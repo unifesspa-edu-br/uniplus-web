@@ -1,3 +1,5 @@
+import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
+
 /**
  * Os tipos de documento, os fatos do candidato e a proteção de dados deles nos testes visuais, com as
  * personas fictícias do portal.
@@ -74,56 +76,82 @@ export const FATOS = [
   {
     id: '01960000-0000-7000-0000-0000000000f1',
     codigo: 'IDENTIDADE_GENERO',
-    nome: 'Identidade de gênero',
-    descricao: 'Como o candidato se identifica.',
-    componenteExibicao: null,
-    dominio: 'CATEGORICO',
-    origem: 'DECLARADO',
-    cardinalidade: 'ESCALAR',
-    fonteValores: 'GLOBAL',
-    formato: null,
-    pontoResolucao: 'INSCRICAO',
-    binding: 'CAMPO_INSCRICAO:IDENTIDADE_GENERO',
-    escopo: 'CANDIDATO',
-    ...PROTECAO,
-    classificacaoProtecao: 'SENSIVEL',
+    descritivo: {
+      nome: 'Identidade de gênero',
+      descricao: 'Como o candidato se identifica.',
+      componenteExibicao: null,
+    },
+    definicao: {
+      dominio: 'CATEGORICO',
+      cardinalidade: 'ESCALAR',
+      escopo: 'CANDIDATO',
+      formato: null,
+      resolucao: {
+        origem: 'DECLARADO',
+        pontoResolucao: 'INSCRICAO',
+        binding: 'CAMPO_INSCRICAO:IDENTIDADE_GENERO',
+      },
+      protecao: {
+        classificacao: 'SENSIVEL',
+        finalidade: PROTECAO.finalidadeTratamento,
+        hipoteseLegal: PROTECAO.hipoteseLegal,
+        aprovacao: AJUSTE,
+      },
+      valores: {
+        fonte: 'GLOBAL',
+        declarados: [
+          {
+            codigo: 'MULHER_CIS',
+            descricao: 'Mulher cis',
+            ordem: 1,
+            ativo: true,
+            orientacao: 'Marque se a identidade coincide com o sexo de nascimento.',
+          },
+          {
+            codigo: 'HOMEM_TRANS',
+            descricao: 'Homem trans',
+            ordem: 2,
+            ativo: true,
+            orientacao: null,
+          },
+        ],
+      },
+    },
     semeadoPeloSistema: false,
     ativo: true,
-    valores: [
-      {
-        codigo: 'MULHER_CIS',
-        descricao: 'Mulher cis',
-        ordem: 1,
-        ativo: true,
-        orientacao: 'Marque se a identidade coincide com o sexo de nascimento.',
-      },
-      { codigo: 'HOMEM_TRANS', descricao: 'Homem trans', ordem: 2, ativo: true, orientacao: null },
-    ],
     regrasPadrao: [],
-    aprovacao: AJUSTE,
   },
   {
     id: '01960000-0000-7000-0000-0000000000f2',
     codigo: 'RENDA_FAMILIAR_BRUTA',
-    nome: 'Renda familiar bruta',
-    descricao: 'Soma da renda mensal bruta dos membros da família.',
-    componenteExibicao: 'MOEDA',
-    dominio: 'NUMERICO',
-    origem: 'DECLARADO',
-    cardinalidade: 'ESCALAR',
-    fonteValores: null,
-    formato: null,
-    pontoResolucao: 'INSCRICAO',
-    binding: 'CAMPO_INSCRICAO:RENDA',
-    escopo: 'CANDIDATO',
-    ...PROTECAO,
+    descritivo: {
+      nome: 'Renda familiar bruta',
+      descricao: 'Soma da renda mensal bruta dos membros da família.',
+      componenteExibicao: 'MOEDA',
+    },
+    definicao: {
+      dominio: 'NUMERICO',
+      cardinalidade: 'ESCALAR',
+      escopo: 'CANDIDATO',
+      formato: null,
+      resolucao: {
+        origem: 'DECLARADO',
+        pontoResolucao: 'INSCRICAO',
+        binding: 'CAMPO_INSCRICAO:RENDA',
+      },
+      protecao: {
+        classificacao: PROTECAO.classificacaoProtecao,
+        finalidade: PROTECAO.finalidadeTratamento,
+        hipoteseLegal: PROTECAO.hipoteseLegal,
+        aprovacao: SOLICITADA,
+      },
+      valores: { fonte: null, declarados: [] },
+    },
     semeadoPeloSistema: false,
     ativo: true,
-    valores: [],
     regrasPadrao: [],
-    aprovacao: SOLICITADA,
   },
-];
+] satisfies FatoCandidatoDto[];
 
 export const PENDENCIAS = [
   {
@@ -139,7 +167,7 @@ export const PENDENCIAS = [
     tipo: 'FATO',
     id: FATOS[1].id,
     codigo: FATOS[1].codigo,
-    nome: FATOS[1].nome,
+    nome: FATOS[1].descritivo.nome,
     ...PROTECAO,
     aprovacao: PENDENTE,
   },
@@ -210,7 +238,7 @@ export const DECISOES = [
     cadastro: 'FATO',
     itemId: FATOS[1].id,
     itemCodigo: FATOS[1].codigo,
-    itemNome: FATOS[1].nome,
+    itemNome: FATOS[1].descritivo.nome,
     ...ATOS_DO_FATO[1],
   },
   {
@@ -224,7 +252,7 @@ export const DECISOES = [
     cadastro: 'FATO',
     itemId: FATOS[0].id,
     itemCodigo: FATOS[0].codigo,
-    itemNome: FATOS[0].nome,
+    itemNome: FATOS[0].descritivo.nome,
     ato: 'APROVACAO',
     instante: '2026-10-27T11:00:00Z',
     atorNome: 'Caroline Stefany Jesus',

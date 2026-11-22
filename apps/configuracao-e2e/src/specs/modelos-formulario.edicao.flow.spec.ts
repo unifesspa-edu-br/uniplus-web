@@ -1,3 +1,4 @@
+import type { ModeloFormularioView } from '@uniplus/shared-data/configuracao';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
@@ -11,10 +12,8 @@ const ID_DO_MODELO = '01960000-0000-7000-0000-0000000000a1';
 const MODELO = {
   id: ID_DO_MODELO,
   codigo: 'INSCRICAO',
-  nome: 'Inscrição',
-  descricao: null,
   finalidade: 'INSCRICAO',
-  tipoProcessoCodigo: null,
+  descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   ativo: true,
   conteudo: {
     titulo: 'Inscrição',
@@ -25,7 +24,7 @@ const MODELO = {
     grupos: [],
     documentosExigidos: [],
   },
-};
+} satisfies ModeloFormularioView;
 const NOME_GRAVADO = 'Inscrição revisada';
 
 /** Atraso da releitura do modelo após a gravação: a tela ainda espera por ela quando o PUT termina. */
@@ -85,7 +84,10 @@ async function mockApi(page: Page, releituraFalha = false) {
       );
       return;
     }
-    await responder(route, 200, { ...MODELO, nome: gravado ? NOME_GRAVADO : MODELO.nome });
+    await responder(route, 200, {
+      ...MODELO,
+      descritivo: { ...MODELO.descritivo, nome: gravado ? NOME_GRAVADO : MODELO.descritivo.nome },
+    });
   });
   return { liberar };
 }
