@@ -83,7 +83,13 @@
     [leitura]="leituraDaProntidao"
   />
   @if (prontidao.erro()) {
-    <!-- A falha e a nova tentativa ficam no aviso acima. -->
+    <!-- A falha e a nova tentativa ficam no aviso acima; sem leitura, vale o que a resposta recusada disse do checklist. -->
+    @if (conferencia.gruposEstruturais() !== null) {
+      <sel-conformidade-estrutural></sel-conformidade-estrutural>
+    }
+    @if (conferencia.regrasLegaisReprovadas().length > 0) {
+      <sel-conformidade-legal></sel-conformidade-legal>
+    }
   } @else if (prontidao.carregando() && conferencia.gruposEstruturais() === null) {
     <p class="alert alert--info" [uiIndicadorDaLeitura]="leituraDaProntidao">
       Carregando o checklist de conformidade…

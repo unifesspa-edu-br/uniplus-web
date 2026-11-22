@@ -7,7 +7,11 @@ import { mensagensDePublicacao } from '../comando-de-publicacao';
 import { dataReferenciaLegalDe } from '../periodo-de-inscricao';
 import { agruparPorDimensao, comoAvisosDaRevisao, comoGruposDaRevisao } from '../grupos-da-revisao';
 import { ProntidaoDaPublicacao } from '../prontidao-da-publicacao.service';
-import { eErroDeDocumentoOuAto, eErroDeFaseSemUnidade } from '../problemas-da-publicacao';
+import {
+  eErroDeDocumentoOuAto,
+  eErroDeFaseSemUnidade,
+  type ObrigatoriedadeReprovadaProblem,
+} from '../problemas-da-publicacao';
 import { RecusasDaPublicacao } from '../../../shared/recusas/recusas-da-publicacao.service';
 
 function recusado(mensagem: string): ValidacaoDoPasso {
@@ -16,11 +20,12 @@ function recusado(mensagem: string): ValidacaoDoPasso {
 
 /**
  * A conferência da publicação: o que o servidor diz estar pendente, estrutural e legalmente, e se
- * a tela já tem o que falta para publicar. Os dois checklists vêm sempre da leitura do servidor, e
- * é ela que a tela relê depois de uma publicação recusada: a recusa e o checklist são duas visões
- * da mesma conferência, sem chave comum, e por isso um não é casado com o outro. Da recusa a
- * conferência usa só o que nenhum dos dois checklists diz, lido do registro da última resposta
- * recusada.
+ * a tela já tem o que falta para publicar. Os dois checklists vêm da leitura do servidor, e é ela
+ * que a tela relê depois de uma publicação recusada: a recusa e o checklist são duas visões da
+ * mesma conferência, sem chave comum, e por isso um não é casado com o outro. Só quando a leitura
+ * não está em tela (falhou) vale o que a resposta recusada disse do checklist, e a leitura que
+ * chega o substitui. Da recusa a conferência usa também o que nenhum dos dois checklists diz,
+ * lido do registro da última resposta recusada.
  */
 @Injectable()
 export class ConferenciaDaPublicacao {
@@ -29,14 +34,26 @@ export class ConferenciaDaPublicacao {
   private readonly catalogoDeFases = inject(CatalogoDeFases);
   private readonly recusasDaPublicacao = inject(RecusasDaPublicacao);
 
-  /** As reprovações da conformidade legal em tela; `null` enquanto ela não foi avaliada. */
-  private readonly obrigatoriedadesReprovadas = computed(() => {
+  /** Os itens estruturais em tela: os da leitura, ou os da resposta recusada quando não há leitura. */
+  private readonly itensEstruturais = computed(() => {
+    const lidos = this.prontidao.estrutural();
+    if (lidos !== null) return lidos;
+    const daResposta = this.recusasDaPublicacao.checklist()?.pendencias ?? [];
+    return daResposta.length === 0 ? null : daResposta.map((item) => ({ ...item, ok: false }));
+  });
+
+  /** As reprovações da conformidade legal em tela; `null` enquanto ela não foi avaliada nem dita pela resposta. */
+  private readonly obrigatoriedadesReprovadas = computed<
+    readonly ObrigatoriedadeReprovadaProblem[] | null
+  >(() => {
     const legal = this.prontidao.legal();
-    return legal === null ? null : legal.regras.filter((regra) => !regra.aprovada);
+    if (legal !== null) return legal.regras.filter((regra) => !regra.aprovada);
+    const daResposta = this.recusasDaPublicacao.checklist()?.obrigatoriedadesReprovadas ?? [];
+    return daResposta.length === 0 ? null : daResposta;
   });
 
   readonly gruposEstruturais = computed(() => {
-    const itens = this.prontidao.estrutural();
+    const itens = this.itensEstruturais();
     return itens === null ? null : comoGruposDaRevisao(agruparPorDimensao(itens));
   });
 
@@ -54,7 +71,7 @@ export class ConferenciaDaPublicacao {
   readonly avisosDaRevisao = computed(() => comoAvisosDaRevisao(this.prontidao.avisos()));
 
   readonly estruturalOk = computed(
-    () => this.prontidao.estrutural()?.every((item) => item.ok) ?? false,
+    () => this.itensEstruturais()?.every((item) => item.ok) ?? false,
   );
 
   readonly regrasLegaisReprovadas = computed(() => this.obrigatoriedadesReprovadas() ?? []);
@@ -95,7 +112,7 @@ export class ConferenciaDaPublicacao {
   constructor() {
     // Os outros passos leem da conferência o que lhes cabe; ao sair da Revisão ela deixa de valer.
     const codigosPendentes = computed(() =>
-      (this.prontidao.estrutural() ?? []).filter((item) => !item.ok).map((item) => item.codigo),
+      (this.itensEstruturais() ?? []).filter((item) => !item.ok).map((item) => item.codigo),
     );
     effect(() => this.store.classificacao.pendenciasDaConferencia.set(codigosPendentes()));
     inject(DestroyRef).onDestroy(() => this.store.classificacao.pendenciasDaConferencia.set([]));

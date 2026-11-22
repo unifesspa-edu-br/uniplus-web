@@ -33,6 +33,48 @@ const CODIGOS_DE_CONFORMIDADE_LEGAL_NAO_AVALIAVEL = new Set<string>([
   'uniplus.selecao.processo_seletivo.periodo_inscricao_obrigatorio_sem_fase_de_coleta',
 ]);
 
+/** Uma pendência estrutural, como a extensão `pendencias` do 422 a devolve: um item reprovado, sem o `ok`. */
+export interface PendenciaEstruturalProblem {
+  readonly codigo: string;
+  readonly dimensao: string;
+  readonly mensagem: string;
+}
+
+/** Uma obrigatoriedade legal reprovada, como a extensão `obrigatoriedadesReprovadas` do 422 a devolve. */
+export interface ObrigatoriedadeReprovadaProblem {
+  readonly regraCodigo: string;
+  readonly descricaoHumana: string;
+  readonly baseLegal: string;
+  readonly motivo: string | null;
+  /**
+   * Onde a norma pode ser lida, e desde quando ela vige. Só existem quando a reprovação vem da
+   * consulta de conformidade legal: a extensão do 422 carrega os quatro campos acima e mais nada.
+   */
+  readonly atoNormativoUrl?: string | null;
+  readonly portariaInterna?: string | null;
+  readonly vigenciaInicio?: string | null;
+}
+
+/** As duas extensões que só a publicação emite; de um endpoint só, e por isso fora de `shared-core`. */
+interface ProblemComExtensoesDePublicacao extends ProblemDetails {
+  readonly pendencias?: readonly PendenciaEstruturalProblem[];
+  readonly obrigatoriedadesReprovadas?: readonly ObrigatoriedadeReprovadaProblem[];
+}
+
+/** O que a resposta recusada da publicação disse do checklist; lista vazia quando ela não o disse. */
+export interface ChecklistDaResposta {
+  readonly pendencias: readonly PendenciaEstruturalProblem[];
+  readonly obrigatoriedadesReprovadas: readonly ObrigatoriedadeReprovadaProblem[];
+}
+
+export function checklistDaResposta(problem: ProblemDetails): ChecklistDaResposta {
+  const { pendencias, obrigatoriedadesReprovadas } = problem as ProblemComExtensoesDePublicacao;
+  return {
+    pendencias: pendencias ?? [],
+    obrigatoriedadesReprovadas: obrigatoriedadesReprovadas ?? [],
+  };
+}
+
 export function eErroDeDocumentoOuAto(codigo: string): boolean {
   return CODIGOS_DE_DOCUMENTO_OU_ATO.has(codigo);
 }
