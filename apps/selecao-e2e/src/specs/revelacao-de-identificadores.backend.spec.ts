@@ -6,6 +6,7 @@ import {
   garantirPerfil,
   identidadeDoToken,
   lerTopicoDoKafka,
+  type MensagemDecodificada,
   tokenDaPersona,
   unidadeDoCertame,
 } from '@uniplus/shared-e2e';
@@ -23,8 +24,8 @@ const QUEM_NAO_CONSULTA_IDENTIFICADOR = 'esther.peixoto';
 const TOPICO = 'autorizacao_registros_de_acesso';
 
 interface RegistroDeAcesso {
-  readonly instante: string;
-  readonly atorSubject: string;
+  readonly instante: number;
+  readonly atorContaId: string;
   readonly processoId: string | null;
   readonly permissao: string;
   readonly sensibilidade: string;
@@ -34,15 +35,12 @@ interface RegistroDeAcesso {
   readonly origem: string;
 }
 
-/** As mensagens do tópico, do início, como o broker as guarda. */
-function mensagensDoTopico(): string[] {
-  return lerTopicoDoKafka(TOPICO);
-}
-
-function registrosDe(mensagens: readonly string[]): RegistroDeAcesso[] {
-  return mensagens
-    .flatMap((linha) => JSON.parse(linha) as { registro: RegistroDeAcesso }[])
-    .map((entrada) => entrada.registro);
+function registrosDe(mensagens: readonly MensagemDecodificada[]): RegistroDeAcesso[] {
+  return mensagens.flatMap(({ registro }) =>
+    (registro as { registros: { registro: RegistroDeAcesso }[] }).registros.map(
+      (entrada) => entrada.registro,
+    ),
+  );
 }
 
 test.describe('Revelação de identificadores', () => {
@@ -201,27 +199,45 @@ test.describe('Revelação de identificadores', () => {
     }
   });
 
-  test('listagem, detalhe e revelação deixam registro de acesso publicado no Kafka', async ({ browser }) => {
+  test('listagem, detalhe e revelação deixam registro de acesso publicado no Kafka', async ({
+    browser,
+  }) => {
     test.setTimeout(240_000);
     const inicio = Date.now();
     const diogo = identidadeDoToken(await tokenDaPersona('diogo.souza')).sub;
-    const pagina = await entrarComoPersona(browser, APP, 'diogo.souza', `/processo-seletivo/${cenario.processoId}/inscricoes`);
+    const pagina = await entrarComoPersona(
+      browser,
+      APP,
+      'diogo.souza',
+      `/processo-seletivo/${cenario.processoId}/inscricoes`,
+    );
     await expect(pagina.getByRole('row', { name: /Ariel Drumond/ })).toBeVisible();
-    await pagina.getByRole('row', { name: /Ariel Drumond/ }).getByRole('link').first().click();
+    await pagina
+      .getByRole('row', { name: /Ariel Drumond/ })
+      .getByRole('link')
+      .first()
+      .click();
     await pagina.getByRole('button', { name: 'Revelar CPF' }).click();
     await expect(pagina.getByText(cenario.fernanda.cpf)).toBeVisible();
 
-    // O produtor publica os três registros juntos: espera todos aparecerem no tópico.
-    const meus = (mensagens: readonly string[]) =>
-      registrosDe(mensagens).filter((r) => r.atorSubject === diogo && Date.parse(r.instante) >= inicio);
-    const achados = (mensagens: readonly string[]) => {
+    // Cada operação publica o próprio registro: espera os três aparecerem no tópico.
+    const meus = (mensagens: readonly MensagemDecodificada[]) =>
+      registrosDe(mensagens).filter((r) => r.atorContaId === diogo && r.instante / 1_000 >= inicio);
+    const achados = (mensagens: readonly MensagemDecodificada[]) => {
       const registros = meus(mensagens);
       return {
         listagem: registros.some(
-          (r) => r.permissao === 'selecao:inscricoes:consultar' && r.inscricaoId === null && r.processoId === cenario.processoId && r.permitido,
+          (r) =>
+            r.permissao === 'selecao:inscricoes:consultar' &&
+            r.inscricaoId === null &&
+            r.processoId === cenario.processoId &&
+            r.permitido,
         ),
         detalhe: registros.some(
-          (r) => r.permissao === 'selecao:dados-pessoais:consultar' && r.inscricaoId === cenario.fernanda.inscricaoId && r.permitido,
+          (r) =>
+            r.permissao === 'selecao:dados-pessoais:consultar' &&
+            r.inscricaoId === cenario.fernanda.inscricaoId &&
+            r.permitido,
         ),
         revelacao: registros.some(
           (r) =>
@@ -232,11 +248,11 @@ test.describe('Revelação de identificadores', () => {
         ),
       };
     };
-    let mensagens: string[] = [];
+    let mensagens: MensagemDecodificada[] = [];
     await expect
       .poll(
-        () => {
-          mensagens = mensagensDoTopico();
+        async () => {
+          mensagens = await lerTopicoDoKafka(TOPICO);
           return achados(mensagens);
         },
         { timeout: 90_000, intervals: [1_000] },
@@ -249,7 +265,13 @@ test.describe('Revelação de identificadores', () => {
     for (const { cpf } of [cenario.fernanda, cenario.erick]) {
       const digitos = cpf.replace(/\D/g, '');
       const formatado = `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-${digitos.slice(9)}`;
-      expect(mensagens.filter((m) => m.includes(digitos) || m.includes(formatado))).toEqual([]);
+      for (const mensagem of mensagens) {
+        const conteudo = JSON.stringify(mensagem.registro);
+        expect(conteudo.includes(digitos)).toBe(false);
+        expect(conteudo.includes(formatado)).toBe(false);
+        expect(mensagem.bytes.includes(Buffer.from(digitos))).toBe(false);
+        expect(mensagem.bytes.includes(Buffer.from(formatado))).toBe(false);
+      }
     }
   });
 });
