@@ -1,6 +1,11 @@
 import type { FormGroup } from '@angular/forms';
-import { StatusProcesso, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import {
+  PapelDaBancaCodigo,
+  StatusProcesso,
+  type ProcessoSeletivoDto,
+} from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
+import { umaBancaDeclarada } from '../../shared/bancas/banca-declarada.testing';
 import type { EtapaForm } from './cronograma-form';
 import {
   PROCESSO_ID,
@@ -97,13 +102,14 @@ describe('CronogramaPassoComponent: nota da etapa', () => {
     it('em consulta, lê quem julga a etapa e não lê o que ela publica', () => {
       const etapa = comEtapaDoEnemAberta();
       etapa.controls.bancas.setValue([
-        {
-          id: null,
-          identificadorLocal: 'banca-teste',
-          copiaDoTipo: null,
-          tipoBancaId: 'banca-1',
-          regraDeDeliberacao: null,
-        },
+        umaBancaDeclarada({
+          copiaDoTipo: {
+            rotulo: 'Banca de entrevista',
+            papel: { codigo: PapelDaBancaCodigo.AVALIA_O_MERITO, rotulo: 'Avalia candidato' },
+            exigeDuasOuMaisBancas: false,
+            encerraRecursoNaPrimeiraInstancia: false,
+          },
+        }),
       ]);
       store.remoteSnapshot.set({
         status: StatusProcesso.publicado,
@@ -112,7 +118,7 @@ describe('CronogramaPassoComponent: nota da etapa', () => {
 
       const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
       expect(leitura).toContain('Quem julga esta etapa');
-      expect(leitura).toContain('banca-1');
+      expect(leitura).toContain('Banca de entrevista 1');
       expect(leitura).not.toContain('O que esta etapa publica');
     });
 
