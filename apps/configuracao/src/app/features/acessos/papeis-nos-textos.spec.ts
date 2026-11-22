@@ -12,7 +12,7 @@ const TEXTOS = [
   ...Object.values(orientacaoDaPropria('aguardando_protecao_de_dados')),
 ];
 
-describe('papéis nos textos de versões, janela e reclassificação', () => {
+describe('papéis nos textos de versões, revisão e reclassificação', () => {
   it('nenhum texto atribui decisão ao Encarregado de dados', () => {
     expect(TEXTOS.filter((texto) => /encarregad/i.test(texto))).toEqual([]);
   });
@@ -21,12 +21,12 @@ describe('papéis nos textos de versões, janela e reclassificação', () => {
     expect(TEXTOS.filter((texto) => /a proteção de dados decide/i.test(texto))).toEqual([]);
   });
 
-  it('a janela diz que o Representante do controlador decide a etapa de proteção de dados', () => {
-    expect(MENSAGENS_DA_JANELA['migracao.sem_permissao_na_etapa']?.resolver).toContain(
-      'o Representante do controlador decide a etapa de proteção de dados',
-    );
-    expect(MENSAGENS_DA_JANELA['migracao.lote_ja_enviado']?.resolver).toContain(
-      'o que aguarda o Representante do controlador, pela etapa de proteção de dados',
+  it('a revisão diz que o Representante do controlador decide a etapa de proteção de dados', () => {
+    expect(
+      MENSAGENS_DA_JANELA['revisao_das_concessoes.sem_permissao_na_etapa']?.resolver,
+    ).toContain('o Representante do controlador decide a etapa de proteção de dados');
+    expect(MENSAGENS_DA_JANELA['revisao_das_concessoes.decisoes_ja_enviadas']?.resolver).toContain(
+      'o Representante do controlador decide as que aguardam a etapa de proteção de dados',
     );
   });
 

@@ -63,19 +63,21 @@ describe('mensagens de acesso', () => {
     );
   });
 
-  it('orienta nas recusas da janela de migração, com os nomes das funções', () => {
+  it('orienta nas recusas da revisão das concessões, com os nomes das funções', () => {
     TestBed.configureTestingModule({ providers: [provideMensagensDeAcesso()] });
     const problemas = TestBed.inject(ProblemI18nService);
     const resolver = (code: string) =>
       textoDaRecusa(problemas.resolve({ type: 'x', title: 'API', status: 422, code, traceId: '' }));
 
-    expect(resolver('uniplus.autorizacao.pedido.perfil_em_janela_de_migracao')).toContain(
-      'não recebe pessoa nova',
+    expect(resolver('uniplus.autorizacao.pedido.perfil_em_revisao_das_concessoes')).toContain(
+      'o pedido só pode ser feito depois que ela terminar',
     );
-    expect(resolver('uniplus.autorizacao.perfil.janela_de_migracao_aberta')).toContain(
-      'não aceita outra versão pendente',
+    expect(resolver('uniplus.autorizacao.perfil.revisao_das_concessoes_aberta')).toContain(
+      'nova versão só depois que ela terminar',
     );
-    expect(resolver('uniplus.autorizacao.migracao.lote_incompleto')).toContain('gestão de acessos');
+    expect(resolver('uniplus.autorizacao.revisao_das_concessoes.decisoes_incompletas')).toContain(
+      'gestão de acessos',
+    );
     expect(resolver('uniplus.autorizacao.perfil.acrescimo_com_concessao_ativa')).toBe('API');
   });
 
@@ -131,10 +133,10 @@ describe('detalhe da trilha', () => {
     expect(detalheDaTrilha(null)).toBe('—');
   });
 
-  it('traduz a etapa da decisão da migração e tira o identificador da janela', () => {
-    const janela = '01a188d4-4a99-7db5-b0cd-0f3e30cce2be';
+  it('traduz a etapa da decisão da revisão e tira o identificador da revisão', () => {
+    const revisao = '01a188d4-4a99-7db5-b0cd-0f3e30cce2be';
 
-    expect(detalheDaTrilha(`Etapa: gestao_de_acessos. Janela: ${janela}.`)).toBe(
+    expect(detalheDaTrilha(`Etapa: gestao_de_acessos. Janela: ${revisao}.`)).toBe(
       'Etapa: Gestão de acessos.',
     );
     expect(tipoDeEvento('migracao_recusar')).toBe('Migração recusada');

@@ -15,12 +15,12 @@ import {
   presente,
 } from './pagina-da-janela.testing';
 
-const JANELA = janelaDeMigracao({
+const REVISAO = janelaDeMigracao({
   decisoesEnviadas: true,
   itens: [itemDaJanela({ concessaoId: 'c1', situacao: 'retida' })],
 });
 
-describe('encerramento manual da janela', () => {
+describe('encerramento manual da revisão', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     TestBed.resetTestingModule();
@@ -46,7 +46,7 @@ describe('encerramento manual da janela', () => {
     );
 
   it('não encerra sem motivo e sem confirmação, e leva o foco ao primeiro campo a corrigir', async () => {
-    const { host, assentar } = await abrirJanela(JANELA);
+    const { host, assentar } = await abrirJanela(REVISAO);
 
     presente(botao(host, 'Encerrar a janela')).click();
     await assentar();
@@ -61,7 +61,7 @@ describe('encerramento manual da janela', () => {
   });
 
   it('com o motivo e sem a confirmação, o foco vai à caixa', async () => {
-    const { host, assentar } = await abrirJanela(JANELA);
+    const { host, assentar } = await abrirJanela(REVISAO);
     await preencher(host, assentar, 'Versão anterior substituída por engano.');
 
     presente(botao(host, 'Encerrar a janela')).click();
@@ -72,9 +72,9 @@ describe('encerramento manual da janela', () => {
     expect(caixa(host).getAttribute('aria-invalid')).toBe('true');
   });
 
-  it('encerra com o motivo e a confirmação e relê a janela encerrada', async () => {
-    api.encerrar.mockReturnValue(of(ok(JANELA)));
-    const { host, assentar, responder } = await abrirJanela(JANELA);
+  it('encerra com o motivo e a confirmação e relê a revisão encerrada', async () => {
+    api.encerrar.mockReturnValue(of(ok(REVISAO)));
+    const { host, assentar, responder } = await abrirJanela(REVISAO);
     await preencher(host, assentar, '  Versão anterior substituída por engano.  ');
     caixa(host).click();
     await assentar();
@@ -108,7 +108,7 @@ describe('encerramento manual da janela', () => {
             type: 'x',
             title: 'Motivo ausente ou longo demais',
             status: 422,
-            code: 'uniplus.autorizacao.migracao.motivo_invalido',
+            code: 'uniplus.autorizacao.revisao_das_concessoes.motivo_invalido',
             traceId: '',
             errors: [{ field: 'Motivo', code: 'motivo_invalido', message: 'Motivo longo demais.' }],
           },
@@ -117,7 +117,7 @@ describe('encerramento manual da janela', () => {
         ),
       ),
     );
-    const { host, assentar } = await abrirJanela(JANELA);
+    const { host, assentar } = await abrirJanela(REVISAO);
     await preencher(host, assentar, 'Versão anterior substituída por engano.');
     caixa(host).click();
     await assentar();
@@ -134,9 +134,9 @@ describe('encerramento manual da janela', () => {
 
   it('mostra a recusa que não é de campo no aviso do formulário, com o foco nele', async () => {
     api.encerrar.mockReturnValue(
-      of(recusa('uniplus.autorizacao.migracao.sem_permissao_na_etapa', 403)),
+      of(recusa('uniplus.autorizacao.revisao_das_concessoes.sem_permissao_na_etapa', 403)),
     );
-    const { host, assentar } = await abrirJanela(JANELA);
+    const { host, assentar } = await abrirJanela(REVISAO);
     await preencher(host, assentar, 'Versão anterior substituída por engano.');
     caixa(host).click();
     await assentar();
@@ -145,13 +145,13 @@ describe('encerramento manual da janela', () => {
     await assentar();
 
     const erro = presente(host.querySelector<HTMLElement>('#cfg-encerramento-erro'));
-    expect(erro.textContent).toContain('Falta a permissão da etapa para esta decisão.');
+    expect(erro.textContent).toContain('Acesso negado: a operação exige a permissão da etapa.');
     expect(document.activeElement).toBe(erro);
   });
 
   it('falha que não veio da API explica no aviso do formulário', async () => {
     api.encerrar.mockReturnValue(throwError(() => new Error('rede')));
-    const { host, assentar } = await abrirJanela(JANELA);
+    const { host, assentar } = await abrirJanela(REVISAO);
     await preencher(host, assentar, 'Versão anterior substituída por engano.');
     caixa(host).click();
     await assentar();
@@ -164,9 +164,11 @@ describe('encerramento manual da janela', () => {
     );
   });
 
-  it('janela que já terminou relê a tela e mantém a explicação à vista', async () => {
-    api.encerrar.mockReturnValue(of(recusa('uniplus.autorizacao.migracao.janela_encerrada', 422)));
-    const { host, assentar, responder } = await abrirJanela(JANELA);
+  it('revisão que já terminou relê a tela e mantém a explicação à vista', async () => {
+    api.encerrar.mockReturnValue(
+      of(recusa('uniplus.autorizacao.revisao_das_concessoes.revisao_encerrada', 422)),
+    );
+    const { host, assentar, responder } = await abrirJanela(REVISAO);
     await preencher(host, assentar, 'Versão anterior substituída por engano.');
     caixa(host).click();
     await assentar();
@@ -181,10 +183,10 @@ describe('encerramento manual da janela', () => {
     );
 
     expect(host.textContent).toContain('A janela mudou');
-    expect(host.textContent).toContain('A janela de migração já terminou.');
+    expect(host.textContent).toContain('A revisão das concessões já terminou.');
   });
 
-  it('o motivo recusado com causa geral marca o campo e mostra a causa no aviso, sem reler a janela', async () => {
+  it('o motivo recusado com causa geral marca o campo e mostra a causa no aviso, sem reler a revisão', async () => {
     api.encerrar.mockReturnValue(
       of(
         apiFailure(
@@ -192,7 +194,7 @@ describe('encerramento manual da janela', () => {
             type: 'x',
             title: 'Janela encerrada',
             status: 422,
-            code: 'uniplus.autorizacao.migracao.janela_encerrada',
+            code: 'uniplus.autorizacao.revisao_das_concessoes.revisao_encerrada',
             traceId: '',
             errors: [
               { field: 'Motivo', code: 'motivo_invalido', message: 'Motivo longo demais.' },
@@ -204,7 +206,7 @@ describe('encerramento manual da janela', () => {
         ),
       ),
     );
-    const { host, assentar } = await abrirJanela(JANELA);
+    const { host, assentar } = await abrirJanela(REVISAO);
     await preencher(host, assentar, 'Versão anterior substituída por engano.');
     caixa(host).click();
     await assentar();
@@ -220,7 +222,7 @@ describe('encerramento manual da janela', () => {
   });
 
   it('quem só tem a permissão da proteção de dados não vê o encerramento', async () => {
-    const { host } = await abrirJanela(JANELA, [PROTECAO_DE_DADOS]);
+    const { host } = await abrirJanela(REVISAO, [PROTECAO_DE_DADOS]);
 
     expect(host.querySelector('cfg-encerramento-da-janela')).toBeNull();
   });

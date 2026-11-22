@@ -8,26 +8,26 @@ import { mensagemDaRecusa } from '../falha-de-servidor';
 import { ChavesPorComando } from '../versoes/chaves-por-comando';
 import { EscritaDoPerfil } from '../versoes/escrita-do-perfil';
 
-const RAIZ = 'uniplus.autorizacao.migracao.';
+const RAIZ = 'uniplus.autorizacao.revisao_das_concessoes.';
 
-/** A recusa mostra que a janela mudou: a tela é relida e a explicação continua à vista. */
+/** A recusa mostra que a revisão mudou: a tela é relida e a explicação continua à vista. */
 const RECUSAS_QUE_MOSTRAM_OUTRO_ESTADO: readonly string[] = [
   'prazo_encerrado',
-  'janela_encerrada',
-  'janela_nao_encontrada',
-  'janela_em_encerramento',
-  'lote_ja_enviado',
+  'revisao_encerrada',
+  'revisao_nao_encontrada',
+  'revisao_em_encerramento',
+  'decisoes_ja_enviadas',
   'concessao_ja_decidida',
 ].map((sufixo) => RAIZ + sufixo);
 
-/** Envia uma operação da janela sob a chave de idempotência e cuida do desfecho que é comum a todas. */
+/** Envia uma operação da revisão sob a chave de idempotência e cuida do desfecho que é comum a todas. */
 @Injectable()
 export class EnvioNaJanela {
   private readonly escrita = inject(EscritaDoPerfil);
   private readonly problemas = inject(ProblemI18nService);
   private readonly notificacoes = inject(NotificationService);
   private readonly chaves = new ChavesPorComando();
-  /** O que mudou na janela quando a API recusou a operação; fica à vista depois da releitura. */
+  /** O que mudou na revisão quando a API recusou a operação; fica à vista depois da releitura. */
   readonly aviso = signal<string | null>(null);
 
   /**
@@ -51,7 +51,7 @@ export class EnvioNaJanela {
   }
 
   /**
-   * O texto da recusa para o lugar onde a pessoa agiu. Quando a recusa diz que a janela já mudou,
+   * O texto da recusa para o lugar onde a pessoa agiu. Quando a recusa diz que a revisão já mudou,
    * a tela é relida, o texto vai para o aviso da página e a devolução é `null`.
    */
   tratar(problema: ProblemDetails): string | null {

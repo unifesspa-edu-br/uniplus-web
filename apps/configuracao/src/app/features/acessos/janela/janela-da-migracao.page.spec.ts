@@ -24,7 +24,7 @@ const REBECA = itemDaJanela({
   beneficiarioNome: 'Rebeca Teste',
   ehDoLeitor: true,
 });
-const LOTE = janelaDeMigracao({ itens: [BETINA, LEANDRO, REBECA] });
+const CONJUNTO_DE_CONCESSOES = janelaDeMigracao({ itens: [BETINA, LEANDRO, REBECA] });
 const ENCERRADA = janelaDeMigracao({
   situacao: 'encerrada',
   encerradaEm: '2026-11-11T09:00:00Z',
@@ -32,8 +32,8 @@ const ENCERRADA = janelaDeMigracao({
   decisoesEnviadas: true,
   itens: [itemDaJanela({ concessaoId: 'c1', situacao: 'nao_migrada' })],
 });
-const LOTE_ENVIADO = janelaDeMigracao({ ...LOTE, decisoesEnviadas: true });
-const TODAS_MIGRADAS = {
+const CONJUNTO_ENVIADO = janelaDeMigracao({ ...CONJUNTO_DE_CONCESSOES, decisoesEnviadas: true });
+const TODAS_APROVADAS = {
   decisoes: [
     { concessaoId: 'c1', decisao: 'migrar' },
     { concessaoId: 'c2', decisao: 'migrar' },
@@ -48,15 +48,15 @@ const UMA_RECUSADA = {
   confirmacaoDeExclusao: true,
 };
 
-type Janela = Awaited<ReturnType<typeof abrirJanela>>;
+type Revisao = Awaited<ReturnType<typeof abrirJanela>>;
 
-async function migrarTodasEEnviar({ host, assentar }: Janela): Promise<void> {
+async function aprovarTodasEEnviar({ host, assentar }: Revisao): Promise<void> {
   presente(botao(host, 'Migrar todas')).click();
   await assentar();
   presente(botao(host, 'Enviar o lote')).click();
 }
 
-async function pedirConfirmacaoDaExclusao({ host, assentar }: Janela): Promise<HTMLElement> {
+async function pedirConfirmacaoDaExclusao({ host, assentar }: Revisao): Promise<HTMLElement> {
   presente(botao(host, 'Migrar todas')).click();
   escolher(linhaDe(host, 'c2'), 'Recusar');
   await assentar();
@@ -65,7 +65,7 @@ async function pedirConfirmacaoDaExclusao({ host, assentar }: Janela): Promise<H
   return presente(host.querySelector<HTMLElement>('cfg-exclusao-dialog'));
 }
 
-describe('JanelaDaMigracaoPage', () => {
+describe('página de revisão das concessões', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     TestBed.resetTestingModule();
@@ -78,11 +78,11 @@ describe('JanelaDaMigracaoPage', () => {
   });
 
   describe('leitura e prazo', () => {
-    it('mostra o prazo da janela, o que falta e a versão de destino', async () => {
+    it('mostra o prazo da revisão, o que falta e a versão de destino', async () => {
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(new Date('2026-11-10T10:30:00Z'));
 
-      const { host } = await abrirJanela(LOTE);
+      const { host } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
 
       expect(host.querySelector('h1')?.textContent).toContain('Janela de migração');
       const prazo = presente(host.querySelector('cfg-prazo-da-janela'));
@@ -92,7 +92,7 @@ describe('JanelaDaMigracaoPage', () => {
       expect(prazo.textContent).toContain('versão 2');
     });
 
-    it('janela encerrada mostra quando e como terminou', async () => {
+    it('revisão encerrada mostra quando e como terminou', async () => {
       const { host } = await abrirJanela(ENCERRADA);
 
       const prazo = presente(host.querySelector('cfg-prazo-da-janela')).textContent;
@@ -101,7 +101,7 @@ describe('JanelaDaMigracaoPage', () => {
       expect(prazo).not.toContain('Tempo restante');
     });
 
-    it('janela encerrada mostra a concessão não migrada e nenhuma ação', async () => {
+    it('revisão encerrada mostra a concessão sem aprovação e nenhuma ação', async () => {
       const { host } = await abrirJanela(ENCERRADA);
 
       expect(host.textContent).toContain('Não migrada no prazo');
@@ -116,17 +116,17 @@ describe('JanelaDaMigracaoPage', () => {
       expect(host.textContent).toContain('Não foi possível carregar a janela');
       const tentar = presente(botao(host, 'Tentar novamente'));
       tentar.click();
-      await responder(LOTE);
+      await responder(CONJUNTO_DE_CONCESSOES);
 
       expect(host.textContent).not.toContain('Não foi possível carregar a janela');
       expect(host.textContent).toContain('Betina Teste');
     });
 
-    it('perfil sem janela mostra a recusa sem oferecer nova tentativa', async () => {
+    it('perfil sem revisão mostra a recusa sem oferecer nova tentativa', async () => {
       const { host, falhar } = montarJanela();
-      await falhar(404, 'uniplus.autorizacao.migracao.janela_nao_encontrada');
+      await falhar(404, 'uniplus.autorizacao.revisao_das_concessoes.revisao_nao_encontrada');
 
-      expect(host.textContent).toContain('O perfil não tem janela de migração');
+      expect(host.textContent).toContain('Revisão das concessões não encontrada');
       expect(botao(host, 'Tentar novamente')).toBeUndefined();
     });
 
@@ -150,9 +150,9 @@ describe('JanelaDaMigracaoPage', () => {
         '/acessos/perfis',
       ],
     ])('quem %s', (_quem, concedidas, rotulo, destino) => {
-      it('volta, de um perfil sem janela, à primeira tela que abre', async () => {
+      it('volta, de um perfil sem revisão, à primeira tela que abre', async () => {
         const { host, falhar } = montarJanela(concedidas);
-        await falhar(404, 'uniplus.autorizacao.migracao.janela_nao_encontrada');
+        await falhar(404, 'uniplus.autorizacao.revisao_das_concessoes.revisao_nao_encontrada');
 
         const link = [...host.querySelectorAll('a')].find((a) => a.textContent?.trim() === rotulo);
         expect(link?.getAttribute('href')).toBe(destino);
@@ -161,16 +161,16 @@ describe('JanelaDaMigracaoPage', () => {
   });
 
   it('diz que a versão com permissão pessoal ou sensível passa pelo Representante do controlador', async () => {
-    const { host } = await abrirJanela(LOTE);
+    const { host } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
 
     expect(host.querySelector('.page-header__desc')?.textContent?.replace(/\s+/g, ' ')).toContain(
       'pessoal ou sensível, do Representante do controlador.',
     );
   });
 
-  describe('lote da gestão de acessos', () => {
-    it('lista cada concessão da versão anterior com migrar e recusar, e deixa a própria retida sem ação', async () => {
-      const { host } = await abrirJanela(LOTE);
+  describe('envio da gestão de acessos', () => {
+    it('lista cada concessão da versão anterior com opções de aprovação e recusa, e deixa a própria retida sem ação', async () => {
+      const { host } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
 
       expect(linhaDe(host, 'c1').querySelectorAll('input[type="radio"]')).toHaveLength(2);
       expect(linhaDe(host, 'c2').textContent).toContain('Leandro Teste');
@@ -182,7 +182,7 @@ describe('JanelaDaMigracaoPage', () => {
     });
 
     it('segura o envio com a lista incompleta e diz quantas faltam', async () => {
-      const { host, assentar } = await abrirJanela(LOTE);
+      const { host, assentar } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
       expect(presente(botao(host, 'Enviar o lote')).disabled).toBe(true);
       expect(host.textContent).toContain('Faltam 2 concessões para enviar o lote.');
 
@@ -194,7 +194,7 @@ describe('JanelaDaMigracaoPage', () => {
     });
 
     it('habilita o envio quando a lista está completa', async () => {
-      const { host, fixture, assentar } = await abrirJanela(LOTE);
+      const { host, fixture, assentar } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
 
       escolher(linhaDe(host, 'c1'), 'Migrar');
       escolher(linhaDe(host, 'c2'), 'Migrar');
@@ -204,8 +204,8 @@ describe('JanelaDaMigracaoPage', () => {
       expect(presente(botao(host, 'Enviar o lote')).disabled).toBe(false);
     });
 
-    it('migrar todas e recusar todas preenchem a lista inteira', async () => {
-      const { host, assentar } = await abrirJanela(LOTE);
+    it('aprovar todas e recusar todas preenchem a lista inteira', async () => {
+      const { host, assentar } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
 
       presente(botao(host, 'Migrar todas')).click();
       await assentar();
@@ -218,45 +218,45 @@ describe('JanelaDaMigracaoPage', () => {
     });
 
     describe('sem recusa', () => {
-      beforeEach(() => api.enviarLote.mockReturnValue(of(ok(LOTE))));
+      beforeEach(() => api.enviarLote.mockReturnValue(of(ok(CONJUNTO_DE_CONCESSOES))));
 
-      it('envia o lote direto, sem pedir confirmação', async () => {
-        const janela = await abrirJanela(LOTE);
+      it('envia as decisões diretamente, sem pedir confirmação', async () => {
+        const revisao = await abrirJanela(CONJUNTO_DE_CONCESSOES);
 
-        await migrarTodasEEnviar(janela);
-        await janela.responder(LOTE_ENVIADO);
+        await aprovarTodasEEnviar(revisao);
+        await revisao.responder(CONJUNTO_ENVIADO);
 
-        const chamada = [LOTE.perfilId, TODAS_MIGRADAS, expect.anything()];
+        const chamada = [CONJUNTO_DE_CONCESSOES.perfilId, TODAS_APROVADAS, expect.anything()];
         expect(api.enviarLote).toHaveBeenCalledWith(...chamada);
       });
 
-      it('avisa que o lote foi enviado', async () => {
-        const janela = await abrirJanela(LOTE);
+      it('avisa que as decisões foram enviadas', async () => {
+        const revisao = await abrirJanela(CONJUNTO_DE_CONCESSOES);
 
-        await migrarTodasEEnviar(janela);
-        await janela.responder(LOTE_ENVIADO);
+        await aprovarTodasEEnviar(revisao);
+        await revisao.responder(CONJUNTO_ENVIADO);
 
         expect(notificacoes.success).toHaveBeenCalledWith('Lote enviado');
-        expect(janela.host.textContent).toContain('O lote da gestão de acessos já foi enviado');
+        expect(revisao.host.textContent).toContain('O lote da gestão de acessos já foi enviado');
       });
     });
 
     describe('com recusa', () => {
-      beforeEach(() => api.enviarLote.mockReturnValue(of(ok(LOTE))));
+      beforeEach(() => api.enviarLote.mockReturnValue(of(ok(CONJUNTO_DE_CONCESSOES))));
 
       it('avisa que o acesso será revogado e só envia depois da confirmação', async () => {
-        const dialogo = await pedirConfirmacaoDaExclusao(await abrirJanela(LOTE));
+        const dialogo = await pedirConfirmacaoDaExclusao(await abrirJanela(CONJUNTO_DE_CONCESSOES));
 
         expect(dialogo.textContent).toContain('1 concessão recusada perde o acesso');
         expect(api.enviarLote).not.toHaveBeenCalled();
       });
 
       it('exige marcar a confirmação e leva o foco a ela', async () => {
-        const janela = await abrirJanela(LOTE);
-        const dialogo = await pedirConfirmacaoDaExclusao(janela);
+        const revisao = await abrirJanela(CONJUNTO_DE_CONCESSOES);
+        const dialogo = await pedirConfirmacaoDaExclusao(revisao);
 
         presente(botao(dialogo, 'Recusar e enviar o lote')).click();
-        await janela.assentar();
+        await revisao.assentar();
 
         const caixa = presente(dialogo.querySelector<HTMLInputElement>('input[type="checkbox"]'));
         expect(api.enviarLote).not.toHaveBeenCalled();
@@ -264,65 +264,65 @@ describe('JanelaDaMigracaoPage', () => {
         expect(document.activeElement).toBe(caixa);
       });
 
-      it('envia o lote com a confirmação da exclusão', async () => {
-        const janela = await abrirJanela(LOTE);
-        const dialogo = await pedirConfirmacaoDaExclusao(janela);
+      it('envia as decisões com a confirmação da exclusão', async () => {
+        const revisao = await abrirJanela(CONJUNTO_DE_CONCESSOES);
+        const dialogo = await pedirConfirmacaoDaExclusao(revisao);
 
         presente(dialogo.querySelector<HTMLInputElement>('input[type="checkbox"]')).click();
-        await janela.assentar();
+        await revisao.assentar();
         presente(botao(dialogo, 'Recusar e enviar o lote')).click();
-        await janela.responder(LOTE_ENVIADO);
+        await revisao.responder(CONJUNTO_ENVIADO);
 
         expect(api.enviarLote.mock.calls[0]?.[1]).toEqual(UMA_RECUSADA);
       });
     });
 
-    describe('com o lote incompleto na API', () => {
+    describe('com o envio incompleto na API', () => {
       beforeEach(() => {
-        const erro = recusa('uniplus.autorizacao.migracao.lote_incompleto', 422);
+        const erro = recusa('uniplus.autorizacao.revisao_das_concessoes.decisoes_incompletas', 422);
         api.enviarLote.mockReturnValue(of(erro));
       });
 
       it('mostra a recusa junto ao envio e leva o foco a ela', async () => {
-        const janela = await abrirJanela(LOTE);
+        const revisao = await abrirJanela(CONJUNTO_DE_CONCESSOES);
 
-        await migrarTodasEEnviar(janela);
-        await janela.assentar();
+        await aprovarTodasEEnviar(revisao);
+        await revisao.assentar();
 
-        const erro = presente(janela.host.querySelector<HTMLElement>('#cfg-lote-erro'));
-        expect(erro.textContent).toContain('O lote não decide todas as concessões');
+        const erro = presente(revisao.host.querySelector<HTMLElement>('#cfg-lote-erro'));
+        expect(erro.textContent).toContain('O envio não decide todas as concessões');
         expect(document.activeElement).toBe(erro);
       });
 
       it('mantém o envio habilitado para a pessoa tentar de novo', async () => {
-        const janela = await abrirJanela(LOTE);
+        const revisao = await abrirJanela(CONJUNTO_DE_CONCESSOES);
 
-        await migrarTodasEEnviar(janela);
-        await janela.assentar();
+        await aprovarTodasEEnviar(revisao);
+        await revisao.assentar();
 
-        expect(presente(botao(janela.host, 'Enviar o lote')).disabled).toBe(false);
+        expect(presente(botao(revisao.host, 'Enviar o lote')).disabled).toBe(false);
       });
     });
 
-    it('lote já enviado por outra pessoa relê a janela e mantém a explicação à vista', async () => {
+    it('decisões já enviadas por outra pessoa relê a revisão e mantém a explicação à vista', async () => {
       api.enviarLote.mockReturnValue(
-        of(recusa('uniplus.autorizacao.migracao.lote_ja_enviado', 409)),
+        of(recusa('uniplus.autorizacao.revisao_das_concessoes.decisoes_ja_enviadas', 409)),
       );
-      const { host, assentar, responder } = await abrirJanela(LOTE);
+      const { host, assentar, responder } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
       presente(botao(host, 'Migrar todas')).click();
       await assentar();
 
       presente(botao(host, 'Enviar o lote')).click();
-      await responder(janelaDeMigracao({ ...LOTE, decisoesEnviadas: true }));
+      await responder(janelaDeMigracao({ ...CONJUNTO_DE_CONCESSOES, decisoesEnviadas: true }));
 
       expect(host.textContent).toContain('A janela mudou');
-      expect(host.textContent).toContain('O lote da gestão de acessos já foi enviado.');
+      expect(host.textContent).toContain('As decisões já foram enviadas para esta revisão.');
       expect(host.querySelector('#cfg-lote-erro')).toBeNull();
     });
 
     it('falha que não veio da API libera o envio e explica junto ao botão', async () => {
       api.enviarLote.mockReturnValue(throwError(() => new Error('rede')));
-      const { host, assentar } = await abrirJanela(LOTE);
+      const { host, assentar } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
       presente(botao(host, 'Migrar todas')).click();
       await assentar();
 
@@ -336,7 +336,7 @@ describe('JanelaDaMigracaoPage', () => {
     });
 
     it('sem a permissão da gestão de acessos, consulta a lista sem decidir', async () => {
-      const { host } = await abrirJanela(LOTE, []);
+      const { host } = await abrirJanela(CONJUNTO_DE_CONCESSOES, []);
 
       expect(host.textContent).toContain('O lote cabe à gestão de acessos');
       expect(host.textContent).toContain('Betina Teste');
@@ -344,9 +344,9 @@ describe('JanelaDaMigracaoPage', () => {
       expect(botao(host, 'Enviar o lote')).toBeUndefined();
     });
 
-    it('bloqueia a decisão enquanto o lote é gravado', async () => {
+    it('bloqueia a decisão enquanto o envio é gravado', async () => {
       api.enviarLote.mockReturnValue(NEVER);
-      const { host, assentar } = await abrirJanela(LOTE);
+      const { host, assentar } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
       presente(botao(host, 'Migrar todas')).click();
       await assentar();
 
@@ -361,8 +361,8 @@ describe('JanelaDaMigracaoPage', () => {
     });
   });
 
-  it('a permissão de gestão de acessos libera o lote e o encerramento', async () => {
-    const { host } = await abrirJanela(LOTE, [GESTAO_DE_ACESSOS]);
+  it('a permissão de gestão de acessos libera o envio e o encerramento', async () => {
+    const { host } = await abrirJanela(CONJUNTO_DE_CONCESSOES, [GESTAO_DE_ACESSOS]);
 
     expect(botao(host, 'Enviar o lote')).toBeDefined();
     expect(host.querySelector('cfg-encerramento-da-janela')).not.toBeNull();
