@@ -56,3 +56,4 @@ export {
   unidadeDoCertame,
 } from './lib/simulacao-real';
 export { lerTopicoDoKafka } from './lib/kafka-real';
+export type { MensagemDecodificada } from './lib/decodificar-avro';
