@@ -11,6 +11,9 @@
       "options": {
         "command": "tsc --noEmit -p {projectRoot}/tsconfig.json"
       }
+    },
+    "e2e": {
+      "dependsOn": ["selecao:serve:production"]
     }
   }
 }

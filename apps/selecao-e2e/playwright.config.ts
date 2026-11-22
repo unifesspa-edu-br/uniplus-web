@@ -52,13 +52,13 @@ const DS_MATRIX_VIEWPORTS = [
 ] as const;
 
 /**
- * O gate AAA fica nos três viewports de referência da ADR-0023. Incluir a TV
+ * A verificação de contraste AAA fica nos três viewports de referência da ADR-0023. Incluir a TV
  * aqui multiplicaria os projects por 1,33 sem cobrir critério novo: acima do
  * desktop o que muda é o teto de largura, verificado pela matriz visual.
  *
  * O 375 fica de fora pelo mesmo motivo, e não por esquecimento: entre 320 e
- * 768 o que a página faz é distribuir a mesma coluna em mais espaço, e o gate
- * de contraste e foco já é exercido nos extremos. Ele entra na matriz visual,
+ * 768 o que a página faz é distribuir a mesma coluna em mais espaço, e a verificação
+ * de contraste e foco já é exercida nos extremos. Ele entra na matriz visual,
  * onde o transbordo é o que importa.
  */
 const AAA_VIEWPORTS = DS_MATRIX_VIEWPORTS.filter(
@@ -111,7 +111,13 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'npx nx run selecao:serve',
+    /**
+     * A tela empacotada, e não a do servidor de desenvolvimento: este entrega cada módulo em
+     * uma requisição própria e, com muitos navegadores ao mesmo tempo, deixa arquivos sem resposta
+     * por mais de 5 s, e o título da página não aparece a tempo.
+     */
+    command: 'npx nx run selecao:serve:production',
+    timeout: 300_000,
     url: baseURL,
     reuseExistingServer: !isGithubActions,
     cwd: workspaceRoot,
