@@ -1,7 +1,7 @@
 import { paginaDoErro, separarCausas, type ProblemDetails } from '@uniplus/shared-core/http';
 import type { RecusaDoCampo } from '@uniplus/shared-ui/components';
 
-import { posicaoDaPublicacao } from '../../passos/fase/campo-da-fase';
+import { posicaoNaLista } from '../../passos/fase/campo-da-fase';
 import { localDaRecusa } from './local-da-recusa';
 
 /** A recusa que o resumo diz, com o `field` que a API deu quando ela veio de um campo. */
@@ -14,7 +14,7 @@ export type RecusaNoResumo = RecusaDoCampo & { readonly campo?: string };
  */
 function prefixoDaPublicacao(campo: string | undefined): string {
   const caminho = campo === undefined ? null : (localDaRecusa(campo)?.caminho ?? null);
-  const posicao = caminho === null ? null : posicaoDaPublicacao(caminho);
+  const posicao = caminho === null ? null : posicaoNaLista(caminho, 'produtos');
   return posicao === null ? '' : `Publicação ${posicao + 1}: `;
 }
 
@@ -28,9 +28,21 @@ export function textoDaRecusaNoResumo(recusa: RecusaNoResumo): string {
   return `${prefixo}${recusa.mensagem} (código ${recusa.codigo}${pagina})`;
 }
 
+/** O mesmo campo com o mesmo código é uma recusa só; a primeira da lista vale. */
+function semRepeticao(recusas: readonly RecusaNoResumo[]): RecusaNoResumo[] {
+  const vistas = new Set<string>();
+  return recusas.filter((recusa) => {
+    const chave = `${recusa.campo ?? ''}\u0000${recusa.codigo}`;
+    if (vistas.has(chave)) return false;
+    vistas.add(chave);
+    return true;
+  });
+}
+
 /**
  * O resumo do passo depois de uma resposta recusada: só o que a tela não pôde pôr num campo, que
- * são as recusas sem lugar e as causas gerais, cada uma com mensagem, código e página, uma vez só.
+ * são as recusas sem lugar e as causas gerais, cada uma com mensagem, código e página. O mesmo
+ * campo com o mesmo código aparece uma vez; campos diferentes ficam, ainda que o texto coincida.
  * Vazio quando todas as causas acharam o campo delas: o aviso do resumo não repete o que o campo
  * já diz.
  */
@@ -43,7 +55,7 @@ export function resumoDasRecusasSemLugar(
     mensagem: causa.message,
     pagina: paginaDoErro(problema, causa.code),
   }));
-  return [...new Set([...semLugar, ...gerais].map(textoDaRecusaNoResumo))];
+  return semRepeticao([...semLugar, ...gerais]).map(textoDaRecusaNoResumo);
 }
 
 /**

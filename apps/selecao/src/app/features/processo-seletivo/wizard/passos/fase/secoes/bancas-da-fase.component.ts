@@ -10,7 +10,9 @@ import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { RegraDeDeliberacaoComponent } from '../../../shared/deliberacao/regra-de-deliberacao.component';
 import {
   errosDaBancaPorCampo,
+  recusasDaBancaPorCampo,
   type CampoDaBanca,
+  type RecusasDaBancaPorCampo,
 } from '../../../shared/deliberacao/recusas-da-regra';
 import { descricaoDaRegra } from '../../../shared/deliberacao/descricao-da-regra';
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
@@ -40,8 +42,8 @@ export class BancasDaFaseComponent {
   protected readonly idDaFase = this.faseEmEdicao.idDaFase;
   protected readonly erroDoCampo = this.faseEmEdicao.erroDoCampo;
   protected readonly problemaLocal = this.faseEmEdicao.problemaLocal;
-  protected readonly recusasDoCampo = this.faseEmEdicao.recusasDoCampo;
-  protected readonly temMensagem = this.faseEmEdicao.temMensagem;
+  protected readonly recusasDaLista = this.faseEmEdicao.recusasDaListaDeBancas;
+  protected readonly temMensagemNaLista = this.faseEmEdicao.temMensagemNaListaDeBancas;
   protected readonly bancasEscolhiveis = this.faseEmEdicao.bancasEscolhiveis;
 
   /** Categorias de documento do cadastro, na ordem de exibição que ele decide. */
@@ -68,9 +70,14 @@ export class BancasDaFaseComponent {
     };
   }
 
-  /** A recusa de cada campo da regra de cada banca, estável entre ciclos de detecção. */
+  /** O que a conferência local recusa em cada campo da regra de cada banca, estável entre ciclos de detecção. */
   protected readonly errosDasRegras = computed(() =>
     this.bancas.map((_, posicao) => this.errosDaRegra(posicao)),
+  );
+
+  /** O que o servidor recusou em cada campo da regra de cada banca e ainda vale, estável entre ciclos de detecção. */
+  protected readonly recusasDasRegras = computed<readonly RecusasDaBancaPorCampo[]>(() =>
+    this.bancas.map((_, posicao) => this.recusasDaRegra(posicao)),
   );
 
   // ─── Bancas requeridas e o recorte de competência ───────────────────────
@@ -131,7 +138,16 @@ export class BancasDaFaseComponent {
 
   private errosDaRegra(posicao: number): Partial<Record<CampoDaBanca, string>> {
     return errosDaBancaPorCampo((campo) =>
-      this.erroDoCampo(`bancasRequeridas.${posicao}.${campo}`),
+      this.faseEmEdicao.problemaLocal(`bancasRequeridas.${posicao}.${campo}`),
+    );
+  }
+
+  /** As recusas a conferir de novo ficam no bloco das bancas, não sob o campo. */
+  private recusasDaRegra(posicao: number): RecusasDaBancaPorCampo {
+    return recusasDaBancaPorCampo((campo) =>
+      this.faseEmEdicao
+        .recusasDoCampo(`bancasRequeridas.${posicao}.${campo}`)
+        .filter((recusa) => !recusa.aConferir),
     );
   }
 

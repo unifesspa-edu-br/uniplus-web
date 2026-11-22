@@ -27,7 +27,7 @@
           [ngModelOptions]="{ standalone: true }"
           [disabled]="!store.aceitaEdicao()"
           [attr.aria-describedby]="
-            temMensagem('bancasRequeridas')
+            temMensagemNaLista()
               ? idDaFase('bancas-erro') + ' ' + idDaFase('bancas-ajuda')
               : idDaFase('bancas-ajuda')
           "
@@ -76,6 +76,7 @@
         [idBase]="idDaFase('regra-' + $index)"
         [desabilitada]="!store.aceitaEdicao()"
         [erros]="errosDasRegras()[$index]"
+        [recusas]="recusasDasRegras()[$index]"
         (regraChange)="declararRegra($index, $event)"
       />
 
@@ -106,12 +107,12 @@
     Acrescentar banca
   </button>
 
-  @if (temMensagem('bancasRequeridas')) {
+  @if (temMensagemNaLista()) {
     <div [attr.id]="idDaFase('bancas-erro')" tabindex="-1">
       @if (problemaLocal('bancasRequeridas'); as erro) {
         <p class="field__erro" role="alert">{{ erro }}</p>
       }
-      <sel-recusas-do-campo [recusas]="recusasDoCampo('bancasRequeridas')" />
+      <sel-recusas-do-campo [recusas]="recusasDaLista()" />
     </div>
   }
 }

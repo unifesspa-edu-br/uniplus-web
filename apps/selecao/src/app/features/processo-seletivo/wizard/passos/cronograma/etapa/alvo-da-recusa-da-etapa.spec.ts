@@ -74,6 +74,37 @@ describe('alvosDaRecusaDaEtapa', () => {
     expect(alvos('bancas', etapa, 0)).toEqual(['cr-etapa-bancas-erro-0']);
   });
 
+  describe('campo da regra de uma banca', () => {
+    const comBancas = umaEtapaDoCronograma({
+      bancas: [
+        { tipoBancaId: 'primeira', regraDeDeliberacao: null },
+        { tipoBancaId: 'segunda', regraDeDeliberacao: null },
+      ],
+    });
+    const reserva = 'cr-etapa-bancas-erro-3';
+
+    it('leva ao controle da banca que a posição aponta, ao bloco das recusas dele, ao do modo e ao das bancas', () => {
+      expect(alvos('bancas.1.quorum', comBancas, 3)).toEqual([
+        'etapa-3-banca-segunda-quorum',
+        'etapa-3-banca-segunda-quorum-recusas',
+        'etapa-3-banca-segunda-modo-recusas',
+        reserva,
+      ]);
+    });
+
+    it('leva a recusa à regra inteira ao modo, que a mostra', () => {
+      expect(alvos('bancas.0.regra', comBancas, 3)).toEqual([
+        'etapa-3-banca-primeira-modo',
+        'etapa-3-banca-primeira-modo-recusas',
+        reserva,
+      ]);
+    });
+
+    it('leva ao bloco das bancas a recusa de uma banca que a etapa não tem', () => {
+      expect(alvos('bancas.5.quorum', comBancas, 3)).toEqual([reserva]);
+    });
+  });
+
   it.each([
     ['origemDoPrazo', 'cr-rec-anc-2-1'],
     ['ancora', 'cr-rec-ato-2-1'],

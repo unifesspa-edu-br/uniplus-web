@@ -2,6 +2,10 @@ import type { EtapaPontuada } from '../../../processo-seletivo.models';
 import { FORMAS_DE_AVALIACAO } from '../../../shared/forma-de-avaliacao';
 import { alvosDoControleDosParametros } from '../../../shared/configuracao-do-recurso/ids-dos-parametros';
 import type { CampoDosParametros } from '../../../shared/configuracao-do-recurso/parametros-do-recurso';
+import {
+  alvosDaRecusaDaBanca,
+  type CampoDaBanca,
+} from '../../../shared/deliberacao/recusas-da-regra';
 import { ehParametroDoRecurso } from '../../../shared/recusas/controle-do-recurso';
 import { NO_TOPO_DA_ETAPA } from '../campo-da-etapa';
 
@@ -52,6 +56,20 @@ const CONTROLE_DO_ITEM: ReadonlyMap<string, string> = new Map([
 
 const ITEM_DA_LISTA = /^(itensDeAvaliacao|escalaDeAtendimento)\.(\d+)\.(\w+)$/;
 const CONTROLE_DO_RECURSO = /^recursos\.(\d+)\.(\w+)$/;
+const CAMPO_DA_BANCA = /^bancas\.(\d+)\.(\w+)$/;
+
+/** O controle da regra da banca, com o bloco das recusas dele e, de reserva, o das bancas. */
+function alvosDaBanca(
+  etapa: EtapaPontuada,
+  indice: number,
+  [, posicao, campo]: RegExpExecArray,
+): string[] {
+  const reserva = `cr-etapa-bancas-erro-${indice}`;
+  const banca = etapa.bancas[Number(posicao)];
+  if (banca === undefined) return [reserva];
+  const base = `etapa-${indice}-banca-${banca.tipoBancaId}`;
+  return [...alvosDaRecusaDaBanca(base, campo as CampoDaBanca), reserva];
+}
 
 function alvosDoItem([, lista, posicao, subcampo]: RegExpExecArray, indice: number): string[] {
   const modelo = CONTROLE_DO_ITEM.get(`${lista}.${subcampo}`) ?? '';
@@ -119,7 +137,9 @@ export function alvosDaRecusaDaEtapa(
 ): readonly string[] {
   const item = ITEM_DA_LISTA.exec(campo);
   const recurso = CONTROLE_DO_RECURSO.exec(campo);
+  const banca = CAMPO_DA_BANCA.exec(campo);
   if (item !== null) return alvosDoItem(item, indice);
   if (recurso !== null) return alvosDoRecurso(etapa, indice, recurso);
+  if (banca !== null) return alvosDaBanca(etapa, indice, banca);
   return ALVOS_DOS_CAMPOS.get(campo)?.(etapa, indice, regras) ?? [`cr-etapa-recusas-${indice}`];
 }

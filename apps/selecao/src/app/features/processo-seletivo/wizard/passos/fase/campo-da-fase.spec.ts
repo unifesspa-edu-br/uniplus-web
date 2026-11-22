@@ -8,7 +8,7 @@ import {
   campoNaTela,
   fimDaFaseNaTela,
   NO_TOPO_DA_FASE,
-  posicaoDaPublicacao,
+  posicaoNaLista,
 } from './campo-da-fase';
 
 const campoDe = (field: string) => {
@@ -45,9 +45,28 @@ describe('campoDaRecusaDaFase', () => {
   });
 
   it.each([
+    ['fases[0].bancasRequeridas[0].regraDeDeliberacao.quorum', 'bancasRequeridas.0.quorum'],
+    ['fases[1].bancasRequeridas[3].regraDeDeliberacao.modo', 'bancasRequeridas.3.modo'],
+    [
+      'request.Fases[0].BancasRequeridas[1].RegraDeDeliberacao.SemUnanimidade',
+      'bancasRequeridas.1.semUnanimidade',
+    ],
+  ])('leva %s ao campo %s da regra da banca requerida', (field, campo) => {
+    expect(campoDe(field)).toBe(campo);
+  });
+
+  it.each([
+    'fases[0].bancasRequeridas[2].regraDeDeliberacao',
+    'fases[0].bancasRequeridas[2].regraDeDeliberacao.campoQueNaoExiste',
+  ])('leva %s à regra inteira da banca requerida', (field) => {
+    expect(campoDe(field)).toBe('bancasRequeridas.2.regra');
+  });
+
+  it.each([
     'fases[0].bancasRequeridas[2]',
-    'fases[0].bancasRequeridas[0].regraDeDeliberacao.quorum',
-  ])('reúne sob as bancas requeridas o caminho %s', (field) => {
+    'fases[0].bancasRequeridas[2].tipoBancaId',
+    'fases[0].bancasRequeridas',
+  ])('reúne sob as bancas requeridas o caminho %s, que não é da regra', (field) => {
     expect(campoDe(field)).toBe('bancasRequeridas');
   });
 
@@ -100,31 +119,50 @@ describe('campoDaRecusaDaFase', () => {
   });
 });
 
-describe('a linha da lista de publicações', () => {
+describe('a linha de uma lista da fase', () => {
   it.each([
-    ['produtos.1.atoCodigo', 1],
-    ['produtos.0.papel', 0],
-    ['produtos.12', 12],
-    ['produtos', null],
-    ['fim', null],
-    ['recurso.prazoValor', null],
-  ])('lê a posição de %s: %s', (campo, posicao) => {
-    expect(posicaoDaPublicacao(campo)).toBe(posicao);
+    ['produtos.1.atoCodigo', 'produtos', 1],
+    ['produtos.0.papel', 'produtos', 0],
+    ['produtos.12', 'produtos', 12],
+    ['produtos', 'produtos', null],
+    ['fim', 'produtos', null],
+    ['recurso.prazoValor', 'produtos', null],
+    ['bancasRequeridas.2.quorum', 'bancasRequeridas', 2],
+    ['bancasRequeridas', 'bancasRequeridas', null],
+    ['bancasRequeridas.2.quorum', 'produtos', null],
+    ['produtos.1.papel', 'bancasRequeridas', null],
+  ] as const)('lê a posição de %s na lista %s: %s', (campo, lista, posicao) => {
+    expect(posicaoNaLista(campo, lista)).toBe(posicao);
   });
 
+  const linhas = { produtos: 2, bancasRequeridas: 1 };
+
   it('deixa a recusa na linha enquanto a posição existe na lista', () => {
-    expect(campoComLinhaNaLista('produtos.1.papel', 2)).toBe('produtos.1.papel');
-    expect(campoComLinhaNaLista('produtos.1', 2)).toBe('produtos.1');
+    expect(campoComLinhaNaLista('produtos.1.papel', linhas)).toBe('produtos.1.papel');
+    expect(campoComLinhaNaLista('produtos.1', linhas)).toBe('produtos.1');
+    expect(campoComLinhaNaLista('bancasRequeridas.0.quorum', linhas)).toBe(
+      'bancasRequeridas.0.quorum',
+    );
   });
 
   it('leva a recusa de uma posição que a lista não tem à lista inteira', () => {
-    expect(campoComLinhaNaLista('produtos.2.atoCodigo', 2)).toBe('produtos');
-    expect(campoComLinhaNaLista('produtos.0', 0)).toBe('produtos');
+    expect(campoComLinhaNaLista('produtos.2.atoCodigo', linhas)).toBe('produtos');
+    expect(campoComLinhaNaLista('produtos.0', { ...linhas, produtos: 0 })).toBe('produtos');
+    expect(campoComLinhaNaLista('bancasRequeridas.1.quorum', linhas)).toBe('bancasRequeridas');
+  });
+
+  it('conta cada lista por si', () => {
+    expect(campoComLinhaNaLista('bancasRequeridas.1.quorum', { ...linhas, produtos: 9 })).toBe(
+      'bancasRequeridas',
+    );
+    expect(campoComLinhaNaLista('produtos.1.papel', { ...linhas, bancasRequeridas: 0 })).toBe(
+      'produtos.1.papel',
+    );
   });
 
   it('não mexe no campo que não é de uma linha', () => {
-    expect(campoComLinhaNaLista('fim', 0)).toBe('fim');
-    expect(campoComLinhaNaLista('produtos', 0)).toBe('produtos');
+    expect(campoComLinhaNaLista('fim', { produtos: 0, bancasRequeridas: 0 })).toBe('fim');
+    expect(campoComLinhaNaLista('produtos', { produtos: 0, bancasRequeridas: 0 })).toBe('produtos');
   });
 });
 

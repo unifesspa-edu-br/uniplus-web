@@ -1,6 +1,7 @@
 import type { FaseDoCronograma } from '../../processo-seletivo.models';
+import { alvosDaRecusaDaBanca, type CampoDaBanca } from '../../shared/deliberacao/recusas-da-regra';
 import { alvosDoControleDosParametros } from '../../shared/configuracao-do-recurso/ids-dos-parametros';
-import { NO_TOPO_DA_FASE, posicaoDaPublicacao } from './campo-da-fase';
+import { NO_TOPO_DA_FASE, posicaoNaLista } from './campo-da-fase';
 import {
   BLOCO_DAS_RECUSAS_DO_RECURSO,
   CONTROLE_DO_RECURSO,
@@ -26,6 +27,7 @@ export function alvosDaRecusaDaFase(
   if (campo === 'inicio' || campo === 'fim') return [`cr-${campo}-${indice}`];
   if (campo.startsWith('produtos')) return alvosDaPublicacao(campo, fase);
   if (campo === 'bancasRequeridas') return [id('banca-0'), id('bancas-erro')];
+  if (campo.startsWith('bancasRequeridas')) return alvosDaBancaRequerida(campo, fase);
   if (campo === 'emiteParecerIndividual') return [id('parecer'), id('parecer-erro')];
   if (campo.startsWith('recurso')) return alvosDoRecurso(campo, fase);
   return campo === NO_TOPO_DA_FASE ? [id('recusas')] : [];
@@ -37,10 +39,20 @@ export function alvosDaRecusaDaFase(
  */
 function alvosDaPublicacao(campo: string, fase: FaseDoCronograma): readonly string[] {
   const id = (sufixo: string) => idDaFase(fase.codigo, sufixo);
-  const posicao = posicaoDaPublicacao(campo);
+  const posicao = posicaoNaLista(campo, 'produtos');
   if (posicao === null) return [id('produto-ato-0'), id('produtos-erro')];
   const controle = campo.endsWith('.papel') ? 'produto-papel' : 'produto-ato';
   return [id(`${controle}-${posicao}`), id(`produto-${posicao}-erro`), id('produtos-erro')];
+}
+
+/** O controle da regra da banca requerida, com o bloco das recusas dele e, de reserva, o das bancas. */
+function alvosDaBancaRequerida(campo: string, fase: FaseDoCronograma): readonly string[] {
+  const [, posicao, controle] = campo.split('.');
+  const base = idDaFase(fase.codigo, `regra-${posicao}`);
+  return [
+    ...alvosDaRecusaDaBanca(base, controle as CampoDaBanca),
+    idDaFase(fase.codigo, 'bancas-erro'),
+  ];
 }
 
 function alvosDoRecurso(campo: string, fase: FaseDoCronograma): readonly string[] {

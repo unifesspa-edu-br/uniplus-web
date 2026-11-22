@@ -45,6 +45,7 @@
       [idBase]="'etapa-' + indiceDaEtapa() + '-banca-' + banca.tipoBancaId"
       [desabilitada]="!edicaoLiberada()"
       [erros]="banca.erros"
+      [recusas]="banca.recusas"
       (regraChange)="edicao.declararRegraDaBancaDaEtapa(etapa, banca.tipoBancaId, $event)"
     />
   </fieldset>

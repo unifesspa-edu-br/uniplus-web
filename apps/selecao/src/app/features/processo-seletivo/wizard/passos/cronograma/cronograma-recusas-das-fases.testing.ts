@@ -2,12 +2,14 @@ import {
   PAPEL_DEFINITIVO,
   PAPEL_PRELIMINAR,
   type RecursoDaFase,
+  type RegraDeDeliberacaoDaBanca,
 } from '../../processo-seletivo.models';
 import {
   PARAMETROS_SEM_INSTANCIA_SUPERIOR,
   umaLeituraDoRecurso,
 } from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
-import { PROBLEM_JSON, PROCESSO_ID, ROTA_FASES } from './cronograma.testing';
+import { COLEGIADA } from '../../shared/deliberacao/regra-de-deliberacao.testing';
+import { ID_BANCA_HETERO, PROBLEM_JSON, PROCESSO_ID, ROTA_FASES } from './cronograma.testing';
 import type { ContextoDoCronograma } from './cronograma-passo.testing';
 
 export const REGRA_DO_RECURSO: RecursoDaFase = {
@@ -71,6 +73,16 @@ export class AjudantesDeRecusasDasFases {
     ];
     this.tela.store.patchObjectSection('cronograma', {
       fases: [{ ...fase, produtos, regraRecurso: regra }],
+    });
+    this.tela.detectar();
+  };
+
+  /** A primeira fase passa a requerer uma banca, com a regra de deliberação informada. */
+  readonly requererBanca = (regraDeDeliberacao: RegraDeDeliberacaoDaBanca = COLEGIADA): void => {
+    const [fase] = this.tela.store.draft().cronograma.fases;
+    const banca = { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [], regraDeDeliberacao };
+    this.tela.store.patchObjectSection('cronograma', {
+      fases: [{ ...fase, bancasRequeridas: [banca] }],
     });
     this.tela.detectar();
   };

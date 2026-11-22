@@ -109,6 +109,30 @@ describe('lugarDaRecusaDaPublicacao: fase', () => {
     expect(banca).toMatchObject({ campo: 'bancasRequeridas', parte: 'fase' });
   });
 
+  it('leva a regra de uma banca requerida ao campo da lista de bancas, mesmo que a banca exista', () => {
+    const comBancas: CronogramaConferido = {
+      ...CRONOGRAMA,
+      fases: [
+        umaFaseDoCronograma({
+          codigo: 'INSCRICAO',
+          bancasRequeridas: [
+            { tipoBancaId: 'banca', categoriasDocumentoIds: [], regraDeDeliberacao: null },
+          ],
+        }),
+      ],
+    };
+
+    const lugar = lugarDaRecusaDaPublicacao(
+      {
+        campo: 'fases[0].bancasRequeridas[0].regraDeDeliberacao.quorum',
+        identificadores: [daFase('INSCRICAO')],
+      },
+      comBancas,
+    );
+
+    expect(lugar).toMatchObject({ tipo: 'fase', campo: 'bancasRequeridas' });
+  });
+
   it('põe no topo da fase a recusa de campo que a tela não conhece', () => {
     const lugar = lugarDaRecusaDaPublicacao(
       { campo: 'fases[0].campoQueNaoExiste', identificadores: [daFase('INSCRICAO')] },
@@ -183,6 +207,18 @@ describe('lugarDaRecusaDaPublicacao: etapa e recurso', () => {
     );
 
     expect(lugar).toMatchObject({ tipo: 'etapa', campo: 'itensDeAvaliacao' });
+  });
+
+  it('leva a regra de uma banca da etapa ao campo das bancas, que a publicação mostra no bloco delas', () => {
+    const lugar = lugarDaRecusaDaPublicacao(
+      {
+        campo: 'etapas[0].bancas[1].regraDeDeliberacao.quorum',
+        identificadores: [daEtapa(ETAPA)],
+      },
+      CRONOGRAMA,
+    );
+
+    expect(lugar).toMatchObject({ tipo: 'etapa', campo: 'bancas' });
   });
 
   it('a etapa que não existe mais leva a recusa ao passo', () => {

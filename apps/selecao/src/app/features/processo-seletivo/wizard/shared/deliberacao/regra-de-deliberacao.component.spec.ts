@@ -4,11 +4,19 @@ import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { RegraDeDeliberacaoDaBanca } from '../../modelos/deliberacao.models';
+import { umaRecusa } from '../configuracao-do-recurso/prazo-do-recurso.testing';
+import type { RecusaOrdenada } from '../recusas/ordem-das-recusas';
 import type { CampoDaBanca } from './recusas-da-regra';
 import { RegraDeDeliberacaoComponent } from './regra-de-deliberacao.component';
 import { ATO_INDIVIDUAL, COLEGIADA, comRegra } from './regra-de-deliberacao.testing';
 
 const ID = 'banca';
+
+const recusaDe = (campo: CampoDaBanca, mensagem: string, aConferir = false): RecusaOrdenada => ({
+  ...umaRecusa(campo, aConferir),
+  codigo: `uniplus.selecao.banca.${campo}`,
+  mensagem,
+});
 
 describe('RegraDeDeliberacaoComponent', () => {
   let fixture: ComponentFixture<RegraDeDeliberacaoComponent>;
@@ -185,6 +193,76 @@ describe('RegraDeDeliberacaoComponent', () => {
       expect(controle('modo-erro')?.textContent).toContain('Declare a regra de deliberação');
       expect(controle('modo')?.getAttribute('aria-invalid')).toBe('true');
       expect(controle('modo')?.getAttribute('aria-describedby')).toBe(`${ID}-modo-erro`);
+    });
+  });
+
+  describe('recusas do servidor', () => {
+    const doQuorum = recusaDe(
+      'quorum',
+      'O quórum precisa ficar entre 1 e o número de integrantes.',
+    );
+
+    it('mostra a recusa sob o campo e liga o campo a ela', () => {
+      exibe(COLEGIADA, { recusas: { quorum: [doQuorum] } });
+
+      expect(controle('quorum-recusas')?.textContent).toContain(
+        'entre 1 e o número de integrantes',
+      );
+      expect(controle('quorum-recusas')?.textContent).toContain(doQuorum.codigo);
+      expect(controle('quorum')?.getAttribute('aria-invalid')).toBe('true');
+      expect(controle('quorum')?.getAttribute('aria-describedby')).toBe(`${ID}-quorum-recusas`);
+      expect(controle('criterio')?.getAttribute('aria-invalid')).toBeNull();
+      expect(controle('criterio-recusas')).toBeNull();
+    });
+
+    it('descreve o campo pela dica, pelo erro da conferência e pela recusa, nessa ordem', () => {
+      exibe(comRegra({ encerramento: 'todosOsTitulares', quorum: '5' }), {
+        erros: { quorum: 'Confira o quórum.' },
+        recusas: { quorum: [doQuorum] },
+      });
+
+      expect(controle('quorum')?.getAttribute('aria-describedby')).toBe(
+        `${ID}-quorum-dica ${ID}-quorum-erro ${ID}-quorum-recusas`,
+      );
+    });
+
+    it('a recusa a conferir de novo fica à vista com a nota e não marca o campo como inválido', () => {
+      exibe(COLEGIADA, { recusas: { quorum: [{ ...doQuorum, aConferir: true }] } });
+
+      expect(controle('quorum-recusas')?.textContent).toContain('conferida de novo');
+      expect(controle('quorum')?.hasAttribute('aria-invalid')).toBe(false);
+      expect(controle('quorum')?.getAttribute('aria-describedby')).toBe(`${ID}-quorum-recusas`);
+    });
+
+    it('mostra sob o modo a recusa do campo que a tela não mostra agora', () => {
+      exibe(ATO_INDIVIDUAL, { recusas: { quorum: [doQuorum] } });
+
+      expect(controle('quorum')).toBeNull();
+      expect(controle('modo-recusas')?.textContent).toContain('entre 1 e o número de integrantes');
+      expect(controle('modo')?.getAttribute('aria-invalid')).toBe('true');
+      expect(controle('modo')?.getAttribute('aria-describedby')).toBe(`${ID}-modo-recusas`);
+    });
+
+    it('mostra sob o modo a recusa da regra inteira, junto das dos campos escondidos', () => {
+      const daRegra = recusaDe('regra', 'Declare a regra de deliberação da banca.');
+      exibe(null, { recusas: { regra: [daRegra], criterio: [recusaDe('criterio', 'Escolha.')] } });
+
+      const sobOModo = controle('modo-recusas')?.textContent ?? '';
+      expect(sobOModo).toContain('Declare a regra de deliberação');
+      expect(sobOModo).toContain('Escolha.');
+    });
+
+    it('não duplica sob o modo a recusa do campo que a tela mostra', () => {
+      exibe(COLEGIADA, { recusas: { quorum: [doQuorum] } });
+
+      expect(controle('modo-recusas')).toBeNull();
+      expect(controle('modo')?.hasAttribute('aria-invalid')).toBe(false);
+    });
+
+    it('a recusa só do servidor não aparece como erro da conferência local', () => {
+      exibe(COLEGIADA, { recusas: { quorum: [doQuorum] } });
+
+      expect(controle('quorum-erro')).toBeNull();
     });
   });
 

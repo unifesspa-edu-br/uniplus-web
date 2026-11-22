@@ -68,6 +68,34 @@ describe('novasPosicoes', () => {
   });
 });
 
+describe('as bancas da etapa', () => {
+  const primeira = { tipoBancaId: 'primeira', regraDeDeliberacao: null };
+  const segunda = { tipoBancaId: 'segunda', regraDeDeliberacao: null };
+  const bancas = (...lista: (typeof primeira)[]) =>
+    listasDaEtapa(umaEtapaDoCronograma({ bancas: lista }));
+
+  it('leva a banca seguinte para a posição da que saiu e marca a que saiu', () => {
+    const resultado = novasPosicoes(bancas(primeira, segunda), bancas(segunda));
+
+    expect(resultado.bancas).toEqual([null, 0]);
+  });
+
+  it('põe o campo da regra na posição de hoje da banca e descarta o da que saiu', () => {
+    const resultado = novasPosicoes(bancas(primeira, segunda), bancas(segunda));
+
+    expect(campoNasNovasPosicoes('bancas.1.quorum', resultado)).toBe('bancas.0.quorum');
+    expect(campoNasNovasPosicoes('bancas.0.quorum', resultado)).toBeNull();
+  });
+
+  it('mantém na mesma posição a banca de regra editada no lugar', () => {
+    const editada = { ...primeira };
+
+    const resultado = novasPosicoes(bancas(primeira, segunda), bancas(editada, segunda));
+
+    expect(resultado.bancas).toEqual([0, 1]);
+  });
+});
+
 describe('campoNasNovasPosicoes', () => {
   const sai0 = novas([a, b, c], [b, c]);
 

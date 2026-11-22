@@ -81,6 +81,25 @@ describe('textoDaRecusaNoResumo', () => {
       ]);
     });
 
+    it('mantém a mesma mensagem em campos diferentes e junta a repetição do mesmo campo e código', () => {
+      const doCampo = (campo: string, mensagem = 'Nome inválido.') => ({
+        campo,
+        mensagem,
+        codigo: 'uniplus.x',
+        pagina: null,
+      });
+      const semLugar = [
+        doCampo('etapas[7].nome'),
+        doCampo('etapas[8].nome'),
+        doCampo('etapas[7].nome', 'Outro texto da mesma recusa.'),
+      ];
+
+      expect(resumoDasRecusasSemLugar(problema([]), semLugar)).toEqual([
+        'Nome inválido. (código uniplus.x)',
+        'Nome inválido. (código uniplus.x)',
+      ]);
+    });
+
     it('fica vazio quando nenhuma recusa ficou sem lugar e não há causa geral', () => {
       expect(resumoDasRecusasSemLugar(problema([]), [])).toEqual([]);
     });
