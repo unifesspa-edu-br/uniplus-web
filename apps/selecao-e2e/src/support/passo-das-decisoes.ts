@@ -13,6 +13,14 @@ export const GRUPO_DA_ETAPA = 'Decisões que esta etapa toma';
 export const grupoDaFase = (page: Page) => page.getByRole('group', { name: GRUPO_DA_FASE });
 export const grupoDaEtapa = (page: Page) => page.getByRole('group', { name: GRUPO_DA_ETAPA });
 
+/** Abre o passo Cronograma do processo que as rotas do cenário já servem. */
+export async function entrarNoCronograma(page: Page, testInfo: TestInfo): Promise<void> {
+  await instalarPreferencia(page, temaDoProject(testInfo.project.name));
+  await page.goto(`/processo-seletivo/${ID_DO_PROCESSO_COMPLETO}`);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await irAoPasso(page, 'Cronograma', testInfo);
+}
+
 /** Abre o processo servido pelo servidor simulado no passo Cronograma. */
 export async function abrirOCronograma(
   page: Page,
@@ -20,10 +28,7 @@ export async function abrirOCronograma(
   servidor: ServidorDosTiposDeDecisao,
 ): Promise<void> {
   await mockarServidorDosTiposDeDecisao(page, servidor);
-  await instalarPreferencia(page, temaDoProject(testInfo.project.name));
-  await page.goto(`/processo-seletivo/${ID_DO_PROCESSO_COMPLETO}`);
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await irAoPasso(page, 'Cronograma', testInfo);
+  await entrarNoCronograma(page, testInfo);
 }
 
 export async function abrirAFase(page: Page): Promise<void> {

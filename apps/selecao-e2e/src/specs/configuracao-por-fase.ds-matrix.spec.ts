@@ -4,6 +4,8 @@ import type { AxeResults } from 'axe-core';
 import { irAoPasso } from '../support/navega-passo';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
 import { OPCOES_DO_RECURSO } from '../fixtures/opcoes-do-recurso';
+import { TIPOS_DE_BANCA } from '../fixtures/tipos-de-banca';
+import { acrescentarBanca, listaDaFase, seletorDoTipo } from '../support/passo-das-bancas';
 import { responder, responderCatalogos } from '../support/responder';
 import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 import { TIPOS_DE_DECISAO_DA_API } from '../support/vocabulario-de-tipos-de-decisao';
@@ -43,17 +45,6 @@ const FASES_CANONICAS = [
     baseLegal: null,
     coletaInscricao: false,
     origemData: 'NO_EDITAL',
-    criadoEm: '2026-08-30T12:00:00Z',
-  },
-] as const;
-
-const TIPOS_BANCA = [
-  {
-    id: '01960000-0000-7000-0000-0000000000b1',
-    codigo: 'HETEROIDENTIFICACAO',
-    nome: 'Banca de heteroidentificação',
-    faseTipica: 'HETEROIDENTIFICACAO',
-    descricao: null,
     criadoEm: '2026-08-30T12:00:00Z',
   },
 ] as const;
@@ -190,7 +181,7 @@ test.describe('Configuração por fase — matriz DS @ds', () => {
     await expect(page.getByLabel('Papel', { exact: true })).toBeVisible();
     await expect(prazoDeInterposicao(page).valor).toBeVisible();
     await expect(prazoDeInterposicao(page).unidade).toBeVisible();
-    await expect(page.getByLabel('Tipo de banca')).toBeVisible();
+    await expect(seletorDoTipo(listaDaFase(page))).toBeVisible();
 
     // Caixa de seleção: a anatomia do design system esconde o controle nativo e desenha a
     // caixa ao lado, então o que se confere é o par — o controle alcançável pelo nome que
@@ -266,8 +257,7 @@ async function ligarRecursoComBanca(page: Page): Promise<void> {
   await prazoDeInterposicao(page).valor.fill('2');
   await prazoDeInterposicao(page).unidade.selectOption('diasUteis');
 
-  await page.getByRole('button', { name: 'Acrescentar banca' }).click();
-  await page.getByLabel('Tipo de banca').selectOption({ label: 'Banca de heteroidentificação' });
+  await acrescentarBanca(listaDaFase(page), 'Banca de heteroidentificação');
   await page.getByText('Raça e etnia').click();
 }
 
@@ -295,7 +285,7 @@ async function mockarCatalogos(page: Page): Promise<void> {
   );
   await responder(page, /\/api\/configuracao\/precedencias-fase(\?.*)?$/, [], CORS_HEADERS);
   await responder(page, /\/api\/organizacao\/unidades(\?.*)?$/, [], CORS_HEADERS);
-  await responder(page, /\/api\/configuracao\/tipos-banca(\?.*)?$/, TIPOS_BANCA, CORS_HEADERS);
+  await responder(page, /\/api\/configuracao\/tipos-banca(\?.*)?$/, TIPOS_DE_BANCA, CORS_HEADERS);
   await responder(
     page,
     /\/api\/configuracao\/categorias-documento(\?.*)?$/,

@@ -10,6 +10,7 @@ import {
   UNIDADE_RESPONSAVEL_DA_FASE,
 } from '../fixtures/processo-publicado-completo';
 import { mockarApi, novoCapturado } from '../support/api-da-unidade-da-fase';
+import { publicarPelaRevisao, simularOQuadroDeVagas } from '../support/publicacao-do-processo';
 
 /**
  * A unidade que responde por cada fase do cronograma, de ponta a ponta na tela: escolher a
@@ -19,15 +20,6 @@ import { mockarApi, novoCapturado } from '../support/api-da-unidade-da-fase';
  * servidos por rota, e o `PUT /cronograma-fases` e o `POST /publicacao` são capturados para
  * conferir o comando que a tela monta — o contrato de verdade entre as duas pontas.
  */
-
-async function simularOQuadroDeVagas(page: Page): Promise<void> {
-  await page
-    .getByRole('navigation', { name: 'Etapas do cadastro' })
-    .getByRole('button', { name: 'Vagas' })
-    .click();
-  await page.getByRole('button', { name: 'Simular o quadro' }).click();
-  await expect(page.getByRole('button', { name: 'Simular o quadro' })).toBeEnabled();
-}
 
 async function abrirOProcesso(page: Page): Promise<void> {
   await page.goto(`/processo-seletivo/${ID_DO_PROCESSO_COMPLETO}`);
@@ -62,25 +54,12 @@ test.describe('Unidade responsável da fase no cronograma', () => {
 
   test('a publicação recusada por fase sem unidade leva à fase, e corrigida publica', async ({
     page,
-  }) => {
+  }, testInfo) => {
     const capturado = novoCapturado(null);
     await mockarApi(page, capturado);
     await abrirOProcesso(page);
-    await simularOQuadroDeVagas(page);
-
-    await page
-      .getByRole('navigation', { name: 'Etapas do cadastro' })
-      .getByRole('button', { name: 'Revisão e publicação' })
-      .click();
-    await page.getByLabel('Tipo de ato').selectOption({ index: 1 });
-    await page.getByLabel('Órgão').fill('CEPS/Unifesspa');
-    await page.getByLabel('Série').fill('Edital de abertura');
-    await page.getByLabel('Ano').fill('2027');
-    await page.getByLabel('Data do ato').fill('2027-01-15');
-    await page.getByLabel('Assinante').fill('Reitor da Unifesspa');
-
-    await page.getByRole('button', { name: 'Publicar', exact: true }).click();
-    await page.getByRole('button', { name: 'Publicar processo' }).click();
+    await simularOQuadroDeVagas(page, testInfo);
+    await publicarPelaRevisao(page, testInfo);
 
     const aviso = page.getByText(
       'Toda fase do cronograma precisa de unidade responsável para publicar.',
@@ -96,12 +75,7 @@ test.describe('Unidade responsável da fase no cronograma', () => {
     await expect(unidade).toHaveAttribute('aria-invalid', 'true');
 
     await unidade.selectOption({ label: 'CGA — Centro de Gestão Acadêmica' });
-    await page
-      .getByRole('navigation', { name: 'Etapas do cadastro' })
-      .getByRole('button', { name: 'Revisão e publicação' })
-      .click();
-    await page.getByRole('button', { name: 'Publicar', exact: true }).click();
-    await page.getByRole('button', { name: 'Publicar processo' }).click();
+    await publicarPelaRevisao(page, testInfo);
 
     await expect.poll(() => capturado.publicado).toBe(true);
     expect(capturado.cronogramas.at(-1)?.[0]?.unidadeResponsavelId).toBe(UNIDADE_CGA.id);

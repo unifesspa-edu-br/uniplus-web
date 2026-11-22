@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { OPCOES_DO_RECURSO } from './opcoes-do-recurso';
+import { TIPOS_DE_BANCA } from './tipos-de-banca';
 import { TIPOS_DE_DECISAO_DA_API } from '../support/vocabulario-de-tipos-de-decisao';
 import {
   responderCatalogos,
@@ -91,17 +92,6 @@ const TIPOS_ATO = [
   },
 ] as const;
 
-const TIPOS_BANCA = [
-  {
-    id: '01960000-0000-7000-0000-0000000000a9',
-    codigo: 'ANALISE_DOCUMENTAL',
-    nome: 'Banca de análise documental',
-    faseTipica: 'HABILITACAO',
-    descricao: null,
-    criadoEm: '2026-08-30T12:00:00Z',
-  },
-] as const;
-
 const CATEGORIAS_DOCUMENTO = [
   {
     id: '01960000-0000-7000-0000-0000000000c1',
@@ -168,7 +158,7 @@ const CATALOGOS: readonly CatalogoMockado[] = [
   ['configuracao/fases-canonicas', FASES_CANONICAS],
   ['configuracao/precedencias-fase', []],
   ['organizacao/unidades', []],
-  ['configuracao/tipos-banca', TIPOS_BANCA],
+  ['configuracao/tipos-banca', TIPOS_DE_BANCA],
   ['configuracao/categorias-documento', CATEGORIAS_DOCUMENTO],
   ['configuracao/tipos-etapa', TIPOS_ETAPA],
   ['configuracao/tipos-documento', TIPOS_DOCUMENTO],

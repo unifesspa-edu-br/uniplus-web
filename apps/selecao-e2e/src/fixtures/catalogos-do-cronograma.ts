@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { CORS_DE_LEITURA } from '../support/processo-mockado';
 import { OPCOES_DO_RECURSO } from './opcoes-do-recurso';
+import { TIPOS_DE_BANCA } from './tipos-de-banca';
 import { TIPOS_DE_DECISAO_DA_API } from '../support/vocabulario-de-tipos-de-decisao';
 import {
   responderCatalogos,
@@ -52,6 +53,25 @@ export const FASES_CANONICAS = [
   },
 ] as const;
 
+export const CATEGORIAS_DE_DOCUMENTO = [
+  {
+    id: '01960000-0000-7000-0000-0000000000d1',
+    codigo: 'RACA_ETNIA',
+    nome: 'Raça e etnia',
+    descricao: null,
+    ordem: 1,
+    criadoEm: '2026-08-30T12:00:00Z',
+  },
+  {
+    id: '01960000-0000-7000-0000-0000000000d2',
+    codigo: 'RENDA',
+    nome: 'Renda',
+    descricao: null,
+    ordem: 2,
+    criadoEm: '2026-08-30T12:00:00Z',
+  },
+] as const;
+
 /**
  * Um documento de nome longo, com descrição: é o caso que espremia o título do card ao lado
  * da ação de remover numa tela estreita.
@@ -99,8 +119,8 @@ const CATALOGOS: readonly CatalogoMockado[] = [
   ['configuracao/fases-canonicas', FASES_CANONICAS],
   ['configuracao/precedencias-fase', []],
   ['organizacao/unidades', []],
-  ['configuracao/tipos-banca', []],
-  ['configuracao/categorias-documento', []],
+  ['configuracao/tipos-banca', TIPOS_DE_BANCA],
+  ['configuracao/categorias-documento', CATEGORIAS_DE_DOCUMENTO],
   ['configuracao/tipos-documento', TIPOS_DOCUMENTO],
   ['configuracao/tipos-etapa', []],
   ['configuracao/fatos-candidato', []],
