@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import type { TipoEtapaDto } from '@uniplus/shared-data/configuracao';
 import { OPCOES_DO_RECURSO } from './opcoes-do-recurso';
 import { TIPOS_DE_BANCA } from './tipos-de-banca';
 import { TIPOS_DE_DECISAO_DA_API } from '../support/vocabulario-de-tipos-de-decisao';
@@ -51,8 +52,14 @@ const TIPOS_ETAPA = [
     nome: 'Análise Documental',
     descricao: null,
     ativo: true,
-    admitePontuacao: false,
-    admiteEliminacao: true,
+    avaliacao: {
+      admitePontuacao: false,
+      admiteEliminacao: true,
+      notaDeOrigemNoEnem: false,
+      exigeCorrecaoIndependente: false,
+      conceitosAdmitidos: [],
+    },
+    criadoEm: '2026-08-30T12:00:00Z',
   },
   {
     id: '01960000-0000-7000-0000-0000000000e2',
@@ -60,10 +67,16 @@ const TIPOS_ETAPA = [
     nome: 'Prova Objetiva',
     descricao: null,
     ativo: true,
-    admitePontuacao: true,
-    admiteEliminacao: true,
+    avaliacao: {
+      admitePontuacao: true,
+      admiteEliminacao: true,
+      notaDeOrigemNoEnem: false,
+      exigeCorrecaoIndependente: false,
+      conceitosAdmitidos: [],
+    },
+    criadoEm: '2026-08-30T12:00:00Z',
   },
-] as const;
+] as const satisfies readonly TipoEtapaDto[];
 
 const TIPOS_ATO = [
   {
