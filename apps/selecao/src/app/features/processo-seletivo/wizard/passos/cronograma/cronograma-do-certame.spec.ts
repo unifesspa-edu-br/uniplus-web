@@ -7,6 +7,7 @@ import {
   fase,
   etapa,
   PRELIMINAR,
+  DEFINITIVO,
   AVALIACAO,
   RESULTADO,
   catalogoDeFases,
@@ -44,11 +45,29 @@ describe('o que impede gravar o cronograma', () => {
 
     const problemas = problemasDe([semJanela], [], new Map([[inscricao.id, inscricao]]), []);
 
-    expect(problemas).toContainEqual('A fase Inscrição precisa de data e hora de início e de fim.');
+    expect(problemas).toContainEqual('A fase Inscrição precisa de data e hora de início.');
   });
 
-  it('fase com janela própria exige data e hora de início e de fim', () => {
+  it('fase com janela própria e sem definitivo exige o início, e o Fim só na publicação', () => {
     const semJanela = fase({ faseCanonicaId: AVALIACAO.id, codigo: 'AVALIACAO' });
+
+    const problemas = problemasDe([semJanela], [etapaValida], catalogoDeFases, []);
+
+    expect(problemas).toContainEqual('A fase Avaliação precisa de data e hora de início.');
+  });
+
+  it('grava como rascunho a fase com período obrigatório, início preenchido e Fim vazio', () => {
+    const semFim = { ...faseDeAvaliacao, fim: null };
+
+    expect(problemasDe([semFim], [etapaValida], catalogoDeFases, [])).toEqual([]);
+  });
+
+  it('fase com janela própria e definitivo exige data e hora de início e de fim', () => {
+    const semJanela = fase({
+      faseCanonicaId: AVALIACAO.id,
+      codigo: 'AVALIACAO',
+      produtos: [DEFINITIVO],
+    });
 
     const problemas = problemasDe([semJanela], [etapaValida], catalogoDeFases, []);
 
