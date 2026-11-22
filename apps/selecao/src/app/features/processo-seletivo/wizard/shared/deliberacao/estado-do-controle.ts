@@ -2,10 +2,10 @@ import { haRecusaAtiva, type RecusaOrdenada } from '../recusas/ordem-das-recusas
 
 /** O que a tela mostra e declara a quem usa leitor de tela para um controle da regra da banca. */
 export interface EstadoDoControle {
-  /** A conferência feita na tela. */
+  /** A conferência feita na tela; some enquanto uma recusa do servidor ainda vale ao controle. */
   readonly erro: string | undefined;
   readonly recusas: readonly RecusaOrdenada[];
-  /** Há erro da tela ou recusa que ainda vale. */
+  /** Há erro da tela ou recusa que ainda vale; a recusa a conferir não marca o controle. */
   readonly invalido: boolean;
   /** Os `id` que descrevem o controle: a dica, o erro da tela e as recusas do servidor. */
   readonly descritoPor: string | null;
@@ -32,10 +32,12 @@ export function estadoDoControle(
   recusas: readonly RecusaOrdenada[],
   comDica = false,
 ): EstadoDoControle {
+  const ativa = haRecusaAtiva(recusas);
+  const erro = ativa || !erroDaTela ? undefined : erroDaTela;
   return {
-    erro: erroDaTela,
+    erro,
     recusas,
-    invalido: !!erroDaTela || haRecusaAtiva(recusas),
-    descritoPor: idsQueDescrevem(id, comDica, erroDaTela !== undefined, recusas.length > 0),
+    invalido: ativa || erro !== undefined,
+    descritoPor: idsQueDescrevem(id, comDica, erro !== undefined, recusas.length > 0),
   };
 }

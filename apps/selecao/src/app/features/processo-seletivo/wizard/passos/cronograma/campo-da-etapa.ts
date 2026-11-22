@@ -1,3 +1,4 @@
+import { bancaDoCampo, campoDaBancaReconhecida } from '../../shared/bancas/campo-da-banca';
 import { FORMA_HUMANA } from '../../shared/forma-de-avaliacao';
 import { escalaVale } from '../../shared/itens-de-avaliacao';
 import {
@@ -6,10 +7,6 @@ import {
   ehDoPrazoDaSegundaInstancia,
 } from '../../shared/recusas/controle-do-recurso';
 import { prazoDaSegundaInstanciaVisivel } from '../../shared/configuracao-do-recurso/parametros-do-recurso';
-import {
-  campoDaBancaNoCaminho,
-  type CampoDaBanca,
-} from '../../shared/deliberacao/recusas-da-regra';
 import type { LocalDaRecusa } from '../../shared/recusas/local-da-recusa';
 import type { EtapaPontuada } from '../../processo-seletivo.models';
 import {
@@ -38,22 +35,18 @@ export type CampoDeItemDaEtapa =
   | `itensDeAvaliacao.${number}.${'rotulo' | 'pontuacaoMaxima'}`
   | `escalaDeAtendimento.${number}.${'rotulo' | 'fracao'}`;
 
-/** Um campo da regra de deliberação de uma banca da etapa, na chave `bancas.0.quorum`; `regra` é a regra inteira. */
-export type CampoDaBancaDaEtapa = `bancas.${number}.${CampoDaBanca}`;
-
 /** Um controle de um recurso da etapa, na chave `recursos.0.prazo`; `recurso` é o recurso inteiro. */
 export type CampoDoRecursoDaEtapa = `recursos.${number}.${ControleDoRecurso | 'recurso'}`;
 
 /**
  * Onde a recusa do servidor aparece na etapa. O nome é o do que a tela mostra: `bancas` reúne as
- * recusas às bancas que não são de um campo da regra de deliberação, e `NO_TOPO_DA_ETAPA` as dos
- * campos que a tela não liga a um controle.
+ * recusas de qualquer banca, e `NO_TOPO_DA_ETAPA` as dos campos que a tela não liga a um controle.
  */
 export type CampoDaRecusaDaEtapa =
   | CampoDaEtapa
   | CampoDeItemDaEtapa
-  | CampoDaBancaDaEtapa
   | CampoDoRecursoDaEtapa
+  | `bancas.${string}`
   | typeof NO_TOPO_DA_ETAPA;
 
 const CAMPOS_DA_ETAPA: ReadonlyMap<string, CampoDaEtapa> = new Map(
@@ -72,7 +65,7 @@ const CAMPOS_DA_ETAPA: ReadonlyMap<string, CampoDaEtapa> = new Map(
 
 const REGRA_DE_CONSOLIDACAO = ['regraconsolidacaocodigo', 'regraconsolidacaoversao'];
 
-type ListaDaEtapa = 'itensDeAvaliacao' | 'escalaDeAtendimento' | 'bancas';
+type ListaDaEtapa = 'itensDeAvaliacao' | 'escalaDeAtendimento';
 
 /** Os campos de cada item das duas listas que têm controle, pelo nome em minúsculas. */
 const CAMPOS_DE_ITEM: ReadonlyMap<string, ReadonlyMap<string, string>> = new Map([
@@ -125,17 +118,11 @@ const CAMPOS_NO_TOPO_DA_ETAPA: ReadonlySet<string> = new Set(
 /** Os campos do recurso da etapa que a tela mostra sem controle de recusa: ficam no recurso. */
 const CAMPOS_DO_RECURSO_SEM_CONTROLE: ReadonlySet<string> = new Set(['procedimentos']);
 
-/** O campo da regra da banca que o caminho aponta; a banca inteira e o tipo dela ficam em `bancas`. */
-function campoDaBancaDaEtapa([posicao, ...dentroDaBanca]: string[]): CampoDaRecusaDaEtapa {
-  const campo = campoDaBancaNoCaminho(dentroDaBanca);
-  return posicao === undefined || campo === null ? 'bancas' : `bancas.${Number(posicao)}.${campo}`;
-}
-
 function campoDaPropriaEtapa(caminho: string): CampoDaRecusaDaEtapa | null {
   if (caminho === '') return NO_TOPO_DA_ETAPA;
   const [primeiro, ...resto] = caminho.split('.');
   const chave = primeiro.toLowerCase();
-  if (chave === 'bancas') return campoDaBancaDaEtapa(resto);
+  if (chave === 'bancas') return campoDaBancaReconhecida('bancas', resto);
   const campo = CAMPOS_DA_ETAPA.get(chave);
   if (campo !== undefined) return campoDoItem(campo, chave, resto);
   if (REGRA_DE_CONSOLIDACAO.includes(chave)) return 'regraConsolidacao';
@@ -198,7 +185,12 @@ function naTela(etapa: EtapaPontuada, tipo: TipoDeEtapaDoCatalogo | undefined): 
   };
 }
 
-const ITEM_DA_LISTA = /^(itensDeAvaliacao|escalaDeAtendimento|bancas)\.(\d+)\./;
+/** O controle que decide se o campo existe na tela: o da seção de bancas, para o campo de uma banca. */
+function controleDoCampo(campo: string): CampoDaEtapa {
+  return (bancaDoCampo(campo, 'bancas') === null ? campo : 'bancas') as CampoDaEtapa;
+}
+
+const ITEM_DA_LISTA = /^(itensDeAvaliacao|escalaDeAtendimento)\.(\d+)\./;
 const CONTROLE_DO_RECURSO = /^recursos\.(\d+)\.(.+)$/;
 
 function itemNaTela(tela: EtapaNaTela, lista: ListaDaEtapa, posicao: number): boolean {
@@ -230,6 +222,6 @@ export function campoNaTelaDaEtapa(
   if (item !== null)
     return itemNaTela(naTela(etapa, tipo), item[1] as ListaDaEtapa, Number(item[2]));
   if (recurso !== null) return recursoNaTela(etapa, Number(recurso[1]), recurso[2]);
-  const tem = TEM_CONTROLE[campo as CampoDaEtapa] as ((tela: EtapaNaTela) => boolean) | undefined;
+  const tem = TEM_CONTROLE[controleDoCampo(campo)] as ((tela: EtapaNaTela) => boolean) | undefined;
   return tem === undefined ? true : tem(naTela(etapa, tipo));
 }

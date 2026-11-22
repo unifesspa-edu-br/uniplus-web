@@ -40,6 +40,7 @@ export class ListaDeBancasComponent {
   readonly bancas = input.required<readonly BancaDeclarada[]>();
   readonly tipos = input.required<readonly TipoDeBancaEscolhivel[]>();
   readonly recusas = input<readonly RecusaOrdenada[]>([]);
+  /** As recusas que apontam a banca inteira; as dos controles dela ficam junto de cada controle. */
   readonly recusasPorBanca = input<ReadonlyMap<string, readonly RecusaOrdenada[]>>(new Map());
   readonly idBase = input.required<string>();
   readonly idRecusas = input<string>();

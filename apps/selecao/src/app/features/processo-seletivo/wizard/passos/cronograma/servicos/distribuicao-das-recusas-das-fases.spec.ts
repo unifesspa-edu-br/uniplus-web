@@ -36,7 +36,7 @@ const camposDistribuidos = (...campos: string[]): string[] => {
 describe('distribuirRecusasDasFases: linhas das listas da fase', () => {
   it('deixa a recusa à regra de uma banca na banca que a fase enviada tinha', () => {
     expect(camposDistribuidos('fases[0].bancasRequeridas[0].regraDeDeliberacao.quorum')).toEqual([
-      'bancasRequeridas.0.quorum',
+      'bancasRequeridas.banca.quorum',
     ]);
   });
 

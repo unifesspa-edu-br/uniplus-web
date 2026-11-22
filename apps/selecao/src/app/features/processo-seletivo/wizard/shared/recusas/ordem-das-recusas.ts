@@ -57,8 +57,8 @@ export function comEstadoDaConferencia(
   guardada: Omit<RecusaOrdenada, 'aConferir'>,
   aConferir: boolean,
 ): RecusaOrdenada {
-  const { campo, codigo, mensagem, pagina, ordem, resposta, origem } = guardada;
-  return { campo, codigo, mensagem, pagina, ordem, resposta, origem, aConferir };
+  const { campo, codigo, mensagem, pagina, ordem, resposta, origem, nota } = guardada;
+  return { campo, codigo, mensagem, pagina, ordem, resposta, origem, aConferir, nota };
 }
 
 /**

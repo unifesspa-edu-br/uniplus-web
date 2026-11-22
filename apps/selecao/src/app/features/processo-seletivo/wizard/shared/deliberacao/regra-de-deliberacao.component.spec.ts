@@ -239,14 +239,14 @@ describe('RegraDeDeliberacaoComponent', () => {
       expect(controle('criterio-recusas')).toBeNull();
     });
 
-    it('descreve o campo pela dica, pelo erro da conferência e pela recusa, nessa ordem', () => {
+    it('descreve o campo pela dica e pela recusa do servidor, que vale no lugar do erro da conferência', () => {
       exibe(comRegra({ encerramento: 'todosOsTitulares', quorum: '5' }), {
         erros: { quorum: 'Confira o quórum.' },
         recusas: { quorum: [doQuorum] },
       });
 
       expect(controle('quorum')?.getAttribute('aria-describedby')).toBe(
-        `${ID}-quorum-dica ${ID}-quorum-erro ${ID}-quorum-recusas`,
+        `${ID}-quorum-dica ${ID}-quorum-recusas`,
       );
     });
 
@@ -259,10 +259,10 @@ describe('RegraDeDeliberacaoComponent', () => {
     });
 
     it('mostra sob o modo a recusa do campo que a tela não mostra agora', () => {
-      exibe(ATO_INDIVIDUAL, { recusas: { quorum: [doQuorum] } });
+      exibe(COLEGIADA, { recusas: { semUnanimidade: [recusaDe('semUnanimidade', 'Escolha.')] } });
 
-      expect(controle('quorum')).toBeNull();
-      expect(controle('modo-recusas')?.textContent).toContain('entre 1 e o número de integrantes');
+      expect(controle('semUnanimidade')).toBeNull();
+      expect(controle('modo-recusas')?.textContent).toContain('Escolha.');
       expect(controle('modo')?.getAttribute('aria-invalid')).toBe('true');
       expect(controle('modo')?.getAttribute('aria-describedby')).toBe(`${ID}-modo-recusas`);
     });

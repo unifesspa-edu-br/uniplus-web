@@ -15,21 +15,48 @@ const recusa = (aConferir = false): RecusaOrdenada => ({
 });
 
 describe('estadoDoControle', () => {
-  it('sem erro nem recusa, o controle é válido e nada o descreve', () => {
-    const estado = estadoDoControle('banca-quorum', undefined, []);
-    expect(estado.invalido).toBe(false);
-    expect(estado.descritoPor).toBeNull();
+  it('não descreve nem marca o controle sem erro nem recusa', () => {
+    expect(estadoDoControle('q', undefined, [])).toMatchObject({
+      invalido: false,
+      descritoPor: null,
+    });
   });
 
-  it('o erro da tela marca o controle e entra na descrição, depois da dica', () => {
-    const estado = estadoDoControle('banca-quorum', 'Informe o quórum.', [], true);
-    expect(estado.invalido).toBe(true);
-    expect(estado.descritoPor).toBe('banca-quorum-dica banca-quorum-erro');
+  it('mostra o erro da tela e o liga ao controle', () => {
+    expect(estadoDoControle('q', 'Confira.', [])).toMatchObject({
+      erro: 'Confira.',
+      invalido: true,
+      descritoPor: 'q-erro',
+    });
   });
 
-  it('o erro da tela e a recusa do servidor aparecem juntos', () => {
-    const estado = estadoDoControle('banca-quorum', 'Informe o quórum.', [recusa()]);
-    expect(estado.erro).toBe('Informe o quórum.');
-    expect(estado.descritoPor).toBe('banca-quorum-erro banca-quorum-recusas');
+  it('esconde o erro da tela enquanto uma recusa do servidor ainda vale', () => {
+    expect(estadoDoControle('q', 'Confira.', [recusa()])).toMatchObject({
+      erro: undefined,
+      invalido: true,
+      descritoPor: 'q-recusas',
+    });
+  });
+
+  it('mostra a recusa a conferir sem marcar o controle e volta com o erro da tela', () => {
+    expect(estadoDoControle('q', 'Confira.', [recusa(true)])).toMatchObject({
+      erro: 'Confira.',
+      invalido: true,
+      descritoPor: 'q-erro q-recusas',
+    });
+    expect(estadoDoControle('q', undefined, [recusa(true)])).toMatchObject({
+      invalido: false,
+      descritoPor: 'q-recusas',
+    });
+  });
+
+  it('junta dica, erro da tela e recusas, nessa ordem', () => {
+    expect(estadoDoControle('q', 'Confira.', [recusa(true)], true).descritoPor).toBe(
+      'q-dica q-erro q-recusas',
+    );
+  });
+
+  it('ignora o erro da tela vazio', () => {
+    expect(estadoDoControle('q', '', [])).toMatchObject({ erro: undefined, invalido: false });
   });
 });

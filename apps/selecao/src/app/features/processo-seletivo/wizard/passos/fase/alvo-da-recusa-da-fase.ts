@@ -1,7 +1,8 @@
 import type { FaseDoCronograma } from '../../processo-seletivo.models';
-import { alvosDaRecusaDaBanca, type CampoDaBanca } from '../../shared/deliberacao/recusas-da-regra';
+import { bancaDoCampo } from '../../shared/bancas/campo-da-banca';
+import { alvosDaBanca, type IdsDaBanca } from '../../shared/bancas/alvos-da-banca';
 import { alvosDoControleDosParametros } from '../../shared/configuracao-do-recurso/ids-dos-parametros';
-import { NO_TOPO_DA_FASE, posicaoNaLista } from './campo-da-fase';
+import { NO_TOPO_DA_FASE, posicaoDaPublicacao } from './campo-da-fase';
 import {
   BLOCO_DAS_RECUSAS_DO_RECURSO,
   CONTROLE_DO_RECURSO,
@@ -26,11 +27,28 @@ export function alvosDaRecusaDaFase(
   const alvos = alvosDaLinhaDoTempo(campo, indice);
   if (alvos.length > 0) return alvos;
   if (campo.startsWith('produtos')) return alvosDaPublicacao(campo, fase);
-  if (campo === 'bancasRequeridas') return [id('banca-0'), id('bancas-erro')];
-  if (campo.startsWith('bancasRequeridas')) return alvosDaBancaRequerida(campo, fase);
+  if (campo.startsWith('bancasRequeridas')) return alvosDasBancas(campo, fase);
   if (campo === 'emiteParecerIndividual') return [id('parecer'), id('parecer-erro')];
   if (campo.startsWith('recurso')) return alvosDoRecurso(campo, fase);
   return campo === NO_TOPO_DA_FASE ? [id('recusas')] : [];
+}
+
+function alvosDasBancas(campo: string, fase: FaseDoCronograma): readonly string[] {
+  const banca = bancaDoCampo(campo, 'bancasRequeridas');
+  return banca === null
+    ? [idDaFase(fase.codigo, 'bancas-erro')]
+    : alvosDaBanca(banca, idsDaBancaDaFase(fase));
+}
+
+/** Os `id` que a seção de bancas da fase dá ao grupo de cada banca, à regra dela e às recusas. */
+function idsDaBancaDaFase(fase: FaseDoCronograma): IdsDaBanca {
+  const id = (sufixo: string) => idDaFase(fase.codigo, sufixo);
+  return {
+    grupo: (banca) => id(`bancas-${banca}`),
+    controle: (banca, controle) => id(`regra-${banca}-${controle}`),
+    categorias: (banca) => id(`bancas-${banca}-categorias`),
+    secao: id('bancas-erro'),
+  };
 }
 
 /**
@@ -39,20 +57,10 @@ export function alvosDaRecusaDaFase(
  */
 function alvosDaPublicacao(campo: string, fase: FaseDoCronograma): readonly string[] {
   const id = (sufixo: string) => idDaFase(fase.codigo, sufixo);
-  const posicao = posicaoNaLista(campo, 'produtos');
+  const posicao = posicaoDaPublicacao(campo);
   if (posicao === null) return [id('produto-ato-0'), id('produtos-erro')];
   const controle = campo.endsWith('.papel') ? 'produto-papel' : 'produto-ato';
   return [id(`${controle}-${posicao}`), id(`produto-${posicao}-erro`), id('produtos-erro')];
-}
-
-/** O controle da regra da banca requerida, com o bloco das recusas dele e, de reserva, o das bancas. */
-function alvosDaBancaRequerida(campo: string, fase: FaseDoCronograma): readonly string[] {
-  const [, posicao, controle] = campo.split('.');
-  const reserva = idDaFase(fase.codigo, 'bancas-erro');
-  const banca = fase.bancasRequeridas[Number(posicao)];
-  if (banca === undefined) return [reserva];
-  const base = idDaFase(fase.codigo, `regra-${banca.identificadorLocal}`);
-  return [...alvosDaRecusaDaBanca(base, controle as CampoDaBanca), reserva];
 }
 
 function alvosDaLinhaDoTempo(campo: string, indice: number): readonly string[] {

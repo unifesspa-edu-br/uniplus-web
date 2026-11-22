@@ -8,13 +8,11 @@ import type {
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { ListaDeBancasComponent } from '../../../shared/bancas/lista-de-bancas.component';
 import { identificacaoDaBanca } from '../../../shared/bancas/lista-de-bancas';
+import type { RecusasDasBancas } from '../../../shared/bancas/recusas-das-bancas';
 import { descricaoDaRegra } from '../../../shared/deliberacao/descricao-da-regra';
-import {
-  errosDaBancaPorCampo,
-  recusasDaBancaPorCampo,
-  type RecusasDaBancaPorCampo,
-} from '../../../shared/deliberacao/recusas-da-regra';
+import { errosDaBancaPorCampo } from '../../../shared/deliberacao/recusas-da-regra';
 import { RegraDeDeliberacaoComponent } from '../../../shared/deliberacao/regra-de-deliberacao.component';
+import type { RecusaOrdenada } from '../../../shared/recusas/ordem-das-recusas';
 import { RecusasDoCampoComponent } from '../../../shared/recusas/recusas-do-campo.component';
 import { CatalogoDeBancas } from '../../cronograma/catalogos/catalogo-de-bancas.service';
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
@@ -42,7 +40,8 @@ export class BancasDaFaseComponent {
   private readonly espelho = this.faseEmEdicao.espelho;
   protected readonly idDaFase = this.faseEmEdicao.idDaFase;
   protected readonly problemaLocal = this.faseEmEdicao.problemaLocal;
-  protected readonly recusasDaLista = this.faseEmEdicao.recusasDaListaDeBancas;
+  protected readonly recusasDoCampo = this.faseEmEdicao.recusasDoCampo;
+  protected readonly temMensagem = this.faseEmEdicao.temMensagem;
   protected readonly categorias = computed(() => this.catalogoDeDocumentos.categorias());
   protected readonly tipos = computed(() =>
     this.catalogoDeBancas.bancas().map((tipo) => ({
@@ -81,22 +80,16 @@ export class BancasDaFaseComponent {
     );
   }
 
+  /** As recusas do servidor às bancas, calculadas uma vez a cada mudança e não a cada leitura da tela. */
+  protected readonly recusasDasBancas = computed<RecusasDasBancas>(() =>
+    this.faseEmEdicao.recusasDasBancas(this.bancas),
+  );
+
   /** O que a conferência local recusa na regra de cada banca, pelo identificador da banca. */
   protected readonly errosDasRegras = computed(
     () =>
       new Map(
         this.bancas.map((banca, posicao) => [banca.identificadorLocal, this.errosDaRegra(posicao)]),
-      ),
-  );
-
-  /** As recusas do servidor à regra de cada banca que ainda valem, pela posição dela na lista. */
-  protected readonly recusasDasRegras = computed(
-    () =>
-      new Map(
-        this.bancas.map((banca, posicao) => [
-          banca.identificadorLocal,
-          this.recusasDaRegra(posicao),
-        ]),
       ),
   );
 
@@ -106,12 +99,15 @@ export class BancasDaFaseComponent {
     );
   }
 
-  private recusasDaRegra(posicao: number): RecusasDaBancaPorCampo {
-    return recusasDaBancaPorCampo((campo) =>
-      this.faseEmEdicao
-        .recusasDoCampo(`bancasRequeridas.${posicao}.${campo}`)
-        .filter((recusa) => !recusa.aConferir),
+  protected recusasDasCategorias(banca: BancaDeclarada): readonly RecusaOrdenada[] {
+    return (
+      this.recusasDasBancas().porControle.get(banca.identificadorLocal)?.categoriasDocumentoIds ??
+      []
     );
+  }
+
+  protected idDasCategorias(banca: BancaDeclarada): string {
+    return this.idDaFase(`bancas-${banca.identificadorLocal}-categorias`);
   }
 
   protected declararRegra(banca: BancaDeclarada, regra: RegraDeDeliberacaoDaBanca | null): void {

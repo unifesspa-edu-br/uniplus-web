@@ -2,12 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import type { FormGroup } from '@angular/forms';
 import type { BancaDaEtapa, RegraDeDeliberacaoDaBanca } from '../../../processo-seletivo.models';
 import { ListaDeBancasComponent } from '../../../shared/bancas/lista-de-bancas.component';
+import type { RecusasDasBancas } from '../../../shared/bancas/recusas-das-bancas';
 import { problemasDaRegraPorCampo } from '../../../shared/deliberacao/conferencia-da-regra';
 import {
   errosDaBancaPorCampo,
-  recusasDaBancaPorCampo,
   type CampoDaBanca,
-  type RecusasDaBancaPorCampo,
 } from '../../../shared/deliberacao/recusas-da-regra';
 import { RegraDeDeliberacaoComponent } from '../../../shared/deliberacao/regra-de-deliberacao.component';
 import { CatalogoDeBancas } from '../catalogos/catalogo-de-bancas.service';
@@ -36,6 +35,11 @@ export class BancasDaEtapaComponent {
     })),
   );
 
+  /** As recusas do servidor às bancas, calculadas uma vez a cada mudança e não a cada leitura da tela. */
+  protected readonly recusasDasBancas = computed<RecusasDasBancas>(() =>
+    this.recusas.recusasDasBancas(this.grupo(), this.edicao.bancasDaEtapa(this.grupo())),
+  );
+
   /** O que a conferência local recusa na regra de cada banca, pelo identificador da banca. */
   protected readonly errosDasRegras = computed(
     () =>
@@ -46,27 +50,11 @@ export class BancasDaEtapaComponent {
       ),
   );
 
-  /** As recusas do servidor à regra de cada banca, pela posição dela na lista. */
-  protected readonly recusasDasRegras = computed(
-    () =>
-      new Map(
-        this.edicao
-          .bancasDaEtapa(this.grupo())
-          .map((banca, posicao) => [banca.identificadorLocal, this.recusasDaBanca(posicao)]),
-      ),
-  );
-
   private errosDaBanca(banca: BancaDaEtapa) {
     const locais: ReadonlyMap<CampoDaBanca, string> = problemasDaRegraPorCampo(
       banca.regraDeDeliberacao,
     );
     return errosDaBancaPorCampo((campo) => locais.get(campo));
-  }
-
-  private recusasDaBanca(posicao: number): RecusasDaBancaPorCampo {
-    return recusasDaBancaPorCampo((campo) =>
-      this.recusas.recusasDoCampo(this.grupo(), `bancas.${posicao}.${campo}`),
-    );
   }
 
   protected alterarRegra(banca: BancaDaEtapa, regra: RegraDeDeliberacaoDaBanca | null): void {

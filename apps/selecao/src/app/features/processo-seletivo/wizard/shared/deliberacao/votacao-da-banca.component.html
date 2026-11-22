@@ -94,7 +94,7 @@
   }
 </div>
 
-@if (comDesempate()) {
+@if (aVista().has('desempate')) {
   @let doDesempate = estado('desempate');
   <div class="form-field form-grid__full">
     <label class="label" [attr.for]="id('desempate')">Em caso de empate</label>
@@ -128,7 +128,7 @@
   </div>
 }
 
-@if (comSemUnanimidade()) {
+@if (aVista().has('semUnanimidade')) {
   @let doResultado = estado('semUnanimidade');
   <div class="form-field form-grid__full">
     <label class="label" [attr.for]="id('semUnanimidade')">Sem unanimidade, o resultado é</label>

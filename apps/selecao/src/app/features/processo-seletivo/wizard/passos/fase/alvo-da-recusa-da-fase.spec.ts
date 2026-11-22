@@ -4,18 +4,7 @@ import type { FaseDoCronograma, RecursoDaFase } from '../../processo-seletivo.mo
 import { umaFaseDoCronograma } from '../../shared/fase-do-cronograma.testing';
 import { alvosDaRecusaDaFase } from './alvo-da-recusa-da-fase';
 
-const banca = (identificadorLocal: string) => ({
-  id: null,
-  identificadorLocal,
-  copiaDoTipo: null,
-  tipoBancaId: 'tipo',
-  categoriasDocumentoIds: [],
-  regraDeDeliberacao: null,
-});
-const FASE = umaFaseDoCronograma({
-  codigo: 'AVALIACAO',
-  bancasRequeridas: [banca('banca-1'), banca('banca-2'), banca('banca-3')],
-});
+const FASE = umaFaseDoCronograma({ codigo: 'AVALIACAO' });
 
 function comInstanciaSuperior(valor: boolean | null): FaseDoCronograma {
   const regra = { admiteInstanciaSuperior: valor } as RecursoDaFase;
@@ -44,9 +33,31 @@ describe('alvosDaRecusaDaFase', () => {
       'fase-AVALIACAO-produtos-erro',
     ]);
     expect(alvosDaRecusaDaFase('bancasRequeridas', FASE, 0)).toEqual([
-      'fase-AVALIACAO-banca-0',
       'fase-AVALIACAO-bancas-erro',
     ]);
+  });
+
+  it('leva a recusa de uma banca ao controle, ao modo, ao grupo dela e ao bloco da seção', () => {
+    expect(alvosDaRecusaDaFase('bancasRequeridas.banca-2.quorum', FASE, 0)).toEqual([
+      'fase-AVALIACAO-regra-banca-2-quorum',
+      'fase-AVALIACAO-regra-banca-2-modo',
+      'fase-AVALIACAO-bancas-banca-2',
+      'fase-AVALIACAO-bancas-erro',
+    ]);
+    expect(alvosDaRecusaDaFase('bancasRequeridas.banca-2', FASE, 0)).toEqual([
+      'fase-AVALIACAO-bancas-banca-2',
+      'fase-AVALIACAO-bancas-erro',
+    ]);
+  });
+
+  it('leva a recusa das categorias da banca ao conjunto de categorias dela', () => {
+    expect(alvosDaRecusaDaFase('bancasRequeridas.banca-2.categoriasDocumentoIds', FASE, 0)).toEqual(
+      [
+        'fase-AVALIACAO-bancas-banca-2-categorias',
+        'fase-AVALIACAO-bancas-banca-2',
+        'fase-AVALIACAO-bancas-erro',
+      ],
+    );
   });
 
   it.each([
@@ -60,23 +71,6 @@ describe('alvosDaRecusaDaFase', () => {
       `fase-AVALIACAO-${controle}`,
       `fase-AVALIACAO-produto-${posicao}-erro`,
       'fase-AVALIACAO-produtos-erro',
-    ]);
-  });
-
-  it('leva a recusa ao campo da regra de uma banca ao controle, ao bloco das recusas dele, ao do modo e ao das bancas', () => {
-    expect(alvosDaRecusaDaFase('bancasRequeridas.2.quorum', FASE, 0)).toEqual([
-      'fase-AVALIACAO-regra-banca-3-quorum',
-      'fase-AVALIACAO-regra-banca-3-quorum-recusas',
-      'fase-AVALIACAO-regra-banca-3-modo-recusas',
-      'fase-AVALIACAO-bancas-erro',
-    ]);
-  });
-
-  it('leva a recusa à regra inteira da banca ao modo dela', () => {
-    expect(alvosDaRecusaDaFase('bancasRequeridas.0.regra', FASE, 0)).toEqual([
-      'fase-AVALIACAO-regra-banca-1-modo',
-      'fase-AVALIACAO-regra-banca-1-modo-recusas',
-      'fase-AVALIACAO-bancas-erro',
     ]);
   });
 

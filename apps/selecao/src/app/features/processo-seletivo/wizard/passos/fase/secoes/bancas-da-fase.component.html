@@ -11,8 +11,20 @@
   }
 } @else {
   <ng-template #detalhe let-banca>
-    <fieldset class="form-field">
+    @let dasCategorias = recusasDasCategorias(banca);
+    <fieldset
+      class="form-field"
+      [attr.id]="idDasCategorias(banca)"
+      tabindex="-1"
+      [attr.aria-describedby]="dasCategorias.length ? idDasCategorias(banca) + '-recusas' : null"
+    >
       <legend class="label">Candidatos atendidos</legend>
+      @if (dasCategorias.length) {
+        <sel-recusas-do-campo
+          [attr.id]="idDasCategorias(banca) + '-recusas'"
+          [recusas]="dasCategorias"
+        />
+      }
       @if (categorias().length === 0) {
         <p class="field__hint">Nenhuma categoria de documento no cadastro.</p>
       }
@@ -41,19 +53,21 @@
       [idBase]="idDaFase('regra-' + banca.identificadorLocal)"
       [desabilitada]="!cronograma.edicaoLiberada()"
       [erros]="errosDasRegras().get(banca.identificadorLocal) ?? {}"
-      [recusas]="recusasDasRegras().get(banca.identificadorLocal) ?? {}"
+      [recusas]="recusasDasBancas().porControle.get(banca.identificadorLocal) ?? {}"
       (regraChange)="declararRegra(banca, $event)"
     />
   </ng-template>
   @if (problemaLocal('bancasRequeridas'); as erro) {
     <p class="field__erro" role="alert">{{ erro }}</p>
   }
+  @let recusasDaLista = recusasDasBancas();
   <sel-lista-de-bancas
     [idBase]="idDaFase('bancas')"
     [idRecusas]="idDaFase('bancas-erro')"
     [bancas]="bancas"
     [tipos]="tipos()"
-    [recusas]="recusasDaLista()"
+    [recusas]="recusasDaLista.secao"
+    [recusasPorBanca]="recusasDaLista.daBanca"
     [edicaoLiberada]="cronograma.edicaoLiberada()"
     textoDoGrupo="Bancas deste tipo com as mesmas categorias, ou todas sem categorias, julgam em paralelo e dividem os candidatos. Bancas com categorias diferentes dividem as categorias; nesse caso, todas precisam ter categorias definidas."
     textoDaExigencia="Este tipo exige duas ou mais bancas para cada grupo de candidatos atendidos."

@@ -78,25 +78,28 @@ export const pedeDesempate = (regra: RegraDeDeliberacaoDaBanca): boolean =>
 export const pedeResultadoSemUnanimidade = (regra: RegraDeDeliberacaoDaBanca): boolean =>
   regra.criterio === 'unanimidade' && (integrantesLidos(regra) ?? 0) > 1;
 
+const CONTROLES_SEMPRE_A_VISTA: readonly CampoDaRegra[] = [
+  'modo',
+  'integrantes',
+  'suplentes',
+  'encerramento',
+  'quorum',
+  'criterio',
+];
+
 /**
- * Os controles que a tela mostra para a regra: sem regra só o modo; com regra, os integrantes e
- * os suplentes e, na banca colegiada, a votação (com o desempate ou o resultado sem unanimidade
- * quando o critério e os integrantes os pedem).
+ * Os controles que a tela mostra para a regra: sem regra só o modo; com regra, os fixos e o
+ * desempate ou o resultado sem unanimidade quando o critério e os integrantes os pedem.
  */
 export function controlesAVista(
   regra: RegraDeDeliberacaoDaBanca | null,
 ): ReadonlySet<CampoDaRegra> {
   if (regra === null) return new Set<CampoDaRegra>(['modo']);
-  const votacao: readonly CampoDaRegra[] = !ehColegiada(regra)
-    ? []
-    : [
-        'encerramento',
-        'quorum',
-        'criterio',
-        ...(pedeDesempate(regra) ? (['desempate'] as const) : []),
-        ...(pedeResultadoSemUnanimidade(regra) ? (['semUnanimidade'] as const) : []),
-      ];
-  return new Set<CampoDaRegra>(['modo', 'integrantes', 'suplentes', ...votacao]);
+  const condicionais: readonly CampoDaRegra[] = [
+    ...(pedeDesempate(regra) ? (['desempate'] as const) : []),
+    ...(pedeResultadoSemUnanimidade(regra) ? (['semUnanimidade'] as const) : []),
+  ];
+  return new Set([...CONTROLES_SEMPRE_A_VISTA, ...condicionais]);
 }
 
 /** Enquanto o número de integrantes não foi digitado, o que ele ainda pode permitir é mantido. */

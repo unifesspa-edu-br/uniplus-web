@@ -6,8 +6,7 @@ import { estadoDoControle, type EstadoDoControle } from './estado-do-controle';
 import type { CampoDaBanca, RecusasDaBancaPorCampo } from './recusas-da-regra';
 import {
   alterarRegra,
-  pedeDesempate,
-  pedeResultadoSemUnanimidade,
+  controlesAVista,
   CRITERIOS_DE_VOTACAO,
   DESEMPATES_DA_VOTACAO,
   ENCERRAMENTOS_DA_VOTACAO,
@@ -38,8 +37,7 @@ export class VotacaoDaBancaComponent {
   protected readonly encerramentos = ENCERRAMENTOS_DA_VOTACAO;
   protected readonly semUnanimidade = RESULTADOS_SEM_UNANIMIDADE;
   protected readonly quorumFixo = computed(() => quorumSegueOsIntegrantes(this.regra()));
-  protected readonly comDesempate = computed(() => pedeDesempate(this.regra()));
-  protected readonly comSemUnanimidade = computed(() => pedeResultadoSemUnanimidade(this.regra()));
+  protected readonly aVista = computed(() => controlesAVista(this.regra()));
 
   protected id(campo: CampoDaBanca): string {
     return `${this.idBase()}-${campo}`;

@@ -2,6 +2,13 @@ import { ElementRef, Injectable, effect, inject } from '@angular/core';
 
 import type { PassoDoWizard } from '../wizard/passo-do-wizard';
 
+function campoRecusado(campo: HTMLElement): boolean {
+  return (
+    campo.getAttribute('aria-invalid') === 'true' ||
+    (campo instanceof HTMLFieldSetElement && campo.hasAttribute('aria-describedby'))
+  );
+}
+
 /** Para onde vai o foco e a rolagem do editor: o título do passo, o aviso de pendências e o campo recusado. */
 @Injectable()
 export class FocoDoEditor {
@@ -123,15 +130,13 @@ export class FocoDoEditor {
     if (
       ativo instanceof HTMLElement &&
       this.raiz.contains(ativo) &&
-      ativo.getAttribute('aria-invalid') === 'true' &&
+      campoRecusado(ativo) &&
       visivel(ativo)
-    ) {
+    )
       return ativo;
-    }
-    return (
-      Array.from(
-        this.raiz.querySelectorAll<HTMLElement>('.step-pane:not([hidden]) [aria-invalid="true"]'),
-      ).find(visivel) ?? null
+    const campos = this.raiz.querySelectorAll<HTMLElement>(
+      '.step-pane:not([hidden]) [aria-invalid="true"]',
     );
+    return [...campos].find(visivel) ?? null;
   }
 }
