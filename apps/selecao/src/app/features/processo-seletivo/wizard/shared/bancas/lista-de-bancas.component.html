@@ -51,9 +51,9 @@
               type="button"
               [attr.aria-describedby]="idBase() + '-ordem-' + banca.tipoBancaId"
               [attr.aria-label]="
-                'Mover a ' +
+                'Mover para antes: ' +
                 identificacao(banca) +
-                ' para antes da ' +
+                ', antes da ' +
                 identificacao(grupo[indice - 1])
               "
               (click)="mover(banca, -1)"
@@ -67,9 +67,9 @@
               type="button"
               [attr.aria-describedby]="idBase() + '-ordem-' + banca.tipoBancaId"
               [attr.aria-label]="
-                'Mover a ' +
+                'Mover para depois: ' +
                 identificacao(banca) +
-                ' para depois da ' +
+                ', depois da ' +
                 identificacao(grupo[indice + 1])
               "
               (click)="mover(banca, 1)"
