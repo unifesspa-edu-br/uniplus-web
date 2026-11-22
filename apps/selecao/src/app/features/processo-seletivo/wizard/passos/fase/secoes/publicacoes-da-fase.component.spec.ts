@@ -56,6 +56,17 @@ describe('PublicacoesDaFaseComponent', () => {
     ]);
   });
 
+  it('marca a publicação como inválida quando a conferência local acusa a lista', () => {
+    comCronograma(fase({ produtos: [{ atoCodigo: '', papel: null }] }));
+
+    const publicacao = nativo.querySelector('#fase-AVALIACAO-produto-ato-0');
+
+    expect(publicacao?.getAttribute('aria-invalid')).toBe('true');
+    expect(nativo.querySelector('#fase-AVALIACAO-produtos-erro')?.textContent).toContain(
+      'Escolha o tipo de ato de cada publicação declarada',
+    );
+  });
+
   describe('parecer individual', () => {
     const caixa = () => nativo.querySelector<HTMLInputElement>('#fase-AVALIACAO-parecer');
     const publicaDefinitivo = fase({
