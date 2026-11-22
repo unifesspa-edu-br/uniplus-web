@@ -38,7 +38,6 @@ export {
   textoDaSituacaoDasOpcoes,
   type SituacaoDasOpcoes,
 } from './escolha-com-explicacao/escolha-com-explicacao';
-export type { RecusaDaEscolha } from './escolha-com-explicacao/recusas-da-escolha';
 export {
   FileUploadComponent,
   type ArquivoEmEnvio,

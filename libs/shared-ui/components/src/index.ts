@@ -48,7 +48,6 @@ export {
   type OpcaoDeEscolhaComExplicacao,
   type SituacaoDasOpcoes,
 } from '../../src/lib/components/escolha-com-explicacao/escolha-com-explicacao';
-export type { RecusaDaEscolha } from '../../src/lib/components/escolha-com-explicacao/recusas-da-escolha';
 export {
   ListaDeDocumentosComponent,
   type DocumentoExigido,

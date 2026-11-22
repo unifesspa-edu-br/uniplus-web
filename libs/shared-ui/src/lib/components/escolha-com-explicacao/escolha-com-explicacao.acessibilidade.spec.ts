@@ -9,7 +9,6 @@ import {
   RECUSA,
   aplicar,
   montar,
-  recusaDaOpcao,
 } from './escolha-com-explicacao.testing';
 
 const COM_OPCOES: Partial<EntradasDaEscolha> = {
@@ -38,8 +37,6 @@ describe('EscolhaComExplicacaoComponent: acessibilidade', () => {
     ['opções, nenhuma marcada', COM_OPCOES],
     ['uma opção marcada', { ...COM_OPCOES, valor: 'NENHUM' }],
     ['recusa ativa', { ...COM_OPCOES, recusas: [RECUSA] }],
-    ['erro local', { ...COM_OPCOES, erroLocal: 'Escolha uma opção.' }],
-    ['recusa de uma opção', { ...COM_OPCOES, recusas: [recusaDaOpcao('NENHUM'), RECUSA] }],
     [
       'recusa a conferir com nota',
       { ...COM_OPCOES, recusasAConferir: [RECUSA], notaDasRecusasAConferir: 'A conferir.' },

@@ -14,8 +14,8 @@ import {
   viewChildren,
 } from '@angular/core';
 
-import { RecusaDoCampoComponent } from '../recusa-do-campo/recusa-do-campo';
-import { type RecusaDaEscolha, idsDasRecusasDe, recusasNaTela } from './recusas-da-escolha';
+import { type RecusaDoCampo, RecusaDoCampoComponent } from '../recusa-do-campo/recusa-do-campo';
+import { idsDasRecusasDoCampo, recusasNaTela } from './recusas-da-escolha';
 
 export interface OpcaoDeEscolhaComExplicacao {
   readonly codigo: string;
@@ -56,12 +56,11 @@ function idsJuntos(ids: readonly (string | null)[]): string | null {
 /**
  * Uma escolha entre opções, cada uma com rótulo e uma explicação própria (por exemplo, as opções de
  * um vocabulário que a API entrega com `descricao`). É um grupo de opções exclusivas: a legenda
- * nomeia o grupo, e cada opção é descrita pela instrução, pela própria explicação e pelas recusas
- * do campo, nessa ordem, cada uma só quando existe.
+ * nomeia o grupo, e cada opção é descrita pela instrução e pela própria explicação, cada uma só
+ * quando existe.
  *
- * O erro visível do campo, local (`erroLocal`) ou da API (`recusas`), marca o grupo e cada opção
- * como inválidos. Cada recusa é descrita só pelo elemento a que pertence: a recusa de uma opção
- * (`opcao`) descreve essa opção; o erro local e as recusas do campo inteiro descrevem o grupo.
+ * A recusa da API que ainda vale (`recusas`) marca o grupo e cada opção como inválidos. As recusas
+ * pertencem ao campo inteiro: ficam depois das opções, dentro do grupo, e descrevem o grupo.
  *
  * Enquanto não há opção para escolher, um parágrafo de situação ocupa o lugar delas, diz por quê
  * (carregando, falhou ou lista vazia) e é o destino de foco do campo. Quando as opções chegam e o
@@ -89,12 +88,10 @@ export class EscolhaComExplicacaoComponent {
   readonly opcoes = input<readonly OpcaoDeEscolhaComExplicacao[]>([]);
   /** O código da opção marcada; vazio quando nenhuma está. */
   readonly valor = input('');
-  /** O erro que a própria tela achou na escolha, como "Escolha uma opção."; marca o campo como inválido. */
-  readonly erroLocal = input<string | null>(null);
   /** Recusas que ainda valem: marcam o campo como inválido. */
-  readonly recusas = input<readonly RecusaDaEscolha[]>([]);
+  readonly recusas = input<readonly RecusaDoCampo[]>([]);
   /** Recusas que a pessoa já tocou por baixo: seguem à vista, sem marcar o campo como inválido. */
-  readonly recusasAConferir = input<readonly RecusaDaEscolha[]>([]);
+  readonly recusasAConferir = input<readonly RecusaDoCampo[]>([]);
   /** Nota que explica as recusas a conferir; aparece junto delas. */
   readonly notaDasRecusasAConferir = input<string | null>(null);
   /** Texto ao fim da legenda, como "(obrigatório)"; com ele o grupo é anunciado como obrigatório. */
@@ -112,7 +109,6 @@ export class EscolhaComExplicacaoComponent {
 
   protected readonly idDoGrupo = this.idDa('grupo');
   protected readonly idDaInstrucao = this.idDa('instrucao');
-  protected readonly idDoErroLocal = this.idDa('erro');
   protected readonly idDaNota = this.idDa('nota-das-recusas-a-conferir');
   protected readonly idDaSituacao = this.idDa('situacao');
 
@@ -120,21 +116,12 @@ export class EscolhaComExplicacaoComponent {
     [this.legenda(), this.textoDeObrigatoriedade()].filter((texto) => texto).join(' '),
   );
   protected readonly obrigatorio = computed(() => !!this.textoDeObrigatoriedade());
-  protected readonly comErroVisivel = computed(
-    () => !!this.erroLocal() || this.recusas().length > 0,
-  );
-  private readonly codigosDasOpcoes = computed(
-    () => new Set(this.opcoes().map((opcao) => opcao.codigo)),
-  );
+  protected readonly comErroVisivel = computed(() => this.recusas().length > 0);
   protected readonly recusasDesenhadas = computed(() =>
-    recusasNaTela(this.recusas(), `${this.prefixoDoId()}-recusa`, this.codigosDasOpcoes()),
+    recusasNaTela(this.recusas(), `${this.prefixoDoId()}-recusa`),
   );
   protected readonly recusasAConferirDesenhadas = computed(() =>
-    recusasNaTela(
-      this.recusasAConferir(),
-      `${this.prefixoDoId()}-a-conferir`,
-      this.codigosDasOpcoes(),
-    ),
+    recusasNaTela(this.recusasAConferir(), `${this.prefixoDoId()}-a-conferir`),
   );
   /** A nota só existe junto de recusas a conferir. */
   protected readonly notaVisivel = computed(() =>
@@ -145,7 +132,13 @@ export class EscolhaComExplicacaoComponent {
     textoDaSituacaoDasOpcoes(this.situacao(), this.textoSemOpcoes()),
   );
   protected readonly descritaPeloCampo = computed(() =>
-    idsJuntos([this.erroLocal() ? this.idDoErroLocal() : null, ...this.idsQueDescrevem(null)]),
+    idsJuntos(
+      idsDasRecusasDoCampo(
+        this.recusasDesenhadas(),
+        this.recusasAConferirDesenhadas(),
+        this.notaVisivel() ? this.idDaNota() : null,
+      ),
+    ),
   );
   protected readonly opcoesNaTela = computed(() => this.opcoes().map((o) => this.naTela(o)));
 
@@ -185,15 +178,6 @@ export class EscolhaComExplicacaoComponent {
     return () => `${this.prefixoDoId()}-${parte}`;
   }
 
-  private idsQueDescrevem(opcao: string | null): string[] {
-    return idsDasRecusasDe(
-      opcao,
-      this.recusasDesenhadas(),
-      this.recusasAConferirDesenhadas(),
-      this.notaVisivel() ? this.idDaNota() : null,
-    );
-  }
-
   private naTela(opcao: OpcaoDeEscolhaComExplicacao): OpcaoNaTela {
     const idDaExplicacao = `${this.prefixoDoId()}-explicacao-${opcao.codigo}`;
     return {
@@ -204,7 +188,6 @@ export class EscolhaComExplicacaoComponent {
       descritaPor: idsJuntos([
         this.instrucao() ? this.idDaInstrucao() : null,
         opcao.descricao ? idDaExplicacao : null,
-        ...this.idsQueDescrevem(opcao.codigo),
       ]),
     };
   }
