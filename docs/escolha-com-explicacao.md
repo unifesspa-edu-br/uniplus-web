@@ -11,8 +11,8 @@ A implementação é o componente `ui-escolha-com-explicacao`, em `libs/shared-u
 3. **Opção sem explicação fica só com o rótulo.** O componente não inventa texto.
 4. **O texto vem da API.** A tela exibe o `rotulo` e a `descricao` que o vocabulário devolve, sem texto fixo por opção e sem ramificar por código de opção.
 5. **Nada vem marcado por conta do sistema** quando a escolha é obrigatória e a pessoa ainda não escolheu: o valor vazio deixa o grupo sem opção marcada.
-6. **O erro do campo aparece junto dele, e `aria-invalid` acompanha o erro visível.** O grupo e cada opção são marcados como inválidos enquanto há erro à vista: o erro local da tela (`erroLocal`) ou uma recusa da API que ainda vale, o mesmo critério do `ui-form-field`. A recusa que a pessoa já tocou por baixo fica à vista, com a nota que explica, e não marca o campo como inválido (ADR-0031).
-7. **Cada recusa descreve só o elemento a que pertence.** A recusa que aponta uma opção (`opcao`, o código dela) descreve essa opção e mais nenhuma. O erro local e a recusa sem `opcao`, ou com uma `opcao` que não está na lista, são do campo inteiro e descrevem o grupo.
+6. **A recusa da API aparece junto do campo, e `aria-invalid` acompanha a recusa que ainda vale.** O grupo e cada opção são marcados como inválidos enquanto há recusa à vista que ainda vale, o mesmo critério do `ui-form-field`. A recusa que a pessoa já tocou por baixo fica à vista, com a nota que explica, e não marca o campo como inválido (ADR-0031).
+7. **A recusa é do campo inteiro.** Ela aparece depois das opções, dentro do grupo, e descreve o grupo; nenhuma opção a cita. A API aponta a escolha como um todo, então o componente não recebe recusa por opção.
 8. **Enquanto não há opção para escolher, um parágrafo diz por quê:** carregando, falhou ou lista vazia. Esse parágrafo é o alvo de foco do campo. A orientação de falha manda usar "Tentar de novo" no aviso do topo do passo, então pressupõe que a tela mostre esse aviso com essa ação.
 
 ## Como usar
@@ -28,7 +28,6 @@ O componente é controlado: `valor` diz qual opção está marcada e `escolhido`
   [opcoes]="opcoes()"
   [valor]="efeito()"
   [situacao]="situacaoDasOpcoes()"
-  [erroLocal]="erroDaEscolha()"
   [recusas]="recusasAtivas()"
   [recusasAConferir]="recusasAConferir()"
   notaDasRecusasAConferir="Você alterou esta parte depois desta recusa; ela será conferida de novo na próxima gravação."
@@ -43,9 +42,8 @@ O componente é controlado: `valor` diz qual opção está marcada e `escolhido`
 | `instrucao`                                    | O que a pessoa precisa saber antes de escolher. Descreve todas as opções.   |
 | `opcoes`                                       | Lista de `{codigo, rotulo, descricao?}`, na ordem em que a API entrega.     |
 | `valor`                                        | Código da opção marcada; vazio quando nenhuma está.                         |
-| `erroLocal`                                    | Erro que a própria tela achou na escolha. Nulo ou vazio quando não há.      |
-| `recusas`                                      | Recusas que ainda valem, cada uma com `opcao` quando é de uma opção.        |
-| `recusasAConferir` e `notaDasRecusasAConferir` | Recusas já tocadas pela pessoa (também com `opcao`) e a nota que diz isso.  |
+| `recusas`                                      | Recusas do campo que ainda valem.                                           |
+| `recusasAConferir` e `notaDasRecusasAConferir` | Recusas já tocadas pela pessoa e a nota que diz isso.                       |
 | `textoDeObrigatoriedade`                       | Texto ao fim da legenda. Nulo quando a escolha não é obrigatória.           |
 | `situacao`                                     | `carregando`, `falhou` ou `pronta`.                                         |
 | `textoSemOpcoes`                               | O que o parágrafo de situação diz quando a lista chega vazia.               |
@@ -54,19 +52,18 @@ O método `focar()` leva o foco à opção marcada, à primeira opção ou, sem 
 
 ## Identificadores
 
-| Parte                 | Identificador                                    |
-| --------------------- | ------------------------------------------------ |
-| grupo                 | `${prefixoDoId}-grupo`                           |
-| instrução             | `${prefixoDoId}-instrucao`                       |
-| opção                 | `${prefixoDoId}-opcao-${codigo}`                 |
-| explicação            | `${prefixoDoId}-explicacao-${codigo}`            |
-| erro local            | `${prefixoDoId}-erro`                            |
-| recusa                | `${prefixoDoId}-recusa-[${opcao}-]${codigo}`     |
-| recusa a conferir     | `${prefixoDoId}-a-conferir-[${opcao}-]${codigo}` |
-| nota das a conferir   | `${prefixoDoId}-nota-das-recusas-a-conferir`     |
-| parágrafo de situação | `${prefixoDoId}-situacao`                        |
+| Parte                 | Identificador                                |
+| --------------------- | -------------------------------------------- |
+| grupo                 | `${prefixoDoId}-grupo`                       |
+| instrução             | `${prefixoDoId}-instrucao`                   |
+| opção                 | `${prefixoDoId}-opcao-${codigo}`             |
+| explicação            | `${prefixoDoId}-explicacao-${codigo}`        |
+| recusa                | `${prefixoDoId}-recusa-${codigo}`            |
+| recusa a conferir     | `${prefixoDoId}-a-conferir-${codigo}`        |
+| nota das a conferir   | `${prefixoDoId}-nota-das-recusas-a-conferir` |
+| parágrafo de situação | `${prefixoDoId}-situacao`                    |
 
-Cada opção é descrita, nesta ordem, pela instrução, pela própria explicação, pelas recusas dela, pelas recusas a conferir dela e, havendo alguma a conferir, pela nota, cada uma só quando existe. O grupo é descrito pelo erro local, pelas recusas do campo inteiro, pelas a conferir e pela nota. Recusas do mesmo código e dono ganham um número ao fim do identificador.
+Cada opção é descrita, nesta ordem, pela instrução e pela própria explicação, cada uma só quando existe. O grupo é descrito pelas recusas, pelas a conferir e, havendo alguma a conferir, pela nota. Recusas do mesmo código ganham um número ao fim do identificador, sem repetir o de outra recusa.
 
 ## Acessibilidade
 

@@ -6,7 +6,6 @@ import {
   type OpcaoDeEscolhaComExplicacao,
   type SituacaoDasOpcoes,
 } from './escolha-com-explicacao';
-import type { RecusaDaEscolha } from './recusas-da-escolha';
 
 export const OPCOES: readonly OpcaoDeEscolhaComExplicacao[] = [
   {
@@ -26,11 +25,6 @@ export const OPCOES: readonly OpcaoDeEscolhaComExplicacao[] = [
   },
 ];
 
-/** A mesma recusa, apontada a uma opção. */
-export function recusaDaOpcao(opcao: string, codigo = RECUSA.codigo): RecusaDaEscolha {
-  return { ...RECUSA, codigo, mensagem: `${RECUSA.mensagem} (${opcao})`, opcao };
-}
-
 export const RECUSA: RecusaDoCampo = {
   codigo: 'uniplus.selecao.exemplo.escolha_obrigatoria',
   mensagem: 'Escolha o efeito do recurso.',
@@ -42,9 +36,8 @@ export interface EntradasDaEscolha {
   instrucao: string;
   opcoes: readonly OpcaoDeEscolhaComExplicacao[];
   valor: string;
-  erroLocal: string | null;
-  recusas: readonly RecusaDaEscolha[];
-  recusasAConferir: readonly RecusaDaEscolha[];
+  recusas: readonly RecusaDoCampo[];
+  recusasAConferir: readonly RecusaDoCampo[];
   notaDasRecusasAConferir: string | null;
   textoDeObrigatoriedade: string | null;
   desabilitado: boolean;

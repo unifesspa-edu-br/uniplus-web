@@ -44,8 +44,6 @@
   >
     {{ textoDaSituacao() }}
   </p>
-  } @if (erroLocal(); as erro) {
-  <p class="field__error" [attr.id]="idDoErroLocal()">{{ erro }}</p>
   } @for (recusa of recusasDesenhadas(); track recusa.id) {
   <ui-recusa-do-campo [attr.id]="recusa.id" [recusas]="recusa.lista" />
   } @for (recusa of recusasAConferirDesenhadas(); track recusa.id) {
