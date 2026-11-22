@@ -31,7 +31,7 @@ export interface RestricaoDeArquivo {
  *
  * O contrato recebe o teto como inteiro de 32 bits e o cadastro não limita o valor em MB:
  * um tipo declarado com 2048 MB ou mais produziria um número acima do que o campo comporta, e
- * a recusa viria como 400 de desserialização, derrubando a gravação da árvore inteira por
+ * a recusa viria como 400 de desserialização, derrubando a gravação da estrutura de regras inteira por
  * causa de um documento. Acima do teto, o campo viaja ausente — "o cadastro não restringe o
  * tamanho" é mais verdadeiro que um número truncado.
  */
@@ -59,14 +59,18 @@ export function formatosDeclarados(formatosAceitos: string | null | undefined): 
   const naoExpressos: string[] = [];
 
   for (const bruto of (formatosAceitos ?? '').split(/[,;/]/)) {
-    const limpo = bruto.trim();
-    if (limpo === '') continue;
-    const token = FORMATO_DO_WIRE.get(limpo.toUpperCase());
-    if (token === undefined) naoExpressos.push(limpo);
-    else if (!tokens.includes(token)) tokens.push(token);
+    registrarFormato(bruto, tokens, naoExpressos);
   }
 
   return { tokens, naoExpressos };
+}
+
+function registrarFormato(bruto: string, tokens: string[], naoExpressos: string[]): void {
+  const limpo = bruto.trim();
+  if (limpo === '') return;
+  const token = FORMATO_DO_WIRE.get(limpo.toUpperCase());
+  if (token === undefined) naoExpressos.push(limpo);
+  else if (!tokens.includes(token)) tokens.push(token);
 }
 
 /** Os formatos e o teto que a exigência herda da restrição do cadastro do tipo de documento. */

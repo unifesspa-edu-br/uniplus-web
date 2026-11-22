@@ -1,10 +1,16 @@
+import { FormaDeComprovacaoCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import type { ModeloDaExigenciaDto } from '@uniplus/shared-data/selecao';
 
 import type { ExigenciasDoRascunho } from '../../processo-seletivo.models';
-import { exigenciasDaFase, exigenciasDaRaiz } from './consulta-das-exigencias';
-import { comExigenciaNaRaiz, exigenciaNova, folhaDe, semAFase } from './exigencias-documentais';
+import { exigenciasDaFase, exigenciasSemGrupo } from './consulta-das-exigencias';
+import {
+  comExigenciaSemGrupo,
+  exigenciaNova,
+  regraDeDocumento,
+  semAFase,
+} from './exigencias-documentais';
 import { exigenciasDe } from './leitura-das-exigencias';
 import {
   ID_HABILITACAO,
@@ -12,12 +18,12 @@ import {
   ID_RG,
   detalheDaApi,
   exigenciaDaApi,
-  noDoRascunho,
+  regraDoRascunho,
 } from './exigencias.testing';
 
 describe('Alcance da exigência de documento entre fases', () => {
   /**
-   * "Vale em todas as fases" não trafega — o contrato recebe as folhas já materializadas. Sem
+   * "Vale em todas as fases" não trafega — o contrato recebe as regras de documento já materializadas. Sem
    * reler a intenção, reabrir o processo a rebaixava a uma escolha fase a fase, e a fase criada
    * depois disso ficava sem o documento, sem nada na tela denunciando a ausência.
    */
@@ -70,13 +76,13 @@ describe('Alcance da exigência de documento entre fases', () => {
   });
 
   /**
-   * A repetição é da folha: "um por membro" numa fase e "um por candidato" noutra são declarações
+   * A repetição é da regra de documento: "um por membro" numa fase e "um por candidato" noutra são declarações
    * diferentes, e lidas como alcance global a gravação seguinte igualaria as duas sem ninguém pedir.
    */
   it('não infere alcance global quando só uma fase repete o documento por um grupo', () => {
     const lido = exigenciasDe(
       detalheDaApi([
-        { ...exigenciaDaApi({ faseId: ID_ISENCAO }), repetePorEntidade: 'FAMILIA' },
+        { ...exigenciaDaApi({ faseId: ID_ISENCAO }), grupoDoFormularioParaRepeticao: 'FAMILIA' },
         exigenciaDaApi({ faseId: ID_HABILITACAO }),
       ]),
     );
@@ -95,46 +101,49 @@ describe('Alcance da exigência de documento entre fases', () => {
         exigenciaDaApi({ faseId: ID_ISENCAO }),
         {
           id: 'grupo-1',
-          tipo: 'OU',
+          forma: {
+            codigo: FormaDeComprovacaoCodigo.QUANTIDADE_MINIMA_DE_ITENS,
+            rotulo: 'Quantidade mínima',
+          },
           cardinalidade: { quantidadeMinima: 1, distincao: null },
           indeferimento: { consequencia: null, basesLegais: [] },
-          repetePorEntidade: null,
+          grupoDoFormularioParaRepeticao: null,
           documento: null,
-          filhos: [exigenciaDaApi({ faseId: ID_HABILITACAO })],
+          itens: [exigenciaDaApi({ faseId: ID_HABILITACAO })],
         },
       ]),
     );
 
-    // A folha do grupo foi lida — a árvore está inteira —, mas não conta como declaração.
+    // A regra de documento do grupo foi lida — a estrutura de regras está inteira —, mas não conta como declaração.
     expect(exigenciasDaFase(lido, 'HABILITACAO')).toHaveLength(1);
     expect(lido.emTodasAsFases).toEqual([]);
   });
 
   /**
    * A marca de alcance global precisa de um modelo de onde copiar. Removida a última fase que
-   * tinha a declaração de raiz, ela fica órfã: a tela segue anunciando o documento como
+   * tinha a declaração de regra principal, ela fica órfã: a tela segue anunciando o documento como
    * exigido, a materialização não tem de onde copiá-lo, e a gravação sai sem ele — sem nada
    * dizendo que a exigência deixou de existir.
    */
   it('a marca de todas as fases cai com a última declaração que lhe servia de modelo', () => {
     const global: ExigenciasDoRascunho = {
       emTodasAsFases: [ID_RG],
-      raizes: [folhaDe(exigenciaNova(ID_RG, 'HABILITACAO'))],
+      regrasDeComprovacao: [regraDeDocumento(exigenciaNova(ID_RG, 'HABILITACAO'))],
     };
 
     const semHabilitacao = semAFase(global, 'HABILITACAO');
 
-    expect(semHabilitacao.raizes).toEqual([]);
+    expect(semHabilitacao.regrasDeComprovacao).toEqual([]);
     expect(semHabilitacao.emTodasAsFases).toEqual([]);
   });
 
-  /** Havendo outra declaração de raiz, a marca continua: ainda há de onde copiar. */
-  it('a marca de todas as fases sobrevive enquanto resta uma declaração de raiz', () => {
+  /** Havendo outra declaração de regra principal, a marca continua: ainda há de onde copiar. */
+  it('a marca de todas as fases sobrevive enquanto resta uma declaração de regra principal', () => {
     const global: ExigenciasDoRascunho = {
       emTodasAsFases: [ID_RG],
-      raizes: [
-        folhaDe(exigenciaNova(ID_RG, 'HABILITACAO')),
-        folhaDe(exigenciaNova(ID_RG, 'ISENCAO')),
+      regrasDeComprovacao: [
+        regraDeDocumento(exigenciaNova(ID_RG, 'HABILITACAO')),
+        regraDeDocumento(exigenciaNova(ID_RG, 'ISENCAO')),
       ],
     };
 
@@ -142,31 +151,32 @@ describe('Alcance da exigência de documento entre fases', () => {
   });
 
   /**
-   * O acréscimo em raiz não pode passar pela substituição que percorre a árvore: ela troca a
-   * PRIMEIRA folha que casa por (documento, fase), e essa primeira pode ser a alternativa
-   * dentro de um grupo OU. Sobrescrevê-la transformaria "este documento serve" em "este
-   * documento é exigido" — e a raiz continuaria sem a declaração prometida.
+   * O acréscimo em regra principal não pode passar pela substituição que percorre a estrutura de regras: ela troca a
+   * PRIMEIRA regra de documento que casa por (documento, fase), e essa primeira pode ser a alternativa
+   * dentro de um grupo de alternativas. Sobrescrevê-la transformaria "este documento serve" em "este
+   * documento é exigido" — e a regra principal continuaria sem a declaração prometida.
    */
-  it('acrescenta na raiz sem tocar na alternativa homônima do grupo', () => {
+  it('acrescenta na regra principal sem tocar na alternativa homônima do grupo', () => {
     const comGrupo: ExigenciasDoRascunho = {
       emTodasAsFases: [],
-      raizes: [
-        noDoRascunho({
-          tipo: 'OU',
+      regrasDeComprovacao: [
+        regraDoRascunho({
+          forma: 'QUANTIDADE_MINIMA_DE_ITENS',
           quantidadeMinima: 1,
-          filhos: [folhaDe(exigenciaNova(ID_RG, 'HABILITACAO'))],
+          itens: [regraDeDocumento(exigenciaNova(ID_RG, 'HABILITACAO'))],
         }),
       ],
     };
 
-    const comRaiz = comExigenciaNaRaiz(comGrupo, exigenciaNova(ID_RG, 'HABILITACAO'));
+    const comRegraPrincipal = comExigenciaSemGrupo(comGrupo, exigenciaNova(ID_RG, 'HABILITACAO'));
 
-    expect(comRaiz.raizes, 'o grupo continua, e a declaração de raiz nasce ao lado').toHaveLength(
-      2,
-    );
-    expect(comRaiz.raizes[0].tipo).toBe('OU');
-    expect(comRaiz.raizes[0].filhos).toHaveLength(1);
-    expect(exigenciasDaRaiz(comRaiz).map((e) => e.tipoDocumentoId)).toEqual([ID_RG]);
+    expect(
+      comRegraPrincipal.regrasDeComprovacao,
+      'o grupo continua, e a declaração sem grupo nasce ao lado',
+    ).toHaveLength(2);
+    expect(comRegraPrincipal.regrasDeComprovacao[0].forma).toBe('QUANTIDADE_MINIMA_DE_ITENS');
+    expect(comRegraPrincipal.regrasDeComprovacao[0].itens).toHaveLength(1);
+    expect(exigenciasSemGrupo(comRegraPrincipal).map((e) => e.tipoDocumentoId)).toEqual([ID_RG]);
   });
 
   /** Presente em uma fase só, entre duas, é escolha explícita — e continua sendo. */

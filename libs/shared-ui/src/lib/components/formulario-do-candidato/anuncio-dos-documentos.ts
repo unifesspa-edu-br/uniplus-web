@@ -1,5 +1,5 @@
-import type { DocumentoNaTela, NoDeDocumentos } from './arvore-de-documentos';
-import { ehEscolha, textoDaUnidade } from './textos-da-arvore-de-documentos';
+import type { DocumentoNaTela, ItemDeComprovacao } from './regras-de-documentos';
+import { ehEscolha, textoDaUnidade } from './textos-das-regras-de-documentos';
 
 /**
  * O que dizer quando os documentos exigidos mudam, uma frase por unidade: cada documento fora de
@@ -12,8 +12,8 @@ import { ehEscolha, textoDaUnidade } from './textos-da-arvore-de-documentos';
  * @param integrantesNoFormulario As ocorrências que os grupos do formulário têm agora.
  */
 export function anunciarMudancaDosDocumentos(
-  anteriores: readonly NoDeDocumentos[] | null,
-  atuais: readonly NoDeDocumentos[] | null,
+  anteriores: readonly ItemDeComprovacao[] | null,
+  atuais: readonly ItemDeComprovacao[] | null,
   integrantesNoFormulario: ReadonlySet<string>,
 ): string {
   if (anteriores === null || atuais === null) return '';
@@ -48,14 +48,15 @@ function frasesDoQueSaiu(
 ): string[] {
   const frases: string[] = [];
   for (const [id, anterior] of antes) {
-    const integranteRemovido =
-      anterior.integrantes.length > 0 &&
-      anterior.integrantes.every((o) => !integrantesNoFormulario.has(o));
-    if (!depois.has(id) && !integranteRemovido) {
+    if (!depois.has(id) && !integranteFoiRemovido(anterior, integrantesNoFormulario)) {
       frases.push(`Deixou de ser exigido: ${anterior.texto}.`);
     }
   }
   return frases;
+}
+
+function integranteFoiRemovido(unidade: Unidade, integrantes: ReadonlySet<string>): boolean {
+  return unidade.integrantes.length > 0 && unidade.integrantes.every((id) => !integrantes.has(id));
 }
 
 /**
@@ -71,41 +72,46 @@ interface Unidade {
   readonly integrantes: readonly string[];
 }
 
-function unidades(no: NoDeDocumentos): readonly Unidade[] {
-  if (no.tipo === 'DOCUMENTO') {
-    return no.documento.exigidas.map((e) => ({
-      id: e.chave,
-      escolha: false,
-      texto: e.texto,
-      conteudo: e.chave,
-      integrantes: integrantesDe([e.chave]),
-    }));
-  }
-  if (!ehEscolha(no)) return no.itens.flatMap(unidades);
-  if (!algoPedido(no)) return [];
-  return [
-    {
-      id: no.chave,
-      escolha: true,
-      texto: textoDaUnidade(no).texto,
-      conteudo: conteudoDe(no),
-      integrantes: integrantesDe(chavesDe(no)),
-    },
-  ];
+function unidades(elemento: ItemDeComprovacao): readonly Unidade[] {
+  if (elemento.forma === 'DOCUMENTO') return unidadesDoDocumento(elemento.documento);
+  if (!ehEscolha(elemento)) return elemento.itens.flatMap(unidades);
+  return algoPedido(elemento) ? [unidadeDaEscolha(elemento)] : [];
 }
 
-/** A estrutura do nó com as exigências de cada folha — as do item juntado, uma por integrante. */
-function conteudoDe(no: NoDeDocumentos): string {
-  if (no.tipo === 'DOCUMENTO') return chavesDaFolha(no.documento).join('+');
-  return `${no.tipo}${no.minimo}(${no.itens.map(conteudoDe).join(',')})`;
+function unidadesDoDocumento(documento: DocumentoNaTela): readonly Unidade[] {
+  return documento.exigidas.map((exigencia) => ({
+    id: exigencia.chave,
+    escolha: false,
+    texto: exigencia.texto,
+    conteudo: exigencia.chave,
+    integrantes: integrantesDe([exigencia.chave]),
+  }));
 }
 
-function chavesDe(no: NoDeDocumentos): readonly string[] {
-  return no.tipo === 'DOCUMENTO' ? chavesDaFolha(no.documento) : no.itens.flatMap(chavesDe);
+function unidadeDaEscolha(elemento: Exclude<ItemDeComprovacao, { forma: 'DOCUMENTO' }>): Unidade {
+  return {
+    id: elemento.chave,
+    escolha: true,
+    texto: textoDaUnidade(elemento).texto,
+    conteudo: conteudoDe(elemento),
+    integrantes: integrantesDe(chavesDe(elemento)),
+  };
 }
 
-/** As chaves `exigência:ocorrência` da folha: as do item juntado, ou a dela. */
-function chavesDaFolha(documento: DocumentoNaTela): readonly string[] {
+/** A estrutura da regra com as exigências de cada regra de documento — as do item juntado, uma por integrante. */
+function conteudoDe(elemento: ItemDeComprovacao): string {
+  if (elemento.forma === 'DOCUMENTO') return chavesDoDocumento(elemento.documento).join('+');
+  return `${elemento.forma}${elemento.minimo}(${elemento.itens.map(conteudoDe).join(',')})`;
+}
+
+function chavesDe(elemento: ItemDeComprovacao): readonly string[] {
+  return elemento.forma === 'DOCUMENTO'
+    ? chavesDoDocumento(elemento.documento)
+    : elemento.itens.flatMap(chavesDe);
+}
+
+/** As chaves `exigência:ocorrência` da regra de documento: as do item juntado, ou a dela. */
+function chavesDoDocumento(documento: DocumentoNaTela): readonly string[] {
   return documento.juntado ? documento.exigidas.map((e) => e.chave) : [documento.chave];
 }
 
@@ -114,6 +120,8 @@ function integrantesDe(chaves: readonly string[]): readonly string[] {
   return [...new Set(chaves.map((c) => c.slice(c.indexOf(':') + 1)).filter((o) => o !== ''))];
 }
 
-function algoPedido(no: NoDeDocumentos): boolean {
-  return no.tipo === 'DOCUMENTO' ? no.documento.exigido : no.itens.some(algoPedido);
+function algoPedido(elemento: ItemDeComprovacao): boolean {
+  return elemento.forma === 'DOCUMENTO'
+    ? elemento.documento.exigido
+    : elemento.itens.some(algoPedido);
 }

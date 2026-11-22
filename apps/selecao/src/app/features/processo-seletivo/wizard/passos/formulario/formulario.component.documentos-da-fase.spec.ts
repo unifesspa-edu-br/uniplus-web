@@ -66,7 +66,10 @@ describe('FormularioPassoComponent: documentos da fase', () => {
       };
       store.patchSection(
         'documentos',
-        comExigencia(comExigencia({ raizes: [], emTodasAsFases: [] }, laudo), certidaoDeOutraFase),
+        comExigencia(
+          comExigencia({ regrasDeComprovacao: [], emTodasAsFases: [] }, laudo),
+          certidaoDeOutraFase,
+        ),
       );
 
       emConsulta();
@@ -90,7 +93,10 @@ describe('FormularioPassoComponent: documentos da fase', () => {
       store.patchSection('cronograma', { ...store.draft().cronograma, fases: [dividida] });
       store.patchSection(
         'documentos',
-        comExigencia({ raizes: [], emTodasAsFases: [] }, exigenciaNova(TIPO_LAUDO, 'INSCRICAO')),
+        comExigencia(
+          { regrasDeComprovacao: [], emTodasAsFases: [] },
+          exigenciaNova(TIPO_LAUDO, 'INSCRICAO'),
+        ),
       );
 
       emConsulta();
@@ -112,7 +118,7 @@ describe('FormularioPassoComponent: documentos da fase', () => {
       });
       store.patchSection('documentos', {
         ...comExigencia(
-          { raizes: [], emTodasAsFases: [] },
+          { regrasDeComprovacao: [], emTodasAsFases: [] },
           { ...exigenciaNova(TIPO_LAUDO, 'ANTES'), tipoDocumentoNome: 'Laudo médico' },
         ),
         emTodasAsFases: [TIPO_LAUDO],

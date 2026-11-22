@@ -12,7 +12,7 @@ describe('baseLegalNova', () => {
     expect(baseLegalNova()).toEqual({
       referencia: '',
       abrangencia: 'INTERNA_EDITAL',
-      status: 'RESOLVIDO',
+      situacao: 'RESOLVIDO',
       observacao: null,
     });
   });
@@ -23,13 +23,13 @@ describe('baseLegalNova', () => {
 });
 
 describe('temNormaResolvida', () => {
-  const norma = (referencia: string, status: string) => ({
+  const norma = (referencia: string, situacao: string) => ({
     ...baseLegalNova(),
     referencia,
-    status,
+    situacao,
   });
 
-  it('pede referência declarada e status resolvido', () => {
+  it('pede referência declarada e situacao resolvido', () => {
     expect(temNormaResolvida([])).toBe(false);
     expect(temNormaResolvida([norma('   ', 'RESOLVIDO')])).toBe(false);
     expect(temNormaResolvida([norma('Lei 12.711/2012', 'PENDENTE')])).toBe(false);
@@ -49,13 +49,13 @@ describe('envio da norma', () => {
       baseLegalParaEnvio({
         referencia: '  Lei 12.711/2012  ',
         abrangencia: 'FEDERAL',
-        status: 'PENDENTE',
+        situacao: 'PENDENTE',
         observacao: '   ',
       }),
     ).toEqual({
       referencia: 'Lei 12.711/2012',
       abrangencia: 'FEDERAL',
-      status: 'PENDENTE',
+      situacao: 'PENDENTE',
       observacao: null,
     });
     expect(baseLegalParaEnvio({ ...baseLegalNova(), observacao: ' cotas ' }).observacao).toBe(

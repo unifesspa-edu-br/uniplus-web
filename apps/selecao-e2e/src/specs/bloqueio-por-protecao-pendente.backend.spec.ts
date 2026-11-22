@@ -5,7 +5,10 @@ import {
   entrarComoPersona,
   prepararAcessosDaSimulacao,
 } from '@uniplus/shared-e2e';
-import type { NoExigenciaInput } from '@uniplus/shared-data/selecao';
+import type {
+  FormaDeComprovacaoCodigo,
+  RegraDeComprovacaoInformada,
+} from '@uniplus/shared-data/selecao';
 import { rascunhoParaConfiguracao } from '../fixtures/cenario-da-projecao';
 
 /**
@@ -18,10 +21,13 @@ const BASES_LEGAIS = [
   {
     referencia: 'Edital nº XX/2026-CEPS/Unifesspa, itens 1.6 e 13',
     abrangencia: 'INTERNA_EDITAL',
-    status: 'RESOLVIDO',
+    situacao: 'RESOLVIDO',
     observacao: null,
   },
 ];
+type RegraNoTransporte = Omit<RegraDeComprovacaoInformada, 'forma'> & {
+  forma: `${FormaDeComprovacaoCodigo}`;
+};
 
 test.describe('Configuração do processo com item de catálogo pendente', () => {
   const sufixo = Date.now();
@@ -62,7 +68,7 @@ test.describe('Configuração do processo com item de catálogo pendente', () =>
       {
         corpo: [
           {
-            tipo: 'FOLHA',
+            forma: 'DOCUMENTO',
             documento: {
               tipoDocumento: { id: tipoId },
               momento: { faseId, etapaId: null, finalidade: 'HABILITACAO' },
@@ -81,8 +87,8 @@ test.describe('Configuração do processo com item de catálogo pendente', () =>
             },
             cardinalidade: null,
             indeferimento: null,
-            filhos: null,
-          } satisfies NoExigenciaInput,
+            itens: null,
+          } satisfies RegraNoTransporte,
         ],
       },
     );

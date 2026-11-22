@@ -104,11 +104,11 @@ export function agrupadosPorFormulario<T>(
 }
 
 /**
- * Declara o formulário da exigência de (documento, fase), e de toda a árvore de raiz que a contém.
+ * Declara o formulário da exigência de (documento, fase), e de toda a regra principal que a contém.
  *
  * As alternativas de um grupo se satisfazem num bloco de comprovação só, e o servidor recusa o
- * grupo com documentos de formulários diferentes: o formulário é da raiz, e os filhos o herdam.
- * Trocá-lo só na folha editada deixaria o grupo dividido entre dois formulários.
+ * grupo com documentos de formulários diferentes: o formulário é da regra principal, e os itens o herdam.
+ * Trocá-lo só na regra de documento editada deixaria o grupo dividido entre dois formulários.
  */
 export function comFinalidade(
   exigencias: ExigenciasDoRascunho,
@@ -116,23 +116,38 @@ export function comFinalidade(
   faseCodigo: string,
   finalidade: string | null,
 ): ExigenciasDoRascunho {
-  // A mesma declaração que `comExigencia` edita: a primeira que casa, na ordem da árvore.
-  const posicao = exigencias.raizes.findIndex((raiz) =>
-    documentosDe([raiz]).some(
-      (documento) =>
-        documento.tipoDocumentoId === tipoDocumentoId && documento.faseCodigo === faseCodigo,
-    ),
-  );
+  const posicao = posicaoDaExigencia(exigencias, tipoDocumentoId, faseCodigo);
   if (posicao === -1) return exigencias;
 
   return {
     ...exigencias,
-    raizes: exigencias.raizes.flatMap((raiz, indice) =>
-      indice === posicao
-        ? transformar([raiz], (documento) => ({ ...documento, finalidade }))
-        : [raiz],
-    ),
+    regrasDeComprovacao: regrasComFinalidade(exigencias.regrasDeComprovacao, posicao, finalidade),
   };
+}
+
+function regrasComFinalidade(
+  regras: ExigenciasDoRascunho['regrasDeComprovacao'],
+  posicao: number,
+  finalidade: string | null,
+): ExigenciasDoRascunho['regrasDeComprovacao'] {
+  return regras.flatMap((regra, indice) =>
+    indice === posicao
+      ? transformar([regra], (documento) => ({ ...documento, finalidade }))
+      : [regra],
+  );
+}
+
+function posicaoDaExigencia(
+  exigencias: ExigenciasDoRascunho,
+  tipoDocumentoId: string,
+  faseCodigo: string,
+): number {
+  return exigencias.regrasDeComprovacao.findIndex((regra) =>
+    documentosDe([regra]).some(
+      (documento) =>
+        documento.tipoDocumentoId === tipoDocumentoId && documento.faseCodigo === faseCodigo,
+    ),
+  );
 }
 
 /** A opção que deixa o documento fora de formulário, na fase que não responde nenhum. */

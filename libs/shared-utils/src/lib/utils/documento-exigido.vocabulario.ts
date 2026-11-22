@@ -5,7 +5,7 @@
 
 /** Alcance da norma que sustenta a exigência, como a tela o nomeia. */
 export const ABRANGENCIA_PADRAO = 'INTERNA_EDITAL';
-export const STATUS_BASE_LEGAL_RESOLVIDO = 'RESOLVIDO';
+export const SITUACAO_BASE_LEGAL_RESOLVIDO = 'RESOLVIDO';
 
 export const ABRANGENCIAS_ESCOLHIVEIS = [
   { valor: 'FEDERAL', rotulo: 'Lei federal' },
@@ -16,8 +16,8 @@ export const ABRANGENCIAS_ESCOLHIVEIS = [
 ] as const;
 
 /** Se a norma já foi identificada ou se a identificação segue pendente. */
-export const STATUS_BASE_LEGAL_ESCOLHIVEIS = [
-  { valor: STATUS_BASE_LEGAL_RESOLVIDO, rotulo: 'Resolvida' },
+export const SITUACAO_BASE_LEGAL_ESCOLHIVEIS = [
+  { valor: SITUACAO_BASE_LEGAL_RESOLVIDO, rotulo: 'Resolvida' },
   { valor: 'PENDENTE', rotulo: 'Pendente' },
 ] as const;
 

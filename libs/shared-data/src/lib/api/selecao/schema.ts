@@ -7328,9 +7328,9 @@ export interface paths {
             };
             readonly requestBody: {
                 readonly content: {
-                    readonly "application/json": readonly components["schemas"]["NoExigenciaInput"][];
-                    readonly "text/json": readonly components["schemas"]["NoExigenciaInput"][];
-                    readonly "application/*+json": readonly components["schemas"]["NoExigenciaInput"][];
+                    readonly "application/json": readonly components["schemas"]["RegraDeComprovacaoInformada"][];
+                    readonly "text/json": readonly components["schemas"]["RegraDeComprovacaoInformada"][];
+                    readonly "application/*+json": readonly components["schemas"]["RegraDeComprovacaoInformada"][];
                 };
             };
             readonly responses: {
@@ -9472,6 +9472,50 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/selecao/vocabularios/formas-comprovacao": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.forma-de-comprovacao.v1+json": readonly components["schemas"]["FormaDeComprovacao"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -9797,13 +9841,13 @@ export interface components {
             readonly id: string;
             readonly referencia: string;
             readonly abrangencia: string;
-            readonly status: string;
+            readonly situacao: string;
             readonly observacao: null | string;
         };
         readonly BaseLegalInput: {
             readonly referencia: string;
             readonly abrangencia: string;
-            readonly status: string;
+            readonly situacao: string;
             readonly observacao: null | string;
         };
         readonly CampoDivulgacaoDto: {
@@ -10298,13 +10342,13 @@ export interface components {
             readonly modalidadeDestinoCodigo: null | string;
         };
         readonly DistincaoDasApresentacoesDto: {
-            readonly chave: null | string;
+            readonly criterioDeDistincao: null | string;
             /** Format: date */
             readonly dataReferencia: null | string;
             readonly ocorrenciasEsperadas: null | readonly string[];
         };
         readonly DistincaoDasApresentacoesInput: {
-            readonly chave: null | string;
+            readonly criterioDeDistincao: null | string;
             /** Format: date */
             readonly dataReferencia: null | string;
             readonly ocorrenciasEsperadas: null | readonly string[];
@@ -10426,7 +10470,7 @@ export interface components {
             }[];
             /**
              * Documentos exigidos
-             * @description As exigências de documentos do processo e a árvore de satisfação delas. Lista vazia ou ausente é válida: há processos sem comprovação documental.
+             * @description As exigências de documentos do processo e as regras de comprovação delas. Lista vazia ou ausente é válida: há processos sem comprovação documental.
              */
             readonly documentosExigidos?: components["schemas"]["DocumentoDaConfiguracaoExigencias"];
             /**
@@ -10459,71 +10503,6 @@ export interface components {
              * @description Motivos do catálogo que o processo escolheu para as decisões das fases e das etapas. Cada motivo se identifica pelo lugar, a fase ou a etapa pela chave, e pelo tipo e pelo código.
              */
             readonly motivos?: readonly components["schemas"]["DocumentoDaConfiguracaoMotivo"][];
-        };
-        /**
-         * Nó da árvore de satisfação
-         * @description Um nó da árvore que diz quais documentos satisfazem a exigência do candidato: a folha aponta uma exigência; E e OU combinam os filhos.
-         */
-        readonly DocumentoDaConfiguracaoArvoreDeSatisfacao: {
-            /**
-             * Ordem
-             * @description Posição do nó entre os irmãos.
-             */
-            readonly ordem?: number;
-            /**
-             * Tipo do nó
-             * @description FOLHA cita uma exigência; E exige todos os filhos; OU exige algum deles.
-             * @enum {unknown}
-             */
-            readonly tipo: DocumentoDaConfiguracaoArvoreDeSatisfacaoTipo;
-            /**
-             * Exigência da folha
-             * @description Chave local da exigência que a folha cita. Só existe no nó FOLHA.
-             */
-            readonly exigenciaChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
-            /**
-             * Quantidade mínima
-             * @description Quantas ocorrências do documento satisfazem a folha (até 366), ou quantos filhos o nó OU precisa.
-             */
-            readonly quantidadeMinima?: number;
-            /**
-             * Consequência
-             * @description Consequência da insatisfação do nó.
-             * @enum {unknown}
-             */
-            readonly consequencia?: DocumentoDaConfiguracaoArvoreDeSatisfacaoConsequencia;
-            /**
-             * Bases legais
-             * @description Embasamento normativo do nó.
-             */
-            readonly basesLegais?: readonly components["schemas"]["DocumentoDaConfiguracaoPredicadoBaseLegal"][];
-            /**
-             * Chave de distinção
-             * @description O que torna duas ocorrências do mesmo documento distintas.
-             * @enum {unknown}
-             */
-            readonly chaveDistincao?: DocumentoDaConfiguracaoArvoreDeSatisfacaoChaveDistincao;
-            /**
-             * Data de referência
-             * Format: date
-             * @description Data de referência: a competência ou o exercício dela é o último a comprovar, contando-se para trás.
-             */
-            readonly dataReferencia?: string;
-            /**
-             * Ocorrências esperadas
-             * @description Rótulos das ocorrências esperadas, quando a chave de distinção é a ocorrência.
-             */
-            readonly ocorrenciasEsperadas?: readonly string[];
-            /**
-             * Repete por entidade
-             * @description Código do grupo de entidades do formulário (por exemplo, os integrantes da família) para cada uma das quais o nó se repete. Ausente quando o nó não se repete.
-             */
-            readonly repetePorEntidade?: string;
-            /**
-             * Filhos
-             * @description Nós filhos, nos nós E e OU.
-             */
-            readonly filhos?: readonly components["schemas"]["DocumentoDaConfiguracaoArvoreDeSatisfacao"][];
         };
         /**
          * Atendimento especializado
@@ -11616,7 +11595,7 @@ export interface components {
         } & components["schemas"]["DocumentoDaConfiguracaoComunsPropriedadesDoRecurso"];
         /**
          * Documentos exigidos
-         * @description As exigências de documentos do processo e a árvore que combina os documentos que satisfazem a exigência do candidato.
+         * @description As exigências de documentos do processo e as regras para comprová-las.
          */
         readonly DocumentoDaConfiguracaoExigencias: {
             /**
@@ -11625,10 +11604,10 @@ export interface components {
              */
             readonly exigencias?: readonly components["schemas"]["DocumentoDaConfiguracaoExigenciasExigencia"][];
             /**
-             * Árvore de satisfação
-             * @description Raízes da árvore de satisfação das exigências.
+             * Regras de comprovação
+             * @description Regras de comprovação que não estão contidas em um grupo.
              */
-            readonly arvoreDeSatisfacao?: readonly components["schemas"]["DocumentoDaConfiguracaoArvoreDeSatisfacao"][];
+            readonly regrasDeComprovacao?: readonly components["schemas"]["DocumentoDaConfiguracaoRegrasDeComprovacao"][];
         };
         /**
          * Exigência de documento
@@ -11637,7 +11616,7 @@ export interface components {
         readonly DocumentoDaConfiguracaoExigenciasExigencia: {
             /**
              * Chave da exigência
-             * @description Chave local da exigência, única no documento. A árvore de satisfação a cita por ela. É obrigatória: é escolhida por quem cria a exigência, o sistema não a atribui, e ela não muda ao renomear nem ao reordenar.
+             * @description Chave local da exigência, única no documento. As regras de comprovação a utilizam. É obrigatória: é escolhida por quem cria a exigência, o sistema não a atribui, e ela não muda ao renomear nem ao reordenar.
              */
             readonly chave: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
             /**
@@ -12382,7 +12361,7 @@ export interface components {
              * @description Se a referência foi resolvida ou ainda está pendente.
              * @enum {unknown}
              */
-            readonly status?: DocumentoDaConfiguracaoPredicadoBaseLegalStatus;
+            readonly situacao?: DocumentoDaConfiguracaoPredicadoBaseLegalSituacao;
             /**
              * Observação
              * @description Nota livre sobre a base legal.
@@ -12464,6 +12443,66 @@ export interface components {
              * @description Sigla da unidade federativa do município.
              */
             readonly uf: string;
+        };
+        /**
+         * Regra de comprovação
+         * @description Regra que define como uma exigência documental é comprovada.
+         */
+        readonly DocumentoDaConfiguracaoRegrasDeComprovacao: {
+            /**
+             * Forma de comprovação
+             * @description A regra exige um documento, todos os itens ou uma quantidade mínima de itens.
+             * @enum {unknown}
+             */
+            readonly forma: DocumentoDaConfiguracaoRegrasDeComprovacaoForma;
+            /**
+             * Exigência documental
+             * @description Chave local da exigência citada pela regra de documento.
+             */
+            readonly exigenciaChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Quantidade mínima
+             * @description Na regra de documento, quantidade de apresentações exigidas, até 366; no grupo, quantidade mínima de itens cumpridos.
+             */
+            readonly quantidadeMinima?: number;
+            /**
+             * Consequência
+             * @description Consequência quando a regra não é cumprida.
+             * @enum {unknown}
+             */
+            readonly consequencia?: DocumentoDaConfiguracaoRegrasDeComprovacaoConsequencia;
+            /**
+             * Bases legais
+             * @description Base legal da regra de comprovação.
+             */
+            readonly basesLegais?: readonly components["schemas"]["DocumentoDaConfiguracaoPredicadoBaseLegal"][];
+            /**
+             * Critério de distinção
+             * @description Critério que distingue apresentações do mesmo documento.
+             * @enum {unknown}
+             */
+            readonly criterioDeDistincao?: DocumentoDaConfiguracaoRegrasDeComprovacaoCriterioDeDistincao;
+            /**
+             * Data de referência
+             * Format: date
+             * @description Data de referência: a competência ou o exercício dela é o último a comprovar, contando-se para trás.
+             */
+            readonly dataReferencia?: string;
+            /**
+             * Ocorrências esperadas
+             * @description Identificadores das ocorrências esperadas, quando o critério é ocorrência.
+             */
+            readonly ocorrenciasEsperadas?: readonly string[];
+            /**
+             * Grupo do formulário para repetição
+             * @description Código do grupo do formulário para cujos registros a regra é aplicada.
+             */
+            readonly grupoDoFormularioParaRepeticao?: string;
+            /**
+             * Itens
+             * @description Regras contidas no grupo de comprovação.
+             */
+            readonly itens?: readonly components["schemas"]["DocumentoDaConfiguracaoRegrasDeComprovacao"][];
         };
         /**
          * Restrição de valor
@@ -12581,8 +12620,8 @@ export interface components {
             readonly situacao: string;
             readonly grupoCodigo: null | string;
             readonly ocorrenciaId: null | string;
-            readonly grupos: readonly components["schemas"]["GrupoDaArvoreDto"][];
-            readonly repetePorEntidade: null | string;
+            readonly grupos: readonly components["schemas"]["GrupoDeComprovacaoDto"][];
+            readonly grupoDoFormularioParaRepeticao: null | string;
             readonly formatosAceitos: readonly string[];
             /** Format: int64 */
             readonly tamanhoMaximoBytes: number;
@@ -12651,7 +12690,7 @@ export interface components {
             /** Format: uuid */
             readonly etapaId: null | string;
             readonly situacao: string;
-            readonly entidadeId: null | string;
+            readonly ocorrenciaId: null | string;
             readonly alternativas: readonly components["schemas"]["AlternativasSimuladasDto"][];
         };
         readonly EditalPublicadoCertameDto: {
@@ -12896,6 +12935,17 @@ export interface components {
         };
         /** @enum {string} */
         readonly FinalidadeDoDocumento: FinalidadeDoDocumento;
+        readonly FormaDeComprovacao: {
+            readonly codigo: components["schemas"]["FormaDeComprovacaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `DOCUMENTO`: Documento
+         *     - `TODOS_OS_ITENS`: Todos estes itens
+         *     - `QUANTIDADE_MINIMA_DE_ITENS`: Pelo menos a quantidade indicada destes itens
+         * @enum {string}
+         */
+        readonly FormaDeComprovacaoCodigo: FormaDeComprovacaoCodigo;
         readonly FormatosAceitosCertameDto: {
             readonly qualquer: boolean;
             readonly lista: null | readonly string[];
@@ -13008,18 +13058,18 @@ export interface components {
             readonly subitens: readonly components["schemas"]["FatoColetadoInput"][];
             readonly etapaCodigo?: null | string;
         };
-        readonly GrupoDaArvoreDto: {
-            /** Format: uuid */
-            readonly grupoId: string;
-            readonly tipo: string;
-            /** Format: int32 */
-            readonly minimo: null | number;
-            readonly repetePorEntidade: null | string;
-        };
         readonly GrupoDaInscricaoDto: {
             readonly codigo: string;
             readonly rotulo: string;
             readonly ocorrencias: readonly components["schemas"]["OcorrenciaDaInscricaoDto"][];
+        };
+        readonly GrupoDeComprovacaoDto: {
+            /** Format: uuid */
+            readonly grupoId: string;
+            readonly forma: components["schemas"]["FormaDeComprovacao"];
+            /** Format: int32 */
+            readonly minimo: null | number;
+            readonly grupoDoFormularioParaRepeticao: null | string;
         };
         readonly GrupoDoComprovanteDto: {
             readonly codigo: string;
@@ -13540,24 +13590,6 @@ export interface components {
             /** Format: double */
             readonly fracao: number;
         };
-        readonly NoExigenciaDto: {
-            /** Format: uuid */
-            readonly id: string;
-            readonly tipo: string;
-            readonly documento: null | components["schemas"]["DocumentoExigidoDto"];
-            readonly cardinalidade: components["schemas"]["CardinalidadeQualificadaDto"];
-            readonly indeferimento: components["schemas"]["IndeferimentoDoGrupoDto"];
-            readonly filhos: readonly components["schemas"]["NoExigenciaDto"][];
-            readonly repetePorEntidade: null | string;
-        };
-        readonly NoExigenciaInput: {
-            readonly tipo: string;
-            readonly documento?: null | components["schemas"]["ItemDocumentoExigidoInput"];
-            readonly cardinalidade?: null | components["schemas"]["CardinalidadeQualificadaInput"];
-            readonly indeferimento?: null | components["schemas"]["IndeferimentoDoGrupoInput"];
-            readonly filhos?: null | readonly components["schemas"]["NoExigenciaInput"][];
-            readonly repetePorEntidade?: null | string;
-        };
         readonly NomeClassificadoDto: {
             readonly valor: string;
         };
@@ -13949,7 +13981,7 @@ export interface components {
             readonly classificacao: null | components["schemas"]["ConfiguracaoClassificacaoDto"];
             readonly cronogramaFases: readonly components["schemas"]["FaseCronogramaDto"][];
             readonly documentosExigidos: readonly components["schemas"]["DocumentoExigidoDto"][];
-            readonly raizesExigencia: readonly components["schemas"]["NoExigenciaDto"][];
+            readonly regrasDeComprovacao: readonly components["schemas"]["RegraDeComprovacaoDto"][];
             readonly referenciaTemporalFatos: null | components["schemas"]["ReferenciaTemporalFatosDto"];
             readonly regrasDerivacao: readonly components["schemas"]["ConfiguracaoDerivacaoDto"][];
             readonly formularios: readonly components["schemas"]["FormularioDto"][];
@@ -14197,6 +14229,24 @@ export interface components {
             readonly _links?: null | {
                 readonly [key: string]: string;
             };
+        };
+        readonly RegraDeComprovacaoDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly forma: components["schemas"]["FormaDeComprovacao"];
+            readonly documento: null | components["schemas"]["DocumentoExigidoDto"];
+            readonly cardinalidade: components["schemas"]["CardinalidadeQualificadaDto"];
+            readonly indeferimento: components["schemas"]["IndeferimentoDoGrupoDto"];
+            readonly itens: readonly components["schemas"]["RegraDeComprovacaoDto"][];
+            readonly grupoDoFormularioParaRepeticao: null | string;
+        };
+        readonly RegraDeComprovacaoInformada: {
+            readonly forma: null | components["schemas"]["FormaDeComprovacaoCodigo"];
+            readonly documento?: null | components["schemas"]["ItemDocumentoExigidoInput"];
+            readonly cardinalidade?: null | components["schemas"]["CardinalidadeQualificadaInput"];
+            readonly indeferimento?: null | components["schemas"]["IndeferimentoDoGrupoInput"];
+            readonly itens?: null | readonly components["schemas"]["RegraDeComprovacaoInformada"][];
+            readonly grupoDoFormularioParaRepeticao?: null | string;
         };
         readonly RegraDeDeliberacaoDto: {
             readonly modo: components["schemas"]["ModoDeDeliberacao"];
@@ -14746,22 +14796,6 @@ export enum DocumentoDaConfiguracaoOpcoesDeCursoNumero {
     Value1 = 1,
     Value2 = 2
 }
-export enum DocumentoDaConfiguracaoArvoreDeSatisfacaoTipo {
-    FOLHA = "FOLHA",
-    E = "E",
-    OU = "OU"
-}
-export enum DocumentoDaConfiguracaoArvoreDeSatisfacaoConsequencia {
-    ELIMINA = "ELIMINA",
-    RECLASSIFICA_AC = "RECLASSIFICA_AC",
-    REMOVE_VANTAGEM = "REMOVE_VANTAGEM",
-    PENDENCIA_REENVIO = "PENDENCIA_REENVIO"
-}
-export enum DocumentoDaConfiguracaoArvoreDeSatisfacaoChaveDistincao {
-    COMPETENCIA_MENSAL = "COMPETENCIA_MENSAL",
-    EXERCICIO_ANUAL = "EXERCICIO_ANUAL",
-    OCORRENCIA = "OCORRENCIA"
-}
 export enum DocumentoDaConfiguracaoBancasRegraDeDeliberacaoModo {
     colegiadaComVotacao = "colegiadaComVotacao",
     atoIndividual = "atoIndividual"
@@ -14918,7 +14952,7 @@ export enum DocumentoDaConfiguracaoPredicadoBaseLegalAbrangencia {
     INTERNA_NORMA = "INTERNA_NORMA",
     INTERNA_EDITAL = "INTERNA_EDITAL"
 }
-export enum DocumentoDaConfiguracaoPredicadoBaseLegalStatus {
+export enum DocumentoDaConfiguracaoPredicadoBaseLegalSituacao {
     PENDENTE = "PENDENTE",
     RESOLVIDO = "RESOLVIDO"
 }
@@ -14934,6 +14968,22 @@ export enum DocumentoDaConfiguracaoPredicadoObrigatoriedadeTipo {
     SEMPRE = "SEMPRE",
     NUNCA = "NUNCA",
     QUANDO = "QUANDO"
+}
+export enum DocumentoDaConfiguracaoRegrasDeComprovacaoForma {
+    DOCUMENTO = "DOCUMENTO",
+    TODOS_OS_ITENS = "TODOS_OS_ITENS",
+    QUANTIDADE_MINIMA_DE_ITENS = "QUANTIDADE_MINIMA_DE_ITENS"
+}
+export enum DocumentoDaConfiguracaoRegrasDeComprovacaoConsequencia {
+    ELIMINA = "ELIMINA",
+    RECLASSIFICA_AC = "RECLASSIFICA_AC",
+    REMOVE_VANTAGEM = "REMOVE_VANTAGEM",
+    PENDENCIA_REENVIO = "PENDENCIA_REENVIO"
+}
+export enum DocumentoDaConfiguracaoRegrasDeComprovacaoCriterioDeDistincao {
+    COMPETENCIA_MENSAL = "COMPETENCIA_MENSAL",
+    EXERCICIO_ANUAL = "EXERCICIO_ANUAL",
+    OCORRENCIA = "OCORRENCIA"
 }
 export enum DocumentoDaConfiguracaoRestricaoDeValorTipo {
     FAIXA_NUMERICA = "FAIXA_NUMERICA",
@@ -14959,6 +15009,11 @@ export enum FinalidadeDoDocumento {
     documentoDoEdital = "documentoDoEdital",
     anexoDoEdital = "anexoDoEdital",
     documentoDeAto = "documentoDeAto"
+}
+export enum FormaDeComprovacaoCodigo {
+    DOCUMENTO = "DOCUMENTO",
+    TODOS_OS_ITENS = "TODOS_OS_ITENS",
+    QUANTIDADE_MINIMA_DE_ITENS = "QUANTIDADE_MINIMA_DE_ITENS"
 }
 export enum GuardaDaVagaCodigo {
     ateOResultadoDefinitivo = "ateOResultadoDefinitivo",

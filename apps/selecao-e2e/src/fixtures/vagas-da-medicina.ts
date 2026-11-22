@@ -49,7 +49,7 @@ export const PROCESSO_DA_MEDICINA = {
   classificacao: null,
   cronogramaFases: [],
   documentosExigidos: [],
-  raizesExigencia: [],
+  regrasDeComprovacao: [],
   referenciaTemporalFatos: null,
   regrasDerivacao: DERIVACOES_DA_MEDICINA,
   formularios: [FORMULARIO_DAS_MODALIDADES_DA_MEDICINA],

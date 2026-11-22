@@ -7,7 +7,7 @@ import {
   baseLegalNova,
   comExigencia,
   exigenciaNova,
-  folhaDe,
+  regraDeDocumento,
 } from '../../shared/exigencias/exigencias-documentais';
 import { RevisaoPassoComponent } from './revisao.component';
 import {
@@ -49,7 +49,7 @@ describe('RevisaoPassoComponent', () => {
       store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE('INSCRICAO')] });
       store.patchSection(
         'documentos',
-        comExigencia({ raizes: [], emTodasAsFases: [] }, documento(true, true)),
+        comExigencia({ regrasDeComprovacao: [], emTodasAsFases: [] }, documento(true, true)),
       );
 
       const texto = await abrirRevisao();
@@ -64,7 +64,7 @@ describe('RevisaoPassoComponent', () => {
         fases: [FASE('INSCRICAO'), FASE('NOVA')],
       });
       store.patchSection('documentos', {
-        ...comExigencia({ raizes: [], emTodasAsFases: [] }, documento(true, true)),
+        ...comExigencia({ regrasDeComprovacao: [], emTodasAsFases: [] }, documento(true, true)),
         emTodasAsFases: ['01960000-0000-7000-0000-0000000000d1'],
       });
 
@@ -74,17 +74,17 @@ describe('RevisaoPassoComponent', () => {
     it('não diz que a fase dispensa base legal quando o grupo decisivo tem norma resolvida', async () => {
       store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE('INSCRICAO')] });
       const facultativo = (tipo: string) =>
-        folhaDe({ ...documento(false, true), tipoDocumentoId: tipo });
+        regraDeDocumento({ ...documento(false, true), tipoDocumentoId: tipo });
       store.patchSection('documentos', {
         emTodasAsFases: [],
-        raizes: [
+        regrasDeComprovacao: [
           {
-            ...folhaDe(documento(false, true)),
-            tipo: 'OU',
+            ...regraDeDocumento(documento(false, true)),
+            forma: 'QUANTIDADE_MINIMA_DE_ITENS',
             documento: null,
             consequencia: 'INDEFERIMENTO',
             basesLegais: [baseLegalNova()].map((base) => ({ ...base, referencia: 'Edital' })),
-            filhos: [facultativo('a'), facultativo('b')],
+            itens: [facultativo('a'), facultativo('b')],
           },
         ],
       });
@@ -98,17 +98,17 @@ describe('RevisaoPassoComponent', () => {
     it('acusa a fase cujo grupo de alternativas decide o resultado sem norma resolvida', async () => {
       store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE('INSCRICAO')] });
       const facultativo = (tipo: string) =>
-        folhaDe({ ...documento(false, true), tipoDocumentoId: tipo });
+        regraDeDocumento({ ...documento(false, true), tipoDocumentoId: tipo });
       store.patchSection('documentos', {
         emTodasAsFases: [],
-        raizes: [
+        regrasDeComprovacao: [
           {
-            ...folhaDe(documento(false, true)),
-            tipo: 'OU',
+            ...regraDeDocumento(documento(false, true)),
+            forma: 'QUANTIDADE_MINIMA_DE_ITENS',
             documento: null,
             consequencia: 'INDEFERIMENTO',
             basesLegais: [],
-            filhos: [facultativo('a'), facultativo('b')],
+            itens: [facultativo('a'), facultativo('b')],
           },
         ],
       });
@@ -120,7 +120,7 @@ describe('RevisaoPassoComponent', () => {
       store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE('INSCRICAO')] });
       store.patchSection(
         'documentos',
-        comExigencia({ raizes: [], emTodasAsFases: [] }, documento(true, false)),
+        comExigencia({ regrasDeComprovacao: [], emTodasAsFases: [] }, documento(true, false)),
       );
 
       expect(await abrirRevisao()).toContain('Base legal pendente em 1 exigência');

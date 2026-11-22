@@ -39,7 +39,7 @@ describe('regressões de origem e calendário', () => {
     const bases = [{ referencia: ' A ' }, { referencia: ' B ' }];
     expect(
       comBasesLegais({ basesLegais: bases }, [
-        { origem: 1, referencia: 'B', abrangencia: '', status: '', observacao: '' },
+        { origem: 1, referencia: 'B', abrangencia: '', situacao: '', observacao: '' },
       ]).basesLegais,
     ).toEqual([bases[1]]);
   });

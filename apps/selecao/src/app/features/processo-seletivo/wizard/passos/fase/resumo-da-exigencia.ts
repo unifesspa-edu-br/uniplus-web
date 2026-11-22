@@ -7,7 +7,7 @@ import {
   ABRANGENCIAS_ESCOLHIVEIS,
   CONSEQUENCIAS_ESCOLHIVEIS,
   FATO_MODALIDADE,
-  STATUS_BASE_LEGAL_ESCOLHIVEIS,
+  SITUACAO_BASE_LEGAL_ESCOLHIVEIS,
   temNormaResolvida,
 } from '../../shared/exigencias/exigencias-documentais';
 import { exigidoDeTodos, numerosDeClausula } from '../../shared/exigencias/recorte-por-modalidade';
@@ -212,8 +212,8 @@ export function descreverNorma(base: BaseLegalConfig): NormaDescrita {
     ABRANGENCIAS_ESCOLHIVEIS.find((opcao) => opcao.valor === base.abrangencia)?.rotulo ??
     base.abrangencia;
   const status =
-    STATUS_BASE_LEGAL_ESCOLHIVEIS.find((opcao) => opcao.valor === base.status)?.rotulo ??
-    base.status;
+    SITUACAO_BASE_LEGAL_ESCOLHIVEIS.find((opcao) => opcao.valor === base.situacao)?.rotulo ??
+    base.situacao;
 
   return {
     referencia: base.referencia.trim() !== '' ? base.referencia.trim() : 'Sem referência declarada',
@@ -237,7 +237,7 @@ export function normaComum(
   const mesma = (base: BaseLegalConfig) =>
     base.referencia.trim() === modelo.referencia.trim() &&
     base.abrangencia === modelo.abrangencia &&
-    base.status === modelo.status &&
+    base.situacao === modelo.situacao &&
     (base.observacao ?? '').trim() === (modelo.observacao ?? '').trim();
 
   return basesPorExigencia.every((bases) => bases.length === 1 && mesma(bases[0])) ? modelo : null;
@@ -246,7 +246,7 @@ export function normaComum(
 /** Como o documento compõe um grupo, curto o bastante para a coluna da entrega. */
 export function composicaoResumida(grupo: GrupoDaExigencia | null): string {
   if (grupo === null) return '';
-  if (grupo.tipo === 'E') return `Conjunto de ${grupo.alternativas} documentos`;
+  if (grupo.forma === 'TODOS_OS_ITENS') return `Conjunto de ${grupo.alternativas} documentos`;
 
   const minima = grupo.quantidadeMinima ?? 1;
   return minima === 1

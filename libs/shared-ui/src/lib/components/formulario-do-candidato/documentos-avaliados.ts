@@ -11,7 +11,7 @@ import type { PendenciaDaAvaliacao } from './modalidades-avaliadas';
 export const PENDENTE = 'PENDENTE';
 /** As respostas dadas já pedem o documento e os arquivos enviados o atendem. */
 export const SATISFEITA = 'SATISFEITA';
-/** As respostas dadas já pedem o documento, pendente ou satisfeito: a lista não distingue os dois. */
+/** As respostas dadas já pedem o documento, pendente ou atendido: a lista não distingue os dois. */
 export const EXIGIDO = 'EXIGIDO';
 
 /** A situação como a lista a agrupa: pendente e satisfeita são ambas o que já é exigido. */
@@ -24,19 +24,19 @@ export const PODE_SER_EXIGIDO = 'PODE_SER_EXIGIDO';
 export const DEPENDE_DE_FASE_POSTERIOR = 'DEPENDE_DE_FASE_POSTERIOR';
 
 /** Todos os itens do grupo são pedidos juntos. */
-export const GRUPO_E = 'E';
+export const TODOS_OS_ITENS = 'TODOS_OS_ITENS';
 /** Basta apresentar `minimo` dos itens do grupo — um, se o mínimo não vier. */
-export const GRUPO_OU = 'OU';
+export const QUANTIDADE_MINIMA_DE_ITENS = 'QUANTIDADE_MINIMA_DE_ITENS';
 
-/** Um grupo da árvore de exigências que contém o documento. */
+/** Um grupo da estrutura de regras de exigências que contém o documento. */
 export interface GrupoDoDocumento {
   readonly grupoId: string;
   /** `E` ou `OU`. */
-  readonly tipo: string;
+  readonly forma: { readonly codigo: string; readonly rotulo: string };
   /** Quantos itens do `OU` bastam; nulo no `E`. */
   readonly minimo: number | null;
-  /** O grupo de integrantes pelo qual este nó se repete: a escolha dele é feita integrante a integrante. */
-  readonly repetePorEntidade: string | null;
+  /** O grupo de integrantes pelo qual este regra se repete: a escolha dele é feita integrante a integrante. */
+  readonly grupoDoFormularioParaRepeticao: string | null;
 }
 
 /** Um arquivo já confirmado para a exigência, como a avaliação o devolve. */
@@ -74,12 +74,12 @@ export interface DocumentoAvaliado {
   /** A ocorrência do grupo a que a exigência se liga; nula enquanto não se sabe quais integrantes há. */
   readonly ocorrenciaId: string | null;
   /**
-   * Os grupos da árvore que contêm a exigência, do mais externo ao mais interno. Documentos com o mesmo
+   * Os grupos da estrutura de regras que contêm a exigência, do mais externo ao mais interno. Documentos com o mesmo
    * grupo estão nele juntos.
    */
   readonly grupos: readonly GrupoDoDocumento[];
   /** O grupo de integrantes pelo qual a própria exigência se repete, quando a repetição começa nela. */
-  readonly repetePorEntidade: string | null;
+  readonly grupoDoFormularioParaRepeticao: string | null;
 }
 
 /** Uma fase do cronograma: os documentos dela e o que falta responder para decidir os que podem ser pedidos. */
@@ -134,27 +134,28 @@ export function situacoesEArquivosDosDocumentos(documentos: readonly DocumentoAv
   readonly arquivos: readonly ArquivoEnviado[];
 } {
   const situacoes: Record<string, SituacaoDaExigencia> = {};
-  const arquivos: ArquivoEnviado[] = [];
   for (const documento of documentos) {
-    const chave = chaveDaExigencia(documento);
     if (documento.situacao === PENDENTE || documento.situacao === SATISFEITA) {
-      situacoes[chave] = documento.situacao;
-    }
-    for (const arquivo of documento.arquivos) {
-      arquivos.push({
-        arquivoId: arquivo.arquivoId,
-        apresentacaoId: arquivo.apresentacaoId,
-        chave,
-        tipoDeMidia: arquivo.tipoDeMidia,
-        tamanhoBytes: arquivo.tamanhoBytes,
-        situacao: arquivo.situacao,
-        mensagem: arquivo.mensagem,
-        rotulo: arquivo.rotulo,
-        confirmadoEm: arquivo.confirmadoEm,
-      });
+      situacoes[chaveDaExigencia(documento)] = documento.situacao;
     }
   }
+  const arquivos = documentos.flatMap(arquivosDoDocumento);
   return { situacoes, arquivos };
+}
+
+function arquivosDoDocumento(documento: DocumentoAvaliado): readonly ArquivoEnviado[] {
+  const chave = chaveDaExigencia(documento);
+  return documento.arquivos.map((arquivo) => ({
+    arquivoId: arquivo.arquivoId,
+    apresentacaoId: arquivo.apresentacaoId,
+    chave,
+    tipoDeMidia: arquivo.tipoDeMidia,
+    tamanhoBytes: arquivo.tamanhoBytes,
+    situacao: arquivo.situacao,
+    mensagem: arquivo.mensagem,
+    rotulo: arquivo.rotulo,
+    confirmadoEm: arquivo.confirmadoEm,
+  }));
 }
 
 /** O que o candidato lê quando a inscrição não pode seguir porque há documento obrigatório em verificação (UNI-REQ-0028). */

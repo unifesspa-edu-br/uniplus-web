@@ -1,7 +1,7 @@
 import type {
   DocumentoExigidoDto,
   BaseLegalDto,
-  NoExigenciaDto,
+  RegraDeComprovacaoDto,
   ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
 
@@ -11,29 +11,31 @@ import type {
   RegraDaExigenciaDeDocumento,
   CriteriosDoComprovante,
   ExigenciasDoRascunho,
-  NoDeExigencia,
+  RegraDeComprovacao,
 } from '../../processo-seletivo.models';
 
 /**
- * A árvore de exigências como o rascunho a guarda, lida de `raizesExigencia`.
+ * A estrutura de regras de exigências como o rascunho a guarda, lida de `regrasDeComprovacao`.
  *
- * Lê a ÁRVORE, não a lista plana `documentosExigidos`: a lista plana não diz quem é filho de
- * qual grupo, e reconstruir tudo como folha solta apagaria o grupo `OU` e a consequência
+ * Lê a estrutura de regras, não a lista plana `documentosExigidos`: a lista plana não diz quem é item de
+ * qual grupo, e reconstruir tudo como regra de documento solta apagaria o grupo de alternativas e a consequência
  * própria dele na gravação seguinte.
  */
 export function exigenciasDe(dto: ProcessoSeletivoDto): ExigenciasDoRascunho {
   const codigoPorFaseId = new Map((dto.cronogramaFases ?? []).map((f) => [f.id, f.codigo]));
-  const raizes = lerExigencias(dto.raizesExigencia ?? [], codigoPorFaseId);
+  const regrasDeComprovacao = lerExigencias(dto.regrasDeComprovacao ?? [], codigoPorFaseId);
   return {
-    raizes,
-    emTodasAsFases: documentosExigidosEmTodasAsFases(raizes, [...codigoPorFaseId.values()]),
+    regrasDeComprovacao,
+    emTodasAsFases: documentosExigidosEmTodasAsFases(regrasDeComprovacao, [
+      ...codigoPorFaseId.values(),
+    ]),
   };
 }
 
 /**
  * Relê, do que voltou do servidor, quais documentos o operador declarou valer em todas as fases.
  *
- * A intenção não trafega: o contrato recebe as folhas já materializadas, uma por fase. Sem
+ * A intenção não trafega: o contrato recebe as regras de documento já materializadas, uma por fase. Sem
  * reconstruí-la, reabrir o processo a rebaixava a uma escolha fase a fase — e a fase criada
  * depois disso ficava sem o documento, sem nada na tela denunciando a ausência.
  *
@@ -48,26 +50,26 @@ export function exigenciasDe(dto: ProcessoSeletivoDto): ExigenciasDoRascunho {
  * configuração, e inferir a primeira daria à segunda um alcance que ninguém declarou.
  */
 function documentosExigidosEmTodasAsFases(
-  raizes: readonly NoDeExigencia[],
+  regrasDeComprovacao: readonly RegraDeComprovacao[],
   fases: readonly string[],
 ): readonly string[] {
   if (fases.length < 2) return [];
-  const porTipo = exigenciasIndependentesPorTipo(raizes);
+  const porTipo = exigenciasIndependentesPorTipo(regrasDeComprovacao);
   return [...porTipo]
     .filter(([, declaracoes]) => temMesmaDeclaracaoEmCadaFase(declaracoes, fases))
     .map(([tipo]) => tipo);
 }
 
-type DeclaracaoDaExigencia = Pick<NoDeExigencia, 'repetePorEntidade'> & {
+type DeclaracaoDaExigencia = Pick<RegraDeComprovacao, 'grupoDoFormularioParaRepeticao'> & {
   readonly documento: ExigenciaDeDocumento;
 };
 
 /** Uma alternativa dentro de um grupo não é uma exigência independente. */
-function exigenciasIndependentesPorTipo(raizes: readonly NoDeExigencia[]) {
+function exigenciasIndependentesPorTipo(regrasDeComprovacao: readonly RegraDeComprovacao[]) {
   const porTipo = new Map<string, DeclaracaoDaExigencia[]>();
-  for (const { tipo, documento, repetePorEntidade } of raizes) {
-    if (tipo !== 'FOLHA' || documento === null) continue;
-    const declaracao = { documento, repetePorEntidade };
+  for (const { forma, documento, grupoDoFormularioParaRepeticao } of regrasDeComprovacao) {
+    if (forma !== 'DOCUMENTO' || documento === null) continue;
+    const declaracao = { documento, grupoDoFormularioParaRepeticao };
     const anteriores = porTipo.get(documento.tipoDocumentoId);
     if (anteriores === undefined) porTipo.set(documento.tipoDocumentoId, [declaracao]);
     else anteriores.push(declaracao);
@@ -92,9 +94,9 @@ function temMesmaDeclaracaoEmCadaFase(
 
 function conteudoDaExigenciaParaComparacao({
   documento,
-  repetePorEntidade,
+  grupoDoFormularioParaRepeticao,
 }: DeclaracaoDaExigencia): string {
-  return `${conteudoDoDocumentoParaComparacao(documento)}|${repetePorEntidade ?? ''}`;
+  return `${conteudoDoDocumentoParaComparacao(documento)}|${grupoDoFormularioParaRepeticao ?? ''}`;
 }
 
 /**
@@ -120,56 +122,58 @@ function conteudoDoDocumentoParaComparacao(exigencia: ExigenciaDeDocumento): str
 }
 
 function lerExigencias(
-  nos: readonly NoExigenciaDto[],
+  regras: readonly RegraDeComprovacaoDto[],
   codigoPorFaseId: ReadonlyMap<string, string>,
-): NoDeExigencia[] {
-  return nos.map((no) => lerExigencia(no, codigoPorFaseId)).filter((no) => no !== null);
+): RegraDeComprovacao[] {
+  return regras
+    .map((regra) => lerExigencia(regra, codigoPorFaseId))
+    .filter((regra) => regra !== null);
 }
 
 /** Descarta documentos sem fase no cronograma e grupos que perderam todas as exigências. */
 function lerExigencia(
-  no: NoExigenciaDto,
+  regra: RegraDeComprovacaoDto,
   codigoPorFaseId: ReadonlyMap<string, string>,
-): NoDeExigencia | null {
-  if (no.tipo === 'FOLHA') return lerDocumentoExigido(no, codigoPorFaseId);
-  return lerGrupoDeExigencias(no, codigoPorFaseId);
+): RegraDeComprovacao | null {
+  if (regra.forma.codigo === 'DOCUMENTO') return lerDocumentoExigido(regra, codigoPorFaseId);
+  return lerGrupoDeExigencias(regra, codigoPorFaseId);
 }
 
 function lerDocumentoExigido(
-  no: NoExigenciaDto,
+  regra: RegraDeComprovacaoDto,
   codigoPorFaseId: ReadonlyMap<string, string>,
-): NoDeExigencia | null {
-  const documento = documentoDe(no.documento, codigoPorFaseId);
+): RegraDeComprovacao | null {
+  const documento = documentoDe(regra.documento, codigoPorFaseId);
   if (documento === null) return null;
-  return { ...camposDoNo(no), tipo: 'FOLHA', documento, filhos: null };
+  return { ...camposDaRegra(regra), forma: 'DOCUMENTO', documento, itens: null };
 }
 
 function lerGrupoDeExigencias(
-  no: NoExigenciaDto,
+  regra: RegraDeComprovacaoDto,
   codigoPorFaseId: ReadonlyMap<string, string>,
-): NoDeExigencia | null {
-  const filhos = lerExigencias(no.filhos ?? [], codigoPorFaseId);
-  if (filhos.length === 0) return null;
-  const tipo = no.tipo as NoDeExigencia['tipo'];
-  return { ...camposDoNo(no), tipo, documento: null, filhos };
+): RegraDeComprovacao | null {
+  const itensDoGrupo = lerExigencias(regra.itens ?? [], codigoPorFaseId);
+  if (itensDoGrupo.length === 0) return null;
+  const forma = regra.forma.codigo as RegraDeComprovacao['forma'];
+  return { ...camposDaRegra(regra), forma, documento: null, itens: itensDoGrupo };
 }
 
 /**
  * Uma lista de normas vazia da API representa ausência de norma própria. Na escrita, enviar
- * uma lista vazia para um nó sem consequência declarada viola o contrato.
+ * uma lista vazia para uma regra sem consequência declarada viola o contrato.
  */
-function camposDoNo(no: NoExigenciaDto): Omit<NoDeExigencia, 'tipo' | 'documento' | 'filhos'> {
-  const { cardinalidade, indeferimento } = no;
+function camposDaRegra(regra: RegraDeComprovacaoDto) {
+  const { cardinalidade, indeferimento } = regra;
   return {
     quantidadeMinima: cardinalidade.quantidadeMinima ?? null,
     consequencia: indeferimento.consequencia,
     basesLegais: indeferimento.basesLegais.length
       ? indeferimento.basesLegais.map(baseLegalDe)
       : null,
-    chaveDistincao: cardinalidade.distincao?.chave ?? null,
+    criterioDeDistincao: cardinalidade.distincao?.criterioDeDistincao ?? null,
     dataReferencia: cardinalidade.distincao?.dataReferencia ?? null,
     ocorrenciasEsperadas: cardinalidade.distincao?.ocorrenciasEsperadas ?? null,
-    repetePorEntidade: no.repetePorEntidade,
+    grupoDoFormularioParaRepeticao: regra.grupoDoFormularioParaRepeticao,
   };
 }
 
@@ -264,7 +268,7 @@ function baseLegalDe(base: BaseLegalDto): BaseLegalConfig {
   return {
     referencia: base.referencia,
     abrangencia: base.abrangencia,
-    status: base.status,
+    situacao: base.situacao,
     observacao: base.observacao ?? null,
   };
 }

@@ -1,10 +1,10 @@
-import type { DocumentoExigidoDto, NoExigenciaDto } from '@uniplus/shared-data/selecao';
+import type { DocumentoExigidoDto, RegraDeComprovacaoDto } from '@uniplus/shared-data/selecao';
 import type { JsonDaApi } from '@uniplus/shared-e2e';
 
-export type NoDaExigencia = JsonDaApi<NoExigenciaDto>;
+export type RegraDaExigencia = JsonDaApi<RegraDeComprovacaoDto>;
 type DocumentoDaExigencia = JsonDaApi<DocumentoExigidoDto>;
 
-export interface FolhaDaExigencia {
+export interface DocumentoDaRegra {
   readonly id: string;
   readonly faseId: string;
   readonly tipoDocumento: Pick<DocumentoDaExigencia['tipoDocumento'], 'id' | 'codigo' | 'nome'>;
@@ -16,7 +16,7 @@ export interface FolhaDaExigencia {
 const BASE_LEGAL_DO_EDITAL = {
   referencia: 'Edital nº 1/2027, Anexo III',
   abrangencia: 'INTERNA_EDITAL',
-  status: 'RESOLVIDO',
+  situacao: 'RESOLVIDO',
   observacao: null,
 };
 
@@ -33,44 +33,46 @@ const REQUISITOS_DO_ARQUIVO: DocumentoDaExigencia['requisitos'] = {
   modelo: null,
 };
 
-function indeferimentoDaFolha(folha: FolhaDaExigencia): DocumentoDaExigencia['indeferimento'] {
+function indeferimentoDoDocumento(regra: DocumentoDaRegra): DocumentoDaExigencia['indeferimento'] {
   return {
-    obrigatorio: folha.obrigatorio,
-    consequencia: folha.consequencia,
-    basesLegais: [{ id: `${folha.id}-norma`, ...BASE_LEGAL_DO_EDITAL }],
+    obrigatorio: regra.obrigatorio,
+    consequencia: regra.consequencia,
+    basesLegais: [{ id: `${regra.id}-norma`, ...BASE_LEGAL_DO_EDITAL }],
   };
 }
 
-function aplicabilidadeDaFolha(folha: FolhaDaExigencia): DocumentoDaExigencia['aplicabilidade'] {
-  const condicoes = folha.condicoes ?? [];
+function aplicabilidadeDoDocumento(
+  regra: DocumentoDaRegra,
+): DocumentoDaExigencia['aplicabilidade'] {
+  const condicoes = regra.condicoes ?? [];
   return { tipo: condicoes.length === 0 ? 'GERAL' : 'CONDICIONAL', condicoes };
 }
 
-function documentoDaFolha(folha: FolhaDaExigencia): DocumentoDaExigencia {
+function documentoDaRegra(regra: DocumentoDaRegra): DocumentoDaExigencia {
   return {
-    id: `${folha.id}-doc`,
+    id: `${regra.id}-doc`,
     tipoDocumento: {
-      ...folha.tipoDocumento,
+      ...regra.tipoDocumento,
       categoria: 'IDENTIFICACAO',
       protecao: PROTECAO_DO_DOCUMENTO,
     },
-    momento: { faseId: folha.faseId, etapaId: null, finalidade: null },
-    aplicabilidade: aplicabilidadeDaFolha(folha),
-    indeferimento: indeferimentoDaFolha(folha),
+    momento: { faseId: regra.faseId, etapaId: null, finalidade: null },
+    aplicabilidade: aplicabilidadeDoDocumento(regra),
+    indeferimento: indeferimentoDoDocumento(regra),
     requisitos: REQUISITOS_DO_ARQUIVO,
     fatosComprovados: [],
   };
 }
 
-/** A exigência de um documento como folha da árvore que o detalhe do processo devolve. */
-export function folhaDaExigencia(folha: FolhaDaExigencia): NoDaExigencia {
+/** A regra de documento devolvida no detalhe do processo. */
+export function regraDaExigencia(regra: DocumentoDaRegra): RegraDaExigencia {
   return {
-    id: folha.id,
-    tipo: 'FOLHA',
-    documento: documentoDaFolha(folha),
+    id: regra.id,
+    forma: { codigo: 'DOCUMENTO', rotulo: 'Documento' },
+    documento: documentoDaRegra(regra),
     cardinalidade: { quantidadeMinima: null, distincao: null },
     indeferimento: { consequencia: null, basesLegais: [] },
-    filhos: [],
-    repetePorEntidade: null,
+    itens: [],
+    grupoDoFormularioParaRepeticao: null,
   };
 }

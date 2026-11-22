@@ -3,22 +3,22 @@
  * passo Fase do processo. Ficam aqui, e não no editor, porque o shared-ui não carrega regra de
  * domínio.
  */
-import { ABRANGENCIA_PADRAO, STATUS_BASE_LEGAL_RESOLVIDO } from './documento-exigido.vocabulario';
+import { ABRANGENCIA_PADRAO, SITUACAO_BASE_LEGAL_RESOLVIDO } from './documento-exigido.vocabulario';
 
 /** Uma norma que sustenta a exigência. `observacao` é texto livre opcional; `null` é a ausência. */
 export interface BaseLegal {
   readonly referencia: string;
   readonly abrangencia: string;
-  readonly status: string;
+  readonly situacao: string;
   readonly observacao: null | string;
 }
 
-/** Uma norma em branco, no alcance e no status que são o caso comum: o edital, resolvida. */
+/** Uma norma em branco, no alcance e no situacao que são o caso comum: o edital, resolvida. */
 export function baseLegalNova(): BaseLegal {
   return {
     referencia: '',
     abrangencia: ABRANGENCIA_PADRAO,
-    status: STATUS_BASE_LEGAL_RESOLVIDO,
+    situacao: SITUACAO_BASE_LEGAL_RESOLVIDO,
     observacao: null,
   };
 }
@@ -29,7 +29,7 @@ export function baseLegalNova(): BaseLegal {
  */
 export function temNormaResolvida(bases: readonly BaseLegal[]): boolean {
   return bases.some(
-    (base) => base.referencia.trim() !== '' && base.status === STATUS_BASE_LEGAL_RESOLVIDO,
+    (base) => base.referencia.trim() !== '' && base.situacao === SITUACAO_BASE_LEGAL_RESOLVIDO,
   );
 }
 
@@ -39,7 +39,7 @@ export function baseLegalParaEnvio(base: BaseLegal): BaseLegal {
   return {
     referencia: base.referencia.trim(),
     abrangencia: base.abrangencia,
-    status: base.status,
+    situacao: base.situacao,
     observacao: observacao === '' ? null : observacao,
   };
 }

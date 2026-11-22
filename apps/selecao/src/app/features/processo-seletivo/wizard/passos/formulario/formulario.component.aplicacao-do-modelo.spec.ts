@@ -113,7 +113,10 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
         aplicabilidade: 'CONDICIONAL',
         condicoes: [{ clausula: 0, fato: 'PCD', operador: 'IGUAL', valor: 'true' }],
       } as ExigenciaDeDocumento;
-      store.patchSection('documentos', comExigencia({ raizes: [], emTodasAsFases: [] }, exigencia));
+      store.patchSection(
+        'documentos',
+        comExigencia({ regrasDeComprovacao: [], emTodasAsFases: [] }, exigencia),
+      );
 
       const aplicacao = escolherEAplicar('INSCRICAO', 'insc');
       expect(

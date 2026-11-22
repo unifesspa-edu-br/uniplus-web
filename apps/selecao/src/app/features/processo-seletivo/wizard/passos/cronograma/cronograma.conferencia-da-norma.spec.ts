@@ -68,7 +68,7 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
           {
             referencia: 'Lei 12.711/2012',
             abrangencia: 'FEDERAL',
-            status: 'RESOLVIDO',
+            situacao: 'RESOLVIDO',
             observacao: '',
           },
         ],
@@ -90,21 +90,24 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
 
     /**
      * A repetição pelo grupo do formulário é conferida antes do envio, como o gatilho: o grupo que
-     * saiu do formulário depois de escolhido derrubaria a gravação da árvore inteira.
+     * saiu do formulário depois de escolhido derrubaria a gravação de todas as regras.
      */
     it('acusa a repetição por grupo que nenhum formulário tem, com o que fazer', () => {
       comExigenciaDeclarada([
         {
           referencia: 'Lei 12.711/2012',
           abrangencia: 'FEDERAL',
-          status: 'RESOLVIDO',
+          situacao: 'RESOLVIDO',
           observacao: '',
         },
       ]);
       const documentos = store.draft().documentos;
       store.patchSection('documentos', {
         ...documentos,
-        raizes: documentos.raizes.map((no) => ({ ...no, repetePorEntidade: 'FAMILIA' })),
+        regrasDeComprovacao: documentos.regrasDeComprovacao.map((no) => ({
+          ...no,
+          grupoDoFormularioParaRepeticao: 'FAMILIA',
+        })),
       });
       detectar();
 
@@ -120,7 +123,7 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
         {
           referencia: 'Lei 12.711/2012',
           abrangencia: 'FEDERAL',
-          status: 'RESOLVIDO',
+          situacao: 'RESOLVIDO',
           observacao: '',
         },
       ]);
@@ -165,7 +168,7 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
           {
             referencia: 'Lei 12.711/2012',
             abrangencia: 'FEDERAL',
-            status: 'RESOLVIDO',
+            situacao: 'RESOLVIDO',
             observacao: '',
           },
         ],
@@ -229,7 +232,7 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
           {
             referencia: 'Lei 12.711/2012',
             abrangencia: 'FEDERAL',
-            status: 'RESOLVIDO',
+            situacao: 'RESOLVIDO',
             observacao: '',
           },
         ],

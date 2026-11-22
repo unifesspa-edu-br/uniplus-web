@@ -90,7 +90,10 @@ describe('Bloco de documentos da inscrição — envio do arquivo exigido', () =
       const tela = montar(
         naTela(
           nestaFase(
-            documento('Laudo médico', { grupoCodigo: 'MEMBROS', repetePorEntidade: 'MEMBROS' }),
+            documento('Laudo médico', {
+              grupoCodigo: 'MEMBROS',
+              grupoDoFormularioParaRepeticao: 'MEMBROS',
+            }),
           ),
         ),
         ENVIO,
@@ -196,7 +199,12 @@ describe('Bloco de documentos da inscrição — envio do arquivo exigido', () =
     });
 
     it('a recusa de uma alternativa some quando o candidato atende o grupo "um ou outro" por outra', async () => {
-      const identidade = { grupoId: 'identidade', tipo: 'OU', minimo: 1, repetePorEntidade: null };
+      const identidade = {
+        grupoId: 'identidade',
+        forma: { codigo: 'QUANTIDADE_MINIMA_DE_ITENS', rotulo: 'Quantidade mínima' },
+        minimo: 1,
+        grupoDoFormularioParaRepeticao: null,
+      };
       const tela = montar(
         naTela(
           nestaFase(
@@ -245,8 +253,18 @@ describe('Bloco de documentos da inscrição — envio do arquivo exigido', () =
     };
 
     it('a recusa sai quando um grupo "um ou outro" externo está atendido, mesmo com o interno pendente', async () => {
-      const externo = { grupoId: 'externo', tipo: 'OU', minimo: 1, repetePorEntidade: null };
-      const interno = { grupoId: 'interno', tipo: 'OU', minimo: 1, repetePorEntidade: null };
+      const externo = {
+        grupoId: 'externo',
+        forma: { codigo: 'QUANTIDADE_MINIMA_DE_ITENS', rotulo: 'Quantidade mínima' },
+        minimo: 1,
+        grupoDoFormularioParaRepeticao: null,
+      };
+      const interno = {
+        grupoId: 'interno',
+        forma: { codigo: 'QUANTIDADE_MINIMA_DE_ITENS', rotulo: 'Quantidade mínima' },
+        minimo: 1,
+        grupoDoFormularioParaRepeticao: null,
+      };
       const docs = (passaporte: string) =>
         naTela(
           nestaFase(

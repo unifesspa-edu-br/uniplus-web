@@ -15,11 +15,28 @@ import {
   fatosCitadosPelasModalidadesOfertadas,
 } from '../../../shared/campos-pressupostos.service';
 import { todasAsExigencias } from '../../../shared/exigencias/consulta-das-exigencias';
-import { arvoreDeExigencias } from '../../../shared/exigencias/gravacao-das-exigencias';
+import { regrasDeComprovacaoParaEnvio } from '../../../shared/exigencias/gravacao-das-exigencias';
 import { modalidadesDaExigencia } from '../../../shared/exigencias/recorte-por-modalidade';
 import { recusaDaExigenciaDoServidor } from '../../../shared/orientacao-da-recusa-do-fato';
 import { quemCitaNoProcesso } from '../../formulario/citantes-no-processo';
 import { finalidadesQueAtende } from '../../formulario/formularios-por-finalidade';
+
+function recusaDaReleitura(): ValidacaoDoPasso {
+  return {
+    valid: false,
+    messages: [
+      'As etapas e o cronograma foram gravados, mas não foi possível reler as fases para gravar os documentos exigidos. Tente gravar de novo.',
+    ],
+  };
+}
+function recusaSemFaseDeInscricao(): ValidacaoDoPasso {
+  return {
+    valid: false,
+    messages: [
+      'As etapas e o cronograma foram gravados. Uma exigência documental depende de um dado que o formulário de inscrição precisa coletar, e o cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição.',
+    ],
+  };
+}
 
 /** A última gravação do passo: os documentos que cada fase exige, depois das fases e das etapas. */
 @Injectable()
@@ -42,29 +59,29 @@ export class GravacaoDasExigenciasDocumentais {
     const geracao = this.store.geracao();
     const detalhe = await firstValueFrom(this.api.obter(processoId));
     if (geracao !== this.store.geracao()) return { valid: true };
-    if (!isApiOk(detalhe)) {
-      return {
-        valid: false,
-        messages: [
-          'As etapas e o cronograma foram gravados, mas não foi possível reler as fases para gravar os documentos exigidos. Tente gravar de novo.',
-        ],
-      };
-    }
+    if (!isApiOk(detalhe)) return recusaDaReleitura();
 
-    const raizes = this.arvoreDoRascunho(detalhe.data);
+    const regrasDeComprovacao = this.regrasDoRascunho(detalhe.data);
     const recusa = await this.garantirOsCampos(processoId, detalhe.data, geracao);
     if (recusa !== null) return recusa;
 
-    const gravacao = await this.cadastro.definirDocumentosExigidos(processoId, raizes);
-    if (geracao !== this.store.geracao()) return { valid: true };
-    return gravacao.ok
-      ? { valid: true }
-      : {
-          valid: false,
-          messages: [
-            `As etapas, o cronograma e o formulário de inscrição foram gravados. ${recusaDaExigenciaDoServidor(gravacao.problem) ?? this.problemI18n.resolve(gravacao.problem).title}`,
-          ],
-        };
+    return this.gravarDocumentos(processoId, regrasDeComprovacao, geracao);
+  }
+
+  private async gravarDocumentos(
+    processoId: string,
+    regrasDeComprovacao: ReturnType<GravacaoDasExigenciasDocumentais['regrasDoRascunho']>,
+    geracao: number,
+  ): Promise<ValidacaoDoPasso> {
+    const gravacao = await this.cadastro.definirDocumentosExigidos(processoId, regrasDeComprovacao);
+    if (geracao !== this.store.geracao() || gravacao.ok) return { valid: true };
+    const motivo =
+      recusaDaExigenciaDoServidor(gravacao.problem) ??
+      this.problemI18n.resolve(gravacao.problem).title;
+    return {
+      valid: false,
+      messages: [`As etapas, o cronograma e o formulário de inscrição foram gravados. ${motivo}`],
+    };
   }
 
   /**
@@ -83,30 +100,44 @@ export class GravacaoDasExigenciasDocumentais {
     processo: ProcessoSeletivoDto,
     geracao: number,
   ): Promise<ValidacaoDoPasso | null> {
-    const recorta = todasAsExigencias(this.store.draft().documentos).some(
-      (exigencia) => modalidadesDaExigencia(exigencia) !== null,
-    );
-    const citadosPelasModalidades = this.pedePerguntasDasModalidades(recorta)
-      ? fatosCitadosPelasModalidadesOfertadas(processo)
-      : new Set<string>();
+    const recorta = this.recortaPorModalidade();
     const citadosPelasExigencias = this.citadosPelasExigencias(processo);
-
-    const campos = await this.camposPressupostos.garantirCampos(
-      processoId,
-      processo,
-      new Set([...citadosPelasExigencias, ...citadosPelasModalidades]),
-    );
+    const fatos = this.fatosParaColeta(processo, recorta, citadosPelasExigencias);
+    const campos = await this.camposPressupostos.garantirCampos(processoId, processo, fatos);
     if (geracao !== this.store.geracao()) return { valid: true };
     return this.recusaDosCampos(campos, processo, recorta, citadosPelasExigencias);
   }
 
+  private fatosParaColeta(
+    processo: ProcessoSeletivoDto,
+    recorta: boolean,
+    citadosPelasExigencias: ReadonlySet<string>,
+  ): ReadonlySet<string> {
+    return new Set([...citadosPelasExigencias, ...this.fatosDasModalidades(processo, recorta)]);
+  }
+
+  private fatosDasModalidades(
+    processo: ProcessoSeletivoDto,
+    recorta: boolean,
+  ): ReadonlySet<string> {
+    return this.pedePerguntasDasModalidades(recorta)
+      ? fatosCitadosPelasModalidadesOfertadas(processo)
+      : new Set<string>();
+  }
+
+  private recortaPorModalidade(): boolean {
+    return todasAsExigencias(this.store.draft().documentos).some(
+      (exigencia) => modalidadesDaExigencia(exigencia) !== null,
+    );
+  }
+
   /**
-   * A árvore de exigências com o id de cada fase gravada, e o formulário de cada fase pelas fases
+   * As regras de comprovação com o id de cada fase gravada, e o formulário de cada fase pelas fases
    * que acabaram de ser gravadas: é contra elas que o servidor confere o formulário de cada
    * documento.
    */
-  private arvoreDoRascunho(processo: ProcessoSeletivoDto) {
-    return arvoreDeExigencias(this.store.draft().documentos, {
+  private regrasDoRascunho(processo: ProcessoSeletivoDto) {
+    return regrasDeComprovacaoParaEnvio(this.store.draft().documentos, {
       faseIdPorCodigo: new Map(processo.cronogramaFases.map((f) => [f.codigo, f.id])),
       modalidadesOfertadas: this.store.modalidadesDoProcesso(),
       etapasVivas: new Set(processo.etapas.map((etapa) => etapa.id)),
@@ -144,18 +175,18 @@ export class GravacaoDasExigenciasDocumentais {
         messages: [`As etapas e o cronograma foram gravados. ${campos.motivo}`],
       };
     }
-    // Sem a fase de inscrição, as perguntas das modalidades esperam por ela; a exigência que
-    // depende de um dado, não.
-    if (
-      campos.tipo === 'semFaseDeInscricao' &&
-      (recorta || !this.camposPressupostos.coletaTudo(processo, citadosPelasExigencias))
-    ) {
-      return {
-        valid: false,
-        messages: [
-          'As etapas e o cronograma foram gravados. Uma exigência documental depende de um dado que o formulário de inscrição precisa coletar, e o cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição.',
-        ],
-      };
+    return this.recusaPorFaltaDeFase(campos, processo, recorta, citadosPelasExigencias);
+  }
+
+  private recusaPorFaltaDeFase(
+    campos: Awaited<ReturnType<GravacaoDosCamposPressupostos['garantirCampos']>>,
+    processo: ProcessoSeletivoDto,
+    recorta: boolean,
+    citadosPelasExigencias: ReadonlySet<string>,
+  ): ValidacaoDoPasso | null {
+    if (campos.tipo !== 'semFaseDeInscricao') return null;
+    if (recorta || !this.camposPressupostos.coletaTudo(processo, citadosPelasExigencias)) {
+      return recusaSemFaseDeInscricao();
     }
     return null;
   }

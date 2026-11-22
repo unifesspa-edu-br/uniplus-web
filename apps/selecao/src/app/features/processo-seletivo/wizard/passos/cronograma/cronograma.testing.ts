@@ -206,7 +206,7 @@ export const PROCESSO_COM_ETAPA_GRAVADA = {
   classificacao: null,
   cronogramaFases: [],
   documentosExigidos: [],
-  raizesExigencia: [],
+  regrasDeComprovacao: [],
   referenciaTemporalFatos: null,
   configuracaoTaxaInscricao: { cobra: false, valor: null, fundamentos: [] },
 };

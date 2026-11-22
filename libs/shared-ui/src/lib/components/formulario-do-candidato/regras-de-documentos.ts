@@ -2,8 +2,8 @@ import type { DocumentoExigido } from '../lista-de-documentos/lista-de-documento
 import {
   classeDaSituacao,
   type DocumentoAvaliado,
-  GRUPO_E,
-  GRUPO_OU,
+  TODOS_OS_ITENS,
+  QUANTIDADE_MINIMA_DE_ITENS,
   type GrupoDoDocumento,
 } from './documentos-avaliados';
 import {
@@ -43,14 +43,14 @@ export interface ExigenciaPedida {
 }
 
 /** Um grupo da escolha na tela. */
-export type GrupoDeDocumentos = Exclude<NoDeDocumentos, { tipo: 'DOCUMENTO' }>;
+export type GrupoDeDocumentos = Exclude<ItemDeComprovacao, { forma: 'DOCUMENTO' }>;
 
-/** Um nó da escolha na tela: um documento, ou um grupo deles. */
-export type NoDeDocumentos =
-  | { readonly tipo: 'DOCUMENTO'; readonly documento: DocumentoNaTela }
+/** Um regra da escolha na tela: um documento, ou um grupo deles. */
+export type ItemDeComprovacao =
+  | { readonly forma: 'DOCUMENTO'; readonly documento: DocumentoNaTela }
   | {
-      readonly tipo: typeof GRUPO_E | typeof GRUPO_OU;
-      /** O grupo e, quando a escolha é feita integrante a integrante, o integrante: único na árvore. */
+      readonly forma: typeof TODOS_OS_ITENS | typeof QUANTIDADE_MINIMA_DE_ITENS;
+      /** O grupo e, quando a escolha é feita integrante a integrante, o integrante: único na estrutura de regras. */
       readonly chave: string;
       /** Quantos itens do `OU` bastam. */
       readonly minimo: number;
@@ -58,92 +58,92 @@ export type NoDeDocumentos =
       readonly integrante: string | null;
       /** Junta as escolhas de cada integrante de um grupo que se repete: todas são pedidas. */
       readonly deCadaIntegrante: boolean;
-      readonly itens: readonly NoDeDocumentos[];
+      readonly itens: readonly ItemDeComprovacao[];
     };
 
 interface GrupoEmMontagem {
-  tipo: typeof GRUPO_E | typeof GRUPO_OU;
+  forma: typeof TODOS_OS_ITENS | typeof QUANTIDADE_MINIMA_DE_ITENS;
   chave: string;
   minimo: number;
   integrante: string | null;
   deCadaIntegrante: boolean;
-  itens: NoEmMontagem[];
+  itens: ItemEmMontagem[];
 }
-type NoEmMontagem = { tipo: 'DOCUMENTO'; documento: DocumentoNaTela } | GrupoEmMontagem;
+type ItemEmMontagem = { forma: 'DOCUMENTO'; documento: DocumentoNaTela } | GrupoEmMontagem;
 
 type Ocorrencias = Readonly<Record<string, readonly OcorrenciaSimulada[]>>;
 
-/** A árvore em montagem e os integrantes já juntados de cada documento que se repete para todos. */
+/** A estrutura de regras em montagem e os integrantes já juntados de cada documento que se repete para todos. */
 interface Montagem {
-  readonly raiz: NoEmMontagem[];
+  readonly itensPrincipais: ItemEmMontagem[];
   readonly integrantesDeTodos: Map<string, IntegranteDoItem[]>;
 }
 
 /** O documento que se repete sob um grupo escolhido uma vez, com o integrante desta avaliação. */
-interface FolhaQueSeRepete {
+interface DocumentoQueSeRepete {
   readonly documento: DocumentoAvaliado;
   readonly grupo: GrupoRenderizavel | undefined;
   readonly integrante: string | null;
 }
 
 /**
- * A árvore da escolha dos documentos, montada pelos grupos de cada um, na ordem em que aparecem. A
- * repetição por integrante vale do nó que a declara para baixo:
+ * A estrutura de regras da escolha dos documentos, montada pelos grupos de cada um, na ordem em que aparecem. A
+ * repetição por integrante vale da regra que a declara para baixo:
  *
  * - no grupo, a escolha dele e a de tudo abaixo é feita integrante a integrante. Sob um grupo que não
  *   se repete, as escolhas dos integrantes ficam juntas num item só, porque todas são pedidas;
- * - na folha sob um grupo que não se repete, a escolha é uma só, e o documento escolhido vale para
+ * - na regra de documento sob um grupo que não se repete, a escolha é uma só, e o documento escolhido vale para
  *   todos os integrantes.
  *
  * O documento do integrante que já não está no formulário não entra: a avaliação dele está atrasada.
  */
-export function arvoreDeDocumentos(
+export function regrasDeDocumentos(
   documentos: readonly DocumentoAvaliado[],
   gruposDoFormulario: readonly GrupoRenderizavel[],
   ocorrencias: Ocorrencias,
-): readonly NoDeDocumentos[] {
-  const montagem: Montagem = { raiz: [], integrantesDeTodos: new Map() };
+): readonly ItemDeComprovacao[] {
+  const montagem: Montagem = { itensPrincipais: [], integrantesDeTodos: new Map() };
   for (const documento of documentos) {
     const grupo = gruposDoFormulario.find((g) => g.codigo === documento.grupoCodigo);
     const integrante = tituloDoIntegrante(documento, grupo, ocorrencias);
     if (integrante !== undefined) incluirDocumento(montagem, { documento, grupo, integrante });
   }
-  return montagem.raiz;
+  return montagem.itensPrincipais;
 }
 
-function incluirDocumento(montagem: Montagem, folha: FolhaQueSeRepete): void {
-  const { documento, integrante } = folha;
-  const itens = descerAoGrupoDoDocumento(montagem.raiz, documento, integrante);
+function incluirDocumento(montagem: Montagem, itemDeDocumento: DocumentoQueSeRepete): void {
+  const { documento, integrante } = itemDeDocumento;
+  const itens = descerAoGrupoDoDocumento(montagem.itensPrincipais, documento, integrante);
   if (repeteParaTodos(documento)) {
-    incluirDeTodos(itens, folha, montagem.integrantesDeTodos);
+    incluirDeTodos(itens, itemDeDocumento, montagem.integrantesDeTodos);
     return;
   }
   const rotulo = integrante === null ? documento.nome : `${documento.nome} — ${integrante}`;
-  itens.push({ tipo: 'DOCUMENTO', documento: paraALista(documento, rotulo) });
+  itens.push({ forma: 'DOCUMENTO', documento: paraALista(documento, rotulo) });
 }
 
-/** O nível do primeiro grupo da árvore que se repete por integrante; negativo quando nenhum se repete. */
+/** O nível do primeiro grupo da estrutura de regras que se repete por integrante; negativo quando nenhum se repete. */
 function nivelDaRepeticao(documento: DocumentoAvaliado): number {
-  return documento.grupos.findIndex((g) => g.repetePorEntidade !== null);
+  return documento.grupos.findIndex((g) => g.grupoDoFormularioParaRepeticao !== null);
 }
 
 function repeteParaTodos(documento: DocumentoAvaliado): boolean {
   return (
-    documento.repetePorEntidade !== null &&
+    documento.grupoDoFormularioParaRepeticao !== null &&
     documento.grupos.length > 0 &&
     nivelDaRepeticao(documento) < 0
   );
 }
 
-/** Os itens do último grupo da árvore do documento, criando os grupos que ainda não existem. */
+/** Os itens do último grupo da estrutura de regras do documento, criando os grupos que ainda não existem. */
 function descerAoGrupoDoDocumento(
-  raiz: NoEmMontagem[],
+  itensPrincipais: ItemEmMontagem[],
   documento: DocumentoAvaliado,
   integrante: string | null,
-): NoEmMontagem[] {
+): ItemEmMontagem[] {
   return passosDaDescida(documento, integrante).reduce(
     (itens, { grupo, identidade }) => grupoEm(itens, grupo, identidade).itens,
-    raiz,
+    itensPrincipais,
   );
 }
 
@@ -152,7 +152,7 @@ interface PassoDaDescida {
   readonly identidade: IdentidadeDoGrupo;
 }
 
-/** Cada grupo por onde o documento desce, com a identidade que ele tem na árvore. */
+/** Cada grupo por onde o documento desce, com a identidade que ele tem na estrutura de regras. */
 function passosDaDescida(
   documento: DocumentoAvaliado,
   integrante: string | null,
@@ -193,24 +193,24 @@ function identidadeDeTodos(grupo: GrupoDoDocumento): IdentidadeDoGrupo {
   return { chave: `${grupo.grupoId}:todos`, integrante: null, deCadaIntegrante: true };
 }
 
-/** O nó que junta as escolhas de cada integrante: todas são pedidas. */
+/** A regra que junta as escolhas de cada integrante: todas são pedidas. */
 const JUNTOS: GrupoDoDocumento = {
   grupoId: '',
-  tipo: GRUPO_E,
+  forma: { codigo: TODOS_OS_ITENS, rotulo: 'Todos estes itens' },
   minimo: null,
-  repetePorEntidade: null,
+  grupoDoFormularioParaRepeticao: null,
 };
 
 type IdentidadeDoGrupo = Pick<GrupoEmMontagem, 'chave' | 'integrante' | 'deCadaIntegrante'>;
 
 /** O grupo do nível em que o documento entra: o já montado com a mesma identidade, ou um novo. */
 function grupoEm(
-  itens: NoEmMontagem[],
+  itens: ItemEmMontagem[],
   grupo: GrupoDoDocumento,
   identidade: IdentidadeDoGrupo,
 ): GrupoEmMontagem {
   const existente = itens.find(
-    (n): n is GrupoEmMontagem => n.tipo !== 'DOCUMENTO' && n.chave === identidade.chave,
+    (n): n is GrupoEmMontagem => n.forma !== 'DOCUMENTO' && n.chave === identidade.chave,
   );
   if (existente) return existente;
   const novo = novoGrupo(grupo, identidade);
@@ -220,7 +220,10 @@ function grupoEm(
 
 function novoGrupo(grupo: GrupoDoDocumento, identidade: IdentidadeDoGrupo): GrupoEmMontagem {
   return {
-    tipo: grupo.tipo === GRUPO_OU ? GRUPO_OU : GRUPO_E,
+    forma:
+      grupo.forma.codigo === QUANTIDADE_MINIMA_DE_ITENS
+        ? QUANTIDADE_MINIMA_DE_ITENS
+        : TODOS_OS_ITENS,
     minimo: grupo.minimo ?? 1,
     itens: [],
     ...identidade,
@@ -228,13 +231,13 @@ function novoGrupo(grupo: GrupoDoDocumento, identidade: IdentidadeDoGrupo): Grup
 }
 
 /**
- * A folha que se repete sob um grupo escolhido uma vez: um item só, com os integrantes de quem as
+ * A regra de documento que se repete sob um grupo escolhido uma vez: um item só, com os integrantes de quem as
  * respostas o pedem — o integrante a quem a exigência não se aplica não vem na avaliação — e a situação
  * de cada um.
  */
 function incluirDeTodos(
-  itens: NoEmMontagem[],
-  { documento, grupo, integrante }: FolhaQueSeRepete,
+  itens: ItemEmMontagem[],
+  { documento, grupo, integrante }: DocumentoQueSeRepete,
   integrantesDeTodos: Map<string, IntegranteDoItem[]>,
 ): void {
   const chave = `${documento.exigenciaId}:todos`;
@@ -244,7 +247,7 @@ function incluirDeTodos(
   ];
   integrantesDeTodos.set(chave, integrantes);
   const juntado = documentoJuntado(chave, documento, grupo, integrantes);
-  substituirOuAcrescentar(itens, { tipo: 'DOCUMENTO', documento: juntado });
+  substituirOuAcrescentar(itens, { forma: 'DOCUMENTO', documento: juntado });
 }
 
 function integranteDoItem(documento: DocumentoAvaliado, titulo: string | null): IntegranteDoItem {
@@ -253,11 +256,11 @@ function integranteDoItem(documento: DocumentoAvaliado, titulo: string | null): 
 }
 
 function substituirOuAcrescentar(
-  itens: NoEmMontagem[],
-  item: NoEmMontagem & { tipo: 'DOCUMENTO' },
+  itens: ItemEmMontagem[],
+  item: ItemEmMontagem & { forma: 'DOCUMENTO' },
 ): void {
   const indice = itens.findIndex(
-    (n) => n.tipo === 'DOCUMENTO' && n.documento.chave === item.documento.chave,
+    (n) => n.forma === 'DOCUMENTO' && n.documento.chave === item.documento.chave,
   );
   if (indice < 0) itens.push(item);
   else itens[indice] = item;

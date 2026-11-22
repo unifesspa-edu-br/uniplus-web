@@ -12,13 +12,13 @@ import {
 import { type ErroDoServidor, mensagemDosErros } from './formulario-do-candidato.model';
 import { ListaDeDocumentosComponent } from '../lista-de-documentos/lista-de-documentos';
 import { AGUARDE_A_VERIFICACAO } from './documentos-avaliados';
-import { type DocumentoNaTela, type NoDeDocumentos } from './arvore-de-documentos';
-import { textoDoGrupo } from './textos-da-arvore-de-documentos';
+import { type DocumentoNaTela, type ItemDeComprovacao } from './regras-de-documentos';
+import { textoDoGrupo } from './textos-das-regras-de-documentos';
 import type { AvaliacaoNaTela, PendenciaDaAvaliacao } from './modalidades-avaliadas';
 
-type GrupoDeDocumentos = Exclude<NoDeDocumentos, { tipo: 'DOCUMENTO' }>;
+type GrupoDeDocumentos = Exclude<ItemDeComprovacao, { forma: 'DOCUMENTO' }>;
 
-/** Um trecho de um nível da árvore: documentos seguidos, que formam uma lista, ou um grupo. */
+/** Um trecho de um nível da estrutura de regras: documentos seguidos, que formam uma lista, ou um grupo. */
 type Trecho =
   | { readonly tipo: 'LISTA'; readonly documentos: readonly DocumentoNaTela[] }
   | { readonly tipo: 'GRUPO'; readonly grupo: GrupoDeDocumentos };
@@ -26,9 +26,27 @@ type Trecho =
 /**
  * Os documentos que o edital pede nesta fase diante das respostas dadas até agora, como a API os calcula
  * (ADR-0143): o que já é exigido, o que pode ser exigido conforme as respostas que faltam, e as escolhas
- * entre alternativas, em listas aninhadas com nome. Leva às perguntas que decidem os que ainda podem ser
+ * entre alternativas, em listas contida em outras com nome. Leva às perguntas que decidem os que ainda podem ser
  * exigidos.
  */
+function agruparDocumentosConsecutivos(regras: readonly ItemDeComprovacao[]): readonly Trecho[] {
+  const trechos: Trecho[] = [];
+  for (const elemento of regras) {
+    if (elemento.forma !== 'DOCUMENTO') trechos.push({ tipo: 'GRUPO', grupo: elemento });
+    else acrescentarDocumento(trechos, elemento.documento);
+  }
+  return trechos;
+}
+
+function acrescentarDocumento(trechos: Trecho[], documento: DocumentoNaTela): void {
+  const ultimo = trechos.at(-1);
+  if (ultimo?.tipo === 'LISTA') {
+    trechos[trechos.length - 1] = { tipo: 'LISTA', documentos: [...ultimo.documentos, documento] };
+  } else {
+    trechos.push({ tipo: 'LISTA', documentos: [documento] });
+  }
+}
+
 @Component({
   selector: 'ui-documentos-da-inscricao',
   standalone: true,
@@ -122,7 +140,7 @@ type Trecho =
         >
           @for (item of grupo.itens; track $index) {
             <li>
-              @if (item.tipo === 'DOCUMENTO') {
+              @if (item.forma === 'DOCUMENTO') {
                 <ng-container
                   *ngTemplateOutlet="listaDeDocumentos; context: { $implicit: [item.documento] }"
                 />
@@ -136,7 +154,7 @@ type Trecho =
     </ng-template>
 
     <div class="documentos-da-inscricao">
-      @if (arvore() === null) {
+      @if (regras() === null) {
         <p>Os documentos exigidos nesta fase são calculados a partir das respostas dadas.</p>
       } @else if (trechos().length === 0) {
         <p>{{ semDocumentos() }}</p>
@@ -190,8 +208,8 @@ type Trecho =
 })
 export class DocumentosDaInscricaoComponent {
   readonly avaliacao = input.required<AvaliacaoNaTela>();
-  /** Os documentos desta fase, na árvore da escolha; nula antes da primeira avaliação dos documentos. */
-  readonly arvore = input.required<readonly NoDeDocumentos[] | null>();
+  /** Os documentos desta fase, na estrutura de regras da escolha; nula antes da primeira avaliação dos documentos. */
+  readonly regras = input.required<readonly ItemDeComprovacao[] | null>();
   /** O que falta responder para decidir os documentos desta fase que podem ser exigidos. */
   readonly pendencias = input<readonly PendenciaDaAvaliacao[]>([]);
   /** O que dizer quando nada é pedido nesta fase. */
@@ -231,24 +249,8 @@ export class DocumentosDaInscricaoComponent {
   readonly irAoCampo = output<string>();
   readonly tentarDeNovo = output<void>();
 
-  /** O primeiro nível da árvore, com os documentos seguidos numa lista só. */
-  protected readonly trechos = computed<readonly Trecho[]>(() => {
-    const trechos: Trecho[] = [];
-    for (const no of this.arvore() ?? []) {
-      const ultimo = trechos.at(-1);
-      if (no.tipo !== 'DOCUMENTO') {
-        trechos.push({ tipo: 'GRUPO', grupo: no });
-      } else if (ultimo?.tipo === 'LISTA') {
-        trechos[trechos.length - 1] = {
-          tipo: 'LISTA',
-          documentos: [...ultimo.documentos, no.documento],
-        };
-      } else {
-        trechos.push({ tipo: 'LISTA', documentos: [no.documento] });
-      }
-    }
-    return trechos;
-  });
+  /** O primeiro nível da estrutura de regras, com os documentos seguidos numa lista só. */
+  protected readonly trechos = computed(() => agruparDocumentosConsecutivos(this.regras() ?? []));
 
   protected readonly aguardeAVerificacao = AGUARDE_A_VERIFICACAO;
   protected readonly SEM_ARQUIVOS: readonly ArquivoEnviado[] = [];

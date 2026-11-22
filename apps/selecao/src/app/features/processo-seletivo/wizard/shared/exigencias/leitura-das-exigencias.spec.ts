@@ -53,14 +53,14 @@ describe('Leitura e regravação das exigências de documentos', () => {
                 id: 'b1',
                 referencia: 'Lei 12.711/2012',
                 abrangencia: 'FEDERAL',
-                status: 'RESOLVIDO',
+                situacao: 'RESOLVIDO',
                 observacao: 'cotas',
               },
               {
                 id: 'b2',
                 referencia: 'Edital 01/2027',
                 abrangencia: 'INTERNA_EDITAL',
-                status: 'PENDENTE',
+                situacao: 'PENDENTE',
                 observacao: null,
               },
             ],
@@ -74,10 +74,10 @@ describe('Leitura e regravação das exigências de documentos', () => {
     expect(bases[0]).toEqual({
       referencia: 'Lei 12.711/2012',
       abrangencia: 'FEDERAL',
-      status: 'RESOLVIDO',
+      situacao: 'RESOLVIDO',
       observacao: 'cotas',
     });
-    expect(bases[1].status).toBe('PENDENTE');
+    expect(bases[1].situacao).toBe('PENDENTE');
     expect(bases[1].observacao).toBeNull();
   });
 
@@ -141,14 +141,14 @@ describe('Leitura e regravação das exigências de documentos', () => {
                 id: 'b1',
                 referencia: 'Lei 12.711/2012',
                 abrangencia: 'FEDERAL',
-                status: 'RESOLVIDO',
+                situacao: 'RESOLVIDO',
                 observacao: 'cotas',
               },
               {
                 id: 'b2',
                 referencia: 'Edital 01/2027',
                 abrangencia: 'INTERNA_EDITAL',
-                status: 'RESOLVIDO',
+                situacao: 'RESOLVIDO',
                 observacao: null,
               },
             ],
@@ -175,7 +175,7 @@ describe('Leitura e regravação das exigências de documentos', () => {
     expect(bases[0].observacao).toBe('cotas');
   });
 
-  /** O `PUT` substitui a árvore inteira: o modelo que não volta no comando é desvinculado. */
+  /** O `PUT` substitui a estrutura de regras inteira: o modelo que não volta no comando é desvinculado. */
   it('regrava o modelo de documento que a exigência oferece', () => {
     const modelo = {
       modeloId: '01960000-0000-7000-0000-00000000a0de',
@@ -185,8 +185,8 @@ describe('Leitura e regravação das exigências de documentos', () => {
     };
     const lido = exigenciasDe(detalheDaApi([exigenciaDaApi({ requisitos: { modelo } })]));
 
-    const raizes = comando(lido);
+    const regrasPrincipais = comando(lido);
 
-    expect(raizes[0].documento?.requisitos?.modelo?.modeloId).toBe(modelo.modeloId);
+    expect(regrasPrincipais[0].documento?.requisitos?.modelo?.modeloId).toBe(modelo.modeloId);
   });
 });

@@ -1,9 +1,13 @@
-import type { ExigenciaDeDocumento, ExigenciasDoRascunho } from '../../processo-seletivo.models';
+import type {
+  ExigenciaDeDocumento,
+  ExigenciasDoRascunho,
+  RegraDeComprovacao as Regra,
+} from '../../processo-seletivo.models';
 
 import type { RestricaoDeArquivo } from './arquivo-da-exigencia';
 
-import { exigenciasDaRaiz, type RepeticaoDaExigencia } from './consulta-das-exigencias';
-import { comExigenciaNaRaiz, exigenciaNova, folhaDe } from './exigencias-documentais';
+import { exigenciasSemGrupo, type RepeticaoDaExigencia } from './consulta-das-exigencias';
+import { comExigenciaSemGrupo, exigenciaNova, regraDeDocumento } from './exigencias-documentais';
 
 /**
  * Materializa, em cada fase do cronograma, o documento que o operador declarou valer em todas.
@@ -12,56 +16,50 @@ import { comExigenciaNaRaiz, exigenciaNova, folhaDe } from './exigencias-documen
  * intenção ter sido declarada também precisa receber a exigência, e uma materialização feita
  * uma vez só deixaria essa fase de fora sem nada na tela denunciando a ausência.
  *
- * O modelo vem das folhas de raiz — copiar uma alternativa de grupo mudaria o sentido dela.
+ * O modelo vem das regras de documento de regra principal — copiar uma alternativa de grupo mudaria o sentido dela.
  */
 export function comAlcanceDeTodasAsFases(
   exigencias: ExigenciasDoRascunho,
   fasesVivas: readonly string[],
 ): ExigenciasDoRascunho {
-  let resultado = exigencias;
+  return exigencias.emTodasAsFases.reduce(
+    (resultado, id) => materializarDocumento(resultado, id, fasesVivas),
+    exigencias,
+  );
+}
 
-  for (const tipoDocumentoId of exigencias.emTodasAsFases) {
-    const folhaModelo = resultado.raizes.find(
-      (no) => no.tipo === 'FOLHA' && no.documento?.tipoDocumentoId === tipoDocumentoId,
-    );
-    const modelo = folhaModelo?.documento;
-    if (folhaModelo === undefined || modelo === undefined || modelo === null) continue;
+function materializarDocumento(
+  exigencias: ExigenciasDoRascunho,
+  id: string,
+  fases: readonly string[],
+): ExigenciasDoRascunho {
+  const modelo = exigencias.regrasDeComprovacao.find(
+    (regra) => regra.forma === 'DOCUMENTO' && regra.documento?.tipoDocumentoId === id,
+  );
+  if (modelo?.documento == null) return exigencias;
+  return fases.reduce((resultado, fase) => materializarNaFase(resultado, modelo, fase), exigencias);
+}
 
-    for (const faseCodigo of fasesVivas) {
-      // Só declaração de RAIZ conta como "já tem". O mesmo documento pode estar na fase como
-      // alternativa dentro de um grupo OU, e isso é outra coisa: ali ele é uma das saídas
-      // possíveis, não uma exigência. Aceitar a folha do grupo como satisfeita transformava
-      // "este documento é exigido" em "este documento serve", sem nada na tela dizendo.
-      const jaTemNaRaiz = exigenciasDaRaiz(resultado).some(
-        (exigencia) =>
-          exigencia.tipoDocumentoId === tipoDocumentoId && exigencia.faseCodigo === faseCodigo,
-      );
-      if (jaTemNaRaiz) continue;
-
-      // O formulário é próprio de cada declaração, como a fase e a etapa: o do modelo pode não ser
-      // respondido na fase de destino, e herdá-lo travaria a fase numa recusa. A cópia nasce sem
-      // declaração, e a fase de destino resolve o formulário que vale nela.
-      // A repetição vai junto com o gatilho que a cópia leva: sem ela, a condição sobre campo do
-      // grupo ficaria sem de quem ser lida, e "um por membro" viraria "um por candidato" em silêncio.
-      // Se a repetição vale na fase de destino, quem diz é a conferência da fase, como para o gatilho.
-      const copia = folhaDe({ ...modelo, faseCodigo, etapaId: null, finalidade: null });
-      resultado = {
-        ...resultado,
-        raizes: [
-          ...resultado.raizes,
-          { ...copia, repetePorEntidade: folhaModelo.repetePorEntidade },
-        ],
-      };
-    }
-  }
-
-  return resultado;
+function materializarNaFase(
+  exigencias: ExigenciasDoRascunho,
+  modelo: Regra,
+  faseCodigo: string,
+): ExigenciasDoRascunho {
+  const documento = modelo.documento;
+  if (documento === null) return exigencias;
+  const existe = exigenciasSemGrupo(exigencias).some(
+    (item) => item.tipoDocumentoId === documento.tipoDocumentoId && item.faseCodigo === faseCodigo,
+  );
+  if (existe) return exigencias;
+  const copia = regraDeDocumento({ ...documento, faseCodigo, etapaId: null, finalidade: null });
+  const regra = { ...copia, grupoDoFormularioParaRepeticao: modelo.grupoDoFormularioParaRepeticao };
+  return { ...exigencias, regrasDeComprovacao: [...exigencias.regrasDeComprovacao, regra] };
 }
 
 /** O que o alcance entre fases precisa saber do documento e do edital para se materializar. */
 export interface ContextoDoAlcance {
   readonly fases: readonly string[];
-  /** A fase em que o operador está: é nela que o modelo de raiz nasce, se faltar. */
+  /** A fase em que o operador está: é nela que o modelo de regra principal nasce, se faltar. */
   readonly faseAberta: string;
   /** A exigência do documento na fase aberta. */
   readonly modelo: ExigenciaDeDocumento;
@@ -100,7 +98,7 @@ export function valendoEmTodasAsFases(
 }
 
 /**
- * Alinha todas as declarações de raiz do documento à da fase aberta.
+ * Alinha todas as declarações de regra principal do documento à da fase aberta.
  *
  * "Vale em todas as fases" quer dizer a MESMA declaração em toda fase. Ligar o regime sobre
  * declarações que já divergiam deixava a tela anunciando uma coisa e a gravação enviando
@@ -112,25 +110,34 @@ export function valendoEmTodasAsFases(
 function alinhadoAFaseAberta(
   exigencias: ExigenciasDoRascunho,
   id: string,
-  { modelo, repeticao }: ContextoDoAlcance,
+  contexto: ContextoDoAlcance,
 ): ExigenciasDoRascunho {
+  const regras = exigencias.regrasDeComprovacao.map((regra) => alinharRegra(regra, id, contexto));
+  return { ...exigencias, regrasDeComprovacao: regras };
+}
+
+function alinharRegra(regra: Regra, id: string, { modelo, repeticao }: ContextoDoAlcance): Regra {
+  const atual = regra.documento;
+  if (regra.forma !== 'DOCUMENTO' || atual === null || atual.tipoDocumentoId !== id) return regra;
+  const grupo = repeticao?.herdada
+    ? regra.grupoDoFormularioParaRepeticao
+    : (repeticao?.grupo ?? null);
   return {
-    ...exigencias,
-    raizes: exigencias.raizes.map((no) =>
-      no.tipo === 'FOLHA' && no.documento !== null && no.documento.tipoDocumentoId === id
-        ? {
-            ...no,
-            repetePorEntidade:
-              repeticao?.herdada === true ? no.repetePorEntidade : (repeticao?.grupo ?? null),
-            documento: {
-              ...modelo,
-              faseCodigo: no.documento.faseCodigo,
-              etapaId: no.documento.etapaId,
-              finalidade: no.documento.finalidade,
-            },
-          }
-        : no,
-    ),
+    ...regra,
+    grupoDoFormularioParaRepeticao: grupo,
+    documento: modeloNaFase(modelo, atual),
+  };
+}
+
+function modeloNaFase(
+  modelo: ExigenciaDeDocumento,
+  atual: ExigenciaDeDocumento,
+): ExigenciaDeDocumento {
+  return {
+    ...modelo,
+    faseCodigo: atual.faseCodigo,
+    etapaId: atual.etapaId,
+    finalidade: atual.finalidade,
   };
 }
 
@@ -144,15 +151,12 @@ function materializadoEmTodasAsFases(
   id: string,
   { fases, faseAberta, restricao }: ContextoDoAlcance,
 ): ExigenciasDoRascunho {
-  const temModelo = exigenciasDaRaiz(exigencias).some(
+  const temModelo = exigenciasSemGrupo(exigencias).some(
     (exigencia) => exigencia.tipoDocumentoId === id,
   );
-  // O modelo é semeado na RAIZ, não por `comExigencia`: quando o documento só existe como
-  // alternativa dentro de um grupo OU, aquela substituiria a folha do grupo e a raiz
-  // continuaria sem modelo. Nasce na fase ABERTA, onde o operador espera ver o que replica.
   const base = temModelo
     ? exigencias
-    : comExigenciaNaRaiz(exigencias, exigenciaNova(id, faseAberta, restricao));
+    : comExigenciaSemGrupo(exigencias, exigenciaNova(id, faseAberta, restricao));
 
   return comAlcanceDeTodasAsFases({ ...base, emTodasAsFases: [id] }, fases);
 }

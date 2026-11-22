@@ -1,21 +1,21 @@
 import type {
   BaseLegalConfig,
   ExigenciaDeDocumento,
-  NoDeExigencia,
+  RegraDeComprovacao,
 } from '../../processo-seletivo.models';
 import { FASES_CANONICAS, ID_AVALIACAO } from './cronograma.testing';
 import type { ContextoDoCronograma } from './cronograma-passo.testing';
 
-const FOLHA_SEM_DOCUMENTO: Omit<NoDeExigencia, 'documento'> = {
-  tipo: 'FOLHA',
+const FOLHA_SEM_DOCUMENTO: Omit<RegraDeComprovacao, 'documento'> = {
+  forma: 'DOCUMENTO',
   quantidadeMinima: null,
   consequencia: null,
   basesLegais: null,
-  filhos: null,
-  chaveDistincao: null,
+  itens: null,
+  criterioDeDistincao: null,
   dataReferencia: null,
   ocorrenciasEsperadas: null,
-  repetePorEntidade: null,
+  grupoDoFormularioParaRepeticao: null,
 };
 
 const DOCUMENTO_GERAL_E_OBRIGATORIO = {
@@ -57,7 +57,7 @@ export class AjudantesDeExigencias {
     const documento = documentoDaAvaliacao(bases, patch);
     this.tela.store.patchSection('documentos', {
       emTodasAsFases: [],
-      raizes: [{ ...FOLHA_SEM_DOCUMENTO, documento }],
+      regrasDeComprovacao: [{ ...FOLHA_SEM_DOCUMENTO, documento }],
     });
     this.tela.detectar();
   };

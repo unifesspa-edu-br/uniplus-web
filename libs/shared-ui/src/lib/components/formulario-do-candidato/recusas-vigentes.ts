@@ -69,15 +69,19 @@ function recusasQueValem(
   decisoes: DecisoesDaAvaliacao,
 ): readonly ErroDoServidor[] {
   if (!todas.some((e) => ehCampoDeDocumento(e.campo))) return todas;
-  const atendidas = new Set(
-    Object.entries(decisoes.situacoes())
-      .filter(([, situacao]) => situacao === 'SATISFEITA')
-      .map(([chave]) => chave),
-  );
-  const arvore = decisoes.documentosDaAvaliacao()?.arvore ?? [];
+  const atendidas = exigenciasSatisfeitas(decisoes);
+  const regras = decisoes.documentosDaAvaliacao()?.regras ?? [];
   return todas.filter(
     (e) =>
       !ehCampoDeDocumento(e.campo) ||
-      !exigenciaAtendida(chaveDoCampoDeDocumento(e.campo), arvore, atendidas),
+      !exigenciaAtendida(chaveDoCampoDeDocumento(e.campo), regras, atendidas),
+  );
+}
+
+function exigenciasSatisfeitas(decisoes: DecisoesDaAvaliacao): ReadonlySet<string> {
+  return new Set(
+    Object.entries(decisoes.situacoes())
+      .filter(([, situacao]) => situacao === 'SATISFEITA')
+      .map(([chave]) => chave),
   );
 }

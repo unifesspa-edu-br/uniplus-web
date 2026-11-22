@@ -14,7 +14,7 @@ import {
   DefinirTaxaInscricaoRequest,
   EtapaProcessoInput,
   FaseCronogramaInput,
-  NoExigenciaInput,
+  RegraDeComprovacaoInformada,
   ProcessosSeletivosApi,
   CronogramaDoProcessoApi,
   VagasDoProcessoApi,
@@ -142,13 +142,17 @@ export class CadastroInicial {
     );
   }
 
-  /** Substitui a árvore inteira; árvore vazia é certame que não coleta documento. */
+  /** Substitui as regras; uma lista vazia indica que o certame não coleta documentos. */
   definirDocumentosExigidos(
     processoSeletivoId: string,
-    raizes: readonly NoExigenciaInput[],
+    regrasDeComprovacao: readonly RegraDeComprovacaoInformada[],
   ): Promise<ResultadoGravacao> {
-    return this.gravacao.gravar('documentosExigidos', raizes, (contexto) =>
-      this.cronogramaApi.definirDocumentosExigidos(processoSeletivoId, raizes, contexto),
+    return this.gravacao.gravar('documentosExigidos', regrasDeComprovacao, (contexto) =>
+      this.cronogramaApi.definirDocumentosExigidos(
+        processoSeletivoId,
+        regrasDeComprovacao,
+        contexto,
+      ),
     );
   }
 

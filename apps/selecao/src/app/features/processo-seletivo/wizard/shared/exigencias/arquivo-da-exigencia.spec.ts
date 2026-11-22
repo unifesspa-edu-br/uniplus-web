@@ -7,20 +7,20 @@ import { ID_CONTRACHEQUE, comando, rascunho } from './exigencias.testing';
 describe('teto de tamanho', () => {
   /**
    * O contrato recebe o teto como `int32`; o cadastro não limita o valor em MB. Acima do que
-   * o campo comporta, a gravação da árvore inteira voltaria 400 por causa de um documento.
+   * o campo comporta, a gravação da estrutura de regras inteira voltaria 400 por causa de um documento.
    */
   it('omite o teto que não cabe no inteiro de 32 bits', () => {
-    const raizes = comando(
+    const regrasPrincipais = comando(
       rascunho(exigenciaNova(ID_CONTRACHEQUE, 'HABILITACAO', { tamanhoMaximoMb: 4096 })),
     );
-    expect(raizes[0].documento?.requisitos?.tamanhoMaximoBytes).toBeNull();
+    expect(regrasPrincipais[0].documento?.requisitos?.tamanhoMaximoBytes).toBeNull();
   });
 
   it('mantém o teto que cabe', () => {
-    const raizes = comando(
+    const regrasPrincipais = comando(
       rascunho(exigenciaNova(ID_CONTRACHEQUE, 'HABILITACAO', { tamanhoMaximoMb: 5 })),
     );
-    expect(raizes[0].documento?.requisitos?.tamanhoMaximoBytes).toBe(5 * 1024 * 1024);
+    expect(regrasPrincipais[0].documento?.requisitos?.tamanhoMaximoBytes).toBe(5 * 1024 * 1024);
   });
 });
 

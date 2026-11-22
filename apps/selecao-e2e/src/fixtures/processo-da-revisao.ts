@@ -144,7 +144,7 @@ const DIMENSOES_SEM_CADASTRO = {
   cascata: null,
   criteriosDesempate: [],
   documentosExigidos: [],
-  raizesExigencia: [],
+  regrasDeComprovacao: [],
   referenciaTemporalFatos: null,
   regrasDerivacao: [],
   formularios: [],

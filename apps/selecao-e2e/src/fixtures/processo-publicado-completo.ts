@@ -17,7 +17,7 @@ import {
   PARAMETROS_DO_DESEMPATE_SEM_VALOR as PARAMETROS_SEM_VALOR,
   referencia,
 } from './regras-congeladas-do-servidor';
-import { folhaDaExigencia } from './no-da-exigencia-do-servidor';
+import { regraDaExigencia } from './regra-de-comprovacao-do-servidor';
 
 type RecursoDaEtapa = EtapaProcessoDto['publicacoes']['recursos'][number];
 
@@ -197,8 +197,8 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
       ],
     }),
   ],
-  raizesExigencia: [
-    folhaDaExigencia({
+  regrasDeComprovacao: [
+    regraDaExigencia({
       id: '01a0d640-0000-7000-8000-000000000a11',
       faseId: FASE_ID,
       tipoDocumento: {
@@ -209,7 +209,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
       obrigatorio: true,
       consequencia: 'ELIMINA',
     }),
-    folhaDaExigencia({
+    regraDaExigencia({
       id: '01a0d640-0000-7000-8000-000000000a12',
       faseId: FASE_ID,
       tipoDocumento: {

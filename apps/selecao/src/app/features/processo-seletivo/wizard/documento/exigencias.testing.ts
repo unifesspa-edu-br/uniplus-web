@@ -3,7 +3,7 @@ import {
   AplicabilidadeDaExigencia,
   OperadorDaCondicao,
   ReferenciaDaIdadeMaxima,
-  TipoDeNoDaArvore,
+  FormaDeComprovacaoDaConfiguracao,
   UnidadeDaIdadeMaxima,
   type DocumentoDaConfiguracao,
 } from '@uniplus/shared-data/selecao';
@@ -11,7 +11,7 @@ import {
 import { documentoSemNada } from './exemplos.testing';
 
 /**
- * Duas exigências, uma árvore com nó de `ordem` fora de sequência e um nó vazio, e os campos que o
+ * Duas exigências, regras com documentos e um grupo vazio, e os campos que o
  * catálogo preenche, para provar que o que o passo não edita volta intacto.
  */
 const EXIGENCIAS_COMPLETAS: DocumentoDaConfiguracao = {
@@ -49,21 +49,22 @@ const EXIGENCIAS_COMPLETAS: DocumentoDaConfiguracao = {
         tamanhoMaximoBytes: 5242880,
       },
     ],
-    arvoreDeSatisfacao: [
+    regrasDeComprovacao: [
       {
-        ordem: 4,
-        tipo: TipoDeNoDaArvore.E,
-        filhos: [
-          { tipo: TipoDeNoDaArvore.FOLHA, exigenciaChave: 'documento-de-identificacao' },
+        forma: FormaDeComprovacaoDaConfiguracao.TODOS_OS_ITENS,
+        itens: [
           {
-            ordem: 9,
-            tipo: TipoDeNoDaArvore.FOLHA,
+            forma: FormaDeComprovacaoDaConfiguracao.DOCUMENTO,
+            exigenciaChave: 'documento-de-identificacao',
+          },
+          {
+            forma: FormaDeComprovacaoDaConfiguracao.DOCUMENTO,
             exigenciaChave: 'comprovante-de-renda',
             quantidadeMinima: 2,
           },
         ],
       },
-      { tipo: TipoDeNoDaArvore.OU, filhos: [] },
+      { forma: FormaDeComprovacaoDaConfiguracao.QUANTIDADE_MINIMA_DE_ITENS, itens: [] },
     ],
   },
 };

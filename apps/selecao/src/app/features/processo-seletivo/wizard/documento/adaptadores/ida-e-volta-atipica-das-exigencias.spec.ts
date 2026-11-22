@@ -1,4 +1,7 @@
-import { TipoDeNoDaArvore, type DocumentoDaConfiguracao } from '@uniplus/shared-data/selecao';
+import {
+  FormaDeComprovacaoDaConfiguracao,
+  type DocumentoDaConfiguracao,
+} from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { catalogoPorCodigo } from '../catalogos-por-codigo';
@@ -19,7 +22,7 @@ function comExigidos(
 /** Valores que o esquema admite e que a leitura do formulário poderia normalizar sem querer. */
 const ATIPICOS: readonly [string, DocumentoDaConfiguracao][] = [
   ['Seção vazia', comExigidos({})],
-  ['Listas vazias', comExigidos({ exigencias: [], arvoreDeSatisfacao: [] })],
+  ['Listas vazias', comExigidos({ exigencias: [], regrasDeComprovacao: [] })],
   [
     'Exigência só com a chave',
     comExigidos({ exigencias: [{ chave: 'a' }, { chave: 'a' }, { chave: 'b' }] }),
@@ -54,32 +57,31 @@ const ATIPICOS: readonly [string, DocumentoDaConfiguracao][] = [
     }),
   ],
   [
-    'Árvore com nós de `ordem` repetida e fora de sequência, e filhos vazios',
+    'Regras de documento e grupo sem itens',
     comExigidos({
-      arvoreDeSatisfacao: [
+      regrasDeComprovacao: [
         {
-          ordem: 3,
-          tipo: TipoDeNoDaArvore.E,
-          filhos: [
-            { ordem: 3, tipo: TipoDeNoDaArvore.FOLHA },
-            { ordem: 1, tipo: TipoDeNoDaArvore.FOLHA },
+          forma: FormaDeComprovacaoDaConfiguracao.TODOS_OS_ITENS,
+          itens: [
+            { forma: FormaDeComprovacaoDaConfiguracao.DOCUMENTO },
+            { forma: FormaDeComprovacaoDaConfiguracao.DOCUMENTO },
           ],
         },
-        { ordem: 3, tipo: TipoDeNoDaArvore.OU, filhos: [] },
+        { forma: FormaDeComprovacaoDaConfiguracao.QUANTIDADE_MINIMA_DE_ITENS, itens: [] },
       ],
     }),
   ],
   [
-    'Nó com ocorrências repetidas, quantidade em notação científica e bases legais vazias',
+    'Regra com ocorrências repetidas, quantidade em notação científica e bases legais vazias',
     comExigidos({
-      arvoreDeSatisfacao: [
+      regrasDeComprovacao: [
         {
-          tipo: TipoDeNoDaArvore.FOLHA,
+          forma: FormaDeComprovacaoDaConfiguracao.DOCUMENTO,
           exigenciaChave: ' a ',
           quantidadeMinima: 1e21,
           ocorrenciasEsperadas: ['jan', 'jan', ' '],
           basesLegais: [{}],
-          repetePorEntidade: ' familia ',
+          grupoDoFormularioParaRepeticao: ' familia ',
         },
       ],
     }),

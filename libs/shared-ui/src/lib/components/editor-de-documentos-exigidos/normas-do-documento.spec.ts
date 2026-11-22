@@ -92,7 +92,7 @@ describe('NormasDoDocumentoComponent', () => {
     situacao.value = 'PENDENTE';
     situacao.dispatchEvent(new Event('change'));
 
-    expect(hospedeiro.bases()[0]).toMatchObject({ abrangencia: 'FEDERAL', status: 'PENDENTE' });
+    expect(hospedeiro.bases()[0]).toMatchObject({ abrangencia: 'FEDERAL', situacao: 'PENDENTE' });
   });
 
   /**
@@ -108,7 +108,7 @@ describe('NormasDoDocumentoComponent', () => {
     digitar('teste-base-0-ref', 'Lei 12.711/2012');
 
     expect(hospedeiro.bases()).toEqual([
-      { ...baseLegalNova(), referencia: 'Lei 12.711/2012', status: 'PENDENTE' },
+      { ...baseLegalNova(), referencia: 'Lei 12.711/2012', situacao: 'PENDENTE' },
       baseLegalNova(),
     ]);
   });

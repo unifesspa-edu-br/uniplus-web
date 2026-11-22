@@ -4,7 +4,7 @@ import type {
   AbrangenciaDaBaseLegal,
   FormatoPermitido,
   ReferenciaDaIdadeMaxima,
-  StatusDaBaseLegal,
+  SituacaoDaBaseLegal,
   UnidadeDaIdadeMaxima,
 } from '@uniplus/shared-data/selecao';
 
@@ -24,7 +24,7 @@ export interface BaseLegalDoFormulario {
   readonly origem?: number;
   readonly referencia: string;
   readonly abrangencia: AbrangenciaDaBaseLegal | '';
-  readonly status: StatusDaBaseLegal | '';
+  readonly situacao: SituacaoDaBaseLegal | '';
   readonly observacao: string;
 }
 
@@ -57,7 +57,7 @@ export function baseLegalComValores(
     atual ?? {},
     (base) => comCampo(base, 'referencia', textoQueVale(base.referencia, valores.referencia)),
     (base) => comEscolha(base, 'abrangencia', valores.abrangencia),
-    (base) => comEscolha(base, 'status', valores.status),
+    (base) => comEscolha(base, 'situacao', valores.situacao),
     (base) => comCampo(base, 'observacao', textoQueVale(base.observacao, valores.observacao)),
   );
 }

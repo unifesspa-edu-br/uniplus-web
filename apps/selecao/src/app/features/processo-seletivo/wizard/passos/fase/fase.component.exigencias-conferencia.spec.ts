@@ -74,7 +74,7 @@ describe('FasePassoComponent', () => {
 
       it('continua com a norma declarada mas pendente', () => {
         editor().definirBasesLegais(ID_CPF, [
-          umaNorma({ referencia: 'Lei 12.711/2012, art. 3º', status: 'PENDENTE' }),
+          umaNorma({ referencia: 'Lei 12.711/2012, art. 3º', situacao: 'PENDENTE' }),
         ]);
         detectar();
 

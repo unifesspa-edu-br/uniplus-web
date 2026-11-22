@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { arvoreDeExigencias } from '../../shared/exigencias/gravacao-das-exigencias';
+import { regrasDeComprovacaoParaEnvio } from '../../shared/exigencias/gravacao-das-exigencias';
 import { fase, ID_AVALIACAO, ID_CPF, proximoPasso } from './fase.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 
@@ -65,7 +65,7 @@ describe('FasePassoComponent', () => {
 
     /** As normas como o comando as leva ao servidor. */
     const gravadas = () =>
-      arvoreDeExigencias(store.draft().documentos, {
+      regrasDeComprovacaoParaEnvio(store.draft().documentos, {
         faseIdPorCodigo: new Map([['AVALIACAO', ID_AVALIACAO]]),
         modalidadesOfertadas: [],
         etapasVivas: new Set<string>(),
@@ -112,7 +112,7 @@ describe('FasePassoComponent', () => {
         {
           referencia: 'Lei 12.711/2012, art. 3º',
           abrangencia: 'FEDERAL',
-          status: 'PENDENTE',
+          situacao: 'PENDENTE',
           observacao: null,
         },
       ]);
@@ -159,9 +159,9 @@ describe('FasePassoComponent', () => {
       detectar();
 
       expect(referencias()).toHaveLength(2);
-      expect(store.draft().documentos.raizes[0].documento?.basesLegais).toEqual([
-        expect.objectContaining({ referencia: 'Lei A', status: 'PENDENTE' }),
-        expect.objectContaining({ referencia: '', status: 'RESOLVIDO' }),
+      expect(store.draft().documentos.regrasDeComprovacao[0].documento?.basesLegais).toEqual([
+        expect.objectContaining({ referencia: 'Lei A', situacao: 'PENDENTE' }),
+        expect.objectContaining({ referencia: '', situacao: 'RESOLVIDO' }),
       ]);
     });
 

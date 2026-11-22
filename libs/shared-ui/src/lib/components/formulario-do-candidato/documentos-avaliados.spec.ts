@@ -1,4 +1,4 @@
-import { arvoreDeDocumentos } from './arvore-de-documentos';
+import { regrasDeDocumentos } from './regras-de-documentos';
 import { documentosDoFormulario, type DocumentosAvaliados } from './documentos-avaliados';
 import {
   CANDIDATO,
@@ -6,7 +6,7 @@ import {
   documento,
   e,
   FAMILIA,
-  folhaRepetida,
+  documentoRepetido,
   MAE,
   ou,
   PAI,
@@ -44,9 +44,9 @@ describe('documentosDoFormulario', () => {
   });
 });
 
-describe('arvoreDeDocumentos', () => {
+describe('regrasDeDocumentos', () => {
   it('a alternativa dentro de outra não faz a outra opção parecer obrigatória', () => {
-    const arvore = arvoreDeDocumentos(
+    const regras = regrasDeDocumentos(
       [
         documento('RG', { grupos: [ou('externo'), ou('identidade')] }),
         documento('CNH', { grupos: [ou('externo'), ou('identidade')] }),
@@ -56,7 +56,7 @@ describe('arvoreDeDocumentos', () => {
       {},
     );
 
-    expect(comoTexto(arvore)).toEqual([
+    expect(comoTexto(regras)).toEqual([
       {
         'Envie uma das opções abaixo, à sua escolha:': [
           { 'Envie um dos documentos abaixo, à sua escolha:': ['RG', 'CNH'] },
@@ -67,7 +67,7 @@ describe('arvoreDeDocumentos', () => {
   });
 
   it('o conjunto que vale junto aparece como uma opção, não como documentos soltos', () => {
-    const arvore = arvoreDeDocumentos(
+    const regras = regrasDeDocumentos(
       [
         documento('RG', { grupos: [ou('a1')] }),
         documento('CNH', { grupos: [ou('a1'), e('a2')] }),
@@ -78,7 +78,7 @@ describe('arvoreDeDocumentos', () => {
       {},
     );
 
-    expect(comoTexto(arvore)).toEqual([
+    expect(comoTexto(regras)).toEqual([
       {
         'Envie uma das opções abaixo, à sua escolha:': [
           'RG',
@@ -89,20 +89,20 @@ describe('arvoreDeDocumentos', () => {
     ]);
   });
 
-  it('o N-de diz quantos bastam', () => {
-    const arvore = arvoreDeDocumentos(
+  it('a quantidade mínima de itens diz quantos bastam', () => {
+    const regras = regrasDeDocumentos(
       ['A', 'B', 'C'].map((nome) => documento(nome, { grupos: [ou('n', 2)] })),
       [],
       {},
     );
 
-    expect(comoTexto(arvore)).toEqual([
+    expect(comoTexto(regras)).toEqual([
       { 'Envie 2 dos documentos abaixo, à sua escolha:': ['A', 'B', 'C'] },
     ]);
   });
 
   it('o documento repetido por integrante leva o título dele no formulário, sem dado pessoal', () => {
-    const arvore = arvoreDeDocumentos(
+    const regras = regrasDeDocumentos(
       [
         documento('Comprovante de renda', { grupoCodigo: 'FAMILIA', ocorrenciaId: 'o1' }),
         documento('Comprovante de renda', { grupoCodigo: 'FAMILIA', ocorrenciaId: 'o2' }),
@@ -112,7 +112,7 @@ describe('arvoreDeDocumentos', () => {
       { FAMILIA: [CANDIDATO, MAE] },
     );
 
-    expect(comoTexto(arvore)).toEqual([
+    expect(comoTexto(regras)).toEqual([
       'Comprovante de renda — Você (candidato)',
       'Comprovante de renda — Integrante 1',
       'Comprovante de renda — de cada integrante (composição familiar)',
@@ -124,13 +124,13 @@ describe('arvoreDeDocumentos', () => {
     const porMembro = ou('a1', 1, 'FAMILIA');
     const doMembro = (nome: string, ocorrenciaId: string) =>
       documento(nome, { grupoCodigo: 'FAMILIA', ocorrenciaId, grupos: [porMembro] });
-    const arvore = arvoreDeDocumentos(
+    const regras = regrasDeDocumentos(
       [doMembro('RG', 'o1'), doMembro('CNH', 'o1'), doMembro('RG', 'o2'), doMembro('CNH', 'o2')],
       [FAMILIA],
       { FAMILIA: [CANDIDATO, MAE] },
     );
 
-    expect(comoTexto(arvore)).toEqual([
+    expect(comoTexto(regras)).toEqual([
       {
         'Você (candidato): Envie um dos documentos abaixo, à sua escolha:': [
           'RG — Você (candidato)',
@@ -146,20 +146,20 @@ describe('arvoreDeDocumentos', () => {
     ]);
   });
 
-  /** A folha que se repete sob um OU escolhido uma vez: o RG de todos, ou a CNH de todos. */
+  /** A regra de documento que se repete sob um grupo de alternativas escolhido uma vez: o RG de todos, ou a CNH de todos. */
   it('a escolha entre documentos que se repetem é uma só, e o escolhido vale para todos', () => {
-    const arvore = arvoreDeDocumentos(
+    const regras = regrasDeDocumentos(
       [
-        folhaRepetida('RG', 'o1', 'PODE_SER_EXIGIDO'),
-        folhaRepetida('CNH', 'o1'),
-        folhaRepetida('RG', 'o2'),
-        folhaRepetida('CNH', 'o2'),
+        documentoRepetido('RG', 'o1', 'PODE_SER_EXIGIDO'),
+        documentoRepetido('CNH', 'o1'),
+        documentoRepetido('RG', 'o2'),
+        documentoRepetido('CNH', 'o2'),
       ],
       [FAMILIA],
       { FAMILIA: [CANDIDATO, MAE] },
     );
 
-    expect(comoTexto(arvore)).toEqual([
+    expect(comoTexto(regras)).toEqual([
       {
         'Envie um dos documentos abaixo, à sua escolha:': [
           'RG — do Integrante 1; pode ser exigido de Você (candidato)',
@@ -167,22 +167,27 @@ describe('arvoreDeDocumentos', () => {
         ],
       },
     ]);
-    const [rg, cnh] = arvore[0].tipo === 'DOCUMENTO' ? [] : arvore[0].itens;
-    expect(rg.tipo === 'DOCUMENTO' && rg.documento.situacao).toBe(
+    const [rg, cnh] = regras[0].forma === 'DOCUMENTO' ? [] : regras[0].itens;
+    expect(rg.forma === 'DOCUMENTO' && rg.documento.situacao).toBe(
       'Conforme o integrante, como indicado no nome',
     );
-    expect(cnh.tipo === 'DOCUMENTO' && cnh.documento.situacao).toBe('Exigido pelas suas respostas');
+    expect(cnh.forma === 'DOCUMENTO' && cnh.documento.situacao).toBe(
+      'Exigido pelas suas respostas',
+    );
   });
 
   /** O irmão sem renda não recebe o comprovante: a avaliação não traz a linha dele. */
   it('o documento que se repete nomeia só os integrantes a que se aplica', () => {
-    const arvore = arvoreDeDocumentos(
-      [folhaRepetida('Comprovante de renda', 'o1'), folhaRepetida('Comprovante de renda', 'o3')],
+    const regras = regrasDeDocumentos(
+      [
+        documentoRepetido('Comprovante de renda', 'o1'),
+        documentoRepetido('Comprovante de renda', 'o3'),
+      ],
       [FAMILIA],
       { FAMILIA: [CANDIDATO, MAE, PAI] },
     );
 
-    expect(comoTexto(arvore)).toEqual([
+    expect(comoTexto(regras)).toEqual([
       {
         'Envie o documento abaixo:': [
           'Comprovante de renda — de Você (candidato) e do Integrante 2',
@@ -197,9 +202,9 @@ describe('arvoreDeDocumentos', () => {
       documento(nome, {
         grupoCodigo: 'FAMILIA',
         ocorrenciaId,
-        grupos: [ou('ext'), { ...e('in'), repetePorEntidade: 'FAMILIA' }],
+        grupos: [ou('ext'), { ...e('in'), grupoDoFormularioParaRepeticao: 'FAMILIA' }],
       });
-    const arvore = arvoreDeDocumentos(
+    const regras = regrasDeDocumentos(
       [
         doMembro('A', 'o1'),
         doMembro('B', 'o1'),
@@ -211,7 +216,7 @@ describe('arvoreDeDocumentos', () => {
       { FAMILIA: [CANDIDATO, MAE] },
     );
 
-    expect(comoTexto(arvore)).toEqual([
+    expect(comoTexto(regras)).toEqual([
       {
         'Envie uma das opções abaixo, à sua escolha:': [
           {
@@ -237,17 +242,17 @@ describe('arvoreDeDocumentos', () => {
   });
 
   it('o documento do integrante que já saiu do formulário não aparece', () => {
-    const arvore = arvoreDeDocumentos(
+    const regras = regrasDeDocumentos(
       [documento('Comprovante de renda', { grupoCodigo: 'FAMILIA', ocorrenciaId: 'o2' })],
       [FAMILIA],
       { FAMILIA: [CANDIDATO] },
     );
 
-    expect(arvore).toEqual([]);
+    expect(regras).toEqual([]);
   });
 
   it('diz a situação no lugar de a quem a exigência se aplica', () => {
-    const situacoes = arvoreDeDocumentos(
+    const situacoes = regrasDeDocumentos(
       [
         documento('A'),
         documento('B', { situacao: 'PODE_SER_EXIGIDO' }),
@@ -255,7 +260,11 @@ describe('arvoreDeDocumentos', () => {
       ],
       [],
       {},
-    ).map((no) => (no.tipo === 'DOCUMENTO' ? [no.documento.situacao, no.documento.exigido] : []));
+    ).map((elemento) =>
+      elemento.forma === 'DOCUMENTO'
+        ? [elemento.documento.situacao, elemento.documento.exigido]
+        : [],
+    );
 
     expect(situacoes).toEqual([
       ['Exigido pelas suas respostas', true],

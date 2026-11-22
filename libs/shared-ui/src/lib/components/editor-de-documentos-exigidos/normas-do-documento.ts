@@ -16,7 +16,7 @@ import {
   ABRANGENCIAS_ESCOLHIVEIS,
   type BaseLegal,
   baseLegalNova,
-  STATUS_BASE_LEGAL_ESCOLHIVEIS,
+  SITUACAO_BASE_LEGAL_ESCOLHIVEIS,
 } from '@uniplus/shared-utils';
 
 /** Os textos do bloco de normas. Cada tela fala a própria língua; o comportamento é o mesmo. */
@@ -25,7 +25,7 @@ export interface TextosDasNormas {
   readonly referencia: string;
   readonly placeholderReferencia: string;
   readonly abrangencia: string;
-  readonly status: string;
+  readonly situacao: string;
   readonly observacao: string;
   /** Complemento do rótulo da observação, só para leitor de tela. */
   readonly observacaoOculta: string;
@@ -51,7 +51,7 @@ const TEXTOS_PADRAO: TextosDasNormas = {
   referencia: 'Referência da norma',
   placeholderReferencia: '',
   abrangencia: 'Alcance',
-  status: 'Situação',
+  situacao: 'Situação',
   observacao: 'Observação',
   observacaoOculta: '',
   observacaoSufixo: '',
@@ -137,17 +137,17 @@ const TEXTOS_PADRAO: TextosDasNormas = {
       </div>
       <div [class]="classeDoCampo()">
         <label [class]="classeDoRotulo()" [for]="idDe('base-' + indice + '-sts')">{{
-          textosDaTela().status
+          textosDaTela().situacao
         }}</label>
         <select
           class="select"
           [id]="idDe('base-' + indice + '-sts')"
           [disabled]="disabled()"
-          (change)="trocarBase(indice, { status: valorDe($event) })"
+          (change)="trocarBase(indice, { situacao: valorDe($event) })"
         >
-          @for (status of statusEscolhiveis; track status.valor) {
-            <option [value]="status.valor" [selected]="status.valor === base.status">
-              {{ status.rotulo }}
+          @for (situacao of situacoesEscolhiveis; track situacao.valor) {
+            <option [value]="situacao.valor" [selected]="situacao.valor === base.situacao">
+              {{ situacao.rotulo }}
             </option>
           }
         </select>
@@ -267,7 +267,7 @@ export class NormasDoDocumentoComponent {
   readonly basesChange = output<readonly BaseLegal[]>();
 
   protected readonly abrangencias = ABRANGENCIAS_ESCOLHIVEIS;
-  protected readonly statusEscolhiveis = STATUS_BASE_LEGAL_ESCOLHIVEIS;
+  protected readonly situacoesEscolhiveis = SITUACAO_BASE_LEGAL_ESCOLHIVEIS;
 
   protected readonly textosDaTela = computed<TextosDasNormas>(() => ({
     ...TEXTOS_PADRAO,

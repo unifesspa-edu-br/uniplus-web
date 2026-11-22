@@ -25,10 +25,10 @@ import {
   DocumentoDaConfiguracaoExigenciasIdadeMaximaEmissaoUnidade as UnidadeDaIdadeMaxima,
   DocumentoDaConfiguracaoPredicadoBaseLegalAbrangencia as AbrangenciaDaBaseLegal,
   DocumentoDaConfiguracaoPredicadoCondicaoOperador as OperadorDaCondicao,
-  DocumentoDaConfiguracaoPredicadoBaseLegalStatus as StatusDaBaseLegal,
-  DocumentoDaConfiguracaoArvoreDeSatisfacaoChaveDistincao as ChaveDeDistincaoDoNo,
-  DocumentoDaConfiguracaoArvoreDeSatisfacaoConsequencia as ConsequenciaDoNo,
-  DocumentoDaConfiguracaoArvoreDeSatisfacaoTipo as TipoDeNoDaArvore,
+  DocumentoDaConfiguracaoPredicadoBaseLegalSituacao as SituacaoDaBaseLegal,
+  DocumentoDaConfiguracaoRegrasDeComprovacaoCriterioDeDistincao as CriterioDeDistincaoDaRegra,
+  DocumentoDaConfiguracaoRegrasDeComprovacaoConsequencia as ConsequenciaDaRegra,
+  DocumentoDaConfiguracaoRegrasDeComprovacaoForma as FormaDeComprovacaoDaConfiguracao,
   DocumentoDaConfiguracaoIdentificacaoOrigemCandidatos,
   DocumentoDaConfiguracaoMotivoSentido as SentidoDoMotivo,
   DocumentoDaConfiguracaoOpcoesDeCursoNumero,
@@ -69,8 +69,8 @@ export type DocumentoDaConfiguracaoRegraDeDerivacao = NonNullable<
 >[number];
 export type DocumentoDaConfiguracaoExigencia =
   Esquemas['DocumentoDaConfiguracaoExigenciasExigencia'];
-export type DocumentoDaConfiguracaoNoDaArvore =
-  Esquemas['DocumentoDaConfiguracaoArvoreDeSatisfacao'];
+export type DocumentoDaConfiguracaoRegraDeComprovacao =
+  Esquemas['DocumentoDaConfiguracaoRegrasDeComprovacao'];
 export type DocumentoDaConfiguracaoBaseLegal =
   Esquemas['DocumentoDaConfiguracaoPredicadoBaseLegal'];
 export type DocumentoDaConfiguracaoPredicado =
@@ -89,9 +89,9 @@ export {
   FinalidadeDoFormulario,
   OperadorDaCondicao,
   AplicabilidadeDaExigencia,
-  ChaveDeDistincaoDoNo,
+  CriterioDeDistincaoDaRegra,
   ConsequenciaDoIndeferimento,
-  ConsequenciaDoNo,
+  ConsequenciaDaRegra,
   CriterioDaDeliberacao,
   DesempateDaDeliberacao,
   EncerramentoDaDeliberacao,
@@ -100,8 +100,8 @@ export {
   ModoDaDeliberacao,
   ReferenciaDaIdadeMaxima,
   SemUnanimidadeNaDeliberacao,
-  StatusDaBaseLegal,
-  TipoDeNoDaArvore,
+  SituacaoDaBaseLegal,
+  FormaDeComprovacaoDaConfiguracao,
   UnidadeDaIdadeMaxima,
   AncoraDoRecursoDaEtapa,
   AreaDoEnemDoProcedimento,

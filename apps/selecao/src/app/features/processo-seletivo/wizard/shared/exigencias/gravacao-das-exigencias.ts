@@ -1,7 +1,8 @@
 import {
   OperadorCodigo,
+  FormaDeComprovacaoCodigo,
   type ItemDocumentoExigidoInput,
-  type NoExigenciaInput,
+  type RegraDeComprovacaoInformada,
 } from '@uniplus/shared-data/selecao';
 import { codigoDoContrato } from '@uniplus/shared-data/utils';
 import { baseLegalParaEnvio, basesLegaisParaEnvio } from '@uniplus/shared-utils';
@@ -11,7 +12,7 @@ import type {
   ExigenciaDeDocumento,
   CriteriosDoComprovante,
   ExigenciasDoRascunho,
-  NoDeExigencia,
+  RegraDeComprovacao,
 } from '../../processo-seletivo.models';
 
 import { comAlcanceDeTodasAsFases } from './alcance-das-exigencias';
@@ -29,30 +30,37 @@ export interface ProcessoVivoDasExigencias {
 }
 
 /**
- * Serializa a árvore do rascunho no que o `PUT` recebe, resolvendo o que é declarado por
+ * Serializa a estrutura de regras do rascunho no que o `PUT` recebe, resolvendo o que é declarado por
  * código e descartando exigências de fases removidas e grupos que ficaram vazios.
  *
- * O `PUT` recusa a árvore inteira se um nó apontar fase que saiu do
+ * O `PUT` recusa a estrutura de regras inteira se uma regra apontar fase que saiu do
  * cronograma (`FaseNaoPertenceAoProcesso`), etapa que não é da fase (`EtapaNaoPertenceAFase`),
- * cláusula de modalidade esvaziada (`ClausulaVazia`) ou grupo sem filhos (`GrupoVazio`) — e a
+ * cláusula de modalidade esvaziada (`ClausulaVazia`) ou grupo sem itens (`GrupoVazio`) — e a
  * recusa chegaria sobre configuração que a tela não mostra mais.
  */
-export function arvoreDeExigencias(
+export function regrasDeComprovacaoParaEnvio(
   exigencias: ExigenciasDoRascunho,
   processo: ProcessoVivoDasExigencias,
-): readonly NoExigenciaInput[] {
+): readonly RegraDeComprovacaoInformada[] {
   const completas = comAlcanceDeTodasAsFases(exigencias, [...processo.faseIdPorCodigo.keys()]);
-  return completas.raizes.flatMap((raiz) =>
-    prepararExigenciasParaEnvio([raiz], processo, finalidadeDaRaiz(raiz, processo)),
+  return completas.regrasDeComprovacao.flatMap((regraPrincipal) =>
+    prepararExigenciasParaEnvio(
+      [regraPrincipal],
+      processo,
+      finalidadeDaRegra(regraPrincipal, processo),
+    ),
   );
 }
 
 /**
- * O formulário da árvore de raiz, declarado na primeira exigência de uma fase ativa e herdado por
+ * O formulário da regra principal, declarado na primeira exigência de uma fase ativa e herdado por
  * todas as outras: o servidor recusa grupo com documentos de formulários diferentes.
  */
-function finalidadeDaRaiz(raiz: NoDeExigencia, processo: ProcessoVivoDasExigencias): string | null {
-  const declarante = documentosDe([raiz]).find((documento) =>
+function finalidadeDaRegra(
+  regraPrincipal: RegraDeComprovacao,
+  processo: ProcessoVivoDasExigencias,
+): string | null {
+  const declarante = documentosDe([regraPrincipal]).find((documento) =>
     processo.faseIdPorCodigo.has(documento.faseCodigo),
   );
   return declarante === undefined
@@ -64,64 +72,67 @@ function finalidadeDaRaiz(raiz: NoDeExigencia, processo: ProcessoVivoDasExigenci
 }
 
 function prepararExigenciasParaEnvio(
-  nos: readonly NoDeExigencia[],
+  regras: readonly RegraDeComprovacao[],
   processo: ProcessoVivoDasExigencias,
   finalidade: string | null,
-): NoExigenciaInput[] {
-  return nos.flatMap((no) => {
-    if (no.tipo === 'FOLHA') return documentoDaExigenciaParaEnvio(no, processo, finalidade);
-    const filhos = prepararExigenciasParaEnvio(no.filhos ?? [], processo, finalidade);
-    if (filhos.length === 0) return [];
-    return [{ ...dadosDaExigenciaParaEnvio(no), filhos }];
+): RegraDeComprovacaoInformada[] {
+  return regras.flatMap((regra) => {
+    if (regra.forma === 'DOCUMENTO')
+      return documentoDaExigenciaParaEnvio(regra, processo, finalidade);
+    const itensDoGrupo = prepararExigenciasParaEnvio(regra.itens ?? [], processo, finalidade);
+    if (itensDoGrupo.length === 0) return [];
+    return [{ ...dadosDaExigenciaParaEnvio(regra), itens: itensDoGrupo }];
   });
 }
 
 /** Exclui exigências de fases removidas do cronograma. */
 function documentoDaExigenciaParaEnvio(
-  no: NoDeExigencia,
+  regra: RegraDeComprovacao,
   processo: ProcessoVivoDasExigencias,
   finalidade: string | null,
-): NoExigenciaInput[] {
-  const documento = no.documento;
+): RegraDeComprovacaoInformada[] {
+  const documento = regra.documento;
   if (documento === null || !processo.faseIdPorCodigo.has(documento.faseCodigo)) return [];
   return [
     {
-      ...dadosDaExigenciaParaEnvio(no),
+      ...dadosDaExigenciaParaEnvio(regra),
       documento: prepararDocumentoParaEnvio(documento, processo, finalidade),
     },
   ];
 }
 
-/** Os campos do nó que o rascunho carrega sem tocar, inclusive os que a tela não edita. */
-function dadosDaExigenciaParaEnvio(no: NoDeExigencia): NoExigenciaInput {
+/** Os campos da regra que o rascunho carrega sem tocar, inclusive os que a tela não edita. */
+function dadosDaExigenciaParaEnvio(regra: RegraDeComprovacao): RegraDeComprovacaoInformada {
   return {
-    tipo: no.tipo,
+    forma: codigoDoContrato(FormaDeComprovacaoCodigo, regra.forma),
     documento: null,
-    cardinalidade: cardinalidadeParaEnvio(no),
-    indeferimento: indeferimentoDoGrupoParaEnvio(no),
-    filhos: null,
-    repetePorEntidade: no.repetePorEntidade,
+    cardinalidade: cardinalidadeParaEnvio(regra),
+    indeferimento: indeferimentoDoGrupoParaEnvio(regra),
+    itens: null,
+    grupoDoFormularioParaRepeticao: regra.grupoDoFormularioParaRepeticao,
   };
 }
 
-function cardinalidadeParaEnvio(no: NoDeExigencia): NoExigenciaInput['cardinalidade'] {
-  const { quantidadeMinima, chaveDistincao, dataReferencia, ocorrenciasEsperadas } = no;
+function cardinalidadeParaEnvio(
+  regra: RegraDeComprovacao,
+): RegraDeComprovacaoInformada['cardinalidade'] {
+  const { quantidadeMinima, criterioDeDistincao, dataReferencia, ocorrenciasEsperadas } = regra;
   const semDistincao =
-    chaveDistincao === null && dataReferencia === null && ocorrenciasEsperadas === null;
+    criterioDeDistincao === null && dataReferencia === null && ocorrenciasEsperadas === null;
   if (quantidadeMinima === null && semDistincao) return null;
   return {
     quantidadeMinima,
-    distincao: semDistincao
-      ? null
-      : { chave: chaveDistincao, dataReferencia, ocorrenciasEsperadas },
+    distincao: semDistincao ? null : { criterioDeDistincao, dataReferencia, ocorrenciasEsperadas },
   };
 }
 
-function indeferimentoDoGrupoParaEnvio(no: NoDeExigencia): NoExigenciaInput['indeferimento'] {
-  if (no.consequencia === null && no.basesLegais === null) return null;
+function indeferimentoDoGrupoParaEnvio(
+  regra: RegraDeComprovacao,
+): RegraDeComprovacaoInformada['indeferimento'] {
+  if (regra.consequencia === null && regra.basesLegais === null) return null;
   return {
-    consequencia: no.consequencia,
-    basesLegais: no.basesLegais === null ? null : no.basesLegais.map(baseLegalParaEnvio),
+    consequencia: regra.consequencia,
+    basesLegais: regra.basesLegais === null ? null : regra.basesLegais.map(baseLegalParaEnvio),
   };
 }
 

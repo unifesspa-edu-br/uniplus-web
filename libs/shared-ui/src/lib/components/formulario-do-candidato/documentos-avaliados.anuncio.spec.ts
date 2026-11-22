@@ -1,15 +1,15 @@
 import { anunciarMudancaDosDocumentos } from './anuncio-dos-documentos';
-import { arvoreDeDocumentos } from './arvore-de-documentos';
+import { regrasDeDocumentos } from './regras-de-documentos';
 import type { DocumentoAvaliado, GrupoDoDocumento } from './documentos-avaliados';
 import { CANDIDATO, documento, e, FAMILIA, MAE, ou, PAI } from './documentos-avaliados.testing';
 
 describe('anunciarMudancaDosDocumentos', () => {
   const familia = { FAMILIA: [CANDIDATO, MAE, PAI] };
-  const arvore = (documentos: DocumentoAvaliado[]) =>
-    arvoreDeDocumentos(documentos, [FAMILIA], familia);
+  const regras = (documentos: DocumentoAvaliado[]) =>
+    regrasDeDocumentos(documentos, [FAMILIA], familia);
   const noFormulario = new Set(familia.FAMILIA.map((o) => o.id));
   const anuncio = (antes: DocumentoAvaliado[], depois: DocumentoAvaliado[]) =>
-    anunciarMudancaDosDocumentos(arvore(antes), arvore(depois), noFormulario);
+    anunciarMudancaDosDocumentos(regras(antes), regras(depois), noFormulario);
   const P = 'PODE_SER_EXIGIDO';
   const naEscolha = (nome: string, situacao = 'PENDENTE', ...grupos: GrupoDoDocumento[]) =>
     documento(nome, { situacao, grupos: grupos.length > 0 ? grupos : [ou('id')] });
@@ -21,20 +21,20 @@ describe('anunciarMudancaDosDocumentos', () => {
     documento(nome, {
       grupoCodigo: 'FAMILIA',
       ocorrenciaId,
-      grupos: [ou('ext'), { ...e('in'), repetePorEntidade: 'FAMILIA' }],
+      grupos: [ou('ext'), { ...e('in'), grupoDoFormularioParaRepeticao: 'FAMILIA' }],
     });
   const c = (situacao = 'PENDENTE') => documento('C', { situacao, grupos: [ou('ext')] });
-  /** A folha que se repete sob um OU escolhido uma vez. */
+  /** A regra de documento que se repete sob um grupo de alternativas escolhido uma vez. */
   const juntada = (nome: string, ocorrenciaId: string) =>
     documento(nome, {
       grupoCodigo: 'FAMILIA',
       ocorrenciaId,
-      repetePorEntidade: 'FAMILIA',
+      grupoDoFormularioParaRepeticao: 'FAMILIA',
       grupos: [ou('b1')],
     });
 
   it('a primeira avaliação não é mudança', () => {
-    expect(anunciarMudancaDosDocumentos(null, arvore([documento('Histórico')]), new Set())).toBe(
+    expect(anunciarMudancaDosDocumentos(null, regras([documento('Histórico')]), new Set())).toBe(
       '',
     );
   });
@@ -49,7 +49,7 @@ describe('anunciarMudancaDosDocumentos', () => {
   });
 
   /** O limite de cada unidade é o ponto: o documento solto não é mais uma alternativa da escolha. */
-  it('a folha e a escolha que entram juntas são ditas separadas', () => {
+  it('a regra de documento e a escolha que entram juntas são ditas separadas', () => {
     expect(
       anuncio(
         [documento('Histórico', { situacao: P }), naEscolha('RG', P), naEscolha('CNH', P)],
@@ -75,19 +75,19 @@ describe('anunciarMudancaDosDocumentos', () => {
     expect(anuncio(escolha('PENDENTE'), escolha(P))).toBe('');
   });
 
-  it('a escolha aninhada é lida delimitada, e o N-de fecha a lista com "e"', () => {
-    const aninhada = (situacao: string) => [
+  it('a escolha dentro de outro grupo é lida delimitada, e a quantidade mínima de itens fecha a lista com "e"', () => {
+    const comGrupoInterno = (situacao: string) => [
       naEscolha('RG', situacao, ou('ext'), ou('in')),
       naEscolha('CNH', situacao, ou('ext'), ou('in')),
       naEscolha('Passaporte', situacao, ou('ext')),
     ];
-    const nDe = (situacao: string) =>
+    const quantidadeMinima = (situacao: string) =>
       ['A', 'B', 'C'].map((n) => naEscolha(n, situacao, ou('n', 2)));
 
-    expect(anuncio(aninhada(P), aninhada('PENDENTE'))).toBe(
+    expect(anuncio(comGrupoInterno(P), comGrupoInterno('PENDENTE'))).toBe(
       'Passou a ser exigido, à sua escolha: RG ou CNH, ou Passaporte.',
     );
-    expect(anuncio(nDe(P), nDe('PENDENTE'))).toBe(
+    expect(anuncio(quantidadeMinima(P), quantidadeMinima('PENDENTE'))).toBe(
       'Passou a ser exigido, à sua escolha: 2 entre A, B e C.',
     );
   });
@@ -113,8 +113,8 @@ describe('anunciarMudancaDosDocumentos', () => {
     const semAMae = { FAMILIA: [CANDIDATO, PAI] };
     const tirarAMae = (documentos: DocumentoAvaliado[]) =>
       anunciarMudancaDosDocumentos(
-        arvoreDeDocumentos(documentos, [FAMILIA], familia),
-        arvoreDeDocumentos(documentos, [FAMILIA], semAMae),
+        regrasDeDocumentos(documentos, [FAMILIA], familia),
+        regrasDeDocumentos(documentos, [FAMILIA], semAMae),
         new Set(semAMae.FAMILIA.map((o) => o.id)),
       );
 
@@ -170,7 +170,7 @@ describe('anunciarMudancaDosDocumentos', () => {
       documento('Comprovante de renda', {
         grupoCodigo: 'FAMILIA',
         ocorrenciaId: o,
-        repetePorEntidade: 'FAMILIA',
+        grupoDoFormularioParaRepeticao: 'FAMILIA',
         grupos: [e('b1')],
       });
 

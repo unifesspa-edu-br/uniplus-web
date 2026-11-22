@@ -62,7 +62,7 @@ describe('exigências', () => {
     expect(editado.documentosExigidos?.exigencias?.[0].chave).toBe('documento-de-identificacao-3');
   });
 
-  it('a exigência que o formulário deixa de trazer sai, e a árvore segue citando a chave dela', () => {
+  it('a exigência que o formulário deixa de trazer sai, e o conjunto de regras segue citando a chave dela', () => {
     const documento = umDocumentoComExigencias();
     const [, renda] = exigenciasLidas(documento);
 
@@ -71,8 +71,8 @@ describe('exigências', () => {
     expect(editado.documentosExigidos?.exigencias?.map((exigencia) => exigencia.chave)).toEqual([
       'comprovante-de-renda',
     ]);
-    expect(editado.documentosExigidos?.arvoreDeSatisfacao).toBe(
-      documento.documentosExigidos?.arvoreDeSatisfacao,
+    expect(editado.documentosExigidos?.regrasDeComprovacao).toBe(
+      documento.documentosExigidos?.regrasDeComprovacao,
     );
   });
 

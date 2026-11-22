@@ -63,7 +63,7 @@ function detalheDoProcesso(servidor: ServidorDosTiposDeDecisao) {
     cronogramaFases: [servidor.fase],
     etapas: [servidor.etapa],
     atendimentoEspecializado: null,
-    raizesExigencia: PROCESSO_PUBLICADO_COMPLETO.raizesExigencia.slice(0, 1),
+    regrasDeComprovacao: PROCESSO_PUBLICADO_COMPLETO.regrasDeComprovacao.slice(0, 1),
     classificacao: { ...PROCESSO_PUBLICADO_COMPLETO.classificacao, regrasEliminacao: [] },
   };
 }

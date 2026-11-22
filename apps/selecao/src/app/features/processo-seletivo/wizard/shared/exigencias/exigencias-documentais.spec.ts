@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   ExigenciaDeDocumento,
   ExigenciasDoRascunho,
-  NoDeExigencia,
+  RegraDeComprovacao,
 } from '../../processo-seletivo.models';
 import { comAlcanceDeTodasAsFases } from './alcance-das-exigencias';
 import { exigenciasLocalizadasDaFase, todasAsExigencias } from './consulta-das-exigencias';
@@ -12,7 +12,7 @@ import {
   comExigencia,
   comRepeticao,
   exigenciaNova,
-  folhaDe,
+  regraDeDocumento,
   semAEtapa,
   semAExigencia,
   semAFase,
@@ -34,12 +34,12 @@ describe('a base legal nova', () => {
 
     expect(doProcesso).toEqual(doModelo);
     expect(doProcesso).toEqual([
-      { referencia: '', abrangencia: 'INTERNA_EDITAL', status: 'RESOLVIDO', observacao: null },
+      { referencia: '', abrangencia: 'INTERNA_EDITAL', situacao: 'RESOLVIDO', observacao: null },
     ]);
   });
 });
 
-describe('operações sobre a árvore do rascunho', () => {
+describe('operações sobre o conjunto de regras do rascunho', () => {
   it('semAFase tira a exigência daquela fase e deixa a das outras', () => {
     const antes = rascunho(
       exigencia({ faseCodigo: 'ISENCAO' }),
@@ -76,54 +76,54 @@ describe('operações sobre a árvore do rascunho', () => {
   });
 });
 
-describe('edição não atropela a folha homônima do grupo', () => {
+describe('edição não atropela a regra de documento homônima do grupo', () => {
   /** O mesmo documento pode estar solto e como alternativa de um `OU` na mesma fase. */
   function soltaEAgrupada(): ExigenciasDoRascunho {
     return {
       emTodasAsFases: [],
-      raizes: [
+      regrasDeComprovacao: [
         {
-          tipo: 'FOLHA',
+          forma: 'DOCUMENTO',
           documento: exigencia({ obrigatorio: true }),
           quantidadeMinima: null,
           consequencia: null,
           basesLegais: null,
-          filhos: null,
-          chaveDistincao: null,
+          itens: null,
+          criterioDeDistincao: null,
           dataReferencia: null,
           ocorrenciasEsperadas: null,
-          repetePorEntidade: null,
+          grupoDoFormularioParaRepeticao: null,
         },
         {
-          tipo: 'OU',
+          forma: 'QUANTIDADE_MINIMA_DE_ITENS',
           documento: null,
           quantidadeMinima: 1,
           consequencia: null,
           basesLegais: null,
-          filhos: [
+          itens: [
             {
-              tipo: 'FOLHA',
+              forma: 'DOCUMENTO',
               documento: exigencia({ obrigatorio: true }),
               quantidadeMinima: null,
               consequencia: null,
               basesLegais: null,
-              filhos: null,
-              chaveDistincao: null,
+              itens: null,
+              criterioDeDistincao: null,
               dataReferencia: null,
               ocorrenciasEsperadas: null,
-              repetePorEntidade: null,
+              grupoDoFormularioParaRepeticao: null,
             },
           ],
-          chaveDistincao: null,
+          criterioDeDistincao: null,
           dataReferencia: null,
           ocorrenciasEsperadas: null,
-          repetePorEntidade: null,
+          grupoDoFormularioParaRepeticao: null,
         },
       ],
     };
   }
 
-  it('comExigencia troca só a primeira folha que casa', () => {
+  it('comExigencia troca só a primeira regra de documento que casa', () => {
     const depois = comExigencia(soltaEAgrupada(), exigencia({ obrigatorio: false }));
     const todas = todasAsExigencias(depois);
 
@@ -133,39 +133,41 @@ describe('edição não atropela a folha homônima do grupo', () => {
     expect(todas[1].obrigatorio).toBe(true);
   });
 
-  it('semAExigencia remove só a primeira folha que casa', () => {
+  it('semAExigencia remove só a primeira regra de documento que casa', () => {
     const depois = semAExigencia(soltaEAgrupada(), ID_RG, 'HABILITACAO');
 
     expect(todasAsExigencias(depois)).toHaveLength(1);
     // O grupo sobreviveu — não foi esvaziado junto.
-    expect(depois.raizes.some((no) => no.tipo === 'OU')).toBe(true);
+    expect(
+      depois.regrasDeComprovacao.some((regra) => regra.forma === 'QUANTIDADE_MINIMA_DE_ITENS'),
+    ).toBe(true);
   });
 });
 
 describe('a repetição pelas ocorrências de um grupo do formulário', () => {
-  const repetida = (documento: ExigenciaDeDocumento, grupo: string): NoDeExigencia => ({
-    ...folhaDe(documento),
-    repetePorEntidade: grupo,
+  const repetida = (documento: ExigenciaDeDocumento, grupo: string): RegraDeComprovacao => ({
+    ...regraDeDocumento(documento),
+    grupoDoFormularioParaRepeticao: grupo,
   });
 
-  it('localiza a repetição da própria folha e a herdada do grupo de alternativas que se repete', () => {
-    const alternativas: NoDeExigencia = {
-      ...folhaDe(exigencia()),
-      tipo: 'OU',
+  it('localiza a repetição da própria regra de documento e a herdada do grupo de alternativas que se repete', () => {
+    const alternativas: RegraDeComprovacao = {
+      ...regraDeDocumento(exigencia()),
+      forma: 'QUANTIDADE_MINIMA_DE_ITENS',
       documento: null,
-      filhos: [
-        folhaDe(exigencia({ tipoDocumentoId: ID_CONTRACHEQUE })),
-        folhaDe(exigencia({ tipoDocumentoId: ID_DIPLOMA })),
+      itens: [
+        regraDeDocumento(exigencia({ tipoDocumentoId: ID_CONTRACHEQUE })),
+        regraDeDocumento(exigencia({ tipoDocumentoId: ID_DIPLOMA })),
       ],
-      repetePorEntidade: 'FAMILIA',
+      grupoDoFormularioParaRepeticao: 'FAMILIA',
     };
-    const arvore: ExigenciasDoRascunho = {
-      raizes: [repetida(exigencia(), 'EMPRESAS'), alternativas],
+    const declaracoes: ExigenciasDoRascunho = {
+      regrasDeComprovacao: [repetida(exigencia(), 'EMPRESAS'), alternativas],
       emTodasAsFases: [],
     };
 
     expect(
-      exigenciasLocalizadasDaFase(arvore, 'HABILITACAO').map(({ repeticao }) => repeticao),
+      exigenciasLocalizadasDaFase(declaracoes, 'HABILITACAO').map(({ repeticao }) => repeticao),
     ).toEqual([
       { grupo: 'EMPRESAS', herdada: false },
       { grupo: 'FAMILIA', herdada: true },
@@ -173,24 +175,29 @@ describe('a repetição pelas ocorrências de um grupo do formulário', () => {
     ]);
   });
 
-  it('declara a repetição só na folha do documento na fase escolhida', () => {
-    const arvore = rascunho(exigencia({ faseCodigo: 'ISENCAO' }), exigencia());
+  it('declara a repetição só na regra de documento do documento na fase escolhida', () => {
+    const declaracoes = rascunho(exigencia({ faseCodigo: 'ISENCAO' }), exigencia());
 
-    const comFamilia = comRepeticao(arvore, ID_RG, 'HABILITACAO', 'FAMILIA');
+    const comFamilia = comRepeticao(declaracoes, ID_RG, 'HABILITACAO', 'FAMILIA');
 
-    expect(comFamilia.raizes.map((no) => no.repetePorEntidade)).toEqual([null, 'FAMILIA']);
+    expect(
+      comFamilia.regrasDeComprovacao.map((regra) => regra.grupoDoFormularioParaRepeticao),
+    ).toEqual([null, 'FAMILIA']);
   });
 
   it('o documento que vale em todas as fases leva a repetição para a fase em que é materializado', () => {
-    const arvore: ExigenciasDoRascunho = {
-      raizes: [repetida(exigencia({ faseCodigo: 'ISENCAO' }), 'FAMILIA')],
+    const declaracoes: ExigenciasDoRascunho = {
+      regrasDeComprovacao: [repetida(exigencia({ faseCodigo: 'ISENCAO' }), 'FAMILIA')],
       emTodasAsFases: [ID_RG],
     };
 
-    const materializada = comAlcanceDeTodasAsFases(arvore, ['ISENCAO', 'HABILITACAO']);
+    const materializada = comAlcanceDeTodasAsFases(declaracoes, ['ISENCAO', 'HABILITACAO']);
 
     expect(
-      materializada.raizes.map((no) => [no.documento?.faseCodigo, no.repetePorEntidade]),
+      materializada.regrasDeComprovacao.map((regra) => [
+        regra.documento?.faseCodigo,
+        regra.grupoDoFormularioParaRepeticao,
+      ]),
     ).toEqual([
       ['ISENCAO', 'FAMILIA'],
       ['HABILITACAO', 'FAMILIA'],

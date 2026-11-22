@@ -180,7 +180,7 @@ function dimensoesVaziasDoDetalhe() {
     classificacao: null,
     cronogramaFases: [],
     documentosExigidos: [],
-    raizesExigencia: [],
+    regrasDeComprovacao: [],
     referenciaTemporalFatos: null,
   };
 }
