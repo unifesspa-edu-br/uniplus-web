@@ -1,5 +1,14 @@
 import { test, expect } from '@playwright/test';
-import { chamarApi, entrarComoPersona, identidadeDoToken, lerTopicoDoKafka, tokenDaPersona } from '@uniplus/shared-e2e';
+import {
+  chamarApi,
+  entrarComoPersona,
+  garantirConcessao,
+  garantirPerfil,
+  identidadeDoToken,
+  lerTopicoDoKafka,
+  tokenDaPersona,
+  unidadeDoCertame,
+} from '@uniplus/shared-e2e';
 import { cenarioDaProjecao, type CenarioDaProjecao } from '../fixtures/cenario-da-projecao';
 
 /**
@@ -8,6 +17,9 @@ import { cenarioDaProjecao, type CenarioDaProjecao } from '../fixtures/cenario-d
  * "Revelar" onde a API diz `podeRevelar`, e o valor revelado vale para aquele campo apenas.
  */
 const APP = process.env['BASE_URL'] ?? 'http://localhost:4200';
+const QUEM_REVELA = 'gustavo.vieira';
+const QUEM_SO_CONSULTA_IDENTIFICADOR = 'vicente.sales';
+const QUEM_NAO_CONSULTA_IDENTIFICADOR = 'esther.peixoto';
 const TOPICO = 'autorizacao_registros_de_acesso';
 
 interface RegistroDeAcesso {
@@ -40,11 +52,38 @@ test.describe('Revelação de identificadores', () => {
   test.beforeAll(async () => {
     test.setTimeout(900_000);
     cenario = await cenarioDaProjecao();
+    const perfis = [
+      {
+        persona: QUEM_REVELA,
+        permissoes: [
+          'selecao:dados-publicos:consultar',
+          'selecao:dados-pessoais:consultar',
+          'selecao:dados-identificadores:consultar',
+          'selecao:dados-identificadores:revelar',
+        ],
+      },
+      {
+        persona: QUEM_SO_CONSULTA_IDENTIFICADOR,
+        permissoes: ['selecao:dados-identificadores:consultar'],
+      },
+      {
+        persona: QUEM_NAO_CONSULTA_IDENTIFICADOR,
+        permissoes: ['selecao:dados-pessoais:consultar'],
+      },
+    ];
+    for (const { persona, permissoes } of perfis) {
+      const perfil = await garantirPerfil(
+        `E2E revelação — ${persona}`,
+        `Acesso à inscrição para ${persona}.`,
+        ['selecao:inscricoes:consultar', ...permissoes],
+      );
+      await garantirConcessao(persona, perfil, await unidadeDoCertame());
+    }
     rota = `/processo-seletivo/${cenario.processoId}/inscricoes/${cenario.fernanda.inscricaoId}`;
   });
 
   test('revela o CPF de Fernanda só naquele campo, e o RG continua oculto', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'diogo.souza', rota);
+    const pagina = await entrarComoPersona(browser, APP, QUEM_REVELA, rota);
     // Quem revela também consulta a classe: o campo chega mascarado, com a revelação oferecida.
     await expect(pagina.getByText('***.598.363-**').first()).toBeVisible();
 
@@ -56,51 +95,68 @@ test.describe('Revelação de identificadores', () => {
   });
 
   test('revela outro identificador, o número do RG', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'diogo.souza', rota);
+    const pagina = await entrarComoPersona(browser, APP, QUEM_REVELA, rota);
 
-    await pagina.getByRole('button', { name: /^Revelar (RG|Número do RG|Documento)/i }).first().click();
+    await pagina
+      .getByRole('button', { name: /^Revelar (RG|Número do RG|Documento)/i })
+      .first()
+      .click();
 
     await expect(pagina.getByText(cenario.fernanda.rg)).toBeVisible();
     await expect(pagina.getByText(cenario.fernanda.cpf)).toHaveCount(0);
   });
 
-  test('quem só consulta o identificador vê o CPF mascarado como a API devolveu, sem "Revelar"', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'helena.rezende', rota);
+  test('quem só consulta o identificador vê o CPF mascarado como a API devolveu, sem "Revelar"', async ({
+    browser,
+  }) => {
+    const pagina = await entrarComoPersona(browser, APP, QUEM_SO_CONSULTA_IDENTIFICADOR, rota);
 
     await expect(pagina.getByText('***.598.363-**').first()).toBeVisible();
     await expect(pagina.getByRole('button', { name: /Revelar/ })).toHaveCount(0);
     await expect(pagina.getByText(cenario.fernanda.cpf)).toHaveCount(0);
   });
 
-  test('sem permissão sobre o identificador o CPF não aparece e não há "Revelar"', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'kevin.carvalho', rota);
+  test('sem permissão sobre o identificador o CPF não aparece e não há "Revelar"', async ({
+    browser,
+  }) => {
+    const pagina = await entrarComoPersona(browser, APP, QUEM_NAO_CONSULTA_IDENTIFICADOR, rota);
 
-    await expect(pagina.getByRole('heading', { level: 2, name: 'Respostas do formulário' })).toBeVisible();
+    await expect(
+      pagina.getByRole('heading', { level: 2, name: 'Respostas do formulário' }),
+    ).toBeVisible();
     await expect(pagina.getByText('CPF', { exact: true })).toHaveCount(0);
     await expect(pagina.getByRole('button', { name: /Revelar/ })).toHaveCount(0);
     await expect(pagina.locator('main')).not.toContainText(/\*\*\*\.598/);
   });
 
   test('o valor revelado não aparece ao abrir outra inscrição', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'diogo.souza', rota);
+    const pagina = await entrarComoPersona(browser, APP, QUEM_REVELA, rota);
     await pagina.getByRole('button', { name: 'Revelar CPF' }).click();
     await expect(pagina.getByText(cenario.fernanda.cpf)).toBeVisible();
 
-    await pagina.goto(`/processo-seletivo/${cenario.processoId}/inscricoes/${cenario.erick.inscricaoId}`);
+    await pagina.goto(
+      `/processo-seletivo/${cenario.processoId}/inscricoes/${cenario.erick.inscricaoId}`,
+    );
 
     await expect(pagina.getByText('Erick Isaac Ramos')).toBeVisible();
     await expect(pagina.locator('main')).not.toContainText(cenario.fernanda.cpf);
     await expect(pagina.locator('main')).not.toContainText(cenario.erick.cpf);
   });
 
-  test('revelação recusada pela API mantém o CPF mascarado e avisa "Dado não disponível"', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'diogo.souza', rota);
+  test('revelação recusada pela API mantém o CPF mascarado e avisa "Dado não disponível"', async ({
+    browser,
+  }) => {
+    const pagina = await entrarComoPersona(browser, APP, QUEM_REVELA, rota);
     await pagina.route(/\/campos\/[^/]+\/revelacao$/, (route) =>
       route.fulfill({
         status: 404,
         contentType: 'application/problem+json',
         headers: { 'access-control-allow-origin': '*' },
-        body: JSON.stringify({ status: 404, title: 'Não encontrado', code: 'uniplus.nao_encontrado' }),
+        body: JSON.stringify({
+          status: 404,
+          title: 'Não encontrado',
+          code: 'uniplus.nao_encontrado',
+        }),
       }),
     );
 
@@ -117,10 +173,26 @@ test.describe('Revelação de identificadores', () => {
     const caminho = (campo: string) =>
       `/api/selecao/processos-seletivos/${cenario.processoId}/inscricoes/${cenario.fernanda.inscricaoId}/campos/${campo}/revelacao`;
 
-    const semPermissao = await chamarApi<{ code: string }>('helena.rezende', 'POST', caminho('CPF'));
-    const semAcesso = await chamarApi<{ code: string }>('kevin.carvalho', 'POST', caminho('CPF'));
-    const inexistente = await chamarApi<{ code: string }>('diogo.souza', 'POST', caminho('CAMPO_QUE_NAO_EXISTE'));
-    const naoIdentificador = await chamarApi<{ code: string }>('diogo.souza', 'POST', caminho('NOME'));
+    const semPermissao = await chamarApi<{ code: string }>(
+      QUEM_SO_CONSULTA_IDENTIFICADOR,
+      'POST',
+      caminho('CPF'),
+    );
+    const semAcesso = await chamarApi<{ code: string }>(
+      QUEM_NAO_CONSULTA_IDENTIFICADOR,
+      'POST',
+      caminho('CPF'),
+    );
+    const inexistente = await chamarApi<{ code: string }>(
+      QUEM_REVELA,
+      'POST',
+      caminho('CAMPO_QUE_NAO_EXISTE'),
+    );
+    const naoIdentificador = await chamarApi<{ code: string }>(
+      QUEM_REVELA,
+      'POST',
+      caminho('NOME'),
+    );
 
     for (const recusa of [semPermissao, semAcesso, inexistente, naoIdentificador]) {
       expect(recusa.status).toBe(404);
@@ -139,7 +211,7 @@ test.describe('Revelação de identificadores', () => {
     await pagina.getByRole('button', { name: 'Revelar CPF' }).click();
     await expect(pagina.getByText(cenario.fernanda.cpf)).toBeVisible();
 
-    // O produtor publica em lote: espera os três registros aparecerem no tópico.
+    // O produtor publica os três registros juntos: espera todos aparecerem no tópico.
     const meus = (mensagens: readonly string[]) =>
       registrosDe(mensagens).filter((r) => r.atorSubject === diogo && Date.parse(r.instante) >= inicio);
     const achados = (mensagens: readonly string[]) => {

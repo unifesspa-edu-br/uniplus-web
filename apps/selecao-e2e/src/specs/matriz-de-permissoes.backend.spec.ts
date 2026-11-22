@@ -17,6 +17,18 @@ import { cenarioDaProjecao, type CenarioDaProjecao } from '../fixtures/cenario-d
  * da API, que é o que a tela exibe sem decidir nada por conta própria (web#1333 e web#1334).
  */
 
+const QUEM_CONSULTA_DADOS_PUBLICOS = 'stefany.cunha';
+const QUEM_CONSULTA_DADOS_INTERNOS = 'jessica.costa';
+const QUEM_CONSULTA_DADOS_PESSOAIS = 'paulo.rodrigues';
+const QUEM_CONSULTA_DADOS_SENSIVEIS = 'luana.figueiredo';
+const QUEM_CONSULTA_IDENTIFICADORES = 'mariane.cruz';
+const QUEM_SO_REVELA_IDENTIFICADORES = 'sara.farias';
+const QUEM_CONSULTA_DOCUMENTOS_PUBLICOS = 'antonia.silveira';
+const QUEM_CONSULTA_DOCUMENTOS_INTERNOS = 'clarice.ribeiro';
+const QUEM_CONSULTA_DOCUMENTOS_PESSOAIS = 'luiz.araujo';
+const QUEM_CONSULTA_DOCUMENTOS_IDENTIFICADORES = 'sara.cardoso';
+const QUEM_CONSULTA_DOCUMENTOS_SENSIVEIS = 'roberto.paula';
+
 interface ItemDaResposta {
   readonly fatoCodigo: string;
   readonly valor?: unknown;
@@ -62,35 +74,35 @@ function itensDe(corpo: Resposta): readonly ItemDaResposta[] {
 // (situação e ofertas) e nenhuma resposta do formulário.
 const DADOS = [
   {
-    persona: 'cecilia.assis',
+    persona: QUEM_CONSULTA_DADOS_PUBLICOS,
     permissao: 'selecao:dados-publicos:consultar',
     classes: [],
     mascarado: false,
     revela: false,
   },
   {
-    persona: 'andre.barbosa',
+    persona: QUEM_CONSULTA_DADOS_INTERNOS,
     permissao: 'selecao:dados-internos:consultar',
     classes: ['INTERNO'],
     mascarado: false,
     revela: false,
   },
   {
-    persona: 'ayla.luz',
+    persona: QUEM_CONSULTA_DADOS_PESSOAIS,
     permissao: 'selecao:dados-pessoais:consultar',
     classes: ['PESSOAL'],
     mascarado: false,
     revela: false,
   },
   {
-    persona: 'barbara.porto',
+    persona: QUEM_CONSULTA_DADOS_SENSIVEIS,
     permissao: 'selecao:dados-sensiveis:consultar',
     classes: ['SENSIVEL'],
     mascarado: false,
     revela: false,
   },
   {
-    persona: 'helena.rezende',
+    persona: QUEM_CONSULTA_IDENTIFICADORES,
     permissao: 'selecao:dados-identificadores:consultar',
     classes: ['IDENTIFICADOR'],
     mascarado: true,
@@ -98,7 +110,7 @@ const DADOS = [
   },
   // Revelar sozinho não dá a classe: sem consultar o identificador, nada dele chega e nada se oferece a revelar.
   {
-    persona: 'benjamin.drumond',
+    persona: QUEM_SO_REVELA_IDENTIFICADORES,
     permissao: 'selecao:dados-identificadores:revelar',
     classes: [],
     mascarado: false,
@@ -108,27 +120,27 @@ const DADOS = [
 
 const DOCUMENTOS = [
   {
-    persona: 'breno.novaes',
+    persona: QUEM_CONSULTA_DOCUMENTOS_PUBLICOS,
     permissao: 'selecao:documentos-publicos:consultar',
     mostraLaudo: false,
   },
   {
-    persona: 'bruna.peixoto',
+    persona: QUEM_CONSULTA_DOCUMENTOS_INTERNOS,
     permissao: 'selecao:documentos-internos:consultar',
     mostraLaudo: false,
   },
   {
-    persona: 'calebe.souza',
+    persona: QUEM_CONSULTA_DOCUMENTOS_PESSOAIS,
     permissao: 'selecao:documentos-pessoais:consultar',
     mostraLaudo: false,
   },
   {
-    persona: 'camila.nunes',
+    persona: QUEM_CONSULTA_DOCUMENTOS_IDENTIFICADORES,
     permissao: 'selecao:documentos-identificadores:consultar',
     mostraLaudo: false,
   },
   {
-    persona: 'catarina.rocha',
+    persona: QUEM_CONSULTA_DOCUMENTOS_SENSIVEIS,
     permissao: 'selecao:documentos-sensiveis:consultar',
     mostraLaudo: true,
   },
@@ -143,7 +155,7 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
     cenario = await cenarioDaProjecao();
     for (const { persona, permissao } of [...DADOS, ...DOCUMENTOS]) {
       const perfil = await garantirPerfil(
-        `E2E projeção — somente ${permissao}`,
+        `E2E matriz de permissões — somente ${permissao}`,
         `Matriz de permissões: só ${permissao}, além do acesso às inscrições.`,
         ['selecao:inscricoes:consultar', permissao],
       );
@@ -198,7 +210,7 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
   }
 
   test('só selecao:documentos-sensiveis:consultar: o laudo sensível aparece', async () => {
-    const { status, corpo } = await detalhe('catarina.rocha');
+    const { status, corpo } = await detalhe(QUEM_CONSULTA_DOCUMENTOS_SENSIVEIS);
 
     expect(status).toBe(200);
     expect(corpo.arquivos?.map((a) => a.classificacaoProtecao)).toContain('SENSIVEL');
@@ -206,8 +218,8 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
   });
 
   test('o detalhe traz o cabeçalho conforme a classe: público dá situação e curso; interno, número e data', async () => {
-    const publico = (await detalhe('cecilia.assis')).corpo;
-    const interno = (await detalhe('andre.barbosa')).corpo;
+    const publico = (await detalhe(QUEM_CONSULTA_DADOS_PUBLICOS)).corpo;
+    const interno = (await detalhe(QUEM_CONSULTA_DADOS_INTERNOS)).corpo;
 
     expect(publico.situacao).toBeDefined();
     expect(publico.ofertas?.length).toBeGreaterThan(0);
@@ -234,14 +246,20 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
   test('a listagem segue as mesmas classes: público e interno aparecem cada um com a sua permissão', async () => {
     const numeroDoErick = (
       await chamarApi<Resposta>(
-        'andre.barbosa',
+        QUEM_CONSULTA_DADOS_INTERNOS,
         'GET',
         `/api/selecao/processos-seletivos/${cenario.processoId}/inscricoes/${cenario.erick.inscricaoId}`,
       )
     ).corpo.numeroInscricao;
 
-    const publico = await linhaDoErick('cecilia.assis', (l) => l.id === cenario.erick.inscricaoId);
-    const interno = await linhaDoErick('andre.barbosa', (l) => l.numeroInscricao === numeroDoErick);
+    const publico = await linhaDoErick(
+      QUEM_CONSULTA_DADOS_PUBLICOS,
+      (l) => l.id === cenario.erick.inscricaoId,
+    );
+    const interno = await linhaDoErick(
+      QUEM_CONSULTA_DADOS_INTERNOS,
+      (l) => l.numeroInscricao === numeroDoErick,
+    );
 
     expect(publico?.situacao).toBeDefined();
     expect(publico?.ofertas?.length).toBeGreaterThan(0);
@@ -253,9 +271,12 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
   });
 
   test('a listagem segue as mesmas classes: pessoal e identificador aparecem cada um com a sua permissão', async () => {
-    const pessoal = await linhaDoErick('ayla.luz', (l) => l.id === cenario.erick.inscricaoId);
+    const pessoal = await linhaDoErick(
+      QUEM_CONSULTA_DADOS_PESSOAIS,
+      (l) => l.id === cenario.erick.inscricaoId,
+    );
     const identificador = await linhaDoErick(
-      'helena.rezende',
+      QUEM_CONSULTA_IDENTIFICADORES,
       (l) => l.id === cenario.erick.inscricaoId,
     );
 
@@ -268,7 +289,7 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
 
   test('o id e o processo da linha vêm com o acesso, mesmo para quem tem só dados internos', async () => {
     const pagina = await chamarApi<Linha[]>(
-      'andre.barbosa',
+      QUEM_CONSULTA_DADOS_INTERNOS,
       'GET',
       `/api/selecao/processos-seletivos/${cenario.processoId}/inscricoes?limit=100`,
     );
@@ -283,7 +304,7 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
 
   test('só a permissão de revelar, sem a classe do identificador, é recusada como campo não encontrado', async () => {
     const revelacao = await chamarApi<{ code: string }>(
-      'benjamin.drumond',
+      QUEM_SO_REVELA_IDENTIFICADORES,
       'POST',
       `/api/selecao/processos-seletivos/${cenario.processoId}/inscricoes/${cenario.fernanda.inscricaoId}/campos/CPF/revelacao`,
     );

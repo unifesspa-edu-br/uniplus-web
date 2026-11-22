@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { entrarComoPersona } from '@uniplus/shared-e2e';
+import {
+  entrarComoPersona,
+  garantirConcessao,
+  garantirPerfil,
+  unidadeDoCertame,
+} from '@uniplus/shared-e2e';
 import { cenarioDaProjecao, type CenarioDaProjecao } from '../fixtures/cenario-da-projecao';
 
 /**
@@ -8,6 +13,9 @@ import { cenarioDaProjecao, type CenarioDaProjecao } from '../fixtures/cenario-d
  * Fernanda enviou o laudo médico (classe sensível); Erick não enviou arquivo.
  */
 const APP = process.env['BASE_URL'] ?? 'http://localhost:4200';
+const QUEM_CONSULTA_TODOS_OS_DADOS = 'victor.almada';
+const QUEM_NAO_CONSULTA_DOCUMENTOS_SENSIVEIS = 'lucas.viana';
+const QUEM_AVALIA_SEM_IDENTIFICACAO = 'luiza.pinto';
 
 test.describe('Detalhe da inscrição e comprovantes enviados', () => {
   let cenario: CenarioDaProjecao;
@@ -16,13 +24,48 @@ test.describe('Detalhe da inscrição e comprovantes enviados', () => {
   test.beforeAll(async () => {
     test.setTimeout(900_000);
     cenario = await cenarioDaProjecao();
+    const perfis = [
+      {
+        persona: QUEM_CONSULTA_TODOS_OS_DADOS,
+        permissoes: [
+          'selecao:dados-publicos:consultar',
+          'selecao:dados-internos:consultar',
+          'selecao:dados-pessoais:consultar',
+          'selecao:dados-sensiveis:consultar',
+          'selecao:dados-identificadores:consultar',
+          'selecao:documentos-sensiveis:consultar',
+        ],
+      },
+      {
+        persona: QUEM_NAO_CONSULTA_DOCUMENTOS_SENSIVEIS,
+        permissoes: [
+          'selecao:dados-publicos:consultar',
+          'selecao:dados-internos:consultar',
+          'selecao:dados-pessoais:consultar',
+          'selecao:documentos-publicos:consultar',
+          'selecao:documentos-internos:consultar',
+          'selecao:documentos-pessoais:consultar',
+        ],
+      },
+      { persona: QUEM_AVALIA_SEM_IDENTIFICACAO, permissoes: ['selecao:dados-publicos:consultar'] },
+    ];
+    for (const { persona, permissoes } of perfis) {
+      const perfil = await garantirPerfil(
+        `E2E detalhe — ${persona}`,
+        `Acesso ao detalhe para ${persona}.`,
+        ['selecao:inscricoes:consultar', ...permissoes],
+      );
+      await garantirConcessao(persona, perfil, await unidadeDoCertame());
+    }
     rota = `/processo-seletivo/${cenario.processoId}/inscricoes/${cenario.fernanda.inscricaoId}`;
   });
 
   test('CEPS abre o laudo pelo acesso auditado', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'diogo.souza', rota);
+    const pagina = await entrarComoPersona(browser, APP, QUEM_CONSULTA_TODOS_OS_DADOS, rota);
 
-    await expect(pagina.getByRole('heading', { level: 2, name: 'Arquivos enviados' })).toBeVisible();
+    await expect(
+      pagina.getByRole('heading', { level: 2, name: 'Arquivos enviados' }),
+    ).toBeVisible();
     const abrir = pagina.getByRole('button', { name: /^Abrir Laudo médico/ }).first();
     // O arquivo abre em outra aba direto no endereço assinado do armazenamento, que o navegador
     // baixa ou exibe: o que se confere é o pedido ao armazenamento e a resposta dele.
@@ -36,19 +79,32 @@ test.describe('Detalhe da inscrição e comprovantes enviados', () => {
     await expect(pagina.getByText('Arquivo não disponível')).toHaveCount(0);
   });
 
-  test('sem a permissão de documentos sensíveis o laudo não aparece e nada indica a omissão', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'kevin.carvalho', rota);
+  test('sem a permissão de documentos sensíveis o laudo não aparece e nada indica a omissão', async ({
+    browser,
+  }) => {
+    const pagina = await entrarComoPersona(
+      browser,
+      APP,
+      QUEM_NAO_CONSULTA_DOCUMENTOS_SENSIVEIS,
+      rota,
+    );
 
-    await expect(pagina.getByRole('heading', { level: 2, name: 'Respostas do formulário' })).toBeVisible();
+    await expect(
+      pagina.getByRole('heading', { level: 2, name: 'Respostas do formulário' }),
+    ).toBeVisible();
     await expect(pagina.getByText('Laudo médico')).toHaveCount(0);
     await expect(pagina.getByRole('heading', { name: 'Arquivos enviados' })).toHaveCount(0);
     await expect(pagina.locator('main')).not.toContainText(/oculto|sem permiss|omitid/i);
   });
 
-  test('sem a permissão de dados pessoais vê a oferta e a situação, sem nome nem CPF', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'leandro.viana', rota);
+  test('sem a permissão de dados pessoais vê a oferta e a situação, sem nome nem CPF', async ({
+    browser,
+  }) => {
+    const pagina = await entrarComoPersona(browser, APP, QUEM_AVALIA_SEM_IDENTIFICACAO, rota);
 
-    await expect(pagina.getByRole('heading', { level: 2, name: 'Inscrição', exact: true })).toBeVisible();
+    await expect(
+      pagina.getByRole('heading', { level: 2, name: 'Inscrição', exact: true }),
+    ).toBeVisible();
     await expect(pagina.getByText(`${cenario.nomeDoProcesso} — inscrição enviada`)).toBeVisible();
     await expect(pagina.getByText('Oferta escolhida', { exact: true })).toBeVisible();
     await expect(pagina.getByText('Medicina').first()).toBeVisible();
@@ -58,25 +114,38 @@ test.describe('Detalhe da inscrição e comprovantes enviados', () => {
   });
 
   test('avaliação cega não recebe nenhum nome, nem o social', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'leandro.viana', rota);
+    const pagina = await entrarComoPersona(browser, APP, QUEM_AVALIA_SEM_IDENTIFICACAO, rota);
 
-    await expect(pagina.getByRole('heading', { level: 2, name: 'Inscrição', exact: true })).toBeVisible();
+    await expect(
+      pagina.getByRole('heading', { level: 2, name: 'Inscrição', exact: true }),
+    ).toBeVisible();
     // Nenhum fato é público: o painel das respostas nem existe para quem só tem dados públicos.
     await expect(pagina.getByRole('heading', { name: 'Respostas do formulário' })).toHaveCount(0);
     await expect(pagina.locator('main')).not.toContainText(/Ariel|Drumond/);
   });
 
-  test('resposta de seleção aparece pelo rótulo e a descrição fica na dica do campo', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'diogo.souza', rota);
+  test('resposta de seleção aparece pelo rótulo e a descrição fica na dica do campo', async ({
+    browser,
+  }) => {
+    const pagina = await entrarComoPersona(browser, APP, QUEM_CONSULTA_TODOS_OS_DADOS, rota);
 
     await expect(pagina.getByText('Brasileiro nato')).toBeVisible();
     await expect(pagina.getByText('Mato Grosso do Sul').first()).toBeVisible();
     // A descrição do fato acompanha o rótulo do campo.
-    await expect(pagina.getByText(/Nome pelo qual o candidato prefere ser identificado/)).toBeVisible();
+    await expect(
+      pagina.getByText(/Nome pelo qual o candidato prefere ser identificado/),
+    ).toBeVisible();
   });
 
-  test('abrir o detalhe faz uma única requisição, sem buscar o processo à parte', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'diogo.souza', '/dashboard');
+  test('abrir o detalhe faz uma única requisição, sem buscar o processo à parte', async ({
+    browser,
+  }) => {
+    const pagina = await entrarComoPersona(
+      browser,
+      APP,
+      QUEM_CONSULTA_TODOS_OS_DADOS,
+      '/dashboard',
+    );
     const chamadas: string[] = [];
     pagina.on('request', (req) => {
       const { pathname } = new URL(req.url());
@@ -84,11 +153,15 @@ test.describe('Detalhe da inscrição e comprovantes enviados', () => {
     });
 
     const respostaDoDetalhe = pagina.waitForResponse(
-      (res) => res.request().method() === 'GET' && res.url().endsWith(`/inscricoes/${cenario.fernanda.inscricaoId}`),
+      (res) =>
+        res.request().method() === 'GET' &&
+        res.url().endsWith(`/inscricoes/${cenario.fernanda.inscricaoId}`),
     );
     await pagina.goto(rota);
     await respostaDoDetalhe;
-    await expect(pagina.getByRole('heading', { level: 2, name: 'Respostas do formulário' })).toBeVisible();
+    await expect(
+      pagina.getByRole('heading', { level: 2, name: 'Respostas do formulário' }),
+    ).toBeVisible();
 
     expect(chamadas).toEqual([
       `GET /api/selecao/processos-seletivos/${cenario.processoId}/inscricoes/${cenario.fernanda.inscricaoId}`,
@@ -96,14 +169,22 @@ test.describe('Detalhe da inscrição e comprovantes enviados', () => {
   });
 
   test('o detalhe não é pré-carregado a partir da listagem', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'diogo.souza', '/dashboard');
+    const pagina = await entrarComoPersona(
+      browser,
+      APP,
+      QUEM_CONSULTA_TODOS_OS_DADOS,
+      '/dashboard',
+    );
     const consultasAoDetalhe: string[] = [];
     pagina.on('request', (req) => {
-      if (req.url().includes(`/inscricoes/${cenario.fernanda.inscricaoId}`)) consultasAoDetalhe.push(req.url());
+      if (req.url().includes(`/inscricoes/${cenario.fernanda.inscricaoId}`))
+        consultasAoDetalhe.push(req.url());
     });
 
     const respostaDaListagem = pagina.waitForResponse(
-      (res) => res.request().method() === 'GET' && res.url().includes(`/processos-seletivos/${cenario.processoId}/inscricoes?`),
+      (res) =>
+        res.request().method() === 'GET' &&
+        res.url().includes(`/processos-seletivos/${cenario.processoId}/inscricoes?`),
     );
     await pagina.goto(`/processo-seletivo/${cenario.processoId}/inscricoes`);
     await respostaDaListagem;
@@ -111,31 +192,42 @@ test.describe('Detalhe da inscrição e comprovantes enviados', () => {
     await expect(linha).toBeVisible();
     await linha.hover();
     await linha.getByRole('link').first().focus();
-    // A página já estava ociosa antes da interação: provar a ausência exige observar a rede por uma janela depois dela;
+    // A página já estava ociosa antes da interação: provar a ausência exige observar a rede por uma período depois dela;
     // o que sair durante a interação fica com o listener acima.
     const preCarregou = await pagina
-      .waitForRequest((req) => req.url().includes(`/inscricoes/${cenario.fernanda.inscricaoId}`), { timeout: 3_000 })
-      .then(() => true, () => false);
+      .waitForRequest((req) => req.url().includes(`/inscricoes/${cenario.fernanda.inscricaoId}`), {
+        timeout: 3_000,
+      })
+      .then(
+        () => true,
+        () => false,
+      );
 
     expect(preCarregou).toBe(false);
     expect(consultasAoDetalhe).toEqual([]);
   });
 
   test('acesso direto e recarregamento mostram a mesma inscrição', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'diogo.souza', rota);
-    await expect(pagina.getByRole('heading', { level: 2, name: 'Respostas do formulário' })).toBeVisible();
+    const pagina = await entrarComoPersona(browser, APP, QUEM_CONSULTA_TODOS_OS_DADOS, rota);
+    await expect(
+      pagina.getByRole('heading', { level: 2, name: 'Respostas do formulário' }),
+    ).toBeVisible();
 
     await pagina.reload();
 
-    await expect(pagina.getByRole('heading', { level: 2, name: 'Respostas do formulário' })).toBeVisible();
+    await expect(
+      pagina.getByRole('heading', { level: 2, name: 'Respostas do formulário' }),
+    ).toBeVisible();
     await expect(pagina.getByText('Brasileiro nato')).toBeVisible();
   });
 
   test('na troca de inscrição nada da anterior permanece', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'diogo.souza', rota);
+    const pagina = await entrarComoPersona(browser, APP, QUEM_CONSULTA_TODOS_OS_DADOS, rota);
     await expect(pagina.getByText('Fernanda Laura Nicole Drumond')).toBeVisible();
 
-    await pagina.goto(`/processo-seletivo/${cenario.processoId}/inscricoes/${cenario.erick.inscricaoId}`);
+    await pagina.goto(
+      `/processo-seletivo/${cenario.processoId}/inscricoes/${cenario.erick.inscricaoId}`,
+    );
 
     await expect(pagina.getByText('Erick Isaac Ramos')).toBeVisible();
     await expect(pagina.locator('main')).not.toContainText(/Fernanda|Drumond/);
@@ -143,27 +235,38 @@ test.describe('Detalhe da inscrição e comprovantes enviados', () => {
   });
 
   test('acesso ao laudo recusado pela API mostra "Arquivo não disponível"', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'diogo.souza', rota);
+    const pagina = await entrarComoPersona(browser, APP, QUEM_CONSULTA_TODOS_OS_DADOS, rota);
     await pagina.route(/\/documentos\/arquivos\/[^/]+\/acesso$/, (route) =>
       route.fulfill({
         status: 404,
         contentType: 'application/problem+json',
         headers: { 'access-control-allow-origin': '*' },
-        body: JSON.stringify({ status: 404, title: 'Não encontrado', code: 'uniplus.nao_encontrado' }),
+        body: JSON.stringify({
+          status: 404,
+          title: 'Não encontrado',
+          code: 'uniplus.nao_encontrado',
+        }),
       }),
     );
-    await expect(pagina.getByRole('heading', { level: 2, name: 'Arquivos enviados' })).toBeVisible();
+    await expect(
+      pagina.getByRole('heading', { level: 2, name: 'Arquivos enviados' }),
+    ).toBeVisible();
 
-    await pagina.getByRole('button', { name: /^Abrir Laudo médico/ }).first().click();
+    await pagina
+      .getByRole('button', { name: /^Abrir Laudo médico/ })
+      .first()
+      .click();
 
     await expect(pagina.getByText('Arquivo não disponível')).toBeVisible();
   });
 
-  test('inscrição inexistente mostra "Inscrição não encontrada" com retorno à listagem', async ({ browser }) => {
+  test('inscrição inexistente mostra "Inscrição não encontrada" com retorno à listagem', async ({
+    browser,
+  }) => {
     const pagina = await entrarComoPersona(
       browser,
       APP,
-      'diogo.souza',
+      QUEM_CONSULTA_TODOS_OS_DADOS,
       `/processo-seletivo/${cenario.processoId}/inscricoes/01a00000-0000-7000-8000-000000000000`,
     );
 
