@@ -1,9 +1,9 @@
-import {
+import type {
+  ConfiguracaoBonusRegionalDto,
+  CriterioDesempateDto,
+  EtapaProcessoDto,
   PapelDaBancaCodigo,
   TipoDeBancaCodigo,
-  type ConfiguracaoBonusRegionalDto,
-  type CriterioDesempateDto,
-  type EtapaProcessoDto,
 } from '@uniplus/shared-data/selecao';
 import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { PROCESSO_PUBLICADO_DA_MEDICINA } from './consulta-da-medicina';
@@ -22,11 +22,14 @@ type RecursoDaEtapa = EtapaProcessoDto['publicacoes']['recursos'][number];
 
 const TIPO_DA_BANCA = {
   codigo: {
-    codigo: TipoDeBancaCodigo.BANCA_ANALISE_DOCUMENTAL,
+    codigo: 'BANCA_ANALISE_DOCUMENTAL' as TipoDeBancaCodigo,
     rotulo: 'Banca de análise documental',
   },
   posicaoNoTipo: 1,
-  papel: { codigo: PapelDaBancaCodigo.AVALIA_O_MERITO, rotulo: 'Avalia o mérito' },
+  papel: {
+    codigo: 'AVALIA_O_MERITO' as PapelDaBancaCodigo,
+    rotulo: 'Avalia o mérito',
+  },
   exigeDuasOuMaisBancas: false,
   encerraRecursoNaPrimeiraInstancia: false,
   tiposDeDecisaoJulgados: [],
