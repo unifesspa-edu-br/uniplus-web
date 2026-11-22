@@ -10,10 +10,10 @@ import {
 import { rotuloDaFormaDeAvaliacao } from '../../shared/forma-de-avaliacao';
 import { decimalLido, textoDaSoma } from '../../shared/itens-de-avaliacao';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
+import { identificacaoDaBanca } from '../../shared/bancas/lista-de-bancas';
 import { descricaoDaRegra } from '../../shared/deliberacao/descricao-da-regra';
 import { parametrosEmTexto } from '../../shared/configuracao-do-recurso/leitura-dos-parametros';
 import type { CatalogoDeAtos } from './catalogos/catalogo-de-atos.service';
-import type { CatalogoDeBancas } from './catalogos/catalogo-de-bancas.service';
 import type { CatalogoDeTiposDeEtapa } from './catalogos/catalogo-de-tipos-de-etapa.service';
 import type { EtapaForm } from './cronograma-form';
 import {
@@ -25,10 +25,9 @@ import {
 } from './declaracoes-da-etapa';
 import { caracteresAdmitidos, eliminaPorCarater, pontuaPorCarater } from './regras-da-etapa';
 
-/** O que a consulta da etapa lê dos catálogos, para nomear ato, tipo e banca. */
+/** O que a consulta da etapa lê dos catálogos, para nomear ato e tipo (a banca vem da cópia guardada). */
 export type CatalogosDaLeitura = Pick<CatalogoDeAtos, 'rotuloDoAto'> &
-  Pick<CatalogoDeTiposDeEtapa, 'tipoEtapaPorId'> &
-  Pick<CatalogoDeBancas, 'bancas'> & {
+  Pick<CatalogoDeTiposDeEtapa, 'tipoEtapaPorId'> & {
     /** O nome do tipo de decisão como o processo lido o traz. */
     readonly rotuloDoTipoDeDecisao: Signal<(codigo: string) => string>;
   };
@@ -177,11 +176,11 @@ function avaliacaoLida(grupo: FormGroup<EtapaForm>, tipos: TiposDeEtapa) {
   };
 }
 
-function bancasLidas(controles: EtapaForm, catalogos: CatalogosDaLeitura): readonly string[] {
-  const nomesDasBancas = catalogos.bancas();
-  return controles.bancas.value.map(({ tipoBancaId, regraDeDeliberacao }) => {
-    const nome = nomesDasBancas.find((banca) => banca.id === tipoBancaId)?.nome ?? tipoBancaId;
-    return `${nome} — ${descricaoDaRegra(regraDeDeliberacao)}`;
+function bancasLidas(controles: EtapaForm): readonly string[] {
+  const bancas = controles.bancas.value;
+  return bancas.map((banca) => {
+    const regra = descricaoDaRegra(banca.regraDeDeliberacao);
+    return `${identificacaoDaBanca(bancas, banca, '')} — ${regra}`;
   });
 }
 
@@ -202,7 +201,7 @@ function divulgacaoLida(grupo: FormGroup<EtapaForm>, catalogos: CatalogosDaLeitu
 
   return {
     parecerIndividual: controles.emiteParecerIndividual.value,
-    bancas: bancasLidas(controles, catalogos),
+    bancas: bancasLidas(controles),
     publicacoes: publicacoesLidas(controles, nomeDoAto),
     tiposDeDecisao: controles.tiposDeDecisao.value.map(catalogos.rotuloDoTipoDeDecisao()),
     recursos: controles.recursos.value.map((recurso) => recursoLido(recurso, nomeDoAto)),

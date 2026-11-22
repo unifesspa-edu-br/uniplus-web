@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { describe, expect, it } from 'vitest';
-import { CaraterEtapa, UnidadePrazoCodigo } from '@uniplus/shared-data/selecao';
+import { CaraterEtapa, PapelDaBancaCodigo, UnidadePrazoCodigo } from '@uniplus/shared-data/selecao';
 
 import type { EtapaPontuada, RecursoDaEtapa } from '../../processo-seletivo.models';
 import {
@@ -18,6 +18,13 @@ import { etapaLida, rotuloDoPapel, type CatalogosDaLeitura } from './leitura-da-
 const ATO = 'EDITAL_ABERTURA';
 const BANCA = '01960000-0000-7000-0000-0000000000b1';
 
+const COPIA_DA_ENTREVISTA = {
+  rotulo: 'Banca de entrevista',
+  papel: { codigo: PapelDaBancaCodigo.AVALIA_O_MERITO, rotulo: 'Avalia candidato' },
+  exigeDuasOuMaisBancas: false,
+  encerraRecursoNaPrimeiraInstancia: false,
+};
+
 const catalogos = {
   rotuloDoAto: signal(new Map([[ATO, 'Edital de abertura']])),
   tipoEtapaPorId: signal(
@@ -31,7 +38,6 @@ const catalogos = {
       ],
     ]),
   ),
-  bancas: signal([{ id: BANCA, nome: 'Banca de redação' }]),
   rotuloDoTipoDeDecisao: signal(rotuloDaApi),
 } as unknown as CatalogosDaLeitura;
 
@@ -130,25 +136,9 @@ describe('etapa lida na consulta', () => {
     expect(comEscala.passoDoLancamento).toBeNull();
   });
 
-  it('nomeia banca e ato pelo catálogo e mostra o id ou o código que ele não conhece', () => {
+  it('nomeia o ato pelo catálogo e mostra o código que ele não conhece', () => {
     const lidaComRefs = lida({
       emiteParecerIndividual: true,
-      bancas: [
-        {
-          id: null,
-          identificadorLocal: 'banca-teste',
-          copiaDoTipo: null,
-          tipoBancaId: BANCA,
-          regraDeDeliberacao: null,
-        },
-        {
-          id: null,
-          identificadorLocal: 'banca-teste',
-          copiaDoTipo: null,
-          tipoBancaId: 'banca-sem-cadastro',
-          regraDeDeliberacao: null,
-        },
-      ],
       produtos: [
         { atoCodigo: ATO, papel: 'resultado_preliminar' },
         { atoCodigo: 'ATO_FORA_DO_CATALOGO', papel: null },
@@ -157,10 +147,6 @@ describe('etapa lida na consulta', () => {
     });
 
     expect(lidaComRefs.parecerIndividual).toBe(true);
-    expect(lidaComRefs.bancas).toEqual([
-      'Banca de redação — Sem regra de deliberação declarada',
-      'banca-sem-cadastro — Sem regra de deliberação declarada',
-    ]);
     expect(lidaComRefs.publicacoes).toEqual([
       'Edital de abertura — resultado_preliminar',
       'ATO_FORA_DO_CATALOGO — não é resultado',
@@ -254,7 +240,7 @@ describe('etapa lida na consulta', () => {
         {
           id: null,
           identificadorLocal: 'banca-teste',
-          copiaDoTipo: null,
+          copiaDoTipo: COPIA_DA_ENTREVISTA,
           tipoBancaId: BANCA,
           regraDeDeliberacao: COLEGIADA,
         },
@@ -262,8 +248,32 @@ describe('etapa lida na consulta', () => {
     });
 
     expect(bancas).toEqual([
-      'Banca de redação — 5 titulares, 2 suplentes; quórum 3; maioria simples; ' +
+      'Banca de entrevista 1 — 5 titulares, 2 suplentes; quórum 3; maioria simples; ' +
         'encerra: a presidência encerra ao atingir o quórum; desempate: voto da presidência',
+    ]);
+  });
+
+  it('identifica cada banca pelo rótulo e pela posição da cópia guardada, não pelo cadastro vivo', () => {
+    const banca = (identificadorLocal: string, tipoBancaId: string, rotulo: string) => ({
+      id: null,
+      identificadorLocal,
+      copiaDoTipo: { ...COPIA_DA_ENTREVISTA, rotulo },
+      tipoBancaId,
+      regraDeDeliberacao: null,
+    });
+
+    const { bancas } = lida({
+      bancas: [
+        banca('a', BANCA, 'Banca de entrevista'),
+        banca('b', 'outro-tipo', 'Banca de redação'),
+        banca('c', BANCA, 'Banca de entrevista'),
+      ],
+    });
+
+    expect(bancas).toEqual([
+      'Banca de entrevista 1 — Sem regra de deliberação declarada',
+      'Banca de redação 1 — Sem regra de deliberação declarada',
+      'Banca de entrevista 2 — Sem regra de deliberação declarada',
     ]);
   });
 });
