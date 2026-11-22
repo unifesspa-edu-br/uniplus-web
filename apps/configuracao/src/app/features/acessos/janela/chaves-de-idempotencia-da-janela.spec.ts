@@ -17,14 +17,15 @@ const LEANDRO = itemDaJanela({
   beneficiarioNome: 'Leandro Teste',
   situacao: 'retida',
 });
-const DEPOIS_DO_LOTE = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA, LEANDRO] });
+const DEPOIS_DO_ENVIO = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA, LEANDRO] });
 const SEM_RESPOSTA = () => of(recusa('uniplus.client.network_error', 0));
-const RECUSADA = () => of(recusa('uniplus.autorizacao.migracao.concessao_propria', 422));
+const RECUSADA = () =>
+  of(recusa('uniplus.autorizacao.revisao_das_concessoes.decisao_da_propria_concessao', 422));
 
 const chaveDa = (chamada: number): unknown =>
   api.decidirRetida.mock.calls[chamada]?.[3].get(IDEMPOTENCY_KEY_TOKEN);
 
-describe('chaves de idempotência da janela', () => {
+describe('chaves de idempotência da revisão', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     TestBed.resetTestingModule();
@@ -37,7 +38,7 @@ describe('chaves de idempotência da janela', () => {
 
   it('depois de falha de rede, repete o mesmo comando sob a mesma chave', async () => {
     api.decidirRetida.mockImplementationOnce(SEM_RESPOSTA).mockImplementationOnce(RECUSADA);
-    const { host, assentar } = await abrirJanela(DEPOIS_DO_LOTE);
+    const { host, assentar } = await abrirJanela(DEPOIS_DO_ENVIO);
 
     presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
     await assentar();
@@ -52,15 +53,15 @@ describe('chaves de idempotência da janela', () => {
     api.decidirRetida
       .mockImplementationOnce(SEM_RESPOSTA)
       .mockImplementationOnce(RECUSADA)
-      .mockImplementationOnce(() => of(ok(DEPOIS_DO_LOTE)));
-    const { host, assentar, responder } = await abrirJanela(DEPOIS_DO_LOTE);
+      .mockImplementationOnce(() => of(ok(DEPOIS_DO_ENVIO)));
+    const { host, assentar, responder } = await abrirJanela(DEPOIS_DO_ENVIO);
 
     presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
     await assentar();
     presente(botao(linhaDe(host, 'c2'), 'Migrar')).click();
     await assentar();
     presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
-    await responder(DEPOIS_DO_LOTE);
+    await responder(DEPOIS_DO_ENVIO);
 
     expect(chaveDa(1)).not.toBe(chaveDa(0));
     expect(chaveDa(2)).toBe(chaveDa(0));

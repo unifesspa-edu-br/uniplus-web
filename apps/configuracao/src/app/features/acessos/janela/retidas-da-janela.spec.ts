@@ -25,9 +25,9 @@ const REBECA = itemDaJanela({
   situacao: 'retida',
   ehDoLeitor: true,
 });
-const DEPOIS_DO_LOTE = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA, REBECA] });
+const DEPOIS_DO_ENVIO = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA, REBECA] });
 
-describe('concessões retidas da janela', () => {
+describe('concessões retidas da revisão', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     TestBed.resetTestingModule();
@@ -38,8 +38,8 @@ describe('concessões retidas da janela', () => {
     document.body.innerHTML = '';
   });
 
-  it('oferece migrar e recusar nas retidas de outras pessoas e nenhuma ação na própria', async () => {
-    const { host } = await abrirJanela(DEPOIS_DO_LOTE);
+  it('oferece aprovar e recusar nas retidas de outras pessoas e nenhuma ação na própria', async () => {
+    const { host } = await abrirJanela(DEPOIS_DO_ENVIO);
 
     const retidas = presente(host.querySelector('cfg-retidas-da-janela'));
     expect(retidas.querySelector('tr[data-concessao-id="c1"]')).not.toBeNull();
@@ -50,9 +50,9 @@ describe('concessões retidas da janela', () => {
     expect(host.textContent).toContain('Retidas: outra pessoa decide');
   });
 
-  it('migra a retida sem pedir confirmação', async () => {
-    api.decidirRetida.mockReturnValue(of(ok(DEPOIS_DO_LOTE)));
-    const { host, responder } = await abrirJanela(DEPOIS_DO_LOTE);
+  it('aprova a retida sem pedir confirmação', async () => {
+    api.decidirRetida.mockReturnValue(of(ok(DEPOIS_DO_ENVIO)));
+    const { host, responder } = await abrirJanela(DEPOIS_DO_ENVIO);
 
     presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
     await responder(
@@ -71,8 +71,8 @@ describe('concessões retidas da janela', () => {
   });
 
   it('recusa a retida só depois de a pessoa confirmar a revogação', async () => {
-    api.decidirRetida.mockReturnValue(of(ok(DEPOIS_DO_LOTE)));
-    const { host, assentar, responder } = await abrirJanela(DEPOIS_DO_LOTE);
+    api.decidirRetida.mockReturnValue(of(ok(DEPOIS_DO_ENVIO)));
+    const { host, assentar, responder } = await abrirJanela(DEPOIS_DO_ENVIO);
 
     presente(botao(linhaDe(host, 'c1'), 'Recusar')).click();
     await assentar();
@@ -83,7 +83,7 @@ describe('concessões retidas da janela', () => {
     presente(dialogo.querySelector<HTMLInputElement>('input[type="checkbox"]')).click();
     await assentar();
     presente(botao(dialogo, 'Recusar concessão')).click();
-    await responder(DEPOIS_DO_LOTE);
+    await responder(DEPOIS_DO_ENVIO);
 
     expect(api.decidirRetida).toHaveBeenCalledWith(
       PERFIL,
@@ -96,9 +96,9 @@ describe('concessões retidas da janela', () => {
 
   it('mostra a recusa da API junto à concessão decidida', async () => {
     api.decidirRetida.mockReturnValue(
-      of(recusa('uniplus.autorizacao.migracao.decisao_da_propria_concessao', 422)),
+      of(recusa('uniplus.autorizacao.revisao_das_concessoes.decisao_da_propria_concessao', 422)),
     );
-    const { host, assentar } = await abrirJanela(DEPOIS_DO_LOTE);
+    const { host, assentar } = await abrirJanela(DEPOIS_DO_ENVIO);
 
     presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
     await assentar();
@@ -111,7 +111,7 @@ describe('concessões retidas da janela', () => {
 
   it('falha que não veio da API explica junto à concessão e libera a decisão', async () => {
     api.decidirRetida.mockReturnValue(throwError(() => new Error('rede')));
-    const { host, assentar } = await abrirJanela(DEPOIS_DO_LOTE);
+    const { host, assentar } = await abrirJanela(DEPOIS_DO_ENVIO);
 
     presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
     await assentar();
@@ -122,11 +122,11 @@ describe('concessões retidas da janela', () => {
     expect(botao(linhaDe(host, 'c1'), 'Migrar')?.disabled).toBe(false);
   });
 
-  it('prazo encerrado relê a janela e mantém a explicação no aviso da página', async () => {
+  it('prazo encerrado relê a revisão e mantém a explicação no aviso da página', async () => {
     api.decidirRetida.mockReturnValue(
-      of(recusa('uniplus.autorizacao.migracao.prazo_encerrado', 422)),
+      of(recusa('uniplus.autorizacao.revisao_das_concessoes.prazo_encerrado', 422)),
     );
-    const { host, responder } = await abrirJanela(DEPOIS_DO_LOTE);
+    const { host, responder } = await abrirJanela(DEPOIS_DO_ENVIO);
 
     presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
     await responder(
@@ -138,13 +138,13 @@ describe('concessões retidas da janela', () => {
     );
 
     expect(host.textContent).toContain('A janela mudou');
-    expect(host.textContent).toContain('O prazo da janela de migração terminou.');
+    expect(host.textContent).toContain('O prazo da revisão das concessões terminou.');
     expect(host.textContent).toContain('Não migrada no prazo');
     expect(host.querySelector('cfg-retidas-da-janela')).toBeNull();
   });
 
   it('quem só tem a permissão da proteção de dados consulta a retida sem decidir', async () => {
-    const { host } = await abrirJanela(DEPOIS_DO_LOTE, [PROTECAO_DE_DADOS]);
+    const { host } = await abrirJanela(DEPOIS_DO_ENVIO, [PROTECAO_DE_DADOS]);
 
     expect(host.querySelector('cfg-retidas-da-janela')?.textContent).toContain(
       'a decisão cabe à gestão de acessos',

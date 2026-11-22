@@ -164,14 +164,14 @@ describe('PedidoDetalhePage — decisões', () => {
     expect(notificacoes.errorFromProblem).not.toHaveBeenCalled();
   });
 
-  it('mostra a recusa do perfil em janela de migração junto à decisão que a causou', async () => {
+  it('mostra a recusa do perfil em revisão das concessões junto à decisão que a causou', async () => {
     const { host, fixture } = await abrir([GESTOR]);
     api.aprovar.mockReturnValue(
       of(
         recusa(
-          'uniplus.autorizacao.pedido.perfil_em_janela_de_migracao',
+          'uniplus.autorizacao.pedido.perfil_em_revisao_das_concessoes',
           422,
-          'O perfil está em janela de migração.',
+          'O perfil está em revisão das concessões: o pedido só pode ser feito depois que ela terminar.',
         ),
       ),
     );
@@ -179,7 +179,9 @@ describe('PedidoDetalhePage — decisões', () => {
     await decidirNoResumo(fixture, host, 'Aprovar');
     await confirmarNoDialogo(fixture, host);
 
-    expect(textoDoAlerta(host)).toContain('O perfil está em janela de migração.');
+    expect(textoDoAlerta(host)).toContain(
+      'O perfil está em revisão das concessões: o pedido só pode ser feito depois que ela terminar.',
+    );
     expect(notificacoes.success).not.toHaveBeenCalled();
   });
 

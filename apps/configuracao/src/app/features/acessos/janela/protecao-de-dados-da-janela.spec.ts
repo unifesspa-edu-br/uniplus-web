@@ -24,14 +24,14 @@ const naEtapa = (concessaoId: string, beneficiarioNome: string) =>
   });
 const BETINA = naEtapa('c1', 'Betina Teste');
 const LEANDRO = naEtapa('c2', 'Leandro Teste');
-const MIGRADA = itemDaJanela({
+const APROVADA = itemDaJanela({
   concessaoId: 'c4',
   beneficiarioNome: 'Aline Teste',
   situacao: 'migrada',
 });
-const JANELA = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA, LEANDRO, MIGRADA] });
+const REVISAO = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA, LEANDRO, APROVADA] });
 
-describe('etapa da proteção de dados da janela', () => {
+describe('etapa da proteção de dados da revisão', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     TestBed.resetTestingModule();
@@ -43,7 +43,7 @@ describe('etapa da proteção de dados da janela', () => {
   });
 
   it('lista só as concessões que aguardam a etapa', async () => {
-    const { host } = await abrirJanela(JANELA);
+    const { host } = await abrirJanela(REVISAO);
 
     const etapa = presente(host.querySelector('cfg-protecao-de-dados-da-janela'));
     expect(etapa.querySelector('tr[data-concessao-id="c1"]')).not.toBeNull();
@@ -52,7 +52,7 @@ describe('etapa da proteção de dados da janela', () => {
   });
 
   it('não envia sem nenhuma escolha e diz por quê', async () => {
-    const { host } = await abrirJanela(JANELA);
+    const { host } = await abrirJanela(REVISAO);
 
     const enviar = presente(botao(host, 'Enviar as decisões'));
     expect(enviar.disabled).toBe(true);
@@ -60,14 +60,14 @@ describe('etapa da proteção de dados da janela', () => {
   });
 
   it('decide só as concessões escolhidas, e as demais seguem aguardando', async () => {
-    api.decidirProtecaoDeDados.mockReturnValue(of(ok(JANELA)));
-    const { host, assentar, responder } = await abrirJanela(JANELA);
+    api.decidirProtecaoDeDados.mockReturnValue(of(ok(REVISAO)));
+    const { host, assentar, responder } = await abrirJanela(REVISAO);
 
     escolher(linhaDe(host, 'c2'), 'Migrar');
     await assentar();
     expect(host.textContent).toContain('1 concessão escolhida; as demais seguem aguardando.');
     presente(botao(host, 'Enviar as decisões')).click();
-    await responder(JANELA);
+    await responder(REVISAO);
 
     expect(api.decidirProtecaoDeDados).toHaveBeenCalledWith(
       PERFIL,
@@ -79,9 +79,9 @@ describe('etapa da proteção de dados da janela', () => {
     );
   });
 
-  it('migra algumas e recusa outras no mesmo envio, com a confirmação da revogação', async () => {
-    api.decidirProtecaoDeDados.mockReturnValue(of(ok(JANELA)));
-    const { host, assentar, responder } = await abrirJanela(JANELA);
+  it('aprova algumas e recusa outras no mesmo envio, com a confirmação da revogação', async () => {
+    api.decidirProtecaoDeDados.mockReturnValue(of(ok(REVISAO)));
+    const { host, assentar, responder } = await abrirJanela(REVISAO);
 
     escolher(linhaDe(host, 'c1'), 'Migrar');
     escolher(linhaDe(host, 'c2'), 'Recusar');
@@ -97,7 +97,7 @@ describe('etapa da proteção de dados da janela', () => {
     presente(dialogo.querySelector<HTMLInputElement>('input[type="checkbox"]')).click();
     await assentar();
     presente(botao(dialogo, 'Recusar e enviar')).click();
-    await responder(JANELA);
+    await responder(REVISAO);
 
     expect(api.decidirProtecaoDeDados.mock.calls[0]?.[1]).toEqual({
       decisoes: [
@@ -108,8 +108,8 @@ describe('etapa da proteção de dados da janela', () => {
     });
   });
 
-  it('migrar todas e recusar todas escolhem toda a etapa', async () => {
-    const { host, assentar } = await abrirJanela(JANELA);
+  it('aprovar todas e recusar todas escolhem toda a etapa', async () => {
+    const { host, assentar } = await abrirJanela(REVISAO);
     const etapa = presente(host.querySelector('cfg-protecao-de-dados-da-janela'));
 
     presente(botao(etapa, 'Recusar todas')).click();
@@ -121,9 +121,9 @@ describe('etapa da proteção de dados da janela', () => {
 
   it('mostra a recusa de a mesma pessoa decidir as duas etapas junto ao envio, com o foco nela', async () => {
     api.decidirProtecaoDeDados.mockReturnValue(
-      of(recusa('uniplus.autorizacao.migracao.mesma_pessoa_nas_duas_etapas', 422)),
+      of(recusa('uniplus.autorizacao.revisao_das_concessoes.mesma_pessoa_nas_duas_etapas', 422)),
     );
-    const { host, assentar } = await abrirJanela(JANELA);
+    const { host, assentar } = await abrirJanela(REVISAO);
     escolher(linhaDe(host, 'c1'), 'Migrar');
     await assentar();
 
@@ -137,7 +137,7 @@ describe('etapa da proteção de dados da janela', () => {
 
   it('falha que não veio da API explica junto ao envio', async () => {
     api.decidirProtecaoDeDados.mockReturnValue(throwError(() => new Error('rede')));
-    const { host, assentar } = await abrirJanela(JANELA);
+    const { host, assentar } = await abrirJanela(REVISAO);
     escolher(linhaDe(host, 'c1'), 'Migrar');
     await assentar();
 
@@ -150,7 +150,7 @@ describe('etapa da proteção de dados da janela', () => {
   });
 
   it('quem só tem a permissão da gestão de acessos consulta a etapa sem decidir', async () => {
-    const { host } = await abrirJanela(JANELA, [GESTAO_DE_ACESSOS]);
+    const { host } = await abrirJanela(REVISAO, [GESTAO_DE_ACESSOS]);
 
     const etapa = presente(host.querySelector('cfg-protecao-de-dados-da-janela'));
     expect(etapa.textContent).toContain('a decisão cabe ao Representante do controlador');
