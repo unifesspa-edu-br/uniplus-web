@@ -14,6 +14,7 @@ import type { BancaDeclarada } from '../../modelos/banca.models';
 import { novaChave } from '../chaves/chave-local';
 import type { RecusaOrdenada } from '../recusas/ordem-das-recusas';
 import { RecusasDoCampoComponent } from '../recusas/recusas-do-campo.component';
+import { bancaDoCampo } from './campo-da-banca';
 import {
   acrescentarBanca,
   gruposPorTipo,
@@ -21,6 +22,9 @@ import {
   moverNoTipo,
   retirarBanca,
 } from './lista-de-bancas';
+
+const TEXTO_DA_BANCA_DE_RECURSOS =
+  'A banca de análise de recursos é opcional quando já existe banca que avalia o item contestado, e obrigatória quando o item contestado não é avaliado por banca, como o gabarito, a nota do ENEM e a classificação. Se ela faltar, a publicação mostra o que a API recusou.';
 
 export interface TipoDeBancaEscolhivel {
   readonly id: string;
@@ -49,6 +53,7 @@ export class ListaDeBancasComponent {
   readonly textoDaExigencia = input('Este tipo exige duas ou mais bancas.');
   readonly detalhe = input<TemplateRef<{ $implicit: BancaDeclarada }> | null>(null);
   readonly bancasChange = output<readonly BancaDeclarada[]>();
+  protected readonly textoDaBancaDeRecursos = TEXTO_DA_BANCA_DE_RECURSOS;
   protected readonly grupos = computed(() => gruposPorTipo(this.bancas()));
   protected readonly tipoSelecionado = signal('');
   protected readonly faltaTipo = signal(false);
@@ -96,12 +101,28 @@ export class ListaDeBancasComponent {
 
   private novaBanca(tipoBancaId: string): BancaDeclarada {
     const tomadas = new Set(this.bancas().map((banca) => banca.identificadorLocal));
+    for (const recusa of this.recusas()) {
+      const banca =
+        bancaDoCampo(recusa.campo, 'bancas') ?? bancaDoCampo(recusa.campo, 'bancasRequeridas');
+      if (banca) tomadas.add(banca.identificador);
+    }
     return {
       id: null,
       identificadorLocal: novaChave({ tipo: 'banca', nome: '', tomadas }),
       tipoBancaId,
-      copiaDoTipo: null,
+      copiaDoTipo: this.copiaDoTipo(tipoBancaId),
       regraDeDeliberacao: null,
+    };
+  }
+
+  private copiaDoTipo(id: string): BancaDeclarada['copiaDoTipo'] {
+    const tipo = this.tipos().find((item) => item.id === id);
+    if (!tipo) return null;
+    return {
+      rotulo: tipo.rotulo,
+      papel: tipo.papel ?? null,
+      exigeDuasOuMaisBancas: tipo.exigeDuasOuMaisBancas ?? false,
+      encerraRecursoNaPrimeiraInstancia: tipo.encerraRecursoNaPrimeiraInstancia ?? false,
     };
   }
 

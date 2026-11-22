@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { FormGroup } from '@angular/forms';
 
 import type { RecursoDaEtapa } from '../../../processo-seletivo.models';
+import { algumaBancaEncerraORecurso } from '../../../shared/bancas/lista-de-bancas';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { ParametrosDoRecursoEmConsultaComponent } from '../../../shared/configuracao-do-recurso/parametros-do-recurso-em-consulta.component';
 import { ParametrosDoRecursoComponent } from '../../../shared/configuracao-do-recurso/parametros-do-recurso.component';
@@ -66,6 +67,11 @@ export class ConfiguracaoDoRecursoDaEtapaComponent {
   /** Todas as recusas ao recurso, na ordem em que se leem. */
   protected readonly recusasDoRecurso = computed(() =>
     this.recusas.recusasDoRecurso(this.grupo(), this.indiceDoRecurso()),
+  );
+
+  /** Lido da cópia do tipo que cada banca da etapa guarda, nunca do cadastro vivo. */
+  protected readonly encerraNaPrimeiraInstancia = computed(() =>
+    algumaBancaEncerraORecurso(this.edicao.bancasDaEtapa(this.grupo())),
   );
 
   /** As recusas aos parâmetros, cada uma no nome que o componente comum dá ao campo. */

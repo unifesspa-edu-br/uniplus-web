@@ -131,6 +131,7 @@
         [recusas]="recusasDosParametros()"
         [prefixoDoId]="prefixoDosParametros()"
         [desabilitado]="!cronograma.edicaoLiberada()"
+        [encerraNaPrimeiraInstancia]="encerraNaPrimeiraInstancia()"
         (alterado)="alterarParametro($event)"
         (retirarPrazoDaSegundaInstancia)="retirarOPrazoDaSegundaInstancia()"
       />

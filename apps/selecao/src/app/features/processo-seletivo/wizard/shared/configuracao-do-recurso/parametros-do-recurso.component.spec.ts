@@ -93,6 +93,30 @@ describe('ParametrosDoRecursoComponent', () => {
     });
   });
 
+  describe('o aviso do recurso que se encerra na 1ª instância', () => {
+    const AVISO = 'O recurso deste tipo se encerra na 1ª instância.';
+    const grupo = (raiz: HTMLElement) => raiz.querySelector('fieldset[role="radiogroup"]');
+
+    it('aparece junto da pergunta, ligado a ela, sem esconder as opções', () => {
+      const { raiz } = montarParametrosDoRecurso({ encerraNaPrimeiraInstancia: true });
+
+      expect(por(raiz, `${P}-superior-encerra`)?.textContent?.trim()).toBe(AVISO);
+      expect(grupo(raiz)?.getAttribute('aria-describedby')).toBe(
+        `${P}-superior-ajuda ${P}-superior-encerra`,
+      );
+      expect(radio(raiz, `${P}-superior-sim`)?.disabled).toBe(false);
+      expect(radio(raiz, `${P}-superior-nao`)?.disabled).toBe(false);
+    });
+
+    it('não aparece quando a tela não diz que o recurso se encerra', () => {
+      const { raiz } = montarParametrosDoRecurso();
+
+      expect(por(raiz, `${P}-superior-encerra`)).toBeNull();
+      expect(raiz.textContent).not.toContain(AVISO);
+      expect(grupo(raiz)?.getAttribute('aria-describedby')).toBe(`${P}-superior-ajuda`);
+    });
+  });
+
   describe('o que avisa', () => {
     it('emite a mudança do prazo digitado, como texto', () => {
       const { raiz, alteracoes, fixture } = montarParametrosDoRecurso();

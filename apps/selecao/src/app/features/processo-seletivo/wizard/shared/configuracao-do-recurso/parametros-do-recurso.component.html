@@ -31,6 +31,7 @@
     [attr.aria-invalid]="instanciaSuperiorInvalida()"
     [attr.aria-describedby]="
       idsDaTela.instanciaSuperior.ajuda +
+      (encerraNaPrimeiraInstancia() ? ' ' + idsDaTela.instanciaSuperior.encerra : '') +
       (instanciaSuperiorEmAberto() ? ' ' + idsDaTela.instanciaSuperior.erro : '') +
       (recusasDe('admiteInstanciaSuperior').length > 0
         ? ' ' + idsDaTela.instanciaSuperior.recusas
@@ -68,6 +69,11 @@
       Não, quando a decisão da banca recursal é final. Sim, quando o candidato pode recorrer da
       decisão da 1ª instância à instância superior, no Uni+, no prazo informado.
     </span>
+    @if (encerraNaPrimeiraInstancia()) {
+      <span class="field__hint" [attr.id]="idsDaTela.instanciaSuperior.encerra">{{
+        mensagemDoRecursoQueSeEncerra
+      }}</span>
+    }
     @if (instanciaSuperiorEmAberto()) {
       <span class="field__erro" role="alert" [attr.id]="idsDaTela.instanciaSuperior.erro">{{
         mensagemDaInstanciaSuperior

@@ -21,6 +21,7 @@ import {
   MENSAGEM_DA_GUARDA_RETIRADA,
   MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO,
   MENSAGEM_DO_PRAZO_RETIRADO,
+  MENSAGEM_DO_RECURSO_QUE_SE_ENCERRA,
   opcoesDaGuarda,
   opcoesParaEscolha,
   parametrosAlterados,
@@ -74,6 +75,11 @@ export class ParametrosDoRecursoComponent {
   /** Base dos `id`: a fase dá um por regra de recurso, e a etapa um por recurso. */
   readonly prefixoDoId = input.required<string>();
   readonly desabilitado = input(false);
+  /**
+   * A cópia do tipo de alguma banca do lugar diz que o recurso dela se encerra na 1ª instância. A
+   * tela só avisa: quem recusa a instância superior nesse caso é a API, na publicação.
+   */
+  readonly encerraNaPrimeiraInstancia = input(false);
 
   readonly alterado = output<AlteracaoDosParametros>();
   readonly retirarPrazoDaSegundaInstancia = output<void>();
@@ -86,6 +92,7 @@ export class ParametrosDoRecursoComponent {
   protected readonly situacaoDosEfeitos = this.catalogo.situacaoDosEfeitos;
   protected readonly situacaoDasGuardas = this.catalogo.situacaoDasGuardas;
   protected readonly mensagemDaInstanciaSuperior = MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO;
+  protected readonly mensagemDoRecursoQueSeEncerra = MENSAGEM_DO_RECURSO_QUE_SE_ENCERRA;
 
   protected readonly rotulos = computed(() => this.leitura().rotulos);
   protected readonly prazoDaSegundaVisivel = computed(() =>

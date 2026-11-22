@@ -3,11 +3,12 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor, type RecusaDoProblema } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
+import { CONFIGURACAO_BASE_PATH, type TipoBancaDto } from '@uniplus/shared-data/configuracao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import {
   EfeitoSuspensivoCodigo,
+  PapelDaBancaCodigo,
   SELECAO_BASE_PATH,
   StatusProcesso,
   UnidadePrazoCodigo,
@@ -17,6 +18,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { RecursoDaEtapa } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
+import { umaBancaDeclarada } from '../../../shared/bancas/banca-declarada.testing';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import {
   opcoesDoRecursoDaUrl,
@@ -24,6 +26,7 @@ import {
   umaLeituraDoRecurso,
 } from '../../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
 import { GravacaoDoProcesso } from '../../../shared/gravacao/gravacao-do-processo';
+import { CatalogoDeBancas } from '../catalogos/catalogo-de-bancas.service';
 import { CatalogoDasOpcoesDoRecurso } from '../catalogos/catalogo-das-opcoes-do-recurso.service';
 import { CATALOGOS_DO_CRONOGRAMA } from '../catalogos/catalogos-do-cronograma';
 import {
@@ -230,6 +233,68 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
     expect(lista?.textContent).toContain('Nota da etapa');
     expect(lista?.textContent).toContain('Clareza');
     expect(lista?.textContent).toContain('Sugestão: PROCEDIMENTO-RECURSO-MONOCRATICO');
+  });
+
+  describe('aviso do recurso que se encerra na 1ª instância', () => {
+    const AVISO = 'O recurso deste tipo se encerra na 1ª instância.';
+    const ID_DO_AVISO = `${P}-superior-encerra`;
+    const bancaComCopia = (encerra: boolean) =>
+      umaBancaDeclarada({
+        copiaDoTipo: {
+          rotulo: 'Banca de entrevista',
+          papel: { codigo: PapelDaBancaCodigo.AVALIA_O_MERITO, rotulo: 'Avalia o mérito' },
+          exigeDuasOuMaisBancas: false,
+          encerraRecursoNaPrimeiraInstancia: encerra,
+        },
+      });
+    const noCadastro = (encerra: boolean) =>
+      ({
+        id: 'entrevista',
+        codigo: { rotulo: 'Banca de entrevista' },
+        encerraRecursoNaPrimeiraInstancia: encerra,
+      }) as TipoBancaDto;
+    const aviso = () => (fixture.nativeElement as HTMLElement).querySelector(`#${ID_DO_AVISO}`);
+
+    beforeEach(() => TestBed.inject(FormularioDoCronograma).etapas.push(grupo));
+
+    const comBancas = (...bancas: ReturnType<typeof bancaComCopia>[]) => {
+      grupo.controls.bancas.setValue(bancas);
+      fixture.detectChanges();
+    };
+
+    it('aparece junto da pergunta, ligado a ela, quando a cópia do tipo de uma banca da etapa traz a marca', () => {
+      comBancas(bancaComCopia(false), { ...bancaComCopia(true), identificadorLocal: 'banca-2' });
+
+      expect(aviso()?.textContent?.trim()).toBe(AVISO);
+      expect(
+        seletor(`${P}-superior-sim`)?.closest('fieldset')?.getAttribute('aria-describedby'),
+      ).toContain(ID_DO_AVISO);
+    });
+
+    it('não aparece quando a etapa não tem banca ou nenhuma cópia traz a marca', () => {
+      expect(aviso()).toBeNull();
+
+      comBancas(bancaComCopia(false));
+
+      expect(aviso()).toBeNull();
+    });
+
+    it('não aparece para a banca ainda sem cópia do tipo, que só tem o cadastro', () => {
+      TestBed.inject(CatalogoDeBancas).bancas.set([noCadastro(true)]);
+      comBancas(umaBancaDeclarada());
+
+      expect(aviso()).toBeNull();
+    });
+
+    it('lê a cópia guardada na banca, mesmo que o cadastro diga outra coisa', () => {
+      TestBed.inject(CatalogoDeBancas).bancas.set([noCadastro(false)]);
+      comBancas(bancaComCopia(true));
+      expect(aviso()).not.toBeNull();
+
+      TestBed.inject(CatalogoDeBancas).bancas.set([noCadastro(true)]);
+      comBancas(bancaComCopia(false));
+      expect(aviso()).toBeNull();
+    });
   });
 
   describe('recusas do servidor ao controle de onde o prazo corre', () => {
