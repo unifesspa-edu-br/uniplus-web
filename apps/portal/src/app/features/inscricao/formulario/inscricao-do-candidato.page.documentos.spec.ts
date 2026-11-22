@@ -50,7 +50,7 @@ describe('InscricaoDoCandidatoPage', () => {
     grupoCodigo: null,
     ocorrenciaId: null,
     grupos: [],
-    repetePorEntidade: null,
+    grupoDoFormularioParaRepeticao: null,
     formatosAceitos: ['PDF'],
     tamanhoMaximoBytes: 2 * 1024 * 1024,
     quantidadeMinima: 1,

@@ -16,9 +16,7 @@ import {
   alcancaOPublico,
   composicaoResumida,
   descreverCondicaoDeModalidade,
-  descreverNorma,
   descreverPublico,
-  normaComum,
   publicoDaExigencia,
   rotuloDaConsequencia,
 } from './resumo-da-exigencia';
@@ -328,68 +326,24 @@ describe('resumo da exigência documental', () => {
     expect(rotuloDaConsequencia('', true)).toBe('Nada além de faltar o documento obrigatório');
   });
 
-  it('descreve a norma pelo alcance e pela identificação', () => {
-    expect(
-      descreverNorma({
-        referencia: ' Lei 12.711/2012, art. 3º ',
-        abrangencia: 'FEDERAL',
-        status: 'PENDENTE',
-        observacao: '',
-      }),
-    ).toEqual({
-      referencia: 'Lei 12.711/2012, art. 3º',
-      detalhe: 'Lei federal · Pendente',
-      observacao: '',
-    });
-    expect(
-      descreverNorma({
-        referencia: '',
-        abrangencia: 'INTERNA_EDITAL',
-        status: 'RESOLVIDO',
-        observacao: '',
-      }).referencia,
-    ).toBe('Sem referência declarada');
-  });
-
-  describe('norma comum da fase', () => {
-    const norma = {
-      referencia: 'Edital nº 1/2027, Anexo III',
-      abrangencia: 'INTERNA_EDITAL',
-      status: 'RESOLVIDO',
-      observacao: '',
-    };
-
-    it('é a norma única e resolvida de todas as exigências', () => {
-      expect(
-        normaComum([[norma], [{ ...norma, referencia: ' Edital nº 1/2027, Anexo III ' }]]),
-      ).toBe(norma);
-    });
-
-    it('não existe quando alguma exigência tem outra norma, duas ou nenhuma', () => {
-      expect(normaComum([[norma], [{ ...norma, referencia: 'Anexo IV' }]])).toBeNull();
-      expect(normaComum([[norma], [norma, norma]])).toBeNull();
-      expect(normaComum([[norma], []])).toBeNull();
-      expect(normaComum([])).toBeNull();
-    });
-
-    /** A pendente continua acusada em cada linha que a publicação recusaria. */
-    it('não sobe a norma pendente, mesmo igual em todas', () => {
-      const pendente = { ...norma, status: 'PENDENTE' };
-
-      expect(normaComum([[pendente], [pendente]])).toBeNull();
-    });
-  });
-
   it('resume como o documento compõe o grupo', () => {
     expect(composicaoResumida(null)).toBe('');
-    expect(composicaoResumida({ tipo: 'OU', quantidadeMinima: null, alternativas: 3 })).toBe(
-      'Basta 1 entre 3 alternativas',
-    );
-    expect(composicaoResumida({ tipo: 'OU', quantidadeMinima: 2, alternativas: 3 })).toBe(
-      '2 entre 3 alternativas',
-    );
-    expect(composicaoResumida({ tipo: 'E', quantidadeMinima: null, alternativas: 2 })).toBe(
-      'Conjunto de 2 documentos',
-    );
+    expect(
+      composicaoResumida({
+        forma: 'QUANTIDADE_MINIMA_DE_ITENS',
+        quantidadeMinima: null,
+        alternativas: 3,
+      }),
+    ).toBe('Basta 1 entre 3 alternativas');
+    expect(
+      composicaoResumida({
+        forma: 'QUANTIDADE_MINIMA_DE_ITENS',
+        quantidadeMinima: 2,
+        alternativas: 3,
+      }),
+    ).toBe('2 entre 3 alternativas');
+    expect(
+      composicaoResumida({ forma: 'TODOS_OS_ITENS', quantidadeMinima: null, alternativas: 2 }),
+    ).toBe('Conjunto de 2 documentos');
   });
 });

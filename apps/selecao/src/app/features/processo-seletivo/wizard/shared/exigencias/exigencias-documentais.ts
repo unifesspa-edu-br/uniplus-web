@@ -4,8 +4,8 @@ import {
   baseLegalNova,
   CONSEQUENCIAS_ESCOLHIVEIS as CONSEQUENCIAS_DO_DOCUMENTO,
   CONSEQUENCIA_REENVIO,
-  STATUS_BASE_LEGAL_ESCOLHIVEIS,
-  STATUS_BASE_LEGAL_RESOLVIDO,
+  SITUACAO_BASE_LEGAL_ESCOLHIVEIS,
+  SITUACAO_BASE_LEGAL_RESOLVIDO,
   temNormaResolvida,
 } from '@uniplus/shared-utils';
 
@@ -14,23 +14,23 @@ import type {
   RegraDaExigenciaDeDocumento,
   CriteriosDoComprovante,
   ExigenciasDoRascunho,
-  NoDeExigencia,
+  RegraDeComprovacao,
 } from '../../processo-seletivo.models';
 
 import { limitesDoArquivo, type RestricaoDeArquivo } from './arquivo-da-exigencia';
 
 /**
- * Tradução entre o rascunho do wizard e a árvore de exigências documentais do contrato
- * (`PUT …/documentos-exigidos`, `ProcessoSeletivoDto.raizesExigencia`).
+ * Tradução entre o rascunho do wizard e a estrutura de regras de exigências documentais do contrato
+ * (`PUT …/documentos-exigidos`, `ProcessoSeletivoDto.regrasDeComprovacao`).
  *
- * O rascunho guarda a MESMA árvore que o contrato, menos as referências que não sobrevivem a
+ * O rascunho guarda a MESMA estrutura de regras que o contrato, menos as referências que não sobrevivem a
  * uma gravação de cronograma — fase por código em vez de id, aqui e na idade máxima. O resto
  * é cópia campo a campo, e é isso que faz o que a tela não edita sobreviver: o `PUT`
- * substitui a árvore inteira, e o que o wizard sintetizasse do zero apagaria grupo `OU`,
+ * substitui a estrutura de regras inteira, e o que o wizard sintetizasse do zero apagaria grupo de alternativas,
  * cardinalidade qualificada e repetição por entidade a cada salvamento.
  *
- * A hidratação lê `raizesExigencia`, a árvore, e não `documentosExigidos`, a lista plana:
- * a lista plana não diz quem é filho de qual grupo.
+ * A hidratação lê `regrasDeComprovacao`, a estrutura de regras, e não `documentosExigidos`, a lista plana:
+ * a lista plana não diz quem é item de qual grupo.
  */
 
 /** Aplicabilidade e gatilho, no vocabulário do wire. */
@@ -80,39 +80,42 @@ function criteriosIniciaisDoComprovante(restricao?: RestricaoDeArquivo): Criteri
 }
 
 /**
- * Acrescenta a exigência como declaração de RAIZ, sem tocar no resto da árvore.
+ * Acrescenta a exigência como declaração de regra principal, sem tocar no resto da estrutura de regras.
  *
  * É a operação que o alcance por todas as fases precisa, e que `comExigencia` não faz: aquela
- * substitui a PRIMEIRA folha que casa por (documento, fase), e essa primeira pode ser a
- * alternativa dentro de um grupo OU — sobrescrevê-la transformaria "este documento serve" em
+ * substitui a PRIMEIRA regra de documento que casa por (documento, fase), e essa primeira pode ser a
+ * alternativa dentro de um grupo de alternativas — sobrescrevê-la transformaria "este documento serve" em
  * "este documento é exigido", que é outra coisa.
  */
-export function comExigenciaNaRaiz(
+export function comExigenciaSemGrupo(
   exigencias: ExigenciasDoRascunho,
   documento: ExigenciaDeDocumento,
 ): ExigenciasDoRascunho {
-  return { ...exigencias, raizes: [...exigencias.raizes, folhaDe(documento)] };
+  return {
+    ...exigencias,
+    regrasDeComprovacao: [...exigencias.regrasDeComprovacao, regraDeDocumento(documento)],
+  };
 }
 
-/** A folha do rascunho que envolve uma exigência. */
-export function folhaDe(documento: ExigenciaDeDocumento): NoDeExigencia {
+/** A regra de documento do rascunho que envolve uma exigência. */
+export function regraDeDocumento(documento: ExigenciaDeDocumento): RegraDeComprovacao {
   return {
-    tipo: 'FOLHA',
+    forma: 'DOCUMENTO',
     documento,
     quantidadeMinima: null,
     consequencia: null,
     basesLegais: null,
-    filhos: null,
-    chaveDistincao: null,
+    itens: null,
+    criterioDeDistincao: null,
     dataReferencia: null,
     ocorrenciasEsperadas: null,
-    repetePorEntidade: null,
+    grupoDoFormularioParaRepeticao: null,
   };
 }
 
 /** O rascunho sem exigência nenhuma. */
 export function exigenciasVazias(): ExigenciasDoRascunho {
-  return { raizes: [], emTodasAsFases: [] };
+  return { regrasDeComprovacao: [], emTodasAsFases: [] };
 }
 
 /**
@@ -125,8 +128,8 @@ export {
   ABRANGENCIA_PADRAO,
   baseLegalNova,
   CONSEQUENCIA_REENVIO,
-  STATUS_BASE_LEGAL_ESCOLHIVEIS,
-  STATUS_BASE_LEGAL_RESOLVIDO,
+  SITUACAO_BASE_LEGAL_ESCOLHIVEIS,
+  SITUACAO_BASE_LEGAL_RESOLVIDO,
   temNormaResolvida,
 };
 
@@ -163,32 +166,33 @@ export const CONSEQUENCIAS_ESCOLHIVEIS = [
 ] as const;
 
 /**
- * Percorre a árvore aplicando uma transformação a cada folha; folha que a transformação
- * descarta sai, e grupo que fica sem filho nenhum sai junto, em cascata.
+ * Percorre a estrutura de regras aplicando uma transformação a cada regra de documento; regra de documento que a transformação
+ * descarta sai, e grupo que fica sem item nenhum sai junto, em cascata.
  *
- * O colapso em cascata é o mesmo que a raiz faz no servidor ao remover uma fase: grupo sem
- * alternativa não exige nada, e mandá-lo vazio faria o `PUT` recusar a árvore inteira.
+ * O colapso em cascata é o mesmo que a regra principal faz no servidor ao remover uma fase: grupo sem
+ * alternativa não exige nada, e mandá-lo vazio faria o `PUT` recusar a estrutura de regras inteira.
  */
 export function transformar(
-  nos: readonly NoDeExigencia[],
+  regras: readonly RegraDeComprovacao[],
   transformacao: (documento: ExigenciaDeDocumento) => ExigenciaDeDocumento | null,
-): readonly NoDeExigencia[] {
-  return nos.flatMap((no) => transformarExigencia(no, transformacao) ?? []);
+): readonly RegraDeComprovacao[] {
+  return regras.flatMap((regra) => transformarExigencia(regra, transformacao) ?? []);
 }
 
 function transformarExigencia(
-  no: NoDeExigencia,
+  regra: RegraDeComprovacao,
   transformacao: (documento: ExigenciaDeDocumento) => ExigenciaDeDocumento | null,
-): NoDeExigencia | null {
-  if (no.tipo === 'FOLHA') {
-    if (no.documento === null) return null;
-    const documento = transformacao(no.documento);
+): RegraDeComprovacao | null {
+  if (regra.forma === 'DOCUMENTO') {
+    if (regra.documento === null) return null;
+    const documento = transformacao(regra.documento);
     if (documento === null) return null;
-    return { ...no, documento };
+    return { ...regra, documento };
   }
-  const filhos = transformar(no.filhos ?? [], transformacao);
-  if (filhos.length === 0) return null;
-  return { ...no, filhos, quantidadeMinima: coubeNoGrupo(no.quantidadeMinima, filhos.length) };
+  const itensDoGrupo = transformar(regra.itens ?? [], transformacao);
+  if (itensDoGrupo.length === 0) return null;
+  const quantidadeMinima = coubeNoGrupo(regra.quantidadeMinima, itensDoGrupo.length);
+  return { ...regra, itens: itensDoGrupo, quantidadeMinima };
 }
 
 /**
@@ -199,9 +203,9 @@ function transformarExigencia(
  * gravados — falando de um campo que esta tela não mostra. Reduzir preserva a intenção
  * possível: continuar pedindo o máximo que o grupo ainda oferece.
  */
-function coubeNoGrupo(quantidadeMinima: number | null, filhos: number): number | null {
+function coubeNoGrupo(quantidadeMinima: number | null, itens: number): number | null {
   if (quantidadeMinima === null) return null;
-  return Math.min(quantidadeMinima, filhos);
+  return Math.min(quantidadeMinima, itens);
 }
 
 /**
@@ -215,13 +219,13 @@ export function semAFase(
   exigencias: ExigenciasDoRascunho,
   faseCodigo: string,
 ): ExigenciasDoRascunho {
-  const raizes = transformar(exigencias.raizes, (documento) =>
+  const regrasDeComprovacao = transformar(exigencias.regrasDeComprovacao, (documento) =>
     documentoSemFase(documento, faseCodigo),
   );
-  const tiposNaRaiz = tiposDeDocumentoNaRaiz(raizes);
+  const tiposSemGrupo = tiposDeDocumentoSemGrupo(regrasDeComprovacao);
   return {
-    raizes,
-    emTodasAsFases: exigencias.emTodasAsFases.filter((tipo) => tiposNaRaiz.has(tipo)),
+    regrasDeComprovacao,
+    emTodasAsFases: exigencias.emTodasAsFases.filter((tipo) => tiposSemGrupo.has(tipo)),
   };
 }
 
@@ -237,11 +241,15 @@ function documentoSemFase(
   };
 }
 
-/** O alcance de todas as fases depende de uma exigência de raiz que sirva de modelo. */
-function tiposDeDocumentoNaRaiz(raizes: readonly NoDeExigencia[]): ReadonlySet<string> {
+/** O alcance de todas as fases depende de uma exigência de regra principal que sirva de modelo. */
+function tiposDeDocumentoSemGrupo(
+  regrasDeComprovacao: readonly RegraDeComprovacao[],
+): ReadonlySet<string> {
   return new Set(
-    raizes.flatMap((no) =>
-      no.tipo === 'FOLHA' && no.documento !== null ? [no.documento.tipoDocumentoId] : [],
+    regrasDeComprovacao.flatMap((regra) =>
+      regra.forma === 'DOCUMENTO' && regra.documento !== null
+        ? [regra.documento.tipoDocumentoId]
+        : [],
     ),
   );
 }
@@ -253,7 +261,7 @@ function tiposDeDocumentoNaRaiz(raizes: readonly NoDeExigencia[]): ReadonlySet<s
 export function semAEtapa(exigencias: ExigenciasDoRascunho, etapaId: string): ExigenciasDoRascunho {
   return {
     ...exigencias,
-    raizes: transformar(exigencias.raizes, (documento) =>
+    regrasDeComprovacao: transformar(exigencias.regrasDeComprovacao, (documento) =>
       documento.etapaId === etapaId ? { ...documento, etapaId: null } : documento,
     ),
   };
@@ -261,22 +269,25 @@ export function semAEtapa(exigencias: ExigenciasDoRascunho, etapaId: string): Ex
 
 /**
  * Substitui a exigência de (documento, fase) pelo resultado da edição, ou a acrescenta como
- * folha na raiz quando ainda não existe.
+ * regra de documento na regra principal quando ainda não existe.
  *
- * A folha nova entra na raiz, nunca dentro de um grupo existente: um grupo `OU` declara
- * alternativas entre si e todas as suas folhas pertencem à mesma fase — acrescentar ali
+ * A regra de documento nova entra na regra principal, nunca dentro de um grupo existente: um grupo de alternativas declara
+ * alternativas entre si e todas as suas regras de documento pertencem à mesma fase — acrescentar ali
  * mudaria o sentido do grupo sem o operador ter pedido.
  */
 export function comExigencia(
   exigencias: ExigenciasDoRascunho,
   documento: ExigenciaDeDocumento,
 ): ExigenciasDoRascunho {
-  const { raizes, alterou } = transformarPrimeiraExigencia(
-    exigencias.raizes,
+  const { regrasDeComprovacao, alterou } = transformarPrimeiraExigencia(
+    exigencias.regrasDeComprovacao,
     pertenceAFaseETipoDeDocumento(documento.faseCodigo, documento.tipoDocumentoId),
     () => documento,
   );
-  return { ...exigencias, raizes: alterou ? raizes : [...raizes, folhaDe(documento)] };
+  const regras = alterou
+    ? regrasDeComprovacao
+    : [...regrasDeComprovacao, regraDeDocumento(documento)];
+  return { ...exigencias, regrasDeComprovacao: regras };
 }
 
 function pertenceAFaseETipoDeDocumento(faseCodigo: string, tipoDocumentoId: string) {
@@ -286,22 +297,22 @@ function pertenceAFaseETipoDeDocumento(faseCodigo: string, tipoDocumentoId: stri
 
 /** Uma exigência independente e uma alternativa de grupo podem pedir o mesmo documento. */
 function transformarPrimeiraExigencia(
-  nos: readonly NoDeExigencia[],
+  regras: readonly RegraDeComprovacao[],
   corresponde: (documento: ExigenciaDeDocumento) => boolean,
   alteracao: (documento: ExigenciaDeDocumento) => ExigenciaDeDocumento | null,
 ) {
   let alterou = false;
-  const raizes = transformar(nos, (documento) => {
+  const regrasDeComprovacao = transformar(regras, (documento) => {
     if (alterou || !corresponde(documento)) return documento;
     alterou = true;
     return alteracao(documento);
   });
-  return { raizes, alterou };
+  return { regrasDeComprovacao, alterou };
 }
 
 /**
  * Declara pelas ocorrências de que grupo repetível a exigência de (documento, fase) se repete, ou
- * `null` para uma por candidato. Escreve na folha, a primeira que casa, pela mesma razão de
+ * `null` para uma por candidato. Escreve na regra de documento, a primeira que casa, pela mesma razão de
  * `comExigencia`; a repetição herdada de um grupo de alternativas é do grupo, que a tela não edita.
  */
 export function comRepeticao(
@@ -311,32 +322,34 @@ export function comRepeticao(
   grupo: string | null,
 ): ExigenciasDoRascunho {
   const corresponde = pertenceAFaseETipoDeDocumento(faseCodigo, tipoDocumentoId);
-  return {
-    ...exigencias,
-    raizes: definirRepeticaoDaPrimeiraExigencia(exigencias.raizes, corresponde, grupo),
-  };
+  const regras = definirRepeticaoDaPrimeiraExigencia(
+    exigencias.regrasDeComprovacao,
+    corresponde,
+    grupo,
+  );
+  return { ...exigencias, regrasDeComprovacao: regras };
 }
 
 /** Atualiza a repetição sem remover exigências nem mudar a quantidade mínima dos grupos. */
 function definirRepeticaoDaPrimeiraExigencia(
-  nos: readonly NoDeExigencia[],
+  regras: readonly RegraDeComprovacao[],
   corresponde: (documento: ExigenciaDeDocumento | null) => boolean,
   grupo: string | null,
-): readonly NoDeExigencia[] {
+): readonly RegraDeComprovacao[] {
   let alterou = false;
-  const editar = (no: NoDeExigencia): NoDeExigencia => {
-    if (alterou) return no;
-    if (no.tipo !== 'FOLHA') return { ...no, filhos: (no.filhos ?? []).map(editar) };
-    if (!corresponde(no.documento)) return no;
+  const editar = (regra: RegraDeComprovacao): RegraDeComprovacao => {
+    if (alterou) return regra;
+    if (regra.forma !== 'DOCUMENTO') return { ...regra, itens: (regra.itens ?? []).map(editar) };
+    if (!corresponde(regra.documento)) return regra;
     alterou = true;
-    return { ...no, repetePorEntidade: grupo };
+    return { ...regra, grupoDoFormularioParaRepeticao: grupo };
   };
-  return nos.map(editar);
+  return regras.map(editar);
 }
 
 /**
- * Declara a repetição em todas as declarações de raiz do documento: o que vale em todas as fases é
- * a mesma declaração em cada uma, e a fase ainda não materializada a recebe do modelo de raiz.
+ * Declara a repetição em todas as declarações de regra principal do documento: o que vale em todas as fases é
+ * a mesma declaração em cada uma, e a fase ainda não materializada a recebe do modelo de regra principal.
  */
 export function comRepeticaoEmTodasAsFases(
   exigencias: ExigenciasDoRascunho,
@@ -345,10 +358,10 @@ export function comRepeticaoEmTodasAsFases(
 ): ExigenciasDoRascunho {
   return {
     ...exigencias,
-    raizes: exigencias.raizes.map((no) =>
-      no.tipo === 'FOLHA' && no.documento?.tipoDocumentoId === tipoDocumentoId
-        ? { ...no, repetePorEntidade: grupo }
-        : no,
+    regrasDeComprovacao: exigencias.regrasDeComprovacao.map((regra) =>
+      regra.forma === 'DOCUMENTO' && regra.documento?.tipoDocumentoId === tipoDocumentoId
+        ? { ...regra, grupoDoFormularioParaRepeticao: grupo }
+        : regra,
     ),
   };
 }
@@ -359,10 +372,10 @@ export function semAExigencia(
   tipoDocumentoId: string,
   faseCodigo: string,
 ): ExigenciasDoRascunho {
-  const { raizes } = transformarPrimeiraExigencia(
-    exigencias.raizes,
+  const { regrasDeComprovacao } = transformarPrimeiraExigencia(
+    exigencias.regrasDeComprovacao,
     pertenceAFaseETipoDeDocumento(faseCodigo, tipoDocumentoId),
     () => null,
   );
-  return { ...exigencias, raizes };
+  return { ...exigencias, regrasDeComprovacao };
 }

@@ -30,7 +30,7 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
         {
           referencia: 'Lei 12.711/2012',
           abrangencia: 'FEDERAL',
-          status: 'RESOLVIDO',
+          situacao: 'RESOLVIDO',
           observacao: '',
         },
       ]);
@@ -54,7 +54,7 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
 
     it('acusa a exigência que decide o resultado e está sem norma resolvida', () => {
       comExigenciaDeclarada([
-        { referencia: '', abrangencia: 'INTERNA_EDITAL', status: 'RESOLVIDO', observacao: '' },
+        { referencia: '', abrangencia: 'INTERNA_EDITAL', situacao: 'RESOLVIDO', observacao: '' },
       ]);
 
       const resultado = conferencia.validar();
@@ -64,11 +64,11 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
 
     it('não acusa quando alguma das normas declaradas está resolvida', () => {
       comExigenciaDeclarada([
-        { referencia: '', abrangencia: 'INTERNA_EDITAL', status: 'RESOLVIDO', observacao: '' },
+        { referencia: '', abrangencia: 'INTERNA_EDITAL', situacao: 'RESOLVIDO', observacao: '' },
         {
           referencia: 'Lei 12.711/2012',
           abrangencia: 'FEDERAL',
-          status: 'RESOLVIDO',
+          situacao: 'RESOLVIDO',
           observacao: '',
         },
       ]);
@@ -81,7 +81,7 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
         {
           referencia: 'Lei 12.711/2012',
           abrangencia: 'FEDERAL',
-          status: 'RESOLVIDO',
+          situacao: 'RESOLVIDO',
           observacao: '',
         },
       ];
@@ -159,7 +159,7 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
           {
             referencia: 'Lei 12.711/2012',
             abrangencia: 'FEDERAL',
-            status: 'RESOLVIDO',
+            situacao: 'RESOLVIDO',
             observacao: '',
           },
         ],
@@ -181,7 +181,7 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
           {
             referencia: 'Lei 12.711/2012',
             abrangencia: 'FEDERAL',
-            status: 'RESOLVIDO',
+            situacao: 'RESOLVIDO',
             observacao: '',
           },
         ],
@@ -207,7 +207,7 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
           {
             referencia: 'Lei 12.711/2012',
             abrangencia: 'FEDERAL',
-            status: 'RESOLVIDO',
+            situacao: 'RESOLVIDO',
             observacao: '',
           },
         ],
@@ -252,7 +252,7 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
         {
           referencia: 'Lei 12.711/2012',
           abrangencia: 'FEDERAL',
-          status: 'RESOLVIDO',
+          situacao: 'RESOLVIDO',
           observacao: '',
         },
       ]);

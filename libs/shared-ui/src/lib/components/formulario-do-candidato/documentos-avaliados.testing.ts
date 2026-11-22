@@ -1,7 +1,7 @@
-import type { NoDeDocumentos } from './arvore-de-documentos';
+import type { ItemDeComprovacao } from './regras-de-documentos';
 import type { DocumentoAvaliado, GrupoDoDocumento } from './documentos-avaliados';
 import type { GrupoRenderizavel } from './formulario-do-candidato.model';
-import { textoDoGrupo } from './textos-da-arvore-de-documentos';
+import { textoDoGrupo } from './textos-das-regras-de-documentos';
 
 const DOCUMENTO_PADRAO = {
   obrigatorio: true,
@@ -12,7 +12,7 @@ const DOCUMENTO_PADRAO = {
   grupoCodigo: null,
   ocorrenciaId: null,
   grupos: [],
-  repetePorEntidade: null,
+  grupoDoFormularioParaRepeticao: null,
   formatosAceitos: ['PDF'],
   tamanhoMaximoBytes: 2 * 1024 * 1024,
   quantidadeMinima: 1,
@@ -31,13 +31,18 @@ export const documento = (
 export const ou = (
   grupoId: string,
   minimo: number | null = 1,
-  repetePorEntidade: string | null = null,
-): GrupoDoDocumento => ({ grupoId, tipo: 'OU', minimo, repetePorEntidade });
+  grupoDoFormularioParaRepeticao: string | null = null,
+): GrupoDoDocumento => ({
+  grupoId,
+  forma: { codigo: 'QUANTIDADE_MINIMA_DE_ITENS', rotulo: 'Quantidade mínima' },
+  minimo,
+  grupoDoFormularioParaRepeticao,
+});
 export const e = (grupoId: string): GrupoDoDocumento => ({
   grupoId,
-  tipo: 'E',
+  forma: { codigo: 'TODOS_OS_ITENS', rotulo: 'Todos estes itens' },
   minimo: null,
-  repetePorEntidade: null,
+  grupoDoFormularioParaRepeticao: null,
 });
 
 export const FAMILIA: GrupoRenderizavel = {
@@ -51,18 +56,20 @@ export const CANDIDATO = { id: 'o1', respostas: { PARENTESCO: 'PROPRIO_CANDIDATO
 export const MAE = { id: 'o2', respostas: { PARENTESCO: 'MAE' } };
 export const PAI = { id: 'o3', respostas: { PARENTESCO: 'PAI' } };
 
-/** O documento que se repete por integrante a partir da própria folha, sob um OU escolhido uma vez. */
-export const folhaRepetida = (nome: string, ocorrenciaId: string, situacao = 'PENDENTE') =>
+/** O documento que se repete por integrante a partir da própria regra de documento, sob um grupo de alternativas escolhido uma vez. */
+export const documentoRepetido = (nome: string, ocorrenciaId: string, situacao = 'PENDENTE') =>
   documento(nome, {
     grupoCodigo: 'FAMILIA',
     ocorrenciaId,
-    repetePorEntidade: 'FAMILIA',
+    grupoDoFormularioParaRepeticao: 'FAMILIA',
     situacao,
     grupos: [ou('b1')],
   });
 
-/** A árvore como texto: o grupo pelo que diz ao candidato, o documento pelo nome. */
-export const comoTexto = (nos: readonly NoDeDocumentos[]): unknown[] =>
-  nos.map((no) =>
-    no.tipo === 'DOCUMENTO' ? no.documento.rotulo : { [textoDoGrupo(no)]: comoTexto(no.itens) },
+/** A estrutura de regras como texto: o grupo pelo que diz ao candidato, o documento pelo nome. */
+export const comoTexto = (elementos: readonly ItemDeComprovacao[]): unknown[] =>
+  elementos.map((elemento) =>
+    elemento.forma === 'DOCUMENTO'
+      ? elemento.documento.rotulo
+      : { [textoDoGrupo(elemento)]: comoTexto(elemento.itens) },
   );

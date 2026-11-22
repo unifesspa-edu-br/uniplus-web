@@ -4,8 +4,8 @@ import type {
 } from '@uniplus/shared-data/selecao';
 
 import { rotuloDoCodigo, type CatalogoPorCodigo } from '../catalogos-por-codigo';
-import type { NoDoFormulario } from '../edicoes/arvore-de-satisfacao.edicao';
-import { definirArvoreDeSatisfacao } from '../edicoes/arvore-de-satisfacao.edicao';
+import type { RegraDoFormulario } from '../edicoes/regras-de-comprovacao.edicao';
+import { definirRegrasDeComprovacao } from '../edicoes/regras-de-comprovacao.edicao';
 import { definirExigencias, type ExigenciaDoFormulario } from '../edicoes/exigencias.edicao';
 import { emSequencia, type EdicaoDoDocumento } from '../edicoes/secao-do-documento';
 import { textoDoNumero } from '../texto-do-campo';
@@ -13,7 +13,7 @@ import {
   baseLegalDoFormulario,
   formatosDoFormulario,
   idadeMaximaDoFormulario,
-  noDoFormulario,
+  regraDoFormulario,
 } from './leituras-das-exigencias';
 
 /** A exigência como o passo a mostra: os valores editáveis e o nome do tipo de documento. */
@@ -22,12 +22,12 @@ export interface ExigenciaDoPasso extends ExigenciaDoFormulario {
 }
 
 /**
- * As exigências ficam planas, cada uma com a sua chave, e a árvore de satisfação as cita por essa
+ * As exigências ficam planas, cada uma com a sua chave, e a estrutura de regras de satisfação as cita por essa
  * chave: o documento é assim, e o adaptador não junta uma coisa na outra.
  */
 export interface ValoresDasExigencias {
   readonly exigencias: readonly ExigenciaDoPasso[];
-  readonly arvoreDeSatisfacao: readonly NoDoFormulario[];
+  readonly regrasDeComprovacao: readonly RegraDoFormulario[];
 }
 
 export interface CatalogosDasExigencias {
@@ -98,13 +98,13 @@ export function valoresDoFormulario(
       ...exigenciaDe(exigencia, catalogos.tiposDeDocumento),
       origem,
     })),
-    arvoreDeSatisfacao: (secao?.arvoreDeSatisfacao ?? []).map(noDoFormulario),
+    regrasDeComprovacao: (secao?.regrasDeComprovacao ?? []).map(regraDoFormulario),
   };
 }
 
 export function edicaoDoPasso(valores: ValoresDasExigencias): EdicaoDoDocumento {
   return emSequencia(
     (documento) => definirExigencias(documento, valores.exigencias),
-    (documento) => definirArvoreDeSatisfacao(documento, valores.arvoreDeSatisfacao),
+    (documento) => definirRegrasDeComprovacao(documento, valores.regrasDeComprovacao),
   );
 }

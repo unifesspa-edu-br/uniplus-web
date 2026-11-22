@@ -48,7 +48,7 @@ export class EixoFormularioComponent {
   }
 
   /**
-   * Declara o formulário do documento nesta fase. Vale para a árvore de raiz inteira: as
+   * Declara o formulário do documento nesta fase. Vale para a regra principal inteira: as
    * alternativas de um grupo se satisfazem num formulário só.
    */
   escolherFinalidade(id: string, finalidade: string): void {

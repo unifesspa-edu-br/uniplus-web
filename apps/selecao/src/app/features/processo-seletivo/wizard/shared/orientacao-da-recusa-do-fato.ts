@@ -1,3 +1,5 @@
+import { RECUSAS_DA_COMPROVACAO } from './recusas-da-comprovacao';
+
 import type { ProblemDetails } from '@uniplus/shared-core/http';
 import { ehColetavel } from '@uniplus/shared-ui/components';
 
@@ -23,28 +25,48 @@ export function orientacaoDaRecusaDaRepeticao(
   nomes: NomesDaOrientacao,
   herdada = false,
 ): string {
-  const outraEscolha = herdada
-    ? 'no passo Formulários, ponha o grupo num formulário respondido até a fase do documento; ou retire este documento da fase'
-    : 'escolha outro grupo em “Repetir por”, ou “Não repete”';
+  const outraEscolha = escolhaParaRepeticao(herdada);
   if (recusa.tipo === 'GRUPO_INEXISTENTE') {
     return `Nenhum formulário do processo tem mais o grupo “${recusa.grupo}”, pelo qual o documento se repete. Como resolver: ${outraEscolha}.`;
   }
 
-  const grupo = `O grupo “${recusa.grupo.rotulo}”`;
-  const fase = nomes.fase(recusa.recusa.faseCodigo);
-  const causa =
-    recusa.recusa.tipo === 'SO_DA_ISENCAO'
-      ? `${grupo} é respondido no formulário de isenção e só repete documento apresentado nele, na fase ${fase}.`
-      : recusa.recusa.tipo === 'FASE_POSTERIOR'
-        ? `${grupo} é respondido na fase ${fase}, depois da fase em que o documento é exigido.`
-        : `${grupo} é respondido na fase ${fase}, que o cronograma não tem.`;
-  const saidas = herdada
-    ? [outraEscolha]
+  const causa = causaDaRecusaDaRepeticao(recusa, nomes);
+  const saidas = saidasDaRepeticao(recusa, producao, nomes, herdada);
+  return `${causa} Como resolver: ${saidas.join('; ou ')}.`;
+}
+
+function escolhaParaRepeticao(herdada: boolean): string {
+  return herdada
+    ? 'no passo Formulários, ponha o grupo num formulário respondido até a fase do documento; ou retire este documento da fase'
+    : 'escolha outro grupo em “Repetir por”, ou “Não repete”';
+}
+
+function saidasDaRepeticao(
+  recusa: Extract<RecusaDaRepeticao, { tipo: 'GRUPO_FORA_DO_LUGAR' }>,
+  producao: ProducaoDosFatos,
+  nomes: NomesDaOrientacao,
+  herdada: boolean,
+): string[] {
+  const escolha = escolhaParaRepeticao(herdada);
+  return herdada
+    ? [escolha]
     : [
         ...saidaPorOutroLugar(recusa.recusa.fato, { ...producao, catalogo: new Map() }, nomes),
-        outraEscolha,
+        escolha,
       ];
-  return `${causa} Como resolver: ${saidas.join('; ou ')}.`;
+}
+
+function causaDaRecusaDaRepeticao(
+  recusa: Extract<RecusaDaRepeticao, { tipo: 'GRUPO_FORA_DO_LUGAR' }>,
+  nomes: NomesDaOrientacao,
+): string {
+  const grupo = `O grupo “${recusa.grupo.rotulo}”`;
+  const fase = nomes.fase(recusa.recusa.faseCodigo);
+  return recusa.recusa.tipo === 'SO_DA_ISENCAO'
+    ? `${grupo} é respondido no formulário de isenção e só repete documento apresentado nele, na fase ${fase}.`
+    : recusa.recusa.tipo === 'FASE_POSTERIOR'
+      ? `${grupo} é respondido na fase ${fase}, depois da fase em que o documento é exigido.`
+      : `${grupo} é respondido na fase ${fase}, que o cronograma não tem.`;
 }
 
 /** Por que o grupo não é oferecido para a repetição do documento, curto o bastante para a dica do campo. */
@@ -97,18 +119,28 @@ export function orientacaoDaRecusaDeFase(
 
   const saidas = [
     ...saidaPorOutroLugar(recusa.fato, producao, nomes),
-    ...saidasPorOutroFormulario(recusa.fato, lugar, producao).map(
-      (finalidade) => `colete ${fato} no formulário de ${nomeDaFinalidade(finalidade)}`,
-    ),
+    ...orientacoesDeColeta(fato, saidasPorOutroFormulario(recusa.fato, lugar, producao)),
   ];
+  return `${causa} Como resolver: ${completarSaidasDaRecusa(recusa, nomes, saidas)}.`;
+}
+
+function orientacoesDeColeta(fato: string, finalidades: readonly string[]): string[] {
+  return finalidades.map(
+    (finalidade) => `colete ${fato} no formulário de ${nomeDaFinalidade(finalidade)}`,
+  );
+}
+
+function completarSaidasDaRecusa(
+  recusa: RecusaDeFase,
+  nomes: NomesDaOrientacao,
+  saidas: string[],
+): string {
   if (saidas.length === 0 && recusa.tipo === 'FASE_FORA_DO_CRONOGRAMA') {
     saidas.push(
       `acrescente ao cronograma a fase ${nomes.fase(recusa.faseCodigo)} e exija o documento nela ou em fase posterior`,
     );
   }
-
-  const comoResolver = saidas.length === 0 ? 'retire esta condição' : saidas.join('; ou ');
-  return `${causa} Como resolver: ${comoResolver}.`;
+  return saidas.length === 0 ? 'retire esta condição' : saidas.join('; ou ');
 }
 
 function causaDaRecusa(recusa: RecusaDeFase, fato: string, nomes: NomesDaOrientacao): string {
@@ -137,19 +169,25 @@ function saidaPorOutroLugar(
 ): readonly string[] {
   const emOrdem = [...producao.fases].sort((uma, outra) => uma.ordem - outra.ordem);
   const aceitas = fasesQueAceitam(fato, emOrdem, producao);
-  const [primeira] = aceitas;
-  if (primeira === undefined) return [];
+  if (aceitas.length === 0) return [];
 
   if (aceitas.some(({ inteira }) => !inteira)) return [saidaPorFormulario(aceitas, nomes)];
   if (aceitas.length === 1)
-    return [`exija o documento na fase ${nomes.fase(primeira.fase.codigo)}`];
+    return [`exija o documento na fase ${nomes.fase(aceitas[0].fase.codigo)}`];
 
-  const daPrimeiraEmDiante = emOrdem.filter((fase) => fase.ordem >= primeira.fase.ordem);
-  return aceitas.length === daPrimeiraEmDiante.length
-    ? [`exija o documento na fase ${nomes.fase(primeira.fase.codigo)} ou em fase posterior`]
-    : [
-        `exija o documento numa destas fases: ${aceitas.map(({ fase }) => nomes.fase(fase.codigo)).join(', ')}`,
-      ];
+  return [saidaParaFasesInteiras(aceitas, emOrdem, nomes)];
+}
+
+function saidaParaFasesInteiras(
+  aceitas: readonly FaseQueAceita[],
+  emOrdem: readonly FaseNoCronograma[],
+  nomes: NomesDaOrientacao,
+): string {
+  const primeira = aceitas[0];
+  const posteriores = emOrdem.filter((fase) => fase.ordem >= primeira.fase.ordem);
+  return aceitas.length === posteriores.length
+    ? `exija o documento na fase ${nomes.fase(primeira.fase.codigo)} ou em fase posterior`
+    : `exija o documento numa destas fases: ${aceitas.map(({ fase }) => nomes.fase(fase.codigo)).join(', ')}`;
 }
 
 /** Uma fase que aceita o fato em algum lugar, e se aceita em todos os formulários que responde. */
@@ -204,17 +242,25 @@ function saidasPorOutroFormulario(
   const doCatalogo = producao.catalogo.get(fato);
   if (doCatalogo === undefined || !ehColetavel(doCatalogo)) return [];
 
-  const atual = formularioQueColeta(fato, producao);
-  return producao.formularios
-    .filter(
-      (formulario) => formulario.finalidade !== atual?.finalidade && formulario.faseCodigo !== '',
-    )
-    .filter(
-      (destino) =>
-        recusaDeFaseDoGatilho(fato, lugar, comColetaEm(producao, fato, destino.finalidade)) ===
-        null,
-    )
+  return outrosFormularios(fato, producao)
+    .filter((destino) => aceitaColetaNoFormulario(fato, lugar, producao, destino.finalidade))
     .map((destino) => destino.finalidade);
+}
+
+function aceitaColetaNoFormulario(
+  fato: string,
+  lugar: LugarDaExigencia,
+  producao: ProducaoDosFatos,
+  finalidade: string,
+): boolean {
+  return recusaDeFaseDoGatilho(fato, lugar, comColetaEm(producao, fato, finalidade)) === null;
+}
+
+function outrosFormularios(fato: string, producao: ProducaoDosFatos) {
+  const atual = formularioQueColeta(fato, producao);
+  return producao.formularios.filter(
+    (formulario) => formulario.finalidade !== atual?.finalidade && formulario.faseCodigo !== '',
+  );
 }
 
 /** A produção com o fato coletado só pelo formulário da finalidade dada. */
@@ -243,6 +289,7 @@ const CAMPO_DO_FORMULARIO = 'no campo “Formulário” do documento, na fase';
  * orienta pelo caso e pelo campo que o resolve, sem nomeá-los.
  */
 const RECUSA_DA_EXIGENCIA_DO_SERVIDOR: ReadonlyMap<string, string> = new Map([
+  ...RECUSAS_DA_COMPROVACAO,
   [
     'uniplus.selecao.documento_exigido.fato_resolvido_em_fase_posterior',
     'Uma condição de documento exigido cita dado que só é conhecido depois da fase em que o documento é exigido. Exija o documento numa fase em que o dado já seja conhecido, ou colete o dado num formulário respondido até a fase da exigência.',
@@ -272,11 +319,11 @@ const RECUSA_DA_EXIGENCIA_DO_SERVIDOR: ReadonlyMap<string, string> = new Map([
     `Um documento exigido declara um formulário que não existe. Escolha ${CAMPO_DO_FORMULARIO} em que ele é exigido, um dos formulários que ela responde.`,
   ],
   [
-    'uniplus.selecao.no_exigencia.tipo_entidade_invalido',
+    'uniplus.selecao.regra_de_comprovacao.grupo_para_repeticao_nao_declarado',
     'Um documento exigido se repete por um grupo que nenhum formulário do processo tem. Escolha outro grupo, ou “Não repete”, no campo “Repetir por” do documento, na fase; quando a repetição é do grupo de alternativas, ponha o grupo de volta num formulário, no passo Formulários.',
   ],
   [
-    'uniplus.selecao.no_exigencia.repeticao_de_entidade_aninhada',
+    'uniplus.selecao.regra_de_comprovacao.repeticao_dentro_de_repeticao',
     'Um documento exigido se repete por um grupo dentro de um grupo de alternativas que já se repete. Escolha “Não repete” no campo “Repetir por” do documento: ele já se repete pelo grupo de alternativas.',
   ],
   [
@@ -284,7 +331,7 @@ const RECUSA_DA_EXIGENCIA_DO_SERVIDOR: ReadonlyMap<string, string> = new Map([
     'Uma condição de documento exigido cita dado que o processo não coleta, ou campo de grupo repetível em documento que não se repete por esse grupo. Escolha o grupo no campo “Repetir por” do documento, colete o dado num formulário, ou retire a condição.',
   ],
   [
-    'uniplus.selecao.no_exigencia.grupo_com_finalidades_diferentes',
+    'uniplus.selecao.regra_de_comprovacao.grupo_com_formularios_diferentes',
     `Os documentos de um grupo de alternativas estão em formulários diferentes, e o candidato satisfaz o grupo num formulário só. Escolha o mesmo formulário para todos eles, ${CAMPO_DO_FORMULARIO} do grupo.`,
   ],
 ]);

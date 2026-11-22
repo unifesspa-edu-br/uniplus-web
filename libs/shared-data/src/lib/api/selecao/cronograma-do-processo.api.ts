@@ -6,7 +6,7 @@ import type {
   DefinirAlgoritmoContagemPrazoRequest,
   EtapaProcessoInput,
   FaseCronogramaInput,
-  NoExigenciaInput,
+  RegraDeComprovacaoInformada,
 } from './processos-seletivos.contrato';
 import { rotasDoProcesso } from './rotas-do-processo';
 import { SELECAO_BASE_PATH } from './tokens';
@@ -71,29 +71,15 @@ export class CronogramaDoProcessoApi {
     );
   }
 
-  /**
-   * PUT `/api/selecao/processos-seletivos/{id}/documentos-exigidos` — substitui
-   * a árvore de exigências documentais inteira.
-   *
-   * A entrada é uma árvore: cada raiz é um nó `FOLHA` (um documento), `E` (todos
-   * os filhos) ou `OU` (quantos `quantidadeMinima` disser). Uma lista simples de
-   * documentos é uma lista de folhas, sem grupo nenhum.
-   *
-   * O documento em si vem por `tipoDocumentoId` — o servidor resolve o cadastro e
-   * congela nome, código e categoria. `exigidoNaFaseId` é a fase em que ele é
-   * exigido, e `exigidoNaEtapaId`, quando presente, a etapa daquela fase que o
-   * coleta.
-   *
-   * Responde 204 sem corpo.
-   */
+  /** Substitui todas as regras de comprovação documental e retorna 204 sem corpo. */
   definirDocumentosExigidos(
     processoSeletivoId: string,
-    raizes: readonly NoExigenciaInput[],
+    regrasDeComprovacao: readonly RegraDeComprovacaoInformada[],
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
       this.rotas.doProcesso(processoSeletivoId, 'documentos-exigidos'),
-      raizes,
+      regrasDeComprovacao,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }

@@ -13017,13 +13017,13 @@ export interface components {
         readonly BaseLegalDoModeloDto: {
             readonly referencia: string;
             readonly abrangencia: string;
-            readonly status: string;
+            readonly situacao: string;
             readonly observacao: null | string;
         };
         readonly BaseLegalDoModeloInput: {
             readonly referencia: string;
             readonly abrangencia: string;
-            readonly status: string;
+            readonly situacao: string;
             readonly observacao: null | string;
         };
         readonly CalendarioDiasUteisDto: {

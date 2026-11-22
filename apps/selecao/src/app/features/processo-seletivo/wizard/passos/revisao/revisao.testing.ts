@@ -105,7 +105,7 @@ export const PROCESSO_DTO_MINIMO = {
   classificacao: null,
   cronogramaFases: [],
   documentosExigidos: [],
-  raizesExigencia: [],
+  regrasDeComprovacao: [],
   referenciaTemporalFatos: null,
   fatosColetados: [],
   regrasDerivacao: [],

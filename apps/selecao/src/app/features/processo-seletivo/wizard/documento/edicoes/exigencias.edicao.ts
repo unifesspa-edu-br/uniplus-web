@@ -98,8 +98,8 @@ function exigenciaComValores(atual: Exigencia, valores: ExigenciaDoFormulario): 
 }
 
 /**
- * As exigências, na ordem do formulário; a que ele deixa de trazer sai. A árvore de satisfação não
- * é tocada: o nó que cita a exigência retirada segue citando a chave dela até o diagnóstico da API
+ * As exigências, na ordem do formulário; a que ele deixa de trazer sai. A estrutura de regras de satisfação não
+ * é tocada: a regra que cita a exigência retirada segue citando a chave dela até o diagnóstico da API
  * apontá-lo.
  */
 export function definirExigencias(

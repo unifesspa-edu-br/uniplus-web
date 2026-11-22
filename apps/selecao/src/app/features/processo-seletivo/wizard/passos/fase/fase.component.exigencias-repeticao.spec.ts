@@ -5,7 +5,7 @@ import { exigenciasLocalizadasDaFase } from '../../shared/exigencias/consulta-da
 import {
   comRepeticao,
   exigenciaNova,
-  folhaDe,
+  regraDeDocumento,
 } from '../../shared/exigencias/exigencias-documentais';
 import { REGRAS_INICIAIS, type GrupoDoFormulario } from '@uniplus/shared-ui/components';
 import { item } from '../formulario/formulario-de-inscricao.testing';
@@ -107,7 +107,7 @@ describe('FasePassoComponent', () => {
 
       const campoRepetirPor = () =>
         nativo.querySelector<HTMLSelectElement>(`select[id$="doc-repeticao-${ID_CPF}"]`);
-      const folhaDoCpf = () =>
+      const regraDocumentalDoCpf = () =>
         exigenciasLocalizadasDaFase(
           store.draft().documentos,
           componente.faseDoRascunho()?.codigo ?? '',
@@ -129,7 +129,7 @@ describe('FasePassoComponent', () => {
         expect(nativo.textContent).toContain('Nenhum formulário do processo tem grupo repetível');
       });
 
-      it('escolher o grupo repete a folha e abre ao gatilho os campos dele', () => {
+      it('escolher o grupo repete a regra de documento e abre ao gatilho os campos dele', () => {
         comHabilitacao([FAMILIA]);
         exigirCpfNaFase(ID_HOMOLOGACAO);
 
@@ -145,7 +145,7 @@ describe('FasePassoComponent', () => {
         gatilho().escolherRepeticao(ID_CPF, 'FAMILIA');
         detectar();
 
-        expect(folhaDoCpf()?.repeticao).toEqual({ grupo: 'FAMILIA', herdada: false });
+        expect(regraDocumentalDoCpf()?.repeticao).toEqual({ grupo: 'FAMILIA', herdada: false });
         expect(
           gatilho()
             .fatosDoGatilhoDoDocumento(ID_CPF)
@@ -188,15 +188,15 @@ describe('FasePassoComponent', () => {
       it('dentro de grupo de alternativas que se repete, mostra a repetição herdada só para leitura', () => {
         comHabilitacao([FAMILIA]);
         abrirFase(ID_HOMOLOGACAO);
-        const folha = folhaDe(exigenciaNova(ID_CPF, 'HOMOLOGACAO_INSCRICOES'));
+        const regraDocumental = regraDeDocumento(exigenciaNova(ID_CPF, 'HOMOLOGACAO_INSCRICOES'));
         store.patchSection('documentos', {
-          raizes: [
+          regrasDeComprovacao: [
             {
-              ...folha,
-              tipo: 'OU',
+              ...regraDocumental,
+              forma: 'QUANTIDADE_MINIMA_DE_ITENS',
               documento: null,
-              filhos: [folha],
-              repetePorEntidade: 'FAMILIA',
+              itens: [regraDocumental],
+              grupoDoFormularioParaRepeticao: 'FAMILIA',
             },
           ],
           emTodasAsFases: [],
@@ -219,15 +219,15 @@ describe('FasePassoComponent', () => {
       it('a repetição herdada que deixou de valer diz o que fazer sem apontar campo que o documento não tem', () => {
         comHabilitacao([]);
         abrirFase(ID_HOMOLOGACAO);
-        const folha = folhaDe(exigenciaNova(ID_CPF, 'HOMOLOGACAO_INSCRICOES'));
+        const regraDocumental = regraDeDocumento(exigenciaNova(ID_CPF, 'HOMOLOGACAO_INSCRICOES'));
         store.patchSection('documentos', {
-          raizes: [
+          regrasDeComprovacao: [
             {
-              ...folha,
-              tipo: 'OU',
+              ...regraDocumental,
+              forma: 'QUANTIDADE_MINIMA_DE_ITENS',
               documento: null,
-              filhos: [folha],
-              repetePorEntidade: 'FAMILIA',
+              itens: [regraDocumental],
+              grupoDoFormularioParaRepeticao: 'FAMILIA',
             },
           ],
           emTodasAsFases: [],

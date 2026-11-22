@@ -85,7 +85,7 @@ export class EditorDaExigenciaComponent {
     referencia: 'Norma que exige o documento',
     placeholderReferencia: 'Lei 12.711/2012, art. 3º',
     abrangencia: 'Alcance da norma',
-    status: 'Identificação da norma',
+    situacao: 'Identificação da norma',
     observacao: 'Observação',
     observacaoOculta: ' sobre a norma',
     observacaoSufixo: ' (opcional)',

@@ -16,7 +16,7 @@ import { capturarAsExigencias } from '../support/api-das-exigencias-do-processo'
  * e o `PUT /documentos-exigidos` é capturado para conferir o comando que a tela monta.
  */
 const [FASE_DO_PROCESSO] = PROCESSO_PUBLICADO_COMPLETO.cronogramaFases;
-const EXIGENCIA_LIDA = PROCESSO_PUBLICADO_COMPLETO.raizesExigencia[0].documento;
+const EXIGENCIA_LIDA = PROCESSO_PUBLICADO_COMPLETO.regrasDeComprovacao[0].documento;
 
 async function abrirOCronograma(page: Page): Promise<void> {
   await page.goto(`/processo-seletivo/${ID_DO_PROCESSO_COMPLETO}`);
@@ -43,9 +43,9 @@ test.describe('Cronograma — documentos exigidos na forma do contrato', () => {
     await page.getByRole('button', { name: /Gravar e avançar/ }).click();
 
     await expect.poll(() => gravadas.corpos.length).toBeGreaterThan(0);
-    const [raiz] = gravadas.corpos[gravadas.corpos.length - 1];
-    expect(raiz).toMatchObject({
-      tipo: 'FOLHA',
+    const [regra] = gravadas.corpos[gravadas.corpos.length - 1];
+    expect(regra).toMatchObject({
+      forma: 'DOCUMENTO',
       documento: {
         tipoDocumento: { id: EXIGENCIA_LIDA?.tipoDocumento.id },
         momento: { faseId: FASE_DO_PROCESSO.id },
@@ -54,9 +54,9 @@ test.describe('Cronograma — documentos exigidos na forma do contrato', () => {
         requisitos: { formatosPermitidos: ['pdf'] },
       },
     });
-    expect(raiz.documento).not.toHaveProperty('tipoDocumentoId');
-    expect(raiz.documento).not.toHaveProperty('obrigatorio');
-    expect(raiz.documento).not.toHaveProperty('consequenciaIndeferimento');
+    expect(regra.documento).not.toHaveProperty('tipoDocumentoId');
+    expect(regra.documento).not.toHaveProperty('obrigatorio');
+    expect(regra.documento).not.toHaveProperty('consequenciaIndeferimento');
   });
 
   test('a recusa do tipo de documento pendente chega ao operador com a orientação', async ({

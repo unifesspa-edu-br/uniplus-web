@@ -1,5 +1,5 @@
 import { faseDoServidor } from './cronograma-do-servidor';
-import { folhaDaExigencia } from './no-da-exigencia-do-servidor';
+import { regraDaExigencia } from './regra-de-comprovacao-do-servidor';
 import {
   FASES_CANONICAS,
   NOME_DOCUMENTO,
@@ -47,8 +47,8 @@ export const DETALHE_PUBLICADO = {
     }),
   ],
   documentosExigidos: [],
-  raizesExigencia: [
-    folhaDaExigencia({
+  regrasDeComprovacao: [
+    regraDaExigencia({
       id: '01960000-0000-7000-0000-000000000a11',
       faseId: FASE_PUBLICADA_ID,
       tipoDocumento: {
@@ -59,7 +59,7 @@ export const DETALHE_PUBLICADO = {
       obrigatorio: true,
       consequencia: 'ELIMINA',
     }),
-    folhaDaExigencia({
+    regraDaExigencia({
       id: '01960000-0000-7000-0000-000000000a12',
       faseId: FASE_PUBLICADA_ID,
       tipoDocumento: {
@@ -106,9 +106,9 @@ export const DETALHE_DUAS_FASES = {
       cronograma: { ordem: 2 },
     }),
   ],
-  raizesExigencia: [
-    ...DETALHE_PUBLICADO.raizesExigencia,
-    folhaDaExigencia({
+  regrasDeComprovacao: [
+    ...DETALHE_PUBLICADO.regrasDeComprovacao,
+    regraDaExigencia({
       id: '01960000-0000-7000-0000-000000000a21',
       faseId: FASE_PUBLICADA_2_ID,
       tipoDocumento: {

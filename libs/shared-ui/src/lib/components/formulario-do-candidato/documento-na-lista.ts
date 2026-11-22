@@ -6,7 +6,7 @@ import {
   EXIGIDO,
   PODE_SER_EXIGIDO,
 } from './documentos-avaliados';
-import type { DocumentoNaTela, ExigenciaPedida } from './arvore-de-documentos';
+import type { DocumentoNaTela, ExigenciaPedida } from './regras-de-documentos';
 import { formatosDaExigencia } from './envio-de-documentos';
 import type { GrupoRenderizavel } from './formulario-do-candidato.model';
 
@@ -169,6 +169,6 @@ function exigidasDoDocumento(
 function ehEnviavel(documento: DocumentoAvaliado): boolean {
   return (
     documento.ocorrenciaId !== null ||
-    (documento.grupoCodigo === null && documento.repetePorEntidade === null)
+    (documento.grupoCodigo === null && documento.grupoDoFormularioParaRepeticao === null)
   );
 }

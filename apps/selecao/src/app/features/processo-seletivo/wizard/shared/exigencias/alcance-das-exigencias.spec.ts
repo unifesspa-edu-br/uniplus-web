@@ -22,61 +22,65 @@ describe('alcance de todas as fases', () => {
       emTodasAsFases: [ID_RG],
     };
 
-    const raizes = comando(declarado);
+    const regrasDeComprovacao = comando(declarado);
 
-    expect(raizes).toHaveLength(2);
-    expect(raizes.map((raiz) => raiz.documento?.momento?.faseId).sort()).toEqual(
-      [ID_ISENCAO, ID_HABILITACAO].sort(),
-    );
+    expect(regrasDeComprovacao).toHaveLength(2);
+    expect(
+      regrasDeComprovacao.map((regraPrincipal) => regraPrincipal.documento?.momento?.faseId).sort(),
+    ).toEqual([ID_ISENCAO, ID_HABILITACAO].sort());
     // A fase nova herda o que foi declarado, não um formulário em branco.
-    expect(raizes.every((raiz) => raiz.documento?.indeferimento?.obrigatorio === false)).toBe(true);
+    expect(
+      regrasDeComprovacao.every(
+        (regraPrincipal) => regraPrincipal.documento?.indeferimento?.obrigatorio === false,
+      ),
+    ).toBe(true);
   });
 
   /** Sem nada declarado, a intenção não inventa exigência. */
-  it('não materializa documento que não tem exigência nenhuma na raiz', () => {
-    const semModelo: ExigenciasDoRascunho = { raizes: [], emTodasAsFases: [ID_RG] };
+  it('não materializa documento que não tem exigência nenhuma na regra principal', () => {
+    const semModelo: ExigenciasDoRascunho = { regrasDeComprovacao: [], emTodasAsFases: [ID_RG] };
     expect(comando(semModelo)).toHaveLength(0);
   });
 
   /**
-   * O modelo sai das folhas de RAIZ. Copiar uma alternativa de grupo `OU` transformaria
+   * O modelo sai das regras de documento de regra principal. Copiar uma alternativa de grupo de alternativas transformaria
    * "um destes dois basta" em "este, sozinho" nas demais fases.
    */
   it('não usa alternativa de grupo como modelo do alcance', () => {
     const soDentroDoGrupo: ExigenciasDoRascunho = {
       emTodasAsFases: [ID_RG],
-      raizes: [
+      regrasDeComprovacao: [
         {
-          tipo: 'OU',
+          forma: 'QUANTIDADE_MINIMA_DE_ITENS',
           documento: null,
           quantidadeMinima: 1,
           consequencia: null,
           basesLegais: null,
-          filhos: [
+          itens: [
             {
-              tipo: 'FOLHA',
+              forma: 'DOCUMENTO',
               documento: exigencia({ faseCodigo: 'HABILITACAO' }),
               quantidadeMinima: null,
               consequencia: null,
               basesLegais: null,
-              filhos: null,
-              chaveDistincao: null,
+              itens: null,
+              criterioDeDistincao: null,
               dataReferencia: null,
               ocorrenciasEsperadas: null,
-              repetePorEntidade: null,
+              grupoDoFormularioParaRepeticao: null,
             },
           ],
-          chaveDistincao: null,
+          criterioDeDistincao: null,
           dataReferencia: null,
           ocorrenciasEsperadas: null,
-          repetePorEntidade: null,
+          grupoDoFormularioParaRepeticao: null,
         },
       ],
     };
 
-    const raizes = comando(soDentroDoGrupo);
-    // O grupo continua inteiro, e nenhuma folha solta foi criada na outra fase.
-    expect(raizes).toHaveLength(1);
-    expect(raizes[0].tipo).toBe('OU');
+    const regrasDeComprovacao = comando(soDentroDoGrupo);
+    // O grupo continua inteiro, e nenhuma regra de documento solta foi criada na outra fase.
+    expect(regrasDeComprovacao).toHaveLength(1);
+    expect(regrasDeComprovacao[0].forma).toBe('QUANTIDADE_MINIMA_DE_ITENS');
   });
 });

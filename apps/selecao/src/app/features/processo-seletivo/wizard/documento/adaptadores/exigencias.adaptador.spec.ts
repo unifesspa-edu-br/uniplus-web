@@ -1,6 +1,6 @@
 import {
   AplicabilidadeDaExigencia,
-  TipoDeNoDaArvore,
+  FormaDeComprovacaoDaConfiguracao,
   type DocumentoDaConfiguracao,
 } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
@@ -62,21 +62,25 @@ describe('adaptador do passo Exigências', () => {
     expect(renda.condicaoGatilho).toHaveLength(1);
   });
 
-  it('lê a árvore pela posição que cada nó ocupa entre os irmãos', () => {
-    const [raiz, ou] = ler(umDocumentoComExigencias()).arvoreDeSatisfacao;
+  it('lê as regras pela posição que ocupam em cada grupo', () => {
+    const [regraPrincipal, ou] = ler(umDocumentoComExigencias()).regrasDeComprovacao;
 
-    expect(raiz.filhos.map((no) => no.origem)).toEqual([0, 1]);
-    expect(raiz.filhos[1]).toMatchObject({
+    expect(regraPrincipal.itens.map((regra) => regra.origem)).toEqual([0, 1]);
+    expect(regraPrincipal.itens[1]).toMatchObject({
       exigenciaChave: 'comprovante-de-renda',
       quantidadeMinima: '2',
     });
-    expect(ou).toMatchObject({ origem: 1, tipo: TipoDeNoDaArvore.OU, filhos: [] });
+    expect(ou).toMatchObject({
+      origem: 1,
+      forma: FormaDeComprovacaoDaConfiguracao.QUANTIDADE_MINIMA_DE_ITENS,
+      itens: [],
+    });
   });
 
   it('sem documentos exigidos nada é declarado e a seção não é criada', () => {
     const documento = documentoSemNada();
 
-    expect(ler(documento)).toEqual({ exigencias: [], arvoreDeSatisfacao: [] });
+    expect(ler(documento)).toEqual({ exigencias: [], regrasDeComprovacao: [] });
     expect(idaEVolta(documento)).toBe(documento);
   });
 

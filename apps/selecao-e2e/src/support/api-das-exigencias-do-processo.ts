@@ -1,5 +1,5 @@
 import type { Page, Route } from '@playwright/test';
-import type { NoExigenciaInput } from '@uniplus/shared-data/selecao';
+import type { RegraDeComprovacaoInformada } from '@uniplus/shared-data/selecao';
 import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { ID_DO_PROCESSO_COMPLETO } from '../fixtures/processo-publicado-completo';
 import { CORS, SEM_CONTEUDO, problema, recusar } from './api-da-unidade-da-fase';
@@ -9,7 +9,7 @@ const ROTA_DAS_EXIGENCIAS = new RegExp(
 );
 
 export interface ExigenciasGravadas {
-  readonly corpos: JsonDaApi<readonly NoExigenciaInput[]>[];
+  readonly corpos: JsonDaApi<readonly RegraDeComprovacaoInformada[]>[];
   /** O código com que o servidor recusa o PUT; nulo, ele grava. */
   codigoDaRecusa: string | null;
 }
@@ -17,7 +17,7 @@ export interface ExigenciasGravadas {
 async function gravarAsExigencias(route: Route, gravadas: ExigenciasGravadas): Promise<void> {
   const requisicao = route.request();
   if (requisicao.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
-  const corpo: JsonDaApi<readonly NoExigenciaInput[]> = requisicao.postDataJSON();
+  const corpo: JsonDaApi<readonly RegraDeComprovacaoInformada[]> = requisicao.postDataJSON();
   gravadas.corpos.push(corpo);
   if (gravadas.codigoDaRecusa === null) return route.fulfill(SEM_CONTEUDO);
   const erro = {

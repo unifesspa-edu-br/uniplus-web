@@ -22,17 +22,29 @@ import {
   producao,
 } from './producao-dos-fatos.testing';
 
+function producaoComDuasFasesDeIsencao(): ProducaoDosFatos {
+  return producao({
+    fases: [
+      { codigo: 'INSCRICAO', ordem: 1, finalidades: ['INSCRICAO'] },
+      { codigo: 'ISENCAO', ordem: 2, finalidades: ['ISENCAO_TAXA'] },
+      { codigo: 'OUTRA_ISENCAO', ordem: 3, finalidades: ['ISENCAO_TAXA'] },
+      { codigo: 'RESULTADO_FINAL', ordem: 4, finalidades: [] },
+    ],
+    formularios: [formulario('ISENCAO_TAXA', 'ISENCAO', 'BAIXA_RENDA')],
+  });
+}
+
 describe('a recusa do servidor sobre onde o documento é cobrado', () => {
   const recusa = (
     code: string,
     errors: readonly { field: string; code: string; message: string }[] = [],
   ) => recusaDaExigenciaDoServidor({ code, errors });
 
-  it('diz o que fazer quando a repetição nomeia grupo que não existe ou se aninha', () => {
-    expect(recusa('uniplus.selecao.no_exigencia.tipo_entidade_invalido')).toContain(
-      'campo “Repetir por”',
-    );
-    expect(recusa('uniplus.selecao.no_exigencia.repeticao_de_entidade_aninhada')).toContain(
+  it('diz o que fazer quando a repetição nomeia grupo que não existe ou contém outra repetição', () => {
+    expect(
+      recusa('uniplus.selecao.regra_de_comprovacao.grupo_para_repeticao_nao_declarado'),
+    ).toContain('campo “Repetir por”');
+    expect(recusa('uniplus.selecao.regra_de_comprovacao.repeticao_dentro_de_repeticao')).toContain(
       'Escolha “Não repete”',
     );
     expect(recusa('uniplus.predicado_dnf.fato_nao_coletado_pelo_processo')).toContain(
@@ -65,13 +77,13 @@ describe('a recusa do servidor sobre onde o documento é cobrado', () => {
     expect(recusa('uniplus.selecao.documento_exigido.fase_incoerente_com_finalidade')).toContain(
       CAMPO,
     );
-    expect(recusa('uniplus.selecao.no_exigencia.grupo_com_finalidades_diferentes')).toContain(
-      CAMPO,
-    );
+    expect(
+      recusa('uniplus.selecao.regra_de_comprovacao.grupo_com_formularios_diferentes'),
+    ).toContain(CAMPO);
     expect(
       recusa('uniplus.validacao', [
         {
-          field: 'raizes[0].documento.finalidade',
+          field: 'regrasDeComprovacao[0].documento.finalidade',
           code: 'uniplus.estrutura_formulario.finalidade_invalida',
           message: '',
         },
@@ -139,6 +151,13 @@ describe('a orientação da recusa de fase', () => {
 
     expect(orientacao).toContain('colete “laudo_recente” no formulário de inscrição');
     expect(orientacao).not.toContain('formulário de isenção da taxa de inscrição');
+  });
+
+  it('lista as fases aceitas quando outras fases posteriores recusam o fato', () => {
+    const contexto = producaoComDuasFasesDeIsencao();
+    expect(orientar('BAIXA_RENDA', na('INSCRICAO'), contexto)).toContain(
+      'exija o documento numa destas fases: isencao, outra_isencao',
+    );
   });
 
   it('sem fase que o aceite, propõe acrescentar ao cronograma a fase em que o fato é conhecido', () => {

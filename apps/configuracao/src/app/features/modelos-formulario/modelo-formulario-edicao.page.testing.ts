@@ -178,7 +178,7 @@ export const modelo: ModeloFormularioView = {
           {
             referencia: 'Lei 13.146/2015',
             abrangencia: 'FEDERAL',
-            status: 'RESOLVIDO',
+            situacao: 'RESOLVIDO',
             observacao: null,
           },
         ],

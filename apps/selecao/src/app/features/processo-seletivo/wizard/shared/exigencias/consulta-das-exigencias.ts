@@ -1,58 +1,47 @@
 import type {
   ExigenciaDeDocumento,
   ExigenciasDoRascunho,
-  NoDeExigencia,
+  RegraDeComprovacao,
 } from '../../processo-seletivo.models';
 
 import { temNormaResolvida } from './exigencias-documentais';
 
-/** As exigências declaradas numa fase, na ordem em que a árvore as guarda. */
+/** As exigências declaradas numa fase, na ordem em que a estrutura de regras as guarda. */
 export function exigenciasDaFase(
   exigencias: ExigenciasDoRascunho,
   faseCodigo: string,
 ): readonly ExigenciaDeDocumento[] {
-  const achados: ExigenciaDeDocumento[] = [];
-  const visitar = (nos: readonly NoDeExigencia[]): void => {
-    for (const no of nos) {
-      if (no.tipo === 'FOLHA') {
-        if (no.documento !== null && no.documento.faseCodigo === faseCodigo) {
-          achados.push(no.documento);
-        }
-        continue;
-      }
-      visitar(no.filhos ?? []);
-    }
-  };
-  visitar(exigencias.raizes);
-  return achados;
+  return documentosDe(exigencias.regrasDeComprovacao).filter(
+    (documento) => documento.faseCodigo === faseCodigo,
+  );
 }
 
 /**
- * Onde uma exigência está na árvore: solta, ou dentro de um grupo que a combina com outras.
+ * Onde uma exigência está na estrutura de regras: solta, ou dentro de um grupo que a combina com outras.
  *
- * A distinção importa para quem monta o edital. Uma folha dentro de um grupo `OU` não é
+ * A distinção importa para quem monta o edital. Uma regra de documento dentro de um grupo de alternativas não é
  * exigida por si — basta satisfazer o grupo —, e a mesma lista mostrando-a ao lado de uma
  * exigência solta faz as duas parecerem a mesma coisa.
  */
 export interface GrupoDaExigencia {
-  readonly tipo: 'E' | 'OU';
+  readonly forma: 'TODOS_OS_ITENS' | 'QUANTIDADE_MINIMA_DE_ITENS';
   /** Quantas alternativas do grupo precisam ser satisfeitas; `null` é o padrão do domínio, 1. */
   readonly quantidadeMinima: number | null;
-  /** Quantos filhos o grupo reúne — folhas e subgrupos, que também são alternativas. */
+  /** Quantos itens o grupo reúne — regras de documento e subgrupos, que também são alternativas. */
   readonly alternativas: number;
 }
 
 /**
  * Pelas ocorrências de que grupo repetível do formulário a exigência se repete (ADR-0138): a da
- * própria folha, ou a herdada do grupo de alternativas mais próximo que se repete — a repetição
- * não aninha, e a folha dentro dele não declara outra.
+ * própria regra de documento, ou a herdada do grupo de alternativas mais próximo que se repete — a repetição
+ * não ocorre dentro de outra repetição, e a regra de documento dentro dele não declara outra.
  */
 export interface RepeticaoDaExigencia {
   readonly grupo: string;
   readonly herdada: boolean;
 }
 
-/** Uma exigência com a posição que ela ocupa na árvore. */
+/** Uma exigência com a posição que ela ocupa na estrutura de regras. */
 export interface ExigenciaLocalizada {
   readonly documento: ExigenciaDeDocumento;
   /** `null` quando a exigência está solta, fora de qualquer grupo. */
@@ -62,9 +51,9 @@ export interface ExigenciaLocalizada {
 }
 
 /**
- * As exigências de uma fase com a posição de cada uma na árvore.
+ * As exigências de uma fase com a posição de cada uma na estrutura de regras.
  *
- * A tela listava as folhas de dentro de um grupo como se fossem soltas, e um conjunto por tipo
+ * A tela listava as regras de documento de dentro de um grupo como se fossem soltas, e um conjunto por tipo
  * de documento colapsava numa linha só o documento declarado solto E dentro de um grupo —
  * editar essa linha mexia numa das duas declarações, escolhida por acaso da ordem.
  */
@@ -77,75 +66,85 @@ export function exigenciasLocalizadasDaFase(
   );
 }
 
-/** Todas as exigências da árvore, de qualquer fase, com a posição de cada uma. */
+/** Todas as exigências da estrutura de regras, de qualquer fase, com a posição de cada uma. */
 export function exigenciasLocalizadas(
   exigencias: ExigenciasDoRascunho,
 ): readonly ExigenciaLocalizada[] {
   const achados: ExigenciaLocalizada[] = [];
-  localizarExigencias(exigencias.raizes, { grupo: null, herdada: null }, achados);
+  localizarExigencias(exigencias.regrasDeComprovacao, { grupo: null, herdada: null }, achados);
   return achados;
 }
 
-/** Onde a descida da árvore está: o grupo que contém os nós e a repetição que ele impõe a eles. */
-interface PosicaoNaArvore {
+/** Onde a descida da estrutura de regras está: o grupo que contém os regras e a repetição que ele impõe a eles. */
+interface PosicaoNaComprovacao {
   readonly grupo: GrupoDaExigencia | null;
   readonly herdada: string | null;
 }
 
 function localizarExigencias(
-  nos: readonly NoDeExigencia[],
-  posicao: PosicaoNaArvore,
+  regras: readonly RegraDeComprovacao[],
+  posicao: PosicaoNaComprovacao,
   achados: ExigenciaLocalizada[],
 ): void {
-  for (const no of nos) {
-    if (no.tipo === 'FOLHA') {
-      if (no.documento !== null) {
-        achados.push({
-          documento: no.documento,
-          grupo: posicao.grupo,
-          repeticao: repeticaoDaFolha(no, posicao.herdada),
-        });
-      }
-      continue;
+  for (const regra of regras) {
+    if (regra.forma === 'DOCUMENTO') {
+      registrarDocumentoLocalizado(regra, posicao, achados);
+    } else {
+      localizarExigenciasNoGrupo({ ...regra, forma: regra.forma }, posicao, achados);
     }
-
-    const filhos = no.filhos ?? [];
-    localizarExigencias(
-      filhos,
-      posicaoDentroDoGrupo({ ...no, tipo: no.tipo }, filhos.length, posicao),
-      achados,
-    );
   }
 }
 
+function localizarExigenciasNoGrupo(
+  grupo: RegraDeComprovacao & Pick<GrupoDaExigencia, 'forma'>,
+  posicao: PosicaoNaComprovacao,
+  achados: ExigenciaLocalizada[],
+): void {
+  const itens = grupo.itens ?? [];
+  localizarExigencias(itens, posicaoDentroDoGrupo(grupo, itens.length, posicao), achados);
+}
+
+function registrarDocumentoLocalizado(
+  regra: RegraDeComprovacao,
+  posicao: PosicaoNaComprovacao,
+  achados: ExigenciaLocalizada[],
+): void {
+  if (regra.documento === null) return;
+  achados.push({
+    documento: regra.documento,
+    grupo: posicao.grupo,
+    repeticao: repeticaoDoDocumento(regra, posicao.herdada),
+  });
+}
+
 function posicaoDentroDoGrupo(
-  grupo: Pick<NoDeExigencia, 'quantidadeMinima' | 'repetePorEntidade'> &
-    Pick<GrupoDaExigencia, 'tipo'>,
+  grupo: Pick<RegraDeComprovacao, 'quantidadeMinima' | 'grupoDoFormularioParaRepeticao'> &
+    Pick<GrupoDaExigencia, 'forma'>,
   alternativas: number,
-  fora: PosicaoNaArvore,
-): PosicaoNaArvore {
+  fora: PosicaoNaComprovacao,
+): PosicaoNaComprovacao {
   return {
-    // Conta TODOS os filhos, não só as folhas: um grupo pode reunir outros grupos, e contar
-    // só as folhas diretas diria "uma das 1 alternativas" onde há duas.
-    grupo: { tipo: grupo.tipo, quantidadeMinima: grupo.quantidadeMinima, alternativas },
-    herdada: fora.herdada ?? grupo.repetePorEntidade,
+    // Conta TODOS os itens, não só as regras de documento: um grupo pode reunir outros grupos, e contar
+    // só as regras de documento diretas diria "uma das 1 alternativas" onde há duas.
+    grupo: { forma: grupo.forma, quantidadeMinima: grupo.quantidadeMinima, alternativas },
+    herdada: fora.herdada ?? grupo.grupoDoFormularioParaRepeticao,
   };
 }
 
-function repeticaoDaFolha(
-  folha: NoDeExigencia,
+function repeticaoDoDocumento(
+  regraDocumental: RegraDeComprovacao,
   herdada: string | null,
 ): RepeticaoDaExigencia | null {
   if (herdada !== null) return { grupo: herdada, herdada: true };
-  return folha.repetePorEntidade === null
+  return regraDocumental.grupoDoFormularioParaRepeticao === null
     ? null
-    : { grupo: folha.repetePorEntidade, herdada: false };
+    : { grupo: regraDocumental.grupoDoFormularioParaRepeticao, herdada: false };
 }
 
 /**
  * Os grupos que decidem sozinhos o resultado e estão sem norma resolvida.
  *
- * É o mesmo que a publicação confere: grupo `OU` com consequência própria precisa de ao menos
+ * É o mesmo que a publicação confere: grupo de alternativas com consequência própria precisa de ao menos
  * uma base legal resolvida, pela mesma razão que a exigência individual precisa. A tela não
  * edita grupo — eles chegam da configuração —, mas calar sobre a pendência faria a pessoa
  * descobrir no último passo, sem saber de qual grupo se trata.
@@ -156,73 +155,71 @@ export function gruposSemNormaResolvida(
   return gruposQueDecidem(exigencias).filter((grupo) => !grupo.normaResolvida);
 }
 
+interface GrupoDecisivo {
+  readonly documentos: readonly string[];
+  readonly fases: readonly string[];
+  readonly normaResolvida: boolean;
+}
+
 /**
  * Os grupos `OU` que decidem sozinhos o resultado (consequência própria), com os documentos e as
  * fases que reúnem e se têm norma resolvida.
  */
-export function gruposQueDecidem(exigencias: ExigenciasDoRascunho): readonly {
-  readonly documentos: readonly string[];
-  readonly fases: readonly string[];
-  readonly normaResolvida: boolean;
-}[] {
-  const decisivos: {
-    documentos: readonly string[];
-    fases: readonly string[];
-    normaResolvida: boolean;
-  }[] = [];
+export function gruposQueDecidem(exigencias: ExigenciasDoRascunho): readonly GrupoDecisivo[] {
+  return identificarGruposDecisivos(exigencias.regrasDeComprovacao);
+}
 
-  const visitar = (nos: readonly NoDeExigencia[]): void => {
-    for (const no of nos) {
-      if (no.tipo === 'FOLHA') continue;
+function identificarGruposDecisivos(regras: readonly RegraDeComprovacao[]): GrupoDecisivo[] {
+  return regras.flatMap((regra) => {
+    if (regra.forma === 'DOCUMENTO') return [];
+    const grupo =
+      regra.forma === 'QUANTIDADE_MINIMA_DE_ITENS' && (regra.consequencia ?? '') !== ''
+        ? [resumirGrupoDecisivo(regra)]
+        : [];
+    return [...grupo, ...identificarGruposDecisivos(regra.itens ?? [])];
+  });
+}
 
-      if (no.tipo === 'OU' && (no.consequencia ?? '') !== '') {
-        // Os documentos de TODA a subárvore, não só as folhas diretas: um grupo que reúne
-        // outros grupos ficaria sem nome nenhum na mensagem, que é o oposto do que ela serve.
-        const documentos = documentosDe(no.filhos ?? []);
-        decisivos.push({
-          documentos: documentos.map((documento) => documento.tipoDocumentoId),
-          fases: [...new Set(documentos.map((documento) => documento.faseCodigo))],
-          normaResolvida: temNormaResolvida(no.basesLegais ?? []),
-        });
-      }
-
-      visitar(no.filhos ?? []);
-    }
+function resumirGrupoDecisivo(regra: RegraDeComprovacao): GrupoDecisivo {
+  const documentos = documentosDe(regra.itens ?? []);
+  return {
+    documentos: documentos.map((documento) => documento.tipoDocumentoId),
+    fases: [...new Set(documentos.map((documento) => documento.faseCodigo))],
+    normaResolvida: temNormaResolvida(regra.basesLegais ?? []),
   };
-
-  visitar(exigencias.raizes);
-  return decisivos;
 }
 
 /**
- * As exigências declaradas na RAIZ da árvore — fora de qualquer grupo.
+ * As exigências declaradas na regra principal da estrutura de regras — fora de qualquer grupo.
  *
  * É deste conjunto que sai o modelo ao espalhar um documento por todas as fases: copiar uma
- * folha de dentro de um grupo `OU` transformaria "um destes dois basta" em "este, sozinho,
+ * regra de documento de dentro de um grupo de alternativas transformaria "um destes dois basta" em "este, sozinho,
  * obrigatório" nas demais fases — mudança de sentido que ninguém pediu.
  */
-export function exigenciasDaRaiz(
+export function exigenciasSemGrupo(
   exigencias: ExigenciasDoRascunho,
 ): readonly ExigenciaDeDocumento[] {
-  return exigencias.raizes
-    .filter((no) => no.tipo === 'FOLHA' && no.documento !== null)
-    .map((no) => no.documento as ExigenciaDeDocumento);
+  return exigencias.regrasDeComprovacao
+    .filter((regra) => regra.forma === 'DOCUMENTO' && regra.documento !== null)
+    .map((regra) => regra.documento as ExigenciaDeDocumento);
 }
 
-/** Todas as exigências da árvore, de qualquer fase. */
+/** Todas as exigências da estrutura de regras, de qualquer fase. */
 export function todasAsExigencias(
   exigencias: ExigenciasDoRascunho,
 ): readonly ExigenciaDeDocumento[] {
-  return documentosDe(exigencias.raizes);
+  return documentosDe(exigencias.regrasDeComprovacao);
 }
 
-/** As exigências das folhas, em qualquer profundidade, na ordem da árvore. */
-export function documentosDe(nos: readonly NoDeExigencia[]): readonly ExigenciaDeDocumento[] {
-  return nos.flatMap((no) =>
-    no.tipo === 'FOLHA'
-      ? no.documento === null
+/** As exigências das regras de documento, em qualquer profundidade, na ordem da estrutura de regras. */
+export function documentosDe(
+  regras: readonly RegraDeComprovacao[],
+): readonly ExigenciaDeDocumento[] {
+  return regras.flatMap((regra) =>
+    regra.forma === 'DOCUMENTO'
+      ? regra.documento === null
         ? []
-        : [no.documento]
-      : documentosDe(no.filhos ?? []),
+        : [regra.documento]
+      : documentosDe(regra.itens ?? []),
   );
 }

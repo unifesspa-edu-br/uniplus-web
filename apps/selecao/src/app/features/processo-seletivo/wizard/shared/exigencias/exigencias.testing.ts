@@ -1,15 +1,16 @@
+import { FormaDeComprovacaoCodigo } from '@uniplus/shared-data/selecao';
 import type {
   DocumentoExigidoDto,
-  NoExigenciaDto,
+  RegraDeComprovacaoDto,
   ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
 
-import { arvoreDeExigencias } from './gravacao-das-exigencias';
+import { regrasDeComprovacaoParaEnvio } from './gravacao-das-exigencias';
 import { comExigencia, exigenciaNova } from './exigencias-documentais';
 import type {
   ExigenciaDeDocumento,
   ExigenciasDoRascunho,
-  NoDeExigencia,
+  RegraDeComprovacao,
 } from '../../processo-seletivo.models';
 
 export const ID_ISENCAO = '01960000-0000-7000-0000-0000000000f1';
@@ -43,7 +44,7 @@ export function exigencia(patch: Partial<ExigenciaDeDocumento> = {}): ExigenciaD
 export function rascunho(...exigencias: readonly ExigenciaDeDocumento[]): ExigenciasDoRascunho {
   return exigencias.reduce<ExigenciasDoRascunho>(
     (acumulado, atual) => comExigencia(acumulado, atual),
-    { raizes: [], emTodasAsFases: [] },
+    { regrasDeComprovacao: [], emTodasAsFases: [] },
   );
 }
 
@@ -51,7 +52,7 @@ export function comando(
   rascunhoDado: ExigenciasDoRascunho,
   modalidades: readonly string[] = ['AC'],
 ) {
-  return arvoreDeExigencias(rascunhoDado, {
+  return regrasDeComprovacaoParaEnvio(rascunhoDado, {
     faseIdPorCodigo: FASES,
     modalidadesOfertadas: modalidades,
     etapasVivas: ETAPAS_VIVAS,
@@ -59,32 +60,34 @@ export function comando(
   });
 }
 
-const NO_SEM_NADA: Omit<NoDeExigencia, 'tipo'> = {
+const NO_SEM_NADA: Omit<RegraDeComprovacao, 'forma'> = {
   documento: null,
   quantidadeMinima: null,
   consequencia: null,
   basesLegais: null,
-  filhos: null,
-  chaveDistincao: null,
+  itens: null,
+  criterioDeDistincao: null,
   dataReferencia: null,
   ocorrenciasEsperadas: null,
-  repetePorEntidade: null,
+  grupoDoFormularioParaRepeticao: null,
 };
 
-/** Um nó sem nada além do tipo; o que o teste declara em `alteracoes` é o que importa nele. */
-export function noDoRascunho(
-  alteracoes: Partial<NoDeExigencia> & Pick<NoDeExigencia, 'tipo'>,
-): NoDeExigencia {
+/** Um regra sem nada além do tipo; o que o teste declara em `alteracoes` é o que importa nele. */
+export function regraDoRascunho(
+  alteracoes: Partial<RegraDeComprovacao> & Pick<RegraDeComprovacao, 'forma'>,
+): RegraDeComprovacao {
   return { ...NO_SEM_NADA, ...alteracoes };
 }
 
-export function detalheDaApi(raizes: readonly NoExigenciaDto[]): ProcessoSeletivoDto {
+export function detalheDaApi(
+  regrasDeComprovacao: readonly RegraDeComprovacaoDto[],
+): ProcessoSeletivoDto {
   return {
     cronogramaFases: [
       { id: ID_ISENCAO, codigo: 'ISENCAO' },
       { id: ID_HABILITACAO, codigo: 'HABILITACAO' },
     ],
-    raizesExigencia: raizes,
+    regrasDeComprovacao: regrasDeComprovacao,
   } as unknown as ProcessoSeletivoDto;
 }
 
@@ -97,14 +100,14 @@ export interface AlteracoesDoDocumentoDaApi {
   readonly requisitos?: Partial<DocumentoExigidoDto['requisitos']>;
 }
 
-export function exigenciaDaApi(alteracoes: AlteracoesDoDocumentoDaApi = {}): NoExigenciaDto {
+export function exigenciaDaApi(alteracoes: AlteracoesDoDocumentoDaApi = {}): RegraDeComprovacaoDto {
   return {
     id: 'no-1',
-    tipo: 'FOLHA',
+    forma: { codigo: FormaDeComprovacaoCodigo.DOCUMENTO, rotulo: 'Documento' },
     cardinalidade: { quantidadeMinima: null, distincao: null },
     indeferimento: { consequencia: null, basesLegais: [] },
-    filhos: [],
-    repetePorEntidade: null,
+    itens: [],
+    grupoDoFormularioParaRepeticao: null,
     documento: documentoDaApi(alteracoes),
   };
 }

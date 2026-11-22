@@ -16,9 +16,7 @@ import {
 import { formatosDeclarados } from '../../../shared/exigencias/arquivo-da-exigencia';
 import {
   exigenciasDaFase,
-  exigenciasDaRaiz,
   exigenciasLocalizadasDaFase,
-  todasAsExigencias,
   type ExigenciaLocalizada,
   type GrupoDaExigencia,
   type RepeticaoDaExigencia,
@@ -32,9 +30,10 @@ import {
 import { finalidadeDaExigencia } from '../../../shared/exigencias/formulario-da-exigencia';
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
+import { documentosDeclarados, modeloParaTodasAsFases } from './documentos-declarados';
 
 /**
- * As exigências documentais da fase aberta: como cada documento está declarado na árvore do
+ * As exigências documentais da fase aberta: como cada documento está declarado na estrutura de regras do
  * rascunho, o que a conferência lê dele e as escritas que passam pela declaração. Cada passo da
  * fase tem a sua instância, porque o Cronograma embute um passo por fase.
  */
@@ -51,7 +50,7 @@ export class ExigenciasDaFaseStore {
   readonly modalidades = computed(() => this.store.modalidadesDoProcesso());
 
   /**
-   * Como cada documento desta fase está declarado na árvore — solto, ou dentro de um grupo
+   * Como cada documento desta fase está declarado na estrutura de regras — solto, ou dentro de um grupo
    * que o combina com outros.
    *
    * Indexado pelo tipo de documento porque é por ele que a tela endereça a exigência. Quando o
@@ -77,11 +76,11 @@ export class ExigenciasDaFaseStore {
    * Como o documento é exigido: por si, ou como alternativa dentro de um grupo. Vazio quando
    * está solto, que é o caso comum e não precisa de explicação.
    */
-  posicaoNaArvore(id: string): string {
+  posicaoNaComprovacao(id: string): string {
     const grupo = this.grupoDoDocumento(id);
     if (grupo === null) return '';
 
-    if (grupo.tipo === 'E') {
+    if (grupo.forma === 'TODOS_OS_ITENS') {
       return `Faz parte de um conjunto de ${grupo.alternativas} documentos que valem juntos.`;
     }
 
@@ -95,8 +94,8 @@ export class ExigenciasDaFaseStore {
   grupoDoDocumento(id: string): GrupoDaExigencia | null {
     const grupo = (this.declaracoesPorDocumento().get(id) ?? [])[0]?.grupo ?? null;
 
-    // Grupo de um filho só não oferece alternativa nenhuma: satisfazê-lo é satisfazer aquele
-    // filho, e a folha é materialmente igual a uma exigência solta. Anunciá-la como grupo
+    // Grupo de um item só não oferece alternativa nenhuma: satisfazê-lo é satisfazer aquele
+    // item, e a regra de documento é materialmente igual a uma exigência solta. Anunciá-la como grupo
     // informaria errado antes de informar mal.
     return grupo !== null && grupo.alternativas >= 2 ? grupo : null;
   }
@@ -112,7 +111,7 @@ export class ExigenciasDaFaseStore {
     const quantas = (this.declaracoesPorDocumento().get(id) ?? []).length;
     if (quantas <= 1) return '';
 
-    return `Este documento está declarado ${quantas} vezes nesta fase, em posições diferentes da árvore. O que se edita aqui é a primeira declaração.`;
+    return `Este documento está declarado ${quantas} vezes nesta fase, em regras de comprovação diferentes. O que se edita aqui é a primeira declaração.`;
   }
 
   /**
@@ -129,50 +128,12 @@ export class ExigenciasDaFaseStore {
     if (fase === null) return [];
 
     const exigencias = this.store.draft().documentos;
-    // Inclui o que vale em todas as fases: a intenção só se materializa na gravação, e sem
-    // isto a fase acrescentada depois não mostraria o documento que o operador já declarou
-    // valer nela.
-    const declarados = new Set([
-      ...exigenciasDaFase(exigencias, fase.codigo).map((e) => e.tipoDocumentoId),
-      ...exigencias.emTodasAsFases,
-    ]);
-    const doCatalogo = this.catalogoDeDocumentos
-      .documentosPorCategoria()
-      .flatMap((grupo) => grupo.docs)
-      .filter((doc) => declarados.has(doc.id));
-
-    // O tipo removido do cadastro sai do catálogo vivo, e a exigência que o cita continua no
-    // rascunho — a gravação seguinte a reenvia inteira. Sem sintetizar a linha, ela sumia da
-    // tela: o operador não conseguia nem conferir nem remover o que continuava sendo exigido.
-    const visiveis = new Set(doCatalogo.map((doc) => doc.id));
-    const foraDoCadastro = [...declarados]
-      .filter((id) => !visiveis.has(id))
-      .map((id) => this.documentoForaDoCadastro(id, exigencias));
-
-    return [...doCatalogo, ...foraDoCadastro];
-  });
-
-  /** A linha do tipo que o cadastro não oferece mais, nomeada pelo que o processo guardou. */
-  documentoForaDoCadastro(
-    tipoDocumentoId: string,
-    exigencias: ExigenciasDoRascunho,
-  ): DocumentoDefinicao {
-    const declarada = todasAsExigencias(exigencias).find(
-      (exigencia) => exigencia.tipoDocumentoId === tipoDocumentoId,
+    return documentosDeclarados(
+      fase.codigo,
+      exigencias,
+      this.catalogoDeDocumentos.documentosPorCategoria().flatMap((grupo) => grupo.docs),
     );
-
-    const situacao =
-      'Este tipo saiu do cadastro depois de ser exigido aqui. Continua valendo enquanto estiver na lista.';
-
-    return {
-      id: tipoDocumentoId,
-      nome: declarada?.tipoDocumentoNome ?? 'Documento fora do cadastro ativo',
-      descricao: null,
-      formatos: null,
-      orientacao: `${situacao} Remova-o se não for mais pedido.`,
-      situacao,
-    };
-  }
+  });
 
   /**
    * A exigência deste documento NESTA fase — a unidade que o contrato guarda. Duas fases que
@@ -189,12 +150,7 @@ export class ExigenciasDaFaseStore {
     );
     if (achada !== undefined) return achada;
 
-    // Fase alcançada por "vale em todas as fases" mas ainda não materializada: mostra o que
-    // será gravado — o modelo de raiz nesta fase —, não um formulário em branco que mentiria
-    // sobre o que o operador já declarou.
-    const modelo = exigencias.emTodasAsFases.includes(id)
-      ? exigenciasDaRaiz(exigencias).find((exigencia) => exigencia.tipoDocumentoId === id)
-      : undefined;
+    const modelo = modeloParaTodasAsFases(exigencias, id);
     if (modelo !== undefined)
       return { ...modelo, faseCodigo: codigo, etapaId: null, finalidade: null };
 
@@ -287,30 +243,36 @@ export class ExigenciasDaFaseStore {
 
     const exigencias = this.store.draft().documentos;
     if (!marcada) {
-      // Documento que valia em todas as fases é materializado ANTES de sair desta: largar o
-      // alcance sem materializar tiraria o documento também de toda fase que ainda só o tinha
-      // por herança — o operador desmarca numa fase e perde em outras, sem nada dizer.
-      const materializadas = exigencias.emTodasAsFases.includes(id)
-        ? comAlcanceDeTodasAsFases(
-            exigencias,
-            this.fasesDoCronograma().map((outra) => outra.codigo),
-          )
-        : exigencias;
-
-      this.store.patchSection('documentos', {
-        ...semAExigencia(materializadas, id, fase.codigo),
-        emTodasAsFases: materializadas.emTodasAsFases.filter((item) => item !== id),
-      });
+      this.removerExigencia(id, fase.codigo, exigencias);
       return;
     }
 
+    this.acrescentarExigencia(id, fase.codigo, exigencias);
+  }
+
+  private acrescentarExigencia(
+    id: string,
+    faseCodigo: string,
+    exigencias: ExigenciasDoRascunho,
+  ): void {
+    const tipo = this.catalogoDeDocumentos.tipoDocumentoPorId().get(id);
     this.store.patchSection(
       'documentos',
-      comExigencia(
-        exigencias,
-        exigenciaNova(id, fase.codigo, this.catalogoDeDocumentos.tipoDocumentoPorId().get(id)),
-      ),
+      comExigencia(exigencias, exigenciaNova(id, faseCodigo, tipo)),
     );
+  }
+
+  private removerExigencia(id: string, faseCodigo: string, exigencias: ExigenciasDoRascunho): void {
+    const materializadas = exigencias.emTodasAsFases.includes(id)
+      ? comAlcanceDeTodasAsFases(
+          exigencias,
+          this.fasesDoCronograma().map((fase) => fase.codigo),
+        )
+      : exigencias;
+    this.store.patchSection('documentos', {
+      ...semAExigencia(materializadas, id, faseCodigo),
+      emTodasAsFases: materializadas.emTodasAsFases.filter((item) => item !== id),
+    });
   }
 
   /**
@@ -346,7 +308,7 @@ export class ExigenciasDaFaseStore {
 
   /**
    * A repetição declarada para o documento nesta fase. Na fase alcançada por "vale em todas as
-   * fases" e ainda não materializada, é a do modelo de raiz, que a gravação copia para ela.
+   * fases" e ainda não materializada, é a do modelo de regra principal, que a gravação copia para ela.
    */
   repeticaoDeclarada(id: string): RepeticaoDaExigencia | null {
     const declarada = (this.declaracoesPorDocumento().get(id) ?? [])[0];
@@ -354,12 +316,12 @@ export class ExigenciasDaFaseStore {
 
     const exigencias = this.store.draft().documentos;
     if (!exigencias.emTodasAsFases.includes(id)) return null;
-    const modelo = exigencias.raizes.find(
-      (no) => no.tipo === 'FOLHA' && no.documento?.tipoDocumentoId === id,
+    const modelo = exigencias.regrasDeComprovacao.find(
+      (no) => no.forma === 'DOCUMENTO' && no.documento?.tipoDocumentoId === id,
     );
-    return modelo === undefined || modelo.repetePorEntidade === null
+    return modelo === undefined || modelo.grupoDoFormularioParaRepeticao === null
       ? null
-      : { grupo: modelo.repetePorEntidade, herdada: false };
+      : { grupo: modelo.grupoDoFormularioParaRepeticao, herdada: false };
   }
 
   /**

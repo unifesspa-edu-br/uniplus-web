@@ -6,7 +6,7 @@ import {
   exigenciaNova,
   exigenciasVazias,
 } from '../../shared/exigencias/exigencias-documentais';
-import { arvoreDeExigencias } from '../../shared/exigencias/gravacao-das-exigencias';
+import { regrasDeComprovacaoParaEnvio } from '../../shared/exigencias/gravacao-das-exigencias';
 import { congeladosDaFase, fase, ID_AVALIACAO, ID_CPF, ID_HOMOLOGACAO } from './fase.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 
@@ -134,13 +134,13 @@ describe('FasePassoComponent', () => {
       ).toBe(
         'O formulário de isenção da taxa de inscrição não é respondido nesta fase; escolha o formulário.',
       );
-      const raizes = arvoreDeExigencias(store.draft().documentos, {
+      const regrasDeComprovacao = regrasDeComprovacaoParaEnvio(store.draft().documentos, {
         faseIdPorCodigo: new Map([['AVALIACAO', ID_AVALIACAO]]),
         modalidadesOfertadas: [],
         etapasVivas: new Set<string>(),
         finalidadesPorFase: new Map([['AVALIACAO', ['INSCRICAO']]]),
       });
-      expect(raizes[0].documento?.momento?.finalidade).toBe('ISENCAO_TAXA');
+      expect(regrasDeComprovacao[0].documento?.momento?.finalidade).toBe('ISENCAO_TAXA');
     });
 
     it('na fase que não responde formulário nenhum, o formulário declarado antes se desfaz pela opção "Nenhum"', () => {
@@ -192,15 +192,20 @@ describe('FasePassoComponent', () => {
       documentos().acrescentarDocumento();
       detectar();
 
-      const raizes = arvoreDeExigencias(store.draft().documentos, {
+      const regrasDeComprovacao = regrasDeComprovacaoParaEnvio(store.draft().documentos, {
         faseIdPorCodigo: new Map([['AVALIACAO', ID_AVALIACAO]]),
         modalidadesOfertadas: [],
         etapasVivas: new Set<string>(),
         finalidadesPorFase: new Map(),
       });
 
-      expect(raizes[0].documento?.requisitos?.formatosPermitidos).toEqual(['PDF', 'JPEG']);
-      expect(raizes[0].documento?.requisitos?.tamanhoMaximoBytes).toBe(10 * 1024 * 1024);
+      expect(regrasDeComprovacao[0].documento?.requisitos?.formatosPermitidos).toEqual([
+        'PDF',
+        'JPEG',
+      ]);
+      expect(regrasDeComprovacao[0].documento?.requisitos?.tamanhoMaximoBytes).toBe(
+        10 * 1024 * 1024,
+      );
     });
 
     it('não inventa restrição para tipo cujo cadastro não declara nenhuma', () => {
@@ -229,7 +234,9 @@ describe('FasePassoComponent', () => {
       detectar();
 
       const { documentos: declaradas } = store.draft();
-      expect(declaradas.raizes[0].documento?.faseCodigo).toBe('HOMOLOGACAO_INSCRICOES');
+      expect(declaradas.regrasDeComprovacao[0].documento?.faseCodigo).toBe(
+        'HOMOLOGACAO_INSCRICOES',
+      );
       expect(exigenciasDaFase(declaradas, 'AVALIACAO')).toHaveLength(1);
     });
 

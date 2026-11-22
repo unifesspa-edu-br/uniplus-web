@@ -67,7 +67,7 @@
         } } @case (BLOCO_COMPROVACAO_DOCUMENTAL) { @if (avaliacao(); as avaliacao) {
         <ui-documentos-da-inscricao
           [avaliacao]="avaliacao"
-          [arvore]="documentosDaAvaliacao()?.arvore ?? null"
+          [regras]="documentosDaAvaliacao()?.regras ?? null"
           [pendencias]="documentosDaAvaliacao()?.pendencias ?? []"
           [semDocumentos]="semDocumentos()"
           [envioDeDocumentos]="envioDeDocumentos()"

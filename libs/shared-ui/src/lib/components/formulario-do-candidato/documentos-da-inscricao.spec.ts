@@ -127,8 +127,18 @@ describe('Bloco de documentos da inscrição', () => {
   });
 
   it('as alternativas aparecem como escolha', () => {
-    const identidade = { grupoId: 'identidade', tipo: 'OU', minimo: 1, repetePorEntidade: null };
-    const conjunto = { grupoId: 'conjunto', tipo: 'E', minimo: null, repetePorEntidade: null };
+    const identidade = {
+      grupoId: 'identidade',
+      forma: { codigo: 'QUANTIDADE_MINIMA_DE_ITENS', rotulo: 'Quantidade mínima' },
+      minimo: 1,
+      grupoDoFormularioParaRepeticao: null,
+    };
+    const conjunto = {
+      grupoId: 'conjunto',
+      forma: { codigo: 'TODOS_OS_ITENS', rotulo: 'Todos estes itens' },
+      minimo: null,
+      grupoDoFormularioParaRepeticao: null,
+    };
     const tela = montar(
       naTela(
         nestaFase(

@@ -1,7 +1,7 @@
 import type {
   DocumentoDaConfiguracaoBaseLegal,
   DocumentoDaConfiguracaoExigencia,
-  DocumentoDaConfiguracaoNoDaArvore,
+  DocumentoDaConfiguracaoRegraDeComprovacao,
 } from '@uniplus/shared-data/selecao';
 
 import type {
@@ -9,7 +9,7 @@ import type {
   FormatosDoFormulario,
   IdadeMaximaDoFormulario,
 } from '../edicoes/condicoes-da-exigencia.edicao';
-import type { NoDoFormulario } from '../edicoes/arvore-de-satisfacao.edicao';
+import type { RegraDoFormulario } from '../edicoes/regras-de-comprovacao.edicao';
 import { textoDoNumero } from '../texto-do-campo';
 
 type Exigencia = DocumentoDaConfiguracaoExigencia;
@@ -22,7 +22,7 @@ export function baseLegalDoFormulario(
     origem,
     referencia: base.referencia ?? '',
     abrangencia: base.abrangencia ?? '',
-    status: base.status ?? '',
+    situacao: base.situacao ?? '',
     observacao: base.observacao ?? '',
   };
 }
@@ -54,32 +54,35 @@ export function formatosDoFormulario(
   };
 }
 
-type CondicaoDoNo = Pick<
-  NoDoFormulario,
-  'origem' | 'tipo' | 'exigenciaChave' | 'quantidadeMinima' | 'consequencia'
+type CondicaoDaRegra = Pick<
+  RegraDoFormulario,
+  'origem' | 'forma' | 'exigenciaChave' | 'quantidadeMinima' | 'consequencia'
 >;
 
-function condicaoDoNo(no: DocumentoDaConfiguracaoNoDaArvore, origem: number): CondicaoDoNo {
+function condicaoDaRegra(
+  regra: DocumentoDaConfiguracaoRegraDeComprovacao,
+  origem: number,
+): CondicaoDaRegra {
   return {
     origem,
-    tipo: no.tipo,
-    exigenciaChave: no.exigenciaChave ?? '',
-    quantidadeMinima: textoDoNumero(no.quantidadeMinima),
-    consequencia: no.consequencia ?? '',
+    forma: regra.forma,
+    exigenciaChave: regra.exigenciaChave ?? '',
+    quantidadeMinima: textoDoNumero(regra.quantidadeMinima),
+    consequencia: regra.consequencia ?? '',
   };
 }
 
-export function noDoFormulario(
-  no: DocumentoDaConfiguracaoNoDaArvore,
+export function regraDoFormulario(
+  regra: DocumentoDaConfiguracaoRegraDeComprovacao,
   origem: number,
-): NoDoFormulario {
+): RegraDoFormulario {
   return {
-    ...condicaoDoNo(no, origem),
-    basesLegais: (no.basesLegais ?? []).map(baseLegalDoFormulario),
-    chaveDistincao: no.chaveDistincao ?? '',
-    dataReferencia: no.dataReferencia ?? '',
-    ocorrenciasEsperadas: no.ocorrenciasEsperadas ?? [],
-    repetePorEntidade: no.repetePorEntidade ?? '',
-    filhos: (no.filhos ?? []).map(noDoFormulario),
+    ...condicaoDaRegra(regra, origem),
+    basesLegais: (regra.basesLegais ?? []).map(baseLegalDoFormulario),
+    criterioDeDistincao: regra.criterioDeDistincao ?? '',
+    dataReferencia: regra.dataReferencia ?? '',
+    ocorrenciasEsperadas: regra.ocorrenciasEsperadas ?? [],
+    grupoDoFormularioParaRepeticao: regra.grupoDoFormularioParaRepeticao ?? '',
+    itens: (regra.itens ?? []).map(regraDoFormulario),
   };
 }

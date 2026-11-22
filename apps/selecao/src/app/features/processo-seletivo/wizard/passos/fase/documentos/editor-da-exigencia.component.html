@@ -5,10 +5,10 @@
     @if (resumo().orientacao; as orientacao) {
       <span class="doc-item__desc">{{ orientacao }}</span>
     }
-    <!-- Folha dentro de um grupo não é exigida por si: basta satisfazer o grupo.
+    <!-- Documento dentro de um grupo não é exigida por si: basta satisfazer o grupo.
        Sem dizê-lo, ela parecia uma exigência solta como qualquer outra. -->
-    @if (exigencias.posicaoNaArvore(doc.id) !== '') {
-      <span class="doc-item__desc">{{ exigencias.posicaoNaArvore(doc.id) }}</span>
+    @if (exigencias.posicaoNaComprovacao(doc.id) !== '') {
+      <span class="doc-item__desc">{{ exigencias.posicaoNaComprovacao(doc.id) }}</span>
     }
     @if (exigencias.declaradoMaisDeUmaVez(doc.id) !== '') {
       <span class="field__hint">{{ exigencias.declaradoMaisDeUmaVez(doc.id) }}</span>

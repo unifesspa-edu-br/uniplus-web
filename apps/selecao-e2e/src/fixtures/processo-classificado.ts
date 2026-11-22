@@ -120,7 +120,7 @@ export const DETALHE_PUBLICADO = {
   },
   cronogramaFases: [],
   documentosExigidos: [],
-  raizesExigencia: [],
+  regrasDeComprovacao: [],
   referenciaTemporalFatos: null,
   regrasDerivacao: [],
   formularios: [],

@@ -96,7 +96,7 @@ export class DecisoesDaAvaliacao {
     source: computed(() => ({
       modalidades: this.conjuntoConhecido(),
       modalidadesDaSegundaOpcao: this.conjuntoConhecidoDaSegundaOpcao(),
-      documentos: this.documentosDaAvaliacao()?.arvore ?? null,
+      documentos: this.documentosDaAvaliacao()?.regras ?? null,
       integrantes: new Set(
         Object.values(this.fontes.grupos()).flatMap((lista) => lista.map((o) => o.id)),
       ),

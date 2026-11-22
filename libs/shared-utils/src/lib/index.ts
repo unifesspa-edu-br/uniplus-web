@@ -41,8 +41,8 @@ export {
   CONSEQUENCIA_REENVIO,
   CONSEQUENCIAS_ESCOLHIVEIS,
   consequenciasDaFase,
-  STATUS_BASE_LEGAL_ESCOLHIVEIS,
-  STATUS_BASE_LEGAL_RESOLVIDO,
+  SITUACAO_BASE_LEGAL_ESCOLHIVEIS,
+  SITUACAO_BASE_LEGAL_RESOLVIDO,
 } from './utils/documento-exigido.vocabulario';
 export { type MunicipioGravado } from './utils/municipio-gravado';
 export { converterLista } from './utils/converter-lista';

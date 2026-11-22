@@ -169,9 +169,12 @@ export function exigenciaCom(
 export function rascunhoCom(...exigencias: readonly ExigenciaDeDocumento[]): ExigenciasDoRascunho {
   return exigencias.reduce<ExigenciasDoRascunho>(
     (acumulado, atual) => comExigencia(acumulado, atual),
-    { raizes: [], emTodasAsFases: [] },
+    { regrasDeComprovacao: [], emTodasAsFases: [] },
   );
 }
 
-export const NENHUMA_EXIGENCIA: ExigenciasDoRascunho = { raizes: [], emTodasAsFases: [] };
+export const NENHUMA_EXIGENCIA: ExigenciasDoRascunho = {
+  regrasDeComprovacao: [],
+  emTodasAsFases: [],
+};
 export const MAIOR_IDADE = { regraCodigo: 'DESEMPATE-MAIOR-IDADE' } as CriterioDesempateConfigurado;

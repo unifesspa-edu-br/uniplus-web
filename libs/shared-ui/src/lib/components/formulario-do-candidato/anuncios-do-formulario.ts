@@ -1,5 +1,5 @@
 import { anunciarMudancaDosDocumentos } from './anuncio-dos-documentos';
-import type { NoDeDocumentos } from './arvore-de-documentos';
+import type { ItemDeComprovacao } from './regras-de-documentos';
 import type { PassoDoFormulario } from './passos-do-formulario';
 import { anunciarMudancaDasModalidades, type ModalidadesAvaliadas } from './modalidades-avaliadas';
 
@@ -40,7 +40,7 @@ export function anunciarCampos(anteriores: CamposDoPasso, atuais: CamposDoPasso)
 export interface DecisaoDaAvaliacao {
   readonly modalidades: ModalidadesAvaliadas | null;
   readonly modalidadesDaSegundaOpcao: ModalidadesAvaliadas | null;
-  readonly documentos: readonly NoDeDocumentos[] | null;
+  readonly documentos: readonly ItemDeComprovacao[] | null;
   readonly integrantes: ReadonlySet<string>;
 }
 

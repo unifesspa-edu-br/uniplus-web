@@ -104,23 +104,18 @@ export interface ModeloDaExigencia {
   readonly hashSha256: string;
 }
 
-/**
- * Um nó da árvore de satisfação, espelho de `NoExigenciaInput`. O rascunho guarda a árvore porque
- * o `PUT` a substitui INTEIRA: o que o wizard não souber expressar e regravar é apagado. Guardando
- * o que veio, o que a tela não edita (grupo `OU`, cardinalidade qualificada, repetição por
- * entidade) sobrevive sem uma lista de campos a preservar.
- */
-export interface NoDeExigencia {
-  readonly tipo: 'FOLHA' | 'E' | 'OU';
+/** Preserva as regras que a tela não edita, pois o envio substitui todas as regras. */
+export interface RegraDeComprovacao {
+  readonly forma: 'DOCUMENTO' | 'TODOS_OS_ITENS' | 'QUANTIDADE_MINIMA_DE_ITENS';
   readonly documento: ExigenciaDeDocumento | null;
   readonly quantidadeMinima: number | null;
   readonly consequencia: string | null;
   readonly basesLegais: readonly BaseLegalConfig[] | null;
-  readonly filhos: readonly NoDeExigencia[] | null;
-  readonly chaveDistincao: string | null;
+  readonly itens: readonly RegraDeComprovacao[] | null;
+  readonly criterioDeDistincao: string | null;
   readonly dataReferencia: string | null;
   readonly ocorrenciasEsperadas: readonly string[] | null;
-  readonly repetePorEntidade: string | null;
+  readonly grupoDoFormularioParaRepeticao: string | null;
 }
 
 /**
@@ -129,6 +124,6 @@ export interface NoDeExigencia {
  * acrescentada depois recebê-los. O contrato só conhece a exigência materializada em cada fase.
  */
 export interface ExigenciasDoRascunho {
-  readonly raizes: readonly NoDeExigencia[];
+  readonly regrasDeComprovacao: readonly RegraDeComprovacao[];
   readonly emTodasAsFases: readonly string[];
 }
