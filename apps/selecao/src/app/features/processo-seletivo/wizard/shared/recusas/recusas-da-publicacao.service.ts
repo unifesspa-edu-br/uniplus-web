@@ -9,6 +9,10 @@ import {
 
 import type { WizardDraft } from '../../modelos/rascunho.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import {
+  checklistDaResposta,
+  type ChecklistDaResposta,
+} from '../../passos/revisao/problemas-da-publicacao';
 import { mesmoConteudo } from '../conteudo-canonico';
 import { NumeracaoDasRespostasRecusadas } from './numeracao-das-respostas-recusadas';
 import type { RecusaOrdenada } from './ordem-das-recusas';
@@ -54,6 +58,7 @@ interface UltimaTentativa {
   readonly recusas: readonly RecusaDaPublicacao[];
   readonly codigo: string;
   readonly titulo: string;
+  readonly checklist: ChecklistDaResposta;
   readonly geracao: number;
   readonly rascunho: WizardDraft;
 }
@@ -88,6 +93,9 @@ export class RecusasDaPublicacao {
 
   /** As recusas da última resposta recusada, na ordem da API, enquanto ainda valem. */
   readonly recusas = computed(() => this.vigente()?.recusas ?? []);
+
+  /** O que a última resposta recusada disse do checklist, enquanto vale; o que a releitura não trouxer. */
+  readonly checklist = computed(() => this.vigente()?.checklist ?? null);
 
   /** O cronograma que a publicação conferiu, enquanto a resposta vale: o que as recusas apontaram. */
   readonly cronogramaDaResposta = computed(() => this.vigente()?.rascunho.cronograma ?? null);
@@ -127,6 +135,7 @@ export class RecusasDaPublicacao {
       recusas: recusasDaResposta(problema, this.numeracao.proxima()),
       codigo: problema.code,
       titulo,
+      checklist: checklistDaResposta(problema),
       geracao: this.store.geracao(),
       rascunho: this.store.draft(),
     });

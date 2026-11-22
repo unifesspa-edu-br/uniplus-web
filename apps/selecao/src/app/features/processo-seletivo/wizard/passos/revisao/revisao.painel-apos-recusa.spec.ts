@@ -43,6 +43,13 @@ const COM_O_ITEM_DO_FIM = {
   itens: [ITEM_DO_FIM],
 };
 
+const REGRA_REPROVADA = {
+  regraCodigo: 'R1',
+  descricaoHumana: 'Regra de teste reprovada.',
+  baseLegal: 'Lei de teste',
+  motivo: null,
+};
+
 const RECUSA_422 = {
   status: 422,
   statusText: 'Unprocessable Entity',
@@ -72,7 +79,11 @@ describe('RevisaoPassoComponent: checklist depois da publicação recusada', () 
     await flushProntidaoVerde(cenario);
   }
 
-  function recusarComCausas(code: string, errors: readonly object[]): Promise<unknown> {
+  function recusarComCausas(
+    code: string,
+    errors: readonly object[],
+    extensoes: object = {},
+  ): Promise<unknown> {
     const gravacao = componente.persistir();
     const problema = {
       type: `${PAGINAS}${code}`,
@@ -81,9 +92,18 @@ describe('RevisaoPassoComponent: checklist depois da publicação recusada', () 
       code,
       traceId: 't1',
       errors,
+      ...extensoes,
     };
     controller.expectOne(ROTA_PUBLICACAO).flush(problema, RECUSA_422);
     return gravacao;
+  }
+
+  async function falharARelitura(): Promise<void> {
+    controller
+      .match((req) => req.url.includes('/conformidade'))
+      .forEach((req) => req.flush(null, { status: 503, statusText: 'Erro' }));
+    await flushMicrotasks();
+    fixture.detectChanges();
   }
 
   it('relê o checklist depois da recusa e mostra o que o servidor devolve, mantendo "Onde corrigir"', async () => {
@@ -126,14 +146,25 @@ describe('RevisaoPassoComponent: checklist depois da publicação recusada', () 
     await prepararRevisao();
 
     await recusarComCausas('uniplus.validacao', [CAUSA_DO_FIM]);
-    controller
-      .match((req) => req.url.includes('/conformidade'))
-      .forEach((req) => req.flush(null, { status: 503, statusText: 'Erro' }));
-    await flushMicrotasks();
-    fixture.detectChanges();
+    await falharARelitura();
 
     expect(fixture.nativeElement.textContent).toContain('Não foi possível carregar o checklist');
     expect(regiao('sel-recusas-da-publicacao')).toContain(CAUSA_DO_FIM.message);
+  });
+
+  it('mostra as pendências e as reprovações da resposta quando a releitura do checklist falha', async () => {
+    await prepararRevisao();
+
+    await recusarComCausas('uniplus.validacao', [CAUSA_DO_FIM], {
+      pendencias: [
+        { codigo: ITEM_DO_FIM.codigo, dimensao: 'cronograma', mensagem: 'Falta o fim.' },
+      ],
+      obrigatoriedadesReprovadas: [REGRA_REPROVADA],
+    });
+    await falharARelitura();
+
+    expect(regiao('sel-conformidade-estrutural')).toContain('Falta o fim.');
+    expect(regiao('sel-conformidade-legal')).toContain(REGRA_REPROVADA.descricaoHumana);
   });
 
   it('não relê o checklist quando a tentativa fica sem resposta, e a tela segue travada', async () => {
