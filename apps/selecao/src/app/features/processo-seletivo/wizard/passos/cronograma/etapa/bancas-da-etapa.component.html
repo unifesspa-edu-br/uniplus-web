@@ -9,18 +9,17 @@
       [idBase]="'etapa-' + indiceDaEtapa() + '-banca-' + banca.identificadorLocal"
       [desabilitada]="!cronograma.edicaoLiberada()"
       [erros]="errosDasRegras().get(banca.identificadorLocal) ?? {}"
-      [recusas]="recusasDasRegras().get(banca.identificadorLocal) ?? {}"
+      [recusas]="recusasDasBancas().porControle.get(banca.identificadorLocal) ?? {}"
       (regraChange)="alterarRegra(banca, $event)"
     />
   </fieldset>
 </ng-template>
+@let recusasDaLista = recusasDasBancas();
 <div
   role="group"
   [attr.aria-labelledby]="'cr-etapa-bancas-titulo-' + indiceDaEtapa()"
   [attr.aria-describedby]="
-    recusas.recusasDoCampo(grupo(), 'bancas').length
-      ? 'cr-etapa-bancas-erro-' + indiceDaEtapa()
-      : null
+    recusasDaLista.secao.length ? 'cr-etapa-bancas-erro-' + indiceDaEtapa() : null
   "
 >
   <sel-lista-de-bancas
@@ -28,7 +27,8 @@
     [idRecusas]="'cr-etapa-bancas-erro-' + indiceDaEtapa()"
     [bancas]="edicao.bancasDaEtapa(grupo())"
     [tipos]="tipos()"
-    [recusas]="recusas.recusasDoCampo(grupo(), 'bancas')"
+    [recusas]="recusasDaLista.secao"
+    [recusasPorBanca]="recusasDaLista.daBanca"
     [edicaoLiberada]="cronograma.edicaoLiberada()"
     [detalhe]="detalhe"
     (bancasChange)="edicao.escreverBancas(grupo(), $event)"

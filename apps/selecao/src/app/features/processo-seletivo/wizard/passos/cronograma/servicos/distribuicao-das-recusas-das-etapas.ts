@@ -2,6 +2,8 @@ import type { FormGroup } from '@angular/forms';
 import type { RecusaDoProblema } from '@uniplus/shared-core/http';
 
 import type { EtapaPontuada } from '../../../processo-seletivo.models';
+import { localDaBancaEnviada } from '../../../shared/bancas/campo-da-banca';
+import { notaDaBanca } from '../../../shared/bancas/recusas-das-bancas';
 import { localDaRecusa, type LocalDaRecusa } from '../../../shared/recusas/local-da-recusa';
 import type { RecusaOrdenada } from '../../../shared/recusas/ordem-das-recusas';
 import { campoDaRecusaDaEtapa } from '../campo-da-etapa';
@@ -41,6 +43,7 @@ interface LugarNaEtapa {
   /** O que a parte valia ao enviar. */
   readonly conteudoEnviado: unknown;
   readonly campo: string;
+  readonly nota: string | undefined;
 }
 
 /**
@@ -70,10 +73,25 @@ function naPosicaoDeHoje(
   return movido !== null && controleNaTela(lugar.grupo, movido.campo) ? movido : null;
 }
 
+/** O lugar da recusa nas posições que os itens e as bancas tinham ao enviar. */
+function lugarEnviado(
+  local: LocalDaRecusa,
+  enviada: EtapaPontuada,
+  grupo: FormGroup<EtapaForm>,
+): LugarNaEtapa | null {
+  const daBanca = localDaBancaEnviada(local, 'bancas', enviada.bancas);
+  const campo = campoDaRecusaDaEtapa(daBanca.local);
+  if (campo === null) return null;
+  const parte = parteDaEtapa(daBanca.local);
+  const conteudoEnviado = conteudoDaParteDaEtapa(enviada, parte);
+  return { campo, parte, grupo, conteudoEnviado, nota: notaDaBanca(daBanca.bancaAusente) };
+}
+
 /**
  * O lugar da recusa na etapa: o campo e a parte pelas posições que os itens tinham ao enviar, e
- * depois pelas de hoje. `null` quando a etapa não conhece o campo, quando o item que a recusa
- * aponta já saiu ou quando a tela não tem controle para ele.
+ * depois pelas de hoje. A banca é a da posição enviada, e a recusa a ela passa a apontar o
+ * identificador dela na tela. `null` quando a etapa não conhece o campo, quando o item que a
+ * recusa aponta já saiu ou quando a tela não tem controle para ele.
  */
 function lugarNaEtapa(
   local: LocalDaRecusa,
@@ -82,11 +100,8 @@ function lugarNaEtapa(
   controleNaTela: ControleNaTelaDaEtapa,
 ): LugarNaEtapa | null {
   const doFormulario = localNoFormulario(local, enviada);
-  const campo = doFormulario === null ? null : campoDaRecusaDaEtapa(doFormulario);
-  if (doFormulario === null || campo === null) return null;
-  const parte = parteDaEtapa(doFormulario);
-  const conteudoEnviado = conteudoDaParteDaEtapa(enviada, parte);
-  return naPosicaoDeHoje({ campo, parte, grupo, conteudoEnviado }, enviada, controleNaTela);
+  const lugar = doFormulario === null ? null : lugarEnviado(doFormulario, enviada, grupo);
+  return lugar === null ? null : naPosicaoDeHoje(lugar, enviada, controleNaTela);
 }
 
 /** A etapa enviada que o `field` aponta, ou `null` quando ele não nomeia etapa enviada. */
@@ -136,15 +151,8 @@ function acrescentar(
 function guardar(
   recusa: RecusaDoProblema,
   resposta: number,
-  { parte, conteudoEnviado, campo }: LugarNaEtapa,
+  { parte, conteudoEnviado, campo, nota }: LugarNaEtapa,
 ): RecusaDaEtapaGuardada {
-  return {
-    ...recusa,
-    campo,
-    resposta,
-    origem: 'gravacao',
-    parte,
-    conteudoEnviado,
-    alterada: false,
-  };
+  const doLugar = { campo, parte, conteudoEnviado, nota, alterada: false };
+  return { ...recusa, ...doLugar, resposta, origem: 'gravacao' };
 }

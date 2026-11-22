@@ -3,7 +3,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { FormGroup } from '@angular/forms';
 import type { RecusaDoProblema } from '@uniplus/shared-core/http';
 
+import type { BancaDaEtapa } from '../../../modelos/banca.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
+import { recusasDasBancas, type RecusasDasBancas } from '../../../shared/bancas/recusas-das-bancas';
 import { mesmoConteudo } from '../../../shared/conteudo-canonico';
 import { descartarAsRecusasAoSairDoPasso } from '../../../shared/recusas/descarte-das-recusas';
 import {
@@ -172,6 +174,11 @@ export class RecusasDoServidorNasEtapas {
     campo: CampoDaRecusaDaEtapa,
   ): readonly RecusaOrdenada[] {
     return emOrdem(this.recusasDaEtapa(grupo).filter((recusa) => recusa.campo === campo));
+  }
+
+  /** As recusas às bancas da etapa: as de cada banca da tela e as da seção, na ordem em que se leem. */
+  recusasDasBancas(grupo: FormGroup<EtapaForm>, bancas: readonly BancaDaEtapa[]): RecusasDasBancas {
+    return recusasDasBancas(this.recusasDaEtapa(grupo), 'bancas', bancas);
   }
 
   /** Todas as recusas a um recurso da etapa, ativas e a conferir, na ordem em que se leem. */

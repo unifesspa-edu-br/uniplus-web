@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   alterarRegra,
+  controlesAVista,
   normalizarRegra,
   pedeDesempate,
   pedeResultadoSemUnanimidade,
@@ -132,5 +133,42 @@ describe('o que a regra pede', () => {
         comRegra({ modo: ModoDeDeliberacao.atoIndividual, encerramento: 'todosOsTitulares' }),
       ),
     ).toBe(true);
+  });
+});
+
+describe('controlesAVista', () => {
+  const aVista = (regra: Parameters<typeof controlesAVista>[0]) => [...controlesAVista(regra)];
+
+  it('mostra só o modo quando a banca não declarou regra', () => {
+    expect(aVista(null)).toEqual(['modo']);
+  });
+
+  it('mostra o desempate da maioria, e não o resultado sem unanimidade', () => {
+    expect(aVista(COLEGIADA)).toEqual(
+      expect.arrayContaining(['modo', 'integrantes', 'suplentes', 'encerramento', 'quorum']),
+    );
+    expect(aVista(COLEGIADA)).toContain('desempate');
+    expect(aVista(COLEGIADA)).not.toContain('semUnanimidade');
+  });
+
+  it('mostra o resultado sem unanimidade da unanimidade, e não o desempate', () => {
+    const regra = comRegra({ criterio: 'unanimidade', desempate: '' });
+
+    expect(aVista(regra)).toContain('semUnanimidade');
+    expect(aVista(regra)).not.toContain('desempate');
+  });
+
+  it('dispensa o desempate e o resultado sem unanimidade de um só integrante', () => {
+    expect(aVista(comRegra({ integrantes: '1' }))).not.toContain('desempate');
+    expect(aVista(comRegra({ criterio: 'unanimidade', integrantes: '1' }))).not.toContain(
+      'semUnanimidade',
+    );
+  });
+
+  it('não mostra nenhum dos dois enquanto o critério não foi escolhido', () => {
+    const escolhidos = aVista(comRegra({ criterio: '', desempate: '' }));
+
+    expect(escolhidos).not.toContain('desempate');
+    expect(escolhidos).not.toContain('semUnanimidade');
   });
 });

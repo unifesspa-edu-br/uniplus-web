@@ -74,6 +74,7 @@ describe('lugarDaRecusaDaPublicacao: fase', () => {
       codigo: 'CLASSIFICACAO',
       campo: 'fim',
       parte: 'fase',
+      bancaAusente: false,
     });
   });
 
@@ -166,7 +167,13 @@ describe('lugarDaRecusaDaPublicacao: etapa e recurso', () => {
       CRONOGRAMA,
     );
 
-    expect(lugar).toEqual({ tipo: 'etapa', etapaId: ETAPA, campo: 'notaMaxima', recursoId: null });
+    expect(lugar).toEqual({
+      tipo: 'etapa',
+      etapaId: ETAPA,
+      campo: 'notaMaxima',
+      recursoId: null,
+      bancaAusente: false,
+    });
   });
 
   it('liga o campo do recurso pelo Id dele, na posição que ele tem hoje', () => {

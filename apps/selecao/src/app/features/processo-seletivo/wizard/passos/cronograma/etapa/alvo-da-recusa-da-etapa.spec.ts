@@ -74,49 +74,6 @@ describe('alvosDaRecusaDaEtapa', () => {
     expect(alvos('bancas', etapa, 0)).toEqual(['cr-etapa-bancas-erro-0']);
   });
 
-  describe('campo da regra de uma banca', () => {
-    const comBancas = umaEtapaDoCronograma({
-      bancas: [
-        {
-          id: null,
-          identificadorLocal: 'primeira',
-          copiaDoTipo: null,
-          tipoBancaId: 'primeira',
-          regraDeDeliberacao: null,
-        },
-        {
-          id: null,
-          identificadorLocal: 'segunda',
-          copiaDoTipo: null,
-          tipoBancaId: 'segunda',
-          regraDeDeliberacao: null,
-        },
-      ],
-    });
-    const reserva = 'cr-etapa-bancas-erro-3';
-
-    it('leva ao controle da banca que a posição aponta, ao bloco das recusas dele, ao do modo e ao das bancas', () => {
-      expect(alvos('bancas.1.quorum', comBancas, 3)).toEqual([
-        'etapa-3-banca-segunda-quorum',
-        'etapa-3-banca-segunda-quorum-recusas',
-        'etapa-3-banca-segunda-modo-recusas',
-        reserva,
-      ]);
-    });
-
-    it('leva a recusa à regra inteira ao modo, que a mostra', () => {
-      expect(alvos('bancas.0.regra', comBancas, 3)).toEqual([
-        'etapa-3-banca-primeira-modo',
-        'etapa-3-banca-primeira-modo-recusas',
-        reserva,
-      ]);
-    });
-
-    it('leva ao bloco das bancas a recusa de uma banca que a etapa não tem', () => {
-      expect(alvos('bancas.5.quorum', comBancas, 3)).toEqual([reserva]);
-    });
-  });
-
   it.each([
     ['origemDoPrazo', 'cr-rec-anc-2-1'],
     ['ancora', 'cr-rec-ato-2-1'],
@@ -171,5 +128,19 @@ describe('alvosDaRecusaDaEtapa', () => {
 
   it('cai no bloco do topo da etapa para o campo que a tela não conhece', () => {
     expect(alvos('peso', etapa, 5)).toEqual(['cr-etapa-recusas-5']);
+  });
+
+  it('leva a recusa de uma banca ao controle, ao modo, ao grupo dela e ao bloco da seção', () => {
+    expect(alvos('bancas.banca-2.criterio', etapa, 1)).toEqual([
+      'etapa-1-banca-banca-2-criterio',
+      'etapa-1-banca-banca-2-modo',
+      'cr-etapa-bancas-1-banca-2',
+      'cr-etapa-bancas-erro-1',
+    ]);
+    expect(alvos('bancas.banca-2', etapa, 1)).toEqual([
+      'cr-etapa-bancas-1-banca-2',
+      'cr-etapa-bancas-erro-1',
+    ]);
+    expect(alvos('bancas', etapa, 1)).toEqual(['cr-etapa-bancas-erro-1']);
   });
 });

@@ -1,5 +1,6 @@
 import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
 
+import { notaDaBanca } from '../../../shared/bancas/recusas-das-bancas';
 import { descreverFase } from '../../../shared/descricao-da-fase';
 import { mesmoConteudo } from '../../../shared/conteudo-canonico';
 import {
@@ -27,6 +28,13 @@ import {
 
 const NOTA_DO_RECURSO_REGRAVADO =
   'Sobre um recurso que foi gravado de novo depois desta tentativa de publicação.';
+
+function notaDoLugar(lugar: LugarDaRecusaDaPublicacao): string | undefined {
+  if (lugar.tipo === 'recursoRegravado') return NOTA_DO_RECURSO_REGRAVADO;
+  return lugar.tipo === 'fase' || lugar.tipo === 'etapa'
+    ? notaDaBanca(lugar.bancaAusente)
+    : undefined;
+}
 
 /**
  * As recusas da última publicação no cronograma de hoje, cada uma no lugar que os identificadores
@@ -132,7 +140,7 @@ export class RecusasDaPublicacaoNoCronograma {
     const chave = this.chave(recusa, doLugar);
     const regravado = doLugar.tipo === 'recursoRegravado';
     const aConferir = regravado || this.alteradas().has(chave) || this.jaAlteradas().has(chave);
-    const nota = regravado ? NOTA_DO_RECURSO_REGRAVADO : undefined;
+    const nota = notaDoLugar(doLugar);
     return { lugar: doLugar, recusa: { ...recusa, campo: campoDoLugar(doLugar), aConferir, nota } };
   }
 

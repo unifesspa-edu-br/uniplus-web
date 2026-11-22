@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { ATO_INDIVIDUAL } from '../../shared/deliberacao/regra-de-deliberacao.testing';
 import { ID_AVALIACAO, ID_BANCA_HETERO } from './cronograma.testing';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
 import {
@@ -14,11 +13,18 @@ const QUORUM = 'uniplus.selecao.banca.quorum_fora_do_intervalo';
 const REGRA_OBRIGATORIA = 'uniplus.selecao.banca.regra_de_deliberacao_obrigatoria';
 const CAMINHO = 'fases[0].bancasRequeridas[0].regraDeDeliberacao';
 const REGRA = `fase-AVALIACAO-regra-${ID_BANCA_HETERO}`;
+const GRUPO = `fase-AVALIACAO-bancas-${ID_BANCA_HETERO}`;
 const NOTA = 'conferida de novo na próxima gravação';
 const DO_QUORUM = {
   field: `${CAMINHO}.quorum`,
   code: QUORUM,
   message: 'O quórum fica entre 1 e o número de integrantes.',
+};
+
+const SEM_UNANIMIDADE = {
+  field: `${CAMINHO}.semUnanimidade`,
+  code: QUORUM,
+  message: 'Escolha o resultado.',
 };
 
 describe('CronogramaPassoComponent: recusas da gravação à regra de deliberação das bancas da fase', () => {
@@ -76,16 +82,16 @@ describe('CronogramaPassoComponent: recusas da gravação à regra de deliberaç
   });
 
   it('mostra sob o modo a recusa ao campo que a tela não mostra para a regra de agora', async () => {
-    comBanca(ATO_INDIVIDUAL);
+    comBanca();
 
-    await recusarFases([DO_QUORUM]);
+    await recusarFases([SEM_UNANIMIDADE]);
 
-    expect(campo('quorum')).toBeNull();
-    expect(bloco(`${REGRA}-modo-recusas`)).toContain('O quórum fica entre 1 e o número');
+    expect(campo('semUnanimidade')).toBeNull();
+    expect(bloco(`${REGRA}-modo-recusas`)).toContain('Escolha o resultado.');
     expect(campo('modo')?.getAttribute('aria-invalid')).toBe('true');
   });
 
-  it('leva ao bloco das bancas a recusa à banca inteira e ao tipo dela', async () => {
+  it('leva ao grupo da banca a recusa à banca inteira e ao tipo dela', async () => {
     comBanca();
 
     await recusarFases([
@@ -93,8 +99,8 @@ describe('CronogramaPassoComponent: recusas da gravação à regra de deliberaç
       { field: 'fases[0].bancasRequeridas[0].tipoBancaId', code: QUORUM, message: 'Tipo.' },
     ]);
 
-    expect(bloco('fase-AVALIACAO-bancas-erro')).toContain('Banca inteira.');
-    expect(bloco('fase-AVALIACAO-bancas-erro')).toContain('Tipo.');
+    expect(bloco(GRUPO)).toContain('Banca inteira.');
+    expect(bloco(GRUPO)).toContain('Tipo.');
     expect(campo('quorum')?.getAttribute('aria-invalid')).toBeNull();
   });
 
@@ -113,7 +119,7 @@ describe('CronogramaPassoComponent: recusas da gravação à regra de deliberaç
     expect(campo('quorum')?.getAttribute('aria-invalid')).toBeNull();
   });
 
-  it('sobe para o bloco das bancas, com a nota, a recusa a conferir de novo e a tira de sob o campo', async () => {
+  it('mantém sob o campo, com a nota, a recusa a conferir de novo, sem marcá-lo como inválido', async () => {
     comBanca();
     await recusarFases([DO_QUORUM]);
 
@@ -124,9 +130,8 @@ describe('CronogramaPassoComponent: recusas da gravação à regra de deliberaç
     caixa.dispatchEvent(new Event('change'));
     detectar();
 
-    expect(bloco('fase-AVALIACAO-bancas-erro')).toContain('O quórum fica entre 1 e o número');
-    expect(bloco('fase-AVALIACAO-bancas-erro')).toContain(NOTA);
-    expect(bloco(`${REGRA}-quorum-recusas`)).toBeNull();
+    expect(bloco(`${REGRA}-quorum-recusas`)).toContain('O quórum fica entre 1 e o número');
+    expect(bloco(`${REGRA}-quorum-recusas`)).toContain(NOTA);
     expect(campo('quorum')?.getAttribute('aria-invalid')).toBeNull();
   });
 
@@ -140,13 +145,13 @@ describe('CronogramaPassoComponent: recusas da gravação à regra de deliberaç
     expect(document.activeElement?.id).toBe(`${REGRA}-quorum`);
   });
 
-  it('leva o foco ao bloco do modo quando a recusa é a um campo que a tela não mostra', async () => {
-    comBanca(ATO_INDIVIDUAL);
-    await recusarFases([DO_QUORUM]);
+  it('leva o foco ao modo quando a recusa é a um campo que a tela não mostra', async () => {
+    comBanca();
+    await recusarFases([SEM_UNANIMIDADE]);
 
     await proximoPasso();
     detectar();
 
-    expect(document.activeElement?.id).toBe(`${REGRA}-modo-recusas`);
+    expect(document.activeElement?.id).toBe(`${REGRA}-modo`);
   });
 });

@@ -1,7 +1,7 @@
 import { paginaDoErro, separarCausas, type ProblemDetails } from '@uniplus/shared-core/http';
 import type { RecusaDoCampo } from '@uniplus/shared-ui/components';
 
-import { posicaoNaLista } from '../../passos/fase/campo-da-fase';
+import { posicaoDaPublicacao } from '../../passos/fase/campo-da-fase';
 import { localDaRecusa } from './local-da-recusa';
 
 /** A recusa que o resumo diz, com o `field` que a API deu quando ela veio de um campo. */
@@ -14,7 +14,7 @@ export type RecusaNoResumo = RecusaDoCampo & { readonly campo?: string };
  */
 function prefixoDaPublicacao(campo: string | undefined): string {
   const caminho = campo === undefined ? null : (localDaRecusa(campo)?.caminho ?? null);
-  const posicao = caminho === null ? null : posicaoNaLista(caminho, 'produtos');
+  const posicao = caminho === null ? null : posicaoDaPublicacao(caminho);
   return posicao === null ? '' : `Publicação ${posicao + 1}: `;
 }
 

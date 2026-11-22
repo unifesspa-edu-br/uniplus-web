@@ -1,13 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import type { RecusaOrdenada } from '../recusas/ordem-das-recusas';
-import {
-  alvosDaRecusaDaBanca,
-  campoDaBancaNoCaminho,
-  CAMPOS_DA_BANCA,
-  errosDaBancaPorCampo,
-  recusasDaBancaPorCampo,
-} from './recusas-da-regra';
+import { CAMPOS_DA_BANCA, errosDaBancaPorCampo, recusasDoModo } from './recusas-da-regra';
+import { controlesAVista } from './regra-de-deliberacao';
+import { COLEGIADA, comRegra } from './regra-de-deliberacao.testing';
 
 describe('errosDaBancaPorCampo', () => {
   it('reúne só os campos que têm erro', () => {
@@ -31,40 +27,42 @@ describe('errosDaBancaPorCampo', () => {
   });
 });
 
-describe('recusasDaBancaPorCampo', () => {
-  const recusa = { campo: 'bancas.0.quorum', codigo: 'x' } as RecusaOrdenada;
+function recusa(campo: string, ordem: number): RecusaOrdenada {
+  return {
+    campo,
+    codigo: `uniplus.selecao.banca.recusa_${ordem}`,
+    mensagem: `Mensagem ${ordem}.`,
+    pagina: null,
+    ordem,
+    resposta: 1,
+    origem: 'gravacao',
+    aConferir: false,
+  };
+}
 
-  it('reúne só os campos que têm recusa', () => {
-    const recusas = recusasDaBancaPorCampo((campo) => (campo === 'quorum' ? [recusa] : []));
+describe('recusasDoModo', () => {
+  const recusas = {
+    modo: [recusa('modo', 0)],
+    regra: [recusa('regra', 1)],
+    quorum: [recusa('quorum', 2)],
+    desempate: [recusa('desempate', 3)],
+  };
+  const doModo = (regra: Parameters<typeof controlesAVista>[0]) =>
+    recusasDoModo(recusas, controlesAVista(regra)).map((item) => item.campo);
 
-    expect(recusas).toEqual({ quorum: [recusa] });
-  });
-});
-
-describe('campoDaBancaNoCaminho', () => {
-  it.each([
-    [['regraDeDeliberacao', 'quorum'], 'quorum'],
-    [['RegraDeDeliberacao', 'SemUnanimidade'], 'semUnanimidade'],
-    [['regraDeDeliberacao', 'campoQueNaoExiste'], 'regra'],
-    [['regraDeDeliberacao'], 'regra'],
-    [['tipoBancaId'], null],
-    [[], null],
-  ])('lê %j como %s', (caminho, campo) => {
-    expect(campoDaBancaNoCaminho(caminho)).toBe(campo);
-  });
-});
-
-describe('alvosDaRecusaDaBanca', () => {
-  it('prefere o controle, depois o bloco das recusas dele e o do modo, que mostra o que não tem controle', () => {
-    expect(alvosDaRecusaDaBanca('base', 'quorum')).toEqual([
-      'base-quorum',
-      'base-quorum-recusas',
-      'base-modo-recusas',
-    ]);
+  it('reúne a do modo e a da regra inteira, na ordem em que a API as deu', () => {
+    expect(doModo(COLEGIADA)).toEqual(['modo', 'regra']);
   });
 
-  it('leva o modo e a regra inteira ao modo, sem repetir o bloco', () => {
-    expect(alvosDaRecusaDaBanca('base', 'modo')).toEqual(['base-modo', 'base-modo-recusas']);
-    expect(alvosDaRecusaDaBanca('base', 'regra')).toEqual(['base-modo', 'base-modo-recusas']);
+  it('acrescenta a do controle que a tela não mostra para a regra', () => {
+    expect(doModo(comRegra({ integrantes: '1' }))).toEqual(['modo', 'regra', 'desempate']);
+  });
+
+  it('acrescenta a de todo controle enquanto não há regra declarada', () => {
+    expect(doModo(null)).toEqual(['modo', 'regra', 'quorum', 'desempate']);
+  });
+
+  it('fica vazia quando nenhuma recusa cabe ao modo', () => {
+    expect(recusasDoModo({ quorum: recusas.quorum }, controlesAVista(COLEGIADA))).toEqual([]);
   });
 });

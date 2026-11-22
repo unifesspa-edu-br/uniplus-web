@@ -3,6 +3,8 @@ import type { RecusaDoProblema } from '@uniplus/shared-core/http';
 import type { FaseDoCronograma } from '../../../processo-seletivo.models';
 import { campoComLinhaNaLista, campoDaRecusaDaFase } from '../../fase/campo-da-fase';
 import { conteudoDaParte, parteDaFase, type ParteDaFase } from '../../fase/parte-da-fase';
+import { localDaBancaEnviada } from '../../../shared/bancas/campo-da-banca';
+import { notaDaBanca } from '../../../shared/bancas/recusas-das-bancas';
 import { localDaRecusa, type LocalDaRecusa } from '../../../shared/recusas/local-da-recusa';
 import type { RecusaOrdenada } from '../../../shared/recusas/ordem-das-recusas';
 
@@ -27,31 +29,53 @@ export interface DistribuicaoDasRecusas {
 export type ControleNaTela = (faseCanonicaId: string, campo: string) => boolean;
 
 interface LugarNaFase {
-  readonly local: LocalDaRecusa;
   readonly fase: FaseDoCronograma;
   readonly campo: string;
+  readonly parte: ParteDaFase;
+  readonly nota: string | undefined;
+}
+
+interface FaseNomeada {
+  readonly local: LocalDaRecusa;
+  readonly fase: FaseDoCronograma;
+}
+
+/** A fase enviada que o `field` nomeia, ou `null` quando ele não nomeia fase nem posição enviada. */
+function faseNomeada(
+  recusa: RecusaDoProblema,
+  enviadas: readonly FaseDoCronograma[],
+): FaseNomeada | null {
+  const local = localDaRecusa(recusa.campo);
+  const fase = local?.dono === 'fase' ? enviadas[local.indice] : undefined;
+  return local === null || fase === undefined ? null : { local, fase };
 }
 
 /**
- * A fase enviada que o `field` aponta, ou `null` quando ele não nomeia fase, nomeia uma posição
- * que não foi enviada, nomeia um campo que a fase não conhece ou nomeia um campo cujo controle a
- * tela não mostra. A recusa a uma linha de publicações ou de bancas que a fase enviada não tinha fica
- * na lista.
+ * O lugar da recusa na fase enviada, ou `null` quando ela nomeia um campo que a fase não conhece
+ * ou cujo controle a tela não mostra. A recusa a uma linha de publicações que a fase enviada não
+ * tinha fica na lista. A banca é a da posição enviada, e a recusa a ela passa a apontar o
+ * identificador dela na tela.
  */
+function naFaseEnviada(
+  { local, fase }: FaseNomeada,
+  controleNaTela: ControleNaTela,
+): LugarNaFase | null {
+  const daBanca = localDaBancaEnviada(local, 'bancasRequeridas', fase.bancasRequeridas);
+  const campo = campoDaRecusaDaFase(daBanca.local);
+  if (campo === null) return null;
+  const doLugar = campoComLinhaNaLista(campo, fase.produtos.length);
+  if (!controleNaTela(fase.faseCanonicaId, doLugar)) return null;
+  const nota = notaDaBanca(daBanca.bancaAusente);
+  return { fase, campo: doLugar, parte: parteDaFase(local), nota };
+}
+
 function lugarNaFase(
   recusa: RecusaDoProblema,
   enviadas: readonly FaseDoCronograma[],
   controleNaTela: ControleNaTela,
 ): LugarNaFase | null {
-  const local = localDaRecusa(recusa.campo);
-  const fase = local?.dono === 'fase' ? enviadas[local.indice] : undefined;
-  const campo = local === null ? null : campoDaRecusaDaFase(local);
-  if (local === null || fase === undefined || campo === null) return null;
-  const doLugar = campoComLinhaNaLista(campo, {
-    produtos: fase.produtos.length,
-    bancasRequeridas: fase.bancasRequeridas.length,
-  });
-  return controleNaTela(fase.faseCanonicaId, doLugar) ? { local, fase, campo: doLugar } : null;
+  const nomeada = faseNomeada(recusa, enviadas);
+  return nomeada === null ? null : naFaseEnviada(nomeada, controleNaTela);
 }
 
 /**
@@ -88,15 +112,8 @@ function acrescentar(
 function guardar(
   recusa: RecusaDoProblema,
   resposta: number,
-  { local, fase, campo }: LugarNaFase,
+  { fase, campo, parte, nota }: LugarNaFase,
 ): RecusaDaFaseGuardada {
-  const parte = parteDaFase(local);
-  return {
-    ...recusa,
-    campo,
-    resposta,
-    origem: 'gravacao',
-    parte,
-    conteudoEnviado: conteudoDaParte(fase, parte),
-  };
+  const conteudoEnviado = conteudoDaParte(fase, parte);
+  return { ...recusa, campo, resposta, origem: 'gravacao', nota, parte, conteudoEnviado };
 }

@@ -17,7 +17,8 @@ import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.ser
 })
 export class NovaFaseComponent {
   protected readonly catalogoDeUnidades = inject(CatalogoDeUnidadesDoCadastro);
-  protected readonly unidadesSemLista = inject(SituacaoDosCatalogosDoCronograma).leituraDasUnidades.visivel;
+  protected readonly unidadesSemLista = inject(SituacaoDosCatalogosDoCronograma).leituraDasUnidades
+    .visivel;
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly edicaoLiberada = this.cronograma.edicaoLiberada;
   protected readonly formulario = this.cronograma.formulario;

@@ -2,6 +2,8 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import axe from 'axe-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BancaDeclarada } from '../../modelos/banca.models';
+import type { RecusaOrdenada } from '../recusas/ordem-das-recusas';
+import { umaBancaDeclarada } from './banca-declarada.testing';
 import { ListaDeBancasComponent } from './lista-de-bancas.component';
 
 describe('ListaDeBancasComponent', () => {
@@ -84,5 +86,55 @@ describe('ListaDeBancasComponent', () => {
     const mover = botao('Mover a Banca de entrevista 2 para antes da Banca de entrevista 1');
     expect(mover?.getAttribute('aria-describedby')).toBe('bancas-ordem-entrevista');
     expect((await axe.run(raiz())).violations).toEqual([]);
+  });
+
+  describe('recusas', () => {
+    const recusa = (campo: string, mensagem: string, nota?: string): RecusaOrdenada => ({
+      campo,
+      codigo: 'uniplus.selecao.banca.recusa',
+      mensagem,
+      pagina: null,
+      ordem: 0,
+      resposta: 1,
+      origem: 'gravacao',
+      aConferir: false,
+      nota,
+    });
+    const grupo = (chave: string) => raiz().querySelector(`[role=group][id="bancas-${chave}"]`);
+
+    beforeEach(() => {
+      atualizar([
+        umaBancaDeclarada({ identificadorLocal: 'banca-1', tipoBancaId: 'entrevista' }),
+        umaBancaDeclarada({ identificadorLocal: 'banca-2', tipoBancaId: 'entrevista' }),
+      ]);
+      fixture.componentRef.setInput(
+        'recusasPorBanca',
+        new Map([['banca-2', [recusa('bancas.banca-2', 'Recusa da segunda.')]]]),
+      );
+      fixture.componentRef.setInput('recusas', [
+        recusa('bancas', 'Recusa da seção.', 'Sobre uma banca que não está mais nesta tela.'),
+      ]);
+      fixture.detectChanges();
+    });
+
+    it('descreve só o grupo da banca recusada pelo bloco das recusas dela', () => {
+      expect(grupo('banca-2')?.getAttribute('aria-describedby')).toBe('bancas-banca-2-recusas');
+      expect(raiz().querySelector('#bancas-banca-2-recusas')?.textContent).toContain(
+        'Recusa da segunda.',
+      );
+      expect(grupo('banca-1')?.getAttribute('aria-describedby')).toBeNull();
+    });
+
+    it('não marca o grupo como inválido: isso cabe só aos controles', () => {
+      expect(raiz().querySelector('[aria-invalid]')).toBeNull();
+    });
+
+    it('mostra a recusa da seção, com a nota, no bloco da seção que recebe foco', () => {
+      const bloco = raiz().querySelector('#bancas-recusas');
+
+      expect(bloco?.textContent).toContain('Recusa da seção.');
+      expect(bloco?.textContent).toContain('Sobre uma banca que não está mais nesta tela.');
+      expect(bloco?.getAttribute('tabindex')).toBe('-1');
+    });
   });
 });

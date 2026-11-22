@@ -27,6 +27,14 @@ export const daEtapa = (id: string): IdentificadorDoItem => ({
   lista: 'etapas',
   identificador: id,
 });
+export const daBancaDaFase = (id: string): IdentificadorDoItem => ({
+  lista: 'bancasRequeridas',
+  identificador: id,
+});
+export const daBancaDaEtapa = (id: string): IdentificadorDoItem => ({
+  lista: 'bancas',
+  identificador: id,
+});
 export const doRecurso = (id: string): IdentificadorDoItem => ({
   lista: 'recursos',
   identificador: id,

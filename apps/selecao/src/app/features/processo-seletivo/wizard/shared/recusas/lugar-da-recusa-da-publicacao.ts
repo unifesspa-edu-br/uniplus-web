@@ -5,6 +5,7 @@ import {
   NO_TOPO_DA_ETAPA,
   type CampoDaRecusaDaEtapa,
 } from '../../passos/cronograma/campo-da-etapa';
+import { localDaBancaIdentificada } from '../bancas/campo-da-banca';
 import { conteudoDaParteDaEtapa } from '../../passos/cronograma/parte-da-etapa';
 import {
   campoComLinhaNaLista,
@@ -26,7 +27,9 @@ export interface CronogramaConferido {
  * Onde a recusa da publicação aponta no cronograma de hoje, achada só pelos identificadores:
  * a fase pelo código, a etapa e o recurso pelo `Id`. A posição que a API deu nunca escolhe o item.
  *
- * - `fase` e `etapa`: o item existe, e `campo` diz sob qual controle a recusa aparece.
+ * - `fase` e `etapa`: o item existe, e `campo` diz sob qual controle a recusa aparece. A banca
+ *   é achada pelo `id` que a API deu; `bancaAusente` diz que a recusa apontava uma banca que não
+ *   está mais na tela, e então ela fica na seção das bancas.
  * - `recursoRegravado`: a etapa existe, mas o recurso que a recusa apontou não existe mais com
  *   aquele `Id`; a recusa fica no topo da etapa.
  * - `passo`: a fase ou a etapa que a recusa apontou não existe mais; a recusa fica no topo do passo.
@@ -37,12 +40,14 @@ export type LugarDaRecusaDaPublicacao =
       readonly codigo: string;
       readonly campo: CampoDaRecusaDaFase;
       readonly parte: ParteDaFase;
+      readonly bancaAusente?: boolean;
     }
   | {
       readonly tipo: 'etapa';
       readonly etapaId: string;
       readonly campo: CampoDaRecusaDaEtapa;
       readonly recursoId: string | null;
+      readonly bancaAusente?: boolean;
     }
   | { readonly tipo: 'recursoRegravado'; readonly etapaId: string }
   | { readonly tipo: 'passo' };
@@ -52,7 +57,7 @@ interface RecusaComIdentificadores {
   readonly identificadores: readonly IdentificadorDoItem[];
 }
 
-const ITEM_DE_LISTA_DA_ETAPA = /^(itensDeAvaliacao|escalaDeAtendimento|bancas)\.\d+\..+$/;
+const ITEM_DE_LISTA_DA_ETAPA = /^(itensDeAvaliacao|escalaDeAtendimento)\.\d+\..+$/;
 
 function identificadorDa(
   identificadores: readonly IdentificadorDoItem[],
@@ -61,27 +66,38 @@ function identificadorDa(
   return identificadores.find((item) => item.lista === lista)?.identificador ?? null;
 }
 
-/**
- * A lista inteira, quando o campo é de um item sem identificador: ele não é achado pela posição.
- * É o caso da regra de uma banca, cuja recusa a publicação mostra no bloco das bancas.
- */
+/** A lista inteira, quando o campo é de um item sem identificador: ele não é achado pela posição. */
 function campoDaListaDaEtapa(campo: CampoDaRecusaDaEtapa): CampoDaRecusaDaEtapa {
   const lista = ITEM_DE_LISTA_DA_ETAPA.exec(campo);
   return lista === null ? campo : (lista[1] as CampoDaRecusaDaEtapa);
 }
 
-/**
- * A recusa da publicação a uma linha de publicações fica na linha; a recusa à regra de uma banca
- * fica no bloco das bancas, e por isso nenhuma linha de banca conta como existente.
- */
-function lugarNaFase(local: LocalDaRecusa, codigo: string, fases: readonly FaseDoCronograma[]) {
+function lugarNaFaseAchada(local: LocalDaRecusa, fase: FaseDoCronograma, bancaId: string | null) {
+  const banca = localDaBancaIdentificada(local, 'bancasRequeridas', fase.bancasRequeridas, bancaId);
+  const campo = campoDaRecusaDaFase(banca.local) ?? NO_TOPO_DA_FASE;
+  const bancaAusente = banca.bancaAusente;
+  return {
+    tipo: 'fase',
+    codigo: fase.codigo,
+    campo: campoComLinhaNaLista(campo, fase.produtos.length),
+    parte: parteDaFase(local),
+    bancaAusente,
+  } as const;
+}
+
+function lugarNaFase(
+  recusa: RecusaComIdentificadores,
+  local: LocalDaRecusa,
+  codigo: string,
+  fases: readonly FaseDoCronograma[],
+): LugarDaRecusaDaPublicacao {
   const fase = fases.find((candidata) => candidata.codigo === codigo);
-  if (fase === undefined) return { tipo: 'passo' } as const;
-  const campo = campoComLinhaNaLista(campoDaRecusaDaFase(local) ?? NO_TOPO_DA_FASE, {
-    produtos: fase.produtos.length,
-    bancasRequeridas: 0,
-  });
-  return { tipo: 'fase', codigo, campo, parte: parteDaFase(local) } as const;
+  if (fase === undefined) return { tipo: 'passo' };
+  return lugarNaFaseAchada(
+    local,
+    fase,
+    identificadorDa(recusa.identificadores, 'bancasRequeridas'),
+  );
 }
 
 function lugarNoRecurso(
@@ -97,6 +113,18 @@ function lugarNoRecurso(
   return { tipo: 'etapa', etapaId, campo: campo as CampoDaRecusaDaEtapa, recursoId };
 }
 
+function lugarNoCorpoDaEtapa(
+  local: LocalDaRecusa,
+  identificadores: readonly IdentificadorDoItem[],
+  etapa: EtapaPontuada,
+): LugarDaRecusaDaPublicacao {
+  const bancaId = identificadorDa(identificadores, 'bancas');
+  const banca = localDaBancaIdentificada(local, 'bancas', etapa.bancas, bancaId);
+  const campo = campoDaListaDaEtapa(campoDaRecusaDaEtapa(banca.local) ?? NO_TOPO_DA_ETAPA);
+  const bancaAusente = banca.bancaAusente;
+  return { tipo: 'etapa', etapaId: etapa.id ?? '', campo, recursoId: null, bancaAusente };
+}
+
 function lugarNaEtapa(
   local: LocalDaRecusa,
   identificadores: readonly IdentificadorDoItem[],
@@ -105,11 +133,8 @@ function lugarNaEtapa(
   const etapaId = identificadorDa(identificadores, 'etapas');
   const etapa = etapas.find((candidata) => candidata.id !== null && candidata.id === etapaId);
   if (etapa === undefined) return { tipo: 'passo' };
-  if (local.recurso !== null) {
-    return lugarNoRecurso(local, etapa, identificadorDa(identificadores, 'recursos'));
-  }
-  const campo = campoDaListaDaEtapa(campoDaRecusaDaEtapa(local) ?? NO_TOPO_DA_ETAPA);
-  return { tipo: 'etapa', etapaId: etapa.id ?? '', campo, recursoId: null };
+  if (local.recurso === null) return lugarNoCorpoDaEtapa(local, identificadores, etapa);
+  return lugarNoRecurso(local, etapa, identificadorDa(identificadores, 'recursos'));
 }
 
 /**
@@ -128,7 +153,7 @@ export function lugarDaRecusaDaPublicacao(
   );
   if (doDono === null) return null;
   return local.dono === 'fase'
-    ? lugarNaFase(local, doDono, cronograma.fases)
+    ? lugarNaFase(recusa, local, doDono, cronograma.fases)
     : lugarNaEtapa(local, recusa.identificadores, cronograma.etapas);
 }
 
