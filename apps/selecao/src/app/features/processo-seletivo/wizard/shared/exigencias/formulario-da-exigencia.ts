@@ -2,7 +2,7 @@ import type { ExigenciasDoRascunho } from '../../processo-seletivo.models';
 import { nomeDaFinalidade } from '../../passos/formulario/formularios-por-finalidade';
 
 import { documentosDe } from './consulta-das-exigencias';
-import { transformar } from './exigencias-documentais';
+import { transformar } from './composicao-das-regras';
 
 /**
  * O formulário da exigência diante dos que a fase responde: definido — um formulário, ou nenhum na
