@@ -1,7 +1,7 @@
 import type { ExigenciaDeDocumento } from '../../processo-seletivo.models';
 
 /** O token que declara ausência de restrição — o campo é obrigatório no wire. */
-const QUALQUER_FORMATO = 'QUALQUER';
+const QUALQUER_FORMATO = { tipo: 'qualquer' } as const;
 
 /**
  * Os formatos que o contrato da exigência conhece, indexados pelas grafias que o cadastro de
@@ -79,7 +79,10 @@ export function limitesDoArquivo(
 ): Pick<ExigenciaDeDocumento, 'formatosPermitidos' | 'tamanhoMaximoBytes'> {
   const { tokens } = formatosDeclarados(restricao?.formatosAceitos);
   return {
-    formatosPermitidos: tokens.length > 0 ? [...tokens] : QUALQUER_FORMATO,
+    formatosPermitidos:
+      tokens.length > 0
+        ? { tipo: 'lista', itens: tokens.map((formato) => ({ formato, tamanhoMaximoBytes: null })) }
+        : QUALQUER_FORMATO,
     tamanhoMaximoBytes: tetoEmBytes(restricao?.tamanhoMaximoMb),
   };
 }

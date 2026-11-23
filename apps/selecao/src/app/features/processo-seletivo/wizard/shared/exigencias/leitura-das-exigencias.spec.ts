@@ -114,9 +114,10 @@ describe('Leitura e regravação das exigências de documentos', () => {
     expect(modalidadesDaExigencia(todasAsExigencias(lido)[0])).toEqual(['LB_PPI']);
   });
 
-  it('descarta a exigência cuja fase não está no cronograma lido', () => {
+  it('conserva a exigência cuja fase não está no cronograma lido', () => {
     const lido = exigenciasDe(detalheDaApi([exigenciaDaApi({ faseId: 'fase-desconhecida' })]));
-    expect(todasAsExigencias(lido)).toHaveLength(0);
+    expect(todasAsExigencias(lido)[0].faseIdLido).toBe('fase-desconhecida');
+    expect(comando(lido)[0].documento?.momento?.faseId).toBe('fase-desconhecida');
   });
 
   /** O ida-e-volta completo: ler e regravar não pode mudar nada. */
@@ -167,7 +168,7 @@ describe('Leitura e regravação das exigências de documentos', () => {
       consequencia: 'PENDENCIA_REENVIO',
     });
     expect(documento?.requisitos).toMatchObject({
-      formatosPermitidos: ['PDF'],
+      formatosPermitidos: [{ formato: 'PDF', tamanhoMaximoBytesMax: null }],
       tamanhoMaximoBytes: 3000000,
     });
     const bases = documento?.indeferimento?.basesLegais ?? [];

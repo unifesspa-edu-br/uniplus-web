@@ -2,7 +2,10 @@ import { computed, inject, Injectable } from '@angular/core';
 
 import type { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { gruposSemNormaResolvida } from '../../../shared/exigencias/consulta-das-exigencias';
+import {
+  documentosDe,
+  gruposSemNormaResolvida,
+} from '../../../shared/exigencias/consulta-das-exigencias';
 import { CatalogoDeAtos } from '../catalogos/catalogo-de-atos.service';
 import { CatalogoDeBancas } from '../catalogos/catalogo-de-bancas.service';
 import { CatalogoDeDocumentos } from '../catalogos/catalogo-de-documentos.service';
@@ -91,6 +94,12 @@ export class ConferenciaDoCronograma {
    * O que a publicação vai cobrar dos grupos, dito como aviso: eles não se editam aqui, e
    * bloquear a gravação por causa deles prenderia o passo sem saída.
    */
+  readonly haDocumentoComFaseNaoEncontrada = computed(() =>
+    documentosDe(this.store.draft().documentos.regrasDeComprovacao).some(
+      (documento) => documento.faseIdLido != null,
+    ),
+  );
+
   readonly avisosDeGrupo = computed(() => avisosDosGrupos(this.gruposDeclarados()));
 
   /**

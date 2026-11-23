@@ -14,6 +14,7 @@ import type {
   RegraDeComprovacao,
 } from '../../processo-seletivo.models';
 
+import { lerFormatosAceitos } from './formatos-aceitos';
 import { criarIdentificadorDaRegra } from './identificador-da-regra';
 
 /**
@@ -98,7 +99,11 @@ function conteudoDaExigenciaParaComparacao({
   documento,
   grupoDoFormularioParaRepeticao,
 }: DeclaracaoDaExigencia): string {
-  return `${conteudoDoDocumentoParaComparacao(documento)}|${grupoDoFormularioParaRepeticao ?? ''}`;
+  return JSON.stringify([
+    conteudoDoDocumentoParaComparacao(documento),
+    documento.fatosComprovados,
+    grupoDoFormularioParaRepeticao,
+  ]);
 }
 
 /**
@@ -132,7 +137,6 @@ function lerExigencias(
     .filter((regra) => regra !== null);
 }
 
-/** Descarta documentos sem fase no cronograma e grupos que perderam todas as exigências. */
 function lerExigencia(
   regra: RegraDeComprovacaoDto,
   codigoPorFaseId: ReadonlyMap<string, string>,
@@ -155,7 +159,6 @@ function lerGrupoDeExigencias(
   codigoPorFaseId: ReadonlyMap<string, string>,
 ): RegraDeComprovacao | null {
   const itensDoGrupo = lerExigencias(regra.itens ?? [], codigoPorFaseId);
-  if (itensDoGrupo.length === 0) return null;
   const forma = regra.forma.codigo as RegraDeComprovacao['forma'];
   return { ...camposDaRegra(regra), forma, documento: null, itens: itensDoGrupo };
 }
@@ -185,21 +188,17 @@ function documentoDe(
   codigoPorFaseId: ReadonlyMap<string, string>,
 ): ExigenciaDeDocumento | null {
   if (dto === null || dto === undefined) return null;
-  const faseCodigo = codigoPorFaseId.get(dto.momento.faseId);
-  if (faseCodigo === undefined) return null;
-  return documentoNaFase(dto, faseCodigo, codigoPorFaseId);
+  return documentoNaFase(dto, codigoPorFaseId);
 }
 
-/** A fase foi encontrada no cronograma, então o documento pode ser incluído no rascunho. */
 function documentoNaFase(
   dto: DocumentoExigidoDto,
-  faseCodigo: string,
   codigoPorFaseId: ReadonlyMap<string, string>,
 ): ExigenciaDeDocumento {
   return {
     tipoDocumentoId: dto.tipoDocumento.id,
     tipoDocumentoNome: dto.tipoDocumento.nome,
-    faseCodigo,
+    ...faseDoDocumento(dto.momento.faseId, codigoPorFaseId),
     etapaId: dto.momento.etapaId,
     finalidade: dto.momento.finalidade,
     ...regraDaExigenciaLida(dto),
@@ -207,9 +206,17 @@ function documentoNaFase(
   };
 }
 
-function regraDaExigenciaLida(dto: DocumentoExigidoDto): RegraDaExigenciaDeDocumento {
+function faseDoDocumento(faseId: string, codigoPorFaseId: ReadonlyMap<string, string>) {
+  const faseCodigo = codigoPorFaseId.get(faseId);
+  return { faseCodigo: faseCodigo ?? '', faseIdLido: faseCodigo === undefined ? faseId : null };
+}
+
+function regraDaExigenciaLida(
+  dto: DocumentoExigidoDto,
+): RegraDaExigenciaDeDocumento & Pick<ExigenciaDeDocumento, 'fatosComprovados'> {
   const { aplicabilidade, indeferimento } = dto;
   return {
+    fatosComprovados: dto.fatosComprovados,
     aplicabilidade: aplicabilidade.tipo,
     obrigatorio: indeferimento.obrigatorio,
     consequenciaIndeferimento: indeferimento.consequencia ?? '',
@@ -233,7 +240,7 @@ function criteriosDoComprovanteLidos(
 ): CriteriosDoComprovante {
   return {
     idadeMaximaEmissao: idadeMaximaDe(requisitos.idadeMaximaEmissao, codigoPorFaseId),
-    formatosPermitidos: requisitos.formatosPermitidos,
+    formatosPermitidos: lerFormatosAceitos(requisitos.formatosPermitidos),
     tamanhoMaximoBytes: requisitos.tamanhoMaximoBytes,
     modelo: modeloDe(requisitos.modelo),
   };
@@ -251,6 +258,7 @@ function idadeMaximaDe(
     referenciaTipo: idade.referenciaTipo,
     data: idade.data,
     referenciaFaseCodigo: faseId === null ? null : (codigoPorFaseId.get(faseId) ?? null),
+    referenciaFaseIdLido: faseId !== null && !codigoPorFaseId.has(faseId) ? faseId : null,
   };
 }
 

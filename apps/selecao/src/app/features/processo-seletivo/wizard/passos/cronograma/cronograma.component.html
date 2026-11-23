@@ -1,3 +1,9 @@
+@if (conferencia.haDocumentoComFaseNaoEncontrada()) {
+  <p class="field__hint" role="status">
+    Há documentos exigidos ligados a uma fase que não está mais no cronograma. Eles foram mantidos
+    até a fase ser corrigida.
+  </p>
+}
 @if (releituraDosIdentificadores.aviso(); as aviso) {
   <p role="alert">{{ aviso }}</p>
 }

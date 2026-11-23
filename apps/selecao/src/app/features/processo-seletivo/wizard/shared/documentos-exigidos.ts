@@ -1,7 +1,7 @@
 import { formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
 import type { FatoCandidatoComOperadores } from '@uniplus/shared-data/configuracao';
 import { ROTULOS_DOS_PASSOS } from '../processo-seletivo.data';
-import type { ExigenciasDoRascunho } from '../processo-seletivo.models';
+import type { ExigenciasDoRascunho, FormatosAceitos } from '../processo-seletivo.models';
 import {
   composicaoResumida,
   descreverPublico,
@@ -46,12 +46,12 @@ export interface DocumentoExigidoLido {
 
 /** Os formatos e o tamanho que a exigência aceita, numa frase. */
 export function descreverArquivo(
-  formatosPermitidos: unknown,
+  formatosPermitidos: FormatosAceitos,
   tamanhoMaximoBytes: number | null,
 ): string {
   const formatos =
-    Array.isArray(formatosPermitidos) && formatosPermitidos.length > 0
-      ? formatosPermitidos.join(', ')
+    formatosPermitidos.tipo === 'lista' && formatosPermitidos.itens.length > 0
+      ? formatosPermitidos.itens.map((item) => item.formato).join(', ')
       : 'qualquer formato';
   const tamanho =
     tamanhoMaximoBytes === null

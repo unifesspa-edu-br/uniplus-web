@@ -15,6 +15,7 @@ import type {
   RegraDeComprovacao,
 } from '../../processo-seletivo.models';
 
+import { formatosParaEnvio } from './formatos-aceitos';
 import { comAlcanceDeTodasAsFases } from './alcance-das-exigencias';
 import { documentosDe } from './consulta-das-exigencias';
 import { APLICABILIDADE_GERAL } from './exigencias-documentais';
@@ -29,15 +30,6 @@ export interface ProcessoVivoDasExigencias {
   readonly finalidadesPorFase: ReadonlyMap<string, readonly string[]>;
 }
 
-/**
- * Serializa a estrutura de regras do rascunho no que o `PUT` recebe, resolvendo o que é declarado por
- * código e descartando exigências de fases removidas e grupos que ficaram vazios.
- *
- * O `PUT` recusa a estrutura de regras inteira se uma regra apontar fase que saiu do
- * cronograma (`FaseNaoPertenceAoProcesso`), etapa que não é da fase (`EtapaNaoPertenceAFase`),
- * cláusula de modalidade esvaziada (`ClausulaVazia`) ou grupo sem itens (`GrupoVazio`) — e a
- * recusa chegaria sobre configuração que a tela não mostra mais.
- */
 export function regrasDeComprovacaoParaEnvio(
   exigencias: ExigenciasDoRascunho,
   processo: ProcessoVivoDasExigencias,
@@ -80,19 +72,19 @@ function prepararExigenciasParaEnvio(
     if (regra.forma === 'DOCUMENTO')
       return documentoDaExigenciaParaEnvio(regra, processo, finalidade);
     const itensDoGrupo = prepararExigenciasParaEnvio(regra.itens ?? [], processo, finalidade);
-    if (itensDoGrupo.length === 0) return [];
+    if ((regra.itens?.length ?? 0) > 0 && itensDoGrupo.length === 0) return [];
     return [{ ...dadosDaExigenciaParaEnvio(regra), itens: itensDoGrupo }];
   });
 }
 
-/** Exclui exigências de fases removidas do cronograma. */
 function documentoDaExigenciaParaEnvio(
   regra: RegraDeComprovacao,
   processo: ProcessoVivoDasExigencias,
   finalidade: string | null,
 ): RegraDeComprovacaoInformada[] {
   const documento = regra.documento;
-  if (documento === null || !processo.faseIdPorCodigo.has(documento.faseCodigo)) return [];
+  if (documento === null) return [];
+  if (!documento.faseIdLido && !processo.faseIdPorCodigo.has(documento.faseCodigo)) return [];
   return [
     {
       ...dadosDaExigenciaParaEnvio(regra),
@@ -143,6 +135,7 @@ function prepararDocumentoParaEnvio(
 ): ItemDocumentoExigidoInput {
   return {
     tipoDocumento: { id: documento.tipoDocumentoId },
+    fatosComprovados: documento.fatosComprovados ?? [],
     momento: momentoParaEnvio(documento, processo, finalidade),
     aplicabilidade: aplicabilidadeParaEnvio(documento, processo.modalidadesOfertadas),
     indeferimento: indeferimentoDoDocumentoParaEnvio(documento),
@@ -166,9 +159,11 @@ function momentoParaEnvio(
   finalidade: string | null,
 ): ItemDocumentoExigidoInput['momento'] {
   return {
-    faseId: processo.faseIdPorCodigo.get(documento.faseCodigo) ?? '',
-    etapaId: etapaDeColetaValida(documento, processo.etapasVivas),
-    finalidade,
+    faseId: processo.faseIdPorCodigo.get(documento.faseCodigo) ?? documento.faseIdLido ?? '',
+    etapaId: documento.faseIdLido
+      ? documento.etapaId
+      : etapaDeColetaValida(documento, processo.etapasVivas),
+    finalidade: documento.faseIdLido ? documento.finalidade : finalidade,
   };
 }
 
@@ -207,7 +202,7 @@ function requisitosParaEnvio(
 ): ItemDocumentoExigidoInput['requisitos'] {
   return {
     idadeMaximaEmissao: idadeMaximaParaEnvio(documento.idadeMaximaEmissao, faseIdPorCodigo),
-    formatosPermitidos: documento.formatosPermitidos,
+    formatosPermitidos: formatosParaEnvio(documento.formatosPermitidos),
     tamanhoMaximoBytes: documento.tamanhoMaximoBytes,
     modelo: documento.modelo === null ? null : { modeloId: documento.modelo.modeloId },
   };
@@ -225,13 +220,6 @@ function etapaDeColetaValida(
   return etapaId !== null && etapaId !== '' && etapasVivas.has(etapaId) ? etapaId : null;
 }
 
-/**
- * A idade máxima, com a fase âncora resolvida de volta para identificador.
- *
- * A fase que ancorava saiu do cronograma: a âncora é limpa em vez de viajar apontando para
- * linha que não existe mais. O servidor recusaria com `IdadeMaximaEmissao.FaseNaoPertenceAoProcesso`,
- * e a recusa falaria de um campo que esta tela não renderiza — o operador não teria o que fazer.
- */
 function idadeMaximaParaEnvio(
   idade: ExigenciaDeDocumento['idadeMaximaEmissao'],
   faseIdPorCodigo: ReadonlyMap<string, string>,
@@ -239,7 +227,9 @@ function idadeMaximaParaEnvio(
   if (idade === null) return null;
   const { referenciaFaseCodigo, valor, unidade, referenciaTipo, data } = idade;
   const referenciaFaseId =
-    referenciaFaseCodigo === null ? null : faseIdPorCodigo.get(referenciaFaseCodigo);
+    referenciaFaseCodigo === null
+      ? (idade.referenciaFaseIdLido ?? null)
+      : faseIdPorCodigo.get(referenciaFaseCodigo);
   if (referenciaFaseId === undefined) return null;
   return { valor, unidade, referenciaTipo, data, referenciaFaseId };
 }
