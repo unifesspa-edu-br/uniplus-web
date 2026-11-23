@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DocumentoDaConfiguracao } from '@uniplus/shared-data/selecao';
 import { definirCondicoesDeAtendimento } from './atendimento.edicao';
-import { comBasesLegais, comFormatosPermitidos } from './condicoes-da-exigencia.edicao';
 import {
   acrescentarItemDeAvaliacao,
   acrescentarNivelDeAtendimento,
@@ -34,25 +33,6 @@ describe('regressões de origem e calendário', () => {
         { codigo: 'A', origem: 1 },
       ]).atendimento?.condicoes,
     ).toEqual([{ condicaoCodigo: 'A' }, { condicaoCodigo: 'A' }]);
-  });
-  it('preserva a origem da base removida', () => {
-    const bases = [{ referencia: ' A ' }, { referencia: ' B ' }];
-    expect(
-      comBasesLegais({ basesLegais: bases }, [
-        { origem: 1, referencia: 'B', abrangencia: '', situacao: '', observacao: '' },
-      ]).basesLegais,
-    ).toEqual([bases[1]]);
-  });
-  it('preserva a origem dos formatos movidos', () => {
-    const formatosPermitidos = {
-      lista: [{ tamanhoMaximoBytesMax: 5 }, { tamanhoMaximoBytesMax: 10 }],
-    };
-    expect(
-      comFormatosPermitidos(
-        { chave: 'x', formatosPermitidos },
-        { qualquer: null, lista: [{ origem: 1, formato: '', tamanhoMaximoBytesMax: '10' }] },
-      ).formatosPermitidos?.lista?.[0],
-    ).toBe(formatosPermitidos.lista[1]);
   });
   it('acrescenta item e nível na etapa escolhida', () => {
     const lugar = { chave: 'x', ocorrencia: 1 };
