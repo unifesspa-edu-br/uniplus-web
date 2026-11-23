@@ -7,7 +7,12 @@ import {
   input,
   output,
 } from '@angular/core';
-import { acompanharLeitura, FalhaDeLeituraDoCampoComponent } from '@uniplus/shared-ui/components';
+import {
+  acompanharLeitura,
+  FalhaDeLeituraDoCampoComponent,
+  RecusaDoCampoComponent,
+} from '@uniplus/shared-ui/components';
+import type { RecusaDaExigencia } from '../../cronograma/servicos/gravacao-das-exigencias-documentais.service';
 import type { FormatosAceitos } from '../../../processo-seletivo.models';
 import {
   aceitarQualquerFormato,
@@ -22,7 +27,7 @@ const BYTES_POR_MEGABYTE = 1024 * 1024;
 
 @Component({
   selector: 'sel-arquivo-aceito',
-  imports: [FalhaDeLeituraDoCampoComponent],
+  imports: [FalhaDeLeituraDoCampoComponent, RecusaDoCampoComponent],
   templateUrl: './arquivo-aceito.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -36,10 +41,16 @@ export class ArquivoAceitoComponent {
     destino: () => this.anfitriao.nativeElement.querySelector<HTMLElement>('input[type=radio]'),
     assunto: 'os formatos permitidos',
   });
+  readonly recusasDosFormatos = input<readonly RecusaDaExigencia[]>([]);
+  readonly recusasDoTamanho = input<readonly RecusaDaExigencia[]>([]);
   readonly formatos = input.required<FormatosAceitos>();
   readonly tamanho = input.required<number | null>();
   readonly idBase = input.required<string>();
   readonly desabilitado = input(false);
+  protected recusasParaExibir(recusas: readonly RecusaDaExigencia[]) {
+    return recusas.map((recusa) => ({ ...recusa, pagina: null }));
+  }
+
   readonly formatosChange = output<FormatosAceitos>();
   readonly tamanhoChange = output<number | null>();
 

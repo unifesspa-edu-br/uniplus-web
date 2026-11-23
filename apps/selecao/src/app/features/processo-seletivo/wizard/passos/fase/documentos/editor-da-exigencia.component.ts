@@ -15,6 +15,7 @@ import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.se
 import { FaseEmEdicao } from '../fase-em-edicao';
 import { ModeloDaExigenciaComponent } from '../modelo-da-exigencia/modelo-da-exigencia.component';
 import { ArquivoAceitoComponent } from './arquivo-aceito.component';
+import { RecusasDasExigencias } from './recusas-das-exigencias.service';
 import { ConsequenciaENormasComponent } from './consequencia-e-normas.component';
 import type { ResumoDoDocumento } from '../tipos-da-conferencia';
 import { EixoAlcanceComponent } from './eixos/eixo-alcance.component';
@@ -50,6 +51,7 @@ export class EditorDaExigenciaComponent {
   protected readonly gatilho = inject(GatilhoDasExigenciasStore);
   private readonly catalogoDeFases = inject(CatalogoDeFases);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
+  protected readonly recusas = inject(RecusasDasExigencias, { optional: true });
 
   readonly resumo = input.required<ResumoDoDocumento>();
   readonly remover = output<void>();
@@ -91,6 +93,12 @@ export class EditorDaExigenciaComponent {
     this.exigencias.escreverExigencia(id, { modelo });
   }
 
+  recusasDaConsequencia(id: string) {
+    return (this.recusas?.doCampo(id, 'documento.indeferimento.consequencia') ?? []).map(
+      (recusa) => ({ ...recusa, pagina: null }),
+    );
+  }
+
   consequenciaDoDocumento(id: string): string {
     return this.exigencias.exigenciaDoDocumento(id).consequenciaIndeferimento;
   }
@@ -101,6 +109,7 @@ export class EditorDaExigenciaComponent {
    */
   escolherConsequencia(id: string, consequencia: string): void {
     this.exigencias.escreverExigencia(id, { consequenciaIndeferimento: consequencia });
+    this.recusas?.limparCampo(id, 'documento.indeferimento.consequencia');
   }
 
   /** As normas que sustentam a exigência nesta fase — são N por exigência (ADR-0074). */

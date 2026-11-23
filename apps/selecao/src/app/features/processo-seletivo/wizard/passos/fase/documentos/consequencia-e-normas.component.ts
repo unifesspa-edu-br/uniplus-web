@@ -1,18 +1,24 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { NormasDoDocumentoComponent, type TextosDasNormas } from '@uniplus/shared-ui/components';
+import {
+  NormasDoDocumentoComponent,
+  RecusaDoCampoComponent,
+  type RecusaDoCampo,
+  type TextosDasNormas,
+} from '@uniplus/shared-ui/components';
 
 import type { BaseLegalConfig } from '../../../processo-seletivo.models';
 import { rotuloDaConsequencia } from '../resumo-da-exigencia';
 
 @Component({
   selector: 'sel-consequencia-e-normas',
-  imports: [NormasDoDocumentoComponent],
+  imports: [NormasDoDocumentoComponent, RecusaDoCampoComponent],
   templateUrl: './consequencia-e-normas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConsequenciaENormasComponent {
   readonly idDaConsequencia = input.required<string>();
   readonly idDasNormas = input.required<string>();
+  readonly recusasDaConsequencia = input<readonly RecusaDoCampo[]>([]);
   readonly consequencia = input.required<string>();
   readonly bases = input.required<readonly BaseLegalConfig[]>();
   readonly opcoes =

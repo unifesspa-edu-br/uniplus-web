@@ -10,6 +10,7 @@
   } @else {
     <button
       class="doc-conferencia__alternar"
+      [attr.id]="idDaFase('doc-linha-' + resumo().id)"
       type="button"
       [attr.aria-expanded]="aberta()"
       [attr.aria-controls]="idDaFase('doc-campos-' + resumo().id)"
@@ -19,6 +20,7 @@
       <span>{{ resumo().nome }}</span>
     </button>
   }
+  <ui-recusa-do-campo [recusas]="recusasDaLinha()" />
 </th>
 <td class="doc-conferencia__largo" data-label="A quem se aplica">
   {{ resumo().aplicaA }}
