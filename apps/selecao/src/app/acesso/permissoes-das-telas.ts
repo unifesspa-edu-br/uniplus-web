@@ -33,3 +33,11 @@ export const PERMISSOES_DO_COMPROVANTE_DA_INSCRICAO = [
 ] as const satisfies readonly CodigoDePermissao[];
 
 export type CaminhoDeTela = keyof typeof PERMISSOES_DAS_TELAS;
+
+/**
+ * Permissão que libera os atalhos do acompanhamento (editar e publicações): a mesma que as rotas
+ * de destino exigem. Consultar o acompanhamento não a concede, e a API decide por recurso e unidade.
+ */
+export const PERMISSOES_DOS_ATALHOS_DO_ACOMPANHAMENTO = [
+  selecao.processosConfigurar,
+] as const satisfies readonly CodigoDePermissao[];

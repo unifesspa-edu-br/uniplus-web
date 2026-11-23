@@ -5,6 +5,7 @@ import { filter, map, startWith } from 'rxjs';
 import { PermissoesService, UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { PerfisDaBarraComponent, UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
 import { PERMISSOES_DAS_TELAS, type CaminhoDeTela } from '../acesso/permissoes-das-telas';
+import { TrilhaContextual } from '../trilha-contextual';
 import {
   AppShellComponent,
   UiShellBreadcrumbItem,
@@ -61,13 +62,19 @@ export class LayoutComponent {
   private readonly router = inject(Router);
   protected readonly userContext = inject(UserContextService);
 
-  protected readonly breadcrumb = toSignal(
+  private readonly trilhaContextual = inject(TrilhaContextual);
+
+  private readonly breadcrumbDaRota = toSignal(
     this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
       startWith(null),
       map(() => this.breadcrumbDaRotaAtiva()),
     ),
     { initialValue: this.breadcrumbDaRotaAtiva() },
+  );
+
+  protected readonly breadcrumb = computed(
+    () => this.trilhaContextual.itens() ?? this.breadcrumbDaRota(),
   );
 
   protected readonly sidebarUserInitials = computed(() => initials(this.userContext.displayName()));

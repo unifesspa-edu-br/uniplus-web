@@ -28,6 +28,14 @@ export const appRoutes: Routes = [
           import('./features/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
       },
       {
+        // Página contextual do acompanhamento: basta a sessão; a API decide a leitura do processo.
+        path: 'acompanhamento/processos/:id',
+        loadComponent: () =>
+          import('./features/acompanhamento/processo/acompanhamento-do-processo.page').then(
+            (m) => m.AcompanhamentoDoProcessoPage,
+          ),
+      },
+      {
         // Antes de `processo-seletivo`, que exige configurar o processo: ver as inscrições tem
         // permissão própria.
         path: 'processo-seletivo/:id/inscricoes',
