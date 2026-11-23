@@ -15,7 +15,14 @@ import {
   regraDeDocumento,
   semAExigencia,
 } from './exigencias-documentais';
-import { ID_CONTRACHEQUE, ID_DIPLOMA, ID_RG, exigencia, rascunho } from './exigencias.testing';
+import {
+  ID_CONTRACHEQUE,
+  ID_DIPLOMA,
+  ID_RG,
+  exigencia,
+  rascunho,
+  regraDoRascunho,
+} from './exigencias.testing';
 
 /** A norma recém-declarada tem uma só definição, a do modelo de formulário e a do processo. */
 describe('a base legal nova', () => {
@@ -57,43 +64,12 @@ describe('edição não atropela a regra de documento homônima do grupo', () =>
     return {
       emTodasAsFases: [],
       regrasDeComprovacao: [
-        {
-          forma: 'DOCUMENTO',
-          documento: exigencia({ obrigatorio: true }),
-          quantidadeMinima: null,
-          consequencia: null,
-          basesLegais: null,
-          itens: null,
-          criterioDeDistincao: null,
-          dataReferencia: null,
-          ocorrenciasEsperadas: null,
-          grupoDoFormularioParaRepeticao: null,
-        },
-        {
+        regraDoRascunho({ forma: 'DOCUMENTO', documento: exigencia() }),
+        regraDoRascunho({
           forma: 'QUANTIDADE_MINIMA_DE_ITENS',
-          documento: null,
           quantidadeMinima: 1,
-          consequencia: null,
-          basesLegais: null,
-          itens: [
-            {
-              forma: 'DOCUMENTO',
-              documento: exigencia({ obrigatorio: true }),
-              quantidadeMinima: null,
-              consequencia: null,
-              basesLegais: null,
-              itens: null,
-              criterioDeDistincao: null,
-              dataReferencia: null,
-              ocorrenciasEsperadas: null,
-              grupoDoFormularioParaRepeticao: null,
-            },
-          ],
-          criterioDeDistincao: null,
-          dataReferencia: null,
-          ocorrenciasEsperadas: null,
-          grupoDoFormularioParaRepeticao: null,
-        },
+          itens: [regraDoRascunho({ forma: 'DOCUMENTO', documento: exigencia() })],
+        }),
       ],
     };
   }

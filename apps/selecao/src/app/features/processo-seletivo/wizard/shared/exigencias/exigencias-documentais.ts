@@ -18,6 +18,7 @@ import type {
 } from '../../processo-seletivo.models';
 
 import { transformar } from './composicao-das-regras';
+import { criarIdentificadorDaRegra } from './identificador-da-regra';
 
 export { semAFase, semAEtapa } from './composicao-das-regras';
 
@@ -104,6 +105,7 @@ export function comExigenciaSemGrupo(
 /** A regra de documento do rascunho que envolve uma exigência. */
 export function regraDeDocumento(documento: ExigenciaDeDocumento): RegraDeComprovacao {
   return {
+    identificadorNoRascunho: criarIdentificadorDaRegra(),
     forma: 'DOCUMENTO',
     documento,
     quantidadeMinima: null,

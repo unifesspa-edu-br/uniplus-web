@@ -35,7 +35,7 @@ export interface CondicaoGatilhoConfig {
 }
 
 /**
- * A idade máxima de emissão aceita para o documento. A fase âncora entra por CÓDIGO: o id da fase
+ * A idade máxima de emissão aceita para o documento. A fase de referência entra por código: o id da fase
  * não sobrevive a uma gravação de cronograma que a remova e reacrescente, e reenviá-lo faria o
  * servidor recusar uma exigência que a tela nem mostra. O id é resolvido no envio.
  */
@@ -106,6 +106,7 @@ export interface ModeloDaExigencia {
 
 /** Preserva as regras que a tela não edita, pois o envio substitui todas as regras. */
 export interface RegraDeComprovacao {
+  readonly identificadorNoRascunho: string;
   readonly forma: 'DOCUMENTO' | 'TODOS_OS_ITENS' | 'QUANTIDADE_MINIMA_DE_ITENS';
   readonly documento: ExigenciaDeDocumento | null;
   readonly quantidadeMinima: number | null;

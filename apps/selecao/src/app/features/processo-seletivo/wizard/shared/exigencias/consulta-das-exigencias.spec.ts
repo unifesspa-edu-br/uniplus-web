@@ -12,7 +12,14 @@ import {
   gruposSemNormaResolvida,
 } from './consulta-das-exigencias';
 import { baseLegalNova, regraDeDocumento, semAExigencia, semAFase } from './exigencias-documentais';
-import { ID_CONTRACHEQUE, ID_DIPLOMA, ID_RG, exigencia, rascunho } from './exigencias.testing';
+import {
+  ID_CONTRACHEQUE,
+  ID_DIPLOMA,
+  ID_RG,
+  exigencia,
+  rascunho,
+  regraDoRascunho,
+} from './exigencias.testing';
 
 describe('onde cada exigência está no conjunto de regras', () => {
   /** Um grupo de alternativas com duas alternativas, como a configuração o traz. */
@@ -22,19 +29,11 @@ describe('onde cada exigência está no conjunto de regras', () => {
   ): ExigenciasDoRascunho {
     return {
       regrasDeComprovacao: [
-        {
+        regraDoRascunho({
           forma: 'QUANTIDADE_MINIMA_DE_ITENS',
-          documento: null,
-          quantidadeMinima: null,
-          consequencia: null,
-          basesLegais: null,
           itens: documentos.map(regraDeDocumento),
-          criterioDeDistincao: null,
-          dataReferencia: null,
-          ocorrenciasEsperadas: null,
-          grupoDoFormularioParaRepeticao: null,
           ...patch,
-        },
+        }),
       ],
       emTodasAsFases: [],
     };

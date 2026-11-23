@@ -8,6 +8,7 @@ import {
   comando,
   exigencia,
   rascunho,
+  regraDoRascunho,
 } from './exigencias.testing';
 
 describe('alcance de todas as fases', () => {
@@ -50,31 +51,11 @@ describe('alcance de todas as fases', () => {
     const soDentroDoGrupo: ExigenciasDoRascunho = {
       emTodasAsFases: [ID_RG],
       regrasDeComprovacao: [
-        {
+        regraDoRascunho({
           forma: 'QUANTIDADE_MINIMA_DE_ITENS',
-          documento: null,
           quantidadeMinima: 1,
-          consequencia: null,
-          basesLegais: null,
-          itens: [
-            {
-              forma: 'DOCUMENTO',
-              documento: exigencia({ faseCodigo: 'HABILITACAO' }),
-              quantidadeMinima: null,
-              consequencia: null,
-              basesLegais: null,
-              itens: null,
-              criterioDeDistincao: null,
-              dataReferencia: null,
-              ocorrenciasEsperadas: null,
-              grupoDoFormularioParaRepeticao: null,
-            },
-          ],
-          criterioDeDistincao: null,
-          dataReferencia: null,
-          ocorrenciasEsperadas: null,
-          grupoDoFormularioParaRepeticao: null,
-        },
+          itens: [regraDoRascunho({ forma: 'DOCUMENTO', documento: exigencia() })],
+        }),
       ],
     };
 

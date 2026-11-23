@@ -1,22 +1,10 @@
 import type {
   BaseLegalConfig,
   ExigenciaDeDocumento,
-  RegraDeComprovacao,
 } from '../../processo-seletivo.models';
+import { regraDoRascunho } from '../../shared/exigencias/exigencias.testing';
 import { FASES_CANONICAS, ID_AVALIACAO } from './cronograma.testing';
 import type { ContextoDoCronograma } from './cronograma-passo.testing';
-
-const FOLHA_SEM_DOCUMENTO: Omit<RegraDeComprovacao, 'documento'> = {
-  forma: 'DOCUMENTO',
-  quantidadeMinima: null,
-  consequencia: null,
-  basesLegais: null,
-  itens: null,
-  criterioDeDistincao: null,
-  dataReferencia: null,
-  ocorrenciasEsperadas: null,
-  grupoDoFormularioParaRepeticao: null,
-};
 
 const DOCUMENTO_GERAL_E_OBRIGATORIO = {
   tipoDocumentoId: '01960000-0000-7000-0000-0000000000d9',
@@ -57,7 +45,7 @@ export class AjudantesDeExigencias {
     const documento = documentoDaAvaliacao(bases, patch);
     this.tela.store.patchSection('documentos', {
       emTodasAsFases: [],
-      regrasDeComprovacao: [{ ...FOLHA_SEM_DOCUMENTO, documento }],
+      regrasDeComprovacao: [regraDoRascunho({ forma: 'DOCUMENTO', documento })],
     });
     this.tela.detectar();
   };

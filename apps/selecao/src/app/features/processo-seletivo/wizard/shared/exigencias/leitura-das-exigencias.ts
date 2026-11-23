@@ -14,6 +14,8 @@ import type {
   RegraDeComprovacao,
 } from '../../processo-seletivo.models';
 
+import { criarIdentificadorDaRegra } from './identificador-da-regra';
+
 /**
  * A estrutura de regras de exigências como o rascunho a guarda, lida de `regrasDeComprovacao`.
  *
@@ -165,6 +167,7 @@ function lerGrupoDeExigencias(
 function camposDaRegra(regra: RegraDeComprovacaoDto) {
   const { cardinalidade, indeferimento } = regra;
   return {
+    identificadorNoRascunho: criarIdentificadorDaRegra(),
     quantidadeMinima: cardinalidade.quantidadeMinima ?? null,
     consequencia: indeferimento.consequencia,
     basesLegais: indeferimento.basesLegais.length
@@ -263,7 +266,6 @@ function modeloDe(
   };
 }
 
-/** As quatro colunas da norma, `observacao` inclusive — que antes nunca era lida. */
 function baseLegalDe(base: BaseLegalDto): BaseLegalConfig {
   return {
     referencia: base.referencia,
