@@ -82,7 +82,7 @@ type CamposDaFase = Pick<FaseDoCronograma, 'faseCanonicaId' | 'codigo' | 'ordem'
   Partial<FaseDoCronograma>;
 type CamposDaEtapa = Pick<EtapaPontuada, 'nome' | 'ordem' | 'faseCodigo'>;
 
-/** Uma fase do rascunho sem nada declarado além da janela e do que o cenário informa. */
+/** Uma fase do rascunho sem nada declarado além do período e do que o cenário informa. */
 function faseDoRascunho(campos: CamposDaFase): FaseDoCronograma {
   return {
     inicio: INICIO_DA_FASE,
@@ -121,7 +121,7 @@ const ETAPA_SEM_DECLARACAO = {
   emiteParecerIndividual: false,
 };
 
-/** Uma etapa classificatória do rascunho, ainda sem identificador, sem produto nem janela. */
+/** Uma etapa classificatória do rascunho, ainda sem identificador, sem produto nem período. */
 function etapaDoRascunho(campos: CamposDaEtapa): EtapaPontuada {
   return {
     ...ETAPA_SEM_DECLARACAO,
@@ -187,7 +187,15 @@ export class ContextoDoCronograma {
   readonly cronograma = this.injetor.get(FormularioDoCronograma);
   readonly releituraDosIdentificadores = this.injetor.get(ReleituraDosIdentificadores);
   readonly unidades = this.injetor.get(UnidadesResponsaveisDasFases);
-  readonly detectar = (): void => this.fixture.detectChanges();
+  readonly detectar = (): void => {
+    this.fixture.detectChanges();
+    for (const requisicao of this.controller.match((pedido) =>
+      pedido.url.includes('/vocabularios/'),
+    )) {
+      requisicao.flush(respostaDaLeitura(requisicao));
+    }
+    this.fixture.detectChanges();
+  };
 
   /** A pessoa deixou o Cronograma: a tela é desmontada, e o que é da página continua. */
   readonly sair = (): void => this.fixture.destroy();
@@ -200,7 +208,7 @@ export class ContextoDoCronograma {
 
   /**
    * A última gravação do passo: relê as fases para traduzir o código canônico que o
-   * rascunho guarda no id que a exigência referencia, e substitui a árvore documental.
+   * rascunho guarda no id que a exigência referencia, e substitui as regras documentais.
    */
   readonly gravouExigencias = async (): Promise<void> => {
     this.controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
@@ -239,7 +247,7 @@ export class ContextoDoCronograma {
     this.detectar();
   };
 
-  /** Uma fase da linha do tempo com o que o cenário declara dela, além da janela de sempre. */
+  /** Uma fase da linha do tempo com o que o cenário declara dela, além do período. */
   readonly comFaseAjustada = (faseCanonicaId: string, ajuste: Partial<FaseDoCronograma>): void => {
     const fase = faseDoRascunho({
       faseCanonicaId,

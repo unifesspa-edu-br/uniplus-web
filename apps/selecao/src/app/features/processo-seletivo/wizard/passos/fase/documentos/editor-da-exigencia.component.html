@@ -88,7 +88,7 @@
       [textoSemFatos]="gatilho.textoSemFatosDoGatilho()"
       [idBase]="idDaFase('doc-' + identificador)"
       [disabled]="!cronograma.edicaoLiberada()"
-      [fatoDoRecorte]="fatoDoRecorte"
+      [fatoDoControleExterno]="fatoDoControleExterno"
       [textoSemCondicao]="gatilho.gatilhoSemCondicaoDiz(identificador)"
       (condicoesChange)="gatilho.escreverCondicoes(identificador, $event)"
     />
@@ -110,22 +110,23 @@
   </div>
 
   <sel-arquivo-aceito
-    [recusasDosFormatos]="
-      recusas?.doCampo(identificador, 'documento.requisitos.formatosPermitidos', faseCodigo()) ?? []
-    "
-    [recusasDoTamanho]="
-      recusas?.doCampo(identificador, 'documento.requisitos.tamanhoMaximoBytes', faseCodigo()) ?? []
-    "
-    [formatos]="exigencias.exigenciaDoDocumento(identificador).formatosPermitidos"
-    [tamanho]="exigencias.exigenciaDoDocumento(identificador).tamanhoMaximoBytes"
+    [documentoId]="identificador"
+    [faseCodigo]="faseCodigo()"
     [idBase]="idDaFase('doc-arquivo-' + identificador)"
     [desabilitado]="!cronograma.edicaoLiberada()"
-    (formatosChange)="exigencias.escreverExigencia(identificador, { formatosPermitidos: $event })"
-    (campoDeFormatoEditado)="recusas?.limparCampo(identificador, $event, faseCodigo())"
-    (tamanhoChange)="
-      exigencias.escreverExigencia(identificador, { tamanhoMaximoBytes: $event });
-      recusas?.limparCampo(identificador, 'documento.requisitos.tamanhoMaximoBytes', faseCodigo())
-    "
+  />
+
+  <sel-prazo-de-emissao
+    [documentoId]="identificador"
+    [faseCodigo]="faseCodigo()"
+    [idBase]="idDaFase('doc-prazo-' + identificador)"
+    [desabilitado]="!cronograma.edicaoLiberada()"
+  />
+  <sel-validade-do-documento
+    [documentoId]="identificador"
+    [faseCodigo]="faseCodigo()"
+    [idBase]="idDaFase('doc-validade-' + identificador)"
+    [desabilitado]="!cronograma.edicaoLiberada()"
   />
 
   <sel-modelo-da-exigencia

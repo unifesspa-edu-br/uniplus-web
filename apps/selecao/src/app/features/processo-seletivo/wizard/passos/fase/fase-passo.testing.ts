@@ -99,5 +99,10 @@ export function usarFase(aoMontar: (contexto: ContextoDaFase) => void): void {
     atual = new ContextoDaFase(await montarFase());
     aoMontar(atual);
   });
-  afterEach(() => atual.controller.verify());
+  afterEach(() => {
+    atual.controller
+      .match((pedido) => pedido.url.includes('/vocabularios/'))
+      .forEach((requisicao) => requisicao.flush([]));
+    atual.controller.verify();
+  });
 }

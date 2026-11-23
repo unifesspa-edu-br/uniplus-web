@@ -1,0 +1,53 @@
+<fieldset
+  [disabled]="desabilitado()"
+  [attr.aria-describedby]="idBase() + '-ajuda ' + idBase() + '-escolha-recusas'"
+>
+  <legend>Validade do documento</legend>
+  <p class="field__hint" [id]="idBase() + '-ajuda'">A escolha é obrigatória antes de publicar.</p>
+  <ui-recusa-do-campo [id]="idBase() + '-escolha-recusas'" [recusas]="recusasDoCampo('escolha')" />
+  @for (opcao of escolhas.escolhasDaValidade(); track opcao.codigo) {
+    <label
+      ><input
+        type="radio"
+        [name]="idBase() + '-escolha'"
+        [id]="idBase() + '-' + opcao.codigo"
+        [checked]="validade()?.escolha === opcao.codigo"
+        (change)="escolher(opcao.codigo)"
+      />
+      {{ opcao.rotulo }}</label
+    >
+  }
+  <ui-falha-de-leitura-do-campo [leitura]="leituraDeEscolhas" />
+  @if (validade()?.escolha === 'exigeDocumentoValido') {
+    <sel-referencia-de-data
+      [referencia]="validade()?.referencia ?? null"
+      [documentoId]="documentoId()"
+      [faseCodigo]="faseCodigo()"
+      [caminho]="caminho + '.referencia'"
+      [idBase]="idBase() + '-referencia'"
+      [desabilitado]="desabilitado()"
+      (referenciaChange)="definirReferencia($event)"
+    />
+    <div class="form-field">
+      <label [for]="idBase() + '-efeito'">Efeito do vencimento</label>
+      <select
+        class="select"
+        [id]="idBase() + '-efeito'"
+        [value]="validade()?.efeitoDoVencimento ?? ''"
+        [attr.aria-describedby]="idBase() + '-efeito-recusas'"
+        (change)="definirEfeito($event)"
+      >
+        <option value="">Selecione</option>
+        @for (opcao of efeitos.efeitosNaAnaliseDoDocumento(); track opcao.codigo) {
+          <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
+        }
+      </select>
+      <ui-recusa-do-campo
+        [id]="idBase() + '-efeito-recusas'"
+        [recusas]="recusasDoCampo('efeitoDoVencimento')"
+      />
+      <ui-falha-de-leitura-do-campo [leitura]="leituraDeEfeitos" />
+    </div>
+    <p class="field__hint">O documento que vence exatamente na data de referência é aceito.</p>
+  }
+</fieldset>

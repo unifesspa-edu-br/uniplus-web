@@ -5,6 +5,8 @@ import type { RecusaDaExigencia } from '../../cronograma/servicos/gravacao-das-e
 const CAMPOS_EXIBIDOS = [
   'documento.requisitos.formatosPermitidos',
   'documento.requisitos.tamanhoMaximoBytes',
+  'documento.requisitos.prazoDeEmissao',
+  'documento.requisitos.validade',
   'documento.indeferimento.consequencia',
 ];
 

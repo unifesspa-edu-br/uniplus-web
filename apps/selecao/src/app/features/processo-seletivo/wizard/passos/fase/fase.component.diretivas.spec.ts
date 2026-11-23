@@ -44,7 +44,12 @@ describe('campos de texto das seções da fase', () => {
     passo.detectar();
   });
 
-  afterEach(() => passo.controller.verify());
+  afterEach(() => {
+    passo.controller
+      .match((pedido) => pedido.url.includes('/vocabularios/'))
+      .forEach((requisicao) => requisicao.flush([]));
+    passo.controller.verify();
+  });
 
   it.each([
     ['publicações', 'produto-ato-0'],
