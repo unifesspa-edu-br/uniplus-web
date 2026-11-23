@@ -61,7 +61,13 @@ describe('ProcessoSeletivoPage: vocabulário de tipos de decisão', () => {
     fixture.componentInstance.store.patchObjectSection('cronograma', { fases: [fase] });
     fixture.detectChanges();
     expect(avancar()?.disabled).toBe(true);
-    expect(avancar()?.parentElement?.textContent).toContain('As opções da regra de deliberação');
+    expect(avancar()?.parentElement?.textContent).toContain('Não foi possível carregar');
+    const recarregar = vi.spyOn(vocabularios, 'recarregarIndisponiveis');
+    const botao = Array.from(host.querySelectorAll('button')).find((item) =>
+      item.textContent?.includes('Tentar de novo'),
+    );
+    botao?.click();
+    expect(recarregar).toHaveBeenCalledOnce();
   });
 
   it('pede os tipos de decisão uma vez por visita ao processo', () => {

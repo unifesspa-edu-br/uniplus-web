@@ -42,6 +42,7 @@ export function comRotulos(regra: RegraDeDeliberacaoDaBanca): RegraDeDeliberacao
 
 function vocabulariosDisponiveis() {
   return {
+    recarregarIndisponiveis: () => undefined,
     pronta: signal(true),
     indisponivel: signal(false),
     modos: lista('modo'),

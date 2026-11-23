@@ -1,8 +1,15 @@
-<div class="form-grid">
+<div class="form-grid" #editor tabindex="-1">
   @if (vocabularios.indisponivel()) {
     <p class="form-grid__full" role="alert">
-      As opções da regra de deliberação não estão disponíveis.
+      Não foi possível carregar as opções da regra. Tente de novo.
     </p>
+    <button
+      type="button"
+      class="btn btn--secondary"
+      (click)="editor.focus(); vocabularios.recarregarIndisponiveis()"
+    >
+      Tentar de novo
+    </button>
   } @else if (!vocabularios.pronta()) {
     <p class="form-grid__full" role="status">Carregando opções da regra de deliberação.</p>
   }

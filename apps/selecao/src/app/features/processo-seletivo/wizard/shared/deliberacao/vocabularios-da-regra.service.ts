@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal, type WritableSignal } from '@angular/core';
 import { type ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 
@@ -22,6 +22,11 @@ function estadoDaResposta(resposta: ApiResult<readonly OpcaoDaRegra[]>): EstadoD
 export class VocabulariosDaRegra {
   private readonly http = inject(HttpClient);
   private readonly base = inject(SELECAO_BASE_PATH);
+  private readonly registros: {
+    caminho: string;
+    recurso: string;
+    estado: WritableSignal<EstadoDaLista>;
+  }[] = [];
   readonly modos = this.ler('modos-deliberacao', 'modo-deliberacao');
   readonly criterios = this.ler('criterios-votacao', 'criterio-votacao');
   readonly desempates = this.ler('desempates-votacao', 'desempate-votacao');
@@ -31,6 +36,12 @@ export class VocabulariosDaRegra {
   readonly indisponivel = computed(() =>
     this.listas().some((lista) => lista.situacao === 'indisponivel'),
   );
+
+  recarregarIndisponiveis(): void {
+    for (const lista of this.registros) {
+      if (lista.estado().situacao === 'indisponivel') this.carregar(lista);
+    }
+  }
 
   opcao(campo: string, codigo: string): OpcaoDaRegra | undefined {
     const listas: Record<string, readonly OpcaoDaRegra[]> = {
@@ -55,14 +66,25 @@ export class VocabulariosDaRegra {
 
   private ler(caminho: string, recurso: string) {
     const estado = signal<EstadoDaLista>({ situacao: 'carregando', opcoes: [] });
+    const lista = { caminho, recurso, estado };
+    this.registros.push(lista);
+    this.carregar(lista);
+    return estado.asReadonly();
+  }
+
+  private carregar(lista: {
+    caminho: string;
+    recurso: string;
+    estado: WritableSignal<EstadoDaLista>;
+  }): void {
+    lista.estado.set({ situacao: 'carregando', opcoes: [] });
     this.http
       .get<
         ApiResult<readonly OpcaoDaRegra[]>
-      >(`${this.base}/api/selecao/vocabularios/${caminho}`, { context: withVendorMime(recurso, 1) })
+      >(`${this.base}/api/selecao/vocabularios/${lista.caminho}`, { context: withVendorMime(lista.recurso, 1) })
       .subscribe({
-        next: (resposta) => estado.set(estadoDaResposta(resposta)),
-        error: () => estado.set({ situacao: 'indisponivel', opcoes: [] }),
+        next: (resposta) => lista.estado.set(estadoDaResposta(resposta)),
+        error: () => lista.estado.set({ situacao: 'indisponivel', opcoes: [] }),
       });
-    return estado.asReadonly();
   }
 }
