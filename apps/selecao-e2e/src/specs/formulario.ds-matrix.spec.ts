@@ -98,7 +98,7 @@ async function abrirFormulario(page: Page, testInfo: TestInfo): Promise<void> {
 
   await irAoPasso(page, 'Formulários', testInfo);
   // O wizard mantém os passos montados; o título diz qual deles está aberto.
-  await expect(page.getByRole('heading', { level: 1, name: /^Passo 11:/ })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: /Formulários/ })).toBeVisible();
   await expect(page.getByLabel('Apurar a idade em', { exact: true })).toBeVisible();
 }
 

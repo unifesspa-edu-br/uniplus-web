@@ -6,6 +6,7 @@ import type {
   CriarProcessoSeletivoCommand,
   DefinirIdentificadorLegivelRequest,
   DefinirAtendimentoEspecializadoRequest,
+  DefinirProvaPresencialRequest,
   DefinirTaxaInscricaoRequest,
   FundamentoIsencaoDto,
   ProcessoSeletivoDto,
@@ -137,6 +138,22 @@ export class ProcessosSeletivosApi {
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
       this.rotas.doProcesso(processoSeletivoId, 'taxa-inscricao'),
+      request,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * Substitui a declaração inteira da prova presencial: estado e lista completa de municípios.
+   * Responde 204 sem corpo, 422 com códigos ProvaPresencial.* ou 503 se o serviço de localidades estiver fora.
+   */
+  definirProvaPresencial(
+    processoSeletivoId: string,
+    request: DefinirProvaPresencialRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      this.rotas.doProcesso(processoSeletivoId, 'prova-presencial'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );

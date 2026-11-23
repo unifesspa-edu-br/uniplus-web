@@ -8,6 +8,7 @@ import {
   SEM_CAMPO,
   type RecusaDaPublicacao,
 } from '../../../shared/recusas/recusas-da-publicacao.service';
+import { eRecusaDaProvaPresencial } from '../../prova-presencial/recusas-da-publicacao-na-prova-presencial.service';
 import { passoPeloRotulo } from '../destino-das-pendencias';
 
 /**
@@ -41,12 +42,16 @@ export class RecusasDaPublicacaoComponent {
     const cronograma = this.store.draft().cronograma;
     return this.recusasDoServidor.recusas().map((recusa) => {
       const lugar = lugarDaRecusaDaPublicacao(recusa, cronograma);
-      return { recusa, comCampo: lugar !== null && lugar.tipo !== 'passo' };
+      return {
+        recusa,
+        comCampo: eRecusaDaProvaPresencial(recusa) || (lugar !== null && lugar.tipo !== 'passo'),
+      };
     });
   });
 
   protected irAoCampo(recusa: RecusaDaPublicacao): void {
     this.recusasDoServidor.destino.set(recusa);
-    this.store.goTo(passoPeloRotulo('Cronograma').indice);
+    const passo = eRecusaDaProvaPresencial(recusa) ? 'Prova presencial' : 'Cronograma';
+    this.store.goTo(passoPeloRotulo(passo).indice);
   }
 }

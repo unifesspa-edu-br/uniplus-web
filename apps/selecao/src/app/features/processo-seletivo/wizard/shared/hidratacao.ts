@@ -16,6 +16,7 @@ import {
   classificacaoDe,
   desempateDe,
 } from './hidratacao/hidratacao-da-classificacao';
+import { provaPresencialDe } from './hidratacao/hidratacao-da-prova-presencial';
 import { cronogramaDe } from './hidratacao/hidratacao-do-cronograma';
 import { cascataDe, distribuicoesDe } from './hidratacao/hidratacao-das-vagas';
 import { formatarValorEmReais } from './valor-em-reais';
@@ -40,14 +41,21 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
     ...draft,
     tipoProcesso: tipoProcessoDe(dto),
     pagamento: pagamentoDe(dto),
-    opcoesDeCurso: { numero: comoTexto(dto.opcoesDeCurso?.numero) },
-    vagas: { ofertas: distribuicoesDe(dto), cascata: cascataDe(dto) },
+    provaPresencial: provaPresencialDe(dto),
+    ...ofertaDe(dto),
     cronograma: cronogramaDe(dto),
     ...regrasDaClassificacaoDe(dto),
     atendimento: atendimentoDe(dto),
     documentos: exigenciasDe(dto),
     formulario: formularioDe(dto),
     identificacao: identificacaoDe(draft.identificacao, dto),
+  };
+}
+
+function ofertaDe(dto: ProcessoSeletivoDto): Pick<WizardDraft, 'opcoesDeCurso' | 'vagas'> {
+  return {
+    opcoesDeCurso: { numero: comoTexto(dto.opcoesDeCurso?.numero) },
+    vagas: { ofertas: distribuicoesDe(dto), cascata: cascataDe(dto) },
   };
 }
 

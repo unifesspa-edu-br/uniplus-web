@@ -39,9 +39,10 @@ const PASSOS: readonly Passo[] = [
   { rotulo: 'Identificação', numero: 2, valor: 'medicina-2027' },
   { rotulo: 'Pagamento', numero: 3, valor: 'R$ 120,50' },
   { rotulo: 'Atend. especial', numero: 10, valor: 'Prova ampliada' },
+  { rotulo: 'Prova presencial', numero: 11, valor: 'Sem prova presencial' },
   {
     rotulo: 'Formulários',
-    numero: 11,
+    numero: 12,
     valor: 'Renda familiar per capita igual ou inferior a um salário mínimo',
     obrigatoriedade: 'opcional',
   },

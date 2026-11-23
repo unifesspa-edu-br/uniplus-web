@@ -28,6 +28,7 @@ const PASSO_POR_DIMENSAO: ReadonlyMap<string, RotuloDePasso> = new Map<string, R
   // A classificação inteira — regra de cálculo, precisão e eliminação — é gravada pelos passos Fórmula e precisão e Eliminação; a pendência abre a Eliminação.
   ['classificacao', 'Eliminação'],
   ['atendimento_especializado', 'Atend. especial'],
+  ['prova_presencial', 'Prova presencial'],
   ['coleta_de_fatos', 'Formulários'],
   ['fada', 'Fator de Atenuação'],
   ['desempate', 'Desempate'],
