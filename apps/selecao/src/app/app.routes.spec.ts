@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { AuthService, PermissoesService } from '@uniplus/shared-auth/bootstrap';
+import { PERMISSOES_DOS_ATALHOS_DO_ACOMPANHAMENTO } from './acesso/permissoes-das-telas';
 import { appRoutes } from './app.routes';
 
 const autenticado = signal(true);
@@ -66,6 +67,40 @@ describe('appRoutes — permissões efetivas', () => {
       expect(login).toHaveBeenCalledWith('/dashboard');
       expect(router.url).toBe('/');
     });
+  });
+
+  describe('acompanhamento do processo', () => {
+    const URL_DO_ACOMPANHAMENTO = '/acompanhamento/processos/11111111-1111-4111-8111-111111111111';
+
+    it('abre direto por URL a quem só tem a sessão, com a lista de permissões vazia', async () => {
+      expect(await ir(URL_DO_ACOMPANHAMENTO)).toBe(URL_DO_ACOMPANHAMENTO);
+    });
+
+    it('manda quem não tem sessão ao login', async () => {
+      autenticado.set(false);
+
+      await router.navigateByUrl(URL_DO_ACOMPANHAMENTO);
+
+      expect(login).toHaveBeenCalledWith(URL_DO_ACOMPANHAMENTO);
+    });
+
+    it.each(['/processo-seletivo/abc', '/processo-seletivo/abc/publicacoes'])(
+      'a permissão dos atalhos abre o destino %s',
+      async (url) => {
+        permissoes.set([...PERMISSOES_DOS_ATALHOS_DO_ACOMPANHAMENTO]);
+
+        expect(await ir(url)).toBe(url);
+      },
+    );
+
+    it.each(['/processo-seletivo/abc', '/processo-seletivo/abc/publicacoes'])(
+      'consultar o acompanhamento não abre o destino %s',
+      async (url) => {
+        permissoes.set(['selecao:processos:acompanhar']);
+
+        expect(await ir(url)).toBe('/acesso-negado');
+      },
+    );
   });
 
   describe('rotas protegidas', () => {
