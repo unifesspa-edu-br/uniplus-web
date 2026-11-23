@@ -17,6 +17,7 @@ export function documentosQueReferenciamAFase(
   return todasAsExigencias(declaradas).filter(
     (documento) =>
       documento.faseCodigo !== codigo &&
-      documento.idadeMaximaEmissao?.referenciaFaseCodigo === codigo,
+      (documento.prazoDeEmissao?.referencia?.faseCodigo === codigo ||
+        documento.validade?.referencia?.faseCodigo === codigo),
   );
 }

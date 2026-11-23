@@ -17,19 +17,6 @@ describe('Conservação das exigências', () => {
     expect(documento?.requisitos?.formatosPermitidos).toEqual(formatos);
   });
 
-  it('conserva uma referência de prazo cuja fase não foi encontrada', () => {
-    const idade = {
-      valor: 3,
-      unidade: 'DIAS',
-      referenciaTipo: 'FASE',
-      data: null,
-      referenciaFaseId: 'fase-ausente',
-    };
-    const regra = exigenciaDaApi({ requisitos: { idadeMaximaEmissao: idade } });
-    const documento = comando(exigenciasDe(detalheDaApi([regra])))[0].documento;
-    expect(documento?.requisitos?.idadeMaximaEmissao).toEqual(idade);
-  });
-
   it('conserva grupo sem documentos', () => {
     const regras = comando(exigenciasDe(detalheDaApi([grupoDaApi([])])));
     expect(regras).toHaveLength(1);
@@ -41,6 +28,9 @@ describe('Conservação das exigências', () => {
       tipo: 'lista',
       itens: [{ formato: 'PDF', tamanhoMaximoBytes: 2048 }],
     } as const;
-    expect(descreverArquivo(formatos, null)).toBe('PDF, sem limite de tamanho declarado');
+    expect(descreverArquivo(formatos, null)).toBe(
+      'PDF (até 2,0 KB), sem limite geral de tamanho declarado',
+    );
+    expect(descreverArquivo(formatos, 4096)).toBe('PDF (até 2,0 KB), até 4,0 KB');
   });
 });

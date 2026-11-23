@@ -15,6 +15,7 @@ import type {
   RegraDeComprovacao,
 } from '../../processo-seletivo.models';
 
+import { prazoEValidadeParaEnvio } from './prazo-e-validade';
 import { formatosParaEnvio } from './formatos-aceitos';
 import { comAlcanceDeTodasAsFases } from './alcance-das-exigencias';
 import { documentosDe } from './consulta-das-exigencias';
@@ -262,11 +263,11 @@ function requisitosParaEnvio(
   faseIdPorCodigo: ReadonlyMap<string, string>,
 ): ItemDocumentoExigidoInput['requisitos'] {
   return {
-    idadeMaximaEmissao: idadeMaximaParaEnvio(documento.idadeMaximaEmissao, faseIdPorCodigo),
+    ...prazoEValidadeParaEnvio(documento, faseIdPorCodigo),
     formatosPermitidos: formatosParaEnvio(documento.formatosPermitidos),
     tamanhoMaximoBytes: documento.tamanhoMaximoBytes,
     modelo: documento.modelo === null ? null : { modeloId: documento.modelo.modeloId },
-  };
+  } as unknown as ItemDocumentoExigidoInput['requisitos'];
 }
 
 /**
@@ -279,18 +280,4 @@ function etapaDeColetaValida(
 ): string | null {
   const etapaId = documento.etapaId;
   return etapaId !== null && etapaId !== '' && etapasVivas.has(etapaId) ? etapaId : null;
-}
-
-function idadeMaximaParaEnvio(
-  idade: ExigenciaDeDocumento['idadeMaximaEmissao'],
-  faseIdPorCodigo: ReadonlyMap<string, string>,
-): NonNullable<ItemDocumentoExigidoInput['requisitos']>['idadeMaximaEmissao'] {
-  if (idade === null) return null;
-  const { referenciaFaseCodigo, valor, unidade, referenciaTipo, data } = idade;
-  const referenciaFaseId =
-    referenciaFaseCodigo === null
-      ? (idade.referenciaFaseIdLido ?? null)
-      : faseIdPorCodigo.get(referenciaFaseCodigo);
-  if (referenciaFaseId === undefined) return null;
-  return { valor, unidade, referenciaTipo, data, referenciaFaseId };
 }

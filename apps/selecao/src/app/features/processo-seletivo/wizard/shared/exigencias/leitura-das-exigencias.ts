@@ -14,6 +14,7 @@ import type {
   RegraDeComprovacao,
 } from '../../processo-seletivo.models';
 
+import { lerPrazoEValidade } from './prazo-e-validade';
 import { lerFormatosAceitos } from './formatos-aceitos';
 import { criarIdentificadorDaRegra } from './identificador-da-regra';
 
@@ -120,12 +121,18 @@ function conteudoDoDocumentoParaComparacao(exigencia: ExigenciaDeDocumento): str
     consequenciaIndeferimento: exigencia.consequenciaIndeferimento,
     condicoes: exigencia.condicoes,
     basesLegais: exigencia.basesLegais,
-    idadeMaximaEmissao: exigencia.idadeMaximaEmissao,
+    criterios: criteriosParaComparacao(exigencia),
+  });
+}
+
+function criteriosParaComparacao(exigencia: ExigenciaDeDocumento) {
+  return {
+    prazoDeEmissao: exigencia.prazoDeEmissao,
+    validade: exigencia.validade,
     formatosPermitidos: exigencia.formatosPermitidos,
     tamanhoMaximoBytes: exigencia.tamanhoMaximoBytes,
-    // O modelo oferecido é conteúdo: fases com modelos diferentes são declarações independentes.
     modeloId: exigencia.modelo?.modeloId ?? null,
-  });
+  };
 }
 
 function lerExigencias(
@@ -239,26 +246,13 @@ function criteriosDoComprovanteLidos(
   codigoPorFaseId: ReadonlyMap<string, string>,
 ): CriteriosDoComprovante {
   return {
-    idadeMaximaEmissao: idadeMaximaDe(requisitos.idadeMaximaEmissao, codigoPorFaseId),
+    ...lerPrazoEValidade(
+      requisitos as unknown as import('@uniplus/shared-data/selecao').RequisitosDoDocumentoDtoProvisorio,
+      codigoPorFaseId,
+    ),
     formatosPermitidos: lerFormatosAceitos(requisitos.formatosPermitidos),
     tamanhoMaximoBytes: requisitos.tamanhoMaximoBytes,
     modelo: modeloDe(requisitos.modelo),
-  };
-}
-
-function idadeMaximaDe(
-  idade: DocumentoExigidoDto['requisitos']['idadeMaximaEmissao'],
-  codigoPorFaseId: ReadonlyMap<string, string>,
-): ExigenciaDeDocumento['idadeMaximaEmissao'] {
-  if (idade === null) return null;
-  const faseId = idade.referenciaFaseId;
-  return {
-    valor: idade.valor,
-    unidade: idade.unidade,
-    referenciaTipo: idade.referenciaTipo,
-    data: idade.data,
-    referenciaFaseCodigo: faseId === null ? null : (codigoPorFaseId.get(faseId) ?? null),
-    referenciaFaseIdLido: faseId !== null && !codigoPorFaseId.has(faseId) ? faseId : null,
   };
 }
 

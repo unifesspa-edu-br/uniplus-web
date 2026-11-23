@@ -281,3 +281,14 @@ export {
   type FormaDeComprovacaoDto,
   type OpcaoDeComprovacaoDto,
 } from './vocabularios-da-comprovacao.api';
+
+export type {
+  DataDeReferenciaDoDocumentoInput,
+  DataDeReferenciaDoDocumentoDto,
+  PrazoDeEmissaoInput,
+  PrazoDeEmissaoDto,
+  ValidadeDoDocumentoInput,
+  ValidadeDoDocumentoDto,
+  RequisitosDoDocumentoDtoProvisorio,
+  RequisitosDoDocumentoInputProvisorio,
+} from './prazo-e-validade-do-documento.provisorio';

@@ -27,7 +27,6 @@ const CORPO_ESPERADO = [
         basesLegais: [],
       },
       requisitos: {
-        idadeMaximaEmissao: null,
         formatosPermitidos: ['PDF', 'JPEG', 'PNG'].map((formato) => ({
           formato,
           tamanhoMaximoBytesMax: null,

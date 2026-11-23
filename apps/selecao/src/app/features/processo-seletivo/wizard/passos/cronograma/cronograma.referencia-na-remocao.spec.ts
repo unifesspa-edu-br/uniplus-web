@@ -7,11 +7,11 @@ import { TIPOS_DOCUMENTO } from '../fase/fase.testing';
 import { TestBed } from '@angular/core/testing';
 
 const prazo = {
+  escolha: 'comPrazo',
   valor: 90,
-  unidade: 'DIAS' as const,
-  referenciaTipo: 'INICIO_FASE' as const,
-  data: null,
-  referenciaFaseCodigo: 'AVALIACAO',
+  unidade: 'dias',
+  referencia: { tipo: 'inicioDaFase', data: null, faseCodigo: 'AVALIACAO' },
+  efeitoForaDoPrazo: 'recusarDocumento',
 };
 
 describe('remoção de fase referenciada por documento', () => {
@@ -26,7 +26,10 @@ describe('remoção de fase referenciada por documento', () => {
       rascunho(
         exigencia({
           faseCodigo,
-          idadeMaximaEmissao: { ...prazo, referenciaFaseCodigo },
+          prazoDeEmissao: {
+            ...prazo,
+            referencia: { ...prazo.referencia, faseCodigo: referenciaFaseCodigo },
+          },
         }),
       ),
     );
@@ -47,7 +50,7 @@ describe('remoção de fase referenciada por documento', () => {
     expect(botao?.disabled).toBe(true);
     expect(
       document.getElementById(botao?.getAttribute('aria-describedby') ?? '')?.textContent,
-    ).toContain('Troque a referência do prazo destes documentos antes de remover a fase.');
+    ).toContain('Troque a referência do prazo ou da validade destes documentos antes de remover a fase.');
     tela.expansao.confirmarRemocaoDaFase(1);
     expect(tela.store.draft().cronograma.fases).toHaveLength(2);
   });
