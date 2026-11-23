@@ -28,6 +28,20 @@ describe('RecusasDasExigencias', () => {
     expect(recusas.doCampo('1', primeira.campo)).toEqual([primeira]);
   });
 
+  it('preserva a recusa ao editar outro formato ou outra fase', () => {
+    const recusas = new RecusasDasExigencias();
+    const recusa = {
+      ...primeira,
+      faseCodigo: 'AVALIACAO',
+      campo: primeira.campo + '[0].tamanhoMaximoBytesMax',
+    };
+    recusas.registrar([recusa]);
+    recusas.limparCampo('1', primeira.campo + '[1].tamanhoMaximoBytesMax', 'AVALIACAO');
+    recusas.limparCampo('1', recusa.campo, 'ISENCAO');
+    expect(recusas.doCampo('1', recusa.campo, 'AVALIACAO')).toEqual([recusa]);
+    expect(recusas.doCampo('1', recusa.campo, 'ISENCAO')).toEqual([]);
+  });
+
   it('limpa todas as recusas para nova gravação', () => {
     const recusas = new RecusasDasExigencias();
     recusas.registrar([primeira, segunda]);

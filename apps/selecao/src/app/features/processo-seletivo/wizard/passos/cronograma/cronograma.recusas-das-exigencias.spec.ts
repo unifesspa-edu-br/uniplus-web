@@ -15,6 +15,11 @@ import {
   PROBLEM_JSON,
 } from './cronograma.testing';
 
+const PROCESSO_COM_AVALIACAO = {
+  ...PROCESSO_COM_ETAPA_GRAVADA,
+  cronogramaFases: [{ id: ID_AVALIACAO, codigo: 'AVALIACAO', faseCanonica: {} }],
+};
+
 const CAMPO = 'documento.requisitos.formatosPermitidos';
 const MENSAGEM = 'Formato recusado pelo servidor';
 const TIPOS = [
@@ -50,10 +55,7 @@ describe('Recusas dos documentos exigidos no cronograma', () => {
     tela.controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
     await tela.proximoPasso();
     await tela.gravouEtapas();
-    tela.controller.expectOne(ROTA_PROCESSO).flush({
-      ...PROCESSO_COM_ETAPA_GRAVADA,
-      cronogramaFases: [{ id: ID_AVALIACAO, codigo: 'AVALIACAO', faseCanonica: {} }],
-    });
+    tela.controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_AVALIACAO);
     await tela.proximoPasso();
     recusarDocumentos(campo);
     const resposta = await resultado;
@@ -88,6 +90,19 @@ describe('Recusas dos documentos exigidos no cronograma', () => {
     expect(campo?.closest('fieldset')?.textContent).not.toContain(MENSAGEM);
   });
 
+  it('mostra na fase acrescentada a recusa da exigência herdada', async () => {
+    const [modelo] = preparar();
+    const documento = exigencia({ faseCodigo: 'ISENCAO', tipoDocumentoId: TIPOS[0].id });
+    tela.store.patchSection('documentos', {
+      emTodasAsFases: [TIPOS[0].id],
+      regrasDeComprovacao: [{ ...modelo, documento }],
+    });
+    tela.detectar();
+    await gravar(`regrasDeComprovacao[0].${CAMPO}`);
+    const campo = tela.nativo.querySelector(`[id$="doc-arquivo-${TIPOS[0].id}-qualquer"]`);
+    expect(campo?.closest('fieldset')?.textContent).toContain(MENSAGEM);
+  });
+
   it('leva o foco ao primeiro campo recusado', async () => {
     const regras = preparar();
     document.body.append(tela.nativo);
@@ -98,10 +113,45 @@ describe('Recusas dos documentos exigidos no cronograma', () => {
     tela.nativo.remove();
   });
 
+  async function recusarCampoDoGrupo(campo: string): Promise<string> {
+    const grupo = regraDoRascunho({
+      forma: 'QUANTIDADE_MINIMA_DE_ITENS',
+      quantidadeMinima: 1,
+      itens: preparar(),
+    });
+    tela.store.patchSection('documentos', { emTodasAsFases: [], regrasDeComprovacao: [grupo] });
+    tela.detectar();
+    await gravar(`regrasDeComprovacao[0].${campo}`);
+    tela.controller
+      .match((pedido) => pedido.url.includes('/vocabularios/'))
+      .forEach((pedido) => pedido.flush([]));
+    return grupo.identificadorNoRascunho;
+  }
+
+  it('abre a combinação e mostra a recusa da quantidade mínima', async () => {
+    const identificador = await recusarCampoDoGrupo('cardinalidade.quantidadeMinima');
+    const campo = tela.nativo.querySelector<HTMLInputElement>(`#quantidade-${identificador}`);
+    expect(campo?.getAttribute('aria-invalid')).toBe('true');
+    expect(campo?.parentElement?.textContent).toContain(MENSAGEM);
+    if (campo) {
+      campo.value = '2';
+      campo.dispatchEvent(new Event('input'));
+    }
+    tela.detectar();
+    expect(campo?.parentElement?.textContent).not.toContain(MENSAGEM);
+  });
+
+  it.each(['consequencia', 'basesLegais'])('mostra a recusa do grupo em %s', async (campo) => {
+    const identificador = await recusarCampoDoGrupo(`indeferimento.${campo}`);
+    const prefixo = campo === 'consequencia' ? 'consequencia' : 'normas';
+    const recusa = tela.nativo.querySelector(`#${prefixo}-${identificador}-recusas`);
+    expect(recusa?.textContent).toContain(MENSAGEM);
+  });
+
   it('mantém a recusa sem identificação apenas na mensagem geral', async () => {
     preparar();
     const resultado = await gravar();
     expect(resultado.messages?.join(' ')).toContain('Recusa geral');
-    expect(tela.nativo.textContent).not.toContain(MENSAGEM);
+    expect(resultado.messages?.join(' ')).toContain(MENSAGEM);
   });
 });

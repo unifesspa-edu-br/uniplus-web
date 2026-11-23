@@ -32,6 +32,7 @@ export interface ProcessoVivoDasExigencias {
 
 export interface OrigemDaRegraEnviada {
   readonly identificadorDaRegra: string;
+  readonly faseCodigo?: string;
   readonly itens: readonly OrigemDaRegraEnviada[];
 }
 
@@ -50,7 +51,34 @@ export function regrasDeComprovacaoParaEnvio(
   );
   return {
     regras: preparadas.map((item) => item.regra),
-    origens: preparadas.map((item) => item.origem),
+    origens: origensParaApresentacao(preparadas, completas, exigencias),
+  };
+}
+
+function origensParaApresentacao(
+  preparadas: readonly RegraPreparada[],
+  completas: ExigenciasDoRascunho,
+  exigencias: ExigenciasDoRascunho,
+): OrigemDaRegraEnviada[] {
+  const existentes = new Set(
+    exigencias.regrasDeComprovacao.map((regra) => regra.identificadorNoRascunho),
+  );
+  return preparadas.map((item) => origemDaRegra(item.origem, completas, existentes));
+}
+
+function origemDaRegra(
+  origem: OrigemDaRegraEnviada,
+  completas: ExigenciasDoRascunho,
+  existentes: ReadonlySet<string>,
+): OrigemDaRegraEnviada {
+  const regra = completas.regrasDeComprovacao.find(
+    (item) => item.identificadorNoRascunho === origem.identificadorDaRegra,
+  );
+  if (!regra || existentes.has(regra.identificadorNoRascunho) || !regra.documento) return origem;
+  return {
+    ...origem,
+    identificadorDaRegra: regra.documento.tipoDocumentoId,
+    faseCodigo: regra.documento.faseCodigo,
   };
 }
 

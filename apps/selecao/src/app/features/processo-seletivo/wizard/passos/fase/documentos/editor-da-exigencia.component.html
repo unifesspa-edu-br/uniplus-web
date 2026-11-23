@@ -111,22 +111,20 @@
 
   <sel-arquivo-aceito
     [recusasDosFormatos]="
-      recusas?.doCampo(identificador, 'documento.requisitos.formatosPermitidos') ?? []
+      recusas?.doCampo(identificador, 'documento.requisitos.formatosPermitidos', faseCodigo()) ?? []
     "
     [recusasDoTamanho]="
-      recusas?.doCampo(identificador, 'documento.requisitos.tamanhoMaximoBytes') ?? []
+      recusas?.doCampo(identificador, 'documento.requisitos.tamanhoMaximoBytes', faseCodigo()) ?? []
     "
     [formatos]="exigencias.exigenciaDoDocumento(identificador).formatosPermitidos"
     [tamanho]="exigencias.exigenciaDoDocumento(identificador).tamanhoMaximoBytes"
     [idBase]="idDaFase('doc-arquivo-' + identificador)"
     [desabilitado]="!cronograma.edicaoLiberada()"
-    (formatosChange)="
-      exigencias.escreverExigencia(identificador, { formatosPermitidos: $event });
-      recusas?.limparCampo(identificador, 'documento.requisitos.formatosPermitidos')
-    "
+    (formatosChange)="exigencias.escreverExigencia(identificador, { formatosPermitidos: $event })"
+    (campoDeFormatoEditado)="recusas?.limparCampo(identificador, $event, faseCodigo())"
     (tamanhoChange)="
       exigencias.escreverExigencia(identificador, { tamanhoMaximoBytes: $event });
-      recusas?.limparCampo(identificador, 'documento.requisitos.tamanhoMaximoBytes')
+      recusas?.limparCampo(identificador, 'documento.requisitos.tamanhoMaximoBytes', faseCodigo())
     "
   />
 

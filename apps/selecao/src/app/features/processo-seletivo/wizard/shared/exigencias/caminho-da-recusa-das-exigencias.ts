@@ -8,6 +8,7 @@ export interface CaminhoDaRecusaDasExigencias {
 
 export interface IdentificacaoDaRecusaDaExigencia {
   readonly identificadorDaRegra: string;
+  readonly faseCodigo?: string;
   readonly campo: string;
 }
 
@@ -42,7 +43,10 @@ export function identificarRecusaDaExigencia(
   if (local === null) return null;
   let origem = origens[local.indiceDaRegra];
   for (const indice of local.indicesDosItens) origem = origem?.itens[indice];
-  return origem === undefined
-    ? null
-    : { identificadorDaRegra: origem.identificadorDaRegra, campo: local.campo };
+  if (origem === undefined) return null;
+  return {
+    identificadorDaRegra: origem.identificadorDaRegra,
+    campo: local.campo,
+    ...(origem.faseCodigo ? { faseCodigo: origem.faseCodigo } : {}),
+  };
 }

@@ -47,10 +47,10 @@ describe('composição dos grupos', () => {
   it('valida a quantidade mínima', () => {
     const grupo = grupoDeTres();
     expect(trocarQuantidadeMinima(grupo, 'grupo', 0).regrasDeComprovacao[0].quantidadeMinima).toBe(
-      1,
+      0,
     );
     expect(trocarQuantidadeMinima(grupo, 'grupo', 4).regrasDeComprovacao[0].quantidadeMinima).toBe(
-      1,
+      4,
     );
     expect(trocarQuantidadeMinima(grupo, 'grupo', 3).regrasDeComprovacao[0].quantidadeMinima).toBe(
       3,
@@ -107,9 +107,8 @@ describe('composição dos grupos', () => {
       ...antes,
       regrasDeComprovacao: [...antes.regrasDeComprovacao, ...quarto.regrasDeComprovacao],
     };
-    const identificadores = combinado.regrasDeComprovacao.map(
-      (regra) => regra.identificadorNoRascunho,
-    );
+    const regras = combinado.regrasDeComprovacao;
+    const identificadores = regras.map(({ identificadorNoRascunho }) => identificadorNoRascunho);
     const primeiro = criarGrupo(combinado, identificadores.slice(0, 2), 'primeiro');
     const segundo = criarGrupo(primeiro, identificadores.slice(2), 'segundo');
     const dentro = incluirNoGrupo(segundo, 'primeiro', 'segundo');

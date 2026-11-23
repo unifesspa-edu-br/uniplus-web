@@ -2,13 +2,13 @@
   [disabled]="desabilitado()"
   [attr.aria-describedby]="
     (listaVazia() ? idBase() + '-formatos-erro ' : '') +
-    (recusasDosFormatos().length ? idBase() + '-formatos-recusas' : '')
+    (recusasDaLista().length ? idBase() + '-formatos-recusas' : '')
   "
 >
   <legend>Formatos aceitos</legend>
   <ui-recusa-do-campo
     [id]="idBase() + '-formatos-recusas'"
-    [recusas]="recusasParaExibir(recusasDosFormatos())"
+    [recusas]="recusasParaExibir(recusasDaLista())"
   />
   <label
     ><input
@@ -58,10 +58,19 @@
             [attr.aria-describedby]="
               idBase() +
               '-ajuda' +
-              (tamanhoInvalido(opcao.codigo) ? ' ' + idBase() + '-' + opcao.codigo + '-erro' : '')
+              (tamanhoInvalido(opcao.codigo) ? ' ' + idBase() + '-' + opcao.codigo + '-erro' : '') +
+              (recusasDoFormato(opcao.codigo).length
+                ? ' ' + idBase() + '-' + opcao.codigo + '-recusas'
+                : '')
             "
-            [attr.aria-invalid]="tamanhoInvalido(opcao.codigo) ? 'true' : null"
+            [attr.aria-invalid]="
+              tamanhoInvalido(opcao.codigo) || recusasDoFormato(opcao.codigo).length ? 'true' : null
+            "
             (input)="definirTamanho(opcao.codigo, $event)"
+          />
+          <ui-recusa-do-campo
+            [id]="idBase() + '-' + opcao.codigo + '-recusas'"
+            [recusas]="recusasParaExibir(recusasDoFormato(opcao.codigo))"
           />
           @if (tamanhoInvalido(opcao.codigo)) {
             <p class="field__error" [id]="idBase() + '-' + opcao.codigo + '-erro'">
@@ -90,7 +99,9 @@
         (tamanhoDaExigenciaInvalido() ? ' ' + idBase() + '-tamanho-erro' : '') +
         (recusasDoTamanho().length ? ' ' + idBase() + '-tamanho-recusas' : '')
       "
-      [attr.aria-invalid]="tamanhoDaExigenciaInvalido() || recusasDoTamanho().length ? 'true' : null"
+      [attr.aria-invalid]="
+        tamanhoDaExigenciaInvalido() || recusasDoTamanho().length ? 'true' : null
+      "
       (input)="definirTamanhoDaExigencia($event)"
     />
     <ui-recusa-do-campo

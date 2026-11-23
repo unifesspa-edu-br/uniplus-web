@@ -33,17 +33,22 @@
         [id]="'quantidade-' + grupo().identificadorNoRascunho"
         [value]="quantidadeDigitada() ?? grupo().quantidadeMinima"
         [disabled]="desabilitado()"
-        [attr.aria-invalid]="quantidadeInvalida()"
+        [attr.aria-invalid]="quantidadeInvalida() || recusasDaQuantidade().length > 0"
         [attr.aria-describedby]="
           'ajuda-' +
           grupo().identificadorNoRascunho +
-          (quantidadeInvalida() ? ' erro-' + grupo().identificadorNoRascunho : '')
+          (quantidadeInvalida() ? ' erro-' + grupo().identificadorNoRascunho : '') +
+          (recusasDaQuantidade().length ? ' recusas-' + grupo().identificadorNoRascunho : '')
         "
         (input)="escolherQuantidade($any($event.target).value)"
       />
       <p class="field__hint" [id]="'ajuda-' + grupo().identificadorNoRascunho">
         Informe quantos documentos devem ser apresentados.
       </p>
+      <ui-recusa-do-campo
+        [id]="'recusas-' + grupo().identificadorNoRascunho"
+        [recusas]="recusasDaQuantidade()"
+      />
       @if (quantidadeInvalida()) {
         <p [id]="'erro-' + grupo().identificadorNoRascunho">
           Informe um número inteiro entre 1 e {{ itens().length }}.
