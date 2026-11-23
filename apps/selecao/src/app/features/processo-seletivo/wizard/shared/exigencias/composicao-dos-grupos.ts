@@ -145,19 +145,11 @@ export function trocarQuantidadeMinima(
 ): ExigenciasDoRascunho {
   return {
     ...exigencias,
-    regrasDeComprovacao: alterarGrupo(exigencias.regrasDeComprovacao, identificador, (grupo) =>
-      quantidadeValida(grupo, quantidade) ? { ...grupo, quantidadeMinima: quantidade } : grupo,
-    ),
+    regrasDeComprovacao: alterarGrupo(exigencias.regrasDeComprovacao, identificador, (grupo) => ({
+      ...grupo,
+      quantidadeMinima: quantidade,
+    })),
   };
-}
-
-function quantidadeValida(grupo: RegraDeComprovacao, quantidade: number): boolean {
-  return (
-    grupo.forma === 'QUANTIDADE_MINIMA_DE_ITENS' &&
-    Number.isInteger(quantidade) &&
-    quantidade >= 1 &&
-    quantidade <= (grupo.itens?.length ?? 0)
-  );
 }
 
 function encontrarGrupo(

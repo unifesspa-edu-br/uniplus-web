@@ -18,6 +18,7 @@ import { rotuloDaConsequencia } from '../resumo-da-exigencia';
 export class ConsequenciaENormasComponent {
   readonly idDaConsequencia = input.required<string>();
   readonly idDasNormas = input.required<string>();
+  readonly recusasDasNormas = input<readonly RecusaDoCampo[]>([]);
   readonly recusasDaConsequencia = input<readonly RecusaDoCampo[]>([]);
   readonly consequencia = input.required<string>();
   readonly bases = input.required<readonly BaseLegalConfig[]>();

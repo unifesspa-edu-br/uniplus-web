@@ -35,6 +35,9 @@
   @for (grupo of grupos.grupos(); track grupo.identificadorNoRascunho) {
     <sel-grupo-de-documentos
       [grupo]="grupo"
+      [recusasDaQuantidade]="
+        recusasDoCampo(grupo.identificadorNoRascunho, 'cardinalidade.quantidadeMinima')
+      "
       [itens]="nomes(grupo.itens ?? [])"
       [disponiveis]="disponiveis(grupo)"
       [formas]="catalogo.formas()"
@@ -48,6 +51,7 @@
       "
       (quantidadeChange)="
         grupos.trocarQuantidade(grupo.identificadorNoRascunho, $event);
+        recusas?.limparCampo(grupo.identificadorNoRascunho, 'cardinalidade.quantidadeMinima');
         aviso.set('Quantidade mínima atualizada.')
       "
       (incluir)="incluir(grupo, $event, botaoCombinar)"
@@ -63,6 +67,12 @@
         referenciaDaNorma="Norma que exige o grupo"
         [idDaConsequencia]="'consequencia-' + grupo.identificadorNoRascunho"
         [idDasNormas]="'normas-' + grupo.identificadorNoRascunho"
+        [recusasDaConsequencia]="
+          recusasDoCampo(grupo.identificadorNoRascunho, 'indeferimento.consequencia')
+        "
+        [recusasDasNormas]="
+          recusasDoCampo(grupo.identificadorNoRascunho, 'indeferimento.basesLegais')
+        "
         [consequencia]="grupo.consequencia ?? ''"
         [bases]="grupo.basesLegais ?? []"
         [opcoes]="opcoes()"

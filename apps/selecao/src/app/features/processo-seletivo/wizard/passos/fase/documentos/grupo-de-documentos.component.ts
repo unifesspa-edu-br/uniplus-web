@@ -12,6 +12,8 @@ import {
   acompanharLeitura,
   FalhaDeLeituraDoCampoComponent,
   IndicadorDaLeituraDirective,
+  RecusaDoCampoComponent,
+  type RecusaDoCampo,
 } from '@uniplus/shared-ui/components';
 import type { FormaDeComprovacaoDto } from '@uniplus/shared-data/selecao';
 
@@ -26,12 +28,13 @@ type FormaDoGrupo = 'TODOS_OS_ITENS' | 'QUANTIDADE_MINIMA_DE_ITENS';
 
 @Component({
   selector: 'sel-grupo-de-documentos',
-  imports: [FalhaDeLeituraDoCampoComponent, IndicadorDaLeituraDirective],
+  imports: [FalhaDeLeituraDoCampoComponent, IndicadorDaLeituraDirective, RecusaDoCampoComponent],
   templateUrl: './grupo-de-documentos.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GrupoDeDocumentosComponent {
   readonly grupo = input.required<RegraDeComprovacao>();
+  readonly recusasDaQuantidade = input<readonly RecusaDoCampo[]>([]);
   readonly itens = input.required<readonly DocumentoDoGrupo[]>();
   readonly disponiveis = input.required<readonly DocumentoDoGrupo[]>();
   readonly formas = input.required<readonly FormaDeComprovacaoDto[]>();
@@ -58,10 +61,10 @@ export class GrupoDeDocumentosComponent {
   );
   readonly quantidadeInvalida = computed(() => {
     const digitada = this.quantidadeDigitada();
-    if (digitada === null) return false;
-    const quantidade = Number(digitada);
+    const quantidade = digitada === null ? this.grupo().quantidadeMinima : Number(digitada);
+    if (quantidade === null) return false;
     return (
-      digitada.trim() === '' ||
+      digitada?.trim() === '' ||
       !Number.isInteger(quantidade) ||
       quantidade < 1 ||
       quantidade > this.itens().length
@@ -90,7 +93,7 @@ export class GrupoDeDocumentosComponent {
 
   escolherQuantidade(valor: string): void {
     this.quantidadeDigitada.set(valor);
-    if (!this.quantidadeInvalida()) this.quantidadeChange.emit(Number(valor));
+    this.quantidadeChange.emit(Number(valor));
   }
 
   incluirEscolhido(): void {

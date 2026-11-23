@@ -56,6 +56,7 @@ export class EditorDaExigenciaComponent {
   readonly resumo = input.required<ResumoDoDocumento>();
   readonly remover = output<void>();
 
+  protected readonly faseCodigo = () => this.faseEmEdicao.faseDoRascunho()?.codigo;
   protected readonly idDaFase = this.faseEmEdicao.idDaFase;
 
   consequenciasDaFase(): readonly { readonly valor: string; readonly rotulo: string }[] {
@@ -94,9 +95,9 @@ export class EditorDaExigenciaComponent {
   }
 
   recusasDaConsequencia(id: string) {
-    return (this.recusas?.doCampo(id, 'documento.indeferimento.consequencia') ?? []).map(
-      (recusa) => ({ ...recusa, pagina: null }),
-    );
+    return (
+      this.recusas?.doCampo(id, 'documento.indeferimento.consequencia', this.faseCodigo()) ?? []
+    ).map((recusa) => ({ ...recusa, pagina: null }));
   }
 
   consequenciaDoDocumento(id: string): string {
@@ -109,7 +110,7 @@ export class EditorDaExigenciaComponent {
    */
   escolherConsequencia(id: string, consequencia: string): void {
     this.exigencias.escreverExigencia(id, { consequenciaIndeferimento: consequencia });
-    this.recusas?.limparCampo(id, 'documento.indeferimento.consequencia');
+    this.recusas?.limparCampo(id, 'documento.indeferimento.consequencia', this.faseCodigo());
   }
 
   /** As normas que sustentam a exigência nesta fase — são N por exigência (ADR-0074). */

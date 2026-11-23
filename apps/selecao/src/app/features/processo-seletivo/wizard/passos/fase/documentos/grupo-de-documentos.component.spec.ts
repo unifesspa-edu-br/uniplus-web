@@ -44,18 +44,28 @@ describe('GrupoDeDocumentosComponent', () => {
     fixture.detectChanges();
     const tela = fixture.nativeElement as HTMLElement;
     expect(tela.querySelectorAll('fieldset')[1].disabled).toBe(true);
-    expect(tela.textContent).toContain('Não foi possível carregar.');
     const falha = tela.querySelector('ui-falha-de-leitura-do-campo');
     expect(falha?.textContent).toContain('Não foi possível carregar.');
     falha?.querySelector<HTMLButtonElement>('button')?.click();
     expect(repetir).toHaveBeenCalledOnce();
+  });
+
+  it('mantém a falha visível enquanto repete a leitura', () => {
+    const fixture = montar();
+    fixture.componentRef.setInput('situacao', 'falhou');
+    fixture.componentRef.setInput('erro', 'Não foi possível carregar.');
+    fixture.detectChanges();
+    const falha = (fixture.nativeElement as HTMLElement).querySelector(
+      'ui-falha-de-leitura-do-campo',
+    );
+    falha?.querySelector<HTMLButtonElement>('button')?.click();
     fixture.componentRef.setInput('situacao', 'carregando');
     fixture.componentRef.setInput('erro', null);
     fixture.detectChanges();
     expect(falha?.textContent).toContain('Não foi possível carregar.');
   });
 
-  it('associa o erro ao campo e não emite quantidade inválida', () => {
+  it('associa o erro ao campo e informa a quantidade inválida', () => {
     const fixture = montar();
     const emitir = vi.fn();
     fixture.componentInstance.quantidadeChange.subscribe(emitir);
@@ -67,7 +77,20 @@ describe('GrupoDeDocumentosComponent', () => {
     fixture.detectChanges();
     expect(campo.getAttribute('aria-invalid')).toBe('true');
     expect(campo.getAttribute('aria-describedby')).toContain('erro-');
-    expect(emitir).not.toHaveBeenCalled();
+    expect(emitir).toHaveBeenCalledWith(3);
+  });
+
+  it('associa a recusa da API à quantidade mínima', () => {
+    const fixture = montar();
+    fixture.componentRef.setInput('recusasDaQuantidade', [
+      { codigo: 'QUANTIDADE', mensagem: 'Corrija a quantidade.', pagina: null },
+    ]);
+    fixture.detectChanges();
+    const tela = fixture.nativeElement as HTMLElement;
+    const campo = tela.querySelector<HTMLInputElement>('input[type=number]') as HTMLInputElement;
+    expect(campo.getAttribute('aria-invalid')).toBe('true');
+    expect(campo.getAttribute('aria-describedby')).toContain('recusas-');
+    expect(tela.textContent).toContain('Corrija a quantidade.');
   });
 
   it('emite as escolhas de forma e quantidade', () => {
@@ -82,20 +105,24 @@ describe('GrupoDeDocumentosComponent', () => {
     expect(quantidade).toHaveBeenCalledWith(2);
   });
 
-  it('emite os documentos a retirar e incluir', () => {
+  it('emite o documento a retirar', () => {
     const fixture = montar();
     const retirar = vi.fn();
-    const incluir = vi.fn();
     fixture.componentInstance.retirar.subscribe(retirar);
-    fixture.componentInstance.incluir.subscribe(incluir);
     const tela = fixture.nativeElement as HTMLElement;
     (tela.querySelector('[aria-label="Retirar do grupo: RG"]') as HTMLButtonElement).click();
+    expect(retirar).toHaveBeenCalledWith('rg');
+  });
+  it('emite o documento escolhido para inclusão', () => {
+    const fixture = montar();
+    const incluir = vi.fn();
+    fixture.componentInstance.incluir.subscribe(incluir);
     fixture.componentInstance.documentoEscolhido.set('cnh');
     fixture.detectChanges();
+    const tela = fixture.nativeElement as HTMLElement;
     [...tela.querySelectorAll('button')]
       .find((botao) => botao.textContent?.includes('Incluir documento'))
       ?.click();
-    expect(retirar).toHaveBeenCalledWith('rg');
     expect(incluir).toHaveBeenCalledWith('cnh');
   });
 });

@@ -1,6 +1,6 @@
 import { computed, inject, Injectable } from '@angular/core';
 
-import type { ValidacaoDoPasso } from '../../../processo-seletivo.models';
+import type { RegraDeComprovacao, ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import {
   documentosDe,
@@ -114,7 +114,24 @@ export class ConferenciaDoCronograma {
       return { valid: false, messages: [TEXTOS_RELEITURA[pendente]] };
     }
 
-    const problemas = this.problemas();
+    const problemas = [
+      ...this.problemas(),
+      ...problemasDasQuantidades(this.store.draft().documentos.regrasDeComprovacao),
+    ];
     return problemas.length === 0 ? { valid: true } : { valid: false, messages: [...problemas] };
   }
+}
+
+function problemasDasQuantidades(regras: readonly RegraDeComprovacao[]): string[] {
+  return regras.flatMap((regra) => {
+    const quantidade = regra.quantidadeMinima;
+    const invalida =
+      regra.forma === 'QUANTIDADE_MINIMA_DE_ITENS' &&
+      quantidade !== null &&
+      (!Number.isInteger(quantidade) || quantidade < 1 || quantidade > (regra.itens?.length ?? 0));
+    return [
+      ...(invalida ? ['Corrija a quantidade mínima dos documentos combinados.'] : []),
+      ...problemasDasQuantidades(regra.itens ?? []),
+    ];
+  });
 }

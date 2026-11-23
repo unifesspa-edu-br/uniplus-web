@@ -13,15 +13,23 @@ export class DocumentosEmEdicao {
 
   constructor() {
     effect(() => {
-      const identificadores = new Set(
-        this.recusas?.todas().map((recusa) => recusa.identificadorDaRegra),
-      );
+      const identificadores = this.identificadoresRecusados();
       for (const exigencia of this.exigencias.declaracoesDaFase()) {
         if (identificadores.has(exigencia.identificadorNoRascunho)) {
           untracked(() => this.alternar(exigencia.identificadorNoRascunho, true));
         }
       }
     });
+  }
+
+  private identificadoresRecusados(): ReadonlySet<string | null> {
+    const fase = this.fase.faseDoRascunho()?.codigo;
+    return new Set(
+      this.recusas
+        ?.todas()
+        .filter((recusa) => !recusa.faseCodigo || recusa.faseCodigo === fase)
+        .map((recusa) => recusa.identificadorDaRegra),
+    );
   }
 
   private chave(id: string): string {

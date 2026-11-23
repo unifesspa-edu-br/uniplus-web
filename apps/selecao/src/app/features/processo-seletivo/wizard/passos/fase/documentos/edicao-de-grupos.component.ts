@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { consequenciasDaFase } from '@uniplus/shared-utils';
 
 import type { BaseLegalConfig, RegraDeComprovacao } from '../../../processo-seletivo.models';
@@ -13,6 +20,7 @@ import { FaseEmEdicao } from '../fase-em-edicao';
 import { CriterioDeDistincaoComponent } from './criterio-de-distincao.component';
 import { ConsequenciaENormasComponent } from './consequencia-e-normas.component';
 import { GrupoDeDocumentosComponent, type DocumentoDoGrupo } from './grupo-de-documentos.component';
+import { RecusasDasExigencias } from './recusas-das-exigencias.service';
 import { GruposDeDocumentosStore } from './grupos-de-documentos.store';
 
 @Component({
@@ -24,6 +32,7 @@ import { GruposDeDocumentosStore } from './grupos-de-documentos.store';
 })
 export class EdicaoDeGruposComponent {
   protected readonly grupos = inject(GruposDeDocumentosStore);
+  protected readonly recusas = inject(RecusasDasExigencias, { optional: true });
   protected readonly catalogo = inject(CatalogoDasFormasDeComprovacao);
   protected readonly cronograma = inject(FormularioDoCronograma);
   private readonly documentos = inject(CatalogoDeDocumentos);
@@ -38,6 +47,28 @@ export class EdicaoDeGruposComponent {
       fase !== null && descreverFase(fase, this.fases.fasePorId()).permiteComplementacao;
     return consequenciasDaFase(CONSEQUENCIAS_ESCOLHIVEIS, permite);
   });
+
+  constructor() {
+    effect(() => {
+      const identificadores =
+        this.recusas?.todas().map((recusa) => recusa.identificadorDaRegra) ?? [];
+      if (
+        this.grupos
+          .grupos()
+          .some((grupo) => identificadores.includes(grupo.identificadorNoRascunho))
+      ) {
+        this.aberto.set(true);
+        this.catalogo.carregar();
+      }
+    });
+  }
+
+  protected recusasDoCampo(identificador: string, campo: string) {
+    return (this.recusas?.doCampo(identificador, campo) ?? []).map((recusa) => ({
+      ...recusa,
+      pagina: null,
+    }));
+  }
 
   protected abrir(): void {
     this.aberto.set(!this.aberto());
@@ -109,6 +140,7 @@ export class EdicaoDeGruposComponent {
       consequencia: consequencia || null,
       basesLegais: grupo.basesLegais,
     });
+    this.recusas?.limparCampo(grupo.identificadorNoRascunho, 'indeferimento.consequencia');
     this.aviso.set('Consequência do grupo atualizada.');
   }
 
@@ -120,6 +152,7 @@ export class EdicaoDeGruposComponent {
       consequencia: grupo.consequencia,
       basesLegais,
     });
+    this.recusas?.limparCampo(grupo.identificadorNoRascunho, 'indeferimento.basesLegais');
     this.aviso.set('Normas do grupo atualizadas.');
   }
 }

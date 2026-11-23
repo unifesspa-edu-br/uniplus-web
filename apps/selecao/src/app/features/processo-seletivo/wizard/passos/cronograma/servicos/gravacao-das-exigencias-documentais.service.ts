@@ -32,6 +32,7 @@ import { finalidadesQueAtende } from '../../formulario/formularios-por-finalidad
 
 export interface RecusaDaExigencia {
   readonly identificadorDaRegra: string | null;
+  readonly faseCodigo?: string;
   readonly campo: string;
   readonly codigo: string;
   readonly mensagem: string;
@@ -48,6 +49,7 @@ function traduzirRecusa(
   const identificacao = identificarRecusaDaExigencia(erro.field ?? '', origens);
   return {
     identificadorDaRegra: identificacao?.identificadorDaRegra ?? null,
+    faseCodigo: identificacao?.faseCodigo,
     campo: identificacao?.campo ?? erro.field ?? '',
     codigo: erro.code ?? '',
     mensagem: recusaDaExigenciaDoServidor({ code: erro.code }) ?? erro.message,
@@ -122,7 +124,10 @@ export class GravacaoDasExigenciasDocumentais {
       recusaDaExigenciaDoServidor(problema) ?? this.problemI18n.resolve(problema).title;
     return {
       valid: false,
-      messages: [`As etapas, o cronograma e o formulário de inscrição foram gravados. ${motivo}`],
+      messages: [
+        `As etapas, o cronograma e o formulário de inscrição foram gravados. ${motivo}`,
+        ...(problema.errors ?? []).map((erro) => erro.message),
+      ],
       recusas: (problema.errors ?? []).map((erro) => traduzirRecusa(erro, origens)),
     };
   }

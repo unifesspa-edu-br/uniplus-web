@@ -4,6 +4,7 @@
     class="select"
     [id]="idDaConsequencia()"
     [disabled]="desabilitado()"
+    [attr.aria-invalid]="recusasDaConsequencia().length ? 'true' : null"
     [attr.aria-describedby]="
       recusasDaConsequencia().length ? idDaConsequencia() + '-recusas' : null
     "
@@ -18,17 +19,26 @@
   <ui-recusa-do-campo [id]="idDaConsequencia() + '-recusas'" [recusas]="recusasDaConsequencia()" />
   <ng-content select="[aviso]"></ng-content>
 </div>
-<ui-normas-do-documento
-  disposicao="na-grade"
-  [bases]="bases()"
-  [idBase]="idDasNormas()"
-  [disabled]="desabilitado()"
-  [minimo]="1"
-  [textos]="textos()"
-  [referenciaObrigatoria]="false"
-  [maximoReferencia]="null"
-  [maximoObservacao]="null"
-  (basesChange)="basesChange.emit($event)"
+<div
+  role="group"
+  tabindex="-1"
+  [id]="idDasNormas() + '-grupo'"
+  aria-label="Normas"
+  [attr.aria-describedby]="recusasDasNormas().length ? idDasNormas() + '-recusas' : null"
 >
-  <ng-content></ng-content>
-</ui-normas-do-documento>
+  <ui-recusa-do-campo [id]="idDasNormas() + '-recusas'" [recusas]="recusasDasNormas()" />
+  <ui-normas-do-documento
+    disposicao="na-grade"
+    [bases]="bases()"
+    [idBase]="idDasNormas()"
+    [disabled]="desabilitado()"
+    [minimo]="1"
+    [textos]="textos()"
+    [referenciaObrigatoria]="false"
+    [maximoReferencia]="null"
+    [maximoObservacao]="null"
+    (basesChange)="basesChange.emit($event)"
+  >
+    <ng-content></ng-content>
+  </ui-normas-do-documento>
+</div>
