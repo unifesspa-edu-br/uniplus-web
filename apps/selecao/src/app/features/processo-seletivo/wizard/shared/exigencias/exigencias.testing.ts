@@ -7,6 +7,7 @@ import type {
 
 import { regrasDeComprovacaoParaEnvio } from './gravacao-das-exigencias';
 import { comExigencia, exigenciaNova } from './exigencias-documentais';
+import { criarIdentificadorDaRegra } from './identificador-da-regra';
 import type {
   ExigenciaDeDocumento,
   ExigenciasDoRascunho,
@@ -60,7 +61,7 @@ export function comando(
   });
 }
 
-const NO_SEM_NADA: Omit<RegraDeComprovacao, 'forma'> = {
+const REGRA_SEM_DADOS: Omit<RegraDeComprovacao, 'forma' | 'identificadorNoRascunho'> = {
   documento: null,
   quantidadeMinima: null,
   consequencia: null,
@@ -76,7 +77,11 @@ const NO_SEM_NADA: Omit<RegraDeComprovacao, 'forma'> = {
 export function regraDoRascunho(
   alteracoes: Partial<RegraDeComprovacao> & Pick<RegraDeComprovacao, 'forma'>,
 ): RegraDeComprovacao {
-  return { ...NO_SEM_NADA, ...alteracoes };
+  return {
+    ...REGRA_SEM_DADOS,
+    identificadorNoRascunho: criarIdentificadorDaRegra(),
+    ...alteracoes,
+  };
 }
 
 export function detalheDaApi(
@@ -109,6 +114,15 @@ export function exigenciaDaApi(alteracoes: AlteracoesDoDocumentoDaApi = {}): Reg
     itens: [],
     grupoDoFormularioParaRepeticao: null,
     documento: documentoDaApi(alteracoes),
+  };
+}
+
+export function grupoDaApi(itens: RegraDeComprovacaoDto[]): RegraDeComprovacaoDto {
+  return {
+    ...exigenciaDaApi(),
+    forma: { codigo: FormaDeComprovacaoCodigo.TODOS_OS_ITENS, rotulo: 'Todos' },
+    documento: null,
+    itens,
   };
 }
 
