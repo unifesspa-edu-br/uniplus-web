@@ -10,13 +10,14 @@ import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.se
 import { CatalogoDasFormasDeComprovacao } from '../../cronograma/catalogos/catalogo-das-formas-de-comprovacao.service';
 import { FormularioDoCronograma } from '../../cronograma/servicos/formulario-do-cronograma.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
+import { CriterioDeDistincaoComponent } from './criterio-de-distincao.component';
 import { ConsequenciaENormasComponent } from './consequencia-e-normas.component';
 import { GrupoDeDocumentosComponent, type DocumentoDoGrupo } from './grupo-de-documentos.component';
 import { GruposDeDocumentosStore } from './grupos-de-documentos.store';
 
 @Component({
   selector: 'sel-edicao-de-grupos',
-  imports: [GrupoDeDocumentosComponent, ConsequenciaENormasComponent],
+  imports: [GrupoDeDocumentosComponent, ConsequenciaENormasComponent, CriterioDeDistincaoComponent],
   providers: [GruposDeDocumentosStore, CatalogoDasFormasDeComprovacao],
   templateUrl: './edicao-de-grupos.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

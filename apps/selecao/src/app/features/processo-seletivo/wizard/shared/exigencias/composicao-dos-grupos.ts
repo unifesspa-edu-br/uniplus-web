@@ -109,6 +109,20 @@ export function editarGrupo(
   };
 }
 
+export function trocarCriterioDeDistincao(
+  exigencias: ExigenciasDoRascunho,
+  identificador: string,
+  criterio: string | null,
+): ExigenciasDoRascunho {
+  return {
+    ...exigencias,
+    regrasDeComprovacao: alterarGrupo(exigencias.regrasDeComprovacao, identificador, (grupo) => ({
+      ...grupo,
+      criterioDeDistincao: criterio,
+    })),
+  };
+}
+
 export function trocarFormaDoGrupo(
   exigencias: ExigenciasDoRascunho,
   identificador: string,

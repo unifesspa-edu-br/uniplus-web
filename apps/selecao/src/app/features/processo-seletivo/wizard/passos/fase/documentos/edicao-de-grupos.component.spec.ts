@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { exigencia, rascunho } from '../../../shared/exigencias/exigencias.testing';
+import { CatalogoDosCriteriosDeDistincaoDeApresentacoes } from '../../cronograma/catalogos/catalogo-dos-criterios-de-distincao-de-apresentacoes.service';
+import { CriterioDeDistincaoComponent } from './criterio-de-distincao.component';
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
 import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
 import { CatalogoDasFormasDeComprovacao } from '../../cronograma/catalogos/catalogo-das-formas-de-comprovacao.service';
@@ -62,6 +64,22 @@ function montar() {
     GruposDeDocumentosStore,
     { provide: CatalogoDasFormasDeComprovacao, useValue: catalogoDasFormas() },
   ];
+  TestBed.overrideComponent(CriterioDeDistincaoComponent, {
+    set: {
+      providers: [
+        {
+          provide: CatalogoDosCriteriosDeDistincaoDeApresentacoes,
+          useValue: {
+            criterios: signal([{ codigo: 'MENSAL', rotulo: 'Por mês' }]),
+            situacao: signal('pronto'),
+            erro: signal(null),
+            carregar: vi.fn(),
+            repetir: vi.fn(),
+          },
+        },
+      ],
+    },
+  });
   TestBed.overrideComponent(EdicaoDeGruposComponent, { set: { providers } });
   const fixture = TestBed.createComponent(EdicaoDeGruposComponent);
   fixture.detectChanges();
@@ -99,5 +117,16 @@ describe('Edição de grupos de documentos', () => {
     tela.querySelector<HTMLInputElement>('input[value=TODOS_OS_ITENS]')?.click();
     fixture.detectChanges();
     expect(draft().documentos.regrasDeComprovacao[0].forma).toBe('TODOS_OS_ITENS');
+  });
+  it('grava e remove o critério escolhido no grupo', () => {
+    const { fixture, draft } = montar();
+    const tela = combinarCinco(fixture);
+    const campo = tela.querySelector('sel-criterio-de-distincao select') as HTMLSelectElement;
+    campo.value = 'MENSAL';
+    campo.dispatchEvent(new Event('change'));
+    expect(draft().documentos.regrasDeComprovacao[0].criterioDeDistincao).toBe('MENSAL');
+    campo.value = '';
+    campo.dispatchEvent(new Event('change'));
+    expect(draft().documentos.regrasDeComprovacao[0].criterioDeDistincao).toBeNull();
   });
 });
