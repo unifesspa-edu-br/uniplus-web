@@ -4,6 +4,7 @@ import {
   editarGrupo,
   incluirNoGrupo,
   retirarDoGrupo,
+  trocarCriterioDeDistincao,
   trocarFormaDoGrupo,
   trocarQuantidadeMinima,
 } from './composicao-dos-grupos';
@@ -54,6 +55,16 @@ describe('composição dos grupos', () => {
     expect(trocarQuantidadeMinima(grupo, 'grupo', 3).regrasDeComprovacao[0].quantidadeMinima).toBe(
       3,
     );
+  });
+
+  it('altera e remove o critério de distinção sem modificar o grupo original', () => {
+    const original = grupoDeTres();
+    const alterado = trocarCriterioDeDistincao(original, 'grupo', 'COMPETENCIA_MENSAL');
+    expect(original.regrasDeComprovacao[0].criterioDeDistincao).toBeNull();
+    expect(alterado.regrasDeComprovacao[0].criterioDeDistincao).toBe('COMPETENCIA_MENSAL');
+    expect(
+      trocarCriterioDeDistincao(alterado, 'grupo', null).regrasDeComprovacao[0].criterioDeDistincao,
+    ).toBeNull();
   });
 
   it('alterna a forma do grupo', () => {

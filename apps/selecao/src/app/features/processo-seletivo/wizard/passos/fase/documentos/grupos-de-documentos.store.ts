@@ -8,6 +8,7 @@ import {
   editarGrupo,
   incluirNoGrupo,
   retirarDoGrupo,
+  trocarCriterioDeDistincao,
   trocarFormaDoGrupo,
   trocarQuantidadeMinima,
 } from '../../../shared/exigencias/composicao-dos-grupos';
@@ -50,6 +51,10 @@ export class GruposDeDocumentosStore {
 
   trocarQuantidade(identificador: string, quantidade: number): void {
     this.atualizar((exigencias) => trocarQuantidadeMinima(exigencias, identificador, quantidade));
+  }
+
+  trocarCriterio(identificador: string, criterio: string | null): void {
+    this.atualizar((exigencias) => trocarCriterioDeDistincao(exigencias, identificador, criterio));
   }
 
   incluir(identificador: string, item: string): void {

@@ -1,0 +1,19 @@
+<div class="form-field">
+  <label class="label" [attr.for]="identificador()">Como distinguir as apresentações</label>
+  <select
+    class="select"
+    [id]="identificador()"
+    [value]="criterio() ?? ''"
+    [disabled]="desabilitado() || catalogo.situacao() !== 'pronto'"
+    (change)="criterioChange.emit($any($event.target).value || null)"
+  >
+    <option value="">Não distinguir</option>
+    @for (opcao of catalogo.criterios(); track opcao.codigo) {
+      <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
+    }
+  </select>
+  @if (catalogo.situacao() === 'carregando') {
+    <p role="status" [uiIndicadorDaLeitura]="leitura">Carregando os critérios de distinção.</p>
+  }
+  <ui-falha-de-leitura-do-campo [leitura]="leitura" />
+</div>

@@ -53,6 +53,12 @@
       (incluir)="incluir(grupo, $event, botaoCombinar)"
       (retirar)="retirar(grupo, $event, botaoCombinar)"
     >
+      <sel-criterio-de-distincao
+        [identificador]="'criterio-' + grupo.identificadorNoRascunho"
+        [criterio]="grupo.criterioDeDistincao"
+        [desabilitado]="!cronograma.edicaoLiberada()"
+        (criterioChange)="grupos.trocarCriterio(grupo.identificadorNoRascunho, $event)"
+      />
       <sel-consequencia-e-normas
         referenciaDaNorma="Norma que exige o grupo"
         [idDaConsequencia]="'consequencia-' + grupo.identificadorNoRascunho"
