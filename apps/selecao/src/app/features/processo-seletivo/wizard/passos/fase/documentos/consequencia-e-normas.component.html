@@ -1,0 +1,30 @@
+<div class="form-field">
+  <label class="label" [attr.for]="idDaConsequencia()">Se não for entregue</label>
+  <select
+    class="select"
+    [id]="idDaConsequencia()"
+    [disabled]="desabilitado()"
+    (change)="consequenciaChange.emit($any($event.target).value)"
+  >
+    @for (opcao of opcoes(); track opcao.valor) {
+      <option [value]="opcao.valor" [selected]="opcao.valor === consequencia()">
+        {{ rotuloDaConsequencia(opcao.valor, obrigatorio()) }}
+      </option>
+    }
+  </select>
+  <ng-content select="[aviso]"></ng-content>
+</div>
+<ui-normas-do-documento
+  disposicao="na-grade"
+  [bases]="bases()"
+  [idBase]="idDasNormas()"
+  [disabled]="desabilitado()"
+  [minimo]="1"
+  [textos]="textos()"
+  [referenciaObrigatoria]="false"
+  [maximoReferencia]="null"
+  [maximoObservacao]="null"
+  (basesChange)="basesChange.emit($event)"
+>
+  <ng-content></ng-content>
+</ui-normas-do-documento>

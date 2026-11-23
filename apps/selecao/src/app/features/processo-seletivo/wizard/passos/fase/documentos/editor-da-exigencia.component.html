@@ -6,8 +6,6 @@
     @if (resumo().orientacao; as orientacao) {
       <span class="doc-item__desc">{{ orientacao }}</span>
     }
-    <!-- Documento dentro de um grupo não é exigida por si: basta satisfazer o grupo.
-       Sem dizê-lo, ela parecia uma exigência solta como qualquer outra. -->
     @if (exigencias.posicaoNaComprovacao(identificador) !== '') {
       <span class="doc-item__desc">{{ exigencias.posicaoNaComprovacao(identificador) }}</span>
     }
@@ -22,11 +20,6 @@
     Remover
   </button>
 </div>
-
-<!--
-Os três eixos da exigência, lado a lado enquanto a largura permite: em que
-fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
--->
 <div class="doc-item__eixos">
   @if (mostraFormulario(identificador)) {
     <sel-eixo-formulario class="form-field" [documentoId]="identificador"></sel-eixo-formulario>
@@ -37,11 +30,6 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
   @if (exigencias.etapasDaFaseAberta().length > 0) {
     <sel-eixo-etapa class="form-field" [documentoId]="identificador"></sel-eixo-etapa>
   }
-
-  <!--
-  Sem modalidade no quadro não há o que escolher: um campo vazio e desabilitado
-  ao lado do aviso seria só mais uma coisa a ignorar.
--->
   @if (exigencias.modalidades().length === 0) {
     <div class="form-field">
       <span class="label">Quem deve entregar</span>
@@ -72,11 +60,6 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
     <label class="label" [attr.for]="idDaFase('doc-exigido-de-' + identificador)">
       Exigido de
     </label>
-    <!--
-    Declaração, não dedução: uma exigência pode ser "de quem satisfaz" e ainda
-    não ter condição escrita — é exigida de ninguém até que a primeira apareça.
-    Deduzir isto da presença de condição tornaria esse estado inalcançável.
-  -->
     <select
       class="select"
       [attr.id]="idDaFase('doc-exigido-de-' + identificador)"
@@ -96,12 +79,6 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
   </div>
 
   @if (!gatilho.ehExigidoDeTodos(identificador)) {
-    <!--
-    O gatilho: há documento que só se cobra de quem tem certo fato — o título de
-    eleitor não se pede a estrangeiro, a mulher nem a menor de dezoito. As
-    condições de uma mesma alternativa valem JUNTAS; alternativas diferentes são
-    caminhos independentes pelos quais o documento passa a ser cobrado.
-  -->
     <ui-editor-de-condicoes
       class="doc-item__gatilho"
       legenda="Condições para este documento ser cobrado"
@@ -132,34 +109,6 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
     </select>
   </div>
 
-  <div class="form-field">
-    <label class="label" [attr.for]="idDaFase('doc-consequencia-' + identificador)">
-      Se não for entregue
-    </label>
-    <!--
-    Toda exigência que decide sozinha o resultado precisa de norma resolvida — é
-    o que a publicação confere. A consequência é o que diz se ela decide.
-  -->
-    <select
-      class="select"
-      [attr.id]="idDaFase('doc-consequencia-' + identificador)"
-      [disabled]="!cronograma.edicaoLiberada()"
-      (change)="escolherConsequencia(identificador, $any($event.target).value)"
-    >
-      @for (opcao of consequenciasDaFase(); track opcao.valor) {
-        <option
-          [value]="opcao.valor"
-          [selected]="opcao.valor === consequenciaDoDocumento(identificador)"
-        >
-          {{ rotuloDaConsequencia(opcao.valor, ehObrigatorio(identificador)) }}
-        </option>
-      }
-    </select>
-    @if (resumo().avisoDeFormatos; as aviso) {
-      <span class="field__hint">{{ aviso }}</span>
-    }
-  </div>
-
   <sel-modelo-da-exigencia
     class="doc-item__modelo"
     [modelo]="modeloDoDocumento(identificador)"
@@ -169,26 +118,25 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
     (modeloChange)="definirModelo(identificador, $event)"
   />
 
-  <!-- As normas que sustentam a exigência: são N por exigência, porque uma lei
-     federal somada à cláusula do edital é o caso comum. O editor é o mesmo do
-     modelo de formulário; a última norma não sai, porque a publicação a cobra. -->
-  <ui-normas-do-documento
-    disposicao="na-grade"
+  <sel-consequencia-e-normas
+    [idDaConsequencia]="idDaFase('doc-consequencia-' + identificador)"
+    [idDasNormas]="idDaFase('doc-normas-' + identificador)"
+    [consequencia]="consequenciaDoDocumento(identificador)"
     [bases]="basesLegaisDoDocumento(identificador)"
-    [idBase]="idDaFase('doc-normas-' + identificador)"
-    [disabled]="!cronograma.edicaoLiberada()"
-    [minimo]="1"
-    [textos]="textosDasNormas"
-    [referenciaObrigatoria]="false"
-    [maximoReferencia]="null"
-    [maximoObservacao]="null"
+    [opcoes]="consequenciasDaFase()"
+    [obrigatorio]="ehObrigatorio(identificador)"
+    [desabilitado]="!cronograma.edicaoLiberada()"
+    (consequenciaChange)="escolherConsequencia(identificador, $event)"
     (basesChange)="definirBasesLegais(identificador, $event)"
   >
+    @if (resumo().avisoDeFormatos; as aviso) {
+      <span aviso class="field__hint">{{ aviso }}</span>
+    }
     @if (exigencias.faltaNormaResolvida(identificador)) {
       <p class="field__hint doc-item__aviso-norma">
         Sem uma norma declarada e identificada como "Resolvida", a publicação recusa esta exigência,
         que decide o resultado.
       </p>
     }
-  </ui-normas-do-documento>
+  </sel-consequencia-e-normas>
 </div>

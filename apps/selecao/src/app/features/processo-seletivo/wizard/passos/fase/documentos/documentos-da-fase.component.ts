@@ -42,6 +42,7 @@ import {
 import type { DetalheLidoDoDocumento, ResumoDoDocumento } from '../tipos-da-conferencia';
 import { DetalheDoDocumentoComponent } from './detalhe-do-documento.component';
 import { EditorDaExigenciaComponent } from './editor-da-exigencia.component';
+import { EdicaoDeGruposComponent } from './edicao-de-grupos.component';
 import { ExigenciasDaFaseStore } from './exigencias-da-fase.store';
 import { GatilhoDasExigenciasStore } from './gatilho-das-exigencias.store';
 import { LinhaDoDocumentoComponent } from './linha-do-documento.component';
@@ -53,6 +54,7 @@ import { LinhaDoDocumentoComponent } from './linha-do-documento.component';
     ComboboxComponent,
     DetalheDoDocumentoComponent,
     EditorDaExigenciaComponent,
+    EdicaoDeGruposComponent,
     LinhaDoDocumentoComponent,
   ],
   templateUrl: './documentos-da-fase.component.html',

@@ -1,0 +1,94 @@
+<fieldset>
+  <legend>{{ resumo() }}</legend>
+  <fieldset [disabled]="desabilitado() || situacao() !== 'pronto'">
+    <legend>Como os documentos são combinados</legend>
+    @for (forma of formasDoGrupo(); track forma.codigo) {
+      <label class="radio">
+        <input
+          type="radio"
+          [name]="'forma-' + grupo().identificadorNoRascunho"
+          [value]="forma.codigo"
+          [checked]="grupo().forma === forma.codigo"
+          (change)="escolherForma(forma.codigo)"
+        />
+        <span class="radio__dot" aria-hidden="true"></span>
+        {{ forma.rotulo }}
+      </label>
+    }
+  </fieldset>
+  @if (situacao() === 'carregando') {
+    <p role="status" [uiIndicadorDaLeitura]="leitura">Carregando as formas de comprovação.</p>
+  }
+  <ui-falha-de-leitura-do-campo [leitura]="leitura" />
+  @if (grupo().forma === 'QUANTIDADE_MINIMA_DE_ITENS') {
+    <div class="form-field">
+      <label class="label" [attr.for]="'quantidade-' + grupo().identificadorNoRascunho"
+        >Quantidade mínima</label
+      >
+      <input
+        class="input"
+        type="number"
+        min="1"
+        [max]="itens().length"
+        [id]="'quantidade-' + grupo().identificadorNoRascunho"
+        [value]="quantidadeDigitada() ?? grupo().quantidadeMinima"
+        [disabled]="desabilitado()"
+        [attr.aria-invalid]="quantidadeInvalida()"
+        [attr.aria-describedby]="
+          'ajuda-' +
+          grupo().identificadorNoRascunho +
+          (quantidadeInvalida() ? ' erro-' + grupo().identificadorNoRascunho : '')
+        "
+        (input)="escolherQuantidade($any($event.target).value)"
+      />
+      <p class="field__hint" [id]="'ajuda-' + grupo().identificadorNoRascunho">
+        Informe quantos documentos devem ser apresentados.
+      </p>
+      @if (quantidadeInvalida()) {
+        <p [id]="'erro-' + grupo().identificadorNoRascunho">
+          Informe um número inteiro entre 1 e {{ itens().length }}.
+        </p>
+      }
+    </div>
+  }
+  <ul>
+    @for (item of itens(); track item.identificador) {
+      <li>
+        {{ item.nome }}
+        <button
+          type="button"
+          class="btn btn--tertiary"
+          [disabled]="desabilitado() || itens().length <= 1"
+          [attr.aria-label]="'Retirar do grupo: ' + item.nome"
+          (click)="retirar.emit(item.identificador)"
+        >
+          Retirar do grupo
+        </button>
+      </li>
+    }
+  </ul>
+  <label class="label" [attr.for]="'incluir-' + grupo().identificadorNoRascunho"
+    >Documento a incluir</label
+  >
+  <select
+    class="select"
+    [id]="'incluir-' + grupo().identificadorNoRascunho"
+    [disabled]="desabilitado() || disponiveis().length === 0"
+    [value]="documentoEscolhido()"
+    (change)="documentoEscolhido.set($any($event.target).value)"
+  >
+    <option value="">Selecione um documento</option>
+    @for (item of disponiveis(); track item.identificador) {
+      <option [value]="item.identificador">{{ item.nome }}</option>
+    }
+  </select>
+  <button
+    type="button"
+    class="btn btn--secondary"
+    [disabled]="desabilitado() || documentoEscolhido() === ''"
+    (click)="incluirEscolhido()"
+  >
+    Incluir documento
+  </button>
+  <ng-content></ng-content>
+</fieldset>
