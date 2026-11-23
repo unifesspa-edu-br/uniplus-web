@@ -27,6 +27,26 @@ function montar() {
 }
 
 describe('ArquivoAceitoComponent', () => {
+  it('associa a recusa do servidor aos formatos', () => {
+    const tela = montar();
+    tela.componentRef.setInput('recusasDosFormatos', [
+      {
+        identificadorDaRegra: 'regra-2',
+        codigo: 'FORMATO_INVALIDO',
+        campo: 'documento.requisitos.formatosPermitidos',
+        mensagem: 'Formato inválido.',
+      },
+    ]);
+    tela.detectChanges();
+    const elemento = tela.nativeElement as HTMLElement;
+    expect(elemento.querySelector('fieldset')?.getAttribute('aria-describedby')).toContain(
+      'arquivo-formatos-recusas',
+    );
+    expect(elemento.querySelector('#arquivo-formatos-recusas')?.textContent).toContain(
+      'Formato inválido.',
+    );
+  });
+
   it('oferece os formatos carregados e informa quando a lista está vazia', () => {
     const tela = montar();
     tela.componentRef.setInput('formatos', { tipo: 'lista', itens: [] });

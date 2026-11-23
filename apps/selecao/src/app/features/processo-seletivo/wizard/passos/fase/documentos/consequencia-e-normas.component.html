@@ -4,6 +4,9 @@
     class="select"
     [id]="idDaConsequencia()"
     [disabled]="desabilitado()"
+    [attr.aria-describedby]="
+      recusasDaConsequencia().length ? idDaConsequencia() + '-recusas' : null
+    "
     (change)="consequenciaChange.emit($any($event.target).value)"
   >
     @for (opcao of opcoes(); track opcao.valor) {
@@ -12,6 +15,7 @@
       </option>
     }
   </select>
+  <ui-recusa-do-campo [id]="idDaConsequencia() + '-recusas'" [recusas]="recusasDaConsequencia()" />
   <ng-content select="[aviso]"></ng-content>
 </div>
 <ui-normas-do-documento

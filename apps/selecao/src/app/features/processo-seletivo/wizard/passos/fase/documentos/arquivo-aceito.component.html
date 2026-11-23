@@ -1,11 +1,19 @@
 <fieldset
   [disabled]="desabilitado()"
-  [attr.aria-describedby]="listaVazia() ? idBase() + '-formatos-erro' : null"
+  [attr.aria-describedby]="
+    (listaVazia() ? idBase() + '-formatos-erro ' : '') +
+    (recusasDosFormatos().length ? idBase() + '-formatos-recusas' : '')
+  "
 >
   <legend>Formatos aceitos</legend>
+  <ui-recusa-do-campo
+    [id]="idBase() + '-formatos-recusas'"
+    [recusas]="recusasParaExibir(recusasDosFormatos())"
+  />
   <label
     ><input
       type="radio"
+      [id]="idBase() + '-qualquer'"
       [name]="idBase() + '-formatos'"
       [checked]="formatos().tipo === 'qualquer'"
       (change)="escolherQualquer()"
@@ -77,10 +85,17 @@
       [id]="idBase() + '-tamanho'"
       [value]="emMegabytes(tamanho())"
       [attr.aria-describedby]="
-        idBase() + '-ajuda' + (tamanhoDaExigenciaInvalido() ? ' ' + idBase() + '-tamanho-erro' : '')
+        idBase() +
+        '-ajuda' +
+        (tamanhoDaExigenciaInvalido() ? ' ' + idBase() + '-tamanho-erro' : '') +
+        (recusasDoTamanho().length ? ' ' + idBase() + '-tamanho-recusas' : '')
       "
-      [attr.aria-invalid]="tamanhoDaExigenciaInvalido() ? 'true' : null"
+      [attr.aria-invalid]="tamanhoDaExigenciaInvalido() || recusasDoTamanho().length ? 'true' : null"
       (input)="definirTamanhoDaExigencia($event)"
+    />
+    <ui-recusa-do-campo
+      [id]="idBase() + '-tamanho-recusas'"
+      [recusas]="recusasParaExibir(recusasDoTamanho())"
     />
     @if (tamanhoDaExigenciaInvalido()) {
       <p class="field__error" [id]="idBase() + '-tamanho-erro'">Informe um tamanho válido.</p>

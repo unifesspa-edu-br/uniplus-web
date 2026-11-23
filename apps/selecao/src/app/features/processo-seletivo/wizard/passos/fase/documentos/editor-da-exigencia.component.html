@@ -110,12 +110,24 @@
   </div>
 
   <sel-arquivo-aceito
+    [recusasDosFormatos]="
+      recusas?.doCampo(identificador, 'documento.requisitos.formatosPermitidos') ?? []
+    "
+    [recusasDoTamanho]="
+      recusas?.doCampo(identificador, 'documento.requisitos.tamanhoMaximoBytes') ?? []
+    "
     [formatos]="exigencias.exigenciaDoDocumento(identificador).formatosPermitidos"
     [tamanho]="exigencias.exigenciaDoDocumento(identificador).tamanhoMaximoBytes"
     [idBase]="idDaFase('doc-arquivo-' + identificador)"
     [desabilitado]="!cronograma.edicaoLiberada()"
-    (formatosChange)="exigencias.escreverExigencia(identificador, { formatosPermitidos: $event })"
-    (tamanhoChange)="exigencias.escreverExigencia(identificador, { tamanhoMaximoBytes: $event })"
+    (formatosChange)="
+      exigencias.escreverExigencia(identificador, { formatosPermitidos: $event });
+      recusas?.limparCampo(identificador, 'documento.requisitos.formatosPermitidos')
+    "
+    (tamanhoChange)="
+      exigencias.escreverExigencia(identificador, { tamanhoMaximoBytes: $event });
+      recusas?.limparCampo(identificador, 'documento.requisitos.tamanhoMaximoBytes')
+    "
   />
 
   <sel-modelo-da-exigencia
@@ -130,6 +142,7 @@
   <sel-consequencia-e-normas
     [idDaConsequencia]="idDaFase('doc-consequencia-' + identificador)"
     [idDasNormas]="idDaFase('doc-normas-' + identificador)"
+    [recusasDaConsequencia]="recusasDaConsequencia(identificador)"
     [consequencia]="consequenciaDoDocumento(identificador)"
     [bases]="basesLegaisDoDocumento(identificador)"
     [opcoes]="consequenciasDaFase()"

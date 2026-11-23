@@ -48,11 +48,12 @@ import { EdicaoDeGruposComponent } from './edicao-de-grupos.component';
 import { ExigenciasDaFaseStore } from './exigencias-da-fase.store';
 import { GatilhoDasExigenciasStore } from './gatilho-das-exigencias.store';
 import { LinhaDoDocumentoComponent } from './linha-do-documento.component';
+import { DocumentosEmEdicao } from './documentos-em-edicao.service';
 
 /** Os documentos que a fase exige: o seletor para acrescentar e a conferência com o que decide cada um. */
 @Component({
   selector: 'sel-documentos-da-fase',
-  providers: [ConfirmacaoDaRemocaoStore],
+  providers: [ConfirmacaoDaRemocaoStore, DocumentosEmEdicao],
   imports: [
     ComboboxComponent,
     ConfirmacaoDaRemocaoDoDocumentoComponent,
@@ -73,9 +74,9 @@ export class DocumentosDaFaseComponent {
   protected readonly exigencias = inject(ExigenciasDaFaseStore);
   protected readonly confirmacao = inject(ConfirmacaoDaRemocaoStore);
   private readonly gatilho = inject(GatilhoDasExigenciasStore);
+  private readonly edicao = inject(DocumentosEmEdicao);
 
   private readonly faseAberta = this.faseEmEdicao.faseAberta;
-  private readonly faseDoRascunho = this.faseEmEdicao.faseDoRascunho;
   protected readonly nomeDaFaseAberta = this.faseEmEdicao.nomeDaFaseAberta;
   protected readonly idDaFase = this.faseEmEdicao.idDaFase;
   protected readonly modalidades = this.exigencias.modalidades;
@@ -157,30 +158,8 @@ export class DocumentosDaFaseComponent {
     destino?.focus();
   }
 
-  /**
-   * Os documentos cujos campos estão à mostra, por fase: a mesma exigência em outra fase é
-   * outra exigência, e abri-la numa não a abre nas demais. A conferência lê o resumo; os campos
-   * abrem por documento, porque a fase com dezenas deles abertos de uma vez não se confere.
-   */
-  readonly documentosEmEdicao = signal<ReadonlySet<string>>(new Set());
-
-  chaveDeEdicao(id: string): string {
-    return `${this.faseDoRascunho()?.codigo ?? ''}|${id}`;
-  }
-
-  emEdicao(id: string): boolean {
-    return this.documentosEmEdicao().has(this.chaveDeEdicao(id));
-  }
-
-  alternarEdicao(id: string, aberto = !this.emEdicao(id)): void {
-    const chave = this.chaveDeEdicao(id);
-    this.documentosEmEdicao.update((atuais) => {
-      const proximos = new Set(atuais);
-      if (aberto) proximos.add(chave);
-      else proximos.delete(chave);
-      return proximos;
-    });
-  }
+  readonly emEdicao = (id: string): boolean => this.edicao.aberto(id);
+  readonly alternarEdicao = (id: string, aberto?: boolean): void => this.edicao.alternar(id, aberto);
 
   /** O resumo de cada documento da fase: o que decide a exigência, sem abrir os campos. */
   readonly resumos = computed<readonly ResumoDoDocumento[]>(() =>

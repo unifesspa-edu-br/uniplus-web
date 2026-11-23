@@ -21,6 +21,7 @@ import { ConvencaoDeContagemComponent } from './convencao-de-contagem.component'
 import { FaseEmConsultaComponent } from './consulta/fase-em-consulta.component';
 import { SituacaoDosCatalogosDoCronograma } from './catalogos/situacao-dos-catalogos-do-cronograma.service';
 import { ConferenciaDoCronograma } from './servicos/conferencia-do-cronograma.service';
+import { ApresentacaoDasRecusasDasExigencias } from './servicos/apresentacao-das-recusas-das-exigencias.service';
 import { EdicaoDaEtapa } from './servicos/edicao-da-etapa.service';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
@@ -70,6 +71,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
     ConferenciaDoCronograma,
     GravacaoDasExigenciasDocumentais,
     GravacaoDoCronograma,
+    ApresentacaoDasRecusasDasExigencias,
     ExpansaoDoCronograma,
     IdaAoCampoDaPublicacao,
   ],

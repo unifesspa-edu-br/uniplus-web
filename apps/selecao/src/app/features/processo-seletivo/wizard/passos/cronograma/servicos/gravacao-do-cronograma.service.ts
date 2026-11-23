@@ -22,6 +22,7 @@ import { ConferenciaDoCronograma } from './conferencia-do-cronograma.service';
 import type { ConteudoDaGravacao, ProblemaDaGravacao } from './conteudo-da-gravacao';
 import type { ControleNaTela } from './distribuicao-das-recusas-das-fases';
 import { ExpansaoDoCronograma } from './expansao-do-cronograma.service';
+import { ApresentacaoDasRecusasDasExigencias } from './apresentacao-das-recusas-das-exigencias.service';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
 import {
   gravarCronogramaFases,
@@ -71,6 +72,7 @@ export class GravacaoDoCronograma {
   private readonly recusaDasEtapas = inject(RecusaDaGravacaoDasEtapas);
   private readonly recusasDasFases = inject(RecusasDoServidorNasFases);
   private readonly recusasDasExigencias = inject(RecusasDasExigencias);
+  private readonly apresentacaoDasRecusas = inject(ApresentacaoDasRecusasDasExigencias);
   private readonly numeracao = inject(NumeracaoDasRespostasRecusadas);
   private readonly injetor = inject(Injector);
   private readonly expansao = inject(ExpansaoDoCronograma);
@@ -320,6 +322,7 @@ export class GravacaoDoCronograma {
     const exigencias = await this.exigencias.gravar(conteudo.processoId);
     if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
     this.recusasDasExigencias.registrar(exigencias.recusas ?? []);
+    if (!exigencias.valid) this.apresentacaoDasRecusas.apresentar();
     return exigencias.valid ? null : exigencias;
   }
 

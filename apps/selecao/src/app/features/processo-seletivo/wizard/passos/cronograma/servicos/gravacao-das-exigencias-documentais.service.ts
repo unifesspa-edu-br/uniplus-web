@@ -33,6 +33,7 @@ import { finalidadesQueAtende } from '../../formulario/formularios-por-finalidad
 export interface RecusaDaExigencia {
   readonly identificadorDaRegra: string | null;
   readonly campo: string;
+  readonly codigo: string;
   readonly mensagem: string;
 }
 
@@ -48,6 +49,7 @@ function traduzirRecusa(
   return {
     identificadorDaRegra: identificacao?.identificadorDaRegra ?? null,
     campo: identificacao?.campo ?? erro.field ?? '',
+    codigo: erro.code ?? '',
     mensagem: recusaDaExigenciaDoServidor({ code: erro.code }) ?? erro.message,
   };
 }
