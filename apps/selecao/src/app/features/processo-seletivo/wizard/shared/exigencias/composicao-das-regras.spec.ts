@@ -16,6 +16,20 @@ describe('composição das regras de comprovação', () => {
     expect(todasAsExigencias(depois)[0].faseCodigo).toBe('HABILITACAO');
   });
 
+  it('preserva a referência de documento de outra fase', () => {
+    const idadeMaximaEmissao = {
+      valor: 90,
+      unidade: 'DIAS' as const,
+      referenciaTipo: 'INICIO_FASE' as const,
+      data: null,
+      referenciaFaseCodigo: 'ISENCAO',
+    };
+    const antes = rascunho(exigencia({ faseCodigo: 'HABILITACAO', idadeMaximaEmissao }));
+    expect(todasAsExigencias(semAFase(antes, 'ISENCAO'))[0].idadeMaximaEmissao).toEqual(
+      idadeMaximaEmissao,
+    );
+  });
+
   it('semAEtapa devolve o documento à fase inteira', () => {
     const depois = semAEtapa(rascunho(exigencia({ etapaId: ID_ETAPA_RENDA })), ID_ETAPA_RENDA);
     expect(todasAsExigencias(depois)[0].etapaId).toBeNull();

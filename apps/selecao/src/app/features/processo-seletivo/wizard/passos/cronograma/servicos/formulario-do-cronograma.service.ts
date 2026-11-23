@@ -23,6 +23,7 @@ import {
   type FaseForm,
 } from '../cronograma-form';
 import { etapaComOQueDeclara } from '../regras-da-etapa';
+import { documentosQueReferenciamAFase, type DependentesDaFase } from './referencias-do-prazo';
 import { espelharFasesNoFormulario } from './espelho-das-fases-no-formulario';
 import { RecusasDoServidorNasFases } from './recusas-do-servidor-nas-fases.service';
 import { SequenciaDasFases } from './sequencia-das-fases';
@@ -208,18 +209,19 @@ export class FormularioDoCronograma {
    * exigência documental declara em que fase é entregue. Some a fase, somem eles — mas o
    * operador precisa saber disso antes de clicar, não depois de perder a configuração.
    */
-  dependentesDaFase(indice: number): { etapas: number; documentos: number } {
+  dependentesDaFase(indice: number): DependentesDaFase {
     const codigo = this.fases.at(indice)?.controls.codigo.value ?? '';
-    if (codigo === '') return { etapas: 0, documentos: 0 };
+    if (codigo === '') return { etapas: 0, documentos: 0, referencias: [] };
 
     const etapas = this.etapas.controls.filter(
       (grupo) => grupo.controls.faseCodigo.value === codigo,
     ).length;
 
-    // A contagem varre a árvore de exigências, que é como o rascunho as guarda.
     const documentos = exigenciasDaFase(this.store.draft().documentos, codigo).length;
 
-    return { etapas, documentos };
+    const fases = this.fases.controls.map((grupo) => grupo.controls.codigo.value);
+    const referencias = documentosQueReferenciamAFase(this.store.draft().documentos, fases, codigo);
+    return { etapas, documentos, referencias };
   }
 
   /**
@@ -283,7 +285,7 @@ export class FormularioDoCronograma {
 
   /**
    * Compara com o rascunho como o formulário o mostraria, não como foi escrito: o rascunho que
-   * chega de fora pode omitir campos opcionais ou trazer a janela em outro formato, e tratar isso
+   * chega de fora pode omitir campos opcionais ou trazer o período em outro formato, e tratar isso
    * como mudança recriaria os controles na primeira edição, quando o caminho de volta reescreve
    * o rascunho na forma do formulário.
    */

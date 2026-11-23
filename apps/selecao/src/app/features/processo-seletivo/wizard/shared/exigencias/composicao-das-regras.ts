@@ -47,36 +47,17 @@ function coubeNoGrupo(quantidadeMinima: number | null, itens: number): number | 
   return Math.min(quantidadeMinima, itens);
 }
 
-/**
- * As exigências sem a fase removida do cronograma. A exigência que valia só ali deixa de
- * existir; o mesmo documento em outra fase continua, porque são exigências distintas.
- *
- * A idade máxima que usava essa fase como referência deixa de apontar para a fase removida
- * — a recusa do servidor falaria de um campo que a tela não mostra.
- */
 export function semAFase(
   exigencias: ExigenciasDoRascunho,
   faseCodigo: string,
 ): ExigenciasDoRascunho {
   const regrasDeComprovacao = transformar(exigencias.regrasDeComprovacao, (documento) =>
-    documentoSemFase(documento, faseCodigo),
+    documento.faseCodigo === faseCodigo ? null : documento,
   );
   const tiposSemGrupo = tiposDeDocumentoSemGrupo(regrasDeComprovacao);
   return {
     regrasDeComprovacao,
     emTodasAsFases: exigencias.emTodasAsFases.filter((tipo) => tiposSemGrupo.has(tipo)),
-  };
-}
-
-function documentoSemFase(
-  documento: ExigenciaDeDocumento,
-  faseCodigo: string,
-): ExigenciaDeDocumento | null {
-  if (documento.faseCodigo === faseCodigo) return null;
-  if (documento.idadeMaximaEmissao?.referenciaFaseCodigo !== faseCodigo) return documento;
-  return {
-    ...documento,
-    idadeMaximaEmissao: { ...documento.idadeMaximaEmissao, referenciaFaseCodigo: null },
   };
 }
 
