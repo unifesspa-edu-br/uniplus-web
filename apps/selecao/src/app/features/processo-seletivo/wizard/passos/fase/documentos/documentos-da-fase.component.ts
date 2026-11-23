@@ -40,6 +40,8 @@ import {
   type OpcaoDoFiltro,
 } from '../resumo-da-exigencia';
 import type { DetalheLidoDoDocumento, ResumoDoDocumento } from '../tipos-da-conferencia';
+import { ConfirmacaoDaRemocaoStore } from './confirmacao-da-remocao.store';
+import { ConfirmacaoDaRemocaoDoDocumentoComponent } from './confirmacao-da-remocao-do-documento.component';
 import { DetalheDoDocumentoComponent } from './detalhe-do-documento.component';
 import { EditorDaExigenciaComponent } from './editor-da-exigencia.component';
 import { EdicaoDeGruposComponent } from './edicao-de-grupos.component';
@@ -50,8 +52,10 @@ import { LinhaDoDocumentoComponent } from './linha-do-documento.component';
 /** Os documentos que a fase exige: o seletor para acrescentar e a conferência com o que decide cada um. */
 @Component({
   selector: 'sel-documentos-da-fase',
+  providers: [ConfirmacaoDaRemocaoStore],
   imports: [
     ComboboxComponent,
+    ConfirmacaoDaRemocaoDoDocumentoComponent,
     DetalheDoDocumentoComponent,
     EditorDaExigenciaComponent,
     EdicaoDeGruposComponent,
@@ -67,6 +71,7 @@ export class DocumentosDaFaseComponent {
   private readonly catalogoDeDocumentos = inject(CatalogoDeDocumentos);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   protected readonly exigencias = inject(ExigenciasDaFaseStore);
+  protected readonly confirmacao = inject(ConfirmacaoDaRemocaoStore);
   private readonly gatilho = inject(GatilhoDasExigenciasStore);
 
   private readonly faseAberta = this.faseEmEdicao.faseAberta;
@@ -134,22 +139,20 @@ export class DocumentosDaFaseComponent {
 
   readonly hospedeiroDoSeletor = viewChild('seletorDeDocumento', { read: ElementRef });
 
-  /**
-   * Tira o documento desta fase; das outras, só se ele não valer em nenhuma mais.
-   *
-   * O botão focado sai junto com a linha, e o foco cairia no corpo da página. Ele vai então para o
-   * seletor do público, que continua na tela enquanto houver documento, ou para o campo de
-   * "Documento a exigir", que é fixo; a região de status diz o que saiu.
-   */
   removerDocumento(id: string, seletorDoPublico: HTMLElement): void {
+    const nome = this.resumos().find((resumo) => resumo.id === id)?.nome ?? '';
+    this.confirmacao.solicitar(id, nome, seletorDoPublico);
+  }
+
+  confirmarRemocao(): void {
+    const id = this.confirmacao.documento;
     const nome = this.resumos().find((resumo) => resumo.id === id)?.nome ?? '';
     this.exigencias.alternarExigencia(id, false);
     this.alternarEdicao(id, false);
     this.avisoDaRemocao.set(`${nome} removido dos documentos exigidos nesta fase.`);
-
     const destino =
       this.resumos().length > 0
-        ? seletorDoPublico
+        ? this.confirmacao.destino
         : this.hospedeiroDoSeletor()?.nativeElement.querySelector('input');
     destino?.focus();
   }
