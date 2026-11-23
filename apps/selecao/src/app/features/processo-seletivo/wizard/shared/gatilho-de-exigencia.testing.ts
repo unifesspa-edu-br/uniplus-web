@@ -117,7 +117,7 @@ const EXIGENCIA_PADRAO: ExigenciaDeDocumento = {
   condicoes: [],
   basesLegais: [],
   idadeMaximaEmissao: null,
-  formatosPermitidos: 'QUALQUER',
+  formatosPermitidos: { tipo: 'qualquer' } as const,
   tamanhoMaximoBytes: null,
   modelo: null,
 };

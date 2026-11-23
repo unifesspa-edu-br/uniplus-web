@@ -195,7 +195,10 @@ describe('FasePassoComponent', () => {
 
       const declarada = exigencias().exigenciaDoDocumento(ID_CPF);
       // O cadastro diz "pdf,jpg"; o contrato da exigência fala PDF e JPEG.
-      expect(declarada.formatosPermitidos).toEqual(['PDF', 'JPEG']);
+      expect(declarada.formatosPermitidos).toEqual({
+        tipo: 'lista',
+        itens: ['PDF', 'JPEG'].map((formato) => ({ formato, tamanhoMaximoBytes: null })),
+      });
       expect(declarada.tamanhoMaximoBytes).toBe(10 * 1024 * 1024);
     });
 
@@ -213,8 +216,8 @@ describe('FasePassoComponent', () => {
       });
 
       expect(regrasDeComprovacao[0].documento?.requisitos?.formatosPermitidos).toEqual([
-        'PDF',
-        'JPEG',
+        { formato: 'PDF', tamanhoMaximoBytesMax: null },
+        { formato: 'JPEG', tamanhoMaximoBytesMax: null },
       ]);
       expect(regrasDeComprovacao[0].documento?.requisitos?.tamanhoMaximoBytes).toBe(
         10 * 1024 * 1024,
@@ -225,7 +228,7 @@ describe('FasePassoComponent', () => {
       comCronograma(fase({}));
       const semRestricao = exigencias().exigenciaDoDocumento('tipo-fora-do-catalogo');
 
-      expect(semRestricao.formatosPermitidos).toBe('QUALQUER');
+      expect(semRestricao.formatosPermitidos).toEqual({ tipo: 'qualquer' });
       expect(semRestricao.tamanhoMaximoBytes).toBeNull();
     });
   });

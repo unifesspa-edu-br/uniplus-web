@@ -164,9 +164,9 @@ describe('regrasDeComprovacaoParaEnvio — do rascunho para o comando', () => {
   it('formato e tamanho vêm do cadastro do tipo de documento', () => {
     const regrasDeComprovacao = comando(rascunho(exigencia()));
     expect(regrasDeComprovacao[0].documento?.requisitos?.formatosPermitidos).toEqual([
-      'PDF',
-      'JPEG',
-      'PNG',
+      { formato: 'PDF', tamanhoMaximoBytesMax: null },
+      { formato: 'JPEG', tamanhoMaximoBytesMax: null },
+      { formato: 'PNG', tamanhoMaximoBytesMax: null },
     ]);
     expect(regrasDeComprovacao[0].documento?.requisitos?.tamanhoMaximoBytes).toBe(5 * 1024 * 1024);
   });
@@ -349,8 +349,7 @@ describe('regrasDeComprovacaoParaEnvio — do rascunho para o comando', () => {
     expect(regrasDeComprovacao[0].grupoDoFormularioParaRepeticao).toBe('MEMBRO_FAMILIA');
   });
 
-  /** A idade máxima ancorada em fase que saiu perde a âncora, em vez de recusar a gravação. */
-  it('limpa a âncora de idade máxima cuja fase saiu do cronograma', () => {
+  it('limpa a idade máxima cuja fase saiu do cronograma', () => {
     const regrasDeComprovacao = comando(
       rascunho(
         exigencia({
@@ -368,7 +367,7 @@ describe('regrasDeComprovacaoParaEnvio — do rascunho para o comando', () => {
     expect(regrasDeComprovacao[0].documento?.requisitos?.idadeMaximaEmissao).toBeNull();
   });
 
-  it('resolve a âncora de idade máxima para o id da fase viva', () => {
+  it('resolve o identificador da fase de referência da idade máxima', () => {
     const regrasDeComprovacao = comando(
       rascunho(
         exigencia({

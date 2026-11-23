@@ -45,6 +45,7 @@ export interface IdadeMaximaEmissaoConfig {
   readonly referenciaTipo: string | null;
   readonly data: string | null;
   readonly referenciaFaseCodigo: string | null;
+  readonly referenciaFaseIdLido?: string | null;
 }
 
 /** Aplicabilidade, obrigatoriedade, consequências e normas da exigência de documento. */
@@ -56,11 +57,21 @@ export interface RegraDaExigenciaDeDocumento {
   readonly basesLegais: readonly BaseLegalConfig[];
 }
 
+export type FormatosAceitos =
+  | { readonly tipo: 'qualquer' }
+  | {
+      readonly tipo: 'lista';
+      readonly itens: readonly {
+        readonly formato: string;
+        readonly tamanhoMaximoBytes: number | null;
+      }[];
+    };
+
 /** Restrições e modelo do documento apresentado. */
 export interface CriteriosDoComprovante {
   readonly idadeMaximaEmissao: IdadeMaximaEmissaoConfig | null;
   /** O contrato aceita a string QUALQUER ou uma lista de formatos declarados. */
-  readonly formatosPermitidos: unknown;
+  readonly formatosPermitidos: FormatosAceitos;
   readonly tamanhoMaximoBytes: number | null;
   /** Modelo que o candidato pode baixar e devolver preenchido. */
   readonly modelo: ModeloDaExigencia | null;
@@ -81,6 +92,8 @@ export interface ExigenciaDeDocumento extends RegraDaExigenciaDeDocumento, Crite
    */
   readonly tipoDocumentoNome?: string;
   readonly faseCodigo: string;
+  readonly faseIdLido?: string | null;
+  readonly fatosComprovados?: readonly string[];
   /** A etapa daquela fase que coleta o documento; `null` quando é da fase inteira. */
   readonly etapaId: string | null;
   /**

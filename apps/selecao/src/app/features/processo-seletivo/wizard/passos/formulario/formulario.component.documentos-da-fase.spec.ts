@@ -60,7 +60,10 @@ describe('FormularioPassoComponent: documentos da fase', () => {
         tipoDocumentoNome: 'Laudo médico',
         aplicabilidade: 'CONDICIONAL',
         condicoes: [{ clausula: 0, fato: 'PCD', operador: 'IGUAL', valor: 'true' }],
-        formatosPermitidos: ['PDF'],
+        formatosPermitidos: {
+          tipo: 'lista',
+          itens: [{ formato: 'PDF', tamanhoMaximoBytes: null }],
+        },
         tamanhoMaximoBytes: 5 * 1024 * 1024,
       } as ExigenciaDeDocumento;
       const certidaoDeOutraFase = {

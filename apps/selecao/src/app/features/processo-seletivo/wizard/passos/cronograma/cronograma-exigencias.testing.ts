@@ -1,7 +1,4 @@
-import type {
-  BaseLegalConfig,
-  ExigenciaDeDocumento,
-} from '../../processo-seletivo.models';
+import type { BaseLegalConfig, ExigenciaDeDocumento } from '../../processo-seletivo.models';
 import { regraDoRascunho } from '../../shared/exigencias/exigencias.testing';
 import { FASES_CANONICAS, ID_AVALIACAO } from './cronograma.testing';
 import type { ContextoDoCronograma } from './cronograma-passo.testing';
@@ -14,7 +11,7 @@ const DOCUMENTO_GERAL_E_OBRIGATORIO = {
   obrigatorio: true,
   consequenciaIndeferimento: '',
   idadeMaximaEmissao: null,
-  formatosPermitidos: 'QUALQUER',
+  formatosPermitidos: { tipo: 'qualquer' } as const,
   tamanhoMaximoBytes: null,
   modelo: null,
 };

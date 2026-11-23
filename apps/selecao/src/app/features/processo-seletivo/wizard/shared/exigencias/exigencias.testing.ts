@@ -97,6 +97,7 @@ export function detalheDaApi(
 }
 
 export interface AlteracoesDoDocumentoDaApi {
+  readonly fatosComprovados?: readonly string[];
   readonly faseId?: string;
   readonly etapaId?: string | null;
   readonly finalidade?: string | null;
@@ -163,6 +164,6 @@ function documentoDaApi(alteracoes: AlteracoesDoDocumentoDaApi): DocumentoExigid
     aplicabilidade: alteracoes.aplicabilidade ?? { tipo: 'GERAL', condicoes: [] },
     indeferimento: { ...INDEFERIMENTO_PADRAO, ...alteracoes.indeferimento },
     requisitos: { ...REQUISITOS_PADRAO, ...alteracoes.requisitos },
-    fatosComprovados: [],
+    fatosComprovados: alteracoes.fatosComprovados ?? [],
   };
 }

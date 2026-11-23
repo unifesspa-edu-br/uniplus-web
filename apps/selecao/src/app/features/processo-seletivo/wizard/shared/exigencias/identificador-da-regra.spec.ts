@@ -18,6 +18,7 @@ const CORPO_ESPERADO = [
     forma: 'DOCUMENTO',
     documento: {
       tipoDocumento: { id: ID_RG },
+      fatosComprovados: [],
       momento: { faseId: ID_HABILITACAO, etapaId: null, finalidade: 'HABILITACAO' },
       aplicabilidade: { tipo: 'GERAL', condicoes: [] },
       indeferimento: {
@@ -27,7 +28,10 @@ const CORPO_ESPERADO = [
       },
       requisitos: {
         idadeMaximaEmissao: null,
-        formatosPermitidos: ['PDF', 'JPEG', 'PNG'],
+        formatosPermitidos: ['PDF', 'JPEG', 'PNG'].map((formato) => ({
+          formato,
+          tamanhoMaximoBytesMax: null,
+        })),
         tamanhoMaximoBytes: 5242880,
         modelo: null,
       },
