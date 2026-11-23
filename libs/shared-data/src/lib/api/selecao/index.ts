@@ -276,3 +276,7 @@ export {
 } from './schema';
 
 export { processoSeletivoRequest } from './processo-seletivo.request';
+export {
+  VocabulariosDaComprovacaoApi,
+  type FormaDeComprovacaoDto,
+} from './vocabularios-da-comprovacao.api';
