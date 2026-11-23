@@ -292,3 +292,5 @@ export type {
   RequisitosDoDocumentoDtoProvisorio,
   RequisitosDoDocumentoInputProvisorio,
 } from './prazo-e-validade-do-documento.provisorio';
+
+export { VocabulariosDoPrazoEDaValidadeApi } from './vocabularios-do-prazo-e-da-validade.api';
