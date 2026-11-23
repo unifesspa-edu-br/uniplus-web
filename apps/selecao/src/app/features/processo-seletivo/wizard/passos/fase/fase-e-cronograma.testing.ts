@@ -333,5 +333,10 @@ export function usarFaseECronograma(aoMontar: (contexto: ContextoDoCertame) => v
     atual = await montarFaseECronograma();
     aoMontar(atual);
   });
-  afterEach(() => atual.controller.verify());
+  afterEach(() => {
+    atual.controller
+      .match((pedido) => pedido.url.includes('/vocabularios/'))
+      .forEach((requisicao) => requisicao.flush([]));
+    atual.controller.verify();
+  });
 }

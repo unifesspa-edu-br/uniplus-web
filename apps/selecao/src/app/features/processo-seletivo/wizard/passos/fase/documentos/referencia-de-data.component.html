@@ -1,0 +1,64 @@
+<div class="form-field">
+  <label [for]="idBase() + '-tipo'">Data de referência</label>
+  <select
+    class="select"
+    [id]="idBase() + '-tipo'"
+    [disabled]="desabilitado()"
+    [value]="referencia()?.tipo ?? ''"
+    [attr.aria-invalid]="recusasDoCampo('tipo').length > 0 ? 'true' : null"
+    [attr.aria-describedby]="
+      idBase() +
+      '-tipo-recusas' +
+      (referencia()?.tipo === 'fimDasInscricoes' ? ' ' + idBase() + '-tipo-ajuda' : '')
+    "
+    (change)="escolherTipo($event)"
+  >
+    <option value="">Selecione</option>
+    @for (opcao of catalogo.tiposDaDataDeReferencia(); track opcao.codigo) {
+      <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
+    }
+  </select>
+  <ui-recusa-do-campo [id]="idBase() + '-tipo-recusas'" [recusas]="recusasDoCampo('tipo')" />
+  <ui-falha-de-leitura-do-campo [leitura]="leituraDeCatalogo" />
+</div>
+@if (referencia()?.tipo === 'dataEspecifica') {
+  <div class="form-field">
+    <label [for]="idBase() + '-data'">Data específica</label>
+    <input
+      class="input"
+      type="date"
+      [id]="idBase() + '-data'"
+      [disabled]="desabilitado()"
+      [value]="referencia()?.data ?? ''"
+      [attr.aria-invalid]="recusasDoCampo('data').length > 0 ? 'true' : null"
+      [attr.aria-describedby]="idBase() + '-data-recusas'"
+      (input)="definirData($event)"
+    />
+    <ui-recusa-do-campo [id]="idBase() + '-data-recusas'" [recusas]="recusasDoCampo('data')" />
+  </div>
+}
+@if (precisaDeFase()) {
+  <div class="form-field">
+    <label [for]="idBase() + '-fase'">Fase</label>
+    <select
+      class="select"
+      [id]="idBase() + '-fase'"
+      [disabled]="desabilitado()"
+      [value]="referencia()?.faseCodigo ?? ''"
+      [attr.aria-invalid]="recusasDoCampo('faseId').length > 0 ? 'true' : null"
+      [attr.aria-describedby]="idBase() + '-fase-recusas'"
+      (change)="definirFase($event)"
+    >
+      <option value="">Selecione</option>
+      @for (fase of cronograma.linhaDoTempo(); track fase.indice) {
+        <option [value]="fase.grupo.controls.codigo.value">{{ fase.nome }}</option>
+      }
+    </select>
+    <ui-recusa-do-campo [id]="idBase() + '-fase-recusas'" [recusas]="recusasDoCampo('faseId')" />
+  </div>
+}
+@if (referencia()?.tipo === 'fimDasInscricoes') {
+  <p class="field__hint" [id]="idBase() + '-tipo-ajuda'">
+    O fim das inscrições é o maior término entre as fases que coletam inscrição.
+  </p>
+}

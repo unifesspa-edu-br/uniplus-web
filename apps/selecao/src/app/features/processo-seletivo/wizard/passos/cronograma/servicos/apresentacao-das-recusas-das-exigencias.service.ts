@@ -64,7 +64,10 @@ export class ApresentacaoDasRecusasDasExigencias {
     const linha = idDaFase(fase, `doc-linha-${identificador}`);
     const arquivo = idDaFase(fase, `doc-arquivo-${identificador}`);
     const campo = recusa.campo;
-    if (campo.startsWith('documento.requisitos.formatosPermitidos')) {
+    const prazoOuValidade = alvoDoPrazoOuValidade(campo, fase, identificador);
+    if (prazoOuValidade) {
+      focarAposRenderizar(this.injetor, prazoOuValidade, linha);
+    } else if (campo.startsWith('documento.requisitos.formatosPermitidos')) {
       focarAposRenderizar(this.injetor, `${arquivo}-qualquer`, linha);
     } else if (campo.startsWith('documento.requisitos.tamanhoMaximoBytes')) {
       focarAposRenderizar(this.injetor, `${arquivo}-tamanho`, linha);
@@ -107,4 +110,29 @@ function alvoDoGrupo(campo: string, identificador: string): string | null {
   if (campo.startsWith('indeferimento.consequencia')) return `consequencia-${identificador}`;
   if (campo.startsWith('indeferimento.basesLegais')) return `normas-${identificador}-grupo`;
   return null;
+}
+
+const CAMPOS_DO_PRAZO_E_DA_VALIDADE: Readonly<Record<string, string>> = {
+  valor: 'valor',
+  unidade: 'unidade',
+  referencia: 'referencia-tipo',
+  'referencia.tipo': 'referencia-tipo',
+  'referencia.data': 'referencia-data',
+  'referencia.faseId': 'referencia-fase',
+  efeitoForaDoPrazo: 'efeito',
+  efeitoDoVencimento: 'efeito',
+};
+
+function alvoDoPrazoOuValidade(campo: string, fase: string, identificador: string): string | null {
+  const partes = /^documento\.requisitos\.(prazoDeEmissao|validade)\.(.+)$/.exec(campo);
+  if (!partes) return null;
+  const prazo = partes[1] === 'prazoDeEmissao';
+  const base = idDaFase(fase, `doc-${prazo ? 'prazo' : 'validade'}-${identificador}`);
+  const destino =
+    partes[2] === 'escolha'
+      ? prazo
+        ? 'semPrazo'
+        : 'naoExigeDocumentoValido'
+      : CAMPOS_DO_PRAZO_E_DA_VALIDADE[partes[2]];
+  return destino ? `${base}-${destino}` : null;
 }

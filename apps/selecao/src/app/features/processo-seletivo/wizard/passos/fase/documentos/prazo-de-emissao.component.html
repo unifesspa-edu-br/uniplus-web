@@ -1,0 +1,94 @@
+<fieldset
+  [disabled]="desabilitado()"
+  [attr.aria-describedby]="idBase() + '-ajuda ' + idBase() + '-escolha-recusas'"
+>
+  <legend>Prazo de emissão</legend>
+  <p class="field__hint" [id]="idBase() + '-ajuda'">A escolha é obrigatória antes de publicar.</p>
+  <ui-recusa-do-campo [id]="idBase() + '-escolha-recusas'" [recusas]="recusasDoCampo('escolha')" />
+  @for (opcao of escolhas.escolhasDoPrazoDeEmissao(); track opcao.codigo) {
+    <label
+      ><input
+        type="radio"
+        [name]="idBase() + '-escolha'"
+        [id]="idBase() + '-' + opcao.codigo"
+        [checked]="prazo()?.escolha === opcao.codigo"
+        (change)="escolher(opcao.codigo)"
+      />
+      {{ opcao.rotulo }}</label
+    >
+  }
+  <ui-falha-de-leitura-do-campo [leitura]="leituraDeEscolhas" />
+  @if (prazo()?.escolha === 'comPrazo') {
+    <div class="form-field">
+      <label [for]="idBase() + '-valor'">Prazo</label>
+      <input
+        class="input"
+        type="number"
+        min="1"
+        step="1"
+        [id]="idBase() + '-valor'"
+        [value]="prazo()?.valor ?? ''"
+        [attr.aria-describedby]="idBase() + '-valor-recusas ' + idBase() + '-valor-ajuda'"
+        [attr.aria-invalid]="valorInvalido() || recusasDoCampo('valor').length ? 'true' : null"
+        (input)="definirValor($event)"
+      />
+      <p class="field__hint" [id]="idBase() + '-valor-ajuda'">
+        Informe um número inteiro positivo.
+      </p>
+      <ui-recusa-do-campo [id]="idBase() + '-valor-recusas'" [recusas]="recusasDoCampo('valor')" />
+    </div>
+    <div class="form-field">
+      <label [for]="idBase() + '-unidade'">Unidade do prazo</label>
+      <select
+        class="select"
+        [id]="idBase() + '-unidade'"
+        [value]="prazo()?.unidade ?? ''"
+        [attr.aria-describedby]="idBase() + '-unidade-recusas'"
+        (change)="definirUnidade($event)"
+      >
+        <option value="">Selecione</option>
+        @for (opcao of unidades.unidadesDoPrazoDeEmissao(); track opcao.codigo) {
+          <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
+        }
+      </select>
+      <ui-recusa-do-campo
+        [id]="idBase() + '-unidade-recusas'"
+        [recusas]="recusasDoCampo('unidade')"
+      />
+      <ui-falha-de-leitura-do-campo [leitura]="leituraDeUnidades" />
+    </div>
+    <sel-referencia-de-data
+      [referencia]="prazo()?.referencia ?? null"
+      [documentoId]="documentoId()"
+      [faseCodigo]="faseCodigo()"
+      [caminho]="caminho + '.referencia'"
+      [idBase]="idBase() + '-referencia'"
+      [desabilitado]="desabilitado()"
+      (referenciaChange)="definirReferencia($event)"
+    />
+    <div class="form-field">
+      <label [for]="idBase() + '-efeito'">Efeito fora do prazo</label>
+      <select
+        class="select"
+        [id]="idBase() + '-efeito'"
+        [value]="prazo()?.efeitoForaDoPrazo ?? ''"
+        [attr.aria-describedby]="idBase() + '-efeito-recusas'"
+        (change)="definirEfeito($event)"
+      >
+        <option value="">Selecione</option>
+        @for (opcao of efeitos.efeitosNaAnaliseDoDocumento(); track opcao.codigo) {
+          <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
+        }
+      </select>
+      <ui-recusa-do-campo
+        [id]="idBase() + '-efeito-recusas'"
+        [recusas]="recusasDoCampo('efeitoForaDoPrazo')"
+      />
+      <ui-falha-de-leitura-do-campo [leitura]="leituraDeEfeitos" />
+    </div>
+    <p class="field__hint">
+      O documento emitido exatamente na data mínima é aceito. Em meses, se o dia não existir no mês,
+      vale o último dia do mês.
+    </p>
+  }
+</fieldset>
