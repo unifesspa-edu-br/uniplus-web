@@ -4,7 +4,7 @@ import { OperadorCodigo } from '@uniplus/shared-data/configuracao';
 import { item } from '../formulario/formulario-de-inscricao.testing';
 import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
 import { fase, ID_CPF, ID_HOMOLOGACAO } from './fase.testing';
-import { usarFase, type ContextoDaFase } from './fase-passo.testing';
+import { identificadorDaRegra, usarFase, type ContextoDaFase } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
   let store: ContextoDaFase['store'];
@@ -94,7 +94,7 @@ describe('FasePassoComponent', () => {
       it('não oferece na fase anterior o dado que a habilitação coleta', () => {
         expect(
           gatilho()
-            .fatosDoGatilhoDoDocumento(ID_CPF)
+            .fatosDoGatilhoDoDocumento(identificadorDaRegra(exigencias(), ID_CPF))
             .map((fato) => fato.codigo),
         ).toEqual([]);
         expect(nativo.querySelector('.doc-item__gatilho')?.textContent).toContain(
@@ -111,7 +111,7 @@ describe('FasePassoComponent', () => {
 
         expect(
           gatilho()
-            .fatosDoGatilhoDoDocumento(ID_CPF)
+            .fatosDoGatilhoDoDocumento(identificadorDaRegra(exigencias(), ID_CPF))
             .map((fato) => fato.codigo),
         ).toEqual(['LAUDO_RECENTE']);
       });

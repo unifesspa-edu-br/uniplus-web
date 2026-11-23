@@ -11,7 +11,7 @@ import { REGRAS_INICIAIS, type GrupoDoFormulario } from '@uniplus/shared-ui/comp
 import { item } from '../formulario/formulario-de-inscricao.testing';
 import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
 import { fase, ID_AVALIACAO, ID_CPF, ID_HOMOLOGACAO } from './fase.testing';
-import { usarFase, type ContextoDaFase } from './fase-passo.testing';
+import { identificadorDaRegra, usarFase, type ContextoDaFase } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
   let componente: ContextoDaFase['componente'];
@@ -106,7 +106,9 @@ describe('FasePassoComponent', () => {
       }
 
       const campoRepetirPor = () =>
-        nativo.querySelector<HTMLSelectElement>(`select[id$="doc-repeticao-${ID_CPF}"]`);
+        nativo.querySelector<HTMLSelectElement>(
+          `select[id$="doc-repeticao-${identificadorDaRegra(exigencias(), ID_CPF)}"]`,
+        );
       const regraDocumentalDoCpf = () =>
         exigenciasLocalizadasDaFase(
           store.draft().documentos,
@@ -138,17 +140,17 @@ describe('FasePassoComponent', () => {
         ).toEqual(['Não repete: um por candidato', 'Composição familiar (FAMILIA)']);
         expect(
           gatilho()
-            .fatosDoGatilhoDoDocumento(ID_CPF)
+            .fatosDoGatilhoDoDocumento(identificadorDaRegra(exigencias(), ID_CPF))
             .map((fato) => fato.codigo),
         ).toEqual([]);
 
-        gatilho().escolherRepeticao(ID_CPF, 'FAMILIA');
+        gatilho().escolherRepeticao(identificadorDaRegra(exigencias(), ID_CPF), 'FAMILIA');
         detectar();
 
         expect(regraDocumentalDoCpf()?.repeticao).toEqual({ grupo: 'FAMILIA', herdada: false });
         expect(
           gatilho()
-            .fatosDoGatilhoDoDocumento(ID_CPF)
+            .fatosDoGatilhoDoDocumento(identificadorDaRegra(exigencias(), ID_CPF))
             .map((fato) => fato.codigo),
         ).toEqual(['PARENTESCO']);
         expect(documentos().resumos()[0]?.repeticao).toBe(
@@ -173,14 +175,22 @@ describe('FasePassoComponent', () => {
         exigirCpfNaFase(ID_AVALIACAO);
         store.patchSection(
           'documentos',
-          comRepeticao(store.draft().documentos, ID_CPF, 'AVALIACAO', 'FAMILIA'),
+          comRepeticao(
+            store.draft().documentos,
+            store.draft().documentos.regrasDeComprovacao[0].identificadorNoRascunho,
+            'FAMILIA',
+          ),
         );
         detectar();
 
         const campo = campoRepetirPor();
         expect(campo?.selectedOptions[0]?.text.trim()).toBe('Composição familiar (não vale mais)');
         expect(campo?.getAttribute('aria-invalid')).toBe('true');
-        expect(nativo.querySelector(`[id$="doc-repeticao-erro-${ID_CPF}"]`)?.textContent).toContain(
+        expect(
+          nativo.querySelector(
+            `[id$="doc-repeticao-erro-${identificadorDaRegra(exigencias(), ID_CPF)}"]`,
+          )?.textContent,
+        ).toContain(
           'O grupo “Composição familiar” é respondido na fase Homologação das inscrições, depois da fase em que o documento é exigido.',
         );
       });
@@ -202,7 +212,7 @@ describe('FasePassoComponent', () => {
           emTodasAsFases: [],
         });
         detectar();
-        documentos().alternarEdicao(ID_CPF);
+        documentos().alternarEdicao(identificadorDaRegra(exigencias(), ID_CPF));
         detectar();
 
         expect(campoRepetirPor()).toBeNull();
@@ -211,7 +221,7 @@ describe('FasePassoComponent', () => {
         );
         expect(
           gatilho()
-            .fatosDoGatilhoDoDocumento(ID_CPF)
+            .fatosDoGatilhoDoDocumento(identificadorDaRegra(exigencias(), ID_CPF))
             .map((fato) => fato.codigo),
         ).toEqual(['PARENTESCO']);
       });
@@ -233,7 +243,7 @@ describe('FasePassoComponent', () => {
           emTodasAsFases: [],
         });
         detectar();
-        documentos().alternarEdicao(ID_CPF);
+        documentos().alternarEdicao(identificadorDaRegra(exigencias(), ID_CPF));
         detectar();
 
         const erro = nativo.querySelector('.doc-item .field__erro')?.textContent ?? '';

@@ -14,7 +14,7 @@ import {
   ID_TIPO_ETAPA,
   TIPOS_DOCUMENTO,
 } from './fase.testing';
-import { usarFase, type ContextoDaFase } from './fase-passo.testing';
+import { identificadorDaRegra, usarFase, type ContextoDaFase } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
   let store: ContextoDaFase['store'];
@@ -41,7 +41,7 @@ describe('FasePassoComponent', () => {
       detectar();
 
       const rotulo = nativo.querySelector(
-        `label[for="fase-AVALIACAO-doc-normas-${ID_CPF}-base-0-obs"]`,
+        `label[for="fase-AVALIACAO-doc-normas-${identificadorDaRegra(exigencias(), ID_CPF)}-base-0-obs"]`,
       );
       const normalizar = (texto: string | null | undefined) => texto?.replace(/\s+/g, ' ').trim();
       expect(normalizar(rotulo?.textContent)).toBe('Observação sobre a norma (opcional)');

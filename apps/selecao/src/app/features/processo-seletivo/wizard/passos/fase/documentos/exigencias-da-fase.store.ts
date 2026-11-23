@@ -9,7 +9,7 @@ import {
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import {
   comAlcanceDeTodasAsFases,
-  recortadoPorFase,
+  restritoAsFases,
   valendoEmTodasAsFases,
   type ContextoDoAlcance,
 } from '../../../shared/exigencias/alcance-das-exigencias';
@@ -23,14 +23,15 @@ import {
 } from '../../../shared/exigencias/consulta-das-exigencias';
 import {
   comExigencia,
+  comExigenciaSemGrupo,
   exigenciaNova,
   exigenciaSemNormaResolvida,
-  semAExigencia,
 } from '../../../shared/exigencias/exigencias-documentais';
 import { finalidadeDaExigencia } from '../../../shared/exigencias/formulario-da-exigencia';
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import { documentosDeclarados, modeloParaTodasAsFases } from './documentos-declarados';
+import { declaracaoHerdada, semDeclaracaoDaFase } from './declaracoes-da-fase';
 
 /**
  * As exigências documentais da fase aberta: como cada documento está declarado na estrutura de regras do
@@ -49,28 +50,32 @@ export class ExigenciasDaFaseStore {
   /** Só as modalidades que as ofertas de vagas selecionam podem exigir documento. */
   readonly modalidades = computed(() => this.store.modalidadesDoProcesso());
 
-  /**
-   * Como cada documento desta fase está declarado na estrutura de regras — solto, ou dentro de um grupo
-   * que o combina com outros.
-   *
-   * Indexado pelo tipo de documento porque é por ele que a tela endereça a exigência. Quando o
-   * mesmo tipo é declarado mais de uma vez na fase, guarda todas: a lista mostra uma linha só,
-   * e é preciso dizer isso em vez de deixar o operador editar uma das declarações sem saber
-   * que há outra.
-   */
-  readonly declaracoesPorDocumento = computed(() => {
+  readonly declaracoesDaFase = computed(() => {
     this.versaoDoFormulario();
     const fase = this.faseDoRascunho();
-    if (fase === null) return new Map<string, readonly ExigenciaLocalizada[]>();
-
-    const porTipo = new Map<string, ExigenciaLocalizada[]>();
-    for (const achada of exigenciasLocalizadasDaFase(this.store.draft().documentos, fase.codigo)) {
-      const atuais = porTipo.get(achada.documento.tipoDocumentoId) ?? [];
-      atuais.push(achada);
-      porTipo.set(achada.documento.tipoDocumentoId, atuais);
-    }
-    return porTipo;
+    if (fase === null) return [];
+    const exigencias = this.store.draft().documentos;
+    const declaradas = exigenciasLocalizadasDaFase(exigencias, fase.codigo);
+    const herdadas = exigencias.emTodasAsFases.flatMap((tipo) =>
+      declaracaoHerdada(exigencias, declaradas, tipo, fase.codigo),
+    );
+    return [...declaradas, ...herdadas];
   });
+
+  private declaracao(id: string): ExigenciaLocalizada | undefined {
+    return (
+      this.declaracoesDaFase().find((item) => item.identificadorNoRascunho === id) ??
+      this.declaracoesDaFase().find((item) => item.documento.tipoDocumentoId === id)
+    );
+  }
+
+  estaEmGrupo(id: string): boolean {
+    return this.declaracao(id)?.grupo != null;
+  }
+
+  tipoDoDocumento(id: string): string {
+    return this.declaracao(id)?.documento.tipoDocumentoId ?? id;
+  }
 
   /**
    * Como o documento é exigido: por si, ou como alternativa dentro de um grupo. Vazio quando
@@ -92,26 +97,12 @@ export class ExigenciasDaFaseStore {
 
   /** O grupo que o documento compõe, ou `null` quando ele é exigido por si. */
   grupoDoDocumento(id: string): GrupoDaExigencia | null {
-    const grupo = (this.declaracoesPorDocumento().get(id) ?? [])[0]?.grupo ?? null;
+    const grupo = this.declaracao(id)?.grupo ?? null;
 
     // Grupo de um item só não oferece alternativa nenhuma: satisfazê-lo é satisfazer aquele
     // item, e a regra de documento é materialmente igual a uma exigência solta. Anunciá-la como grupo
     // informaria errado antes de informar mal.
     return grupo !== null && grupo.alternativas >= 2 ? grupo : null;
-  }
-
-  /**
-   * O aviso de que este documento está declarado mais de uma vez nesta fase.
-   *
-   * A tela mostra uma linha por tipo de documento, e editar essa linha mexe na primeira
-   * declaração. Enquanto isso ficava calado, o operador acreditava estar editando a exigência
-   * que estava vendo.
-   */
-  declaradoMaisDeUmaVez(id: string): string {
-    const quantas = (this.declaracoesPorDocumento().get(id) ?? []).length;
-    if (quantas <= 1) return '';
-
-    return `Este documento está declarado ${quantas} vezes nesta fase, em regras de comprovação diferentes. O que se edita aqui é a primeira declaração.`;
   }
 
   /**
@@ -145,9 +136,7 @@ export class ExigenciasDaFaseStore {
     const fase = this.faseDoRascunho();
     const codigo = fase?.codigo ?? '';
     const exigencias = this.store.draft().documentos;
-    const achada = exigenciasDaFase(exigencias, codigo).find(
-      (exigencia) => exigencia.tipoDocumentoId === id,
-    );
+    const achada = this.declaracao(id)?.documento;
     if (achada !== undefined) return achada;
 
     const modelo = modeloParaTodasAsFases(exigencias, id);
@@ -197,7 +186,7 @@ export class ExigenciasDaFaseStore {
    * exigência recusaria na entrega.
    */
   formatosForaDoContrato(id: string): readonly string[] {
-    const tipo = this.catalogoDeDocumentos.tipoDocumentoPorId().get(id);
+    const tipo = this.catalogoDeDocumentos.tipoDocumentoPorId().get(this.tipoDoDocumento(id));
     return formatosDeclarados(tipo?.formatosAceitos).naoExpressos;
   }
 
@@ -217,7 +206,10 @@ export class ExigenciasDaFaseStore {
    * documento, em vez de ficar de fora em silêncio.
    */
   valeEmTodasAsFases(id: string): boolean {
-    return this.store.draft().documentos.emTodasAsFases.includes(id);
+    return (
+      this.declaracao(id)?.grupo == null &&
+      this.store.draft().documentos.emTodasAsFases.includes(this.tipoDoDocumento(id))
+    );
   }
 
   /** O documento é exigido nesta fase. */
@@ -258,32 +250,38 @@ export class ExigenciasDaFaseStore {
     const tipo = this.catalogoDeDocumentos.tipoDocumentoPorId().get(id);
     this.store.patchSection(
       'documentos',
-      comExigencia(exigencias, exigenciaNova(id, faseCodigo, tipo)),
+      comExigenciaSemGrupo(exigencias, exigenciaNova(id, faseCodigo, tipo)),
     );
   }
 
   private removerExigencia(id: string, faseCodigo: string, exigencias: ExigenciasDoRascunho): void {
-    const materializadas = exigencias.emTodasAsFases.includes(id)
+    const tipo = this.tipoDoDocumento(id);
+    const declaracao = this.declaracao(id);
+    const materializadas = this.valeEmTodasAsFases(id)
       ? comAlcanceDeTodasAsFases(
           exigencias,
           this.fasesDoCronograma().map((fase) => fase.codigo),
         )
       : exigencias;
-    this.store.patchSection('documentos', {
-      ...semAExigencia(materializadas, id, faseCodigo),
-      emTodasAsFases: materializadas.emTodasAsFases.filter((item) => item !== id),
-    });
+    this.store.patchSection(
+      'documentos',
+      semDeclaracaoDaFase(materializadas, faseCodigo, tipo, declaracao),
+    );
   }
 
   /**
-   * Troca "vale para todas as fases" pelo recorte explícito, partindo das fases que o edital
+   * Troca "vale para todas as fases" pela seleção explícita de fases, partindo das fases que o edital
    * tem hoje. Congelar o conjunto atual preserva o que estava valendo; começar do zero
    * apagaria a exigência de todas as outras fases por causa de uma decisão tomada numa só.
    */
   recortarPorFase(id: string): void {
     this.store.patchSection(
       'documentos',
-      recortadoPorFase(this.store.draft().documentos, id, this.contextoDoAlcance(id)),
+      restritoAsFases(
+        this.store.draft().documentos,
+        this.tipoDoDocumento(id),
+        this.contextoDoAlcance(id),
+      ),
     );
   }
 
@@ -291,7 +289,11 @@ export class ExigenciasDaFaseStore {
   valerEmTodasAsFases(id: string): void {
     this.store.patchSection(
       'documentos',
-      valendoEmTodasAsFases(this.store.draft().documentos, id, this.contextoDoAlcance(id)),
+      valendoEmTodasAsFases(
+        this.store.draft().documentos,
+        this.tipoDoDocumento(id),
+        this.contextoDoAlcance(id),
+      ),
     );
   }
 
@@ -302,7 +304,7 @@ export class ExigenciasDaFaseStore {
       faseAberta: this.faseDoRascunho()?.codigo ?? fases[0] ?? '',
       modelo: this.exigenciaDoDocumento(id),
       repeticao: this.repeticaoDeclarada(id),
-      restricao: this.catalogoDeDocumentos.tipoDocumentoPorId().get(id),
+      restricao: this.catalogoDeDocumentos.tipoDocumentoPorId().get(this.tipoDoDocumento(id)),
     };
   }
 
@@ -311,13 +313,15 @@ export class ExigenciasDaFaseStore {
    * fases" e ainda não materializada, é a do modelo de regra principal, que a gravação copia para ela.
    */
   repeticaoDeclarada(id: string): RepeticaoDaExigencia | null {
-    const declarada = (this.declaracoesPorDocumento().get(id) ?? [])[0];
+    const declarada = this.declaracao(id);
     if (declarada !== undefined) return declarada.repeticao;
 
     const exigencias = this.store.draft().documentos;
-    if (!exigencias.emTodasAsFases.includes(id)) return null;
+    if (!exigencias.emTodasAsFases.includes(this.tipoDoDocumento(id))) return null;
     const modelo = exigencias.regrasDeComprovacao.find(
-      (no) => no.forma === 'DOCUMENTO' && no.documento?.tipoDocumentoId === id,
+      (regra) =>
+        regra.forma === 'DOCUMENTO' &&
+        regra.documento?.tipoDocumentoId === this.tipoDoDocumento(id),
     );
     return modelo === undefined || modelo.grupoDoFormularioParaRepeticao === null
       ? null
@@ -328,7 +332,7 @@ export class ExigenciasDaFaseStore {
    * Edita a declaração desta fase. Mexer nela é dizer que a declaração é própria — e "vale em
    * todas" quer dizer a MESMA declaração em toda fase. Mantendo a marca, as fases passavam a
    * divergir com o regime global ainda ligado: a releitura ao reabrir o processo não reconhecia
-   * mais a intenção, e a fase criada depois ficava sem o documento, em silêncio. O recorte
+   * mais a intenção, e a fase criada depois ficava sem o documento, em silêncio. A seleção de fases
    * congela o que valia em cada fase antes de aplicar a edição nesta.
    */
   editarDeclaracao(
@@ -343,12 +347,17 @@ export class ExigenciasDaFaseStore {
   }
 
   escreverGatilho(id: string, exigencia: ExigenciaDeDocumento): void {
-    this.editarDeclaracao(id, (exigencias) => comExigencia(exigencias, exigencia));
+    this.editarDeclaracao(id, (exigencias) =>
+      comExigencia(exigencias, this.declaracao(id)?.identificadorNoRascunho ?? id, exigencia),
+    );
   }
 
   escreverExigencia(id: string, patch: Partial<ExigenciaDeDocumento>): void {
     this.editarDeclaracao(id, (exigencias) =>
-      comExigencia(exigencias, { ...this.exigenciaDoDocumento(id), ...patch }),
+      comExigencia(exigencias, this.declaracao(id)?.identificadorNoRascunho ?? id, {
+        ...this.exigenciaDoDocumento(id),
+        ...patch,
+      }),
     );
   }
 }

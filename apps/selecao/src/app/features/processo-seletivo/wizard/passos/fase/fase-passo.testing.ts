@@ -17,6 +17,14 @@ import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.compone
 
 export const ID_RG = '01960000-0000-7000-0000-0000000000f2';
 
+export function identificadorDaRegra(exigencias: ExigenciasDaFaseStore, tipo: string): string {
+  const declaracao = exigencias
+    .declaracoesDaFase()
+    .find((item) => item.documento.tipoDocumentoId === tipo);
+  if (!declaracao) throw new Error(`Declaração não encontrada para ${tipo}`);
+  return declaracao.identificadorNoRascunho;
+}
+
 /** Uma norma como a recém-declarada, com o que o cenário precisa diferente. */
 export function umaNorma(parcial: Partial<BaseLegalConfig> = {}): BaseLegalConfig {
   return { ...baseLegalNova(), ...parcial };
@@ -76,7 +84,9 @@ export class ContextoDaFase {
   readonly botaoDeEdicao = () =>
     this.nativo.querySelector<HTMLButtonElement>('.doc-conferencia__alternar');
   readonly campoDeEntrega = () =>
-    this.nativo.querySelector(`#fase-AVALIACAO-doc-obrigatorio-${ID_CPF}`);
+    this.nativo.querySelector(
+      `#fase-AVALIACAO-doc-obrigatorio-${identificadorDaRegra(this.exigencias(), ID_CPF)}`,
+    );
 }
 
 /**

@@ -3,7 +3,10 @@ import { fatoComOperadores } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 
 import type { ExigenciaDeDocumento } from '../../processo-seletivo.models';
-import { comExigencia, exigenciaNova } from '../../shared/exigencias/exigencias-documentais';
+import {
+  comExigenciaSemGrupo,
+  exigenciaNova,
+} from '../../shared/exigencias/exigencias-documentais';
 import { PASSO_CRONOGRAMA } from '../../shared/documentos-exigidos';
 import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
 import { conteudoDoFormulario } from './formulario-do-processo';
@@ -66,8 +69,8 @@ describe('FormularioPassoComponent: documentos da fase', () => {
       };
       store.patchSection(
         'documentos',
-        comExigencia(
-          comExigencia({ regrasDeComprovacao: [], emTodasAsFases: [] }, laudo),
+        comExigenciaSemGrupo(
+          comExigenciaSemGrupo({ regrasDeComprovacao: [], emTodasAsFases: [] }, laudo),
           certidaoDeOutraFase,
         ),
       );
@@ -93,7 +96,7 @@ describe('FormularioPassoComponent: documentos da fase', () => {
       store.patchSection('cronograma', { ...store.draft().cronograma, fases: [dividida] });
       store.patchSection(
         'documentos',
-        comExigencia(
+        comExigenciaSemGrupo(
           { regrasDeComprovacao: [], emTodasAsFases: [] },
           exigenciaNova(TIPO_LAUDO, 'INSCRICAO'),
         ),
@@ -117,7 +120,7 @@ describe('FormularioPassoComponent: documentos da fase', () => {
         fases: [antes, FASE_INSCRICAO],
       });
       store.patchSection('documentos', {
-        ...comExigencia(
+        ...comExigenciaSemGrupo(
           { regrasDeComprovacao: [], emTodasAsFases: [] },
           { ...exigenciaNova(TIPO_LAUDO, 'ANTES'), tipoDocumentoNome: 'Laudo médico' },
         ),

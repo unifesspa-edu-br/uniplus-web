@@ -2,7 +2,10 @@ import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import type { ExigenciaDeDocumento } from '../../processo-seletivo.models';
-import { comExigencia, exigenciaNova } from '../../shared/exigencias/exigencias-documentais';
+import {
+  comExigenciaSemGrupo,
+  exigenciaNova,
+} from '../../shared/exigencias/exigencias-documentais';
 import { usarPasso, type ContextoDoPasso } from './formulario-passo.testing';
 import { CamposPressupostosDoFormulario } from './servicos/campos-pressupostos-do-formulario.service';
 
@@ -30,7 +33,7 @@ describe('FormularioPassoComponent: campos citados por outras partes do processo
     } as ExigenciaDeDocumento;
     store.patchSection(
       'documentos',
-      comExigencia({ regrasDeComprovacao: [], emTodasAsFases: [] }, exigencia),
+      comExigenciaSemGrupo({ regrasDeComprovacao: [], emTodasAsFases: [] }, exigencia),
     );
   }
 

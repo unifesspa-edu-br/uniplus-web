@@ -5,7 +5,7 @@ import { FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import {
   baseLegalNova,
-  comExigencia,
+  comExigenciaSemGrupo,
   exigenciaNova,
   regraDeDocumento,
 } from '../../shared/exigencias/exigencias-documentais';
@@ -49,7 +49,10 @@ describe('RevisaoPassoComponent', () => {
       store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE('INSCRICAO')] });
       store.patchSection(
         'documentos',
-        comExigencia({ regrasDeComprovacao: [], emTodasAsFases: [] }, documento(true, true)),
+        comExigenciaSemGrupo(
+          { regrasDeComprovacao: [], emTodasAsFases: [] },
+          documento(true, true),
+        ),
       );
 
       const texto = await abrirRevisao();
@@ -64,7 +67,10 @@ describe('RevisaoPassoComponent', () => {
         fases: [FASE('INSCRICAO'), FASE('NOVA')],
       });
       store.patchSection('documentos', {
-        ...comExigencia({ regrasDeComprovacao: [], emTodasAsFases: [] }, documento(true, true)),
+        ...comExigenciaSemGrupo(
+          { regrasDeComprovacao: [], emTodasAsFases: [] },
+          documento(true, true),
+        ),
         emTodasAsFases: ['01960000-0000-7000-0000-0000000000d1'],
       });
 
@@ -120,7 +126,10 @@ describe('RevisaoPassoComponent', () => {
       store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE('INSCRICAO')] });
       store.patchSection(
         'documentos',
-        comExigencia({ regrasDeComprovacao: [], emTodasAsFases: [] }, documento(true, false)),
+        comExigenciaSemGrupo(
+          { regrasDeComprovacao: [], emTodasAsFases: [] },
+          documento(true, false),
+        ),
       );
 
       expect(await abrirRevisao()).toContain('Base legal pendente em 1 exigência');

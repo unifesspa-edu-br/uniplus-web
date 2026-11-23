@@ -2,6 +2,7 @@ import { By } from '@angular/platform-browser';
 import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { identificadorDaRegra } from './fase-passo.testing';
 import { recurso } from './configuracao-da-fase.testing';
 import { DocumentosDaFaseComponent } from './documentos/documentos-da-fase.component';
 import { ExigenciasDaFaseStore } from './documentos/exigencias-da-fase.store';
@@ -36,7 +37,10 @@ describe('campos de texto das seções da fase', () => {
     passo.raiz.injector.get(ExigenciasDaFaseStore).alternarExigencia(ID_CPF, true);
     passo.raiz
       .query(By.directive(DocumentosDaFaseComponent))
-      .componentInstance.alternarEdicao(ID_CPF, true);
+      .componentInstance.alternarEdicao(
+        identificadorDaRegra(passo.raiz.injector.get(ExigenciasDaFaseStore), ID_CPF),
+        true,
+      );
     passo.detectar();
   });
 
@@ -45,9 +49,14 @@ describe('campos de texto das seções da fase', () => {
   it.each([
     ['publicações', 'produto-ato-0'],
     ['regra de recurso', 'regra'],
-    ['editor da exigência', `doc-normas-${ID_CPF}-base-0-ref`],
+    ['editor da exigência', 'doc-normas'],
   ])('a seção de %s aplica a ValorLegivelDirective ao campo %s', (_secao, sufixo) => {
-    const campo = passo.raiz.query(By.css(`#fase-AVALIACAO-${sufixo}`));
+    const identificador = identificadorDaRegra(
+      passo.raiz.injector.get(ExigenciasDaFaseStore),
+      ID_CPF,
+    );
+    const nome = sufixo === 'doc-normas' ? `${sufixo}-${identificador}-base-0-ref` : sufixo;
+    const campo = passo.raiz.query(By.css(`#fase-AVALIACAO-${nome}`));
 
     expect(campo, sufixo).not.toBeNull();
     expect(campo.injector.get(ValorLegivelDirective, null)).not.toBeNull();

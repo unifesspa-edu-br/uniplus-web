@@ -43,6 +43,7 @@ export interface RepeticaoDaExigencia {
 
 /** Uma exigência com a posição que ela ocupa na estrutura de regras. */
 export interface ExigenciaLocalizada {
+  readonly identificadorNoRascunho: string;
   readonly documento: ExigenciaDeDocumento;
   /** `null` quando a exigência está solta, fora de qualquer grupo. */
   readonly grupo: GrupoDaExigencia | null;
@@ -50,13 +51,7 @@ export interface ExigenciaLocalizada {
   readonly repeticao: RepeticaoDaExigencia | null;
 }
 
-/**
- * As exigências de uma fase com a posição de cada uma na estrutura de regras.
- *
- * A tela listava as regras de documento de dentro de um grupo como se fossem soltas, e um conjunto por tipo
- * de documento colapsava numa linha só o documento declarado solto E dentro de um grupo —
- * editar essa linha mexia numa das duas declarações, escolhida por acaso da ordem.
- */
+/** As exigências de uma fase com a posição de cada uma na estrutura de regras. */
 export function exigenciasLocalizadasDaFase(
   exigencias: ExigenciasDoRascunho,
   faseCodigo: string,
@@ -111,6 +106,7 @@ function registrarDocumentoLocalizado(
 ): void {
   if (regra.documento === null) return;
   achados.push({
+    identificadorNoRascunho: regra.identificadorNoRascunho,
     documento: regra.documento,
     grupo: posicao.grupo,
     repeticao: repeticaoDoDocumento(regra, posicao.herdada),

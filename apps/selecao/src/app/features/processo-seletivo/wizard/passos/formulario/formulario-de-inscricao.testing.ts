@@ -13,7 +13,10 @@ import type {
   ExigenciasDoRascunho,
   FormularioDeInscricao,
 } from '../../processo-seletivo.models';
-import { comExigencia, exigenciaNova } from '../../shared/exigencias/exigencias-documentais';
+import {
+  comExigenciaSemGrupo,
+  exigenciaNova,
+} from '../../shared/exigencias/exigencias-documentais';
 
 export const ID_TITULO = '01960000-0000-7000-0000-0000000000d1';
 export const ID_RESERVISTA = '01960000-0000-7000-0000-0000000000d2';
@@ -168,7 +171,7 @@ export function exigenciaCom(
 
 export function rascunhoCom(...exigencias: readonly ExigenciaDeDocumento[]): ExigenciasDoRascunho {
   return exigencias.reduce<ExigenciasDoRascunho>(
-    (acumulado, atual) => comExigencia(acumulado, atual),
+    (acumulado, atual) => comExigenciaSemGrupo(acumulado, atual),
     { regrasDeComprovacao: [], emTodasAsFases: [] },
   );
 }

@@ -115,8 +115,7 @@ describe('o formulário em que o documento é apresentado', () => {
 
     const declarado = comFinalidade(
       { regrasDeComprovacao: [grupo, solta], emTodasAsFases: [] },
-      ID_CONTRACHEQUE,
-      'ISENCAO',
+      grupo.itens?.[1].identificadorNoRascunho ?? '',
       'ISENCAO_TAXA',
     );
 

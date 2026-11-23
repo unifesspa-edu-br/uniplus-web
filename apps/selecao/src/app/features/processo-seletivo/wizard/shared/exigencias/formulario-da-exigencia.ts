@@ -1,7 +1,7 @@
 import type { ExigenciasDoRascunho } from '../../processo-seletivo.models';
 import { nomeDaFinalidade } from '../../passos/formulario/formularios-por-finalidade';
 
-import { documentosDe } from './consulta-das-exigencias';
+import { exigenciasLocalizadas } from './consulta-das-exigencias';
 import { transformar } from './composicao-das-regras';
 
 /**
@@ -112,11 +112,10 @@ export function agrupadosPorFormulario<T>(
  */
 export function comFinalidade(
   exigencias: ExigenciasDoRascunho,
-  tipoDocumentoId: string,
-  faseCodigo: string,
+  identificadorNoRascunho: string,
   finalidade: string | null,
 ): ExigenciasDoRascunho {
-  const posicao = posicaoDaExigencia(exigencias, tipoDocumentoId, faseCodigo);
+  const posicao = posicaoDaExigencia(exigencias, identificadorNoRascunho);
   if (posicao === -1) return exigencias;
 
   return {
@@ -137,15 +136,10 @@ function regrasComFinalidade(
   );
 }
 
-function posicaoDaExigencia(
-  exigencias: ExigenciasDoRascunho,
-  tipoDocumentoId: string,
-  faseCodigo: string,
-): number {
+function posicaoDaExigencia(exigencias: ExigenciasDoRascunho, identificador: string): number {
   return exigencias.regrasDeComprovacao.findIndex((regra) =>
-    documentosDe([regra]).some(
-      (documento) =>
-        documento.tipoDocumentoId === tipoDocumentoId && documento.faseCodigo === faseCodigo,
+    exigenciasLocalizadas({ regrasDeComprovacao: [regra], emTodasAsFases: [] }).some(
+      (item) => item.identificadorNoRascunho === identificador,
     ),
   );
 }

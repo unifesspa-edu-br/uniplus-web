@@ -59,7 +59,6 @@ export class EixoFormularioComponent {
       comFinalidade(
         exigencias,
         id,
-        fase.codigo,
         finalidade === '' || finalidade === SEM_FORMULARIO ? null : finalidade,
       ),
     );
