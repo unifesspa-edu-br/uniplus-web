@@ -13,18 +13,9 @@ import {
   comRepeticao,
   exigenciaNova,
   regraDeDocumento,
-  semAEtapa,
   semAExigencia,
-  semAFase,
 } from './exigencias-documentais';
-import {
-  ID_CONTRACHEQUE,
-  ID_DIPLOMA,
-  ID_ETAPA_RENDA,
-  ID_RG,
-  exigencia,
-  rascunho,
-} from './exigencias.testing';
+import { ID_CONTRACHEQUE, ID_DIPLOMA, ID_RG, exigencia, rascunho } from './exigencias.testing';
 
 /** A norma recém-declarada tem uma só definição, a do modelo de formulário e a do processo. */
 describe('a base legal nova', () => {
@@ -40,22 +31,6 @@ describe('a base legal nova', () => {
 });
 
 describe('operações sobre o conjunto de regras do rascunho', () => {
-  it('semAFase tira a exigência daquela fase e deixa a das outras', () => {
-    const antes = rascunho(
-      exigencia({ faseCodigo: 'ISENCAO' }),
-      exigencia({ faseCodigo: 'HABILITACAO' }),
-    );
-
-    const depois = semAFase(antes, 'ISENCAO');
-    expect(todasAsExigencias(depois)).toHaveLength(1);
-    expect(todasAsExigencias(depois)[0].faseCodigo).toBe('HABILITACAO');
-  });
-
-  it('semAEtapa devolve o documento à fase inteira', () => {
-    const depois = semAEtapa(rascunho(exigencia({ etapaId: ID_ETAPA_RENDA })), ID_ETAPA_RENDA);
-    expect(todasAsExigencias(depois)[0].etapaId).toBeNull();
-  });
-
   it('semAExigencia remove só o par (documento, fase) indicado', () => {
     const antes = rascunho(
       exigencia({ faseCodigo: 'ISENCAO' }),

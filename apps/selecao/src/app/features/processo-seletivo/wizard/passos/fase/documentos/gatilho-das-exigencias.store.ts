@@ -11,16 +11,11 @@ import {
   recusasDeFaseDoGatilho,
   type FatoEscolhivel,
 } from '../../../shared/gatilho-de-exigencia';
-import {
-  motivoDoGrupoForaDoLugar,
-  orientacaoDaRecusaDaRepeticao,
-  type NomesDaOrientacao,
-} from '../../../shared/orientacao-da-recusa-do-fato';
+import { type NomesDaOrientacao } from '../../../shared/orientacao-da-recusa-do-fato';
 import {
   camposDaRepeticao,
   fasesNoCronograma,
   producaoDoRascunho,
-  recusaDaRepeticao,
   type ProducaoDosFatos,
 } from '../../../shared/producao-dos-fatos';
 import {
@@ -39,6 +34,7 @@ import { FaseEmEdicao } from '../fase-em-edicao';
 import type { RepeticaoDoDocumento } from '../tipos-da-conferencia';
 import { SEM_REPETICAO } from '../tipos-da-conferencia';
 import { ExigenciasDaFaseStore } from './exigencias-da-fase.store';
+import { repeticaoDoDocumentoNaFase } from './repeticao-do-documento-na-fase';
 
 const SEM_ERROS: Readonly<Record<number, string>> = {};
 
@@ -120,21 +116,19 @@ export class GatilhoDasExigenciasStore {
     return new Map(
       this.exigencias
         .documentosDaFase()
-        .map((doc) => [doc.id, this.gatilhoDoDocumento(doc.id, producao, nomes)] as const),
+        .map(
+          (documento) =>
+            [documento.id, this.gatilhoDoDocumento(documento.id, producao, nomes)] as const,
+        ),
     );
   });
 
   private gatilhoDoDocumento(id: string, producao: ProducaoDosFatos, nomes: NomesDaOrientacao) {
     const exigencia = this.exigencias.exigenciaDoDocumento(id);
-    // Os campos do grupo pelo qual o documento se repete: o gatilho os cita além dos do candidato.
-    const doGrupo = camposDaRepeticao(
-      this.exigencias.repeticaoDeclarada(id)?.grupo ?? null,
-      producao,
-    );
-    const erros: Record<number, string> = {};
-    for (const recusa of recusasDeFaseDoGatilho(exigencia, producao, nomes, doGrupo)) {
-      erros[recusa.indice] = recusa.orientacao;
-    }
+    const grupo = this.exigencias.repeticaoDeclarada(id)?.grupo ?? null;
+    const doGrupo = camposDaRepeticao(grupo, producao);
+    const recusas = recusasDeFaseDoGatilho(exigencia, producao, nomes, doGrupo);
+    const erros = Object.fromEntries(recusas.map(({ indice, orientacao }) => [indice, orientacao]));
     const fatos = fatosDoGatilhoNaFase(this.catalogoDeFatos.fatos(), exigencia, {
       producao,
       dominiosDinamicos: this.dominiosDoGatilho(),
@@ -150,48 +144,22 @@ export class GatilhoDasExigenciasStore {
    * pode escolher onde o documento é cobrado, os que não pode e por quê, e o que fazer quando a
    * escolhida deixou de valer — grupo removido, respondido depois da fase ou só na isenção.
    */
-  readonly repeticaoPorDocumento = computed(() => {
-    const producao = this.producaoDosFatos();
-    const nomes = this.nomesDaOrientacao();
-
-    return new Map(
-      this.exigencias
-        .documentosDaFase()
-        .map((doc): [string, RepeticaoDoDocumento] => [
-          doc.id,
-          this.repeticaoDoDocumentoNaFase(doc.id, producao, nomes),
-        ]),
-    );
-  });
-
-  private repeticaoDoDocumentoNaFase(
-    id: string,
-    producao: ProducaoDosFatos,
-    nomes: NomesDaOrientacao,
-  ): RepeticaoDoDocumento {
-    const exigencia = this.exigencias.exigenciaDoDocumento(id);
-    const atual = this.exigencias.repeticaoDeclarada(id);
-    const grupos = [...producao.grupos.values()];
-    const avaliados = grupos.map((grupo) => ({
-      grupo,
-      recusa: recusaDaRepeticao(grupo.codigo, exigencia, producao),
-    }));
-    const recusaAtual = atual === null ? null : recusaDaRepeticao(atual.grupo, exigencia, producao);
-
-    return {
-      atual,
-      rotulo: atual === null ? '' : (producao.grupos.get(atual.grupo)?.rotulo ?? atual.grupo),
-      semGrupo: grupos.length === 0,
-      oferecidos: avaliados.filter(({ recusa }) => recusa === null).map(({ grupo }) => grupo),
-      naoOferecidos: avaliados.flatMap(({ recusa }) =>
-        recusa?.tipo === 'GRUPO_FORA_DO_LUGAR' ? [motivoDoGrupoForaDoLugar(recusa, nomes)] : [],
+  readonly repeticaoPorDocumento = computed(
+    () =>
+      new Map(
+        this.exigencias
+          .documentosDaFase()
+          .map((documento) => [
+            documento.id,
+            repeticaoDoDocumentoNaFase(
+              this.exigencias.exigenciaDoDocumento(documento.id),
+              this.exigencias.repeticaoDeclarada(documento.id),
+              this.producaoDosFatos(),
+              this.nomesDaOrientacao(),
+            ),
+          ]),
       ),
-      erro:
-        recusaAtual === null || atual === null
-          ? null
-          : orientacaoDaRecusaDaRepeticao(recusaAtual, producao, nomes, atual.herdada),
-    };
-  }
+  );
 
   /** A repetição do documento na fase aberta, com o que o campo "Repetir por" oferece. */
   repeticaoDoDocumento(id: string): RepeticaoDoDocumento {
