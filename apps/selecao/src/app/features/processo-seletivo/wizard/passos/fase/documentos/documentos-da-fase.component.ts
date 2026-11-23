@@ -115,12 +115,11 @@ export class DocumentosDaFaseComponent {
     if (id === '') return;
 
     this.exigencias.alternarExigencia(id, true);
-    // O aviso de que ele saiu deixou de valer: zerado, a próxima remoção do mesmo documento
-    // muda o texto da região de status e volta a ser anunciada.
     this.avisoDaRemocao.set('');
-    // O documento recém-exigido ainda não declarou nada: os campos dele abrem já à mostra.
-    this.alternarEdicao(id, true);
-    // O campo volta ao estado neutro: o próximo documento começa do zero.
+    const declaracao = this.exigencias
+      .declaracoesDaFase()
+      .find((item) => item.documento.tipoDocumentoId === id);
+    this.alternarEdicao(declaracao?.identificadorNoRascunho ?? id, true);
     this.documentoAAcrescentar.set('');
   }
 
@@ -180,38 +179,44 @@ export class DocumentosDaFaseComponent {
 
   /** O resumo de cada documento da fase: o que decide a exigência, sem abrir os campos. */
   readonly resumos = computed<readonly ResumoDoDocumento[]>(() =>
-    this.exigencias.documentosDaFase().map((doc) => this.resumoDoDocumento(doc)),
+    this.exigencias.documentosDaFase().flatMap((doc) => {
+      const declaracoes = this.exigencias
+        .declaracoesDaFase()
+        .filter((item) => item.documento.tipoDocumentoId === doc.id);
+      return declaracoes.length === 0
+        ? [this.resumoDoDocumento(doc, doc.id)]
+        : declaracoes.map((item) => this.resumoDoDocumento(doc, item.identificadorNoRascunho));
+    }),
   );
 
-  private resumoDoDocumento(doc: DocumentoDefinicao): ResumoDoDocumento {
-    const exigencia = this.exigencias.exigenciaDoDocumento(doc.id);
+  private resumoDoDocumento(doc: DocumentoDefinicao, id: string): ResumoDoDocumento {
+    const exigencia = this.exigencias.exigenciaDoDocumento(id);
     const publico = publicoDaExigencia(exigencia, this.gatilho.fatoPorCodigo());
     return {
-      id: doc.id,
+      id,
       nome: doc.nome,
       documento: doc,
       publico,
       aplicaA: descreverPublico(publico),
       entrega: exigencia.obrigatorio ? 'Obrigatória' : 'Facultativa',
-      composicao: composicaoResumida(this.exigencias.grupoDoDocumento(doc.id)),
-      repeticao: this.repeticaoResumidaDoDocumento(doc.id),
-      ...this.detalhesDoResumo(doc),
+      composicao: composicaoResumida(this.exigencias.grupoDoDocumento(id)),
+      repeticao: this.repeticaoResumidaDoDocumento(id),
+      ...this.detalhesDoResumo(doc, id),
     };
   }
 
-  private detalhesDoResumo(doc: DocumentoDefinicao) {
-    const exigencia = this.exigencias.exigenciaDoDocumento(doc.id);
+  private detalhesDoResumo(doc: DocumentoDefinicao, id: string) {
+    const exigencia = this.exigencias.exigenciaDoDocumento(id);
     return {
-      coleta: this.coletaDoDocumento(doc.id),
-      consequencia: this.consequenciaDoDocumento(doc.id),
+      coleta: this.coletaDoDocumento(id),
+      consequencia: this.consequenciaDoDocumento(id),
       bases: exigencia.basesLegais,
       normas: exigencia.basesLegais.map(descreverNorma),
-      faltaNorma: this.exigencias.faltaNormaResolvida(doc.id),
-      repetido: this.exigencias.declaradoMaisDeUmaVez(doc.id),
-      finalidade: this.exigencias.finalidadeDoDocumento(doc.id),
+      faltaNorma: this.exigencias.faltaNormaResolvida(id),
+      finalidade: this.exigencias.finalidadeDoDocumento(id),
       orientacao: doc.orientacao,
       avisoDeFormatos: this.exigencias.avisoDeFormatos(doc.id),
-      detalhe: this.store.emConsulta() ? this.detalheLidoDoDocumento(doc) : null,
+      detalhe: this.store.emConsulta() ? this.detalheLidoDoDocumento(doc, id) : null,
     };
   }
 
@@ -227,8 +232,7 @@ export class DocumentosDaFaseComponent {
   }
 
   /** O que a consulta lê de um documento além do que a conferência já resume. */
-  detalheLidoDoDocumento(doc: DocumentoDefinicao): DetalheLidoDoDocumento {
-    const id = doc.id;
+  detalheLidoDoDocumento(doc: DocumentoDefinicao, id: string): DetalheLidoDoDocumento {
     const modelo = this.exigencias.exigenciaDoDocumento(id).modelo;
     return {
       descricao: doc.descricao,

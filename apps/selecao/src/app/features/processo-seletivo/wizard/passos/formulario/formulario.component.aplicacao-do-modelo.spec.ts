@@ -2,7 +2,10 @@ import { conteudoInicial } from '@uniplus/shared-ui/components';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { ExigenciaDeDocumento, FaseDoCronograma } from '../../processo-seletivo.models';
-import { comExigencia, exigenciaNova } from '../../shared/exigencias/exigencias-documentais';
+import {
+  comExigenciaSemGrupo,
+  exigenciaNova,
+} from '../../shared/exigencias/exigencias-documentais';
 import {
   CONGELADOS_DA_INSCRICAO,
   etapa,
@@ -115,7 +118,7 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
       } as ExigenciaDeDocumento;
       store.patchSection(
         'documentos',
-        comExigencia({ regrasDeComprovacao: [], emTodasAsFases: [] }, exigencia),
+        comExigenciaSemGrupo({ regrasDeComprovacao: [], emTodasAsFases: [] }, exigencia),
       );
 
       const aplicacao = escolherEAplicar('INSCRICAO', 'insc');

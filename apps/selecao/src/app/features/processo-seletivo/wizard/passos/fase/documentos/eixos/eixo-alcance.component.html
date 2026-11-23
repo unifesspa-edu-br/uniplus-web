@@ -14,7 +14,11 @@ primeiro diz "todas".
   <option value="fase" [selected]="!exigencias.valeEmTodasAsFases(documentoId())">
     Só em {{ nomeDaFaseAberta() }}
   </option>
-  <option value="todas" [selected]="exigencias.valeEmTodasAsFases(documentoId())">
+  <option
+    value="todas"
+    [disabled]="exigencias.estaEmGrupo(documentoId())"
+    [selected]="exigencias.valeEmTodasAsFases(documentoId())"
+  >
     Todas as fases do edital
   </option>
 </select>

@@ -111,6 +111,12 @@ describe('onde cada exigência está no conjunto de regras', () => {
     );
 
     expect(doRg).toHaveLength(2);
+    expect(doRg[0].identificadorNoRascunho).toBe(
+      comAsDuas.regrasDeComprovacao[0].itens?.[0].identificadorNoRascunho,
+    );
+    expect(doRg[1].identificadorNoRascunho).toBe(
+      comAsDuas.regrasDeComprovacao[1].identificadorNoRascunho,
+    );
     expect(doRg[0].grupo?.forma).toBe('QUANTIDADE_MINIMA_DE_ITENS');
     expect(doRg[1].grupo).toBeNull();
   });
@@ -153,11 +159,21 @@ describe('onde cada exigência está no conjunto de regras', () => {
       { quantidadeMinima: 2 },
     );
 
-    const comDuas = semAExigencia(comTres, ID_DIPLOMA, 'HABILITACAO');
+    const comDuas = semAExigencia(
+      comTres,
+      exigenciasLocalizadasDaFase(comTres, 'HABILITACAO').find(
+        (item) => item.documento.tipoDocumentoId === ID_DIPLOMA,
+      )?.identificadorNoRascunho ?? '',
+    );
     expect(comDuas.regrasDeComprovacao[0].itens).toHaveLength(2);
     expect(comDuas.regrasDeComprovacao[0].quantidadeMinima).toBe(2);
 
-    const comUma = semAExigencia(comDuas, ID_CONTRACHEQUE, 'HABILITACAO');
+    const comUma = semAExigencia(
+      comDuas,
+      exigenciasLocalizadasDaFase(comDuas, 'HABILITACAO').find(
+        (item) => item.documento.tipoDocumentoId === ID_CONTRACHEQUE,
+      )?.identificadorNoRascunho ?? '',
+    );
     expect(comUma.regrasDeComprovacao[0].itens).toHaveLength(1);
     expect(comUma.regrasDeComprovacao[0].quantidadeMinima).toBe(1);
   });
@@ -187,7 +203,12 @@ describe('onde cada exigência está no conjunto de regras', () => {
       emTodasAsFases: [],
     };
 
-    const comUma = semAExigencia(conjunto, ID_CONTRACHEQUE, 'HABILITACAO');
+    const comUma = semAExigencia(
+      conjunto,
+      exigenciasLocalizadasDaFase(conjunto, 'HABILITACAO').find(
+        (item) => item.documento.tipoDocumentoId === ID_CONTRACHEQUE,
+      )?.identificadorNoRascunho ?? '',
+    );
     expect(comUma.regrasDeComprovacao[0].quantidadeMinima).toBeNull();
   });
 

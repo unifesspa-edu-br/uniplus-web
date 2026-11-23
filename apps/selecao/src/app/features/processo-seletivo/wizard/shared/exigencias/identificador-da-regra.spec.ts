@@ -52,7 +52,11 @@ describe('identificador da regra no rascunho', () => {
 
   it('preserva o identificador ao editar uma exigência', () => {
     const antes = rascunho(exigencia());
-    const depois = comExigencia(antes, exigencia({ obrigatorio: false }));
+    const depois = comExigencia(
+      antes,
+      antes.regrasDeComprovacao[0].identificadorNoRascunho,
+      exigencia({ obrigatorio: false }),
+    );
     expect(depois.regrasDeComprovacao[0].identificadorNoRascunho).toBe(
       antes.regrasDeComprovacao[0].identificadorNoRascunho,
     );

@@ -1,4 +1,5 @@
 @let doc = resumo().documento;
+@let identificador = resumo().id;
 <div class="doc-item__row">
   <div class="doc-item__info">
     <span class="doc-item__name">{{ doc.nome }}</span>
@@ -7,11 +8,8 @@
     }
     <!-- Documento dentro de um grupo não é exigida por si: basta satisfazer o grupo.
        Sem dizê-lo, ela parecia uma exigência solta como qualquer outra. -->
-    @if (exigencias.posicaoNaComprovacao(doc.id) !== '') {
-      <span class="doc-item__desc">{{ exigencias.posicaoNaComprovacao(doc.id) }}</span>
-    }
-    @if (exigencias.declaradoMaisDeUmaVez(doc.id) !== '') {
-      <span class="field__hint">{{ exigencias.declaradoMaisDeUmaVez(doc.id) }}</span>
+    @if (exigencias.posicaoNaComprovacao(identificador) !== '') {
+      <span class="doc-item__desc">{{ exigencias.posicaoNaComprovacao(identificador) }}</span>
     }
   </div>
   <button
@@ -30,14 +28,14 @@ Os três eixos da exigência, lado a lado enquanto a largura permite: em que
 fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
 -->
 <div class="doc-item__eixos">
-  @if (mostraFormulario(doc.id)) {
-    <sel-eixo-formulario class="form-field" [documentoId]="doc.id"></sel-eixo-formulario>
+  @if (mostraFormulario(identificador)) {
+    <sel-eixo-formulario class="form-field" [documentoId]="identificador"></sel-eixo-formulario>
   }
 
-  <sel-eixo-alcance class="form-field" [documentoId]="doc.id"></sel-eixo-alcance>
+  <sel-eixo-alcance class="form-field" [documentoId]="identificador"></sel-eixo-alcance>
 
   @if (exigencias.etapasDaFaseAberta().length > 0) {
-    <sel-eixo-etapa class="form-field" [documentoId]="doc.id"></sel-eixo-etapa>
+    <sel-eixo-etapa class="form-field" [documentoId]="identificador"></sel-eixo-etapa>
   }
 
   <!--
@@ -61,17 +59,19 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
         placeholder="Todas as modalidades ofertadas"
         textoSemResultado="Nenhuma modalidade do quadro casa com o que você digitou."
         [grupos]="gatilho.modalidadesEscolhiveis()"
-        [values]="gatilho.modalidadesEfetivas(doc.id)"
+        [values]="gatilho.modalidadesEfetivas(identificador)"
         [disabled]="!cronograma.edicaoLiberada()"
-        (valuesChange)="gatilho.definirModalidades(doc.id, $event)"
+        (valuesChange)="gatilho.definirModalidades(identificador, $event)"
       />
     </div>
   }
 
-  <sel-eixo-repeticao class="form-field" [documentoId]="doc.id"></sel-eixo-repeticao>
+  <sel-eixo-repeticao class="form-field" [documentoId]="identificador"></sel-eixo-repeticao>
 
   <div class="form-field">
-    <label class="label" [attr.for]="idDaFase('doc-exigido-de-' + doc.id)"> Exigido de </label>
+    <label class="label" [attr.for]="idDaFase('doc-exigido-de-' + identificador)">
+      Exigido de
+    </label>
     <!--
     Declaração, não dedução: uma exigência pode ser "de quem satisfaz" e ainda
     não ter condição escrita — é exigida de ninguém até que a primeira apareça.
@@ -79,21 +79,23 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
   -->
     <select
       class="select"
-      [attr.id]="idDaFase('doc-exigido-de-' + doc.id)"
+      [attr.id]="idDaFase('doc-exigido-de-' + identificador)"
       [disabled]="!cronograma.edicaoLiberada()"
-      (change)="gatilho.escolherExigidoDe(doc.id, $any($event.target).value)"
+      (change)="gatilho.escolherExigidoDe(identificador, $any($event.target).value)"
     >
-      <option value="todos" [selected]="gatilho.ehExigidoDeTodos(doc.id)">Todo candidato</option>
-      <option value="quem" [selected]="!gatilho.ehExigidoDeTodos(doc.id)">
+      <option value="todos" [selected]="gatilho.ehExigidoDeTodos(identificador)">
+        Todo candidato
+      </option>
+      <option value="quem" [selected]="!gatilho.ehExigidoDeTodos(identificador)">
         Só de quem satisfaz as condições declaradas
       </option>
     </select>
-    @if (gatilho.avisoDeDescarteDoGatilho(doc.id) !== '') {
-      <span class="field__hint">{{ gatilho.avisoDeDescarteDoGatilho(doc.id) }}</span>
+    @if (gatilho.avisoDeDescarteDoGatilho(identificador) !== '') {
+      <span class="field__hint">{{ gatilho.avisoDeDescarteDoGatilho(identificador) }}</span>
     }
   </div>
 
-  @if (!gatilho.ehExigidoDeTodos(doc.id)) {
+  @if (!gatilho.ehExigidoDeTodos(identificador)) {
     <!--
     O gatilho: há documento que só se cobra de quem tem certo fato — o título de
     eleitor não se pede a estrangeiro, a mulher nem a menor de dezoito. As
@@ -103,35 +105,35 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
     <ui-editor-de-condicoes
       class="doc-item__gatilho"
       legenda="Condições para este documento ser cobrado"
-      [condicoes]="exigencias.exigenciaDoDocumento(doc.id).condicoes"
-      [fatos]="gatilho.fatosDoGatilhoDoDocumento(doc.id)"
-      [erros]="gatilho.errosDeFaseDoGatilho(doc.id)"
+      [condicoes]="exigencias.exigenciaDoDocumento(identificador).condicoes"
+      [fatos]="gatilho.fatosDoGatilhoDoDocumento(identificador)"
+      [erros]="gatilho.errosDeFaseDoGatilho(identificador)"
       [textoSemFatos]="gatilho.textoSemFatosDoGatilho()"
-      [idBase]="idDaFase('doc-' + doc.id)"
+      [idBase]="idDaFase('doc-' + identificador)"
       [disabled]="!cronograma.edicaoLiberada()"
       [fatoDoRecorte]="fatoDoRecorte"
-      [textoSemCondicao]="gatilho.gatilhoSemCondicaoDiz(doc.id)"
-      (condicoesChange)="gatilho.escreverCondicoes(doc.id, $event)"
+      [textoSemCondicao]="gatilho.gatilhoSemCondicaoDiz(identificador)"
+      (condicoesChange)="gatilho.escreverCondicoes(identificador, $event)"
     />
   }
 
   <div class="form-field">
-    <label class="label" [attr.for]="idDaFase('doc-obrigatorio-' + doc.id)"> Entrega </label>
+    <label class="label" [attr.for]="idDaFase('doc-obrigatorio-' + identificador)"> Entrega </label>
     <select
       class="select"
-      [attr.id]="idDaFase('doc-obrigatorio-' + doc.id)"
+      [attr.id]="idDaFase('doc-obrigatorio-' + identificador)"
       [disabled]="!cronograma.edicaoLiberada()"
-      (change)="escolherObrigatoriedade(doc.id, $any($event.target).value)"
+      (change)="escolherObrigatoriedade(identificador, $any($event.target).value)"
     >
-      <option value="sim" [selected]="ehObrigatorio(doc.id)">Obrigatória</option>
-      <option value="nao" [selected]="!ehObrigatorio(doc.id)">
+      <option value="sim" [selected]="ehObrigatorio(identificador)">Obrigatória</option>
+      <option value="nao" [selected]="!ehObrigatorio(identificador)">
         Facultativa — a análise segue sem ela
       </option>
     </select>
   </div>
 
   <div class="form-field">
-    <label class="label" [attr.for]="idDaFase('doc-consequencia-' + doc.id)">
+    <label class="label" [attr.for]="idDaFase('doc-consequencia-' + identificador)">
       Se não for entregue
     </label>
     <!--
@@ -140,13 +142,16 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
   -->
     <select
       class="select"
-      [attr.id]="idDaFase('doc-consequencia-' + doc.id)"
+      [attr.id]="idDaFase('doc-consequencia-' + identificador)"
       [disabled]="!cronograma.edicaoLiberada()"
-      (change)="escolherConsequencia(doc.id, $any($event.target).value)"
+      (change)="escolherConsequencia(identificador, $any($event.target).value)"
     >
       @for (opcao of consequenciasDaFase(); track opcao.valor) {
-        <option [value]="opcao.valor" [selected]="opcao.valor === consequenciaDoDocumento(doc.id)">
-          {{ rotuloDaConsequencia(opcao.valor, ehObrigatorio(doc.id)) }}
+        <option
+          [value]="opcao.valor"
+          [selected]="opcao.valor === consequenciaDoDocumento(identificador)"
+        >
+          {{ rotuloDaConsequencia(opcao.valor, ehObrigatorio(identificador)) }}
         </option>
       }
     </select>
@@ -157,11 +162,11 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
 
   <sel-modelo-da-exigencia
     class="doc-item__modelo"
-    [modelo]="modeloDoDocumento(doc.id)"
+    [modelo]="modeloDoDocumento(identificador)"
     [desabilitado]="!cronograma.edicaoLiberada()"
-    [idBase]="idDaFase('doc-modelo-' + doc.id)"
+    [idBase]="idDaFase('doc-modelo-' + identificador)"
     [nomeDoDocumento]="doc.nome"
-    (modeloChange)="definirModelo(doc.id, $event)"
+    (modeloChange)="definirModelo(identificador, $event)"
   />
 
   <!-- As normas que sustentam a exigência: são N por exigência, porque uma lei
@@ -169,17 +174,17 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
      modelo de formulário; a última norma não sai, porque a publicação a cobra. -->
   <ui-normas-do-documento
     disposicao="na-grade"
-    [bases]="basesLegaisDoDocumento(doc.id)"
-    [idBase]="idDaFase('doc-normas-' + doc.id)"
+    [bases]="basesLegaisDoDocumento(identificador)"
+    [idBase]="idDaFase('doc-normas-' + identificador)"
     [disabled]="!cronograma.edicaoLiberada()"
     [minimo]="1"
     [textos]="textosDasNormas"
     [referenciaObrigatoria]="false"
     [maximoReferencia]="null"
     [maximoObservacao]="null"
-    (basesChange)="definirBasesLegais(doc.id, $event)"
+    (basesChange)="definirBasesLegais(identificador, $event)"
   >
-    @if (exigencias.faltaNormaResolvida(doc.id)) {
+    @if (exigencias.faltaNormaResolvida(identificador)) {
       <p class="field__hint doc-item__aviso-norma">
         Sem uma norma declarada e identificada como "Resolvida", a publicação recusa esta exigência,
         que decide o resultado.

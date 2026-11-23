@@ -6,7 +6,7 @@ import type {
 } from '@uniplus/shared-data/selecao';
 
 import { regrasDeComprovacaoParaEnvio } from './gravacao-das-exigencias';
-import { comExigencia, exigenciaNova } from './exigencias-documentais';
+import { comExigenciaSemGrupo, exigenciaNova } from './exigencias-documentais';
 import { criarIdentificadorDaRegra } from './identificador-da-regra';
 import type {
   ExigenciaDeDocumento,
@@ -44,7 +44,7 @@ export function exigencia(patch: Partial<ExigenciaDeDocumento> = {}): ExigenciaD
 
 export function rascunho(...exigencias: readonly ExigenciaDeDocumento[]): ExigenciasDoRascunho {
   return exigencias.reduce<ExigenciasDoRascunho>(
-    (acumulado, atual) => comExigencia(acumulado, atual),
+    (acumulado, atual) => comExigenciaSemGrupo(acumulado, atual),
     { regrasDeComprovacao: [], emTodasAsFases: [] },
   );
 }

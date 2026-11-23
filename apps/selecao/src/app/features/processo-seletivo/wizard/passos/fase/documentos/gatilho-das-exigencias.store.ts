@@ -20,10 +20,10 @@ import {
 } from '../../../shared/producao-dos-fatos';
 import {
   comExigidoDeTodos,
-  comRecorteEscolhido,
+  comModalidadesEscolhidas,
   exigidoDeTodos,
   modalidadesDaExigencia,
-} from '../../../shared/exigencias/recorte-por-modalidade';
+} from '../../../shared/exigencias/modalidades-da-exigencia';
 import {
   comRepeticao,
   comRepeticaoEmTodasAsFases,
@@ -70,7 +70,7 @@ export class GatilhoDasExigenciasStore {
   );
 
   /**
-   * Todos os fatos do catálogo que um gatilho sabe avaliar, sem o recorte de fase. É o
+   * Todos os fatos do catálogo que um gatilho sabe avaliar, sem a restrição de fase. É o
    * vocabulário com que a tela lê o público de uma exigência já declarada.
    *
    * A lista não se escreve aqui: acrescentar um fato é mudança de software — só serve o fato
@@ -114,12 +114,10 @@ export class GatilhoDasExigenciasStore {
     const nomes = this.nomesDaOrientacao();
 
     return new Map(
-      this.exigencias
-        .documentosDaFase()
-        .map(
-          (documento) =>
-            [documento.id, this.gatilhoDoDocumento(documento.id, producao, nomes)] as const,
-        ),
+      this.exigencias.declaracoesDaFase().map((documento) => {
+        const identificador = documento.identificadorNoRascunho;
+        return [identificador, this.gatilhoDoDocumento(identificador, producao, nomes)] as const;
+      }),
     );
   });
 
@@ -148,12 +146,12 @@ export class GatilhoDasExigenciasStore {
     () =>
       new Map(
         this.exigencias
-          .documentosDaFase()
+          .declaracoesDaFase()
           .map((documento) => [
-            documento.id,
+            documento.identificadorNoRascunho,
             repeticaoDoDocumentoNaFase(
-              this.exigencias.exigenciaDoDocumento(documento.id),
-              this.exigencias.repeticaoDeclarada(documento.id),
+              this.exigencias.exigenciaDoDocumento(documento.identificadorNoRascunho),
+              this.exigencias.repeticaoDeclarada(documento.identificadorNoRascunho),
               this.producaoDosFatos(),
               this.nomesDaOrientacao(),
             ),
@@ -180,8 +178,8 @@ export class GatilhoDasExigenciasStore {
     this.store.patchSection(
       'documentos',
       this.exigencias.valeEmTodasAsFases(id)
-        ? comRepeticaoEmTodasAsFases(exigencias, id, grupo)
-        : comRepeticao(exigencias, id, fase.codigo, grupo),
+        ? comRepeticaoEmTodasAsFases(exigencias, this.exigencias.tipoDoDocumento(id), grupo)
+        : comRepeticao(exigencias, id, grupo),
     );
   }
 
@@ -206,7 +204,7 @@ export class GatilhoDasExigenciasStore {
   }
 
   /**
-   * O que o operador perde ao dizer que o documento é de todo candidato: o recorte por
+   * O que o operador perde ao dizer que o documento é de todo candidato: a restrição por
    * modalidade e as condições declaradas saem junto, porque uma exigência geral que carrega
    * gatilho é recusada pelo servidor.
    */
@@ -214,27 +212,27 @@ export class GatilhoDasExigenciasStore {
     if (this.ehExigidoDeTodos(id)) return '';
 
     const exigencia = this.exigencias.exigenciaDoDocumento(id);
-    const recorte = modalidadesDaExigencia(exigencia) !== null;
+    const temRestricaoDeModalidades = modalidadesDaExigencia(exigencia) !== null;
     const condicoes = clausulasDoGatilho(exigencia).length > 0;
-    if (!recorte && !condicoes) return '';
+    if (!temRestricaoDeModalidades && !condicoes) return '';
 
-    if (recorte && condicoes) {
-      return 'Passar para "todo candidato" descarta o recorte por modalidade e as condições declaradas abaixo.';
+    if (temRestricaoDeModalidades && condicoes) {
+      return 'Passar para "todo candidato" descarta a restrição às modalidades e as condições declaradas abaixo.';
     }
-    return recorte
-      ? 'Passar para "todo candidato" descarta o recorte por modalidade.'
+    return temRestricaoDeModalidades
+      ? 'Passar para "todo candidato" descarta a restrição às modalidades.'
       : 'Passar para "todo candidato" descarta as condições declaradas abaixo.';
   }
 
   /**
-   * O que a exigência alcança quando nenhuma condição foi declarada no editor: ou o recorte
+   * O que a exigência alcança quando nenhuma condição foi declarada no editor: ou a restrição
    * por modalidade a sustenta, ou ela não é cobrada de ninguém. As duas situações têm a mesma
-   * tela vazia, e dizer "de ninguém" nas duas fazia o operador desfazer o recorte que acabara
+   * tela vazia, e dizer "de ninguém" nas duas fazia o operador desfazer a restrição que acabara
    * de declarar.
    */
   gatilhoSemCondicaoDiz(id: string): string {
-    const recorte = modalidadesDaExigencia(this.exigencias.exigenciaDoDocumento(id));
-    if (recorte === null) {
+    const modalidadesRestritas = modalidadesDaExigencia(this.exigencias.exigenciaDoDocumento(id));
+    if (modalidadesRestritas === null) {
       return 'Sem condição declarada, este documento não é cobrado de ninguém.';
     }
     return 'Este documento é cobrado de quem concorre nas modalidades escolhidas acima. Acrescente condição para restringir mais.';
@@ -266,17 +264,17 @@ export class GatilhoDasExigenciasStore {
   }
 
   /**
-   * Modalidades que valem para o documento. Sem recorte, ele acompanha o que o quadro de
+   * Modalidades que valem para o documento. Sem restrição, ele acompanha o que o quadro de
    * vagas oferta — derivado, não copiado: uma lista própria ficaria vazia no documento
    * recém-incluído e dependeria de alguém sincronizá-la.
    */
   modalidadesEfetivas(id: string): readonly string[] {
     const aceitas = this.exigencias.modalidades();
-    const recorte = modalidadesDaExigencia(this.exigencias.exigenciaDoDocumento(id));
-    if (recorte === null) return aceitas;
+    const modalidadesRestritas = modalidadesDaExigencia(this.exigencias.exigenciaDoDocumento(id));
+    if (modalidadesRestritas === null) return aceitas;
 
     const conjunto = new Set(aceitas);
-    return recorte.filter((codigo) => conjunto.has(codigo));
+    return modalidadesRestritas.filter((codigo) => conjunto.has(codigo));
   }
 
   /** As modalidades que o quadro de vagas oferta, como a lista de escolha as apresenta. */
@@ -292,7 +290,7 @@ export class GatilhoDasExigenciasStore {
   });
 
   /**
-   * Substitui de uma vez o recorte de quem entrega o documento.
+   * Substitui de uma vez a restrição de quem entrega o documento.
    *
    * Marcar todas as ofertadas volta ao padrão — o documento acompanha o quadro de vagas —
    * em vez de gravar uma lista que por acaso coincide com ele: a diferença aparece quando o
@@ -301,7 +299,7 @@ export class GatilhoDasExigenciasStore {
   definirModalidades(id: string, escolhidas: readonly string[]): void {
     this.exigencias.escreverGatilho(
       id,
-      comRecorteEscolhido(
+      comModalidadesEscolhidas(
         this.exigencias.exigenciaDoDocumento(id),
         escolhidas,
         this.exigencias.modalidades(),

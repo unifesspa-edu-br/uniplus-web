@@ -44,14 +44,18 @@ describe('operações sobre o conjunto de regras do rascunho', () => {
       exigencia({ faseCodigo: 'HABILITACAO' }),
     );
 
-    const depois = semAExigencia(antes, ID_RG, 'ISENCAO');
+    const depois = semAExigencia(antes, antes.regrasDeComprovacao[0].identificadorNoRascunho);
     expect(todasAsExigencias(depois)).toHaveLength(1);
     expect(todasAsExigencias(depois)[0].faseCodigo).toBe('HABILITACAO');
   });
 
   it('comExigencia substitui a existente em vez de duplicar', () => {
     const antes = rascunho(exigencia());
-    const depois = comExigencia(antes, exigencia({ obrigatorio: false }));
+    const depois = comExigencia(
+      antes,
+      antes.regrasDeComprovacao[0].identificadorNoRascunho,
+      exigencia({ obrigatorio: false }),
+    );
 
     expect(todasAsExigencias(depois)).toHaveLength(1);
     expect(todasAsExigencias(depois)[0].obrigatorio).toBe(false);
@@ -74,24 +78,20 @@ describe('edição não atropela a regra de documento homônima do grupo', () =>
     };
   }
 
-  it('comExigencia troca só a primeira regra de documento que casa', () => {
-    const depois = comExigencia(soltaEAgrupada(), exigencia({ obrigatorio: false }));
-    const todas = todasAsExigencias(depois);
+  it('edita a segunda declaração sem alterar a primeira', () => {
+    const antes = soltaEAgrupada();
+    const identificador = antes.regrasDeComprovacao[1].itens?.[0].identificadorNoRascunho ?? '';
+    const depois = comExigencia(antes, identificador, exigencia({ obrigatorio: false }));
 
-    expect(todas).toHaveLength(2);
-    expect(todas[0].obrigatorio).toBe(false);
-    // A alternativa do grupo continua como estava.
-    expect(todas[1].obrigatorio).toBe(true);
+    expect(todasAsExigencias(depois).map((item) => item.obrigatorio)).toEqual([true, false]);
   });
 
-  it('semAExigencia remove só a primeira regra de documento que casa', () => {
-    const depois = semAExigencia(soltaEAgrupada(), ID_RG, 'HABILITACAO');
+  it('remove a segunda declaração e mantém a primeira', () => {
+    const antes = soltaEAgrupada();
+    const identificador = antes.regrasDeComprovacao[1].itens?.[0].identificadorNoRascunho ?? '';
+    const depois = semAExigencia(antes, identificador);
 
-    expect(todasAsExigencias(depois)).toHaveLength(1);
-    // O grupo sobreviveu — não foi esvaziado junto.
-    expect(
-      depois.regrasDeComprovacao.some((regra) => regra.forma === 'QUANTIDADE_MINIMA_DE_ITENS'),
-    ).toBe(true);
+    expect(todasAsExigencias(depois)).toEqual([antes.regrasDeComprovacao[0].documento]);
   });
 });
 
@@ -129,7 +129,11 @@ describe('a repetição pelas ocorrências de um grupo do formulário', () => {
   it('declara a repetição só na regra de documento do documento na fase escolhida', () => {
     const declaracoes = rascunho(exigencia({ faseCodigo: 'ISENCAO' }), exigencia());
 
-    const comFamilia = comRepeticao(declaracoes, ID_RG, 'HABILITACAO', 'FAMILIA');
+    const comFamilia = comRepeticao(
+      declaracoes,
+      declaracoes.regrasDeComprovacao[1].identificadorNoRascunho,
+      'FAMILIA',
+    );
 
     expect(
       comFamilia.regrasDeComprovacao.map((regra) => regra.grupoDoFormularioParaRepeticao),

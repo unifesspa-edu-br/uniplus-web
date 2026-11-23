@@ -17,7 +17,6 @@ import type {
   RegraDeComprovacao,
 } from '../../processo-seletivo.models';
 
-import { transformar } from './composicao-das-regras';
 import { criarIdentificadorDaRegra } from './identificador-da-regra';
 
 export { semAFase, semAEtapa } from './composicao-das-regras';
@@ -87,10 +86,6 @@ function criteriosIniciaisDoComprovante(restricao?: RestricaoDeArquivo): Criteri
 /**
  * Acrescenta a exigência como declaração de regra principal, sem tocar no resto da estrutura de regras.
  *
- * É a operação que o alcance por todas as fases precisa, e que `comExigencia` não faz: aquela
- * substitui a PRIMEIRA regra de documento que casa por (documento, fase), e essa primeira pode ser a
- * alternativa dentro de um grupo de alternativas — sobrescrevê-la transformaria "este documento serve" em
- * "este documento é exigido", que é outra coisa.
  */
 export function comExigenciaSemGrupo(
   exigencias: ExigenciasDoRascunho,
@@ -171,84 +166,51 @@ export const CONSEQUENCIAS_ESCOLHIVEIS = [
   ...CONSEQUENCIAS_DO_DOCUMENTO,
 ] as const;
 
-/**
- * Substitui a exigência de (documento, fase) pelo resultado da edição, ou a acrescenta como
- * regra de documento na regra principal quando ainda não existe.
- *
- * A regra de documento nova entra na regra principal, nunca dentro de um grupo existente: um grupo de alternativas declara
- * alternativas entre si e todas as suas regras de documento pertencem à mesma fase — acrescentar ali
- * mudaria o sentido do grupo sem o operador ter pedido.
- */
+/** Atualiza a declaração identificada no rascunho. */
 export function comExigencia(
   exigencias: ExigenciasDoRascunho,
+  identificadorNoRascunho: string,
   documento: ExigenciaDeDocumento,
 ): ExigenciasDoRascunho {
-  const { regrasDeComprovacao, alterou } = transformarPrimeiraExigencia(
-    exigencias.regrasDeComprovacao,
-    pertenceAFaseETipoDeDocumento(documento.faseCodigo, documento.tipoDocumentoId),
-    () => documento,
-  );
-  const regras = alterou
-    ? regrasDeComprovacao
-    : [...regrasDeComprovacao, regraDeDocumento(documento)];
-  return { ...exigencias, regrasDeComprovacao: regras };
+  return comRegraAlterada(exigencias, identificadorNoRascunho, (regra) => ({
+    ...regra,
+    documento,
+  }));
 }
 
-function pertenceAFaseETipoDeDocumento(faseCodigo: string, tipoDocumentoId: string) {
-  return (documento: ExigenciaDeDocumento | null) =>
-    documento?.faseCodigo === faseCodigo && documento.tipoDocumentoId === tipoDocumentoId;
-}
-
-/** Uma exigência independente e uma alternativa de grupo podem pedir o mesmo documento. */
-function transformarPrimeiraExigencia(
-  regras: readonly RegraDeComprovacao[],
-  corresponde: (documento: ExigenciaDeDocumento) => boolean,
-  alteracao: (documento: ExigenciaDeDocumento) => ExigenciaDeDocumento | null,
-) {
-  let alterou = false;
-  const regrasDeComprovacao = transformar(regras, (documento) => {
-    if (alterou || !corresponde(documento)) return documento;
-    alterou = true;
-    return alteracao(documento);
-  });
-  return { regrasDeComprovacao, alterou };
-}
-
-/**
- * Declara pelas ocorrências de que grupo repetível a exigência de (documento, fase) se repete, ou
- * `null` para uma por candidato. Escreve na regra de documento, a primeira que casa, pela mesma razão de
- * `comExigencia`; a repetição herdada de um grupo de alternativas é do grupo, que a tela não edita.
- */
+/** Define a repetição da declaração identificada no rascunho. */
 export function comRepeticao(
   exigencias: ExigenciasDoRascunho,
-  tipoDocumentoId: string,
-  faseCodigo: string,
+  identificadorNoRascunho: string,
   grupo: string | null,
 ): ExigenciasDoRascunho {
-  const corresponde = pertenceAFaseETipoDeDocumento(faseCodigo, tipoDocumentoId);
-  const regras = definirRepeticaoDaPrimeiraExigencia(
-    exigencias.regrasDeComprovacao,
-    corresponde,
-    grupo,
-  );
-  return { ...exigencias, regrasDeComprovacao: regras };
+  return comRegraAlterada(exigencias, identificadorNoRascunho, (regra) => ({
+    ...regra,
+    grupoDoFormularioParaRepeticao: grupo,
+  }));
 }
 
-/** Atualiza a repetição sem remover exigências nem mudar a quantidade mínima dos grupos. */
-function definirRepeticaoDaPrimeiraExigencia(
-  regras: readonly RegraDeComprovacao[],
-  corresponde: (documento: ExigenciaDeDocumento | null) => boolean,
-  grupo: string | null,
-): readonly RegraDeComprovacao[] {
-  let alterou = false;
-  const editar = (regra: RegraDeComprovacao): RegraDeComprovacao => {
-    if (alterou) return regra;
-    if (regra.forma !== 'DOCUMENTO') return { ...regra, itens: (regra.itens ?? []).map(editar) };
-    if (!corresponde(regra.documento)) return regra;
-    alterou = true;
-    return { ...regra, grupoDoFormularioParaRepeticao: grupo };
+function comRegraAlterada(
+  exigencias: ExigenciasDoRascunho,
+  identificador: string,
+  alteracao: (regra: RegraDeComprovacao) => RegraDeComprovacao,
+): ExigenciasDoRascunho {
+  return {
+    ...exigencias,
+    regrasDeComprovacao: alterarRegra(exigencias.regrasDeComprovacao, identificador, alteracao),
   };
-  return regras.map(editar);
+}
+
+function alterarRegra(
+  regras: readonly RegraDeComprovacao[],
+  identificador: string,
+  alteracao: (regra: RegraDeComprovacao) => RegraDeComprovacao,
+): readonly RegraDeComprovacao[] {
+  return regras.map((regra) => {
+    if (regra.identificadorNoRascunho === identificador) return alteracao(regra);
+    if (regra.forma === 'DOCUMENTO') return regra;
+    return { ...regra, itens: alterarRegra(regra.itens ?? [], identificador, alteracao) };
+  });
 }
 
 /**
@@ -270,16 +232,28 @@ export function comRepeticaoEmTodasAsFases(
   };
 }
 
-/** Remove a exigência de (documento, fase), colapsando o grupo que ficar vazio. */
+/** Remove a declaração identificada e os grupos que ficarem vazios. */
 export function semAExigencia(
   exigencias: ExigenciasDoRascunho,
-  tipoDocumentoId: string,
-  faseCodigo: string,
+  identificadorNoRascunho: string,
 ): ExigenciasDoRascunho {
-  const { regrasDeComprovacao } = transformarPrimeiraExigencia(
-    exigencias.regrasDeComprovacao,
-    pertenceAFaseETipoDeDocumento(faseCodigo, tipoDocumentoId),
-    () => null,
-  );
-  return { ...exigencias, regrasDeComprovacao };
+  return {
+    ...exigencias,
+    regrasDeComprovacao: removerRegra(exigencias.regrasDeComprovacao, identificadorNoRascunho),
+  };
+}
+
+function removerRegra(
+  regras: readonly RegraDeComprovacao[],
+  identificador: string,
+): readonly RegraDeComprovacao[] {
+  return regras.flatMap((regra) => {
+    if (regra.identificadorNoRascunho === identificador) return [];
+    if (regra.forma === 'DOCUMENTO') return [regra];
+    const itens = removerRegra(regra.itens ?? [], identificador);
+    if (itens.length === 0) return [];
+    const quantidadeMinima =
+      regra.quantidadeMinima === null ? null : Math.min(regra.quantidadeMinima, itens.length);
+    return [{ ...regra, itens, quantidadeMinima }];
+  });
 }

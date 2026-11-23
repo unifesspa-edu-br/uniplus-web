@@ -8,19 +8,16 @@
   @if (store.emConsulta()) {
     <span>{{ resumo().nome }}</span>
   } @else {
-  <button
-    class="doc-conferencia__alternar"
-    type="button"
-    [attr.aria-expanded]="aberta()"
-    [attr.aria-controls]="idDaFase('doc-campos-' + resumo().id)"
-    (click)="alternar.emit()"
-  >
-    <span class="etapa-resumo__seta" aria-hidden="true"></span>
-    <span>{{ resumo().nome }}</span>
-  </button>
-  }
-  @if (resumo().repetido !== '') {
-    <span class="doc-conferencia__meta">{{ resumo().repetido }}</span>
+    <button
+      class="doc-conferencia__alternar"
+      type="button"
+      [attr.aria-expanded]="aberta()"
+      [attr.aria-controls]="idDaFase('doc-campos-' + resumo().id)"
+      (click)="alternar.emit()"
+    >
+      <span class="etapa-resumo__seta" aria-hidden="true"></span>
+      <span>{{ resumo().nome }}</span>
+    </button>
   }
 </th>
 <td class="doc-conferencia__largo" data-label="A quem se aplica">

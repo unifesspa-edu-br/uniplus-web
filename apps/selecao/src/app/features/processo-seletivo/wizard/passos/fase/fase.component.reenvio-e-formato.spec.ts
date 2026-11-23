@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import type { AtributosCongeladosDaFase } from '../../processo-seletivo.models';
 import { exigenciasDaFase } from '../../shared/exigencias/consulta-das-exigencias';
 import {
-  comExigencia,
+  comExigenciaSemGrupo,
   exigenciaNova,
   exigenciasVazias,
 } from '../../shared/exigencias/exigencias-documentais';
 import { regrasDeComprovacaoParaEnvio } from '../../shared/exigencias/gravacao-das-exigencias';
 import { congeladosDaFase, fase, ID_AVALIACAO, ID_CPF, ID_HOMOLOGACAO } from './fase.testing';
-import { usarFase, type ContextoDaFase } from './fase-passo.testing';
+import { identificadorDaRegra, usarFase, type ContextoDaFase } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
   let store: ContextoDaFase['store'];
@@ -94,8 +94,9 @@ describe('FasePassoComponent', () => {
    * responde formulário nenhum não a mostra.
    */
   describe('formulário em que o documento é apresentado', () => {
-    const ID_FORMULARIO = `fase-AVALIACAO-doc-formulario-${ID_CPF}`;
-    const seletor = () => nativo.querySelector<HTMLSelectElement>(`#${ID_FORMULARIO}`);
+    const idFormulario = () =>
+      `fase-AVALIACAO-doc-formulario-${identificadorDaRegra(exigencias(), ID_CPF)}`;
+    const seletor = () => nativo.querySelector<HTMLSelectElement>(`#${idFormulario()}`);
 
     function exigirCpfNa(congelados: Partial<AtributosCongeladosDaFase> | null): void {
       comCronograma(
@@ -111,7 +112,9 @@ describe('FasePassoComponent', () => {
       expect(seletor()?.value).toBe('');
       expect(seletor()?.getAttribute('aria-invalid')).toBe('true');
       expect(
-        nativo.querySelector(`#fase-AVALIACAO-doc-formulario-erro-${ID_CPF}`)?.textContent,
+        nativo.querySelector(
+          `#fase-AVALIACAO-doc-formulario-erro-${identificadorDaRegra(exigencias(), ID_CPF)}`,
+        )?.textContent,
       ).toContain('Escolha em que formulário o candidato apresenta este documento.');
 
       exigirCpfNa({ coletaInscricao: true });
@@ -124,13 +127,20 @@ describe('FasePassoComponent', () => {
 
     it('o formulário declarado que a fase não responde mais não é trocado: o campo aparece com o erro e a gravação o leva como declarado', () => {
       exigirCpfNa({ coletaInscricao: true });
-      eixoFormulario().escolherFinalidade(ID_CPF, 'ISENCAO_TAXA');
+      eixoFormulario().escolherFinalidade(
+        identificadorDaRegra(exigencias(), ID_CPF),
+        'ISENCAO_TAXA',
+      );
       detectar();
 
       expect(seletor()?.value).toBe('');
       expect(seletor()?.getAttribute('aria-invalid')).toBe('true');
       expect(
-        nativo.querySelector(`#fase-AVALIACAO-doc-formulario-erro-${ID_CPF}`)?.textContent?.trim(),
+        nativo
+          .querySelector(
+            `#fase-AVALIACAO-doc-formulario-erro-${identificadorDaRegra(exigencias(), ID_CPF)}`,
+          )
+          ?.textContent?.trim(),
       ).toBe(
         'O formulário de isenção da taxa de inscrição não é respondido nesta fase; escolha o formulário.',
       );
@@ -145,7 +155,10 @@ describe('FasePassoComponent', () => {
 
     it('na fase que não responde formulário nenhum, o formulário declarado antes se desfaz pela opção "Nenhum"', () => {
       exigirCpfNa(null);
-      eixoFormulario().escolherFinalidade(ID_CPF, 'ISENCAO_TAXA');
+      eixoFormulario().escolherFinalidade(
+        identificadorDaRegra(exigencias(), ID_CPF),
+        'ISENCAO_TAXA',
+      );
       detectar();
       const campo = seletor() as HTMLSelectElement;
 
@@ -283,8 +296,8 @@ describe('FasePassoComponent', () => {
       );
       store.patchSection(
         'documentos',
-        comExigencia(
-          comExigencia(exigenciasVazias(), {
+        comExigenciaSemGrupo(
+          comExigenciaSemGrupo(exigenciasVazias(), {
             ...exigenciaNova(ID_CPF, 'AVALIACAO'),
             finalidade: 'INSCRICAO',
           }),
@@ -308,7 +321,7 @@ describe('FasePassoComponent', () => {
       comCronograma(fase({ congelados: daInscricao }));
       documentos().escolherDocumento(ID_CPF);
       documentos().acrescentarDocumento();
-      eixoFormulario().escolherFinalidade(ID_CPF, 'INSCRICAO');
+      eixoFormulario().escolherFinalidade(identificadorDaRegra(exigencias(), ID_CPF), 'INSCRICAO');
       exigencias().valerEmTodasAsFases(ID_CPF);
       detectar();
 

@@ -53,7 +53,6 @@ export interface ResumoDoDocumento {
   readonly bases: readonly BaseLegalConfig[];
   readonly normas: readonly NormaDescrita[];
   readonly faltaNorma: boolean;
-  readonly repetido: string;
   /** O formulário em que o documento é apresentado; `null` enquanto a fase dividida pede a escolha. */
   readonly finalidade: string | null;
   /** O que orienta quem edita, já completo. */

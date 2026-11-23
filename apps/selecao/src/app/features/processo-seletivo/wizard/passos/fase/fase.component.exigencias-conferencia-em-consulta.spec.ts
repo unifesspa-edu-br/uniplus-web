@@ -7,7 +7,7 @@ import { DocumentosDaFaseComponent } from './documentos/documentos-da-fase.compo
 import { ExigenciasDaFaseStore } from './documentos/exigencias-da-fase.store';
 import { FasePassoComponent } from './fase.component';
 import { fase, ID_AVALIACAO, ID_CPF, ID_HOMOLOGACAO, TIPOS_DOCUMENTO } from './fase.testing';
-import { usarFase, type ContextoDaFase } from './fase-passo.testing';
+import { identificadorDaRegra, usarFase, type ContextoDaFase } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
   let store: ContextoDaFase['store'];
@@ -77,17 +77,17 @@ describe('FasePassoComponent', () => {
         documentos().escolherDocumento(ID_CPF);
         documentos().acrescentarDocumento();
         detectar();
-        expect(documentos().emEdicao(ID_CPF)).toBe(true);
+        expect(documentos().emEdicao(identificadorDaRegra(exigencias(), ID_CPF))).toBe(true);
 
         abrirFase(ID_HOMOLOGACAO);
         exigencias().alternarExigencia(ID_CPF, true);
         detectar();
-        expect(documentos().emEdicao(ID_CPF)).toBe(false);
+        expect(documentos().emEdicao(identificadorDaRegra(exigencias(), ID_CPF))).toBe(false);
         expect(campoDeEntrega()).toBeNull();
 
         abrirFase(ID_AVALIACAO);
         detectar();
-        expect(documentos().emEdicao(ID_CPF)).toBe(true);
+        expect(documentos().emEdicao(identificadorDaRegra(exigencias(), ID_CPF))).toBe(true);
       });
 
       /**
@@ -105,11 +105,14 @@ describe('FasePassoComponent', () => {
         for (const requisicao of controller.match(() => true)) requisicao.flush([]);
 
         exigencias().alternarExigencia(ID_CPF, true);
-        documentos().alternarEdicao(ID_CPF, true);
+        documentos().alternarEdicao(identificadorDaRegra(exigencias(), ID_CPF), true);
         segunda.debugElement.injector.get(ExigenciasDaFaseStore).alternarExigencia(ID_CPF, true);
         segunda.debugElement
           .query(By.directive(DocumentosDaFaseComponent))
-          .componentInstance.alternarEdicao(ID_CPF, true);
+          .componentInstance.alternarEdicao(
+            identificadorDaRegra(segunda.debugElement.injector.get(ExigenciasDaFaseStore), ID_CPF),
+            true,
+          );
         detectar();
         segunda.detectChanges();
 
