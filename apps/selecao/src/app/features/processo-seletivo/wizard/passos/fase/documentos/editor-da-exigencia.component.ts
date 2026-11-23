@@ -14,6 +14,7 @@ import { mostraFormulario } from '../../../shared/exigencias/formulario-da-exige
 import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import { ModeloDaExigenciaComponent } from '../modelo-da-exigencia/modelo-da-exigencia.component';
+import { ArquivoAceitoComponent } from './arquivo-aceito.component';
 import { ConsequenciaENormasComponent } from './consequencia-e-normas.component';
 import type { ResumoDoDocumento } from '../tipos-da-conferencia';
 import { EixoAlcanceComponent } from './eixos/eixo-alcance.component';
@@ -27,6 +28,7 @@ import { GatilhoDasExigenciasStore } from './gatilho-das-exigencias.store';
 @Component({
   selector: 'sel-editor-da-exigencia',
   imports: [
+    ArquivoAceitoComponent,
     ComboboxComponent,
     EditorDeCondicoesComponent,
     EixoAlcanceComponent,

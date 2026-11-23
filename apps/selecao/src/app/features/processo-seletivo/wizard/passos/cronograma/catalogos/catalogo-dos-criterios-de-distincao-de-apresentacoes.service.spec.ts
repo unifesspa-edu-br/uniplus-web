@@ -1,0 +1,31 @@
+import { TestBed } from '@angular/core/testing';
+import { of, throwError } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
+import { VocabulariosDaComprovacaoApi } from '@uniplus/shared-data/selecao';
+import { CatalogoDosCriteriosDeDistincaoDeApresentacoes } from './catalogo-dos-criterios-de-distincao-de-apresentacoes.service';
+
+describe('CatalogoDosCriteriosDeDistincaoDeApresentacoes', () => {
+  it('informa falha, repete a leitura e conserva a resposta', () => {
+    const buscar = vi
+      .fn()
+      .mockReturnValueOnce(throwError(() => new Error()))
+      .mockReturnValue(of({ ok: true, data: [{ codigo: 'A', rotulo: 'Rótulo' }] }));
+    TestBed.configureTestingModule({
+      providers: [
+        CatalogoDosCriteriosDeDistincaoDeApresentacoes,
+        {
+          provide: VocabulariosDaComprovacaoApi,
+          useValue: { listarCriteriosDeDistincaoDeApresentacoes: buscar },
+        },
+      ],
+    });
+    const catalogo = TestBed.inject(CatalogoDosCriteriosDeDistincaoDeApresentacoes);
+    catalogo.carregar();
+    expect(catalogo.situacao()).toBe('falhou');
+    catalogo.repetir();
+    expect(catalogo.situacao()).toBe('pronto');
+    expect(catalogo.criterios()).toEqual([{ codigo: 'A', rotulo: 'Rótulo' }]);
+    catalogo.carregar();
+    expect(buscar).toHaveBeenCalledTimes(2);
+  });
+});

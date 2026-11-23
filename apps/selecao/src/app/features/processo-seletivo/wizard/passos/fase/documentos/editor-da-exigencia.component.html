@@ -109,6 +109,15 @@
     </select>
   </div>
 
+  <sel-arquivo-aceito
+    [formatos]="exigencias.exigenciaDoDocumento(identificador).formatosPermitidos"
+    [tamanho]="exigencias.exigenciaDoDocumento(identificador).tamanhoMaximoBytes"
+    [idBase]="idDaFase('doc-arquivo-' + identificador)"
+    [desabilitado]="!cronograma.edicaoLiberada()"
+    (formatosChange)="exigencias.escreverExigencia(identificador, { formatosPermitidos: $event })"
+    (tamanhoChange)="exigencias.escreverExigencia(identificador, { tamanhoMaximoBytes: $event })"
+  />
+
   <sel-modelo-da-exigencia
     class="doc-item__modelo"
     [modelo]="modeloDoDocumento(identificador)"
