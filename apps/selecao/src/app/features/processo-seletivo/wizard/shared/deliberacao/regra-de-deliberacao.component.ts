@@ -5,6 +5,7 @@ import {
   inject,
   input,
   output,
+  type OnInit,
   signal,
 } from '@angular/core';
 import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
@@ -39,7 +40,7 @@ const SEM_REGRA = '';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: ':host { display: block; }',
 })
-export class RegraDeDeliberacaoComponent {
+export class RegraDeDeliberacaoComponent implements OnInit {
   readonly regra = input.required<RegraDeDeliberacaoDaBanca | null>();
   /** Prefixo dos `id` dos controles: único na tela, para ligar rótulo, ajuda e erro. */
   readonly idBase = input.required<string>();
@@ -70,6 +71,10 @@ export class RegraDeDeliberacaoComponent {
       recusasDoModo(this.recusas(), controlesAVista(this.regra())),
     ),
   );
+
+  ngOnInit(): void {
+    this.vocabularios.recarregarIndisponiveis();
+  }
 
   protected id(campo: CampoDaBanca): string {
     return `${this.idBase()}-${campo}`;

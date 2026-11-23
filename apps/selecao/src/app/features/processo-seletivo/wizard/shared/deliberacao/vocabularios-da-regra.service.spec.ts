@@ -13,6 +13,14 @@ const ROTAS = [
   'resultados-sem-unanimidade',
 ];
 
+function responderComFalha(http: HttpTestingController): void {
+  for (const rota of ROTAS) {
+    const pedido = http.expectOne(`/api/selecao/vocabularios/${rota}`);
+    if (rota === ROTAS[1]) pedido.flush('Erro', { status: 503, statusText: 'Erro' });
+    else pedido.flush({ ok: true, data: [] });
+  }
+}
+
 describe('VocabulariosDaRegra', () => {
   beforeEach(() =>
     TestBed.configureTestingModule({
@@ -51,6 +59,18 @@ describe('VocabulariosDaRegra', () => {
     expect(vocabularios.criterios().situacao).toBe('indisponivel');
     expect(vocabularios.modos().situacao).toBe('pronta');
     expect(vocabularios.pronta()).toBe(false);
+    http.verify();
+  });
+  it('recupera apenas a lista que falhou', () => {
+    const vocabularios = TestBed.inject(VocabulariosDaRegra);
+    const http = TestBed.inject(HttpTestingController);
+    responderComFalha(http);
+    vocabularios.recarregarIndisponiveis();
+    expect(vocabularios.criterios().situacao).toBe('carregando');
+    vocabularios.recarregarIndisponiveis();
+    http.expectOne(`/api/selecao/vocabularios/${ROTAS[1]}`).flush({ ok: true, data: [] });
+    expect(vocabularios.pronta()).toBe(true);
+    expect(vocabularios.criterios().situacao).toBe('pronta');
     http.verify();
   });
 });

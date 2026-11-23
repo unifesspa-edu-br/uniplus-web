@@ -114,7 +114,7 @@ leituraDoProcesso.visivel()) {
         </section>
       </div>
     </div>
-    <div class="wiz-footer" #wizFooter>
+    <div class="wiz-footer" #wizFooter tabindex="-1">
       <button
         class="btn btn--tertiary"
         type="button"
@@ -140,7 +140,14 @@ leituraDoProcesso.visivel()) {
            novo — durante uma janela em que um novo clique só seria
            descartado em silêncio por `nextOrPublish()`. -->
       @if (regraIndisponivel()) {
-      <p role="alert">As opções da regra de deliberação não estão disponíveis.</p>
+      <p role="alert">Não foi possível carregar as opções da regra. Tente de novo.</p>
+      <button
+        type="button"
+        class="btn btn--secondary"
+        (click)="wizFooter.focus(); vocabulariosDaRegra.recarregarIndisponiveis()"
+      >
+        Tentar de novo
+      </button>
       }
       <button
         class="btn btn--primary"
