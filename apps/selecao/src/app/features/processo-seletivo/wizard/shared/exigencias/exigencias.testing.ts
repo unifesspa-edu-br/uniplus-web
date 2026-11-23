@@ -58,7 +58,7 @@ export function comando(
     modalidadesOfertadas: modalidades,
     etapasVivas: ETAPAS_VIVAS,
     finalidadesPorFase: FINALIDADES_POR_FASE,
-  });
+  }).regras;
 }
 
 const REGRA_SEM_DADOS: Omit<RegraDeComprovacao, 'forma' | 'identificadorNoRascunho'> = {

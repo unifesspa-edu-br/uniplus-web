@@ -70,7 +70,7 @@ describe('FasePassoComponent', () => {
         modalidadesOfertadas: [],
         etapasVivas: new Set<string>(),
         finalidadesPorFase: new Map([['AVALIACAO', ['INSCRICAO']]]),
-      })[0].documento?.indeferimento?.basesLegais;
+      }).regras[0].documento?.indeferimento?.basesLegais;
 
     const AVISO = 'Sem uma norma declarada e identificada como "Resolvida"';
     const temAviso = () =>

@@ -73,7 +73,7 @@ describe('o formulário em que o documento é apresentado', () => {
         etapasVivas: ETAPAS_VIVAS,
         finalidadesPorFase: finalidades,
       },
-    );
+    ).regras;
 
     expect(
       regrasDeComprovacao.map((regraPrincipal) => [
