@@ -124,3 +124,12 @@
 } @else {
   <p class="field__hint">Esta fase ainda não exige documento nenhum.</p>
 }
+
+@if (!store.emConsulta()) {
+  <sel-confirmacao-da-remocao-do-documento
+    [(visivel)]="confirmacao.aberta"
+    [descricaoId]="idDaFase('efeito-remocao')"
+    [texto]="confirmacao.texto()"
+    (confirmada)="confirmarRemocao()"
+  />
+}

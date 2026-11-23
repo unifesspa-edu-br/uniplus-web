@@ -63,21 +63,21 @@ describe('FasePassoComponent', () => {
     }
 
     it('não repete id com duas fases abertas', () => {
-      const raizes = duasFases();
+      const fases = duasFases();
 
-      const ids = raizes.flatMap((raiz) =>
-        Array.from(raiz.querySelectorAll('[id]'), (elemento) => elemento.id),
+      const ids = fases.flatMap((faseNaTela) =>
+        Array.from(faseNaTela.querySelectorAll('[id]'), (elemento) => elemento.id),
       );
       expect(ids.length).toBeGreaterThan(20);
       expect(ids.filter((id, posicao) => ids.indexOf(id) !== posicao)).toEqual([]);
     });
 
     it('aponta for, aria-describedby e aria-controls para elementos da própria fase', () => {
-      const raizes = duasFases();
+      const fases = duasFases();
 
-      for (const raiz of raizes) {
+      for (const faseNaTela of fases) {
         const referencias = Array.from(
-          raiz.querySelectorAll('[for], [aria-describedby], [aria-controls]'),
+          faseNaTela.querySelectorAll('[for], [aria-describedby], [aria-controls]'),
         ).flatMap((elemento) =>
           ['for', 'aria-describedby', 'aria-controls'].flatMap(
             (atributo) => elemento.getAttribute(atributo)?.split(/\s+/) ?? [],
@@ -85,9 +85,9 @@ describe('FasePassoComponent', () => {
         );
         expect(referencias.length).toBeGreaterThan(10);
         const orfas = referencias.filter(
-          (id) => id !== '' && raiz.querySelector(`[id="${id}"]`) === null,
+          (id) => id !== '' && faseNaTela.querySelector(`[id="${id}"]`) === null,
         );
-        // O combobox do catálogo tem o próprio gerador; o que não resolve dentro da raiz é dele.
+        // O combobox do catálogo gera seus próprios identificadores.
         expect(orfas.filter((id) => id.startsWith('fase-'))).toEqual([]);
       }
     });
@@ -114,6 +114,11 @@ describe('FasePassoComponent', () => {
       const botao = nativo.querySelector<HTMLButtonElement>('.doc-item__row button');
       botao?.focus();
       botao?.click();
+      detectar();
+      const confirmar = Array.from(
+        nativo.querySelectorAll<HTMLButtonElement>('dialog button'),
+      ).find((item) => item.textContent?.trim() === 'Remover');
+      confirmar?.click();
       detectar();
     };
 

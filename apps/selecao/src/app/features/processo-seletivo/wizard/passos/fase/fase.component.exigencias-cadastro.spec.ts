@@ -128,6 +128,8 @@ describe('FasePassoComponent', () => {
 
       documentos().removerDocumento(ID_CPF, document.body);
       detectar();
+      documentos().confirmarRemocao();
+      detectar();
 
       expect(exigencias().documentosDaFase()).toEqual([]);
       expect(
