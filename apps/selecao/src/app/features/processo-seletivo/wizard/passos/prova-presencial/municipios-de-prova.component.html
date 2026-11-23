@@ -1,0 +1,56 @@
+<div class="field">
+  @if (!somenteLeitura()) {
+    <label class="field__label" [attr.for]="busca()?.campoId()">Municípios de prova</label>
+    <ui-valor-de-municipio
+      [multiplo]="true"
+      [disabled]="desabilitado()"
+      rotulo="Municípios de prova"
+      [values]="codigos()"
+      [rotulosGravados]="rotulos()"
+      [invalido]="haRecusaAtiva(recusasDaLista())"
+      [descritoPor]="recusasDaLista().length ? prefixo + '-recusa-lista' : null"
+      (valuesChange)="alterarEscolha($event)"
+    />
+  } @else {
+    <p class="field__label" [id]="prefixo + '-lista'" tabindex="-1">Municípios de prova</p>
+  }
+  @if (recusasDaLista().length) {
+    <sel-recusas-do-campo [attr.id]="prefixo + '-recusa-lista'" [recusas]="recusasDaLista()" />
+  }
+  <ul aria-label="Municípios de prova">
+    @for (municipio of municipios(); track municipio.codigoIbge) {
+      <li>
+        <span>{{ rotulo(municipio) }}</span>
+        @if (!somenteLeitura()) {
+          <button
+            type="button"
+            class="btn btn--secondary"
+            [disabled]="desabilitado()"
+            [id]="idDoBotao(municipio.codigoIbge)"
+            [attr.aria-label]="'Remover ' + rotulo(municipio)"
+            [attr.aria-describedby]="
+              recusasPorMunicipio().get(municipio.codigoIbge)?.length
+                ? idDaRecusa(municipio.codigoIbge)
+                : null
+            "
+            [attr.aria-invalid]="
+              haRecusaAtiva(recusasPorMunicipio().get(municipio.codigoIbge) ?? []) ? 'true' : null
+            "
+            (click)="remover(municipio)"
+          >
+            Remover
+          </button>
+        }
+        @if (recusasPorMunicipio().get(municipio.codigoIbge); as recusas) {
+          @if (recusas.length) {
+            <sel-recusas-do-campo
+              [attr.id]="idDaRecusa(municipio.codigoIbge)"
+              [recusas]="recusas"
+            />
+          }
+        }
+      </li>
+    }
+  </ul>
+  <span class="sr-only" aria-live="polite">{{ anuncio() }}</span>
+</div>

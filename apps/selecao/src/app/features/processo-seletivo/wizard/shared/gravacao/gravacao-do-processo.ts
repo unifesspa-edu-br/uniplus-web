@@ -7,6 +7,7 @@ import { ChaveRetida } from './chave-retida';
 import { ResultadoDaGravacao, SUPERADO } from './resultado-da-gravacao';
 
 export type RecursoDoProcesso =
+  | 'provaPresencial'
   | 'taxa'
   | 'distribuicao'
   | 'opcoesDeCurso'

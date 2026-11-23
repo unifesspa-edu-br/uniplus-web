@@ -45,6 +45,8 @@ const PRODUTOS_DA_FASE: Erro = {
   message: 'A fase Resultado publica o preliminar sem o definitivo.',
 };
 
+const CAUSA_GERAL: Erro = { code: GERAL, message: 'O cronograma está incompleto.' };
+
 describe('RevisaoPassoComponent: recusas da publicação', () => {
   let cenario: CenarioDaRevisao;
   let fixture: ComponentFixture<RevisaoPassoComponent>;
@@ -100,6 +102,30 @@ describe('RevisaoPassoComponent: recusas da publicação', () => {
     await flushMicrotasks();
   }
 
+  const textosDosItens = (): (string | undefined)[] =>
+    Array.from(bloco()?.querySelectorAll('li') ?? []).map((item) =>
+      item.textContent?.replace(/\s+/g, ' '),
+    );
+
+  async function voltarAoPasso() {
+    fixture.destroy();
+    const volta = TestBed.createComponent(RevisaoPassoComponent);
+    volta.detectChanges();
+    await flushMicrotasks();
+    const texto = (): string => (volta.nativeElement as HTMLElement).textContent ?? '';
+    return { volta, texto };
+  }
+
+  async function responderRelidoDoChecklist(): Promise<void> {
+    controller
+      .expectOne((req) => req.url.endsWith('/conformidade'))
+      .flush({ processoSeletivoId: PROCESSO_DTO_MINIMO.id, itens: [], avisos: [] });
+    controller
+      .match((req) => req.url.includes('/conformidade-legal'))
+      .forEach((req) => req.flush({ regras: [], avisos: [], dataReferencia: '2027-01-01' }));
+    await flushMicrotasks();
+  }
+
   async function publicarSemResposta(): Promise<void> {
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_PUBLICACAO).error(new ProgressEvent('error'));
@@ -141,15 +167,9 @@ describe('RevisaoPassoComponent: recusas da publicação', () => {
   it('lista todas as causas na ordem da API, inclusive a geral, que não leva a nota de campo', async () => {
     await prepararRevisao();
 
-    await publicarERecusar([
-      PRODUTOS_DA_FASE,
-      { code: GERAL, message: 'O cronograma está incompleto.' },
-      FIM_DA_FASE,
-    ]);
+    await publicarERecusar([PRODUTOS_DA_FASE, CAUSA_GERAL, FIM_DA_FASE]);
 
-    const itens = Array.from(bloco()?.querySelectorAll('li') ?? []).map((item) =>
-      item.textContent?.replace(/\s+/g, ' '),
-    );
+    const itens = textosDosItens();
     expect(itens).toHaveLength(3);
     expect(itens[0]).toContain(PRODUTOS_DA_FASE.message);
     expect(itens[1]).toContain('O cronograma está incompleto.');
@@ -213,18 +233,14 @@ describe('RevisaoPassoComponent: recusas da publicação', () => {
   it('mostra as recusas ao voltar ao passo, com o checklist carregando e depois com falha', async () => {
     await prepararRevisao();
     await publicarERecusar([FIM_DA_FASE]);
-    fixture.destroy();
 
-    const volta = TestBed.createComponent(RevisaoPassoComponent);
-    volta.detectChanges();
-    await flushMicrotasks();
-    const textoAoVoltar = (): string => (volta.nativeElement as HTMLElement).textContent ?? '';
-    expect(textoAoVoltar()).toContain(FIM_DA_FASE.message);
+    const { volta, texto } = await voltarAoPasso();
+    expect(texto()).toContain(FIM_DA_FASE.message);
 
     await responderChecklist(503);
     volta.detectChanges();
-    expect(textoAoVoltar()).toContain('Não foi possível carregar o checklist');
-    expect(textoAoVoltar()).toContain(FIM_DA_FASE.message);
+    expect(texto()).toContain('Não foi possível carregar o checklist');
+    expect(texto()).toContain(FIM_DA_FASE.message);
   });
 
   it('troca todas as recusas pelas da resposta recusada seguinte', async () => {
@@ -266,17 +282,7 @@ describe('RevisaoPassoComponent: recusas da publicação', () => {
     await publicarERecusar([FIM_DA_FASE]);
 
     void componente.recarregarChecklist();
-    controller
-      .expectOne((req) => req.url.endsWith('/conformidade'))
-      .flush({
-        processoSeletivoId: PROCESSO_DTO_MINIMO.id,
-        itens: [],
-        avisos: [],
-      });
-    controller
-      .match((req) => req.url.includes('/conformidade-legal'))
-      .forEach((req) => req.flush({ regras: [], avisos: [], dataReferencia: '2027-01-01' }));
-    await flushMicrotasks();
+    await responderRelidoDoChecklist();
 
     expect(recusasDoServidor.recusas()).toHaveLength(1);
   });
@@ -308,6 +314,20 @@ describe('RevisaoPassoComponent: recusas da publicação', () => {
     };
     const botao = (): HTMLButtonElement | null =>
       bloco()?.querySelector<HTMLButtonElement>('button') ?? null;
+
+    it('leva uma recusa da prova presencial ao passo correspondente', async () => {
+      await prepararRevisao();
+      await publicarERecusar([
+        { code: 'ProvaPresencial.PorDeclarar', message: 'Declare a prova.' },
+      ]);
+
+      botao()?.click();
+
+      expect(store.passoAtual()).toBe(
+        PASSOS.findIndex((passo) => passo.rotulo === 'Prova presencial'),
+      );
+      expect(recusasDoServidor.destino()?.codigo).toBe('ProvaPresencial.PorDeclarar');
+    });
 
     it('oferece o botão à recusa que aponta uma fase que está no cronograma', async () => {
       await prepararRevisao();

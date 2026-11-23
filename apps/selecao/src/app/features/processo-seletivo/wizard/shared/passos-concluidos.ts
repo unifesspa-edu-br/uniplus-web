@@ -1,6 +1,7 @@
 import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
 import type { ItemConformidadeDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
+import { provaPresencialDe } from './hidratacao/hidratacao-da-prova-presencial';
 import { PASSOS } from '../processo-seletivo.data';
 import type { RotuloDePasso } from '../processo-seletivo.data';
 import { passosComPendencia } from '../passos/revisao/grupos-da-revisao';
@@ -19,7 +20,7 @@ type PassoQueGrava = Exclude<RotuloDePasso, 'Revisão e publicação'>;
  * sinal de que a Eliminação foi visitada, e lista vazia é uma gravação válida. Por isso os dois
  * contam com a classificação gravada, e uma pendência do checklist tira a marca.
  */
-function gravadoPorPasso(dto: ProcessoSeletivoDto): Record<PassoQueGrava, boolean> {
+export function gravadoPorPasso(dto: ProcessoSeletivoDto): Record<PassoQueGrava, boolean> {
   return {
     'Tipo do processo': true,
     Identificação: (dto.identificadorLegivel ?? '').trim() !== '',
@@ -30,7 +31,16 @@ function gravadoPorPasso(dto: ProcessoSeletivoDto): Record<PassoQueGrava, boolea
     'Fator de Atenuação': dto.aplicaFada != null,
     Desempate: desempateGravado(dto),
     Eliminação: dto.classificacao != null,
+    ...gravadoNaInscricao(dto),
+  };
+}
+
+function gravadoNaInscricao(
+  dto: ProcessoSeletivoDto,
+): Pick<Record<PassoQueGrava, boolean>, 'Atend. especial' | 'Prova presencial' | 'Formulários'> {
+  return {
     'Atend. especial': dto.atendimentoEspecializado != null,
+    'Prova presencial': provaPresencialDe(dto).temProvaPresencial !== null,
     Formulários: (dto.formularios ?? []).length > 0,
   };
 }

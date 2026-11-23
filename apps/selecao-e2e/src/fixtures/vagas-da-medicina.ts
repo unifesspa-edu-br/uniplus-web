@@ -11,6 +11,7 @@ import { CASCATA_DA_MEDICINA } from './medicina/cascata-da-medicina';
 import { DISTRIBUICAO_DA_MEDICINA } from './medicina/distribuicao-da-medicina';
 import { FORMULARIO_DAS_MODALIDADES_DA_MEDICINA } from './medicina/formulario-das-modalidades';
 import { DERIVACOES_DA_MEDICINA } from './medicina/regras-das-modalidades';
+import { PROVA_PRESENCIAL_DECLARADA_SEM_PROVA } from './prova-presencial-declarada';
 
 /** Detalhe do processo, com a distribuição, a cascata e as regras congeladas das modalidades. */
 export const PROCESSO_DA_MEDICINA = {
@@ -40,6 +41,7 @@ export const PROCESSO_DA_MEDICINA = {
     uf: 'PA',
   },
   etapas: [],
+  provaPresencial: PROVA_PRESENCIAL_DECLARADA_SEM_PROVA,
   atendimentoEspecializado: null,
   distribuicaoVagas: DISTRIBUICAO_DA_MEDICINA,
   fada: null,

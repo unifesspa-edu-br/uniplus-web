@@ -32,18 +32,24 @@ async function recusarOsModelosPorFaltaDePermissao(page: Page): Promise<void> {
   });
 }
 
+async function abrirOPassoFormularios(page: Page): Promise<void> {
+  await page.goto(`/processo-seletivo/${PROCESSO_PUBLICADO_DA_MEDICINA.id}`);
+  await page
+    .getByRole('navigation', { name: 'Etapas do cadastro' })
+    .getByRole('button', { name: 'Formulários' })
+    .click();
+}
+
 test.describe('Formulários — consulta dos modelos recusada por falta de permissão', () => {
   test('o passo avisa o que não carregou e o restante segue', async ({ page }) => {
     await mockarFormularioDoProcesso(page);
     await recusarOsModelosPorFaltaDePermissao(page);
 
-    await page.goto(`/processo-seletivo/${PROCESSO_PUBLICADO_DA_MEDICINA.id}`);
-    await page
-      .getByRole('navigation', { name: 'Etapas do cadastro' })
-      .getByRole('button', { name: 'Formulários' })
-      .click();
+    await abrirOPassoFormularios(page);
 
-    await expect(page.getByRole('heading', { level: 1, name: /^Passo 11:/ })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: /^Passo \d+: Formulários/ }),
+    ).toBeVisible();
     await expect(page.getByText(AVISO)).toBeVisible();
     await expect(page.getByRole('article', { name: CAMPO_DA_PCD })).toBeVisible();
     await expect(page).not.toHaveURL(/acesso-negado/);

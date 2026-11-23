@@ -12,6 +12,7 @@ import {
   DefinirOpcoesDeclaradasRequest,
   DefinirAtendimentoEspecializadoRequest,
   DefinirTaxaInscricaoRequest,
+  DefinirProvaPresencialRequest,
   EtapaProcessoInput,
   FaseCronogramaInput,
   RegraDeComprovacaoInformada,
@@ -99,6 +100,15 @@ export class CadastroInicial {
   ): Promise<ResultadoGravacao> {
     return this.gravacao.gravar('taxa', request, (contexto) =>
       this.api.definirTaxaInscricao(processoSeletivoId, request, contexto),
+    );
+  }
+
+  definirProvaPresencial(
+    processoSeletivoId: string,
+    request: DefinirProvaPresencialRequest,
+  ): Promise<ResultadoGravacao> {
+    return this.gravacao.gravar('provaPresencial', request, (contexto) =>
+      this.api.definirProvaPresencial(processoSeletivoId, request, contexto),
     );
   }
 
