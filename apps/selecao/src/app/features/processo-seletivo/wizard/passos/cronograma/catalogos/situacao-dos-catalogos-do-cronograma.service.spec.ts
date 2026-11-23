@@ -23,6 +23,7 @@ import {
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { RESPOSTA_DO_VOCABULARIO } from '../../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 
+import { CatalogoDosFormatosPermitidos } from './catalogo-dos-formatos-permitidos.service';
 import { CATALOGOS_DO_CRONOGRAMA } from './catalogos-do-cronograma';
 import { falhaDoServidor, pagina } from './catalogos.testing';
 import { SituacaoDosCatalogosDoCronograma } from './situacao-dos-catalogos-do-cronograma.service';
@@ -58,6 +59,7 @@ function montar(falhas: Falhas = {}, buscas?: Buscas) {
   TestBed.configureTestingModule({
     providers: [
       ...CATALOGOS_DO_CRONOGRAMA,
+      { provide: CatalogoDosFormatosPermitidos, useValue: { carregar: vi.fn() } },
       {
         provide: ProcessoSeletivoStore,
         useValue: { emConsulta: signal(falhas.emConsulta === true) },
@@ -164,8 +166,8 @@ describe('SituacaoDosCatalogosDoCronograma', () => {
     expect(situacao.leituraDosMotivos.visivel()).toBe(true);
   });
 
-  /** Refazer só o que falhou abriria a tela com catálogos de rodadas diferentes. */
-  it('repete a rodada inteira, inclusive os catálogos que já tinham carregado, as unidades e os motivos', () => {
+  /** Os catálogos são atualizados juntos. */
+  it('repete todas as buscas, inclusive os catálogos que já tinham carregado, as unidades e os motivos', () => {
     const buscas = { fases: vi.fn(), unidades: vi.fn(), motivos: vi.fn(), tiposDeDecisao: vi.fn() };
     const situacao = montar({ fatos: true, unidades: true }, buscas);
 
@@ -208,7 +210,7 @@ describe('SituacaoDosCatalogosDoCronograma', () => {
     expect(situacao.erro()).toBeNull();
   });
 
-  it('na edição, repete a busca das opções do recurso junto com a rodada inteira', () => {
+  it('na edição, repete a busca das opções do recurso junto com todas as buscas', () => {
     const opcoesDoRecurso = vi.fn();
     const buscas = { fases: vi.fn(), unidades: vi.fn(), motivos: vi.fn(), opcoesDoRecurso };
     const situacao = montar({}, buscas);

@@ -279,4 +279,5 @@ export { processoSeletivoRequest } from './processo-seletivo.request';
 export {
   VocabulariosDaComprovacaoApi,
   type FormaDeComprovacaoDto,
+  type OpcaoDeComprovacaoDto,
 } from './vocabularios-da-comprovacao.api';

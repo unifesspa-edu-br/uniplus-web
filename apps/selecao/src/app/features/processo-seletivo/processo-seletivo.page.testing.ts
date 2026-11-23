@@ -44,6 +44,7 @@ import {
   OpcoesDoRecursoApi,
   RegrasCatalogoApi,
   VagasDoProcessoApi,
+  VocabulariosDaComprovacaoApi,
 } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { opcoesDoRecursoApiDeTeste } from './wizard/passos/cronograma/catalogos/catalogos.testing';
@@ -85,6 +86,13 @@ const modalidadesApiStub = {
 /** Catálogos do passo de vagas: vazios, porque esta suíte cobre a página. */
 const catalogoVazioStub = {
   listar: () => of(apiOk<readonly never[]>([], 200, new HttpHeaders())),
+};
+
+const vocabulariosDaComprovacaoStub = {
+  listarFormasDeComprovacao: catalogoVazioStub.listar,
+  listarFormatosPermitidos: catalogoVazioStub.listar,
+  listarCriteriosDeDistincaoDeApresentacoes: catalogoVazioStub.listar,
+  listarConsequenciasDeIndeferimento: catalogoVazioStub.listar,
 };
 
 export const opcoesDoRecursoApiStub = {
@@ -133,6 +141,7 @@ export const PAGE_PROVIDERS = [
   { provide: CategoriasDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposEtapaApi, useValue: catalogoVazioStub },
   { provide: TiposDocumentoApi, useValue: catalogoVazioStub },
+  { provide: VocabulariosDaComprovacaoApi, useValue: vocabulariosDaComprovacaoStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
   { provide: MotivosDeDecisaoApi, useValue: catalogoVazioStub },
   { provide: OpcoesDoRecursoApi, useValue: opcoesDoRecursoApiStub },

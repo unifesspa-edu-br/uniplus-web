@@ -30,6 +30,7 @@ import {
 import { RESPOSTA_DO_VOCABULARIO } from '../../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 
+import { CatalogoDosFormatosPermitidos } from './catalogo-dos-formatos-permitidos.service';
 import { CATALOGOS_DO_CRONOGRAMA } from './catalogos-do-cronograma';
 import { opcoesDoRecursoApiDeTeste, pagina } from './catalogos.testing';
 import { SituacaoDosCatalogosDoCronograma } from './situacao-dos-catalogos-do-cronograma.service';
@@ -67,6 +68,7 @@ describe('leitura acompanhada dos catálogos do cronograma', () => {
     TestBed.configureTestingModule({
       providers: [
         ...CATALOGOS_DO_CRONOGRAMA,
+        { provide: CatalogoDosFormatosPermitidos, useValue: { carregar: vi.fn() } },
         { provide: ProcessoSeletivoStore, useValue: { emConsulta: signal(true) } },
         { provide: OpcoesDoRecursoApi, useValue: {} },
         { provide: AnuncioDaConclusao, useValue: { anunciar } },
@@ -96,7 +98,7 @@ describe('leitura acompanhada dos catálogos do cronograma', () => {
     );
   }
 
-  /** A primeira rodada termina com a falha dos fatos, e a pessoa pede a segunda. */
+  /** A primeira leitura termina com a falha dos fatos, e a pessoa pede a segunda. */
   async function falharEPedirDeNovo(): Promise<void> {
     situacao.carregar();
     fases.next(sucesso());
@@ -121,7 +123,7 @@ describe('leitura acompanhada dos catálogos do cronograma', () => {
 
   afterEach(() => destino.remove());
 
-  it('a rodada que recomeça apaga a falha dos catálogos, e o aviso segue com a mensagem de antes', async () => {
+  it('a leitura repetida apaga a falha dos catálogos, e o aviso segue com a mensagem de antes', async () => {
     await falharEPedirDeNovo();
 
     expect(situacao.erro()).toBeNull();

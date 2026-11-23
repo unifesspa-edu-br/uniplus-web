@@ -1,0 +1,92 @@
+<fieldset
+  [disabled]="desabilitado()"
+  [attr.aria-describedby]="listaVazia() ? idBase() + '-formatos-erro' : null"
+>
+  <legend>Formatos aceitos</legend>
+  <label
+    ><input
+      type="radio"
+      [name]="idBase() + '-formatos'"
+      [checked]="formatos().tipo === 'qualquer'"
+      (change)="escolherQualquer()"
+    />
+    Qualquer formato</label
+  >
+  <label
+    ><input
+      type="radio"
+      [name]="idBase() + '-formatos'"
+      [checked]="formatos().tipo === 'lista'"
+      (change)="escolherLista()"
+    />
+    Somente estes formatos</label
+  >
+  @if (formatos().tipo === 'lista') {
+    @if (catalogo.situacao() === 'carregando') {
+      <p>Carregando formatos...</p>
+    }
+    <ui-falha-de-leitura-do-campo [leitura]="leitura" />
+    @for (opcao of catalogo.formatos(); track opcao.codigo) {
+      <div class="form-field">
+        <label
+          ><input
+            type="checkbox"
+            [checked]="selecionado(opcao.codigo)"
+            (change)="alternar(opcao.codigo, $event)"
+          />
+          {{ opcao.rotulo }}</label
+        >
+        @if (selecionado(opcao.codigo)) {
+          <label [attr.for]="idBase() + '-' + opcao.codigo"
+            >Tamanho máximo para {{ opcao.rotulo }} (MB), opcional</label
+          >
+          <input
+            class="input"
+            type="number"
+            min="0"
+            step="any"
+            [id]="idBase() + '-' + opcao.codigo"
+            [value]="emMegabytes(tamanhoDoFormato(opcao.codigo))"
+            [attr.aria-describedby]="
+              idBase() +
+              '-ajuda' +
+              (tamanhoInvalido(opcao.codigo) ? ' ' + idBase() + '-' + opcao.codigo + '-erro' : '')
+            "
+            [attr.aria-invalid]="tamanhoInvalido(opcao.codigo) ? 'true' : null"
+            (input)="definirTamanho(opcao.codigo, $event)"
+          />
+          @if (tamanhoInvalido(opcao.codigo)) {
+            <p class="field__error" [id]="idBase() + '-' + opcao.codigo + '-erro'">
+              Informe um tamanho válido que não ultrapasse o tamanho máximo da exigência.
+            </p>
+          }
+        }
+      </div>
+    }
+    @if (listaVazia()) {
+      <p class="field__error" [id]="idBase() + '-formatos-erro'">Selecione ao menos um formato.</p>
+    }
+  }
+  <div class="form-field">
+    <label [attr.for]="idBase() + '-tamanho'">Tamanho máximo da exigência (MB), opcional</label>
+    <input
+      class="input"
+      type="number"
+      min="0"
+      step="any"
+      [id]="idBase() + '-tamanho'"
+      [value]="emMegabytes(tamanho())"
+      [attr.aria-describedby]="
+        idBase() + '-ajuda' + (tamanhoDaExigenciaInvalido() ? ' ' + idBase() + '-tamanho-erro' : '')
+      "
+      [attr.aria-invalid]="tamanhoDaExigenciaInvalido() ? 'true' : null"
+      (input)="definirTamanhoDaExigencia($event)"
+    />
+    @if (tamanhoDaExigenciaInvalido()) {
+      <p class="field__error" [id]="idBase() + '-tamanho-erro'">Informe um tamanho válido.</p>
+    }
+    <p class="field__hint" [id]="idBase() + '-ajuda'">
+      O tamanho máximo de cada formato não pode ultrapassar o tamanho máximo da exigência.
+    </p>
+  </div>
+</fieldset>

@@ -5,6 +5,7 @@ import { acompanharLeitura, destinoAcessivel } from '@uniplus/shared-ui/componen
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { tituloDoPasso } from '../../../shared/titulo-do-passo';
 
+import { CatalogoDosFormatosPermitidos } from './catalogo-dos-formatos-permitidos.service';
 import { CatalogoDasOpcoesDoRecurso } from './catalogo-das-opcoes-do-recurso.service';
 import { CatalogoDeAtos } from './catalogo-de-atos.service';
 import { CatalogoDeBancas } from './catalogo-de-bancas.service';
@@ -45,6 +46,7 @@ export class SituacaoDosCatalogosDoCronograma {
   private readonly tiposDeDecisao = inject(VOCABULARIO_DE_TIPOS_DE_DECISAO);
   private readonly unidades = inject(CatalogoDeUnidadesDoCadastro);
   private readonly motivos = inject(CatalogoDeMotivos);
+  private readonly formatos = inject(CatalogoDosFormatosPermitidos);
 
   private readonly exigidosNestaTela = computed(() =>
     this.store.emConsulta()
@@ -107,16 +109,14 @@ export class SituacaoDosCatalogosDoCronograma {
   });
 
   carregar(): void {
+    this.formatos.carregar();
     this.unidades.carregar();
     this.motivos.carregar();
     this.exigidos.forEach((catalogo) => catalogo.carregar());
     if (!this.store.emConsulta()) this.carregarDaEdicao();
   }
 
-  /**
-   * Repete a rodada inteira, e não só o que falhou: refazer um catálogo e manter outro de uma
-   * rodada anterior abriria a tela com dados de momentos diferentes.
-   */
+  /** Atualiza os catálogos necessários para a configuração. */
   recarregar(): void {
     this.unidades.recarregar();
     this.motivos.recarregar();

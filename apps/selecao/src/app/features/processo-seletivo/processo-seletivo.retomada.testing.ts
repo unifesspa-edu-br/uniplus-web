@@ -50,6 +50,7 @@ import {
   PublicacaoDoProcessoApi,
   StatusProcesso,
   VagasDoProcessoApi,
+  VocabulariosDaComprovacaoApi,
 } from '@uniplus/shared-data/selecao';
 import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-testing';
 import { BehaviorSubject, NEVER, of } from 'rxjs';
@@ -86,6 +87,13 @@ const falhaDeCatalogo = { listar: () => of(errorResult(mockProblemDetails({ stat
  */
 const catalogoVazioStub = { listar: () => respostaVazia<never>() };
 
+const vocabulariosDaComprovacaoStub = {
+  listarFormasDeComprovacao: catalogoVazioStub.listar,
+  listarFormatosPermitidos: catalogoVazioStub.listar,
+  listarCriteriosDeDistincaoDeApresentacoes: catalogoVazioStub.listar,
+  listarConsequenciasDeIndeferimento: catalogoVazioStub.listar,
+};
+
 /** Os catálogos que cada passo do assistente carrega ao montar; vazios, o grafo de injeção fecha sem HTTP. */
 const PROVEDORES_DE_CATALOGO_VAZIO: readonly Provider[] = [
   provideApiDosTiposDeDecisao(),
@@ -111,6 +119,7 @@ const PROVEDORES_DE_CATALOGO_VAZIO: readonly Provider[] = [
   { provide: CategoriasDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposEtapaApi, useValue: catalogoVazioStub },
   { provide: TiposDocumentoApi, useValue: catalogoVazioStub },
+  { provide: VocabulariosDaComprovacaoApi, useValue: vocabulariosDaComprovacaoStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
   { provide: MotivosDeDecisaoApi, useValue: catalogoVazioStub },
   { provide: OpcoesDoRecursoApi, useValue: opcoesDoRecursoApiStub },
