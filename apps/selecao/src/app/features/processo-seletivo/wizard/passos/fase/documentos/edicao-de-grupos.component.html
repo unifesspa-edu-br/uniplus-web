@@ -1,0 +1,69 @@
+<button
+  #botaoCombinar
+  type="button"
+  class="btn btn--secondary"
+  [disabled]="!cronograma.edicaoLiberada()"
+  [attr.aria-expanded]="aberto()"
+  (click)="abrir()"
+>
+  Combinar documentos
+</button>
+<p role="status">{{ aviso() }}</p>
+@if (aberto()) {
+  <fieldset [disabled]="!cronograma.edicaoLiberada()">
+    <legend>Escolha dois ou mais documentos para combinar</legend>
+    @for (documento of nomes(grupos.documentosSoltos()); track documento.identificador) {
+      <label class="checkbox">
+        <input
+          type="checkbox"
+          [checked]="escolhidos().has(documento.identificador)"
+          (change)="escolher(documento.identificador, $any($event.target).checked)"
+        />
+        <span class="checkbox__box" aria-hidden="true"></span>
+        {{ documento.nome }}
+      </label>
+    }
+    <button
+      type="button"
+      class="btn btn--secondary"
+      [disabled]="escolhidos().size < 2"
+      (click)="criar(botaoCombinar)"
+    >
+      Criar grupo
+    </button>
+  </fieldset>
+  @for (grupo of grupos.grupos(); track grupo.identificadorNoRascunho) {
+    <sel-grupo-de-documentos
+      [grupo]="grupo"
+      [itens]="nomes(grupo.itens ?? [])"
+      [disponiveis]="disponiveis(grupo)"
+      [formas]="catalogo.formas()"
+      [situacao]="catalogo.situacao()"
+      [erro]="catalogo.erro()"
+      [desabilitado]="!cronograma.edicaoLiberada()"
+      (repetir)="catalogo.repetir()"
+      (formaChange)="
+        grupos.trocarForma(grupo.identificadorNoRascunho, $event);
+        aviso.set('Forma do grupo atualizada.')
+      "
+      (quantidadeChange)="
+        grupos.trocarQuantidade(grupo.identificadorNoRascunho, $event);
+        aviso.set('Quantidade mínima atualizada.')
+      "
+      (incluir)="incluir(grupo, $event, botaoCombinar)"
+      (retirar)="retirar(grupo, $event, botaoCombinar)"
+    >
+      <sel-consequencia-e-normas
+        referenciaDaNorma="Norma que exige o grupo"
+        [idDaConsequencia]="'consequencia-' + grupo.identificadorNoRascunho"
+        [idDasNormas]="'normas-' + grupo.identificadorNoRascunho"
+        [consequencia]="grupo.consequencia ?? ''"
+        [bases]="grupo.basesLegais ?? []"
+        [opcoes]="opcoes()"
+        [desabilitado]="!cronograma.edicaoLiberada()"
+        (consequenciaChange)="atualizarConsequencia(grupo, $event)"
+        (basesChange)="atualizarNormas(grupo, $event)"
+      />
+    </sel-grupo-de-documentos>
+  }
+}

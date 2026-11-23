@@ -1,11 +1,6 @@
 import { FormularioDoCronograma } from '../../cronograma/servicos/formulario-do-cronograma.service';
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
-import {
-  ComboboxComponent,
-  EditorDeCondicoesComponent,
-  NormasDoDocumentoComponent,
-  type TextosDasNormas,
-} from '@uniplus/shared-ui/components';
+import { ComboboxComponent, EditorDeCondicoesComponent } from '@uniplus/shared-ui/components';
 import { consequenciasDaFase } from '@uniplus/shared-utils';
 
 import type { BaseLegalConfig, ModeloDaExigencia } from '../../../processo-seletivo.models';
@@ -19,7 +14,7 @@ import { mostraFormulario } from '../../../shared/exigencias/formulario-da-exige
 import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import { ModeloDaExigenciaComponent } from '../modelo-da-exigencia/modelo-da-exigencia.component';
-import { rotuloDaConsequencia } from '../resumo-da-exigencia';
+import { ConsequenciaENormasComponent } from './consequencia-e-normas.component';
 import type { ResumoDoDocumento } from '../tipos-da-conferencia';
 import { EixoAlcanceComponent } from './eixos/eixo-alcance.component';
 import { EixoEtapaComponent } from './eixos/eixo-etapa.component';
@@ -39,7 +34,7 @@ import { GatilhoDasExigenciasStore } from './gatilho-das-exigencias.store';
     EixoFormularioComponent,
     EixoRepeticaoComponent,
     ModeloDaExigenciaComponent,
-    NormasDoDocumentoComponent,
+    ConsequenciaENormasComponent,
   ],
   templateUrl: './editor-da-exigencia.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -59,14 +54,6 @@ export class EditorDaExigenciaComponent {
 
   protected readonly idDaFase = this.faseEmEdicao.idDaFase;
 
-  /**
-   * O que a tela oferece como consequência NESTA fase.
-   *
-   * "Abre pendência para reenvio" só é aceita em fase que admite complementação — quem decide
-   * é o cadastro da fase canônica, não este passo. Oferecê-la onde a fase não admite produzia
-   * uma recusa na gravação que o operador não sabia ligar ao que fez, e sem remédio à mão: o
-   * sinalizador não é editável aqui.
-   */
   consequenciasDaFase(): readonly { readonly valor: string; readonly rotulo: string }[] {
     return consequenciasDaFase(CONSEQUENCIAS_ESCOLHIVEIS, this.faseAdmiteComplementacao());
   }
@@ -79,21 +66,6 @@ export class EditorDaExigenciaComponent {
   }
 
   readonly consequencias = CONSEQUENCIAS_ESCOLHIVEIS;
-
-  /** Os rótulos das normas no passo Fase; o editor é o mesmo do modelo de formulário. */
-  protected readonly textosDasNormas: Partial<TextosDasNormas> = {
-    referencia: 'Norma que exige o documento',
-    placeholderReferencia: 'Lei 12.711/2012, art. 3º',
-    abrangencia: 'Alcance da norma',
-    situacao: 'Identificação da norma',
-    observacao: 'Observação',
-    observacaoOculta: ' sobre a norma',
-    observacaoSufixo: ' (opcional)',
-    placeholderObservacao: 'O que esta norma exige, em uma linha',
-    acrescentar: 'Acrescentar outra norma',
-    remover: 'Remover esta norma',
-    removerAcessivel: '',
-  };
 
   ehObrigatorio(id: string): boolean {
     return this.exigencias.exigenciaDoDocumento(id).obrigatorio;
@@ -141,11 +113,6 @@ export class EditorDaExigenciaComponent {
    */
   definirBasesLegais(id: string, bases: readonly BaseLegalConfig[]): void {
     this.exigencias.escreverExigencia(id, { basesLegais: bases });
-  }
-
-  /** O rótulo da consequência, o mesmo no seletor do editor e no resumo. */
-  rotuloDaConsequencia(valor: string, obrigatorio: boolean): string {
-    return rotuloDaConsequencia(valor, obrigatorio);
   }
 
   /** O fato que tem controle próprio ao lado do gatilho: o editor não o mostra. */

@@ -12,7 +12,7 @@ interface AlinhamentoMedido {
 const SELETORES_DA_MEDICAO = {
   observacao: '[id*="-doc-normas-"][id$="-obs"]',
   vizinhos:
-    '.doc-item__eixos > .form-field, .doc-item__eixos > ui-normas-do-documento > .form-field',
+    '.doc-item__eixos > .form-field, .doc-item__eixos sel-consequencia-e-normas .form-field',
 };
 
 /** Quantos campos dividem a linha com a observação e quanto o input de cada um desvia do dela. */
