@@ -27,6 +27,16 @@ function problema(...erros: ProblemValidationError[]): ProblemDetails {
 
 const comCampo = (field: string, code = CODIGO_A) => ({ field, code, message: `Sobre ${field}.` });
 
+function resumoDasRecusas(recusas: ReturnType<typeof recusasDaResposta>) {
+  return recusas.map(({ campo, codigo, ordem, resposta, pagina }) => [
+    campo,
+    codigo,
+    ordem,
+    resposta,
+    pagina,
+  ]);
+}
+
 describe('recusasDaResposta', () => {
   it('leva todas as causas, na ordem da API, com a página de cada código', () => {
     const recusas = recusasDaResposta(
@@ -37,15 +47,7 @@ describe('recusasDaResposta', () => {
       4,
     );
 
-    expect(
-      recusas.map(({ campo, codigo, ordem, resposta, pagina }) => [
-        campo,
-        codigo,
-        ordem,
-        resposta,
-        pagina,
-      ]),
-    ).toEqual([
+    expect(resumoDasRecusas(recusas)).toEqual([
       ['/cronograma/fases/1/produtos', CODIGO_A, 0, 4, `${PAGINAS}${CODIGO_A}`],
       ['/cronograma/fases/0/fim', CODIGO_B, 1, 4, `${PAGINAS}${CODIGO_B}`],
     ]);
@@ -155,6 +157,16 @@ describe('RecusasDaPublicacao', () => {
     expect(recusas.cronogramaDaResposta()?.fases).toHaveLength(1);
     recusas.limpar();
     expect(recusas.cronogramaDaResposta()).toBeNull();
+  });
+
+  it('guarda a declaração de prova presencial conferida enquanto a resposta vale', () => {
+    expect(recusas.provaPresencialDaResposta()).toBeNull();
+    store.patchObjectSection('provaPresencial', { temProvaPresencial: true });
+    recusas.registrar(problema(comCampo('/a')), TITULO);
+    store.patchObjectSection('provaPresencial', { temProvaPresencial: false });
+    expect(recusas.provaPresencialDaResposta()?.temProvaPresencial).toBe(true);
+    recusas.limpar();
+    expect(recusas.provaPresencialDaResposta()).toBeNull();
   });
 
   it('esquece o destino do "Ir ao campo" ao limpar', () => {

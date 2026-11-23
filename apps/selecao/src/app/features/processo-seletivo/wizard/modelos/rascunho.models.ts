@@ -1,3 +1,5 @@
+import type { DeclaracaoDaProvaPresencial } from '../passos/prova-presencial/declaracao-da-prova-presencial';
+
 import type { FundamentoIsencaoCodigo } from '@uniplus/shared-data/selecao';
 
 import type { AtendimentoCondicaoSelecionada, ReferenciaDeAtendimento } from './atendimento.models';
@@ -37,6 +39,7 @@ export interface WizardDraft {
     valor: string;
     fundamentos: FundamentoIsencaoCodigo[];
   };
+  provaPresencial: DeclaracaoDaProvaPresencial;
   /**
    * Quantos cursos o candidato escolhe na inscrição: `'1'`, `'2'` ou vazio enquanto não declarado.
    * Gravado junto das vagas porque a quantidade de cursos cadastrados limita o número.
@@ -177,6 +180,7 @@ export interface WizardDraft {
 export const SECOES_DO_RASCUNHO = [
   'tipoProcesso',
   'pagamento',
+  'provaPresencial',
   'identificacao',
   'opcoesDeCurso',
   'vagas',

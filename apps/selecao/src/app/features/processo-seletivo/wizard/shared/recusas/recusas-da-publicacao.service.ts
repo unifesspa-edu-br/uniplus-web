@@ -100,6 +100,11 @@ export class RecusasDaPublicacao {
   /** O cronograma que a publicação conferiu, enquanto a resposta vale: o que as recusas apontaram. */
   readonly cronogramaDaResposta = computed(() => this.vigente()?.rascunho.cronograma ?? null);
 
+  /** A declaração de prova presencial conferida pela publicação. */
+  readonly provaPresencialDaResposta = computed(
+    () => this.vigente()?.rascunho.provaPresencial ?? null,
+  );
+
   /** A recusa a que a pessoa pediu "Ir ao campo" e que o Cronograma ainda não levou ao campo. */
   readonly destino = signal<RecusaDaPublicacao | null>(null);
 

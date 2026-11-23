@@ -28,6 +28,7 @@ const DEFINICOES = [
   { rotulo: 'Desempate', revisao: 'Critérios de desempate' },
   { rotulo: 'Eliminação', revisao: 'Regras de eliminação' },
   { rotulo: 'Atend. especial', titulo: 'Atendimento especializado' },
+  { rotulo: 'Prova presencial' },
   // Penúltimo porque é a superfície de COLETA de tudo que veio antes: Fator de Atenuação, desempate,
   // eliminação e atendimento especializado podem depender de um fato do candidato, e o domínio
   // de campos como a condição de atendimento sai da oferta declarada no passo anterior.

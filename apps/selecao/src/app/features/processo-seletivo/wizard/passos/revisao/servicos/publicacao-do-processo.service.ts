@@ -8,6 +8,7 @@ import { firstValueFrom } from 'rxjs';
 import { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
+import { ehGeoIndisponivel, MENSAGEM_GEO_INDISPONIVEL } from '../../../shared/geo-indisponivel';
 import { RecusasDaPublicacao } from '../../../shared/recusas/recusas-da-publicacao.service';
 import {
   gravarNoPasso,
@@ -192,6 +193,8 @@ export class PublicacaoDoProcesso {
     readonly problem: ProblemDetails;
     readonly inconclusiva: boolean;
   }): ValidacaoDoPasso {
+    if (ehGeoIndisponivel(resultado.problem)) return recusado(MENSAGEM_GEO_INDISPONIVEL);
+
     // Sem resposta conclusiva o comando pode já ter sido executado. Editar um campo antes de tentar
     // de novo giraria a chave de idempotência e deixaria o retry correr contra a primeira tentativa,
     // por isso a tela segue travada até uma releitura dizer o que o servidor tem.
