@@ -12,6 +12,8 @@ export interface ExigenciasGravadas {
   readonly corpos: JsonDaApi<readonly RegraDeComprovacaoInformada[]>[];
   /** O código com que o servidor recusa o PUT; nulo, ele grava. */
   codigoDaRecusa: string | null;
+  campoDaRecusa: string;
+  mensagemDaRecusa: string;
 }
 
 async function gravarAsExigencias(route: Route, gravadas: ExigenciasGravadas): Promise<void> {
@@ -21,9 +23,9 @@ async function gravarAsExigencias(route: Route, gravadas: ExigenciasGravadas): P
   gravadas.corpos.push(corpo);
   if (gravadas.codigoDaRecusa === null) return route.fulfill(SEM_CONTEUDO);
   const erro = {
-    field: '[0].documento.tipoDocumento.id',
+    field: gravadas.campoDaRecusa,
     code: gravadas.codigoDaRecusa,
-    message: 'x',
+    message: gravadas.mensagemDaRecusa,
   };
   return recusar(route, problema(422, 'uniplus.validacao', 'Validação', [erro]));
 }
@@ -33,7 +35,12 @@ async function gravarAsExigencias(route: Route, gravadas: ExigenciasGravadas): P
  * Playwright consulta as rotas da mais recente para a mais antiga.
  */
 export async function capturarAsExigencias(page: Page): Promise<ExigenciasGravadas> {
-  const gravadas: ExigenciasGravadas = { corpos: [], codigoDaRecusa: null };
+  const gravadas: ExigenciasGravadas = {
+    corpos: [],
+    codigoDaRecusa: null,
+    campoDaRecusa: '[0].documento.tipoDocumento.id',
+    mensagemDaRecusa: 'x',
+  };
   await page.route(ROTA_DAS_EXIGENCIAS, (route) => gravarAsExigencias(route, gravadas));
   return gravadas;
 }
