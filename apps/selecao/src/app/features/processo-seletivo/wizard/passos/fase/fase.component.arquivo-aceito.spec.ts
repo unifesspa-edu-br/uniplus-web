@@ -87,8 +87,39 @@ describe('Formatos aceitos na fase', () => {
       modalidadesOfertadas: [],
       etapasVivas: new Set<string>(),
       finalidadesPorFase: new Map(),
-    });
+    }).regras;
   }
+
+  it('preserva PNG ao editar os tamanhos antes de atualizar as entradas do seletor', () => {
+    const radios = tela.nativo.querySelectorAll<HTMLInputElement>(
+      'sel-arquivo-aceito input[type=radio]',
+    );
+    marcar(radios[1]);
+    const caixas = tela.nativo.querySelectorAll<HTMLInputElement>(
+      'sel-arquivo-aceito input[type=checkbox]',
+    );
+    marcar(caixas[0]);
+
+    caixas[1].checked = true;
+    caixas[1].dispatchEvent(new Event('change'));
+    const tamanho = campo('sel-arquivo-aceito input[id$="-tamanho"]');
+    tamanho.value = '5';
+    tamanho.dispatchEvent(new Event('input'));
+    const pdf = campo('sel-arquivo-aceito input[id$="-PDF"]');
+    pdf.value = '5';
+    pdf.dispatchEvent(new Event('input'));
+    tela.detectar();
+
+    expect(tela.exigencias().exigenciaDoDocumento(ID_CPF).formatosPermitidos).toEqual({
+      tipo: 'lista',
+      itens: [
+        { formato: 'PDF', tamanhoMaximoBytes: 5 * MEGABYTE },
+        { formato: 'PNG', tamanhoMaximoBytes: null },
+      ],
+    });
+    expect(caixas[1].checked).toBe(true);
+    expect(campo('sel-arquivo-aceito input[id$="-PNG"]')).toBeTruthy();
+  });
 
   it('envia os formatos e os tamanhos escolhidos', async () => {
     escolherFormatos();

@@ -30,18 +30,33 @@ export interface ProcessoVivoDasExigencias {
   readonly finalidadesPorFase: ReadonlyMap<string, readonly string[]>;
 }
 
+export interface OrigemDaRegraEnviada {
+  readonly identificadorDaRegra: string;
+  readonly itens: readonly OrigemDaRegraEnviada[];
+}
+
+export interface ExigenciasParaEnvio {
+  readonly regras: readonly RegraDeComprovacaoInformada[];
+  readonly origens: readonly OrigemDaRegraEnviada[];
+}
+
 export function regrasDeComprovacaoParaEnvio(
   exigencias: ExigenciasDoRascunho,
   processo: ProcessoVivoDasExigencias,
-): readonly RegraDeComprovacaoInformada[] {
+): ExigenciasParaEnvio {
   const completas = comAlcanceDeTodasAsFases(exigencias, [...processo.faseIdPorCodigo.keys()]);
-  return completas.regrasDeComprovacao.flatMap((regraPrincipal) =>
-    prepararExigenciasParaEnvio(
-      [regraPrincipal],
-      processo,
-      finalidadeDaRegra(regraPrincipal, processo),
-    ),
+  const preparadas = completas.regrasDeComprovacao.flatMap((regra) =>
+    prepararExigenciasParaEnvio([regra], processo, finalidadeDaRegra(regra, processo)),
   );
+  return {
+    regras: preparadas.map((item) => item.regra),
+    origens: preparadas.map((item) => item.origem),
+  };
+}
+
+interface RegraPreparada {
+  readonly regra: RegraDeComprovacaoInformada;
+  readonly origem: OrigemDaRegraEnviada;
 }
 
 /**
@@ -67,30 +82,48 @@ function prepararExigenciasParaEnvio(
   regras: readonly RegraDeComprovacao[],
   processo: ProcessoVivoDasExigencias,
   finalidade: string | null,
-): RegraDeComprovacaoInformada[] {
+): RegraPreparada[] {
   return regras.flatMap((regra) => {
     if (regra.forma === 'DOCUMENTO')
       return documentoDaExigenciaParaEnvio(regra, processo, finalidade);
-    const itensDoGrupo = prepararExigenciasParaEnvio(regra.itens ?? [], processo, finalidade);
-    if ((regra.itens?.length ?? 0) > 0 && itensDoGrupo.length === 0) return [];
-    return [{ ...dadosDaExigenciaParaEnvio(regra), itens: itensDoGrupo }];
+    const itens = prepararExigenciasParaEnvio(regra.itens ?? [], processo, finalidade);
+    if ((regra.itens?.length ?? 0) > 0 && itens.length === 0) return [];
+    return [grupoPreparado(regra, itens)];
   });
+}
+
+function grupoPreparado(
+  regra: RegraDeComprovacao,
+  itens: readonly RegraPreparada[],
+): RegraPreparada {
+  return {
+    regra: { ...dadosDaExigenciaParaEnvio(regra), itens: itens.map((item) => item.regra) },
+    origem: {
+      identificadorDaRegra: regra.identificadorNoRascunho,
+      itens: itens.map((item) => item.origem),
+    },
+  };
 }
 
 function documentoDaExigenciaParaEnvio(
   regra: RegraDeComprovacao,
   processo: ProcessoVivoDasExigencias,
   finalidade: string | null,
-): RegraDeComprovacaoInformada[] {
+): RegraPreparada[] {
   const documento = regra.documento;
   if (documento === null) return [];
   if (!documento.faseIdLido && !processo.faseIdPorCodigo.has(documento.faseCodigo)) return [];
-  return [
-    {
-      ...dadosDaExigenciaParaEnvio(regra),
-      documento: prepararDocumentoParaEnvio(documento, processo, finalidade),
-    },
-  ];
+  return [documentoPreparado(regra, prepararDocumentoParaEnvio(documento, processo, finalidade))];
+}
+
+function documentoPreparado(
+  regra: RegraDeComprovacao,
+  documento: ItemDocumentoExigidoInput,
+): RegraPreparada {
+  return {
+    regra: { ...dadosDaExigenciaParaEnvio(regra), documento },
+    origem: { identificadorDaRegra: regra.identificadorNoRascunho, itens: [] },
+  };
 }
 
 /** Os campos da regra que o rascunho carrega sem tocar, inclusive os que a tela não edita. */

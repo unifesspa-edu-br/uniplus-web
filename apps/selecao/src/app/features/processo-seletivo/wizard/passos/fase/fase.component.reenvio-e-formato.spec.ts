@@ -149,7 +149,7 @@ describe('FasePassoComponent', () => {
         modalidadesOfertadas: [],
         etapasVivas: new Set<string>(),
         finalidadesPorFase: new Map([['AVALIACAO', ['INSCRICAO']]]),
-      });
+      }).regras;
       expect(regrasDeComprovacao[0].documento?.momento?.finalidade).toBe('ISENCAO_TAXA');
     });
 
@@ -213,7 +213,7 @@ describe('FasePassoComponent', () => {
         modalidadesOfertadas: [],
         etapasVivas: new Set<string>(),
         finalidadesPorFase: new Map(),
-      });
+      }).regras;
 
       expect(regrasDeComprovacao[0].documento?.requisitos?.formatosPermitidos).toEqual([
         { formato: 'PDF', tamanhoMaximoBytesMax: null },

@@ -1,5 +1,10 @@
 import { inject, Injectable } from '@angular/core';
-import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
+import {
+  isApiOk,
+  ProblemI18nService,
+  type ProblemValidationError,
+  type ProblemDetails,
+} from '@uniplus/shared-core/http';
 import {
   OrigemCandidatos,
   ProcessosSeletivosApi,
@@ -15,11 +20,37 @@ import {
   fatosCitadosPelasModalidadesOfertadas,
 } from '../../../shared/campos-pressupostos.service';
 import { todasAsExigencias } from '../../../shared/exigencias/consulta-das-exigencias';
-import { regrasDeComprovacaoParaEnvio } from '../../../shared/exigencias/gravacao-das-exigencias';
+import {
+  regrasDeComprovacaoParaEnvio,
+  type OrigemDaRegraEnviada,
+} from '../../../shared/exigencias/gravacao-das-exigencias';
+import { identificarRecusaDaExigencia } from '../../../shared/exigencias/caminho-da-recusa-das-exigencias';
 import { modalidadesDaExigencia } from '../../../shared/exigencias/recorte-por-modalidade';
 import { recusaDaExigenciaDoServidor } from '../../../shared/orientacao-da-recusa-do-fato';
 import { quemCitaNoProcesso } from '../../formulario/citantes-no-processo';
 import { finalidadesQueAtende } from '../../formulario/formularios-por-finalidade';
+
+export interface RecusaDaExigencia {
+  readonly identificadorDaRegra: string | null;
+  readonly campo: string;
+  readonly mensagem: string;
+}
+
+export interface ResultadoDaGravacaoDasExigencias extends ValidacaoDoPasso {
+  readonly recusas?: readonly RecusaDaExigencia[];
+}
+
+function traduzirRecusa(
+  erro: ProblemValidationError,
+  origens: readonly OrigemDaRegraEnviada[],
+): RecusaDaExigencia {
+  const identificacao = identificarRecusaDaExigencia(erro.field ?? '', origens);
+  return {
+    identificadorDaRegra: identificacao?.identificadorDaRegra ?? null,
+    campo: identificacao?.campo ?? erro.field ?? '',
+    mensagem: recusaDaExigenciaDoServidor({ code: erro.code }) ?? erro.message,
+  };
+}
 
 function recusaDaReleitura(): ValidacaoDoPasso {
   return {
@@ -55,7 +86,7 @@ export class GravacaoDasExigenciasDocumentais {
    * releitura aqui é a que traduz um no outro; sem ela, a exigência sairia apontando
    * para uma fase que só existe no rascunho.
    */
-  async gravar(processoId: string): Promise<ValidacaoDoPasso> {
+  async gravar(processoId: string): Promise<ResultadoDaGravacaoDasExigencias> {
     const geracao = this.store.geracao();
     const detalhe = await firstValueFrom(this.api.obter(processoId));
     if (geracao !== this.store.geracao()) return { valid: true };
@@ -72,15 +103,25 @@ export class GravacaoDasExigenciasDocumentais {
     processoId: string,
     regrasDeComprovacao: ReturnType<GravacaoDasExigenciasDocumentais['regrasDoRascunho']>,
     geracao: number,
-  ): Promise<ValidacaoDoPasso> {
-    const gravacao = await this.cadastro.definirDocumentosExigidos(processoId, regrasDeComprovacao);
+  ): Promise<ResultadoDaGravacaoDasExigencias> {
+    const gravacao = await this.cadastro.definirDocumentosExigidos(
+      processoId,
+      regrasDeComprovacao.regras,
+    );
     if (geracao !== this.store.geracao() || gravacao.ok) return { valid: true };
+    return this.resultadoDaRecusa(gravacao.problem, regrasDeComprovacao.origens);
+  }
+
+  private resultadoDaRecusa(
+    problema: ProblemDetails,
+    origens: readonly OrigemDaRegraEnviada[],
+  ): ResultadoDaGravacaoDasExigencias {
     const motivo =
-      recusaDaExigenciaDoServidor(gravacao.problem) ??
-      this.problemI18n.resolve(gravacao.problem).title;
+      recusaDaExigenciaDoServidor(problema) ?? this.problemI18n.resolve(problema).title;
     return {
       valid: false,
       messages: [`As etapas, o cronograma e o formulário de inscrição foram gravados. ${motivo}`],
+      recusas: (problema.errors ?? []).map((erro) => traduzirRecusa(erro, origens)),
     };
   }
 
