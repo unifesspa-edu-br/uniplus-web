@@ -27,7 +27,7 @@ describe('ProcedimentosDoRecursoComponent: a recusa que vem do servidor', () => 
   it('mostra junto ao seletor o texto da tela, o código e a página, e não o texto do servidor', async () => {
     const enviados = [procedimento({ tipoDeDecisao: HOMOLOGACAO })];
 
-    const { raiz } = await montarEdicao({
+    const { elementoDaTela } = await montarEdicao({
       procedimentos: enviados,
       recusas: recusasDosProcedimentosDaFase(PROBLEMA, 0, {
         ...documentoSemNada(),
@@ -44,13 +44,13 @@ describe('ProcedimentosDoRecursoComponent: a recusa que vem do servidor', () => 
       }),
     });
 
-    const recusa = raiz.querySelector('ui-recusa-do-campo') as HTMLElement;
+    const recusa = elementoDaTela.querySelector('ui-recusa-do-campo') as HTMLElement;
     expect(recusa.textContent).toContain(textoDaRecusaDoProcedimento(CODIGO));
     expect(recusa.textContent).not.toContain('texto livre');
     expect(recusa.querySelector('code')?.textContent).toBe(CODIGO);
     expect(recusa.querySelector('a')?.getAttribute('href')).toBe(
       `https://developers.example.test/erros/${CODIGO}`,
     );
-    expect(seletorDa(raiz).getAttribute('aria-invalid')).toBe('true');
+    expect(seletorDa(elementoDaTela).getAttribute('aria-invalid')).toBe('true');
   });
 });

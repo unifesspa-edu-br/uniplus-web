@@ -21,7 +21,7 @@ const BANCAS = [
 ] as TipoBancaDto[];
 
 describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', () => {
-  let raiz: ContextoDoCronograma['raiz'];
+  let elementoDaTela: ContextoDoCronograma['elementoDaTela'];
   let expansao: ContextoDoCronograma['expansao'];
   let edicao: ContextoDoCronograma['edicao'];
   let cronograma: ContextoDoCronograma['cronograma'];
@@ -32,12 +32,21 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
   let comEtapasEmFases: ContextoDoCronograma['comEtapasEmFases'];
 
   usarCronograma((tela) => {
-    ({ raiz, expansao, edicao, cronograma, store, detectar, nativo, comFases, comEtapasEmFases } =
-      tela);
+    ({
+      elementoDaTela,
+      expansao,
+      edicao,
+      cronograma,
+      store,
+      detectar,
+      nativo,
+      comFases,
+      comEtapasEmFases,
+    } = tela);
   });
 
   function etapaAberta(): FormGroup<EtapaForm> {
-    raiz.injector.get(CatalogoDeBancas).bancas.set(BANCAS);
+    elementoDaTela.injector.get(CatalogoDeBancas).bancas.set(BANCAS);
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);
     expansao.alternarFase(0);
@@ -137,7 +146,7 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
     const etapa = etapaAberta();
     acrescentarBancaNaEtapa(edicao, etapa, ID_BANCA_HETERO);
     declararRegraNaBanca(edicao, etapa, 'banca-1', comRegra({ criterio: '' }));
-    raiz.injector.get(CatalogoDeBancas).bancas.set([]);
+    elementoDaTela.injector.get(CatalogoDeBancas).bancas.set([]);
     detectar();
 
     expect(nativo.textContent).toContain('Nenhum tipo de banca no cadastro.');
@@ -149,7 +158,7 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
     const etapa = etapaAberta();
     acrescentarBancaNaEtapa(edicao, etapa, ID_BANCA_HETERO);
     declararRegraNaBanca(edicao, etapa, 'banca-1', comRegra({ criterio: '' }));
-    raiz.injector.get(CatalogoDeBancas).erro.set('Não foi possível carregar as bancas.');
+    elementoDaTela.injector.get(CatalogoDeBancas).erro.set('Não foi possível carregar as bancas.');
     detectar();
 
     expect(nativo.querySelector('ui-alert .alert__title')?.textContent).toBe(

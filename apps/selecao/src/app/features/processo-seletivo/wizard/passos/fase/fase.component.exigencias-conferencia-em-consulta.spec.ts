@@ -116,10 +116,10 @@ describe('FasePassoComponent', () => {
         detectar();
         segunda.detectChanges();
 
-        const referencias = (raiz: HTMLElement) => {
-          const filtro = raiz.querySelector('.doc-conferencia__filtro select');
-          const rotulo = raiz.querySelector('.doc-conferencia__filtro label');
-          const alternar = raiz.querySelector('.doc-conferencia__alternar');
+        const referencias = (elementoDaTela: HTMLElement) => {
+          const filtro = elementoDaTela.querySelector('.doc-conferencia__filtro select');
+          const rotulo = elementoDaTela.querySelector('.doc-conferencia__filtro label');
+          const alternar = elementoDaTela.querySelector('.doc-conferencia__alternar');
           const alvos = [
             rotulo?.getAttribute('for'),
             filtro?.getAttribute('aria-describedby'),
@@ -127,11 +127,13 @@ describe('FasePassoComponent', () => {
           ];
           for (const alvo of alvos) {
             expect(alvo, 'a referência aponta para dentro da própria fase').toBeTruthy();
-            expect(raiz.querySelector(`[id="${alvo}"]`)).not.toBeNull();
+            expect(elementoDaTela.querySelector(`[id="${alvo}"]`)).not.toBeNull();
           }
           // Só os ids do bloco da conferência: os dos campos do documento ficam fora desta verificação.
           return Array.from(
-            raiz.querySelectorAll('.doc-conferencia__filtro [id], .doc-conferencia__campos[id]'),
+            elementoDaTela.querySelectorAll(
+              '.doc-conferencia__filtro [id], .doc-conferencia__campos[id]',
+            ),
           ).map((elemento) => elemento.id);
         };
 

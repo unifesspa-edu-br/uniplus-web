@@ -9,7 +9,7 @@ import { usarFase, type ContextoDaFase, ID_RG, umaNorma } from './fase-passo.tes
 describe('FasePassoComponent', () => {
   let detectar: ContextoDaFase['detectar'];
   let nativo: ContextoDaFase['nativo'];
-  let raiz: ContextoDaFase['raiz'];
+  let elementoDaTela: ContextoDaFase['elementoDaTela'];
   let comCronograma: ContextoDaFase['comCronograma'];
   let exigencias: ContextoDaFase['exigencias'];
   let gatilho: ContextoDaFase['gatilho'];
@@ -24,7 +24,7 @@ describe('FasePassoComponent', () => {
     ({
       detectar,
       nativo,
-      raiz,
+      elementoDaTela,
       comCronograma,
       exigencias,
       gatilho,
@@ -197,7 +197,7 @@ describe('FasePassoComponent', () => {
           hashSha256: 'cd'.repeat(32),
         };
 
-        const envio = raiz.query(By.directive(ModeloDaExigenciaComponent));
+        const envio = elementoDaTela.query(By.directive(ModeloDaExigenciaComponent));
         (envio.componentInstance as ModeloDaExigenciaComponent).modeloChange.emit(modelo);
 
         expect(exigencias().exigenciaDoDocumento(ID_CPF).modelo).toEqual(modelo);

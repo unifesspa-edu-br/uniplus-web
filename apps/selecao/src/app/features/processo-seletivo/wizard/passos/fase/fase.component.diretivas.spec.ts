@@ -34,11 +34,11 @@ describe('campos de texto das seções da fase', () => {
         ],
       }),
     );
-    passo.raiz.injector.get(ExigenciasDaFaseStore).alternarExigencia(ID_CPF, true);
-    passo.raiz
+    passo.elementoDaTela.injector.get(ExigenciasDaFaseStore).alternarExigencia(ID_CPF, true);
+    passo.elementoDaTela
       .query(By.directive(DocumentosDaFaseComponent))
       .componentInstance.alternarEdicao(
-        identificadorDaRegra(passo.raiz.injector.get(ExigenciasDaFaseStore), ID_CPF),
+        identificadorDaRegra(passo.elementoDaTela.injector.get(ExigenciasDaFaseStore), ID_CPF),
         true,
       );
     passo.detectar();
@@ -57,11 +57,11 @@ describe('campos de texto das seções da fase', () => {
     ['editor da exigência', 'doc-normas'],
   ])('a seção de %s aplica a ValorLegivelDirective ao campo %s', (_secao, sufixo) => {
     const identificador = identificadorDaRegra(
-      passo.raiz.injector.get(ExigenciasDaFaseStore),
+      passo.elementoDaTela.injector.get(ExigenciasDaFaseStore),
       ID_CPF,
     );
     const nome = sufixo === 'doc-normas' ? `${sufixo}-${identificador}-base-0-ref` : sufixo;
-    const campo = passo.raiz.query(By.css(`#fase-AVALIACAO-${nome}`));
+    const campo = passo.elementoDaTela.query(By.css(`#fase-AVALIACAO-${nome}`));
 
     expect(campo, sufixo).not.toBeNull();
     expect(campo.injector.get(ValorLegivelDirective, null)).not.toBeNull();

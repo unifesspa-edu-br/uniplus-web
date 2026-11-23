@@ -176,7 +176,7 @@ export class ContextoDoCronograma {
   private readonly fixture = TestBed.createComponent(CronogramaPassoComponent);
   private readonly injetor = this.fixture.debugElement.injector;
   readonly componente = this.fixture.componentInstance;
-  readonly raiz = this.fixture.debugElement;
+  readonly elementoDaTela = this.fixture.debugElement;
   readonly nativo = this.fixture.nativeElement as HTMLElement;
   readonly expansao = this.injetor.get(ExpansaoDoCronograma);
   readonly leitura = this.injetor.get(LeituraDaLinhaDoTempo);
@@ -201,7 +201,7 @@ export class ContextoDoCronograma {
   readonly sair = (): void => this.fixture.destroy();
 
   readonly convencao = (): ConvencaoDeContagemComponent =>
-    this.raiz.query(By.directive(ConvencaoDeContagemComponent)).componentInstance;
+    this.elementoDaTela.query(By.directive(ConvencaoDeContagemComponent)).componentInstance;
 
   /** Deixa a cadeia de `await` do comando avançar antes da próxima expectativa. */
   readonly proximoPasso = (): Promise<unknown> => new Promise((resolve) => setTimeout(resolve, 0));

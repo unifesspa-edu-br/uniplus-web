@@ -30,9 +30,9 @@ describe('RegraDeRecursoDaFaseComponent: recurso que se encerra na 1ª instânci
   let cadastro: CatalogoDeBancas;
 
   beforeEach(async () => {
-    let raiz;
-    ({ controller, nativo, comCronograma, detectar, raiz } = await montarFase());
-    cadastro = raiz.injector.get(CatalogoDeBancas);
+    let elementoDaTela;
+    ({ controller, nativo, comCronograma, detectar, elementoDaTela } = await montarFase());
+    cadastro = elementoDaTela.injector.get(CatalogoDeBancas);
   });
 
   afterEach(() => controller.verify());

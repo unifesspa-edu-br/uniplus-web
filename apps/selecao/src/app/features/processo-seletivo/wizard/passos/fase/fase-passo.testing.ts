@@ -40,7 +40,7 @@ export class ContextoDaFase {
   readonly controller: FaseMontada['controller'];
   readonly detectar: FaseMontada['detectar'];
   readonly nativo: FaseMontada['nativo'];
-  readonly raiz: FaseMontada['raiz'];
+  readonly elementoDaTela: FaseMontada['elementoDaTela'];
   readonly atenderCatalogos: FaseMontada['atenderCatalogos'];
   readonly comCronograma: FaseMontada['comCronograma'];
   readonly selecionado: FaseMontada['selecionado'];
@@ -53,7 +53,7 @@ export class ContextoDaFase {
       controller: this.controller,
       detectar: this.detectar,
       nativo: this.nativo,
-      raiz: this.raiz,
+      elementoDaTela: this.elementoDaTela,
       atenderCatalogos: this.atenderCatalogos,
       comCronograma: this.comCronograma,
       selecionado: this.selecionado,
@@ -61,21 +61,22 @@ export class ContextoDaFase {
     } = montada);
   }
 
-  readonly exigencias = () => this.raiz.injector.get(ExigenciasDaFaseStore);
-  readonly gatilho = () => this.raiz.injector.get(GatilhoDasExigenciasStore);
+  readonly exigencias = () => this.elementoDaTela.injector.get(ExigenciasDaFaseStore);
+  readonly gatilho = () => this.elementoDaTela.injector.get(GatilhoDasExigenciasStore);
   /** As escritas do editor e dos eixos não dependem de a linha estar aberta na tela. */
   readonly noPasso = <T>(classe: new () => T): T =>
-    runInInjectionContext(this.raiz.injector, () => new classe());
+    runInInjectionContext(this.elementoDaTela.injector, () => new classe());
   readonly editor = () => this.noPasso(EditorDaExigenciaComponent);
   readonly eixoEtapa = () => this.noPasso(EixoEtapaComponent);
   readonly eixoFormulario = () => this.noPasso(EixoFormularioComponent);
   readonly documentos = () =>
-    this.raiz.query(By.directive(DocumentosDaFaseComponent))
+    this.elementoDaTela.query(By.directive(DocumentosDaFaseComponent))
       .componentInstance as DocumentosDaFaseComponent;
   readonly bancas = () =>
-    this.raiz.query(By.directive(BancasDaFaseComponent)).componentInstance as BancasDaFaseComponent;
+    this.elementoDaTela.query(By.directive(BancasDaFaseComponent))
+      .componentInstance as BancasDaFaseComponent;
   readonly publicacoes = () =>
-    this.raiz.query(By.directive(PublicacoesDaFaseComponent))
+    this.elementoDaTela.query(By.directive(PublicacoesDaFaseComponent))
       .componentInstance as PublicacoesDaFaseComponent;
 
   readonly linhas = () => Array.from(this.nativo.querySelectorAll('.doc-conferencia__linha'));

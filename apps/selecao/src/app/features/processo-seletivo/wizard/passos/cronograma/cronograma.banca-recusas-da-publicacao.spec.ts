@@ -42,7 +42,7 @@ describe('CronogramaPassoComponent: recusas da publicação às bancas', () => {
   });
 
   function comBancasNaEtapa(...ids: string[]): void {
-    tela.raiz.injector.get(CatalogoDeBancas).bancas.set(BANCAS);
+    tela.elementoDaTela.injector.get(CatalogoDeBancas).bancas.set(BANCAS);
     tela.comFases(ID_AVALIACAO);
     tela.comEtapasEmFases(['AVALIACAO']);
     const etapa = tela.cronograma.etapas.at(0);
@@ -53,7 +53,7 @@ describe('CronogramaPassoComponent: recusas da publicação às bancas', () => {
     tela.detectar();
   }
   function comBancasNaFase(...ids: string[]): void {
-    tela.raiz.injector.get(CatalogoDeBancas).bancas.set(BANCAS);
+    tela.elementoDaTela.injector.get(CatalogoDeBancas).bancas.set(BANCAS);
     tela.comFases(ID_AVALIACAO);
     tela.comUmaEtapa();
     const [fase] = tela.store.draft().cronograma.fases;

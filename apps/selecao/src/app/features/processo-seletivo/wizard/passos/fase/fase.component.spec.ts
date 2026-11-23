@@ -17,7 +17,7 @@ describe('FasePassoComponent', () => {
   let store: ContextoDaFase['store'];
   let detectar: ContextoDaFase['detectar'];
   let nativo: ContextoDaFase['nativo'];
-  let raiz: ContextoDaFase['raiz'];
+  let elementoDaTela: ContextoDaFase['elementoDaTela'];
   let comCronograma: ContextoDaFase['comCronograma'];
   let abrirFase: ContextoDaFase['abrirFase'];
   let selecionado: ContextoDaFase['selecionado'];
@@ -29,7 +29,7 @@ describe('FasePassoComponent', () => {
       store,
       detectar,
       nativo,
-      raiz,
+      elementoDaTela,
       comCronograma,
       abrirFase,
       selecionado,
@@ -45,7 +45,9 @@ describe('FasePassoComponent', () => {
     abrirFase(ID_HOMOLOGACAO);
 
     expect(componente.faseAberta()).toBe(ID_HOMOLOGACAO);
-    expect(raiz.injector.get(FaseEmEdicao).nomeDaFaseAberta()).toBe('Homologação das inscrições');
+    expect(elementoDaTela.injector.get(FaseEmEdicao).nomeDaFaseAberta()).toBe(
+      'Homologação das inscrições',
+    );
   });
 
   it('espelha no formulário a fase que chega ao rascunho', () => {
@@ -275,7 +277,7 @@ describe('FasePassoComponent', () => {
         }),
       );
 
-      expect(raiz.injector.get(FaseEmEdicao).ancorasPossiveis()).toEqual([
+      expect(elementoDaTela.injector.get(FaseEmEdicao).ancorasPossiveis()).toEqual([
         { codigo: 'GABARITO_PRELIMINAR', nome: 'Gabarito preliminar' },
       ]);
     });

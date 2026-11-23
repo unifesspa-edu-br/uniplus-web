@@ -37,7 +37,7 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da fase', () 
   });
 
   function comBancas(...chaves: string[]): void {
-    tela.raiz.injector.get(CatalogoDeBancas).bancas.set(BANCAS);
+    tela.elementoDaTela.injector.get(CatalogoDeBancas).bancas.set(BANCAS);
     tela.comFases(ID_AVALIACAO);
     tela.comUmaEtapa();
     noRascunho(...chaves);
@@ -199,7 +199,7 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da fase', () 
   it('calcula as recusas das bancas uma vez por mudança, e não a cada leitura da tela', async () => {
     comBancas('banca-1', 'banca-2');
     await recusar('fases[0].bancasRequeridas[1].regraDeDeliberacao.quorum');
-    const secao = tela.raiz.query(By.directive(BancasDaFaseComponent));
+    const secao = tela.elementoDaTela.query(By.directive(BancasDaFaseComponent));
     const calculo = vi.spyOn(secao.injector.get(FaseEmEdicao), 'recusasDasBancas');
 
     noRascunho('banca-1', 'banca-2', 'banca-3');
