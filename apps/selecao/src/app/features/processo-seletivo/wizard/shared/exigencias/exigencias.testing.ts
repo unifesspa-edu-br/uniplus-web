@@ -3,6 +3,7 @@ import type {
   DocumentoExigidoDto,
   RegraDeComprovacaoDto,
   ProcessoSeletivoDto,
+  RequisitosDoDocumentoDtoProvisorio,
 } from '@uniplus/shared-data/selecao';
 
 import { regrasDeComprovacaoParaEnvio } from './gravacao-das-exigencias';
@@ -103,7 +104,8 @@ export interface AlteracoesDoDocumentoDaApi {
   readonly finalidade?: string | null;
   readonly aplicabilidade?: DocumentoExigidoDto['aplicabilidade'];
   readonly indeferimento?: Partial<DocumentoExigidoDto['indeferimento']>;
-  readonly requisitos?: Partial<DocumentoExigidoDto['requisitos']>;
+  readonly requisitos?: Partial<DocumentoExigidoDto['requisitos']> &
+    RequisitosDoDocumentoDtoProvisorio;
 }
 
 export function exigenciaDaApi(alteracoes: AlteracoesDoDocumentoDaApi = {}): RegraDeComprovacaoDto {
@@ -145,10 +147,11 @@ const INDEFERIMENTO_PADRAO: DocumentoExigidoDto['indeferimento'] = {
   basesLegais: [],
 };
 
-const REQUISITOS_PADRAO: DocumentoExigidoDto['requisitos'] = {
+const REQUISITOS_PADRAO = {
   formatosPermitidos: 'QUALQUER',
   tamanhoMaximoBytes: null,
-  idadeMaximaEmissao: null,
+  prazoDeEmissao: null,
+  validade: null,
   modelo: null,
 };
 
@@ -156,14 +159,21 @@ function documentoDaApi(alteracoes: AlteracoesDoDocumentoDaApi): DocumentoExigid
   return {
     id: 'doc-1',
     tipoDocumento: TIPO_RG,
-    momento: {
-      faseId: alteracoes.faseId ?? ID_HABILITACAO,
-      etapaId: alteracoes.etapaId ?? null,
-      finalidade: alteracoes.finalidade ?? null,
-    },
+    momento: momentoDaApi(alteracoes),
     aplicabilidade: alteracoes.aplicabilidade ?? { tipo: 'GERAL', condicoes: [] },
     indeferimento: { ...INDEFERIMENTO_PADRAO, ...alteracoes.indeferimento },
-    requisitos: { ...REQUISITOS_PADRAO, ...alteracoes.requisitos },
+    requisitos: {
+      ...REQUISITOS_PADRAO,
+      ...alteracoes.requisitos,
+    } as unknown as DocumentoExigidoDto['requisitos'],
     fatosComprovados: alteracoes.fatosComprovados ?? [],
+  };
+}
+
+function momentoDaApi(alteracoes: AlteracoesDoDocumentoDaApi): DocumentoExigidoDto['momento'] {
+  return {
+    faseId: alteracoes.faseId ?? ID_HABILITACAO,
+    etapaId: alteracoes.etapaId ?? null,
+    finalidade: alteracoes.finalidade ?? null,
   };
 }

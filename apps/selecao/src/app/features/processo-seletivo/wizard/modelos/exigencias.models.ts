@@ -34,18 +34,25 @@ export interface CondicaoGatilhoConfig {
   readonly valor: string;
 }
 
-/**
- * A idade máxima de emissão aceita para o documento. A fase de referência entra por código: o id da fase
- * não sobrevive a uma gravação de cronograma que a remova e reacrescente, e reenviá-lo faria o
- * servidor recusar uma exigência que a tela nem mostra. O id é resolvido no envio.
- */
-export interface IdadeMaximaEmissaoConfig {
+export interface ReferenciaDoDocumento {
+  readonly tipo: string | null;
+  readonly data: string | null;
+  readonly faseCodigo: string | null;
+  readonly faseIdLido?: string | null;
+}
+
+export interface PrazoDeEmissao {
+  readonly escolha: string;
   readonly valor: number | null;
   readonly unidade: string | null;
-  readonly referenciaTipo: string | null;
-  readonly data: string | null;
-  readonly referenciaFaseCodigo: string | null;
-  readonly referenciaFaseIdLido?: string | null;
+  readonly referencia: ReferenciaDoDocumento | null;
+  readonly efeitoForaDoPrazo: string | null;
+}
+
+export interface ValidadeDoDocumento {
+  readonly escolha: string;
+  readonly referencia: ReferenciaDoDocumento | null;
+  readonly efeitoDoVencimento: string | null;
 }
 
 /** Aplicabilidade, obrigatoriedade, consequências e normas da exigência de documento. */
@@ -69,7 +76,8 @@ export type FormatosAceitos =
 
 /** Restrições e modelo do documento apresentado. */
 export interface CriteriosDoComprovante {
-  readonly idadeMaximaEmissao: IdadeMaximaEmissaoConfig | null;
+  readonly prazoDeEmissao: PrazoDeEmissao | null;
+  readonly validade: ValidadeDoDocumento | null;
   /** O contrato aceita a string QUALQUER ou uma lista de formatos declarados. */
   readonly formatosPermitidos: FormatosAceitos;
   readonly tamanhoMaximoBytes: number | null;
@@ -81,7 +89,7 @@ export interface CriteriosDoComprovante {
  * A exigência de um documento numa fase, a unidade que o contrato guarda: um registro por
  * (documento, fase, etapa). Um registro por tipo de documento achataria, na releitura, o mesmo
  * documento exigido em duas fases, e a gravação seguinte reescreveria a segunda com o valor da
- * primeira. A fase entra por CÓDIGO, como na idade máxima.
+ * primeira. A fase entra por CÓDIGO, para resolução na gravação.
  */
 export interface ExigenciaDeDocumento extends RegraDaExigenciaDeDocumento, CriteriosDoComprovante {
   readonly tipoDocumentoId: string;

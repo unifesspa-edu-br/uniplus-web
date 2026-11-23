@@ -8,6 +8,8 @@ import {
 import type {
   FormaDeComprovacaoCodigo,
   RegraDeComprovacaoInformada,
+  ItemDocumentoExigidoInput,
+  RequisitosDoDocumentoInputProvisorio,
 } from '@uniplus/shared-data/selecao';
 import { rascunhoParaConfiguracao } from '../fixtures/cenario-da-projecao';
 
@@ -25,8 +27,15 @@ const BASES_LEGAIS = [
     observacao: null,
   },
 ];
-type RegraNoTransporte = Omit<RegraDeComprovacaoInformada, 'forma'> & {
+type RegraNoTransporte = Omit<RegraDeComprovacaoInformada, 'forma' | 'documento'> & {
   forma: `${FormaDeComprovacaoCodigo}`;
+  documento: Omit<ItemDocumentoExigidoInput, 'requisitos'> & {
+    requisitos: Pick<
+      NonNullable<ItemDocumentoExigidoInput['requisitos']>,
+      'formatosPermitidos' | 'tamanhoMaximoBytes' | 'modelo'
+    > &
+      RequisitosDoDocumentoInputProvisorio;
+  };
 };
 
 test.describe('Configuração do processo com item de catálogo pendente', () => {
@@ -81,7 +90,6 @@ test.describe('Configuração do processo com item de catálogo pendente', () =>
               requisitos: {
                 formatosPermitidos: 'QUALQUER',
                 tamanhoMaximoBytes: null,
-                idadeMaximaEmissao: null,
                 modelo: null,
               },
             },

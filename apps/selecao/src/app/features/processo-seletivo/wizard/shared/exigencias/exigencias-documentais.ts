@@ -77,7 +77,8 @@ function regraInicialDaExigencia(): RegraDaExigenciaDeDocumento {
 
 function criteriosIniciaisDoComprovante(restricao?: RestricaoDeArquivo): CriteriosDoComprovante {
   return {
-    idadeMaximaEmissao: null,
+    prazoDeEmissao: null,
+    validade: null,
     ...limitesDoArquivo(restricao),
     modelo: null,
   };

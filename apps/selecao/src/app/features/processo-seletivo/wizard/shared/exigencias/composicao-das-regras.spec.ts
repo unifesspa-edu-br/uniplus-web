@@ -17,17 +17,15 @@ describe('composição das regras de comprovação', () => {
   });
 
   it('preserva a referência de documento de outra fase', () => {
-    const idadeMaximaEmissao = {
+    const prazoDeEmissao = {
+      escolha: 'comPrazo',
       valor: 90,
-      unidade: 'DIAS' as const,
-      referenciaTipo: 'INICIO_FASE' as const,
-      data: null,
-      referenciaFaseCodigo: 'ISENCAO',
+      unidade: 'dias',
+      referencia: { tipo: 'inicioDaFase', data: null, faseCodigo: 'ISENCAO' },
+      efeitoForaDoPrazo: 'recusarDocumento',
     };
-    const antes = rascunho(exigencia({ faseCodigo: 'HABILITACAO', idadeMaximaEmissao }));
-    expect(todasAsExigencias(semAFase(antes, 'ISENCAO'))[0].idadeMaximaEmissao).toEqual(
-      idadeMaximaEmissao,
-    );
+    const antes = rascunho(exigencia({ faseCodigo: 'HABILITACAO', prazoDeEmissao }));
+    expect(todasAsExigencias(semAFase(antes, 'ISENCAO'))[0].prazoDeEmissao).toEqual(prazoDeEmissao);
   });
 
   it('semAEtapa devolve o documento à fase inteira', () => {

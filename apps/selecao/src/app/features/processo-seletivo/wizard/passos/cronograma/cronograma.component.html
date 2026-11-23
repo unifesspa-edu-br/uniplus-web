@@ -104,7 +104,8 @@
                     }
                   </ul>
                   <p [attr.id]="'cr-orientacao-remocao-' + item.indice">
-                    Troque a referência do prazo destes documentos antes de remover a fase.
+                    Troque a referência do prazo ou da validade destes documentos antes de remover a
+                    fase.
                   </p>
                 }
               }
@@ -184,7 +185,7 @@
                 <!--
                 A etapa é filha da fase no domínio, mas no formulário continua irmã de
                 `fases`: um `formArrayName` aninhado seria procurado dentro do grupo da
-                fase, que não a contém. Por isso a ligação é por referência, e o recorte
+                fase, que não a contém. Por isso a ligação é por referência, e a filtragem
                 por fase acontece em `etapasDaFase`.
               -->
                 <sel-etapas-da-fase [fase]="item"></sel-etapas-da-fase>

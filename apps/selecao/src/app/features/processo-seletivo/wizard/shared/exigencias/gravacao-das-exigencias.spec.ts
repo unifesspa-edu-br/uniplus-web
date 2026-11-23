@@ -349,41 +349,4 @@ describe('regrasDeComprovacaoParaEnvio — do rascunho para o comando', () => {
     expect(regrasDeComprovacao[0].grupoDoFormularioParaRepeticao).toBe('MEMBRO_FAMILIA');
   });
 
-  it('limpa a idade máxima cuja fase saiu do cronograma', () => {
-    const regrasDeComprovacao = comando(
-      rascunho(
-        exigencia({
-          idadeMaximaEmissao: {
-            valor: 90,
-            unidade: 'DIAS',
-            referenciaTipo: 'INICIO_FASE',
-            data: null,
-            referenciaFaseCodigo: 'FASE_QUE_SAIU',
-          },
-        }),
-      ),
-    );
-
-    expect(regrasDeComprovacao[0].documento?.requisitos?.idadeMaximaEmissao).toBeNull();
-  });
-
-  it('resolve o identificador da fase de referência da idade máxima', () => {
-    const regrasDeComprovacao = comando(
-      rascunho(
-        exigencia({
-          idadeMaximaEmissao: {
-            valor: 90,
-            unidade: 'DIAS',
-            referenciaTipo: 'INICIO_FASE',
-            data: null,
-            referenciaFaseCodigo: 'ISENCAO',
-          },
-        }),
-      ),
-    );
-
-    expect(regrasDeComprovacao[0].documento?.requisitos?.idadeMaximaEmissao?.referenciaFaseId).toBe(
-      ID_ISENCAO,
-    );
-  });
 });

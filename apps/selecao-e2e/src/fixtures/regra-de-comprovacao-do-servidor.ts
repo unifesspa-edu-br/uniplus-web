@@ -26,10 +26,11 @@ const PROTECAO_DO_DOCUMENTO: DocumentoDaExigencia['tipoDocumento']['protecao'] =
   hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
 };
 
-const REQUISITOS_DO_ARQUIVO: DocumentoDaExigencia['requisitos'] = {
+const REQUISITOS_DO_ARQUIVO = {
   formatosPermitidos: ['pdf'],
   tamanhoMaximoBytes: 10485760,
-  idadeMaximaEmissao: null,
+  prazoDeEmissao: null,
+  validade: null,
   modelo: null,
 };
 
@@ -59,7 +60,7 @@ function documentoDaRegra(regra: DocumentoDaRegra): DocumentoDaExigencia {
     momento: { faseId: regra.faseId, etapaId: null, finalidade: null },
     aplicabilidade: aplicabilidadeDoDocumento(regra),
     indeferimento: indeferimentoDoDocumento(regra),
-    requisitos: REQUISITOS_DO_ARQUIVO,
+    requisitos: REQUISITOS_DO_ARQUIVO as unknown as DocumentoDaExigencia['requisitos'],
     fatosComprovados: [],
   };
 }
