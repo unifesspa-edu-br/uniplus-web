@@ -36,7 +36,7 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da etapa', ()
   });
 
   function comDuasBancasDoMesmoTipo(): FormGroup<EtapaForm> {
-    tela.raiz.injector.get(CatalogoDeBancas).bancas.set(BANCAS);
+    tela.elementoDaTela.injector.get(CatalogoDeBancas).bancas.set(BANCAS);
     tela.comFases(ID_AVALIACAO);
     tela.comEtapasEmFases(['AVALIACAO']);
     tela.expansao.alternarFase(0);
@@ -264,7 +264,7 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da etapa', ()
     const etapa = comDuasBancasDoMesmoTipo();
     await recusar('etapas[0].bancas[1].regraDeDeliberacao.quorum');
     const calculo = vi.spyOn(
-      tela.raiz.injector.get(RecusasDoServidorNasEtapas),
+      tela.elementoDaTela.injector.get(RecusasDoServidorNasEtapas),
       'recusasDasBancas',
     );
 

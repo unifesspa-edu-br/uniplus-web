@@ -39,7 +39,7 @@ describe.each(['edicao', 'consulta', 'bloqueado'] as const)('cobertura na tela e
     describe.each([false, true])('com recusa: %s', (comRecusa) => {
       it.each(FORMATOS)('mantém procedimentos e avisos no formato $formato', async (formato) => {
         const { procedimentos, regras } = formato;
-        const { raiz } = await montarEdicao({
+        const { elementoDaTela } = await montarEdicao({
           modo,
           temJanela,
           tiposDeclarados: [NOTA, HOMOLOGACAO],
@@ -51,18 +51,23 @@ describe.each(['edicao', 'consulta', 'bloqueado'] as const)('cobertura na tela e
           [NOTA, HOMOLOGACAO],
           procedimentos,
         );
-        const avisos = Array.from(raiz.querySelectorAll('.alert--warning'), (aviso) => aviso.id);
-        expect(raiz.hidden).toBe(false);
-        expect(raiz.querySelectorAll('sel-procedimento-do-tipo')).toHaveLength(2);
+        const avisos = Array.from(
+          elementoDaTela.querySelectorAll('.alert--warning'),
+          (aviso) => aviso.id,
+        );
+        expect(elementoDaTela.hidden).toBe(false);
+        expect(elementoDaTela.querySelectorAll('sel-procedimento-do-tipo')).toHaveLength(2);
         expect(avisos).toEqual(faltantes.map((tipo) => `proc-${tipo}-falta`));
-        for (const regra of regras) expect(raiz.textContent).toContain(regra);
-        expect(raiz.textContent?.includes(RECUSA.codigo)).toBe(comRecusa);
+        for (const regra of regras) expect(elementoDaTela.textContent).toContain(regra);
+        expect(elementoDaTela.textContent?.includes(RECUSA.codigo)).toBe(comRecusa);
         if (modo === 'consulta') {
-          expect(raiz.querySelector('input, select, button')).toBeNull();
-          expect(raiz.textContent).not.toContain('Procedimento não declarado');
+          expect(elementoDaTela.querySelector('input, select, button')).toBeNull();
+          expect(elementoDaTela.textContent).not.toContain('Procedimento não declarado');
         }
         if (modo === 'bloqueado' || !temJanela) {
-          expect(raiz.querySelector('select:not(:disabled), input:not(:disabled)')).toBeNull();
+          expect(
+            elementoDaTela.querySelector('select:not(:disabled), input:not(:disabled)'),
+          ).toBeNull();
         }
       });
     });
@@ -72,24 +77,27 @@ describe.each(['edicao', 'consulta', 'bloqueado'] as const)('cobertura na tela e
 describe('ligação da apresentação à função pura de cobertura', () => {
   it('apresenta somente o resultado recebido da função, sem recalcular no componente', async () => {
     const calcular = vi.spyOn(cobertura, 'tiposSemProcedimento').mockReturnValue([HOMOLOGACAO]);
-    const { raiz } = await montarEdicao({ tiposDeclarados: [NOTA, HOMOLOGACAO] });
+    const { elementoDaTela } = await montarEdicao({ tiposDeclarados: [NOTA, HOMOLOGACAO] });
     expect(calcular).toHaveBeenCalledExactlyOnceWith(true, [NOTA, HOMOLOGACAO], []);
-    expect(raiz.querySelector(`#proc-${NOTA}-falta`)).toBeNull();
-    expect(raiz.querySelector(`#proc-${HOMOLOGACAO}-falta`)).not.toBeNull();
+    expect(elementoDaTela.querySelector(`#proc-${NOTA}-falta`)).toBeNull();
+    expect(elementoDaTela.querySelector(`#proc-${HOMOLOGACAO}-falta`)).not.toBeNull();
   });
 
   it('atualiza a cobertura quando mudam os procedimentos, os tipos ou o período', async () => {
-    const { fixture, raiz } = await montarEdicao({ modo: 'consulta', tiposDeclarados: [NOTA] });
-    expect(raiz.querySelectorAll('.alert--warning')).toHaveLength(1);
+    const { fixture, elementoDaTela } = await montarEdicao({
+      modo: 'consulta',
+      tiposDeclarados: [NOTA],
+    });
+    expect(elementoDaTela.querySelectorAll('.alert--warning')).toHaveLength(1);
     for (const procedimentos of [[ANTERIOR], [DOCUMENTAL], [ANTERIOR, DOCUMENTAL]]) {
       await atualizar(fixture, { procedimentos });
-      expect(raiz.querySelector('.alert--warning')).toBeNull();
+      expect(elementoDaTela.querySelector('.alert--warning')).toBeNull();
     }
     await atualizar(fixture, { procedimentos: [] });
-    expect(raiz.querySelectorAll('.alert--warning')).toHaveLength(1);
+    expect(elementoDaTela.querySelectorAll('.alert--warning')).toHaveLength(1);
     await atualizar(fixture, { tiposDeclarados: [NOTA, HOMOLOGACAO] });
-    expect(raiz.querySelectorAll('.alert--warning')).toHaveLength(2);
+    expect(elementoDaTela.querySelectorAll('.alert--warning')).toHaveLength(2);
     await atualizar(fixture, { temJanela: false });
-    expect(raiz.querySelector('.alert--warning')).toBeNull();
+    expect(elementoDaTela.querySelector('.alert--warning')).toBeNull();
   });
 });

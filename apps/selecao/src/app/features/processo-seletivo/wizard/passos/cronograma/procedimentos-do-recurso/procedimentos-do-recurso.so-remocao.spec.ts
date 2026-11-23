@@ -34,8 +34,8 @@ describe('ProcedimentosDoRecursoComponent em edição: a linha que só se remove
   };
 
   it('não troca a regra do procedimento que o lugar deixou de oferecer, e ainda o remove', async () => {
-    const { raiz, eventos } = await montarEdicao(comItemPerdido);
-    const seletor = seletorDa(raiz, NOTA, 1);
+    const { elementoDaTela, eventos } = await montarEdicao(comItemPerdido);
+    const seletor = seletorDa(elementoDaTela, NOTA, 1);
 
     escolher(seletor, MONOCRATICO);
     removerDaLinha(seletor).click();
@@ -50,8 +50,8 @@ describe('ProcedimentosDoRecursoComponent em edição: a linha que só se remove
   });
 
   it('não troca a regra do procedimento de um tipo que o lugar deixou de declarar, e ainda o remove', async () => {
-    const { raiz, eventos } = await montarEdicao(comTipoNaoDeclarado);
-    const seletor = seletorDa(raiz, NOTA, 0);
+    const { elementoDaTela, eventos } = await montarEdicao(comTipoNaoDeclarado);
+    const seletor = seletorDa(elementoDaTela, NOTA, 0);
 
     escolher(seletor, MONOCRATICO);
     removerDaLinha(seletor).click();
@@ -63,45 +63,45 @@ describe('ProcedimentosDoRecursoComponent em edição: a linha que só se remove
   });
 
   it('mantém o seletor das linhas oferecidas habilitado ao lado da que só se remove', async () => {
-    const { raiz, eventos } = await montarEdicao(comItemPerdido);
+    const { elementoDaTela, eventos } = await montarEdicao(comItemPerdido);
 
-    escolher(seletorDa(raiz, NOTA, 0), MONOCRATICO);
+    escolher(seletorDa(elementoDaTela, NOTA, 0), MONOCRATICO);
 
-    expect(seletorDa(raiz, NOTA, 0).disabled).toBe(false);
+    expect(seletorDa(elementoDaTela, NOTA, 0).disabled).toBe(false);
     expect(eventos.trocarRegra).toHaveBeenCalledOnce();
   });
 
   it('liga o seletor desabilitado à explicação de que o item deixou de existir', async () => {
-    const { raiz } = await montarEdicao(comItemPerdido);
+    const { elementoDaTela } = await montarEdicao(comItemPerdido);
 
-    expect(descricaoDe(seletorDa(raiz, NOTA, 1)).join(' ')).toContain(
+    expect(descricaoDe(seletorDa(elementoDaTela, NOTA, 1)).join(' ')).toContain(
       'O item contestado não existe mais nesta etapa. Remova o procedimento.',
     );
   });
 
   it('liga o seletor parado ao aviso do tipo que o lugar deixou de declarar', async () => {
-    const { raiz } = await montarEdicao(comTipoNaoDeclarado);
+    const { elementoDaTela } = await montarEdicao(comTipoNaoDeclarado);
 
-    expect(descricaoDe(seletorDa(raiz, NOTA, 0)).join(' ')).toContain(
+    expect(descricaoDe(seletorDa(elementoDaTela, NOTA, 0)).join(' ')).toContain(
       'não está mais na lista de decisões',
     );
   });
 
   it('desabilita também a remoção quando a edição está bloqueada', async () => {
-    const { raiz } = await montarEdicao({ ...comTipoNaoDeclarado, modo: 'bloqueado' });
+    const { elementoDaTela } = await montarEdicao({ ...comTipoNaoDeclarado, modo: 'bloqueado' });
 
-    expect(removerDaLinha(seletorDa(raiz, NOTA, 0)).disabled).toBe(true);
+    expect(removerDaLinha(seletorDa(elementoDaTela, NOTA, 0)).disabled).toBe(true);
   });
 
   it('permite remover sem janela, sem oferecer novas escolhas', async () => {
-    const { raiz, eventos } = await montarEdicao({
+    const { elementoDaTela, eventos } = await montarEdicao({
       temJanela: false,
       tiposDeclarados: [NOTA, HOMOLOGACAO],
       procedimentos: [daNota()],
     });
-    const seletor = seletorDa(raiz, NOTA, 0);
-    expect(raiz.querySelectorAll('select')).toHaveLength(1);
-    expect(raiz.querySelectorAll('input[type=radio]')).toHaveLength(0);
+    const seletor = seletorDa(elementoDaTela, NOTA, 0);
+    expect(elementoDaTela.querySelectorAll('select')).toHaveLength(1);
+    expect(elementoDaTela.querySelectorAll('input[type=radio]')).toHaveLength(0);
     expect(seletor.disabled).toBe(true);
     removerDaLinha(seletor).click();
     expect(eventos.remover).toHaveBeenCalledExactlyOnceWith({ tipoDeDecisao: NOTA, alvo: null });
@@ -111,12 +111,12 @@ describe('ProcedimentosDoRecursoComponent em edição: a linha que só se remove
 
   it('orienta e remove individualmente uma repetição importada', async () => {
     const declarado = daNota({ alvo: ITEM_1 });
-    const { raiz, eventos } = await montarEdicao({
+    const { elementoDaTela, eventos } = await montarEdicao({
       tiposDeclarados: [NOTA],
       itensDaEtapa: ITENS,
       procedimentos: [declarado, declarado],
     });
-    const repetido = seletorDa(raiz, NOTA, 1);
+    const repetido = seletorDa(elementoDaTela, NOTA, 1);
     expect(descricaoDe(repetido).join(' ')).toContain(
       'está repetido para a mesma decisão e mesmo item contestado',
     );
@@ -136,29 +136,29 @@ describe.each(['edicao', 'consulta', 'bloqueado'] as const)('explicações em %s
     async (inteiroPrimeiro) => {
       const inteiro = daNota();
       const porItem = daNota({ alvo: ITEM_1 });
-      const { raiz } = await montarEdicao({
+      const { elementoDaTela } = await montarEdicao({
         modo,
         tiposDeclarados: [NOTA],
         itensDaEtapa: ITENS,
         procedimentos: inteiroPrimeiro ? [inteiro, porItem] : [porItem, inteiro],
       });
-      expect(raiz.textContent?.replace(/\s+/g, ' ')).toContain(
+      expect(elementoDaTela.textContent?.replace(/\s+/g, ' ')).toContain(
         'Há um procedimento para a decisão inteira e procedimentos por item contestado. Mantenha o procedimento da decisão inteira ou os procedimentos por item e remova os demais.',
       );
-      expect(raiz.textContent).not.toContain('não existe mais');
+      expect(elementoDaTela.textContent).not.toContain('não existe mais');
     },
   );
 
   it('explica que o item deixou de existir', async () => {
-    const { raiz } = await montarEdicao({
+    const { elementoDaTela } = await montarEdicao({
       modo,
       tiposDeclarados: [NOTA],
       itensDaEtapa: ITENS,
       procedimentos: [daNota({ alvo: ITEM_PERDIDO })],
     });
-    expect(raiz.textContent?.replace(/\s+/g, ' ')).toContain(
+    expect(elementoDaTela.textContent?.replace(/\s+/g, ' ')).toContain(
       'O item contestado não existe mais nesta etapa. Remova o procedimento.',
     );
-    expect(raiz.textContent).not.toContain('Há um procedimento para a decisão inteira');
+    expect(elementoDaTela.textContent).not.toContain('Há um procedimento para a decisão inteira');
   });
 });

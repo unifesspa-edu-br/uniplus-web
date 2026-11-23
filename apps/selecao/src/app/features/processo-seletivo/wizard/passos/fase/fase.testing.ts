@@ -188,7 +188,7 @@ export interface FaseMontada {
   readonly controller: HttpTestingController;
   readonly detectar: () => void;
   readonly nativo: HTMLElement;
-  readonly raiz: DebugElement;
+  readonly elementoDaTela: DebugElement;
   readonly atenderCatalogos: () => void;
   readonly comCronograma: (...fases: readonly FaseDoCronograma[]) => void;
   readonly selecionado: (id: string) => string;
@@ -296,7 +296,7 @@ function passoMontado(
     controller,
     detectar: () => fixture.detectChanges(),
     nativo: fixture.nativeElement as HTMLElement,
-    raiz: fixture.debugElement,
+    elementoDaTela: fixture.debugElement,
     ...operacoesDoPasso(fixture, controller),
   };
 }

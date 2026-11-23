@@ -15,15 +15,15 @@ describe('PublicacoesDaFaseComponent', () => {
   let controller: HttpTestingController;
   let detectar: () => void;
   let nativo: HTMLElement;
-  let raiz: DebugElement;
+  let elementoDaTela: DebugElement;
   let comCronograma: (...fases: readonly FaseDoCronograma[]) => void;
 
   const publicacoes = () =>
-    raiz.query(By.directive(PublicacoesDaFaseComponent))
+    elementoDaTela.query(By.directive(PublicacoesDaFaseComponent))
       .componentInstance as PublicacoesDaFaseComponent;
 
   beforeEach(async () => {
-    ({ store, controller, detectar, nativo, raiz, comCronograma } = await montarFase());
+    ({ store, controller, detectar, nativo, elementoDaTela, comCronograma } = await montarFase());
   });
 
   afterEach(() => controller.verify());

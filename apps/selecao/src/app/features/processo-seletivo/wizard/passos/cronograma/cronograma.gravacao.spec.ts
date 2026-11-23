@@ -13,7 +13,7 @@ import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.te
 
 describe('CronogramaPassoComponent: gravação', () => {
   let componente: ContextoDoCronograma['componente'];
-  let raiz: ContextoDoCronograma['raiz'];
+  let elementoDaTela: ContextoDoCronograma['elementoDaTela'];
   let cronograma: ContextoDoCronograma['cronograma'];
   let releituraDosIdentificadores: ContextoDoCronograma['releituraDosIdentificadores'];
   let store: ContextoDoCronograma['store'];
@@ -27,7 +27,7 @@ describe('CronogramaPassoComponent: gravação', () => {
   usarCronograma((tela) => {
     ({
       componente,
-      raiz,
+      elementoDaTela,
       cronograma,
       releituraDosIdentificadores,
       store,
@@ -125,7 +125,7 @@ describe('CronogramaPassoComponent: gravação', () => {
     expect(resultado.messages).toEqual(['Recusa da API à banca da etapa']);
   });
 
-  it('mantém o texto da recusa do ENEM da raiz e remete aos campos que trazem os erros', async () => {
+  it('mantém o texto da recusa do ENEM da elementoDaTela e remete aos campos que trazem os erros', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFases(ID_AVALIACAO);
     comUmaEtapa();
@@ -296,7 +296,7 @@ describe('CronogramaPassoComponent: gravação', () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     releituraDosIdentificadores.pendente.set('etapas');
     detectar();
-    const tela = (): HTMLElement => raiz.nativeElement as HTMLElement;
+    const tela = (): HTMLElement => elementoDaTela.nativeElement as HTMLElement;
     const alerta = (): string => tela().textContent ?? '';
     expect(alerta()).toContain('A gravação fica suspensa');
 

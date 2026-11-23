@@ -18,7 +18,7 @@ const DATA_NA_EXECUCAO =
 describe('CronogramaPassoComponent: Fim da fase', () => {
   let componente: ContextoDoCronograma['componente'];
   let expansao: ContextoDoCronograma['expansao'];
-  let raiz: ContextoDoCronograma['raiz'];
+  let elementoDaTela: ContextoDoCronograma['elementoDaTela'];
   let cronograma: ContextoDoCronograma['cronograma'];
   let controller: ContextoDoCronograma['controller'];
   let detectar: ContextoDoCronograma['detectar'];
@@ -35,7 +35,7 @@ describe('CronogramaPassoComponent: Fim da fase', () => {
     ({
       componente,
       expansao,
-      raiz,
+      elementoDaTela,
       cronograma,
       controller,
       detectar,
@@ -148,7 +148,7 @@ describe('CronogramaPassoComponent: Fim da fase', () => {
 
   describe('a indicação acompanha o que a fase publica', () => {
     const publicacoes = () =>
-      raiz.query(By.directive(PublicacoesDaFaseComponent))
+      elementoDaTela.query(By.directive(PublicacoesDaFaseComponent))
         .componentInstance as PublicacoesDaFaseComponent;
 
     it('tira a indicação ao declarar o definitivo e a devolve ao tirar o papel', () => {

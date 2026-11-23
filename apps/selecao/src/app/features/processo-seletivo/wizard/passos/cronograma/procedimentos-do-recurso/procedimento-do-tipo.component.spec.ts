@@ -30,68 +30,70 @@ async function montar(entradas: Record<string, unknown> = {}) {
   }
   fixture.detectChanges();
   TestBed.inject(ApplicationRef).tick();
-  const raiz = fixture.nativeElement as HTMLElement;
-  return { fixture, raiz };
+  const elementoDaTela = fixture.nativeElement as HTMLElement;
+  return { fixture, elementoDaTela };
 }
 
 describe('procedimento do tipo no documento', () => {
   it('apresenta o aviso recebido e acompanha sua alteração sem decidir a cobertura', async () => {
-    const { fixture, raiz } = await montar({ semProcedimento: true });
-    expect(raiz.textContent).toContain('Falta o procedimento de recurso');
-    expect(raiz.querySelector('select')?.getAttribute('aria-describedby')).toContain(
+    const { fixture, elementoDaTela } = await montar({ semProcedimento: true });
+    expect(elementoDaTela.textContent).toContain('Falta o procedimento de recurso');
+    expect(elementoDaTela.querySelector('select')?.getAttribute('aria-describedby')).toContain(
       'procedimento-NOTA_DA_ETAPA-falta',
     );
     fixture.componentRef.setInput('semProcedimento', false);
     fixture.detectChanges();
-    expect(raiz.textContent).not.toContain('Falta o procedimento de recurso');
-    expect(raiz.querySelector('select')?.getAttribute('aria-describedby')).toBeNull();
+    expect(elementoDaTela.textContent).not.toContain('Falta o procedimento de recurso');
+    expect(elementoDaTela.querySelector('select')?.getAttribute('aria-describedby')).toBeNull();
   });
 
   it('não cobra nem oferece declaração sem janela', async () => {
-    const { raiz } = await montar({ temJanela: false });
-    expect(raiz.querySelector('select')).toBeNull();
-    expect(raiz.querySelector('[role="status"]')).toBeNull();
-    expect(raiz.querySelector('input')).toBeNull();
+    const { elementoDaTela } = await montar({ temJanela: false });
+    expect(elementoDaTela.querySelector('select')).toBeNull();
+    expect(elementoDaTela.querySelector('[role="status"]')).toBeNull();
+    expect(elementoDaTela.querySelector('input')).toBeNull();
   });
 
   it('conserva a inconsistência importada sem janela e permite removê-la', async () => {
-    const { raiz } = await montar({
+    const { elementoDaTela } = await montar({
       temJanela: false,
       tipo: tiposNaTela([DECLARADO], [Tipo.NOTA_DA_ETAPA], rotuloDaApi)[0],
     });
-    expect(raiz.querySelector('select')?.disabled).toBe(true);
-    expect(raiz.querySelector('button')?.disabled).toBe(false);
-    expect(raiz.textContent).toContain(CODIGO);
+    expect(elementoDaTela.querySelector('select')?.disabled).toBe(true);
+    expect(elementoDaTela.querySelector('button')?.disabled).toBe(false);
+    expect(elementoDaTela.textContent).toContain(CODIGO);
   });
 
   it('consulta mostra o procedimento em texto, sem controles de edição', async () => {
-    const { raiz } = await montar({
+    const { elementoDaTela } = await montar({
       modo: 'consulta',
       tipo: tiposNaTela([DECLARADO], [Tipo.NOTA_DA_ETAPA], rotuloDaApi)[0],
     });
-    expect(raiz.textContent).toContain(`${CODIGO} — Referência institucional`);
-    expect(raiz.querySelector('select, button, input')).toBeNull();
+    expect(elementoDaTela.textContent).toContain(`${CODIGO} — Referência institucional`);
+    expect(elementoDaTela.querySelector('select, button, input')).toBeNull();
   });
 
   it('preserva código e versão fora do catálogo na consulta', async () => {
     const declarado = procedimentoDoDocumento({ regra: { codigo: 'REGRA-ANTIGA', versao: 'v7' } });
-    const { fixture, raiz } = await montar({
+    const { fixture, elementoDaTela } = await montar({
       modo: 'consulta',
       tipo: tiposNaTela([declarado], [Tipo.NOTA_DA_ETAPA], rotuloDaApi)[0],
     });
     fixture.componentRef.setInput('regrasDoCatalogo', []);
     fixture.detectChanges();
-    expect(raiz.textContent).toContain('REGRA-ANTIGA');
+    expect(elementoDaTela.textContent).toContain('REGRA-ANTIGA');
     expect(declarado.regra).toEqual({ codigo: 'REGRA-ANTIGA', versao: 'v7' });
   });
 
   it('declara só pela escolha da pessoa e mantém a sugestão fora do documento', async () => {
-    const { fixture, raiz } = await montar({ sugestao: { codigo: CODIGO, versao: 'v1' } });
+    const { fixture, elementoDaTela } = await montar({
+      sugestao: { codigo: CODIGO, versao: 'v1' },
+    });
     const declarar = vi.fn();
     fixture.componentInstance.declarar.subscribe(declarar);
-    const seletor = raiz.querySelector('select') as HTMLSelectElement;
+    const seletor = elementoDaTela.querySelector('select') as HTMLSelectElement;
     expect(seletor.value).toBe('');
-    expect(raiz.textContent).toContain('Sugestão:');
+    expect(elementoDaTela.textContent).toContain('Sugestão:');
     escolher(seletor, CHAVE);
     expect(declarar).toHaveBeenCalledExactlyOnceWith({
       identidade: { tipoDeDecisao: Tipo.NOTA_DA_ETAPA, alvo: null },
@@ -101,7 +103,7 @@ describe('procedimento do tipo no documento', () => {
   });
 
   it('não troca o declarado quando a sugestão ou o catálogo mudam', async () => {
-    const { fixture, raiz } = await montar({
+    const { fixture, elementoDaTela } = await montar({
       tipo: tiposNaTela([DECLARADO], [Tipo.NOTA_DA_ETAPA], rotuloDaApi)[0],
     });
     const trocar = vi.fn();
@@ -109,33 +111,33 @@ describe('procedimento do tipo no documento', () => {
     fixture.componentRef.setInput('sugestao', { codigo: 'OUTRA', versao: 'v2' });
     fixture.componentRef.setInput('regrasDoCatalogo', []);
     fixture.detectChanges();
-    expect(raiz.querySelector('select')?.value).toBe(CHAVE);
-    expect(raiz.textContent).not.toContain('Sugestão:');
+    expect(elementoDaTela.querySelector('select')?.value).toBe(CHAVE);
+    expect(elementoDaTela.textContent).not.toContain('Sugestão:');
     expect(trocar).not.toHaveBeenCalled();
     expect(fixture.componentInstance.tipo().procedimentos[0]).toBe(DECLARADO);
   });
 
   it('não emite troca para a opção antiga fora do catálogo', async () => {
-    const { fixture, raiz } = await montar({
+    const { fixture, elementoDaTela } = await montar({
       regrasDoCatalogo: [],
       tipo: tiposNaTela([DECLARADO], [Tipo.NOTA_DA_ETAPA], rotuloDaApi)[0],
     });
     const trocar = vi.fn();
     fixture.componentInstance.trocarRegra.subscribe(trocar);
-    escolher(raiz.querySelector('select') as HTMLSelectElement, CHAVE);
+    escolher(elementoDaTela.querySelector('select') as HTMLSelectElement, CHAVE);
     expect(trocar).not.toHaveBeenCalled();
   });
 
   it('mantém duplicatas importadas e remove a ocorrência escolhida', async () => {
     const duplicada = procedimentoDoDocumento({ alvo: ITEM });
-    const { fixture, raiz } = await montar({
+    const { fixture, elementoDaTela } = await montar({
       tipo: tiposNaTela([duplicada, duplicada], [Tipo.NOTA_DA_ETAPA], rotuloDaApi)[0],
       alvosOferecidos: [{ alvo: ITEM, rotulo: 'Argumentação' }],
     });
     const remover = vi.fn();
     fixture.componentInstance.remover.subscribe(remover);
-    expect(raiz.querySelectorAll('select')).toHaveLength(2);
-    (raiz.querySelectorAll('button')[1] as HTMLButtonElement).click();
+    expect(elementoDaTela.querySelectorAll('select')).toHaveLength(2);
+    (elementoDaTela.querySelectorAll('button')[1] as HTMLButtonElement).click();
     expect(remover).toHaveBeenCalledExactlyOnceWith({
       tipoDeDecisao: Tipo.NOTA_DA_ETAPA,
       alvo: ITEM,
@@ -144,7 +146,7 @@ describe('procedimento do tipo no documento', () => {
   });
 
   it('não sugere par ausente do catálogo mesmo quando o código existe em outra versão', async () => {
-    const { raiz } = await montar({ sugestao: { codigo: CODIGO, versao: 'v2' } });
-    expect(raiz.textContent).not.toContain('Sugestão:');
+    const { elementoDaTela } = await montar({ sugestao: { codigo: CODIGO, versao: 'v2' } });
+    expect(elementoDaTela.textContent).not.toContain('Sugestão:');
   });
 });

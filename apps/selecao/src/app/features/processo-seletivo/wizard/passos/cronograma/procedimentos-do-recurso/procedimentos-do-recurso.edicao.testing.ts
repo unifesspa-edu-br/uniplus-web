@@ -68,7 +68,7 @@ export interface EventosDaEdicao {
 
 export interface MontagemDaEdicao {
   readonly fixture: FixtureDosProcedimentos;
-  readonly raiz: HTMLElement;
+  readonly elementoDaTela: HTMLElement;
   readonly eventos: EventosDaEdicao;
 }
 
@@ -132,12 +132,18 @@ export async function montarEdicao(
   const eventos = ouvir(fixture);
   fixture.componentRef.setInput('idDoTitulo', ID_DO_TITULO);
   await atualizar(fixture, { ...ENTRADAS_PADRAO, ...entradas });
-  return { fixture, raiz: fixture.nativeElement as HTMLElement, eventos };
+  return { fixture, elementoDaTela: fixture.nativeElement as HTMLElement, eventos };
 }
 
 /** O seletor da linha de posição `posicao` do tipo de decisão. */
-export function seletorDa(raiz: HTMLElement, tipo = HOMOLOGACAO, posicao = 0): HTMLSelectElement {
-  return raiz.querySelector(`#${ID_DO_TITULO}-${tipo}-${posicao}-regra`) as HTMLSelectElement;
+export function seletorDa(
+  elementoDaTela: HTMLElement,
+  tipo = HOMOLOGACAO,
+  posicao = 0,
+): HTMLSelectElement {
+  return elementoDaTela.querySelector(
+    `#${ID_DO_TITULO}-${tipo}-${posicao}-regra`,
+  ) as HTMLSelectElement;
 }
 
 /** Faz o que a pessoa faz: escolhe a opção no seletor e dispara a mudança. */
@@ -146,11 +152,11 @@ export function escolher(seletor: HTMLSelectElement, chave: string): void {
   seletor.dispatchEvent(new Event('change'));
 }
 
-export function textoDe(raiz: HTMLElement): string {
-  return (raiz.textContent ?? '').replace(/\s+/g, ' ');
+export function textoDe(elementoDaTela: HTMLElement): string {
+  return (elementoDaTela.textContent ?? '').replace(/\s+/g, ' ');
 }
 
-export function rotulosDosTipos(raiz: HTMLElement): string[] {
-  const legendas = raiz.querySelectorAll('sel-procedimento-do-tipo > fieldset > legend');
+export function rotulosDosTipos(elementoDaTela: HTMLElement): string[] {
+  const legendas = elementoDaTela.querySelectorAll('sel-procedimento-do-tipo > fieldset > legend');
   return Array.from(legendas, (legenda) => legenda.textContent?.trim() ?? '');
 }
