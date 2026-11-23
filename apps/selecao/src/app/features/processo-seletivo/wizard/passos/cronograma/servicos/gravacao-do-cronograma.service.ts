@@ -1,3 +1,4 @@
+import { RecusasDasExigencias } from '../../fase/documentos/recusas-das-exigencias.service';
 import { computed, effect, inject, Injectable, Injector, signal, untracked } from '@angular/core';
 import {
   ProblemI18nService,
@@ -69,6 +70,7 @@ export class GravacaoDoCronograma {
   private readonly recusas = inject(RecusasDoServidorNasEtapas);
   private readonly recusaDasEtapas = inject(RecusaDaGravacaoDasEtapas);
   private readonly recusasDasFases = inject(RecusasDoServidorNasFases);
+  private readonly recusasDasExigencias = inject(RecusasDasExigencias);
   private readonly numeracao = inject(NumeracaoDasRespostasRecusadas);
   private readonly injetor = inject(Injector);
   private readonly expansao = inject(ExpansaoDoCronograma);
@@ -314,8 +316,10 @@ export class GravacaoDoCronograma {
   }
 
   private async gravarExigencias(conteudo: ConteudoDaGravacao): Promise<ValidacaoDoPasso | null> {
+    this.recusasDasExigencias.limpar();
     const exigencias = await this.exigencias.gravar(conteudo.processoId);
     if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
+    this.recusasDasExigencias.registrar(exigencias.recusas ?? []);
     return exigencias.valid ? null : exigencias;
   }
 
