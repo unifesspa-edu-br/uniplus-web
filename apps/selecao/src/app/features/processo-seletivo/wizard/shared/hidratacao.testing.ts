@@ -53,6 +53,7 @@ export const DISTRIBUICAO = {
 export function dtoCom(distribuicao: unknown): ProcessoSeletivoDto {
   return {
     nome: 'PS 2026',
+    provaPresencial: null,
     tipoProcesso: { origemId: 'tipo-1', codigo: 'SISU', nome: 'SiSU' },
     unidadeAdministradora: { origemId: 'unidade-1' },
     origemCandidatos: 'Interno',

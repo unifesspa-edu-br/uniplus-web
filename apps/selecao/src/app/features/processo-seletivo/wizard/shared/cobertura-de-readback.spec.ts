@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
 import { SECOES_DO_RASCUNHO, WizardDraft } from '../processo-seletivo.models';
 import { hidratarDraft } from './hidratacao';
+import { dtoCom } from './hidratacao.testing';
 
 /**
  * O inventário que fecha o diagnóstico do bloco do ato que se perdia.
@@ -30,21 +30,9 @@ describe('cobertura de readback do rascunho', () => {
       SECOES_DO_RASCUNHO.map((secao) => [secao, { marcador: secao }]),
     ) as unknown as WizardDraft;
 
-  const dtoVazio = (): ProcessoSeletivoDto =>
-    ({
-      id: '00000000-0000-0000-0000-000000000001',
-      nome: 'Certame',
-      tipoProcesso: { origemId: 'tp-1', nome: 'SiSU' },
-      unidadeAdministradora: { origemId: 'un-1' },
-      localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
-      origemCandidatos: 'INSCRICAO_PROPRIA',
-      cronogramaFases: [],
-      etapas: [],
-    }) as unknown as ProcessoSeletivoDto;
-
   const secoesIntocadas = (): readonly string[] => {
     const antes = marcador();
-    const depois = hidratarDraft(antes, dtoVazio());
+    const depois = hidratarDraft(antes, dtoCom([]));
     return SECOES_DO_RASCUNHO.filter((secao) => depois[secao] === antes[secao]);
   };
 
