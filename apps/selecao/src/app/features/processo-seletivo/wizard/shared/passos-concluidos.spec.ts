@@ -3,7 +3,8 @@ import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
 import type { ItemConformidadeDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
 import { PASSOS } from '../processo-seletivo.data';
-import { passosConcluidosDe } from './passos-concluidos';
+import { gravadoPorPasso, passosConcluidosDe } from './passos-concluidos';
+import { dtoCom } from './hidratacao.testing';
 
 /** O detalhe sempre traz a origem dos candidatos; o teste só a varia onde ela importa. */
 function rotulosConcluidos(
@@ -16,6 +17,10 @@ function rotulosConcluidos(
   } as ProcessoSeletivoDto;
   const concluidos = passosConcluidosDe(completo, checklist);
   return PASSOS.filter((_, i) => concluidos.has(i)).map((passo) => passo.rotulo);
+}
+
+function reprovado(codigo: string, dimensao: string): ItemConformidadeDto {
+  return { codigo, dimensao, mensagem: '', ok: false };
 }
 
 describe('passosConcluidosDe', () => {
@@ -83,14 +88,7 @@ describe('passosConcluidosDe', () => {
   });
 
   it('tira do conjunto o passo que o item reprovado aponta, mesmo gravado', () => {
-    const checklist: ItemConformidadeDto[] = [
-      {
-        codigo: 'criterios_desempate_em_excesso',
-        dimensao: 'classificacao',
-        mensagem: '',
-        ok: false,
-      },
-    ];
+    const checklist = [reprovado('criterios_desempate_em_excesso', 'classificacao')];
 
     const rotulos = rotulosConcluidos(
       {
@@ -105,14 +103,9 @@ describe('passosConcluidosDe', () => {
   });
 
   it('aponta o FADA e o Desempate pelas dimensões novas do checklist', () => {
-    const checklist: ItemConformidadeDto[] = [
-      {
-        codigo: 'bonus_regional_nao_declarado',
-        dimensao: 'bonus_regional',
-        mensagem: '',
-        ok: false,
-      },
-      { codigo: 'criterios_desempate_ausentes', dimensao: 'desempate', mensagem: '', ok: false },
+    const checklist = [
+      reprovado('bonus_regional_nao_declarado', 'bonus_regional'),
+      reprovado('criterios_desempate_ausentes', 'desempate'),
     ];
 
     const rotulos = rotulosConcluidos(
@@ -122,6 +115,21 @@ describe('passosConcluidosDe', () => {
 
     expect(rotulos).not.toContain('FADA');
     expect(rotulos).not.toContain('Desempate');
+  });
+
+  it('reconhece a declaração da prova presencial nas duas respostas', () => {
+    const dto = dtoCom([]);
+    expect(gravadoPorPasso(dto)['Prova presencial']).toBe(false);
+    expect(
+      gravadoPorPasso({ ...dto, provaPresencial: { temProvaPresencial: false, municipios: [] } })[
+        'Prova presencial'
+      ],
+    ).toBe(true);
+    expect(
+      gravadoPorPasso({ ...dto, provaPresencial: { temProvaPresencial: true, municipios: [] } })[
+        'Prova presencial'
+      ],
+    ).toBe(true);
   });
 
   it('nunca conta a Revisão, que publica e não declara conteúdo', () => {

@@ -55,6 +55,9 @@ import { DesempatePassoComponent } from './wizard/passos/desempate/desempate.com
 import { reavaliarRecusaPeloDesempate } from './wizard/passos/desempate/conferencia-do-desempate-gravado';
 import { EliminacaoPassoComponent } from './wizard/passos/eliminacao/eliminacao.component';
 import { AtendimentoPassoComponent } from './wizard/passos/atendimento/atendimento.component';
+import { ProvaPresencialPassoComponent } from './wizard/passos/prova-presencial/prova-presencial.component';
+import { RecusasDaPublicacaoNaProvaPresencial } from './wizard/passos/prova-presencial/recusas-da-publicacao-na-prova-presencial.service';
+import { GravacaoDaProvaPresencialService } from './wizard/passos/prova-presencial/gravacao-da-prova-presencial.service';
 import { RevisaoPassoComponent } from './wizard/passos/revisao/revisao.component';
 import { avisarAoFecharAJanelaEnquanto } from './wizard/shared/aviso-ao-fechar-a-janela';
 import { temAtoDigitado } from './wizard/shared/ato-digitado';
@@ -85,6 +88,7 @@ import {
     DesempatePassoComponent,
     EliminacaoPassoComponent,
     AtendimentoPassoComponent,
+    ProvaPresencialPassoComponent,
     RevisaoPassoComponent,
     StepsResponsivoComponent,
   ],
@@ -95,6 +99,8 @@ import {
     LeituraDoProcesso,
     GravacaoDoProcesso,
     CadastroInicial,
+    GravacaoDaProvaPresencialService,
+    RecusasDaPublicacaoNaProvaPresencial,
     EnvioDoEdital,
     ...CATALOGOS_DO_CRONOGRAMA,
     GravacaoDosCamposPressupostos,

@@ -11,6 +11,7 @@ import {
   PESOS_AREA_ENEM,
   RESOLUCAO_PESO_AREA,
 } from './catalogos-da-classificacao';
+import { PROVA_PRESENCIAL_DECLARADA_SEM_PROVA } from './prova-presencial-declarada';
 
 export const PROCESSO_PUBLICADO_ID = '01960000-0000-7000-0000-000000000898';
 
@@ -61,6 +62,7 @@ export const DETALHE_PUBLICADO = {
     etapaGravada(ETAPA_ENTREVISTA_ID, 'Entrevista', 1, false),
     etapaGravada('01960000-0000-7000-0000-0000000008f9', 'Nota do ENEM', 2, true),
   ],
+  provaPresencial: PROVA_PRESENCIAL_DECLARADA_SEM_PROVA,
   atendimentoEspecializado: null,
   distribuicaoVagas: [],
   aplicaBonusRegional: true,

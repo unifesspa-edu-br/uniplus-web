@@ -6,6 +6,7 @@ import {
   TIPOS_DOCUMENTO,
   TIPOS_PROCESSO,
 } from './catalogos-do-cronograma';
+import { PROVA_PRESENCIAL_DECLARADA_SEM_PROVA } from './prova-presencial-declarada';
 
 /**
  * Documentos publicados: o processo da consulta, com uma fase e dois documentos — um cobrado de
@@ -32,6 +33,7 @@ export const DETALHE_PUBLICADO = {
   },
   localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
   etapas: [],
+  provaPresencial: PROVA_PRESENCIAL_DECLARADA_SEM_PROVA,
   atendimentoEspecializado: null,
   distribuicaoVagas: [],
   bonusRegional: null,

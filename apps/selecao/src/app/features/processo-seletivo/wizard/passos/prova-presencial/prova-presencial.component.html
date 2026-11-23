@@ -1,0 +1,49 @@
+<div class="step-card">
+  @if (store.emConsulta()) {
+    <ui-valor-em-consulta
+      rotulo="O processo tem prova presencial?"
+      seVazio="Ainda não declarada"
+      [valor]="valorEmConsulta()"
+    />
+  } @else {
+    <ui-escolha-com-explicacao
+      prefixoDoId="prova-presencial"
+      legenda="O processo tem prova presencial?"
+      textoDeObrigatoriedade="(obrigatório)"
+      [instrucao]="escolhaInvalida() ? 'Escolha se o processo tem prova presencial.' : ''"
+      [opcoes]="opcoes"
+      [valor]="escolha()"
+      [desabilitado]="!store.aceitaEdicao()"
+      [recusas]="recusas().escolha"
+      (escolhido)="escolher($event)"
+    />
+    @if (escolha() === '') {
+      <ui-alert variant="info" [dynamic]="false" role="status">
+        A prova presencial ainda não foi declarada. O processo não pode ser publicado sem essa
+        declaração.
+      </ui-alert>
+    }
+    @if (escolha() === 'com' || recusas().lista.length || recusas().porMunicipio.size) {
+      <sel-municipios-de-prova
+        [municipios]="municipiosResolvidos()"
+        [somenteLeitura]="escolha() !== 'com'"
+        [desabilitado]="!store.aceitaEdicao()"
+        [recusasDaLista]="recusas().lista"
+        [recusasPorMunicipio]="recusas().porMunicipio"
+        (municipioAdicionado)="adicionar($event)"
+        (municipioRemovido)="remover($event)"
+      />
+    }
+    @if (escolha() === 'sem' && declaracao().municipios.length) {
+      <ui-alert variant="warning" [dynamic]="false" role="status">
+        {{ avisoDeRemocao() }}
+      </ui-alert>
+    }
+  }
+</div>
+@if (gravacao.aviso(); as aviso) {
+  <ui-alert variant="warning" [dynamic]="false" role="status">{{ aviso }}</ui-alert>
+}
+@if (erroDeGravacao(); as erro) {
+  <p class="field__erro" role="alert">{{ erro }}</p>
+}

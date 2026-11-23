@@ -34,14 +34,15 @@ const PASSOS: readonly Passo[] = [
   { numero: 8, rotulo: 'Desempate', esperado: 'Regra do critério' },
   { numero: 9, rotulo: 'Eliminação', esperado: 'Regra de eliminação 1' },
   { numero: 10, rotulo: 'Atend. especial', esperado: 'Prova ampliada' },
+  { numero: 11, rotulo: 'Prova presencial', esperado: 'Sem prova presencial' },
   {
-    numero: 11,
+    numero: 12,
     rotulo: 'Formulários',
     esperado: 'Renda familiar per capita igual ou inferior a um salário mínimo',
     obrigatoriedade: 'opcional',
   },
   {
-    numero: 12,
+    numero: 13,
     rotulo: 'Revisão e publicação',
     esperado: 'Número do ato',
   },

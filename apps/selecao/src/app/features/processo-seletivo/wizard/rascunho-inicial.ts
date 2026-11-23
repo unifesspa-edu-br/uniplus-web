@@ -20,8 +20,8 @@ export function rascunhoInicial(): WizardDraft {
     tipoProcesso: { selected: '', rotulo: '', codigo: '' },
     identificacao: identificacaoInicial(),
     pagamento: { cobra: null, valor: '', fundamentos: [] },
-    opcoesDeCurso: { numero: '' },
-    vagas: { ofertas: [], cascata: null },
+    provaPresencial: { temProvaPresencial: null, municipios: [] },
+    ...ofertaInicial(),
     cronograma: { fases: [], etapas: [], algoritmoContagemCodigo: '', algoritmoContagemVersao: '' },
     ...regrasDaClassificacaoIniciais(),
     documentos: exigenciasVazias(),
@@ -29,6 +29,10 @@ export function rascunhoInicial(): WizardDraft {
     atendimento: { condicoes: [], recursos: [], tiposDeficiencia: [] },
     publicacao: publicacaoInicial(),
   };
+}
+
+function ofertaInicial(): Pick<WizardDraft, 'opcoesDeCurso' | 'vagas'> {
+  return { opcoesDeCurso: { numero: '' }, vagas: { ofertas: [], cascata: null } };
 }
 
 export function regrasDaClassificacaoIniciais(): RegrasDaClassificacao {

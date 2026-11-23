@@ -14,9 +14,9 @@ describe('destino de cada pendência no painel', () => {
   }
 
   /**
-   * O rótulo do passo, e não o índice, é o que se afirma aqui: o índice literal já se
-   * desalinhou quando "Locais de prova" saiu do wizard, e um teste escrito contra o índice
-   * teria acompanhado o erro em vez de apanhá-lo.
+   * O rótulo do passo, e não o índice, é o que se afirma aqui: o índice literal se desalinha
+   * quando um passo entra ou sai do assistente, e um teste escrito contra o índice acompanharia
+   * o erro em vez de apanhá-lo.
    */
   function rotuloDoItem(codigo: string, dimensao: string): string | null {
     const passo = pendente(codigo, dimensao).passo;
@@ -27,18 +27,17 @@ describe('destino de cada pendência no painel', () => {
     return pendente(codigo, dimensao).orientacao?.texto ?? null;
   }
 
-  it('leva cada dimensão ao passo que a grava', () => {
-    expect(rotuloDoItem('taxa_inscricao_nao_declarada', 'taxa_inscricao')).toBe('Pagamento');
-    expect(rotuloDoItem('distribuicao_vagas_ausente', 'distribuicao_vagas')).toBe('Vagas');
-    expect(rotuloDoItem('cascata_pendente', 'cascata_remanejamento')).toBe('Vagas');
-    expect(rotuloDoItem('cronograma_fases_ausente', 'cronograma')).toBe('Cronograma');
-    expect(rotuloDoItem('algoritmo_contagem_prazo_nao_declarado', 'contagem_de_prazos')).toBe(
-      'Cronograma',
-    );
-    expect(rotuloDoItem('classificacao_ausente', 'classificacao')).toBe('Eliminação');
-    expect(rotuloDoItem('atendimento_especializado_ausente', 'atendimento_especializado')).toBe(
-      'Atend. especial',
-    );
+  it.each([
+    ['taxa_inscricao_nao_declarada', 'taxa_inscricao', 'Pagamento'],
+    ['distribuicao_vagas_ausente', 'distribuicao_vagas', 'Vagas'],
+    ['cascata_pendente', 'cascata_remanejamento', 'Vagas'],
+    ['cronograma_fases_ausente', 'cronograma', 'Cronograma'],
+    ['algoritmo_contagem_prazo_nao_declarado', 'contagem_de_prazos', 'Cronograma'],
+    ['classificacao_ausente', 'classificacao', 'Eliminação'],
+    ['prova_presencial_nao_declarada', 'prova_presencial', 'Prova presencial'],
+    ['atendimento_especializado_ausente', 'atendimento_especializado', 'Atend. especial'],
+  ])('leva a pendência %s da dimensão %s ao passo %s', (codigo, dimensao, rotulo) => {
+    expect(rotuloDoItem(codigo, dimensao)).toBe(rotulo);
   });
 
   /** A nota máxima da etapa é declarada na própria etapa, no passo do cronograma. */

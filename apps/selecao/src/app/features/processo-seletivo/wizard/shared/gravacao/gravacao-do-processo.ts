@@ -7,6 +7,7 @@ import { ChaveRetida } from './chave-retida';
 import { ResultadoDaGravacao, SUPERADO } from './resultado-da-gravacao';
 
 export type RecursoDoProcesso =
+  | 'provaPresencial'
   | 'taxa'
   | 'distribuicao'
   | 'opcoesDeCurso'
@@ -61,7 +62,6 @@ export class GravacaoDoProcesso {
     const geracao = this.geracao();
     const chave = this.chaveDe(recurso);
     const result = await firstValueFrom(enviar(this.contextoDa(chave.contextoPara(intencao))));
-
     if (geracao !== this.geracao()) return superado();
     if (isApiOk(result)) {
       chave.renovar();

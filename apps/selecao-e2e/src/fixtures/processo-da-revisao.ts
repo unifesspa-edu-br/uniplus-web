@@ -1,5 +1,6 @@
 import { ORIGEM_NO_EDITAL } from './valor-do-enum';
 import { faseDoServidor } from './cronograma-do-servidor';
+import { PROVA_PRESENCIAL_DECLARADA_SEM_PROVA } from './prova-presencial-declarada';
 
 export const PROCESSO_ID = '01960000-0000-7000-0000-000000000901';
 export const DOCUMENTO_ID = '01960000-0000-7000-0000-000000000902';
@@ -138,6 +139,7 @@ const IDENTIFICACAO_DO_PROCESSO = {
 
 const DIMENSOES_SEM_CADASTRO = {
   etapas: [],
+  provaPresencial: PROVA_PRESENCIAL_DECLARADA_SEM_PROVA,
   atendimentoEspecializado: null,
   distribuicaoVagas: [],
   bonusRegional: null,

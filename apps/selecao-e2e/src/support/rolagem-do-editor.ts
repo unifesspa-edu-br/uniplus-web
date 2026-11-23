@@ -74,8 +74,9 @@ export async function encurtarJanela(page: Page): Promise<void> {
 
 /**
  * Rola com a roda sobre as regiões fora do conteúdo do passo — a navegação entre passos
- * (stepper ou barra de etapas) e o rodapé com os botões — e confere que a área de
- * trabalho se move em cada uma.
+ * (stepper ou barra de etapas) e o rodapé com os botões — e confere o que se move em cada
+ * uma. Quando o stepper não cabe na janela ele rola por conta própria: a roda então move o
+ * stepper, e o que se confere é que o último passo se torna alcançável.
  */
 export async function conferirRolagemPorRodaForaDoConteudo(page: Page): Promise<void> {
   const largura = page.viewportSize()?.width ?? 0;
@@ -85,15 +86,50 @@ export async function conferirRolagemPorRodaForaDoConteudo(page: Page): Promise<
   ];
 
   for (const regiao of regioes) {
-    await voltarAoTopo(page);
-    await page.locator(regiao).hover();
-    await page.mouse.wheel(0, 200);
-    await expect
-      .poll(async () => (await medirAreaDeTrabalho(page)).topo, {
-        message: `a roda sobre ${regiao} deveria rolar a área de trabalho`,
-      })
-      .toBeGreaterThan(0);
+    await conferirRodaSobre(page, regiao);
   }
+}
+
+async function conferirRodaSobre(page: Page, regiao: string): Promise<void> {
+  await voltarAoTopo(page);
+  const regiaoRola = await rolaPorConta(page, regiao);
+  await page.locator(regiao).hover();
+  await page.mouse.wheel(0, 200);
+  if (regiaoRola) {
+    await conferirUltimoPassoAlcancavel(page, regiao);
+    return;
+  }
+  await expect
+    .poll(async () => (await medirAreaDeTrabalho(page)).topo, {
+      message: `a roda sobre ${regiao} deveria rolar a área de trabalho`,
+    })
+    .toBeGreaterThan(0);
+}
+
+async function rolaPorConta(page: Page, seletor: string): Promise<boolean> {
+  return page
+    .locator(seletor)
+    .evaluate(
+      (regiao) =>
+        regiao.scrollHeight > regiao.clientHeight &&
+        getComputedStyle(regiao).overflowY !== 'visible',
+    );
+}
+
+/**
+ * A roda sobre um stepper que rola por conta própria o leva até o fim, e o foco no último
+ * passo o deixa visível dentro da região e da janela.
+ */
+async function conferirUltimoPassoAlcancavel(page: Page, seletor: string): Promise<void> {
+  const regiao = page.locator(seletor);
+  await expect
+    .poll(async () => regiao.evaluate((r) => r.scrollTop), {
+      message: `a roda sobre ${seletor} deveria rolar o próprio stepper`,
+    })
+    .toBeGreaterThan(0);
+  const ultimo = regiao.getByRole('button').last();
+  await ultimo.focus();
+  await expect(ultimo).toBeInViewport({ ratio: 1 });
 }
 
 /**

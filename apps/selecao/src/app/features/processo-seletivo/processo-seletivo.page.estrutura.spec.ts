@@ -1,4 +1,5 @@
-import { TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ProviderToken } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { StepsResponsivoComponent } from '@uniplus/shared-ui/components';
 import {
@@ -12,6 +13,99 @@ import { ROTULOS_DOS_PASSOS } from './wizard/processo-seletivo.data';
 import { ProcessoSeletivoStore } from './wizard/processo-seletivo.store';
 import { RecusasDaPublicacao } from './wizard/shared/recusas/recusas-da-publicacao.service';
 import { NumeracaoDasRespostasRecusadas } from './wizard/shared/recusas/numeracao-das-respostas-recusadas';
+
+const COMPONENTE_POR_ROTULO: Readonly<Record<string, string>> = {
+  'Tipo do processo': 'sel-step-tipo-processo',
+  Identificação: 'sel-step-identificacao',
+  Pagamento: 'sel-step-pagamento',
+  Vagas: 'sel-step-vagas',
+  Cronograma: 'sel-step-cronograma',
+  'Fórmula e precisão': 'sel-step-formula',
+  FADA: 'sel-step-bonus',
+  Desempate: 'sel-step-desempate',
+  Eliminação: 'sel-step-eliminacao',
+  'Atend. especial': 'sel-step-atendimento',
+  'Prova presencial': 'sel-step-prova-presencial',
+  Formulários: 'sel-step-formulario',
+  'Revisão e publicação': 'sel-step-revisao',
+};
+
+const RECUSA_DE_EXEMPLO: Parameters<RecusasDaPublicacao['registrar']>[0] = {
+  type: 'about:blank',
+  title: 'x',
+  status: 422,
+  code: 'uniplus.x',
+  traceId: 't',
+  errors: [{ code: 'uniplus.y', message: 'Causa.' }],
+};
+
+const MODOS_DA_PAGINA: readonly (readonly [string, string | null])[] = [
+  ['em edição', null],
+  ['em consulta', SituacaoDoProcessoSeletivoCodigo.PUBLICADO],
+];
+
+type PaginaMontada = ComponentFixture<ProcessoSeletivoPage>;
+
+function montarPaginaRenderizada(): PaginaMontada {
+  const fixture = TestBed.createComponent(ProcessoSeletivoPage);
+  fixture.detectChanges();
+  return fixture;
+}
+
+function montarPaginaNoModo(situacao: string | null): PaginaMontada {
+  const fixture = TestBed.createComponent(ProcessoSeletivoPage);
+  if (situacao !== null) {
+    fixture.debugElement.injector.get(ProcessoSeletivoStore).remoteSnapshot.set({
+      id: 'processo-publicado',
+      situacao: { codigo: situacao, rotulo: situacao },
+    } as unknown as ProcessoSeletivoDto);
+  }
+  fixture.detectChanges();
+  return fixture;
+}
+
+function paineisVisiveis(fixture: PaginaMontada): HTMLElement[] {
+  const host = fixture.nativeElement as HTMLElement;
+  return Array.from(host.querySelectorAll('.step-pane') as NodeListOf<HTMLElement>).filter(
+    (painel) => !painel.hasAttribute('hidden'),
+  );
+}
+
+function esperarPainelDoPasso(fixture: PaginaMontada, rotulo: string, indice: number): void {
+  const visiveis = paineisVisiveis(fixture);
+
+  expect(visiveis, `nenhum painel visível no passo ${indice} ("${rotulo}")`).toHaveLength(1);
+  expect(
+    visiveis[0].firstElementChild?.tagName.toLowerCase(),
+    `no passo ${indice} o stepper anuncia "${rotulo}", mas o painel visível é outro`,
+  ).toBe(COMPONENTE_POR_ROTULO[rotulo]);
+}
+
+function esperarSemRolagemPropria(fixture: PaginaMontada): void {
+  const wizContent = (fixture.nativeElement as HTMLElement).querySelector('.wiz-content');
+  expect(wizContent?.hasAttribute('uiBackToTopContainer')).toBe(false);
+  expect(wizContent?.hasAttribute('tabindex')).toBe(false);
+  expect(wizContent?.getAttribute('role')).toBeNull();
+}
+
+function dialogoDasEtapas(fixture: PaginaMontada): HTMLDialogElement {
+  const dialog = (fixture.nativeElement as HTMLElement).querySelector<HTMLDialogElement>(
+    'dialog.steps-overlay',
+  );
+  if (dialog === null) throw new Error('Diálogo de etapas ausente.');
+  return dialog;
+}
+
+function etapasDaPagina(fixture: PaginaMontada): StepsResponsivoComponent {
+  return fixture.debugElement.query(By.directive(StepsResponsivoComponent))
+    .componentInstance as StepsResponsivoComponent;
+}
+
+function mesmoProvedorEmDuasPaginas<T>(token: ProviderToken<T>): [T, T] {
+  const primeira = TestBed.createComponent(ProcessoSeletivoPage);
+  const segunda = TestBed.createComponent(ProcessoSeletivoPage);
+  return [primeira.debugElement.injector.get(token), segunda.debugElement.injector.get(token)];
+}
 
 describe('ProcessoSeletivoPage — estrutura', () => {
   beforeEach(configurarPagina);
@@ -45,7 +139,7 @@ describe('ProcessoSeletivoPage — estrutura', () => {
   /**
    * O painel e o validador de cada passo são resolvidos por ÍNDICE, mas o índice de cada um vem
    * de duas fontes diferentes: o rótulo sai de `PASSOS`, e o painel e o validador saem da ordem
-   * em que o template declara as seções — doze literais `passoAtual() !== N` escritos à mão e
+   * em que o template declara as seções — treze literais `passoAtual() !== N` escritos à mão e
    * um `viewChildren` que lê a ordem de declaração.
    *
    * Reordenar um passo mexendo só em `PASSOS` dessincroniza os dois lados **sem erro de
@@ -53,41 +147,14 @@ describe('ProcessoSeletivoPage — estrutura', () => {
    * operam no componente errado. Este teste amarra os dois.
    */
   it('o painel visível em cada índice é o do passo que o stepper anuncia', () => {
-    const componentePorRotulo: Readonly<Record<string, string>> = {
-      'Tipo do processo': 'sel-step-tipo-processo',
-      Identificação: 'sel-step-identificacao',
-      Pagamento: 'sel-step-pagamento',
-      Vagas: 'sel-step-vagas',
-      Cronograma: 'sel-step-cronograma',
-      'Fórmula e precisão': 'sel-step-formula',
-      FADA: 'sel-step-bonus',
-      Desempate: 'sel-step-desempate',
-      Eliminação: 'sel-step-eliminacao',
-      'Atend. especial': 'sel-step-atendimento',
-      Formulários: 'sel-step-formulario',
-      'Revisão e publicação': 'sel-step-revisao',
-    };
+    const fixture = montarPaginaRenderizada();
 
-    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
-    fixture.detectChanges();
-    const host = fixture.nativeElement as HTMLElement;
-    const store = fixture.componentInstance.store;
-
-    expect(Object.keys(componentePorRotulo)).toEqual([...ROTULOS_DOS_PASSOS]);
+    expect(Object.keys(COMPONENTE_POR_ROTULO)).toEqual([...ROTULOS_DOS_PASSOS]);
 
     ROTULOS_DOS_PASSOS.forEach((rotulo, indice) => {
-      store.goTo(indice);
+      fixture.componentInstance.store.goTo(indice);
       fixture.detectChanges();
-
-      const visiveis = Array.from(
-        host.querySelectorAll('.step-pane') as NodeListOf<HTMLElement>,
-      ).filter((painel) => !painel.hasAttribute('hidden'));
-
-      expect(visiveis, `nenhum painel visível no passo ${indice} ("${rotulo}")`).toHaveLength(1);
-      expect(
-        visiveis[0].firstElementChild?.tagName.toLowerCase(),
-        `no passo ${indice} o stepper anuncia "${rotulo}", mas o painel visível é outro`,
-      ).toBe(componentePorRotulo[rotulo]);
+      esperarPainelDoPasso(fixture, rotulo, indice);
     });
   });
 
@@ -131,25 +198,10 @@ describe('ProcessoSeletivoPage — estrutura', () => {
     expect(host.querySelector('.wiz-content')).not.toBeNull();
   });
 
-  it.each([
-    ['em edição', null],
-    ['em consulta', SituacaoDoProcessoSeletivoCodigo.PUBLICADO],
-  ])(
+  it.each(MODOS_DA_PAGINA)(
     '%s, .wiz-content não é contêiner de rolagem próprio: rola o .page do shell',
     (_modo, status) => {
-      const fixture = TestBed.createComponent(ProcessoSeletivoPage);
-      if (status !== null) {
-        fixture.debugElement.injector.get(ProcessoSeletivoStore).remoteSnapshot.set({
-          id: 'processo-publicado',
-          situacao: { codigo: status, rotulo: status },
-        } as unknown as ProcessoSeletivoDto);
-      }
-      fixture.detectChanges();
-
-      const wizContent = (fixture.nativeElement as HTMLElement).querySelector('.wiz-content');
-      expect(wizContent?.hasAttribute('uiBackToTopContainer')).toBe(false);
-      expect(wizContent?.hasAttribute('tabindex')).toBe(false);
-      expect(wizContent?.getAttribute('role')).toBeNull();
+      esperarSemRolagemPropria(montarPaginaNoModo(status));
     },
   );
 });
@@ -158,16 +210,14 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
   beforeEach(configurarPagina);
 
   function montar() {
-    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
-    fixture.detectChanges();
-    const host = fixture.nativeElement as HTMLElement;
-    const dialog = host.querySelector<HTMLDialogElement>('dialog.steps-overlay');
+    const fixture = montarPaginaRenderizada();
+    const dialog = (fixture.nativeElement as HTMLElement).querySelector<HTMLDialogElement>(
+      'dialog.steps-overlay',
+    );
     if (dialog === null) {
       throw new Error('A lista de etapas precisa ser um <dialog> para conter o foco.');
     }
-    const etapas = fixture.debugElement.query(By.directive(StepsResponsivoComponent))
-      .componentInstance as StepsResponsivoComponent;
-    return { fixture, page: fixture.componentInstance, dialog, etapas };
+    return { fixture, page: fixture.componentInstance, dialog, etapas: etapasDaPagina(fixture) };
   }
 
   function instrumentar(dialog: HTMLDialogElement) {
@@ -175,6 +225,28 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
     dialog.showModal = showModal;
     dialog.close = vi.fn(() => dialog.dispatchEvent(new Event('close')));
     return showModal;
+  }
+
+  function montarComListaAberta() {
+    const { fixture, dialog, etapas } = montar();
+    const store = fixture.debugElement.injector.get(ProcessoSeletivoStore);
+    instrumentar(dialog);
+    etapas.abrir();
+    return { fixture, dialog, etapas, store };
+  }
+
+  function tituloDoPassoOuFalha(fixture: PaginaMontada): HTMLElement {
+    const titulo = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      '.step-head h1',
+    );
+    if (titulo === null) throw new Error('Título do passo ausente.');
+    return titulo;
+  }
+
+  function botoesAtuaisDaColunaLateral(fixture: PaginaMontada): NodeListOf<Element> {
+    return (fixture.nativeElement as HTMLElement).querySelectorAll(
+      'nav[aria-label="Etapas do cadastro"] li button[aria-current="step"]',
+    );
   }
 
   it('abre a lista de etapas como diálogo modal', () => {
@@ -194,20 +266,14 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
     store.goTo(1);
     fixture.detectChanges();
 
-    const host = fixture.nativeElement as HTMLElement;
-    const atuais = host.querySelectorAll(
-      'nav[aria-label="Etapas do cadastro"] li button[aria-current="step"]',
-    );
+    const atuais = botoesAtuaisDaColunaLateral(fixture);
     expect(atuais.length).toBe(1);
     expect(atuais[0].textContent).toContain(store.labels[1]);
     expect(atuais[0].textContent).toContain('(concluída)');
   });
 
   it('o passo acionado na coluna lateral vai para o store, sem fechar a lista', () => {
-    const { fixture, dialog, etapas } = montar();
-    const store = fixture.debugElement.injector.get(ProcessoSeletivoStore);
-    instrumentar(dialog);
-    etapas.abrir();
+    const { fixture, etapas, store } = montarComListaAberta();
 
     const botoes = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
       'nav[aria-label="Etapas do cadastro"] li button',
@@ -219,10 +285,7 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
   });
 
   it('o passo acionado na lista em diálogo vai para o store e fecha a lista', () => {
-    const { fixture, dialog, etapas } = montar();
-    const store = fixture.debugElement.injector.get(ProcessoSeletivoStore);
-    instrumentar(dialog);
-    etapas.abrir();
+    const { dialog, etapas, store } = montarComListaAberta();
 
     dialog.querySelectorAll<HTMLButtonElement>('ui-steps li button')[3].click();
 
@@ -231,14 +294,8 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
   });
 
   it('escolher na lista em diálogo o passo em que já se está leva o foco ao título dele', async () => {
-    const { fixture, dialog, etapas } = montar();
-    const store = fixture.debugElement.injector.get(ProcessoSeletivoStore);
-    instrumentar(dialog);
-    etapas.abrir();
-    const titulo = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
-      '.step-head h1',
-    );
-    if (titulo === null) throw new Error('Título do passo ausente.');
+    const { fixture, dialog, store } = montarComListaAberta();
+    const titulo = tituloDoPassoOuFalha(fixture);
     document.body.append(fixture.nativeElement);
 
     dialog.querySelectorAll<HTMLButtonElement>('ui-steps li button')[store.passoAtual()].click();
@@ -263,15 +320,10 @@ describe('ProcessoSeletivoPage — bloqueio de scroll', () => {
   beforeEach(configurarPagina);
 
   it('libera o bloqueio de scroll ao destruir a página com overlay aberto', () => {
-    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
-    fixture.detectChanges();
+    const fixture = montarPaginaRenderizada();
+    dialogoDasEtapas(fixture).showModal = vi.fn();
 
-    const host = fixture.nativeElement as HTMLElement;
-    const dialog = host.querySelector<HTMLDialogElement>('dialog.steps-overlay');
-    if (dialog === null) throw new Error('Diálogo de etapas ausente.');
-    dialog.showModal = vi.fn();
-
-    fixture.debugElement.query(By.directive(StepsResponsivoComponent)).componentInstance.abrir();
+    etapasDaPagina(fixture).abrir();
     fixture.detectChanges();
     expect(document.body.classList.contains('ui-overlay-open')).toBe(true);
 
@@ -280,10 +332,7 @@ describe('ProcessoSeletivoPage — bloqueio de scroll', () => {
   });
 
   it('provê uma numeração das respostas recusadas por página, para todos os passos', () => {
-    const primeira = TestBed.createComponent(ProcessoSeletivoPage);
-    const segunda = TestBed.createComponent(ProcessoSeletivoPage);
-    const daPrimeira = primeira.debugElement.injector.get(NumeracaoDasRespostasRecusadas);
-    const daSegunda = segunda.debugElement.injector.get(NumeracaoDasRespostasRecusadas);
+    const [daPrimeira, daSegunda] = mesmoProvedorEmDuasPaginas(NumeracaoDasRespostasRecusadas);
 
     daPrimeira.proxima();
 
@@ -292,22 +341,9 @@ describe('ProcessoSeletivoPage — bloqueio de scroll', () => {
   });
 
   it('provê as recusas da publicação por página, para a Revisão escrever e o Cronograma ler', () => {
-    const primeira = TestBed.createComponent(ProcessoSeletivoPage);
-    const segunda = TestBed.createComponent(ProcessoSeletivoPage);
-    const daPrimeira = primeira.debugElement.injector.get(RecusasDaPublicacao);
-    const daSegunda = segunda.debugElement.injector.get(RecusasDaPublicacao);
+    const [daPrimeira, daSegunda] = mesmoProvedorEmDuasPaginas(RecusasDaPublicacao);
 
-    daPrimeira.registrar(
-      {
-        type: 'about:blank',
-        title: 'x',
-        status: 422,
-        code: 'uniplus.x',
-        traceId: 't',
-        errors: [{ code: 'uniplus.y', message: 'Causa.' }],
-      },
-      'x',
-    );
+    daPrimeira.registrar(RECUSA_DE_EXEMPLO, 'x');
 
     expect(daPrimeira.recusas()).toHaveLength(1);
     expect(daSegunda.recusas()).toHaveLength(0);

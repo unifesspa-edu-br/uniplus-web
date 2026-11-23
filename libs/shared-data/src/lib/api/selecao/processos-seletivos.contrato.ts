@@ -49,6 +49,10 @@ export type AcessoModeloDeDocumentoDto = components['schemas']['AcessoModeloDeDo
 export type ModeloDaExigenciaDto = components['schemas']['ModeloDaExigenciaDto'];
 export type ConfiguracaoTaxaInscricaoDto = components['schemas']['ConfiguracaoTaxaInscricaoDto'];
 export type DefinirTaxaInscricaoRequest = components['schemas']['DefinirTaxaInscricaoRequest'];
+export type DefinirProvaPresencialRequest = components['schemas']['DefinirProvaPresencialRequest'];
+export type MunicipioDeProvaInformado = components['schemas']['MunicipioDeProvaInformado'];
+export type ProvaPresencialDto = components['schemas']['ProvaPresencialDto'];
+export type MunicipioDeProvaDto = components['schemas']['MunicipioDeProvaDto'];
 export type FundamentoIsencaoDto = components['schemas']['FundamentoIsencaoDto'];
 
 /** Vocabulário fechado dos fundamentos que a configuração pode referenciar. */
