@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
+import { CatalogoDeDocumentos } from '../catalogos/catalogo-de-documentos.service';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
 
 /** O que a linha do tempo mostra aberto: fases, etapas e os blocos de dentro de cada etapa. */
@@ -17,6 +18,7 @@ export class ExpansaoDoCronograma {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly cronograma = inject(FormularioDoCronograma);
   private readonly injector = inject(Injector);
+  private readonly catalogoDeDocumentos = inject(CatalogoDeDocumentos);
 
   /**
    * As fases expandidas, por posição na linha do tempo.
@@ -39,7 +41,7 @@ export class ExpansaoDoCronograma {
   /**
    * Os blocos abertos dentro de cada etapa, na chave `posição:bloco`.
    *
-   * Recolhidos por padrão, como a etapa e a fase: cada janela recursal declarada ocupa uma
+   * Recolhidos por padrão, como a etapa e a fase: cada prazo recursal declarado ocupa uma
    * grade inteira, e a prova objetiva do certame qualificado abre duas.
    */
   private readonly blocosAbertos = signal<ReadonlySet<string>>(new Set());
@@ -134,7 +136,11 @@ export class ExpansaoDoCronograma {
   pedirRemocaoDaFase(indice: number): void {
     // Fase sem nada pendurado não precisa de confirmação: não há o que avisar.
     const dependentes = this.cronograma.dependentesDaFase(indice);
-    if (dependentes.etapas === 0 && dependentes.documentos === 0) {
+    if (
+      dependentes.etapas === 0 &&
+      dependentes.documentos === 0 &&
+      dependentes.referencias.length === 0
+    ) {
       this.remocaoAConfirmar.set(null);
       this.cronograma.removerFase(indice);
       return;
@@ -144,8 +150,22 @@ export class ExpansaoDoCronograma {
   }
 
   confirmarRemocaoDaFase(indice: number): void {
+    if (this.cronograma.dependentesDaFase(indice).referencias.length > 0) return;
     this.remocaoAConfirmar.set(null);
     this.cronograma.removerFase(indice);
+  }
+
+  referenciasDaFase(indice: number): readonly { nome: string; fase: string }[] {
+    return this.cronograma.dependentesDaFase(indice).referencias.map((documento) => ({
+      nome:
+        this.catalogoDeDocumentos.tipoDocumentoPorId().get(documento.tipoDocumentoId)?.nome ??
+        documento.tipoDocumentoId,
+      fase:
+        this.cronograma
+          .linhaDoTempo()
+          .find((fase) => fase.grupo.controls.codigo.value === documento.faseCodigo)?.nome ??
+        documento.faseCodigo,
+    }));
   }
 
   /** O que a confirmação enuncia, na língua de quem monta o edital. */

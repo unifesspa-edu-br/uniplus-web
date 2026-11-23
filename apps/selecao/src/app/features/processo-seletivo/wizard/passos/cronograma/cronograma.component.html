@@ -91,14 +91,33 @@
           -->
           @if (expansao.remocaoAConfirmar() === item.indice) {
             <div class="confirma-remocao" role="alert">
-              <p class="confirma-remocao__texto">
-                Remover <strong>{{ item.nome }}</strong> apaga também
-                {{ expansao.resumoDaRemocao(item.indice) }} desta fase.
-              </p>
+              @if (expansao.resumoDaRemocao(item.indice); as resumo) {
+                <p class="confirma-remocao__texto">
+                  Remover <strong>{{ item.nome }}</strong> apaga também {{ resumo }} desta fase.
+                </p>
+              }
+              @if (expansao.referenciasDaFase(item.indice); as referencias) {
+                @if (referencias.length > 0) {
+                  <ul class="u-list">
+                    @for (referencia of referencias; track $index) {
+                      <li>{{ referencia.nome }} — {{ referencia.fase }}</li>
+                    }
+                  </ul>
+                  <p [attr.id]="'cr-orientacao-remocao-' + item.indice">
+                    Troque a referência do prazo destes documentos antes de remover a fase.
+                  </p>
+                }
+              }
               <div class="confirma-remocao__acoes">
                 <button
                   class="btn btn--danger btn--sm"
                   type="button"
+                  [disabled]="expansao.referenciasDaFase(item.indice).length > 0"
+                  [attr.aria-describedby]="
+                    expansao.referenciasDaFase(item.indice).length > 0
+                      ? 'cr-orientacao-remocao-' + item.indice
+                      : null
+                  "
                   (click)="expansao.confirmarRemocaoDaFase(item.indice)"
                 >
                   Remover assim mesmo
