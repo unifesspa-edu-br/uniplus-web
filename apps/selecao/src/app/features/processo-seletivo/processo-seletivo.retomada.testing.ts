@@ -51,6 +51,7 @@ import {
   StatusProcesso,
   VagasDoProcessoApi,
   VocabulariosDaComprovacaoApi,
+  VocabulariosDoPrazoEDaValidadeApi,
 } from '@uniplus/shared-data/selecao';
 import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-testing';
 import { BehaviorSubject, NEVER, of } from 'rxjs';
@@ -87,6 +88,14 @@ const falhaDeCatalogo = { listar: () => of(errorResult(mockProblemDetails({ stat
  */
 const catalogoVazioStub = { listar: () => respostaVazia<never>() };
 
+const vocabulariosDoPrazoEDaValidadeStub = {
+  listarEscolhasDoPrazoDeEmissao: catalogoVazioStub.listar,
+  listarEscolhasDaValidade: catalogoVazioStub.listar,
+  listarUnidadesDoPrazoDeEmissao: catalogoVazioStub.listar,
+  listarTiposDaDataDeReferencia: catalogoVazioStub.listar,
+  listarEfeitosNaAnaliseDoDocumento: catalogoVazioStub.listar,
+};
+
 const vocabulariosDaComprovacaoStub = {
   listarFormasDeComprovacao: catalogoVazioStub.listar,
   listarFormatosPermitidos: catalogoVazioStub.listar,
@@ -120,6 +129,7 @@ const PROVEDORES_DE_CATALOGO_VAZIO: readonly Provider[] = [
   { provide: TiposEtapaApi, useValue: catalogoVazioStub },
   { provide: TiposDocumentoApi, useValue: catalogoVazioStub },
   { provide: VocabulariosDaComprovacaoApi, useValue: vocabulariosDaComprovacaoStub },
+  { provide: VocabulariosDoPrazoEDaValidadeApi, useValue: vocabulariosDoPrazoEDaValidadeStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
   { provide: MotivosDeDecisaoApi, useValue: catalogoVazioStub },
   { provide: OpcoesDoRecursoApi, useValue: opcoesDoRecursoApiStub },
