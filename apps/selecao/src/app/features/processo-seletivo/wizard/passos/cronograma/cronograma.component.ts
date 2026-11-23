@@ -1,3 +1,4 @@
+import { RecusasDasExigencias } from '../fase/documentos/recusas-das-exigencias.service';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
@@ -56,6 +57,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
   templateUrl: './cronograma.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
+    RecusasDasExigencias,
     provePassoDoWizard(CronogramaPassoComponent),
     UnidadesResponsaveisDasFases,
     ReleituraDosIdentificadores,
