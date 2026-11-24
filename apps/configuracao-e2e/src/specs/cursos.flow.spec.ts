@@ -161,8 +161,18 @@ test.describe('Curso — CRUD (#389)', () => {
     const capturado = novoCapturado();
     // A API devolve por nome (ordem alfabética padrão); a Web só apresenta.
     await mockApi(page, capturado, [
-      { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c9', codigo: 'ADM', nome: 'Administração' },
-      { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c1', codigo: 'ZOO', nome: 'Zootecnia' },
+      {
+        ...cursoSeed,
+        id: '01960000-0000-7000-0000-0000000000c9',
+        codigo: 'ADM',
+        nome: 'Administração',
+      },
+      {
+        ...cursoSeed,
+        id: '01960000-0000-7000-0000-0000000000c1',
+        codigo: 'ZOO',
+        nome: 'Zootecnia',
+      },
     ]);
     await abrirPagina(page);
 
@@ -193,7 +203,9 @@ test.describe('Curso — CRUD (#389)', () => {
     expect(capturado.posts[0]).toMatchObject({ codigo: 'ADM', nome: 'Administração' });
   });
 
-  test('grupo de área do ENEM: a tabela mostra o rótulo e o curso grava o grupo pelo código', async ({ page }) => {
+  test('grupo de área do ENEM: a tabela mostra o rótulo e o curso grava o grupo pelo código', async ({
+    page,
+  }) => {
     const capturado = novoCapturado();
     await mockApi(page, capturado, [cursoSeed]);
     await abrirPagina(page);
@@ -271,7 +283,9 @@ test.describe('Curso — CRUD (#389)', () => {
     await expect(drawer.getByRole('heading', { name: 'Ofertas de ENG-CIV' })).toBeVisible();
     await expect(drawer.getByText('Remoção bloqueada')).toBeVisible();
     await expect(
-      drawer.getByText('Não é possível remover um curso referenciado por uma oferta de curso ativa'),
+      drawer.getByText(
+        'Não é possível remover um curso referenciado por uma oferta de curso ativa',
+      ),
     ).toBeVisible();
     await expect(drawer.getByText('Instituto de Geociências e Engenharias')).toBeVisible();
     await expect.poll(() => capturado.ofertaCursoIds).toContain(CURSO_ID);
@@ -300,10 +314,7 @@ test.describe('Curso — CRUD (#389)', () => {
     await page
       .getByRole('button', { name: `Remover curso ${cursoSeed.codigo}`, exact: true })
       .click();
-    await page
-      .locator('dialog.uni-dialog')
-      .getByRole('button', { name: 'Remover' })
-      .click();
+    await page.locator('dialog.uni-dialog').getByRole('button', { name: 'Remover' }).click();
 
     await expect.poll(() => capturado.deletedIds.length).toBe(1);
     expect(capturado.deletedIds[0]).toBe(CURSO_ID);
@@ -312,7 +323,12 @@ test.describe('Curso — CRUD (#389)', () => {
   test('Cenário BDD: voltar depois de a listagem expirar recarrega do começo e avisa', async ({
     page,
   }) => {
-    const cursoB = { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c2', codigo: 'ZOO', nome: 'Zootecnia' };
+    const cursoB = {
+      ...cursoSeed,
+      id: '01960000-0000-7000-0000-0000000000c2',
+      codigo: 'ZOO',
+      nome: 'Zootecnia',
+    };
     const listaUrls: string[] = [];
     await page.route(/\/api\/configuracao\/cursos(\?.*)?$/, async (route) => {
       if (route.request().method() === 'OPTIONS') {

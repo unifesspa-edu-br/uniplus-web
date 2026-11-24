@@ -41,23 +41,29 @@ async function mockApi(
   capturado: { post?: unknown; deleted?: boolean },
   lista: readonly unknown[],
 ): Promise<void> {
-  await page.route(/\/api\/configuracao\/admin\/referencias-reserva-demografica\/[^/]+$/, async (route) => {
-    if (route.request().method() === 'DELETE') {
-      capturado.deleted = true;
-    }
-    await route.fulfill({ status: 204, headers: CORS_HEADERS });
-  });
-  await page.route(/\/api\/configuracao\/admin\/referencias-reserva-demografica$/, async (route) => {
-    if (route.request().method() === 'POST') {
-      capturado.post = route.request().postDataJSON();
-    }
-    await route.fulfill({
-      status: 201,
-      contentType: 'application/json',
-      headers: CORS_HEADERS,
-      body: '"new-id"',
-    });
-  });
+  await page.route(
+    /\/api\/configuracao\/admin\/referencias-reserva-demografica\/[^/]+$/,
+    async (route) => {
+      if (route.request().method() === 'DELETE') {
+        capturado.deleted = true;
+      }
+      await route.fulfill({ status: 204, headers: CORS_HEADERS });
+    },
+  );
+  await page.route(
+    /\/api\/configuracao\/admin\/referencias-reserva-demografica$/,
+    async (route) => {
+      if (route.request().method() === 'POST') {
+        capturado.post = route.request().postDataJSON();
+      }
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        headers: CORS_HEADERS,
+        body: '"new-id"',
+      });
+    },
+  );
   await page.route(/\/api\/configuracao\/referencias-reserva-demografica(\?.*)?$/, (route) =>
     jsonRoute(route, lista),
   );
@@ -95,13 +101,15 @@ test.describe('Reserva demográfica — CRUD (#394)', () => {
     await page.locator('[formControlName="baseLegal"]').fill('Lei 12.711/2012, art. 10, III');
     await page.getByRole('button', { name: 'Criar referência' }).click();
 
-    await expect.poll(() => capturado.post).toMatchObject({
-      censoReferencia: '2022',
-      ppiPercentual: 78.5,
-      quilombolaPercentual: 1.2,
-      pcdPercentual: 8.4,
-      baseLegal: 'Lei 12.711/2012, art. 10, III',
-    });
+    await expect
+      .poll(() => capturado.post)
+      .toMatchObject({
+        censoReferencia: '2022',
+        ppiPercentual: 78.5,
+        quilombolaPercentual: 1.2,
+        pcdPercentual: 8.4,
+        baseLegal: 'Lei 12.711/2012, art. 10, III',
+      });
   });
 
   test('CA-07: remover faz soft-delete após confirmação', async ({ page }) => {

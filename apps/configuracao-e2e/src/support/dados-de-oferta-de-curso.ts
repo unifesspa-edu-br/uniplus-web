@@ -1,12 +1,6 @@
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import type { Page } from '@playwright/test';
-import {
-  FormatoPedagogicoCodigo,
-  ProgramaDeOfertaCodigo,
-  RegimeDeFuncionamentoCodigo,
-  RegimeDeTurnoCodigo,
-  TurnoOfertaCodigo,
-  type OfertaCursoDto,
-} from '@uniplus/shared-data/configuracao';
+import type { LocalOfertaDto, OfertaCursoDto } from '@uniplus/shared-data/configuracao';
 
 /** Os dados do cadastro de Oferta de curso que os specs de fluxo compartilham. */
 
@@ -20,9 +14,9 @@ export const CURSO = {
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
-export const LOCAL = {
+export const LOCAL: JsonDaApi<LocalOfertaDto> = {
   id: '01960000-0000-7000-0000-0000000000e1',
-  tipo: 'campusSede',
+  tipo: { codigo: 'CAMPUS_SEDE', rotulo: 'Campus sede' },
   campusResponsavelId: null,
   cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
   endereco: null,
@@ -47,7 +41,7 @@ export const UNIDADE = {
 /** A identidade da oferta: caixa alta, começando por letra, de 2 a 50 caracteres. */
 export const CODIGO_DA_OFERTA = 'ENGENHARIA_CIVIL_MARABA';
 
-export const OFERTA: OfertaCursoDto = {
+export const OFERTA: JsonDaApi<OfertaCursoDto> = {
   id: '01960000-0000-7000-0000-0000000000d1',
   codigo: CODIGO_DA_OFERTA,
   cursoId: CURSO.id,
@@ -58,11 +52,11 @@ export const OFERTA: OfertaCursoDto = {
     nome: UNIDADE.nome,
     tipo: 'Instituto',
   },
-  programaDeOferta: { codigo: ProgramaDeOfertaCodigo.REGULAR, rotulo: 'Regular' },
-  formatoPedagogico: { codigo: FormatoPedagogicoCodigo.PRESENCIAL, rotulo: 'Presencial' },
-  regimeDeFuncionamento: { codigo: RegimeDeFuncionamentoCodigo.EXTENSIVO, rotulo: 'Extensivo' },
-  regimeDeTurno: { codigo: RegimeDeTurnoCodigo.REGULAR, rotulo: 'Regular' },
-  turnos: [{ codigo: TurnoOfertaCodigo.MATUTINO, rotulo: 'Matutino' }],
+  programaDeOferta: { codigo: 'REGULAR', rotulo: 'Regular' },
+  formatoPedagogico: { codigo: 'PRESENCIAL', rotulo: 'Presencial' },
+  regimeDeFuncionamento: { codigo: 'EXTENSIVO', rotulo: 'Extensivo' },
+  regimeDeTurno: { codigo: 'REGULAR', rotulo: 'Regular' },
+  turnos: [{ codigo: 'MATUTINO', rotulo: 'Matutino' }],
   eMecCodigo: '123456',
   codigoSga: null,
   vagasAnuaisAutorizadas: 40,

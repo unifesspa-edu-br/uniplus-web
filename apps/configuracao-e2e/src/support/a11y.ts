@@ -23,8 +23,6 @@ export async function assertSemViolacoesGraves(
   options: RunAxeOptions = {},
 ): Promise<void> {
   const { violations } = await runAxeWcagAA(page, options);
-  const graves = violations.filter(
-    ({ impact }) => impact === 'serious' || impact === 'critical',
-  );
+  const graves = violations.filter(({ impact }) => impact === 'serious' || impact === 'critical');
   expect(graves, JSON.stringify(graves, null, 2)).toEqual([]);
 }

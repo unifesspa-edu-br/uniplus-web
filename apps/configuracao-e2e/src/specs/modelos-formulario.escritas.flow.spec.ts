@@ -1,5 +1,6 @@
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import {
-  FinalidadeFormularioCodigo,
+  type FinalidadeFormularioCodigo,
   type ModeloFormularioView,
 } from '@uniplus/shared-data/configuracao';
 import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
@@ -16,7 +17,7 @@ const ID_DO_NOVO_MODELO = '01960000-0000-7000-0000-0000000000a2';
 const MODELO = {
   id: ID_DO_MODELO,
   codigo: 'INSCRICAO',
-  finalidade: { codigo: FinalidadeFormularioCodigo.INSCRICAO, rotulo: 'Inscrição' },
+  finalidade: { codigo: 'INSCRICAO', rotulo: 'Inscrição' },
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   ativo: true,
   conteudo: {
@@ -28,7 +29,7 @@ const MODELO = {
     grupos: [],
     documentosExigidos: [],
   },
-} satisfies ModeloFormularioView;
+} satisfies JsonDaApi<ModeloFormularioView>;
 
 /** Atraso da recarga da lista após a escrita: o botão da linha ainda está indisponível quando a troca termina. */
 const ATRASO_DA_RECARGA_EM_MS = 1500;

@@ -1,5 +1,6 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { faseCanonica } from '../support/api-de-fases-canonicas';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
@@ -20,22 +21,11 @@ const CORS_HEADERS = {
 
 const FASE_ID = '01960000-0000-7000-0000-0000000000f1';
 
-const faseSeed = {
+const faseSeed = faseCanonica({
   id: FASE_ID,
-  codigo: 'AVALIACAO',
-  nome: 'Avaliação',
-  descricao: null,
-  unidadeSugerida: null,
   agrupaEtapas: true,
-  permiteComplementacao: false,
   admiteAgruparEtapas: true,
-  admiteComplementacao: false,
-  baseLegal: null,
-  coletaInscricao: false,
-  coletaSolicitacaoIsencao: false,
-  origemData: 'NO_EDITAL',
-  criadoEm: '2026-06-10T12:00:00Z',
-};
+});
 
 const UNIDADE_CGA = {
   id: '01960000-0000-7000-0000-0000000000a2',
@@ -55,15 +45,14 @@ const UNIDADE_CGA = {
   cidadeUf: null,
 };
 
-const faseIsencaoSeed = {
-  ...faseSeed,
+const faseIsencaoSeed = faseCanonica({
   id: '01960000-0000-7000-0000-0000000000f2',
   codigo: 'SOLICITACAO_ISENCAO',
   nome: 'Solicitação de isenção',
   agrupaEtapas: false,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: true,
-};
+});
 
 async function jsonRoute(route: Route, body: unknown, status = 200): Promise<void> {
   if (route.request().method() === 'OPTIONS') {
@@ -192,24 +181,27 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     expect(capturado.posts).toHaveLength(0);
   });
 
-  for (const [origem, rotulo, outra] of [
-    ['NO_EDITAL', 'Fixada no edital', 'NA_EXECUCAO'],
-    ['NA_EXECUCAO', 'Definida na execução', 'NO_EDITAL'],
+  for (const [origem, rotulo, outra, rotuloDaOutra] of [
+    ['NO_EDITAL', 'No edital', 'NA_EXECUCAO', 'Na execucao'],
+    ['NA_EXECUCAO', 'Na execucao', 'NO_EDITAL', 'No edital'],
   ] as const) {
     test(`a origem da data ${rotulo} segue no comando de atualização como ${origem}`, async ({
       page,
     }) => {
       const capturado = novoCapturado();
-      await mockApi(page, capturado, [{ ...faseSeed, origemData: outra }]);
+      await mockApi(page, capturado, [
+        faseCanonica({ ...faseSeed, origemData: { codigo: outra, rotulo: rotuloDaOutra } }),
+      ]);
       await abrirPagina(page);
 
       await page
         .getByRole('button', { name: `Editar fase canônica ${faseSeed.codigo}`, exact: true })
         .click();
       const campo = page.getByLabel('Origem da data');
-      await expect(campo.getByRole('option', { name: 'Fixada no edital' })).toHaveCount(1);
-      await expect(campo.getByRole('option', { name: 'Definida na execução' })).toHaveCount(1);
-      await campo.selectOption({ label: rotulo });
+      await expect(campo.getByRole('option', { name: 'No edital' })).toHaveCount(1);
+      await expect(campo.getByRole('option', { name: 'Na execucao' })).toHaveCount(1);
+      await campo.selectOption(origem);
+      await expect(campo.locator('option:checked')).toHaveText(rotulo);
       await page.getByRole('button', { name: 'Salvar fase canônica' }).click();
 
       await expect.poll(() => capturado.puts.length).toBe(1);
@@ -227,7 +219,7 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     const ajuda = page
       .locator('label.field', { hasText: 'Origem da data' })
       .locator('.field__hint');
-    await expect(ajuda).toContainText('Fixada no edital');
+    await expect(ajuda).toContainText('quando a data será definida');
     await expect(ajuda).not.toContainText(/terceiro|MEC|SiSU/i);
   });
 

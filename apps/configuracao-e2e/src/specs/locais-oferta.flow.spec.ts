@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { LOCAL_POLO_EAD as LOCAL } from '../support/dados-de-local-de-oferta';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
@@ -14,16 +15,6 @@ const CORS_HEADERS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
-};
-
-const LOCAL = {
-  id: '01960000-0000-7000-0000-0000000000d1',
-  tipo: 'poloEad',
-  codigoEmec: '999',
-  campusResponsavelId: null,
-  cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
-  endereco: null,
-  criadoEm: '2026-06-10T12:00:00Z',
 };
 
 async function responder(route: Route, status: number, corpo?: unknown): Promise<void> {

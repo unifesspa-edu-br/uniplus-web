@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { faseCanonica } from '../support/api-de-fases-canonicas';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 const CORS_HEADERS = {
@@ -7,22 +8,7 @@ const CORS_HEADERS = {
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
 };
 
-const FASE = {
-  id: '01960000-0000-7000-0000-0000000000f1',
-  codigo: 'AVALIACAO',
-  nome: 'Avaliação',
-  descricao: null,
-  unidadeSugerida: null,
-  agrupaEtapas: true,
-  permiteComplementacao: false,
-  admiteAgruparEtapas: true,
-  admiteComplementacao: false,
-  baseLegal: null,
-  coletaInscricao: false,
-  coletaSolicitacaoIsencao: false,
-  origemData: 'NO_EDITAL',
-  criadoEm: '2026-06-10T12:00:00Z',
-};
+const FASE = faseCanonica({ agrupaEtapas: true, admiteAgruparEtapas: true });
 
 /** Atraso da recarga da lista após a escrita: o botão da linha ainda está indisponível quando o drawer fecha. */
 const ATRASO_DA_RECARGA_EM_MS = 1500;

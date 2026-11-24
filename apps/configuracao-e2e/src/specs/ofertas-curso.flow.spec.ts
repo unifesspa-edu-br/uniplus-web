@@ -1,5 +1,14 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
-import { CODIGO_DA_OFERTA, preencherCodigoDaOferta } from '../support/dados-de-oferta-de-curso';
+import type { CursoDto } from '@uniplus/shared-data/configuracao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
+import {
+  CODIGO_DA_OFERTA,
+  IDENTIFICADOR_DA_OFERTA,
+  LOCAL,
+  OFERTA,
+  UNIDADE,
+  preencherCodigoDaOferta,
+} from '../support/dados-de-oferta-de-curso';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
@@ -15,11 +24,11 @@ const CORS_HEADERS = {
 };
 
 const CURSO_ID = '01960000-0000-7000-0000-0000000000c1';
-const LOCAL_ID = '01960000-0000-7000-0000-0000000000e1';
-const UNIDADE_ID = '01960000-0000-7000-0000-0000000000f1';
-const OFERTA_ID = '01960000-0000-7000-0000-0000000000d1';
+const LOCAL_ID = LOCAL.id;
+const UNIDADE_ID = UNIDADE.id;
+const OFERTA_ID = OFERTA.id;
 
-const cursoSeed = {
+const cursoSeed: JsonDaApi<CursoDto> = {
   id: CURSO_ID,
   codigo: 'ENG-CIV',
   nome: 'Engenharia Civil',
@@ -29,67 +38,10 @@ const cursoSeed = {
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
-const localSeed = {
-  id: LOCAL_ID,
-  tipo: { codigo: 'CAMPUS_SEDE', rotulo: 'Campus sede' },
-  campusResponsavelId: null,
-  cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
-  endereco: null,
-  codigoEmec: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-};
-
-const unidadeSeed = {
-  id: UNIDADE_ID,
-  nome: 'Instituto de Geociências e Engenharias',
-  alias: null,
-  slug: 'ige',
-  sigla: 'IGE',
-  codigo: 'IGE',
-  unidadeSuperiorId: null,
-  tipo: 'Instituto',
-  unidadeAcademica: true,
-  vigenciaInicio: '2020-01-01',
-  vigenciaFim: null,
-};
-
-const ofertaSeed = {
-  id: OFERTA_ID,
-  codigo: CODIGO_DA_OFERTA,
-  cursoId: CURSO_ID,
-  localOfertaId: LOCAL_ID,
-  unidadeOfertante: {
-    origemId: UNIDADE_ID,
-    sigla: 'IGE',
-    nome: 'Instituto de Geociências e Engenharias',
-    tipo: 'Instituto',
-  },
-  programaDeOferta: 'REGULAR',
-  formatoPedagogico: 'PRESENCIAL',
-  regimeDeFuncionamento: 'EXTENSIVO',
-  regimeDeTurno: 'REGULAR',
-  turnos: ['MATUTINO'],
-  eMecCodigo: '123456',
-  codigoSga: null,
-  vagasAnuaisAutorizadas: 40,
-  baseLegal: null,
-  atoAutorizacaoMec: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-};
-
-// Nome acessível das ações da linha de `ofertaSeed` (#835), composto a partir
-// dos seeds como a página compõe (`identificadorOferta`): curso · unidade ·
-// local · programa · turnos. Escrito à mão, uma mudança num seed quebraria o
-// locator em silêncio, com um timeout no clique. Os rótulos de programa e de
-// turno (`REGULAR`, `MATUTINO`) vão por extenso pelo mesmo motivo da constante
-// do tipo: os catálogos da lib não são importáveis aqui.
-const identificadorOfertaSeed = [
-  cursoSeed.nome,
-  unidadeSeed.sigla,
-  `${localSeed.tipo.rotulo} — ${localSeed.cidade.nome}`,
-  'Regular',
-  'Matutino',
-].join(' · ');
+const localSeed = LOCAL;
+const unidadeSeed = UNIDADE;
+const ofertaSeed = OFERTA;
+const identificadorOfertaSeed = IDENTIFICADOR_DA_OFERTA;
 
 /**
  * Marca um turno pelo gesto real do operador: o clique no rótulo. O
