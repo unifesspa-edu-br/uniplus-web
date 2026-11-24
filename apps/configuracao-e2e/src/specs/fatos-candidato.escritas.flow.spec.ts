@@ -28,7 +28,7 @@ async function preencherCriacao(page: Page): Promise<void> {
   await page.locator('input[formcontrolname="nome"]').fill('Perfil socioeconômico');
   await page.locator('input[formcontrolname="codigo"]').fill('PERFIL');
   await page.locator('textarea[formcontrolname="descricao"]').fill('Perfil que define a reserva.');
-  await page.locator('select[formcontrolname="dominio"]').selectOption('BOOLEANO');
+  await page.locator('select[formcontrolname="dominio"]').selectOption('SIM_OU_NAO');
   await page.locator('#cfg-fato-pontoResolucao').selectOption('INSCRICAO');
   await page.locator('select[formcontrolname="classificacaoProtecao"]').selectOption('PESSOAL');
   await page
