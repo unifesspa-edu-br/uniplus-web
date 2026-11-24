@@ -11,6 +11,7 @@ import {
   etapa,
   FASE_INSCRICAO,
   GRAVADO,
+  HABILITACAO_GRAVADA,
   INSCRICAO_COPIADA,
   modelo,
   MODELOS,
@@ -178,8 +179,7 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
         { id: 'F-HABILITACAO', codigo: 'HABILITACAO', coletaInscricao: false },
       ];
       const copiada = {
-        ...GRAVADO,
-        finalidade: 'HABILITACAO',
+        ...HABILITACAO_GRAVADA,
         faseId: null,
         modeloOrigem: { id: 'hab', codigo: 'HAB' },
         etapas: [etapa('REVISAO_E_ACEITE', 0, 'REVISAO_E_ACEITE')],

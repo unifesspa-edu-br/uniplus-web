@@ -61,7 +61,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       await page.getByLabel('Idade mínima', { exact: true }).fill('60');
 
       await page.getByRole('button', { name: '+ Acrescentar critério' }).click();
-      await regraDoCriterio.nth(2).selectOption('DESEMPATE-PREDICADO-FATO|1.0');
+      await regraDoCriterio.nth(2).selectOption('DESEMPATE-CONDICAO-SOBRE-DADO|1.0');
       // Fato, comparação e valor vêm do catálogo institucional: os três são vocabulário
       // fechado do servidor, e antes eram campos de texto que aceitavam "lte" para ser
       // recusado no 422.

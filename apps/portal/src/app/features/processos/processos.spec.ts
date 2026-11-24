@@ -1,4 +1,4 @@
-import { SituacaoDoCertame, type CertameNaVitrineDto } from '@uniplus/shared-data/selecao';
+import { SituacaoDoCertameCodigo, type CertameNaVitrineDto } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -57,16 +57,16 @@ describe('ProcessosComponent', () => {
     await cenario.responderLista([sisu, tecnicoEnfermagem], contadoresHeaders);
     cenario.fixture.detectChanges();
 
-    expect(cenario.chip('Inscrições abertas')?.textContent).toContain('1');
-    expect(cenario.chip('Últimos dias')?.textContent).toContain('1');
-    expect(cenario.chip('Em breve')?.textContent).toContain('0');
+    expect(cenario.chip(sisu.situacao.rotulo)?.textContent).toContain('1');
+    expect(cenario.chip(tecnicoEnfermagem.situacao.rotulo)?.textContent).toContain('1');
+    expect(cenario.chip('Em breve')).toBeNull();
   });
 
   it('chip fica sem contador quando a resposta não traz os headers X-Certames-*', async () => {
     await cenario.responderLista([sisu]);
     cenario.fixture.detectChanges();
 
-    expect(cenario.chip('Em breve')?.textContent).not.toContain('0');
+    expect(cenario.chip(sisu.situacao.rotulo)?.textContent).not.toContain('0');
     expect(cenario.host().querySelector('.filter-chip__count')).toBeNull();
   });
 
@@ -142,7 +142,7 @@ describe('ProcessosComponent', () => {
       ...sisu,
       inscricoesDe,
       inscricoesAte: '2026-11-13T15:00:00Z',
-      situacao: SituacaoDoCertame.emBreve,
+      situacao: { codigo: SituacaoDoCertameCodigo.emBreve, rotulo: 'Situação de teste' },
     });
 
     const metaDoPrimeiroItem = (): string =>

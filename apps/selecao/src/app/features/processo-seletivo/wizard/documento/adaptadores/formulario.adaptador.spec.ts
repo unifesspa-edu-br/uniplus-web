@@ -1,4 +1,8 @@
-import { FinalidadeDoFormulario, type DocumentoDaConfiguracao } from '@uniplus/shared-data/selecao';
+import {
+  FinalidadeDoFormulario,
+  TipoDaReferenciaTemporal,
+  type DocumentoDaConfiguracao,
+} from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { documentoSemNada, exemploDoContrato, NOMES_DOS_EXEMPLOS } from '../exemplos.testing';
@@ -22,7 +26,11 @@ describe('adaptador do passo Formulários', () => {
   });
 
   it('lê o cabeçalho e a referência temporal da finalidade', () => {
-    const valores = valoresDoFormulario(exemploDoContrato('inscricao-pelo-sistema'), INSCRICAO);
+    const documento = {
+      ...exemploDoContrato('inscricao-pelo-sistema'),
+      coleta: { referenciaTemporalDosDados: { tipo: TipoDaReferenciaTemporal.FIM_INSCRICAO } },
+    };
+    const valores = valoresDoFormulario(documento, INSCRICAO);
 
     expect(valores).toEqual({
       formulario: {
@@ -54,11 +62,11 @@ describe('adaptador do passo Formulários', () => {
     const [antes] = documento.formularios ?? [];
     const [depois] = editado.formularios ?? [];
     expect(depois.titulo).toBe('Novo');
-    expect(depois.etapas).toBe(antes.etapas);
+    expect(depois.paginas).toBe(antes.paginas);
     expect(depois.itens).toBe(antes.itens);
     expect(depois.grupos).toBe(antes.grupos);
     expect(depois.termos).toBe(antes.termos);
-    expect(editado.coleta?.regrasDerivacao).toBe(documento.coleta?.regrasDerivacao);
+    expect(editado.coleta?.calculosDosDados).toBe(documento.coleta?.calculosDosDados);
   });
 
   it('o modelo de origem é só leitura: não volta ao documento editado', () => {

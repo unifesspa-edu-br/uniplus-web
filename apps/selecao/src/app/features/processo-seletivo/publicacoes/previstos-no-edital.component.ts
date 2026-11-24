@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import {
-  SituacaoDoProdutoPrevisto,
+  SituacaoDoProdutoPrevistoCodigo,
   type AtoDoProcessoDto,
   type ProdutoPrevistoDto,
 } from '@uniplus/shared-data/selecao';
@@ -54,7 +54,7 @@ export class PrevistosNoEditalComponent {
 
   protected readonly rotuloDoAto = rotuloDoAto;
   protected readonly rotuloDoPapel = rotuloDoPapel;
-  protected readonly aberto = SituacaoDoProdutoPrevisto.aberto;
+  protected readonly aberto = SituacaoDoProdutoPrevistoCodigo.aberto;
 
   protected readonly fases = computed(() => {
     const { consulta, nomeDaFase } = this.previstos();

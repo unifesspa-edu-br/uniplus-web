@@ -1,10 +1,17 @@
 import {
+  DADO_SIM_OU_NAO,
+  ORIGEM_DECLARADA,
+  VALOR_UNICO,
+} from '../../shared/valores-do-catalogo.testing';
+import {
+  FinalidadeFormularioCodigo as FinalidadeDoModelo,
   OperadorCodigo as OperadorDoCatalogo,
   type FatoDoCatalogoDto,
   type ModeloFormularioView,
 } from '@uniplus/shared-data/configuracao';
 import {
   type FormularioDto,
+  FinalidadeFormularioCodigo,
   OperadorCodigo,
   TipoRenderizacaoCodigo,
 } from '@uniplus/shared-data/selecao';
@@ -56,7 +63,7 @@ export const FASE_HABILITACAO: FaseDoCronograma = {
 };
 
 const APRESENTACAO_BOOLEANA: Omit<ItemDoFormulario['apresentacao'], 'rotulo'> = {
-  tipoRenderizacao: TipoRenderizacaoCodigo.BOOLEANO,
+  tipoRenderizacao: TipoRenderizacaoCodigo.SIM_OU_NAO,
   ajuda: null,
   pedirConfirmacao: false,
 };
@@ -100,7 +107,7 @@ export const etapa = (
 
 /** A inscrição como o servidor a devolve: com a seção dos dados básicos que a API acrescenta. */
 export const GRAVADO: FormularioDto = {
-  finalidade: 'INSCRICAO',
+  finalidade: { codigo: FinalidadeFormularioCodigo.INSCRICAO, rotulo: 'Inscrição' },
   faseId: 'F-INSCRICAO',
   titulo: 'Inscrição — Medicina 2027',
   modeloOrigem: null,
@@ -150,9 +157,9 @@ export const PCD_NO_CATALOGO: FatoDoCatalogoDto = {
     codigo: 'PCD',
     nome: 'Pessoa com deficiência',
     descricao: 'Se o candidato é pessoa com deficiência.',
-    dominio: 'BOOLEANO',
-    origem: 'DECLARADO',
-    cardinalidade: 'ESCALAR',
+    dominio: DADO_SIM_OU_NAO,
+    origem: ORIGEM_DECLARADA,
+    cardinalidade: VALOR_UNICO,
     valoresDominio: null,
     pontoResolucao: 'INSCRICAO',
     binding: 'CAMPO_INSCRICAO:PCD',
@@ -173,7 +180,7 @@ export const PCD_NO_CATALOGO: FatoDoCatalogoDto = {
 
 export const HABILITACAO_GRAVADA = {
   ...GRAVADO,
-  finalidade: 'HABILITACAO',
+  finalidade: { codigo: FinalidadeFormularioCodigo.HABILITACAO, rotulo: 'Habilitação' },
   faseId: 'F-HABILITACAO',
   etapas: [etapa('REVISAO_E_ACEITE', 0, 'REVISAO_E_ACEITE')],
   coleta: { itens: [], grupos: [] },
@@ -189,10 +196,23 @@ const CONTEUDO_VAZIO_DO_MODELO: ModeloFormularioView['conteudo'] = {
   documentosExigidos: [],
 };
 
-export const modelo = (id: string, nome: string, finalidade: string): ModeloFormularioView => ({
+const ROTULOS_DAS_FINALIDADES: Record<FinalidadeDoModelo, string> = {
+  INSCRICAO: 'Inscrição',
+  ISENCAO_TAXA: 'Isenção de taxa',
+  HABILITACAO: 'Habilitação',
+};
+
+export const modelo = (
+  id: string,
+  nome: string,
+  finalidade: keyof typeof FinalidadeDoModelo,
+): ModeloFormularioView => ({
   id,
   codigo: id.toUpperCase(),
-  finalidade,
+  finalidade: {
+    codigo: FinalidadeDoModelo[finalidade],
+    rotulo: ROTULOS_DAS_FINALIDADES[finalidade],
+  },
   ativo: true,
   descritivo: { nome, descricao: null, tipoProcessoCodigo: 'MEDICINA' },
   conteudo: CONTEUDO_VAZIO_DO_MODELO,
@@ -204,7 +224,7 @@ export const MODELOS = [
 ];
 
 export const relato = (finalidade: string) => ({
-  finalidade,
+  finalidade: { codigo: finalidade, rotulo: finalidade },
   fatosTrazidosParaAInscricao: [],
   fatosMantidosNaInscricao: [],
   descartados: [],

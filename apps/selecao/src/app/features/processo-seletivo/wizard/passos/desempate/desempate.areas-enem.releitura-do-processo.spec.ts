@@ -1,4 +1,4 @@
-import { StatusProcesso } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -59,7 +59,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: releitura do pro
         .expectOne((r) => r.url.endsWith(ROTA_DETALHE))
         .flush({
           id: PROCESSO_ID,
-          status: StatusProcesso.rascunho,
+          status: StatusProcessoCodigo.rascunho,
           classificacao: {
             resolucaoPesoAreaEnem: RESOLUCAO,
             quadroPesoAreaEnem: QUADRO_CONGELADO,

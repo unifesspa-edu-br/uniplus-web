@@ -9,7 +9,7 @@ import { AppConfigService, type AppConfig } from '@uniplus/shared-data/config';
 import { CONFIGURACAO_BASE_PATH, PesosEnemApi } from '@uniplus/shared-data/configuracao';
 import {
   SELECAO_BASE_PATH,
-  StatusProcesso,
+  StatusProcessoCodigo,
   type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
 import { vi } from 'vitest';
@@ -98,29 +98,30 @@ export interface OpcoesDaMontagem {
   readonly comoSecao?: boolean;
 }
 
-export async function montar<T>(
-  tipo: Type<T>,
-  opcoes: OpcoesDaMontagem = {},
-): Promise<MontagemDe<T>> {
+const PROVEDORES_DA_MONTAGEM = [
+  ProcessoSeletivoStore,
+  CatalogosDeClassificacao,
+  LeituraDoCadastroDePesos,
+  provideHttpClient(withInterceptors([apiResultInterceptor])),
+  provideHttpClientTesting(),
+  {
+    provide: PermissoesService,
+    useValue: { tem: (codigo: string) => concedidas().includes(codigo) },
+  },
+  { provide: ReleituraDoSnapshot, useValue: releitura },
+  { provide: SELECAO_BASE_PATH, useValue: BASE },
+  { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+];
+
+async function configurarMontagem<T>(tipo: Type<T>, opcoes: OpcoesDaMontagem): Promise<void> {
+  const pesos = opcoes.pesosApi ? [{ provide: PesosEnemApi, useValue: opcoes.pesosApi }] : [];
   await TestBed.configureTestingModule({
     imports: [tipo],
-    providers: [
-      ProcessoSeletivoStore,
-      CatalogosDeClassificacao,
-      LeituraDoCadastroDePesos,
-      provideHttpClient(withInterceptors([apiResultInterceptor])),
-      provideHttpClientTesting(),
-      {
-        provide: PermissoesService,
-        useValue: { tem: (codigo: string) => concedidas().includes(codigo) },
-      },
-      { provide: ReleituraDoSnapshot, useValue: releitura },
-      { provide: SELECAO_BASE_PATH, useValue: BASE },
-      { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-      ...(opcoes.pesosApi ? [{ provide: PesosEnemApi, useValue: opcoes.pesosApi }] : []),
-    ],
+    providers: [...PROVEDORES_DA_MONTAGEM, ...pesos],
   }).compileComponents();
+}
 
+function prepararMontagem(opcoes: OpcoesDaMontagem): ProcessoSeletivoStore {
   if (opcoes.config) TestBed.inject(AppConfigService).load(opcoes.config);
   const store = TestBed.inject(ProcessoSeletivoStore);
   opcoes.antesDeMontar?.(store);
@@ -129,16 +130,27 @@ export async function montar<T>(
     TestBed.inject(CatalogosDeClassificacao).carregar();
   }
 
+  return store;
+}
+
+export async function montar<T>(
+  tipo: Type<T>,
+  opcoes: OpcoesDaMontagem = {},
+): Promise<MontagemDe<T>> {
+  await configurarMontagem(tipo, opcoes);
+  const store = prepararMontagem(opcoes);
   const fixture = TestBed.createComponent(tipo);
   const controller = TestBed.inject(HttpTestingController);
   controllerAtual = controller;
-  fixture.detectChanges();
+  iniciarComponente(fixture, controller);
+  return montagemDoComponente(fixture, store, controller);
+}
 
-  for (const requisicao of controller.match((r) => r.url.includes('/regras-catalogo'))) {
-    requisicao.flush([]);
-  }
-  fixture.detectChanges();
-
+function montagemDoComponente<T>(
+  fixture: ComponentFixture<T>,
+  store: ProcessoSeletivoStore,
+  controller: HttpTestingController,
+): MontagemDe<T> {
   return {
     fixture,
     componente: fixture.componentInstance,
@@ -146,6 +158,15 @@ export async function montar<T>(
     controller,
     el: fixture.nativeElement as HTMLElement,
   };
+}
+
+function iniciarComponente<T>(
+  fixture: ComponentFixture<T>,
+  controller: HttpTestingController,
+): void {
+  fixture.detectChanges();
+  controller.match((r) => r.url.includes('/regras-catalogo')).forEach((r) => r.flush([]));
+  fixture.detectChanges();
 }
 
 /** Depois de cada teste: devolve as permissões ao padrão e confere que nenhum pedido sobrou. */
@@ -236,16 +257,23 @@ export function rascunhoComResolucao(resolucao: string) {
 export function processoGravadoCom(
   resolucao: string,
   quadro: unknown[],
-  status: StatusProcesso = StatusProcesso.rascunho,
+  status: StatusProcessoCodigo = StatusProcessoCodigo.rascunho,
 ) {
   return (store: ProcessoSeletivoStore) => {
     rascunhoComResolucao(resolucao)(store);
     const classificacao = { resolucaoPesoAreaEnem: resolucao, quadroPesoAreaEnem: quadro };
-    store.remoteSnapshot.set({ status, classificacao } as unknown as ProcessoSeletivoDto);
+    store.remoteSnapshot.set(detalheComClassificacao(status, classificacao));
     store.classificacao.registrarLida(
       classificacao as unknown as ProcessoSeletivoDto['classificacao'],
     );
   };
+}
+
+function detalheComClassificacao(
+  status: StatusProcessoCodigo,
+  classificacao: object,
+): ProcessoSeletivoDto {
+  return { status: { codigo: status, rotulo: status }, classificacao } as ProcessoSeletivoDto;
 }
 
 /** As cinco áreas, na ordem canônica do cadastro — a Redação primeiro. */

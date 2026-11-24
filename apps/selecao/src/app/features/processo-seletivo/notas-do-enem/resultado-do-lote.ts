@@ -214,9 +214,9 @@ export function agruparOcorrencias(lote: LoteDeNotasDoEnemDto): readonly GrupoDe
     else doTipo.push(linha);
   };
   for (const ocorrencia of lote.ocorrencias ?? []) {
-    const tipo: TipoDeGrupo = TIPOS_CONHECIDOS[ocorrencia.tipo] ?? 'outras';
+    const tipo: TipoDeGrupo = TIPOS_CONHECIDOS[ocorrencia.tipo.codigo] ?? 'outras';
     const linha = daOcorrencia(ocorrencia);
-    incluir(tipo, tipo === 'outras' ? { ...linha, candidato: ocorrencia.tipo } : linha);
+    incluir(tipo, tipo === 'outras' ? { ...linha, candidato: ocorrencia.tipo.rotulo } : linha);
   }
   for (const ausente of lote.ausentes ?? []) incluir('ausente', doAusente(ausente));
 

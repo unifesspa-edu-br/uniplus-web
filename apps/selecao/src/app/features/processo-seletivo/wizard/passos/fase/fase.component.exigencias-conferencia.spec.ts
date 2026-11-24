@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CatalogoDeDocumentos } from '../cronograma/catalogos/catalogo-de-documentos.service';
-import { fase, ID_CPF, TIPOS_DOCUMENTO } from './fase.testing';
+import { CONSEQUENCIA_ELIMINA, fase, ID_CPF, TIPOS_DOCUMENTO } from './fase.testing';
 import { ModeloDaExigenciaComponent } from './modelo-da-exigencia/modelo-da-exigencia.component';
 import { usarFase, type ContextoDaFase, ID_RG, umaNorma } from './fase-passo.testing';
 
@@ -117,7 +117,7 @@ describe('FasePassoComponent', () => {
         expect(linha.querySelector('th[scope="row"]')?.textContent?.trim()).toBe('CPF');
         expect(celula(linha, 'A quem se aplica')).toBe('Todo candidato');
         expect(celula(linha, 'Entrega')).toBe('Obrigatória');
-        expect(celula(linha, 'Se não for entregue')).toBe('Elimina do processo');
+        expect(celula(linha, 'Se não for entregue')).toBe(CONSEQUENCIA_ELIMINA.rotulo);
         expect(celula(linha, 'Coleta')).toBe('Na fase inteira');
         expect(campoDeEntrega()).toBeNull();
         expect(botaoDeEdicao()?.getAttribute('aria-expanded')).toBe('false');

@@ -1,3 +1,4 @@
+import { CRITERIOS, RESULTADOS } from '../../shared/deliberacao/regra-de-deliberacao.testing';
 import type { FormGroup } from '@angular/forms';
 import type { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 import type { TipoBancaDto } from '@uniplus/shared-data/configuracao';
@@ -129,7 +130,7 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da etapa', ()
       tela.edicao,
       etapa,
       'banca-2',
-      comRegra({ criterio: 'unanimidade', desempate: '', semUnanimidade: 'favoravel' }),
+      comRegra({ criterio: CRITERIOS.unanimidade, desempate: null, semUnanimidade: RESULTADOS.favoravel }),
     );
     tela.detectar();
 
@@ -195,7 +196,7 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da etapa', ()
       tela.edicao,
       etapa,
       'banca-2',
-      comRegra({ criterio: 'unanimidade', desempate: '', semUnanimidade: 'favoravel' }),
+      comRegra({ criterio: CRITERIOS.unanimidade, desempate: null, semUnanimidade: RESULTADOS.favoravel }),
     );
     tela.detectar();
 

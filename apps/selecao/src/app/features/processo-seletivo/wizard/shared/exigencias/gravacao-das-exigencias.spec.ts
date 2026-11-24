@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { OperadorCodigo } from '@uniplus/shared-data/selecao';
 
 import type { ExigenciasDoRascunho } from '../../processo-seletivo.models';
 import { comAlcanceDeTodasAsFases } from './alcance-das-exigencias';
 import { exigenciasDaFase } from './consulta-das-exigencias';
 import { exigenciaNova } from './exigencias-documentais';
-import { comModalidades } from './recorte-por-modalidade';
+import { comModalidades } from './modalidades-da-exigencia';
 import {
   ID_CONTRACHEQUE,
   ID_ETAPA_RENDA,
@@ -54,13 +55,13 @@ describe('regrasDeComprovacaoParaEnvio — do rascunho para o comando', () => {
     expect(regrasDeComprovacao[0].documento?.momento?.etapaId).toBeNull();
   });
 
-  it('sem recorte de modalidade, o documento é exigido de todo candidato', () => {
+  it('sem seleção de modalidades, o documento é exigido de todo candidato', () => {
     const regrasDeComprovacao = comando(rascunho(exigencia()));
     expect(regrasDeComprovacao[0].documento?.aplicabilidade?.tipo).toBe('GERAL');
     expect(regrasDeComprovacao[0].documento?.aplicabilidade?.condicoes).toEqual([]);
   });
 
-  it('o recorte de modalidade vira a cláusula do gatilho', () => {
+  it('a seleção de modalidades vira a cláusula do gatilho', () => {
     const regrasDeComprovacao = comando(rascunho(comModalidades(exigencia(), ['LB_PPI'])), [
       'AC',
       'LB_PPI',
@@ -68,37 +69,37 @@ describe('regrasDeComprovacaoParaEnvio — do rascunho para o comando', () => {
 
     expect(regrasDeComprovacao[0].documento?.aplicabilidade?.tipo).toBe('CONDICIONAL');
     expect(regrasDeComprovacao[0].documento?.aplicabilidade?.condicoes).toEqual([
-      { clausula: 1, fato: 'MODALIDADE', operador: 'EM', valor: '["LB_PPI"]' },
+      { clausula: 1, fato: 'MODALIDADE', operador: OperadorCodigo.ALGUM_DE, valor: '["LB_PPI"]' },
     ]);
   });
 
   /**
-   * O recorte esvaziado pelo quadro de vagas NÃO vira "exigido de todos": alargar em silêncio o
+   * A seleção de modalidades esvaziada pelo quadro de vagas NÃO vira "exigido de todos": alargar em silêncio o
    * alcance de um documento é decisão de negócio que ninguém tomou. A cláusula sai — o agregado
    * recusa cláusula vazia —, a aplicabilidade declarada permanece, e a prontidão acusa que a
    * exigência não alcança modalidade nenhuma.
    */
-  it('recorte esvaziado pelo quadro de vagas não alarga o alcance sozinho', () => {
+  it('seleção de modalidades esvaziada pelo quadro de vagas não alarga o alcance sozinho', () => {
     const regrasDeComprovacao = comando(rascunho(comModalidades(exigencia(), ['LB_PPI'])), ['AC']);
     expect(regrasDeComprovacao[0].documento?.aplicabilidade?.tipo).toBe('CONDICIONAL');
     expect(regrasDeComprovacao[0].documento?.aplicabilidade?.condicoes).toEqual([]);
   });
 
   /**
-   * O recorte que passou a cobrir toda a oferta só é podado quando resta outra condição
-   * sustentando a exigência. Sem ela, podá-lo deixaria uma exigência "de quem satisfaz" com
+   * A seleção de modalidades que passou a cobrir toda a oferta só é podada quando resta outra condição
+   * sustentando a exigência. Sem ela, podá-la deixaria uma exigência "de quem satisfaz" com
    * gatilho vazio — cobrada de ninguém —, e o documento sumiria do edital em silêncio por
    * causa de uma mudança no quadro de vagas que ninguém ligou a ele.
    */
-  it('recorte que cobre toda a oferta é preservado quando é a única condição', () => {
+  it('seleção de modalidades que cobre toda a oferta é preservada quando é a única condição', () => {
     const regrasDeComprovacao = comando(rascunho(comModalidades(exigencia(), ['AC'])), ['AC']);
     expect(regrasDeComprovacao[0].documento?.aplicabilidade?.condicoes).toEqual([
-      { clausula: 1, fato: 'MODALIDADE', operador: 'EM', valor: '["AC"]' },
+      { clausula: 1, fato: 'MODALIDADE', operador: OperadorCodigo.ALGUM_DE, valor: '["AC"]' },
     ]);
   });
 
-  /** Havendo outra condição, o recorte redundante sai e a exigência acompanha o quadro. */
-  it('recorte que cobre toda a oferta sai quando outra condição sustenta a exigência', () => {
+  /** Havendo outra condição, a seleção de modalidades redundante sai e a exigência acompanha o quadro. */
+  it('seleção de modalidades que cobre toda a oferta sai quando outra condição sustenta a exigência', () => {
     const porSexo = exigencia({
       aplicabilidade: 'CONDICIONAL',
       condicoes: [{ clausula: 1, fato: 'SEXO', operador: 'DIFERENTE', valor: '"FEMININO"' }],
@@ -348,5 +349,4 @@ describe('regrasDeComprovacaoParaEnvio — do rascunho para o comando', () => {
     });
     expect(regrasDeComprovacao[0].grupoDoFormularioParaRepeticao).toBe('MEMBRO_FAMILIA');
   });
-
 });

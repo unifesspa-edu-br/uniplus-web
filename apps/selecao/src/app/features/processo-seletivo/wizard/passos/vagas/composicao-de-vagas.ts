@@ -1,4 +1,4 @@
-import type { ComposicaoVagasToken } from '@uniplus/shared-data/configuracao';
+import { ComposicaoVagasCodigo } from '@uniplus/shared-data/configuracao';
 
 /**
  * O ramo em que a regra de distribuição monta o quadro: o cálculo da Lei 12.711 ou o quadro que o
@@ -10,18 +10,18 @@ export const RAMO_QUADRO_FIXADO_NO_EDITAL = 'QUADRO_FIXADO_NO_EDITAL';
 
 /** Composições cuja quantidade o motor calcula; informá-las é recusado. */
 export const COMPOSICOES_CALCULADAS: readonly string[] = [
-  'DENTRO_DA_RESERVA_LEGAL',
-  'RESTANTE_DAS_VAGAS_OFERTADAS',
-] satisfies readonly ComposicaoVagasToken[];
+  ComposicaoVagasCodigo.DENTRO_DA_RESERVA_LEGAL,
+  ComposicaoVagasCodigo.RESTANTE_DAS_VAGAS_OFERTADAS,
+] satisfies readonly ComposicaoVagasCodigo[];
 
 /** Composições que o edital precisa fixar mesmo no ramo federal. */
 export const COMPOSICOES_DECLARADAS: readonly string[] = [
-  'RETIRADA_DE_OUTRA_MODALIDADE',
-  'SUPLEMENTAR_AO_TOTAL',
-] satisfies readonly ComposicaoVagasToken[];
+  ComposicaoVagasCodigo.RETIRADA_DE_OUTRA_MODALIDADE,
+  ComposicaoVagasCodigo.SUPLEMENTAR_AO_TOTAL,
+] satisfies readonly ComposicaoVagasCodigo[];
 
 /** A que acresce vagas ao total da oferta em vez de disputar as que ela tem. */
-const COMPOSICAO_SUPLEMENTAR = 'SUPLEMENTAR_AO_TOTAL';
+const COMPOSICAO_SUPLEMENTAR = ComposicaoVagasCodigo.SUPLEMENTAR_AO_TOTAL;
 
 /** A distribuição segue a Lei 12.711, no ramo que a regra declara; sem ramo, não se presume. */
 export function ehRamoFederal(ramoDaDistribuicao: string | null | undefined): boolean {

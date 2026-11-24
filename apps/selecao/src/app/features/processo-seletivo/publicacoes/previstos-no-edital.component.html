@@ -45,9 +45,9 @@
             <td data-label="Documento">
               <div class="table-responsive__primary">{{ nomeDoItem(item) }}</div>
               @if (rotuloDoPapel(item.papel); as papel) {
-                <div class="previstos__detalhe">Resultado {{ papel.toLocaleLowerCase('pt-BR') }}</div>
+                <div class="previstos__detalhe">Resultado {{ papel }}</div>
               }
-              @if (item.situacao === aberto && item.impedimento) {
+              @if (item.situacao.codigo === aberto && item.impedimento) {
                 <div class="previstos__impedimento">{{ item.impedimento.mensagem }}</div>
               }
             </td>
@@ -72,7 +72,7 @@
                   </div>
                 }
               } @else {
-                <ui-tag variant="neutral">Aberto</ui-tag>
+                <ui-tag variant="neutral">{{ item.situacao.rotulo }}</ui-tag>
               }
             </td>
 

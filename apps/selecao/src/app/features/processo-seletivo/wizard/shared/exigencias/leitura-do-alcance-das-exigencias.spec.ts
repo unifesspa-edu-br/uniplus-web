@@ -62,7 +62,7 @@ describe('Alcance da exigência de documento entre fases', () => {
     const modelo: ModeloDaExigenciaDto = {
       modeloId: 'modelo-1',
       nomeArquivo: 'autodeclaracao.odt',
-      formato: 'ODT',
+      formato: { codigo: 'ODT' as ModeloDaExigenciaDto['formato']['codigo'], rotulo: 'ODT' },
       hashSha256: 'a'.repeat(64),
     };
     const lido = exigenciasDe(

@@ -1,4 +1,4 @@
-import { StatusProcesso } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -132,7 +132,7 @@ describe('PesoPorAreaComponent', () => {
 
       abrirOutroProcesso(
         m,
-        processoGravadoCom(OUTRA_RESOLUCAO, QUADRO_CONGELADO, StatusProcesso.publicado),
+        processoGravadoCom(OUTRA_RESOLUCAO, QUADRO_CONGELADO, StatusProcessoCodigo.publicado),
       );
 
       expect(catalogos().resolucoesPesoAreaEnem()).toEqual([]);
@@ -145,7 +145,7 @@ describe('PesoPorAreaComponent', () => {
   describe('processo que não aceita edição', () => {
     it('não lê o cadastro, lê a resolução como texto e mostra a cópia congelada', async () => {
       const m = await montarSecao({
-        antesDeMontar: processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO, StatusProcesso.publicado),
+        antesDeMontar: processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO, StatusProcessoCodigo.publicado),
       });
       responderAreas(m);
 
@@ -164,7 +164,7 @@ describe('PesoPorAreaComponent', () => {
       responderPesos(m);
       expect(texto(m.el)).toContain('O cadastro de Peso por Área mudou depois');
 
-      processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO, StatusProcesso.publicado)(m.store);
+      processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO, StatusProcessoCodigo.publicado)(m.store);
       m.fixture.detectChanges();
 
       expect(texto(m.el)).not.toContain('O cadastro de Peso por Área mudou depois');

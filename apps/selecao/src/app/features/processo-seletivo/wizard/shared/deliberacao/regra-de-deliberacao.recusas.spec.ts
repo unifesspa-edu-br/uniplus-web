@@ -1,3 +1,5 @@
+import { proverVocabulariosDaDeliberacao } from './regra-de-deliberacao.testing';
+import { ENCERRAMENTOS } from './regra-de-deliberacao.testing';
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { fornecerVocabulariosDaRegra } from './vocabularios-da-regra.testing';
@@ -43,6 +45,7 @@ describe('RegraDeDeliberacaoComponent: recusas do servidor', () => {
     await TestBed.configureTestingModule({
       providers: [fornecerVocabulariosDaRegra()],
       imports: [RegraDeDeliberacaoComponent],
+      providers: [proverVocabulariosDaDeliberacao()],
     }).compileComponents();
     fixture = TestBed.createComponent(RegraDeDeliberacaoComponent);
     fixture.componentRef.setInput('idBase', ID);
@@ -89,7 +92,7 @@ describe('RegraDeDeliberacaoComponent: recusas do servidor', () => {
 
   it('junta a dica, o erro da tela e a recusa, nessa ordem, no quórum fixo', () => {
     exibe(
-      comRegra({ encerramento: 'todosOsTitulares', quorum: '5' }),
+      comRegra({ encerramento: ENCERRAMENTOS.todosOsTitulares, quorum: '5' }),
       { quorum: [recusa('quorum', 'Antiga.', true)] },
       { quorum: 'Da tela.' },
     );

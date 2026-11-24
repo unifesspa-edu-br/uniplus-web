@@ -43,7 +43,7 @@ const COM_NATURALIDADE: FormularioRenderizavelDto = {
     campoColetado(
       'DESEJA_NOME_SOCIAL',
       'Deseja usar nome social',
-      TipoRenderizacaoCodigo.BOOLEANO,
+      TipoRenderizacaoCodigo.SIM_OU_NAO,
       { ordem: 5 },
     ),
   ),

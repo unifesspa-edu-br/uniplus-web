@@ -4,10 +4,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import {
-  OrigemCandidatos,
+  OrigemCandidatosCodigo,
   ProcessoSeletivoDto,
   SELECAO_BASE_PATH,
-  StatusProcesso,
+  StatusProcessoCodigo,
 } from '@uniplus/shared-data/selecao';
 import { apresentacaoDaEtapa, apresentacaoDoCampo } from '@uniplus/shared-ui/components';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -128,7 +128,7 @@ describe('DesempatePassoComponent', () => {
     storeLocal.processoSeletivoId.set(PROCESSO_ID);
     storeLocal.patchSection('desempate', [
       criterio({
-        regraCodigo: 'DESEMPATE-PREDICADO-FATO',
+        regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
         regraVersao: '1.0',
         fato: 'RENDA_PER_CAPITA',
         operador: 'MENOR_OU_IGUAL',
@@ -137,7 +137,7 @@ describe('DesempatePassoComponent', () => {
     ]);
     storeLocal.remoteSnapshot.set({
       id: PROCESSO_ID,
-      status: StatusProcesso.publicado,
+      status: StatusProcessoCodigo.publicado,
     } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
 
@@ -232,7 +232,7 @@ describe('DesempatePassoComponent', () => {
 
   it('exige ao menos um critério quando a inscrição é feita no sistema', () => {
     store.patchObjectSection('identificacao', {
-      origemCandidatos: OrigemCandidatos.inscricaoPropria,
+      origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
     });
 
     const resultado = componente.validar();
@@ -245,7 +245,7 @@ describe('DesempatePassoComponent', () => {
 
   it('é válido sem critério quando o resultado é importado: a lista já vem classificada', () => {
     store.patchObjectSection('identificacao', {
-      origemCandidatos: OrigemCandidatos.importacaoExterna,
+      origemCandidatos: OrigemCandidatosCodigo.importacaoExterna,
     });
 
     expect(componente.validar().valid).toBe(true);

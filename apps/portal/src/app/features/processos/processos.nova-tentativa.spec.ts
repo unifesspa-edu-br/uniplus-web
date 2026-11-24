@@ -34,7 +34,7 @@ describe('ProcessosComponent — nova tentativa e página que falha', () => {
 
   async function falharAoFiltrarPorSituacao(): Promise<void> {
     await cenario.responderLista([sisu], contadoresHeaders);
-    cenario.vitrine().situacaoSelecionada.set('INSCRICOES_ABERTAS');
+    cenario.vitrine().situacaoSelecionada.set(sisu.situacao.codigo);
     await cenario.propagar();
     await cenario.responderComProblema(500, ERRO_INTERNO);
     cenario.fixture.detectChanges();
@@ -46,10 +46,20 @@ describe('ProcessosComponent — nova tentativa e página que falha', () => {
 
     const alerta = cenario.host().querySelector('.alert--danger');
     expect(alerta?.textContent).toContain('Erro interno ao consultar certames');
-    // Busca e chips continuam de pé: quando é o recorte que a API recusa,
+    // Busca e chips continuam de pé: quando é a consulta que a API recusa,
     // desfazê-lo é a saída.
     expect(cenario.host().querySelector('ui-filter-bar')).toBeTruthy();
-    expect(cenario.chip('Últimos dias')).toBeTruthy();
+    expect(
+      cenario
+        .vitrine()
+        .statusChips()
+        .map(({ label, count }) => ({ label, count })),
+    ).toEqual([
+      { label: 'Em breve', count: undefined },
+      { label: 'Inscrições abertas', count: undefined },
+      { label: 'Últimos dias', count: undefined },
+      { label: 'Encerrado', count: undefined },
+    ]);
 
     const tentar = cenario.botao('Tentar novamente');
     expect(tentar).toBeTruthy();

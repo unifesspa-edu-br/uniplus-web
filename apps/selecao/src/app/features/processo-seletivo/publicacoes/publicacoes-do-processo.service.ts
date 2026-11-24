@@ -6,7 +6,7 @@ import { TiposAtoApi, type TipoAtoPublicadoDto } from '@uniplus/shared-data/publ
 import {
   ProcessosSeletivosApi,
   DocumentosEAtosDoProcessoApi,
-  StatusProcesso,
+  StatusProcessoCodigo,
   type AtoDoProcessoDto,
   type CampoDivulgacaoDto,
   type ProcessoSeletivoDto,
@@ -163,7 +163,7 @@ export class PublicacoesDoProcesso {
   /** O processo em rascunho ainda não tem edital vigente, e portanto nenhum item a publicar. */
   private async lerPrevistosDoProcessoPublicado(processoId: string, leitura: number): Promise<void> {
     const processo = this.processo();
-    if (processo.estado !== 'lido' || processo.dados.status === StatusProcesso.rascunho) return;
+    if (processo.estado !== 'lido' || processo.dados.status.codigo === StatusProcessoCodigo.rascunho) return;
     await this.lerPrevistos(processoId, leitura);
   }
 

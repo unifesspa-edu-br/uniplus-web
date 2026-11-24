@@ -6,7 +6,7 @@ import {
   CronogramaDoProcessoApi,
   DocumentosEAtosDoProcessoApi,
   FormulariosDoProcessoApi,
-  OrigemCandidatos,
+  OrigemCandidatosCodigo,
   ProcessosSeletivosApi,
   SELECAO_BASE_PATH,
 } from '@uniplus/shared-data/selecao';
@@ -212,7 +212,7 @@ describe('GravacaoDoProcesso', () => {
       const comando = {
         nome: 'Processo Seletivo A',
         tipoProcessoOrigemId: '01960000-0000-7000-0000-000000000001',
-        origemCandidatos: OrigemCandidatos.inscricaoPropria,
+        origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
         unidadeAdministradoraOrigemId: '01960000-0000-7000-0000-000000000002',
         localidadeCodigoIbge: null,
         localidadeNome: null,

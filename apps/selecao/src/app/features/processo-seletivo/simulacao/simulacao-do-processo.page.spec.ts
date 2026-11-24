@@ -1,3 +1,4 @@
+import { AplicabilidadeCodigo } from '@uniplus/shared-data/selecao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -37,9 +38,9 @@ const FORMULARIO_DA_HABILITACAO: FormularioRenderizavelDto = {
   comprovacaoDocumental: [
     {
       rotulo: 'Histórico escolar',
-      aplicabilidade: 'GERAL',
+      aplicabilidade: { codigo: AplicabilidadeCodigo.GERAL, rotulo: 'Geral' },
       obrigatorio: true,
-      formatos: { qualquer: false, lista: ['PDF'] },
+      formatos: { qualquer: false, lista: [{ codigo: 'PDF' as NonNullable<NonNullable<FormularioRenderizavelDto['comprovacaoDocumental']>[number]['formatos']['lista']>[number]['codigo'], rotulo: 'PDF' }] },
       modelo: null,
     },
   ],

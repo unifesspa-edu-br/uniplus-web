@@ -11,7 +11,7 @@ import { consequenciasDaFase } from '@uniplus/shared-utils';
 import type { BaseLegalConfig, RegraDeComprovacao } from '../../../processo-seletivo.models';
 import { descreverFase } from '../../../shared/descricao-da-fase';
 import { documentosDe } from '../../../shared/exigencias/consulta-das-exigencias';
-import { CONSEQUENCIAS_ESCOLHIVEIS } from '../../../shared/exigencias/exigencias-documentais';
+import { CatalogoDasConsequenciasDeIndeferimento } from '../../cronograma/catalogos/catalogo-das-consequencias-de-indeferimento.service';
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
 import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
 import { CatalogoDasFormasDeComprovacao } from '../../cronograma/catalogos/catalogo-das-formas-de-comprovacao.service';
@@ -38,6 +38,7 @@ export class EdicaoDeGruposComponent {
   private readonly documentos = inject(CatalogoDeDocumentos);
   private readonly fases = inject(CatalogoDeFases);
   private readonly fase = inject(FaseEmEdicao);
+  private readonly consequencias = inject(CatalogoDasConsequenciasDeIndeferimento);
   protected readonly aberto = signal(false);
   protected readonly escolhidos = signal<ReadonlySet<string>>(new Set());
   protected readonly aviso = signal('');
@@ -45,7 +46,10 @@ export class EdicaoDeGruposComponent {
     const fase = this.fase.faseDoRascunho();
     const permite =
       fase !== null && descreverFase(fase, this.fases.fasePorId()).permiteComplementacao;
-    return consequenciasDaFase(CONSEQUENCIAS_ESCOLHIVEIS, permite);
+    const opcoes = this.consequencias
+      .consequencias()
+      .map(({ codigo, rotulo }) => ({ valor: codigo, rotulo }));
+    return consequenciasDaFase([{ valor: '', rotulo: 'Não decide sozinha' }, ...opcoes], permite);
   });
 
   constructor() {

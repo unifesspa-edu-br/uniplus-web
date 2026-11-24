@@ -6,7 +6,7 @@ import {
   type ResultadoEnvio,
 } from '@uniplus/shared-core/http';
 import {
-  FinalidadeDoDocumento,
+  FinalidadeDoDocumentoCodigo,
   IniciarEnvioDoDocumentoAPublicarDto,
   DocumentosEAtosDoProcessoApi,
 } from '@uniplus/shared-data/selecao';
@@ -30,7 +30,7 @@ export class EnvioDoEdital {
     return firstValueFrom(
       this.api.listarDocumentosAPublicar(
         processoSeletivoId,
-        FinalidadeDoDocumento.documentoDoEdital,
+        FinalidadeDoDocumentoCodigo.documentoDoEdital,
       ),
     );
   }
@@ -51,7 +51,7 @@ export class EnvioDoEdital {
     nomeArquivo: string,
   ): Promise<ResultadoIniciacao> {
     const request = {
-      finalidade: FinalidadeDoDocumento.documentoDoEdital,
+      finalidade: FinalidadeDoDocumentoCodigo.documentoDoEdital,
       nomeArquivo,
       tipoDeMidia: TIPO_DE_MIDIA_DO_EDITAL,
     };

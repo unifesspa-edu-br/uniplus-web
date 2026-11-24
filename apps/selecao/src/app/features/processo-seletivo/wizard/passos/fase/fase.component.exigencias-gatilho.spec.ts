@@ -1,3 +1,8 @@
+import {
+  DADO_SIM_OU_NAO,
+  ORIGEM_DECLARADA,
+  VALOR_UNICO,
+} from '../../shared/valores-do-catalogo.testing';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { OperadorCodigo } from '@uniplus/shared-data/configuracao';
@@ -46,9 +51,9 @@ describe('FasePassoComponent', () => {
         codigo: 'LAUDO_RECENTE',
         nome: 'Laudo recente',
         descricao: 'Laudo médico recente do candidato.',
-        dominio: 'BOOLEANO',
-        origem: 'DECLARADO',
-        cardinalidade: 'ESCALAR',
+        dominio: DADO_SIM_OU_NAO,
+        origem: ORIGEM_DECLARADA,
+        cardinalidade: VALOR_UNICO,
         valoresDominio: null,
         pontoResolucao: 'AVALIACAO',
         binding: 'CAMPO_FORMULARIO:LAUDO_RECENTE',

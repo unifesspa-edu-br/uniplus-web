@@ -9,10 +9,10 @@ import {
 } from './exigencias-documentais';
 
 /**
- * O recorte de modalidades declarado no gatilho da exigência, ou `null` quando ela vale para
+ * A restrição às modalidades declarada no gatilho da exigência, ou `null` quando ela vale para
  * todo candidato.
  *
- * O recorte mora no gatilho porque é assim que o contrato o expressa — `MODALIDADE EM [...]`
+ * A restrição mora no gatilho porque é assim que o contrato o expressa — `MODALIDADE EM [...]`
  * —, e guardar uma segunda lista ao lado dele criaria duas versões da mesma verdade.
  */
 export function modalidadesDaExigencia(documento: ExigenciaDeDocumento): readonly string[] | null {
@@ -30,7 +30,7 @@ export function comModalidades(
   documento: ExigenciaDeDocumento,
   codigos: readonly string[] | null,
 ): ExigenciaDeDocumento {
-  const condicoes = comRecorteDeModalidade(documento.condicoes, codigos);
+  const condicoes = comRestricaoDeModalidades(documento.condicoes, codigos);
   return codigos === null
     ? { ...documento, condicoes }
     : { ...documento, aplicabilidade: APLICABILIDADE_CONDICIONAL, condicoes };
@@ -48,14 +48,14 @@ export function numerosDeClausula(condicoes: readonly CondicaoGatilhoConfig[]): 
 }
 
 /**
- * Troca o recorte de modalidade do gatilho, replicando-o em CADA alternativa.
+ * Troca a restrição às modalidades do gatilho, replicando-a em CADA alternativa.
  *
  * As cláusulas se combinam por OU e as condições de dentro de uma delas por E — a forma
- * normal disjuntiva. Como o recorte vale para o gatilho inteiro, ele tem de aparecer em toda
- * alternativa: escrevê-lo só na primeira diria "(modalidade E o resto) OU (a outra
- * alternativa, para qualquer modalidade)", que é justamente o que quem recortou não quis.
+ * normal disjuntiva. Como a restrição vale para o gatilho inteiro, ela tem de aparecer em toda
+ * alternativa: escrevê-la só na primeira diria "(modalidade E o resto) OU (a outra
+ * alternativa, para qualquer modalidade)", que é justamente o que quem escolheu as modalidades não quis.
  */
-export function comRecorteDeModalidade(
+export function comRestricaoDeModalidades(
   condicoes: readonly CondicaoGatilhoConfig[],
   codigos: readonly string[] | null,
 ): readonly CondicaoGatilhoConfig[] {
@@ -74,7 +74,7 @@ export function ehCondicaoDasModalidades(condicao: {
   readonly fato: string;
   readonly operador: string;
 }): boolean {
-  return condicao.fato === FATO_MODALIDADE && condicao.operador === OperadorCodigo.EM;
+  return condicao.fato === FATO_MODALIDADE && condicao.operador === OperadorCodigo.ALGUM_DE;
 }
 
 function modalidadesEmCadaClausula(
@@ -85,13 +85,13 @@ function modalidadesEmCadaClausula(
   return numerosDeClausula(outras).map((clausula) => ({
     clausula,
     fato: FATO_MODALIDADE,
-    operador: OperadorCodigo.EM,
+    operador: OperadorCodigo.ALGUM_DE,
     valor,
   }));
 }
 
 /**
- * A exigência com o recorte que o operador acabou de marcar em "quem deve entregar".
+ * A exigência com a restrição que o operador acabou de marcar em "quem deve entregar".
  *
  * Marcar TODAS as modalidades ofertadas é declarar que o documento vale para todo candidato —
  * a menos que reste outra condição a sustentá-lo. Sem esta parte, a exigência ficava "de quem
@@ -102,7 +102,7 @@ function modalidadesEmCadaClausula(
  * diferença aparece quando o quadro muda depois, e o que acompanha o quadro acompanha a
  * mudança.
  */
-export function comRecorteEscolhido(
+export function comModalidadesEscolhidas(
   documento: ExigenciaDeDocumento,
   escolhidas: readonly string[],
   ofertadas: readonly string[],
@@ -111,10 +111,10 @@ export function comRecorteEscolhido(
     escolhidas.length === ofertadas.length &&
     ofertadas.every((codigo) => escolhidas.includes(codigo));
 
-  const recortada = comModalidades(documento, acompanhaOQuadro ? null : [...escolhidas]);
-  return acompanhaOQuadro && recortada.condicoes.length === 0
-    ? comExigidoDeTodos(recortada, true)
-    : recortada;
+  const exigencia = comModalidades(documento, acompanhaOQuadro ? null : [...escolhidas]);
+  return acompanhaOQuadro && exigencia.condicoes.length === 0
+    ? comExigidoDeTodos(exigencia, true)
+    : exigencia;
 }
 
 /** Se a exigência é cobrada de todo candidato, sem gatilho nenhum. */
@@ -140,29 +140,31 @@ export function comExigidoDeTodos(
 }
 
 /**
- * As modalidades do recorte, ou `null` quando não há recorte a escrever.
+ * As modalidades da restrição, ou `null` quando não há restrição a escrever.
  *
- * Duas podas, por motivos diferentes. O recorte que ficou VAZIO depois de o quadro de vagas
+ * Duas podas, por motivos diferentes. A restrição que ficou VAZIA depois de o quadro de vagas
  * mudar sai porque cláusula vazia é recusada pelo agregado — e a exigência que deixou de
  * alcançar modalidade alguma é acusada à parte, pela conferência de alcance.
  *
- * O recorte que passou a cobrir TODA a oferta sai só quando o gatilho tem outra condição para
- * sustentar a exigência. Sem ela, podá-lo deixaria uma exigência "de quem satisfaz" sem
+ * A restrição que passou a cobrir TODA a oferta sai só quando o gatilho tem outra condição para
+ * sustentar a exigência. Sem ela, retirá-la deixaria uma exigência "de quem satisfaz" sem
  * condição nenhuma — cobrada de ninguém —, e o documento sumiria do edital em silêncio por
  * causa de uma mudança no quadro de vagas que ninguém ligou a ele.
  */
-export function recorteDeModalidades(
+export function modalidadesParaGravacao(
   documento: ExigenciaDeDocumento,
   modalidadesOfertadas: readonly string[],
 ): readonly string[] | null {
   const ofertadas = new Set(modalidadesOfertadas);
-  const recorte = (modalidadesDoGatilho(documento.condicoes) ?? []).filter((codigo) =>
+  const modalidadesRestritas = (modalidadesDoGatilho(documento.condicoes) ?? []).filter((codigo) =>
     ofertadas.has(codigo),
   );
-  if (recorte.length === 0) return null;
+  if (modalidadesRestritas.length === 0) return null;
 
   const temOutraCondicao = documento.condicoes.some((c) => c.fato !== FATO_MODALIDADE);
-  return recorte.length === ofertadas.size && temOutraCondicao ? null : recorte;
+  return modalidadesRestritas.length === ofertadas.size && temOutraCondicao
+    ? null
+    : modalidadesRestritas;
 }
 
 /**
@@ -170,7 +172,7 @@ export function recorteDeModalidades(
  * modalidade.
  *
  * O valor trafega como texto que contém JSON (mesmo tratamento do gatilho no resto do
- * contrato), e texto que não é a lista esperada não vira recorte — um recorte inventado a
+ * contrato), e texto que não é a lista esperada não vira restrição — uma restrição inventada a
  * partir de um valor ilegível mentiria sobre quem precisa entregar.
  */
 export function modalidadesDoGatilho(

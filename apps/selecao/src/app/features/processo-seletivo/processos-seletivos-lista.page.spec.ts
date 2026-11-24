@@ -1,4 +1,4 @@
-import { StatusProcesso } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -57,12 +57,12 @@ describe('ProcessosSeletivosListaPage', () => {
    * entre um rascunho e um certame publicado.
    */
   it.each([
-    [StatusProcesso.rascunho, 'Rascunho', 'tag--warning'],
-    [StatusProcesso.publicado, 'Publicado', 'tag--success'],
-    [StatusProcesso.encerrado, 'Encerrado', ''],
-    [StatusProcesso.cancelado, 'Cancelado', 'tag--danger'],
+    [StatusProcessoCodigo.rascunho, 'Em preparação', 'tag--warning'],
+    [StatusProcessoCodigo.publicado, 'Publicado', 'tag--success'],
+    [StatusProcessoCodigo.encerrado, 'Encerrado', ''],
+    [StatusProcessoCodigo.cancelado, 'Cancelado', 'tag--danger'],
   ])('rotula e colore o status %s', async (status, rotulo, classe) => {
-    await cenario.responderLista([processo({ status })]);
+    await cenario.responderLista([processo({ status: { codigo: status, rotulo } })]);
 
     const tag = cenario.tela().querySelector('[data-label="Status"] .tag');
 
@@ -74,7 +74,9 @@ describe('ProcessosSeletivosListaPage', () => {
 
   /** Status vindo de um backend mais novo aparece cru, em vez de sumir. */
   it('exibe um status que esta versão não reconhece', async () => {
-    await cenario.responderLista([processo({ status: 'Suspenso' as StatusProcesso })]);
+    await cenario.responderLista([
+      processo({ status: { codigo: 'Suspenso' as StatusProcessoCodigo, rotulo: 'Suspenso' } }),
+    ]);
 
     expect(cenario.tela().querySelector('[data-label="Status"] .tag')?.textContent?.trim()).toBe(
       'Suspenso',
@@ -91,7 +93,9 @@ describe('ProcessosSeletivosListaPage', () => {
     async (status) => {
       // Fora do enum de propósito: o que está sob prova é justamente o token que o
       // contrato não declara, e sem o cast não há como exprimi-lo.
-      await cenario.responderLista([processo({ status: status as StatusProcesso })]);
+      await cenario.responderLista([
+        processo({ status: { codigo: status as StatusProcessoCodigo, rotulo: status } }),
+      ]);
 
       const tag = cenario.tela().querySelector('[data-label="Status"] .tag');
 

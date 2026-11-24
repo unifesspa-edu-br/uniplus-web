@@ -1,7 +1,7 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { describe, expect, it } from 'vitest';
-import { StatusProcesso } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -59,7 +59,7 @@ describe('RevisaoPassoComponent — publicação aceita pelo servidor', () => {
 
       const resultado = await gravacao;
       expect(resultado).toEqual({ valid: true });
-      expect(store.remoteSnapshot()?.status).toBe(StatusProcesso.publicado);
+      expect(store.remoteSnapshot()?.status).toEqual(PROCESSO_DTO_MINIMO.status);
       expect(publicacaoDe(cenario).snapshotConfirmado()?.snapshotPublicacaoId).toBe(
         SNAPSHOT_DTO.snapshotPublicacaoId,
       );
@@ -91,7 +91,7 @@ describe('RevisaoPassoComponent — publicação aceita pelo servidor', () => {
       const resultado = await gravacao;
       expect(resultado.valid).toBe(false);
       // O snapshot não confirmou, mas o detalhe publicado já está no store.
-      expect(store.remoteSnapshot()?.status).toBe(StatusProcesso.publicado);
+      expect(store.remoteSnapshot()?.status).toEqual(PROCESSO_DTO_MINIMO.status);
       expect(store.edicaoPermitida()).toBe(false);
       expect(publicacaoDe(cenario).snapshotConfirmado()).toBeNull();
     });
@@ -114,7 +114,10 @@ describe('RevisaoPassoComponent — publicação aceita pelo servidor', () => {
       await flushMicrotasks();
       controller
         .expectOne(ROTA_DETALHE)
-        .flush({ ...PROCESSO_DTO_MINIMO, status: StatusProcesso.rascunho });
+        .flush({
+          ...PROCESSO_DTO_MINIMO,
+          status: { ...PROCESSO_DTO_MINIMO.status, codigo: StatusProcessoCodigo.rascunho },
+        });
       controller.expectOne(ROTA_SNAPSHOT).flush(SNAPSHOT_DTO);
 
       const resultado = await gravacao;

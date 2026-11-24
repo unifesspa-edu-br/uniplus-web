@@ -1,6 +1,7 @@
+import { proverVocabulariosDaDeliberacao } from './regra-de-deliberacao.testing';
+import { MODOS, CRITERIOS, ENCERRAMENTOS } from './regra-de-deliberacao.testing';
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
-import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { RegraDeDeliberacaoDaBanca } from '../../modelos/deliberacao.models';
@@ -26,9 +27,14 @@ describe('RegraDeDeliberacaoComponent', () => {
   const nativo = () => fixture.nativeElement as HTMLElement;
   const controle = <T extends HTMLElement>(campo: string): T | null =>
     nativo().querySelector<T>(`#${ID}-${campo}`);
-  const exibe = (regra: RegraDeDeliberacaoDaBanca | null, extras = {}) => {
+  const exibe = (
+    regra: RegraDeDeliberacaoDaBanca | null,
+    extras: { erros?: unknown; recusas?: unknown; desabilitada?: boolean } = {},
+  ) => {
     fixture.componentRef.setInput('regra', regra);
-    for (const [nome, valor] of Object.entries(extras)) fixture.componentRef.setInput(nome, valor);
+    if (extras.erros) fixture.componentRef.setInput('erros', extras.erros);
+    if (extras.recusas) fixture.componentRef.setInput('recusas', extras.recusas);
+    if (extras.desabilitada) fixture.componentRef.setInput('desabilitada', true);
     fixture.detectChanges();
   };
   const escolher = (campo: string, valor: string) => {
@@ -48,6 +54,7 @@ describe('RegraDeDeliberacaoComponent', () => {
     await TestBed.configureTestingModule({
       providers: [fornecerVocabulariosDaRegra()],
       imports: [RegraDeDeliberacaoComponent],
+      providers: [proverVocabulariosDaDeliberacao()],
     }).compileComponents();
     fixture = TestBed.createComponent(RegraDeDeliberacaoComponent);
     fixture.componentRef.setInput('idBase', ID);
@@ -95,11 +102,11 @@ describe('RegraDeDeliberacaoComponent', () => {
     });
 
     it('cria a regra do modo escolhido, com os campos ainda em branco', () => {
-      escolher('modo', ModoDeDeliberacao.colegiadaComVotacao);
+      escolher('modo', MODOS.colegiadaComVotacao.codigo);
 
       expect(emitidas).toEqual([
         expect.objectContaining({
-          modo: ModoDeDeliberacao.colegiadaComVotacao,
+          modo: MODOS.colegiadaComVotacao,
           integrantes: '',
           suplentes: '0',
         }),
@@ -135,7 +142,7 @@ describe('RegraDeDeliberacaoComponent', () => {
     it('troca de critério e já tira o desempate que ele não admite', () => {
       escolher('criterio', 'unanimidade');
 
-      expect(emitidas.at(-1)).toMatchObject({ criterio: 'unanimidade', desempate: '' });
+      expect(emitidas.at(-1)).toMatchObject({ criterio: CRITERIOS.unanimidade, desempate: null });
     });
 
     it('volta a banca ao estado sem regra', () => {
@@ -145,17 +152,17 @@ describe('RegraDeDeliberacaoComponent', () => {
     });
 
     it('passa ao ato individual preservando a votação', () => {
-      escolher('modo', ModoDeDeliberacao.atoIndividual);
+      escolher('modo', MODOS.atoIndividual.codigo);
 
       expect(emitidas.at(-1)).toMatchObject({
-        modo: ModoDeDeliberacao.atoIndividual,
-        criterio: 'maioriaSimples',
+        modo: MODOS.atoIndividual,
+        criterio: CRITERIOS.maioriaSimples,
         quorum: '3',
       });
     });
 
     it('pede o resultado sem unanimidade só no critério que o admite', () => {
-      exibe(comRegra({ criterio: 'unanimidade', desempate: '' }));
+      exibe(comRegra({ criterio: CRITERIOS.unanimidade, desempate: null }));
 
       expect(controle('semUnanimidade')).not.toBeNull();
       expect(controle('desempate')).toBeNull();
@@ -170,7 +177,9 @@ describe('RegraDeDeliberacaoComponent', () => {
   });
 
   describe('quórum que acompanha os integrantes', () => {
-    beforeEach(() => exibe(comRegra({ encerramento: 'todosOsTitulares', quorum: '5' })));
+    beforeEach(() =>
+      exibe(comRegra({ encerramento: ENCERRAMENTOS.todosOsTitulares, quorum: '5' })),
+    );
 
     it('não deixa digitar o quórum e explica por quê', () => {
       expect(controle<HTMLInputElement>('quorum')?.readOnly).toBe(true);
@@ -192,7 +201,7 @@ describe('RegraDeDeliberacaoComponent', () => {
     });
 
     it('retira a votação, anuncia e devolve o foco ao seletor de modo', () => {
-      exibe(comRegra({ modo: ModoDeDeliberacao.atoIndividual }));
+      exibe(comRegra({ modo: MODOS.atoIndividual }));
       document.body.appendChild(nativo());
       const botao = Array.from(nativo().querySelectorAll('button')).find((item) =>
         item.textContent?.includes('Retirar a votação do recurso'),
@@ -202,12 +211,12 @@ describe('RegraDeDeliberacaoComponent', () => {
 
       expect(emitidas.at(-1)).toEqual(
         comRegra({
-          modo: ModoDeDeliberacao.atoIndividual,
+          modo: MODOS.atoIndividual,
           quorum: '',
-          criterio: '',
-          encerramento: '',
-          desempate: '',
-          semUnanimidade: '',
+          criterio: null,
+          encerramento: null,
+          desempate: null,
+          semUnanimidade: null,
         }),
       );
       expect(nativo().querySelector('[role="status"]')?.textContent).toContain(
@@ -264,7 +273,7 @@ describe('RegraDeDeliberacaoComponent', () => {
     });
 
     it('descreve o campo pela dica e pela recusa do servidor, que vale no lugar do erro da conferência', () => {
-      exibe(comRegra({ encerramento: 'todosOsTitulares', quorum: '5' }), {
+      exibe(comRegra({ encerramento: ENCERRAMENTOS.todosOsTitulares, quorum: '5' }), {
         erros: { quorum: 'Confira o quórum.' },
         recusas: { quorum: [doQuorum] },
       });

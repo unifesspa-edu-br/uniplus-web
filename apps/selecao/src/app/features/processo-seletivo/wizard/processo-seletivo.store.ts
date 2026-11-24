@@ -1,5 +1,5 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { StatusProcesso } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import type { DocumentoAPublicarDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import type { StepStatus } from '@uniplus/shared-ui/components';
 import { ROTULOS_DOS_PASSOS } from './processo-seletivo.data';
@@ -199,7 +199,7 @@ export class ProcessoSeletivoStore {
    */
   readonly processoForaDeRascunho = computed(() => {
     const detalhe = this.remoteSnapshot();
-    return detalhe !== null && detalhe.status !== StatusProcesso.rascunho;
+    return detalhe !== null && detalhe.status.codigo !== StatusProcessoCodigo.rascunho;
   });
 
   /**
@@ -221,7 +221,7 @@ export class ProcessoSeletivoStore {
   readonly aceitaEdicao = computed(() => this.edicaoPermitida() && !this.operacaoEmAndamento());
 
   readonly motivoDeSomenteLeitura = computed(() =>
-    motivoDeSomenteLeitura(this.remoteSnapshot()?.status, this.publicacaoNaoConfirmada()),
+    motivoDeSomenteLeitura(this.remoteSnapshot()?.status.codigo, this.publicacaoNaoConfirmada()),
   );
 
   readonly modalidadesDoProcesso = computed(() => modalidadesDasOfertas(this.draft()));

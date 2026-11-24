@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { Subject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ApiResult, apiOk } from '@uniplus/shared-core/http';
-import { type InscricaoDto, SituacaoInscricao } from '@uniplus/shared-data/selecao';
+import { type InscricaoDto, SituacaoInscricaoCodigo } from '@uniplus/shared-data/selecao';
 import type { SimulacaoDoFormulario } from '@uniplus/shared-ui/components';
 
 import { AnuncioDaInscricao } from './anuncio-da-inscricao';
@@ -21,7 +21,6 @@ const PROCESSO = 'processo-1';
 const ETAG_DA_TELA = '"inscricao-1:1"';
 const ETAG_GRAVADO = '"inscricao-1:2"';
 
-/** As peças de que a gravação depende, com o que cada uma devolve e o que lhe foi pedido. */
 function prepararAGravacao() {
   const gravada = signal<InscricaoDto | null>(inscricao({ ...RESPONDIDA, eTag: ETAG_DA_TELA }));
   const processoId = signal<string | null>(PROCESSO);
@@ -78,13 +77,20 @@ function prepararAGravacao() {
     anuncio: TestBed.inject(AnuncioDaInscricao),
   };
 }
-
 type Cenario = ReturnType<typeof prepararAGravacao>;
 
 const okDe = (data: InscricaoDto): ApiResult<InscricaoDto> => apiOk(data, 200, new HttpHeaders());
 
-const gravadaComSucesso = (eTag: string, situacao = SituacaoInscricao.rascunho): InscricaoDto =>
-  inscricao({ ...RESPONDIDA, eTag, situacao, numeroInscricao: '2027-000001' });
+const gravadaComSucesso = (
+  eTag: string,
+  situacao = SituacaoInscricaoCodigo.rascunho,
+): InscricaoDto =>
+  inscricao({
+    ...RESPONDIDA,
+    eTag,
+    situacao: { codigo: situacao, rotulo: 'Situação de teste' },
+    numeroInscricao: '2027-000001',
+  });
 
 describe('GravacaoDaInscricao: o salvar do rascunho', () => {
   let c: Cenario;
@@ -283,7 +289,7 @@ describe('GravacaoDaInscricao: o envio', () => {
     expect(c.gravacao.operacao()).toBe('enviando');
     expect(c.leitura.adotar).not.toHaveBeenCalled();
 
-    const relida = gravadaComSucesso(ETAG_GRAVADO, SituacaoInscricao.submetida);
+    const relida = gravadaComSucesso(ETAG_GRAVADO, SituacaoInscricaoCodigo.submetida);
     releitura.next(okDe(relida));
 
     expect(c.leitura.adotar).toHaveBeenCalledWith(relida);
@@ -313,7 +319,7 @@ describe('GravacaoDaInscricao: o envio', () => {
   });
 
   it('a inscrição enviada fica sem rascunho mesmo sem recibo', () => {
-    c.gravada.set(gravadaComSucesso(ETAG_DA_TELA, SituacaoInscricao.submetida));
+    c.gravada.set(gravadaComSucesso(ETAG_DA_TELA, SituacaoInscricaoCodigo.submetida));
 
     expect(c.gravacao.enviada()).toBe(true);
   });
@@ -370,7 +376,7 @@ describe.each([
 
   it('ETag mudou numa inscrição enviada: o aviso confirma o envio com o número', () => {
     c.servico.obter.mockReturnValue(
-      of(okDe(gravadaComSucesso(ETAG_GRAVADO, SituacaoInscricao.submetida))),
+      of(okDe(gravadaComSucesso(ETAG_GRAVADO, SituacaoInscricaoCodigo.submetida))),
     );
 
     c.gravacao.salvar(c.formulario);

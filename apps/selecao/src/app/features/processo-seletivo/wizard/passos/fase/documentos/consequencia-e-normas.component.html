@@ -12,7 +12,11 @@
   >
     @for (opcao of opcoes(); track opcao.valor) {
       <option [value]="opcao.valor" [selected]="opcao.valor === consequencia()">
-        {{ rotuloDaConsequencia(opcao.valor, obrigatorio()) }}
+        {{
+          opcao.valor === '' && obrigatorio()
+            ? 'Nada além de faltar o documento obrigatório'
+            : opcao.rotulo
+        }}
       </option>
     }
   </select>

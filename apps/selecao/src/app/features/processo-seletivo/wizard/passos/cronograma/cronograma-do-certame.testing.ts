@@ -1,4 +1,5 @@
-import { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import { OrigemDataFaseCodigo } from '@uniplus/shared-data/configuracao';
+import { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 import {
   type EtapaPontuada,
   type FaseDoCronograma,
@@ -53,6 +54,15 @@ export function problemasDe(
   return problemasDoCronograma({ fases, etapas, exigencias: [], catalogos });
 }
 
+export const ORIGEM_NO_EDITAL = {
+  codigo: OrigemDataFaseCodigo.NO_EDITAL,
+  rotulo: 'Origem no edital',
+};
+export const ORIGEM_NA_EXECUCAO = {
+  codigo: OrigemDataFaseCodigo.NA_EXECUCAO,
+  rotulo: 'Origem na execução',
+};
+
 const FASE_CANONICA_PADRAO = {
   id: 'fase-1',
   codigo: 'INSCRICAO',
@@ -64,7 +74,7 @@ const FASE_CANONICA_PADRAO = {
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
-  origemData: 'NO_EDITAL',
+  origemData: ORIGEM_NO_EDITAL,
   criadoEm: '2026-08-30T12:00:00Z',
 };
 
@@ -95,7 +105,7 @@ export function aresta(parcial: Partial<PrecedenciaFaseDto>): PrecedenciaFaseDto
 const ETAPA_PADRAO: EtapaPontuada = {
   id: null,
   nome: 'Prova Objetiva',
-  carater: CaraterEtapa.classificatoria,
+  carater: CaraterEtapaCodigo.classificatoria,
   tipoEtapaOrigemId: 'tipo-1',
   peso: '2',
   notaMinima: '',
@@ -149,13 +159,13 @@ export const AVALIACAO = faseCanonica({
   codigo: 'AVALIACAO',
   nome: 'Avaliação',
   agrupaEtapas: true,
-  origemData: 'NO_EDITAL',
+  origemData: ORIGEM_NO_EDITAL,
 });
 export const RESULTADO = faseCanonica({
   id: 'id-resultado',
   codigo: 'RESULTADO_PRELIMINAR',
   nome: 'Resultado preliminar',
-  origemData: 'NA_EXECUCAO',
+  origemData: ORIGEM_NA_EXECUCAO,
 });
 export const catalogoDeFases = new Map([
   [AVALIACAO.id, AVALIACAO],
@@ -164,7 +174,7 @@ export const catalogoDeFases = new Map([
 
 export const etapaValida = etapa({
   nome: 'Prova',
-  carater: CaraterEtapa.classificatoria,
+  carater: CaraterEtapaCodigo.classificatoria,
   tipoEtapaOrigemId: 'tipo-1',
   peso: '1',
 });

@@ -1,7 +1,7 @@
 import type {
   DocumentoDaConfiguracao,
   DocumentoDaConfiguracaoColeta,
-  DocumentoDaConfiguracaoRegraDeDerivacao,
+  DocumentoDaConfiguracaoCalculoDoDado,
   TipoDaReferenciaTemporal,
 } from '@uniplus/shared-data/selecao';
 
@@ -9,7 +9,7 @@ import { textoQueVale } from '../valor-que-vale';
 import { comAlteracoes } from './partes-por-chave';
 import { comCampo, comEscolha, comLista, naSecao } from './secao-do-documento';
 
-type Referencia = NonNullable<DocumentoDaConfiguracaoColeta['referenciaTemporalFatos']>;
+type Referencia = NonNullable<DocumentoDaConfiguracaoColeta['referenciaTemporalDosDados']>;
 
 /** A data a que os fatos do candidato se referem, como o formulário a tem. */
 export interface ReferenciaTemporalDoFormulario {
@@ -39,18 +39,18 @@ export function definirReferenciaTemporal(
   return naSecao(documento, 'coleta', (coleta) =>
     comCampo(
       coleta,
-      'referenciaTemporalFatos',
+      'referenciaTemporalDosDados',
       referencia === null
         ? undefined
-        : referenciaComValores(coleta.referenciaTemporalFatos, referencia),
+        : referenciaComValores(coleta.referenciaTemporalDosDados, referencia),
     ),
   );
 }
 
-type Derivacao = DocumentoDaConfiguracaoRegraDeDerivacao;
+type Derivacao = DocumentoDaConfiguracaoCalculoDoDado;
 
 function posicaoDoFato(atuais: readonly Derivacao[], codigo: string, ocorrencia: number) {
-  return atuais.flatMap((entrada, indice) => (entrada.fatoCodigo === codigo ? [indice] : []))[
+  return atuais.flatMap((entrada, indice) => (entrada.codigoDoDado === codigo ? [indice] : []))[
     ocorrencia
   ];
 }
@@ -64,7 +64,7 @@ function comRegrasDoFato(
   const posicao = posicaoDoFato(atuais, fatoCodigo, ocorrencia);
   if (posicao === undefined)
     return ocorrencia === 0
-      ? [...atuais, { fatoCodigo, ...(regras !== undefined && { regras }) }]
+      ? [...atuais, { codigoDoDado: fatoCodigo, ...(regras !== undefined && { regras }) }]
       : [...atuais];
   return atuais.map((entrada, indice) =>
     indice === posicao ? comCampo(entrada, 'regras', regras) : entrada,
@@ -84,8 +84,8 @@ export function definirRegrasDeDerivacao(
   return naSecao(documento, 'coleta', (coleta) =>
     comLista(
       coleta,
-      'regrasDerivacao',
-      comRegrasDoFato(coleta.regrasDerivacao ?? [], fatoCodigo, regras, ocorrencia),
+      'calculosDosDados',
+      comRegrasDoFato(coleta.calculosDosDados ?? [], fatoCodigo, regras, ocorrencia),
     ),
   );
 }

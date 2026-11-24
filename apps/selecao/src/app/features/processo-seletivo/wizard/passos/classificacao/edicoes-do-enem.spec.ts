@@ -1,10 +1,10 @@
-import { OrigemCandidatos, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatosCodigo, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import type { WizardDraft } from '../../processo-seletivo.models';
 import { anoDaEdicao, declaraEdicoesDoEnem, edicoesDoEnemDe } from './edicoes-do-enem';
 
-const rascunho = (baseadoEmEnem: boolean, origem: OrigemCandidatos): WizardDraft =>
+const rascunho = (baseadoEmEnem: boolean, origem: OrigemCandidatosCodigo): WizardDraft =>
   ({
     classificacao: { baseadoEmEnem, edicoesEnem: [] },
     identificacao: { origemCandidatos: origem },
@@ -12,9 +12,9 @@ const rascunho = (baseadoEmEnem: boolean, origem: OrigemCandidatos): WizardDraft
 
 describe('declaraEdicoesDoEnem', () => {
   it('só com a nota do ENEM e a inscrição feita no processo', () => {
-    expect(declaraEdicoesDoEnem(rascunho(true, OrigemCandidatos.inscricaoPropria))).toBe(true);
-    expect(declaraEdicoesDoEnem(rascunho(true, OrigemCandidatos.importacaoExterna))).toBe(false);
-    expect(declaraEdicoesDoEnem(rascunho(false, OrigemCandidatos.inscricaoPropria))).toBe(false);
+    expect(declaraEdicoesDoEnem(rascunho(true, OrigemCandidatosCodigo.inscricaoPropria))).toBe(true);
+    expect(declaraEdicoesDoEnem(rascunho(true, OrigemCandidatosCodigo.importacaoExterna))).toBe(false);
+    expect(declaraEdicoesDoEnem(rascunho(false, OrigemCandidatosCodigo.inscricaoPropria))).toBe(false);
   });
 });
 

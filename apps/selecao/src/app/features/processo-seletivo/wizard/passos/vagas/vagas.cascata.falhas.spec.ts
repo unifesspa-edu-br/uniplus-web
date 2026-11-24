@@ -1,5 +1,5 @@
 import { HttpTestingController } from '@angular/common/http/testing';
-import { ProcessoSeletivoDto, StatusProcesso } from '@uniplus/shared-data/selecao';
+import { ProcessoSeletivoDto, StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -184,7 +184,7 @@ describe('VagasPassoComponent — falhas na gravação da cascata de remanejamen
     // valor do seletor de regra, que decide se a remoção precisa ser
     // enviada quando a oferta em tela já não tem modalidade SEGUE_CASCATA.
     store.remoteSnapshot.set({
-      status: StatusProcesso.rascunho,
+      status: { codigo: StatusProcessoCodigo.rascunho, rotulo: StatusProcessoCodigo.rascunho },
       cascata: {
         id: 'cascata-1',
         regra: { codigo: 'REMANEJ-CASCATA-LEI-12711', versao: 'v1', hash: 'hash-1' },

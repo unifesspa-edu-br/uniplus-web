@@ -14,12 +14,13 @@ import {
 import {
   type CertameNaVitrineDto,
   SELECAO_BASE_PATH,
+  SituacaoDoCertameCodigo,
   certamesPublicosRequest,
 } from '@uniplus/shared-data/selecao';
 import type { UiFilterChipOption, UiFiltroAtivo } from '@uniplus/shared-ui/components';
 
 import { type ContadoresSituacao, contadoresDosHeaders } from './contadores-de-situacao';
-import { SITUACOES_EXIBIDAS, recebeInscricao, rotuloDaSituacao } from './situacao-do-certame';
+import { SITUACOES_EXIBIDAS, recebeInscricao } from './situacao-do-certame';
 
 /** Debounce da busca textual — uma request por rajada de digitação, não por tecla. */
 export const ESPERA_DA_BUSCA_MS = 300;
@@ -120,22 +121,27 @@ export class VitrineDeCertames {
     },
   });
 
+  private readonly rotulosDasSituacoes: Record<SituacaoDoCertameCodigo, string> = {
+    [SituacaoDoCertameCodigo.EM_BREVE]: 'Em breve',
+    [SituacaoDoCertameCodigo.INSCRICOES_ABERTAS]: 'Inscrições abertas',
+    [SituacaoDoCertameCodigo.ULTIMOS_DIAS]: 'Últimos dias',
+    [SituacaoDoCertameCodigo.ENCERRADAS]: 'Encerrado',
+  };
+
   readonly statusChips = computed<readonly UiFilterChipOption[]>(() => {
     const contadores = this.contadores();
     return SITUACOES_EXIBIDAS.map((situacao) => ({
       value: situacao,
-      label: rotuloDaSituacao(situacao),
+      label: this.rotulosDasSituacoes[situacao],
       count: contadores?.[situacao],
     }));
   });
 
   readonly filtrosAtivos = computed<readonly UiFiltroAtivo[]>(() => {
     const situacao = this.situacaoSelecionada();
-    if (situacao === null) {
-      return [];
-    }
-    const rotulo = this.statusChips().find((chip) => chip.value === situacao)?.label ?? situacao;
-    return [{ nome: 'Situação', valor: rotulo }];
+    const rotulo =
+      situacao === null ? undefined : this.rotulosDasSituacoes[situacao as SituacaoDoCertameCodigo];
+    return rotulo ? [{ nome: 'Situação', valor: rotulo }] : [];
   });
 
   readonly temFiltrosAtivos = computed(
@@ -145,7 +151,7 @@ export class VitrineDeCertames {
   /**
    * Certame do hero — só na primeira página sem filtro ativo, e só entre os que
    * ainda recebem inscrição: o hero convida a se inscrever, e a API ordena por
-   * urgência, de modo que sem esse recorte o primeiro item de uma vitrine sem
+   * urgência, de modo que sem esse filtro o primeiro item de uma vitrine sem
    * certame aberto seria um encerrado, anunciado com prazo vencido e botão de
    * inscrição.
    */

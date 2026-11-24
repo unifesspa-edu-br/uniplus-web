@@ -11,7 +11,7 @@ import { RELOGIO } from '@uniplus/shared-core/relogio';
 import {
   type InscricaoDto,
   SELECAO_BASE_PATH,
-  SituacaoInscricao,
+  SituacaoInscricaoCodigo,
 } from '@uniplus/shared-data/selecao';
 import {
   BUSCA_DE_CEP,
@@ -31,7 +31,7 @@ const PROCESSO = '0199e000-0000-7000-8000-0000000000d1';
 const RASCUNHO: InscricaoDto = {
   id: 'inscricao-1',
   processoSeletivoId: PROCESSO,
-  situacao: SituacaoInscricao.rascunho,
+  situacao: { codigo: SituacaoInscricaoCodigo.rascunho, rotulo: 'Situação de teste' },
   numeroInscricao: null,
   formulario: {
     versaoFormularioId: 'versao-1',

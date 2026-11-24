@@ -1,6 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { apiOk, type ProblemDetails } from '@uniplus/shared-core/http';
-import { FinalidadeDoDocumento } from '@uniplus/shared-data/selecao';
+import { FinalidadeDoDocumentoCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import type { EnvioDoAnexo } from '../wizard/shared/anexos-do-edital/envio-do-anexo.service';
@@ -52,7 +52,7 @@ function envioControlado() {
 
 function lista(envio: EnvioDoAnexo, processoId: string | null = PROCESSO_ID): EnviosDeArquivos {
   return new EnviosDeArquivos({
-    finalidade: FinalidadeDoDocumento.documentoDeAto,
+    finalidade: FinalidadeDoDocumentoCodigo.documentoDeAto,
     processoId: () => processoId,
     abrirEnvio: () => envio,
     tipoDeMidiaDe: () => 'application/pdf',

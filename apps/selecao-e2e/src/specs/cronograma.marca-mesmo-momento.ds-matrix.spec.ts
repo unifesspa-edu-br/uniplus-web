@@ -44,7 +44,7 @@ function fasesDoCenario() {
 async function mockarDetalhe(page: Page): Promise<void> {
   const detalhe = {
     ...PROCESSO_PUBLICADO_COMPLETO,
-    status: 'rascunho',
+    status: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
     cronogramaFases: fasesDoCenario(),
     atendimentoEspecializado: null,
     regrasDeComprovacao: PROCESSO_PUBLICADO_COMPLETO.regrasDeComprovacao.slice(0, 1),

@@ -1,8 +1,9 @@
 import { By } from '@angular/platform-browser';
 import {
-  SituacaoDoProdutoPrevisto,
-  StatusProcesso,
-  ProdutoPrevistoDto,
+  SituacaoDoProdutoPrevistoCodigo,
+  StatusProcessoCodigo,
+  ImpedimentoDoProdutoCodigo,
+  type ProdutoPrevistoDto,
 } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -17,6 +18,12 @@ import {
   temCorrigir,
 } from './publicacoes-do-processo.page.testing';
 
+const DEFINITIVO = {
+  codigo: 'DEFINITIVO' as NonNullable<ProdutoPrevistoDto['papel']>['codigo'],
+  rotulo: 'Definitivo',
+};
+const PUBLICADO = { codigo: SituacaoDoProdutoPrevistoCodigo.publicado, rotulo: 'Publicado' };
+
 describe('PublicacoesDoProcessoPage — itens do edital', () => {
   let pagina: PaginaDePublicacoes;
 
@@ -29,16 +36,19 @@ describe('PublicacoesDoProcessoPage — itens do edital', () => {
   it('lista os itens do edital por fase e libera "Publicar" só no que o servidor libera', async () => {
     const preliminar = item('preliminar');
     const definitivo = item('definitivo', {
-      papel: 'DEFINITIVO',
+      papel: DEFINITIVO,
       podePublicar: false,
       impedimento: {
-        motivo: 'preliminarNaoPublicado',
+        motivo: {
+          codigo: ImpedimentoDoProdutoCodigo.preliminarNaoPublicado,
+          rotulo: 'Preliminar não publicado',
+        },
         mensagem:
           'O resultado definitivo só pode ser publicado depois do preliminar da mesma matéria.',
-      } as ProdutoPrevistoDto['impedimento'],
+      },
     });
 
-    await pagina.abrir(StatusProcesso.publicado, [], previstos(preliminar, definitivo));
+    await pagina.abrir(StatusProcessoCodigo.publicado, [], previstos(preliminar, definitivo));
 
     expect(pagina.host.querySelector('sel-previstos-no-edital h3')?.textContent).toContain(
       'Inscrição',
@@ -50,7 +60,7 @@ describe('PublicacoesDoProcessoPage — itens do edital', () => {
   });
 
   it('abre o formulário do resultado com a política do certame pelos nomes dos campos', async () => {
-    await pagina.abrir(StatusProcesso.publicado, [], previstos(item('preliminar')));
+    await pagina.abrir(StatusProcessoCodigo.publicado, [], previstos(item('preliminar')));
 
     botao(pagina.linhasDosPrevistos()[0], 'Publicar')?.click();
     pagina.fixture.detectChanges();
@@ -65,7 +75,7 @@ describe('PublicacoesDoProcessoPage — itens do edital', () => {
   });
 
   it('sem o catálogo de campos, publica do mesmo jeito e mostra a política pelo código', async () => {
-    await pagina.abrir(StatusProcesso.publicado, [], previstos(item('preliminar')), true);
+    await pagina.abrir(StatusProcessoCodigo.publicado, [], previstos(item('preliminar')), true);
 
     botao(pagina.linhasDosPrevistos()[0], 'Publicar')?.click();
     pagina.fixture.detectChanges();
@@ -80,13 +90,13 @@ describe('PublicacoesDoProcessoPage — itens do edital', () => {
     const original = ato('original');
     const errata = ato('errata', { atoCorrigidoId: 'original' });
     const publicado = item('preliminar', {
-      situacao: SituacaoDoProdutoPrevisto.publicado,
+      situacao: PUBLICADO,
       ato: original,
       correcoes: [errata],
       podePublicar: false,
     });
 
-    await pagina.abrir(StatusProcesso.publicado, [errata, original], previstos(publicado));
+    await pagina.abrir(StatusProcessoCodigo.publicado, [errata, original], previstos(publicado));
 
     botao(pagina.linhasDosPrevistos()[0], 'Corrigir')?.click();
     pagina.fixture.detectChanges();
@@ -101,11 +111,11 @@ describe('PublicacoesDoProcessoPage — itens do edital', () => {
     const doItem = ato('resultado');
 
     await pagina.abrir(
-      StatusProcesso.publicado,
+      StatusProcessoCodigo.publicado,
       [doItem],
       previstos(
         item('preliminar', {
-          situacao: SituacaoDoProdutoPrevisto.publicado,
+          situacao: PUBLICADO,
           ato: doItem,
           podePublicar: false,
         }),
@@ -117,15 +127,18 @@ describe('PublicacoesDoProcessoPage — itens do edital', () => {
 
   it('relê os itens quando o documento é publicado e libera o definitivo', async () => {
     const definitivoBloqueado = item('definitivo', {
-      papel: 'DEFINITIVO',
+      papel: DEFINITIVO,
       podePublicar: false,
       impedimento: {
-        motivo: 'preliminarNaoPublicado',
+        motivo: {
+          codigo: ImpedimentoDoProdutoCodigo.preliminarNaoPublicado,
+          rotulo: 'Preliminar não publicado',
+        },
         mensagem: 'O resultado preliminar ainda não foi publicado.',
-      } as ProdutoPrevistoDto['impedimento'],
+      },
     });
     await pagina.abrir(
-      StatusProcesso.publicado,
+      StatusProcessoCodigo.publicado,
       [],
       previstos(item('preliminar'), definitivoBloqueado),
     );
@@ -138,11 +151,11 @@ describe('PublicacoesDoProcessoPage — itens do edital', () => {
     pagina.responderPrevistos(
       previstos(
         item('preliminar', {
-          situacao: SituacaoDoProdutoPrevisto.publicado,
+          situacao: PUBLICADO,
           ato: ato('original'),
           podePublicar: false,
         }),
-        item('definitivo', { papel: 'DEFINITIVO' }),
+        item('definitivo', { papel: DEFINITIVO }),
       ),
     );
     await pagina.fixture.whenStable();

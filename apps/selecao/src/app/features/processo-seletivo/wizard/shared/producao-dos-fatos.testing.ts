@@ -1,3 +1,10 @@
+import {
+  DADO_NUMERICO,
+  DADO_OPCAO,
+  DADO_SIM_OU_NAO,
+  VALORES_MODALIDADE,
+  VALOR_UNICO,
+} from './valores-do-catalogo.testing';
 import type {
   FatoComFase,
   FormularioQueColeta,
@@ -9,8 +16,8 @@ import type {
 export const fato = (codigo: string, extra: Partial<FatoComFase> = {}): FatoComFase => ({
   codigo,
   nome: codigo,
-  dominio: 'BOOLEANO',
-  cardinalidade: 'ESCALAR',
+  dominio: DADO_SIM_OU_NAO,
+  cardinalidade: VALOR_UNICO,
   valoresDominio: null,
   fonteValores: null,
   binding: `CAMPO_FORMULARIO:${codigo}`,
@@ -28,14 +35,14 @@ export const SEM_RENDA = fato('SEM_RENDA', { escopo: 'MEMBRO_GRUPO' });
 export const ALGUM_SEM_RENDA = fato('ALGUM_SEM_RENDA', { binding: 'AGREGACAO_GRUPO:SEM_RENDA' });
 export const PERFIL = fato('PERFIL', { binding: 'REGRA_DERIVACAO:PERFIL' });
 export const CONVOCACAO = fato('MODALIDADE_CONVOCACAO', {
-  dominio: 'CATEGORICO',
-  fonteValores: 'MODALIDADE',
+  dominio: DADO_OPCAO,
+  fonteValores: VALORES_MODALIDADE,
   binding: 'CLASSIFICACAO:MODALIDADE_CONVOCACAO',
   pontoResolucao: 'RESULTADO_FINAL',
 });
 export const DO_SIGAA = fato('DO_SIGAA', { binding: 'INTEGRACAO:SIGAA' });
 export const FAIXA_ETARIA = fato('FAIXA_ETARIA', {
-  dominio: 'NUMERICO',
+  dominio: DADO_NUMERICO,
   binding: 'ATRIBUTO_CANDIDATO:FAIXA_ETARIA',
 });
 

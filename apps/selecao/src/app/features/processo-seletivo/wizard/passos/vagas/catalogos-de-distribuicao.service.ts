@@ -4,6 +4,8 @@ import { Observable, forkJoin } from 'rxjs';
 import { ApiResult, coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
 import {
   CursoDto,
+  FormatoPedagogicoCodigo,
+  ProgramaDeOfertaCodigo,
   CursosApi,
   ModalidadeDto,
   ModalidadesApi,
@@ -101,19 +103,7 @@ export class CatalogosDeDistribuicao {
   readonly modalidadePorId = computed<ReadonlyMap<string, ModalidadeDoCatalogo>>(
     () =>
       new Map(
-        this.modalidades().map((modalidade) => [
-          modalidade.id,
-          {
-            id: modalidade.id,
-            codigo: modalidade.codigo,
-            composicaoVagas: modalidade.composicaoVagas,
-            composicaoOrigemCodigo: modalidade.composicaoOrigem,
-            regraRemanejamento: modalidade.regraRemanejamento,
-            remanejamentoDestino: modalidade.remanejamentoDestino,
-            remanejamentoPar: modalidade.remanejamentoPar,
-            remanejamentoFallback: modalidade.remanejamentoFallback,
-          },
-        ]),
+        this.modalidades().map((modalidade) => [modalidade.id, modalidadeDoCatalogo(modalidade)]),
       ),
   );
 
@@ -144,18 +134,10 @@ export class CatalogosDeDistribuicao {
     const cursoPorId = new Map(this.cursos().map((curso) => [curso.id, curso]));
 
     return new Map(
-      this.ofertas().map((oferta) => {
-        const curso = cursoPorId.get(oferta.cursoId);
-        const grau = curso?.grau?.trim();
-        return [
-          oferta.id,
-          [
-            curso?.nome ?? 'Curso não identificado',
-            ...(grau ? [grau] : []),
-            oferta.unidadeOfertante.sigla,
-          ].join(' · '),
-        ];
-      }),
+      this.ofertas().map((oferta) => [
+        oferta.id,
+        nomeDaOferta(oferta, cursoPorId.get(oferta.cursoId)),
+      ]),
     );
   });
 
@@ -165,20 +147,7 @@ export class CatalogosDeDistribuicao {
    * repetir "REGULAR · PRESENCIAL" em toda a lista.
    */
   readonly detalheDaOferta = computed<ReadonlyMap<string, string>>(
-    () =>
-      new Map(
-        this.ofertas().map((oferta) => [
-          oferta.id,
-          [
-            oferta.regimeDeTurno,
-            oferta.turnos.join(' e '),
-            ...(oferta.programaDeOferta === 'REGULAR' ? [] : [oferta.programaDeOferta]),
-            ...(oferta.formatoPedagogico === 'PRESENCIAL' ? [] : [oferta.formatoPedagogico]),
-          ]
-            .filter((parte) => parte !== '' && parte !== null)
-            .join(' · '),
-        ]),
-      ),
+    () => new Map(this.ofertas().map((oferta) => [oferta.id, detalheDaOferta(oferta)])),
   );
 
   /** Nome e detalhe juntos, para mensagens e rótulos acessíveis. */
@@ -245,23 +214,11 @@ export class CatalogosDeDistribuicao {
   }
 
   private guardarCatalogos(resultados: CatalogosLidos): void {
-    const { ofertas, cursos, modalidades, referencias, distribuicao, ajuste, cascata } = resultados;
-
-    // Um catálogo faltando deixa a tela oferecendo menos do que existe, e
-    // o operador não teria como saber. Ou vêm todos, ou nenhum.
-    if (
-      !isApiOk(ofertas) ||
-      !isApiOk(cursos) ||
-      !isApiOk(modalidades) ||
-      !isApiOk(referencias) ||
-      !isApiOk(distribuicao) ||
-      !isApiOk(ajuste) ||
-      !isApiOk(cascata)
-    ) {
+    if (!catalogosValidos(resultados)) {
       this.anunciarErro();
       return;
     }
-
+    const { ofertas, cursos, modalidades, referencias, distribuicao, ajuste, cascata } = resultados;
     this.ofertas.set(ofertas.data);
     this.cursos.set(cursos.data);
     this.modalidades.set(modalidades.data);
@@ -281,4 +238,44 @@ export class CatalogosDeDistribuicao {
 /** Sem inteiro, não há teto conhecido. */
 function comoInteiro(valor: number | null | undefined): number | null {
   return typeof valor === 'number' && Number.isInteger(valor) ? valor : null;
+}
+
+function modalidadeDoCatalogo(modalidade: ModalidadeDto): ModalidadeDoCatalogo {
+  return {
+    id: modalidade.id,
+    codigo: modalidade.codigo,
+    composicaoVagas: modalidade.composicaoVagas.codigo,
+    composicaoOrigemCodigo: modalidade.composicaoOrigem,
+    regraRemanejamento: modalidade.remanejamento?.regra.codigo ?? null,
+    remanejamentoDestino: modalidade.remanejamento?.destino ?? null,
+    remanejamentoPar: modalidade.remanejamento?.par ?? null,
+    remanejamentoFallback: modalidade.remanejamento?.fallback ?? null,
+  };
+}
+
+function nomeDaOferta(oferta: OfertaCursoDto, curso: CursoDto | undefined): string {
+  return [
+    curso?.nome ?? 'Curso não identificado',
+    curso?.grau?.trim(),
+    oferta.unidadeOfertante.sigla,
+  ]
+    .filter((parte) => parte)
+    .join(' · ');
+}
+
+function catalogosValidos(resultados: CatalogosLidos): resultados is {
+  [K in keyof CatalogosLidos]: Extract<CatalogosLidos[K], { ok: true }>;
+} {
+  return Object.values(resultados).every(isApiOk);
+}
+
+function detalheDaOferta(oferta: OfertaCursoDto): string {
+  return [
+    oferta.regimeDeTurno.rotulo,
+    oferta.turnos.map((turno) => turno.rotulo).join(' e '),
+    ...(oferta.programaDeOferta.codigo === ProgramaDeOfertaCodigo.REGULAR
+      ? [] : [oferta.programaDeOferta.rotulo]),
+    ...(oferta.formatoPedagogico.codigo === FormatoPedagogicoCodigo.PRESENCIAL
+      ? [] : [oferta.formatoPedagogico.rotulo]),
+  ].filter((parte) => parte !== '').join(' · ');
 }

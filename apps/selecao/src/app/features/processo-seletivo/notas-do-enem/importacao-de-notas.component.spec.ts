@@ -1,9 +1,9 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import type { LoteDeNotasDoEnemDto } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { NotasDoEnemPage } from './notas-do-enem.page';
+import { ID_DO_LOTE, lote } from './importacao-de-notas.testing';
 import {
   ROTA_EDICAO,
   abrirTela,
@@ -15,54 +15,6 @@ import {
 } from './notas-do-enem.testing';
 
 const ROTA_LOTES = `${ROTA_EDICAO}/lotes-de-notas`;
-const ID_DO_LOTE = '01960000-0000-7000-0000-0000000005dd';
-
-function lote(sobrescritas: Partial<LoteDeNotasDoEnemDto> = {}): LoteDeNotasDoEnemDto {
-  return {
-    id: ID_DO_LOTE,
-    edicao: '2025',
-    leiauteCodigo: 'RETORNO_20',
-    leiauteVersao: '1',
-    leiauteHash: 'h'.repeat(64),
-    arquivoHash: 'a'.repeat(64),
-    importadoPor: 'usuario-opaco',
-    importadoPorNome: 'Diogo Bruno Filipe Souza',
-    importadoEm: '2026-10-26T12:00:00Z',
-    totalDeLinhas: 5,
-    totalDeInscritosComNota: 2,
-    totalDeLancamentos: 10,
-    totalDeInscritosSemLinha: 1,
-    totalDeLinhasSemInscrito: 1,
-    totalDeInscritosEmConflito: 0,
-    totalDeInscritosAusentes: 0,
-    vigente: true,
-    ausentes: null,
-    ocorrencias: [
-      {
-        tipo: 'INSCRITO_SEM_LINHA',
-        inscricaoId: null,
-        numeroDeInscricao: 'INS-0003',
-        numerosDasLinhas: null,
-        nomeDoCandidato: null,
-        cpfMascarado: null,
-        sexo: null,
-        ofertas: null,
-      },
-      {
-        tipo: 'LINHA_SEM_INSCRITO',
-        inscricaoId: null,
-        numeroDeInscricao: null,
-        numerosDasLinhas: [14],
-        nomeDoCandidato: null,
-        cpfMascarado: null,
-        sexo: null,
-        ofertas: null,
-      },
-    ],
-    ...sobrescritas,
-  };
-}
-
 describe('ImportacaoDeNotasComponent', () => {
   let controller: HttpTestingController;
   let tela: TelaAberta;

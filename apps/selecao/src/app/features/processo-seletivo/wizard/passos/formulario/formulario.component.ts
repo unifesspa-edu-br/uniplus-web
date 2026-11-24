@@ -18,6 +18,7 @@ import {
   FINALIDADE_INSCRICAO,
   BLOCO_COMPROVACAO_DOCUMENTAL,
   ValorEmConsultaComponent,
+  acompanharLeitura,
   conteudoInicial,
   conteudoParaEnvio,
   semDadosBasicos,
@@ -35,12 +36,14 @@ import { GravacaoDosFormularios } from './servicos/gravacao-dos-formularios.serv
 import { RemocaoDoFormulario } from './servicos/remocao-do-formulario.service';
 import { CamposPressupostosDoFormulario } from './servicos/campos-pressupostos-do-formulario.service';
 import { FasesDosFormularios } from './servicos/fases-dos-formularios.service';
+import { CatalogoDasConsequenciasDeIndeferimento } from '../cronograma/catalogos/catalogo-das-consequencias-de-indeferimento.service';
 import { CatalogosDoFormulario } from './servicos/catalogos-do-formulario.service';
 import { LeituraDoProcessoNoFormulario } from './servicos/leitura-do-processo-no-formulario.service';
 import { ModeloDoFormularioComponent } from './secoes/modelo.component';
 import { ApuracaoDaIdadeComponent } from './secoes/apuracao-da-idade.component';
 import { SimulacaoDoFormularioComponent } from './secoes/simulacao.component';
 import { DocumentosDoFormularioComponent } from './documentos-do-formulario.component';
+import { tituloDoPasso } from '../../shared/titulo-do-passo';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 import { desempateSemDataDeNascimento, PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
 import { camposSemUsoDeclarado } from './citantes-no-processo';
@@ -98,6 +101,7 @@ const anuncioDoAcrescimo = (finalidade: string): string =>
     AplicacaoDeModelo,
     AplicacaoNoServidor,
     CatalogosDoFormulario,
+    CatalogoDasConsequenciasDeIndeferimento,
     GravacaoDosFormularios,
     RemocaoDoFormulario,
     CamposPressupostosDoFormulario,
@@ -112,6 +116,13 @@ const anuncioDoAcrescimo = (finalidade: string): string =>
 export class FormularioPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   protected readonly dados = inject(CatalogosDoFormulario);
+  protected readonly consequencias = inject(CatalogoDasConsequenciasDeIndeferimento);
+  protected readonly leituraDasConsequencias = acompanharLeitura({
+    falha: this.consequencias.erro,
+    pendente: computed(() => this.consequencias.situacao() === 'carregando'),
+    recarregar: () => this.consequencias.repetir(),
+    destino: tituloDoPasso,
+  });
   /** O que o leitor de tela ouve depois de acrescentar ou remover um formulário, ou de aplicar um modelo. */
   protected readonly anuncio = signal('');
   protected readonly remocao = inject(RemocaoDoFormulario);
@@ -126,6 +137,7 @@ export class FormularioPassoComponent {
   private readonly abaEscolhida = signal(FINALIDADE_INSCRICAO);
   readonly finalidadeAAcrescentar = signal('');
   constructor() {
+    this.consequencias.carregar();
     this.dados.carregarCatalogo();
     this.dados.carregarTermos();
   }

@@ -1,4 +1,5 @@
 import {
+  FinalidadeFormularioCodigo,
   type AplicacaoDeModeloDto,
   type FormularioDto,
   TipoRenderizacaoCodigo,
@@ -35,12 +36,12 @@ const com = (...fatos: string[]): ConteudoDoFormulario => ({
 
 /** O formulário como o servidor o devolve, só com itens e a revisão e aceite. */
 const doServidor = (
-  finalidade: string,
+  finalidade: FinalidadeFormularioCodigo,
   faseId: string | null,
   fatos: readonly string[],
   modeloOrigemCodigo: string | null = null,
 ): FormularioDto => ({
-  finalidade,
+  finalidade: { codigo: finalidade, rotulo: finalidade },
   faseId,
   titulo: null,
   modeloOrigem: modeloOrigemCodigo === null ? null : { id: 'm', codigo: modeloOrigemCodigo },
@@ -52,7 +53,7 @@ const doServidor = (
       etapaCodigo: null,
       apresentacao: {
         rotulo: fatoCodigo,
-        tipoRenderizacao: TipoRenderizacaoCodigo.BOOLEANO,
+        tipoRenderizacao: TipoRenderizacaoCodigo.SIM_OU_NAO,
         ajuda: null,
         pedirConfirmacao: false,
       },
@@ -71,7 +72,7 @@ const doServidor = (
 });
 
 const relato = (extra: Partial<AplicacaoDeModeloDto> = {}): AplicacaoDeModeloDto => ({
-  finalidade: 'INSCRICAO',
+  finalidade: { codigo: FinalidadeFormularioCodigo.INSCRICAO, rotulo: 'Inscrição' },
   fatosTrazidosParaAInscricao: [],
   fatosMantidosNaInscricao: [],
   descartados: [],
@@ -114,7 +115,11 @@ describe('os modelos oferecidos', () => {
 describe('a fase que a aplicação declara', () => {
   it('a do formulário que já tem fase no servidor é preservada pela cópia', () => {
     expect(
-      faseQueAAplicacaoDeclara(doServidor('INSCRICAO', 'F-INSCRICAO', []), 'INSCRICAO', FASES),
+      faseQueAAplicacaoDeclara(
+        doServidor(FinalidadeFormularioCodigo.INSCRICAO, 'F-INSCRICAO', []),
+        'INSCRICAO',
+        FASES,
+      ),
     ).toEqual({ declarar: false });
   });
 
@@ -124,7 +129,11 @@ describe('a fase que a aplicação declara', () => {
       faseId: 'F-HABILITACAO',
     });
     expect(
-      faseQueAAplicacaoDeclara(doServidor('HABILITACAO', null, []), 'HABILITACAO', FASES),
+      faseQueAAplicacaoDeclara(
+        doServidor(FinalidadeFormularioCodigo.HABILITACAO, null, []),
+        'HABILITACAO',
+        FASES,
+      ),
     ).toEqual({ declarar: true, faseId: 'F-HABILITACAO' });
     expect(faseQueAAplicacaoDeclara(null, 'HABILITACAO', [FASES[0]])).toEqual({
       declarar: true,
@@ -138,8 +147,8 @@ describe('o rascunho depois da aplicação', () => {
     const editada = { finalidade: 'ISENCAO_TAXA', faseCodigo: 'INSCRICAO', conteudo: com('RENDA') };
     const servidor = {
       formularios: [
-        doServidor('INSCRICAO', 'F-INSCRICAO', ['PCD']),
-        doServidor('HABILITACAO', null, ['DIPLOMA'], 'HAB-PADRAO'),
+        doServidor(FinalidadeFormularioCodigo.INSCRICAO, 'F-INSCRICAO', ['PCD']),
+        doServidor(FinalidadeFormularioCodigo.HABILITACAO, null, ['DIPLOMA'], 'HAB-PADRAO'),
       ],
       cronogramaFases: FASES,
       regrasDerivacao: [],
@@ -148,7 +157,9 @@ describe('o rascunho depois da aplicação', () => {
     const depois = comAplicacaoDoServidor(
       rascunho({ outrasFinalidades: [editada] }),
       servidor,
-      relato({ finalidade: 'HABILITACAO' }),
+      relato({
+        finalidade: { codigo: FinalidadeFormularioCodigo.HABILITACAO, rotulo: 'Habilitação' },
+      }),
       'HABILITACAO',
     );
 
@@ -167,8 +178,8 @@ describe('o rascunho depois da aplicação', () => {
   it('na inscrição, o formulário de onde a cópia trouxe fatos volta ao que o servidor deixou', () => {
     const servidor = {
       formularios: [
-        doServidor('INSCRICAO', 'F-INSCRICAO', ['RENDA'], 'INSC'),
-        doServidor('ISENCAO_TAXA', 'F-INSCRICAO', ['NIS']),
+        doServidor(FinalidadeFormularioCodigo.INSCRICAO, 'F-INSCRICAO', ['RENDA'], 'INSC'),
+        doServidor(FinalidadeFormularioCodigo.ISENCAO_TAXA, 'F-INSCRICAO', ['NIS']),
       ],
       cronogramaFases: FASES,
       regrasDerivacao: [],
@@ -193,7 +204,7 @@ describe('o rascunho depois da aplicação', () => {
 
   it('as derivações copiadas do catálogo somam-se às do rascunho, sem trocar as outras', () => {
     const servidor = {
-      formularios: [doServidor('INSCRICAO', 'F-INSCRICAO', ['PCD'])],
+      formularios: [doServidor(FinalidadeFormularioCodigo.INSCRICAO, 'F-INSCRICAO', ['PCD'])],
       cronogramaFases: FASES,
       regrasDerivacao: [
         { codigoFato: 'COTISTA', regras: ['do servidor'] },
@@ -225,7 +236,7 @@ describe('o resumo da aplicação', () => {
     };
     const resumo = resumoDaAplicacao(
       relato({
-        finalidade: 'ISENCAO_TAXA',
+        finalidade: { codigo: FinalidadeFormularioCodigo.ISENCAO_TAXA, rotulo: 'Isenção de taxa' },
         fatosMantidosNaInscricao: ['RENDA'],
         descartados: [{ parte: 'ITEM', codigo: 'NIS', motivo: 'FATO_DESATIVADO' }],
       }),

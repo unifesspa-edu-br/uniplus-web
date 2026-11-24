@@ -1,8 +1,7 @@
-import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
 import type { ItemConformidadeDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
 import { PASSOS } from '../processo-seletivo.data';
-import { decodificarOrigemCandidatos } from './hidratacao';
 import type { RotuloDePasso } from '../processo-seletivo.data';
 import { passosComPendencia } from '../passos/revisao/grupos-da-revisao';
 
@@ -30,7 +29,7 @@ function gravadoPorPasso(dto: ProcessoSeletivoDto): Record<PassoQueGrava, boolea
     Bônus: dto.aplicaBonusRegional != null,
     Desempate:
       (dto.criteriosDesempate ?? []).length > 0 ||
-      decodificarOrigemCandidatos(dto.origemCandidatos) === OrigemCandidatos.importacaoExterna,
+      dto.origemCandidatos.codigo === OrigemCandidatosCodigo.importacaoExterna,
     Eliminação: classificacaoGravada,
     'Atend. especial': dto.atendimentoEspecializado != null,
     Formulários: (dto.formularios ?? []).length > 0,

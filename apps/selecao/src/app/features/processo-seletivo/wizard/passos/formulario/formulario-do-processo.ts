@@ -306,7 +306,7 @@ export function formularioDaFinalidade(
   formularios: readonly FormularioDto[],
   finalidade: string,
 ): FormularioDto | null {
-  return formularios.find((formulario) => formulario.finalidade === finalidade) ?? null;
+  return formularios.find((formulario) => formulario.finalidade.codigo === finalidade) ?? null;
 }
 
 /** Os fatos que o formulário coleta: os itens, os campos dos grupos e os próprios códigos dos grupos. */
@@ -325,7 +325,7 @@ export function fatosDasOutrasFinalidades(
   return [
     ...new Set(
       formularios
-        .filter((formulario) => formulario.finalidade !== finalidade)
+        .filter((formulario) => formulario.finalidade.codigo !== finalidade)
         .flatMap((formulario) => fatosColetadosPor(conteudoDoFormulario(formulario))),
     ),
   ];
@@ -358,7 +358,7 @@ export function formularioDoServidor(
 ): FormularioDoServidor {
   const fase = dto.cronogramaFases.find((f) => f.id === formulario.faseId);
   return {
-    finalidade: formulario.finalidade,
+    finalidade: formulario.finalidade.codigo,
     faseCodigo: fase?.codigo ?? '',
     conteudo: conteudoDoFormulario(formulario),
     modeloOrigemCodigo: formulario.modeloOrigem?.codigo ?? null,

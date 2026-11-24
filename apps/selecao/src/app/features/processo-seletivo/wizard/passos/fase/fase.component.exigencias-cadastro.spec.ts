@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
-import { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 import {
   exigenciasDaFase,
   todasAsExigencias,
@@ -171,7 +171,7 @@ describe('FasePassoComponent', () => {
           {
             id: ID_ETAPA_DOCUMENTAL,
             nome: 'Análise documental',
-            carater: CaraterEtapa.eliminatoria,
+            carater: CaraterEtapaCodigo.eliminatoria,
             tipoEtapaOrigemId: ID_TIPO_ETAPA,
             peso: '',
             notaMinima: '',

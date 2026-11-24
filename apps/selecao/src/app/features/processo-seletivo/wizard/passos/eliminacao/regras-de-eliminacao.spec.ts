@@ -21,9 +21,9 @@ import {
 describe('regras de eliminação por área', () => {
   montarEliminacao();
 
-  describe('ELIM-CORTE-EM-AREA — área do quadro e mínimo', () => {
+  describe('ELIMINACAO-CORTE-EM-AREA — área do quadro e mínimo', () => {
     const CORTE = {
-      regraCodigo: 'ELIM-CORTE-EM-AREA',
+      regraCodigo: 'ELIMINACAO-CORTE-EM-AREA',
       regraVersao: 'v1',
       etapaRef: '',
       notaMinima: '',

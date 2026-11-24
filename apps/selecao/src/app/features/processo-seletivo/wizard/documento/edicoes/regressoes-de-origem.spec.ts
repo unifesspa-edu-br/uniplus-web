@@ -13,8 +13,8 @@ const DOCUMENTO_COM_CHAVES_REPETIDAS: DocumentoDaConfiguracao = {
   etapas: [{ chave: 'x' }, { chave: 'x' }],
   cronograma: {
     fases: [
-      { chave: 'x', faseCanonicaCodigo: 'INSCRICOES', noMesmoMomentoDaAnterior: false },
-      { chave: 'x', faseCanonicaCodigo: 'INSCRICOES', noMesmoMomentoDaAnterior: false },
+      { chave: 'x', tipoFaseCodigo: 'INSCRICOES', noMesmoMomentoDaAnterior: false },
+      { chave: 'x', tipoFaseCodigo: 'INSCRICOES', noMesmoMomentoDaAnterior: false },
     ],
   },
 };

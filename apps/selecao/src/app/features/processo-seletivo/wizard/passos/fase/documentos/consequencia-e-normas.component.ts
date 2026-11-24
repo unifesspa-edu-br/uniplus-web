@@ -7,7 +7,6 @@ import {
 } from '@uniplus/shared-ui/components';
 
 import type { BaseLegalConfig } from '../../../processo-seletivo.models';
-import { rotuloDaConsequencia } from '../resumo-da-exigencia';
 
 @Component({
   selector: 'sel-consequencia-e-normas',
@@ -29,7 +28,6 @@ export class ConsequenciaENormasComponent {
   readonly referenciaDaNorma = input('Norma que exige o documento');
   readonly consequenciaChange = output<string>();
   readonly basesChange = output<readonly BaseLegalConfig[]>();
-  protected readonly rotuloDaConsequencia = rotuloDaConsequencia;
   protected readonly textos = computed<Partial<TextosDasNormas>>(() => ({
     referencia: this.referenciaDaNorma(),
     placeholderReferencia: 'Lei 12.711/2012, art. 3º',

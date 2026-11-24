@@ -24,6 +24,7 @@ import {
   formulariosEscolhiveis,
 } from '../../../shared/exigencias/formulario-da-exigencia';
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
+import { CatalogoDasConsequenciasDeIndeferimento } from '../../cronograma/catalogos/catalogo-das-consequencias-de-indeferimento.service';
 import { nomeDaFinalidade } from '../../formulario/formularios-por-finalidade';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import {
@@ -53,7 +54,11 @@ import { DocumentosEmEdicao } from './documentos-em-edicao.service';
 /** Os documentos que a fase exige: o seletor para acrescentar e a conferência com o que decide cada um. */
 @Component({
   selector: 'sel-documentos-da-fase',
-  providers: [ConfirmacaoDaRemocaoStore, DocumentosEmEdicao],
+  providers: [
+    ConfirmacaoDaRemocaoStore,
+    DocumentosEmEdicao,
+    CatalogoDasConsequenciasDeIndeferimento,
+  ],
   imports: [
     ComboboxComponent,
     ConfirmacaoDaRemocaoDoDocumentoComponent,
@@ -75,6 +80,11 @@ export class DocumentosDaFaseComponent {
   protected readonly confirmacao = inject(ConfirmacaoDaRemocaoStore);
   private readonly gatilho = inject(GatilhoDasExigenciasStore);
   private readonly edicao = inject(DocumentosEmEdicao);
+  private readonly catalogoDeConsequencias = inject(CatalogoDasConsequenciasDeIndeferimento);
+
+  constructor() {
+    this.catalogoDeConsequencias.carregar();
+  }
 
   private readonly faseAberta = this.faseEmEdicao.faseAberta;
   protected readonly nomeDaFaseAberta = this.faseEmEdicao.nomeDaFaseAberta;
@@ -159,7 +169,8 @@ export class DocumentosDaFaseComponent {
   }
 
   readonly emEdicao = (id: string): boolean => this.edicao.aberto(id);
-  readonly alternarEdicao = (id: string, aberto?: boolean): void => this.edicao.alternar(id, aberto);
+  readonly alternarEdicao = (id: string, aberto?: boolean): void =>
+    this.edicao.alternar(id, aberto);
 
   /** O resumo de cada documento da fase: o que decide a exigência, sem abrir os campos. */
   readonly resumos = computed<readonly ResumoDoDocumento[]>(() =>
@@ -206,7 +217,11 @@ export class DocumentosDaFaseComponent {
 
   private consequenciaDoDocumento(id: string): string {
     const exigencia = this.exigencias.exigenciaDoDocumento(id);
-    return rotuloDaConsequencia(exigencia.consequenciaIndeferimento, exigencia.obrigatorio);
+    return rotuloDaConsequencia(
+      exigencia.consequenciaIndeferimento,
+      exigencia.obrigatorio,
+      this.catalogoDeConsequencias.consequencias(),
+    );
   }
 
   /** O arquivo que a exigência gravou aceitar, escrito como o formulário e a revisão o escrevem. */

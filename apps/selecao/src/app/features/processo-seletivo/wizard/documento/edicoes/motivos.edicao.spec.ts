@@ -29,8 +29,8 @@ function umMotivo(lugar: object, codigo = 'SEM_RESULTADO'): DocumentoDaConfigura
   };
 }
 
-function comMotivos(...motivos: DocumentoDaConfiguracaoMotivo[]): DocumentoDaConfiguracao {
-  return { ...documentoSemNada(), motivos };
+function comMotivos(...motivosDeDecisao: DocumentoDaConfiguracaoMotivo[]): DocumentoDaConfiguracao {
+  return { ...documentoSemNada(), motivosDeDecisao };
 }
 
 describe('motivos do documento', () => {
@@ -47,7 +47,7 @@ describe('motivos do documento', () => {
     const resultado = escolherMotivo(documento, umMotivo(NA_PROVA));
 
     expect(resultado).toMatchObject({ escolhido: true });
-    expect(resultado.escolhido && resultado.documento.motivos).toEqual([
+    expect(resultado.escolhido && resultado.documento.motivosDeDecisao).toEqual([
       umMotivo(NA_INSCRICAO),
       umMotivo(NA_PROVA),
     ]);
@@ -66,8 +66,10 @@ describe('motivos do documento', () => {
 
     const editado = retirarMotivo(documento, umMotivo(NA_INSCRICAO));
 
-    expect(editado.motivos?.map((motivo) => motivo.codigo)).toEqual(['OUTRO']);
-    expect(retirarMotivo(documento, umMotivo(NA_PROVA)).motivos).toEqual(documento.motivos);
+    expect(editado.motivosDeDecisao?.map((motivo) => motivo.codigo)).toEqual(['OUTRO']);
+    expect(retirarMotivo(documento, umMotivo(NA_PROVA)).motivosDeDecisao).toEqual(
+      documento.motivosDeDecisao,
+    );
   });
 
   it('retirar os motivos do lugar é ação explícita e não toca nos dos outros', () => {
@@ -75,14 +77,16 @@ describe('motivos do documento', () => {
 
     const editado = retirarMotivosDoLugar(documento, NA_INSCRICAO);
 
-    expect(editado.motivos).toEqual([umMotivo(NA_PROVA)]);
+    expect(editado.motivosDeDecisao).toEqual([umMotivo(NA_PROVA)]);
   });
 
   it('a lista vazia só aparece onde já estava', () => {
     const semMotivos = documentoSemNada();
 
     expect(retirarMotivo(semMotivos, umMotivo(NA_PROVA))).toBe(semMotivos);
-    expect(retirarMotivosDoLugar(comMotivos(umMotivo(NA_PROVA)), NA_PROVA).motivos).toEqual([]);
+    expect(
+      retirarMotivosDoLugar(comMotivos(umMotivo(NA_PROVA)), NA_PROVA).motivosDeDecisao,
+    ).toEqual([]);
   });
 });
 

@@ -138,7 +138,7 @@ test.describe('Edições do ENEM aceitas na Fórmula em edição — matriz DS @
     await abrirProcessoDoCenario(page, testInfo, PROCESSO_EDICOES_ENEM_ID, {
       ...DETALHE_DESEMPATE_POR_AREA,
       id: PROCESSO_EDICOES_ENEM_ID,
-      status: 'rascunho',
+      status: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
       opcoesDeclaradas: [
         {
           fatoCodigo: 'EDICAO_ENEM',

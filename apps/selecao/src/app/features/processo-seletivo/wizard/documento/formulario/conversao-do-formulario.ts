@@ -14,7 +14,7 @@ import type {
 
 type Formulario = DocumentoDaConfiguracaoFormulario;
 
-const CAMPOS: readonly (keyof Formulario)[] = ['titulo', 'etapas', 'itens', 'grupos', 'termos'];
+const CAMPOS: readonly (keyof Formulario)[] = ['titulo', 'paginas', 'itens', 'grupos', 'termos'];
 const PRESSUPOSTOS_INDEVIDOS =
   'Os fatos anteriores são informados pela inscrição. Retire os pressupostos declarados.';
 const DOCUMENTOS_EM_OUTRA_SECAO = 'Edite os documentos exigidos na seção própria do processo.';
@@ -31,7 +31,7 @@ function lerConteudo(formulario: Formulario, contexto: Contexto): ConteudoDoForm
   return {
     titulo: formulario.titulo ?? null,
     pressupostos: [],
-    etapas: formulario.etapas?.map(lerEtapa) ?? null,
+    etapas: formulario.paginas?.map(lerEtapa) ?? null,
     itens:
       formulario.itens?.map((item, indice) => lerItem(item, contexto, ['itens', String(indice)])) ??
       null,
@@ -66,13 +66,13 @@ function etapasDoConteudo(
   conteudo: ConteudoDoFormulario,
   original: Formulario,
   contexto: Contexto,
-): Formulario['etapas'] {
+): Formulario['paginas'] {
   return conteudo.etapas?.flatMap((etapa) => {
     const convertida = gravarEtapa(
       etapa,
-      original.etapas?.find((atual) => atual.codigo === etapa.codigo),
+      original.paginas?.find((atual) => atual.codigo === etapa.codigo),
       contexto,
-      ['etapas', etapa.codigo],
+      ['paginas', etapa.codigo],
     );
     return convertida === undefined ? [] : [convertida];
   });
@@ -96,7 +96,7 @@ function termosDoConteudo(
 
 function itensDoConteudo(conteudo: ConteudoDoFormulario, original: Formulario, contexto: Contexto) {
   return conteudo.itens?.map((item) => {
-    const anterior = original.itens?.find((atual) => atual.fatoCodigo === item.fatoCodigo);
+    const anterior = original.itens?.find((atual) => atual.codigoDoDado === item.fatoCodigo);
     return gravarItem(item, anterior, contexto, ['itens', item.fatoCodigo]);
   });
 }
@@ -120,7 +120,7 @@ function converterPartes(
   return {
     ...original,
     titulo: conteudo.titulo ?? undefined,
-    etapas: etapasDoConteudo(conteudo, original, contexto),
+    paginas: etapasDoConteudo(conteudo, original, contexto),
     itens: itensDoConteudo(conteudo, original, contexto),
     grupos: gruposDoConteudo(conteudo, original, contexto),
     termos: termosDoConteudo(conteudo, original, contexto),

@@ -1,5 +1,5 @@
 import {
-  CaraterEtapa,
+  CaraterEtapaCodigo,
   EfeitoSuspensivoCodigo,
   type EtapaProcessoDto,
   type FaseCronogramaDto,
@@ -76,7 +76,10 @@ export const RECURSO_DA_FASE: RecursoDaFaseDoServidor = {
 
 const FASE_CANONICA: FaseCronogramaDto['faseCanonica'] = {
   origemId: 'fase-canonica-homologacao',
-  origemData: 'NO_EDITAL',
+  origemData: {
+    codigo: 'NO_EDITAL' as FaseCronogramaDto['faseCanonica']['origemData']['codigo'],
+    rotulo: 'No edital',
+  },
   agrupaEtapas: false,
   permiteComplementacao: true,
   coletaInscricao: false,
@@ -93,7 +96,16 @@ const CRONOGRAMA_DA_FASE: FaseCronogramaDto['cronograma'] = {
 
 const PUBLICACOES_DA_FASE: FaseCronogramaDto['publicacoes'] = {
   produtos: [
-    { id: 'produto-preliminar', atoCodigo: 'RESULTADO_HOMOLOGACAO', papel: 'PRELIMINAR' },
+    {
+      id: 'produto-preliminar',
+      atoCodigo: 'RESULTADO_HOMOLOGACAO',
+      papel: {
+        codigo: 'PRELIMINAR' as NonNullable<
+          FaseCronogramaDto['publicacoes']['produtos'][number]['papel']
+        >['codigo'],
+        rotulo: 'Preliminar',
+      },
+    },
     { id: 'produto-aviso', atoCodigo: 'COMUNICADO_HOMOLOGACAO', papel: null },
   ],
   produzResultado: true,
@@ -132,7 +144,7 @@ export function faseDoServidor(parcial: FaseDoServidorParcial = {}): FaseCronogr
 
 const IDENTIFICACAO_DA_ETAPA: EtapaProcessoDto['identificacao'] = {
   nome: 'Prova Objetiva',
-  carater: CaraterEtapa.classificatoria,
+  carater: { codigo: CaraterEtapaCodigo.classificatoria, rotulo: 'Classificatória' },
   tipoEtapa: {
     origemId: 'tipo-etapa-1',
     codigo: 'PROVA_OBJETIVA',
@@ -180,13 +192,18 @@ export function etapaDoServidor(parcial: EtapaDoServidorParcial = {}): EtapaProc
 
 type RecursoDaEtapaDoServidor = EtapaProcessoDto['publicacoes']['recursos'][number];
 
+const ATO_PUBLICADO = {
+  codigo: 'atoPublicado' as RecursoDaEtapaDoServidor['ancora']['codigo'],
+  rotulo: 'Ato publicado',
+};
+
 /** Recurso da etapa ancorado na publicação de um ato, com os parâmetros do exemplo da fase. */
 export function recursoDaEtapaDoServidor(
   parcial: Partial<RecursoDaEtapaDoServidor> = {},
 ): RecursoDaEtapaDoServidor {
   return {
     id: 'recurso-da-etapa-1',
-    ancora: 'atoPublicado' as RecursoDaEtapaDoServidor['ancora'],
+    ancora: ATO_PUBLICADO,
     regra: { codigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO', versao: '1.0.0', hash: 'abc123' },
     parametros: PARAMETROS_DO_RECURSO,
     produtoAncoraId: 'produto-da-etapa-1',

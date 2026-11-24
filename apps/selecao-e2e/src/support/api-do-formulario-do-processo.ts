@@ -50,7 +50,7 @@ function processoComAFaseDaInscricao() {
   const faseDaInscricao = faseDoServidor();
   return {
     ...PROCESSO_PUBLICADO_DA_MEDICINA,
-    status: 'rascunho',
+    status: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
     cronogramaFases: [faseDaInscricao],
     formularios: PROCESSO_PUBLICADO_DA_MEDICINA.formularios.map((formulario) => ({
       ...formulario,

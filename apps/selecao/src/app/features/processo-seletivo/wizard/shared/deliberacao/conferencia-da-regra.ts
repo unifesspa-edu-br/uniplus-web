@@ -19,9 +19,9 @@ const MENSAGEM: Readonly<Record<string, string>> = {
   integrantes: 'Informe quantos titulares a banca tem: um número inteiro, de 1 até 2.147.483.647.',
   suplentes: 'Informe quantos suplentes a banca tem, de 0 até 2.147.483.647.',
   quorum: 'O quórum é um número inteiro de 1 até o número de integrantes.',
-  criterio: 'Escolha o critério: maioria simples, maioria absoluta ou unanimidade.',
+  criterio: 'Escolha o critério da votação.',
   encerramento: 'Diga como a votação se encerra.',
-  desempate: 'Escolha o desempate: voto da presidência ou nova votação.',
+  desempate: 'Escolha como resolver o empate.',
   semUnanimidade: 'Diga o que vale quando não há unanimidade.',
 };
 
@@ -53,11 +53,11 @@ function quorumForaDoIntervalo(regra: RegraDeDeliberacaoDaBanca): boolean {
 
 function problemasDaVotacao(regra: RegraDeDeliberacaoDaBanca): readonly ProblemaDaRegra[] {
   return falhas(
-    [regra.criterio === '', 'criterio'],
-    [regra.encerramento === '', 'encerramento'],
+    [regra.criterio === null, 'criterio'],
+    [regra.encerramento === null, 'encerramento'],
     [quorumForaDoIntervalo(regra), 'quorum'],
-    [pedeDesempate(regra) && regra.desempate === '', 'desempate'],
-    [pedeResultadoSemUnanimidade(regra) && regra.semUnanimidade === '', 'semUnanimidade'],
+    [pedeDesempate(regra) && regra.desempate === null, 'desempate'],
+    [pedeResultadoSemUnanimidade(regra) && regra.semUnanimidade === null, 'semUnanimidade'],
   );
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
 import type { ItemConformidadeDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
 import { PASSOS } from '../processo-seletivo.data';
@@ -11,7 +11,7 @@ function rotulosConcluidos(
   checklist: ItemConformidadeDto[] = [],
 ) {
   const completo = {
-    origemCandidatos: OrigemCandidatos.inscricaoPropria,
+    origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
     ...dto,
   } as ProcessoSeletivoDto;
   const concluidos = passosConcluidosDe(completo, checklist);
@@ -39,7 +39,7 @@ describe('passosConcluidosDe', () => {
     expect(rotulosConcluidos({ criteriosDesempate: [{}] as never })).toContain('Desempate');
     expect(
       rotulosConcluidos({
-        origemCandidatos: OrigemCandidatos.importacaoExterna,
+        origemCandidatos: { codigo: OrigemCandidatosCodigo.importacaoExterna, rotulo: 'Importação externa' },
         criteriosDesempate: [],
       }),
     ).toContain('Desempate');

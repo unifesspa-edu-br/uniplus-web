@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, Injector } from '@angular/core';
 import { FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
-import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
 
 import { CriterioDesempateConfigurado, ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { fatosColetadosPelaInscricao } from '../formulario/fatos-coletados-da-inscricao';
@@ -89,12 +89,12 @@ export class DesempatePassoComponent {
    * vem classificada e o passo não o exige (a API aceita critérios, mas não os cobra).
    */
   readonly desempateObrigatorio = computed(
-    () => this.store.draft().identificacao.origemCandidatos === OrigemCandidatos.inscricaoPropria,
+    () => this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.inscricaoPropria,
   );
 
   /** Só diz que o desempate não é obrigatório quando a origem já foi escolhida como importação. */
   readonly desempateDispensado = computed(
-    () => this.store.draft().identificacao.origemCandidatos === OrigemCandidatos.importacaoExterna,
+    () => this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.importacaoExterna,
   );
 
   /**

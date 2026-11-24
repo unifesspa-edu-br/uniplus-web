@@ -1,5 +1,6 @@
+import type { DocumentoAPublicarDto } from '@uniplus/shared-data/selecao';
 import { TestBed } from '@angular/core/testing';
-import { FinalidadeDoDocumento } from '@uniplus/shared-data/selecao';
+import { FinalidadeDoDocumentoCodigo } from '@uniplus/shared-data/selecao';
 import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-testing';
 import { BehaviorSubject, from, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,7 +22,7 @@ describe('ProcessoSeletivoPage — edital na retomada', MONTAGEM_LENTA, () => {
     await propagar();
 
     // Os anexos do edital vivem na mesma coleção e não disputam o posto de oficial.
-    expect(listar).toHaveBeenCalledWith(PROCESSO_ID, FinalidadeDoDocumento.documentoDoEdital);
+    expect(listar).toHaveBeenCalledWith(PROCESSO_ID, FinalidadeDoDocumentoCodigo.documentoDoEdital);
 
     const uploads = cenario.store.draft().identificacao.uploads;
     expect(uploads).toHaveLength(1);
@@ -127,7 +128,7 @@ describe('ProcessoSeletivoPage — edital na retomada', MONTAGEM_LENTA, () => {
   it('ignora documentos pendentes ao restaurar o vínculo', async () => {
     const cenario = montar({
       listarDocumentos: vi.fn(() =>
-        of(okResult([documento({ status: 'Pendente', confirmadoEm: null })])),
+        of(okResult([documento({ status: { codigo: 'Pendente' as DocumentoAPublicarDto['status']['codigo'], rotulo: 'Pendente' }, confirmadoEm: null })])),
       ),
     });
     await propagar();

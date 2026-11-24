@@ -22,7 +22,7 @@ function regra(codigo: string, versao: string): RegraCatalogoDto {
   return {
     codigo,
     versao,
-    tipo: 'PRAZO',
+    tipo: { codigo: 'regra_prazo_recurso' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Prazo de recurso' },
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: 'Base legal de teste',

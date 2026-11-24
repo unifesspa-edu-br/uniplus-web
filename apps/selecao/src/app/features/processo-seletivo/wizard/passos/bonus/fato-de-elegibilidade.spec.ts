@@ -1,10 +1,10 @@
-import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import type { FormularioDeInscricao, WizardDraft } from '../../processo-seletivo.models';
 import { citaFatoDeElegibilidade, fatosDeElegibilidade } from './fato-de-elegibilidade';
 
-const rascunho = (aplica: boolean | null, origem: OrigemCandidatos): WizardDraft =>
+const rascunho = (aplica: boolean | null, origem: OrigemCandidatosCodigo): WizardDraft =>
   ({
     bonus: { aplica },
     identificacao: { origemCandidatos: origem },
@@ -23,9 +23,9 @@ const formulario = (
 
 describe('citaFatoDeElegibilidade', () => {
   it('só quando o processo aplica o acréscimo e o candidato se inscreve nele', () => {
-    expect(citaFatoDeElegibilidade(rascunho(true, OrigemCandidatos.inscricaoPropria))).toBe(true);
-    expect(citaFatoDeElegibilidade(rascunho(true, OrigemCandidatos.importacaoExterna))).toBe(false);
-    expect(citaFatoDeElegibilidade(rascunho(false, OrigemCandidatos.inscricaoPropria))).toBe(false);
+    expect(citaFatoDeElegibilidade(rascunho(true, OrigemCandidatosCodigo.inscricaoPropria))).toBe(true);
+    expect(citaFatoDeElegibilidade(rascunho(true, OrigemCandidatosCodigo.importacaoExterna))).toBe(false);
+    expect(citaFatoDeElegibilidade(rascunho(false, OrigemCandidatosCodigo.inscricaoPropria))).toBe(false);
   });
 });
 

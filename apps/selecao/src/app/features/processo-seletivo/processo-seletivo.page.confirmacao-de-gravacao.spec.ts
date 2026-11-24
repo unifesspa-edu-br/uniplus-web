@@ -2,7 +2,7 @@ import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Subject, type Observable, of } from 'rxjs';
 import { apiFailure, apiOk } from '@uniplus/shared-core/http';
-import { OrigemCandidatos, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatosCodigo, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { PAGE_PROVIDERS, listarFundamentos } from './processo-seletivo.page.testing';
 import { ProcessoSeletivoStore } from './wizard/processo-seletivo.store';
@@ -38,7 +38,7 @@ function preencherCadastroInicial(store: ProcessoSeletivoStore): void {
   store.patchObjectSection('identificacao', {
     nome: 'Vestibular 2027',
     unidadeAdministradoraId: 'unidade-1',
-    origemCandidatos: OrigemCandidatos.inscricaoPropria,
+    origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
     localidade: MARABA,
     identificadorLegivel: 'vestibular-2027',
   });

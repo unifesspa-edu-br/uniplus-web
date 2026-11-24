@@ -1,4 +1,5 @@
-import { StatusProcesso, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import { detalhe } from '../processo-seletivo.retomada.testing';
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from './processo-seletivo.store';
@@ -37,7 +38,7 @@ describe('ProcessoSeletivoStore — progresso', () => {
 });
 
 describe('ProcessoSeletivoStore — processo fora de rascunho', () => {
-  const comStatus = (status: StatusProcesso) => ({ id: 'p1', status }) as ProcessoSeletivoDto;
+  const comStatus = (status: StatusProcessoCodigo) => detalhe({ id: 'p1', status: { codigo: status, rotulo: status } });
 
   it('sem detalhe lido, o processo não está fora de rascunho e a edição segue permitida', () => {
     const store = new ProcessoSeletivoStore();
@@ -49,7 +50,7 @@ describe('ProcessoSeletivoStore — processo fora de rascunho', () => {
   it('o status publicado confirma o processo fora de rascunho e encerra a edição', () => {
     const store = new ProcessoSeletivoStore();
 
-    store.remoteSnapshot.set(comStatus(StatusProcesso.publicado));
+    store.remoteSnapshot.set(comStatus(StatusProcessoCodigo.publicado));
 
     expect(store.processoForaDeRascunho()).toBe(true);
     expect(store.edicaoPermitida()).toBe(false);
@@ -57,7 +58,7 @@ describe('ProcessoSeletivoStore — processo fora de rascunho', () => {
 
   it('a publicação não confirmada bloqueia a edição sem dizer que o processo saiu do rascunho', () => {
     const store = new ProcessoSeletivoStore();
-    store.remoteSnapshot.set(comStatus(StatusProcesso.rascunho));
+    store.remoteSnapshot.set(comStatus(StatusProcessoCodigo.rascunho));
 
     store.publicacaoNaoConfirmada.set(true);
 
@@ -86,7 +87,7 @@ describe('ProcessoSeletivoStore — várias seções numa só escrita', () => {
 
   it('não escreve com o processo fora de rascunho', () => {
     const store = new ProcessoSeletivoStore();
-    store.remoteSnapshot.set({ id: 'p1', status: StatusProcesso.publicado } as ProcessoSeletivoDto);
+    store.remoteSnapshot.set(detalhe({ id: 'p1', status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' } }));
 
     escreverCronogramaEDocumentos(store);
 

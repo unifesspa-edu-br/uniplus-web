@@ -1,6 +1,7 @@
+import { detalhe } from '../../../processo-seletivo.retomada.testing';
 import { TestBed } from '@angular/core/testing';
 import type { ProblemDetails, ProblemValidationError } from '@uniplus/shared-core/http';
-import { StatusProcesso, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -185,7 +186,7 @@ describe('RecusasDaPublicacao', () => {
   it('esvazia quando o servidor diz que o processo saiu do rascunho', () => {
     recusas.registrar(problema(comCampo('/a')), TITULO);
 
-    store.remoteSnapshot.set({ id: 'p1', status: StatusProcesso.publicado } as ProcessoSeletivoDto);
+    store.remoteSnapshot.set(detalhe({ id: 'p1', status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'publicado' } }));
     TestBed.tick();
 
     expect(recusas.recusas()).toEqual([]);
@@ -194,7 +195,7 @@ describe('RecusasDaPublicacao', () => {
   it('mantém as recusas enquanto o processo segue em rascunho', () => {
     recusas.registrar(problema(comCampo('/a')), TITULO);
 
-    store.remoteSnapshot.set({ id: 'p1', status: StatusProcesso.rascunho } as ProcessoSeletivoDto);
+    store.remoteSnapshot.set(detalhe({ id: 'p1', status: { codigo: StatusProcessoCodigo.rascunho, rotulo: 'rascunho' } }));
     TestBed.tick();
 
     expect(recusas.recusas()).toHaveLength(1);

@@ -140,7 +140,7 @@ describe('recusas da conversão do formulário', () => {
     expect(recusada.ok).toBe(false);
     if (!recusada.ok)
       expect(recusada.impedimentos).toEqual([
-        { caminho: '/itens/0/precondicao/0/0/operador', mensagem: 'Selecione uma opção válida.' },
+        { caminho: '/itens/0/exibicao/0/0/operador', mensagem: 'Selecione uma opção válida.' },
       ]);
   });
 

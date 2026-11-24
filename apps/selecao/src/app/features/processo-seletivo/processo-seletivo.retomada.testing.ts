@@ -37,18 +37,18 @@ import {
   ClassificacaoDoProcessoApi,
   CronogramaDoProcessoApi,
   DocumentosEAtosDoProcessoApi,
-  FinalidadeDoDocumento,
+  FinalidadeDoDocumentoCodigo,
   FormulariosDoProcessoApi,
   FundamentoIsencaoDto,
   ItemConformidadeDto,
-  OrigemCandidatos,
+  OrigemCandidatosCodigo,
   MotivosDeDecisaoApi,
   OpcoesDoRecursoApi,
   RegrasCatalogoApi,
   ProcessoSeletivoDto,
   ProcessosSeletivosApi,
   PublicacaoDoProcessoApi,
-  StatusProcesso,
+  StatusProcessoCodigo,
   VagasDoProcessoApi,
   VocabulariosDaComprovacaoApi,
   VocabulariosDoPrazoEDaValidadeApi,
@@ -171,7 +171,15 @@ const INSTANTES_DO_DOCUMENTO_CONFIRMADO = {
 const TAXA_DE_INSCRICAO = {
   cobra: true,
   valor: 230,
-  fundamentos: ['CADASTRO_UNICO', 'DOACAO_MEDULA_OSSEA'],
+  fundamentos: ['CADASTRO_UNICO', 'DOACAO_MEDULA_OSSEA'].map((codigo) => ({
+    codigo,
+    rotulo: codigo,
+  })),
+};
+
+const ORIGEM_INSCRICAO = {
+  codigo: OrigemCandidatosCodigo.inscricaoPropria,
+  rotulo: 'Inscrição própria',
 };
 
 function identificacaoDoDetalhe() {
@@ -179,11 +187,8 @@ function identificacaoDoDetalhe() {
     id: PROCESSO_ID,
     nome: 'Vestibular 2026.1',
     tipoProcesso: { origemId: TIPO_ORIGEM_ID, codigo: 'VESTIBULAR', nome: 'Vestibular' },
-    status: StatusProcesso.rascunho,
-    // Os dois campos saem do enum gerado, não de literal escrito à mão: o
-    // contrato os declara, e derivá-los dali é o que garante
-    // que a fixture use o vocabulário que a API realmente emite.
-    origemCandidatos: OrigemCandidatos.inscricaoPropria,
+    status: { codigo: StatusProcessoCodigo.rascunho, rotulo: 'Rascunho' },
+    origemCandidatos: ORIGEM_INSCRICAO,
     unidadeAdministradora: UNIDADE_ADMINISTRADORA,
     localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
   };
@@ -219,14 +224,23 @@ export function detalhe(overrides: Partial<ProcessoSeletivoDto> = {}): ProcessoS
   } as ProcessoSeletivoDto;
 }
 
+const FINALIDADE_EDITAL = {
+  codigo: FinalidadeDoDocumentoCodigo.documentoDoEdital,
+  rotulo: 'Documento do edital',
+};
+const STATUS_CONFIRMADO = {
+  codigo: 'Confirmado' as DocumentoAPublicarDto['status']['codigo'],
+  rotulo: 'Confirmado',
+};
+
 export function documento(overrides: Partial<DocumentoAPublicarDto> = {}): DocumentoAPublicarDto {
   return {
     id: '019f41cf-69fd-759a-ac6d-09acabc1b030',
     processoSeletivoId: PROCESSO_ID,
-    finalidade: FinalidadeDoDocumento.documentoDoEdital,
+    finalidade: FINALIDADE_EDITAL,
     nomeArquivo: 'edital-de-abertura.pdf',
     tipoDeMidia: 'application/pdf',
-    status: 'Confirmado',
+    status: STATUS_CONFIRMADO,
     tamanhoBytes: 2048,
     hashSha256: 'a'.repeat(64),
     ...INSTANTES_DO_DOCUMENTO_CONFIRMADO,

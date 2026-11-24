@@ -266,7 +266,7 @@ export class ModeloDaExigenciaComponent {
     this.modeloChange.emit({
       modeloId: modelo.id,
       nomeArquivo: modelo.nomeArquivo,
-      formato: modelo.formato,
+      formato: modelo.formato.codigo,
       hashSha256: modelo.hashSha256 ?? '',
     });
   }

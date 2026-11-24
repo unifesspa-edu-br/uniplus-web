@@ -14,7 +14,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
 import {
   FalhaDeLeituraDoCampoComponent,
   ValorEmConsultaComponent,
@@ -40,8 +40,8 @@ export const ORIGENS_CANDIDATOS: readonly {
   readonly value: OrigemCandidatosSelecionada;
   readonly label: string;
 }[] = [
-  { value: OrigemCandidatos.inscricaoPropria, label: 'Inscrição neste sistema' },
-  { value: OrigemCandidatos.importacaoExterna, label: 'Importação externa' },
+  { value: OrigemCandidatosCodigo.inscricaoPropria, label: 'Inscrição neste sistema' },
+  { value: OrigemCandidatosCodigo.importacaoExterna, label: 'Importação externa' },
 ];
 
 @Component({

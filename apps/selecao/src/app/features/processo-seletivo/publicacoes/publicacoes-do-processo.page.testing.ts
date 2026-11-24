@@ -10,8 +10,8 @@ import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { PUBLICACOES_BASE_PATH, type TipoAtoPublicadoDto } from '@uniplus/shared-data/publicacoes';
 import {
   SELECAO_BASE_PATH,
-  SituacaoDoProdutoPrevisto,
-  StatusProcesso,
+  SituacaoDoProdutoPrevistoCodigo,
+  StatusProcessoCodigo,
   type AtoDoProcessoDto,
   type ProcessoSeletivoDto,
   type ProdutoPrevistoDto,
@@ -85,8 +85,11 @@ export function ato(id: string, sobrescritas: Partial<AtoDoProcessoDto> = {}): A
 const ITEM_PADRAO: Omit<ProdutoPrevistoDto, 'id' | 'correcoes'> = {
   tipoCodigo: 'RESULTADO_HOMOLOGACAO',
   tipoNome: 'Resultado da homologação',
-  papel: 'PRELIMINAR',
-  situacao: SituacaoDoProdutoPrevisto.aberto,
+  papel: {
+    codigo: 'PRELIMINAR' as NonNullable<ProdutoPrevistoDto['papel']>['codigo'],
+    rotulo: 'Preliminar',
+  },
+  situacao: { codigo: SituacaoDoProdutoPrevistoCodigo.aberto, rotulo: 'Aberto' },
   ato: null,
   podePublicar: true,
   impedimento: null,
@@ -178,10 +181,12 @@ export class PaginaDePublicacoes {
     this.fixture.detectChanges();
   }
 
-  responderProcesso(status: string): void {
-    this.controller
-      .expectOne(ROTA_PROCESSO)
-      .flush({ id: PROCESSO_ID, nome: 'Medicina 2027', status } as ProcessoSeletivoDto);
+  responderProcesso(status: StatusProcessoCodigo): void {
+    this.controller.expectOne(ROTA_PROCESSO).flush({
+      id: PROCESSO_ID,
+      nome: 'Medicina 2027',
+      status: { codigo: status, rotulo: status },
+    } as ProcessoSeletivoDto);
   }
 
   falharProcesso(): void {
@@ -209,21 +214,24 @@ export class PaginaDePublicacoes {
     this.controller.expectOne((r) => r.url === ROTA_TIPOS).flush(null, ERRO_503);
   }
 
-  private responderLeituraInicial(status: string, atos: readonly AtoDoProcessoDto[]): void {
+  private responderLeituraInicial(
+    status: StatusProcessoCodigo,
+    atos: readonly AtoDoProcessoDto[],
+  ): void {
     this.responderProcesso(status);
     this.controller.expectOne(ROTA_ATOS).flush(atos);
     this.responderTipos();
   }
 
   async abrir(
-    status: string,
+    status: StatusProcessoCodigo,
     atos: readonly AtoDoProcessoDto[],
     itensPrevistos: ProdutosPrevistosDoProcessoDto = previstos(),
     camposFalham = false,
   ): Promise<void> {
     this.iniciar();
     this.responderLeituraInicial(status, atos);
-    if (status !== StatusProcesso.rascunho) {
+    if (status !== StatusProcessoCodigo.rascunho) {
       // Os itens do edital só são pedidos depois de o processo dizer que já não é rascunho.
       await tick();
       this.responderPrevistos(itensPrevistos, camposFalham);
@@ -233,7 +241,7 @@ export class PaginaDePublicacoes {
 
   async abrirPublicadoComFalhaEm(onde: 'tipos' | 'previstos'): Promise<void> {
     this.iniciar();
-    this.responderProcesso(StatusProcesso.publicado);
+    this.responderProcesso(StatusProcessoCodigo.publicado);
     this.controller.expectOne(ROTA_ATOS).flush([]);
     if (onde === 'tipos') this.falharTipos();
     else this.responderTipos();

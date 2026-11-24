@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser';
-import { StatusProcesso } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PublicarDocumentoComponent } from './publicar-documento.component';
@@ -35,7 +35,7 @@ describe('PublicacoesDoProcessoPage — atos publicados', () => {
       motivoDaCorrecao: 'Corrige a data.',
     });
 
-    await pagina.abrir(StatusProcesso.publicado, [errata, aviso]);
+    await pagina.abrir(StatusProcessoCodigo.publicado, [errata, aviso]);
 
     const [linhaDaErrata, linhaDoAviso] = pagina.linhas();
     expect(linhaDaErrata.textContent).toContain('Corrige: Aviso nº 01/2026');
@@ -48,7 +48,7 @@ describe('PublicacoesDoProcessoPage — atos publicados', () => {
   it('não oferece "Corrigir" no edital, que só se corrige por retificação', async () => {
     const edital = ato('edital', { tipoCodigo: 'EDITAL_ABERTURA', tipoNome: 'Edital de abertura' });
 
-    await pagina.abrir(StatusProcesso.publicado, [edital]);
+    await pagina.abrir(StatusProcessoCodigo.publicado, [edital]);
 
     expect(temCorrigir(pagina.linhas()[0])).toBe(false);
   });
@@ -59,7 +59,7 @@ describe('PublicacoesDoProcessoPage — atos publicados', () => {
       publicadoEm: '2026-11-12T15:30:00Z',
     });
 
-    await pagina.abrir(StatusProcesso.publicado, [publicado]);
+    await pagina.abrir(StatusProcessoCodigo.publicado, [publicado]);
 
     const cabecalhos = Array.from(pagina.host.querySelectorAll('th[scope="col"]')).map((th) =>
       th.textContent?.trim(),
@@ -73,7 +73,7 @@ describe('PublicacoesDoProcessoPage — atos publicados', () => {
   });
 
   it('abre o formulário de correção com o ato clicado', async () => {
-    await pagina.abrir(StatusProcesso.publicado, [ato('aviso', { numero: '01/2026' })]);
+    await pagina.abrir(StatusProcessoCodigo.publicado, [ato('aviso', { numero: '01/2026' })]);
 
     const corrigir = Array.from(pagina.linhas()[0].querySelectorAll('button')).find(
       (b) => b.textContent?.trim() === 'Corrigir',
@@ -89,7 +89,7 @@ describe('PublicacoesDoProcessoPage — atos publicados', () => {
   });
 
   it('relê os atos quando o documento é publicado e mostra o novo na lista', async () => {
-    await pagina.abrir(StatusProcesso.publicado, [ato('aviso', { numero: '01/2026' })]);
+    await pagina.abrir(StatusProcessoCodigo.publicado, [ato('aviso', { numero: '01/2026' })]);
     expect(pagina.linhas()).toHaveLength(1);
 
     const formulario = pagina.fixture.debugElement.query(By.directive(PublicarDocumentoComponent));
@@ -106,7 +106,7 @@ describe('PublicacoesDoProcessoPage — atos publicados', () => {
   });
 
   it('sobe a espera dos atos ao relê-los, com a lista à vista, e a derruba junto da falha', async () => {
-    await pagina.abrir(StatusProcesso.publicado, [ato('aviso', { numero: '01/2026' })]);
+    await pagina.abrir(StatusProcessoCodigo.publicado, [ato('aviso', { numero: '01/2026' })]);
     const servico = pagina.fixture.componentInstance['publicacoes'];
     expect(servico.lendoAtos()).toBe(false);
 
@@ -128,7 +128,7 @@ describe('PublicacoesDoProcessoPage — atos publicados', () => {
   });
 
   it('com duas releituras dos atos seguidas, a resposta da mais antiga não derruba a espera nem sobrepõe a nova', async () => {
-    await pagina.abrir(StatusProcesso.publicado, [ato('aviso', { numero: '01/2026' })]);
+    await pagina.abrir(StatusProcessoCodigo.publicado, [ato('aviso', { numero: '01/2026' })]);
     const servico = pagina.fixture.componentInstance['publicacoes'];
     const formulario = pagina.fixture.debugElement.query(By.directive(PublicarDocumentoComponent));
     const publicado = (formulario.componentInstance as PublicarDocumentoComponent).publicado;
@@ -152,7 +152,7 @@ describe('PublicacoesDoProcessoPage — atos publicados', () => {
   });
 
   it('oferece tentar de novo a falha dos atos e relê a lista ao tentar', async () => {
-    await pagina.abrir(StatusProcesso.publicado, [ato('aviso', { numero: '01/2026' })]);
+    await pagina.abrir(StatusProcessoCodigo.publicado, [ato('aviso', { numero: '01/2026' })]);
     const formulario = pagina.fixture.debugElement.query(By.directive(PublicarDocumentoComponent));
     (formulario.componentInstance as PublicarDocumentoComponent).publicado.emit();
     pagina.controller
@@ -188,7 +188,7 @@ describe('PublicacoesDoProcessoPage — atos publicados', () => {
     afterEach(() => vi.restoreAllMocks());
 
     it('diz que o navegador bloqueou a aba, sem pedir o acesso', async () => {
-      await pagina.abrir(StatusProcesso.publicado, [ato('aviso')]);
+      await pagina.abrir(StatusProcessoCodigo.publicado, [ato('aviso')]);
       vi.spyOn(window, 'open').mockReturnValue(null);
 
       abrirDocumento();
@@ -200,7 +200,7 @@ describe('PublicacoesDoProcessoPage — atos publicados', () => {
     });
 
     it('mostra a recusa do servidor ao pedir o acesso ao documento', async () => {
-      await pagina.abrir(StatusProcesso.publicado, [ato('aviso')]);
+      await pagina.abrir(StatusProcessoCodigo.publicado, [ato('aviso')]);
       const aba = { close: vi.fn(), location: { href: '' }, opener: {} } as unknown as Window;
       vi.spyOn(window, 'open').mockReturnValue(aba);
 

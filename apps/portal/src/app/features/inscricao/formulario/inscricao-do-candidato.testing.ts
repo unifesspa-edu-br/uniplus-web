@@ -62,7 +62,11 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
           nome: 'Declaração de veracidade',
           texto: 'Declaro que as informações prestadas são verdadeiras.',
           baseLegal: 'Edital do processo seletivo',
-          formaAceite: 'CHECKBOX',
+          formaAceite: {
+            codigo:
+              'A_DEFINIR' as FormularioRenderizavelDto['formulario']['termos'][number]['conteudo']['formaAceite']['codigo'],
+            rotulo: 'Aceite de teste',
+          },
           hashVersao: 'sha256-veracidade-v1',
         },
       },

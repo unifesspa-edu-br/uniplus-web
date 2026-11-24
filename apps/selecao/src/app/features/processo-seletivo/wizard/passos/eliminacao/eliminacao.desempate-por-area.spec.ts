@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { StatusProcesso, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { ValidacaoDoPasso } from '../../processo-seletivo.models';
@@ -124,7 +124,7 @@ describe('Eliminação diante do desempate por área', () => {
       classificacaoPeloEnem();
       store.classificacao.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
       store.remoteSnapshot.set({
-        status: StatusProcesso.publicado,
+        status: StatusProcessoCodigo.publicado,
       } as unknown as ProcessoSeletivoDto);
 
       expect(componente.avisoDoDesempatePorArea()).toEqual([]);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 import { fase, ID_BANCA_HETERO, ID_CATEGORIA_RACA, proximoPasso } from './fase.testing';
 import { recurso } from './configuracao-da-fase.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
@@ -117,7 +117,7 @@ describe('FasePassoComponent: edição da fase no rascunho', () => {
         {
           id: '01960000-0000-7000-0000-0000000000ee',
           nome: 'Prova objetiva',
-          carater: CaraterEtapa.classificatoria,
+          carater: CaraterEtapaCodigo.classificatoria,
           tipoEtapaOrigemId: '01960000-0000-7000-0000-0000000000e1',
           peso: '1',
           notaMinima: '',

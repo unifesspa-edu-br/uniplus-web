@@ -123,14 +123,14 @@ export interface ListaDoFormulario<P extends ParteOrdenada> {
   readonly gravar: (formulario: Formulario, partes: readonly P[]) => Formulario;
 }
 
-type Etapa = NonNullable<Formulario['etapas']>[number];
+type Etapa = NonNullable<Formulario['paginas']>[number];
 type Item = NonNullable<Formulario['itens']>[number];
 type Grupo = NonNullable<Formulario['grupos']>[number];
 type Termo = NonNullable<Formulario['termos']>[number];
 
 export const ETAPAS: ListaDoFormulario<Etapa> = {
-  ler: (formulario) => formulario.etapas,
-  gravar: (formulario, partes) => comLista(formulario, 'etapas', partes),
+  ler: (formulario) => formulario.paginas,
+  gravar: (formulario, partes) => comLista(formulario, 'paginas', partes),
 };
 export const ITENS: ListaDoFormulario<Item> = {
   ler: (formulario) => formulario.itens,

@@ -113,7 +113,7 @@ export class RemocaoDoFormulario {
       this.leitura.processoLido.update((lido) =>
         lido === null
           ? lido
-          : { ...lido, formularios: lido.formularios.filter((f) => f.finalidade !== finalidade) },
+          : { ...lido, formularios: lido.formularios.filter((f) => f.finalidade.codigo !== finalidade) },
       );
       return null;
     }

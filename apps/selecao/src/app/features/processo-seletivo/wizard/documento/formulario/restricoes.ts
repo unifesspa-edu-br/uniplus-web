@@ -9,7 +9,7 @@ import type {
   LimiteDeDataNoWire as LimiteEditado,
 } from '@uniplus/shared-ui/components';
 import type { ContextoDaConversao as Contexto } from './contexto-da-conversao';
-import { predicadoDoDocumento } from './obrigatoriedade';
+import { lerPredicado, predicadoDoDocumento } from './obrigatoriedade';
 
 type Item = NonNullable<Formulario['itens']>[number];
 type Restricao = NonNullable<Item['restricoes']>[number];
@@ -19,22 +19,29 @@ const CAMPOS: readonly (keyof Restricao)[] = [
   'tipo',
   'minimo',
   'maximo',
-  'fatos',
+  'codigosDosDados',
   'entradas',
   'dataMinima',
   'dataMaxima',
 ];
 const CAMPOS_DA_ENTRADA: readonly (keyof Entrada)[] = ['valores', 'quando'];
-const CAMPOS_DO_LIMITE: readonly (keyof Limite)[] = ['ancora', 'data', 'anos', 'dias'];
+const CAMPOS_DO_LIMITE: readonly (keyof Limite)[] = ['referenciaDaData', 'data', 'anos', 'dias'];
 
 export function lerRestricao(restricao: Restricao): RestricaoEditada {
   return {
     ...restricao,
+    fatos: restricao.codigosDosDados,
+    dataMinima: lerLimite(restricao.dataMinima),
+    dataMaxima: lerLimite(restricao.dataMaxima),
     entradas: restricao.entradas?.map((entrada) => ({
       ...entrada,
-      quando: entrada.quando ?? null,
+      quando: lerPredicado(entrada.quando),
     })),
   };
+}
+
+function lerLimite(limite: Limite | null | undefined): LimiteEditado | null | undefined {
+  return limite == null ? limite : { ...limite, ancora: limite.referenciaDaData };
 }
 
 function deslocamentoDoLimite(limite: LimiteEditado, contexto: Contexto, caminho: Caminho) {
@@ -55,7 +62,7 @@ function gravarLimite(
   const referencia = contexto.escolha(ReferenciaDoLimite, limite.ancora, [...caminho, 'ancora']);
   if (referencia === undefined) return undefined;
   const convertido: Limite = {
-    ancora: referencia,
+    referenciaDaData: referencia,
     ...deslocamentoDoLimite(limite, contexto, caminho),
   };
   return contexto.edicao.preservar(original ?? undefined, convertido, CAMPOS_DO_LIMITE, caminho);
@@ -108,7 +115,7 @@ function camposDaRestricao(
   return {
     ...faixaNumerica(restricao, contexto, caminho),
     ...faixaDeData(restricao, original, contexto, caminho),
-    fatos: restricao.fatos ?? undefined,
+    codigosDosDados: restricao.fatos ?? undefined,
     entradas: entradasDaRestricao(restricao, original, contexto, caminho),
   };
 }

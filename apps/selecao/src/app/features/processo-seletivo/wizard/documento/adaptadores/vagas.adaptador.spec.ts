@@ -90,7 +90,9 @@ describe('adaptador do passo Vagas', () => {
   });
 
   it('lê o número de opções, a oferta e a cascata do exemplo', () => {
-    const valores = valoresDe(exemploDoContrato('inscricao-pelo-sistema'));
+    const exemplo = exemploDoContrato('inscricao-pelo-sistema');
+    const cascataRemanejamento = { ...exemplo.cascataRemanejamento, destinoFinalCodigo: 'AC' };
+    const valores = valoresDe({ ...exemplo, cascataRemanejamento });
 
     expect(valores.numeroDeOpcoes).toBe('1');
     expect(valores.ofertas).toHaveLength(1);

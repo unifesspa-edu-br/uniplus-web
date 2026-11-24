@@ -1,3 +1,4 @@
+import { PAPEL_DEFINITIVO } from '../fixtures/valor-do-enum';
 import type { Page, Route } from '@playwright/test';
 import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
 import type { FaseCronogramaDto } from '@uniplus/shared-data/selecao';
@@ -35,7 +36,7 @@ const ROTA_DO_ATO_PUBLICADO = new RegExp(`/api/publicacoes/atos/${ATO_PUBLICADO.
 export const PRODUTO_DEFINITIVO = {
   id: '01a0d640-0000-7000-8000-0000000000d2',
   atoCodigo: 'RESULTADO_FINAL',
-  papel: 'DEFINITIVO',
+  papel: PAPEL_DEFINITIVO,
 };
 
 type UnidadeDaFase = typeof UNIDADE_RESPONSAVEL_DA_FASE | null;
@@ -99,7 +100,9 @@ export async function mockarCatalogos(page: Page): Promise<void> {
 function detalheDoProcesso(capturado: Capturado) {
   return {
     ...PROCESSO_PUBLICADO_COMPLETO,
-    status: capturado.publicado ? 'publicado' : 'rascunho',
+    status: capturado.publicado
+      ? { codigo: 'PUBLICADO', rotulo: 'Publicado' }
+      : { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
     cronogramaFases: [capturado.fase],
     atendimentoEspecializado: null,
     regrasDeComprovacao: PROCESSO_PUBLICADO_COMPLETO.regrasDeComprovacao.slice(0, 1),

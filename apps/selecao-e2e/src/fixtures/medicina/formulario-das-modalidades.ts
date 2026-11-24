@@ -1,3 +1,4 @@
+import { valorDoEnum } from '../valor-do-enum';
 import { campoColetado } from '../campo-coletado';
 import type { FormularioDto } from '@uniplus/shared-data/selecao';
 import type { JsonDaApi } from '@uniplus/shared-e2e';
@@ -12,13 +13,13 @@ export const CAMPOS_DAS_MODALIDADES_DA_MEDICINA = [
     fatoCodigo: 'FORMA_CONCLUSAO_EM',
     ordem: 0,
     rotulo: 'Como você concluiu o ensino médio?',
-    tipoRenderizacao: 'SELECAO_UNICA',
+    tipoRenderizacao: 'ESCOLHA_UNICA',
   }),
   campoColetado({
     fatoCodigo: 'ONDE_CURSOU_EM',
     ordem: 1,
     rotulo: 'Onde você cursou o ensino médio?',
-    tipoRenderizacao: 'SELECAO_UNICA',
+    tipoRenderizacao: 'ESCOLHA_UNICA',
     ajuda:
       'A resposta define se você pode concorrer às vagas para quem cursou o ensino médio em escola pública.',
     restricoes: [
@@ -48,7 +49,7 @@ export const CAMPOS_DAS_MODALIDADES_DA_MEDICINA = [
               [
                 {
                   fato: 'FORMA_CONCLUSAO_EM',
-                  operador: 'EM',
+                  operador: 'ALGUM_DE',
                   valor: ['ENCCEJA', 'PROFICIENCIA', 'ENEM'],
                 },
               ],
@@ -66,62 +67,62 @@ export const CAMPOS_DAS_MODALIDADES_DA_MEDICINA = [
     fatoCodigo: 'CONCORRER_PCD',
     ordem: 2,
     rotulo: 'Deseja concorrer às vagas para pessoas com deficiência?',
-    tipoRenderizacao: 'BOOLEANO',
+    tipoRenderizacao: 'SIM_OU_NAO',
   }),
   campoColetado({
     fatoCodigo: 'CONCORRER_EP',
     ordem: 3,
     rotulo: 'Deseja concorrer às vagas para quem cursou o ensino médio em escola pública?',
-    tipoRenderizacao: 'BOOLEANO',
+    tipoRenderizacao: 'SIM_OU_NAO',
   }),
   campoColetado({
     fatoCodigo: 'CONCORRER_PPI',
     ordem: 4,
     rotulo: 'Deseja concorrer às vagas para pretos, pardos e indígenas?',
-    tipoRenderizacao: 'BOOLEANO',
+    tipoRenderizacao: 'SIM_OU_NAO',
     ajuda: 'Para quem se autodeclara preto, pardo ou indígena.',
   }),
   campoColetado({
     fatoCodigo: 'CONCORRER_Q',
     ordem: 5,
     rotulo: 'Deseja concorrer às vagas para quilombolas?',
-    tipoRenderizacao: 'BOOLEANO',
+    tipoRenderizacao: 'SIM_OU_NAO',
   }),
   campoColetado({
     fatoCodigo: 'CONCORRER_RENDA',
     ordem: 6,
     rotulo: 'Deseja concorrer às vagas com critério de renda?',
-    tipoRenderizacao: 'BOOLEANO',
+    tipoRenderizacao: 'SIM_OU_NAO',
   }),
   campoColetado({
     fatoCodigo: 'PCD',
     ordem: 7,
     rotulo: 'Você é pessoa com deficiência?',
-    tipoRenderizacao: 'BOOLEANO',
+    tipoRenderizacao: 'SIM_OU_NAO',
   }),
   campoColetado({
     fatoCodigo: 'INDIGENA',
     ordem: 8,
     rotulo: 'Você pertence a um povo indígena?',
-    tipoRenderizacao: 'BOOLEANO',
+    tipoRenderizacao: 'SIM_OU_NAO',
   }),
   campoColetado({
     fatoCodigo: 'QUILOMBOLA',
     ordem: 9,
     rotulo: 'Você se autodeclara quilombola?',
-    tipoRenderizacao: 'BOOLEANO',
+    tipoRenderizacao: 'SIM_OU_NAO',
   }),
   campoColetado({
     fatoCodigo: 'BAIXA_RENDA',
     ordem: 10,
     rotulo: 'Sua renda familiar bruta mensal por pessoa é de até um salário mínimo?',
-    tipoRenderizacao: 'BOOLEANO',
+    tipoRenderizacao: 'SIM_OU_NAO',
   }),
 ];
 
 /** O formulário de inscrição com as perguntas que as regras das modalidades fazem. */
 export const FORMULARIO_DAS_MODALIDADES_DA_MEDICINA = {
-  finalidade: 'INSCRICAO',
+  finalidade: valorDoEnum('INSCRICAO', 'Inscrição'),
   faseId: null,
   titulo: null,
   modeloOrigem: null,

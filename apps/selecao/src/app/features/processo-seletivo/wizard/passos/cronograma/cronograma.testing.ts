@@ -1,5 +1,6 @@
 import type { TipoEtapaDto } from '@uniplus/shared-data/configuracao';
 import { etapaDoServidor } from '../../shared/cronograma-do-servidor.testing';
+import { ORIGEM_NA_EXECUCAO, ORIGEM_NO_EDITAL } from './cronograma-do-certame.testing';
 
 export const BASE = 'http://localhost:5000';
 export const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
@@ -41,7 +42,7 @@ export const FASES_CANONICAS = [
     agrupaEtapas: false,
     permiteComplementacao: false,
     coletaInscricao: true,
-    origemData: 'NO_EDITAL',
+    origemData: ORIGEM_NO_EDITAL,
   },
   {
     id: ID_AVALIACAO,
@@ -51,7 +52,7 @@ export const FASES_CANONICAS = [
     agrupaEtapas: true,
     permiteComplementacao: false,
     coletaInscricao: false,
-    origemData: 'NO_EDITAL',
+    origemData: ORIGEM_NO_EDITAL,
   },
   {
     id: ID_RESULTADO,
@@ -61,7 +62,7 @@ export const FASES_CANONICAS = [
     agrupaEtapas: false,
     permiteComplementacao: false,
     coletaInscricao: false,
-    origemData: 'NA_EXECUCAO',
+    origemData: ORIGEM_NA_EXECUCAO,
   },
 ];
 

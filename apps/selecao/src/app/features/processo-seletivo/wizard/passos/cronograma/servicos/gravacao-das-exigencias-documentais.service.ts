@@ -6,7 +6,7 @@ import {
   type ProblemDetails,
 } from '@uniplus/shared-core/http';
 import {
-  OrigemCandidatos,
+  OrigemCandidatosCodigo,
   ProcessosSeletivosApi,
   type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
@@ -247,7 +247,7 @@ export class GravacaoDasExigenciasDocumentais {
   private pedePerguntasDasModalidades(recorta: boolean): boolean {
     return (
       recorta ||
-      this.store.draft().identificacao.origemCandidatos === OrigemCandidatos.inscricaoPropria
+      this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.inscricaoPropria
     );
   }
 }

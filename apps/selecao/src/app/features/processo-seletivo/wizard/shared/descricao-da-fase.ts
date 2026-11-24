@@ -1,4 +1,4 @@
-import type { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
+import { OrigemDataFaseCodigo, type FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 
 import {
   PAPEL_PRELIMINAR,
@@ -7,9 +7,6 @@ import {
 } from '../processo-seletivo.models';
 import { finalidadesQueAtende } from '../passos/formulario/formularios-por-finalidade';
 import { publicaResultadoDefinitivo } from './publicacoes-da-fase';
-
-/** Origem de data que obriga a fase a declarar janela. */
-export const ORIGEM_DATA_NO_EDITAL = 'NO_EDITAL';
 
 /**
  * O que a fase escolhida exige — nunca declarado pelo operador. É a diferença
@@ -39,7 +36,7 @@ export interface ExigenciasDaFase {
 
 /** Os atributos da fase canônica que decidem exigência, venham do catálogo ou do congelado. */
 interface AtributosDaFaseCanonica {
-  readonly origemData: string;
+  readonly origemData: { readonly codigo: string };
   readonly agrupaEtapas: boolean;
   readonly coletaInscricao: boolean;
   readonly coletaSolicitacaoIsencao: boolean;
@@ -51,7 +48,7 @@ export function exigenciasDe(
 ): ExigenciasDaFase {
   return {
     janelaObrigatoria:
-      canonica.origemData === ORIGEM_DATA_NO_EDITAL ||
+      canonica.origemData.codigo === OrigemDataFaseCodigo.NO_EDITAL ||
       canonica.coletaInscricao ||
       canonica.coletaSolicitacaoIsencao,
     publicaProduto: produtos.length > 0,
@@ -99,12 +96,22 @@ function atributosDaFase(
   const { congelados } = fase;
   return congelados === null
     ? atributosDoCatalogo(fase, canonica)
-    : {
-        coletaInscricao: congelados.coletaInscricao,
-        coletaSolicitacaoIsencao: congelados.coletaSolicitacaoIsencao,
-        permiteComplementacao: congelados.permiteComplementacao,
-        exigencias: exigenciasDe(congelados, fase.produtos),
-      };
+    : atributosCongelados(congelados, fase.produtos);
+}
+
+function atributosCongelados(
+  congelados: NonNullable<FaseDoCronograma['congelados']>,
+  produtos: readonly ProdutoDaFase[],
+): AtributosDescritos {
+  return {
+    coletaInscricao: congelados.coletaInscricao,
+    coletaSolicitacaoIsencao: congelados.coletaSolicitacaoIsencao,
+    permiteComplementacao: congelados.permiteComplementacao,
+    exigencias: exigenciasDe(
+      { ...congelados, origemData: { codigo: congelados.origemData } },
+      produtos,
+    ),
+  };
 }
 
 function atributosDoCatalogo(

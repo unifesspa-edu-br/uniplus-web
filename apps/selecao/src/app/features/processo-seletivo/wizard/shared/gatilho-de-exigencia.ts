@@ -23,7 +23,7 @@ import {
   ehCondicaoDasModalidades,
   exigidoDeTodos,
   numerosDeClausula,
-} from './exigencias/recorte-por-modalidade';
+} from './exigencias/modalidades-da-exigencia';
 import {
   orientacaoDaRecusaDeFase,
   orientacaoDoCampoDeMembroForaDaRepeticao,
@@ -47,7 +47,7 @@ import {
  * indígena. As regras de predicado — forma do valor, alcance,
  * conferência — são do editor compartilhado em `@uniplus/shared-ui`, reexportado daqui para
  * que o resto do módulo tenha um só lugar de onde importar. O que fica neste arquivo é o que
- * é DESTA exigência: o recorte por modalidade, que tem controle próprio, e o modelo do
+ * é DESTA exigência: a restrição às modalidades, que tem controle próprio, e o modelo do
  * documento.
  */
 export {
@@ -79,7 +79,7 @@ export type CondicaoPosicionada = CondicaoPosicionadaGenerica<CondicaoGatilhoCon
 export type ClausulaDeGatilho = ClausulaDeCondicoes<CondicaoGatilhoConfig>;
 
 /**
- * Os fatos que um gatilho sabe avaliar, na ordem do catálogo, sem o recorte de fase da
+ * Os fatos que um gatilho sabe avaliar, na ordem do catálogo, sem a restrição de fase da
  * exigência — o vocabulário com que a tela lê e confere condições já escritas. O que o editor
  * de uma exigência oferece é `fatosDoGatilhoNaFase`.
  *
@@ -114,7 +114,7 @@ export function dominiosDoGatilho(
   return new Map([
     [FATO_CONDICAO_ATENDIMENTO, condicoesDeAtendimento],
     ...fatos
-      .filter((fato) => fato.fonteValores === FONTE_MODALIDADE)
+      .filter((fato) => fato.fonteValores?.codigo === FONTE_MODALIDADE)
       .map((fato): [string, readonly string[]] => [fato.codigo, modalidades]),
   ]);
 }
@@ -223,7 +223,7 @@ function orientacaoDaRecusaDoFato(
 /**
  * As alternativas do gatilho, na ordem, sem a condição de modalidade — que a tela edita pelo
  * controle de "quem deve entregar" e mostraria aqui como uma segunda verdade sobre o mesmo
- * recorte.
+ * restrição.
  */
 export function clausulasDoGatilho(documento: ExigenciaDeDocumento): readonly ClausulaDeGatilho[] {
   return clausulasDe(documento.condicoes, FATO_MODALIDADE);
@@ -256,7 +256,7 @@ export function semCondicao(documento: ExigenciaDeDocumento, indice: number): Ex
  * A exigência com uma alternativa a mais — a segunda via pela qual o documento passa a ser
  * cobrado, combinada por OU com as que já existem.
  *
- * O recorte de modalidade acompanha: ele vale para o gatilho inteiro, e deixá-lo de fora da
+ * A restrição às modalidades acompanha: ela vale para o gatilho inteiro, e deixá-la de fora da
  * alternativa nova a faria valer para toda modalidade.
  */
 export function comClausula(
@@ -275,7 +275,7 @@ export function semClausula(documento: ExigenciaDeDocumento, numero: number): Ex
  * O que impede o gatilho de ser gravado, espelhando o que o servidor confere: fato fora do
  * vocabulário, operador que o domínio não admite, e condição sem valor.
  *
- * O recorte por modalidade é conferido pelo seu próprio controle — "quem deve entregar" —,
+ * A restrição às modalidades é conferida pelo seu próprio controle — "quem deve entregar" —,
  * contra o quadro de vagas, que este vocabulário não enxerga.
  */
 export function problemasDoGatilho(
@@ -289,21 +289,21 @@ export function problemasDoGatilho(
 }
 
 /**
- * As modalidades do recorte do gatilho, ou `null` quando ele não tem recorte uniforme.
+ * As modalidades da restrição do gatilho, ou `null` quando ele não tem restrição uniforme.
  *
- * Recorte é a mesma cláusula `MODALIDADE EM [...]`, com a mesma lista, em TODAS as
+ * A restrição é a mesma cláusula `MODALIDADE EM [...]`, com a mesma lista, em TODAS as
  * alternativas — a forma que o controle "quem deve entregar" grava. Só então ela restringe o
  * gatilho inteiro; presente em algumas alternativas, é condição delas e de mais nenhuma.
  */
-export function recorteUniforme(documento: ExigenciaDeDocumento): readonly string[] | null {
+export function modalidadesUniformes(documento: ExigenciaDeDocumento): readonly string[] | null {
   if (documento.condicoes.length === 0) return null;
 
   const listasPorAlternativa = listasDeModalidadesPorAlternativa(documento.condicoes);
   const [primeira] = listasPorAlternativa[0] ?? [];
   if (primeira === undefined) return null;
   if (!listasPorAlternativa.every((listas) => listas.includes(primeira))) return null;
-  const recorte: readonly string[] = JSON.parse(primeira);
-  return recorte;
+  const modalidadesRestritas: readonly string[] = JSON.parse(primeira);
+  return modalidadesRestritas;
 }
 
 function listasDeModalidadesPorAlternativa(
@@ -346,9 +346,9 @@ function condicaoDeModalidadeAceita(condicao: CondicaoDeFato, modalidadeCodigo: 
       return valorEscalarDe(condicao) === modalidadeCodigo;
     case OperadorCodigo.DIFERENTE:
       return valorEscalarDe(condicao) !== modalidadeCodigo;
-    case OperadorCodigo.EM:
+    case OperadorCodigo.ALGUM_DE:
       return valoresDeListaDe(condicao).includes(modalidadeCodigo);
-    case OperadorCodigo.NAO_EM:
+    case OperadorCodigo.NENHUM_DE:
       return !valoresDeListaDe(condicao).includes(modalidadeCodigo);
     default:
       return false;

@@ -1,3 +1,4 @@
+import { ORIGEM_NO_EDITAL } from './valor-do-enum';
 import { faseDoServidor } from './cronograma-do-servidor';
 
 export const PROCESSO_ID = '01960000-0000-7000-0000-000000000901';
@@ -22,7 +23,7 @@ export const TIPO_ATO_DTO = {
 
 /** Fase com `coletaInscricao: true` — o período de inscrição some da tela e vem da janela dela. */
 export const FASE_DE_COLETA = faseDoServidor({
-  faseCanonica: { origemData: 'DECLARADA' },
+  faseCanonica: { origemData: ORIGEM_NO_EDITAL },
 });
 
 export const ATO_DTO = {

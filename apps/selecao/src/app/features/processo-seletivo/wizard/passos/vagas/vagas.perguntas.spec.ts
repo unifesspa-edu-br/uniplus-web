@@ -1,16 +1,14 @@
+import { PCD } from '../../shared/gatilho-de-exigencia.testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import {
-  CONFIGURACAO_BASE_PATH,
-  type FatoCandidatoComOperadores,
-} from '@uniplus/shared-data/configuracao';
+import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import {
-  OrigemCandidatos,
+  OrigemCandidatosCodigo,
   SELECAO_BASE_PATH,
   TipoRenderizacaoCodigo,
   type FormularioDto,
@@ -94,7 +92,7 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
 
     store.processoSeletivoId.set(PROCESSO_ID);
     store.patchObjectSection('identificacao', {
-      origemCandidatos: OrigemCandidatos.inscricaoPropria,
+      origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
     });
     store.patchObjectSection('vagas', {
       ofertas: [
@@ -119,18 +117,12 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
     for (const requisicao of controller.match(() => true)) requisicao.flush([]);
     catalogos.fatos.set([
       {
+        ...PCD,
+        escopo: 'CANDIDATO',
         codigo: 'CONCORRER_PCD',
         nome: 'Concorrer na reserva para pessoa com deficiência',
-        dominio: 'BOOLEANO',
-        origem: 'DECLARADO',
-        cardinalidade: 'UNIVALORADO',
         binding: 'CAMPO_INSCRICAO:CONCORRER_PCD',
-        escopo: 'CANDIDATO',
-        fonteValores: null,
-        ativo: true,
-        valoresDominio: null,
-        operadoresAdmitidos: [{ codigo: 'IGUAL', rotulo: 'é' }],
-      } as unknown as FatoCandidatoComOperadores,
+      },
     ]);
     catalogos.carregando.set(false);
 
@@ -166,7 +158,7 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
       ],
       coleta: {
         itens: coletados.map((codigo, ordem) =>
-          campoDoServidor(codigo, ordem, 'DADOS_BASICOS', TipoRenderizacaoCodigo.BOOLEANO),
+          campoDoServidor(codigo, ordem, 'DADOS_BASICOS', TipoRenderizacaoCodigo.SIM_OU_NAO),
         ),
         grupos: [],
       },
@@ -283,7 +275,7 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
 
   it('no processo que importa o resultado, relê só para mostrar as regras, sem pôr perguntas', async () => {
     store.patchObjectSection('identificacao', {
-      origemCandidatos: OrigemCandidatos.importacaoExterna,
+      origemCandidatos: OrigemCandidatosCodigo.importacaoExterna,
     });
 
     const { gravacao } = await gravarQuadro(

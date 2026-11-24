@@ -163,7 +163,7 @@ export function outrasFinalidadesDoServidor(
 ): readonly FormularioDaFinalidade[] {
   return emOrdemDasFinalidades(
     dto.formularios
-      .filter((formulario) => formulario.finalidade !== FINALIDADE_INSCRICAO)
+      .filter((formulario) => formulario.finalidade.codigo !== FINALIDADE_INSCRICAO)
       .map((formulario) => formularioDoServidor(dto, formulario)),
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 import {
   declaraNotaDoEnem,
   componeNota,
@@ -15,11 +15,11 @@ describe('etapa que compõe a nota', () => {
    * recusada, e a mensagem do domínio fala de nota final, não de etapa.
    */
   it('exige caráter que pontua e peso declarado', () => {
-    expect(componeNota(etapa({ carater: CaraterEtapa.classificatoria, peso: '2' }))).toBe(true);
-    expect(componeNota(etapa({ carater: CaraterEtapa.ambas, peso: '1' }))).toBe(true);
-    expect(componeNota(etapa({ carater: CaraterEtapa.eliminatoria, peso: '2' }))).toBe(false);
-    expect(componeNota(etapa({ carater: CaraterEtapa.classificatoria, peso: '' }))).toBe(false);
-    expect(componeNota(etapa({ carater: CaraterEtapa.classificatoria, peso: '   ' }))).toBe(false);
+    expect(componeNota(etapa({ carater: CaraterEtapaCodigo.classificatoria, peso: '2' }))).toBe(true);
+    expect(componeNota(etapa({ carater: CaraterEtapaCodigo.ambas, peso: '1' }))).toBe(true);
+    expect(componeNota(etapa({ carater: CaraterEtapaCodigo.eliminatoria, peso: '2' }))).toBe(false);
+    expect(componeNota(etapa({ carater: CaraterEtapaCodigo.classificatoria, peso: '' }))).toBe(false);
+    expect(componeNota(etapa({ carater: CaraterEtapaCodigo.classificatoria, peso: '   ' }))).toBe(false);
   });
 
   /**
@@ -28,15 +28,15 @@ describe('etapa que compõe a nota', () => {
    * conferência da tela e ser recusado no servidor por outro motivo.
    */
   it('não considera peso zero como composição de nota', () => {
-    expect(componeNota(etapa({ carater: CaraterEtapa.classificatoria, peso: '0' }))).toBe(false);
-    expect(componeNota(etapa({ carater: CaraterEtapa.ambas, peso: '0,0' }))).toBe(false);
+    expect(componeNota(etapa({ carater: CaraterEtapaCodigo.classificatoria, peso: '0' }))).toBe(false);
+    expect(componeNota(etapa({ carater: CaraterEtapaCodigo.ambas, peso: '0,0' }))).toBe(false);
   });
 });
 
 describe('o que a etapa declara', () => {
   const humana = etapa({
     nome: 'Redação',
-    carater: CaraterEtapa.classificatoria,
+    carater: CaraterEtapaCodigo.classificatoria,
     tipoEtapaOrigemId: 'tipo-1',
     notaMaxima: '10',
     passoDoLancamento: '0,5',

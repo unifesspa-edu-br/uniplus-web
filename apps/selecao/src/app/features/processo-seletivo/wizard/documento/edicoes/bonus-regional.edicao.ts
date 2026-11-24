@@ -17,7 +17,7 @@ const SEM_APLICACAO = [
   'regra',
   'fator',
   'teto',
-  'fatoElegibilidadeCodigo',
+  'codigoDoDadoDeElegibilidade',
   'baseLegalBonusRegionalCodigo',
   'tipoInstrumento',
   'identificacao',
@@ -111,6 +111,10 @@ export function definirFatoDeElegibilidade(
   codigo: string,
 ): DocumentoDaConfiguracao {
   return quandoAplica(documento, (bonus) =>
-    comCampo(bonus, 'fatoElegibilidadeCodigo', textoQueVale(bonus.fatoElegibilidadeCodigo, codigo)),
+    comCampo(
+      bonus,
+      'codigoDoDadoDeElegibilidade',
+      textoQueVale(bonus.codigoDoDadoDeElegibilidade, codigo),
+    ),
   );
 }

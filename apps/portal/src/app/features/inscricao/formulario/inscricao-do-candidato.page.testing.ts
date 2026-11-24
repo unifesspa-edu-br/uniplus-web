@@ -17,7 +17,7 @@ import {
   type InscricaoDto,
   type InscricaoRequest,
   SELECAO_BASE_PATH,
-  SituacaoInscricao,
+  SituacaoInscricaoCodigo,
   TipoRenderizacaoCodigo,
 } from '@uniplus/shared-data/selecao';
 import {
@@ -73,7 +73,12 @@ export const SEM_DOCUMENTOS: AvaliacaoDaInscricaoDto['documentos'] = { fases: []
 export const concorrendoEm = (...nomes: string[]): AvaliacaoDaInscricaoDto => ({
   modalidades: {
     derivada: true,
-    situacao: 'CONCORRE',
+    situacao: {
+      codigo: 'CONCORRE' as NonNullable<
+        AvaliacaoDaInscricaoDto['modalidades']['situacao']
+      >['codigo'],
+      rotulo: 'Concorrendo',
+    },
     itens: nomes.map((nome, ordem) => ({ codigo: `M${ordem}`, nome, ordem })),
     pendencias: [],
   },
@@ -110,7 +115,7 @@ export const COM_NOME_SOCIAL = comCampoColetado(
     campoColetado(
       'DESEJA_NOME_SOCIAL',
       'Deseja usar nome social',
-      TipoRenderizacaoCodigo.BOOLEANO,
+      TipoRenderizacaoCodigo.SIM_OU_NAO,
       { ordem: 8 },
     ),
   ),
@@ -120,7 +125,7 @@ export const COM_NOME_SOCIAL = comCampoColetado(
 const INSCRICAO_EM_RASCUNHO: InscricaoDto = {
   id: 'inscricao-1',
   processoSeletivoId: PROCESSO,
-  situacao: SituacaoInscricao.rascunho,
+  situacao: { codigo: SituacaoInscricaoCodigo.rascunho, rotulo: 'Situação de teste' },
   numeroInscricao: null,
   formulario: {
     versaoFormularioId: 'versao-1',

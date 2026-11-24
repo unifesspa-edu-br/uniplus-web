@@ -97,7 +97,7 @@ export interface WizardDraft {
     casasArredondamento: string;
     regraOrdemAlocacaoCodigo: string;
     regraOrdemAlocacaoVersao: string;
-    /** Condiciona se `ELIM-CORTE-EM-AREA` e `ELIM-ZERO-EM-AREA` são aceitas em `regrasEliminacao` (`EliminacaoEnemForaDeProcessoEnem`). */
+    /** Condiciona se `ELIMINACAO-CORTE-EM-AREA` e `ELIMINACAO-ZERO-EM-AREA` são aceitas em `regrasEliminacao` (`EliminacaoEnemForaDeProcessoEnem`). */
     baseadoEmEnem: boolean;
     /** Escala em que o edital publica a nota final, como o operador a escreve (`1000`, `100,5`). Vazia enquanto não declarada: o rascunho a aceita, a publicação não. */
     escalaNotaFinal: string;

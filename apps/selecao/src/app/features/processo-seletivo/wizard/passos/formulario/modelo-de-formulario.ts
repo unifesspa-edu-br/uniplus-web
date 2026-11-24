@@ -37,9 +37,9 @@ export function modelosPorFinalidade(
 ): ReadonlyMap<string, readonly ModeloOferecido[]> {
   const porFinalidade = new Map<string, ModeloOferecido[]>();
   for (const modelo of modelos) {
-    const daFinalidade = porFinalidade.get(modelo.finalidade) ?? [];
+    const daFinalidade = porFinalidade.get(modelo.finalidade.codigo) ?? [];
     daFinalidade.push({ id: modelo.id, codigo: modelo.codigo, nome: modelo.descritivo.nome });
-    porFinalidade.set(modelo.finalidade, daFinalidade);
+    porFinalidade.set(modelo.finalidade.codigo, daFinalidade);
   }
   for (const daFinalidade of porFinalidade.values()) {
     daFinalidade.sort((um, outro) => um.nome.localeCompare(outro.nome, 'pt-BR'));
@@ -90,7 +90,7 @@ export function comAplicacaoDoServidor(
   relato: AplicacaoDeModeloDto,
   faseDaAba: string,
 ): FormularioDeInscricao {
-  const aplicado = formularioDoServidorNaFinalidade(servidor, relato.finalidade);
+  const aplicado = formularioDoServidorNaFinalidade(servidor, relato.finalidade.codigo);
   if (aplicado === null) return rascunho;
   const comAplicado = comFormulario(rascunho, comFaseDaAba(aplicado, faseDaAba));
   const comOutros = comFormulariosQueCederamFatos(comAplicado, rascunho, servidor, relato);
@@ -112,7 +112,7 @@ function formulariosQueCederamFatos(
   const trazidos = new Set(relato.fatosTrazidosParaAInscricao);
   return formulariosDoRascunho(rascunho).filter(
     (outro) =>
-      outro.finalidade !== relato.finalidade &&
+      outro.finalidade !== relato.finalidade.codigo &&
       fatosColetadosPor(outro.conteudo).some((fato) => trazidos.has(fato)),
   );
 }

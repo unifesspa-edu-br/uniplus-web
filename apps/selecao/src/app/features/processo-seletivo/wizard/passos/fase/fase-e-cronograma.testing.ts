@@ -7,7 +7,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import { CaraterEtapa, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { CaraterEtapaCodigo, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { NumeracaoDasRespostasRecusadas } from '../../shared/recusas/numeracao-das-respostas-recusadas';
@@ -204,7 +204,7 @@ const faseDoCertame = (
 const ETAPA_GRAVADA = {
   id: ID_ETAPA_GRAVADA,
   nome: 'Prova objetiva',
-  carater: CaraterEtapa.classificatoria,
+  carater: CaraterEtapaCodigo.classificatoria,
   tipoEtapaOrigemId: ID_TIPO_ETAPA,
   peso: '1',
   notaMinima: '',

@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FinalidadeDoDocumento } from '@uniplus/shared-data/selecao';
+import { FinalidadeDoDocumentoCodigo } from '@uniplus/shared-data/selecao';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AnexosDaPublicacaoComponent } from './anexos-da-publicacao.component';
@@ -14,7 +14,7 @@ describe('AnexosDaPublicacaoComponent', () => {
 
   beforeEach(() => {
     envios = new EnviosDeArquivos({
-      finalidade: FinalidadeDoDocumento.documentoDeAto,
+      finalidade: FinalidadeDoDocumentoCodigo.documentoDeAto,
       processoId: () => null,
       abrirEnvio: () => {
         throw new Error('o envio não é aberto sem processo');

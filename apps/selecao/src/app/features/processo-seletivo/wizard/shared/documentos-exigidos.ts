@@ -28,6 +28,7 @@ import { dominiosDoGatilho, fatosParaGatilho, type FatoEscolhivel } from './gati
 /** Como a leitura nomeia o que o rascunho guarda por código. */
 export interface VocabularioDosDocumentos {
   readonly fatoPorCodigo: ReadonlyMap<string, FatoEscolhivel>;
+  readonly consequencias: readonly { readonly codigo: string; readonly rotulo: string }[];
   readonly nomeDoTipo: (tipoDocumentoId: string, nomeGuardado: string | undefined) => string;
 }
 
@@ -51,13 +52,19 @@ export function descreverArquivo(
 ): string {
   const formatos =
     formatosPermitidos.tipo === 'lista' && formatosPermitidos.itens.length > 0
-      ? formatosPermitidos.itens.map((item) => item.formato).join(', ')
+      ? formatosPermitidos.itens.map(descreverFormato).join(', ')
       : 'qualquer formato';
   const tamanho =
     tamanhoMaximoBytes === null
-      ? 'sem limite de tamanho declarado'
+      ? 'sem limite geral de tamanho declarado'
       : `até ${formatarTamanhoDeArquivo(tamanhoMaximoBytes)}`;
   return `${formatos}, ${tamanho}`;
+}
+
+function descreverFormato(item: { formato: string; tamanhoMaximoBytes: number | null }): string {
+  return item.tamanhoMaximoBytes === null
+    ? item.formato
+    : `${item.formato} (até ${formatarTamanhoDeArquivo(item.tamanhoMaximoBytes)})`;
 }
 
 type DocumentoDaExigencia = ExigenciaLocalizada['documento'];
@@ -66,11 +73,13 @@ function resumoDoDocumento(
   documento: DocumentoDaExigencia,
   vocabulario: VocabularioDosDocumentos,
 ): Omit<DocumentoExigidoLido, 'chave' | 'composicao' | 'repeticao'> {
+  const { consequenciaIndeferimento, obrigatorio } = documento;
+  const { consequencias } = vocabulario;
   return {
     nome: vocabulario.nomeDoTipo(documento.tipoDocumentoId, documento.tipoDocumentoNome),
     obrigatoriedade: documento.obrigatorio ? 'Obrigatório' : 'Facultativo',
     aplicaA: descreverPublico(publicoDaExigencia(documento, vocabulario.fatoPorCodigo)),
-    consequencia: rotuloDaConsequencia(documento.consequenciaIndeferimento, documento.obrigatorio),
+    consequencia: rotuloDaConsequencia(consequenciaIndeferimento, obrigatorio, consequencias),
     arquivo: descreverArquivo(documento.formatosPermitidos, documento.tamanhoMaximoBytes),
   };
 }

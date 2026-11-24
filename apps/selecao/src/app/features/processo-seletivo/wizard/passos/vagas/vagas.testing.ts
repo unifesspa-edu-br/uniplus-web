@@ -32,7 +32,7 @@ export const MODALIDADES = [
     codigo: 'AC_I',
     descricao: 'Indígena',
     naturezaLegal: 'ACAO_AFIRMATIVA',
-    composicaoVagas: 'SUPLEMENTAR_AO_TOTAL',
+    composicaoVagas: { codigo: 'SUPLEMENTAR_AO_TOTAL', rotulo: 'Suplementar' },
     composicaoOrigemCodigo: null,
     regraRemanejamento: null,
     remanejamentoDestino: null,
@@ -44,7 +44,7 @@ export const MODALIDADES = [
     codigo: 'AC_Q',
     descricao: 'Quilombola',
     naturezaLegal: 'ACAO_AFIRMATIVA',
-    composicaoVagas: 'SUPLEMENTAR_AO_TOTAL',
+    composicaoVagas: { codigo: 'SUPLEMENTAR_AO_TOTAL', rotulo: 'Suplementar' },
     composicaoOrigemCodigo: null,
     regraRemanejamento: null,
     remanejamentoDestino: null,
@@ -63,19 +63,23 @@ export const OFERTAS = [
     id: OFERTA,
     cursoId: 'curso-1',
     unidadeOfertante: { sigla: 'IGE' },
-    programaDeOferta: 'REGULAR',
-    formatoPedagogico: 'PRESENCIAL',
-    regimeDeTurno: 'INTEGRAL',
-    turnos: ['MATUTINO', 'VESPERTINO'],
+    programaDeOferta: { codigo: 'REGULAR', rotulo: 'Regular' },
+    formatoPedagogico: { codigo: 'PRESENCIAL', rotulo: 'Presencial' },
+    regimeDeTurno: { codigo: 'INTEGRAL', rotulo: 'INTEGRAL' },
+    turnos: [
+      { codigo: 'MATUTINO', rotulo: 'MATUTINO' },
+      { codigo: 'VESPERTINO', rotulo: 'VESPERTINO' },
+    ],
     vagasAnuaisAutorizadas: 40,
   },
   {
     id: OUTRA_OFERTA,
     cursoId: 'curso-2',
     unidadeOfertante: { sigla: 'IGE' },
-    programaDeOferta: 'REGULAR',
-    formatoPedagogico: 'PRESENCIAL',
-    turnos: ['NOTURNO'],
+    programaDeOferta: { codigo: 'REGULAR', rotulo: 'Regular' },
+    formatoPedagogico: { codigo: 'PRESENCIAL', rotulo: 'Presencial' },
+    regimeDeTurno: { codigo: 'REGULAR', rotulo: 'REGULAR' },
+    turnos: [{ codigo: 'NOTURNO', rotulo: 'NOTURNO' }],
     vagasAnuaisAutorizadas: 40,
   },
 ];
@@ -103,11 +107,7 @@ export async function comReleitura<T>(
   void gravacao.finally(() => (terminou = true)).catch(() => undefined);
   for (let volta = 0; !terminou && volta < 20; volta++) {
     await new Promise((resolve) => setTimeout(resolve, 0));
-    for (const releitura of controller.match(
-      (r) => r.method === 'GET' && ROTA_PROCESSO_LIDO.test(r.url),
-    )) {
-      releitura.flush({ distribuicaoVagas: [], regrasDerivacao: [] });
-    }
+    responderReleituras(controller);
   }
   return gravacao;
 }
@@ -146,19 +146,27 @@ export const MODALIDADES_CASCATA = [
     codigo: 'LB_PPI',
     descricao: null,
     naturezaLegal: 'COTA_RESERVADA',
-    composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
+    composicaoVagas: {
+      codigo: 'RETIRADA_DE_OUTRA_MODALIDADE',
+      rotulo: 'Retirada de outra modalidade',
+    },
     composicaoOrigem: 'AC',
-    regraRemanejamento: 'SEGUE_CASCATA',
-    remanejamentoDestino: null,
-    remanejamentoPar: null,
-    remanejamentoFallback: null,
+    remanejamento: {
+      regra: { codigo: 'SEGUE_CASCATA', rotulo: 'Segue cascata' },
+      destino: null,
+      par: null,
+      fallback: null,
+    },
   },
   {
     id: LB_Q,
     codigo: 'LB_Q',
     descricao: null,
     naturezaLegal: 'COTA_RESERVADA',
-    composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
+    composicaoVagas: {
+      codigo: 'RETIRADA_DE_OUTRA_MODALIDADE',
+      rotulo: 'Retirada de outra modalidade',
+    },
     composicaoOrigem: 'AC',
     regraRemanejamento: null,
     remanejamentoDestino: null,
@@ -170,7 +178,10 @@ export const MODALIDADES_CASCATA = [
     codigo: 'AC',
     descricao: null,
     naturezaLegal: 'GERAL',
-    composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
+    composicaoVagas: {
+      codigo: 'RETIRADA_DE_OUTRA_MODALIDADE',
+      rotulo: 'Retirada de outra modalidade',
+    },
     composicaoOrigem: null,
     regraRemanejamento: null,
     remanejamentoDestino: null,
@@ -185,9 +196,10 @@ export const OFERTAS_CASCATA = [
     id: OFERTA_CASCATA,
     cursoId: 'curso-1',
     unidadeOfertante: { sigla: 'IGE' },
-    programaDeOferta: 'REGULAR',
-    formatoPedagogico: 'PRESENCIAL',
-    turnos: ['MATUTINO'],
+    programaDeOferta: { codigo: 'REGULAR', rotulo: 'Regular' },
+    formatoPedagogico: { codigo: 'PRESENCIAL', rotulo: 'Presencial' },
+    regimeDeTurno: { codigo: 'REGULAR', rotulo: 'REGULAR' },
+    turnos: [{ codigo: 'MATUTINO', rotulo: 'MATUTINO' }],
     vagasAnuaisAutorizadas: 100,
   },
 ];
@@ -298,4 +310,10 @@ export function servicosDe(fixture: ComponentFixture<VagasPassoComponent>): Serv
     conferencia: injetor.get(ConferenciaDoQuadro),
     catalogos: injetor.get(CatalogosDeDistribuicao),
   };
+}
+
+function responderReleituras(controller: HttpTestingController): void {
+  for (const releitura of controller.match((r) => r.method === 'GET' && ROTA_PROCESSO_LIDO.test(r.url))) {
+    releitura.flush({ distribuicaoVagas: [], regrasDerivacao: [] });
+  }
 }

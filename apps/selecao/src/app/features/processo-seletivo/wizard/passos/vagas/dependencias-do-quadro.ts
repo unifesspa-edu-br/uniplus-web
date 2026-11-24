@@ -1,4 +1,4 @@
-import { COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE } from '@uniplus/shared-data/configuracao';
+import { ComposicaoVagasCodigo, RegraRemanejamentoCodigo } from '@uniplus/shared-data/configuracao';
 
 import { DistribuicaoDeVagas } from '../../processo-seletivo.models';
 
@@ -59,21 +59,36 @@ export function problemasDeModalidadeForaDoRol(
 
   const codigosSelecionados = distribuicao.modalidades.map((modalidade) => modalidade.codigo);
 
-  const excedentes = codigosSelecionados
+  return [
+    ...modalidadesExcedentes(distribuicao, codigosSelecionados, rol),
+    ...modalidadesFaltantes(distribuicao, codigosSelecionados, rol),
+  ];
+}
+
+function modalidadesExcedentes(
+  distribuicao: DistribuicaoDeVagas,
+  codigosSelecionados: readonly string[],
+  rol: readonly string[],
+): string[] {
+  return codigosSelecionados
     .filter((codigo) => !rol.includes(codigo))
     .map(
       (codigo) =>
         `${codigo} não pertence ao rol que ${distribuicao.regraDistribuicaoCodigo} admite — a seleção desta oferta precisa corresponder exatamente ao rol da regra atual.`,
     );
+}
 
-  const faltantes = rol
+function modalidadesFaltantes(
+  distribuicao: DistribuicaoDeVagas,
+  codigosSelecionados: readonly string[],
+  rol: readonly string[],
+): string[] {
+  return rol
     .filter((codigo) => !codigosSelecionados.includes(codigo))
     .map(
       (codigo) =>
         `${codigo} pertence ao rol que ${distribuicao.regraDistribuicaoCodigo} exige e não está selecionada nesta oferta — a seleção desta oferta precisa corresponder exatamente ao rol da regra atual.`,
     );
-
-  return [...excedentes, ...faltantes];
 }
 
 export function problemasDeModalidades(
@@ -85,9 +100,8 @@ export function problemasDeModalidades(
   if (modalidadeIds.length === 0) return ['Selecione ao menos uma modalidade para esta oferta.'];
 
   const problemas: string[] = [];
-  if (repetidos(modalidadeIds).length > 0) {
+  if (repetidos(modalidadeIds).length > 0)
     problemas.push('Cada modalidade só pode ser selecionada uma vez nesta oferta.');
-  }
 
   problemas.push(...problemasDeDependencia(modalidadeIds, catalogo, federal));
   return problemas;
@@ -128,16 +142,17 @@ function exigenciaDaRetirada(
   modalidade: ModalidadeDoCatalogo,
   federal: boolean,
 ): ExigenciaDeCompanheira[] {
-  return federal && modalidade.composicaoVagas === COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE
+  return federal &&
+    modalidade.composicaoVagas === ComposicaoVagasCodigo.RETIRADA_DE_OUTRA_MODALIDADE
     ? [{ codigo: modalidade.composicaoOrigemCodigo, papel: 'a origem da retirada' }]
     : [];
 }
 
 function exigenciasDoRemanejamento(modalidade: ModalidadeDoCatalogo): ExigenciaDeCompanheira[] {
   switch (modalidade.regraRemanejamento) {
-    case 'DESTINO_UNICO':
+    case RegraRemanejamentoCodigo.DESTINO_UNICO:
       return [{ codigo: modalidade.remanejamentoDestino, papel: 'o destino do remanejamento' }];
-    case 'CRUZADO':
+    case RegraRemanejamentoCodigo.CRUZADO:
       return [
         { codigo: modalidade.remanejamentoPar, papel: 'o par do remanejamento' },
         { codigo: modalidade.remanejamentoFallback, papel: 'o destino final do remanejamento' },
@@ -159,12 +174,8 @@ export function problemasDeQuadro(
 ): ProblemaDaDistribuicao[] {
   const selecionadas = new Set(distribuicao.modalidades.map((modalidade) => modalidade.id));
   const fixadas = new Map(distribuicao.quadro.map((item) => [item.modalidadeId, item.quantidade]));
-  const repetida = repetidos(distribuicao.quadro.map((item) => item.modalidadeId)).length > 0;
-
   return [
-    ...(repetida
-      ? [{ escopo: 'padrao' as const, mensagem: 'O quadro não pode repetir a mesma modalidade.' }]
-      : []),
+    ...problemasDeRepeticaoNoQuadro(distribuicao),
     ...[...fixadas].flatMap(([modalidadeId, quantidade]) =>
       problemasDaQuantidadeFixada(modalidadeId, quantidade, selecionadas, catalogo),
     ),
@@ -172,6 +183,13 @@ export function problemasDeQuadro(
       problemasDaModalidadeSelecionada(modalidadeId, fixadas.has(modalidadeId), catalogo, federal),
     ),
   ];
+}
+
+function problemasDeRepeticaoNoQuadro(distribuicao: DistribuicaoDeVagas): ProblemaDaDistribuicao[] {
+  const repetida = repetidos(distribuicao.quadro.map((item) => item.modalidadeId)).length > 0;
+  return repetida
+    ? [{ escopo: 'padrao', mensagem: 'O quadro não pode repetir a mesma modalidade.' }]
+    : [];
 }
 
 /** O que o edital fixou precisa pertencer à oferta e ser inteiro não negativo. */
@@ -182,12 +200,7 @@ function problemasDaQuantidadeFixada(
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
 ): ProblemaDaDistribuicao[] {
   if (!selecionadas.has(modalidadeId)) {
-    return [
-      {
-        escopo: 'padrao',
-        mensagem: `${rotulo(modalidadeId, catalogo)} tem quantidade fixada mas não está selecionada nesta oferta.`,
-      },
-    ];
+    return [problemaDeQuantidadeSemModalidade(modalidadeId, catalogo)];
   }
 
   const numero = inteiroDoCampo(quantidade);
@@ -199,6 +212,16 @@ function problemasDaQuantidadeFixada(
         },
       ]
     : [];
+}
+
+function problemaDeQuantidadeSemModalidade(
+  modalidadeId: string,
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+): ProblemaDaDistribuicao {
+  return {
+    escopo: 'padrao',
+    mensagem: `${rotulo(modalidadeId, catalogo)} tem quantidade fixada mas não está selecionada nesta oferta.`,
+  };
 }
 
 /**
@@ -216,27 +239,34 @@ function problemasDaModalidadeSelecionada(
     federal && composicao !== undefined && COMPOSICOES_CALCULADAS.includes(composicao);
 
   if (calculadaPelaRegra) {
-    return temQuantidade
-      ? [
-          {
-            escopo: 'oferta',
-            mensagem: `A quantidade de ${rotulo(modalidadeId, catalogo)} é calculada pela Lei 12.711 — não pode ser fixada pelo edital.`,
-          },
-        ]
-      : [];
+    return temQuantidade ? [problemaDeQuantidadeCalculada(modalidadeId, catalogo)] : [];
   }
 
   const exigeDeclaracao =
     !federal || (composicao !== undefined && COMPOSICOES_DECLARADAS.includes(composicao));
-
   return exigeDeclaracao && !temQuantidade
-    ? [
-        {
-          escopo: 'preenchimento',
-          mensagem: `Informe a quantidade de vagas de ${rotulo(modalidadeId, catalogo)}.`,
-        },
-      ]
+    ? [problemaDeQuantidadeAusente(modalidadeId, catalogo)]
     : [];
+}
+
+function problemaDeQuantidadeAusente(
+  modalidadeId: string,
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+): ProblemaDaDistribuicao {
+  return {
+    escopo: 'preenchimento',
+    mensagem: `Informe a quantidade de vagas de ${rotulo(modalidadeId, catalogo)}.`,
+  };
+}
+
+function problemaDeQuantidadeCalculada(
+  modalidadeId: string,
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+): ProblemaDaDistribuicao {
+  return {
+    escopo: 'oferta',
+    mensagem: `A quantidade de ${rotulo(modalidadeId, catalogo)} é calculada pela Lei 12.711 — não pode ser fixada pelo edital.`,
+  };
 }
 
 export function problemasDeReferencias(

@@ -71,10 +71,10 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     });
   });
 
-  describe('DESEMPATE-PREDICADO-FATO — exige fato, operador e valor', () => {
+  describe('DESEMPATE-CONDICAO-SOBRE-DADO — exige fato, operador e valor', () => {
     it('recusa incompleto', () => {
       store.patchSection('desempate', [
-        criterio({ regraCodigo: 'DESEMPATE-PREDICADO-FATO', regraVersao: '1.0', fato: 'RENDA' }),
+        criterio({ regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO', regraVersao: '1.0', fato: 'RENDA' }),
       ]);
 
       expect(componente.validar().valid).toBe(false);
@@ -83,7 +83,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     it('aceita completo', () => {
       store.patchSection('desempate', [
         criterio({
-          regraCodigo: 'DESEMPATE-PREDICADO-FATO',
+          regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
           regraVersao: '1.0',
           fato: 'RENDA_PER_CAPITA',
           operador: 'MENOR_IGUAL',
@@ -102,7 +102,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     it('recusa a comparação que não pertence ao vocabulário', () => {
       store.patchSection('desempate', [
         criterio({
-          regraCodigo: 'DESEMPATE-PREDICADO-FATO',
+          regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
           regraVersao: '1.0',
           fato: 'RENDA_PER_CAPITA',
           operador: 'lte',
@@ -119,7 +119,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     it('recusa o valor que não pertence ao domínio do fato', () => {
       store.patchSection('desempate', [
         criterio({
-          regraCodigo: 'DESEMPATE-PREDICADO-FATO',
+          regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
           regraVersao: '1.0',
           fato: 'COR_RACA',
           operador: 'IGUAL',
@@ -140,7 +140,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     it('voltar o seletor ao branco limpa o fato no rascunho, não só na tela', () => {
       store.patchSection('desempate', [
         criterio({
-          regraCodigo: 'DESEMPATE-PREDICADO-FATO',
+          regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
           regraVersao: '1.0',
           fato: 'COR_RACA',
           operador: 'IGUAL',
@@ -172,7 +172,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     it('lê de volta o valor categórico no formato em que o servidor o devolve', () => {
       store.patchSection('desempate', [
         criterio({
-          regraCodigo: 'DESEMPATE-PREDICADO-FATO',
+          regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
           regraVersao: '1.0',
           fato: 'COR_RACA',
           operador: 'IGUAL',
@@ -192,7 +192,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     it('recusa o fato que não está no catálogo', () => {
       store.patchSection('desempate', [
         criterio({
-          regraCodigo: 'DESEMPATE-PREDICADO-FATO',
+          regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
           regraVersao: '1.0',
           fato: 'RELIGIAO',
           operador: 'IGUAL',

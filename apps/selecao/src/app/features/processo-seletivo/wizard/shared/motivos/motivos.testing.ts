@@ -1,3 +1,4 @@
+import { SentidoDoMotivoCodigo } from '@uniplus/shared-data/selecao';
 import { TipoMotivoDeDecisaoCodigo, type MotivoDeDecisaoDto } from '@uniplus/shared-data/selecao';
 
 import { umTipoDeDecisaoDaApi } from '../decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
@@ -43,7 +44,7 @@ export function umMotivoDoCadastro({
     codigo: 'SEM_RESULTADO_NO_ENEM',
     descricao: 'Sem resultado no ENEM informado.',
     subclassificacao: null,
-    sentido: 'DESFAVORAVEL',
+    sentido: { codigo: SentidoDoMotivoCodigo.DESFAVORAVEL, rotulo: 'Desfavorável' },
     ativo: true,
     ...campos,
   };

@@ -8,7 +8,7 @@ import { RELOGIO } from '@uniplus/shared-core/relogio';
 import {
   CertameNaVitrineDto,
   SELECAO_BASE_PATH,
-  SituacaoDoCertame,
+  SituacaoDoCertameCodigo,
 } from '@uniplus/shared-data/selecao';
 import { ligarRelogioControlado } from '@uniplus/shared-testing';
 import { delay, of } from 'rxjs';
@@ -41,7 +41,7 @@ export const sisu: CertameNaVitrineDto = {
   modalidadesOfertadas: ['AC', 'PPI'],
   inscricoesDe: '2026-02-01T00:00:00Z',
   inscricoesAte: '2026-04-16T23:59:59Z',
-  situacao: SituacaoDoCertame.inscricoesAbertas,
+  situacao: { codigo: SituacaoDoCertameCodigo.inscricoesAbertas, rotulo: 'Inscrições abertas' },
   totalDeVagas: 1234,
   identificadorLegivel: 'sisu-2026-1',
 };
@@ -54,7 +54,7 @@ export const tecnicoEnfermagem: CertameNaVitrineDto = {
   modalidadesOfertadas: ['AC'],
   inscricoesDe: '2026-02-01T00:00:00Z',
   inscricoesAte: '2026-03-25T23:59:59Z',
-  situacao: SituacaoDoCertame.ultimosDias,
+  situacao: { codigo: SituacaoDoCertameCodigo.ultimosDias, rotulo: 'Últimos dias' },
   totalDeVagas: 60,
   identificadorLegivel: 'psr-tec-enfermagem-2026',
 };
@@ -67,7 +67,7 @@ export const encerrado: CertameNaVitrineDto = {
   modalidadesOfertadas: ['AC'],
   inscricoesDe: '2026-01-05T00:00:00Z',
   inscricoesAte: '2026-03-22T23:59:59Z',
-  situacao: SituacaoDoCertame.encerradas,
+  situacao: { codigo: SituacaoDoCertameCodigo.encerradas, rotulo: 'Encerrado' },
   totalDeVagas: 40,
   identificadorLegivel: 'pg-educacao-2026',
 };
@@ -81,7 +81,7 @@ export const semDocumento: CertameNaVitrineDto = {
   modalidadesOfertadas: ['AC'],
   inscricoesDe: '2026-02-01T00:00:00Z',
   inscricoesAte: '2026-04-16T23:59:59Z',
-  situacao: SituacaoDoCertame.inscricoesAbertas,
+  situacao: { codigo: SituacaoDoCertameCodigo.inscricoesAbertas, rotulo: 'Inscrições abertas' },
   totalDeVagas: 10,
 };
 

@@ -8,6 +8,7 @@ import {
   exigenciaNova,
 } from '../../shared/exigencias/exigencias-documentais';
 import { PASSO_CRONOGRAMA } from '../../shared/documentos-exigidos';
+import { CatalogoDasConsequenciasDeIndeferimento } from '../cronograma/catalogos/catalogo-das-consequencias-de-indeferimento.service';
 import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
 import { conteudoDoFormulario } from './formulario-do-processo';
 import {
@@ -58,6 +59,7 @@ describe('FormularioPassoComponent: documentos da fase', () => {
       const laudo = {
         ...exigenciaNova(TIPO_LAUDO, 'INSCRICAO'),
         tipoDocumentoNome: 'Laudo médico',
+        consequenciaIndeferimento: 'ELIMINA',
         aplicabilidade: 'CONDICIONAL',
         condicoes: [{ clausula: 0, fato: 'PCD', operador: 'IGUAL', valor: 'true' }],
         formatosPermitidos: {
@@ -78,11 +80,15 @@ describe('FormularioPassoComponent: documentos da fase', () => {
         ),
       );
 
+      fixture.debugElement.injector
+        .get(CatalogoDasConsequenciasDeIndeferimento)
+        .consequencias.set([{ codigo: 'ELIMINA', rotulo: 'Consequência definida pela API' }]);
       emConsulta();
 
       const texto = host.textContent ?? '';
       expect(texto).toContain('Laudo médico');
       expect(texto).toContain('Obrigatório');
+      expect(texto).toContain('Consequência definida pela API');
       expect(texto).toContain('Pessoa com deficiência');
       expect(texto).toContain('PDF, até 5,0 MB');
       expect(texto).not.toContain('Outra fase');

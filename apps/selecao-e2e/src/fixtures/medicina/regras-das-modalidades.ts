@@ -17,7 +17,7 @@ export const REGRAS_DE_APLICABILIDADE = {
   LI_PPI: [
     [
       { fato: 'OPTOU_PELAS_COTAS_DA_LEI', operador: 'IGUAL', valor: true },
-      { fato: 'COR_RACA', operador: 'EM', valor: ['PRETA', 'PARDA'] },
+      { fato: 'COR_RACA', operador: 'ALGUM_DE', valor: ['PRETA', 'PARDA'] },
       { fato: 'CONCORRER_PPI', operador: 'IGUAL', valor: true },
     ],
     [
@@ -30,7 +30,7 @@ export const REGRAS_DE_APLICABILIDADE = {
   LB_PPI: [
     [
       { fato: 'OPTOU_PELAS_COTAS_DA_LEI', operador: 'IGUAL', valor: true },
-      { fato: 'COR_RACA', operador: 'EM', valor: ['PRETA', 'PARDA'] },
+      { fato: 'COR_RACA', operador: 'ALGUM_DE', valor: ['PRETA', 'PARDA'] },
       { fato: 'CONCORRER_PPI', operador: 'IGUAL', valor: true },
       { fato: 'BAIXA_RENDA', operador: 'IGUAL', valor: true },
       { fato: 'CONCORRER_RENDA', operador: 'IGUAL', valor: true },
@@ -99,14 +99,14 @@ export const DERIVACOES_DA_MEDICINA = [
           [
             {
               fato: 'ONDE_CURSOU_EM',
-              operador: 'EM',
+              operador: 'ALGUM_DE',
               valor: ['SOMENTE_PUBLICA', 'COMUNITARIA_CAMPO', 'PUBLICA_E_COMUNITARIA'],
             },
           ],
           [
             {
               fato: 'FORMA_CONCLUSAO_EM',
-              operador: 'EM',
+              operador: 'ALGUM_DE',
               valor: ['ENCCEJA', 'PROFICIENCIA', 'ENEM'],
             },
             { fato: 'ONDE_CURSOU_EM', operador: 'IGUAL', valor: 'CERTIFICACAO' },

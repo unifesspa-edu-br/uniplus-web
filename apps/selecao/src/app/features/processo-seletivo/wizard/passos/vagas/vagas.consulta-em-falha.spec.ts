@@ -9,7 +9,7 @@ import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import {
   ProcessoSeletivoDto,
   SELECAO_BASE_PATH,
-  StatusProcesso,
+  StatusProcessoCodigo,
 } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
@@ -17,7 +17,16 @@ import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
 import { VagasPassoComponent } from './vagas.component';
-import { AC_CASCATA, BASE, LB_PPI, LB_Q, distribuicaoComCascata, gravadaDe } from './vagas.testing';
+import {
+  AC_CASCATA,
+  BASE,
+  LB_PPI,
+  LB_Q,
+  MODALIDADES,
+  MODALIDADES_CASCATA,
+  distribuicaoComCascata,
+  gravadaDe,
+} from './vagas.testing';
 
 describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
   let store: ProcessoSeletivoStore;
@@ -62,7 +71,7 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
       ofertas: [{ ...distribuicaoComCascata(), referenciaReservaDemograficaId: 'ref-1' }],
     });
     store.remoteSnapshot.set({
-      status: StatusProcesso.publicado,
+      status: { codigo: StatusProcessoCodigo.publicado, rotulo: StatusProcessoCodigo.publicado },
     } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
     falharPendentes();
@@ -95,7 +104,7 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
   });
 
   it('no regime federal, só a modalidade com quantidade gravada vira coluna, na ordem do padrão', () => {
-    store.remoteSnapshot.set({ status: StatusProcesso.rascunho } as unknown as ProcessoSeletivoDto);
+    store.remoteSnapshot.set({ status: { codigo: StatusProcessoCodigo.rascunho, rotulo: StatusProcessoCodigo.rascunho } } as unknown as ProcessoSeletivoDto);
     store.patchObjectSection('vagas', {
       ofertas: [
         {
@@ -108,7 +117,7 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
       ],
     });
     store.remoteSnapshot.set({
-      status: StatusProcesso.publicado,
+      status: { codigo: StatusProcessoCodigo.publicado, rotulo: StatusProcessoCodigo.publicado },
     } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
 
@@ -127,7 +136,7 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
 
   /** O snapshot traz descrição e composição: a consulta as lê dele, sem esperar pelo catálogo. */
   it('lê descrição e composição do snapshot gravado, mesmo com o catálogo fora do ar', () => {
-    store.remoteSnapshot.set({ status: StatusProcesso.rascunho } as unknown as ProcessoSeletivoDto);
+    store.remoteSnapshot.set({ status: { codigo: StatusProcessoCodigo.rascunho, rotulo: StatusProcessoCodigo.rascunho } } as unknown as ProcessoSeletivoDto);
     store.patchObjectSection('vagas', {
       ofertas: [
         {
@@ -149,7 +158,7 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
       ],
     });
     store.remoteSnapshot.set({
-      status: StatusProcesso.publicado,
+      status: { codigo: StatusProcessoCodigo.publicado, rotulo: StatusProcessoCodigo.publicado },
     } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
 
@@ -165,7 +174,7 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
 
   /** O catálogo mudou depois da publicação: vale o gravado, e a modalidade que saiu continua. */
   it('com o catálogo divergente do snapshot, mostra o gravado e mantém a modalidade que saiu dele', () => {
-    store.remoteSnapshot.set({ status: StatusProcesso.rascunho } as unknown as ProcessoSeletivoDto);
+    store.remoteSnapshot.set({ status: { codigo: StatusProcessoCodigo.rascunho, rotulo: StatusProcessoCodigo.rascunho } } as unknown as ProcessoSeletivoDto);
     store.patchObjectSection('vagas', {
       ofertas: [
         {
@@ -196,11 +205,11 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
         id: LB_PPI,
         codigo: 'LB_PPI',
         descricao: 'Descrição de hoje',
-        composicaoVagas: 'DENTRO_DA_RESERVA_LEGAL',
+        composicaoVagas: MODALIDADES[0].composicaoVagas,
       } as never,
     ]);
     store.remoteSnapshot.set({
-      status: StatusProcesso.publicado,
+      status: { codigo: StatusProcessoCodigo.publicado, rotulo: StatusProcessoCodigo.publicado },
     } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
 
@@ -214,12 +223,12 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
   });
 
   it('padrão sem modalidades diz que nenhuma é oferecida, e não que não leu', () => {
-    store.remoteSnapshot.set({ status: StatusProcesso.rascunho } as unknown as ProcessoSeletivoDto);
+    store.remoteSnapshot.set({ status: { codigo: StatusProcessoCodigo.rascunho, rotulo: StatusProcessoCodigo.rascunho } } as unknown as ProcessoSeletivoDto);
     store.patchObjectSection('vagas', {
       ofertas: [{ ...distribuicaoComCascata(), modalidades: [], quadro: [] }],
     });
     store.remoteSnapshot.set({
-      status: StatusProcesso.publicado,
+      status: { codigo: StatusProcessoCodigo.publicado, rotulo: StatusProcessoCodigo.publicado },
     } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
 
@@ -241,7 +250,7 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
 
   it('nova tentativa que falha depois de uma carga boa mantém o que já foi lido', () => {
     const catalogos = fixture.componentInstance.catalogos;
-    catalogos.modalidades.set([{ id: LB_PPI, codigo: 'LB_PPI', descricao: 'Ampla PPI' } as never]);
+    catalogos.modalidades.set([{ ...MODALIDADES_CASCATA[0], descricao: 'Ampla PPI' } as never]);
     fixture.detectChanges();
 
     expect(catalogos.erro()).not.toBeNull();
@@ -253,7 +262,7 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
 
   it('diz "Não declarada" para a regra de ajuste que o processo não gravou', () => {
     // O store não aceita mutação em consulta: grava como rascunho e volta a publicado.
-    store.remoteSnapshot.set({ status: StatusProcesso.rascunho } as unknown as ProcessoSeletivoDto);
+    store.remoteSnapshot.set({ status: { codigo: StatusProcessoCodigo.rascunho, rotulo: StatusProcessoCodigo.rascunho } } as unknown as ProcessoSeletivoDto);
     store.patchObjectSection('vagas', {
       ofertas: [
         {
@@ -265,7 +274,7 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
       ],
     });
     store.remoteSnapshot.set({
-      status: StatusProcesso.publicado,
+      status: { codigo: StatusProcessoCodigo.publicado, rotulo: StatusProcessoCodigo.publicado },
     } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
 
@@ -277,7 +286,7 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
   });
 
   it('em edição, a falha dos catálogos continua pedindo nova tentativa', () => {
-    store.remoteSnapshot.set({ status: StatusProcesso.rascunho } as unknown as ProcessoSeletivoDto);
+    store.remoteSnapshot.set({ status: { codigo: StatusProcessoCodigo.rascunho, rotulo: StatusProcessoCodigo.rascunho } } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
 
     expect(store.emConsulta()).toBe(false);

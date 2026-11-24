@@ -1,3 +1,4 @@
+import { PAPEL_PRELIMINAR } from '../fixtures/valor-do-enum';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import { PROCESSO_ID } from '../fixtures/processo-da-revisao';
@@ -20,7 +21,7 @@ import { irAoPasso } from '../support/navega-passo';
 const PRODUTO = {
   id: '01960000-0000-7000-0000-0000000009d1',
   atoCodigo: 'RESULTADO_PRELIMINAR',
-  papel: 'PRELIMINAR',
+  papel: PAPEL_PRELIMINAR,
 };
 
 const REGRA_DO_RECURSO = {

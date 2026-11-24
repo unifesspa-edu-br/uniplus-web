@@ -1,13 +1,13 @@
-import type { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import type { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
 
 /**
- * Origem dos candidatos no rascunho: `''` é "ainda não escolhida". `OrigemCandidatos.nenhuma`
+ * Origem dos candidatos no rascunho: `''` é "ainda não escolhida". `OrigemCandidatosCodigo.nenhuma`
  * existe no contrato, mas a criação a recusa, então não é oferecida.
  */
 export type OrigemCandidatosSelecionada =
   | ''
-  | OrigemCandidatos.inscricaoPropria
-  | OrigemCandidatos.importacaoExterna;
+  | OrigemCandidatosCodigo.inscricaoPropria
+  | OrigemCandidatosCodigo.importacaoExterna;
 
 /**
  * Fase do anexo do edital, na ordem em que a API a executa: registro com URL pré-assinada

@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { OperadorCodigo } from '@uniplus/shared-data/selecao';
+import {
+  AplicabilidadeCodigo,
+  OperadorCodigo,
+  type DocumentoExigidoDto,
+} from '@uniplus/shared-data/selecao';
 
 import { exigenciasDaFase, todasAsExigencias } from './consulta-das-exigencias';
 import { exigenciasDe } from './leitura-das-exigencias';
-import { modalidadesDaExigencia } from './recorte-por-modalidade';
+import { modalidadesDaExigencia } from './modalidades-da-exigencia';
 import {
   ID_ETAPA_RENDA,
   ID_HABILITACAO,
@@ -23,7 +27,15 @@ describe('Leitura e regravação das exigências de documentos', () => {
   it('mantém separadas as duas exigências do mesmo documento em fases diferentes', () => {
     const isencao = exigenciaDaApi({
       faseId: ID_ISENCAO,
-      indeferimento: { obrigatorio: true, consequencia: 'ELIMINA' },
+      indeferimento: {
+        obrigatorio: true,
+        consequencia: {
+          codigo: 'ELIMINA' as NonNullable<
+            DocumentoExigidoDto['indeferimento']['consequencia']
+          >['codigo'],
+          rotulo: 'Elimina',
+        },
+      },
     });
     const habilitacao = exigenciaDaApi({
       faseId: ID_HABILITACAO,
@@ -52,15 +64,31 @@ describe('Leitura e regravação das exigências de documentos', () => {
               {
                 id: 'b1',
                 referencia: 'Lei 12.711/2012',
-                abrangencia: 'FEDERAL',
-                situacao: 'RESOLVIDO',
+                abrangencia: {
+                  codigo:
+                    'FEDERAL' as DocumentoExigidoDto['indeferimento']['basesLegais'][number]['abrangencia']['codigo'],
+                  rotulo: 'Federal',
+                },
+                situacao: {
+                  codigo:
+                    'RESOLVIDO' as DocumentoExigidoDto['indeferimento']['basesLegais'][number]['situacao']['codigo'],
+                  rotulo: 'Resolvido',
+                },
                 observacao: 'cotas',
               },
               {
                 id: 'b2',
                 referencia: 'Edital 01/2027',
-                abrangencia: 'INTERNA_EDITAL',
-                situacao: 'PENDENTE',
+                abrangencia: {
+                  codigo:
+                    'INTERNA_EDITAL' as DocumentoExigidoDto['indeferimento']['basesLegais'][number]['abrangencia']['codigo'],
+                  rotulo: 'Edital',
+                },
+                situacao: {
+                  codigo:
+                    'PENDENTE' as DocumentoExigidoDto['indeferimento']['basesLegais'][number]['situacao']['codigo'],
+                  rotulo: 'Pendente',
+                },
                 observacao: null,
               },
             ],
@@ -91,18 +119,18 @@ describe('Leitura e regravação das exigências de documentos', () => {
     expect(todasAsExigencias(lido)[0].etapaId).toBe(ID_ETAPA_RENDA);
   });
 
-  it('reconstrói o recorte de modalidade a partir do gatilho', () => {
+  it('reconstrói a seleção de modalidades a partir do gatilho', () => {
     const lido = exigenciasDe(
       detalheDaApi([
         exigenciaDaApi({
           aplicabilidade: {
-            tipo: 'CONDICIONAL',
+            tipo: { codigo: AplicabilidadeCodigo.CONDICIONAL, rotulo: 'Condicional' },
             condicoes: [
               {
                 id: 'c1',
                 clausula: 1,
                 fato: 'MODALIDADE',
-                operador: OperadorCodigo.EM,
+                operador: OperadorCodigo.ALGUM_DE,
                 valor: '["LB_PPI"]',
               },
             ],
@@ -136,20 +164,41 @@ describe('Leitura e regravação das exigências de documentos', () => {
           etapaId: ID_ETAPA_RENDA,
           indeferimento: {
             obrigatorio: false,
-            consequencia: 'PENDENCIA_REENVIO',
+            consequencia: {
+              codigo: 'ABRE_PRAZO_PARA_REENVIO' as NonNullable<
+                DocumentoExigidoDto['indeferimento']['consequencia']
+              >['codigo'],
+              rotulo: 'Abre prazo para reenvio',
+            },
             basesLegais: [
               {
                 id: 'b1',
                 referencia: 'Lei 12.711/2012',
-                abrangencia: 'FEDERAL',
-                situacao: 'RESOLVIDO',
+                abrangencia: {
+                  codigo:
+                    'FEDERAL' as DocumentoExigidoDto['indeferimento']['basesLegais'][number]['abrangencia']['codigo'],
+                  rotulo: 'Federal',
+                },
+                situacao: {
+                  codigo:
+                    'RESOLVIDO' as DocumentoExigidoDto['indeferimento']['basesLegais'][number]['situacao']['codigo'],
+                  rotulo: 'Resolvido',
+                },
                 observacao: 'cotas',
               },
               {
                 id: 'b2',
                 referencia: 'Edital 01/2027',
-                abrangencia: 'INTERNA_EDITAL',
-                situacao: 'RESOLVIDO',
+                abrangencia: {
+                  codigo:
+                    'INTERNA_EDITAL' as DocumentoExigidoDto['indeferimento']['basesLegais'][number]['abrangencia']['codigo'],
+                  rotulo: 'Edital',
+                },
+                situacao: {
+                  codigo:
+                    'RESOLVIDO' as DocumentoExigidoDto['indeferimento']['basesLegais'][number]['situacao']['codigo'],
+                  rotulo: 'Resolvido',
+                },
                 observacao: null,
               },
             ],
@@ -165,7 +214,7 @@ describe('Leitura e regravação das exigências de documentos', () => {
     expect(documento?.tipoDocumento?.id).toBe(ID_RG);
     expect(documento?.indeferimento).toMatchObject({
       obrigatorio: false,
-      consequencia: 'PENDENCIA_REENVIO',
+      consequencia: 'ABRE_PRAZO_PARA_REENVIO',
     });
     expect(documento?.requisitos).toMatchObject({
       formatosPermitidos: [{ formato: 'PDF', tamanhoMaximoBytesMax: null }],
@@ -181,7 +230,12 @@ describe('Leitura e regravação das exigências de documentos', () => {
     const modelo = {
       modeloId: '01960000-0000-7000-0000-00000000a0de',
       nomeArquivo: 'autodeclaracao.docx',
-      formato: 'DOCX',
+      formato: {
+        codigo: 'DOCX' as NonNullable<
+          DocumentoExigidoDto['requisitos']['modelo']
+        >['formato']['codigo'],
+        rotulo: 'DOCX',
+      },
       hashSha256: 'ab'.repeat(32),
     };
     const lido = exigenciasDe(detalheDaApi([exigenciaDaApi({ requisitos: { modelo } })]));

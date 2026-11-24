@@ -4,7 +4,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { type Mock, expect, vi } from 'vitest';
 import { SignedUploadClient } from '@uniplus/shared-core/http';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
-import { InscricoesApi } from '@uniplus/shared-data/selecao';
+import { InscricoesApi, SituacaoDoArquivoDoCandidatoCodigo } from '@uniplus/shared-data/selecao';
 import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-testing';
 import type { AlvoDoEnvio, EnvioDeDocumentos } from '@uniplus/shared-ui/components';
 
@@ -48,6 +48,8 @@ export const CONFIRMADO = {
   tamanhoBytes: 7,
   hashSha256: 'abc',
   confirmadoEm: '2026-10-20T10:00:00Z',
+  situacao: { codigo: SituacaoDoArquivoDoCandidatoCodigo.emVerificacao, rotulo: 'Em verificação' },
+  mensagem: null,
   rotulo: 'Arquivo 3',
   nomeParaDownload: null,
 };

@@ -14,7 +14,7 @@ function ocorrencia(
   extra: Partial<OcorrenciaDoLoteDto> = {},
 ): OcorrenciaDoLoteDto {
   return {
-    tipo,
+    tipo: { codigo: tipo as OcorrenciaDoLoteDto['tipo']['codigo'], rotulo: tipo },
     inscricaoId: null,
     numeroDeInscricao,
     numerosDasLinhas: linhas,

@@ -1,5 +1,8 @@
 import { HttpTestingController } from '@angular/common/http/testing';
-import { FinalidadeDoDocumento } from '@uniplus/shared-data/selecao';
+import {
+  FinalidadeDoDocumentoCodigo,
+  type DocumentoAPublicarDto,
+} from '@uniplus/shared-data/selecao';
 import { expect } from 'vitest';
 
 import { EtapasDoEnvioDoEdital } from './etapas-do-envio-do-edital';
@@ -52,14 +55,23 @@ export function iniciacao(expiraEmMs = Date.now() + 900_000) {
   };
 }
 
+const FINALIDADE_EDITAL = {
+  codigo: FinalidadeDoDocumentoCodigo.documentoDoEdital,
+  rotulo: 'Documento do edital',
+};
+const STATUS_CONFIRMADO = {
+  codigo: 'Confirmado' as DocumentoAPublicarDto['status']['codigo'],
+  rotulo: 'Confirmado',
+};
+
 export function documentoConfirmado(id: string, hash: string, confirmadoEm: string) {
   return {
     id,
     processoSeletivoId: PROCESSO_ID,
-    finalidade: FinalidadeDoDocumento.documentoDoEdital,
+    finalidade: FINALIDADE_EDITAL,
     nomeArquivo: 'edital.pdf',
     tipoDeMidia: 'application/pdf',
-    status: 'Confirmado',
+    status: STATUS_CONFIRMADO,
     criadoEm: '2026-08-20T12:00:00Z',
     expiraEm: '2026-08-20T12:15:00Z',
     tamanhoBytes: 2048,
@@ -74,9 +86,18 @@ export async function percorrerOEnvio(
   controller: HttpTestingController,
   arquivo = pdf(),
 ): Promise<void> {
-  void etapas.anexar(arquivo);
+  await iniciarAnexo(etapas, arquivo);
+
+  responderInicio(controller, arquivo);
   await tick();
 
+  await responderUpload(controller);
+
+  responderConfirmacao(controller);
+  await tick();
+}
+
+function responderInicio(controller: HttpTestingController, arquivo: File): void {
   const inicio = controller.expectOne(ROTA_DOCUMENTOS);
   expect(inicio.request.body).toEqual({
     finalidade: 'documentoDoEdital',
@@ -87,13 +108,20 @@ export async function percorrerOEnvio(
     status: 201,
     statusText: 'Created',
   });
-  await tick();
+}
 
-  controller.expectOne(URL_ASSINADA).flush(null);
-  await tick();
-
+function responderConfirmacao(controller: HttpTestingController): void {
   controller
     .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/confirmacao`)
     .flush({ id: DOCUMENTO_ID }, { status: 200, statusText: 'OK' });
+}
+
+async function responderUpload(controller: HttpTestingController): Promise<void> {
+  controller.expectOne(URL_ASSINADA).flush(null);
+  await tick();
+}
+
+async function iniciarAnexo(etapas: EtapasDoEnvioDoEdital, arquivo: File): Promise<void> {
+  void etapas.anexar(arquivo);
   await tick();
 }

@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
-import { CaraterEtapa, OrigemCandidatos, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { CaraterEtapaCodigo, OrigemCandidatosCodigo, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { EtapaPontuada } from '../../processo-seletivo.models';
@@ -20,7 +20,7 @@ function etapaQueCompoeNota(): EtapaPontuada {
   return {
     id: 'etapa-1',
     nome: 'Prova objetiva',
-    carater: CaraterEtapa.classificatoria,
+    carater: CaraterEtapaCodigo.classificatoria,
     tipoEtapaOrigemId: 'tipo-1',
     peso: '1',
     notaMinima: '',
@@ -243,7 +243,7 @@ describe('FormulaPassoComponent', () => {
   describe('edições do ENEM aceitas', () => {
     function processoDeInscricaoComEnem(edicoesEnem: readonly string[]): void {
       store.patchObjectSection('identificacao', {
-        origemCandidatos: OrigemCandidatos.inscricaoPropria,
+        origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
       });
       store.patchObjectSection('classificacao', { baseadoEmEnem: true, edicoesEnem });
       fixture.detectChanges();

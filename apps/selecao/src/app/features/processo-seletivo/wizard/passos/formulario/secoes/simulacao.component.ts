@@ -6,7 +6,6 @@ import { rascunhoDifereDoGravado } from '../formulario-do-processo';
 import {
   emOrdemDasFinalidades,
   formulariosDoRascunho,
-  nomeDaFinalidade,
 } from '../formularios-por-finalidade';
 import { LeituraDoProcessoNoFormulario } from '../servicos/leitura-do-processo-no-formulario.service';
 
@@ -34,10 +33,10 @@ export class SimulacaoDoFormularioComponent {
 
   /** Os formulários que se pode simular: os gravados, porque a API monta a simulação deles. */
   protected readonly formulariosParaSimular = computed(() =>
-    emOrdemDasFinalidades(this.leitura.processoLido()?.formularios ?? []).map((formulario) => ({
-      finalidade: formulario.finalidade,
-      nome: nomeDaFinalidade(formulario.finalidade),
-    })),
+    emOrdemDasFinalidades((this.leitura.processoLido()?.formularios ?? []).map((formulario) => ({
+      finalidade: formulario.finalidade.codigo,
+      nome: formulario.finalidade.rotulo,
+    }))),
   );
 
   /** Há alteração nos formulários ainda não gravada: a simulação não a veria. */

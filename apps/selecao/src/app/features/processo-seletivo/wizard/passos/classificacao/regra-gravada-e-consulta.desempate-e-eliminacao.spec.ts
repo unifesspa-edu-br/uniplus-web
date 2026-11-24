@@ -91,7 +91,7 @@ describe('regra gravada no select, passo lido como texto em consulta — desempa
 
   describe('Eliminação', () => {
     const regraGravada = {
-      regraCodigo: 'ELIM-NOTA-MINIMA-ETAPA',
+      regraCodigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA',
       regraVersao: '1.0',
       etapaRef: '',
       notaMinima: '400',
@@ -107,10 +107,10 @@ describe('regra gravada no select, passo lido como texto em consulta — desempa
       });
       detectar(fixture);
 
-      catalogos.regrasEliminacao.set([regra('ELIM-ZERO-EM-AREA'), regra('ELIM-NOTA-MINIMA-ETAPA')]);
+      catalogos.regrasEliminacao.set([regra('ELIMINACAO-ZERO-EM-AREA'), regra('ELIMINACAO-NOTA-MINIMA-ETAPA')]);
       detectar(fixture);
 
-      expect(valorDoSelect(host, 'elim-regra-0')).toBe('ELIM-NOTA-MINIMA-ETAPA|1.0');
+      expect(valorDoSelect(host, 'elim-regra-0')).toBe('ELIMINACAO-NOTA-MINIMA-ETAPA|1.0');
     });
 
     it('com o processo publicado, lê cada regra como texto, sem ações', async () => {
@@ -120,12 +120,12 @@ describe('regra gravada no select, passo lido como texto em consulta — desempa
         regrasEliminacao: [regraGravada],
       });
       publicar(store);
-      catalogos.regrasEliminacao.set([regra('ELIM-NOTA-MINIMA-ETAPA')]);
+      catalogos.regrasEliminacao.set([regra('ELIMINACAO-NOTA-MINIMA-ETAPA')]);
       detectar(fixture);
 
       expect(semControles(host)).toEqual([]);
       expect(leitura(host)).toEqual([
-        ['Regra de eliminação 1', 'ELIM-NOTA-MINIMA-ETAPA — Base de ELIM-NOTA-MINIMA-ETAPA'],
+        ['Regra de eliminação 1', 'ELIMINACAO-NOTA-MINIMA-ETAPA — Base de ELIMINACAO-NOTA-MINIMA-ETAPA'],
         ['Etapa', 'Não informado'],
         ['Nota mínima', '400'],
       ]);
@@ -181,7 +181,7 @@ describe('regra gravada no select, passo lido como texto em consulta — desempa
 
       componente.acrescentarRegra();
       store.patchObjectSection('classificacao', {
-        regrasEliminacao: [{ ...regraGravada, regraCodigo: 'ELIM-ZERO-EM-AREA' }],
+        regrasEliminacao: [{ ...regraGravada, regraCodigo: 'ELIMINACAO-ZERO-EM-AREA' }],
       });
       componente.removerRegra(0);
 

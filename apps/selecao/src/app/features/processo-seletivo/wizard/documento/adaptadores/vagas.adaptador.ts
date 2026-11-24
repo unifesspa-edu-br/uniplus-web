@@ -125,7 +125,7 @@ function cascataDe(documento: DocumentoDaConfiguracao): CascataDasVagas | null {
   return {
     regra: regraEscolhida(cascata.regra),
     matriz: {
-      fallbackCodigo: cascata.fallbackCodigo ?? '',
+      fallbackCodigo: cascata.destinoFinalCodigo ?? '',
       ordens: ordensDoDocumento(cascata.destinos ?? []),
     },
   };

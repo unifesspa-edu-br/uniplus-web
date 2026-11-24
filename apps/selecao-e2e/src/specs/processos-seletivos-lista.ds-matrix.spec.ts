@@ -26,7 +26,7 @@ const PROCESSOS = [
       codigo: 'VESTIBULAR',
       nome: 'Vestibular',
     },
-    status: 'rascunho',
+    status: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
     criadoEm: '2026-08-20T13:23:42.707136+00:00',
   },
   {
@@ -37,7 +37,7 @@ const PROCESSOS = [
       codigo: 'PSIQ',
       nome: 'Processo Seletivo Indígena e Quilombola',
     },
-    status: 'publicado',
+    status: { codigo: 'PUBLICADO', rotulo: 'Publicado' },
     criadoEm: '2026-08-21T09:10:00.000000+00:00',
   },
 ] as const;
@@ -89,7 +89,7 @@ test.describe('Listagem de processos seletivos — matriz DS @ds', () => {
    * rodapé de paginação, e o transbordo horizontal não acusa nada. A rolagem é a da roda
    * do mouse, como a do operador: `scrollIntoView` rolaria também o painel, que aceita
    * rolagem programática mesmo com `overflow: hidden`. `toBeInViewport` considera o
-   * recorte dos ancestrais, então a linha cortada não conta como visível.
+   * limitação visual dos ancestrais, então a linha cortada não conta como visível.
    */
   test('alcança a última linha e a paginação rolando a página', async ({ page }) => {
     const muitos = Array.from({ length: 60 }, (_, indice) => ({

@@ -15,6 +15,7 @@ import type {
 } from '@uniplus/shared-ui/components';
 
 import { InscricaoDoCandidatoService } from './inscricao-do-candidato.service';
+import { apresentarDocumentos } from './documentos-da-avaliacao';
 
 /** O tempo sem nova mudança antes de consultar: quem digita não dispara uma consulta por tecla. */
 export const ESPERA_DA_CONSULTA_MS = 400;
@@ -212,9 +213,15 @@ export class AvaliacaoDaInscricaoEstado {
 
   private aplicar(avaliacao: AvaliacaoDaInscricaoDto): void {
     this.erro.set(null);
-    this.modalidades.set(avaliacao.modalidades);
-    this.modalidadesSegundaOpcao.set(avaliacao.modalidadesSegundaOpcao ?? null);
-    this.documentos.set(avaliacao.documentos);
+    this.modalidades.set({
+      ...avaliacao.modalidades,
+      situacao: avaliacao.modalidades.situacao?.codigo ?? null,
+    });
+    const segunda = avaliacao.modalidadesSegundaOpcao;
+    this.modalidadesSegundaOpcao.set(
+      segunda ? { ...segunda, situacao: segunda.situacao?.codigo ?? null } : null,
+    );
+    this.documentos.set(apresentarDocumentos(avaliacao.documentos));
   }
 }
 

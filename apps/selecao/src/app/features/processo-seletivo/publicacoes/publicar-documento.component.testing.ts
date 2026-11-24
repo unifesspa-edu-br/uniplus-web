@@ -5,7 +5,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import type { TipoAtoPublicadoDto } from '@uniplus/shared-data/publicacoes';
 import {
   SELECAO_BASE_PATH,
-  SituacaoDoProdutoPrevisto,
+  SituacaoDoProdutoPrevistoCodigo,
   type AtoDoProcessoDto,
   type ProdutoPrevistoDto,
 } from '@uniplus/shared-data/selecao';
@@ -85,8 +85,8 @@ export const aviso: AtoDoProcessoDto = {
 const ITEM_PADRAO: Omit<ProdutoPrevistoDto, 'id'> = {
   tipoCodigo: 'RESULTADO_HOMOLOGACAO',
   tipoNome: 'Resultado da homologação',
-  papel: 'PRELIMINAR',
-  situacao: SituacaoDoProdutoPrevisto.aberto,
+  papel: { codigo: 'PRELIMINAR' as NonNullable<ProdutoPrevistoDto['papel']>['codigo'], rotulo: 'Preliminar' },
+  situacao: { codigo: SituacaoDoProdutoPrevistoCodigo.aberto, rotulo: 'Aberto' },
   ato: null,
   correcoes: [],
   podePublicar: true,

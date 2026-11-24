@@ -11,7 +11,7 @@ import { formatarDataBr } from '@uniplus/shared-utils';
 export interface ArquivoExibido {
   readonly id: string;
   readonly nome: string;
-  readonly situacao: string;
+  readonly situacao: ArquivoAdministrativoDto["situacao"];
   readonly detalhe: string;
   readonly nomeDoAbrir: string;
 }
@@ -19,7 +19,7 @@ export interface ArquivoExibido {
 /** Os campos do painel de identificação; `null` é o que a API não devolveu. */
 export interface IdentificacaoExibida {
   readonly numero: string | null;
-  readonly situacao: string | null;
+  readonly situacao: InscricaoAdministrativaDto["situacao"] | null;
   /** Vazia quando a API omitiu as ofertas; a tela então não mostra o rótulo. */
   readonly ofertas: readonly OfertaExibida[];
   readonly enviadaEm: string | null;

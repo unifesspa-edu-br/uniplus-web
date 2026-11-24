@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { isApiOk, ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
-import { OrigemCandidatos, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatosCodigo, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { firstValueFrom } from 'rxjs';
 
 import { ValidacaoDoPasso } from '../../../processo-seletivo.models';
@@ -216,7 +216,7 @@ export class GravacaoDasVagas {
 
   /** O candidato se inscreve no processo: é da inscrição que a modalidade dele se deriva. */
   private derivaAModalidade(): boolean {
-    return this.store.draft().identificacao.origemCandidatos === OrigemCandidatos.inscricaoPropria;
+    return this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.inscricaoPropria;
   }
 
   /**

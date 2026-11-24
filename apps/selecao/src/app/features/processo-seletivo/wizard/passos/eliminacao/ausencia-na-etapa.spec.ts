@@ -18,9 +18,9 @@ import {
 describe('ausência na etapa, pelo passo', () => {
   montarEliminacao();
 
-  describe('ELIM-AUSENCIA-NA-ETAPA — só a etapa, fora do ENEM, uma vez por etapa', () => {
+  describe('ELIMINACAO-AUSENCIA-NA-ETAPA — só a etapa, fora do ENEM, uma vez por etapa', () => {
     const AUSENCIA = {
-      regraCodigo: 'ELIM-AUSENCIA-NA-ETAPA',
+      regraCodigo: 'ELIMINACAO-AUSENCIA-NA-ETAPA',
       regraVersao: '1.0',
       etapaRef: 'etapa-1',
       notaMinima: '',

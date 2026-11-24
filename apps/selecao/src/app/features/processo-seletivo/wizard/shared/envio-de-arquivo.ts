@@ -1,6 +1,6 @@
 import { isApiOk, type ProblemDetails, destinoExpirado } from '@uniplus/shared-core/http';
 import type {
-  FinalidadeDoDocumento,
+  FinalidadeDoDocumentoCodigo,
   IniciarEnvioDoDocumentoAPublicarDto,
 } from '@uniplus/shared-data/selecao';
 
@@ -29,7 +29,7 @@ export interface AlvoDoEnvio {
 export interface OpcoesDoEnvioDeArquivo {
   readonly envio: EnvioDoAnexo;
   readonly arquivo: File;
-  readonly finalidade: FinalidadeDoDocumento;
+  readonly finalidade: FinalidadeDoDocumentoCodigo;
   /** O tipo de mídia que o envio declara; `null` quando o formato não serve a este uso. */
   readonly tipoDeMidia: string | null;
   /** O que dizer quando o formato do arquivo não é aceito. */

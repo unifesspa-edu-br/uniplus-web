@@ -2,8 +2,6 @@ import {
   ABRANGENCIAS_ESCOLHIVEIS,
   ABRANGENCIA_PADRAO,
   baseLegalNova,
-  CONSEQUENCIAS_ESCOLHIVEIS as CONSEQUENCIAS_DO_DOCUMENTO,
-  CONSEQUENCIA_REENVIO,
   SITUACAO_BASE_LEGAL_ESCOLHIVEIS,
   SITUACAO_BASE_LEGAL_RESOLVIDO,
   temNormaResolvida,
@@ -41,6 +39,7 @@ import { limitesDoArquivo, type RestricaoDeArquivo } from './arquivo-da-exigenci
 export const APLICABILIDADE_GERAL = 'GERAL';
 export const APLICABILIDADE_CONDICIONAL = 'CONDICIONAL';
 export const FATO_MODALIDADE = 'MODALIDADE';
+export const CONSEQUENCIA_REENVIO = 'ABRE_PRAZO_PARA_REENVIO';
 
 /**
  * Uma exigência recém-declarada, antes de o operador dizer qualquer coisa sobre ela. Nasce
@@ -129,7 +128,6 @@ export {
   ABRANGENCIAS_ESCOLHIVEIS,
   ABRANGENCIA_PADRAO,
   baseLegalNova,
-  CONSEQUENCIA_REENVIO,
   SITUACAO_BASE_LEGAL_ESCOLHIVEIS,
   SITUACAO_BASE_LEGAL_RESOLVIDO,
   temNormaResolvida,
@@ -157,15 +155,6 @@ export function exigenciaSemNormaResolvida(
 ): boolean {
   return exigenciaDecideResultado(exigencia) && !temNormaResolvida(exigencia.basesLegais);
 }
-
-/**
- * O que acontece com quem não entrega o documento, ou tem a entrega indeferida. Vazio é
- * escolha legítima: a exigência que não decide sozinha não precisa declarar consequência.
- */
-export const CONSEQUENCIAS_ESCOLHIVEIS = [
-  { valor: '', rotulo: 'Não decide sozinha' },
-  ...CONSEQUENCIAS_DO_DOCUMENTO,
-] as const;
 
 /** Atualiza a declaração identificada no rascunho. */
 export function comExigencia(

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpHeaders } from '@angular/common/http';
 import { of } from 'rxjs';
 import { apiFailure } from '@uniplus/shared-core/http';
-import { SituacaoInscricao, TipoRenderizacaoCodigo } from '@uniplus/shared-data/selecao';
+import { SituacaoInscricaoCodigo, TipoRenderizacaoCodigo } from '@uniplus/shared-data/selecao';
 import {
   FORMULARIO_DE_INSCRICAO_MOCK,
   campoColetado,
@@ -76,7 +76,7 @@ describe('InscricaoDoCandidatoPage', () => {
     cenario.servico.formulario = COM_MUNICIPIO;
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
-      situacao: SituacaoInscricao.submetida,
+      situacao: { codigo: SituacaoInscricaoCodigo.submetida, rotulo: 'Situação de teste' },
       respostas: {
         ...RESPONDIDA.respostas,
         NATURALIDADE_MUNICIPIO: { codigo: '2927408', rotulo: 'Salvador' },

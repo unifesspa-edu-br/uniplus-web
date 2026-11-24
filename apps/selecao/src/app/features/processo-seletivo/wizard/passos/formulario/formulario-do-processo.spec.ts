@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  FinalidadeFormularioCodigo,
   type FatoColetadoDto,
   type FormularioDto,
   OperadorCodigo,
@@ -29,7 +30,7 @@ const fato = (
   etapaCodigo,
   apresentacao: {
     rotulo: fatoCodigo,
-    tipoRenderizacao: TipoRenderizacaoCodigo.BOOLEANO,
+    tipoRenderizacao: TipoRenderizacaoCodigo.SIM_OU_NAO,
     ajuda: null,
     pedirConfirmacao: false,
   },
@@ -49,7 +50,7 @@ const etapa = (codigo: string, ordem: number): FormularioDto['etapas'][number] =
 });
 
 const inscricao: FormularioDto = {
-  finalidade: 'INSCRICAO',
+  finalidade: { codigo: FinalidadeFormularioCodigo.INSCRICAO, rotulo: 'Inscrição' },
   faseId: 'F1',
   titulo: 'Inscrição',
   modeloOrigem: null,
@@ -197,7 +198,11 @@ describe('planoDeGravacao', () => {
               nome: 'Termo',
               texto: 'Texto',
               baseLegal: 'LGPD',
-              formaAceite: 'CHECKBOX',
+              formaAceite: {
+                codigo:
+                  'REGISTRO_SEM_ENDERECO_IP' as FormularioDto['termos'][number]['termo']['conteudo']['formaAceite']['codigo'],
+                rotulo: 'Registro sem endereço IP',
+              },
               hashVersao: 'h',
             },
           },

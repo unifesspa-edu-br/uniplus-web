@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 import { type EtapaPontuada, type RecursoDaEtapa } from '../../processo-seletivo.models';
 import {
   fracaoDoPercentual,
@@ -50,7 +50,7 @@ describe('problemas das etapas', () => {
   it('etapas que não compõem a nota final são recusadas com a explicação da média', () => {
     const soEliminatoria = etapa({
       nome: 'Títulos',
-      carater: CaraterEtapa.eliminatoria,
+      carater: CaraterEtapaCodigo.eliminatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '',
     });
@@ -63,7 +63,7 @@ describe('problemas das etapas', () => {
   it('caráter que o tipo de etapa não admite é recusado antes de gravar', () => {
     const classificatoria = etapa({
       nome: 'Análise documental',
-      carater: CaraterEtapa.classificatoria,
+      carater: CaraterEtapaCodigo.classificatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '1',
     });
@@ -88,7 +88,7 @@ describe('problemas das etapas', () => {
   it('tipo que a tela não conhece não gera recusa de caráter', () => {
     const classificatoria = etapa({
       nome: 'Prova',
-      carater: CaraterEtapa.classificatoria,
+      carater: CaraterEtapaCodigo.classificatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '1',
     });
@@ -119,7 +119,7 @@ describe('problemas das etapas', () => {
   it('número malformado é recusado em vez de limpar o campo em silêncio', () => {
     const notaTorta = etapa({
       nome: 'Prova',
-      carater: CaraterEtapa.classificatoria,
+      carater: CaraterEtapaCodigo.classificatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '1',
       notaMinima: '7,5,',
@@ -187,7 +187,7 @@ describe('problemas das etapas', () => {
   it('campo numérico vazio continua sendo não declarado, e não erro', () => {
     const semNota = etapa({
       nome: 'Prova',
-      carater: CaraterEtapa.classificatoria,
+      carater: CaraterEtapaCodigo.classificatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '1',
       notaMinima: '',
@@ -199,14 +199,14 @@ describe('problemas das etapas', () => {
   it('peso zero declarado é recusado mesmo com outra etapa compondo a nota', () => {
     const compoe = etapa({
       nome: 'Prova',
-      carater: CaraterEtapa.classificatoria,
+      carater: CaraterEtapaCodigo.classificatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '1',
       ordem: 1,
     });
     const zerada = etapa({
       nome: 'Redação',
-      carater: CaraterEtapa.classificatoria,
+      carater: CaraterEtapaCodigo.classificatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '0',
       ordem: 2,
@@ -220,14 +220,14 @@ describe('problemas das etapas', () => {
   it('etapa sem peso declarado continua válida ao lado de outra que compõe', () => {
     const compoe = etapa({
       nome: 'Prova',
-      carater: CaraterEtapa.classificatoria,
+      carater: CaraterEtapaCodigo.classificatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '1',
       ordem: 1,
     });
     const soEliminatoria = etapa({
       nome: 'Títulos',
-      carater: CaraterEtapa.eliminatoria,
+      carater: CaraterEtapaCodigo.eliminatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '',
       ordem: 2,
@@ -250,7 +250,7 @@ describe('problemas das etapas', () => {
     ];
     const humanaComItens = etapa({
       nome: 'Projeto',
-      carater: CaraterEtapa.classificatoria,
+      carater: CaraterEtapaCodigo.classificatoria,
       tipoEtapaOrigemId: 'tipo-1',
       notaMaxima: '10',
       formaDeAvaliacao: 'HUMANA',
@@ -339,11 +339,11 @@ describe('etapa de nota do ENEM', () => {
   }
 
   it('classificatória com peso não tem pendência', () => {
-    expect(problemasDaEnem({ carater: CaraterEtapa.classificatoria, peso: '2' })).toEqual([]);
+    expect(problemasDaEnem({ carater: CaraterEtapaCodigo.classificatoria, peso: '2' })).toEqual([]);
   });
 
   it('puramente eliminatória é recusada: a etapa sempre compõe a média', () => {
-    expect(problemasDaEnem({ carater: CaraterEtapa.eliminatoria, peso: '' })).toHaveLength(1);
+    expect(problemasDaEnem({ carater: CaraterEtapaCodigo.eliminatoria, peso: '' })).toHaveLength(1);
   });
 
   it('com publicação, janela própria ou recurso contado de publicação é recusada', () => {

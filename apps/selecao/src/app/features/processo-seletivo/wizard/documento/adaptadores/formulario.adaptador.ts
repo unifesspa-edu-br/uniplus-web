@@ -38,7 +38,7 @@ export interface ValoresDoPasso {
 }
 
 function referenciaDe(
-  referencia: NonNullable<DocumentoDaConfiguracaoColeta['referenciaTemporalFatos']> | undefined,
+  referencia: NonNullable<DocumentoDaConfiguracaoColeta['referenciaTemporalDosDados']> | undefined,
 ): ReferenciaTemporalDoFormulario | null {
   if (referencia === undefined) return null;
   return {
@@ -66,7 +66,7 @@ export function valoresDoFormulario(
   if (formulario === undefined) return undefined;
   return {
     formulario: cabecalhoDe(formulario),
-    referenciaTemporal: referenciaDe(documento.coleta?.referenciaTemporalFatos),
+    referenciaTemporal: referenciaDe(documento.coleta?.referenciaTemporalDosDados),
   };
 }
 
@@ -108,7 +108,7 @@ export function edicaoDoConteudo(
 
 const CAMPOS_DO_CONTEUDO: readonly (keyof DocumentoDaConfiguracaoFormulario)[] = [
   'titulo',
-  'etapas',
+  'paginas',
   'itens',
   'grupos',
   'termos',

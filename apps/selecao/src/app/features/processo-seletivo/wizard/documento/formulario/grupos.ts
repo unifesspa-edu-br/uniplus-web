@@ -11,7 +11,7 @@ const CAMPOS: readonly (keyof Grupo)[] = [
   'codigo',
   'ordem',
   'rotulo',
-  'etapaCodigo',
+  'paginaCodigo',
   'incluiCandidato',
   'minimo',
   'maximo',
@@ -24,7 +24,7 @@ function apresentacaoDoGrupo(grupo: GrupoDoFormulario) {
     codigo: grupo.codigo,
     ordem: grupo.ordem,
     rotulo: grupo.rotulo,
-    etapaCodigo: grupo.etapaCodigo ?? undefined,
+    paginaCodigo: grupo.etapaCodigo ?? undefined,
     incluiCandidato: grupo.ocorrencias.incluiCandidato,
   };
 }
@@ -54,7 +54,7 @@ function subitensDoGrupo(
   caminho: Caminho,
 ) {
   return grupo.subitens.map((item) => {
-    const anterior = original?.subitens.find((atual) => atual.fatoCodigo === item.fatoCodigo);
+    const anterior = original?.subitens.find((atual) => atual.codigoDoDado === item.fatoCodigo);
     return gravarItem(item, anterior, contexto, [...caminho, 'subitens', item.fatoCodigo]);
   });
 }

@@ -9,10 +9,10 @@ function etapa(id: string, notaDeOrigemNoEnem: boolean) {
 function configuracao(etapas: ReturnType<typeof etapa>[], edicoes: readonly string[]): unknown {
   return {
     etapas,
-    fatosColetados: [
-      { fatoCodigo: 'OUTRO_FATO', valoresSelecionaveis: [{ valorCodigo: 'x', ordem: 1 }] },
+    dadosDosFormularios: [
+      { codigoDoDado: 'OUTRO_FATO', valoresSelecionaveis: [{ valorCodigo: 'x', ordem: 1 }] },
       {
-        fatoCodigo: 'EDICAO_ENEM',
+        codigoDoDado: 'EDICAO_ENEM',
         valoresSelecionaveis: edicoes.map((valorCodigo, i) => ({
           valorCodigo,
           ordem: edicoes.length - i,

@@ -1,6 +1,6 @@
 import { computed, signal } from '@angular/core';
 import type { ProblemDetails } from '@uniplus/shared-core/http';
-import type { FinalidadeDoDocumento } from '@uniplus/shared-data/selecao';
+import type { FinalidadeDoDocumentoCodigo } from '@uniplus/shared-data/selecao';
 import type { ArquivoEmEnvio } from '@uniplus/shared-ui/components';
 
 import type { EnvioDoAnexo } from '../wizard/shared/anexos-do-edital/envio-do-anexo.service';
@@ -17,7 +17,7 @@ export interface ArquivoDoAto extends EstadoDoEnvio {
 }
 
 export interface DependenciasDosEnvios {
-  readonly finalidade: FinalidadeDoDocumento;
+  readonly finalidade: FinalidadeDoDocumentoCodigo;
   /** O processo em que os arquivos são enviados; `null` enquanto não houver um. */
   readonly processoId: () => string | null;
   readonly abrirEnvio: () => EnvioDoAnexo;

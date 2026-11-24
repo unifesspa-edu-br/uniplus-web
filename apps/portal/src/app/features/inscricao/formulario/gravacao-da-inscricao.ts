@@ -11,7 +11,7 @@ import {
   type ReciboDaInscricaoDto,
   type InscricaoDto,
   type InscricaoRequest,
-  SituacaoInscricao,
+  SituacaoInscricaoCodigo,
 } from '@uniplus/shared-data/selecao';
 import type { ErroDoServidor, FormularioDoCandidatoComponent } from '@uniplus/shared-ui/components';
 
@@ -105,7 +105,8 @@ export class GravacaoDaInscricao {
   /** A inscrição enviada só muda por novo envio, que emite novo comprovante: não há rascunho dela. */
   readonly enviada = computed(
     () =>
-      this.recibo() !== null || this.leitura.inscricao()?.situacao === SituacaoInscricao.submetida,
+      this.recibo() !== null ||
+      this.leitura.inscricao()?.situacao.codigo === SituacaoInscricaoCodigo.submetida,
   );
 
   salvar(formulario: FormularioParaGravar): void {
