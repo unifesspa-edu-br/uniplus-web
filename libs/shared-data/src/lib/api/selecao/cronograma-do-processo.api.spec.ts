@@ -1,3 +1,4 @@
+import { PapelDaPublicacaoPrevistaCodigo } from './schema';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -5,7 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiResultInterceptor, isApiOk } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
-import { CaraterEtapa, EfeitoSuspensivoCodigo, UnidadePrazoCodigo } from './index';
+import { CaraterEtapaCodigo, EfeitoSuspensivoCodigo, UnidadePrazoCodigo } from './index';
 import { EtapaProcessoInput, FaseCronogramaInput } from './processos-seletivos.contrato';
 import { SELECAO_BASE_PATH } from './tokens';
 import { CronogramaDoProcessoApi } from './cronograma-do-processo.api';
@@ -41,7 +42,7 @@ describe('CronogramaDoProcessoApi', () => {
       {
         id: '01960000-0000-7000-0000-0000000005e1',
         nome: 'Prova Objetiva',
-        carater: CaraterEtapa.classificatoria,
+        carater: CaraterEtapaCodigo.classificatoria,
         tipoEtapaOrigemId: '01960000-0000-7000-0000-0000000005f1',
         peso: 2,
         notaMinima: null,
@@ -53,7 +54,7 @@ describe('CronogramaDoProcessoApi', () => {
       },
       {
         nome: 'Redação',
-        carater: CaraterEtapa.ambas,
+        carater: CaraterEtapaCodigo.ambas,
         tipoEtapaOrigemId: '01960000-0000-7000-0000-0000000005f2',
         peso: 1,
         notaMinima: 5,
@@ -138,7 +139,9 @@ describe('CronogramaDoProcessoApi', () => {
         faseCanonicaId: '01960000-0000-7000-0000-0000000006a2',
         inicio: '2026-03-25T08:00:00-03:00',
         fim: '2026-03-25T23:59:59-03:00',
-        produtos: [{ atoCodigo: 'RESULTADO_HOMOLOGACAO', papel: 'PRELIMINAR' }],
+        produtos: [
+          { atoCodigo: 'RESULTADO_HOMOLOGACAO', papel: PapelDaPublicacaoPrevistaCodigo.PRELIMINAR },
+        ],
         emiteParecerIndividual: false,
         bancasRequeridas: [
           {

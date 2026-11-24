@@ -17,9 +17,7 @@ describe('ModalidadeFormPage', () => {
 
   describe('edição', () => {
     it('mantém o que foi digitado ao trocar a natureza ou a composição', async () => {
-      await pagina.editar(
-        modalidade({ ...BONUS, regraRemanejamento: null, remanejamentoDestino: null }),
-      );
+      await pagina.editar(modalidade({ ...BONUS, remanejamento: null }));
       pagina.edicao.form.controls.descricao.setValue('Descrição digitada');
 
       pagina.setControl('composicaoVagas', 'RETIRADA_DE_OUTRA_MODALIDADE');

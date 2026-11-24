@@ -1,3 +1,6 @@
+import { VocabulariosDeConfiguracaoApi } from '@uniplus/shared-data/configuracao';
+import { of } from 'rxjs';
+import { ORIGENS_DE_DATA } from './origens-de-data.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
@@ -29,7 +32,7 @@ export const faseAvaliacaoSeed: FaseCanonicaDto = {
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
-  origemData: 'NO_EDITAL',
+  origemData: ORIGENS_DE_DATA.NO_EDITAL,
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
@@ -50,10 +53,16 @@ export interface CenaDaPagina {
   readonly appRef: ApplicationRef;
 }
 
+const provedorDasOrigensDeData = {
+  provide: VocabulariosDeConfiguracaoApi,
+  useValue: { listar: () => of({ ok: true, data: Object.values(ORIGENS_DE_DATA) }) },
+};
+
 function configurarModuloDaPagina(): void {
   TestBed.configureTestingModule({
     imports: [FasesCanonicasPage],
     providers: [
+      provedorDasOrigensDeData,
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),
       provideRouter([]),

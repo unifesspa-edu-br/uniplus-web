@@ -15,10 +15,10 @@ import type {
 export const fato = (codigo: string): FatoDoFormulario => ({
   codigo,
   nome: codigo,
-  dominio: 'BOOLEANO',
+  dominio: { codigo: 'SIM_OU_NAO', rotulo: 'SIM_OU_NAO' },
   binding: `CAMPO_FORMULARIO:${codigo}`,
   operadoresAdmitidos: SO_IGUALDADE,
-  cardinalidade: 'ESCALAR',
+  cardinalidade: { codigo: 'VALOR_UNICO', rotulo: 'VALOR_UNICO' },
   fonteValores: null,
   escopo: 'CANDIDATO',
   ativo: true,
@@ -40,7 +40,7 @@ const apresentacaoDe = (
   extra?: Partial<ApresentacaoDoCampo>,
 ): ApresentacaoDoCampo => ({
   rotulo: `Campo ${fatoCodigo}`,
-  tipoRenderizacao: 'BOOLEANO',
+  tipoRenderizacao: 'SIM_OU_NAO',
   pedirConfirmacao: false,
   ...extra,
 });

@@ -60,7 +60,7 @@ describe('recusa que aponta uma restrição', () => {
   const enviado = conteudo({
     itens: [
       item('ESPERA', 0, 'S1', {
-        apresentacao: { tipoRenderizacao: 'SELECAO_UNICA' },
+        apresentacao: { tipoRenderizacao: 'ESCOLHA_UNICA' },
         regras: { restricoes: [opcoes, dasRespostas] },
       }),
     ],

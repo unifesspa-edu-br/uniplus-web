@@ -35,13 +35,13 @@ describe('MotivosDeDecisaoPage — leitura', () => {
 
     const linha = p.texto('tbody tr');
     expect(linha).toContain('RENDA_ACIMA_DO_LIMITE');
-    expect(linha).toContain('Desfavorável ao candidato');
+    expect(linha).toContain(isencao.sentido.rotulo);
     expect(linha).toContain('BAIXA_RENDA');
     expect(linha).toContain('Ativo');
     expect(p.texto('thead')).toContain('Fundamento');
   });
 
-  it('trocar o tipo lê o novo recorte e some a coluna de fundamento quando o tipo não a tem', async () => {
+  it('trocar o tipo lê o nova lista de motivos e some a coluna de fundamento quando o tipo não a tem', async () => {
     p = await montarPagina([isencao]);
     const seletor = p.elemento<HTMLSelectElement>('[data-testid="motivos-tipo"]');
 

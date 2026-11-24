@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { FORMAS_ACEITE } from '@uniplus/shared-data/configuracao';
+import { FormaAceiteCodigo } from '@uniplus/shared-data/configuracao';
 import {
   EmptyStateComponent,
   FilterBarComponent,
@@ -12,16 +12,11 @@ import {
 } from '@uniplus/shared-ui/components';
 import { TermoConsentimentoResumoDto } from '@uniplus/shared-data/configuracao';
 
-/** Rótulo legível de um token de domínio fechado (fallback: o próprio token). */
-function rotulo(roster: readonly { value: string; label: string }[], token: string): string {
-  return roster.find((o) => o.value === token)?.label ?? token;
-}
-
 /** Variante visual da tag de Forma de aceite. */
-const FORMA_ACEITE_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
-  A_DEFINIR: 'neutral',
-  REGISTRO_DIGITAL_SEM_LOG_IP: 'info',
-  REGISTRO_DIGITAL_COM_LOG_IP: 'success',
+const FORMA_ACEITE_VARIANTE: Readonly<Record<FormaAceiteCodigo, UiTagVariant>> = {
+  [FormaAceiteCodigo.A_DEFINIR]: 'neutral',
+  [FormaAceiteCodigo.REGISTRO_SEM_ENDERECO_IP]: 'info',
+  [FormaAceiteCodigo.REGISTRO_COM_ENDERECO_IP]: 'success',
 };
 
 @Component({
@@ -51,10 +46,7 @@ export class TermosConsentimentoListaComponent {
   readonly limpar = output<void>();
   readonly anterior = output<void>();
   readonly proximo = output<void>();
-  protected formaAceiteLabel(token: string): string {
-    return rotulo(FORMAS_ACEITE, token);
-  }
-  protected formaAceiteVariante(token: string): UiTagVariant {
-    return FORMA_ACEITE_VARIANTE[token] ?? 'neutral';
+  protected formaAceiteVariante(token: FormaAceiteCodigo): UiTagVariant {
+    return FORMA_ACEITE_VARIANTE[token];
   }
 }

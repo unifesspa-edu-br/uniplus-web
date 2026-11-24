@@ -30,11 +30,11 @@ const selecaoExibida: Exibicao = (campo, valor) =>
   (Array.isArray(valor) ? valor : [valor]).map((c) => opcao(campo, String(c))).join(', ');
 
 const EXIBICAO_POR_TIPO: Readonly<Record<string, Exibicao>> = {
-  BOOLEANO: (_, valor) => (valor === true ? 'Sim' : 'Não'),
+  SIM_OU_NAO: (_, valor) => (valor === true ? 'Sim' : 'Não'),
   DATA: (_, valor) => formatarDataBr(String(valor)) || String(valor),
   NUMERO: (_, valor) => Number(valor).toLocaleString('pt-BR', { maximumFractionDigits: 20 }),
-  SELECAO_UNICA: selecaoExibida,
-  SELECAO_MULTIPLA: selecaoExibida,
+  ESCOLHA_UNICA: selecaoExibida,
+  ESCOLHA_MULTIPLA: selecaoExibida,
   MUNICIPIO: (_, valor) => municipioExibido(valor),
   ENDERECO: (_, valor) => endereco(valor as EnderecoRespondido),
 };

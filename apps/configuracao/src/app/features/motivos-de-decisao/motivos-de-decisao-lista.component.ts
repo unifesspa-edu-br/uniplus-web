@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
-import { MotivoDeDecisaoDto, rotuloDoSentido } from '@uniplus/shared-data/selecao';
+import { MotivoDeDecisaoDto } from '@uniplus/shared-data/selecao';
 import {
   EmptyStateComponent,
   FilterBarComponent,
@@ -78,7 +78,7 @@ export class MotivosDeDecisaoListaComponent {
   }
 
   protected sentidoDe(motivo: MotivoDeDecisaoDto): string {
-    return rotuloDoSentido(motivo.sentido);
+    return motivo.sentido.rotulo;
   }
 
   protected nomeDaAcaoDeSituacao(motivo: MotivoDeDecisaoDto): string {

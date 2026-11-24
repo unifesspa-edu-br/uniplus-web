@@ -13,7 +13,7 @@ import {
 
 export interface MotivoForm {
   codigo: FormControl<string>;
-  sentido: FormControl<string>;
+  sentido: FormControl<CriarMotivoDeDecisaoCommand['sentido']>;
   subclassificacao: FormControl<string>;
   descricao: FormControl<string>;
 }
@@ -22,7 +22,7 @@ export type ValoresDoMotivo = ReturnType<FormGroup<MotivoForm>['getRawValue']>;
 
 export const MOTIVO_EM_BRANCO: ValoresDoMotivo = {
   codigo: '',
-  sentido: '',
+  sentido: null,
   subclassificacao: '',
   descricao: '',
 };
@@ -59,7 +59,7 @@ function controleDeTexto(validators: ValidatorFn[] = []): FormControl<string> {
 export function criarFormularioDeMotivo(): FormGroup<MotivoForm> {
   return new FormGroup<MotivoForm>({
     codigo: controleDeTexto(VALIDADORES_DO_CODIGO),
-    sentido: controleDeTexto([Validators.required]),
+    sentido: new FormControl<CriarMotivoDeDecisaoCommand['sentido']>(null, Validators.required),
     subclassificacao: controleDeTexto(),
     descricao: controleDeTexto(VALIDADORES_DA_DESCRICAO),
   });
@@ -87,7 +87,7 @@ export function ajustarAoModo(
   form.updateValueAndValidity({ emitEvent: false });
 }
 
-function habilitar(controle: FormControl<string>, habilitado: boolean): void {
+function habilitar(controle: AbstractControl, habilitado: boolean): void {
   if (habilitado) {
     controle.enable({ emitEvent: false });
   } else {
@@ -98,7 +98,7 @@ function habilitar(controle: FormControl<string>, habilitado: boolean): void {
 export function valoresDoMotivo(motivo: MotivoDeDecisaoDto): ValoresDoMotivo {
   return {
     codigo: motivo.codigo,
-    sentido: motivo.sentido,
+    sentido: motivo.sentido.codigo,
     subclassificacao: motivo.subclassificacao ?? '',
     descricao: motivo.descricao,
   };
@@ -117,7 +117,7 @@ export function comandoDeCriacao(
     codigo: nullIfBlank(valores.codigo),
     descricao: nullIfBlank(valores.descricao),
     subclassificacao: nullIfBlank(valores.subclassificacao),
-    sentido: nullIfBlank(valores.sentido),
+    sentido: valores.sentido,
   };
 }
 

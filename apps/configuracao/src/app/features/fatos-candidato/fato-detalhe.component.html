@@ -41,20 +41,20 @@
           </div>
           <div>
             <dt>Origem</dt>
-            <dd>{{ rotulo(origens, f.definicao.resolucao.origem) }}</dd>
+            <dd>{{ f.definicao.resolucao.origem.rotulo }}</dd>
           </div>
           <div>
             <dt>Tipo de dado</dt>
-            <dd>{{ rotulo(dominios, f.definicao.dominio) }}</dd>
+            <dd>{{ f.definicao.dominio.rotulo }}</dd>
           </div>
           <div>
             <dt>Cardinalidade</dt>
-            <dd>{{ rotulo(cardinalidades, f.definicao.cardinalidade) }}</dd>
+            <dd>{{ f.definicao.cardinalidade.rotulo }}</dd>
           </div>
           @if (f.definicao.valores.fonte) {
             <div>
               <dt>Fonte dos valores</dt>
-              <dd>{{ rotulo(fontes, f.definicao.valores.fonte) }}</dd>
+              <dd>{{ f.definicao.valores.fonte.rotulo }}</dd>
             </div>
           }
           @if (f.definicao.formato) {

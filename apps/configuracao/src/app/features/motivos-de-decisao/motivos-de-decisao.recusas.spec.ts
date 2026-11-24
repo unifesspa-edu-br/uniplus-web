@@ -1,3 +1,4 @@
+import { SentidoDoMotivoCodigo } from '@uniplus/shared-data/selecao';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   ESCRITA,
@@ -12,7 +13,7 @@ import {
 const ATIVACAO = `${ESCRITA}/${isencao.id}/ativacao`;
 const valido = {
   codigo: 'RENDA_ACIMA_DO_LIMITE',
-  sentido: 'DESFAVORAVEL',
+  sentido: SentidoDoMotivoCodigo.DESFAVORAVEL,
   subclassificacao: 'BAIXA_RENDA',
   descricao: 'A renda supera o limite.',
 };

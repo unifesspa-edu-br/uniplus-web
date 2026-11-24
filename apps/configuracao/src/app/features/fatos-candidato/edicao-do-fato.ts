@@ -6,6 +6,7 @@ import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import {
   FatoCandidatoDto,
   FatosCandidatoApi,
+  OrigemFatoCodigo,
   type CorrecaoDeValorDominioInput,
   type DefinicaoDoFatoInput,
 } from '@uniplus/shared-data/configuracao';
@@ -168,7 +169,7 @@ export class EdicaoDoFato extends EscritorDeFato {
   private aoSalvarDefinicao(corpo: DefinicaoDoFatoInput): void {
     this.chaves.rotacionar('definicao');
     // O formato de `contribui` depende do tipo de dado (nulo no booleano, um valor no categórico).
-    if ('dominio' in corpo && corpo.dominio !== this.leitura.fato()?.definicao.dominio) {
+    if ('dominio' in corpo && corpo.dominio !== this.leitura.fato()?.definicao.dominio.codigo) {
       this.aRecopiar.regras = true;
     }
     this.recopiarDefinicao();
@@ -304,7 +305,7 @@ export class EdicaoDoFato extends EscritorDeFato {
   }
 
   acrescentarRegra(): void {
-    this.regras.acrescentar(this.leitura.fato()?.definicao.dominio ?? '');
+    this.regras.acrescentar(this.leitura.fato()?.definicao.dominio.codigo ?? '');
   }
 
   salvarRegras(): void {
@@ -352,7 +353,7 @@ export class EdicaoDoFato extends EscritorDeFato {
   /** Descrição só com espaços não é descrição: no fato declarado vale como vazia. */
   private exigirDescricaoDoDeclarado(controle: FormControl<string>): void {
     if (
-      this.leitura.fato()?.definicao.resolucao.origem === 'DECLARADO' &&
+      this.leitura.fato()?.definicao.resolucao.origem.codigo === OrigemFatoCodigo.DECLARADO &&
       obrigatorioNaoEmBranco(controle) !== null
     ) {
       controle.setErrors({ required: true });

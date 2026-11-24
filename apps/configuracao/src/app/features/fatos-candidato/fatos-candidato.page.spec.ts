@@ -43,12 +43,12 @@ describe('FatosCandidatoPage — leitura', () => {
     it('CA-01: a situação e a origem escolhidas chegam à consulta da API', async () => {
       p = await montarPagina([]);
 
-      p.store.filtroOrigem.set('DERIVADO');
+      p.store.filtroOrigem.set('CALCULADO');
       p.store.filtroSituacao.set('');
       await p.propagar();
 
       const filtrada = p.http.expectOne((r) => r.url === LISTA && r.method === 'GET');
-      expect(filtrada.request.params.get('origem')).toBe('DERIVADO');
+      expect(filtrada.request.params.get('origem')).toBe('CALCULADO');
       expect(filtrada.request.params.has('ativo')).toBe(false);
       filtrada.flush([]);
       await p.propagar();
@@ -58,14 +58,14 @@ describe('FatosCandidatoPage — leitura', () => {
       p = await montarPagina([]);
 
       const chip = [...p.raiz().querySelectorAll<HTMLElement>('ui-filter-chips button')].find(
-        (b) => b.textContent?.trim() === 'Derivado',
+        (b) => b.textContent?.trim() === 'Calculado',
       );
       expect(chip).toBeDefined();
       chip?.click();
       await p.propagar();
 
-      expect(p.store.filtroOrigem()).toBe('DERIVADO');
-      p.http.expectOne((r) => r.url === LISTA && r.params.get('origem') === 'DERIVADO').flush([]);
+      expect(p.store.filtroOrigem()).toBe('CALCULADO');
+      p.http.expectOne((r) => r.url === LISTA && r.params.get('origem') === 'CALCULADO').flush([]);
       await p.propagar();
       expect(p.texto('ui-filter-bar')).toContain('Origem');
     });
@@ -106,7 +106,7 @@ describe('FatosCandidatoPage — leitura', () => {
       await p.propagar();
       expect(p.store.proximo()).not.toBeNull();
 
-      p.store.filtroOrigem.set('DERIVADO');
+      p.store.filtroOrigem.set('CALCULADO');
       await p.propagar();
       p.http
         .expectOne((r) => r.url === LISTA && r.method === 'GET')
@@ -279,8 +279,8 @@ describe('FatosCandidatoPage — leitura', () => {
       const linha = p.texto('tbody tr');
       for (const esperado of [
         'COR_RACA',
-        'Declarado pelo candidato',
-        'Lista de valores',
+        corRaca.definicao.resolucao.origem.rotulo,
+        corRaca.definicao.dominio.rotulo,
         'Ativo',
         'Pessoal sensível',
         'Ajuste recomendado',

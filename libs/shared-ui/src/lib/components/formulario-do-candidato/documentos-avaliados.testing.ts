@@ -8,7 +8,9 @@ const DOCUMENTO_PADRAO = {
   finalidade: 'INSCRICAO',
   formatos: { qualquer: true, lista: null },
   modelo: null,
-  situacao: 'PENDENTE',
+  situacao: { rotulo: 'Exigido pelas suas respostas', variante: 'warning' },
+  exigido: true,
+  atendido: false,
   grupoCodigo: null,
   ocorrenciaId: null,
   grupos: [],
@@ -21,13 +23,33 @@ const DOCUMENTO_PADRAO = {
 
 export const documento = (
   nome: string,
-  outros: Partial<DocumentoAvaliado> = {},
+  outros: Omit<Partial<DocumentoAvaliado>, 'situacao'> & { situacao?: string } = {},
 ): DocumentoAvaliado => ({
   exigenciaId: `exigencia-${nome}`,
   nome,
   ...DOCUMENTO_PADRAO,
   ...outros,
+  ...situacaoDeTeste(outros.situacao),
 });
+const ROTULOS: Record<string, string> = {
+  PENDENTE: 'Exigido pelas suas respostas',
+  SATISFEITA: 'Exigido pelas suas respostas',
+  PODE_SER_EXIGIDO: 'Pode ser exigido, conforme as respostas',
+  DEPENDE_DE_FASE_POSTERIOR: 'Pode ser exigido, conforme uma fase posterior do processo',
+};
+
+function situacaoDeTeste(
+  situacao = 'PENDENTE',
+): Pick<DocumentoAvaliado, 'situacao' | 'exigido' | 'atendido'> {
+  return {
+    situacao: {
+      rotulo: ROTULOS[situacao] ?? situacao,
+      variante: situacao === 'SATISFEITA' ? 'success' : 'warning',
+    },
+    exigido: situacao === 'PENDENTE' || situacao === 'SATISFEITA',
+    atendido: situacao === 'SATISFEITA',
+  };
+}
 export const ou = (
   grupoId: string,
   minimo: number | null = 1,

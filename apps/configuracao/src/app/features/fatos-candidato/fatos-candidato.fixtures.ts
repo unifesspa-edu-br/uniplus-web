@@ -1,5 +1,9 @@
 import {
   OperadorCodigo,
+  TipoDoDadoCodigo,
+  QuantidadeDeValoresCodigo,
+  OrigemFatoCodigo,
+  FonteValoresFatoCodigo,
   type FatoCandidatoDto,
   type FatoCandidatoView,
   type FatoDeManutencaoDto,
@@ -35,6 +39,23 @@ export const noCatalogo = (fato: FatoCandidatoView): FatoDoCatalogoDto => ({
 });
 
 type Definicao = FatoCandidatoDto['definicao'];
+
+export const tipoSimOuNao = { codigo: TipoDoDadoCodigo.SIM_OU_NAO, rotulo: 'Sim ou não' };
+export const tipoOpcao = { codigo: TipoDoDadoCodigo.OPCAO, rotulo: 'Lista de valores' };
+export const tipoNumerico = { codigo: TipoDoDadoCodigo.NUMERICO, rotulo: 'Número' };
+export const tipoTexto = { codigo: TipoDoDadoCodigo.TEXTO, rotulo: 'Texto' };
+export const valorUnico = { codigo: QuantidadeDeValoresCodigo.VALOR_UNICO, rotulo: 'Um valor' };
+export const variosValores = {
+  codigo: QuantidadeDeValoresCodigo.VARIOS_VALORES,
+  rotulo: 'Vários valores',
+};
+export const origemDeclarada = { codigo: OrigemFatoCodigo.DECLARADO, rotulo: 'Declarado' };
+export const origemCalculada = { codigo: OrigemFatoCodigo.CALCULADO, rotulo: 'Calculado' };
+export const fonteCatalogo = { codigo: FonteValoresFatoCodigo.CATALOGO, rotulo: 'Catálogo' };
+export const fonteDoProcesso = {
+  codigo: FonteValoresFatoCodigo.OPCOES_DO_PROCESSO,
+  rotulo: 'Processo',
+};
 
 export const comDefinicao = (
   fato: FatoCandidatoDto,
@@ -86,13 +107,13 @@ export const trabalha: FatoCandidatoDto = {
     componenteExibicao: null,
   },
   definicao: {
-    dominio: 'BOOLEANO',
-    cardinalidade: 'ESCALAR',
+    dominio: tipoSimOuNao,
+    cardinalidade: valorUnico,
     escopo: 'CANDIDATO',
     formato: null,
     valores: { fonte: null, declarados: [] },
     resolucao: {
-      origem: 'DECLARADO',
+      origem: origemDeclarada,
       pontoResolucao: 'INSCRICAO',
       binding: 'CAMPO_INSCRICAO:TRABALHA',
     },
@@ -120,9 +141,9 @@ export const corRaca: FatoCandidatoDto = {
   },
   definicao: {
     ...trabalha.definicao,
-    dominio: 'CATEGORICO',
+    dominio: tipoOpcao,
     valores: {
-      fonte: 'GLOBAL',
+      fonte: fonteCatalogo,
       declarados: [
         { codigo: 'PRETA', descricao: 'Preta', ordem: 0, ativo: true, orientacao: null },
       ],
@@ -145,7 +166,7 @@ export const comValores = (fato: FatoCandidatoDto = corRaca): FatoCandidatoDto =
   ]);
 
 export const derivado: FatoCandidatoDto = {
-  ...comResolucao(trabalha, { origem: 'DERIVADO', binding: 'REGRA_DERIVACAO:PERFIL' }),
+  ...comResolucao(trabalha, { origem: origemCalculada, binding: 'REGRA_DERIVACAO:PERFIL' }),
   id: '01960000-0000-7000-0000-0000000000d1',
   codigo: 'PERFIL',
   descritivo: { ...trabalha.descritivo, nome: 'Perfil' },
@@ -163,9 +184,9 @@ export const quilombola: FatoCandidatoView = {
   codigo: 'QUILOMBOLA',
   nome: 'Quilombola',
   descricao: 'Se o candidato é quilombola.',
-  dominio: 'BOOLEANO',
-  origem: 'DECLARADO',
-  cardinalidade: 'ESCALAR',
+  dominio: tipoSimOuNao,
+  origem: origemDeclarada,
+  cardinalidade: valorUnico,
   valoresDominio: null,
   pontoResolucao: 'INSCRICAO',
   binding: 'CAMPO_INSCRICAO:QUILOMBOLA',

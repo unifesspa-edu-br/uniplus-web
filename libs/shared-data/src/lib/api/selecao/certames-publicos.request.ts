@@ -6,10 +6,10 @@ import {
   withVendorMime,
 } from '@uniplus/shared-core/http';
 import type { components } from './schema';
-import { SituacaoDoCertame } from './schema';
+import { SituacaoDoCertameCodigo } from './schema';
 
 export type CertameNaVitrineDto = components['schemas']['CertameNaVitrineDto'];
-export { SituacaoDoCertame };
+export { SituacaoDoCertameCodigo };
 export type TipoCatalogadoCertameDto = components['schemas']['TipoCatalogadoCertameDto'];
 export type CertamePublicadoDto = components['schemas']['CertamePublicadoDto'];
 export type ExigenciaDocumentalCertameDto = components['schemas']['ExigenciaDocumentalCertameDto'];
@@ -58,7 +58,7 @@ export function certamesPublicosRequest(
 }
 
 /**
- * `cursor` e `limit` são exclusivos: o cursor opaco já carrega a janela e o recorte da consulta
+ * `cursor` e `limit` são exclusivos: o cursor opaco já carrega a janela e o filtros da consulta
  * que o emitiu, e repetir `limit` ao navegar renderia 422 (uniplus.pagination.limit_invalido).
  */
 function certamesPublicosParams(query: CertamesPublicosQuery): HttpParams {

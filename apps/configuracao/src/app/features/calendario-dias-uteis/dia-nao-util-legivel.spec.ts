@@ -19,8 +19,7 @@ const celula = (...ocorrencias: unknown[]): CelulaCalendarioMensal => ({
 
 describe('apresentação do dia não útil', () => {
   it('nomeia a abrangência e devolve o token desconhecido como veio', () => {
-    expect(abrangenciaLegivel('MUNICIPAL')).toBe('Municipal');
-    expect(abrangenciaLegivel('OUTRA')).toBe('OUTRA');
+    expect(abrangenciaLegivel(DIA_MUNICIPAL.abrangencia)).toBe(DIA_MUNICIPAL.abrangencia.rotulo);
   });
 
   it('mostra a UF por extenso e a sigla, ou o que veio quando não a conhece', () => {
@@ -38,10 +37,10 @@ describe('apresentação do dia não útil', () => {
 
   it('o nome acessível do dia traz a data, e as ocorrências quando há', () => {
     expect(rotuloDoDia(celula(DIA_MUNICIPAL))).toBe(
-      '5 de abril de 2026: Aniversário de Marabá (Municipal)',
+      `5 de abril de 2026: Aniversário de Marabá (${DIA_MUNICIPAL.abrangencia.rotulo})`,
     );
     expect(rotuloDoDia(celula(DIA_MUNICIPAL, DIA_ESTADUAL))).toBe(
-      '5 de abril de 2026: 2 ocorrências — Aniversário de Marabá (Municipal), Adesão do Grão-Pará à Independência (Estadual)',
+      `5 de abril de 2026: 2 ocorrências — Aniversário de Marabá (${DIA_MUNICIPAL.abrangencia.rotulo}), Adesão do Grão-Pará à Independência (${DIA_ESTADUAL.abrangencia.rotulo})`,
     );
     expect(rotuloDoDiaSemOcorrencia(celula())).toBe(
       '5 de abril de 2026: sem dia não útil cadastrado',
@@ -49,7 +48,9 @@ describe('apresentação do dia não útil', () => {
   });
 
   it('a prévia resume a ocorrência única ou conta as várias', () => {
-    expect(textoDaPrevia(celula(DIA_MUNICIPAL))).toBe('Aniversário de Marabá — Municipal');
+    expect(textoDaPrevia(celula(DIA_MUNICIPAL))).toBe(
+      `Aniversário de Marabá — ${DIA_MUNICIPAL.abrangencia.rotulo}`,
+    );
     expect(textoDaPrevia(celula(DIA_MUNICIPAL, DIA_ESTADUAL))).toBe('2 ocorrências nesta data');
   });
 });

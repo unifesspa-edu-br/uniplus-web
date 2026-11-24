@@ -1,3 +1,4 @@
+import { AbrangenciaCodigo } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import {
   comandoDeCriacaoDoCalendario,
@@ -6,7 +7,7 @@ import {
 } from './calendario-form';
 import { aplicarAbrangencia, criarGrupoDeDiaNaoUtil } from './dia-nao-util-form';
 
-function formularioComDias(...dias: Array<[string, string]>) {
+function formularioComDias(...dias: Array<[AbrangenciaCodigo, string]>) {
   const form = criarFormularioDeCalendario();
   form.controls.versaoDataset.setValue('2026.1');
   for (const [abrangencia, data] of dias) {
@@ -22,14 +23,20 @@ function formularioComDias(...dias: Array<[string, string]>) {
 
 describe('formulário de calendário', () => {
   it('permite a mesma data em abrangências diferentes', () => {
-    const form = formularioComDias(['NACIONAL', '2026-09-07'], ['INSTITUCIONAL', '2026-09-07']);
+    const form = formularioComDias(
+      [AbrangenciaCodigo.NACIONAL, '2026-09-07'],
+      [AbrangenciaCodigo.INSTITUCIONAL, '2026-09-07'],
+    );
 
     expect(form.controls.diasNaoUteis.errors).toBeNull();
     expect(form.valid).toBe(true);
   });
 
   it('recusa a mesma data na mesma abrangência e região, nas duas linhas, até uma ser corrigida', () => {
-    const form = formularioComDias(['NACIONAL', '2026-09-07'], ['NACIONAL', '2026-09-07']);
+    const form = formularioComDias(
+      [AbrangenciaCodigo.NACIONAL, '2026-09-07'],
+      [AbrangenciaCodigo.NACIONAL, '2026-09-07'],
+    );
     const dias = form.controls.diasNaoUteis;
 
     expect(dias.errors?.['dataDuplicada']).toBe(true);
@@ -46,14 +53,20 @@ describe('formulário de calendário', () => {
   });
 
   it('o mesmo dia estadual em UFs diferentes não se repete', () => {
-    const form = formularioComDias(['ESTADUAL', '2026-08-15'], ['ESTADUAL', '2026-08-15']);
+    const form = formularioComDias(
+      [AbrangenciaCodigo.ESTADUAL, '2026-08-15'],
+      [AbrangenciaCodigo.ESTADUAL, '2026-08-15'],
+    );
     form.controls.diasNaoUteis.at(1).controls.uf.setValue('SP');
 
     expect(form.controls.diasNaoUteis.errors).toBeNull();
   });
 
   it('o dia municipal só é comparável depois da escolha do município', () => {
-    const form = formularioComDias(['MUNICIPAL', '2026-04-05'], ['MUNICIPAL', '2026-04-05']);
+    const form = formularioComDias(
+      [AbrangenciaCodigo.MUNICIPAL, '2026-04-05'],
+      [AbrangenciaCodigo.MUNICIPAL, '2026-04-05'],
+    );
 
     expect(form.controls.diasNaoUteis.errors).toBeNull();
   });
@@ -73,7 +86,10 @@ describe('formulário de calendário', () => {
   });
 
   it('o comando leva a versão aparada e os dias na ordem da tela', () => {
-    const form = formularioComDias(['NACIONAL', '2026-09-07'], ['INSTITUCIONAL', '2026-10-01']);
+    const form = formularioComDias(
+      [AbrangenciaCodigo.NACIONAL, '2026-09-07'],
+      [AbrangenciaCodigo.INSTITUCIONAL, '2026-10-01'],
+    );
     form.controls.versaoDataset.setValue('  2026.1 ');
 
     const comando = comandoDeCriacaoDoCalendario(form);

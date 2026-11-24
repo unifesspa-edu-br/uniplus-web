@@ -1,12 +1,9 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import {
-  NaturezaLegalToken,
-  REGRAS_REMANEJAMENTO,
-  RegraRemanejamentoToken,
-} from '@uniplus/shared-data/configuracao';
+import { NaturezaLegalCodigo, RegraRemanejamentoCodigo } from '@uniplus/shared-data/configuracao';
 
 import { dicaDaRegra, regraDesabilitada } from './modalidade-form';
+import { VocabulariosDaModalidade } from './vocabularios-da-modalidade';
 import { ModalidadeSecao } from './modalidade-secao';
 import type { OpcaoDeReferencia } from './opcao-de-referencia';
 
@@ -19,19 +16,19 @@ import type { OpcaoDeReferencia } from './opcao-de-referencia';
   styleUrl: '../../shared/formulario/secao-do-formulario.css',
 })
 export class ModalidadeRemanejamentoComponent extends ModalidadeSecao {
-  readonly natureza = input.required<NaturezaLegalToken>();
+  readonly natureza = input.required<NaturezaLegalCodigo | ''>();
   readonly mostraDestino = input.required<boolean>();
   readonly mostraParFallback = input.required<boolean>();
   readonly opcoesReferencia = input.required<readonly OpcaoDeReferencia[]>();
   readonly regraMudou = output<void>();
 
-  protected readonly regras = REGRAS_REMANEJAMENTO;
+  protected readonly regras = inject(VocabulariosDaModalidade).regras;
 
   protected dica(): string {
     return dicaDaRegra(this.natureza());
   }
 
-  protected desabilitada(regra: RegraRemanejamentoToken): boolean {
+  protected desabilitada(regra: RegraRemanejamentoCodigo): boolean {
     return regraDesabilitada(this.natureza(), regra);
   }
 }

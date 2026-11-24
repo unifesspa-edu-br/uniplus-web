@@ -1,3 +1,7 @@
+import { VocabulariosDeConfiguracaoApi } from '@uniplus/shared-data/configuracao';
+import { of } from 'rxjs';
+import { ABRANGENCIAS } from './abrangencias.testing';
+import { AbrangenciaCodigo } from '@uniplus/shared-data/configuracao';
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -13,7 +17,15 @@ describe('DiaNaoUtilCamposComponent', () => {
   let alteracoes: AlteracaoDoLocal[];
 
   beforeEach(async () => {
-    TestBed.configureTestingModule({ imports: [DiaNaoUtilCamposComponent] });
+    TestBed.configureTestingModule({
+      imports: [DiaNaoUtilCamposComponent],
+      providers: [
+        {
+          provide: VocabulariosDeConfiguracaoApi,
+          useValue: { listar: () => of({ ok: true, data: Object.values(ABRANGENCIAS) }) },
+        },
+      ],
+    });
     fixture = TestBed.createComponent(DiaNaoUtilCamposComponent);
     grupo = criarGrupoDeDiaNaoUtil();
     alteracoes = [];
@@ -31,7 +43,7 @@ describe('DiaNaoUtilCamposComponent', () => {
     return encontrado as T;
   };
   const tornarMunicipal = async (): Promise<void> => {
-    grupo.controls.abrangencia.setValue('MUNICIPAL');
+    grupo.controls.abrangencia.setValue(AbrangenciaCodigo.MUNICIPAL);
     aplicarAbrangencia(grupo);
     await fixture.whenStable();
     fixture.detectChanges();
@@ -117,7 +129,7 @@ describe('DiaNaoUtilCamposComponent', () => {
     expect(campo('label[for="busca-municipio-3"]').textContent).toContain('Município');
     expect(raiz().textContent).toContain('Estado para busca');
 
-    grupo.controls.abrangencia.setValue('NACIONAL');
+    grupo.controls.abrangencia.setValue(AbrangenciaCodigo.NACIONAL);
     aplicarAbrangencia(grupo);
     await fixture.whenStable();
     fixture.detectChanges();
@@ -179,6 +191,12 @@ describe('DiaNaoUtilCamposComponent', () => {
 @Component({
   standalone: true,
   imports: [DiaNaoUtilCamposComponent],
+  providers: [
+    {
+      provide: VocabulariosDeConfiguracaoApi,
+      useValue: { listar: () => of({ ok: true, data: Object.values(ABRANGENCIAS) }) },
+    },
+  ],
   template: `<cfg-dia-nao-util-campos
     [grupo]="grupo"
     sufixoDeId="3"
@@ -200,10 +218,18 @@ class PaiDoDiaComponent {
 
 describe('DiaNaoUtilCamposComponent — nova tentativa da busca com o pai real', () => {
   it('a busca que dá certo depois do "Tentar novamente" leva o foco ao campo de busca', async () => {
-    TestBed.configureTestingModule({ imports: [PaiDoDiaComponent] });
+    TestBed.configureTestingModule({
+      imports: [PaiDoDiaComponent],
+      providers: [
+        {
+          provide: VocabulariosDeConfiguracaoApi,
+          useValue: { listar: () => of({ ok: true, data: Object.values(ABRANGENCIAS) }) },
+        },
+      ],
+    });
     const fixture = TestBed.createComponent(PaiDoDiaComponent);
     const pai = fixture.componentInstance;
-    pai.grupo.controls.abrangencia.setValue('MUNICIPAL');
+    pai.grupo.controls.abrangencia.setValue(AbrangenciaCodigo.MUNICIPAL);
     aplicarAbrangencia(pai.grupo);
     pai.grupo.controls.buscaMunicipio.setValue('Zzz');
     pai.busca.set({ opcoes: [], carregando: false, erro: true });

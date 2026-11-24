@@ -71,11 +71,11 @@ describe('campos confirmados no editor', () => {
       {
         codigo: 'PARENTESCO',
         nome: 'Parentesco',
-        dominio: 'CATEGORICO',
+        dominio: { codigo: 'OPCAO', rotulo: 'OPCAO' },
         valoresDominio: ['PROPRIO_CANDIDATO'],
         operadoresAdmitidos: COM_LISTA,
         binding: 'CAMPO_FORMULARIO:PARENTESCO',
-        cardinalidade: 'ESCALAR',
+        cardinalidade: { codigo: 'VALOR_UNICO', rotulo: 'VALOR_UNICO' },
         fonteValores: null,
         escopo: 'MEMBRO_GRUPO',
         ativo: true,

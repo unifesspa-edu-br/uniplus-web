@@ -1,3 +1,4 @@
+import { AbrangenciaCodigo } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import {
   aplicarAbrangencia,
@@ -16,7 +17,7 @@ const MARABA = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' };
 
 function diaMunicipalEscolhido(): GrupoDoDia {
   const grupo = criarGrupoDeDiaNaoUtil();
-  grupo.controls.abrangencia.setValue('MUNICIPAL');
+  grupo.controls.abrangencia.setValue(AbrangenciaCodigo.MUNICIPAL);
   aplicarAbrangencia(grupo);
   grupo.controls.codigoMunicipio.setValue(MARABA.codigoIbge);
   gravarOpcaoEscolhida(grupo, MARABA);
@@ -29,14 +30,14 @@ describe('dia não útil — formulário', () => {
   it('nasce estadual, no Pará e sem município escolhido', () => {
     const grupo = criarGrupoDeDiaNaoUtil();
 
-    expect(grupo.controls.abrangencia.value).toBe('ESTADUAL');
+    expect(grupo.controls.abrangencia.value).toBe(AbrangenciaCodigo.ESTADUAL);
     expect(grupo.controls.uf.value).toBe('PA');
     expect(municipioSelecionadoDe(grupo)).toBeNull();
   });
 
   it('a abrangência municipal começa sem nenhum município, nem o de uma constante', () => {
     const grupo = criarGrupoDeDiaNaoUtil();
-    grupo.controls.abrangencia.setValue('MUNICIPAL');
+    grupo.controls.abrangencia.setValue(AbrangenciaCodigo.MUNICIPAL);
     aplicarAbrangencia(grupo);
 
     expect(grupo.controls.codigoMunicipio.value).toBe('');
@@ -50,7 +51,7 @@ describe('dia não útil — formulário', () => {
     const grupo = diaMunicipalEscolhido();
     expect(grupo.errors).toBeNull();
 
-    grupo.controls.abrangencia.setValue('NACIONAL');
+    grupo.controls.abrangencia.setValue(AbrangenciaCodigo.NACIONAL);
     aplicarAbrangencia(grupo);
 
     expect(grupo.controls.codigoMunicipio.value).toBe('');
@@ -73,7 +74,7 @@ describe('dia não útil — formulário', () => {
 
   it('o dia municipal sem escolha da Geo mostra o aviso do município, mas só depois de tocado', () => {
     const grupo = criarGrupoDeDiaNaoUtil();
-    grupo.controls.abrangencia.setValue('MUNICIPAL');
+    grupo.controls.abrangencia.setValue(AbrangenciaCodigo.MUNICIPAL);
     aplicarAbrangencia(grupo);
 
     expect(errosDoDia(grupo, false).codigoMunicipio).toBeNull();
@@ -100,7 +101,7 @@ describe('dia não útil — formulário', () => {
 
   it('envia o snapshot completo no dia municipal e a UF nula', () => {
     expect(comandoDoDiaNaoUtil(diaMunicipalEscolhido())).toEqual({
-      abrangencia: 'MUNICIPAL',
+      abrangencia: AbrangenciaCodigo.MUNICIPAL,
       data: '2026-04-05',
       uf: null,
       municipioIbge: '1504208',
@@ -112,13 +113,13 @@ describe('dia não útil — formulário', () => {
 
   it('envia nulos nos campos regionais que a abrangência não usa', () => {
     const grupo = criarGrupoDeDiaNaoUtil();
-    grupo.controls.abrangencia.setValue('NACIONAL');
+    grupo.controls.abrangencia.setValue(AbrangenciaCodigo.NACIONAL);
     aplicarAbrangencia(grupo);
     grupo.controls.data.setValue('2026-09-07');
     grupo.controls.descricao.setValue('  Independência  ');
 
     expect(comandoDoDiaNaoUtil(grupo)).toEqual({
-      abrangencia: 'NACIONAL',
+      abrangencia: AbrangenciaCodigo.NACIONAL,
       data: '2026-09-07',
       uf: null,
       municipioIbge: null,

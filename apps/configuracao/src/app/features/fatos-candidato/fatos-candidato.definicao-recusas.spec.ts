@@ -6,7 +6,13 @@ import {
   urlDoFato,
   compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
-import { comDefinicao, comProtecao, corRaca, emManutencao } from './fatos-candidato.fixtures';
+import {
+  comDefinicao,
+  comProtecao,
+  corRaca,
+  emManutencao,
+  tipoTexto,
+} from './fatos-candidato.fixtures';
 import { type FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 import {
   campo,
@@ -158,7 +164,7 @@ describe('FatosCandidatoPage — recusas e concorrência da definição do fato'
     it('a recusa do servidor num controle não some quando outro campo muda', async () => {
       const texto = comProtecao(
         comDefinicao(corRaca, {
-          dominio: 'TEXTO',
+          dominio: tipoTexto,
           formato: 'EMAIL',
           valores: { ...corRaca.definicao.valores, fonte: null },
         }),
@@ -183,7 +189,7 @@ describe('FatosCandidatoPage — recusas e concorrência da definição do fato'
     it('depois da recusa num eixo, corrigir outro e salvar de novo envia: quem reconfere é a API', async () => {
       const texto = comProtecao(
         comDefinicao(corRaca, {
-          dominio: 'TEXTO',
+          dominio: tipoTexto,
           formato: 'EMAIL',
           valores: { ...corRaca.definicao.valores, fonte: null },
         }),

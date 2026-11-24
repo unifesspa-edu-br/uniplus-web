@@ -91,7 +91,7 @@ function lerValor(valor: unknown, operador: Condicao['operador'], caminho: strin
     throw new Recusa(
       caminho,
       comparaComLista(operador)
-        ? 'Os operadores EM e NAO_EM exigem uma lista, sem itens de texto em branco.'
+        ? 'Os operadores ALGUM_DE e NENHUM_DE exigem uma lista, sem itens de texto em branco.'
         : 'Os operadores IGUAL, DIFERENTE, MAIOR_IGUAL e MENOR_IGUAL exigem um valor simples não branco.',
     );
   }

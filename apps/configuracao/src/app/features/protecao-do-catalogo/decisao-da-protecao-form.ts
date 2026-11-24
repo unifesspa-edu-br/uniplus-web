@@ -24,7 +24,7 @@ export function recomendacoesPara(item: DetalheDaProtecaoDoCatalogoDto | null) {
   const doDominio =
     item.fato === null
       ? null
-      : new Set(classificacoesDoDominio(item.fato.dominio).map((opcao) => opcao.valor));
+      : new Set(classificacoesDoDominio(item.fato.dominio.codigo).map((opcao) => opcao.valor));
   return CLASSIFICACOES_DE_PROTECAO.filter(
     (opcao) =>
       opcao.valor !== item.classificacaoProtecao &&

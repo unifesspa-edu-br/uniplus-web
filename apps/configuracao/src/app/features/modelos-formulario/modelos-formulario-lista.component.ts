@@ -4,7 +4,6 @@ import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
 import { ModeloFormularioView, TipoProcessoDto } from '@uniplus/shared-data/configuracao';
 import {
   EmptyStateComponent,
-  FINALIDADES,
   FilterBarComponent,
   FilterChipsComponent,
   IconButtonComponent,
@@ -15,6 +14,7 @@ import {
   type UiFilterChipOption,
 } from '@uniplus/shared-ui/components';
 import { devolverFocoDaLista } from '../../shared/foco';
+import { FINALIDADES_DO_FORMULARIO } from './finalidades-do-formulario';
 
 @Component({
   selector: 'cfg-modelos-formulario-lista',
@@ -58,10 +58,10 @@ export class ModelosFormularioListaComponent {
     idDoTitulo: 'cfg-modelos-list-title',
   });
   protected readonly permissaoDeManter = PERMISSAO.configuracao.modelosFormularioManter;
-  protected readonly finalidadeChips: readonly UiFilterChipOption[] = [
+  protected readonly finalidadeChips = computed<readonly UiFilterChipOption[]>(() => [
     { value: '', label: 'Todas' },
-    ...FINALIDADES.map((f) => ({ value: f.valor, label: f.rotulo })),
-  ];
+    ...FINALIDADES_DO_FORMULARIO.map(({ codigo, rotulo }) => ({ value: codigo, label: rotulo })),
+  ]);
   protected readonly situacaoChips: readonly UiFilterChipOption[] = [
     { value: 'true', label: 'Ativos' },
     { value: 'false', label: 'Desativados' },
@@ -73,18 +73,21 @@ export class ModelosFormularioListaComponent {
     if (finalidade)
       ativos.push({
         nome: 'Finalidade',
-        valor: this.finalidadeChips.find((c) => c.value === finalidade)?.label ?? finalidade,
+        valor: this.finalidadeChips().find((c) => c.value === finalidade)?.label ?? finalidade,
       });
+    this.adicionarSituacao(ativos);
+    const tipo = this.filtroTipo();
+    if (tipo) ativos.push({ nome: 'Tipo de processo', valor: this.rotuloDoTipo(tipo) });
+    return ativos;
+  });
+  private adicionarSituacao(ativos: UiFiltroAtivo[]): void {
     const situacao = this.filtroSituacao();
     if (situacao)
       ativos.push({
         nome: 'Situação',
         valor: this.situacaoChips.find((c) => c.value === situacao)?.label ?? situacao,
       });
-    const tipo = this.filtroTipo();
-    if (tipo) ativos.push({ nome: 'Tipo de processo', valor: this.rotuloDoTipo(tipo) });
-    return ativos;
-  });
+  }
   protected criarModelo(evento: Event): void {
     if (this.ocupada()) {
       evento.preventDefault();
@@ -98,9 +101,6 @@ export class ModelosFormularioListaComponent {
   }
   protected valorDe(evento: Event): string {
     return (evento.target as HTMLSelectElement).value;
-  }
-  protected rotuloDaFinalidade(valor: string): string {
-    return FINALIDADES.find((f) => f.valor === valor)?.rotulo ?? valor;
   }
   protected rotuloDoTipo(codigo: string): string {
     return this.tiposDeProcesso().find((t) => t.codigo === codigo)?.nome ?? codigo;

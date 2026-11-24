@@ -1,3 +1,4 @@
+import { RegraRemanejamentoCodigo } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { marcarRecusaDoServidor } from '../../shared/formulario';
 import { comandoDeCriacao, regraDesabilitada } from './modalidade-form';
@@ -27,19 +28,39 @@ describe('ModalidadeFormPage', () => {
     await pagina.montar();
     pagina.setControl('naturezaLegal', 'COTA_RESERVADA');
     pagina.edicao.aoMudarNatureza();
-    expect(pagina.edicao.form.controls.regraRemanejamento.value).toBe('SEGUE_CASCATA');
-    expect(regraDesabilitada(pagina.edicao.natureza(), 'SEGUE_CASCATA')).toBe(false);
-    expect(regraDesabilitada(pagina.edicao.natureza(), 'DESTINO_UNICO')).toBe(true);
-    expect(regraDesabilitada(pagina.edicao.natureza(), 'CRUZADO')).toBe(true);
+    expect(pagina.edicao.form.controls.regraRemanejamento.value).toBe(
+      RegraRemanejamentoCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO,
+    );
+    expect(
+      regraDesabilitada(
+        pagina.edicao.natureza(),
+        RegraRemanejamentoCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO,
+      ),
+    ).toBe(false);
+    expect(
+      regraDesabilitada(pagina.edicao.natureza(), RegraRemanejamentoCodigo.DESTINO_UNICO),
+    ).toBe(true);
+    expect(regraDesabilitada(pagina.edicao.natureza(), RegraRemanejamentoCodigo.CRUZADO)).toBe(
+      true,
+    );
   });
 
   it('ModalidadeForm_Natureza_AcaoAfirmativaOfertaDestinoOuCruzado', async () => {
     await pagina.montar();
     pagina.setControl('naturezaLegal', 'ACAO_AFIRMATIVA');
     pagina.edicao.aoMudarNatureza();
-    expect(regraDesabilitada(pagina.edicao.natureza(), 'SEGUE_CASCATA')).toBe(true);
-    expect(regraDesabilitada(pagina.edicao.natureza(), 'DESTINO_UNICO')).toBe(false);
-    expect(regraDesabilitada(pagina.edicao.natureza(), 'CRUZADO')).toBe(false);
+    expect(
+      regraDesabilitada(
+        pagina.edicao.natureza(),
+        RegraRemanejamentoCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO,
+      ),
+    ).toBe(true);
+    expect(
+      regraDesabilitada(pagina.edicao.natureza(), RegraRemanejamentoCodigo.DESTINO_UNICO),
+    ).toBe(false);
+    expect(regraDesabilitada(pagina.edicao.natureza(), RegraRemanejamentoCodigo.CRUZADO)).toBe(
+      false,
+    );
     // Regra passa a ser obrigatória.
     expect(pagina.edicao.form.controls.regraRemanejamento.invalid).toBe(true);
   });
@@ -168,7 +189,12 @@ describe('ModalidadeFormPage', () => {
     expect(pagina.edicao.confirmandoReset()).toBe(false);
     expect(pagina.edicao.form.controls.naturezaLegal.value).toBe('ACAO_AFIRMATIVA');
     expect(pagina.edicao.form.controls.regraRemanejamento.value).toBe('');
-    expect(regraDesabilitada(pagina.edicao.natureza(), 'SEGUE_CASCATA')).toBe(true);
+    expect(
+      regraDesabilitada(
+        pagina.edicao.natureza(),
+        RegraRemanejamentoCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO,
+      ),
+    ).toBe(true);
   });
 
   it('montarComandoCriar anula campos inaplicáveis por coerência', async () => {
@@ -180,11 +206,8 @@ describe('ModalidadeFormPage', () => {
     pagina.edicao.aoMudarComposicao();
     const cmd = comandoDeCriacao(pagina.edicao.form.getRawValue(), []);
     expect(cmd.codigo).toBe('AC2');
-    expect(cmd.regraRemanejamento).toBeNull();
+    expect(cmd.remanejamento).toBeNull();
     expect(cmd.composicaoOrigem).toBeNull();
-    expect(cmd.remanejamentoDestino).toBeNull();
-    expect(cmd.remanejamentoPar).toBeNull();
-    expect(cmd.remanejamentoFallback).toBeNull();
   });
 
   it('CA-02: cria modalidade válida (POST com Idempotency-Key)', async () => {
@@ -206,8 +229,8 @@ describe('ModalidadeFormPage', () => {
     expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
     expect(post.request.body.codigo).toBe('V');
     expect(post.request.body.composicaoOrigem).toBe('AC');
-    expect(post.request.body.remanejamentoDestino).toBe('AC');
-    expect(post.request.body.regraRemanejamento).toBe('DESTINO_UNICO');
+    expect(post.request.body.remanejamento.destino).toBe('AC');
+    expect(post.request.body.remanejamento.regra).toBe('DESTINO_UNICO');
     post.flush('novo-id', { status: 201, statusText: 'Created' });
   });
 

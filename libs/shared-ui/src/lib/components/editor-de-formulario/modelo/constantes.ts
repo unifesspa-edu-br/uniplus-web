@@ -72,14 +72,14 @@ export const LIMITES_DO_FORMULARIO = {
 
 /** Como o candidato responde, pelo tipo de campo. */
 export const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
-  BOOLEANO: 'Sim ou não',
+  SIM_OU_NAO: 'Sim ou não',
   NUMERO: 'Número',
   TEXTO: 'Texto',
   DATA: 'Data',
   ENDERECO: 'Endereço',
   MUNICIPIO: 'Município',
-  SELECAO_UNICA: 'Escolha de um valor',
-  SELECAO_MULTIPLA: 'Escolha de vários valores',
+  ESCOLHA_UNICA: 'Escolha de um valor',
+  ESCOLHA_MULTIPLA: 'Escolha de vários valores',
 };
 
 export const FINALIDADES: readonly OpcaoDoFormulario[] = [

@@ -1,3 +1,5 @@
+import { AbrangenciaCodigo } from './schema';
+import { valorDeTeste } from './vocabularios.testing';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -27,7 +29,7 @@ const IDEMPOTENCY_KEY = '019f41cf-69fd-759a-ac6d-09acabc1b0ff';
  * manual divergir do OpenAPI committed.
  */
 const itemMunicipal: DiaNaoUtilCommandItem = {
-  abrangencia: 'MUNICIPAL',
+  abrangencia: AbrangenciaCodigo.MUNICIPAL,
   municipioIbge: '1504208',
   municipioNome: 'Marabá',
   municipioUf: 'PA',
@@ -39,7 +41,7 @@ const itemMunicipal: DiaNaoUtilCommandItem = {
 const diaMunicipal: DiaNaoUtilDto = {
   id: '019f41cf-69fd-759a-ac6d-09acabc1b100',
   ...itemMunicipal,
-  abrangencia: 'MUNICIPAL',
+  abrangencia: valorDeTeste(AbrangenciaCodigo.MUNICIPAL),
   descricao: 'Aniversário de Marabá',
   uf: null,
 };

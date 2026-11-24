@@ -21,7 +21,7 @@ describe('citações entre campos', () => {
           regras: {
             exibicao: [
               [
-                { fato: 'NEGADO', operador: 'NAO_EM', valor: ['A'] },
+                { fato: 'NEGADO', operador: 'NENHUM_DE', valor: ['A'] },
                 { fato: 'IGUAL', operador: 'IGUAL', valor: true },
               ],
             ],

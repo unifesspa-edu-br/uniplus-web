@@ -1,3 +1,4 @@
+import { valoresDaOferta } from './valores-da-oferta.testing';
 import { TestBed } from '@angular/core/testing';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CursoDto } from '@uniplus/shared-data/configuracao';
@@ -31,12 +32,14 @@ describe('OfertasCursoPage — listagem', () => {
   });
 
   it('mostra os regimes e o programa pelo rótulo, não pelo token do contrato', async () => {
-    p = await montarPagina([mesmaOferta('x', { regimeDeFuncionamento: 'ALTERNANCIA_PEDAGOGICA' })]);
+    p = await montarPagina([
+      mesmaOferta('x', { regimeDeFuncionamento: valoresDaOferta.alternancia }),
+    ]);
     const texto = p.fixture.nativeElement.textContent as string;
-    expect(texto).toContain('Alternância Pedagógica');
-    expect(texto).toContain('Regular');
-    expect(texto).not.toContain('ALTERNANCIA_PEDAGOGICA');
-    expect(texto).not.toContain('EXTENSIVO');
+    expect(texto).toContain(valoresDaOferta.alternancia.rotulo);
+    expect(texto).toContain(valoresDaOferta.programa.rotulo);
+    expect(texto).not.toContain(valoresDaOferta.alternancia.codigo);
+    expect(texto).not.toContain(valoresDaOferta.funcionamento.codigo);
   });
 
   it('mostra a coluna Grau logo após Curso, com o grau de cada curso', async () => {
@@ -113,21 +116,27 @@ describe('OfertasCursoPage — listagem', () => {
     it('distingue ofertas do mesmo curso em turnos ou programas diferentes', async () => {
       p = await montarPagina([
         oferta,
-        mesmaOferta('b', { turnos: ['NOTURNO'] }),
-        mesmaOferta('c', { programaDeOferta: 'PARFOR', baseLegal: 'Decreto 6.755/2009' }),
+        mesmaOferta('b', { turnos: [valoresDaOferta.turnos[2]] }),
+        mesmaOferta('c', {
+          programaDeOferta: valoresDaOferta.parfor,
+          baseLegal: 'Decreto 6.755/2009',
+        }),
       ]);
       const nomes = [
         ...p.fixture.nativeElement.querySelectorAll('button[aria-label^="Editar oferta de curso"]'),
       ].map((botao) => botao.getAttribute('aria-label'));
       expect(nomes).toEqual([
         `Editar oferta de curso ${identificador}`,
-        `Editar oferta de curso ${identificador.replace('Matutino', 'Noturno')}`,
-        `Editar oferta de curso ${identificador.replace('Regular · Matutino', 'PARFOR · Matutino')}`,
+        `Editar oferta de curso ${identificador.replace(valoresDaOferta.turnos[0].rotulo, valoresDaOferta.turnos[2].rotulo)}`,
+        `Editar oferta de curso ${identificador.replace(valoresDaOferta.programa.rotulo, valoresDaOferta.parfor.rotulo)}`,
       ]);
     });
 
     it('acrescenta o ordinal quando todas as colunas do nome coincidem', async () => {
-      p = await montarPagina([oferta, mesmaOferta('b', { formatoPedagogico: 'EAD' })]);
+      p = await montarPagina([
+        oferta,
+        mesmaOferta('b', { formatoPedagogico: valoresDaOferta.ead }),
+      ]);
       for (const ordem of ['1 de 2', '2 de 2']) {
         expect(p.editar(`${identificador} (${ordem})`)).toBeTruthy();
         expect(p.remover(`${identificador} (${ordem})`)).toBeTruthy();

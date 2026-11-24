@@ -1,3 +1,4 @@
+import { SentidoDoMotivoCodigo } from '@uniplus/shared-data/selecao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -33,7 +34,7 @@ export const isencao: MotivoDeDecisaoDto = {
   codigo: 'RENDA_ACIMA_DO_LIMITE',
   descricao: 'A renda familiar informada supera o limite do fundamento.',
   subclassificacao: 'BAIXA_RENDA',
-  sentido: 'DESFAVORAVEL',
+  sentido: { codigo: SentidoDoMotivoCodigo.DESFAVORAVEL, rotulo: 'Sentido de teste desfavorável' },
   ativo: true,
   _links: {},
 };
@@ -43,7 +44,7 @@ export const desativado: MotivoDeDecisaoDto = {
   id: '01960000-0000-7000-0000-0000000000a2',
   codigo: 'DOCUMENTO_ILEGIVEL',
   descricao: 'O documento enviado não pôde ser lido.',
-  sentido: 'FAVORAVEL',
+  sentido: { codigo: SentidoDoMotivoCodigo.FAVORAVEL, rotulo: 'Sentido de teste favorável' },
   ativo: false,
 };
 

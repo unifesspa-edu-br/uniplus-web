@@ -1,3 +1,4 @@
+import { ORIGENS_DE_DATA } from './origens-de-data.testing';
 import { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { FasesCanonicasStore } from './fases-canonicas.store';
@@ -148,12 +149,12 @@ describe('FasesCanonicasPage — edição pelo drawer', () => {
     const faseComColeta: FaseCanonicaDto = {
       ...faseAvaliacaoSeed,
       coletaInscricao: true,
-      origemData: 'NA_EXECUCAO',
+      origemData: ORIGENS_DE_DATA.NA_EXECUCAO,
     };
     await responderLista(cena, [faseComColeta]);
 
     cena.edicao.abrirEdicao(faseComColeta);
-    expect(cena.edicao.form.controls.origemData.value).toBe('NA_EXECUCAO');
+    expect(cena.edicao.form.controls.origemData.value).toBe(ORIGENS_DE_DATA.NA_EXECUCAO.codigo);
     expect(cena.edicao.form.controls.coletaInscricao.value).toBe(true);
 
     cena.edicao.salvar();
@@ -161,7 +162,7 @@ describe('FasesCanonicasPage — edição pelo drawer', () => {
       `${BASE}/api/configuracao/admin/fases-canonicas/${faseComColeta.id}`,
     );
     expect(put.request.body).toMatchObject({
-      origemData: 'NA_EXECUCAO',
+      origemData: ORIGENS_DE_DATA.NA_EXECUCAO.codigo,
       coletaInscricao: true,
     });
     put.flush(null, { status: 204, statusText: 'No Content' });
@@ -179,11 +180,11 @@ describe('FasesCanonicasPage — edição pelo drawer', () => {
     );
     expect([...select.options].map((opcao) => opcao.text.trim())).toEqual([
       'Selecione a origem da data',
-      'Fixada no edital',
-      'Definida na execução',
+      ORIGENS_DE_DATA.NO_EDITAL.rotulo,
+      ORIGENS_DE_DATA.NA_EXECUCAO.rotulo,
     ]);
     const ajuda = select.closest('label')?.querySelector('.field__hint')?.textContent ?? '';
-    expect(ajuda).toContain('Fixada no edital');
+    expect(ajuda).toContain('quando a data será definida');
     expect(ajuda).not.toMatch(/terceiro|MEC|SiSU/i);
   });
 

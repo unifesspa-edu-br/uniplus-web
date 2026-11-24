@@ -6,25 +6,10 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, ModalidadeDto } from '@uniplus/shared-data/configuracao';
 import { ModalidadeFormPage } from './modalidade-form.page';
 import { ModalidadesListPage } from './modalidades-list.page';
+import { MODALIDADE } from './modalidades-tabela.testing';
 import { BASE } from './modalidades-de-teste.testing';
 
-export const modalidade: ModalidadeDto = {
-  id: 'id-v',
-  codigo: 'V',
-  legalFixa: false,
-  descricao: 'Modalidade V',
-  naturezaLegal: 'AMPLA',
-  composicaoVagas: 'RESTANTE_DAS_VAGAS_OFERTADAS',
-  composicaoOrigem: null,
-  regraRemanejamento: null,
-  remanejamentoDestino: null,
-  remanejamentoPar: null,
-  remanejamentoFallback: null,
-  regraDeAplicabilidade: [],
-  acaoQuandoIndeferido: null,
-  baseLegal: null,
-  criadoEm: '2026-07-03T12:00:00Z',
-};
+export const modalidade: ModalidadeDto = MODALIDADE;
 
 export function configurar(): void {
   TestBed.configureTestingModule({

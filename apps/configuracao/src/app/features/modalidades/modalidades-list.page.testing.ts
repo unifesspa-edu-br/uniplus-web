@@ -11,6 +11,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { expect } from 'vitest';
 import { CATALOGO } from './catalogo-de-fatos.fixture';
+import { COMPOSICOES, NATUREZAS, REGRAS } from './modalidades-tabela.testing';
 import { ModalidadesListPage } from './modalidades-list.page';
 import { BASE, URL, URL_CATALOGO, modalidade } from './modalidades-de-teste.testing';
 
@@ -20,15 +21,14 @@ export const V = modalidade({
   codigo: 'V',
   legalFixa: false,
   descricao: 'PcD ampla concorrência',
-  naturezaLegal: 'ACAO_AFIRMATIVA',
-  composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
+  naturezaLegal: NATUREZAS.acao,
+  composicaoVagas: COMPOSICOES.retirada,
   composicaoOrigem: 'AC',
-  regraRemanejamento: 'DESTINO_UNICO',
-  remanejamentoDestino: 'AC',
+  remanejamento: { regra: REGRAS.destino, destino: 'AC', par: null, fallback: null },
   regraDeAplicabilidade: [
     [
       { fato: 'ESCOLA_PUBLICA', operador: OperadorCodigo.IGUAL, valor: true },
-      { fato: 'COR_RACA', operador: OperadorCodigo.EM, valor: ['PRETA', 'INDIGENA'] },
+      { fato: 'COR_RACA', operador: OperadorCodigo.ALGUM_DE, valor: ['PRETA', 'INDIGENA'] },
     ],
     [{ fato: 'COR_RACA', operador: OperadorCodigo.IGUAL, valor: 'PARDA' }],
   ],
@@ -60,6 +60,9 @@ export class PaginaDaListaDeModalidades {
     this.controller = TestBed.inject(HttpTestingController);
     this.appRef = TestBed.inject(ApplicationRef);
     this.fixture.detectChanges();
+    this.controller
+      .expectOne(`${BASE}/api/configuracao/vocabularios/naturezas-legais`)
+      .flush(Object.values(NATUREZAS));
   }
 
   verificar(): void {

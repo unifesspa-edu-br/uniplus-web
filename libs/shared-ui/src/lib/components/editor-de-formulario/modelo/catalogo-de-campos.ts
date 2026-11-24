@@ -10,7 +10,7 @@ import {
   ESCOPO_CANDIDATO,
   ESCOPO_MEMBRO,
   EscopoDoCampo,
-  FONTE_GEO_MUNICIPIO,
+  FONTE_MUNICIPIOS,
   FatoDoFormulario,
   ItemDoFormulario,
   MULTIVALORADO,
@@ -26,17 +26,17 @@ const BINDINGS_DE_CAMPO = ['CAMPO_INSCRICAO:', 'CAMPO_FORMULARIO:'];
 export function renderizacaoDe(
   fato: Pick<FatoDoFormulario, 'dominio' | 'cardinalidade' | 'fonteValores'>,
 ): string | null {
-  const multivalorado = fato.cardinalidade === MULTIVALORADO;
-  if (fato.dominio === 'CATEGORICO') {
-    return renderizacaoDoCategorico(fato.fonteValores, multivalorado);
+  const multivalorado = fato.cardinalidade.codigo === MULTIVALORADO;
+  if (fato.dominio.codigo === 'OPCAO') {
+    return renderizacaoDoCategorico(fato.fonteValores?.codigo ?? null, multivalorado);
   }
-  return renderizacaoDoDominioSimples(fato.dominio, multivalorado);
+  return renderizacaoDoDominioSimples(fato.dominio.codigo, multivalorado);
 }
 
 function renderizacaoDoDominioSimples(dominio: string, multivalorado: boolean): string | null {
   switch (dominio) {
-    case 'BOOLEANO':
-      return 'BOOLEANO';
+    case 'SIM_OU_NAO':
+      return 'SIM_OU_NAO';
     case 'NUMERICO':
       return 'NUMERO';
     case 'TEXTO':
@@ -52,8 +52,8 @@ function renderizacaoDoCategorico(
   fonteValores: null | string,
   multivalorado: boolean,
 ): string | null {
-  if (fonteValores === FONTE_GEO_MUNICIPIO) return multivalorado ? null : 'MUNICIPIO';
-  return multivalorado ? 'SELECAO_MULTIPLA' : 'SELECAO_UNICA';
+  if (fonteValores === FONTE_MUNICIPIOS) return multivalorado ? null : 'MUNICIPIO';
+  return multivalorado ? 'ESCOLHA_MULTIPLA' : 'ESCOLHA_UNICA';
 }
 
 /**
@@ -137,6 +137,6 @@ export function fatosDeMembroParaAcrescentar(
   indisponiveis: readonly string[] = [],
 ): readonly FatoDoFormulario[] {
   return fatosParaAcrescentar(conteudo, catalogo, ESCOPO_MEMBRO, indisponiveis).filter(
-    (fato) => fato.fonteValores !== FONTE_GEO_MUNICIPIO,
+    (fato) => fato.fonteValores?.codigo !== FONTE_MUNICIPIOS,
   );
 }

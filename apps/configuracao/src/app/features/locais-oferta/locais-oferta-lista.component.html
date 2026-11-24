@@ -39,7 +39,7 @@
           @for (local of locais(); track local.id) {
             <tr [attr.data-local-id]="local.id">
               <td data-label="Tipo">
-                <span class="tag">{{ tipoLabel(local.tipo) }}</span>
+                <span class="tag">{{ local.tipo.rotulo }}</span>
               </td>
               <td data-label="Cidade">{{ cidadeLabel(local) }}</td>
               <td data-label="Campus responsável">

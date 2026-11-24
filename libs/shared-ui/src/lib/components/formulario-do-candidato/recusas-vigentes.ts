@@ -81,7 +81,7 @@ function recusasQueValem(
 function exigenciasSatisfeitas(decisoes: DecisoesDaAvaliacao): ReadonlySet<string> {
   return new Set(
     Object.entries(decisoes.situacoes())
-      .filter(([, situacao]) => situacao === 'SATISFEITA')
+      .filter(([, situacao]) => situacao.atendido)
       .map(([chave]) => chave),
   );
 }

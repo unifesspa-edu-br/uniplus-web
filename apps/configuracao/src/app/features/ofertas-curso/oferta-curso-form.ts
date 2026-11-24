@@ -3,10 +3,11 @@ import {
   AtualizarOfertaCursoCommand,
   CriarOfertaCursoCommand,
   OfertaCursoDto,
-  PROGRAMA_DE_OFERTA_REGULAR,
-  REGIME_DE_FUNCIONAMENTO_EXTENSIVO,
-  REGIME_DE_TURNO_REGULAR,
-  ordenarTurnosCanonicamente,
+  ProgramaDeOfertaCodigo,
+  FormatoPedagogicoCodigo,
+  RegimeDeFuncionamentoCodigo,
+  RegimeDeTurnoCodigo,
+  TurnoOfertaCodigo,
 } from '@uniplus/shared-data/configuracao';
 import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
 import {
@@ -14,23 +15,27 @@ import {
   mensagemDeErroDoControle,
   nullIfBlank,
 } from '../../shared/formulario';
-import { cardinalidadeDeTurnos, compatibilidadeComRegimeDeTurno } from './turnos-da-oferta';
+import {
+  cardinalidadeDeTurnos,
+  compatibilidadeComRegimeDeTurno,
+  ordenarTurnos,
+} from './turnos-da-oferta';
 
 export interface OfertaCursoForm {
   codigo: FormControl<string>;
   cursoId: FormControl<string>;
   localOfertaId: FormControl<string>;
   unidadeOfertanteOrigemId: FormControl<string>;
-  programaDeOferta: FormControl<string>;
-  formatoPedagogico: FormControl<string>;
-  regimeDeTurno: FormControl<string>;
-  turnos: FormControl<readonly string[]>;
+  programaDeOferta: FormControl<ProgramaDeOfertaCodigo>;
+  formatoPedagogico: FormControl<FormatoPedagogicoCodigo>;
+  regimeDeTurno: FormControl<RegimeDeTurnoCodigo>;
+  turnos: FormControl<readonly TurnoOfertaCodigo[]>;
   eMecCodigo: FormControl<string>;
   codigoSga: FormControl<string>;
   vagasAnuaisAutorizadas: FormControl<number | null>;
   baseLegal: FormControl<string>;
   atoAutorizacaoMec: FormControl<string>;
-  regimeDeFuncionamento: FormControl<string>;
+  regimeDeFuncionamento: FormControl<RegimeDeFuncionamentoCodigo>;
 }
 
 export type ValoresDaOferta = ReturnType<FormGroup<OfertaCursoForm>['getRawValue']>;
@@ -40,16 +45,16 @@ export const OFERTA_EM_BRANCO: ValoresDaOferta = {
   cursoId: '',
   localOfertaId: '',
   unidadeOfertanteOrigemId: '',
-  programaDeOferta: PROGRAMA_DE_OFERTA_REGULAR,
-  formatoPedagogico: 'PRESENCIAL',
-  regimeDeTurno: REGIME_DE_TURNO_REGULAR,
+  programaDeOferta: ProgramaDeOfertaCodigo.REGULAR,
+  formatoPedagogico: FormatoPedagogicoCodigo.PRESENCIAL,
+  regimeDeTurno: RegimeDeTurnoCodigo.REGULAR,
   turnos: [],
   eMecCodigo: '',
   codigoSga: '',
   vagasAnuaisAutorizadas: null,
   baseLegal: '',
   atoAutorizacaoMec: '',
-  regimeDeFuncionamento: REGIME_DE_FUNCIONAMENTO_EXTENSIVO,
+  regimeDeFuncionamento: RegimeDeFuncionamentoCodigo.EXTENSIVO,
 };
 
 const PREFIXO_DO_CODIGO = 'uniplus.configuracao.oferta_curso.';
@@ -90,8 +95,8 @@ const obrigatorio = (): FormControl<string> =>
 const opcional = (maximo: number): FormControl<string> =>
   new FormControl('', { nonNullable: true, validators: [Validators.maxLength(maximo)] });
 
-const obrigatorioCom = (valor: string): FormControl<string> =>
-  new FormControl(valor, { nonNullable: true, validators: [Validators.required] });
+const obrigatorioCom = <T extends string>(valor: T): FormControl<T> =>
+  new FormControl<T>(valor, { nonNullable: true, validators: [Validators.required] });
 
 export function criarFormularioDeOferta(): FormGroup<OfertaCursoForm> {
   return new FormGroup<OfertaCursoForm>({
@@ -119,17 +124,23 @@ function controlesDeIdentificacao() {
 
 function controlesDoRegime() {
   return {
-    programaDeOferta: obrigatorioCom(PROGRAMA_DE_OFERTA_REGULAR),
-    formatoPedagogico: obrigatorioCom('PRESENCIAL'),
-    regimeDeTurno: obrigatorioCom(REGIME_DE_TURNO_REGULAR),
-    turnos: new FormControl<readonly string[]>([], {
+    programaDeOferta: obrigatorioCom<ProgramaDeOfertaCodigo>(ProgramaDeOfertaCodigo.REGULAR),
+    formatoPedagogico: obrigatorioCom<FormatoPedagogicoCodigo>(FormatoPedagogicoCodigo.PRESENCIAL),
+    regimeDeTurno: obrigatorioCom<RegimeDeTurnoCodigo>(RegimeDeTurnoCodigo.REGULAR),
+    ...controlesDeTurnos(),
+  };
+}
+
+function controlesDeTurnos() {
+  return {
+    turnos: new FormControl<readonly TurnoOfertaCodigo[]>([], {
       nonNullable: true,
       validators: [cardinalidadeDeTurnos],
     }),
-    regimeDeFuncionamento: new FormControl(REGIME_DE_FUNCIONAMENTO_EXTENSIVO, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(30), compatibilidadeComRegimeDeTurno],
-    }),
+    regimeDeFuncionamento: new FormControl<RegimeDeFuncionamentoCodigo>(
+      RegimeDeFuncionamentoCodigo.EXTENSIVO,
+      { nonNullable: true, validators: [Validators.required, compatibilidadeComRegimeDeTurno] },
+    ),
   };
 }
 
@@ -162,11 +173,11 @@ export function valoresDaOferta(oferta: OfertaCursoDto): ValoresDaOferta {
 
 function valoresDoRegime(oferta: OfertaCursoDto) {
   return {
-    programaDeOferta: oferta.programaDeOferta,
-    formatoPedagogico: oferta.formatoPedagogico,
-    regimeDeTurno: oferta.regimeDeTurno,
-    regimeDeFuncionamento: oferta.regimeDeFuncionamento,
-    turnos: ordenarTurnosCanonicamente(oferta.turnos),
+    programaDeOferta: oferta.programaDeOferta.codigo,
+    formatoPedagogico: oferta.formatoPedagogico.codigo,
+    regimeDeTurno: oferta.regimeDeTurno.codigo,
+    regimeDeFuncionamento: oferta.regimeDeFuncionamento.codigo,
+    turnos: ordenarTurnos(oferta.turnos.map((turno) => turno.codigo)),
   };
 }
 
@@ -189,13 +200,13 @@ function camposDaOferta(valores: ValoresDaOferta) {
     programaDeOferta: valores.programaDeOferta,
     formatoPedagogico: valores.formatoPedagogico,
     regimeDeTurno: valores.regimeDeTurno,
-    turnos: ordenarTurnosCanonicamente(valores.turnos),
+    turnos: ordenarTurnos(valores.turnos),
     eMecCodigo: nullIfBlank(valores.eMecCodigo),
     codigoSga: nullIfBlank(valores.codigoSga),
     vagasAnuaisAutorizadas: valores.vagasAnuaisAutorizadas,
     baseLegal: nullIfBlank(valores.baseLegal),
     atoAutorizacaoMec: nullIfBlank(valores.atoAutorizacaoMec),
-    regimeDeFuncionamento: nullIfBlank(valores.regimeDeFuncionamento),
+    regimeDeFuncionamento: valores.regimeDeFuncionamento,
   };
 }
 
@@ -235,11 +246,8 @@ const MENSAGEM_DE_FORMATO_DO_CODIGO =
 function mensagemDaRegraDaOferta(erros: Record<string, unknown>): string | null {
   if (erros['pattern']) return MENSAGEM_DE_FORMATO_DO_CODIGO;
   if (erros['min']) return 'Valor não pode ser negativo.';
-  const incompativel = erros['regimeFuncionamentoIncompativelRegimeTurno'] as
-    | { regimeDeTurno: string }
-    | undefined;
-  return incompativel
-    ? `A oferta INTENSIVO exige regime de turno INTEGRAL; foi declarado ${incompativel.regimeDeTurno}.`
+  return erros['regimeFuncionamentoIncompativelRegimeTurno']
+    ? 'O regime de funcionamento selecionado exige dois turnos distintos.'
     : mensagemDosTurnos(erros);
 }
 
@@ -248,13 +256,12 @@ function mensagemDosTurnos(erros: Record<string, unknown>): string | null {
     return 'Marque ao menos um turno — nenhum formato pedagógico dispensa o turno.';
   }
   if (erros['cardinalidadeTurnos']) {
-    const { regime, exigidos } = erros['cardinalidadeTurnos'] as {
-      regime: string;
+    const { exigidos } = erros['cardinalidadeTurnos'] as {
       exigidos: number;
     };
     return exigidos === 1
-      ? `O regime ${regime} exige exatamente um turno.`
-      : `O regime ${regime} exige exatamente ${exigidos} turnos distintos.`;
+      ? 'O regime selecionado exige exatamente um turno.'
+      : `O regime selecionado exige exatamente ${exigidos} turnos distintos.`;
   }
   return erros['turnoRepetido'] ? 'Os turnos devem ser distintos entre si.' : null;
 }

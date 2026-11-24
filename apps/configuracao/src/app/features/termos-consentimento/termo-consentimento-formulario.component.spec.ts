@@ -1,10 +1,12 @@
+import { provedorDeFormasDeAceite } from './formas-de-aceite.testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { TermoConsentimentoFormularioComponent } from './termo-consentimento-formulario.component';
 import { criarFormulario } from './termo-consentimento-form';
 import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 describe('TermoConsentimentoFormularioComponent', () => {
+  beforeEach(() => TestBed.configureTestingModule({ providers: [provedorDeFormasDeAceite] }));
   function montar(criando: boolean): ComponentFixture<TermoConsentimentoFormularioComponent> {
     const fixture = TestBed.createComponent(TermoConsentimentoFormularioComponent);
     fixture.componentRef.setInput('form', criarFormulario());

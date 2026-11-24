@@ -3,6 +3,7 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { responderNaturezas } from './vocabularios-da-modalidade.testing';
 import { CATALOGO } from './catalogo-de-fatos.fixture';
 import { EdicaoDasModalidades } from './edicao-das-modalidades';
 import { ModalidadesListPage } from './modalidades-list.page';
@@ -28,6 +29,7 @@ describe('Modalidades — remoção pela interface', () => {
     app = TestBed.inject(ApplicationRef);
     edicao = fixture.debugElement.injector.get(EdicaoDasModalidades);
     fixture.detectChanges();
+    responderNaturezas(controller);
     controller.expectOne((r) => r.url === URL).flush([modalidade]);
     controller.match(URL_CATALOGO).forEach((r) => r.flush(CATALOGO));
     await propagar();

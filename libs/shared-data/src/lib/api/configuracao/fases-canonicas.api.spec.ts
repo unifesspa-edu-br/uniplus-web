@@ -1,3 +1,5 @@
+import { OrigemDataFaseCodigo } from './schema';
+import { valorDeTeste } from './vocabularios.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -33,7 +35,7 @@ const faseSeed: FaseCanonicaDto = {
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
-  origemData: 'NO_EDITAL',
+  origemData: valorDeTeste(OrigemDataFaseCodigo.NO_EDITAL),
   criadoEm: '2026-06-10T12:00:00Z',
 };
 

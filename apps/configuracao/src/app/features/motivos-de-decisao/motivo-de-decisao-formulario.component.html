@@ -67,7 +67,7 @@
               [attr.aria-invalid]="erroDoCampo('sentido') ? 'true' : null"
               [attr.aria-describedby]="erroDoCampo('sentido') ? 'cfg-motivo-sentido-erro' : null"
             >
-              <option value="">Selecione</option>
+              <option [ngValue]="null">Selecione</option>
               @for (sentido of sentidos; track sentido.codigo) {
                 <option [value]="sentido.codigo">{{ sentido.rotulo }}</option>
               }

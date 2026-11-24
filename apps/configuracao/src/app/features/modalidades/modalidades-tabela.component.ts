@@ -1,24 +1,15 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import {
-  COMPOSICOES_VAGAS,
-  ModalidadeDto,
-  NATUREZAS_LEGAIS,
-  REGRAS_REMANEJAMENTO,
-} from '@uniplus/shared-data/configuracao';
+import { ModalidadeDto, NaturezaLegalCodigo } from '@uniplus/shared-data/configuracao';
 import {
   IconButtonComponent,
   TagComponent,
   type UiTagVariant,
 } from '@uniplus/shared-ui/components';
 
-function rotulo(roster: readonly { value: string; label: string }[], token: string): string {
-  return roster.find((opcao) => opcao.value === token)?.label ?? token;
-}
-
-const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
-  AMPLA: 'info',
-  COTA_RESERVADA: 'success',
-  ACAO_AFIRMATIVA: 'warning',
+const NATUREZA_VARIANTE: Readonly<Record<NaturezaLegalCodigo, UiTagVariant>> = {
+  [NaturezaLegalCodigo.AMPLA]: 'info',
+  [NaturezaLegalCodigo.COTA_RESERVADA]: 'success',
+  [NaturezaLegalCodigo.ACAO_AFIRMATIVA]: 'warning',
 };
 
 /** A tabela das modalidades, com as ações de editar e remover de cada linha. */
@@ -40,24 +31,19 @@ export class ModalidadesTabelaComponent {
   readonly removendoId = input.required<string | null>();
   readonly remover = output<ModalidadeDto>();
 
-  protected naturezaLabel(token: string): string {
-    return rotulo(NATUREZAS_LEGAIS, token);
-  }
-  protected naturezaVariante(token: string): UiTagVariant {
-    return NATUREZA_VARIANTE[token] ?? 'neutral';
-  }
-  protected composicaoLabel(token: string): string {
-    return rotulo(COMPOSICOES_VAGAS, token);
+  protected naturezaVariante(codigo: NaturezaLegalCodigo): UiTagVariant {
+    return NATUREZA_VARIANTE[codigo];
   }
   protected referenciadaPor(codigo: string): readonly ModalidadeDto[] {
     return this.referencias().get(codigo) ?? [];
   }
   protected remanejamentoResumo(m: ModalidadeDto): string {
-    if (m.regraRemanejamento === null) return '—';
-    const regra = rotulo(REGRAS_REMANEJAMENTO, m.regraRemanejamento);
-    if (m.remanejamentoDestino) return `${regra} → ${m.remanejamentoDestino}`;
-    if (m.remanejamentoPar || m.remanejamentoFallback) {
-      return `${regra} (${m.remanejamentoPar ?? '—'} / ${m.remanejamentoFallback ?? '—'})`;
+    const remanejamento = m.remanejamento;
+    if (remanejamento === null) return '—';
+    const regra = remanejamento.regra.rotulo;
+    if (remanejamento.destino) return `${regra} → ${remanejamento.destino}`;
+    if (remanejamento.par || remanejamento.fallback) {
+      return `${regra} (${remanejamento.par ?? '—'} / ${remanejamento.fallback ?? '—'})`;
     }
     return regra;
   }

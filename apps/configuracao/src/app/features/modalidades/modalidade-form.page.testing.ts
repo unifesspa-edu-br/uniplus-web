@@ -8,6 +8,8 @@ import {
   ModalidadeDto,
   OperadorCodigo,
 } from '@uniplus/shared-data/configuracao';
+import { NATUREZAS, COMPOSICOES, REGRAS } from './modalidades-tabela.testing';
+import { responderVocabularios } from './vocabularios-da-modalidade.testing';
 import { CATALOGO } from './catalogo-de-fatos.fixture';
 import { EdicaoDaModalidade } from './edicao-da-modalidade';
 import { ModalidadeFormPage } from './modalidade-form.page';
@@ -17,11 +19,17 @@ export const LB_PPI = modalidade({
   id: 'id-lb',
   codigo: 'LB_PPI',
   descricao: 'Cota PPI baixa renda',
-  naturezaLegal: 'COTA_RESERVADA',
-  composicaoVagas: 'DENTRO_DA_RESERVA_LEGAL',
-  regraRemanejamento: 'SEGUE_CASCATA',
+  naturezaLegal: NATUREZAS.cota,
+  composicaoVagas: COMPOSICOES.reserva,
+  remanejamento: { regra: REGRAS.cascata, destino: null, par: null, fallback: null },
   regraDeAplicabilidade: [
-    [{ fato: 'COR_RACA', operador: OperadorCodigo.EM, valor: ['PRETA', 'PARDA', 'INDIGENA'] }],
+    [
+      {
+        fato: 'COR_RACA',
+        operador: OperadorCodigo.ALGUM_DE,
+        valor: ['PRETA', 'PARDA', 'INDIGENA'],
+      },
+    ],
   ],
 });
 /** Modalidade institucional: fora do catálogo legal fixo, a regra se edita. */
@@ -30,10 +38,9 @@ export const BONUS = modalidade({
   codigo: 'AA_REGIONAL',
   legalFixa: false,
   descricao: 'Ação afirmativa regional',
-  naturezaLegal: 'ACAO_AFIRMATIVA',
-  composicaoVagas: 'SUPLEMENTAR_AO_TOTAL',
-  regraRemanejamento: 'DESTINO_UNICO',
-  remanejamentoDestino: 'AC',
+  naturezaLegal: NATUREZAS.acao,
+  composicaoVagas: COMPOSICOES.suplementar,
+  remanejamento: { regra: REGRAS.destino, destino: 'AC', par: null, fallback: null },
   regraDeAplicabilidade: [
     [{ fato: 'ESCOLA_PUBLICA', operador: OperadorCodigo.IGUAL, valor: true }],
     [{ fato: 'COR_RACA', operador: OperadorCodigo.IGUAL, valor: 'INDIGENA' }],
@@ -79,6 +86,7 @@ export class PaginaDaModalidade {
   async montar(vivas: readonly ModalidadeDto[] = [AC, LB_PPI]): Promise<void> {
     this.criar();
     TestBed.tick();
+    responderVocabularios(this.controller);
     const req = this.controller.expectOne((r) => r.url === URL && r.params.get('limit') === '100');
     req.flush([...vivas]);
     await this.atualizar();

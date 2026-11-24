@@ -1,3 +1,4 @@
+import { SentidoDoMotivoCodigo } from '@uniplus/shared-data/selecao';
 import { TipoMotivoDeDecisaoCodigo } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import {
@@ -56,7 +57,7 @@ describe('formulário de motivo de decisão', () => {
     const comando = comandoDeCriacao('CLASSIFICACAO', {
       ...MOTIVO_EM_BRANCO,
       codigo: 'NOTA_INSUFICIENTE',
-      sentido: 'DESFAVORAVEL',
+      sentido: SentidoDoMotivoCodigo.DESFAVORAVEL,
       descricao: 'Nota abaixo do mínimo.',
     });
 
@@ -65,7 +66,7 @@ describe('formulário de motivo de decisão', () => {
       codigo: 'NOTA_INSUFICIENTE',
       descricao: 'Nota abaixo do mínimo.',
       subclassificacao: null,
-      sentido: 'DESFAVORAVEL',
+      sentido: SentidoDoMotivoCodigo.DESFAVORAVEL,
     });
   });
 

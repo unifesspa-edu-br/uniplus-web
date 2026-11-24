@@ -202,19 +202,19 @@ describe('FatosCandidatoPage — criação do fato', () => {
     p = await montarPagina([]);
     await p.abrirCriacao();
     await escolherTipo('DECLARADO');
-    preencher({ ...PREENCHIMENTO_DO_DERIVADO, dominio: 'CATEGORICO' });
+    preencher({ ...PREENCHIMENTO_DO_DERIVADO, dominio: 'OPCAO' });
     await p.propagar();
     expect(p.existe(campo('fonteValores'))).toBe(true);
-    p.digitar(campo('fonteValores'), 'GLOBAL');
+    p.digitar(campo('fonteValores'), 'CATALOGO');
 
     await criar();
 
     const pedido = p.http.expectOne(LISTA);
     expect(pedido.request.method).toBe('POST');
     expect(pedido.request.body).toMatchObject({
-      cardinalidade: 'ESCALAR',
-      dominio: 'CATEGORICO',
-      fonteValores: 'GLOBAL',
+      cardinalidade: 'VALOR_UNICO',
+      dominio: 'OPCAO',
+      fonteValores: 'CATALOGO',
       formato: null,
     });
     await entregar(pedido);

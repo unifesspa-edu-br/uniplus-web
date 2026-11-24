@@ -74,7 +74,7 @@ describe('o formulário de criação do fato', () => {
     const { form } = ligado();
     form.patchValue({
       tipo: 'DECLARADO',
-      dominio: 'BOOLEANO',
+      dominio: 'SIM_OU_NAO',
       classificacaoProtecao: 'PESSOAL',
       hipoteseLegal: 'INTERESSE_LEGITIMO',
     });
@@ -88,12 +88,12 @@ describe('o formulário de criação do fato', () => {
 
   it('exige o fato de membro só no agregado, e fonte e formato só nos tipos de dado que os têm', () => {
     const { form } = ligado();
-    form.patchValue({ tipo: 'DECLARADO', dominio: 'BOOLEANO' });
+    form.patchValue({ tipo: 'DECLARADO', dominio: 'SIM_OU_NAO' });
     TestBed.tick();
     expect(form.controls.fatoDeMembro.hasError('required')).toBe(false);
     expect(form.controls.fonteValores.hasError('required')).toBe(false);
 
-    form.patchValue({ dominio: 'CATEGORICO' });
+    form.patchValue({ dominio: 'OPCAO' });
     TestBed.tick();
     expect(form.controls.fonteValores.hasError('required')).toBe(true);
 

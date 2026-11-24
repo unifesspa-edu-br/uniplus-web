@@ -1,3 +1,4 @@
+import { fonteEscolhida, quantidadeEscolhida, tipoDoDadoEscolhido } from './codigos-do-fato';
 import {
   Validators,
   type AbstractControl,
@@ -8,6 +9,12 @@ import type {
   DefinicaoDoFatoInput,
   FatoCandidatoDto,
   FatoCandidatoView,
+} from '@uniplus/shared-data/configuracao';
+import {
+  FonteValoresFatoCodigo,
+  OrigemFatoCodigo,
+  QuantidadeDeValoresCodigo,
+  TipoDoDadoCodigo,
 } from '@uniplus/shared-data/configuracao';
 import {
   CLASSIFICACOES_DE_PROTECAO,
@@ -23,38 +30,41 @@ import {
  */
 
 export const ORIGENS: readonly OpcaoDeVocabulario[] = [
-  { valor: 'DECLARADO', rotulo: 'Declarado pelo candidato' },
-  { valor: 'DERIVADO', rotulo: 'Derivado' },
-  { valor: 'INTEGRACAO', rotulo: 'Integração' },
+  { valor: OrigemFatoCodigo.DECLARADO, rotulo: 'Declarado pelo candidato' },
+  { valor: OrigemFatoCodigo.CALCULADO, rotulo: 'Calculado' },
+  { valor: OrigemFatoCodigo.INTEGRACAO, rotulo: 'Integração' },
 ];
 
 export const DOMINIOS: readonly OpcaoDeVocabulario[] = [
-  { valor: 'BOOLEANO', rotulo: 'Sim ou não' },
-  { valor: 'NUMERICO', rotulo: 'Número' },
-  { valor: 'CATEGORICO', rotulo: 'Lista de valores' },
-  { valor: 'TEXTO', rotulo: 'Texto' },
-  { valor: 'DATA', rotulo: 'Data' },
-  { valor: 'ENDERECO', rotulo: 'Endereço' },
+  { valor: TipoDoDadoCodigo.SIM_OU_NAO, rotulo: 'Sim ou não' },
+  { valor: TipoDoDadoCodigo.NUMERICO, rotulo: 'Número' },
+  { valor: TipoDoDadoCodigo.OPCAO, rotulo: 'Lista de valores' },
+  { valor: TipoDoDadoCodigo.TEXTO, rotulo: 'Texto' },
+  { valor: TipoDoDadoCodigo.DATA, rotulo: 'Data' },
+  { valor: TipoDoDadoCodigo.ENDERECO, rotulo: 'Endereço' },
 ];
 
 /** O derivado por regra é booleano ou categórico: são os domínios que uma regra contribui. */
 export const DOMINIOS_DO_DERIVADO: readonly OpcaoDeVocabulario[] = DOMINIOS.filter((d) =>
-  ['BOOLEANO', 'CATEGORICO'].includes(d.valor),
+  [TipoDoDadoCodigo.SIM_OU_NAO, TipoDoDadoCodigo.OPCAO].some((codigo) => codigo === d.valor),
 );
 
 export const CARDINALIDADES: readonly OpcaoDeVocabulario[] = [
-  { valor: 'ESCALAR', rotulo: 'Um valor' },
-  { valor: 'MULTIVALORADO', rotulo: 'Vários valores' },
+  { valor: QuantidadeDeValoresCodigo.VALOR_UNICO, rotulo: 'Um valor' },
+  { valor: QuantidadeDeValoresCodigo.VARIOS_VALORES, rotulo: 'Vários valores' },
 ];
 
 export const FONTES_DE_VALORES: readonly OpcaoDeVocabulario[] = [
-  { valor: 'GLOBAL', rotulo: 'Valores do catálogo' },
-  { valor: 'PROCESSO', rotulo: 'Opções declaradas pelo processo' },
-  { valor: 'MODALIDADE', rotulo: 'Modalidades do processo' },
-  { valor: 'MUNICIPIOS_BONUS', rotulo: 'Municípios do bônus regional' },
-  { valor: 'GEO_UF', rotulo: 'Unidades da federação' },
-  { valor: 'GEO_MUNICIPIO', rotulo: 'Municípios' },
-  { valor: 'TIPOS_DEFICIENCIA', rotulo: 'Tipos de deficiência do cadastro' },
+  { valor: FonteValoresFatoCodigo.CATALOGO, rotulo: 'Valores do catálogo' },
+  { valor: FonteValoresFatoCodigo.OPCOES_DO_PROCESSO, rotulo: 'Opções declaradas pelo processo' },
+  { valor: FonteValoresFatoCodigo.MODALIDADE, rotulo: 'Modalidades do processo' },
+  { valor: FonteValoresFatoCodigo.MUNICIPIOS_DO_FADA, rotulo: 'Municípios da área da FADA' },
+  { valor: FonteValoresFatoCodigo.UNIDADES_FEDERATIVAS, rotulo: 'Unidades da federação' },
+  { valor: FonteValoresFatoCodigo.MUNICIPIOS, rotulo: 'Municípios' },
+  {
+    valor: FonteValoresFatoCodigo.TIPOS_DE_DEFICIENCIA,
+    rotulo: 'Tipos de deficiência do cadastro',
+  },
 ];
 
 export const FORMATOS_DE_TEXTO: readonly OpcaoDeVocabulario[] = [
@@ -95,8 +105,9 @@ export function rotuloDoComponente(componente: string | null): string {
  * e nunca são menos que dado pessoal. Identificador é número de documento, que é sempre texto.
  */
 export function classificacoesDoDominio(dominio: string): readonly OpcaoDeVocabulario[] {
-  if (dominio === 'TEXTO') return somente(['PESSOAL', 'IDENTIFICADOR', 'SENSIVEL']);
-  if (dominio === 'DATA' || dominio === 'ENDERECO') return somente(['PESSOAL', 'SENSIVEL']);
+  if (dominio === TipoDoDadoCodigo.TEXTO) return somente(['PESSOAL', 'IDENTIFICADOR', 'SENSIVEL']);
+  if (dominio === TipoDoDadoCodigo.DATA || dominio === TipoDoDadoCodigo.ENDERECO)
+    return somente(['PESSOAL', 'SENSIVEL']);
   return CLASSIFICACOES_DE_PROTECAO.filter((c) => c.valor !== 'IDENTIFICADOR');
 }
 
@@ -106,12 +117,12 @@ function somente(valores: readonly string[]): readonly OpcaoDeVocabulario[] {
 
 /** O fato declarado categórico escolhe a fonte dos valores; os demais domínios não têm fonte. */
 export function temFonteDeValores(dominio: string): boolean {
-  return dominio === 'CATEGORICO';
+  return dominio === TipoDoDadoCodigo.OPCAO;
 }
 
 /** O fato declarado de texto tem formato; os demais domínios não. */
 export function temFormato(dominio: string): boolean {
-  return dominio === 'TEXTO';
+  return dominio === TipoDoDadoCodigo.TEXTO;
 }
 
 /** O vínculo do fato: de onde vem o valor dele. */
@@ -156,8 +167,8 @@ export function podeTerValores(fato: FatoAvaliado): boolean {
   const tipo = tipoDoFato(fato);
   return (
     !fato.semeadoPeloSistema &&
-    fato.definicao.dominio === 'CATEGORICO' &&
-    fato.definicao.valores.fonte === 'GLOBAL' &&
+    fato.definicao.dominio.codigo === TipoDoDadoCodigo.OPCAO &&
+    fato.definicao.valores.fonte?.codigo === FonteValoresFatoCodigo.CATALOGO &&
     (tipo === 'DECLARADO' || tipo === 'DERIVADO_POR_REGRA')
   );
 }
@@ -190,8 +201,9 @@ export function fatosDeMembroAgregaveis<
     (fato) =>
       fato.ativo &&
       fato.escopo === 'MEMBRO_GRUPO' &&
-      fato.origem === 'DECLARADO' &&
-      ['BOOLEANO', 'CATEGORICO'].includes(fato.dominio),
+      fato.origem.codigo === OrigemFatoCodigo.DECLARADO &&
+      (fato.dominio.codigo === TipoDoDadoCodigo.SIM_OU_NAO ||
+        fato.dominio.codigo === TipoDoDadoCodigo.OPCAO),
   );
 }
 
@@ -200,7 +212,7 @@ export function fatosDeMembroAgregaveis<
  * que…" e o categórico, os valores presentes no grupo.
  */
 export function resumoDoAgregado(dominioDoMembro: string): string {
-  return dominioDoMembro === 'CATEGORICO'
+  return dominioDoMembro === TipoDoDadoCodigo.OPCAO
     ? 'O agregado será uma lista com os valores que aparecem entre os membros do grupo.'
     : 'O agregado será "sim" quando existir no grupo ao menos um membro com resposta "sim".';
 }
@@ -318,9 +330,9 @@ export function corpoDaDefinicao(tipo: TipoDoFato, v: DefinicaoEmEdicao): Defini
 
 function eixosEnviados(eixos: EixosEditaveis, v: DefinicaoEmEdicao): Partial<DefinicaoDoFatoInput> {
   return {
-    ...(eixos.dominio ? { dominio: v.dominio } : {}),
+    ...(eixos.dominio ? { dominio: tipoDoDadoEscolhido(v.dominio) } : {}),
     ...(eixos.escopo ? { escopo: v.escopo } : {}),
-    ...(eixos.cardinalidade ? { cardinalidade: v.cardinalidade } : {}),
+    ...(eixos.cardinalidade ? { cardinalidade: quantidadeEscolhida(v.cardinalidade) } : {}),
   };
 }
 
@@ -330,7 +342,7 @@ function fonteEFormatoEnviados(
   v: DefinicaoEmEdicao,
 ): Partial<DefinicaoDoFatoInput> {
   return {
-    fonteValores: eixos.fonteValores ? v.fonteValores : null,
+    fonteValores: eixos.fonteValores ? fonteEscolhida(v.fonteValores) : null,
     formato: eixos.formato ? v.formato : null,
   };
 }

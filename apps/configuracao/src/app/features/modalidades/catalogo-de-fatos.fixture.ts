@@ -1,14 +1,17 @@
 import {
   OperadorCodigo,
+  TipoDoDadoCodigo,
+  OrigemFatoCodigo,
+  QuantidadeDeValoresCodigo,
   type FatoCandidatoView,
   type FatoDoCatalogoDto,
 } from '@uniplus/shared-data/configuracao';
 
 const FATO_BOOLEANO: Omit<FatoCandidatoView, 'id' | 'codigo' | 'nome' | 'binding'> = {
   descricao: 'Dado do candidato.',
-  dominio: 'BOOLEANO',
-  origem: 'DECLARADO',
-  cardinalidade: 'ESCALAR',
+  dominio: { codigo: TipoDoDadoCodigo.SIM_OU_NAO, rotulo: 'Sim ou não' },
+  origem: { codigo: OrigemFatoCodigo.DECLARADO, rotulo: 'Declarado' },
+  cardinalidade: { codigo: QuantidadeDeValoresCodigo.VALOR_UNICO, rotulo: 'Um valor' },
   valoresDominio: null,
   pontoResolucao: 'INSCRICAO',
   valoresDominioDeclarados: null,
@@ -42,7 +45,7 @@ export const ESCOLA_PUBLICA = fatoDoCatalogo({
 export const COR_RACA = fatoDoCatalogo({
   codigo: 'COR_RACA',
   nome: 'Cor/raça',
-  dominio: 'CATEGORICO',
+  dominio: { codigo: TipoDoDadoCodigo.OPCAO, rotulo: 'Opção' },
   valoresDominio: ['PRETA', 'PARDA', 'INDIGENA'],
   valoresDominioDeclarados: [
     { codigo: 'PRETA', descricao: 'Preta', ordem: 1, ativo: true },
@@ -55,8 +58,8 @@ export const COR_RACA = fatoDoCatalogo({
 export const MODALIDADE = fatoDoCatalogo({
   codigo: 'MODALIDADE',
   nome: 'Modalidade de concorrência',
-  dominio: 'CATEGORICO',
-  origem: 'DERIVADO',
+  dominio: { codigo: TipoDoDadoCodigo.OPCAO, rotulo: 'Opção' },
+  origem: { codigo: OrigemFatoCodigo.CALCULADO, rotulo: 'Calculado' },
   valoresDominio: ['AC', 'LB_PPI'],
   binding: 'REGRA:MODALIDADE',
 });
@@ -67,8 +70,8 @@ const IGUALDADE = [
 ] as const;
 
 const PERTINENCIA = [
-  { codigo: OperadorCodigo.EM, rotulo: 'é um de' },
-  { codigo: OperadorCodigo.NAO_EM, rotulo: 'não é nenhum de' },
+  { codigo: OperadorCodigo.ALGUM_DE, rotulo: 'é um de' },
+  { codigo: OperadorCodigo.NENHUM_DE, rotulo: 'não é nenhum de' },
 ] as const;
 
 const CATEGORICO = [...IGUALDADE, ...PERTINENCIA] as const;

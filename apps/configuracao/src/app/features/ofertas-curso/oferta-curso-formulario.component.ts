@@ -1,18 +1,16 @@
-import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { TurnoOfertaCodigo } from '@uniplus/shared-data/configuracao';
 import {
-  FORMATOS_PEDAGOGICOS,
-  PROGRAMAS_DE_OFERTA,
-  REGIMES_DE_FUNCIONAMENTO,
-  REGIMES_DE_TURNO,
-} from '@uniplus/shared-data/configuracao';
-import {
+  acompanharLeitura,
   AlertComponent,
   DrawerComponent,
   FalhaDeLeituraDoCampoComponent,
+  FalhaDeLeituraComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
+import { carregarVocabulario } from '../../shared/vocabulario-de-configuracao';
 import { OfertaCursoForm, mensagemDeErroDaOferta } from './oferta-curso-form';
 import type { RegrasDoFormulario } from './regras-do-formulario-da-oferta';
 import { alternarTurno } from './turnos-da-oferta';
@@ -62,6 +60,7 @@ const SELECOES_DE_VINCULO: readonly SelecaoDeVinculo[] = [
     DrawerComponent,
     SpinnerComponent,
     FalhaDeLeituraDoCampoComponent,
+    FalhaDeLeituraComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './oferta-curso-formulario.component.html',
@@ -82,10 +81,37 @@ export class OfertaCursoFormularioComponent {
   readonly cancelar = output<void>();
 
   protected readonly selecoes = SELECOES_DE_VINCULO;
-  protected readonly programas = PROGRAMAS_DE_OFERTA;
-  protected readonly formatos = FORMATOS_PEDAGOGICOS;
-  protected readonly regimesDeTurno = REGIMES_DE_TURNO;
-  protected readonly regimesDeFuncionamento = REGIMES_DE_FUNCIONAMENTO;
+  private readonly vocabularios = {
+    programas: carregarVocabulario('programas-oferta'),
+    formatos: carregarVocabulario('formatos-pedagogicos'),
+    regimesDeTurno: carregarVocabulario('regimes-turno'),
+    regimesDeFuncionamento: carregarVocabulario('regimes-funcionamento'),
+    turnos: carregarVocabulario('turnos-oferta'),
+  };
+  protected readonly programas = this.vocabularios.programas.opcoes;
+  protected readonly formatos = this.vocabularios.formatos.opcoes;
+  protected readonly regimesDeTurno = this.vocabularios.regimesDeTurno.opcoes;
+  protected readonly regimesDeFuncionamento = this.vocabularios.regimesDeFuncionamento.opcoes;
+  protected readonly turnos = this.vocabularios.turnos.opcoes;
+  protected readonly falhaNosVocabularios = computed(() =>
+    Object.values(this.vocabularios).some((vocabulario) => vocabulario.falhou()),
+  );
+  protected readonly leituraDosVocabularios = acompanharLeitura({
+    falha: computed(() =>
+      this.falhaNosVocabularios() ? 'Não foi possível carregar todas as opções.' : null,
+    ),
+    pendente: computed(() =>
+      Object.values(this.vocabularios).some((vocabulario) => vocabulario.carregando()),
+    ),
+    recarregar: () => this.recarregarVocabularios(),
+    destino: () => document.getElementById('cfg-oferta-regime'),
+  });
+
+  protected recarregarVocabularios(): void {
+    Object.values(this.vocabularios)
+      .filter((vocabulario) => vocabulario.falhou())
+      .forEach((vocabulario) => vocabulario.recarregar());
+  }
 
   private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });
 
@@ -98,7 +124,7 @@ export class OfertaCursoFormularioComponent {
 
   /** O envio do formulário (Enter num campo, por exemplo) também espera o envio em curso. */
   protected aoEnviar(): void {
-    if (this.salvando()) {
+    if (this.salvando() || this.falhaNosVocabularios() || this.leituraDosVocabularios.pendente()) {
       return;
     }
     this.salvar.emit();
@@ -121,7 +147,7 @@ export class OfertaCursoFormularioComponent {
     return ids.length > 0 ? ids.join(' ') : null;
   }
 
-  protected marcarTurno(token: string): void {
+  protected marcarTurno(token: TurnoOfertaCodigo): void {
     alternarTurno(this.form().controls.turnos, token, this.regras().turnosExigidos);
   }
 }

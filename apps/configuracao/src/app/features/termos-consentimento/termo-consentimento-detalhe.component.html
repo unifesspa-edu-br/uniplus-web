@@ -58,6 +58,7 @@
         <label class="field">
           <span class="field__label">Forma de aceite</span>
           <select
+            id="termo-rascunho-formaAceite"
             class="select"
             formControlName="formaAceite"
             [attr.aria-describedby]="
@@ -66,10 +67,11 @@
             "
             [attr.aria-invalid]="erroDoCampo('formaAceite') ? 'true' : null"
           >
-            @for (opcao of formasAceite; track opcao.value) {
-              <option [value]="opcao.value">{{ opcao.label }}</option>
+            @for (opcao of formasAceite.opcoes(); track opcao.codigo) {
+              <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
             }
           </select>
+          <ui-falha-de-leitura-do-campo [leitura]="leituraDasFormas" />
           @if (erroDoCampo('formaAceite')) {
             <span id="termo-rascunho-formaAceite-erro" class="field__error">{{
               erroDoCampo('formaAceite')
@@ -80,7 +82,7 @@
             class="field__hint"
             title="A recusa por forma não resolvida é regra de publicação do processo, não deste cadastro."
           >
-            &quot;A definir&quot; é válido até a promoção final do processo.
+            A forma de aceite pode ser definida até a promoção final do processo.
           </span>
         </label>
       </div>
@@ -185,7 +187,7 @@
           @for (v of termo()?.versoes; track v.id) {
             <tr>
               <td data-label="Promovida em">{{ formatarData(v.promovidaEm) }}</td>
-              <td data-label="Forma de aceite">{{ formaAceiteLabel(v.formaAceite) }}</td>
+              <td data-label="Forma de aceite">{{ v.formaAceite.rotulo }}</td>
               <td data-label="Hash">
                 <code [title]="v.hash">{{ hashTruncado(v.hash) }}</code>
               </td>

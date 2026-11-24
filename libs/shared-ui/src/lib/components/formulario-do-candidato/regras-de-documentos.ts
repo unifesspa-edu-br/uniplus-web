@@ -1,6 +1,5 @@
 import type { DocumentoExigido } from '../lista-de-documentos/lista-de-documentos';
 import {
-  classeDaSituacao,
   type DocumentoAvaliado,
   TODOS_OS_ITENS,
   QUANTIDADE_MINIMA_DE_ITENS,
@@ -252,7 +251,13 @@ function incluirDeTodos(
 
 function integranteDoItem(documento: DocumentoAvaliado, titulo: string | null): IntegranteDoItem {
   const { ocorrenciaId } = documento;
-  return { titulo, ocorrenciaId, situacao: classeDaSituacao(documento.situacao) };
+  return {
+    titulo,
+    ocorrenciaId,
+    exigido: documento.exigido,
+    atendido: documento.atendido,
+    rotuloDaSituacao: documento.situacao.rotulo,
+  };
 }
 
 function substituirOuAcrescentar(

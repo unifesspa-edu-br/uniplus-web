@@ -1,3 +1,5 @@
+import { FormaAceiteCodigo } from './schema';
+import { valorDeTeste } from './vocabularios.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -26,7 +28,7 @@ const termoResumoSeed: TermoConsentimentoResumoDto = {
   id: ID,
   codigo: 'TERMO_DE_PRIVACIDADE_LGPD',
   nome: 'Termo de Privacidade LGPD',
-  formaAceiteRascunho: 'REGISTRO_DIGITAL_COM_LOG_IP',
+  formaAceiteRascunho: valorDeTeste(FormaAceiteCodigo.REGISTRO_COM_ENDERECO_IP),
   revisado: true,
   criadoEm: '2026-08-13T10:00:00Z',
 };
@@ -35,7 +37,7 @@ const termoDtoSeed: TermoConsentimentoDto = {
   id: ID,
   codigo: 'TERMO_DE_PRIVACIDADE_LGPD',
   nome: 'Termo de Privacidade LGPD',
-  formaAceiteRascunho: 'REGISTRO_DIGITAL_COM_LOG_IP',
+  formaAceiteRascunho: valorDeTeste(FormaAceiteCodigo.REGISTRO_COM_ENDERECO_IP),
   textoRascunho: 'Conteúdo detalhado do termo...',
   baseLegalRascunho: null,
   revisado: true,
@@ -46,14 +48,14 @@ const termoDtoSeed: TermoConsentimentoDto = {
 
 const criarCommand: CriarTermoConsentimentoCommand = {
   nome: 'Novo Termo de Consentimento',
-  formaAceiteRascunho: 'REGISTRO_DIGITAL_COM_LOG_IP',
+  formaAceiteRascunho: FormaAceiteCodigo.REGISTRO_COM_ENDERECO_IP,
   textoRascunho: 'Texto inicial do rascunho',
   baseLegalRascunho: null,
 };
 
 const editarCommand: EditarRascunhoTermoConsentimentoCommand = {
   id: ID,
-  formaAceiteRascunho: 'REGISTRO_DIGITAL_SEM_LOG_IP',
+  formaAceiteRascunho: FormaAceiteCodigo.REGISTRO_SEM_ENDERECO_IP,
   textoRascunho: 'Texto do rascunho atualizado',
   baseLegalRascunho: null,
 };
@@ -156,7 +158,9 @@ describe('TermosConsentimentoApi', () => {
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/termos-consentimento`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body.nome).toBe('Novo Termo de Consentimento');
-    expect(req.request.body.formaAceiteRascunho).toBe('REGISTRO_DIGITAL_COM_LOG_IP');
+    expect(req.request.body.formaAceiteRascunho).toBe(
+      FormaAceiteCodigo.REGISTRO_COM_ENDERECO_IP,
+    );
     expect(req.request.headers.get('Idempotency-Key')).toBe('k');
     expect(req.request.headers.get('Accept')).toBe('application/json');
     req.flush(ID, { status: 201, statusText: 'Created' });
@@ -170,7 +174,9 @@ describe('TermosConsentimentoApi', () => {
       `${BASE}/api/configuracao/admin/termos-consentimento/${ID}/rascunho`,
     );
     expect(req.request.method).toBe('PUT');
-    expect(req.request.body.formaAceiteRascunho).toBe('REGISTRO_DIGITAL_SEM_LOG_IP');
+    expect(req.request.body.formaAceiteRascunho).toBe(
+      FormaAceiteCodigo.REGISTRO_SEM_ENDERECO_IP,
+    );
     expect(req.request.headers.get('Idempotency-Key')).toBe('k');
     req.flush(null, { status: 204, statusText: 'No Content' });
     const result = (await promise) as ApiResult<void>;

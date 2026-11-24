@@ -22,7 +22,7 @@ const OFERTA_DA_API = [
 const IDADE: FatoDoCatalogo = {
   codigo: 'IDADE',
   nome: 'Idade',
-  dominio: 'NUMERICO',
+  dominio: { codigo: 'NUMERICO', rotulo: 'NUMERICO' },
   binding: 'ATRIBUTO_CANDIDATO:IDADE',
   operadoresAdmitidos: OFERTA_DA_API,
 };

@@ -1,3 +1,4 @@
+import { SentidoDoMotivoCodigo } from '@uniplus/shared-data/selecao';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   ESCRITA,
@@ -17,7 +18,7 @@ const CRIADO = [
 ] as const;
 const valido = {
   codigo: 'RENDA_ACIMA_DO_LIMITE',
-  sentido: 'DESFAVORAVEL',
+  sentido: SentidoDoMotivoCodigo.DESFAVORAVEL,
   subclassificacao: 'BAIXA_RENDA',
   descricao: 'A renda supera o limite.',
 };
@@ -200,7 +201,7 @@ describe('MotivosDeDecisaoPage — reenvio após falha sem resposta conclusiva',
     await p.propagar();
     p.edicao.form.patchValue({
       codigo: 'NOTA_INSUFICIENTE',
-      sentido: 'DESFAVORAVEL',
+      sentido: SentidoDoMotivoCodigo.DESFAVORAVEL,
       descricao: 'Nota baixa.',
     });
     (await enviar()).flush(...FALHA_AMBIGUA);

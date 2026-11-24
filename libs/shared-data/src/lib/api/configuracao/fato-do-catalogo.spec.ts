@@ -1,16 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { fatoComOperadores } from './fato-do-catalogo';
 import type { FatoCandidatoView, FatoDoCatalogoDto } from './fatos-candidato.api';
-import { OperadorCodigo } from './schema';
+import {
+  OperadorCodigo,
+  TipoDoDadoCodigo,
+  OrigemFatoCodigo,
+  QuantidadeDeValoresCodigo,
+} from './schema';
+import { valorDeTeste } from './vocabularios.testing';
 
 const COR_RACA: FatoCandidatoView = {
   id: '01960000-0000-7000-0000-0000000000f1',
   codigo: 'COR_RACA',
   nome: 'Cor ou raça',
   descricao: 'Autodeclaração de cor ou raça.',
-  dominio: 'CATEGORICO',
-  origem: 'DECLARADO',
-  cardinalidade: 'UNICO',
+  dominio: valorDeTeste(TipoDoDadoCodigo.OPCAO),
+  origem: valorDeTeste(OrigemFatoCodigo.DECLARADO),
+  cardinalidade: valorDeTeste(QuantidadeDeValoresCodigo.VALOR_UNICO),
   valoresDominio: ['PRETA', 'PARDA'],
   pontoResolucao: 'INSCRICAO',
   binding: 'CAMPO_FORMULARIO:COR_RACA',
@@ -29,15 +35,18 @@ describe('fatoComOperadores', () => {
     const envelope: FatoDoCatalogoDto = {
       fato: COR_RACA,
       operadoresAdmitidos: [
-        { codigo: OperadorCodigo.IGUAL, rotulo: 'é igual a' },
-        { codigo: OperadorCodigo.DIFERENTE, rotulo: 'é diferente de' },
+        valorDeTeste(OperadorCodigo.IGUAL),
+        valorDeTeste(OperadorCodigo.DIFERENTE),
       ],
     };
 
     const fato = fatoComOperadores(envelope);
 
     expect(fato.codigo).toBe('COR_RACA');
-    expect(fato.operadoresAdmitidos.map((o) => o.codigo)).toEqual(['IGUAL', 'DIFERENTE']);
-    expect(fato.operadoresAdmitidos[0].rotulo).toBe('é igual a');
+    expect(fato.operadoresAdmitidos.map((o) => o.codigo)).toEqual([
+      OperadorCodigo.IGUAL,
+      OperadorCodigo.DIFERENTE,
+    ]);
+    expect(fato.operadoresAdmitidos[0].rotulo).toBe(envelope.operadoresAdmitidos[0].rotulo);
   });
 });

@@ -1,3 +1,8 @@
+import {
+  NaturezaLegalCodigo,
+  ComposicaoVagasCodigo,
+  RegraRemanejamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
 import { FormControl, Validators } from '@angular/forms';
 import { describe, expect, it } from 'vitest';
 import {
@@ -44,9 +49,9 @@ describe('modalidade-form', () => {
   it('descreve o remanejamento cruzado só quando par e fallback foram informados', () => {
     const form = criarFormularioDeModalidade();
     const condicionais = {
-      natureza: 'ACAO_AFIRMATIVA',
-      composicao: 'RESTANTE_DAS_VAGAS_OFERTADAS',
-      regra: 'CRUZADO',
+      natureza: NaturezaLegalCodigo.ACAO_AFIRMATIVA,
+      composicao: ComposicaoVagasCodigo.RESTANTE_DAS_VAGAS_OFERTADAS,
+      regra: RegraRemanejamentoCodigo.CRUZADO,
     } as const;
     expect(resumoCondicional(condicionais, form.getRawValue())[1]).toBe(
       'Remanejamento cruzado (informe o par e o fallback).',
@@ -59,9 +64,17 @@ describe('modalidade-form', () => {
 
   it('exige a origem só na composição que retira de outra modalidade', () => {
     const form = criarFormularioDeModalidade();
-    reconciliarCondicionais(form, 'AMPLA', 'RETIRADA_DE_OUTRA_MODALIDADE');
+    reconciliarCondicionais(
+      form,
+      NaturezaLegalCodigo.AMPLA,
+      ComposicaoVagasCodigo.RETIRADA_DE_OUTRA_MODALIDADE,
+    );
     expect(form.controls.composicaoOrigem.invalid).toBe(true);
-    reconciliarCondicionais(form, 'AMPLA', 'RESTANTE_DAS_VAGAS_OFERTADAS');
+    reconciliarCondicionais(
+      form,
+      NaturezaLegalCodigo.AMPLA,
+      ComposicaoVagasCodigo.RESTANTE_DAS_VAGAS_OFERTADAS,
+    );
     expect(form.controls.composicaoOrigem.valid).toBe(true);
   });
 });

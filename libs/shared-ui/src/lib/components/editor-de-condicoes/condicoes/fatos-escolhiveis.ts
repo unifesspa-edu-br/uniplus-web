@@ -25,7 +25,7 @@ export type TipoDeDominio = 'BOOLEANO' | 'NUMERICO' | 'CATEGORICO_ESTATICO' | 'C
 export interface FatoDoCatalogo {
   readonly codigo: string;
   readonly nome: string;
-  readonly dominio: string;
+  readonly dominio: CodigoComRotulo<string>;
   readonly valoresDominio?: readonly string[] | null;
   readonly binding: string;
   /**
@@ -33,8 +33,8 @@ export interface FatoDoCatalogo {
    * Vazia quando o fato não pode ser citado em regra.
    */
   readonly operadoresAdmitidos: readonly CodigoComRotulo<string>[];
-  /** De onde vêm os valores do categórico (`GEO_MUNICIPIO`, `PROCESSO`...); nulo nos demais. */
-  readonly fonteValores?: string | null;
+  /** De onde vêm os valores do categórico (`MUNICIPIOS`, `OPCOES_DO_PROCESSO`...); nulo nos demais. */
+  readonly fonteValores?: CodigoComRotulo<string> | null;
   /** Os valores do categórico com a descrição que o cadastro deu a cada um, quando há. */
   readonly valoresDominioDeclarados?: readonly ValorDoCatalogo[] | null;
   /** Se a proteção de dados aprovou a proteção do fato; sem a aprovação, o fato não aceita vínculo novo. */
@@ -76,7 +76,7 @@ export interface FatoEscolhivel {
 }
 
 /** A fonte dos valores do fato de município. */
-export const FONTE_GEO_MUNICIPIO = 'GEO_MUNICIPIO';
+export const FONTE_MUNICIPIOS = 'MUNICIPIOS';
 
 /** Os prefixos de binding que marcam o fato perguntado ao candidato no formulário. */
 const BINDINGS_DE_CAMPO = ['CAMPO_INSCRICAO:', 'CAMPO_FORMULARIO:'];
@@ -107,11 +107,12 @@ export function fatoEscolhivel(fato: FatoDoCatalogo): FatoEscolhivel | null {
 }
 
 function tipoDoDominio(fato: FatoDoCatalogo): TipoDeDominio | null {
-  switch (fato.dominio) {
-    case 'BOOLEANO':
+  switch (fato.dominio.codigo) {
+    case 'SIM_OU_NAO':
+      return 'BOOLEANO';
     case 'NUMERICO':
-      return fato.dominio;
-    case 'CATEGORICO':
+      return fato.dominio.codigo;
+    case 'OPCAO':
       return (fato.valoresDominio ?? []).length > 0 ? 'CATEGORICO_ESTATICO' : 'CATEGORICO_DINAMICO';
     default:
       return null;
@@ -171,7 +172,7 @@ function oferecido(
   const fato = fatoEscolhivel(view);
   if (fato === null || fato.operadoresAdmitidos.length === 0) return null;
   if (fato.tipoDominio !== 'CATEGORICO_DINAMICO') return fato;
-  if (comMunicipios && view.fonteValores === FONTE_GEO_MUNICIPIO) {
+  if (comMunicipios && view.fonteValores?.codigo === FONTE_MUNICIPIOS) {
     return { ...fato, municipio: true };
   }
   const ofertados = dominiosDinamicos.get(fato.codigo) ?? [];

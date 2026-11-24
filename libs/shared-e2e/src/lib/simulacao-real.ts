@@ -210,7 +210,7 @@ const CADASTROS_MANTIDOS_PELO_ROTEIRO = [
   'precedencias-fase',
   'calendarios-dias-uteis',
   'pesos-area-enem',
-  'base-legal-bonus-regional',
+  'base-legal-do-fada',
   'referencias-reserva-demografica',
   'termos-consentimento',
   'modelos-formulario',

@@ -16,7 +16,7 @@ export type ControleDoCampo =
   | 'codigos';
 
 const CONTROLE_PELO_TIPO: Readonly<Record<string, Exclude<ControleDoCampo, 'fixa'>>> = {
-  BOOLEANO: 'booleano',
+  SIM_OU_NAO: 'booleano',
   NUMERO: 'numero',
   DATA: 'data',
   MUNICIPIO: 'municipio',
@@ -35,8 +35,8 @@ export function controleDoTipo(
     opcoes: 0,
   },
 ): Exclude<ControleDoCampo, 'fixa'> {
-  if (tipoRenderizacao === 'SELECAO_UNICA') return controleDaEscolhaUnica(escolha);
-  if (tipoRenderizacao === 'SELECAO_MULTIPLA')
+  if (tipoRenderizacao === 'ESCOLHA_UNICA') return controleDaEscolhaUnica(escolha);
+  if (tipoRenderizacao === 'ESCOLHA_MULTIPLA')
     return escolha.semValoresConhecidos ? 'codigos' : 'escolha';
   return Object.hasOwn(CONTROLE_PELO_TIPO, tipoRenderizacao)
     ? CONTROLE_PELO_TIPO[tipoRenderizacao]

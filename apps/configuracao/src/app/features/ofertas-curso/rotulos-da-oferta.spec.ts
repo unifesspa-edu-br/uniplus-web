@@ -14,6 +14,7 @@ import {
   rotuloDosTurnos,
 } from './rotulos-da-oferta';
 import { engCiv, ige, maraba } from './ofertas-curso.testing';
+import { valoresDaOferta } from './valores-da-oferta.testing';
 
 describe('rótulos da oferta', () => {
   it('o curso aparece só pelo nome na listagem e com o código fora dela', () => {
@@ -31,16 +32,19 @@ describe('rótulos da oferta', () => {
     );
   });
 
-  it('um tipo de local ou um token que a versão desconhece aparece como veio', () => {
-    expect(rotularTipoLocal({ ...maraba, tipo: 'novo' as never })).toBe('novo');
-    expect(rotuloDoPrograma('NOVO')).toBe('NOVO');
-    expect(rotuloDoFormato('NOVO')).toBe('NOVO');
-    expect(rotuloDoRegimeDeTurno('NOVO')).toBe('NOVO');
-    expect(rotuloDoRegimeDeFuncionamento('NOVO')).toBe('NOVO');
+  it('mostra os rótulos recebidos da API', () => {
+    expect(rotuloDoPrograma(valoresDaOferta.programa)).toBe(valoresDaOferta.programa.rotulo);
+    expect(rotuloDoFormato(valoresDaOferta.formato)).toBe(valoresDaOferta.formato.rotulo);
+    expect(rotuloDoRegimeDeTurno(valoresDaOferta.regime)).toBe(valoresDaOferta.regime.rotulo);
+    expect(rotuloDoRegimeDeFuncionamento(valoresDaOferta.funcionamento)).toBe(
+      valoresDaOferta.funcionamento.rotulo,
+    );
   });
 
-  it('os turnos saem em ordem canônica, ligados por "e", e a lista vazia vira traço', () => {
-    expect(rotuloDosTurnos(['VESPERTINO', 'MATUTINO'])).toBe('Matutino e Vespertino');
+  it('os turnos recebidos são ligados por "e" e a lista vazia vira traço', () => {
+    expect(rotuloDosTurnos(valoresDaOferta.turnos)).toBe(
+      valoresDaOferta.turnos.map((turno) => turno.rotulo).join(' e '),
+    );
     expect(rotuloDosTurnos([])).toBe('—');
   });
 });

@@ -67,7 +67,7 @@ export function formaDe(valor: ValorJson | undefined): FormaDoValor {
 
 /**
  * Sem resposta: nulo, texto em branco ou lista vazia. Tratar o branco como valor faria uma condição
- * DIFERENTE ou NAO_EM ser satisfeita por quem não respondeu.
+ * DIFERENTE ou NENHUM_DE ser satisfeita por quem não respondeu.
  */
 export function estaVazia(resposta: ValorJson | undefined): boolean {
   switch (formaDe(resposta)) {

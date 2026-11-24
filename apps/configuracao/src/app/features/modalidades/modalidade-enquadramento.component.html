@@ -12,8 +12,8 @@
         [attr.aria-invalid]="erroDoCampo('acaoQuandoIndeferido') ? 'true' : null"
       >
         <option value="">Não se aplica</option>
-        @for (op of acoes; track op.value) {
-          <option [value]="op.value">{{ op.label }}</option>
+        @for (op of acoes(); track op.codigo) {
+          <option [value]="op.codigo">{{ op.rotulo }}</option>
         }
       </select>
       <span class="field__hint"

@@ -1,3 +1,4 @@
+import { AbrangenciaCodigo } from '@uniplus/shared-data/configuracao';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
@@ -81,7 +82,7 @@ export class EdicaoDosDiasNaoUteis {
     this.recusa.set('');
     this.form.reset({
       data: '',
-      abrangencia: 'ESTADUAL',
+      abrangencia: AbrangenciaCodigo.ESTADUAL,
       codigoMunicipio: '',
       uf: PARA_SIGLA,
       buscaMunicipio: '',

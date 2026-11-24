@@ -60,8 +60,8 @@
                 <div class="table-responsive__primary">{{ t.nome }}</div>
               </td>
               <td data-label="Forma de aceite">
-                <ui-tag [variant]="formaAceiteVariante(t.formaAceiteRascunho)">
-                  {{ formaAceiteLabel(t.formaAceiteRascunho) }}
+                <ui-tag [variant]="formaAceiteVariante(t.formaAceiteRascunho.codigo)">
+                  {{ t.formaAceiteRascunho.rotulo }}
                 </ui-tag>
               </td>
               <td data-label="Status de revisão">

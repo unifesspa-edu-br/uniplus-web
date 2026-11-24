@@ -4,13 +4,19 @@ import { conteudo, fato, item, secao } from './conteudos-de-exemplo.testing';
 import { acrescentarCampo } from './itens';
 
 describe('campo de município', () => {
-  const uf = fato('UF', { dominio: 'CATEGORICO', fonteValores: 'GEO_UF' });
-  const municipio = fato('MUNICIPIO', { dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' });
+  const uf = fato('UF', {
+    dominio: { codigo: 'OPCAO', rotulo: 'OPCAO' },
+    fonteValores: { codigo: 'UNIDADES_FEDERATIVAS', rotulo: 'UNIDADES_FEDERATIVAS' },
+  });
+  const municipio = fato('MUNICIPIO', {
+    dominio: { codigo: 'OPCAO', rotulo: 'OPCAO' },
+    fonteValores: { codigo: 'MUNICIPIOS', rotulo: 'MUNICIPIOS' },
+  });
 
   it('o município nasce restrito à UF respondida antes', () => {
     const comUf = conteudo({
       etapas: [secao('S1', 0)],
-      itens: [item('UF', 0, 'S1', { apresentacao: { tipoRenderizacao: 'SELECAO_UNICA' } })],
+      itens: [item('UF', 0, 'S1', { apresentacao: { tipoRenderizacao: 'ESCOLHA_UNICA' } })],
     });
 
     const resultado = acrescentarCampo(comUf, municipio, 'S1', { catalogo: [uf, municipio] });

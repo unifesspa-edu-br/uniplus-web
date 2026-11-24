@@ -287,7 +287,7 @@ export interface paths {
         readonly get: {
             readonly parameters: {
                 readonly query?: {
-                    readonly situacao?: components["schemas"]["SituacaoDoCertame"];
+                    readonly situacao?: components["schemas"]["SituacaoDoCertameCodigo"];
                     /** @description Código da modalidade que o certame precisa ofertar. Sem o parâmetro, não recorta. */
                     readonly modalidade?: string;
                     /** @description Texto pesquisado no título do certame e no número do edital. Insensível a caixa e a acentuação. */
@@ -465,7 +465,7 @@ export interface paths {
         readonly get: {
             readonly parameters: {
                 readonly query?: {
-                    readonly finalidade?: components["schemas"]["FinalidadeDoDocumento"];
+                    readonly finalidade?: components["schemas"]["FinalidadeDoDocumentoCodigo"];
                 };
                 readonly header?: never;
                 readonly path: {
@@ -482,6 +482,15 @@ export interface paths {
                     };
                     content: {
                         readonly "application/vnd.uniplus.documento-a-publicar.v1+json": readonly components["schemas"]["DocumentoAPublicarDto"][];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
                 /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
@@ -1233,7 +1242,7 @@ export interface paths {
                 readonly header?: never;
                 readonly path: {
                     readonly id: string;
-                    readonly finalidade: string;
+                    readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
                 };
                 readonly cookie?: never;
             };
@@ -1298,7 +1307,7 @@ export interface paths {
                 readonly header?: never;
                 readonly path: {
                     readonly id: string;
-                    readonly finalidade: string;
+                    readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
                 };
                 readonly cookie?: never;
             };
@@ -1385,7 +1394,7 @@ export interface paths {
                 };
                 readonly path: {
                     readonly id: string;
-                    readonly finalidade: string;
+                    readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
                 };
                 readonly cookie?: never;
             };
@@ -1485,7 +1494,7 @@ export interface paths {
                 readonly header?: never;
                 readonly path: {
                     readonly id: string;
-                    readonly finalidade: string;
+                    readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
                 };
                 readonly cookie?: never;
             };
@@ -1567,7 +1576,7 @@ export interface paths {
                 };
                 readonly path: {
                     readonly id: string;
-                    readonly finalidade: string;
+                    readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
                 };
                 readonly cookie?: never;
             };
@@ -1684,7 +1693,7 @@ export interface paths {
                 };
                 readonly path: {
                     readonly id: string;
-                    readonly finalidade: string;
+                    readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
                 };
                 readonly cookie?: never;
             };
@@ -4084,7 +4093,7 @@ export interface paths {
         readonly get: {
             readonly parameters: {
                 readonly query?: {
-                    readonly tipo?: components["schemas"]["TipoDeLeiauteDoInep"];
+                    readonly tipo?: string;
                 };
                 readonly header?: never;
                 readonly path?: never;
@@ -4616,7 +4625,7 @@ export interface paths {
             readonly parameters: {
                 readonly query?: {
                     readonly tipoProcesso?: string;
-                    readonly categoria?: components["schemas"]["CategoriaObrigatoriedade"];
+                    readonly categoria?: components["schemas"]["CategoriaObrigatoriedadeCodigo"];
                     readonly vigentes?: boolean;
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
@@ -5260,12 +5269,16 @@ export interface paths {
                 };
             };
             readonly responses: {
-                /** @description No Content */
-                readonly 204: {
+                /** @description OK */
+                readonly 200: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        readonly "text/plain": readonly components["schemas"]["EtapaProcessoDto"][];
+                        readonly "application/json": readonly components["schemas"]["EtapaProcessoDto"][];
+                        readonly "text/json": readonly components["schemas"]["EtapaProcessoDto"][];
+                    };
                 };
                 /** @description Bad Request */
                 readonly 400: {
@@ -5921,7 +5934,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "application/vnd.uniplus.motivo-do-processo.v1+json": readonly components["schemas"]["MotivoDoProcessoDto"][];
+                        readonly "application/vnd.uniplus.motivo-do-processo.v1+json": readonly components["schemas"]["MotivoDeDecisaoDoProcessoDto"][];
                     };
                 };
                 /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
@@ -7218,12 +7231,16 @@ export interface paths {
                 };
             };
             readonly responses: {
-                /** @description No Content */
-                readonly 204: {
+                /** @description OK */
+                readonly 200: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        readonly "text/plain": readonly components["schemas"]["FaseCronogramaDto"][];
+                        readonly "application/json": readonly components["schemas"]["FaseCronogramaDto"][];
+                        readonly "text/json": readonly components["schemas"]["FaseCronogramaDto"][];
+                    };
                 };
                 /** @description Bad Request */
                 readonly 400: {
@@ -9736,6 +9753,138 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/selecao/vocabularios/formatos-permitidos": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.formato-permitido.v1+json": readonly components["schemas"]["FormatoPermitido"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/vocabularios/criterios-distincao-apresentacoes": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.criterio-distincao-apresentacoes.v1+json": readonly components["schemas"]["CriterioDeDistincaoDasApresentacoes"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/vocabularios/consequencias-indeferimento": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.consequencia-indeferimento.v1+json": readonly components["schemas"]["ConsequenciaDoIndeferimento"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -9803,8 +9952,6 @@ export interface components {
             readonly itemDeAvaliacaoId: null | string;
             readonly areaDoEnem: null | string;
         };
-        /** @enum {string} */
-        readonly AncoraDoRecurso: AncoraDoRecurso;
         readonly AnexoDoAtoRequest: {
             /** Format: uuid */
             readonly documentoId: string;
@@ -9815,16 +9962,26 @@ export interface components {
             readonly documentoId: string;
             readonly nome: null | string;
         };
+        readonly Aplicabilidade: {
+            readonly codigo: components["schemas"]["AplicabilidadeCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `GERAL`: Todos os candidatos — Exigida de todos os candidatos: as condições não são avaliadas.
+         *     - `CONDICIONAL`: Só quem atende às condições — Exigida apenas de quem atende às condições declaradas; sem nenhuma condição ativa, não é exigida de ninguém.
+         * @enum {string}
+         */
+        readonly AplicabilidadeCodigo: AplicabilidadeCodigo;
         readonly AplicabilidadeDaExigenciaDto: {
-            readonly tipo: string;
+            readonly tipo: components["schemas"]["Aplicabilidade"];
             readonly condicoes: readonly components["schemas"]["CondicaoGatilhoDto"][];
         };
         readonly AplicabilidadeDaExigenciaInput: {
-            readonly tipo: null | string;
+            readonly tipo: null | components["schemas"]["AplicabilidadeCodigo"];
             readonly condicoes: null | readonly components["schemas"]["CondicaoGatilhoInput"][];
         };
         readonly AplicacaoDeModeloDto: {
-            readonly finalidade: string;
+            readonly finalidade: components["schemas"]["FinalidadeFormulario"];
             readonly fatosTrazidosParaAInscricao: readonly string[];
             readonly fatosMantidosNaInscricao: readonly string[];
             readonly descartados: readonly components["schemas"]["ParteDescartadaDto"][];
@@ -9951,7 +10108,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly tipoProcessoCodigo: null | string;
-            readonly categoria: components["schemas"]["CategoriaObrigatoriedade"];
+            readonly categoria: null | components["schemas"]["CategoriaObrigatoriedadeCodigo"];
             readonly regraCodigo: null | string;
             readonly predicado: null | components["schemas"]["PredicadoObrigatoriedade"];
             readonly descricaoHumana: null | string;
@@ -9973,7 +10130,7 @@ export interface components {
             readonly ofertas: null | readonly components["schemas"]["OfertaEscolhidaDto"][];
         };
         readonly AvaliacaoDaEtapaDto: {
-            readonly formaDeAvaliacao: null | string;
+            readonly formaDeAvaliacao: null | components["schemas"]["FormaDeAvaliacao"];
             readonly regraConsolidacao: null | components["schemas"]["ReferenciaRegraDto"];
             readonly itensDeAvaliacao: readonly components["schemas"]["ItemDeAvaliacaoDto"][];
             readonly escalaDeAtendimento: null | readonly components["schemas"]["NivelDeAtendimentoDto"][];
@@ -10060,8 +10217,8 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly referencia: string;
-            readonly abrangencia: string;
-            readonly situacao: string;
+            readonly abrangencia: components["schemas"]["TipoAbrangencia"];
+            readonly situacao: components["schemas"]["StatusBaseLegal"];
             readonly observacao: null | string;
         };
         readonly BaseLegalInput: {
@@ -10104,8 +10261,17 @@ export interface components {
             readonly usaNomeSocial: boolean;
             readonly cpfMascarado: string;
         };
-        /** @enum {string} */
-        readonly CaraterEtapa: CaraterEtapa;
+        readonly CaraterEtapa: {
+            readonly codigo: components["schemas"]["CaraterEtapaCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `classificatoria`: Classificatória — A nota da etapa entra na nota final e na ordem de classificação dos candidatos.
+         *     - `eliminatoria`: Eliminatória — A etapa aprova ou reprova o candidato, sem pontuar.
+         *     - `ambas`: Classificatória e eliminatória — A nota da etapa entra na nota final e, além disso, pode eliminar o candidato.
+         * @enum {string}
+         */
+        readonly CaraterEtapaCodigo: CaraterEtapaCodigo;
         readonly CardinalidadeQualificadaDto: {
             /** Format: int32 */
             readonly quantidadeMinima: null | number;
@@ -10123,8 +10289,21 @@ export interface components {
             readonly categoriaDocumentoOrigemId: string;
             readonly codigo: string;
         };
-        /** @enum {string} */
-        readonly CategoriaObrigatoriedade: CategoriaObrigatoriedade;
+        readonly CategoriaObrigatoriedade: {
+            readonly codigo: components["schemas"]["CategoriaObrigatoriedadeCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `etapa`: Etapa — Regra sobre as etapas do processo seletivo.
+         *     - `modalidade`: Modalidade — Regra sobre as modalidades de concorrência e a reserva de vagas.
+         *     - `desempate`: Desempate — Regra sobre os critérios de desempate.
+         *     - `documento`: Documento — Regra sobre os documentos exigidos dos candidatos.
+         *     - `fada`: Fator de Atenuação das Desigualdades de Acesso (FADA) — Regra sobre o Fator de Atenuação das Desigualdades de Acesso (FADA).
+         *     - `atendimento`: Atendimento — Regra sobre o atendimento especializado.
+         *     - `outros`: Outros — Regra que não pertence a nenhuma das outras categorias.
+         * @enum {string}
+         */
+        readonly CategoriaObrigatoriedadeCodigo: CategoriaObrigatoriedadeCodigo;
         readonly CertameNaVitrineDto: {
             /** Format: uuid */
             readonly processoSeletivoId: string;
@@ -10160,7 +10339,7 @@ export interface components {
             readonly modalidadesOfertadas: readonly string[];
             readonly vagas: readonly components["schemas"]["QuadroDeVagasCertameDto"][];
             readonly etapas: readonly components["schemas"]["EtapaCertameDto"][];
-            readonly origemCandidatos: string;
+            readonly origemCandidatos: components["schemas"]["OrigemCandidatos"];
             readonly cronogramaFases: readonly components["schemas"]["FaseCronogramaCertameDto"][];
             readonly documentosExigidos: readonly components["schemas"]["ExigenciaDocumentalCertameDto"][];
             readonly atendimento: components["schemas"]["AtendimentoCertameDto"];
@@ -10177,6 +10356,18 @@ export interface components {
             readonly itens: readonly components["schemas"]["CampoRenderizavel"][];
             readonly grupos: readonly components["schemas"]["GrupoRenderizavel"][];
         };
+        readonly ComposicaoVagasModalidade: {
+            readonly codigo: components["schemas"]["ComposicaoVagasModalidadeCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `RESTANTE_DAS_VAGAS_OFERTADAS`: Restante das vagas ofertadas — Vagas restantes após as reservas.
+         *     - `DENTRO_DA_RESERVA_LEGAL`: Dentro da reserva legal — Vagas incluídas na reserva legal.
+         *     - `RETIRADA_DE_OUTRA_MODALIDADE`: Retirada de outra modalidade — Vagas retiradas de outra modalidade.
+         *     - `SUPLEMENTAR_AO_TOTAL`: Suplementar ao total — Vagas adicionais ao total ofertado.
+         * @enum {string}
+         */
+        readonly ComposicaoVagasModalidadeCodigo: ComposicaoVagasModalidadeCodigo;
         readonly ComprovanteDaInscricaoDto: {
             readonly candidato: components["schemas"]["CandidatoDoComprovanteDto"];
             readonly inscricao: components["schemas"]["InscricaoNoComprovanteDto"];
@@ -10345,7 +10536,7 @@ export interface components {
             readonly cobra: boolean;
             /** Format: double */
             readonly valor: null | number;
-            readonly fundamentos: readonly string[];
+            readonly fundamentos: readonly components["schemas"]["FundamentoIsencao"][];
         };
         readonly ConfirmarEnvioDeDocumentoDaInscricaoRequest: {
             readonly etag: null | string;
@@ -10364,11 +10555,30 @@ export interface components {
             readonly itens: readonly components["schemas"]["ItemConformidadeDto"][];
             readonly avisos: readonly components["schemas"]["AvisoConformidadeDto"][];
         };
+        readonly ConsequenciaDoIndeferimento: {
+            readonly codigo: components["schemas"]["ConsequenciaDoIndeferimentoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `ELIMINA`: Eliminação — Retira a pessoa do processo seletivo.
+         *     - `RECLASSIFICA_AC`: Ampla concorrência — Passa a pessoa para a ampla concorrência.
+         *     - `REMOVE_VANTAGEM`: Perda da vantagem — Retira a vantagem solicitada.
+         *     - `ABRE_PRAZO_PARA_REENVIO`: Prazo para reenvio — Abre prazo para reenviar o documento.
+         * @enum {string}
+         */
+        readonly ConsequenciaDoIndeferimentoCodigo: ConsequenciaDoIndeferimentoCodigo;
         readonly ConteudoDoTermoDto: {
             readonly nome: string;
             readonly texto: string;
             readonly baseLegal: string;
-            readonly formaAceite: string;
+            readonly formaAceite: components["schemas"]["FormaAceite"];
+            readonly hashVersao: string;
+        };
+        readonly ConteudoDoTermoExigidoDto: {
+            readonly nome: string;
+            readonly texto: string;
+            readonly baseLegal: string;
+            readonly formaAceite: components["schemas"]["FormaAceite"];
             readonly hashVersao: string;
         };
         readonly CpfMascaradoDto: {
@@ -10380,11 +10590,11 @@ export interface components {
             readonly codigo: null | string;
             readonly descricao: null | string;
             readonly subclassificacao: null | string;
-            readonly sentido: null | string;
+            readonly sentido: null | components["schemas"]["SentidoDoMotivoCodigo"];
         };
         readonly CriarObrigatoriedadeLegalCommand: {
             readonly tipoProcessoCodigo: null | string;
-            readonly categoria: components["schemas"]["CategoriaObrigatoriedade"];
+            readonly categoria: null | components["schemas"]["CategoriaObrigatoriedadeCodigo"];
             readonly regraCodigo: null | string;
             readonly predicado: null | components["schemas"]["PredicadoObrigatoriedade"];
             readonly descricaoHumana: null | string;
@@ -10400,7 +10610,7 @@ export interface components {
             readonly nome: string;
             /** Format: uuid */
             readonly tipoProcessoOrigemId: string;
-            readonly origemCandidatos: components["schemas"]["OrigemCandidatos"];
+            readonly origemCandidatos: null | components["schemas"]["OrigemCandidatosCodigo"];
             /** Format: uuid */
             readonly unidadeAdministradoraOrigemId: string;
             readonly localidadeCodigoIbge: null | string;
@@ -10408,6 +10618,17 @@ export interface components {
             readonly localidadeUf: null | string;
             readonly identificadorLegivel: null | string;
         };
+        readonly CriterioDeDistincaoDasApresentacoes: {
+            readonly codigo: components["schemas"]["CriterioDeDistincaoDasApresentacoesCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `COMPETENCIA_MENSAL`: Competência mensal — Distingue as apresentações pelo mês a que se referem.
+         *     - `EXERCICIO_ANUAL`: Exercício anual — Distingue as apresentações pelo ano a que se referem.
+         *     - `OCORRENCIA`: Ocorrência — Distingue as apresentações por ocorrência.
+         * @enum {string}
+         */
+        readonly CriterioDeDistincaoDasApresentacoesCodigo: CriterioDeDistincaoDasApresentacoesCodigo;
         readonly CriterioDesempateDto: {
             /** Format: uuid */
             readonly id: string;
@@ -10579,7 +10800,7 @@ export interface components {
             readonly modalidadeDestinoCodigo: null | string;
         };
         readonly DistincaoDasApresentacoesDto: {
-            readonly criterioDeDistincao: null | string;
+            readonly criterioDeDistincao: null | components["schemas"]["CriterioDeDistincaoDasApresentacoes"];
             /** Format: date */
             readonly dataReferencia: null | string;
             readonly ocorrenciasEsperadas: null | readonly string[];
@@ -10598,7 +10819,7 @@ export interface components {
             readonly finalidade: components["schemas"]["FinalidadeDoDocumento"];
             readonly nomeArquivo: string;
             readonly tipoDeMidia: string;
-            readonly status: string;
+            readonly status: components["schemas"]["StatusArquivoEnviado"];
             /** Format: date-time */
             readonly criadoEm: string;
             /** Format: date-time */
@@ -10739,7 +10960,7 @@ export interface components {
              * Motivos de decisão
              * @description Motivos do catálogo que o processo escolheu para as decisões das fases e das etapas. Cada motivo se identifica pelo lugar, a fase ou a etapa pela chave, e pelo tipo e pelo código.
              */
-            readonly motivos?: readonly components["schemas"]["DocumentoDaConfiguracaoMotivo"][];
+            readonly motivosDeDecisao?: readonly components["schemas"]["DocumentoDaConfiguracaoMotivo"][];
         };
         /**
          * Atendimento especializado
@@ -10912,7 +11133,7 @@ export interface components {
              * Fato de elegibilidade
              * @description Código do fato que decide quem recebe o bônus, quando o processo o declara, de 1 a 60 caracteres.
              */
-            readonly fatoElegibilidadeCodigo?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
+            readonly codigoDoDadoDeElegibilidade?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
             /**
              * Base legal
              * @description Código estável da base legal do bônus regional no catálogo: maiúscula inicial, depois maiúsculas, dígitos e sublinhado, de 2 a 100 caracteres.
@@ -10974,7 +11195,7 @@ export interface components {
              * Modalidade de destino final
              * @description Código da modalidade que recebe as vagas quando nenhum destino da cascata as absorve, em geral a ampla concorrência.
              */
-            readonly fallbackCodigo?: string;
+            readonly destinoFinalCodigo?: string;
             /**
              * Destinos
              * @description Os destinos de cada modalidade de origem, até 56 no total e até 8 origens distintas.
@@ -11062,13 +11283,13 @@ export interface components {
              * Referência temporal dos fatos
              * @description Instante a partir do qual se avaliam os fatos que dependem de data, como a idade do candidato. A fase citada é a do cronograma deste documento.
              */
-            readonly referenciaTemporalFatos?: {
+            readonly referenciaTemporalDosDados?: {
                 /**
                  * Tipo de referência
                  * @description Âncora da referência: fim da inscrição, início ou fim de uma fase, ou uma data específica.
                  * @enum {unknown}
                  */
-                readonly tipo?: DocumentoDaConfiguracaoColetaReferenciaTemporalFatosTipo;
+                readonly tipo?: DocumentoDaConfiguracaoColetaReferenciaTemporalDosDadosTipo;
                 /**
                  * Data específica
                  * Format: date
@@ -11085,12 +11306,12 @@ export interface components {
              * Regras de derivação
              * @description Regras que derivam o valor de um fato do catálogo a partir de outros fatos. Cada fato derivado aparece uma vez. A derivação da modalidade não entra aqui: vem da oferta.
              */
-            readonly regrasDerivacao?: readonly {
+            readonly calculosDosDados?: readonly {
                 /**
                  * Fato derivado
                  * @description Código do fato derivado no catálogo, de 1 a 60 caracteres.
                  */
-                readonly fatoCodigo: string;
+                readonly codigoDoDado: string;
                 /**
                  * Regras
                  * @description Regras da derivação, cada uma com a condição em que contribui. A regra sem condição é a âncora e contribui sempre, junto com as demais que valerem.
@@ -11110,7 +11331,7 @@ export interface components {
                      * Quando vale
                      * @description Condição da regra. Nula ou ausente: regra âncora, que vale sempre.
                      */
-                    readonly quando?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+                    readonly quando?: null | components["schemas"]["DocumentoDaConfiguracaoCondicoesCondicoesAlternativas"];
                 }[];
             }[];
         };
@@ -11174,23 +11395,6 @@ export interface components {
             readonly regra: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
         };
         /**
-         * Ato publicado pela fase
-         * @description Um tipo de ato que a fase publica, com o papel dele no ciclo de recurso.
-         */
-        readonly DocumentoDaConfiguracaoComunsProduto: {
-            /**
-             * Tipo de ato
-             * @description Código do tipo de ato no catálogo de publicações.
-             */
-            readonly atoCodigo: string;
-            /**
-             * Papel do ato
-             * @description PRELIMINAR para o resultado que admite recurso, DEFINITIVO para o resultado final. Ausente quando o ato não é um resultado.
-             * @enum {unknown}
-             */
-            readonly papel?: DocumentoDaConfiguracaoComunsProdutoPapel;
-        };
-        /**
          * Propriedades do recurso
          * @description Prazos, efeito suspensivo e guarda da vaga do recurso, comuns à fase e à etapa.
          */
@@ -11220,7 +11424,7 @@ export interface components {
              * Ato âncora do prazo
              * @description Código do tipo de ato, entre os atos preliminares da própria fase, a partir de cujo instante o prazo corre.
              */
-            readonly atoAncoraCodigo?: string;
+            readonly publicacaoDeReferenciaAtoCodigo?: string;
             /**
              * Admite instância superior
              * @description Se cabe recurso à instância superior.
@@ -11256,6 +11460,23 @@ export interface components {
             readonly procedimentosDeRecurso?: readonly components["schemas"]["DocumentoDaConfiguracaoComunsProcedimentoDeRecurso"][];
         };
         /**
+         * Ato publicado pela fase
+         * @description Um tipo de ato que a fase publica, com o papel dele no ciclo de recurso.
+         */
+        readonly DocumentoDaConfiguracaoComunsPublicacaoPrevista: {
+            /**
+             * Tipo de ato
+             * @description Código do tipo de ato no catálogo de publicações.
+             */
+            readonly atoCodigo: string;
+            /**
+             * Papel do ato
+             * @description PRELIMINAR para o resultado que admite recurso, DEFINITIVO para o resultado final. Ausente quando o ato não é um resultado.
+             * @enum {unknown}
+             */
+            readonly papel?: DocumentoDaConfiguracaoComunsPublicacaoPrevistaPapel;
+        };
+        /**
          * Referência a uma regra do catálogo
          * @description Cita uma regra do catálogo de regras pelo código e pela versão. O catálogo é só de acréscimo: a versão citada nunca muda de conteúdo.
          */
@@ -11288,6 +11509,78 @@ export interface components {
          */
         readonly DocumentoDaConfiguracaoComunsTiposDeDecisao: readonly components["schemas"]["DocumentoDaConfiguracaoComunsTipoDeDecisao"][];
         /**
+         * Base legal
+         * @description Embasamento da exigência: a norma, a abrangência dela e se a referência já foi resolvida.
+         */
+        readonly DocumentoDaConfiguracaoCondicoesBaseLegal: {
+            /**
+             * Referência
+             * @description Citação da norma que fundamenta a exigência.
+             */
+            readonly referencia?: string;
+            /**
+             * Abrangência
+             * @description Esfera da norma.
+             * @enum {unknown}
+             */
+            readonly abrangencia?: DocumentoDaConfiguracaoCondicoesBaseLegalAbrangencia;
+            /**
+             * Situação
+             * @description Se a referência foi resolvida ou ainda está pendente.
+             * @enum {unknown}
+             */
+            readonly situacao?: DocumentoDaConfiguracaoCondicoesBaseLegalSituacao;
+            /**
+             * Observação
+             * @description Nota livre sobre a base legal.
+             */
+            readonly observacao?: string;
+        };
+        /**
+         * Condição de aplicação
+         * @description Uma condição: o dado, o operador e o valor de comparação. Os operadores ALGUM_DE e NENHUM_DE comparam com uma lista; os demais, com um valor escalar. A existência do dado no vocabulário é regra do domínio, não do esquema.
+         */
+        readonly DocumentoDaConfiguracaoCondicoesCondicao: {
+            /**
+             * Dado
+             * @description Código do fato que a condição examina, de 1 a 60 caracteres (o limite do armazenamento), com ao menos um caractere que não seja espaço.
+             */
+            readonly codigoDoDado: string;
+            /**
+             * Operador
+             * @description Operador de comparação entre o fato e o valor.
+             * @enum {unknown}
+             */
+            readonly operador: DocumentoDaConfiguracaoCondicoesCondicaoOperador;
+            /**
+             * Valor
+             * @description Valor de comparação: uma lista para ALGUM_DE e NENHUM_DE, um texto, número ou booleano para os demais. Texto em branco, sozinho ou como item da lista, é recusado.
+             */
+            readonly valor: unknown;
+        };
+        /**
+         * Alternativas de condições
+         * @description Lista de alternativas ligadas por OU; cada alternativa é uma lista de condições ligadas por E. A lista vazia é a ausência de alternativas, que não é verdadeira para ninguém: usá-lo como condição de uma regra a torna nunca aplicável.
+         */
+        readonly DocumentoDaConfiguracaoCondicoesCondicoesAlternativas: readonly (readonly components["schemas"]["DocumentoDaConfiguracaoCondicoesCondicao"][])[];
+        /**
+         * Obrigatoriedade
+         * @description Se a exigência vale sempre, nunca, ou só quando as condições são verdadeiras. As condições existem somente em QUANDO.
+         */
+        readonly DocumentoDaConfiguracaoCondicoesObrigatoriedade: {
+            /**
+             * Tipo da obrigatoriedade
+             * @description SEMPRE, NUNCA ou QUANDO.
+             * @enum {unknown}
+             */
+            readonly tipo: DocumentoDaConfiguracaoCondicoesObrigatoriedadeTipo;
+            /**
+             * Condições
+             * @description Condição em que a obrigatoriedade QUANDO vale; nas outras o campo é nulo ou ausente.
+             */
+            readonly quando?: null | components["schemas"]["DocumentoDaConfiguracaoCondicoesCondicoesAlternativas"];
+        };
+        /**
          * Cronograma
          * @description As fases do processo, cada uma com a sua janela de datas, unidade responsável, atos que publica, bancas e regra de recurso.
          */
@@ -11312,7 +11605,7 @@ export interface components {
              * Fase canônica
              * @description Código da fase no catálogo de fases canônicas, por exemplo INSCRICAO ou RESULTADO_FINAL.
              */
-            readonly faseCanonicaCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
+            readonly tipoFaseCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
             /**
              * No mesmo momento da fase anterior
              * @description A fase acontece no mesmo momento da fase que a antecede na lista. Não vale na primeira fase.
@@ -11348,7 +11641,7 @@ export interface components {
              * Atos que a fase publica
              * @description Tipos de ato publicados pela fase, como o resultado preliminar. O par tipo de ato e papel não se repete na fase. A fase que publica o resultado preliminar de um tipo de ato publica nela mesma o definitivo do mesmo tipo.
              */
-            readonly produtos?: readonly components["schemas"]["DocumentoDaConfiguracaoComunsProduto"][];
+            readonly publicacoesPrevistas?: readonly components["schemas"]["DocumentoDaConfiguracaoComunsPublicacaoPrevista"][];
             /**
              * Emite parecer individual
              * @description Se a fase emite parecer individual ao candidato, quando ela publica resultado.
@@ -11412,7 +11705,7 @@ export interface components {
          * Condição do desempate
          * @description Fato, operador e valor que o desempate por predicado avalia.
          */
-        readonly DocumentoDaConfiguracaoDesempateCondicaoDoDesempate: components["schemas"]["DocumentoDaConfiguracaoPredicadoCondicao"];
+        readonly DocumentoDaConfiguracaoDesempateCondicaoDoDesempate: components["schemas"]["DocumentoDaConfiguracaoCondicoesCondicao"];
         /**
          * Parâmetros da regra
          * @description Desempata a favor do candidato com a idade mínima informada ou mais.
@@ -11719,7 +12012,7 @@ export interface components {
              * Regra de consolidação
              * @description Regra do catálogo que consolida as correções na avaliação humana.
              */
-            readonly regraConsolidacao?: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
+            readonly regraDeApuracaoDaAvaliacao?: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
             /**
              * Itens de avaliação
              * @description Itens que compõem a nota da etapa. Cada item tem uma chave local, que o preserva quando o rótulo muda.
@@ -11759,7 +12052,7 @@ export interface components {
              * Atos que a etapa publica
              * @description Tipos de ato publicados pela etapa. O par tipo de ato e papel não se repete na etapa.
              */
-            readonly produtos?: readonly components["schemas"]["DocumentoDaConfiguracaoComunsProduto"][];
+            readonly publicacoesPrevistas?: readonly components["schemas"]["DocumentoDaConfiguracaoComunsPublicacaoPrevista"][];
             /**
              * Bancas da etapa
              * @description Bancas que a etapa exige. Cada uma tem uma chave local.
@@ -11820,15 +12113,15 @@ export interface components {
         };
         /**
          * Recurso da etapa
-         * @description Recurso que a etapa admite: o evento que inicia o prazo e as mesmas propriedades de prazos, efeito suspensivo e guarda da vaga do recurso da fase. Quando o evento que inicia o prazo é atoPublicado, o ato de referência é um ato preliminar da própria etapa.
+         * @description Recurso que a etapa admite: o evento que inicia o prazo e as mesmas propriedades de prazos, efeito suspensivo e guarda da vaga do recurso da fase. Quando o evento que inicia o prazo é publicacaoDoAto, o ato de referência é um ato preliminar da própria etapa.
          */
         readonly DocumentoDaConfiguracaoEtapasRecursoDaEtapa: {
             /**
-             * Âncora do prazo
-             * @description De onde o prazo corre: do ato publicado (atoPublicado) ou da ciência individual do candidato (cienciaIndividual).
+             * Evento que inicia o prazo
+             * @description De onde o prazo corre: da publicação do ato (publicacaoDoAto) ou da ciência individual do candidato (cienciaIndividual).
              * @enum {unknown}
              */
-            readonly ancora?: DocumentoDaConfiguracaoEtapasRecursoDaEtapaAncora;
+            readonly eventoInicialDoPrazo?: DocumentoDaConfiguracaoEtapasRecursoDaEtapaEventoInicialDoPrazo;
         } & components["schemas"]["DocumentoDaConfiguracaoComunsPropriedadesDoRecurso"];
         /**
          * Documentos exigidos
@@ -11891,7 +12184,7 @@ export interface components {
              * Fatos comprovados
              * @description Códigos dos fatos do candidato que o documento comprova. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
              */
-            readonly fatosComprovados?: readonly string[];
+            readonly dadosComprovados?: readonly string[];
             /**
              * Fase em que é exigido
              * @description Chave local da fase do cronograma em que o documento é exigido.
@@ -11929,12 +12222,12 @@ export interface components {
              * Condição de gatilho
              * @description Predicado que torna a exigência aplicável, quando ela é condicional.
              */
-            readonly condicaoGatilho?: components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+            readonly condicoes?: components["schemas"]["DocumentoDaConfiguracaoCondicoesCondicoesAlternativas"];
             /**
              * Bases legais
              * @description Embasamento normativo da exigência.
              */
-            readonly basesLegais?: readonly components["schemas"]["DocumentoDaConfiguracaoPredicadoBaseLegal"][];
+            readonly basesLegais?: readonly components["schemas"]["DocumentoDaConfiguracaoCondicoesBaseLegal"][];
             /**
              * Idade máxima de emissão
              * @description Quanto tempo o documento pode ter desde a emissão, contado a partir da referência.
@@ -12036,7 +12329,7 @@ export interface components {
         };
         /**
          * Formulário do processo
-         * @description O formulário de uma finalidade: as etapas, os itens e grupos coletados e os termos de consentimento exigidos. Cada finalidade tem no máximo um formulário no processo. Um formulário comporta no máximo 200 itens, contando itens, grupos e subitens.
+         * @description O formulário de uma finalidade: as páginas, os itens e grupos coletados e os termos de consentimento exigidos. Cada finalidade tem no máximo um formulário no processo. Um formulário comporta no máximo 200 itens, contando itens, grupos e subitens.
          */
         readonly DocumentoDaConfiguracaoFormulario: {
             /**
@@ -12061,10 +12354,10 @@ export interface components {
              */
             readonly modeloOrigemCodigo?: string;
             /**
-             * Etapas
+             * Páginas
              * @description Seções e blocos do formulário, na ordem de apresentação.
              */
-            readonly etapas?: readonly components["schemas"]["DocumentoDaConfiguracaoFormularioEtapa"][];
+            readonly paginas?: readonly components["schemas"]["DocumentoDaConfiguracaoFormularioPagina"][];
             /**
              * Itens
              * @description Fatos coletados pelo formulário.
@@ -12082,54 +12375,6 @@ export interface components {
             readonly termos?: readonly components["schemas"]["DocumentoDaConfiguracaoFormularioTermoExigido"][];
         };
         /**
-         * Etapa do formulário
-         * @description Uma seção de campos ou um bloco de sistema.
-         */
-        readonly DocumentoDaConfiguracaoFormularioEtapa: {
-            /**
-             * Código
-             * @description Código da etapa, único no formulário. Os itens e grupos a citam em etapaCodigo.
-             */
-            readonly codigo: components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
-            /**
-             * Ordem
-             * @description Posição de apresentação, a partir de 0.
-             */
-            readonly ordem?: number;
-            /**
-             * Tipo
-             * @description SECAO reúne campos; BLOCO é um bloco de sistema.
-             * @enum {unknown}
-             */
-            readonly tipo: DocumentoDaConfiguracaoFormularioEtapaTipo;
-            /**
-             * Bloco de sistema
-             * @description Qual bloco de sistema a etapa é. Só faz sentido quando o tipo é BLOCO; a coerência é regra do domínio.
-             * @enum {unknown}
-             */
-            readonly bloco?: DocumentoDaConfiguracaoFormularioEtapaBloco;
-            /**
-             * Título
-             * @description Título da etapa, de até 300 caracteres.
-             */
-            readonly titulo?: string;
-            /**
-             * Descrição
-             * @description Texto explicativo da etapa, de até 2000 caracteres.
-             */
-            readonly descricao?: string;
-            /**
-             * Aviso
-             * @description Aviso destacado da etapa, de até 2000 caracteres.
-             */
-            readonly aviso?: string;
-            /**
-             * Exibição
-             * @description Condição para exibir a etapa. Nula ou ausente: sempre exibida.
-             */
-            readonly exibicao?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
-        };
-        /**
          * Grupo repetível
          * @description Conjunto de campos que o candidato repete, uma vez por ocorrência.
          */
@@ -12140,10 +12385,10 @@ export interface components {
              */
             readonly codigo: components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
             /**
-             * Etapa
-             * @description Código da etapa do tipo SECAO, do mesmo formulário, em que o grupo aparece.
+             * Página
+             * @description Código da página do tipo SECAO, do mesmo formulário, em que o grupo aparece.
              */
-            readonly etapaCodigo?: components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
+            readonly paginaCodigo?: components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
             /**
              * Ordem
              * @description Posição de apresentação, a partir de 0, única no formulário entre itens e grupos.
@@ -12173,17 +12418,65 @@ export interface components {
              * Exibição
              * @description Condição para exibir o grupo. Nula ou ausente: sempre exibido.
              */
-            readonly exibicao?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+            readonly exibicao?: null | components["schemas"]["DocumentoDaConfiguracaoCondicoesCondicoesAlternativas"];
             /**
              * Obrigatoriedade
              * @description Se o preenchimento do grupo é obrigatório sempre, nunca ou só sob uma condição.
              */
-            readonly obrigatoriedade?: components["schemas"]["DocumentoDaConfiguracaoPredicadoObrigatoriedade"];
+            readonly obrigatoriedade?: components["schemas"]["DocumentoDaConfiguracaoCondicoesObrigatoriedade"];
             /**
              * Subitens
-             * @description Campos de cada ocorrência, até 30. O subitem não tem etapa nem impedimento: ficam ausentes ou nulos.
+             * @description Campos de cada ocorrência, até 30. O subitem não tem página nem impedimento: ficam ausentes ou nulos.
              */
             readonly subitens: readonly components["schemas"]["DocumentoDaConfiguracaoItemDoFormulario"][];
+        };
+        /**
+         * Página do formulário
+         * @description Uma seção de campos ou um bloco de sistema.
+         */
+        readonly DocumentoDaConfiguracaoFormularioPagina: {
+            /**
+             * Código
+             * @description Código da página, único no formulário. Os itens e grupos a citam em paginaCodigo.
+             */
+            readonly codigo: components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
+            /**
+             * Ordem
+             * @description Posição de apresentação, a partir de 0.
+             */
+            readonly ordem?: number;
+            /**
+             * Tipo
+             * @description SECAO reúne campos; BLOCO é um bloco de sistema.
+             * @enum {unknown}
+             */
+            readonly tipo: DocumentoDaConfiguracaoFormularioPaginaTipo;
+            /**
+             * Bloco de sistema
+             * @description Qual bloco de sistema a página é. Só faz sentido quando o tipo é BLOCO; a coerência é regra do domínio.
+             * @enum {unknown}
+             */
+            readonly bloco?: DocumentoDaConfiguracaoFormularioPaginaBloco;
+            /**
+             * Título
+             * @description Título da página, de até 300 caracteres.
+             */
+            readonly titulo?: string;
+            /**
+             * Descrição
+             * @description Texto explicativo da página, de até 2000 caracteres.
+             */
+            readonly descricao?: string;
+            /**
+             * Aviso
+             * @description Aviso destacado da página, de até 2000 caracteres.
+             */
+            readonly aviso?: string;
+            /**
+             * Exibição
+             * @description Condição para exibir a página. Nula ou ausente: sempre exibida.
+             */
+            readonly exibicao?: null | components["schemas"]["DocumentoDaConfiguracaoCondicoesCondicoesAlternativas"];
         };
         /**
          * Termo exigido pelo formulário
@@ -12214,12 +12507,12 @@ export interface components {
              * Exibição
              * @description Condição para exibir o termo. Nula ou ausente: sempre exibido.
              */
-            readonly exibicao?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+            readonly exibicao?: null | components["schemas"]["DocumentoDaConfiguracaoCondicoesCondicoesAlternativas"];
             /**
              * Obrigatoriedade
              * @description Se o aceite é obrigatório sempre, nunca ou só sob uma condição.
              */
-            readonly obrigatoriedade?: components["schemas"]["DocumentoDaConfiguracaoPredicadoObrigatoriedade"];
+            readonly obrigatoriedade?: components["schemas"]["DocumentoDaConfiguracaoCondicoesObrigatoriedade"];
         };
         /**
          * Regra de homologação das inscrições
@@ -12272,7 +12565,7 @@ export interface components {
              * Enquadramento
              * @description Predicado que restringe a quem a condição vale; ausente ou nulo, vale para todos.
              */
-            readonly enquadramento?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+            readonly enquadramento?: null | components["schemas"]["DocumentoDaConfiguracaoCondicoesCondicoesAlternativas"];
         };
         /**
          * Identificação do processo
@@ -12382,12 +12675,12 @@ export interface components {
              * Fato
              * @description Código do fato no catálogo, de 1 a 60 caracteres. Cada fato é coletado por um só formulário do processo.
              */
-            readonly fatoCodigo: string;
+            readonly codigoDoDado: string;
             /**
              * Etapa
              * @description Código da etapa do tipo SECAO, do mesmo formulário, em que o item aparece. Nulo ou ausente em subitem de grupo.
              */
-            readonly etapaCodigo?: null | components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
+            readonly paginaCodigo?: null | components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
             /**
              * Ordem
              * @description Posição de apresentação, a partir de 0. Única no formulário entre itens e grupos; o subitem tem ordem própria dentro do grupo.
@@ -12412,12 +12705,12 @@ export interface components {
              * Obrigatoriedade
              * @description Se a resposta é obrigatória sempre, nunca ou só sob uma condição.
              */
-            readonly obrigatoriedade?: components["schemas"]["DocumentoDaConfiguracaoPredicadoObrigatoriedade"];
+            readonly obrigatoriedade?: components["schemas"]["DocumentoDaConfiguracaoCondicoesObrigatoriedade"];
             /**
              * Precondição
              * @description Condição para o fato ser coletado. Nula ou ausente: é sempre coletado. A lista vazia nunca é verdadeira.
              */
-            readonly precondicao?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+            readonly exibicao?: null | components["schemas"]["DocumentoDaConfiguracaoCondicoesCondicoesAlternativas"];
             /**
              * Restrições de valor
              * @description Limites impostos à resposta.
@@ -12448,7 +12741,7 @@ export interface components {
              * Quando impede
              * @description Predicado que, verdadeiro, impede a inscrição.
              */
-            readonly quando: components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+            readonly quando: components["schemas"]["DocumentoDaConfiguracaoCondicoesCondicoesAlternativas"];
             /**
              * Mensagem
              * @description Explicação ao candidato, de 1 a 500 caracteres.
@@ -12578,78 +12871,6 @@ export interface components {
             readonly corte?: number;
         };
         /**
-         * Base legal
-         * @description Embasamento da exigência: a norma, a abrangência dela e se a referência já foi resolvida.
-         */
-        readonly DocumentoDaConfiguracaoPredicadoBaseLegal: {
-            /**
-             * Referência
-             * @description Citação da norma que fundamenta a exigência.
-             */
-            readonly referencia?: string;
-            /**
-             * Abrangência
-             * @description Esfera da norma.
-             * @enum {unknown}
-             */
-            readonly abrangencia?: DocumentoDaConfiguracaoPredicadoBaseLegalAbrangencia;
-            /**
-             * Situação
-             * @description Se a referência foi resolvida ou ainda está pendente.
-             * @enum {unknown}
-             */
-            readonly situacao?: DocumentoDaConfiguracaoPredicadoBaseLegalSituacao;
-            /**
-             * Observação
-             * @description Nota livre sobre a base legal.
-             */
-            readonly observacao?: string;
-        };
-        /**
-         * Condição de um predicado
-         * @description Um átomo do predicado: o fato, o operador e o valor de comparação. Os operadores EM e NAO_EM comparam com uma lista; os demais, com um valor escalar. A existência do fato no vocabulário é regra do domínio, não do esquema.
-         */
-        readonly DocumentoDaConfiguracaoPredicadoCondicao: {
-            /**
-             * Fato
-             * @description Código do fato que a condição examina, de 1 a 60 caracteres (o limite do armazenamento), com ao menos um caractere que não seja espaço.
-             */
-            readonly fato: string;
-            /**
-             * Operador
-             * @description Operador de comparação entre o fato e o valor.
-             * @enum {unknown}
-             */
-            readonly operador: DocumentoDaConfiguracaoPredicadoCondicaoOperador;
-            /**
-             * Valor
-             * @description Valor de comparação: uma lista para EM e NAO_EM, um texto, número ou booleano para os demais. Texto em branco, sozinho ou como item da lista, é recusado.
-             */
-            readonly valor: unknown;
-        };
-        /**
-         * Obrigatoriedade
-         * @description Se a exigência vale sempre, nunca, ou só quando o predicado é verdadeiro. O predicado existe somente em QUANDO.
-         */
-        readonly DocumentoDaConfiguracaoPredicadoObrigatoriedade: {
-            /**
-             * Tipo da obrigatoriedade
-             * @description SEMPRE, NUNCA ou QUANDO.
-             * @enum {unknown}
-             */
-            readonly tipo: DocumentoDaConfiguracaoPredicadoObrigatoriedadeTipo;
-            /**
-             * Predicado
-             * @description Condição em que a obrigatoriedade QUANDO vale; nas outras o campo é nulo ou ausente.
-             */
-            readonly predicado?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
-        };
-        /**
-         * Predicado em forma normal disjuntiva
-         * @description Lista de cláusulas ligadas por OU; cada cláusula é uma lista de condições ligadas por E. A lista vazia é o predicado sem cláusula, que não é verdadeiro para ninguém: usá-lo como condição de uma regra a torna nunca aplicável.
-         */
-        readonly DocumentoDaConfiguracaoPredicadoPredicado: readonly (readonly components["schemas"]["DocumentoDaConfiguracaoPredicadoCondicao"][])[];
-        /**
          * Prova presencial
          * @description O que o processo declara da prova presencial: se a tem e, só então, os municípios em que a aplica. A declaração é do próprio processo, nunca deduzida do tipo de processo nem das etapas.
          */
@@ -12712,7 +12933,7 @@ export interface components {
              * Bases legais
              * @description Base legal da regra de comprovação.
              */
-            readonly basesLegais?: readonly components["schemas"]["DocumentoDaConfiguracaoPredicadoBaseLegal"][];
+            readonly basesLegais?: readonly components["schemas"]["DocumentoDaConfiguracaoCondicoesBaseLegal"][];
             /**
              * Critério de distinção
              * @description Critério que distingue apresentações do mesmo documento.
@@ -12771,7 +12992,7 @@ export interface components {
                  * Quando vale
                  * @description Condição em que o conjunto vale. Ausente ou nula: vale sempre.
                  */
-                readonly quando?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+                readonly quando?: null | components["schemas"]["DocumentoDaConfiguracaoCondicoesCondicoesAlternativas"];
                 /**
                  * Valores permitidos
                  * @description Códigos dos valores permitidos.
@@ -12782,7 +13003,7 @@ export interface components {
              * Fatos de origem
              * @description Códigos dos fatos cujas respostas formam as opções (OPCOES_DAS_RESPOSTAS) ou fato com a UF respondida (MUNICIPIOS_DA_UF).
              */
-            readonly fatos?: readonly string[];
+            readonly codigosDosDados?: readonly string[];
             /**
              * Data mínima
              * @description Limite inferior da faixa de data. Usado no tipo FAIXA_DE_DATA.
@@ -12804,7 +13025,7 @@ export interface components {
              * @description DATA_FIXA usa a data; ENVIO usa o deslocamento em anos e dias.
              * @enum {unknown}
              */
-            readonly ancora: DocumentoDaConfiguracaoRestricaoDeValorLimiteDeDataAncora;
+            readonly referenciaDaData: DocumentoDaConfiguracaoRestricaoDeValorLimiteDeDataReferenciaDaData;
             /**
              * Data
              * Format: date
@@ -12849,17 +13070,17 @@ export interface components {
             readonly tipoDocumentoCodigo: string;
             readonly nome: string;
             readonly obrigatorio: boolean;
-            readonly finalidade: null | string;
+            readonly finalidade: null | components["schemas"]["FinalidadeFormulario"];
             /** Format: uuid */
             readonly etapaId: null | string;
             readonly formatos: components["schemas"]["FormatosAceitosCertameDto"];
             readonly modelo: null | components["schemas"]["ModeloDocumentalCertameDto"];
-            readonly situacao: string;
+            readonly situacao: components["schemas"]["SituacaoDoDocumento"];
             readonly grupoCodigo: null | string;
             readonly ocorrenciaId: null | string;
             readonly grupos: readonly components["schemas"]["GrupoDeComprovacaoDto"][];
             readonly grupoDoFormularioParaRepeticao: null | string;
-            readonly formatosAceitos: readonly string[];
+            readonly formatosAceitos: readonly components["schemas"]["FormatoPermitido"][];
             /** Format: int64 */
             readonly tamanhoMaximoBytes: number;
             /** Format: int32 */
@@ -12923,7 +13144,7 @@ export interface components {
             readonly obrigatorio: boolean;
             /** Format: uuid */
             readonly faseId: string;
-            readonly finalidade: null | string;
+            readonly finalidade: null | components["schemas"]["FinalidadeFormulario"];
             /** Format: uuid */
             readonly etapaId: null | string;
             readonly situacao: string;
@@ -12985,7 +13206,7 @@ export interface components {
         };
         readonly EtapaCertameDto: {
             readonly nome: string;
-            readonly carater: string;
+            readonly carater: components["schemas"]["CaraterEtapa"];
             readonly tipoEtapa: components["schemas"]["TipoCatalogadoCertameDto"];
             readonly peso: null | string;
             readonly notaMinima: null | string;
@@ -13007,7 +13228,7 @@ export interface components {
             readonly produtos: readonly components["schemas"]["ProdutoPrevistoDto"][];
         };
         readonly EtapaConcluidaInput: {
-            readonly finalidade: string;
+            readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
             readonly etapa: string;
         };
         readonly EtapaFormularioDto: {
@@ -13046,7 +13267,7 @@ export interface components {
         };
         readonly EtapaProcessoInput: {
             readonly nome: string;
-            readonly carater: components["schemas"]["CaraterEtapa"];
+            readonly carater: null | components["schemas"]["CaraterEtapaCodigo"];
             /** Format: uuid */
             readonly tipoEtapaOrigemId: string;
             /** Format: double */
@@ -13071,13 +13292,23 @@ export interface components {
             readonly notaMaxima?: null | number;
             /** Format: double */
             readonly passoDoLancamento?: null | number;
-            readonly formaDeAvaliacao?: null | string;
+            readonly formaDeAvaliacao?: null | components["schemas"]["FormaDeAvaliacaoCodigo"];
             readonly regraConsolidacaoCodigo?: null | string;
             readonly regraConsolidacaoVersao?: null | string;
             readonly itensDeAvaliacao?: null | readonly components["schemas"]["ItemDeAvaliacaoInput"][];
             readonly escalaDeAtendimento?: null | readonly components["schemas"]["NivelDeAtendimentoInput"][];
             readonly tiposDeDecisao?: null | readonly components["schemas"]["TipoMotivoDeDecisaoCodigo"][];
         };
+        readonly EventoInicialDoPrazo: {
+            readonly codigo: components["schemas"]["EventoInicialDoPrazoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `publicacaoDoAto`: Publicação do ato — O prazo conta da publicação do ato e vale igual para todos os candidatos (UNI-REQ-0115).
+         *     - `cienciaIndividual`: Ciência individual do candidato — O prazo conta da data em que cada candidato toma ciência da decisão que o alcança.
+         * @enum {string}
+         */
+        readonly EventoInicialDoPrazoCodigo: EventoInicialDoPrazoCodigo;
         readonly ExibicaoEObrigatoriedadeDto: {
             readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
             readonly obrigatoriedade: components["schemas"]["ObrigatoriedadeDto"];
@@ -13088,7 +13319,7 @@ export interface components {
         };
         readonly ExigenciaDocumentalCertameDto: {
             readonly rotulo: string;
-            readonly aplicabilidade: string;
+            readonly aplicabilidade: components["schemas"]["Aplicabilidade"];
             readonly obrigatorio: boolean;
             readonly formatos: components["schemas"]["FormatosAceitosCertameDto"];
             readonly modelo: null | components["schemas"]["ModeloDocumentalCertameDto"];
@@ -13096,7 +13327,7 @@ export interface components {
         readonly FaseCanonicaCongeladaDto: {
             /** Format: uuid */
             readonly origemId: string;
-            readonly origemData: string;
+            readonly origemData: components["schemas"]["OrigemDataFase"];
             readonly agrupaEtapas: boolean;
             readonly permiteComplementacao: boolean;
             readonly coletaInscricao: boolean;
@@ -13178,8 +13409,53 @@ export interface components {
             readonly regras: null | components["schemas"]["RegrasDoCampoInput"];
             readonly etapaCodigo?: null | string;
         };
-        /** @enum {string} */
-        readonly FinalidadeDoDocumento: FinalidadeDoDocumento;
+        readonly FinalidadeDoDocumento: {
+            readonly codigo: components["schemas"]["FinalidadeDoDocumentoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `documentoDoEdital`: Documento do edital — Documento principal do edital.
+         *     - `anexoDoEdital`: Anexo do edital — Documento que acompanha o edital.
+         *     - `documentoDeAto`: Documento de ato — Documento de um ato do processo.
+         * @enum {string}
+         */
+        readonly FinalidadeDoDocumentoCodigo: FinalidadeDoDocumentoCodigo;
+        readonly FinalidadeFormulario: {
+            readonly codigo: components["schemas"]["FinalidadeFormularioCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description Para que o formulário coleta respostas: cada processo tem no máximo um formulário por finalidade.
+         *
+         *     - `INSCRICAO`: Inscrição — Formulário em que o candidato se inscreve no processo seletivo.
+         *     - `ISENCAO_TAXA`: Isenção da taxa — Formulário em que o candidato pede a isenção da taxa de inscrição.
+         *     - `HABILITACAO`: Habilitação — Formulário em que o candidato comprova os requisitos para ser habilitado.
+         * @enum {string}
+         */
+        readonly FinalidadeFormularioCodigo: FinalidadeFormularioCodigo;
+        readonly FormaAceite: {
+            readonly codigo: components["schemas"]["FormaAceiteCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description Como o candidato registra o aceite de um termo de consentimento ou declaração.
+         *
+         *     - `A_DEFINIR`: A definir — Forma ainda não definida; a publicação de um processo recusa termo exigido nesta forma.
+         *     - `REGISTRO_SEM_ENDERECO_IP`: Registro digital sem o endereço IP — O aceite é registrado no sistema sem guardar o endereço IP do candidato.
+         *     - `REGISTRO_COM_ENDERECO_IP`: Registro digital com o endereço IP — O aceite é registrado no sistema guardando o endereço IP do candidato.
+         * @enum {string}
+         */
+        readonly FormaAceiteCodigo: FormaAceiteCodigo;
+        readonly FormaDeAvaliacao: {
+            readonly codigo: components["schemas"]["FormaDeAvaliacaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `OBJETIVA`: Avaliação objetiva — Gabarito ou leitora óptica: a nota sai sem avaliador.
+         *     - `HUMANA`: Avaliação humana — Pessoas da banca da etapa lançam as notas.
+         * @enum {string}
+         */
+        readonly FormaDeAvaliacaoCodigo: FormaDeAvaliacaoCodigo;
         readonly FormaDeComprovacao: {
             readonly codigo: components["schemas"]["FormaDeComprovacaoCodigo"];
             readonly rotulo: string;
@@ -13191,9 +13467,31 @@ export interface components {
          * @enum {string}
          */
         readonly FormaDeComprovacaoCodigo: FormaDeComprovacaoCodigo;
+        readonly FormatoDeDocumento: {
+            readonly codigo: components["schemas"]["FormatoDeDocumentoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `DOCX`: DOCX — Documento de texto em formato DOCX.
+         *     - `ODT`: ODT — Documento de texto em formato ODT.
+         *     - `PDF`: PDF — Documento em formato PDF.
+         * @enum {string}
+         */
+        readonly FormatoDeDocumentoCodigo: FormatoDeDocumentoCodigo;
+        readonly FormatoPermitido: {
+            readonly codigo: components["schemas"]["FormatoPermitidoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `PDF`: PDF — Documento em formato PDF.
+         *     - `JPEG`: JPEG — Imagem em formato JPEG.
+         *     - `PNG`: PNG — Imagem em formato PNG.
+         * @enum {string}
+         */
+        readonly FormatoPermitidoCodigo: FormatoPermitidoCodigo;
         readonly FormatosAceitosCertameDto: {
             readonly qualquer: boolean;
-            readonly lista: null | readonly string[];
+            readonly lista: null | readonly components["schemas"]["FormatoPermitido"][];
         };
         readonly FormularioDaInscricaoDto: {
             /** Format: uuid */
@@ -13208,7 +13506,7 @@ export interface components {
             readonly aceites: readonly components["schemas"]["AceiteDeTermoInput"][];
         };
         readonly FormularioDto: {
-            readonly finalidade: string;
+            readonly finalidade: components["schemas"]["FinalidadeFormulario"];
             /** Format: uuid */
             readonly faseId: null | string;
             readonly titulo: null | string;
@@ -13247,12 +13545,23 @@ export interface components {
             readonly dependenciasDoFator: null | components["schemas"]["DependenciasDaAvaliacaoDto"];
         };
         readonly FormularioSimuladoDto: {
-            readonly finalidade: string;
+            readonly finalidade: components["schemas"]["FinalidadeFormulario"];
             readonly itens: readonly components["schemas"]["ItemSimuladoDto"][];
             readonly grupos: readonly components["schemas"]["GrupoSimuladoDto"][];
             readonly termos: readonly components["schemas"]["TermoSimuladoDto"][];
             readonly secoes: readonly components["schemas"]["SecaoSimuladaDto"][];
         };
+        readonly FundamentoIsencao: {
+            readonly codigo: components["schemas"]["FundamentoIsencaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `CADASTRO_UNICO`: Cadastro Único — Candidato de família de baixa renda inscrita no Cadastro Único do Governo Federal.
+         *     - `DOACAO_MEDULA_OSSEA`: Doação de medula óssea — Candidato doador de medula óssea.
+         *     - `CARENCIA_SOCIOECONOMICA`: Carência socioeconômica — Candidato com renda familiar per capita de até um salário mínimo e meio que tenha cursado o ensino médio completo em escola pública ou como bolsista integral da rede privada — os dois requisitos são cumulativos (Lei nº 12.799/2013).
+         * @enum {string}
+         */
+        readonly FundamentoIsencaoCodigo: FundamentoIsencaoCodigo;
         readonly FundamentoIsencaoDto: {
             readonly codigo: string;
             readonly nome: string;
@@ -13344,8 +13653,8 @@ export interface components {
         readonly GrupoSimuladoDto: {
             readonly codigo: string;
             readonly etapaCodigo: null | string;
-            readonly visivel: components["schemas"]["TernarioCodigo"];
-            readonly obrigatorio: components["schemas"]["TernarioCodigo"];
+            readonly visivel: components["schemas"]["Ternario"];
+            readonly obrigatorio: components["schemas"]["Ternario"];
             readonly contagemValida: boolean;
             readonly ocorrenciaDoCandidatoValida: boolean;
             readonly ocorrencias: readonly components["schemas"]["OcorrenciaSimuladaDto"][];
@@ -13368,8 +13677,8 @@ export interface components {
         readonly IdadeMaximaEmissaoDto: {
             /** Format: int32 */
             readonly valor: number;
-            readonly unidade: string;
-            readonly referenciaTipo: string;
+            readonly unidade: components["schemas"]["UnidadeIdade"];
+            readonly referenciaTipo: components["schemas"]["ReferenciaTipoIdadeEmissao"];
             /** Format: date */
             readonly data: null | string;
             /** Format: uuid */
@@ -13397,11 +13706,20 @@ export interface components {
             readonly lista: string;
             readonly identificador: string;
         };
-        /** @enum {string} */
-        readonly ImpedimentoDoProduto: ImpedimentoDoProduto;
+        readonly ImpedimentoDoProduto: {
+            readonly codigo: components["schemas"]["ImpedimentoDoProdutoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `jaPublicado`: Já publicada — A publicação prevista já foi realizada.
+         *     - `preliminarNaoPublicado`: Preliminar não publicado — O resultado preliminar ainda não foi publicado.
+         *     - `tipoDeAtoNaoVigente`: Tipo de ato não vigente — O tipo de ato não tem versão vigente.
+         * @enum {string}
+         */
+        readonly ImpedimentoDoProdutoCodigo: ImpedimentoDoProdutoCodigo;
         readonly ImpedimentoDoProdutoDto: {
-            readonly motivo: components["schemas"]["ImpedimentoDoProduto"];
-            readonly mensagem: string;
+            readonly motivo?: components["schemas"]["ImpedimentoDoProduto"];
+            readonly mensagem?: string;
         };
         readonly ImpedimentoDto: {
             readonly quando: readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
@@ -13413,7 +13731,7 @@ export interface components {
         };
         readonly IndeferimentoDoDocumentoDto: {
             readonly obrigatorio: boolean;
-            readonly consequencia: null | string;
+            readonly consequencia: null | components["schemas"]["ConsequenciaDoIndeferimento"];
             readonly basesLegais: readonly components["schemas"]["BaseLegalDto"][];
         };
         readonly IndeferimentoDoDocumentoInput: {
@@ -13422,7 +13740,7 @@ export interface components {
             readonly basesLegais: null | readonly components["schemas"]["BaseLegalInput"][];
         };
         readonly IndeferimentoDoGrupoDto: {
-            readonly consequencia: null | string;
+            readonly consequencia: null | components["schemas"]["ConsequenciaDoIndeferimento"];
             readonly basesLegais: readonly components["schemas"]["BaseLegalDto"][];
         };
         readonly IndeferimentoDoGrupoInput: {
@@ -13460,7 +13778,7 @@ export interface components {
             readonly expiraEm: string;
         };
         readonly IniciarEnvioDoDocumentoAPublicarRequest: {
-            readonly finalidade: null | components["schemas"]["FinalidadeDoDocumento"];
+            readonly finalidade: null | components["schemas"]["FinalidadeDoDocumentoCodigo"];
             readonly nomeArquivo: null | string;
             readonly tipoDeMidia: null | string;
         };
@@ -13606,10 +13924,10 @@ export interface components {
         readonly ItemSimuladoDto: {
             readonly fatoCodigo: string;
             readonly etapaCodigo: null | string;
-            readonly visivel: components["schemas"]["TernarioCodigo"];
-            readonly obrigatorio: components["schemas"]["TernarioCodigo"];
+            readonly visivel: components["schemas"]["Ternario"];
+            readonly obrigatorio: components["schemas"]["Ternario"];
             readonly restricoesVioladas: readonly string[];
-            readonly impedido: components["schemas"]["TernarioCodigo"];
+            readonly impedido: components["schemas"]["Ternario"];
             readonly mensagemDoImpedimento: null | string;
             readonly opcoes: null | components["schemas"]["OpcoesSimuladasDto"];
         };
@@ -13624,7 +13942,7 @@ export interface components {
         readonly LeiauteDoInepDto: {
             readonly codigo: string;
             readonly versao: string;
-            readonly tipo: string;
+            readonly tipo: components["schemas"]["TipoDeLeiauteDoInep"];
             readonly descricao: string;
             readonly hash: string;
             /** Format: int32 */
@@ -13719,7 +14037,7 @@ export interface components {
         };
         readonly ModalidadesDaInscricaoDto: {
             readonly derivada: boolean;
-            readonly situacao: null | string;
+            readonly situacao: null | components["schemas"]["SituacaoDasModalidades"];
             readonly itens: readonly components["schemas"]["ModalidadeDaInscricaoDto"][];
             readonly pendencias: readonly components["schemas"]["PendenciaDaAvaliacaoDto"][];
         };
@@ -13730,10 +14048,10 @@ export interface components {
             readonly modalidadeOrigemId: string;
             readonly codigo: string;
             readonly descricao: null | string;
-            readonly naturezaLegal: string;
-            readonly composicaoVagas: string;
+            readonly naturezaLegal: components["schemas"]["NaturezaLegalModalidade"];
+            readonly composicaoVagas: components["schemas"]["ComposicaoVagasModalidade"];
             readonly composicaoOrigemCodigo: null | string;
-            readonly regraRemanejamento: null | string;
+            readonly regraRemanejamento: null | components["schemas"]["RegraRemanejamentoModalidade"];
             readonly remanejamentoDestino: null | string;
             readonly remanejamentoPar: null | string;
             readonly remanejamentoFallback: null | string;
@@ -13747,7 +14065,7 @@ export interface components {
             /** Format: uuid */
             readonly modeloId: string;
             readonly nomeArquivo: string;
-            readonly formato: string;
+            readonly formato: components["schemas"]["FormatoDeDocumento"];
             readonly hashSha256: string;
         };
         readonly ModeloDaExigenciaInput: {
@@ -13760,8 +14078,8 @@ export interface components {
             /** Format: uuid */
             readonly processoSeletivoId: string;
             readonly nomeArquivo: string;
-            readonly formato: string;
-            readonly status: string;
+            readonly formato: components["schemas"]["FormatoDeDocumento"];
+            readonly status: components["schemas"]["StatusArquivoEnviado"];
             /** Format: date-time */
             readonly criadoEm: string;
             /** Format: date-time */
@@ -13779,7 +14097,7 @@ export interface components {
         };
         readonly ModeloDocumentalCertameDto: {
             readonly nomeArquivo: string;
-            readonly formato: string;
+            readonly formato: components["schemas"]["FormatoDeDocumento"];
             readonly hashSha256: string;
             /** Format: uri */
             readonly urlDownload: null | string;
@@ -13799,14 +14117,26 @@ export interface components {
             readonly faseId: string;
             /** Format: uuid */
             readonly etapaId: null | string;
-            readonly finalidade: null | string;
+            readonly finalidade: null | components["schemas"]["FinalidadeFormulario"];
         };
         readonly MomentoDaExigenciaInput: {
             /** Format: uuid */
             readonly faseId: string;
             /** Format: uuid */
             readonly etapaId?: null | string;
-            readonly finalidade?: null | string;
+            readonly finalidade?: null | components["schemas"]["FinalidadeFormularioCodigo"];
+        };
+        readonly MotivoDeDecisaoDoProcessoDto: {
+            /** Format: uuid */
+            readonly motivoDeDecisaoId: string;
+            readonly lugar: components["schemas"]["LugarDoMotivoDto"];
+            readonly tipo: components["schemas"]["TipoMotivoDeDecisao"];
+            readonly codigo: string;
+            readonly descricao: string;
+            readonly subclassificacao: null | string;
+            readonly sentido: components["schemas"]["SentidoDoMotivo"];
+            readonly vigencia: components["schemas"]["VigenciaDoMotivoDto"];
+            readonly justificativaDaInclusao: null | string;
         };
         readonly MotivoDeDecisaoDto: {
             /** Format: uuid */
@@ -13815,24 +14145,23 @@ export interface components {
             readonly codigo: string;
             readonly descricao: string;
             readonly subclassificacao: null | string;
-            readonly sentido: string;
+            readonly sentido: components["schemas"]["SentidoDoMotivo"];
             readonly ativo: boolean;
             readonly _links?: null | {
                 readonly [key: string]: string;
             };
         };
-        readonly MotivoDoProcessoDto: {
-            /** Format: uuid */
-            readonly motivoDeDecisaoId: string;
-            readonly lugar: components["schemas"]["LugarDoMotivoDto"];
-            readonly tipo: components["schemas"]["TipoMotivoDeDecisao"];
-            readonly codigo: string;
-            readonly descricao: string;
-            readonly subclassificacao: null | string;
-            readonly sentido: string;
-            readonly vigencia: components["schemas"]["VigenciaDoMotivoDto"];
-            readonly justificativaDaInclusao: null | string;
+        readonly NaturezaLegalModalidade: {
+            readonly codigo: components["schemas"]["NaturezaLegalModalidadeCodigo"];
+            readonly rotulo: string;
         };
+        /**
+         * @description - `COTA_RESERVADA`: Cota reservada — Vagas reservadas pela Lei de Cotas.
+         *     - `AMPLA`: Ampla concorrência — Vagas destinadas à ampla concorrência.
+         *     - `ACAO_AFIRMATIVA`: Ação afirmativa — Vagas de ação afirmativa institucional.
+         * @enum {string}
+         */
+        readonly NaturezaLegalModalidadeCodigo: NaturezaLegalModalidadeCodigo;
         readonly NivelDeAtendimentoDto: {
             readonly rotulo: string;
             /** Format: double */
@@ -13899,7 +14228,7 @@ export interface components {
             readonly itens: readonly components["schemas"]["ItemDoComprovanteDto"][];
         };
         readonly OcorrenciaDoLoteDto: {
-            readonly tipo: string;
+            readonly tipo: components["schemas"]["TipoDeOcorrenciaDoLote"];
             /** Format: uuid */
             readonly inscricaoId: null | string;
             readonly numeroDeInscricao: null | string;
@@ -13993,19 +14322,37 @@ export interface components {
             readonly definitivas: boolean;
         };
         /**
-         * @description Operador que compara o fato do candidato com o valor da condição. Sobre fato multivalorado, igual a significa pertencer ao conjunto do candidato (ADR-0111, Emenda 1.2).
+         * @description Operador que compara o dado do candidato com o valor da condição. Sobre dado com vários valores, igual a significa pertencer ao conjunto do candidato (ADR-0111, Emenda 1.2).
          *
          *     - `IGUAL`: é igual a
-         *     - `EM`: é um de
+         *     - `ALGUM_DE`: é um de
          *     - `MAIOR_IGUAL`: maior ou igual a
          *     - `MENOR_IGUAL`: menor ou igual a
          *     - `DIFERENTE`: é diferente de
-         *     - `NAO_EM`: não é nenhum de
+         *     - `NENHUM_DE`: não é nenhum de
          * @enum {string}
          */
         readonly OperadorCodigo: OperadorCodigo;
-        /** @enum {string} */
-        readonly OrigemCandidatos: OrigemCandidatos;
+        readonly OrigemCandidatos: {
+            readonly codigo: components["schemas"]["OrigemCandidatosCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `inscricaoPropria`: Inscrição própria — O processo coleta a própria inscrição: exige ao menos uma fase de coleta de inscrição.
+         *     - `importacaoExterna`: Importação externa — Os candidatos vêm de importação externa, como a do SiSU: nenhuma fase de coleta é exigida.
+         * @enum {string}
+         */
+        readonly OrigemCandidatosCodigo: OrigemCandidatosCodigo;
+        readonly OrigemDataFase: {
+            readonly codigo: components["schemas"]["OrigemDataFaseCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `NO_EDITAL`: No edital — A data é fixada no edital: o período é obrigatório.
+         *     - `NA_EXECUCAO`: Na execução do processo — A data não é fixada no edital: a unidade responsável pela fase a define na execução, e o período é opcional.
+         * @enum {string}
+         */
+        readonly OrigemDataFaseCodigo: OrigemDataFaseCodigo;
         readonly PapelDaBanca: {
             readonly codigo: components["schemas"]["PapelDaBancaCodigo"];
             readonly rotulo: string;
@@ -14021,6 +14368,16 @@ export interface components {
          * @enum {string}
          */
         readonly PapelDaBancaCodigo: PapelDaBancaCodigo;
+        readonly PapelDaPublicacaoPrevista: {
+            readonly codigo: components["schemas"]["PapelDaPublicacaoPrevistaCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `PRELIMINAR`: Preliminar — Abre o ciclo recursal da matéria: há um resultado definitivo depois dele.
+         *     - `DEFINITIVO`: Definitivo — Encerra o ciclo recursal da matéria: não há outro resultado sobre ela.
+         * @enum {string}
+         */
+        readonly PapelDaPublicacaoPrevistaCodigo: PapelDaPublicacaoPrevistaCodigo;
         readonly ParametrosDoCriterioDesempateDto: {
             /** Format: uuid */
             readonly etapaRef: null | string;
@@ -14261,28 +14618,28 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly atoCodigo: string;
-            readonly papel: null | string;
+            readonly papel: null | components["schemas"]["PapelDaPublicacaoPrevista"];
         };
         readonly ProdutoDaEtapaInput: {
             readonly atoCodigo: string;
-            readonly papel: null | string;
+            readonly papel: null | components["schemas"]["PapelDaPublicacaoPrevistaCodigo"];
         };
         readonly ProdutoDaFaseDto: {
             /** Format: uuid */
             readonly id: string;
             readonly atoCodigo: string;
-            readonly papel: null | string;
+            readonly papel: null | components["schemas"]["PapelDaPublicacaoPrevista"];
         };
         readonly ProdutoDaFaseInput: {
             readonly atoCodigo: string;
-            readonly papel: null | string;
+            readonly papel: null | components["schemas"]["PapelDaPublicacaoPrevistaCodigo"];
         };
         readonly ProdutoPrevistoDto: {
             /** Format: uuid */
             readonly id: string;
             readonly tipoCodigo: string;
             readonly tipoNome: null | string;
-            readonly papel: null | string;
+            readonly papel: null | components["schemas"]["PapelDaPublicacaoPrevista"];
             readonly situacao: components["schemas"]["SituacaoDoProdutoPrevisto"];
             readonly ato: null | components["schemas"]["AtoDoProcessoDto"];
             readonly correcoes: readonly components["schemas"]["AtoDoProcessoDto"][];
@@ -14390,7 +14747,7 @@ export interface components {
         readonly RecursoDaEtapaDto: {
             /** Format: uuid */
             readonly id: string;
-            readonly ancora: components["schemas"]["AncoraDoRecurso"];
+            readonly ancora: components["schemas"]["EventoInicialDoPrazo"];
             readonly regra: components["schemas"]["ReferenciaRegraDto"];
             readonly parametros: components["schemas"]["ParametrosRegraPrazoRecursoDto"];
             /** Format: uuid */
@@ -14399,7 +14756,7 @@ export interface components {
             readonly procedimentos: readonly components["schemas"]["ProcedimentoDeRecursoDto"][];
         };
         readonly RecursoDaEtapaInput: {
-            readonly ancora: components["schemas"]["AncoraDoRecurso"];
+            readonly ancora: null | components["schemas"]["EventoInicialDoPrazoCodigo"];
             readonly regraCodigo: string;
             readonly regraVersao: string;
             /** Format: double */
@@ -14444,12 +14801,37 @@ export interface components {
             readonly baseLegal: string;
         };
         readonly ReferenciaTemporalFatosDto: {
-            readonly tipo: string;
+            readonly tipo: components["schemas"]["ReferenciaTipo"];
             /** Format: date */
             readonly data: null | string;
             /** Format: uuid */
             readonly faseId: null | string;
         };
+        readonly ReferenciaTipo: {
+            readonly codigo: components["schemas"]["ReferenciaTipoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `FIM_INSCRICAO`: Fim da inscrição — Usa o fim da inscrição como referência.
+         *     - `INICIO_FASE`: Início da fase — Usa o início da fase como referência.
+         *     - `FIM_FASE`: Fim da fase — Usa o fim da fase como referência.
+         *     - `DATA_ESPECIFICA`: Data específica — Usa a data informada como referência.
+         * @enum {string}
+         */
+        readonly ReferenciaTipoCodigo: ReferenciaTipoCodigo;
+        readonly ReferenciaTipoIdadeEmissao: {
+            readonly codigo: components["schemas"]["ReferenciaTipoIdadeEmissaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `FIM_INSCRICAO`: Fim da inscrição — Fim da fase de inscrição.
+         *     - `INICIO_FASE`: Início da fase — Início da fase indicada.
+         *     - `FIM_FASE`: Fim da fase — Fim da fase indicada.
+         *     - `DATA_ESPECIFICA`: Data específica — Data indicada na exigência.
+         *     - `DATA_SUBMISSAO`: Data de submissão — Data de envio do documento.
+         * @enum {string}
+         */
+        readonly ReferenciaTipoIdadeEmissaoCodigo: ReferenciaTipoIdadeEmissaoCodigo;
         readonly RegraAvaliadaDto: {
             /** Format: uuid */
             readonly regraId: string;
@@ -14472,13 +14854,14 @@ export interface components {
         readonly RegraCatalogoDto: {
             readonly codigo: string;
             readonly versao: string;
-            readonly tipo: string;
+            readonly tipo: components["schemas"]["TipoRegra"];
             readonly declaracaoDaRegra: components["schemas"]["JsonElement"];
             readonly invariantes: components["schemas"]["JsonElement"];
             readonly baseLegal: string;
             readonly hash: string;
             readonly modalidadesAdmitidas: null | readonly string[];
             readonly ramoDaDistribuicao: null | string;
+            readonly rotulo?: null | string;
             readonly _links?: null | {
                 readonly [key: string]: string;
             };
@@ -14598,6 +14981,17 @@ export interface components {
             readonly guardaDaVaga: null | components["schemas"]["GuardaDaVagaCodigo"];
             readonly procedimentos?: null | readonly components["schemas"]["ProcedimentoDeRecursoInput"][];
         };
+        readonly RegraRemanejamentoModalidade: {
+            readonly codigo: components["schemas"]["RegraRemanejamentoModalidadeCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `SEGUE_ORDEM_DE_REMANEJAMENTO`: Segue a ordem de remanejamento — As vagas seguem a ordem legal de remanejamento.
+         *     - `DESTINO_UNICO`: Destino único — As vagas seguem para uma modalidade de destino.
+         *     - `CRUZADO`: Remanejamento cruzado — As vagas são remanejadas entre modalidades pareadas.
+         * @enum {string}
+         */
+        readonly RegraRemanejamentoModalidadeCodigo: RegraRemanejamentoModalidadeCodigo;
         readonly RegrasDoCampoDto: {
             readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
             readonly obrigatoriedade: components["schemas"]["ObrigatoriedadeDto"];
@@ -14697,16 +15091,88 @@ export interface components {
         };
         readonly SecaoSimuladaDto: {
             readonly codigo: string;
-            readonly visivel: components["schemas"]["TernarioCodigo"];
+            readonly visivel: components["schemas"]["Ternario"];
         };
-        /** @enum {string} */
-        readonly SituacaoDoArquivoDoCandidato: SituacaoDoArquivoDoCandidato;
-        /** @enum {string} */
-        readonly SituacaoDoCertame: SituacaoDoCertame;
-        /** @enum {string} */
-        readonly SituacaoDoProdutoPrevisto: SituacaoDoProdutoPrevisto;
-        /** @enum {string} */
-        readonly SituacaoInscricao: SituacaoInscricao;
+        readonly SentidoDoMotivo: {
+            readonly codigo: components["schemas"]["SentidoDoMotivoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `FAVORAVEL`: favorável — O motivo é favorável à pessoa.
+         *     - `DESFAVORAVEL`: desfavorável — O motivo é desfavorável à pessoa.
+         * @enum {string}
+         */
+        readonly SentidoDoMotivoCodigo: SentidoDoMotivoCodigo;
+        readonly SituacaoDasModalidades: {
+            readonly codigo: components["schemas"]["SituacaoDasModalidadesCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `CONCORRE`: Concorre — As respostas indicam modalidades ofertadas.
+         *     - `NAO_CONCORRE`: Não concorre — Nenhuma modalidade ofertada se aplica.
+         *     - `FALTA_RESPONDER`: Falta responder — Faltam respostas necessárias para determinar as modalidades.
+         * @enum {string}
+         */
+        readonly SituacaoDasModalidadesCodigo: SituacaoDasModalidadesCodigo;
+        readonly SituacaoDoArquivoDoCandidato: {
+            readonly codigo: components["schemas"]["SituacaoDoArquivoDoCandidatoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `pendente`: Pendente — O envio do arquivo está pendente.
+         *     - `emVerificacao`: Em verificação — O arquivo está em verificação.
+         *     - `verificado`: Verificado — O arquivo foi verificado.
+         *     - `recusado`: Recusado — O arquivo foi recusado.
+         *     - `reenvioNecessario`: Reenvio necessário — O arquivo precisa ser enviado novamente.
+         * @enum {string}
+         */
+        readonly SituacaoDoArquivoDoCandidatoCodigo: SituacaoDoArquivoDoCandidatoCodigo;
+        readonly SituacaoDoCertame: {
+            readonly codigo: components["schemas"]["SituacaoDoCertameCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `emBreve`: Em breve — As inscrições ainda não começaram.
+         *     - `inscricoesAbertas`: Inscrições abertas — As inscrições estão abertas.
+         *     - `ultimosDias`: Últimos dias — As inscrições estão nos últimos dias.
+         *     - `encerradas`: Encerradas — As inscrições estão encerradas.
+         * @enum {string}
+         */
+        readonly SituacaoDoCertameCodigo: SituacaoDoCertameCodigo;
+        readonly SituacaoDoDocumento: {
+            readonly codigo: components["schemas"]["SituacaoDoDocumentoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `naoExigido`: Não exigido — A exigência não se aplica.
+         *     - `PENDENTE`: Pendente — A exigência ainda não foi atendida.
+         *     - `PODE_SER_EXIGIDO`: Pode ser exigido — Uma resposta pendente decide a exigência.
+         *     - `DEPENDE_DE_FASE_POSTERIOR`: Depende de fase posterior — A exigência depende de uma fase posterior.
+         *     - `SATISFEITA`: Satisfeita — A exigência foi atendida.
+         * @enum {string}
+         */
+        readonly SituacaoDoDocumentoCodigo: SituacaoDoDocumentoCodigo;
+        readonly SituacaoDoProdutoPrevisto: {
+            readonly codigo: components["schemas"]["SituacaoDoProdutoPrevistoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `aberto`: Aberta — A publicação prevista ainda não foi realizada.
+         *     - `publicado`: Publicada — A publicação prevista foi realizada.
+         * @enum {string}
+         */
+        readonly SituacaoDoProdutoPrevistoCodigo: SituacaoDoProdutoPrevistoCodigo;
+        readonly SituacaoInscricao: {
+            readonly codigo: components["schemas"]["SituacaoInscricaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `rascunho`: Rascunho — A inscrição está em preenchimento.
+         *     - `submetida`: Submetida — A inscrição foi enviada.
+         *     - `cancelada`: Cancelada — A inscrição enviada foi cancelada.
+         * @enum {string}
+         */
+        readonly SituacaoInscricaoCodigo: SituacaoInscricaoCodigo;
         readonly SnapshotVigenteDto: {
             /** Format: uuid */
             readonly snapshotPublicacaoId: string;
@@ -14718,12 +15184,42 @@ export interface components {
             readonly hashEdital: string;
             readonly configuracao: components["schemas"]["JsonNode"];
         };
-        /** @enum {string} */
-        readonly StatusProcesso: StatusProcesso;
+        readonly StatusArquivoEnviado: {
+            readonly codigo: components["schemas"]["StatusArquivoEnviadoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `Pendente`: Pendente — O envio ainda não foi confirmado.
+         *     - `Confirmado`: Confirmado — O conteúdo do envio foi confirmado.
+         * @enum {string}
+         */
+        readonly StatusArquivoEnviadoCodigo: StatusArquivoEnviadoCodigo;
+        readonly StatusBaseLegal: {
+            readonly codigo: components["schemas"]["StatusBaseLegalCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `PENDENTE`: Pendente — A base legal ainda está pendente.
+         *     - `RESOLVIDO`: Resolvido — A base legal está resolvida.
+         * @enum {string}
+         */
+        readonly StatusBaseLegalCodigo: StatusBaseLegalCodigo;
+        readonly StatusProcesso: {
+            readonly codigo: components["schemas"]["StatusProcessoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `rascunho`: Rascunho — O processo está em preparação.
+         *     - `publicado`: Publicado — O processo foi publicado.
+         *     - `encerrado`: Encerrado — O processo foi encerrado.
+         *     - `cancelado`: Cancelado — O processo foi cancelado.
+         * @enum {string}
+         */
+        readonly StatusProcessoCodigo: StatusProcessoCodigo;
         readonly TaxaInscricaoCertameDto: {
             readonly cobra: boolean;
             readonly valor: null | string;
-            readonly fundamentos: readonly string[];
+            readonly fundamentos: readonly components["schemas"]["FundamentoIsencao"][];
         };
         readonly TermoAceitoDoComprovanteDto: {
             readonly codigo: string;
@@ -14736,7 +15232,7 @@ export interface components {
             readonly codigo: string;
             /** Format: int32 */
             readonly ordem: number;
-            readonly termo: components["schemas"]["VersaoDoTermoDto"];
+            readonly termo: components["schemas"]["VersaoDoTermoExigidoDto"];
             readonly regras: components["schemas"]["ExibicaoEObrigatoriedadeDto"];
         };
         readonly TermoExigidoInput: {
@@ -14763,8 +15259,12 @@ export interface components {
         };
         readonly TermoSimuladoDto: {
             readonly codigo: string;
-            readonly visivel: components["schemas"]["TernarioCodigo"];
-            readonly obrigatorio: components["schemas"]["TernarioCodigo"];
+            readonly visivel: components["schemas"]["Ternario"];
+            readonly obrigatorio: components["schemas"]["Ternario"];
+        };
+        readonly Ternario: {
+            readonly codigo: components["schemas"]["TernarioCodigo"];
+            readonly rotulo: string;
         };
         /**
          * @description Resultado da avaliação de uma condição: verdadeiro, falso ou indeterminado, que é estado próprio e não equivale a falso nem a ausência.
@@ -14775,6 +15275,19 @@ export interface components {
          * @enum {string}
          */
         readonly TernarioCodigo: TernarioCodigo;
+        readonly TipoAbrangencia: {
+            readonly codigo: components["schemas"]["TipoAbrangenciaCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `FEDERAL`: Federal — Aplica-se a norma federal.
+         *     - `ESTADUAL`: Estadual — Aplica-se a norma estadual.
+         *     - `MUNICIPAL`: Municipal — Aplica-se a norma municipal.
+         *     - `INTERNA_NORMA`: Norma interna — Aplica-se a norma da instituição.
+         *     - `INTERNA_EDITAL`: Edital — Aplica-se o próprio edital.
+         * @enum {string}
+         */
+        readonly TipoAbrangenciaCodigo: TipoAbrangenciaCodigo;
         readonly TipoCatalogadoCertameDto: {
             readonly codigo: string;
             readonly nome: string;
@@ -14799,8 +15312,27 @@ export interface components {
          * @enum {string}
          */
         readonly TipoDeBancaCodigo: TipoDeBancaCodigo;
-        /** @enum {string} */
-        readonly TipoDeLeiauteDoInep: "envio" | "retorno" | null;
+        readonly TipoDeLeiauteDoInep: {
+            readonly codigo: components["schemas"]["TipoDeLeiauteDoInepCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `ENVIO`: Envio — Arquivo enviado ao INEP.
+         *     - `RETORNO`: Retorno — Arquivo recebido do INEP.
+         * @enum {string}
+         */
+        readonly TipoDeLeiauteDoInepCodigo: TipoDeLeiauteDoInepCodigo;
+        readonly TipoDeOcorrenciaDoLote: {
+            readonly codigo: components["schemas"]["TipoDeOcorrenciaDoLoteCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `INSCRITO_SEM_LINHA`: Inscrito sem linha — A inscrição não aparece no arquivo.
+         *     - `LINHA_SEM_INSCRITO`: Linha sem inscrito — A linha não corresponde a uma inscrição.
+         *     - `CONFLITO`: Conflito — A inscrição tem linhas diferentes no arquivo.
+         * @enum {string}
+         */
+        readonly TipoDeOcorrenciaDoLoteCodigo: TipoDeOcorrenciaDoLoteCodigo;
         readonly TipoDocumentoDaExigenciaDto: {
             /** Format: uuid */
             readonly id: string;
@@ -14845,17 +15377,39 @@ export interface components {
             readonly codigo: string;
             readonly nome: string;
         };
+        readonly TipoRegra: {
+            readonly codigo: components["schemas"]["TipoRegraCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `regra_calculo`: Cálculo da nota — Cálculo da nota.
+         *     - `regra_arredondamento`: Arredondamento da nota — Arredondamento da nota.
+         *     - `regra_eliminacao`: Eliminação — Eliminação.
+         *     - `regra_fada`: Fator de Atenuação das Desigualdades de Acesso (FADA) — Regra do Fator de Atenuação das Desigualdades de Acesso (FADA).
+         *     - `criterio_desempate`: Critério de desempate — Critério de desempate.
+         *     - `criterio_remanejamento`: Critério de remanejamento — Critério de remanejamento.
+         *     - `regra_ordem_alocacao`: Ordem de alocação — Ordem de alocação.
+         *     - `regra_elegibilidade`: Elegibilidade — Elegibilidade.
+         *     - `regra_distribuicao_vagas`: Distribuição de vagas — Distribuição de vagas.
+         *     - `regra_ajuste_distribuicao_vagas`: Ajuste da distribuição de vagas — Ajuste da distribuição de vagas.
+         *     - `regra_prazo_recurso`: Prazo de recurso — Prazo de recurso.
+         *     - `convencao_contagem_prazo`: Convenção de contagem do prazo — Convenção de contagem do prazo.
+         *     - `regra_apuracao_avaliacao`: Apuração da avaliação — Apuração da avaliação.
+         *     - `regra_procedimento_recurso`: Procedimento de recurso — Procedimento de recurso.
+         * @enum {string}
+         */
+        readonly TipoRegraCodigo: TipoRegraCodigo;
         /**
          * @description Como o campo do formulário é apresentado e respondido pelo candidato.
          *
-         *     - `NUMERO`: Número
-         *     - `BOOLEANO`: Sim ou não
-         *     - `SELECAO_UNICA`: Escolha de um valor
-         *     - `SELECAO_MULTIPLA`: Escolha de vários valores
-         *     - `TEXTO`: Texto
-         *     - `DATA`: Data
-         *     - `ENDERECO`: Endereço
-         *     - `MUNICIPIO`: Município
+         *     - `NUMERO`: Número — Campo em que o candidato digita um número inteiro.
+         *     - `SIM_OU_NAO`: Sim ou não — Campo em que o candidato responde sim ou não.
+         *     - `ESCOLHA_UNICA`: Escolha de um valor — Campo em que o candidato escolhe uma opção entre as oferecidas.
+         *     - `ESCOLHA_MULTIPLA`: Escolha de vários valores — Campo em que o candidato escolhe uma ou mais opções entre as oferecidas.
+         *     - `TEXTO`: Texto — Campo em que o candidato digita um texto, conferido pelo formato do dado.
+         *     - `DATA`: Data — Campo em que o candidato informa uma data do calendário.
+         *     - `ENDERECO`: Endereço — Campo de endereço completo, preenchido a partir da busca do CEP.
+         *     - `MUNICIPIO`: Município — Campo em que o candidato escolhe o município entre os da unidade federativa já respondida.
          * @enum {string}
          */
         readonly TipoRenderizacaoCodigo: TipoRenderizacaoCodigo;
@@ -14877,6 +15431,17 @@ export interface components {
             readonly cidadeNome: null | string;
             readonly cidadeUf: null | string;
         };
+        readonly UnidadeIdade: {
+            readonly codigo: components["schemas"]["UnidadeIdadeCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `DIAS`: Dias — Contagem em dias.
+         *     - `MESES`: Meses — Contagem em meses.
+         *     - `ANOS`: Anos — Contagem em anos.
+         * @enum {string}
+         */
+        readonly UnidadeIdadeCodigo: UnidadeIdadeCodigo;
         readonly UnidadePrazo: {
             readonly codigo: components["schemas"]["UnidadePrazoCodigo"];
             readonly rotulo: string;
@@ -14931,7 +15496,7 @@ export interface components {
             readonly ordem: number;
             readonly orientacao?: null | string;
         };
-        readonly VersaoDoTermoDto: {
+        readonly VersaoDoTermoExigidoDto: {
             /** Format: uuid */
             readonly termoId: string;
             /** Format: uuid */
@@ -14939,7 +15504,7 @@ export interface components {
             readonly termoCodigo: string;
             /** Format: int32 */
             readonly versaoNumero: number;
-            readonly conteudo: components["schemas"]["ConteudoDoTermoDto"];
+            readonly conteudo: components["schemas"]["ConteudoDoTermoExigidoDto"];
         };
         readonly VersaoDoTermoInput: {
             /** Format: uuid */
@@ -15016,10 +15581,9 @@ export enum PathsApiSelecaoRegrasCatalogoGetParametersQueryDirection {
     next = "next",
     prev = "prev"
 }
-export enum AncoraDoRecurso {
-    nenhuma = "nenhuma",
-    atoPublicado = "atoPublicado",
-    cienciaIndividual = "cienciaIndividual"
+export enum AplicabilidadeCodigo {
+    GERAL = "GERAL",
+    CONDICIONAL = "CONDICIONAL"
 }
 export enum ArquivoAdministrativoDtoClassificacaoProtecao {
     PUBLICO = "PUBLICO",
@@ -15028,21 +15592,36 @@ export enum ArquivoAdministrativoDtoClassificacaoProtecao {
     IDENTIFICADOR = "IDENTIFICADOR",
     SENSIVEL = "SENSIVEL"
 }
-export enum CaraterEtapa {
-    nenhum = "nenhum",
+export enum CaraterEtapaCodigo {
     classificatoria = "classificatoria",
     eliminatoria = "eliminatoria",
     ambas = "ambas"
 }
-export enum CategoriaObrigatoriedade {
-    nenhuma = "nenhuma",
+export enum CategoriaObrigatoriedadeCodigo {
     etapa = "etapa",
     modalidade = "modalidade",
     desempate = "desempate",
     documento = "documento",
-    bonus = "bonus",
+    fada = "fada",
     atendimento = "atendimento",
     outros = "outros"
+}
+export enum ComposicaoVagasModalidadeCodigo {
+    RESTANTE_DAS_VAGAS_OFERTADAS = "RESTANTE_DAS_VAGAS_OFERTADAS",
+    DENTRO_DA_RESERVA_LEGAL = "DENTRO_DA_RESERVA_LEGAL",
+    RETIRADA_DE_OUTRA_MODALIDADE = "RETIRADA_DE_OUTRA_MODALIDADE",
+    SUPLEMENTAR_AO_TOTAL = "SUPLEMENTAR_AO_TOTAL"
+}
+export enum ConsequenciaDoIndeferimentoCodigo {
+    ELIMINA = "ELIMINA",
+    RECLASSIFICA_AC = "RECLASSIFICA_AC",
+    REMOVE_VANTAGEM = "REMOVE_VANTAGEM",
+    ABRE_PRAZO_PARA_REENVIO = "ABRE_PRAZO_PARA_REENVIO"
+}
+export enum CriterioDeDistincaoDasApresentacoesCodigo {
+    COMPETENCIA_MENSAL = "COMPETENCIA_MENSAL",
+    EXERCICIO_ANUAL = "EXERCICIO_ANUAL",
+    OCORRENCIA = "OCORRENCIA"
 }
 export enum CriterioDeVotacaoCodigo {
     maioriaSimples = "maioriaSimples",
@@ -15089,7 +15668,7 @@ export enum DocumentoDaConfiguracaoBancasRegraDeDeliberacaoSemUnanimidade {
     desfavoravel = "desfavoravel",
     novaVotacao = "novaVotacao"
 }
-export enum DocumentoDaConfiguracaoColetaReferenciaTemporalFatosTipo {
+export enum DocumentoDaConfiguracaoColetaReferenciaTemporalDosDadosTipo {
     FIM_INSCRICAO = "FIM_INSCRICAO",
     INICIO_FASE = "INICIO_FASE",
     FIM_FASE = "FIM_FASE",
@@ -15101,10 +15680,6 @@ export enum DocumentoDaConfiguracaoComunsAlvoDoProcedimentoDeRecursoAreaDoEnem {
     CIENCIAS_HUMANAS = "CIENCIAS_HUMANAS",
     LINGUAGENS = "LINGUAGENS",
     MATEMATICA = "MATEMATICA"
-}
-export enum DocumentoDaConfiguracaoComunsProdutoPapel {
-    PRELIMINAR = "PRELIMINAR",
-    DEFINITIVO = "DEFINITIVO"
 }
 export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoUnidade {
     horas = "horas",
@@ -15123,6 +15698,10 @@ export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoGuardaDaVaga {
     ateOResultadoDefinitivo = "ateOResultadoDefinitivo",
     naoGuarda = "naoGuarda"
 }
+export enum DocumentoDaConfiguracaoComunsPublicacaoPrevistaPapel {
+    PRELIMINAR = "PRELIMINAR",
+    DEFINITIVO = "DEFINITIVO"
+}
 export enum DocumentoDaConfiguracaoComunsTipoDeDecisao {
     ISENCAO_DA_TAXA = "ISENCAO_DA_TAXA",
     HOMOLOGACAO_DAS_INSCRICOES = "HOMOLOGACAO_DAS_INSCRICOES",
@@ -15132,6 +15711,30 @@ export enum DocumentoDaConfiguracaoComunsTipoDeDecisao {
     CLASSIFICACAO = "CLASSIFICACAO",
     GABARITO_DA_PROVA = "GABARITO_DA_PROVA",
     NOTA_DA_ETAPA = "NOTA_DA_ETAPA"
+}
+export enum DocumentoDaConfiguracaoCondicoesBaseLegalAbrangencia {
+    FEDERAL = "FEDERAL",
+    ESTADUAL = "ESTADUAL",
+    MUNICIPAL = "MUNICIPAL",
+    INTERNA_NORMA = "INTERNA_NORMA",
+    INTERNA_EDITAL = "INTERNA_EDITAL"
+}
+export enum DocumentoDaConfiguracaoCondicoesBaseLegalSituacao {
+    PENDENTE = "PENDENTE",
+    RESOLVIDO = "RESOLVIDO"
+}
+export enum DocumentoDaConfiguracaoCondicoesCondicaoOperador {
+    ALGUM_DE = "ALGUM_DE",
+    DIFERENTE = "DIFERENTE",
+    IGUAL = "IGUAL",
+    MAIOR_IGUAL = "MAIOR_IGUAL",
+    MENOR_IGUAL = "MENOR_IGUAL",
+    NENHUM_DE = "NENHUM_DE"
+}
+export enum DocumentoDaConfiguracaoCondicoesObrigatoriedadeTipo {
+    SEMPRE = "SEMPRE",
+    NUNCA = "NUNCA",
+    QUANDO = "QUANDO"
 }
 export enum DocumentoDaConfiguracaoDistribuicaoDeVagasAjusteDoQuadro$tipo {
     reduzirDe = "reduzirDe",
@@ -15151,8 +15754,8 @@ export enum DocumentoDaConfiguracaoEtapasFormaDeAvaliacao {
     OBJETIVA = "OBJETIVA",
     HUMANA = "HUMANA"
 }
-export enum DocumentoDaConfiguracaoEtapasRecursoDaEtapaAncora {
-    atoPublicado = "atoPublicado",
+export enum DocumentoDaConfiguracaoEtapasRecursoDaEtapaEventoInicialDoPrazo {
+    publicacaoDoAto = "publicacaoDoAto",
     cienciaIndividual = "cienciaIndividual"
 }
 export enum DocumentoDaConfiguracaoExigenciasExigenciaClassificacaoProtecao {
@@ -15168,14 +15771,14 @@ export enum DocumentoDaConfiguracaoExigenciasExigenciaFinalidade {
     HABILITACAO = "HABILITACAO"
 }
 export enum DocumentoDaConfiguracaoExigenciasExigenciaAplicabilidade {
-    Geral = "Geral",
-    Condicional = "Condicional"
+    GERAL = "GERAL",
+    CONDICIONAL = "CONDICIONAL"
 }
 export enum DocumentoDaConfiguracaoExigenciasExigenciaConsequenciaIndeferimento {
     ELIMINA = "ELIMINA",
     RECLASSIFICA_AC = "RECLASSIFICA_AC",
     REMOVE_VANTAGEM = "REMOVE_VANTAGEM",
-    PENDENCIA_REENVIO = "PENDENCIA_REENVIO"
+    ABRE_PRAZO_PARA_REENVIO = "ABRE_PRAZO_PARA_REENVIO"
 }
 export enum DocumentoDaConfiguracaoExigenciasFormatosPermitidosListaFormato {
     PDF = "PDF",
@@ -15199,11 +15802,11 @@ export enum DocumentoDaConfiguracaoFormularioFinalidade {
     ISENCAO_TAXA = "ISENCAO_TAXA",
     HABILITACAO = "HABILITACAO"
 }
-export enum DocumentoDaConfiguracaoFormularioEtapaTipo {
+export enum DocumentoDaConfiguracaoFormularioPaginaTipo {
     SECAO = "SECAO",
     BLOCO = "BLOCO"
 }
-export enum DocumentoDaConfiguracaoFormularioEtapaBloco {
+export enum DocumentoDaConfiguracaoFormularioPaginaBloco {
     COMPROVACAO_DOCUMENTAL = "COMPROVACAO_DOCUMENTAL",
     MODALIDADES_CALCULADAS = "MODALIDADES_CALCULADAS",
     REVISAO_E_ACEITE = "REVISAO_E_ACEITE"
@@ -15216,30 +15819,6 @@ export enum DocumentoDaConfiguracaoMotivoSentido {
     FAVORAVEL = "FAVORAVEL",
     DESFAVORAVEL = "DESFAVORAVEL"
 }
-export enum DocumentoDaConfiguracaoPredicadoBaseLegalAbrangencia {
-    FEDERAL = "FEDERAL",
-    ESTADUAL = "ESTADUAL",
-    MUNICIPAL = "MUNICIPAL",
-    INTERNA_NORMA = "INTERNA_NORMA",
-    INTERNA_EDITAL = "INTERNA_EDITAL"
-}
-export enum DocumentoDaConfiguracaoPredicadoBaseLegalSituacao {
-    PENDENTE = "PENDENTE",
-    RESOLVIDO = "RESOLVIDO"
-}
-export enum DocumentoDaConfiguracaoPredicadoCondicaoOperador {
-    IGUAL = "IGUAL",
-    DIFERENTE = "DIFERENTE",
-    MAIOR_IGUAL = "MAIOR_IGUAL",
-    MENOR_IGUAL = "MENOR_IGUAL",
-    EM = "EM",
-    NAO_EM = "NAO_EM"
-}
-export enum DocumentoDaConfiguracaoPredicadoObrigatoriedadeTipo {
-    SEMPRE = "SEMPRE",
-    NUNCA = "NUNCA",
-    QUANDO = "QUANDO"
-}
 export enum DocumentoDaConfiguracaoRegrasDeComprovacaoForma {
     DOCUMENTO = "DOCUMENTO",
     TODOS_OS_ITENS = "TODOS_OS_ITENS",
@@ -15249,7 +15828,7 @@ export enum DocumentoDaConfiguracaoRegrasDeComprovacaoConsequencia {
     ELIMINA = "ELIMINA",
     RECLASSIFICA_AC = "RECLASSIFICA_AC",
     REMOVE_VANTAGEM = "REMOVE_VANTAGEM",
-    PENDENCIA_REENVIO = "PENDENCIA_REENVIO"
+    ABRE_PRAZO_PARA_REENVIO = "ABRE_PRAZO_PARA_REENVIO"
 }
 export enum DocumentoDaConfiguracaoRegrasDeComprovacaoCriterioDeDistincao {
     COMPETENCIA_MENSAL = "COMPETENCIA_MENSAL",
@@ -15264,7 +15843,7 @@ export enum DocumentoDaConfiguracaoRestricaoDeValorTipo {
     MUNICIPIOS_DA_UF = "MUNICIPIOS_DA_UF",
     FAIXA_DE_DATA = "FAIXA_DE_DATA"
 }
-export enum DocumentoDaConfiguracaoRestricaoDeValorLimiteDeDataAncora {
+export enum DocumentoDaConfiguracaoRestricaoDeValorLimiteDeDataReferenciaDaData {
     DATA_FIXA = "DATA_FIXA",
     ENVIO = "ENVIO"
 }
@@ -15280,21 +15859,54 @@ export enum EncerramentoDaVotacaoCodigo {
     todosOsTitulares = "todosOsTitulares",
     presidenciaNoQuorum = "presidenciaNoQuorum"
 }
-export enum FinalidadeDoDocumento {
+export enum EventoInicialDoPrazoCodigo {
+    publicacaoDoAto = "publicacaoDoAto",
+    cienciaIndividual = "cienciaIndividual"
+}
+export enum FinalidadeDoDocumentoCodigo {
     documentoDoEdital = "documentoDoEdital",
     anexoDoEdital = "anexoDoEdital",
     documentoDeAto = "documentoDeAto"
+}
+export enum FinalidadeFormularioCodigo {
+    INSCRICAO = "INSCRICAO",
+    ISENCAO_TAXA = "ISENCAO_TAXA",
+    HABILITACAO = "HABILITACAO"
+}
+export enum FormaAceiteCodigo {
+    A_DEFINIR = "A_DEFINIR",
+    REGISTRO_SEM_ENDERECO_IP = "REGISTRO_SEM_ENDERECO_IP",
+    REGISTRO_COM_ENDERECO_IP = "REGISTRO_COM_ENDERECO_IP"
+}
+export enum FormaDeAvaliacaoCodigo {
+    OBJETIVA = "OBJETIVA",
+    HUMANA = "HUMANA"
 }
 export enum FormaDeComprovacaoCodigo {
     DOCUMENTO = "DOCUMENTO",
     TODOS_OS_ITENS = "TODOS_OS_ITENS",
     QUANTIDADE_MINIMA_DE_ITENS = "QUANTIDADE_MINIMA_DE_ITENS"
 }
+export enum FormatoDeDocumentoCodigo {
+    DOCX = "DOCX",
+    ODT = "ODT",
+    PDF = "PDF"
+}
+export enum FormatoPermitidoCodigo {
+    PDF = "PDF",
+    JPEG = "JPEG",
+    PNG = "PNG"
+}
+export enum FundamentoIsencaoCodigo {
+    CADASTRO_UNICO = "CADASTRO_UNICO",
+    DOACAO_MEDULA_OSSEA = "DOACAO_MEDULA_OSSEA",
+    CARENCIA_SOCIOECONOMICA = "CARENCIA_SOCIOECONOMICA"
+}
 export enum GuardaDaVagaCodigo {
     ateOResultadoDefinitivo = "ateOResultadoDefinitivo",
     naoGuarda = "naoGuarda"
 }
-export enum ImpedimentoDoProduto {
+export enum ImpedimentoDoProdutoCodigo {
     jaPublicado = "jaPublicado",
     preliminarNaoPublicado = "preliminarNaoPublicado",
     tipoDeAtoNaoVigente = "tipoDeAtoNaoVigente"
@@ -15303,18 +15915,26 @@ export enum ModoDeDeliberacaoCodigo {
     colegiadaComVotacao = "colegiadaComVotacao",
     atoIndividual = "atoIndividual"
 }
+export enum NaturezaLegalModalidadeCodigo {
+    COTA_RESERVADA = "COTA_RESERVADA",
+    AMPLA = "AMPLA",
+    ACAO_AFIRMATIVA = "ACAO_AFIRMATIVA"
+}
 export enum OperadorCodigo {
     IGUAL = "IGUAL",
-    EM = "EM",
+    ALGUM_DE = "ALGUM_DE",
     MAIOR_IGUAL = "MAIOR_IGUAL",
     MENOR_IGUAL = "MENOR_IGUAL",
     DIFERENTE = "DIFERENTE",
-    NAO_EM = "NAO_EM"
+    NENHUM_DE = "NENHUM_DE"
 }
-export enum OrigemCandidatos {
-    nenhuma = "nenhuma",
+export enum OrigemCandidatosCodigo {
     inscricaoPropria = "inscricaoPropria",
     importacaoExterna = "importacaoExterna"
+}
+export enum OrigemDataFaseCodigo {
+    NO_EDITAL = "NO_EDITAL",
+    NA_EXECUCAO = "NA_EXECUCAO"
 }
 export enum PapelDaBancaCodigo {
     AVALIA_O_MERITO = "AVALIA_O_MERITO",
@@ -15322,6 +15942,10 @@ export enum PapelDaBancaCodigo {
     IMPORTA_AS_NOTAS_DO_INEP = "IMPORTA_AS_NOTAS_DO_INEP",
     IMPORTA_CANDIDATOS = "IMPORTA_CANDIDATOS",
     JULGA_A_SEGUNDA_INSTANCIA = "JULGA_A_SEGUNDA_INSTANCIA"
+}
+export enum PapelDaPublicacaoPrevistaCodigo {
+    PRELIMINAR = "PRELIMINAR",
+    DEFINITIVO = "DEFINITIVO"
 }
 export enum ParametrosRegraAjusteDistribuicaoParametrosReduzirDe$tipo {
     reduzirDe = "reduzirDe"
@@ -15350,35 +15974,76 @@ export enum PredicadoObrigatoriedadeEtapaObrigatoria$tipo {
 export enum PredicadoObrigatoriedadeModalidadesMinimas$tipo {
     modalidadesMinimas = "modalidadesMinimas"
 }
+export enum ReferenciaTipoCodigo {
+    FIM_INSCRICAO = "FIM_INSCRICAO",
+    INICIO_FASE = "INICIO_FASE",
+    FIM_FASE = "FIM_FASE",
+    DATA_ESPECIFICA = "DATA_ESPECIFICA"
+}
+export enum ReferenciaTipoIdadeEmissaoCodigo {
+    FIM_INSCRICAO = "FIM_INSCRICAO",
+    INICIO_FASE = "INICIO_FASE",
+    FIM_FASE = "FIM_FASE",
+    DATA_ESPECIFICA = "DATA_ESPECIFICA",
+    DATA_SUBMISSAO = "DATA_SUBMISSAO"
+}
+export enum RegraRemanejamentoModalidadeCodigo {
+    SEGUE_ORDEM_DE_REMANEJAMENTO = "SEGUE_ORDEM_DE_REMANEJAMENTO",
+    DESTINO_UNICO = "DESTINO_UNICO",
+    CRUZADO = "CRUZADO"
+}
 export enum ResultadoSemUnanimidadeCodigo {
     favoravel = "favoravel",
     desfavoravel = "desfavoravel",
     novaVotacao = "novaVotacao"
 }
-export enum SituacaoDoArquivoDoCandidato {
+export enum SentidoDoMotivoCodigo {
+    FAVORAVEL = "FAVORAVEL",
+    DESFAVORAVEL = "DESFAVORAVEL"
+}
+export enum SituacaoDasModalidadesCodigo {
+    CONCORRE = "CONCORRE",
+    NAO_CONCORRE = "NAO_CONCORRE",
+    FALTA_RESPONDER = "FALTA_RESPONDER"
+}
+export enum SituacaoDoArquivoDoCandidatoCodigo {
     pendente = "pendente",
     emVerificacao = "emVerificacao",
     verificado = "verificado",
     recusado = "recusado",
     reenvioNecessario = "reenvioNecessario"
 }
-export enum SituacaoDoCertame {
+export enum SituacaoDoCertameCodigo {
     emBreve = "emBreve",
     inscricoesAbertas = "inscricoesAbertas",
     ultimosDias = "ultimosDias",
     encerradas = "encerradas"
 }
-export enum SituacaoDoProdutoPrevisto {
+export enum SituacaoDoDocumentoCodigo {
+    naoExigido = "naoExigido",
+    PENDENTE = "PENDENTE",
+    PODE_SER_EXIGIDO = "PODE_SER_EXIGIDO",
+    DEPENDE_DE_FASE_POSTERIOR = "DEPENDE_DE_FASE_POSTERIOR",
+    SATISFEITA = "SATISFEITA"
+}
+export enum SituacaoDoProdutoPrevistoCodigo {
     aberto = "aberto",
     publicado = "publicado"
 }
-export enum SituacaoInscricao {
+export enum SituacaoInscricaoCodigo {
     rascunho = "rascunho",
     submetida = "submetida",
     cancelada = "cancelada"
 }
-export enum StatusProcesso {
-    nenhum = "nenhum",
+export enum StatusArquivoEnviadoCodigo {
+    Pendente = "Pendente",
+    Confirmado = "Confirmado"
+}
+export enum StatusBaseLegalCodigo {
+    PENDENTE = "PENDENTE",
+    RESOLVIDO = "RESOLVIDO"
+}
+export enum StatusProcessoCodigo {
     rascunho = "rascunho",
     publicado = "publicado",
     encerrado = "encerrado",
@@ -15388,6 +16053,13 @@ export enum TernarioCodigo {
     INDETERMINADO = "INDETERMINADO",
     VERDADEIRO = "VERDADEIRO",
     FALSO = "FALSO"
+}
+export enum TipoAbrangenciaCodigo {
+    FEDERAL = "FEDERAL",
+    ESTADUAL = "ESTADUAL",
+    MUNICIPAL = "MUNICIPAL",
+    INTERNA_NORMA = "INTERNA_NORMA",
+    INTERNA_EDITAL = "INTERNA_EDITAL"
 }
 export enum TipoDeBancaCodigo {
     BANCA_ANALISE_DOCUMENTAL = "BANCA_ANALISE_DOCUMENTAL",
@@ -15401,6 +16073,15 @@ export enum TipoDeBancaCodigo {
     BANCA_IMPORTACAO_CANDIDATOS = "BANCA_IMPORTACAO_CANDIDATOS",
     BANCA_ANALISE_RECURSOS_SEGUNDA_INSTANCIA = "BANCA_ANALISE_RECURSOS_SEGUNDA_INSTANCIA"
 }
+export enum TipoDeLeiauteDoInepCodigo {
+    ENVIO = "ENVIO",
+    RETORNO = "RETORNO"
+}
+export enum TipoDeOcorrenciaDoLoteCodigo {
+    INSCRITO_SEM_LINHA = "INSCRITO_SEM_LINHA",
+    LINHA_SEM_INSCRITO = "LINHA_SEM_INSCRITO",
+    CONFLITO = "CONFLITO"
+}
 export enum TipoMotivoDeDecisaoCodigo {
     ISENCAO_DA_TAXA = "ISENCAO_DA_TAXA",
     HOMOLOGACAO_DAS_INSCRICOES = "HOMOLOGACAO_DAS_INSCRICOES",
@@ -15411,15 +16092,36 @@ export enum TipoMotivoDeDecisaoCodigo {
     GABARITO_DA_PROVA = "GABARITO_DA_PROVA",
     NOTA_DA_ETAPA = "NOTA_DA_ETAPA"
 }
+export enum TipoRegraCodigo {
+    regra_calculo = "regra_calculo",
+    regra_arredondamento = "regra_arredondamento",
+    regra_eliminacao = "regra_eliminacao",
+    regra_fada = "regra_fada",
+    criterio_desempate = "criterio_desempate",
+    criterio_remanejamento = "criterio_remanejamento",
+    regra_ordem_alocacao = "regra_ordem_alocacao",
+    regra_elegibilidade = "regra_elegibilidade",
+    regra_distribuicao_vagas = "regra_distribuicao_vagas",
+    regra_ajuste_distribuicao_vagas = "regra_ajuste_distribuicao_vagas",
+    regra_prazo_recurso = "regra_prazo_recurso",
+    convencao_contagem_prazo = "convencao_contagem_prazo",
+    regra_apuracao_avaliacao = "regra_apuracao_avaliacao",
+    regra_procedimento_recurso = "regra_procedimento_recurso"
+}
 export enum TipoRenderizacaoCodigo {
     NUMERO = "NUMERO",
-    BOOLEANO = "BOOLEANO",
-    SELECAO_UNICA = "SELECAO_UNICA",
-    SELECAO_MULTIPLA = "SELECAO_MULTIPLA",
+    SIM_OU_NAO = "SIM_OU_NAO",
+    ESCOLHA_UNICA = "ESCOLHA_UNICA",
+    ESCOLHA_MULTIPLA = "ESCOLHA_MULTIPLA",
     TEXTO = "TEXTO",
     DATA = "DATA",
     ENDERECO = "ENDERECO",
     MUNICIPIO = "MUNICIPIO"
+}
+export enum UnidadeIdadeCodigo {
+    DIAS = "DIAS",
+    MESES = "MESES",
+    ANOS = "ANOS"
 }
 export enum UnidadePrazoCodigo {
     horas = "horas",

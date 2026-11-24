@@ -1,3 +1,4 @@
+import { SentidoDoMotivoCodigo } from '@uniplus/shared-data/selecao';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   ESCRITA,
@@ -34,7 +35,7 @@ describe('MotivosDeDecisaoPage — escritas', () => {
     expect(p.texto('select[formcontrolname="subclassificacao"]')).toContain('Baixa renda');
     p.edicao.form.setValue({
       codigo: 'RENDA_ACIMA_DO_LIMITE',
-      sentido: 'DESFAVORAVEL',
+      sentido: SentidoDoMotivoCodigo.DESFAVORAVEL,
       subclassificacao: 'BAIXA_RENDA',
       descricao: 'A renda supera o limite.',
     });
@@ -48,7 +49,7 @@ describe('MotivosDeDecisaoPage — escritas', () => {
       codigo: 'RENDA_ACIMA_DO_LIMITE',
       descricao: 'A renda supera o limite.',
       subclassificacao: 'BAIXA_RENDA',
-      sentido: 'DESFAVORAVEL',
+      sentido: SentidoDoMotivoCodigo.DESFAVORAVEL,
     });
     post.flush(...CRIADO);
     await p.propagar();
@@ -71,7 +72,7 @@ describe('MotivosDeDecisaoPage — escritas', () => {
     expect(p.existe('select[formcontrolname="subclassificacao"]')).toBe(false);
     p.edicao.form.patchValue({
       codigo: 'NOTA_INSUFICIENTE',
-      sentido: 'DESFAVORAVEL',
+      sentido: SentidoDoMotivoCodigo.DESFAVORAVEL,
       descricao: 'Nota baixa.',
     });
     p.edicao.salvar();
@@ -181,7 +182,7 @@ describe('MotivosDeDecisaoPage — escritas', () => {
     await abrirCadastroDeIsencao();
     p.edicao.form.setValue({
       codigo: 'RENDA_ACIMA_DO_LIMITE',
-      sentido: 'DESFAVORAVEL',
+      sentido: SentidoDoMotivoCodigo.DESFAVORAVEL,
       subclassificacao: 'BAIXA_RENDA',
       descricao: 'A renda supera o limite.',
     });

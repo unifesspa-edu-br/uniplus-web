@@ -1,3 +1,4 @@
+import { FINALIDADE_INSCRICAO } from './vocabulario-do-modelo.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
@@ -15,7 +16,7 @@ export const URL = `${BASE}/api/configuracao/admin/modelos-formulario`;
 export const modelo: ModeloFormularioView = {
   id: 'modelo-1',
   codigo: 'INSCRICAO',
-  finalidade: 'INSCRICAO',
+  finalidade: FINALIDADE_INSCRICAO,
   ativo: true,
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   conteudo: {

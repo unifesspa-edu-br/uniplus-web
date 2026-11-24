@@ -71,8 +71,8 @@
             [attr.aria-describedby]="erro('finalidade') ? 'cfg-modelo-finalidade-erro' : null"
           >
             <option value="">Escolha a finalidade</option>
-            @for (finalidade of finalidades; track finalidade.valor) {
-              <option [value]="finalidade.valor">{{ finalidade.rotulo }}</option>
+            @for (finalidade of finalidades(); track finalidade.codigo) {
+              <option [value]="finalidade.codigo">{{ finalidade.rotulo }}</option>
             }
           </select>
           @if (erro('finalidade')) {

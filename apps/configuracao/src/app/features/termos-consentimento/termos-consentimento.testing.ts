@@ -1,3 +1,4 @@
+import { formasDeAceite, provedorDeFormasDeAceite } from './formas-de-aceite.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -49,7 +50,7 @@ export function termo(sobrescritas: Partial<TermoConsentimentoDto> = {}): TermoC
     nome: 'Declaração de veracidade',
     textoRascunho: 'Declaro que as informações são verdadeiras.',
     baseLegalRascunho: 'Lei nº 13.709/2018',
-    formaAceiteRascunho: 'A_DEFINIR',
+    formaAceiteRascunho: formasDeAceite.definir,
     revisado: false,
     revisadoEm: null,
     versoes: [],
@@ -66,7 +67,7 @@ export function versao(
     numero: 1,
     texto: 'Declaro que as informações são verdadeiras.',
     baseLegal: 'Lei nº 13.709/2018',
-    formaAceite: 'A_DEFINIR',
+    formaAceite: formasDeAceite.definir,
     hash: 'abc123',
     promovidaEm: '2026-08-11T13:00:00Z',
     ...sobrescritas,
@@ -126,22 +127,29 @@ export interface CenaDoDetalhe {
   avisos(): string[];
 }
 
+const ROTAS_DE_TESTE = [
+  { path: 'termos-consentimento', children: [] },
+  { path: 'termos-consentimento/:id', children: [] },
+];
+
+function rotaDoTermo(id: string | null) {
+  return {
+    provide: ActivatedRoute,
+    useValue: { snapshot: { paramMap: convertToParamMap(id === null ? {} : { id }) } },
+  };
+}
+
 function configurarDetalhe(id: string | null): void {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     imports: [TermosConsentimentoDetailPage],
     providers: [
+      provedorDeFormasDeAceite,
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),
-      provideRouter([
-        { path: 'termos-consentimento', children: [] },
-        { path: 'termos-consentimento/:id', children: [] },
-      ]),
+      provideRouter(ROTAS_DE_TESTE),
       { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-      {
-        provide: ActivatedRoute,
-        useValue: { snapshot: { paramMap: convertToParamMap(id === null ? {} : { id }) } },
-      },
+      rotaDoTermo(id),
     ],
   });
 }
@@ -160,27 +168,32 @@ function buscarBotao(raiz: HTMLElement, texto: string): HTMLButtonElement {
   return encontrado as HTMLButtonElement;
 }
 
+async function propagarDetalhe(fixture: ComponentFixture<TermosConsentimentoDetailPage>) {
+  await Promise.resolve();
+  TestBed.inject(ApplicationRef).tick();
+  fixture.detectChanges();
+}
+
+function avisosDaCena(): string[] {
+  return TestBed.inject(NotificationService)
+    .notifications()
+    .map((item) => item.title);
+}
+
 function criarCena(fixture: ComponentFixture<TermosConsentimentoDetailPage>): CenaDoDetalhe {
-  const appRef = TestBed.inject(ApplicationRef);
-  const notificacoes = TestBed.inject(NotificationService);
   const raiz: HTMLElement = fixture.nativeElement;
-  const cena: CenaDoDetalhe = {
+  return {
     fixture,
     controller: TestBed.inject(HttpTestingController),
     edicao: fixture.debugElement.injector.get(EdicaoDosTermosConsentimento),
     store: fixture.debugElement.injector.get(TermoConsentimentoStore),
-    notificacoes,
-    async propagar() {
-      await Promise.resolve();
-      appRef.tick();
-      fixture.detectChanges();
-    },
+    notificacoes: TestBed.inject(NotificationService),
+    propagar: () => propagarDetalhe(fixture),
     elemento: <T extends HTMLElement>(seletor: string): T => buscarElemento<T>(raiz, seletor),
     botao: (texto: string): HTMLButtonElement => buscarBotao(raiz, texto),
-    titulo: () => cena.elemento('h1'),
-    avisos: () => notificacoes.notifications().map((item) => item.title),
+    titulo: () => buscarElemento(raiz, 'h1'),
+    avisos: avisosDaCena,
   };
-  return cena;
 }
 
 /**

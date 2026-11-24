@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
-import type { DiaNaoUtilDto } from '@uniplus/shared-data/configuracao';
+import { AbrangenciaCodigo, type DiaNaoUtilDto } from '@uniplus/shared-data/configuracao';
 import { formatIsoDateBr } from '@uniplus/shared-data/utils';
 import { DrawerComponent } from '@uniplus/shared-ui/components';
 import { abrangenciaLegivel, municipioLegivel, ufLegivel } from './dia-nao-util-legivel';
@@ -20,6 +20,7 @@ export class OcorrenciasDoDiaComponent {
   readonly adicionar = output<void>();
   readonly fechado = output<void>();
 
+  protected readonly abrangencias = AbrangenciaCodigo;
   protected readonly abrangenciaLegivel = abrangenciaLegivel;
   protected readonly municipioLegivel = municipioLegivel;
   protected readonly ufLegivel = ufLegivel;

@@ -2,23 +2,17 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { ModeloFormularioCabecalhoComponent } from './modelo-formulario-cabecalho.component';
+import { modelo } from './modelo-formulario-edicao.page.testing';
 
 describe('ModeloFormularioCabecalhoComponent', () => {
-  function montar(): ModeloFormularioCabecalhoComponent {
+  it('mostra a finalidade recebida', () => {
     TestBed.configureTestingModule({
       imports: [ModeloFormularioCabecalhoComponent],
       providers: [provideRouter([])],
     });
     const fixture = TestBed.createComponent(ModeloFormularioCabecalhoComponent);
-    fixture.componentRef.setInput('modelo', null);
+    fixture.componentRef.setInput('modelo', modelo);
     fixture.detectChanges();
-    return fixture.componentInstance;
-  }
-
-  it('o rótulo da finalidade volta ao valor quando ela não está no catálogo', () => {
-    const componente = montar();
-
-    expect(componente.rotuloDaFinalidade('INSCRICAO')).not.toBe('INSCRICAO');
-    expect(componente.rotuloDaFinalidade('OUTRA')).toBe('OUTRA');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(modelo.finalidade.rotulo);
   });
 });

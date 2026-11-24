@@ -31,7 +31,7 @@ const cursoSeed = {
 
 const localSeed = {
   id: LOCAL_ID,
-  tipo: 'campusSede',
+  tipo: { codigo: 'CAMPUS_SEDE', rotulo: 'Campus sede' },
   campusResponsavelId: null,
   cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
   endereco: null,
@@ -77,23 +77,16 @@ const ofertaSeed = {
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
-// Rótulo de `localSeed.tipo` em TIPOS_LOCAL_OFERTA (@uniplus/shared-data/configuracao,
-// `libs/shared-data/src/lib/api/configuracao/locais-oferta.api.ts`) — não
-// importável aqui: o barril da lib carrega clientes Angular decorados, e o
-// JIT falha fora de um bootstrap Angular (Playwright roda em Node puro).
-// Mudar TipoLocalOferta.campusSede lá exige atualizar esta constante também.
-const TIPO_LOCAL_OFERTA_CAMPUS_SEDE_LABEL = 'Campus sede';
-
 // Nome acessível das ações da linha de `ofertaSeed` (#835), composto a partir
 // dos seeds como a página compõe (`identificadorOferta`): curso · unidade ·
 // local · programa · turnos. Escrito à mão, uma mudança num seed quebraria o
 // locator em silêncio, com um timeout no clique. Os rótulos de programa e de
 // turno (`REGULAR`, `MATUTINO`) vão por extenso pelo mesmo motivo da constante
-// acima: os catálogos da lib não são importáveis aqui.
+// do tipo: os catálogos da lib não são importáveis aqui.
 const identificadorOfertaSeed = [
   cursoSeed.nome,
   unidadeSeed.sigla,
-  `${TIPO_LOCAL_OFERTA_CAMPUS_SEDE_LABEL} — ${localSeed.cidade.nome}`,
+  `${localSeed.tipo.rotulo} — ${localSeed.cidade.nome}`,
   'Regular',
   'Matutino',
 ].join(' · ');

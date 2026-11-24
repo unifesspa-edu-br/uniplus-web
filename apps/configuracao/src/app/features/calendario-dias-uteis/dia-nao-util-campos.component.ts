@@ -1,9 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { switchMap } from 'rxjs';
 import { acompanharLeitura, FalhaDeLeituraDoCampoComponent } from '@uniplus/shared-ui/components';
-import { ABRANGENCIAS, UNIDADES_FEDERATIVAS } from '@uniplus/shared-data/configuracao';
+import { AbrangenciaCodigo, UNIDADES_FEDERATIVAS } from '@uniplus/shared-data/configuracao';
+import { carregarVocabulario } from '../../shared/vocabulario-de-configuracao';
 import type { AlteracaoDoLocal } from './busca-de-municipios';
 import {
   MUNICIPIO_BUSCA_VAZIA,
@@ -34,7 +43,32 @@ export class DiaNaoUtilCamposComponent {
   readonly dataDuplicada = input(false);
   readonly alteracao = output<AlteracaoDoLocal>();
 
-  protected readonly abrangencias = ABRANGENCIAS;
+  protected readonly abrangencias = carregarVocabulario('abrangencias-dia-nao-util');
+  private readonly validarAbrangencia = effect((onCleanup) => {
+    const controle = this.grupo().controls.abrangencia;
+    const opcoes = this.abrangencias.opcoes();
+    const disponivel = !this.abrangencias.carregando();
+    const validar = () =>
+      disponivel && opcoes.some((opcao) => opcao.codigo === controle.value)
+        ? null
+        : { vocabularioIndisponivel: true };
+    controle.addValidators(validar);
+    controle.updateValueAndValidity();
+    onCleanup(() => {
+      controle.removeValidators(validar);
+      controle.updateValueAndValidity();
+    });
+  });
+  protected readonly leituraDasAbrangencias = acompanharLeitura({
+    assunto: 'abrangências',
+    falha: computed(() =>
+      this.abrangencias.falhou() ? 'Não foi possível carregar as abrangências.' : null,
+    ),
+    pendente: this.abrangencias.carregando,
+    recarregar: this.abrangencias.recarregar,
+    destino: () => document.getElementById(`abrangencia-${this.sufixoDeId()}`),
+  });
+  protected readonly abrangenciaCodigo = AbrangenciaCodigo;
   protected readonly unidadesFederativas = UNIDADES_FEDERATIVAS;
 
   /**

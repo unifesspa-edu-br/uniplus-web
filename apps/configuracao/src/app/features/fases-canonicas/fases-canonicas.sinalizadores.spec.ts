@@ -1,3 +1,6 @@
+import { VocabulariosDeConfiguracaoApi } from '@uniplus/shared-data/configuracao';
+import { of } from 'rxjs';
+import { ORIGENS_DE_DATA } from './origens-de-data.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -29,7 +32,7 @@ const fase: FaseCanonicaDto = {
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
-  origemData: 'NO_EDITAL',
+  origemData: ORIGENS_DE_DATA.NO_EDITAL,
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
@@ -42,6 +45,10 @@ describe('FasesCanonicasPage — sinalizadores da fase', () => {
     TestBed.configureTestingModule({
       imports: [FasesCanonicasPage],
       providers: [
+        {
+          provide: VocabulariosDeConfiguracaoApi,
+          useValue: { listar: () => of({ ok: true, data: Object.values(ORIGENS_DE_DATA) }) },
+        },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         provideRouter([]),

@@ -1,3 +1,4 @@
+import { AbrangenciaCodigo } from '@uniplus/shared-data/configuracao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -40,7 +41,7 @@ describe('BuscaDeMunicipios', () => {
 
   const diaMunicipal = (): GrupoDoDia => {
     const grupo = criarGrupoDeDiaNaoUtil();
-    grupo.controls.abrangencia.setValue('MUNICIPAL');
+    grupo.controls.abrangencia.setValue(AbrangenciaCodigo.MUNICIPAL);
     busca.aplicar(grupo, { tipo: 'abrangencia' });
     return grupo;
   };
@@ -295,7 +296,7 @@ describe('BuscaDeMunicipios', () => {
     const grupo = diaMunicipal();
     await escolher(grupo);
 
-    grupo.controls.abrangencia.setValue('ESTADUAL');
+    grupo.controls.abrangencia.setValue(AbrangenciaCodigo.ESTADUAL);
     busca.aplicar(grupo, { tipo: 'abrangencia' });
 
     expect(estado(grupo)).toEqual({ opcoes: [], carregando: false, erro: false });

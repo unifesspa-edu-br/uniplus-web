@@ -10,13 +10,9 @@ import {
   isApiOk,
 } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
-import {
-  CriarLocalOfertaCommand,
-  LocaisOfertaApi,
-  LocalOfertaDto,
-  TipoLocalOferta,
-  TIPOS_LOCAL_OFERTA,
-} from './locais-oferta.api';
+import { CriarLocalOfertaCommand, LocaisOfertaApi, LocalOfertaDto } from './locais-oferta.api';
+import { TipoLocalOfertaCodigo } from './schema';
+import { TIPO_LOCAL_DE_TESTE } from './locais-oferta.testing';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -24,7 +20,7 @@ const ID = '01960000-0000-7000-0000-0000000000d1';
 
 const localSeed: LocalOfertaDto = {
   id: ID,
-  tipo: TipoLocalOferta.poloEad,
+  tipo: TIPO_LOCAL_DE_TESTE,
   codigoEmec: '999',
   campusResponsavelId: null,
   cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
@@ -33,7 +29,7 @@ const localSeed: LocalOfertaDto = {
 };
 
 const criarCommand: CriarLocalOfertaCommand = {
-  tipo: TipoLocalOferta.poloEad,
+  tipo: TipoLocalOfertaCodigo.POLO_DE_EDUCACAO_A_DISTANCIA,
   codigoEmec: '999',
   campusResponsavelId: null,
   cidadeCodigoIbge: '1504208',
@@ -59,17 +55,6 @@ describe('LocaisOfertaApi', () => {
   });
 
   afterEach(() => controller.verify());
-
-  it('TIPOS_LOCAL_OFERTA cobre o roster do enum (sem "nenhum")', () => {
-    expect(TIPOS_LOCAL_OFERTA.map((t) => t.value)).toEqual([
-      'campusSede',
-      'campusForaDeSede',
-      'cursoForaDeSede',
-      'poloEad',
-      'convenioInteriorizacao',
-      'outro',
-    ]);
-  });
 
   it('listar() faz GET /api/configuracao/locais-oferta com Accept versionado', async () => {
     const promise = firstValueFrom(api.listar({ limit: 25 }));

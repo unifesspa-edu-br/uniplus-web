@@ -1,12 +1,17 @@
+import { ABRANGENCIAS } from './abrangencias.testing';
 import type { DiaNaoUtilDto } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
-import { agruparPorMes, anosDoCalendario, type CelulaCalendarioMensal } from './calendario-mensal.util';
+import {
+  agruparPorMes,
+  anosDoCalendario,
+  type CelulaCalendarioMensal,
+} from './calendario-mensal.util';
 
 function diaNaoUtil(
   overrides: Partial<DiaNaoUtilDto> & { id: string; data: string },
 ): DiaNaoUtilDto {
   return {
-    abrangencia: 'NACIONAL',
+    abrangencia: ABRANGENCIAS.NACIONAL,
     municipioIbge: null,
     municipioNome: null,
     municipioUf: null,
@@ -149,13 +154,13 @@ describe('agruparPorMes()', () => {
       diaNaoUtil({
         id: '1',
         data: '2026-11-15',
-        abrangencia: 'NACIONAL',
+        abrangencia: ABRANGENCIAS.NACIONAL,
         descricao: 'Proclamação da República',
       }),
       diaNaoUtil({
         id: '2',
         data: '2026-11-15',
-        abrangencia: 'INSTITUCIONAL',
+        abrangencia: ABRANGENCIAS.INSTITUCIONAL,
         descricao: 'Aniversário da UFPA',
       }),
     ];

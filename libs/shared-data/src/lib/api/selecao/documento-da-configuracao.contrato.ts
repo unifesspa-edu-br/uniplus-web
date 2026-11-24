@@ -4,10 +4,10 @@ import {
   DocumentoDaConfiguracaoBancasRegraDeDeliberacaoEncerramento as EncerramentoDaDeliberacao,
   DocumentoDaConfiguracaoBancasRegraDeDeliberacaoModo as ModoDaDeliberacao,
   DocumentoDaConfiguracaoBancasRegraDeDeliberacaoSemUnanimidade as SemUnanimidadeNaDeliberacao,
-  DocumentoDaConfiguracaoColetaReferenciaTemporalFatosTipo as TipoDaReferenciaTemporal,
+  DocumentoDaConfiguracaoColetaReferenciaTemporalDosDadosTipo as TipoDaReferenciaTemporal,
   DocumentoDaConfiguracaoFormularioFinalidade as FinalidadeDoFormulario,
   DocumentoDaConfiguracaoComunsAlvoDoProcedimentoDeRecursoAreaDoEnem as AreaDoEnemDoProcedimento,
-  DocumentoDaConfiguracaoComunsProdutoPapel as PapelDoProduto,
+  DocumentoDaConfiguracaoComunsPublicacaoPrevistaPapel as PapelDaPublicacaoPrevista,
   DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoUnidade as UnidadeDoPrazoDoRecurso,
   DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoSegundaInstanciaUnidade as UnidadeDoPrazoDaSegundaInstancia,
   DocumentoDaConfiguracaoComunsPropriedadesDoRecursoEfeitoSuspensivo as EfeitoSuspensivoDoDocumento,
@@ -16,10 +16,19 @@ import {
   DocumentoDaConfiguracaoDistribuicaoDeVagasAjusteDoQuadro$tipo as TipoDeAjusteDoQuadro,
   DocumentoDaConfiguracaoEtapasCarater as CaraterDaEtapa,
   DocumentoDaConfiguracaoEtapasFormaDeAvaliacao as FormaDeAvaliacaoDaEtapa,
-  DocumentoDaConfiguracaoEtapasRecursoDaEtapaAncora as AncoraDoRecursoDaEtapa,
-  DocumentoDaConfiguracaoPredicadoBaseLegalAbrangencia as AbrangenciaDaBaseLegal,
-  DocumentoDaConfiguracaoPredicadoCondicaoOperador as OperadorDaCondicao,
-  DocumentoDaConfiguracaoPredicadoBaseLegalSituacao as SituacaoDaBaseLegal,
+  DocumentoDaConfiguracaoEtapasRecursoDaEtapaEventoInicialDoPrazo as EventoInicialDoPrazoDoRecursoDaEtapa,
+  DocumentoDaConfiguracaoExigenciasExigenciaAplicabilidade as AplicabilidadeDaExigencia,
+  DocumentoDaConfiguracaoExigenciasExigenciaConsequenciaIndeferimento as ConsequenciaDoIndeferimento,
+  DocumentoDaConfiguracaoExigenciasExigenciaFinalidade as FinalidadeDaExigencia,
+  DocumentoDaConfiguracaoExigenciasFormatosPermitidosListaFormato as FormatoPermitido,
+  DocumentoDaConfiguracaoExigenciasIdadeMaximaEmissaoReferenciaTipo as ReferenciaDaIdadeMaxima,
+  DocumentoDaConfiguracaoExigenciasIdadeMaximaEmissaoUnidade as UnidadeDaIdadeMaxima,
+  DocumentoDaConfiguracaoCondicoesBaseLegalAbrangencia as AbrangenciaDaBaseLegal,
+  DocumentoDaConfiguracaoCondicoesCondicaoOperador as OperadorDaCondicao,
+  DocumentoDaConfiguracaoCondicoesBaseLegalSituacao as SituacaoDaBaseLegal,
+  DocumentoDaConfiguracaoRegrasDeComprovacaoCriterioDeDistincao as CriterioDeDistincaoDaRegra,
+  DocumentoDaConfiguracaoRegrasDeComprovacaoConsequencia as ConsequenciaDaRegra,
+  DocumentoDaConfiguracaoRegrasDeComprovacaoForma as FormaDeComprovacaoDaConfiguracao,
   DocumentoDaConfiguracaoIdentificacaoOrigemCandidatos,
   DocumentoDaConfiguracaoMotivoSentido as SentidoDoMotivo,
   DocumentoDaConfiguracaoOpcoesDeCursoNumero,
@@ -55,21 +64,21 @@ export type DocumentoDaConfiguracaoRecursoDaEtapa =
   Esquemas['DocumentoDaConfiguracaoEtapasRecursoDaEtapa'];
 export type DocumentoDaConfiguracaoFormulario = Esquemas['DocumentoDaConfiguracaoFormulario'];
 export type DocumentoDaConfiguracaoColeta = Esquemas['DocumentoDaConfiguracaoColeta'];
-export type DocumentoDaConfiguracaoRegraDeDerivacao = NonNullable<
-  DocumentoDaConfiguracaoColeta['regrasDerivacao']
+export type DocumentoDaConfiguracaoCalculoDoDado = NonNullable<
+  DocumentoDaConfiguracaoColeta['calculosDosDados']
 >[number];
 export type DocumentoDaConfiguracaoExigencia =
   Esquemas['DocumentoDaConfiguracaoExigenciasExigencia'];
 export type DocumentoDaConfiguracaoRegraDeComprovacao =
   Esquemas['DocumentoDaConfiguracaoRegrasDeComprovacao'];
 export type DocumentoDaConfiguracaoBaseLegal =
-  Esquemas['DocumentoDaConfiguracaoPredicadoBaseLegal'];
-export type DocumentoDaConfiguracaoPredicado =
-  Esquemas['DocumentoDaConfiguracaoPredicadoPredicado'];
+  Esquemas['DocumentoDaConfiguracaoCondicoesBaseLegal'];
+export type DocumentoDaConfiguracaoCondicoesAlternativas =
+  Esquemas['DocumentoDaConfiguracaoCondicoesCondicoesAlternativas'];
 export type DocumentoDaConfiguracaoBanca = Esquemas['DocumentoDaConfiguracaoBancas'];
 export type DocumentoDaConfiguracaoRegraDeDeliberacao =
   Esquemas['DocumentoDaConfiguracaoBancasRegraDeDeliberacao'];
-export type DocumentoDaConfiguracaoProduto = Esquemas['DocumentoDaConfiguracaoComunsProduto'];
+export type DocumentoDaConfiguracaoPublicacaoPrevista = Esquemas['DocumentoDaConfiguracaoComunsPublicacaoPrevista'];
 export type DocumentoDaConfiguracaoMotivo = Esquemas['DocumentoDaConfiguracaoMotivo'];
 export type DocumentoDaConfiguracaoProcedimentoDeRecurso =
   Esquemas['DocumentoDaConfiguracaoComunsProcedimentoDeRecurso'];
@@ -85,11 +94,13 @@ export {
   ModoDaDeliberacao,
   SemUnanimidadeNaDeliberacao,
   SituacaoDaBaseLegal,
-  AncoraDoRecursoDaEtapa,
+  FormaDeComprovacaoDaConfiguracao,
+  UnidadeDaIdadeMaxima,
+  EventoInicialDoPrazoDoRecursoDaEtapa,
   AreaDoEnemDoProcedimento,
   CaraterDaEtapa,
   FormaDeAvaliacaoDaEtapa,
-  PapelDoProduto,
+  PapelDaPublicacaoPrevista,
   SentidoDoMotivo,
   TipoDeDecisaoDoDocumento,
   UnidadeDoPrazoDoRecurso,

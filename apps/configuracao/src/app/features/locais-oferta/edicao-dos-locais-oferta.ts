@@ -14,11 +14,7 @@ import {
   withIdempotencyKey,
 } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import {
-  LocaisOfertaApi,
-  LocalOfertaDto,
-  TIPOS_LOCAL_OFERTA,
-} from '@uniplus/shared-data/configuracao';
+import { LocaisOfertaApi, LocalOfertaDto } from '@uniplus/shared-data/configuracao';
 import {
   ehErroDeEndereco,
   limparPendenciaDaCidadeAoPreencher,
@@ -92,7 +88,7 @@ export class EdicaoDosLocaisOferta {
   readonly confirmMessage = computed(() => {
     const local = this.localParaRemover();
     return local
-      ? `Deseja remover este local (${TIPOS_LOCAL_OFERTA.find((tipo) => tipo.value === local.tipo)?.label ?? local.tipo})? A remoção é lógica (soft-delete).`
+      ? `Deseja remover este local (${local.tipo.rotulo})? A remoção é lógica (soft-delete).`
       : 'Deseja remover este local de oferta?';
   });
 
@@ -104,15 +100,17 @@ export class EdicaoDosLocaisOferta {
       this.enderecoErro,
       this.destroyRef,
     );
-    effect(() => {
-      if (!this.recarregando()) return;
-      if (this.leitura.carregando()) this.viuCarregamento = true;
-      else if (this.viuCarregamento) {
-        this.viuCarregamento = false;
-        this.recarregando.set(false);
-        this.localAfetadoId.set(null);
-      }
-    });
+    effect(() => this.acompanharRecarga());
+  }
+
+  private acompanharRecarga(): void {
+    if (!this.recarregando()) return;
+    if (this.leitura.carregando()) this.viuCarregamento = true;
+    else if (this.viuCarregamento) {
+      this.viuCarregamento = false;
+      this.recarregando.set(false);
+      this.localAfetadoId.set(null);
+    }
   }
 
   fechar(): void {
@@ -156,9 +154,7 @@ export class EdicaoDosLocaisOferta {
 
   removerConfirmado(): void {
     const local = this.localParaRemover();
-    if (local === null || this.gravando()) {
-      return;
-    }
+    if (local === null || this.gravando()) return;
     this.erroDaRemocao.set(null);
     this.localAfetadoId.set(local.id);
     this.escrita.set('removendo');
@@ -173,12 +169,7 @@ export class EdicaoDosLocaisOferta {
 
   private concluirRemocao(result: ApiResult<void>): void {
     if (!result.ok) {
-      const titulo = this.problemI18n.resolve(result.problem).title;
-      this.localAfetadoId.set(null);
-      this.erroDaRemocao.set(titulo);
-      if (result.problem.status >= 500) {
-        this.notifications.errorFromProblem(result.problem, { title: titulo });
-      }
+      this.recusarRemocao(result.problem);
       return;
     }
     this.resultadoDaRemocao.set('Local de oferta removido.');
@@ -188,6 +179,13 @@ export class EdicaoDosLocaisOferta {
     this.recarregar();
   }
 
+  private recusarRemocao(problem: ProblemDetails): void {
+    const titulo = this.problemI18n.resolve(problem).title;
+    this.localAfetadoId.set(null);
+    this.erroDaRemocao.set(titulo);
+    if (problem.status >= 500) this.notifications.errorFromProblem(problem, { title: titulo });
+  }
+
   salvar(): void {
     if (this.gravando()) {
       return;
@@ -195,27 +193,30 @@ export class EdicaoDosLocaisOferta {
     this.formError.set(null);
     this.enderecoErro.set(null);
     descartarRecusasDoServidor(this.form);
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      this.enderecoErro.set(pendenciaDaCidade(this.form.controls.endereco, 'o local'));
-      return;
-    }
+    if (!this.formularioValido()) return;
     this.localAfetadoId.set(this.localEmEdicaoId());
     this.escrita.set('salvando');
     this.formError.set(null);
 
-    if (this.modo() === 'criar') {
-      this.api
-        .criar(
-          comandoDeCriacao(this.form.getRawValue()),
-          withIdempotencyKey(this.idempotencyKeyAtual()),
-        )
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((result) => this.handleSalvarResult(result));
-      return;
-    }
+    if (this.modo() === 'criar') this.criar();
+    else this.atualizar();
+  }
 
-    this.atualizar();
+  private formularioValido(): boolean {
+    if (!this.form.invalid) return true;
+    this.form.markAllAsTouched();
+    this.enderecoErro.set(pendenciaDaCidade(this.form.controls.endereco, 'o local'));
+    return false;
+  }
+
+  private criar(): void {
+    this.api
+      .criar(
+        comandoDeCriacao(this.form.getRawValue()),
+        withIdempotencyKey(this.idempotencyKeyAtual()),
+      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => this.handleSalvarResult(result));
   }
 
   private atualizar(): void {
@@ -246,19 +247,9 @@ export class EdicaoDosLocaisOferta {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (
-      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
-      problem.errors &&
-      problem.errors.length > 0
-    ) {
-      this.renovarIdempotencyKey();
-      this.aplicarErrosDeValidacao(separarCausas(problem.errors));
-      return;
-    }
+    if (this.recusarValidacao(problem)) return;
     if (ehErroDeEndereco(problem.code)) {
-      this.renovarIdempotencyKey();
-      this.enderecoErro.set(this.problemI18n.resolve(problem).title);
-      this.formError.set(null);
+      this.recusarEndereco(problem);
       return;
     }
     if (deveRotacionarIdempotencyKey(problem)) this.renovarIdempotencyKey();
@@ -266,6 +257,21 @@ export class EdicaoDosLocaisOferta {
     if (problem.status >= 500) {
       this.notifications.errorFromProblem(problem);
     }
+  }
+
+  private recusarValidacao(problem: ProblemDetails): boolean {
+    if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
+      this.renovarIdempotencyKey();
+      this.aplicarErrosDeValidacao(separarCausas(problem.errors));
+      return true;
+    }
+    return false;
+  }
+
+  private recusarEndereco(problem: ProblemDetails): void {
+    this.renovarIdempotencyKey();
+    this.enderecoErro.set(this.problemI18n.resolve(problem).title);
+    this.formError.set(null);
   }
 
   private renovarIdempotencyKey(): void {
@@ -281,15 +287,16 @@ export class EdicaoDosLocaisOferta {
         aplicouAlgum = true;
         continue;
       }
-      const controlName = controleDoCampoDoServidor(erro.field);
-      if (controlName === null) continue;
-      const control = this.form.controls[controlName];
-      marcarRecusaDoServidor(control, erro.code, erro.message);
-      aplicouAlgum = true;
+      aplicouAlgum = this.recusarCampo(erro) || aplicouAlgum;
     }
-
     this.enderecoErro.set(erroEndereco);
-
     this.formError.set(textoDaAreaGeral(aplicouAlgum, causas));
+  }
+
+  private recusarCampo(erro: CausasDoProblema['deCampo'][number]): boolean {
+    const controlName = controleDoCampoDoServidor(erro.field);
+    if (controlName === null) return false;
+    marcarRecusaDoServidor(this.form.controls[controlName], erro.code, erro.message);
+    return true;
   }
 }

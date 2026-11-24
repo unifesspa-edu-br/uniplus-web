@@ -1,4 +1,4 @@
-export { FormaDeComprovacaoCodigo } from './schema';
+export { FormaDeComprovacaoCodigo, SentidoDoMotivoCodigo } from './schema';
 export { SELECAO_BASE_PATH } from './tokens';
 export {
   PARAMETROS_DA_ELIMINACAO,
@@ -6,10 +6,10 @@ export {
   type ParametrosDaEliminacao,
   type ParametrosDoDesempate,
 } from './parametros-das-regras.contrato';
-export { SituacaoDoArquivoDoCandidato } from './inscricoes.contrato';
+export { SituacaoDoArquivoDoCandidatoCodigo } from './inscricoes.contrato';
 export {
   CERTAMES_PUBLICOS_PATH,
-  SituacaoDoCertame,
+  SituacaoDoCertameCodigo,
   certamesPublicosRequest,
   type CertameNaVitrineDto,
   type CertamePublicadoDto,
@@ -173,14 +173,14 @@ export {
   type ConfiguracaoDivulgacaoDto,
   type EtapaComProdutosPrevistosDto,
   type FaseComProdutosPrevistosDto,
-  ImpedimentoDoProduto,
+  ImpedimentoDoProdutoCodigo,
   type ProdutoPrevistoDto,
   type ProdutosPrevistosDoProcessoDto,
   type PublicarProdutoDoEditalRequest,
-  SituacaoDoProdutoPrevisto,
+  SituacaoDoProdutoPrevistoCodigo,
   type DocumentoAPublicarDto,
   type DocumentoDoAtoDto,
-  FinalidadeDoDocumento,
+  FinalidadeDoDocumentoCodigo,
   type IniciarEnvioDoDocumentoAPublicarDto,
   type IniciarEnvioDoDocumentoAPublicarRequest,
   type FormularioRenderizavelDto,
@@ -200,11 +200,13 @@ export {
   ModoDaDeliberacao,
   SemUnanimidadeNaDeliberacao,
   SituacaoDaBaseLegal,
-  AncoraDoRecursoDaEtapa,
+  FormaDeComprovacaoDaConfiguracao,
+  UnidadeDaIdadeMaxima,
+  EventoInicialDoPrazoDoRecursoDaEtapa,
   AreaDoEnemDoProcedimento,
   CaraterDaEtapa,
   FormaDeAvaliacaoDaEtapa,
-  PapelDoProduto,
+  PapelDaPublicacaoPrevista,
   SentidoDoMotivo,
   TipoDeDecisaoDoDocumento,
   UnidadeDoPrazoDoRecurso,
@@ -220,13 +222,13 @@ export {
   type DocumentoDaConfiguracaoClassificacao,
   type DocumentoDaConfiguracaoColeta,
   type DocumentoDaConfiguracaoFormulario,
-  type DocumentoDaConfiguracaoRegraDeDerivacao,
+  type DocumentoDaConfiguracaoCalculoDoDado,
   type DocumentoDaConfiguracaoBanca,
   type DocumentoDaConfiguracaoBaseLegal,
   type DocumentoDaConfiguracaoExigencia,
   type DocumentoDaConfiguracaoRegraDeComprovacao,
-  type DocumentoDaConfiguracaoPredicado,
-  type DocumentoDaConfiguracaoProduto,
+  type DocumentoDaConfiguracaoCondicoesAlternativas,
+  type DocumentoDaConfiguracaoPublicacaoPrevista,
   type DocumentoDaConfiguracaoRegraDeDeliberacao,
   type DocumentoDaConfiguracaoCronogramaFase,
   type DocumentoDaConfiguracaoDistribuicaoDeVagas,
@@ -241,13 +243,18 @@ export {
   type DocumentoDaConfiguracaoReferenciaDeRegra,
 } from './documento-da-configuracao.contrato';
 export {
-  CaraterEtapa,
+  CaraterEtapaCodigo,
   EfeitoSuspensivoCodigo,
+  FinalidadeFormularioCodigo,
+  FormaAceiteCodigo,
+  FormatoPermitidoCodigo,
   GuardaDaVagaCodigo,
   ModoDeDeliberacaoCodigo as ModoDeDeliberacao,
-  OrigemCandidatos,
-  SituacaoInscricao,
-  StatusProcesso,
+  OrigemCandidatosCodigo,
+  SituacaoDasModalidadesCodigo,
+  SituacaoDoDocumentoCodigo,
+  SituacaoInscricaoCodigo,
+  StatusProcessoCodigo,
   UnidadePrazoCodigo,
 } from './schema';
 export {
@@ -260,11 +267,11 @@ export {
 } from './obrigatoriedades-legais.api';
 
 export {
-  DocumentoDaConfiguracaoFormularioEtapaTipo as TipoDaEtapaDoFormulario,
-  DocumentoDaConfiguracaoFormularioEtapaBloco as BlocoDoFormulario,
-  DocumentoDaConfiguracaoPredicadoObrigatoriedadeTipo as TipoDaObrigatoriedadeDoFormulario,
+  DocumentoDaConfiguracaoFormularioPaginaTipo as TipoDaPaginaDoFormulario,
+  DocumentoDaConfiguracaoFormularioPaginaBloco as BlocoDoFormulario,
+  DocumentoDaConfiguracaoCondicoesObrigatoriedadeTipo as TipoDaObrigatoriedadeDoFormulario,
   DocumentoDaConfiguracaoRestricaoDeValorTipo as TipoDaRestricaoDoFormulario,
-  DocumentoDaConfiguracaoRestricaoDeValorLimiteDeDataAncora as ReferenciaDoLimiteDeData,
+  DocumentoDaConfiguracaoRestricaoDeValorLimiteDeDataReferenciaDaData as ReferenciaDoLimiteDeData,
 } from './schema';
 
 export {

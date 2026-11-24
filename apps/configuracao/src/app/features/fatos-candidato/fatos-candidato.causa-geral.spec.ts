@@ -19,7 +19,7 @@ const PREENCHIMENTO_DO_DERIVADO: Record<string, string> = {
   nome: 'Perfil socioeconômico',
   descricao: 'Perfil que define a reserva de vagas.',
   codigo: 'PERFIL',
-  dominio: 'BOOLEANO',
+  dominio: 'SIM_OU_NAO',
   pontoResolucao: 'INSCRICAO',
   classificacaoProtecao: 'PESSOAL',
   finalidadeTratamento: 'Classificar a reserva de vagas.',

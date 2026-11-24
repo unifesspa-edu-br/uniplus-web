@@ -62,31 +62,7 @@ export const NO_PROCESSO: FormularioNoProcesso = {
 
 export const SEM_DOCUMENTOS = 'Você não envia documentos nesta etapa.';
 
-const DOCUMENTO_PENDENTE = {
-  obrigatorio: true,
-  finalidade: 'INSCRICAO',
-  formatos: { qualquer: true, lista: null },
-  modelo: null,
-  situacao: 'PENDENTE',
-  grupoCodigo: null,
-  ocorrenciaId: null,
-  grupos: [],
-  grupoDoFormularioParaRepeticao: null,
-  formatosAceitos: ['PDF'],
-  tamanhoMaximoBytes: 2 * 1024 * 1024,
-  quantidadeMinima: 1,
-  arquivos: [],
-} satisfies Omit<DocumentoAvaliado, 'exigenciaId' | 'nome'>;
-
-export const documento = (
-  nome: string,
-  outros: Partial<DocumentoAvaliado> = {},
-): DocumentoAvaliado => ({
-  exigenciaId: `exigencia-${nome}`,
-  nome,
-  ...DOCUMENTO_PENDENTE,
-  ...outros,
-});
+export { documento } from './documentos-avaliados.testing';
 
 export const arquivoVerificado = (arquivoId: string): ArquivoDoDocumento => ({
   arquivoId,

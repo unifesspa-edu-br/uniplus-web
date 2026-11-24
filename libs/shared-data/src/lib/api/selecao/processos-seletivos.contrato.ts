@@ -1,8 +1,8 @@
 import {
   DefinirTaxaInscricaoRequestFundamentos,
-  FinalidadeDoDocumento,
-  ImpedimentoDoProduto,
-  SituacaoDoProdutoPrevisto,
+  FinalidadeDoDocumentoCodigo,
+  ImpedimentoDoProdutoCodigo,
+  SituacaoDoProdutoPrevistoCodigo,
 } from './schema';
 import type { components } from './schema';
 
@@ -35,10 +35,10 @@ export type ConfiguracaoDivulgacaoDto = components['schemas']['ConfiguracaoDivul
 export type CampoDivulgacaoDto = components['schemas']['CampoDivulgacaoDto'];
 
 /** Para que serve o documento enviado: o edital oficial, um anexo dele ou um documento de ato. */
-export { FinalidadeDoDocumento };
+export { FinalidadeDoDocumentoCodigo };
 
 /** O que o cronograma do edital declara publicar: a situação de cada item e o que o impede de sair. */
-export { ImpedimentoDoProduto, SituacaoDoProdutoPrevisto };
+export { ImpedimentoDoProdutoCodigo, SituacaoDoProdutoPrevistoCodigo };
 export type IniciarEnvioDoModeloDeDocumentoRequest =
   components['schemas']['IniciarEnvioDoModeloDeDocumentoRequest'];
 export type IniciarEnvioDoModeloDeDocumentoDto =

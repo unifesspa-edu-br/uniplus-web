@@ -14,8 +14,8 @@
         (change)="regraMudou.emit()"
       >
         <option value="">Selecione uma regra</option>
-        @for (op of regras; track op.value) {
-          <option [value]="op.value" [disabled]="desabilitada(op.value)">{{ op.label }}</option>
+        @for (op of regras(); track op.codigo) {
+          <option [value]="op.codigo" [disabled]="desabilitada(op.codigo)">{{ op.rotulo }}</option>
         }
       </select>
       <span class="field__hint">{{ dica() }}</span>

@@ -50,16 +50,12 @@
       <code>{{ f.codigo }}</code>
     </dd>
     <dt>Origem</dt>
-    <dd>{{ rotulo(origens, f.definicao.resolucao.origem) }}</dd>
+    <dd>{{ f.definicao.resolucao.origem.rotulo }}</dd>
     <dt>Tipo de dado</dt>
-    <dd>
-      {{ rotulo(dominios, f.definicao.dominio) }} ({{
-        rotulo(cardinalidades, f.definicao.cardinalidade)
-      }})
-    </dd>
+    <dd>{{ f.definicao.dominio.rotulo }} ({{ f.definicao.cardinalidade.rotulo }})</dd>
     @if (f.definicao.valores.fonte) {
       <dt>Fonte dos valores</dt>
-      <dd>{{ rotulo(fontes, f.definicao.valores.fonte) }}</dd>
+      <dd>{{ f.definicao.valores.fonte.rotulo }}</dd>
     }
     @if (f.definicao.formato) {
       <dt>Formato</dt>
@@ -93,7 +89,7 @@
           <code>{{ f.codigo }}</code>
         </dd>
         <dt>Origem</dt>
-        <dd>{{ rotulo(origens, f.definicao.resolucao.origem) }}</dd>
+        <dd>{{ f.definicao.resolucao.origem.rotulo }}</dd>
         @if (leitura.membroDoAgregado(); as membro) {
           <dt>Fato de membro resumido</dt>
           <dd>

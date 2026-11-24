@@ -37,7 +37,7 @@ export function fatosCitaveisPelaSecao(
 }
 
 /**
- * Os fatos cujo campo precisa ser obrigatório sempre: o citado por negação (`DIFERENTE`, `NAO_EM`)
+ * Os fatos cujo campo precisa ser obrigatório sempre: o citado por negação (`DIFERENTE`, `NENHUM_DE`)
  * em qualquer regra, e o que tem impedimento. Sem resposta, todo operador dá falso, e a negação ou
  * o impedimento dariam resultado que o candidato não declarou (UNI-REQ-0074).
  */

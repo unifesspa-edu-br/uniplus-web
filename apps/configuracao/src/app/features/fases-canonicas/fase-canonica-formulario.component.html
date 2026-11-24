@@ -100,28 +100,34 @@
             <span class="field__label is-required">Origem da data</span>
             <select
               class="select"
+              id="cfg-fase-origem-data"
               formControlName="origemData"
               [attr.aria-invalid]="erroDoCampo('origemData') ? 'true' : null"
               [attr.aria-describedby]="
-                erroDoCampo('origemData') ? 'cfg-fase-erro-origemData' : null
+                leituraDasOrigens.visivel()
+                  ? 'cfg-fase-falha-origem'
+                  : erroDoCampo('origemData')
+                    ? 'cfg-fase-erro-origemData'
+                    : null
               "
               aria-required="true"
             >
-              <option value="" disabled>Selecione a origem da data</option>
-              @for (origem of origensData; track origem) {
-                <option [value]="origem">{{ rotuloDaOrigem(origem) }}</option>
+              <option [ngValue]="null" disabled>Selecione a origem da data</option>
+              @for (origem of origensData.opcoes(); track origem.codigo) {
+                <option [value]="origem.codigo">{{ origem.rotulo }}</option>
               }
             </select>
-            <span class="field__hint">
-              Fixada no edital: a data consta do edital e a janela é obrigatória. Definida na
-              execução: a unidade responsável pela fase define a data durante o processo.
-            </span>
+            @if (origensData.carregando() && !leituraDasOrigens.visivel()) {
+              <span role="status">Carregando origens da data…</span>
+            }
+            <span class="field__hint"> A escolha determina quando a data será definida. </span>
             @if (erroDoCampo('origemData')) {
               <span class="field__error" id="cfg-fase-erro-origemData">{{
                 erroDoCampo('origemData')
               }}</span>
             }
           </label>
+          <ui-falha-de-leitura-do-campo id="cfg-fase-falha-origem" [leitura]="leituraDasOrigens" />
           <label class="field" [class.is-error]="erroDoCampo('baseLegal')">
             <span class="field__label">Base legal</span>
             <input
@@ -281,9 +287,9 @@
       type="submit"
       form="cfg-fase-canonica-form"
       class="btn btn--primary"
-      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-disabled]="salvando() || !origemDisponivel() ? 'true' : null"
       [attr.aria-busy]="salvando() ? 'true' : null"
-      (click)="salvando() ? $event.preventDefault() : null"
+      (click)="salvando() || !origemDisponivel() ? $event.preventDefault() : null"
     >
       @if (salvando()) {
         <ui-spinner spinnerSize="sm" />

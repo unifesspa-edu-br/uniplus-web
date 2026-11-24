@@ -11,8 +11,9 @@
         [attr.aria-invalid]="erroDoCampo('naturezaLegal') ? 'true' : null"
         (change)="naturezaMudou.emit()"
       >
-        @for (op of naturezas; track op.value) {
-          <option [value]="op.value">{{ op.label }}</option>
+        <option value="">Selecione uma natureza</option>
+        @for (op of naturezas(); track op.codigo) {
+          <option [value]="op.codigo">{{ op.rotulo }}</option>
         }
       </select>
       <span class="field__hint">Governa as regras de remanejamento disponíveis.</span>
@@ -35,13 +36,12 @@
         [attr.aria-invalid]="erroDoCampo('composicaoVagas') ? 'true' : null"
         (change)="composicaoMudou.emit()"
       >
-        @for (op of composicoes; track op.value) {
-          <option [value]="op.value">{{ op.label }}</option>
+        <option value="">Selecione uma composição</option>
+        @for (op of composicoes(); track op.codigo) {
+          <option [value]="op.codigo">{{ op.rotulo }}</option>
         }
       </select>
-      <span class="field__hint"
-        >"Retirada de outra modalidade" exige informar a modalidade de origem.</span
-      >
+      <span class="field__hint">Algumas composições exigem informar a modalidade de origem.</span>
       @if (erroDoCampo('composicaoVagas')) {
         <span id="cfg-mod-composicaoVagas-erro" class="field__error">{{
           erroDoCampo('composicaoVagas')

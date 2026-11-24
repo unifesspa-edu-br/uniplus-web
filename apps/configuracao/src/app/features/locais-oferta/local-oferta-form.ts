@@ -3,7 +3,7 @@ import {
   AtualizarLocalOfertaCommand,
   CriarLocalOfertaCommand,
   LocalOfertaDto,
-  TipoLocalOferta,
+  TipoLocalOfertaCodigo,
 } from '@uniplus/shared-data/configuracao';
 import type { EnderecoEstruturado } from '@uniplus/shared-ui/components';
 import {
@@ -14,7 +14,7 @@ import {
 import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
 
 export interface LocalOfertaForm {
-  tipo: FormControl<string>;
+  tipo: FormControl<TipoLocalOfertaCodigo | null>;
   codigoEmec: FormControl<string>;
   campusResponsavelId: FormControl<string>;
   endereco: FormControl<EnderecoEstruturado | null>;
@@ -23,7 +23,7 @@ export interface LocalOfertaForm {
 type ValoresDoLocal = ReturnType<FormGroup<LocalOfertaForm>['getRawValue']>;
 
 export const LOCAL_EM_BRANCO: ValoresDoLocal = {
-  tipo: '',
+  tipo: null,
   codigoEmec: '',
   campusResponsavelId: '',
   endereco: null,
@@ -37,7 +37,9 @@ const CONTROLES_DO_SERVIDOR: ReadonlySet<string> = new Set<keyof LocalOfertaForm
 
 export function criarFormularioDeLocalOferta(): FormGroup<LocalOfertaForm> {
   return new FormGroup<LocalOfertaForm>({
-    tipo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    tipo: new FormControl<TipoLocalOfertaCodigo | null>(null, {
+      validators: [Validators.required],
+    }),
     codigoEmec: new FormControl('', {
       nonNullable: true,
       validators: [Validators.maxLength(20)],
@@ -51,7 +53,7 @@ export function criarFormularioDeLocalOferta(): FormGroup<LocalOfertaForm> {
 
 export function valoresDoLocal(local: LocalOfertaDto): ValoresDoLocal {
   return {
-    tipo: local.tipo,
+    tipo: local.tipo.codigo,
     codigoEmec: local.codigoEmec ?? '',
     campusResponsavelId: local.campusResponsavelId ?? '',
     endereco: enderecoEstruturadoDe(local.cidade, local.endereco),
@@ -68,7 +70,7 @@ export function comandoDeCriacao(valores: ValoresDoLocal): CriarLocalOfertaComma
     valores.endereco,
   );
   return {
-    tipo: valores.tipo as TipoLocalOferta,
+    tipo: valores.tipo,
     codigoEmec: nullIfBlank(valores.codigoEmec),
     campusResponsavelId: nullIfBlank(valores.campusResponsavelId),
     cidadeCodigoIbge,

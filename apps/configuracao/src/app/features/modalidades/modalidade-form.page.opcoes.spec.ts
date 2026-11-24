@@ -1,3 +1,4 @@
+import { responderVocabularios } from './vocabularios-da-modalidade.testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LB_PPI, PaginaDaModalidade } from './modalidade-form.page.testing';
@@ -19,6 +20,7 @@ describe('ModalidadeFormPage', () => {
     pagina.criar();
 
     TestBed.tick();
+    responderVocabularios(pagina.controller);
     const pagina1 = pagina.controller.expectOne(
       (r) => r.url === URL && r.params.get('limit') === '100',
     );
@@ -62,6 +64,7 @@ describe('ModalidadeFormPage', () => {
     ): Promise<ModalidadeFormStore> {
       pagina.criar();
       TestBed.tick();
+      responderVocabularios(pagina.controller);
       pagina.controller
         .expectOne((r) => r.url === URL && r.params.get('limit') === '100')
         .flush([AC], { headers: { Link: `<${URL}?cursor=pagina-2&direction=next>; rel="next"` } });

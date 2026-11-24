@@ -20,11 +20,6 @@ import {
   regrasDoArquivo,
 } from './envio-de-documentos';
 
-const TEXTO_DA_SITUACAO: Readonly<Record<SituacaoDaExigencia, string>> = {
-  SATISFEITA: 'Satisfeita',
-  PENDENTE: 'Pendente',
-};
-
 const FALHA_AO_REMOVER = 'Não foi possível remover o arquivo. Tente novamente.';
 const FALHA_AO_BAIXAR = 'Não foi possível baixar o arquivo. Tente novamente.';
 /** O arquivo ainda em envio não tem posição: a API a dá ao registrá-lo. */
@@ -44,14 +39,29 @@ function arquivosConfirmados(
 ): ArquivoEnviado[] {
   const doServidor = new Map<string, ArquivoEnviado>();
   for (const arquivo of avaliados) {
-    doServidor.set(
-      arquivo.arquivoId,
-      daAvaliacaoSobreOEnvio(arquivo, confirmadosPeloEnvio.get(arquivo.arquivoId)),
-    );
+    const confirmado = confirmadosPeloEnvio.get(arquivo.arquivoId);
+    doServidor.set(arquivo.arquivoId, daAvaliacaoSobreOEnvio(arquivo, confirmado));
   }
-  for (const [id, arquivo] of confirmadosPeloEnvio) if (!doServidor.has(id)) doServidor.set(id, arquivo);
+  for (const [id, arquivo] of confirmadosPeloEnvio)
+    if (!doServidor.has(id)) doServidor.set(id, arquivo);
   for (const id of removidos) doServidor.delete(id);
   return [...doServidor.values()];
+}
+
+function semId(ids: ReadonlySet<string>, id: string): Set<string> {
+  const restantes = new Set(ids);
+  restantes.delete(id);
+  return restantes;
+}
+
+function novoArquivoEmEnvio(id: string, arquivo: File): ArquivoEmEnvio {
+  return {
+    id,
+    nome: NOME_DO_ARQUIVO_EM_ENVIO,
+    tamanhoBytes: arquivo.size,
+    fase: 'iniciando',
+    progresso: 0,
+  };
 }
 
 /**
@@ -89,8 +99,8 @@ function arquivosConfirmados(
     <div class="envio-do-documento">
       <div class="envio-do-documento__cabeca">
         @if (situacao(); as situacao) {
-          <ui-tag [variant]="situacao === 'SATISFEITA' ? 'success' : 'warning'">
-            {{ textoDaSituacao(situacao) }}
+          <ui-tag [variant]="situacao.variante">
+            {{ situacao.rotulo }}
           </ui-tag>
         }
         @if (quantidadeMinima() > 1) {
@@ -173,39 +183,32 @@ export class EnvioDoDocumentoComponent {
   );
 
   protected readonly itensDaLista = computed<readonly ArquivoEmEnvio[]>(() => {
-    const removendo = this.removendo();
     const doServidor = arquivosConfirmados(
       this.arquivos(),
       this.confirmadosPeloEnvio(),
       this.removidos(),
     );
-    // O nome original não é guardado: o arquivo se identifica pelo rótulo da API e pela data do envio.
-    const confirmados = doServidor.map(
-      (arquivo): ArquivoEmEnvio => ({
-        id: arquivo.arquivoId,
-        nome: arquivo.rotulo,
-        detalhe: detalheDoArquivoEnviado(arquivo),
-        ...faseDaVerificacao(arquivo),
-        progresso: 100,
-        podeRetirar: this.podeRemover() && !removendo.has(arquivo.arquivoId),
-      }),
-    );
-    const podeEnviar = this.podeEnviar();
-    const locais = this.emAndamento().map(
-      (a): ArquivoEmEnvio => ({
-        ...a,
-        podeTentarDeNovo: a.podeTentarDeNovo !== false && podeEnviar,
-      }),
-    );
+    const confirmados = doServidor.map((arquivo) => this.itemConfirmado(arquivo, this.removendo()));
+    const locais = this.emAndamento().map((a) => ({
+      ...a,
+      podeTentarDeNovo: a.podeTentarDeNovo !== false && this.podeEnviar(),
+    }));
     return [...confirmados, ...locais];
   });
 
-  constructor() {
-    inject(DestroyRef).onDestroy(() => (this.destruido = true));
+  private itemConfirmado(arquivo: ArquivoEnviado, removendo: ReadonlySet<string>): ArquivoEmEnvio {
+    return {
+      id: arquivo.arquivoId,
+      nome: arquivo.rotulo,
+      detalhe: detalheDoArquivoEnviado(arquivo),
+      ...faseDaVerificacao(arquivo),
+      progresso: 100,
+      podeRetirar: this.podeRemover() && !removendo.has(arquivo.arquivoId),
+    };
   }
 
-  protected textoDaSituacao(situacao: SituacaoDaExigencia): string {
-    return TEXTO_DA_SITUACAO[situacao];
+  constructor() {
+    inject(DestroyRef).onDestroy(() => (this.destruido = true));
   }
 
   protected enviarTodos(arquivos: readonly File[]): void {
@@ -214,16 +217,7 @@ export class EnvioDoDocumentoComponent {
     for (const arquivo of arquivos) {
       const id = `envio-${this.proximoLocal++}`;
       this.bytes.set(id, arquivo);
-      this.emAndamento.update((lista) => [
-        ...lista,
-        {
-          id,
-          nome: NOME_DO_ARQUIVO_EM_ENVIO,
-          tamanhoBytes: arquivo.size,
-          fase: 'iniciando',
-          progresso: 0,
-        },
-      ]);
+      this.emAndamento.update((lista) => [...lista, novoArquivoEmEnvio(id, arquivo)]);
       void this.enviar(id);
     }
   }
@@ -242,9 +236,8 @@ export class EnvioDoDocumentoComponent {
     this.falhaAoBaixar.set(null);
     try {
       const desfecho = await this.envio().baixar(id);
-      if (!this.destruido && !desfecho.ok) {
+      if (!this.destruido && !desfecho.ok)
         this.falhaAoBaixar.set(desfecho.mensagem || FALHA_AO_BAIXAR);
-      }
     } catch {
       if (!this.destruido) this.falhaAoBaixar.set(FALHA_AO_BAIXAR);
     } finally {
@@ -256,24 +249,28 @@ export class EnvioDoDocumentoComponent {
     this.falhaAoRemover.set(null);
     this.falhaAoBaixar.set(null);
     if (this.emAndamento().some((a) => a.id === id)) {
-      this.bytes.delete(id);
-      this.emAndamento.update((lista) => lista.filter((a) => a.id !== id));
+      this.retirarLocal(id);
       return;
     }
+    await this.retirarConfirmado(id);
+  }
+
+  private async retirarConfirmado(id: string): Promise<void> {
     if (this.removendo().has(id)) return;
     this.removendo.update((atual) => new Set(atual).add(id));
     const desfecho = await this.envio().remover(id);
     if (this.destruido) return;
-    this.removendo.update((atual) => {
-      const restantes = new Set(atual);
-      restantes.delete(id);
-      return restantes;
-    });
+    this.removendo.update((atual) => semId(atual, id));
     if (!desfecho.ok) {
       this.falhaAoRemover.set(desfecho.mensagem || FALHA_AO_REMOVER);
       return;
     }
     this.removidos.update((atual) => new Set(atual).add(id));
+  }
+
+  private retirarLocal(id: string): void {
+    this.bytes.delete(id);
+    this.emAndamento.update((lista) => lista.filter((a) => a.id !== id));
   }
 
   private async enviar(id: string): Promise<void> {
@@ -284,21 +281,20 @@ export class EnvioDoDocumentoComponent {
       this.atualizar(id, { fase, progresso }),
     );
     if (!this.bytes.has(id)) {
-      // O candidato retirou o arquivo enquanto ele subia: o envio terminou, e o que ele pediu foi tirar.
       if (desfecho.ok) await this.descartar(desfecho.arquivo.arquivoId);
       return;
     }
     if (this.destruido) return;
-    if (!desfecho.ok) {
-      this.atualizar(id, {
-        fase: 'erro',
-        mensagem: desfecho.mensagem,
-        podeTentarDeNovo: desfecho.podeTentarDeNovo,
-      });
-      return;
-    }
-    this.bytes.delete(id);
-    this.emAndamento.update((lista) => lista.filter((a) => a.id !== id));
+    if (!desfecho.ok) this.registrarFalha(id, desfecho);
+    else this.retirarLocal(id);
+  }
+
+  private registrarFalha(id: string, falha: { mensagem: string; podeTentarDeNovo: boolean }): void {
+    this.atualizar(id, {
+      fase: 'erro',
+      mensagem: falha.mensagem,
+      podeTentarDeNovo: falha.podeTentarDeNovo,
+    });
   }
 
   /** Remove o arquivo que o candidato já tinha retirado quando o envio terminou. */
@@ -337,12 +333,9 @@ function faseDaVerificacao(
     case 'emVerificacao':
       return { fase: 'verificando', mensagem: arquivo.mensagem };
     case 'pendente':
-      // Os bytes ainda não foram confirmados: o arquivo não chegou à verificação.
       return { fase: 'iniciando' };
     case 'recusado':
     case 'reenvioNecessario':
-      // Trocar o arquivo é remover este e enviar outro: os bytes não estão mais na tela.
       return { fase: 'erro', mensagem: arquivo.mensagem, podeTentarDeNovo: false };
   }
 }
-

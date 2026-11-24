@@ -7,6 +7,8 @@ import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   CONFIGURACAO_BASE_PATH,
+  QuantidadeDeValoresCodigo,
+  TipoDoDadoCodigo,
   type AprovacaoDaProtecaoDto,
   type DecisaoDaProtecaoDto,
   type DetalheDaProtecaoDoCatalogoDto,
@@ -73,9 +75,17 @@ export const detalheDoLaudo: DetalheDaProtecaoDoCatalogoDto = {
   manifestacoesVigentes: [],
 };
 
+export const dominioTexto = { codigo: TipoDoDadoCodigo.TEXTO, rotulo: 'Texto' } as const;
+export const valorUnico = {
+  codigo: QuantidadeDeValoresCodigo.VALOR_UNICO,
+  rotulo: 'Valor único',
+} as const;
+
+export const dominioOpcao = { codigo: TipoDoDadoCodigo.OPCAO, rotulo: 'Opção' } as const;
+
 const FATO_CATEGORICO = {
-  dominio: 'CATEGORICO',
-  cardinalidade: 'ESCALAR',
+  dominio: dominioOpcao,
+  cardinalidade: valorUnico,
   semeadoPeloSistema: false,
   componenteExibicao: null,
   valores: [

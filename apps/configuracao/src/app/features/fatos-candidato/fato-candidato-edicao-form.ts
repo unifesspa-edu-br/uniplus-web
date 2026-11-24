@@ -8,6 +8,7 @@ import type {
   FatoCandidatoDto,
   ValorDominioInput,
 } from '@uniplus/shared-data/configuracao';
+import { controleDaQuantidade } from './codigos-do-fato';
 import { nullIfBlank } from '../../shared/formulario';
 import {
   esvaziarSeForaDas,
@@ -76,7 +77,7 @@ export function criarFormularioDaDefinicao() {
   const obrigatorio = { nonNullable: true as const, validators: [Validators.required] };
   return new FormGroup({
     dominio: new FormControl('', { nonNullable: true }),
-    cardinalidade: new FormControl('ESCALAR', { nonNullable: true }),
+    cardinalidade: controleDaQuantidade(),
     fonteValores: new FormControl('', { nonNullable: true }),
     formato: new FormControl('', { nonNullable: true }),
     escopo: new FormControl('CANDIDATO', { nonNullable: true }),
@@ -91,9 +92,9 @@ export function valoresDaDefinicao(fato: FatoCandidatoDto): DefinicaoEmEdicao {
   const { definicao } = fato;
   return {
     ...protecaoDoFato(fato),
-    dominio: definicao.dominio,
-    cardinalidade: definicao.cardinalidade,
-    fonteValores: definicao.valores.fonte ?? '',
+    dominio: definicao.dominio.codigo,
+    cardinalidade: definicao.cardinalidade.codigo,
+    fonteValores: definicao.valores.fonte?.codigo ?? '',
     formato: definicao.formato ?? '',
     escopo: definicao.escopo,
     pontoResolucao: definicao.resolucao.pontoResolucao,

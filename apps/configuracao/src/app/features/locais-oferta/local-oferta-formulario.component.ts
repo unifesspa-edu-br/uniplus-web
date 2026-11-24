@@ -7,7 +7,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { CampusDto, TIPOS_LOCAL_OFERTA } from '@uniplus/shared-data/configuracao';
+import { CampusDto } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
   type CatalogoAcompanhado,
@@ -16,6 +16,7 @@ import {
   FalhaDeLeituraDoCampoComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
+import { carregarVocabulario } from '../../shared/vocabulario-de-configuracao';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { LocalOfertaForm } from './local-oferta-form';
@@ -52,7 +53,7 @@ export class LocalOfertaFormularioComponent {
     if (this.salvando()) return 'Salvando...';
     return this.modo() === 'criar' ? 'Criar local' : 'Salvar local';
   });
-  protected readonly tipoOptions = TIPOS_LOCAL_OFERTA;
+  protected readonly tipos = carregarVocabulario('tipos-local-oferta');
   private readonly endereco = viewChild(EnderecoGeoComponent);
   private readonly foco = acompanharFocoDoEnvio({
     salvando: this.salvando,

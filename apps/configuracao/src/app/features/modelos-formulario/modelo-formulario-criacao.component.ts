@@ -1,16 +1,16 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { TipoProcessoDto } from '@uniplus/shared-data/configuracao';
+import { ModeloFormularioView, TipoProcessoDto } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
   DrawerComponent,
   FalhaDeLeituraDoCampoComponent,
-  FINALIDADES,
   SpinnerComponent,
   type LeituraAcompanhada,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { CampoDaCriacao, CriacaoForm, mensagemDoCampo } from './modelo-formulario-form';
+import { FINALIDADES_DO_FORMULARIO } from './finalidades-do-formulario';
 
 @Component({
   selector: 'cfg-modelo-formulario-criacao',
@@ -36,7 +36,10 @@ export class ModeloFormularioCriacaoComponent {
   readonly leituraDosTipos = input.required<LeituraAcompanhada>();
   readonly abertoChange = output<boolean>();
   readonly criar = output<void>();
-  protected readonly finalidades = FINALIDADES;
+  readonly modelos = input.required<readonly ModeloFormularioView[]>();
+  protected finalidades() {
+    return FINALIDADES_DO_FORMULARIO;
+  }
   private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });
 
   protected erro(campo: CampoDaCriacao): string | null {

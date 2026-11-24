@@ -5,10 +5,10 @@ import { alternativaSemOProprioCampo, comImpedimento, impedimentoCabe } from './
 
 describe('impedimentoCabe', () => {
   it('o impedimento só cabe na inscrição, em tipo admitido e com o próprio campo citável', () => {
-    expect(impedimentoCabe('INSCRICAO', 'BOOLEANO', true)).toBe(true);
-    expect(impedimentoCabe('HABILITACAO', 'BOOLEANO', true)).toBe(false);
+    expect(impedimentoCabe('INSCRICAO', 'SIM_OU_NAO', true)).toBe(true);
+    expect(impedimentoCabe('HABILITACAO', 'SIM_OU_NAO', true)).toBe(false);
     expect(impedimentoCabe('INSCRICAO', 'TEXTO', true)).toBe(false);
-    expect(impedimentoCabe('INSCRICAO', 'SELECAO_UNICA', false)).toBe(false);
+    expect(impedimentoCabe('INSCRICAO', 'ESCOLHA_UNICA', false)).toBe(false);
   });
 
   it('o campo de município admite impedimento', () => {

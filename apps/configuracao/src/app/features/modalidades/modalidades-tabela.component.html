@@ -29,14 +29,14 @@
           </td>
           <td data-label="Quem concorre">{{ quemConcorre().get(m.id) }}</td>
           <td data-label="Natureza">
-            <ui-tag [variant]="naturezaVariante(m.naturezaLegal)">
-              {{ naturezaLabel(m.naturezaLegal) }}
+            <ui-tag [variant]="naturezaVariante(m.naturezaLegal.codigo)">
+              {{ m.naturezaLegal.rotulo }}
             </ui-tag>
           </td>
           <td data-label="Composição de vagas">
-            {{ composicaoLabel(m.composicaoVagas) }}
+            {{ m.composicaoVagas.rotulo }}
             @if (m.composicaoOrigem) {
-              <code>{{ m.composicaoOrigem }}</code>
+              {{ ' ' }}<code>{{ m.composicaoOrigem }}</code>
             }
           </td>
           <td data-label="Remanejamento">{{ remanejamentoResumo(m) }}</td>

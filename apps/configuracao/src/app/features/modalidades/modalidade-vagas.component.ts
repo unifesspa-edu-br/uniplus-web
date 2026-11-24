@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { COMPOSICOES_VAGAS, NATUREZAS_LEGAIS } from '@uniplus/shared-data/configuracao';
 
+import { VocabulariosDaModalidade } from './vocabularios-da-modalidade';
 import { ModalidadeSecao } from './modalidade-secao';
 import type { OpcaoDeReferencia } from './opcao-de-referencia';
 
@@ -19,6 +19,7 @@ export class ModalidadeVagasComponent extends ModalidadeSecao {
   readonly naturezaMudou = output<void>();
   readonly composicaoMudou = output<void>();
 
-  protected readonly naturezas = NATUREZAS_LEGAIS;
-  protected readonly composicoes = COMPOSICOES_VAGAS;
+  private readonly vocabularios = inject(VocabulariosDaModalidade);
+  protected readonly naturezas = this.vocabularios.naturezas;
+  protected readonly composicoes = this.vocabularios.composicoes;
 }

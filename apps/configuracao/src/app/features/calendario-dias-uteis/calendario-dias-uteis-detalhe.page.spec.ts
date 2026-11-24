@@ -1,3 +1,4 @@
+import { ABRANGENCIAS } from './abrangencias.testing';
 import { TestBed } from '@angular/core/testing';
 import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -79,7 +80,7 @@ describe('CalendarioDiasUteisDetalhePage — leitura', () => {
       await p.propagar();
 
       expect(painel().textContent).toContain('Pará — PA');
-      expect(painel().textContent).toContain('Estadual');
+      expect(painel().textContent).toContain(DIA_ESTADUAL.abrangencia.rotulo);
       expect(painel().textContent).not.toContain('ESTADUAL');
     });
 
@@ -102,7 +103,7 @@ describe('CalendarioDiasUteisDetalhePage — leitura', () => {
       botao.dispatchEvent(new MouseEvent('mouseenter'));
       await p.propagar();
       expect(p.elemento('.cfg-calendario-mensal__preview').textContent).toContain(
-        'Aniversário de Marabá — Municipal',
+        `Aniversário de Marabá — ${DIA_MUNICIPAL.abrangencia.rotulo}`,
       );
 
       botao.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
@@ -178,7 +179,11 @@ describe('CalendarioDiasUteisDetalhePage — leitura', () => {
     });
 
     it('conta as ocorrências do dataset no resumo e mantém uma célula por data', async () => {
-      const outraNoMesmoDia = { ...DIA_MUNICIPAL, id: 'outro-id', abrangencia: 'INSTITUCIONAL' };
+      const outraNoMesmoDia = {
+        ...DIA_MUNICIPAL,
+        id: 'outro-id',
+        abrangencia: ABRANGENCIAS.INSTITUCIONAL,
+      };
       p = await montarDetalhe([DIA_MUNICIPAL, outraNoMesmoDia, DIA_ESTADUAL]);
 
       expect(p.elemento('.cfg-calendario-resumo').textContent).toContain('3');
@@ -191,7 +196,7 @@ describe('CalendarioDiasUteisDetalhePage — leitura', () => {
       const segunda = {
         ...DIA_MUNICIPAL,
         id: 'segunda-ocorrencia',
-        abrangencia: 'INSTITUCIONAL',
+        abrangencia: ABRANGENCIAS.INSTITUCIONAL,
         descricao: 'Aniversário da Unifesspa',
       };
       p = await montarDetalhe([DIA_MUNICIPAL, segunda]);

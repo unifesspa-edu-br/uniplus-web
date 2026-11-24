@@ -1,3 +1,4 @@
+import { DADO_OPCAO, FONTE_MUNICIPIOS } from './vocabulario-do-modelo.testing';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture } from '@angular/core/testing';
 import {
@@ -142,15 +143,17 @@ describe('ModeloFormularioEdicaoPage', () => {
           documentosExigidos: [
             {
               ...laudo,
-              quando: [[{ fato: 'MUNICIPIO', operador: OperadorCodigo.EM, valor: ['1500000'] }]],
+              quando: [
+                [{ fato: 'MUNICIPIO', operador: OperadorCodigo.ALGUM_DE, valor: ['1500000'] }],
+              ],
             },
           ],
         },
       },
       [
         {
-          fato: { ...fato('MUNICIPIO').fato, dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' },
-          operadoresAdmitidos: [{ codigo: OperadorCodigo.EM, rotulo: 'é um de' }],
+          fato: { ...fato('MUNICIPIO').fato, dominio: DADO_OPCAO, fonteValores: FONTE_MUNICIPIOS },
+          operadoresAdmitidos: [{ codigo: OperadorCodigo.ALGUM_DE, rotulo: 'é um de' }],
         },
       ],
     );

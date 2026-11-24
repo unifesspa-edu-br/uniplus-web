@@ -13,7 +13,7 @@
     </h1>
     @if (modelo(); as m) {
       <p class="page-header__desc">
-        <code>{{ m.codigo }}</code> · {{ rotuloDaFinalidade(m.finalidade) }}
+        <code>{{ m.codigo }}</code> · {{ m.finalidade.rotulo }}
         <ui-tag [variant]="m.ativo ? 'success' : 'neutral'">{{
           m.ativo ? 'Ativo' : 'Desativado'
         }}</ui-tag>

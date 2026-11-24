@@ -1,12 +1,5 @@
 import {
-  FORMATOS_PEDAGOGICOS,
   LocalOfertaDto,
-  PROGRAMAS_DE_OFERTA,
-  REGIMES_DE_FUNCIONAMENTO,
-  REGIMES_DE_TURNO,
-  TIPOS_LOCAL_OFERTA,
-  TURNOS_OFERTA,
-  ordenarTurnosCanonicamente,
   type CursoDto,
   type UnidadeOfertanteDto,
 } from '@uniplus/shared-data/configuracao';
@@ -20,8 +13,7 @@ export const rotularCursoNaListagem = (curso: CursoDto): string => curso.nome;
 
 export const rotularCursoCompleto = (curso: CursoDto): string => `${curso.codigo} — ${curso.nome}`;
 
-export const rotularTipoLocal = (local: LocalOfertaDto): string =>
-  TIPOS_LOCAL_OFERTA.find((tipo) => tipo.value === local.tipo)?.label ?? local.tipo;
+export const rotularTipoLocal = (local: LocalOfertaDto): string => local.tipo.rotulo;
 
 export const rotularLocalOferta = (local: LocalOfertaDto): string =>
   `${rotularTipoLocal(local)} — ${local.cidade.nome}`;
@@ -36,25 +28,13 @@ export const rotularUnidade = (
   unidade: Pick<UnidadeOfertanteDto, 'sigla' | 'nome' | 'tipo'>,
 ): string => `${unidade.sigla} · ${unidade.nome} · ${unidade.tipo}`;
 
-const rotuloDe = (
-  opcoes: readonly { readonly value: string; readonly label: string }[],
-  token: string,
-): string => opcoes.find((opcao) => opcao.value === token)?.label ?? token;
+type ValorRotulado = { readonly rotulo: string };
 
-export const rotuloDoPrograma = (token: string): string => rotuloDe(PROGRAMAS_DE_OFERTA, token);
+export const rotuloDoPrograma = (valor: ValorRotulado): string => valor.rotulo;
+export const rotuloDoFormato = (valor: ValorRotulado): string => valor.rotulo;
+export const rotuloDoRegimeDeTurno = (valor: ValorRotulado): string => valor.rotulo;
+export const rotuloDoRegimeDeFuncionamento = (valor: ValorRotulado): string => valor.rotulo;
 
-export const rotuloDoFormato = (token: string): string => rotuloDe(FORMATOS_PEDAGOGICOS, token);
-
-export const rotuloDoRegimeDeTurno = (token: string): string => rotuloDe(REGIMES_DE_TURNO, token);
-
-export const rotuloDoRegimeDeFuncionamento = (token: string): string =>
-  rotuloDe(REGIMES_DE_FUNCIONAMENTO, token);
-
-export function rotuloDosTurnos(tokens: readonly string[]): string {
-  if (tokens.length === 0) {
-    return '—';
-  }
-  return ordenarTurnosCanonicamente(tokens)
-    .map((token) => rotuloDe(TURNOS_OFERTA, token))
-    .join(' e ');
+export function rotuloDosTurnos(valores: readonly ValorRotulado[]): string {
+  return valores.length ? valores.map((valor) => valor.rotulo).join(' e ') : '—';
 }

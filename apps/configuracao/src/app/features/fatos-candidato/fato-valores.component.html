@@ -37,9 +37,7 @@
                         >
                           @let erroDescricao = erroDaCorrecao('descricao');
                           <label class="field" [class.is-error]="erroDescricao">
-                            <span
-                              class="field__label"
-                              [class.is-required]="f.definicao.resolucao.origem === 'DECLARADO'"
+                            <span class="field__label" [class.is-required]="declarado()"
                               >Descrição<span class="sr-only">
                                 do valor {{ valor.codigo }}</span
                               ></span
@@ -49,9 +47,7 @@
                               type="text"
                               formControlName="descricao"
                               [id]="idDoValor(valor.codigo, 'descricao')"
-                              [attr.aria-required]="
-                                f.definicao.resolucao.origem === 'DECLARADO' ? 'true' : null
-                              "
+                              [attr.aria-required]="declarado() ? 'true' : null"
                               [attr.aria-invalid]="erroDescricao ? 'true' : null"
                               [attr.aria-describedby]="
                                 erroDescricao
@@ -224,18 +220,12 @@
               </label>
               @let erroNovaDescricao = erroDoNovoValor('descricao');
               <label class="field" [class.is-error]="erroNovaDescricao">
-                <span
-                  class="field__label"
-                  [class.is-required]="f.definicao.resolucao.origem === 'DECLARADO'"
-                  >Descrição</span
-                >
+                <span class="field__label" [class.is-required]="declarado()">Descrição</span>
                 <input
                   class="input"
                   type="text"
                   formControlName="descricao"
-                  [attr.aria-required]="
-                    f.definicao.resolucao.origem === 'DECLARADO' ? 'true' : null
-                  "
+                  [attr.aria-required]="declarado() ? 'true' : null"
                   [attr.aria-invalid]="erroNovaDescricao ? 'true' : null"
                   [attr.aria-describedby]="
                     erroNovaDescricao ? 'cfg-fato-valor-descricao-erro' : null

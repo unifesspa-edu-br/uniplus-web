@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { ProblemDetails, separarCausas } from '@uniplus/shared-core/http';
 import {
   OperadorCodigo,
+  TipoDoDadoCodigo,
   TipoRenderizacaoCodigo,
   type FatoCandidatoDto,
   type RegrasPadraoInput,
@@ -51,7 +52,7 @@ export class RegrasEmEdicao {
   }
 
   acrescentar(dominio: string): void {
-    const contribui = dominio === 'CATEGORICO' ? '' : null;
+    const contribui = dominio === TipoDoDadoCodigo.OPCAO ? '' : null;
     this.regras.update((regras) => [...regras, { contribui, condicoes: [] }]);
   }
 

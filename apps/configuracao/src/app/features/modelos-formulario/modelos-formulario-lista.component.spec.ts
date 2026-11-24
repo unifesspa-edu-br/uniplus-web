@@ -1,3 +1,4 @@
+import { FINALIDADE_INSCRICAO, FINALIDADE_ISENCAO } from './vocabulario-do-modelo.testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
@@ -17,7 +18,7 @@ const conteudo = {
 const ativo: ModeloFormularioView = {
   id: 'm1',
   codigo: 'INSCRICAO',
-  finalidade: 'INSCRICAO',
+  finalidade: FINALIDADE_INSCRICAO,
   ativo: true,
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   conteudo,
@@ -178,12 +179,12 @@ describe('ModelosFormularioListaComponent', () => {
     ).toBe('VESTIBULAR');
   });
 
-  it('mostra o rótulo da finalidade e mantém o valor quando ela é desconhecida', () => {
-    montar([ativo, { ...ativo, id: 'm3', codigo: 'OUTRO', finalidade: 'DESCONHECIDA' }]);
+  it('mostra os rótulos das finalidades recebidas', () => {
+    montar([ativo, { ...ativo, id: 'm3', codigo: 'OUTRO', finalidade: FINALIDADE_ISENCAO }]);
 
     const celulas = raiz().querySelectorAll('td[data-label="Finalidade"]');
-    expect(celulas[0].textContent?.trim()).not.toBe('INSCRICAO');
-    expect(celulas[1].textContent?.trim()).toBe('DESCONHECIDA');
+    expect(celulas[0].textContent?.trim()).toBe(FINALIDADE_INSCRICAO.rotulo);
+    expect(celulas[1].textContent?.trim()).toBe(FINALIDADE_ISENCAO.rotulo);
   });
 
   it('o estado vazio só aparece sem carga nem erro', () => {

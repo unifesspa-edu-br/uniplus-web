@@ -5458,7 +5458,7 @@ export interface paths {
             readonly parameters: {
                 readonly query?: {
                     readonly tipoProcesso?: string;
-                    readonly finalidade?: string;
+                    readonly finalidade?: components["schemas"]["FinalidadeFormularioCodigo"];
                     readonly ativo?: boolean;
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
@@ -12620,6 +12620,490 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/vocabularios/origens-data-fase": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-origem-data-fase.v1+json": readonly components["schemas"]["OrigemDataFase"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/naturezas-legais": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-natureza-legal.v1+json": readonly components["schemas"]["NaturezaLegal"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/acoes-quando-indeferido": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-acao-quando-indeferido.v1+json": readonly components["schemas"]["AcaoQuandoIndeferido"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/composicoes-vagas": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-composicao-vagas.v1+json": readonly components["schemas"]["ComposicaoVagas"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/regras-remanejamento": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-regra-remanejamento.v1+json": readonly components["schemas"]["RegraRemanejamento"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/programas-oferta": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-programa-de-oferta.v1+json": readonly components["schemas"]["ProgramaDeOferta"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/formatos-pedagogicos": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-formato-pedagogico.v1+json": readonly components["schemas"]["FormatoPedagogico"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/regimes-funcionamento": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-regime-de-funcionamento.v1+json": readonly components["schemas"]["RegimeDeFuncionamento"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/regimes-turno": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-regime-de-turno.v1+json": readonly components["schemas"]["RegimeDeTurno"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/turnos-oferta": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-turno-oferta.v1+json": readonly components["schemas"]["TurnoOferta"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/abrangencias-dia-nao-util": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-abrangencia-dia-nao-util.v1+json": readonly components["schemas"]["Abrangencia"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/vocabularios/grupos-area-enem": {
         readonly parameters: {
             readonly query?: never;
@@ -12664,6 +13148,182 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/vocabularios/tipos-do-dado": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.tipo-do-dado.v1+json": readonly components["schemas"]["TipoDoDado"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/quantidades-de-valores": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.quantidade-de-valores.v1+json": readonly components["schemas"]["QuantidadeDeValores"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/tipos-local-oferta": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-tipo-local-oferta.v1+json": readonly components["schemas"]["TipoLocalOferta"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/formas-aceite": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-forma-aceite.v1+json": readonly components["schemas"]["FormaAceite"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/vocabularios/naturezas-conceito": {
         readonly parameters: {
             readonly query?: never;
@@ -12686,7 +13346,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "application/vnd.uniplus.codigo-natureza-conceito.v1+json": readonly components["schemas"]["NaturezaConceito"][];
+                        readonly "application/vnd.uniplus.codigo-natureza-conceito.v1+json": readonly components["schemas"]["FormaDoConceito"][];
                     };
                 };
                 /** @description Not Acceptable */
@@ -12712,6 +13372,28 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        readonly Abrangencia: {
+            readonly codigo: components["schemas"]["AbrangenciaCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `NACIONAL`: Nacional
+         *     - `ESTADUAL`: Estadual
+         *     - `MUNICIPAL`: Municipal
+         *     - `INSTITUCIONAL`: Institucional
+         * @enum {string}
+         */
+        readonly AbrangenciaCodigo: AbrangenciaCodigo;
+        readonly AcaoQuandoIndeferido: {
+            readonly codigo: components["schemas"]["AcaoQuandoIndeferidoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `RECLASSIFICA_AC`: Ampla concorrência — Passa a pessoa para a ampla concorrência.
+         *     - `RECLASSIFICA_CONFORME_EDITAL`: Conforme o edital — Reclassifica a pessoa conforme as regras do edital.
+         * @enum {string}
+         */
+        readonly AcaoQuandoIndeferidoCodigo: AcaoQuandoIndeferidoCodigo;
         readonly AgregadoPortavel: {
             readonly codigo: string;
             readonly grupoCodigo: string;
@@ -12835,14 +13517,14 @@ export interface components {
             readonly coletaInscricao: boolean;
             /** @default false */
             readonly coletaSolicitacaoIsencao: boolean;
-            readonly origemData?: null | string;
+            readonly origemData?: null | components["schemas"]["OrigemDataFaseCodigo"];
             /** Format: uuid */
             readonly unidadeSugeridaId?: null | string;
         };
         readonly AtualizarLocalOfertaCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly tipo: components["schemas"]["TipoLocalOferta"];
+            readonly tipo: null | components["schemas"]["TipoLocalOfertaCodigo"];
             /** Format: uuid */
             readonly campusResponsavelId: null | string;
             readonly cidadeCodigoIbge: null | string;
@@ -12855,26 +13537,23 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly descricao?: null | string;
-            readonly naturezaLegal?: null | string;
-            readonly composicaoVagas?: null | string;
+            readonly naturezaLegal?: null | components["schemas"]["NaturezaLegalCodigo"];
+            readonly composicaoVagas?: null | components["schemas"]["ComposicaoVagasCodigo"];
             readonly composicaoOrigem?: null | string;
-            readonly regraRemanejamento?: null | string;
-            readonly remanejamentoDestino?: null | string;
-            readonly remanejamentoPar?: null | string;
-            readonly remanejamentoFallback?: null | string;
+            readonly remanejamento?: null | components["schemas"]["RemanejamentoDasVagasInformado"];
             readonly regraDeAplicabilidade?: null | readonly (readonly components["schemas"]["CondicaoDoPredicadoInput"][])[];
-            readonly acaoQuandoIndeferido?: null | string;
+            readonly acaoQuandoIndeferido?: null | components["schemas"]["AcaoQuandoIndeferidoCodigo"];
             readonly baseLegal?: null | string;
         };
         readonly AtualizarOfertaCursoCommand: {
             /** Format: uuid */
             readonly id: string;
             readonly codigo: null | string;
-            readonly programaDeOferta: null | string;
-            readonly regimeDeFuncionamento: null | string;
-            readonly regimeDeTurno: null | string;
-            readonly turnos: null | readonly string[];
-            readonly formatoPedagogico?: null | string;
+            readonly programaDeOferta: null | components["schemas"]["ProgramaDeOfertaCodigo"];
+            readonly regimeDeFuncionamento: null | components["schemas"]["RegimeDeFuncionamentoCodigo"];
+            readonly regimeDeTurno: null | components["schemas"]["RegimeDeTurnoCodigo"];
+            readonly turnos: null | readonly components["schemas"]["TurnoOfertaCodigo"][];
+            readonly formatoPedagogico?: null | components["schemas"]["FormatoPedagogicoCodigo"];
             readonly eMecCodigo?: null | string;
             readonly codigoSga?: null | string;
             /** Format: int32 */
@@ -13110,10 +13789,22 @@ export interface components {
             readonly itens: readonly components["schemas"]["CampoRenderizavel"][];
             readonly grupos: readonly components["schemas"]["GrupoRenderizavel"][];
         };
+        readonly ComposicaoVagas: {
+            readonly codigo: components["schemas"]["ComposicaoVagasCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `RESTANTE_DAS_VAGAS_OFERTADAS`: Restante das vagas ofertadas
+         *     - `DENTRO_DA_RESERVA_LEGAL`: Dentro da reserva legal
+         *     - `RETIRADA_DE_OUTRA_MODALIDADE`: Retirada de outra modalidade
+         *     - `SUPLEMENTAR_AO_TOTAL`: Suplementar ao total
+         * @enum {string}
+         */
+        readonly ComposicaoVagasCodigo: ComposicaoVagasCodigo;
         readonly ConceitoAdmitidoDto: {
             readonly codigo: string;
             readonly nome: string;
-            readonly natureza: components["schemas"]["NaturezaConceito"];
+            readonly natureza: components["schemas"]["FormaDoConceito"];
         };
         readonly CondicaoAtendimentoDto: {
             /** Format: uuid */
@@ -13169,7 +13860,7 @@ export interface components {
             readonly nome: string;
             readonly texto: string;
             readonly baseLegal: string;
-            readonly formaAceite: string;
+            readonly formaAceite: components["schemas"]["FormaAceite"];
             readonly hashVersao: string;
         };
         readonly CorrecaoDeValorDominioInput: {
@@ -13232,7 +13923,7 @@ export interface components {
             readonly coletaInscricao: boolean;
             /** @default false */
             readonly coletaSolicitacaoIsencao: boolean;
-            readonly origemData?: null | string;
+            readonly origemData?: null | components["schemas"]["OrigemDataFaseCodigo"];
             /** Format: uuid */
             readonly unidadeSugeridaId?: null | string;
         };
@@ -13251,9 +13942,9 @@ export interface components {
             readonly codigo: string;
             readonly nome: string;
             readonly descricao: null | string;
-            readonly dominio: string;
-            readonly cardinalidade: string;
-            readonly fonteValores: null | string;
+            readonly dominio: components["schemas"]["TipoDoDadoCodigo"];
+            readonly cardinalidade: components["schemas"]["QuantidadeDeValoresCodigo"];
+            readonly fonteValores: null | components["schemas"]["FonteValoresFatoCodigo"];
             readonly formato: null | string;
             readonly pontoResolucao: string;
             readonly escopo: string;
@@ -13266,7 +13957,7 @@ export interface components {
             readonly codigo: string;
             readonly nome: string;
             readonly descricao: null | string;
-            readonly dominio: string;
+            readonly dominio: components["schemas"]["TipoDoDadoCodigo"];
             readonly pontoResolucao: string;
             readonly escopo: string;
             readonly classificacaoProtecao: string;
@@ -13275,7 +13966,7 @@ export interface components {
             readonly componenteExibicao?: null | string;
         };
         readonly CriarLocalOfertaCommand: {
-            readonly tipo: components["schemas"]["TipoLocalOferta"];
+            readonly tipo: null | components["schemas"]["TipoLocalOfertaCodigo"];
             /** Format: uuid */
             readonly campusResponsavelId: null | string;
             readonly cidadeCodigoIbge: null | string;
@@ -13287,20 +13978,17 @@ export interface components {
         readonly CriarModalidadeCommand: {
             readonly codigo: null | string;
             readonly descricao?: null | string;
-            readonly naturezaLegal?: null | string;
-            readonly composicaoVagas?: null | string;
+            readonly naturezaLegal?: null | components["schemas"]["NaturezaLegalCodigo"];
+            readonly composicaoVagas?: null | components["schemas"]["ComposicaoVagasCodigo"];
             readonly composicaoOrigem?: null | string;
-            readonly regraRemanejamento?: null | string;
-            readonly remanejamentoDestino?: null | string;
-            readonly remanejamentoPar?: null | string;
-            readonly remanejamentoFallback?: null | string;
+            readonly remanejamento?: null | components["schemas"]["RemanejamentoDasVagasInformado"];
             readonly regraDeAplicabilidade?: null | readonly (readonly components["schemas"]["CondicaoDoPredicadoInput"][])[];
-            readonly acaoQuandoIndeferido?: null | string;
+            readonly acaoQuandoIndeferido?: null | components["schemas"]["AcaoQuandoIndeferidoCodigo"];
             readonly baseLegal?: null | string;
         };
         readonly CriarModeloFormularioCommand: {
             readonly codigo: string;
-            readonly finalidade: string;
+            readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
             readonly descritivo: null | components["schemas"]["DescritivoDoModeloInput"];
             readonly conteudo: null | components["schemas"]["ConteudoDoModeloInput"];
         };
@@ -13312,11 +14000,11 @@ export interface components {
             /** Format: uuid */
             readonly unidadeOfertanteOrigemId: string;
             readonly codigo: null | string;
-            readonly programaDeOferta: null | string;
-            readonly regimeDeFuncionamento: null | string;
-            readonly regimeDeTurno: null | string;
-            readonly turnos: null | readonly string[];
-            readonly formatoPedagogico?: null | string;
+            readonly programaDeOferta: null | components["schemas"]["ProgramaDeOfertaCodigo"];
+            readonly regimeDeFuncionamento: null | components["schemas"]["RegimeDeFuncionamentoCodigo"];
+            readonly regimeDeTurno: null | components["schemas"]["RegimeDeTurnoCodigo"];
+            readonly turnos: null | readonly components["schemas"]["TurnoOfertaCodigo"][];
+            readonly formatoPedagogico?: null | components["schemas"]["FormatoPedagogicoCodigo"];
             readonly eMecCodigo?: null | string;
             readonly codigoSga?: null | string;
             /** Format: int32 */
@@ -13355,7 +14043,7 @@ export interface components {
             readonly nome: null | string;
             readonly textoRascunho: null | string;
             readonly baseLegalRascunho: null | string;
-            readonly formaAceiteRascunho: null | string;
+            readonly formaAceiteRascunho: null | components["schemas"]["FormaAceiteCodigo"];
         };
         readonly CriarTipoBancaCommand: {
             readonly codigo: null | components["schemas"]["TipoDeBancaCodigo"];
@@ -13454,8 +14142,8 @@ export interface components {
             readonly dianteDeManifestacaoDesfavoravel: boolean;
         };
         readonly DefinicaoDoFatoDto: {
-            readonly dominio: string;
-            readonly cardinalidade: string;
+            readonly dominio: components["schemas"]["TipoDoDado"];
+            readonly cardinalidade: components["schemas"]["QuantidadeDeValores"];
             readonly escopo: string;
             readonly formato: null | string;
             readonly valores: components["schemas"]["ValoresDoFatoDto"];
@@ -13467,23 +14155,23 @@ export interface components {
             readonly classificacaoProtecao: string;
             readonly finalidadeTratamento: string;
             readonly hipoteseLegal: string;
-            readonly dominio?: null | string;
-            readonly cardinalidade?: null | string;
-            readonly fonteValores?: null | string;
+            readonly dominio?: null | components["schemas"]["TipoDoDadoCodigo"];
+            readonly cardinalidade?: null | components["schemas"]["QuantidadeDeValoresCodigo"];
+            readonly fonteValores?: null | components["schemas"]["FonteValoresFatoCodigo"];
             readonly formato?: null | string;
             readonly escopo?: null | string;
         };
         readonly DefinicaoDoTipoConceitoDto: {
             readonly nome: string;
             readonly descricao: null | string;
-            readonly natureza: components["schemas"]["NaturezaConceito"];
+            readonly natureza: components["schemas"]["FormaDoConceito"];
             readonly numerico: null | components["schemas"]["EscalaNumericaDto"];
             readonly valores: null | readonly components["schemas"]["ValorCategoricoDto"][];
         };
         readonly DefinicaoDoTipoConceitoInput: {
             readonly nome: null | string;
             readonly descricao: null | string;
-            readonly natureza: null | components["schemas"]["NaturezaConceitoCodigo"];
+            readonly natureza: null | components["schemas"]["FormaDoConceitoCodigo"];
             readonly numerico: null | components["schemas"]["EscalaNumericaCommand"];
             readonly valores: null | readonly components["schemas"]["ValorCategoricoCommand"][];
         };
@@ -13529,8 +14217,8 @@ export interface components {
             readonly manifestacoesVigentes: readonly components["schemas"]["ManifestacaoDaProtecaoDto"][];
         };
         readonly DetalheDoFatoDto: {
-            readonly dominio: string;
-            readonly cardinalidade: string;
+            readonly dominio: components["schemas"]["TipoDoDado"];
+            readonly cardinalidade: components["schemas"]["QuantidadeDeValores"];
             readonly semeadoPeloSistema: boolean;
             readonly componenteExibicao: null | string;
             readonly valores: readonly components["schemas"]["DetalheDoValorDoFatoDto"][];
@@ -13547,7 +14235,7 @@ export interface components {
             readonly orientacao: null | string;
         };
         readonly DiaNaoUtilCommandItem: {
-            readonly abrangencia: null | string;
+            readonly abrangencia: null | components["schemas"]["AbrangenciaCodigo"];
             readonly municipioIbge: null | string;
             readonly municipioNome: null | string;
             readonly municipioUf: null | string;
@@ -13559,7 +14247,7 @@ export interface components {
         readonly DiaNaoUtilDto: {
             /** Format: uuid */
             readonly id: string;
-            readonly abrangencia: string;
+            readonly abrangencia: components["schemas"]["Abrangencia"];
             readonly municipioIbge: null | string;
             readonly municipioNome: null | string;
             readonly municipioUf: null | string;
@@ -13595,7 +14283,7 @@ export interface components {
             readonly id: string;
             readonly textoRascunho: null | string;
             readonly baseLegalRascunho: null | string;
-            readonly formaAceiteRascunho: null | string;
+            readonly formaAceiteRascunho: null | components["schemas"]["FormaAceiteCodigo"];
         };
         readonly EnderecoGeoDto: {
             readonly cep: string;
@@ -13725,7 +14413,7 @@ export interface components {
             readonly baseLegal: null | string;
             readonly coletaInscricao: boolean;
             readonly coletaSolicitacaoIsencao: boolean;
-            readonly origemData: string;
+            readonly origemData: components["schemas"]["OrigemDataFase"];
             readonly unidadeSugerida: null | components["schemas"]["UnidadeSugeridaDto"];
             /** Format: date-time */
             readonly criadoEm: string;
@@ -13753,14 +14441,14 @@ export interface components {
             readonly codigo: string;
             readonly nome: string;
             readonly descricao: string;
-            readonly dominio: string;
-            readonly origem: string;
-            readonly cardinalidade: string;
+            readonly dominio: components["schemas"]["TipoDoDado"];
+            readonly origem: components["schemas"]["OrigemFato"];
+            readonly cardinalidade: components["schemas"]["QuantidadeDeValores"];
             readonly valoresDominio: null | readonly string[];
             readonly pontoResolucao: string;
             readonly binding: string;
             readonly valoresDominioDeclarados: null | readonly components["schemas"]["FatoValorDominioViewItem"][];
-            readonly fonteValores: null | string;
+            readonly fonteValores: null | components["schemas"]["FonteValoresFato"];
             readonly ativo: boolean;
             readonly classificacaoProtecao: string;
             readonly hipoteseLegal: string;
@@ -13803,6 +14491,72 @@ export interface components {
             readonly ativo: boolean;
             readonly orientacao?: null | string;
         };
+        readonly FinalidadeFormulario: {
+            readonly codigo: components["schemas"]["FinalidadeFormularioCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description Para que o formulário coleta respostas: cada processo tem no máximo um formulário por finalidade.
+         *
+         *     - `INSCRICAO`: Inscrição — Formulário em que o candidato se inscreve no processo seletivo.
+         *     - `ISENCAO_TAXA`: Isenção da taxa — Formulário em que o candidato pede a isenção da taxa de inscrição.
+         *     - `HABILITACAO`: Habilitação — Formulário em que o candidato comprova os requisitos para ser habilitado.
+         * @enum {string}
+         */
+        readonly FinalidadeFormularioCodigo: FinalidadeFormularioCodigo;
+        readonly FonteValoresFato: {
+            readonly codigo: components["schemas"]["FonteValoresFatoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description De onde vêm os valores de um dado de opção do catálogo.
+         *
+         *     - `CATALOGO`: Catálogo — Os valores vivem no próprio catálogo, como a cor ou raça, o sexo e a nacionalidade.
+         *     - `OPCOES_DO_PROCESSO`: Opções do processo — Os valores são as opções que cada processo declara, congeladas no edital.
+         *     - `MODALIDADE`: Modalidades do processo — Os valores são as modalidades de concorrência ofertadas pelo processo.
+         *     - `MUNICIPIOS_DO_FADA`: Municípios do Fator de Atenuação das Desigualdades de Acesso (FADA) — Os valores são os municípios da área do Fator de Atenuação das Desigualdades de Acesso (FADA) que o processo configurou, pelo código do IBGE.
+         *     - `UNIDADES_FEDERATIVAS`: Unidades federativas — Os valores são as 27 unidades federativas, pela sigla: as do dado calculado de residência e as que o candidato declara.
+         *     - `MUNICIPIOS`: Municípios — Os valores são os municípios do módulo de geografia, pelo código do IBGE, entre os da unidade federativa respondida antes.
+         *     - `TIPOS_DE_DEFICIENCIA`: Tipos de deficiência — Os valores são os tipos do cadastro de tipos de deficiência, todos os vivos, em qualquer processo.
+         * @enum {string}
+         */
+        readonly FonteValoresFatoCodigo: FonteValoresFatoCodigo;
+        readonly FormaAceite: {
+            readonly codigo: components["schemas"]["FormaAceiteCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description Como o candidato registra o aceite de um termo de consentimento ou declaração.
+         *
+         *     - `A_DEFINIR`: A definir — Forma ainda não definida; a publicação de um processo recusa termo exigido nesta forma.
+         *     - `REGISTRO_SEM_ENDERECO_IP`: Registro digital sem o endereço IP — O aceite é registrado no sistema sem guardar o endereço IP do candidato.
+         *     - `REGISTRO_COM_ENDERECO_IP`: Registro digital com o endereço IP — O aceite é registrado no sistema guardando o endereço IP do candidato.
+         * @enum {string}
+         */
+        readonly FormaAceiteCodigo: FormaAceiteCodigo;
+        readonly FormaDoConceito: {
+            readonly codigo: components["schemas"]["FormaDoConceitoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description Como o conceito que avalia uma etapa se expressa: numa escala numérica ou entre opções de uma lista.
+         *
+         *     - `NUMERICO`: Numérico — Conceito medido numa escala de mínimo, máximo e casas decimais.
+         *     - `POR_OPCOES`: Por opções — Conceito escolhido entre as opções ordenadas de uma lista, cada uma contando ou não como aprovação.
+         * @enum {string}
+         */
+        readonly FormaDoConceitoCodigo: FormaDoConceitoCodigo;
+        readonly FormatoPedagogico: {
+            readonly codigo: components["schemas"]["FormatoPedagogicoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `PRESENCIAL`: Presencial
+         *     - `SEMIPRESENCIAL`: Semipresencial
+         *     - `EAD`: A distância
+         * @enum {string}
+         */
+        readonly FormatoPedagogicoCodigo: FormatoPedagogicoCodigo;
         readonly FormularioPortavel: {
             readonly etapas: readonly components["schemas"]["EtapaPortavel"][];
             readonly termos: readonly components["schemas"]["TermoPortavel"][];
@@ -13976,15 +14730,12 @@ export interface components {
             readonly codigo: string;
             readonly legalFixa: boolean;
             readonly descricao: null | string;
-            readonly naturezaLegal: string;
-            readonly composicaoVagas: string;
+            readonly naturezaLegal: components["schemas"]["NaturezaLegal"];
+            readonly composicaoVagas: components["schemas"]["ComposicaoVagas"];
             readonly composicaoOrigem: null | string;
-            readonly regraRemanejamento: null | string;
-            readonly remanejamentoDestino: null | string;
-            readonly remanejamentoPar: null | string;
-            readonly remanejamentoFallback: null | string;
+            readonly remanejamento: null | components["schemas"]["RemanejamentoDasVagasDto"];
             readonly regraDeAplicabilidade: readonly (readonly components["schemas"]["CondicaoDoPredicadoDto"][])[];
-            readonly acaoQuandoIndeferido: null | string;
+            readonly acaoQuandoIndeferido: null | components["schemas"]["AcaoQuandoIndeferido"];
             readonly baseLegal: null | string;
             /** Format: date-time */
             readonly criadoEm: string;
@@ -13996,23 +14747,22 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly codigo: string;
-            readonly finalidade: string;
+            readonly finalidade: components["schemas"]["FinalidadeFormulario"];
             readonly ativo: boolean;
             readonly descritivo: components["schemas"]["DescritivoDoModeloDto"];
             readonly conteudo: components["schemas"]["ConteudoDoModeloDto"];
         };
-        readonly NaturezaConceito: {
-            readonly codigo: components["schemas"]["NaturezaConceitoCodigo"];
+        readonly NaturezaLegal: {
+            readonly codigo: components["schemas"]["NaturezaLegalCodigo"];
             readonly rotulo: string;
         };
         /**
-         * @description Como o conceito que avalia uma etapa se expressa: numa escala numérica ou entre valores categóricos.
-         *
-         *     - `NUMERICO`: Numérico — Conceito medido numa escala de mínimo, máximo e casas decimais.
-         *     - `CATEGORICO`: Categórico — Conceito escolhido entre valores categóricos ordenados.
+         * @description - `COTA_RESERVADA`: Cota reservada
+         *     - `AMPLA`: Ampla concorrência
+         *     - `ACAO_AFIRMATIVA`: Ação afirmativa
          * @enum {string}
          */
-        readonly NaturezaConceitoCodigo: NaturezaConceitoCodigo;
+        readonly NaturezaLegalCodigo: NaturezaLegalCodigo;
         readonly ObrigatoriedadeDto: {
             readonly tipo: string;
             readonly predicado: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
@@ -14062,11 +14812,11 @@ export interface components {
             /** Format: uuid */
             readonly localOfertaId: string;
             readonly unidadeOfertante: components["schemas"]["UnidadeOfertanteDto"];
-            readonly programaDeOferta: string;
-            readonly formatoPedagogico: string;
-            readonly regimeDeFuncionamento: string;
-            readonly regimeDeTurno: string;
-            readonly turnos: readonly string[];
+            readonly programaDeOferta: components["schemas"]["ProgramaDeOferta"];
+            readonly formatoPedagogico: components["schemas"]["FormatoPedagogico"];
+            readonly regimeDeFuncionamento: components["schemas"]["RegimeDeFuncionamento"];
+            readonly regimeDeTurno: components["schemas"]["RegimeDeTurno"];
+            readonly turnos: readonly components["schemas"]["TurnoOferta"][];
             readonly eMecCodigo: null | string;
             readonly codigoSga: null | string;
             /** Format: int32 */
@@ -14100,20 +14850,43 @@ export interface components {
             readonly rotulo: string;
         };
         /**
-         * @description Operador que compara o fato do candidato com o valor da condição. Sobre fato multivalorado, igual a significa pertencer ao conjunto do candidato (ADR-0111, Emenda 1.2).
+         * @description Operador que compara o dado do candidato com o valor da condição. Sobre dado com vários valores, igual a significa pertencer ao conjunto do candidato (ADR-0111, Emenda 1.2).
          *
          *     - `IGUAL`: é igual a
-         *     - `EM`: é um de
+         *     - `ALGUM_DE`: é um de
          *     - `MAIOR_IGUAL`: maior ou igual a
          *     - `MENOR_IGUAL`: menor ou igual a
          *     - `DIFERENTE`: é diferente de
-         *     - `NAO_EM`: não é nenhum de
+         *     - `NENHUM_DE`: não é nenhum de
          * @enum {string}
          */
         readonly OperadorCodigo: OperadorCodigo;
         readonly OrdemDosValoresInput: {
             readonly codigos: readonly string[];
         };
+        readonly OrigemDataFase: {
+            readonly codigo: components["schemas"]["OrigemDataFaseCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `NO_EDITAL`: No edital — A data é fixada no edital: o período é obrigatório.
+         *     - `NA_EXECUCAO`: Na execução do processo — A data não é fixada no edital: a unidade responsável pela fase a define na execução, e o período é opcional.
+         * @enum {string}
+         */
+        readonly OrigemDataFaseCodigo: OrigemDataFaseCodigo;
+        readonly OrigemFato: {
+            readonly codigo: components["schemas"]["OrigemFatoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description Como o valor de um dado do catálogo chega ao sistema: calculado, declarado pelo candidato ou recebido de integração.
+         *
+         *     - `CALCULADO`: Calculado — O valor é calculado pelo sistema ou por uma regra; não é coletado, é resultado.
+         *     - `DECLARADO`: Declarado — O valor é a resposta ou a escolha direta do candidato no formulário.
+         *     - `INTEGRACAO`: Integração — O valor é recebido de uma integração com outro sistema.
+         * @enum {string}
+         */
+        readonly OrigemFatoCodigo: OrigemFatoCodigo;
         readonly PapelDaBanca: {
             readonly codigo: components["schemas"]["PapelDaBancaCodigo"];
             readonly rotulo: string;
@@ -14237,12 +15010,39 @@ export interface components {
                 }[];
             }[];
         };
+        readonly ProgramaDeOferta: {
+            readonly codigo: components["schemas"]["ProgramaDeOfertaCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `REGULAR`: Regular
+         *     - `FORMA_PARA`: Forma Pará
+         *     - `PARFOR`: Parfor
+         *     - `PRONERA`: Pronera
+         *     - `PEPETI`: PEPETI
+         *     - `CONVENIO_OUTRO`: Outro convênio
+         *     - `OUTRO`: Outro programa
+         * @enum {string}
+         */
+        readonly ProgramaDeOfertaCodigo: ProgramaDeOfertaCodigo;
         readonly ProtecaoDoFatoDto: {
             readonly classificacao: string;
             readonly finalidade: string;
             readonly hipoteseLegal: string;
             readonly aprovacao: components["schemas"]["AprovacaoDaProtecaoDto"];
         };
+        readonly QuantidadeDeValores: {
+            readonly codigo: components["schemas"]["QuantidadeDeValoresCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description Quantos valores um dado assume para um mesmo candidato: um só ou vários.
+         *
+         *     - `VALOR_UNICO`: Um valor — O candidato tem um único valor para o dado.
+         *     - `VARIOS_VALORES`: Vários valores — O candidato pode ter mais de um valor para o dado.
+         * @enum {string}
+         */
+        readonly QuantidadeDeValoresCodigo: QuantidadeDeValoresCodigo;
         readonly RecursoAcessibilidadeDto: {
             /** Format: uuid */
             readonly id: string;
@@ -14272,6 +15072,27 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly RegimeDeFuncionamento: {
+            readonly codigo: components["schemas"]["RegimeDeFuncionamentoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `INTENSIVO`: Intensivo
+         *     - `EXTENSIVO`: Extensivo
+         *     - `ALTERNANCIA_PEDAGOGICA`: Alternância pedagógica
+         * @enum {string}
+         */
+        readonly RegimeDeFuncionamentoCodigo: RegimeDeFuncionamentoCodigo;
+        readonly RegimeDeTurno: {
+            readonly codigo: components["schemas"]["RegimeDeTurnoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `REGULAR`: Regular
+         *     - `INTEGRAL`: Integral
+         * @enum {string}
+         */
+        readonly RegimeDeTurnoCodigo: RegimeDeTurnoCodigo;
         readonly RegistrarManifestacaoDaProtecaoRequest: {
             /** @enum {null|string} */
             readonly cadastro: RegistrarManifestacaoDaProtecaoRequestCadastro;
@@ -14295,6 +15116,17 @@ export interface components {
             readonly contribui: null | string;
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoDoPredicadoInput"][])[];
         };
+        readonly RegraRemanejamento: {
+            readonly codigo: components["schemas"]["RegraRemanejamentoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `SEGUE_ORDEM_DE_REMANEJAMENTO`: Segue a ordem de remanejamento
+         *     - `DESTINO_UNICO`: Destino único
+         *     - `CRUZADO`: Cruzado
+         * @enum {string}
+         */
+        readonly RegraRemanejamentoCodigo: RegraRemanejamentoCodigo;
         readonly RegrasDoCampoAvaliadas: {
             readonly visivel: components["schemas"]["TernarioCodigo"];
             readonly obrigatorio: components["schemas"]["TernarioCodigo"];
@@ -14316,8 +15148,20 @@ export interface components {
         readonly RegrasPadraoInput: {
             readonly regras: readonly components["schemas"]["RegraPadraoInput"][];
         };
+        readonly RemanejamentoDasVagasDto: {
+            readonly regra: components["schemas"]["RegraRemanejamento"];
+            readonly destino: null | string;
+            readonly par: null | string;
+            readonly fallback: null | string;
+        };
+        readonly RemanejamentoDasVagasInformado: {
+            readonly regra: null | components["schemas"]["RegraRemanejamentoCodigo"];
+            readonly destino?: null | string;
+            readonly par?: null | string;
+            readonly fallback?: null | string;
+        };
         readonly ResolucaoDoFatoDto: {
-            readonly origem: string;
+            readonly origem: components["schemas"]["OrigemFato"];
             readonly pontoResolucao: string;
             readonly binding: string;
         };
@@ -14377,7 +15221,7 @@ export interface components {
             readonly nome: string;
             readonly textoRascunho: null | string;
             readonly baseLegalRascunho: null | string;
-            readonly formaAceiteRascunho: string;
+            readonly formaAceiteRascunho: components["schemas"]["FormaAceite"];
             readonly revisado: boolean;
             /** Format: date-time */
             readonly revisadoEm: null | string;
@@ -14393,7 +15237,7 @@ export interface components {
             readonly id: string;
             readonly codigo: string;
             readonly nome: string;
-            readonly formaAceiteRascunho: string;
+            readonly formaAceiteRascunho: components["schemas"]["FormaAceite"];
             readonly revisado: boolean;
             /** Format: date-time */
             readonly criadoEm: string;
@@ -14408,7 +15252,7 @@ export interface components {
             readonly numero: number;
             readonly texto: string;
             readonly baseLegal: string;
-            readonly formaAceite: string;
+            readonly formaAceite: components["schemas"]["FormaAceite"];
             readonly hash: string;
             /** Format: date-time */
             readonly promovidaEm: string;
@@ -14541,6 +15385,22 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly TipoDoDado: {
+            readonly codigo: components["schemas"]["TipoDoDadoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description O tipo de um dado do candidato: decide o campo que a pessoa preenche, as comparações que uma regra pode fazer com ele e a forma do valor.
+         *
+         *     - `SIM_OU_NAO`: Sim ou não — Resposta que só pode ser sim ou não.
+         *     - `OPCAO`: Opção — Resposta escolhida entre as opções de uma lista fechada.
+         *     - `NUMERICO`: Número — Número inteiro.
+         *     - `TEXTO`: Texto — Texto livre ou num formato conhecido, como CPF, e-mail ou telefone.
+         *     - `DATA`: Data — Data do calendário.
+         *     - `ENDERECO`: Endereço — Endereço com CEP e cidade.
+         * @enum {string}
+         */
+        readonly TipoDoDadoCodigo: TipoDoDadoCodigo;
         readonly TipoEtapaDto: {
             /** Format: uuid */
             readonly id: string;
@@ -14577,8 +15437,20 @@ export interface components {
             readonly rotulo: string;
             readonly descricao: string;
         };
-        /** @enum {string} */
-        readonly TipoLocalOferta: TipoLocalOferta;
+        readonly TipoLocalOferta: {
+            readonly codigo: components["schemas"]["TipoLocalOfertaCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `CAMPUS_SEDE`: Campus sede
+         *     - `CAMPUS_FORA_DE_SEDE`: Campus fora de sede
+         *     - `CURSO_FORA_DE_SEDE`: Curso fora de sede
+         *     - `POLO_DE_EDUCACAO_A_DISTANCIA`: Polo de educação a distância
+         *     - `CONVENIO_DE_INTERIORIZACAO`: Convênio de interiorização
+         *     - `OUTRO`: Outro
+         * @enum {string}
+         */
+        readonly TipoLocalOfertaCodigo: TipoLocalOfertaCodigo;
         readonly TipoMotivoDeDecisao: {
             readonly codigo: components["schemas"]["TipoMotivoDeDecisaoCodigo"];
             readonly rotulo: string;
@@ -14613,17 +15485,28 @@ export interface components {
         /**
          * @description Como o campo do formulário é apresentado e respondido pelo candidato.
          *
-         *     - `NUMERO`: Número
-         *     - `BOOLEANO`: Sim ou não
-         *     - `SELECAO_UNICA`: Escolha de um valor
-         *     - `SELECAO_MULTIPLA`: Escolha de vários valores
-         *     - `TEXTO`: Texto
-         *     - `DATA`: Data
-         *     - `ENDERECO`: Endereço
-         *     - `MUNICIPIO`: Município
+         *     - `NUMERO`: Número — Campo em que o candidato digita um número inteiro.
+         *     - `SIM_OU_NAO`: Sim ou não — Campo em que o candidato responde sim ou não.
+         *     - `ESCOLHA_UNICA`: Escolha de um valor — Campo em que o candidato escolhe uma opção entre as oferecidas.
+         *     - `ESCOLHA_MULTIPLA`: Escolha de vários valores — Campo em que o candidato escolhe uma ou mais opções entre as oferecidas.
+         *     - `TEXTO`: Texto — Campo em que o candidato digita um texto, conferido pelo formato do dado.
+         *     - `DATA`: Data — Campo em que o candidato informa uma data do calendário.
+         *     - `ENDERECO`: Endereço — Campo de endereço completo, preenchido a partir da busca do CEP.
+         *     - `MUNICIPIO`: Município — Campo em que o candidato escolhe o município entre os da unidade federativa já respondida.
          * @enum {string}
          */
         readonly TipoRenderizacaoCodigo: TipoRenderizacaoCodigo;
+        readonly TurnoOferta: {
+            readonly codigo: components["schemas"]["TurnoOfertaCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `MATUTINO`: Matutino
+         *     - `VESPERTINO`: Vespertino
+         *     - `NOTURNO`: Noturno
+         * @enum {string}
+         */
+        readonly TurnoOfertaCodigo: TurnoOfertaCodigo;
         readonly UnidadeOfertanteDto: {
             /** Format: uuid */
             readonly origemId: string;
@@ -14666,7 +15549,7 @@ export interface components {
             readonly orientacao?: null | string;
         };
         readonly ValoresDoFatoDto: {
-            readonly fonte: null | string;
+            readonly fonte: null | components["schemas"]["FonteValoresFato"];
             readonly declarados: readonly components["schemas"]["FatoValorDominioDto"][];
         };
         readonly ValorSelecionavel: {
@@ -14881,6 +15764,22 @@ export enum PathsApiConfiguracaoAdminTiposProcessoGetParametersQueryDirection {
     next = "next",
     prev = "prev"
 }
+export enum AbrangenciaCodigo {
+    NACIONAL = "NACIONAL",
+    ESTADUAL = "ESTADUAL",
+    MUNICIPAL = "MUNICIPAL",
+    INSTITUCIONAL = "INSTITUCIONAL"
+}
+export enum AcaoQuandoIndeferidoCodigo {
+    RECLASSIFICA_AC = "RECLASSIFICA_AC",
+    RECLASSIFICA_CONFORME_EDITAL = "RECLASSIFICA_CONFORME_EDITAL"
+}
+export enum ComposicaoVagasCodigo {
+    RESTANTE_DAS_VAGAS_OFERTADAS = "RESTANTE_DAS_VAGAS_OFERTADAS",
+    DENTRO_DA_RESERVA_LEGAL = "DENTRO_DA_RESERVA_LEGAL",
+    RETIRADA_DE_OUTRA_MODALIDADE = "RETIRADA_DE_OUTRA_MODALIDADE",
+    SUPLEMENTAR_AO_TOTAL = "SUPLEMENTAR_AO_TOTAL"
+}
 export enum DecidirProtecaoDoCatalogoRequestCadastro {
     TIPO_DOCUMENTO = "TIPO_DOCUMENTO",
     FATO = "FATO"
@@ -14896,21 +15795,59 @@ export enum EstadoFatoCodigo {
     RESOLVIDO = "RESOLVIDO",
     NAO_INFORMADO = "NAO_INFORMADO"
 }
+export enum FinalidadeFormularioCodigo {
+    INSCRICAO = "INSCRICAO",
+    ISENCAO_TAXA = "ISENCAO_TAXA",
+    HABILITACAO = "HABILITACAO"
+}
+export enum FonteValoresFatoCodigo {
+    CATALOGO = "CATALOGO",
+    OPCOES_DO_PROCESSO = "OPCOES_DO_PROCESSO",
+    MODALIDADE = "MODALIDADE",
+    MUNICIPIOS_DO_FADA = "MUNICIPIOS_DO_FADA",
+    UNIDADES_FEDERATIVAS = "UNIDADES_FEDERATIVAS",
+    MUNICIPIOS = "MUNICIPIOS",
+    TIPOS_DE_DEFICIENCIA = "TIPOS_DE_DEFICIENCIA"
+}
+export enum FormaAceiteCodigo {
+    A_DEFINIR = "A_DEFINIR",
+    REGISTRO_SEM_ENDERECO_IP = "REGISTRO_SEM_ENDERECO_IP",
+    REGISTRO_COM_ENDERECO_IP = "REGISTRO_COM_ENDERECO_IP"
+}
+export enum FormaDoConceitoCodigo {
+    NUMERICO = "NUMERICO",
+    POR_OPCOES = "POR_OPCOES"
+}
+export enum FormatoPedagogicoCodigo {
+    PRESENCIAL = "PRESENCIAL",
+    SEMIPRESENCIAL = "SEMIPRESENCIAL",
+    EAD = "EAD"
+}
 export enum ItemParaSolicitarRequestCadastro {
     TIPO_DOCUMENTO = "TIPO_DOCUMENTO",
     FATO = "FATO"
 }
-export enum NaturezaConceitoCodigo {
-    NUMERICO = "NUMERICO",
-    CATEGORICO = "CATEGORICO"
+export enum NaturezaLegalCodigo {
+    COTA_RESERVADA = "COTA_RESERVADA",
+    AMPLA = "AMPLA",
+    ACAO_AFIRMATIVA = "ACAO_AFIRMATIVA"
 }
 export enum OperadorCodigo {
     IGUAL = "IGUAL",
-    EM = "EM",
+    ALGUM_DE = "ALGUM_DE",
     MAIOR_IGUAL = "MAIOR_IGUAL",
     MENOR_IGUAL = "MENOR_IGUAL",
     DIFERENTE = "DIFERENTE",
-    NAO_EM = "NAO_EM"
+    NENHUM_DE = "NENHUM_DE"
+}
+export enum OrigemDataFaseCodigo {
+    NO_EDITAL = "NO_EDITAL",
+    NA_EXECUCAO = "NA_EXECUCAO"
+}
+export enum OrigemFatoCodigo {
+    CALCULADO = "CALCULADO",
+    DECLARADO = "DECLARADO",
+    INTEGRACAO = "INTEGRACAO"
 }
 export enum PapelDaBancaCodigo {
     AVALIA_O_MERITO = "AVALIA_O_MERITO",
@@ -14918,6 +15855,28 @@ export enum PapelDaBancaCodigo {
     IMPORTA_AS_NOTAS_DO_INEP = "IMPORTA_AS_NOTAS_DO_INEP",
     IMPORTA_CANDIDATOS = "IMPORTA_CANDIDATOS",
     JULGA_A_SEGUNDA_INSTANCIA = "JULGA_A_SEGUNDA_INSTANCIA"
+}
+export enum ProgramaDeOfertaCodigo {
+    REGULAR = "REGULAR",
+    FORMA_PARA = "FORMA_PARA",
+    PARFOR = "PARFOR",
+    PRONERA = "PRONERA",
+    PEPETI = "PEPETI",
+    CONVENIO_OUTRO = "CONVENIO_OUTRO",
+    OUTRO = "OUTRO"
+}
+export enum QuantidadeDeValoresCodigo {
+    VALOR_UNICO = "VALOR_UNICO",
+    VARIOS_VALORES = "VARIOS_VALORES"
+}
+export enum RegimeDeFuncionamentoCodigo {
+    INTENSIVO = "INTENSIVO",
+    EXTENSIVO = "EXTENSIVO",
+    ALTERNANCIA_PEDAGOGICA = "ALTERNANCIA_PEDAGOGICA"
+}
+export enum RegimeDeTurnoCodigo {
+    REGULAR = "REGULAR",
+    INTEGRAL = "INTEGRAL"
 }
 export enum RegistrarManifestacaoDaProtecaoRequestCadastro {
     TIPO_DOCUMENTO = "TIPO_DOCUMENTO",
@@ -14927,6 +15886,11 @@ export enum RegistrarManifestacaoDaProtecaoRequestParecer {
     ADEQUADA = "ADEQUADA",
     RECOMENDA_AJUSTE = "RECOMENDA_AJUSTE",
     INADEQUADA = "INADEQUADA"
+}
+export enum RegraRemanejamentoCodigo {
+    SEGUE_ORDEM_DE_REMANEJAMENTO = "SEGUE_ORDEM_DE_REMANEJAMENTO",
+    DESTINO_UNICO = "DESTINO_UNICO",
+    CRUZADO = "CRUZADO"
 }
 export enum TernarioCodigo {
     INDETERMINADO = "INDETERMINADO",
@@ -14945,6 +15909,14 @@ export enum TipoDeBancaCodigo {
     BANCA_IMPORTACAO_CANDIDATOS = "BANCA_IMPORTACAO_CANDIDATOS",
     BANCA_ANALISE_RECURSOS_SEGUNDA_INSTANCIA = "BANCA_ANALISE_RECURSOS_SEGUNDA_INSTANCIA"
 }
+export enum TipoDoDadoCodigo {
+    SIM_OU_NAO = "SIM_OU_NAO",
+    OPCAO = "OPCAO",
+    NUMERICO = "NUMERICO",
+    TEXTO = "TEXTO",
+    DATA = "DATA",
+    ENDERECO = "ENDERECO"
+}
 export enum TipoInstrumentoNormativoCodigo {
     LEI = "LEI",
     DECRETO = "DECRETO",
@@ -14954,14 +15926,13 @@ export enum TipoInstrumentoNormativoCodigo {
     PARECER = "PARECER",
     EDITAL = "EDITAL"
 }
-export enum TipoLocalOferta {
-    nenhum = "nenhum",
-    campusSede = "campusSede",
-    campusForaDeSede = "campusForaDeSede",
-    cursoForaDeSede = "cursoForaDeSede",
-    poloEad = "poloEad",
-    convenioInteriorizacao = "convenioInteriorizacao",
-    outro = "outro"
+export enum TipoLocalOfertaCodigo {
+    CAMPUS_SEDE = "CAMPUS_SEDE",
+    CAMPUS_FORA_DE_SEDE = "CAMPUS_FORA_DE_SEDE",
+    CURSO_FORA_DE_SEDE = "CURSO_FORA_DE_SEDE",
+    POLO_DE_EDUCACAO_A_DISTANCIA = "POLO_DE_EDUCACAO_A_DISTANCIA",
+    CONVENIO_DE_INTERIORIZACAO = "CONVENIO_DE_INTERIORIZACAO",
+    OUTRO = "OUTRO"
 }
 export enum TipoMotivoDeDecisaoCodigo {
     ISENCAO_DA_TAXA = "ISENCAO_DA_TAXA",
@@ -14975,11 +15946,16 @@ export enum TipoMotivoDeDecisaoCodigo {
 }
 export enum TipoRenderizacaoCodigo {
     NUMERO = "NUMERO",
-    BOOLEANO = "BOOLEANO",
-    SELECAO_UNICA = "SELECAO_UNICA",
-    SELECAO_MULTIPLA = "SELECAO_MULTIPLA",
+    SIM_OU_NAO = "SIM_OU_NAO",
+    ESCOLHA_UNICA = "ESCOLHA_UNICA",
+    ESCOLHA_MULTIPLA = "ESCOLHA_MULTIPLA",
     TEXTO = "TEXTO",
     DATA = "DATA",
     ENDERECO = "ENDERECO",
     MUNICIPIO = "MUNICIPIO"
+}
+export enum TurnoOfertaCodigo {
+    MATUTINO = "MATUTINO",
+    VESPERTINO = "VESPERTINO",
+    NOTURNO = "NOTURNO"
 }

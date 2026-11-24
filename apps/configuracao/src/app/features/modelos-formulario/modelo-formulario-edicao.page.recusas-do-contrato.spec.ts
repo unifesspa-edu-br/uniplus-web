@@ -34,7 +34,7 @@ const umCampo = (fatoCodigo: string, ordem: number, etapaCodigo: string | null):
   ordem,
   apresentacao: {
     rotulo: `Campo ${fatoCodigo}`,
-    tipoRenderizacao: TipoRenderizacaoCodigo.BOOLEANO,
+    tipoRenderizacao: TipoRenderizacaoCodigo.SIM_OU_NAO,
     ajuda: null,
     pedirConfirmacao: false,
   },

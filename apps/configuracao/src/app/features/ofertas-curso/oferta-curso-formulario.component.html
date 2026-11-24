@@ -104,7 +104,12 @@
       </section>
 
       <section aria-labelledby="cfg-oferta-regime">
-        <h3 id="cfg-oferta-regime" class="form-section__title">Regime de oferta</h3>
+        <h3 id="cfg-oferta-regime" class="form-section__title" tabindex="-1">Regime de oferta</h3>
+        <ui-falha-de-leitura
+          titulo="Opções indisponíveis"
+          variante="warning"
+          [leitura]="leituraDosVocabularios"
+        />
         <div class="form-grid">
           <label class="field" [class.is-error]="erroDoCampo('programaDeOferta')">
             <span class="field__label is-required">Programa de oferta</span>
@@ -115,8 +120,8 @@
               [attr.aria-invalid]="erroDoCampo('programaDeOferta') ? 'true' : null"
               [attr.aria-describedby]="descritoPor('programaDeOferta')"
             >
-              @for (opcao of programas; track opcao.value) {
-                <option [value]="opcao.value">{{ opcao.label }}</option>
+              @for (opcao of programas(); track opcao.codigo) {
+                <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
               }
             </select>
             @if (erroDoCampo('programaDeOferta')) {
@@ -134,8 +139,8 @@
               [attr.aria-invalid]="erroDoCampo('formatoPedagogico') ? 'true' : null"
               [attr.aria-describedby]="descritoPor('formatoPedagogico')"
             >
-              @for (opcao of formatos; track opcao.value) {
-                <option [value]="opcao.value">{{ opcao.label }}</option>
+              @for (opcao of formatos(); track opcao.codigo) {
+                <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
               }
             </select>
             @if (erroDoCampo('formatoPedagogico')) {
@@ -153,8 +158,8 @@
               [attr.aria-invalid]="erroDoCampo('regimeDeFuncionamento') ? 'true' : null"
               [attr.aria-describedby]="descritoPor('regimeDeFuncionamento')"
             >
-              @for (opcao of regimesDeFuncionamento; track opcao.value) {
-                <option [value]="opcao.value">{{ opcao.label }}</option>
+              @for (opcao of regimesDeFuncionamento(); track opcao.codigo) {
+                <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
               }
             </select>
             @if (erroDoCampo('regimeDeFuncionamento')) {
@@ -172,14 +177,10 @@
               [attr.aria-invalid]="erroDoCampo('regimeDeTurno') ? 'true' : null"
               [attr.aria-describedby]="descritoPor('regimeDeTurno')"
             >
-              @if (regras().regimeNaoReconhecido; as token) {
-                <option [value]="token">{{ token }} — não reconhecido por esta versão</option>
-              }
-              @for (opcao of regimesDeTurno; track opcao.value) {
-                <option [value]="opcao.value">{{ opcao.label }}</option>
+              @for (opcao of regimesDeTurno(); track opcao.codigo) {
+                <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
               }
             </select>
-            <span class="field__hint">{{ regras().regimeDescricao }}</span>
             @if (erroDoCampo('regimeDeTurno')) {
               <span class="field__error" [id]="idDoErro('regimeDeTurno')">{{
                 erroDoCampo('regimeDeTurno')
@@ -190,18 +191,18 @@
           <fieldset class="field cfg-oferta-turnos" [class.is-error]="erroDosTurnos">
             <legend class="field__label is-required">Turnos</legend>
             <div class="cfg-oferta-turnos__opcoes">
-              @for (opcao of regras().opcoesDeTurno; track opcao.value) {
+              @for (opcao of turnos(); track opcao.codigo) {
                 <label class="checkbox">
                   <input
                     type="checkbox"
-                    [value]="opcao.value"
-                    [checked]="regras().turnosMarcados.includes(opcao.value)"
+                    [value]="opcao.codigo"
+                    [checked]="regras().turnosMarcados.includes(opcao.codigo)"
                     [attr.aria-invalid]="erroDosTurnos ? 'true' : null"
                     [attr.aria-describedby]="descritoPor('turnos', 'cfg-oferta-turnos-hint')"
-                    (change)="marcarTurno(opcao.value)"
+                    (change)="marcarTurno(opcao.codigo)"
                   />
                   <span class="checkbox__box" aria-hidden="true"></span>
-                  <span>{{ opcao.label }}</span>
+                  <span>{{ opcao.rotulo }}</span>
                 </label>
               }
             </div>
@@ -279,9 +280,7 @@
               [attr.aria-invalid]="erroDoCampo('atoAutorizacaoMec') ? 'true' : null"
               [attr.aria-describedby]="descritoPor('atoAutorizacaoMec')"
             />
-            <span class="field__hint">
-              Independente do programa — vale para qualquer oferta, inclusive Regular.
-            </span>
+            <span class="field__hint"> Independente do programa — vale para qualquer oferta. </span>
             @if (erroDoCampo('atoAutorizacaoMec')) {
               <span class="field__error" [id]="idDoErro('atoAutorizacaoMec')">{{
                 erroDoCampo('atoAutorizacaoMec')

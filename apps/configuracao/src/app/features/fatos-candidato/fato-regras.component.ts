@@ -4,6 +4,7 @@ import {
   EditorDeCondicoesComponent,
   FalhaDeLeituraComponent,
 } from '@uniplus/shared-ui/components';
+import { TipoDoDadoCodigo } from '@uniplus/shared-data/configuracao';
 import { EdicaoDoFato } from './edicao-do-fato';
 
 /** As regras padrão do derivado: o valor que cada uma acrescenta e as condições em que vale. */
@@ -17,6 +18,7 @@ import { EdicaoDoFato } from './edicao-do-fato';
 export class FatoRegrasComponent {
   private readonly edicao = inject(EdicaoDoFato);
 
+  protected readonly tiposDoDado = TipoDoDadoCodigo;
   protected readonly leitura = this.edicao.leitura;
   protected readonly fato = this.leitura.fato;
   protected readonly bloqueado = this.edicao.bloqueado;

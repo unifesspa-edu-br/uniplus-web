@@ -11,7 +11,7 @@ const item: ItemDoFormulario<number> = {
   ordem: 1,
   apresentacao: {
     rotulo: 'Estudou em escola pública?',
-    tipoRenderizacao: 'BOOLEANO',
+    tipoRenderizacao: 'SIM_OU_NAO',
     pedirConfirmacao: false,
   },
   regras: {
@@ -115,7 +115,9 @@ describe('conteudoParaOModelo', () => {
   });
 
   it('põe o tipo de renderização no código do contrato', () => {
-    expect(gravado.itens?.[0].apresentacao?.tipoRenderizacao).toBe(TipoRenderizacaoCodigo.BOOLEANO);
+    expect(gravado.itens?.[0].apresentacao?.tipoRenderizacao).toBe(
+      TipoRenderizacaoCodigo.SIM_OU_NAO,
+    );
   });
 
   it('deixa nulo o código que o contrato não conhece, para a API recusar', () => {
@@ -146,7 +148,7 @@ describe('conteudoDoModelo', () => {
   const [nome, escolaPublica] = lido.itens ?? [];
 
   it('troca o tipo de renderização e o operador pelo texto do código', () => {
-    expect(escolaPublica.apresentacao.tipoRenderizacao).toBe('BOOLEANO');
+    expect(escolaPublica.apresentacao.tipoRenderizacao).toBe('SIM_OU_NAO');
     expect(escolaPublica.regras.impedimento?.quando?.[0][0].operador).toBe('IGUAL');
   });
 

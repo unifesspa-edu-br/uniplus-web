@@ -8,6 +8,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ModelosFormularioPage } from './modelos-formulario.page';
+import { modelo } from './modelos-formulario.escritas.testing';
 
 const BASE = 'http://localhost:5000';
 const URL = `${BASE}/api/configuracao/admin/modelos-formulario`;
@@ -45,7 +46,7 @@ describe('ModelosFormularioPage — causa geral na recusa da criação', () => {
     controller = TestBed.inject(HttpTestingController);
     appRef = TestBed.inject(ApplicationRef);
     fixture.detectChanges();
-    controller.expectOne((r) => r.url === URL).flush([]);
+    controller.expectOne((r) => r.url === URL).flush([modelo]);
     controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-processo`).flush([]);
     await propagar();
   });

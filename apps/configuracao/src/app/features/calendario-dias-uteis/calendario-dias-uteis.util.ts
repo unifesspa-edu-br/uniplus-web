@@ -1,3 +1,4 @@
+import { AbrangenciaCodigo } from '@uniplus/shared-data/configuracao';
 import {
   AbstractControl,
   FormControl,
@@ -29,7 +30,7 @@ export interface DiaNaoUtilFormGroup {
   municipioNome: FormControl<string | null>;
   municipioUf: FormControl<string | null>;
   buscaMunicipio: FormControl<string>;
-  abrangencia: FormControl<string>;
+  abrangencia: FormControl<AbrangenciaCodigo | null>;
   data: FormControl<string>;
   descricao: FormControl<string>;
 }
@@ -122,7 +123,7 @@ export function textoNormalizado(maxLength: number): ValidatorFn {
  */
 export function snapshotMunicipalCoerente(control: AbstractControl): ValidationErrors | null {
   const grupo = control as FormGroup<DiaNaoUtilFormGroup>;
-  if (grupo.controls.abrangencia.value !== 'MUNICIPAL') {
+  if (grupo.controls.abrangencia.value !== AbrangenciaCodigo.MUNICIPAL) {
     return null;
   }
 

@@ -17,6 +17,8 @@ import {
   clicar,
   confirmarNoDialogo as confirmar,
   detalheDoFato,
+  dominioTexto,
+  valorUnico,
   detalheDoLaudo,
   dialogoDaDecisao as dialogo,
   digitar as digitarNoCampo,
@@ -104,8 +106,8 @@ describe('ProtecaoDoCatalogoPage — recomendar ajuste e reprovar', () => {
         detalheDoFato({
           classificacaoProtecao: 'SENSIVEL',
           fato: {
-            dominio: 'TEXTO',
-            cardinalidade: 'ESCALAR',
+            dominio: dominioTexto,
+            cardinalidade: valorUnico,
             semeadoPeloSistema: false,
             componenteExibicao: null,
             valores: [],

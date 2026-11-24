@@ -1,13 +1,9 @@
-import {
-  ABRANGENCIAS,
-  DiaNaoUtilDto,
-  UNIDADES_FEDERATIVAS,
-} from '@uniplus/shared-data/configuracao';
+import { DiaNaoUtilDto, UNIDADES_FEDERATIVAS } from '@uniplus/shared-data/configuracao';
 import { formatIsoDateLong } from '@uniplus/shared-data/utils';
 import type { CelulaCalendarioMensal } from './calendario-mensal.util';
 
-export function abrangenciaLegivel(abrangencia: string): string {
-  return ABRANGENCIAS.find((candidata) => candidata.value === abrangencia)?.label ?? abrangencia;
+export function abrangenciaLegivel(abrangencia: DiaNaoUtilDto['abrangencia']): string {
+  return abrangencia.rotulo;
 }
 
 /**

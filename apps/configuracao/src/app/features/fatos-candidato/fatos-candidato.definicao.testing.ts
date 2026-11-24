@@ -1,13 +1,19 @@
 import { type FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 import { type Pagina, problema, sucesso, urlDoFato } from './fatos-candidato.testing';
-import { comDefinicao, comResolucao, corRaca } from './fatos-candidato.fixtures';
+import {
+  comDefinicao,
+  comResolucao,
+  corRaca,
+  origemCalculada,
+  tipoSimOuNao,
+} from './fatos-candidato.fixtures';
 
 export const DEFINICAO = '#cfg-fato-definicao';
 export const campo = (nome: string): string => `${DEFINICAO} [formcontrolname="${nome}"]`;
 export const derivadoBooleano: FatoCandidatoDto = {
   ...comResolucao(
     comDefinicao(corRaca, {
-      dominio: 'BOOLEANO',
+      dominio: tipoSimOuNao,
       valores: { fonte: null, declarados: [] },
       protecao: {
         ...corRaca.definicao.protecao,
@@ -15,7 +21,7 @@ export const derivadoBooleano: FatoCandidatoDto = {
         hipoteseLegal: 'CUMPRIMENTO_OBRIGACAO_LEGAL',
       },
     }),
-    { origem: 'DERIVADO', binding: 'REGRA_DERIVACAO:PERFIL' },
+    { origem: origemCalculada, binding: 'REGRA_DERIVACAO:PERFIL' },
   ),
   codigo: 'PERFIL',
 };

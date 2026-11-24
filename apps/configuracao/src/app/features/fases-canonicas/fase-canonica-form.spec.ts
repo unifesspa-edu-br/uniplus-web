@@ -1,3 +1,4 @@
+import { ORIGENS_DE_DATA } from './origens-de-data.testing';
 import { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import {
@@ -22,7 +23,7 @@ const fase: FaseCanonicaDto = {
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
-  origemData: 'NO_EDITAL',
+  origemData: ORIGENS_DE_DATA.NO_EDITAL,
   criadoEm: '',
 };
 

@@ -1,3 +1,5 @@
+import { sentidoDesfavoravel } from './vocabularios.testing';
+import { SentidoDoMotivoCodigo } from './schema';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -32,7 +34,7 @@ const motivo: MotivoDeDecisaoDto = {
   codigo: 'SEM_RESULTADO_NO_ENEM',
   descricao: 'Sem resultado no ENEM informado.',
   subclassificacao: null,
-  sentido: 'DESFAVORAVEL',
+  sentido: sentidoDesfavoravel,
   ativo: true,
 };
 
@@ -41,7 +43,7 @@ const criacao: CriarMotivoDeDecisaoCommand = {
   codigo: 'SEM_RESULTADO_NO_ENEM',
   descricao: 'Sem resultado no ENEM informado.',
   subclassificacao: null,
-  sentido: 'DESFAVORAVEL',
+  sentido: SentidoDoMotivoCodigo.DESFAVORAVEL,
 };
 
 describe('MotivosDeDecisaoApi', () => {

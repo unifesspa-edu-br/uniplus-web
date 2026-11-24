@@ -1,10 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { FORMAS_ACEITE, TermoConsentimentoDto } from '@uniplus/shared-data/configuracao';
-import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import { TermoConsentimentoDto } from '@uniplus/shared-data/configuracao';
+import {
+  acompanharLeitura,
+  AlertComponent,
+  FalhaDeLeituraDoCampoComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
 import { formatarDataBr } from '@uniplus/shared-utils';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
+import { carregarVocabulario } from '../../shared/vocabulario-de-configuracao';
 import { AcaoTermo, RascunhoForm, TEXTO_MAX } from './termo-consentimento-form';
 
 const MOTIVO_DA_LEITURA_DEFASADA =
@@ -13,7 +19,7 @@ const MOTIVO_DA_LEITURA_DEFASADA =
 @Component({
   selector: 'cfg-termo-consentimento-detalhe',
   standalone: true,
-  imports: [ReactiveFormsModule, AlertComponent, SpinnerComponent],
+  imports: [ReactiveFormsModule, AlertComponent, FalhaDeLeituraDoCampoComponent, SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './termo-consentimento-detalhe.component.html',
 })
@@ -30,7 +36,16 @@ export class TermoConsentimentoDetalheComponent {
   readonly revisar = output<void>();
   readonly promover = output<void>();
   readonly remover = output<void>();
-  protected readonly formasAceite = FORMAS_ACEITE;
+  protected readonly formasAceite = carregarVocabulario('formas-aceite');
+  protected readonly leituraDasFormas = acompanharLeitura({
+    assunto: 'formas de aceite',
+    falha: computed(() =>
+      this.formasAceite.falhou() ? 'Não foi possível carregar as opções.' : null,
+    ),
+    pendente: this.formasAceite.carregando,
+    recarregar: () => this.formasAceite.recarregar(),
+    destino: () => document.getElementById('termo-rascunho-formaAceite'),
+  });
   protected readonly textoMax = TEXTO_MAX;
   protected readonly statusLabel = computed(() => {
     const termo = this.termo();
@@ -56,9 +71,6 @@ export class TermoConsentimentoDetalheComponent {
   protected formatarData(value: string): string {
     return formatarDataBr(value, 'datetime');
   }
-  protected formaAceiteLabel(token: string): string {
-    return this.formasAceite.find((o) => o.value === token)?.label ?? token;
-  }
   protected hashTruncado(hash: string): string {
     return hash.length > 12 ? `${hash.slice(0, 12)}…` : hash;
   }
@@ -71,7 +83,7 @@ export class TermoConsentimentoDetalheComponent {
   });
 
   protected aoEnviar(): void {
-    if (this.processando()) return;
+    if (this.processando() || this.leituraDasFormas.pendente()) return;
     this.salvar.emit();
     if (this.form().invalid) this.foco.focarPrimeiroInvalido();
   }

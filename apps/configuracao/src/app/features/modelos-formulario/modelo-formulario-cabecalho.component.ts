@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { FINALIDADES, TagComponent } from '@uniplus/shared-ui/components';
+import { TagComponent } from '@uniplus/shared-ui/components';
 import type { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.store';
 
 /** O título do modelo aberto: nome, código, finalidade e situação. */
@@ -12,8 +12,4 @@ import type { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.sto
 })
 export class ModeloFormularioCabecalhoComponent {
   readonly modelo = input.required<ReturnType<ModeloFormularioEdicaoStore['modelo']>>();
-
-  rotuloDaFinalidade(valor: string): string {
-    return FINALIDADES.find((f) => f.valor === valor)?.rotulo ?? valor;
-  }
 }
