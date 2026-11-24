@@ -17,13 +17,13 @@ const QUEM_DECIDE =
 const ITEM = {
   concessaoId: 'c1',
   beneficiarioNome: 'Fernanda Drumond',
-  escopoTipo: 'unidade',
+  escopoTipo: 'UNIDADE',
   unidadeId: UNIDADE_CEPS,
   validaAte: null,
   versaoAtual: 1,
   acrescimo: ['selecao:processos:aprovar'],
   exigeProtecaoDeDados: true,
-  situacao: 'aguardando_protecao_de_dados',
+  situacao: 'AGUARDANDO_PROTECAO_DE_DADOS',
   ehDoLeitor: false,
 };
 

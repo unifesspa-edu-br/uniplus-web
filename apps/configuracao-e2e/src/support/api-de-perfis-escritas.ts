@@ -57,7 +57,7 @@ const ENVIO_DO_DOCUMENTO = {
   perfilId: '01960000-0000-7000-0000-0000000000a2',
   versaoId: '01960000-0000-7000-0000-0000000000b2',
   documentoId: '01960000-0000-7000-0000-0000000000c2',
-  situacao: 'aguardando_envio',
+  situacao: 'AGUARDANDO_ENVIO',
   urlDeEnvio: URL_DE_ENVIO,
   tipoDeMidia: 'application/pdf',
   expiraEm: '2099-01-01T00:00:00Z',

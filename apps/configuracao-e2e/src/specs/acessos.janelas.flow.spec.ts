@@ -42,7 +42,7 @@ async function abrir(
   return chamadas;
 }
 
-test.describe('Acessos — fila de janelas de migração', () => {
+test.describe('Acessos — fila de revisões das concessões', () => {
   test('Diogo vê a janela, o prazo, o que decidir e o link para a janela do perfil', async ({
     page,
   }) => {
@@ -54,18 +54,18 @@ test.describe('Acessos — fila de janelas de migração', () => {
     );
 
     await expect(
-      page.getByRole('heading', { name: 'Janelas de migração na gestão de acessos', level: 1 }),
+      page.getByRole('heading', { name: 'Revisões das concessões na gestão de acessos', level: 1 }),
     ).toBeVisible();
     const janela = page.getByRole('link', { name: 'Operador de inscrições' });
     await expect(janela).toHaveAttribute('href', `/acessos/perfis/${PERFIL_ID}/janela`);
     await expect(page.getByText('· versão 3')).toBeVisible();
-    await expect(page.getByText('Lote ainda não enviado')).toBeVisible();
+    await expect(page.getByText('Decisões ainda não enviadas')).toBeVisible();
     await expect(page.getByText('2 concessões')).toBeVisible();
     expect(chamadas).toHaveLength(1);
     expect(chamadas[0]).toMatchObject({
       metodo: 'GET',
       caminho: '/api/autorizacao/revisoes-de-concessoes',
-      consulta: '?etapa=gestao_de_acessos',
+      consulta: '?etapa=GESTAO_DE_ACESSOS',
     });
   });
 
@@ -77,9 +77,9 @@ test.describe('Acessos — fila de janelas de migração', () => {
       [{ status: 200, corpo: [{ ...ITEM, decisoesEnviadas: true, quantidadeADecidir: 1 }] }],
     );
 
-    await expect(page.getByText('Lote enviado')).toBeVisible();
+    await expect(page.getByText('Decisões enviadas')).toBeVisible();
     await expect(page.getByText('1 concessão', { exact: true })).toBeVisible();
-    expect(chamadas[0]?.consulta).toBe('?etapa=protecao_de_dados');
+    expect(chamadas[0]?.consulta).toBe('?etapa=PROTECAO_DE_DADOS');
   });
 
   test('fila vazia diz que nenhuma janela aguarda a decisão', async ({ page }) => {
@@ -90,7 +90,9 @@ test.describe('Acessos — fila de janelas de migração', () => {
       [{ status: 200, corpo: [] }],
     );
 
-    await expect(page.getByText('Nenhuma janela de migração aguarda a sua decisão.')).toBeVisible();
+    await expect(
+      page.getByText('Nenhuma revisão das concessões do perfil aguarda a sua decisão.'),
+    ).toBeVisible();
     await expect(page.getByRole('link', { name: 'Operador de inscrições' })).toHaveCount(0);
   });
 
@@ -140,8 +142,12 @@ test.describe('Acessos — fila de janelas de migração', () => {
     );
     const menu = page.getByRole('navigation', { name: 'Navegação principal' });
 
-    await expect(menu.getByRole('link', { name: 'Janelas na gestão de acessos' })).toBeVisible();
-    await expect(menu.getByRole('link', { name: 'Janelas na proteção de dados' })).toHaveCount(0);
+    await expect(
+      menu.getByRole('link', { name: 'Revisões das concessões na gestão de acessos' }),
+    ).toBeVisible();
+    await expect(
+      menu.getByRole('link', { name: 'Revisões das concessões na proteção de dados' }),
+    ).toHaveCount(0);
   });
 
   test('o menu oferece a quem só aprova pela proteção de dados apenas a janela dela', async ({
@@ -155,8 +161,12 @@ test.describe('Acessos — fila de janelas de migração', () => {
     );
     const menu = page.getByRole('navigation', { name: 'Navegação principal' });
 
-    await expect(menu.getByRole('link', { name: 'Janelas na proteção de dados' })).toBeVisible();
-    await expect(menu.getByRole('link', { name: 'Janelas na gestão de acessos' })).toHaveCount(0);
+    await expect(
+      menu.getByRole('link', { name: 'Revisões das concessões na proteção de dados' }),
+    ).toBeVisible();
+    await expect(
+      menu.getByRole('link', { name: 'Revisões das concessões na gestão de acessos' }),
+    ).toHaveCount(0);
   });
 
   test('quem só aprova pela proteção de dados é levada ao acesso negado na fila da gestão de acessos', async ({

@@ -77,7 +77,7 @@ test.describe('Acessos — providências sobre concessões', () => {
     await expect(
       page.getByRole('heading', { name: 'Providências sobre concessões', level: 1 }),
     ).toBeVisible();
-    await expect(page.getByLabel('Situação')).toHaveValue('aberta');
+    await expect(page.getByLabel('Situação')).toHaveValue('ABERTA');
     await expect(page.locator('tr[data-providencia-id]')).toHaveCount(1);
     await semViolacoes(page);
   });
@@ -86,7 +86,7 @@ test.describe('Acessos — providências sobre concessões', () => {
     page,
   }) => {
     const escritas = await abrir(page, PERMISSOES_DO_DIOGO_ADMINISTRA_CONCESSOES, DETALHE, {
-      detalhe: [providencia(), providencia({ situacao: 'respondida' })],
+      detalhe: [providencia(), providencia({ situacao: 'RESPONDIDA' })],
       escritas: [
         { status: 409, corpo: CONFLITO_RETENTAVEL },
         { status: 200, corpo: providencia() },
@@ -106,7 +106,7 @@ test.describe('Acessos — providências sobre concessões', () => {
 
   test('o atendimento pede o e-mail do beneficiário e revoga a concessão', async ({ page }) => {
     const escritas = await abrir(page, PERMISSOES_DO_DIOGO_ADMINISTRA_CONCESSOES, DETALHE, {
-      detalhe: [providencia(), providencia({ situacao: 'atendida' })],
+      detalhe: [providencia(), providencia({ situacao: 'ATENDIDA' })],
     });
     await page.getByRole('button', { name: 'Atender e revogar a concessão' }).click();
     const dialogo = page.getByRole('dialog', { name: 'Revogar a concessão' });
@@ -128,8 +128,8 @@ test.describe('Acessos — providências sobre concessões', () => {
     await abrir(page, PERMISSOES_DO_DIOGO_ADMINISTRA_CONCESSOES, DETALHE, {
       detalhe: [
         providencia({
-          situacao: 'prejudicada',
-          encerramentoDaConcessao: { causa: 'revogada', em: '2026-11-11T14:00:00Z' },
+          situacao: 'PREJUDICADA',
+          encerramentoDaConcessao: { causa: 'REVOGADA', em: '2026-11-11T14:00:00Z' },
         }),
       ],
     });

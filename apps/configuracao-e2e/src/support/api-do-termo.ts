@@ -19,7 +19,7 @@ const PERFIS_PARA_PEDIDO = [
     id: PERFIL_SENSIVEL_ID,
     nome: 'Analista de documentos',
     descricao: 'Analisa os documentos pessoais do processo.',
-    escopo: 'unidade',
+    escopo: 'UNIDADE',
     exigeAprovacaoDeProtecaoDeDados: true,
     governanca: null,
   },
@@ -89,7 +89,7 @@ export function pedidoComTermo(opcoes: OpcoesDoPedido) {
   return (contaId: string) => ({
     ...pedidoSeed({
       id: PEDIDO_ID,
-      situacao: opcoes.situacao ?? 'aguardando_beneficiario',
+      situacao: opcoes.situacao ?? 'AGUARDANDO_BENEFICIARIO',
       etapaAtual: null,
       ...partesDoPedido(opcoes, contaId),
     }),

@@ -159,7 +159,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
 
     await page.getByRole('link', { name: 'Histórico de pedidos' }).click();
     await expect(page).toHaveURL(/\/acessos\/historico$/);
-    await page.getByLabel('Situação').selectOption('recusado');
+    await page.getByLabel('Situação').selectOption('RECUSADO');
     await page.getByRole('link', { name: /Visualizar o pedido de Analista de documentos/ }).click();
     await expect(page).toHaveURL(new RegExp(`/acessos/pedidos/${PEDIDO_ID}(\\?.*)?$`));
     await page.getByRole('link', { name: 'Voltar ao histórico de pedidos' }).click();

@@ -13,7 +13,7 @@ const PERFIS_PARA_PEDIDO = PERFIS.map(({ id, nome, descricao }) => ({
   id,
   nome,
   descricao,
-  escopo: 'unidade',
+  escopo: 'UNIDADE',
   exigeAprovacaoDeProtecaoDeDados: false,
   governanca: null,
 }));

@@ -79,8 +79,8 @@ export interface EstadoDaApi {
 
 const PEDIDO_NA_FILA_DO_GESTOR = {
   id: '01960000-0000-7000-0000-00000000cc01',
-  situacao: 'aguardando_gestor',
-  etapaAtual: 'gestor',
+  situacao: 'AGUARDANDO_GESTOR',
+  etapaAtual: 'GESTOR',
   solicitante: FERNANDA,
   beneficiario: {
     email: BETINA_EMAIL,
@@ -88,7 +88,7 @@ const PEDIDO_NA_FILA_DO_GESTOR = {
     nome: 'Betina Teste',
   },
   perfil: { id: PERFIL_SENSIVEL_ID, nome: 'Analista de documentos' },
-  escopo: { tipo: 'unidade', unidadeId: UNIDADE_ID },
+  escopo: { tipo: 'UNIDADE', unidadeId: UNIDADE_ID },
   justificativa: 'Analisa os documentos do processo seletivo da unidade.',
   criadoEm: '2026-10-28T12:00:00Z',
   encerradoEm: null,
@@ -120,7 +120,7 @@ export function concessaoDoPedido(pedido: Pedido, id: string): Concessao {
     beneficiario: pedido.beneficiario.identidade ?? pedido.solicitante,
     perfil: pedido.perfil,
     escopo: pedido.escopo,
-    origem: { tipo: 'pedido', id: pedido.id },
+    origem: { tipo: 'PEDIDO', id: pedido.id },
     validaAte: pedido.validaAte,
   };
 }

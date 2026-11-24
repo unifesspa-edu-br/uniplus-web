@@ -21,7 +21,7 @@ const CONCESSAO = {
   id: CONCESSAO_ID,
   beneficiario: pessoa('conta-leandro', 'Leandro Caleb Viana'),
   perfil: { id: 'p1', nome: 'Banca de documentos' },
-  escopo: { tipo: 'unidade', unidadeId: UNIDADE_CEPS },
+  escopo: { tipo: 'UNIDADE', unidadeId: UNIDADE_CEPS },
   validaAte: null,
   ativa: true,
 };
@@ -30,9 +30,9 @@ const CONCESSAO = {
 export function providencia(parcial: object = {}) {
   return {
     id: PROVIDENCIA_ID,
-    tipo: 'retirada',
+    tipo: 'RETIRADA',
     fundamento: 'Deixou a banca e mantém acesso a documentos sensíveis.',
-    situacao: 'aberta',
+    situacao: 'ABERTA',
     abertaEm: '2026-11-10T12:00:00Z',
     solicitadaPor: pessoa('conta-kevin', 'Kevin Anderson Carvalho'),
     concessao: CONCESSAO,
@@ -52,7 +52,7 @@ export const CONFLITO_RETENTAVEL = {
 const CONCESSAO_LIDA = {
   ...CONCESSAO,
   versao: 1,
-  origem: { tipo: 'pedido', id: 'pd1' },
+  origem: { tipo: 'PEDIDO', id: 'pd1' },
   concedidaEm: '2026-03-02T12:00:00Z',
   revogadaEm: null,
   revogadaPor: null,

@@ -26,10 +26,10 @@ const BETINA = { emissor: EMISSOR, contaId: 'conta-betina-0002-ficticia', nome: 
 type Identidade = { readonly emissor: string; readonly contaId: string; readonly nome: string };
 
 const PENDENTE = {
-  escopo: { tipo: 'unidade', unidadeId: UNIDADE_CEPS },
+  escopo: { tipo: 'UNIDADE', unidadeId: UNIDADE_CEPS },
   validaAte: null,
-  decide: 'representante-do-controlador',
-  situacao: 'pendente',
+  decide: 'REPRESENTANTE_DO_CONTROLADOR',
+  situacao: 'PENDENTE',
   decididoPor: null,
   decididoEm: null,
   ehDoLeitor: false,
@@ -41,7 +41,7 @@ export function itemDaRevisao(id: string, beneficiario: Identidade, parcial: obj
 }
 
 export const ITEM_DECIDIDO = {
-  situacao: 'confirmada',
+  situacao: 'CONFIRMADA',
   decididoPor: BETINA,
   decididoEm: '2026-11-10T13:00:00Z',
 };
@@ -57,7 +57,7 @@ export function itensDaRevisao(contaDeQuemLe: string) {
       ...ITEM_DECIDIDO,
       perfil: { id: 'p2', nome: 'Avaliador de recursos' },
     }),
-    itemDaRevisao('i3', DIOGO, { decide: 'gestor-de-acessos' }),
+    itemDaRevisao('i3', DIOGO, { decide: 'GESTOR_DE_ACESSOS' }),
     itemDaRevisao(
       'i4',
       { emissor: EMISSOR, contaId: contaDeQuemLe, nome: 'Pessoa que lê a revisão' },
@@ -70,7 +70,7 @@ export const RESUMO_ABERTO = {
   id: REVISAO_ID,
   abertaEm: '2026-11-09T12:00:00Z',
   abertaPor: BETINA,
-  situacao: 'em_andamento',
+  situacao: 'EM_ANDAMENTO',
   totalDeItens: 4,
   pendentes: 3,
 };
@@ -83,7 +83,7 @@ export const RESUMO_ENCERRADO = {
   id: '01960000-0000-7000-0000-0000000000b0',
   abertaEm: '2026-05-04T12:00:00Z',
   abertaPor: BETINA,
-  situacao: 'concluida',
+  situacao: 'CONCLUIDA',
   totalDeItens: 2,
   pendentes: 0,
 };
@@ -150,8 +150,8 @@ const CONCESSAO_DA_FERNANDA = {
   beneficiario: FERNANDA,
   perfil: { id: 'p2', nome: 'Avaliador de recursos' },
   versao: 1,
-  escopo: { tipo: 'unidade', unidadeId: UNIDADE_CEPS },
-  origem: { tipo: 'pedido', id: 'pedido-1' },
+  escopo: { tipo: 'UNIDADE', unidadeId: UNIDADE_CEPS },
+  origem: { tipo: 'PEDIDO', id: 'pedido-1' },
   concedidaEm: '2026-03-02T12:00:00Z',
   validaAte: null,
   ativa: false,
