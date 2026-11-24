@@ -18,13 +18,13 @@ import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
 
-const EM_VIGOR: JsonDaApi<SituacaoDoAcessoDoPerfilDto> = { codigo: 'em_vigor', rotulo: 'Em vigor' };
+const EM_VIGOR: JsonDaApi<SituacaoDoAcessoDoPerfilDto> = { codigo: 'EM_VIGOR', rotulo: 'Em vigor' };
 const SEM_VERSAO_EM_VIGOR: JsonDaApi<SituacaoDoAcessoDoPerfilDto> = {
-  codigo: 'sem_versao_em_vigor',
+  codigo: 'SEM_VERSAO_EM_VIGOR',
   rotulo: 'Sem versão em vigor',
 };
 const SUSPENSO: JsonDaApi<SituacaoDoAcessoDoPerfilDto> = {
-  codigo: 'suspenso',
+  codigo: 'SUSPENSO',
   rotulo: 'Suspenso',
 };
 const SUSPENSAO: JsonDaApi<SuspensaoDoPerfilDto> = {

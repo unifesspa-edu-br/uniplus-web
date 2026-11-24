@@ -5,14 +5,14 @@ import {
 
 /** O que a API devolve como situação do acesso, com os rótulos dela. */
 export const ACESSO_SUSPENSO: SituacaoDoAcessoDoPerfilDto = {
-  codigo: SituacaoDoAcessoDoPerfilCodigo.suspenso,
+  codigo: SituacaoDoAcessoDoPerfilCodigo.SUSPENSO,
   rotulo: 'Suspenso',
 };
 export const ACESSO_EM_VIGOR: SituacaoDoAcessoDoPerfilDto = {
-  codigo: SituacaoDoAcessoDoPerfilCodigo.em_vigor,
+  codigo: SituacaoDoAcessoDoPerfilCodigo.EM_VIGOR,
   rotulo: 'Em vigor',
 };
 export const ACESSO_SEM_VERSAO_EM_VIGOR: SituacaoDoAcessoDoPerfilDto = {
-  codigo: SituacaoDoAcessoDoPerfilCodigo.sem_versao_em_vigor,
+  codigo: SituacaoDoAcessoDoPerfilCodigo.SEM_VERSAO_EM_VIGOR,
   rotulo: 'Sem versão em vigor',
 };

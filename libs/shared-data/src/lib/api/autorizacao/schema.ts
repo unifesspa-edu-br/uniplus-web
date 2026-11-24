@@ -6922,9 +6922,9 @@ export interface components {
         /**
          * @description Situação do acesso do perfil, e não de cada concessão: com o perfil em vigor, uma concessão ainda pode não dar acesso por prazo vencido, revisão das concessões em andamento ou permissão suspensa por reclassificação. A desativação do perfil não altera a situação.
          *
-         *     - `suspenso`: Suspenso — Há suspensão aberta: nenhuma concessão do perfil dá acesso até a retomada.
-         *     - `em_vigor`: Em vigor — Sem suspensão e com permissões valendo. O perfil de governança está sempre em vigor.
-         *     - `sem_versao_em_vigor`: Sem versão em vigor — Sem suspensão e sem versão aprovada valendo.
+         *     - `SUSPENSO`: Suspenso — Há suspensão aberta: nenhuma concessão do perfil dá acesso até a retomada.
+         *     - `EM_VIGOR`: Em vigor — Sem suspensão e com permissões valendo. O perfil de governança está sempre em vigor.
+         *     - `SEM_VERSAO_EM_VIGOR`: Sem versão em vigor — Sem suspensão e sem versão aprovada valendo.
          * @enum {string}
          */
         readonly SituacaoDoAcessoDoPerfilCodigo: SituacaoDoAcessoDoPerfilCodigo;
@@ -7200,7 +7200,7 @@ export enum PathsApiAutorizacaoTermosDeResponsabilidadeVersoesGetParametersQuery
     prev = "prev"
 }
 export enum SituacaoDoAcessoDoPerfilCodigo {
-    suspenso = "suspenso",
-    em_vigor = "em_vigor",
-    sem_versao_em_vigor = "sem_versao_em_vigor"
+    SUSPENSO = "SUSPENSO",
+    EM_VIGOR = "EM_VIGOR",
+    SEM_VERSAO_EM_VIGOR = "SEM_VERSAO_EM_VIGOR"
 }
