@@ -14,13 +14,21 @@ const ROTEIRO =
   path.resolve(__dirname, '../../../../../uniplus-api/scripts/roteiro-processo-teste-inscricao.sh');
 
 export async function publicadoDoAcompanhamento(): Promise<ProcessoListado> {
-  const existente = (await listarProcessos()).find(
-    (processo) => processo.nome === NOME && processo.status === 'publicado',
-  );
+  const publicados = (await listarProcessos())
+    .filter((processo) => processo.status === 'publicado')
+    .sort(compararProcessos);
+  const existente = publicados.find((processo) => processo.nome === NOME) ?? publicados[0];
   if (existente !== undefined) return existente;
   await prepararAcessosDaSimulacao();
   await aprovarCatalogoInicial();
   return { id: await criarProcesso(), nome: NOME, status: 'publicado' };
+}
+
+function compararProcessos(primeiro: ProcessoListado, segundo: ProcessoListado): number {
+  return (
+    primeiro.nome.localeCompare(segundo.nome, 'pt-BR') ||
+    (primeiro.id < segundo.id ? -1 : primeiro.id > segundo.id ? 1 : 0)
+  );
 }
 
 function criarProcesso(): Promise<string> {
