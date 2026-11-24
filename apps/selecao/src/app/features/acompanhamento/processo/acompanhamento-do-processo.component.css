@@ -3,6 +3,8 @@
   flex-direction: column;
   gap: var(--space-6);
   min-height: 0;
+  /* Herdada pelo título: nome longo, ou sem espaços, quebra em vez de vazar sobre as ações. */
+  overflow-wrap: anywhere;
 }
 
 .acompanhamento__acoes {

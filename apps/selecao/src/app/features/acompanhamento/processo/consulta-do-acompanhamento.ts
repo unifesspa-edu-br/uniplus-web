@@ -11,6 +11,7 @@ import { ehIdentificadorDoProcesso } from '../../processo-seletivo/identificador
 export type SituacaoDoAcompanhamento =
   | { readonly estado: 'lendo' }
   | { readonly estado: 'nao-encontrado' }
+  | { readonly estado: 'acesso-negado' }
   | { readonly estado: 'falha' }
   | { readonly estado: 'lido'; readonly processo: ProcessoSeletivoDto };
 
@@ -24,6 +25,7 @@ function situacaoDaLeitura(
   if (processo !== null) return { estado: 'lido', processo };
   const problema = recurso.problem();
   if (problema?.status === STATUS_HTTP.NAO_ENCONTRADO) return { estado: 'nao-encontrado' };
+  if (problema?.status === STATUS_HTTP.SEM_PERMISSAO) return { estado: 'acesso-negado' };
   if (problema !== null || recurso.error() !== undefined) return { estado: 'falha' };
   return { estado: 'lendo' };
 }

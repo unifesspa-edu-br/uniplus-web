@@ -3,7 +3,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -29,6 +29,7 @@ describe('AcompanhamentoDoProcessoPage — estados', () => {
       providers: [
         provideRouter([
           { path: 'acompanhamento/processos/:id', component: AcompanhamentoDoProcessoPage },
+          { path: 'dashboard', children: [] },
         ]),
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -82,12 +83,14 @@ describe('AcompanhamentoDoProcessoPage — estados', () => {
     expect(texto()).toContain('Processo seletivo não encontrado');
     expect(texto()).toContain('Voltar ao painel');
     expect(texto()).not.toContain(AVISO);
+    expect(trilha()).toEqual(['Painel de processos', 'Acompanhamento']);
   });
 
   it('identificador malformado não consulta e mostra não encontrado', async () => {
     await abrir('nao-e-uuid');
     http.expectNone(() => true);
     expect(texto()).toContain('Processo seletivo não encontrado');
+    expect(trilha()).toEqual(['Painel de processos', 'Acompanhamento']);
   });
 
   it('401 não é apresentado como ausência de informações nem como não encontrado', async () => {
@@ -95,6 +98,7 @@ describe('AcompanhamentoDoProcessoPage — estados', () => {
     await responder(ID_A, '', 401);
     expect(texto()).not.toContain(AVISO);
     expect(texto()).not.toContain('Processo seletivo não encontrado');
+    expect(trilha()).toEqual(['Painel de processos', 'Acompanhamento']);
   });
 
   it('403 não mantém os dados do processo anterior', async () => {
@@ -105,6 +109,21 @@ describe('AcompanhamentoDoProcessoPage — estados', () => {
     expect(texto()).not.toContain('Processo anterior');
     expect(texto()).not.toContain('Editar processo');
     expect(texto()).not.toContain(AVISO);
+    expect(texto()).toContain('Acesso negado');
+    expect(texto()).not.toContain('Tentar novamente');
+    expect(trilha()).toEqual(['Painel de processos', 'Acompanhamento']);
+  });
+
+  it('Voltar ao painel navega para o painel', async () => {
+    await abrir(ID_A);
+    await responder(ID_A, '', 404);
+    const link = Array.from((harness.routeNativeElement as HTMLElement).querySelectorAll('a')).find(
+      (a) => a.textContent?.includes('Voltar ao painel'),
+    );
+    expect(link?.getAttribute('href')).toBe('/dashboard');
+    link?.click();
+    await harness.fixture.whenStable();
+    expect(TestBed.inject(Router).url).toBe('/dashboard');
   });
 
   it('falha oferece nova tentativa que consulta de novo e não mostra o aviso de ausência', async () => {
@@ -112,6 +131,7 @@ describe('AcompanhamentoDoProcessoPage — estados', () => {
     await responder(ID_A, '', 500);
     expect(texto()).toContain('Não foi possível carregar o processo seletivo');
     expect(texto()).not.toContain(AVISO);
+    expect(trilha()).toEqual(['Painel de processos', 'Acompanhamento']);
     const botao = (harness.routeNativeElement as HTMLElement).querySelector<HTMLButtonElement>(
       '.list-state__retry button',
     );

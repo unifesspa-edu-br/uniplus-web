@@ -74,6 +74,12 @@ describe('AcompanhamentoDoProcessoPage', () => {
     expect(trilha()).toEqual(['Painel de processos', 'Vestibular', 'Acompanhamento']);
   });
 
+  it('o primeiro item da trilha leva ao painel e os demais não têm ação', async () => {
+    await responder('Vestibular', 'publicado');
+    const itens = TestBed.inject(TrilhaContextual).itens() ?? [];
+    expect(itens.map((item) => item.routerLink)).toEqual(['/dashboard', undefined, undefined]);
+  });
+
   it('sem permissão de configurar não oferece atalhos', async () => {
     await responder('V', 'publicado');
     expect(texto()).not.toContain('Editar processo');
