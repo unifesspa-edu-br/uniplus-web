@@ -26,18 +26,20 @@ describe('eliminação e desempate', () => {
 
   it('lê somente campos válidos de rascunhos e ignora códigos sem forma', () => {
     expect(
-      lerParametrosDaEliminacao('ELIM-NOTA-MINIMA-ETAPA', {
+      lerParametrosDaEliminacao('ELIMINACAO-NOTA-MINIMA-ETAPA', {
         etapaChave: ' etapa ',
         notaMinima: 'errada',
         extra: true,
       }),
     ).toEqual({
       conhecida: true,
-      codigo: 'ELIM-NOTA-MINIMA-ETAPA',
+      codigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA',
       valores: { etapaChave: ' etapa ' },
     });
     expect(lerParametrosDaEliminacao('OUTRA', {})).toEqual({ conhecida: false });
-    expect(lerParametrosDoDesempate('DESEMPATE-PREDICADO-FATO', {})).toEqual({ conhecida: false });
+    expect(lerParametrosDoDesempate('DESEMPATE-CONDICAO-SOBRE-DADO', {})).toEqual({
+      conhecida: false,
+    });
     expect(lerParametrosDoDesempate('DESEMPATE-IDOSO', { idadeMinima: Infinity })).toEqual({
       conhecida: true,
       codigo: 'DESEMPATE-IDOSO',
@@ -48,7 +50,7 @@ describe('eliminação e desempate', () => {
   it('preserva campos desconhecidos, inválidos, ordem e itens repetidos', () => {
     const item = {
       parametros: { extra: 1, notaMinima: 'inválida', etapaChave: ' etapa ' },
-      regra: { codigo: 'ELIM-NOTA-MINIMA-ETAPA', versao: ' v1 ' },
+      regra: { codigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA', versao: ' v1 ' },
     };
     const documento = {
       ...documentoSemNada(),
@@ -90,7 +92,10 @@ describe('eliminação e desempate', () => {
       ...documentoSemNada(),
       classificacao: {
         regrasEliminacao: [
-          { regra: { codigo: 'ELIM-CORTE-EM-AREA' }, parametros: { minimo: 10, extra: true } },
+          {
+            regra: { codigo: 'ELIMINACAO-CORTE-EM-AREA' },
+            parametros: { minimo: 10, extra: true },
+          },
         ],
       },
     };
@@ -98,10 +103,10 @@ describe('eliminação e desempate', () => {
     const item = valores.itens[0];
     expect(eliminacao.edicaoDoPasso(valores)(documento)).toEqual(documento);
     const alterado = eliminacao.edicaoDoPasso({
-      itens: [{ ...item, codigo: 'ELIM-ZERO-EM-AREA' }],
+      itens: [{ ...item, codigo: 'ELIMINACAO-ZERO-EM-AREA' }],
     })(documento);
     expect(alterado.classificacao?.regrasEliminacao?.[0]).toEqual({
-      regra: { codigo: 'ELIM-ZERO-EM-AREA' },
+      regra: { codigo: 'ELIMINACAO-ZERO-EM-AREA' },
     });
   });
 

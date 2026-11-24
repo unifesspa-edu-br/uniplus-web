@@ -107,8 +107,8 @@ function comRegraEReserva(
   fallbackCodigo: string,
 ): Cascata {
   const comRegra = comCampo(cascata, 'regra', referenciaQueVale(cascata.regra, regra));
-  const reserva = textoQueVale(cascata.fallbackCodigo, fallbackCodigo);
-  return comCampo(comRegra, 'fallbackCodigo', reserva);
+  const reserva = textoQueVale(cascata.destinoFinalCodigo, fallbackCodigo);
+  return comCampo(comRegra, 'destinoFinalCodigo', reserva);
 }
 
 /**

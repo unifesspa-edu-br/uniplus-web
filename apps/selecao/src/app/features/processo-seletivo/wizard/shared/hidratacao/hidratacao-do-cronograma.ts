@@ -61,7 +61,7 @@ type RecursoDaEtapaDoDto = EtapaDoDto['publicacoes']['recursos'][number];
 function congeladosDe(fase: FaseDoDto): NonNullable<FaseDoCronograma['congelados']> {
   const { faseCanonica } = fase;
   return {
-    origemData: faseCanonica.origemData,
+    origemData: faseCanonica.origemData.codigo,
     agrupaEtapas: faseCanonica.agrupaEtapas,
     coletaInscricao: faseCanonica.coletaInscricao,
     permiteComplementacao: faseCanonica.permiteComplementacao,
@@ -72,12 +72,12 @@ function congeladosDe(fase: FaseDoDto): NonNullable<FaseDoCronograma['congelados
 function produtosDe(
   produtos: readonly {
     readonly atoCodigo: string;
-    readonly papel?: ProdutoDaFase['papel'] | null;
+    readonly papel?: { readonly codigo: ProdutoDaFase['papel'] } | null;
   }[],
 ): ProdutoDaFase[] {
   return produtos.map((produto) => ({
     atoCodigo: produto.atoCodigo,
-    papel: produto.papel ?? null,
+    papel: produto.papel?.codigo ?? null,
   }));
 }
 
@@ -244,7 +244,7 @@ function identificacaoDaEtapaDe(
   const { tipoEtapa } = identificacao;
   return {
     nome: identificacao.nome,
-    carater: identificacao.carater,
+    carater: identificacao.carater.codigo,
     tipoEtapaOrigemId: tipoEtapa.origemId,
     tipoCongelado: {
       origemId: tipoEtapa.origemId,
@@ -274,7 +274,7 @@ function avaliacaoDaEtapaDe({ nota, avaliacao }: EtapaDoDto): AvaliacaoDaEtapa {
     notaMinima: comoTexto(nota.notaMinima),
     notaMaxima: comoTexto(nota.notaMaxima),
     passoDoLancamento: comoTexto(nota.passoDoLancamento),
-    formaDeAvaliacao: avaliacao.formaDeAvaliacao ?? '',
+    formaDeAvaliacao: avaliacao.formaDeAvaliacao?.codigo ?? '',
     regraConsolidacaoCodigo: avaliacao.regraConsolidacao?.codigo ?? '',
     regraConsolidacaoVersao: avaliacao.regraConsolidacao?.versao ?? '',
     itensDeAvaliacao: avaliacao.itensDeAvaliacao.map(itemDeAvaliacaoDe),
@@ -338,7 +338,7 @@ function instanteDe(instante: string | null): string {
 function recursoDaEtapaDe(recurso: RecursoDaEtapaDoDto): RecursoDaEtapa {
   return {
     id: recurso.id,
-    ancora: recurso.ancora as RecursoDaEtapa['ancora'],
+    ancora: recurso.ancora.codigo as RecursoDaEtapa['ancora'],
     regraCodigo: recurso.regra.codigo,
     regraVersao: recurso.regra.versao,
     atoAncoraCodigo: recurso.atoAncoraCodigo ?? '',

@@ -1,4 +1,4 @@
-import { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import type { RegraEliminacaoConfigurada } from '../../processo-seletivo.models';
@@ -8,7 +8,7 @@ import type { EtapaReferenciavel } from './regras-de-eliminacao';
 const ETAPA: EtapaReferenciavel = {
   id: 'etapa-1',
   nome: 'Prova objetiva',
-  carater: CaraterEtapa.classificatoria,
+  carater: CaraterEtapaCodigo.classificatoria,
   tipoEtapaOrigemId: 'tipo-1',
   peso: '1',
   notaMinima: '',
@@ -48,8 +48,8 @@ function conferir(regras: RegraEliminacaoConfigurada[], baseadoEmEnem = false): 
 }
 
 describe('mensagensDasRegras', () => {
-  describe('ELIM-NOTA-MINIMA-ETAPA — exige etapaRef e notaMinima', () => {
-    const NOTA = regra({ regraCodigo: 'ELIM-NOTA-MINIMA-ETAPA' });
+  describe('ELIMINACAO-NOTA-MINIMA-ETAPA — exige etapaRef e notaMinima', () => {
+    const NOTA = regra({ regraCodigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA' });
 
     it('recusa sem etapaRef nem notaMinima', () => {
       expect(conferir([NOTA])).not.toBe('');
@@ -66,8 +66,8 @@ describe('mensagensDasRegras', () => {
     });
   });
 
-  describe('ELIM-ZERO-EM-AREA — não usa argumento', () => {
-    const ZERO = regra({ regraCodigo: 'ELIM-ZERO-EM-AREA' });
+  describe('ELIMINACAO-ZERO-EM-AREA — não usa argumento', () => {
+    const ZERO = regra({ regraCodigo: 'ELIMINACAO-ZERO-EM-AREA' });
 
     it('recusa sem baseadoEmEnem — a exigência não é exclusiva do corte por área', () => {
       expect(conferir([ZERO])).toContain('baseada em ENEM');
@@ -78,8 +78,8 @@ describe('mensagensDasRegras', () => {
     });
   });
 
-  describe('ELIM-FALTA-EM-DIA-DE-PROVA-ENEM — sem argumento e uma só vez', () => {
-    const FALTA = regra({ regraCodigo: 'ELIM-FALTA-EM-DIA-DE-PROVA-ENEM' });
+  describe('ELIMINACAO-FALTA-EM-DIA-DE-PROVA-ENEM — sem argumento e uma só vez', () => {
+    const FALTA = regra({ regraCodigo: 'ELIMINACAO-FALTA-EM-DIA-DE-PROVA-ENEM' });
 
     it('mostra a pendência sem baseadoEmEnem, antes de gravar', () => {
       expect(conferir([FALTA])).toContain('baseada em ENEM');

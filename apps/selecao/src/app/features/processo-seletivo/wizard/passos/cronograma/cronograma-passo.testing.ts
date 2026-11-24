@@ -10,7 +10,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import { CaraterEtapa, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { CaraterEtapaCodigo, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach } from 'vitest';
 
 import type {
@@ -54,6 +54,7 @@ import { RecusasDoServidorNasEtapas } from './servicos/recusas-do-servidor-nas-e
 import { ReleituraDosIdentificadores } from './servicos/releitura-dos-identificadores.service';
 import { UnidadesResponsaveisDasFases } from './servicos/unidades-responsaveis-das-fases.service';
 import { provideTiposDeDecisaoDaApi } from '../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
+import { proverVocabulariosDaDeliberacao } from '../../shared/deliberacao/regra-de-deliberacao.testing';
 
 const SEM_CONTEUDO = { status: 204, statusText: 'No Content' };
 const INICIO_DA_FASE = '2026-03-01T08:00:00-03:00';
@@ -74,6 +75,7 @@ const PROVEDORES = [
   { provide: SELECAO_BASE_PATH, useValue: BASE },
   { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
   provideTiposDeDecisaoDaApi(),
+  proverVocabulariosDaDeliberacao(),
   { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
   { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
 ];
@@ -112,7 +114,7 @@ function congeladosDaFase(agrupaEtapas: boolean): FaseDoCronograma['congelados']
 
 const ETAPA_SEM_DECLARACAO = {
   id: null,
-  carater: CaraterEtapa.classificatoria,
+  carater: CaraterEtapaCodigo.classificatoria,
   tipoEtapaOrigemId: TIPO_ETAPA,
   peso: '1',
   notaMinima: '',

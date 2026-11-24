@@ -7,7 +7,7 @@ import { inteiroNaForma } from '../../shared/numero-do-campo';
 /**
  * Códigos de `CriterioDesempateCodigo` — o discriminador do shape de args de
  * `ArgsCriterioDesempate` (`DESEMPATE-MAIOR-NOTA-ETAPA` usa `etapaRef`;
- * `DESEMPATE-IDOSO` usa `idadeMinima`; `DESEMPATE-PREDICADO-FATO` usa
+ * `DESEMPATE-IDOSO` usa `idadeMinima`; `DESEMPATE-CONDICAO-SOBRE-DADO` usa
  * `fato`+`operador`+`valor`; `DESEMPATE-MAIOR-NOTA-AREA-ENEM` usa `areas`;
  * `DESEMPATE-MAIOR-IDADE` não usa nenhum). Não é
  * rótulo do frontend: é o mesmo discriminador que
@@ -15,7 +15,7 @@ import { inteiroNaForma } from '../../shared/numero-do-campo';
  */
 const DESEMPATE_MAIOR_NOTA_ETAPA = 'DESEMPATE-MAIOR-NOTA-ETAPA';
 const DESEMPATE_IDOSO = 'DESEMPATE-IDOSO';
-const DESEMPATE_PREDICADO_FATO = 'DESEMPATE-PREDICADO-FATO';
+const DESEMPATE_PREDICADO_FATO = 'DESEMPATE-CONDICAO-SOBRE-DADO';
 const DESEMPATE_MAIOR_NOTA_AREA_ENEM = 'DESEMPATE-MAIOR-NOTA-AREA-ENEM';
 
 export function desempateUsaEtapa(regraCodigo: string): boolean {

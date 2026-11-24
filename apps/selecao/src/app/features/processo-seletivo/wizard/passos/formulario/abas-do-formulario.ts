@@ -9,7 +9,7 @@ import {
 import type { FormularioDaFinalidade, WizardDraft } from '../../processo-seletivo.models';
 import {
   documentosDoFormulario,
-  type fatosParaLerOGatilho,
+  type VocabularioDosDocumentos,
 } from '../../shared/documentos-exigidos';
 import { fatosForaDaColetaDaInscricao } from './fatos-coletados-da-inscricao';
 import {
@@ -34,12 +34,6 @@ export interface TextosDasAbas {
   readonly resumosDaAplicacao: ReadonlyMap<string, readonly string[]>;
   readonly modelos: ReadonlyMap<string, readonly ModeloOferecido[]>;
   readonly modeloEscolhido: ReadonlyMap<string, string>;
-}
-
-/** Como a lista de documentos do formulário nomeia o tipo de documento e lê o público de cada um. */
-export interface VocabularioDosDocumentos {
-  readonly fatoPorCodigo: ReturnType<typeof fatosParaLerOGatilho>;
-  readonly nomeDoTipo: (id: string, nomeGuardado: string | undefined) => string;
 }
 
 /** O que o modelo de exibição das abas precisa saber do passo. */
@@ -81,11 +75,10 @@ export function abasDoFormulario(entrada: EntradaDasAbas) {
 /** Os ids e os nomes da aba, pela finalidade. */
 function identificacaoDaAba(formulario: FormularioDaFinalidade) {
   const sufixo = sufixoDaFinalidade(formulario.finalidade);
+  const rotulo = FINALIDADES.find((opcao) => opcao.valor === formulario.finalidade)?.rotulo;
   return {
     finalidade: formulario.finalidade,
-    rotulo:
-      FINALIDADES.find((opcao) => opcao.valor === formulario.finalidade)?.rotulo ??
-      formulario.finalidade,
+    rotulo: rotulo ?? formulario.finalidade,
     nome: nomeDaFinalidade(formulario.finalidade),
     ehInscricao: formulario.finalidade === FINALIDADE_INSCRICAO,
     aba: `form-aba-${sufixo}`,
@@ -112,14 +105,12 @@ function textosDaAba(textos: TextosDasAbas, formulario: FormularioDaFinalidade) 
   const { finalidade } = formulario;
   const recusaDaRemocao = textos.recusasDaRemocao.get(finalidade) ?? null;
   const recusaDaAplicacao = textos.recusasDaAplicacao.get(finalidade) ?? null;
+  const recusada = [recusaDaRemocao, recusaDaAplicacao].some((recusa) => recusa !== null);
   return {
     recusas: textos.recusasDaGravacao.get(finalidade) ?? null,
     recusaDaRemocao,
     recusaDaAplicacao,
-    recusada:
-      textos.recusasDaGravacao.has(finalidade) ||
-      recusaDaRemocao !== null ||
-      recusaDaAplicacao !== null,
+    recusada: textos.recusasDaGravacao.has(finalidade) || recusada,
     modelos: textos.modelos.get(finalidade) ?? [],
     modeloEscolhido: textos.modeloEscolhido.get(finalidade) ?? '',
     resumoDaAplicacao: textos.resumosDaAplicacao.get(finalidade) ?? null,
@@ -149,24 +140,29 @@ function conteudoDaAba(
   formulario: FormularioDaFinalidade,
   finalidadesDaFase: ReadonlyMap<string, readonly string[]>,
 ) {
-  const escolhida = entrada.fases.get(formulario.finalidade)?.escolhida ?? '';
   return {
     conteudo: formulario.conteudo,
     leitura: leituraDe(formulario.conteudo),
     temBlocoDocumental: etapasEmOrdem(formulario.conteudo).some(
       (etapa) => etapa.bloco === BLOCO_COMPROVACAO_DOCUMENTAL,
     ),
-    documentos: documentosDoFormulario(
-      entrada.documentos,
-      {
-        faseCodigo: escolhida,
-        finalidade: formulario.finalidade,
-        finalidadesDaFase: finalidadesDaFase.get(escolhida) ?? [],
-        fasesVivas: entrada.fasesDoCronograma.map((fase) => fase.codigo),
-      },
-      entrada.vocabulario,
-    ),
+    documentos: documentosDaAba(entrada, formulario, finalidadesDaFase),
   };
+}
+
+function documentosDaAba(
+  entrada: EntradaDasAbas,
+  formulario: FormularioDaFinalidade,
+  finalidadesDaFase: ReadonlyMap<string, readonly string[]>,
+) {
+  const faseCodigo = entrada.fases.get(formulario.finalidade)?.escolhida ?? '';
+  const formularioNaFase = {
+    faseCodigo,
+    finalidade: formulario.finalidade,
+    finalidadesDaFase: finalidadesDaFase.get(faseCodigo) ?? [],
+    fasesVivas: entrada.fasesDoCronograma.map((fase) => fase.codigo),
+  };
+  return documentosDoFormulario(entrada.documentos, formularioNaFase, entrada.vocabulario);
 }
 
 /** Uma aba do passo, como o modelo de exibição a monta. */

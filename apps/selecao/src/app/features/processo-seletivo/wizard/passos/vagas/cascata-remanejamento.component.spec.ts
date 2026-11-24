@@ -1,7 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
-import { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { detalhe } from '../../../processo-seletivo.retomada.testing';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CascataRemanejamentoComponent } from './cascata-remanejamento.component';
 import {
@@ -74,7 +74,7 @@ describe('CascataRemanejamentoComponent', () => {
     const select = elemento.querySelector<HTMLSelectElement>('#c-regra-cascata');
     expect(select).not.toBeNull();
     expect(select?.querySelector('option[value="|"]')?.textContent).toContain('Selecione a regra');
-    expect(componente.valorDoSelect()).toBe('|');
+    expect(componente.seletor.controle.value).toBe('|');
     expect(componente.cascata()).toBeNull();
   });
 
@@ -84,7 +84,7 @@ describe('CascataRemanejamentoComponent', () => {
     });
     detectar();
 
-    componente.escolherRegra('REMANEJ-CASCATA-LEI-12711|v1');
+    componente.seletor.controle.setValue('REMANEJ-CASCATA-LEI-12711|v1');
     detectar();
 
     expect(store.draft().vagas.cascata).toEqual({
@@ -137,7 +137,7 @@ describe('CascataRemanejamentoComponent', () => {
     });
     detectar();
 
-    componente.escolherRegra('REMANEJ-CASCATA-LEI-12711|v1');
+    componente.seletor.controle.setValue('REMANEJ-CASCATA-LEI-12711|v1');
     detectar();
 
     expect(componente.problemas().length).toBeGreaterThan(0);
@@ -156,7 +156,7 @@ describe('CascataRemanejamentoComponent', () => {
     });
     detectar();
 
-    componente.escolherRegra('REMANEJ-CASCATA-LEI-12711|v1');
+    componente.seletor.controle.setValue('REMANEJ-CASCATA-LEI-12711|v1');
     detectar();
     expect(componente.problemas()).toEqual([]);
     expect(componente.pronta()).toBe(true);
@@ -173,11 +173,11 @@ describe('CascataRemanejamentoComponent', () => {
       ],
     });
     detectar();
-    componente.escolherRegra('REMANEJ-CASCATA-LEI-12711|v1');
+    componente.seletor.controle.setValue('REMANEJ-CASCATA-LEI-12711|v1');
     detectar();
     expect(store.draft().vagas.cascata).not.toBeNull();
 
-    componente.escolherRegra('|');
+    componente.seletor.controle.setValue('|');
     detectar();
 
     expect(store.draft().vagas.cascata).toBeNull();
@@ -185,21 +185,23 @@ describe('CascataRemanejamentoComponent', () => {
   });
 
   it('reconhece que o servidor tem uma cascata a partir da hidratação, não do seletor', () => {
-    store.remoteSnapshot.set({
-      cascata: {
-        id: 'cascata-1',
-        regra: { codigo: 'REMANEJ-CASCATA-LEI-12711', versao: 'v1', hash: 'h' },
-        fallbackCodigo: 'AC',
-        destinos: [],
-      },
-    } as unknown as ProcessoSeletivoDto);
+    store.remoteSnapshot.set(
+      detalhe({
+        cascata: {
+          id: 'cascata-1',
+          regra: { codigo: 'REMANEJ-CASCATA-LEI-12711', versao: 'v1', hash: 'h' },
+          fallbackCodigo: 'AC',
+          destinos: [],
+        },
+      }),
+    );
     detectar();
 
     expect(componente.existeNoServidor()).toBe(true);
   });
 
   it('não confunde cascata inexistente no servidor com rascunho vazio', () => {
-    store.remoteSnapshot.set({ cascata: null } as unknown as ProcessoSeletivoDto);
+    store.remoteSnapshot.set(detalhe({ cascata: null }));
     detectar();
 
     expect(componente.existeNoServidor()).toBe(false);
@@ -207,23 +209,28 @@ describe('CascataRemanejamentoComponent', () => {
 
   /**
    * As rotas do editor reusam a mesma instância de componente ao trocar de
-   * processo — sem isto, a confirmação e o rastro de "existe no servidor" do
+   * processo — sem isto, o estado de "existe no servidor" do
    * processo anterior vazariam para o processo que acabou de hidratar.
    */
-  it('reseta confirmado e existeNoServidor a cada nova hidratação (troca de processo)', () => {
-    store.remoteSnapshot.set({
-      cascata: {
-        id: 'cascata-a',
-        regra: { codigo: 'REMANEJ-CASCATA-LEI-12711', versao: 'v1', hash: 'h' },
-        fallbackCodigo: 'AC',
-        destinos: [],
-      },
-    } as unknown as ProcessoSeletivoDto);
+  it('atualiza a existência no servidor ao trocar de processo', () => {
+    store.remoteSnapshot.set(
+      detalhe({
+        cascata: {
+          id: 'cascata-a',
+          regra: { codigo: 'REMANEJ-CASCATA-LEI-12711', versao: 'v1', hash: 'h' },
+          fallbackCodigo: 'AC',
+          destinos: [],
+        },
+      }),
+    );
     detectar();
     expect(componente.existeNoServidor()).toBe(true);
 
+    componente.existeNoServidor.set(false);
+    expect(componente.existeNoServidor()).toBe(false);
+    componente.existeNoServidor.set(true);
     // Processo B, sem cascata gravada.
-    store.remoteSnapshot.set({ cascata: null } as unknown as ProcessoSeletivoDto);
+    store.remoteSnapshot.set(detalhe({ cascata: null }));
     detectar();
 
     expect(componente.existeNoServidor()).toBe(false);
@@ -234,17 +241,22 @@ describe('CascataRemanejamentoComponent', () => {
       ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
     });
     detectar();
-    expect(componente.regraControl.disabled).toBe(false);
+    expect(componente.seletor.controle.disabled).toBe(false);
 
     store.salvando.set(true);
     detectar();
 
-    expect(componente.regraControl.disabled).toBe(true);
+    expect(componente.seletor.controle.disabled).toBe(true);
     const select = elemento.querySelector<HTMLSelectElement>('#c-regra-cascata');
     expect(select?.disabled).toBe(true);
+    store.salvando.set(false);
+    detectar();
+    expect(componente.seletor.controle.enabled).toBe(true);
   });
 
   it('sincroniza o controle reativo com o rascunho sem reemitir o evento', () => {
+    const mudanca = vi.fn();
+    componente.seletor.controle.valueChanges.subscribe(mudanca);
     store.patchObjectSection('vagas', {
       ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
     });
@@ -255,7 +267,8 @@ describe('CascataRemanejamentoComponent', () => {
     });
     detectar();
 
-    expect(componente.regraControl.value).toBe('REMANEJ-CASCATA-LEI-12711|v1');
+    expect(componente.seletor.controle.value).toBe('REMANEJ-CASCATA-LEI-12711|v1');
+    expect(mudanca).not.toHaveBeenCalled();
   });
 
   it('em edição, a oferta fora do catálogo continua distinta das outras pelo identificador', () => {

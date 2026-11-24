@@ -1,4 +1,4 @@
-import { SituacaoDoCertame } from '@uniplus/shared-data/selecao';
+import { SituacaoDoCertameCodigo } from '@uniplus/shared-data/selecao';
 
 /**
  * Contagem por situação (headers `X-Certames-*`, só vêm com
@@ -23,9 +23,12 @@ function numeroDoHeader(headers: LeitorDeHeaders, nome: string): number | undefi
 
 export function contadoresDosHeaders(headers: LeitorDeHeaders): ContadoresSituacao {
   return {
-    [SituacaoDoCertame.emBreve]: numeroDoHeader(headers, 'X-Certames-Em-Breve'),
-    [SituacaoDoCertame.inscricoesAbertas]: numeroDoHeader(headers, 'X-Certames-Inscricoes-Abertas'),
-    [SituacaoDoCertame.ultimosDias]: numeroDoHeader(headers, 'X-Certames-Ultimos-Dias'),
-    [SituacaoDoCertame.encerradas]: numeroDoHeader(headers, 'X-Certames-Encerrados'),
+    [SituacaoDoCertameCodigo.emBreve]: numeroDoHeader(headers, 'X-Certames-Em-Breve'),
+    [SituacaoDoCertameCodigo.inscricoesAbertas]: numeroDoHeader(
+      headers,
+      'X-Certames-Inscricoes-Abertas',
+    ),
+    [SituacaoDoCertameCodigo.ultimosDias]: numeroDoHeader(headers, 'X-Certames-Ultimos-Dias'),
+    [SituacaoDoCertameCodigo.encerradas]: numeroDoHeader(headers, 'X-Certames-Encerrados'),
   };
 }

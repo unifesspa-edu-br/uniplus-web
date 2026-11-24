@@ -1,6 +1,6 @@
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
 
-import type { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import type { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 
 import type {
   AtributosCongeladosDaFase,
@@ -23,7 +23,7 @@ import {
 } from '../../shared/fuso-institucional';
 
 /** Caráter ainda não escolhido é `''` — o valor que o seletor mostra vazio. */
-export type CaraterEscolhido = CaraterEtapa | '';
+export type CaraterEscolhido = CaraterEtapaCodigo | '';
 
 /**
  * Uma fase do cronograma como o formulário a guarda.
@@ -52,7 +52,7 @@ export interface FaseForm {
   readonly emiteParecerIndividual: FormControl<boolean>;
   /**
    * Também não editado aqui, e carregado pela mesma razão de `produtos`: quem
-   * declara a banca e o recorte que ela julga é a superfície da fase.
+   * declara a banca e a competência que ela julga é a superfície da fase.
    */
   readonly bancasRequeridas: FormControl<readonly BancaRequeridaDaFase[]>;
   /**

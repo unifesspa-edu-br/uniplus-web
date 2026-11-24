@@ -31,7 +31,7 @@ export function motivosDoLugar(
   documento: DocumentoDaConfiguracao,
   lugar: LugarDoMotivo,
 ): readonly Motivo[] {
-  return motivosDaFaseOuEtapa(documento.motivos ?? [], lugar);
+  return motivosDaFaseOuEtapa(documento.motivosDeDecisao ?? [], lugar);
 }
 
 /**
@@ -51,9 +51,9 @@ export function escolherMotivo(
   documento: DocumentoDaConfiguracao,
   novo: Motivo,
 ): ResultadoDaEscolhaDoMotivo {
-  const resultado = escolher(documento.motivos ?? [], novo);
+  const resultado = escolher(documento.motivosDeDecisao ?? [], novo);
   if (!resultado.escolhido) return resultado;
-  return { escolhido: true, documento: comLista(documento, 'motivos', resultado.motivos) };
+  return { escolhido: true, documento: comLista(documento, 'motivosDeDecisao', resultado.motivos) };
 }
 
 /** Retira o motivo da fase ou etapa; retirar o que não está escolhido não muda nada. */
@@ -61,7 +61,11 @@ export function retirarMotivo(
   documento: DocumentoDaConfiguracao,
   identidade: MotivoReconhecivel,
 ): DocumentoDaConfiguracao {
-  return comLista(documento, 'motivos', retirar(documento.motivos ?? [], identidade));
+  return comLista(
+    documento,
+    'motivosDeDecisao',
+    retirar(documento.motivosDeDecisao ?? [], identidade),
+  );
 }
 
 /**
@@ -72,6 +76,6 @@ export function retirarMotivosDoLugar(
   documento: DocumentoDaConfiguracao,
   lugar: LugarDoMotivo,
 ): DocumentoDaConfiguracao {
-  const restantes = semMotivosDeFaseOuEtapaRemovida(documento.motivos ?? [], lugar);
-  return comLista(documento, 'motivos', restantes);
+  const restantes = semMotivosDeFaseOuEtapaRemovida(documento.motivosDeDecisao ?? [], lugar);
+  return comLista(documento, 'motivosDeDecisao', restantes);
 }

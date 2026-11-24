@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { StatusProcesso } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { okResult } from '@uniplus/shared-testing';
 import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -173,7 +173,9 @@ describe('ProcessoSeletivoPage — ato digitado na Revisão', MONTAGEM_LENTA, ()
     cenario.store.projetarSecao('publicacao', { numero: '07/2027' });
     expect(cenario.componente.atoDigitadoPendente(), 'pré-condição: há ato a perder').toBe(true);
 
-    cenario.store.remoteSnapshot.set(detalhe({ status: StatusProcesso.publicado }));
+    cenario.store.remoteSnapshot.set(
+      detalhe({ status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' } }),
+    );
 
     expect(cenario.componente.atoDigitadoPendente()).toBe(false);
   });
@@ -201,7 +203,9 @@ describe('ProcessoSeletivoPage — ato digitado na Revisão', MONTAGEM_LENTA, ()
     it('só deixa de avisar quando a releitura confirma o processo fora de rascunho', async () => {
       const cenario = await comAtoEPublicacaoNaoConfirmada();
 
-      cenario.store.hidratar(detalhe({ status: StatusProcesso.publicado }));
+      cenario.store.hidratar(
+        detalhe({ status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' } }),
+      );
 
       expect(cenario.componente.atoDigitadoPendente()).toBe(false);
     });

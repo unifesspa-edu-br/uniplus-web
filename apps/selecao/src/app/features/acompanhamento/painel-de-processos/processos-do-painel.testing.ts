@@ -1,4 +1,4 @@
-import { StatusProcesso, type ProcessoSeletivoResumoDto } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo, type ProcessoSeletivoResumoDto } from '@uniplus/shared-data/selecao';
 
 function vestibular(id: string, nome: string): ProcessoSeletivoResumoDto {
   return {
@@ -9,7 +9,7 @@ function vestibular(id: string, nome: string): ProcessoSeletivoResumoDto {
       codigo: 'VESTIBULAR',
       nome: 'Vestibular',
     },
-    status: StatusProcesso.rascunho,
+    status: { codigo: StatusProcessoCodigo.rascunho, rotulo: 'Rascunho' },
     criadoEm: '2026-08-20T13:23:42.707136+00:00',
   };
 }

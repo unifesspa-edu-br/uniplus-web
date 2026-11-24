@@ -30,6 +30,20 @@ describe('conversão do documento e do conteúdo do editor', () => {
     expect(volta.formulario.grupos?.[0]).not.toHaveProperty('minimo');
   });
 
+  it('lê e conserva as condições do documento ao editar outro campo', () => {
+    const condicao = { codigoDoDado: 'PARENTESCO', operador: OperadorDaCondicao.IGUAL, valor: 'A' };
+    const original = {
+      ...formulario(),
+      itens: [{ codigoDoDado: 'RENDA', exibicao: [[condicao]] }],
+    };
+    const lido = aceita(conteudoDoDocumento(original, CATALOGOS));
+    expect(lido.conteudo.itens?.[0].regras.exibicao).toEqual([
+      [{ fato: 'PARENTESCO', operador: OperadorDaCondicao.IGUAL, valor: 'A' }],
+    ]);
+    const volta = aceita(editar(original, (conteudo) => ({ ...conteudo, titulo: 'Cadastro' })));
+    expect(volta.formulario.itens).toEqual(original.itens);
+  });
+
   it('grava só o mínimo confirmado em zero, mesmo sem mudar o valor mostrado', () => {
     const original = formulario();
     const volta = aceita(
@@ -52,7 +66,7 @@ describe('conversão do documento e do conteúdo do editor', () => {
   it('preserva predicados vazios e nulos quando outro campo é editado', () => {
     const original = {
       ...formulario(),
-      itens: [{ fatoCodigo: 'RENDA', precondicao: [], impedimento: null }],
+      itens: [{ codigoDoDado: 'RENDA', exibicao: [], impedimento: null }],
     };
     const volta = aceita(editar(original, (conteudo) => ({ ...conteudo, titulo: 'Cadastro' })));
     expect(volta.formulario.itens).toEqual(original.itens);
@@ -77,7 +91,9 @@ describe('conversão do documento e do conteúdo do editor', () => {
     );
     expect(volta.formulario.itens?.[0].obrigatoriedade).toEqual({
       tipo: Obrigatoriedade.QUANDO,
-      predicado: [[{ fato: 'PARENTESCO', operador: OperadorDaCondicao.IGUAL, valor: 'PROPRIO' }]],
+      quando: [
+        [{ codigoDoDado: 'PARENTESCO', operador: OperadorDaCondicao.IGUAL, valor: 'PROPRIO' }],
+      ],
     });
     expect(volta.formulario.itens?.[0]).not.toHaveProperty('tipoRenderizacao');
     expect(volta.formulario.itens?.[0]).not.toHaveProperty('predicadoObrigatoriedade');
@@ -89,10 +105,10 @@ describe('conversão do documento e do conteúdo do editor', () => {
       ...formulario(),
       itens: [
         {
-          fatoCodigo: 'RENDA',
+          codigoDoDado: 'RENDA',
           obrigatoriedade: {
             tipo: Obrigatoriedade.QUANDO,
-            predicado: [],
+            quando: [],
           },
         },
       ],
@@ -139,7 +155,7 @@ describe('conversão do documento e do conteúdo do editor', () => {
             { tipo: Restricao.FAIXA_NUMERICA, minimo: 1.25, maximo: null },
             {
               tipo: Restricao.FAIXA_DE_DATA,
-              dataMinima: { ancora: ReferenciaDoLimite.ENVIO, anos: 2, dias: 1 },
+              dataMinima: { referenciaDaData: ReferenciaDoLimite.ENVIO, anos: 2, dias: 1 },
             },
           ],
         },
@@ -218,7 +234,9 @@ describe('conversão do documento e do conteúdo do editor', () => {
   it('remover a última restrição declara uma lista vazia, preservando as outras ausências', () => {
     const original = {
       ...formulario(),
-      itens: [{ fatoCodigo: 'RENDA', restricoes: [{ tipo: Restricao.FAIXA_NUMERICA, minimo: 0 }] }],
+      itens: [
+        { codigoDoDado: 'RENDA', restricoes: [{ tipo: Restricao.FAIXA_NUMERICA, minimo: 0 }] },
+      ],
     };
     const volta = aceita(
       editar(original, (conteudo) => ({
@@ -239,7 +257,7 @@ describe('conversão do documento e do conteúdo do editor', () => {
       ...formulario(),
       itens: [
         {
-          fatoCodigo: 'RENDA',
+          codigoDoDado: 'RENDA',
           restricoes: [{ tipo: Restricao.OPCOES_PERMITIDAS, entradas: [{ valores: ['A'] }] }],
         },
       ],
@@ -268,7 +286,7 @@ describe('conversão do documento e do conteúdo do editor', () => {
       ...formulario(),
       itens: [
         {
-          fatoCodigo: 'RENDA',
+          codigoDoDado: 'RENDA',
           restricoes: [{ tipo: Restricao.OPCOES_PERMITIDAS, entradas: [{ valores: ['A'] }] }],
         },
       ],
@@ -300,7 +318,7 @@ describe('conversão do documento e do conteúdo do editor', () => {
       })),
     );
     expect(volta.formulario.itens?.[0].impedimento).toEqual({
-      quando: [[{ fato: 'RENDA', operador: OperadorDaCondicao.IGUAL, valor: 0 }]],
+      quando: [[{ codigoDoDado: 'RENDA', operador: OperadorDaCondicao.IGUAL, valor: 0 }]],
       mensagem: 'A resposta impede a inscrição.',
     });
     expect(volta.formulario.itens?.[0].opcoes).toEqual(formulario().itens?.[0].opcoes);
@@ -343,7 +361,7 @@ describe('conversão do documento e do conteúdo do editor', () => {
         ],
       })),
     );
-    expect(volta.formulario.etapas?.[1]).toMatchObject({
+    expect(volta.formulario.paginas?.[1]).toMatchObject({
       codigo: 'outra',
       tipo: 'SECAO',
       exibicao: [],

@@ -8,7 +8,7 @@ import { passarOTempo } from '@uniplus/shared-testing';
 import {
   type InscricaoDto,
   type InscricaoRequest,
-  SituacaoInscricao,
+  SituacaoInscricaoCodigo,
   TipoRenderizacaoCodigo,
 } from '@uniplus/shared-data/selecao';
 import {
@@ -134,7 +134,9 @@ describe('InscricaoDoCandidatoPage', () => {
     const tela = await cenario.abrir();
     cenario.servico.salvar = () =>
       of(problema(422, 'uniplus.selecao.inscricao.rascunho_so_antes_do_envio'));
-    cenario.servico.inscricao = inscricao({ situacao: SituacaoInscricao.submetida });
+    cenario.servico.inscricao = inscricao({
+      situacao: { codigo: SituacaoInscricaoCodigo.submetida, rotulo: 'Situação de teste' },
+    });
 
     await cenario.clicar(botao(tela, 'Salvar rascunho'));
 

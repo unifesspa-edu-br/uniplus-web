@@ -29,11 +29,11 @@ export const REGRA_CALCULO_IMPORTADA = 'CLASSIFICACAO-IMPORTADA';
 export const REGRA_CALCULO_MEDIA_PONDERADA = 'FORMULA-MEDIA-PONDERADA';
 
 /** Códigos de `RegraEliminacaoCodigo`, na mesma função de discriminador. */
-const ELIM_NOTA_MINIMA_ETAPA = 'ELIM-NOTA-MINIMA-ETAPA';
-const ELIM_CORTE_EM_AREA = 'ELIM-CORTE-EM-AREA';
-const ELIM_ZERO_EM_AREA = 'ELIM-ZERO-EM-AREA';
-const ELIM_FALTA_EM_DIA_DE_PROVA_ENEM = 'ELIM-FALTA-EM-DIA-DE-PROVA-ENEM';
-const ELIM_AUSENCIA_NA_ETAPA = 'ELIM-AUSENCIA-NA-ETAPA';
+const ELIM_NOTA_MINIMA_ETAPA = 'ELIMINACAO-NOTA-MINIMA-ETAPA';
+const ELIM_CORTE_EM_AREA = 'ELIMINACAO-CORTE-EM-AREA';
+const ELIM_ZERO_EM_AREA = 'ELIMINACAO-ZERO-EM-AREA';
+const ELIM_FALTA_EM_DIA_DE_PROVA_ENEM = 'ELIMINACAO-FALTA-EM-DIA-DE-PROVA-ENEM';
+const ELIM_AUSENCIA_NA_ETAPA = 'ELIMINACAO-AUSENCIA-NA-ETAPA';
 
 /**
  * A classificação exige a resolução de Peso por Área: baseada em ENEM e com a média ponderada
@@ -56,11 +56,11 @@ export function classificacaoUsaFormulaLocal(regraCalculoCodigo: string): boolea
 
 /**
  * O shape de campos que uma regra de eliminação aceita, espelhando
- * `DefinirClassificacaoCommandHandler.MontarArgs` (`ELIM-NOTA-MINIMA-ETAPA`
- * exige `etapaRef`+`notaMinima`; `ELIM-CORTE-EM-AREA` exige `areaCodigo`+`minimo`;
- * `ELIM-AUSENCIA-NA-ETAPA` exige só `etapaRef`; `ELIM-ZERO-EM-AREA` não aceita nenhum). Uma regra fora deste conjunto ainda
+ * `DefinirClassificacaoCommandHandler.MontarArgs` (`ELIMINACAO-NOTA-MINIMA-ETAPA`
+ * exige `etapaRef`+`notaMinima`; `ELIMINACAO-CORTE-EM-AREA` exige `areaCodigo`+`minimo`;
+ * `ELIMINACAO-AUSENCIA-NA-ETAPA` exige só `etapaRef`; `ELIMINACAO-ZERO-EM-AREA` não aceita nenhum). Uma regra fora deste conjunto ainda
  * não tem shape reconhecido pela tela — trata como "nenhum campo", igual a
- * `ELIM-ZERO-EM-AREA`, em vez de adivinhar.
+ * `ELIMINACAO-ZERO-EM-AREA`, em vez de adivinhar.
  */
 export function eliminacaoUsaEtapaENotaMinima(regraCodigo: string): boolean {
   return regraCodigo === ELIM_NOTA_MINIMA_ETAPA;

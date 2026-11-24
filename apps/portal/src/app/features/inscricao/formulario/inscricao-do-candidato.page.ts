@@ -34,6 +34,7 @@ import { AvaliacaoDaInscricaoEstado } from './avaliacao-da-inscricao.estado';
 import { DiaDoEnvio } from './dia-do-envio';
 import { EscolhaDoCurso, PASSO_DO_CURSO } from './escolha-do-curso';
 import { EscolhaDoCursoComponent } from './escolha-do-curso.component';
+import { formularioParaExibicao } from './formulario-para-exibicao';
 import { GravacaoDaInscricao } from './gravacao-da-inscricao';
 import { LeituraDaInscricao } from './leitura-da-inscricao';
 import { ReavaliacaoDaInscricao } from './reavaliacao-da-inscricao';
@@ -115,6 +116,10 @@ export class InscricaoDoCandidatoPage implements OnInit {
   protected readonly respostasFixas = computed(() =>
     respostasFixasDaConta(this.usuario.user(), this.leitura.formulario()),
   );
+  protected readonly formularioExibido = computed(() => {
+    const formulario = this.leitura.formulario();
+    return formulario ? formularioParaExibicao(formulario.formulario) : null;
+  });
 
   /**
    * Os fatos que o sistema calcula das respostas e que o formulário cita, com o rótulo de lá. Voltam ao

@@ -19,7 +19,10 @@ export const DEPENDENCIAS = { fatos: ['CONCORRER_EP', 'FAMILIA.RENDA'], grupos: 
 
 export const modalidadesDe = (...nomes: string[]): AvaliacaoDaInscricaoDto['modalidades'] => ({
   derivada: true,
-  situacao: 'CONCORRE',
+  situacao: {
+    codigo: 'CONCORRE' as NonNullable<AvaliacaoDaInscricaoDto['modalidades']['situacao']>['codigo'],
+    rotulo: 'Concorrendo',
+  },
   itens: nomes.map((nome, ordem) => ({ codigo: nome, nome, ordem })),
   pendencias: [],
 });

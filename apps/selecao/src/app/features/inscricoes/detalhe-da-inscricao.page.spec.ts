@@ -11,8 +11,8 @@ import { BehaviorSubject } from 'rxjs';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   SELECAO_BASE_PATH,
-  SituacaoDoArquivoDoCandidato,
-  SituacaoInscricao,
+  SituacaoDoArquivoDoCandidatoCodigo,
+  SituacaoInscricaoCodigo,
   type ArquivoAdministrativoDto,
   type OfertaEscolhidaDto,
   type InscricaoAdministrativaDto,
@@ -24,6 +24,7 @@ import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
 import { DetalheDaInscricaoPage } from './detalhe-da-inscricao.page';
 import { DetalheDaInscricao } from './detalhe-da-inscricao.service';
 import { INSCRICOES_DO_PROCESSO_ROUTES } from './inscricoes.routes';
+import { INSCRICAO_ENVIADA } from './situacoes-da-inscricao.testing';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000005aa';
@@ -79,7 +80,7 @@ function arquivo(
     nomeDoDocumento,
     tipoDeMidia: 'application/pdf',
     classificacaoProtecao: 'SENSIVEL',
-    situacao: SituacaoDoArquivoDoCandidato.verificado,
+    situacao: { codigo: SituacaoDoArquivoDoCandidatoCodigo.verificado, rotulo: 'Verificado' },
     tamanhoBytes: 2048,
     confirmadoEm: '2026-12-10T15:00:00Z',
     ...extra,
@@ -89,7 +90,7 @@ function arquivo(
 const FERNANDA: InscricaoAdministrativaDto = {
   id: INSCRICAO_ID,
   processo: PROCESSO,
-  situacao: SituacaoInscricao.submetida,
+  situacao: INSCRICAO_ENVIADA,
   ofertas: [oferta(1, MEDICINA), oferta(2, DIREITO)],
   numeroInscricao: '2027-000101',
   submetidaEm: '2026-12-10T15:00:00Z',
@@ -237,7 +238,7 @@ describe('DetalheDaInscricaoPage', () => {
 
     expect(host().querySelector('h1')?.textContent).toContain('Inscrição 2027-000101');
     expect(dado('Número')).toBe('2027-000101');
-    expect(dado('Situação')).toBe('Enviada');
+    expect(dado('Situação')).toBe(INSCRICAO_ENVIADA.rotulo);
     expect(itensDe('Ofertas escolhidas')).toEqual([MEDICINA, DIREITO]);
     expect(dado('Oferta escolhida')).toBeNull();
     expect(host().querySelector('.page-header__desc')?.textContent).toContain(
@@ -362,7 +363,7 @@ describe('DetalheDaInscricaoPage', () => {
     expect(itens[0]).toContain('Laudo médico');
     expect(itens[0]).toContain('PDF');
     expect(itens[0]).toContain('2,0 KB');
-    expect(itens[0]).toContain('Verificado');
+    expect(itens[0]).toContain(FERNANDA.arquivos[0].situacao.rotulo);
     expect(botoesAbrir().map((b) => b.getAttribute('aria-label'))).toEqual([
       'Abrir Laudo médico, enviado em 10/12/2026, 12:00',
       'Abrir Comprovante de residência, enviado em 10/12/2026, 12:00',
@@ -386,7 +387,7 @@ describe('DetalheDaInscricaoPage', () => {
     await abrir({
       id: INSCRICAO_ID,
       processo: PROCESSO,
-      situacao: SituacaoInscricao.submetida,
+      situacao: INSCRICAO_ENVIADA,
       ofertas: [oferta(1, DIREITO)],
       secoes: [],
       derivados: [],
@@ -395,7 +396,7 @@ describe('DetalheDaInscricaoPage', () => {
       numeroDoUltimoComprovante: null,
     });
 
-    expect(dado('Situação')).toBe('Enviada');
+    expect(dado('Situação')).toBe(INSCRICAO_ENVIADA.rotulo);
     expect(dado('Oferta escolhida')).toBe(DIREITO);
     expect(dado('Número')).toBeNull();
     expect(dado('Nome completo')).toBeNull();
@@ -409,7 +410,7 @@ describe('DetalheDaInscricaoPage', () => {
   it('mostra o motivo e o instante do cancelamento quando a API os devolve', async () => {
     await abrir({
       ...FERNANDA,
-      situacao: SituacaoInscricao.cancelada,
+      situacao: { codigo: SituacaoInscricaoCodigo.cancelada, rotulo: 'Cancelada' },
       canceladaEm: '2026-12-11T15:00:00Z',
       motivoDoCancelamento: 'A pedido da candidata',
     });

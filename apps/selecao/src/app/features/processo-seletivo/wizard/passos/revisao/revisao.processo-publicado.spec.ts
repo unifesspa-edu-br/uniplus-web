@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { HttpHeaders } from '@angular/common/http';
 import { of } from 'rxjs';
 import { apiOk } from '@uniplus/shared-core/http';
-import { StatusProcesso, type DocumentoDoAtoDto } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo, type DocumentoDoAtoDto } from '@uniplus/shared-data/selecao';
 import { errorResult, mockProblemDetails } from '@uniplus/shared-testing';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { RevisaoPassoComponent } from './revisao.component';
@@ -142,10 +142,13 @@ describe('RevisaoPassoComponent', () => {
 
     // Cancelado e encerrado não dizem se houve publicação: um rascunho cancelado não tem
     // snapshot vigente, e a transcrição que ele guarda precisa continuar na tela.
-    it.each([StatusProcesso.rascunho, StatusProcesso.cancelado, StatusProcesso.encerrado])(
+    it.each([StatusProcessoCodigo.rascunho, StatusProcessoCodigo.cancelado, StatusProcessoCodigo.encerrado])(
       'em %s não lê ato nenhum e mantém a transcrição',
       async (status) => {
-        store.remoteSnapshot.set({ ...PROCESSO_DTO_MINIMO, status } as never);
+        store.remoteSnapshot.set({
+          ...PROCESSO_DTO_MINIMO,
+          status: { ...PROCESSO_DTO_MINIMO.status, codigo: status },
+        } as never);
         await criarProcesso(cenario);
         await flushProntidaoVerde(cenario);
         fixture.detectChanges();
@@ -154,8 +157,8 @@ describe('RevisaoPassoComponent', () => {
         expect(cenario.atosLidos).toEqual([]);
         const tela = fixture.nativeElement as HTMLElement;
         // Rascunho a edita; cancelado e encerrado a leem como texto, sem campo.
-        expect(tela.querySelector('#rev-numero') !== null).toBe(status === StatusProcesso.rascunho);
-        if (status !== StatusProcesso.rascunho) {
+        expect(tela.querySelector('#rev-numero') !== null).toBe(status === StatusProcessoCodigo.rascunho);
+        if (status !== StatusProcessoCodigo.rascunho) {
           expect(tela.textContent).toContain('Número do ato');
         }
       },

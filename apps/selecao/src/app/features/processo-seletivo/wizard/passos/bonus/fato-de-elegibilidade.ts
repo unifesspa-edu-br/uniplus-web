@@ -1,4 +1,4 @@
-import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
 
 import type { FormularioDeInscricao, WizardDraft } from '../../processo-seletivo.models';
 
@@ -16,7 +16,7 @@ export interface FatoDeElegibilidade {
 export function citaFatoDeElegibilidade(draft: WizardDraft): boolean {
   return (
     draft.bonus.aplica === true &&
-    draft.identificacao.origemCandidatos === OrigemCandidatos.inscricaoPropria
+    draft.identificacao.origemCandidatos === OrigemCandidatosCodigo.inscricaoPropria
   );
 }
 

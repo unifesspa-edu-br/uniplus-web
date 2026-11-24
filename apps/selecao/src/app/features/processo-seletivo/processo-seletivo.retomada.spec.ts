@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-testing';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -129,15 +128,6 @@ describe('ProcessoSeletivoPage — retomada por endereço', MONTAGEM_LENTA, () =
     await propagar();
 
     expect(cenario.store.draft().identificacao.origemCandidatos).toBe('inscricaoPropria');
-  });
-
-  it('deixa a origem em branco quando o valor não é do vocabulário conhecido', async () => {
-    const cenario = montar({
-      obter: vi.fn(() => of(okResult(detalhe({ origemCandidatos: OrigemCandidatos.nenhuma })))),
-    });
-    await propagar();
-
-    expect(cenario.store.draft().identificacao.origemCandidatos).toBe('');
   });
 
   /** Retomar equivale a ter criado: o contrato não expõe atualização desses campos. */

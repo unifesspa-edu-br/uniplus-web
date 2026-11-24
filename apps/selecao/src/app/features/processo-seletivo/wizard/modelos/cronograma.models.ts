@@ -1,4 +1,4 @@
-import type { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import type { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 
 import type {
   LeituraDoRecurso,
@@ -149,7 +149,7 @@ export interface EtapaPontuada {
   /** Devolvido pela API; `null` enquanto a etapa é nova. */
   readonly id: string | null;
   readonly nome: string;
-  readonly carater: CaraterEtapa | '';
+  readonly carater: CaraterEtapaCodigo | '';
   readonly tipoEtapaOrigemId: string;
   readonly peso: string;
   readonly notaMinima: string;

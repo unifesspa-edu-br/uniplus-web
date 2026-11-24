@@ -1,5 +1,5 @@
 import axe from 'axe-core';
-import { StatusProcesso, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { ID_AVALIACAO, ID_INSCRICAO, ID_RESULTADO, ROTA_FASES } from './cronograma.testing';
@@ -129,7 +129,7 @@ describe('Cronograma: marca do mesmo momento', () => {
   it('mostra a marca publicada na consulta', () => {
     tela.comFaseAjustada(ID_INSCRICAO, { noMesmoMomentoDaAnterior: true });
     tela.store.remoteSnapshot.set({
-      status: StatusProcesso.publicado,
+      status: StatusProcessoCodigo.publicado,
     } as unknown as ProcessoSeletivoDto);
     tela.detectar();
     const texto = tela.nativo.querySelector('sel-fase-em-consulta')?.textContent ?? '';

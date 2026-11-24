@@ -1,4 +1,4 @@
-import { OrigemCandidatos, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatosCodigo, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import type { WizardDraft } from '../../processo-seletivo.models';
 
 /** O fato cujas opções são as edições do ENEM que o processo aceita. */
@@ -14,7 +14,7 @@ const PRIMEIRA_EDICAO = 1998;
 export function declaraEdicoesDoEnem(draft: WizardDraft): boolean {
   return (
     draft.classificacao.baseadoEmEnem &&
-    draft.identificacao.origemCandidatos === OrigemCandidatos.inscricaoPropria
+    draft.identificacao.origemCandidatos === OrigemCandidatosCodigo.inscricaoPropria
   );
 }
 

@@ -1,3 +1,4 @@
+import { PAPEL_PRELIMINAR, PUBLICACAO_DO_ATO } from './valor-do-enum';
 import type {
   ConfiguracaoBonusRegionalDto,
   CriterioDesempateDto,
@@ -105,7 +106,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
     regrasEliminacao: [
       {
         id: '01a0d640-0000-7000-8000-0000000000e4',
-        regra: referencia('ELIM-ZERO-EM-AREA'),
+        regra: referencia('ELIMINACAO-ZERO-EM-AREA'),
         etapaRef: null,
         notaMinima: null,
         minimo: null,
@@ -133,12 +134,12 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
       },
       janela: { inicio: '2027-01-20T08:00:00Z', fim: '2027-01-20T12:00:00Z' },
       publicacoes: {
-        produtos: [{ id: PRODUTO_ID, atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
+        produtos: [{ id: PRODUTO_ID, atoCodigo: 'RESULTADO_PRELIMINAR', papel: PAPEL_PRELIMINAR }],
         emiteParecerIndividual: true,
         recursos: [
           {
             id: '01a0d640-0000-7000-8000-0000000000f3',
-            ancora: 'atoPublicado' as RecursoDaEtapa['ancora'],
+            ancora: PUBLICACAO_DO_ATO,
             regra: referencia('RECURSO-PRAZO-ANCORADO-EM-ATO'),
             parametros: PARAMETROS_DO_RECURSO,
             produtoAncoraId: PRODUTO_ID,
@@ -169,7 +170,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
       },
       cronograma: { unidadeResponsavel: UNIDADE_RESPONSAVEL_DA_FASE },
       publicacoes: {
-        produtos: [{ id: PRODUTO_ID, atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
+        produtos: [{ id: PRODUTO_ID, atoCodigo: 'RESULTADO_PRELIMINAR', papel: PAPEL_PRELIMINAR }],
         produzResultado: true,
         regraRecurso: {
           id: '01a0d640-0000-7000-8000-0000000000c5',
@@ -224,7 +225,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
           id: '01a0d640-0000-7000-8000-000000000a13',
           clausula: 1,
           fato: 'MODALIDADE',
-          operador: 'EM',
+          operador: 'ALGUM_DE',
           valor: '["LB_PPI"]',
         },
       ],

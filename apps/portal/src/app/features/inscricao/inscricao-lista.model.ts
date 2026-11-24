@@ -1,7 +1,7 @@
 import {
   type AcoesDaInscricaoDto,
   type MinhaInscricaoDto,
-  SituacaoInscricao,
+  SituacaoInscricaoCodigo,
 } from '@uniplus/shared-data/selecao';
 import { formatarDataBr } from '@uniplus/shared-utils';
 
@@ -10,7 +10,7 @@ export interface ItemDaLista {
   /** A chave da lista: o mesmo processo pode ter uma inscrição cancelada e outra nova. */
   readonly id: string;
   readonly processoId: string;
-  readonly situacao: SituacaoInscricao;
+  readonly situacao: MinhaInscricaoDto['situacao'];
   readonly nome: string;
   /** Só a inscrição enviada ou cancelada tem número. */
   readonly numero: string | null;
@@ -31,10 +31,10 @@ export interface CursoDaInscricao {
 }
 
 function mensagemDa(inscricao: MinhaInscricaoDto): string | null {
-  switch (inscricao.situacao) {
-    case SituacaoInscricao.submetida:
+  switch (inscricao.situacao.codigo) {
+    case SituacaoInscricaoCodigo.submetida:
       return null;
-    case SituacaoInscricao.cancelada: {
+    case SituacaoInscricaoCodigo.cancelada: {
       const quando = formatarDataBr(inscricao.canceladaEm);
       const cancelada = quando ? `Cancelada em ${quando}.` : null;
       return inscricao.motivoDoCancelamento

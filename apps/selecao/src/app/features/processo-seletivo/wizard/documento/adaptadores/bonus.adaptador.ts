@@ -30,7 +30,7 @@ export function valoresDoFormulario(documento: DocumentoDaConfiguracao): Valores
     fator: textoDoNumero(bonus?.fator),
     teto: textoDoNumero(bonus?.teto),
     baseLegal: bonus?.baseLegalBonusRegionalCodigo ?? null,
-    fatoDeElegibilidade: bonus?.fatoElegibilidadeCodigo ?? null,
+    fatoDeElegibilidade: bonus?.codigoDoDadoDeElegibilidade ?? null,
   };
 }
 

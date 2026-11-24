@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { descreverFase, exigenciasDe } from './descricao-da-fase';
 import {
+  ORIGEM_NO_EDITAL,
+  ORIGEM_NA_EXECUCAO,
   faseCanonica,
   fase,
   PRELIMINAR,
@@ -10,7 +12,7 @@ import {
 
 describe('exigências da fase', () => {
   it('a fase que coleta inscrição ou isenção exige janela mesmo com a data definida na execução', () => {
-    const naExecucao = faseCanonica({ origemData: 'NA_EXECUCAO' });
+    const naExecucao = faseCanonica({ origemData: ORIGEM_NA_EXECUCAO });
 
     expect(exigenciasDe({ ...naExecucao, coletaInscricao: true }, []).janelaObrigatoria).toBe(true);
     expect(
@@ -19,12 +21,12 @@ describe('exigências da fase', () => {
   });
 
   it('data fixada no edital obriga janela; definida na execução não', () => {
-    expect(exigenciasDe(faseCanonica({ origemData: 'NO_EDITAL' }), []).janelaObrigatoria).toBe(
+    expect(exigenciasDe(faseCanonica({ origemData: ORIGEM_NO_EDITAL }), []).janelaObrigatoria).toBe(
       true,
     );
-    expect(exigenciasDe(faseCanonica({ origemData: 'NA_EXECUCAO' }), []).janelaObrigatoria).toBe(
-      false,
-    );
+    expect(
+      exigenciasDe(faseCanonica({ origemData: ORIGEM_NA_EXECUCAO }), []).janelaObrigatoria,
+    ).toBe(false);
   });
 
   /**
@@ -68,7 +70,7 @@ describe('exigências da fase', () => {
   });
 
   it('o Fim obrigatório não depende de o período ser obrigatório', () => {
-    const naExecucao = faseCanonica({ origemData: 'NA_EXECUCAO' });
+    const naExecucao = faseCanonica({ origemData: ORIGEM_NA_EXECUCAO });
 
     expect(exigenciasDe(naExecucao, []).janelaObrigatoria).toBe(false);
     expect(exigenciasDe(naExecucao, []).fimObrigatorio).toBe(true);

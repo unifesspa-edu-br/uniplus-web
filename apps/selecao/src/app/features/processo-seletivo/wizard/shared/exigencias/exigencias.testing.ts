@@ -1,4 +1,8 @@
-import { FormaDeComprovacaoCodigo } from '@uniplus/shared-data/selecao';
+import {
+  AplicabilidadeCodigo,
+  FinalidadeFormularioCodigo,
+  FormaDeComprovacaoCodigo,
+} from '@uniplus/shared-data/selecao';
 import type {
   DocumentoExigidoDto,
   RegraDeComprovacaoDto,
@@ -155,12 +159,17 @@ const REQUISITOS_PADRAO = {
   modelo: null,
 };
 
+const APLICABILIDADE_GERAL = {
+  tipo: { codigo: AplicabilidadeCodigo.GERAL, rotulo: 'Geral' },
+  condicoes: [],
+};
+
 function documentoDaApi(alteracoes: AlteracoesDoDocumentoDaApi): DocumentoExigidoDto {
   return {
     id: 'doc-1',
     tipoDocumento: TIPO_RG,
     momento: momentoDaApi(alteracoes),
-    aplicabilidade: alteracoes.aplicabilidade ?? { tipo: 'GERAL', condicoes: [] },
+    aplicabilidade: alteracoes.aplicabilidade ?? APLICABILIDADE_GERAL,
     indeferimento: { ...INDEFERIMENTO_PADRAO, ...alteracoes.indeferimento },
     requisitos: {
       ...REQUISITOS_PADRAO,
@@ -174,6 +183,11 @@ function momentoDaApi(alteracoes: AlteracoesDoDocumentoDaApi): DocumentoExigidoD
   return {
     faseId: alteracoes.faseId ?? ID_HABILITACAO,
     etapaId: alteracoes.etapaId ?? null,
-    finalidade: alteracoes.finalidade ?? null,
+    finalidade: alteracoes.finalidade
+      ? {
+          codigo: alteracoes.finalidade as FinalidadeFormularioCodigo,
+          rotulo: alteracoes.finalidade,
+        }
+      : null,
   };
 }

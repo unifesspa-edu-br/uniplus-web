@@ -7,6 +7,7 @@ import { InscricoesApi } from '@uniplus/shared-data/selecao';
 import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-testing';
 import type { AlvoDoEnvio } from '@uniplus/shared-ui/components';
 
+import { CONFIRMADO } from './envio-de-documentos-da-inscricao.testing';
 import { EnvioDeDocumentosDaInscricao } from './envio-de-documentos-da-inscricao';
 
 const PROCESSO = 'processo-1';
@@ -17,18 +18,6 @@ const DESTINO = {
   urlUpload: 'http://storage/laudo',
   contentTypeExigido: 'application/pdf',
   expiraEm: '2999-01-01T00:00:00Z',
-};
-const CONFIRMADO = {
-  arquivoId: 'arquivo-1',
-  apresentacaoId: 'apresentacao-1',
-  exigenciaId: 'e1',
-  ocorrenciaId: null,
-  tipoDeMidia: 'application/pdf',
-  tamanhoBytes: 7,
-  hashSha256: 'abc',
-  confirmadoEm: '2026-10-20T10:00:00Z',
-  rotulo: 'Arquivo 3',
-  nomeParaDownload: null,
 };
 
 describe('Envio dos documentos da inscrição', () => {

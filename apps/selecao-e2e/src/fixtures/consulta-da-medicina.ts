@@ -12,12 +12,15 @@ import { PROCESSO_DA_MEDICINA } from './vagas-da-medicina';
  */
 export const PROCESSO_PUBLICADO_DA_MEDICINA = {
   ...PROCESSO_DA_MEDICINA,
-  status: 'publicado',
+  status: { codigo: 'PUBLICADO', rotulo: 'Publicado' },
   identificadorLegivel: 'medicina-2027',
   configuracaoTaxaInscricao: {
     cobra: true,
     valor: 120.5,
-    fundamentos: ['CADASTRO_UNICO', 'DOACAO_MEDULA_OSSEA'],
+    fundamentos: [
+      { codigo: 'CADASTRO_UNICO', rotulo: 'Cadastro Único' },
+      { codigo: 'DOACAO_MEDULA_OSSEA', rotulo: 'Doação de medula óssea' },
+    ],
   },
   atendimentoEspecializado: {
     condicoes: [
@@ -53,7 +56,7 @@ export const PROCESSO_PUBLICADO_DA_MEDICINA = {
   },
   formularios: [
     {
-      finalidade: 'INSCRICAO',
+      finalidade: { codigo: 'INSCRICAO', rotulo: 'Inscrição' },
       faseId: null,
       titulo: 'Inscrição — Processo Seletivo de Medicina 2027',
       modeloOrigem: null,
@@ -81,13 +84,13 @@ export const PROCESSO_PUBLICADO_DA_MEDICINA = {
             fatoCodigo: 'COR_RACA',
             ordem: 0,
             rotulo: 'Cor ou raça',
-            tipoRenderizacao: 'SELECAO_UNICA',
+            tipoRenderizacao: 'ESCOLHA_UNICA',
           }),
           campoColetado({
             fatoCodigo: 'RENDA_FAMILIAR_PER_CAPITA_ATE_UM_SALARIO_MINIMO',
             ordem: 1,
             rotulo: 'Renda familiar per capita igual ou inferior a um salário mínimo',
-            tipoRenderizacao: 'BOOLEANO',
+            tipoRenderizacao: 'SIM_OU_NAO',
             obrigatoriedade: { tipo: 'NUNCA', predicado: null },
           }),
           // As perguntas que as regras das modalidades fazem, depois dos dois campos acima.

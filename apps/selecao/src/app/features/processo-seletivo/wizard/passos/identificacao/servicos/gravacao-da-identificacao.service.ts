@@ -1,6 +1,6 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { type ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
-import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
 
 import { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
@@ -147,7 +147,7 @@ export class GravacaoDaIdentificacao {
       nome: identificacao.nome.trim(),
       identificadorLegivel: identificador,
       tipoProcessoOrigemId: this.store.draft().tipoProcesso.selected,
-      origemCandidatos: identificacao.origemCandidatos as OrigemCandidatos,
+      origemCandidatos: identificacao.origemCandidatos as OrigemCandidatosCodigo,
       unidadeAdministradoraOrigemId: identificacao.unidadeAdministradoraId,
       localidadeCodigoIbge: identificacao.localidade?.codigoIbge ?? null,
       localidadeNome: identificacao.localidade?.nome ?? null,

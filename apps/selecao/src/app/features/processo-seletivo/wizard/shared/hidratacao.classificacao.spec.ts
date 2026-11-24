@@ -17,7 +17,7 @@ const CLASSIFICACAO = {
   regrasEliminacao: [
     {
       id: 'snapshot-elim-1',
-      regra: { codigo: 'ELIM-NOTA-MINIMA-ETAPA', versao: '1.0' },
+      regra: { codigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA', versao: '1.0' },
       etapaRef: 'etapa-persistida-1',
       notaMinima: 5,
       minimo: null,
@@ -25,7 +25,7 @@ const CLASSIFICACAO = {
     },
     {
       id: 'snapshot-elim-2',
-      regra: { codigo: 'ELIM-CORTE-EM-AREA', versao: 'v1' },
+      regra: { codigo: 'ELIMINACAO-CORTE-EM-AREA', versao: 'v1' },
       etapaRef: null,
       notaMinima: null,
       minimo: 450,
@@ -118,7 +118,7 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
       resolucaoPesoAreaEnem: '',
       regrasEliminacao: [
         {
-          regraCodigo: 'ELIM-NOTA-MINIMA-ETAPA',
+          regraCodigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA',
           regraVersao: '1.0',
           etapaRef: 'etapa-persistida-1',
           notaMinima: '5',
@@ -126,7 +126,7 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
           areaCodigo: '',
         },
         {
-          regraCodigo: 'ELIM-CORTE-EM-AREA',
+          regraCodigo: 'ELIMINACAO-CORTE-EM-AREA',
           regraVersao: 'v1',
           etapaRef: '',
           notaMinima: '',

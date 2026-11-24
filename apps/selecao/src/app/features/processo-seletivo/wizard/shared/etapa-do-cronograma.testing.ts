@@ -1,4 +1,4 @@
-import { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 
 import type { EtapaPontuada, RecursoDaEtapa } from '../processo-seletivo.models';
 import {
@@ -20,7 +20,7 @@ const RECURSO_DA_ETAPA_PADRAO: RecursoDaEtapa = {
 const ETAPA_DO_CRONOGRAMA_PADRAO: EtapaPontuada = {
   id: null,
   nome: 'Prova',
-  carater: CaraterEtapa.ambas,
+  carater: CaraterEtapaCodigo.ambas,
   tipoEtapaOrigemId: '',
   peso: '1',
   notaMinima: '',

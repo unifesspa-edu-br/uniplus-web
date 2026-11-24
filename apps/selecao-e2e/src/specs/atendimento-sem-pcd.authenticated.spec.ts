@@ -52,7 +52,7 @@ const TIPO_VISUAL = {
 /** O formulário de inscrição pergunta o tipo de deficiência; a oferta ainda não declara nada. */
 const PROCESSO_COM_FORMULARIO_QUE_PERGUNTA_O_TIPO = {
   ...PROCESSO_PUBLICADO_DA_MEDICINA,
-  status: 'rascunho',
+  status: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
   atendimentoEspecializado: { condicoes: [], recursos: [], tiposDeficiencia: [] },
   formularios: [
     {
@@ -63,7 +63,7 @@ const PROCESSO_COM_FORMULARIO_QUE_PERGUNTA_O_TIPO = {
             fatoCodigo: 'TIPO_DEFICIENCIA',
             ordem: 0,
             rotulo: 'Tipo de deficiência',
-            tipoRenderizacao: 'SELECAO_UNICA',
+            tipoRenderizacao: 'ESCOLHA_UNICA',
           }),
           ...CAMPOS_DAS_MODALIDADES_DA_MEDICINA.map((campo) => ({
             ...campo,

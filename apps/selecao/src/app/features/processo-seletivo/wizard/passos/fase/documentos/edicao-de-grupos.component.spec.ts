@@ -10,6 +10,7 @@ import { CriterioDeDistincaoComponent } from './criterio-de-distincao.component'
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
 import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
 import { CatalogoDasFormasDeComprovacao } from '../../cronograma/catalogos/catalogo-das-formas-de-comprovacao.service';
+import { CatalogoDasConsequenciasDeIndeferimento } from '../../cronograma/catalogos/catalogo-das-consequencias-de-indeferimento.service';
 import { FormularioDoCronograma } from '../../cronograma/servicos/formulario-do-cronograma.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import { EdicaoDeGruposComponent } from './edicao-de-grupos.component';
@@ -48,6 +49,10 @@ function provedoresDaFase() {
     },
     { provide: FormularioDoCronograma, useValue: { edicaoLiberada: signal(true) } },
     { provide: CatalogoDeFases, useValue: { fasePorId: signal(new Map()) } },
+    {
+      provide: CatalogoDasConsequenciasDeIndeferimento,
+      useValue: { consequencias: signal([]), situacao: signal('pronto'), erro: signal(null) },
+    },
     {
       provide: CatalogoDeDocumentos,
       useValue: { tipoDocumentoPorId: signal(new Map(NOMES.map((nome) => [nome, { nome }]))) },

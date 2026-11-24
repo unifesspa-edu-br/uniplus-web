@@ -179,15 +179,19 @@ function camposDaRegra(regra: RegraDeComprovacaoDto) {
   return {
     identificadorNoRascunho: criarIdentificadorDaRegra(),
     quantidadeMinima: cardinalidade.quantidadeMinima ?? null,
-    consequencia: indeferimento.consequencia,
+    consequencia: indeferimento.consequencia?.codigo ?? null,
     basesLegais: indeferimento.basesLegais.length
       ? indeferimento.basesLegais.map(baseLegalDe)
       : null,
-    criterioDeDistincao: cardinalidade.distincao?.criterioDeDistincao ?? null,
+    criterioDeDistincao: codigoDaDistincao(regra),
     dataReferencia: cardinalidade.distincao?.dataReferencia ?? null,
     ocorrenciasEsperadas: cardinalidade.distincao?.ocorrenciasEsperadas ?? null,
     grupoDoFormularioParaRepeticao: regra.grupoDoFormularioParaRepeticao,
   };
+}
+
+function codigoDaDistincao(regra: RegraDeComprovacaoDto): string | null {
+  return regra.cardinalidade.distincao?.criterioDeDistincao?.codigo ?? null;
 }
 
 function documentoDe(
@@ -207,7 +211,7 @@ function documentoNaFase(
     tipoDocumentoNome: dto.tipoDocumento.nome,
     ...faseDoDocumento(dto.momento.faseId, codigoPorFaseId),
     etapaId: dto.momento.etapaId,
-    finalidade: dto.momento.finalidade,
+    finalidade: dto.momento.finalidade?.codigo ?? null,
     ...regraDaExigenciaLida(dto),
     ...criteriosDoComprovanteLidos(dto.requisitos, codigoPorFaseId),
   };
@@ -224,9 +228,9 @@ function regraDaExigenciaLida(
   const { aplicabilidade, indeferimento } = dto;
   return {
     fatosComprovados: dto.fatosComprovados,
-    aplicabilidade: aplicabilidade.tipo,
+    aplicabilidade: aplicabilidade.tipo.codigo,
     obrigatorio: indeferimento.obrigatorio,
-    consequenciaIndeferimento: indeferimento.consequencia ?? '',
+    consequenciaIndeferimento: indeferimento.consequencia?.codigo ?? '',
     condicoes: aplicabilidade.condicoes.map(condicaoDaExigencia),
     basesLegais: indeferimento.basesLegais.map(baseLegalDe),
   };
@@ -263,7 +267,7 @@ function modeloDe(
   return {
     modeloId: modelo.modeloId,
     nomeArquivo: modelo.nomeArquivo,
-    formato: modelo.formato,
+    formato: modelo.formato.codigo,
     hashSha256: modelo.hashSha256,
   };
 }
@@ -271,8 +275,8 @@ function modeloDe(
 function baseLegalDe(base: BaseLegalDto): BaseLegalConfig {
   return {
     referencia: base.referencia,
-    abrangencia: base.abrangencia,
-    situacao: base.situacao,
+    abrangencia: base.abrangencia.codigo,
+    situacao: base.situacao.codigo,
     observacao: base.observacao ?? null,
   };
 }

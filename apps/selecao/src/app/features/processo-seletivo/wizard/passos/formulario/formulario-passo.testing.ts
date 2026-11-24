@@ -7,7 +7,11 @@ import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import { SELECAO_BASE_PATH, type FormularioDto } from '@uniplus/shared-data/selecao';
+import {
+  SELECAO_BASE_PATH,
+  StatusProcessoCodigo,
+  type FormularioDto,
+} from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -101,7 +105,7 @@ export class ContextoDoPasso {
       ...PROCESSO,
       formularios,
       id: PROCESSO_ID,
-      status: 'rascunho',
+      status: { codigo: StatusProcessoCodigo.rascunho, rotulo: StatusProcessoCodigo.rascunho },
     } as never);
     this.fixture.detectChanges();
   };

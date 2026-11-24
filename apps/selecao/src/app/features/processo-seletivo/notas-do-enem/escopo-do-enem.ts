@@ -54,8 +54,8 @@ function valorSelecionavelDe(valor: Objeto): { codigo: string; ordem: unknown }[
 }
 
 function edicoesDaVersaoPublicada(configuracao: Objeto): readonly string[] {
-  const fato = objetosDe(configuracao['fatosColetados']).find(
-    (f) => f['fatoCodigo'] === FATO_DA_EDICAO_DO_ENEM,
+  const fato = objetosDe(configuracao['dadosDosFormularios']).find(
+    (f) => f['codigoDoDado'] === FATO_DA_EDICAO_DO_ENEM,
   );
   const valores = objetosDe(fato?.['valoresSelecionaveis']).flatMap(valorSelecionavelDe);
   return codigosPelaOrdem(valores, (v) => v.codigo);

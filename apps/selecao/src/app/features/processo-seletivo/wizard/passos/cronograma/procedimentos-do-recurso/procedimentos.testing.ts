@@ -10,7 +10,7 @@ export function regraDoCatalogo(codigo: string, baseLegal: string): RegraCatalog
   return {
     codigo,
     versao: 'v1',
-    tipo: 'regra_procedimento_recurso',
+    tipo: { codigo: 'regra_procedimento_recurso' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Procedimento de recurso' },
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal,

@@ -9,7 +9,8 @@ function objeto(valor: unknown): valor is Readonly<Record<string, unknown>> {
 
 function posicaoDaParte(lista: readonly unknown[], chave: string): number {
   const indice = lista.findIndex(
-    (item) => objeto(item) && (item['codigo'] ?? item['fatoCodigo']) === chave,
+    (item) =>
+      objeto(item) && (item['codigo'] ?? item['codigoDoDado'] ?? item['fatoCodigo']) === chave,
   );
   return indice >= 0 ? indice : Number(chave);
 }
@@ -23,7 +24,8 @@ export function localizacaoDaConversao(caminho: Caminho, conteudo?: Conteudo): s
       atual = atual[indice];
       return Number.isInteger(indice) ? String(indice) : chave;
     }
-    atual = objeto(atual) ? atual[chave] : undefined;
+    const campo = chave === 'paginas' ? 'etapas' : chave;
+    atual = objeto(atual) ? atual[campo] : undefined;
     return chave;
   });
   return '/' + partes.map(escaparSegmento).join('/');

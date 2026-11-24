@@ -1,6 +1,6 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture } from '@angular/core/testing';
-import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
 import { apresentacaoDoCampo } from '@uniplus/shared-ui/components';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -269,7 +269,7 @@ describe('BonusPassoComponent', () => {
   describe('quem recebe o acréscimo', () => {
     function comInscricaoPropriaEFormulario(): void {
       store.patchObjectSection('identificacao', {
-        origemCandidatos: OrigemCandidatos.inscricaoPropria,
+        origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
       });
       store.patchObjectSection('formulario', {
         conteudo: {

@@ -28,7 +28,7 @@ function comEtapaAvaliada(): DocumentoDaConfiguracao {
         ],
       },
     ],
-    motivos: [],
+    motivosDeDecisao: [],
   };
 }
 
@@ -57,7 +57,7 @@ describe('acrescentar item e nível', () => {
         fases: [
           {
             chave: 'f',
-            faseCanonicaCodigo: 'INSCRICOES',
+            tipoFaseCodigo: 'INSCRICOES',
             noMesmoMomentoDaAnterior: false,
             regraRecurso: {
               procedimentosDeRecurso: [

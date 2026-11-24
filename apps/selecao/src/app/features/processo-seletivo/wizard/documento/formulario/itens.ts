@@ -8,13 +8,13 @@ import { gravarRestricao } from './restricoes';
 type Item = NonNullable<DocumentoDaConfiguracaoFormulario['itens']>[number];
 
 const CAMPOS: readonly (keyof Item)[] = [
-  'fatoCodigo',
+  'codigoDoDado',
   'ordem',
-  'etapaCodigo',
+  'paginaCodigo',
   'rotulo',
   'ajuda',
   'pedirConfirmacao',
-  'precondicao',
+  'exibicao',
   'obrigatoriedade',
   'impedimento',
   'restricoes',
@@ -54,9 +54,9 @@ function impedimentoDoItem(
 
 function apresentacaoDoItem(item: ItemDoFormulario) {
   return {
-    fatoCodigo: item.fatoCodigo,
+    codigoDoDado: item.fatoCodigo,
     ordem: item.ordem,
-    etapaCodigo: item.etapaCodigo,
+    paginaCodigo: item.etapaCodigo,
     rotulo: item.apresentacao.rotulo,
     ajuda: item.apresentacao.ajuda ?? undefined,
     pedirConfirmacao: item.apresentacao.pedirConfirmacao,
@@ -67,7 +67,7 @@ function camposDoItem(item: ItemDoFormulario, contexto: Contexto, caminho: Camin
   contexto.tipoDoCampo(item.fatoCodigo, [...caminho, 'fatoCodigo']);
   return {
     ...apresentacaoDoItem(item),
-    precondicao: predicadoDoDocumento(item.regras.exibicao, contexto, [...caminho, 'precondicao']),
+    exibicao: predicadoDoDocumento(item.regras.exibicao, contexto, [...caminho, 'exibicao']),
     obrigatoriedade: obrigatoriedadeDoDocumento(item.regras.obrigatoriedade, contexto, [
       ...caminho,
       'obrigatoriedade',

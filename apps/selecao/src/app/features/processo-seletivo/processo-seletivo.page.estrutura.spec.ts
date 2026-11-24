@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { StepsResponsivoComponent } from '@uniplus/shared-ui/components';
-import { StatusProcesso, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { configurarPagina } from './processo-seletivo.page.testing';
 import { tituloDoPasso } from './wizard/shared/titulo-do-passo';
@@ -130,7 +130,7 @@ describe('ProcessoSeletivoPage — estrutura', () => {
 
   it.each([
     ['em edição', null],
-    ['em consulta', StatusProcesso.publicado],
+    ['em consulta', StatusProcessoCodigo.publicado],
   ])(
     '%s, .wiz-content não é contêiner de rolagem próprio: rola o .page do shell',
     (_modo, status) => {

@@ -19,7 +19,7 @@ function destino(origem: string, ordem: number, destinoCodigo: string): DestinoD
 function documentoComDestinos(destinos: readonly DestinoDoDocumento[]): DocumentoDaConfiguracao {
   return {
     ...documentoSemNada(),
-    cascataRemanejamento: { regra: REGRA, fallbackCodigo: 'AC', destinos },
+    cascataRemanejamento: { regra: REGRA, destinoFinalCodigo: 'AC', destinos },
   };
 }
 

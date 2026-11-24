@@ -1,3 +1,4 @@
+import type { ProdutoPrevistoDto } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { ModoDaPublicacao } from './modo-da-publicacao';
@@ -52,6 +53,7 @@ describe('PublicarDocumentoComponent — item do edital', () => {
 
     expect(tela.host.querySelector('#pub-tipo')).toBeNull();
     expect(tela.host.textContent).toContain('Resultado da homologação');
+    expect(tela.host.textContent).toContain('resultado preliminar');
     const politica =
       tela.host.querySelector('[aria-labelledby="pub-politica-titulo"]')?.textContent ?? '';
     expect(politica).toContain('Número de inscrição');
@@ -108,6 +110,9 @@ describe('PublicarDocumentoComponent — item do edital', () => {
       corrigido: null,
     });
     expect(tela.host.querySelector('#pub-politica')).toBeNull();
+    expect(tela.host.querySelector('[aria-labelledby="pub-item-titulo"]')?.textContent).not.toContain(
+      '— resultado',
+    );
 
     confirmar();
 
@@ -144,7 +149,7 @@ describe('PublicarDocumentoComponent — item do edital', () => {
   });
 
   it('mostra a recusa do servidor com a mensagem do catálogo e mantém o formulário preenchido', async () => {
-    await preparar({ ...publicarResultado, item: item({ papel: 'DEFINITIVO' }) });
+    await preparar({ ...publicarResultado, item: item({ papel: { codigo: 'DEFINITIVO' as NonNullable<ProdutoPrevistoDto['papel']>['codigo'], rotulo: 'Definitivo' } }) });
     (tela.host.querySelector('#pub-politica') as HTMLInputElement).click();
     tela.fixture.detectChanges();
     confirmar();

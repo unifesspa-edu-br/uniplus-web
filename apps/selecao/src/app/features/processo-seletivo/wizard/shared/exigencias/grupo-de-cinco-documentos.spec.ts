@@ -51,13 +51,13 @@ function respostaDaApi(): RegraDeComprovacaoDto {
     },
     cardinalidade: { quantidadeMinima: 1, distincao: null },
     indeferimento: {
-      consequencia: 'ELIMINA',
+      consequencia: { codigo: 'ELIMINA' as NonNullable<NonNullable<RegraDeComprovacaoDto['indeferimento']>['consequencia']>['codigo'], rotulo: 'Elimina' },
       basesLegais: [
         {
           id: 'norma',
           referencia: 'Edital 1/2027',
-          abrangencia: 'INTERNA_EDITAL',
-          situacao: 'RESOLVIDO',
+          abrangencia: { codigo: 'INTERNA_EDITAL' as NonNullable<RegraDeComprovacaoDto['indeferimento']>['basesLegais'][number]['abrangencia']['codigo'], rotulo: 'Edital' },
+          situacao: { codigo: 'RESOLVIDO' as NonNullable<RegraDeComprovacaoDto['indeferimento']>['basesLegais'][number]['situacao']['codigo'], rotulo: 'Resolvido' },
           observacao: null,
         },
       ],

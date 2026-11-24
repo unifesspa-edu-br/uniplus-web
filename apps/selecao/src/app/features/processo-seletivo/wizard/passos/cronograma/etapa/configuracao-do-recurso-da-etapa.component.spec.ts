@@ -10,7 +10,6 @@ import {
   EfeitoSuspensivoCodigo,
   PapelDaBancaCodigo,
   SELECAO_BASE_PATH,
-  StatusProcesso,
   UnidadePrazoCodigo,
   type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
@@ -33,6 +32,7 @@ import {
   provideTiposDeDecisaoDaApi,
   umProcessoLidoComOsTiposDeDecisao,
 } from '../../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
+import { PROCESSO_DTO_MINIMO } from '../../revisao/revisao.testing';
 import { etapa } from '../cronograma-do-certame.testing';
 import { etapaDoFormulario, grupoDaEtapa } from '../cronograma-form';
 import { BASE } from '../cronograma.testing';
@@ -194,7 +194,7 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
 
   it('em consulta, lê os parâmetros em texto e não desenha os controles', () => {
     TestBed.inject(ProcessoSeletivoStore).remoteSnapshot.set({
-      status: StatusProcesso.publicado,
+      status: PROCESSO_DTO_MINIMO.status,
     } as unknown as ProcessoSeletivoDto);
     fixture.componentRef.setInput('recursoDaEtapa', {
       ...RECURSO,
@@ -208,7 +208,10 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
   });
 
   it('lista os procedimentos declarados, nomeando o item contestado pelo rótulo da etapa', () => {
-    TestBed.inject(ProcessoSeletivoStore).remoteSnapshot.set(umProcessoLidoComOsTiposDeDecisao());
+    TestBed.inject(ProcessoSeletivoStore).remoteSnapshot.set({
+      ...umProcessoLidoComOsTiposDeDecisao(),
+      status: PROCESSO_DTO_MINIMO.status,
+    });
     grupo.controls.itensDeAvaliacao.setValue([
       { id: 'item-1', rotulo: 'Clareza', pontuacaoMaxima: '4' },
     ]);

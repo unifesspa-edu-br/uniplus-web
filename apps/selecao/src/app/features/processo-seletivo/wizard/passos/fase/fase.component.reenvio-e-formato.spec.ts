@@ -50,7 +50,7 @@ describe('FasePassoComponent', () => {
         editor()
           .consequenciasDaFase()
           .map((opcao) => opcao.valor),
-      ).not.toContain('PENDENCIA_REENVIO');
+      ).not.toContain('ABRE_PRAZO_PARA_REENVIO');
     });
 
     it('oferece o reenvio na fase que admite', () => {
@@ -61,7 +61,7 @@ describe('FasePassoComponent', () => {
         editor()
           .consequenciasDaFase()
           .map((opcao) => opcao.valor),
-      ).toContain('PENDENCIA_REENVIO');
+      ).toContain('ABRE_PRAZO_PARA_REENVIO');
     });
 
     /**
@@ -74,10 +74,10 @@ describe('FasePassoComponent', () => {
       documentos().escolherDocumento(ID_CPF);
       documentos().acrescentarDocumento();
       detectar();
-      editor().escolherConsequencia(ID_CPF, 'PENDENCIA_REENVIO');
+      editor().escolherConsequencia(ID_CPF, 'ABRE_PRAZO_PARA_REENVIO');
       detectar();
 
-      expect(editor().consequenciaDoDocumento(ID_CPF)).toBe('PENDENCIA_REENVIO');
+      expect(editor().consequenciaDoDocumento(ID_CPF)).toBe('ABRE_PRAZO_PARA_REENVIO');
     });
   });
 

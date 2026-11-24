@@ -5,7 +5,10 @@ import {
   APLICABILIDADE_CONDICIONAL,
   exigenciaNova,
 } from '../../shared/exigencias/exigencias-documentais';
-import { comExigidoDeTodos, comModalidades } from '../../shared/exigencias/recorte-por-modalidade';
+import {
+  comExigidoDeTodos,
+  comModalidades,
+} from '../../shared/exigencias/modalidades-da-exigencia';
 import {
   comClausula,
   comCondicaoTrocada,
@@ -27,8 +30,8 @@ const IGUALDADE = [
 ];
 const PERTINENCIA = [
   ...IGUALDADE,
-  { codigo: 'EM', rotulo: 'é um de' },
-  { codigo: 'NAO_EM', rotulo: 'não é nenhum de' },
+  { codigo: 'ALGUM_DE', rotulo: 'é um de' },
+  { codigo: 'NENHUM_DE', rotulo: 'não é nenhum de' },
 ];
 const COMPARACAO = [
   { codigo: 'IGUAL', rotulo: 'é igual a' },
@@ -83,7 +86,7 @@ describe('resumo da exigência documental', () => {
     expect(publico.alcancaModalidade('AC')).toBe(false);
   });
 
-  it('nomeia as modalidades do recorte pelo código', () => {
+  it('nomeia as modalidades da seleção de modalidades pelo código', () => {
     const publico = publicoDaExigencia(condicional([], ['LB_PPI', 'LI_PPI']), FATOS);
 
     expect(descreverPublico(publico)).toBe('Modalidades LB_PPI, LI_PPI');
@@ -91,7 +94,7 @@ describe('resumo da exigência documental', () => {
 
   it('lê as condições por E dentro da alternativa e por OU entre elas', () => {
     const exigencia = condicional([
-      { clausula: 1, fato: 'COR_RACA', operador: 'EM', valor: '["Preta","Parda"]' },
+      { clausula: 1, fato: 'COR_RACA', operador: 'ALGUM_DE', valor: '["Preta","Parda"]' },
       { clausula: 1, fato: 'ESTRANGEIRO', operador: 'IGUAL', valor: 'false' },
       { clausula: 2, fato: 'COR_RACA', operador: 'IGUAL', valor: '"Indígena"' },
     ]);
@@ -101,7 +104,7 @@ describe('resumo da exigência documental', () => {
     );
   });
 
-  it('junta o recorte por modalidade e as condições', () => {
+  it('junta a seleção de modalidades e as condições', () => {
     const exigencia = condicional(
       [{ clausula: 1, fato: 'COR_RACA', operador: 'IGUAL', valor: '"Indígena"' }],
       ['LB_PPI'],
@@ -116,12 +119,12 @@ describe('resumo da exigência documental', () => {
    * O domínio aceita condição de modalidade com qualquer operador, gravada por outro caminho
    * que não o editor: ela aparece descrita e decide o filtro por modalidade como na publicação.
    */
-  describe('condição de modalidade de outra forma que o recorte', () => {
+  describe('condição de modalidade de outra forma que a seleção de modalidades', () => {
     const igual = condicional([
       { clausula: 1, fato: 'MODALIDADE', operador: 'IGUAL', valor: '"LB_PPI"' },
     ]);
     const exceto = condicional([
-      { clausula: 1, fato: 'MODALIDADE', operador: 'NAO_EM', valor: '["LB_PPI","LI_PPI"]' },
+      { clausula: 1, fato: 'MODALIDADE', operador: 'NENHUM_DE', valor: '["LB_PPI","LI_PPI"]' },
       { clausula: 1, fato: 'COR_RACA', operador: 'IGUAL', valor: '"Indígena"' },
     ]);
 
@@ -148,16 +151,16 @@ describe('resumo da exigência documental', () => {
 
       expect(frase('IGUAL', '"LB_PPI"')).toBe('Modalidade LB_PPI');
       expect(frase('DIFERENTE', '"LB_PPI"')).toBe('Modalidades exceto LB_PPI');
-      expect(frase('EM', '["LB_PPI","LI_PPI"]')).toBe('Modalidades LB_PPI, LI_PPI');
-      expect(frase('NAO_EM', '["AC"]')).toBe('Modalidades exceto AC');
+      expect(frase('ALGUM_DE', '["LB_PPI","LI_PPI"]')).toBe('Modalidades LB_PPI, LI_PPI');
+      expect(frase('NENHUM_DE', '["AC"]')).toBe('Modalidades exceto AC');
     });
   });
 
   /**
-   * As alternativas se combinam por OU: a que só tem o recorte cobra o documento de toda a
+   * As alternativas se combinam por OU: a que só tem a seleção de modalidades cobra o documento de toda a
    * modalidade recortada, e a condição da outra não restringe nada além dela.
    */
-  describe('alternativa que só tem o recorte', () => {
+  describe('alternativa que só tem a seleção de modalidades', () => {
     const SEXO: FatoEscolhivel = {
       codigo: 'SEXO',
       nome: 'Sexo',
@@ -189,7 +192,7 @@ describe('resumo da exigência documental', () => {
         [
           { clausula: 1, fato: 'ESTRANGEIRO', operador: 'IGUAL', valor: 'false' },
           { clausula: 2, fato: 'COR_RACA', operador: 'IGUAL', valor: '"Indígena"' },
-          { clausula: 2, fato: 'MODALIDADE', operador: 'EM', valor: '["LB_PPI"]' },
+          { clausula: 2, fato: 'MODALIDADE', operador: 'ALGUM_DE', valor: '["LB_PPI"]' },
         ],
         ['LB_PPI'],
       );
@@ -205,10 +208,10 @@ describe('resumo da exigência documental', () => {
   });
 
   /**
-   * O `EM` de modalidade só é recorte quando está, com a mesma lista, em todas as alternativas.
+   * O `EM` de modalidade só é seleção de modalidades quando está, com a mesma lista, em todas as alternativas.
    * Fora disso é condição da própria alternativa, e o domínio a lê assim.
    */
-  describe('recorte que não está em todas as alternativas', () => {
+  describe('seleção de modalidades que não está em todas as alternativas', () => {
     const idade: FatoEscolhivel = {
       codigo: 'IDADE',
       nome: 'Idade',
@@ -219,16 +222,16 @@ describe('resumo da exigência documental', () => {
     };
     const fatos = new Map([...FATOS, [idade.codigo, idade]]);
     const soNaPrimeira = condicional([
-      { clausula: 1, fato: 'MODALIDADE', operador: 'EM', valor: '["LB_PPI"]' },
+      { clausula: 1, fato: 'MODALIDADE', operador: 'ALGUM_DE', valor: '["LB_PPI"]' },
       { clausula: 2, fato: 'COR_RACA', operador: 'IGUAL', valor: '"Indígena"' },
     ]);
     const comOutraCondicao = condicional([
-      { clausula: 1, fato: 'MODALIDADE', operador: 'EM', valor: '["A"]' },
+      { clausula: 1, fato: 'MODALIDADE', operador: 'ALGUM_DE', valor: '["A"]' },
       { clausula: 1, fato: 'ESTRANGEIRO', operador: 'IGUAL', valor: 'true' },
       { clausula: 2, fato: 'IDADE', operador: 'MAIOR_IGUAL', valor: '60' },
     ]);
 
-    it('descreve o EM dentro da alternativa, não como recorte do gatilho', () => {
+    it('descreve o EM dentro da alternativa, não coma seleção de modalidades do gatilho', () => {
       const primeira = publicoDaExigencia(soNaPrimeira, fatos);
       const segunda = publicoDaExigencia(comOutraCondicao, fatos);
 
@@ -252,12 +255,12 @@ describe('resumo da exigência documental', () => {
       expect(alcancaOPublico(segunda, indigena)).toBe(false);
     });
 
-    it('mantém o recorte que o editor grava em todas as alternativas', () => {
+    it('mantém a seleção de modalidades que o editor grava em todas as alternativas', () => {
       const uniforme = condicional(
         [
           { clausula: 1, fato: 'ESTRANGEIRO', operador: 'IGUAL', valor: 'false' },
           { clausula: 2, fato: 'COR_RACA', operador: 'IGUAL', valor: '"Indígena"' },
-          { clausula: 2, fato: 'MODALIDADE', operador: 'EM', valor: '["LB_PPI"]' },
+          { clausula: 2, fato: 'MODALIDADE', operador: 'ALGUM_DE', valor: '["LB_PPI"]' },
         ],
         ['LB_PPI'],
       );
@@ -284,7 +287,7 @@ describe('resumo da exigência documental', () => {
     );
     const deNinguem = publicoDaExigencia(condicional([]), FATOS);
 
-    it('por modalidade: o geral, o recorte que a inclui e a condição sobre outro fato', () => {
+    it('por modalidade: o geral, a seleção de modalidades que a inclui e a condição sobre outro fato', () => {
       const filtro = { tipo: 'modalidade', codigo: 'LB_PPI' } as const;
 
       expect(alcancaOPublico(geral, filtro)).toBe(true);
@@ -313,7 +316,7 @@ describe('resumo da exigência documental', () => {
       expect(alcancaOPublico(deNinguem, filtro)).toBe(false);
     });
 
-    it('a exigência geral deixa de ser geral ao receber recorte', () => {
+    it('a exigência geral deixa de ser geral ao receber seleção de modalidades', () => {
       const recortada = comExigidoDeTodos(exigenciaNova('DOC', 'HABILITACAO'), false);
 
       expect(publicoDaExigencia(recortada, FATOS).deTodos).toBe(false);
@@ -321,9 +324,11 @@ describe('resumo da exigência documental', () => {
   });
 
   it('nomeia a consequência da falta, sem mentir sobre a obrigatória', () => {
-    expect(rotuloDaConsequencia('ELIMINA', true)).toBe('Elimina do processo');
-    expect(rotuloDaConsequencia('', false)).toBe('Não decide sozinha');
-    expect(rotuloDaConsequencia('', true)).toBe('Nada além de faltar o documento obrigatório');
+    expect(
+      rotuloDaConsequencia('ELIMINA', true, [{ codigo: 'ELIMINA', rotulo: 'Rótulo da API' }]),
+    ).toBe('Rótulo da API');
+    expect(rotuloDaConsequencia('', false, [])).toBe('Não decide sozinha');
+    expect(rotuloDaConsequencia('', true, [])).toBe('Nada além de faltar o documento obrigatório');
   });
 
   it('resume como o documento compõe o grupo', () => {

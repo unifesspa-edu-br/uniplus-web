@@ -43,7 +43,7 @@ export function processo(
   return {
     id: PROCESSO_ID,
     nome: 'Medicina 2027',
-    status,
+    status: { codigo: status, rotulo: status },
     identificadorLegivel,
   } as unknown as ProcessoSeletivoDto;
 }
@@ -54,25 +54,36 @@ export function snapshotVigente(
 ): SnapshotVigenteDto {
   const { etapaDoEnem = true, edicoes = ['2024', '2025'] } = sobrescritas;
   return {
-    configuracao: {
-      etapas: [
-        { id: 'outra', nome: 'Prova objetiva', tipoEtapa: { notaDeOrigemNoEnem: false } },
-        ...(etapaDoEnem
-          ? [{ id: ETAPA_ID, nome: 'Nota do ENEM', tipoEtapa: { notaDeOrigemNoEnem: true } }]
-          : []),
-      ],
-      fatosColetados: [
-        {
-          fatoCodigo: 'EDICAO_ENEM',
-          valoresSelecionaveis: edicoes.map((valorCodigo, indice) => ({
-            valorCodigo,
-            ordem: indice + 1,
-          })),
-        },
-      ],
-    },
+    configuracao: configuracaoPublicada(etapaDoEnem, edicoes),
   } as unknown as SnapshotVigenteDto;
 }
+
+function configuracaoPublicada(etapaDoEnem: boolean, edicoes: readonly string[]) {
+  return {
+    etapas: [
+      { id: 'outra', nome: 'Prova objetiva', tipoEtapa: { notaDeOrigemNoEnem: false } },
+      ...(etapaDoEnem
+        ? [{ id: ETAPA_ID, nome: 'Nota do ENEM', tipoEtapa: { notaDeOrigemNoEnem: true } }]
+        : []),
+    ],
+    dadosDosFormularios: [dadoDasEdicoes(edicoes)],
+  };
+}
+
+function dadoDasEdicoes(edicoes: readonly string[]) {
+  return {
+    codigoDoDado: 'EDICAO_ENEM',
+    valoresSelecionaveis: edicoes.map((valorCodigo, indice) => ({
+      valorCodigo,
+      ordem: indice + 1,
+    })),
+  };
+}
+
+const TIPOS_DE_LEIAUTE = {
+  envio: { codigo: 'envio' as LeiauteDoInepDto['tipo']['codigo'], rotulo: 'Envio' },
+  retorno: { codigo: 'retorno' as LeiauteDoInepDto['tipo']['codigo'], rotulo: 'Retorno' },
+};
 
 export function leiaute(
   codigo: string,
@@ -82,7 +93,7 @@ export function leiaute(
   return {
     codigo,
     versao: 'v1',
-    tipo,
+    tipo: TIPOS_DE_LEIAUTE[tipo],
     descricao: `Leiaute ${codigo}`,
     hash: 'h'.repeat(64),
     quantidadeDeCampos: 20,
@@ -112,21 +123,24 @@ export async function responderALeituraInicial(
   publicada: SnapshotVigenteDto | null = snapshotVigente(),
 ): Promise<void> {
   controller.expectOne(ROTA_PROCESSO).flush(processoLido);
-  if (processoLido.status !== 'rascunho') {
-    await tick();
-    const requisicao = controller.expectOne(ROTA_SNAPSHOT);
-    if (publicada === null) {
-      requisicao.flush({ title: 'Sem versão publicada' }, { status: 404, statusText: 'Not Found' });
-    } else {
-      requisicao.flush(publicada);
-    }
-  }
+  if (processoLido.status.codigo !== 'rascunho') await responderSnapshot(controller, publicada);
   controller
     .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'envio')
     .flush(leiautes.envio ?? LEIAUTES_DE_ENVIO);
   controller
     .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'retorno')
     .flush(leiautes.retorno ?? LEIAUTES_DE_RETORNO);
+}
+
+async function responderSnapshot(
+  controller: HttpTestingController,
+  publicada: SnapshotVigenteDto | null,
+): Promise<void> {
+  await tick();
+  const requisicao = controller.expectOne(ROTA_SNAPSHOT);
+  if (publicada === null)
+    requisicao.flush({ title: 'Sem versão publicada' }, { status: 404, statusText: 'Not Found' });
+  else requisicao.flush(publicada);
 }
 
 /** A tela aberta, com a leitura inicial respondida e a edição escolhida, quando pedida. */
@@ -162,17 +176,21 @@ export async function escolherEdicao(
   controller: HttpTestingController,
   { fixture, host }: TelaAberta,
   card: Card,
-  edicao = '2025',
-  historico: readonly object[] = [],
+  ...opcoes: [edicao?: string, historico?: readonly object[]]
 ): Promise<void> {
-  const select = host.querySelector<HTMLSelectElement>(`#notas-edicao-${card}`);
-  if (select === null) throw new Error('O seletor de edição não foi renderizado.');
-  select.value = edicao;
-  select.dispatchEvent(new Event('change'));
+  const [edicao = '2025', historico = []] = opcoes;
+  selecionarEdicao(host, card, edicao);
   const rota = ROTA_EDICAO.replace(/\/2025$/, `/${edicao}`);
   controller.expectOne(`${rota}/${ROTA_DO_HISTORICO[card]}`).flush(historico);
   await fixture.whenStable();
   fixture.detectChanges();
+}
+
+function selecionarEdicao(host: HTMLElement, card: Card, edicao: string): void {
+  const select = host.querySelector<HTMLSelectElement>(`#notas-edicao-${card}`);
+  if (select === null) throw new Error('O seletor de edição não foi renderizado.');
+  select.value = edicao;
+  select.dispatchEvent(new Event('change'));
 }
 
 export function trocarEdicao(

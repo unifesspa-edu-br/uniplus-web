@@ -47,27 +47,25 @@ const BLOCOS_ACHATADOS_NO_DOCUMENTO: ReadonlySet<string> = new Set([
 ]);
 const PARTES_DA_OBRIGATORIEDADE: ReadonlySet<string> = new Set(['tipo', 'predicado']);
 
-function nomeNoDocumento(campo: string): string {
-  switch (campo) {
-    case 'termoId':
-      return 'termoCodigo';
-    case 'versaoId':
-      return 'versaoNumero';
-    default:
-      return campo;
-  }
-}
+const NOMES_NO_DOCUMENTO: Readonly<Record<string, string>> = {
+  etapas: 'paginas',
+  fatoCodigo: 'codigoDoDado',
+  etapaCodigo: 'paginaCodigo',
+  fatos: 'codigosDosDados',
+  ancora: 'referenciaDaData',
+  fato: 'codigoDoDado',
+  termoId: 'termoCodigo',
+  versaoId: 'versaoNumero',
+};
 
-function ehItem(caminho: readonly string[], posicao: number): boolean {
-  return caminho[posicao - 2] === 'itens' || caminho[posicao - 2] === 'subitens';
+function nomeNoDocumento(campo: string): string {
+  return NOMES_NO_DOCUMENTO[campo] ?? campo;
 }
 
 /** O mesmo campo no documento, que guarda a apresentação, as ocorrências e as regras sem o bloco que o editor usa. */
 function caminhoNoDocumento(caminho: readonly string[]): readonly string[] {
   return caminho.reduce<readonly string[]>((atual, parte, posicao) => {
     if (BLOCOS_ACHATADOS_NO_DOCUMENTO.has(parte) || parte === 'regras') return atual;
-    if (caminho[posicao - 1] === 'regras' && parte === 'exibicao')
-      return [...atual, ehItem(caminho, posicao - 1) ? 'precondicao' : 'exibicao'];
     const naObrigatoriedade =
       caminho[posicao - 1] === 'obrigatoriedade' && PARTES_DA_OBRIGATORIEDADE.has(parte);
     return naObrigatoriedade ? atual : [...atual, nomeNoDocumento(parte)];

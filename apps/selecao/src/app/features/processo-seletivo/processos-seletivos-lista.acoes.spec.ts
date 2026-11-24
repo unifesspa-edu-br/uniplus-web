@@ -1,4 +1,4 @@
-import { StatusProcesso } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -40,8 +40,16 @@ describe('ProcessosSeletivosListaPage', () => {
    */
   it('oferece as publicações e as notas do ENEM só do processo que já foi publicado', async () => {
     await cenario.responderLista([
-      processo({ id: 'rascunho', nome: 'Em cadastro', status: StatusProcesso.rascunho }),
-      processo({ id: 'publicado', nome: 'No ar', status: StatusProcesso.publicado }),
+      processo({
+        id: 'rascunho',
+        nome: 'Em cadastro',
+        status: { codigo: StatusProcessoCodigo.rascunho, rotulo: 'Rascunho' },
+      }),
+      processo({
+        id: 'publicado',
+        nome: 'No ar',
+        status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' },
+      }),
     ]);
 
     const hrefs = Array.from(
@@ -62,12 +70,22 @@ describe('ProcessosSeletivosListaPage', () => {
         cenario.tela().querySelectorAll<HTMLAnchorElement>('tbody tr [data-label="Ações"] a'),
       ).map((a) => a.getAttribute('href'));
 
-    await cenario.responderLista([processo({ id: 'publicado', status: StatusProcesso.publicado })]);
+    await cenario.responderLista([
+      processo({
+        id: 'publicado',
+        status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' },
+      }),
+    ]);
     expect(hrefs()).not.toContain('/processo-seletivo/publicado/inscricoes');
 
     concedidas.set(['selecao:processos:configurar', 'selecao:inscricoes:consultar']);
     cenario.voltarAListagem();
-    await cenario.responderLista([processo({ id: 'publicado', status: StatusProcesso.publicado })]);
+    await cenario.responderLista([
+      processo({
+        id: 'publicado',
+        status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' },
+      }),
+    ]);
 
     expect(hrefs()).toContain('/processo-seletivo/publicado/inscricoes');
   });
@@ -77,8 +95,14 @@ describe('ProcessosSeletivosListaPage', () => {
     concedidas.set(['selecao:inscricoes:consultar']);
     cenario.voltarAListagem();
     await cenario.responderLista([
-      processo({ id: 'rascunho', status: StatusProcesso.rascunho }),
-      processo({ id: 'publicado', status: StatusProcesso.publicado }),
+      processo({
+        id: 'rascunho',
+        status: { codigo: StatusProcessoCodigo.rascunho, rotulo: 'Rascunho' },
+      }),
+      processo({
+        id: 'publicado',
+        status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' },
+      }),
     ]);
 
     const hrefs = Array.from(

@@ -1,4 +1,4 @@
-import { FundamentoIsencao, OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import { FundamentoIsencao, OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
 import type { FundamentoIsencaoCodigo, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
 import type {
@@ -37,22 +37,32 @@ export {
 export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): WizardDraft {
   return {
     ...draft,
-    tipoProcesso: {
-      selected: dto.tipoProcesso.origemId,
-      rotulo: dto.tipoProcesso.nome,
-      codigo: dto.tipoProcesso.codigo,
-    },
+    tipoProcesso: tipoProcessoDe(dto),
     pagamento: pagamentoDe(dto),
     opcoesDeCurso: { numero: comoTexto(dto.opcoesDeCurso?.numero) },
     vagas: { ofertas: distribuicoesDe(dto), cascata: cascataDe(dto) },
     cronograma: cronogramaDe(dto),
+    ...resultadosDe(dto),
+    documentos: exigenciasDe(dto),
+    formulario: formularioDe(dto),
+    identificacao: identificacaoDe(draft.identificacao, dto),
+  };
+}
+
+function resultadosDe(dto: ProcessoSeletivoDto) {
+  return {
     classificacao: classificacaoDe(dto),
     bonus: bonusDe(dto),
     desempate: desempateDe(dto),
     atendimento: atendimentoDe(dto),
-    documentos: exigenciasDe(dto),
-    formulario: formularioDe(dto),
-    identificacao: identificacaoDe(draft.identificacao, dto),
+  };
+}
+
+function tipoProcessoDe(dto: ProcessoSeletivoDto): WizardDraft['tipoProcesso'] {
+  return {
+    selected: dto.tipoProcesso.origemId,
+    rotulo: dto.tipoProcesso.nome,
+    codigo: dto.tipoProcesso.codigo,
   };
 }
 
@@ -65,12 +75,8 @@ function identificacaoDe(
     nome: dto.nome,
     identificadorLegivel: dto.identificadorLegivel ?? '',
     unidadeAdministradoraId: dto.unidadeAdministradora.origemId,
-    origemCandidatos: decodificarOrigemCandidatos(dto.origemCandidatos),
-    localidade: {
-      codigoIbge: dto.localidade.codigoIbge,
-      nome: dto.localidade.nome,
-      uf: dto.localidade.uf,
-    },
+    origemCandidatos: decodificarOrigemCandidatos(dto.origemCandidatos.codigo),
+    localidade: dto.localidade,
   };
 }
 
@@ -99,7 +105,7 @@ function referenciaTemporalDe(
 ): FormularioDeInscricao['referenciaTemporal'] {
   const referencia = dto.referenciaTemporalFatos;
   return {
-    tipo: referencia?.tipo ?? '',
+    tipo: referencia?.tipo.codigo ?? '',
     data: referencia?.data ?? '',
     faseCodigo: codigoDaFaseDe(dto, referencia?.faseId),
   };
@@ -124,8 +130,16 @@ function pagamentoDe(dto: ProcessoSeletivoDto): WizardDraft['pagamento'] {
   return {
     cobra: config.cobra,
     valor: valorGravadoComoTexto(config.valor),
-    fundamentos: [...config.fundamentos].filter(ehFundamentoConhecido),
+    fundamentos: fundamentosDe(config.fundamentos),
   };
+}
+
+function fundamentosDe(
+  fundamentos: NonNullable<ProcessoSeletivoDto['configuracaoTaxaInscricao']>['fundamentos'],
+): FundamentoIsencaoCodigo[] {
+  return fundamentos
+    .map(({ codigo }) => Object.values(FundamentoIsencao).find((valor) => String(valor) === codigo))
+    .filter((valor): valor is FundamentoIsencaoCodigo => valor !== undefined);
 }
 
 /** O valor gravado chega como número do JSON, não como a escrita do operador. */
@@ -134,27 +148,12 @@ function valorGravadoComoTexto(valor: number | null | undefined): string {
   return Number.isFinite(valor) ? formatarValorEmReais(valor) : '';
 }
 
-/**
- * O detalhe devolve os fundamentos como texto livre e a gravação aceita vocabulário fechado: o
- * código desconhecido sai do rascunho em vez de seguir para um comando que o recusaria.
- */
-function ehFundamentoConhecido(codigo: string): codigo is FundamentoIsencaoCodigo {
-  const conhecidos: readonly string[] = Object.values(FundamentoIsencao);
-  return conhecidos.includes(codigo);
-}
-
-/**
- * A leitura devolve o nome do enum de domínio (`InscricaoPropria`) e a criação recebe
- * `inscricaoPropria`. Sem traduzir, a retomada gravaria no rascunho um valor que nenhuma `<option>`
- * tem. Valor fora do vocabulário vira `''`, e a validação cobra a escolha.
- */
 export function decodificarOrigemCandidatos(valor: string): OrigemCandidatosSelecionada {
-  const normalizado = valor.charAt(0).toLowerCase() + valor.slice(1);
-  if (normalizado === OrigemCandidatos.inscricaoPropria) {
-    return OrigemCandidatos.inscricaoPropria;
+  if (valor === OrigemCandidatosCodigo.inscricaoPropria) {
+    return OrigemCandidatosCodigo.inscricaoPropria;
   }
-  if (normalizado === OrigemCandidatos.importacaoExterna) {
-    return OrigemCandidatos.importacaoExterna;
+  if (valor === OrigemCandidatosCodigo.importacaoExterna) {
+    return OrigemCandidatosCodigo.importacaoExterna;
   }
   return '';
 }

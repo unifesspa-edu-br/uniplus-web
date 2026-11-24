@@ -1,4 +1,5 @@
 import {
+  FinalidadeFormularioCodigo,
   type FatoColetadoDto,
   type FormularioDto,
   TipoRenderizacaoCodigo,
@@ -60,7 +61,7 @@ export function campoDoServidor(
 /** O formulário de inscrição de uma fase, sem modelo de origem, termos nem grupos. */
 export function formularioDoServidor(extra: Partial<FormularioDto> = {}): FormularioDto {
   return {
-    finalidade: 'INSCRICAO',
+    finalidade: { codigo: FinalidadeFormularioCodigo.INSCRICAO, rotulo: 'Inscrição' },
     faseId: null,
     titulo: null,
     modeloOrigem: null,

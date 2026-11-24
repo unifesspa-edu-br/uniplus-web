@@ -4,7 +4,7 @@ import { signal, type WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, type TipoEtapaDto } from '@uniplus/shared-data/configuracao';
-import { CaraterEtapa, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { CaraterEtapaCodigo, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach } from 'vitest';
 
 import { EtapaPontuada } from '../../processo-seletivo.models';
@@ -48,7 +48,7 @@ export function aguardarReleitura(): Promise<void> {
 export const ETAPA_PERSISTIDA: EtapaPontuada = {
   id: 'etapa-1',
   nome: 'Prova objetiva',
-  carater: CaraterEtapa.classificatoria,
+  carater: CaraterEtapaCodigo.classificatoria,
   tipoEtapaOrigemId: 'tipo-1',
   peso: '1',
   notaMinima: '',

@@ -5,14 +5,14 @@ import type {
   ItemDoFormulario,
   GrupoDoFormulario,
 } from '@uniplus/shared-ui/components';
-import { lerExibicaoEObrigatoriedade } from './obrigatoriedade';
+import { lerExibicaoEObrigatoriedade, lerPredicado } from './obrigatoriedade';
 import { lerRestricao } from './restricoes';
 import type { ContextoDaConversao as Contexto } from './contexto-da-conversao';
 
 type Formulario = DocumentoDaConfiguracaoFormulario;
 type Item = NonNullable<Formulario['itens']>[number];
 type Grupo = NonNullable<Formulario['grupos']>[number];
-type Etapa = NonNullable<Formulario['etapas']>[number];
+type Etapa = NonNullable<Formulario['paginas']>[number];
 
 export function lerEtapa(etapa: Etapa): EtapaDoFormulario {
   return {
@@ -25,7 +25,7 @@ export function lerEtapa(etapa: Etapa): EtapaDoFormulario {
       descricao: etapa.descricao ?? null,
       aviso: etapa.aviso ?? null,
     },
-    exibicao: etapa.exibicao ?? null,
+    exibicao: lerPredicado(etapa.exibicao),
   };
 }
 
@@ -43,9 +43,15 @@ function apresentacaoDoItem(
 
 function regrasDoItem(item: Item): ItemDoFormulario['regras'] {
   return {
-    ...lerExibicaoEObrigatoriedade(item.precondicao, item.obrigatoriedade),
+    ...lerExibicaoEObrigatoriedade(item.exibicao, item.obrigatoriedade),
     restricoes: item.restricoes?.map(lerRestricao),
-    impedimento: item.impedimento,
+    impedimento:
+      item.impedimento == null
+        ? item.impedimento
+        : {
+            ...item.impedimento,
+            quando: lerPredicado(item.impedimento.quando),
+          },
   };
 }
 
@@ -58,11 +64,12 @@ function ocorrenciasDoGrupo(grupo: Grupo): GrupoDoFormulario['ocorrencias'] {
 }
 
 export function lerItem(item: Item, contexto: Contexto, caminho: Caminho): ItemDoFormulario {
-  const tipoRenderizacao = contexto.tipoDoCampo(item.fatoCodigo, [...caminho, 'fatoCodigo']) ?? '';
+  const tipoRenderizacao =
+    contexto.tipoDoCampo(item.codigoDoDado, [...caminho, 'fatoCodigo']) ?? '';
   return {
-    fatoCodigo: item.fatoCodigo,
+    fatoCodigo: item.codigoDoDado,
     ordem: item.ordem ?? 0,
-    etapaCodigo: item.etapaCodigo,
+    etapaCodigo: item.paginaCodigo,
     apresentacao: apresentacaoDoItem(item, tipoRenderizacao),
     regras: regrasDoItem(item),
   };
@@ -73,7 +80,7 @@ export function lerGrupo(grupo: Grupo, contexto: Contexto, caminho: Caminho): Gr
     codigo: grupo.codigo,
     ordem: grupo.ordem ?? 0,
     rotulo: grupo.rotulo ?? '',
-    etapaCodigo: grupo.etapaCodigo ?? null,
+    etapaCodigo: grupo.paginaCodigo ?? null,
     ocorrencias: ocorrenciasDoGrupo(grupo),
     regras: lerExibicaoEObrigatoriedade(grupo.exibicao, grupo.obrigatoriedade),
     subitens: grupo.subitens.map((item, indice) =>

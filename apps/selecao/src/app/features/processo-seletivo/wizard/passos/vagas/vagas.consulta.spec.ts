@@ -9,7 +9,7 @@ import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import {
   ProcessoSeletivoDto,
   SELECAO_BASE_PATH,
-  StatusProcesso,
+  StatusProcessoCodigo,
 } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
@@ -69,7 +69,7 @@ describe('VagasPassoComponent — consulta', () => {
       ofertas: [distribuicao(OFERTA), distribuicao(OUTRA_OFERTA)],
     });
     store.remoteSnapshot.set({
-      status: StatusProcesso.publicado,
+      status: StatusProcessoCodigo.publicado,
     } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
   });

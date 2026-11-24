@@ -126,7 +126,7 @@ describe('o valor da condição na forma que o wire exige', () => {
     const diferente = comOperador(igual, fato, 'DIFERENTE');
     expect(valorEscalarDe(diferente)).toBe('FEMININO');
 
-    const emLista = comOperador(diferente, fato, 'NAO_EM');
+    const emLista = comOperador(diferente, fato, 'NENHUM_DE');
     expect(valoresDeListaDe(emLista)).toEqual(['FEMININO']);
 
     const comDois = comValoresDeLista(emLista, ['FEMININO', 'INTERSEXO']);
@@ -161,7 +161,7 @@ describe('o que a condição alcança', () => {
 
   it('condição que não alcança valor nenhum do domínio é dita como tal', () => {
     const fato = escolhivel(SEXO);
-    const nenhum = comValoresDeLista({ ...condicaoNova(fato, 1), operador: 'NAO_EM' }, [
+    const nenhum = comValoresDeLista({ ...condicaoNova(fato, 1), operador: 'NENHUM_DE' }, [
       'MASCULINO',
       'FEMININO',
       'INTERSEXO',

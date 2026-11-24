@@ -10,7 +10,7 @@ import { LoteDeNotasComponent } from './lote-de-notas.component';
 
 function ocorrencia(tipo: string, extra: Partial<OcorrenciaDoLoteDto> = {}): OcorrenciaDoLoteDto {
   return {
-    tipo,
+    tipo: { codigo: tipo as OcorrenciaDoLoteDto['tipo']['codigo'], rotulo: tipo },
     inscricaoId: null,
     numeroDeInscricao: null,
     numerosDasLinhas: null,

@@ -10,7 +10,7 @@ import { apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   CriarProcessoSeletivoCommand,
   FormulariosDoProcessoApi,
-  OrigemCandidatos,
+  OrigemCandidatosCodigo,
   SELECAO_BASE_PATH,
 } from '@uniplus/shared-data/selecao';
 import { of } from 'rxjs';
@@ -28,7 +28,7 @@ describe('CadastroInicial — descarte do cadastro em andamento', () => {
   const comando = (nome: string): CriarProcessoSeletivoCommand => ({
     nome,
     tipoProcessoOrigemId: '01960000-0000-7000-0000-000000000001',
-    origemCandidatos: OrigemCandidatos.inscricaoPropria,
+    origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
     unidadeAdministradoraOrigemId: '01960000-0000-7000-0000-000000000002',
     localidadeCodigoIbge: null,
     localidadeNome: null,

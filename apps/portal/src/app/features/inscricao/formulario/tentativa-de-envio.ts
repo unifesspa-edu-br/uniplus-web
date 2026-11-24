@@ -86,7 +86,7 @@ export class TentativaDeEnvio {
       tipoDeMidia: confirmacao.tipoDeMidia,
       // A API só informa o tamanho depois da verificação: vale o do arquivo escolhido.
       tamanhoBytes: this.tamanhoBytes,
-      situacao: confirmacao.situacao,
+      situacao: confirmacao.situacao.codigo,
       mensagem: confirmacao.mensagem,
       rotulo: confirmacao.rotulo,
       confirmadoEm: confirmacao.confirmadoEm,

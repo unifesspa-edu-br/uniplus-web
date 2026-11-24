@@ -3,7 +3,7 @@ import {
   type FormularioRenderizavelDto,
   type InscricaoDto,
   type InscricaoRequest,
-  SituacaoInscricao,
+  SituacaoInscricaoCodigo,
 } from '@uniplus/shared-data/selecao';
 import type { SimulacaoDoFormulario } from '@uniplus/shared-ui/components';
 
@@ -97,7 +97,7 @@ export function corpoDaGravacao(
 export function mesmoConteudoGravado(a: InscricaoDto, b: InscricaoDto): boolean {
   const gravado = (i: InscricaoDto): string =>
     JSON.stringify([
-      i.situacao,
+      i.situacao.codigo,
       i.formulario.versaoFormularioId,
       i.escolhasDeCurso.ofertaCursoId,
       i.escolhasDeCurso.ofertaCursoSegundaOpcaoId,
@@ -110,7 +110,7 @@ export function mesmoConteudoGravado(a: InscricaoDto, b: InscricaoDto): boolean 
 
 /** O que o leitor de tela ouve quando a releitura mostra que a gravação aconteceu. */
 export function confirmacaoDaGravacao(inscricao: InscricaoDto): string {
-  if (inscricao.situacao !== SituacaoInscricao.submetida) return 'Rascunho salvo.';
+  if (inscricao.situacao.codigo !== SituacaoInscricaoCodigo.submetida) return 'Rascunho salvo.';
   return inscricao.numeroInscricao
     ? `Inscrição enviada. Número ${inscricao.numeroInscricao}.`
     : 'Inscrição enviada.';

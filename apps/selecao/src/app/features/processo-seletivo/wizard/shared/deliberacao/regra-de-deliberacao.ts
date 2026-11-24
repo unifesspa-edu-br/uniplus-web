@@ -1,4 +1,8 @@
-import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
+import {
+  CriterioDeVotacaoCodigo,
+  EncerramentoDaVotacaoCodigo,
+  ModoDeDeliberacao,
+} from '@uniplus/shared-data/selecao';
 
 import type { RegraDeDeliberacaoDaBanca } from '../../modelos/deliberacao.models';
 import { inteiroDoCampo } from '../numero-do-campo';
@@ -6,21 +10,21 @@ import { inteiroDoCampo } from '../numero-do-campo';
 /** O campo da regra que o operador edita. */
 export type CampoDaRegra = Exclude<keyof RegraDeDeliberacaoDaBanca, 'rotulos'>;
 
-export function regraNova(modo: ModoDeDeliberacao): RegraDeDeliberacaoDaBanca {
+export function regraNova(modo: RegraDeDeliberacaoDaBanca['modo']): RegraDeDeliberacaoDaBanca {
   return normalizarRegra({
     modo,
     integrantes: '',
     suplentes: '0',
     quorum: '',
-    criterio: '',
-    desempate: '',
-    encerramento: '',
-    semUnanimidade: '',
+    criterio: null,
+    desempate: null,
+    encerramento: null,
+    semUnanimidade: null,
   });
 }
 
 export const ehColegiada = (regra: RegraDeDeliberacaoDaBanca): boolean =>
-  regra.modo === ModoDeDeliberacao.colegiadaComVotacao;
+  regra.modo.codigo === ModoDeDeliberacao.colegiadaComVotacao;
 
 export const modoConhecido = (regra: RegraDeDeliberacaoDaBanca): boolean =>
   ehColegiada(regra) || regra.modo === ModoDeDeliberacao.atoIndividual;
@@ -29,11 +33,13 @@ const integrantesLidos = (regra: RegraDeDeliberacaoDaBanca): number | null =>
   inteiroDoCampo(regra.integrantes);
 
 const ehMaioria = (regra: RegraDeDeliberacaoDaBanca): boolean =>
-  regra.criterio === 'maioriaSimples' || regra.criterio === 'maioriaAbsoluta';
+  (regra.criterio !== null && regra.criterio.codigo === CriterioDeVotacaoCodigo.maioriaSimples) ||
+  (regra.criterio !== null && regra.criterio.codigo === CriterioDeVotacaoCodigo.maioriaAbsoluta);
 
 /** Com todos os titulares votando, o quórum é o número de integrantes: não se digita. */
 export const quorumSegueOsIntegrantes = (regra: RegraDeDeliberacaoDaBanca): boolean =>
-  regra.encerramento === 'todosOsTitulares';
+  regra.encerramento !== null &&
+  regra.encerramento.codigo === EncerramentoDaVotacaoCodigo.todosOsTitulares;
 
 /** Só a maioria, com mais de um integrante, pode empatar. */
 export const pedeDesempate = (regra: RegraDeDeliberacaoDaBanca): boolean =>
@@ -41,7 +47,9 @@ export const pedeDesempate = (regra: RegraDeDeliberacaoDaBanca): boolean =>
 
 /** Só a unanimidade, com mais de um integrante, pode não ser alcançada. */
 export const pedeResultadoSemUnanimidade = (regra: RegraDeDeliberacaoDaBanca): boolean =>
-  regra.criterio === 'unanimidade' && (integrantesLidos(regra) ?? 0) > 1;
+  regra.criterio !== null &&
+  regra.criterio.codigo === CriterioDeVotacaoCodigo.unanimidade &&
+  (integrantesLidos(regra) ?? 0) > 1;
 
 const CONTROLES_SEMPRE_A_VISTA: readonly CampoDaRegra[] = [
   'modo',
@@ -81,8 +89,13 @@ export function normalizarRegra(regra: RegraDeDeliberacaoDaBanca): RegraDeDelibe
   return {
     ...regra,
     quorum: quorumNormalizado(regra),
-    desempate: varios && ehMaioria(regra) ? regra.desempate : '',
-    semUnanimidade: varios && regra.criterio === 'unanimidade' ? regra.semUnanimidade : '',
+    desempate: varios && ehMaioria(regra) ? regra.desempate : null,
+    semUnanimidade:
+      varios &&
+      regra.criterio !== null &&
+      regra.criterio.codigo === CriterioDeVotacaoCodigo.unanimidade
+        ? regra.semUnanimidade
+        : null,
   };
 }
 
@@ -91,10 +104,10 @@ function quorumNormalizado(regra: RegraDeDeliberacaoDaBanca): string {
 }
 
 /** Muda um campo e devolve a regra coerente. */
-export function alterarRegra(
+export function alterarRegra<K extends CampoDaRegra>(
   regra: RegraDeDeliberacaoDaBanca,
-  campo: CampoDaRegra,
-  valor: string,
+  campo: K,
+  valor: RegraDeDeliberacaoDaBanca[K],
 ): RegraDeDeliberacaoDaBanca {
   return normalizarRegra({ ...regra, [campo]: valor });
 }

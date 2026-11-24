@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { OrigemCandidatos, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatosCodigo, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it, vi } from 'vitest';
 
 import { OrigemCandidatosSelecionada } from '../../processo-seletivo.models';
@@ -44,7 +44,7 @@ describe('gravação da classificação', () => {
       store.patchObjectSection('classificacao', {
         regrasEliminacao: [
           {
-            regraCodigo: 'ELIM-NOTA-MINIMA-ETAPA',
+            regraCodigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA',
             regraVersao: '1.0',
             etapaRef: 'etapa-1',
             notaMinima: '5',
@@ -65,7 +65,7 @@ describe('gravação da classificação', () => {
         casasArredondamento: 2,
         regrasEliminacao: [
           {
-            regraCodigo: 'ELIM-NOTA-MINIMA-ETAPA',
+            regraCodigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA',
             etapaRef: 'etapa-1',
             notaMinima: 5,
             minimo: null,
@@ -411,7 +411,7 @@ describe('gravação da classificação', () => {
     }
 
     it('grava as edições depois da classificação aceita, na ordem que o candidato vê', async () => {
-      prepararImportadaComEnem(OrigemCandidatos.inscricaoPropria);
+      prepararImportadaComEnem(OrigemCandidatosCodigo.inscricaoPropria);
 
       const gravacao = componente.persistir();
       await aceitarClassificacao();
@@ -429,7 +429,7 @@ describe('gravação da classificação', () => {
     });
 
     it('a recusa do servidor às edições volta o passo inválido e fica guardada para o passo Fórmula', async () => {
-      prepararImportadaComEnem(OrigemCandidatos.inscricaoPropria);
+      prepararImportadaComEnem(OrigemCandidatosCodigo.inscricaoPropria);
 
       const gravacao = componente.persistir();
       await aceitarClassificacao();
@@ -457,7 +457,7 @@ describe('gravação da classificação', () => {
     });
 
     it('não grava edições no processo que só importa o resultado', async () => {
-      prepararImportadaComEnem(OrigemCandidatos.importacaoExterna);
+      prepararImportadaComEnem(OrigemCandidatosCodigo.importacaoExterna);
 
       const gravacao = componente.persistir();
       await aceitarClassificacao();

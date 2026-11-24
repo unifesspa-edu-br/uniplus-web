@@ -1,3 +1,4 @@
+import { valorDoEnum } from './valor-do-enum';
 import type { DocumentoExigidoDto, RegraDeComprovacaoDto } from '@uniplus/shared-data/selecao';
 import type { JsonDaApi } from '@uniplus/shared-e2e';
 
@@ -9,14 +10,23 @@ export interface DocumentoDaRegra {
   readonly faseId: string;
   readonly tipoDocumento: Pick<DocumentoDaExigencia['tipoDocumento'], 'id' | 'codigo' | 'nome'>;
   readonly obrigatorio: boolean;
-  readonly consequencia: string;
+  readonly consequencia: NonNullable<
+    DocumentoDaExigencia['indeferimento']['consequencia']
+  >['codigo'];
   readonly condicoes?: DocumentoDaExigencia['aplicabilidade']['condicoes'];
 }
 
+const ROTULOS_DAS_CONSEQUENCIAS: Record<DocumentoDaRegra['consequencia'], string> = {
+  ELIMINA: 'Elimina',
+  RECLASSIFICA_AC: 'Reclassifica para ampla concorrência',
+  REMOVE_VANTAGEM: 'Remove vantagem',
+  ABRE_PRAZO_PARA_REENVIO: 'Abre prazo para reenvio',
+};
+
 const BASE_LEGAL_DO_EDITAL = {
   referencia: 'Edital nº 1/2027, Anexo III',
-  abrangencia: 'INTERNA_EDITAL',
-  situacao: 'RESOLVIDO',
+  abrangencia: valorDoEnum('INTERNA_EDITAL', 'Edital'),
+  situacao: valorDoEnum('RESOLVIDO', 'Resolvido'),
   observacao: null,
 };
 
@@ -37,7 +47,7 @@ const REQUISITOS_DO_ARQUIVO = {
 function indeferimentoDoDocumento(regra: DocumentoDaRegra): DocumentoDaExigencia['indeferimento'] {
   return {
     obrigatorio: regra.obrigatorio,
-    consequencia: regra.consequencia,
+    consequencia: valorDoEnum(regra.consequencia, ROTULOS_DAS_CONSEQUENCIAS[regra.consequencia]),
     basesLegais: [{ id: `${regra.id}-norma`, ...BASE_LEGAL_DO_EDITAL }],
   };
 }
@@ -46,7 +56,11 @@ function aplicabilidadeDoDocumento(
   regra: DocumentoDaRegra,
 ): DocumentoDaExigencia['aplicabilidade'] {
   const condicoes = regra.condicoes ?? [];
-  return { tipo: condicoes.length === 0 ? 'GERAL' : 'CONDICIONAL', condicoes };
+  const tipo =
+    condicoes.length === 0
+      ? valorDoEnum('GERAL', 'Geral')
+      : valorDoEnum('CONDICIONAL', 'Condicional');
+  return { tipo, condicoes };
 }
 
 function documentoDaRegra(regra: DocumentoDaRegra): DocumentoDaExigencia {

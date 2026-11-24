@@ -27,7 +27,12 @@ const INSCRICAO = FinalidadeDoFormulario.INSCRICAO;
 const ISENCAO = FinalidadeDoFormulario.ISENCAO_TAXA;
 
 function umDocumento(): DocumentoDaConfiguracao {
-  return exemploDoContrato('inscricao-pelo-sistema');
+  return {
+    ...exemploDoContrato('inscricao-pelo-sistema'),
+    coleta: {
+      calculosDosDados: [{ codigoDoDado: 'FAIXA_DE_RENDA', regras: [] }],
+    },
+  };
 }
 
 function formulario(documento: DocumentoDaConfiguracao): DocumentoDaConfiguracaoFormulario {
@@ -87,7 +92,7 @@ describe('criar, remover e aplicar modelo', () => {
       finalidade: ISENCAO,
       titulo: 'Do modelo',
       modeloOrigemCodigo: 'MODELO_PADRAO',
-      itens: [{ fatoCodigo: 'RENDA' }],
+      itens: [{ codigoDoDado: 'RENDA' }],
     };
 
     const editado = aplicarModelo(documento, INSCRICAO, copia);
@@ -112,9 +117,9 @@ describe('partes do formulário', () => {
 
     const editado = moverParte(documento, INSCRICAO, ITENS, { de: 0, para: 1 });
 
-    expect(formulario(editado).itens?.map((item) => [item.fatoCodigo, item.ordem])).toEqual([
-      [segundo.fatoCodigo, 0],
-      [primeiro.fatoCodigo, 1],
+    expect(formulario(editado).itens?.map((item) => [item.codigoDoDado, item.ordem])).toEqual([
+      [segundo.codigoDoDado, 0],
+      [primeiro.codigoDoDado, 1],
     ]);
   });
 
@@ -156,31 +161,33 @@ describe('coleta', () => {
     });
     const sem = definirReferenciaTemporal(documento, null);
 
-    expect(trocada.coleta?.referenciaTemporalFatos).toEqual({
+    expect(trocada.coleta?.referenciaTemporalDosDados).toEqual({
       tipo: 'DATA_ESPECIFICA',
       data: '2027-01-10',
     });
-    expect(sem.coleta).not.toHaveProperty('referenciaTemporalFatos');
-    expect(trocada.coleta?.regrasDerivacao).toBe(documento.coleta?.regrasDerivacao);
+    expect(sem.coleta).not.toHaveProperty('referenciaTemporalDosDados');
+    expect(trocada.coleta?.calculosDosDados).toBe(documento.coleta?.calculosDosDados);
   });
 
   it('as regras de um fato são trocadas sem tocar nas dos outros; o fato novo entra ao fim', () => {
     const documento = umDocumento();
-    const [faixa] = documento.coleta?.regrasDerivacao ?? [];
+    const [faixa] = documento.coleta?.calculosDosDados ?? [];
 
     const trocada = definirRegrasDeDerivacao(documento, 'FAIXA_DE_RENDA', []);
     const nova = definirRegrasDeDerivacao(documento, 'OUTRO_FATO', [
       { ordem: 0, contribui: 'A', quando: null },
     ]);
 
-    expect(trocada.coleta?.regrasDerivacao).toEqual([{ fatoCodigo: 'FAIXA_DE_RENDA', regras: [] }]);
-    expect(nova.coleta?.regrasDerivacao?.[0]).toBe(faixa);
-    expect(nova.coleta?.regrasDerivacao?.[1].fatoCodigo).toBe('OUTRO_FATO');
+    expect(trocada.coleta?.calculosDosDados).toEqual([
+      { codigoDoDado: 'FAIXA_DE_RENDA', regras: [] },
+    ]);
+    expect(nova.coleta?.calculosDosDados?.[0]).toBe(faixa);
+    expect(nova.coleta?.calculosDosDados?.[1].codigoDoDado).toBe('OUTRO_FATO');
   });
 
   it('declarar as mesmas regras devolve o documento como estava', () => {
     const documento = umDocumento();
-    const [faixa] = documento.coleta?.regrasDerivacao ?? [];
+    const [faixa] = documento.coleta?.calculosDosDados ?? [];
 
     expect(definirRegrasDeDerivacao(documento, 'FAIXA_DE_RENDA', faixa.regras)).toBe(documento);
   });
@@ -190,7 +197,7 @@ describe('ocorrências e movimentos atípicos', () => {
   it('preserva ordens quando o movimento é nulo ou a origem não existe', () => {
     const documento: DocumentoDaConfiguracao = {
       ...umDocumento(),
-      formularios: [{ finalidade: INSCRICAO, itens: [{ fatoCodigo: 'A', ordem: 7 }] }],
+      formularios: [{ finalidade: INSCRICAO, itens: [{ codigoDoDado: 'A', ordem: 7 }] }],
     };
     expect(moverParte(documento, INSCRICAO, ITENS, { de: 0, para: 0 })).toBe(documento);
     expect(moverParte(documento, INSCRICAO, ITENS, { de: 8, para: 0 })).toBe(documento);
@@ -198,25 +205,25 @@ describe('ocorrências e movimentos atípicos', () => {
 
   it('edita somente a ocorrência indicada de um fato repetido', () => {
     const entradas = [
-      { fatoCodigo: 'A', regras: [] },
-      { fatoCodigo: 'A', regras: [] },
+      { codigoDoDado: 'A', regras: [] },
+      { codigoDoDado: 'A', regras: [] },
     ];
     const documento: DocumentoDaConfiguracao = {
       ...umDocumento(),
-      coleta: { regrasDerivacao: entradas },
+      coleta: { calculosDosDados: entradas },
     };
     const resultado = definirRegrasDeDerivacao(documento, 'A', [
       { ordem: 0, contribui: 'B', quando: null },
     ]);
-    expect(resultado.coleta?.regrasDerivacao?.[1]).toBe(entradas[1]);
+    expect(resultado.coleta?.calculosDosDados?.[1]).toBe(entradas[1]);
     const segunda = definirRegrasDeDerivacao(
       documento,
       'A',
       [{ ordem: 0, contribui: 'B', quando: null }],
       1,
     );
-    expect(segunda.coleta?.regrasDerivacao?.[0]).toBe(entradas[0]);
-    expect(segunda.coleta?.regrasDerivacao?.[1].regras).toEqual([
+    expect(segunda.coleta?.calculosDosDados?.[0]).toBe(entradas[0]);
+    expect(segunda.coleta?.calculosDosDados?.[1].regras).toEqual([
       { ordem: 0, contribui: 'B', quando: null },
     ]);
   });

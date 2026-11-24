@@ -1,4 +1,4 @@
-import { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -54,7 +54,7 @@ function etapa(patch: Partial<EtapaPontuada>): EtapaPontuada {
   return {
     id: 'etapa-1',
     nome: 'Prova objetiva',
-    carater: CaraterEtapa.classificatoria,
+    carater: CaraterEtapaCodigo.classificatoria,
     tipoEtapaOrigemId: 'tipo-1',
     peso: '1',
     notaMinima: '',
@@ -94,7 +94,7 @@ describe('comoComandoDeClassificacao — bimodalidade (INV-B8)', () => {
       regraArredondamentoCodigo: 'ARRED-TRUNCAR',
       regraArredondamentoVersao: '1.0',
       casasArredondamento: '2',
-      regrasEliminacao: [regraEliminacao({ regraCodigo: 'ELIM-ZERO-EM-AREA', regraVersao: '1.0' })],
+      regrasEliminacao: [regraEliminacao({ regraCodigo: 'ELIMINACAO-ZERO-EM-AREA', regraVersao: '1.0' })],
     };
 
     const comando = comoComandoDeClassificacao(classificacao);
@@ -113,7 +113,7 @@ describe('comoComandoDeClassificacao — bimodalidade (INV-B8)', () => {
       regraArredondamentoCodigo: 'ARRED-TRUNCAR',
       regraArredondamentoVersao: '1.0',
       casasArredondamento: '2',
-      regrasEliminacao: [regraEliminacao({ regraCodigo: 'ELIM-ZERO-EM-AREA', regraVersao: '1.0' })],
+      regrasEliminacao: [regraEliminacao({ regraCodigo: 'ELIMINACAO-ZERO-EM-AREA', regraVersao: '1.0' })],
     };
 
     const comando = comoComandoDeClassificacao(classificacao);
@@ -228,13 +228,13 @@ describe('escala da nota final no comando', () => {
 });
 
 describe('shape por código de regra de eliminação (DefinirClassificacaoCommandHandler.MontarArgs)', () => {
-  it('ELIM-NOTA-MINIMA-ETAPA usa etapaRef e notaMinima, e minimo e areaCodigo vão null', () => {
-    expect(eliminacaoUsaEtapaENotaMinima('ELIM-NOTA-MINIMA-ETAPA')).toBe(true);
-    expect(eliminacaoUsaAreaEMinimo('ELIM-NOTA-MINIMA-ETAPA')).toBe(false);
+  it('ELIMINACAO-NOTA-MINIMA-ETAPA usa etapaRef e notaMinima, e minimo e areaCodigo vão null', () => {
+    expect(eliminacaoUsaEtapaENotaMinima('ELIMINACAO-NOTA-MINIMA-ETAPA')).toBe(true);
+    expect(eliminacaoUsaAreaEMinimo('ELIMINACAO-NOTA-MINIMA-ETAPA')).toBe(false);
 
     const comando = comoComandoDeRegraEliminacao(
       regraEliminacao({
-        regraCodigo: 'ELIM-NOTA-MINIMA-ETAPA',
+        regraCodigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA',
         regraVersao: '1.0',
         etapaRef: 'etapa-1',
         notaMinima: '5',
@@ -244,7 +244,7 @@ describe('shape por código de regra de eliminação (DefinirClassificacaoComman
     );
 
     expect(comando).toEqual({
-      regraCodigo: 'ELIM-NOTA-MINIMA-ETAPA',
+      regraCodigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA',
       regraVersao: '1.0',
       etapaRef: 'etapa-1',
       notaMinima: 5,
@@ -253,13 +253,13 @@ describe('shape por código de regra de eliminação (DefinirClassificacaoComman
     });
   });
 
-  it('ELIM-CORTE-EM-AREA usa areaCodigo e minimo, e etapaRef/notaMinima vão null', () => {
-    expect(eliminacaoUsaAreaEMinimo('ELIM-CORTE-EM-AREA')).toBe(true);
-    expect(eliminacaoExigeBaseadoEmEnem('ELIM-CORTE-EM-AREA')).toBe(true);
+  it('ELIMINACAO-CORTE-EM-AREA usa areaCodigo e minimo, e etapaRef/notaMinima vão null', () => {
+    expect(eliminacaoUsaAreaEMinimo('ELIMINACAO-CORTE-EM-AREA')).toBe(true);
+    expect(eliminacaoExigeBaseadoEmEnem('ELIMINACAO-CORTE-EM-AREA')).toBe(true);
 
     const comando = comoComandoDeRegraEliminacao(
       regraEliminacao({
-        regraCodigo: 'ELIM-CORTE-EM-AREA',
+        regraCodigo: 'ELIMINACAO-CORTE-EM-AREA',
         regraVersao: 'v1',
         etapaRef: 'etapa-1', // resíduo — não pode vazar
         notaMinima: '5', // resíduo — não pode vazar
@@ -269,7 +269,7 @@ describe('shape por código de regra de eliminação (DefinirClassificacaoComman
     );
 
     expect(comando).toEqual({
-      regraCodigo: 'ELIM-CORTE-EM-AREA',
+      regraCodigo: 'ELIMINACAO-CORTE-EM-AREA',
       regraVersao: 'v1',
       etapaRef: null,
       notaMinima: null,
@@ -278,14 +278,14 @@ describe('shape por código de regra de eliminação (DefinirClassificacaoComman
     });
   });
 
-  it('ELIM-AUSENCIA-NA-ETAPA usa só etapaRef, sem exigir ENEM', () => {
-    expect(eliminacaoUsaSoEtapa('ELIM-AUSENCIA-NA-ETAPA')).toBe(true);
-    expect(eliminacaoUsaEtapaENotaMinima('ELIM-AUSENCIA-NA-ETAPA')).toBe(false);
-    expect(eliminacaoExigeBaseadoEmEnem('ELIM-AUSENCIA-NA-ETAPA')).toBe(false);
+  it('ELIMINACAO-AUSENCIA-NA-ETAPA usa só etapaRef, sem exigir ENEM', () => {
+    expect(eliminacaoUsaSoEtapa('ELIMINACAO-AUSENCIA-NA-ETAPA')).toBe(true);
+    expect(eliminacaoUsaEtapaENotaMinima('ELIMINACAO-AUSENCIA-NA-ETAPA')).toBe(false);
+    expect(eliminacaoExigeBaseadoEmEnem('ELIMINACAO-AUSENCIA-NA-ETAPA')).toBe(false);
 
     const comando = comoComandoDeRegraEliminacao(
       regraEliminacao({
-        regraCodigo: 'ELIM-AUSENCIA-NA-ETAPA',
+        regraCodigo: 'ELIMINACAO-AUSENCIA-NA-ETAPA',
         regraVersao: '1.0',
         etapaRef: 'etapa-1',
         notaMinima: '5', // resíduo — não pode vazar
@@ -295,7 +295,7 @@ describe('shape por código de regra de eliminação (DefinirClassificacaoComman
     );
 
     expect(comando).toEqual({
-      regraCodigo: 'ELIM-AUSENCIA-NA-ETAPA',
+      regraCodigo: 'ELIMINACAO-AUSENCIA-NA-ETAPA',
       regraVersao: '1.0',
       etapaRef: 'etapa-1',
       notaMinima: null,
@@ -305,26 +305,26 @@ describe('shape por código de regra de eliminação (DefinirClassificacaoComman
   });
 
   it('a regra antiga de corte de redação não tem mais shape reconhecido', () => {
-    expect(eliminacaoUsaAreaEMinimo('ELIM-CORTE-REDACAO')).toBe(false);
+    expect(eliminacaoUsaAreaEMinimo('ELIMINACAO-CORTE-REDACAO')).toBe(false);
   });
 
-  it('ELIM-FALTA-EM-DIA-DE-PROVA-ENEM exige ENEM, não usa campo e vale uma só vez', () => {
-    const codigo = 'ELIM-FALTA-EM-DIA-DE-PROVA-ENEM';
+  it('ELIMINACAO-FALTA-EM-DIA-DE-PROVA-ENEM exige ENEM, não usa campo e vale uma só vez', () => {
+    const codigo = 'ELIMINACAO-FALTA-EM-DIA-DE-PROVA-ENEM';
     expect(eliminacaoUsaEtapaENotaMinima(codigo)).toBe(false);
     expect(eliminacaoUsaAreaEMinimo(codigo)).toBe(false);
     expect(eliminacaoExigeBaseadoEmEnem(codigo)).toBe(true);
     expect(eliminacaoAceitaUmaSoVez(codigo)).toBe(true);
-    expect(eliminacaoAceitaUmaSoVez('ELIM-ZERO-EM-AREA')).toBe(false);
+    expect(eliminacaoAceitaUmaSoVez('ELIMINACAO-ZERO-EM-AREA')).toBe(false);
   });
 
-  it('ELIM-ZERO-EM-AREA não usa nenhum campo', () => {
-    expect(eliminacaoUsaEtapaENotaMinima('ELIM-ZERO-EM-AREA')).toBe(false);
-    expect(eliminacaoUsaAreaEMinimo('ELIM-ZERO-EM-AREA')).toBe(false);
-    expect(eliminacaoExigeBaseadoEmEnem('ELIM-ZERO-EM-AREA')).toBe(true);
+  it('ELIMINACAO-ZERO-EM-AREA não usa nenhum campo', () => {
+    expect(eliminacaoUsaEtapaENotaMinima('ELIMINACAO-ZERO-EM-AREA')).toBe(false);
+    expect(eliminacaoUsaAreaEMinimo('ELIMINACAO-ZERO-EM-AREA')).toBe(false);
+    expect(eliminacaoExigeBaseadoEmEnem('ELIMINACAO-ZERO-EM-AREA')).toBe(true);
 
     const comando = comoComandoDeRegraEliminacao(
       regraEliminacao({
-        regraCodigo: 'ELIM-ZERO-EM-AREA',
+        regraCodigo: 'ELIMINACAO-ZERO-EM-AREA',
         regraVersao: '1.0',
         etapaRef: 'etapa-1',
         notaMinima: '5',
@@ -334,7 +334,7 @@ describe('shape por código de regra de eliminação (DefinirClassificacaoComman
     );
 
     expect(comando).toEqual({
-      regraCodigo: 'ELIM-ZERO-EM-AREA',
+      regraCodigo: 'ELIMINACAO-ZERO-EM-AREA',
       regraVersao: '1.0',
       etapaRef: null,
       notaMinima: null,
@@ -350,25 +350,25 @@ describe('divisorDaMediaValido', () => {
   });
 
   it('é falso quando nenhuma etapa compõe a nota', () => {
-    expect(divisorDaMediaValido([etapa({ carater: CaraterEtapa.eliminatoria, peso: '1' })])).toBe(
+    expect(divisorDaMediaValido([etapa({ carater: CaraterEtapaCodigo.eliminatoria, peso: '1' })])).toBe(
       false,
     );
   });
 
   it('é falso quando a única etapa que pontua tem peso zero', () => {
     expect(
-      divisorDaMediaValido([etapa({ carater: CaraterEtapa.classificatoria, peso: '0' })]),
+      divisorDaMediaValido([etapa({ carater: CaraterEtapaCodigo.classificatoria, peso: '0' })]),
     ).toBe(false);
   });
 
   it('é verdadeiro com ao menos uma etapa classificatória de peso positivo', () => {
     expect(
-      divisorDaMediaValido([etapa({ carater: CaraterEtapa.classificatoria, peso: '1' })]),
+      divisorDaMediaValido([etapa({ carater: CaraterEtapaCodigo.classificatoria, peso: '1' })]),
     ).toBe(true);
   });
 
   it('é verdadeiro para etapa de caráter "ambas"', () => {
-    expect(divisorDaMediaValido([etapa({ carater: CaraterEtapa.ambas, peso: '2' })])).toBe(true);
+    expect(divisorDaMediaValido([etapa({ carater: CaraterEtapaCodigo.ambas, peso: '2' })])).toBe(true);
   });
 });
 

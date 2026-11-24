@@ -97,7 +97,7 @@ export const DETALHE_PUBLICADO = {
     regrasEliminacao: [
       {
         id: '01960000-0000-7000-0000-0000000008e1',
-        regra: referencia('ELIM-ZERO-EM-AREA'),
+        regra: referencia('ELIMINACAO-ZERO-EM-AREA'),
         etapaRef: null,
         notaMinima: null,
         minimo: null,
@@ -105,7 +105,7 @@ export const DETALHE_PUBLICADO = {
       },
       {
         id: '01960000-0000-7000-0000-0000000008e2',
-        regra: referencia('ELIM-AUSENCIA-NA-ETAPA'),
+        regra: referencia('ELIMINACAO-AUSENCIA-NA-ETAPA'),
         etapaRef: ETAPA_ENTREVISTA_ID,
         notaMinima: null,
         minimo: null,
@@ -149,8 +149,8 @@ export const LEITURAS: Record<string, Record<string, string>> = {
   },
   Desempate: { 'Regra do critério': 'DESEMPATE-MAIOR-IDADE — Costume administrativo' },
   Eliminação: {
-    'Regra de eliminação 1': 'ELIM-ZERO-EM-AREA — Resolução 805/2020, art. 5º',
-    'Regra de eliminação 2': 'ELIM-AUSENCIA-NA-ETAPA — Edital do processo',
+    'Regra de eliminação 1': 'ELIMINACAO-ZERO-EM-AREA — Resolução 805/2020, art. 5º',
+    'Regra de eliminação 2': 'ELIMINACAO-AUSENCIA-NA-ETAPA — Edital do processo',
     Etapa: 'Entrevista',
   },
 };

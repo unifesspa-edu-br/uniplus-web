@@ -1,5 +1,5 @@
 import {
-  SituacaoDoProdutoPrevisto,
+  SituacaoDoProdutoPrevistoCodigo,
   type AtoDoProcessoDto,
   type ProdutoPrevistoDto,
   type ProdutosPrevistosDoProcessoDto,
@@ -41,8 +41,8 @@ function item(id: string, sobrescritas: Partial<ProdutoPrevistoDto> = {}): Produ
     id,
     tipoCodigo: 'RESULTADO_HOMOLOGACAO',
     tipoNome: 'Resultado da homologação',
-    papel: 'PRELIMINAR',
-    situacao: SituacaoDoProdutoPrevisto.aberto,
+    papel: { codigo: 'PRELIMINAR' as NonNullable<ProdutoPrevistoDto['papel']>['codigo'], rotulo: 'Preliminar' },
+    situacao: { codigo: SituacaoDoProdutoPrevistoCodigo.aberto, rotulo: 'Aberto' },
     ato: null,
     correcoes: [],
     podePublicar: true,

@@ -1,3 +1,11 @@
+import {
+  DADO_NUMERICO,
+  DADO_OPCAO,
+  DADO_SIM_OU_NAO,
+  ORIGEM_CALCULADA,
+  ORIGEM_DECLARADA,
+  VALOR_UNICO,
+} from '../../shared/valores-do-catalogo.testing';
 import { OperadorCodigo, type FatoCandidatoComOperadores } from '@uniplus/shared-data/configuracao';
 import {
   apresentacaoDaEtapa,
@@ -28,8 +36,8 @@ const IGUALDADE = [
 const PERTINENCIA = [
   { codigo: OperadorCodigo.IGUAL, rotulo: 'é' },
   { codigo: OperadorCodigo.DIFERENTE, rotulo: 'não é' },
-  { codigo: OperadorCodigo.EM, rotulo: 'é um de' },
-  { codigo: OperadorCodigo.NAO_EM, rotulo: 'não é nenhum de' },
+  { codigo: OperadorCodigo.ALGUM_DE, rotulo: 'é um de' },
+  { codigo: OperadorCodigo.NENHUM_DE, rotulo: 'não é nenhum de' },
 ] as const;
 const COMPARACAO = [
   { codigo: OperadorCodigo.IGUAL, rotulo: 'é igual a' },
@@ -42,9 +50,9 @@ const FATO_DECLARADO = {
   operadoresAdmitidos: IGUALDADE,
   id: 'f',
   descricao: null,
-  dominio: 'BOOLEANO',
-  origem: 'DECLARADO',
-  cardinalidade: 'ESCALAR',
+  dominio: DADO_SIM_OU_NAO,
+  origem: ORIGEM_DECLARADA,
+  cardinalidade: VALOR_UNICO,
   valoresDominio: null,
   pontoResolucao: 'INSCRICAO',
   escopo: 'CANDIDATO',
@@ -68,21 +76,21 @@ export function fato(
 export const SEXO = fato({
   codigo: 'SEXO',
   nome: 'Sexo',
-  dominio: 'CATEGORICO',
+  dominio: DADO_OPCAO,
   operadoresAdmitidos: PERTINENCIA,
 });
 export const PCD = fato({ codigo: 'PCD', nome: 'Pessoa com deficiência' });
 export const RENDA = fato({
   codigo: 'RENDA_FAMILIAR',
   nome: 'Renda familiar',
-  dominio: 'NUMERICO',
+  dominio: DADO_NUMERICO,
   operadoresAdmitidos: COMPARACAO,
 });
 export const MODALIDADE = fato({
   codigo: 'MODALIDADE',
-  origem: 'DERIVADO',
+  origem: ORIGEM_CALCULADA,
   binding: 'REGRA_DERIVACAO:MODALIDADE',
-  dominio: 'CATEGORICO',
+  dominio: DADO_OPCAO,
   operadoresAdmitidos: PERTINENCIA,
 });
 export const CATALOGO = [SEXO, PCD, RENDA, MODALIDADE];

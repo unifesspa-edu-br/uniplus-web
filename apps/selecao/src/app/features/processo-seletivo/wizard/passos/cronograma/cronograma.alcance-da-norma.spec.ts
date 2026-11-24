@@ -135,14 +135,14 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
 
       it('acusa o gatilho NAO_EM que exclui toda modalidade ofertada', () => {
         ofertando('LB_Q');
-        comExigenciaDeclarada(NORMA_RESOLVIDA, gatilhoDeModalidade('NAO_EM', '["LB_Q"]'));
+        comExigenciaDeclarada(NORMA_RESOLVIDA, gatilhoDeModalidade('NENHUM_DE', '["LB_Q"]'));
 
         expect(acusaOrfa()).toBe(true);
       });
 
       it('não acusa o gatilho NAO_EM que deixa passar alguma modalidade ofertada', () => {
         ofertando('LB_Q', 'LB_PPI');
-        comExigenciaDeclarada(NORMA_RESOLVIDA, gatilhoDeModalidade('NAO_EM', '["LB_Q"]'));
+        comExigenciaDeclarada(NORMA_RESOLVIDA, gatilhoDeModalidade('NENHUM_DE', '["LB_Q"]'));
 
         expect(acusaOrfa()).toBe(false);
       });
@@ -163,7 +163,7 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
             observacao: '',
           },
         ],
-        { consequenciaIndeferimento: 'PENDENCIA_REENVIO' },
+        { consequenciaIndeferimento: 'ABRE_PRAZO_PARA_REENVIO' },
       );
 
       const resultado = conferencia.validar();

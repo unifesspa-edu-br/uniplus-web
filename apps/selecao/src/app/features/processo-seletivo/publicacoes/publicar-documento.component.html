@@ -55,7 +55,7 @@
         <h3 id="pub-item-titulo" class="form-section__title">Item do edital</h3>
         <p class="pub__corrigido">
           {{ itemDoEdital.tipoNome ?? itemDoEdital.tipoCodigo }}
-          @if (rotuloDoPapel(itemDoEdital.papel); as papel) {
+          @if (rotuloDoPapel(itemDoEdital.papel?.codigo ?? null); as papel) {
             — resultado {{ papel.toLocaleLowerCase('pt-BR') }}
           }
         </p>

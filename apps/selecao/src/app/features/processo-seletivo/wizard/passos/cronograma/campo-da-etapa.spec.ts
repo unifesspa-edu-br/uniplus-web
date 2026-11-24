@@ -1,4 +1,4 @@
-import { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { umaLeituraDoRecurso } from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
@@ -131,14 +131,14 @@ describe('campoNaTelaDaEtapa', () => {
     expect(
       campoNaTelaDaEtapa(
         'notaMinima',
-        umaEtapaDoCronograma({ carater: CaraterEtapa.ambas }),
+        umaEtapaDoCronograma({ carater: CaraterEtapaCodigo.ambas }),
         undefined,
       ),
     ).toBe(true);
     expect(
       campoNaTelaDaEtapa(
         'notaMinima',
-        umaEtapaDoCronograma({ carater: CaraterEtapa.classificatoria }),
+        umaEtapaDoCronograma({ carater: CaraterEtapaCodigo.classificatoria }),
         undefined,
       ),
     ).toBe(false);

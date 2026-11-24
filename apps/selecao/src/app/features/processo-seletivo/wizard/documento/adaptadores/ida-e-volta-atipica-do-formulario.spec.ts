@@ -34,7 +34,7 @@ const ATIPICOS: readonly [string, DocumentoDaConfiguracao][] = [
         titulo: '  Inscrição  ',
         faseChave: ' inscricao ',
         modeloOrigemCodigo: 'MODELO',
-        etapas: [],
+        paginas: [],
         itens: [],
         grupos: [],
         termos: [],
@@ -51,14 +51,14 @@ const ATIPICOS: readonly [string, DocumentoDaConfiguracao][] = [
   [
     'Coleta com referência vazia e data com espaços',
     comFormularios([{ finalidade: INSCRICAO }], {
-      referenciaTemporalFatos: {},
-      regrasDerivacao: [],
+      referenciaTemporalDosDados: {},
+      calculosDosDados: [],
     }),
   ],
   [
     'Referência temporal com data e fase com espaços',
     comFormularios([{ finalidade: INSCRICAO }], {
-      referenciaTemporalFatos: { data: ' 2027-01-10 ', faseChave: ' fase ' },
+      referenciaTemporalDosDados: { data: ' 2027-01-10 ', faseChave: ' fase ' },
     }),
   ],
 ];
@@ -94,10 +94,10 @@ it('remove ou altera a lista da ocorrência indicada sem mexer na outra', () => 
     { finalidade: ISENCAO, titulo: 'B' },
   ]);
   const editado = acrescentarParte(documento, { finalidade: ISENCAO, ocorrencia: 1 }, ITENS, {
-    fatoCodigo: 'A',
+    codigoDoDado: 'A',
   });
   expect(editado.formularios).toEqual([
     { finalidade: ISENCAO },
-    { finalidade: ISENCAO, titulo: 'B', itens: [{ fatoCodigo: 'A', ordem: 0 }] },
+    { finalidade: ISENCAO, titulo: 'B', itens: [{ codigoDoDado: 'A', ordem: 0 }] },
   ]);
 });

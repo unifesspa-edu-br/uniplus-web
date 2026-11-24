@@ -1,5 +1,5 @@
 import type { HttpRequest } from '@angular/common/http';
-import { SituacaoDoCertame } from '@uniplus/shared-data/selecao';
+import { SituacaoDoCertameCodigo } from '@uniplus/shared-data/selecao';
 import { passarOTempo } from '@uniplus/shared-testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -48,13 +48,13 @@ describe('ProcessosComponent — busca e paginação', () => {
   it('filtro por situação dispara GET com situacao e reseta a paginação', async () => {
     await cenario.responderLista([sisu, tecnicoEnfermagem], contadoresHeaders);
 
-    cenario.chip('Últimos dias')?.click();
+    cenario.chip(tecnicoEnfermagem.situacao.rotulo)?.click();
     cenario.fixture.detectChanges();
 
     const requisicao = cenario.controller.expectOne(
       (requisicao) => requisicao.url === CERTAMES_URL && requisicao.params.has('situacao'),
     );
-    expect(requisicao.request.params.get('situacao')).toBe(SituacaoDoCertame.ultimosDias);
+    expect(requisicao.request.params.get('situacao')).toBe(SituacaoDoCertameCodigo.ultimosDias);
     expect(requisicao.request.params.has('cursor')).toBe(false);
     requisicao.flush([tecnicoEnfermagem], { headers: contadoresHeaders });
     await cenario.propagar();

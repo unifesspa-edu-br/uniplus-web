@@ -1,3 +1,8 @@
+import {
+  DADO_OPCAO,
+  ORIGEM_DECLARADA,
+  VALOR_UNICO,
+} from '../../shared/valores-do-catalogo.testing';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { OperadorCodigo } from '@uniplus/shared-data/configuracao';
@@ -50,9 +55,9 @@ describe('FasePassoComponent', () => {
         codigo: 'PARENTESCO',
         nome: 'Parentesco',
         descricao: 'Grau de parentesco do membro.',
-        dominio: 'CATEGORICO',
-        origem: 'DECLARADO',
-        cardinalidade: 'ESCALAR',
+        dominio: DADO_OPCAO,
+        origem: ORIGEM_DECLARADA,
+        cardinalidade: VALOR_UNICO,
         valoresDominio: ['FILHO', 'CONJUGE'],
         pontoResolucao: 'AVALIACAO',
         binding: 'CAMPO_FORMULARIO:PARENTESCO',

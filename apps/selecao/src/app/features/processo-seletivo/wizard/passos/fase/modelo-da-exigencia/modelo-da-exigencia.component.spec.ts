@@ -55,7 +55,7 @@ function confirmado() {
     id: MODELO_ID,
     processoSeletivoId: PROCESSO_ID,
     nomeArquivo: 'autodeclaracao.docx',
-    formato: 'DOCX',
+    formato: { codigo: 'DOCX', rotulo: 'Documento Word' },
     status: 'Confirmado',
     criadoEm: '2026-10-04T12:00:00Z',
     expiraEm: '2026-10-04T12:15:00Z',

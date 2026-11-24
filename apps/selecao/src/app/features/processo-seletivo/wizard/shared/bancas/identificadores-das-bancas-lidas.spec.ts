@@ -1,4 +1,4 @@
-import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
+import { MODOS } from '../deliberacao/regra-de-deliberacao.testing';
 import { describe, expect, it } from 'vitest';
 import type { RegraDeDeliberacaoDaBanca } from '../../modelos/deliberacao.models';
 import type { BancaDeclarada } from '../../modelos/banca.models';
@@ -11,14 +11,14 @@ function banca(tipoBancaId: string, identificadorLocal: string, id: string | nul
 describe('comOsIdentificadoresLidos', () => {
   it('associa bancas do mesmo tipo pelo conteúdo mesmo com a leitura em outra ordem', () => {
     const regra: RegraDeDeliberacaoDaBanca = {
-      modo: ModoDeDeliberacao.colegiadaComVotacao,
+      modo: MODOS.colegiadaComVotacao,
       integrantes: '3',
       suplentes: '0',
       quorum: '2',
-      criterio: '',
-      desempate: '',
-      encerramento: '',
-      semUnanimidade: '',
+      criterio: null,
+      desempate: null,
+      encerramento: null,
+      semUnanimidade: null,
     };
     const primeira = { ...banca('a', 'primeira', null), regraDeDeliberacao: regra };
     const segunda = {

@@ -5,16 +5,17 @@ import type { BaseLegalConfig, ExigenciaDeDocumento } from '../../processo-selet
 import { type GrupoDaExigencia } from '../../shared/exigencias/consulta-das-exigencias';
 import {
   ABRANGENCIAS_ESCOLHIVEIS,
-  CONSEQUENCIAS_ESCOLHIVEIS,
   FATO_MODALIDADE,
   SITUACAO_BASE_LEGAL_ESCOLHIVEIS,
   temNormaResolvida,
 } from '../../shared/exigencias/exigencias-documentais';
-import { exigidoDeTodos, numerosDeClausula } from '../../shared/exigencias/recorte-por-modalidade';
 import {
-  comparaComLista,
+  exigidoDeTodos,
+  numerosDeClausula,
+} from '../../shared/exigencias/modalidades-da-exigencia';
+import {
   podeAlcancarModalidade,
-  recorteUniforme,
+  modalidadesUniformes,
   valorEscalarDe,
   valoresDeListaDe,
   type CondicaoDeFato,
@@ -24,15 +25,15 @@ import {
 /**
  * A quem uma exigência documental se aplica, na forma que a conferência lê e filtra.
  *
- * O recorte por modalidade que o editor escreve — o mesmo `EM` em todas as alternativas — vale
+ * A restrição às modalidades que o editor escreve — o mesmo `EM` em todas as alternativas — vale
  * para o gatilho inteiro; as alternativas se combinam por OU, e as condições de uma alternativa
  * por E — a mesma leitura do editor. Qualquer outra condição de modalidade, que o domínio aceita
- * por outro caminho (o `EM` fora do recorte, é, não é, não é nenhum de), entra na alternativa
+ * por outro caminho (o `EM` fora da restrição, é, não é, não é nenhum de), entra na alternativa
  * dela, descrita.
  */
 export interface PublicoDaExigencia {
   readonly deTodos: boolean;
-  /** As modalidades do recorte uniforme, ou `null` quando o gatilho não o tem. */
+  /** As modalidades da restrição uniforme, ou `null` quando o gatilho não a tem. */
   readonly modalidades: readonly string[] | null;
   /** Cada alternativa do gatilho como as condições dela, já em prosa. */
   readonly alternativas: readonly (readonly string[])[];
@@ -65,7 +66,7 @@ function publicoCondicional(
   exigencia: ExigenciaDeDocumento,
   fatoPorCodigo: ReadonlyMap<string, FatoEscolhivel>,
 ): PublicoDaExigencia {
-  const modalidades = recorteUniforme(exigencia);
+  const modalidades = modalidadesUniformes(exigencia);
   const porAlternativa = condicoesPorAlternativa(exigencia);
   return {
     deTodos: false,
@@ -99,8 +100,8 @@ function condicoesPorAlternativa(exigencia: ExigenciaDeDocumento): CondicaoDeFat
   );
 }
 
-// O recorte é a mesma cláusula `EM` em todas as alternativas: ele já aparece como
-// "Modalidades …", e repeti-lo em cada alternativa só alongaria a frase. Fora do recorte, o
+// A restrição é a mesma cláusula `EM` em todas as alternativas: ela já aparece como
+// "Modalidades …", e repeti-la em cada alternativa só alongaria a frase. Fora da restrição, o
 // `EM` é condição da própria alternativa e aparece descrito nela.
 function descreverAlternativa(
   condicoes: readonly CondicaoDeFato[],
@@ -108,7 +109,7 @@ function descreverAlternativa(
   fatoPorCodigo: ReadonlyMap<string, FatoEscolhivel>,
 ): string[] {
   return condicoes
-    .filter((condicao) => !ehORecorte(condicao, modalidades))
+    .filter((condicao) => !ehRestricaoDeModalidades(condicao, modalidades))
     .map((condicao) =>
       ehCondicaoDeModalidade(condicao)
         ? descreverCondicaoDeModalidade(condicao)
@@ -116,30 +117,35 @@ function descreverAlternativa(
     );
 }
 
-function ehORecorte(condicao: CondicaoDeFato, modalidades: readonly string[] | null): boolean {
+function ehRestricaoDeModalidades(
+  condicao: CondicaoDeFato,
+  modalidades: readonly string[] | null,
+): boolean {
   return (
     modalidades !== null &&
     ehCondicaoDeModalidade(condicao) &&
-    condicao.operador === OperadorCodigo.EM &&
+    condicao.operador === OperadorCodigo.ALGUM_DE &&
     JSON.stringify(valoresDeListaDe(condicao)) === JSON.stringify(modalidades)
   );
 }
 
 /** A condição sobre a modalidade como frase, nos códigos do quadro de vagas. */
 export function descreverCondicaoDeModalidade(condicao: CondicaoDeFato): string {
-  const codigos = comparaComLista(condicao.operador)
-    ? valoresDeListaDe(condicao)
-    : [valorEscalarDe(condicao)].filter((codigo) => codigo !== '');
+  const codigos =
+    condicao.operador === OperadorCodigo.ALGUM_DE || condicao.operador === OperadorCodigo.NENHUM_DE
+      ? valoresDeListaDe(condicao)
+      : [valorEscalarDe(condicao)].filter((codigo) => codigo !== '');
   const lista = codigos.length > 0 ? codigos.join(', ') : '(valor não escolhido)';
   const nega =
-    condicao.operador === OperadorCodigo.DIFERENTE || condicao.operador === OperadorCodigo.NAO_EM;
+    condicao.operador === OperadorCodigo.DIFERENTE ||
+    condicao.operador === OperadorCodigo.NENHUM_DE;
 
   if (nega) return `Modalidades exceto ${lista}`;
   return codigos.length > 1 ? `Modalidades ${lista}` : `Modalidade ${lista}`;
 }
 
 /**
- * A quem a exigência se aplica, numa frase. A exigência "de quem satisfaz" sem recorte nem
+ * A quem a exigência se aplica, numa frase. A exigência "de quem satisfaz" sem restrição nem
  * condição não é cobrada de ninguém, e a conferência precisa dizê-lo em vez de calar.
  */
 export function descreverPublico(publico: PublicoDaExigencia): string {
@@ -174,7 +180,7 @@ export type FiltroDePublico =
  * deixá-lo de fora.
  *
  * Por condição entra o documento que a declara em alguma alternativa e o que não depende de
- * outro fato em alguma alternativa (o de todo candidato, o recortado só por modalidade): esse
+ * outro fato em alguma alternativa (o de todo candidato, o restrito só por modalidade): esse
  * candidato também pode entregá-lo.
  */
 export function alcancaOPublico(publico: PublicoDaExigencia, filtro: FiltroDePublico): boolean {
@@ -195,9 +201,14 @@ export function alcancaOPublico(publico: PublicoDaExigencia, filtro: FiltroDePub
  * O que acontece com quem não entrega, como o editor o nomeia. Sem consequência, a exigência
  * obrigatória ainda decide pela falta do próprio documento, e o rótulo genérico mentiria.
  */
-export function rotuloDaConsequencia(valor: string, obrigatorio: boolean): string {
+export function rotuloDaConsequencia(
+  valor: string,
+  obrigatorio: boolean,
+  opcoes: readonly { readonly codigo: string; readonly rotulo: string }[],
+): string {
   if (valor === '' && obrigatorio) return 'Nada além de faltar o documento obrigatório';
-  return CONSEQUENCIAS_ESCOLHIVEIS.find((opcao) => opcao.valor === valor)?.rotulo ?? valor;
+  if (valor === '') return 'Não decide sozinha';
+  return opcoes.find((opcao) => opcao.codigo === valor)?.rotulo ?? '';
 }
 
 /** A norma como a conferência a mostra: a referência e, abaixo, o alcance e a identificação. */

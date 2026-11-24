@@ -6,8 +6,8 @@
           <p class="insc-arquivos__nome">{{ arquivo.nome }}</p>
           <p class="insc-arquivos__detalhe">{{ arquivo.detalhe }}</p>
         </div>
-        <ui-tag [variant]="varianteDaSituacaoDoArquivo(arquivo.situacao)">
-          {{ rotuloDaSituacaoDoArquivo(arquivo.situacao) }}
+        <ui-tag [variant]="varianteDaSituacaoDoArquivo(arquivo.situacao.codigo)">
+          {{ arquivo.situacao.rotulo }}
         </ui-tag>
         <button
           type="button"

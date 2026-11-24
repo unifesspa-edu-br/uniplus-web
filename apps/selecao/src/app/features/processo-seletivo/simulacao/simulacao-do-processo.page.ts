@@ -114,7 +114,12 @@ export class SimulacaoDoProcessoPage {
   );
   /** A lista do bloco de comprovação documental; o rascunho não a tem, porque ela sai da publicação. */
   protected readonly documentos = computed<readonly DocumentoExigido[] | null>(
-    () => this.lido()?.comprovacaoDocumental ?? null,
+    () => this.lido()?.comprovacaoDocumental?.map((documento) => ({
+      ...documento,
+      aplicabilidade: documento.aplicabilidade.codigo,
+      formatos: { ...documento.formatos, lista: documento.formatos.lista?.map((f) => f.rotulo) ?? null },
+      modelo: documento.modelo === null ? null : { ...documento.modelo, formato: documento.modelo.formato.rotulo },
+    })) ?? null,
   );
 
   protected readonly conferir: ConferenciaComOServidor = (simulacao) =>

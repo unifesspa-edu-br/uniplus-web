@@ -1,10 +1,11 @@
+import { OperadorCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import {
   comExigidoDeTodos,
   comModalidades,
-  comRecorteEscolhido,
-} from './exigencias/recorte-por-modalidade';
+  comModalidadesEscolhidas,
+} from './exigencias/modalidades-da-exigencia';
 import {
   clausulasDoGatilho,
   comClausula,
@@ -209,7 +210,7 @@ describe('o alcance por modalidade e o alcance declarado', () => {
   it('marcar todas as modalidades devolve o documento a todo candidato', () => {
     const restrita = comModalidades(exigencia(), ['LB_PPI']);
 
-    const todas = comRecorteEscolhido(restrita, ['AC', 'LB_PPI'], ['AC', 'LB_PPI']);
+    const todas = comModalidadesEscolhidas(restrita, ['AC', 'LB_PPI'], ['AC', 'LB_PPI']);
 
     expect(todas.aplicabilidade).toBe('GERAL');
     expect(todas.condicoes).toEqual([]);
@@ -220,7 +221,7 @@ describe('o alcance por modalidade e o alcance declarado', () => {
     const porSexo = comCondicao(exigencia(), 1, escolhivel(SEXO));
     const restrita = comModalidades(porSexo, ['LB_PPI']);
 
-    const todas = comRecorteEscolhido(restrita, ['AC', 'LB_PPI'], ['AC', 'LB_PPI']);
+    const todas = comModalidadesEscolhidas(restrita, ['AC', 'LB_PPI'], ['AC', 'LB_PPI']);
 
     expect(todas.aplicabilidade).toBe('CONDICIONAL');
     expect(todas.condicoes.map((c) => c.fato)).toEqual(['SEXO']);
@@ -228,7 +229,7 @@ describe('o alcance por modalidade e o alcance declarado', () => {
 
   /** Alcance parcial é restrição: a cláusula é escrita e a exigência passa a ser condicional. */
   it('marcar parte das modalidades escreve a restrição por modalidade', () => {
-    const restritaPorModalidade = comRecorteEscolhido(
+    const restritaPorModalidade = comModalidadesEscolhidas(
       exigencia({ aplicabilidade: 'GERAL' }),
       ['LB_PPI'],
       ['AC', 'LB_PPI'],
@@ -236,7 +237,7 @@ describe('o alcance por modalidade e o alcance declarado', () => {
 
     expect(restritaPorModalidade.aplicabilidade).toBe('CONDICIONAL');
     expect(restritaPorModalidade.condicoes).toEqual([
-      { clausula: 1, fato: 'MODALIDADE', operador: 'EM', valor: '["LB_PPI"]' },
+      { clausula: 1, fato: 'MODALIDADE', operador: OperadorCodigo.ALGUM_DE, valor: '["LB_PPI"]' },
     ]);
   });
 

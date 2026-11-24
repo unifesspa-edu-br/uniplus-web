@@ -1,3 +1,4 @@
+import { CRITERIOS, RESULTADOS } from '../../shared/deliberacao/regra-de-deliberacao.testing';
 import { By } from '@angular/platform-browser';
 import type { TipoBancaDto } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it, vi } from 'vitest';
@@ -119,7 +120,7 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da fase', () 
   it('mostra sob o modo, e leva o foco a ele, a recusa do controle que a regra atual não mostra', async () => {
     comBancas('banca-1');
     const [fase] = tela.store.draft().cronograma.fases;
-    const regra = comRegra({ criterio: 'unanimidade', desempate: '', semUnanimidade: 'favoravel' });
+    const regra = comRegra({ criterio: CRITERIOS.unanimidade, desempate: null, semUnanimidade: RESULTADOS.favoravel });
     tela.store.patchObjectSection('cronograma', {
       fases: [
         {

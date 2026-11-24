@@ -16,7 +16,7 @@ const CRONOGRAMA_COMPLETO: DocumentoDaConfiguracao = {
     fases: [
       {
         chave: 'inscricao',
-        faseCanonicaCodigo: 'INSCRICAO',
+        tipoFaseCodigo: 'INSCRICAO',
         inicio: '2027-01-10T03:00:00Z',
         fim: '2027-01-20T02:59:59Z',
         unidadeResponsavelCodigo: 'CEPS',
@@ -26,14 +26,14 @@ const CRONOGRAMA_COMPLETO: DocumentoDaConfiguracao = {
       },
       {
         chave: 'avaliacao',
-        faseCanonicaCodigo: 'AVALIACAO',
+        tipoFaseCodigo: 'AVALIACAO',
         noMesmoMomentoDaAnterior: false,
         regraDeHomologacao: { resultadoAtoCodigo: 'RESULTADO', alternativas: [] },
         assinantes: ['0196b3c2-8a10-7c3e-b5d2-6f1e4a9c2d71'],
       },
       {
         chave: 'resultado',
-        faseCanonicaCodigo: 'RESULTADO_FINAL',
+        tipoFaseCodigo: 'RESULTADO_FINAL',
         noMesmoMomentoDaAnterior: false,
       },
     ],
@@ -46,8 +46,8 @@ const CRONOGRAMA_COMPLETO: DocumentoDaConfiguracao = {
   provaPresencial: { temProvaPresencial: false },
   divulgacao: { justificativa: 'Texto' },
   coleta: {
-    regrasDerivacao: [
-      { fatoCodigo: 'FAIXA', regras: [{ ordem: 0, contribui: 'A', quando: null }] },
+    calculosDosDados: [
+      { codigoDoDado: 'FAIXA', regras: [{ ordem: 0, contribui: 'A', quando: null }] },
     ],
   },
 };

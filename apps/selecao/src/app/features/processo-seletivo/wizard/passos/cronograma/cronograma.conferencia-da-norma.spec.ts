@@ -1,5 +1,6 @@
+import { ORIGEM_DECLARADA, VALORES_MODALIDADE, VALOR_UNICO } from '../../shared/valores-do-catalogo.testing';
+import { FAIXA_ETARIA, MODALIDADE } from '../../shared/gatilho-de-exigencia.testing';
 import { TestBed } from '@angular/core/testing';
-import { FatoCandidatoComOperadores } from '@uniplus/shared-data/configuracao';
 import { type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 import { conteudoInicial } from '@uniplus/shared-ui/components';
@@ -49,19 +50,14 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
     it('acusa o gatilho que cita dado conhecido só depois da fase da exigência, com o que fazer', () => {
       TestBed.inject(CatalogoDeFatos).fatos.set([
         {
+          ...MODALIDADE,
+          cardinalidade: VALOR_UNICO,
+          fonteValores: VALORES_MODALIDADE,
           codigo: 'MODALIDADE_CONVOCACAO',
           nome: 'Modalidade da convocação',
-          dominio: 'CATEGORICO',
-          origem: 'DERIVADO',
-          cardinalidade: 'ESCALAR',
           binding: 'CLASSIFICACAO:MODALIDADE_CONVOCACAO',
-          escopo: 'CANDIDATO',
-          fonteValores: 'MODALIDADE',
-          ativo: true,
-          valoresDominio: null,
           pontoResolucao: 'RESULTADO_FINAL',
-          operadoresAdmitidos: [{ codigo: 'IGUAL', rotulo: 'é' }],
-        } as unknown as FatoCandidatoComOperadores,
+        },
       ]);
       comExigenciaDeclarada(
         [
@@ -150,18 +146,13 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
     it('não põe na inscrição o fato que outra finalidade do rascunho, ainda não gravada, já coleta', async () => {
       TestBed.inject(CatalogoDeFatos).fatos.set([
         {
+          ...FAIXA_ETARIA,
+          origem: ORIGEM_DECLARADA,
+          escopo: 'CANDIDATO',
           codigo: 'RENDA_FAMILIAR',
           nome: 'Renda familiar',
-          dominio: 'NUMERICO',
-          origem: 'DECLARADO',
-          cardinalidade: 'UNIVALORADO',
           binding: 'CAMPO_FORMULARIO:RENDA_FAMILIAR',
-          escopo: 'CANDIDATO',
-          fonteValores: null,
-          ativo: true,
-          valoresDominio: null,
-          operadoresAdmitidos: [{ codigo: 'IGUAL', rotulo: 'é' }],
-        } as unknown as FatoCandidatoComOperadores,
+        },
       ]);
       comExigenciaDeclarada(
         [
@@ -213,18 +204,13 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
       const catalogos = TestBed.inject(CatalogoDeFatos);
       catalogos.fatos.set([
         {
+          ...FAIXA_ETARIA,
+          origem: ORIGEM_DECLARADA,
+          escopo: 'CANDIDATO',
           codigo: 'RENDA_FAMILIAR',
           nome: 'Renda familiar',
-          dominio: 'NUMERICO',
-          origem: 'DECLARADO',
-          cardinalidade: 'UNIVALORADO',
           binding: 'CAMPO_INSCRICAO:RENDA_FAMILIAR',
-          escopo: 'CANDIDATO',
-          fonteValores: null,
-          ativo: true,
-          valoresDominio: null,
-          operadoresAdmitidos: [{ codigo: 'IGUAL', rotulo: 'é' }],
-        } as unknown as FatoCandidatoComOperadores,
+        },
       ]);
 
       comExigenciaDeclarada(

@@ -14,7 +14,7 @@ import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { ProblemI18nService, abrirAcessoEmNovaAba } from '@uniplus/shared-core/http';
 import {
   DocumentosEAtosDoProcessoApi,
-  StatusProcesso,
+  StatusProcessoCodigo,
   type AtoDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
 import {
@@ -113,7 +113,7 @@ export class PublicacoesDoProcessoPage {
   /** O processo ainda não foi publicado: não há página pública para receber documentos. */
   protected readonly emRascunho = computed(() => {
     const processo = this.publicacoes.processo();
-    return processo.estado === 'lido' && processo.dados.status === StatusProcesso.rascunho;
+    return processo.estado === 'lido' && processo.dados.status.codigo === StatusProcessoCodigo.rascunho;
   });
 
   /** Publicar documento é de quem tem a permissão de publicar; as demais permissões não bastam. */

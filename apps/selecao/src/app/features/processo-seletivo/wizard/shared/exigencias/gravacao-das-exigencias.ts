@@ -1,5 +1,7 @@
 import {
   OperadorCodigo,
+  AplicabilidadeCodigo,
+  FinalidadeFormularioCodigo,
   FormaDeComprovacaoCodigo,
   type ItemDocumentoExigidoInput,
   type RegraDeComprovacaoInformada,
@@ -210,7 +212,7 @@ function aplicabilidadeParaEnvio(
   modalidadesOfertadas: readonly string[],
 ): ItemDocumentoExigidoInput['aplicabilidade'] {
   return {
-    tipo: documento.aplicabilidade,
+    tipo: codigoDoContrato(AplicabilidadeCodigo, documento.aplicabilidade),
     condicoes: condicoesParaEnvio(documento, modalidadesOfertadas),
   };
 }
@@ -225,8 +227,15 @@ function momentoParaEnvio(
     etapaId: documento.faseIdLido
       ? documento.etapaId
       : etapaDeColetaValida(documento, processo.etapasVivas),
-    finalidade: documento.faseIdLido ? documento.finalidade : finalidade,
+    finalidade: finalidadeParaEnvio(documento, finalidade),
   };
+}
+
+function finalidadeParaEnvio(documento: ExigenciaDeDocumento, finalidade: string | null) {
+  return codigoDoContrato(
+    FinalidadeFormularioCodigo,
+    (documento.faseIdLido ? documento.finalidade : finalidade) ?? '',
+  );
 }
 
 function indeferimentoDoDocumentoParaEnvio(

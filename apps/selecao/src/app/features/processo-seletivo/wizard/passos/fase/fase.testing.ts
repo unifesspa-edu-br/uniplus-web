@@ -23,8 +23,18 @@ import { ReleituraDosIdentificadores } from '../cronograma/servicos/releitura-do
 import { UnidadesResponsaveisDasFases } from '../cronograma/servicos/unidades-responsaveis-das-fases.service';
 import { FasePassoComponent } from './fase.component';
 import { provideTiposDeDecisaoDaApi } from '../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
+import { proverVocabulariosDaDeliberacao } from '../../shared/deliberacao/regra-de-deliberacao.testing';
+import { CatalogoDasConsequenciasDeIndeferimento } from '../cronograma/catalogos/catalogo-das-consequencias-de-indeferimento.service';
 
 export const BASE = 'http://localhost:5000';
+export const CONSEQUENCIA_ELIMINA = {
+  codigo: 'ELIMINA',
+  rotulo: 'Elimina do processo',
+};
+export const CONSEQUENCIA_REENVIO = {
+  codigo: 'ABRE_PRAZO_PARA_REENVIO',
+  rotulo: 'Abre prazo para reenvio',
+};
 export const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
 export const ROTA_FASES = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/cronograma-fases`;
 
@@ -211,15 +221,22 @@ const PROVEDORES_DA_FASE = [
   { provide: SELECAO_BASE_PATH, useValue: BASE },
   { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
   provideTiposDeDecisaoDaApi(),
+  proverVocabulariosDaDeliberacao(),
+  CatalogoDasConsequenciasDeIndeferimento,
   { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
   { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
 ];
+
+function opcoesParaUrl(url: string): readonly unknown[] | null {
+  if (url.includes('consequencias-indeferimento')) return [CONSEQUENCIA_ELIMINA, CONSEQUENCIA_REENVIO];
+  return opcoesDoRecursoDaUrl(url);
+}
 
 /** Responde ao que os catálogos pedem quando um passo abre. */
 function atenderOsCatalogos(controller: HttpTestingController): void {
   for (const requisicao of controller.match(() => true)) {
     const { url } = requisicao.request;
-    const opcoes = opcoesDoRecursoDaUrl(url);
+    const opcoes = opcoesParaUrl(url);
     if (opcoes !== null) requisicao.flush(opcoes);
     else if (url.includes('fases-canonicas')) requisicao.flush(FASES_CANONICAS);
     else if (url.includes('tipos-banca')) requisicao.flush(BANCAS);
@@ -260,10 +277,17 @@ function comAsFases(
   else fixture.detectChanges();
 }
 
+function responderConsequenciasDeIndeferimento(controller: HttpTestingController): void {
+  controller
+    .match((requisicao) => requisicao.url.includes('consequencias-indeferimento'))
+    .forEach((requisicao) => requisicao.flush([CONSEQUENCIA_ELIMINA, CONSEQUENCIA_REENVIO]));
+}
+
 function atenderOuFalhar(
   controller: HttpTestingController,
   catalogos: 'atendidos' | 'pendentes' | 'com-erro',
 ): void {
+  TestBed.inject(CatalogoDasConsequenciasDeIndeferimento).carregar();
   if (catalogos === 'atendidos') atenderOsCatalogos(controller);
   if (catalogos === 'com-erro') falharOsCatalogos(controller);
 }
@@ -280,7 +304,10 @@ function operacoesDoPasso(
   const store = TestBed.inject(ProcessoSeletivoStore);
   return {
     atenderCatalogos: () => atenderOsCatalogos(controller),
-    comCronograma: (...fases) => comAsFases(fixture, store, fases),
+    comCronograma: (...fases) => {
+      comAsFases(fixture, store, fases);
+      responderConsequenciasDeIndeferimento(controller);
+    },
     selecionado: (id) => valorDoSeletor(fixture.nativeElement as HTMLElement, id),
     abrirFase: (faseCanonicaId) => fixarAFase(fixture, faseCanonicaId),
   };

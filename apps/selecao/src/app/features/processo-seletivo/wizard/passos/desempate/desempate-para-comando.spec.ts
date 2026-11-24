@@ -86,12 +86,12 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
     expect(comando.parametros?.etapaRef).toBeNull();
   });
 
-  it('DESEMPATE-PREDICADO-FATO usa fato, operador e valor', () => {
-    expect(desempateUsaPredicadoFato('DESEMPATE-PREDICADO-FATO')).toBe(true);
+  it('DESEMPATE-CONDICAO-SOBRE-DADO usa fato, operador e valor', () => {
+    expect(desempateUsaPredicadoFato('DESEMPATE-CONDICAO-SOBRE-DADO')).toBe(true);
 
     const comando = comoComandoDeCriterioDesempate(
       criterio({
-        regraCodigo: 'DESEMPATE-PREDICADO-FATO',
+        regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
         regraVersao: '1.0',
         fato: 'RENDA_PER_CAPITA',
         operador: OperadorCodigo.MENOR_IGUAL,
@@ -102,7 +102,7 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
 
     expect(comando).toEqual({
       ordem: 1,
-      regra: { codigo: 'DESEMPATE-PREDICADO-FATO', versao: '1.0' },
+      regra: { codigo: 'DESEMPATE-CONDICAO-SOBRE-DADO', versao: '1.0' },
       parametros: {
         etapaRef: null,
         idadeMinima: null,

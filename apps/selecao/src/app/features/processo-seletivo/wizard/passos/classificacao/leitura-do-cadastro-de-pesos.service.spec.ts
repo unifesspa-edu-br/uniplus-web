@@ -5,7 +5,7 @@ import { apiOk } from '@uniplus/shared-core/http';
 import { PesosEnemApi } from '@uniplus/shared-data/configuracao';
 import {
   RegrasCatalogoApi,
-  StatusProcesso,
+  StatusProcessoCodigo,
   type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -97,7 +97,7 @@ describe('LeituraDoCadastroDePesos', () => {
       expect(cadastroDePesos.leitura().lido).toBe(true);
 
       store.remoteSnapshot.set({
-        status: StatusProcesso.publicado,
+        status: StatusProcessoCodigo.publicado,
       } as unknown as ProcessoSeletivoDto);
       store.classificacao.registrarLida({
         resolucaoPesoAreaEnem: RESOLUCAO,
@@ -132,7 +132,7 @@ describe('LeituraDoCadastroDePesos', () => {
       TestBed.tick();
       // Só para consulta, com a cópia: a classificação nova não pede outra leitura.
       store.remoteSnapshot.set({
-        status: StatusProcesso.publicado,
+        status: StatusProcessoCodigo.publicado,
       } as unknown as ProcessoSeletivoDto);
       store.classificacao.registrarLida(CLASSIFICACAO_COM_COPIA);
       TestBed.tick();

@@ -9,7 +9,7 @@ import { type ApiResult, apiOk } from '@uniplus/shared-core/http';
 import {
   type AcoesDaInscricaoDto,
   type MinhaInscricaoDto,
-  SituacaoInscricao,
+  SituacaoInscricaoCodigo,
 } from '@uniplus/shared-data/selecao';
 
 import type { ItemDaLista } from './inscricao-lista.model';
@@ -42,11 +42,11 @@ type DadosDaSituacao = Pick<
 >;
 
 /** O que só a situação define: o rascunho não tem número, curso nem comprovante. */
-function dadosDaSituacao(situacao: SituacaoInscricao): DadosDaSituacao {
-  const rascunho = situacao === SituacaoInscricao.rascunho;
-  const semComprovante = rascunho || situacao === SituacaoInscricao.cancelada;
+function dadosDaSituacao(situacao: SituacaoInscricaoCodigo): DadosDaSituacao {
+  const rascunho = situacao === SituacaoInscricaoCodigo.rascunho;
+  const semComprovante = rascunho || situacao === SituacaoInscricaoCodigo.cancelada;
   return {
-    situacao,
+    situacao: { codigo: situacao, rotulo: 'Situação de teste' },
     numeroInscricao: rascunho ? null : '00000042',
     opcoesDeCurso: rascunho ? [] : [CURSO_ESCOLHIDO],
     canceladaEm: null,
@@ -55,9 +55,9 @@ function dadosDaSituacao(situacao: SituacaoInscricao): DadosDaSituacao {
   };
 }
 
-function acoesDe(situacao: SituacaoInscricao, aberta: boolean): AcoesDaInscricaoDto {
-  const enviada = situacao === SituacaoInscricao.submetida;
-  const rascunho = situacao === SituacaoInscricao.rascunho;
+function acoesDe(situacao: SituacaoInscricaoCodigo, aberta: boolean): AcoesDaInscricaoDto {
+  const enviada = situacao === SituacaoInscricaoCodigo.submetida;
+  const rascunho = situacao === SituacaoInscricaoCodigo.rascunho;
   return {
     podeContinuar: rascunho && aberta,
     podeCorrigir: enviada && aberta,
@@ -69,7 +69,7 @@ function acoesDe(situacao: SituacaoInscricao, aberta: boolean): AcoesDaInscricao
 /** Um item da lista na situação pedida: com curso quando não é rascunho, e ações conforme `aberta`. */
 export function inscricao(
   id: string,
-  situacao: SituacaoInscricao,
+  situacao: SituacaoInscricaoCodigo,
   nomeDoProcesso: string | null,
   aberta = true,
 ): MinhaInscricaoDto {
@@ -83,10 +83,10 @@ export function inscricao(
 }
 
 export const INSCRICOES: readonly MinhaInscricaoDto[] = [
-  inscricao('p1', SituacaoInscricao.rascunho, 'Auxílio estudantil 2026'),
-  inscricao('p2', SituacaoInscricao.submetida, 'Bolsa de iniciação científica'),
-  inscricao('p3', SituacaoInscricao.submetida, 'Morada estudantil'),
-  inscricao('p4', SituacaoInscricao.rascunho, 'Auxílio transporte'),
+  inscricao('p1', SituacaoInscricaoCodigo.rascunho, 'Auxílio estudantil 2026'),
+  inscricao('p2', SituacaoInscricaoCodigo.submetida, 'Bolsa de iniciação científica'),
+  inscricao('p3', SituacaoInscricaoCodigo.submetida, 'Morada estudantil'),
+  inscricao('p4', SituacaoInscricaoCodigo.rascunho, 'Auxílio transporte'),
 ];
 
 export const respostaSemConteudo = (): Observable<ApiResult<void>> =>

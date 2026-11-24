@@ -1,4 +1,4 @@
-import { StatusProcesso } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -18,7 +18,7 @@ describe('PublicacoesDoProcessoPage — publicar documento', () => {
   afterEach(() => pagina.controller.verify());
 
   it('não permite publicar antes de o processo ser publicado', async () => {
-    await pagina.abrir(StatusProcesso.rascunho, []);
+    await pagina.abrir(StatusProcessoCodigo.rascunho, []);
 
     expect(pagina.host.textContent).toContain('O processo ainda não foi publicado');
     expect(pagina.host.querySelector('sel-atos-do-processo')).toBeNull();
@@ -31,7 +31,7 @@ describe('PublicacoesDoProcessoPage — publicar documento', () => {
   it('sem a permissão de publicar, não oferece publicar nem corrigir, mesmo com o processo publicado', async () => {
     pagina.permissoesConcedidas = ['selecao:processos:configurar', 'selecao:processos:acompanhar'];
 
-    await pagina.abrir(StatusProcesso.publicado, [], previstos(item('preliminar')));
+    await pagina.abrir(StatusProcessoCodigo.publicado, [], previstos(item('preliminar')));
 
     const textos = Array.from(pagina.host.querySelectorAll('button')).map((b) =>
       b.textContent?.trim(),
@@ -44,7 +44,7 @@ describe('PublicacoesDoProcessoPage — publicar documento', () => {
   });
 
   it('com a permissão de publicar e o processo publicado, oferece "Publicar documento" habilitado', async () => {
-    await pagina.abrir(StatusProcesso.publicado, []);
+    await pagina.abrir(StatusProcessoCodigo.publicado, []);
 
     const publicar = Array.from(pagina.host.querySelectorAll('button')).find(
       (b) => b.textContent?.trim() === 'Publicar documento',

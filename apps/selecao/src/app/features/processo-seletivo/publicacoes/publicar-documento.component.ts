@@ -30,7 +30,7 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import type { TipoAtoPublicadoDto } from '@uniplus/shared-data/publicacoes';
 import {
-  FinalidadeDoDocumento,
+  FinalidadeDoDocumentoCodigo,
   DocumentosEAtosDoProcessoApi,
   type AtoDoProcessoDto,
   type AtoPublicadoDto,
@@ -291,7 +291,7 @@ export class PublicarDocumentoComponent {
   ): EnviosDeArquivos {
     return new EnviosDeArquivos({
       ...formato,
-      finalidade: FinalidadeDoDocumento.documentoDeAto,
+      finalidade: FinalidadeDoDocumentoCodigo.documentoDeAto,
       processoId: () => this.processoId(),
       abrirEnvio: () => this.envios.abrirEnvio(),
       explicar: (problema) => this.problemI18n.resolve(problema).title,

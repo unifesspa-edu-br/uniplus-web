@@ -101,7 +101,7 @@ const ATIPICOS: readonly [string, IdaEVolta, DocumentoDaConfiguracao][] = [
       ],
       cascataRemanejamento: {
         regra: {},
-        fallbackCodigo: ' AC ',
+        destinoFinalCodigo: ' AC ',
         destinos: [
           { modalidadeOrigemCodigo: 'B', ordem: 3, modalidadeDestinoCodigo: 'AC' },
           { modalidadeOrigemCodigo: 'A', ordem: 1, modalidadeDestinoCodigo: 'B' },
@@ -120,7 +120,7 @@ const ATIPICOS: readonly [string, IdaEVolta, DocumentoDaConfiguracao][] = [
         fator: 1e-7,
         baseLegalBonusRegionalCodigo: ' BASE ',
         descricao: 'Descrição gravada',
-        fatoElegibilidadeCodigo: ' FATO ',
+        codigoDoDadoDeElegibilidade: ' FATO ',
       },
       identificacao: { nome: 'Depois do bônus' },
     }),

@@ -1,3 +1,12 @@
+import {
+  DADO_NUMERICO,
+  DADO_OPCAO,
+  DADO_SIM_OU_NAO,
+  ORIGEM_CALCULADA,
+  ORIGEM_DECLARADA,
+  VALOR_UNICO,
+  VARIOS_VALORES,
+} from './valores-do-catalogo.testing';
 import { OperadorCodigo, type FatoCandidatoComOperadores } from '@uniplus/shared-data/configuracao';
 
 import type { ExigenciaDeDocumento } from '../processo-seletivo.models';
@@ -6,8 +15,8 @@ import { fatoEscolhivel, fatosParaGatilho, type FatoEscolhivel } from './gatilho
 const PERTINENCIA = [
   { codigo: OperadorCodigo.IGUAL, rotulo: 'é' },
   { codigo: OperadorCodigo.DIFERENTE, rotulo: 'não é' },
-  { codigo: OperadorCodigo.EM, rotulo: 'é um de' },
-  { codigo: OperadorCodigo.NAO_EM, rotulo: 'não é nenhum de' },
+  { codigo: OperadorCodigo.ALGUM_DE, rotulo: 'é um de' },
+  { codigo: OperadorCodigo.NENHUM_DE, rotulo: 'não é nenhum de' },
 ] as const;
 const IGUALDADE = [
   { codigo: OperadorCodigo.IGUAL, rotulo: 'é' },
@@ -24,9 +33,9 @@ const FATO_PADRAO = {
   operadoresAdmitidos: PERTINENCIA,
   nome: '',
   descricao: null,
-  dominio: 'CATEGORICO',
-  origem: 'DECLARADO',
-  cardinalidade: 'ESCALAR',
+  dominio: DADO_OPCAO,
+  origem: ORIGEM_DECLARADA,
+  cardinalidade: VALOR_UNICO,
   valoresDominio: null,
   pontoResolucao: 'INSCRICAO',
   valoresDominioDeclarados: null,
@@ -63,8 +72,8 @@ export const COR_RACA = view({
 export const FAIXA_ETARIA = view({
   codigo: 'FAIXA_ETARIA',
   nome: 'Faixa etária',
-  dominio: 'NUMERICO',
-  origem: 'DERIVADO',
+  dominio: DADO_NUMERICO,
+  origem: ORIGEM_CALCULADA,
   binding: 'ATRIBUTO_CANDIDATO:FAIXA_ETARIA',
   operadoresAdmitidos: COMPARACAO,
 });
@@ -72,22 +81,22 @@ export const FAIXA_ETARIA = view({
 export const PCD = view({
   codigo: 'PCD',
   nome: 'Pessoa com deficiência',
-  dominio: 'BOOLEANO',
+  dominio: DADO_SIM_OU_NAO,
   operadoresAdmitidos: IGUALDADE,
 });
 
 export const MODALIDADE = view({
   codigo: 'MODALIDADE',
   nome: 'Modalidade de concorrência',
-  origem: 'DERIVADO',
-  cardinalidade: 'MULTIVALORADO',
+  origem: ORIGEM_CALCULADA,
+  cardinalidade: VARIOS_VALORES,
   binding: 'REGRA_DERIVACAO:MODALIDADE',
 });
 
 export const CONDICAO_ATENDIMENTO = view({
   codigo: 'CONDICAO_ATENDIMENTO',
   nome: 'Condição de atendimento especializado',
-  cardinalidade: 'MULTIVALORADO',
+  cardinalidade: VARIOS_VALORES,
 });
 
 export const CATALOGO = [

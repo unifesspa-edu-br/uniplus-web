@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
-import type { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import type { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 import {
   abrirFaseDeHabilitacao,
@@ -12,7 +12,7 @@ const CARATER = {
   classificatoria: 'classificatoria',
   eliminatoria: 'eliminatoria',
   ambas: 'ambas',
-} as const satisfies Record<string, `${CaraterEtapa}`>;
+} as const satisfies Record<string, `${CaraterEtapaCodigo}`>;
 
 test.beforeEach(async ({ page }) => {
   await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);

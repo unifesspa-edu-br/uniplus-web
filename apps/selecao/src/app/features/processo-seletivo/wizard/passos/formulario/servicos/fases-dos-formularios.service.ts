@@ -4,6 +4,7 @@ import { FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { descreverFase } from '../../../shared/descricao-da-fase';
 import { fatosParaLerOGatilho } from '../../../shared/documentos-exigidos';
+import { CatalogoDasConsequenciasDeIndeferimento } from '../../cronograma/catalogos/catalogo-das-consequencias-de-indeferimento.service';
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
 import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
 import { CatalogoDeFatos } from '../../cronograma/catalogos/catalogo-de-fatos.service';
@@ -23,6 +24,7 @@ import {
 @Injectable()
 export class FasesDosFormularios {
   private readonly store = inject(ProcessoSeletivoStore);
+  private readonly consequencias = inject(CatalogoDasConsequenciasDeIndeferimento);
   private readonly catalogoDeDocumentos = inject(CatalogoDeDocumentos);
   private readonly catalogoDeFases = inject(CatalogoDeFases);
   private readonly catalogoDeFatos = inject(CatalogoDeFatos);
@@ -78,6 +80,7 @@ export class FasesDosFormularios {
   readonly vocabularioDosDocumentos = computed(() => {
     const tipoPorId = this.catalogoDeDocumentos.tipoDocumentoPorId();
     return {
+      consequencias: this.consequencias.consequencias(),
       fatoPorCodigo: fatosParaLerOGatilho(
         this.catalogoDeFatos.fatos(),
         this.store.draft().atendimento.condicoes.map((condicao) => condicao.codigo),

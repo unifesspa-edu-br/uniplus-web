@@ -21,13 +21,13 @@ const textos = (valor: unknown): valor is readonly string[] =>
   Array.isArray(valor) && valor.every(texto);
 
 const notaMinima = { etapaChave: texto, notaMinima: numero } satisfies FormaDosParametros<
-  ParametrosDaEliminacao['ELIM-NOTA-MINIMA-ETAPA']
+  ParametrosDaEliminacao['ELIMINACAO-NOTA-MINIMA-ETAPA']
 >;
 const corte = { areaCodigo: texto, minimo: numero } satisfies FormaDosParametros<
-  ParametrosDaEliminacao['ELIM-CORTE-EM-AREA']
+  ParametrosDaEliminacao['ELIMINACAO-CORTE-EM-AREA']
 >;
 const ausencia = { etapaChave: texto } satisfies FormaDosParametros<
-  ParametrosDaEliminacao['ELIM-AUSENCIA-NA-ETAPA']
+  ParametrosDaEliminacao['ELIMINACAO-AUSENCIA-NA-ETAPA']
 >;
 const etapa = { etapaChave: texto } satisfies FormaDosParametros<
   ParametrosDoDesempate['DESEMPATE-MAIOR-NOTA-ETAPA']
@@ -55,13 +55,13 @@ export function lerParametrosDaEliminacao(
   codigo: string,
   parametros: Parametros = {},
 ): Leitura<ParametrosDaEliminacao> {
-  if (codigo === 'ELIM-ZERO-EM-AREA' || codigo === 'ELIM-FALTA-EM-DIA-DE-PROVA-ENEM')
+  if (codigo === 'ELIMINACAO-ZERO-EM-AREA' || codigo === 'ELIMINACAO-FALTA-EM-DIA-DE-PROVA-ENEM')
     return { conhecida: true, codigo, valores: {} };
-  if (codigo === 'ELIM-AUSENCIA-NA-ETAPA')
+  if (codigo === 'ELIMINACAO-AUSENCIA-NA-ETAPA')
     return { conhecida: true, codigo, valores: camposComForma(parametros, ausencia) };
-  if (codigo === 'ELIM-NOTA-MINIMA-ETAPA')
+  if (codigo === 'ELIMINACAO-NOTA-MINIMA-ETAPA')
     return { conhecida: true, codigo, valores: camposComForma(parametros, notaMinima) };
-  if (codigo === 'ELIM-CORTE-EM-AREA')
+  if (codigo === 'ELIMINACAO-CORTE-EM-AREA')
     return { conhecida: true, codigo, valores: camposComForma(parametros, corte) };
   return { conhecida: false };
 }

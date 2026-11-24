@@ -1,6 +1,7 @@
-import { SituacaoDoProdutoPrevisto, type AtoDoProcessoDto, type ProdutoPrevistoDto } from '@uniplus/shared-data/selecao';
+import { type AtoDoProcessoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
+import { item } from './publicar-documento.component.testing';
 import { atoDaCorrecao, escolheOTipo, tituloDa, type ModoDaPublicacao } from './modo-da-publicacao';
 
 const ATO = {
@@ -10,12 +11,7 @@ const ATO = {
   numero: '01/2026',
 } as AtoDoProcessoDto;
 
-const ITEM = {
-  id: '01960000-0000-7000-0000-0000000005f1',
-  tipoCodigo: 'RESULTADO_HOMOLOGACAO',
-  tipoNome: 'Resultado da homologação',
-  situacao: SituacaoDoProdutoPrevisto.aberto,
-} as ProdutoPrevistoDto;
+const ITEM = item();
 
 const POLITICA = { campos: ['Número de inscrição'], justificativa: null };
 

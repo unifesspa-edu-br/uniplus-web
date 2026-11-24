@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { StatusProcesso } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { okResult } from '@uniplus/shared-testing';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -24,7 +24,15 @@ describe('ProcessoSeletivoPage — processo fora de rascunho', MONTAGEM_LENTA, (
   const PASSO_PAGAMENTO = 2;
 
   const publicado = () =>
-    montar({ obter: vi.fn(() => of(okResult(detalhe({ status: StatusProcesso.publicado })))) });
+    montar({
+      obter: vi.fn(() =>
+        of(
+          okResult(
+            detalhe({ status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' } }),
+          ),
+        ),
+      ),
+    });
 
   it('não promete gravação no rótulo do avanço', async () => {
     const cenario = publicado();
@@ -73,7 +81,13 @@ describe('ProcessoSeletivoPage — processo fora de rascunho', MONTAGEM_LENTA, (
 
   it('explica a consulta conforme o status, sem prometer retificação a quem não a tem', async () => {
     const cancelado = montar({
-      obter: vi.fn(() => of(okResult(detalhe({ status: StatusProcesso.cancelado })))),
+      obter: vi.fn(() =>
+        of(
+          okResult(
+            detalhe({ status: { codigo: StatusProcessoCodigo.cancelado, rotulo: 'Cancelado' } }),
+          ),
+        ),
+      ),
     });
     await propagar();
     expect(cancelado.store.motivoDeSomenteLeitura()).toContain('cancelado');
@@ -87,7 +101,13 @@ describe('ProcessoSeletivoPage — processo fora de rascunho', MONTAGEM_LENTA, (
 
   it('relê o edital confirmado, que é o que a consulta existe para mostrar', async () => {
     const cenario = montar({
-      obter: vi.fn(() => of(okResult(detalhe({ status: StatusProcesso.publicado })))),
+      obter: vi.fn(() =>
+        of(
+          okResult(
+            detalhe({ status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' } }),
+          ),
+        ),
+      ),
       listarDocumentos: vi.fn(() => of(okResult([documento()]))),
     });
     await propagar();
@@ -99,7 +119,15 @@ describe('ProcessoSeletivoPage — processo fora de rascunho', MONTAGEM_LENTA, (
     const cenario = montar({
       // Fora do enum de propósito: simula um backend mais novo. O cast é o objeto
       // do teste — sem ele não há como exprimir o token que o contrato não declara.
-      obter: vi.fn(() => of(okResult(detalhe({ status: 'Arquivado' as StatusProcesso })))),
+      obter: vi.fn(() =>
+        of(
+          okResult(
+            detalhe({
+              status: { codigo: 'Arquivado' as StatusProcessoCodigo, rotulo: 'Arquivado' },
+            }),
+          ),
+        ),
+      ),
     });
     await propagar();
 

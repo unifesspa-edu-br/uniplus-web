@@ -1,3 +1,4 @@
+import { DADO_NUMERICO, DADO_OPCAO, VALOR_UNICO } from '../../shared/valores-do-catalogo.testing';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import { EditorDeFormularioComponent, type FatoDoFormulario } from '@uniplus/shared-ui/components';
@@ -14,8 +15,8 @@ const FATOS: readonly FatoDoFormulario[] = [
   {
     codigo: 'RENDA',
     nome: 'Renda',
-    dominio: 'NUMERICO',
-    cardinalidade: 'ESCALAR',
+    dominio: DADO_NUMERICO,
+    cardinalidade: VALOR_UNICO,
     binding: 'CAMPO_FORMULARIO:RENDA',
     operadoresAdmitidos: IGUALDADE,
     fonteValores: null,
@@ -25,9 +26,9 @@ const FATOS: readonly FatoDoFormulario[] = [
   {
     codigo: 'PARENTESCO',
     nome: 'Parentesco',
-    dominio: 'CATEGORICO',
+    dominio: DADO_OPCAO,
     valoresDominio: ['PROPRIO_CANDIDATO'],
-    cardinalidade: 'ESCALAR',
+    cardinalidade: VALOR_UNICO,
     binding: 'CAMPO_FORMULARIO:PARENTESCO',
     operadoresAdmitidos: IGUALDADE,
     fonteValores: null,
@@ -41,7 +42,7 @@ describe('edição do documento pelo editor', () => {
     const original = {
       ...formulario(),
       grupos: [
-        { codigo: 'familia', etapaCodigo: 'dados', subitens: [{ fatoCodigo: 'PARENTESCO' }] },
+        { codigo: 'familia', paginaCodigo: 'dados', subitens: [{ codigoDoDado: 'PARENTESCO' }] },
       ],
     };
     let atual = aceita(conteudoDoDocumento(original, CATALOGOS));
@@ -64,9 +65,7 @@ describe('edição do documento pelo editor', () => {
     expect(atual.formulario.grupos?.[0]).toMatchObject({
       minimo: 1,
       incluiCandidato: true,
-      subitens: [
-        { ordem: 0, precondicao: null, obrigatoriedade: { tipo: Obrigatoriedade.SEMPRE } },
-      ],
+      subitens: [{ ordem: 0, exibicao: null, obrigatoriedade: { tipo: Obrigatoriedade.SEMPRE } }],
     });
     expect(atual.formulario.grupos?.[0]).not.toHaveProperty('ordem');
     expect(atual.formulario.itens).toEqual(original.itens);

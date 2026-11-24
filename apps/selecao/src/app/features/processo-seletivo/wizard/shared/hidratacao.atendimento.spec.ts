@@ -1,3 +1,4 @@
+import { FinalidadeFormularioCodigo, TipoDaReferenciaTemporal } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 import {
   type FormularioDto,
@@ -110,16 +111,19 @@ describe('hidratarDraft — formulário de inscrição', () => {
     });
   }
 
-  const formulario = (finalidade: string, extra: Partial<FormularioDto> = {}) =>
+  const formulario = (
+    finalidade: FormularioDto['finalidade']['codigo'],
+    extra: Partial<FormularioDto> = {},
+  ) =>
     formularioDoServidor({
-      finalidade,
+      finalidade: { codigo: finalidade, rotulo: finalidade },
       faseId: ID_INSCRICAO,
       titulo: 'Inscrição 2027',
       etapas: [etapaDoServidor('DADOS_BASICOS', 0), etapaDoServidor('S1', 1)],
       coleta: {
         itens: [
-          campoDoServidor('NOME', 0, 'DADOS_BASICOS', TipoRenderizacaoCodigo.SELECAO_UNICA),
-          campoDoServidor('SEXO', 1, 'S1', TipoRenderizacaoCodigo.SELECAO_UNICA),
+          campoDoServidor('NOME', 0, 'DADOS_BASICOS', TipoRenderizacaoCodigo.ESCOLHA_UNICA),
+          campoDoServidor('SEXO', 1, 'S1', TipoRenderizacaoCodigo.ESCOLHA_UNICA),
         ],
         grupos: [],
       },
@@ -129,7 +133,7 @@ describe('hidratarDraft — formulário de inscrição', () => {
   it('lê o formulário de inscrição no conteúdo do editor, com a fase pelo código', () => {
     const draft = hidratarDraft(
       DRAFT,
-      dtoComFormulario({ formularios: [formulario('INSCRICAO')] }),
+      dtoComFormulario({ formularios: [formulario(FinalidadeFormularioCodigo.INSCRICAO)] }),
     );
 
     expect(draft.formulario.faseCodigo).toBe('INSCRICAO');
@@ -150,11 +154,11 @@ describe('hidratarDraft — formulário de inscrição', () => {
       DRAFT,
       dtoComFormulario({
         formularios: [
-          formulario('INSCRICAO'),
-          formulario('ISENCAO_TAXA', {
+          formulario(FinalidadeFormularioCodigo.INSCRICAO),
+          formulario(FinalidadeFormularioCodigo.ISENCAO_TAXA, {
             etapas: [etapaDoServidor('S1', 0)],
             coleta: {
-              itens: [campoDoServidor('RENDA', 0, 'S1', TipoRenderizacaoCodigo.SELECAO_UNICA)],
+              itens: [campoDoServidor('RENDA', 0, 'S1', TipoRenderizacaoCodigo.ESCOLHA_UNICA)],
               grupos: [],
             },
           }),
@@ -176,10 +180,10 @@ describe('hidratarDraft — formulário de inscrição', () => {
       DRAFT,
       dtoComFormulario({
         formularios: [
-          formulario('INSCRICAO', {
+          formulario(FinalidadeFormularioCodigo.INSCRICAO, {
             modeloOrigem: { id: 'm1', codigo: 'MEDICINA-INSCRICAO' },
           }),
-          formulario('ISENCAO_TAXA', {
+          formulario(FinalidadeFormularioCodigo.ISENCAO_TAXA, {
             etapas: [etapaDoServidor('S1', 0)],
             modeloOrigem: { id: 'm2', codigo: 'ISENCAO-PADRAO' },
           }),
@@ -196,7 +200,14 @@ describe('hidratarDraft — formulário de inscrição', () => {
     const draft = hidratarDraft(
       DRAFT,
       dtoComFormulario({
-        referenciaTemporalFatos: { tipo: 'INICIO_FASE', data: null, faseId: ID_INSCRICAO },
+        referenciaTemporalFatos: {
+          tipo: {
+            codigo: TipoDaReferenciaTemporal.INICIO_FASE,
+            rotulo: TipoDaReferenciaTemporal.INICIO_FASE,
+          },
+          data: null,
+          faseId: ID_INSCRICAO,
+        },
       }),
     );
 
@@ -211,7 +222,14 @@ describe('hidratarDraft — formulário de inscrição', () => {
     const draft = hidratarDraft(
       DRAFT,
       dtoComFormulario({
-        referenciaTemporalFatos: { tipo: 'DATA_ESPECIFICA', data: '2027-01-31', faseId: null },
+        referenciaTemporalFatos: {
+          tipo: {
+            codigo: TipoDaReferenciaTemporal.DATA_ESPECIFICA,
+            rotulo: TipoDaReferenciaTemporal.DATA_ESPECIFICA,
+          },
+          data: '2027-01-31',
+          faseId: null,
+        },
       }),
     );
 

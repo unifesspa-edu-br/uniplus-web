@@ -1,6 +1,6 @@
 import type { CaminhoDoCampo as Caminho } from '@uniplus/shared-ui/components';
 import {
-  TipoDaEtapaDoFormulario,
+  TipoDaPaginaDoFormulario,
   BlocoDoFormulario,
   type DocumentoDaConfiguracaoFormulario,
 } from '@uniplus/shared-data/selecao';
@@ -8,7 +8,7 @@ import type { EtapaDoFormulario } from '@uniplus/shared-ui/components';
 import type { ContextoDaConversao as Contexto } from './contexto-da-conversao';
 import { predicadoDoDocumento } from './obrigatoriedade';
 
-type Etapa = NonNullable<DocumentoDaConfiguracaoFormulario['etapas']>[number];
+type Etapa = NonNullable<DocumentoDaConfiguracaoFormulario['paginas']>[number];
 
 const CAMPOS: readonly (keyof Etapa)[] = [
   'codigo',
@@ -42,7 +42,7 @@ function converterEtapa(
   contexto: Contexto,
   caminho: Caminho,
 ): Etapa | undefined {
-  const tipo = contexto.escolha(TipoDaEtapaDoFormulario, etapa.tipo, [...caminho, 'tipo']);
+  const tipo = contexto.escolha(TipoDaPaginaDoFormulario, etapa.tipo, [...caminho, 'tipo']);
   if (tipo === undefined) return undefined;
   const convertida: Etapa = {
     ...apresentacaoDaEtapa(etapa),

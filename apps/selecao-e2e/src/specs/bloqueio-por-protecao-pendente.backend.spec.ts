@@ -1,3 +1,4 @@
+import { AplicabilidadeCodigo, FinalidadeFormularioCodigo } from '@uniplus/shared-data/selecao';
 import { test, expect } from '@playwright/test';
 import {
   OPERADOR_DO_ROTEIRO,
@@ -80,8 +81,12 @@ test.describe('Configuração do processo com item de catálogo pendente', () =>
             forma: 'DOCUMENTO',
             documento: {
               tipoDocumento: { id: tipoId },
-              momento: { faseId, etapaId: null, finalidade: 'HABILITACAO' },
-              aplicabilidade: { tipo: 'GERAL', condicoes: [] },
+              momento: {
+                faseId,
+                etapaId: null,
+                finalidade: FinalidadeFormularioCodigo.HABILITACAO,
+              },
+              aplicabilidade: { tipo: AplicabilidadeCodigo.GERAL, condicoes: [] },
               indeferimento: {
                 obrigatorio: true,
                 consequencia: 'ELIMINA',

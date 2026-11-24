@@ -26,8 +26,9 @@ const PADRAO_VAZIO: PadraoDoEdital = {
 };
 
 /** A modalidade do padrão como a tela a lê; sem `composicaoVagas`, nem o processo nem o catálogo a dizem. */
-export type ModalidadeDoPadrao = Pick<ModalidadeDto, 'id' | 'codigo' | 'descricao'> &
-  Partial<Pick<ModalidadeDto, 'composicaoVagas'>>;
+export type ModalidadeDoPadrao = Pick<ModalidadeDto, 'id' | 'codigo' | 'descricao'> & {
+  readonly composicaoVagas?: string;
+};
 
 /**
  * O estado local do passo de vagas: o que o operador está fazendo e não vive no rascunho, e o que
@@ -106,21 +107,15 @@ export class EstadoDoPassoDeVagas {
    */
   readonly modalidadesDoPadrao = computed<readonly ModalidadeDoPadrao[]>(() => {
     if (!this.store.emConsulta()) {
-      const selecionadas = new Set(this.padrao().modalidades.map((modalidade) => modalidade.id));
-      return this.catalogos.modalidades().filter((modalidade) => selecionadas.has(modalidade.id));
+      return modalidadesSelecionadas(this.padrao(), this.catalogos.modalidades());
     }
 
-    const vigentes = new Map(this.catalogos.modalidades().map((m) => [m.id, m]));
-    const gravadas = modalidadesGravadasPorId(
+    return modalidadesDoPadraoGravado(
+      this.padrao(),
       this.distribuicoes(),
+      this.catalogos.modalidades(),
       this.catalogos.modalidadePorId(),
     );
-    return this.padrao().modalidades.map((modalidade) => ({
-      id: modalidade.id,
-      codigo: modalidade.codigo,
-      descricao: modalidade.gravada?.descricao ?? vigentes.get(modalidade.id)?.descricao ?? '',
-      composicaoVagas: gravadas.get(modalidade.id)?.composicaoVagas || undefined,
-    }));
   });
 
   readonly colunasDeQuantidade = computed(() =>
@@ -283,4 +278,26 @@ export class EstadoDoPassoDeVagas {
     this.opcoesConferidas.set(false);
     this.recusaDaApiNasOpcoes.set(null);
   }
+}
+
+function modalidadesDoPadraoGravado(
+  padrao: PadraoDoEdital,
+  distribuicoes: readonly DistribuicaoDeVagas[],
+  modalidades: readonly ModalidadeDto[],
+  catalogo: ReturnType<CatalogosDeDistribuicao['modalidadePorId']>,
+): ModalidadeDoPadrao[] {
+  const vigentes = new Map(modalidades.map((modalidade) => [modalidade.id, modalidade]));
+  const gravadas = modalidadesGravadasPorId(distribuicoes, catalogo);
+  return padrao.modalidades.map((modalidade) => ({
+    id: modalidade.id,
+    codigo: modalidade.codigo,
+    descricao: modalidade.gravada?.descricao ?? vigentes.get(modalidade.id)?.descricao ?? '',
+    composicaoVagas: gravadas.get(modalidade.id)?.composicaoVagas || undefined,
+  }));
+}
+
+function modalidadesSelecionadas(padrao: PadraoDoEdital, modalidades: readonly ModalidadeDto[]): ModalidadeDoPadrao[] {
+  const selecionadas = new Set(padrao.modalidades.map((modalidade) => modalidade.id));
+  return modalidades.filter((modalidade) => selecionadas.has(modalidade.id))
+    .map((modalidade) => ({ ...modalidade, composicaoVagas: modalidade.composicaoVagas.codigo }));
 }

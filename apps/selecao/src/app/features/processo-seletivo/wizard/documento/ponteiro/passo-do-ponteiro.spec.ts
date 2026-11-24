@@ -28,7 +28,7 @@ describe('passoDoPonteiro', () => {
     ['/bonusRegional/fator', { passo: 'Bônus' }],
     ['/atendimento/condicoes/0/condicaoCodigo', { passo: 'Atend. especial' }],
     ['/formularios/0/itens/2/rotulo', { passo: 'Formulários' }],
-    ['/coleta/regrasDerivacao/0', { passo: 'Formulários' }],
+    ['/coleta/calculosDosDados/0', { passo: 'Formulários' }],
   ])('leva %s ao passo certo', (ponteiro, esperado) => {
     expect(passoDoPonteiro(ponteiro)).toEqual(esperado);
   });

@@ -6,11 +6,6 @@ import { etapaDoServidor, faseDoServidor } from './cronograma-do-servidor.testin
 /** Só o que `hidratarDraft` lê; o resto do rascunho não participa. */
 export const DRAFT = { identificacao: {} } as unknown as WizardDraft;
 
-/**
- * Grafia do wire que o detalhe de Seleção emite — PascalCase, e não o token
- * canônico do catálogo de Configuração. Escrever a fixture
- * com o vocabulário do catálogo esconderia o defeito que este arquivo cobre.
- */
 export const DISTRIBUICAO = {
   id: 'snapshot-1',
   ofertaCursoOrigemId: 'oferta-1',
@@ -26,7 +21,7 @@ export const DISTRIBUICAO = {
       id: 'snapshot-m',
       modalidadeOrigemId: 'modalidade-1',
       codigo: 'AC',
-      composicaoVagas: 'RestanteDasVagasOfertadas',
+      composicaoVagas: { codigo: 'RESTANTE_DAS_VAGAS_OFERTADAS', rotulo: 'Restante das vagas' },
       quantidadeDeclarada: null,
       descricao: null,
       composicaoOrigemCodigo: null,
@@ -39,7 +34,7 @@ export const DISTRIBUICAO = {
       id: 'snapshot-p',
       modalidadeOrigemId: 'modalidade-2',
       codigo: 'AC_PCD',
-      composicaoVagas: 'RetiradaDeOutraModalidade',
+      composicaoVagas: { codigo: 'RETIRADA_DE_OUTRA_MODALIDADE', rotulo: 'Retirada de outra modalidade' },
       quantidadeDeclarada: 2,
       descricao: null,
       composicaoOrigemCodigo: null,

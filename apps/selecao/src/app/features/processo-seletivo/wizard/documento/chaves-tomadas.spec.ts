@@ -11,7 +11,7 @@ function comReferencias(): DocumentoDaConfiguracao {
     documentosExigidos: {
       exigencias: [{ chave: 'rg', faseChave: 'inscricao', etapaChave: 'prova' }],
     },
-    coleta: { referenciaTemporalFatos: { faseChave: 'coleta' } },
+    coleta: { referenciaTemporalDosDados: { faseChave: 'coleta' } },
     importacao: { primeiraFaseDepoisDaImportacaoChave: 'resultado' },
   };
 }

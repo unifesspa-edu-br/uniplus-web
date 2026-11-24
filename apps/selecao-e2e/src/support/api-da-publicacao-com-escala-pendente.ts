@@ -1,3 +1,4 @@
+import { PAPEL_DEFINITIVO } from '../fixtures/valor-do-enum';
 import type { Page, Route } from '@playwright/test';
 import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
 import type { FaseCronogramaDto } from '@uniplus/shared-data/selecao';
@@ -33,12 +34,15 @@ const IGUALDADE = [
 
 const FATO_DECLARADO = {
   descricao: null,
-  origem: 'DECLARADO',
-  cardinalidade: 'ESCALAR',
+  origem: { codigo: 'DECLARADO', rotulo: 'Declarado' },
+  cardinalidade: { codigo: 'VALOR_UNICO', rotulo: 'Valor único' },
   valoresDominio: null,
   pontoResolucao: 'INSCRICAO',
   valoresDominioDeclarados: null,
 };
+
+const DOMINIO_DATA = { codigo: 'DATA', rotulo: 'Data' };
+const DOMINIO_SIM_OU_NAO = { codigo: 'SIM_OU_NAO', rotulo: 'Sim ou não' };
 
 /** A data não é citável em regra: a API devolve a lista de operadores vazia. */
 function fatoDoFormulario(codigo: string) {
@@ -49,7 +53,7 @@ function fatoDoFormulario(codigo: string) {
       id: `fato-${codigo}`,
       codigo,
       nome: codigo,
-      dominio: data ? 'DATA' : 'BOOLEANO',
+      dominio: data ? DOMINIO_DATA : DOMINIO_SIM_OU_NAO,
       binding: `CAMPO_INSCRICAO:${codigo}`,
     },
     operadoresAdmitidos: data ? [] : IGUALDADE,
@@ -77,7 +81,7 @@ export const CAUSA_DA_ESCALA_PENDENTE = {
 const PRODUTO_DEFINITIVO = {
   id: '01960000-0000-7000-0000-0000000009d1',
   atoCodigo: 'RESULTADO_DEFINITIVO',
-  papel: 'DEFINITIVO',
+  papel: PAPEL_DEFINITIVO,
 };
 
 /**
@@ -131,19 +135,24 @@ const comProdutoDefinitivo = (fase: FaseCronogramaDto) =>
   comProdutoNaFase(fase, PRODUTO_DEFINITIVO);
 
 function detalheDoProcesso(recebido: PublicacaoRecebida): unknown {
-  const escala = recebido.classificacao?.['escalaNotaFinal'] ?? null;
   return comFaseDeInscricao({
     ...PROCESSO_PUBLICADO_COMPLETO,
     atendimentoEspecializado: null,
     cascata: null,
     cronogramaFases: PROCESSO_PUBLICADO_COMPLETO.cronogramaFases.map(comProdutoDefinitivo),
-    status: recebido.publicou ? 'publicado' : 'rascunho',
-    classificacao: {
-      ...PROCESSO_PUBLICADO_COMPLETO.classificacao,
-      regrasEliminacao: [],
-      escalaNotaFinal: escala,
-    },
+    status: recebido.publicou
+      ? { codigo: 'PUBLICADO', rotulo: 'Publicado' }
+      : { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
+    classificacao: classificacaoComEscala(recebido),
   });
+}
+
+function classificacaoComEscala(recebido: PublicacaoRecebida) {
+  return {
+    ...PROCESSO_PUBLICADO_COMPLETO.classificacao,
+    regrasEliminacao: [],
+    escalaNotaFinal: recebido.classificacao?.['escalaNotaFinal'] ?? null,
+  };
 }
 
 /**

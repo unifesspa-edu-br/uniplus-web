@@ -4,7 +4,7 @@ import { HttpHeaders } from '@angular/common/http';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiOk } from '@uniplus/shared-core/http';
-import { StatusProcesso } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -56,7 +56,7 @@ describe('RevisaoPassoComponent — ato e período', () => {
       store.patchObjectSection('publicacao', { numero: '', ato: atoCompleto() });
       store.remoteSnapshot.set({
         ...PROCESSO_DTO_MINIMO,
-        status: StatusProcesso.cancelado,
+        status: StatusProcessoCodigo.cancelado,
       } as never);
       await criarProcesso(cenario);
       await flushProntidaoVerde(cenario);

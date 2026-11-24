@@ -1,6 +1,6 @@
 import {
   FinalidadeDoFormulario,
-  TipoDaEtapaDoFormulario,
+  TipoDaPaginaDoFormulario,
   type DocumentoDaConfiguracaoFormulario,
 } from '@uniplus/shared-data/selecao';
 import type {
@@ -30,11 +30,11 @@ export function formulario(): DocumentoDaConfiguracaoFormulario {
     finalidade: FinalidadeDoFormulario.INSCRICAO,
     faseChave: 'inscricao',
     modeloOrigemCodigo: 'MODELO',
-    etapas: [{ codigo: 'dados', tipo: TipoDaEtapaDoFormulario.SECAO }],
+    paginas: [{ codigo: 'dados', tipo: TipoDaPaginaDoFormulario.SECAO }],
     itens: [
-      { fatoCodigo: 'RENDA', precondicao: null, opcoes: [{ codigo: 'opcao', rotulo: 'Opção' }] },
+      { codigoDoDado: 'RENDA', exibicao: null, opcoes: [{ codigo: 'opcao', rotulo: 'Opção' }] },
     ],
-    grupos: [{ codigo: 'familia', subitens: [{ fatoCodigo: 'PARENTESCO' }] }],
+    grupos: [{ codigo: 'familia', subitens: [{ codigoDoDado: 'PARENTESCO' }] }],
     termos: [{ codigo: 'aceite', termoCodigo: 'CONSENTIMENTO', versaoNumero: 1 }],
   };
 }

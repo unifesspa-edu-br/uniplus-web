@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ProblemI18nService, STATUS_HTTP, isApiOk } from '@uniplus/shared-core/http';
 import {
-  FinalidadeDoDocumento,
+  FinalidadeDoDocumentoCodigo,
   ProcessoSeletivoDto,
   ProcessosSeletivosApi,
   PublicacaoDoProcessoApi,
@@ -172,7 +172,7 @@ export class LeituraDoProcesso {
     const resultado = await firstValueFrom(
       this.documentosApi.listarDocumentosAPublicar(
         processoSeletivoId,
-        FinalidadeDoDocumento.documentoDoEdital,
+        FinalidadeDoDocumentoCodigo.documentoDoEdital,
       ),
     );
     if (superada()) return;

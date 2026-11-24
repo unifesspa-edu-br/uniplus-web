@@ -38,7 +38,7 @@ interface LinhaDaInscricao {
   readonly cpf: string | null;
   /** `null` quando a API omitiu as ofertas da linha. */
   readonly ofertas: readonly OfertaExibida[] | null;
-  readonly situacao: string | null;
+  readonly situacao: NonNullable<InscricaoDoProcessoDto['situacao']> | null;
   readonly enviadaEm: string | null;
   readonly nomeDoLink: string;
 }
@@ -190,8 +190,8 @@ function nomeDoLink(linha: Omit<LinhaDaInscricao, 'nomeDoLink'>, posicao: number
                         @if (col.situacao) {
                           <td [attr.data-label]="linha.situacao !== null ? 'Situação' : null">
                             @if (linha.situacao !== null) {
-                              <ui-tag [variant]="varianteDaSituacaoDaInscricao(linha.situacao)">
-                                {{ rotuloDaSituacaoDaInscricao(linha.situacao) }}
+                              <ui-tag [variant]="varianteDaSituacaoDaInscricao(linha.situacao.codigo)">
+                                {{ linha.situacao.rotulo }}
                               </ui-tag>
                             }
                           </td>

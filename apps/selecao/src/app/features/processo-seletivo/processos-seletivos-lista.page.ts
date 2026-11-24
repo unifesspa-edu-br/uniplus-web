@@ -12,6 +12,7 @@ import { RouterLink } from '@angular/router';
 import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import {
   ProblemI18nService,
+  type ApiResult,
   extractNextCursor,
   extractPrevCursor,
   type Cursor,
@@ -20,7 +21,7 @@ import {
 import {
   ProcessosSeletivosApi,
   ProcessoSeletivoResumoDto,
-  StatusProcesso,
+  StatusProcessoCodigo,
 } from '@uniplus/shared-data/selecao';
 import {
   acompanharLeitura,
@@ -39,31 +40,12 @@ import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 /** Itens por página iniciais; o operador troca pelo seletor do rodapé. */
 const PAGE_SIZE = 50;
 
-/**
- * Rótulo de exibição por status. As chaves vêm do enum gerado a partir do
- * contrato, não de uma cópia escrita à mão — o schema declara os valores
- * admissíveis e derivá-los dali é o que impede a
- * grafia divergir do que o servidor emite. Um token fora deste conjunto é
- * exibido cru, para que um status introduzido por um backend mais novo
- * apareça ao operador em vez de sumir atrás de um rótulo genérico.
- *
- * `Map` e não objeto literal: a chave vem do servidor, e num objeto literal
- * um token como `constructor` ou `toString` resolveria para o membro herdado
- * de `Object.prototype` — uma função, que o `??` não trata como ausência.
- */
-const STATUS_LABEL = new Map<string, string>([
-  [StatusProcesso.rascunho, 'Rascunho'],
-  [StatusProcesso.publicado, 'Publicado'],
-  [StatusProcesso.encerrado, 'Encerrado'],
-  [StatusProcesso.cancelado, 'Cancelado'],
-]);
-
-const STATUS_VARIANTE = new Map<string, UiTagVariant>([
-  [StatusProcesso.rascunho, 'warning'],
-  [StatusProcesso.publicado, 'success'],
-  [StatusProcesso.encerrado, 'neutral'],
-  [StatusProcesso.cancelado, 'danger'],
-]);
+const STATUS_VARIANTE: Record<StatusProcessoCodigo, UiTagVariant> = {
+  [StatusProcessoCodigo.rascunho]: 'warning',
+  [StatusProcessoCodigo.publicado]: 'success',
+  [StatusProcessoCodigo.encerrado]: 'neutral',
+  [StatusProcessoCodigo.cancelado]: 'danger',
+};
 
 /**
  * Listagem administrativa dos Processos Seletivos.
@@ -160,8 +142,8 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
                     </td>
 
                     <td data-label="Status">
-                      <ui-tag [variant]="statusVariante(processo.status)">
-                        {{ statusLabel(processo.status) }}
+                      <ui-tag [variant]="statusVariante(processo.status.codigo)">
+                        {{ processo.status.rotulo }}
                       </ui-tag>
                     </td>
 
@@ -178,10 +160,10 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
                           [link]="['/processo-seletivo', processo.id]"
                         />
                       }
-                      @if (!foiPublicado(processo.status) && !podeConfigurarProcesso()) {
+                      @if (!foiPublicado(processo.status.codigo) && !podeConfigurarProcesso()) {
                         <span>Inscrições disponíveis após a publicação</span>
                       }
-                      @if (foiPublicado(processo.status)) {
+                      @if (foiPublicado(processo.status.codigo)) {
                         @if (podeConfigurarProcesso()) {
                           <ui-icon-button
                             icon="pi-file"
@@ -288,38 +270,39 @@ export class ProcessosSeletivosListaPage {
 
   private carregarPagina(): void {
     const pagina = this.pagina();
-    const primeiraPagina = pagina === undefined;
-
     this.loading.set(true);
-
     this.api
       .listar({
         cursor: pagina?.cursor,
         direction: pagina?.direction,
-        limit: primeiraPagina ? this.limite() : undefined,
+        limit: pagina === undefined ? this.limite() : undefined,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
-        this.loading.set(false);
-
-        if (!resultado.ok) {
-          this.erro.set(this.problemI18n.resolve(resultado.problem).title);
-          // ADR-0026: falha na primeira página limpa a lista, porque o que
-          // estava em tela pode não valer mais; falha de navegação preserva a
-          // página atual e os cursores, para o pager não sumir sob o operador.
-          if (primeiraPagina) {
-            this.itens.set([]);
-            this.cursores.set({ prev: null, next: null });
-          }
-          return;
-        }
-
-        this.erro.set(null);
-        this.itens.set(resultado.data);
-
-        const link = resultado.headers?.get('Link') ?? null;
-        this.cursores.set({ prev: extractPrevCursor(link), next: extractNextCursor(link) });
+        this.receberPagina(resultado, pagina === undefined);
       });
+  }
+
+  private receberPagina(
+    resultado: ApiResult<readonly ProcessoSeletivoResumoDto[]>,
+    primeiraPagina: boolean,
+  ): void {
+    this.loading.set(false);
+    if (!resultado.ok) {
+      this.erro.set(this.problemI18n.resolve(resultado.problem).title);
+      if (primeiraPagina) {
+        this.itens.set([]);
+        this.cursores.set({ prev: null, next: null });
+      }
+      return;
+    }
+    this.atualizarPagina(resultado.data, resultado.headers?.get('Link') ?? null);
+  }
+
+  private atualizarPagina(itens: readonly ProcessoSeletivoResumoDto[], link: string | null): void {
+    this.erro.set(null);
+    this.itens.set(itens);
+    this.cursores.set({ prev: extractPrevCursor(link), next: extractNextCursor(link) });
   }
 
   protected proximaPagina(): void {
@@ -355,19 +338,15 @@ export class ProcessosSeletivosListaPage {
     return true;
   }
 
-  protected statusLabel(status: string): string {
-    return STATUS_LABEL.get(status) ?? status;
-  }
-
   /**
    * Antes da publicação o processo não tem página pública nem edital divulgado: não há o que
    * listar de publicado nem notas do ENEM a enviar ou importar.
    */
-  protected foiPublicado(status: string): boolean {
-    return status !== StatusProcesso.rascunho;
+  protected foiPublicado(status: StatusProcessoCodigo): boolean {
+    return status !== StatusProcessoCodigo.rascunho;
   }
 
-  protected statusVariante(status: string): UiTagVariant {
-    return STATUS_VARIANTE.get(status) ?? 'neutral';
+  protected statusVariante(status: StatusProcessoCodigo): UiTagVariant {
+    return Object.hasOwn(STATUS_VARIANTE, status) ? STATUS_VARIANTE[status] : 'neutral';
   }
 }

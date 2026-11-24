@@ -74,7 +74,7 @@ export const DETALHE_PUBLICADO = {
           id: '01960000-0000-7000-0000-000000000a13',
           clausula: 1,
           fato: 'MODALIDADE',
-          operador: 'EM',
+          operador: 'ALGUM_DE',
           valor: '["LB_PPI"]',
         },
       ],

@@ -16,7 +16,7 @@ import {
   IndicadorDaLeituraDirective,
   type ArquivoEmEnvio,
 } from '@uniplus/shared-ui/components';
-import { FinalidadeDoDocumento, type DocumentoDoAtoDto } from '@uniplus/shared-data/selecao';
+import { FinalidadeDoDocumentoCodigo, type DocumentoDoAtoDto } from '@uniplus/shared-data/selecao';
 
 import type { AnexoDoEdital } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -206,7 +206,7 @@ export class AnexosDoEditalComponent {
       new EnvioDeArquivo({
         envio: this.servico.abrirEnvio(),
         arquivo,
-        finalidade: FinalidadeDoDocumento.anexoDoEdital,
+        finalidade: FinalidadeDoDocumentoCodigo.anexoDoEdital,
         tipoDeMidia: tipoDeMidiaDoAnexo(arquivo.name),
         recusaDoFormato: 'O formato do arquivo não é aceito para anexo.',
         explicar: (problema) => this.problemI18n.resolve(problema).title,

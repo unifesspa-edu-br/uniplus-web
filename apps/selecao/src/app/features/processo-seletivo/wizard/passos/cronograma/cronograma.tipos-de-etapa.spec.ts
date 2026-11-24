@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 import { CatalogoDeTiposDeEtapa } from './catalogos/catalogo-de-tipos-de-etapa.service';
 import {
@@ -146,7 +146,7 @@ describe('CronogramaPassoComponent: tipos de etapa', () => {
         {
           id: 'etapa-primeira',
           nome: 'Prova',
-          carater: CaraterEtapa.classificatoria,
+          carater: CaraterEtapaCodigo.classificatoria,
           tipoEtapaOrigemId: TIPO_ETAPA,
           peso: '1',
           notaMinima: '',
@@ -163,7 +163,7 @@ describe('CronogramaPassoComponent: tipos de etapa', () => {
         {
           id: 'etapa-segunda',
           nome: 'Redação',
-          carater: CaraterEtapa.classificatoria,
+          carater: CaraterEtapaCodigo.classificatoria,
           tipoEtapaOrigemId: TIPO_ETAPA,
           peso: '2',
           notaMinima: '',

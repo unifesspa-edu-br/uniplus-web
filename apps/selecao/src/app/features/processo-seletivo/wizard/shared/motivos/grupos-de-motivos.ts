@@ -28,7 +28,7 @@ function doCatalogo(motivo: MotivoDeDecisaoDto, escolhido?: MotivoNoDocumento): 
     tipoCodigo: motivo.tipo.codigo,
     codigo: motivo.codigo,
     descricao: escolhido?.descricao ?? motivo.descricao,
-    sentido: escolhido?.sentido ?? motivo.sentido,
+    sentido: escolhido?.sentido ?? motivo.sentido?.codigo ?? null,
     subclassificacao: escolhido?.subclassificacao ?? motivo.subclassificacao,
     escolhido: escolhido !== undefined,
     desativado: !motivo.ativo,

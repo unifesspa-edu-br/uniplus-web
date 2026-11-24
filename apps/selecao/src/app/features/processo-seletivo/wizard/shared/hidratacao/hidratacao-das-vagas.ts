@@ -47,9 +47,9 @@ function modalidadeDe(modalidade: ModalidadeGravada): DistribuicaoDeVagas['modal
     codigo: modalidade.codigo,
     gravada: {
       descricao: modalidade.descricao,
-      composicaoVagas: decodificarComposicaoVagas(modalidade.composicaoVagas),
+      composicaoVagas: decodificarComposicaoVagas(modalidade.composicaoVagas.codigo),
       composicaoOrigemCodigo: modalidade.composicaoOrigemCodigo,
-      regraRemanejamento: modalidade.regraRemanejamento,
+      regraRemanejamento: modalidade.regraRemanejamento?.codigo ?? null,
       remanejamentoDestino: modalidade.remanejamentoDestino,
       remanejamentoPar: modalidade.remanejamentoPar,
       remanejamentoFallback: modalidade.remanejamentoFallback,

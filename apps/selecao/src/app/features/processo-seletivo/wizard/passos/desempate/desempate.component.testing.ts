@@ -1,3 +1,10 @@
+import {
+  DADO_NUMERICO,
+  DADO_OPCAO,
+  ORIGEM_CALCULADA,
+  ORIGEM_DECLARADA,
+  VALOR_UNICO,
+} from '../../shared/valores-do-catalogo.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -7,7 +14,7 @@ import {
   OperadorCodigo as OperadorDoCatalogo,
   type FatoDoCatalogoDto,
 } from '@uniplus/shared-data/configuracao';
-import { CaraterEtapa, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { CaraterEtapaCodigo, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 
 import { CriterioDesempateConfigurado, EtapaPontuada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -25,7 +32,7 @@ export const ROTA_DESEMPATE = `${BASE}/api/selecao/processos-seletivos/${PROCESS
 export const ETAPA_PERSISTIDA: EtapaPontuada = {
   id: 'etapa-1',
   nome: 'Prova objetiva',
-  carater: CaraterEtapa.classificatoria,
+  carater: CaraterEtapaCodigo.classificatoria,
   tipoEtapaOrigemId: 'tipo-1',
   peso: '1',
   notaMinima: '',
@@ -47,9 +54,9 @@ export const FATOS: readonly FatoDoCatalogoDto[] = [
       codigo: 'RENDA_PER_CAPITA',
       nome: 'Renda familiar per capita',
       descricao: 'Renda familiar dividida pelos membros.',
-      dominio: 'NUMERICO',
-      origem: 'DERIVADO',
-      cardinalidade: 'ESCALAR',
+      dominio: DADO_NUMERICO,
+      origem: ORIGEM_CALCULADA,
+      cardinalidade: VALOR_UNICO,
       valoresDominio: null,
       pontoResolucao: 'INSCRICAO',
       binding: 'ATRIBUTO_CANDIDATO:RENDA_PER_CAPITA',
@@ -75,9 +82,9 @@ export const FATOS: readonly FatoDoCatalogoDto[] = [
       codigo: 'COR_RACA',
       nome: 'Cor ou raça',
       descricao: 'Cor ou raça autodeclarada.',
-      dominio: 'CATEGORICO',
-      origem: 'DECLARADO',
-      cardinalidade: 'ESCALAR',
+      dominio: DADO_OPCAO,
+      origem: ORIGEM_DECLARADA,
+      cardinalidade: VALOR_UNICO,
       valoresDominio: ['BRANCA', 'PRETA', 'PARDA', 'INDIGENA', 'AMARELA'],
       pontoResolucao: 'INSCRICAO',
       binding: 'CAMPO_INSCRICAO:COR_RACA',
@@ -93,8 +100,8 @@ export const FATOS: readonly FatoDoCatalogoDto[] = [
     operadoresAdmitidos: [
       { codigo: OperadorDoCatalogo.IGUAL, rotulo: 'é' },
       { codigo: OperadorDoCatalogo.DIFERENTE, rotulo: 'não é' },
-      { codigo: OperadorDoCatalogo.EM, rotulo: 'é um de' },
-      { codigo: OperadorDoCatalogo.NAO_EM, rotulo: 'não é nenhum de' },
+      { codigo: OperadorDoCatalogo.ALGUM_DE, rotulo: 'é um de' },
+      { codigo: OperadorDoCatalogo.NENHUM_DE, rotulo: 'não é nenhum de' },
     ],
   },
 ];

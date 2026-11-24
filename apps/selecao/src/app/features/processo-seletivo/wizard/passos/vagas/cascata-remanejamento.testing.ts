@@ -11,50 +11,17 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CascataRemanejamentoComponent } from './cascata-remanejamento.component';
 import { CatalogosDeDistribuicao } from './catalogos-de-distribuicao.service';
 import { federal } from './distribuicao-de-vagas.testing';
+import { MODALIDADES_CASCATA } from './vagas.testing';
 
 export const BASE = 'http://localhost:5000';
 export const LB_PPI = '01960000-0000-7000-0000-0000000000b1';
 export const LB_Q = '01960000-0000-7000-0000-0000000000b2';
 export const AC = '01960000-0000-7000-0000-0000000000b3';
 
-export const MODALIDADES = [
-  {
-    id: LB_PPI,
-    codigo: 'LB_PPI',
-    descricao: null,
-    naturezaLegal: 'COTA_RESERVADA',
-    composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
-    composicaoOrigem: 'AC',
-    regraRemanejamento: 'SEGUE_CASCATA',
-    remanejamentoDestino: null,
-    remanejamentoPar: null,
-    remanejamentoFallback: null,
-  },
-  {
-    id: LB_Q,
-    codigo: 'LB_Q',
-    descricao: null,
-    naturezaLegal: 'COTA_RESERVADA',
-    composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
-    composicaoOrigem: 'AC',
-    regraRemanejamento: null,
-    remanejamentoDestino: null,
-    remanejamentoPar: null,
-    remanejamentoFallback: null,
-  },
-  {
-    id: AC,
-    codigo: 'AC',
-    descricao: null,
-    naturezaLegal: 'GERAL',
-    composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
-    composicaoOrigem: null,
-    regraRemanejamento: null,
-    remanejamentoDestino: null,
-    remanejamentoPar: null,
-    remanejamentoFallback: null,
-  },
-];
+export const MODALIDADES = MODALIDADES_CASCATA.map((modalidade, indice) => ({
+  ...modalidade,
+  id: [LB_PPI, LB_Q, AC][indice],
+}));
 
 export const REGRA_CASCATA = {
   codigo: 'REMANEJ-CASCATA-LEI-12711',

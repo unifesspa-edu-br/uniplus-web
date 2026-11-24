@@ -1,3 +1,9 @@
+import {
+  DADO_OPCAO,
+  DADO_SIM_OU_NAO,
+  ORIGEM_CALCULADA,
+  VALORES_MODALIDADE,
+} from './valores-do-catalogo.testing';
 import { describe, expect, it } from 'vitest';
 
 import type { FatoCandidatoComOperadores } from '@uniplus/shared-data/configuracao';
@@ -26,20 +32,24 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
   const DEFICIENCIA = doProcesso({
     codigo: 'PCD',
     nome: 'Pessoa com deficiência',
-    dominio: 'BOOLEANO',
+    dominio: DADO_SIM_OU_NAO,
   });
-  const LAUDO = doProcesso({ codigo: 'LAUDO_RECENTE', nome: 'Laudo recente', dominio: 'BOOLEANO' });
+  const LAUDO = doProcesso({
+    codigo: 'LAUDO_RECENTE',
+    nome: 'Laudo recente',
+    dominio: DADO_SIM_OU_NAO,
+  });
   const CONVOCACAO = doProcesso({
     codigo: 'MODALIDADE_CONVOCACAO',
     nome: 'Modalidade da convocação',
-    fonteValores: 'MODALIDADE',
-    origem: 'DERIVADO',
+    fonteValores: VALORES_MODALIDADE,
+    origem: ORIGEM_CALCULADA,
     binding: 'CLASSIFICACAO:MODALIDADE_CONVOCACAO',
     pontoResolucao: 'RESULTADO_FINAL',
   });
   const CONCORRENCIA = doProcesso({
     ...MODALIDADE,
-    fonteValores: 'MODALIDADE',
+    fonteValores: VALORES_MODALIDADE,
     escopo: 'CANDIDATO',
   });
   const FATOS = [DEFICIENCIA, LAUDO, CONVOCACAO, CONCORRENCIA];
@@ -88,7 +98,7 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
   });
 
   it('na fase que divide inscrição e isenção, o documento da inscrição não oferece o fato que só a isenção coleta', () => {
-    const BOLSISTA = doProcesso({ codigo: 'BOLSISTA', nome: 'Bolsista', dominio: 'BOOLEANO' });
+    const BOLSISTA = doProcesso({ codigo: 'BOLSISTA', nome: 'Bolsista', dominio: DADO_SIM_OU_NAO });
     const dividida: ProducaoDosFatos = {
       ...PRODUCAO,
       fases: [
@@ -150,7 +160,7 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
     const PARENTESCO = doProcesso({
       codigo: 'PARENTESCO',
       nome: 'Parentesco',
-      dominio: 'CATEGORICO',
+      dominio: DADO_OPCAO,
       valoresDominio: ['FILHO', 'CONJUGE'],
       escopo: 'MEMBRO_GRUPO',
     });

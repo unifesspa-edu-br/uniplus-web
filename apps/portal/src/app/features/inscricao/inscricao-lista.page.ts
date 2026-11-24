@@ -32,7 +32,7 @@ import { FormsModule } from '@angular/forms';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { mediaQuerySignal } from '@uniplus/shared-core/dom';
 import { type ApiFailure, type ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
-import { SituacaoInscricao } from '@uniplus/shared-data/selecao';
+import { SituacaoInscricaoCodigo } from '@uniplus/shared-data/selecao';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { map, type Observable } from 'rxjs';
@@ -68,15 +68,10 @@ const VIEW_OPTIONS: readonly UiSegmentedOption<VisaoCertames>[] = [
   { value: 'cards', label: 'Cards', icon: 'pi-th-large' },
 ];
 
-const INSCRICAO_STATUS_LABEL: Record<SituacaoInscricao, string> = {
-  [SituacaoInscricao.rascunho]: 'Em rascunho',
-  [SituacaoInscricao.submetida]: 'Enviada',
-  [SituacaoInscricao.cancelada]: 'Cancelada',
-};
-const INSCRICAO_STATUS_VARIANT: Record<SituacaoInscricao, UiTagVariant> = {
-  [SituacaoInscricao.rascunho]: 'warning',
-  [SituacaoInscricao.submetida]: 'success',
-  [SituacaoInscricao.cancelada]: 'neutral',
+const INSCRICAO_STATUS_VARIANT: Record<SituacaoInscricaoCodigo, UiTagVariant> = {
+  [SituacaoInscricaoCodigo.rascunho]: 'warning',
+  [SituacaoInscricaoCodigo.submetida]: 'success',
+  [SituacaoInscricaoCodigo.cancelada]: 'neutral',
 };
 
 type TipoDeAcaoQueNavega = 'continuar' | 'corrigir' | 'comprovante';
@@ -339,11 +334,7 @@ export class InscricaoListaPage {
     }
   }
 
-  protected exibeInscricaoStatusLabel(status: SituacaoInscricao): string {
-    return INSCRICAO_STATUS_LABEL[status];
-  }
-
-  protected exibeInscricaoStatusVariantLabel(status: SituacaoInscricao): UiTagVariant {
+  protected exibeInscricaoStatusVariantLabel(status: SituacaoInscricaoCodigo): UiTagVariant {
     return INSCRICAO_STATUS_VARIANT[status];
   }
 

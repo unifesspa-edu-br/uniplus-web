@@ -18,11 +18,11 @@ function pagina(dados: readonly RegraCatalogoDto[]) {
   return of(apiOk(dados, 200, new HttpHeaders()));
 }
 
-function regra(codigo: string, tipo: string): RegraCatalogoDto {
+function regra(codigo: string, tipo: RegraCatalogoDto['tipo']['codigo']): RegraCatalogoDto {
   return {
     codigo,
     versao: '1.0',
-    tipo,
+    tipo: { codigo: tipo, rotulo: tipo },
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: `Base de ${codigo}`,
@@ -33,12 +33,12 @@ function regra(codigo: string, tipo: string): RegraCatalogoDto {
 }
 
 const POR_TIPO: Record<string, readonly RegraCatalogoDto[]> = {
-  regra_calculo: [regra('FORMULA-MEDIA-PONDERADA', 'regra_calculo')],
-  regra_arredondamento: [regra('ARRED-TRUNCAR', 'regra_arredondamento')],
-  regra_ordem_alocacao: [regra('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA', 'regra_ordem_alocacao')],
-  regra_eliminacao: [regra('ELIM-ZERO-EM-AREA', 'regra_eliminacao')],
-  regra_bonus: [regra('BONUS-MULTIPLICATIVO', 'regra_bonus')],
-  criterio_desempate: [regra('DESEMPATE-MAIOR-IDADE', 'criterio_desempate')],
+  regra_calculo: [regra('FORMULA-MEDIA-PONDERADA', 'regra_calculo' as RegraCatalogoDto['tipo']['codigo'])],
+  regra_arredondamento: [regra('ARRED-TRUNCAR', 'regra_arredondamento' as RegraCatalogoDto['tipo']['codigo'])],
+  regra_ordem_alocacao: [regra('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA', 'regra_ordem_alocacao' as RegraCatalogoDto['tipo']['codigo'])],
+  regra_eliminacao: [regra('ELIMINACAO-ZERO-EM-AREA', 'regra_eliminacao' as RegraCatalogoDto['tipo']['codigo'])],
+  regra_bonus: [regra('BONUS-MULTIPLICATIVO', 'regra_bonus' as RegraCatalogoDto['tipo']['codigo'])],
+  criterio_desempate: [regra('DESEMPATE-MAIOR-IDADE', 'criterio_desempate' as RegraCatalogoDto['tipo']['codigo'])],
 };
 
 const RESOLUCAO = 'Resolução nº 805/2024/Consepe';
@@ -100,7 +100,7 @@ describe('CatalogosDeClassificacao', () => {
     expect(servico.regrasOrdemAlocacao().map((r) => r.codigo)).toEqual([
       'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
     ]);
-    expect(servico.regrasEliminacao().map((r) => r.codigo)).toEqual(['ELIM-ZERO-EM-AREA']);
+    expect(servico.regrasEliminacao().map((r) => r.codigo)).toEqual(['ELIMINACAO-ZERO-EM-AREA']);
     expect(servico.regrasBonus().map((r) => r.codigo)).toEqual(['BONUS-MULTIPLICATIVO']);
     expect(servico.criteriosDesempate().map((r) => r.codigo)).toEqual(['DESEMPATE-MAIOR-IDADE']);
     expect(servico.carregando()).toBe(false);

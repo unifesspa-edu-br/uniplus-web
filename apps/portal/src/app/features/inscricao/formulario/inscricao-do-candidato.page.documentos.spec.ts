@@ -1,10 +1,11 @@
+import { FinalidadeFormularioCodigo } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { of } from 'rxjs';
 import {
   type AvaliacaoDaInscricaoDto,
   type AvaliacaoDaInscricaoRequest,
   type InscricaoRequest,
-  SituacaoDoArquivoDoCandidato,
+  SituacaoDoArquivoDoCandidatoCodigo,
 } from '@uniplus/shared-data/selecao';
 import { passarOTempo } from '@uniplus/shared-testing';
 import { esperaDaConsulta } from './acompanhamento-da-verificacao';
@@ -36,22 +37,32 @@ describe('InscricaoDoCandidatoPage', () => {
   /** Uma exigência da fase da inscrição na avaliação, na finalidade dada. */
   const documento = (
     nome: string,
-    finalidade: string,
+    finalidade: FinalidadeFormularioCodigo,
   ): AvaliacaoDaInscricaoDto['documentos']['fases'][number]['documentos'][number] => ({
     exigenciaId: `exigencia-${nome}`,
     tipoDocumentoCodigo: 'DOCUMENTO',
     nome,
     obrigatorio: true,
-    finalidade,
+    finalidade: { codigo: finalidade, rotulo: 'Finalidade de teste' },
     etapaId: null,
     formatos: { qualquer: true, lista: null },
     modelo: null,
-    situacao: 'PENDENTE',
+    situacao: {
+      codigo:
+        'PENDENTE' as AvaliacaoDaInscricaoDto['documentos']['fases'][number]['documentos'][number]['situacao']['codigo'],
+      rotulo: 'Exigido pelas suas respostas',
+    },
     grupoCodigo: null,
     ocorrenciaId: null,
     grupos: [],
     grupoDoFormularioParaRepeticao: null,
-    formatosAceitos: ['PDF'],
+    formatosAceitos: [
+      {
+        codigo:
+          'PDF' as AvaliacaoDaInscricaoDto['documentos']['fases'][number]['documentos'][number]['formatosAceitos'][number]['codigo'],
+        rotulo: 'PDF',
+      },
+    ],
     tamanhoMaximoBytes: 2 * 1024 * 1024,
     quantidadeMinima: 1,
     arquivos: [],
@@ -107,8 +118,11 @@ describe('InscricaoDoCandidatoPage', () => {
               codigo: 'INSCRICAO',
               ordem: 1,
               documentos: [
-                documento('Histórico escolar', 'INSCRICAO'),
-                documento('Comprovante de renda para a isenção', 'ISENCAO_TAXA'),
+                documento('Histórico escolar', FinalidadeFormularioCodigo.INSCRICAO),
+                documento(
+                  'Comprovante de renda para a isenção',
+                  FinalidadeFormularioCodigo.ISENCAO_TAXA,
+                ),
               ],
               pendencias: [],
             },
@@ -116,7 +130,7 @@ describe('InscricaoDoCandidatoPage', () => {
               faseId: 'outra-fase',
               codigo: 'HABILITACAO',
               ordem: 2,
-              documentos: [documento('Diploma', 'INSCRICAO')],
+              documentos: [documento('Diploma', FinalidadeFormularioCodigo.INSCRICAO)],
               pendencias: [],
             },
           ],
@@ -139,7 +153,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   /** A avaliação com um documento obrigatório cujo único arquivo está na situação dada. */
-  const comArquivoEm = (situacao: SituacaoDoArquivoDoCandidato): AvaliacaoDaInscricaoDto => ({
+  const comArquivoEm = (situacao: SituacaoDoArquivoDoCandidatoCodigo): AvaliacaoDaInscricaoDto => ({
     ...SEM_DERIVACAO,
     documentos: {
       fases: [
@@ -149,7 +163,7 @@ describe('InscricaoDoCandidatoPage', () => {
           ordem: 1,
           documentos: [
             {
-              ...documento('Histórico escolar', 'INSCRICAO'),
+              ...documento('Histórico escolar', FinalidadeFormularioCodigo.INSCRICAO),
               arquivos: [
                 {
                   arquivoId: 'arquivo-1',
@@ -162,9 +176,9 @@ describe('InscricaoDoCandidatoPage', () => {
                   confirmadoEm: '2026-10-24T10:00:00Z',
                   rotulo: 'Arquivo 1',
                   nomeParaDownload: null,
-                  situacao,
+                  situacao: { codigo: situacao, rotulo: 'Situação de teste' },
                   mensagem:
-                    situacao === SituacaoDoArquivoDoCandidato.verificado
+                    situacao === SituacaoDoArquivoDoCandidatoCodigo.verificado
                       ? null
                       : 'Arquivo em verificação. Isso costuma levar poucos segundos.',
                 },
@@ -183,7 +197,7 @@ describe('InscricaoDoCandidatoPage', () => {
     cenario.servico.formulario = COM_DOCUMENTOS;
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
-      avaliacao: comArquivoEm(SituacaoDoArquivoDoCandidato.emVerificacao),
+      avaliacao: comArquivoEm(SituacaoDoArquivoDoCandidatoCodigo.emVerificacao),
     });
     const tela = await cenario.abrir();
 
@@ -193,8 +207,8 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('consulta a verificação com espera crescente até o resultado e então libera o envio', async () => {
     const respostas = [
-      comArquivoEm(SituacaoDoArquivoDoCandidato.emVerificacao),
-      comArquivoEm(SituacaoDoArquivoDoCandidato.verificado),
+      comArquivoEm(SituacaoDoArquivoDoCandidatoCodigo.emVerificacao),
+      comArquivoEm(SituacaoDoArquivoDoCandidatoCodigo.verificado),
     ];
     cenario.servico.avaliar = (_: string, request: AvaliacaoDaInscricaoRequest) => {
       cenario.servico.avaliacoes.push(request);
@@ -203,7 +217,7 @@ describe('InscricaoDoCandidatoPage', () => {
     cenario.servico.formulario = COM_DOCUMENTOS;
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
-      avaliacao: comArquivoEm(SituacaoDoArquivoDoCandidato.emVerificacao),
+      avaliacao: comArquivoEm(SituacaoDoArquivoDoCandidatoCodigo.emVerificacao),
     });
     const tela = await cenario.abrir();
     const avancar = async (ms: number): Promise<void> => {

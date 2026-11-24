@@ -1,7 +1,7 @@
 import type { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import type { RecusaDoProblema } from '@uniplus/shared-core/http';
-import { StatusProcesso, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import { StatusProcessoCodigo, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { FaseDoCronograma } from '../../../processo-seletivo.models';
@@ -27,7 +27,7 @@ describe('RegraDeRecursoDaFaseComponent: consulta e recusas', () => {
 
   const emConsulta = () => {
     store.remoteSnapshot.set({
-      status: StatusProcesso.publicado,
+      status: StatusProcessoCodigo.publicado,
     } as unknown as ProcessoSeletivoDto);
     detectar();
   };

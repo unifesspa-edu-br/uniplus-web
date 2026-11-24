@@ -37,9 +37,9 @@ const REGRAS_ORDEM_ALOCACAO = [
   ),
 ];
 const REGRAS_ELIMINACAO = [
-  regra('ELIM-ZERO-EM-AREA', 'regra_eliminacao', 'Resolução 805/2020, art. 5º'),
-  regra('ELIM-CORTE-EM-AREA', 'regra_eliminacao', 'Resolução 805/2024, art. 6º'),
-  regra('ELIM-AUSENCIA-NA-ETAPA', 'regra_eliminacao', 'Edital do processo'),
+  regra('ELIMINACAO-ZERO-EM-AREA', 'regra_eliminacao', 'Resolução 805/2020, art. 5º'),
+  regra('ELIMINACAO-CORTE-EM-AREA', 'regra_eliminacao', 'Resolução 805/2024, art. 6º'),
+  regra('ELIMINACAO-AUSENCIA-NA-ETAPA', 'regra_eliminacao', 'Edital do processo'),
 ];
 const REGRAS_BONUS = [
   regra(
@@ -96,7 +96,7 @@ export const PESOS_AREA_ENEM = [
 const CRITERIOS_DESEMPATE = [
   regra('DESEMPATE-MAIOR-IDADE', 'criterio_desempate', 'Costume administrativo'),
   regra('DESEMPATE-IDOSO', 'criterio_desempate', 'Lei 10.741/2003, art. 27'),
-  regra('DESEMPATE-PREDICADO-FATO', 'criterio_desempate', 'Definido por cada edital'),
+  regra('DESEMPATE-CONDICAO-SOBRE-DADO', 'criterio_desempate', 'Definido por cada edital'),
   regra('DESEMPATE-MAIOR-NOTA-AREA-ENEM', 'criterio_desempate', 'Definido por cada edital'),
 ];
 

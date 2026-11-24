@@ -21,7 +21,7 @@ function documentoQueAplicaOBonus(): DocumentoDaConfiguracao {
       regra: { codigo: 'BONUS-REGIONAL-FATOR', versao: 'v1' },
       fator: 1.5,
       teto: 20,
-      fatoElegibilidadeCodigo: 'RESIDE_NA_REGIAO',
+      codigoDoDadoDeElegibilidade: 'RESIDE_NA_REGIAO',
       baseLegalBonusRegionalCodigo: 'LEI_ESTADUAL_DE_EXEMPLO',
       tipoInstrumento: 'LEI',
       identificacao: 'Lei estadual de exemplo',
@@ -133,7 +133,7 @@ describe('adaptador do passo Bônus', () => {
     const bonus = edicaoDoPasso(valores)(documento).bonusRegional;
 
     expect(bonus).not.toHaveProperty('regra');
-    expect(bonus).not.toHaveProperty('fatoElegibilidadeCodigo');
+    expect(bonus).not.toHaveProperty('codigoDoDadoDeElegibilidade');
   });
 
   it('não altera o documento recebido nem o que o passo não edita', () => {

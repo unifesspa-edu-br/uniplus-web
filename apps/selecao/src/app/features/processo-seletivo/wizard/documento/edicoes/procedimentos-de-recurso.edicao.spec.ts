@@ -151,13 +151,13 @@ describe('procedimentos na fase e na etapa', () => {
         fases: [
           {
             chave: 'a',
-            faseCanonicaCodigo: 'INSCRICOES',
+            tipoFaseCodigo: 'INSCRICOES',
             noMesmoMomentoDaAnterior: false,
             regraRecurso: { regraCodigo: 'RECURSO', procedimentosDeRecurso: [] },
           },
           {
             chave: 'sem-recurso',
-            faseCanonicaCodigo: 'INSCRICOES',
+            tipoFaseCodigo: 'INSCRICOES',
             noMesmoMomentoDaAnterior: false,
           },
         ],
@@ -222,13 +222,13 @@ describe('janelas de chave repetida', () => {
         fases: [
           {
             chave: 'a',
-            faseCanonicaCodigo: 'INSCRICOES',
+            tipoFaseCodigo: 'INSCRICOES',
             noMesmoMomentoDaAnterior: false,
             regraRecurso: {},
           },
           {
             chave: 'a',
-            faseCanonicaCodigo: 'INSCRICOES',
+            tipoFaseCodigo: 'INSCRICOES',
             noMesmoMomentoDaAnterior: false,
             regraRecurso: {},
           },
@@ -251,13 +251,13 @@ describe('janelas de chave repetida', () => {
       fases: [
         {
           chave: 'a',
-          faseCanonicaCodigo: 'INSCRICOES',
+          tipoFaseCodigo: 'INSCRICOES',
           noMesmoMomentoDaAnterior: false,
           regraRecurso: {},
         },
         {
           chave: 'a',
-          faseCanonicaCodigo: 'INSCRICOES',
+          tipoFaseCodigo: 'INSCRICOES',
           noMesmoMomentoDaAnterior: false,
           regraRecurso: { procedimentosDeRecurso: procedimentos },
         },

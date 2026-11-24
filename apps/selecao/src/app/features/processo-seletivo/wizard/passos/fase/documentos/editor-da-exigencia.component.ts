@@ -6,10 +6,8 @@ import { consequenciasDaFase } from '@uniplus/shared-utils';
 import type { BaseLegalConfig, ModeloDaExigencia } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { descreverFase } from '../../../shared/descricao-da-fase';
-import {
-  CONSEQUENCIAS_ESCOLHIVEIS,
-  FATO_MODALIDADE,
-} from '../../../shared/exigencias/exigencias-documentais';
+import { FATO_MODALIDADE } from '../../../shared/exigencias/exigencias-documentais';
+import { CatalogoDasConsequenciasDeIndeferimento } from '../../cronograma/catalogos/catalogo-das-consequencias-de-indeferimento.service';
 import { mostraFormulario } from '../../../shared/exigencias/formulario-da-exigencia';
 import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
@@ -55,6 +53,7 @@ export class EditorDaExigenciaComponent {
   protected readonly gatilho = inject(GatilhoDasExigenciasStore);
   private readonly catalogoDeFases = inject(CatalogoDeFases);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
+  private readonly catalogoDeConsequencias = inject(CatalogoDasConsequenciasDeIndeferimento);
   protected readonly recusas = inject(RecusasDasExigencias, { optional: true });
 
   readonly resumo = input.required<ResumoDoDocumento>();
@@ -64,7 +63,13 @@ export class EditorDaExigenciaComponent {
   protected readonly idDaFase = this.faseEmEdicao.idDaFase;
 
   consequenciasDaFase(): readonly { readonly valor: string; readonly rotulo: string }[] {
-    return consequenciasDaFase(CONSEQUENCIAS_ESCOLHIVEIS, this.faseAdmiteComplementacao());
+    const opcoes = this.catalogoDeConsequencias
+      .consequencias()
+      .map(({ codigo, rotulo }) => ({ valor: codigo, rotulo }));
+    return consequenciasDaFase(
+      [{ valor: '', rotulo: 'Não decide sozinha' }, ...opcoes],
+      this.faseAdmiteComplementacao(),
+    );
   }
 
   /** Se a fase aberta admite reenvio de documento depois da análise. */
@@ -73,8 +78,6 @@ export class EditorDaExigenciaComponent {
     if (fase === null) return false;
     return descreverFase(fase, this.catalogoDeFases.fasePorId()).permiteComplementacao;
   }
-
-  readonly consequencias = CONSEQUENCIAS_ESCOLHIVEIS;
 
   ehObrigatorio(id: string): boolean {
     return this.exigencias.exigenciaDoDocumento(id).obrigatorio;
@@ -132,7 +135,7 @@ export class EditorDaExigenciaComponent {
   }
 
   /** O fato que tem controle próprio ao lado do gatilho: o editor não o mostra. */
-  readonly fatoDoRecorte = FATO_MODALIDADE;
+  readonly fatoDoControleExterno = FATO_MODALIDADE;
 
   /**
    * Se a escolha do formulário aparece: na fase que responde algum, e em qualquer fase enquanto o

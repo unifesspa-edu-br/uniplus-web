@@ -9,7 +9,7 @@ import {
   ProcessoSeletivoDto,
   RegraCatalogoDto,
   SELECAO_BASE_PATH,
-  StatusProcesso,
+  StatusProcessoCodigo,
 } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -27,7 +27,7 @@ export function regra(codigo: string): RegraCatalogoDto {
   return {
     codigo,
     versao: '1.0',
-    tipo: 'regra_calculo',
+    tipo: { codigo: 'regra_calculo' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Regra de cálculo' },
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: `Base de ${codigo}`,
@@ -98,7 +98,7 @@ export function valorDoSelect(host: HTMLElement, id: string): string | undefined
 export function publicar(store: ProcessoSeletivoStore): void {
   store.remoteSnapshot.set({
     id: PROCESSO_ID,
-    status: StatusProcesso.publicado,
+    status: StatusProcessoCodigo.publicado,
   } as unknown as ProcessoSeletivoDto);
 }
 

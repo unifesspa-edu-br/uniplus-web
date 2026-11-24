@@ -2,7 +2,7 @@ import {
   OperadorDaCondicao,
   TipoDaObrigatoriedadeDoFormulario as Tipo,
   type DocumentoDaConfiguracaoFormulario as Formulario,
-  type DocumentoDaConfiguracaoPredicado as Predicado,
+  type DocumentoDaConfiguracaoCondicoesAlternativas as Predicado,
 } from '@uniplus/shared-data/selecao';
 import type {
   CaminhoDoCampo as Caminho,
@@ -20,7 +20,9 @@ function converterCondicao(condicao: Condicao, contexto: Contexto, caminho: Cami
     ...caminho,
     'operador',
   ]);
-  return operador === undefined ? [] : [{ ...condicao, operador }];
+  return operador === undefined
+    ? []
+    : [{ codigoDoDado: condicao.fato, operador, valor: condicao.valor }];
 }
 
 export function predicadoDoDocumento(
@@ -36,15 +38,27 @@ export function predicadoDoDocumento(
   );
 }
 
+export function lerPredicado(valor: Predicado | null | undefined): PredicadoNoWire {
+  return (
+    valor?.map((clausula) =>
+      clausula.map((condicao) => ({
+        fato: condicao.codigoDoDado,
+        operador: condicao.operador,
+        valor: condicao.valor,
+      })),
+    ) ?? null
+  );
+}
+
 export function lerObrigatoriedade(valor: Obrigatoriedade | undefined): ObrigatoriedadeEditada {
-  return { tipo: valor?.tipo ?? 'SEMPRE', predicado: valor?.predicado ?? null };
+  return { tipo: valor?.tipo ?? 'SEMPRE', predicado: lerPredicado(valor?.quando) };
 }
 
 export function lerExibicaoEObrigatoriedade(
-  exibicao: PredicadoNoWire | undefined,
+  exibicao: Predicado | null | undefined,
   obrigatoriedade: Obrigatoriedade | undefined,
 ): ExibicaoEObrigatoriedade {
-  return { exibicao: exibicao ?? null, obrigatoriedade: lerObrigatoriedade(obrigatoriedade) };
+  return { exibicao: lerPredicado(exibicao), obrigatoriedade: lerObrigatoriedade(obrigatoriedade) };
 }
 
 export function regrasDoDocumento(
@@ -74,5 +88,5 @@ export function obrigatoriedadeDoDocumento(
     tipo === Tipo.QUANDO
       ? predicadoDoDocumento(obrigatoriedade.predicado, contexto, local)
       : undefined;
-  return tipo === Tipo.QUANDO ? { tipo, predicado } : { tipo };
+  return tipo === Tipo.QUANDO ? { tipo, quando: predicado } : { tipo };
 }
