@@ -120,7 +120,7 @@ test.describe('Termo de responsabilidade', () => {
     expect(criado.status, JSON.stringify(criado.corpo)).toBe(201);
     const caminho = `${ROTA_DOS_PEDIDOS}/${criado.corpo.id}`;
     const lerPedido = async () => (await chamarApi<Pedido>(SOLICITANTE, 'GET', caminho)).corpo;
-    await expect.poll(async () => (await lerPedido()).situacao).toBe('aguardando_beneficiario');
+    await expect.poll(async () => (await lerPedido()).situacao).toBe('AGUARDANDO_BENEFICIARIO');
     expect((await lerPedido()).termo?.versaoId).toBe(versao.id);
 
     const divergente = await chamarApi(BENEFICIARIO, 'POST', `${caminho}/aceite`, {

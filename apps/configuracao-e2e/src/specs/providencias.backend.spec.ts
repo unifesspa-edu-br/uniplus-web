@@ -59,7 +59,7 @@ async function encerrarAberta(concessaoId: string): Promise<void> {
 
 function solicitar(concessaoId: string) {
   return chamarApi<Providencia>(ENCARREGADO_DE_DADOS, 'POST', ROTA, {
-    corpo: { concessaoId, tipo: 'retirada', fundamento: FUNDAMENTO },
+    corpo: { concessaoId, tipo: 'RETIRADA', fundamento: FUNDAMENTO },
   });
 }
 
@@ -78,7 +78,7 @@ test.describe('Providências sobre concessões', () => {
     const criada = await solicitar(concessao.id);
     expect(criada.status, JSON.stringify(criada.corpo)).toBe(201);
     primeira = criada.corpo;
-    expect(primeira.situacao).toBe('aberta');
+    expect(primeira.situacao).toBe('ABERTA');
 
     const repetida = await solicitar(concessao.id);
     expect(repetida.status).toBe(409);
@@ -120,7 +120,7 @@ test.describe('Providências sobre concessões', () => {
       },
     );
     expect(resposta.status, JSON.stringify(resposta.corpo)).toBe(200);
-    expect(resposta.corpo.situacao).toBe('respondida');
+    expect(resposta.corpo.situacao).toBe('RESPONDIDA');
     expect((await concessaoAtivaDa(BENEFICIARIA)).id).toBe(concessao.id);
   });
 

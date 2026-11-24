@@ -63,9 +63,9 @@ test.describe('Acessos — revisão periódica', () => {
 
     await expect(page.getByRole('heading', { name: 'Revisões de acesso', level: 1 })).toBeVisible();
     await expect(page.locator('tr[data-revisao-id]')).toHaveCount(2);
-    await page.getByLabel('Situação').selectOption('concluida');
+    await page.getByLabel('Situação').selectOption('CONCLUIDA');
     await expect(page.locator('tr[data-revisao-id]')).toHaveCount(1);
-    expect(chamadas.at(-1)?.consulta.get('situacao')).toBe('concluida');
+    expect(chamadas.at(-1)?.consulta.get('situacao')).toBe('CONCLUIDA');
     await expect(page.getByRole('button', { name: 'Abrir revisão' })).toHaveCount(0);
 
     await page.locator(`tr[data-revisao-id="${RESUMO_ENCERRADO.id}"] a`).click();
@@ -110,7 +110,7 @@ test.describe('Acessos — revisão periódica', () => {
     const motivo = 'Deixou de avaliar recursos neste processo.';
     const revogado = itemDaRevisao('i9', FERNANDA, {
       ...ITEM_DECIDIDO,
-      situacao: 'revogada',
+      situacao: 'REVOGADA',
       concessaoId: 'concessao-i9',
     });
     await mockConcessao(page, concessaoRevogada('concessao-i9', motivo));
@@ -137,7 +137,7 @@ test.describe('Acessos — revisão periódica', () => {
         revisaoAberta,
         (contaId) => ({
           ...revisaoAberta(contaId),
-          itens: [itemDaRevisao('i1', FERNANDA, { decide: 'gestor-de-acessos' })],
+          itens: [itemDaRevisao('i1', FERNANDA, { decide: 'GESTOR_DE_ACESSOS' })],
         }),
       ],
       decisao: {
@@ -166,7 +166,7 @@ test.describe('Acessos — revisão periódica', () => {
         revisaoAberta,
         (contaId) => ({
           ...revisaoAberta(contaId),
-          itens: [itemDaRevisao('i1', FERNANDA, { ...ITEM_DECIDIDO, situacao: 'revogada' })],
+          itens: [itemDaRevisao('i1', FERNANDA, { ...ITEM_DECIDIDO, situacao: 'REVOGADA' })],
         }),
       ],
       decisao: {

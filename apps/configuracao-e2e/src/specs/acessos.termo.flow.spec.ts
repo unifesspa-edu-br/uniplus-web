@@ -201,7 +201,7 @@ test.describe('Acessos — aceite do termo de responsabilidade', () => {
       pedido: pedidoComTermo({
         solicitadoPorMim: true,
         anexaraDocumento: true,
-        situacao: 'aguardando_documento',
+        situacao: 'AGUARDANDO_DOCUMENTO',
       }),
     });
 

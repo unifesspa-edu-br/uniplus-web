@@ -30,7 +30,7 @@ const SUSPENSO: JsonDaApi<SituacaoDoAcessoDoPerfilDto> = {
 const SUSPENSAO: JsonDaApi<SuspensaoDoPerfilDto> = {
   desde: '2026-11-10T11:00:00Z',
   papelDeQuemSuspendeu: 'gestao_de_acessos',
-  etapasExigidasAgora: ['gestao_de_acessos'],
+  etapasExigidasAgora: ['GESTAO_DE_ACESSOS'],
   etapasDecididas: [],
 };
 const DESATIVADO_DESDE = '2026-11-08T15:00:00Z';

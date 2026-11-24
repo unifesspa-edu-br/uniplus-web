@@ -3,12 +3,10 @@ import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
 import {
   CATALOGO_DESATUALIZADO,
   MENSAGEM_DO_CATALOGO_DESATUALIZADO,
-  UNIDADE_CEPS,
   ERRO_INTERNO,
   mockRota,
   mockUnidades,
   problema,
-  type Resposta,
 } from '../support/api-de-perfis-filas';
 import {
   PERMISSOES_DA_BETINA_SO_APROVA,
@@ -17,94 +15,18 @@ import {
 } from '../support/permissoes';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
-const ID = '01960000-0000-7000-0000-0000000000e1';
-const PERFIL_ID = '01960000-0000-7000-0000-0000000000a1';
-const VERSAO_2 = '01960000-0000-7000-0000-0000000000b2';
-const FILA = /\/api\/autorizacao\/reclassificacoes(\?.*)?$/;
-const DETALHE = new RegExp(`/api/autorizacao/reclassificacoes/${ID}$`);
-const DECISAO = new RegExp(`/api/autorizacao/reclassificacoes/${ID}/decisoes$`);
-const DOCUMENTO = new RegExp(`/api/autorizacao/perfis/${PERFIL_ID}/versoes/${VERSAO_2}/documento$`);
-const URL_DO_DOCUMENTO = 'http://localhost:9000/uniplus-teste/portaria.pdf';
-
-const ITEM_DA_FILA = {
-  id: ID,
-  perfilId: PERFIL_ID,
-  perfilNome: 'Operador de inscrições',
-  codigo: 'selecao:processos:aprovar',
-  mudanca: {
-    classificacaoAnterior: 'interno',
-    classificacaoNova: 'pessoal',
-    deUnidadeAnterior: false,
-    deUnidadeNovo: true,
-  },
-  instante: '2026-11-09T15:00:00Z',
-  concessoesAguardando: 3,
-};
-
-const concessao = (id: string, nome: string, extra: Record<string, unknown> = {}) => ({
-  concessaoId: id,
-  beneficiarioNome: nome,
-  escopoTipo: 'unidade',
-  unidadeId: UNIDADE_CEPS,
-  versao: 2,
-  etapasExigidas: ['gestao_de_acessos'],
-  etapasDecididas: [],
-  ehDoLeitor: false,
-  ...extra,
-});
-
-const RECLASSIFICACAO = {
-  ...ITEM_DA_FILA,
-  vigente: true,
-  versoes: [
-    {
-      id: VERSAO_2,
-      numero: 2,
-      situacao: 'vigente',
-      permissoes: [
-        { codigo: 'selecao:processos:aprovar', classificacao: 'pessoal', deUnidade: true },
-      ],
-      linkDoDocumento: 'documento',
-    },
-  ],
-  concessoes: [
-    concessao('c1', 'Betina Teste'),
-    concessao('c2', 'Diogo Teste', { ehDoLeitor: true }),
-    concessao('c3', 'Paulo Teste', { unidadeId: null }),
-  ],
-};
-
-const DECISAO_OK = {
-  loteId: 'lote-1',
-  decididas: ['c1'],
-  liberadas: ['c1'],
-  paraOutraPessoa: [],
-  puladasPorEscopo: [],
-};
-
-interface Cenario {
-  readonly detalhe?: Resposta | readonly Resposta[];
-  readonly decisao?: readonly Resposta[];
-}
-
-async function preparar(page: Page, permissoes: readonly string[], cenario: Cenario = {}) {
-  await mockConfiguracaoRuntimeConfig(page);
-  await mockPermissoesEfetivas(page, permissoes);
-  await mockUnidades(page);
-  const detalhes = [cenario.detalhe ?? { status: 200, corpo: RECLASSIFICACAO }].flat();
-  const leituras = await mockRota(
-    page,
-    DETALHE,
-    (_c, n) => detalhes[Math.min(n, detalhes.length) - 1] as Resposta,
-  );
-  const decisoes = cenario.decisao ?? [{ status: 200, corpo: DECISAO_OK }];
-  const envios = await mockRota(
-    page,
-    DECISAO,
-    (_c, n) => decisoes[Math.min(n, decisoes.length) - 1] as Resposta,
-  );
-  return { leituras, envios };
-}
+import {
+  ID,
+  FILA,
+  DETALHE,
+  DOCUMENTO,
+  URL_DO_DOCUMENTO,
+  ITEM_DA_FILA,
+  concessao,
+  RECLASSIFICACAO,
+  DECISAO_OK,
+  preparar,
+} from '../support/reclassificacao-cenario';
 
 const marcar = (page: Page, nome: string) =>
   page.locator('label.checkbox', { hasText: `Decidir a concessão de ${nome}` }).click();
@@ -129,7 +51,7 @@ test.describe('Acessos — fila da reclassificação', () => {
     await expect(page.getByText('3 concessões')).toBeVisible();
     expect(fila[0]).toMatchObject({
       caminho: '/api/autorizacao/reclassificacoes',
-      consulta: '?etapa=gestao_de_acessos',
+      consulta: '?etapa=GESTAO_DE_ACESSOS',
     });
 
     await page.getByRole('link', { name: 'Operador de inscrições' }).click();
@@ -147,7 +69,7 @@ test.describe('Acessos — fila da reclassificação', () => {
     await page.goto('/acessos/reclassificacoes/protecao-de-dados');
 
     await expect(page.getByText('Nenhuma reclassificação aguarda a sua decisão.')).toBeVisible();
-    expect(fila[0]?.consulta).toBe('?etapa=protecao_de_dados');
+    expect(fila[0]?.consulta).toBe('?etapa=PROTECAO_DE_DADOS');
   });
 
   test('falha na leitura oferece "Tentar novamente"', async ({ page }) => {
@@ -223,8 +145,8 @@ test.describe('Acessos — detalhe e decisão da reclassificação', () => {
       metodo: 'POST',
       caminho: `/api/autorizacao/reclassificacoes/${ID}/decisoes`,
       corpo: {
-        etapa: 'gestao_de_acessos',
-        resultado: 'liberada',
+        etapa: 'GESTAO_DE_ACESSOS',
+        resultado: 'LIBERADA',
         concessoes: ['c1'],
         todas: false,
         motivo: null,
@@ -262,8 +184,8 @@ test.describe('Acessos — detalhe e decisão da reclassificação', () => {
       metodo: 'POST',
       caminho: `/api/autorizacao/reclassificacoes/${ID}/decisoes`,
       corpo: {
-        etapa: 'gestao_de_acessos',
-        resultado: 'liberada',
+        etapa: 'GESTAO_DE_ACESSOS',
+        resultado: 'LIBERADA',
         concessoes: null,
         todas: true,
         motivo: null,
@@ -289,8 +211,8 @@ test.describe('Acessos — detalhe e decisão da reclassificação', () => {
       metodo: 'POST',
       caminho: `/api/autorizacao/reclassificacoes/${ID}/decisoes`,
       corpo: {
-        etapa: 'gestao_de_acessos',
-        resultado: 'mantida',
+        etapa: 'GESTAO_DE_ACESSOS',
+        resultado: 'MANTIDA',
         concessoes: ['c1'],
         todas: false,
         motivo: 'A unidade ainda não adequou o escopo.',
@@ -304,7 +226,7 @@ test.describe('Acessos — detalhe e decisão da reclassificação', () => {
         status: 200,
         corpo: {
           ...RECLASSIFICACAO,
-          concessoes: [concessao('c4', 'Rebeca Teste', { etapasExigidas: ['protecao_de_dados'] })],
+          concessoes: [concessao('c4', 'Rebeca Teste', { etapasExigidas: ['PROTECAO_DE_DADOS'] })],
         },
       },
     });
@@ -314,7 +236,7 @@ test.describe('Acessos — detalhe e decisão da reclassificação', () => {
     await liberar(page).click();
 
     await expect(page.getByText('Decisão registrada.')).toBeVisible();
-    expect(envios[0]?.corpo).toMatchObject({ etapa: 'protecao_de_dados', concessoes: ['c4'] });
+    expect(envios[0]?.corpo).toMatchObject({ etapa: 'PROTECAO_DE_DADOS', concessoes: ['c4'] });
   });
 
   test('documento não lido leva à leitura, e depois de ler a decisão segue', async ({ page }) => {

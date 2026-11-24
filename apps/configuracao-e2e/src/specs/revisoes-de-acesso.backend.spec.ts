@@ -30,7 +30,7 @@ async function revisaoEmAndamento(): Promise<string> {
   const lista = await chamarApi<RevisaoListada[]>(
     REPRESENTANTE_DO_CONTROLADOR,
     'GET',
-    '/api/autorizacao/revisoes?situacao=em_andamento&limit=10',
+    '/api/autorizacao/revisoes?situacao=EM_ANDAMENTO&limit=10',
   );
   expect(lista.status, JSON.stringify(lista.corpo)).toBe(200);
   const aberta = lista.corpo[0];

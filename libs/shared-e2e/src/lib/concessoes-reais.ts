@@ -13,6 +13,17 @@ import {
 } from './backend-real';
 import { PDF_MINIMO, enviarPelaUrlAssinada } from './envio-de-arquivo';
 
+type TipoDeEscopo = 'UNIDADE' | 'INSTITUICAO';
+type SituacaoDoPedido =
+  | 'AGUARDANDO_BENEFICIARIO'
+  | 'AGUARDANDO_GESTOR'
+  | 'AGUARDANDO_PROTECAO_DE_DADOS'
+  | 'APROVADO'
+  | 'RECUSADO'
+  | 'CANCELADO'
+  | 'AGUARDANDO_DOCUMENTO'
+  | 'DEVOLVIDO';
+
 interface ConcessaoExistente {
   readonly beneficiario: { readonly contaId: string };
   readonly escopo: { readonly unidadeId: string | null };
@@ -21,7 +32,7 @@ interface ConcessaoExistente {
 
 interface PedidoCriado {
   readonly id: string;
-  readonly situacao: string;
+  readonly situacao: SituacaoDoPedido;
 }
 
 /**
@@ -52,19 +63,17 @@ async function pedidoDaConcessao(
   perfilId: string,
   unidadeDaConcessao: string,
 ): Promise<PedidoDeConcessao> {
-  const perfil = await acharNaListagem<{ id: string; escopo: string }>(
+  const perfil = await acharNaListagem<{ id: string; escopo: TipoDeEscopo }>(
     SOLICITANTE_DE_PEDIDOS,
     '/api/autorizacao/perfis-para-pedido?limit=100',
     (p) => p.id === perfilId,
   );
-  const unidadeId = perfil?.escopo === 'unidade' ? unidadeDaConcessao : null;
+  const unidadeId = perfil?.escopo === 'UNIDADE' ? unidadeDaConcessao : null;
   const { sub: contaId, email } = identidadeDoToken(await tokenDaPersona(beneficiario));
   return { beneficiario, email, contaId, perfilId, unidadeId };
 }
 
-/** Perfil de governança "Representante do controlador", que decide a segunda etapa. */
 const PERFIL_DO_REPRESENTANTE = '019a0000-0000-7000-8000-000000000002';
-/** Quem decide a segunda etapa dos pedidos em que o titular, `REPRESENTANTE_DO_CONTROLADOR`, é beneficiário. */
 const SUBSTITUTO_DO_REPRESENTANTE = 'caroline.jesus';
 let representantesGuardados: Promise<void> | undefined;
 
@@ -148,7 +157,7 @@ interface PedidoDeConcessao {
 
 interface PedidoListado {
   readonly id: string;
-  readonly situacao: string;
+  readonly situacao: SituacaoDoPedido;
   readonly beneficiario: { readonly email: string };
   readonly perfil: { readonly id: string };
   readonly escopo: { readonly unidadeId: string | null };
@@ -160,7 +169,7 @@ interface EtapaDoPedido {
 }
 
 interface PedidoLido {
-  readonly situacao: string;
+  readonly situacao: SituacaoDoPedido;
   readonly solicitante: { readonly contaId: string };
   readonly termo: { readonly versaoId: string } | null;
 }
@@ -186,17 +195,17 @@ const postar = (quem: string, caminho: string, corpo?: unknown): Promise<Respost
  * documento de designação (perfil de governança) é anexado por quem solicitou, em PDF, pela URL
  * assinada; o pedido só segue depois que a API verifica o arquivo.
  */
-const ETAPAS_POR_SITUACAO: Readonly<Record<string, EtapaDoPedido>> = {
-  aguardando_documento: { nome: 'anexo do documento de designação', executar: anexarDocumento },
-  aguardando_beneficiario: {
+const ETAPAS_POR_SITUACAO: Readonly<Partial<Record<SituacaoDoPedido, EtapaDoPedido>>> = {
+  AGUARDANDO_DOCUMENTO: { nome: 'anexo do documento de designação', executar: anexarDocumento },
+  AGUARDANDO_BENEFICIARIO: {
     nome: 'aceite da pessoa beneficiária',
     executar: aceitarComOTermo,
   },
-  aguardando_gestor: {
+  AGUARDANDO_GESTOR: {
     nome: 'aprovação funcional',
     executar: (p, base) => postar(POR_QUEM_APROVA_COMO_GESTOR(p), `${base}/aprovacoes`, {}),
   },
-  aguardando_protecao_de_dados: {
+  AGUARDANDO_PROTECAO_DE_DADOS: {
     nome: 'aprovação da proteção de dados',
     executar: (p, base) => postar(POR_QUEM_APROVA_COMO_PROTECAO(p), `${base}/aprovacoes`, {}),
   },
@@ -229,7 +238,7 @@ async function pedidoEmAndamento(pedido: PedidoDeConcessao): Promise<PedidoLista
 async function conduzirPedido(
   pedido: PedidoDeConcessao,
   pedidoId: string,
-  situacaoInicial: string,
+  situacaoInicial: SituacaoDoPedido,
 ): Promise<void> {
   const base = `${ROTA_DOS_PEDIDOS}/${pedidoId}`;
   let situacao = situacaoInicial;
@@ -243,10 +252,10 @@ async function conduzirPedido(
 /** Executa a etapa e espera o pedido sair da situação que ela resolve; devolve a seguinte. */
 async function avancar(
   etapa: EtapaDoPedido,
-  situacao: string,
+  situacao: SituacaoDoPedido,
   pedido: PedidoDeConcessao,
   base: string,
-): Promise<string> {
+): Promise<SituacaoDoPedido> {
   const resposta = await etapa.executar(pedido, base);
   const contexto = `${etapa.nome} do pedido ${base} de ${pedido.beneficiario}`;
   expect(resposta.status, `${contexto}: ${JSON.stringify(resposta.corpo)}`).toBe(200);
@@ -269,10 +278,10 @@ async function lerPedido(pedido: PedidoDeConcessao, base: string): Promise<Pedid
  * do anexo, que é assíncrona.
  */
 async function aguardarSairDe(
-  situacao: string,
+  situacao: SituacaoDoPedido,
   pedido: PedidoDeConcessao,
   base: string,
-): Promise<string | null> {
+): Promise<SituacaoDoPedido | null> {
   const limite = Date.now() + ESPERA_DA_VERIFICACAO_MS;
   for (;;) {
     const atual = (await lerPedido(pedido, base)).situacao;

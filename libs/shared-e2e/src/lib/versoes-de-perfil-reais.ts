@@ -16,6 +16,9 @@ export const AUTOR_DAS_VERSOES = SEGUNDO_GESTOR_DE_ACESSOS;
 
 const ESPERA_DA_VERIFICACAO_MS = 60_000;
 const RAIZ = '/api/autorizacao/perfis';
+type CategoriaDaRemocao = 'INCIDENTE' | 'ERRO_DE_COMPOSICAO' | 'MUDANCA_DE_FUNCAO';
+type EtapaDaVersao = 'GESTAO_DE_ACESSOS' | 'PROTECAO_DE_DADOS';
+type SituacaoDoAnexo = 'AGUARDANDO_ENVIO' | 'EM_VERIFICACAO' | 'VERIFICADO' | 'RECUSADO';
 
 export interface EnvioDaVersao {
   readonly perfilId: string;
@@ -26,8 +29,8 @@ export interface EnvioDaVersao {
 
 export interface VersaoPendenteLida {
   readonly versaoId: string;
-  readonly situacaoDoDocumento: string;
-  readonly etapaAtual: string;
+  readonly situacaoDoDocumento: SituacaoDoAnexo;
+  readonly etapaAtual: EtapaDaVersao;
   readonly exigeProtecaoDeDados: boolean;
   readonly permissoes: readonly { readonly codigo: string }[];
 }
@@ -58,13 +61,13 @@ export async function lerPerfil(perfilId: string, quem = AUTOR_DAS_VERSOES): Pro
 
 export interface RemocaoDaProposta {
   readonly motivo: string;
-  readonly categoria: 'incidente' | 'erro_de_composicao' | 'mudanca_de_funcao';
+  readonly categoria: CategoriaDaRemocao;
 }
 
 const MOTIVO_DA_SIMULACAO = 'Recomposição do perfil pela simulação ponta a ponta.';
 const REMOCAO_DA_SIMULACAO: RemocaoDaProposta = {
   motivo: MOTIVO_DA_SIMULACAO,
-  categoria: 'erro_de_composicao',
+  categoria: 'ERRO_DE_COMPOSICAO',
 };
 
 /** Os códigos das permissões em vigor do perfil, ou nenhum quando ainda não há versão em vigor. */
@@ -125,8 +128,8 @@ export async function aguardarDocumentoVerificado(perfilId: string): Promise<Ver
   const limite = Date.now() + ESPERA_DA_VERIFICACAO_MS;
   for (;;) {
     const { versaoPendente } = await lerPerfil(perfilId);
-    if (versaoPendente?.situacaoDoDocumento === 'verificado') return versaoPendente;
-    if (versaoPendente?.situacaoDoDocumento === 'recusado' || Date.now() > limite) {
+    if (versaoPendente?.situacaoDoDocumento === 'VERIFICADO') return versaoPendente;
+    if (versaoPendente?.situacaoDoDocumento === 'RECUSADO' || Date.now() > limite) {
       throw new Error(`O documento da versão pendente do perfil ${perfilId} não foi verificado.`);
     }
     await new Promise((resolver) => setTimeout(resolver, 1_000));
@@ -140,9 +143,9 @@ export async function aguardarDocumentoVerificado(perfilId: string): Promise<Ver
 export async function decidirVersao(
   quem: string,
   versao: Pick<EnvioDaVersao, 'perfilId' | 'versaoId'>,
-  etapa: 'gestao_de_acessos' | 'protecao_de_dados',
+  etapa: EtapaDaVersao,
 ): Promise<RespostaDaApi> {
-  if (etapa === 'protecao_de_dados') await garantirRepresentantes();
+  if (etapa === 'PROTECAO_DE_DADOS') await garantirRepresentantes();
   return chamarApi(
     quem,
     'POST',
@@ -157,14 +160,14 @@ export async function aprovarVersaoPendente(
   versao: VersaoPendenteLida,
 ): Promise<void> {
   const identificada = { perfilId, versaoId: versao.versaoId };
-  await aprovarNaEtapa(GESTOR_DE_ACESSOS, identificada, 'gestao_de_acessos');
+  await aprovarNaEtapa(GESTOR_DE_ACESSOS, identificada, 'GESTAO_DE_ACESSOS');
   if (!versao.exigeProtecaoDeDados) return;
-  await aprovarNaEtapa(REPRESENTANTE_DO_CONTROLADOR, identificada, 'protecao_de_dados');
+  await aprovarNaEtapa(REPRESENTANTE_DO_CONTROLADOR, identificada, 'PROTECAO_DE_DADOS');
 }
 
-const NOME_DA_ETAPA = {
-  gestao_de_acessos: 'gestão de acessos',
-  protecao_de_dados: 'proteção de dados',
+const NOME_DA_ETAPA: Record<EtapaDaVersao, string> = {
+  GESTAO_DE_ACESSOS: 'gestão de acessos',
+  PROTECAO_DE_DADOS: 'proteção de dados',
 };
 
 async function aprovarNaEtapa(
