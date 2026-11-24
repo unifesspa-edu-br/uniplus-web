@@ -1920,6 +1920,26 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/selecao/processos-seletivos/{id}/indicadores": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /**
+         * Obtém os indicadores quantitativos do processo seletivo
+         * @description Retorna inscrições submetidas não canceladas, inscritos distintos e rascunhos do processo seletivo. A consulta exige autenticação e autorização conforme o estado e a unidade do processo.
+         */
+        readonly get: operations["ObterIndicadoresDoProcesso"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/selecao/processos-seletivos/{id}/inscricao": {
         readonly parameters: {
             readonly query?: never;
@@ -10775,6 +10795,13 @@ export interface components {
             readonly situacao?: null | components["schemas"]["SituacaoDoCertame"];
             readonly editaisPublicados?: null | readonly components["schemas"]["EditalPublicadoCertameDto"][];
         };
+        /**
+         * @description - `INSCRICOES`: Inscrições — Submetidas e não canceladas
+         *     - `INSCRITOS`: Inscritos — Pessoas distintas com inscrição submetida e não cancelada
+         *     - `RASCUNHOS`: Rascunhos
+         * @enum {string}
+         */
+        readonly CodigoIndicadorDoProcessoCodigo: CodigoIndicadorDoProcessoCodigo;
         readonly ColetaDoFormularioDto: {
             readonly itens: readonly components["schemas"]["FatoColetadoDto"][];
             readonly grupos: readonly components["schemas"]["GrupoColetadoDto"][];
@@ -14330,6 +14357,25 @@ export interface components {
             readonly consequencia?: null | string;
             readonly basesLegais?: null | readonly components["schemas"]["BaseLegalInput"][];
         };
+        readonly IndicadorDoProcessoDto: {
+            readonly codigo: components["schemas"]["CodigoIndicadorDoProcessoCodigo"];
+            /** Format: int64 */
+            readonly valor: number;
+            readonly rotulo: string;
+            readonly descricao: string;
+        };
+        readonly IndicadoresDoProcessoDto: {
+            /** Format: uuid */
+            readonly processoSeletivoId: string;
+            /** Format: date-time */
+            readonly consultadoEm: string;
+            readonly indicadores: readonly components["schemas"]["IndicadorDoProcessoDto"][];
+            readonly _links: components["schemas"]["IndicadoresDoProcessoLinksDto"];
+        };
+        readonly IndicadoresDoProcessoLinksDto: {
+            readonly self: string;
+            readonly processo: string;
+        };
         readonly IniciarEnvioDeDocumentoDaInscricaoDto: {
             /** Format: uuid */
             readonly arquivoId: string;
@@ -16247,6 +16293,64 @@ export interface operations {
             };
         };
     };
+    readonly ObterIndicadoresDoProcesso: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.indicadores-do-processo.v1+json": components["schemas"]["IndicadoresDoProcessoDto"];
+                };
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
 }
 export enum PathsApiSelecaoCertamesGetParametersQueryDirection {
     next = "next",
@@ -16301,6 +16405,11 @@ export enum CategoriaObrigatoriedadeCodigo {
     FADA = "FADA",
     ATENDIMENTO = "ATENDIMENTO",
     OUTROS = "OUTROS"
+}
+export enum CodigoIndicadorDoProcessoCodigo {
+    INSCRICOES = "INSCRICOES",
+    INSCRITOS = "INSCRITOS",
+    RASCUNHOS = "RASCUNHOS"
 }
 export enum ComposicaoVagasModalidadeCodigo {
     RESTANTE_DAS_VAGAS_OFERTADAS = "RESTANTE_DAS_VAGAS_OFERTADAS",
