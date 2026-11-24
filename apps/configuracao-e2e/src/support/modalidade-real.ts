@@ -62,6 +62,15 @@ async function escolherOsEnums(pagina: Page, escolhas: EscolhasDaModalidade): Pr
   await escolherPeloRotulo(campos.regra, escolhas.regra);
 }
 
+async function acrescentarCondicaoDaCota(pagina: Page): Promise<void> {
+  await pagina.getByRole('button', { name: 'Acrescentar alternativa' }).click();
+  await pagina.getByLabel('Fato do candidato', { exact: true }).selectOption({
+    label: 'Optou pelas cotas da Lei nº 12.711/2012',
+  });
+  await pagina.getByLabel('Comparação', { exact: true }).selectOption({ label: 'é igual a' });
+  await pagina.getByLabel('Resposta', { exact: true }).selectOption({ label: 'Sim' });
+}
+
 /** Preenche o formulário de criação e salva. */
 export async function criarModalidadePelaTela(
   pagina: Page,
@@ -70,6 +79,7 @@ export async function criarModalidadePelaTela(
 ): Promise<void> {
   await pagina.getByRole('textbox', { name: /^Código/ }).fill(codigo);
   await escolherOsEnums(pagina, escolhas);
+  await acrescentarCondicaoDaCota(pagina);
   await pagina.getByRole('button', { name: 'Criar modalidade' }).click();
   await expect(pagina).toHaveURL(/\/modalidades$/);
 }
