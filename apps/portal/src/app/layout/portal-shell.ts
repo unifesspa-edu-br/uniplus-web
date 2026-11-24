@@ -17,6 +17,7 @@ import { mediaQuerySignal } from '@uniplus/shared-core/dom';
 interface PortalFooterLink {
   readonly label: string;
   readonly routerLink?: string;
+  readonly externalLink?: boolean;
   readonly requiresAuth?: boolean;
 }
 
@@ -118,7 +119,18 @@ interface PortalFooterGroup {
                 @for (link of group.links; track link.label) {
                   <li>
                     @if (link.routerLink) {
-                      <a [routerLink]="link.routerLink">{{ link.label }}</a>
+                      @if (link.externalLink) {
+                        <a
+                          [href]="link.routerLink"
+                          rel="noopener noreferrer"
+                          target="_blank"
+                          [aria-label]="link.label + ' (abre em nova aba)'"
+                        >
+                          {{ link.label }}
+                        </a>
+                      } @else {
+                        <a [routerLink]="link.routerLink">{{ link.label }}</a>
+                      }
                     } @else {
                       <span class="is-disabled" aria-disabled="true">{{ link.label }}</span>
                     }
@@ -162,14 +174,18 @@ export class PortalShellComponent {
     },
     {
       label: 'Institucional',
-      links: [{ label: 'CEPS' }, { label: 'CRCA' }, { label: 'Calendário acadêmico' }],
-    },
-    {
-      label: 'Acessibilidade',
       links: [
-        { label: 'Mapa do site' },
-        { label: 'Política de privacidade' },
-        { label: 'Acessibilidade' },
+        { label: 'CEPS', routerLink: 'https://ceps.unifesspa.edu.br', externalLink: true },
+        {
+          label: 'CGA',
+          routerLink: 'https://cga.unifesspa.edu.br',
+          externalLink: true,
+        },
+        {
+          label: 'Calendário acadêmico',
+          routerLink: 'https://cga.unifesspa.edu.br/documentos/calendário-acadêmico.html',
+          externalLink: true,
+        },
       ],
     },
   ];

@@ -13,5 +13,4 @@ export const NAVEGACAO_DO_PORTAL: readonly ItemDaNavegacao[] = [
     routerLink: '/inscricao',
     requiresAuth: true,
   },
-  { label: 'Ajuda', icon: 'pi-question-circle' },
 ];
