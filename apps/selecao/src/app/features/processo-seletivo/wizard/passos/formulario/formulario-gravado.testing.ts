@@ -196,7 +196,7 @@ const CONTEUDO_VAZIO_DO_MODELO: ModeloFormularioView['conteudo'] = {
   termos: [],
   pressupostos: [],
   grupos: [],
-  documentosExigidos: [],
+  conjuntoDeDocumentos: { documentosExigidos: [], gruposDeDocumentos: [] },
 };
 
 const ROTULOS_DAS_FINALIDADES: Record<FinalidadeDoModelo, string> = {
