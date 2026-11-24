@@ -769,7 +769,7 @@ export interface components {
             readonly codigo: null | string;
             /** Format: uuid */
             readonly unidadeSuperiorId: null | string;
-            readonly tipo: components["schemas"]["TipoUnidade"];
+            readonly tipo: null | components["schemas"]["TipoUnidadeCodigo"];
             readonly unidadeAcademica: boolean;
             /** Format: date */
             readonly vigenciaFim: null | string;
@@ -821,7 +821,7 @@ export interface components {
             readonly codigo: null | string;
             /** Format: uuid */
             readonly unidadeSuperiorId: null | string;
-            readonly tipo: components["schemas"]["TipoUnidade"];
+            readonly tipo: null | components["schemas"]["TipoUnidadeCodigo"];
             readonly unidadeAcademica: boolean;
             /** Format: date */
             readonly vigenciaInicio: string;
@@ -930,8 +930,23 @@ export interface components {
                 }[];
             }[];
         };
-        /** @enum {string} */
-        readonly TipoUnidade: TipoUnidade;
+        /**
+         * @description O tipo de uma unidade da universidade, que a classifica na estrutura organizacional: da reitoria aos núcleos.
+         *
+         *     - `REITORIA`: Reitoria — A unidade máxima de administração da universidade.
+         *     - `PRO_REITORIA`: Pró-reitoria — Unidade de administração superior ligada à reitoria e responsável por uma área, como ensino ou pesquisa.
+         *     - `CENTRO`: Centro — Unidade que reúne cursos e áreas de conhecimento afins.
+         *     - `INSTITUTO`: Instituto — Unidade acadêmica que reúne cursos e pesquisa de uma área do conhecimento.
+         *     - `FACULDADE`: Faculdade — Unidade acadêmica responsável por cursos de uma área específica.
+         *     - `DEPARTAMENTO`: Departamento — Subdivisão de uma unidade acadêmica que reúne disciplinas afins.
+         *     - `COORDENACAO`: Coordenação — Unidade que coordena um curso, um programa ou uma atividade.
+         *     - `DIRETORIA`: Diretoria — Unidade de direção de um conjunto de atividades administrativas ou acadêmicas.
+         *     - `DIVISAO`: Divisão — Subdivisão de uma diretoria ou de outra unidade administrativa.
+         *     - `NUCLEO`: Núcleo — Unidade que reúne pessoas em torno de um tema ou de uma atividade específica.
+         *     - `OUTRO`: Outro — Unidade que não se enquadra nos demais tipos.
+         * @enum {string}
+         */
+        readonly TipoUnidadeCodigo: TipoUnidadeCodigo;
         readonly UnidadeDto: {
             /** Format: uuid */
             readonly id: string;
@@ -1011,17 +1026,16 @@ export enum PathsApiOrganizacaoUnidadesGetParametersQueryDirection {
     next = "next",
     prev = "prev"
 }
-export enum TipoUnidade {
-    nenhum = "nenhum",
-    reitoria = "reitoria",
-    proReitoria = "proReitoria",
-    centro = "centro",
-    instituto = "instituto",
-    faculdade = "faculdade",
-    departamento = "departamento",
-    coordenacao = "coordenacao",
-    diretoria = "diretoria",
-    divisao = "divisao",
-    nucleo = "nucleo",
-    outro = "outro"
+export enum TipoUnidadeCodigo {
+    REITORIA = "REITORIA",
+    PRO_REITORIA = "PRO_REITORIA",
+    CENTRO = "CENTRO",
+    INSTITUTO = "INSTITUTO",
+    FACULDADE = "FACULDADE",
+    DEPARTAMENTO = "DEPARTAMENTO",
+    COORDENACAO = "COORDENACAO",
+    DIRETORIA = "DIRETORIA",
+    DIVISAO = "DIVISAO",
+    NUCLEO = "NUCLEO",
+    OUTRO = "OUTRO"
 }

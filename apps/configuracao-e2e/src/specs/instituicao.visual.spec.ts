@@ -16,7 +16,7 @@ const REITORIAS = [
     sigla: 'REITORIA',
     codigo: 'REITORIA',
     unidadeSuperiorId: null,
-    tipo: 'Reitoria',
+    tipo: 'REITORIA',
     unidadeAcademica: false,
     vigenciaInicio: '2026-01-01',
     vigenciaFim: null,

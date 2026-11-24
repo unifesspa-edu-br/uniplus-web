@@ -44,7 +44,7 @@ const UNIDADE = {
   sigla: 'IGE',
   codigo: 'IGE',
   unidadeSuperiorId: null,
-  tipo: 'Instituto',
+  tipo: 'INSTITUTO',
   unidadeAcademica: true,
   vigenciaInicio: '2020-01-01',
   vigenciaFim: null,

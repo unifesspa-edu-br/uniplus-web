@@ -18,6 +18,7 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CursosApi, LocaisOfertaApi, OfertaCursoDto } from '@uniplus/shared-data/configuracao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
+import { rotuloDoTipo } from '../unidades/tipos-de-unidade';
 import {
   rotularCidadeETipo,
   rotularCursoCompleto,
@@ -159,28 +160,31 @@ export class VinculosDaOferta {
     escolhidos: Signal<VinculosEscolhidos>,
     oferta: Signal<OfertaCursoDto | null>,
   ): Signal<VinculosDoFormulario> {
-    return computed(() => {
-      const { cursoId, localOfertaId, unidadeOfertanteOrigemId } = escolhidos();
-      const curso = this.cursosPorId().get(cursoId);
-      const local = this.locaisPorId().get(localOfertaId);
-      const unidade = this.unidadesPorId().get(unidadeOfertanteOrigemId);
-      const emEdicao = oferta();
-      const contextoDoCurso = curso ? rotularGrauENivel(curso) : null;
-      return {
-        curso: this.catalogo(this.cursos, rotularCursoCompleto, contextoDoCurso),
-        local: this.catalogo(
-          this.locais,
-          rotularLocalOferta,
-          local ? rotularCidadeETipo(local) : null,
-        ),
-        unidade: this.catalogo(
-          this.unidades,
-          (item) => `${item.sigla} — ${item.nome}`,
-          unidade ? rotularUnidade(unidade) : null,
-        ),
-        edicao: this.paraEdicao(cursoId, localOfertaId, contextoDoCurso, emEdicao),
-      };
-    });
+    return computed(() => this.montarFormulario(escolhidos(), oferta()));
+  }
+
+  private montarFormulario(escolhidos: VinculosEscolhidos, oferta: OfertaCursoDto | null) {
+    const { cursoId, localOfertaId, unidadeOfertanteOrigemId } = escolhidos;
+    const curso = this.cursosPorId().get(cursoId);
+    const contextoDoCurso = curso ? rotularGrauENivel(curso) : null;
+    return {
+      curso: this.catalogo(this.cursos, rotularCursoCompleto, contextoDoCurso),
+      local: this.catalogoDeLocais(localOfertaId),
+      unidade: this.catalogoDeUnidades(unidadeOfertanteOrigemId),
+      edicao: this.paraEdicao(cursoId, localOfertaId, contextoDoCurso, oferta),
+    };
+  }
+
+  private catalogoDeLocais(id: string): CatalogoDoFormulario {
+    const local = this.locaisPorId().get(id);
+    return this.catalogo(this.locais, rotularLocalOferta, local ? rotularCidadeETipo(local) : null);
+  }
+
+  private catalogoDeUnidades(id: string): CatalogoDoFormulario {
+    const unidade = this.unidadesPorId().get(id);
+    const tipo = unidade?.tipo == null ? '—' : rotuloDoTipo(unidade.tipo);
+    const contexto = unidade ? rotularUnidade({ ...unidade, tipo }) : null;
+    return this.catalogo(this.unidades, (item) => `${item.sigla} — ${item.nome}`, contexto);
   }
 
   private paraEdicao(
@@ -218,18 +222,30 @@ export class VinculosDaOferta {
       (cursor) => pagina(cursor).pipe(tap((resultado) => this.avisarFalhaDoServidor(resultado))),
       this.destroyRef,
     );
-    const leitura = acompanharCatalogo({
+    const leitura = this.acompanhar(lookup, idDoCampo, assunto, mensagemDaFalha);
+    return { ...lookup, leitura };
+  }
+
+  private acompanhar<T>(
+    lookup: LookupCompleto<T>,
+    idDoCampo: string,
+    assunto: string,
+    mensagemDaFalha: string,
+  ): CatalogoAcompanhado {
+    return acompanharCatalogo({
       assunto,
       falha: computed(() => (lookup.comErro() ? mensagemDaFalha : null)),
       pendente: lookup.pendente,
       recarregar: () => lookup.recarregar(),
-      destino: () =>
-        destinoAcessivel(
-          document.getElementById(idDoCampo),
-          document.getElementById(ID_DO_TITULO_DA_LISTA),
-        ),
+      destino: () => this.destinoDoCampo(idDoCampo),
     });
-    return { ...lookup, leitura };
+  }
+
+  private destinoDoCampo(idDoCampo: string) {
+    return destinoAcessivel(
+      document.getElementById(idDoCampo),
+      document.getElementById(ID_DO_TITULO_DA_LISTA),
+    );
   }
 
   private avisarFalhaDoServidor(resultado: ApiResult<unknown>): void {

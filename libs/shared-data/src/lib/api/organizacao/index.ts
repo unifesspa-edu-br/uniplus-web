@@ -12,7 +12,7 @@ export {
 } from './instituicao.api';
 export {
   TIPOS_UNIDADE,
-  TipoUnidade,
+  TipoUnidadeCodigo,
   UnidadesApi,
   type AtualizarUnidadeCommand,
   type CriarUnidadeCommand,

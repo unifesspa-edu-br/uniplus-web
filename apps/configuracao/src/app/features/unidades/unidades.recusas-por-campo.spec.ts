@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { TipoUnidadeCodigo } from '@uniplus/shared-data/organizacao';
 import {
   CenarioDaPaginaDeUnidades,
   ESCRITA,
@@ -266,7 +267,7 @@ describe('UnidadesPage — recusas do servidor', () => {
     });
 
     it('o tipo que o servidor devolveu e a tela não conhece bloqueia o envio e diz por quê', async () => {
-      const desconhecida = { ...reitoria, tipo: 'TipoInexistente' };
+      const desconhecida = { ...reitoria, tipo: 'TipoInexistente' as TipoUnidadeCodigo };
       p = await p.reabrirCom([desconhecida]);
       await p.abrirEdicao(desconhecida);
 
@@ -282,13 +283,18 @@ describe('UnidadesPage — recusas do servidor', () => {
       expect(document.activeElement).toBe(p.campo('tipo'));
     });
 
-    it('o tipo com acentuação ou hífen diferente na API é reconhecido e preservado', async () => {
-      const proReitoria = { ...reitoria, id: 'u-9', sigla: 'PROEG', tipo: 'Pro-Reitoria' };
+    it('o código do tipo é reconhecido e preservado', async () => {
+      const proReitoria = {
+        ...reitoria,
+        id: 'u-9',
+        sigla: 'PROEG',
+        tipo: TipoUnidadeCodigo.PRO_REITORIA,
+      };
       p = await p.reabrirCom([proReitoria]);
       await p.abrirEdicao(proReitoria);
 
       expect(p.edicao.tipoNaoReconhecido()).toBe(false);
-      expect(p.campo('tipo').value).toBe('proReitoria');
+      expect(p.campo('tipo').value).toBe(TipoUnidadeCodigo.PRO_REITORIA);
     });
   });
 });

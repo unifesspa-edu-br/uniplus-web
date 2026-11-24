@@ -14,7 +14,7 @@ import {
   AtualizarUnidadeCommand,
   CriarUnidadeCommand,
   TIPOS_UNIDADE,
-  TipoUnidade,
+  TipoUnidadeCodigo,
   UnidadeDto,
   UnidadesApi,
 } from './unidades.api';
@@ -31,7 +31,7 @@ const unidadeSeed: UnidadeDto = {
   sigla: 'IEDAR',
   codigo: 'IEDAR',
   unidadeSuperiorId: null,
-  tipo: 'Instituto',
+  tipo: TipoUnidadeCodigo.INSTITUTO,
   unidadeAcademica: true,
   vigenciaInicio: '2026-01-01',
   vigenciaFim: null,
@@ -48,7 +48,7 @@ const criarCommand: CriarUnidadeCommand = {
   sigla: unidadeSeed.sigla,
   codigo: unidadeSeed.codigo,
   unidadeSuperiorId: null,
-  tipo: TipoUnidade.instituto,
+  tipo: TipoUnidadeCodigo.INSTITUTO,
   unidadeAcademica: true,
   vigenciaInicio: '2026-01-01',
   vigenciaFim: null,
@@ -65,7 +65,7 @@ const atualizarCommand: AtualizarUnidadeCommand = {
   sigla: unidadeSeed.sigla,
   codigo: unidadeSeed.codigo,
   unidadeSuperiorId: null,
-  tipo: TipoUnidade.instituto,
+  tipo: TipoUnidadeCodigo.INSTITUTO,
   unidadeAcademica: true,
   vigenciaFim: null,
   motivoMudancaIdentificador: null,
@@ -150,12 +150,17 @@ describe('UnidadesApi', () => {
   it('expõe labels acentuados para tipos de unidade na UI', () => {
     expect(TIPOS_UNIDADE).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ value: TipoUnidade.proReitoria, label: 'Pró-Reitoria' }),
-        expect.objectContaining({ value: TipoUnidade.coordenacao, label: 'Coordenação' }),
-        expect.objectContaining({ value: TipoUnidade.divisao, label: 'Divisão' }),
-        expect.objectContaining({ value: TipoUnidade.nucleo, label: 'Núcleo' }),
+        expect.objectContaining({ value: TipoUnidadeCodigo.PRO_REITORIA, label: 'Pró-Reitoria' }),
+        expect.objectContaining({ value: TipoUnidadeCodigo.COORDENACAO, label: 'Coordenação' }),
+        expect.objectContaining({ value: TipoUnidadeCodigo.DIVISAO, label: 'Divisão' }),
+        expect.objectContaining({ value: TipoUnidadeCodigo.NUCLEO, label: 'Núcleo' }),
       ]),
     );
+  });
+
+  it('oferece os onze tipos de unidade pelo código, sem o valor nenhum', () => {
+    expect(TIPOS_UNIDADE.map((tipo) => tipo.value)).toEqual(Object.values(TipoUnidadeCodigo));
+    expect(TIPOS_UNIDADE).toHaveLength(11);
   });
 
   it('atualizar() faz PUT /api/organizacao/admin/unidades/{id} com Idempotency-Key', async () => {

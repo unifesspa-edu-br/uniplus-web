@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { rotuloDoTipo } from './tipos-de-unidade';
 import type { UnidadeDto } from '@uniplus/shared-data/organizacao';
 import { DrawerComponent } from '@uniplus/shared-ui/components';
 import { cidadeDaUnidade, vigenciaDaUnidade } from './rotulos-da-unidade';
@@ -20,6 +21,7 @@ export class UnidadeDetalheComponent {
   readonly editar = output<UnidadeDto>();
   readonly remover = output<UnidadeDto>();
 
+  protected readonly rotuloDoTipo = rotuloDoTipo;
   protected readonly cidade = cidadeDaUnidade;
   protected readonly vigencia = vigenciaDaUnidade;
 }

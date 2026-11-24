@@ -33,7 +33,7 @@ const REITORIA: Item = {
   sigla: 'REIT',
   codigo: '001',
   unidadeSuperiorId: null,
-  tipo: 'Reitoria',
+  tipo: 'REITORIA',
   unidadeAcademica: false,
   vigenciaInicio: '2020-01-01',
   vigenciaFim: null,
@@ -49,7 +49,7 @@ const INSTITUTO: Item = {
   slug: 'ice',
   sigla: 'ICE',
   codigo: '002',
-  tipo: 'Instituto',
+  tipo: 'INSTITUTO',
 };
 
 /** Atraso da recarga da lista após a escrita: o botão da linha ainda está indisponível quando o diálogo fecha. */

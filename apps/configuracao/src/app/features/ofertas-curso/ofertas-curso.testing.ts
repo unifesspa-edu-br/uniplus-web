@@ -16,7 +16,11 @@ import {
   OfertaCursoDto,
   TipoLocalOfertaCodigo,
 } from '@uniplus/shared-data/configuracao';
-import { ORGANIZACAO_BASE_PATH, UnidadeDto } from '@uniplus/shared-data/organizacao';
+import {
+  ORGANIZACAO_BASE_PATH,
+  TipoUnidadeCodigo,
+  UnidadeDto,
+} from '@uniplus/shared-data/organizacao';
 import { MockInstance, expect, vi } from 'vitest';
 import { EdicaoDasOfertasCurso } from './edicao-das-ofertas-curso';
 import { OfertasCursoPage } from './ofertas-curso.page';
@@ -76,7 +80,7 @@ export const ige = {
   sigla: 'IGE',
   codigo: 'IGE',
   unidadeSuperiorId: null,
-  tipo: 'Instituto',
+  tipo: TipoUnidadeCodigo.INSTITUTO,
   unidadeAcademica: true,
   vigenciaInicio: '2020-01-01',
   vigenciaFim: null,

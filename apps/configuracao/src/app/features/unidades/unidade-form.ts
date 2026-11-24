@@ -1,17 +1,17 @@
 import { AbstractControl, FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
 import {
-  TipoUnidade,
+  TipoUnidadeCodigo,
   type AtualizarUnidadeCommand,
   type CriarUnidadeCommand,
   type UnidadeDto,
 } from '@uniplus/shared-data/organizacao';
+import { OPCOES_DE_TIPO } from './tipos-de-unidade';
 import type { CidadeRef } from '@uniplus/shared-ui/components';
 import {
   controlNameFromBackendField,
   mensagemDeErroDoCampoComFormato,
   nullIfBlank,
 } from '../../shared/formulario';
-import { tipoDoRotulo } from './tipos-de-unidade';
 
 export interface UnidadeForm {
   nome: FormControl<string>;
@@ -20,7 +20,7 @@ export interface UnidadeForm {
   sigla: FormControl<string>;
   codigo: FormControl<string>;
   unidadeSuperiorId: FormControl<string>;
-  tipo: FormControl<string>;
+  tipo: FormControl<TipoUnidadeCodigo | ''>;
   unidadeAcademica: FormControl<boolean>;
   vigenciaInicio: FormControl<string>;
   vigenciaFim: FormControl<string>;
@@ -67,29 +67,52 @@ function campoDeTexto(...validators: ValidatorFn[]): FormControl<string> {
   return new FormControl('', { nonNullable: true, validators });
 }
 
-export function criarFormularioDeUnidade(): FormGroup<UnidadeForm> {
-  return new FormGroup<UnidadeForm>({
-    nome: campoDeTexto(
-      Validators.required,
-      Validators.minLength(NOME_TAMANHO_MINIMO),
-      Validators.maxLength(NOME_TAMANHO_MAXIMO),
-    ),
+function campoDoNome(): FormControl<string> {
+  return campoDeTexto(
+    Validators.required,
+    Validators.minLength(NOME_TAMANHO_MINIMO),
+    Validators.maxLength(NOME_TAMANHO_MAXIMO),
+  );
+}
+
+function campoObrigatorio(valorInicial: string): FormControl<string> {
+  return new FormControl(valorInicial, { nonNullable: true, validators: [Validators.required] });
+}
+
+function controlesDeIdentificacao(): Pick<
+  UnidadeForm,
+  'nome' | 'alias' | 'slug' | 'sigla' | 'codigo' | 'unidadeSuperiorId'
+> {
+  return {
+    nome: campoDoNome(),
     alias: campoDeTexto(Validators.maxLength(ALIAS_TAMANHO_MAXIMO)),
     slug: campoDeTexto(Validators.required),
     sigla: campoDeTexto(Validators.required, Validators.maxLength(SIGLA_TAMANHO_MAXIMO)),
     codigo: campoDeTexto(Validators.required, Validators.maxLength(CODIGO_TAMANHO_MAXIMO)),
     unidadeSuperiorId: campoDeTexto(),
-    tipo: new FormControl<string>(TipoUnidade.instituto, {
+  };
+}
+
+function controlesDeClassificacaoEVigencia(): Omit<
+  UnidadeForm,
+  keyof ReturnType<typeof controlesDeIdentificacao>
+> {
+  return {
+    tipo: new FormControl<TipoUnidadeCodigo | ''>(TipoUnidadeCodigo.INSTITUTO, {
       nonNullable: true,
       validators: [Validators.required],
     }),
     unidadeAcademica: new FormControl(false, { nonNullable: true }),
-    vigenciaInicio: new FormControl(dataAtualIso(), {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
+    vigenciaInicio: campoObrigatorio(dataAtualIso()),
     vigenciaFim: campoDeTexto(),
     motivoMudancaIdentificador: campoDeTexto(Validators.maxLength(MOTIVO_TAMANHO_MAXIMO)),
+  };
+}
+
+export function criarFormularioDeUnidade(): FormGroup<UnidadeForm> {
+  return new FormGroup<UnidadeForm>({
+    ...controlesDeIdentificacao(),
+    ...controlesDeClassificacaoEVigencia(),
   });
 }
 
@@ -101,7 +124,7 @@ export function valoresEmBrancoDaUnidade(): ValoresDaUnidade {
     sigla: '',
     codigo: '',
     unidadeSuperiorId: '',
-    tipo: TipoUnidade.instituto,
+    tipo: TipoUnidadeCodigo.INSTITUTO,
     unidadeAcademica: false,
     vigenciaInicio: dataAtualIso(),
     vigenciaFim: '',
@@ -117,7 +140,7 @@ export function valoresDaUnidade(unidade: UnidadeDto): ValoresDaUnidade {
     sigla: unidade.sigla,
     codigo: unidade.codigo,
     unidadeSuperiorId: unidade.unidadeSuperiorId ?? '',
-    tipo: tipoDoRotulo(unidade.tipo),
+    tipo: OPCOES_DE_TIPO.some((opcao) => opcao.value === unidade.tipo) ? unidade.tipo : '',
     unidadeAcademica: unidade.unidadeAcademica,
     vigenciaInicio: unidade.vigenciaInicio,
     vigenciaFim: unidade.vigenciaFim ?? '',
@@ -148,10 +171,8 @@ function trioDaCidade(cidade: CidadeRef | null) {
   };
 }
 
-export function comandoDeCriacao(
-  valor: ValoresDaUnidade,
-  cidade: CidadeRef | null,
-): CriarUnidadeCommand {
+/** O que o pedido de criar e o de atualizar levam igual. */
+function camposDoPedido(valor: ValoresDaUnidade, cidade: CidadeRef | null) {
   return {
     nome: valor.nome.trim(),
     alias: nullIfBlank(valor.alias),
@@ -159,12 +180,18 @@ export function comandoDeCriacao(
     sigla: valor.sigla.trim(),
     codigo: valor.codigo.trim(),
     unidadeSuperiorId: nullIfBlank(valor.unidadeSuperiorId),
-    tipo: valor.tipo as TipoUnidade,
+    tipo: valor.tipo || null,
     unidadeAcademica: valor.unidadeAcademica,
-    vigenciaInicio: valor.vigenciaInicio,
     vigenciaFim: nullIfBlank(valor.vigenciaFim),
     ...trioDaCidade(cidade),
   };
+}
+
+export function comandoDeCriacao(
+  valor: ValoresDaUnidade,
+  cidade: CidadeRef | null,
+): CriarUnidadeCommand {
+  return { ...camposDoPedido(valor, cidade), vigenciaInicio: valor.vigenciaInicio };
 }
 
 /** A atualização não leva o início da vigência: o campo é somente leitura na edição. */
@@ -175,17 +202,8 @@ export function comandoDeAtualizacao(
 ): AtualizarUnidadeCommand {
   return {
     id,
-    nome: valor.nome.trim(),
-    alias: nullIfBlank(valor.alias),
-    slug: valor.slug.trim(),
-    sigla: valor.sigla.trim(),
-    codigo: valor.codigo.trim(),
-    unidadeSuperiorId: nullIfBlank(valor.unidadeSuperiorId),
-    tipo: valor.tipo as TipoUnidade,
-    unidadeAcademica: valor.unidadeAcademica,
-    vigenciaFim: nullIfBlank(valor.vigenciaFim),
+    ...camposDoPedido(valor, cidade),
     motivoMudancaIdentificador: nullIfBlank(valor.motivoMudancaIdentificador),
-    ...trioDaCidade(cidade),
   };
 }
 

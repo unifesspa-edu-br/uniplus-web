@@ -1,3 +1,4 @@
+import { TipoUnidadeCodigo } from '@uniplus/shared-data/organizacao';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -36,7 +37,7 @@ export const reitoria: UnidadeDto = {
   sigla: 'REITORIA',
   codigo: 'REITORIA',
   unidadeSuperiorId: null,
-  tipo: 'Reitoria',
+  tipo: TipoUnidadeCodigo.REITORIA,
   unidadeAcademica: false,
   vigenciaInicio: '2026-01-01',
   vigenciaFim: null,
