@@ -1,121 +1,126 @@
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Subject } from 'rxjs';
-import { beforeEach, describe, expect, it } from 'vitest';
-
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
-import type { ApiResult } from '@uniplus/shared-core/http';
-import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-testing';
-import { ProcessosSeletivosApi, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
-
+import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { ConsultaDoAcompanhamento } from './consulta-do-acompanhamento';
-
-type Resposta = ApiResult<ProcessoSeletivoDto>;
-interface Chamada {
-  readonly id: string;
-  readonly resposta: Subject<Resposta>;
-}
 
 const ID_A = '11111111-1111-4111-8111-111111111111';
 const ID_B = '22222222-2222-4222-8222-222222222222';
-
-const processo = (id: string, nome: string) => okResult({ id, nome } as ProcessoSeletivoDto);
-const falha = (status: number): Resposta => errorResult(mockProblemDetails({ status }));
+const rota = (id: string) => `/api/selecao/processos-seletivos/${id}`;
 
 describe('ConsultaDoAcompanhamento', () => {
-  let chamadas: Chamada[];
-  let usuarioId: ReturnType<typeof signal<string | null>>;
   let consulta: ConsultaDoAcompanhamento;
+  let http: HttpTestingController;
+  let usuario: ReturnType<typeof signal<string | null>>;
+  let token: ReturnType<typeof signal<string>>;
 
   beforeEach(() => {
-    chamadas = [];
-    usuarioId = signal<string | null>('u1');
+    usuario = signal<string | null>('usuario');
+    token = signal('primeiro');
     TestBed.configureTestingModule({
       providers: [
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        { provide: SELECAO_BASE_PATH, useValue: '' },
         ConsultaDoAcompanhamento,
-        {
-          provide: ProcessosSeletivosApi,
-          useValue: {
-            obter: (id: string) => {
-              const resposta = new Subject<Resposta>();
-              chamadas.push({ id, resposta });
-              return resposta;
-            },
-          },
-        },
         {
           provide: UserContextService,
           useValue: {
-            isAuthenticated: () => usuarioId() !== null,
-            user: () => (usuarioId() === null ? null : { id: usuarioId() }),
+            isAuthenticated: () => usuario() !== null,
+            user: () => ({ id: usuario(), token: token() }),
           },
         },
       ],
     });
     consulta = TestBed.inject(ConsultaDoAcompanhamento);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify({ ignoreCancelled: true }));
+  const atualizar = async () => {
+    await Promise.resolve();
     TestBed.tick();
+  };
+  const abrir = async (id: string) => {
+    consulta.abrir(id);
+    await atualizar();
+  };
+  const responder = async (id: string, nome: string) => {
+    http.expectOne(rota(id)).flush({ id, nome });
+    await atualizar();
+  };
+  const recusar = async (id: string, status: number) => {
+    http.expectOne(rota(id)).flush({}, { status, statusText: 'Erro' });
+    await atualizar();
+  };
+
+  it('apresenta o processo lido', async () => {
+    await abrir(ID_A);
+    await responder(ID_A, 'Processo A');
+    expect(consulta.situacao()).toMatchObject({ estado: 'lido', processo: { nome: 'Processo A' } });
   });
 
-  const responder = (indice: number, r: Resposta) => chamadas[indice].resposta.next(r);
-  const estado = () => consulta.situacao().estado;
-
-  it('identificador malformado não consulta e diz não encontrado', () => {
-    consulta.abrir('abc');
-    expect(chamadas).toHaveLength(0);
-    expect(estado()).toBe('nao-encontrado');
+  it('apresenta não encontrado na resposta 404', async () => {
+    await abrir(ID_A);
+    await recusar(ID_A, 404);
+    expect(consulta.situacao().estado).toBe('nao-encontrado');
   });
 
-  it('abre o processo pelo recurso existente e apresenta o sucesso', () => {
-    consulta.abrir(ID_A);
-    expect(estado()).toBe('lendo');
-    responder(0, processo(ID_A, 'Vestibular'));
-    expect(consulta.situacao()).toMatchObject({ estado: 'lido', processo: { nome: 'Vestibular' } });
-  });
-
-  it.each([
-    [404, 'nao-encontrado'],
-    [403, 'acesso-negado'],
-    [500, 'falha'],
-  ])('status %i vira %s', (status, esperado) => {
-    consulta.abrir(ID_A);
-    responder(0, falha(status));
-    expect(estado()).toBe(esperado);
-  });
-
-  it('resposta tardia do processo A não altera o contexto do B', () => {
-    consulta.abrir(ID_A);
-    consulta.abrir(ID_B);
-    expect(estado()).toBe('lendo');
-    responder(0, processo(ID_A, 'A'));
-    expect(estado()).toBe('lendo');
-    responder(1, processo(ID_B, 'B'));
-    expect(consulta.situacao()).toMatchObject({ processo: { nome: 'B' } });
-  });
-
-  it('trocar o identificador limpa o processo anterior enquanto carrega', () => {
-    consulta.abrir(ID_A);
-    responder(0, processo(ID_A, 'A'));
-    consulta.abrir(ID_B);
-    expect(consulta.situacao()).toEqual({ estado: 'lendo' });
-  });
-
-  it('a nova tentativa consulta o identificador atual e só vale após falha', () => {
-    consulta.abrir(ID_A);
+  it('repete o identificador atual somente após falha', async () => {
+    await abrir(ID_A);
     consulta.tentarNovamente();
-    expect(chamadas).toHaveLength(1);
-    responder(0, falha(500));
+    await recusar(ID_A, 500);
+    expect(consulta.situacao().estado).toBe('falha');
+    await abrir(ID_B);
+    await recusar(ID_B, 500);
     consulta.tentarNovamente();
-    expect(chamadas.map((c) => c.id)).toEqual([ID_A, ID_A]);
-    expect(estado()).toBe('lendo');
+    await atualizar();
+    await responder(ID_B, 'Processo B');
+    expect(consulta.situacao().estado).toBe('lido');
   });
 
-  it('a troca de sessão limpa o contexto e ignora a resposta antiga', () => {
-    consulta.abrir(ID_A);
-    usuarioId.set('u2');
-    TestBed.tick();
-    expect(estado()).toBe('lendo');
-    expect(chamadas).toHaveLength(2);
-    responder(0, processo(ID_A, 'do usuário antigo'));
-    expect(estado()).toBe('lendo');
+  it('recusa identificador malformado sem consulta', async () => {
+    await abrir('invalido');
+    http.expectNone(() => true);
+    expect(consulta.situacao().estado).toBe('nao-encontrado');
+  });
+
+  it('cancela a leitura anterior ao trocar de identificador', async () => {
+    await abrir(ID_A);
+    const anterior = http.expectOne(rota(ID_A));
+    await abrir(ID_B);
+    expect(anterior.cancelled).toBe(true);
+    expect(() => anterior.flush({ id: ID_A, nome: 'Antigo' })).toThrow();
+    expect(consulta.situacao().estado).toBe('lendo');
+    await responder(ID_B, 'Atual');
+    expect(consulta.situacao()).toMatchObject({ processo: { nome: 'Atual' } });
+  });
+
+  it('refaz a leitura na perda e no retorno da sessão', async () => {
+    await abrir(ID_A);
+    await responder(ID_A, 'Anterior');
+    usuario.set(null);
+    await atualizar();
+    expect(consulta.situacao().estado).toBe('lendo');
+    await recusar(ID_A, 401);
+    expect(consulta.situacao().estado).toBe('falha');
+    usuario.set('usuario');
+    await atualizar();
+    expect(consulta.situacao().estado).toBe('lendo');
+    await responder(ID_A, 'Atual');
+    expect(consulta.situacao()).toMatchObject({ processo: { nome: 'Atual' } });
+  });
+
+  it('não reconsulta na renovação do token do mesmo usuário', async () => {
+    await abrir(ID_A);
+    await responder(ID_A, 'Atual');
+    token.set('renovado');
+    await atualizar();
+    http.expectNone(rota(ID_A));
+    expect(consulta.situacao().estado).toBe('lido');
   });
 });

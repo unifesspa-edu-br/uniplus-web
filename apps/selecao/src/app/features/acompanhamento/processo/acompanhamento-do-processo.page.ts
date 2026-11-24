@@ -71,13 +71,6 @@ const TITULO_GENERICO = 'Acompanhamento';
       @case ('nao-encontrado') {
         <ui-empty-state heading="Processo seletivo não encontrado" />
       }
-      @case ('acesso-negado') {
-        <ui-empty-state
-          variant="error"
-          heading="Acesso negado"
-          description="Você não tem permissão para acompanhar este processo seletivo."
-        />
-      }
       @case ('lido') {
         <section aria-labelledby="acompanhamento-secao">
           <h2 id="acompanhamento-secao" class="acompanhamento__secao">Acompanhamento</h2>
@@ -108,9 +101,7 @@ export class AcompanhamentoDoProcessoPage {
     pendente: computed(() => this.consulta.situacao().estado === 'lendo'),
     recarregar: () => this.consulta.tentarNovamente(),
     destino: () => this.host.nativeElement.querySelector('h1'),
-    recusada: computed(() =>
-      ['nao-encontrado', 'acesso-negado'].includes(this.consulta.situacao().estado),
-    ),
+    recusada: computed(() => this.consulta.situacao().estado === 'nao-encontrado'),
   });
 
   protected readonly titulo = computed(() => this.nome() ?? TITULO_GENERICO);
