@@ -82,8 +82,8 @@ describe('CronogramaPassoComponent: foco na primeira recusa da regra de recurso'
 
   it.each([
     ['.prazoUnidade', 'prazo-interposicao-unidade'],
-    ['.efeitoSuspensivo', 'efeito-opcao-semEfeitoSuspensivo'],
-    ['.guardaDaVaga', 'guarda-opcao-ateOResultadoDefinitivo'],
+    ['.efeitoSuspensivo', 'efeito-opcao-SEM_EFEITO_SUSPENSIVO'],
+    ['.guardaDaVaga', 'guarda-opcao-ATE_O_RESULTADO_DEFINITIVO'],
   ])(
     'leva o foco ao controle de %s dos parâmetros, na opção marcada quando é uma escolha',
     async (campo, sufixo) => {

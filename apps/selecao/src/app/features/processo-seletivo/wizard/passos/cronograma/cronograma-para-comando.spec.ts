@@ -140,12 +140,12 @@ describe('recurso da etapa no ida-e-volta', () => {
 
     expect(comoComandoDeEtapa(etapa).recursos?.[0]).toMatchObject({
       prazoValor: 2,
-      prazoUnidade: 'diasUteis',
+      prazoUnidade: 'DIAS_UTEIS',
       admiteInstanciaSuperior: true,
       prazoSegundaInstanciaValor: 3,
-      prazoSegundaInstanciaUnidade: 'diasUteis',
-      efeitoSuspensivo: 'semEfeitoSuspensivo',
-      guardaDaVaga: 'ateOResultadoDefinitivo',
+      prazoSegundaInstanciaUnidade: 'DIAS_UTEIS',
+      efeitoSuspensivo: 'SEM_EFEITO_SUSPENSIVO',
+      guardaDaVaga: 'ATE_O_RESULTADO_DEFINITIVO',
     });
   });
 
@@ -167,7 +167,7 @@ describe('recurso da etapa no ida-e-volta', () => {
     expect(comoComandoDeEtapa(etapa).recursos?.[0]).toMatchObject({
       admiteInstanciaSuperior: false,
       prazoSegundaInstanciaValor: 3,
-      prazoSegundaInstanciaUnidade: 'diasUteis',
+      prazoSegundaInstanciaUnidade: 'DIAS_UTEIS',
     });
   });
 
@@ -200,10 +200,10 @@ describe('recurso da etapa no ida-e-volta', () => {
     const comando = comoComandoDeEtapa(etapa);
 
     expect(comando.recursos?.[0]).toMatchObject({
-      ancora: 'atoPublicado',
+      ancora: 'PUBLICACAO_DO_ATO',
       regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
       prazoValor: 5,
-      prazoUnidade: 'diasUteis',
+      prazoUnidade: 'DIAS_UTEIS',
       atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
     });
   });
@@ -216,7 +216,7 @@ describe('fase no comando', () => {
     atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
     ...PARAMETROS_COM_INSTANCIA_SUPERIOR,
     prazoSegundaInstanciaValor: '48',
-    prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.horas,
+    prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.HORAS,
     leitura: umaLeituraDoRecurso(),
     procedimentos: [],
   };
@@ -239,12 +239,12 @@ describe('fase no comando', () => {
       regraVersao: 'v1',
       atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
       prazoValor: 2,
-      prazoUnidade: 'diasUteis',
+      prazoUnidade: 'DIAS_UTEIS',
       admiteInstanciaSuperior: true,
       prazoSegundaInstanciaValor: 48,
-      prazoSegundaInstanciaUnidade: 'horas',
-      efeitoSuspensivo: 'semEfeitoSuspensivo',
-      guardaDaVaga: 'ateOResultadoDefinitivo',
+      prazoSegundaInstanciaUnidade: 'HORAS',
+      efeitoSuspensivo: 'SEM_EFEITO_SUSPENSIVO',
+      guardaDaVaga: 'ATE_O_RESULTADO_DEFINITIVO',
       procedimentos: [],
     });
   });

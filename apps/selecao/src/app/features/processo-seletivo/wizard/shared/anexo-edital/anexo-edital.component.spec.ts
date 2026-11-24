@@ -189,7 +189,7 @@ describe('AnexoEditalComponent', () => {
     await anexarComSucesso(pdf('edital-de-abertura-do-processo-seletivo-de-medicina-2027.pdf'));
 
     store.remoteSnapshot.set({
-      status: StatusProcessoCodigo.publicado,
+      status: StatusProcessoCodigo.PUBLICADO,
     } as unknown as ProcessoSeletivoDto);
     detectar();
 

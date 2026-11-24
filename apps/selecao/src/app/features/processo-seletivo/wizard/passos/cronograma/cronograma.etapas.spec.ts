@@ -235,15 +235,15 @@ describe('CronogramaPassoComponent: etapas', () => {
     comEtapasEmFases(['AVALIACAO']);
     const etapa = cronograma.etapas.at(0);
 
-    edicao.escolherCarater(etapa, 'classificatoria');
+    edicao.escolherCarater(etapa, 'CLASSIFICATORIA');
     expect(edicao.etapaComponeNota(etapa)).toBe(true);
     expect(edicao.etapaElimina(etapa)).toBe(false);
 
-    edicao.escolherCarater(etapa, 'eliminatoria');
+    edicao.escolherCarater(etapa, 'ELIMINATORIA');
     expect(edicao.etapaComponeNota(etapa)).toBe(false);
     expect(edicao.etapaElimina(etapa)).toBe(true);
 
-    edicao.escolherCarater(etapa, 'ambas');
+    edicao.escolherCarater(etapa, 'AMBAS');
     expect(edicao.etapaComponeNota(etapa)).toBe(true);
     expect(edicao.etapaElimina(etapa)).toBe(true);
   });
@@ -259,12 +259,12 @@ describe('CronogramaPassoComponent: etapas', () => {
     etapa.controls.peso.setValue('3');
     etapa.controls.notaMinima.setValue('5');
 
-    edicao.escolherCarater(etapa, 'eliminatoria');
+    edicao.escolherCarater(etapa, 'ELIMINATORIA');
 
     expect(etapa.controls.peso.value, 'a eliminatória não entra no divisor da média').toBe('');
     expect(etapa.controls.notaMinima.value, 'o corte continua sendo dela').toBe('5');
 
-    edicao.escolherCarater(etapa, 'classificatoria');
+    edicao.escolherCarater(etapa, 'CLASSIFICATORIA');
 
     expect(etapa.controls.notaMinima.value, 'quem não elimina não tem corte').toBe('');
   });

@@ -26,7 +26,7 @@ export const MODALIDADES = MODALIDADES_CASCATA.map((modalidade, indice) => ({
 export const REGRA_CASCATA = {
   codigo: 'REMANEJ-CASCATA-LEI-12711',
   versao: 'v1',
-  tipo: 'criterio_remanejamento',
+  tipo: { codigo: 'CRITERIO_REMANEJAMENTO', rotulo: 'Remanejamento' },
   declaracaoDaRegra: {
     fallbackCodigo: 'AC',
     ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
@@ -41,7 +41,7 @@ export const REGRA_CASCATA = {
 export const REGRA_CASCATA_ANTERIOR = {
   codigo: 'REMANEJ-CASCATA-LEI-12711',
   versao: 'v0',
-  tipo: 'criterio_remanejamento',
+  tipo: { codigo: 'CRITERIO_REMANEJAMENTO', rotulo: 'Remanejamento' },
   declaracaoDaRegra: {
     fallbackCodigo: 'AC',
     ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
@@ -113,7 +113,7 @@ function responderCatalogos(controller: HttpTestingController): void {
   for (const requisicao of controller.match(() => true)) {
     const url = requisicao.request.urlWithParams;
     if (url.includes('modalidades')) requisicao.flush(MODALIDADES);
-    else if (url.includes('tipo=criterio_remanejamento')) requisicao.flush([REGRA_CASCATA]);
+    else if (url.includes('tipo=CRITERIO_REMANEJAMENTO')) requisicao.flush([REGRA_CASCATA]);
     else requisicao.flush([]);
   }
 }

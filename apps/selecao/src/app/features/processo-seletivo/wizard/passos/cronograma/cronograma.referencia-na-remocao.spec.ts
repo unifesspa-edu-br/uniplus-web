@@ -9,7 +9,7 @@ import { TestBed } from '@angular/core/testing';
 const prazo = {
   escolha: 'comPrazo',
   valor: 90,
-  unidade: 'dias',
+  unidade: 'DIAS',
   referencia: { tipo: 'inicioDaFase', data: null, faseCodigo: 'AVALIACAO' },
   efeitoForaDoPrazo: 'recusarDocumento',
 };

@@ -101,7 +101,7 @@ const REGRAS_RECURSO = [
   {
     codigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
     versao: 'v1',
-    tipo: 'regra_prazo_recurso',
+    tipo: 'REGRA_PRAZO_RECURSO',
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: 'Lei 9.784/1999, art. 59',
@@ -249,13 +249,13 @@ function prazoDeInterposicao(page: Page) {
   };
 }
 
-/** Liga o recurso e requer uma banca com recorte — o estado mais cheio da tela. */
+/** Liga o recurso e requer uma banca com competência definida — o estado mais cheio da tela. */
 async function ligarRecursoComBanca(page: Page): Promise<void> {
   // O controle nativo é escondido pela anatomia do design system — quem recebe o clique
   // é o rótulo, como acontece com quem usa a tela.
   await page.getByText('Cabe recurso do que esta fase publica').click();
   await prazoDeInterposicao(page).valor.fill('2');
-  await prazoDeInterposicao(page).unidade.selectOption('diasUteis');
+  await prazoDeInterposicao(page).unidade.selectOption('DIAS_UTEIS');
 
   await acrescentarBanca(listaDaFase(page), 'Banca de heteroidentificação');
   await page.getByText('Raça e etnia').click();

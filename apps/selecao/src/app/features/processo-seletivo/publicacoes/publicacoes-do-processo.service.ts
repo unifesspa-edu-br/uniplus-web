@@ -163,7 +163,7 @@ export class PublicacoesDoProcesso {
   /** O processo em rascunho ainda não tem edital vigente, e portanto nenhum item a publicar. */
   private async lerPrevistosDoProcessoPublicado(processoId: string, leitura: number): Promise<void> {
     const processo = this.processo();
-    if (processo.estado !== 'lido' || processo.dados.status.codigo === StatusProcessoCodigo.rascunho) return;
+    if (processo.estado !== 'lido' || processo.dados.status.codigo === StatusProcessoCodigo.RASCUNHO) return;
     await this.lerPrevistos(processoId, leitura);
   }
 

@@ -146,7 +146,7 @@ describe('CronogramaPassoComponent: tipos de etapa', () => {
         {
           id: 'etapa-primeira',
           nome: 'Prova',
-          carater: CaraterEtapaCodigo.classificatoria,
+          carater: CaraterEtapaCodigo.CLASSIFICATORIA,
           tipoEtapaOrigemId: TIPO_ETAPA,
           peso: '1',
           notaMinima: '',
@@ -163,7 +163,7 @@ describe('CronogramaPassoComponent: tipos de etapa', () => {
         {
           id: 'etapa-segunda',
           nome: 'Redação',
-          carater: CaraterEtapaCodigo.classificatoria,
+          carater: CaraterEtapaCodigo.CLASSIFICATORIA,
           tipoEtapaOrigemId: TIPO_ETAPA,
           peso: '2',
           notaMinima: '',

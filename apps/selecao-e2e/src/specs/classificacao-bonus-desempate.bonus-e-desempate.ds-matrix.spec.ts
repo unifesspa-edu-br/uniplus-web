@@ -10,21 +10,21 @@ test.beforeEach(async ({ page }) => {
   await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
 });
 
-test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
+test.describe('Classificação, FADA e desempate — matriz DS @ds', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     await abrirProcessoNovo(page, testInfo);
   });
 
-  test.describe('Bônus', () => {
-    test('não viola WCAG 2.1 AA com bônus declarado', async ({ page }, testInfo) => {
-      await irAoPasso(page, 'Bônus', testInfo);
-      await page.getByLabel('Aplica o bônus regional', { exact: true }).check();
+  test.describe('FADA', () => {
+    test('não viola WCAG 2.1 AA com FADA declarado', async ({ page }, testInfo) => {
+      await irAoPasso(page, 'FADA', testInfo);
+      await page.getByLabel('Aplica o FADA', { exact: true }).check();
       await page
-        .getByLabel('Regra do bônus', { exact: true })
+        .getByLabel('Regra do FADA', { exact: true })
         .selectOption('BONUS-MULTIPLICATIVO|1.0');
       await page.getByLabel('Fator', { exact: true }).fill('1.2');
       await page
-        .getByLabel('Base Legal do bônus', { exact: true })
+        .getByLabel('Base Legal do FADA', { exact: true })
         .selectOption(BASE_LEGAL_BONUS_REGIONAL_ID);
 
       const resultado = await runAxeWcagAA(page);
@@ -32,8 +32,8 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
     });
 
     test('não viola WCAG 2.1 AA com a conferência acusando', async ({ page }, testInfo) => {
-      await irAoPasso(page, 'Bônus', testInfo);
-      await page.getByLabel('Aplica o bônus regional', { exact: true }).check();
+      await irAoPasso(page, 'FADA', testInfo);
+      await page.getByLabel('Aplica o FADA', { exact: true }).check();
       await page.getByLabel('Fator', { exact: true }).fill('0');
 
       const resultado = await runAxeWcagAA(page);
@@ -54,17 +54,14 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       const regraDoCriterio = page.getByLabel('Regra do critério', { exact: true });
 
       await page.getByRole('button', { name: '+ Acrescentar critério' }).click();
-      await regraDoCriterio.nth(0).selectOption('DESEMPATE-MAIOR-IDADE|1.0');
+      await regraDoCriterio.nth(0).selectOption('DESEMPATE_MAIOR_IDADE|1.0');
 
       await page.getByRole('button', { name: '+ Acrescentar critério' }).click();
-      await regraDoCriterio.nth(1).selectOption('DESEMPATE-IDOSO|1.0');
+      await regraDoCriterio.nth(1).selectOption('DESEMPATE_IDOSO|1.0');
       await page.getByLabel('Idade mínima', { exact: true }).fill('60');
 
       await page.getByRole('button', { name: '+ Acrescentar critério' }).click();
-      await regraDoCriterio.nth(2).selectOption('DESEMPATE-CONDICAO-SOBRE-DADO|1.0');
-      // Fato, comparação e valor vêm do catálogo institucional: os três são vocabulário
-      // fechado do servidor, e antes eram campos de texto que aceitavam "lte" para ser
-      // recusado no 422.
+      await regraDoCriterio.nth(2).selectOption('DESEMPATE_CONDICAO_SOBRE_DADO|1.0');
       await page.getByLabel('Fato do candidato', { exact: true }).selectOption('RENDA_PER_CAPITA');
       await page.getByLabel('Comparação', { exact: true }).selectOption('MENOR_IGUAL');
       await page.getByLabel('Valor', { exact: true }).fill('1');

@@ -1,4 +1,8 @@
-import { FinalidadeFormularioCodigo } from '@uniplus/shared-data/selecao';
+import {
+  BlocoSistemaCodigo,
+  TipoEtapaFormularioCodigo,
+  FinalidadeFormularioCodigo,
+} from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { of } from 'rxjs';
 import {
@@ -76,8 +80,8 @@ describe('InscricaoDoCandidatoPage', () => {
         codigo: 'DOCUMENTOS',
         codigoNasRegras: null,
         ordem: 3,
-        tipo: 'BLOCO',
-        bloco: 'COMPROVACAO_DOCUMENTAL',
+        tipo: TipoEtapaFormularioCodigo.BLOCO,
+        bloco: BlocoSistemaCodigo.COMPROVACAO_DOCUMENTAL,
         apresentacao: { titulo: 'Documentos', descricao: null, aviso: null },
       },
     ],
@@ -178,7 +182,7 @@ describe('InscricaoDoCandidatoPage', () => {
                   nomeParaDownload: null,
                   situacao: { codigo: situacao, rotulo: 'Situação de teste' },
                   mensagem:
-                    situacao === SituacaoDoArquivoDoCandidatoCodigo.verificado
+                    situacao === SituacaoDoArquivoDoCandidatoCodigo.VERIFICADO
                       ? null
                       : 'Arquivo em verificação. Isso costuma levar poucos segundos.',
                 },
@@ -197,7 +201,7 @@ describe('InscricaoDoCandidatoPage', () => {
     cenario.servico.formulario = COM_DOCUMENTOS;
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
-      avaliacao: comArquivoEm(SituacaoDoArquivoDoCandidatoCodigo.emVerificacao),
+      avaliacao: comArquivoEm(SituacaoDoArquivoDoCandidatoCodigo.EM_VERIFICACAO),
     });
     const tela = await cenario.abrir();
 
@@ -207,8 +211,8 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('consulta a verificação com espera crescente até o resultado e então libera o envio', async () => {
     const respostas = [
-      comArquivoEm(SituacaoDoArquivoDoCandidatoCodigo.emVerificacao),
-      comArquivoEm(SituacaoDoArquivoDoCandidatoCodigo.verificado),
+      comArquivoEm(SituacaoDoArquivoDoCandidatoCodigo.EM_VERIFICACAO),
+      comArquivoEm(SituacaoDoArquivoDoCandidatoCodigo.VERIFICADO),
     ];
     cenario.servico.avaliar = (_: string, request: AvaliacaoDaInscricaoRequest) => {
       cenario.servico.avaliacoes.push(request);
@@ -217,7 +221,7 @@ describe('InscricaoDoCandidatoPage', () => {
     cenario.servico.formulario = COM_DOCUMENTOS;
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
-      avaliacao: comArquivoEm(SituacaoDoArquivoDoCandidatoCodigo.emVerificacao),
+      avaliacao: comArquivoEm(SituacaoDoArquivoDoCandidatoCodigo.EM_VERIFICACAO),
     });
     const tela = await cenario.abrir();
     const avancar = async (ms: number): Promise<void> => {

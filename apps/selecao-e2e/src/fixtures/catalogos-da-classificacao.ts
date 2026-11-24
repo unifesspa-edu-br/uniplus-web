@@ -23,28 +23,28 @@ function regra(codigo: string, tipo: string, baseLegal: string) {
 }
 
 const REGRAS_CALCULO = [
-  regra('FORMULA-MEDIA-PONDERADA', 'regra_calculo', 'Resolução CEPS 12/2026'),
-  regra('CLASSIFICACAO-IMPORTADA', 'regra_calculo', 'Portaria MEC 468/2023'),
+  regra('FORMULA-MEDIA-PONDERADA', 'REGRA_CALCULO', 'Resolução CEPS 12/2026'),
+  regra('CLASSIFICACAO-IMPORTADA', 'REGRA_CALCULO', 'Portaria MEC 468/2023'),
 ];
 const REGRAS_ARREDONDAMENTO = [
-  regra('ARRED-TRUNCAR', 'regra_arredondamento', 'Edital padrão PSIQ'),
+  regra('ARRED-TRUNCAR', 'REGRA_ARREDONDAMENTO', 'Edital padrão PSIQ'),
 ];
 const REGRAS_ORDEM_ALOCACAO = [
   regra(
     'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
-    'regra_ordem_alocacao',
+    'REGRA_ORDEM_ALOCACAO',
     'UNI-REQ-0045 — processamento da 1ª opção antes da 2ª',
   ),
 ];
 const REGRAS_ELIMINACAO = [
-  regra('ELIMINACAO-ZERO-EM-AREA', 'regra_eliminacao', 'Resolução 805/2020, art. 5º'),
-  regra('ELIMINACAO-CORTE-EM-AREA', 'regra_eliminacao', 'Resolução 805/2024, art. 6º'),
-  regra('ELIMINACAO-AUSENCIA-NA-ETAPA', 'regra_eliminacao', 'Edital do processo'),
+  regra('ELIMINACAO_ZERO_EM_AREA', 'REGRA_ELIMINACAO', 'Resolução 805/2020, art. 5º'),
+  regra('ELIMINACAO_CORTE_EM_AREA', 'REGRA_ELIMINACAO', 'Resolução 805/2024, art. 6º'),
+  regra('ELIMINACAO_AUSENCIA_NA_ETAPA', 'REGRA_ELIMINACAO', 'Edital do processo'),
 ];
 const REGRAS_BONUS = [
   regra(
     'BONUS-MULTIPLICATIVO',
-    'regra_bonus',
+    'REGRA_FADA',
     'Bônus multiplicativo aplicado à nota final após os pesos das áreas do ENEM, sem teto por padrão',
   ),
 ];
@@ -94,10 +94,10 @@ export const PESOS_AREA_ENEM = [
 }));
 
 const CRITERIOS_DESEMPATE = [
-  regra('DESEMPATE-MAIOR-IDADE', 'criterio_desempate', 'Costume administrativo'),
-  regra('DESEMPATE-IDOSO', 'criterio_desempate', 'Lei 10.741/2003, art. 27'),
-  regra('DESEMPATE-CONDICAO-SOBRE-DADO', 'criterio_desempate', 'Definido por cada edital'),
-  regra('DESEMPATE-MAIOR-NOTA-AREA-ENEM', 'criterio_desempate', 'Definido por cada edital'),
+  regra('DESEMPATE_MAIOR_IDADE', 'CRITERIO_DESEMPATE', 'Costume administrativo'),
+  regra('DESEMPATE_IDOSO', 'CRITERIO_DESEMPATE', 'Lei 10.741/2003, art. 27'),
+  regra('DESEMPATE_CONDICAO_SOBRE_DADO', 'CRITERIO_DESEMPATE', 'Definido por cada edital'),
+  regra('DESEMPATE_MAIOR_NOTA_AREA_ENEM', 'CRITERIO_DESEMPATE', 'Definido por cada edital'),
 ];
 
 /**
@@ -112,9 +112,9 @@ const FATOS_CANDIDATO = [
       codigo: 'RENDA_PER_CAPITA',
       nome: 'Renda familiar per capita',
       descricao: null,
-      dominio: 'NUMERICO',
-      origem: 'DERIVADO',
-      cardinalidade: 'ESCALAR',
+      dominio: { codigo: 'NUMERICO', rotulo: 'Numérico' },
+      origem: { codigo: 'CALCULADO', rotulo: 'Calculado' },
+      cardinalidade: { codigo: 'VALOR_UNICO', rotulo: 'Valor único' },
       valoresDominio: null,
       pontoResolucao: 'INSCRICAO',
       binding: 'ATRIBUTO_CANDIDATO:RENDA_PER_CAPITA',
@@ -131,9 +131,9 @@ const FATOS_CANDIDATO = [
       codigo: 'COR_RACA',
       nome: 'Cor ou raça',
       descricao: null,
-      dominio: 'CATEGORICO',
-      origem: 'DECLARADO',
-      cardinalidade: 'ESCALAR',
+      dominio: { codigo: 'OPCAO', rotulo: 'Opção' },
+      origem: { codigo: 'DECLARADO', rotulo: 'Declarado' },
+      cardinalidade: { codigo: 'VALOR_UNICO', rotulo: 'Valor único' },
       valoresDominio: ['BRANCA', 'PRETA', 'PARDA', 'INDIGENA', 'AMARELA'],
       pontoResolucao: 'INSCRICAO',
       binding: 'CAMPO_INSCRICAO:COR_RACA',
@@ -147,12 +147,12 @@ const FATOS_CANDIDATO = [
 ];
 
 const REGRAS_POR_TIPO: Record<string, readonly unknown[]> = {
-  regra_calculo: REGRAS_CALCULO,
-  regra_arredondamento: REGRAS_ARREDONDAMENTO,
-  regra_ordem_alocacao: REGRAS_ORDEM_ALOCACAO,
-  regra_eliminacao: REGRAS_ELIMINACAO,
-  regra_bonus: REGRAS_BONUS,
-  criterio_desempate: CRITERIOS_DESEMPATE,
+  REGRA_CALCULO: REGRAS_CALCULO,
+  REGRA_ARREDONDAMENTO: REGRAS_ARREDONDAMENTO,
+  REGRA_ORDEM_ALOCACAO: REGRAS_ORDEM_ALOCACAO,
+  REGRA_ELIMINACAO: REGRAS_ELIMINACAO,
+  REGRA_FADA: REGRAS_BONUS,
+  CRITERIO_DESEMPATE: CRITERIOS_DESEMPATE,
 };
 
 /**

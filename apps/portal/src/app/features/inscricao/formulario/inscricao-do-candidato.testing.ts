@@ -1,4 +1,7 @@
 import {
+  BlocoSistemaCodigo,
+  TipoEtapaFormularioCodigo,
+  TipoObrigatoriedadeCodigo,
   type FormularioRenderizavelDto,
   TipoRenderizacaoCodigo,
 } from '@uniplus/shared-data/selecao';
@@ -46,8 +49,8 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
         codigo: 'REVISAO',
         codigoNasRegras: null,
         ordem: 2,
-        tipo: 'BLOCO',
-        bloco: 'REVISAO_E_ACEITE',
+        tipo: TipoEtapaFormularioCodigo.BLOCO,
+        bloco: BlocoSistemaCodigo.REVISAO_E_ACEITE,
         apresentacao: { titulo: 'Revisão e aceite', descricao: null, aviso: null },
       },
     ],
@@ -119,7 +122,10 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
       termos: [
         {
           codigo: 'Inscricao:VERACIDADE',
-          regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
+          regras: {
+            exibicao: null,
+            obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null },
+          },
         },
       ],
       derivacoes: [],
@@ -133,7 +139,7 @@ function secao(codigo: string, ordem: number, titulo: string): EtapaDoFormulario
     codigo,
     codigoNasRegras: `Inscricao:${codigo}`,
     ordem,
-    tipo: 'SECAO',
+    tipo: TipoEtapaFormularioCodigo.SECAO,
     bloco: null,
     apresentacao: { titulo, descricao: null, aviso: null },
   };
@@ -145,7 +151,7 @@ export function item(fatoCodigo: string, formato: string | null = null): ItemDas
     fatoCodigo,
     regras: {
       exibicao: null,
-      obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+      obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null },
       restricoes: [],
       impedimento: null,
     },

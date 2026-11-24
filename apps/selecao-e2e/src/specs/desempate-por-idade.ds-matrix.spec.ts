@@ -8,7 +8,7 @@ import { instalarPreferencia, temaDoProject } from '../support/tema';
 import { responder, responderCom } from '../support/responder';
 import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 
-type CriterioDeIdade = 'DESEMPATE-MAIOR-IDADE' | 'DESEMPATE-IDOSO';
+type CriterioDeIdade = 'DESEMPATE_MAIOR_IDADE' | 'DESEMPATE_IDOSO';
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -20,7 +20,7 @@ function regra(codigo: string, baseLegal: string) {
   return {
     codigo,
     versao: '1.0',
-    tipo: 'criterio_desempate',
+    tipo: 'CRITERIO_DESEMPATE',
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal,
@@ -30,8 +30,8 @@ function regra(codigo: string, baseLegal: string) {
 }
 
 const REGRAS_DE_DESEMPATE = [
-  regra('DESEMPATE-MAIOR-IDADE', 'Costume administrativo'),
-  regra('DESEMPATE-IDOSO', 'Lei 10.741/2003, art. 27'),
+  regra('DESEMPATE_MAIOR_IDADE', 'Costume administrativo'),
+  regra('DESEMPATE_IDOSO', 'Lei 10.741/2003, art. 27'),
 ];
 
 /** O dado pelo qual o desempate por maior idade ordena, como o catálogo de fatos o publica. */
@@ -42,9 +42,9 @@ const FATOS_DO_CANDIDATO = [
       codigo: 'DATA_NASCIMENTO',
       nome: 'Data de nascimento',
       descricao: null,
-      dominio: 'DATA',
-      origem: 'DECLARADO',
-      cardinalidade: 'ESCALAR',
+      dominio: { codigo: 'DATA', rotulo: 'Data' },
+      origem: { codigo: 'DECLARADO', rotulo: 'Declarado' },
+      cardinalidade: { codigo: 'VALOR_UNICO', rotulo: 'Valor único' },
       valoresDominio: null,
       pontoResolucao: 'INSCRICAO',
       binding: 'CAMPO_INSCRICAO:DATA_NASCIMENTO',
@@ -77,7 +77,7 @@ test.describe('Desempate por idade e formulário — matriz DS @ds', () => {
   test.describe('idoso sem apuração da idade', () => {
     test.describe('passo Desempate', () => {
       test.beforeEach(async ({ page }, testInfo) => {
-        await declararCriterio(page, testInfo, 'DESEMPATE-IDOSO');
+        await declararCriterio(page, testInfo, 'DESEMPATE_IDOSO');
       });
 
       test('avisa a incoerência e não viola WCAG 2.1 AA', async ({ page }) => {
@@ -93,7 +93,7 @@ test.describe('Desempate por idade e formulário — matriz DS @ds', () => {
 
     test.describe('passo Formulários', () => {
       test.beforeEach(async ({ page }, testInfo) => {
-        await declararCriterio(page, testInfo, 'DESEMPATE-IDOSO');
+        await declararCriterio(page, testInfo, 'DESEMPATE_IDOSO');
         await page.locator('#desemp-ir-formulario-apuracao').click();
         await expect(page.getByRole('heading', { level: 1 })).toContainText('Formulários');
       });
@@ -132,7 +132,7 @@ async function declararCriterio(
   await irAoPasso(page, 'Desempate', testInfo);
   await page.getByRole('button', { name: '+ Acrescentar critério' }).click();
   await page.getByLabel('Regra do critério', { exact: true }).selectOption(`${codigo}|1.0`);
-  if (codigo === 'DESEMPATE-IDOSO') {
+  if (codigo === 'DESEMPATE_IDOSO') {
     await page.getByLabel('Idade mínima', { exact: true }).fill('60');
   }
 }
@@ -166,7 +166,7 @@ async function mockarApi(page: Page): Promise<void> {
     const tipo = new URL(route.request().url()).searchParams.get('tipo') ?? '';
     await responderCom(
       route,
-      tipo === 'criterio_desempate' ? REGRAS_DE_DESEMPATE : [],
+      tipo === 'CRITERIO_DESEMPATE' ? REGRAS_DE_DESEMPATE : [],
       CORS_HEADERS,
     );
   });

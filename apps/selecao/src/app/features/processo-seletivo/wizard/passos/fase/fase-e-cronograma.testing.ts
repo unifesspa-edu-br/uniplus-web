@@ -139,7 +139,7 @@ export const PROCESSO_COM_ETAPA_GRAVADA = {
     nome: 'Vestibular',
   },
   status: 'rascunho',
-  origemCandidatos: 'inscricaoPropria',
+  origemCandidatos: 'INSCRICAO_PROPRIA',
   unidadeAdministradora: {
     origemId: '01960000-0000-7000-0000-0000000000u1',
     sigla: 'IGE',
@@ -204,7 +204,7 @@ const faseDoCertame = (
 const ETAPA_GRAVADA = {
   id: ID_ETAPA_GRAVADA,
   nome: 'Prova objetiva',
-  carater: CaraterEtapaCodigo.classificatoria,
+  carater: CaraterEtapaCodigo.CLASSIFICATORIA,
   tipoEtapaOrigemId: ID_TIPO_ETAPA,
   peso: '1',
   notaMinima: '',

@@ -40,7 +40,7 @@ describe('FasePassoComponent: edição da fase no rascunho', () => {
   });
 
   describe('bancas requeridas', () => {
-    it('declara a banca com o recorte de competência que ela julga', () => {
+    it('declara a banca com a competência que ela julga', () => {
       comCronograma(fase({}));
 
       const seletor = nativo.querySelector<HTMLSelectElement>('sel-lista-de-bancas select');
@@ -117,7 +117,7 @@ describe('FasePassoComponent: edição da fase no rascunho', () => {
         {
           id: '01960000-0000-7000-0000-0000000000ee',
           nome: 'Prova objetiva',
-          carater: CaraterEtapaCodigo.classificatoria,
+          carater: CaraterEtapaCodigo.CLASSIFICATORIA,
           tipoEtapaOrigemId: '01960000-0000-7000-0000-0000000000e1',
           peso: '1',
           notaMinima: '',

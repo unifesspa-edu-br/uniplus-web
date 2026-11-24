@@ -291,7 +291,7 @@ export class PublicarDocumentoComponent {
   ): EnviosDeArquivos {
     return new EnviosDeArquivos({
       ...formato,
-      finalidade: FinalidadeDoDocumentoCodigo.documentoDeAto,
+      finalidade: FinalidadeDoDocumentoCodigo.DOCUMENTO_DE_ATO,
       processoId: () => this.processoId(),
       abrirEnvio: () => this.envios.abrirEnvio(),
       explicar: (problema) => this.problemI18n.resolve(problema).title,

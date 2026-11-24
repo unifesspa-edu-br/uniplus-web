@@ -1,3 +1,4 @@
+import { TipoRegraCodigo } from '@uniplus/shared-data/selecao';
 import { Injectable, inject, signal } from '@angular/core';
 import { forkJoin, map } from 'rxjs';
 import { coletarPaginas } from '@uniplus/shared-core/http';
@@ -7,8 +8,8 @@ import { dadosOuNulo, LeituraDeCatalogo } from './leitura-de-catalogo';
 
 const TIPO_REGRA_CONTAGEM = 'algoritmo_contagem_prazo';
 const TIPO_REGRA_CONSOLIDACAO = 'regra_consolidacao';
-const TIPO_REGRA_RECURSO = 'regra_prazo_recurso';
-const TIPO_REGRA_PROCEDIMENTO = 'regra_procedimento_recurso';
+const TIPO_REGRA_RECURSO = TipoRegraCodigo.REGRA_PRAZO_RECURSO;
+const TIPO_REGRA_PROCEDIMENTO = TipoRegraCodigo.REGRA_PROCEDIMENTO_RECURSO;
 
 /**
  * As regras versionadas do `rol_de_regras` que o cronograma referencia: a de recurso de uma fase,

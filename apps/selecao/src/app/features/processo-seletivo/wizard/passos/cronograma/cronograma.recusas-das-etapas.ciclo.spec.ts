@@ -81,7 +81,7 @@ describe('CronogramaPassoComponent: ciclo de vida das recusas das etapas', () =>
   function doisRecursos(): void {
     etapasAbertas(1);
     const recurso = (prazoValor: string) =>
-      umRecursoDaEtapa({ ancora: 'cienciaIndividual', atoAncoraCodigo: '', prazoValor });
+      umRecursoDaEtapa({ ancora: 'CIENCIA_INDIVIDUAL', atoAncoraCodigo: '', prazoValor });
     cronograma.etapas.at(0).controls.recursos.setValue([recurso('1'), recurso('2')]);
     expansao.abrirBloco(0, 'recursos');
     detectar();

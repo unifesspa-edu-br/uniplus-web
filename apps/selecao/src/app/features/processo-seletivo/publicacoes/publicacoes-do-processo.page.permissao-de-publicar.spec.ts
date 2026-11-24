@@ -18,7 +18,7 @@ describe('PublicacoesDoProcessoPage — publicar documento', () => {
   afterEach(() => pagina.controller.verify());
 
   it('não permite publicar antes de o processo ser publicado', async () => {
-    await pagina.abrir(StatusProcessoCodigo.rascunho, []);
+    await pagina.abrir(StatusProcessoCodigo.RASCUNHO, []);
 
     expect(pagina.host.textContent).toContain('O processo ainda não foi publicado');
     expect(pagina.host.querySelector('sel-atos-do-processo')).toBeNull();
@@ -31,7 +31,7 @@ describe('PublicacoesDoProcessoPage — publicar documento', () => {
   it('sem a permissão de publicar, não oferece publicar nem corrigir, mesmo com o processo publicado', async () => {
     pagina.permissoesConcedidas = ['selecao:processos:configurar', 'selecao:processos:acompanhar'];
 
-    await pagina.abrir(StatusProcessoCodigo.publicado, [], previstos(item('preliminar')));
+    await pagina.abrir(StatusProcessoCodigo.PUBLICADO, [], previstos(item('preliminar')));
 
     const textos = Array.from(pagina.host.querySelectorAll('button')).map((b) =>
       b.textContent?.trim(),
@@ -44,7 +44,7 @@ describe('PublicacoesDoProcessoPage — publicar documento', () => {
   });
 
   it('com a permissão de publicar e o processo publicado, oferece "Publicar documento" habilitado', async () => {
-    await pagina.abrir(StatusProcessoCodigo.publicado, []);
+    await pagina.abrir(StatusProcessoCodigo.PUBLICADO, []);
 
     const publicar = Array.from(pagina.host.querySelectorAll('button')).find(
       (b) => b.textContent?.trim() === 'Publicar documento',

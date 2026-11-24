@@ -1,3 +1,4 @@
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -44,7 +45,7 @@ describe('NotasDoEnemPage', () => {
   };
 
   it('o processo em rascunho explica que falta divulgar e não oferece escolha de edição', async () => {
-    await abrir(processo({ status: 'rascunho' }));
+    await abrir(processo({ status: StatusProcessoCodigo.RASCUNHO }));
 
     expect(texto()).toContain('O processo ainda não foi divulgado');
     expect(host.querySelector('sel-seletor-de-edicao')).toBeNull();
@@ -136,10 +137,10 @@ describe('NotasDoEnemPage', () => {
       .expectOne(ROTA_PROCESSO)
       .flush(null, { status: 503, statusText: 'Service Unavailable' });
     controller
-      .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'envio')
+      .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'ENVIO')
       .flush([]);
     controller
-      .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'retorno')
+      .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'RETORNO')
       .flush([]);
     await fixture.whenStable();
 
@@ -149,7 +150,7 @@ describe('NotasDoEnemPage', () => {
     const recente = notas.recarregarProcesso();
     const pedidoRecente = controller.expectOne(ROTA_PROCESSO);
 
-    pedidoRecente.flush(processo({ status: 'rascunho' }));
+    pedidoRecente.flush(processo({ status: StatusProcessoCodigo.RASCUNHO }));
     await recente;
     pedidoAntigo.flush(null, { status: 503, statusText: 'Service Unavailable' });
     await antiga;
@@ -173,10 +174,10 @@ describe('NotasDoEnemPage', () => {
         .expectOne(ROTA_PROCESSO)
         .flush(null, { status: 503, statusText: 'Service Unavailable' });
       controller
-        .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'envio')
+        .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'ENVIO')
         .flush([]);
       controller
-        .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'retorno')
+        .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'RETORNO')
         .flush([]);
       await fixture.whenStable();
       fixture.detectChanges();
@@ -193,7 +194,7 @@ describe('NotasDoEnemPage', () => {
       expect(texto()).toContain('Carregando o processo seletivo…');
       expect(texto()).toContain('Não foi possível carregar o processo seletivo');
       expect(host.querySelectorAll('[role="status"]')).toHaveLength(1);
-      controller.expectOne(ROTA_PROCESSO).flush(processo({ status: 'rascunho' }));
+      controller.expectOne(ROTA_PROCESSO).flush(processo({ status: StatusProcessoCodigo.RASCUNHO }));
       await tick();
       await fixture.whenStable();
       fixture.detectChanges();

@@ -30,18 +30,18 @@
     [disabled]="!edicaoLiberada()"
     (change)="escolherOrigemDoPrazo($any($event.target).value)"
   >
-    @if (!notaDoEnem || recurso.ancora === 'atoPublicado') {
-      <option value="atoPublicado" [selected]="recurso.ancora === 'atoPublicado'">
+    @if (!notaDoEnem || recurso.ancora === 'PUBLICACAO_DO_ATO') {
+      <option value="PUBLICACAO_DO_ATO" [selected]="recurso.ancora === 'PUBLICACAO_DO_ATO'">
         Publicação do ato — um prazo para todos
       </option>
     }
-    <option value="cienciaIndividual" [selected]="recurso.ancora === 'cienciaIndividual'">
+    <option value="CIENCIA_INDIVIDUAL" [selected]="recurso.ancora === 'CIENCIA_INDIVIDUAL'">
       Ciência do candidato — um prazo por candidato
     </option>
   </select>
 </div>
 <ng-container *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'origemDoPrazo' }" />
-@if (recurso.ancora === 'atoPublicado') {
+@if (recurso.ancora === 'PUBLICACAO_DO_ATO') {
   <div class="form-field">
     <label class="label" [attr.for]="'cr-rec-ato-' + posicao + '-' + indice">
       Contra qual publicação

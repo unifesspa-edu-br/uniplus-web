@@ -64,7 +64,7 @@ describe('VagasPassoComponent — reaplicar o rol sob composição calculada', (
   const REGRA_FEDERAL = {
     codigo: 'DISTRIB-VAGAS-LEI-12711',
     versao: 'v1',
-    tipo: 'regra_distribuicao_vagas',
+    tipo: 'REGRA_DISTRIBUICAO_VAGAS',
     declaracaoDaRegra: {},
     invariantes: [],
     baseLegal: 'Lei 12.711/2012',
@@ -105,7 +105,7 @@ describe('VagasPassoComponent — reaplicar o rol sob composição calculada', (
       else if (url.includes('modalidades')) requisicao.flush(MODALIDADES_FEDERAL);
       else if (url.includes('regras-catalogo')) {
         const tipo = requisicao.request.params.get('tipo');
-        requisicao.flush(tipo === 'regra_distribuicao_vagas' ? [REGRA_FEDERAL] : []);
+        requisicao.flush(tipo === 'REGRA_DISTRIBUICAO_VAGAS' ? [REGRA_FEDERAL] : []);
       } else requisicao.flush([]);
     }
     detectar();

@@ -33,7 +33,7 @@ describe('CronogramaPassoComponent: recusas da publicação nas etapas', () => {
     const etapa = tela.cronograma.etapas.at(0);
     etapa.controls.id.setValue(ETAPA);
     etapa.controls.recursos.setValue([
-      umRecursoDaEtapa({ id: recursoId, ancora: 'cienciaIndividual', atoAncoraCodigo: '' }),
+      umRecursoDaEtapa({ id: recursoId, ancora: 'CIENCIA_INDIVIDUAL', atoAncoraCodigo: '' }),
     ]);
     tela.expansao.abrirFases([0]);
     tela.expansao.abrirEtapas([0]);
@@ -179,7 +179,7 @@ describe('CronogramaPassoComponent: recusas da publicação nas etapas', () => {
       const etapa = tela.cronograma.etapas.at(0);
       etapa.controls.id.setValue(ETAPA);
       etapa.controls.recursos.setValue([
-        umRecursoDaEtapa({ id: RECURSO, ancora: 'cienciaIndividual', atoAncoraCodigo: '' }),
+        umRecursoDaEtapa({ id: RECURSO, ancora: 'CIENCIA_INDIVIDUAL', atoAncoraCodigo: '' }),
       ]);
       recusarOPrazo();
 

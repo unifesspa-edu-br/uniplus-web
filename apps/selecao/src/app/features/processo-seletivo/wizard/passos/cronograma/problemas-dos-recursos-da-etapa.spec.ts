@@ -14,7 +14,7 @@ import {
 } from './cronograma-do-certame.testing';
 
 const RECURSO: RecursoDaEtapa = {
-  ancora: 'atoPublicado',
+  ancora: 'PUBLICACAO_DO_ATO',
   regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
   regraVersao: '1.0.0',
   ...PARAMETROS_COM_INSTANCIA_SUPERIOR,

@@ -7,7 +7,7 @@ import {
 } from './configuracao-do-recurso/parametros-do-recurso.testing';
 
 const RECURSO_DA_ETAPA_PADRAO: RecursoDaEtapa = {
-  ancora: 'atoPublicado',
+  ancora: 'PUBLICACAO_DO_ATO',
   regraCodigo: 'REGRA_DO_RECURSO',
   regraVersao: '1',
   ...PARAMETROS_SEM_INSTANCIA_SUPERIOR,
@@ -20,7 +20,7 @@ const RECURSO_DA_ETAPA_PADRAO: RecursoDaEtapa = {
 const ETAPA_DO_CRONOGRAMA_PADRAO: EtapaPontuada = {
   id: null,
   nome: 'Prova',
-  carater: CaraterEtapaCodigo.ambas,
+  carater: CaraterEtapaCodigo.AMBAS,
   tipoEtapaOrigemId: '',
   peso: '1',
   notaMinima: '',

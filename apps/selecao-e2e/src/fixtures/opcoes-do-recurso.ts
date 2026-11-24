@@ -2,14 +2,14 @@ import type { CatalogoMockado } from '../support/responder';
 
 /** As unidades do prazo de recurso que a API oferece, como ela as devolve. */
 export const UNIDADES_DO_PRAZO_DE_RECURSO = [
-  { codigo: 'horas', rotulo: 'Horas' },
-  { codigo: 'diasUteis', rotulo: 'Dias úteis' },
+  { codigo: 'HORAS', rotulo: 'Horas' },
+  { codigo: 'DIAS_UTEIS', rotulo: 'Dias úteis' },
 ] as const;
 
 /** Os efeitos suspensivos que a API oferece, cada um com a explicação do que faz. */
 export const EFEITOS_SUSPENSIVOS = [
   {
-    codigo: 'semEfeitoSuspensivo',
+    codigo: 'SEM_EFEITO_SUSPENSIVO',
     rotulo: 'Sem efeito suspensivo',
     descricao: 'O recurso não suspende o processo: as fases seguintes começam nas datas previstas.',
   },
@@ -18,12 +18,12 @@ export const EFEITOS_SUSPENSIVOS = [
 /** As guardas da vaga que a API oferece, cada uma com a explicação do que faz. */
 export const GUARDAS_DA_VAGA = [
   {
-    codigo: 'ateOResultadoDefinitivo',
+    codigo: 'ATE_O_RESULTADO_DEFINITIVO',
     rotulo: 'Guarda a vaga até o resultado definitivo',
     descricao: 'A vaga fica guardada até a publicação do resultado definitivo.',
   },
   {
-    codigo: 'naoGuarda',
+    codigo: 'NAO_GUARDA',
     rotulo: 'Não guarda a vaga',
     descricao: 'A vaga segue para o próximo candidato enquanto o recurso é julgado.',
   },

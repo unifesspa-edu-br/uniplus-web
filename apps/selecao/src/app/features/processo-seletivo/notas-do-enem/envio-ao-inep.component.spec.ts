@@ -28,8 +28,8 @@ function textoDe(blob: Blob): Promise<string> {
 }
 
 const DOIS_LEIAUTES = [
-  leiauteDoCatalogo('ENVIO_CPF', 'envio'),
-  leiauteDoCatalogo('ENVIO_CPF_COM_NOME', 'envio'),
+  leiauteDoCatalogo('ENVIO_CPF', 'ENVIO'),
+  leiauteDoCatalogo('ENVIO_CPF_COM_NOME', 'ENVIO'),
 ];
 
 describe('EnvioAoInepComponent', () => {

@@ -134,7 +134,7 @@ const REGRAS_RECURSO = [
   {
     codigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
     versao: 'v1',
-    tipo: 'regra_prazo_recurso',
+    tipo: 'REGRA_PRAZO_RECURSO',
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: 'Lei 9.784/1999, art. 59',
@@ -185,7 +185,7 @@ export async function mockarCatalogos(page: Page): Promise<void> {
   await responderCatalogos(page, CATALOGOS, CORS_DA_ETAPA);
   await responderRegrasDoCatalogo(
     page,
-    { regra_prazo_recurso: REGRAS_RECURSO, regra_consolidacao: REGRAS_CONSOLIDACAO },
+    { REGRA_PRAZO_RECURSO: REGRAS_RECURSO, regra_consolidacao: REGRAS_CONSOLIDACAO },
     CORS_DA_ETAPA,
   );
 }

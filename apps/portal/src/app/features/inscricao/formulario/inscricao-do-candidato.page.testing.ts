@@ -10,6 +10,8 @@ import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { RELOGIO } from '@uniplus/shared-core/relogio';
 import { type ApiResult, apiFailure, apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
+  BlocoSistemaCodigo,
+  TipoEtapaFormularioCodigo,
   type AvaliacaoDaInscricaoDto,
   type AvaliacaoDaInscricaoRequest,
   type ReciboDaInscricaoDto,
@@ -98,8 +100,8 @@ export const COM_MODALIDADES: FormularioRenderizavelDto = {
         codigo: 'MODALIDADES',
         codigoNasRegras: null,
         ordem: 3,
-        tipo: 'BLOCO',
-        bloco: 'MODALIDADES_CALCULADAS',
+        tipo: TipoEtapaFormularioCodigo.BLOCO,
+        bloco: BlocoSistemaCodigo.MODALIDADES_CALCULADAS,
         apresentacao: { titulo: 'Modalidades de concorrência', descricao: null, aviso: null },
       },
     ],
@@ -125,7 +127,7 @@ export const COM_NOME_SOCIAL = comCampoColetado(
 const INSCRICAO_EM_RASCUNHO: InscricaoDto = {
   id: 'inscricao-1',
   processoSeletivoId: PROCESSO,
-  situacao: { codigo: SituacaoInscricaoCodigo.rascunho, rotulo: 'Situação de teste' },
+  situacao: { codigo: SituacaoInscricaoCodigo.RASCUNHO, rotulo: 'Situação de teste' },
   numeroInscricao: null,
   formulario: {
     versaoFormularioId: 'versao-1',

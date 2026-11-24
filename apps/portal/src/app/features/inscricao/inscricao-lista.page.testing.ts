@@ -43,8 +43,8 @@ type DadosDaSituacao = Pick<
 
 /** O que só a situação define: o rascunho não tem número, curso nem comprovante. */
 function dadosDaSituacao(situacao: SituacaoInscricaoCodigo): DadosDaSituacao {
-  const rascunho = situacao === SituacaoInscricaoCodigo.rascunho;
-  const semComprovante = rascunho || situacao === SituacaoInscricaoCodigo.cancelada;
+  const rascunho = situacao === SituacaoInscricaoCodigo.RASCUNHO;
+  const semComprovante = rascunho || situacao === SituacaoInscricaoCodigo.CANCELADA;
   return {
     situacao: { codigo: situacao, rotulo: 'Situação de teste' },
     numeroInscricao: rascunho ? null : '00000042',
@@ -56,8 +56,8 @@ function dadosDaSituacao(situacao: SituacaoInscricaoCodigo): DadosDaSituacao {
 }
 
 function acoesDe(situacao: SituacaoInscricaoCodigo, aberta: boolean): AcoesDaInscricaoDto {
-  const enviada = situacao === SituacaoInscricaoCodigo.submetida;
-  const rascunho = situacao === SituacaoInscricaoCodigo.rascunho;
+  const enviada = situacao === SituacaoInscricaoCodigo.SUBMETIDA;
+  const rascunho = situacao === SituacaoInscricaoCodigo.RASCUNHO;
   return {
     podeContinuar: rascunho && aberta,
     podeCorrigir: enviada && aberta,
@@ -83,10 +83,10 @@ export function inscricao(
 }
 
 export const INSCRICOES: readonly MinhaInscricaoDto[] = [
-  inscricao('p1', SituacaoInscricaoCodigo.rascunho, 'Auxílio estudantil 2026'),
-  inscricao('p2', SituacaoInscricaoCodigo.submetida, 'Bolsa de iniciação científica'),
-  inscricao('p3', SituacaoInscricaoCodigo.submetida, 'Morada estudantil'),
-  inscricao('p4', SituacaoInscricaoCodigo.rascunho, 'Auxílio transporte'),
+  inscricao('p1', SituacaoInscricaoCodigo.RASCUNHO, 'Auxílio estudantil 2026'),
+  inscricao('p2', SituacaoInscricaoCodigo.SUBMETIDA, 'Bolsa de iniciação científica'),
+  inscricao('p3', SituacaoInscricaoCodigo.SUBMETIDA, 'Morada estudantil'),
+  inscricao('p4', SituacaoInscricaoCodigo.RASCUNHO, 'Auxílio transporte'),
 ];
 
 export const respostaSemConteudo = (): Observable<ApiResult<void>> =>

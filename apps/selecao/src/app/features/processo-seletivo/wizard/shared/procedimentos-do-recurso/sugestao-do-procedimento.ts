@@ -1,5 +1,6 @@
 import {
   FormaDeAvaliacaoDaEtapa,
+  TipoRegraCodigo,
   type RegraCatalogoDto,
 } from '@uniplus/shared-data/selecao';
 
@@ -28,7 +29,8 @@ export function sugerirProcedimentoDeRecurso(
   const codigo = codigoPelaForma(forma, origemNoEnem);
   const regras = catalogo.filter(
     (candidata) =>
-      candidata.tipo.codigo === 'regra_procedimento_recurso' && candidata.codigo === codigo,
+      candidata.tipo.codigo === TipoRegraCodigo.REGRA_PROCEDIMENTO_RECURSO &&
+      candidata.codigo === codigo,
   );
   const versoes = new Set(regras.map((regra) => regra.versao));
   return codigo !== null && versoes.size === 1 ? { codigo, versao: regras[0].versao } : null;

@@ -1,3 +1,4 @@
+import { TipoRegraCodigo } from '@uniplus/shared-data/selecao';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ObservedValueOf, Subscription, catchError, finalize, forkJoin, of } from 'rxjs';
@@ -12,12 +13,12 @@ import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/seleca
 
 import { tituloDoPasso } from '../../shared/titulo-do-passo';
 
-const TIPO_REGRA_CALCULO = 'regra_calculo';
-const TIPO_REGRA_ARREDONDAMENTO = 'regra_arredondamento';
-const TIPO_REGRA_ORDEM_ALOCACAO = 'regra_ordem_alocacao';
-const TIPO_REGRA_ELIMINACAO = 'regra_eliminacao';
+const TIPO_REGRA_CALCULO = TipoRegraCodigo.REGRA_CALCULO;
+const TIPO_REGRA_ARREDONDAMENTO = TipoRegraCodigo.REGRA_ARREDONDAMENTO;
+const TIPO_REGRA_ORDEM_ALOCACAO = TipoRegraCodigo.REGRA_ORDEM_ALOCACAO;
+const TIPO_REGRA_ELIMINACAO = TipoRegraCodigo.REGRA_ELIMINACAO;
 const TIPO_REGRA_BONUS = 'regra_bonus';
-const TIPO_CRITERIO_DESEMPATE = 'criterio_desempate';
+const TIPO_CRITERIO_DESEMPATE = TipoRegraCodigo.CRITERIO_DESEMPATE;
 
 const COMPARADOR_DE_RESOLUCAO = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
 

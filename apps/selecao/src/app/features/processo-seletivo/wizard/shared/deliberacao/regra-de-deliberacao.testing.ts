@@ -11,37 +11,37 @@ import type { RegraDeDeliberacaoDaBanca } from '../../modelos/deliberacao.models
 
 export const MODOS = {
   colegiadaComVotacao: {
-    codigo: ModoDeDeliberacao.colegiadaComVotacao,
+    codigo: ModoDeDeliberacao.COLEGIADA_COM_VOTACAO,
     rotulo: 'Colegiada, com votação',
   },
-  atoIndividual: { codigo: ModoDeDeliberacao.atoIndividual, rotulo: 'Ato individual' },
+  atoIndividual: { codigo: ModoDeDeliberacao.ATO_INDIVIDUAL, rotulo: 'Ato individual' },
 };
 export const CRITERIOS = {
-  maioriaSimples: { codigo: CriterioDeVotacaoCodigo.maioriaSimples, rotulo: 'Maioria simples' },
-  maioriaAbsoluta: { codigo: CriterioDeVotacaoCodigo.maioriaAbsoluta, rotulo: 'Maioria absoluta' },
-  unanimidade: { codigo: CriterioDeVotacaoCodigo.unanimidade, rotulo: 'Unanimidade' },
+  maioriaSimples: { codigo: CriterioDeVotacaoCodigo.MAIORIA_SIMPLES, rotulo: 'Maioria simples' },
+  maioriaAbsoluta: { codigo: CriterioDeVotacaoCodigo.MAIORIA_ABSOLUTA, rotulo: 'Maioria absoluta' },
+  unanimidade: { codigo: CriterioDeVotacaoCodigo.UNANIMIDADE, rotulo: 'Unanimidade' },
 };
 export const DESEMPATES = {
   votoDaPresidencia: {
-    codigo: DesempateDaVotacaoCodigo.votoDaPresidencia,
+    codigo: DesempateDaVotacaoCodigo.VOTO_DA_PRESIDENCIA,
     rotulo: 'Voto da presidência',
   },
-  novaVotacao: { codigo: DesempateDaVotacaoCodigo.novaVotacao, rotulo: 'Nova votação' },
+  novaVotacao: { codigo: DesempateDaVotacaoCodigo.NOVA_VOTACAO, rotulo: 'Nova votação' },
 };
 export const ENCERRAMENTOS = {
   todosOsTitulares: {
-    codigo: EncerramentoDaVotacaoCodigo.todosOsTitulares,
+    codigo: EncerramentoDaVotacaoCodigo.TODOS_OS_TITULARES,
     rotulo: 'Todos os titulares votam',
   },
   presidenciaNoQuorum: {
-    codigo: EncerramentoDaVotacaoCodigo.presidenciaNoQuorum,
+    codigo: EncerramentoDaVotacaoCodigo.PRESIDENCIA_NO_QUORUM,
     rotulo: 'A presidência encerra ao atingir o quórum',
   },
 };
 export const RESULTADOS = {
-  favoravel: { codigo: ResultadoSemUnanimidadeCodigo.favoravel, rotulo: 'Favorável' },
-  desfavoravel: { codigo: ResultadoSemUnanimidadeCodigo.desfavoravel, rotulo: 'Desfavorável' },
-  novaVotacao: { codigo: ResultadoSemUnanimidadeCodigo.novaVotacao, rotulo: 'Nova votação' },
+  favoravel: { codigo: ResultadoSemUnanimidadeCodigo.FAVORAVEL, rotulo: 'Favorável' },
+  desfavoravel: { codigo: ResultadoSemUnanimidadeCodigo.DESFAVORAVEL, rotulo: 'Desfavorável' },
+  novaVotacao: { codigo: ResultadoSemUnanimidadeCodigo.NOVA_VOTACAO, rotulo: 'Nova votação' },
 };
 export const COLEGIADA: RegraDeDeliberacaoDaBanca = {
   modo: MODOS.colegiadaComVotacao,

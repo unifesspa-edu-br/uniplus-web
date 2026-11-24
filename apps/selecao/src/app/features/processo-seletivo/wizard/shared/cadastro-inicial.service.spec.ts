@@ -28,7 +28,7 @@ describe('CadastroInicial — descarte do cadastro em andamento', () => {
   const comando = (nome: string): CriarProcessoSeletivoCommand => ({
     nome,
     tipoProcessoOrigemId: '01960000-0000-7000-0000-000000000001',
-    origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
+    origemCandidatos: OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
     unidadeAdministradoraOrigemId: '01960000-0000-7000-0000-000000000002',
     localidadeCodigoIbge: null,
     localidadeNome: null,

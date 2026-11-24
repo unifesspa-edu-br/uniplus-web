@@ -112,7 +112,7 @@ describe('IdentificacaoPassoComponent', () => {
     store.patchObjectSection('identificacao', {
       nome: 'Processo Seletivo 2027',
       unidadeAdministradoraId: UNIDADE_ID,
-      origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
+      origemCandidatos: OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
       localidade: MARABA,
       identificadorLegivel: 'ps-2027',
     });
@@ -311,7 +311,7 @@ describe('IdentificacaoPassoComponent', () => {
     store.patchObjectSection('identificacao', {
       nome: 'Processo Seletivo 2027',
       unidadeAdministradoraId: UNIDADE_ID,
-      origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
+      origemCandidatos: OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
     });
 
     const resultado = componente.validar();
@@ -487,7 +487,7 @@ describe('IdentificacaoPassoComponent', () => {
   /** Com o processo criado não há o que gravar: o passo volta a ser navegação. */
   it('dispensa a confirmação quando o processo já existe', () => {
     preencherCamposDoComando();
-    lerDetalhe(StatusProcessoCodigo.rascunho, 'ps-2027');
+    lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
     detectar();
 
     expect(componente.confirmacaoDeGravacao()).toBeNull();
@@ -612,7 +612,7 @@ describe('IdentificacaoPassoComponent', () => {
 
     it('grava pelo PUT do campo o identificador trocado depois da criação', async () => {
       preencherCamposDoComando();
-      lerDetalhe(StatusProcessoCodigo.rascunho, 'ps-2027');
+      lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
       detectar();
       store.patchObjectSection('identificacao', { identificadorLegivel: 'ps-2027-medicina' });
 
@@ -630,7 +630,7 @@ describe('IdentificacaoPassoComponent', () => {
 
     it('não regrava o identificador que o servidor já tem', async () => {
       preencherCamposDoComando();
-      lerDetalhe(StatusProcessoCodigo.rascunho, 'ps-2027');
+      lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
       detectar();
 
       expect((await componente.persistir()).valid).toBe(true);
@@ -639,7 +639,7 @@ describe('IdentificacaoPassoComponent', () => {
 
     it('mostra junto ao campo a recusa do PUT', async () => {
       preencherCamposDoComando();
-      lerDetalhe(StatusProcessoCodigo.rascunho, 'ps-2027');
+      lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
       detectar();
       store.patchObjectSection('identificacao', { identificadorLegivel: 'medicina-2027' });
 
@@ -663,7 +663,7 @@ describe('IdentificacaoPassoComponent', () => {
      */
     it('confere e grava o identificador editado durante a varredura da publicação', async () => {
       preencherCamposDoComando();
-      lerDetalhe(StatusProcessoCodigo.rascunho, 'ps-2027');
+      lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
       detectar();
       store.patchObjectSection('identificacao', { identificadorLegivel: 'medicina-2027' });
       store.travamentoDeOrquestracao.set(true);
@@ -680,7 +680,7 @@ describe('IdentificacaoPassoComponent', () => {
 
     it('barra a publicação com o identificador inválido e mostra o erro no campo', () => {
       preencherCamposDoComando();
-      lerDetalhe(StatusProcessoCodigo.rascunho, 'ps-2027');
+      lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
       store.patchObjectSection('identificacao', { identificadorLegivel: 'Medicina 2027' });
       store.travamentoDeOrquestracao.set(true);
 
@@ -699,7 +699,7 @@ describe('IdentificacaoPassoComponent', () => {
      */
     it('reenvia depois de uma gravação inconclusiva, mesmo de volta ao valor anterior', async () => {
       preencherCamposDoComando();
-      lerDetalhe(StatusProcessoCodigo.rascunho, 'ps-2027');
+      lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
       detectar();
       store.patchObjectSection('identificacao', { identificadorLegivel: 'medicina-2027' });
 
@@ -723,7 +723,7 @@ describe('IdentificacaoPassoComponent', () => {
 
     it('não reenvia o valor anterior depois de uma recusa definitiva', async () => {
       preencherCamposDoComando();
-      lerDetalhe(StatusProcessoCodigo.rascunho, 'ps-2027');
+      lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
       detectar();
       store.patchObjectSection('identificacao', { identificadorLegivel: 'medicina-2027' });
 
@@ -745,7 +745,7 @@ describe('IdentificacaoPassoComponent', () => {
     /** Publicado, o campo não muda por aqui — nem exige o que o operador não pode corrigir. */
     it('lê o identificador como texto e não o confere com o processo publicado', () => {
       // Publicado sem identificador: a leitura diz que falta, e a validação não o exige.
-      lerDetalhe(StatusProcessoCodigo.publicado, null);
+      lerDetalhe(StatusProcessoCodigo.PUBLICADO, null);
       detectar();
 
       expect(host.querySelector('#f-identificador')).toBeNull();
@@ -769,7 +769,7 @@ describe('IdentificacaoPassoComponent', () => {
 
   it('em consulta, lê o cadastro como texto, com o rótulo de cada escolha', () => {
     preencherCamposDoComando();
-    lerDetalhe(StatusProcessoCodigo.publicado, 'ps-2027');
+    lerDetalhe(StatusProcessoCodigo.PUBLICADO, 'ps-2027');
     detectar();
 
     expect(host.querySelector('input, select, textarea, button')).toBeNull();

@@ -56,7 +56,7 @@ export function iniciacao(expiraEmMs = Date.now() + 900_000) {
 }
 
 const FINALIDADE_EDITAL = {
-  codigo: FinalidadeDoDocumentoCodigo.documentoDoEdital,
+  codigo: FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL,
   rotulo: 'Documento do edital',
 };
 const STATUS_CONFIRMADO = {
@@ -100,7 +100,7 @@ export async function percorrerOEnvio(
 function responderInicio(controller: HttpTestingController, arquivo: File): void {
   const inicio = controller.expectOne(ROTA_DOCUMENTOS);
   expect(inicio.request.body).toEqual({
-    finalidade: 'documentoDoEdital',
+    finalidade: 'DOCUMENTO_DO_EDITAL',
     nomeArquivo: arquivo.name,
     tipoDeMidia: 'application/pdf',
   });

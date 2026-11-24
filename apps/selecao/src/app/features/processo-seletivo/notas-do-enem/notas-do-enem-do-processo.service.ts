@@ -101,8 +101,8 @@ export class NotasDoEnemDoProcesso {
   /** Cada contador distingue a leitura mais recente da que ficou para trás quando o escopo muda. */
   private readonly ordemDoProcesso = new LeiturasEmOrdem();
   private readonly ordemDosLeiautes: Record<TipoDeLeiaute, LeiturasEmOrdem> = {
-    envio: new LeiturasEmOrdem(),
-    retorno: new LeiturasEmOrdem(),
+    ENVIO: new LeiturasEmOrdem(),
+    RETORNO: new LeiturasEmOrdem(),
   };
 
   readonly processoId = signal<string | null>(null);
@@ -165,8 +165,8 @@ export class NotasDoEnemDoProcesso {
 
     await Promise.all([
       this.lerProcesso(processoId, aindaVale),
-      this.recarregarLeiautes('envio'),
-      this.recarregarLeiautes('retorno'),
+      this.recarregarLeiautes('ENVIO'),
+      this.recarregarLeiautes('RETORNO'),
     ]);
   }
 
@@ -180,7 +180,7 @@ export class NotasDoEnemDoProcesso {
 
   async recarregarLeiautes(tipo: TipoDeLeiaute): Promise<void> {
     const aindaVale = this.ordemDosLeiautes[tipo].iniciar();
-    const destino = tipo === 'envio' ? this.leiautesDeEnvio : this.leiautesDeRetorno;
+    const destino = tipo === 'ENVIO' ? this.leiautesDeEnvio : this.leiautesDeRetorno;
     destino.set(LENDO);
 
     const resultado = await firstValueFrom(this.api.listarLeiautes(tipo));
@@ -236,7 +236,7 @@ export class NotasDoEnemDoProcesso {
     processoId: string,
     processo: ProcessoSeletivoDto,
   ): Promise<EscopoDoEnem | ApiFailure> {
-    if (processo.status.codigo === StatusProcessoCodigo.rascunho) return ESCOPO_DE_RASCUNHO;
+    if (processo.status.codigo === StatusProcessoCodigo.RASCUNHO) return ESCOPO_DE_RASCUNHO;
 
     const snapshot = await firstValueFrom(this.publicacaoApi.obterSnapshotVigente(processoId));
     if (isApiOk(snapshot)) return escopoDoEnem(snapshot.data.configuracao);

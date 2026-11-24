@@ -1,6 +1,10 @@
 import { signal } from '@angular/core';
 import { describe, expect, it } from 'vitest';
-import { CaraterEtapa, PapelDaBancaCodigo, UnidadePrazoCodigo } from '@uniplus/shared-data/selecao';
+import {
+  CaraterEtapaCodigo,
+  PapelDaBancaCodigo,
+  UnidadePrazoCodigo,
+} from '@uniplus/shared-data/selecao';
 
 import type { EtapaPontuada, RecursoDaEtapa } from '../../processo-seletivo.models';
 import {
@@ -47,7 +51,7 @@ function lida(parcial: Partial<EtapaPontuada>) {
 }
 
 const recurso: RecursoDaEtapa = {
-  ancora: 'atoPublicado',
+  ancora: 'PUBLICACAO_DO_ATO',
   regraCodigo: 'PRAZO',
   regraVersao: '1',
   ...PARAMETROS_SEM_INSTANCIA_SUPERIOR,
@@ -73,13 +77,17 @@ describe('papel da publicação', () => {
 describe('etapa lida na consulta', () => {
   it('mostra peso e nota mínima só onde o caráter os admite', () => {
     const classificatoria = lida({
-      carater: CaraterEtapa.classificatoria,
+      carater: CaraterEtapaCodigo.CLASSIFICATORIA,
       peso: '2',
       notaMinima: '5',
     });
     expect([classificatoria.peso, classificatoria.notaMinima]).toEqual(['2', null]);
 
-    const eliminatoria = lida({ carater: CaraterEtapa.eliminatoria, peso: '2', notaMinima: '5' });
+    const eliminatoria = lida({
+      carater: CaraterEtapaCodigo.ELIMINATORIA,
+      peso: '2',
+      notaMinima: '5',
+    });
     expect([eliminatoria.peso, eliminatoria.notaMinima]).toEqual([null, '5']);
   });
 
@@ -169,7 +177,7 @@ describe('etapa lida na consulta', () => {
           ...recurso,
           admiteInstanciaSuperior: true,
           prazoSegundaInstanciaValor: '3',
-          prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.diasUteis,
+          prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.DIAS_UTEIS,
         },
       ],
     }).recursos;
@@ -185,11 +193,11 @@ describe('etapa lida na consulta', () => {
   it('mostra o código quando a leitura não trouxe o nome da unidade', () => {
     const [texto] = lida({
       recursos: [
-        { ...recurso, leitura: umaLeituraDoRecurso(), prazoUnidade: UnidadePrazoCodigo.horas },
+        { ...recurso, leitura: umaLeituraDoRecurso(), prazoUnidade: UnidadePrazoCodigo.HORAS },
       ],
     }).recursos;
 
-    expect(texto).toContain('prazo de interposição: 2 — horas');
+    expect(texto).toContain('prazo de interposição: 2 — HORAS');
   });
 
   it('lê o prazo da 2ª instância que veio sem instância superior', () => {
@@ -198,7 +206,7 @@ describe('etapa lida na consulta', () => {
         {
           ...recurso,
           prazoSegundaInstanciaValor: '3',
-          prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.diasUteis,
+          prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.DIAS_UTEIS,
         },
       ],
     }).recursos;
@@ -225,7 +233,7 @@ describe('etapa lida na consulta', () => {
           ...PARAMETROS_EM_BRANCO,
           admiteInstanciaSuperior: false,
           leitura: umaLeituraDoRecurso(),
-          ancora: 'cienciaIndividual',
+          ancora: 'CIENCIA_INDIVIDUAL',
         },
       ],
     }).recursos;

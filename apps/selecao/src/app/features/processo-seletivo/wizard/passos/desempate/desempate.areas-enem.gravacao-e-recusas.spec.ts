@@ -74,7 +74,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: gravação e rec
           criteriosDesempate: [
             {
               ordem: 1,
-              regra: { codigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM', versao: '1' },
+              regra: { codigo: 'DESEMPATE_MAIOR_NOTA_AREA_ENEM', versao: '1' },
               parametros: { areas: ['REDACAO'] },
             },
           ],
@@ -150,7 +150,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: gravação e rec
         },
       });
       m.store.patchSection('desempate', [
-        { ...criterio([]), regraCodigo: 'DESEMPATE-MAIOR-IDADE' },
+        { ...criterio([]), regraCodigo: 'DESEMPATE_MAIOR_IDADE' },
       ]);
 
       const gravacao = m.componente.persistir();

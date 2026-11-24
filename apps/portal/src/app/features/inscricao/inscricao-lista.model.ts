@@ -32,9 +32,9 @@ export interface CursoDaInscricao {
 
 function mensagemDa(inscricao: MinhaInscricaoDto): string | null {
   switch (inscricao.situacao.codigo) {
-    case SituacaoInscricaoCodigo.submetida:
+    case SituacaoInscricaoCodigo.SUBMETIDA:
       return null;
-    case SituacaoInscricaoCodigo.cancelada: {
+    case SituacaoInscricaoCodigo.CANCELADA: {
       const quando = formatarDataBr(inscricao.canceladaEm);
       const cancelada = quando ? `Cancelada em ${quando}.` : null;
       return inscricao.motivoDoCancelamento

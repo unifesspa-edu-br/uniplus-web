@@ -130,7 +130,7 @@ describe('ProcessoSeletivoPage — estrutura', () => {
 
   it.each([
     ['em edição', null],
-    ['em consulta', StatusProcessoCodigo.publicado],
+    ['em consulta', StatusProcessoCodigo.PUBLICADO],
   ])(
     '%s, .wiz-content não é contêiner de rolagem próprio: rola o .page do shell',
     (_modo, status) => {

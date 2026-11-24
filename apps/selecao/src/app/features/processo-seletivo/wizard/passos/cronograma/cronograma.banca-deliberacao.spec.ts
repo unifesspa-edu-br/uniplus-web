@@ -5,7 +5,12 @@ import {
 } from './bancas-da-etapa.testing';
 import type { FormGroup } from '@angular/forms';
 import type { TipoBancaDto } from '@uniplus/shared-data/configuracao';
-import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
+import {
+  CriterioDeVotacaoCodigo,
+  DesempateDaVotacaoCodigo,
+  EncerramentoDaVotacaoCodigo,
+  ModoDeDeliberacao,
+} from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { COLEGIADA, comRegra } from '../../shared/deliberacao/regra-de-deliberacao.testing';
@@ -95,13 +100,13 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
     acrescentarBancaNaEtapa(edicao, etapa, ID_BANCA_HETERO);
     detectar();
 
-    escolher('modo', ModoDeDeliberacao.colegiadaComVotacao);
+    escolher('modo', ModoDeDeliberacao.COLEGIADA_COM_VOTACAO);
     digitar('integrantes', '5');
     digitar('suplentes', '2');
-    escolher('encerramento', 'presidenciaNoQuorum');
+    escolher('encerramento', EncerramentoDaVotacaoCodigo.PRESIDENCIA_NO_QUORUM);
     digitar('quorum', '3');
-    escolher('criterio', 'maioriaSimples');
-    escolher('desempate', 'votoDaPresidencia');
+    escolher('criterio', CriterioDeVotacaoCodigo.MAIORIA_SIMPLES);
+    escolher('desempate', DesempateDaVotacaoCodigo.VOTO_DA_PRESIDENCIA);
 
     expect(regraDa(etapa)).toEqual(comRotulos(COLEGIADA));
     expect(etapa.controls.bancas.dirty).toBe(true);
@@ -123,12 +128,12 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
     detectar();
     const modo = nativo.querySelector<HTMLSelectElement>('#etapa-0-banca-banca-2-modo');
     if (!modo) throw new Error('Modo da segunda banca ausente.');
-    modo.value = ModoDeDeliberacao.atoIndividual;
+    modo.value = ModoDeDeliberacao.ATO_INDIVIDUAL;
     modo.dispatchEvent(new Event('change'));
     detectar();
     expect(edicao.bancasDaEtapa(etapa)).toHaveLength(2);
     expect(regraDa(etapa, 0)).toBeNull();
-    expect(regraDa(etapa, 1)?.modo).toBe(ModoDeDeliberacao.atoIndividual);
+    expect(regraDa(etapa, 1)?.modo).toBe(ModoDeDeliberacao.ATO_INDIVIDUAL);
   });
 
   it('cobra sob o campo o que a regra declarada ainda não tem', () => {

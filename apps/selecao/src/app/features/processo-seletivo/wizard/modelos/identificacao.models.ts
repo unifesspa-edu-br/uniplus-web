@@ -6,8 +6,8 @@ import type { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
  */
 export type OrigemCandidatosSelecionada =
   | ''
-  | OrigemCandidatosCodigo.inscricaoPropria
-  | OrigemCandidatosCodigo.importacaoExterna;
+  | OrigemCandidatosCodigo.INSCRICAO_PROPRIA
+  | OrigemCandidatosCodigo.IMPORTACAO_EXTERNA;
 
 /**
  * Fase do anexo do edital, na ordem em que a API a executa: registro com URL pré-assinada

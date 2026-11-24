@@ -16,7 +16,7 @@ describe('FormularioPassoComponent: consulta e avisos de idade', () => {
   });
 
   it('avisa do desempate por idoso sem apuração da idade e leva ao passo Desempate', () => {
-    declararDesempate('DESEMPATE-IDOSO');
+    declararDesempate('DESEMPATE_IDOSO');
     store.patchObjectSection('formulario', {
       referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
     });
@@ -31,7 +31,7 @@ describe('FormularioPassoComponent: consulta e avisos de idade', () => {
 
   describe('em consulta', () => {
     beforeEach(() => {
-      store.remoteSnapshot.set({ status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' } } as never);
+      store.remoteSnapshot.set({ status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' } } as never);
       fixture.detectChanges();
     });
 
@@ -73,15 +73,15 @@ describe('FormularioPassoComponent: consulta e avisos de idade', () => {
     });
 
     it('não mostra os avisos de idade: o processo publicado não admite a correção', () => {
-      store.remoteSnapshot.set({ status: { codigo: StatusProcessoCodigo.rascunho, rotulo: 'Rascunho' } } as never);
-      declararDesempate('DESEMPATE-IDOSO');
+      store.remoteSnapshot.set({ status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: 'Rascunho' } } as never);
+      declararDesempate('DESEMPATE_IDOSO');
       store.patchObjectSection('formulario', {
         referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
       });
       fixture.detectChanges();
       expect(host.querySelector('#form-idoso-sem-apuracao')).not.toBeNull();
 
-      store.remoteSnapshot.set({ status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' } } as never);
+      store.remoteSnapshot.set({ status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' } } as never);
       fixture.detectChanges();
 
       expect(host.querySelector('#form-idoso-sem-apuracao')).toBeNull();

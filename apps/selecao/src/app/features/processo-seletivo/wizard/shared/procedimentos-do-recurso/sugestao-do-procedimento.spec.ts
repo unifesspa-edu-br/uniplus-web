@@ -13,7 +13,7 @@ function regra(codigo: string, parcial: Partial<RegraCatalogoDto> = {}): RegraCa
   return {
     codigo,
     versao: 'v1',
-    tipo: { codigo: 'regra_procedimento_recurso' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Procedimento de recurso' },
+    tipo: { codigo: 'REGRA_PROCEDIMENTO_RECURSO' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Procedimento de recurso' },
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: 'Referência institucional',
@@ -54,7 +54,7 @@ describe('sugestão pela forma da etapa', () => {
     ).toBeNull();
     expect(
       sugerirProcedimentoDeRecurso(Forma.OBJETIVA, false, [
-        regra(RECALCULO, { tipo: { codigo: 'regra_calculo' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Regra de cálculo' } }),
+        regra(RECALCULO, { tipo: { codigo: 'REGRA_CALCULO' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Regra de cálculo' } }),
       ]),
     ).toBeNull();
   });

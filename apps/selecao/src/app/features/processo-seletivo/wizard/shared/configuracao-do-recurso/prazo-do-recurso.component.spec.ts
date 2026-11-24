@@ -66,9 +66,9 @@ describe('PrazoDoRecursoComponent: estrutura', () => {
 describe('PrazoDoRecursoComponent: valor e unidade', () => {
   it.each([
     ['vazio', '', ''],
-    ['zero', '0', 'horas'],
-    ['fração em dias úteis', '1,5', 'diasUteis'],
-    ['fração em horas', '1,5', 'horas'],
+    ['zero', '0', 'HORAS'],
+    ['fração em dias úteis', '1,5', 'DIAS_UTEIS'],
+    ['fração em horas', '1,5', 'HORAS'],
   ])('mostra o prazo %s como veio, sem conferir', (_nome, texto, codigo) => {
     const fixture = montarPrazo({ valor: texto, unidade: codigo });
 
@@ -79,7 +79,7 @@ describe('PrazoDoRecursoComponent: valor e unidade', () => {
   });
 
   it('oferece a opção em branco e as unidades dadas, e nenhuma outra', () => {
-    expect(codigosDaUnidade(montarPrazo())).toEqual(['', 'diasUteis', 'horas']);
+    expect(codigosDaUnidade(montarPrazo())).toEqual(['', 'DIAS_UTEIS', 'HORAS']);
   });
 
   it('diz na opção em branco o que a tela mandou, ou "Escolha a unidade"', () => {
@@ -93,23 +93,23 @@ describe('PrazoDoRecursoComponent: valor e unidade', () => {
   });
 
   it('mantém à vista e marcada a unidade gravada que o vocabulário não oferece', () => {
-    const fixture = montarPrazo({ valor: '2', unidade: 'dias' });
+    const fixture = montarPrazo({ valor: '2', unidade: 'DIAS' });
 
-    expect(codigosDaUnidade(fixture)).toEqual(['', 'diasUteis', 'horas', 'dias']);
-    expect(campoDaUnidade(fixture).value).toBe('dias');
+    expect(codigosDaUnidade(fixture)).toEqual(['', 'DIAS_UTEIS', 'HORAS', 'DIAS']);
+    expect(campoDaUnidade(fixture).value).toBe('DIAS');
     expect(campoDaUnidade(fixture).selectedOptions[0]?.textContent?.trim()).toBe(
-      'dias — não é mais oferecida',
+      'DIAS — não é mais oferecida',
     );
   });
 
   it('as unidades oferecidas não levam a marca de fora do vocabulário', () => {
-    const fixture = montarPrazo({ unidade: 'horas' });
+    const fixture = montarPrazo({ unidade: 'HORAS' });
 
     expect(campoDaUnidade(fixture).selectedOptions[0]?.textContent?.trim()).toBe('horas');
   });
 
   it('avisa o valor digitado, inclusive fração, sem aceitar nem recusar', () => {
-    const fixture = montarPrazo({ unidade: 'diasUteis' });
+    const fixture = montarPrazo({ unidade: 'DIAS_UTEIS' });
     const avisos = vi.fn();
     fixture.componentInstance.valorAlterado.subscribe(avisos);
 
@@ -120,16 +120,16 @@ describe('PrazoDoRecursoComponent: valor e unidade', () => {
   });
 
   it('avisa a unidade escolhida e a em branco', () => {
-    const fixture = montarPrazo({ unidade: 'horas' });
+    const fixture = montarPrazo({ unidade: 'HORAS' });
     const avisos = vi.fn();
     fixture.componentInstance.unidadeAlterada.subscribe(avisos);
 
-    for (const codigo of ['diasUteis', '']) {
+    for (const codigo of ['DIAS_UTEIS', '']) {
       campoDaUnidade(fixture).value = codigo;
       campoDaUnidade(fixture).dispatchEvent(new Event('change'));
     }
 
-    expect(avisos.mock.calls).toEqual([['diasUteis'], ['']]);
+    expect(avisos.mock.calls).toEqual([['DIAS_UTEIS'], ['']]);
   });
 });
 
@@ -149,15 +149,15 @@ describe('PrazoDoRecursoComponent: sem unidade para escolher', () => {
   });
 
   it('com a unidade gravada, ela segue à vista e o seletor fica disponível', () => {
-    const fixture = montarPrazo({ unidades: [], unidade: 'horas', situacao: 'falhou' });
+    const fixture = montarPrazo({ unidades: [], unidade: 'HORAS', situacao: 'falhou' });
 
     expect(campoDaUnidade(fixture).disabled).toBe(false);
-    expect(campoDaUnidade(fixture).value).toBe('horas');
+    expect(campoDaUnidade(fixture).value).toBe('HORAS');
     expect(fixture.nativeElement.querySelector(`#${IDS.situacao}`)).toBeNull();
   });
 
   it('mostra o nome que a leitura deu à unidade que o vocabulário não oferece', () => {
-    const fixture = montarPrazo({ unidade: 'dias', rotuloLido: 'Dias corridos' });
+    const fixture = montarPrazo({ unidade: 'DIAS', rotuloLido: 'Dias corridos' });
 
     expect(campoDaUnidade(fixture).selectedOptions[0]?.textContent?.trim()).toBe(
       'Dias corridos — não é mais oferecida',

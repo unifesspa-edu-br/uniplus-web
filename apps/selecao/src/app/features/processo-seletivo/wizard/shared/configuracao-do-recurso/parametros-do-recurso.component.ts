@@ -161,7 +161,7 @@ export class ParametrosDoRecursoComponent {
   protected instrucaoDaGuarda(): string {
     const { admiteInstanciaSuperior, guardaDaVaga } = this.parametros();
     const base = 'Sem escolha, a vaga fica guardada até o resultado definitivo.';
-    const fixa = admiteInstanciaSuperior === true && guardaDaVaga === GuardaDaVagaCodigo.naoGuarda;
+    const fixa = admiteInstanciaSuperior === true && guardaDaVaga === GuardaDaVagaCodigo.NAO_GUARDA;
     return fixa ? `${base} ${MENSAGEM_DA_GUARDA_FIXA}` : base;
   }
 

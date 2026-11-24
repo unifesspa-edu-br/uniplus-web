@@ -134,7 +134,7 @@ describe('FasePassoComponent', () => {
         regraRecurso: recurso({
           admiteInstanciaSuperior,
           prazoSegundaInstanciaValor: '48',
-          prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.horas,
+          prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.HORAS,
         }),
       });
     }

@@ -54,7 +54,7 @@ describe('ProcessosComponent — busca e paginação', () => {
     const requisicao = cenario.controller.expectOne(
       (requisicao) => requisicao.url === CERTAMES_URL && requisicao.params.has('situacao'),
     );
-    expect(requisicao.request.params.get('situacao')).toBe(SituacaoDoCertameCodigo.ultimosDias);
+    expect(requisicao.request.params.get('situacao')).toBe(SituacaoDoCertameCodigo.ULTIMOS_DIAS);
     expect(requisicao.request.params.has('cursor')).toBe(false);
     requisicao.flush([tecnicoEnfermagem], { headers: contadoresHeaders });
     await cenario.propagar();

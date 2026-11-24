@@ -23,12 +23,12 @@ function numeroDoHeader(headers: LeitorDeHeaders, nome: string): number | undefi
 
 export function contadoresDosHeaders(headers: LeitorDeHeaders): ContadoresSituacao {
   return {
-    [SituacaoDoCertameCodigo.emBreve]: numeroDoHeader(headers, 'X-Certames-Em-Breve'),
-    [SituacaoDoCertameCodigo.inscricoesAbertas]: numeroDoHeader(
+    [SituacaoDoCertameCodigo.EM_BREVE]: numeroDoHeader(headers, 'X-Certames-Em-Breve'),
+    [SituacaoDoCertameCodigo.INSCRICOES_ABERTAS]: numeroDoHeader(
       headers,
       'X-Certames-Inscricoes-Abertas',
     ),
-    [SituacaoDoCertameCodigo.ultimosDias]: numeroDoHeader(headers, 'X-Certames-Ultimos-Dias'),
-    [SituacaoDoCertameCodigo.encerradas]: numeroDoHeader(headers, 'X-Certames-Encerrados'),
+    [SituacaoDoCertameCodigo.ULTIMOS_DIAS]: numeroDoHeader(headers, 'X-Certames-Ultimos-Dias'),
+    [SituacaoDoCertameCodigo.ENCERRADAS]: numeroDoHeader(headers, 'X-Certames-Encerrados'),
   };
 }

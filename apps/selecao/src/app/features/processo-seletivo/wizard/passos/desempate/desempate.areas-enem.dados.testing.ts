@@ -8,7 +8,7 @@ export const ROTA_PESOS = '/api/configuracao/pesos-area-enem';
 export const ROTA_AREAS = '/api/configuracao/pesos-area-enem/areas';
 export const ROTA_DESEMPATE = `/api/selecao/processos-seletivos/${PROCESSO_ID}/criterios-desempate`;
 export const ROTA_DETALHE = `/api/selecao/processos-seletivos/${PROCESSO_ID}`;
-export const REGRA_POR_AREA = 'DESEMPATE-MAIOR-NOTA-AREA-ENEM|1';
+export const REGRA_POR_AREA = 'DESEMPATE_MAIOR_NOTA_AREA_ENEM|1';
 
 export const ERRO_500 = {
   corpo: { type: 'about:blank', title: 'Erro interno.', status: 500, code: 'x', traceId: 't' },
@@ -89,7 +89,7 @@ export const CLASSIFICACAO_COM_QUADRO = {
 
 export function criterio(areas: string[]): CriterioDesempateConfigurado {
   return {
-    regraCodigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM',
+    regraCodigo: 'DESEMPATE_MAIOR_NOTA_AREA_ENEM',
     regraVersao: '1',
     etapaRef: '',
     idadeMinima: '',

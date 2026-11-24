@@ -110,7 +110,7 @@ export function mesmoConteudoGravado(a: InscricaoDto, b: InscricaoDto): boolean 
 
 /** O que o leitor de tela ouve quando a releitura mostra que a gravação aconteceu. */
 export function confirmacaoDaGravacao(inscricao: InscricaoDto): string {
-  if (inscricao.situacao.codigo !== SituacaoInscricaoCodigo.submetida) return 'Rascunho salvo.';
+  if (inscricao.situacao.codigo !== SituacaoInscricaoCodigo.SUBMETIDA) return 'Rascunho salvo.';
   return inscricao.numeroInscricao
     ? `Inscrição enviada. Número ${inscricao.numeroInscricao}.`
     : 'Inscrição enviada.';

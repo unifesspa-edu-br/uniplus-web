@@ -139,7 +139,7 @@ export function responderPendentes(
 export function classificacaoGravada(
   resolucao: string | null,
   quadro: unknown[],
-  status: StatusProcessoCodigo = StatusProcessoCodigo.rascunho,
+  status: StatusProcessoCodigo = StatusProcessoCodigo.RASCUNHO,
 ) {
   return (store: ProcessoSeletivoStore) => {
     const classificacao = { resolucaoPesoAreaEnem: resolucao, quadroPesoAreaEnem: quadro };

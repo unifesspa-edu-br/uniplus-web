@@ -1,5 +1,5 @@
 import type { Locator } from '@playwright/test';
-import type { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
+import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 import type { BancaDaFaseLida } from './api-das-bancas';
 
 /** A regra de deliberação como a leitura a devolve. */
@@ -7,20 +7,20 @@ export type RegraLida = NonNullable<BancaDaFaseLida['regraDeDeliberacao']>;
 
 /** Uma banca colegiada de três titulares, que decide por maioria simples com quórum de dois. */
 export const REGRA_COLEGIADA: RegraLida = {
-  modo: { codigo: 'colegiadaComVotacao' as ModoDeDeliberacao, rotulo: 'Colegiada, com votação' },
+  modo: { codigo: ModoDeDeliberacao.COLEGIADA_COM_VOTACAO, rotulo: 'Colegiada, com votação' },
   integrantes: 3,
   suplentes: 0,
   quorum: 2,
   criterio: {
-    codigo: 'maioriaSimples' as NonNullable<RegraLida['criterio']>['codigo'],
+    codigo: 'MAIORIA_SIMPLES' as NonNullable<RegraLida['criterio']>['codigo'],
     rotulo: 'Maioria simples',
   },
   desempate: {
-    codigo: 'votoDaPresidencia' as NonNullable<RegraLida['desempate']>['codigo'],
+    codigo: 'VOTO_DA_PRESIDENCIA' as NonNullable<RegraLida['desempate']>['codigo'],
     rotulo: 'Voto da presidência',
   },
   encerramento: {
-    codigo: 'presidenciaNoQuorum' as NonNullable<RegraLida['encerramento']>['codigo'],
+    codigo: 'PRESIDENCIA_NO_QUORUM' as NonNullable<RegraLida['encerramento']>['codigo'],
     rotulo: 'A presidência encerra ao atingir o quórum',
   },
   semUnanimidade: null,

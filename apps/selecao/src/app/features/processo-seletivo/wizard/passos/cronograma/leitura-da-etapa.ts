@@ -73,7 +73,7 @@ function itensLidos(grupo: FormGroup<EtapaForm>): {
 }
 
 function origemDoPrazoLida(recurso: RecursoDaEtapa, nomeDoAto: (codigo: string) => string): string {
-  return recurso.ancora === 'atoPublicado'
+  return recurso.ancora === 'PUBLICACAO_DO_ATO'
     ? `prazo corre da publicação de ${nomeDoAto(recurso.atoAncoraCodigo)}`
     : 'prazo corre da ciência do candidato';
 }

@@ -6,6 +6,7 @@ import { of, Subject } from 'rxjs';
 import { type ApiResult, apiFailure, apiOk } from '@uniplus/shared-core/http';
 import { passarOTempo } from '@uniplus/shared-testing';
 import {
+  TipoObrigatoriedadeCodigo,
   type InscricaoDto,
   type InscricaoRequest,
   SituacaoInscricaoCodigo,
@@ -95,7 +96,7 @@ describe('InscricaoDoCandidatoPage', () => {
                     ocorrencias,
                     regras: {
                       exibicao: null,
-                      obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+                      obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null },
                     },
                     subitens: [item('RENDA')],
                   },
@@ -135,7 +136,7 @@ describe('InscricaoDoCandidatoPage', () => {
     cenario.servico.salvar = () =>
       of(problema(422, 'uniplus.selecao.inscricao.rascunho_so_antes_do_envio'));
     cenario.servico.inscricao = inscricao({
-      situacao: { codigo: SituacaoInscricaoCodigo.submetida, rotulo: 'Situação de teste' },
+      situacao: { codigo: SituacaoInscricaoCodigo.SUBMETIDA, rotulo: 'Situação de teste' },
     });
 
     await cenario.clicar(botao(tela, 'Salvar rascunho'));

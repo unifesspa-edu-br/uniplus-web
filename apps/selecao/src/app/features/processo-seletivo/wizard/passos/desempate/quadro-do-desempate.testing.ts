@@ -75,7 +75,7 @@ export const NUNCA: ClassificacaoGravada = { estado: 'nunca-gravada' };
 
 export function criterio(areas: string[]): CriterioDesempateConfigurado {
   return {
-    regraCodigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM',
+    regraCodigo: 'DESEMPATE_MAIOR_NOTA_AREA_ENEM',
     regraVersao: '1',
     etapaRef: '',
     idadeMinima: '',

@@ -1,5 +1,5 @@
 import type { CertamePublicoResponse } from '@uniplus/shared-data/portal';
-import type { CertameNaVitrineDto, SituacaoDoCertame } from '@uniplus/shared-data/selecao';
+import type { CertameNaVitrineDto, SituacaoDoCertameCodigo } from '@uniplus/shared-data/selecao';
 import { test, expect, type Page } from '@playwright/test';
 
 /**
@@ -24,7 +24,10 @@ const CERTAME: CertameNaVitrineDto = {
   modalidadesOfertadas: ['AC'],
   inscricoesDe: '2026-01-01T12:00:00Z',
   inscricoesAte: '2026-12-05T23:59:00Z',
-  situacao: 'inscricoesAbertas' as SituacaoDoCertame,
+  situacao: {
+    codigo: 'INSCRICOES_ABERTAS' as SituacaoDoCertameCodigo,
+    rotulo: 'Inscrições abertas',
+  },
   totalDeVagas: 10,
 };
 

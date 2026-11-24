@@ -1,3 +1,4 @@
+import { BlocoSistemaCodigo } from '@uniplus/shared-data/selecao';
 import { TestBed } from '@angular/core/testing';
 import { fatoComOperadores } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
@@ -39,8 +40,8 @@ describe('FormularioPassoComponent: documentos da fase', () => {
       ...GRAVADO,
       etapas: [
         etapa('DADOS_BASICOS', 0),
-        etapa('DOCUMENTOS', 1, 'COMPROVACAO_DOCUMENTAL'),
-        etapa('REVISAO_E_ACEITE', 2, 'REVISAO_E_ACEITE'),
+        etapa('DOCUMENTOS', 1, BlocoSistemaCodigo.COMPROVACAO_DOCUMENTAL),
+        etapa('REVISAO_E_ACEITE', 2, BlocoSistemaCodigo.REVISAO_E_ACEITE),
       ],
       coleta: { itens: [campo('NOME', 0, 'DADOS_BASICOS')], grupos: [] },
     };

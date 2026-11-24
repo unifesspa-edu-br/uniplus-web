@@ -3,19 +3,19 @@ import type { components } from './schema';
 type Esquemas = components['schemas'];
 
 export const PARAMETROS_DA_ELIMINACAO = {
-  'ELIMINACAO-NOTA-MINIMA-ETAPA': 'DocumentoDaConfiguracaoEliminacaoParametrosNotaMinimaEtapa',
-  'ELIMINACAO-CORTE-EM-AREA': 'DocumentoDaConfiguracaoEliminacaoParametrosCorteEmArea',
-  'ELIMINACAO-ZERO-EM-AREA': 'DocumentoDaConfiguracaoComunsSemParametros',
-  'ELIMINACAO-FALTA-EM-DIA-DE-PROVA-ENEM': 'DocumentoDaConfiguracaoComunsSemParametros',
-  'ELIMINACAO-AUSENCIA-NA-ETAPA': 'DocumentoDaConfiguracaoEliminacaoParametrosAusenciaNaEtapa',
+  'ELIMINACAO_NOTA_MINIMA_ETAPA': 'DocumentoDaConfiguracaoEliminacaoParametrosNotaMinimaEtapa',
+  'ELIMINACAO_CORTE_EM_AREA': 'DocumentoDaConfiguracaoEliminacaoParametrosCorteEmArea',
+  'ELIMINACAO_ZERO_EM_AREA': 'DocumentoDaConfiguracaoComunsSemParametros',
+  'ELIMINACAO_FALTA_EM_DIA_DE_PROVA_ENEM': 'DocumentoDaConfiguracaoComunsSemParametros',
+  'ELIMINACAO_AUSENCIA_NA_ETAPA': 'DocumentoDaConfiguracaoEliminacaoParametrosAusenciaNaEtapa',
 } as const satisfies Record<string, keyof Esquemas>;
 
 export const PARAMETROS_DO_DESEMPATE = {
-  'DESEMPATE-MAIOR-NOTA-ETAPA': 'DocumentoDaConfiguracaoDesempateParametrosMaiorNotaEtapa',
-  'DESEMPATE-MAIOR-IDADE': 'DocumentoDaConfiguracaoComunsSemParametros',
-  'DESEMPATE-IDOSO': 'DocumentoDaConfiguracaoDesempateParametrosIdoso',
-  'DESEMPATE-CONDICAO-SOBRE-DADO': 'DocumentoDaConfiguracaoDesempateCondicaoDoDesempate',
-  'DESEMPATE-MAIOR-NOTA-AREA-ENEM': 'DocumentoDaConfiguracaoDesempateParametrosMaiorNotaAreaEnem',
+  'DESEMPATE_MAIOR_NOTA_ETAPA': 'DocumentoDaConfiguracaoDesempateParametrosMaiorNotaEtapa',
+  'DESEMPATE_MAIOR_IDADE': 'DocumentoDaConfiguracaoComunsSemParametros',
+  'DESEMPATE_IDOSO': 'DocumentoDaConfiguracaoDesempateParametrosIdoso',
+  'DESEMPATE_CONDICAO_SOBRE_DADO': 'DocumentoDaConfiguracaoDesempateCondicaoDoDesempate',
+  'DESEMPATE_MAIOR_NOTA_AREA_ENEM': 'DocumentoDaConfiguracaoDesempateParametrosMaiorNotaAreaEnem',
 } as const satisfies Record<string, keyof Esquemas>;
 
 export type ParametrosDaEliminacao = {

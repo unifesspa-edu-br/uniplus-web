@@ -43,7 +43,7 @@ const resumoSeed: ProcessoSeletivoResumoDto = {
 const criarCommand: CriarProcessoSeletivoCommand = {
   nome: 'Processo Seletivo 2027',
   tipoProcessoOrigemId: TIPO_ID,
-  origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
+  origemCandidatos: OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
   unidadeAdministradoraOrigemId: '01960000-0000-7000-000000000517',
   localidadeCodigoIbge: null,
   localidadeNome: null,

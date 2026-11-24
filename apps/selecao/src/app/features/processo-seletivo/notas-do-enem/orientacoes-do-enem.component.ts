@@ -14,7 +14,7 @@ import { NotasDoEnemDoProcesso } from './notas-do-enem-do-processo.service';
     <details class="notas__orientacoes">
       <summary>Orientações</summary>
       <div class="notas__orientacoes-corpo">
-        @if (tipo() === 'envio') {
+        @if (tipo() === 'ENVIO') {
           <p class="notas__texto">
             O arquivo de envio traz os CPFs dos inscritos da edição, um por linha, no leiaute que o
             INEP espera. Cada arquivo gerado fica registrado no histórico de envios.
@@ -27,7 +27,7 @@ import { NotasDoEnemDoProcesso } from './notas-do-enem-do-processo.service';
         }
         <dl class="notas__leiautes">
           <div>
-            <dt>{{ tipo() === 'envio' ? 'Leiaute de envio' : 'Leiaute de retorno' }}</dt>
+            <dt>{{ tipo() === 'ENVIO' ? 'Leiaute de envio' : 'Leiaute de retorno' }}</dt>
             @for (leiaute of lista(); track leiaute.codigo + leiaute.versao) {
               <dd>
                 <strong>{{ leiaute.codigo }} {{ leiaute.versao }}</strong>
@@ -45,11 +45,11 @@ import { NotasDoEnemDoProcesso } from './notas-do-enem-do-processo.service';
 export class OrientacoesDoEnemComponent {
   private readonly notas = inject(NotasDoEnemDoProcesso);
 
-  readonly tipo = input.required<'envio' | 'retorno'>();
+  readonly tipo = input.required<'ENVIO' | 'RETORNO'>();
 
   protected lista(): readonly LeiauteDoInepDto[] {
     const leitura: Leitura<readonly LeiauteDoInepDto[]> =
-      this.tipo() === 'envio' ? this.notas.leiautesDeEnvio() : this.notas.leiautesDeRetorno();
+      this.tipo() === 'ENVIO' ? this.notas.leiautesDeEnvio() : this.notas.leiautesDeRetorno();
     return leitura.estado === 'lido' ? leitura.dados : [];
   }
 }

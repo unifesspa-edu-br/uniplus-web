@@ -59,7 +59,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: releitura do pro
         .expectOne((r) => r.url.endsWith(ROTA_DETALHE))
         .flush({
           id: PROCESSO_ID,
-          status: StatusProcessoCodigo.rascunho,
+          status: StatusProcessoCodigo.RASCUNHO,
           classificacao: {
             resolucaoPesoAreaEnem: RESOLUCAO,
             quadroPesoAreaEnem: QUADRO_CONGELADO,

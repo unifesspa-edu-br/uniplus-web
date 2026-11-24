@@ -29,12 +29,12 @@ describe('ObrigatoriedadesLegaisApi', () => {
     const result = firstValueFrom(
       api.listar({
         tipoEdital: 'edital',
-        categoria: CategoriaObrigatoriedadeCodigo.etapa,
+        categoria: CategoriaObrigatoriedadeCodigo.ETAPA,
         vigentes: false,
       }),
     );
     const req = http.expectOne((request) => request.url === base);
-    expect(req.request.params.get('categoria')).toBe(CategoriaObrigatoriedadeCodigo.etapa);
+    expect(req.request.params.get('categoria')).toBe(CategoriaObrigatoriedadeCodigo.ETAPA);
     expect(req.request.params.get('tipoEdital')).toBe('edital');
     expect(req.request.params.get('vigentes')).toBe('false');
     req.flush([]);

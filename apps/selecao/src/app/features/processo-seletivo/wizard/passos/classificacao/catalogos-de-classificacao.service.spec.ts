@@ -33,12 +33,12 @@ function regra(codigo: string, tipo: RegraCatalogoDto['tipo']['codigo']): RegraC
 }
 
 const POR_TIPO: Record<string, readonly RegraCatalogoDto[]> = {
-  regra_calculo: [regra('FORMULA-MEDIA-PONDERADA', 'regra_calculo' as RegraCatalogoDto['tipo']['codigo'])],
-  regra_arredondamento: [regra('ARRED-TRUNCAR', 'regra_arredondamento' as RegraCatalogoDto['tipo']['codigo'])],
-  regra_ordem_alocacao: [regra('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA', 'regra_ordem_alocacao' as RegraCatalogoDto['tipo']['codigo'])],
-  regra_eliminacao: [regra('ELIMINACAO-ZERO-EM-AREA', 'regra_eliminacao' as RegraCatalogoDto['tipo']['codigo'])],
+  REGRA_CALCULO: [regra('FORMULA-MEDIA-PONDERADA', 'REGRA_CALCULO' as RegraCatalogoDto['tipo']['codigo'])],
+  REGRA_ARREDONDAMENTO: [regra('ARRED-TRUNCAR', 'REGRA_ARREDONDAMENTO' as RegraCatalogoDto['tipo']['codigo'])],
+  REGRA_ORDEM_ALOCACAO: [regra('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA', 'REGRA_ORDEM_ALOCACAO' as RegraCatalogoDto['tipo']['codigo'])],
+  REGRA_ELIMINACAO: [regra('ELIMINACAO_ZERO_EM_AREA', 'REGRA_ELIMINACAO' as RegraCatalogoDto['tipo']['codigo'])],
   regra_bonus: [regra('BONUS-MULTIPLICATIVO', 'regra_bonus' as RegraCatalogoDto['tipo']['codigo'])],
-  criterio_desempate: [regra('DESEMPATE-MAIOR-IDADE', 'criterio_desempate' as RegraCatalogoDto['tipo']['codigo'])],
+  CRITERIO_DESEMPATE: [regra('DESEMPATE_MAIOR_IDADE', 'CRITERIO_DESEMPATE' as RegraCatalogoDto['tipo']['codigo'])],
 };
 
 const RESOLUCAO = 'Resolução nº 805/2024/Consepe';
@@ -100,20 +100,20 @@ describe('CatalogosDeClassificacao', () => {
     expect(servico.regrasOrdemAlocacao().map((r) => r.codigo)).toEqual([
       'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
     ]);
-    expect(servico.regrasEliminacao().map((r) => r.codigo)).toEqual(['ELIMINACAO-ZERO-EM-AREA']);
+    expect(servico.regrasEliminacao().map((r) => r.codigo)).toEqual(['ELIMINACAO_ZERO_EM_AREA']);
     expect(servico.regrasBonus().map((r) => r.codigo)).toEqual(['BONUS-MULTIPLICATIVO']);
-    expect(servico.criteriosDesempate().map((r) => r.codigo)).toEqual(['DESEMPATE-MAIOR-IDADE']);
+    expect(servico.criteriosDesempate().map((r) => r.codigo)).toEqual(['DESEMPATE_MAIOR_IDADE']);
     expect(servico.carregando()).toBe(false);
 
     const tiposPedidos = listar.mock.calls.map(([query]: [RegrasCatalogoQuery]) => query.tipo);
     expect(new Set(tiposPedidos)).toEqual(
       new Set([
-        'regra_calculo',
-        'regra_arredondamento',
-        'regra_ordem_alocacao',
-        'regra_eliminacao',
+        'REGRA_CALCULO',
+        'REGRA_ARREDONDAMENTO',
+        'REGRA_ORDEM_ALOCACAO',
+        'REGRA_ELIMINACAO',
         'regra_bonus',
-        'criterio_desempate',
+        'CRITERIO_DESEMPATE',
       ]),
     );
   });

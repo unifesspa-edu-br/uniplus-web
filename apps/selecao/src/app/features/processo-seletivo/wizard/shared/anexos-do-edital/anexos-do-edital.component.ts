@@ -206,7 +206,7 @@ export class AnexosDoEditalComponent {
       new EnvioDeArquivo({
         envio: this.servico.abrirEnvio(),
         arquivo,
-        finalidade: FinalidadeDoDocumentoCodigo.anexoDoEdital,
+        finalidade: FinalidadeDoDocumentoCodigo.ANEXO_DO_EDITAL,
         tipoDeMidia: tipoDeMidiaDoAnexo(arquivo.name),
         recusaDoFormato: 'O formato do arquivo não é aceito para anexo.',
         explicar: (problema) => this.problemI18n.resolve(problema).title,

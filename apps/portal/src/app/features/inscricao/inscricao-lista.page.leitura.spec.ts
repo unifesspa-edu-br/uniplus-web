@@ -54,7 +54,7 @@ describe('InscricaoListaPage', () => {
   });
 
   it('sem o nome do processo, que deixou de ser público, mostra um texto neutro', () => {
-    expect(itemDaLista(inscricao('p9', SituacaoInscricaoCodigo.rascunho, null)).nome).toBe(
+    expect(itemDaLista(inscricao('p9', SituacaoInscricaoCodigo.RASCUNHO, null)).nome).toBe(
       'Processo seletivo',
     );
   });
@@ -71,7 +71,7 @@ describe('InscricaoListaPage', () => {
   it('com duas opções de curso, cada uma sai com a sua ordem', async () => {
     await cenario.carregar([
       {
-        ...inscricao('p1', SituacaoInscricaoCodigo.submetida, 'Medicina 2027'),
+        ...inscricao('p1', SituacaoInscricaoCodigo.SUBMETIDA, 'Medicina 2027'),
         opcoesDeCurso: [
           { ordem: 1, cursoNome: 'Direito', cursoGrau: 'Bacharelado' },
           { ordem: 2, cursoNome: 'Medicina', cursoGrau: 'Bacharelado' },
@@ -87,7 +87,7 @@ describe('InscricaoListaPage', () => {
 
   it('rascunho que ainda não escolheu curso diz que o curso não foi escolhido', async () => {
     await cenario.carregar([
-      inscricao('p1', SituacaoInscricaoCodigo.rascunho, 'Auxílio estudantil 2026'),
+      inscricao('p1', SituacaoInscricaoCodigo.RASCUNHO, 'Auxílio estudantil 2026'),
     ]);
 
     expect(cenario.itens()[0].textContent).toContain('Curso ainda não escolhido');

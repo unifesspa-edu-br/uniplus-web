@@ -7,7 +7,7 @@ describe('descreverDocumento', () => {
   const documento: DocumentoAPublicarDto = {
     id: '019f41cf-69fd-759a-ac6d-09acabc1b030',
     processoSeletivoId: '019f41cf-69fd-759a-ac6d-09acabc1b031',
-    finalidade: { codigo: FinalidadeDoDocumentoCodigo.documentoDoEdital, rotulo: 'Documento do edital' },
+    finalidade: { codigo: FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL, rotulo: 'Documento do edital' },
     nomeArquivo: 'edital-de-abertura.pdf',
     tipoDeMidia: 'application/pdf',
     status: { codigo: 'Confirmado' as DocumentoAPublicarDto['status']['codigo'], rotulo: 'Confirmado' },
@@ -33,7 +33,7 @@ describe('classificarDocumentos', () => {
   const pdf: DocumentoAPublicarDto = {
     id: '019f41cf-69fd-759a-ac6d-09acabc1b040',
     processoSeletivoId: '019f41cf-69fd-759a-ac6d-09acabc1b031',
-    finalidade: { codigo: FinalidadeDoDocumentoCodigo.documentoDoEdital, rotulo: 'Documento do edital' },
+    finalidade: { codigo: FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL, rotulo: 'Documento do edital' },
     nomeArquivo: 'edital-de-abertura.pdf',
     tipoDeMidia: 'application/pdf',
     status: { codigo: 'Confirmado' as DocumentoAPublicarDto['status']['codigo'], rotulo: 'Confirmado' },

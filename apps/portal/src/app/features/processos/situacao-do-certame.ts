@@ -4,17 +4,17 @@ import { diaNoFuso, formatarDataBr } from '@uniplus/shared-utils';
 
 /** Ordem de exibição dos chips — não é a ordem alfabética do enum gerado. */
 export const SITUACOES_EXIBIDAS: readonly SituacaoDoCertameCodigo[] = [
-  SituacaoDoCertameCodigo.emBreve,
-  SituacaoDoCertameCodigo.inscricoesAbertas,
-  SituacaoDoCertameCodigo.ultimosDias,
-  SituacaoDoCertameCodigo.encerradas,
+  SituacaoDoCertameCodigo.EM_BREVE,
+  SituacaoDoCertameCodigo.INSCRICOES_ABERTAS,
+  SituacaoDoCertameCodigo.ULTIMOS_DIAS,
+  SituacaoDoCertameCodigo.ENCERRADAS,
 ];
 
 const VARIANTE: Record<SituacaoDoCertameCodigo, UiTagVariant> = {
-  [SituacaoDoCertameCodigo.emBreve]: 'info',
-  [SituacaoDoCertameCodigo.inscricoesAbertas]: 'success',
-  [SituacaoDoCertameCodigo.ultimosDias]: 'warning',
-  [SituacaoDoCertameCodigo.encerradas]: 'neutral',
+  [SituacaoDoCertameCodigo.EM_BREVE]: 'info',
+  [SituacaoDoCertameCodigo.INSCRICOES_ABERTAS]: 'success',
+  [SituacaoDoCertameCodigo.ULTIMOS_DIAS]: 'warning',
+  [SituacaoDoCertameCodigo.ENCERRADAS]: 'neutral',
 };
 
 /**
@@ -22,8 +22,8 @@ const VARIANTE: Record<SituacaoDoCertameCodigo, UiTagVariant> = {
  * do topo pode convidar a fazer.
  */
 const SITUACOES_QUE_RECEBEM_INSCRICAO: readonly SituacaoDoCertameCodigo[] = [
-  SituacaoDoCertameCodigo.inscricoesAbertas,
-  SituacaoDoCertameCodigo.ultimosDias,
+  SituacaoDoCertameCodigo.INSCRICOES_ABERTAS,
+  SituacaoDoCertameCodigo.ULTIMOS_DIAS,
 ];
 
 export function rotuloDaSituacao(situacao: CertameNaVitrineDto['situacao']): string {
@@ -49,7 +49,7 @@ export function vagasFormatadas(totalDeVagas: number): string {
  * inscrição nem de abertura já passada — nesses casos o que importa é o prazo.
  */
 export function aberturaDoCertame(certame: CertameNaVitrineDto, agora: Date): string | null {
-  if (certame.situacao.codigo !== SituacaoDoCertameCodigo.emBreve) {
+  if (certame.situacao.codigo !== SituacaoDoCertameCodigo.EM_BREVE) {
     return null;
   }
   const abertura = new Date(certame.inscricoesDe);

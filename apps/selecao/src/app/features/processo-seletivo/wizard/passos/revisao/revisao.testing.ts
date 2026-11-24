@@ -83,7 +83,7 @@ export const PROCESSO_DTO_MINIMO = {
   id: PROCESSO_ID,
   nome: 'x',
   tipoProcesso: { origemId: 't1', codigo: 'T', nome: 'x' },
-  status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' },
+  status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' },
   origemCandidatos: 'InscricaoPropria',
   unidadeAdministradora: {
     origemId: 'u1',

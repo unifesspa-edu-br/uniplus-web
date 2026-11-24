@@ -51,7 +51,7 @@ describe('Bloco de documentos da inscrição', () => {
     const emVerificacao: ArquivoDoDocumento = {
       ...arquivoVerificado('a1'),
       tamanhoBytes: null,
-      situacao: 'emVerificacao',
+      situacao: 'EM_VERIFICACAO',
       mensagem: 'Arquivo em verificação. Isso costuma levar poucos segundos.',
     };
     const AVISO =

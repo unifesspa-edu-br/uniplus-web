@@ -69,9 +69,9 @@ const VIEW_OPTIONS: readonly UiSegmentedOption<VisaoCertames>[] = [
 ];
 
 const INSCRICAO_STATUS_VARIANT: Record<SituacaoInscricaoCodigo, UiTagVariant> = {
-  [SituacaoInscricaoCodigo.rascunho]: 'warning',
-  [SituacaoInscricaoCodigo.submetida]: 'success',
-  [SituacaoInscricaoCodigo.cancelada]: 'neutral',
+  [SituacaoInscricaoCodigo.RASCUNHO]: 'warning',
+  [SituacaoInscricaoCodigo.SUBMETIDA]: 'success',
+  [SituacaoInscricaoCodigo.CANCELADA]: 'neutral',
 };
 
 type TipoDeAcaoQueNavega = 'continuar' | 'corrigir' | 'comprovante';

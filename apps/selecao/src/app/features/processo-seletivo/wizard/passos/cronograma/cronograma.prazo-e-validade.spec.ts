@@ -28,7 +28,7 @@ function preencherCatalogos(): void {
   TestBed.inject(CatalogoDasEscolhasDaValidade).escolhasDaValidade.set([
     opcao('exigeDocumentoValido'),
   ]);
-  TestBed.inject(CatalogoDasUnidadesDoPrazoDeEmissao).unidadesDoPrazoDeEmissao.set([opcao('dias')]);
+  TestBed.inject(CatalogoDasUnidadesDoPrazoDeEmissao).unidadesDoPrazoDeEmissao.set([opcao('DIAS')]);
   TestBed.inject(CatalogoDosTiposDaDataDeReferencia).tiposDaDataDeReferencia.set([
     opcao('fimDasInscricoes'),
   ]);
@@ -76,7 +76,7 @@ function configurarPrazo(tela: ContextoDoCronograma, id: string): void {
   ]);
   tela.detectar();
   mudar(tela.nativo, `-prazo-${id}-valor`, '30');
-  mudar(tela.nativo, `-prazo-${id}-unidade`, 'dias');
+  mudar(tela.nativo, `-prazo-${id}-unidade`, 'DIAS');
   mudar(tela.nativo, `-prazo-${id}-referencia-tipo`, 'fimDasInscricoes');
   mudar(tela.nativo, `-prazo-${id}-efeito`, 'recusarDocumento');
 }
@@ -103,7 +103,7 @@ const REQUISITOS_CONFIGURADOS = {
   prazoDeEmissao: {
     escolha: 'comPrazo',
     valor: 30,
-    unidade: 'dias',
+    unidade: 'DIAS',
     referencia: { tipo: 'fimDasInscricoes' },
     efeitoForaDoPrazo: 'recusarDocumento',
   },

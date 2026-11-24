@@ -77,8 +77,8 @@ describe('CronogramaPassoComponent: nota da etapa', () => {
     it('não oferece o caráter puramente eliminatório', () => {
       const etapa = comEtapaDoEnemAberta();
       expect(edicao.caracteresPara(etapa).map((o) => o.valor)).toEqual([
-        'classificatoria',
-        'ambas',
+        'CLASSIFICATORIA',
+        'AMBAS',
       ]);
     });
 
@@ -112,7 +112,7 @@ describe('CronogramaPassoComponent: nota da etapa', () => {
         }),
       ]);
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.publicado,
+        status: StatusProcessoCodigo.PUBLICADO,
       } as unknown as ProcessoSeletivoDto);
       detectar();
 
@@ -138,11 +138,11 @@ describe('CronogramaPassoComponent: nota da etapa', () => {
       etapa.controls.produtos.setValue([{ atoCodigo: 'ATO', papel: null }]);
       etapa.controls.inicio.setValue('2027-01-10T08:00');
       edicao.acrescentarRecursoNaEtapa(etapa);
-      edicao.alterarRecursoDaEtapa(etapa, 0, { campo: 'ancora', valor: 'cienciaIndividual' });
+      edicao.alterarRecursoDaEtapa(etapa, 0, { campo: 'ancora', valor: 'CIENCIA_INDIVIDUAL' });
       edicao.acrescentarRecursoNaEtapa(etapa);
       expect(etapa.controls.recursos.value.map((r) => r.ancora)).toEqual([
-        'cienciaIndividual',
-        'atoPublicado',
+        'CIENCIA_INDIVIDUAL',
+        'PUBLICACAO_DO_ATO',
       ]);
 
       edicao.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
@@ -255,7 +255,7 @@ describe('CronogramaPassoComponent: nota da etapa', () => {
 
     it('mostra a recusa do servidor sob o campo e a deixa a conferir quando a etapa muda', async () => {
       const etapa = etapaAberta();
-      edicao.escolherCarater(etapa, 'ambas');
+      edicao.escolherCarater(etapa, 'AMBAS');
       etapa.controls.notaMaxima.setValue('10');
       detectar();
 
@@ -298,7 +298,7 @@ describe('CronogramaPassoComponent: nota da etapa', () => {
       expansao.alternarFase(0);
       expansao.alternarEtapa(0);
       const etapa = cronograma.etapas.at(0);
-      edicao.escolherCarater(etapa, 'classificatoria');
+      edicao.escolherCarater(etapa, 'CLASSIFICATORIA');
       detectar();
       return etapa;
     }

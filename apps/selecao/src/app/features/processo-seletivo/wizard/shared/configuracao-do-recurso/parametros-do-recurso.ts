@@ -127,7 +127,7 @@ export function opcoesDaGuarda(
   const oferecidas = opcoesParaEscolha(opcoes, valorAtual, rotuloLido);
   if (admiteInstanciaSuperior !== true) return oferecidas;
   return oferecidas.filter(
-    (opcao) => opcao.codigo !== GuardaDaVagaCodigo.naoGuarda || opcao.codigo === valorAtual,
+    (opcao) => opcao.codigo !== GuardaDaVagaCodigo.NAO_GUARDA || opcao.codigo === valorAtual,
   );
 }
 
@@ -220,7 +220,7 @@ function semOPrazoDaSegundaInstancia(
 
 /** Marcar Sim com "não guarda" escolhida deixa a guarda vazia: com instância superior ela é fixa. */
 function semANaoGuarda(parametros: ParametrosDoRecurso): ParametrosAlterados | null {
-  if (parametros.guardaDaVaga !== GuardaDaVagaCodigo.naoGuarda) return null;
+  if (parametros.guardaDaVaga !== GuardaDaVagaCodigo.NAO_GUARDA) return null;
   return {
     parametros: { ...parametros, guardaDaVaga: '' },
     leitura: LEITURA_EM_BRANCO,

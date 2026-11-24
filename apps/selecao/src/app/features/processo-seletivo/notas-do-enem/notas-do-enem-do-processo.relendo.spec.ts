@@ -124,13 +124,13 @@ describe('NotasDoEnemDoProcesso: leitura em curso do histórico', () => {
   });
 
   it('a leitura de leiautes superada por outra não desfaz o resultado da mais nova', async () => {
-    const antiga = notas.recarregarLeiautes('envio');
+    const antiga = notas.recarregarLeiautes('ENVIO');
     const pedidoAntigo = controller.expectOne(
-      (r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'envio',
+      (r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'ENVIO',
     );
-    const recente = notas.recarregarLeiautes('envio');
+    const recente = notas.recarregarLeiautes('ENVIO');
     const pedidoRecente = controller.expectOne(
-      (r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'envio',
+      (r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'ENVIO',
     );
 
     pedidoRecente.flush([]);

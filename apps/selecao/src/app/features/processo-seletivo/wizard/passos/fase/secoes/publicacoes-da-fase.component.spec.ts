@@ -114,7 +114,7 @@ describe('PublicacoesDaFaseComponent', () => {
     it('em consulta, lê a promessa como texto, sem caixa', () => {
       comCronograma({ ...publicaDefinitivo, emiteParecerIndividual: true });
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.publicado,
+        status: StatusProcessoCodigo.PUBLICADO,
       } as unknown as ProcessoSeletivoDto);
       detectar();
 

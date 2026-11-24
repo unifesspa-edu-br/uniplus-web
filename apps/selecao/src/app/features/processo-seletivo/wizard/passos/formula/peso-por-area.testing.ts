@@ -257,7 +257,7 @@ export function rascunhoComResolucao(resolucao: string) {
 export function processoGravadoCom(
   resolucao: string,
   quadro: unknown[],
-  status: StatusProcessoCodigo = StatusProcessoCodigo.rascunho,
+  status: StatusProcessoCodigo = StatusProcessoCodigo.RASCUNHO,
 ) {
   return (store: ProcessoSeletivoStore) => {
     rascunhoComResolucao(resolucao)(store);

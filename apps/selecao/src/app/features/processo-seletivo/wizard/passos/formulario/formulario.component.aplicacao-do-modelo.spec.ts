@@ -1,3 +1,4 @@
+import { BlocoSistemaCodigo } from '@uniplus/shared-data/selecao';
 import { conteudoInicial } from '@uniplus/shared-ui/components';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -182,7 +183,7 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
         ...HABILITACAO_GRAVADA,
         faseId: null,
         modeloOrigem: { id: 'hab', codigo: 'HAB' },
-        etapas: [etapa('REVISAO_E_ACEITE', 0, 'REVISAO_E_ACEITE')],
+        etapas: [etapa('REVISAO_E_ACEITE', 0, BlocoSistemaCodigo.REVISAO_E_ACEITE)],
         coleta: { itens: [], grupos: [] },
       };
 

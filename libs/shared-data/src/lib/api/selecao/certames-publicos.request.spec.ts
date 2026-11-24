@@ -41,12 +41,12 @@ describe('certamesPublicosRequest', () => {
 
   it('declara situação, busca e contadores quando pedidos', () => {
     const request = certamesPublicosRequest(BASE, {
-      situacao: SituacaoDoCertameCodigo.ultimosDias,
+      situacao: SituacaoDoCertameCodigo.ULTIMOS_DIAS,
       q: '  técnico  ',
       incluirContadores: true,
     });
 
-    expect(params(request).get('situacao')).toBe('ultimosDias');
+    expect(params(request).get('situacao')).toBe(SituacaoDoCertameCodigo.ULTIMOS_DIAS);
     expect(params(request).get('q')).toBe('técnico');
     expect(params(request).get('incluir_contadores')).toBe('true');
   });

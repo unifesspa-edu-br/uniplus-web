@@ -57,10 +57,10 @@ describe('ProcessosSeletivosListaPage', () => {
    * entre um rascunho e um certame publicado.
    */
   it.each([
-    [StatusProcessoCodigo.rascunho, 'Em preparação', 'tag--warning'],
-    [StatusProcessoCodigo.publicado, 'Publicado', 'tag--success'],
-    [StatusProcessoCodigo.encerrado, 'Encerrado', ''],
-    [StatusProcessoCodigo.cancelado, 'Cancelado', 'tag--danger'],
+    [StatusProcessoCodigo.RASCUNHO, 'Em preparação', 'tag--warning'],
+    [StatusProcessoCodigo.PUBLICADO, 'Publicado', 'tag--success'],
+    [StatusProcessoCodigo.ENCERRADO, 'Encerrado', ''],
+    [StatusProcessoCodigo.CANCELADO, 'Cancelado', 'tag--danger'],
   ])('rotula e colore o status %s', async (status, rotulo, classe) => {
     await cenario.responderLista([processo({ status: { codigo: status, rotulo } })]);
 

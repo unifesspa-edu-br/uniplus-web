@@ -131,14 +131,14 @@ describe('campoNaTelaDaEtapa', () => {
     expect(
       campoNaTelaDaEtapa(
         'notaMinima',
-        umaEtapaDoCronograma({ carater: CaraterEtapaCodigo.ambas }),
+        umaEtapaDoCronograma({ carater: CaraterEtapaCodigo.AMBAS }),
         undefined,
       ),
     ).toBe(true);
     expect(
       campoNaTelaDaEtapa(
         'notaMinima',
-        umaEtapaDoCronograma({ carater: CaraterEtapaCodigo.classificatoria }),
+        umaEtapaDoCronograma({ carater: CaraterEtapaCodigo.CLASSIFICATORIA }),
         undefined,
       ),
     ).toBe(false);

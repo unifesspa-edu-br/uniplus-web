@@ -74,7 +74,7 @@ describe('CronogramaPassoComponent: convenção de contagem', () => {
     // do servidor, não uma escrita local — molde de
     // `pagamento.component.spec.ts:511` e `anexo-edital.component.spec.ts:332`.
     store.remoteSnapshot.set({
-      status: { codigo: StatusProcessoCodigo.rascunho, rotulo: 'Rascunho' },
+      status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: 'Rascunho' },
       algoritmoContagemPrazo: { codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL', versao: 'v1' },
     } as never);
     detectar();

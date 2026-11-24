@@ -150,7 +150,7 @@ export const REGRAS = [
   {
     codigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
     versao: 'v1',
-    tipo: 'regra_prazo_recurso',
+    tipo: 'REGRA_PRAZO_RECURSO',
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: 'Lei 9.784/1999',

@@ -69,7 +69,7 @@ export const arquivoVerificado = (arquivoId: string): ArquivoDoDocumento => ({
   apresentacaoId: `apresentacao-${arquivoId}`,
   tipoDeMidia: 'application/pdf',
   tamanhoBytes: 2048,
-  situacao: 'verificado',
+  situacao: 'VERIFICADO',
   mensagem: null,
   rotulo: 'Arquivo 1',
   confirmadoEm: '2026-10-22T12:33:00Z',

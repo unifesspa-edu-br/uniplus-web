@@ -24,7 +24,7 @@ export interface LeiauteEscolhido {
   readonly leiauteVersao: string;
 }
 
-export type TipoDeLeiaute = 'envio' | 'retorno';
+export type TipoDeLeiaute = 'ENVIO' | 'RETORNO';
 
 /**
  * Cliente do envio de CPFs ao INEP e da importação das notas do ENEM, por etapa e edição do

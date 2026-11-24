@@ -28,7 +28,7 @@ describe('ProcessoSeletivoPage — processo fora de rascunho', MONTAGEM_LENTA, (
       obter: vi.fn(() =>
         of(
           okResult(
-            detalhe({ status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' } }),
+            detalhe({ status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' } }),
           ),
         ),
       ),
@@ -84,7 +84,7 @@ describe('ProcessoSeletivoPage — processo fora de rascunho', MONTAGEM_LENTA, (
       obter: vi.fn(() =>
         of(
           okResult(
-            detalhe({ status: { codigo: StatusProcessoCodigo.cancelado, rotulo: 'Cancelado' } }),
+            detalhe({ status: { codigo: StatusProcessoCodigo.CANCELADO, rotulo: 'Cancelado' } }),
           ),
         ),
       ),
@@ -104,7 +104,7 @@ describe('ProcessoSeletivoPage — processo fora de rascunho', MONTAGEM_LENTA, (
       obter: vi.fn(() =>
         of(
           okResult(
-            detalhe({ status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' } }),
+            detalhe({ status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' } }),
           ),
         ),
       ),

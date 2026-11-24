@@ -28,15 +28,15 @@ export interface AlvoDoEnvio {
  * situação nova onde o DTO da API é atribuído a este tipo.
  */
 export type SituacaoDoArquivo =
-  | 'pendente'
-  | 'emVerificacao'
-  | 'verificado'
-  | 'recusado'
-  | 'reenvioNecessario';
+  | 'PENDENTE'
+  | 'EM_VERIFICACAO'
+  | 'VERIFICADO'
+  | 'RECUSADO'
+  | 'REENVIO_NECESSARIO';
 
 /** Se a verificação do arquivo ainda não terminou. */
 export function emVerificacao(situacao: SituacaoDoArquivo): boolean {
-  return situacao === 'emVerificacao';
+  return situacao === 'EM_VERIFICACAO';
 }
 
 /** Um arquivo que a API já registrou como enviado. */

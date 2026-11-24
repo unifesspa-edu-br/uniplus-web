@@ -1,3 +1,4 @@
+import { TipoRegraCodigo } from '@uniplus/shared-data/selecao';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, forkJoin } from 'rxjs';
@@ -21,9 +22,9 @@ import { tituloDoPasso } from '../../shared/titulo-do-passo';
 import { ModalidadeDoCatalogo } from './modalidades-da-distribuicao';
 
 /** Tipos do `rol_de_regras` que esta tela referencia. */
-const TIPO_REGRA_DISTRIBUICAO = 'regra_distribuicao_vagas';
-const TIPO_REGRA_AJUSTE = 'regra_ajuste_distribuicao_vagas';
-const TIPO_REGRA_CASCATA = 'criterio_remanejamento';
+const TIPO_REGRA_DISTRIBUICAO = TipoRegraCodigo.REGRA_DISTRIBUICAO_VAGAS;
+const TIPO_REGRA_AJUSTE = TipoRegraCodigo.REGRA_AJUSTE_DISTRIBUICAO_VAGAS;
+const TIPO_REGRA_CASCATA = TipoRegraCodigo.CRITERIO_REMANEJAMENTO;
 
 /** As sete leituras de que a tela depende, cada uma com o desfecho próprio. */
 interface CatalogosLidos {

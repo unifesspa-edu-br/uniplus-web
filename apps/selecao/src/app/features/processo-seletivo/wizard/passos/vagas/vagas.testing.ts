@@ -207,7 +207,7 @@ export const OFERTAS_CASCATA = [
 export const REGRA_CASCATA = {
   codigo: 'REMANEJ-CASCATA-LEI-12711',
   versao: 'v1',
-  tipo: 'criterio_remanejamento',
+  tipo: 'CRITERIO_REMANEJAMENTO',
   declaracaoDaRegra: {
     fallbackCodigo: 'AC',
     ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
@@ -223,7 +223,7 @@ export const REGRA_CASCATA = {
 export const REGRA_CASCATA_SEM_MATRIZ = {
   codigo: 'REMANEJ-CASCATA-SEM-MATRIZ',
   versao: 'v1',
-  tipo: 'criterio_remanejamento',
+  tipo: 'CRITERIO_REMANEJAMENTO',
   declaracaoDaRegra: {},
   invariantes: [],
   baseLegal: 'Portaria MEC nº 704/2025',
@@ -273,7 +273,7 @@ export function distribuicaoComCascata(): DistribuicaoDeVagas {
 export const REGRA_INSTITUCIONAL = {
   codigo: 'DISTRIB-VAGAS-INSTITUCIONAL',
   versao: 'v1',
-  tipo: 'regra_distribuicao_vagas',
+  tipo: 'REGRA_DISTRIBUICAO_VAGAS',
   declaracaoDaRegra: {},
   invariantes: [],
   baseLegal: 'Res. Unifesspa 532/2021',
@@ -286,7 +286,7 @@ export const REGRA_INSTITUCIONAL = {
 export const REGRA_PSIQ = {
   codigo: 'DISTRIB-VAGAS-PSIQ',
   versao: 'v1',
-  tipo: 'regra_distribuicao_vagas',
+  tipo: 'REGRA_DISTRIBUICAO_VAGAS',
   declaracaoDaRegra: {},
   invariantes: [],
   baseLegal: 'Portaria Normativa MEC 18/2012',

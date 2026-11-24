@@ -1,8 +1,8 @@
 /**
  * Uma regra de eliminação no rascunho, no shape do `esquema_args` que
- * `DefinirClassificacaoCommandHandler.MontarArgs` valida por código: `ELIMINACAO-NOTA-MINIMA-ETAPA`
- * usa `etapaRef` + `notaMinima`; `ELIMINACAO-CORTE-EM-AREA` usa `areaCodigo` + `minimo`;
- * `ELIMINACAO-ZERO-EM-AREA` não usa nenhuma. As colunas ficam sempre presentes, e o mapeador para o
+ * `DefinirClassificacaoCommandHandler.MontarArgs` valida por código: `ELIMINACAO_NOTA_MINIMA_ETAPA`
+ * usa `etapaRef` + `notaMinima`; `ELIMINACAO_CORTE_EM_AREA` usa `areaCodigo` + `minimo`;
+ * `ELIMINACAO_ZERO_EM_AREA` não usa nenhuma. As colunas ficam sempre presentes, e o mapeador para o
  * comando decide qual vale por `regraCodigo`: trocar de regra sem perder o digitado simplifica a
  * tela sem violar a invariante do servidor.
  */
@@ -19,9 +19,9 @@ export interface RegraEliminacaoConfigurada {
 
 /**
  * Um critério de desempate no rascunho, no shape de `ArgsCriterioDesempate` por código:
- * `DESEMPATE-MAIOR-NOTA-ETAPA` usa `etapaRef`; `DESEMPATE-IDOSO`, `idadeMinima`;
- * `DESEMPATE-CONDICAO-SOBRE-DADO`, `fato` + `operador` + `valor`; `DESEMPATE-MAIOR-NOTA-AREA-ENEM`,
- * `areas` (códigos na ordem em que desempatam); `DESEMPATE-MAIOR-IDADE` não usa nenhum. A ordem é
+ * `DESEMPATE_MAIOR_NOTA_ETAPA` usa `etapaRef`; `DESEMPATE_IDOSO`, `idadeMinima`;
+ * `DESEMPATE_CONDICAO_SOBRE_DADO`, `fato` + `operador` + `valor`; `DESEMPATE_MAIOR_NOTA_AREA_ENEM`,
+ * `areas` (códigos na ordem em que desempatam); `DESEMPATE_MAIOR_IDADE` não usa nenhum. A ordem é
  * a posição do item na lista do rascunho.
  */
 export interface CriterioDesempateConfigurado {

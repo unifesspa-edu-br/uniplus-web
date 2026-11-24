@@ -57,7 +57,7 @@ describe('ParametrosDoRecursoEmConsultaComponent', () => {
     const conteudo = texto(montar(gravado, umaLeituraDoRecurso({ rotulos })));
 
     expect(conteudo).toContain('Prazo para recorrer em 2ª instância');
-    expect(conteudo).toContain('3 — diasUteis');
+    expect(conteudo).toContain('3 — DIAS_UTEIS');
   });
 
   it('não oferece controle algum: é só leitura', () => {

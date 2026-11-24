@@ -53,7 +53,7 @@ function temAncoraOrfa(etapa: EtapaPontuada): boolean {
   );
   return etapa.recursos.some(
     (recurso) =>
-      recurso.ancora === 'atoPublicado' &&
+      recurso.ancora === 'PUBLICACAO_DO_ATO' &&
       recursoResolvido(recurso) &&
       !preliminares.has(recurso.atoAncoraCodigo),
   );

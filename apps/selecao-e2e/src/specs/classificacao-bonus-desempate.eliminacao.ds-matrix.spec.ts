@@ -31,7 +31,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
   });
 
   test.describe('Eliminação', () => {
-    /** ELIMINACAO-ZERO-EM-AREA não usa argumento — a única regra que dispensa etapa persistida. */
+    /** ELIMINACAO_ZERO_EM_AREA não usa argumento — a única regra que dispensa etapa persistida. */
     test('não viola WCAG 2.1 AA com uma regra de eliminação sem argumento', async ({
       page,
     }, testInfo) => {
@@ -43,7 +43,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       await page.getByRole('button', { name: '+ Acrescentar regra de eliminação' }).click();
       await page
         .getByLabel('Regra de eliminação', { exact: true })
-        .selectOption('ELIMINACAO-ZERO-EM-AREA|1.0');
+        .selectOption('ELIMINACAO_ZERO_EM_AREA|1.0');
 
       const resultado = await runAxeWcagAA(page);
       expect(identificadoresDe(resultado)).toEqual([]);
@@ -63,7 +63,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       await page.getByRole('button', { name: '+ Acrescentar regra de eliminação' }).click();
       await page
         .getByLabel('Regra de eliminação', { exact: true })
-        .selectOption('ELIMINACAO-CORTE-EM-AREA|1.0');
+        .selectOption('ELIMINACAO_CORTE_EM_AREA|1.0');
       await page.getByLabel('Área do ENEM', { exact: true }).selectOption('REDACAO');
 
       const minimo = page.getByLabel('Nota mínima em Redação', { exact: true });
@@ -110,7 +110,7 @@ test.describe('Eliminação por ausência na etapa em edição — matriz DS @ds
     await abrirProcessoDoCenario(page, testInfo, PROCESSO_AUSENCIA_ID, {
       ...DETALHE_PUBLICADO,
       id: PROCESSO_AUSENCIA_ID,
-      status: 'rascunho',
+      status: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
     });
     await irAoPasso(page, 'Eliminação', testInfo);
   });
@@ -119,7 +119,7 @@ test.describe('Eliminação por ausência na etapa em edição — matriz DS @ds
     page,
   }, testInfo) => {
     await page.getByRole('button', { name: '+ Acrescentar regra de eliminação' }).click();
-    await page.locator('#elim-regra-2').selectOption('ELIMINACAO-AUSENCIA-NA-ETAPA|1.0');
+    await page.locator('#elim-regra-2').selectOption('ELIMINACAO_AUSENCIA_NA_ETAPA|1.0');
 
     const etapa = page.locator('#elim-etapa-2');
     await expect(etapa.locator('option')).toHaveText(['— escolher —']);

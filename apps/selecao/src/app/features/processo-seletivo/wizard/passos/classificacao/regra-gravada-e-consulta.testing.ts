@@ -27,7 +27,7 @@ export function regra(codigo: string): RegraCatalogoDto {
   return {
     codigo,
     versao: '1.0',
-    tipo: { codigo: 'regra_calculo' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Regra de cálculo' },
+    tipo: { codigo: 'REGRA_CALCULO' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Regra de cálculo' },
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: `Base de ${codigo}`,
@@ -98,7 +98,7 @@ export function valorDoSelect(host: HTMLElement, id: string): string | undefined
 export function publicar(store: ProcessoSeletivoStore): void {
   store.remoteSnapshot.set({
     id: PROCESSO_ID,
-    status: StatusProcessoCodigo.publicado,
+    status: StatusProcessoCodigo.PUBLICADO,
   } as unknown as ProcessoSeletivoDto);
 }
 

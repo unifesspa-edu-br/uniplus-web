@@ -86,7 +86,7 @@ const ITEM_PADRAO: Omit<ProdutoPrevistoDto, 'id'> = {
   tipoCodigo: 'RESULTADO_HOMOLOGACAO',
   tipoNome: 'Resultado da homologação',
   papel: { codigo: 'PRELIMINAR' as NonNullable<ProdutoPrevistoDto['papel']>['codigo'], rotulo: 'Preliminar' },
-  situacao: { codigo: SituacaoDoProdutoPrevistoCodigo.aberto, rotulo: 'Aberto' },
+  situacao: { codigo: SituacaoDoProdutoPrevistoCodigo.ABERTO, rotulo: 'Aberto' },
   ato: null,
   correcoes: [],
   podePublicar: true,
@@ -169,7 +169,7 @@ export class TelaDePublicarDocumento {
   private responderInicioDoEnvio(nome: string, documentoId: string, tipoDeMidia: string): void {
     const inicio = this.controller.expectOne(ROTA_DOCUMENTOS);
     expect(inicio.request.body).toEqual({
-      finalidade: 'documentoDeAto',
+      finalidade: 'DOCUMENTO_DE_ATO',
       nomeArquivo: nome,
       tipoDeMidia,
     });

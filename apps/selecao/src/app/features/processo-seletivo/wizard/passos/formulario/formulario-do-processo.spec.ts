@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  TipoEtapaFormularioCodigo,
+  TipoObrigatoriedadeCodigo,
   FinalidadeFormularioCodigo,
   type FatoColetadoDto,
   type FormularioDto,
@@ -13,7 +15,7 @@ type RegrasDoFato = FatoColetadoDto['regras'];
 
 const regras = (extra: Partial<RegrasDoFato> = {}): RegrasDoFato => ({
   exibicao: null,
-  obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+  obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null },
   restricoes: [],
   impedimento: null,
   ...extra,
@@ -43,7 +45,7 @@ const fato = (
 const etapa = (codigo: string, ordem: number): FormularioDto['etapas'][number] => ({
   codigo,
   ordem,
-  tipo: 'SECAO',
+  tipo: TipoEtapaFormularioCodigo.SECAO,
   bloco: null,
   apresentacao: { titulo: codigo, descricao: null, aviso: null },
   exibicao: null,
@@ -61,7 +63,7 @@ const inscricao: FormularioDto = {
       fato('A', 1, 'S1', {
         regras: regras({
           obrigatoriedade: {
-            tipo: 'QUANDO',
+            tipo: TipoObrigatoriedadeCodigo.QUANDO,
             predicado: [[{ fato: 'NOME', operador: OperadorCodigo.IGUAL, valor: 'X' }]],
           },
         }),
@@ -75,7 +77,10 @@ const inscricao: FormularioDto = {
         etapaCodigo: 'S2',
         rotulo: 'Família',
         ocorrencias: { minimo: 1, maximo: null, incluiCandidato: true },
-        regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
+        regras: {
+          exibicao: null,
+          obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null },
+        },
         subitens: [fato('PARENTESCO', 0, '')],
       },
     ],
@@ -88,12 +93,12 @@ describe('formulário do processo no editor', () => {
     const conteudo = conteudoDoFormulario(inscricao);
 
     expect(conteudo.itens?.[1].regras.obrigatoriedade).toEqual({
-      tipo: 'QUANDO',
+      tipo: TipoObrigatoriedadeCodigo.QUANDO,
       predicado: [[{ fato: 'NOME', operador: OperadorCodigo.IGUAL, valor: 'X' }]],
     });
     expect(conteudo.grupos?.[0].subitens[0]).toMatchObject({
       fatoCodigo: 'PARENTESCO',
-      regras: { obrigatoriedade: { tipo: 'SEMPRE' } },
+      regras: { obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE } },
     });
     expect(conteudo.pressupostos).toEqual([]);
   });
@@ -206,7 +211,10 @@ describe('planoDeGravacao', () => {
               hashVersao: 'h',
             },
           },
-          regras: { exibicao: [], obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
+          regras: {
+            exibicao: [],
+            obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null },
+          },
         },
       ],
     };

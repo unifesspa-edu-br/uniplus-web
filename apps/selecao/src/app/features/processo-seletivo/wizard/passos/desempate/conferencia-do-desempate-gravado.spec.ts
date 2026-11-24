@@ -19,7 +19,7 @@ describe('conferirDesempateGravado', () => {
   it('sem critério por área não há o que conferir', () => {
     expect(
       conferirDesempateGravado(
-        [{ ...criterio([]), regraCodigo: 'DESEMPATE-MAIOR-IDADE' }],
+        [{ ...criterio([]), regraCodigo: 'DESEMPATE_MAIOR_IDADE' }],
         classificacao(null),
         CARREGANDO,
       ),
@@ -89,7 +89,7 @@ describe('reavaliarRecusaPeloDesempate', () => {
   });
 
   it('sem critério por área gravado, tira a recusa sem depender do cadastro', () => {
-    const store = comRecusa([{ ...criterio([]), regraCodigo: 'DESEMPATE-MAIOR-IDADE' }]);
+    const store = comRecusa([{ ...criterio([]), regraCodigo: 'DESEMPATE_MAIOR_IDADE' }]);
 
     reavaliarRecusaPeloDesempate(store, CARREGANDO);
 

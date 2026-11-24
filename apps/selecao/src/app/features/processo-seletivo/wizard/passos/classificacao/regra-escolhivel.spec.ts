@@ -7,7 +7,7 @@ function regra(patch: Partial<RegraCatalogoDto>): RegraCatalogoDto {
   return {
     codigo: '',
     versao: '',
-    tipo: { codigo: 'regra_calculo' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Regra de cálculo' },
+    tipo: { codigo: 'REGRA_CALCULO' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Regra de cálculo' },
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: 'Base legal',

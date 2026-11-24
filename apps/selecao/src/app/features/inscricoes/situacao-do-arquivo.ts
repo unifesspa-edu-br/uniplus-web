@@ -2,11 +2,11 @@ import { SituacaoDoArquivoDoCandidatoCodigo } from '@uniplus/shared-data/selecao
 import type { UiTagVariant } from '@uniplus/shared-ui/components';
 
 const VARIANTES: Record<SituacaoDoArquivoDoCandidatoCodigo, UiTagVariant> = {
-  [SituacaoDoArquivoDoCandidatoCodigo.pendente]: 'neutral',
-  [SituacaoDoArquivoDoCandidatoCodigo.emVerificacao]: 'info',
-  [SituacaoDoArquivoDoCandidatoCodigo.verificado]: 'success',
-  [SituacaoDoArquivoDoCandidatoCodigo.recusado]: 'danger',
-  [SituacaoDoArquivoDoCandidatoCodigo.reenvioNecessario]: 'warning',
+  [SituacaoDoArquivoDoCandidatoCodigo.PENDENTE]: 'neutral',
+  [SituacaoDoArquivoDoCandidatoCodigo.EM_VERIFICACAO]: 'info',
+  [SituacaoDoArquivoDoCandidatoCodigo.VERIFICADO]: 'success',
+  [SituacaoDoArquivoDoCandidatoCodigo.RECUSADO]: 'danger',
+  [SituacaoDoArquivoDoCandidatoCodigo.REENVIO_NECESSARIO]: 'warning',
 };
 
 export function varianteDaSituacaoDoArquivo(situacao: SituacaoDoArquivoDoCandidatoCodigo): UiTagVariant {

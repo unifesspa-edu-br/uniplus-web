@@ -16,7 +16,7 @@ export interface FatoDeElegibilidade {
 export function citaFatoDeElegibilidade(draft: WizardDraft): boolean {
   return (
     draft.bonus.aplica === true &&
-    draft.identificacao.origemCandidatos === OrigemCandidatosCodigo.inscricaoPropria
+    draft.identificacao.origemCandidatos === OrigemCandidatosCodigo.INSCRICAO_PROPRIA
   );
 }
 

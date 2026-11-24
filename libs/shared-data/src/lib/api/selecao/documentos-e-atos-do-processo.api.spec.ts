@@ -124,10 +124,10 @@ describe('DocumentosEAtosDoProcessoApi', () => {
   });
   it('listarDocumentosAPublicar() filtra a coleção pela finalidade pedida', async () => {
     const promise = firstValueFrom(
-      api.listarDocumentosAPublicar(ID, FinalidadeDoDocumentoCodigo.documentoDoEdital),
+      api.listarDocumentosAPublicar(ID, FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL),
     );
     const req = controller.expectOne(
-      `${BASE}/api/selecao/processos-seletivos/${ID}/documentos-a-publicar?finalidade=documentoDoEdital`,
+      `${BASE}/api/selecao/processos-seletivos/${ID}/documentos-a-publicar?finalidade=DOCUMENTO_DO_EDITAL`,
     );
 
     req.flush([documentoSeed]);
@@ -220,7 +220,7 @@ describe('DocumentosEAtosDoProcessoApi', () => {
   });
   it('iniciarEnvioDocumentoAPublicar() posta finalidade, nome e tipo de mídia e devolve a URL assinada', async () => {
     const request = {
-      finalidade: FinalidadeDoDocumentoCodigo.documentoDoEdital,
+      finalidade: FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL,
       nomeArquivo: 'edital.pdf',
       tipoDeMidia: 'application/pdf',
     };

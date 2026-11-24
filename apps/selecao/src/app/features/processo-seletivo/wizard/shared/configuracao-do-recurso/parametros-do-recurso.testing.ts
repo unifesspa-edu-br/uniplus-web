@@ -21,10 +21,10 @@ import { ParametrosDoRecursoComponent } from './parametros-do-recurso.component'
 /** Os parâmetros de um recurso sem instância superior, com os valores que o catálogo oferece. */
 export const PARAMETROS_SEM_INSTANCIA_SUPERIOR: ParametrosDoRecurso = {
   prazoValor: '2',
-  prazoUnidade: UnidadePrazoCodigo.diasUteis,
+  prazoUnidade: UnidadePrazoCodigo.DIAS_UTEIS,
   admiteInstanciaSuperior: false,
-  efeitoSuspensivo: EfeitoSuspensivoCodigo.semEfeitoSuspensivo,
-  guardaDaVaga: GuardaDaVagaCodigo.ateOResultadoDefinitivo,
+  efeitoSuspensivo: EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO,
+  guardaDaVaga: GuardaDaVagaCodigo.ATE_O_RESULTADO_DEFINITIVO,
   prazoSegundaInstanciaValor: '',
   prazoSegundaInstanciaUnidade: '',
 };
@@ -34,7 +34,7 @@ export const PARAMETROS_COM_INSTANCIA_SUPERIOR: ParametrosDoRecurso = {
   ...PARAMETROS_SEM_INSTANCIA_SUPERIOR,
   admiteInstanciaSuperior: true,
   prazoSegundaInstanciaValor: '3',
-  prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.diasUteis,
+  prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.DIAS_UTEIS,
 };
 
 export function umaLeituraDoRecurso(parcial: Partial<LeituraDoRecurso> = {}): LeituraDoRecurso {
@@ -43,14 +43,14 @@ export function umaLeituraDoRecurso(parcial: Partial<LeituraDoRecurso> = {}): Le
 
 /** As unidades de prazo que a API oferece ao recurso. */
 export const UNIDADES_DO_PRAZO_NA_API = [
-  { codigo: UnidadePrazoCodigo.diasUteis, rotulo: 'Dias úteis' },
-  { codigo: UnidadePrazoCodigo.horas, rotulo: 'Horas' },
+  { codigo: UnidadePrazoCodigo.DIAS_UTEIS, rotulo: 'Dias úteis' },
+  { codigo: UnidadePrazoCodigo.HORAS, rotulo: 'Horas' },
 ];
 
 /** Os efeitos suspensivos que a API oferece, cada um com a explicação do que faz. */
 export const EFEITOS_NA_API = [
   {
-    codigo: EfeitoSuspensivoCodigo.semEfeitoSuspensivo,
+    codigo: EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO,
     rotulo: 'Sem efeito suspensivo',
     descricao: 'O recurso não suspende o processo: as fases seguintes começam nas datas previstas.',
   },
@@ -59,12 +59,12 @@ export const EFEITOS_NA_API = [
 /** As guardas da vaga que a API oferece, cada uma com a explicação do que faz. */
 export const GUARDAS_NA_API = [
   {
-    codigo: GuardaDaVagaCodigo.ateOResultadoDefinitivo,
+    codigo: GuardaDaVagaCodigo.ATE_O_RESULTADO_DEFINITIVO,
     rotulo: 'Guarda a vaga até o resultado definitivo',
     descricao: 'A vaga fica guardada até a publicação do resultado definitivo.',
   },
   {
-    codigo: GuardaDaVagaCodigo.naoGuarda,
+    codigo: GuardaDaVagaCodigo.NAO_GUARDA,
     rotulo: 'Não guarda a vaga',
     descricao: 'A vaga segue para o próximo candidato enquanto o recurso é julgado.',
   },

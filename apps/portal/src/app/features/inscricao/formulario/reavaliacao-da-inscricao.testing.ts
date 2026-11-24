@@ -25,7 +25,7 @@ const ESPERA_DO_ESTADO_MS = 400;
 const INSCRICAO_EM_RASCUNHO: InscricaoDto = {
   id: 'inscricao-1',
   processoSeletivoId: '0199e000-0000-7000-8000-0000000000d1',
-  situacao: { codigo: SituacaoInscricaoCodigo.rascunho, rotulo: 'Situação de teste' },
+  situacao: { codigo: SituacaoInscricaoCodigo.RASCUNHO, rotulo: 'Situação de teste' },
   numeroInscricao: null,
   formulario: {
     versaoFormularioId: 'versao-1',

@@ -31,8 +31,8 @@ describe('parametrosEmTexto', () => {
   it('sem o nome lido, cai no próprio código gravado', () => {
     const texto = parametrosEmTexto(PARAMETROS_SEM_INSTANCIA_SUPERIOR, umaLeituraDoRecurso());
 
-    expect(texto.prazo).toBe('2 — diasUteis');
-    expect(texto.efeitoSuspensivo).toBe('semEfeitoSuspensivo');
+    expect(texto.prazo).toBe('2 — DIAS_UTEIS');
+    expect(texto.efeitoSuspensivo).toBe('SEM_EFEITO_SUSPENSIVO');
   });
 
   it('mostra o prazo da 2ª instância quando há valor e unidade', () => {

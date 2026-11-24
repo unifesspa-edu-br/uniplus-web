@@ -184,7 +184,7 @@ describe('VagasPassoComponent — falhas na gravação da cascata de remanejamen
     // valor do seletor de regra, que decide se a remoção precisa ser
     // enviada quando a oferta em tela já não tem modalidade SEGUE_CASCATA.
     store.remoteSnapshot.set({
-      status: { codigo: StatusProcessoCodigo.rascunho, rotulo: StatusProcessoCodigo.rascunho },
+      status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: StatusProcessoCodigo.RASCUNHO },
       cascata: {
         id: 'cascata-1',
         regra: { codigo: 'REMANEJ-CASCATA-LEI-12711', versao: 'v1', hash: 'hash-1' },

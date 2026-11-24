@@ -19,10 +19,10 @@ describe('DesempatePassoComponent — validação e gravação', () => {
 
   afterEach(() => controller.verify());
 
-  describe('DESEMPATE-MAIOR-NOTA-ETAPA — exige etapaRef existente', () => {
+  describe('DESEMPATE_MAIOR_NOTA_ETAPA — exige etapaRef existente', () => {
     it('recusa sem etapaRef', () => {
       store.patchSection('desempate', [
-        criterio({ regraCodigo: 'DESEMPATE-MAIOR-NOTA-ETAPA', regraVersao: '1.0' }),
+        criterio({ regraCodigo: 'DESEMPATE_MAIOR_NOTA_ETAPA', regraVersao: '1.0' }),
       ]);
 
       expect(componente.validar().valid).toBe(false);
@@ -31,7 +31,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     it('recusa quando a etapa referenciada não existe mais', () => {
       store.patchSection('desempate', [
         criterio({
-          regraCodigo: 'DESEMPATE-MAIOR-NOTA-ETAPA',
+          regraCodigo: 'DESEMPATE_MAIOR_NOTA_ETAPA',
           regraVersao: '1.0',
           etapaRef: 'etapa-removida',
         }),
@@ -43,7 +43,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     it('aceita com etapaRef existente', () => {
       store.patchSection('desempate', [
         criterio({
-          regraCodigo: 'DESEMPATE-MAIOR-NOTA-ETAPA',
+          regraCodigo: 'DESEMPATE_MAIOR_NOTA_ETAPA',
           regraVersao: '1.0',
           etapaRef: 'etapa-1',
         }),
@@ -53,10 +53,10 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     });
   });
 
-  describe('DESEMPATE-IDOSO — exige idadeMinima maior que zero', () => {
+  describe('DESEMPATE_IDOSO — exige idadeMinima maior que zero', () => {
     it('recusa idade mínima ausente', () => {
       store.patchSection('desempate', [
-        criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: '1.0' }),
+        criterio({ regraCodigo: 'DESEMPATE_IDOSO', regraVersao: '1.0' }),
       ]);
 
       expect(componente.validar().valid).toBe(false);
@@ -64,17 +64,17 @@ describe('DesempatePassoComponent — validação e gravação', () => {
 
     it('aceita com idade mínima informada', () => {
       store.patchSection('desempate', [
-        criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: '1.0', idadeMinima: '60' }),
+        criterio({ regraCodigo: 'DESEMPATE_IDOSO', regraVersao: '1.0', idadeMinima: '60' }),
       ]);
 
       expect(componente.validar().valid).toBe(true);
     });
   });
 
-  describe('DESEMPATE-CONDICAO-SOBRE-DADO — exige fato, operador e valor', () => {
+  describe('DESEMPATE_CONDICAO_SOBRE_DADO — exige fato, operador e valor', () => {
     it('recusa incompleto', () => {
       store.patchSection('desempate', [
-        criterio({ regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO', regraVersao: '1.0', fato: 'RENDA' }),
+        criterio({ regraCodigo: 'DESEMPATE_CONDICAO_SOBRE_DADO', regraVersao: '1.0', fato: 'RENDA' }),
       ]);
 
       expect(componente.validar().valid).toBe(false);
@@ -83,7 +83,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     it('aceita completo', () => {
       store.patchSection('desempate', [
         criterio({
-          regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
+          regraCodigo: 'DESEMPATE_CONDICAO_SOBRE_DADO',
           regraVersao: '1.0',
           fato: 'RENDA_PER_CAPITA',
           operador: 'MENOR_IGUAL',
@@ -102,7 +102,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     it('recusa a comparação que não pertence ao vocabulário', () => {
       store.patchSection('desempate', [
         criterio({
-          regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
+          regraCodigo: 'DESEMPATE_CONDICAO_SOBRE_DADO',
           regraVersao: '1.0',
           fato: 'RENDA_PER_CAPITA',
           operador: 'lte',
@@ -119,7 +119,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     it('recusa o valor que não pertence ao domínio do fato', () => {
       store.patchSection('desempate', [
         criterio({
-          regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
+          regraCodigo: 'DESEMPATE_CONDICAO_SOBRE_DADO',
           regraVersao: '1.0',
           fato: 'COR_RACA',
           operador: 'IGUAL',
@@ -140,7 +140,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     it('voltar o seletor ao branco limpa o fato no rascunho, não só na tela', () => {
       store.patchSection('desempate', [
         criterio({
-          regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
+          regraCodigo: 'DESEMPATE_CONDICAO_SOBRE_DADO',
           regraVersao: '1.0',
           fato: 'COR_RACA',
           operador: 'IGUAL',
@@ -172,7 +172,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     it('lê de volta o valor categórico no formato em que o servidor o devolve', () => {
       store.patchSection('desempate', [
         criterio({
-          regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
+          regraCodigo: 'DESEMPATE_CONDICAO_SOBRE_DADO',
           regraVersao: '1.0',
           fato: 'COR_RACA',
           operador: 'IGUAL',
@@ -192,7 +192,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     it('recusa o fato que não está no catálogo', () => {
       store.patchSection('desempate', [
         criterio({
-          regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
+          regraCodigo: 'DESEMPATE_CONDICAO_SOBRE_DADO',
           regraVersao: '1.0',
           fato: 'RELIGIAO',
           operador: 'IGUAL',
@@ -204,10 +204,10 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     });
   });
 
-  describe('DESEMPATE-MAIOR-IDADE — sem argumento', () => {
+  describe('DESEMPATE_MAIOR_IDADE — sem argumento', () => {
     it('aceita sem nenhum campo adicional', () => {
       store.patchSection('desempate', [
-        criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: '1.0' }),
+        criterio({ regraCodigo: 'DESEMPATE_MAIOR_IDADE', regraVersao: '1.0' }),
       ]);
 
       expect(componente.validar().valid).toBe(true);
@@ -230,11 +230,11 @@ describe('DesempatePassoComponent — validação e gravação', () => {
     it('grava a coleção inteira, com ordem pela posição em tela', async () => {
       store.patchSection('desempate', [
         criterio({
-          regraCodigo: 'DESEMPATE-MAIOR-NOTA-ETAPA',
+          regraCodigo: 'DESEMPATE_MAIOR_NOTA_ETAPA',
           regraVersao: '1.0',
           etapaRef: 'etapa-1',
         }),
-        criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: '1.0', idadeMinima: '60' }),
+        criterio({ regraCodigo: 'DESEMPATE_IDOSO', regraVersao: '1.0', idadeMinima: '60' }),
       ]);
 
       const gravacao = componente.persistir();
@@ -243,7 +243,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
       expect(requisicao.request.body).toEqual([
         {
           ordem: 1,
-          regra: { codigo: 'DESEMPATE-MAIOR-NOTA-ETAPA', versao: '1.0' },
+          regra: { codigo: 'DESEMPATE_MAIOR_NOTA_ETAPA', versao: '1.0' },
           parametros: {
             etapaRef: 'etapa-1',
             idadeMinima: null,
@@ -255,7 +255,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
         },
         {
           ordem: 2,
-          regra: { codigo: 'DESEMPATE-IDOSO', versao: '1.0' },
+          regra: { codigo: 'DESEMPATE_IDOSO', versao: '1.0' },
           parametros: {
             etapaRef: null,
             idadeMinima: 60,
@@ -273,7 +273,7 @@ describe('DesempatePassoComponent — validação e gravação', () => {
 
     it('não chama a API quando a validação recusa', async () => {
       store.patchSection('desempate', [
-        criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: '1.0' }),
+        criterio({ regraCodigo: 'DESEMPATE_IDOSO', regraVersao: '1.0' }),
       ]);
 
       const resultado = await componente.persistir();

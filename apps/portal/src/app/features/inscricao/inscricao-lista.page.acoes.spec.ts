@@ -35,10 +35,10 @@ describe('InscricaoListaPage', () => {
 
   it('as ações vêm das permissões da API: enviada com as inscrições abertas, rascunho e encerrada', async () => {
     await cenario.carregar([
-      inscricao('p1', SituacaoInscricaoCodigo.rascunho, 'Auxílio'),
-      inscricao('p2', SituacaoInscricaoCodigo.submetida, 'Bolsa'),
-      inscricao('p3', SituacaoInscricaoCodigo.submetida, 'Morada', false),
-      inscricao('p4', SituacaoInscricaoCodigo.rascunho, 'Auxílio transporte', false),
+      inscricao('p1', SituacaoInscricaoCodigo.RASCUNHO, 'Auxílio'),
+      inscricao('p2', SituacaoInscricaoCodigo.SUBMETIDA, 'Bolsa'),
+      inscricao('p3', SituacaoInscricaoCodigo.SUBMETIDA, 'Morada', false),
+      inscricao('p4', SituacaoInscricaoCodigo.RASCUNHO, 'Auxílio transporte', false),
     ]);
 
     const itens = cenario.itens();
@@ -54,13 +54,13 @@ describe('InscricaoListaPage', () => {
 
   it('sem número de comprovante da API, a cancelada mostra só os dados básicos, sem "Ver comprovante", e a nova do mesmo processo aparece ao lado, cada uma com a sua chave', async () => {
     const cancelada = {
-      ...inscricao('p1', SituacaoInscricaoCodigo.cancelada, 'Medicina 2027'),
+      ...inscricao('p1', SituacaoInscricaoCodigo.CANCELADA, 'Medicina 2027'),
       inscricaoId: 'i-velha',
       canceladaEm: '2026-12-13T12:00:00Z',
       motivoDoCancelamento: 'Mudei de curso',
     };
     const nova = {
-      ...inscricao('p1', SituacaoInscricaoCodigo.rascunho, 'Medicina 2027'),
+      ...inscricao('p1', SituacaoInscricaoCodigo.RASCUNHO, 'Medicina 2027'),
       inscricaoId: 'i-nova',
     };
     await cenario.carregar([cancelada, nova]);
@@ -84,7 +84,7 @@ describe('InscricaoListaPage', () => {
 
   it('a ação que desfaz a inscrição sai depois das demais, em botão próprio', async () => {
     await cenario.carregar([
-      inscricao('p2', SituacaoInscricaoCodigo.submetida, 'Bolsa de iniciação científica'),
+      inscricao('p2', SituacaoInscricaoCodigo.SUBMETIDA, 'Bolsa de iniciação científica'),
     ]);
 
     const item = cenario.itens()[0];
@@ -100,7 +100,7 @@ describe('InscricaoListaPage', () => {
 
   it('sem edição a seguir, ver o comprovante é a ação principal', async () => {
     await cenario.carregar([
-      inscricao('p2', SituacaoInscricaoCodigo.submetida, 'Bolsa de iniciação científica', false),
+      inscricao('p2', SituacaoInscricaoCodigo.SUBMETIDA, 'Bolsa de iniciação científica', false),
     ]);
 
     const botao = cenario.tela().querySelector('li.inscricao-lista-item ui-button button');

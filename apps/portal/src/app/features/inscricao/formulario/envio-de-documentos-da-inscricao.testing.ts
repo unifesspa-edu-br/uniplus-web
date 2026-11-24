@@ -48,7 +48,7 @@ export const CONFIRMADO = {
   tamanhoBytes: 7,
   hashSha256: 'abc',
   confirmadoEm: '2026-10-20T10:00:00Z',
-  situacao: { codigo: SituacaoDoArquivoDoCandidatoCodigo.emVerificacao, rotulo: 'Em verificação' },
+  situacao: { codigo: SituacaoDoArquivoDoCandidatoCodigo.EM_VERIFICACAO, rotulo: 'Em verificação' },
   mensagem: null,
   rotulo: 'Arquivo 3',
   nomeParaDownload: null,

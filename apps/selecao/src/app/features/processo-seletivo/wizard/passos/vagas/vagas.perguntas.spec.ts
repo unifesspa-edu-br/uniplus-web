@@ -1,3 +1,4 @@
+import { BlocoSistemaCodigo } from '@uniplus/shared-data/selecao';
 import { PCD } from '../../shared/gatilho-de-exigencia.testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -92,7 +93,7 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
 
     store.processoSeletivoId.set(PROCESSO_ID);
     store.patchObjectSection('identificacao', {
-      origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
+      origemCandidatos: OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
     });
     store.patchObjectSection('vagas', {
       ofertas: [
@@ -154,7 +155,7 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
       faseId: FASE_DE_INSCRICAO.id,
       etapas: [
         etapaDoServidor('DADOS_BASICOS', 0),
-        etapaDoServidor('REVISAO_E_ACEITE', 1, 'REVISAO_E_ACEITE'),
+        etapaDoServidor('REVISAO_E_ACEITE', 1, BlocoSistemaCodigo.REVISAO_E_ACEITE),
       ],
       coleta: {
         itens: coletados.map((codigo, ordem) =>
@@ -275,7 +276,7 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
 
   it('no processo que importa o resultado, relê só para mostrar as regras, sem pôr perguntas', async () => {
     store.patchObjectSection('identificacao', {
-      origemCandidatos: OrigemCandidatosCodigo.importacaoExterna,
+      origemCandidatos: OrigemCandidatosCodigo.IMPORTACAO_EXTERNA,
     });
 
     const { gravacao } = await gravarQuadro(

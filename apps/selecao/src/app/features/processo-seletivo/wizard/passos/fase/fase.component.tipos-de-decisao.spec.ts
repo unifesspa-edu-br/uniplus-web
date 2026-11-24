@@ -76,7 +76,7 @@ describe('FasePassoComponent: tipos de decisão da fase', () => {
     comCronograma(fase({ tiposDeDecisao: ['CLASSIFICACAO', 'TIPO_DO_FUTURO'] }));
     store.remoteSnapshot.set({
       ...umProcessoLidoComOsTiposDeDecisao(),
-      status: StatusProcessoCodigo.publicado,
+      status: StatusProcessoCodigo.PUBLICADO,
     } as unknown as ProcessoSeletivoDto);
     detectar();
 
@@ -90,7 +90,7 @@ describe('FasePassoComponent: tipos de decisão da fase', () => {
   it('diz que nenhuma decisão foi declarada quando a fase publicada não declara tipo', () => {
     comCronograma(fase({}));
     store.remoteSnapshot.set({
-      status: StatusProcessoCodigo.publicado,
+      status: StatusProcessoCodigo.PUBLICADO,
     } as unknown as ProcessoSeletivoDto);
     detectar();
 

@@ -127,7 +127,7 @@ describe('ProcessoSeletivoPage — retomada por endereço', MONTAGEM_LENTA, () =
     const cenario = montar();
     await propagar();
 
-    expect(cenario.store.draft().identificacao.origemCandidatos).toBe('inscricaoPropria');
+    expect(cenario.store.draft().identificacao.origemCandidatos).toBe('INSCRICAO_PROPRIA');
   });
 
   /** Retomar equivale a ter criado: o contrato não expõe atualização desses campos. */
@@ -237,7 +237,7 @@ describe('ProcessoSeletivoPage — retomada por endereço', MONTAGEM_LENTA, () =
 
     expect(host.querySelector<HTMLInputElement>('#f-nome')?.value).toBe('Vestibular 2026.1');
     expect(host.querySelector<HTMLSelectElement>('#f-unidade')?.value).toBe(UNIDADE_ORIGEM_ID);
-    expect(host.querySelector<HTMLSelectElement>('#f-origem')?.value).toBe('inscricaoPropria');
+    expect(host.querySelector<HTMLSelectElement>('#f-origem')?.value).toBe('INSCRICAO_PROPRIA');
   });
 
   /**

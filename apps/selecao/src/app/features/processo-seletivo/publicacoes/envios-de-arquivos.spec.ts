@@ -52,7 +52,7 @@ function envioControlado() {
 
 function lista(envio: EnvioDoAnexo, processoId: string | null = PROCESSO_ID): EnviosDeArquivos {
   return new EnviosDeArquivos({
-    finalidade: FinalidadeDoDocumentoCodigo.documentoDeAto,
+    finalidade: FinalidadeDoDocumentoCodigo.DOCUMENTO_DE_ATO,
     processoId: () => processoId,
     abrirEnvio: () => envio,
     tipoDeMidiaDe: () => 'application/pdf',

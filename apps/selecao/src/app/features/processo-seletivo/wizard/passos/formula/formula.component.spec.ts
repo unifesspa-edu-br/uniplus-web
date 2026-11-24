@@ -20,7 +20,7 @@ function etapaQueCompoeNota(): EtapaPontuada {
   return {
     id: 'etapa-1',
     nome: 'Prova objetiva',
-    carater: CaraterEtapaCodigo.classificatoria,
+    carater: CaraterEtapaCodigo.CLASSIFICATORIA,
     tipoEtapaOrigemId: 'tipo-1',
     peso: '1',
     notaMinima: '',
@@ -243,7 +243,7 @@ describe('FormulaPassoComponent', () => {
   describe('edições do ENEM aceitas', () => {
     function processoDeInscricaoComEnem(edicoesEnem: readonly string[]): void {
       store.patchObjectSection('identificacao', {
-        origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
+        origemCandidatos: OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
       });
       store.patchObjectSection('classificacao', { baseadoEmEnem: true, edicoesEnem });
       fixture.detectChanges();

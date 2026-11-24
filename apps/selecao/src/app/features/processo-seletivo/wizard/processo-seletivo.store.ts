@@ -199,7 +199,7 @@ export class ProcessoSeletivoStore {
    */
   readonly processoForaDeRascunho = computed(() => {
     const detalhe = this.remoteSnapshot();
-    return detalhe !== null && detalhe.status.codigo !== StatusProcessoCodigo.rascunho;
+    return detalhe !== null && detalhe.status.codigo !== StatusProcessoCodigo.RASCUNHO;
   });
 
   /**

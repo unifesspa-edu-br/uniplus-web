@@ -4,26 +4,26 @@ import type { RegraDeDeliberacaoDaBanca } from '../../modelos/deliberacao.models
 
 const listas: Record<string, readonly OpcaoDaRegra[]> = {
   modo: [
-    { codigo: 'colegiadaComVotacao', rotulo: 'Colegiada, com votação' },
-    { codigo: 'atoIndividual', rotulo: 'Ato individual' },
+    { codigo: 'COLEGIADA_COM_VOTACAO', rotulo: 'Colegiada, com votação' },
+    { codigo: 'ATO_INDIVIDUAL', rotulo: 'Ato individual' },
   ],
   criterio: [
-    { codigo: 'maioriaSimples', rotulo: 'Maioria simples' },
-    { codigo: 'maioriaAbsoluta', rotulo: 'Maioria absoluta' },
-    { codigo: 'unanimidade', rotulo: 'Unanimidade' },
+    { codigo: 'MAIORIA_SIMPLES', rotulo: 'Maioria simples' },
+    { codigo: 'MAIORIA_ABSOLUTA', rotulo: 'Maioria absoluta' },
+    { codigo: 'UNANIMIDADE', rotulo: 'Unanimidade' },
   ],
   desempate: [
-    { codigo: 'votoDaPresidencia', rotulo: 'Voto da presidência' },
-    { codigo: 'novaVotacao', rotulo: 'Nova votação' },
+    { codigo: 'VOTO_DA_PRESIDENCIA', rotulo: 'Voto da presidência' },
+    { codigo: 'NOVA_VOTACAO', rotulo: 'Nova votação' },
   ],
   encerramento: [
-    { codigo: 'todosOsTitulares', rotulo: 'Todos os titulares votam' },
-    { codigo: 'presidenciaNoQuorum', rotulo: 'A presidência encerra ao atingir o quórum' },
+    { codigo: 'TODOS_OS_TITULARES', rotulo: 'Todos os titulares votam' },
+    { codigo: 'PRESIDENCIA_NO_QUORUM', rotulo: 'A presidência encerra ao atingir o quórum' },
   ],
   semUnanimidade: [
-    { codigo: 'favoravel', rotulo: 'Favorável' },
-    { codigo: 'desfavoravel', rotulo: 'Desfavorável' },
-    { codigo: 'novaVotacao', rotulo: 'Nova votação' },
+    { codigo: 'FAVORAVEL', rotulo: 'Favorável' },
+    { codigo: 'DESFAVORAVEL', rotulo: 'Desfavorável' },
+    { codigo: 'NOVA_VOTACAO', rotulo: 'Nova votação' },
   ],
 };
 

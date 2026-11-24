@@ -105,7 +105,7 @@ export class ContextoDoPasso {
       ...PROCESSO,
       formularios,
       id: PROCESSO_ID,
-      status: { codigo: StatusProcessoCodigo.rascunho, rotulo: StatusProcessoCodigo.rascunho },
+      status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: StatusProcessoCodigo.RASCUNHO },
     } as never);
     this.fixture.detectChanges();
   };

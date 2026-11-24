@@ -24,7 +24,7 @@ describe('Eliminação diante do desempate por área', () => {
 
   describe('critério de desempate que compara a nota de área do ENEM', () => {
     const CRITERIO_POR_AREA = {
-      regraCodigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM',
+      regraCodigo: 'DESEMPATE_MAIOR_NOTA_AREA_ENEM',
       regraVersao: '1',
       etapaRef: '',
       idadeMinima: '',
@@ -124,7 +124,7 @@ describe('Eliminação diante do desempate por área', () => {
       classificacaoPeloEnem();
       store.classificacao.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.publicado,
+        status: StatusProcessoCodigo.PUBLICADO,
       } as unknown as ProcessoSeletivoDto);
 
       expect(componente.avisoDoDesempatePorArea()).toEqual([]);
@@ -210,7 +210,7 @@ describe('Eliminação diante do desempate por área', () => {
       prepararClassificacaoLocal();
       store.classificacao.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
       store.patchSection('desempate', [
-        { ...CRITERIO_POR_AREA, regraCodigo: 'DESEMPATE-MAIOR-IDADE', areas: [] },
+        { ...CRITERIO_POR_AREA, regraCodigo: 'DESEMPATE_MAIOR_IDADE', areas: [] },
       ]);
 
       expect(componente.validar()).toEqual({ valid: true });

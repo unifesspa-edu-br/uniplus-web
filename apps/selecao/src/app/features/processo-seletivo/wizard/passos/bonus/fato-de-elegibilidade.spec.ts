@@ -23,9 +23,9 @@ const formulario = (
 
 describe('citaFatoDeElegibilidade', () => {
   it('só quando o processo aplica o acréscimo e o candidato se inscreve nele', () => {
-    expect(citaFatoDeElegibilidade(rascunho(true, OrigemCandidatosCodigo.inscricaoPropria))).toBe(true);
-    expect(citaFatoDeElegibilidade(rascunho(true, OrigemCandidatosCodigo.importacaoExterna))).toBe(false);
-    expect(citaFatoDeElegibilidade(rascunho(false, OrigemCandidatosCodigo.inscricaoPropria))).toBe(false);
+    expect(citaFatoDeElegibilidade(rascunho(true, OrigemCandidatosCodigo.INSCRICAO_PROPRIA))).toBe(true);
+    expect(citaFatoDeElegibilidade(rascunho(true, OrigemCandidatosCodigo.IMPORTACAO_EXTERNA))).toBe(false);
+    expect(citaFatoDeElegibilidade(rascunho(false, OrigemCandidatosCodigo.INSCRICAO_PROPRIA))).toBe(false);
   });
 });
 

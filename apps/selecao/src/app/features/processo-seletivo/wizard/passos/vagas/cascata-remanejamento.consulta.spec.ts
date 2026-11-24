@@ -35,7 +35,7 @@ describe('CascataRemanejamentoComponent — em consulta', () => {
         cascata: { regraCodigo: 'REMANEJ-CASCATA-LEI-12711', regraVersao: 'v0' },
       });
       store.remoteSnapshot.set({
-        status: { codigo: StatusProcessoCodigo.publicado, rotulo: StatusProcessoCodigo.publicado },
+        status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: StatusProcessoCodigo.PUBLICADO },
       } as unknown as ProcessoSeletivoDto);
       detectar();
     });
@@ -66,7 +66,7 @@ describe('CascataRemanejamentoComponent — em consulta', () => {
     /** O snapshot já responde: o catálogo fora do ar não torna a pergunta aberta. */
     it('com a regra de remanejamento gravada, o catálogo fora do ar não cria a seção', () => {
       store.remoteSnapshot.set({
-        status: { codigo: StatusProcessoCodigo.rascunho, rotulo: StatusProcessoCodigo.rascunho },
+        status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: StatusProcessoCodigo.RASCUNHO },
       } as unknown as ProcessoSeletivoDto);
       store.patchObjectSection('vagas', {
         ofertas: [
@@ -88,7 +88,7 @@ describe('CascataRemanejamentoComponent — em consulta', () => {
         ],
       });
       store.remoteSnapshot.set({
-        status: { codigo: StatusProcessoCodigo.publicado, rotulo: StatusProcessoCodigo.publicado },
+        status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: StatusProcessoCodigo.PUBLICADO },
       } as unknown as ProcessoSeletivoDto);
       componente.catalogos.modalidades.set([]);
       componente.catalogos.erro.set('Falha');
@@ -111,13 +111,13 @@ describe('CascataRemanejamentoComponent — em consulta', () => {
 
     it('com o catálogo lido dizendo que a cascata não se aplica, a seção não aparece', () => {
       store.remoteSnapshot.set({
-        status: { codigo: StatusProcessoCodigo.rascunho, rotulo: StatusProcessoCodigo.rascunho },
+        status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: StatusProcessoCodigo.RASCUNHO },
       } as unknown as ProcessoSeletivoDto);
       store.patchObjectSection('vagas', {
         ofertas: [distribuicaoFederal([{ id: LB_Q, codigo: 'LB_Q' }])],
       });
       store.remoteSnapshot.set({
-        status: { codigo: StatusProcessoCodigo.publicado, rotulo: StatusProcessoCodigo.publicado },
+        status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: StatusProcessoCodigo.PUBLICADO },
       } as unknown as ProcessoSeletivoDto);
       detectar();
 

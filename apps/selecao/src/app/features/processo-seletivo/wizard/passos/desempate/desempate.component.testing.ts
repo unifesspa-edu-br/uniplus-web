@@ -32,7 +32,7 @@ export const ROTA_DESEMPATE = `${BASE}/api/selecao/processos-seletivos/${PROCESS
 export const ETAPA_PERSISTIDA: EtapaPontuada = {
   id: 'etapa-1',
   nome: 'Prova objetiva',
-  carater: CaraterEtapaCodigo.classificatoria,
+  carater: CaraterEtapaCodigo.CLASSIFICATORIA,
   tipoEtapaOrigemId: 'tipo-1',
   peso: '1',
   notaMinima: '',

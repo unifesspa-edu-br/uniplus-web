@@ -178,7 +178,7 @@ const TAXA_DE_INSCRICAO = {
 };
 
 const ORIGEM_INSCRICAO = {
-  codigo: OrigemCandidatosCodigo.inscricaoPropria,
+  codigo: OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
   rotulo: 'Inscrição própria',
 };
 
@@ -187,7 +187,7 @@ function identificacaoDoDetalhe() {
     id: PROCESSO_ID,
     nome: 'Vestibular 2026.1',
     tipoProcesso: { origemId: TIPO_ORIGEM_ID, codigo: 'VESTIBULAR', nome: 'Vestibular' },
-    status: { codigo: StatusProcessoCodigo.rascunho, rotulo: 'Rascunho' },
+    status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: 'Rascunho' },
     origemCandidatos: ORIGEM_INSCRICAO,
     unidadeAdministradora: UNIDADE_ADMINISTRADORA,
     localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
@@ -225,11 +225,11 @@ export function detalhe(overrides: Partial<ProcessoSeletivoDto> = {}): ProcessoS
 }
 
 const FINALIDADE_EDITAL = {
-  codigo: FinalidadeDoDocumentoCodigo.documentoDoEdital,
+  codigo: FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL,
   rotulo: 'Documento do edital',
 };
 const STATUS_CONFIRMADO = {
-  codigo: 'Confirmado' as DocumentoAPublicarDto['status']['codigo'],
+  codigo: 'CONFIRMADO' as DocumentoAPublicarDto['status']['codigo'],
   rotulo: 'Confirmado',
 };
 

@@ -17,7 +17,7 @@ const CLASSIFICACAO = {
   regrasEliminacao: [
     {
       id: 'snapshot-elim-1',
-      regra: { codigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA', versao: '1.0' },
+      regra: { codigo: 'ELIMINACAO_NOTA_MINIMA_ETAPA', versao: '1.0' },
       etapaRef: 'etapa-persistida-1',
       notaMinima: 5,
       minimo: null,
@@ -25,7 +25,7 @@ const CLASSIFICACAO = {
     },
     {
       id: 'snapshot-elim-2',
-      regra: { codigo: 'ELIMINACAO-CORTE-EM-AREA', versao: 'v1' },
+      regra: { codigo: 'ELIMINACAO_CORTE_EM_AREA', versao: 'v1' },
       etapaRef: null,
       notaMinima: null,
       minimo: 450,
@@ -55,7 +55,7 @@ const CRITERIOS_DESEMPATE = [
   {
     id: 'snapshot-desemp-2',
     ordem: 2,
-    regra: { codigo: 'DESEMPATE-IDOSO', versao: '1.0' },
+    regra: { codigo: 'DESEMPATE_IDOSO', versao: '1.0' },
     parametros: {
       etapaRef: null,
       idadeMinima: 60,
@@ -68,7 +68,7 @@ const CRITERIOS_DESEMPATE = [
   {
     id: 'snapshot-desemp-1',
     ordem: 1,
-    regra: { codigo: 'DESEMPATE-MAIOR-NOTA-ETAPA', versao: '1.0' },
+    regra: { codigo: 'DESEMPATE_MAIOR_NOTA_ETAPA', versao: '1.0' },
     parametros: {
       etapaRef: 'etapa-persistida-1',
       idadeMinima: null,
@@ -81,7 +81,7 @@ const CRITERIOS_DESEMPATE = [
   {
     id: 'snapshot-desemp-3',
     ordem: 3,
-    regra: { codigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM', versao: '1' },
+    regra: { codigo: 'DESEMPATE_MAIOR_NOTA_AREA_ENEM', versao: '1' },
     parametros: {
       etapaRef: null,
       idadeMinima: null,
@@ -118,7 +118,7 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
       resolucaoPesoAreaEnem: '',
       regrasEliminacao: [
         {
-          regraCodigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA',
+          regraCodigo: 'ELIMINACAO_NOTA_MINIMA_ETAPA',
           regraVersao: '1.0',
           etapaRef: 'etapa-persistida-1',
           notaMinima: '5',
@@ -126,7 +126,7 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
           areaCodigo: '',
         },
         {
-          regraCodigo: 'ELIMINACAO-CORTE-EM-AREA',
+          regraCodigo: 'ELIMINACAO_CORTE_EM_AREA',
           regraVersao: 'v1',
           etapaRef: '',
           notaMinima: '',
@@ -256,12 +256,12 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
     );
 
     expect(desempate.map((criterio) => criterio.regraCodigo)).toEqual([
-      'DESEMPATE-MAIOR-NOTA-ETAPA',
-      'DESEMPATE-IDOSO',
-      'DESEMPATE-MAIOR-NOTA-AREA-ENEM',
+      'DESEMPATE_MAIOR_NOTA_ETAPA',
+      'DESEMPATE_IDOSO',
+      'DESEMPATE_MAIOR_NOTA_AREA_ENEM',
     ]);
     expect(desempate[1]).toEqual({
-      regraCodigo: 'DESEMPATE-IDOSO',
+      regraCodigo: 'DESEMPATE_IDOSO',
       regraVersao: '1.0',
       etapaRef: '',
       idadeMinima: '60',

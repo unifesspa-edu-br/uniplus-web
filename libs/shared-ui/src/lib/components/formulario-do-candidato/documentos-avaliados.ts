@@ -166,7 +166,7 @@ export function aguardaVerificacaoDeObrigatorio(documentos: readonly DocumentoAv
   return documentos.some((documento) => {
     if (!documento.obrigatorio) return false;
     const verificadas = new Set(
-      documento.arquivos.filter((a) => a.situacao === 'verificado').map((a) => a.apresentacaoId),
+      documento.arquivos.filter((a) => a.situacao === 'VERIFICADO').map((a) => a.apresentacaoId),
     );
     return documento.arquivos.some(
       (a) => emVerificacao(a.situacao) && !verificadas.has(a.apresentacaoId),

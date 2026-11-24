@@ -10,13 +10,13 @@ describe('PrazoDoRecursoComponent: acessibilidade', () => {
   it.each([
     ['em branco', {}],
     ['obrigatório e preenchido', { textoDeObrigatoriedade: '(obrigatório)', valor: '2' }],
-    ['com unidade fora do vocabulário', { valor: '2', unidade: 'dias' }],
+    ['com unidade fora do vocabulário', { valor: '2', unidade: 'DIAS' }],
     ['sem unidade para escolher', { unidades: [], situacao: 'falhou' }],
     [
       'sem unidade para escolher e com recusa da unidade',
       { unidades: [], situacao: 'falhou', recusasDaUnidade: [umaRecusa('prazoUnidade')] },
     ],
-    ['com o botão de retirar', { valor: '2', unidade: 'horas', retiravel: true }],
+    ['com o botão de retirar', { valor: '2', unidade: 'HORAS', retiravel: true }],
     ['com recusa ativa', { recusasDoValor: [umaRecusa('prazoValor')] }],
     ['com recusa a conferir', { recusasDaUnidade: [umaRecusa('prazoUnidade', true)] }],
   ])('não tem violações %s', async (_nome, entradas) => {

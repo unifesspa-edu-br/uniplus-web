@@ -113,7 +113,7 @@ export class PublicacoesDoProcessoPage {
   /** O processo ainda não foi publicado: não há página pública para receber documentos. */
   protected readonly emRascunho = computed(() => {
     const processo = this.publicacoes.processo();
-    return processo.estado === 'lido' && processo.dados.status.codigo === StatusProcessoCodigo.rascunho;
+    return processo.estado === 'lido' && processo.dados.status.codigo === StatusProcessoCodigo.RASCUNHO;
   });
 
   /** Publicar documento é de quem tem a permissão de publicar; as demais permissões não bastam. */

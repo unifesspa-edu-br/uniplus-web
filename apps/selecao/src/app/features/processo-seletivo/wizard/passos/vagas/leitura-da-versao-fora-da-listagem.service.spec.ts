@@ -18,7 +18,7 @@ const SELECAO_A = { regraCodigo: 'REMANEJ-CASCATA-LEI-12711', regraVersao: 'v0' 
 const REGRA_V0 = {
   codigo: 'REMANEJ-CASCATA-LEI-12711',
   versao: 'v0',
-  tipo: 'criterio_remanejamento',
+  tipo: 'CRITERIO_REMANEJAMENTO',
   declaracaoDaRegra: { fallbackCodigo: 'AC', ordens: [] },
   invariantes: [],
   baseLegal: 'Portaria MEC nº 704/2025 (redação anterior)',

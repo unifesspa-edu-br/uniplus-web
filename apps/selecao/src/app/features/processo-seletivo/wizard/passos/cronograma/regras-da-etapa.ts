@@ -1,4 +1,5 @@
 import type { TipoEtapaDto } from '@uniplus/shared-data/configuracao';
+import { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
 import { FORMA_HUMANA } from '../../shared/forma-de-avaliacao';
 import { escalaVale } from '../../shared/itens-de-avaliacao';
@@ -6,12 +7,12 @@ import type { EtapaPontuada, TipoCongeladoDaEtapa } from '../../processo-seletiv
 
 /** O caráter da etapa diz se ela entra na nota final. */
 export function pontuaPorCarater(carater: string): boolean {
-  return carater === 'classificatoria' || carater === 'ambas';
+  return carater === CaraterEtapaCodigo.CLASSIFICATORIA || carater === CaraterEtapaCodigo.AMBAS;
 }
 
 /** O caráter da etapa diz se ela elimina candidato. */
 export function eliminaPorCarater(carater: string): boolean {
-  return carater === 'eliminatoria' || carater === 'ambas';
+  return carater === CaraterEtapaCodigo.ELIMINATORIA || carater === CaraterEtapaCodigo.AMBAS;
 }
 
 /** O que a conferência precisa saber de um tipo de etapa do cadastro. */
@@ -130,9 +131,9 @@ export function componeNota(etapa: EtapaPontuada): boolean {
 
 /** Caráter de uma etapa, com o rótulo que o operador lê. */
 export const CARATERES = [
-  { valor: 'classificatoria', rotulo: 'Classificatória' },
-  { valor: 'eliminatoria', rotulo: 'Eliminatória' },
-  { valor: 'ambas', rotulo: 'Classificatória e eliminatória' },
+  { valor: CaraterEtapaCodigo.CLASSIFICATORIA, rotulo: 'Classificatória' },
+  { valor: CaraterEtapaCodigo.ELIMINATORIA, rotulo: 'Eliminatória' },
+  { valor: CaraterEtapaCodigo.AMBAS, rotulo: 'Classificatória e eliminatória' },
 ] as const;
 
 function caraterAdmitido(
@@ -141,17 +142,17 @@ function caraterAdmitido(
   notaDoEnem: boolean,
 ): boolean {
   const { admitePontuacao, admiteEliminacao } = avaliacao;
-  if (carater === 'classificatoria') return admitePontuacao;
-  if (carater === 'eliminatoria') return admiteEliminacao && !notaDoEnem;
+  if (carater === CaraterEtapaCodigo.CLASSIFICATORIA) return admitePontuacao;
+  if (carater === CaraterEtapaCodigo.ELIMINATORIA) return admiteEliminacao && !notaDoEnem;
   return admitePontuacao && admiteEliminacao;
 }
 
 /**
  * Os caracteres que a etapa pode ter, dado o tipo escolhido.
  *
- * O recorte vem do cadastro de Configuração, onde cada tipo declara se compõe a nota final e
+ * A definição dos tipos de fase vem do cadastro de Configuração, onde cada tipo declara se compõe a nota final e
  * se elimina candidato — e não de uma lista de códigos escrita aqui, que envelheceria no dia
- * em que o CEPS cadastrasse um tipo novo. É esse recorte que faz peso e nota mínima
+ * em que o CEPS cadastrasse um tipo novo. É essa definição que faz peso e nota mínima
  * desaparecerem de uma análise documental sem que a tela precise saber o que ela é.
  */
 export function caracteresAdmitidos(

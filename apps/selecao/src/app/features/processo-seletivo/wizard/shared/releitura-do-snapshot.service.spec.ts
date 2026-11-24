@@ -86,7 +86,7 @@ describe('ReleituraDoSnapshot', () => {
         {
           id: 'c1',
           ordem: 1,
-          regra: { codigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM', versao: '1' },
+          regra: { codigo: 'DESEMPATE_MAIOR_NOTA_AREA_ENEM', versao: '1' },
           parametros: {
             etapaRef: null,
             idadeMinima: null,

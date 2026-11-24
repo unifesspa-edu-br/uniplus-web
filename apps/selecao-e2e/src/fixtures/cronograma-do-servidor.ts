@@ -73,7 +73,7 @@ export function faseDoServidor(parcial: FaseDoServidorParcial = {}): FaseCronogr
 
 const IDENTIFICACAO_DA_ETAPA: EtapaProcessoDto['identificacao'] = {
   nome: 'Prova objetiva',
-  carater: valorDoEnum(CaraterEtapaCodigo.classificatoria, 'Classificatória'),
+  carater: valorDoEnum(CaraterEtapaCodigo.CLASSIFICATORIA, 'Classificatória'),
   tipoEtapa: {
     origemId: '01960000-0000-7000-0000-0000000000b1',
     codigo: 'PROVA_OBJETIVA',
@@ -126,13 +126,13 @@ type ParametrosDoRecursoDoServidor = NonNullable<
 /** Os parâmetros de um recurso sem instância superior, como o servidor os devolve na leitura. */
 export const PARAMETROS_DO_RECURSO_DO_SERVIDOR: ParametrosDoRecursoDoServidor = {
   prazoValor: 2,
-  prazoUnidade: { codigo: 'diasUteis', rotulo: 'Dias úteis' },
+  prazoUnidade: { codigo: 'DIAS_UTEIS', rotulo: 'Dias úteis' },
   admiteInstanciaSuperior: false,
   prazoSegundaInstanciaValor: null,
   prazoSegundaInstanciaUnidade: null,
-  efeitoSuspensivo: { codigo: 'semEfeitoSuspensivo', rotulo: 'Sem efeito suspensivo' },
+  efeitoSuspensivo: { codigo: 'SEM_EFEITO_SUSPENSIVO', rotulo: 'Sem efeito suspensivo' },
   guardaDaVaga: {
-    codigo: 'ateOResultadoDefinitivo',
+    codigo: 'ATE_O_RESULTADO_DEFINITIVO',
     rotulo: 'Guarda a vaga até o resultado definitivo',
   },
 } as ParametrosDoRecursoDoServidor;
