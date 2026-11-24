@@ -13,7 +13,7 @@ import {
   rotuloDoRegimeDeTurno,
   rotuloDosTurnos,
 } from './rotulos-da-oferta';
-import { engCiv, ige, maraba } from './ofertas-curso.testing';
+import { engCiv, maraba, oferta } from './ofertas-curso.testing';
 import { valoresDaOferta } from './valores-da-oferta.testing';
 
 describe('rótulos da oferta', () => {
@@ -27,7 +27,7 @@ describe('rótulos da oferta', () => {
     expect(rotularTipoLocal(maraba)).toBe('Campus sede');
     expect(rotularLocalOferta(maraba)).toBe('Campus sede — Marabá');
     expect(rotularCidadeETipo(maraba)).toBe('Marabá · Campus sede');
-    expect(rotularUnidade({ sigla: ige.sigla, nome: ige.nome, tipo: ige.tipo })).toBe(
+    expect(rotularUnidade(oferta.unidadeOfertante)).toBe(
       'IGE · Instituto de Geociências e Engenharias · Instituto',
     );
   });

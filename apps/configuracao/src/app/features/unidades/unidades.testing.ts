@@ -11,7 +11,11 @@ import { of } from 'rxjs';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { GeoApi, type CidadeResumoDto } from '@uniplus/shared-data/geo';
-import { ORGANIZACAO_BASE_PATH, TipoUnidade, UnidadeDto } from '@uniplus/shared-data/organizacao';
+import {
+  ORGANIZACAO_BASE_PATH,
+  TipoUnidadeCodigo,
+  UnidadeDto,
+} from '@uniplus/shared-data/organizacao';
 import { okResult, passarOTempo } from '@uniplus/shared-testing';
 import { expect, vi, type Mock } from 'vitest';
 import { BuscaDeCidade } from './busca-de-cidade';
@@ -39,7 +43,7 @@ export const reitoria: UnidadeDto = {
   codigo: '001',
   slug: 'reitoria',
   alias: null,
-  tipo: TipoUnidade.reitoria,
+  tipo: TipoUnidadeCodigo.REITORIA,
   unidadeSuperiorId: null,
   unidadeAcademica: false,
   vigenciaInicio: '2020-01-01',
@@ -58,7 +62,7 @@ export const instituto: UnidadeDto = {
   codigo: '002',
   slug: 'ice',
   alias: 'Exatas',
-  tipo: TipoUnidade.instituto,
+  tipo: TipoUnidadeCodigo.INSTITUTO,
   unidadeSuperiorId: reitoria.id,
   unidadeAcademica: true,
   vigenciaInicio: '2021-01-01',

@@ -2,14 +2,16 @@ import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/commo
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
-import { TipoUnidade } from './schema';
+import { TipoUnidadeCodigo } from './schema';
 import { ORGANIZACAO_BASE_PATH } from './tokens';
 import type { components } from './schema';
 
-export type UnidadeDto = components['schemas']['UnidadeDto'];
+export type UnidadeDto = Omit<components['schemas']['UnidadeDto'], 'tipo'> & {
+  readonly tipo: TipoUnidadeCodigo;
+};
 export type CriarUnidadeCommand = components['schemas']['CriarUnidadeCommand'];
 export type AtualizarUnidadeCommand = components['schemas']['AtualizarUnidadeCommand'];
-export { TipoUnidade };
+export { TipoUnidadeCodigo };
 
 /** Filtro da listagem paginada de unidades (cursor opaco, ADR-0026). */
 export interface UnidadesQuery {
@@ -21,22 +23,22 @@ export interface UnidadesQuery {
 }
 
 export interface UnidadeTipoOption {
-  readonly value: TipoUnidade;
+  readonly value: TipoUnidadeCodigo;
   readonly label: string;
 }
 
 export const TIPOS_UNIDADE: readonly UnidadeTipoOption[] = [
-  { value: TipoUnidade.reitoria, label: 'Reitoria' },
-  { value: TipoUnidade.proReitoria, label: 'Pró-Reitoria' },
-  { value: TipoUnidade.centro, label: 'Centro' },
-  { value: TipoUnidade.instituto, label: 'Instituto' },
-  { value: TipoUnidade.faculdade, label: 'Faculdade' },
-  { value: TipoUnidade.departamento, label: 'Departamento' },
-  { value: TipoUnidade.coordenacao, label: 'Coordenação' },
-  { value: TipoUnidade.diretoria, label: 'Diretoria' },
-  { value: TipoUnidade.divisao, label: 'Divisão' },
-  { value: TipoUnidade.nucleo, label: 'Núcleo' },
-  { value: TipoUnidade.outro, label: 'Outro' },
+  { value: TipoUnidadeCodigo.REITORIA, label: 'Reitoria' },
+  { value: TipoUnidadeCodigo.PRO_REITORIA, label: 'Pró-Reitoria' },
+  { value: TipoUnidadeCodigo.CENTRO, label: 'Centro' },
+  { value: TipoUnidadeCodigo.INSTITUTO, label: 'Instituto' },
+  { value: TipoUnidadeCodigo.FACULDADE, label: 'Faculdade' },
+  { value: TipoUnidadeCodigo.DEPARTAMENTO, label: 'Departamento' },
+  { value: TipoUnidadeCodigo.COORDENACAO, label: 'Coordenação' },
+  { value: TipoUnidadeCodigo.DIRETORIA, label: 'Diretoria' },
+  { value: TipoUnidadeCodigo.DIVISAO, label: 'Divisão' },
+  { value: TipoUnidadeCodigo.NUCLEO, label: 'Núcleo' },
+  { value: TipoUnidadeCodigo.OUTRO, label: 'Outro' },
 ] as const;
 
 @Injectable({ providedIn: 'root' })

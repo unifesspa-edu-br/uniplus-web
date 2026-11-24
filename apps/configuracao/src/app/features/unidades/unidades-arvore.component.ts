@@ -7,6 +7,7 @@ import {
   untracked,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { rotuloDoTipo } from './tipos-de-unidade';
 import type { UnidadeDto } from '@uniplus/shared-data/organizacao';
 import { IconButtonComponent } from '@uniplus/shared-ui/components';
 import { NoDaArvore, idsDosNosComFilhos } from './arvore-de-unidades';
@@ -41,6 +42,8 @@ export class UnidadesArvoreComponent {
         ? idsDosNosComFilhos(arvore)
         : new Set(anterior?.value ?? []),
   });
+
+  protected readonly rotuloDoTipo = rotuloDoTipo;
 
   protected expandido(id: string): boolean {
     return this.expandidos().has(id);

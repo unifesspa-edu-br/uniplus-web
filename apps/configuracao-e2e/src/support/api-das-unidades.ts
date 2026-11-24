@@ -9,7 +9,7 @@ export const UNIDADES = [
     sigla: 'REITORIA',
     codigo: 'REITORIA',
     unidadeSuperiorId: null,
-    tipo: 'Reitoria',
+    tipo: 'REITORIA',
     unidadeAcademica: false,
     vigenciaInicio: '2026-01-01',
     vigenciaFim: null,
@@ -23,7 +23,7 @@ export const UNIDADES = [
     sigla: 'PROEG',
     codigo: 'PROEG',
     unidadeSuperiorId: '01960000-0000-7000-0000-000000000001',
-    tipo: 'Pro-Reitoria',
+    tipo: 'PRO_REITORIA',
     unidadeAcademica: false,
     vigenciaInicio: '2026-01-01',
     vigenciaFim: null,
@@ -37,7 +37,7 @@ export const UNIDADES = [
     sigla: 'CEPS',
     codigo: 'CEPS',
     unidadeSuperiorId: '01960000-0000-7000-0000-000000000002',
-    tipo: 'Centro',
+    tipo: 'CENTRO',
     unidadeAcademica: false,
     vigenciaInicio: '2026-01-01',
     vigenciaFim: null,
@@ -51,7 +51,7 @@ export const UNIDADES = [
     sigla: 'CTIC',
     codigo: 'CTIC',
     unidadeSuperiorId: '01960000-0000-7000-0000-000000000001',
-    tipo: 'Centro',
+    tipo: 'CENTRO',
     unidadeAcademica: false,
     vigenciaInicio: '2026-01-01',
     vigenciaFim: null,
@@ -142,20 +142,19 @@ function atenderCriacao() {
   };
 }
 
-// Roster fechado TipoUnidade (valor numérico → label do DTO), espelhando
-// TIPOS_UNIDADE da página para traduzir o filtro `?tipo=N` do contrato.
-const TIPO_LABEL_POR_VALOR: Record<string, string> = {
-  '1': 'Reitoria',
-  '2': 'Pro-Reitoria',
-  '3': 'Centro',
-  '4': 'Instituto',
-  '5': 'Faculdade',
-  '6': 'Departamento',
-  '7': 'Coordenacao',
-  '8': 'Diretoria',
-  '9': 'Divisao',
-  '10': 'Nucleo',
-  '11': 'Outro',
+// O filtro numérico corresponde aos códigos retornados na listagem.
+const TIPO_CODIGO_POR_VALOR: Record<string, string> = {
+  '1': 'REITORIA',
+  '2': 'PRO_REITORIA',
+  '3': 'CENTRO',
+  '4': 'INSTITUTO',
+  '5': 'FACULDADE',
+  '6': 'DEPARTAMENTO',
+  '7': 'COORDENACAO',
+  '8': 'DIRETORIA',
+  '9': 'DIVISAO',
+  '10': 'NUCLEO',
+  '11': 'OUTRO',
 };
 
 function normalizarBusca(value: string): string {
@@ -174,8 +173,8 @@ function casaComTermo(unidade: Unidade, termo: string): boolean {
 }
 
 function casaComTipos(unidade: Unidade, tipos: string[]): boolean {
-  const labels = tipos.map((tipo) => TIPO_LABEL_POR_VALOR[tipo]).filter(Boolean);
-  return labels.includes(unidade.tipo);
+  const codigos = tipos.map((tipo) => TIPO_CODIGO_POR_VALOR[tipo]).filter(Boolean);
+  return codigos.includes(unidade.tipo);
 }
 
 /**

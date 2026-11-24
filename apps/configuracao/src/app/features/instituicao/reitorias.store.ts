@@ -4,7 +4,7 @@ import { ProblemI18nService, useApiResource, withVendorMime } from '@uniplus/sha
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { ORGANIZACAO_BASE_PATH, UnidadeDto } from '@uniplus/shared-data/organizacao';
 
-/** Valor de `TipoUnidade` da Reitoria no roster fechado (`TIPOS_UNIDADE`). */
+/** Número da Reitoria no filtro `?tipo=` da listagem de unidades. */
 const TIPO_REITORIA = '1';
 
 /** Tamanho da janela ao buscar as Unidades do tipo Reitoria para o select. */

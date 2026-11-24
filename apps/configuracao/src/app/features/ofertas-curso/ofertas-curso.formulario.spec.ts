@@ -183,6 +183,20 @@ describe('OfertasCursoPage — regras do formulário', () => {
       );
     });
 
+    it.each([[null, '—'], ['TIPO_DESCONHECIDO', 'TIPO_DESCONHECIDO']])(
+      'mostra o tipo %s da unidade como %s',
+      async (tipo, rotulo) => {
+        p = await montarPagina([]);
+        p.novo().click();
+        await p.responderUnidades([{ ...ige, tipo: tipo as typeof ige.tipo }]);
+        p.preencher('unidadeOfertanteOrigemId', ige.id);
+        await p.propagar();
+        const dica = p.campo('unidadeOfertanteOrigemId').closest('.field')
+          ?.querySelector('.field__hint')?.textContent?.trim();
+        expect(dica).toBe(`IGE · Instituto de Geociências e Engenharias · ${rotulo}`);
+      },
+    );
+
     it('os controles obrigatórios de entrada nativa são identificados para tecnologias assistivas', async () => {
       p = await montarPagina([]);
       await p.abrirCadastro();

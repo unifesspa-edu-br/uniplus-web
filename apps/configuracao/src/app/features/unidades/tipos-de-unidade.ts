@@ -1,25 +1,23 @@
-import { TIPOS_UNIDADE, TipoUnidade } from '@uniplus/shared-data/organizacao';
+import { TIPOS_UNIDADE, TipoUnidadeCodigo } from '@uniplus/shared-data/organizacao';
 import type { UiFilterChipOption } from '@uniplus/shared-ui/components';
 
 /**
- * Ordinal numérico do enum `TipoUnidade` no backend (`TipoUnidade.cs`), usado só pelo filtro
- * `?tipo=` da listagem. Esse parâmetro é lido pelo controller como `int[]` bruto, independente do
- * enum em string que o corpo JSON de criação e atualização usa; o enum em string não expõe o
- * ordinal em tempo de execução, então a tabela fica aqui.
+ * Ordinal numérico do tipo no backend, usado só pelo filtro `?tipo=` da listagem. Esse parâmetro
+ * é lido pelo controller como número, independente do código de texto que o corpo de criação e
+ * de atualização envia; o código não expõe o ordinal, então a tabela fica aqui.
  */
-const ORDINAL_DO_FILTRO: Readonly<Record<TipoUnidade, number>> = {
-  [TipoUnidade.nenhum]: 0,
-  [TipoUnidade.reitoria]: 1,
-  [TipoUnidade.proReitoria]: 2,
-  [TipoUnidade.centro]: 3,
-  [TipoUnidade.instituto]: 4,
-  [TipoUnidade.faculdade]: 5,
-  [TipoUnidade.departamento]: 6,
-  [TipoUnidade.coordenacao]: 7,
-  [TipoUnidade.diretoria]: 8,
-  [TipoUnidade.divisao]: 9,
-  [TipoUnidade.nucleo]: 10,
-  [TipoUnidade.outro]: 11,
+const ORDINAL_DO_FILTRO: Readonly<Record<TipoUnidadeCodigo, number>> = {
+  [TipoUnidadeCodigo.REITORIA]: 1,
+  [TipoUnidadeCodigo.PRO_REITORIA]: 2,
+  [TipoUnidadeCodigo.CENTRO]: 3,
+  [TipoUnidadeCodigo.INSTITUTO]: 4,
+  [TipoUnidadeCodigo.FACULDADE]: 5,
+  [TipoUnidadeCodigo.DEPARTAMENTO]: 6,
+  [TipoUnidadeCodigo.COORDENACAO]: 7,
+  [TipoUnidadeCodigo.DIRETORIA]: 8,
+  [TipoUnidadeCodigo.DIVISAO]: 9,
+  [TipoUnidadeCodigo.NUCLEO]: 10,
+  [TipoUnidadeCodigo.OUTRO]: 11,
 };
 
 /** Os 11 tipos do domínio fechado, como o select do formulário os oferece. */
@@ -40,21 +38,6 @@ export const CHIPS_DE_TIPO: readonly UiFilterChipOption[] = [
   })),
 ];
 
-function normalizarRotulo(valor: string): string {
-  return valor
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .replace(/\+/gu, 'plus')
-    .replace(/[^a-z0-9]/giu, '')
-    .toLocaleLowerCase('pt-BR');
-}
-
-/**
- * O valor do tipo que o backend devolveu como rótulo. Sem casamento com os 11 tipos conhecidos
- * devolve vazio (controle inválido), em vez de assumir "Outro": editar e salvar não reclassifica
- * a unidade em silêncio.
- */
-export function tipoDoRotulo(rotulo: string): string {
-  const alvo = normalizarRotulo(rotulo);
-  return TIPOS_UNIDADE.find((tipo) => normalizarRotulo(tipo.label) === alvo)?.value ?? '';
+export function rotuloDoTipo(codigo: TipoUnidadeCodigo): string {
+  return TIPOS_UNIDADE.find((tipo) => tipo.value === codigo)?.label ?? codigo;
 }

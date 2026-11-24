@@ -1,4 +1,4 @@
-import { TipoUnidade } from '@uniplus/shared-data/organizacao';
+import { TipoUnidadeCodigo } from '@uniplus/shared-data/organizacao';
 import { describe, expect, it } from 'vitest';
 import {
   ALIAS_TAMANHO_MAXIMO,
@@ -12,7 +12,7 @@ import {
   criarFormularioDeUnidade,
   valoresDaUnidade,
 } from './unidade-form';
-import { instituto, reitoria } from './unidades.testing';
+import { reitoria } from './unidades.testing';
 
 describe('unidade-form', () => {
   it('cada campo de texto recusa o excesso do limite do domínio', () => {
@@ -43,13 +43,12 @@ describe('unidade-form', () => {
   it('o formulário em branco é inválido e nasce com tipo e vigência preenchidos', () => {
     const form = criarFormularioDeUnidade();
     expect(form.valid).toBe(false);
-    expect(form.controls.tipo.value).toBe(TipoUnidade.instituto);
+    expect(form.controls.tipo.value).toBe(TipoUnidadeCodigo.INSTITUTO);
     expect(form.controls.vigenciaInicio.value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
-  it('a edição traz o tipo do rótulo; rótulo desconhecido deixa o tipo em branco', () => {
-    expect(valoresDaUnidade(reitoria).tipo).toBe(TipoUnidade.reitoria);
-    expect(valoresDaUnidade({ ...instituto, tipo: 'Inexistente' as never }).tipo).toBe('');
+  it('a edição preserva o código do tipo', () => {
+    expect(valoresDaUnidade(reitoria).tipo).toBe(TipoUnidadeCodigo.REITORIA);
   });
 
   it('o campo do servidor casa por caixa e rejeita o desconhecido', () => {
@@ -72,5 +71,10 @@ describe('unidade-form', () => {
 
     expect('vigenciaInicio' in comandoDeAtualizacao(reitoria.id, valor, null)).toBe(false);
     expect(comandoDeCriacao(valor, null).vigenciaInicio).toBe('2020-01-01');
+  });
+  it('envia o código no cadastro e na alteração', () => {
+    const valor = { ...valoresDaUnidade(reitoria), tipo: TipoUnidadeCodigo.PRO_REITORIA };
+    expect(comandoDeCriacao(valor, null).tipo).toBe('PRO_REITORIA');
+    expect(comandoDeAtualizacao(reitoria.id, valor, null).tipo).toBe('PRO_REITORIA');
   });
 });
