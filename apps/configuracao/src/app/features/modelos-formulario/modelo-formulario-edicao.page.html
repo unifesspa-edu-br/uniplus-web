@@ -51,7 +51,7 @@
 
 <ui-falha-de-leitura
   variante="warning"
-  titulo="Fases ou tipos de documento não carregados"
+  titulo="Fases, tipos de documento ou consequências não carregados"
   [leitura]="store.leituraDoVocabulario"
 />
 @if (edicao.conteudo(); as c) {
@@ -71,6 +71,7 @@
   [fatos]="store.fatos()"
   [fases]="store.fases()"
   [tiposDeDocumento]="store.tiposDeDocumento()"
+  [consequencias]="store.consequencias()"
   [recusas]="edicao.recusasDosDocumentos()"
   [somenteLeitura]="edicao.somenteLeitura()"
   [comMunicipios]="comMunicipios"

@@ -1,5 +1,5 @@
 import type { ClausulasNoWire } from '../editor-de-condicoes/condicoes/condicoes-no-wire';
-import { type BaseLegal, baseLegalNova, CONSEQUENCIAS_ESCOLHIVEIS } from '@uniplus/shared-utils';
+import { type BaseLegal, baseLegalNova, CONSEQUENCIA_PADRAO } from '@uniplus/shared-utils';
 
 /** Uma opção de vocabulário: fase canônica ou tipo de documento, pelo código. */
 export interface OpcaoDoDocumento {
@@ -7,6 +7,12 @@ export interface OpcaoDoDocumento {
   readonly nome: string;
   /** Só da fase: se ela admite complementação, que a consequência de reenvio exige. */
   readonly permiteComplementacao?: boolean;
+}
+
+/** Uma consequência do indeferimento, como a API a devolve: o código e o rótulo que a tela mostra. */
+export interface ConsequenciaDoIndeferimento {
+  readonly codigo: string;
+  readonly rotulo: string;
 }
 
 /** A norma do documento exigido: a mesma do processo, definida em `@uniplus/shared-utils`. */
@@ -32,7 +38,7 @@ export function documentoExigidoNovo(
     tipoDocumentoCodigo,
     obrigatorio: true,
     quando: null,
-    consequenciaIndeferimento: CONSEQUENCIAS_ESCOLHIVEIS[0].valor,
+    consequenciaIndeferimento: CONSEQUENCIA_PADRAO,
     basesLegais: [baseLegalNova()],
   };
 }

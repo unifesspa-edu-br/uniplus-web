@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 
 import {
-  CONSEQUENCIAS_ESCOLHIVEIS,
+  CONSEQUENCIA_PADRAO,
   CONSEQUENCIA_REENVIO,
   consequenciasDaFase,
 } from '@uniplus/shared-utils';
@@ -23,6 +23,7 @@ import {
 } from '../editor-de-formulario/predicado-em-edicao';
 import {
   type DocumentoExigidoDoFormulario,
+  type ConsequenciaDoIndeferimento,
   type OpcaoDoDocumento,
   type RecusasDoDocumento,
 } from './documentos-exigidos';
@@ -174,6 +175,8 @@ export class DocumentoExigidoComponent {
   readonly posicao = input.required<number>();
   readonly fases = input.required<readonly OpcaoDoDocumento[]>();
   readonly tipos = input.required<readonly OpcaoDoDocumento[]>();
+  /** As consequências do indeferimento que a API oferece, com o rótulo dela. */
+  readonly consequenciasOferecidas = input.required<readonly ConsequenciaDoIndeferimento[]>();
   readonly fatos = input.required<readonly FatoEscolhivel[]>();
   readonly idBase = input.required<string>();
   readonly disabled = input<boolean>(false);
@@ -214,7 +217,10 @@ export class DocumentoExigidoComponent {
   protected readonly consequencias = computed(() => {
     const gravada = this.documento().consequenciaIndeferimento;
     const fase = this.fases().find((opcao) => opcao.codigo === this.documento().faseCodigo);
-    const oferecidas = consequenciasDaFase(CONSEQUENCIAS_ESCOLHIVEIS, fase?.permiteComplementacao);
+    const oferecidas = consequenciasDaFase(
+      this.consequenciasOferecidas().map(({ codigo, rotulo }) => ({ valor: codigo, rotulo })),
+      fase?.permiteComplementacao,
+    );
     return oferecidas.some((consequencia) => consequencia.valor === gravada)
       ? oferecidas
       : [{ valor: gravada, rotulo: gravada }, ...oferecidas];
@@ -245,7 +251,7 @@ export class DocumentoExigidoComponent {
       this.documento().consequenciaIndeferimento === CONSEQUENCIA_REENVIO;
     this.trocar(
       perdeOReenvio
-        ? { faseCodigo, consequenciaIndeferimento: CONSEQUENCIAS_ESCOLHIVEIS[0].valor }
+        ? { faseCodigo, consequenciaIndeferimento: CONSEQUENCIA_PADRAO }
         : { faseCodigo },
     );
   }

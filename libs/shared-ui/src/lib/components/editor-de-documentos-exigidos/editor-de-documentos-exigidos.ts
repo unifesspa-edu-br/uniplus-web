@@ -13,6 +13,7 @@ import { type FatoEscolhivel } from '../editor-de-condicoes/condicoes/fatos-esco
 import { focarDepois } from '../editor-de-formulario/foco';
 import {
   documentoExigidoNovo,
+  type ConsequenciaDoIndeferimento,
   type DocumentoExigidoDoFormulario,
   type OpcaoDoDocumento,
   type RecusasDoDocumento,
@@ -62,6 +63,7 @@ function manterOuPrimeira(
           [posicao]="$index + 1"
           [fases]="fases()"
           [tipos]="tipos()"
+          [consequenciasOferecidas]="consequencias()"
           [fatos]="fatos()"
           [citaveis]="citaveis()"
           [idBase]="idDe('doc-' + $index)"
@@ -128,6 +130,8 @@ export class EditorDeDocumentosExigidosComponent {
   readonly fases = input.required<readonly OpcaoDoDocumento[]>();
   /** Os tipos de documento do cadastro, pelo código. */
   readonly tipos = input.required<readonly OpcaoDoDocumento[]>();
+  /** As consequências do indeferimento que a API oferece. */
+  readonly consequencias = input.required<readonly ConsequenciaDoIndeferimento[]>();
   /** Os fatos que a condição pode citar: os que o modelo coleta, deriva ou conhece antes. */
   readonly fatos = input.required<readonly FatoEscolhivel[]>();
   readonly citaveis = input<ReadonlySet<string> | null>(null);

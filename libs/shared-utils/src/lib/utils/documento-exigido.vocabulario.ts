@@ -27,13 +27,8 @@ export const SITUACAO_BASE_LEGAL_ESCOLHIVEIS = [
  */
 export const CONSEQUENCIA_REENVIO = 'ABRE_PRAZO_PARA_REENVIO';
 
-/** O que acontece com o candidato que não apresenta o documento. */
-export const CONSEQUENCIAS_ESCOLHIVEIS = [
-  { valor: 'ELIMINA', rotulo: 'Elimina do processo' },
-  { valor: 'RECLASSIFICA_AC', rotulo: 'Reclassifica para ampla concorrência' },
-  { valor: 'REMOVE_VANTAGEM', rotulo: 'Remove a vantagem pleiteada' },
-  { valor: CONSEQUENCIA_REENVIO, rotulo: 'Abre pendência para reenvio' },
-] as const;
+/** A consequência com que um documento exigido novo nasce, até a pessoa escolher outra. */
+export const CONSEQUENCIA_PADRAO = 'ELIMINA';
 
 /**
  * As consequências que a fase admite: o reenvio só vale em fase que admite complementação. A fase

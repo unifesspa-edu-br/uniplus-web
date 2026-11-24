@@ -115,15 +115,20 @@ describe('ModeloFormularioEdicaoPage', () => {
     expect(tela.querySelector('option[value="GRADUACAO"]')).not.toBeNull();
   });
 
-  it('falha ao carregar o vocabulário dos documentos: a nova tentativa lê fases e tipos de novo e o foco vai ao título', async () => {
+  it('falha ao carregar o vocabulário dos documentos: a nova tentativa lê fases, tipos e consequências de novo e o foco vai ao título', async () => {
     const tela = await carregar(modelo, [], FASES, ['fases', 'tipos-documento']);
 
-    await tentarNovamenteComFoco(tela, 'Fases ou tipos de documento não carregados');
+    await tentarNovamenteComFoco(tela, 'Fases, tipos de documento ou consequências não carregados');
     controller.expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`).flush(FASES);
     controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-documento`).flush([]);
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/selecao/vocabularios/consequencias-indeferimento`)
+      .flush([]);
     await concluirANovaTentativa();
 
-    expect(tela.textContent).not.toContain('Fases ou tipos de documento não carregados');
+    expect(tela.textContent).not.toContain(
+      'Fases, tipos de documento ou consequências não carregados',
+    );
   });
 
   it('a primeira leitura falha: o foco não vai ao título, pois ninguém esperava a recarga', async () => {

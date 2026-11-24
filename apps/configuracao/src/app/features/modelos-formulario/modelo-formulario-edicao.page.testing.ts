@@ -19,6 +19,7 @@ import {
   type ModeloFormularioView,
 } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
+import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { ModeloFormularioEdicaoPage } from './modelo-formulario-edicao.page';
 
 export const BASE = 'http://localhost:5000';
@@ -195,7 +196,7 @@ export const modelo: ModeloFormularioView = {
         tipoDocumentoCodigo: 'CERTIDAO_NASCIMENTO',
         obrigatorio: false,
         quando: null,
-        consequenciaIndeferimento: 'PENDENCIA_REENVIO',
+        consequenciaIndeferimento: 'ABRE_PRAZO_PARA_REENVIO',
         basesLegais: [],
         porOpcao: null,
       },
@@ -228,6 +229,17 @@ const TIPOS_DE_DOCUMENTO = [
   { id: '2', codigo: 'CERTIDAO_NASCIMENTO', nome: 'Certidão de nascimento' },
   { id: '3', codigo: 'ATESTADO', nome: 'Atestado' },
 ];
+
+const CONSEQUENCIAS_DO_INDEFERIMENTO = [
+  { codigo: 'ELIMINA', rotulo: 'Elimina do processo' },
+  { codigo: 'ABRE_PRAZO_PARA_REENVIO', rotulo: 'Abre prazo para reenvio' },
+];
+
+const RECURSO_DAS_CONSEQUENCIAS: RecursoDaCarga = {
+  recurso: 'consequencias',
+  url: `${BASE}/api/selecao/vocabularios/consequencias-indeferimento`,
+  dados: CONSEQUENCIAS_DO_INDEFERIMENTO,
+};
 
 export interface TelaDeEdicao {
   readonly fixture: ComponentFixture<ModeloFormularioEdicaoPage>;
@@ -262,6 +274,7 @@ function provedoresDaTela(): (EnvironmentProviders | Provider)[] {
     provideHttpClientTesting(),
     { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
     { provide: GEO_BASE_PATH, useValue: BASE },
+    { provide: SELECAO_BASE_PATH, useValue: BASE },
     {
       provide: ActivatedRoute,
       useValue: { snapshot: { paramMap: convertToParamMap({ id: ID }) } },
@@ -298,6 +311,7 @@ function recursosDaCarga(cenario: CenarioDaCarga): readonly RecursoDaCarga[] {
     { recurso: 'termos', url: `${API}/termos-consentimento`, dados: [] },
     { recurso: 'fases', url: `${API}/fases-canonicas`, dados: cenario.fases ?? FASES },
     { recurso: 'tipos-documento', url: `${API}/tipos-documento`, dados: TIPOS_DE_DOCUMENTO },
+    RECURSO_DAS_CONSEQUENCIAS,
   ];
 }
 
