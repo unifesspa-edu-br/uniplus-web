@@ -1,3 +1,8 @@
+import {
+  FormaDoEncerramento,
+  ResultadoDaMigracao,
+  SituacaoDaMigracao,
+} from '@uniplus/shared-data/autorizacao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { NEVER, of, throwError } from 'rxjs';
@@ -28,22 +33,22 @@ const CONJUNTO_DE_CONCESSOES = janelaDeMigracao({ itens: [BETINA, LEANDRO, REBEC
 const ENCERRADA = janelaDeMigracao({
   situacao: 'encerrada',
   encerradaEm: '2026-11-11T09:00:00Z',
-  forma: 'prazo',
+  forma: FormaDoEncerramento.PRAZO,
   decisoesEnviadas: true,
-  itens: [itemDaJanela({ concessaoId: 'c1', situacao: 'nao_migrada' })],
+  itens: [itemDaJanela({ concessaoId: 'c1', situacao: SituacaoDaMigracao.NAO_MIGRADA })],
 });
 const CONJUNTO_ENVIADO = janelaDeMigracao({ ...CONJUNTO_DE_CONCESSOES, decisoesEnviadas: true });
 const TODAS_APROVADAS = {
   decisoes: [
-    { concessaoId: 'c1', decisao: 'migrar' },
-    { concessaoId: 'c2', decisao: 'migrar' },
+    { concessaoId: 'c1', decisao: ResultadoDaMigracao.MIGRAR },
+    { concessaoId: 'c2', decisao: ResultadoDaMigracao.MIGRAR },
   ],
   confirmacaoDeExclusao: false,
 };
 const UMA_RECUSADA = {
   decisoes: [
-    { concessaoId: 'c1', decisao: 'migrar' },
-    { concessaoId: 'c2', decisao: 'recusar' },
+    { concessaoId: 'c1', decisao: ResultadoDaMigracao.MIGRAR },
+    { concessaoId: 'c2', decisao: ResultadoDaMigracao.RECUSAR },
   ],
   confirmacaoDeExclusao: true,
 };
@@ -53,14 +58,14 @@ type Revisao = Awaited<ReturnType<typeof abrirJanela>>;
 async function aprovarTodasEEnviar({ host, assentar }: Revisao): Promise<void> {
   presente(botao(host, 'Migrar todas')).click();
   await assentar();
-  presente(botao(host, 'Enviar o lote')).click();
+  presente(botao(host, 'Enviar as decisões')).click();
 }
 
 async function pedirConfirmacaoDaExclusao({ host, assentar }: Revisao): Promise<HTMLElement> {
   presente(botao(host, 'Migrar todas')).click();
   escolher(linhaDe(host, 'c2'), 'Recusar');
   await assentar();
-  presente(botao(host, 'Enviar o lote')).click();
+  presente(botao(host, 'Enviar as decisões')).click();
   await assentar();
   return presente(host.querySelector<HTMLElement>('cfg-exclusao-dialog'));
 }
@@ -84,7 +89,7 @@ describe('página de revisão das concessões', () => {
 
       const { host } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
 
-      expect(host.querySelector('h1')?.textContent).toContain('Janela de migração');
+      expect(host.querySelector('h1')?.textContent).toContain('Revisão das concessões do perfil');
       const prazo = presente(host.querySelector('cfg-prazo-da-janela'));
       expect(prazo.textContent).toContain('12/11/2026');
       expect(prazo.textContent).toContain('49 h 30 min');
@@ -113,12 +118,12 @@ describe('página de revisão das concessões', () => {
       const { host, falhar, responder } = montarJanela();
       await falhar(503);
 
-      expect(host.textContent).toContain('Não foi possível carregar a janela');
+      expect(host.textContent).toContain('Não foi possível carregar a revisão das concessões');
       const tentar = presente(botao(host, 'Tentar novamente'));
       tentar.click();
       await responder(CONJUNTO_DE_CONCESSOES);
 
-      expect(host.textContent).not.toContain('Não foi possível carregar a janela');
+      expect(host.textContent).not.toContain('Não foi possível carregar a revisão das concessões');
       expect(host.textContent).toContain('Betina Teste');
     });
 
@@ -183,14 +188,14 @@ describe('página de revisão das concessões', () => {
 
     it('segura o envio com a lista incompleta e diz quantas faltam', async () => {
       const { host, assentar } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
-      expect(presente(botao(host, 'Enviar o lote')).disabled).toBe(true);
-      expect(host.textContent).toContain('Faltam 2 concessões para enviar o lote.');
+      expect(presente(botao(host, 'Enviar as decisões')).disabled).toBe(true);
+      expect(host.textContent).toContain('Faltam 2 concessões para enviar as decisões.');
 
       escolher(linhaDe(host, 'c1'), 'Migrar');
       await assentar();
 
-      expect(host.textContent).toContain('Falta 1 concessão para enviar o lote.');
-      expect(presente(botao(host, 'Enviar o lote')).disabled).toBe(true);
+      expect(host.textContent).toContain('Falta 1 concessão para enviar as decisões.');
+      expect(presente(botao(host, 'Enviar as decisões')).disabled).toBe(true);
     });
 
     it('habilita o envio quando a lista está completa', async () => {
@@ -201,7 +206,7 @@ describe('página de revisão das concessões', () => {
       await assentar();
       fixture.detectChanges();
 
-      expect(presente(botao(host, 'Enviar o lote')).disabled).toBe(false);
+      expect(presente(botao(host, 'Enviar as decisões')).disabled).toBe(false);
     });
 
     it('aprovar todas e recusar todas preenchem a lista inteira', async () => {
@@ -209,7 +214,7 @@ describe('página de revisão das concessões', () => {
 
       presente(botao(host, 'Migrar todas')).click();
       await assentar();
-      expect(presente(botao(host, 'Enviar o lote')).disabled).toBe(false);
+      expect(presente(botao(host, 'Enviar as decisões')).disabled).toBe(false);
 
       presente(botao(host, 'Recusar todas')).click();
       await assentar();
@@ -236,8 +241,10 @@ describe('página de revisão das concessões', () => {
         await aprovarTodasEEnviar(revisao);
         await revisao.responder(CONJUNTO_ENVIADO);
 
-        expect(notificacoes.success).toHaveBeenCalledWith('Lote enviado');
-        expect(revisao.host.textContent).toContain('O lote da gestão de acessos já foi enviado');
+        expect(notificacoes.success).toHaveBeenCalledWith('Decisões enviadas');
+        expect(revisao.host.textContent).toContain(
+          'As decisões da gestão de acessos já foram enviadas',
+        );
       });
     });
 
@@ -255,7 +262,7 @@ describe('página de revisão das concessões', () => {
         const revisao = await abrirJanela(CONJUNTO_DE_CONCESSOES);
         const dialogo = await pedirConfirmacaoDaExclusao(revisao);
 
-        presente(botao(dialogo, 'Recusar e enviar o lote')).click();
+        presente(botao(dialogo, 'Recusar e enviar as decisões')).click();
         await revisao.assentar();
 
         const caixa = presente(dialogo.querySelector<HTMLInputElement>('input[type="checkbox"]'));
@@ -270,7 +277,7 @@ describe('página de revisão das concessões', () => {
 
         presente(dialogo.querySelector<HTMLInputElement>('input[type="checkbox"]')).click();
         await revisao.assentar();
-        presente(botao(dialogo, 'Recusar e enviar o lote')).click();
+        presente(botao(dialogo, 'Recusar e enviar as decisões')).click();
         await revisao.responder(CONJUNTO_ENVIADO);
 
         expect(api.enviarLote.mock.calls[0]?.[1]).toEqual(UMA_RECUSADA);
@@ -300,7 +307,7 @@ describe('página de revisão das concessões', () => {
         await aprovarTodasEEnviar(revisao);
         await revisao.assentar();
 
-        expect(presente(botao(revisao.host, 'Enviar o lote')).disabled).toBe(false);
+        expect(presente(botao(revisao.host, 'Enviar as decisões')).disabled).toBe(false);
       });
     });
 
@@ -312,10 +319,10 @@ describe('página de revisão das concessões', () => {
       presente(botao(host, 'Migrar todas')).click();
       await assentar();
 
-      presente(botao(host, 'Enviar o lote')).click();
+      presente(botao(host, 'Enviar as decisões')).click();
       await responder(janelaDeMigracao({ ...CONJUNTO_DE_CONCESSOES, decisoesEnviadas: true }));
 
-      expect(host.textContent).toContain('A janela mudou');
+      expect(host.textContent).toContain('A revisão das concessões mudou');
       expect(host.textContent).toContain('As decisões já foram enviadas para esta revisão.');
       expect(host.querySelector('#cfg-lote-erro')).toBeNull();
     });
@@ -326,22 +333,22 @@ describe('página de revisão das concessões', () => {
       presente(botao(host, 'Migrar todas')).click();
       await assentar();
 
-      presente(botao(host, 'Enviar o lote')).click();
+      presente(botao(host, 'Enviar as decisões')).click();
       await assentar();
 
       expect(host.querySelector('#cfg-lote-erro')?.textContent).toContain(
         'Não foi possível concluir a operação.',
       );
-      expect(presente(botao(host, 'Enviar o lote')).disabled).toBe(false);
+      expect(presente(botao(host, 'Enviar as decisões')).disabled).toBe(false);
     });
 
     it('sem a permissão da gestão de acessos, consulta a lista sem decidir', async () => {
       const { host } = await abrirJanela(CONJUNTO_DE_CONCESSOES, []);
 
-      expect(host.textContent).toContain('O lote cabe à gestão de acessos');
+      expect(host.textContent).toContain('O envio das decisões cabe à gestão de acessos');
       expect(host.textContent).toContain('Betina Teste');
       expect(host.querySelector('input[type="radio"]')).toBeNull();
-      expect(botao(host, 'Enviar o lote')).toBeUndefined();
+      expect(botao(host, 'Enviar as decisões')).toBeUndefined();
     });
 
     it('bloqueia a decisão enquanto o envio é gravado', async () => {
@@ -350,10 +357,10 @@ describe('página de revisão das concessões', () => {
       presente(botao(host, 'Migrar todas')).click();
       await assentar();
 
-      presente(botao(host, 'Enviar o lote')).click();
+      presente(botao(host, 'Enviar as decisões')).click();
       await assentar();
 
-      expect(presente(botao(host, 'Enviar o lote')).disabled).toBe(true);
+      expect(presente(botao(host, 'Enviar as decisões')).disabled).toBe(true);
       expect(presente(botao(host, 'Migrar todas')).disabled).toBe(true);
       expect(
         host.querySelector<HTMLInputElement>('input[type="radio"]')?.closest('fieldset')?.disabled,
@@ -364,7 +371,7 @@ describe('página de revisão das concessões', () => {
   it('a permissão de gestão de acessos libera o envio e o encerramento', async () => {
     const { host } = await abrirJanela(CONJUNTO_DE_CONCESSOES, [GESTAO_DE_ACESSOS]);
 
-    expect(botao(host, 'Enviar o lote')).toBeDefined();
+    expect(botao(host, 'Enviar as decisões')).toBeDefined();
     expect(host.querySelector('cfg-encerramento-da-janela')).not.toBeNull();
   });
 });

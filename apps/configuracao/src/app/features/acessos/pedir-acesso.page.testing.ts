@@ -1,3 +1,4 @@
+import { TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import {
   HttpResponse,
   provideHttpClient,
@@ -28,7 +29,7 @@ export const PERFIL_COMUM = {
   id: 'perfil-1',
   nome: 'Operador de inscrições',
   descricao: 'Opera as inscrições.',
-  escopo: 'unidade',
+  escopo: TipoDeEscopo.UNIDADE,
   exigeAprovacaoDeProtecaoDeDados: false,
   governanca: null,
 };
@@ -36,7 +37,7 @@ export const PERFIL_INSTITUCIONAL = {
   ...PERFIL_COMUM,
   id: 'perfil-2',
   nome: 'Consulta institucional',
-  escopo: 'instituicao',
+  escopo: TipoDeEscopo.INSTITUICAO,
 };
 
 export const PERFIL_DE_GOVERNANCA = {

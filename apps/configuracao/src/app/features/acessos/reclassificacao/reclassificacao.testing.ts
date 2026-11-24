@@ -1,3 +1,4 @@
+import { EtapaDaVersao, SituacaoDaVersao, TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ApplicationRef } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
@@ -32,62 +33,63 @@ export function concessao(parcial: Partial<ConcessaoSuspensaDto> = {}): Concessa
   return {
     concessaoId: 'c1',
     beneficiarioNome: 'Betina Teste',
-    escopoTipo: 'unidade',
+    escopoTipo: TipoDeEscopo.UNIDADE,
     unidadeId: 'unidade-1',
     versao: 1,
-    etapasExigidas: ['gestao_de_acessos'],
+    etapasExigidas: [EtapaDaVersao.GESTAO_DE_ACESSOS],
     etapasDecididas: [],
     ehDoLeitor: false,
     ...parcial,
   };
 }
 
-export function reclassificacao(parcial: Partial<ReclassificacaoDto> = {}): ReclassificacaoDto {
-  return {
-    id: ID,
-    perfilId: PERFIL,
-    perfilNome: 'Operador de inscrições',
-    codigo: 'selecao:processos:aprovar',
-    mudanca: {
-      classificacaoAnterior: 'interno',
-      classificacaoNova: 'pessoal',
-      deUnidadeAnterior: false,
-      deUnidadeNovo: true,
+const RECLASSIFICACAO: ReclassificacaoDto = {
+  id: ID,
+  perfilId: PERFIL,
+  perfilNome: 'Operador de inscrições',
+  codigo: 'selecao:processos:aprovar',
+  mudanca: {
+    classificacaoAnterior: 'interno',
+    classificacaoNova: 'pessoal',
+    deUnidadeAnterior: false,
+    deUnidadeNovo: true,
+  },
+  instante: '2026-11-09T15:00:00Z',
+  vigente: true,
+  versoes: [
+    {
+      id: 'v1',
+      numero: 1,
+      situacao: SituacaoDaVersao.VIGENTE,
+      permissoes: [
+        { codigo: 'selecao:processos:aprovar', classificacao: 'interno', deUnidade: false },
+      ],
+      linkDoDocumento: 'https://api.test/documento/v1',
     },
-    instante: '2026-11-09T15:00:00Z',
-    vigente: true,
-    versoes: [
-      {
-        id: 'v1',
-        numero: 1,
-        situacao: 'vigente',
-        permissoes: [
-          { codigo: 'selecao:processos:aprovar', classificacao: 'interno', deUnidade: false },
-        ],
-        linkDoDocumento: 'https://api.test/documento/v1',
-      },
-      {
-        id: 'v2',
-        numero: 2,
-        situacao: 'vigente',
-        permissoes: [
-          { codigo: 'selecao:processos:aprovar', classificacao: 'pessoal', deUnidade: true },
-        ],
-        linkDoDocumento: null,
-      },
-    ],
-    concessoes: [
-      concessao(),
-      concessao({ concessaoId: 'c2', beneficiarioNome: 'Diogo Teste', ehDoLeitor: true }),
-      concessao({
-        concessaoId: 'c3',
-        beneficiarioNome: 'Paulo Teste',
-        unidadeId: null,
-        escopoTipo: 'instituicao',
-      }),
-    ],
-    ...parcial,
-  };
+    {
+      id: 'v2',
+      numero: 2,
+      situacao: SituacaoDaVersao.VIGENTE,
+      permissoes: [
+        { codigo: 'selecao:processos:aprovar', classificacao: 'pessoal', deUnidade: true },
+      ],
+      linkDoDocumento: null,
+    },
+  ],
+  concessoes: [
+    concessao(),
+    concessao({ concessaoId: 'c2', beneficiarioNome: 'Diogo Teste', ehDoLeitor: true }),
+    concessao({
+      concessaoId: 'c3',
+      beneficiarioNome: 'Paulo Teste',
+      unidadeId: null,
+      escopoTipo: TipoDeEscopo.INSTITUICAO,
+    }),
+  ],
+};
+
+export function reclassificacao(parcial: Partial<ReclassificacaoDto> = {}): ReclassificacaoDto {
+  return { ...structuredClone(RECLASSIFICACAO), ...parcial };
 }
 
 export interface PaginaDaReclassificacao {
@@ -96,50 +98,67 @@ export interface PaginaDaReclassificacao {
   readonly assentar: () => Promise<void>;
 }
 
+const cliente = provideHttpClient(
+  withInterceptors([
+    (req) => leituras(req.url).pipe(map((body: unknown) => new HttpResponse({ body }))),
+  ]),
+);
+
+const unidades = {
+  provide: UnidadesApi,
+  useValue: {
+    listar: () => of(ok([{ id: 'unidade-1', nome: 'Centro de Seleção', sigla: 'CEPS' }])),
+  },
+};
+
+function provedoresReclassificacao(concedidas: readonly string[]) {
+  return [
+    provideRouter([]),
+    provideMensagensDeAcesso(),
+    { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
+    cliente,
+    { provide: ReclassificacoesApi, useValue: api },
+    { provide: DocumentoDaVersaoService, useValue: documentos },
+    { provide: NotificationService, useValue: notificacoes },
+    ...provedoresDeConsulta(concedidas),
+  ];
+}
+
+function provedoresDeConsulta(concedidas: readonly string[]) {
+  return [
+    {
+      provide: PermissoesService,
+      useValue: {
+        tem: (c: string) => concedidas.includes(c),
+        temAlguma: (...c: string[]) => c.some((x) => concedidas.includes(x)),
+      },
+    },
+    unidades,
+  ];
+}
+
+function configurarReclassificacao(concedidas: readonly string[]): void {
+  TestBed.configureTestingModule({ providers: provedoresReclassificacao(concedidas) });
+}
+
+async function assentar(): Promise<void> {
+  await new Promise((resolver) => setTimeout(resolver));
+  TestBed.inject(ApplicationRef).tick();
+  await new Promise((resolver) => setTimeout(resolver));
+  TestBed.inject(ApplicationRef).tick();
+}
+
 /** Abre a reclassificação com a leitura respondida e as permissões informadas. */
 export async function abrirReclassificacao(
   leitura: unknown = ok(reclassificacao()),
   concedidas: readonly string[] = [GESTAO_DE_ACESSOS],
 ): Promise<PaginaDaReclassificacao> {
   leituras.mockReturnValue(of(leitura));
-  TestBed.configureTestingModule({
-    providers: [
-      provideRouter([]),
-      provideMensagensDeAcesso(),
-      { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
-      provideHttpClient(
-        withInterceptors([
-          (req) => leituras(req.url).pipe(map((body: unknown) => new HttpResponse({ body }))),
-        ]),
-      ),
-      { provide: ReclassificacoesApi, useValue: api },
-      { provide: DocumentoDaVersaoService, useValue: documentos },
-      { provide: NotificationService, useValue: notificacoes },
-      {
-        provide: PermissoesService,
-        useValue: {
-          tem: (c: string) => concedidas.includes(c),
-          temAlguma: (...c: string[]) => c.some((x) => concedidas.includes(x)),
-        },
-      },
-      {
-        provide: UnidadesApi,
-        useValue: {
-          listar: () => of(ok([{ id: 'unidade-1', nome: 'Centro de Seleção', sigla: 'CEPS' }])),
-        },
-      },
-    ],
-  });
+  configurarReclassificacao(concedidas);
   const fixture = TestBed.createComponent(ReclassificacaoDetalhePage);
   fixture.componentRef.setInput('id', ID);
   const host = fixture.nativeElement as HTMLElement;
   document.body.appendChild(host);
-  const assentar = async (): Promise<void> => {
-    await new Promise((resolver) => setTimeout(resolver));
-    TestBed.inject(ApplicationRef).tick();
-    await new Promise((resolver) => setTimeout(resolver));
-    TestBed.inject(ApplicationRef).tick();
-  };
   fixture.detectChanges();
   await assentar();
   return { fixture, host, assentar };

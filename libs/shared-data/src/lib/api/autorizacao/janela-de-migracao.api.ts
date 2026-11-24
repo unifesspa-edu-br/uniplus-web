@@ -1,3 +1,4 @@
+export type { DecisaoDaMigracao } from './codigos-de-autorizacao';
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -13,9 +14,6 @@ export type EnviarLoteDaMigracaoRequest = components['schemas']['EnviarDecisoesD
 export type DecidirRetidaRequest = components['schemas']['DecidirRetidaRequest'];
 export type DecidirEtapaDaProtecaoRequest = components['schemas']['DecidirEtapaDaProtecaoRequest'];
 export type EncerrarJanelaRequest = components['schemas']['EncerrarRevisaoRequest'];
-
-/** O que a gestão de acessos e a proteção de dados decidem sobre cada concessão da versão anterior. */
-export type DecisaoDaMigracao = 'migrar' | 'recusar';
 
 /** Cliente da janela de migração do perfil: lote, retidas, proteção de dados e encerramento. */
 @Injectable({ providedIn: 'root' })

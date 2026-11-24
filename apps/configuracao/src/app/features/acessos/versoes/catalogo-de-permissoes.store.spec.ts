@@ -15,7 +15,12 @@ const CATALOGO = [
       {
         resource: 'processos',
         permissoes: [
-          { codigo: 'selecao:processos:consultar', nome: 'Consultar processos', descricao: '', sensibilidade: 'interno' },
+          {
+            codigo: 'selecao:processos:consultar',
+            nome: 'Consultar processos',
+            descricao: '',
+            sensibilidade: 'INTERNO',
+          },
         ],
       },
     ],
@@ -58,7 +63,7 @@ describe('CatalogoDePermissoesStore', () => {
     expect(store.porCodigo().get('selecao:processos:consultar')).toEqual({
       codigo: 'selecao:processos:consultar',
       nome: 'Consultar processos',
-      sensibilidade: 'interno',
+      sensibilidade: 'INTERNO',
     });
   });
 
@@ -77,9 +82,14 @@ describe('CatalogoDePermissoesStore', () => {
   it('depois da falha, tentar novamente repete a leitura', async () => {
     store.carregar();
     await aguardar();
-    http
-      .expectOne(URL)
-      .flush({ type: 'x', title: 'Falha', status: 503, code: 'erro', traceId: '' }, { status: 503, statusText: 'Erro', headers: { 'Content-Type': 'application/problem+json' } });
+    http.expectOne(URL).flush(
+      { type: 'x', title: 'Falha', status: 503, code: 'erro', traceId: '' },
+      {
+        status: 503,
+        statusText: 'Erro',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
     await aguardar();
     expect(store.falha()).not.toBeNull();
 

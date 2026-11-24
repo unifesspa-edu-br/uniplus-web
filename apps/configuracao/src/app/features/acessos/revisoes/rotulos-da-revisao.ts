@@ -1,4 +1,4 @@
-import type {
+import {
   QuemDecideOItem,
   SituacaoDaRevisao,
   SituacaoDoItemDaRevisao,
@@ -11,28 +11,31 @@ export interface RotuloDaRevisao {
 }
 
 const SITUACAO_DA_REVISAO: Readonly<Record<SituacaoDaRevisao, RotuloDaRevisao>> = {
-  em_andamento: { texto: 'Aberta', variante: 'warning' },
-  concluida: { texto: 'Encerrada', variante: 'neutral' },
+  [SituacaoDaRevisao.EM_ANDAMENTO]: { texto: 'Aberta', variante: 'warning' },
+  [SituacaoDaRevisao.CONCLUIDA]: { texto: 'Encerrada', variante: 'neutral' },
 };
 
 const SITUACAO_DO_ITEM: Readonly<Record<SituacaoDoItemDaRevisao, RotuloDaRevisao>> = {
-  pendente: { texto: 'Aguarda decisão', variante: 'info' },
-  confirmada: { texto: 'Acesso mantido', variante: 'success' },
-  revogada: { texto: 'Acesso revogado', variante: 'danger' },
-  concessao_encerrada: { texto: 'Concessão encerrada fora da revisão', variante: 'neutral' },
+  [SituacaoDoItemDaRevisao.PENDENTE]: { texto: 'Aguarda decisão', variante: 'info' },
+  [SituacaoDoItemDaRevisao.CONFIRMADA]: { texto: 'Acesso mantido', variante: 'success' },
+  [SituacaoDoItemDaRevisao.REVOGADA]: { texto: 'Acesso revogado', variante: 'danger' },
+  [SituacaoDoItemDaRevisao.CONCESSAO_ENCERRADA]: {
+    texto: 'Concessão encerrada fora da revisão',
+    variante: 'neutral',
+  },
 };
 
 /** Os papéis pela função, no masculino genérico (ADR-0162). */
 const QUEM_DECIDE: Readonly<Record<QuemDecideOItem, string>> = {
-  'representante-do-controlador': 'Representante do controlador',
-  'gestor-de-acessos': 'Gestão de acessos',
+  [QuemDecideOItem.REPRESENTANTE_DO_CONTROLADOR]: 'Representante do controlador',
+  [QuemDecideOItem.GESTOR_DE_ACESSOS]: 'Gestão de acessos',
 };
 
 /** O que o filtro da lista oferece; a API filtra pela situação, e "todas" não manda o parâmetro. */
 export const OPCOES_DO_FILTRO = [
   { valor: 'todas', texto: 'Todas' },
-  { valor: 'em_andamento', texto: 'Abertas' },
-  { valor: 'concluida', texto: 'Encerradas' },
+  { valor: SituacaoDaRevisao.EM_ANDAMENTO, texto: 'Abertas' },
+  { valor: SituacaoDaRevisao.CONCLUIDA, texto: 'Encerradas' },
 ] as const;
 
 export type FiltroDaRevisao = (typeof OPCOES_DO_FILTRO)[number]['valor'];

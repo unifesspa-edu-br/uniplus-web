@@ -1,3 +1,4 @@
+import { SituacaoDoAnexo } from '@uniplus/shared-data/autorizacao';
 import { HttpHeaders, HttpResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
@@ -80,18 +81,27 @@ describe('DocumentoDaVersaoService', () => {
   });
 
   it('mostra a recusa da confirmação junto ao envio', async () => {
-    api.confirmarDocumento.mockReturnValue(of(recusa('uniplus.autorizacao.perfil.documento_invalido')));
+    api.confirmarDocumento.mockReturnValue(
+      of(recusa('uniplus.autorizacao.perfil.documento_invalido')),
+    );
 
     const desfecho = await servico.enviar(ENVIO, PDF, aoAndar);
 
     expect(desfecho.ok).toBe(false);
-    expect((desfecho as { mensagem: string }).mensagem).toContain('O tamanho declarado do documento ou o identificador de envio (ETag) não é válido.');
+    expect((desfecho as { mensagem: string }).mensagem).toContain(
+      'O tamanho declarado do documento ou o identificador de envio (ETag) não é válido.',
+    );
   });
 
   it('reemite o envio do documento que aguarda o arquivo', async () => {
     api.reemitirEnvio.mockReturnValue(of(ok(ENVIO)));
 
-    const desfecho = await servico.reenviar('p1', pendente('aguardando_envio'), PDF, aoAndar);
+    const desfecho = await servico.reenviar(
+      'p1',
+      pendente(SituacaoDoAnexo.AGUARDANDO_ENVIO),
+      PDF,
+      aoAndar,
+    );
 
     expect(desfecho).toEqual({ ok: true });
     expect(api.reemitirEnvio).toHaveBeenCalledWith('p1', 'v1', expect.anything());
@@ -101,13 +111,18 @@ describe('DocumentoDaVersaoService', () => {
   it('pede outro documento, com o tamanho do arquivo, quando a verificação recusou o anterior', async () => {
     api.novoDocumento.mockReturnValue(of(ok(ENVIO)));
 
-    await servico.reenviar('p1', pendente('recusado'), PDF, aoAndar);
+    await servico.reenviar('p1', pendente(SituacaoDoAnexo.RECUSADO), PDF, aoAndar);
 
     expect(api.novoDocumento).toHaveBeenCalledWith('p1', 'v1', PDF.size, expect.anything());
   });
 
   it('não envia nada quando o documento da versão não aguarda arquivo', async () => {
-    const desfecho = await servico.reenviar('p1', pendente('verificado'), PDF, aoAndar);
+    const desfecho = await servico.reenviar(
+      'p1',
+      pendente(SituacaoDoAnexo.VERIFICADO),
+      PDF,
+      aoAndar,
+    );
 
     expect(desfecho).toEqual({ ok: false, mensagem: 'A versão não aguarda um documento.' });
     expect(armazenamento.enviar).not.toHaveBeenCalled();
@@ -116,7 +131,9 @@ describe('DocumentoDaVersaoService', () => {
   it('abre o documento verificado numa aba nova e a deixa à vista', async () => {
     const aba = { location: { href: '' }, opener: {} as unknown, close: vi.fn() };
     vi.spyOn(window, 'open').mockReturnValue(aba as unknown as Window);
-    api.lerDocumento.mockReturnValue(of(ok({ url: 'https://armazenamento.test/doc', expiraEm: AMANHA })));
+    api.lerDocumento.mockReturnValue(
+      of(ok({ url: 'https://armazenamento.test/doc', expiraEm: AMANHA })),
+    );
 
     const desfecho = await servico.abrir('p1', 'v1', () => true);
 
@@ -134,7 +151,9 @@ describe('DocumentoDaVersaoService', () => {
   it('devolve o texto da recusa da leitura do documento', async () => {
     const aba = { close: vi.fn() };
     vi.spyOn(window, 'open').mockReturnValue(aba as unknown as Window);
-    api.lerDocumento.mockReturnValue(of(recusa('uniplus.autorizacao.perfil.documento_nao_verificado')));
+    api.lerDocumento.mockReturnValue(
+      of(recusa('uniplus.autorizacao.perfil.documento_nao_verificado')),
+    );
 
     const desfecho = await servico.abrir('p1', 'v1', () => true);
 

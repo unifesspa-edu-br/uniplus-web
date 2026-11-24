@@ -1,3 +1,4 @@
+import { FormaDoEncerramento, SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { HttpHeaders } from '@angular/common/http';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -17,7 +18,7 @@ import {
 
 const REVISAO = janelaDeMigracao({
   decisoesEnviadas: true,
-  itens: [itemDaJanela({ concessaoId: 'c1', situacao: 'retida' })],
+  itens: [itemDaJanela({ concessaoId: 'c1', situacao: SituacaoDaMigracao.RETIDA })],
 });
 
 describe('encerramento manual da revisão', () => {
@@ -48,7 +49,7 @@ describe('encerramento manual da revisão', () => {
   it('não encerra sem motivo e sem confirmação, e leva o foco ao primeiro campo a corrigir', async () => {
     const { host, assentar } = await abrirJanela(REVISAO);
 
-    presente(botao(host, 'Encerrar a janela')).click();
+    presente(botao(host, 'Encerrar a revisão das concessões')).click();
     await assentar();
 
     expect(api.encerrar).not.toHaveBeenCalled();
@@ -64,7 +65,7 @@ describe('encerramento manual da revisão', () => {
     const { host, assentar } = await abrirJanela(REVISAO);
     await preencher(host, assentar, 'Versão anterior substituída por engano.');
 
-    presente(botao(host, 'Encerrar a janela')).click();
+    presente(botao(host, 'Encerrar a revisão das concessões')).click();
     await assentar();
 
     expect(api.encerrar).not.toHaveBeenCalled();
@@ -79,14 +80,14 @@ describe('encerramento manual da revisão', () => {
     caixa(host).click();
     await assentar();
 
-    presente(botao(host, 'Encerrar a janela')).click();
+    presente(botao(host, 'Encerrar a revisão das concessões')).click();
     await responder(
       janelaDeMigracao({
         situacao: 'encerrada',
-        forma: 'manual',
+        forma: FormaDoEncerramento.MANUAL,
         encerradaEm: '2026-11-10T09:00:00Z',
         decisoesEnviadas: true,
-        itens: [itemDaJanela({ concessaoId: 'c1', situacao: 'nao_migrada' })],
+        itens: [itemDaJanela({ concessaoId: 'c1', situacao: SituacaoDaMigracao.NAO_MIGRADA })],
       }),
     );
 
@@ -95,8 +96,10 @@ describe('encerramento manual da revisão', () => {
       { motivo: 'Versão anterior substituída por engano.', confirmacaoDeExclusao: true },
       expect.anything(),
     );
-    expect(notificacoes.success).toHaveBeenCalledWith('Janela encerrada');
-    expect(host.textContent).toContain('A gestão de acessos encerrou a janela antes do prazo.');
+    expect(notificacoes.success).toHaveBeenCalledWith('Revisão das concessões encerrada');
+    expect(host.textContent).toContain(
+      'A gestão de acessos encerrou a revisão das concessões antes do prazo.',
+    );
     expect(host.querySelector('cfg-encerramento-da-janela')).toBeNull();
   });
 
@@ -122,7 +125,7 @@ describe('encerramento manual da revisão', () => {
     caixa(host).click();
     await assentar();
 
-    presente(botao(host, 'Encerrar a janela')).click();
+    presente(botao(host, 'Encerrar a revisão das concessões')).click();
     await assentar();
 
     const motivo = presente(
@@ -141,7 +144,7 @@ describe('encerramento manual da revisão', () => {
     caixa(host).click();
     await assentar();
 
-    presente(botao(host, 'Encerrar a janela')).click();
+    presente(botao(host, 'Encerrar a revisão das concessões')).click();
     await assentar();
 
     const erro = presente(host.querySelector<HTMLElement>('#cfg-encerramento-erro'));
@@ -156,7 +159,7 @@ describe('encerramento manual da revisão', () => {
     caixa(host).click();
     await assentar();
 
-    presente(botao(host, 'Encerrar a janela')).click();
+    presente(botao(host, 'Encerrar a revisão das concessões')).click();
     await assentar();
 
     expect(host.querySelector('#cfg-encerramento-erro')?.textContent).toContain(
@@ -173,16 +176,16 @@ describe('encerramento manual da revisão', () => {
     caixa(host).click();
     await assentar();
 
-    presente(botao(host, 'Encerrar a janela')).click();
+    presente(botao(host, 'Encerrar a revisão das concessões')).click();
     await responder(
       janelaDeMigracao({
         situacao: 'encerrada',
-        forma: 'concluida',
+        forma: FormaDoEncerramento.CONCLUIDA,
         encerradaEm: '2026-11-10T09:00:00Z',
       }),
     );
 
-    expect(host.textContent).toContain('A janela mudou');
+    expect(host.textContent).toContain('A revisão das concessões mudou');
     expect(host.textContent).toContain('A revisão das concessões já terminou.');
   });
 
@@ -192,7 +195,7 @@ describe('encerramento manual da revisão', () => {
         apiFailure(
           {
             type: 'x',
-            title: 'Janela encerrada',
+            title: 'Revisão das concessões encerrada',
             status: 422,
             code: 'uniplus.autorizacao.revisao_das_concessoes.revisao_encerrada',
             traceId: '',
@@ -211,14 +214,14 @@ describe('encerramento manual da revisão', () => {
     caixa(host).click();
     await assentar();
 
-    presente(botao(host, 'Encerrar a janela')).click();
+    presente(botao(host, 'Encerrar a revisão das concessões')).click();
     await assentar();
 
     expect(host.textContent).toContain('Motivo longo demais.');
     expect(host.querySelector('#cfg-encerramento-erro')?.textContent).toContain(
       'A janela está bloqueada.',
     );
-    expect(host.textContent).not.toContain('A janela mudou');
+    expect(host.textContent).not.toContain('A revisão das concessões mudou');
   });
 
   it('quem só tem a permissão da proteção de dados não vê o encerramento', async () => {

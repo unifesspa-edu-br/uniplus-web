@@ -1,3 +1,4 @@
+import { EtapaDoPedido, SituacaoDoPedido } from '@uniplus/shared-data/autorizacao';
 import { signal } from '@angular/core';
 import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
@@ -35,12 +36,18 @@ describe('PedidoDetalhePage — decisões', () => {
   const dubles = dublesDoPedido();
   const { api, notificacoes } = dubles;
   const abrir = abrirPedido(dubles);
-
   it('depois de recusa da API, recarrega o pedido e mostra a etapa que a API tem', async () => {
     const { host, fixture } = await abrir([GESTOR, PROTECAO_DE_DADOS]);
     api.aprovar.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.perfil_alterado', 409)));
     api.obter.mockReturnValue(
-      of(ok(pedido({ situacao: 'aguardando_protecao_de_dados', etapaAtual: 'protecao_de_dados' }))),
+      of(
+        ok(
+          pedido({
+            situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+            etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
+          }),
+        ),
+      ),
     );
 
     await decidirNoResumo(fixture, host, 'Aprovar');
@@ -51,7 +58,6 @@ describe('PedidoDetalhePage — decisões', () => {
     expect(textoDoAlerta(host)).toContain('Recusado');
     expect(host.textContent).toContain('Proteção de dados');
   });
-
   it('mantém a confirmação aberta e impede outra decisão durante o envio', async () => {
     const { fixture, host } = await abrir([GESTOR]);
     const resposta = new Subject<ReturnType<typeof ok>>();
@@ -73,14 +79,20 @@ describe('PedidoDetalhePage — decisões', () => {
     await esperar(fixture);
     expect(dialogo.querySelector('dialog')?.hasAttribute('open')).toBe(false);
   });
-
   it('fecha o diálogo de recusa quando o pedido já não está na etapa da pessoa', async () => {
     const { host, fixture } = await abrir([GESTOR]);
     document.body.append(host);
     await decidirNoResumo(fixture, host, 'Recusar');
     api.recusar.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.etapa_invalida')));
     api.obter.mockReturnValue(
-      of(ok(pedido({ situacao: 'aguardando_protecao_de_dados', etapaAtual: 'protecao_de_dados' }))),
+      of(
+        ok(
+          pedido({
+            situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+            etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
+          }),
+        ),
+      ),
     );
 
     await escreverMotivo(fixture, host, 'Motivo.');
@@ -94,14 +106,20 @@ describe('PedidoDetalhePage — decisões', () => {
     expect(document.activeElement).toBe(host.querySelector('#cfg-pedido-titulo'));
     host.remove();
   });
-
   it('fecha a confirmação quando a recarga traz outra etapa e leva o foco ao título', async () => {
     const { host, fixture } = await abrir([GESTOR]);
     document.body.append(host);
     await decidirNoResumo(fixture, host, 'Aprovar');
     expect(dialogoAberto(host, ':scope > ui-dialog')).toBe(true);
     api.obter.mockReturnValue(
-      of(ok(pedido({ situacao: 'aguardando_protecao_de_dados', etapaAtual: 'protecao_de_dados' }))),
+      of(
+        ok(
+          pedido({
+            situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+            etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
+          }),
+        ),
+      ),
     );
 
     fixture.debugElement.injector.get(PedidoDetalheStore).recarregar();
@@ -112,7 +130,6 @@ describe('PedidoDetalhePage — decisões', () => {
     expect(document.activeElement).toBe(host.querySelector('#cfg-pedido-titulo'));
     host.remove();
   });
-
   it('bloqueia nova decisão após recusa da API até reavaliar o pedido recarregado', async () => {
     const { host, fixture } = await abrir([GESTOR]);
     const recarga = new Subject<ReturnType<typeof ok>>();
@@ -128,7 +145,12 @@ describe('PedidoDetalhePage — decisões', () => {
     expect(api.aprovar).not.toHaveBeenCalled();
 
     recarga.next(
-      ok(pedido({ situacao: 'aguardando_protecao_de_dados', etapaAtual: 'protecao_de_dados' })),
+      ok(
+        pedido({
+          situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+          etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
+        }),
+      ),
     );
     recarga.complete();
     await esperar(fixture);
@@ -137,10 +159,11 @@ describe('PedidoDetalhePage — decisões', () => {
     await confirmarRecusa(fixture, host);
     expect(api.recusar).toHaveBeenCalledTimes(1);
   });
-
   it('aprova e recarrega o pedido', async () => {
     const { host, fixture } = await abrir([GESTOR]);
-    api.aprovar.mockReturnValue(of(ok(pedido({ situacao: 'aguardando_protecao_de_dados' }))));
+    api.aprovar.mockReturnValue(
+      of(ok(pedido({ situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS }))),
+    );
 
     await decidirNoResumo(fixture, host, 'Aprovar');
     await confirmarNoDialogo(fixture, host);
@@ -149,7 +172,6 @@ describe('PedidoDetalhePage — decisões', () => {
     expect(notificacoes.success).toHaveBeenCalledWith('Pedido atualizado');
     expect(api.obter).toHaveBeenCalledTimes(2);
   });
-
   it('mostra a recusa de quem decide o pedido de que é parte e relê o pedido', async () => {
     const { host, fixture } = await abrir([GESTOR]);
     api.aprovar.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.decisor_e_parte')));
@@ -163,7 +185,6 @@ describe('PedidoDetalhePage — decisões', () => {
     expect(notificacoes.success).not.toHaveBeenCalled();
     expect(notificacoes.errorFromProblem).not.toHaveBeenCalled();
   });
-
   it('mostra a recusa do perfil em revisão das concessões junto à decisão que a causou', async () => {
     const { host, fixture } = await abrir([GESTOR]);
     api.aprovar.mockReturnValue(
@@ -184,7 +205,6 @@ describe('PedidoDetalhePage — decisões', () => {
     );
     expect(notificacoes.success).not.toHaveBeenCalled();
   });
-
   it('a falha de servidor da decisão vira notificação, sem aviso de sucesso', async () => {
     const { host, fixture } = await abrir([GESTOR]);
     api.aprovar.mockReturnValue(of(recusa('uniplus.internal.unexpected', 500, 'Erro interno')));
@@ -196,7 +216,6 @@ describe('PedidoDetalhePage — decisões', () => {
     expect(notificacoes.errorFromProblem.mock.calls[0]?.[1]).toEqual({ title: 'Erro interno' });
     expect(notificacoes.success).not.toHaveBeenCalled();
   });
-
   it('ao reabrir a recusa limpa o motivo e a validação anterior', async () => {
     const { fixture, host } = await abrir([GESTOR]);
     await recusarComMotivo(fixture, host, '');
@@ -209,7 +228,6 @@ describe('PedidoDetalhePage — decisões', () => {
     expect(campo?.value).toBe('');
     expect(campo?.getAttribute('aria-invalid')).toBeNull();
   });
-
   it('impede decisões concorrentes e mantém o diálogo aberto durante o envio', async () => {
     const { fixture, host } = await abrir([GESTOR]);
     const resposta = new Subject<ReturnType<typeof ok>>();
@@ -242,7 +260,6 @@ describe('PedidoDetalhePage — decisões', () => {
     expect(edicao.recusando()).toBe(false);
     expect(dialogoAberto(host, 'cfg-motivo-dialog')).toBe(false);
   });
-
   it('mostra e foca o motivo recusado pelo servidor', async () => {
     const { fixture, host } = await abrir([GESTOR]);
     api.recusar.mockReturnValue(
@@ -274,7 +291,6 @@ describe('PedidoDetalhePage — decisões', () => {
     expect(host.textContent).toContain('Motivo recusado.');
     expect(document.activeElement).toBe(campo);
   });
-
   it('confirmar de novo sem editar o motivo recusado volta a enviar a recusa à API', async () => {
     const { fixture, host } = await abrir([GESTOR]);
     api.recusar.mockReturnValue(
@@ -306,10 +322,11 @@ describe('PedidoDetalhePage — decisões', () => {
 
     expect(api.recusar).toHaveBeenCalledTimes(2);
   });
-
   it('recusa com motivo e fecha o diálogo', async () => {
     const { fixture, host } = await abrir([GESTOR]);
-    api.recusar.mockReturnValue(of(ok(pedido({ situacao: 'recusado', etapaAtual: null }))));
+    api.recusar.mockReturnValue(
+      of(ok(pedido({ situacao: SituacaoDoPedido.RECUSADO, etapaAtual: null }))),
+    );
 
     await recusarComMotivo(fixture, host, 'Sem necessidade funcional.');
 
@@ -319,7 +336,6 @@ describe('PedidoDetalhePage — decisões', () => {
     ]);
     expect(dialogoAberto(host, 'cfg-motivo-dialog')).toBe(false);
   });
-
   it('mantém o diálogo de recusa com o erro da API', async () => {
     const { fixture, host } = await abrir([GESTOR]);
     api.recusar.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.motivo_invalido')));
@@ -330,7 +346,6 @@ describe('PedidoDetalhePage — decisões', () => {
     expect(dialogoMotivoAlerta(host)).toContain('Recusado');
     expect(dialogoAberto(host, 'cfg-motivo-dialog')).toBe(true);
   });
-
   it('reabrir o diálogo de recusa não mostra o erro da tentativa anterior', async () => {
     const { fixture, host } = await abrir([GESTOR]);
     api.recusar.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.motivo_invalido')));
@@ -343,7 +358,6 @@ describe('PedidoDetalhePage — decisões', () => {
     expect(dialogoMotivoAlerta(host)).toBeUndefined();
     expect(dialogoAberto(host, 'cfg-motivo-dialog')).toBe(true);
   });
-
   it('aplica a decisão retornada enquanto a recarga está pendente', async () => {
     const { fixture, host } = await abrir([GESTOR]);
     const recarga = new Subject<ReturnType<typeof ok>>();
@@ -352,8 +366,8 @@ describe('PedidoDetalhePage — decisões', () => {
       of(
         ok(
           pedido({
-            situacao: 'aguardando_protecao_de_dados',
-            etapaAtual: 'protecao_de_dados',
+            situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+            etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
           }),
         ),
       ),
@@ -363,7 +377,12 @@ describe('PedidoDetalhePage — decisões', () => {
     expect(host.textContent).toContain('Carregando o pedido');
     expect(decisoesOferecidas(host)).toEqual([false, false]);
     recarga.next(
-      ok(pedido({ situacao: 'aguardando_protecao_de_dados', etapaAtual: 'protecao_de_dados' })),
+      ok(
+        pedido({
+          situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+          etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
+        }),
+      ),
     );
     recarga.complete();
     await esperar(fixture);

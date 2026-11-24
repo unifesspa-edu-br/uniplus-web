@@ -1,3 +1,8 @@
+import {
+  EtapaDoPedido,
+  ResultadoDaDecisao,
+  SituacaoDoPedido,
+} from '@uniplus/shared-data/autorizacao';
 import { EdicaoDoPedido } from './edicao-do-pedido';
 import {
   ChangeDetectionStrategy,
@@ -40,7 +45,11 @@ import { EvidenciaDoTermoComponent } from './termo/evidencia-do-termo.component'
 import { TermoDeResponsabilidadeComponent } from './termo/termo-de-responsabilidade.component';
 import { TermoDoPedido } from './termo/termo-do-pedido';
 
-const ENCERRADOS: readonly string[] = ['aprovado', 'recusado', 'cancelado'];
+const ENCERRADOS: readonly string[] = [
+  SituacaoDoPedido.APROVADO,
+  SituacaoDoPedido.RECUSADO,
+  SituacaoDoPedido.CANCELADO,
+];
 
 import { CONFIRMACOES, type Acao } from './confirmacoes-do-pedido';
 
@@ -124,7 +133,7 @@ export class PedidoDetalhePage {
 
   private readonly encerrado = computed(() => ENCERRADOS.includes(this.pedido()?.situacao ?? ''));
   protected readonly aguardandoDocumento = computed(
-    () => this.pedido()?.situacao === 'aguardando_documento',
+    () => this.pedido()?.situacao === SituacaoDoPedido.AGUARDANDO_DOCUMENTO,
   );
   protected readonly ehSolicitante = computed(
     () => this.pedido()?.solicitante.contaId === this.usuario.user()?.id,
@@ -144,8 +153,8 @@ export class PedidoDetalhePage {
     const eu = this.usuario.user()?.id;
     return (this.pedido()?.decisoes ?? []).some(
       (decisao) =>
-        decisao.etapa === 'gestor' &&
-        decisao.resultado === 'aprovado' &&
+        decisao.etapa === EtapaDoPedido.GESTOR &&
+        decisao.resultado === ResultadoDaDecisao.APROVADO &&
         decisao.decisor.contaId === eu,
     );
   });
@@ -154,12 +163,13 @@ export class PedidoDetalhePage {
   protected readonly informaPrazo = computed(
     () =>
       this.podeDecidir() &&
-      this.pedido()?.etapaAtual === 'gestor' &&
+      this.pedido()?.etapaAtual === EtapaDoPedido.GESTOR &&
       this.pedido()?.admitePrazo === true,
   );
 
   protected readonly podeAceitar = computed(
-    () => this.pedido()?.situacao === 'aguardando_beneficiario' && this.ehBeneficiario(),
+    () =>
+      this.pedido()?.situacao === SituacaoDoPedido.AGUARDANDO_BENEFICIARIO && this.ehBeneficiario(),
   );
   /**
    * O termo fixado que o beneficiário aceita junto com o pedido. O pedido que ainda espera o
@@ -185,11 +195,11 @@ export class PedidoDetalhePage {
   protected readonly podeDecidir = computed(() => {
     const etapaAtual = this.pedido()?.etapaAtual;
     if (this.ehSolicitante() || this.ehBeneficiario()) return false;
-    if (etapaAtual === 'protecao_de_dados' && this.jaAprovouComoGestor()) return false;
+    if (etapaAtual === EtapaDoPedido.PROTECAO_DE_DADOS && this.jaAprovouComoGestor()) return false;
     return (
-      (etapaAtual === 'gestor' &&
+      (etapaAtual === EtapaDoPedido.GESTOR &&
         this.permissoes.tem(PERMISSAO.autorizacao.pedidosAprovarFuncional)) ||
-      (etapaAtual === 'protecao_de_dados' &&
+      (etapaAtual === EtapaDoPedido.PROTECAO_DE_DADOS &&
         this.permissoes.tem(PERMISSAO.autorizacao.pedidosAprovarProtecaoDeDados))
     );
   });

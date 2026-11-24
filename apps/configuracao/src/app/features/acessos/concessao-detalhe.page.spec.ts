@@ -1,3 +1,4 @@
+import { TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError, type Observable } from 'rxjs';
@@ -17,7 +18,7 @@ const ATIVA: ConcessaoDto = {
   beneficiario: pessoa('conta-fernanda', 'Fernanda Drumond'),
   perfil: { id: 'p1', nome: 'Operador de inscrições' },
   versao: 2,
-  escopo: { tipo: 'unidade', unidadeId: 'unidade-1' },
+  escopo: { tipo: TipoDeEscopo.UNIDADE, unidadeId: 'unidade-1' },
   origem: { tipo: 'pedido', id: 'pd1' },
   concedidaEm: '2026-03-02T12:00:00Z',
   validaAte: null,
@@ -105,11 +106,11 @@ describe('ConcessaoDetalhePage', () => {
     expect(host.textContent).toContain('Revogada');
   });
 
-  it('na revogada pela janela de migração, quem revogou é a janela', async () => {
+  it('na revogada pela revisão das concessões do perfil, quem revogou é a janela', async () => {
     responder(ok({ ...REVOGADA, revogadaPor: null, revogadaPelaRevisaoId: 'j1' }));
     const host = await abrir();
 
-    expect(host.textContent).toContain('Janela de migração');
+    expect(host.textContent).toContain('Revisão das concessões do perfil');
   });
 
   it('a revogada sem motivo gravado diz isso', async () => {

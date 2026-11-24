@@ -1,3 +1,4 @@
+import { SituacaoDoPedido } from './codigos-de-autorizacao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -38,10 +39,11 @@ describe('PedidosDeConcessaoApi', () => {
     expect((await resposta).ok).toBe(true);
   });
 
-
   it('lista a fila pedida pelo vendor MIME do pedido', async () => {
-    const resposta = firstValueFrom(api.listar({ fila: 'gestor', situacao: 'aguardando_gestor' }));
-    const req = controller.expectOne(`${RAIZ}?fila=gestor&situacao=aguardando_gestor&limit=50`);
+    const resposta = firstValueFrom(
+      api.listar({ fila: 'gestor', situacao: SituacaoDoPedido.AGUARDANDO_GESTOR }),
+    );
+    const req = controller.expectOne(`${RAIZ}?fila=gestor&situacao=AGUARDANDO_GESTOR&limit=50`);
     expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('pedido-de-concessao', 1));
     req.flush([]);
     expect((await resposta).ok).toBe(true);

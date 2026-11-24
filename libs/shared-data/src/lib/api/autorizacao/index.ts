@@ -1,9 +1,9 @@
+export * from './codigos-de-autorizacao';
 export { AUTORIZACAO_BASE_PATH } from './tokens';
 export type { PaginaQuery } from './paginacao';
 export { SituacaoDoAcessoDoPerfilCodigo } from './schema';
 export {
   PerfisApi,
-  type CategoriaDaRemocao,
   type ComposicaoEmVigorDto,
   type DadosDaVersaoRequest,
   type ModuloDoCatalogoDto,
@@ -29,7 +29,6 @@ export {
   type DecisaoDaVersaoDto,
   type DocumentoDaVersaoDto,
   type EnvioDoDocumentoDto,
-  type EtapaDaVersao,
   type ItemDaFilaDeVersoesDto,
   type LeituraDoDocumentoDaVersaoDto,
   type ProporVersaoRequest,
@@ -47,7 +46,6 @@ export {
   ProvidenciasApi,
   type AtenderProvidenciaRequest,
   type AtoDoDesfechoDto,
-  type CausaDoEncerramento,
   type ConcessaoDaProvidenciaDto,
   type DesfechoDaProvidenciaDto,
   type EncerramentoDaConcessaoDto,
@@ -55,9 +53,7 @@ export {
   type ProvidenciaDto,
   type ProvidenciaResumoDto,
   type ResponderProvidenciaRequest,
-  type SituacaoDaProvidencia,
   type SolicitarProvidenciaRequest,
-  type TipoDaProvidencia,
 } from './providencias.api';
 export {
   PedidosDeConcessaoApi,
@@ -78,7 +74,6 @@ export {
   JanelaDeMigracaoApi,
   type DecidirEtapaDaProtecaoRequest,
   type DecidirRetidaRequest,
-  type DecisaoDaMigracao,
   type EncerrarJanelaRequest,
   type EnviarLoteDaMigracaoRequest,
   type ItemDaFilaDeJanelasDto,
@@ -96,19 +91,15 @@ export {
   type MudancaDaPermissaoDto,
   type PermissaoDaVersaoEmUsoDto,
   type ReclassificacaoDto,
-  type ResultadoDaReclassificacao,
   type VersaoEmUsoDto,
 } from './reclassificacoes.api';
 export {
   RevisoesApi,
   type ItemDaRevisaoDto,
   type ListaDeRevisoesQuery,
-  type QuemDecideOItem,
   type RevisaoDeAcessosDto,
   type RevisaoResumoDto,
   type RevogarItemDaRevisaoRequest,
-  type SituacaoDaRevisao,
-  type SituacaoDoItemDaRevisao,
 } from './revisoes.api';
 export {
   TermosDeResponsabilidadeApi,

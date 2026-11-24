@@ -1,22 +1,26 @@
+import { OrigemDaRetomada, TipoDoEventoDaContencao } from '@uniplus/shared-data/autorizacao';
 import type { EventoDaTrilhaDto, RegistroDaContencaoDto } from '@uniplus/shared-data/autorizacao';
 import { etapa } from '../rotulos-de-acesso';
 import { porQuemDecide } from './rotulos-da-versao';
 
-const ORIGEM_DA_RETOMADA: Readonly<Record<string, string>> = {
-  decisao_da_etapa: 'Decorreu da decisão da última etapa exigida.',
-  troca_de_vigencia: 'Decorreu da troca da versão em vigor, que mudou as etapas exigidas.',
-  reclassificacao: 'Decorreu da reclassificação de uma permissão do perfil.',
+const ORIGEM_DA_RETOMADA: Readonly<Record<OrigemDaRetomada, string>> = {
+  [OrigemDaRetomada.DECISAO_DA_ETAPA]: 'Decorreu da decisão da última etapa exigida.',
+  [OrigemDaRetomada.TROCA_DE_VIGENCIA]:
+    'Decorreu da troca da versão em vigor, que mudou as etapas exigidas.',
+  [OrigemDaRetomada.RECLASSIFICACAO]: 'Decorreu da reclassificação de uma permissão do perfil.',
 };
 
 /** As frases do registro que não são o motivo digitado, na ordem em que a pessoa as lê. */
 function frases(registro: RegistroDaContencaoDto): readonly string[] {
   const { tipo, etapa: codigo, origem, perfilProtegido, decisorTemConcessao } = registro;
   return [
-    tipo === 'suspensao' && codigo ? `Determinada ${porQuemDecide(codigo)}.` : '',
+    tipo === TipoDoEventoDaContencao.SUSPENSAO && codigo
+      ? `Determinada ${porQuemDecide(codigo)}.`
+      : '',
     tipo === 'decisao_da_retomada' && codigo ? `Etapa: ${etapa(codigo).toLowerCase()}.` : '',
     tipo === 'decisao_da_retomada' && perfilProtegido ? 'O perfil era protegido na decisão.' : '',
     decisorTemConcessao ? 'Quem decidiu tem concessão do perfil.' : '',
-    origem ? (ORIGEM_DA_RETOMADA[origem] ?? '') : '',
+    origem ? (ORIGEM_DA_RETOMADA[origem as OrigemDaRetomada] ?? '') : '',
   ].filter((frase) => frase !== '');
 }
 

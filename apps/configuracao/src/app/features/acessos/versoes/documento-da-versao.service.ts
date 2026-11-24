@@ -1,3 +1,4 @@
+import { SituacaoDoAnexo } from '@uniplus/shared-data/autorizacao';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -113,10 +114,10 @@ export class DocumentoDaVersaoService {
     arquivo: File,
   ): Promise<ApiResult<EnvioDoDocumentoDto> | null> {
     const chave = withIdempotencyKey();
-    if (versao.situacaoDoDocumento === 'recusado') {
+    if (versao.situacaoDoDocumento === SituacaoDoAnexo.RECUSADO) {
       return firstValueFrom(this.api.novoDocumento(perfilId, versao.versaoId, arquivo.size, chave));
     }
-    return versao.situacaoDoDocumento === 'aguardando_envio'
+    return versao.situacaoDoDocumento === SituacaoDoAnexo.AGUARDANDO_ENVIO
       ? firstValueFrom(this.api.reemitirEnvio(perfilId, versao.versaoId, chave))
       : Promise.resolve(null);
   }

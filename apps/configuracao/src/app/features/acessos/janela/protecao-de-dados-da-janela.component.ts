@@ -1,3 +1,4 @@
+import { ResultadoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import type { ItemDaJanelaDto, JanelaDeMigracaoDto } from '@uniplus/shared-data/autorizacao';
 import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
@@ -26,6 +27,7 @@ const ID_DO_ERRO = 'cfg-protecao-erro';
   templateUrl: './protecao-de-dados-da-janela.component.html',
 })
 export class ProtecaoDeDadosDaJanelaComponent {
+  protected readonly ResultadoDaMigracao = ResultadoDaMigracao;
   readonly janela = input.required<JanelaDeMigracaoDto>();
   readonly itens = input.required<readonly ItemDaJanelaDto[]>();
   readonly nomeDoEscopo = input.required<(item: ItemDaJanelaDto) => string>();

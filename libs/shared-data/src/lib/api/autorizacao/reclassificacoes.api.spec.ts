@@ -1,3 +1,4 @@
+import { EtapaDaVersao, ResultadoDaLiberacao } from './codigos-de-autorizacao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -31,8 +32,8 @@ describe('ReclassificacoesApi', () => {
 
   it('decide a etapa por POST em decisoes, com chave de idempotência', () => {
     const corpo = {
-      etapa: 'protecao_de_dados',
-      resultado: 'mantida',
+      etapa: EtapaDaVersao.PROTECAO_DE_DADOS,
+      resultado: ResultadoDaLiberacao.MANTIDA,
       concessoes: null,
       todas: true,
       motivo: 'Aguarda esclarecimento.',
@@ -43,6 +44,12 @@ describe('ReclassificacoesApi', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(corpo);
     expect(req.request.headers.get('Idempotency-Key')).toBe('k1');
-    req.flush({ loteId: ID, decididas: [], liberadas: [], paraOutraPessoa: [], puladasPorEscopo: [] });
+    req.flush({
+      loteId: ID,
+      decididas: [],
+      liberadas: [],
+      paraOutraPessoa: [],
+      puladasPorEscopo: [],
+    });
   });
 });

@@ -1,3 +1,4 @@
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -6,7 +7,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AUTORIZACAO_BASE_PATH,
-  type EtapaDaVersao,
   type ItemDaFilaDeJanelasDto,
 } from '@uniplus/shared-data/autorizacao';
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
@@ -79,8 +79,8 @@ describe('FilaDeJanelasPage', () => {
   });
 
   it.each([
-    ['gestao_de_acessos', 'Janelas de migração na gestão de acessos'],
-    ['protecao_de_dados', 'Janelas de migração na proteção de dados'],
+    [EtapaDaVersao.GESTAO_DE_ACESSOS, 'Revisões das concessões na gestão de acessos'],
+    [EtapaDaVersao.PROTECAO_DE_DADOS, 'Revisões das concessões na proteção de dados'],
   ] as const)('a etapa %s lê a própria fila e tem o próprio título', async (etapa, titulo) => {
     const { host } = await abrir(etapa);
 
@@ -92,7 +92,7 @@ describe('FilaDeJanelasPage', () => {
   });
 
   it('a fila da etapa de proteção de dados nomeia o Representante do controlador como quem decide', async () => {
-    const { host } = await abrir('protecao_de_dados');
+    const { host } = await abrir(EtapaDaVersao.PROTECAO_DE_DADOS);
 
     expect(host.textContent).toContain(
       'aguardam a decisão do Representante do controlador sobre a adequação à proteção de dados',
@@ -101,7 +101,7 @@ describe('FilaDeJanelasPage', () => {
   });
 
   it('mostra de cada janela o perfil, a versão-alvo, o prazo em Brasília e as concessões a decidir', async () => {
-    const { host } = await abrir('gestao_de_acessos');
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
 
     const enviado = secao(host, 'Acompanhamento');
     expect(enviado.textContent).toContain('versão 3');
@@ -114,11 +114,11 @@ describe('FilaDeJanelasPage', () => {
   });
 
   it('lista as janelas numa lista com um item por janela, cada um com seu título e link', async () => {
-    const { host } = await abrir('gestao_de_acessos');
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
 
     const lista = host.querySelector('ul');
     expect(lista?.getAttribute('role')).toBe('list');
-    expect(lista?.getAttribute('aria-label')).toBe('Janelas de migração na gestão de acessos');
+    expect(lista?.getAttribute('aria-label')).toBe('Revisões das concessões na gestão de acessos');
     const itens = [...(lista?.querySelectorAll(':scope > li') ?? [])];
     expect(itens).toHaveLength(2);
     expect(itens.map((li) => li.querySelector('h2 a')?.textContent?.trim())).toEqual([
@@ -128,20 +128,20 @@ describe('FilaDeJanelasPage', () => {
   });
 
   it('com a fila vazia, não mostra lista', async () => {
-    const { host } = await abrir('gestao_de_acessos', ok([]));
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS, ok([]));
 
     expect(host.querySelector('ul')).toBeNull();
   });
 
   it('diz se o lote já foi enviado', async () => {
-    const { host } = await abrir('gestao_de_acessos');
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
 
-    expect(secao(host, 'Acompanhamento').textContent).toContain('Lote enviado');
-    expect(secao(host, 'Auditoria').textContent).toContain('Lote ainda não enviado');
+    expect(secao(host, 'Acompanhamento').textContent).toContain('Decisões enviadas');
+    expect(secao(host, 'Auditoria').textContent).toContain('Decisões ainda não enviadas');
   });
 
   it('leva cada janela à tela da janela do perfil', async () => {
-    const { host } = await abrir('protecao_de_dados');
+    const { host } = await abrir(EtapaDaVersao.PROTECAO_DE_DADOS);
 
     expect(secao(host, 'Auditoria').querySelector('a')?.getAttribute('href')).toBe(
       '/acessos/perfis/p2/janela',
@@ -149,21 +149,23 @@ describe('FilaDeJanelasPage', () => {
   });
 
   it('não traz dado pessoal de beneficiário', async () => {
-    const { host } = await abrir('gestao_de_acessos');
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
 
     expect(host.textContent).not.toMatch(/\d{3}\.\d{3}\.\d{3}|@/);
   });
 
   it('diz que a fila está vazia', async () => {
-    const { host } = await abrir('gestao_de_acessos', ok([]));
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS, ok([]));
 
-    expect(host.textContent).toContain('Nenhuma janela de migração aguarda a sua decisão.');
+    expect(host.textContent).toContain(
+      'Nenhuma revisão das concessões do perfil aguarda a sua decisão.',
+    );
     expect(host.querySelectorAll('section.panel')).toHaveLength(0);
   });
 
   it('com a leitura falha, não diz que a fila está vazia e oferece tentar novamente', async () => {
     const { fixture, host } = await abrir(
-      'gestao_de_acessos',
+      EtapaDaVersao.GESTAO_DE_ACESSOS,
       recusa('uniplus.internal.unexpected', 500, 'Erro interno'),
     );
     const tentar = (): HTMLButtonElement | undefined =>
@@ -171,7 +173,7 @@ describe('FilaDeJanelasPage', () => {
         (b) => b.textContent?.trim() === 'Tentar novamente',
       );
 
-    expect(host.textContent).not.toContain('Nenhuma janela de migração aguarda');
+    expect(host.textContent).not.toContain('Nenhuma revisão das concessões do perfil aguarda');
     leitura.mockReturnValue(of(ok([ENVIADO])));
     tentar()?.click();
     await assentar(fixture);
@@ -180,7 +182,7 @@ describe('FilaDeJanelasPage', () => {
   });
 
   it('sem permissão para a fila, mostra a recusa sem oferecer nova tentativa', async () => {
-    const { host } = await abrir('gestao_de_acessos', recusa('uniplus.forbidden', 403));
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS, recusa('uniplus.forbidden', 403));
 
     expect(
       [...host.querySelectorAll('button')].some(

@@ -20,7 +20,7 @@ const CATALOGO = [
       {
         resource: 'processos',
         permissoes: [
-          { codigo: CODIGO, nome: 'Aprovar processos', descricao: '', sensibilidade: 'pessoal' },
+          { codigo: CODIGO, nome: 'Aprovar processos', descricao: '', sensibilidade: 'PESSOAL' },
         ],
       },
     ],

@@ -1,3 +1,4 @@
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -6,7 +7,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AUTORIZACAO_BASE_PATH,
-  type EtapaDaVersao,
   type ItemDaFilaDeReclassificacoesDto,
 } from '@uniplus/shared-data/autorizacao';
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
@@ -87,8 +87,8 @@ describe('FilaDeReclassificacoesPage', () => {
   });
 
   it.each([
-    ['gestao_de_acessos', 'Reclassificações na gestão de acessos'],
-    ['protecao_de_dados', 'Reclassificações na proteção de dados'],
+    [EtapaDaVersao.GESTAO_DE_ACESSOS, 'Reclassificações na gestão de acessos'],
+    [EtapaDaVersao.PROTECAO_DE_DADOS, 'Reclassificações na proteção de dados'],
   ] as const)('a etapa %s lê a própria fila e tem o próprio título', async (etapa, titulo) => {
     const { host } = await abrir(etapa);
 
@@ -97,7 +97,7 @@ describe('FilaDeReclassificacoesPage', () => {
   });
 
   it('mostra de cada item o perfil, a permissão, o que mudou, o instante e as concessões suspensas', async () => {
-    const { host } = await abrir('protecao_de_dados');
+    const { host } = await abrir(EtapaDaVersao.PROTECAO_DE_DADOS);
 
     const subida = secao(host, 'Acompanhamento');
     expect(subida.textContent).toContain('selecao:processos:aprovar');
@@ -113,7 +113,7 @@ describe('FilaDeReclassificacoesPage', () => {
   });
 
   it('leva cada item ao detalhe da reclassificação', async () => {
-    const { host } = await abrir('gestao_de_acessos');
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
 
     expect(secao(host, 'Auditoria').querySelector('a')?.getAttribute('href')).toBe(
       '/acessos/reclassificacoes/r2',
@@ -121,7 +121,7 @@ describe('FilaDeReclassificacoesPage', () => {
   });
 
   it('lista os itens numa lista nomeada pela etapa, um li por reclassificação', async () => {
-    const { host } = await abrir('gestao_de_acessos');
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
 
     const lista = host.querySelector('ul');
     expect(lista?.getAttribute('role')).toBe('list');
@@ -130,7 +130,7 @@ describe('FilaDeReclassificacoesPage', () => {
   });
 
   it('diz que a fila está vazia, sem lista', async () => {
-    const { host } = await abrir('gestao_de_acessos', ok([]));
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS, ok([]));
 
     expect(host.textContent).toContain('Nenhuma reclassificação aguarda a sua decisão.');
     expect(host.querySelector('ul')).toBeNull();
@@ -138,7 +138,7 @@ describe('FilaDeReclassificacoesPage', () => {
 
   it('com a leitura falha, não diz que a fila está vazia e oferece tentar novamente', async () => {
     const { fixture, host } = await abrir(
-      'gestao_de_acessos',
+      EtapaDaVersao.GESTAO_DE_ACESSOS,
       recusa('uniplus.internal.unexpected', 500, 'Erro interno'),
     );
     const tentar = (): HTMLButtonElement | undefined =>
@@ -155,7 +155,7 @@ describe('FilaDeReclassificacoesPage', () => {
   });
 
   it('sem permissão para a fila, mostra a recusa sem oferecer nova tentativa', async () => {
-    const { host } = await abrir('gestao_de_acessos', recusa('uniplus.forbidden', 403));
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS, recusa('uniplus.forbidden', 403));
 
     expect(
       [...host.querySelectorAll('button')].some(
@@ -167,8 +167,12 @@ describe('FilaDeReclassificacoesPage', () => {
 
   it('o catálogo desatualizado diz que o sistema está sendo atualizado', async () => {
     const { host } = await abrir(
-      'gestao_de_acessos',
-      recusaPeloInterceptor('uniplus.autorizacao.catalogo.desatualizado', 503, 'Catalog out of date'),
+      EtapaDaVersao.GESTAO_DE_ACESSOS,
+      recusaPeloInterceptor(
+        'uniplus.autorizacao.catalogo.desatualizado',
+        503,
+        'Catalog out of date',
+      ),
     );
 
     expect(host.textContent).toContain(

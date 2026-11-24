@@ -1,3 +1,4 @@
+import { SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -20,7 +21,7 @@ describe('orientação das concessões do próprio leitor', () => {
   it('a retida aguarda outra pessoa da gestão de acessos', async () => {
     const janela = janelaDeMigracao({
       decisoesEnviadas: true,
-      itens: [itemDaJanela({ ...PROPRIA, situacao: 'retida' })],
+      itens: [itemDaJanela({ ...PROPRIA, situacao: SituacaoDaMigracao.RETIDA })],
     });
     const { host } = await abrirJanela(janela);
 
@@ -31,7 +32,9 @@ describe('orientação das concessões do próprio leitor', () => {
   it('a que aguarda a proteção de dados aguarda outra pessoa dessa etapa', async () => {
     const janela = janelaDeMigracao({
       decisoesEnviadas: true,
-      itens: [itemDaJanela({ ...PROPRIA, situacao: 'aguardando_protecao_de_dados' })],
+      itens: [
+        itemDaJanela({ ...PROPRIA, situacao: SituacaoDaMigracao.AGUARDANDO_PROTECAO_DE_DADOS }),
+      ],
     });
     const { host } = await abrirJanela(janela);
 

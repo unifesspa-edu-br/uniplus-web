@@ -1,3 +1,4 @@
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -10,11 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import type {
-  ConcessaoSuspensaDto,
-  EtapaDaVersao,
-  ReclassificacaoDto,
-} from '@uniplus/shared-data/autorizacao';
+import type { ConcessaoSuspensaDto, ReclassificacaoDto } from '@uniplus/shared-data/autorizacao';
 import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { MotivoDialogComponent } from '../motivo-dialog.component';
 import { etapa as rotuloDaEtapa } from '../rotulos-de-acesso';
@@ -34,6 +31,7 @@ import { FILA_DA_ETAPA } from './rotulos-da-reclassificacao';
   templateUrl: './decisao-da-reclassificacao.component.html',
 })
 export class DecisaoDaReclassificacaoComponent {
+  protected readonly etapasDaVersao = EtapaDaVersao;
   readonly reclassificacao = input.required<ReclassificacaoDto>();
   /** As etapas que a pessoa decide, pelas permissões dela. */
   readonly etapas = input.required<readonly EtapaDaVersao[]>();
@@ -48,7 +46,8 @@ export class DecisaoDaReclassificacaoComponent {
     () => !this.reclassificacao().vigente || this.decisao.superada(),
   );
   protected readonly voltar = computed(
-    () => FILA_DA_ETAPA[this.decisao.etapa() ?? this.etapas()[0] ?? 'gestao_de_acessos'],
+    () =>
+      FILA_DA_ETAPA[this.decisao.etapa() ?? this.etapas()[0] ?? EtapaDaVersao.GESTAO_DE_ACESSOS],
   );
   protected readonly pendentes = computed(() => {
     const etapa = this.decisao.etapa();

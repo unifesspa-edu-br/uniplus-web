@@ -1,3 +1,4 @@
+import { ResultadoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import type { DecisaoDaMigracao } from '@uniplus/shared-data/autorizacao';
 
@@ -13,8 +14,8 @@ import type { DecisaoDaMigracao } from '@uniplus/shared-data/autorizacao';
         <input
           type="radio"
           [name]="grupo()"
-          [checked]="valor() === 'migrar'"
-          (change)="escolhida.emit('migrar')"
+          [checked]="valor() === ResultadoDaMigracao.MIGRAR"
+          (change)="escolhida.emit(ResultadoDaMigracao.MIGRAR)"
         />
         <span class="radio__dot" aria-hidden="true"></span>
         Migrar
@@ -23,8 +24,8 @@ import type { DecisaoDaMigracao } from '@uniplus/shared-data/autorizacao';
         <input
           type="radio"
           [name]="grupo()"
-          [checked]="valor() === 'recusar'"
-          (change)="escolhida.emit('recusar')"
+          [checked]="valor() === ResultadoDaMigracao.RECUSAR"
+          (change)="escolhida.emit(ResultadoDaMigracao.RECUSAR)"
         />
         <span class="radio__dot" aria-hidden="true"></span>
         Recusar
@@ -33,6 +34,7 @@ import type { DecisaoDaMigracao } from '@uniplus/shared-data/autorizacao';
   `,
 })
 export class EscolhaDaDecisaoComponent {
+  protected readonly ResultadoDaMigracao = ResultadoDaMigracao;
   readonly pessoa = input.required<string>();
   readonly grupo = input.required<string>();
   readonly valor = input<DecisaoDaMigracao | null>(null);

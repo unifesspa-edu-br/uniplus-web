@@ -18,7 +18,7 @@ const CATALOGO = [
             codigo: CODIGO,
             nome: 'Aprovar processos seletivos',
             descricao: '',
-            sensibilidade: 'interno',
+            sensibilidade: 'INTERNO',
           },
         ],
       },

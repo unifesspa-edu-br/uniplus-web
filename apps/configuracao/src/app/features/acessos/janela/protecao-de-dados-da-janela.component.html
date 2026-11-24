@@ -6,7 +6,7 @@
     Estas concessões ganham permissão pessoal ou sensível na versão nova e só migram com a decisão
     do Representante do controlador. Quem a gestão de acessos recusou não chega aqui.
     @if (!podeDecidir()) {
-      Você consulta a janela, mas a decisão cabe ao Representante do controlador.
+      Você consulta a revisão das concessões, mas a decisão cabe ao Representante do controlador.
     }
   </p>
 
@@ -24,7 +24,7 @@
         type="button"
         class="btn btn--secondary btn--rect"
         [disabled]="gravando()"
-        (click)="etapa.decidirTodas(itens(), 'migrar')"
+        (click)="etapa.decidirTodas(itens(), ResultadoDaMigracao.MIGRAR)"
       >
         Migrar todas
       </button>
@@ -32,7 +32,7 @@
         type="button"
         class="btn btn--secondary btn--rect"
         [disabled]="gravando()"
-        (click)="etapa.decidirTodas(itens(), 'recusar')"
+        (click)="etapa.decidirTodas(itens(), ResultadoDaMigracao.RECUSAR)"
       >
         Recusar todas
       </button>
@@ -74,8 +74,9 @@
         @if (escolhidas() === 0) {
           Escolha migrar ou recusar em ao menos uma concessão. As demais seguem aguardando.
         } @else {
-          {{ escolhidas() === 1 ? '1 concessão escolhida' : escolhidas() + ' concessões escolhidas' }};
-          as demais seguem aguardando.
+          {{
+            escolhidas() === 1 ? '1 concessão escolhida' : escolhidas() + ' concessões escolhidas'
+          }}; as demais seguem aguardando.
         }
       </p>
     </div>
@@ -91,6 +92,10 @@
   [enviando]="gravando()"
   (confirmado)="confirmarExclusao()"
 >
-  {{ etapa.recusas() === 1 ? '1 concessão recusada perde' : etapa.recusas() + ' concessões recusadas perdem' }}
+  {{
+    etapa.recusas() === 1
+      ? '1 concessão recusada perde'
+      : etapa.recusas() + ' concessões recusadas perdem'
+  }}
   o acesso ao perfil assim que as decisões são enviadas.
 </cfg-exclusao-dialog>

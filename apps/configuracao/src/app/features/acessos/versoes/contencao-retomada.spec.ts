@@ -1,3 +1,4 @@
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -17,8 +18,8 @@ import { perfilDoDetalhe } from './perfis.testing';
 const SUSPENSO = perfilDoDetalhe({
   suspensao: {
     desde: '2026-11-09T15:00:00Z',
-    papelDeQuemSuspendeu: 'gestao_de_acessos',
-    etapasExigidasAgora: ['gestao_de_acessos', 'protecao_de_dados'],
+    papelDeQuemSuspendeu: EtapaDaVersao.GESTAO_DE_ACESSOS,
+    etapasExigidasAgora: [EtapaDaVersao.GESTAO_DE_ACESSOS, EtapaDaVersao.PROTECAO_DE_DADOS],
     etapasDecididas: [],
   },
 });
@@ -60,7 +61,7 @@ describe('retomar o perfil suspenso', () => {
 
   it('decide a etapa com o motivo e avisa o que ainda falta', async () => {
     api.retomar.mockReturnValue(
-      of(ok({ concluida: false, etapasPendentes: ['protecao_de_dados'] })),
+      of(ok({ concluida: false, etapasPendentes: [EtapaDaVersao.PROTECAO_DE_DADOS] })),
     );
     const { fixture, host } = await abrirPerfil(SUSPENSO, [GESTAO]);
 
@@ -68,7 +69,7 @@ describe('retomar o perfil suspenso', () => {
 
     expect(api.retomar).toHaveBeenCalledWith(
       'p1',
-      { etapa: 'gestao_de_acessos', motivo: 'Incidente resolvido.' },
+      { etapa: EtapaDaVersao.GESTAO_DE_ACESSOS, motivo: 'Incidente resolvido.' },
       expect.anything(),
     );
     expect(notificacoes.success).toHaveBeenCalledWith(
@@ -83,7 +84,7 @@ describe('retomar o perfil suspenso', () => {
     await decidir(fixture, host, 'Retomar: proteção de dados');
 
     expect(api.retomar.mock.calls[0]?.[1]).toEqual({
-      etapa: 'protecao_de_dados',
+      etapa: EtapaDaVersao.PROTECAO_DE_DADOS,
       motivo: 'Incidente resolvido.',
     });
     expect(notificacoes.success).toHaveBeenCalledWith(

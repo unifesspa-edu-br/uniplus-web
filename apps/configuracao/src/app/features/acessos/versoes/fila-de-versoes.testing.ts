@@ -1,3 +1,4 @@
+import { SituacaoDoAnexo } from '@uniplus/shared-data/autorizacao';
 import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import type { EnvironmentProviders, Provider } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -33,7 +34,11 @@ export const ITEM: ItemDaFilaDeVersoesDto = {
 export const OUTRO: ItemDaFilaDeVersoesDto = {
   perfilId: 'p3',
   perfilNome: 'Auditoria',
-  versao: versaoPendente({ versaoId: 'v7', numero: 4, situacaoDoDocumento: 'em_verificacao' }),
+  versao: versaoPendente({
+    versaoId: 'v7',
+    numero: 4,
+    situacaoDoDocumento: SituacaoDoAnexo.EM_VERIFICACAO,
+  }),
   propostaPorQuemLe: false,
 };
 

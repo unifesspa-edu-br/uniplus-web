@@ -1,3 +1,4 @@
+import { TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormControl, Validators } from '@angular/forms';
@@ -19,7 +20,7 @@ const concessao: ConcessaoDto = {
   },
   perfil: { id: 'p1', nome: 'Operador de inscrições' },
   versao: 1,
-  escopo: { tipo: 'unidade', unidadeId: 'unidade-1' },
+  escopo: { tipo: TipoDeEscopo.UNIDADE, unidadeId: 'unidade-1' },
   origem: { tipo: 'pedido', id: 'pedido-1' },
   concedidaEm: '2026-10-28T12:00:00Z',
   validaAte: null,

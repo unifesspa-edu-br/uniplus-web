@@ -1,3 +1,4 @@
+import { TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import type { ItemDaJanelaDto, JanelaDeMigracaoDto } from '@uniplus/shared-data/autorizacao';
 
 export const PERFIL = '01960000-0000-7000-0000-0000000000d1';
@@ -9,7 +10,7 @@ const ACRESCIMO = 'selecao:processos:aprovar';
 const ITEM_AGUARDANDO_O_LOTE = {
   concessaoId: 'c1',
   beneficiarioNome: 'Betina Teste',
-  escopoTipo: 'unidade',
+  escopoTipo: TipoDeEscopo.UNIDADE,
   unidadeId: 'unidade-1',
   validaAte: null,
   versaoAtual: 1,

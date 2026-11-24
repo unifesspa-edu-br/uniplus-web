@@ -1,3 +1,8 @@
+import {
+  EtapaDoPedido,
+  ResultadoDaDecisao,
+  SituacaoDoPedido,
+} from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -90,7 +95,10 @@ describe('PedidoDetalhePage — leitura e quem decide', () => {
   it('o Representante do controlador decide o pedido da etapa dele', async () => {
     const { host } = await abrir(
       [PROTECAO_DE_DADOS],
-      pedido({ situacao: 'aguardando_protecao_de_dados', etapaAtual: 'protecao_de_dados' }),
+      pedido({
+        situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+        etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
+      }),
     );
 
     expect(decisoesOferecidas(host)).toEqual([true, true]);
@@ -109,18 +117,18 @@ describe('PedidoDetalhePage — leitura e quem decide', () => {
 
   it('quem já decidiu como gestor não vê aprovar nem recusar na etapa da proteção de dados', async () => {
     const decisao = {
-      etapa: 'gestor',
+      etapa: EtapaDoPedido.GESTOR,
       decisor: { emissor: 'unifesspa', contaId: EU.id },
-      resultado: 'aprovado',
+      resultado: ResultadoDaDecisao.APROVADO,
       motivo: null,
       instante: '2026-10-28T13:00:00Z',
       permissoesAvaliadas: [],
-      sensibilidadeAvaliada: 'pessoal',
+      sensibilidadeAvaliada: 'PESSOAL',
       dispensa: null,
     };
     const naEtapaDaProtecaoDeDados = pedido({
-      situacao: 'aguardando_protecao_de_dados',
-      etapaAtual: 'protecao_de_dados',
+      situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+      etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
       decisoes: [decisao],
     });
 
@@ -147,13 +155,17 @@ describe('PedidoDetalhePage — leitura e quem decide', () => {
       motivo: null,
       instante: '2026-10-28T13:00:00Z',
       permissoesAvaliadas: [],
-      sensibilidadeAvaliada: 'pessoal',
+      sensibilidadeAvaliada: 'PESSOAL',
       dispensa: null,
     });
     const devolvido = pedido({
       decisoes: [
-        decisao('gestor', 'aprovado', EU.id),
-        decisao('protecao_de_dados', 'perfil_alterado', 'conta-outra-pessoa-2'),
+        decisao(EtapaDoPedido.GESTOR, ResultadoDaDecisao.APROVADO, EU.id),
+        decisao(
+          EtapaDoPedido.PROTECAO_DE_DADOS,
+          ResultadoDaDecisao.PERFIL_ALTERADO,
+          'conta-outra-pessoa-2',
+        ),
       ],
     });
 
@@ -161,12 +173,16 @@ describe('PedidoDetalhePage — leitura e quem decide', () => {
     expect(decisoesOferecidas(gestor.host)).toEqual([true, true]);
 
     const naEtapaDaProtecaoDeDados = pedido({
-      situacao: 'aguardando_protecao_de_dados',
-      etapaAtual: 'protecao_de_dados',
+      situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+      etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
       decisoes: [
-        decisao('gestor', 'aprovado', EU.id),
-        decisao('protecao_de_dados', 'perfil_alterado', 'conta-protecao-de-dados-0'),
-        decisao('gestor', 'aprovado', 'conta-outro-gestor'),
+        decisao(EtapaDoPedido.GESTOR, ResultadoDaDecisao.APROVADO, EU.id),
+        decisao(
+          EtapaDoPedido.PROTECAO_DE_DADOS,
+          ResultadoDaDecisao.PERFIL_ALTERADO,
+          'conta-protecao-de-dados-0',
+        ),
+        decisao(EtapaDoPedido.GESTOR, ResultadoDaDecisao.APROVADO, 'conta-outro-gestor'),
       ],
     });
     const protecaoDeDados = await abrir([PROTECAO_DE_DADOS], naEtapaDaProtecaoDeDados, {

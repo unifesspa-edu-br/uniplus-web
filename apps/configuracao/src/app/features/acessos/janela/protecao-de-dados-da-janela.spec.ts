@@ -1,3 +1,4 @@
+import { ResultadoDaMigracao, SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
@@ -19,7 +20,7 @@ const naEtapa = (concessaoId: string, beneficiarioNome: string) =>
   itemDaJanela({
     concessaoId,
     beneficiarioNome,
-    situacao: 'aguardando_protecao_de_dados',
+    situacao: SituacaoDaMigracao.AGUARDANDO_PROTECAO_DE_DADOS,
     exigeProtecaoDeDados: true,
   });
 const BETINA = naEtapa('c1', 'Betina Teste');
@@ -27,7 +28,7 @@ const LEANDRO = naEtapa('c2', 'Leandro Teste');
 const APROVADA = itemDaJanela({
   concessaoId: 'c4',
   beneficiarioNome: 'Aline Teste',
-  situacao: 'migrada',
+  situacao: SituacaoDaMigracao.MIGRADA,
 });
 const REVISAO = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA, LEANDRO, APROVADA] });
 
@@ -71,7 +72,10 @@ describe('etapa da proteção de dados da revisão', () => {
 
     expect(api.decidirProtecaoDeDados).toHaveBeenCalledWith(
       PERFIL,
-      { decisoes: [{ concessaoId: 'c2', decisao: 'migrar' }], confirmacaoDeExclusao: false },
+      {
+        decisoes: [{ concessaoId: 'c2', decisao: ResultadoDaMigracao.MIGRAR }],
+        confirmacaoDeExclusao: false,
+      },
       expect.anything(),
     );
     expect(notificacoes.success).toHaveBeenCalledWith(
@@ -101,8 +105,8 @@ describe('etapa da proteção de dados da revisão', () => {
 
     expect(api.decidirProtecaoDeDados.mock.calls[0]?.[1]).toEqual({
       decisoes: [
-        { concessaoId: 'c1', decisao: 'migrar' },
-        { concessaoId: 'c2', decisao: 'recusar' },
+        { concessaoId: 'c1', decisao: ResultadoDaMigracao.MIGRAR },
+        { concessaoId: 'c2', decisao: ResultadoDaMigracao.RECUSAR },
       ],
       confirmacaoDeExclusao: true,
     });

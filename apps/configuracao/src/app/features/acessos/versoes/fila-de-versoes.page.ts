@@ -1,3 +1,4 @@
+import { EtapaDaVersao, SituacaoDoAnexo } from '@uniplus/shared-data/autorizacao';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -10,7 +11,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
-import type { EtapaDaVersao, ItemDaFilaDeVersoesDto } from '@uniplus/shared-data/autorizacao';
+import type { ItemDaFilaDeVersoesDto } from '@uniplus/shared-data/autorizacao';
 import {
   acompanharLeitura,
   AlertComponent,
@@ -38,11 +39,11 @@ interface Apresentacao {
 }
 
 const APRESENTACAO: Readonly<Record<EtapaDaVersao, Apresentacao>> = {
-  gestao_de_acessos: {
+  [EtapaDaVersao.GESTAO_DE_ACESSOS]: {
     titulo: 'Versões de perfil na gestão de acessos',
     descricao: 'Versões de perfil que aguardam a sua aprovação da adequação funcional.',
   },
-  protecao_de_dados: {
+  [EtapaDaVersao.PROTECAO_DE_DADOS]: {
     titulo: 'Versões de perfil na proteção de dados',
     descricao:
       'Versões que acrescentam permissões pessoais ou sensíveis, já aprovadas pela gestão de acessos, que aguardam a decisão do Representante do controlador sobre a adequação à proteção de dados.',
@@ -108,7 +109,7 @@ export class FilaDeVersoesPage {
   }
 
   protected documentoVerificado(item: ItemDaFilaDeVersoesDto): boolean {
-    return item.versao.situacaoDoDocumento === 'verificado';
+    return item.versao.situacaoDoDocumento === SituacaoDoAnexo.VERIFICADO;
   }
 
   /** O que impede a aprovação, dito junto ao botão. */

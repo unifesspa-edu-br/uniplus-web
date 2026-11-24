@@ -1,3 +1,4 @@
+import { SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
@@ -10,12 +11,12 @@ import { abrirJanela, api, botao, linhaDe, presente } from './pagina-da-janela.t
 const BETINA = itemDaJanela({
   concessaoId: 'c1',
   beneficiarioNome: 'Betina Teste',
-  situacao: 'retida',
+  situacao: SituacaoDaMigracao.RETIDA,
 });
 const LEANDRO = itemDaJanela({
   concessaoId: 'c2',
   beneficiarioNome: 'Leandro Teste',
-  situacao: 'retida',
+  situacao: SituacaoDaMigracao.RETIDA,
 });
 const DEPOIS_DO_ENVIO = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA, LEANDRO] });
 const SEM_RESPOSTA = () => of(recusa('uniplus.client.network_error', 0));

@@ -1,3 +1,4 @@
+import { SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,12 +16,12 @@ import {
 const RETIDA = itemDaJanela({
   concessaoId: 'c1',
   beneficiarioNome: 'Betina Teste',
-  situacao: 'retida',
+  situacao: SituacaoDaMigracao.RETIDA,
 });
 const NA_PROTECAO = itemDaJanela({
   concessaoId: 'c2',
   beneficiarioNome: 'Leandro Teste',
-  situacao: 'aguardando_protecao_de_dados',
+  situacao: SituacaoDaMigracao.AGUARDANDO_PROTECAO_DE_DADOS,
   exigeProtecaoDeDados: true,
 });
 const JANELA = janelaDeMigracao({ decisoesEnviadas: true, itens: [RETIDA, NA_PROTECAO] });

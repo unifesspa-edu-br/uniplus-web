@@ -1,3 +1,4 @@
+import { TipoDeDivergencia, TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -19,7 +20,7 @@ const FALTANTE: DivergenciaDaGovernancaDto = {
   perfilId: 'p1',
   perfilNome: 'Gestão de acessos',
   codigo: 'autorizacao:perfis:manter',
-  tipo: 'composicao_faltante',
+  tipo: TipoDeDivergencia.COMPOSICAO_FALTANTE,
   de: null,
   para: 'autorizacao:perfis:manter',
   instante: '2026-11-09T15:00:00Z',
@@ -29,16 +30,16 @@ const CLASSE: DivergenciaDaGovernancaDto = {
   id: 'd2',
   perfilId: 'p2',
   perfilNome: 'Proteção de dados',
-  tipo: 'classificacao',
+  tipo: TipoDeDivergencia.CLASSIFICACAO,
   de: 'interno',
   para: 'sensivel',
 };
 const ESCOPO: DivergenciaDaGovernancaDto = {
   ...FALTANTE,
   id: 'd3',
-  tipo: 'escopo',
-  de: 'instituicao',
-  para: 'unidade',
+  tipo: TipoDeDivergencia.ESCOPO,
+  de: TipoDeEscopo.INSTITUICAO,
+  para: TipoDeEscopo.UNIDADE,
 };
 
 describe('DivergenciasDaGovernancaPage', () => {

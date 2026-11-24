@@ -1,3 +1,4 @@
+import { EtapaDoPedido, SituacaoDoPedido, TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import { HttpErrorResponse, HttpHeaders, HttpRequest, HttpResponse } from '@angular/common/http';
 import { throwError } from 'rxjs';
 import {
@@ -57,8 +58,8 @@ export function concedidas(...codigos: string[]) {
 
 const PEDIDO_AGUARDANDO_O_GESTOR = {
   id: 'pedido-1',
-  situacao: 'aguardando_gestor',
-  etapaAtual: 'gestor',
+  situacao: SituacaoDoPedido.AGUARDANDO_GESTOR,
+  etapaAtual: EtapaDoPedido.GESTOR,
   solicitante: { emissor: 'unifesspa', contaId: 'conta-outra-pessoa' },
   beneficiario: {
     email: 'betina.teste@unifesspa.edu.br',
@@ -66,7 +67,7 @@ const PEDIDO_AGUARDANDO_O_GESTOR = {
     nome: 'Betina Teste',
   },
   perfil: { id: 'perfil-1', nome: 'Operador de inscrições' },
-  escopo: { tipo: 'unidade', unidadeId: 'unidade-1' },
+  escopo: { tipo: TipoDeEscopo.UNIDADE, unidadeId: 'unidade-1' },
   justificativa: 'Atende a comissão do processo seletivo.',
   admitePrazo: true,
   validaAteSugerida: null,

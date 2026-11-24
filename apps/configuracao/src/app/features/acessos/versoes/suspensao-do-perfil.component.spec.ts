@@ -1,3 +1,4 @@
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { SuspensaoDoPerfilDto } from '@uniplus/shared-data/autorizacao';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -5,9 +6,9 @@ import { SuspensaoDoPerfilComponent } from './suspensao-do-perfil.component';
 
 const SUSPENSAO: SuspensaoDoPerfilDto = {
   desde: '2026-11-09T15:00:00Z',
-  papelDeQuemSuspendeu: 'protecao_de_dados',
-  etapasExigidasAgora: ['gestao_de_acessos', 'protecao_de_dados'],
-  etapasDecididas: ['gestao_de_acessos'],
+  papelDeQuemSuspendeu: EtapaDaVersao.PROTECAO_DE_DADOS,
+  etapasExigidasAgora: [EtapaDaVersao.GESTAO_DE_ACESSOS, EtapaDaVersao.PROTECAO_DE_DADOS],
+  etapasDecididas: [EtapaDaVersao.GESTAO_DE_ACESSOS],
 };
 
 describe('SuspensaoDoPerfilComponent', () => {
@@ -35,12 +36,14 @@ describe('SuspensaoDoPerfilComponent', () => {
   it('mantém a etapa já decidida que deixou de ser exigida, dizendo que não é mais exigida', () => {
     const texto = abrir({
       ...SUSPENSAO,
-      etapasExigidasAgora: ['gestao_de_acessos'],
-      etapasDecididas: ['protecao_de_dados'],
+      etapasExigidasAgora: [EtapaDaVersao.GESTAO_DE_ACESSOS],
+      etapasDecididas: [EtapaDaVersao.PROTECAO_DE_DADOS],
     });
 
     expect(texto).toContain('Retomada pela gestão de acessos: aguarda a decisão');
-    expect(texto).toContain('Retomada pelo Representante do controlador: decidida; não é mais exigida');
+    expect(texto).toContain(
+      'Retomada pelo Representante do controlador: decidida; não é mais exigida',
+    );
   });
 
   it('não repete a etapa exigida e decidida entre as dispensadas', () => {

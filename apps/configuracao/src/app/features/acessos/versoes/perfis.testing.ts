@@ -1,20 +1,21 @@
+import { EtapaDaVersao, SituacaoDoAnexo } from '@uniplus/shared-data/autorizacao';
 import type { PerfilDto, VersaoPendenteDto } from '@uniplus/shared-data/autorizacao';
 import { ACESSO_EM_VIGOR } from './situacao-do-acesso.testing';
 
 export const LEITURA = {
   codigo: 'selecao:processos:consultar',
   nome: 'Consultar processos',
-  sensibilidade: 'interno',
+  sensibilidade: 'INTERNO',
 } as const;
 export const ESCRITA = {
   codigo: 'selecao:processos:configurar',
   nome: 'Configurar processos',
-  sensibilidade: 'interno',
+  sensibilidade: 'INTERNO',
 } as const;
 export const APROVACAO = {
   codigo: 'selecao:processos:aprovar',
   nome: 'Aprovar processos',
-  sensibilidade: 'pessoal',
+  sensibilidade: 'PESSOAL',
 } as const;
 
 const VERSAO_PENDENTE = {
@@ -24,10 +25,10 @@ const VERSAO_PENDENTE = {
   descricao: 'Opera as inscrições.',
   protocolo: 'P-2/2026',
   documentoId: 'd2',
-  situacaoDoDocumento: 'verificado',
+  situacaoDoDocumento: SituacaoDoAnexo.VERIFICADO,
   criadaEm: '2026-11-02T12:00:00Z',
   expiraEm: '2026-11-16T12:00:00Z',
-  etapaAtual: 'gestao_de_acessos',
+  etapaAtual: EtapaDaVersao.GESTAO_DE_ACESSOS,
   exigeProtecaoDeDados: true,
   criadorTemConcessao: false,
   propostaPorQuemLe: false,
@@ -51,7 +52,7 @@ const PERFIL_DO_DETALHE = {
   descricao: 'Opera as inscrições.',
   ativo: true,
   governanca: null,
-  sensibilidade: 'interno',
+  sensibilidade: 'INTERNO',
   situacaoDoAcesso: ACESSO_EM_VIGOR,
   versaoPendente: null,
   ultimaVersaoEncerradaSemVigor: null,

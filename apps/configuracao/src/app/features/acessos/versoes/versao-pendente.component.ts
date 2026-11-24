@@ -1,3 +1,4 @@
+import { SituacaoDoAnexo } from '@uniplus/shared-data/autorizacao';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import type { VersaoPendenteDto } from '@uniplus/shared-data/autorizacao';
 import {
@@ -12,13 +13,22 @@ import type { AcoesDoPerfil } from './estado-do-perfil';
 import { ResumoDaVersaoComponent } from './resumo-da-versao.component';
 import { etapaDaVersao } from './rotulos-da-versao';
 
-const DOCUMENTO_ENVIAVEL: readonly string[] = ['aguardando_envio', 'recusado'];
+const DOCUMENTO_ENVIAVEL: readonly string[] = [
+  SituacaoDoAnexo.AGUARDANDO_ENVIO,
+  SituacaoDoAnexo.RECUSADO,
+];
 
 /** A versão pendente de um perfil, com o envio do documento que falta e o cancelamento. */
 @Component({
   selector: 'cfg-versao-pendente',
   standalone: true,
-  imports: [AlertComponent, FileUploadComponent, ResumoDaVersaoComponent, SpinnerComponent, TagComponent],
+  imports: [
+    AlertComponent,
+    FileUploadComponent,
+    ResumoDaVersaoComponent,
+    SpinnerComponent,
+    TagComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './versao-pendente.component.html',
 })
@@ -38,7 +48,9 @@ export class VersaoPendenteComponent {
   protected readonly idDoTitulo = ID_DO_TITULO_DA_VERSAO_PENDENTE;
   protected readonly etapa = etapaDaVersao;
   protected readonly avisoDeAutoria = AVISO_DE_AUTORIA;
-  protected readonly recusado = computed(() => this.versao().situacaoDoDocumento === 'recusado');
+  protected readonly recusado = computed(
+    () => this.versao().situacaoDoDocumento === SituacaoDoAnexo.RECUSADO,
+  );
   protected readonly faltaDocumento = computed(() =>
     DOCUMENTO_ENVIAVEL.includes(this.versao().situacaoDoDocumento),
   );

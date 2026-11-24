@@ -1,3 +1,4 @@
+import { TipoDaProvidencia } from './codigos-de-autorizacao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -31,7 +32,11 @@ describe('ProvidenciasApi', () => {
   afterEach(() => controller.verify());
 
   it('solicita com a concessão, o tipo e o fundamento, sob a chave de idempotência', () => {
-    const corpo = { concessaoId: ID, tipo: 'retirada', fundamento: 'Deixou a banca.' } as const;
+    const corpo = {
+      concessaoId: ID,
+      tipo: TipoDaProvidencia.RETIRADA,
+      fundamento: 'Deixou a banca.',
+    } as const;
     void firstValueFrom(api.solicitar(corpo, withIdempotencyKey('k')));
     const req = controller.expectOne(ROTA);
     expect(req.request.method).toBe('POST');

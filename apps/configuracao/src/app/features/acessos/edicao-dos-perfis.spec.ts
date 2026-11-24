@@ -1,3 +1,4 @@
+import { CategoriaDaRemocao } from '@uniplus/shared-data/autorizacao';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
@@ -35,10 +36,10 @@ function perfil(permissoes: readonly string[]): PerfilDto {
     descricao: 'Opera as inscrições.',
     ativo: true,
     governanca: null,
-    sensibilidade: 'interno',
+    sensibilidade: 'INTERNO',
     composicaoEmVigor: {
       numero: 1,
-      permissoes: permissoes.map((codigo) => ({ codigo, nome: codigo, sensibilidade: 'interno' })),
+      permissoes: permissoes.map((codigo) => ({ codigo, nome: codigo, sensibilidade: 'INTERNO' })),
     },
     versaoPendente: null,
     ultimaVersaoEncerradaSemVigor: null,
@@ -133,9 +134,7 @@ describe('EdicaoDosPerfis', () => {
       preencher({ nome: 'Operador', descricao: 'Opera.', protocolo: 'P-1' });
       edicao.alternar(ESCREVER);
       edicao.documento.set(PDF);
-      perfis.criar.mockReturnValue(
-        of(recusa('uniplus.autorizacao.perfil.nome_duplicado', 409)),
-      );
+      perfis.criar.mockReturnValue(of(recusa('uniplus.autorizacao.perfil.nome_duplicado', 409)));
 
       await edicao.salvar();
 
@@ -190,7 +189,9 @@ describe('EdicaoDosPerfis', () => {
 
       await edicao.salvar();
 
-      expect(edicao.erroDoForm()).toBe('Nada mudou. Altere o nome, a descrição, as permissões ou o documento para enviar.');
+      expect(edicao.erroDoForm()).toBe(
+        'Nada mudou. Altere o nome, a descrição, as permissões ou o documento para enviar.',
+      );
       expect(versoes.propor).not.toHaveBeenCalled();
     });
 
@@ -263,7 +264,10 @@ describe('EdicaoDosPerfis', () => {
       expect(edicao.form.controls.motivoDaRemocao.invalid).toBe(true);
       expect(edicao.form.controls.categoriaDaRemocao.invalid).toBe(true);
 
-      preencher({ motivoDaRemocao: ' Excesso de acesso. ', categoriaDaRemocao: 'mudanca_de_funcao' });
+      preencher({
+        motivoDaRemocao: ' Excesso de acesso. ',
+        categoriaDaRemocao: CategoriaDaRemocao.MUDANCA_DE_FUNCAO,
+      });
       versoes.propor.mockReturnValue(of(ok(ENVIO)));
       await edicao.salvar();
 
@@ -271,7 +275,7 @@ describe('EdicaoDosPerfis', () => {
         'p1',
         expect.objectContaining({
           motivoDaRemocao: 'Excesso de acesso.',
-          categoriaDaRemocao: 'mudanca_de_funcao',
+          categoriaDaRemocao: CategoriaDaRemocao.MUDANCA_DE_FUNCAO,
         }),
         expect.anything(),
       );
@@ -279,7 +283,10 @@ describe('EdicaoDosPerfis', () => {
 
     it('só removendo, vale na hora e dispensa o documento', async () => {
       edicao.alternar(LEITE);
-      preencher({ motivoDaRemocao: 'Excesso de acesso.', categoriaDaRemocao: 'incidente' });
+      preencher({
+        motivoDaRemocao: 'Excesso de acesso.',
+        categoriaDaRemocao: CategoriaDaRemocao.INCIDENTE,
+      });
       perfis.remover.mockReturnValue(of(ok(perfil([ESCREVER]))));
 
       expect(edicao.exigeDocumento()).toBe(false);
@@ -287,7 +294,11 @@ describe('EdicaoDosPerfis', () => {
 
       expect(perfis.remover).toHaveBeenCalledWith(
         'p1',
-        { permissoes: [LEITE], motivo: 'Excesso de acesso.', categoria: 'incidente' },
+        {
+          permissoes: [LEITE],
+          motivo: 'Excesso de acesso.',
+          categoria: CategoriaDaRemocao.INCIDENTE,
+        },
         expect.anything(),
       );
       expect(versoes.propor).not.toHaveBeenCalled();

@@ -9,7 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import type { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import {
   acompanharLeitura,
   FalhaDeLeituraComponent,
@@ -29,15 +29,15 @@ interface Apresentacao {
 }
 
 const APRESENTACAO: Readonly<Record<EtapaDaVersao, Apresentacao>> = {
-  gestao_de_acessos: {
-    titulo: 'Janelas de migração na gestão de acessos',
+  [EtapaDaVersao.GESTAO_DE_ACESSOS]: {
+    titulo: 'Revisões das concessões na gestão de acessos',
     descricao:
-      'Janelas abertas em que há lote a enviar ou concessões retidas para a sua decisão, dentro do prazo.',
+      'Revisões das concessões abertas em que há decisões a enviar ou concessões retidas para a sua decisão, dentro do prazo.',
   },
-  protecao_de_dados: {
-    titulo: 'Janelas de migração na proteção de dados',
+  [EtapaDaVersao.PROTECAO_DE_DADOS]: {
+    titulo: 'Revisões das concessões na proteção de dados',
     descricao:
-      'Janelas abertas com concessões que aguardam a decisão do Representante do controlador sobre a adequação à proteção de dados, dentro do prazo.',
+      'Revisões das concessões abertas com concessões que aguardam a decisão do Representante do controlador sobre a adequação à proteção de dados, dentro do prazo.',
   },
 };
 
@@ -67,7 +67,7 @@ export class FilaDeJanelasPage {
   protected readonly idDoTitulo = ID_DO_TITULO;
   protected readonly texto = computed(() => APRESENTACAO[this.etapa()]);
   protected readonly leitura = acompanharLeitura({
-    assunto: 'fila de janelas de migração',
+    assunto: 'fila de revisões das concessões',
     falha: this.store.falha,
     pendente: this.store.carregando,
     indisponivel: signal(false),

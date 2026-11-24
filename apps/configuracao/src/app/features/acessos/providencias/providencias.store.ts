@@ -1,3 +1,4 @@
+import { SituacaoDaProvidencia } from '@uniplus/shared-data/autorizacao';
 import { HttpParams } from '@angular/common/http';
 import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import {
@@ -29,7 +30,7 @@ export class ProvidenciasStore {
   private readonly basePath = inject(AUTORIZACAO_BASE_PATH);
   private readonly problemas = inject(ProblemI18nService);
   private readonly notificacoes = inject(NotificationService);
-  readonly situacao = signal<FiltroDaSituacaoDaProvidencia>('aberta');
+  readonly situacao = signal<FiltroDaSituacaoDaProvidencia>(SituacaoDaProvidencia.ABERTA);
   private readonly pagina = linkedSignal<string, CursorPagina | undefined>({
     source: () => this.situacao(),
     computation: () => undefined,

@@ -1,3 +1,4 @@
+import { SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
@@ -10,13 +11,13 @@ const NAO_ENCONTRADA = 'uniplus.autorizacao.revisao_das_concessoes.revisao_nao_e
 const BETINA = itemDaJanela({
   concessaoId: 'c1',
   beneficiarioNome: 'Betina Teste',
-  situacao: 'retida',
+  situacao: SituacaoDaMigracao.RETIDA,
 });
 const ABERTA = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA] });
 const ENCERRADA = janelaDeMigracao({
   situacao: 'encerrada',
   decisoesEnviadas: true,
-  itens: [{ ...BETINA, situacao: 'nao_migrada' }],
+  itens: [{ ...BETINA, situacao: SituacaoDaMigracao.NAO_MIGRADA }],
 });
 
 describe('revisão encerrada por outra pessoa durante a ação', () => {
@@ -37,7 +38,7 @@ describe('revisão encerrada por outra pessoa durante a ação', () => {
     presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
     await responder(ENCERRADA);
 
-    expect(host.textContent).toContain('A janela mudou');
+    expect(host.textContent).toContain('A revisão das concessões mudou');
     expect(host.textContent).toContain('Não migrada no prazo');
     expect(host.querySelector('cfg-retidas-da-janela')).toBeNull();
     expect(botao(host, 'Migrar')).toBeUndefined();
@@ -59,11 +60,11 @@ describe('revisão encerrada por outra pessoa durante a ação', () => {
     });
     const { host, responder } = await abrirJanela(aberta);
 
-    presente(botao(host, 'Enviar o lote')).click();
+    presente(botao(host, 'Enviar as decisões')).click();
     await responder(ENCERRADA);
 
-    expect(host.textContent).toContain('A janela mudou');
+    expect(host.textContent).toContain('A revisão das concessões mudou');
     expect(host.textContent).toContain(titulo);
-    expect(botao(host, 'Enviar o lote')).toBeUndefined();
+    expect(botao(host, 'Enviar as decisões')).toBeUndefined();
   });
 });
