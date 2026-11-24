@@ -1,4 +1,7 @@
-import type { DocumentoExigidoDoFormulario } from '../../editor-de-documentos-exigidos/documentos-exigidos';
+import type {
+  DocumentoExigidoDoFormulario,
+  GrupoDeDocumentosDoFormulario,
+} from '../../editor-de-documentos-exigidos/documentos-exigidos';
 import { type ClausulasNoWire } from '../../editor-de-condicoes/condicoes/condicoes-no-wire';
 import { type FatoDoCatalogo } from '../../editor-de-condicoes/condicoes/fatos-escolhiveis';
 import { type CodigoComRotulo } from '../../codigo-com-rotulo';
@@ -141,6 +144,8 @@ export interface ConteudoDoFormulario<N = NumeroDigitado, O = string, T = string
   readonly grupos?: null | readonly GrupoDoFormulario<N, O, T>[];
   /** O conjunto padrão de documentos exigidos; o PUT substitui o conteúdo inteiro, então ele viaja a cada gravação. */
   readonly documentosExigidos?: null | readonly DocumentoExigidoDoFormulario<O>[];
+  /** Os grupos de documentos do conjunto padrão; viajam como vieram. */
+  readonly gruposDeDocumentos?: null | readonly GrupoDeDocumentosDoFormulario<O>[];
 }
 
 /** O que o editor precisa saber de um fato do catálogo para oferecê-lo como campo. */

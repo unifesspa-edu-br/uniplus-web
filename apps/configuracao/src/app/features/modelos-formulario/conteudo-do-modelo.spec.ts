@@ -1,4 +1,15 @@
-import { OperadorCodigo, TipoRenderizacaoCodigo } from '@uniplus/shared-data/configuracao';
+import {
+  BlocoSistemaCodigo,
+  EfeitoNaAnaliseDoDocumentoCodigo,
+  EscolhaDaValidadeCodigo,
+  EscolhaDoPrazoDeEmissaoCodigo,
+  OperadorCodigo,
+  TipoDaDataDeReferenciaCodigo,
+  TipoEtapaFormularioCodigo,
+  TipoObrigatoriedadeCodigo,
+  TipoRenderizacaoCodigo,
+  UnidadeDoPrazoDeEmissaoCodigo,
+} from '@uniplus/shared-data/configuracao';
 import { type ConteudoDoFormulario, type ItemDoFormulario } from '@uniplus/shared-ui/components';
 import { describe, expect, it } from 'vitest';
 import { conteudoDoModelo, conteudoParaOModelo } from './conteudo-do-modelo';
@@ -65,6 +76,22 @@ const conteudo: ConteudoDoFormulario<number> = {
       basesLegais: null,
     },
   ],
+  gruposDeDocumentos: [
+    {
+      quantidadeMinima: 1,
+      indeferimento: { consequencia: 'ELIMINA', basesLegais: [] },
+      documentos: [
+        {
+          faseCodigo: 'INSCRICAO',
+          tipoDocumentoCodigo: 'CPF',
+          obrigatorio: false,
+          quando: QUANDO,
+          consequenciaIndeferimento: 'ELIMINA',
+          basesLegais: null,
+        },
+      ],
+    },
+  ],
 };
 
 const semPredicado = { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } };
@@ -102,16 +129,25 @@ describe('conteudoParaOModelo', () => {
     expect(predicados.map(operadorDe)).toEqual(Array(4).fill(OperadorCodigo.IGUAL));
   });
 
-  it('converte os predicados dos grupos, dos termos e dos documentos exigidos', () => {
+  it('converte os predicados dos grupos e dos termos', () => {
     const [grupo] = gravado.grupos ?? [];
     const predicados = [
       grupo.regras?.exibicao,
       grupo.subitens[0].regras?.exibicao,
       gravado.termos?.[0].regras?.exibicao,
-      gravado.documentosExigidos?.[0].quando,
     ];
 
-    expect(predicados.map(operadorDe)).toEqual(Array(4).fill(OperadorCodigo.IGUAL));
+    expect(predicados.map(operadorDe)).toEqual(Array(3).fill(OperadorCodigo.IGUAL));
+  });
+
+  it('converte os predicados dos documentos exigidos e dos documentos dos grupos', () => {
+    const { documentosExigidos, gruposDeDocumentos } = gravado.conjuntoDeDocumentos ?? {};
+    const predicados = [
+      documentosExigidos?.[0].quando,
+      gruposDeDocumentos?.[0].documentos?.[0].quando,
+    ];
+
+    expect(predicados.map(operadorDe)).toEqual(Array(2).fill(OperadorCodigo.IGUAL));
   });
 
   it('põe o tipo de renderização no código do contrato', () => {
@@ -135,11 +171,80 @@ describe('conteudoParaOModelo', () => {
       grupos: undefined,
       termos: null,
       documentosExigidos: undefined,
+      gruposDeDocumentos: undefined,
     });
 
     expect(sem.itens?.[0].regras?.exibicao).toBeNull();
     expect(sem.itens?.[0].regras?.impedimento).toBeUndefined();
     expect(sem.etapas).toBeNull();
+  });
+
+  it('põe o tipo e o bloco da etapa e a obrigatoriedade nos códigos do contrato', () => {
+    const gravadoComBloco = conteudoParaOModelo({
+      ...conteudo,
+      etapas: (conteudo.etapas ?? []).map((etapa) => ({
+        ...etapa,
+        tipo: 'BLOCO',
+        bloco: 'REVISAO_E_ACEITE',
+      })),
+    });
+
+    expect(gravadoComBloco.etapas?.[0]).toMatchObject({
+      tipo: TipoEtapaFormularioCodigo.BLOCO,
+      bloco: BlocoSistemaCodigo.REVISAO_E_ACEITE,
+    });
+    expect(gravado.etapas?.[0]).toMatchObject({
+      tipo: TipoEtapaFormularioCodigo.SECAO,
+      bloco: null,
+    });
+    expect(gravado.itens?.[0].regras?.obrigatoriedade?.tipo).toBe(TipoObrigatoriedadeCodigo.QUANDO);
+    expect(gravado.termos?.[0].regras?.obrigatoriedade?.tipo).toBe(
+      TipoObrigatoriedadeCodigo.QUANDO,
+    );
+  });
+
+  it('agrupa o indeferimento do documento e leva os grupos dentro do conjunto', () => {
+    const { documentosExigidos, gruposDeDocumentos } = gravado.conjuntoDeDocumentos ?? {};
+
+    expect(documentosExigidos?.[0]).toMatchObject({
+      indeferimento: { obrigatorio: true, consequencia: 'ELIMINA', basesLegais: null },
+    });
+    expect(documentosExigidos?.[0]).not.toHaveProperty('consequenciaIndeferimento');
+    expect(gruposDeDocumentos?.[0]).toMatchObject({
+      quantidadeMinima: 1,
+      indeferimento: { consequencia: 'ELIMINA', basesLegais: [] },
+    });
+    expect(gruposDeDocumentos?.[0].documentos?.[0].indeferimento).toMatchObject({
+      obrigatorio: false,
+    });
+  });
+
+  it('grava os requisitos só com os códigos, como o modelo os recebe', () => {
+    const lidoDoModelo = conteudoDoModelo(modelo.conteudo);
+
+    const [laudo, certidao] =
+      conteudoParaOModelo(lidoDoModelo as ConteudoDoFormulario<number>).conjuntoDeDocumentos
+        ?.documentosExigidos ?? [];
+
+    expect(laudo.requisitos).toEqual({
+      prazoDeEmissao: {
+        escolha: EscolhaDoPrazoDeEmissaoCodigo.COM_PRAZO,
+        valor: 90,
+        unidade: UnidadeDoPrazoDeEmissaoCodigo.DIAS,
+        referencia: {
+          tipo: TipoDaDataDeReferenciaCodigo.FIM_DAS_INSCRICOES,
+          data: null,
+          faseCodigo: null,
+        },
+        efeitoForaDoPrazo: EfeitoNaAnaliseDoDocumentoCodigo.RECUSAR_DOCUMENTO,
+      },
+      validade: {
+        escolha: EscolhaDaValidadeCodigo.EXIGE_DOCUMENTO_VALIDO,
+        referencia: null,
+        efeitoDoVencimento: EfeitoNaAnaliseDoDocumentoCodigo.ACEITAR_COM_AVISO,
+      },
+    });
+    expect(certidao.requisitos).toEqual({ prazoDeEmissao: null, validade: null });
   });
 });
 
@@ -164,5 +269,56 @@ describe('conteudoDoModelo', () => {
       incluiCandidato: true,
     });
     expect(lido.termos?.[0].termo).toEqual({ termoId: 'T1', versaoId: 'V1' });
+  });
+
+  it('desdobra o indeferimento do documento em campos que a tela edita', () => {
+    const [laudo, certidao] = lido.documentosExigidos ?? [];
+
+    expect(laudo).toMatchObject({
+      obrigatorio: true,
+      consequenciaIndeferimento: 'ELIMINA',
+      basesLegais: [{ referencia: 'Lei 13.146/2015' }],
+    });
+    expect(certidao).toMatchObject({
+      obrigatorio: false,
+      consequenciaIndeferimento: 'ABRE_PRAZO_PARA_REENVIO',
+    });
+    expect(laudo).not.toHaveProperty('indeferimento');
+  });
+
+  it('lê os requisitos pelo código, sem o rótulo', () => {
+    const [laudo, certidao] = lido.documentosExigidos ?? [];
+
+    expect(laudo.requisitos?.prazoDeEmissao).toMatchObject({
+      escolha: 'COM_PRAZO',
+      valor: 90,
+      unidade: 'DIAS',
+      efeitoForaDoPrazo: 'RECUSAR_DOCUMENTO',
+      referencia: { tipo: 'FIM_DAS_INSCRICOES' },
+    });
+    expect(laudo.requisitos?.validade).toMatchObject({ escolha: 'EXIGE_DOCUMENTO_VALIDO' });
+    expect(certidao.requisitos).toEqual({ prazoDeEmissao: null, validade: null });
+  });
+
+  it('traz os grupos de documentos com os documentos desdobrados', () => {
+    const comGrupo = conteudoDoModelo({
+      ...modelo.conteudo,
+      conjuntoDeDocumentos: {
+        ...modelo.conteudo.conjuntoDeDocumentos,
+        gruposDeDocumentos: [
+          {
+            quantidadeMinima: 1,
+            indeferimento: null,
+            documentos: [modelo.conteudo.conjuntoDeDocumentos.documentosExigidos[1]],
+          },
+        ],
+      },
+    });
+
+    expect(comGrupo.gruposDeDocumentos?.[0].documentos[0]).toMatchObject({
+      tipoDocumentoCodigo: 'CERTIDAO_NASCIMENTO',
+      obrigatorio: false,
+    });
+    expect(comGrupo.gruposDeDocumentos?.[0].indeferimento).toBeNull();
   });
 });

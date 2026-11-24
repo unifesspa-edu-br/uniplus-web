@@ -13398,7 +13398,7 @@ export interface components {
             readonly codigo: string;
             readonly grupoCodigo: string;
             readonly fatoDeMembro: string;
-            readonly operacao: string;
+            readonly operacao: components["schemas"]["OperacaoAgregadoCodigo"];
         };
         readonly ApresentacaoDaEtapaDto: {
             readonly titulo: string;
@@ -13705,6 +13705,15 @@ export interface components {
             readonly situacao: string;
             readonly observacao: null | string;
         };
+        /**
+         * @description Os blocos que o sistema monta no formulário a partir da configuração do processo seletivo.
+         *
+         *     - `COMPROVACAO_DOCUMENTAL`: Comprovação documental — Os documentos que o candidato envia, conforme a exigência de cada situação dele.
+         *     - `MODALIDADES_CALCULADAS`: Modalidades calculadas — As modalidades de concorrência em que o candidato se enquadra, calculadas pelas respostas dele.
+         *     - `REVISAO_E_ACEITE`: Revisão e aceite — A conferência das respostas e o aceite dos termos, sempre a última etapa do formulário.
+         * @enum {string}
+         */
+        readonly BlocoSistemaCodigo: BlocoSistemaCodigo;
         readonly CalendarioDiasUteisDto: {
             /** Format: uuid */
             readonly id: string;
@@ -13838,6 +13847,14 @@ export interface components {
             readonly operador: null | components["schemas"]["OperadorCodigo"];
             readonly valor: components["schemas"]["JsonElement"];
         };
+        readonly ConjuntoDeDocumentosDoModeloDto: {
+            readonly documentosExigidos: readonly components["schemas"]["DocumentoExigidoDoModeloDto"][];
+            readonly gruposDeDocumentos: readonly components["schemas"]["GrupoDeDocumentosDoModeloDto"][];
+        };
+        readonly ConjuntoDeDocumentosDoModeloInput: {
+            readonly documentosExigidos: null | readonly components["schemas"]["DocumentoExigidoDoModeloInput"][];
+            readonly gruposDeDocumentos: null | readonly components["schemas"]["GrupoDeDocumentosDoModeloInput"][];
+        };
         readonly ConteudoDoModeloDto: {
             readonly titulo: null | string;
             readonly etapas: readonly components["schemas"]["EtapaFormularioDto"][];
@@ -13845,7 +13862,7 @@ export interface components {
             readonly termos: readonly components["schemas"]["TermoDoModeloDto"][];
             readonly pressupostos: readonly string[];
             readonly grupos: readonly components["schemas"]["GrupoDoModeloDto"][];
-            readonly documentosExigidos: readonly components["schemas"]["DocumentoExigidoDoModeloDto"][];
+            readonly conjuntoDeDocumentos: components["schemas"]["ConjuntoDeDocumentosDoModeloDto"];
         };
         readonly ConteudoDoModeloInput: {
             readonly titulo: null | string;
@@ -13854,7 +13871,7 @@ export interface components {
             readonly termos: null | readonly components["schemas"]["TermoExigidoInput"][];
             readonly pressupostos: null | readonly string[];
             readonly grupos?: null | readonly components["schemas"]["GrupoColetadoInput"][];
-            readonly documentosExigidos?: null | readonly components["schemas"]["DocumentoExigidoDoModeloInput"][];
+            readonly conjuntoDeDocumentos?: null | components["schemas"]["ConjuntoDeDocumentosDoModeloInput"];
         };
         readonly ConteudoDoTermoDto: {
             readonly nome: string;
@@ -14105,6 +14122,18 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly DataDeReferenciaDoDocumentoDoModeloDto: {
+            readonly tipo: components["schemas"]["TipoDaDataDeReferencia"];
+            readonly faseCodigo: null | string;
+            /** Format: date */
+            readonly data: null | string;
+        };
+        readonly DataDeReferenciaDoDocumentoDoModeloInput: {
+            readonly tipo: null | components["schemas"]["TipoDaDataDeReferenciaCodigo"];
+            /** Format: date */
+            readonly data: null | string;
+            readonly faseCodigo: null | string;
+        };
         readonly DecidirProtecaoDoCatalogoRequest: {
             /** @enum {null|string} */
             readonly cadastro: DecidirProtecaoDoCatalogoRequestCadastro;
@@ -14259,19 +14288,17 @@ export interface components {
         readonly DocumentoExigidoDoModeloDto: {
             readonly faseCodigo: string;
             readonly tipoDocumentoCodigo: string;
-            readonly obrigatorio: boolean;
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
-            readonly consequenciaIndeferimento: string;
-            readonly basesLegais: readonly components["schemas"]["BaseLegalDoModeloDto"][];
+            readonly indeferimento: components["schemas"]["IndeferimentoDoDocumentoDoModeloDto"];
+            readonly requisitos: components["schemas"]["RequisitosDoDocumentoDoModeloDto"];
             readonly porOpcao: null | components["schemas"]["ExigenciaPorOpcaoDto"];
         };
         readonly DocumentoExigidoDoModeloInput: {
             readonly faseCodigo: string;
             readonly tipoDocumentoCodigo: string;
-            readonly obrigatorio: boolean;
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
-            readonly consequenciaIndeferimento: string;
-            readonly basesLegais: null | readonly components["schemas"]["BaseLegalDoModeloInput"][];
+            readonly indeferimento: null | components["schemas"]["IndeferimentoDoDocumentoDoModeloInput"];
+            readonly requisitos?: null | components["schemas"]["RequisitosDoDocumentoDoModeloInput"];
             readonly porOpcao?: null | components["schemas"]["ExigenciaPorOpcaoInput"];
         };
         readonly EdicaoDoModeloInput: {
@@ -14285,6 +14312,18 @@ export interface components {
             readonly baseLegalRascunho: null | string;
             readonly formaAceiteRascunho: null | components["schemas"]["FormaAceiteCodigo"];
         };
+        readonly EfeitoNaAnaliseDoDocumento: {
+            readonly codigo: components["schemas"]["EfeitoNaAnaliseDoDocumentoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description Efeito na análise de um documento fora do prazo ou vencido.
+         *
+         *     - `RECUSAR_DOCUMENTO`: Recusar documento
+         *     - `ACEITAR_COM_AVISO`: Aceitar com aviso
+         * @enum {string}
+         */
+        readonly EfeitoNaAnaliseDoDocumentoCodigo: EfeitoNaAnaliseDoDocumentoCodigo;
         readonly EnderecoGeoDto: {
             readonly cep: string;
             readonly logradouro: null | string;
@@ -14338,6 +14377,30 @@ export interface components {
             /** Format: int32 */
             readonly casasDecimais: number;
         };
+        readonly EscolhaDaValidade: {
+            readonly codigo: components["schemas"]["EscolhaDaValidadeCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description Escolha sobre a validade do documento.
+         *
+         *     - `NAO_EXIGE_DOCUMENTO_VALIDO`: Não exige documento válido
+         *     - `EXIGE_DOCUMENTO_VALIDO`: Exige documento válido
+         * @enum {string}
+         */
+        readonly EscolhaDaValidadeCodigo: EscolhaDaValidadeCodigo;
+        readonly EscolhaDoPrazoDeEmissao: {
+            readonly codigo: components["schemas"]["EscolhaDoPrazoDeEmissaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description Escolha sobre o prazo de emissão do documento.
+         *
+         *     - `SEM_PRAZO`: Sem prazo
+         *     - `COM_PRAZO`: Com prazo
+         * @enum {string}
+         */
+        readonly EscolhaDoPrazoDeEmissaoCodigo: EscolhaDoPrazoDeEmissaoCodigo;
         readonly EstadoFato: {
             readonly codigo: components["schemas"]["EstadoFatoCodigo"];
             readonly rotulo: string;
@@ -14360,8 +14423,8 @@ export interface components {
             readonly codigo: string;
             /** Format: int32 */
             readonly ordem: number;
-            readonly tipo: string;
-            readonly bloco: null | string;
+            readonly tipo: components["schemas"]["TipoEtapaFormularioCodigo"];
+            readonly bloco: null | components["schemas"]["BlocoSistemaCodigo"];
             readonly apresentacao: components["schemas"]["ApresentacaoDaEtapaDto"];
             readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
         };
@@ -14369,8 +14432,8 @@ export interface components {
             readonly codigo: string;
             /** Format: int32 */
             readonly ordem: number;
-            readonly tipo: string;
-            readonly bloco: null | string;
+            readonly tipo: components["schemas"]["TipoEtapaFormularioCodigo"];
+            readonly bloco: null | components["schemas"]["BlocoSistemaCodigo"];
             readonly apresentacao: null | components["schemas"]["ApresentacaoDaEtapaInput"];
             readonly exibicao?: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
         };
@@ -14518,6 +14581,7 @@ export interface components {
          *     - `UNIDADES_FEDERATIVAS`: Unidades federativas — Os valores são as 27 unidades federativas, pela sigla: as do dado calculado de residência e as que o candidato declara.
          *     - `MUNICIPIOS`: Municípios — Os valores são os municípios do módulo de geografia, pelo código do IBGE, entre os da unidade federativa respondida antes.
          *     - `TIPOS_DE_DEFICIENCIA`: Tipos de deficiência — Os valores são os tipos do cadastro de tipos de deficiência, todos os vivos, em qualquer processo.
+         *     - `MUNICIPIOS_PROVA_PRESENCIAL`: Municípios da prova presencial — Os valores são os municípios declarados para a prova presencial, pelo código do IBGE.
          * @enum {string}
          */
         readonly FonteValoresFatoCodigo: FonteValoresFatoCodigo;
@@ -14593,6 +14657,18 @@ export interface components {
             readonly subitens: readonly components["schemas"]["FatoColetadoInput"][];
             readonly etapaCodigo?: null | string;
         };
+        readonly GrupoDeDocumentosDoModeloDto: {
+            /** Format: int32 */
+            readonly quantidadeMinima: null | number;
+            readonly indeferimento: null | components["schemas"]["IndeferimentoDoGrupoDeDocumentosDoModeloDto"];
+            readonly documentos: readonly components["schemas"]["DocumentoExigidoDoModeloDto"][];
+        };
+        readonly GrupoDeDocumentosDoModeloInput: {
+            /** Format: int32 */
+            readonly quantidadeMinima: null | number;
+            readonly indeferimento: null | components["schemas"]["IndeferimentoDoGrupoDeDocumentosDoModeloInput"];
+            readonly documentos: null | readonly components["schemas"]["DocumentoExigidoDoModeloInput"][];
+        };
         readonly GrupoDoModeloDto: {
             readonly codigo: string;
             /** Format: int32 */
@@ -14634,6 +14710,24 @@ export interface components {
         readonly ImpedimentoInput: {
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
             readonly mensagem: null | string;
+        };
+        readonly IndeferimentoDoDocumentoDoModeloDto: {
+            readonly obrigatorio: boolean;
+            readonly consequencia: string;
+            readonly basesLegais: readonly components["schemas"]["BaseLegalDoModeloDto"][];
+        };
+        readonly IndeferimentoDoDocumentoDoModeloInput: {
+            readonly obrigatorio: boolean;
+            readonly consequencia: string;
+            readonly basesLegais: null | readonly components["schemas"]["BaseLegalDoModeloInput"][];
+        };
+        readonly IndeferimentoDoGrupoDeDocumentosDoModeloDto: {
+            readonly consequencia: string;
+            readonly basesLegais: readonly components["schemas"]["BaseLegalDoModeloDto"][];
+        };
+        readonly IndeferimentoDoGrupoDeDocumentosDoModeloInput: {
+            readonly consequencia: string;
+            readonly basesLegais: null | readonly components["schemas"]["BaseLegalDoModeloInput"][];
         };
         readonly ItemDaProtecaoDoCatalogoDto: {
             readonly tipo: string;
@@ -14764,11 +14858,11 @@ export interface components {
          */
         readonly NaturezaLegalCodigo: NaturezaLegalCodigo;
         readonly ObrigatoriedadeDto: {
-            readonly tipo: string;
+            readonly tipo: components["schemas"]["TipoObrigatoriedadeCodigo"];
             readonly predicado: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
         };
         readonly ObrigatoriedadeInput: {
-            readonly tipo: null | string;
+            readonly tipo: null | components["schemas"]["TipoObrigatoriedadeCodigo"];
             readonly predicado?: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
         };
         readonly OcorrenciaAvaliada: {
@@ -14845,6 +14939,14 @@ export interface components {
             readonly codigos?: null | readonly string[];
             readonly definitivas: boolean;
         };
+        /**
+         * @description O que o fato agregado calcula a partir das ocorrências de um grupo repetível.
+         *
+         *     - `EXISTE`: Existe alguma ocorrência — Verdadeiro quando ao menos uma ocorrência do grupo respondeu sim.
+         *     - `VALORES_PRESENTES`: Valores presentes nas ocorrências — Os valores diferentes que as ocorrências do grupo responderam.
+         * @enum {string}
+         */
+        readonly OperacaoAgregadoCodigo: OperacaoAgregadoCodigo;
         readonly Operador: {
             readonly codigo: components["schemas"]["OperadorCodigo"];
             readonly rotulo: string;
@@ -14943,6 +15045,22 @@ export interface components {
             readonly _links?: null | {
                 readonly [key: string]: string;
             };
+        };
+        readonly PrazoDeEmissaoDoModeloDto: {
+            readonly escolha: components["schemas"]["EscolhaDoPrazoDeEmissao"];
+            /** Format: int32 */
+            readonly valor: null | number;
+            readonly unidade: null | components["schemas"]["UnidadeDoPrazoDeEmissao"];
+            readonly referencia: null | components["schemas"]["DataDeReferenciaDoDocumentoDoModeloDto"];
+            readonly efeitoForaDoPrazo: null | components["schemas"]["EfeitoNaAnaliseDoDocumento"];
+        };
+        readonly PrazoDeEmissaoDoModeloInput: {
+            readonly escolha: null | components["schemas"]["EscolhaDoPrazoDeEmissaoCodigo"];
+            /** Format: int32 */
+            readonly valor: null | number;
+            readonly unidade: null | components["schemas"]["UnidadeDoPrazoDeEmissaoCodigo"];
+            readonly referencia: null | components["schemas"]["DataDeReferenciaDoDocumentoDoModeloInput"];
+            readonly efeitoForaDoPrazo: null | components["schemas"]["EfeitoNaAnaliseDoDocumentoCodigo"];
         };
         readonly PrecedenciaFaseDto: {
             /** Format: uuid */
@@ -15160,6 +15278,14 @@ export interface components {
             readonly par?: null | string;
             readonly fallback?: null | string;
         };
+        readonly RequisitosDoDocumentoDoModeloDto: {
+            readonly prazoDeEmissao: null | components["schemas"]["PrazoDeEmissaoDoModeloDto"];
+            readonly validade: null | components["schemas"]["ValidadeDoDocumentoDoModeloDto"];
+        };
+        readonly RequisitosDoDocumentoDoModeloInput: {
+            readonly prazoDeEmissao: null | components["schemas"]["PrazoDeEmissaoDoModeloInput"];
+            readonly validade: null | components["schemas"]["ValidadeDoDocumentoDoModeloInput"];
+        };
         readonly ResolucaoDoFatoDto: {
             readonly origem: components["schemas"]["OrigemFato"];
             readonly pontoResolucao: string;
@@ -15196,8 +15322,8 @@ export interface components {
             readonly codigoNasRegras: null | string;
             /** Format: int32 */
             readonly ordem: number;
-            readonly tipo: string;
-            readonly bloco: null | string;
+            readonly tipo: components["schemas"]["TipoEtapaFormularioCodigo"];
+            readonly bloco: null | components["schemas"]["BlocoSistemaCodigo"];
             readonly apresentacao: components["schemas"]["ApresentacaoDaEtapaDto"];
         };
         readonly SolicitacaoDaProtecaoDto: {
@@ -15331,6 +15457,21 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly TipoDaDataDeReferencia: {
+            readonly codigo: components["schemas"]["TipoDaDataDeReferenciaCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description Data usada como referência para o documento.
+         *
+         *     - `FIM_DAS_INSCRICOES`: Fim das inscrições
+         *     - `INICIO_DA_FASE`: Início da fase
+         *     - `FIM_DA_FASE`: Fim da fase
+         *     - `DATA_ESPECIFICA`: Data específica
+         *     - `DATA_DA_APRESENTACAO`: Data da apresentação
+         * @enum {string}
+         */
+        readonly TipoDaDataDeReferenciaCodigo: TipoDaDataDeReferenciaCodigo;
         readonly TipoDeBanca: {
             readonly codigo: components["schemas"]["TipoDeBancaCodigo"];
             readonly rotulo: string;
@@ -15415,6 +15556,14 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        /**
+         * @description O que a etapa do formulário é: uma seção com itens de resposta ou um bloco que o sistema monta.
+         *
+         *     - `SECAO`: Seção — Etapa com os itens que o candidato responde.
+         *     - `BLOCO`: Bloco do sistema — Etapa que o sistema monta a partir da configuração do processo; o bloco diz qual.
+         * @enum {string}
+         */
+        readonly TipoEtapaFormularioCodigo: TipoEtapaFormularioCodigo;
         readonly TipoInstrumentoNormativo: {
             readonly codigo: components["schemas"]["TipoInstrumentoNormativoCodigo"];
             readonly rotulo: string;
@@ -15469,6 +15618,15 @@ export interface components {
          * @enum {string}
          */
         readonly TipoMotivoDeDecisaoCodigo: TipoMotivoDeDecisaoCodigo;
+        /**
+         * @description Quando o item ou o termo do formulário é de resposta obrigatória.
+         *
+         *     - `SEMPRE`: Sempre obrigatório — O candidato sempre precisa responder. Não tem condição.
+         *     - `NUNCA`: Nunca obrigatório — A resposta é sempre opcional. Não tem condição.
+         *     - `QUANDO`: Obrigatório quando a condição é verdadeira — O candidato precisa responder quando a condição sobre as respostas anteriores é verdadeira. Tem sempre uma condição.
+         * @enum {string}
+         */
+        readonly TipoObrigatoriedadeCodigo: TipoObrigatoriedadeCodigo;
         readonly TipoProcessoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -15507,6 +15665,19 @@ export interface components {
          * @enum {string}
          */
         readonly TurnoOfertaCodigo: TurnoOfertaCodigo;
+        readonly UnidadeDoPrazoDeEmissao: {
+            readonly codigo: components["schemas"]["UnidadeDoPrazoDeEmissaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description Unidade de contagem do prazo de emissão.
+         *
+         *     - `DIAS`: Dias
+         *     - `MESES`: Meses
+         *     - `ANOS`: Anos
+         * @enum {string}
+         */
+        readonly UnidadeDoPrazoDeEmissaoCodigo: UnidadeDoPrazoDeEmissaoCodigo;
         readonly UnidadeOfertanteDto: {
             /** Format: uuid */
             readonly origemId: string;
@@ -15530,6 +15701,16 @@ export interface components {
             readonly perfis: readonly components["schemas"]["PerfilConcedidoResponse"][];
             /** Format: date-time */
             readonly timestamp: string;
+        };
+        readonly ValidadeDoDocumentoDoModeloDto: {
+            readonly escolha: components["schemas"]["EscolhaDaValidade"];
+            readonly referencia: null | components["schemas"]["DataDeReferenciaDoDocumentoDoModeloDto"];
+            readonly efeitoDoVencimento: null | components["schemas"]["EfeitoNaAnaliseDoDocumento"];
+        };
+        readonly ValidadeDoDocumentoDoModeloInput: {
+            readonly escolha: null | components["schemas"]["EscolhaDaValidadeCodigo"];
+            readonly referencia: null | components["schemas"]["DataDeReferenciaDoDocumentoDoModeloInput"];
+            readonly efeitoDoVencimento: null | components["schemas"]["EfeitoNaAnaliseDoDocumentoCodigo"];
         };
         readonly ValorCategoricoCommand: {
             readonly codigo: null | string;
@@ -15774,6 +15955,11 @@ export enum AcaoQuandoIndeferidoCodigo {
     RECLASSIFICA_AC = "RECLASSIFICA_AC",
     RECLASSIFICA_CONFORME_EDITAL = "RECLASSIFICA_CONFORME_EDITAL"
 }
+export enum BlocoSistemaCodigo {
+    COMPROVACAO_DOCUMENTAL = "COMPROVACAO_DOCUMENTAL",
+    MODALIDADES_CALCULADAS = "MODALIDADES_CALCULADAS",
+    REVISAO_E_ACEITE = "REVISAO_E_ACEITE"
+}
 export enum ComposicaoVagasCodigo {
     RESTANTE_DAS_VAGAS_OFERTADAS = "RESTANTE_DAS_VAGAS_OFERTADAS",
     DENTRO_DA_RESERVA_LEGAL = "DENTRO_DA_RESERVA_LEGAL",
@@ -15788,6 +15974,18 @@ export enum DecidirProtecaoDoCatalogoRequestDecisao {
     APROVAR = "APROVAR",
     RECOMENDAR_AJUSTE = "RECOMENDAR_AJUSTE",
     REPROVAR = "REPROVAR"
+}
+export enum EfeitoNaAnaliseDoDocumentoCodigo {
+    RECUSAR_DOCUMENTO = "RECUSAR_DOCUMENTO",
+    ACEITAR_COM_AVISO = "ACEITAR_COM_AVISO"
+}
+export enum EscolhaDaValidadeCodigo {
+    NAO_EXIGE_DOCUMENTO_VALIDO = "NAO_EXIGE_DOCUMENTO_VALIDO",
+    EXIGE_DOCUMENTO_VALIDO = "EXIGE_DOCUMENTO_VALIDO"
+}
+export enum EscolhaDoPrazoDeEmissaoCodigo {
+    SEM_PRAZO = "SEM_PRAZO",
+    COM_PRAZO = "COM_PRAZO"
 }
 export enum EstadoFatoCodigo {
     INDETERMINADO = "INDETERMINADO",
@@ -15807,7 +16005,8 @@ export enum FonteValoresFatoCodigo {
     MUNICIPIOS_DO_FADA = "MUNICIPIOS_DO_FADA",
     UNIDADES_FEDERATIVAS = "UNIDADES_FEDERATIVAS",
     MUNICIPIOS = "MUNICIPIOS",
-    TIPOS_DE_DEFICIENCIA = "TIPOS_DE_DEFICIENCIA"
+    TIPOS_DE_DEFICIENCIA = "TIPOS_DE_DEFICIENCIA",
+    MUNICIPIOS_PROVA_PRESENCIAL = "MUNICIPIOS_PROVA_PRESENCIAL"
 }
 export enum FormaAceiteCodigo {
     A_DEFINIR = "A_DEFINIR",
@@ -15831,6 +16030,10 @@ export enum NaturezaLegalCodigo {
     COTA_RESERVADA = "COTA_RESERVADA",
     AMPLA = "AMPLA",
     ACAO_AFIRMATIVA = "ACAO_AFIRMATIVA"
+}
+export enum OperacaoAgregadoCodigo {
+    EXISTE = "EXISTE",
+    VALORES_PRESENTES = "VALORES_PRESENTES"
 }
 export enum OperadorCodigo {
     IGUAL = "IGUAL",
@@ -15897,6 +16100,13 @@ export enum TernarioCodigo {
     VERDADEIRO = "VERDADEIRO",
     FALSO = "FALSO"
 }
+export enum TipoDaDataDeReferenciaCodigo {
+    FIM_DAS_INSCRICOES = "FIM_DAS_INSCRICOES",
+    INICIO_DA_FASE = "INICIO_DA_FASE",
+    FIM_DA_FASE = "FIM_DA_FASE",
+    DATA_ESPECIFICA = "DATA_ESPECIFICA",
+    DATA_DA_APRESENTACAO = "DATA_DA_APRESENTACAO"
+}
 export enum TipoDeBancaCodigo {
     BANCA_ANALISE_DOCUMENTAL = "BANCA_ANALISE_DOCUMENTAL",
     BANCA_ENTREVISTA = "BANCA_ENTREVISTA",
@@ -15916,6 +16126,10 @@ export enum TipoDoDadoCodigo {
     TEXTO = "TEXTO",
     DATA = "DATA",
     ENDERECO = "ENDERECO"
+}
+export enum TipoEtapaFormularioCodigo {
+    SECAO = "SECAO",
+    BLOCO = "BLOCO"
 }
 export enum TipoInstrumentoNormativoCodigo {
     LEI = "LEI",
@@ -15944,6 +16158,11 @@ export enum TipoMotivoDeDecisaoCodigo {
     GABARITO_DA_PROVA = "GABARITO_DA_PROVA",
     NOTA_DA_ETAPA = "NOTA_DA_ETAPA"
 }
+export enum TipoObrigatoriedadeCodigo {
+    SEMPRE = "SEMPRE",
+    NUNCA = "NUNCA",
+    QUANDO = "QUANDO"
+}
 export enum TipoRenderizacaoCodigo {
     NUMERO = "NUMERO",
     SIM_OU_NAO = "SIM_OU_NAO",
@@ -15958,4 +16177,9 @@ export enum TurnoOfertaCodigo {
     MATUTINO = "MATUTINO",
     VESPERTINO = "VESPERTINO",
     NOTURNO = "NOTURNO"
+}
+export enum UnidadeDoPrazoDeEmissaoCodigo {
+    DIAS = "DIAS",
+    MESES = "MESES",
+    ANOS = "ANOS"
 }

@@ -1,6 +1,9 @@
 import { converterLista } from '@uniplus/shared-utils';
 import { predicadoComOperadores } from '../../editor-de-condicoes/condicoes/condicoes-no-wire';
-import type { DocumentoExigidoDoFormulario } from '../../editor-de-documentos-exigidos/documentos-exigidos';
+import type {
+  DocumentoExigidoDoFormulario,
+  GrupoDeDocumentosDoFormulario,
+} from '../../editor-de-documentos-exigidos/documentos-exigidos';
 import type {
   ConteudoDoFormulario,
   EtapaDoFormulario,
@@ -131,6 +134,35 @@ function documentoComCodigos<O1, T1, O2, T2>(
   return { ...documento, quando: predicadoComOperadores(documento.quando, troca.operador) };
 }
 
+function grupoDeDocumentosComCodigos<O1, T1, O2, T2>(
+  grupo: GrupoDeDocumentosDoFormulario<O1>,
+  troca: TrocaDeCodigos<O1, T1, O2, T2>,
+): GrupoDeDocumentosDoFormulario<O2> {
+  return {
+    ...grupo,
+    documentos: grupo.documentos.map((documento) => documentoComCodigos(documento, troca)),
+  };
+}
+
+interface DocumentosDoConteudo<N, O, T> {
+  readonly documentosExigidos: ConteudoDoFormulario<N, O, T>['documentosExigidos'];
+  readonly gruposDeDocumentos: ConteudoDoFormulario<N, O, T>['gruposDeDocumentos'];
+}
+
+function documentosDoConteudoComCodigos<N, O1, T1, O2, T2>(
+  conteudo: ConteudoDoFormulario<N, O1, T1>,
+  troca: TrocaDeCodigos<O1, T1, O2, T2>,
+): DocumentosDoConteudo<N, O2, T2> {
+  return {
+    documentosExigidos: converterLista(conteudo.documentosExigidos, (documento) =>
+      documentoComCodigos(documento, troca),
+    ),
+    gruposDeDocumentos: converterLista(conteudo.gruposDeDocumentos, (grupo) =>
+      grupoDeDocumentosComCodigos(grupo, troca),
+    ),
+  };
+}
+
 /**
  * O conteúdo do formulário com cada operador e cada tipo de renderização trocados, em etapas, itens,
  * grupos e seus subitens, termos, restrições, impedimentos e documentos exigidos. O que o conteúdo
@@ -147,8 +179,6 @@ export function conteudoComCodigos<N, O1, T1, O2, T2>(
     itens: converterLista(conteudo.itens, (item) => itemComCodigos(item, troca)),
     grupos: converterLista(conteudo.grupos, (grupo) => grupoComCodigos(grupo, troca)),
     termos: converterLista(conteudo.termos, (termo) => termoComCodigos(termo, troca)),
-    documentosExigidos: converterLista(conteudo.documentosExigidos, (documento) =>
-      documentoComCodigos(documento, troca),
-    ),
+    ...documentosDoConteudoComCodigos(conteudo, troca),
   };
 }

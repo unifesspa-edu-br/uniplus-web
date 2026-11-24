@@ -26,7 +26,7 @@ export const modelo: ModeloFormularioView = {
     termos: [],
     pressupostos: [],
     grupos: [],
-    documentosExigidos: [],
+    conjuntoDeDocumentos: { documentosExigidos: [], gruposDeDocumentos: [] },
   },
 };
 

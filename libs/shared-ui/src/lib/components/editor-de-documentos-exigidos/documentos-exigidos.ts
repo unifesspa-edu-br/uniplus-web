@@ -18,6 +18,33 @@ export interface ConsequenciaDoIndeferimento {
 /** A norma do documento exigido: a mesma do processo, definida em `@uniplus/shared-utils`. */
 export type BaseLegalDoDocumento = BaseLegal;
 
+/** A data que serve de referência ao prazo de emissão ou à validade; os códigos seguem em texto. */
+export interface DataDeReferenciaDoDocumento {
+  readonly tipo: null | string;
+  readonly data: null | string;
+  readonly faseCodigo: null | string;
+}
+
+export interface PrazoDeEmissaoDoDocumento {
+  readonly escolha: null | string;
+  readonly valor: null | number;
+  readonly unidade: null | string;
+  readonly referencia: null | DataDeReferenciaDoDocumento;
+  readonly efeitoForaDoPrazo: null | string;
+}
+
+export interface ValidadeDoDocumento {
+  readonly escolha: null | string;
+  readonly referencia: null | DataDeReferenciaDoDocumento;
+  readonly efeitoDoVencimento: null | string;
+}
+
+/** O que o documento exige de quem o envia: prazo de emissão e validade. O editor os preserva como vieram. */
+export interface RequisitosDoDocumento {
+  readonly prazoDeEmissao: null | PrazoDeEmissaoDoDocumento;
+  readonly validade: null | ValidadeDoDocumento;
+}
+
 /** Um documento do conjunto padrão do modelo, na forma do contrato. */
 export interface DocumentoExigidoDoFormulario<O = string> {
   readonly faseCodigo: string;
@@ -26,6 +53,18 @@ export interface DocumentoExigidoDoFormulario<O = string> {
   readonly quando: ClausulasNoWire<O> | null;
   readonly consequenciaIndeferimento: string;
   readonly basesLegais: null | readonly BaseLegalDoDocumento[];
+  readonly requisitos?: null | RequisitosDoDocumento;
+  readonly porOpcao?: null | { readonly fatoCodigo: string; readonly exceto: readonly string[] };
+}
+
+/** Um grupo de documentos: vale a quantidade mínima, e a consequência é a do grupo. */
+export interface GrupoDeDocumentosDoFormulario<O = string> {
+  readonly quantidadeMinima: null | number;
+  readonly indeferimento: null | {
+    readonly consequencia: string;
+    readonly basesLegais: null | readonly BaseLegalDoDocumento[];
+  };
+  readonly documentos: readonly DocumentoExigidoDoFormulario<O>[];
 }
 
 /** Um documento novo: exigido de todo candidato, com uma norma em branco para preencher. */

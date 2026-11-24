@@ -13,7 +13,7 @@ const conteudo = {
   termos: [],
   pressupostos: [],
   grupos: [],
-  documentosExigidos: [],
+  conjuntoDeDocumentos: { documentosExigidos: [], gruposDeDocumentos: [] },
 };
 const ativo: ModeloFormularioView = {
   id: 'm1',
@@ -185,6 +185,17 @@ describe('ModelosFormularioListaComponent', () => {
     const celulas = raiz().querySelectorAll('td[data-label="Finalidade"]');
     expect(celulas[0].textContent?.trim()).toBe(FINALIDADE_INSCRICAO.rotulo);
     expect(celulas[1].textContent?.trim()).toBe(FINALIDADE_ISENCAO.rotulo);
+  });
+
+  it('mantém todas as finalidades ao trocar o filtro e o resultado', () => {
+    montar([]);
+    const chips = (): string => raiz().querySelector('ui-filter-chips')?.textContent ?? '';
+    expect(chips()).toContain('Habilitação');
+    fixture.componentRef.setInput('filtroFinalidade', 'INSCRICAO');
+    fixture.componentRef.setInput('modelosBuscados', [ativo]);
+    fixture.detectChanges();
+    expect(chips()).toContain('Isenção da taxa de inscrição');
+    expect(chips()).toContain('Habilitação');
   });
 
   it('o estado vazio só aparece sem carga nem erro', () => {

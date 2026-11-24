@@ -3,16 +3,17 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ModeloFormularioView } from '@uniplus/shared-data/configuracao';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { conteudoDoModelo } from './conteudo-do-modelo';
 import { ModeloFormularioRodapeComponent } from './modelo-formulario-rodape.component';
 
-const conteudo = {
+const conteudoGravado = {
   titulo: 'Inscrição',
   etapas: [],
   itens: [],
   termos: [],
   pressupostos: [],
   grupos: [],
-  documentosExigidos: [],
+  conjuntoDeDocumentos: { documentosExigidos: [], gruposDeDocumentos: [] },
 };
 const modelo: ModeloFormularioView = {
   id: 'm1',
@@ -20,8 +21,10 @@ const modelo: ModeloFormularioView = {
   finalidade: FINALIDADE_INSCRICAO,
   ativo: true,
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
-  conteudo,
+  conteudo: conteudoGravado,
 };
+/** O conteúdo na forma que a tela edita, igual ao gravado. */
+const conteudo = conteudoDoModelo(conteudoGravado);
 
 describe('ModeloFormularioRodapeComponent', () => {
   let fixture: ComponentFixture<ModeloFormularioRodapeComponent>;

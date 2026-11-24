@@ -9,13 +9,59 @@ import {
   conteudoComCodigos,
   type ConteudoDoFormulario,
 } from '@uniplus/shared-ui/components';
+import {
+  etapasParaOModelo,
+  gruposParaOModelo,
+  itensParaOModelo,
+  termosParaOModelo,
+} from './codigos-de-etapa-e-obrigatoriedade';
+import { documentoDoModelo, documentoParaOModelo } from './documentos-do-modelo';
+
+type DocumentosDoEditor = Pick<
+  ConteudoDoFormulario<number, OperadorCodigo | null>,
+  'documentosExigidos' | 'gruposDeDocumentos'
+>;
+
+/** Os documentos e os grupos do editor, dentro do conjunto de documentos que o modelo grava. */
+function conjuntoParaOModelo({ documentosExigidos, gruposDeDocumentos }: DocumentosDoEditor) {
+  return {
+    documentosExigidos: documentosExigidos?.map(documentoParaOModelo) ?? null,
+    gruposDeDocumentos:
+      gruposDeDocumentos?.map((grupo) => ({
+        ...grupo,
+        documentos: grupo.documentos.map(documentoParaOModelo),
+      })) ?? null,
+  };
+}
 
 /** O conteúdo do editor como o modelo o grava: cada operador e cada tipo de renderização no código do contrato. */
 export function conteudoParaOModelo(conteudo: ConteudoDoFormulario<number>): ConteudoDoModeloInput {
-  return conteudoComCodigos(conteudo, codigosDoContrato(OperadorCodigo, TipoRenderizacaoCodigo));
+  const { documentosExigidos, gruposDeDocumentos, ...convertido } = conteudoComCodigos(
+    conteudo,
+    codigosDoContrato(OperadorCodigo, TipoRenderizacaoCodigo),
+  );
+  return {
+    ...convertido,
+    etapas: etapasParaOModelo(convertido.etapas),
+    itens: itensParaOModelo(convertido.itens),
+    grupos: gruposParaOModelo(convertido.grupos),
+    termos: termosParaOModelo(convertido.termos),
+    conjuntoDeDocumentos: conjuntoParaOModelo({ documentosExigidos, gruposDeDocumentos }),
+  };
 }
 
 /** O conteúdo que o modelo devolve, na forma do editor: cada código é convertido no texto que a tela confere. */
 export function conteudoDoModelo(conteudo: ModeloFormularioView['conteudo']): ConteudoDoFormulario {
-  return conteudoComCodigos(conteudo, CODIGOS_EM_TEXTO);
+  const { conjuntoDeDocumentos, ...demais } = conteudo;
+  return conteudoComCodigos(
+    {
+      ...demais,
+      documentosExigidos: conjuntoDeDocumentos.documentosExigidos.map(documentoDoModelo),
+      gruposDeDocumentos: conjuntoDeDocumentos.gruposDeDocumentos.map((grupo) => ({
+        ...grupo,
+        documentos: grupo.documentos.map(documentoDoModelo),
+      })),
+    },
+    CODIGOS_EM_TEXTO,
+  );
 }

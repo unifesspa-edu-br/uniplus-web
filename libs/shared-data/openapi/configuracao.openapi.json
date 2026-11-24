@@ -15990,7 +15990,7 @@
             "type": "string"
           },
           "operacao": {
-            "type": "string"
+            "$ref": "#/components/schemas/OperacaoAgregadoCodigo"
           }
         }
       },
@@ -17454,6 +17454,15 @@
           }
         }
       },
+      "BlocoSistemaCodigo": {
+        "enum": [
+          "COMPROVACAO_DOCUMENTAL",
+          "MODALIDADES_CALCULADAS",
+          "REVISAO_E_ACEITE"
+        ],
+        "type": "string",
+        "description": "Os blocos que o sistema monta no formul\u00E1rio a partir da configura\u00E7\u00E3o do processo seletivo.\n\n- \u0060COMPROVACAO_DOCUMENTAL\u0060: Comprova\u00E7\u00E3o documental \u2014 Os documentos que o candidato envia, conforme a exig\u00EAncia de cada situa\u00E7\u00E3o dele.\n- \u0060MODALIDADES_CALCULADAS\u0060: Modalidades calculadas \u2014 As modalidades de concorr\u00EAncia em que o candidato se enquadra, calculadas pelas respostas dele.\n- \u0060REVISAO_E_ACEITE\u0060: Revis\u00E3o e aceite \u2014 A confer\u00EAncia das respostas e o aceite dos termos, sempre a \u00FAltima etapa do formul\u00E1rio."
+      },
       "CalendarioDiasUteisDto": {
         "required": [
           "id",
@@ -17966,6 +17975,54 @@
           }
         }
       },
+      "ConjuntoDeDocumentosDoModeloDto": {
+        "required": [
+          "documentosExigidos",
+          "gruposDeDocumentos"
+        ],
+        "type": "object",
+        "properties": {
+          "documentosExigidos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentoExigidoDoModeloDto"
+            }
+          },
+          "gruposDeDocumentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrupoDeDocumentosDoModeloDto"
+            }
+          }
+        }
+      },
+      "ConjuntoDeDocumentosDoModeloInput": {
+        "required": [
+          "documentosExigidos",
+          "gruposDeDocumentos"
+        ],
+        "type": "object",
+        "properties": {
+          "documentosExigidos": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/DocumentoExigidoDoModeloInput"
+            }
+          },
+          "gruposDeDocumentos": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/GrupoDeDocumentosDoModeloInput"
+            }
+          }
+        }
+      },
       "ConteudoDoModeloDto": {
         "required": [
           "titulo",
@@ -17974,7 +18031,7 @@
           "termos",
           "pressupostos",
           "grupos",
-          "documentosExigidos"
+          "conjuntoDeDocumentos"
         ],
         "type": "object",
         "properties": {
@@ -18014,11 +18071,8 @@
               "$ref": "#/components/schemas/GrupoDoModeloDto"
             }
           },
-          "documentosExigidos": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DocumentoExigidoDoModeloDto"
-            }
+          "conjuntoDeDocumentos": {
+            "$ref": "#/components/schemas/ConjuntoDeDocumentosDoModeloDto"
           }
         }
       },
@@ -18083,14 +18137,15 @@
               "$ref": "#/components/schemas/GrupoColetadoInput"
             }
           },
-          "documentosExigidos": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "$ref": "#/components/schemas/DocumentoExigidoDoModeloInput"
-            }
+          "conjuntoDeDocumentos": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ConjuntoDeDocumentosDoModeloInput"
+              }
+            ]
           }
         }
       },
@@ -19412,6 +19467,65 @@
           }
         }
       },
+      "DataDeReferenciaDoDocumentoDoModeloDto": {
+        "required": [
+          "tipo",
+          "faseCodigo",
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDaDataDeReferencia"
+          },
+          "faseCodigo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "data": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          }
+        }
+      },
+      "DataDeReferenciaDoDocumentoDoModeloInput": {
+        "required": [
+          "tipo",
+          "data",
+          "faseCodigo"
+        ],
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TipoDaDataDeReferenciaCodigo"
+              }
+            ]
+          },
+          "data": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "faseCodigo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "DecidirProtecaoDoCatalogoRequest": {
         "required": [
           "cadastro",
@@ -20172,10 +20286,9 @@
         "required": [
           "faseCodigo",
           "tipoDocumentoCodigo",
-          "obrigatorio",
           "quando",
-          "consequenciaIndeferimento",
-          "basesLegais",
+          "indeferimento",
+          "requisitos",
           "porOpcao"
         ],
         "type": "object",
@@ -20185,9 +20298,6 @@
           },
           "tipoDocumentoCodigo": {
             "type": "string"
-          },
-          "obrigatorio": {
-            "type": "boolean"
           },
           "quando": {
             "type": [
@@ -20201,14 +20311,11 @@
               }
             }
           },
-          "consequenciaIndeferimento": {
-            "type": "string"
+          "indeferimento": {
+            "$ref": "#/components/schemas/IndeferimentoDoDocumentoDoModeloDto"
           },
-          "basesLegais": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BaseLegalDoModeloDto"
-            }
+          "requisitos": {
+            "$ref": "#/components/schemas/RequisitosDoDocumentoDoModeloDto"
           },
           "porOpcao": {
             "oneOf": [
@@ -20226,10 +20333,8 @@
         "required": [
           "faseCodigo",
           "tipoDocumentoCodigo",
-          "obrigatorio",
           "quando",
-          "consequenciaIndeferimento",
-          "basesLegais"
+          "indeferimento"
         ],
         "type": "object",
         "properties": {
@@ -20238,9 +20343,6 @@
           },
           "tipoDocumentoCodigo": {
             "type": "string"
-          },
-          "obrigatorio": {
-            "type": "boolean"
           },
           "quando": {
             "type": [
@@ -20254,17 +20356,25 @@
               }
             }
           },
-          "consequenciaIndeferimento": {
-            "type": "string"
+          "indeferimento": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IndeferimentoDoDocumentoDoModeloInput"
+              }
+            ]
           },
-          "basesLegais": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "$ref": "#/components/schemas/BaseLegalDoModeloInput"
-            }
+          "requisitos": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RequisitosDoDocumentoDoModeloInput"
+              }
+            ]
           },
           "porOpcao": {
             "oneOf": [
@@ -20343,6 +20453,29 @@
             ]
           }
         }
+      },
+      "EfeitoNaAnaliseDoDocumento": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/EfeitoNaAnaliseDoDocumentoCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "EfeitoNaAnaliseDoDocumentoCodigo": {
+        "enum": [
+          "RECUSAR_DOCUMENTO",
+          "ACEITAR_COM_AVISO"
+        ],
+        "type": "string",
+        "description": "Efeito na an\u00E1lise de um documento fora do prazo ou vencido.\n\n- \u0060RECUSAR_DOCUMENTO\u0060: Recusar documento\n- \u0060ACEITAR_COM_AVISO\u0060: Aceitar com aviso"
       },
       "EnderecoGeoDto": {
         "required": [
@@ -20585,6 +20718,52 @@
           }
         }
       },
+      "EscolhaDaValidade": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/EscolhaDaValidadeCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "EscolhaDaValidadeCodigo": {
+        "enum": [
+          "NAO_EXIGE_DOCUMENTO_VALIDO",
+          "EXIGE_DOCUMENTO_VALIDO"
+        ],
+        "type": "string",
+        "description": "Escolha sobre a validade do documento.\n\n- \u0060NAO_EXIGE_DOCUMENTO_VALIDO\u0060: N\u00E3o exige documento v\u00E1lido\n- \u0060EXIGE_DOCUMENTO_VALIDO\u0060: Exige documento v\u00E1lido"
+      },
+      "EscolhaDoPrazoDeEmissao": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/EscolhaDoPrazoDeEmissaoCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "EscolhaDoPrazoDeEmissaoCodigo": {
+        "enum": [
+          "SEM_PRAZO",
+          "COM_PRAZO"
+        ],
+        "type": "string",
+        "description": "Escolha sobre o prazo de emiss\u00E3o do documento.\n\n- \u0060SEM_PRAZO\u0060: Sem prazo\n- \u0060COM_PRAZO\u0060: Com prazo"
+      },
       "EstadoFato": {
         "required": [
           "codigo",
@@ -20644,12 +20823,16 @@
             "format": "int32"
           },
           "tipo": {
-            "type": "string"
+            "$ref": "#/components/schemas/TipoEtapaFormularioCodigo"
           },
           "bloco": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BlocoSistemaCodigo"
+              }
             ]
           },
           "apresentacao": {
@@ -20687,12 +20870,16 @@
             "format": "int32"
           },
           "tipo": {
-            "type": "string"
+            "$ref": "#/components/schemas/TipoEtapaFormularioCodigo"
           },
           "bloco": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BlocoSistemaCodigo"
+              }
             ]
           },
           "apresentacao": {
@@ -21312,10 +21499,11 @@
           "MUNICIPIOS_DO_FADA",
           "UNIDADES_FEDERATIVAS",
           "MUNICIPIOS",
-          "TIPOS_DE_DEFICIENCIA"
+          "TIPOS_DE_DEFICIENCIA",
+          "MUNICIPIOS_PROVA_PRESENCIAL"
         ],
         "type": "string",
-        "description": "De onde v\u00EAm os valores de um dado de op\u00E7\u00E3o do cat\u00E1logo.\n\n- \u0060CATALOGO\u0060: Cat\u00E1logo \u2014 Os valores vivem no pr\u00F3prio cat\u00E1logo, como a cor ou ra\u00E7a, o sexo e a nacionalidade.\n- \u0060OPCOES_DO_PROCESSO\u0060: Op\u00E7\u00F5es do processo \u2014 Os valores s\u00E3o as op\u00E7\u00F5es que cada processo declara, congeladas no edital.\n- \u0060MODALIDADE\u0060: Modalidades do processo \u2014 Os valores s\u00E3o as modalidades de concorr\u00EAncia ofertadas pelo processo.\n- \u0060MUNICIPIOS_DO_FADA\u0060: Munic\u00EDpios do Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA) \u2014 Os valores s\u00E3o os munic\u00EDpios da \u00E1rea do Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA) que o processo configurou, pelo c\u00F3digo do IBGE.\n- \u0060UNIDADES_FEDERATIVAS\u0060: Unidades federativas \u2014 Os valores s\u00E3o as 27 unidades federativas, pela sigla: as do dado calculado de resid\u00EAncia e as que o candidato declara.\n- \u0060MUNICIPIOS\u0060: Munic\u00EDpios \u2014 Os valores s\u00E3o os munic\u00EDpios do m\u00F3dulo de geografia, pelo c\u00F3digo do IBGE, entre os da unidade federativa respondida antes.\n- \u0060TIPOS_DE_DEFICIENCIA\u0060: Tipos de defici\u00EAncia \u2014 Os valores s\u00E3o os tipos do cadastro de tipos de defici\u00EAncia, todos os vivos, em qualquer processo."
+        "description": "De onde v\u00EAm os valores de um dado de op\u00E7\u00E3o do cat\u00E1logo.\n\n- \u0060CATALOGO\u0060: Cat\u00E1logo \u2014 Os valores vivem no pr\u00F3prio cat\u00E1logo, como a cor ou ra\u00E7a, o sexo e a nacionalidade.\n- \u0060OPCOES_DO_PROCESSO\u0060: Op\u00E7\u00F5es do processo \u2014 Os valores s\u00E3o as op\u00E7\u00F5es que cada processo declara, congeladas no edital.\n- \u0060MODALIDADE\u0060: Modalidades do processo \u2014 Os valores s\u00E3o as modalidades de concorr\u00EAncia ofertadas pelo processo.\n- \u0060MUNICIPIOS_DO_FADA\u0060: Munic\u00EDpios do Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA) \u2014 Os valores s\u00E3o os munic\u00EDpios da \u00E1rea do Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA) que o processo configurou, pelo c\u00F3digo do IBGE.\n- \u0060UNIDADES_FEDERATIVAS\u0060: Unidades federativas \u2014 Os valores s\u00E3o as 27 unidades federativas, pela sigla: as do dado calculado de resid\u00EAncia e as que o candidato declara.\n- \u0060MUNICIPIOS\u0060: Munic\u00EDpios \u2014 Os valores s\u00E3o os munic\u00EDpios do m\u00F3dulo de geografia, pelo c\u00F3digo do IBGE, entre os da unidade federativa respondida antes.\n- \u0060TIPOS_DE_DEFICIENCIA\u0060: Tipos de defici\u00EAncia \u2014 Os valores s\u00E3o os tipos do cadastro de tipos de defici\u00EAncia, todos os vivos, em qualquer processo.\n- \u0060MUNICIPIOS_PROVA_PRESENCIAL\u0060: Munic\u00EDpios da prova presencial \u2014 Os valores s\u00E3o os munic\u00EDpios declarados para a prova presencial, pelo c\u00F3digo do IBGE."
       },
       "FormaAceite": {
         "required": [
@@ -21564,6 +21752,75 @@
           }
         }
       },
+      "GrupoDeDocumentosDoModeloDto": {
+        "required": [
+          "quantidadeMinima",
+          "indeferimento",
+          "documentos"
+        ],
+        "type": "object",
+        "properties": {
+          "quantidadeMinima": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "indeferimento": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IndeferimentoDoGrupoDeDocumentosDoModeloDto"
+              }
+            ]
+          },
+          "documentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentoExigidoDoModeloDto"
+            }
+          }
+        }
+      },
+      "GrupoDeDocumentosDoModeloInput": {
+        "required": [
+          "quantidadeMinima",
+          "indeferimento",
+          "documentos"
+        ],
+        "type": "object",
+        "properties": {
+          "quantidadeMinima": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "indeferimento": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IndeferimentoDoGrupoDeDocumentosDoModeloInput"
+              }
+            ]
+          },
+          "documentos": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/DocumentoExigidoDoModeloInput"
+            }
+          }
+        }
+      },
       "GrupoDoModeloDto": {
         "required": [
           "codigo",
@@ -21753,6 +22010,92 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "IndeferimentoDoDocumentoDoModeloDto": {
+        "required": [
+          "obrigatorio",
+          "consequencia",
+          "basesLegais"
+        ],
+        "type": "object",
+        "properties": {
+          "obrigatorio": {
+            "type": "boolean"
+          },
+          "consequencia": {
+            "type": "string"
+          },
+          "basesLegais": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BaseLegalDoModeloDto"
+            }
+          }
+        }
+      },
+      "IndeferimentoDoDocumentoDoModeloInput": {
+        "required": [
+          "obrigatorio",
+          "consequencia",
+          "basesLegais"
+        ],
+        "type": "object",
+        "properties": {
+          "obrigatorio": {
+            "type": "boolean"
+          },
+          "consequencia": {
+            "type": "string"
+          },
+          "basesLegais": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/BaseLegalDoModeloInput"
+            }
+          }
+        }
+      },
+      "IndeferimentoDoGrupoDeDocumentosDoModeloDto": {
+        "required": [
+          "consequencia",
+          "basesLegais"
+        ],
+        "type": "object",
+        "properties": {
+          "consequencia": {
+            "type": "string"
+          },
+          "basesLegais": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BaseLegalDoModeloDto"
+            }
+          }
+        }
+      },
+      "IndeferimentoDoGrupoDeDocumentosDoModeloInput": {
+        "required": [
+          "consequencia",
+          "basesLegais"
+        ],
+        "type": "object",
+        "properties": {
+          "consequencia": {
+            "type": "string"
+          },
+          "basesLegais": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/BaseLegalDoModeloInput"
+            }
           }
         }
       },
@@ -22273,7 +22616,7 @@
         "type": "object",
         "properties": {
           "tipo": {
-            "type": "string"
+            "$ref": "#/components/schemas/TipoObrigatoriedadeCodigo"
           },
           "predicado": {
             "type": [
@@ -22296,9 +22639,13 @@
         "type": "object",
         "properties": {
           "tipo": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TipoObrigatoriedadeCodigo"
+              }
             ]
           },
           "predicado": {
@@ -22646,6 +22993,14 @@
           }
         }
       },
+      "OperacaoAgregadoCodigo": {
+        "enum": [
+          "EXISTE",
+          "VALORES_PRESENTES"
+        ],
+        "type": "string",
+        "description": "O que o fato agregado calcula a partir das ocorr\u00EAncias de um grupo repet\u00EDvel.\n\n- \u0060EXISTE\u0060: Existe alguma ocorr\u00EAncia \u2014 Verdadeiro quando ao menos uma ocorr\u00EAncia do grupo respondeu sim.\n- \u0060VALORES_PRESENTES\u0060: Valores presentes nas ocorr\u00EAncias \u2014 Os valores diferentes que as ocorr\u00EAncias do grupo responderam."
+      },
       "Operador": {
         "required": [
           "codigo",
@@ -22914,6 +23269,117 @@
             "additionalProperties": {
               "type": "string"
             }
+          }
+        }
+      },
+      "PrazoDeEmissaoDoModeloDto": {
+        "required": [
+          "escolha",
+          "valor",
+          "unidade",
+          "referencia",
+          "efeitoForaDoPrazo"
+        ],
+        "type": "object",
+        "properties": {
+          "escolha": {
+            "$ref": "#/components/schemas/EscolhaDoPrazoDeEmissao"
+          },
+          "valor": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "unidade": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UnidadeDoPrazoDeEmissao"
+              }
+            ]
+          },
+          "referencia": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DataDeReferenciaDoDocumentoDoModeloDto"
+              }
+            ]
+          },
+          "efeitoForaDoPrazo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EfeitoNaAnaliseDoDocumento"
+              }
+            ]
+          }
+        }
+      },
+      "PrazoDeEmissaoDoModeloInput": {
+        "required": [
+          "escolha",
+          "valor",
+          "unidade",
+          "referencia",
+          "efeitoForaDoPrazo"
+        ],
+        "type": "object",
+        "properties": {
+          "escolha": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EscolhaDoPrazoDeEmissaoCodigo"
+              }
+            ]
+          },
+          "valor": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "unidade": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UnidadeDoPrazoDeEmissaoCodigo"
+              }
+            ]
+          },
+          "referencia": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DataDeReferenciaDoDocumentoDoModeloInput"
+              }
+            ]
+          },
+          "efeitoForaDoPrazo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EfeitoNaAnaliseDoDocumentoCodigo"
+              }
+            ]
           }
         }
       },
@@ -23764,6 +24230,64 @@
           }
         }
       },
+      "RequisitosDoDocumentoDoModeloDto": {
+        "required": [
+          "prazoDeEmissao",
+          "validade"
+        ],
+        "type": "object",
+        "properties": {
+          "prazoDeEmissao": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PrazoDeEmissaoDoModeloDto"
+              }
+            ]
+          },
+          "validade": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ValidadeDoDocumentoDoModeloDto"
+              }
+            ]
+          }
+        }
+      },
+      "RequisitosDoDocumentoDoModeloInput": {
+        "required": [
+          "prazoDeEmissao",
+          "validade"
+        ],
+        "type": "object",
+        "properties": {
+          "prazoDeEmissao": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PrazoDeEmissaoDoModeloInput"
+              }
+            ]
+          },
+          "validade": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ValidadeDoDocumentoDoModeloInput"
+              }
+            ]
+          }
+        }
+      },
       "ResolucaoDoFatoDto": {
         "required": [
           "origem",
@@ -23955,12 +24479,16 @@
             "format": "int32"
           },
           "tipo": {
-            "type": "string"
+            "$ref": "#/components/schemas/TipoEtapaFormularioCodigo"
           },
           "bloco": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BlocoSistemaCodigo"
+              }
             ]
           },
           "apresentacao": {
@@ -24426,6 +24954,32 @@
           }
         }
       },
+      "TipoDaDataDeReferencia": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/TipoDaDataDeReferenciaCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "TipoDaDataDeReferenciaCodigo": {
+        "enum": [
+          "FIM_DAS_INSCRICOES",
+          "INICIO_DA_FASE",
+          "FIM_DA_FASE",
+          "DATA_ESPECIFICA",
+          "DATA_DA_APRESENTACAO"
+        ],
+        "type": "string",
+        "description": "Data usada como refer\u00EAncia para o documento.\n\n- \u0060FIM_DAS_INSCRICOES\u0060: Fim das inscri\u00E7\u00F5es\n- \u0060INICIO_DA_FASE\u0060: In\u00EDcio da fase\n- \u0060FIM_DA_FASE\u0060: Fim da fase\n- \u0060DATA_ESPECIFICA\u0060: Data espec\u00EDfica\n- \u0060DATA_DA_APRESENTACAO\u0060: Data da apresenta\u00E7\u00E3o"
+      },
       "TipoDeBanca": {
         "required": [
           "codigo",
@@ -24661,6 +25215,14 @@
           }
         }
       },
+      "TipoEtapaFormularioCodigo": {
+        "enum": [
+          "SECAO",
+          "BLOCO"
+        ],
+        "type": "string",
+        "description": "O que a etapa do formul\u00E1rio \u00E9: uma se\u00E7\u00E3o com itens de resposta ou um bloco que o sistema monta.\n\n- \u0060SECAO\u0060: Se\u00E7\u00E3o \u2014 Etapa com os itens que o candidato responde.\n- \u0060BLOCO\u0060: Bloco do sistema \u2014 Etapa que o sistema monta a partir da configura\u00E7\u00E3o do processo; o bloco diz qual."
+      },
       "TipoInstrumentoNormativo": {
         "required": [
           "codigo",
@@ -24764,6 +25326,15 @@
         "type": "string",
         "description": "A decis\u00E3o individual a que um motivo serve. O tipo separa as listas do cadastro de motivos, e o c\u00F3digo do motivo s\u00F3 \u00E9 \u00FAnico dentro dele. O recurso n\u00E3o \u00E9 tipo pr\u00F3prio: o motivo do recurso \u00E9 o da decis\u00E3o recorrida.\n\n- \u0060ISENCAO_DA_TAXA\u0060: Isen\u00E7\u00E3o da taxa\n- \u0060HOMOLOGACAO_DAS_INSCRICOES\u0060: Homologa\u00E7\u00E3o das inscri\u00E7\u00F5es\n- \u0060ANALISE_DOCUMENTAL\u0060: An\u00E1lise documental\n- \u0060HETEROIDENTIFICACAO\u0060: Heteroidentifica\u00E7\u00E3o\n- \u0060AVALIACAO_BIOPSICOSSOCIAL\u0060: Avalia\u00E7\u00E3o biopsicossocial\n- \u0060CLASSIFICACAO\u0060: Classifica\u00E7\u00E3o\n- \u0060GABARITO_DA_PROVA\u0060: Gabarito da prova\n- \u0060NOTA_DA_ETAPA\u0060: Nota da etapa"
       },
+      "TipoObrigatoriedadeCodigo": {
+        "enum": [
+          "SEMPRE",
+          "NUNCA",
+          "QUANDO"
+        ],
+        "type": "string",
+        "description": "Quando o item ou o termo do formul\u00E1rio \u00E9 de resposta obrigat\u00F3ria.\n\n- \u0060SEMPRE\u0060: Sempre obrigat\u00F3rio \u2014 O candidato sempre precisa responder. N\u00E3o tem condi\u00E7\u00E3o.\n- \u0060NUNCA\u0060: Nunca obrigat\u00F3rio \u2014 A resposta \u00E9 sempre opcional. N\u00E3o tem condi\u00E7\u00E3o.\n- \u0060QUANDO\u0060: Obrigat\u00F3rio quando a condi\u00E7\u00E3o \u00E9 verdadeira \u2014 O candidato precisa responder quando a condi\u00E7\u00E3o sobre as respostas anteriores \u00E9 verdadeira. Tem sempre uma condi\u00E7\u00E3o."
+      },
       "TipoProcessoDto": {
         "required": [
           "id",
@@ -24846,6 +25417,30 @@
         ],
         "type": "string",
         "description": "- \u0060MATUTINO\u0060: Matutino\n- \u0060VESPERTINO\u0060: Vespertino\n- \u0060NOTURNO\u0060: Noturno"
+      },
+      "UnidadeDoPrazoDeEmissao": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/UnidadeDoPrazoDeEmissaoCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "UnidadeDoPrazoDeEmissaoCodigo": {
+        "enum": [
+          "DIAS",
+          "MESES",
+          "ANOS"
+        ],
+        "type": "string",
+        "description": "Unidade de contagem do prazo de emiss\u00E3o.\n\n- \u0060DIAS\u0060: Dias\n- \u0060MESES\u0060: Meses\n- \u0060ANOS\u0060: Anos"
       },
       "UnidadeOfertanteDto": {
         "required": [
@@ -24944,6 +25539,79 @@
           "timestamp": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "ValidadeDoDocumentoDoModeloDto": {
+        "required": [
+          "escolha",
+          "referencia",
+          "efeitoDoVencimento"
+        ],
+        "type": "object",
+        "properties": {
+          "escolha": {
+            "$ref": "#/components/schemas/EscolhaDaValidade"
+          },
+          "referencia": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DataDeReferenciaDoDocumentoDoModeloDto"
+              }
+            ]
+          },
+          "efeitoDoVencimento": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EfeitoNaAnaliseDoDocumento"
+              }
+            ]
+          }
+        }
+      },
+      "ValidadeDoDocumentoDoModeloInput": {
+        "required": [
+          "escolha",
+          "referencia",
+          "efeitoDoVencimento"
+        ],
+        "type": "object",
+        "properties": {
+          "escolha": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EscolhaDaValidadeCodigo"
+              }
+            ]
+          },
+          "referencia": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DataDeReferenciaDoDocumentoDoModeloInput"
+              }
+            ]
+          },
+          "efeitoDoVencimento": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EfeitoNaAnaliseDoDocumentoCodigo"
+              }
+            ]
           }
         }
       },

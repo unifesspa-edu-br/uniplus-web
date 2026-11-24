@@ -13,7 +13,7 @@ const ID_DO_MODELO = '01960000-0000-7000-0000-0000000000a1';
 const ROTULO_DA_ESCOLA = 'Estudou em escola pública?';
 const TITULO_DO_CAMPO = /Estudou em escola pública/;
 const AJUDA_DA_ESCOLA = 'Marque se todo o ensino médio foi cursado em escola pública.';
-const OBRIGATORIEDADE_SEMPRE = { tipo: 'SEMPRE', predicado: null };
+const OBRIGATORIEDADE_SEMPRE = { tipo: 'SEMPRE', predicado: null } as const;
 const REGRAS_DO_CAMPO = {
   exibicao: null,
   obrigatoriedade: OBRIGATORIEDADE_SEMPRE,
@@ -79,7 +79,7 @@ const MODELO: JsonDaApi<ModeloFormularioView> = {
         subitens: [],
       },
     ],
-    documentosExigidos: [],
+    conjuntoDeDocumentos: { documentosExigidos: [], gruposDeDocumentos: [] },
   },
 };
 

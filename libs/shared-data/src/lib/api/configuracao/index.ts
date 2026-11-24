@@ -269,6 +269,14 @@ export {
   TipoMotivoDeDecisaoCodigo,
   TipoRenderizacaoCodigo,
   RegraRemanejamentoCodigo,
+  BlocoSistemaCodigo,
+  EfeitoNaAnaliseDoDocumentoCodigo,
+  EscolhaDaValidadeCodigo,
+  EscolhaDoPrazoDeEmissaoCodigo,
+  TipoDaDataDeReferenciaCodigo,
+  TipoEtapaFormularioCodigo,
+  TipoObrigatoriedadeCodigo,
+  UnidadeDoPrazoDeEmissaoCodigo,
 } from './schema';
 export { TiposDeDecisaoApi, type TipoDeDecisao } from './tipos-de-decisao.api';
 export {
