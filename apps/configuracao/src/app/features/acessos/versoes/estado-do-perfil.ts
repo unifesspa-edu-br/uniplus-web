@@ -94,9 +94,9 @@ function etapasPorDecidir(suspensao: PerfilDto['suspensao']): readonly string[] 
 
 /** A cor de cada situação do acesso; o rótulo da etiqueta é o que a API devolve. */
 export const VARIANTES_DO_ACESSO: VariantesDosCodigos<SituacaoDoAcessoDoPerfilCodigo> = {
-  [SituacaoDoAcessoDoPerfilCodigo.suspenso]: 'danger',
-  [SituacaoDoAcessoDoPerfilCodigo.em_vigor]: 'success',
-  [SituacaoDoAcessoDoPerfilCodigo.sem_versao_em_vigor]: 'warning',
+  [SituacaoDoAcessoDoPerfilCodigo.SUSPENSO]: 'danger',
+  [SituacaoDoAcessoDoPerfilCodigo.EM_VIGOR]: 'success',
+  [SituacaoDoAcessoDoPerfilCodigo.SEM_VERSAO_EM_VIGOR]: 'warning',
 };
 const JANELA_DE_MIGRACAO: EtiquetaDoPerfil = {
   texto: 'Janela de migração aberta',

@@ -19,7 +19,7 @@ function perfil(id: string, nome: string, sensibilidade: string): JsonDaApi<Perf
     ativo: true,
     governanca: null,
     sensibilidade,
-    situacaoDoAcesso: { codigo: 'em_vigor', rotulo: 'Em vigor' },
+    situacaoDoAcesso: { codigo: 'EM_VIGOR', rotulo: 'Em vigor' },
     temVersaoPendente: false,
     suspensao: null,
     desativadoDesde: null,

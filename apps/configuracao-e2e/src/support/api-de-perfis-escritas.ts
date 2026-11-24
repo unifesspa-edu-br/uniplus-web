@@ -24,7 +24,7 @@ export const PERFIL: JsonDaApi<PerfilListadoDto> = {
   ativo: true,
   governanca: null,
   sensibilidade: 'interno',
-  situacaoDoAcesso: { codigo: 'em_vigor', rotulo: 'Em vigor' },
+  situacaoDoAcesso: { codigo: 'EM_VIGOR', rotulo: 'Em vigor' },
   temVersaoPendente: false,
   suspensao: null,
   desativadoDesde: null,
