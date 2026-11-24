@@ -11,7 +11,7 @@ export const FATO = {
     componenteExibicao: null,
   },
   definicao: {
-    dominio: 'BOOLEANO',
+    dominio: 'SIM_OU_NAO',
     cardinalidade: 'ESCALAR',
     escopo: 'CANDIDATO',
     formato: null,
