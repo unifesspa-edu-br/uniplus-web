@@ -26,7 +26,7 @@ const modelo = (codigo: string, nome: string): ModeloFormularioView => ({
     termos: [],
     pressupostos: [],
     grupos: [],
-    documentosExigidos: [],
+    conjuntoDeDocumentos: { documentosExigidos: [], gruposDeDocumentos: [] },
   },
 });
 

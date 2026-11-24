@@ -61,12 +61,17 @@ describe('ModeloFormularioEdicaoPage', () => {
     salvar(tela);
 
     const req = controller.expectOne((r) => r.method === 'PUT' && r.url === MODELO);
-    const documentos = req.request.body.conteudo.documentosExigidos;
+    const documentos = req.request.body.conteudo.conjuntoDeDocumentos.documentosExigidos;
     expect(documentos).toHaveLength(2);
     expect(documentos[0]).toMatchObject({
       tipoDocumentoCodigo: 'ATESTADO',
-      quando: modelo.conteudo.documentosExigidos[0].quando,
-      basesLegais: modelo.conteudo.documentosExigidos[0].basesLegais,
+      quando: modelo.conteudo.conjuntoDeDocumentos.documentosExigidos[0].quando,
+      indeferimento: {
+        obrigatorio: true,
+        consequencia: 'ELIMINA',
+        basesLegais:
+          modelo.conteudo.conjuntoDeDocumentos.documentosExigidos[0].indeferimento.basesLegais,
+      },
     });
     expect(documentos[1]).toMatchObject({ faseCodigo: 'INSCRICAO', quando: null });
     req.flush(null, { status: 204, statusText: 'No Content' });
@@ -75,17 +80,20 @@ describe('ModeloFormularioEdicaoPage', () => {
   });
 
   it('marca junto da condição o fato que o modelo não coleta, antes de enviar', async () => {
-    const [laudo] = modelo.conteudo.documentosExigidos ?? [];
+    const [laudo] = modelo.conteudo.conjuntoDeDocumentos.documentosExigidos ?? [];
     const tela = await carregar({
       ...modelo,
       conteudo: {
         ...modelo.conteudo,
-        documentosExigidos: [
-          {
-            ...laudo,
-            quando: [[{ fato: 'GESTANTE', operador: OperadorCodigo.IGUAL, valor: true }]],
-          },
-        ],
+        conjuntoDeDocumentos: {
+          documentosExigidos: [
+            {
+              ...laudo,
+              quando: [[{ fato: 'GESTANTE', operador: OperadorCodigo.IGUAL, valor: true }]],
+            },
+          ],
+          gruposDeDocumentos: [],
+        },
       },
     });
 
@@ -125,29 +133,32 @@ describe('ModeloFormularioEdicaoPage', () => {
     salvar(tela);
 
     const req = controller.expectOne((r) => r.method === 'PUT' && r.url === MODELO);
-    const documento = req.request.body.conteudo.documentosExigidos[1];
+    const documento = req.request.body.conteudo.conjuntoDeDocumentos.documentosExigidos[1];
     expect(documento).toMatchObject({ faseCodigo: 'HOMOLOGACAO' });
-    expect(documento.consequenciaIndeferimento).not.toBe('ABRE_PRAZO_PARA_REENVIO');
+    expect(documento.indeferimento.consequencia).not.toBe('ABRE_PRAZO_PARA_REENVIO');
     req.flush(null, { status: 204, statusText: 'No Content' });
     await propagar();
     controller.expectOne(MODELO).flush(modelo);
   });
 
   it('oferece o fato de município que a condição do documento cita', async () => {
-    const [laudo] = modelo.conteudo.documentosExigidos ?? [];
+    const [laudo] = modelo.conteudo.conjuntoDeDocumentos.documentosExigidos ?? [];
     const tela = await carregar(
       {
         ...modelo,
         conteudo: {
           ...modelo.conteudo,
-          documentosExigidos: [
-            {
-              ...laudo,
-              quando: [
-                [{ fato: 'MUNICIPIO', operador: OperadorCodigo.ALGUM_DE, valor: ['1500000'] }],
-              ],
-            },
-          ],
+          conjuntoDeDocumentos: {
+            documentosExigidos: [
+              {
+                ...laudo,
+                quando: [
+                  [{ fato: 'MUNICIPIO', operador: OperadorCodigo.ALGUM_DE, valor: ['1500000'] }],
+                ],
+              },
+            ],
+            gruposDeDocumentos: [],
+          },
         },
       },
       [

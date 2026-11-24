@@ -11,8 +11,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
+  BlocoSistemaCodigo,
   CONFIGURACAO_BASE_PATH,
   OperadorCodigo,
+  TipoEtapaFormularioCodigo,
+  TipoObrigatoriedadeCodigo,
   TipoRenderizacaoCodigo,
   type FatoCandidatoView,
   type FatoDoCatalogoDto,
@@ -20,6 +23,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { REQUISITOS_DO_LAUDO } from './requisitos-do-modelo.testing';
 import { ModeloFormularioEdicaoPage } from './modelo-formulario-edicao.page';
 
 export const BASE = 'http://localhost:5000';
@@ -63,7 +67,7 @@ export const fato = (codigo: string): FatoDoCatalogoDto => ({
   ],
 });
 
-export const SEMPRE_OBRIGATORIO = { tipo: 'SEMPRE', predicado: null };
+export const SEMPRE_OBRIGATORIO = { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null };
 /** As regras de um campo sem exibição condicionada, restrição nem impedimento. */
 export const SEM_REGRAS_DO_CAMPO = {
   exibicao: null,
@@ -88,7 +92,7 @@ export const modelo: ModeloFormularioView = {
       {
         codigo: 'DADOS_BASICOS',
         ordem: 0,
-        tipo: 'SECAO',
+        tipo: TipoEtapaFormularioCodigo.SECAO,
         bloco: null,
         apresentacao: { titulo: 'Dados do candidato', descricao: null, aviso: null },
         exibicao: null,
@@ -96,7 +100,7 @@ export const modelo: ModeloFormularioView = {
       {
         codigo: 'SECAO_1',
         ordem: 1,
-        tipo: 'SECAO',
+        tipo: TipoEtapaFormularioCodigo.SECAO,
         bloco: null,
         apresentacao: { titulo: 'Escolaridade', descricao: null, aviso: null },
         exibicao: null,
@@ -104,8 +108,8 @@ export const modelo: ModeloFormularioView = {
       {
         codigo: 'REVISAO_E_ACEITE',
         ordem: 2,
-        tipo: 'BLOCO',
-        bloco: 'REVISAO_E_ACEITE',
+        tipo: TipoEtapaFormularioCodigo.BLOCO,
+        bloco: BlocoSistemaCodigo.REVISAO_E_ACEITE,
         apresentacao: { titulo: 'Revisão e aceite', descricao: null, aviso: null },
         exibicao: null,
       },
@@ -159,7 +163,10 @@ export const modelo: ModeloFormularioView = {
         codigo: 'LGPD',
         ordem: 0,
         termo: { termoId: 'T1', versaoId: 'V1' },
-        regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
+        regras: {
+          exibicao: null,
+          obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null },
+        },
       },
     ],
     pressupostos: [],
@@ -170,37 +177,49 @@ export const modelo: ModeloFormularioView = {
         rotulo: 'Composição familiar',
         etapaCodigo: 'SECAO_1',
         ocorrencias: { minimo: 1, maximo: null, incluiCandidato: true },
-        regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
+        regras: {
+          exibicao: null,
+          obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null },
+        },
         subitens: [],
       },
     ],
-    documentosExigidos: [
-      {
-        faseCodigo: 'INSCRICAO',
-        tipoDocumentoCodigo: 'LAUDO_MEDICO',
-        obrigatorio: true,
-        quando: [[{ fato: 'ESCOLA_PUBLICA', operador: OperadorCodigo.IGUAL, valor: true }]],
-        consequenciaIndeferimento: 'ELIMINA',
-        basesLegais: [
-          {
-            referencia: 'Lei 13.146/2015',
-            abrangencia: 'FEDERAL',
-            situacao: 'RESOLVIDO',
-            observacao: null,
+    conjuntoDeDocumentos: {
+      documentosExigidos: [
+        {
+          faseCodigo: 'INSCRICAO',
+          tipoDocumentoCodigo: 'LAUDO_MEDICO',
+          quando: [[{ fato: 'ESCOLA_PUBLICA', operador: OperadorCodigo.IGUAL, valor: true }]],
+          indeferimento: {
+            obrigatorio: true,
+            consequencia: 'ELIMINA',
+            basesLegais: [
+              {
+                referencia: 'Lei 13.146/2015',
+                abrangencia: 'FEDERAL',
+                situacao: 'RESOLVIDO',
+                observacao: null,
+              },
+            ],
           },
-        ],
-        porOpcao: null,
-      },
-      {
-        faseCodigo: 'INSCRICAO',
-        tipoDocumentoCodigo: 'CERTIDAO_NASCIMENTO',
-        obrigatorio: false,
-        quando: null,
-        consequenciaIndeferimento: 'ABRE_PRAZO_PARA_REENVIO',
-        basesLegais: [],
-        porOpcao: null,
-      },
-    ],
+          requisitos: REQUISITOS_DO_LAUDO,
+          porOpcao: null,
+        },
+        {
+          faseCodigo: 'INSCRICAO',
+          tipoDocumentoCodigo: 'CERTIDAO_NASCIMENTO',
+          quando: null,
+          indeferimento: {
+            obrigatorio: false,
+            consequencia: 'ABRE_PRAZO_PARA_REENVIO',
+            basesLegais: [],
+          },
+          requisitos: { prazoDeEmissao: null, validade: null },
+          porOpcao: null,
+        },
+      ],
+      gruposDeDocumentos: [],
+    },
   },
 };
 

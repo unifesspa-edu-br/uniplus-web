@@ -23,7 +23,7 @@ const MODELO = {
     termos: [],
     pressupostos: [],
     grupos: [],
-    documentosExigidos: [],
+    conjuntoDeDocumentos: { documentosExigidos: [], gruposDeDocumentos: [] },
   },
 };
 const TOLERANCIA = 1;
