@@ -38,12 +38,12 @@ describe('BonusPassoComponent', () => {
     expect(store.draft().bonus.aplica).toBe(true);
   });
 
-  it('recusa enquanto a declaração de aplicar ou não o bônus não foi respondida', () => {
+  it('recusa enquanto a declaração de aplicar ou não o FADA não foi respondida', () => {
     const resultado = componente.validar();
 
     expect(resultado.valid).toBe(false);
     expect(resultado).toMatchObject({
-      messages: ['Informe se o processo aplica o bônus regional.'],
+      messages: ['Informe se o processo aplica o FADA.'],
     });
   });
 
@@ -193,7 +193,7 @@ describe('BonusPassoComponent', () => {
       controller.expectOne(ROTA_BONUS).flush(
         {
           type: 'about:blank',
-          title: 'O fator do bônus deve ser maior que zero.',
+          title: 'O fator do FADA deve ser maior que zero.',
           status: 422,
           code: 'ConfiguracaoBonusRegional.FatorInvalido',
           traceId: 'trace-1',
@@ -209,11 +209,11 @@ describe('BonusPassoComponent', () => {
   });
 
   describe('confirmacaoDeGravacao()', () => {
-    it('confirma que o processo não aplica o bônus', () => {
+    it('confirma que o processo não aplica o FADA', () => {
       componente.escolherAplicacao(false);
       const confirmacao = componente.confirmacaoDeGravacao();
       expect(confirmacao?.itens).toEqual([
-        { rotulo: 'Bônus regional', valor: 'Não aplicado neste processo' },
+        { rotulo: 'FADA', valor: 'Não aplicado neste processo' },
       ]);
     });
 

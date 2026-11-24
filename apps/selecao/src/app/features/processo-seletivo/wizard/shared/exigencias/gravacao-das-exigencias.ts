@@ -23,7 +23,7 @@ import { comAlcanceDeTodasAsFases } from './alcance-das-exigencias';
 import { documentosDe } from './consulta-das-exigencias';
 import { APLICABILIDADE_GERAL } from './exigencias-documentais';
 import { finalidadeEnviada } from './formulario-da-exigencia';
-import { comRecorteDeModalidade, recorteDeModalidades } from './recorte-por-modalidade';
+import { comRestricaoDeModalidades, modalidadesParaGravacao } from './modalidades-da-exigencia';
 
 /** Os dados do processo usados para preparar as exigências para envio. */
 export interface ProcessoVivoDasExigencias {
@@ -255,8 +255,10 @@ function condicoesParaEnvio(
   modalidadesOfertadas: readonly string[],
 ): CondicoesDaAplicabilidade {
   if (documento.aplicabilidade === APLICABILIDADE_GERAL) return [];
-  const recorte = recorteDeModalidades(documento, modalidadesOfertadas);
-  return comRecorteDeModalidade(documento.condicoes, recorte).map(condicaoParaEnvio);
+  const modalidadesRestritas = modalidadesParaGravacao(documento, modalidadesOfertadas);
+  return comRestricaoDeModalidades(documento.condicoes, modalidadesRestritas).map(
+    condicaoParaEnvio,
+  );
 }
 
 type CondicoesDaAplicabilidade = NonNullable<
@@ -276,7 +278,7 @@ function requisitosParaEnvio(
     formatosPermitidos: formatosParaEnvio(documento.formatosPermitidos),
     tamanhoMaximoBytes: documento.tamanhoMaximoBytes,
     modelo: documento.modelo === null ? null : { modeloId: documento.modelo.modeloId },
-  } as unknown as ItemDocumentoExigidoInput['requisitos'];
+  };
 }
 
 /**

@@ -32,6 +32,8 @@ const CORPO_ESPERADO = [
           tamanhoMaximoBytesMax: null,
         })),
         tamanhoMaximoBytes: 5242880,
+        prazoDeEmissao: null,
+        validade: null,
         modelo: null,
       },
     },

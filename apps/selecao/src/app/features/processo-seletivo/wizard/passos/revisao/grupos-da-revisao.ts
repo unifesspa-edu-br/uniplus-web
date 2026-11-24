@@ -55,7 +55,7 @@ const ROTULO_POR_DIMENSAO: ReadonlyMap<string, string> = new Map<string, string>
   ['classificacao', 'Classificação'],
   ['atendimento_especializado', 'Atendimento especializado'],
   ['coleta_de_fatos', 'Coleta de fatos'],
-  ['bonus_regional', 'Bônus regional'],
+  ['bonus_regional', 'FADA regional'],
   ['desempate', 'Critérios de desempate'],
   ['etapas', 'Etapas'],
 ]);
@@ -83,23 +83,31 @@ export function agruparPorDimensao(
   const indicePorDimensao = new Map<string, number>();
 
   for (const item of itens) {
-    const indiceExistente = indicePorDimensao.get(item.dimensao);
-    if (indiceExistente === undefined) {
-      indicePorDimensao.set(item.dimensao, grupos.length);
-      grupos.push({ dimensao: item.dimensao, itens: [item], ok: item.ok });
-      continue;
-    }
-
-    const grupo = grupos[indiceExistente];
-    if (grupo === undefined) continue;
-    grupos[indiceExistente] = {
-      ...grupo,
-      itens: [...grupo.itens, item],
-      ok: grupo.ok && item.ok,
-    };
+    agruparItem(grupos, indicePorDimensao, item);
   }
 
   return grupos;
+}
+
+function agruparItem(
+  grupos: GrupoDeConformidade[],
+  indices: Map<string, number>,
+  item: ItemConformidadeDto,
+): void {
+  const indice = indices.get(item.dimensao);
+  if (indice !== undefined) return acrescentarAoGrupo(grupos, indice, item);
+  indices.set(item.dimensao, grupos.length);
+  grupos.push({ dimensao: item.dimensao, itens: [item], ok: item.ok });
+}
+
+function acrescentarAoGrupo(
+  grupos: GrupoDeConformidade[],
+  indice: number,
+  item: ItemConformidadeDto,
+): void {
+  const grupo = grupos[indice];
+  if (grupo === undefined) return;
+  grupos[indice] = { ...grupo, itens: [...grupo.itens, item], ok: grupo.ok && item.ok };
 }
 
 function idDoItem(codigo: string, parte: 'mensagem' | 'orientacao'): string {

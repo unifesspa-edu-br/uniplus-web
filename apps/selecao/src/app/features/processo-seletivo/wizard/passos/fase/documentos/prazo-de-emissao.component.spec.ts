@@ -28,11 +28,11 @@ const PROVEDORES = [
     useValue: {
       exigenciaDoDocumento: () => ({
         prazoDeEmissao: {
-          escolha: 'comPrazo',
+          escolha: 'COM_PRAZO',
           valor: 30,
-          unidade: 'dias',
+          unidade: 'DIAS',
           referencia: null,
-          efeitoForaDoPrazo: 'recusarDocumento',
+          efeitoForaDoPrazo: 'RECUSAR_DOCUMENTO',
         },
       }),
       escreverExigencia: escrever,
@@ -41,7 +41,7 @@ const PROVEDORES = [
   {
     provide: CatalogoDasEscolhasDoPrazoDeEmissao,
     useValue: catalogo('escolhasDoPrazoDeEmissao', [
-      { codigo: 'semPrazo', rotulo: 'Escolha recebida' },
+      { codigo: 'SEM_PRAZO', rotulo: 'Escolha recebida' },
     ]),
   },
   {
@@ -83,9 +83,11 @@ describe('prazo-de-emissao', () => {
     const { tela, escrever } = montar();
     const elemento = tela.nativeElement as HTMLElement;
     expect(elemento.textContent).toContain('Escolha recebida');
-    elemento.querySelector<HTMLInputElement>('#campo-semPrazo')?.dispatchEvent(new Event('change'));
+    elemento
+      .querySelector<HTMLInputElement>('#campo-SEM_PRAZO')
+      ?.dispatchEvent(new Event('change'));
     expect(escrever).toHaveBeenCalledWith('documento', {
-      prazoDeEmissao: expect.objectContaining({ escolha: 'semPrazo', referencia: null }),
+      prazoDeEmissao: expect.objectContaining({ escolha: 'SEM_PRAZO', referencia: null }),
     });
   });
   it('mostra o valor existente e a recusa junto ao campo', () => {

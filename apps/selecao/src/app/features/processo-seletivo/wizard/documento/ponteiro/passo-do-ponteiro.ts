@@ -48,7 +48,7 @@ const RESOLUCAO_POR_SECAO: ReadonlyMap<string, Resolucao> = new Map<string, Reso
   ['documentosExigidos', noPasso('Cronograma', 'documentos')],
   ['motivos', noPasso('Cronograma', 'decisoes')],
   ['classificacao', doBlocoDaClassificacao],
-  ['bonusRegional', noPasso('Bônus')],
+  ['fada', noPasso('FADA')],
   ['atendimento', noPasso('Atend. especial')],
   ['formularios', noPasso('Formulários')],
   ['coleta', noPasso('Formulários')],

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { catalogoPorCodigo } from '../catalogos-por-codigo';
 import { documentoSemNada } from '../exemplos.testing';
 import * as atendimento from './atendimento.adaptador';
-import * as bonus from './bonus.adaptador';
+import * as fada from './fada.adaptador';
 import * as formula from './formula.adaptador';
 import * as identificacao from './identificacao.adaptador';
 import * as pagamento from './pagamento.adaptador';
@@ -26,7 +26,7 @@ const VAGAS: IdaEVolta = (d) =>
   vagas.edicaoDoPasso(
     vagas.valoresDoFormulario(d, { ofertas: SEM_CATALOGO, modalidades: SEM_CATALOGO }),
   )(d);
-const BONUS: IdaEVolta = (d) => bonus.edicaoDoPasso(bonus.valoresDoFormulario(d))(d);
+const BONUS: IdaEVolta = (d) => fada.edicaoDoPasso(fada.valoresDoFormulario(d))(d);
 const ATENDIMENTO: IdaEVolta = (d) =>
   atendimento.edicaoDoPasso(
     atendimento.valoresDoFormulario(d, {
@@ -111,24 +111,24 @@ const ATIPICOS: readonly [string, IdaEVolta, DocumentoDaConfiguracao][] = [
     }),
   ],
   [
-    'Bônus com referência vazia, textos com espaço e chave antes de outra seção',
+    'FADA com referência vazia, textos com espaço e chave antes de outra seção',
     BONUS,
     comSecao({
-      bonusRegional: {
+      fada: {
         aplica: true,
         regra: {},
         fator: 1e-7,
-        baseLegalBonusRegionalCodigo: ' BASE ',
+        baseLegalCodigo: ' BASE ',
         descricao: 'Descrição gravada',
         codigoDoDadoDeElegibilidade: ' FATO ',
       },
-      identificacao: { nome: 'Depois do bônus' },
+      identificacao: { nome: 'Depois do FADA' },
     }),
   ],
   [
-    'Bônus que não aplica, antes de outra seção',
+    'FADA que não aplica, antes de outra seção',
     BONUS,
-    comSecao({ bonusRegional: { aplica: false }, identificacao: { nome: 'Depois do bônus' } }),
+    comSecao({ fada: { aplica: false }, identificacao: { nome: 'Depois do FADA' } }),
   ],
   [
     'Atendimento com itens de código repetido em cada lista',

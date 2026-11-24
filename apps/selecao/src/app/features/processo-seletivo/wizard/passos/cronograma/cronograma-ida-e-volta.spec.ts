@@ -15,7 +15,7 @@ import { etapaDoFormulario, faseDoFormulario, grupoDaEtapa, grupoDaFase } from '
 import { comoComandoDeEtapa, comoComandoDeFase } from './cronograma-para-comando';
 
 const UNIDADE = { origemId: 'unidade-cga', sigla: 'CGA', nome: 'Centro de Gestão Acadêmica' };
-const ITEM = { id: 'item-1', rotulo: 'Clareza', pontuacaoMaxima: 4 };
+const ITEM = { ordem: 1, chave: 'item-1', id: 'item-1', rotulo: 'Clareza', pontuacaoMaxima: 4 };
 
 const PROCEDIMENTOS_DO_SERVIDOR = [
   {

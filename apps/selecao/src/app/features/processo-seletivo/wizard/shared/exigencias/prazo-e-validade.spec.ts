@@ -1,4 +1,11 @@
-import type { RequisitosDoDocumentoDtoProvisorio } from '@uniplus/shared-data/selecao';
+import {
+  EscolhaDoPrazoDeEmissaoCodigo,
+  EscolhaDaValidadeCodigo,
+  UnidadeDoPrazoDeEmissaoCodigo,
+  TipoDaDataDeReferenciaCodigo,
+  EfeitoNaAnaliseDoDocumentoCodigo,
+  type DocumentoExigidoDto,
+} from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 import {
   comando,
@@ -12,63 +19,90 @@ import {
 import { exigenciasDe } from './leitura-das-exigencias';
 import { lerPrazoEValidade, prazoEValidadeParaEnvio } from './prazo-e-validade';
 
-const opcao = (codigo: string) => ({ codigo, rotulo: `Rótulo de ${codigo}` });
+const opcao = <T extends string>(codigo: T) => ({ codigo, rotulo: `Rótulo de ${codigo}` });
 const codigos = new Map([[ID_ISENCAO, 'ISENCAO']]);
-const referencia = { tipo: opcao('inicioDaFase'), data: null, faseId: ID_ISENCAO };
+const referencia = {
+  tipo: opcao(TipoDaDataDeReferenciaCodigo.INICIO_DA_FASE),
+  data: null,
+  faseId: ID_ISENCAO,
+};
 const prazo = {
-  escolha: opcao('comPrazo'),
+  escolha: opcao(EscolhaDoPrazoDeEmissaoCodigo.COM_PRAZO),
   valor: 3,
-  unidade: opcao('dias'),
+  unidade: opcao(UnidadeDoPrazoDeEmissaoCodigo.DIAS),
   referencia,
-  efeitoForaDoPrazo: opcao('recusarDocumento'),
+  efeitoForaDoPrazo: opcao(EfeitoNaAnaliseDoDocumentoCodigo.RECUSAR_DOCUMENTO),
 };
 const validade = {
-  escolha: opcao('exigeDocumentoValido'),
+  escolha: opcao(EscolhaDaValidadeCodigo.EXIGE_DOCUMENTO_VALIDO),
   referencia,
-  efeitoDoVencimento: opcao('aceitarComAviso'),
+  efeitoDoVencimento: opcao(EfeitoNaAnaliseDoDocumentoCodigo.ACEITAR_COM_AVISO),
 };
 
 const semExigencias = {
   prazoDeEmissao: {
-    escolha: opcao('semPrazo'),
+    escolha: opcao(EscolhaDoPrazoDeEmissaoCodigo.SEM_PRAZO),
     valor: null,
     unidade: null,
     referencia: null,
     efeitoForaDoPrazo: null,
   },
   validade: {
-    escolha: opcao('naoExigeDocumentoValido'),
+    escolha: opcao(EscolhaDaValidadeCodigo.NAO_EXIGE_DOCUMENTO_VALIDO),
     referencia: null,
     efeitoDoVencimento: null,
   },
 };
 
-function enviar(requisitos: RequisitosDoDocumentoDtoProvisorio) {
-  const criterios = { ...exigencia(), ...lerPrazoEValidade(requisitos, codigos) };
+function enviar(requisitos: Partial<DocumentoExigidoDto['requisitos']>) {
+  const criterios = {
+    ...exigencia(),
+    ...lerPrazoEValidade({ prazoDeEmissao: null, validade: null, ...requisitos }, codigos),
+  };
   return prazoEValidadeParaEnvio(criterios, FASES);
 }
 
 describe('prazo de emissão e validade do documento', () => {
-  it.each(['dias', 'meses', 'anos'])('conserva a unidade %s', (unidade) => {
+  it.each([
+    UnidadeDoPrazoDeEmissaoCodigo.DIAS,
+    UnidadeDoPrazoDeEmissaoCodigo.MESES,
+    UnidadeDoPrazoDeEmissaoCodigo.ANOS,
+  ])('conserva a unidade %s', (unidade) => {
     const resultado = enviar({ prazoDeEmissao: { ...prazo, unidade: opcao(unidade) } });
     expect(resultado.prazoDeEmissao).toEqual({
-      escolha: 'comPrazo',
+      escolha: EscolhaDoPrazoDeEmissaoCodigo.COM_PRAZO,
       valor: 3,
       unidade,
-      referencia: { tipo: 'inicioDaFase', data: null, faseId: ID_ISENCAO },
-      efeitoForaDoPrazo: 'recusarDocumento',
+      referencia: {
+        tipo: TipoDaDataDeReferenciaCodigo.INICIO_DA_FASE,
+        data: null,
+        faseId: ID_ISENCAO,
+      },
+      efeitoForaDoPrazo: EfeitoNaAnaliseDoDocumentoCodigo.RECUSAR_DOCUMENTO,
     });
   });
 
   it.each(
-    ['dias', 'meses', 'anos'].flatMap((unidade) =>
-      ['fimDasInscricoes', 'inicioDaFase', 'fimDaFase', 'dataEspecifica', 'dataDaApresentacao'].map(
-        (tipo) => ({ unidade, tipo }),
-      ),
+    [
+      UnidadeDoPrazoDeEmissaoCodigo.DIAS,
+      UnidadeDoPrazoDeEmissaoCodigo.MESES,
+      UnidadeDoPrazoDeEmissaoCodigo.ANOS,
+    ].flatMap((unidade) =>
+      [
+        TipoDaDataDeReferenciaCodigo.FIM_DAS_INSCRICOES,
+        TipoDaDataDeReferenciaCodigo.INICIO_DA_FASE,
+        TipoDaDataDeReferenciaCodigo.FIM_DA_FASE,
+        TipoDaDataDeReferenciaCodigo.DATA_ESPECIFICA,
+        TipoDaDataDeReferenciaCodigo.DATA_DA_APRESENTACAO,
+      ].map((tipo) => ({ unidade, tipo })),
     ),
   )('conserva $unidade com referência $tipo no prazo e na validade', ({ unidade, tipo }) => {
-    const data = tipo === 'dataEspecifica' ? '2027-01-30' : null;
-    const faseId = tipo === 'inicioDaFase' || tipo === 'fimDaFase' ? ID_ISENCAO : null;
+    const data = tipo === TipoDaDataDeReferenciaCodigo.DATA_ESPECIFICA ? '2027-01-30' : null;
+    const faseId =
+      tipo === TipoDaDataDeReferenciaCodigo.INICIO_DA_FASE ||
+      tipo === TipoDaDataDeReferenciaCodigo.FIM_DA_FASE
+        ? ID_ISENCAO
+        : null;
     const recebida = { tipo: opcao(tipo), data, faseId };
     const resultado = enviar({
       prazoDeEmissao: { ...prazo, unidade: opcao(unidade), referencia: recebida },
@@ -83,39 +117,60 @@ describe('prazo de emissão e validade do documento', () => {
   it('conserva as escolhas sem prazo e sem exigência de validade', () => {
     const resultado = enviar(semExigencias);
     expect(resultado.prazoDeEmissao).toEqual({
-      escolha: 'semPrazo',
+      escolha: EscolhaDoPrazoDeEmissaoCodigo.SEM_PRAZO,
       valor: null,
       unidade: null,
       referencia: null,
       efeitoForaDoPrazo: null,
     });
     expect(resultado.validade).toEqual({
-      escolha: 'naoExigeDocumentoValido',
+      escolha: EscolhaDaValidadeCodigo.NAO_EXIGE_DOCUMENTO_VALIDO,
       referencia: null,
       efeitoDoVencimento: null,
     });
   });
 
-  it('omite escolhas ainda não declaradas no envio', () => {
-    expect(prazoEValidadeParaEnvio(exigencia(), FASES)).toEqual({});
-    expect(lerPrazoEValidade({}, codigos)).toEqual({ prazoDeEmissao: null, validade: null });
+  it('envia escolhas ainda não declaradas como nulas', () => {
+    expect(prazoEValidadeParaEnvio(exigencia(), FASES)).toEqual({
+      prazoDeEmissao: null,
+      validade: null,
+    });
+    expect(lerPrazoEValidade({ prazoDeEmissao: null, validade: null }, codigos)).toEqual({
+      prazoDeEmissao: null,
+      validade: null,
+    });
     const requisitos = comando(rascunho(exigencia()))[0].documento?.requisitos;
-    expect(requisitos).not.toHaveProperty('prazoDeEmissao');
-    expect(requisitos).not.toHaveProperty('validade');
+    expect(requisitos?.prazoDeEmissao).toBeNull();
+    expect(requisitos?.validade).toBeNull();
   });
 
   it('conserva as escolhas e as fases ausentes ao reler e gravar', () => {
     const faseId = 'fase-ausente';
-    const referenciaAusente = { ...referencia, faseId };
+    const referenciaAusente = {
+      ...referencia,
+      tipo: opcao(TipoDaDataDeReferenciaCodigo.INICIO_DA_FASE),
+      faseId,
+    };
     const recebidos = {
-      prazoDeEmissao: { ...prazo, referencia: referenciaAusente },
-      validade: { ...validade, referencia: referenciaAusente },
+      prazoDeEmissao: {
+        ...prazo,
+        escolha: opcao(EscolhaDoPrazoDeEmissaoCodigo.COM_PRAZO),
+        unidade: opcao(UnidadeDoPrazoDeEmissaoCodigo.DIAS),
+        efeitoForaDoPrazo: opcao(EfeitoNaAnaliseDoDocumentoCodigo.RECUSAR_DOCUMENTO),
+        referencia: referenciaAusente,
+      },
+      validade: {
+        ...validade,
+        escolha: opcao(EscolhaDaValidadeCodigo.EXIGE_DOCUMENTO_VALIDO),
+        efeitoDoVencimento: opcao(EfeitoNaAnaliseDoDocumentoCodigo.ACEITAR_COM_AVISO),
+        referencia: referenciaAusente,
+      },
     };
     const regra = exigenciaDaApi({ requisitos: recebidos });
     const resultado = comando(exigenciasDe(detalheDaApi([regra])))[0].documento?.requisitos;
     expect(resultado).toMatchObject({
-      prazoDeEmissao: { escolha: 'comPrazo', referencia: { faseId } },
-      validade: { escolha: 'exigeDocumentoValido', referencia: { faseId } },
+      prazoDeEmissao: { escolha: EscolhaDoPrazoDeEmissaoCodigo.COM_PRAZO, referencia: { faseId } },
+      validade: { escolha: EscolhaDaValidadeCodigo.EXIGE_DOCUMENTO_VALIDO, referencia: { faseId } },
     });
   });
 });

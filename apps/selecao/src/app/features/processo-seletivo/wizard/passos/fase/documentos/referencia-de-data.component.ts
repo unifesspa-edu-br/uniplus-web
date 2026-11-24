@@ -78,7 +78,9 @@ export class ReferenciaDeDataComponent {
   }
 
   protected precisaDeFase(): boolean {
-    return this.referencia()?.tipo === 'inicioDaFase' || this.referencia()?.tipo === 'fimDaFase';
+    return (
+      this.referencia()?.tipo === 'INICIO_DA_FASE' || this.referencia()?.tipo === 'FIM_DA_FASE'
+    );
   }
 
   private referenciaAtual(): ReferenciaDoDocumento {

@@ -18,11 +18,11 @@ describe('composição das regras de comprovação', () => {
 
   it('preserva a referência de documento de outra fase', () => {
     const prazoDeEmissao = {
-      escolha: 'comPrazo',
+      escolha: 'COM_PRAZO',
       valor: 90,
-      unidade: 'dias',
-      referencia: { tipo: 'inicioDaFase', data: null, faseCodigo: 'ISENCAO' },
-      efeitoForaDoPrazo: 'recusarDocumento',
+      unidade: 'DIAS',
+      referencia: { tipo: 'INICIO_DA_FASE', data: null, faseCodigo: 'ISENCAO' },
+      efeitoForaDoPrazo: 'RECUSAR_DOCUMENTO',
     };
     const antes = rascunho(exigencia({ faseCodigo: 'HABILITACAO', prazoDeEmissao }));
     expect(todasAsExigencias(semAFase(antes, 'ISENCAO'))[0].prazoDeEmissao).toEqual(prazoDeEmissao);

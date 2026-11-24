@@ -39,11 +39,11 @@ export function motivosDoLugar(
  * vocabulário do documento não tem não viram motivo: não há como escrevê-los no documento.
  */
 export function motivoDoDocumento(escolhido: MotivoNoDocumento): Motivo | undefined {
-  const tipoCodigo = membroDoEnum(TipoDeDecisaoDoDocumento, escolhido.tipoCodigo);
+  const tipoDeDecisaoCodigo = membroDoEnum(TipoDeDecisaoDoDocumento, escolhido.tipoDeDecisaoCodigo);
   const sentido = membroDoEnum(SentidoDoMotivo, escolhido.sentido ?? '');
   const sentidoDesconhecido = escolhido.sentido !== undefined && sentido === undefined;
-  if (tipoCodigo === undefined || sentidoDesconhecido) return undefined;
-  return comCampo({ ...escolhido, tipoCodigo, sentido }, 'sentido', sentido);
+  if (tipoDeDecisaoCodigo === undefined || sentidoDesconhecido) return undefined;
+  return comCampo({ ...escolhido, tipoDeDecisaoCodigo, sentido }, 'sentido', sentido);
 }
 
 /** Acrescenta o motivo ao fim; repetir o motivo da mesma fase ou etapa é recusado. */

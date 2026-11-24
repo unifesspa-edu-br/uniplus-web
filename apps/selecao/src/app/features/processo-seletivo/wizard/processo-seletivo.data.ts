@@ -24,7 +24,7 @@ const DEFINICOES = [
     revisao: 'Cronograma e etapas',
   },
   { rotulo: 'Fórmula e precisão', revisao: 'Fórmula de classificação' },
-  { rotulo: 'Bônus', titulo: 'Bônus regional' },
+  { rotulo: 'FADA', titulo: 'FADA regional' },
   { rotulo: 'Desempate', revisao: 'Critérios de desempate' },
   { rotulo: 'Eliminação', revisao: 'Regras de eliminação' },
   { rotulo: 'Atend. especial', titulo: 'Atendimento especializado' },

@@ -57,7 +57,7 @@ describe('ProcessoSeletivoPage — estrutura', () => {
       Vagas: 'sel-step-vagas',
       Cronograma: 'sel-step-cronograma',
       'Fórmula e precisão': 'sel-step-formula',
-      Bônus: 'sel-step-bonus',
+      FADA: 'sel-step-bonus',
       Desempate: 'sel-step-desempate',
       Eliminação: 'sel-step-eliminacao',
       'Atend. especial': 'sel-step-atendimento',

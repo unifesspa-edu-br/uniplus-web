@@ -105,7 +105,7 @@ describe('BasesLegaisDeBonus', () => {
     responderTipos([]);
 
     expect(bases.carregando()).toBe(false);
-    expect(bases.erro()).toBe('Não foi possível carregar as bases legais de bônus regional.');
+    expect(bases.erro()).toBe('Não foi possível carregar as bases legais de FADA.');
   });
 
   it('mostra o rótulo do tipo que veio na base do cadastro', () => {

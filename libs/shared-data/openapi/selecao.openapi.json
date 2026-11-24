@@ -6679,7 +6679,7 @@
           "ProcessoSeletivo"
         ],
         "summary": "Substitui as etapas e as bancas do processo",
-        "description": "Substitui as etapas e as bancas de cada etapa inteiras: o que o corpo n\u00E3o traz deixa de existir no processo. A regra de delibera\u00E7\u00E3o de uma banca \u00E9 opcional neste pedido, e a banca que a omite apaga a regra que j\u00E1 estava gravada. A obrigatoriedade da regra de delibera\u00E7\u00E3o \u00E9 conferida na publica\u00E7\u00E3o.",
+        "description": "Substitui as etapas e as bancas de cada etapa inteiras: o que o corpo n\u00E3o traz deixa de existir no processo. A regra de delibera\u00E7\u00E3o de uma banca \u00E9 opcional neste pedido, e a banca que a omite apaga a regra que j\u00E1 estava gravada. A obrigatoriedade da regra de delibera\u00E7\u00E3o \u00E9 conferida na publica\u00E7\u00E3o. Para preservar as chaves, devolva o id de cada etapa, item e banca que permanece e a chave de cada n\u00EDvel que permanece. As chaves novas v\u00EAm na releitura pelo GET.",
         "parameters": [
           {
             "name": "id",
@@ -6733,34 +6733,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/EtapaProcessoDto"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/EtapaProcessoDto"
-                  }
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/EtapaProcessoDto"
-                  }
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Bad Request",
@@ -8460,6 +8434,147 @@
         "x-uniplus-idempotent": true
       }
     },
+    "/api/selecao/processos-seletivos/{id}/prova-presencial": {
+      "put": {
+        "tags": [
+          "ProcessoSeletivo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirProvaPresencialRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirProvaPresencialRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirProvaPresencialRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
     "/api/selecao/processos-seletivos/{id}/opcoes-de-curso": {
       "put": {
         "tags": [
@@ -9170,6 +9285,7 @@
         "tags": [
           "ProcessoSeletivo"
         ],
+        "description": "Para preservar as chaves, devolva o tipo de cada fase e o id de cada banca que permanece. As chaves da fase e da banca novas v\u00EAm na releitura pelo GET.",
         "parameters": [
           {
             "name": "id",
@@ -9223,34 +9339,8 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FaseCronogramaDto"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FaseCronogramaDto"
-                  }
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FaseCronogramaDto"
-                  }
-                }
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "description": "Bad Request",
@@ -10743,6 +10833,107 @@
         }
       }
     },
+    "/api/selecao/processos-seletivos/{id}/configuracao": {
+      "get": {
+        "tags": [
+          "ProcessoSeletivo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "versao",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "description": "O resumo da configura\u00E7\u00E3o congelada da vers\u00E3o.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/vnd.uniplus.configuracao-de-processo-seletivo.v1\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoDaConfiguracao"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/selecao/processos-seletivos/{processoSeletivoId}/produtos-previstos": {
       "get": {
         "tags": [
@@ -12082,6 +12273,166 @@
         }
       }
     },
+    "/api/selecao/vocabularios/escolhas-prazo-emissao": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.escolha-prazo-emissao.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EscolhaDoPrazoDeEmissao"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/selecao/vocabularios/escolhas-validade": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.escolha-validade.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EscolhaDaValidade"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/selecao/vocabularios/unidades-prazo-emissao": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.unidade-prazo-emissao.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnidadeDoPrazoDeEmissao"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/selecao/vocabularios/tipos-data-referencia": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.tipo-data-referencia.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TipoDaDataDeReferencia"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/selecao/vocabularios/efeitos-analise-documento": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.efeito-analise-documento.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EfeitoNaAnaliseDoDocumento"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/selecao/vocabularios/formatos-permitidos": {
       "get": {
         "tags": [
@@ -13311,6 +13662,7 @@
       "BancaDaEtapaDto": {
         "required": [
           "id",
+          "chave",
           "tipoBancaOrigemId",
           "codigo",
           "posicaoNoTipo",
@@ -13326,6 +13678,9 @@
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "chave": {
+            "type": "string"
           },
           "tipoBancaOrigemId": {
             "type": "string",
@@ -13400,6 +13755,7 @@
       "BancaRequeridaDto": {
         "required": [
           "id",
+          "chave",
           "tipoBancaOrigemId",
           "codigo",
           "posicaoNoTipo",
@@ -13416,6 +13772,9 @@
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "chave": {
+            "type": "string"
           },
           "tipoBancaOrigemId": {
             "type": "string",
@@ -13957,7 +14316,8 @@
           "documentosExigidos",
           "atendimento",
           "taxaInscricao",
-          "retificacao"
+          "retificacao",
+          "provaPresencial"
         ],
         "type": "object",
         "properties": {
@@ -14060,6 +14420,9 @@
                 "$ref": "#/components/schemas/RetificacaoCertameDto"
               }
             ]
+          },
+          "provaPresencial": {
+            "$ref": "#/components/schemas/ProvaPresencialCertameDto"
           },
           "situacao": {
             "oneOf": [
@@ -15431,6 +15794,67 @@
           }
         }
       },
+      "DataDeReferenciaDoDocumentoDto": {
+        "required": [
+          "tipo",
+          "data",
+          "faseId"
+        ],
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDaDataDeReferencia"
+          },
+          "data": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "faseId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "DataDeReferenciaDoDocumentoInput": {
+        "required": [
+          "tipo",
+          "data",
+          "faseId"
+        ],
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TipoDaDataDeReferenciaCodigo"
+              }
+            ]
+          },
+          "data": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "faseId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
       "DeficienciaAtendidaDto": {
         "required": [
           "id",
@@ -15816,6 +16240,24 @@
           }
         }
       },
+      "DefinirProvaPresencialRequest": {
+        "required": [
+          "temProvaPresencial",
+          "municipios"
+        ],
+        "type": "object",
+        "properties": {
+          "temProvaPresencial": {
+            "type": "boolean"
+          },
+          "municipios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MunicipioDeProvaInformado"
+            }
+          }
+        }
+      },
       "DefinirReferenciaTemporalFatosRequest": {
         "required": [
           "tipo",
@@ -16150,7 +16592,7 @@
       },
       "DocumentoDaConfiguracao": {
         "title": "Documento de configura\u00E7\u00E3o do processo seletivo",
-        "description": "Formato port\u00E1vel da configura\u00E7\u00E3o de um processo seletivo, na vers\u00E3o 1. Serve ao rascunho salvo pela tela e \u00E0 importa\u00E7\u00E3o e exporta\u00E7\u00E3o de um processo, inclusive o preparado fora do sistema. O esquema descreve s\u00F3 a forma: tipo, formato, enumera\u00E7\u00F5es, limites de tamanho e o que \u00E9 estruturalmente obrigat\u00F3rio. As regras de neg\u00F3cio (o que torna a configura\u00E7\u00E3o public\u00E1vel) s\u00E3o do dom\u00EDnio e n\u00E3o se repetem aqui; por isso um rascunho incompleto \u00E9 v\u00E1lido. Campo ainda n\u00E3o preenchido \u00E9 campo ausente, nunca texto no lugar de n\u00FAmero ou de data. Cat\u00E1logos e unidades s\u00E3o citados pelo c\u00F3digo est\u00E1vel, nunca pelo identificador interno do banco. As refer\u00EAncias entre partes do documento usam a chave local da parte referenciada, definida no pr\u00F3prio documento e \u00FAnica nele.",
+        "description": "Formato port\u00E1vel da configura\u00E7\u00E3o de um processo seletivo, na vers\u00E3o 1. Serve ao rascunho salvo pela tela e \u00E0 importa\u00E7\u00E3o e exporta\u00E7\u00E3o de um processo, inclusive o preparado fora do sistema. O esquema descreve s\u00F3 a forma: tipo, formato, enumera\u00E7\u00F5es, limites de tamanho e o que \u00E9 estruturalmente obrigat\u00F3rio. As regras de neg\u00F3cio (o que torna a configura\u00E7\u00E3o public\u00E1vel) s\u00E3o do dom\u00EDnio e n\u00E3o se repetem aqui; por isso um rascunho incompleto \u00E9 v\u00E1lido. Campo ainda n\u00E3o preenchido \u00E9 campo ausente, nunca texto no lugar de n\u00FAmero ou de data. Cat\u00E1logos e unidades s\u00E3o citados pelo c\u00F3digo est\u00E1vel, nunca pelo identificador interno do banco. Os identificadores s\u00F3 de leitura do processo e das partes s\u00E3o ignorados na importa\u00E7\u00E3o. As refer\u00EAncias entre partes do documento usam a chave local da parte referenciada, definida no pr\u00F3prio documento e \u00FAnica no escopo da parte. O sistema n\u00E3o atribui chave \u00E0 parte importada sem ela.",
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -16236,7 +16678,7 @@
           },
           "etapas": {
             "title": "Etapas",
-            "description": "Etapas de avalia\u00E7\u00E3o do processo. A chave de cada etapa \u00E9 \u00FAnica no documento e \u00E9 a que as outras partes usam para cit\u00E1-la. Lista vazia ou ausente \u00E9 v\u00E1lida: h\u00E1 processos sem prova.",
+            "description": "Etapas de avalia\u00E7\u00E3o do processo. A chave de cada etapa \u00E9 \u00FAnica no documento e \u00E9 a que as outras partes usam para cit\u00E1-la. A posi\u00E7\u00E3o na lista define a ordem das etapas. Lista vazia ou ausente \u00E9 v\u00E1lida: h\u00E1 processos sem prova.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DocumentoDaConfiguracaoEtapas"
@@ -16296,10 +16738,10 @@
             "description": "Condi\u00E7\u00F5es, recursos e tipos de defici\u00EAncia que o processo atende. Ausente no rascunho que ainda n\u00E3o decidiu o atendimento.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoAtendimento"
           },
-          "bonusRegional": {
-            "title": "B\u00F4nus regional",
-            "description": "Declara\u00E7\u00E3o de que o processo aplica ou n\u00E3o o b\u00F4nus regional e, se aplica, a regra e a base legal. Ausente no rascunho que ainda n\u00E3o decidiu.",
-            "$ref": "#/components/schemas/DocumentoDaConfiguracaoBonusRegional"
+          "fada": {
+            "title": "Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA)",
+            "description": "Declara\u00E7\u00E3o de que o processo aplica ou n\u00E3o o Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA) e, se aplica, a regra e a base legal. Ausente no rascunho que ainda n\u00E3o decidiu.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoFada"
           },
           "importacao": {
             "title": "Importa\u00E7\u00E3o do resultado",
@@ -16308,7 +16750,7 @@
           },
           "provaPresencial": {
             "title": "Prova presencial",
-            "description": "Declara\u00E7\u00E3o de que o processo tem ou n\u00E3o prova presencial e, se tem, dos munic\u00EDpios de aplica\u00E7\u00E3o. Ausente no rascunho que ainda n\u00E3o a declarou.",
+            "description": "Declara\u00E7\u00E3o de que o processo tem ou n\u00E3o prova presencial e, se tem, dos munic\u00EDpios de prova. Ausente no rascunho que ainda n\u00E3o a declarou.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoProvaPresencial"
           },
           "motivosDeDecisao": {
@@ -16435,9 +16877,16 @@
           "tipoBancaCodigo"
         ],
         "properties": {
+          "id": {
+            "title": "Identificador interno da parte",
+            "description": "Identificador interno da parte, s\u00F3 de leitura; a importa\u00E7\u00E3o o ignora e cria um novo; nunca \u00E9 refer\u00EAncia entre partes.",
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
           "chave": {
             "title": "Chave da banca",
-            "description": "Chave local da banca, \u00FAnica no documento. \u00C9 obrigat\u00F3ria: \u00E9 escolhida por quem cria a banca, o sistema n\u00E3o a atribui, e ela n\u00E3o muda ao renomear nem ao reordenar.",
+            "description": "Chave local da banca, \u00FAnica no documento. \u00C9 obrigat\u00F3ria: \u00E9 escolhida por quem escreve o documento; na grava\u00E7\u00E3o pela tela, o sistema a atribui uma vez ao criar a parte, e ela n\u00E3o muda ao renomear nem ao reordenar.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsChave"
           },
           "tipoBancaCodigo": {
@@ -16458,6 +16907,16 @@
               "pattern": "^[A-Z][A-Z0-9_]{1,49}$",
               "maxLength": 50
             }
+          },
+          "categoriasDocumentoNomes": {
+            "title": "Nomes dos candidatos atendidos",
+            "description": "Nomes das categorias de documento que a banca analisa, na mesma ordem dos c\u00F3digos. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia s\u00E3o os c\u00F3digos.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "readOnly": true
           },
           "regraDeDeliberacao": {
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoBancasRegraDeDeliberacao"
@@ -16529,138 +16988,6 @@
               "DESFAVORAVEL",
               "NOVA_VOTACAO"
             ]
-          }
-        }
-      },
-      "DocumentoDaConfiguracaoBonusRegional": {
-        "title": "B\u00F4nus regional",
-        "description": "O acr\u00E9scimo na nota do candidato que cumpre a base legal do b\u00F4nus regional. O processo declara que aplica o b\u00F4nus e cita a regra do cat\u00E1logo e a base legal pelo c\u00F3digo, ou declara que n\u00E3o o aplica.",
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "aplica"
-        ],
-        "properties": {
-          "aplica": {
-            "title": "Aplica o b\u00F4nus",
-            "description": "Verdadeiro quando o processo aplica o b\u00F4nus regional. Falso pro\u00EDbe os demais campos.",
-            "type": "boolean"
-          },
-          "regra": {
-            "title": "Regra do b\u00F4nus",
-            "description": "Regra do cat\u00E1logo que calcula o b\u00F4nus.",
-            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsReferenciaDeRegra"
-          },
-          "fator": {
-            "title": "Fator",
-            "description": "Fator multiplicativo aplicado \u00E0 nota do candidato eleg\u00EDvel. Maior que zero, at\u00E9 99,9999.",
-            "type": "number",
-            "multipleOf": 0.0001,
-            "exclusiveMinimum": 0,
-            "maximum": 99.9999
-          },
-          "teto": {
-            "title": "Teto",
-            "description": "Acr\u00E9scimo m\u00E1ximo que o b\u00F4nus pode dar, quando houver. Maior que zero, at\u00E9 99,9999.",
-            "type": "number",
-            "multipleOf": 0.0001,
-            "exclusiveMinimum": 0,
-            "maximum": 99.9999
-          },
-          "codigoDoDadoDeElegibilidade": {
-            "title": "Fato de elegibilidade",
-            "description": "C\u00F3digo do fato que decide quem recebe o b\u00F4nus, quando o processo o declara, de 1 a 60 caracteres.",
-            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCatalogo",
-            "maxLength": 60
-          },
-          "baseLegalBonusRegionalCodigo": {
-            "title": "Base legal",
-            "description": "C\u00F3digo est\u00E1vel da base legal do b\u00F4nus regional no cat\u00E1logo: mai\u00FAscula inicial, depois mai\u00FAsculas, d\u00EDgitos e sublinhado, de 2 a 100 caracteres.",
-            "type": "string",
-            "pattern": "^[A-Z][A-Z0-9_]{1,99}$"
-          },
-          "tipoInstrumento": {
-            "title": "Tipo do instrumento",
-            "description": "Tipo do instrumento normativo da base legal. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o, porque vem do cat\u00E1logo pelo c\u00F3digo.",
-            "type": "string",
-            "maxLength": 30,
-            "readOnly": true
-          },
-          "identificacao": {
-            "title": "Identifica\u00E7\u00E3o",
-            "description": "Identifica\u00E7\u00E3o do instrumento normativo da base legal. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o, porque vem do cat\u00E1logo pelo c\u00F3digo.",
-            "type": "string",
-            "maxLength": 500,
-            "readOnly": true
-          },
-          "descricao": {
-            "title": "Descri\u00E7\u00E3o",
-            "description": "Descri\u00E7\u00E3o da base legal. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o, porque vem do cat\u00E1logo pelo c\u00F3digo.",
-            "type": "string",
-            "maxLength": 2000,
-            "readOnly": true
-          },
-          "municipios": {
-            "title": "Munic\u00EDpios",
-            "description": "Munic\u00EDpios que a base legal contempla. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o, porque vem do cat\u00E1logo pelo c\u00F3digo.",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DocumentoDaConfiguracaoBonusRegionalMunicipio"
-            },
-            "readOnly": true
-          }
-        },
-        "if": {
-          "properties": {
-            "aplica": {
-              "const": true
-            }
-          }
-        },
-        "then": {
-          "required": [
-            "regra",
-            "fator",
-            "baseLegalBonusRegionalCodigo"
-          ]
-        },
-        "else": {
-          "properties": {
-            "regra": false,
-            "fator": false,
-            "teto": false,
-            "codigoDoDadoDeElegibilidade": false,
-            "baseLegalBonusRegionalCodigo": false,
-            "tipoInstrumento": false,
-            "identificacao": false,
-            "descricao": false,
-            "municipios": false
-          }
-        }
-      },
-      "DocumentoDaConfiguracaoBonusRegionalMunicipio": {
-        "title": "Munic\u00EDpio",
-        "description": "Um munic\u00EDpio contemplado pela base legal.",
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "codigoIbge": {
-            "title": "C\u00F3digo IBGE",
-            "description": "C\u00F3digo do munic\u00EDpio no IBGE, com 7 d\u00EDgitos.",
-            "type": "string",
-            "pattern": "^[0-9]{7}$"
-          },
-          "nome": {
-            "title": "Nome",
-            "description": "Nome do munic\u00EDpio.",
-            "type": "string",
-            "maxLength": 150
-          },
-          "uf": {
-            "title": "UF",
-            "description": "Sigla da unidade federativa.",
-            "type": "string",
-            "pattern": "^[A-Z]{2}$"
           }
         }
       },
@@ -16923,9 +17250,9 @@
       },
       "DocumentoDaConfiguracaoComunsChave": {
         "title": "Chave local",
-        "description": "Identificador local de uma parte do documento, que as outras partes usam para se referir a ela; as refer\u00EAncias a uma parte (por exemplo a chave da fase ou da etapa) t\u00EAm este mesmo formato. \u00C9 \u00FAnico entre as partes do mesmo tipo no documento ou, quando a parte pertence a outra (os itens de uma etapa), dentro da parte que a cont\u00E9m. Letras min\u00FAsculas, n\u00FAmeros e h\u00EDfens, come\u00E7ando por letra.",
+        "description": "Identificador local de uma parte do documento, que as outras partes usam para se referir a ela; as refer\u00EAncias a uma parte (por exemplo a chave da fase ou da etapa) t\u00EAm este mesmo formato. \u00C9 \u00FAnico entre as partes do mesmo tipo no documento ou, quando a parte pertence a outra (os itens de uma etapa), dentro da parte que a cont\u00E9m. Letras min\u00FAsculas, n\u00FAmeros e sublinhados, come\u00E7ando por letra. Quem escreve o documento escolhe a chave; na grava\u00E7\u00E3o pela tela, o sistema a atribui uma vez ao criar a parte. Ela n\u00E3o muda ao renomear nem ao reordenar.",
         "type": "string",
-        "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]\u002B)*$",
+        "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]\u002B)*$",
         "minLength": 1,
         "maxLength": 64
       },
@@ -17095,6 +17422,13 @@
             "pattern": "^[A-Z]\u002B(_[A-Z]\u002B)*$",
             "minLength": 1,
             "maxLength": 60
+          },
+          "atoNome": {
+            "title": "Nome do tipo de ato",
+            "description": "Nome do tipo de ato no cat\u00E1logo de publica\u00E7\u00F5es, copiado ao publicar. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "maxLength": 200,
+            "readOnly": true
           },
           "papel": {
             "title": "Papel do ato",
@@ -17384,15 +17718,29 @@
           "tipoFaseCodigo"
         ],
         "properties": {
+          "id": {
+            "title": "Identificador interno da parte",
+            "description": "Identificador interno da parte, s\u00F3 de leitura; a importa\u00E7\u00E3o o ignora e cria um novo; nunca \u00E9 refer\u00EAncia entre partes.",
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
           "chave": {
             "title": "Chave da fase",
-            "description": "Chave local da fase, \u00FAnica no documento. Outras partes a usam para citar esta fase. \u00C9 obrigat\u00F3ria: \u00E9 escolhida por quem cria a fase, o sistema n\u00E3o a atribui, e ela n\u00E3o muda ao renomear nem ao reordenar.",
+            "description": "Chave local da fase, \u00FAnica no documento. Outras partes a usam para citar esta fase. \u00C9 obrigat\u00F3ria: \u00E9 escolhida por quem escreve o documento; na grava\u00E7\u00E3o pela tela, o sistema a atribui uma vez ao criar a parte, e ela n\u00E3o muda ao renomear nem ao reordenar.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsChave"
           },
           "tipoFaseCodigo": {
             "title": "Fase can\u00F4nica",
             "description": "C\u00F3digo da fase no cat\u00E1logo de fases can\u00F4nicas, por exemplo INSCRICAO ou RESULTADO_FINAL.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCatalogo"
+          },
+          "tipoFaseNome": {
+            "title": "Nome do tipo de fase",
+            "description": "Nome do tipo de fase, guardado no processo. Campo s\u00F3 de leitura: a exporta\u00E7\u00E3o o traz para quem l\u00EA o arquivo, e ele \u00E9 ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "maxLength": 200,
+            "readOnly": true
           },
           "noMesmoMomentoDaAnterior": {
             "title": "No mesmo momento da fase anterior",
@@ -18227,9 +18575,16 @@
           "chave"
         ],
         "properties": {
+          "id": {
+            "title": "Identificador interno da parte",
+            "description": "Identificador interno da parte, s\u00F3 de leitura; a importa\u00E7\u00E3o o ignora e cria um novo; nunca \u00E9 refer\u00EAncia entre partes.",
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
           "chave": {
             "title": "Chave da etapa",
-            "description": "Chave local da etapa, \u00FAnica no documento. Desempate, elimina\u00E7\u00E3o e exig\u00EAncias a usam para citar esta etapa. \u00C9 obrigat\u00F3ria: \u00E9 escolhida por quem cria a etapa, o sistema n\u00E3o a atribui, e ela n\u00E3o muda ao renomear nem ao reordenar.",
+            "description": "Chave local da etapa, \u00FAnica no documento. Desempate, elimina\u00E7\u00E3o e exig\u00EAncias a usam para citar esta etapa. \u00C9 obrigat\u00F3ria: \u00E9 escolhida por quem escreve o documento; na grava\u00E7\u00E3o pela tela, o sistema a atribui uma vez ao criar a parte, e ela n\u00E3o muda ao renomear nem ao reordenar.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsChave"
           },
           "nome": {
@@ -18306,12 +18661,6 @@
               "$ref": "#/components/schemas/DocumentoDaConfiguracaoEtapasNivelDeAtendimento"
             }
           },
-          "ordem": {
-            "title": "Ordem",
-            "description": "Posi\u00E7\u00E3o de apresenta\u00E7\u00E3o da etapa, a partir de 1.",
-            "type": "integer",
-            "minimum": 1
-          },
           "faseChave": {
             "title": "Fase da etapa",
             "description": "Chave local da fase do cronograma que cont\u00E9m a etapa.",
@@ -18345,7 +18694,23 @@
             "description": "Bancas que a etapa exige. Cada uma tem uma chave local.",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/DocumentoDaConfiguracaoBancas"
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/DocumentoDaConfiguracaoBancas"
+                }
+              ],
+              "properties": {
+                "categoriasDocumentoCodigos": {
+                  "title": "Candidatos atendidos",
+                  "description": "N\u00E3o existe na banca da etapa: s\u00F3 a banca da fase define candidatos atendidos por categoria.",
+                  "not": {}
+                },
+                "categoriasDocumentoNomes": {
+                  "title": "Nomes dos candidatos atendidos",
+                  "description": "N\u00E3o existe na banca da etapa: s\u00F3 a banca da fase define candidatos atendidos por categoria.",
+                  "not": {}
+                }
+              }
             }
           },
           "recursos": {
@@ -18372,9 +18737,16 @@
           "chave"
         ],
         "properties": {
+          "id": {
+            "title": "Identificador interno da parte",
+            "description": "Identificador interno da parte, s\u00F3 de leitura; a importa\u00E7\u00E3o o ignora e cria um novo; nunca \u00E9 refer\u00EAncia entre partes.",
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
           "chave": {
             "title": "Chave do item",
-            "description": "Chave local do item, \u00FAnica na etapa. \u00C9 obrigat\u00F3ria: \u00E9 escolhida por quem cria o item, o sistema n\u00E3o a atribui, e ela n\u00E3o muda ao renomear nem ao reordenar.",
+            "description": "Chave local do item, \u00FAnica na etapa. \u00C9 obrigat\u00F3ria: \u00E9 escolhida por quem escreve o documento; na grava\u00E7\u00E3o pela tela, o sistema a atribui uma vez ao criar a parte, e ela n\u00E3o muda ao renomear nem ao reordenar.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsChave"
           },
           "rotulo": {
@@ -18403,7 +18775,7 @@
         "properties": {
           "chave": {
             "title": "Chave do n\u00EDvel",
-            "description": "Chave local do n\u00EDvel, \u00FAnica na escala. \u00C9 a identidade do n\u00EDvel entre vers\u00F5es e nas refer\u00EAncias internas: o r\u00F3tulo \u00E9 texto edit\u00E1vel, e corrigir a grafia n\u00E3o pode virar retirada e inclus\u00E3o. \u00C9 obrigat\u00F3ria: \u00E9 escolhida por quem cria o n\u00EDvel, o sistema n\u00E3o a atribui, e ela n\u00E3o muda ao renomear nem ao reordenar.",
+            "description": "Chave local do n\u00EDvel, \u00FAnica na escala. \u00C9 a identidade do n\u00EDvel entre vers\u00F5es e nas refer\u00EAncias internas: o r\u00F3tulo \u00E9 texto edit\u00E1vel, e corrigir a grafia n\u00E3o pode virar retirada e inclus\u00E3o. \u00C9 obrigat\u00F3ria: \u00E9 escolhida por quem escreve o documento; na grava\u00E7\u00E3o pela tela, o sistema a atribui uma vez ao criar a parte, e ela n\u00E3o muda ao renomear nem ao reordenar.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsChave"
           },
           "rotulo": {
@@ -18468,6 +18840,36 @@
           }
         }
       },
+      "DocumentoDaConfiguracaoExigenciasDataDeReferenciaDoDocumento": {
+        "title": "Data de refer\u00EAncia",
+        "description": "Refer\u00EAncia usada para o documento.",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "tipo": {
+            "title": "Tipo",
+            "description": "Tipo da data de refer\u00EAncia.",
+            "enum": [
+              "FIM_DAS_INSCRICOES",
+              "INICIO_DA_FASE",
+              "FIM_DA_FASE",
+              "DATA_ESPECIFICA",
+              "DATA_DA_APRESENTACAO"
+            ]
+          },
+          "data": {
+            "title": "Data",
+            "description": "Data espec\u00EDfica da refer\u00EAncia.",
+            "type": "string",
+            "format": "date"
+          },
+          "faseChave": {
+            "title": "Fase da refer\u00EAncia",
+            "description": "Chave local da fase de refer\u00EAncia.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsChave"
+          }
+        }
+      },
       "DocumentoDaConfiguracaoExigenciasExigencia": {
         "title": "Exig\u00EAncia de documento",
         "description": "Um documento que o processo exige, onde \u00E9 exigido, se \u00E9 obrigat\u00F3rio, em que condi\u00E7\u00E3o e como \u00E9 entregue. O tipo de documento \u00E9 citado pelo c\u00F3digo do cat\u00E1logo.",
@@ -18477,9 +18879,16 @@
           "chave"
         ],
         "properties": {
+          "id": {
+            "title": "Identificador interno da parte",
+            "description": "Identificador interno da parte, s\u00F3 de leitura; a importa\u00E7\u00E3o o ignora e cria um novo; nunca \u00E9 refer\u00EAncia entre partes.",
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
           "chave": {
             "title": "Chave da exig\u00EAncia",
-            "description": "Chave local da exig\u00EAncia, \u00FAnica no documento. As regras de comprova\u00E7\u00E3o a utilizam. \u00C9 obrigat\u00F3ria: \u00E9 escolhida por quem cria a exig\u00EAncia, o sistema n\u00E3o a atribui, e ela n\u00E3o muda ao renomear nem ao reordenar.",
+            "description": "Chave local da exig\u00EAncia, \u00FAnica no documento. As regras de comprova\u00E7\u00E3o a utilizam. \u00C9 obrigat\u00F3ria: \u00E9 escolhida por quem escreve o documento; na grava\u00E7\u00E3o pela tela, o sistema a atribui uma vez ao criar a parte, e ela n\u00E3o muda ao renomear nem ao reordenar.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsChave"
           },
           "tipoDocumentoCodigo": {
@@ -18598,11 +19007,6 @@
               "$ref": "#/components/schemas/DocumentoDaConfiguracaoCondicoesBaseLegal"
             }
           },
-          "idadeMaximaEmissao": {
-            "title": "Idade m\u00E1xima de emiss\u00E3o",
-            "description": "Quanto tempo o documento pode ter desde a emiss\u00E3o, contado a partir da refer\u00EAncia.",
-            "$ref": "#/components/schemas/DocumentoDaConfiguracaoExigenciasIdadeMaximaEmissao"
-          },
           "formatosPermitidos": {
             "title": "Formatos permitidos",
             "description": "Os formatos de arquivo aceitos para a entrega do documento: qualquer um ou uma lista com o tamanho m\u00E1ximo de cada formato.",
@@ -18640,6 +19044,16 @@
                 "pattern": "^[0-9a-f]{64}$"
               }
             }
+          },
+          "prazoDeEmissao": {
+            "title": "Prazo de emiss\u00E3o",
+            "description": "Escolha e detalhes do prazo de emiss\u00E3o do documento.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoExigenciasPrazoDeEmissao"
+          },
+          "validade": {
+            "title": "Validade do documento",
+            "description": "Escolha e detalhes da exig\u00EAncia de validade do documento.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoExigenciasValidade"
           }
         }
       },
@@ -18684,48 +19098,208 @@
           }
         }
       },
-      "DocumentoDaConfiguracaoExigenciasIdadeMaximaEmissao": {
-        "title": "Idade m\u00E1xima de emiss\u00E3o",
-        "description": "Quanto tempo o documento pode ter desde a emiss\u00E3o, contado a partir da refer\u00EAncia.",
+      "DocumentoDaConfiguracaoExigenciasPrazoDeEmissao": {
+        "title": "Prazo de emiss\u00E3o",
+        "description": "Escolha e detalhes do prazo de emiss\u00E3o.",
         "type": "object",
         "additionalProperties": false,
         "properties": {
+          "escolha": {
+            "title": "Escolha",
+            "description": "Escolha sobre o prazo.",
+            "enum": [
+              "SEM_PRAZO",
+              "COM_PRAZO"
+            ]
+          },
           "valor": {
             "title": "Valor",
-            "description": "Quantidade de unidades, maior que zero.",
+            "description": "Quantidade de unidades do prazo.",
             "type": "integer",
             "minimum": 1
           },
           "unidade": {
             "title": "Unidade",
-            "description": "Unidade do valor.",
+            "description": "Unidade do prazo.",
             "enum": [
               "DIAS",
               "MESES",
               "ANOS"
             ]
           },
-          "referenciaTipo": {
+          "referencia": {
             "title": "Refer\u00EAncia",
-            "description": "Instante de onde a idade \u00E9 contada.",
+            "description": "Data usada como refer\u00EAncia.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoExigenciasDataDeReferenciaDoDocumento"
+          },
+          "efeitoForaDoPrazo": {
+            "title": "Efeito fora do prazo",
+            "description": "Efeito na an\u00E1lise do documento fora do prazo.",
             "enum": [
-              "FIM_INSCRICAO",
-              "INICIO_FASE",
-              "FIM_FASE",
-              "DATA_ESPECIFICA",
-              "DATA_SUBMISSAO"
+              "RECUSAR_DOCUMENTO",
+              "ACEITAR_COM_AVISO"
+            ]
+          }
+        }
+      },
+      "DocumentoDaConfiguracaoExigenciasValidade": {
+        "title": "Validade do documento",
+        "description": "Escolha e detalhes da exig\u00EAncia de validade.",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "escolha": {
+            "title": "Escolha",
+            "description": "Escolha sobre a validade.",
+            "enum": [
+              "NAO_EXIGE_DOCUMENTO_VALIDO",
+              "EXIGE_DOCUMENTO_VALIDO"
             ]
           },
-          "data": {
-            "title": "Data",
-            "description": "Data da refer\u00EAncia, quando ela \u00E9 uma data espec\u00EDfica.",
-            "type": "string",
-            "format": "date"
+          "referencia": {
+            "title": "Refer\u00EAncia",
+            "description": "Data usada como refer\u00EAncia.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoExigenciasDataDeReferenciaDoDocumento"
           },
-          "referenciaFaseChave": {
-            "title": "Fase da refer\u00EAncia",
-            "description": "Chave local da fase de onde a idade \u00E9 contada, quando a refer\u00EAncia \u00E9 o in\u00EDcio ou o fim de uma fase.",
-            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsChave"
+          "efeitoDoVencimento": {
+            "title": "Efeito do vencimento",
+            "description": "Efeito na an\u00E1lise do documento vencido.",
+            "enum": [
+              "RECUSAR_DOCUMENTO",
+              "ACEITAR_COM_AVISO"
+            ]
+          }
+        }
+      },
+      "DocumentoDaConfiguracaoFada": {
+        "title": "Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA)",
+        "description": "O Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA): o acr\u00E9scimo na nota do candidato que cumpre a base legal. O processo declara que aplica o FADA e cita a regra do cat\u00E1logo e a base legal pelo c\u00F3digo, ou declara que n\u00E3o o aplica.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "aplica"
+        ],
+        "properties": {
+          "aplica": {
+            "title": "Aplica o FADA",
+            "description": "Verdadeiro quando o processo aplica o Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA). Falso pro\u00EDbe os demais campos.",
+            "type": "boolean"
+          },
+          "regra": {
+            "title": "Regra do FADA",
+            "description": "Regra do cat\u00E1logo que calcula o FADA.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsReferenciaDeRegra"
+          },
+          "fator": {
+            "title": "Fator",
+            "description": "Fator multiplicativo aplicado \u00E0 nota do candidato eleg\u00EDvel. Maior que zero, at\u00E9 99,9999.",
+            "type": "number",
+            "multipleOf": 0.0001,
+            "exclusiveMinimum": 0,
+            "maximum": 99.9999
+          },
+          "teto": {
+            "title": "Teto",
+            "description": "Acr\u00E9scimo m\u00E1ximo que o FADA pode dar, quando houver. Maior que zero, at\u00E9 99,9999.",
+            "type": "number",
+            "multipleOf": 0.0001,
+            "exclusiveMinimum": 0,
+            "maximum": 99.9999
+          },
+          "codigoDoDadoDeElegibilidade": {
+            "title": "Fato de elegibilidade",
+            "description": "C\u00F3digo do fato que decide quem recebe o FADA, quando o processo o declara, de 1 a 60 caracteres.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCatalogo",
+            "maxLength": 60
+          },
+          "baseLegalCodigo": {
+            "title": "Base legal",
+            "description": "C\u00F3digo est\u00E1vel da base legal do FADA no cat\u00E1logo: mai\u00FAscula inicial, depois mai\u00FAsculas, d\u00EDgitos e sublinhado, de 2 a 100 caracteres.",
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,99}$"
+          },
+          "tipoInstrumento": {
+            "title": "Tipo do instrumento",
+            "description": "Tipo do instrumento normativo da base legal. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o, porque vem do cat\u00E1logo pelo c\u00F3digo.",
+            "type": "string",
+            "maxLength": 30,
+            "readOnly": true
+          },
+          "identificacao": {
+            "title": "Identifica\u00E7\u00E3o",
+            "description": "Identifica\u00E7\u00E3o do instrumento normativo da base legal. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o, porque vem do cat\u00E1logo pelo c\u00F3digo.",
+            "type": "string",
+            "maxLength": 500,
+            "readOnly": true
+          },
+          "descricao": {
+            "title": "Descri\u00E7\u00E3o",
+            "description": "Descri\u00E7\u00E3o da base legal. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o, porque vem do cat\u00E1logo pelo c\u00F3digo.",
+            "type": "string",
+            "maxLength": 2000,
+            "readOnly": true
+          },
+          "municipios": {
+            "title": "Munic\u00EDpios",
+            "description": "Munic\u00EDpios que a base legal contempla. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o, porque vem do cat\u00E1logo pelo c\u00F3digo.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentoDaConfiguracaoFadaMunicipio"
+            },
+            "readOnly": true
+          }
+        },
+        "if": {
+          "properties": {
+            "aplica": {
+              "const": true
+            }
+          }
+        },
+        "then": {
+          "required": [
+            "regra",
+            "fator",
+            "baseLegalCodigo"
+          ]
+        },
+        "else": {
+          "properties": {
+            "regra": false,
+            "fator": false,
+            "teto": false,
+            "codigoDoDadoDeElegibilidade": false,
+            "baseLegalCodigo": false,
+            "tipoInstrumento": false,
+            "identificacao": false,
+            "descricao": false,
+            "municipios": false
+          }
+        }
+      },
+      "DocumentoDaConfiguracaoFadaMunicipio": {
+        "title": "Munic\u00EDpio",
+        "description": "Um munic\u00EDpio contemplado pela base legal.",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "codigoIbge": {
+            "title": "C\u00F3digo IBGE",
+            "description": "C\u00F3digo do munic\u00EDpio no IBGE, com 7 d\u00EDgitos.",
+            "type": "string",
+            "pattern": "^[0-9]{7}$"
+          },
+          "nome": {
+            "title": "Nome",
+            "description": "Nome do munic\u00EDpio.",
+            "type": "string",
+            "maxLength": 150
+          },
+          "uf": {
+            "title": "UF",
+            "description": "Sigla da unidade federativa.",
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
           }
         }
       },
@@ -18764,6 +19338,14 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 60,
+            "readOnly": true
+          },
+          "modeloOrigemNome": {
+            "title": "Nome do modelo de origem",
+            "description": "Nome do modelo de formul\u00E1rio de que o formul\u00E1rio partiu, guardado no processo. Ausente quando n\u00E3o h\u00E1 modelo de origem. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
             "readOnly": true
           },
           "paginas": {
@@ -19186,13 +19768,13 @@
       },
       "DocumentoDaConfiguracaoImportacao": {
         "title": "Importa\u00E7\u00E3o do resultado",
-        "description": "O que o processo de resultado importado declara da importa\u00E7\u00E3o: os relat\u00F3rios que importa, cada um pelo leiaute e pela vers\u00E3o, e a primeira fase depois da importa\u00E7\u00E3o, em que o formul\u00E1rio coleta o que o arquivo n\u00E3o traz.",
+        "description": "O que o processo de resultado importado declara da importa\u00E7\u00E3o: os relat\u00F3rios que importa, cada um pelo formato e pela vers\u00E3o, e a primeira fase depois da importa\u00E7\u00E3o, em que o formul\u00E1rio coleta o que o arquivo n\u00E3o traz.",
         "type": "object",
         "additionalProperties": false,
         "properties": {
           "relatorios": {
             "title": "Relat\u00F3rios",
-            "description": "Relat\u00F3rios que o processo importa. Nenhum leiaute se repete.",
+            "description": "Relat\u00F3rios que o processo importa. Nenhum formato se repete.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DocumentoDaConfiguracaoImportacaoRelatorio"
@@ -19207,26 +19789,26 @@
       },
       "DocumentoDaConfiguracaoImportacaoRelatorio": {
         "title": "Relat\u00F3rio importado",
-        "description": "Um relat\u00F3rio que o processo importa, pelo leiaute que ele segue.",
+        "description": "Um relat\u00F3rio que o processo importa, pelo formato que ele segue.",
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "leiauteCodigo": {
-            "title": "Leiaute",
-            "description": "C\u00F3digo do leiaute do arquivo no cat\u00E1logo de leiautes.",
+          "formatoCodigo": {
+            "title": "Formato",
+            "description": "C\u00F3digo do formato do arquivo no cat\u00E1logo de formatos.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCatalogo"
           },
-          "leiauteVersao": {
-            "title": "Vers\u00E3o do leiaute",
-            "description": "Vers\u00E3o do leiaute do arquivo.",
+          "formatoVersao": {
+            "title": "Vers\u00E3o do formato",
+            "description": "Vers\u00E3o do formato do arquivo.",
             "type": "string",
             "minLength": 1,
             "maxLength": 16
           }
         },
         "required": [
-          "leiauteCodigo",
-          "leiauteVersao"
+          "formatoCodigo",
+          "formatoVersao"
         ]
       },
       "DocumentoDaConfiguracaoItemDoFormulario": {
@@ -19390,7 +19972,7 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "tipoCodigo",
+          "tipoDeDecisaoCodigo",
           "codigo"
         ],
         "oneOf": [
@@ -19416,7 +19998,7 @@
             "description": "Chave da etapa em que o motivo vale. Exatamente um entre a fase e a etapa.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsChave"
           },
-          "tipoCodigo": {
+          "tipoDeDecisaoCodigo": {
             "title": "Tipo de decis\u00E3o",
             "description": "Tipo de decis\u00E3o a que o motivo pertence.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsTipoDeDecisao"
@@ -19446,6 +20028,12 @@
               "FAVORAVEL",
               "DESFAVORAVEL"
             ],
+            "readOnly": true
+          },
+          "sentidoRotulo": {
+            "title": "R\u00F3tulo do sentido",
+            "description": "R\u00F3tulo atual do sentido do motivo. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o.",
+            "type": "string",
             "readOnly": true
           },
           "justificativaDaInclusao": {
@@ -19554,7 +20142,7 @@
             "type": "boolean"
           },
           "municipios": {
-            "title": "Munic\u00EDpios de aplica\u00E7\u00E3o",
+            "title": "Munic\u00EDpios de prova",
             "description": "Munic\u00EDpios em que a prova \u00E9 aplicada, cada um pelo c\u00F3digo do IBGE. Vazio sem prova presencial.",
             "type": "array",
             "items": {
@@ -19578,7 +20166,7 @@
         }
       },
       "DocumentoDaConfiguracaoProvaPresencialMunicipio": {
-        "title": "Munic\u00EDpio de aplica\u00E7\u00E3o",
+        "title": "Munic\u00EDpio de prova",
         "description": "Um munic\u00EDpio em que a prova \u00E9 aplicada: o c\u00F3digo do IBGE \u00E9 a autoridade, e a UF \u00E9 a do prefixo do c\u00F3digo.",
         "type": "object",
         "additionalProperties": false,
@@ -19592,6 +20180,13 @@
             "description": "C\u00F3digo do munic\u00EDpio no IBGE, com 7 d\u00EDgitos e o prefixo de uma unidade federativa.",
             "type": "string",
             "pattern": "^(1[1-7]|2[1-9]|3[1-3]|35|4[1-3]|5[0-3])[0-9]{5}$"
+          },
+          "nome": {
+            "title": "Nome do munic\u00EDpio",
+            "description": "Nome do munic\u00EDpio no Geo, copiado na \u00FAltima publica\u00E7\u00E3o ou retifica\u00E7\u00E3o; vazio antes da primeira. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o.",
+            "type": "string",
+            "maxLength": 150,
+            "readOnly": true
           },
           "uf": {
             "title": "UF",
@@ -19823,7 +20418,7 @@
         ],
         "properties": {
           "referenciaDaData": {
-            "title": "\u00C2ncora",
+            "title": "Refer\u00EAncia da data",
             "description": "DATA_FIXA usa a data; ENVIO usa o deslocamento em anos e dias.",
             "enum": [
               "DATA_FIXA",
@@ -19832,22 +20427,22 @@
           },
           "data": {
             "title": "Data",
-            "description": "Data do limite, no formato AAAA-MM-DD. Usada na \u00E2ncora DATA_FIXA.",
+            "description": "Data do limite, no formato AAAA-MM-DD. Usada com DATA_FIXA.",
             "type": "string",
             "format": "date"
           },
           "anos": {
             "title": "Anos",
-            "description": "Deslocamento em anos a partir do envio, de 0 a 150. Usado na \u00E2ncora ENVIO.",
+            "description": "Deslocamento em anos a partir do envio, de -150 a 150. Negativo indica antes do envio; por exemplo, -120 indica 120 anos antes. Usado com ENVIO.",
             "type": "integer",
-            "minimum": 0,
+            "minimum": -150,
             "maximum": 150
           },
           "dias": {
             "title": "Dias",
-            "description": "Deslocamento em dias a partir do envio, de 0 a 54900. Usado na \u00E2ncora ENVIO.",
+            "description": "Deslocamento em dias a partir do envio, de -54900 a 54900. Negativo indica antes do envio; por exemplo, -120 indica 120 dias antes. Usado com ENVIO.",
             "type": "integer",
-            "minimum": 0,
+            "minimum": -54900,
             "maximum": 54900
           }
         }
@@ -20140,7 +20735,8 @@
           "aplicabilidade",
           "indeferimento",
           "requisitos",
-          "fatosComprovados"
+          "fatosComprovados",
+          "chave"
         ],
         "type": "object",
         "properties": {
@@ -20168,6 +20764,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "chave": {
+            "type": "string"
           }
         }
       },
@@ -20279,6 +20878,29 @@
           }
         }
       },
+      "EfeitoNaAnaliseDoDocumento": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/EfeitoNaAnaliseDoDocumentoCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "EfeitoNaAnaliseDoDocumentoCodigo": {
+        "enum": [
+          "RECUSAR_DOCUMENTO",
+          "ACEITAR_COM_AVISO"
+        ],
+        "type": "string",
+        "description": "Efeito na an\u00E1lise de um documento fora do prazo ou vencido.\n\n- \u0060RECUSAR_DOCUMENTO\u0060: Recusar documento\n- \u0060ACEITAR_COM_AVISO\u0060: Aceitar com aviso"
+      },
       "EfeitoSuspensivo": {
         "required": [
           "codigo",
@@ -20366,6 +20988,52 @@
             "type": "string"
           }
         }
+      },
+      "EscolhaDaValidade": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/EscolhaDaValidadeCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "EscolhaDaValidadeCodigo": {
+        "enum": [
+          "NAO_EXIGE_DOCUMENTO_VALIDO",
+          "EXIGE_DOCUMENTO_VALIDO"
+        ],
+        "type": "string",
+        "description": "Escolha sobre a validade do documento.\n\n- \u0060NAO_EXIGE_DOCUMENTO_VALIDO\u0060: N\u00E3o exige documento v\u00E1lido\n- \u0060EXIGE_DOCUMENTO_VALIDO\u0060: Exige documento v\u00E1lido"
+      },
+      "EscolhaDoPrazoDeEmissao": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/EscolhaDoPrazoDeEmissaoCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "EscolhaDoPrazoDeEmissaoCodigo": {
+        "enum": [
+          "SEM_PRAZO",
+          "COM_PRAZO"
+        ],
+        "type": "string",
+        "description": "Escolha sobre o prazo de emiss\u00E3o do documento.\n\n- \u0060SEM_PRAZO\u0060: Sem prazo\n- \u0060COM_PRAZO\u0060: Com prazo"
       },
       "EscolhasDeCursoDaInscricaoDto": {
         "required": [
@@ -20683,7 +21351,8 @@
           "avaliacao",
           "janela",
           "publicacoes",
-          "bancas"
+          "bancas",
+          "chave"
         ],
         "type": "object",
         "properties": {
@@ -20711,6 +21380,9 @@
             "items": {
               "$ref": "#/components/schemas/BancaDaEtapaDto"
             }
+          },
+          "chave": {
+            "type": "string"
           }
         }
       },
@@ -20964,6 +21636,8 @@
           "aplicabilidade",
           "obrigatorio",
           "formatos",
+          "prazoDeEmissao",
+          "validade",
           "modelo"
         ],
         "type": "object",
@@ -20979,6 +21653,26 @@
           },
           "formatos": {
             "$ref": "#/components/schemas/FormatosAceitosCertameDto"
+          },
+          "prazoDeEmissao": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PrazoDeEmissaoCertameDto"
+              }
+            ]
+          },
+          "validade": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ValidadeDoDocumentoCertameDto"
+              }
+            ]
           },
           "modelo": {
             "oneOf": [
@@ -21106,6 +21800,7 @@
       "FaseCronogramaDto": {
         "required": [
           "id",
+          "chave",
           "codigo",
           "faseCanonica",
           "cronograma",
@@ -21117,6 +21812,9 @@
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "chave": {
+            "type": "string"
           },
           "codigo": {
             "type": "string"
@@ -22322,87 +23020,6 @@
           }
         }
       },
-      "IdadeMaximaEmissaoDto": {
-        "required": [
-          "valor",
-          "unidade",
-          "referenciaTipo",
-          "data",
-          "referenciaFaseId"
-        ],
-        "type": "object",
-        "properties": {
-          "valor": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "unidade": {
-            "$ref": "#/components/schemas/UnidadeIdade"
-          },
-          "referenciaTipo": {
-            "$ref": "#/components/schemas/ReferenciaTipoIdadeEmissao"
-          },
-          "data": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date"
-          },
-          "referenciaFaseId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
-          }
-        }
-      },
-      "IdadeMaximaEmissaoInput": {
-        "required": [
-          "valor",
-          "unidade",
-          "referenciaTipo",
-          "data",
-          "referenciaFaseId"
-        ],
-        "type": "object",
-        "properties": {
-          "valor": {
-            "type": [
-              "null",
-              "integer"
-            ],
-            "format": "int32"
-          },
-          "unidade": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "referenciaTipo": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "data": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date"
-          },
-          "referenciaFaseId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
-          }
-        }
-      },
       "IdentificacaoDaEtapaDto": {
         "required": [
           "nome",
@@ -22423,10 +23040,7 @@
             "$ref": "#/components/schemas/TipoEtapaSnapshotDto"
           },
           "ordem": {
-            "type": [
-              "null",
-              "integer"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "faseCodigo": {
@@ -23161,7 +23775,9 @@
         "required": [
           "id",
           "rotulo",
-          "pontuacaoMaxima"
+          "pontuacaoMaxima",
+          "ordem",
+          "chave"
         ],
         "type": "object",
         "properties": {
@@ -23175,6 +23791,13 @@
           "pontuacaoMaxima": {
             "type": "number",
             "format": "double"
+          },
+          "ordem": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "chave": {
+            "type": "string"
           }
         }
       },
@@ -23375,6 +23998,12 @@
             "items": {
               "type": "string"
             }
+          },
+          "chave": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -24312,6 +24941,68 @@
           }
         }
       },
+      "MunicipioDeProvaCertameDto": {
+        "required": [
+          "codigoIbge",
+          "uf",
+          "nome"
+        ],
+        "type": "object",
+        "properties": {
+          "codigoIbge": {
+            "type": "string"
+          },
+          "uf": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
+      },
+      "MunicipioDeProvaDto": {
+        "required": [
+          "codigoIbge",
+          "uf",
+          "nome"
+        ],
+        "type": "object",
+        "properties": {
+          "codigoIbge": {
+            "type": "string"
+          },
+          "uf": {
+            "type": "string"
+          },
+          "nome": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "MunicipioDeProvaInformado": {
+        "required": [
+          "codigoIbge",
+          "uf"
+        ],
+        "type": "object",
+        "properties": {
+          "codigoIbge": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "uf": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "NaturezaLegalModalidade": {
         "required": [
           "codigo",
@@ -24339,7 +25030,9 @@
       "NivelDeAtendimentoDto": {
         "required": [
           "rotulo",
-          "fracao"
+          "fracao",
+          "ordem",
+          "chave"
         ],
         "type": "object",
         "properties": {
@@ -24349,6 +25042,13 @@
           "fracao": {
             "type": "number",
             "format": "double"
+          },
+          "ordem": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "chave": {
+            "type": "string"
           }
         }
       },
@@ -24365,6 +25065,12 @@
           "fracao": {
             "type": "number",
             "format": "double"
+          },
+          "chave": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -25497,6 +26203,145 @@
           }
         }
       },
+      "PrazoDeEmissaoCertameDto": {
+        "required": [
+          "escolha",
+          "valor",
+          "unidade",
+          "referencia",
+          "efeito"
+        ],
+        "type": "object",
+        "properties": {
+          "escolha": {
+            "$ref": "#/components/schemas/EscolhaDoPrazoDeEmissao"
+          },
+          "valor": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unidade": {
+            "$ref": "#/components/schemas/UnidadeDoPrazoDeEmissao"
+          },
+          "referencia": {
+            "$ref": "#/components/schemas/ReferenciaDoDocumentoCertameDto"
+          },
+          "efeito": {
+            "$ref": "#/components/schemas/EfeitoNaAnaliseDoDocumento"
+          }
+        }
+      },
+      "PrazoDeEmissaoDto": {
+        "required": [
+          "escolha",
+          "valor",
+          "unidade",
+          "referencia",
+          "efeitoForaDoPrazo"
+        ],
+        "type": "object",
+        "properties": {
+          "escolha": {
+            "$ref": "#/components/schemas/EscolhaDoPrazoDeEmissao"
+          },
+          "valor": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "unidade": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UnidadeDoPrazoDeEmissao"
+              }
+            ]
+          },
+          "referencia": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DataDeReferenciaDoDocumentoDto"
+              }
+            ]
+          },
+          "efeitoForaDoPrazo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EfeitoNaAnaliseDoDocumento"
+              }
+            ]
+          }
+        }
+      },
+      "PrazoDeEmissaoInput": {
+        "required": [
+          "escolha",
+          "valor",
+          "unidade",
+          "referencia",
+          "efeitoForaDoPrazo"
+        ],
+        "type": "object",
+        "properties": {
+          "escolha": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EscolhaDoPrazoDeEmissaoCodigo"
+              }
+            ]
+          },
+          "valor": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "unidade": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UnidadeDoPrazoDeEmissaoCodigo"
+              }
+            ]
+          },
+          "referencia": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DataDeReferenciaDoDocumentoInput"
+              }
+            ]
+          },
+          "efeitoForaDoPrazo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EfeitoNaAnaliseDoDocumentoCodigo"
+              }
+            ]
+          }
+        }
+      },
       "PredicadoObrigatoriedade": {
         "required": [
           "$tipo"
@@ -26021,6 +26866,7 @@
           "bonusRegional",
           "aplicaBonusRegional",
           "opcoesDeCurso",
+          "provaPresencial",
           "cascata",
           "criteriosDesempate",
           "classificacao",
@@ -26111,6 +26957,16 @@
               },
               {
                 "$ref": "#/components/schemas/OpcoesDeCursoDto"
+              }
+            ]
+          },
+          "provaPresencial": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProvaPresencialDto"
               }
             ]
           },
@@ -26475,6 +27331,42 @@
           },
           "hipoteseLegal": {
             "type": "string"
+          }
+        }
+      },
+      "ProvaPresencialCertameDto": {
+        "required": [
+          "temProvaPresencial",
+          "municipios"
+        ],
+        "type": "object",
+        "properties": {
+          "temProvaPresencial": {
+            "type": "boolean"
+          },
+          "municipios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MunicipioDeProvaCertameDto"
+            }
+          }
+        }
+      },
+      "ProvaPresencialDto": {
+        "required": [
+          "temProvaPresencial",
+          "municipios"
+        ],
+        "type": "object",
+        "properties": {
+          "temProvaPresencial": {
+            "type": "boolean"
+          },
+          "municipios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MunicipioDeProvaDto"
+            }
           }
         }
       },
@@ -26999,6 +27891,33 @@
           }
         }
       },
+      "ReferenciaDoDocumentoCertameDto": {
+        "required": [
+          "tipo",
+          "data",
+          "faseId"
+        ],
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDaDataDeReferencia"
+          },
+          "data": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "faseId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
       "ReferenciaRegraDto": {
         "required": [
           "codigo",
@@ -27125,32 +28044,6 @@
         ],
         "type": "string",
         "description": "- \u0060FIM_INSCRICAO\u0060: Fim da inscri\u00E7\u00E3o \u2014 Usa o fim da inscri\u00E7\u00E3o como refer\u00EAncia.\n- \u0060INICIO_FASE\u0060: In\u00EDcio da fase \u2014 Usa o in\u00EDcio da fase como refer\u00EAncia.\n- \u0060FIM_FASE\u0060: Fim da fase \u2014 Usa o fim da fase como refer\u00EAncia.\n- \u0060DATA_ESPECIFICA\u0060: Data espec\u00EDfica \u2014 Usa a data informada como refer\u00EAncia."
-      },
-      "ReferenciaTipoIdadeEmissao": {
-        "required": [
-          "codigo",
-          "rotulo"
-        ],
-        "type": "object",
-        "properties": {
-          "codigo": {
-            "$ref": "#/components/schemas/ReferenciaTipoIdadeEmissaoCodigo"
-          },
-          "rotulo": {
-            "type": "string"
-          }
-        }
-      },
-      "ReferenciaTipoIdadeEmissaoCodigo": {
-        "enum": [
-          "FIM_INSCRICAO",
-          "INICIO_FASE",
-          "FIM_FASE",
-          "DATA_ESPECIFICA",
-          "DATA_SUBMISSAO"
-        ],
-        "type": "string",
-        "description": "- \u0060FIM_INSCRICAO\u0060: Fim da inscri\u00E7\u00E3o \u2014 Fim da fase de inscri\u00E7\u00E3o.\n- \u0060INICIO_FASE\u0060: In\u00EDcio da fase \u2014 In\u00EDcio da fase indicada.\n- \u0060FIM_FASE\u0060: Fim da fase \u2014 Fim da fase indicada.\n- \u0060DATA_ESPECIFICA\u0060: Data espec\u00EDfica \u2014 Data indicada na exig\u00EAncia.\n- \u0060DATA_SUBMISSAO\u0060: Data de submiss\u00E3o \u2014 Data de envio do documento."
       },
       "RegraAvaliadaDto": {
         "required": [
@@ -28023,7 +28916,8 @@
         "required": [
           "formatosPermitidos",
           "tamanhoMaximoBytes",
-          "idadeMaximaEmissao",
+          "prazoDeEmissao",
+          "validade",
           "modelo"
         ],
         "type": "object",
@@ -28038,13 +28932,23 @@
             ],
             "format": "int32"
           },
-          "idadeMaximaEmissao": {
+          "prazoDeEmissao": {
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/IdadeMaximaEmissaoDto"
+                "$ref": "#/components/schemas/PrazoDeEmissaoDto"
+              }
+            ]
+          },
+          "validade": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ValidadeDoDocumentoDto"
               }
             ]
           },
@@ -28064,7 +28968,8 @@
         "required": [
           "formatosPermitidos",
           "tamanhoMaximoBytes",
-          "idadeMaximaEmissao",
+          "prazoDeEmissao",
+          "validade",
           "modelo"
         ],
         "type": "object",
@@ -28087,13 +28992,23 @@
             ],
             "format": "int32"
           },
-          "idadeMaximaEmissao": {
+          "prazoDeEmissao": {
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/IdadeMaximaEmissaoInput"
+                "$ref": "#/components/schemas/PrazoDeEmissaoInput"
+              }
+            ]
+          },
+          "validade": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ValidadeDoDocumentoInput"
               }
             ]
           },
@@ -28973,6 +29888,32 @@
           }
         }
       },
+      "TipoDaDataDeReferencia": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/TipoDaDataDeReferenciaCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "TipoDaDataDeReferenciaCodigo": {
+        "enum": [
+          "FIM_DAS_INSCRICOES",
+          "INICIO_DA_FASE",
+          "FIM_DA_FASE",
+          "DATA_ESPECIFICA",
+          "DATA_DA_APRESENTACAO"
+        ],
+        "type": "string",
+        "description": "Data usada como refer\u00EAncia para o documento.\n\n- \u0060FIM_DAS_INSCRICOES\u0060: Fim das inscri\u00E7\u00F5es\n- \u0060INICIO_DA_FASE\u0060: In\u00EDcio da fase\n- \u0060FIM_DA_FASE\u0060: Fim da fase\n- \u0060DATA_ESPECIFICA\u0060: Data espec\u00EDfica\n- \u0060DATA_DA_APRESENTACAO\u0060: Data da apresenta\u00E7\u00E3o"
+      },
       "TipoDeBanca": {
         "required": [
           "codigo",
@@ -29316,7 +30257,7 @@
           }
         }
       },
-      "UnidadeIdade": {
+      "UnidadeDoPrazoDeEmissao": {
         "required": [
           "codigo",
           "rotulo"
@@ -29324,21 +30265,21 @@
         "type": "object",
         "properties": {
           "codigo": {
-            "$ref": "#/components/schemas/UnidadeIdadeCodigo"
+            "$ref": "#/components/schemas/UnidadeDoPrazoDeEmissaoCodigo"
           },
           "rotulo": {
             "type": "string"
           }
         }
       },
-      "UnidadeIdadeCodigo": {
+      "UnidadeDoPrazoDeEmissaoCodigo": {
         "enum": [
           "DIAS",
           "MESES",
           "ANOS"
         ],
         "type": "string",
-        "description": "- \u0060DIAS\u0060: Dias \u2014 Contagem em dias.\n- \u0060MESES\u0060: Meses \u2014 Contagem em meses.\n- \u0060ANOS\u0060: Anos \u2014 Contagem em anos."
+        "description": "Unidade de contagem do prazo de emiss\u00E3o.\n\n- \u0060DIAS\u0060: Dias\n- \u0060MESES\u0060: Meses\n- \u0060ANOS\u0060: Anos"
       },
       "UnidadePrazo": {
         "required": [
@@ -29495,6 +30436,98 @@
           "quantidade": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "ValidadeDoDocumentoCertameDto": {
+        "required": [
+          "escolha",
+          "referencia",
+          "efeito"
+        ],
+        "type": "object",
+        "properties": {
+          "escolha": {
+            "$ref": "#/components/schemas/EscolhaDaValidade"
+          },
+          "referencia": {
+            "$ref": "#/components/schemas/ReferenciaDoDocumentoCertameDto"
+          },
+          "efeito": {
+            "$ref": "#/components/schemas/EfeitoNaAnaliseDoDocumento"
+          }
+        }
+      },
+      "ValidadeDoDocumentoDto": {
+        "required": [
+          "escolha",
+          "referencia",
+          "efeitoDoVencimento"
+        ],
+        "type": "object",
+        "properties": {
+          "escolha": {
+            "$ref": "#/components/schemas/EscolhaDaValidade"
+          },
+          "referencia": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DataDeReferenciaDoDocumentoDto"
+              }
+            ]
+          },
+          "efeitoDoVencimento": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EfeitoNaAnaliseDoDocumento"
+              }
+            ]
+          }
+        }
+      },
+      "ValidadeDoDocumentoInput": {
+        "required": [
+          "escolha",
+          "referencia",
+          "efeitoDoVencimento"
+        ],
+        "type": "object",
+        "properties": {
+          "escolha": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EscolhaDaValidadeCodigo"
+              }
+            ]
+          },
+          "referencia": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DataDeReferenciaDoDocumentoInput"
+              }
+            ]
+          },
+          "efeitoDoVencimento": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EfeitoNaAnaliseDoDocumentoCodigo"
+              }
+            ]
           }
         }
       },

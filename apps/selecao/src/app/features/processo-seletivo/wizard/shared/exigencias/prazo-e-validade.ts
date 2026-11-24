@@ -1,11 +1,21 @@
-import type {
-  DataDeReferenciaDoDocumentoDto,
-  DataDeReferenciaDoDocumentoInput,
-  PrazoDeEmissaoDto,
-  ValidadeDoDocumentoDto,
-  RequisitosDoDocumentoDtoProvisorio,
-  RequisitosDoDocumentoInputProvisorio,
+import {
+  EscolhaDoPrazoDeEmissaoCodigo,
+  EscolhaDaValidadeCodigo,
+  UnidadeDoPrazoDeEmissaoCodigo,
+  TipoDaDataDeReferenciaCodigo,
+  EfeitoNaAnaliseDoDocumentoCodigo,
+  type DocumentoExigidoDto,
+  type ItemDocumentoExigidoInput,
 } from '@uniplus/shared-data/selecao';
+import { codigoDoContrato } from '@uniplus/shared-data/utils';
+type RequisitosDto = DocumentoExigidoDto['requisitos'];
+type RequisitosInput = NonNullable<ItemDocumentoExigidoInput['requisitos']>;
+type PrazoDeEmissaoDto = RequisitosDto['prazoDeEmissao'];
+type ValidadeDoDocumentoDto = RequisitosDto['validade'];
+type DataDeReferenciaDoDocumentoDto = NonNullable<PrazoDeEmissaoDto>['referencia'];
+type DataDeReferenciaDoDocumentoInput = NonNullable<
+  NonNullable<RequisitosInput['prazoDeEmissao']>['referencia']
+>;
 import type { CriteriosDoComprovante, ReferenciaDoDocumento } from '../../processo-seletivo.models';
 
 function lerReferencia(
@@ -49,7 +59,7 @@ function lerValidade(
 }
 
 export function lerPrazoEValidade(
-  requisitos: RequisitosDoDocumentoDtoProvisorio,
+  requisitos: Pick<RequisitosDto, 'prazoDeEmissao' | 'validade'>,
   codigos: ReadonlyMap<string, string>,
 ): Pick<CriteriosDoComprovante, 'prazoDeEmissao' | 'validade'> {
   return {
@@ -67,30 +77,51 @@ function referenciaParaEnvio(
     referencia.faseCodigo === null
       ? (referencia.faseIdLido ?? null)
       : (fases.get(referencia.faseCodigo) ?? null);
-  return { tipo: referencia.tipo, data: referencia.data, faseId };
+  return {
+    tipo: codigoDoContrato(TipoDaDataDeReferenciaCodigo, referencia.tipo ?? ''),
+    data: referencia.data,
+    faseId,
+  };
 }
 
 function prazoParaEnvio(
   prazo: NonNullable<CriteriosDoComprovante['prazoDeEmissao']>,
   fases: ReadonlyMap<string, string>,
 ) {
-  return { ...prazo, referencia: referenciaParaEnvio(prazo.referencia, fases) };
+  return {
+    ...prazo,
+    escolha: codigoDoContrato(EscolhaDoPrazoDeEmissaoCodigo, prazo.escolha),
+    unidade: codigoDoContrato(UnidadeDoPrazoDeEmissaoCodigo, prazo.unidade ?? ''),
+    efeitoForaDoPrazo: codigoDoContrato(
+      EfeitoNaAnaliseDoDocumentoCodigo,
+      prazo.efeitoForaDoPrazo ?? '',
+    ),
+    referencia: referenciaParaEnvio(prazo.referencia, fases),
+  };
 }
 
 function validadeParaEnvio(
   validade: NonNullable<CriteriosDoComprovante['validade']>,
   fases: ReadonlyMap<string, string>,
 ) {
-  return { ...validade, referencia: referenciaParaEnvio(validade.referencia, fases) };
+  return {
+    ...validade,
+    escolha: codigoDoContrato(EscolhaDaValidadeCodigo, validade.escolha),
+    efeitoDoVencimento: codigoDoContrato(
+      EfeitoNaAnaliseDoDocumentoCodigo,
+      validade.efeitoDoVencimento ?? '',
+    ),
+    referencia: referenciaParaEnvio(validade.referencia, fases),
+  };
 }
 
 export function prazoEValidadeParaEnvio(
   criterios: CriteriosDoComprovante,
   fases: ReadonlyMap<string, string>,
-): RequisitosDoDocumentoInputProvisorio {
+): Pick<RequisitosInput, 'prazoDeEmissao' | 'validade'> {
   const { prazoDeEmissao, validade } = criterios;
   return {
-    ...(prazoDeEmissao === null ? {} : { prazoDeEmissao: prazoParaEnvio(prazoDeEmissao, fases) }),
-    ...(validade === null ? {} : { validade: validadeParaEnvio(validade, fases) }),
+    prazoDeEmissao: prazoDeEmissao === null ? null : prazoParaEnvio(prazoDeEmissao, fases),
+    validade: validade === null ? null : validadeParaEnvio(validade, fases),
   };
 }

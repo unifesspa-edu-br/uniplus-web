@@ -63,13 +63,17 @@ describe('escolher', () => {
   });
 
   it('permite o mesmo código em outro tipo de decisão na mesma fase', () => {
-    const outroTipo = umMotivoNoDocumento(FASE_DA_INSCRICAO, { tipoCodigo: 'CLASSIFICACAO' });
+    const outroTipo = umMotivoNoDocumento(FASE_DA_INSCRICAO, {
+      tipoDeDecisaoCodigo: 'CLASSIFICACAO',
+    });
 
     expect(escolher([naInscricao], outroTipo).escolhido).toBe(true);
   });
 
   it('não recusa pelo tipo de decisão, declarado ou não', () => {
-    const qualquerTipo = umMotivoNoDocumento(FASE_DA_INSCRICAO, { tipoCodigo: 'TIPO_NOVO' });
+    const qualquerTipo = umMotivoNoDocumento(FASE_DA_INSCRICAO, {
+      tipoDeDecisaoCodigo: 'TIPO_NOVO',
+    });
 
     expect(escolher([], qualquerTipo).escolhido).toBe(true);
   });

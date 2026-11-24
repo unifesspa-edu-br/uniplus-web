@@ -69,7 +69,7 @@ describe('regra gravada no select, passo lido como texto em consulta — fórmul
     });
   });
 
-  describe('Bônus', () => {
+  describe('FADA', () => {
     it('mostra a regra gravada quando o catálogo chega depois do rascunho', async () => {
       const { fixture, host, store, catalogos } = await montar(BonusPassoComponent);
       store.patchObjectSection('bonus', {
@@ -100,11 +100,11 @@ describe('regra gravada no select, passo lido como texto em consulta — fórmul
 
       expect(semControles(host)).toEqual([]);
       expect(leitura(host)).toEqual([
-        ['Bônus regional', 'Aplicado neste processo'],
-        ['Regra do bônus', 'BONUS-REGIONAL — Base de BONUS-REGIONAL'],
+        ['FADA', 'Aplicado neste processo'],
+        ['Regra do FADA', 'BONUS-REGIONAL — Base de BONUS-REGIONAL'],
         ['Fator', '1,2'],
         ['Teto', 'Sem teto'],
-        ['Base Legal do bônus', 'Não informado'],
+        ['Base Legal do FADA', 'Não informado'],
       ]);
     });
 
@@ -114,7 +114,7 @@ describe('regra gravada no select, passo lido como texto em consulta — fórmul
       publicar(store);
       detectar(fixture);
 
-      expect(leitura(host)).toEqual([['Bônus regional', 'Não aplicado neste processo']]);
+      expect(leitura(host)).toEqual([['FADA', 'Não aplicado neste processo']]);
       expect(host.querySelector('.bonus-info')).toBeNull();
     });
 

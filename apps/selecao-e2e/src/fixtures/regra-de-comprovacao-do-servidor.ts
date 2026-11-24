@@ -18,7 +18,7 @@ export interface DocumentoDaRegra {
 
 const ROTULOS_DAS_CONSEQUENCIAS: Record<DocumentoDaRegra['consequencia'], string> = {
   ELIMINA: 'Elimina',
-  RECLASSIFICA_AC: 'Reclassifica para ampla concorrência',
+  RECLASSIFICA_AC: 'Reclassificação para ampla concorrência',
   REMOVE_VANTAGEM: 'Remove vantagem',
   ABRE_PRAZO_PARA_REENVIO: 'Abre prazo para reenvio',
 };
@@ -37,7 +37,7 @@ const PROTECAO_DO_DOCUMENTO: DocumentoDaExigencia['tipoDocumento']['protecao'] =
 };
 
 const REQUISITOS_DO_ARQUIVO = {
-  formatosPermitidos: ['pdf'],
+  formatosPermitidos: [{ formato: 'PDF', tamanhoMaximoBytesMax: null }],
   tamanhoMaximoBytes: 10485760,
   prazoDeEmissao: null,
   validade: null,
@@ -63,18 +63,19 @@ function aplicabilidadeDoDocumento(
   return { tipo, condicoes };
 }
 
+function tipoDoDocumento(regra: DocumentoDaRegra): DocumentoDaExigencia['tipoDocumento'] {
+  return { ...regra.tipoDocumento, categoria: 'IDENTIFICACAO', protecao: PROTECAO_DO_DOCUMENTO };
+}
+
 function documentoDaRegra(regra: DocumentoDaRegra): DocumentoDaExigencia {
   return {
     id: `${regra.id}-doc`,
-    tipoDocumento: {
-      ...regra.tipoDocumento,
-      categoria: 'IDENTIFICACAO',
-      protecao: PROTECAO_DO_DOCUMENTO,
-    },
+    chave: `${regra.id}-doc`,
+    tipoDocumento: tipoDoDocumento(regra),
     momento: { faseId: regra.faseId, etapaId: null, finalidade: null },
     aplicabilidade: aplicabilidadeDoDocumento(regra),
     indeferimento: indeferimentoDoDocumento(regra),
-    requisitos: REQUISITOS_DO_ARQUIVO as unknown as DocumentoDaExigencia['requisitos'],
+    requisitos: REQUISITOS_DO_ARQUIVO,
     fatosComprovados: [],
   };
 }

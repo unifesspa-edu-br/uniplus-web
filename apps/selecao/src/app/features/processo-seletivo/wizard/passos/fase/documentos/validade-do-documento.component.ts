@@ -71,7 +71,7 @@ export class ValidadeDoDocumentoComponent {
   }
 
   protected escolher(escolha: string): void {
-    if (escolha === 'naoExigeDocumentoValido') {
+    if (escolha === 'NAO_EXIGE_DOCUMENTO_VALIDO') {
       this.recusas?.limparCampo(this.documentoId(), this.caminho, this.faseCodigo());
     }
     this.gravar(escolherValidade(escolha), 'escolha');

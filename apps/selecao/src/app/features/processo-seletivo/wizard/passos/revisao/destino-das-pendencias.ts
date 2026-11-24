@@ -29,7 +29,7 @@ const PASSO_POR_DIMENSAO: ReadonlyMap<string, RotuloDePasso> = new Map<string, R
   ['classificacao', 'Eliminação'],
   ['atendimento_especializado', 'Atend. especial'],
   ['coleta_de_fatos', 'Formulários'],
-  ['bonus_regional', 'Bônus'],
+  ['bonus_regional', 'FADA'],
   ['desempate', 'Desempate'],
   ['etapas', 'Cronograma'],
 ]);
@@ -129,7 +129,7 @@ const DESTINO_POR_ITEM: ReadonlyMap<string, DestinoDoItem> = new Map<string, Des
   [
     'bonus_regional_fato_de_elegibilidade',
     {
-      passo: 'Bônus',
+      passo: 'FADA',
       orientacao:
         'Escolha quem recebe o acréscimo: um campo de sim ou não do formulário de inscrição, fora de grupo, ou um fato que o processo deriva como sim ou não, conhecido até a inscrição e sem depender do que só o formulário de isenção coleta.',
     },

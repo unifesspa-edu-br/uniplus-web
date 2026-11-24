@@ -11,7 +11,7 @@ import { acompanharCatalogo } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 
-const MENSAGEM_DAS_BASES_LEGAIS = 'Não foi possível carregar as bases legais de bônus regional.';
+const MENSAGEM_DAS_BASES_LEGAIS = 'Não foi possível carregar as bases legais de FADA.';
 const MENSAGEM_DOS_TIPOS_DE_NORMA = 'Não foi possível carregar como se lê o tipo de cada norma.';
 
 /** O que o `<select>` de base legal exibe — o mesmo par que `RegraEscolhivel` usa. */
@@ -20,7 +20,7 @@ export interface BaseLegalEscolhivel {
   readonly identificacao: string;
   /**
    * O que a norma é e o que ela diz. Sem os dois, escolher entre duas portarias de identificação
-   * parecida é adivinhar, e é a norma que sustenta o bônus. Vêm do cadastro, e também do snapshot
+   * parecida é adivinhar, e é a norma que sustenta o FADA. Vêm do cadastro, e também do snapshot
    * congelado no processo, que guarda os dois.
    *
    * `tipo` é o rótulo do tipo da norma. A base do cadastro o traz da API; a que só o snapshot do
@@ -49,7 +49,7 @@ function escolhivelDoCadastro(base: BaseLegalBonusRegionalDto): BaseLegalEscolhi
   };
 }
 
-/** As bases legais do bônus regional, com o tipo de cada norma como a API o entregou. */
+/** As bases legais do FADA, com o tipo de cada norma como a API o entregou. */
 @Injectable()
 export class BasesLegaisDeBonus {
   private readonly store = inject(ProcessoSeletivoStore);

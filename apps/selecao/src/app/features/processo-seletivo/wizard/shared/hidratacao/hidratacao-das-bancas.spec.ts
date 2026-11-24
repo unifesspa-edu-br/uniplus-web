@@ -17,6 +17,7 @@ describe('bancaRequeridaDe', () => {
   it('leva o tipo, as categorias atendidas e a regra da banca da fase', () => {
     const dto = {
       id: 'banca-1',
+      chave: 'banca-1',
       tipoBancaOrigemId: 'tipo-1',
       codigo: { codigo: 'BANCA_ENTREVISTA', rotulo: 'Banca de entrevista' },
       papel: { codigo: 'AVALIA_O_MERITO', rotulo: 'Avalia o mérito' },
@@ -40,6 +41,7 @@ describe('bancaDaEtapaDe', () => {
   it('leva o tipo e a regra da banca da etapa', () => {
     const dto = {
       id: 'banca-2',
+      chave: 'banca-2',
       tipoBancaOrigemId: 'tipo-2',
       codigo: { codigo: 'BANCA_ENTREVISTA', rotulo: 'Banca de entrevista' },
       papel: { codigo: 'AVALIA_O_MERITO', rotulo: 'Avalia o mérito' },

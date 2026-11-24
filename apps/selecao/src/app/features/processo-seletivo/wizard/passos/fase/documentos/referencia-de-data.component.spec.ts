@@ -15,7 +15,7 @@ const PROVEDORES = [
       repetir: vi.fn(),
       erro: signal(null),
       situacao: signal('pronto'),
-      tiposDaDataDeReferencia: signal([{ codigo: 'dataEspecifica', rotulo: 'Data específica' }]),
+      tiposDaDataDeReferencia: signal([{ codigo: 'DATA_ESPECIFICA', rotulo: 'Data específica' }]),
     },
   },
   { provide: FormularioDoCronograma, useValue: { linhaDoTempo: signal([]) } },
@@ -34,22 +34,22 @@ function montar(tipo: string) {
 
 describe('referência de data', () => {
   it('oferece os tipos recebidos e mostra data apenas para data específica', () => {
-    const tela = montar('dataEspecifica');
+    const tela = montar('DATA_ESPECIFICA');
     const elemento = tela.nativeElement as HTMLElement;
     expect(elemento.textContent).toContain('Data específica');
     expect(elemento.querySelector('input[type=date]')).not.toBeNull();
     expect(elemento.querySelector('#referencia-fase')).toBeNull();
   });
 
-  it.each(['inicioDaFase', 'fimDaFase'])('mostra fase para %s', (tipo) => {
+  it.each(['INICIO_DA_FASE', 'FIM_DA_FASE'])('mostra fase para %s', (tipo) => {
     const elemento = montar(tipo).nativeElement as HTMLElement;
     expect(elemento.querySelector('#referencia-fase')).not.toBeNull();
     expect(elemento.querySelector('input[type=date]')).toBeNull();
   });
 
   it.each([
-    ['dataEspecifica', 'data', 'data', 'input'],
-    ['inicioDaFase', 'faseId', 'fase', 'change'],
+    ['DATA_ESPECIFICA', 'data', 'data', 'input'],
+    ['INICIO_DA_FASE', 'faseId', 'fase', 'change'],
   ])('mostra e limpa a recusa de %s no campo correspondente', (tipo, campo, sufixo, evento) => {
     const tela = montar(tipo);
     TestBed.inject(RecusasDasExigencias).registrar([
@@ -76,7 +76,7 @@ describe('referência de data', () => {
   });
 
   it('não mostra data nem fase para o fim das inscrições', () => {
-    const elemento = montar('fimDasInscricoes').nativeElement as HTMLElement;
+    const elemento = montar('FIM_DAS_INSCRICOES').nativeElement as HTMLElement;
     expect(elemento.querySelector('#referencia-fase')).toBeNull();
     expect(elemento.querySelector('input[type=date]')).toBeNull();
   });
@@ -84,7 +84,7 @@ describe('referência de data', () => {
   it.each(['referencia', 'referencia.tipo'])(
     'mostra a recusa de %s no tipo e limpa ao editar',
     (campo) => {
-      const tela = montar('dataEspecifica');
+      const tela = montar('DATA_ESPECIFICA');
       const caminho = `documento.requisitos.validade.${campo}`;
       TestBed.inject(RecusasDasExigencias).registrar([
         {

@@ -139,7 +139,7 @@ describe('MotivosDaFaseOuEtapaComponent: tipo que não é declarado', () => {
       catalogo: [renda],
       escolhidos: [
         umMotivoNoDocumento(FASE_DA_INSCRICAO, {
-          tipoCodigo: 'ISENCAO_DA_TAXA',
+          tipoDeDecisaoCodigo: 'ISENCAO_DA_TAXA',
           codigo: 'RENDA_ALTA',
         }),
       ],
@@ -268,7 +268,7 @@ describe('MotivosDaFaseOuEtapaComponent: consulta dos tipos', () => {
   }
 
   const motivoDeIsencao = umMotivoNoDocumento(FASE_DA_INSCRICAO, {
-    tipoCodigo: 'ISENCAO_DA_TAXA',
+    tipoDeDecisaoCodigo: 'ISENCAO_DA_TAXA',
     codigo: 'RENDA_ALTA',
   });
 
@@ -290,7 +290,9 @@ describe('MotivosDaFaseOuEtapaComponent: consulta dos tipos', () => {
   it('descreve genericamente o tipo que a API não informa', async () => {
     const fixture = await montarMotivos({
       modo: 'consulta',
-      escolhidos: [umMotivoNoDocumento(FASE_DA_INSCRICAO, { tipoCodigo: 'TIPO_DESCONHECIDO' })],
+      escolhidos: [
+        umMotivoNoDocumento(FASE_DA_INSCRICAO, { tipoDeDecisaoCodigo: 'TIPO_DESCONHECIDO' }),
+      ],
       tiposDeclarados: [],
     });
 

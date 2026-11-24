@@ -22,7 +22,7 @@ const NA_PROVA = { etapaChave: 'prova' };
 function umMotivo(lugar: object, codigo = 'SEM_RESULTADO'): DocumentoDaConfiguracaoMotivo {
   return {
     ...lugar,
-    tipoCodigo: TipoDeDecisaoDoDocumento.HOMOLOGACAO_DAS_INSCRICOES,
+    tipoDeDecisaoCodigo: TipoDeDecisaoDoDocumento.HOMOLOGACAO_DAS_INSCRICOES,
     codigo,
     descricao: 'Descrição gravada',
     versaoDoEditalDeEntrada: 2,
@@ -93,7 +93,7 @@ describe('motivos do documento', () => {
 describe('motivo do documento', () => {
   const escolhido: MotivoNoDocumento = {
     faseChave: 'inscricao',
-    tipoCodigo: 'CLASSIFICACAO',
+    tipoDeDecisaoCodigo: 'CLASSIFICACAO',
     codigo: 'NOTA_ABAIXO',
     descricao: 'Nota abaixo',
     sentido: 'DESFAVORAVEL',
@@ -102,7 +102,7 @@ describe('motivo do documento', () => {
   it('escreve o motivo escolhido com tipo e sentido do vocabulário do documento', () => {
     expect(motivoDoDocumento(escolhido)).toEqual({
       ...escolhido,
-      tipoCodigo: TipoDeDecisaoDoDocumento.CLASSIFICACAO,
+      tipoDeDecisaoCodigo: TipoDeDecisaoDoDocumento.CLASSIFICACAO,
       sentido: SentidoDoMotivo.DESFAVORAVEL,
     });
   });
@@ -114,7 +114,9 @@ describe('motivo do documento', () => {
   });
 
   it('tipo de decisão ou sentido que o documento não conhece não vira motivo', () => {
-    expect(motivoDoDocumento({ ...escolhido, tipoCodigo: 'TIPO_DO_FUTURO' })).toBeUndefined();
+    expect(
+      motivoDoDocumento({ ...escolhido, tipoDeDecisaoCodigo: 'TIPO_DO_FUTURO' }),
+    ).toBeUndefined();
     expect(motivoDoDocumento({ ...escolhido, sentido: 'NEUTRO' })).toBeUndefined();
   });
 });

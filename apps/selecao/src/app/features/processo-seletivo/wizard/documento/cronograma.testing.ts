@@ -39,8 +39,8 @@ const CRONOGRAMA_COMPLETO: DocumentoDaConfiguracao = {
     ],
   },
   etapas: [
-    { chave: 'prova', nome: 'Prova', ordem: 1, faseChave: 'avaliacao', peso: 1 },
-    { chave: 'redacao', nome: 'Redação', ordem: 2, faseChave: 'avaliacao', peso: 2 },
+    { chave: 'prova', nome: 'Prova', faseChave: 'avaliacao', peso: 1 },
+    { chave: 'redacao', nome: 'Redação', faseChave: 'avaliacao', peso: 2 },
   ],
   importacao: { primeiraFaseDepoisDaImportacaoChave: 'resultado' },
   provaPresencial: { temProvaPresencial: false },

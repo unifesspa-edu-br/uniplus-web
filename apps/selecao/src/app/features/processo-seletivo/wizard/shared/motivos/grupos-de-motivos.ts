@@ -5,7 +5,7 @@ import type { MotivoNoDocumento } from './motivo-no-documento';
 
 /** Um motivo que a fase ou etapa pode escolher ou já escolheu, dentro de um tipo de decisão. */
 export interface MotivoOferecido {
-  readonly tipoCodigo: string;
+  readonly tipoDeDecisaoCodigo: string;
   readonly codigo: string;
   readonly descricao: string;
   readonly sentido: string | null;
@@ -17,7 +17,7 @@ export interface MotivoOferecido {
 
 /** Os motivos de um tipo de decisão, e se a fase ou etapa declara esse tipo. */
 export interface GrupoDeMotivos {
-  readonly tipoCodigo: string;
+  readonly tipoDeDecisaoCodigo: string;
   readonly rotulo: string;
   readonly declarado: boolean;
   readonly motivos: readonly MotivoOferecido[];
@@ -25,7 +25,7 @@ export interface GrupoDeMotivos {
 
 function doCatalogo(motivo: MotivoDeDecisaoDto, escolhido?: MotivoNoDocumento): MotivoOferecido {
   return {
-    tipoCodigo: motivo.tipo.codigo,
+    tipoDeDecisaoCodigo: motivo.tipo.codigo,
     codigo: motivo.codigo,
     descricao: escolhido?.descricao ?? motivo.descricao,
     sentido: escolhido?.sentido ?? motivo.sentido?.codigo ?? null,
@@ -37,7 +37,7 @@ function doCatalogo(motivo: MotivoDeDecisaoDto, escolhido?: MotivoNoDocumento): 
 
 function soDoDocumento(motivo: MotivoNoDocumento): MotivoOferecido {
   return {
-    tipoCodigo: motivo.tipoCodigo,
+    tipoDeDecisaoCodigo: motivo.tipoDeDecisaoCodigo,
     codigo: motivo.codigo,
     descricao: motivo.descricao ?? motivo.codigo,
     sentido: motivo.sentido ?? null,
@@ -75,12 +75,14 @@ function escolhidosForaDoCatalogo(
  * já estava escolhido.
  */
 function motivosDoTipo(
-  tipoCodigo: string,
+  tipoDeDecisaoCodigo: string,
   catalogo: readonly MotivoDeDecisaoDto[],
   escolhidos: readonly MotivoNoDocumento[],
 ): readonly MotivoOferecido[] {
-  const noCatalogo = catalogo.filter((motivo) => motivo.tipo.codigo === tipoCodigo);
-  const escolhidosDoTipo = escolhidos.filter((motivo) => motivo.tipoCodigo === tipoCodigo);
+  const noCatalogo = catalogo.filter((motivo) => motivo.tipo.codigo === tipoDeDecisaoCodigo);
+  const escolhidosDoTipo = escolhidos.filter(
+    (motivo) => motivo.tipoDeDecisaoCodigo === tipoDeDecisaoCodigo,
+  );
   return [
     ...oferecidosPeloCatalogo(noCatalogo, escolhidosDoTipo),
     ...escolhidosForaDoCatalogo(noCatalogo, escolhidosDoTipo),
@@ -110,7 +112,7 @@ function tiposPresentes(
   return [
     ...catalogo.map((motivo) => motivo.tipo),
     ...declarados,
-    ...escolhidos.map((motivo) => motivo.tipoCodigo),
+    ...escolhidos.map((motivo) => motivo.tipoDeDecisaoCodigo),
   ].sort(emOrdemDoCodigo);
 }
 
@@ -121,7 +123,7 @@ function grupoDoTipo(
   escolhidos: readonly MotivoNoDocumento[],
 ): GrupoDeMotivos {
   return {
-    tipoCodigo: codigo,
+    tipoDeDecisaoCodigo: codigo,
     rotulo: rotulo === codigo ? '' : rotulo,
     declarado: declarados.includes(codigo),
     motivos: motivosDoTipo(codigo, motivosDoCatalogo, escolhidos),
@@ -151,7 +153,7 @@ export function tiposEscolhidosNaoDeclarados(
   declarados: readonly string[],
   vocabulario: readonly ItemDeVocabulario[],
 ): readonly string[] {
-  const escolhidosPorTipo = new Set(escolhidos.map((motivo) => motivo.tipoCodigo));
+  const escolhidosPorTipo = new Set(escolhidos.map((motivo) => motivo.tipoDeDecisaoCodigo));
   return opcoesDoVocabulario(vocabulario, [...escolhidosPorTipo].sort())
     .map((tipo) => tipo.codigo)
     .filter((codigo) => escolhidosPorTipo.has(codigo) && !declarados.includes(codigo));

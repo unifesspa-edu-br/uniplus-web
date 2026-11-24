@@ -113,7 +113,7 @@ export interface WizardDraft {
     edicoesEnem: readonly string[];
   };
   /**
-   * Bônus regional (`PUT …/bonus-regional`), declaração obrigatória como a da taxa: `aplica` é
+   * FADA regional (`PUT …/bonus-regional`), declaração obrigatória como a da taxa: `aplica` é
    * `null` até o operador responder. `false` grava com os cinco campos `null`; `true` exige a
    * configuração. A base legal referencia um cadastro tipado por id.
    */

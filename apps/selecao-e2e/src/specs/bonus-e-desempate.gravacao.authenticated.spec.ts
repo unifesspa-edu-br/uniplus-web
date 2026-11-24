@@ -26,7 +26,7 @@ const BONUS_LIDO = DETALHE_PUBLICADO.bonusRegional;
 /** O bônus sem o fato de elegibilidade, que o catálogo desta fixture não traz. */
 const DETALHE_DO_BONUS = {
   ...DETALHE_PUBLICADO,
-  status: 'rascunho',
+  status: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
   bonusRegional: { ...BONUS_LIDO, fatoElegibilidadeCodigo: null },
 };
 
@@ -61,14 +61,14 @@ test.describe('Bônus regional e desempate — gravação na forma do contrato',
       page,
       testInfo,
       { id: PROCESSO_PUBLICADO_ID, detalhe: DETALHE_DO_BONUS },
-      'Bônus',
+      'FADA',
     );
-    await expect(page.getByLabel('Base Legal do bônus')).toContainText(
+    await expect(page.getByLabel('Base Legal do FADA')).toContainText(
       'Portaria Unifesspa nº 2514/2023',
     );
 
     await page.getByRole('button', { name: /Gravar e avançar/ }).click();
-    await confirmarNoDialogo(page, 'Gravar bônus');
+    await confirmarNoDialogo(page, 'Gravar FADA');
 
     await expect.poll(() => gravados.bonus.length).toBe(1);
     expect(gravados.bonus[0]).toEqual({
@@ -84,7 +84,10 @@ test.describe('Bônus regional e desempate — gravação na forma do contrato',
   test('o desempate por áreas do ENEM volta com as áreas dentro dos parâmetros', async ({
     page,
   }, testInfo) => {
-    const detalhe = { ...DETALHE_DESEMPATE_POR_AREA, status: 'rascunho' };
+    const detalhe = {
+      ...DETALHE_DESEMPATE_POR_AREA,
+      status: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
+    };
     const [criterioLido] = DETALHE_DESEMPATE_POR_AREA.criteriosDesempate;
     const gravados = await abrirNoPasso(
       page,

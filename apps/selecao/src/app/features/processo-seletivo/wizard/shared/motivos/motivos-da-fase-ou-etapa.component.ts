@@ -90,7 +90,10 @@ export class MotivosDaFaseOuEtapaComponent {
 
   private readonly tiposLidos = computed(() => {
     const rotulo = rotuloDoTipoDeDecisaoLido(this.store.remoteSnapshot());
-    const codigos = [...this.tiposDeclarados(), ...this.escolhidos().map((m) => m.tipoCodigo)];
+    const codigos = [
+      ...this.tiposDeclarados(),
+      ...this.escolhidos().map((m) => m.tipoDeDecisaoCodigo),
+    ];
     const vocabulario = this.vocabulario.itens();
     return [...new Set(codigos)].sort().map((codigo) => ({
       codigo,
@@ -132,18 +135,18 @@ export class MotivosDaFaseOuEtapaComponent {
     () =>
       new Map(
         this.grupos().map((grupo) => [
-          grupo.tipoCodigo,
+          grupo.tipoDeDecisaoCodigo,
           grupo.motivos.filter((motivo) => motivo.escolhido).map(textoDoMotivoLido),
         ]),
       ),
   );
 
   protected temEscolhidoSemDeclaracao(grupo: GrupoDeMotivos): boolean {
-    return this.tiposEscolhidosSemDeclaracao().has(grupo.tipoCodigo);
+    return this.tiposEscolhidosSemDeclaracao().has(grupo.tipoDeDecisaoCodigo);
   }
 
   protected idDoMotivo(motivo: MotivoOferecido): string {
-    return `${this.idBase()}-${motivo.tipoCodigo}-${motivo.codigo}`;
+    return `${this.idBase()}-${motivo.tipoDeDecisaoCodigo}-${motivo.codigo}`;
   }
 
   protected idDaRecusa(motivo: MotivoOferecido): string {
@@ -151,7 +154,7 @@ export class MotivosDaFaseOuEtapaComponent {
   }
 
   protected idDoAviso(grupo: GrupoDeMotivos): string {
-    return `${this.idBase()}-${grupo.tipoCodigo}-aviso`;
+    return `${this.idBase()}-${grupo.tipoDeDecisaoCodigo}-aviso`;
   }
 
   protected temRecusa(motivo: MotivoOferecido): boolean {
