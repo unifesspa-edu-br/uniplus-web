@@ -1,10 +1,10 @@
-import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
+import type { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { acharNaListagem, chamarApi } from '@uniplus/shared-e2e';
 
 export interface ProcessoListado {
   readonly id: string;
   readonly nome: string;
-  readonly status: { readonly codigo: StatusProcessoCodigo; readonly rotulo: string };
+  readonly status: { readonly codigo: `${StatusProcessoCodigo}`; readonly rotulo: string };
 }
 
 /** Todos os processos da listagem, percorrendo as páginas até o fim. */
@@ -28,7 +28,7 @@ export async function processosPublicadosComNome(
   return (await listarProcessos()).filter(
     (processo) =>
       processo.nome.startsWith(prefixo) &&
-      processo.status.codigo === StatusProcessoCodigo.PUBLICADO,
+      processo.status.codigo === 'PUBLICADO',
   );
 }
 

@@ -59,7 +59,7 @@ export class RegraDeDeliberacaoComponent implements OnInit {
     return regra !== null && ehColegiada(regra);
   });
   protected readonly modoConhecido = modoConhecido;
-  protected readonly modoIndividual = ModoDeDeliberacao.atoIndividual;
+  protected readonly modoIndividual = ModoDeDeliberacao.ATO_INDIVIDUAL;
   protected readonly semRegra = SEM_REGRA;
   protected readonly anuncio = signal('');
 

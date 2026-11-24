@@ -52,5 +52,11 @@ export async function rascunhoDoAcompanhamento(criador: string): Promise<Process
     '/api/selecao/processos-seletivos?limit=100',
     (processo) => processo.nome === NOME,
   );
-  return existente ?? { id: await criarRascunho(criador), nome: NOME, status: 'rascunho' };
+  return (
+    existente ?? {
+      id: await criarRascunho(criador),
+      nome: NOME,
+      status: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
+    }
+  );
 }

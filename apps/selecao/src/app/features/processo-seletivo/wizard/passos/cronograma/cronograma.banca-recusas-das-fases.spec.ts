@@ -120,7 +120,11 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da fase', () 
   it('mostra sob o modo, e leva o foco a ele, a recusa do controle que a regra atual não mostra', async () => {
     comBancas('banca-1');
     const [fase] = tela.store.draft().cronograma.fases;
-    const regra = comRegra({ criterio: CRITERIOS.unanimidade, desempate: null, semUnanimidade: RESULTADOS.favoravel });
+    const regra = comRegra({
+      criterio: CRITERIOS.unanimidade.codigo,
+      desempate: '',
+      semUnanimidade: RESULTADOS.favoravel.codigo,
+    });
     tela.store.patchObjectSection('cronograma', {
       fases: [
         {

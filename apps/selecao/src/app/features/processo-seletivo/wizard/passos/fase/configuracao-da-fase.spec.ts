@@ -263,7 +263,7 @@ describe('bancas requeridas e o recorte de competência', () => {
     it('cobra o campo da regra sob a posição da banca que o tem em branco', () => {
       const problemas = comRegra(
         banca(COLEGIADA),
-        banca({ ...COLEGIADA, criterio: null, quorum: '9' }, 'banca-redacao'),
+        banca({ ...COLEGIADA, criterio: '', quorum: '9' }, 'banca-redacao'),
       );
 
       expect(problemas.map((problema) => problema.campo)).toEqual([

@@ -15,13 +15,17 @@ const ROTEIRO =
 
 export async function publicadoDoAcompanhamento(): Promise<ProcessoListado> {
   const publicados = (await listarProcessos())
-    .filter((processo) => processo.status === 'publicado')
+    .filter((processo) => processo.status.codigo === 'PUBLICADO')
     .sort(compararProcessos);
   const existente = publicados.find((processo) => processo.nome === NOME) ?? publicados[0];
   if (existente !== undefined) return existente;
   await prepararAcessosDaSimulacao();
   await aprovarCatalogoInicial();
-  return { id: await criarProcesso(), nome: NOME, status: 'publicado' };
+  return {
+    id: await criarProcesso(),
+    nome: NOME,
+    status: { codigo: 'PUBLICADO', rotulo: 'Publicado' },
+  };
 }
 
 function compararProcessos(primeiro: ProcessoListado, segundo: ProcessoListado): number {

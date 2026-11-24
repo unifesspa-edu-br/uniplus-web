@@ -130,7 +130,11 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da etapa', ()
       tela.edicao,
       etapa,
       'banca-2',
-      comRegra({ criterio: CRITERIOS.unanimidade, desempate: null, semUnanimidade: RESULTADOS.favoravel }),
+      comRegra({
+        criterio: CRITERIOS.unanimidade.codigo,
+        desempate: '',
+        semUnanimidade: RESULTADOS.favoravel.codigo,
+      }),
     );
     tela.detectar();
 
@@ -196,7 +200,11 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da etapa', ()
       tela.edicao,
       etapa,
       'banca-2',
-      comRegra({ criterio: CRITERIOS.unanimidade, desempate: null, semUnanimidade: RESULTADOS.favoravel }),
+      comRegra({
+        criterio: CRITERIOS.unanimidade.codigo,
+        desempate: '',
+        semUnanimidade: RESULTADOS.favoravel.codigo,
+      }),
     );
     tela.detectar();
 

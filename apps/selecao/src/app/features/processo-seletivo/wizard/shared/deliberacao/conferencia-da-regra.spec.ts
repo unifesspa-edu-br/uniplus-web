@@ -40,11 +40,11 @@ describe('problemasDaRegra', () => {
   });
 
   it('cobra critério e encerramento da colegiada, e não do ato individual', () => {
-    expect(campos(comRegra({ criterio: null, encerramento: null }))).toEqual([
+    expect(campos(comRegra({ criterio: '', encerramento: '' }))).toEqual([
       'criterio',
       'encerramento',
     ]);
-    expect(campos(comRegra({ criterio: null, encerramento: null }, ATO_INDIVIDUAL))).toEqual([]);
+    expect(campos(comRegra({ criterio: '', encerramento: '' }, ATO_INDIVIDUAL))).toEqual([]);
   });
 
   it('cobra o quórum fora do intervalo de um até os integrantes', () => {
@@ -55,25 +55,25 @@ describe('problemasDaRegra', () => {
   });
 
   it('não cobra o quórum que acompanha os integrantes', () => {
-    expect(campos(comRegra({ encerramento: ENCERRAMENTOS.todosOsTitulares, quorum: '' }))).toEqual(
-      [],
-    );
+    expect(
+      campos(comRegra({ encerramento: ENCERRAMENTOS.todosOsTitulares.codigo, quorum: '' })),
+    ).toEqual([]);
   });
 
   it('cobra o desempate da maioria que pode empatar', () => {
-    expect(campos(comRegra({ desempate: null }))).toEqual(['desempate']);
-    expect(campos(comRegra({ desempate: null, integrantes: '1', quorum: '1' }))).toEqual([]);
+    expect(campos(comRegra({ desempate: '' }))).toEqual(['desempate']);
+    expect(campos(comRegra({ desempate: '', integrantes: '1', quorum: '1' }))).toEqual([]);
   });
 
   it('cobra o resultado sem unanimidade da unanimidade com mais de um integrante', () => {
-    const unanimidade = comRegra({ criterio: CRITERIOS.unanimidade, desempate: null });
+    const unanimidade = comRegra({ criterio: CRITERIOS.unanimidade.codigo, desempate: '' });
 
     expect(campos(unanimidade)).toEqual(['semUnanimidade']);
-    expect(campos({ ...unanimidade, semUnanimidade: RESULTADOS.novaVotacao })).toEqual([]);
+    expect(campos({ ...unanimidade, semUnanimidade: RESULTADOS.novaVotacao.codigo })).toEqual([]);
   });
 
   it('diz o que fazer em cada campo cobrado', () => {
-    const [problema] = problemasDaRegra(comRegra({ criterio: null }));
+    const [problema] = problemasDaRegra(comRegra({ criterio: '' }));
 
     expect(problema.mensagem).toContain('critério');
   });
@@ -81,7 +81,7 @@ describe('problemasDaRegra', () => {
 
 describe('problemasDaRegraPorCampo', () => {
   it('reúne a mensagem de cada campo cobrado', () => {
-    const porCampo = problemasDaRegraPorCampo(comRegra({ criterio: null, suplentes: '' }));
+    const porCampo = problemasDaRegraPorCampo(comRegra({ criterio: '', suplentes: '' }));
 
     expect([...porCampo.keys()]).toEqual(['suplentes', 'criterio']);
   });

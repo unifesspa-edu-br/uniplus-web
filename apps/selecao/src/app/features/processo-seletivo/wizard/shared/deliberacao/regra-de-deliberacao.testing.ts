@@ -44,24 +44,24 @@ export const RESULTADOS = {
   novaVotacao: { codigo: ResultadoSemUnanimidadeCodigo.NOVA_VOTACAO, rotulo: 'Nova votação' },
 };
 export const COLEGIADA: RegraDeDeliberacaoDaBanca = {
-  modo: MODOS.colegiadaComVotacao,
+  modo: MODOS.colegiadaComVotacao.codigo,
   integrantes: '5',
   suplentes: '2',
   quorum: '3',
-  criterio: CRITERIOS.maioriaSimples,
-  desempate: DESEMPATES.votoDaPresidencia,
-  encerramento: ENCERRAMENTOS.presidenciaNoQuorum,
-  semUnanimidade: null,
+  criterio: CRITERIOS.maioriaSimples.codigo,
+  desempate: DESEMPATES.votoDaPresidencia.codigo,
+  encerramento: ENCERRAMENTOS.presidenciaNoQuorum.codigo,
+  semUnanimidade: '',
 };
 export const ATO_INDIVIDUAL: RegraDeDeliberacaoDaBanca = {
-  modo: MODOS.atoIndividual,
+  modo: MODOS.atoIndividual.codigo,
   integrantes: '1',
   suplentes: '0',
   quorum: '',
-  criterio: null,
-  desempate: null,
-  encerramento: null,
-  semUnanimidade: null,
+  criterio: '',
+  desempate: '',
+  encerramento: '',
+  semUnanimidade: '',
 };
 export const comRegra = (
   parcial: Partial<RegraDeDeliberacaoDaBanca>,

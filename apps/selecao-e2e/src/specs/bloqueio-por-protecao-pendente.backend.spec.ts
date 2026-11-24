@@ -1,4 +1,7 @@
-import { AplicabilidadeCodigo, FinalidadeFormularioCodigo } from '@uniplus/shared-data/selecao';
+import type {
+  FinalidadeFormularioCodigo,
+  AplicabilidadeCodigo,
+} from '@uniplus/shared-data/selecao';
 import { test, expect } from '@playwright/test';
 import {
   OPERADOR_DO_ROTEIRO,
@@ -10,7 +13,6 @@ import type {
   FormaDeComprovacaoCodigo,
   RegraDeComprovacaoInformada,
   ItemDocumentoExigidoInput,
-  RequisitosDoDocumentoInputProvisorio,
 } from '@uniplus/shared-data/selecao';
 import { rascunhoParaConfiguracao } from '../fixtures/cenario-da-projecao';
 
@@ -31,11 +33,7 @@ const BASES_LEGAIS = [
 type RegraNoTransporte = Omit<RegraDeComprovacaoInformada, 'forma' | 'documento'> & {
   forma: `${FormaDeComprovacaoCodigo}`;
   documento: Omit<ItemDocumentoExigidoInput, 'requisitos'> & {
-    requisitos: Pick<
-      NonNullable<ItemDocumentoExigidoInput['requisitos']>,
-      'formatosPermitidos' | 'tamanhoMaximoBytes' | 'modelo'
-    > &
-      RequisitosDoDocumentoInputProvisorio;
+    requisitos: NonNullable<ItemDocumentoExigidoInput['requisitos']>;
   };
 };
 
@@ -84,15 +82,17 @@ test.describe('Configuração do processo com item de catálogo pendente', () =>
               momento: {
                 faseId,
                 etapaId: null,
-                finalidade: FinalidadeFormularioCodigo.HABILITACAO,
+                finalidade: 'HABILITACAO' as FinalidadeFormularioCodigo.HABILITACAO,
               },
-              aplicabilidade: { tipo: AplicabilidadeCodigo.GERAL, condicoes: [] },
+              aplicabilidade: { tipo: 'GERAL' as AplicabilidadeCodigo.GERAL, condicoes: [] },
               indeferimento: {
                 obrigatorio: true,
                 consequencia: 'ELIMINA',
                 basesLegais: BASES_LEGAIS,
               },
               requisitos: {
+                prazoDeEmissao: null,
+                validade: null,
                 formatosPermitidos: 'QUALQUER',
                 tamanhoMaximoBytes: null,
                 modelo: null,

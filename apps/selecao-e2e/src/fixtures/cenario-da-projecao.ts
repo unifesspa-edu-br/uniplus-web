@@ -1,4 +1,3 @@
-import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import * as path from 'node:path';
 import {
   aprovarCatalogoInicial,
@@ -51,7 +50,7 @@ export interface CenarioDaProjecao {
 async function acharProcesso(nome: string): Promise<string | undefined> {
   return (await listarProcessos()).find(
     (processo) =>
-      processo.nome === nome && processo.status.codigo === StatusProcessoCodigo.PUBLICADO,
+      processo.nome === nome && processo.status.codigo === 'PUBLICADO',
   )?.id;
 }
 
@@ -147,7 +146,7 @@ export async function rascunhoParaConfiguracao(): Promise<{
 
 async function garantirRascunho(): Promise<string> {
   const existente = (await listarProcessos()).find(
-    (p) => p.nome === NOME_DO_RASCUNHO && p.status.codigo === StatusProcessoCodigo.RASCUNHO,
+    (p) => p.nome === NOME_DO_RASCUNHO && p.status.codigo === 'RASCUNHO',
   );
   return existente?.id ?? criarRascunho();
 }

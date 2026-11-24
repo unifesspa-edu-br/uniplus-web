@@ -11,14 +11,14 @@ function banca(tipoBancaId: string, identificadorLocal: string, id: string | nul
 describe('comOsIdentificadoresLidos', () => {
   it('associa bancas do mesmo tipo pelo conteúdo mesmo com a leitura em outra ordem', () => {
     const regra: RegraDeDeliberacaoDaBanca = {
-      modo: MODOS.colegiadaComVotacao,
+      modo: MODOS.colegiadaComVotacao.codigo,
       integrantes: '3',
       suplentes: '0',
       quorum: '2',
-      criterio: null,
-      desempate: null,
-      encerramento: null,
-      semUnanimidade: null,
+      criterio: '',
+      desempate: '',
+      encerramento: '',
+      semUnanimidade: '',
     };
     const primeira = { ...banca('a', 'primeira', null), regraDeDeliberacao: regra };
     const segunda = {
