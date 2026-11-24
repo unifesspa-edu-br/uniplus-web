@@ -115,7 +115,7 @@ describe('ModeloFormularioEdicaoPage', () => {
     const valores = Array.from(
       (tela.querySelector('#cfg-modelo-docs-doc-0-consequencia') as HTMLSelectElement).options,
     ).map((opcao) => opcao.value);
-    expect(valores).not.toContain('PENDENCIA_REENVIO');
+    expect(valores).not.toContain('ABRE_PRAZO_PARA_REENVIO');
   });
 
   it('tira o reenvio da consequência ao trocar para fase que não admite complementação', async () => {
@@ -127,7 +127,7 @@ describe('ModeloFormularioEdicaoPage', () => {
     const req = controller.expectOne((r) => r.method === 'PUT' && r.url === MODELO);
     const documento = req.request.body.conteudo.documentosExigidos[1];
     expect(documento).toMatchObject({ faseCodigo: 'HOMOLOGACAO' });
-    expect(documento.consequenciaIndeferimento).not.toBe('PENDENCIA_REENVIO');
+    expect(documento.consequenciaIndeferimento).not.toBe('ABRE_PRAZO_PARA_REENVIO');
     req.flush(null, { status: 204, statusText: 'No Content' });
     await propagar();
     controller.expectOne(MODELO).flush(modelo);
@@ -170,6 +170,6 @@ describe('ModeloFormularioEdicaoPage', () => {
     const valores = Array.from(
       (tela.querySelector('#cfg-modelo-docs-doc-0-consequencia') as HTMLSelectElement).options,
     ).map((opcao) => opcao.value);
-    expect(valores).not.toContain('PENDENCIA_REENVIO');
+    expect(valores).not.toContain('ABRE_PRAZO_PARA_REENVIO');
   });
 });

@@ -18,6 +18,7 @@ import {
   TipoDocumentoDto,
   TipoProcessoDto,
 } from '@uniplus/shared-data/configuracao';
+import { SELECAO_BASE_PATH, type OpcaoDeComprovacaoDto } from '@uniplus/shared-data/selecao';
 import {
   acompanharLeitura,
   termoDisponivelDe,
@@ -37,7 +38,7 @@ const SEM_O_CATALOGO = 'Sem o catálogo não é possível acrescentar campos nem
 const SEM_OS_TIPOS =
   'Sem os tipos de processo o campo Tipo de processo não lista as opções nem mostra o tipo do modelo.';
 const SEM_O_VOCABULARIO =
-  'Sem as fases e os tipos de documento não é possível acrescentar documentos exigidos.';
+  'Sem as fases, os tipos de documento e as consequências do indeferimento não é possível acrescentar documentos exigidos.';
 
 function leituraNoTitulo(opcoes: Omit<OpcoesDaLeitura, 'destino'>): LeituraAcompanhada {
   return acompanharLeitura({
@@ -53,6 +54,7 @@ function falhaCom(falhou: Signal<boolean>, mensagem: string): Signal<string | nu
 @Injectable()
 export class ModeloFormularioEdicaoStore {
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
+  private readonly selecaoBasePath = inject(SELECAO_BASE_PATH);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly termosApi = inject(TermosConsentimentoApi);
   private readonly destroyRef = inject(DestroyRef);
@@ -76,6 +78,12 @@ export class ModeloFormularioEdicaoStore {
     params: new HttpParams().set('limit', '100'),
     context: withVendorMime('tipo-documento', 1),
   }));
+  private readonly consequenciasDoIndeferimento = useApiResource<readonly OpcaoDeComprovacaoDto[]>(
+    () => ({
+      url: `${this.selecaoBasePath}/api/selecao/vocabularios/consequencias-indeferimento`,
+      context: withVendorMime('consequencia-indeferimento', 1),
+    }),
+  );
   private readonly tipos = useApiResource<readonly TipoProcessoDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/tipos-processo`,
     params: new HttpParams().set('limit', '100'),
@@ -114,8 +122,9 @@ export class ModeloFormularioEdicaoStore {
   readonly tiposDeDocumento = computed<readonly OpcaoDoDocumento[]>(() =>
     (this.tiposDocumento.data() ?? []).map(({ codigo, nome }) => ({ codigo, nome })),
   );
+  readonly consequencias = computed(() => this.consequenciasDoIndeferimento.data() ?? []);
   readonly vocabularioDosDocumentosComErro = computed(() =>
-    [this.fasesCanonicas, this.tiposDocumento].some(
+    [this.fasesCanonicas, this.tiposDocumento, this.consequenciasDoIndeferimento].some(
       (recurso) => recurso.problem() !== null || recurso.error() !== undefined,
     ),
   );
@@ -123,7 +132,10 @@ export class ModeloFormularioEdicaoStore {
   readonly termosComErro = signal(false);
   readonly termosCarregando = signal(false);
   readonly vocabularioDosDocumentosCarregando = computed(
-    () => this.fasesCanonicas.isLoading() || this.tiposDocumento.isLoading(),
+    () =>
+      this.fasesCanonicas.isLoading() ||
+      this.tiposDocumento.isLoading() ||
+      this.consequenciasDoIndeferimento.isLoading(),
   );
 
   readonly leituraDoModelo = leituraNoTitulo({
@@ -177,6 +189,7 @@ export class ModeloFormularioEdicaoStore {
   recarregarVocabularioDosDocumentos(): void {
     this.fasesCanonicas.reload();
     this.tiposDocumento.reload();
+    this.consequenciasDoIndeferimento.reload();
   }
 
   recarregar(): void {

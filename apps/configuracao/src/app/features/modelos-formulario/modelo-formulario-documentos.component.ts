@@ -24,6 +24,7 @@ export class ModeloFormularioDocumentosComponent {
   readonly fatos = input.required<ReturnType<Store['fatos']>>();
   readonly fases = input.required<ReturnType<Store['fases']>>();
   readonly tiposDeDocumento = input.required<ReturnType<Store['tiposDeDocumento']>>();
+  readonly consequencias = input.required<ReturnType<Store['consequencias']>>();
   readonly recusas = input.required<ReturnType<Edicao['recusasDosDocumentos']>>();
   /** A gravação em curso e a espera pela recarga que a segue. */
   readonly somenteLeitura = input.required<boolean>();

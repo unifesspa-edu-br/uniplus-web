@@ -25,6 +25,7 @@ describe('ModeloFormularioDocumentosComponent', () => {
       fatos: [],
       fases: [],
       tiposDeDocumento: [],
+      consequencias: [],
       recusas: { porDocumento: new Map(), gerais: [] },
       somenteLeitura: false,
       comMunicipios: false,
