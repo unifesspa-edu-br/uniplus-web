@@ -1,3 +1,13 @@
+import type {
+  TipoDaProvidencia,
+  SituacaoDaProvidencia,
+  CausaDoEncerramento,
+} from './codigos-de-autorizacao';
+export type {
+  TipoDaProvidencia,
+  SituacaoDaProvidencia,
+  CausaDoEncerramento,
+} from './codigos-de-autorizacao';
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -7,20 +17,8 @@ import { AUTORIZACAO_BASE_PATH } from './tokens';
 
 type Esquemas = components['schemas'];
 
-/** O que a providência pede: a retirada do acesso ou a revisão dele. */
-export type TipoDaProvidencia = 'retirada' | 'revisao';
-
-/**
- * Aberta, respondida e atendida são gravadas; prejudicada é a aberta cuja concessão deixou de valer
- * por outro caminho, calculada na leitura.
- */
-export type SituacaoDaProvidencia = 'aberta' | 'respondida' | 'atendida' | 'prejudicada';
-
 /** O filtro da fila: uma situação ou todas; sem filtro, a API lista as abertas. */
 export type FiltroDaSituacaoDaProvidencia = SituacaoDaProvidencia | 'todas';
-
-/** O que encerrou a concessão da providência prejudicada: o primeiro fato, revogação ou vencimento. */
-export type CausaDoEncerramento = 'revogada' | 'vencida';
 
 export type ConcessaoDaProvidenciaDto = Esquemas['ConcessaoDaProvidenciaDto'];
 

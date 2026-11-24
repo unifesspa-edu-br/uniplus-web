@@ -1,3 +1,4 @@
+import { ResultadoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import type { ItemDaJanelaDto, JanelaDeMigracaoDto } from '@uniplus/shared-data/autorizacao';
 import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
@@ -27,6 +28,7 @@ const ID_DO_ERRO = 'cfg-lote-erro';
   templateUrl: './lote-da-migracao.component.html',
 })
 export class LoteDaMigracaoComponent {
+  protected readonly ResultadoDaMigracao = ResultadoDaMigracao;
   readonly janela = input.required<JanelaDeMigracaoDto>();
   readonly itens = input.required<ItensDaJanela>();
   readonly nomeDoEscopo = input.required<(item: ItemDaJanelaDto) => string>();

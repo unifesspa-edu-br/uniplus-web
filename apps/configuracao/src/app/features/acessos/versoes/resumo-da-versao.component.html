@@ -28,7 +28,7 @@
   <dt>Documento instituidor</dt>
   <dd>
     {{ situacaoDoDocumento(versao().situacaoDoDocumento) }}
-    @if (versao().situacaoDoDocumento === 'verificado') {
+    @if (versao().situacaoDoDocumento === SituacaoDoAnexo.VERIFICADO) {
       <button type="button" class="btn btn--tertiary btn--sm" (click)="abrirDocumento.emit()">
         Abrir documento
       </button>

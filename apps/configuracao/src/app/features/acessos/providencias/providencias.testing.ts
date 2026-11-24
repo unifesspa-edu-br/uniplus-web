@@ -1,3 +1,8 @@
+import {
+  SituacaoDaProvidencia,
+  TipoDaProvidencia,
+  TipoDeEscopo,
+} from '@uniplus/shared-data/autorizacao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef, type Type } from '@angular/core';
@@ -30,16 +35,16 @@ const CONCESSAO_DO_LEANDRO: ProvidenciaDto['concessao'] = {
   id: 'c1',
   beneficiario: pessoa('conta-leandro', 'Leandro Viana'),
   perfil: { id: 'p1', nome: 'Banca de documentos' },
-  escopo: { tipo: 'unidade', unidadeId: 'unidade-1' },
+  escopo: { tipo: TipoDeEscopo.UNIDADE, unidadeId: 'unidade-1' },
   validaAte: null,
   ativa: true,
 };
 
 const ABERTA: Omit<ProvidenciaDto, 'solicitadaPor' | 'concessao'> = {
   id: ID,
-  tipo: 'retirada',
+  tipo: TipoDaProvidencia.RETIRADA,
   fundamento: 'Deixou a banca e mantém acesso a documentos sensíveis.',
-  situacao: 'aberta',
+  situacao: SituacaoDaProvidencia.ABERTA,
   abertaEm: '2026-11-10T12:00:00Z',
   encerramentoDaConcessao: null,
   desfecho: null,

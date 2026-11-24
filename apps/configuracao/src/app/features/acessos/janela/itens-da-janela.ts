@@ -1,3 +1,4 @@
+import { ResultadoDaMigracao, SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import type {
   DecisaoDaMigracao,
   ItemDaJanelaDto,
@@ -25,8 +26,8 @@ type GrupoComAcao = 'doLote' | 'retidas' | 'naProtecaoDeDados';
 
 const GRUPO_DA_SITUACAO: Readonly<Record<string, GrupoComAcao>> = {
   aguardando_lote: 'doLote',
-  retida: 'retidas',
-  aguardando_protecao_de_dados: 'naProtecaoDeDados',
+  [SituacaoDaMigracao.RETIDA]: 'retidas',
+  [SituacaoDaMigracao.AGUARDANDO_PROTECAO_DE_DADOS]: 'naProtecaoDeDados',
 };
 
 /** A janela aceita decisão enquanto está aberta; encerrando ou encerrada, só mostra a situação final. */
@@ -62,7 +63,7 @@ export function semDecisao(
 }
 
 export function quantidadeDeRecusas(decisoes: DecisoesDaMigracao): number {
-  return [...decisoes.values()].filter((decisao) => decisao === 'recusar').length;
+  return [...decisoes.values()].filter((decisao) => decisao === ResultadoDaMigracao.RECUSAR).length;
 }
 
 /** As decisões na ordem das concessões da janela, só das que pertencem à etapa. */

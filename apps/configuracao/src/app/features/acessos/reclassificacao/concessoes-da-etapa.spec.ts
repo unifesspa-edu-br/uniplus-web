@@ -1,24 +1,34 @@
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { describe, expect, it } from 'vitest';
 import { decidiveisDaEtapa, desfechoDaDecisao, pendentesDaEtapa } from './concessoes-da-etapa';
 import { concessao } from './reclassificacao.testing';
 
 const BETINA = concessao();
 const DIOGO = concessao({ concessaoId: 'c2', beneficiarioNome: 'Diogo Teste', ehDoLeitor: true });
-const DECIDIDA = concessao({ concessaoId: 'c3', etapasDecididas: ['gestao_de_acessos'] });
-const OUTRA_ETAPA = concessao({ concessaoId: 'c4', etapasExigidas: ['protecao_de_dados'] });
+const DECIDIDA = concessao({
+  concessaoId: 'c3',
+  etapasDecididas: [EtapaDaVersao.GESTAO_DE_ACESSOS],
+});
+const OUTRA_ETAPA = concessao({
+  concessaoId: 'c4',
+  etapasExigidas: [EtapaDaVersao.PROTECAO_DE_DADOS],
+});
 const TODAS = [BETINA, DIOGO, DECIDIDA, OUTRA_ETAPA];
 
 describe('concessões da etapa', () => {
   it('as pendentes exigem a etapa e ainda não a decidiram', () => {
-    expect(pendentesDaEtapa(TODAS, 'gestao_de_acessos').map((c) => c.concessaoId)).toEqual([
-      'c1',
-      'c2',
-    ]);
-    expect(pendentesDaEtapa(TODAS, 'protecao_de_dados').map((c) => c.concessaoId)).toEqual(['c4']);
+    expect(
+      pendentesDaEtapa(TODAS, EtapaDaVersao.GESTAO_DE_ACESSOS).map((c) => c.concessaoId),
+    ).toEqual(['c1', 'c2']);
+    expect(
+      pendentesDaEtapa(TODAS, EtapaDaVersao.PROTECAO_DE_DADOS).map((c) => c.concessaoId),
+    ).toEqual(['c4']);
   });
 
   it('as decidíveis deixam de fora a concessão da própria pessoa', () => {
-    expect(decidiveisDaEtapa(TODAS, 'gestao_de_acessos').map((c) => c.concessaoId)).toEqual(['c1']);
+    expect(
+      decidiveisDaEtapa(TODAS, EtapaDaVersao.GESTAO_DE_ACESSOS).map((c) => c.concessaoId),
+    ).toEqual(['c1']);
   });
 
   it('o desfecho traz as concessões como a leitura as tem e conta as que ela não tem', () => {

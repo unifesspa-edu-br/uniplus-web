@@ -1,3 +1,4 @@
+import { SituacaoDaVersao } from '@uniplus/shared-data/autorizacao';
 import type { ComponentFixture } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -86,7 +87,7 @@ describe('PerfilDetalhePage: link da versão', () => {
   });
 
   it('com a versão cancelada, mostra o aviso e o perfil, sem versão pendente', async () => {
-    const { host } = await abrir(ok(perfilComEncerrada('cancelada', 2)), {
+    const { host } = await abrir(ok(perfilComEncerrada(SituacaoDaVersao.CANCELADA, 2)), {
       versaoId: 'v2',
       concedidas: [PERMISSAO.autorizacao.perfisAprovarProtecaoDeDados],
     });
@@ -108,7 +109,7 @@ describe('PerfilDetalhePage: link da versão', () => {
   });
 
   it('com a versão do link em vigor e uma proposta posterior recusada, mostra os dois avisos', async () => {
-    const { host } = await abrir(ok(perfilComEncerrada('recusada', 2)), {
+    const { host } = await abrir(ok(perfilComEncerrada(SituacaoDaVersao.RECUSADA, 2)), {
       versaoId: 'v1',
     });
 

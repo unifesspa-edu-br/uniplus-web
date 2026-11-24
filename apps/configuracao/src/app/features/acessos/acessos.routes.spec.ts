@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { CanActivateFn, Route, UrlTree, provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { AuthService, PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import {
   PERMISSOES_DA_CONCESSAO,
   PERMISSOES_DA_JANELA_DE_MIGRACAO,
@@ -210,12 +211,12 @@ describe('rotas dos acessos', () => {
   });
 
   it.each([
-    ['versoes-de-perfil/gestao-de-acessos', 'gestao_de_acessos'],
-    ['versoes-de-perfil/protecao-de-dados', 'protecao_de_dados'],
-    ['janelas-de-migracao/gestao-de-acessos', 'gestao_de_acessos'],
-    ['janelas-de-migracao/protecao-de-dados', 'protecao_de_dados'],
-    ['reclassificacoes/gestao-de-acessos', 'gestao_de_acessos'],
-    ['reclassificacoes/protecao-de-dados', 'protecao_de_dados'],
+    ['versoes-de-perfil/gestao-de-acessos', EtapaDaVersao.GESTAO_DE_ACESSOS],
+    ['versoes-de-perfil/protecao-de-dados', EtapaDaVersao.PROTECAO_DE_DADOS],
+    ['janelas-de-migracao/gestao-de-acessos', EtapaDaVersao.GESTAO_DE_ACESSOS],
+    ['janelas-de-migracao/protecao-de-dados', EtapaDaVersao.PROTECAO_DE_DADOS],
+    ['reclassificacoes/gestao-de-acessos', EtapaDaVersao.GESTAO_DE_ACESSOS],
+    ['reclassificacoes/protecao-de-dados', EtapaDaVersao.PROTECAO_DE_DADOS],
   ])('%s lista a etapa %s', (caminho, etapa) => {
     expect(rota(caminho).data?.['etapa']).toBe(etapa);
   });

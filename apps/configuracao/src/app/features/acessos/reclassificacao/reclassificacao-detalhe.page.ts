@@ -1,3 +1,4 @@
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -11,7 +12,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
-import type { ConcessaoSuspensaDto, EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
+import type { ConcessaoSuspensaDto } from '@uniplus/shared-data/autorizacao';
 import {
   acompanharLeitura,
   AlertComponent,
@@ -82,14 +83,14 @@ export class ReclassificacaoDetalhePage {
     this.escopos.nome(concessao);
   protected readonly etapasDaPessoa = computed<readonly EtapaDaVersao[]>(() => [
     ...(this.permissoes.tem(autorizacao.perfisAprovarFuncional)
-      ? (['gestao_de_acessos'] as const)
+      ? ([EtapaDaVersao.GESTAO_DE_ACESSOS] as const)
       : []),
     ...(this.permissoes.tem(autorizacao.perfisAprovarProtecaoDeDados)
-      ? (['protecao_de_dados'] as const)
+      ? ([EtapaDaVersao.PROTECAO_DE_DADOS] as const)
       : []),
   ]);
   protected readonly voltar = computed(
-    () => FILA_DA_ETAPA[this.etapasDaPessoa()[0] ?? 'gestao_de_acessos'],
+    () => FILA_DA_ETAPA[this.etapasDaPessoa()[0] ?? EtapaDaVersao.GESTAO_DE_ACESSOS],
   );
   protected readonly etapaAberta = computed(() =>
     this.etapasDaPessoa().length > 0 && this.store.reclassificacao()?.vigente
@@ -97,8 +98,7 @@ export class ReclassificacaoDetalhePage {
       : undefined,
   );
   protected readonly selecaoTravada = computed(
-    () =>
-      this.decisao.alcance() === 'todas' || this.escrita.gravando() || this.store.carregando(),
+    () => this.decisao.alcance() === 'todas' || this.escrita.gravando() || this.store.carregando(),
   );
   protected readonly leitura = acompanharLeitura({
     assunto: 'reclassificação',

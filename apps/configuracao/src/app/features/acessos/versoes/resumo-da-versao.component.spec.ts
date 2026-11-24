@@ -1,3 +1,4 @@
+import { EtapaDaVersao, ResultadoDaDecisao } from '@uniplus/shared-data/autorizacao';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { VersaoPendenteDto } from '@uniplus/shared-data/autorizacao';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -8,15 +9,21 @@ import { resultadoDaDecisao } from './rotulos-da-versao';
 type Decisao = VersaoPendenteDto['decisoes'][number];
 
 function decisao(resultado: string): Decisao {
-  return { etapa: 'gestao_de_acessos', resultado, nome: 'Operador de inscrições', temConcessao: false, instante: '2026-11-11T13:40:00Z' };
+  return {
+    etapa: EtapaDaVersao.GESTAO_DE_ACESSOS,
+    resultado,
+    nome: 'Operador de inscrições',
+    temConcessao: false,
+    instante: '2026-11-11T13:40:00Z',
+  };
 }
 
 describe('resultadoDaDecisao', () => {
   it.each([
-    ['aprovado', 'Aprovado', 'success'],
-    ['recusado', 'Recusado', 'danger'],
-    ['perfil_alterado', 'Perfil alterado antes da decisão', 'warning'],
-    ['prazo_vencido', 'Prazo vencido', 'warning'],
+    [ResultadoDaDecisao.APROVADO, 'Aprovado', 'success'],
+    [ResultadoDaDecisao.RECUSADO, 'Recusado', 'danger'],
+    [ResultadoDaDecisao.PERFIL_ALTERADO, 'Perfil alterado antes da decisão', 'warning'],
+    [ResultadoDaDecisao.PRAZO_VENCIDO, 'Prazo vencido', 'warning'],
   ] as const)('mostra %s como "%s" na cor %s', (codigo, texto, variante) => {
     expect(resultadoDaDecisao(codigo)).toEqual({ texto, variante });
   });
@@ -34,7 +41,10 @@ describe('ResumoDaVersaoComponent', () => {
   });
 
   it('mostra a decisão aprovada pela gestão de acessos como sucesso', () => {
-    fixture.componentRef.setInput('versao', versaoPendente({ decisoes: [decisao('aprovado')] }));
+    fixture.componentRef.setInput(
+      'versao',
+      versaoPendente({ decisoes: [decisao(ResultadoDaDecisao.APROVADO)] }),
+    );
     fixture.detectChanges();
 
     const decisoes = [...(fixture.nativeElement as HTMLElement).querySelectorAll('h3')].find(

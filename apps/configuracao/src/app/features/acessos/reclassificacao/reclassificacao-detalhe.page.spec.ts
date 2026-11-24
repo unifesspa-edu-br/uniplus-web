@@ -1,3 +1,4 @@
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { ok, recusa, recusaPeloInterceptor } from '../testes';
@@ -84,8 +85,8 @@ describe('ReclassificacaoDetalhePage', () => {
         reclassificacao({
           concessoes: [
             concessao({
-              etapasExigidas: ['gestao_de_acessos', 'protecao_de_dados'],
-              etapasDecididas: ['protecao_de_dados'],
+              etapasExigidas: [EtapaDaVersao.GESTAO_DE_ACESSOS, EtapaDaVersao.PROTECAO_DE_DADOS],
+              etapasDecididas: [EtapaDaVersao.PROTECAO_DE_DADOS],
             }),
             concessao({ concessaoId: 'c3', beneficiarioNome: 'Paulo Teste', unidadeId: null }),
           ],
@@ -112,7 +113,11 @@ describe('ReclassificacaoDetalhePage', () => {
 
   it('não deixa escolher a concessão cuja etapa já foi decidida', async () => {
     const { host } = await abrirReclassificacao(
-      ok(reclassificacao({ concessoes: [concessao({ etapasDecididas: ['gestao_de_acessos'] })] })),
+      ok(
+        reclassificacao({
+          concessoes: [concessao({ etapasDecididas: [EtapaDaVersao.GESTAO_DE_ACESSOS] })],
+        }),
+      ),
     );
 
     expect(caixaDe(host, 'Betina Teste')).toBeNull();
@@ -158,7 +163,11 @@ describe('ReclassificacaoDetalhePage', () => {
 
   it('traduz o catálogo desatualizado na leitura', async () => {
     const { host } = await abrirReclassificacao(
-      recusaPeloInterceptor('uniplus.autorizacao.catalogo.desatualizado', 503, 'Catalog out of date'),
+      recusaPeloInterceptor(
+        'uniplus.autorizacao.catalogo.desatualizado',
+        503,
+        'Catalog out of date',
+      ),
     );
 
     expect(host.textContent).toContain(

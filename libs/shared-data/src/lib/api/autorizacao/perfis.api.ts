@@ -1,3 +1,4 @@
+export type { CategoriaDaRemocao } from './codigos-de-autorizacao';
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -17,9 +18,6 @@ export type ResourceDoCatalogoDto = components['schemas']['ResourceDoCatalogoRes
 export type ModuloDoCatalogoDto = components['schemas']['ModuloDoCatalogoResponse'];
 export type DadosDaVersaoRequest = components['schemas']['DadosDaVersaoRequest'];
 export type RemoverPermissoesRequest = components['schemas']['RemoverPermissoesRequest'];
-
-/** Motivos de contenção que a API aceita na remoção de permissões. */
-export type CategoriaDaRemocao = 'incidente' | 'erro_de_composicao' | 'mudanca_de_funcao';
 
 /** Cliente dos perfis de acesso: leitura, criação, remoção de permissões. */
 @Injectable({ providedIn: 'root' })

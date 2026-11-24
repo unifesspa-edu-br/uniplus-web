@@ -1,3 +1,4 @@
+export type { ResultadoDaReclassificacao } from './codigos-de-autorizacao';
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -5,7 +6,8 @@ import { ApiResult } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { AUTORIZACAO_BASE_PATH } from './tokens';
 
-export type ItemDaFilaDeReclassificacoesDto = components['schemas']['ItemDaFilaDeReclassificacoesDto'];
+export type ItemDaFilaDeReclassificacoesDto =
+  components['schemas']['ItemDaFilaDeReclassificacoesDto'];
 export type ReclassificacaoDto = components['schemas']['ReclassificacaoDto'];
 export type MudancaDaPermissaoDto = components['schemas']['MudancaDaPermissaoDto'];
 export type VersaoEmUsoDto = components['schemas']['VersaoEmUsoDto'];
@@ -14,9 +16,6 @@ export type ConcessaoSuspensaDto = components['schemas']['ConcessaoSuspensaDto']
 export type DecidirReclassificacaoRequest = components['schemas']['DecidirReclassificacaoRequest'];
 export type DecisaoDaReclassificacaoDto = components['schemas']['DecisaoDaReclassificacaoDto'];
 export type DivergenciaDaGovernancaDto = components['schemas']['DivergenciaDaGovernancaDto'];
-
-/** O resultado da decisão de uma etapa sobre as concessões suspensas pela reclassificação. */
-export type ResultadoDaReclassificacao = 'liberada' | 'mantida';
 
 /** Cliente da reclassificação de permissão: a decisão de cada etapa sobre as concessões suspensas. */
 @Injectable({ providedIn: 'root' })

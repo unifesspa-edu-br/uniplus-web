@@ -1,3 +1,8 @@
+import {
+  QuemDecideOItem,
+  SituacaoDaRevisao,
+  SituacaoDoItemDaRevisao,
+} from '@uniplus/shared-data/autorizacao';
 import { describe, expect, it } from 'vitest';
 import { decideOItem, porBeneficiario, type QuemLe } from './regras-da-revisao';
 import {
@@ -15,7 +20,7 @@ function quemLe(...concedidas: string[]): QuemLe {
   return { tem: (codigo) => concedidas.includes(codigo) };
 }
 
-const DO_REPRESENTANTE = item({ decide: 'gestor-de-acessos' });
+const DO_REPRESENTANTE = item({ decide: QuemDecideOItem.GESTOR_DE_ACESSOS });
 
 describe('quem decide o item da revisão', () => {
   it('o Representante do controlador decide o item comum', () => {
@@ -55,14 +60,22 @@ describe('quem decide o item da revisão', () => {
   it('item decidido ou de concessão encerrada não se decide de novo', () => {
     expect(decideOItem(revisao(), itemDecidido(), quemLe(CONDUZIR))).toBe(false);
     expect(
-      decideOItem(revisao(), item({ situacao: 'concessao_encerrada' }), quemLe(CONDUZIR)),
+      decideOItem(
+        revisao(),
+        item({ situacao: SituacaoDoItemDaRevisao.CONCESSAO_ENCERRADA }),
+        quemLe(CONDUZIR),
+      ),
     ).toBe(false);
   });
 
   it('revisão encerrada é somente leitura', () => {
-    expect(decideOItem(revisao({ situacao: 'concluida' }), item(), quemLe(CONDUZIR, REVER))).toBe(
-      false,
-    );
+    expect(
+      decideOItem(
+        revisao({ situacao: SituacaoDaRevisao.CONCLUIDA }),
+        item(),
+        quemLe(CONDUZIR, REVER),
+      ),
+    ).toBe(false);
   });
 });
 

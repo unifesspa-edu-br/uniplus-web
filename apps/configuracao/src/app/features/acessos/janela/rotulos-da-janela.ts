@@ -1,3 +1,4 @@
+import { FormaDoEncerramento, SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import type { UiTagVariant } from '@uniplus/shared-ui/components';
 
 export interface RotuloDaJanela {
@@ -5,17 +6,17 @@ export interface RotuloDaJanela {
   readonly variante: UiTagVariant;
 }
 
-const SITUACAO_DO_ITEM: Readonly<Record<string, RotuloDaJanela>> = {
+const SITUACAO_DO_ITEM: Readonly<Record<SituacaoDaMigracao | 'aguardando_lote', RotuloDaJanela>> = {
   aguardando_lote: { texto: 'Aguarda o lote', variante: 'info' },
-  retida: { texto: 'Retida', variante: 'warning' },
-  aguardando_protecao_de_dados: {
+  [SituacaoDaMigracao.RETIDA]: { texto: 'Retida', variante: 'warning' },
+  [SituacaoDaMigracao.AGUARDANDO_PROTECAO_DE_DADOS]: {
     texto: 'Aguarda o Representante do controlador',
     variante: 'info',
   },
-  migrada: { texto: 'Migrada', variante: 'success' },
-  recusada: { texto: 'Recusada', variante: 'danger' },
-  nao_migrada: { texto: 'Não migrada no prazo', variante: 'danger' },
-  fora_da_lista: { texto: 'Fora da lista', variante: 'neutral' },
+  [SituacaoDaMigracao.MIGRADA]: { texto: 'Migrada', variante: 'success' },
+  [SituacaoDaMigracao.RECUSADA]: { texto: 'Recusada', variante: 'danger' },
+  [SituacaoDaMigracao.NAO_MIGRADA]: { texto: 'Não migrada no prazo', variante: 'danger' },
+  [SituacaoDaMigracao.FORA_DA_LISTA]: { texto: 'Fora da lista', variante: 'neutral' },
 };
 
 const SITUACAO_DA_JANELA: Readonly<Record<string, RotuloDaJanela>> = {
@@ -24,14 +25,19 @@ const SITUACAO_DA_JANELA: Readonly<Record<string, RotuloDaJanela>> = {
   encerrada: { texto: 'Encerrada', variante: 'neutral' },
 };
 
-const FORMA_DO_ENCERRAMENTO: Readonly<Record<string, string>> = {
-  concluida: 'Todas as concessões foram decididas.',
-  prazo: 'O prazo de 72 horas terminou.',
-  manual: 'A gestão de acessos encerrou a janela antes do prazo.',
+const FORMA_DO_ENCERRAMENTO: Readonly<Record<FormaDoEncerramento, string>> = {
+  [FormaDoEncerramento.CONCLUIDA]: 'Todas as concessões foram decididas.',
+  [FormaDoEncerramento.PRAZO]: 'O prazo de 72 horas terminou.',
+  [FormaDoEncerramento.MANUAL]: 'A gestão de acessos encerrou a janela antes do prazo.',
 };
 
 export function situacaoDoItem(codigo: string): RotuloDaJanela {
-  return SITUACAO_DO_ITEM[codigo] ?? { texto: codigo, variante: 'neutral' };
+  return (
+    SITUACAO_DO_ITEM[codigo as SituacaoDaMigracao | 'aguardando_lote'] ?? {
+      texto: codigo,
+      variante: 'neutral',
+    }
+  );
 }
 
 export function situacaoDaJanela(codigo: string): RotuloDaJanela {
@@ -39,7 +45,7 @@ export function situacaoDaJanela(codigo: string): RotuloDaJanela {
 }
 
 export function formaDoEncerramento(codigo: string | null): string | null {
-  return codigo === null ? null : (FORMA_DO_ENCERRAMENTO[codigo] ?? codigo);
+  return codigo === null ? null : (FORMA_DO_ENCERRAMENTO[codigo as FormaDoEncerramento] ?? codigo);
 }
 
 /** O que diz a quem lê sobre as concessões que são dele: quem as decide depende da situação. */
@@ -62,5 +68,7 @@ const NA_PROTECAO_DE_DADOS: OrientacaoDaPropria = {
 };
 
 export function orientacaoDaPropria(situacao: string): OrientacaoDaPropria {
-  return situacao === 'aguardando_protecao_de_dados' ? NA_PROTECAO_DE_DADOS : NA_GESTAO;
+  return situacao === SituacaoDaMigracao.AGUARDANDO_PROTECAO_DE_DADOS
+    ? NA_PROTECAO_DE_DADOS
+    : NA_GESTAO;
 }

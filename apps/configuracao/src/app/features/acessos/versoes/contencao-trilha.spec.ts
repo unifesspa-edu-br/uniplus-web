@@ -1,3 +1,9 @@
+import {
+  AtorDoEventoDaContencao,
+  EtapaDaVersao,
+  OrigemDaRetomada,
+  TipoDoEventoDaContencao,
+} from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import type { RegistroDaContencaoDto } from '@uniplus/shared-data/autorizacao';
@@ -34,20 +40,20 @@ const TRILHA: readonly RegistroDaContencaoDto[] = [
   {
     ...BASE,
     id: 'r2',
-    tipo: 'retomada',
+    tipo: TipoDoEventoDaContencao.RETOMADA,
     ordem: 2,
-    ator: 'sistema',
+    ator: AtorDoEventoDaContencao.SISTEMA,
     pessoa: null,
-    origem: 'decisao_da_etapa',
+    origem: OrigemDaRetomada.DECISAO_DA_ETAPA,
   },
   {
     ...BASE,
     id: 'r1',
-    tipo: 'suspensao',
+    tipo: TipoDoEventoDaContencao.SUSPENSAO,
     ordem: 1,
-    ator: 'humano',
+    ator: AtorDoEventoDaContencao.HUMANO,
     pessoa: DIOGO,
-    etapa: 'gestao_de_acessos',
+    etapa: EtapaDaVersao.GESTAO_DE_ACESSOS,
     motivo: 'Incidente.',
   },
 ];

@@ -1,3 +1,4 @@
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { Routes } from '@angular/router';
 import { permissaoGuard } from '@uniplus/shared-auth/guards';
 import {
@@ -88,7 +89,10 @@ export const ACESSOS_ROUTES: Routes = [
         canActivate: [
           permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/versoes-de-perfil/gestao-de-acessos']),
         ],
-        data: { breadcrumb: 'Versões de perfil na gestão de acessos', etapa: 'gestao_de_acessos' },
+        data: {
+          breadcrumb: 'Versões de perfil na gestão de acessos',
+          etapa: EtapaDaVersao.GESTAO_DE_ACESSOS,
+        },
         loadComponent: () =>
           import('./versoes/fila-de-versoes.page').then((m) => m.FilaDeVersoesPage),
       },
@@ -97,7 +101,10 @@ export const ACESSOS_ROUTES: Routes = [
         canActivate: [
           permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/versoes-de-perfil/protecao-de-dados']),
         ],
-        data: { breadcrumb: 'Versões de perfil na proteção de dados', etapa: 'protecao_de_dados' },
+        data: {
+          breadcrumb: 'Versões de perfil na proteção de dados',
+          etapa: EtapaDaVersao.PROTECAO_DE_DADOS,
+        },
         loadComponent: () =>
           import('./versoes/fila-de-versoes.page').then((m) => m.FilaDeVersoesPage),
       },
@@ -107,8 +114,8 @@ export const ACESSOS_ROUTES: Routes = [
           permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/janelas-de-migracao/gestao-de-acessos']),
         ],
         data: {
-          breadcrumb: 'Janelas de migração na gestão de acessos',
-          etapa: 'gestao_de_acessos',
+          breadcrumb: 'Revisões das concessões na gestão de acessos',
+          etapa: EtapaDaVersao.GESTAO_DE_ACESSOS,
         },
         loadComponent: () =>
           import('./janela/fila-de-janelas.page').then((m) => m.FilaDeJanelasPage),
@@ -119,8 +126,8 @@ export const ACESSOS_ROUTES: Routes = [
           permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/janelas-de-migracao/protecao-de-dados']),
         ],
         data: {
-          breadcrumb: 'Janelas de migração na proteção de dados',
-          etapa: 'protecao_de_dados',
+          breadcrumb: 'Revisões das concessões na proteção de dados',
+          etapa: EtapaDaVersao.PROTECAO_DE_DADOS,
         },
         loadComponent: () =>
           import('./janela/fila-de-janelas.page').then((m) => m.FilaDeJanelasPage),
@@ -130,7 +137,10 @@ export const ACESSOS_ROUTES: Routes = [
         canActivate: [
           permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/reclassificacoes/gestao-de-acessos']),
         ],
-        data: { breadcrumb: 'Reclassificações na gestão de acessos', etapa: 'gestao_de_acessos' },
+        data: {
+          breadcrumb: 'Reclassificações na gestão de acessos',
+          etapa: EtapaDaVersao.GESTAO_DE_ACESSOS,
+        },
         loadComponent: () =>
           import('./reclassificacao/fila-de-reclassificacoes.page').then(
             (m) => m.FilaDeReclassificacoesPage,
@@ -141,7 +151,10 @@ export const ACESSOS_ROUTES: Routes = [
         canActivate: [
           permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/reclassificacoes/protecao-de-dados']),
         ],
-        data: { breadcrumb: 'Reclassificações na proteção de dados', etapa: 'protecao_de_dados' },
+        data: {
+          breadcrumb: 'Reclassificações na proteção de dados',
+          etapa: EtapaDaVersao.PROTECAO_DE_DADOS,
+        },
         loadComponent: () =>
           import('./reclassificacao/fila-de-reclassificacoes.page').then(
             (m) => m.FilaDeReclassificacoesPage,
@@ -167,9 +180,7 @@ export const ACESSOS_ROUTES: Routes = [
       },
       {
         path: 'termo-de-responsabilidade',
-        canActivate: [
-          permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/termo-de-responsabilidade']),
-        ],
+        canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/termo-de-responsabilidade'])],
         data: { breadcrumb: 'Termo de responsabilidade' },
         loadComponent: () =>
           import('./termo/publicacao-do-termo.page').then((m) => m.PublicacaoDoTermoPage),
@@ -190,7 +201,7 @@ export const ACESSOS_ROUTES: Routes = [
       {
         path: 'perfis/:id/janela',
         canActivate: [permissaoGuard(...PERMISSOES_DA_JANELA_DE_MIGRACAO)],
-        data: { breadcrumb: 'Janela de migração' },
+        data: { breadcrumb: 'Revisão das concessões do perfil' },
         loadComponent: () =>
           import('./janela/janela-da-migracao.page').then((m) => m.JanelaDaMigracaoPage),
       },

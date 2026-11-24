@@ -1,3 +1,4 @@
+import { ResultadoDaMigracao } from './codigos-de-autorizacao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -33,7 +34,7 @@ describe('JanelaDeMigracaoApi', () => {
 
   it('envia o lote por POST em revisao-das-concessoes/decisoes, com chave de idempotência', () => {
     const corpo = {
-      decisoes: [{ concessaoId: CONCESSAO, decisao: 'migrar' }],
+      decisoes: [{ concessaoId: CONCESSAO, decisao: ResultadoDaMigracao.MIGRAR }],
       confirmacaoDeExclusao: false,
     };
     void firstValueFrom(api.enviarLote(PERFIL, corpo, withIdempotencyKey('k1')));
@@ -45,7 +46,7 @@ describe('JanelaDeMigracaoApi', () => {
   });
 
   it('decide a retida pela concessão, na rota das retidas', () => {
-    const corpo = { decisao: 'recusar', confirmacaoDeExclusao: true };
+    const corpo = { decisao: ResultadoDaMigracao.RECUSAR, confirmacaoDeExclusao: true };
     void firstValueFrom(api.decidirRetida(PERFIL, CONCESSAO, corpo, withIdempotencyKey('k2')));
     const req = controller.expectOne(`${JANELA}/retidas/${CONCESSAO}`);
 
@@ -55,7 +56,7 @@ describe('JanelaDeMigracaoApi', () => {
 
   it('decide a etapa da proteção de dados e encerra a janela com o motivo', () => {
     const etapa = {
-      decisoes: [{ concessaoId: CONCESSAO, decisao: 'recusar' }],
+      decisoes: [{ concessaoId: CONCESSAO, decisao: ResultadoDaMigracao.RECUSAR }],
       confirmacaoDeExclusao: true,
     };
     const encerramento = { motivo: 'Versão anterior substituída.', confirmacaoDeExclusao: true };

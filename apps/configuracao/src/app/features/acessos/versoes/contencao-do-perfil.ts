@@ -1,10 +1,10 @@
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { HttpContext } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ProblemI18nService, type ApiResult, type ProblemDetails } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   ContencaoDoPerfilApi,
-  type EtapaDaVersao,
   type RetomadaDaSuspensaoDto,
 } from '@uniplus/shared-data/autorizacao';
 import type { Observable } from 'rxjs';
@@ -32,8 +32,8 @@ const retomar =
 /** O endpoint de cada ação: a retomada leva a etapa que a pessoa decide. */
 const CHAMADAS: Record<AcaoDaContencao, Chamada> = {
   suspender: (api, perfilId, corpo, contexto) => api.suspender(perfilId, corpo, contexto),
-  retomar_gestao_de_acessos: retomar('gestao_de_acessos'),
-  retomar_protecao_de_dados: retomar('protecao_de_dados'),
+  retomar_gestao_de_acessos: retomar(EtapaDaVersao.GESTAO_DE_ACESSOS),
+  retomar_protecao_de_dados: retomar(EtapaDaVersao.PROTECAO_DE_DADOS),
   desativar: (api, perfilId, corpo, contexto) => api.desativar(perfilId, corpo, contexto),
   reativar: (api, perfilId, corpo, contexto) => api.reativar(perfilId, corpo, contexto),
 };

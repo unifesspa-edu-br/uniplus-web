@@ -1,3 +1,4 @@
+import { CategoriaDaRemocao } from './codigos-de-autorizacao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -58,7 +59,7 @@ describe('PerfisApi', () => {
     void firstValueFrom(
       api.remover(
         ID,
-        { permissoes: ['a:b:c'], motivo: 'Excesso.', categoria: 'incidente' },
+        { permissoes: ['a:b:c'], motivo: 'Excesso.', categoria: CategoriaDaRemocao.INCIDENTE },
         withIdempotencyKey('k5'),
       ),
     );
@@ -68,7 +69,7 @@ describe('PerfisApi', () => {
     expect(req.request.body).toEqual({
       permissoes: ['a:b:c'],
       motivo: 'Excesso.',
-      categoria: 'incidente',
+      categoria: CategoriaDaRemocao.INCIDENTE,
     });
   });
 

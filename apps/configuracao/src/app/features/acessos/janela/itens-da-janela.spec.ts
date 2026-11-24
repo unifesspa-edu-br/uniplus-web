@@ -1,3 +1,4 @@
+import { ResultadoDaMigracao, SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { describe, expect, it } from 'vitest';
 import {
   decisoesDaEtapa,
@@ -12,13 +13,13 @@ import { itemDaJanela, janelaDeMigracao } from './janela.testing';
 const BETINA = itemDaJanela({ concessaoId: 'c1', beneficiarioNome: 'Betina Teste' });
 const LEANDRO = itemDaJanela({ concessaoId: 'c2', beneficiarioNome: 'Leandro Teste' });
 const PROPRIA = itemDaJanela({ concessaoId: 'c3', ehDoLeitor: true });
-const RETIDA = itemDaJanela({ concessaoId: 'c4', situacao: 'retida' });
+const RETIDA = itemDaJanela({ concessaoId: 'c4', situacao: SituacaoDaMigracao.RETIDA });
 const NA_PROTECAO = itemDaJanela({
   concessaoId: 'c5',
-  situacao: 'aguardando_protecao_de_dados',
+  situacao: SituacaoDaMigracao.AGUARDANDO_PROTECAO_DE_DADOS,
   exigeProtecaoDeDados: true,
 });
-const MIGRADA = itemDaJanela({ concessaoId: 'c6', situacao: 'migrada' });
+const MIGRADA = itemDaJanela({ concessaoId: 'c6', situacao: SituacaoDaMigracao.MIGRADA });
 
 describe('separarItens', () => {
   it('separa o que a pessoa que lê decide, o que é dela e o que já tem situação final', () => {
@@ -38,7 +39,7 @@ describe('separarItens', () => {
   it('a concessão própria que aguarda a proteção de dados também fica sem ação', () => {
     const propria = itemDaJanela({
       concessaoId: 'c7',
-      situacao: 'aguardando_protecao_de_dados',
+      situacao: SituacaoDaMigracao.AGUARDANDO_PROTECAO_DE_DADOS,
       ehDoLeitor: true,
     });
 
@@ -61,9 +62,9 @@ describe('separarItens', () => {
 
 describe('decisões da migração', () => {
   const decisoes = new Map([
-    ['c1', 'migrar' as const],
-    ['c2', 'recusar' as const],
-    ['fora', 'recusar' as const],
+    ['c1', ResultadoDaMigracao.MIGRAR],
+    ['c2', ResultadoDaMigracao.RECUSAR],
+    ['fora', ResultadoDaMigracao.RECUSAR],
   ]);
 
   it('conta as concessões sem decisão e as recusas', () => {
@@ -73,8 +74,8 @@ describe('decisões da migração', () => {
 
   it('envia só as decisões das concessões da etapa, na ordem da lista', () => {
     expect(decisoesDaEtapa([LEANDRO, BETINA, PROPRIA], decisoes)).toEqual([
-      { concessaoId: 'c2', decisao: 'recusar' },
-      { concessaoId: 'c1', decisao: 'migrar' },
+      { concessaoId: 'c2', decisao: ResultadoDaMigracao.RECUSAR },
+      { concessaoId: 'c1', decisao: ResultadoDaMigracao.MIGRAR },
     ]);
   });
 });

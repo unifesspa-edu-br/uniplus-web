@@ -1,3 +1,4 @@
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { Subject, of } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
@@ -60,8 +61,8 @@ describe('FilaDeVersoesPage', () => {
   beforeEach(reiniciarDuplas);
 
   it.each([
-    ['gestao_de_acessos', 'Versões de perfil na gestão de acessos'],
-    ['protecao_de_dados', 'Versões de perfil na proteção de dados'],
+    [EtapaDaVersao.GESTAO_DE_ACESSOS, 'Versões de perfil na gestão de acessos'],
+    [EtapaDaVersao.PROTECAO_DE_DADOS, 'Versões de perfil na proteção de dados'],
   ] as const)('a etapa %s lê a própria fila e tem o próprio título', async (etapa, titulo) => {
     const { host } = await abrir(etapa);
 
@@ -70,7 +71,7 @@ describe('FilaDeVersoesPage', () => {
   });
 
   it('a fila da etapa de proteção de dados nomeia o Representante do controlador como quem decide', async () => {
-    const { host } = await abrir('protecao_de_dados');
+    const { host } = await abrir(EtapaDaVersao.PROTECAO_DE_DADOS);
 
     expect(host.textContent).toContain(
       'aguardam a decisão do Representante do controlador sobre a adequação à proteção de dados',
@@ -79,7 +80,7 @@ describe('FilaDeVersoesPage', () => {
   });
 
   it('lista cada versão com o perfil, o que muda e a etapa em que está', async () => {
-    const { host } = await abrir('gestao_de_acessos');
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
 
     expect(host.querySelectorAll('section.panel')).toHaveLength(2);
     const primeira = secao(host, OPERADOR);
@@ -90,7 +91,7 @@ describe('FilaDeVersoesPage', () => {
   });
 
   it('mostra o nome e a descrição propostos junto com o nome em vigor', async () => {
-    const { host } = await abrir('gestao_de_acessos', ok([TEXTUAL]));
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS, ok([TEXTUAL]));
 
     const area = secao(host, 'Operador');
     expect(area.textContent).toContain('Operador de processos');
@@ -99,17 +100,17 @@ describe('FilaDeVersoesPage', () => {
   });
 
   it('aprova a mudança só de texto', async () => {
-    const { fixture, host } = await abrir('gestao_de_acessos', ok([TEXTUAL]));
+    const { fixture, host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS, ok([TEXTUAL]));
     versoes.aprovar.mockReturnValue(of(ok({})));
 
     await clicar(fixture, host, 'Operador', 'Aprovar');
 
-    const chamada = ['p5', 'v9', 'gestao_de_acessos', expect.anything()];
+    const chamada = ['p5', 'v9', EtapaDaVersao.GESTAO_DE_ACESSOS, expect.anything()];
     expect(versoes.aprovar).toHaveBeenCalledWith(...chamada);
   });
 
   it('quem só aprova também abre o perfil pelo nome na fila', async () => {
-    const { host } = await abrir('gestao_de_acessos', ok([ITEM]), [
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS, ok([ITEM]), [
       PERMISSAO.autorizacao.perfisAprovarFuncional,
     ]);
 
@@ -118,7 +119,7 @@ describe('FilaDeVersoesPage', () => {
   });
 
   it('sem permissão de perfis mostra o nome sem link', async () => {
-    const { host } = await abrir('gestao_de_acessos', ok([ITEM]), []);
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS, ok([ITEM]), []);
 
     const area = secao(host, OPERADOR);
     expect(area.querySelector('h2 a')).toBeNull();
@@ -126,18 +127,18 @@ describe('FilaDeVersoesPage', () => {
   });
 
   it('diz que a fila está vazia', async () => {
-    const { host } = await abrir('protecao_de_dados', ok([]));
+    const { host } = await abrir(EtapaDaVersao.PROTECAO_DE_DADOS, ok([]));
 
     expect(host.textContent).toContain('Nenhuma versão aguarda a sua aprovação.');
   });
 
   it('aprova a etapa da fila, avisa e relê a fila', async () => {
-    const { fixture, host } = await abrir('protecao_de_dados');
+    const { fixture, host } = await abrir(EtapaDaVersao.PROTECAO_DE_DADOS);
     versoes.aprovar.mockReturnValue(of(ok({})));
 
     await clicar(fixture, host, OPERADOR, 'Aprovar');
 
-    const chamada = ['p1', 'v2', 'protecao_de_dados', expect.anything()];
+    const chamada = ['p1', 'v2', EtapaDaVersao.PROTECAO_DE_DADOS, expect.anything()];
     expect(versoes.aprovar).toHaveBeenCalledWith(...chamada);
     expect(notificacoes.success).toHaveBeenCalledWith('Versão aprovada', OPERADOR);
     expect(leitura).toHaveBeenCalledTimes(2);
@@ -145,7 +146,7 @@ describe('FilaDeVersoesPage', () => {
 
   it('não oferece aprovar nem recusar a versão que a própria pessoa propôs, e explica', async () => {
     const propria = { ...ITEM, propostaPorQuemLe: true };
-    const { host } = await abrir('gestao_de_acessos', ok([propria, OUTRO]));
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS, ok([propria, OUTRO]));
 
     const secaoPropria = secao(host, OPERADOR);
     expect(botao(secaoPropria, 'Aprovar')).toBeUndefined();
@@ -157,14 +158,14 @@ describe('FilaDeVersoesPage', () => {
 
   it('mantém as decisões das outras versões quando uma é a da própria pessoa', async () => {
     const propria = { ...ITEM, propostaPorQuemLe: true };
-    const { host } = await abrir('gestao_de_acessos', ok([propria, OUTRO]));
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS, ok([propria, OUTRO]));
 
     expect(botao(secao(host, 'Auditoria'), 'Aprovar')).toBeDefined();
     expect(botao(secao(host, 'Auditoria'), 'Recusar')).toBeDefined();
   });
 
   it('segura a aprovação enquanto o documento não foi verificado e diz por quê', async () => {
-    const { host } = await abrir('gestao_de_acessos');
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
 
     const area = secao(host, 'Auditoria');
     const aprovar = presente(botao(area, 'Aprovar'));
@@ -176,13 +177,13 @@ describe('FilaDeVersoesPage', () => {
   });
 
   it('não segura a aprovação da versão com o documento verificado', async () => {
-    const { host } = await abrir('gestao_de_acessos');
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
 
     expect(presente(botao(secao(host, OPERADOR), 'Aprovar')).disabled).toBe(false);
   });
 
   it('mostra a recusa da API junto à versão', async () => {
-    const { fixture, host } = await abrir('gestao_de_acessos');
+    const { fixture, host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
     versoes.aprovar.mockReturnValue(of(recusa('uniplus.autorizacao.perfil.decisor_e_autor', 422)));
 
     await clicar(fixture, host, OPERADOR, 'Aprovar');
@@ -192,7 +193,7 @@ describe('FilaDeVersoesPage', () => {
   });
 
   it('mostra a recusa da API sem afetar as outras versões', async () => {
-    const { fixture, host } = await abrir('gestao_de_acessos');
+    const { fixture, host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
     versoes.aprovar.mockReturnValue(of(recusa('uniplus.autorizacao.perfil.decisor_e_autor', 422)));
 
     await clicar(fixture, host, OPERADOR, 'Aprovar');
@@ -202,7 +203,7 @@ describe('FilaDeVersoesPage', () => {
 
   describe('recusar', () => {
     it('exige o motivo antes de chamar a API', async () => {
-      const { fixture, host } = await abrir('gestao_de_acessos');
+      const { fixture, host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
       const dialogo = await abrirODialogoDeRecusa(fixture, host, OPERADOR);
 
       await recusarNoDialogo(fixture, dialogo);
@@ -213,17 +214,17 @@ describe('FilaDeVersoesPage', () => {
     });
 
     it('recusa a etapa da fila com o motivo aparado', async () => {
-      const aberta = await abrir('protecao_de_dados');
+      const aberta = await abrir(EtapaDaVersao.PROTECAO_DE_DADOS);
       versoes.recusar.mockReturnValue(of(ok({})));
 
       await recusarComMotivo(aberta);
 
-      const motivo = { etapa: 'protecao_de_dados', motivo: 'Sem base legal.' };
+      const motivo = { etapa: EtapaDaVersao.PROTECAO_DE_DADOS, motivo: 'Sem base legal.' };
       expect(versoes.recusar).toHaveBeenCalledWith('p1', 'v2', motivo, expect.anything());
     });
 
     it('depois de recusar, fecha o diálogo e avisa', async () => {
-      const aberta = await abrir('protecao_de_dados');
+      const aberta = await abrir(EtapaDaVersao.PROTECAO_DE_DADOS);
       versoes.recusar.mockReturnValue(of(ok({})));
 
       const dialogo = await recusarComMotivo(aberta);
@@ -233,7 +234,7 @@ describe('FilaDeVersoesPage', () => {
     });
 
     it('mostra a recusa da API no diálogo e o mantém aberto', async () => {
-      const aberta = await abrir('gestao_de_acessos');
+      const aberta = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
       const erro = recusa('uniplus.autorizacao.perfil.etapa_ja_decidida', 409);
       versoes.recusar.mockReturnValue(of(erro));
 
@@ -245,7 +246,7 @@ describe('FilaDeVersoesPage', () => {
   });
 
   it('relê a fila e mantém a explicação depois da aprovação recusada com aprovações descartadas', async () => {
-    const { fixture, host } = await abrir('gestao_de_acessos');
+    const { fixture, host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
     const erro = recusa('uniplus.autorizacao.perfil.aprovacoes_descartadas', 409);
     versoes.aprovar.mockReturnValue(of(erro));
     const leiturasAntes = leitura.mock.calls.length;
@@ -258,7 +259,7 @@ describe('FilaDeVersoesPage', () => {
   });
 
   it('relê a fila quando a versão expirou', async () => {
-    const aberta = await abrir('gestao_de_acessos');
+    const aberta = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
     const leiturasAntes = leitura.mock.calls.length;
 
     const dialogo = await recusarExpirada(aberta);
@@ -268,7 +269,7 @@ describe('FilaDeVersoesPage', () => {
   });
 
   it('explica que a versão expirou e a tira da fila', async () => {
-    const aberta = await abrir('gestao_de_acessos');
+    const aberta = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
 
     await recusarExpirada(aberta);
 
@@ -278,7 +279,7 @@ describe('FilaDeVersoesPage', () => {
   });
 
   it('fica indisponível durante a decisão', async () => {
-    const { fixture, host } = await abrir('gestao_de_acessos');
+    const { fixture, host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
     versoes.aprovar.mockReturnValue(new Subject());
 
     presente(botao(secao(host, OPERADOR), 'Aprovar')).click();
@@ -289,7 +290,7 @@ describe('FilaDeVersoesPage', () => {
   });
 
   it('abre o documento da versão e avisa quando o navegador bloqueia', async () => {
-    const { fixture, host } = await abrir('gestao_de_acessos');
+    const { fixture, host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS);
     documento.abrir.mockResolvedValue('bloqueada');
 
     await clicar(fixture, host, OPERADOR, 'Abrir documento');
@@ -302,7 +303,7 @@ describe('FilaDeVersoesPage', () => {
 
   it('com a leitura falha, oferece tentar novamente', async () => {
     const falha = recusa('uniplus.internal.unexpected', 500, 'Erro interno');
-    const { fixture, host } = await abrir('gestao_de_acessos', falha);
+    const { fixture, host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS, falha);
     leitura.mockReturnValue(of(ok([ITEM])));
 
     presente(botao(host, 'Tentar novamente')).click();
@@ -312,7 +313,7 @@ describe('FilaDeVersoesPage', () => {
   });
 
   it('sem permissão para a fila, mostra a recusa sem oferecer nova tentativa', async () => {
-    const { host } = await abrir('gestao_de_acessos', recusa('uniplus.forbidden', 403));
+    const { host } = await abrir(EtapaDaVersao.GESTAO_DE_ACESSOS, recusa('uniplus.forbidden', 403));
 
     expect(botao(host, 'Tentar novamente')).toBeUndefined();
   });

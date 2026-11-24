@@ -1,9 +1,10 @@
-import { PERMISSAO, type CodigoDePermissao } from '@uniplus/shared-auth/bootstrap';
-import type {
-  ItemDaRevisaoDto,
+import {
   QuemDecideOItem,
-  RevisaoDeAcessosDto,
+  SituacaoDaRevisao,
+  SituacaoDoItemDaRevisao,
 } from '@uniplus/shared-data/autorizacao';
+import { PERMISSAO, type CodigoDePermissao } from '@uniplus/shared-auth/bootstrap';
+import type { ItemDaRevisaoDto, RevisaoDeAcessosDto } from '@uniplus/shared-data/autorizacao';
 
 const { autorizacao } = PERMISSAO;
 
@@ -13,8 +14,8 @@ const { autorizacao } = PERMISSAO;
  * (`autorizacao:revisoes:consultar`) não tem nenhuma delas.
  */
 const PERMISSAO_QUE_DECIDE: Readonly<Record<QuemDecideOItem, CodigoDePermissao>> = {
-  'representante-do-controlador': autorizacao.revisoesConduzir,
-  'gestor-de-acessos': autorizacao.revisoesReverProtecaoDeDados,
+  [QuemDecideOItem.REPRESENTANTE_DO_CONTROLADOR]: autorizacao.revisoesConduzir,
+  [QuemDecideOItem.GESTOR_DE_ACESSOS]: autorizacao.revisoesReverProtecaoDeDados,
 };
 
 /** As permissões efetivas de quem lê a revisão. */
@@ -41,7 +42,11 @@ export function decideOItem(
   item: ItemDaRevisaoDto,
   quemLe: QuemLe,
 ): boolean {
-  if (revisao.situacao !== 'em_andamento' || item.situacao !== 'pendente') return false;
+  if (
+    revisao.situacao !== SituacaoDaRevisao.EM_ANDAMENTO ||
+    item.situacao !== SituacaoDoItemDaRevisao.PENDENTE
+  )
+    return false;
   if (item.ehDoLeitor) return false;
   return quemLe.tem(PERMISSAO_QUE_DECIDE[item.decide]);
 }

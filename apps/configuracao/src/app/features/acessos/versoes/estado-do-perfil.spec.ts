@@ -1,3 +1,4 @@
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { describe, expect, it } from 'vitest';
 import {
   acoesDoPerfil,
@@ -30,8 +31,8 @@ const SUSPENSO_DESDE = '2026-11-09T12:00:00Z';
 const DESATIVADO_DESDE = '2026-11-08T12:00:00Z';
 const SUSPENSAO = {
   desde: SUSPENSO_DESDE,
-  papelDeQuemSuspendeu: 'gestao_de_acessos',
-  etapasExigidasAgora: ['gestao_de_acessos'],
+  papelDeQuemSuspendeu: EtapaDaVersao.GESTAO_DE_ACESSOS,
+  etapasExigidasAgora: [EtapaDaVersao.GESTAO_DE_ACESSOS],
   etapasDecididas: [],
 };
 const SUSPENSO = { ...EM_VIGOR, situacaoDoAcesso: ACESSO_SUSPENSO, suspensoDesde: SUSPENSO_DESDE };
@@ -78,23 +79,26 @@ describe('etiquetasDoPerfil', () => {
 });
 
 describe('etiquetasDoDetalhe', () => {
-  it('mostra as mesmas etiquetas da lista quando não há janela de migração', () => {
+  it('mostra as mesmas etiquetas da lista quando não há revisão das concessões do perfil', () => {
     expect(etiquetasDoDetalhe(DESATIVADO)).toEqual(etiquetasDoPerfil(DESATIVADO));
   });
 
-  it('mostra a janela de migração aberta depois da desativação', () => {
+  it('mostra a revisão das concessões do perfil aberta depois da desativação', () => {
     const comJanela = { ...DESATIVADO, emJanelaDeMigracao: true };
 
     expect(textos(etiquetasDoDetalhe(comJanela))).toEqual([
       'Desativado',
-      'Janela de migração aberta',
+      'Revisão das concessões do perfil aberta',
     ]);
   });
 
-  it('a janela de migração aberta é uma etiqueta de aviso', () => {
+  it('a revisão das concessões do perfil aberta é uma etiqueta de aviso', () => {
     const [janela] = etiquetasDoDetalhe({ ...EM_VIGOR, emJanelaDeMigracao: true });
 
-    expect(janela).toEqual({ texto: 'Janela de migração aberta', variante: 'warning' });
+    expect(janela).toEqual({
+      texto: 'Revisão das concessões do perfil aberta',
+      variante: 'warning',
+    });
   });
 });
 
@@ -119,7 +123,7 @@ describe('acoesDoPerfil', () => {
     expect(acoes.proporVersao).toBe(false);
   });
 
-  it('com a janela de migração aberta, não propõe versão nova mas segue aceitando a remoção', () => {
+  it('com a revisão das concessões do perfil aberta, não propõe versão nova mas segue aceitando a remoção', () => {
     const acoes = acoesDoPerfil({ ...EM_VIGOR, emJanelaDeMigracao: true }, GESTAO);
 
     expect(acoes.proporVersao).toBe(false);
@@ -152,16 +156,21 @@ describe('acoesDoPerfil', () => {
   describe('retomada da suspensão', () => {
     const SUSPENSO_A_RETOMAR = {
       ...SUSPENSO,
-      etapasDaRetomadaPorDecidir: ['gestao_de_acessos', 'protecao_de_dados'],
+      etapasDaRetomadaPorDecidir: [
+        EtapaDaVersao.GESTAO_DE_ACESSOS,
+        EtapaDaVersao.PROTECAO_DE_DADOS,
+      ],
     };
     const AMBAS = { gestaoDeAcessos: true, protecaoDeDados: true };
 
     it('oferece cada etapa por decidir que a pessoa tem permissão para decidir', () => {
       expect(acoesDoPerfil(SUSPENSO_A_RETOMAR, AMBAS).retomar).toEqual([
-        'gestao_de_acessos',
-        'protecao_de_dados',
+        EtapaDaVersao.GESTAO_DE_ACESSOS,
+        EtapaDaVersao.PROTECAO_DE_DADOS,
       ]);
-      expect(acoesDoPerfil(SUSPENSO_A_RETOMAR, GESTAO).retomar).toEqual(['gestao_de_acessos']);
+      expect(acoesDoPerfil(SUSPENSO_A_RETOMAR, GESTAO).retomar).toEqual([
+        EtapaDaVersao.GESTAO_DE_ACESSOS,
+      ]);
       expect(
         acoesDoPerfil(SUSPENSO_A_RETOMAR, { gestaoDeAcessos: false, protecaoDeDados: false })
           .retomar,
@@ -171,10 +180,10 @@ describe('acoesDoPerfil', () => {
     it('não oferece a etapa já decidida nem a que o perfil deixou de exigir', () => {
       const soAProtecao = {
         ...SUSPENSO_A_RETOMAR,
-        etapasDaRetomadaPorDecidir: ['protecao_de_dados'],
+        etapasDaRetomadaPorDecidir: [EtapaDaVersao.PROTECAO_DE_DADOS],
       };
 
-      expect(acoesDoPerfil(soAProtecao, AMBAS).retomar).toEqual(['protecao_de_dados']);
+      expect(acoesDoPerfil(soAProtecao, AMBAS).retomar).toEqual([EtapaDaVersao.PROTECAO_DE_DADOS]);
       expect(
         acoesDoPerfil({ ...SUSPENSO_A_RETOMAR, etapasDaRetomadaPorDecidir: [] }, AMBAS).retomar,
       ).toEqual([]);
@@ -184,13 +193,15 @@ describe('acoesDoPerfil', () => {
       const perfil = perfilDoDetalhe({
         suspensao: {
           desde: '2026-11-09T12:00:00Z',
-          papelDeQuemSuspendeu: 'gestao_de_acessos',
-          etapasExigidasAgora: ['gestao_de_acessos', 'protecao_de_dados'],
-          etapasDecididas: ['gestao_de_acessos'],
+          papelDeQuemSuspendeu: EtapaDaVersao.GESTAO_DE_ACESSOS,
+          etapasExigidasAgora: [EtapaDaVersao.GESTAO_DE_ACESSOS, EtapaDaVersao.PROTECAO_DE_DADOS],
+          etapasDecididas: [EtapaDaVersao.GESTAO_DE_ACESSOS],
         },
       });
 
-      expect(resumoDoDetalhe(perfil).etapasDaRetomadaPorDecidir).toEqual(['protecao_de_dados']);
+      expect(resumoDoDetalhe(perfil).etapasDaRetomadaPorDecidir).toEqual([
+        EtapaDaVersao.PROTECAO_DE_DADOS,
+      ]);
     });
   });
 
@@ -222,7 +233,7 @@ describe('acoesDoPerfil', () => {
 });
 
 describe('resumo da lista e do detalhe', () => {
-  it('a lista não informa a janela de migração, que só o detalhe conhece', () => {
+  it('a lista não informa a revisão das concessões do perfil, que só o detalhe conhece', () => {
     const listado = {
       ...perfilDoDetalhe(),
       temVersaoVigente: true,
@@ -232,7 +243,7 @@ describe('resumo da lista e do detalhe', () => {
     expect('emJanelaDeMigracao' in resumoDaLista(listado)).toBe(false);
   });
 
-  it('o detalhe informa se há janela de migração', () => {
+  it('o detalhe informa se há revisão das concessões do perfil', () => {
     const janela = { id: 'j1', terminaEm: '2026-11-12T12:00:00Z', situacao: 'aberta' };
 
     expect(

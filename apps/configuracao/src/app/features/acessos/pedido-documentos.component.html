@@ -12,7 +12,7 @@
             Documento enviado em
             {{ anexo.enviadoEm ? (anexo.enviadoEm | dateBr: 'datetime') : '—' }} ·
             {{ rotuloDoAnexo(anexo.situacao) }}
-            @if (anexo.situacao === 'verificado') {
+            @if (anexo.situacao === SituacaoDoAnexo.VERIFICADO) {
               <button
                 type="button"
                 class="btn btn--tertiary btn--sm"

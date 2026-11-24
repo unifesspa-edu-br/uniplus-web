@@ -1,6 +1,6 @@
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import {
   SituacaoDoAcessoDoPerfilCodigo,
-  type EtapaDaVersao,
   type PerfilDto,
   type PerfilListadoDto,
   type SituacaoDoAcessoDoPerfilDto,
@@ -99,7 +99,7 @@ export const VARIANTES_DO_ACESSO: VariantesDosCodigos<SituacaoDoAcessoDoPerfilCo
   [SituacaoDoAcessoDoPerfilCodigo.SEM_VERSAO_EM_VIGOR]: 'warning',
 };
 const JANELA_DE_MIGRACAO: EtiquetaDoPerfil = {
-  texto: 'Janela de migração aberta',
+  texto: 'Revisão das concessões do perfil aberta',
   variante: 'warning',
 };
 
@@ -126,7 +126,7 @@ function etiquetaDeDesativado(perfil: ResumoDoPerfil): EtiquetaDoPerfil {
 
 /**
  * O perfil de governança não tem versão nem situação para mudar: a composição dele muda por
- * migration. Com a janela de migração aberta o perfil não aceita versão nova, mas a remoção segue.
+ * migration. Com a revisão das concessões do perfil aberta o perfil não aceita versão nova, mas a remoção segue.
  */
 export function acoesDoPerfil(
   perfil: ResumoDoDetalheDoPerfil,
@@ -175,8 +175,8 @@ function etapasDaRetomada(
   permissoes: PermissoesDaContencao,
 ): readonly EtapaDaVersao[] {
   const decidiveis: readonly EtapaDaVersao[] = [
-    ...(permissoes.gestaoDeAcessos ? (['gestao_de_acessos'] as const) : []),
-    ...(permissoes.protecaoDeDados ? (['protecao_de_dados'] as const) : []),
+    ...(permissoes.gestaoDeAcessos ? ([EtapaDaVersao.GESTAO_DE_ACESSOS] as const) : []),
+    ...(permissoes.protecaoDeDados ? ([EtapaDaVersao.PROTECAO_DE_DADOS] as const) : []),
   ];
   return decidiveis.filter((etapa) => perfil.etapasDaRetomadaPorDecidir.includes(etapa));
 }

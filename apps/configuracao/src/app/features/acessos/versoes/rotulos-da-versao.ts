@@ -1,8 +1,13 @@
+import {
+  EtapaDaVersao,
+  ResultadoDaDecisao,
+  SituacaoDaVersao,
+} from '@uniplus/shared-data/autorizacao';
 import type { UiTagVariant } from '@uniplus/shared-ui/components';
 
-const ETAPA: Readonly<Record<string, string>> = {
-  gestao_de_acessos: 'Gestão de acessos',
-  protecao_de_dados: 'Proteção de dados',
+const ETAPA: Readonly<Record<EtapaDaVersao, string>> = {
+  [EtapaDaVersao.GESTAO_DE_ACESSOS]: 'Gestão de acessos',
+  [EtapaDaVersao.PROTECAO_DE_DADOS]: 'Proteção de dados',
 };
 
 export interface RotuloDaDecisao {
@@ -10,17 +15,24 @@ export interface RotuloDaDecisao {
   readonly variante: UiTagVariant;
 }
 
-const RESULTADO: Readonly<Record<string, RotuloDaDecisao>> = {
-  aprovado: { texto: 'Aprovado', variante: 'success' },
-  recusado: { texto: 'Recusado', variante: 'danger' },
-  perfil_alterado: { texto: 'Perfil alterado antes da decisão', variante: 'warning' },
-  prazo_vencido: { texto: 'Prazo vencido', variante: 'warning' },
+const RESULTADO: Readonly<Record<ResultadoDaDecisao, RotuloDaDecisao>> = {
+  [ResultadoDaDecisao.APROVADO]: { texto: 'Aprovado', variante: 'success' },
+  [ResultadoDaDecisao.RECUSADO]: { texto: 'Recusado', variante: 'danger' },
+  [ResultadoDaDecisao.PERFIL_ALTERADO]: {
+    texto: 'Perfil alterado antes da decisão',
+    variante: 'warning',
+  },
+  [ResultadoDaDecisao.PRAZO_VENCIDO]: { texto: 'Prazo vencido', variante: 'warning' },
+  [ResultadoDaDecisao.TERMO_EXIGIDO]: { texto: 'Termo exigido', variante: 'warning' },
 };
 
-const SITUACAO_ENCERRADA: Readonly<Record<string, string>> = {
-  recusada: 'recusada',
-  cancelada: 'cancelada',
-  expirada: 'encerrada por expiração',
+const SITUACAO_ENCERRADA: Readonly<Record<SituacaoDaVersao, string>> = {
+  [SituacaoDaVersao.PENDENTE]: 'pendente',
+  [SituacaoDaVersao.VIGENTE]: 'vigente',
+  [SituacaoDaVersao.ENCERRADA]: 'encerrada',
+  [SituacaoDaVersao.RECUSADA]: 'recusada',
+  [SituacaoDaVersao.CANCELADA]: 'cancelada',
+  [SituacaoDaVersao.EXPIRADA]: 'encerrada por expiração',
 };
 
 interface DecisorDaEtapa {
@@ -29,16 +41,21 @@ interface DecisorDaEtapa {
 }
 
 /** Quem decide cada etapa: os códigos nomeiam o que se confere, e o texto, o papel (ADR-0162). */
-const DECISOR_DA_ETAPA: Readonly<Record<string, DecisorDaEtapa>> = {
-  gestao_de_acessos: { de: 'da gestão de acessos', por: 'pela gestão de acessos' },
-  protecao_de_dados: {
+const DECISOR_DA_ETAPA: Readonly<Record<EtapaDaVersao, DecisorDaEtapa>> = {
+  [EtapaDaVersao.GESTAO_DE_ACESSOS]: { de: 'da gestão de acessos', por: 'pela gestão de acessos' },
+  [EtapaDaVersao.PROTECAO_DE_DADOS]: {
     de: 'do Representante do controlador',
     por: 'pelo Representante do controlador',
   },
 };
 
 function decisorDaEtapa(codigo: string): DecisorDaEtapa {
-  return DECISOR_DA_ETAPA[codigo] ?? { de: `da etapa ${codigo}`, por: `pela etapa ${codigo}` };
+  return (
+    DECISOR_DA_ETAPA[codigo as EtapaDaVersao] ?? {
+      de: `da etapa ${codigo}`,
+      por: `pela etapa ${codigo}`,
+    }
+  );
 }
 
 /** A decisão que a etapa pede, nomeada por quem a toma: "decisão do Representante do controlador". */
@@ -52,21 +69,21 @@ export function porQuemDecide(codigo: string): string {
 }
 
 export function etapaDaVersao(codigo: string): string {
-  return ETAPA[codigo] ?? codigo;
+  return ETAPA[codigo as EtapaDaVersao] ?? codigo;
 }
 
 /** O texto e a cor da decisão; o resultado que a tela não conhece fica neutro, nunca como recusa. */
 export function resultadoDaDecisao(codigo: string): RotuloDaDecisao {
-  return RESULTADO[codigo] ?? { texto: codigo, variante: 'neutral' };
+  return RESULTADO[codigo as ResultadoDaDecisao] ?? { texto: codigo, variante: 'neutral' };
 }
 
 export function situacaoEncerrada(codigo: string): string {
-  return SITUACAO_ENCERRADA[codigo] ?? codigo;
+  return SITUACAO_ENCERRADA[codigo as SituacaoDaVersao] ?? codigo;
 }
 
 /** As etapas que a versão ainda exige, na ordem em que acontecem. */
 export function etapasExigidas(exigeProtecaoDeDados: boolean): string {
   return exigeProtecaoDeDados
-    ? `${etapaDaVersao('gestao_de_acessos')} e ${etapaDaVersao('protecao_de_dados').toLowerCase()}`
-    : etapaDaVersao('gestao_de_acessos');
+    ? `${etapaDaVersao(EtapaDaVersao.GESTAO_DE_ACESSOS)} e ${etapaDaVersao(EtapaDaVersao.PROTECAO_DE_DADOS).toLowerCase()}`
+    : etapaDaVersao(EtapaDaVersao.GESTAO_DE_ACESSOS);
 }

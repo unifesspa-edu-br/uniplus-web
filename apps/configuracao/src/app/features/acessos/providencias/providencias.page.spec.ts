@@ -1,3 +1,4 @@
+import { SituacaoDaProvidencia } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildVendorMimeAccept } from '@uniplus/shared-core/http';
@@ -43,7 +44,7 @@ describe('ProvidenciasPage', () => {
 
   it('lê as abertas por padrão, no media type da providência, na ordem da API', async () => {
     const req = leitura();
-    expect(req.request.params.get('situacao')).toBe('aberta');
+    expect(req.request.params.get('situacao')).toBe(SituacaoDaProvidencia.ABERTA);
     expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('providencia', 1));
     req.flush(FILA);
     await assentar();

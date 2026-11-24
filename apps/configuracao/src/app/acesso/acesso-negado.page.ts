@@ -11,17 +11,22 @@ import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { AccessDeniedComponent } from '@uniplus/shared-auth/components';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
-import { PedidosDeConcessaoApi, type PedidoResumoDto } from '@uniplus/shared-data/autorizacao';
+import type { ApiResult } from '@uniplus/shared-core/http';
+import {
+  PedidosDeConcessaoApi,
+  SituacaoDoPedido,
+  type PedidoResumoDto,
+} from '@uniplus/shared-data/autorizacao';
 import { TagComponent } from '@uniplus/shared-ui/components';
 import { ehOBeneficiario } from '../features/acessos/beneficiario-do-pedido';
 import { situacaoDoPedido } from '../features/acessos/rotulos-de-acesso';
 
 /** Situações em que o pedido ainda espera alguém; as demais já foram decididas ou canceladas. */
-const EM_ABERTO = [
-  'aguardando_documento',
-  'aguardando_beneficiario',
-  'aguardando_gestor',
-  'aguardando_protecao_de_dados',
+const EM_ABERTO: readonly string[] = [
+  SituacaoDoPedido.AGUARDANDO_DOCUMENTO,
+  SituacaoDoPedido.AGUARDANDO_BENEFICIARIO,
+  SituacaoDoPedido.AGUARDANDO_GESTOR,
+  SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
 ];
 
 /** Recusa da API a quem não tem e-mail institucional verificado nem a permissão de manter perfis. */
@@ -48,9 +53,9 @@ function acaoDo(
   pedido: PedidoResumoDto,
   eu: { readonly id: string; readonly email: string } | null,
 ): PedidoEmAberto['acao'] {
-  if (pedido.situacao === 'aguardando_documento') return 'anexar';
+  if (pedido.situacao === SituacaoDoPedido.AGUARDANDO_DOCUMENTO) return 'anexar';
   const aceitavel =
-    pedido.situacao === 'aguardando_beneficiario' &&
+    pedido.situacao === SituacaoDoPedido.AGUARDANDO_BENEFICIARIO &&
     eu !== null &&
     ehOBeneficiario(pedido.beneficiario, eu);
   return aceitavel ? 'aceitar' : 'ver';
@@ -132,28 +137,23 @@ export class AcessoNegadoPage implements OnInit {
   }
 
   private carregarPedidosEmAberto(): void {
-    // Uma consulta por situação em aberto: a fila completa é paginada e o pedido em aberto pode
-    // estar atrás de uma página de pedidos já encerrados.
     const consulta = forkJoin(
       EM_ABERTO.map((situacao) => this.api.listar({ fila: 'meus', situacao })),
-    ).subscribe({
-      next: (resultados) => {
-        const eu = this.usuario.user();
-        const porId = new Map<string, PedidoResumoDto>();
-        for (const resultado of resultados) {
-          if (!resultado.ok) continue;
-          for (const pedido of resultado.data) {
-            if (EM_ABERTO.includes(pedido.situacao)) porId.set(pedido.id, pedido);
-          }
-        }
-        this.emAberto.set(
-          [...porId.values()].map((pedido) => ({
-            pedido,
-            acao: acaoDo(pedido, eu),
-          })),
-        );
-      },
-    });
+    ).subscribe({ next: (resultados) => this.mostrarPedidosEmAberto(resultados) });
     this.destroyRef.onDestroy(() => consulta.unsubscribe());
+  }
+
+  private mostrarPedidosEmAberto(
+    resultados: readonly ApiResult<readonly PedidoResumoDto[]>[],
+  ): void {
+    const eu = this.usuario.user();
+    const porId = new Map<string, PedidoResumoDto>();
+    for (const resultado of resultados) {
+      if (!resultado.ok) continue;
+      for (const pedido of resultado.data) {
+        if (EM_ABERTO.includes(pedido.situacao)) porId.set(pedido.id, pedido);
+      }
+    }
+    this.emAberto.set([...porId.values()].map((pedido) => ({ pedido, acao: acaoDo(pedido, eu) })));
   }
 }

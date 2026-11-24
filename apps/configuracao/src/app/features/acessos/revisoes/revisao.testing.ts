@@ -1,4 +1,10 @@
 import {
+  QuemDecideOItem,
+  SituacaoDaRevisao,
+  SituacaoDoItemDaRevisao,
+  TipoDeEscopo,
+} from '@uniplus/shared-data/autorizacao';
+import {
   HttpHeaders,
   HttpResponse,
   provideHttpClient,
@@ -42,10 +48,10 @@ const ITEM_PENDENTE = {
   id: 'i1',
   concessaoId: 'c1',
   perfil: { id: 'p1', nome: 'Operador de inscrições' },
-  escopo: { tipo: 'unidade', unidadeId: 'unidade-1' },
+  escopo: { tipo: TipoDeEscopo.UNIDADE, unidadeId: 'unidade-1' },
   validaAte: null,
-  decide: 'representante-do-controlador',
-  situacao: 'pendente',
+  decide: QuemDecideOItem.REPRESENTANTE_DO_CONTROLADOR,
+  situacao: SituacaoDoItemDaRevisao.PENDENTE,
   decididoPor: null,
   decididoEm: null,
   ehDoLeitor: false,
@@ -67,7 +73,7 @@ export function item(parcial: Partial<ItemDaRevisaoDto> = {}): ItemDaRevisaoDto 
 /** O item já decidido: confirmado por quem lê, com a governança gravada. */
 export function itemDecidido(parcial: Partial<ItemDaRevisaoDto> = {}): ItemDaRevisaoDto {
   return item({
-    situacao: 'confirmada',
+    situacao: SituacaoDoItemDaRevisao.CONFIRMADA,
     decididoPor: pessoa(CONTA_DE_QUEM_LE, 'Betina Neves'),
     decididoEm: '2026-11-10T13:00:00Z',
     ...parcial,
@@ -77,7 +83,7 @@ export function itemDecidido(parcial: Partial<ItemDaRevisaoDto> = {}): ItemDaRev
 const REVISAO_ABERTA = {
   id: ID,
   abertaEm: '2026-11-09T12:00:00Z',
-  situacao: 'em_andamento',
+  situacao: SituacaoDaRevisao.EM_ANDAMENTO,
   totalDeItens: 4,
   pendentes: 3,
 } as const satisfies Partial<RevisaoDeAcessosDto>;
@@ -94,7 +100,7 @@ export function itensDaRevisao(): ItemDaRevisaoDto[] {
     item({
       id: 'i3',
       beneficiario: pessoa('conta-diogo', 'Diogo Souza'),
-      decide: 'gestor-de-acessos',
+      decide: QuemDecideOItem.GESTOR_DE_ACESSOS,
     }),
     item({ id: 'i4', beneficiario: pessoa(CONTA_DE_QUEM_LE, 'Betina Neves'), ehDoLeitor: true }),
   ];

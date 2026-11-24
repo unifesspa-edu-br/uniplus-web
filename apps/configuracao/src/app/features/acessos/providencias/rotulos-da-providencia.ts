@@ -1,9 +1,9 @@
-import type {
+import {
   CausaDoEncerramento,
-  FiltroDaSituacaoDaProvidencia,
   SituacaoDaProvidencia,
   TipoDaProvidencia,
 } from '@uniplus/shared-data/autorizacao';
+import type { FiltroDaSituacaoDaProvidencia } from '@uniplus/shared-data/autorizacao';
 import type { UiTagVariant } from '@uniplus/shared-ui/components';
 
 /** A situação como a tela a mostra: o texto do contrato e a cor da etiqueta. */
@@ -13,20 +13,20 @@ export interface SituacaoNaTela {
 }
 
 const SITUACOES: Readonly<Record<SituacaoDaProvidencia, SituacaoNaTela>> = {
-  aberta: { texto: 'Aberta', variante: 'warning' },
-  respondida: { texto: 'Respondida', variante: 'info' },
-  atendida: { texto: 'Atendida', variante: 'success' },
-  prejudicada: { texto: 'Prejudicada', variante: 'neutral' },
+  [SituacaoDaProvidencia.ABERTA]: { texto: 'Aberta', variante: 'warning' },
+  [SituacaoDaProvidencia.RESPONDIDA]: { texto: 'Respondida', variante: 'info' },
+  [SituacaoDaProvidencia.ATENDIDA]: { texto: 'Atendida', variante: 'success' },
+  [SituacaoDaProvidencia.PREJUDICADA]: { texto: 'Prejudicada', variante: 'neutral' },
 };
 
 const TIPOS: Readonly<Record<TipoDaProvidencia, string>> = {
-  retirada: 'Retirada do acesso',
-  revisao: 'Revisão do acesso',
+  [TipoDaProvidencia.RETIRADA]: 'Retirada do acesso',
+  [TipoDaProvidencia.REVISAO]: 'Revisão do acesso',
 };
 
 const ENCERRAMENTOS: Readonly<Record<CausaDoEncerramento, string>> = {
-  revogada: 'Concessão revogada',
-  vencida: 'Concessão vencida',
+  [CausaDoEncerramento.REVOGADA]: 'Concessão revogada',
+  [CausaDoEncerramento.VENCIDA]: 'Concessão vencida',
 };
 
 /** Os tipos na ordem em que a solicitação os oferece. */

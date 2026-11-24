@@ -1,3 +1,4 @@
+import { ResultadoDaMigracao, SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
@@ -17,12 +18,12 @@ import {
 const BETINA = itemDaJanela({
   concessaoId: 'c1',
   beneficiarioNome: 'Betina Teste',
-  situacao: 'retida',
+  situacao: SituacaoDaMigracao.RETIDA,
 });
 const REBECA = itemDaJanela({
   concessaoId: 'c3',
   beneficiarioNome: 'Rebeca Teste',
-  situacao: 'retida',
+  situacao: SituacaoDaMigracao.RETIDA,
   ehDoLeitor: true,
 });
 const DEPOIS_DO_ENVIO = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA, REBECA] });
@@ -56,13 +57,16 @@ describe('concessões retidas da revisão', () => {
 
     presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
     await responder(
-      janelaDeMigracao({ decisoesEnviadas: true, itens: [{ ...BETINA, situacao: 'migrada' }] }),
+      janelaDeMigracao({
+        decisoesEnviadas: true,
+        itens: [{ ...BETINA, situacao: SituacaoDaMigracao.MIGRADA }],
+      }),
     );
 
     expect(api.decidirRetida).toHaveBeenCalledWith(
       PERFIL,
       'c1',
-      { decisao: 'migrar', confirmacaoDeExclusao: false },
+      { decisao: ResultadoDaMigracao.MIGRAR, confirmacaoDeExclusao: false },
       expect.anything(),
     );
     expect(notificacoes.success).toHaveBeenCalledWith('Concessão migrada');
@@ -88,7 +92,7 @@ describe('concessões retidas da revisão', () => {
     expect(api.decidirRetida).toHaveBeenCalledWith(
       PERFIL,
       'c1',
-      { decisao: 'recusar', confirmacaoDeExclusao: true },
+      { decisao: ResultadoDaMigracao.RECUSAR, confirmacaoDeExclusao: true },
       expect.anything(),
     );
     expect(notificacoes.success).toHaveBeenCalledWith('Concessão recusada');
@@ -133,11 +137,11 @@ describe('concessões retidas da revisão', () => {
       janelaDeMigracao({
         situacao: 'encerrada',
         decisoesEnviadas: true,
-        itens: [{ ...BETINA, situacao: 'nao_migrada' }],
+        itens: [{ ...BETINA, situacao: SituacaoDaMigracao.NAO_MIGRADA }],
       }),
     );
 
-    expect(host.textContent).toContain('A janela mudou');
+    expect(host.textContent).toContain('A revisão das concessões mudou');
     expect(host.textContent).toContain('O prazo da revisão das concessões terminou.');
     expect(host.textContent).toContain('Não migrada no prazo');
     expect(host.querySelector('cfg-retidas-da-janela')).toBeNull();

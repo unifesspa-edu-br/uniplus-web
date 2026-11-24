@@ -71,7 +71,7 @@
       </fieldset>
       <p class="cfg-muted">
         A sua própria concessão fica de fora quando você decide todas.
-        @if (decisao.etapa() === 'gestao_de_acessos') {
+        @if (decisao.etapa() === etapasDaVersao.GESTAO_DE_ACESSOS) {
           Ao liberar, ficam de fora também as que o escopo da permissão não comporta; manter
           suspensas essas concessões é permitido.
         }

@@ -1,3 +1,4 @@
+import { SituacaoDoPedido, TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
@@ -45,10 +46,10 @@ describe('PedidosPage', () => {
     await atualizar();
     expect(store.itens()).toHaveLength(1);
     expect(fixture.nativeElement.textContent).toContain('Betina Teste');
-    store.filtrarPor('recusado');
+    store.filtrarPor(SituacaoDoPedido.RECUSADO);
     await atualizar();
     const filtro = http.expectOne((r) => r.url === URL);
-    expect(filtro.request.params.get('situacao')).toBe('recusado');
+    expect(filtro.request.params.get('situacao')).toBe(SituacaoDoPedido.RECUSADO);
     filtro.flush([]);
     await atualizar();
     expect(store.itens()).toHaveLength(0);
@@ -139,7 +140,7 @@ describe('PedidosPage', () => {
     fixture.detectChanges();
     const req = http.expectOne((r) => r.url === URL);
     expect(req.request.params.get('fila')).toBe('meus');
-    req.flush([pedido({ situacao: 'aguardando_gestor' })]);
+    req.flush([pedido({ situacao: SituacaoDoPedido.AGUARDANDO_GESTOR })]);
     await atualizar();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('h1')?.textContent).toContain('Meus pedidos de acesso');
@@ -170,11 +171,11 @@ describe('PedidosPage', () => {
     http.expectOne((r) => r.url === URL).flush([]);
     await atualizar();
     const select = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
-    select.value = 'aprovado';
+    select.value = SituacaoDoPedido.APROVADO;
     select.dispatchEvent(new Event('change'));
     await atualizar();
     const req = http.expectOne((r) => r.url === URL);
-    expect(req.request.params.get('situacao')).toBe('aprovado');
+    expect(req.request.params.get('situacao')).toBe(SituacaoDoPedido.APROVADO);
     req.flush([]);
     await atualizar();
   });
@@ -186,19 +187,19 @@ describe('PedidosPage', () => {
     const inicial = http.expectOne((r) => r.url === URL);
     expect(inicial.request.params.get('fila')).toBe('todos');
     expect(inicial.request.params.has('situacao')).toBe(false);
-    inicial.flush([pedido({ situacao: 'recusado' })]);
+    inicial.flush([pedido({ situacao: SituacaoDoPedido.RECUSADO })]);
     await atualizar();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('h1')?.textContent).toContain('Histórico de pedidos');
     expect(host.textContent).toContain('Recusado');
     expect(host.querySelector('a[href="/acessos/pedidos/novo"]')).toBeNull();
     const select = host.querySelector('select') as HTMLSelectElement;
-    select.value = 'recusado';
+    select.value = SituacaoDoPedido.RECUSADO;
     select.dispatchEvent(new Event('change'));
     await atualizar();
     const filtro = http.expectOne((r) => r.url === URL);
     expect(filtro.request.params.get('fila')).toBe('todos');
-    expect(filtro.request.params.get('situacao')).toBe('recusado');
+    expect(filtro.request.params.get('situacao')).toBe(SituacaoDoPedido.RECUSADO);
     filtro.flush([]);
     await atualizar();
   });
@@ -208,7 +209,7 @@ describe('PedidosPage', () => {
     const fixture = TestBed.createComponent(PedidosPage);
     fixture.componentRef.setInput('fila', 'todos');
     fixture.detectChanges();
-    http.expectOne((r) => r.url === URL).flush([pedido({ situacao: 'recusado' })]);
+    http.expectOne((r) => r.url === URL).flush([pedido({ situacao: SituacaoDoPedido.RECUSADO })]);
     await atualizar();
     const linha = fixture.nativeElement.querySelector('tbody tr') as HTMLElement;
     expect(linha.getAttribute('tabindex')).toBe('0');
@@ -257,7 +258,7 @@ describe('PedidosPage', () => {
       .expectOne((r) => r.url === URL)
       .flush([
         pedido(),
-        pedido({ id: 'pedido-2', escopo: { tipo: 'instituicao', unidadeId: null } }),
+        pedido({ id: 'pedido-2', escopo: { tipo: TipoDeEscopo.INSTITUICAO, unidadeId: null } }),
       ]);
     await atualizar();
 

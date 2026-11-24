@@ -1,3 +1,4 @@
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import type { Type } from '@angular/core';
@@ -44,7 +45,7 @@ const LEITURAS: readonly Leitura[] = [
     nome: 'fila de versões de perfil',
     store: FilaDeVersoesStore,
     url: `${BASE}/versoes-de-perfil`,
-    iniciar: (store: FilaDeVersoesStore) => store.etapa.set('gestao_de_acessos'),
+    iniciar: (store: FilaDeVersoesStore) => store.etapa.set(EtapaDaVersao.GESTAO_DE_ACESSOS),
   },
   { nome: 'lista de concessões', store: ConcessoesStore, url: `${BASE}/concessoes` },
   {

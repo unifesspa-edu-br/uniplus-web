@@ -1,3 +1,5 @@
+import type { EtapaDaVersao } from './codigos-de-autorizacao';
+export type { EtapaDaVersao } from './codigos-de-autorizacao';
 import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -13,9 +15,6 @@ export type ItemDaFilaDeVersoesDto = components['schemas']['ItemDaFilaDeVersoesD
 export type EnvioDoDocumentoDto = components['schemas']['EnvioDoDocumentoDto'];
 export type DocumentoDaVersaoDto = components['schemas']['DocumentoDaVersaoDto'];
 export type LeituraDoDocumentoDaVersaoDto = components['schemas']['LeituraDoDocumentoDaVersaoDto'];
-
-/** Etapa da aprovação de uma versão: cada uma tem a própria fila e a própria permissão. */
-export type EtapaDaVersao = 'gestao_de_acessos' | 'protecao_de_dados';
 
 /** A proposta devolve o envio do documento quando cria versão pendente, ou o perfil quando só retirou permissões. */
 export type ResultadoDaProposta = EnvioDoDocumentoDto | PerfilDto;
@@ -33,11 +32,9 @@ export class VersoesDoPerfilApi {
     request: ProporVersaoRequest,
     context: HttpContext,
   ): Observable<ApiResult<ResultadoDaProposta>> {
-    return this.http.post<ApiResult<ResultadoDaProposta>>(
-      `${this.versoes(perfilId)}`,
-      request,
-      { context },
-    );
+    return this.http.post<ApiResult<ResultadoDaProposta>>(`${this.versoes(perfilId)}`, request, {
+      context,
+    });
   }
 
   /** POST `.../versoes/{versaoId}/cancelamento` — cancela a versão pendente, com motivo. */

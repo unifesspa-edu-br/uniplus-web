@@ -1,3 +1,4 @@
+import { ResultadoDaLiberacao } from '@uniplus/shared-data/autorizacao';
 import { Injectable, inject, signal } from '@angular/core';
 import { ProblemI18nService, type ProblemDetails } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
@@ -61,7 +62,7 @@ export class DecisaoDaReclassificacao {
   }
 
   liberar(reclassificacao: ReclassificacaoDto): Promise<void> {
-    return this.enviar(reclassificacao, 'liberada', null);
+    return this.enviar(reclassificacao, ResultadoDaLiberacao.LIBERADA, null);
   }
 
   pedirManutencao(): void {
@@ -77,7 +78,9 @@ export class DecisaoDaReclassificacao {
 
   manter(reclassificacao: ReclassificacaoDto): Promise<void> {
     const motivo = this.motivo.exigir();
-    return motivo === null ? Promise.resolve() : this.enviar(reclassificacao, 'mantida', motivo);
+    return motivo === null
+      ? Promise.resolve()
+      : this.enviar(reclassificacao, ResultadoDaLiberacao.MANTIDA, motivo);
   }
 
   private enviar(
@@ -90,14 +93,30 @@ export class DecisaoDaReclassificacao {
       this.falhar(SEM_CONCESSAO_MARCADA);
       return Promise.resolve();
     }
-    const escolhidas = [...this.marcadas()];
-    const todas = this.alcance() === 'todas';
-    const corpo = { etapa, resultado, concessoes: todas ? null : escolhidas, todas, motivo };
+    return this.executar(reclassificacao, etapa, resultado, motivo);
+  }
+
+  private executar(
+    reclassificacao: ReclassificacaoDto,
+    etapa: EtapaDaVersao,
+    resultado: ResultadoDaReclassificacao,
+    motivo: string | null,
+  ): Promise<void> {
+    const corpo = this.corpo(etapa, resultado, motivo);
     return this.escrita.executar(
       'decisao',
       () => this.gravar(reclassificacao, corpo),
       (mensagem) => this.falhar(mensagem),
     );
+  }
+
+  private corpo(
+    etapa: EtapaDaVersao,
+    resultado: ResultadoDaReclassificacao,
+    motivo: string | null,
+  ) {
+    const todas = this.alcance() === 'todas';
+    return { etapa, resultado, concessoes: todas ? null : [...this.marcadas()], todas, motivo };
   }
 
   private semAlvo(): boolean {

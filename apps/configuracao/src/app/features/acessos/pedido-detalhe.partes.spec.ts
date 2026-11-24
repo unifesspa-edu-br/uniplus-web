@@ -1,3 +1,9 @@
+import {
+  EtapaDoPedido,
+  ResultadoDaDecisao,
+  SituacaoDoAnexo,
+  SituacaoDoPedido,
+} from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -28,7 +34,7 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
 
   it('o beneficiário nomeado aceita o pedido que espera por ele', async () => {
     const aguardando = pedido({
-      situacao: 'aguardando_beneficiario',
+      situacao: SituacaoDoPedido.AGUARDANDO_BENEFICIARIO,
       etapaAtual: null,
       beneficiario: { email: EU.email, identidade: null, nome: null },
     });
@@ -54,20 +60,23 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
 
   it('não oferece cancelar depois da decisão nem no pedido encerrado', async () => {
     const decisao = {
-      etapa: 'gestor',
+      etapa: EtapaDoPedido.GESTOR,
       decisor: { emissor: 'unifesspa', contaId: 'conta-gestor-0000' },
-      resultado: 'aprovado',
+      resultado: ResultadoDaDecisao.APROVADO,
       motivo: null,
       instante: '2026-10-28T13:00:00Z',
       permissoesAvaliadas: [],
-      sensibilidadeAvaliada: 'pessoal',
+      sensibilidadeAvaliada: 'PESSOAL',
       dispensa: null,
     };
     const decidido = await abrir([], { ...solicitadoPorMim(), decisoes: [decisao] });
     expect(botao(noResumo(decidido.host), 'Cancelar o pedido')).toBeUndefined();
     expect(decidido.host.textContent).toContain('Dado pessoal');
 
-    const encerrado = await abrir([], { ...solicitadoPorMim(), situacao: 'aprovado' });
+    const encerrado = await abrir([], {
+      ...solicitadoPorMim(),
+      situacao: SituacaoDoPedido.APROVADO,
+    });
     expect(botao(noResumo(encerrado.host), 'Cancelar o pedido')).toBeUndefined();
   });
 
@@ -99,7 +108,11 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
   it('destaca a pendência e a ação de anexar quando o pedido aguarda o documento', async () => {
     const { host } = await abrir(
       [],
-      pedido({ ...solicitadoPorMim(), situacao: 'aguardando_documento', etapaAtual: null }),
+      pedido({
+        ...solicitadoPorMim(),
+        situacao: SituacaoDoPedido.AGUARDANDO_DOCUMENTO,
+        etapaAtual: null,
+      }),
     );
 
     expect(host.textContent).toContain('Falta o documento de designação');
@@ -126,7 +139,7 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
           ...solicitadoPorMim(),
           termo: TERMO,
           anexaraDocumento: true,
-          situacao: 'aguardando_documento',
+          situacao: SituacaoDoPedido.AGUARDANDO_DOCUMENTO,
           etapaAtual: null,
         }),
       );
@@ -217,11 +230,16 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
       anexos: [
         {
           id: 'a1',
-          situacao: 'verificado',
+          situacao: SituacaoDoAnexo.VERIFICADO,
           tamanhoDeclarado: 10,
           enviadoEm: '2026-10-28T12:30:00Z',
         },
-        { id: 'a2', situacao: 'em_verificacao', tamanhoDeclarado: 10, enviadoEm: null },
+        {
+          id: 'a2',
+          situacao: SituacaoDoAnexo.EM_VERIFICACAO,
+          tamanhoDeclarado: 10,
+          enviadoEm: null,
+        },
       ],
     });
     const { fixture, host } = await abrir([GESTOR], comAnexo);

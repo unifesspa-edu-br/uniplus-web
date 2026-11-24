@@ -1,3 +1,8 @@
+import {
+  QuemDecideOItem,
+  SituacaoDaRevisao,
+  SituacaoDoItemDaRevisao,
+} from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -111,7 +116,11 @@ describe('RevisaoDetalhePage', () => {
     });
 
     it('revisão encerrada é somente leitura e diz isso', async () => {
-      const encerrada = revisao({ situacao: 'concluida', pendentes: 0, itens: [itemDecidido()] });
+      const encerrada = revisao({
+        situacao: SituacaoDaRevisao.CONCLUIDA,
+        pendentes: 0,
+        itens: [itemDecidido()],
+      });
       const { host } = await abrirRevisao([ok(encerrada)], [CONDUZIR, REVER]);
 
       expect(host.textContent).toContain('Revisão encerrada');
@@ -137,7 +146,10 @@ describe('RevisaoDetalhePage', () => {
       ['quem consulta concessões', [CONSULTAR, CONSULTAR_CONCESSOES]],
       ['quem administra concessões', [CONDUZIR, ADMINISTRAR_CONCESSOES]],
     ] as const)('o item decidido leva %s à concessão', async (_, concedidas) => {
-      const revogado = itemDecidido({ situacao: 'revogada', concessaoId: 'c9' });
+      const revogado = itemDecidido({
+        situacao: SituacaoDoItemDaRevisao.REVOGADA,
+        concessaoId: 'c9',
+      });
       const { host } = await abrirRevisao([ok(revisao({ itens: [revogado] }))], concedidas);
 
       expect(link(linha(host, 'i1'))?.getAttribute('href')).toBe('/acessos/concessoes/c9');
@@ -177,7 +189,7 @@ describe('RevisaoDetalhePage', () => {
       api.confirmar.mockReturnValue(
         of(recusaPeloInterceptor(DECISOR_MUDOU, 422, 'O item cabe à outra governança')),
       );
-      const relida = revisao({ itens: [item({ decide: 'gestor-de-acessos' })] });
+      const relida = revisao({ itens: [item({ decide: QuemDecideOItem.GESTOR_DE_ACESSOS })] });
       const { host } = await abrirRevisao([ok(revisao()), ok(relida)]);
 
       botao(linha(host, 'i1'), 'Confirmar').click();
@@ -193,7 +205,9 @@ describe('RevisaoDetalhePage', () => {
       api.confirmar.mockReturnValue(
         of(recusaPeloInterceptor('uniplus.autorizacao.revisao.item_ja_decidido', 409, 'x')),
       );
-      const relida = revisao({ itens: [itemDecidido({ id: 'i1', situacao: 'revogada' })] });
+      const relida = revisao({
+        itens: [itemDecidido({ id: 'i1', situacao: SituacaoDoItemDaRevisao.REVOGADA })],
+      });
       const { host } = await abrirRevisao([ok(revisao()), ok(relida)]);
 
       botao(linha(host, 'i1'), 'Confirmar').click();
@@ -252,7 +266,7 @@ describe('RevisaoDetalhePage', () => {
       api.revogar.mockReturnValue(
         of(recusaPeloInterceptor(DECISOR_MUDOU, 422, 'O item cabe à outra governança')),
       );
-      const relida = revisao({ itens: [item({ decide: 'gestor-de-acessos' })] });
+      const relida = revisao({ itens: [item({ decide: QuemDecideOItem.GESTOR_DE_ACESSOS })] });
       const { host } = await abrirRevisao([ok(revisao()), ok(relida)]);
 
       await revogarComMotivo(host, 'i1');

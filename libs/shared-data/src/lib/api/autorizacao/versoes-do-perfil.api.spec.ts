@@ -1,3 +1,4 @@
+import { EtapaDaVersao } from './codigos-de-autorizacao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -59,24 +60,33 @@ describe('VersoesDoPerfilApi', () => {
   });
 
   it('aprova e recusa informando a etapa, e a recusa leva o motivo', () => {
-    void firstValueFrom(api.aprovar(PERFIL, VERSAO, 'gestao_de_acessos', withIdempotencyKey('k3')));
     void firstValueFrom(
-      api.recusar(PERFIL, VERSAO, { etapa: 'protecao_de_dados', motivo: 'Sem base.' }, withIdempotencyKey('k4')),
+      api.aprovar(PERFIL, VERSAO, EtapaDaVersao.GESTAO_DE_ACESSOS, withIdempotencyKey('k3')),
+    );
+    void firstValueFrom(
+      api.recusar(
+        PERFIL,
+        VERSAO,
+        { etapa: EtapaDaVersao.PROTECAO_DE_DADOS, motivo: 'Sem base.' },
+        withIdempotencyKey('k4'),
+      ),
     );
 
     expect(controller.expectOne(`${DA_VERSAO}/aprovacao`).request.body).toEqual({
-      etapa: 'gestao_de_acessos',
+      etapa: EtapaDaVersao.GESTAO_DE_ACESSOS,
     });
     expect(controller.expectOne(`${DA_VERSAO}/recusa`).request.body).toEqual({
-      etapa: 'protecao_de_dados',
+      etapa: EtapaDaVersao.PROTECAO_DE_DADOS,
       motivo: 'Sem base.',
     });
   });
 
   it('lê a fila da etapa', () => {
-    void firstValueFrom(api.fila('protecao_de_dados'));
+    void firstValueFrom(api.fila(EtapaDaVersao.PROTECAO_DE_DADOS));
     const req = controller.expectOne(
-      (r) => r.url === `${RAIZ}/versoes-de-perfil` && r.params.get('fila') === 'protecao_de_dados',
+      (r) =>
+        r.url === `${RAIZ}/versoes-de-perfil` &&
+        r.params.get('fila') === EtapaDaVersao.PROTECAO_DE_DADOS,
     );
 
     expect(req.request.method).toBe('GET');

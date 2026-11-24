@@ -1,3 +1,4 @@
+import { SituacaoDaRevisao } from '@uniplus/shared-data/autorizacao';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
@@ -41,7 +42,7 @@ const RESUMO: RevisaoResumoDto = {
   id: 'r1',
   abertaEm: '2026-11-09T12:00:00Z',
   abertaPor: pessoa('conta-betina', 'Betina Neves'),
-  situacao: 'em_andamento',
+  situacao: SituacaoDaRevisao.EM_ANDAMENTO,
   totalDeItens: 4,
   pendentes: 3,
 };
@@ -146,7 +147,7 @@ describe('lista de revisões com a situação recusada pela API (400)', () => {
     const host = await abrirLista();
     const filtro = host.querySelector('select') as HTMLSelectElement;
 
-    filtro.value = 'concluida';
+    filtro.value = SituacaoDaRevisao.CONCLUIDA;
     filtro.dispatchEvent(new Event('change'));
     await assentar();
     expect(host.textContent).toContain('Não foi possível carregar');

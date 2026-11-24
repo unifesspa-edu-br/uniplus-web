@@ -1,3 +1,4 @@
+import { ResultadoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { Injectable, inject, signal } from '@angular/core';
 import {
   JanelaDeMigracaoApi,
@@ -20,7 +21,7 @@ export class DecisaoDaRetida {
   readonly erros = signal<ReadonlyMap<string, string>>(new Map());
 
   migrar(perfilId: string, item: ItemDaJanelaDto): Promise<void> {
-    return this.enviar(perfilId, item, 'migrar');
+    return this.enviar(perfilId, item, ResultadoDaMigracao.MIGRAR);
   }
 
   pedirRecusa(item: ItemDaJanelaDto): void {
@@ -32,7 +33,9 @@ export class DecisaoDaRetida {
 
   confirmarRecusa(perfilId: string): Promise<void> {
     const item = this.recusando();
-    return item === null ? Promise.resolve() : this.enviar(perfilId, item, 'recusar');
+    return item === null
+      ? Promise.resolve()
+      : this.enviar(perfilId, item, ResultadoDaMigracao.RECUSAR);
   }
 
   private enviar(
@@ -52,7 +55,7 @@ export class DecisaoDaRetida {
     concessaoId: string,
     decisao: DecisaoDaMigracao,
   ): Promise<void> {
-    const corpo = { decisao, confirmacaoDeExclusao: decisao === 'recusar' };
+    const corpo = { decisao, confirmacaoDeExclusao: decisao === ResultadoDaMigracao.RECUSAR };
     const recusa = await this.envio.enviar(`retida:${perfilId}:${concessaoId}`, corpo, (c) =>
       this.api.decidirRetida(perfilId, concessaoId, corpo, c),
     );
@@ -63,7 +66,9 @@ export class DecisaoDaRetida {
   private concluir(decisao: DecisaoDaMigracao): void {
     this.confirmando.set(false);
     this.recusando.set(null);
-    this.envio.concluir(decisao === 'migrar' ? 'Concessão migrada' : 'Concessão recusada');
+    this.envio.concluir(
+      decisao === ResultadoDaMigracao.MIGRAR ? 'Concessão migrada' : 'Concessão recusada',
+    );
   }
 
   private registrarErro(concessaoId: string, texto: string | null): void {

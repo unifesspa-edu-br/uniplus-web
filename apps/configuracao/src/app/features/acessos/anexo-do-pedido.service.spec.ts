@@ -1,3 +1,4 @@
+import { SituacaoDoAnexo } from '@uniplus/shared-data/autorizacao';
 import { HttpHeaders, HttpResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
@@ -10,7 +11,7 @@ import { ok, recusa } from './testes';
 
 const PARA_ENVIO = {
   id: 'anexo-1',
-  situacao: 'aguardando_envio',
+  situacao: SituacaoDoAnexo.AGUARDANDO_ENVIO,
   urlDeEnvio: 'https://armazenamento.exemplo.test/put',
   tipoDeMidia: 'application/pdf',
   expiraEm: '2999-01-01T00:00:00Z',

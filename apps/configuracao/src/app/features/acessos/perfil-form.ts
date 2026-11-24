@@ -1,5 +1,6 @@
+import { CategoriaDaRemocao } from '@uniplus/shared-data/autorizacao';
 import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
-import type { CategoriaDaRemocao, PerfilDto } from '@uniplus/shared-data/autorizacao';
+import type { PerfilDto } from '@uniplus/shared-data/autorizacao';
 import { controlNameFromBackendField, mensagemDeErroDoControle } from '../../shared/formulario';
 
 export type CampoDoPerfil =
@@ -37,9 +38,9 @@ export const CATEGORIAS_DA_REMOCAO: readonly {
   readonly value: CategoriaDaRemocao;
   readonly label: string;
 }[] = [
-  { value: 'incidente', label: 'Incidente de segurança' },
-  { value: 'erro_de_composicao', label: 'Erro de composição do perfil' },
-  { value: 'mudanca_de_funcao', label: 'Mudança de função' },
+  { value: CategoriaDaRemocao.INCIDENTE, label: 'Incidente de segurança' },
+  { value: CategoriaDaRemocao.ERRO_DE_COMPOSICAO, label: 'Erro de composição do perfil' },
+  { value: CategoriaDaRemocao.MUDANCA_DE_FUNCAO, label: 'Mudança de função' },
 ];
 
 export type FormularioDePerfil = ReturnType<typeof criarFormularioDePerfil>;

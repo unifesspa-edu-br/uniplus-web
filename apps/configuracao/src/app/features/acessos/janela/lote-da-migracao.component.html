@@ -39,7 +39,7 @@
           type="button"
           class="btn btn--secondary btn--rect"
           [disabled]="gravando()"
-          (click)="lote.decidirTodas(itens().doLote, 'migrar')"
+          (click)="lote.decidirTodas(itens().doLote, ResultadoDaMigracao.MIGRAR)"
         >
           Migrar todas
         </button>
@@ -47,7 +47,7 @@
           type="button"
           class="btn btn--secondary btn--rect"
           [disabled]="gravando()"
-          (click)="lote.decidirTodas(itens().doLote, 'recusar')"
+          (click)="lote.decidirTodas(itens().doLote, ResultadoDaMigracao.RECUSAR)"
         >
           Recusar todas
         </button>

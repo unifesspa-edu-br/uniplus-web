@@ -1,3 +1,4 @@
+import { CategoriaDaRemocao, EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { EnvironmentProviders, Provider } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -224,7 +225,7 @@ export interface RemocaoPreenchida {
 export const REMOCAO_DA_TELA: RemocaoPreenchida = {
   permissao: LEITURA.nome,
   motivo: 'x',
-  categoria: 'incidente',
+  categoria: CategoriaDaRemocao.INCIDENTE,
 };
 
 /** Marca a permissão, escreve o motivo e escolhe a categoria no diálogo de remoção. */
@@ -247,7 +248,7 @@ export function perfilComEncerrada(situacao: string, numero: number): PerfilDto 
     ultimaVersaoEncerradaSemVigor: {
       numero,
       situacao,
-      etapa: 'protecao_de_dados',
+      etapa: EtapaDaVersao.PROTECAO_DE_DADOS,
       instante: '2026-11-03T12:00:00Z',
     },
   });

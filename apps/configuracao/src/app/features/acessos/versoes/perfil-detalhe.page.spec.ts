@@ -1,3 +1,4 @@
+import { EtapaDaVersao, SituacaoDaVersao } from '@uniplus/shared-data/autorizacao';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { perfilDoDetalhe, versaoPendente } from './perfis.testing';
@@ -20,9 +21,9 @@ import {
 
 const SUSPENSAO_EM_RETOMADA = {
   desde: '2026-11-09T15:00:00Z',
-  papelDeQuemSuspendeu: 'gestao_de_acessos',
-  etapasExigidasAgora: ['gestao_de_acessos', 'protecao_de_dados'],
-  etapasDecididas: ['gestao_de_acessos'],
+  papelDeQuemSuspendeu: EtapaDaVersao.GESTAO_DE_ACESSOS,
+  etapasExigidasAgora: [EtapaDaVersao.GESTAO_DE_ACESSOS, EtapaDaVersao.PROTECAO_DE_DADOS],
+  etapasDecididas: [EtapaDaVersao.GESTAO_DE_ACESSOS],
 };
 
 describe('PerfilDetalhePage', () => {
@@ -66,23 +67,23 @@ describe('PerfilDetalhePage', () => {
     expect(host.textContent).not.toContain('Você propôs esta versão.');
   });
 
-  it('com a janela de migração aberta, mostra o prazo e o caminho para a janela e não propõe versão nova', async () => {
+  it('com a revisão das concessões do perfil aberta, mostra o prazo e o caminho para a janela e não propõe versão nova', async () => {
     const janela = { id: 'j1', terminaEm: '2026-11-12T12:00:00Z', situacao: 'aberta' };
     const { host } = await abrir(ok(perfilDoDetalhe({ revisaoDasConcessoes: janela })));
 
-    expect(host.textContent).toContain('Janela de migração aberta');
+    expect(host.textContent).toContain('Revisão das concessões do perfil aberta');
     expect(host.textContent).toContain('12/11/2026');
     expect(host.querySelector('a[href="/acessos/perfis/p1/janela"]')?.textContent).toContain(
-      'Abrir a janela de migração',
+      'Abrir a revisão das concessões do perfil',
     );
     expect(botao(host, 'Propor nova versão')).toBeUndefined();
     expect(botao(host, 'Remover permissões')).toBeDefined();
   });
 
-  it('sem janela de migração, não mostra o aviso', async () => {
+  it('sem revisão das concessões do perfil, não mostra o aviso', async () => {
     const { host } = await abrir(ok(perfilDoDetalhe({ revisaoDasConcessoes: null })));
 
-    expect(host.textContent).not.toContain('Janela de migração');
+    expect(host.textContent).not.toContain('Revisão das concessões do perfil');
   });
 
   it('perfil suspenso mostra o estado, desde quando e as etapas da retomada', async () => {
@@ -127,7 +128,7 @@ describe('PerfilDetalhePage', () => {
     },
   );
 
-  it('depois da situação do acesso vêm a desativação e a janela de migração, nessa ordem', async () => {
+  it('depois da situação do acesso vêm a desativação e a revisão das concessões do perfil, nessa ordem', async () => {
     const janela = { id: 'j1', terminaEm: '2026-11-12T12:00:00Z', situacao: 'aberta' };
     const { host } = await abrir(
       ok(
@@ -142,7 +143,11 @@ describe('PerfilDetalhePage', () => {
     const etiquetas = [...host.querySelectorAll('.cfg-tags .tag')].map((tag) =>
       tag.textContent?.trim(),
     );
-    expect(etiquetas).toEqual([ACESSO_EM_VIGOR.rotulo, 'Desativado', 'Janela de migração aberta']);
+    expect(etiquetas).toEqual([
+      ACESSO_EM_VIGOR.rotulo,
+      'Desativado',
+      'Revisão das concessões do perfil aberta',
+    ]);
   });
 
   it('perfil desativado mostra desde quando', async () => {
@@ -209,7 +214,7 @@ describe('PerfilDetalhePage', () => {
   });
 
   it('avisa que a última versão proposta não entrou em vigor', async () => {
-    const { host } = await abrir(ok(perfilComEncerrada('recusada', 3)));
+    const { host } = await abrir(ok(perfilComEncerrada(SituacaoDaVersao.RECUSADA, 3)));
 
     expect(host.textContent).toContain('A última versão proposta não entrou em vigor');
     expect(host.textContent).toContain('A versão 3 foi recusada.');

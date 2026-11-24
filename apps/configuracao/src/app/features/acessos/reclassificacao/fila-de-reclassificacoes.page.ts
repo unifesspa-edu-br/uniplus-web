@@ -1,3 +1,4 @@
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -9,7 +10,6 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import type { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import {
   acompanharLeitura,
   FalhaDeLeituraComponent,
@@ -29,12 +29,12 @@ interface Apresentacao {
 }
 
 const APRESENTACAO: Readonly<Record<EtapaDaVersao, Apresentacao>> = {
-  gestao_de_acessos: {
+  [EtapaDaVersao.GESTAO_DE_ACESSOS]: {
     titulo: 'Reclassificações na gestão de acessos',
     descricao:
       'Permissões cujo escopo mudou e que mantêm concessões suspensas à espera da sua decisão.',
   },
-  protecao_de_dados: {
+  [EtapaDaVersao.PROTECAO_DE_DADOS]: {
     titulo: 'Reclassificações na proteção de dados',
     descricao:
       'Permissões cuja classificação subiu e que mantêm concessões suspensas à espera da sua decisão.',

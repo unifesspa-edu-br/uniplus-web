@@ -1,3 +1,4 @@
+import { CategoriaDaRemocao } from '@uniplus/shared-data/autorizacao';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { LEITURA, perfilDoDetalhe, versaoPendente } from './perfis.testing';
@@ -21,7 +22,7 @@ import {
 const REMOCAO_ESPERADA = {
   permissoes: [LEITURA.codigo],
   motivo: 'Acesso excessivo.',
-  categoria: 'erro_de_composicao',
+  categoria: CategoriaDaRemocao.ERRO_DE_COMPOSICAO,
 };
 const ERRO_DE_MOTIVO = { field: 'Motivo', code: 'motivo_invalido', message: 'Motivo recusado.' };
 const ERRO_DE_PERMISSAO = {
@@ -46,7 +47,7 @@ async function removerComMotivo(
   const dados = {
     ...REMOCAO_DA_TELA,
     motivo: ' Acesso excessivo. ',
-    categoria: 'erro_de_composicao',
+    categoria: CategoriaDaRemocao.ERRO_DE_COMPOSICAO,
   };
   preencherARemocao(dialogo, dados);
   await confirmarARemocao(fixture, host);

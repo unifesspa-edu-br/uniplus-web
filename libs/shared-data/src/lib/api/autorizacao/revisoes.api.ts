@@ -1,3 +1,13 @@
+import type {
+  SituacaoDaRevisao,
+  SituacaoDoItemDaRevisao,
+  QuemDecideOItem,
+} from './codigos-de-autorizacao';
+export type {
+  SituacaoDaRevisao,
+  SituacaoDoItemDaRevisao,
+  QuemDecideOItem,
+} from './codigos-de-autorizacao';
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -6,9 +16,6 @@ import { PaginaQuery, paramsDaPagina } from './paginacao';
 import type { components } from './schema';
 import { AUTORIZACAO_BASE_PATH } from './tokens';
 
-/** Situação da revisão na API: com item pendente ela segue em andamento; sem nenhum, está concluída. */
-export type SituacaoDaRevisao = 'em_andamento' | 'concluida';
-
 /**
  * A página da lista de revisões; a `situacao`, quando informada, filtra no servidor antes da
  * paginação.
@@ -16,19 +23,6 @@ export type SituacaoDaRevisao = 'em_andamento' | 'concluida';
 export interface ListaDeRevisoesQuery extends PaginaQuery {
   readonly situacao?: SituacaoDaRevisao;
 }
-
-/** Situação do item: a decisão gravada, a espera dela ou a concessão que deixou de valer fora da revisão. */
-export type SituacaoDoItemDaRevisao =
-  | 'pendente'
-  | 'confirmada'
-  | 'revogada'
-  | 'concessao_encerrada';
-
-/**
- * Quem decide o item (ADR-0162): o Representante do controlador decide os itens comuns, e a gestão de
- * acessos, os de quem é Representante. No item pendente é quem decidiria agora; no decidido, a governança gravada.
- */
-export type QuemDecideOItem = 'representante-do-controlador' | 'gestor-de-acessos';
 
 /*
  * O contrato gerado traz situação e quem decide como `string`; os tipos abaixo dão a eles os

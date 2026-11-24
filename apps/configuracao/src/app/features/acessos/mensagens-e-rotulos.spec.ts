@@ -1,3 +1,4 @@
+import { EtapaDoPedido, SituacaoDoAnexo, SituacaoDoPedido } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { describe, expect, it } from 'vitest';
@@ -88,14 +89,19 @@ describe('mensagens de acesso', () => {
 
 describe('rótulos de acesso', () => {
   it('traduz o vocabulário da API e devolve o código desconhecido como veio', () => {
-    expect(situacaoDoPedido('aguardando_gestor').texto).toBe('Aguardando a gestão de acessos');
+    expect(situacaoDoPedido(SituacaoDoPedido.AGUARDANDO_GESTOR).texto).toBe(
+      'Aguardando a gestão de acessos',
+    );
     expect(situacaoDoPedido('novo').texto).toBe('novo');
-    expect(situacaoDoAnexo('em_verificacao')).toBe('Em verificação');
+    expect(situacaoDoAnexo(SituacaoDoAnexo.EM_VERIFICACAO)).toBe('Em verificação');
     expect(situacaoDoAnexo('x')).toBe('x');
     expect(tipoDeEvento('pedido_criado')).toBe('Pedido criado');
+    expect(tipoDeEvento('APROVADO')).toBe('Aprovação');
+    expect(tipoDeEvento('RECUSADO')).toBe('Recusa');
+    expect(tipoDeEvento('SUSPENSAO')).toBe('Perfil suspenso');
     expect(tipoDeEvento('prazo_vencido_entre_etapas')).toBe('Prazo vencido entre as etapas');
     expect(sensibilidade('Sensivel')).toBe('Dado sensível');
-    expect(etapa('protecao_de_dados')).toBe('Proteção de dados');
+    expect(etapa(EtapaDoPedido.PROTECAO_DE_DADOS)).toBe('Proteção de dados');
     expect(etapa(null)).toBe('—');
     expect(motivoDaDispensa('designacao_de_protecao_de_dados')).toBe(
       'designação do Representante do controlador',
@@ -123,7 +129,7 @@ describe('detalhe da trilha', () => {
     expect(detalheDaTrilha(`Anexo ${anexo}. SHA-256 do PDF: ${hash}.`)).toBe(
       'Documento. SHA-256 do PDF: 5d6e2503….',
     );
-    expect(detalheDaTrilha('Etapa: gestor. Sensibilidade avaliada: pessoal.')).toBe(
+    expect(detalheDaTrilha('Etapa: GESTOR. Sensibilidade avaliada: PESSOAL.')).toBe(
       'Etapa: Gestão de acessos. Sensibilidade avaliada: Dado pessoal.',
     );
     expect(detalheDaTrilha('Motivo: designacao_de_protecao_de_dados.')).toBe(
@@ -136,10 +142,10 @@ describe('detalhe da trilha', () => {
   it('traduz a etapa da decisão da revisão e tira o identificador da revisão', () => {
     const revisao = '01a188d4-4a99-7db5-b0cd-0f3e30cce2be';
 
-    expect(detalheDaTrilha(`Etapa: gestao_de_acessos. Janela: ${revisao}.`)).toBe(
+    expect(detalheDaTrilha(`Etapa: GESTAO_DE_ACESSOS. Revisão: ${revisao}.`)).toBe(
       'Etapa: Gestão de acessos.',
     );
-    expect(tipoDeEvento('migracao_recusar')).toBe('Migração recusada');
+    expect(tipoDeEvento('migracao_recusar')).toBe('Concessão recusada na revisão');
   });
 
   it('nomeia em pt-BR os eventos do termo de responsabilidade nas trilhas do pedido e da concessão', () => {

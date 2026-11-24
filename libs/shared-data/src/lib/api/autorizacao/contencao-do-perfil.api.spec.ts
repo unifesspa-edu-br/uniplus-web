@@ -1,3 +1,4 @@
+import { EtapaDaVersao } from './codigos-de-autorizacao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -47,17 +48,17 @@ describe('ContencaoDoPerfilApi', () => {
   });
 
   it('retoma uma etapa e devolve se a suspensão terminou e o que falta', async () => {
-    const corpo = { etapa: 'gestao_de_acessos', motivo: 'Incidente resolvido.' };
+    const corpo = { etapa: EtapaDaVersao.GESTAO_DE_ACESSOS, motivo: 'Incidente resolvido.' };
     const resposta = firstValueFrom(api.retomar(ID, corpo, withIdempotencyKey('chave-2')));
 
     const req = controller.expectOne(`${RAIZ}/${ID}/suspensao/retomada`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(corpo);
-    req.flush({ concluida: false, etapasPendentes: ['protecao_de_dados'] });
+    req.flush({ concluida: false, etapasPendentes: [EtapaDaVersao.PROTECAO_DE_DADOS] });
     const resultado = await resposta;
     expect(resultado.ok && resultado.data).toEqual({
       concluida: false,
-      etapasPendentes: ['protecao_de_dados'],
+      etapasPendentes: [EtapaDaVersao.PROTECAO_DE_DADOS],
     });
   });
 });

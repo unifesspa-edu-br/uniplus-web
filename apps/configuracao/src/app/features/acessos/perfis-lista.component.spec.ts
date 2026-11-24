@@ -1,3 +1,5 @@
+import { TipoDeGovernanca } from '@uniplus/shared-data/autorizacao';
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import type { PerfilListadoDto } from '@uniplus/shared-data/autorizacao';
@@ -15,7 +17,7 @@ const COMUM: PerfilListadoDto = {
   descricao: 'Opera as inscrições.',
   ativo: true,
   governanca: null,
-  sensibilidade: 'interno',
+  sensibilidade: 'INTERNO',
   situacaoDoAcesso: ACESSO_EM_VIGOR,
   temVersaoPendente: false,
   suspensao: null,
@@ -35,8 +37,8 @@ const SUSPENSO: PerfilListadoDto = {
   situacaoDoAcesso: ACESSO_SUSPENSO,
   suspensao: {
     desde: '2026-11-09T15:00:00Z',
-    papelDeQuemSuspendeu: 'gestao_de_acessos',
-    etapasExigidasAgora: ['gestao_de_acessos'],
+    papelDeQuemSuspendeu: EtapaDaVersao.GESTAO_DE_ACESSOS,
+    etapasExigidasAgora: [EtapaDaVersao.GESTAO_DE_ACESSOS],
     etapasDecididas: [],
   },
 };
@@ -44,7 +46,7 @@ const GOVERNANCA: PerfilListadoDto = {
   ...COMUM,
   id: 'p2',
   nome: 'Gestor de acessos',
-  governanca: 'gestor',
+  governanca: TipoDeGovernanca.GESTOR_DE_ACESSOS,
 };
 
 describe('PerfisListaComponent', () => {

@@ -1,3 +1,4 @@
+import { SituacaoDoAnexo } from '@uniplus/shared-data/autorizacao';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import type { VersaoPendenteDto } from '@uniplus/shared-data/autorizacao';
 import { TagComponent } from '@uniplus/shared-ui/components';
@@ -15,6 +16,7 @@ import { etapaDaVersao, etapasExigidas, resultadoDaDecisao } from './rotulos-da-
   templateUrl: './resumo-da-versao.component.html',
 })
 export class ResumoDaVersaoComponent {
+  protected readonly SituacaoDoAnexo = SituacaoDoAnexo;
   readonly versao = input.required<VersaoPendenteDto>();
   /** O nome e a descrição em vigor, quando a tela os conhece, para comparar com os propostos. */
   readonly nomeVigente = input<string | null>(null);
