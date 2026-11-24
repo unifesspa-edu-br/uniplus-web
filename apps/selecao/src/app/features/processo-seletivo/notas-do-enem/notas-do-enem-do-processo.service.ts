@@ -221,14 +221,22 @@ export class NotasDoEnemDoProcesso {
       return;
     }
 
-    const escopo = await this.lerEscopo(processoId, resultado.data);
+    await this.registrarEscopoDoProcesso(processoId, resultado.data, aindaVale);
+  }
+
+  private async registrarEscopoDoProcesso(
+    processoId: string,
+    processo: ProcessoSeletivoDto,
+    aindaVale: () => boolean,
+  ): Promise<void> {
+    const escopo = await this.lerEscopo(processoId, processo);
     if (!aindaVale()) return;
     if ('ok' in escopo) {
       this.processo.set({ estado: 'falha', mensagem: this.mensagemDaFalha(escopo) });
       return;
     }
     this.escopoLido.set(escopo);
-    this.processo.set({ estado: 'lido', dados: resultado.data });
+    this.processo.set({ estado: 'lido', dados: processo });
   }
 
   /** O processo sem versão publicada (rascunho ou snapshot ausente) não tem edital a operar. */

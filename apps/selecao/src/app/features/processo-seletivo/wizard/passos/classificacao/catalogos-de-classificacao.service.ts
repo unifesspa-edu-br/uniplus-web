@@ -42,6 +42,21 @@ interface LeituraDosPesos {
 
 type CatalogosLidos = ObservedValueOf<ReturnType<typeof lerCatalogos>>;
 
+type CatalogosValidos = {
+  [K in keyof CatalogosLidos]: Extract<CatalogosLidos[K], { ok: true }>;
+};
+
+function catalogosValidos(catalogos: CatalogosLidos): catalogos is CatalogosValidos {
+  return (
+    isApiOk(catalogos.calculo) &&
+    isApiOk(catalogos.arredondamento) &&
+    isApiOk(catalogos.ordemAlocacao) &&
+    isApiOk(catalogos.eliminacao) &&
+    isApiOk(catalogos.bonus) &&
+    isApiOk(catalogos.desempate)
+  );
+}
+
 /**
  * Catálogos que os passos de Fórmula, Eliminação, Bônus e Desempate
  * referenciam — as seis dimensões de regra que compõem a classificação do
@@ -101,9 +116,7 @@ export class CatalogosDeClassificacao {
 
   /** O aviso da falha de leitura do cadastro; a nova tentativa que falha de novo é dita por quem a pede. */
   readonly pesosErro = computed(() =>
-    this.pesosFalhou()
-      ? 'Não foi possível carregar o cadastro de Peso por Área.'
-      : null,
+    this.pesosFalhou() ? 'Não foi possível carregar o cadastro de Peso por Área.' : null,
   );
 
   /**
@@ -147,22 +160,11 @@ export class CatalogosDeClassificacao {
   }
 
   private guardarCatalogos(resultados: CatalogosLidos): void {
-    const { calculo, arredondamento, ordemAlocacao, eliminacao, bonus, desempate } = resultados;
-
-    // Um catálogo faltando deixa a tela oferecendo menos do que existe, e
-    // o operador não teria como saber. Ou vêm todos, ou nenhum.
-    if (
-      !isApiOk(calculo) ||
-      !isApiOk(arredondamento) ||
-      !isApiOk(ordemAlocacao) ||
-      !isApiOk(eliminacao) ||
-      !isApiOk(bonus) ||
-      !isApiOk(desempate)
-    ) {
+    if (!catalogosValidos(resultados)) {
       this.anunciarErro();
       return;
     }
-
+    const { calculo, arredondamento, ordemAlocacao, eliminacao, bonus, desempate } = resultados;
     this.regrasCalculo.set(calculo.data);
     this.regrasArredondamento.set(arredondamento.data);
     this.regrasOrdemAlocacao.set(ordemAlocacao.data);
@@ -236,30 +238,35 @@ export class CatalogosDeClassificacao {
 
     this.leituraDosPesos?.unsubscribe();
     const pedeAreas = !this.areasLidas && !this.areasBuscando;
-    let leuAsLinhas = false;
     if (pedeAreas) this.areasBuscando = true;
-    this.leituraDosPesos = forkJoin({
-      linhas: coletarPaginas((cursor) => this.pesosApi.listar({ cursor, direction: 'next' })),
-      areas: pedeAreas ? this.pesosApi.listarAreas().pipe(catchError(() => of(null))) : of(null),
-    })
+    this.acompanharLeituraDosPesos(marca, numero, pedeAreas);
+  }
+
+  private acompanharLeituraDosPesos(marca: number, numero: number, pedeAreas: boolean): void {
+    let leuAsLinhas = false;
+    this.leituraDosPesos = this.consultarPesosEAreas(pedeAreas)
       .pipe(
-        // Também quando uma leitura nova substitui esta: a lista pedida aqui não chega mais.
-        finalize(() => {
-          if (pedeAreas) this.areasBuscando = false;
-          // A lista que a leitura não trouxe — pedida por ela e recusada, ou pedida à parte e
-          // recusada enquanto ela corria — é pedida de novo, com a guarda já liberada.
-          if (leuAsLinhas && !this.areasLidas) this.garantirAreasEnem();
-        }),
+        finalize(() => this.encerrarLeituraDasAreas(pedeAreas, leuAsLinhas)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: (leitura) => {
           leuAsLinhas = this.guardarPesosLidos(leitura, marca, numero);
         },
-        // O erro que escapa do envelope `ApiResult` também encerra a leitura; sem isto o seletor
-        // ficaria desabilitado para sempre.
         error: () => this.anunciarFalhaDosPesos(),
       });
+  }
+
+  private consultarPesosEAreas(pedeAreas: boolean) {
+    return forkJoin({
+      linhas: coletarPaginas((cursor) => this.pesosApi.listar({ cursor, direction: 'next' })),
+      areas: pedeAreas ? this.pesosApi.listarAreas().pipe(catchError(() => of(null))) : of(null),
+    });
+  }
+
+  private encerrarLeituraDasAreas(pediuAreas: boolean, leuAsLinhas: boolean): void {
+    if (pediuAreas) this.areasBuscando = false;
+    if (leuAsLinhas && !this.areasLidas) this.garantirAreasEnem();
   }
 
   /** Guarda o que a leitura trouxe e diz se as linhas do cadastro vieram. */
@@ -274,14 +281,26 @@ export class CatalogosDeClassificacao {
       this.anunciarFalhaDosPesos();
       return false;
     }
-    this.pesosAreaEnem.set(linhas.data);
+    this.registrarPesosLidos(linhas.data, marca, numero);
+    return true;
+  }
+
+  private registrarPesosLidos(
+    linhas: readonly PesoAreaEnemDto[],
+    marca: number,
+    numero: number,
+  ): void {
+    this.pesosAreaEnem.set(linhas);
     this.pesosLidosNaMarca.set(marca);
     this.pesosLidosNaLeitura.set(numero);
     this.pesosFalhou.set(false);
     this.pesosCarregando.set(false);
+    this.executarAcoesAposLeitura();
+  }
+
+  private executarAcoesAposLeitura(): void {
     const pendentes = this.aoLerPendentes.splice(0);
     pendentes.forEach((depoisDeLer) => depoisDeLer());
-    return true;
   }
 
   private guardarAreas(areas: readonly AreaPesoAreaEnemDto[]): void {

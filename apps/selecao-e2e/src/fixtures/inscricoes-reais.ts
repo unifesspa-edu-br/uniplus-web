@@ -1,3 +1,5 @@
+import { json } from './resposta-da-api';
+import { respostasDa, type Pessoa } from './respostas-da-persona';
 import {
   SituacaoDoArquivoDoCandidatoCodigo,
   SituacaoInscricaoCodigo,
@@ -12,29 +14,9 @@ import { API_URL, PDF_MINIMO, enviarPelaUrlAssinada, tokenDaPersona } from '@uni
  * Os dados pessoais vêm de `fake-people.json` do portal (uniplus-developers); nada é inventado.
  */
 
-const GEO_URL = process.env['E2E_GEO_URL'] ?? 'http://localhost:5400';
-
 export const ARQUIVO_DE_PESSOAS =
   process.env['E2E_FAKE_PEOPLE'] ??
   path.resolve(__dirname, '../../../../../uniplus-developers/src/data/fake-people.json');
-
-interface Pessoa {
-  readonly nome: string;
-  readonly nome_social?: string | null;
-  readonly username: string;
-  readonly sexo: 'Feminino' | 'Masculino';
-  readonly data_nasc: string;
-  readonly cpf: string;
-  readonly rg: string;
-  readonly mae: string;
-  readonly pai: string;
-  readonly email: string;
-  readonly cep: string;
-  readonly endereco: string;
-  readonly numero: number;
-  readonly bairro: string;
-  readonly celular: string;
-}
 
 export interface InscricaoCriada {
   readonly username: string;
@@ -53,84 +35,7 @@ async function pessoa(username: string): Promise<Pessoa> {
   return achada;
 }
 
-async function json<T>(resposta: Response, esperado: number, contexto: string): Promise<T> {
-  const texto = await resposta.text();
-  if (resposta.status < esperado || resposta.status >= esperado + 100) {
-    throw new Error(`${contexto}: ${resposta.status} ${texto.slice(0, 400)}`);
-  }
-  return (texto === '' ? null : JSON.parse(texto)) as T;
-}
-
-async function respostasDa(
-  p: Pessoa,
-  token: string,
-  comLaudo: boolean,
-): Promise<Record<string, unknown>> {
-  const cep = p.cep.replace(/\D/g, '');
-  const geo = await json<{ codigoIbge: string; cidade: string; uf: string }>(
-    await fetch(`${GEO_URL}/api/cep/${cep}`, { headers: { authorization: `Bearer ${token}` } }),
-    200,
-    `CEP ${cep}`,
-  );
-  const sexo = p.sexo === 'Feminino' ? 'FEMININO' : 'MASCULINO';
-  const [dia, mes, ano] = p.data_nasc.split('/');
-  return {
-    NOME: p.nome,
-    DESEJA_NOME_SOCIAL: p.nome_social != null,
-    ...(p.nome_social != null ? { NOME_SOCIAL: p.nome_social } : {}),
-    NACIONALIDADE: 'NATO',
-    CPF: p.cpf.replace(/\D/g, ''),
-    DATA_NASCIMENTO: `${ano}-${mes}-${dia}`,
-    RG_NUMERO: p.rg,
-    RG_ORGAO_EMISSOR: 'SSP',
-    RG_UF: geo.uf,
-    RG_DATA_EMISSAO: `${Number(ano) + 18}-01-01`,
-    NATURALIDADE_UF: geo.uf,
-    NATURALIDADE_MUNICIPIO: geo.codigoIbge,
-    NOME_MAE: p.mae,
-    NOME_PAI: p.pai,
-    ESTADO_CIVIL: 'SOLTEIRO',
-    SEXO: sexo,
-    SEXO_CIVIL: sexo,
-    IDENTIDADE_GENERO: 'PREFIRO_NAO_INFORMAR',
-    ORIENTACAO_SEXUAL: 'PREFIRO_NAO_INFORMAR',
-    EMAIL: `${p.email.split('@')[0]}@uniplus-test.local`,
-    TELEFONE: p.celular,
-    TIPO_ENDERECO: 'URBANO',
-    ENDERECO_RESIDENCIAL: {
-      cep: p.cep,
-      logradouro: p.endereco,
-      numero: String(p.numero),
-      complemento: null,
-      bairro: p.bairro,
-      distrito: null,
-      cidade: { codigoIbge: geo.codigoIbge, nome: geo.cidade, uf: geo.uf },
-      latitude: null,
-      longitude: null,
-      nivelResolucao: null,
-      origem: null,
-    },
-    COR_RACA: 'BRANCA',
-    EDICAO_ENEM: '2025',
-    FORMA_CONCLUSAO_EM: 'REGULAR',
-    ONDE_CURSOU_EM: 'PRIVADA',
-    SOLICITA_FATOR_ATENUACAO: false,
-    PCD: comLaudo,
-    ...(comLaudo ? { TIPO_DEFICIENCIA: 'AUDITIVA' } : {}),
-    CONCORRER_PCD: comLaudo,
-    CONCORRER_EP: false,
-    INDIGENA: false,
-    QUILOMBOLA: false,
-    CONCORRER_PPI: false,
-    CONCORRER_Q: false,
-    BAIXA_RENDA: false,
-    CONCORRER_RENDA: false,
-    SOLICITA_ATENDIMENTO_ESPECIALIZADO: comLaudo,
-    ...(comLaudo
-      ? { CONDICAO_ATENDIMENTO: ['PCD'], RECURSO_ACESSIBILIDADE: ['TEMPO_ADICIONAL'] }
-      : {}),
-  };
-}
+type RascunhoComSituacao = Rascunho & { situacao: { codigo: string; rotulo: string } };
 
 interface Rascunho {
   readonly id: string;
@@ -160,30 +65,39 @@ async function aguardarVerificacaoDosArquivos(
   base: string,
   cabecalho: () => Record<string, string>,
   enviados: number,
-): Promise<Rascunho & { situacao: { codigo: string; rotulo: string } }> {
+): Promise<RascunhoComSituacao> {
   const limite = Date.now() + 60_000;
   for (;;) {
-    const rascunho = await json<Rascunho & { situacao: { codigo: string; rotulo: string } }>(
-      await fetch(base, { headers: cabecalho() }),
-      200,
-      'rascunho com o laudo',
-    );
-    const arquivos = rascunho.avaliacao.documentos.fases
-      .flatMap((fase) => fase.documentos)
-      .flatMap((documento) => documento.arquivos ?? []);
-    if (
-      arquivos.length >= enviados &&
-      arquivos.every(
-        (arquivo) => arquivo.situacao.codigo === SituacaoDoArquivoDoCandidatoCodigo.VERIFICADO,
-      )
-    ) {
-      return rascunho;
-    }
+    const rascunho = await lerRascunhoComLaudo(base, cabecalho);
+    if (arquivosVerificados(rascunho, enviados)) return rascunho;
     if (Date.now() > limite) {
       throw new Error('Os arquivos enviados não terminaram a verificação em 60 s.');
     }
     await new Promise((resolver) => setTimeout(resolver, 1_000));
   }
+}
+
+async function lerRascunhoComLaudo(
+  base: string,
+  cabecalho: () => Record<string, string>,
+): Promise<RascunhoComSituacao> {
+  return json<RascunhoComSituacao>(
+    await fetch(base, { headers: cabecalho() }),
+    200,
+    'rascunho com o laudo',
+  );
+}
+
+function arquivosVerificados(rascunho: Rascunho, enviados: number): boolean {
+  const arquivos = rascunho.avaliacao.documentos.fases
+    .flatMap((fase) => fase.documentos)
+    .flatMap((documento) => documento.arquivos ?? []);
+  return (
+    arquivos.length >= enviados &&
+    arquivos.every(
+      (arquivo) => arquivo.situacao.codigo === SituacaoDoArquivoDoCandidatoCodigo.VERIFICADO,
+    )
+  );
 }
 
 /**
@@ -223,112 +137,153 @@ export async function inscreverPersona(
 ): Promise<InscricaoCriada> {
   const p = await pessoa(username);
   const token = await tokenDaPersona(username);
-  const base = `${API_URL}/api/selecao/processos-seletivos/${processoId}/inscricao`;
-  const cabecalho = (extra: Record<string, string> = {}) => ({
-    authorization: `Bearer ${token}`,
+  const inscricao = new InscricaoDaPersona(processoId, username, token);
+  const rascunho = await inscricao.inscrever(p, comLaudo);
+  return { username, inscricaoId: rascunho.id, cpf: p.cpf, rg: p.rg, nome: p.nome };
+}
+
+type CorpoDaInscricao = {
+  ofertaCursoId: string;
+  ofertaCursoSegundaOpcaoId: null;
+  respostas: Record<string, unknown>;
+  grupos: Record<string, never>;
+  aceites: { codigo: string; versaoId: string; hashVersao: string }[];
+};
+
+type ExigenciaDeLaudo = Rascunho['avaliacao']['documentos']['fases'][number]['documentos'][number];
+type EnvioDoLaudo = { arquivoId: string; urlUpload: string; contentTypeExigido: string };
+
+class InscricaoDaPersona {
+  private readonly base: string;
+
+  constructor(
+    private readonly processoId: string,
+    private readonly username: string,
+    private readonly token: string,
+  ) {
+    this.base = `${API_URL}/api/selecao/processos-seletivos/${processoId}/inscricao`;
+  }
+
+  private cabecalho = (extra: Record<string, string> = {}): Record<string, string> => ({
+    authorization: `Bearer ${this.token}`,
     'idempotency-key': crypto.randomUUID(),
     accept: 'application/vnd.uniplus.inscricao.v1+json',
     ...extra,
   });
 
-  let resposta = await fetch(base, { headers: cabecalho() });
-  if (resposta.status === 404) {
-    resposta = await fetch(base, { method: 'POST', headers: cabecalho() });
-  }
-  let rascunho = await json<Rascunho & { situacao: { codigo: string; rotulo: string } }>(
-    resposta,
-    200,
-    `rascunho de ${username}`,
-  );
-  if (rascunho.situacao.codigo !== SituacaoInscricaoCodigo.RASCUNHO) {
-    return { username, inscricaoId: rascunho.id, cpf: p.cpf, rg: p.rg, nome: p.nome };
+  async inscrever(p: Pessoa, comLaudo: boolean): Promise<RascunhoComSituacao> {
+    let rascunho = await this.obterRascunho();
+    if (rascunho.situacao.codigo !== SituacaoInscricaoCodigo.RASCUNHO) return rascunho;
+    const corpo = await this.montarRespostas(p, comLaudo);
+    rascunho = await this.salvarRespostas(rascunho, corpo);
+    if (comLaudo) rascunho = await this.enviarLaudos(rascunho);
+    await this.submeter(rascunho, corpo);
+    return rascunho;
   }
 
-  const { formulario } = await json<{ formulario: { termos: TermoDoFormulario[] } }>(
-    await fetch(`${API_URL}/api/selecao/processos-seletivos/${processoId}/formularios/INSCRICAO`),
-    200,
-    'formulário de inscrição',
-  );
-  const corpo = {
-    ofertaCursoId: await ofertaDeMedicina(processoId),
-    ofertaCursoSegundaOpcaoId: null,
-    respostas: await respostasDa(p, token, comLaudo),
-    grupos: {},
-    aceites: formulario.termos.map(({ codigo, versaoId, conteudo }) => ({
+  async obterRascunho(): Promise<RascunhoComSituacao> {
+    let resposta = await fetch(this.base, { headers: this.cabecalho() });
+    if (resposta.status === 404) {
+      resposta = await fetch(this.base, { method: 'POST', headers: this.cabecalho() });
+    }
+    return json(resposta, 200, `rascunho de ${this.username}`);
+  }
+
+  async montarRespostas(p: Pessoa, comLaudo: boolean): Promise<CorpoDaInscricao> {
+    const aceites = await this.aceitesDoFormulario();
+    return {
+      ofertaCursoId: await ofertaDeMedicina(this.processoId),
+      ofertaCursoSegundaOpcaoId: null,
+      respostas: await respostasDa(p, this.token, comLaudo),
+      grupos: {},
+      aceites,
+    };
+  }
+
+  private async aceitesDoFormulario(): Promise<CorpoDaInscricao['aceites']> {
+    const { formulario } = await json<{ formulario: { termos: TermoDoFormulario[] } }>(
+      await fetch(
+        `${API_URL}/api/selecao/processos-seletivos/${this.processoId}/formularios/INSCRICAO`,
+      ),
+      200,
+      'formulário de inscrição',
+    );
+    return formulario.termos.map(({ codigo, versaoId, conteudo }) => ({
       codigo,
       versaoId,
       hashVersao: conteudo.hashVersao,
-    })),
-  };
+    }));
+  }
 
-  resposta = await fetch(base, {
-    method: 'PUT',
-    headers: cabecalho({ 'if-match': rascunho.eTag, 'content-type': 'application/json' }),
-    body: JSON.stringify(corpo),
-  });
-  rascunho = await json<Rascunho & { situacao: { codigo: string; rotulo: string } }>(
-    resposta,
-    200,
-    `respostas de ${username}`,
-  );
+  async salvarRespostas(
+    rascunho: RascunhoComSituacao,
+    corpo: CorpoDaInscricao,
+  ): Promise<RascunhoComSituacao> {
+    const resposta = await fetch(this.base, {
+      method: 'PUT',
+      headers: this.cabecalho({ 'if-match': rascunho.eTag, 'content-type': 'application/json' }),
+      body: JSON.stringify(corpo),
+    });
+    return json(resposta, 200, `respostas de ${this.username}`);
+  }
 
-  if (comLaudo) {
+  async enviarLaudos(rascunho: RascunhoComSituacao): Promise<RascunhoComSituacao> {
     const exigencias = rascunho.avaliacao.documentos.fases
       .flatMap((fase) => fase.documentos)
       .filter((d) => d.tipoDocumentoCodigo.includes('LAUDO'));
     if (exigencias.length === 0) {
       throw new Error('O processo não pediu laudo a quem declarou deficiência.');
     }
-    for (const exigencia of exigencias) {
-      const envio = await json<{
-        arquivoId: string;
-        urlUpload: string;
-        contentTypeExigido: string;
-      }>(
-        await fetch(`${base}/documentos/envios`, {
-          method: 'POST',
-          headers: cabecalho({ 'content-type': 'application/json' }),
-          body: JSON.stringify({
-            exigenciaId: exigencia.exigenciaId,
-            ocorrenciaId: exigencia.ocorrenciaId,
-            apresentacaoId: null,
-            tipoDeMidia: 'application/pdf',
-            tamanhoBytes: PDF_MINIMO.length,
-          }),
-        }),
-        201,
-        'iniciar o envio do laudo',
-      );
-      const etag = await enviarPelaUrlAssinada(
-        envio.urlUpload,
-        envio.contentTypeExigido,
-        PDF_MINIMO,
-      );
-      await json(
-        await fetch(`${base}/documentos/envios/${envio.arquivoId}/confirmacao`, {
-          method: 'POST',
-          headers: cabecalho({ 'content-type': 'application/json' }),
-          body: JSON.stringify({ etag }),
-        }),
-        200,
-        'confirmar o envio do laudo',
-      );
-    }
-    rascunho = await aguardarVerificacaoDosArquivos(base, cabecalho, exigencias.length);
+    for (const exigencia of exigencias) await this.enviarLaudo(exigencia);
+    return aguardarVerificacaoDosArquivos(this.base, this.cabecalho, exigencias.length);
   }
 
-  await json(
-    await fetch(`${base}/submissao`, {
+  private async enviarLaudo(exigencia: ExigenciaDeLaudo): Promise<void> {
+    const envio = await this.iniciarEnvio(exigencia);
+    const etag = await enviarPelaUrlAssinada(envio.urlUpload, envio.contentTypeExigido, PDF_MINIMO);
+    await this.confirmarEnvio(envio.arquivoId, etag);
+  }
+
+  private async iniciarEnvio(exigencia: ExigenciaDeLaudo): Promise<EnvioDoLaudo> {
+    const resposta = await fetch(`${this.base}/documentos/envios`, {
       method: 'POST',
-      headers: cabecalho({
-        'if-match': rascunho.eTag,
-        'content-type': 'application/json',
-        accept: 'application/vnd.uniplus.recibo-da-inscricao.v1+json',
+      headers: this.cabecalho({ 'content-type': 'application/json' }),
+      body: JSON.stringify({
+        exigenciaId: exigencia.exigenciaId,
+        ocorrenciaId: exigencia.ocorrenciaId,
+        apresentacaoId: null,
+        tipoDeMidia: 'application/pdf',
+        tamanhoBytes: PDF_MINIMO.length,
       }),
-      body: JSON.stringify(corpo),
-    }),
-    200,
-    `submissão de ${username}`,
-  );
-  return { username, inscricaoId: rascunho.id, cpf: p.cpf, rg: p.rg, nome: p.nome };
+    });
+    return json(resposta, 201, 'iniciar o envio do laudo');
+  }
+
+  private async confirmarEnvio(arquivoId: string, etag: string): Promise<void> {
+    await json(
+      await fetch(`${this.base}/documentos/envios/${arquivoId}/confirmacao`, {
+        method: 'POST',
+        headers: this.cabecalho({ 'content-type': 'application/json' }),
+        body: JSON.stringify({ etag }),
+      }),
+      200,
+      'confirmar o envio do laudo',
+    );
+  }
+
+  async submeter(rascunho: RascunhoComSituacao, corpo: CorpoDaInscricao): Promise<void> {
+    await json(
+      await fetch(`${this.base}/submissao`, {
+        method: 'POST',
+        headers: this.cabecalho({
+          'if-match': rascunho.eTag,
+          'content-type': 'application/json',
+          accept: 'application/vnd.uniplus.recibo-da-inscricao.v1+json',
+        }),
+        body: JSON.stringify(corpo),
+      }),
+      200,
+      `submissão de ${this.username}`,
+    );
+  }
 }

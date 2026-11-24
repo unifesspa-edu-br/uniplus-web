@@ -17,17 +17,10 @@ import {
   DocumentoDaConfiguracaoEtapasCarater as CaraterDaEtapa,
   DocumentoDaConfiguracaoEtapasFormaDeAvaliacao as FormaDeAvaliacaoDaEtapa,
   DocumentoDaConfiguracaoEtapasRecursoDaEtapaEventoInicialDoPrazo as EventoInicialDoPrazoDoRecursoDaEtapa,
-  DocumentoDaConfiguracaoExigenciasExigenciaAplicabilidade as AplicabilidadeDaExigencia,
-  DocumentoDaConfiguracaoExigenciasExigenciaConsequenciaIndeferimento as ConsequenciaDoIndeferimento,
-  DocumentoDaConfiguracaoExigenciasExigenciaFinalidade as FinalidadeDaExigencia,
-  DocumentoDaConfiguracaoExigenciasFormatosPermitidosListaFormato as FormatoPermitido,
-  DocumentoDaConfiguracaoExigenciasIdadeMaximaEmissaoReferenciaTipo as ReferenciaDaIdadeMaxima,
   DocumentoDaConfiguracaoExigenciasIdadeMaximaEmissaoUnidade as UnidadeDaIdadeMaxima,
   DocumentoDaConfiguracaoCondicoesBaseLegalAbrangencia as AbrangenciaDaBaseLegal,
   DocumentoDaConfiguracaoCondicoesCondicaoOperador as OperadorDaCondicao,
   DocumentoDaConfiguracaoCondicoesBaseLegalSituacao as SituacaoDaBaseLegal,
-  DocumentoDaConfiguracaoRegrasDeComprovacaoCriterioDeDistincao as CriterioDeDistincaoDaRegra,
-  DocumentoDaConfiguracaoRegrasDeComprovacaoConsequencia as ConsequenciaDaRegra,
   DocumentoDaConfiguracaoRegrasDeComprovacaoForma as FormaDeComprovacaoDaConfiguracao,
   DocumentoDaConfiguracaoIdentificacaoOrigemCandidatos,
   DocumentoDaConfiguracaoMotivoSentido as SentidoDoMotivo,
@@ -78,7 +71,8 @@ export type DocumentoDaConfiguracaoCondicoesAlternativas =
 export type DocumentoDaConfiguracaoBanca = Esquemas['DocumentoDaConfiguracaoBancas'];
 export type DocumentoDaConfiguracaoRegraDeDeliberacao =
   Esquemas['DocumentoDaConfiguracaoBancasRegraDeDeliberacao'];
-export type DocumentoDaConfiguracaoPublicacaoPrevista = Esquemas['DocumentoDaConfiguracaoComunsPublicacaoPrevista'];
+export type DocumentoDaConfiguracaoPublicacaoPrevista =
+  Esquemas['DocumentoDaConfiguracaoComunsPublicacaoPrevista'];
 export type DocumentoDaConfiguracaoMotivo = Esquemas['DocumentoDaConfiguracaoMotivo'];
 export type DocumentoDaConfiguracaoProcedimentoDeRecurso =
   Esquemas['DocumentoDaConfiguracaoComunsProcedimentoDeRecurso'];

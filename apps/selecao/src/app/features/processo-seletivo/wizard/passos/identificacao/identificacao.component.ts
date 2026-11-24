@@ -166,28 +166,26 @@ export class IdentificacaoPassoComponent {
   confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
     if (this.store.cadastroInicialCongelado()) return null;
 
-    // A navegação pelo stepper é livre, então dá para chegar aqui com o tipo
-    // do processo — que é do passo 1 — ainda por escolher. O resumo listaria
-    // "Tipo do processo" em branco e prometeria um comando pronto que a
-    // criação recusaria logo depois. Sem confirmação, a recusa de
-    // `persistir()` aparece direto e nomeia o que falta.
     if (this.gravacao.camposFaltantesDoComando().length > 0) return null;
-
-    const leitura = this.leitura();
-
     return {
       titulo: 'Confirmar o cadastro do processo seletivo',
       aviso:
         'Estes dados não poderão ser alterados depois de gravados. Confira antes de continuar.',
       rotuloDeConfirmar: 'Gravar processo',
-      itens: [
-        { rotulo: 'Nome do processo seletivo', valor: leitura.nome },
-        { rotulo: 'Tipo do processo', valor: this.store.draft().tipoProcesso.rotulo },
-        { rotulo: 'Unidade administradora', valor: leitura.unidade ?? '' },
-        { rotulo: 'Município que rege os prazos', valor: leitura.municipio ?? '' },
-        { rotulo: 'Origem dos candidatos', valor: leitura.origem ?? '' },
-      ],
+      itens: this.itensDaConfirmacao(),
     };
+  }
+
+  private itensDaConfirmacao(): ConfirmacaoDeGravacao['itens'] {
+    const leitura = this.leitura();
+
+    return [
+      { rotulo: 'Nome do processo seletivo', valor: leitura.nome },
+      { rotulo: 'Tipo do processo', valor: this.store.draft().tipoProcesso.rotulo },
+      { rotulo: 'Unidade administradora', valor: leitura.unidade ?? '' },
+      { rotulo: 'Município que rege os prazos', valor: leitura.municipio ?? '' },
+      { rotulo: 'Origem dos candidatos', valor: leitura.origem ?? '' },
+    ];
   }
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
@@ -217,13 +215,15 @@ export class IdentificacaoPassoComponent {
         this.gravacao.erroDoIdentificador.set(null);
       });
 
-    effect(() => {
-      const valor = this.store.draft().identificacao.identificadorLegivel;
-      if (this.identificadorLegivel.value !== valor) {
-        this.identificadorLegivel.setValue(valor, { emitEvent: false });
-      }
-      this.habilitar(this.identificadorLegivel, this.gravacao.identificadorEditavel());
-    });
+    effect(() => this.sincronizarIdentificadorLegivel());
+  }
+
+  private sincronizarIdentificadorLegivel(): void {
+    const valor = this.store.draft().identificacao.identificadorLegivel;
+    if (this.identificadorLegivel.value !== valor) {
+      this.identificadorLegivel.setValue(valor, { emitEvent: false });
+    }
+    this.habilitar(this.identificadorLegivel, this.gravacao.identificadorEditavel());
   }
 
   private ligarFormulario(): void {
@@ -237,18 +237,20 @@ export class IdentificacaoPassoComponent {
 
     // A hidratação escreve no store; o formulário reflete sem devolver o eco, que reabriria o
     // ciclo e marcaria o campo como sujo sem o operador tocar.
-    effect(() => {
-      const identificacao = this.store.draft().identificacao;
-      this.form.setValue(
-        {
-          nome: identificacao.nome,
-          unidadeAdministradoraId: identificacao.unidadeAdministradoraId,
-          origemCandidatos: identificacao.origemCandidatos,
-        },
-        { emitEvent: false },
-      );
-      this.habilitar(this.form, !this.store.cadastroInicialCongelado());
-    });
+    effect(() => this.sincronizarFormulario());
+  }
+
+  private sincronizarFormulario(): void {
+    const identificacao = this.store.draft().identificacao;
+    this.form.setValue(
+      {
+        nome: identificacao.nome,
+        unidadeAdministradoraId: identificacao.unidadeAdministradoraId,
+        origemCandidatos: identificacao.origemCandidatos,
+      },
+      { emitEvent: false },
+    );
+    this.habilitar(this.form, !this.store.cadastroInicialCongelado());
   }
 
   private habilitar(controle: AbstractControl, habilitado: boolean): void {

@@ -25,6 +25,9 @@ import {
 } from '../opcoes-de-curso';
 import { EstadoDoPassoDeVagas } from './estado-do-passo-de-vagas';
 
+const MENSAGEM_CASCATA_INCOMPLETA =
+  'Escolha a regra de remanejamento e confirme a matriz antes de gravar as vagas.';
+
 /** Uma gravação do passo, na ordem em que o servidor a aceita, com o que diz ao concluir. */
 interface EtapaDeGravacao {
   readonly gravada: string;
@@ -55,22 +58,22 @@ export class GravacaoDasVagas {
     processoId: string,
     cascata: CascataRemanejamentoComponent | undefined,
   ): Promise<ValidacaoDoPasso | RespostaDescartada> {
-    return gravarNoPasso(this.store, async () => {
-      const geracao = this.store.geracao();
-      this.estado.recusaDaApiNasOpcoes.set(null);
-      const recusa = await this.gravarOpcoesEDistribuicao(processoId, geracao);
-      if (recusa !== null) return recusa;
+    return gravarNoPasso(this.store, () => this.gravarVagasECascata(processoId, cascata));
+  }
 
-      // O editor pode ter passado a outro processo enquanto o comando corria: concluir o passo
-      // agora avançaria o rascunho de outro cadastro.
-      if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
-
-      const gravouACascata = await this.persistirCascata(processoId, cascata);
-      if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
-      if (!gravouACascata.valid) return this.cascataNaoGravada(gravouACascata);
-
-      return this.acompanharAsRegrasDasModalidades(processoId);
-    });
+  private async gravarVagasECascata(
+    processoId: string,
+    cascata: CascataRemanejamentoComponent | undefined,
+  ): Promise<ValidacaoDoPasso | RespostaDescartada> {
+    const geracao = this.store.geracao();
+    this.estado.recusaDaApiNasOpcoes.set(null);
+    const recusa = await this.gravarOpcoesEDistribuicao(processoId, geracao);
+    if (recusa !== null) return recusa;
+    if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
+    const gravouACascata = await this.persistirCascata(processoId, cascata);
+    if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
+    if (!gravouACascata.valid) return this.cascataNaoGravada(gravouACascata);
+    return this.acompanharAsRegrasDasModalidades(processoId);
   }
 
   private cascataNaoGravada(resultado: ValidacaoDoPasso): ValidacaoDoPasso {
@@ -91,8 +94,6 @@ export class GravacaoDasVagas {
     processoId: string,
     geracao: number,
   ): Promise<ValidacaoDoPasso | null> {
-    // Depois de uma resposta inconclusiva o número gravado pode ter mudado sem que a tela saiba, e
-    // a releitura vem antes de decidir a ordem.
     if (this.store.vagasGravadasDefasadas()) {
       const releitura = await this.reler(processoId, geracao);
       if (releitura !== null) return releitura;
@@ -101,6 +102,13 @@ export class GravacaoDasVagas {
     const comandos = this.estado.distribuicoes().map(comoComando);
     const etapas = this.etapasNaOrdemDoServidor(processoId, geracao, comandos);
 
+    return this.gravarEtapas(etapas, geracao);
+  }
+
+  private async gravarEtapas(
+    etapas: EtapaDeGravacao[],
+    geracao: number,
+  ): Promise<ValidacaoDoPasso | null> {
     let jaGravada: string | null = null;
     for (const etapa of etapas) {
       const resultado = await etapa.gravar();
@@ -129,28 +137,42 @@ export class GravacaoDasVagas {
     geracao: number,
     comandos: ReturnType<typeof comoComando>[],
   ): EtapaDeGravacao[] {
-    const numero = Number(this.estado.numeroDeOpcoes());
-    const etapas: EtapaDeGravacao[] = [
-      {
-        gravada: 'O número de opções de curso foi gravado.',
-        gravar: async () => {
-          const resultado = await this.cadastro.definirOpcoesDeCurso(processoId, { numero });
-          if (resultado.ok && geracao === this.store.geracao()) {
-            this.store.opcoesDeCursoGravadas.set(numero);
-          }
-          return resultado;
-        },
-      },
-      {
-        gravada: 'A distribuição de vagas foi gravada.',
-        gravar: () => this.cadastro.definirDistribuicaoVagas(processoId, comandos),
-      },
-    ];
+    const etapas = this.etapasDeGravacao(processoId, geracao, comandos);
     const distribuicaoPrimeiro = !numeroDeOpcoesPrimeiro(
       this.store.opcoesDeCursoGravadas(),
       comandos.length,
     );
     return distribuicaoPrimeiro ? etapas.reverse() : etapas;
+  }
+
+  private etapasDeGravacao(
+    processoId: string,
+    geracao: number,
+    comandos: ReturnType<typeof comoComando>[],
+  ): EtapaDeGravacao[] {
+    return [
+      this.etapaDeOpcoes(processoId, geracao),
+      {
+        gravada: 'A distribuição de vagas foi gravada.',
+        gravar: () => this.cadastro.definirDistribuicaoVagas(processoId, comandos),
+      },
+    ];
+  }
+
+  private etapaDeOpcoes(processoId: string, geracao: number): EtapaDeGravacao {
+    const numero = Number(this.estado.numeroDeOpcoes());
+    return {
+      gravada: 'O número de opções de curso foi gravado.',
+      gravar: () => this.gravarNumeroDeOpcoes(processoId, geracao, numero),
+    };
+  }
+
+  private async gravarNumeroDeOpcoes(processoId: string, geracao: number, numero: number) {
+    const resultado = await this.cadastro.definirOpcoesDeCurso(processoId, { numero });
+    if (resultado.ok && geracao === this.store.geracao()) {
+      this.store.opcoesDeCursoGravadas.set(numero);
+    }
+    return resultado;
   }
 
   /** A recusa por número acima das ofertas é do campo; as demais seguem a mensagem da API. */
@@ -165,15 +187,17 @@ export class GravacaoDasVagas {
     const dizendoOQueGravou = (mensagem: string): string =>
       jaGravada === null ? mensagem : `${jaGravada} ${mensagem}`;
 
-    if (recusadoPorOpcoesAcimaDasOfertas(falha.problem)) {
-      this.estado.recusaDaApiNasOpcoes.set({
-        numero: this.estado.numeroDeOpcoes(),
-        ofertas: this.estado.distribuicoes().length,
-      });
-      return { valid: false, messages: [dizendoOQueGravou(TEXTO_OPCOES_ACIMA_DAS_OFERTAS)] };
-    }
-    const titulo = this.problemI18n.resolve(falha.problem).title;
-    return { valid: false, messages: [dizendoOQueGravou(titulo)] };
+    const mensagem = this.mensagemDaRecusa(falha.problem);
+    return { valid: false, messages: [dizendoOQueGravou(mensagem)] };
+  }
+
+  private mensagemDaRecusa(problem: ProblemDetails): string {
+    if (!recusadoPorOpcoesAcimaDasOfertas(problem)) return this.problemI18n.resolve(problem).title;
+    this.estado.recusaDaApiNasOpcoes.set({
+      numero: this.estado.numeroDeOpcoes(),
+      ofertas: this.estado.distribuicoes().length,
+    });
+    return TEXTO_OPCOES_ACIMA_DAS_OFERTAS;
   }
 
   /**
@@ -189,22 +213,32 @@ export class GravacaoDasVagas {
     const detalhe = await firstValueFrom(this.api.obter(processoId));
     if (geracao !== this.store.geracao()) return { valid: true };
 
-    if (!isApiOk(detalhe)) {
-      this.store.vagasGravadasDefasadas.set(true);
-      return this.derivaAModalidade()
-        ? this.gravadaMas(
-            'Não foi possível reler o processo para pôr no formulário de inscrição as perguntas que as modalidades fazem. Grave as vagas de novo.',
-          )
-        : { valid: true };
-    }
+    if (!isApiOk(detalhe)) return this.falhaAoRelerModalidades();
     this.store.registrarRegrasDasModalidades(detalhe.data);
     this.store.registrarVagasGravadas(detalhe.data);
     if (!this.derivaAModalidade()) return { valid: true };
 
+    return this.garantirCamposDasModalidades(processoId, detalhe.data, geracao);
+  }
+
+  private falhaAoRelerModalidades(): ValidacaoDoPasso {
+    this.store.vagasGravadasDefasadas.set(true);
+    return this.derivaAModalidade()
+      ? this.gravadaMas(
+          'Não foi possível reler o processo para pôr no formulário de inscrição as perguntas que as modalidades fazem. Grave as vagas de novo.',
+        )
+      : { valid: true };
+  }
+
+  private async garantirCamposDasModalidades(
+    processoId: string,
+    detalhe: Parameters<GravacaoDosCamposPressupostos['garantirCampos']>[1],
+    geracao: number,
+  ): Promise<ValidacaoDoPasso> {
     const campos = await this.camposPressupostos.garantirCampos(
       processoId,
-      detalhe.data,
-      fatosCitadosPelasModalidadesOfertadas(detalhe.data),
+      detalhe,
+      fatosCitadosPelasModalidadesOfertadas(detalhe),
     );
     if (geracao !== this.store.geracao()) return { valid: true };
     return campos.tipo === 'recusados' ? this.gravadaMas(campos.motivo) : { valid: true };
@@ -216,7 +250,9 @@ export class GravacaoDasVagas {
 
   /** O candidato se inscreve no processo: é da inscrição que a modalidade dele se deriva. */
   private derivaAModalidade(): boolean {
-    return this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.INSCRICAO_PROPRIA;
+    return (
+      this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.INSCRICAO_PROPRIA
+    );
   }
 
   /**
@@ -235,21 +271,29 @@ export class GravacaoDasVagas {
       return secao?.existeNoServidor() ? this.removerCascata(processoId, secao) : { valid: true };
     }
 
+    return this.gravarCascataSePronta(processoId, secao);
+  }
+
+  private async gravarCascataSePronta(
+    processoId: string,
+    secao: CascataRemanejamentoComponent,
+  ): Promise<ValidacaoDoPasso> {
     const cascata = this.store.draft().vagas.cascata;
     if (cascata === null || !secao.pronta()) {
-      return {
-        valid: false,
-        messages: [
-          'Escolha a regra de remanejamento e confirme a matriz antes de gravar as vagas.',
-        ],
-      };
+      return { valid: false, messages: [MENSAGEM_CASCATA_INCOMPLETA] };
     }
 
     const matriz = secao.matriz();
-    if (matriz === null) {
-      return { valid: false, messages: [secao.mensagemDeMatrizIndisponivel()] };
-    }
+    if (matriz === null) return { valid: false, messages: [secao.mensagemDeMatrizIndisponivel()] };
+    return this.gravarCascata(processoId, secao, cascata, matriz);
+  }
 
+  private async gravarCascata(
+    processoId: string,
+    secao: CascataRemanejamentoComponent,
+    cascata: NonNullable<ReturnType<ProcessoSeletivoStore['draft']>['vagas']['cascata']>,
+    matriz: NonNullable<ReturnType<CascataRemanejamentoComponent['matriz']>>,
+  ): Promise<ValidacaoDoPasso> {
     const resultado = await this.cadastro.definirCascataRemanejamento(
       processoId,
       comandoDaCascata(cascata, matriz),

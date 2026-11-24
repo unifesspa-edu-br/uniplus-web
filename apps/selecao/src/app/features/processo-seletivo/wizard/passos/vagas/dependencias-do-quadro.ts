@@ -179,10 +179,19 @@ export function problemasDeQuadro(
     ...[...fixadas].flatMap(([modalidadeId, quantidade]) =>
       problemasDaQuantidadeFixada(modalidadeId, quantidade, selecionadas, catalogo),
     ),
-    ...[...selecionadas].flatMap((modalidadeId) =>
-      problemasDaModalidadeSelecionada(modalidadeId, fixadas.has(modalidadeId), catalogo, federal),
-    ),
+    ...problemasDasModalidadesSelecionadas(selecionadas, fixadas, catalogo, federal),
   ];
+}
+
+function problemasDasModalidadesSelecionadas(
+  selecionadas: ReadonlySet<string>,
+  fixadas: ReadonlyMap<string, string>,
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+  federal: boolean,
+): ProblemaDaDistribuicao[] {
+  return [...selecionadas].flatMap((id) =>
+    problemasDaModalidadeSelecionada(id, fixadas.has(id), catalogo, federal),
+  );
 }
 
 function problemasDeRepeticaoNoQuadro(distribuicao: DistribuicaoDeVagas): ProblemaDaDistribuicao[] {
@@ -205,13 +214,18 @@ function problemasDaQuantidadeFixada(
 
   const numero = inteiroDoCampo(quantidade);
   return numero === null || numero < 0
-    ? [
-        {
-          escopo: 'preenchimento',
-          mensagem: `Informe a quantidade de ${rotulo(modalidadeId, catalogo)} como inteiro não negativo.`,
-        },
-      ]
+    ? [problemaDeQuantidadeInvalida(modalidadeId, catalogo)]
     : [];
+}
+
+function problemaDeQuantidadeInvalida(
+  modalidadeId: string,
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+): ProblemaDaDistribuicao {
+  return {
+    escopo: 'preenchimento',
+    mensagem: `Informe a quantidade de ${rotulo(modalidadeId, catalogo)} como inteiro não negativo.`,
+  };
 }
 
 function problemaDeQuantidadeSemModalidade(
@@ -235,18 +249,20 @@ function problemasDaModalidadeSelecionada(
   federal: boolean,
 ): ProblemaDaDistribuicao[] {
   const composicao = catalogo.get(modalidadeId)?.composicaoVagas;
-  const calculadaPelaRegra =
-    federal && composicao !== undefined && COMPOSICOES_CALCULADAS.includes(composicao);
-
-  if (calculadaPelaRegra) {
+  if (federal && composicao !== undefined && COMPOSICOES_CALCULADAS.includes(composicao)) {
     return temQuantidade ? [problemaDeQuantidadeCalculada(modalidadeId, catalogo)] : [];
   }
 
-  const exigeDeclaracao =
-    !federal || (composicao !== undefined && COMPOSICOES_DECLARADAS.includes(composicao));
-  return exigeDeclaracao && !temQuantidade
+  return exigeQuantidadeDeclarada(composicao, federal) && !temQuantidade
     ? [problemaDeQuantidadeAusente(modalidadeId, catalogo)]
     : [];
+}
+
+function exigeQuantidadeDeclarada(
+  composicao: ModalidadeDoCatalogo['composicaoVagas'] | undefined,
+  federal: boolean,
+): boolean {
+  return !federal || (composicao !== undefined && COMPOSICOES_DECLARADAS.includes(composicao));
 }
 
 function problemaDeQuantidadeAusente(

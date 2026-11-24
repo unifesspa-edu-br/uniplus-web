@@ -22,20 +22,27 @@ export function grupos(...areas: string[]): readonly GrupoDoQuadro[] {
   }));
 }
 
+const CLASSIFICACAO_SEM_ENEM: WizardDraft['classificacao'] = {
+  regraCalculoCodigo: 'OUTRA',
+  regraCalculoVersao: '1.0',
+  regraArredondamentoCodigo: '',
+  regraArredondamentoVersao: '',
+  casasArredondamento: '',
+  regraOrdemAlocacaoCodigo: '',
+  regraOrdemAlocacaoVersao: '',
+  baseadoEmEnem: false,
+  escalaNotaFinal: '',
+  resolucaoPesoAreaEnem: '',
+  regrasEliminacao: [],
+  edicoesEnem: [],
+};
+
 export function classificacao(resolucao: string | null): WizardDraft['classificacao'] {
   return {
+    ...CLASSIFICACAO_SEM_ENEM,
     regraCalculoCodigo: resolucao === null ? 'OUTRA' : REGRA_CALCULO_MEDIA_PONDERADA,
-    regraCalculoVersao: '1.0',
-    regraArredondamentoCodigo: '',
-    regraArredondamentoVersao: '',
-    casasArredondamento: '',
-    regraOrdemAlocacaoCodigo: '',
-    regraOrdemAlocacaoVersao: '',
     baseadoEmEnem: resolucao !== null,
-    escalaNotaFinal: '',
     resolucaoPesoAreaEnem: resolucao ?? '',
-    regrasEliminacao: [],
-    edicoesEnem: [],
   };
 }
 

@@ -18,22 +18,26 @@ type PassoQueGrava = Exclude<RotuloDePasso, 'Revisão e publicação'>;
  * compartilham a classificação, gravada junto no passo Eliminação.
  */
 function gravadoPorPasso(dto: ProcessoSeletivoDto): Record<PassoQueGrava, boolean> {
-  const classificacaoGravada = dto.classificacao != null;
   return {
     'Tipo do processo': true,
     Identificação: (dto.identificadorLegivel ?? '').trim() !== '',
     Pagamento: dto.configuracaoTaxaInscricao != null,
     Vagas: (dto.distribuicaoVagas ?? []).length > 0 && dto.opcoesDeCurso != null,
     Cronograma: (dto.cronogramaFases ?? []).length > 0,
-    'Fórmula e precisão': classificacaoGravada,
+    'Fórmula e precisão': dto.classificacao != null,
     Bônus: dto.aplicaBonusRegional != null,
-    Desempate:
-      (dto.criteriosDesempate ?? []).length > 0 ||
-      dto.origemCandidatos.codigo === OrigemCandidatosCodigo.IMPORTACAO_EXTERNA,
-    Eliminação: classificacaoGravada,
+    Desempate: desempateGravado(dto),
+    Eliminação: dto.classificacao != null,
     'Atend. especial': dto.atendimentoEspecializado != null,
     Formulários: (dto.formularios ?? []).length > 0,
   };
+}
+
+function desempateGravado(dto: ProcessoSeletivoDto): boolean {
+  return (
+    (dto.criteriosDesempate ?? []).length > 0 ||
+    dto.origemCandidatos.codigo === OrigemCandidatosCodigo.IMPORTACAO_EXTERNA
+  );
 }
 
 /**

@@ -11,7 +11,7 @@ import { formatarDataBr } from '@uniplus/shared-utils';
 export interface ArquivoExibido {
   readonly id: string;
   readonly nome: string;
-  readonly situacao: ArquivoAdministrativoDto["situacao"];
+  readonly situacao: ArquivoAdministrativoDto['situacao'];
   readonly detalhe: string;
   readonly nomeDoAbrir: string;
 }
@@ -19,7 +19,7 @@ export interface ArquivoExibido {
 /** Os campos do painel de identificação; `null` é o que a API não devolveu. */
 export interface IdentificacaoExibida {
   readonly numero: string | null;
-  readonly situacao: InscricaoAdministrativaDto["situacao"] | null;
+  readonly situacao: InscricaoAdministrativaDto['situacao'] | null;
   /** Vazia quando a API omitiu as ofertas; a tela então não mostra o rótulo. */
   readonly ofertas: readonly OfertaExibida[];
   readonly enviadaEm: string | null;
@@ -57,10 +57,13 @@ export function identificacaoExibida(
     canceladaEm: inscricao.canceladaEm ?? null,
     motivoDoCancelamento: inscricao.motivoDoCancelamento || null,
   };
-  const algumCampo = Object.values(campos).some((valor) =>
+  return temIdentificacao(campos) ? campos : null;
+}
+
+function temIdentificacao(campos: IdentificacaoExibida): boolean {
+  return Object.values(campos).some((valor) =>
     Array.isArray(valor) ? valor.length > 0 : valor !== null,
   );
-  return algumCampo ? campos : null;
 }
 
 function arquivoExibido(
@@ -68,27 +71,37 @@ function arquivoExibido(
   lugar: PosicaoDoArquivo,
 ): ArquivoExibido {
   const enviadoEm = formatarDataBr(arquivo.confirmadoEm, 'datetime');
+  const documento = nomeDoDocumento(arquivo, lugar);
+  return {
+    id: arquivo.arquivoId,
+    nome: documento,
+    situacao: arquivo.situacao,
+    detalhe: detalheDoArquivoEnviado(arquivo),
+    nomeDoAbrir: nomeParaAbrirDocumento(documento, lugar, enviadoEm),
+  };
+}
+
+function nomeDoDocumento(arquivo: ArquivoAdministrativoDto, lugar: PosicaoDoArquivo): string {
   // O grupo junto da ordem evita o mesmo nome para a ocorrência 1 de dois grupos diferentes.
-  const documento =
-    lugar.ocorrencia === null
-      ? arquivo.nomeDoDocumento
-      : `${arquivo.nomeDoDocumento} (${lugar.ocorrencia.grupo}, ocorrência ${lugar.ocorrencia.ordem})`;
+  return lugar.ocorrencia === null
+    ? arquivo.nomeDoDocumento
+    : `${arquivo.nomeDoDocumento} (${lugar.ocorrencia.grupo}, ocorrência ${lugar.ocorrencia.ordem})`;
+}
+
+function nomeParaAbrirDocumento(
+  documento: string,
+  lugar: PosicaoDoArquivo,
+  enviadoEm: string,
+): string {
   // O mesmo documento pode ter vários arquivos: a posição entre eles distingue o nome mesmo quando
   // a data é igual ou inválida.
-  const nomeDoAbrir = [
+  return [
     `Abrir ${documento}`,
     lugar.total > 1 ? `arquivo ${lugar.posicao} de ${lugar.total}` : null,
     enviadoEm === '' ? null : `enviado em ${enviadoEm}`,
   ]
     .filter((parte) => parte !== null)
     .join(', ');
-  return {
-    id: arquivo.arquivoId,
-    nome: documento,
-    situacao: arquivo.situacao,
-    detalhe: detalheDoArquivoEnviado(arquivo),
-    nomeDoAbrir,
-  };
 }
 
 /** Cada ocorrência de grupo repetível que o detalhe devolveu, pelo id da ocorrência. */
@@ -116,15 +129,16 @@ export function arquivosExibidos(inscricao: InscricaoAdministrativaDto | null): 
   const arquivos = inscricao?.arquivos ?? [];
   const conhecidas =
     inscricao === null ? new Map<string, OcorrenciaConhecida>() : ocorrenciasConhecidas(inscricao);
-  const chave = (a: ArquivoAdministrativoDto): string => {
-    if (a.ocorrenciaId == null) return `${a.exigenciaId}|`;
-    return conhecidas.has(a.ocorrenciaId)
-      ? `${a.exigenciaId}|${a.ocorrenciaId}`
-      : `${a.exigenciaId}|omitida`;
-  };
-  const total = new Map<string, number>();
-  for (const a of arquivos) total.set(chave(a), (total.get(chave(a)) ?? 0) + 1);
+  return exibirArquivosPorOcorrencia(arquivos, conhecidas);
+}
 
+function exibirArquivosPorOcorrencia(
+  arquivos: readonly ArquivoAdministrativoDto[],
+  conhecidas: ReadonlyMap<string, OcorrenciaConhecida>,
+): ArquivoExibido[] {
+  const chave = (arquivo: ArquivoAdministrativoDto): string =>
+    chaveDaOcorrencia(arquivo, conhecidas);
+  const total = contarArquivosPorOcorrencia(arquivos, chave);
   const visto = new Map<string, number>();
   return arquivos.map((a) => {
     const posicao = (visto.get(chave(a)) ?? 0) + 1;
@@ -132,4 +146,23 @@ export function arquivosExibidos(inscricao: InscricaoAdministrativaDto | null): 
     const ocorrencia = a.ocorrenciaId == null ? null : (conhecidas.get(a.ocorrenciaId) ?? null);
     return arquivoExibido(a, { posicao, total: total.get(chave(a)) ?? 1, ocorrencia });
   });
+}
+
+function chaveDaOcorrencia(
+  arquivo: ArquivoAdministrativoDto,
+  conhecidas: ReadonlyMap<string, OcorrenciaConhecida>,
+): string {
+  if (arquivo.ocorrenciaId == null) return `${arquivo.exigenciaId}|`;
+  return conhecidas.has(arquivo.ocorrenciaId)
+    ? `${arquivo.exigenciaId}|${arquivo.ocorrenciaId}`
+    : `${arquivo.exigenciaId}|omitida`;
+}
+
+function contarArquivosPorOcorrencia(
+  arquivos: readonly ArquivoAdministrativoDto[],
+  chave: (arquivo: ArquivoAdministrativoDto) => string,
+): Map<string, number> {
+  const total = new Map<string, number>();
+  for (const arquivo of arquivos) total.set(chave(arquivo), (total.get(chave(arquivo)) ?? 0) + 1);
+  return total;
 }

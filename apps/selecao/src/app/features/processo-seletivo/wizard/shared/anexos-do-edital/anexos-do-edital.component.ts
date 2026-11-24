@@ -147,27 +147,30 @@ export class AnexosDoEditalComponent {
 
   constructor() {
     // O arquivo de um processo não vale em outro: trocar o processo em tela esquece os envios.
-    effect(() => {
-      this.store.geracao();
-      untracked(() => {
-        this.memoria.clear();
-        this.recusa.set(null);
-        this.erroDeAbertura.set(null);
-      });
-    });
+    effect(() => this.esquecerEnviosDoProcessoAnterior());
+    effect(() => this.acompanharAnexosPublicados());
+  }
 
-    effect(() => {
-      this.store.geracao();
-      const id = this.store.processoSeletivoId();
-      const atoId = this.atoId();
-      const lerPublicados = this.publicado() && id !== null && atoId !== null;
-      untracked(() => {
-        if (!lerPublicados) {
-          this.publicados.set(null);
-          return;
-        }
-        void this.lerPublicados(id, atoId);
-      });
+  private esquecerEnviosDoProcessoAnterior(): void {
+    this.store.geracao();
+    untracked(() => {
+      this.memoria.clear();
+      this.recusa.set(null);
+      this.erroDeAbertura.set(null);
+    });
+  }
+
+  private acompanharAnexosPublicados(): void {
+    this.store.geracao();
+    const id = this.store.processoSeletivoId();
+    const atoId = this.atoId();
+    const lerPublicados = this.publicado() && id !== null && atoId !== null;
+    untracked(() => {
+      if (!lerPublicados) {
+        this.publicados.set(null);
+        return;
+      }
+      void this.lerPublicados(id, atoId);
     });
   }
 
@@ -183,12 +186,13 @@ export class AnexosDoEditalComponent {
 
     this.recusa.set(null);
     const novos = arquivos.map((arquivo) => this.registrar(arquivo));
-    // A lista cresce de forma síncrona: o limite do ui-file-upload conta o que já está nela.
-    this.store.patchObjectSection('publicacao', {
-      anexos: [...this.anexos(), ...novos.map(({ anexo }) => anexo)],
-    });
+    this.adicionarAnexos(novos.map(({ anexo }) => anexo));
     const ids = novos.map(({ anexo }) => anexo.id);
     this.fila = this.fila.then(() => this.enviarEmSequencia(processoId, ids));
+  }
+
+  private adicionarAnexos(novos: readonly AnexoDoEdital[]): void {
+    this.store.patchObjectSection('publicacao', { anexos: [...this.anexos(), ...novos] });
   }
 
   private registrar(arquivo: File): { anexo: AnexoDoEdital } {
@@ -199,10 +203,14 @@ export class AnexosDoEditalComponent {
       progress: 0,
       fase: 'iniciando',
     };
-    // Geração do editor quando o anexo foi escolhido; o arquivo de um processo não vale em outro.
+    this.guardarEnvio(anexo.id, arquivo);
+    return { anexo };
+  }
+
+  private guardarEnvio(id: string, arquivo: File): void {
     const geracao = this.store.geracao();
     this.memoria.set(
-      anexo.id,
+      id,
       new EnvioDeArquivo({
         envio: this.servico.abrirEnvio(),
         arquivo,
@@ -213,7 +221,6 @@ export class AnexosDoEditalComponent {
         vale: () => geracao === this.store.geracao(),
       }),
     );
-    return { anexo };
   }
 
   private async enviarEmSequencia(processoId: string, ids: readonly string[]): Promise<void> {
@@ -316,19 +323,29 @@ export class AnexosDoEditalComponent {
     this.abrindo.set(documentoAPublicarId);
     this.erroDeAbertura.set(null);
     try {
-      const desfecho = await abrirAcessoEmNovaAba(
-        () => this.servico.obterAcesso(processoId, documentoAPublicarId),
-        () => geracao === this.store.geracao(),
-      );
-      if (desfecho.situacao === 'bloqueada') {
-        this.erroDeAbertura.set(
-          'O navegador bloqueou a abertura do anexo. Permita pop-ups para este endereço e tente de novo.',
-        );
-      } else if (desfecho.situacao === 'recusada') {
-        this.erroDeAbertura.set(this.problemI18n.resolve(desfecho.problem).title);
-      }
+      const desfecho = await this.obterAcessoAoAnexo(processoId, documentoAPublicarId, geracao);
+      this.informarResultadoDaAbertura(desfecho);
     } finally {
       this.abrindo.set(null);
+    }
+  }
+
+  private obterAcessoAoAnexo(processoId: string, documentoAPublicarId: string, geracao: number) {
+    return abrirAcessoEmNovaAba(
+      () => this.servico.obterAcesso(processoId, documentoAPublicarId),
+      () => geracao === this.store.geracao(),
+    );
+  }
+
+  private informarResultadoDaAbertura(
+    desfecho: Awaited<ReturnType<typeof abrirAcessoEmNovaAba>>,
+  ): void {
+    if (desfecho.situacao === 'bloqueada') {
+      this.erroDeAbertura.set(
+        'O navegador bloqueou a abertura do anexo. Permita pop-ups para este endereço e tente de novo.',
+      );
+    } else if (desfecho.situacao === 'recusada') {
+      this.erroDeAbertura.set(this.problemI18n.resolve(desfecho.problem).title);
     }
   }
 
@@ -350,7 +367,9 @@ export class AnexosDoEditalComponent {
     if (geracao !== this.store.geracao() || leitura !== this.leituraAtual) return;
 
     const ato = isApiOk(atos) ? atos.data.find((item) => item.id === atoId) : undefined;
-    this.publicados.set(ato === undefined ? { estado: 'falha' } : { estado: 'lido', anexos: ato.anexos });
+    this.publicados.set(
+      ato === undefined ? { estado: 'falha' } : { estado: 'lido', anexos: ato.anexos },
+    );
   }
 }
 

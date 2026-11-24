@@ -134,37 +134,43 @@ export let tipoEtapaPorId: WritableSignal<ReadonlyMap<string, TipoEtapaDto>>;
 
 /** Monta o passo de Eliminação antes de cada teste e confere, no fim, que nenhum pedido sobrou. */
 export function montarEliminacao(): void {
-  beforeEach(async () => {
-    tipoEtapaPorId = signal(new Map());
-    await TestBed.configureTestingModule({
-      imports: [EliminacaoPassoComponent],
-      providers: [
-        ProcessoSeletivoStore,
-        CadastroInicial,
-        GravacaoDoProcesso,
-        CatalogosDeClassificacao,
-        { provide: CatalogoDeTiposDeEtapa, useValue: { tipoEtapaPorId } },
-        LeituraDoCadastroDePesos,
-        ReleituraDoSnapshot,
-        provideHttpClient(withInterceptors([apiResultInterceptor])),
-        provideHttpClientTesting(),
-        { provide: SELECAO_BASE_PATH, useValue: BASE },
-        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-      ],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(EliminacaoPassoComponent);
-    componente = fixture.componentInstance;
-    store = TestBed.inject(ProcessoSeletivoStore);
-    controller = TestBed.inject(HttpTestingController);
-
-    fixture.detectChanges();
-    for (const requisicao of controller.match(() => true)) requisicao.flush([]);
-    fixture.detectChanges();
-
-    store.processoSeletivoId.set(PROCESSO_ID);
-    store.patchObjectSection('cronograma', { etapas: [ETAPA_PERSISTIDA] });
-  });
-
+  beforeEach(prepararPassoDeEliminacao);
   afterEach(() => controller.verify());
+}
+
+async function prepararPassoDeEliminacao(): Promise<void> {
+  tipoEtapaPorId = signal(new Map());
+  await TestBed.configureTestingModule({
+    imports: [EliminacaoPassoComponent],
+    providers: provedoresDaEliminacao(),
+  }).compileComponents();
+  fixture = TestBed.createComponent(EliminacaoPassoComponent);
+  componente = fixture.componentInstance;
+  store = TestBed.inject(ProcessoSeletivoStore);
+  controller = TestBed.inject(HttpTestingController);
+  responderAosCatalogos();
+  store.processoSeletivoId.set(PROCESSO_ID);
+  store.patchObjectSection('cronograma', { etapas: [ETAPA_PERSISTIDA] });
+}
+
+function provedoresDaEliminacao() {
+  return [
+    ProcessoSeletivoStore,
+    CadastroInicial,
+    GravacaoDoProcesso,
+    CatalogosDeClassificacao,
+    { provide: CatalogoDeTiposDeEtapa, useValue: { tipoEtapaPorId } },
+    LeituraDoCadastroDePesos,
+    ReleituraDoSnapshot,
+    provideHttpClient(withInterceptors([apiResultInterceptor])),
+    provideHttpClientTesting(),
+    { provide: SELECAO_BASE_PATH, useValue: BASE },
+    { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+  ];
+}
+
+function responderAosCatalogos(): void {
+  fixture.detectChanges();
+  for (const requisicao of controller.match(() => true)) requisicao.flush([]);
+  fixture.detectChanges();
 }

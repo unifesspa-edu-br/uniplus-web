@@ -86,8 +86,6 @@ export class EnvioDeArquivo {
     const atual = alvo.estado();
     if (atual === undefined) return;
 
-    // O arquivo já chegou ao storage numa tentativa anterior: repetir o PUT seria desperdício e
-    // esbarraria numa URL possivelmente vencida. Só a confirmação falta.
     if (soFaltaConfirmar(atual) && atual.documentoAPublicarId !== undefined) {
       await this.confirmar(processoId, alvo, atual.documentoAPublicarId);
       return;
@@ -112,23 +110,49 @@ export class EnvioDeArquivo {
       return null;
     }
 
+    return this.iniciarEnvio(processoId, alvo, this.opcoes.tipoDeMidia);
+  }
+
+  private async iniciarEnvio(
+    processoId: string,
+    alvo: AlvoDoEnvio,
+    tipoDeMidia: string,
+  ): Promise<IniciarEnvioDoDocumentoAPublicarDto | null> {
     this.atualizar(alvo, { fase: 'iniciando', progress: 0, mensagemErro: undefined });
-    const { resultado } = await this.opcoes.envio.iniciar(processoId, {
-      finalidade: this.opcoes.finalidade,
-      nomeArquivo: this.opcoes.arquivo.name,
-      tipoDeMidia: this.opcoes.tipoDeMidia,
-    });
+    const { resultado } = await this.opcoes.envio.iniciar(
+      processoId,
+      this.dadosDoArquivo(tipoDeMidia),
+    );
     if (!this.vale) return null;
+    return this.receberDestino(alvo, resultado);
+  }
+
+  private receberDestino(
+    alvo: AlvoDoEnvio,
+    resultado: Awaited<ReturnType<EnvioDoAnexo['iniciar']>>['resultado'],
+  ): IniciarEnvioDoDocumentoAPublicarDto | null {
     if (!isApiOk(resultado)) {
       this.falhar(alvo, this.opcoes.explicar(resultado.problem));
       return null;
     }
-    this.destino = resultado.data;
-    this.atualizar(alvo, {
-      documentoAPublicarId: resultado.data.documentoAPublicarId,
-      expiraEm: resultado.data.expiraEm,
-    });
+    this.guardarDestino(alvo, resultado.data);
     return resultado.data;
+  }
+
+  private dadosDoArquivo(tipoDeMidia: string) {
+    return {
+      finalidade: this.opcoes.finalidade,
+      nomeArquivo: this.opcoes.arquivo.name,
+      tipoDeMidia,
+    };
+  }
+
+  private guardarDestino(alvo: AlvoDoEnvio, destino: IniciarEnvioDoDocumentoAPublicarDto): void {
+    this.destino = destino;
+    this.atualizar(alvo, {
+      documentoAPublicarId: destino.documentoAPublicarId,
+      expiraEm: destino.expiraEm,
+    });
   }
 
   /** O PUT direto ao storage; `false` quando falhou ou o envio deixou de valer. */
@@ -141,20 +165,26 @@ export class EnvioDeArquivo {
       this.atualizar(alvo, { progress }),
     );
     if (!this.vale) return false;
-    if (!envio.ok) {
-      if (envio.expirada) {
-        this.descartarDestinoVencido(alvo);
-        this.falhar(alvo, 'O endereço de envio não é mais válido. Tente novamente para obter um novo.');
-      } else {
-        this.falhar(alvo, 'Falha ao enviar o arquivo. Verifique a conexão e tente novamente.');
-      }
-      return false;
-    }
+    if (envio.ok) this.registrarEnvioAoStorage(alvo);
+    else this.informarFalhaNoStorage(alvo, envio.expirada);
+    return envio.ok;
+  }
 
+  private registrarEnvioAoStorage(alvo: AlvoDoEnvio): void {
     this.atualizar(alvo, { enviado: true, progress: 100 });
-    // A URL cumpriu o papel; some da memória para não ficar credencial viva à toa.
     this.destino = null;
-    return true;
+  }
+
+  private informarFalhaNoStorage(alvo: AlvoDoEnvio, expirada: boolean): void {
+    if (expirada) {
+      this.descartarDestinoVencido(alvo);
+      this.falhar(
+        alvo,
+        'O endereço de envio não é mais válido. Tente novamente para obter um novo.',
+      );
+    } else {
+      this.falhar(alvo, 'Falha ao enviar o arquivo. Verifique a conexão e tente novamente.');
+    }
   }
 
   /** A assinatura recusada não volta a valer: a retentativa pede outra URL. */
@@ -174,19 +204,26 @@ export class EnvioDeArquivo {
       documentoAPublicarId,
     );
     if (!this.vale) return;
+    if (isApiOk(resultado)) this.registrarConfirmacao(alvo);
+    else this.informarFalhaNaConfirmacao(alvo, resultado.problem, inconclusiva);
+  }
 
-    if (!isApiOk(resultado)) {
-      const mensagem = this.opcoes.explicar(resultado.problem);
-      this.atualizar(alvo, { confirmacaoIndefinida: inconclusiva });
-      this.falhar(
-        alvo,
-        inconclusiva
-          ? `${mensagem} Não é possível saber se o arquivo foi registrado; use "Tentar novamente" para repetir a mesma confirmação.`
-          : mensagem,
-      );
-      return;
-    }
+  private informarFalhaNaConfirmacao(
+    alvo: AlvoDoEnvio,
+    problema: ProblemDetails,
+    inconclusiva: boolean,
+  ): void {
+    const mensagem = this.opcoes.explicar(problema);
+    this.atualizar(alvo, { confirmacaoIndefinida: inconclusiva });
+    this.falhar(
+      alvo,
+      inconclusiva
+        ? `${mensagem} Não é possível saber se o arquivo foi registrado; use "Tentar novamente" para repetir a mesma confirmação.`
+        : mensagem,
+    );
+  }
 
+  private registrarConfirmacao(alvo: AlvoDoEnvio): void {
     this.atualizar(alvo, {
       fase: 'confirmado',
       progress: 100,

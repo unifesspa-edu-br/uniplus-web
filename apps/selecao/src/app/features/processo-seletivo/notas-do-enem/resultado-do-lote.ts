@@ -45,6 +45,11 @@ export function fraseDoLote(totais: TotaisDoLote): string {
     `${formatarNumeroPtBr(totais.inscritosSemNota)} sem nota`,
     quantos(totais.linhasSemInscrito, 'linha sem inscrito', 'linhas sem inscrito'),
   ];
+  acrescentarConflitosEAusentes(partes, totais);
+  return `${partes.join(', ')}.`;
+}
+
+function acrescentarConflitosEAusentes(partes: string[], totais: TotaisDoLote): void {
   if (totais.inscritosEmConflito > 0) {
     partes.push(
       quantos(totais.inscritosEmConflito, 'inscrito em conflito', 'inscritos em conflito'),
@@ -53,7 +58,6 @@ export function fraseDoLote(totais: TotaisDoLote): string {
   if (totais.inscritosAusentes > 0) {
     partes.push(quantos(totais.inscritosAusentes, 'inscrito ausente', 'inscritos ausentes'));
   }
-  return `${partes.join(', ')}.`;
 }
 
 export type TipoDeGrupo =
@@ -208,23 +212,39 @@ export function listaDeLinhas(linhas: readonly number[]): string {
  */
 export function agruparOcorrencias(lote: LoteDeNotasDoEnemDto): readonly GrupoDeOcorrencias[] {
   const porTipo = new Map<TipoDeGrupo, LinhaDeOcorrencia[]>();
-  const incluir = (tipo: TipoDeGrupo, linha: LinhaDeOcorrencia): void => {
-    const doTipo = porTipo.get(tipo);
-    if (doTipo === undefined) porTipo.set(tipo, [linha]);
-    else doTipo.push(linha);
-  };
-  for (const ocorrencia of lote.ocorrencias ?? []) {
-    const tipo: TipoDeGrupo = TIPOS_CONHECIDOS[ocorrencia.tipo.codigo] ?? 'outras';
-    const linha = daOcorrencia(ocorrencia);
-    incluir(tipo, tipo === 'outras' ? { ...linha, candidato: ocorrencia.tipo.rotulo } : linha);
-  }
-  for (const ausente of lote.ausentes ?? []) incluir('ausente', doAusente(ausente));
-
+  incluirOcorrenciasDoLote(porTipo, lote);
   return ORDEM.flatMap((tipo) => {
     const doTipo = porTipo.get(tipo);
     if (doTipo === undefined) return [];
     return [{ tipo, ...DESCRICAO[tipo], itens: ordenar(tipo, doTipo) }];
   });
+}
+
+function incluirOcorrenciasDoLote(
+  porTipo: Map<TipoDeGrupo, LinhaDeOcorrencia[]>,
+  lote: LoteDeNotasDoEnemDto,
+): void {
+  for (const ocorrencia of lote.ocorrencias ?? []) {
+    const tipo: TipoDeGrupo = TIPOS_CONHECIDOS[ocorrencia.tipo.codigo] ?? 'outras';
+    incluirOcorrencia(porTipo, tipo, linhaDaOcorrencia(ocorrencia, tipo));
+  }
+  for (const ausente of lote.ausentes ?? [])
+    incluirOcorrencia(porTipo, 'ausente', doAusente(ausente));
+}
+
+function linhaDaOcorrencia(ocorrencia: OcorrenciaDoLoteDto, tipo: TipoDeGrupo): LinhaDeOcorrencia {
+  const linha = daOcorrencia(ocorrencia);
+  return tipo === 'outras' ? { ...linha, candidato: ocorrencia.tipo.rotulo } : linha;
+}
+
+function incluirOcorrencia(
+  porTipo: Map<TipoDeGrupo, LinhaDeOcorrencia[]>,
+  tipo: TipoDeGrupo,
+  linha: LinhaDeOcorrencia,
+): void {
+  const doTipo = porTipo.get(tipo);
+  if (doTipo === undefined) porTipo.set(tipo, [linha]);
+  else doTipo.push(linha);
 }
 
 function ordenar(tipo: TipoDeGrupo, itens: LinhaDeOcorrencia[]): LinhaDeOcorrencia[] {

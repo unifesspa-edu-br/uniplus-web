@@ -144,17 +144,24 @@ export function comFormulario(
   novo: FormularioDaFinalidade,
 ): FormularioDeInscricao {
   if (novo.finalidade === FINALIDADE_INSCRICAO) {
-    return {
-      ...formulario,
-      faseCodigo: novo.faseCodigo,
-      conteudo: novo.conteudo,
-      modeloOrigemCodigo: novo.modeloOrigemCodigo ?? null,
-    };
+    return comFormularioDeInscricao(formulario, novo);
   }
   const outras = formulario.outrasFinalidades.filter(
     (outro) => outro.finalidade !== novo.finalidade,
   );
   return { ...formulario, outrasFinalidades: emOrdemDasFinalidades([...outras, novo]) };
+}
+
+function comFormularioDeInscricao(
+  formulario: FormularioDeInscricao,
+  novo: FormularioDaFinalidade,
+): FormularioDeInscricao {
+  return {
+    ...formulario,
+    faseCodigo: novo.faseCodigo,
+    conteudo: novo.conteudo,
+    modeloOrigemCodigo: novo.modeloOrigemCodigo ?? null,
+  };
 }
 
 /** Os formulários das outras finalidades que o servidor tem, na forma do rascunho e em ordem. */
@@ -280,9 +287,7 @@ function exigirOrdemEmTornoDaInscricao(
   formularios: readonly FormularioNaGravacao[],
   exigir: (primeira: string, depois: string) => void,
 ): void {
-  const inscricao = formularios.find(
-    (formulario) => formulario.finalidade === FINALIDADE_INSCRICAO,
-  );
+  const inscricao = formularios.find(ehFormularioDeInscricao);
   if (inscricao === undefined) return;
 
   const ganhos = diferenca(coletados(inscricao.desejado), coletados(inscricao.servidor));
@@ -291,6 +296,10 @@ function exigirOrdemEmTornoDaInscricao(
     if (algumEm(ganhos, citados(outra.desejado))) exigir(FINALIDADE_INSCRICAO, outra.finalidade);
     if (algumEm(perdas, citados(outra.servidor))) exigir(outra.finalidade, FINALIDADE_INSCRICAO);
   }
+}
+
+function ehFormularioDeInscricao(formulario: FormularioNaGravacao): boolean {
+  return formulario.finalidade === FINALIDADE_INSCRICAO;
 }
 
 function ordenarPelasDependencias(

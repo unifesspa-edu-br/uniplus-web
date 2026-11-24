@@ -145,20 +145,21 @@ export class EnviosDeArquivos {
       progress: 0,
       fase: 'iniciando',
     };
-    const geracao = this.geracao;
-    this.memoria.set(
-      item.id,
-      new EnvioDeArquivo({
-        envio: this.dependencias.abrirEnvio(),
-        arquivo,
-        finalidade: this.dependencias.finalidade,
-        tipoDeMidia: this.dependencias.tipoDeMidiaDe(arquivo.name),
-        recusaDoFormato: this.dependencias.recusaDoFormato,
-        explicar: this.dependencias.explicar,
-        vale: () => geracao === this.geracao,
-      }),
-    );
+    this.memoria.set(item.id, this.prepararEnvio(arquivo));
     return item;
+  }
+
+  private prepararEnvio(arquivo: File): EnvioDeArquivo {
+    const geracao = this.geracao;
+    return new EnvioDeArquivo({
+      envio: this.dependencias.abrirEnvio(),
+      arquivo,
+      finalidade: this.dependencias.finalidade,
+      tipoDeMidia: this.dependencias.tipoDeMidiaDe(arquivo.name),
+      recusaDoFormato: this.dependencias.recusaDoFormato,
+      explicar: this.dependencias.explicar,
+      vale: () => geracao === this.geracao,
+    });
   }
 
   private async executar(processoId: string, id: string): Promise<void> {

@@ -109,17 +109,15 @@ function naoVazio(texto: string): string | null {
 export function comoComandoDeRegraEliminacao(
   regra: RegraEliminacaoConfigurada,
 ): RegraEliminacaoInput {
-  const usaEtapa = eliminacaoUsaEtapa(regra.regraCodigo);
-  const usaNotaMinima = eliminacaoUsaEtapaENotaMinima(regra.regraCodigo);
-  const usaAreaEMinimo = eliminacaoUsaAreaEMinimo(regra.regraCodigo);
-
   return {
     regraCodigo: regra.regraCodigo,
     regraVersao: regra.regraVersao,
-    etapaRef: usaEtapa ? naoVazio(regra.etapaRef) : null,
-    notaMinima: usaNotaMinima ? decimalNaForma(regra.notaMinima) : null,
-    minimo: usaAreaEMinimo ? decimalNaForma(regra.minimo) : null,
-    areaCodigo: usaAreaEMinimo ? naoVazio(regra.areaCodigo) : null,
+    etapaRef: eliminacaoUsaEtapa(regra.regraCodigo) ? naoVazio(regra.etapaRef) : null,
+    notaMinima: eliminacaoUsaEtapaENotaMinima(regra.regraCodigo)
+      ? decimalNaForma(regra.notaMinima)
+      : null,
+    minimo: eliminacaoUsaAreaEMinimo(regra.regraCodigo) ? decimalNaForma(regra.minimo) : null,
+    areaCodigo: eliminacaoUsaAreaEMinimo(regra.regraCodigo) ? naoVazio(regra.areaCodigo) : null,
   };
 }
 
@@ -140,17 +138,29 @@ export function comoComandoDeClassificacao(
   return {
     regraCalculoCodigo: classificacao.regraCalculoCodigo,
     regraCalculoVersao: classificacao.regraCalculoVersao,
-    regraArredondamentoCodigo: local ? naoVazio(classificacao.regraArredondamentoCodigo) : null,
-    regraArredondamentoVersao: local ? naoVazio(classificacao.regraArredondamentoVersao) : null,
-    casasArredondamento: local ? inteiroNaForma(classificacao.casasArredondamento) : null,
+    ...precisaoDoComando(classificacao, local),
     regraOrdemAlocacaoCodigo: classificacao.regraOrdemAlocacaoCodigo,
     regraOrdemAlocacaoVersao: classificacao.regraOrdemAlocacaoVersao,
     regrasEliminacao: local ? classificacao.regrasEliminacao.map(comoComandoDeRegraEliminacao) : [],
+    ...dadosDoEnemNoComando(classificacao),
+  };
+}
+
+function dadosDoEnemNoComando(classificacao: WizardDraft['classificacao']) {
+  return {
     baseadoEmEnem: classificacao.baseadoEmEnem,
-    escalaNotaFinal: local ? escalaDaNotaFinal(classificacao.escalaNotaFinal) : null,
     resolucaoPesoAreaEnem: exigeResolucaoPesoAreaEnem(classificacao)
       ? naoVazio(classificacao.resolucaoPesoAreaEnem)
       : null,
+  };
+}
+
+function precisaoDoComando(classificacao: WizardDraft['classificacao'], local: boolean) {
+  return {
+    regraArredondamentoCodigo: local ? naoVazio(classificacao.regraArredondamentoCodigo) : null,
+    regraArredondamentoVersao: local ? naoVazio(classificacao.regraArredondamentoVersao) : null,
+    casasArredondamento: local ? inteiroNaForma(classificacao.casasArredondamento) : null,
+    escalaNotaFinal: local ? escalaDaNotaFinal(classificacao.escalaNotaFinal) : null,
   };
 }
 
@@ -218,32 +228,38 @@ export function pendenciasDaClassificacaoBase(
   resolucaoForaDoCadastro: (resolucao: string) => boolean = () => false,
 ): readonly PendenciaDaClassificacaoBase[] {
   const pendencias: PendenciaDaClassificacaoBase[] = [];
-
-  if (!classificacao.regraCalculoCodigo) {
-    pendencias.push({
-      campo: 'regraCalculo',
-      mensagem: 'Selecione a regra de cálculo da nota, no passo Fórmula.',
-    });
-  }
+  if (!classificacao.regraCalculoCodigo) pendencias.push(pendenciaDaRegraDeCalculo());
   if (classificacaoUsaFormulaLocal(classificacao.regraCalculoCodigo)) {
     pendencias.push(...pendenciasDaPrecisao(classificacao));
   }
-  if (!classificacao.regraOrdemAlocacaoCodigo) {
-    pendencias.push({
-      campo: 'regraOrdemAlocacao',
-      mensagem: 'Selecione a regra de ordem de alocação, no passo Fórmula.',
-    });
-  }
-
+  if (!classificacao.regraOrdemAlocacaoCodigo) pendencias.push(pendenciaDaOrdemDeAlocacao());
   const pendencia = pendenciaDaResolucao(classificacao, resolucaoForaDoCadastro);
-  if (pendencia !== null) {
-    pendencias.push({
-      campo: 'resolucaoPesoAreaEnem',
-      mensagem: TEXTO_DA_PENDENCIA_DA_RESOLUCAO[pendencia].resumo,
-    });
-  }
+  if (pendencia !== null) pendencias.push(pendenciaDaResolucaoParaResumo(pendencia));
 
   return pendencias;
+}
+
+function pendenciaDaResolucaoParaResumo(
+  pendencia: PendenciaDaResolucao,
+): PendenciaDaClassificacaoBase {
+  return {
+    campo: 'resolucaoPesoAreaEnem',
+    mensagem: TEXTO_DA_PENDENCIA_DA_RESOLUCAO[pendencia].resumo,
+  };
+}
+
+function pendenciaDaRegraDeCalculo(): PendenciaDaClassificacaoBase {
+  return {
+    campo: 'regraCalculo',
+    mensagem: 'Selecione a regra de cálculo da nota, no passo Fórmula.',
+  };
+}
+
+function pendenciaDaOrdemDeAlocacao(): PendenciaDaClassificacaoBase {
+  return {
+    campo: 'regraOrdemAlocacao',
+    mensagem: 'Selecione a regra de ordem de alocação, no passo Fórmula.',
+  };
 }
 
 /** O arredondamento e a escala da nota final, que só a fórmula local usa. */
@@ -252,25 +268,40 @@ function pendenciasDaPrecisao(
 ): PendenciaDaClassificacaoBase[] {
   const pendencias: PendenciaDaClassificacaoBase[] = [];
   if (!classificacao.regraArredondamentoCodigo) {
-    pendencias.push({
-      campo: 'regraArredondamento',
-      mensagem: 'Selecione a regra de arredondamento, no passo Fórmula.',
-    });
+    pendencias.push(pendenciaDoArredondamento());
   }
-  const casas = inteiroNaForma(classificacao.casasArredondamento);
-  if (casas === null || casas <= 0) {
-    pendencias.push({
-      campo: 'casasArredondamento',
-      mensagem: 'Informe as casas decimais de arredondamento, maior que zero, no passo Fórmula.',
-    });
-  }
+  if (casasDecimaisInvalidas(classificacao.casasArredondamento))
+    pendencias.push(pendenciaDasCasasDecimais());
   if (escalaDaNotaFinalIlegivel(classificacao.escalaNotaFinal)) {
-    pendencias.push({
-      campo: 'escalaNotaFinal',
-      mensagem: `Escala da nota final, no passo Fórmula: ${FORMATO_DA_ESCALA_DA_NOTA_FINAL}`,
-    });
+    pendencias.push(pendenciaDaEscala());
   }
   return pendencias;
+}
+
+function pendenciaDoArredondamento(): PendenciaDaClassificacaoBase {
+  return {
+    campo: 'regraArredondamento',
+    mensagem: 'Selecione a regra de arredondamento, no passo Fórmula.',
+  };
+}
+
+function casasDecimaisInvalidas(valor: string): boolean {
+  const casas = inteiroNaForma(valor);
+  return casas === null || casas <= 0;
+}
+
+function pendenciaDaEscala(): PendenciaDaClassificacaoBase {
+  return {
+    campo: 'escalaNotaFinal',
+    mensagem: `Escala da nota final, no passo Fórmula: ${FORMATO_DA_ESCALA_DA_NOTA_FINAL}`,
+  };
+}
+
+function pendenciaDasCasasDecimais(): PendenciaDaClassificacaoBase {
+  return {
+    campo: 'casasArredondamento',
+    mensagem: 'Informe as casas decimais de arredondamento, maior que zero, no passo Fórmula.',
+  };
 }
 
 /** As mensagens de `pendenciasDaClassificacaoBase`, na mesma ordem. */

@@ -18,7 +18,10 @@ export function motivoDeSomenteLeitura(
   if (status === StatusProcessoCodigo.PUBLICADO) {
     return 'Este processo já foi publicado. A configuração fica disponível para consulta; alterá-la depende de abrir uma retificação.';
   }
+  return motivoDoProcessoNaoEditavel(status);
+}
 
+function motivoDoProcessoNaoEditavel(status: StatusProcessoCodigo): string {
   if (status === StatusProcessoCodigo.ENCERRADO || status === StatusProcessoCodigo.CANCELADO) {
     const situacao = status === StatusProcessoCodigo.ENCERRADO ? 'encerrado' : 'cancelado';
     return `Este processo está ${situacao} e não aceita alteração. A configuração fica disponível para consulta.`;

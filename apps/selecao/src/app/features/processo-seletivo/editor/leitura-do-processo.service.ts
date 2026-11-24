@@ -65,29 +65,31 @@ export class LeituraDoProcesso {
     const leitura = ++this.leituraEmCurso;
     const superada = (): boolean => leitura !== this.leituraEmCurso;
 
-    if (!UUID.test(id)) {
-      // A leitura anterior já foi superada pelo carimbo acima; sem encerrar o carregamento aqui,
-      // voltar ao processo que estava aberto encontraria o editor preso no indicador de progresso.
-      this.encerrarLeituraComFalha(
-        'idInvalido',
-        'O endereço não aponta para um identificador de processo válido.',
-      );
-      return;
-    }
+    if (!this.validarIdentificador(id)) return;
+    this.prepararEditorParaLeitura();
+    await this.lerProcesso(id, superada);
+  }
 
-    // Abrir um processo por endereço sempre começa do zero. Hidratar por cima do que estava em
-    // tela manteria o que o detalhe não traz (anexo, metadados locais do edital, seções sem
-    // readback) atribuído ao processo errado, vindo de outro `:id` ou de um `novo` já preenchido.
-    // O caminho `novo` → id recém-criado não passa por aqui: o rascunho local é do processo que
-    // acabou de nascer.
+  /** Encerra também o carregamento anterior quando o novo endereço é inválido. */
+  private validarIdentificador(id: string): boolean {
+    if (UUID.test(id)) return true;
+    this.encerrarLeituraComFalha(
+      'idInvalido',
+      'O endereço não aponta para um identificador de processo válido.',
+    );
+    return false;
+  }
+
+  /** Evita atribuir ao novo processo dados que o detalhe não traz. */
+  private prepararEditorParaLeitura(): void {
     this.limparEditor();
-
     this.store.falhaDeLeitura.set(null);
     this.store.hidratando.set(true);
+  }
 
+  private async lerProcesso(id: string, superada: () => boolean): Promise<void> {
     const detalhe = await firstValueFrom(this.api.obter(id));
     if (superada()) return;
-
     if (!isApiOk(detalhe)) {
       this.encerrarLeituraComFalha(
         motivoDe(detalhe.problem.status),
@@ -95,7 +97,6 @@ export class LeituraDoProcesso {
       );
       return;
     }
-
     await this.restaurarProcesso(id, detalhe.data, superada);
     if (superada()) return;
 
@@ -169,24 +170,29 @@ export class LeituraDoProcesso {
     superada: () => boolean,
   ): Promise<void> {
     if (!this.conducao.podePublicar()) return;
-    const resultado = await firstValueFrom(
-      this.documentosApi.listarDocumentosAPublicar(
-        processoSeletivoId,
-        FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL,
-      ),
-    );
+    const resultado = await this.listarDocumentosDoEdital(processoSeletivoId);
     if (superada()) return;
-
     if (!isApiOk(resultado)) {
       this.store.avisoDocumentos.set(
         'Não foi possível verificar se este processo já tem edital anexado. Confira antes de enviar outro.',
       );
       return;
     }
+    this.aplicarDocumentosDoEdital(resultado.data);
+  }
 
+  private listarDocumentosDoEdital(processoSeletivoId: string) {
+    return firstValueFrom(
+      this.documentosApi.listarDocumentosAPublicar(
+        processoSeletivoId,
+        FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL,
+      ),
+    );
+  }
+
+  private aplicarDocumentosDoEdital(documentos: Parameters<typeof classificarDocumentos>[0]): void {
     this.store.avisoDocumentos.set(null);
-
-    const { vinculo, escolha } = classificarDocumentos(resultado.data);
+    const { vinculo, escolha } = classificarDocumentos(documentos);
     if (vinculo !== null) {
       this.store.projetarSecao('identificacao', { uploads: [vinculo] });
     }
