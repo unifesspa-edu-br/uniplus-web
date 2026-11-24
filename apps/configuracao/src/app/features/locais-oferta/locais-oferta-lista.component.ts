@@ -1,10 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { ResolucaoDeVinculo } from '@uniplus/shared-core/http';
-import {
-  LocalOfertaDto,
-  TIPOS_LOCAL_OFERTA,
-  TipoLocalOferta,
-} from '@uniplus/shared-data/configuracao';
+import { LocalOfertaDto } from '@uniplus/shared-data/configuracao';
 import {
   EmptyStateComponent,
   IconButtonComponent,
@@ -61,17 +57,13 @@ export class LocaisOfertaListaComponent {
     idDoCadastro: 'cfg-locais-novo',
   });
 
-  protected tipoLabel(tipo: TipoLocalOferta): string {
-    return TIPOS_LOCAL_OFERTA.find((item) => item.value === tipo)?.label ?? tipo;
-  }
-
   protected cidadeLabel(local: LocalOfertaDto): string {
     const cidade = local.endereco?.cidade ?? local.cidade;
     return cidade ? `${cidade.nome} — ${cidade.uf}` : '—';
   }
 
   protected nomeDaAcao(acao: Acao, local: LocalOfertaDto): string {
-    return `${VERBO_DA_ACAO[acao]} local de oferta ${this.tipoLabel(local.tipo)} — ${this.cidadeLabel(local)}`;
+    return `${VERBO_DA_ACAO[acao]} local de oferta ${local.tipo.rotulo} — ${this.cidadeLabel(local)}`;
   }
 
   protected acionarCadastro(): void {

@@ -1,6 +1,13 @@
+import { VocabulariosDeConfiguracaoApi } from '@uniplus/shared-data/configuracao';
+import { of } from 'rxjs';
+import { ABRANGENCIAS } from './abrangencias.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
+import {
+  HttpTestingController,
+  TestRequest,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
+import { ApplicationRef, Type } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
@@ -31,7 +38,7 @@ export const PARAUAPEBAS = { codigoIbge: '1505536', nome: 'Parauapebas', uf: 'PA
 
 export const DIA_MUNICIPAL = {
   id: '019f41cf-69fd-759a-ac6d-09acabc1b100',
-  abrangencia: 'MUNICIPAL',
+  abrangencia: ABRANGENCIAS.MUNICIPAL,
   municipioIbge: '1504208',
   municipioNome: 'Marabá',
   municipioUf: 'PA',
@@ -42,7 +49,7 @@ export const DIA_MUNICIPAL = {
 
 export const DIA_ESTADUAL = {
   id: '019f41cf-69fd-759a-ac6d-09acabc1b101',
-  abrangencia: 'ESTADUAL',
+  abrangencia: ABRANGENCIAS.ESTADUAL,
   municipioIbge: null,
   municipioNome: null,
   municipioUf: null,
@@ -53,7 +60,7 @@ export const DIA_ESTADUAL = {
 
 export const DIA_NACIONAL_JANEIRO = {
   id: '019f41cf-69fd-759a-ac6d-09acabc1b102',
-  abrangencia: 'NACIONAL',
+  abrangencia: ABRANGENCIAS.NACIONAL,
   municipioIbge: null,
   municipioNome: null,
   municipioUf: null,
@@ -84,185 +91,292 @@ export const problema = (status: number, corpo: object = {}) =>
 
 export const criado = () => [CALENDARIO_ID, { status: 201, statusText: 'Created' }] as const;
 
+const vocabularioDeAbrangencias = {
+  provide: VocabulariosDeConfiguracaoApi,
+  useValue: { listar: () => of({ ok: true, data: Object.values(ABRANGENCIAS) }) },
+};
+
+const rotaDaLista = provideRouter([{ path: 'calendario-dias-uteis', children: [] }]);
+
+const enderecosDaApi = [
+  { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+  { provide: GEO_BASE_PATH, useValue: BASE },
+];
+
+function rotaAtivaComo(rota?: Partial<ActivatedRoute>) {
+  return rota ? [{ provide: ActivatedRoute, useValue: rota }] : [];
+}
+
 function configurar(raiz: unknown, rota?: Partial<ActivatedRoute>) {
   TestBed.configureTestingModule({
     imports: [raiz as never],
     providers: [
+      vocabularioDeAbrangencias,
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),
-      provideRouter([{ path: 'calendario-dias-uteis', children: [] }]),
-      { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-      { provide: GEO_BASE_PATH, useValue: BASE },
-      ...(rota ? [{ provide: ActivatedRoute, useValue: rota }] : []),
+      rotaDaLista,
+      ...enderecosDaApi,
+      ...rotaAtivaComo(rota),
     ],
   });
+}
+
+function propagarEm<T>(fixture: ComponentFixture<T>) {
+  const app = TestBed.inject(ApplicationRef);
+  return async (): Promise<void> => {
+    await Promise.resolve();
+    app.tick();
+    fixture.detectChanges();
+  };
+}
+
+function elementoEm<T>(fixture: ComponentFixture<T>) {
+  return <E extends HTMLElement>(seletor: string): E => {
+    const encontrado = (fixture.nativeElement as HTMLElement).querySelector<E>(seletor);
+    expect(encontrado, seletor).not.toBeNull();
+    return encontrado as E;
+  };
+}
+
+function escrever(campo: HTMLInputElement | HTMLTextAreaElement, valor: string): void {
+  campo.value = valor;
+  campo.dispatchEvent(new Event('input'));
+}
+
+function escolher(campo: HTMLSelectElement, valor: string): void {
+  campo.value = valor;
+  campo.dispatchEvent(new Event('change'));
+}
+
+function espiarNotificacoes() {
+  const notificacoes = TestBed.inject(NotificationService);
+  return {
+    sucessos: vi.spyOn(notificacoes, 'success'),
+    erros: vi.spyOn(notificacoes, 'errorFromProblem'),
+  };
+}
+
+type Municipio = { codigoIbge: string; nome: string; uf: string };
+
+async function responderBuscaDeCidades(
+  http: HttpTestingController,
+  municipio: Municipio,
+): Promise<void> {
+  await passarOTempo(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS);
+  http
+    .expectOne((r) => r.url === CIDADES)
+    .flush([{ id: `cidade-${municipio.codigoIbge}`, ddd: '94', ...municipio }]);
+}
+
+function buscadorDeMunicipio(
+  elemento: ReturnType<typeof elementoEm>,
+  propagar: () => Promise<void>,
+  http: HttpTestingController,
+) {
+  return async (ids: { busca: string; opcoes: string }, municipio: Municipio): Promise<void> => {
+    escrever(elemento<HTMLInputElement>(ids.busca), municipio.nome);
+    await responderBuscaDeCidades(http, municipio);
+    await propagar();
+    escolher(elemento<HTMLSelectElement>(ids.opcoes), municipio.codigoIbge);
+    await propagar();
+  };
 }
 
 /** O que as duas páginas oferecem para conduzi-las como a pessoa faz. */
 function ferramentas<T>(fixture: ComponentFixture<T>) {
   const http = TestBed.inject(HttpTestingController);
-  const app = TestBed.inject(ApplicationRef);
-  const notificacoes = TestBed.inject(NotificationService);
-  const sucessos = vi.spyOn(notificacoes, 'success');
-  const erros = vi.spyOn(notificacoes, 'errorFromProblem');
-  const propagar = async (): Promise<void> => {
-    await Promise.resolve();
-    app.tick();
-    fixture.detectChanges();
-  };
-  const elemento = <E extends HTMLElement>(seletor: string): E => {
-    const encontrado = (fixture.nativeElement as HTMLElement).querySelector<E>(seletor);
-    expect(encontrado, seletor).not.toBeNull();
-    return encontrado as E;
-  };
-  const escrever = (campo: HTMLInputElement | HTMLTextAreaElement, valor: string): void => {
-    campo.value = valor;
-    campo.dispatchEvent(new Event('input'));
-  };
-  const escolher = (campo: HTMLSelectElement, valor: string): void => {
-    campo.value = valor;
-    campo.dispatchEvent(new Event('change'));
-  };
-  const buscarMunicipio = async (
-    ids: { busca: string; opcoes: string },
-    municipio: { codigoIbge: string; nome: string; uf: string },
-  ): Promise<void> => {
-    escrever(elemento<HTMLInputElement>(ids.busca), municipio.nome);
-    await passarOTempo(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS);
-    http
-      .expectOne((r) => r.url === CIDADES)
-      .flush([{ id: `cidade-${municipio.codigoIbge}`, ddd: '94', ...municipio }]);
-    await propagar();
-    escolher(elemento<HTMLSelectElement>(ids.opcoes), municipio.codigoIbge);
-    await propagar();
-  };
+  const propagar = propagarEm(fixture);
+  const elemento = elementoEm(fixture);
   return {
     fixture,
     http,
-    sucessos,
-    erros,
+    ...espiarNotificacoes(),
     propagar,
     elemento,
     escrever,
     escolher,
-    buscarMunicipio,
+    buscarMunicipio: buscadorDeMunicipio(elemento, propagar, http),
+  };
+}
+
+type Ferramentas = ReturnType<typeof ferramentas>;
+
+function abrirPagina<T>(pagina: Type<T>, rota?: Partial<ActivatedRoute>) {
+  configurar(pagina, rota);
+  return ferramentas(TestBed.createComponent(pagina));
+}
+
+function controlesDoFormulario(base: Ferramentas) {
+  return {
+    salvar: (): HTMLButtonElement => base.elemento('button[form="cfg-calendario-dias-uteis-form"]'),
+    formulario: (): HTMLFormElement => base.elemento('#cfg-calendario-dias-uteis-form'),
+  };
+}
+
+/** Envia com o foco no botão de salvar e devolve a requisição de escrita feita à API. */
+async function enviarPeloBotao(base: Ferramentas, escrita: string): Promise<TestRequest> {
+  const botao = controlesDoFormulario(base).salvar();
+  botao.focus();
+  botao.click();
+  await base.propagar();
+  return base.http.expectOne(escrita);
+}
+
+function campoDoDia(base: Ferramentas, indice: number, campo: string): HTMLElement {
+  return base.elemento(`#${campo}-${indice}`);
+}
+
+async function adicionarDia(base: Ferramentas, edicao: EdicaoDoCalendario): Promise<number> {
+  base.elemento<HTMLButtonElement>('#cfg-calendario-adicionar-dia').click();
+  await base.propagar();
+  return edicao.form.controls.diasNaoUteis.length - 1;
+}
+
+/** Preenche o dia pelo que a pessoa vê: abrangência, data e descrição. */
+async function preencherDia(
+  base: Ferramentas,
+  indice: number,
+  abrangencia: string,
+  data: string,
+): Promise<void> {
+  base.escolher(campoDoDia(base, indice, 'abrangencia') as HTMLSelectElement, abrangencia);
+  await base.propagar();
+  base.escrever(campoDoDia(base, indice, 'data') as HTMLInputElement, data);
+  base.escrever(
+    campoDoDia(base, indice, 'descricao') as HTMLTextAreaElement,
+    'Independência do Brasil',
+  );
+  await base.propagar();
+}
+
+function municipioDoDia(base: Ferramentas, indice: number, municipio: Municipio): Promise<void> {
+  return base.buscarMunicipio(
+    { busca: `#busca-municipio-${indice}`, opcoes: `#codigo-municipio-${indice}` },
+    municipio,
+  );
+}
+
+function acoesDoCalendarioNovo(base: Ferramentas, edicao: EdicaoDoCalendario) {
+  return {
+    dia: (indice: number, campo: string): HTMLElement => campoDoDia(base, indice, campo),
+    adicionarDia: () => adicionarDia(base, edicao),
+    preencherDia: (indice: number, abrangencia: string, data: string) =>
+      preencherDia(base, indice, abrangencia, data),
+    enviar: () => enviarPeloBotao(base, ESCRITA_DO_CALENDARIO),
+    municipioDoDia: (indice: number, municipio: Municipio = MARABA) =>
+      municipioDoDia(base, indice, municipio),
+  };
+}
+
+function servicosDoCalendarioNovo(fixture: ComponentFixture<CalendarioDiasUteisNovoPage>) {
+  const injetor = fixture.debugElement.injector;
+  return {
+    edicao: injetor.get(EdicaoDoCalendario),
+    busca: injetor.get(BuscaDeMunicipios),
+  };
+}
+
+function consultasDoCalendarioNovo(base: Ferramentas) {
+  return {
+    versao: (): HTMLInputElement => base.elemento('[formcontrolname="versaoDataset"]'),
+    ...controlesDoFormulario(base),
   };
 }
 
 /** A página de novo calendário, com a rota da lista pronta para o redirecionamento. */
 export async function montarNovo() {
-  configurar(CalendarioDiasUteisNovoPage);
-  const fixture = TestBed.createComponent(CalendarioDiasUteisNovoPage);
-  const base = ferramentas(fixture);
-  const injetor = fixture.debugElement.injector;
-  const edicao = injetor.get(EdicaoDoCalendario);
-  const busca = injetor.get(BuscaDeMunicipios);
-  fixture.detectChanges();
-  const dia = (indice: number, campo: string): HTMLElement => base.elemento(`#${campo}-${indice}`);
+  const base = abrirPagina(CalendarioDiasUteisNovoPage);
+  const servicos = servicosDoCalendarioNovo(base.fixture);
+  base.fixture.detectChanges();
   return {
     ...base,
-    edicao,
-    busca,
+    ...servicos,
     router: TestBed.inject(Router),
-    dia,
-    versao: (): HTMLInputElement => base.elemento('[formcontrolname="versaoDataset"]'),
-    salvar: (): HTMLButtonElement => base.elemento('button[form="cfg-calendario-dias-uteis-form"]'),
-    formulario: (): HTMLFormElement => base.elemento('#cfg-calendario-dias-uteis-form'),
-    async adicionarDia(): Promise<number> {
-      base.elemento<HTMLButtonElement>('#cfg-calendario-adicionar-dia').click();
-      await base.propagar();
-      return edicao.form.controls.diasNaoUteis.length - 1;
-    },
-    /** Preenche o dia pelo que a pessoa vê: abrangência, data e descrição. */
-    async preencherDia(indice: number, abrangencia: string, data: string): Promise<void> {
-      base.escolher(dia(indice, 'abrangencia') as HTMLSelectElement, abrangencia);
-      await base.propagar();
-      base.escrever(dia(indice, 'data') as HTMLInputElement, data);
-      base.escrever(dia(indice, 'descricao') as HTMLTextAreaElement, 'Independência do Brasil');
-      await base.propagar();
-    },
-    /** Envia com o foco no botão de salvar e devolve a requisição de escrita. */
-    async enviar(): Promise<ReturnType<typeof base.http.expectOne>> {
-      const botao = base.elemento<HTMLButtonElement>(
-        'button[form="cfg-calendario-dias-uteis-form"]',
-      );
-      botao.focus();
-      botao.click();
-      await base.propagar();
-      return base.http.expectOne(ESCRITA_DO_CALENDARIO);
-    },
-    async municipioDoDia(indice: number, municipio = MARABA): Promise<void> {
-      await base.buscarMunicipio(
-        { busca: `#busca-municipio-${indice}`, opcoes: `#codigo-municipio-${indice}` },
+    ...consultasDoCalendarioNovo(base),
+    ...acoesDoCalendarioNovo(base, servicos.edicao),
+  };
+}
+
+function rotaDoDetalhe(parametros: Subject<{ id: string }>): Partial<ActivatedRoute> {
+  return {
+    snapshot: { paramMap: convertToParamMap({ id: CALENDARIO_ID }) },
+    params: parametros,
+  } as unknown as Partial<ActivatedRoute>;
+}
+
+function servicosDoDetalhe(fixture: ComponentFixture<CalendarioDiasUteisDetalhePage>) {
+  const injetor = fixture.debugElement.injector;
+  return {
+    edicao: injetor.get(EdicaoDosDiasNaoUteis),
+    store: injetor.get(CalendarioStore),
+    selecao: injetor.get(SelecaoDoDia),
+    busca: injetor.get(BuscaDeMunicipios),
+  };
+}
+
+async function carregarCalendario(
+  base: Ferramentas,
+  dias: readonly unknown[],
+  vigente: boolean,
+): Promise<void> {
+  await Promise.resolve();
+  base.http.expectOne(LEITURA).flush(calendarioCom(dias, vigente));
+  await base.propagar();
+}
+
+function botaoDoDia(base: Ferramentas, rotuloInicio: string): HTMLButtonElement {
+  return base.elemento(`button.cfg-calendario-mensal__dia[aria-label^="${rotuloInicio}"]`);
+}
+
+/** Clica no dia e em "Adicionar feriado", como a pessoa faz. */
+async function abrirCadastroPeloDia(base: Ferramentas, rotuloInicio: string): Promise<void> {
+  botaoDoDia(base, rotuloInicio).focus();
+  botaoDoDia(base, rotuloInicio).click();
+  await base.propagar();
+  const adicionar = base.elemento<HTMLButtonElement>('cfg-ocorrencias-do-dia .btn--primary');
+  adicionar.focus();
+  adicionar.click();
+  await base.propagar();
+}
+
+function consultasDoDetalhe(base: Ferramentas) {
+  return {
+    botaoDoDia: (rotuloInicio: string) => botaoDoDia(base, rotuloInicio),
+    dialogo: (): HTMLDialogElement => base.elemento('cfg-dia-nao-util-dialogo dialog'),
+    campo: (nome: string): HTMLElement => base.elemento(`[formcontrolname="${nome}"]`),
+    ...controlesDoFormulario(base),
+  };
+}
+
+function acoesDoDetalhe(base: Ferramentas) {
+  return {
+    carregar: (dias: readonly unknown[], vigente = false) =>
+      carregarCalendario(base, dias, vigente),
+    abrirCadastro: (rotuloInicio = '16 de setembro de 2026') =>
+      abrirCadastroPeloDia(base, rotuloInicio),
+    enviar: () => enviarPeloBotao(base, ESCRITA_DO_DIA),
+    municipioDoDialogo: (municipio: Municipio = MARABA) =>
+      base.buscarMunicipio(
+        { busca: '#busca-municipio-novo', opcoes: '#codigo-municipio-novo' },
         municipio,
-      );
-    },
+      ),
   };
 }
 
 /** O detalhe com o dataset carregado. */
 export async function montarDetalhe(diasNaoUteis: readonly unknown[] = [DIA_ESTADUAL]) {
   const parametros = new Subject<{ id: string }>();
-  configurar(CalendarioDiasUteisDetalhePage, {
-    snapshot: { paramMap: convertToParamMap({ id: CALENDARIO_ID }) },
-    params: parametros,
-  } as unknown as Partial<ActivatedRoute>);
-  const fixture = TestBed.createComponent(CalendarioDiasUteisDetalhePage);
-  const base = ferramentas(fixture);
-  const injetor = fixture.debugElement.injector;
-  const edicao = injetor.get(EdicaoDosDiasNaoUteis);
-  const store = injetor.get(CalendarioStore);
-  const selecao = injetor.get(SelecaoDoDia);
-  const busca = injetor.get(BuscaDeMunicipios);
-  fixture.detectChanges();
-  const carregar = async (dias: readonly unknown[], vigente = false): Promise<void> => {
-    await Promise.resolve();
-    base.http.expectOne(LEITURA).flush(calendarioCom(dias, vigente));
-    await base.propagar();
-  };
-  await carregar(diasNaoUteis);
-
-  const botaoDoDia = (rotuloInicio: string): HTMLButtonElement =>
-    base.elemento(`button.cfg-calendario-mensal__dia[aria-label^="${rotuloInicio}"]`);
+  const base = abrirPagina(CalendarioDiasUteisDetalhePage, rotaDoDetalhe(parametros));
+  const servicos = servicosDoDetalhe(base.fixture);
+  base.fixture.detectChanges();
+  const acoes = acoesDoDetalhe(base);
+  await acoes.carregar(diasNaoUteis);
   return {
     ...base,
-    edicao,
-    store,
-    selecao,
-    busca,
+    ...servicos,
     parametros,
-    carregar,
-    botaoDoDia,
-    dialogo: (): HTMLDialogElement => base.elemento('cfg-dia-nao-util-dialogo dialog'),
-    campo: (nome: string): HTMLElement => base.elemento(`[formcontrolname="${nome}"]`),
-    salvar: (): HTMLButtonElement => base.elemento('button[form="cfg-calendario-dias-uteis-form"]'),
-    formulario: (): HTMLFormElement => base.elemento('#cfg-calendario-dias-uteis-form'),
-    /** Clica no dia e em "Adicionar feriado", como a pessoa faz. */
-    async abrirCadastro(rotuloInicio = '16 de setembro de 2026'): Promise<void> {
-      botaoDoDia(rotuloInicio).focus();
-      botaoDoDia(rotuloInicio).click();
-      await base.propagar();
-      const adicionar = base.elemento<HTMLButtonElement>('cfg-ocorrencias-do-dia .btn--primary');
-      adicionar.focus();
-      adicionar.click();
-      await base.propagar();
-    },
-    /** Envia o diálogo aberto, com o foco no botão, e devolve a requisição de escrita. */
-    async enviar(): Promise<ReturnType<typeof base.http.expectOne>> {
-      const botao = base.elemento<HTMLButtonElement>(
-        'button[form="cfg-calendario-dias-uteis-form"]',
-      );
-      botao.focus();
-      botao.click();
-      await base.propagar();
-      return base.http.expectOne(ESCRITA_DO_DIA);
-    },
-    async municipioDoDialogo(municipio = MARABA): Promise<void> {
-      await base.buscarMunicipio(
-        { busca: '#busca-municipio-novo', opcoes: '#codigo-municipio-novo' },
-        municipio,
-      );
-    },
+    ...consultasDoDetalhe(base),
+    ...acoes,
   };
 }
 

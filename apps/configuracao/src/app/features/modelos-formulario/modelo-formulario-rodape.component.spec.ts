@@ -1,3 +1,4 @@
+import { FINALIDADE_INSCRICAO } from './vocabulario-do-modelo.testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ModeloFormularioView } from '@uniplus/shared-data/configuracao';
@@ -16,7 +17,7 @@ const conteudo = {
 const modelo: ModeloFormularioView = {
   id: 'm1',
   codigo: 'INSCRICAO',
-  finalidade: 'INSCRICAO',
+  finalidade: FINALIDADE_INSCRICAO,
   ativo: true,
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   conteudo,

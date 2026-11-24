@@ -36,6 +36,11 @@
   <ui-spinner spinnerSize="md" /> Carregando modalidade...
 </div>
 } @else if (!leitura.visivel()) {
+<ui-falha-de-leitura
+  titulo="Não foi possível carregar as opções"
+  variante="warning"
+  [leitura]="leituraDosVocabularios"
+/>
 <cfg-modalidade-formulario
   [form]="edicao.form"
   [modoEdicao]="edicao.modoEdicao"

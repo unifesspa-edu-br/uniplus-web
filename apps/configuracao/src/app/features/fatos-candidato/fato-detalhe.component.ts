@@ -16,12 +16,8 @@ import {
   rotuloDe,
 } from '../../shared/protecao-do-catalogo';
 import {
-  CARDINALIDADES,
-  DOMINIOS,
   ESCOPOS,
-  FONTES_DE_VALORES,
   FORMATOS_DE_TEXTO,
-  ORIGENS,
   rotuloDoComponente,
   protecaoDoFato,
 } from './fato-candidato.regras';
@@ -68,10 +64,6 @@ export class FatoDetalheComponent {
   ];
   protected readonly permissaoDeManter = PERMISSAO.configuracao.fatosCandidatoManter;
   protected readonly permissaoDeConsultar = PERMISSAO.configuracao.fatosCandidatoConsultar;
-  protected readonly origens = ORIGENS;
-  protected readonly dominios = DOMINIOS;
-  protected readonly cardinalidades = CARDINALIDADES;
-  protected readonly fontes = FONTES_DE_VALORES;
   protected readonly formatos = FORMATOS_DE_TEXTO;
   protected readonly escopos = ESCOPOS;
   protected readonly rotuloDoComponente = rotuloDoComponente;

@@ -162,18 +162,33 @@ describe('regrasDeDocumentos', () => {
     expect(comoTexto(regras)).toEqual([
       {
         'Envie um dos documentos abaixo, à sua escolha:': [
-          'RG — do Integrante 1; pode ser exigido de Você (candidato)',
+          'RG — do Integrante 1; Pode ser exigido, conforme as respostas de Você (candidato)',
           'CNH — de Você (candidato) e do Integrante 1',
         ],
       },
     ]);
     const [rg, cnh] = regras[0].forma === 'DOCUMENTO' ? [] : regras[0].itens;
     expect(rg.forma === 'DOCUMENTO' && rg.documento.situacao).toBe(
-      'Conforme o integrante, como indicado no nome',
+      'Exigido pelas suas respostas / Pode ser exigido, conforme as respostas',
     );
     expect(cnh.forma === 'DOCUMENTO' && cnh.documento.situacao).toBe(
       'Exigido pelas suas respostas',
     );
+  });
+
+  it('ordena alfabeticamente as situações agregadas independentemente da ordem de entrada', () => {
+    const documentos = [
+      documentoRepetido('RG', 'o1', 'PODE_SER_EXIGIDO'),
+      documentoRepetido('RG', 'o2'),
+    ];
+    const situacao = (entrada: typeof documentos) => {
+      const [regra] = regrasDeDocumentos(entrada, [FAMILIA], { FAMILIA: [CANDIDATO, MAE] });
+      const item = regra.forma === 'DOCUMENTO' ? regra : regra.itens[0];
+      return item.forma === 'DOCUMENTO' ? item.documento.situacao : null;
+    };
+    const esperada = 'Exigido pelas suas respostas / Pode ser exigido, conforme as respostas';
+    expect(situacao(documentos)).toBe(esperada);
+    expect(situacao([...documentos].reverse())).toBe(esperada);
   });
 
   /** O irmão sem renda não recebe o comprovante: a avaliação não traz a linha dele. */

@@ -14,7 +14,7 @@ import {
   CursoDto,
   LocalOfertaDto,
   OfertaCursoDto,
-  TipoLocalOferta,
+  TipoLocalOfertaCodigo,
 } from '@uniplus/shared-data/configuracao';
 import { ORGANIZACAO_BASE_PATH, UnidadeDto } from '@uniplus/shared-data/organizacao';
 import { MockInstance, expect, vi } from 'vitest';
@@ -22,6 +22,7 @@ import { EdicaoDasOfertasCurso } from './edicao-das-ofertas-curso';
 import { OfertasCursoPage } from './ofertas-curso.page';
 import { OfertasCursoStore } from './ofertas-curso.store';
 import { VinculosDaOferta } from './vinculos-da-oferta';
+import { valoresDaOferta, vocabulariosDaOferta } from './valores-da-oferta.testing';
 
 const BASE = 'http://localhost:5000';
 /** Teto de página da API: `limit` fora de 1..100 responde 422 e o lookup rejeitado deixa o select vazio. */
@@ -59,7 +60,7 @@ export const engMinas: CursoDto = {
 
 export const maraba: LocalOfertaDto = {
   id: '01960000-0000-7000-0000-0000000000e1',
-  tipo: TipoLocalOferta.campusSede,
+  tipo: { codigo: TipoLocalOfertaCodigo.CAMPUS_SEDE, rotulo: 'Campus sede' },
   campusResponsavelId: null,
   cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
   endereco: null,
@@ -92,11 +93,11 @@ export const oferta: OfertaCursoDto = {
     nome: 'Instituto de Geociências e Engenharias',
     tipo: 'Instituto',
   },
-  programaDeOferta: 'REGULAR',
-  formatoPedagogico: 'PRESENCIAL',
-  regimeDeTurno: 'REGULAR',
-  regimeDeFuncionamento: 'EXTENSIVO',
-  turnos: ['MATUTINO'],
+  programaDeOferta: valoresDaOferta.programa,
+  formatoPedagogico: valoresDaOferta.formato,
+  regimeDeTurno: valoresDaOferta.regime,
+  regimeDeFuncionamento: valoresDaOferta.funcionamento,
+  turnos: [valoresDaOferta.turnos[0]],
   eMecCodigo: '123456',
   codigoSga: null,
   vagasAnuaisAutorizadas: 40,
@@ -197,10 +198,19 @@ export class PaginaDeOfertas {
 
   async carregar(itens: readonly OfertaCursoDto[], catalogos: CatalogosDaPagina): Promise<void> {
     this.fixture.detectChanges();
+    this.responderVocabularios();
     this.http.expectOne((r) => r.url === LISTA).flush(itens);
     responder(this.doCatalogo(CURSOS), catalogos.cursos ?? [engCiv]);
     responder(this.doCatalogo(LOCAIS), catalogos.locais ?? [maraba]);
     await this.propagar();
+  }
+
+  private responderVocabularios(): void {
+    for (const [nome, itens] of Object.entries(vocabulariosDaOferta)) {
+      this.http
+        .match(`${BASE}/api/configuracao/vocabularios/${nome}`)
+        .forEach((pedido) => pedido.flush(itens));
+    }
   }
 
   async propagar(): Promise<void> {
@@ -283,7 +293,7 @@ export class PaginaDeOfertas {
     this.preencher('cursoId', engCiv.id);
     this.preencher('localOfertaId', maraba.id);
     this.preencher('unidadeOfertanteOrigemId', ige.id);
-    this.turno('Matutino').click();
+    this.turno(valoresDaOferta.turnos[0].rotulo).click();
     await this.propagar();
   }
 

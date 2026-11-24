@@ -9,9 +9,7 @@ import {
   rotuloDe,
 } from '../../shared/protecao-do-catalogo';
 import {
-  CARDINALIDADES,
   COMPONENTES_DE_EXIBICAO,
-  DOMINIOS,
   ROTULO_DO_COMPONENTE_PADRAO,
 } from '../fatos-candidato/fato-candidato.regras';
 
@@ -28,8 +26,6 @@ export class ItemDaProtecaoDetalheComponent {
   readonly categorias = input.required<ReadonlyMap<string, { nome: string }>>();
   protected readonly cadastro = nomeDoCadastro;
   protected readonly rotulo = rotuloDe;
-  protected readonly dominios = DOMINIOS;
-  protected readonly cardinalidades = CARDINALIDADES;
   protected readonly componentes = COMPONENTES_DE_EXIBICAO;
   protected readonly rotuloDoPadrao = ROTULO_DO_COMPONENTE_PADRAO;
   protected readonly data = (instante: string): string => formatarDataBr(instante, 'datetime');

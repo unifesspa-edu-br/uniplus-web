@@ -1,3 +1,4 @@
+import { valoresDaOferta } from '../ofertas-curso/valores-da-oferta.testing';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { OfertaCursoDto } from '@uniplus/shared-data/configuracao';
@@ -48,25 +49,12 @@ describe('OfertasDoCursoComponent', () => {
   const texto = (): string => (fixture.nativeElement as HTMLElement).textContent ?? '';
 
   it('mostra programa, regime e turnos da oferta pelos rótulos do domínio', () => {
-    montar([{ ...oferta, turnos: ['VESPERTINO', 'MATUTINO'] }]);
+    montar([{ ...oferta, turnos: [valoresDaOferta.turnos[1], valoresDaOferta.turnos[0]] }]);
 
     expect(texto()).toContain('IGE — Instituto de Geociências e Engenharias');
-    expect(texto()).toContain('Matutino e Vespertino');
-  });
-
-  it('mantém o token que o domínio não conhece e mostra traço quando não há turnos', () => {
-    montar([
-      {
-        ...oferta,
-        programaDeOferta: 'NOVO_PROGRAMA' as OfertaCursoDto['programaDeOferta'],
-        regimeDeTurno: 'NOVO_REGIME' as OfertaCursoDto['regimeDeTurno'],
-        turnos: [],
-      },
-    ]);
-
-    expect(texto()).toContain('NOVO_PROGRAMA');
-    expect(texto()).toContain('NOVO_REGIME');
-    expect(texto()).toContain('—');
+    expect(texto()).toContain(
+      `${valoresDaOferta.turnos[1].rotulo} e ${valoresDaOferta.turnos[0].rotulo}`,
+    );
   });
 
   it('o bloqueio só manda remover ofertas quando elas existem', () => {

@@ -1,3 +1,11 @@
+import {
+  FormatoPedagogicoCodigo,
+  ProgramaDeOfertaCodigo,
+  RegimeDeFuncionamentoCodigo,
+  RegimeDeTurnoCodigo,
+  TurnoOfertaCodigo,
+} from './schema';
+import { valorDeTeste } from './vocabularios.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -30,11 +38,11 @@ const ofertaSeed: OfertaCursoDto = {
     nome: 'Instituto de Geociências e Engenharias',
     tipo: 'Instituto',
   },
-  programaDeOferta: 'REGULAR',
-  formatoPedagogico: 'PRESENCIAL',
-  regimeDeFuncionamento: 'EXTENSIVO',
-  regimeDeTurno: 'REGULAR',
-  turnos: ['MATUTINO'],
+  programaDeOferta: valorDeTeste(ProgramaDeOfertaCodigo.REGULAR),
+  formatoPedagogico: valorDeTeste(FormatoPedagogicoCodigo.PRESENCIAL),
+  regimeDeFuncionamento: valorDeTeste(RegimeDeFuncionamentoCodigo.EXTENSIVO),
+  regimeDeTurno: valorDeTeste(RegimeDeTurnoCodigo.REGULAR),
+  turnos: [valorDeTeste(TurnoOfertaCodigo.MATUTINO)],
   eMecCodigo: '123456',
   codigoSga: null,
   vagasAnuaisAutorizadas: 40,
@@ -48,11 +56,11 @@ const criarCommand: CriarOfertaCursoCommand = {
   cursoId: CURSO_ID,
   localOfertaId: LOCAL_ID,
   unidadeOfertanteOrigemId: UNIDADE_ID,
-  programaDeOferta: 'REGULAR',
-  formatoPedagogico: 'PRESENCIAL',
+  programaDeOferta: ProgramaDeOfertaCodigo.REGULAR,
+  formatoPedagogico: FormatoPedagogicoCodigo.PRESENCIAL,
   regimeDeFuncionamento: null,
   regimeDeTurno: null,
-  turnos: ['MATUTINO'],
+  turnos: [TurnoOfertaCodigo.MATUTINO],
   eMecCodigo: '123456',
   vagasAnuaisAutorizadas: 40,
 };
@@ -185,11 +193,11 @@ describe('OfertasCursoApi', () => {
         {
           id: ID,
           codigo: 'ENG_CIVIL_MARABA',
-          programaDeOferta: 'REGULAR',
-          formatoPedagogico: 'PRESENCIAL',
+          programaDeOferta: ProgramaDeOfertaCodigo.REGULAR,
+          formatoPedagogico: FormatoPedagogicoCodigo.PRESENCIAL,
           regimeDeFuncionamento: null,
           regimeDeTurno: null,
-          turnos: ['MATUTINO'],
+          turnos: [TurnoOfertaCodigo.MATUTINO],
           eMecCodigo: '123456',
           vagasAnuaisAutorizadas: 40,
         },

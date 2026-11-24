@@ -41,8 +41,8 @@ describe('EditorDeFormularioComponent: impedimento com a busca de municípios', 
     cenario.montar();
     const municipio: FatoDoFormulario = {
       ...fato('MUNICIPIO'),
-      dominio: 'CATEGORICO',
-      fonteValores: 'GEO_MUNICIPIO',
+      dominio: { codigo: 'OPCAO', rotulo: 'OPCAO' },
+      fonteValores: { codigo: 'MUNICIPIOS', rotulo: 'MUNICIPIOS' },
     };
     cenario.entrada('conteudo', {
       ...conteudo,

@@ -39,10 +39,10 @@ describe('FormularioDoCandidatoComponent', () => {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
       coleta: {
         itens: [
-          campoRenderizavel('CURSOS', 'Cursos', 'SELECAO_MULTIPLA', {
+          campoRenderizavel('CURSOS', 'Cursos', 'ESCOLHA_MULTIPLA', {
             valoresSelecionaveis: [{ codigo: 'MED', descricao: 'Medicina', ordem: 0 }],
           }),
-          campoRenderizavel('ESPERA', 'Lista de espera', 'SELECAO_UNICA', { ordem: 1 }),
+          campoRenderizavel('ESPERA', 'Lista de espera', 'ESCOLHA_UNICA', { ordem: 1 }),
         ],
         grupos: [],
       },
@@ -138,7 +138,7 @@ describe('FormularioDoCandidatoComponent', () => {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
       coleta: {
         itens: [
-          campoRenderizavel('TURNO', 'Turno', 'SELECAO_UNICA', {
+          campoRenderizavel('TURNO', 'Turno', 'ESCOLHA_UNICA', {
             valoresSelecionaveis: [{ codigo: 'NOITE', descricao: 'Noite', ordem: 0 }],
           }),
         ],
@@ -201,7 +201,7 @@ describe('FormularioDoCandidatoComponent', () => {
         },
       ],
       coleta: {
-        itens: [campoRenderizavel('QUER_A', 'Mostrar a seção A?', 'BOOLEANO')],
+        itens: [campoRenderizavel('QUER_A', 'Mostrar a seção A?', 'SIM_OU_NAO')],
         grupos: [],
       },
       regras: {
@@ -292,7 +292,7 @@ describe('FormularioDoCandidatoComponent', () => {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
       coleta: {
         itens: [
-          campoRenderizavel('COR_RACA', 'Cor ou raça', 'SELECAO_UNICA', {
+          campoRenderizavel('COR_RACA', 'Cor ou raça', 'ESCOLHA_UNICA', {
             valoresSelecionaveis: [
               { codigo: 'BRANCA', descricao: 'Branca', ordem: 0 },
               {

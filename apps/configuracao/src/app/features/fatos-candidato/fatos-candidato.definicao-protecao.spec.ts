@@ -13,6 +13,10 @@ import {
   comValoresDeclarados,
   corRaca,
   emManutencao,
+  tipoTexto,
+  tipoSimOuNao,
+  tipoOpcao,
+  fonteCatalogo,
 } from './fatos-candidato.fixtures';
 import { OperadorCodigo, type FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 import { campo, derivadoBooleano, ConducaoDaDefinicao } from './fatos-candidato.definicao.testing';
@@ -35,7 +39,7 @@ describe('FatosCandidatoPage — proteção de dados e tipo de dado na definiç�
   describe('a aprovação da proteção de dados', () => {
     it('ao abrir, não apaga a proteção que o servidor tem, ainda que a regra do domínio hoje não a admita', async () => {
       const sistema = comProtecao(
-        comDefinicao({ ...corRaca, semeadoPeloSistema: true }, { dominio: 'TEXTO' }),
+        comDefinicao({ ...corRaca, semeadoPeloSistema: true }, { dominio: tipoTexto }),
         { classificacao: 'INTERNO', hipoteseLegal: 'INTERESSE_LEGITIMO' },
       );
       await abrir(sistema);
@@ -46,7 +50,7 @@ describe('FatosCandidatoPage — proteção de dados e tipo de dado na definiç�
 
     it('esvazia a hipótese que a pessoa tornou incompatível ao trocar a classificação', async () => {
       const sistema = comProtecao(
-        comDefinicao({ ...corRaca, semeadoPeloSistema: true }, { dominio: 'BOOLEANO' }),
+        comDefinicao({ ...corRaca, semeadoPeloSistema: true }, { dominio: tipoSimOuNao }),
         { classificacao: 'PESSOAL', hipoteseLegal: 'INTERESSE_LEGITIMO' },
       );
       await abrir(sistema);
@@ -96,9 +100,9 @@ describe('FatosCandidatoPage — proteção de dados e tipo de dado na definiç�
   describe('trocar o tipo de dado do derivado', () => {
     const categorico: FatoCandidatoDto = {
       ...comValoresDeclarados(
-        comDefinicao(derivadoBooleano, { dominio: 'CATEGORICO' }),
+        comDefinicao(derivadoBooleano, { dominio: tipoOpcao }),
         [{ codigo: 'A', descricao: null, ordem: 0, ativo: true, orientacao: null }],
-        'GLOBAL',
+        fonteCatalogo,
       ),
       regrasPadrao: [
         {
@@ -121,13 +125,13 @@ describe('FatosCandidatoPage — proteção de dados e tipo de dado na definiç�
       await p.acionar(p.botaoPeloTexto('Salvar regras', p.drawerDoFato()) as HTMLButtonElement);
       expect(p.texto('#cfg-fato-regra-0-erro')).not.toBe('');
 
-      p.digitar(campo('dominio'), 'BOOLEANO');
+      p.digitar(campo('dominio'), 'SIM_OU_NAO');
       await enviar();
       definir(categorico).flush(...sucesso());
       await p.propagar();
       p.http.expectOne(urlDoFato(categorico)).flush(
         emManutencao({
-          ...comValoresDeclarados(comDefinicao(categorico, { dominio: 'BOOLEANO' }), [], null),
+          ...comValoresDeclarados(comDefinicao(categorico, { dominio: tipoSimOuNao }), [], null),
           regrasPadrao: [{ contribui: null, quando: categorico.regrasPadrao[0].quando }],
         }),
       );
@@ -142,7 +146,7 @@ describe('FatosCandidatoPage — proteção de dados e tipo de dado na definiç�
 
     it('as regras em tela só voltam a salvar quando chegam as do servidor', async () => {
       await abrir(categorico);
-      p.digitar(campo('dominio'), 'BOOLEANO');
+      p.digitar(campo('dominio'), 'SIM_OU_NAO');
       await enviar();
       definir(categorico).flush(...sucesso());
       await p.propagar();
@@ -154,7 +158,7 @@ describe('FatosCandidatoPage — proteção de dados e tipo de dado na definiç�
 
       p.http.expectOne(urlDoFato(categorico)).flush(
         emManutencao({
-          ...comValoresDeclarados(comDefinicao(categorico, { dominio: 'BOOLEANO' }), [], null),
+          ...comValoresDeclarados(comDefinicao(categorico, { dominio: tipoSimOuNao }), [], null),
           regrasPadrao: [{ contribui: null, quando: categorico.regrasPadrao[0].quando }],
         }),
       );

@@ -1,3 +1,4 @@
+import { FINALIDADE_INSCRICAO } from './vocabulario-do-modelo.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
@@ -15,7 +16,7 @@ const URL_DOS_TIPOS = `${BASE}/api/configuracao/tipos-processo`;
 const modelo = (codigo: string, nome: string): ModeloFormularioView => ({
   id: codigo,
   codigo,
-  finalidade: 'INSCRICAO',
+  finalidade: FINALIDADE_INSCRICAO,
   ativo: true,
   descritivo: { nome, descricao: null, tipoProcessoCodigo: null },
   conteudo: {

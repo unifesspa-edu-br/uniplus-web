@@ -9,17 +9,23 @@ import { conteudo, fato, item, secao } from './conteudos-de-exemplo.testing';
 
 describe('renderizacaoDe', () => {
   it.each([
-    ['BOOLEANO', 'ESCALAR', null, 'BOOLEANO'],
-    ['NUMERICO', 'ESCALAR', null, 'NUMERO'],
-    ['TEXTO', 'ESCALAR', null, 'TEXTO'],
-    ['DATA', 'ESCALAR', null, 'DATA'],
-    ['ENDERECO', 'ESCALAR', null, 'ENDERECO'],
-    ['CATEGORICO', 'ESCALAR', 'GLOBAL', 'SELECAO_UNICA'],
-    ['CATEGORICO', 'MULTIVALORADO', 'GLOBAL', 'SELECAO_MULTIPLA'],
-    ['CATEGORICO', 'ESCALAR', 'GEO_MUNICIPIO', 'MUNICIPIO'],
-    ['TEXTO', 'MULTIVALORADO', null, null],
+    ['SIM_OU_NAO', 'VALOR_UNICO', null, 'SIM_OU_NAO'],
+    ['NUMERICO', 'VALOR_UNICO', null, 'NUMERO'],
+    ['TEXTO', 'VALOR_UNICO', null, 'TEXTO'],
+    ['DATA', 'VALOR_UNICO', null, 'DATA'],
+    ['ENDERECO', 'VALOR_UNICO', null, 'ENDERECO'],
+    ['OPCAO', 'VALOR_UNICO', 'GLOBAL', 'ESCOLHA_UNICA'],
+    ['OPCAO', 'VARIOS_VALORES', 'GLOBAL', 'ESCOLHA_MULTIPLA'],
+    ['OPCAO', 'VALOR_UNICO', 'MUNICIPIOS', 'MUNICIPIO'],
+    ['TEXTO', 'VARIOS_VALORES', null, null],
   ])('%s %s (%s) → %s, como a API confere', (dominio, cardinalidade, fonteValores, esperado) => {
-    expect(renderizacaoDe({ dominio, cardinalidade, fonteValores })).toBe(esperado);
+    expect(
+      renderizacaoDe({
+        dominio: { codigo: dominio, rotulo: dominio },
+        cardinalidade: { codigo: cardinalidade, rotulo: cardinalidade },
+        fonteValores: fonteValores === null ? null : { codigo: fonteValores, rotulo: fonteValores },
+      }),
+    ).toBe(esperado);
   });
 });
 
@@ -31,8 +37,14 @@ describe('fatosParaAcrescentar', () => {
       fato('DESATIVADO', { ativo: false }),
       fato('DE_MEMBRO', { escopo: 'MEMBRO_GRUPO' }),
       fato('DERIVADO', { binding: 'REGRA_DERIVACAO:DERIVADO' }),
-      fato('MUNICIPIO', { dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' }),
-      fato('NOMES', { dominio: 'TEXTO', cardinalidade: 'MULTIVALORADO' }),
+      fato('MUNICIPIO', {
+        dominio: { codigo: 'OPCAO', rotulo: 'OPCAO' },
+        fonteValores: { codigo: 'MUNICIPIOS', rotulo: 'MUNICIPIOS' },
+      }),
+      fato('NOMES', {
+        dominio: { codigo: 'TEXTO', rotulo: 'TEXTO' },
+        cardinalidade: { codigo: 'VARIOS_VALORES', rotulo: 'VARIOS_VALORES' },
+      }),
     ];
     const atual = conteudo({
       etapas: [secao('S1', 0)],

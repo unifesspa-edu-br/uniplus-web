@@ -16,6 +16,6 @@ export const COM_ORDEM: Operadores = [
 
 export const COM_LISTA: Operadores = [
   ...SO_IGUALDADE,
-  { codigo: 'EM', rotulo: 'é um de' },
-  { codigo: 'NAO_EM', rotulo: 'não é nenhum de' },
+  { codigo: 'ALGUM_DE', rotulo: 'é um de' },
+  { codigo: 'NENHUM_DE', rotulo: 'não é nenhum de' },
 ];

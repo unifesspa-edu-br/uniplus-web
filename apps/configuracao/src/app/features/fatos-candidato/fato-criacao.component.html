@@ -130,7 +130,7 @@
         </select>
         <span class="field__hint" id="cfg-fato-membro-dica" aria-live="polite">
           @if (membroEscolhido(); as membro) {
-            {{ resumo(membro.dominio) }} O fato de membro é conhecido a partir da fase
+            {{ resumo(membro.dominio.codigo) }} O fato de membro é conhecido a partir da fase
             {{ nomeDaFase(membro.pontoResolucao) }}; o agregado não pode ser conhecido antes dela
             nem ter proteção de dados mais fraca.
           } @else if (!catalogo.pendente() && !catalogo.falhou() && fatosDeMembro().length === 0) {

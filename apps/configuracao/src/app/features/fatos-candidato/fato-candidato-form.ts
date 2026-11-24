@@ -1,6 +1,12 @@
+import {
+  controleDaQuantidade,
+  fonteEscolhida,
+  quantidadeEscolhida,
+  tipoDoDadoEscolhido,
+} from './codigos-do-fato';
 import { Signal, computed, effect, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormControl, FormGroup, Validators, type ValidatorFn } from '@angular/forms';
 import type { HttpContext } from '@angular/common/http';
 import type { ApiResult } from '@uniplus/shared-core/http';
 import type { FatosCandidatoApi } from '@uniplus/shared-data/configuracao';
@@ -86,24 +92,21 @@ export function criarFormularioDeFato(): FormGroup<CriacaoForm> {
 
 const OBRIGATORIO = { nonNullable: true as const, validators: [Validators.required] };
 
+const textoComLimite = (limite: number, ...validadores: ValidatorFn[]) =>
+  new FormControl('', {
+    nonNullable: true,
+    validators: [...validadores, Validators.maxLength(limite)],
+  });
+
 function controlesDeIdentificacao() {
   return {
-    codigo: new FormControl('', {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
-        Validators.pattern(CODIGO_CADASTRO_FORMATO),
-      ],
-    }),
-    nome: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(LIMITES_DO_FATO.nome)],
-    }),
-    descricao: new FormControl('', {
-      nonNullable: true,
-      validators: [obrigatorioNaoEmBranco, Validators.maxLength(LIMITES_DO_FATO.descricao)],
-    }),
+    codigo: textoComLimite(
+      CODIGO_CADASTRO_TAMANHO_MAXIMO,
+      Validators.required,
+      Validators.pattern(CODIGO_CADASTRO_FORMATO),
+    ),
+    nome: textoComLimite(LIMITES_DO_FATO.nome, Validators.required),
+    descricao: textoComLimite(LIMITES_DO_FATO.descricao, obrigatorioNaoEmBranco),
     componenteExibicao: new FormControl('', { nonNullable: true }),
   };
 }
@@ -112,7 +115,7 @@ function controlesDeDefinicao() {
   return {
     dominio: new FormControl('', OBRIGATORIO),
     fatoDeMembro: new FormControl('', { nonNullable: true }),
-    cardinalidade: new FormControl('ESCALAR', { nonNullable: true }),
+    cardinalidade: controleDaQuantidade(),
     fonteValores: new FormControl('', { nonNullable: true }),
     formato: new FormControl('', { nonNullable: true }),
     escopo: new FormControl('CANDIDATO', { nonNullable: true }),
@@ -123,10 +126,7 @@ function controlesDeDefinicao() {
 function controlesDeProtecao() {
   return {
     classificacaoProtecao: new FormControl('', OBRIGATORIO),
-    finalidadeTratamento: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(LIMITES_DO_FATO.finalidadeTratamento)],
-    }),
+    finalidadeTratamento: textoComLimite(LIMITES_DO_FATO.finalidadeTratamento, Validators.required),
     hipoteseLegal: new FormControl('', OBRIGATORIO),
   };
 }
@@ -147,7 +147,17 @@ export function criarNaApi(
   v: ValoresDaCriacao,
   contexto: HttpContext,
 ): Observable<ApiResult<string>> {
-  const identificacao = {
+  const identificacao = identificacaoDoFato(v);
+  if (v.tipo === 'AGREGADO') {
+    return api.criarAgregado({ ...identificacao, fatoDeMembro: v.fatoDeMembro }, contexto);
+  }
+  const comum = { ...identificacao, dominio: tipoDoDadoEscolhido(v.dominio), escopo: v.escopo };
+  if (v.tipo === 'DERIVADO') return api.criarDerivado(comum, contexto);
+  return api.criar({ ...comum, ...eixosDoDeclarado(v) }, contexto);
+}
+
+function identificacaoDoFato(v: ValoresDaCriacao) {
+  return {
     codigo: v.codigo.trim(),
     nome: v.nome.trim(),
     descricao: v.descricao.trim(),
@@ -157,20 +167,14 @@ export function criarNaApi(
     finalidadeTratamento: v.finalidadeTratamento.trim(),
     hipoteseLegal: v.hipoteseLegal,
   };
-  if (v.tipo === 'AGREGADO') {
-    return api.criarAgregado({ ...identificacao, fatoDeMembro: v.fatoDeMembro }, contexto);
-  }
-  const comum = { ...identificacao, dominio: v.dominio, escopo: v.escopo };
-  if (v.tipo === 'DERIVADO') return api.criarDerivado(comum, contexto);
-  return api.criar(
-    {
-      ...comum,
-      cardinalidade: v.cardinalidade,
-      fonteValores: temFonteDeValores(v.dominio) ? v.fonteValores : null,
-      formato: temFormato(v.dominio) ? v.formato : null,
-    },
-    contexto,
-  );
+}
+
+function eixosDoDeclarado(v: ValoresDaCriacao) {
+  return {
+    cardinalidade: quantidadeEscolhida(v.cardinalidade),
+    fonteValores: temFonteDeValores(v.dominio) ? fonteEscolhida(v.fonteValores) : null,
+    formato: temFormato(v.dominio) ? v.formato : null,
+  };
 }
 
 /** O que o formulário de criação deriva dos valores digitados: quais campos existem e que opções cabem. */
@@ -195,27 +199,28 @@ export function ligarDependenciasDaCriacao(form: FormGroup<CriacaoForm>): Depend
   const valores = toSignal(form.valueChanges.pipe(map(() => form.getRawValue())), {
     initialValue: form.getRawValue(),
   });
-  const declarado = computed(() => valores().tipo === 'DECLARADO');
-  const agregado = computed(() => valores().tipo === 'AGREGADO');
-  const temFonte = computed(() => temFonteDeValores(valores().dominio));
-  const temFormatoDeTexto = computed(() => temFormato(valores().dominio));
-  const dominios = computed(() => (declarado() ? DOMINIOS : DOMINIOS_DO_DERIVADO));
-  const classificacoes = computed(() => classificacoesDoDominio(valores().dominio));
-  const hipoteses = computed(() => hipotesesDaClassificacao(valores().classificacaoProtecao));
-
-  const dependencias = {
-    valores,
-    declarado,
-    agregado,
-    temFonte,
-    temFormatoDeTexto,
-    dominios,
-    classificacoes,
-    hipoteses,
-  };
+  const tipos = tiposDaCriacao(valores);
+  const dependencias = { valores, ...tipos, ...opcoesDaCriacao(valores, tipos.declarado) };
   manterEscolhasCompativeis(form, dependencias);
   exigirCamposDoTipo(form, dependencias);
   return dependencias;
+}
+
+function tiposDaCriacao(valores: Signal<ValoresDaCriacao>) {
+  return {
+    declarado: computed(() => valores().tipo === 'DECLARADO'),
+    agregado: computed(() => valores().tipo === 'AGREGADO'),
+    temFonte: computed(() => temFonteDeValores(valores().dominio)),
+    temFormatoDeTexto: computed(() => temFormato(valores().dominio)),
+  };
+}
+
+function opcoesDaCriacao(valores: Signal<ValoresDaCriacao>, declarado: Signal<boolean>) {
+  return {
+    dominios: computed(() => (declarado() ? DOMINIOS : DOMINIOS_DO_DERIVADO)),
+    classificacoes: computed(() => classificacoesDoDominio(valores().dominio)),
+    hipoteses: computed(() => hipotesesDaClassificacao(valores().classificacaoProtecao)),
+  };
 }
 
 /** A escolha que deixou de estar entre as opções se esvazia: ficaria no controle, invisível. */

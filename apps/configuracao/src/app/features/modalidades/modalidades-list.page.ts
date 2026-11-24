@@ -10,7 +10,9 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { ModalidadeDto, NATUREZAS_LEGAIS } from '@uniplus/shared-data/configuracao';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
+import { ModalidadeDto, VocabulariosDeConfiguracaoApi } from '@uniplus/shared-data/configuracao';
 import {
   acompanharLeitura,
   AlertComponent,
@@ -51,6 +53,12 @@ import { ModalidadesStore } from './modalidades.store';
 })
 export class ModalidadesListPage {
   private readonly store = inject(ModalidadesStore);
+  private readonly naturezas = toSignal(
+    inject(VocabulariosDeConfiguracaoApi)
+      .listar('naturezas-legais')
+      .pipe(map((resultado) => (resultado.ok ? resultado.data : []))),
+    { initialValue: [] },
+  );
   private readonly edicao = inject(EdicaoDasModalidades);
   private readonly injector = inject(Injector);
   private readonly entendi = viewChild<ElementRef<HTMLButtonElement>>('entendi');
@@ -62,8 +70,8 @@ export class ModalidadesListPage {
     if (natureza === null) {
       return [];
     }
-    const rotulo = NATUREZAS_LEGAIS.find((n) => n.value === natureza)?.label ?? natureza;
-    return [{ nome: 'Natureza', valor: rotulo }];
+    const rotulo = this.naturezas().find((n) => n.codigo === natureza)?.rotulo;
+    return rotulo === undefined ? [] : [{ nome: 'Natureza', valor: rotulo }];
   });
   protected readonly dialogAberto = this.edicao.dialogAberto;
   protected readonly removendo = this.edicao.removendo;
@@ -94,10 +102,10 @@ export class ModalidadesListPage {
 
   protected readonly chipsNatureza = computed<readonly UiFilterChipOption[]>(() => {
     const todas = this.modalidades();
-    return NATUREZAS_LEGAIS.map((n) => ({
-      value: n.value,
-      label: n.label,
-      count: todas.filter((m) => m.naturezaLegal === n.value).length,
+    return this.naturezas().map((n) => ({
+      value: n.codigo,
+      label: n.rotulo,
+      count: todas.filter((m) => m.naturezaLegal.codigo === n.codigo).length,
     }));
   });
 
@@ -109,7 +117,7 @@ export class ModalidadesListPage {
         termo.length === 0 ||
         m.codigo.toLocaleLowerCase('pt-BR').includes(termo) ||
         (m.descricao ?? '').toLocaleLowerCase('pt-BR').includes(termo);
-      const casaNatureza = natureza === null || m.naturezaLegal === natureza;
+      const casaNatureza = natureza === null || m.naturezaLegal.codigo === natureza;
       return casaBusca && casaNatureza;
     });
   });
@@ -215,9 +223,9 @@ export class ModalidadesListPage {
 function alvosDaModalidade(m: ModalidadeDto): readonly string[] {
   const alvos = [
     m.composicaoOrigem,
-    m.remanejamentoDestino,
-    m.remanejamentoPar,
-    m.remanejamentoFallback,
+    m.remanejamento?.destino,
+    m.remanejamento?.par,
+    m.remanejamento?.fallback,
   ];
   return alvos.filter((alvo): alvo is string => !!alvo && alvo !== m.codigo);
 }

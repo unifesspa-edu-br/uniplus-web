@@ -22,7 +22,7 @@ describe('faixa de datas', () => {
         false,
       ),
     ).toEqual([]);
-    for (const tipo of ['NUMERO', 'TEXTO', 'BOOLEANO', 'SELECAO_UNICA']) {
+    for (const tipo of ['NUMERO', 'TEXTO', 'SIM_OU_NAO', 'ESCOLHA_UNICA']) {
       expect(
         restricoesParaAcrescentar(
           item('X', 0, 'S1', { apresentacao: { tipoRenderizacao: tipo } }),

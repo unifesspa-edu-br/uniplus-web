@@ -76,7 +76,7 @@ export const FORMULARIO_DE_ENDERECO_COM_ALDEIA: FormularioDoCandidato = {
   termos: [],
   coleta: {
     itens: [
-      campoRenderizavel('TIPO_ENDERECO', 'Tipo de endereço', 'SELECAO_UNICA', {
+      campoRenderizavel('TIPO_ENDERECO', 'Tipo de endereço', 'ESCOLHA_UNICA', {
         valoresSelecionaveis: [
           { codigo: 'URBANO', descricao: 'Urbano', ordem: 0 },
           { codigo: 'ALDEIA', descricao: 'Aldeia', ordem: 1 },

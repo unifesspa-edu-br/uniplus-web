@@ -75,11 +75,11 @@ const ETAPAS_DO_FATOR: FormularioDoCandidato['etapas'] = [
 ];
 
 const CAMPOS_DO_FATOR: CampoRenderizavel[] = [
-  campoRenderizavel(SOLICITA_O_FATOR, 'Deseja solicitar o Fator?', 'BOOLEANO'),
+  campoRenderizavel(SOLICITA_O_FATOR, 'Deseja solicitar o Fator?', 'SIM_OU_NAO'),
   campoRenderizavel(
     CAMINHO_DO_FATOR,
     'Por qual vínculo com a área você solicita o Fator?',
-    'SELECAO_UNICA',
+    'ESCOLHA_UNICA',
     {
       ordem: 1,
       valoresSelecionaveis: [
@@ -88,12 +88,12 @@ const CAMPOS_DO_FATOR: CampoRenderizavel[] = [
       ],
     },
   ),
-  campoRenderizavel(MUNICIPIO_DO_FATOR, 'Em qual município você residiu?', 'SELECAO_UNICA', {
+  campoRenderizavel(MUNICIPIO_DO_FATOR, 'Em qual município você residiu?', 'ESCOLHA_UNICA', {
     ordem: 2,
     valoresSelecionaveis: [{ codigo: '2105302', descricao: 'Imperatriz — MA', ordem: 0 }],
   }),
   campoRenderizavel(MESES_NA_AREA, 'Meses na área', 'NUMERO', { ordem: 4 }),
-  campoRenderizavel(ATIVIDADES_NA_AREA, 'Atividades na área', 'SELECAO_MULTIPLA', {
+  campoRenderizavel(ATIVIDADES_NA_AREA, 'Atividades na área', 'ESCOLHA_MULTIPLA', {
     ordem: 5,
     valoresSelecionaveis: [
       { codigo: 'PESCA', descricao: 'Pesca artesanal', ordem: 0 },

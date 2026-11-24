@@ -1,5 +1,9 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { AtualizarFaseCanonicaCommand, FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
+import {
+  AtualizarFaseCanonicaCommand,
+  FaseCanonicaDto,
+  OrigemDataFaseCodigo,
+} from '@uniplus/shared-data/configuracao';
 import {
   controlNameFromBackendField,
   controleDeMarca,
@@ -36,7 +40,7 @@ export interface FaseForm {
   baseLegal: FormControl<string>;
   agrupaEtapas: FormControl<boolean>;
   permiteComplementacao: FormControl<boolean>;
-  origemData: FormControl<string>;
+  origemData: FormControl<OrigemDataFaseCodigo | null>;
   coletaInscricao: FormControl<boolean>;
   coletaSolicitacaoIsencao: FormControl<boolean>;
 }
@@ -63,7 +67,7 @@ export function criarFormularioDeFase(): FormGroup<FaseForm> {
     baseLegal: controleDeTexto(Validators.maxLength(500)),
     agrupaEtapas: controleDeMarca(false),
     permiteComplementacao: controleDeMarca(false),
-    origemData: controleDeTexto(Validators.required),
+    origemData: new FormControl<OrigemDataFaseCodigo | null>(null, Validators.required),
     coletaInscricao: controleDeMarca(false),
     coletaSolicitacaoIsencao: controleDeMarca(false),
   });
@@ -78,7 +82,7 @@ export function valoresDaFase(fase: FaseCanonicaDto) {
     baseLegal: fase.baseLegal ?? '',
     agrupaEtapas: fase.agrupaEtapas,
     permiteComplementacao: fase.permiteComplementacao,
-    origemData: fase.origemData,
+    origemData: fase.origemData.codigo,
     coletaInscricao: fase.coletaInscricao,
     coletaSolicitacaoIsencao: fase.coletaSolicitacaoIsencao,
   };

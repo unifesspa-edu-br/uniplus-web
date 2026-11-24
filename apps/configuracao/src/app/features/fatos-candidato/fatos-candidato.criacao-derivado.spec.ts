@@ -33,7 +33,7 @@ describe('FatosCandidatoPage — criação do fato derivado', () => {
       expect(pedido.request.body).toMatchObject({
         codigo: 'PERFIL',
         nome: 'Perfil socioeconômico',
-        dominio: 'BOOLEANO',
+        dominio: 'SIM_OU_NAO',
         componenteExibicao: null,
       });
       await entregar(pedido);

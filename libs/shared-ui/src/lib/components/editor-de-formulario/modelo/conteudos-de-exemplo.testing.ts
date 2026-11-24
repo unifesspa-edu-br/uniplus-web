@@ -10,7 +10,7 @@ import type {
 } from './tipos';
 
 export const APRESENTACAO_PADRAO = {
-  tipoRenderizacao: 'BOOLEANO',
+  tipoRenderizacao: 'SIM_OU_NAO',
   pedirConfirmacao: false,
 } satisfies Omit<ApresentacaoDoCampo, 'rotulo'>;
 
@@ -85,10 +85,10 @@ export function fato(codigo: string, extra: Partial<FatoDoFormulario> = {}): Fat
   return {
     codigo,
     nome: codigo,
-    dominio: 'BOOLEANO',
+    dominio: { codigo: 'SIM_OU_NAO', rotulo: 'SIM_OU_NAO' },
     binding: `CAMPO_FORMULARIO:${codigo}`,
     operadoresAdmitidos: SO_IGUALDADE,
-    cardinalidade: 'ESCALAR',
+    cardinalidade: { codigo: 'VALOR_UNICO', rotulo: 'VALOR_UNICO' },
     fonteValores: null,
     escopo: 'CANDIDATO',
     ativo: true,
@@ -100,7 +100,7 @@ export const membro = (codigo: string, extra: Partial<FatoDoFormulario> = {}): F
   fato(codigo, { escopo: 'MEMBRO_GRUPO', ...extra });
 
 export const parentesco = membro('PARENTESCO', {
-  dominio: 'CATEGORICO',
+  dominio: { codigo: 'OPCAO', rotulo: 'OPCAO' },
   operadoresAdmitidos: COM_LISTA,
   valoresDominio: ['PROPRIO_CANDIDATO', 'MAE'],
 });

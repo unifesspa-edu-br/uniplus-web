@@ -1,16 +1,12 @@
 import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
 import {
-  AcaoQuandoIndeferidoToken,
+  AcaoQuandoIndeferidoCodigo,
   AtualizarModalidadeCommand,
-  COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE,
-  COMPOSICAO_VAGAS_DEFAULT,
-  COMPOSICOES_VAGAS,
-  ComposicaoVagasToken,
+  ComposicaoVagasCodigo,
   CriarModalidadeCommand,
   ModalidadeDto,
-  NATUREZA_LEGAL_DEFAULT,
-  NaturezaLegalToken,
-  RegraRemanejamentoToken,
+  NaturezaLegalCodigo,
+  RegraRemanejamentoCodigo,
 } from '@uniplus/shared-data/configuracao';
 import {
   controlNameFromBackendField,
@@ -29,14 +25,14 @@ const VALIDADORES_DO_CODIGO = [
   Validators.pattern(CODIGO_REGEX),
 ];
 
-export type RegraSelecao = RegraRemanejamentoToken | '';
-export type AcaoSelecao = AcaoQuandoIndeferidoToken | '';
+export type RegraSelecao = RegraRemanejamentoCodigo | '';
+export type AcaoSelecao = AcaoQuandoIndeferidoCodigo | '';
 
 export interface ModalidadeForm {
   codigo: FormControl<string>;
   descricao: FormControl<string>;
-  naturezaLegal: FormControl<NaturezaLegalToken>;
-  composicaoVagas: FormControl<ComposicaoVagasToken>;
+  naturezaLegal: FormControl<NaturezaLegalCodigo | ''>;
+  composicaoVagas: FormControl<ComposicaoVagasCodigo | ''>;
   composicaoOrigem: FormControl<string>;
   regraRemanejamento: FormControl<RegraSelecao>;
   remanejamentoDestino: FormControl<string>;
@@ -50,8 +46,8 @@ export type ValoresDaModalidade = ReturnType<FormGroup<ModalidadeForm>['getRawVa
 
 /** As escolhas que dirigem quais campos aparecem e o que é exigido deles. */
 export interface Condicionais {
-  readonly natureza: NaturezaLegalToken;
-  readonly composicao: ComposicaoVagasToken;
+  readonly natureza: NaturezaLegalCodigo | '';
+  readonly composicao: ComposicaoVagasCodigo | '';
   readonly regra: RegraSelecao;
 }
 
@@ -74,49 +70,72 @@ const CONTROLES_DO_SERVIDOR: ReadonlySet<string> = new Set<keyof ModalidadeForm>
 /** A regra de aplicabilidade não é controle do formulário: o editor a escreve fora dele. */
 const CAMPO_DA_REGRA = 'regraDeAplicabilidade';
 
-export function criarFormularioDeModalidade(): FormGroup<ModalidadeForm> {
-  return new FormGroup<ModalidadeForm>({
-    codigo: new FormControl('', {
-      nonNullable: true,
-      validators: VALIDADORES_DO_CODIGO,
-    }),
+function controlesDeIdentificacao() {
+  return {
+    codigo: new FormControl('', { nonNullable: true, validators: VALIDADORES_DO_CODIGO }),
     descricao: new FormControl('', {
       nonNullable: true,
       validators: [Validators.maxLength(DESCRICAO_MAX)],
     }),
-    naturezaLegal: new FormControl<NaturezaLegalToken>(NATUREZA_LEGAL_DEFAULT, {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
-    composicaoVagas: new FormControl<ComposicaoVagasToken>(COMPOSICAO_VAGAS_DEFAULT, {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
-    composicaoOrigem: new FormControl('', { nonNullable: true }),
-    regraRemanejamento: new FormControl<RegraSelecao>('', { nonNullable: true }),
-    remanejamentoDestino: new FormControl('', { nonNullable: true }),
-    remanejamentoPar: new FormControl('', { nonNullable: true }),
-    remanejamentoFallback: new FormControl('', { nonNullable: true }),
-    acaoQuandoIndeferido: new FormControl<AcaoSelecao>('', { nonNullable: true }),
     baseLegal: new FormControl('', {
       nonNullable: true,
       validators: [Validators.maxLength(BASE_LEGAL_MAX)],
     }),
-  });
+  };
+}
+
+function controlesDeVagas() {
+  return {
+    naturezaLegal: new FormControl<NaturezaLegalCodigo | ''>('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    composicaoVagas: new FormControl<ComposicaoVagasCodigo | ''>('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    composicaoOrigem: new FormControl('', { nonNullable: true }),
+    ...controlesDoRemanejamento(),
+    acaoQuandoIndeferido: new FormControl<AcaoSelecao>('', { nonNullable: true }),
+  };
+}
+
+function controlesDoRemanejamento() {
+  return {
+    regraRemanejamento: new FormControl<RegraSelecao>('', { nonNullable: true }),
+    remanejamentoDestino: new FormControl('', { nonNullable: true }),
+    remanejamentoPar: new FormControl('', { nonNullable: true }),
+    remanejamentoFallback: new FormControl('', { nonNullable: true }),
+  };
+}
+
+export function criarFormularioDeModalidade(): FormGroup<ModalidadeForm> {
+  return new FormGroup<ModalidadeForm>({ ...controlesDeIdentificacao(), ...controlesDeVagas() });
+}
+
+function valoresDoRemanejamento(
+  remanejamento: ModalidadeDto['remanejamento'],
+): Pick<
+  ValoresDaModalidade,
+  'regraRemanejamento' | 'remanejamentoDestino' | 'remanejamentoPar' | 'remanejamentoFallback'
+> {
+  return {
+    regraRemanejamento: remanejamento?.regra.codigo ?? '',
+    remanejamentoDestino: remanejamento?.destino ?? '',
+    remanejamentoPar: remanejamento?.par ?? '',
+    remanejamentoFallback: remanejamento?.fallback ?? '',
+  };
 }
 
 export function valoresDaModalidade(dto: ModalidadeDto): ValoresDaModalidade {
   return {
     codigo: dto.codigo,
     descricao: dto.descricao ?? '',
-    naturezaLegal: dto.naturezaLegal as NaturezaLegalToken,
-    composicaoVagas: dto.composicaoVagas as ComposicaoVagasToken,
+    naturezaLegal: dto.naturezaLegal.codigo,
+    composicaoVagas: dto.composicaoVagas.codigo,
     composicaoOrigem: dto.composicaoOrigem ?? '',
-    regraRemanejamento: (dto.regraRemanejamento ?? '') as RegraSelecao,
-    remanejamentoDestino: dto.remanejamentoDestino ?? '',
-    remanejamentoPar: dto.remanejamentoPar ?? '',
-    remanejamentoFallback: dto.remanejamentoFallback ?? '',
-    acaoQuandoIndeferido: (dto.acaoQuandoIndeferido ?? '') as AcaoSelecao,
+    ...valoresDoRemanejamento(dto.remanejamento),
+    acaoQuandoIndeferido: dto.acaoQuandoIndeferido?.codigo ?? '',
     baseLegal: dto.baseLegal ?? '',
   };
 }
@@ -140,35 +159,45 @@ function camposComuns(
 ): Omit<CriarModalidadeCommand, 'codigo'> {
   return {
     descricao: nullIfBlank(valores.descricao),
-    naturezaLegal: valores.naturezaLegal,
-    composicaoVagas: valores.composicaoVagas,
+    naturezaLegal: valores.naturezaLegal || null,
+    composicaoVagas: valores.composicaoVagas || null,
     composicaoOrigem: origemDaComposicao(valores),
-    ...camposDoRemanejamento(valores),
+    remanejamento: camposDoRemanejamento(valores),
     regraDeAplicabilidade,
-    acaoQuandoIndeferido: nullIfBlank(valores.acaoQuandoIndeferido),
+    acaoQuandoIndeferido: valores.acaoQuandoIndeferido || null,
     baseLegal: nullIfBlank(valores.baseLegal),
   };
 }
 
 function origemDaComposicao(valores: ValoresDaModalidade): string | null {
   const retiraDeOutraModalidade =
-    valores.composicaoVagas === COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE;
+    valores.composicaoVagas === ComposicaoVagasCodigo.RETIRADA_DE_OUTRA_MODALIDADE;
   return retiraDeOutraModalidade ? nullIfBlank(valores.composicaoOrigem) : null;
 }
 
 function camposDoRemanejamento(
   valores: ValoresDaModalidade,
-): Pick<
-  CriarModalidadeCommand,
-  'regraRemanejamento' | 'remanejamentoDestino' | 'remanejamentoPar' | 'remanejamentoFallback'
-> {
-  const regra = valores.naturezaLegal === 'AMPLA' ? null : nullIfBlank(valores.regraRemanejamento);
+): CriarModalidadeCommand['remanejamento'] {
+  const regra =
+    valores.naturezaLegal === NaturezaLegalCodigo.AMPLA ? null : valores.regraRemanejamento || null;
+  if (regra === null) return null;
   return {
-    regraRemanejamento: regra,
-    remanejamentoDestino:
-      regra === 'DESTINO_UNICO' ? nullIfBlank(valores.remanejamentoDestino) : null,
-    remanejamentoPar: regra === 'CRUZADO' ? nullIfBlank(valores.remanejamentoPar) : null,
-    remanejamentoFallback: regra === 'CRUZADO' ? nullIfBlank(valores.remanejamentoFallback) : null,
+    regra,
+    ...argumentosDoRemanejamento(regra, valores),
+  };
+}
+
+function argumentosDoRemanejamento(regra: RegraRemanejamentoCodigo, valores: ValoresDaModalidade) {
+  return {
+    destino:
+      regra === RegraRemanejamentoCodigo.DESTINO_UNICO
+        ? nullIfBlank(valores.remanejamentoDestino)
+        : null,
+    par: regra === RegraRemanejamentoCodigo.CRUZADO ? nullIfBlank(valores.remanejamentoPar) : null,
+    fallback:
+      regra === RegraRemanejamentoCodigo.CRUZADO
+        ? nullIfBlank(valores.remanejamentoFallback)
+        : null,
   };
 }
 
@@ -193,6 +222,14 @@ export function comandoDeAtualizacao(
 
 /** O controle do formulário que corresponde ao campo recusado pelo servidor, se houver. */
 export function controleDoCampoDoServidor(field: string): keyof ModalidadeForm | null {
+  const campos: Readonly<Record<string, keyof ModalidadeForm>> = {
+    regra: 'regraRemanejamento',
+    destino: 'remanejamentoDestino',
+    par: 'remanejamentoPar',
+    fallback: 'remanejamentoFallback',
+  };
+  const partes = field.split('.').map(emCamelCase);
+  if (partes.includes('remanejamento')) return campos[partes.at(-1) ?? ''] ?? null;
   return controlNameFromBackendField<keyof ModalidadeForm>(field, CONTROLES_DO_SERVIDOR);
 }
 
@@ -231,24 +268,24 @@ export function marcarCodigoRepetido(control: AbstractControl, repetido: boolean
 }
 
 export function regraDesabilitada(
-  natureza: NaturezaLegalToken,
-  valor: RegraRemanejamentoToken,
+  natureza: NaturezaLegalCodigo | '',
+  valor: RegraRemanejamentoCodigo,
 ): boolean {
   switch (natureza) {
-    case 'COTA_RESERVADA':
-      return valor !== 'SEGUE_CASCATA';
-    case 'ACAO_AFIRMATIVA':
-      return valor === 'SEGUE_CASCATA';
+    case NaturezaLegalCodigo.COTA_RESERVADA:
+      return valor !== RegraRemanejamentoCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO;
+    case NaturezaLegalCodigo.ACAO_AFIRMATIVA:
+      return valor === RegraRemanejamentoCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO;
     default:
       return false;
   }
 }
 
-export function dicaDaRegra(natureza: NaturezaLegalToken): string {
+export function dicaDaRegra(natureza: NaturezaLegalCodigo | ''): string {
   switch (natureza) {
-    case 'COTA_RESERVADA':
+    case NaturezaLegalCodigo.COTA_RESERVADA:
       return 'Cota da Lei 12.711 segue obrigatoriamente a cascata legal.';
-    case 'ACAO_AFIRMATIVA':
+    case NaturezaLegalCodigo.ACAO_AFIRMATIVA:
       return 'Ação afirmativa não segue a cascata legal: escolha destino único ou remanejamento cruzado.';
     default:
       return 'Selecione a regra de remanejamento aplicável.';
@@ -268,17 +305,23 @@ export function remanejamentoPreenchido(valores: ValoresDaModalidade): boolean {
 }
 
 export function naturezaCompativelComRegra(
-  natureza: NaturezaLegalToken,
+  natureza: NaturezaLegalCodigo | '',
   regra: RegraSelecao,
 ): boolean {
   switch (natureza) {
-    case 'AMPLA':
+    case NaturezaLegalCodigo.AMPLA:
       return regra === '';
-    case 'COTA_RESERVADA':
-      return regra === 'SEGUE_CASCATA';
+    case NaturezaLegalCodigo.COTA_RESERVADA:
+      return regra === RegraRemanejamentoCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO;
     default:
-      return regra === 'DESTINO_UNICO' || regra === 'CRUZADO';
+      return regraDeAcaoAfirmativa(regra);
   }
+}
+
+function regraDeAcaoAfirmativa(regra: RegraSelecao): boolean {
+  return (
+    regra === RegraRemanejamentoCodigo.DESTINO_UNICO || regra === RegraRemanejamentoCodigo.CRUZADO
+  );
 }
 
 function exigirSe(control: AbstractControl, aplicavel: boolean): void {
@@ -291,18 +334,23 @@ function exigirSe(control: AbstractControl, aplicavel: boolean): void {
   control.updateValueAndValidity({ emitEvent: false });
 }
 
-function reconciliarOrigem(controls: ModalidadeForm, composicao: ComposicaoVagasToken): void {
-  exigirSe(controls.composicaoOrigem, composicao === COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE);
+function reconciliarOrigem(controls: ModalidadeForm, composicao: ComposicaoVagasCodigo | ''): void {
+  exigirSe(
+    controls.composicaoOrigem,
+    composicao === ComposicaoVagasCodigo.RETIRADA_DE_OUTRA_MODALIDADE,
+  );
 }
 
-function reconciliarRegra(controls: ModalidadeForm, natureza: NaturezaLegalToken): void {
+function reconciliarRegra(controls: ModalidadeForm, natureza: NaturezaLegalCodigo | ''): void {
   const regra = controls.regraRemanejamento;
-  if (natureza === 'AMPLA') {
+  if (natureza === NaturezaLegalCodigo.AMPLA) {
     regra.setValue('', { emitEvent: false });
     regra.clearValidators();
   } else {
-    if (natureza === 'COTA_RESERVADA') regra.setValue('SEGUE_CASCATA', { emitEvent: false });
-    else if (regra.value === 'SEGUE_CASCATA') regra.setValue('', { emitEvent: false });
+    if (natureza === NaturezaLegalCodigo.COTA_RESERVADA)
+      regra.setValue(RegraRemanejamentoCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO, { emitEvent: false });
+    else if (regra.value === RegraRemanejamentoCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO)
+      regra.setValue('', { emitEvent: false });
     regra.setValidators([Validators.required]);
   }
   regra.updateValueAndValidity({ emitEvent: false });
@@ -315,54 +363,16 @@ function reconciliarRegra(controls: ModalidadeForm, natureza: NaturezaLegalToken
  */
 export function reconciliarCondicionais(
   form: FormGroup<ModalidadeForm>,
-  natureza: NaturezaLegalToken,
-  composicao: ComposicaoVagasToken,
+  natureza: NaturezaLegalCodigo | '',
+  composicao: ComposicaoVagasCodigo | '',
 ): void {
   const controls = form.controls;
   reconciliarOrigem(controls, composicao);
   reconciliarRegra(controls, natureza);
   const regra = controls.regraRemanejamento.value;
-  exigirSe(controls.remanejamentoDestino, regra === 'DESTINO_UNICO');
-  exigirSe(controls.remanejamentoPar, regra === 'CRUZADO');
-  exigirSe(controls.remanejamentoFallback, regra === 'CRUZADO');
+  exigirSe(controls.remanejamentoDestino, regra === RegraRemanejamentoCodigo.DESTINO_UNICO);
+  exigirSe(controls.remanejamentoPar, regra === RegraRemanejamentoCodigo.CRUZADO);
+  exigirSe(controls.remanejamentoFallback, regra === RegraRemanejamentoCodigo.CRUZADO);
 }
 
-function clausulaDaComposicao(composicao: ComposicaoVagasToken, origem: string): string {
-  if (composicao === COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE) {
-    return origem
-      ? `As vagas são retiradas da modalidade ${origem}.`
-      : 'As vagas são retiradas de outra modalidade (informe a origem).';
-  }
-  const rotulo = COMPOSICOES_VAGAS.find((c) => c.value === composicao)?.label ?? composicao;
-  return `Composição das vagas: ${rotulo.toLocaleLowerCase('pt-BR')}.`;
-}
-
-function clausulaDoRemanejamento(condicionais: Condicionais, valores: ValoresDaModalidade): string {
-  const { natureza, regra } = condicionais;
-  if (natureza === 'AMPLA') return 'Ampla concorrência não remaneja vagas ociosas.';
-  if (natureza === 'COTA_RESERVADA') {
-    return 'Cota da Lei 12.711: vagas ociosas seguem a cascata legal de remanejamento.';
-  }
-  if (regra === 'DESTINO_UNICO') {
-    return valores.remanejamentoDestino
-      ? `Vagas ociosas remanejam para ${valores.remanejamentoDestino}.`
-      : 'Vagas ociosas remanejam para um destino único (informe o destino).';
-  }
-  if (regra === 'CRUZADO') {
-    return valores.remanejamentoPar && valores.remanejamentoFallback
-      ? `Remanejamento cruzado entre ${valores.remanejamentoPar} e ${valores.remanejamentoFallback}.`
-      : 'Remanejamento cruzado (informe o par e o fallback).';
-  }
-  return 'Selecione a regra de remanejamento para esta modalidade.';
-}
-
-/** As frases que descrevem, em prosa, o efeito das escolhas atuais. */
-export function resumoCondicional(
-  condicionais: Condicionais,
-  valores: ValoresDaModalidade,
-): readonly string[] {
-  return [
-    clausulaDaComposicao(condicionais.composicao, valores.composicaoOrigem),
-    clausulaDoRemanejamento(condicionais, valores),
-  ];
-}
+export { resumoCondicional } from './resumo-da-modalidade';

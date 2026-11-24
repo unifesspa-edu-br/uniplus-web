@@ -1,16 +1,34 @@
 import { AbstractControl, FormControl, ValidationErrors } from '@angular/forms';
 import {
-  OfertaCursoDto,
-  REGIMES_DE_TURNO,
-  REGIME_DE_FUNCIONAMENTO_INTENSIVO,
-  REGIME_DE_TURNO_INTEGRAL,
-  TURNOS_OFERTA,
-  turnosExigidosPorRegime,
-  type TurnoOfertaOption,
+  RegimeDeFuncionamentoCodigo,
+  RegimeDeTurnoCodigo,
+  TurnoOfertaCodigo,
 } from '@uniplus/shared-data/configuracao';
 
+const TURNOS_POR_REGIME: Readonly<Record<RegimeDeTurnoCodigo, number>> = {
+  [RegimeDeTurnoCodigo.REGULAR]: 1,
+  [RegimeDeTurnoCodigo.INTEGRAL]: 2,
+};
+
+const ORDEM_DOS_TURNOS: Readonly<Record<TurnoOfertaCodigo, number>> = {
+  [TurnoOfertaCodigo.MATUTINO]: 0,
+  [TurnoOfertaCodigo.VESPERTINO]: 1,
+  [TurnoOfertaCodigo.NOTURNO]: 2,
+};
+
+export function ordenarTurnos(turnos: readonly TurnoOfertaCodigo[]): readonly TurnoOfertaCodigo[] {
+  return [...turnos].sort((a, b) => ORDEM_DOS_TURNOS[a] - ORDEM_DOS_TURNOS[b]);
+}
+
+/** Quantos turnos o regime exige; nulo quando o regime é desconhecido do web e a API decide. */
+export function turnosExigidosPorRegime(
+  regime: RegimeDeTurnoCodigo | null | undefined,
+): number | null {
+  return (regime && (TURNOS_POR_REGIME as Readonly<Record<string, number>>)[regime]) ?? null;
+}
+
 /** Descarta os turnos marcados há mais tempo até caber no limite do regime. */
-export function manterOsMaisRecentes(turnos: readonly string[], limite: number): readonly string[] {
+export function manterOsMaisRecentes<T>(turnos: readonly T[], limite: number): readonly T[] {
   return turnos.length <= limite ? turnos : turnos.slice(turnos.length - limite);
 }
 
@@ -28,8 +46,8 @@ export function cardinalidadeDeTurnos(control: AbstractControl): ValidationError
   if (new Set(turnos).size !== turnos.length) {
     return { turnoRepetido: true };
   }
-  const regime = control.parent?.get('regimeDeTurno')?.value as string | undefined;
-  const exigidos = regime === undefined ? null : turnosExigidosPorRegime(regime);
+  const regime = control.parent?.get('regimeDeTurno')?.value as RegimeDeTurnoCodigo | undefined;
+  const exigidos = turnosExigidosPorRegime(regime);
   return exigidos !== null && turnos.length !== exigidos
     ? { cardinalidadeTurnos: { regime, exigidos } }
     : null;
@@ -41,11 +59,13 @@ export function cardinalidadeDeTurnos(control: AbstractControl): ValidationError
  * conviver no mesmo `errors` com `required`, `maxLength` e a recusa vinda da API.
  */
 export function compatibilidadeComRegimeDeTurno(control: AbstractControl): ValidationErrors | null {
-  if (control.value !== REGIME_DE_FUNCIONAMENTO_INTENSIVO) {
+  if (control.value !== RegimeDeFuncionamentoCodigo.INTENSIVO) {
     return null;
   }
-  const regimeDeTurno = control.parent?.get('regimeDeTurno')?.value as string | undefined;
-  if (!regimeDeTurno || regimeDeTurno === REGIME_DE_TURNO_INTEGRAL) {
+  const regimeDeTurno = control.parent?.get('regimeDeTurno')?.value as
+    | RegimeDeTurnoCodigo
+    | undefined;
+  if (!regimeDeTurno || regimeDeTurno === RegimeDeTurnoCodigo.INTEGRAL) {
     return null;
   }
   return { regimeFuncionamentoIncompativelRegimeTurno: { regimeDeTurno } };
@@ -58,8 +78,8 @@ export function compatibilidadeComRegimeDeTurno(control: AbstractControl): Valid
  * a seleção. A ordem canônica é aplicada na exibição e no envio.
  */
 export function alternarTurno(
-  control: FormControl<readonly string[]>,
-  token: string,
+  control: FormControl<readonly TurnoOfertaCodigo[]>,
+  token: TurnoOfertaCodigo,
   exigidos: number | null,
 ): void {
   const atuais = control.value;
@@ -69,46 +89,6 @@ export function alternarTurno(
   control.setValue(exigidos === null ? proximos : manterOsMaisRecentes(proximos, exigidos));
   control.markAsTouched();
   control.markAsDirty();
-}
-
-/**
- * Token de regime da oferta em edição que este frontend não conhece, de um backend mais novo. Vira
- * uma opção própria no seletor: sem ela o `select` renderiza em branco enquanto o modelo guarda o
- * valor, e o operador salvaria sem enxergar qual regime está preservando.
- */
-export function regimeNaoReconhecido(oferta: OfertaCursoDto | null): string | null {
-  const original = oferta?.regimeDeTurno;
-  if (original === undefined) {
-    return null;
-  }
-  return REGIMES_DE_TURNO.some((regime) => regime.value === original) ? null : original;
-}
-
-/**
- * Os três períodos conhecidos mais os tokens que a oferta em edição traz e este frontend não
- * conhece. Sem essa segunda parte o token ficaria invisível: o controle o preservaria, ele
- * satisfaria o validador de cardinalidade e poderia ser descartado sem o operador enxergar.
- */
-export function opcoesDeTurno(oferta: OfertaCursoDto | null): readonly TurnoOfertaOption[] {
-  const originais = oferta?.turnos ?? [];
-  const naoReconhecidos = new Set(
-    originais.filter((token) => !TURNOS_OFERTA.some((turno) => turno.value === token)),
-  );
-  return [
-    ...TURNOS_OFERTA,
-    ...[...naoReconhecidos].map((token) => ({
-      value: token,
-      label: `${token} — não reconhecido por esta versão`,
-    })),
-  ];
-}
-
-export function descricaoDoRegime(regimeDeTurno: string): string {
-  const regime = REGIMES_DE_TURNO.find((item) => item.value === regimeDeTurno);
-  return (
-    regime?.descricao ??
-    'Regime declarado por uma versão mais nova da API — a validação dos turnos fica com ela.'
-  );
 }
 
 export function dicaDosTurnos(exigidos: number | null): string {

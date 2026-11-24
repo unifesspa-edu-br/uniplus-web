@@ -121,7 +121,7 @@ describe('FormularioDoCandidatoComponent', () => {
   });
 
   it('no grupo que inclui o candidato, os outros integrantes não oferecem o parentesco de próprio candidato', () => {
-    const parentesco = campoRenderizavel('PARENTESCO', 'Parentesco', 'SELECAO_UNICA', {
+    const parentesco = campoRenderizavel('PARENTESCO', 'Parentesco', 'ESCOLHA_UNICA', {
       valoresSelecionaveis: [
         { codigo: 'PROPRIO_CANDIDATO', descricao: 'Próprio candidato', ordem: 0 },
         { codigo: 'MAE', descricao: 'Mãe', ordem: 1 },

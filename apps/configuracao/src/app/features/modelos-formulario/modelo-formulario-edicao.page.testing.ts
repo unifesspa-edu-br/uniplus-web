@@ -1,3 +1,9 @@
+import {
+  FINALIDADE_INSCRICAO,
+  DADO_SIM_OU_NAO,
+  ORIGEM_DECLARADA,
+  VALOR_UNICO,
+} from './vocabulario-do-modelo.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef, type EnvironmentProviders, type Provider } from '@angular/core';
@@ -26,9 +32,9 @@ export const PROBLEMA = {
 
 const FATO_BASE: Omit<FatoCandidatoView, 'id' | 'codigo' | 'nome' | 'binding'> = {
   descricao: 'Dado do candidato.',
-  dominio: 'BOOLEANO',
-  origem: 'DECLARADO',
-  cardinalidade: 'ESCALAR',
+  dominio: DADO_SIM_OU_NAO,
+  origem: ORIGEM_DECLARADA,
+  cardinalidade: VALOR_UNICO,
   valoresDominio: null,
   pontoResolucao: 'INSCRICAO',
   valoresDominioDeclarados: null,
@@ -72,7 +78,7 @@ export const SEM_REGRAS_DO_CAMPO = {
 export const modelo: ModeloFormularioView = {
   id: ID,
   codigo: 'INSCRICAO_MEDICINA',
-  finalidade: 'INSCRICAO',
+  finalidade: FINALIDADE_INSCRICAO,
   ativo: true,
   descritivo: { nome: 'Inscrição Medicina', descricao: null, tipoProcessoCodigo: null },
   conteudo: {
@@ -121,7 +127,7 @@ export const modelo: ModeloFormularioView = {
         ordem: 1,
         apresentacao: {
           rotulo: 'Estudou em escola pública?',
-          tipoRenderizacao: TipoRenderizacaoCodigo.BOOLEANO,
+          tipoRenderizacao: TipoRenderizacaoCodigo.SIM_OU_NAO,
           ajuda: null,
           pedirConfirmacao: false,
         },

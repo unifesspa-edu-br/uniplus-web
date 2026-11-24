@@ -23,7 +23,7 @@ const CATALOGO: readonly FatoDoCatalogo[] = [
   {
     codigo: 'SEXO',
     nome: 'Sexo',
-    dominio: 'CATEGORICO',
+    dominio: { codigo: 'OPCAO', rotulo: 'OPCAO' },
     valoresDominio: ['FEMININO', 'MASCULINO', 'INTERSEXO'],
     binding: 'CAMPO_FORMULARIO:SEXO',
     operadoresAdmitidos: COM_LISTA,
@@ -31,21 +31,21 @@ const CATALOGO: readonly FatoDoCatalogo[] = [
   {
     codigo: 'PCD',
     nome: 'Pessoa com deficiência',
-    dominio: 'BOOLEANO',
+    dominio: { codigo: 'SIM_OU_NAO', rotulo: 'SIM_OU_NAO' },
     binding: 'CAMPO_INSCRICAO:PCD',
     operadoresAdmitidos: SO_IGUALDADE,
   },
   {
     codigo: 'FAIXA_ETARIA',
     nome: 'Faixa etária',
-    dominio: 'NUMERICO',
+    dominio: { codigo: 'NUMERICO', rotulo: 'NUMERICO' },
     binding: 'ATRIBUTO_CANDIDATO:IDADE',
     operadoresAdmitidos: COM_ORDEM,
   },
   {
     codigo: 'MODALIDADE',
     nome: 'Modalidade',
-    dominio: 'CATEGORICO',
+    dominio: { codigo: 'OPCAO', rotulo: 'OPCAO' },
     valoresDominio: null,
     binding: 'REGRA_DERIVACAO:MODALIDADE',
     operadoresAdmitidos: COM_LISTA,
@@ -53,7 +53,7 @@ const CATALOGO: readonly FatoDoCatalogo[] = [
   {
     codigo: 'NOME',
     nome: 'Nome',
-    dominio: 'TEXTO',
+    dominio: { codigo: 'TEXTO', rotulo: 'TEXTO' },
     binding: 'CAMPO_FORMULARIO:NOME',
     operadoresAdmitidos: [],
   },
@@ -83,8 +83,8 @@ describe('o catálogo na forma que o editor oferece', () => {
 });
 
 describe('as alternativas do predicado', () => {
-  it('a nova alternativa leva o recorte, que o editor não mostra', () => {
-    const lista = [condicao(1, 'MODALIDADE', 'EM', '["AC"]'), condicao(1, 'PCD')];
+  it('a nova alternativa leva a condição do controle externo, que o editor não mostra', () => {
+    const lista = [condicao(1, 'MODALIDADE', 'ALGUM_DE', '["AC"]'), condicao(1, 'PCD')];
 
     const nova = comClausulaEm(lista, FATOS[0], 'MODALIDADE');
 
@@ -120,7 +120,7 @@ describe('as alternativas do predicado', () => {
     <ui-editor-de-condicoes
       legenda="Condições do teste"
       idBase="teste"
-      fatoDoRecorte="MODALIDADE"
+      fatoDoControleExterno="MODALIDADE"
       [condicoes]="condicoes()"
       [fatos]="fatos()"
       [erros]="erros()"
@@ -141,7 +141,7 @@ describe('o predicado na forma aninhada da API', () => {
         { fato: 'SEXO', operador: 'IGUAL', valor: 'FEMININO' },
         { fato: 'IDADE', operador: 'MAIOR_IGUAL', valor: 18 },
       ],
-      [{ fato: 'MODALIDADE', operador: 'EM', valor: ['AC', 'LB_PPI'] }],
+      [{ fato: 'MODALIDADE', operador: 'ALGUM_DE', valor: ['AC', 'LB_PPI'] }],
     ];
 
     const editor = deClausulasDoWire(wire);

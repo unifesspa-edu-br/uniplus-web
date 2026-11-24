@@ -7,22 +7,6 @@ import {
 } from './envio-de-documentos';
 import type { PendenciaDaAvaliacao } from './modalidades-avaliadas';
 
-/** As respostas dadas já pedem o documento e falta enviar. */
-export const PENDENTE = 'PENDENTE';
-/** As respostas dadas já pedem o documento e os arquivos enviados o atendem. */
-export const SATISFEITA = 'SATISFEITA';
-/** As respostas dadas já pedem o documento, pendente ou atendido: a lista não distingue os dois. */
-export const EXIGIDO = 'EXIGIDO';
-
-/** A situação como a lista a agrupa: pendente e satisfeita são ambas o que já é exigido. */
-export function classeDaSituacao(situacao: string): string {
-  return situacao === PENDENTE || situacao === SATISFEITA ? EXIGIDO : situacao;
-}
-/** Uma resposta que ainda falta decide se o documento é pedido. */
-export const PODE_SER_EXIGIDO = 'PODE_SER_EXIGIDO';
-/** Decide um fato que só se conhece numa fase posterior, como a modalidade da convocação. */
-export const DEPENDE_DE_FASE_POSTERIOR = 'DEPENDE_DE_FASE_POSTERIOR';
-
 /** Todos os itens do grupo são pedidos juntos. */
 export const TODOS_OS_ITENS = 'TODOS_OS_ITENS';
 /** Basta apresentar `minimo` dos itens do grupo — um, se o mínimo não vier. */
@@ -68,7 +52,9 @@ export interface DocumentoAvaliado {
   readonly quantidadeMinima: number;
   /** Os arquivos confirmados desta exigência e ocorrência. */
   readonly arquivos: readonly ArquivoDoDocumento[];
-  readonly situacao: string;
+  readonly situacao: Pick<SituacaoDaExigencia, 'rotulo' | 'variante'>;
+  readonly exigido: boolean;
+  readonly atendido: boolean;
   /** O grupo pelo qual a exigência se repete, uma vez por integrante; nulo fora de repetição. */
   readonly grupoCodigo: string | null;
   /** A ocorrência do grupo a que a exigência se liga; nula enquanto não se sabe quais integrantes há. */
@@ -135,12 +121,14 @@ export function situacoesEArquivosDosDocumentos(documentos: readonly DocumentoAv
 } {
   const situacoes: Record<string, SituacaoDaExigencia> = {};
   for (const documento of documentos) {
-    if (documento.situacao === PENDENTE || documento.situacao === SATISFEITA) {
-      situacoes[chaveDaExigencia(documento)] = documento.situacao;
+    if (documento.exigido) {
+      situacoes[chaveDaExigencia(documento)] = {
+        ...documento.situacao,
+        atendido: documento.atendido,
+      };
     }
   }
-  const arquivos = documentos.flatMap(arquivosDoDocumento);
-  return { situacoes, arquivos };
+  return { situacoes, arquivos: documentos.flatMap(arquivosDoDocumento) };
 }
 
 function arquivosDoDocumento(documento: DocumentoAvaliado): readonly ArquivoEnviado[] {

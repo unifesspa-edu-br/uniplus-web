@@ -1,4 +1,4 @@
-import { NaturezaConceitoCodigo, type TipoConceitoDto } from '@uniplus/shared-data/configuracao';
+import { FormaDoConceitoCodigo, type TipoConceitoDto } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import type { RecusaDoServidor } from '../../shared/formulario';
 import { alternarConceito, opcoesDeConceito } from './conceitos-admitidos';
@@ -12,7 +12,7 @@ function conceito(codigo: string, nome: string, ativo = true): TipoConceitoDto {
     definicao: {
       nome,
       descricao: null,
-      natureza: { codigo: NaturezaConceitoCodigo.CATEGORICO, rotulo: 'Categórico' },
+      natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Categórico' },
       numerico: null,
       valores: [],
     },

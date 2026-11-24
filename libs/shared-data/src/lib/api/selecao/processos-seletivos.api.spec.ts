@@ -1,3 +1,4 @@
+import { situacaoDoProcesso } from './vocabularios.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -18,7 +19,7 @@ import {
   TipoProcessoSnapshotDto,
 } from './processos-seletivos.contrato';
 import { ProcessosSeletivosApi } from './processos-seletivos.api';
-import { OrigemCandidatos, StatusProcesso } from './schema';
+import { OrigemCandidatosCodigo } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -35,14 +36,14 @@ const resumoSeed: ProcessoSeletivoResumoDto = {
   id: ID,
   nome: 'Processo Seletivo 2027',
   tipoProcesso,
-  status: StatusProcesso.rascunho,
+  status: situacaoDoProcesso,
   criadoEm: '2026-08-11T12:00:00Z',
 };
 
 const criarCommand: CriarProcessoSeletivoCommand = {
   nome: 'Processo Seletivo 2027',
   tipoProcessoOrigemId: TIPO_ID,
-  origemCandidatos: OrigemCandidatos.inscricaoPropria,
+  origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
   unidadeAdministradoraOrigemId: '01960000-0000-7000-000000000517',
   localidadeCodigoIbge: null,
   localidadeNome: null,

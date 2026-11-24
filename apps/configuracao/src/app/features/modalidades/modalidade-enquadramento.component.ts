@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { ACOES_QUANDO_INDEFERIDO } from '@uniplus/shared-data/configuracao';
 
+import { VocabulariosDaModalidade } from './vocabularios-da-modalidade';
 import { ModalidadeSecao } from './modalidade-secao';
 
 @Component({
@@ -13,5 +13,5 @@ import { ModalidadeSecao } from './modalidade-secao';
   styleUrl: '../../shared/formulario/secao-do-formulario.css',
 })
 export class ModalidadeEnquadramentoComponent extends ModalidadeSecao {
-  protected readonly acoes = ACOES_QUANDO_INDEFERIDO;
+  protected readonly acoes = inject(VocabulariosDaModalidade).acoes;
 }

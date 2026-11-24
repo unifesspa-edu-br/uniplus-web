@@ -28,7 +28,7 @@ export const RESTRICOES: readonly OpcaoDoFormulario[] = [
 
 /** As casas decimais que a faixa admite: as do edital (`FormaDoItem.CasasDecimaisDaFaixa`). */
 export const CASAS_DECIMAIS_DA_FAIXA = 4;
-const TIPOS_DE_SELECAO = new Set(['SELECAO_UNICA', 'SELECAO_MULTIPLA']);
+const TIPOS_DE_SELECAO = new Set(['ESCOLHA_UNICA', 'ESCOLHA_MULTIPLA']);
 
 /** O tipo de campo a que cada restrição de limite se aplica. */
 const CAMPO_DA_RESTRICAO: ReadonlyMap<string, string> = new Map([
@@ -95,12 +95,16 @@ export function opcoesDaFonteCabemNoAlvo(
   fonte: FatoComValores,
   dominiosDinamicos: ReadonlyMap<string, readonly string[]> = new Map(),
 ): boolean {
-  if (fonte.dominio !== alvo.dominio) return false;
+  if (fonte.dominio.codigo !== alvo.dominio.codigo) return false;
   const daFonte = valoresDoDominio(fonte, dominiosDinamicos);
   const doAlvo = valoresDoDominio(alvo, dominiosDinamicos);
   if (daFonte === null && doAlvo === null)
-    return (fonte.fonteValores ?? null) === (alvo.fonteValores ?? null);
+    return mesmaFonteDeValores(fonte, alvo);
   return daFonte !== null && doAlvo !== null && [...daFonte].every((valor) => doAlvo.has(valor));
+}
+
+function mesmaFonteDeValores(a: FatoComValores, b: FatoComValores): boolean {
+  return (a.fonteValores?.codigo ?? null) === (b.fonteValores?.codigo ?? null);
 }
 
 /**

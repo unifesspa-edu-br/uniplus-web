@@ -3,32 +3,11 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
 import type { components } from './schema';
-import { TipoLocalOferta } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 export type LocalOfertaDto = components['schemas']['LocalOfertaDto'];
 export type CriarLocalOfertaCommand = components['schemas']['CriarLocalOfertaCommand'];
 export type AtualizarLocalOfertaCommand = components['schemas']['AtualizarLocalOfertaCommand'];
-
-// O contrato expõe `TipoLocalOferta` como enum de string (codegen `--enum`);
-// reexportado para consumo direto dos valores (`TipoLocalOferta.poloEad`).
-export { TipoLocalOferta };
-
-/** Opção de tipo de Local de Oferta (roster fechado do enum do contrato). */
-export interface TipoLocalOfertaOption {
-  readonly value: TipoLocalOferta;
-  readonly label: string;
-}
-
-/** Rótulos pt-BR do enum `TipoLocalOferta` (classificação INEP/e-MEC; sem `nenhum`). */
-export const TIPOS_LOCAL_OFERTA: readonly TipoLocalOfertaOption[] = [
-  { value: TipoLocalOferta.campusSede, label: 'Campus sede' },
-  { value: TipoLocalOferta.campusForaDeSede, label: 'Campus fora de sede' },
-  { value: TipoLocalOferta.cursoForaDeSede, label: 'Curso fora de sede' },
-  { value: TipoLocalOferta.poloEad, label: 'Polo EAD' },
-  { value: TipoLocalOferta.convenioInteriorizacao, label: 'Convênio de interiorização' },
-  { value: TipoLocalOferta.outro, label: 'Outro' },
-] as const;
 
 /** Filtro de listagem de Locais de Oferta (cursor pagination, ADR-0026). */
 export interface LocaisOfertaQuery {

@@ -41,7 +41,11 @@ describe('EditorDeFormularioComponent: acréscimo de campos, pressupostos e grup
       fato('A'),
       fato('B'),
       fato('C'),
-      { ...fato('MUNICIPIO'), dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' },
+      {
+        ...fato('MUNICIPIO'),
+        dominio: { codigo: 'OPCAO', rotulo: 'OPCAO' },
+        fonteValores: { codigo: 'MUNICIPIOS', rotulo: 'MUNICIPIOS' },
+      },
     ]);
     cenario.detectar();
     cenario.escolherEm('f-etapa-S1-acrescentar', 'MUNICIPIO');
@@ -126,7 +130,11 @@ describe('EditorDeFormularioComponent: acréscimo de campos, pressupostos e grup
       fato('B'),
       fato('C'),
       membro('RENDA'),
-      { ...membro('PARENTESCO'), dominio: 'CATEGORICO', valoresDominio: ['PROPRIO_CANDIDATO'] },
+      {
+        ...membro('PARENTESCO'),
+        dominio: { codigo: 'OPCAO', rotulo: 'OPCAO' },
+        valoresDominio: ['PROPRIO_CANDIDATO'],
+      },
     ]);
     cenario.detectar();
 

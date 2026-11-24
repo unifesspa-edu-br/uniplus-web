@@ -2,6 +2,7 @@ import type { Signal } from '@angular/core';
 import { formatarDataBr, formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
 
 import type { FaseDoArquivo } from '../file-upload/file-upload';
+import type { UiTagVariant } from '../tag/tag';
 import type { DocumentoExigido } from '../lista-de-documentos/lista-de-documentos';
 
 /**
@@ -100,7 +101,11 @@ export interface EnvioDeDocumentos {
 }
 
 /** Se a exigência está atendida pelos arquivos enviados; vem da avaliação da API. */
-export type SituacaoDaExigencia = 'SATISFEITA' | 'PENDENTE';
+export interface SituacaoDaExigencia {
+  readonly rotulo: string;
+  readonly variante: UiTagVariant;
+  readonly atendido: boolean;
+}
 
 const BYTES_POR_MB = 1024 * 1024;
 
@@ -140,18 +145,22 @@ export function regrasDoArquivo(
   formatos: DocumentoExigido['formatos'],
   tamanhoMaximoBytes: number,
 ): RegrasDoArquivo {
-  const lista = formatos.lista ?? [];
-  const declarados = lista.flatMap((nome) => FORMATOS[nome.trim().toUpperCase()] ?? []);
-  const aceitos =
-    formatos.qualquer || declarados.length === 0
-      ? FORMATOS_DO_ARMAZENAMENTO
-      : [...new Set(declarados)];
+  const aceitos = formatosAceitos(formatos);
   return {
     extensoes: aceitos.flatMap((f) => f.extensoes).join(','),
     tiposDeMidia: aceitos.flatMap((f) => f.tiposDeMidia),
     rotulosDosFormatos: aceitos.map((f) => f.rotulo),
     tamanhoMaximoMb: tamanhoMaximoBytes / BYTES_POR_MB,
   };
+}
+
+function formatosAceitos(formatos: DocumentoExigido['formatos']): readonly Formato[] {
+  const declarados = (formatos.lista ?? []).flatMap(
+    (nome) => FORMATOS[nome.trim().toUpperCase()] ?? [],
+  );
+  return formatos.qualquer || declarados.length === 0
+    ? FORMATOS_DO_ARMAZENAMENTO
+    : [...new Set(declarados)];
 }
 
 /** O prefixo do campo com que a API aponta a recusa de uma exigência documental. */
@@ -190,7 +199,9 @@ export function formatosDaExigencia(formatosAceitos: readonly string[]): {
 
 /** O rótulo do formato de um tipo de mídia ("JPG" para image/jpeg), o mesmo que a zona de envio mostra; nulo se não é um formato da inscrição. */
 export function rotuloDoFormato(tipoDeMidia: string): string | null {
-  return FORMATOS_DO_ARMAZENAMENTO.find((f) => f.tiposDeMidia.includes(tipoDeMidia))?.rotulo ?? null;
+  return (
+    FORMATOS_DO_ARMAZENAMENTO.find((f) => f.tiposDeMidia.includes(tipoDeMidia))?.rotulo ?? null
+  );
 }
 
 /** O que se sabe de um arquivo enviado para dizer o que ele é: o formato, o tamanho e o envio. */

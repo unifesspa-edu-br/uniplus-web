@@ -20,6 +20,7 @@ import {
   confirmarNoDialogo,
   dialogoDaDecisao,
   detalheDoFato,
+  dominioOpcao,
   detalheDoLaudo,
   drawerDoItem as drawer,
   laudo,
@@ -28,6 +29,7 @@ import {
   rural,
   type PaginaMontada,
   compilarPaginaUmaVez,
+  valorUnico,
 } from './protecao-do-catalogo.testing';
 
 describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
@@ -149,8 +151,8 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
 
     const texto = drawer(tela)?.textContent?.replace(/\s+/gu, ' ') ?? '';
     expect(texto).toContain('Se o candidato mora em área rural.');
-    expect(texto).toContain('Lista de valores');
-    expect(texto).toContain('Um valor');
+    expect(texto).toContain(dominioOpcao.rotulo);
+    expect(texto).toContain(valorUnico.rotulo);
     expect(texto).toContain('Mora em área rural');
     expect(texto).toContain('Considere o endereço do comprovante.');
   });

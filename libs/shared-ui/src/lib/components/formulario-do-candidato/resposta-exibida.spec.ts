@@ -5,7 +5,7 @@ import { respostaExibida } from './resposta-exibida';
 describe('respostaExibida', () => {
   it('mostra a opção escolhida pelo nome que o formulário dá, e o código quando não o dá', () => {
     const campo = {
-      apresentacao: { tipoRenderizacao: 'SELECAO_MULTIPLA' },
+      apresentacao: { tipoRenderizacao: 'ESCOLHA_MULTIPLA' },
       valoresSelecionaveis: [
         { codigo: 'LB_PPI', descricao: 'Escola pública, preto, pardo ou indígena' },
       ],
@@ -17,7 +17,7 @@ describe('respostaExibida', () => {
   });
 
   it('mostra sim ou não, a data no formato brasileiro e o endereço por extenso', () => {
-    expect(respostaExibida({ apresentacao: { tipoRenderizacao: 'BOOLEANO' } }, false)).toBe('Não');
+    expect(respostaExibida({ apresentacao: { tipoRenderizacao: 'SIM_OU_NAO' } }, false)).toBe('Não');
     expect(respostaExibida({ apresentacao: { tipoRenderizacao: 'DATA' } }, '2001-03-09')).toBe(
       '09/03/2001',
     );

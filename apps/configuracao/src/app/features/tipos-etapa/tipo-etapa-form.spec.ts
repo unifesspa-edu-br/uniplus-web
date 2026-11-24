@@ -1,4 +1,4 @@
-import { NaturezaConceitoCodigo, TipoEtapaDto } from '@uniplus/shared-data/configuracao';
+import { FormaDoConceitoCodigo, TipoEtapaDto } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import {
   comandoDeAtualizacao,
@@ -24,7 +24,7 @@ const tipo: TipoEtapaDto = {
       {
         codigo: 'CONCEITO_A',
         nome: 'Conceito A',
-        natureza: { codigo: NaturezaConceitoCodigo.CATEGORICO, rotulo: 'Categórico' },
+        natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Categórico' },
       },
     ],
   },

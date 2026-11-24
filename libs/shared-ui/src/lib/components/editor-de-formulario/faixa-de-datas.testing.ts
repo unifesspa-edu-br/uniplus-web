@@ -4,7 +4,7 @@ import type { FatoDoFormulario, ItemDoFormulario, RegrasDoCampo } from './modelo
 
 export const data = (codigo: string): FatoDoFormulario => ({
   ...fato(codigo),
-  dominio: 'DATA',
+  dominio: { codigo: 'DATA', rotulo: 'DATA' },
   operadoresAdmitidos: [],
 });
 

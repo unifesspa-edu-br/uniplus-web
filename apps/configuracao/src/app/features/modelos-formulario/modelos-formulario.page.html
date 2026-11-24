@@ -37,6 +37,7 @@
   (proximo)="store.proximaPagina()"
 />
 <cfg-modelo-formulario-criacao
+  [modelos]="store.modelosBuscados()"
   [form]="edicao.form"
   [aberto]="edicao.drawerAberto()"
   [salvando]="edicao.salvando()"

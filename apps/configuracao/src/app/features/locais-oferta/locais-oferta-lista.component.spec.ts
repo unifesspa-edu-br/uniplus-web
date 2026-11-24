@@ -1,13 +1,15 @@
+import { TIPO_LOCAL_DE_TESTE } from './locais-oferta.testing';
+import { OUTRO_TIPO_LOCAL_DE_TESTE } from './locais-oferta.testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ResolucaoDeVinculo } from '@uniplus/shared-core/http';
-import { LocalOfertaDto, TipoLocalOferta } from '@uniplus/shared-data/configuracao';
+import { LocalOfertaDto } from '@uniplus/shared-data/configuracao';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { LocaisOfertaListaComponent } from './locais-oferta-lista.component';
 
 const local: LocalOfertaDto = {
   id: 'l1',
-  tipo: TipoLocalOferta.poloEad,
+  tipo: TIPO_LOCAL_DE_TESTE,
   codigoEmec: null,
   campusResponsavelId: null,
   cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
@@ -90,14 +92,14 @@ describe('LocaisOfertaListaComponent', () => {
       {
         ...local,
         id: 'l2',
-        tipo: 'invalido' as TipoLocalOferta,
+        tipo: TIPO_LOCAL_DE_TESTE,
         endereco: { cidade: { codigoIbge: '1', nome: 'Altamira', uf: 'PA' } } as never,
       },
     ]);
     const texto = raiz().textContent ?? '';
     expect(texto).toContain('—');
     expect(texto).toContain('Altamira — PA');
-    expect(texto).toContain('invalido');
+    expect(texto).toContain(TIPO_LOCAL_DE_TESTE.rotulo);
   });
 
   it('mostra o andamento só na linha afetada', () => {
@@ -139,9 +141,11 @@ describe('LocaisOfertaListaComponent', () => {
     montar([local]);
     botao('Editar').click();
     gravar();
-    fixture.componentRef.setInput('locais', [{ ...local, tipo: TipoLocalOferta.campusForaDeSede }]);
+    fixture.componentRef.setInput('locais', [{ ...local, tipo: OUTRO_TIPO_LOCAL_DE_TESTE }]);
     await terminarGravacao();
-    expect(acaoDaLinha('l1', 'Editar').getAttribute('aria-label')).toContain('Campus fora de sede');
+    expect(acaoDaLinha('l1', 'Editar').getAttribute('aria-label')).toContain(
+      OUTRO_TIPO_LOCAL_DE_TESTE.rotulo,
+    );
     expect(document.activeElement).toBe(acaoDaLinha('l1', 'Editar'));
   });
 

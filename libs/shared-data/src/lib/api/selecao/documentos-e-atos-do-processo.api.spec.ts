@@ -1,3 +1,4 @@
+import { arquivoConfirmado, arquivoPendente, finalidadeDoDocumento } from './vocabularios.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -15,7 +16,7 @@ import {
   DocumentoAPublicarDto,
   IniciarEnvioDoDocumentoAPublicarDto,
 } from './processos-seletivos.contrato';
-import { FinalidadeDoDocumento } from './schema';
+import { FinalidadeDoDocumentoCodigo } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 import { DocumentosEAtosDoProcessoApi } from './documentos-e-atos-do-processo.api';
 
@@ -37,10 +38,10 @@ const iniciacaoSeed: IniciarEnvioDoDocumentoAPublicarDto = {
 const documentoSeed: DocumentoAPublicarDto = {
   id: DOCUMENTO_ID,
   processoSeletivoId: ID,
-  finalidade: FinalidadeDoDocumento.documentoDoEdital,
+  finalidade: finalidadeDoDocumento,
   nomeArquivo: 'edital.pdf',
   tipoDeMidia: 'application/pdf',
-  status: 'Confirmado',
+  status: arquivoConfirmado,
   criadoEm: '2026-08-13T12:00:00Z',
   expiraEm: '2026-08-13T12:15:00Z',
   tamanhoBytes: 2048,
@@ -51,10 +52,10 @@ const documentoSeed: DocumentoAPublicarDto = {
 const documentoPendenteSeed: DocumentoAPublicarDto = {
   id: '01960000-0000-7000-0000-000000000519',
   processoSeletivoId: ID,
-  finalidade: FinalidadeDoDocumento.documentoDoEdital,
+  finalidade: finalidadeDoDocumento,
   nomeArquivo: 'edital.pdf',
   tipoDeMidia: 'application/pdf',
-  status: 'Pendente',
+  status: arquivoPendente,
   criadoEm: '2026-08-13T12:10:00Z',
   expiraEm: '2026-08-13T12:25:00Z',
   tamanhoBytes: null,
@@ -95,7 +96,7 @@ describe('DocumentosEAtosDoProcessoApi', () => {
     expect(isApiOk(result)).toBe(true);
     if (result.ok) {
       expect(result.data).toHaveLength(2);
-      expect(result.data.map((documento) => documento.status)).toEqual(['Confirmado', 'Pendente']);
+      expect(result.data.map((documento) => documento.status)).toEqual([arquivoConfirmado, arquivoPendente]);
     }
   });
   /**
@@ -123,7 +124,7 @@ describe('DocumentosEAtosDoProcessoApi', () => {
   });
   it('listarDocumentosAPublicar() filtra a coleção pela finalidade pedida', async () => {
     const promise = firstValueFrom(
-      api.listarDocumentosAPublicar(ID, FinalidadeDoDocumento.documentoDoEdital),
+      api.listarDocumentosAPublicar(ID, FinalidadeDoDocumentoCodigo.documentoDoEdital),
     );
     const req = controller.expectOne(
       `${BASE}/api/selecao/processos-seletivos/${ID}/documentos-a-publicar?finalidade=documentoDoEdital`,
@@ -219,7 +220,7 @@ describe('DocumentosEAtosDoProcessoApi', () => {
   });
   it('iniciarEnvioDocumentoAPublicar() posta finalidade, nome e tipo de mídia e devolve a URL assinada', async () => {
     const request = {
-      finalidade: FinalidadeDoDocumento.documentoDoEdital,
+      finalidade: FinalidadeDoDocumentoCodigo.documentoDoEdital,
       nomeArquivo: 'edital.pdf',
       tipoDeMidia: 'application/pdf',
     };
@@ -258,6 +259,6 @@ describe('DocumentosEAtosDoProcessoApi', () => {
 
     const result = (await promise) as ApiResult<DocumentoAPublicarDto>;
     expect(isApiOk(result)).toBe(true);
-    if (result.ok) expect(result.data.status).toBe('Confirmado');
+    if (result.ok) expect(result.data.status).toEqual(arquivoConfirmado);
   });
 });

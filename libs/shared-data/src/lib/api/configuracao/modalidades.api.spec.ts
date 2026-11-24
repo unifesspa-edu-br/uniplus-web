@@ -1,3 +1,10 @@
+import {
+  AcaoQuandoIndeferidoCodigo,
+  ComposicaoVagasCodigo,
+  NaturezaLegalCodigo,
+  RegraRemanejamentoCodigo,
+} from './schema';
+import { valorDeTeste } from './vocabularios.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -22,17 +29,25 @@ const modalidadeSeed: ModalidadeDto = {
   codigo: 'LB_PPI',
   legalFixa: true,
   descricao: 'Cota PPI baixa renda',
-  naturezaLegal: 'COTA_RESERVADA',
-  composicaoVagas: 'DENTRO_DA_RESERVA_LEGAL',
+  naturezaLegal: valorDeTeste(NaturezaLegalCodigo.COTA_RESERVADA),
+  composicaoVagas: valorDeTeste(ComposicaoVagasCodigo.DENTRO_DA_RESERVA_LEGAL),
   composicaoOrigem: null,
-  regraRemanejamento: 'SEGUE_CASCATA',
-  remanejamentoDestino: null,
-  remanejamentoPar: null,
-  remanejamentoFallback: null,
+  remanejamento: {
+    regra: valorDeTeste(RegraRemanejamentoCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO),
+    destino: null,
+    par: null,
+    fallback: null,
+  },
   regraDeAplicabilidade: [
-    [{ fato: 'COR_RACA', operador: OperadorCodigo.EM, valor: ['PRETA', 'PARDA', 'INDIGENA'] }],
+    [
+      {
+        fato: 'COR_RACA',
+        operador: OperadorCodigo.ALGUM_DE,
+        valor: ['PRETA', 'PARDA', 'INDIGENA'],
+      },
+    ],
   ],
-  acaoQuandoIndeferido: 'RECLASSIFICAR_AC',
+  acaoQuandoIndeferido: valorDeTeste(AcaoQuandoIndeferidoCodigo.RECLASSIFICA_AC),
   baseLegal: 'Lei 12.711/2012, art. 1º',
   criadoEm: '2026-07-03T12:00:00Z',
 };
@@ -40,15 +55,17 @@ const modalidadeSeed: ModalidadeDto = {
 const criarCommand: CriarModalidadeCommand = {
   codigo: 'V',
   descricao: 'PcD ampla concorrência',
-  naturezaLegal: 'ACAO_AFIRMATIVA',
-  composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
+  naturezaLegal: NaturezaLegalCodigo.ACAO_AFIRMATIVA,
+  composicaoVagas: ComposicaoVagasCodigo.RETIRADA_DE_OUTRA_MODALIDADE,
   composicaoOrigem: 'AC',
-  regraRemanejamento: 'DESTINO_UNICO',
-  remanejamentoDestino: 'AC',
-  remanejamentoPar: null,
-  remanejamentoFallback: null,
+  remanejamento: {
+    regra: RegraRemanejamentoCodigo.DESTINO_UNICO,
+    destino: 'AC',
+    par: null,
+    fallback: null,
+  },
   regraDeAplicabilidade: [[{ fato: 'PCD', operador: OperadorCodigo.IGUAL, valor: true }]],
-  acaoQuandoIndeferido: 'RECLASSIFICAR_AC',
+  acaoQuandoIndeferido: AcaoQuandoIndeferidoCodigo.RECLASSIFICA_AC,
   baseLegal: 'Lei 14.723/2023',
 };
 
@@ -110,23 +127,25 @@ describe('ModalidadesApi', () => {
         {
           id: ID,
           descricao: 'Cota PPI baixa renda',
-          naturezaLegal: 'COTA_RESERVADA',
-          composicaoVagas: 'DENTRO_DA_RESERVA_LEGAL',
+          naturezaLegal: NaturezaLegalCodigo.COTA_RESERVADA,
+          composicaoVagas: ComposicaoVagasCodigo.DENTRO_DA_RESERVA_LEGAL,
           composicaoOrigem: null,
-          regraRemanejamento: 'SEGUE_CASCATA',
-          remanejamentoDestino: null,
-          remanejamentoPar: null,
-          remanejamentoFallback: null,
+          remanejamento: {
+            regra: RegraRemanejamentoCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO,
+            destino: null,
+            par: null,
+            fallback: null,
+          },
           regraDeAplicabilidade: [
             [
               {
                 fato: 'COR_RACA',
-                operador: OperadorCodigo.EM,
+                operador: OperadorCodigo.ALGUM_DE,
                 valor: ['PRETA', 'PARDA', 'INDIGENA'],
               },
             ],
           ],
-          acaoQuandoIndeferido: 'RECLASSIFICAR_AC',
+          acaoQuandoIndeferido: AcaoQuandoIndeferidoCodigo.RECLASSIFICA_AC,
           baseLegal: 'Lei 12.711/2012',
         },
         withIdempotencyKey('k'),

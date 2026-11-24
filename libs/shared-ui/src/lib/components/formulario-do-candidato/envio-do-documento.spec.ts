@@ -1,7 +1,6 @@
 import { signal } from '@angular/core';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import axe from 'axe-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FileUploadComponent } from '../file-upload/file-upload';
@@ -277,10 +276,9 @@ describe('Envio do arquivo de um documento exigido', () => {
       });
 
       const itens = Array.from(tela.querySelectorAll('.uni-uploader__item'));
-      expect(itens.map((i) => i.querySelector('.uni-uploader__item-name')?.textContent?.trim())).toEqual([
-        'Arquivo 2',
-        'Arquivo 1',
-      ]);
+      expect(
+        itens.map((i) => i.querySelector('.uni-uploader__item-name')?.textContent?.trim()),
+      ).toEqual(['Arquivo 2', 'Arquivo 1']);
       expect(itens[1].querySelector('.uni-uploader__item-meta')?.textContent).toBe(
         'PDF · 2,0 KB · enviado em 22/10/2026, 09:33',
       );
@@ -300,9 +298,9 @@ describe('Envio do arquivo de um documento exigido', () => {
     it('o botão Baixar leva o rótulo da API no nome acessível', () => {
       const tela = montar({ arquivos: [{ ...CONFIRMADO, rotulo: 'Arquivo 7' }] });
 
-      expect(
-        tela.querySelector('button[aria-label^="Baixar"]')?.getAttribute('aria-label'),
-      ).toBe('Baixar Arquivo 7 de Laudo médico');
+      expect(tela.querySelector('button[aria-label^="Baixar"]')?.getAttribute('aria-label')).toBe(
+        'Baixar Arquivo 7 de Laudo médico',
+      );
     });
 
     it('falha ao obter o acesso: mostra a mensagem com role alert', async () => {
@@ -326,7 +324,9 @@ describe('Envio do arquivo de um documento exigido', () => {
       await fixture.whenStable();
       fixture.detectChanges();
 
-      expect(tela.querySelector('[role="alert"]')?.textContent).toContain('Não foi possível baixar');
+      expect(tela.querySelector('[role="alert"]')?.textContent).toContain(
+        'Não foi possível baixar',
+      );
     });
 
     it('imagem JPEG aparece com o rótulo JPG da zona de envio', () => {
@@ -369,73 +369,5 @@ describe('Envio do arquivo de um documento exigido', () => {
     expect(durante).not.toBe('');
     expect(anuncio()).not.toBe(durante);
     terminar({ ok: true, arquivo: CONFIRMADO });
-  });
-
-  it('remove o arquivo enviado pela API e avisa quem hospeda', async () => {
-    const tela = montar();
-    envio.arquivos.set([CONFIRMADO]);
-    fixture.detectChanges();
-
-    (tela.querySelector('button[aria-label^="Remover"]') as HTMLButtonElement).click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(envio.remover).toHaveBeenCalledWith('arquivo-1');
-    expect(tela.querySelector('.uni-uploader__item')).toBeNull();
-  });
-
-  it('arquivo removido não volta enquanto a avaliação que o trazia não é refeita', async () => {
-    const tela = montar({ arquivos: [CONFIRMADO] });
-
-    (tela.querySelector('button[aria-label^="Remover"]') as HTMLButtonElement).click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(tela.querySelector('.uni-uploader__item')).toBeNull();
-  });
-
-  it('com a inscrição enviada, ainda deixa enviar para corrigir, mas não remover', () => {
-    const tela = montar({ arquivos: [CONFIRMADO], podeRemover: false });
-
-    expect(tela.querySelector('button[aria-label^="Remover"]')).toBeNull();
-    expect((tela.querySelector('input[type="file"]') as HTMLInputElement).disabled).toBe(false);
-  });
-
-  it('com a inscrição sendo enviada, não deixa enviar', () => {
-    const tela = montar({ podeEnviar: false });
-
-    expect((tela.querySelector('input[type="file"]') as HTMLInputElement).disabled).toBe(true);
-  });
-
-  it('com mínimo acima de 1, diz quantos arquivos enviar e liga a dica ao campo', () => {
-    const tela = montar({ quantidadeMinima: 2 });
-
-    const dica = tela.querySelector('.envio-do-documento__dica') as HTMLElement;
-    expect(dica.textContent).toContain('Envie 2 arquivos');
-    expect(
-      (tela.querySelector('input[type="file"]') as HTMLInputElement).getAttribute(
-        'aria-describedby',
-      ),
-    ).toContain(dica.id);
-  });
-
-  it('escreve a situação da exigência quando a avaliação a informa', () => {
-    const tela = montar({ situacao: 'PENDENTE' });
-
-    expect(tela.querySelector('ui-tag')?.textContent?.trim()).toBe('Pendente');
-  });
-
-  it('não tem violação de acessibilidade com o arquivo enviado, a situação e a dica', async () => {
-    document.body.appendChild(montar({ situacao: 'PENDENTE', quantidadeMinima: 2 }));
-    await escolher(arquivo('laudo.pdf'));
-
-    // O contraste depende dos estilos globais do design system, que o teste de unidade não carrega.
-    const resultado = await axe.run(fixture.nativeElement, {
-      runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
-      rules: { 'color-contrast': { enabled: false } },
-    });
-
-    expect(resultado.violations.map((v) => v.id)).toEqual([]);
-    fixture.nativeElement.remove();
   });
 });

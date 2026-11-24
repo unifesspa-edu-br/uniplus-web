@@ -1,7 +1,11 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { FORMAS_ACEITE } from '@uniplus/shared-data/configuracao';
-import { SpinnerComponent } from '@uniplus/shared-ui/components';
+import { carregarVocabulario } from '../../shared/vocabulario-de-configuracao';
+import {
+  acompanharLeitura,
+  FalhaDeLeituraDoCampoComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { CriarForm, TEXTO_MAX } from './termo-consentimento-form';
@@ -9,7 +13,7 @@ import { CriarForm, TEXTO_MAX } from './termo-consentimento-form';
 @Component({
   selector: 'cfg-termo-consentimento-formulario',
   standalone: true,
-  imports: [ReactiveFormsModule, SpinnerComponent],
+  imports: [ReactiveFormsModule, FalhaDeLeituraDoCampoComponent, SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './termo-consentimento-formulario.component.html',
 })
@@ -17,7 +21,16 @@ export class TermoConsentimentoFormularioComponent {
   readonly form = input.required<FormGroup<CriarForm>>();
   readonly criando = input.required<boolean>();
   readonly salvar = output<void>();
-  protected readonly formasAceite = FORMAS_ACEITE;
+  protected readonly formasAceite = carregarVocabulario('formas-aceite');
+  protected readonly leituraDasFormas = acompanharLeitura({
+    assunto: 'formas de aceite',
+    falha: computed(() =>
+      this.formasAceite.falhou() ? 'Não foi possível carregar as opções.' : null,
+    ),
+    pendente: this.formasAceite.carregando,
+    recarregar: () => this.formasAceite.recarregar(),
+    destino: () => document.getElementById('termo-novo-formaAceite'),
+  });
   protected readonly textoMax = TEXTO_MAX;
   private readonly foco = acompanharFocoDoEnvio({
     salvando: this.criando,
@@ -29,7 +42,7 @@ export class TermoConsentimentoFormularioComponent {
   }
 
   protected aoEnviar(): void {
-    if (this.criando()) return;
+    if (this.criando() || this.leituraDasFormas.pendente()) return;
     this.salvar.emit();
     if (this.form().invalid) this.foco.focarPrimeiroInvalido();
   }

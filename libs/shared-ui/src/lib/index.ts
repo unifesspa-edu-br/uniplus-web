@@ -84,7 +84,7 @@ export {
   problemasDeCondicoes,
 } from './components/editor-de-condicoes/condicoes/conferencia-da-condicao';
 export {
-  FONTE_GEO_MUNICIPIO,
+  FONTE_MUNICIPIOS,
   type FatoDoCatalogo,
   type FatoEscolhivel,
   type TipoDeDominio,

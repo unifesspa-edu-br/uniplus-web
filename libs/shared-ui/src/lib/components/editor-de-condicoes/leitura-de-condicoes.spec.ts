@@ -14,7 +14,7 @@ import {
 const COR_RACA = fatoEscolhivel({
   codigo: 'COR_RACA',
   nome: 'Cor/raça',
-  dominio: 'CATEGORICO',
+  dominio: { codigo: 'OPCAO', rotulo: 'OPCAO' },
   valoresDominio: ['PRETA', 'PARDA', 'INDIGENA', 'NAO_DECLARADA'],
   valoresDominioDeclarados: [
     { codigo: 'PRETA', descricao: 'Preta' },
@@ -28,7 +28,7 @@ const COR_RACA = fatoEscolhivel({
 const ESCOLA_PUBLICA = fatoEscolhivel({
   codigo: 'ESCOLA_PUBLICA',
   nome: 'Cursou o ensino médio em escola pública',
-  dominio: 'BOOLEANO',
+  dominio: { codigo: 'SIM_OU_NAO', rotulo: 'SIM_OU_NAO' },
   binding: 'CAMPO_INSCRICAO:escolaPublica',
   operadoresAdmitidos: SO_IGUALDADE,
 }) as FatoEscolhivel;
@@ -47,7 +47,7 @@ describe('leitura das condições', () => {
   it('mostra o valor pela descrição do cadastro, e pelo código só quando ele não tem descrição', () => {
     expect(
       descreverCondicao(
-        { fato: 'COR_RACA', operador: 'EM', valor: '["PRETA","INDIGENA","NAO_DECLARADA"]' },
+        { fato: 'COR_RACA', operador: 'ALGUM_DE', valor: '["PRETA","INDIGENA","NAO_DECLARADA"]' },
         COR_RACA,
       ),
     ).toBe('Cor/raça é um de Preta, Indígena, NAO_DECLARADA');

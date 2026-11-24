@@ -3,10 +3,10 @@ import { ItemDoFormulario, PredicadoNoWire } from './tipos';
 
 /** Os tipos de campo que o impedimento admite (`Impedimento.CabeNoCampo`). */
 const CAMPOS_COM_IMPEDIMENTO = new Set([
-  'BOOLEANO',
+  'SIM_OU_NAO',
   'NUMERO',
-  'SELECAO_UNICA',
-  'SELECAO_MULTIPLA',
+  'ESCOLHA_UNICA',
+  'ESCOLHA_MULTIPLA',
   'MUNICIPIO',
 ]);
 

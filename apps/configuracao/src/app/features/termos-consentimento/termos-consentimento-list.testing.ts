@@ -1,3 +1,4 @@
+import { formasDeAceite, provedorDeFormasDeAceite } from './formas-de-aceite.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
@@ -22,7 +23,7 @@ export function termoResumo(
     id: over.id ?? crypto.randomUUID(),
     codigo: 'TERMO_DE_PRIVACIDADE_LGPD',
     nome: 'Termo de Privacidade LGPD',
-    formaAceiteRascunho: 'REGISTRO_DIGITAL_COM_LOG_IP',
+    formaAceiteRascunho: formasDeAceite.comLog,
     revisado: true,
     criadoEm: '2026-08-13T10:00:00Z',
     ...over,
@@ -60,6 +61,7 @@ export class CenarioDaLista {
     TestBed.configureTestingModule({
       imports: [TermosConsentimentoListPage],
       providers: [
+        provedorDeFormasDeAceite,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         provideRouter([{ path: 'termos-consentimento', children: [] }]),

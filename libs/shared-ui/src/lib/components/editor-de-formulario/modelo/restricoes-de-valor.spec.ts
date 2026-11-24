@@ -11,7 +11,7 @@ import type { FatoDoFormulario } from './tipos';
 describe('restricoesParaAcrescentar', () => {
   it('oferece só a restrição que cabe no tipo do campo, uma por tipo', () => {
     const numero = item('IDADE', 0, 'S1', { apresentacao: { tipoRenderizacao: 'NUMERO' } });
-    const selecao = item('COR', 0, 'S1', { apresentacao: { tipoRenderizacao: 'SELECAO_UNICA' } });
+    const selecao = item('COR', 0, 'S1', { apresentacao: { tipoRenderizacao: 'ESCOLHA_UNICA' } });
 
     expect(restricoesParaAcrescentar(numero, false).map((r) => r.valor)).toEqual([
       'FAIXA_NUMERICA',
@@ -36,7 +36,7 @@ describe('restricoesParaAcrescentar', () => {
 
   it('oferece as opções das respostas anteriores na seleção só quando há campo anterior de onde elas venham', () => {
     const selecao = item('LISTA_DE_ESPERA', 1, 'S1', {
-      apresentacao: { tipoRenderizacao: 'SELECAO_UNICA' },
+      apresentacao: { tipoRenderizacao: 'ESCOLHA_UNICA' },
     });
 
     expect(restricoesParaAcrescentar(selecao, false, false)).toEqual([]);
@@ -53,9 +53,9 @@ describe('de onde vêm as opções formadas pelas respostas', () => {
     extra: Partial<FatoDoFormulario> = {},
   ): FatoDoFormulario =>
     fato(codigo, {
-      dominio: 'CATEGORICO',
-      cardinalidade: 'MULTIVALORADO',
-      fonteValores: 'GLOBAL',
+      dominio: { codigo: 'OPCAO', rotulo: 'OPCAO' },
+      cardinalidade: { codigo: 'VARIOS_VALORES', rotulo: 'VARIOS_VALORES' },
+      fonteValores: { codigo: 'GLOBAL', rotulo: 'GLOBAL' },
       valoresDominio: valores,
       ...extra,
     });
@@ -77,33 +77,37 @@ describe('de onde vêm as opções formadas pelas respostas', () => {
       'o domínio é outro',
       false,
       curso('ESPERA', ['MED']),
-      curso('OPCOES', ['MED'], { dominio: 'TEXTO' }),
+      curso('OPCOES', ['MED'], { dominio: { codigo: 'TEXTO', rotulo: 'TEXTO' } }),
     ],
     [
       'nenhum enumera e a fonte dos valores é a mesma',
       true,
-      curso('ESPERA', null, { fonteValores: 'PROCESSO' }),
-      curso('OPCOES', null, { fonteValores: 'PROCESSO' }),
+      curso('ESPERA', null, { fonteValores: { codigo: 'PROCESSO', rotulo: 'PROCESSO' } }),
+      curso('OPCOES', null, { fonteValores: { codigo: 'PROCESSO', rotulo: 'PROCESSO' } }),
     ],
     [
       'nenhum enumera e a fonte dos valores é outra',
       false,
-      curso('ESPERA', null, { fonteValores: 'PROCESSO' }),
-      curso('OPCOES', null, { fonteValores: 'GEO_UF' }),
+      curso('ESPERA', null, { fonteValores: { codigo: 'PROCESSO', rotulo: 'PROCESSO' } }),
+      curso('OPCOES', null, { fonteValores: { codigo: 'UNIDADES_FEDERATIVAS', rotulo: 'UNIDADES_FEDERATIVAS' } }),
     ],
     [
       'só um enumera',
       false,
       curso('ESPERA', ['MED']),
-      curso('OPCOES', null, { fonteValores: 'PROCESSO' }),
+      curso('OPCOES', null, { fonteValores: { codigo: 'PROCESSO', rotulo: 'PROCESSO' } }),
     ],
   ])('%s: cabe = %s', (_caso, cabe, alvo, fonte) => {
     expect(opcoesDaFonteCabemNoAlvo(alvo, fonte)).toBe(cabe);
   });
 
   it('o domínio do processo, quando conhecido, conta como os valores enumerados', () => {
-    const alvo = curso('ESPERA', null, { fonteValores: 'PROCESSO' });
-    const fonte = curso('OPCOES', null, { fonteValores: 'PROCESSO' });
+    const alvo = curso('ESPERA', null, {
+      fonteValores: { codigo: 'PROCESSO', rotulo: 'PROCESSO' },
+    });
+    const fonte = curso('OPCOES', null, {
+      fonteValores: { codigo: 'PROCESSO', rotulo: 'PROCESSO' },
+    });
 
     expect(
       opcoesDaFonteCabemNoAlvo(

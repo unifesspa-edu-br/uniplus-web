@@ -11,8 +11,8 @@ import type { CampoAvaliado, ValorJson } from './interpretador/regras-do-formula
 const FORMAS: readonly { readonly tipo: string; readonly rotulo: string }[] = [
   { tipo: 'TEXTO', rotulo: 'Texto ou código' },
   { tipo: 'NUMERO', rotulo: 'Número' },
-  { tipo: 'BOOLEANO', rotulo: 'Sim ou não' },
-  { tipo: 'SELECAO_MULTIPLA', rotulo: 'Lista de códigos' },
+  { tipo: 'SIM_OU_NAO', rotulo: 'Sim ou não' },
+  { tipo: 'ESCOLHA_MULTIPLA', rotulo: 'Lista de códigos' },
 ];
 
 function apresentacaoDoPressuposto(

@@ -1,3 +1,4 @@
+import { ORIGENS_DE_DATA } from '../fases-canonicas/origens-de-data.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -70,7 +71,7 @@ const FASE_CANONICA_PADRAO: Omit<FaseCanonicaDto, 'id' | 'codigo' | 'nome'> = {
   admiteComplementacao: false,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
-  origemData: 'NO_EDITAL',
+  origemData: ORIGENS_DE_DATA.NO_EDITAL,
   baseLegal: null,
   criadoEm: '2026-06-10T12:00:00Z',
 };

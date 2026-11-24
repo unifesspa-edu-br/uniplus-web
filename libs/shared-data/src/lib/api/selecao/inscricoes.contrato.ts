@@ -100,7 +100,7 @@ export type CampoReveladoDto = Schemas['CampoReveladoDto'];
 export type ArquivoDaApresentacaoDto = Schemas['ArquivoDaApresentacaoDto'];
 
 /** Onde o arquivo está na verificação feita depois da confirmação. */
-export { SituacaoDoArquivoDoCandidato } from './schema';
+export { SituacaoDoArquivoDoCandidatoCodigo } from './schema';
 
 /**
  * Uma inscrição na listagem de quem opera o processo. A API omite o campo que a permissão da pessoa

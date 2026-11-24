@@ -1,3 +1,4 @@
+import { ORIGENS_DE_DATA } from '../fases-canonicas/origens-de-data.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
@@ -36,7 +37,7 @@ function faseCanonica(codigo: string, nome: string): FaseCanonicaDto {
     admiteComplementacao: false,
     coletaInscricao: false,
     coletaSolicitacaoIsencao: false,
-    origemData: 'NO_EDITAL',
+    origemData: ORIGENS_DE_DATA.NO_EDITAL,
     baseLegal: null,
     criadoEm: '2026-06-10T12:00:00Z',
   };

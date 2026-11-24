@@ -1,3 +1,4 @@
+import { tipoDeRegra } from './vocabularios.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -15,7 +16,7 @@ const ACCEPT = buildVendorMimeAccept('regra-catalogo', 1);
 const regra: RegraCatalogoDto = {
   codigo: 'LEI_12711_2012',
   versao: '2024.1',
-  tipo: 'DISTRIBUICAO',
+  tipo: tipoDeRegra,
   declaracaoDaRegra: {},
   invariantes: {},
   baseLegal: 'Lei nº 12.711/2012',

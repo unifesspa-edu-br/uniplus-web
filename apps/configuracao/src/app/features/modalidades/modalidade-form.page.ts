@@ -18,6 +18,7 @@ import {
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 
+import { VocabulariosDaModalidade } from './vocabularios-da-modalidade';
 import { EdicaoDaModalidade } from './edicao-da-modalidade';
 import { EdicaoDaRegraDeAplicabilidade } from './edicao-da-regra-de-aplicabilidade';
 import { ModalidadeEnquadramentoComponent } from './modalidade-enquadramento.component';
@@ -35,7 +36,12 @@ const MENSAGEM_DAS_OPCOES =
 /** Cadastro e edição de uma modalidade: compõe o formulário, suas seções e a confirmação de troca de natureza. */
 @Component({
   selector: 'cfg-modalidade-form-page',
-  providers: [ModalidadeFormStore, EdicaoDaRegraDeAplicabilidade, EdicaoDaModalidade],
+  providers: [
+    ModalidadeFormStore,
+    EdicaoDaRegraDeAplicabilidade,
+    VocabulariosDaModalidade,
+    EdicaoDaModalidade,
+  ],
   standalone: true,
   imports: [
     RouterLink,
@@ -76,6 +82,15 @@ export class ModalidadeFormPage {
     falha: computed(() => (this.store.opcoesComErro() ? MENSAGEM_DAS_OPCOES : null)),
     pendente: this.store.carregandoOpcoes,
     recarregar: () => this.store.recarregarOpcoes(),
+    destino: () => document.getElementById(ID_DO_TITULO),
+  });
+
+  protected readonly leituraDosVocabularios = acompanharLeitura({
+    falha: computed(() =>
+      this.edicao.vocabularios.falhou() ? 'As opções não estão disponíveis.' : null,
+    ),
+    pendente: this.edicao.vocabularios.carregando,
+    recarregar: () => this.edicao.vocabularios.recarregar(),
     destino: () => document.getElementById(ID_DO_TITULO),
   });
 

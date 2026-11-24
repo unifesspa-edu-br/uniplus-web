@@ -28,10 +28,10 @@ import {
 const MUNICIPIO_DE_RESIDENCIA: FatoDoCatalogo = {
   codigo: 'MUNICIPIO_RESIDENCIA',
   nome: 'Município de residência',
-  dominio: 'CATEGORICO',
+  dominio: { codigo: 'OPCAO', rotulo: 'OPCAO' },
   valoresDominio: null,
   binding: 'CAMPO_FORMULARIO:MUNICIPIO_RESIDENCIA',
-  fonteValores: 'GEO_MUNICIPIO',
+  fonteValores: { codigo: 'MUNICIPIOS', rotulo: 'MUNICIPIOS' },
   operadoresAdmitidos: COM_LISTA,
 };
 

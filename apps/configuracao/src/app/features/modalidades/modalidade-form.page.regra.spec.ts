@@ -83,13 +83,13 @@ describe('ModalidadeFormPage', () => {
       expect(pagina.fixture.nativeElement.querySelector('ui-editor-de-condicoes')).not.toBeNull();
 
       pagina.edicao.aplicabilidade.trocar([
-        { clausula: 1, fato: 'COR_RACA', operador: 'NAO_EM', valor: '["PRETA"]' },
+        { clausula: 1, fato: 'COR_RACA', operador: 'NENHUM_DE', valor: '["PRETA"]' },
       ]);
       pagina.edicao.salvar();
 
       const put = pagina.controller.expectOne(`${URL_ADMIN}/${BONUS.id}`);
       expect(put.request.body.regraDeAplicabilidade).toEqual([
-        [{ fato: 'COR_RACA', operador: 'NAO_EM', valor: ['PRETA'] }],
+        [{ fato: 'COR_RACA', operador: 'NENHUM_DE', valor: ['PRETA'] }],
       ]);
       put.flush(null, { status: 204, statusText: 'No Content' });
     });

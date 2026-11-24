@@ -1,3 +1,4 @@
+import { valoresDaOferta } from '../ofertas-curso/valores-da-oferta.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
@@ -55,11 +56,11 @@ export const oferta: OfertaCursoDto = {
     nome: 'Instituto de Geociências e Engenharias',
     tipo: 'Instituto',
   },
-  programaDeOferta: 'REGULAR',
-  regimeDeFuncionamento: 'EXTENSIVO',
-  formatoPedagogico: 'PRESENCIAL',
-  regimeDeTurno: 'REGULAR',
-  turnos: ['MATUTINO'],
+  programaDeOferta: valoresDaOferta.programa,
+  regimeDeFuncionamento: valoresDaOferta.funcionamento,
+  formatoPedagogico: valoresDaOferta.formato,
+  regimeDeTurno: valoresDaOferta.regime,
+  turnos: [valoresDaOferta.turnos[0]],
   eMecCodigo: '123456',
   codigoSga: null,
   vagasAnuaisAutorizadas: 40,
@@ -83,8 +84,7 @@ export const recusaDeCampo = (field: string, message: string) =>
 export const sucesso = () => [null, { status: 204, statusText: 'No Content' }] as const;
 export const criado = () => ['novo-id', { status: 201, statusText: 'Created' }] as const;
 
-/** A página montada com a lista já carregada, e as ferramentas para conduzi-la como a pessoa faz. */
-export async function montarPagina(itens: readonly CursoDto[] = [engCiv]) {
+function configurarPagina(): void {
   TestBed.configureTestingModule({
     imports: [CursosPage],
     providers: [
@@ -94,108 +94,106 @@ export async function montarPagina(itens: readonly CursoDto[] = [engCiv]) {
       { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
     ],
   });
-  const fixture: ComponentFixture<CursosPage> = TestBed.createComponent(CursosPage);
-  const http = TestBed.inject(HttpTestingController);
-  const app = TestBed.inject(ApplicationRef);
-  const injetor = fixture.debugElement.injector;
-  const edicao = injetor.get(EdicaoDosCursos);
-  const store = injetor.get(CursosStore);
-  const ofertas = injetor.get(OfertasDoCursoStore);
-  const notificacoes = TestBed.inject(NotificationService);
-  const sucessos = vi.spyOn(notificacoes, 'success');
-  const erros = vi.spyOn(notificacoes, 'errorFromProblem');
-
-  const propagar = async (): Promise<void> => {
-    await Promise.resolve();
-    app.tick();
-    fixture.detectChanges();
-  };
-  const elemento = <T extends HTMLElement>(seletor: string): T => {
-    const encontrado = (fixture.nativeElement as HTMLElement).querySelector<T>(seletor);
-    expect(encontrado, seletor).not.toBeNull();
-    return encontrado as T;
-  };
-  const pelaEtiqueta = (nome: string): HTMLButtonElement =>
-    elemento(`button[aria-label="${nome}"]`);
-  const recarregarCom = async (lista: readonly CursoDto[]): Promise<void> => {
-    await propagar();
-    http.expectOne((r) => r.url === LISTA).flush(lista);
-    await propagar();
-  };
-  const preencher = (nome: string, valor: string): void => {
-    const campo = elemento<HTMLInputElement>(`[formcontrolname="${nome}"]`);
-    campo.value = valor;
-    campo.dispatchEvent(new Event('input'));
-  };
-
-  fixture.detectChanges();
-  http.expectOne((r) => r.url === LISTA).flush(itens);
-  await propagar();
-
-  return {
-    fixture,
-    http,
-    edicao,
-    store,
-    ofertas,
-    sucessos,
-    erros,
-    propagar,
-    elemento,
-    recarregarCom,
-    preencher,
-    /** Responde o vocabulário que a página pede ao iniciar e confere que nada mais ficou pendente. */
-    encerrar(): void {
-      http.match(GRUPOS).forEach((pedido) => pedido.flush([]));
-      http.verify();
-    },
-    formulario: (): HTMLFormElement => elemento('#cfg-curso-form'),
-    novo: (): HTMLButtonElement => elemento('#cfg-cursos-novo'),
-    editar: (c: CursoDto = engCiv) => pelaEtiqueta(`Editar curso ${c.codigo}`),
-    remover: (c: CursoDto = engCiv) => pelaEtiqueta(`Remover curso ${c.codigo}`),
-    verOfertas: (c: CursoDto = engCiv) => pelaEtiqueta(`Ofertas de ${c.codigo}`),
-    salvar: (): HTMLButtonElement => elemento('button[form="cfg-curso-form"]'),
-    confirmar: (): HTMLButtonElement => elemento('[data-testid="confirm-dialog-confirm"]'),
-    cancelarDaConfirmacao: (): HTMLButtonElement =>
-      elemento('[data-testid="confirm-dialog-cancel"]'),
-    campo: (nome: string): HTMLInputElement => elemento(`[formcontrolname="${nome}"]`),
-    statusDaPagina: (): string =>
-      elemento(':scope > span.sr-only[role="status"]').textContent ?? '',
-    /** Clica de verdade em "Novo curso" e preenche o mínimo para enviar. */
-    async abrirCadastro(): Promise<void> {
-      const novo = elemento<HTMLButtonElement>('#cfg-cursos-novo');
-      novo.focus();
-      novo.click();
-      await propagar();
-      preencher('codigo', 'DIR');
-      preencher('nome', 'Direito');
-      preencher('grau', 'Bacharelado');
-      preencher('nivelEnsino', 'Graduação');
-    },
-    async abrirEdicao(curso: CursoDto = engCiv): Promise<void> {
-      const botao = pelaEtiqueta(`Editar curso ${curso.codigo}`);
-      botao.focus();
-      botao.click();
-      await propagar();
-    },
-    /** Envia o formulário aberto, com o foco no botão de salvar, e devolve a requisição de escrita. */
-    async enviar(url = ESCRITA) {
-      const botao = elemento<HTMLButtonElement>('button[form="cfg-curso-form"]');
-      botao.focus();
-      botao.click();
-      await propagar();
-      return http.expectOne(url);
-    },
-    async confirmarRemocao(curso: CursoDto = engCiv) {
-      const lixeira = pelaEtiqueta(`Remover curso ${curso.codigo}`);
-      lixeira.focus();
-      lixeira.click();
-      await propagar();
-      elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]').click();
-      await propagar();
-      return http.expectOne(`${ESCRITA}/${curso.id}`);
-    },
-  };
 }
 
-export type Pagina = Awaited<ReturnType<typeof montarPagina>>;
+export class Pagina {
+  readonly fixture: ComponentFixture<CursosPage> = TestBed.createComponent(CursosPage);
+  readonly http = TestBed.inject(HttpTestingController);
+  readonly edicao = this.fixture.debugElement.injector.get(EdicaoDosCursos);
+  readonly store = this.fixture.debugElement.injector.get(CursosStore);
+  readonly ofertas = this.fixture.debugElement.injector.get(OfertasDoCursoStore);
+  readonly sucessos = vi.spyOn(TestBed.inject(NotificationService), 'success');
+  readonly erros = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+
+  async propagar(): Promise<void> {
+    await Promise.resolve();
+    TestBed.inject(ApplicationRef).tick();
+    this.fixture.detectChanges();
+  }
+
+  elemento<T extends HTMLElement>(seletor: string): T {
+    const encontrado = (this.fixture.nativeElement as HTMLElement).querySelector<T>(seletor);
+    expect(encontrado, seletor).not.toBeNull();
+    return encontrado as T;
+  }
+
+  private pelaEtiqueta(nome: string): HTMLButtonElement {
+    return this.elemento(`button[aria-label="${nome}"]`);
+  }
+
+  async recarregarCom(lista: readonly CursoDto[]): Promise<void> {
+    await this.propagar();
+    this.http.expectOne((r) => r.url === LISTA).flush(lista);
+    await this.propagar();
+  }
+
+  preencher(nome: string, valor: string): void {
+    const campo = this.elemento<HTMLInputElement>(`[formcontrolname="${nome}"]`);
+    campo.value = valor;
+    campo.dispatchEvent(new Event('input'));
+  }
+
+  encerrar(): void {
+    this.http.match(GRUPOS).forEach((pedido) => pedido.flush([]));
+    this.http.verify();
+  }
+
+  formulario = (): HTMLFormElement => this.elemento('#cfg-curso-form');
+  novo = (): HTMLButtonElement => this.elemento('#cfg-cursos-novo');
+  editar = (c: CursoDto = engCiv) => this.pelaEtiqueta(`Editar curso ${c.codigo}`);
+  remover = (c: CursoDto = engCiv) => this.pelaEtiqueta(`Remover curso ${c.codigo}`);
+  verOfertas = (c: CursoDto = engCiv) => this.pelaEtiqueta(`Ofertas de ${c.codigo}`);
+  salvar = (): HTMLButtonElement => this.elemento('button[form="cfg-curso-form"]');
+  confirmar = (): HTMLButtonElement => this.elemento('[data-testid="confirm-dialog-confirm"]');
+  cancelarDaConfirmacao = (): HTMLButtonElement =>
+    this.elemento('[data-testid="confirm-dialog-cancel"]');
+  campo = (nome: string): HTMLInputElement => this.elemento(`[formcontrolname="${nome}"]`);
+  statusDaPagina = (): string =>
+    this.elemento(':scope > span.sr-only[role="status"]').textContent ?? '';
+
+  async abrirCadastro(): Promise<void> {
+    const novo = this.novo();
+    novo.focus();
+    novo.click();
+    await this.propagar();
+    this.preencher('codigo', 'DIR');
+    this.preencher('nome', 'Direito');
+    this.preencher('grau', 'Bacharelado');
+    this.preencher('nivelEnsino', 'Graduação');
+  }
+
+  async abrirEdicao(curso: CursoDto = engCiv): Promise<void> {
+    const botao = this.editar(curso);
+    botao.focus();
+    botao.click();
+    await this.propagar();
+  }
+
+  async enviar(url = ESCRITA) {
+    const botao = this.salvar();
+    botao.focus();
+    botao.click();
+    await this.propagar();
+    return this.http.expectOne(url);
+  }
+
+  async confirmarRemocao(curso: CursoDto = engCiv) {
+    const lixeira = this.remover(curso);
+    lixeira.focus();
+    lixeira.click();
+    await this.propagar();
+    this.confirmar().click();
+    await this.propagar();
+    return this.http.expectOne(`${ESCRITA}/${curso.id}`);
+  }
+}
+
+/** A página montada com a lista já carregada. */
+export async function montarPagina(itens: readonly CursoDto[] = [engCiv]): Promise<Pagina> {
+  configurarPagina();
+  const pagina = new Pagina();
+  pagina.fixture.detectChanges();
+  pagina.http.expectOne((r) => r.url === LISTA).flush(itens);
+  await pagina.propagar();
+  return pagina;
+}

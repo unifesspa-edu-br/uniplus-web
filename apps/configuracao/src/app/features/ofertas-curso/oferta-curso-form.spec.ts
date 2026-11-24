@@ -1,3 +1,5 @@
+import { TurnoOfertaCodigo } from '@uniplus/shared-data/configuracao';
+import { valoresDaOferta as dadosDaOferta } from './valores-da-oferta.testing';
 import { describe, expect, it } from 'vitest';
 import {
   OFERTA_EM_BRANCO,
@@ -20,7 +22,7 @@ const preenchido = () => {
     cursoId: 'c',
     localOfertaId: 'l',
     unidadeOfertanteOrigemId: 'u',
-    turnos: ['MATUTINO'],
+    turnos: [TurnoOfertaCodigo.MATUTINO],
   });
   return form;
 };
@@ -38,17 +40,6 @@ describe('formulário de oferta de curso', () => {
       expect(form.controls[campo].hasError('required'), campo).toBe(true);
     }
     expect(preenchido().valid).toBe(true);
-
-    for (const campo of [
-      'programaDeOferta',
-      'formatoPedagogico',
-      'regimeDeTurno',
-      'regimeDeFuncionamento',
-    ] as const) {
-      const form = preenchido();
-      form.controls[campo].setValue('');
-      expect(form.controls[campo].hasError('required'), campo).toBe(true);
-    }
   });
 
   it.each([
@@ -56,7 +47,6 @@ describe('formulário de oferta de curso', () => {
     ['codigoSga', 30],
     ['baseLegal', 500],
     ['atoAutorizacaoMec', 300],
-    ['regimeDeFuncionamento', 30],
   ] as const)('respeita o tamanho máximo de %s (%i)', (campo, maximo) => {
     const form = preenchido();
     form.controls[campo].setValue('x'.repeat(maximo));
@@ -110,17 +100,13 @@ describe('formulário de oferta de curso', () => {
     expect(mensagemDeErroDaOferta(form.controls.turnos)).toBe(
       'Marque ao menos um turno — nenhum formato pedagógico dispensa o turno.',
     );
-    form.controls.turnos.setValue(['MATUTINO', 'MATUTINO']);
+    form.controls.turnos.setValue([TurnoOfertaCodigo.MATUTINO, TurnoOfertaCodigo.MATUTINO]);
     expect(mensagemDeErroDaOferta(form.controls.turnos)).toBe(
       'Os turnos devem ser distintos entre si.',
     );
-    form.controls.turnos.setValue(['MATUTINO', 'NOTURNO']);
+    form.controls.turnos.setValue([TurnoOfertaCodigo.MATUTINO, TurnoOfertaCodigo.NOTURNO]);
     expect(mensagemDeErroDaOferta(form.controls.turnos)).toBe(
-      'O regime REGULAR exige exatamente um turno.',
-    );
-    form.controls.regimeDeFuncionamento.setValue('x'.repeat(31));
-    expect(mensagemDeErroDaOferta(form.controls.regimeDeFuncionamento)).toBe(
-      'Informe no máximo 30 caracteres.',
+      'O regime selecionado exige exatamente um turno.',
     );
     form.controls.cursoId.setValue('');
     expect(mensagemDeErroDaOferta(form.controls.cursoId)).not.toBeNull();
@@ -138,7 +124,7 @@ describe('formulário de oferta de curso', () => {
   it('os valores da oferta trazem a origem da unidade e ordenam os turnos canonicamente', () => {
     const valores = valoresDaOferta({
       ...oferta,
-      turnos: ['NOTURNO', 'MATUTINO'],
+      turnos: [dadosDaOferta.turnos[2], dadosDaOferta.turnos[0]],
       eMecCodigo: null,
       baseLegal: null,
     });
@@ -146,7 +132,7 @@ describe('formulário de oferta de curso', () => {
       codigo: oferta.codigo,
       cursoId: oferta.cursoId,
       unidadeOfertanteOrigemId: oferta.unidadeOfertante.origemId,
-      turnos: ['MATUTINO', 'NOTURNO'],
+      turnos: [TurnoOfertaCodigo.MATUTINO, TurnoOfertaCodigo.NOTURNO],
       eMecCodigo: '',
       baseLegal: '',
     });
@@ -159,13 +145,12 @@ describe('formulário de oferta de curso', () => {
   });
 
   it('o comando manda nulo no que está em branco e a atualização leva o id sem os vínculos', () => {
-    const valores = { ...valoresDaOferta(oferta), eMecCodigo: ' ', regimeDeFuncionamento: '' };
+    const valores = { ...valoresDaOferta(oferta), eMecCodigo: ' ' };
     const criacao = comandoDeCriacao(valores);
     expect(criacao).toMatchObject({
       codigo: oferta.codigo,
       cursoId: oferta.cursoId,
       eMecCodigo: null,
-      regimeDeFuncionamento: null,
     });
     const atualizacao = comandoDeAtualizacao('o1', valores);
     expect(atualizacao).toMatchObject({ id: 'o1', codigo: oferta.codigo, eMecCodigo: null });

@@ -34,7 +34,7 @@ import {
 } from '../../shared/protecao-do-catalogo';
 import type { AndamentoDaEscrita } from '../../shared/escrita';
 import { ID_DO_CADASTRO, ID_DO_TITULO_DA_LISTA } from './ids-do-fato';
-import { DOMINIOS, ORIGENS, acaoDeAtivacao } from './fato-candidato.regras';
+import { ORIGENS, acaoDeAtivacao } from './fato-candidato.regras';
 
 const CHIPS_DE_ORIGEM: readonly UiFilterChipOption[] = [
   { value: '', label: 'Todas' },
@@ -94,8 +94,6 @@ export class FatosCandidatoListaComponent {
   protected readonly idDoCadastro = ID_DO_CADASTRO;
   protected readonly chipsDeOrigem = CHIPS_DE_ORIGEM;
   protected readonly chipsDeSituacao = CHIPS_DE_SITUACAO;
-  protected readonly origens = ORIGENS;
-  protected readonly dominios = DOMINIOS;
   protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
   protected readonly rotulo = rotuloDe;
   protected readonly acaoDeAtivacao = acaoDeAtivacao;

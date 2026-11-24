@@ -1,3 +1,4 @@
+import { formasDeAceite } from './formas-de-aceite.testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { TermoConsentimentoResumoDto } from '@uniplus/shared-data/configuracao';
@@ -8,7 +9,7 @@ const LGPD: TermoConsentimentoResumoDto = {
   id: 'id-lgpd',
   codigo: 'TERMO_LGPD',
   nome: 'Termo LGPD',
-  formaAceiteRascunho: 'REGISTRO_DIGITAL_COM_LOG_IP',
+  formaAceiteRascunho: formasDeAceite.comLog,
   revisado: true,
   criadoEm: '2026-08-13T10:00:00Z',
 };
@@ -16,7 +17,7 @@ const IMAGEM: TermoConsentimentoResumoDto = {
   ...LGPD,
   id: 'id-imagem',
   nome: 'Uso de imagem',
-  formaAceiteRascunho: 'OUTRA',
+  formaAceiteRascunho: formasDeAceite.semLog,
   revisado: false,
 };
 
@@ -98,12 +99,12 @@ describe('TermosConsentimentoListaComponent', () => {
       ['Nome', 'Forma de aceite', 'Status de revisão'].map((rotulo) =>
         linha.querySelector(`[data-label="${rotulo}"]`)?.textContent?.trim(),
       );
-    expect(celulas(linhas[0])).toEqual([
-      'Termo LGPD',
-      'Registro digital (com log de IP)',
-      'Revisado',
+    expect(celulas(linhas[0])).toEqual(['Termo LGPD', formasDeAceite.comLog.rotulo, 'Revisado']);
+    expect(celulas(linhas[1])).toEqual([
+      'Uso de imagem',
+      formasDeAceite.semLog.rotulo,
+      'Em elaboração',
     ]);
-    expect(celulas(linhas[1])).toEqual(['Uso de imagem', 'OUTRA', 'Em elaboração']);
   });
 
   it('sem termos, oferece o cadastro; com filtro, oferece limpar a busca', () => {

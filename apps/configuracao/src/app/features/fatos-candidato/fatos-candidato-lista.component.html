@@ -103,8 +103,8 @@
                   <ui-tag variant="primary">Sistema</ui-tag>
                 }
               </td>
-              <td data-label="Origem">{{ rotulo(origens, fato.definicao.resolucao.origem) }}</td>
-              <td data-label="Tipo de dado">{{ rotulo(dominios, fato.definicao.dominio) }}</td>
+              <td data-label="Origem">{{ fato.definicao.resolucao.origem.rotulo }}</td>
+              <td data-label="Tipo de dado">{{ fato.definicao.dominio.rotulo }}</td>
               <td data-label="Situação" class="u-nowrap-desktop">
                 @if (fato.id === andamento()?.id) {
                   <span aria-hidden="true">{{ andamento()?.rotulo }}</span>

@@ -21,19 +21,22 @@ import {
   corRaca,
   emManutencao,
   quilombola,
+  variosValores,
+  origemCalculada,
+  tipoSimOuNao,
 } from './fatos-candidato.fixtures';
 
 const perfil: FatoCandidatoDto = {
   ...comResolucao(
-    comValoresDeclarados(comDefinicao(corRaca, { cardinalidade: 'MULTIVALORADO' }), [
+    comValoresDeclarados(comDefinicao(corRaca, { cardinalidade: variosValores }), [
       { codigo: 'A', descricao: null, ordem: 0, ativo: true, orientacao: null },
     ]),
-    { origem: 'DERIVADO', binding: 'REGRA_DERIVACAO:PERFIL' },
+    { origem: origemCalculada, binding: 'REGRA_DERIVACAO:PERFIL' },
   ),
   codigo: 'PERFIL',
 };
 const booleano: FatoCandidatoDto = comValoresDeclarados(
-  comDefinicao(perfil, { dominio: 'BOOLEANO' }),
+  comDefinicao(perfil, { dominio: tipoSimOuNao }),
   [],
   null,
 );

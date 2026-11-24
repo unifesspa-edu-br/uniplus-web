@@ -14,15 +14,14 @@ import {
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
-  COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE,
-  COMPOSICAO_VAGAS_DEFAULT,
-  ComposicaoVagasToken,
+  ComposicaoVagasCodigo,
   ModalidadeDto,
   ModalidadesApi,
-  NATUREZA_LEGAL_DEFAULT,
-  NaturezaLegalToken,
+  NaturezaLegalCodigo,
+  RegraRemanejamentoCodigo,
 } from '@uniplus/shared-data/configuracao';
 
+import { VocabulariosDaModalidade } from './vocabularios-da-modalidade';
 import { EdicaoDaRegraDeAplicabilidade } from './edicao-da-regra-de-aplicabilidade';
 import {
   Condicionais,
@@ -66,6 +65,7 @@ export class EdicaoDaModalidade {
   private readonly destroyRef = inject(DestroyRef);
   readonly aplicabilidade = inject(EdicaoDaRegraDeAplicabilidade);
 
+  readonly vocabularios = inject(VocabulariosDaModalidade);
   readonly form = criarFormularioDeModalidade();
   private readonly id = this.store.id;
   readonly modoEdicao = this.id !== null;
@@ -75,15 +75,15 @@ export class EdicaoDaModalidade {
   readonly conferencias = signal(0);
   private chaveDeIdempotencia = idempotencyKey.create();
 
-  readonly natureza = signal<NaturezaLegalToken>(NATUREZA_LEGAL_DEFAULT);
-  private readonly composicao = signal<ComposicaoVagasToken>(COMPOSICAO_VAGAS_DEFAULT);
+  readonly natureza = signal<NaturezaLegalCodigo | ''>('');
+  private readonly composicao = signal<ComposicaoVagasCodigo | ''>('');
   private readonly regra = signal<RegraSelecao>('');
-  readonly mostraRemanejamento = computed(() => this.natureza() !== 'AMPLA');
+  readonly mostraRemanejamento = computed(() => this.natureza() !== '' && this.natureza() !== NaturezaLegalCodigo.AMPLA);
   readonly mostraOrigem = computed(
-    () => this.composicao() === COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE,
+    () => this.composicao() === ComposicaoVagasCodigo.RETIRADA_DE_OUTRA_MODALIDADE,
   );
-  readonly mostraDestino = computed(() => this.regra() === 'DESTINO_UNICO');
-  readonly mostraParFallback = computed(() => this.regra() === 'CRUZADO');
+  readonly mostraDestino = computed(() => this.regra() === RegraRemanejamentoCodigo.DESTINO_UNICO);
+  readonly mostraParFallback = computed(() => this.regra() === RegraRemanejamentoCodigo.CRUZADO);
 
   /** A modalidade em edição, para não oferecer a si mesma como referência nem acusar o próprio código. */
   private readonly codigoAtual = signal<string | null>(null);
@@ -102,12 +102,15 @@ export class EdicaoDaModalidade {
   });
   readonly resumo = computed(() => {
     this.valores();
-    return resumoCondicional(this.condicionais(), this.form.getRawValue());
+    const rotulo =
+      this.vocabularios.composicoes().find((item) => item.codigo === this.composicao())?.rotulo ??
+      '';
+    return resumoCondicional(this.condicionais(), this.form.getRawValue(), rotulo);
   });
 
   readonly confirmandoReset = signal(false);
-  private naturezaAnterior: NaturezaLegalToken = NATUREZA_LEGAL_DEFAULT;
-  private naturezaPendente: NaturezaLegalToken | null = null;
+  private naturezaAnterior: NaturezaLegalCodigo | '' = '';
+  private naturezaPendente: NaturezaLegalCodigo | '' | null = null;
 
   constructor() {
     effect(() => {
@@ -115,7 +118,23 @@ export class EdicaoDaModalidade {
       // Só a chegada da modalidade preenche: ler as escolhas dentro do preenchimento refaria o efeito a cada troca.
       if (modalidade !== null) untracked(() => this.preencher(modalidade));
     });
-    if (this.id === null) this.reconciliar();
+    this.inicializarEscolhas();
+  }
+
+  private inicializarEscolhas(): void {
+    effect(() => {
+      const naturezas = this.vocabularios.naturezas();
+      const composicoes = this.vocabularios.composicoes();
+      if (this.id !== null) return;
+      if (!this.form.controls.naturezaLegal.value && naturezas[0]) {
+        this.form.controls.naturezaLegal.setValue(naturezas[0].codigo);
+        this.aoMudarNatureza();
+      }
+      if (!this.form.controls.composicaoVagas.value && composicoes[0]) {
+        this.form.controls.composicaoVagas.setValue(composicoes[0].codigo);
+        this.aoMudarComposicao();
+      }
+    });
   }
 
   private condicionais(): Condicionais {
@@ -270,7 +289,7 @@ export class EdicaoDaModalidade {
     this.chaveDeIdempotencia = idempotencyKey.create();
   }
 
-  private aplicarNatureza(nova: NaturezaLegalToken): void {
+  private aplicarNatureza(nova: NaturezaLegalCodigo | ''): void {
     this.natureza.set(nova);
     this.naturezaAnterior = nova;
     this.reconciliar();

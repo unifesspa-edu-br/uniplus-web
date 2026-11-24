@@ -2,7 +2,7 @@ import { HttpParams } from '@angular/common/http';
 import { VENDOR_MIME_TOKEN, createCursor } from '@uniplus/shared-core/http';
 import { describe, expect, it } from 'vitest';
 import { certamesPublicosRequest } from './certames-publicos.request';
-import { SituacaoDoCertame } from './schema';
+import { SituacaoDoCertameCodigo } from './schema';
 
 const BASE = 'http://localhost:5000';
 
@@ -41,7 +41,7 @@ describe('certamesPublicosRequest', () => {
 
   it('declara situação, busca e contadores quando pedidos', () => {
     const request = certamesPublicosRequest(BASE, {
-      situacao: SituacaoDoCertame.ultimosDias,
+      situacao: SituacaoDoCertameCodigo.ultimosDias,
       q: '  técnico  ',
       incluirContadores: true,
     });

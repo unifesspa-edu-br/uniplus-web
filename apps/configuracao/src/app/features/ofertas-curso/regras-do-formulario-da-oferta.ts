@@ -3,19 +3,13 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup, Validators } from '@angular/forms';
 import {
   OfertaCursoDto,
-  PROGRAMA_DE_OFERTA_REGULAR,
-  turnosExigidosPorRegime,
-  type TurnoOfertaOption,
+  ProgramaDeOfertaCodigo,
+  RegimeDeTurnoCodigo,
+  TurnoOfertaCodigo,
 } from '@uniplus/shared-data/configuracao';
 import { manterEmCaixaAlta } from '../../shared/codigo-de-cadastro';
 import type { OfertaCursoForm } from './oferta-curso-form';
-import {
-  descricaoDoRegime,
-  dicaDosTurnos,
-  manterOsMaisRecentes,
-  opcoesDeTurno,
-  regimeNaoReconhecido,
-} from './turnos-da-oferta';
+import { dicaDosTurnos, manterOsMaisRecentes, turnosExigidosPorRegime } from './turnos-da-oferta';
 import type { VinculosEscolhidos } from './vinculos-da-oferta';
 
 /** O que o formulário mostra do regime de oferta, derivado do que o operador já preencheu. */
@@ -24,10 +18,7 @@ export interface RegrasDoFormulario {
   readonly exigeBaseLegal: boolean;
   /** `null` quando o regime é de uma versão mais nova da API: a UI não impõe cardinalidade. */
   readonly turnosExigidos: number | null;
-  readonly turnosMarcados: readonly string[];
-  readonly opcoesDeTurno: readonly TurnoOfertaOption[];
-  readonly regimeNaoReconhecido: string | null;
-  readonly regimeDescricao: string;
+  readonly turnosMarcados: readonly TurnoOfertaCodigo[];
   readonly turnosHint: string;
 }
 
@@ -55,7 +46,7 @@ function exigirBaseLegal(form: FormGroup<OfertaCursoForm>, exige: boolean): void
 function ajustarTurnosAoRegime(
   form: FormGroup<OfertaCursoForm>,
   exigidos: number | null,
-  marcados: readonly string[],
+  marcados: readonly TurnoOfertaCodigo[],
 ): void {
   const reduzidos = exigidos === null ? marcados : manterOsMaisRecentes(marcados, exigidos);
   if (reduzidos.length !== marcados.length) {
@@ -83,26 +74,30 @@ function vinculosEscolhidos(form: FormGroup<OfertaCursoForm>): Signal<VinculosEs
 
 interface SinaisDasRegras {
   readonly exigeBaseLegal: Signal<boolean>;
-  readonly regime: Signal<string>;
-  readonly turnos: Signal<readonly string[]>;
+  readonly regime: Signal<RegimeDeTurnoCodigo>;
+  readonly turnos: Signal<readonly TurnoOfertaCodigo[]>;
   readonly turnosExigidos: Signal<number | null>;
 }
 
 function sinaisDasRegras(form: FormGroup<OfertaCursoForm>): SinaisDasRegras {
   const { controls } = form;
-  const programa = toSignal(controls.programaDeOferta.valueChanges, {
-    initialValue: controls.programaDeOferta.value,
-  });
+  const exigeBaseLegal = acompanharBaseLegal(form);
   const regime = toSignal(controls.regimeDeTurno.valueChanges, {
     initialValue: controls.regimeDeTurno.value,
   });
   const turnos = toSignal(controls.turnos.valueChanges, { initialValue: controls.turnos.value });
   return {
-    exigeBaseLegal: computed(() => programa() !== PROGRAMA_DE_OFERTA_REGULAR),
+    exigeBaseLegal,
     regime,
     turnos,
     turnosExigidos: computed(() => turnosExigidosPorRegime(regime())),
   };
+}
+
+function acompanharBaseLegal(form: FormGroup<OfertaCursoForm>): Signal<boolean> {
+  const controle = form.controls.programaDeOferta;
+  const programa = toSignal(controle.valueChanges, { initialValue: controle.value });
+  return computed(() => programa() !== ProgramaDeOfertaCodigo.REGULAR);
 }
 
 function aplicarRegras(form: FormGroup<OfertaCursoForm>, sinais: SinaisDasRegras): void {
@@ -114,25 +109,26 @@ function aplicarRegras(form: FormGroup<OfertaCursoForm>, sinais: SinaisDasRegras
     const [exigidos, marcados] = [sinais.turnosExigidos(), sinais.turnos()];
     untracked(() => ajustarTurnosAoRegime(form, exigidos, marcados));
   });
+  acompanharCompatibilidade(form, sinais.regime);
+}
+
+function acompanharCompatibilidade(
+  form: FormGroup<OfertaCursoForm>,
+  regime: Signal<RegimeDeTurnoCodigo>,
+): void {
   effect(() => {
-    sinais.regime();
+    regime();
     untracked(() =>
       form.controls.regimeDeFuncionamento.updateValueAndValidity({ emitEvent: false }),
     );
   });
 }
 
-function regrasDoFormulario(
-  sinais: SinaisDasRegras,
-  ofertaEmEdicao: Signal<OfertaCursoDto | null>,
-): Signal<RegrasDoFormulario> {
+function regrasDoFormulario(sinais: SinaisDasRegras): Signal<RegrasDoFormulario> {
   return computed(() => ({
     exigeBaseLegal: sinais.exigeBaseLegal(),
     turnosExigidos: sinais.turnosExigidos(),
     turnosMarcados: sinais.turnos(),
-    opcoesDeTurno: opcoesDeTurno(ofertaEmEdicao()),
-    regimeNaoReconhecido: regimeNaoReconhecido(ofertaEmEdicao()),
-    regimeDescricao: descricaoDoRegime(sinais.regime()),
     turnosHint: dicaDosTurnos(sinais.turnosExigidos()),
   }));
 }
@@ -144,13 +140,13 @@ function regrasDoFormulario(
  */
 export function acompanharRegrasDaOferta(
   form: FormGroup<OfertaCursoForm>,
-  ofertaEmEdicao: Signal<OfertaCursoDto | null>,
+  _ofertaEmEdicao: Signal<OfertaCursoDto | null>,
 ): AcompanhamentoDoFormulario {
   const sinais = sinaisDasRegras(form);
   manterEmCaixaAlta(form.controls.codigo);
   aplicarRegras(form, sinais);
   return {
     escolhidos: vinculosEscolhidos(form),
-    regras: regrasDoFormulario(sinais, ofertaEmEdicao),
+    regras: regrasDoFormulario(sinais),
   };
 }

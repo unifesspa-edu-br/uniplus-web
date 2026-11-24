@@ -1,3 +1,4 @@
+import { FinalidadeFormularioCodigo } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import {
   campoDaRecusa,
@@ -14,7 +15,7 @@ describe('formulário de criação do modelo', () => {
       codigo: ' INSCRICAO ',
       nome: ' Inscrição ',
       descricao: '   ',
-      finalidade: 'INSCRICAO',
+      finalidade: FinalidadeFormularioCodigo.INSCRICAO,
       tipoProcessoCodigo: '',
     });
 
@@ -22,7 +23,7 @@ describe('formulário de criação do modelo', () => {
 
     expect(comando).toMatchObject({
       codigo: 'INSCRICAO',
-      finalidade: 'INSCRICAO',
+      finalidade: FinalidadeFormularioCodigo.INSCRICAO,
       descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
     });
     expect(comando.conteudo).not.toBeNull();
@@ -30,7 +31,11 @@ describe('formulário de criação do modelo', () => {
 
   it('leva descrição e tipo de processo preenchidos ao comando', () => {
     const form = criarFormularioDeModelo();
-    form.patchValue({ descricao: 'Texto', tipoProcessoCodigo: 'VESTIBULAR' });
+    form.patchValue({
+      descricao: 'Texto',
+      finalidade: FinalidadeFormularioCodigo.INSCRICAO,
+      tipoProcessoCodigo: 'VESTIBULAR',
+    });
 
     expect(comandoDeCriacao(form).descritivo).toMatchObject({
       descricao: 'Texto',

@@ -1,6 +1,7 @@
+import { formasDeAceite, provedorDeFormasDeAceite } from './formas-de-aceite.testing';
 import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { TermoConsentimentoDetalheComponent } from './termo-consentimento-detalhe.component';
 import { AcaoTermo, criarFormularioRascunho } from './termo-consentimento-form';
 import { REVISADO, termo, versao } from './termos-consentimento.testing';
@@ -17,6 +18,8 @@ interface Estado {
 }
 
 describe('TermoConsentimentoDetalheComponent', () => {
+  beforeEach(() => TestBed.configureTestingModule({ providers: [provedorDeFormasDeAceite] }));
+
   function montar(estado: Estado = {}): ComponentFixture<TermoConsentimentoDetalheComponent> {
     const fixture = TestBed.createComponent(TermoConsentimentoDetalheComponent);
     fixture.componentRef.setInput('form', criarFormularioRascunho());
@@ -105,15 +108,15 @@ describe('TermoConsentimentoDetalheComponent', () => {
     const fixture = montar({
       dados: termo({
         versoes: [
-          versao({ formaAceite: 'REGISTRO_DIGITAL_COM_LOG_IP', hash }),
-          versao({ id: 'v2', formaAceite: 'OUTRA', hash: 'curto' }),
+          versao({ formaAceite: formasDeAceite.comLog, hash }),
+          versao({ id: 'v2', formaAceite: formasDeAceite.semLog, hash: 'curto' }),
         ],
       }),
     });
     const linhas = [...(fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')];
     expect(
       linhas.map((l) => l.querySelector('[data-label="Forma de aceite"]')?.textContent),
-    ).toEqual(['Registro digital (com log de IP)', 'OUTRA']);
+    ).toEqual([formasDeAceite.comLog.rotulo, formasDeAceite.semLog.rotulo]);
     expect(linhas[0].querySelector('code')?.getAttribute('title')).toBe(hash);
     expect(linhas[1].querySelector('code')?.textContent).toBe('curto');
   });

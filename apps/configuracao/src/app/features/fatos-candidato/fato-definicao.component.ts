@@ -18,11 +18,9 @@ import { eixosSomenteLeitura } from './eixos-somente-leitura';
 import { FatoProtecaoDaDefinicaoComponent } from './fato-protecao-da-definicao.component';
 import {
   CARDINALIDADES,
-  DOMINIOS,
   ESCOPOS,
   FONTES_DE_VALORES,
   FORMATOS_DE_TEXTO,
-  ORIGENS,
   rotuloDoComponente,
 } from './fato-candidato.regras';
 import { ID_DO_SALVAR_DA_DEFINICAO } from './ids-do-fato';
@@ -63,8 +61,6 @@ export class FatoDefinicaoComponent {
   );
 
   protected readonly idDoSalvar = ID_DO_SALVAR_DA_DEFINICAO;
-  protected readonly origens = ORIGENS;
-  protected readonly dominios = DOMINIOS;
   protected readonly cardinalidades = CARDINALIDADES;
   protected readonly fontes = FONTES_DE_VALORES;
   protected readonly formatos = FORMATOS_DE_TEXTO;

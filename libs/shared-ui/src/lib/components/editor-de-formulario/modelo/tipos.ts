@@ -1,6 +1,7 @@
 import type { DocumentoExigidoDoFormulario } from '../../editor-de-documentos-exigidos/documentos-exigidos';
 import { type ClausulasNoWire } from '../../editor-de-condicoes/condicoes/condicoes-no-wire';
 import { type FatoDoCatalogo } from '../../editor-de-condicoes/condicoes/fatos-escolhiveis';
+import { type CodigoComRotulo } from '../../codigo-com-rotulo';
 
 /**
  * O conteúdo de um formulário — o do modelo, na Configuração, e o do processo, na Seleção — na
@@ -144,8 +145,8 @@ export interface ConteudoDoFormulario<N = NumeroDigitado, O = string, T = string
 
 /** O que o editor precisa saber de um fato do catálogo para oferecê-lo como campo. */
 export interface FatoDoFormulario extends FatoDoCatalogo {
-  readonly cardinalidade: string;
-  readonly fonteValores: null | string;
+  readonly cardinalidade: CodigoComRotulo<string>;
+  readonly fonteValores: null | CodigoComRotulo<string>;
   readonly escopo: string;
   readonly ativo: boolean;
 }
@@ -171,9 +172,9 @@ export interface OpcaoDoFormulario {
 export type EscopoDoCampo = 'CANDIDATO' | 'MEMBRO_GRUPO';
 export const ESCOPO_CANDIDATO: EscopoDoCampo = 'CANDIDATO';
 export const ESCOPO_MEMBRO: EscopoDoCampo = 'MEMBRO_GRUPO';
-export const FONTE_GEO_MUNICIPIO = 'GEO_MUNICIPIO';
-export const FONTE_GEO_UF = 'GEO_UF';
-export const MULTIVALORADO = 'MULTIVALORADO';
+export const FONTE_MUNICIPIOS = 'MUNICIPIOS';
+export const FONTE_UNIDADES_FEDERATIVAS = 'UNIDADES_FEDERATIVAS';
+export const MULTIVALORADO = 'VARIOS_VALORES';
 
 /** Um item ou um grupo de uma seção, na posição que ocupa nela. */
 export type EntradaDaSecao =

@@ -184,8 +184,8 @@ function tipoDoCampo(item: ItemDasRegras, temValores: boolean, indicios: Indicio
   const tem = (tipo: string): boolean => restricoes.some((r) => r.tipo === tipo);
   if (tem('MUNICIPIOS_DA_UF')) return 'MUNICIPIO';
   if (temValores || tem('OPCOES_DAS_RESPOSTAS'))
-    return Array.isArray(indicios.resposta) ? 'SELECAO_MULTIPLA' : 'SELECAO_UNICA';
-  if (indicaTipo('boolean', indicios)) return 'BOOLEANO';
+    return Array.isArray(indicios.resposta) ? 'ESCOLHA_MULTIPLA' : 'ESCOLHA_UNICA';
+  if (indicaTipo('boolean', indicios)) return 'SIM_OU_NAO';
   if (indicaTipo('number', indicios) || tem('FAIXA_NUMERICA')) return 'NUMERO';
   return 'TEXTO';
 }

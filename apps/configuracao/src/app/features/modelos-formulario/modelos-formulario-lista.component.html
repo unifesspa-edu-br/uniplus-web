@@ -9,7 +9,7 @@
     <ng-container uiFilterBarSecondary>
       <span class="u-eyebrow">Finalidade</span>
       <ui-filter-chips
-        [options]="finalidadeChips"
+        [options]="finalidadeChips()"
         [(selected)]="filtroFinalidade"
         ariaLabel="Filtrar por finalidade"
       />
@@ -75,7 +75,7 @@
                 <code>{{ modelo.codigo }}</code>
               </td>
               <td data-label="Nome">{{ modelo.descritivo.nome }}</td>
-              <td data-label="Finalidade">{{ rotuloDaFinalidade(modelo.finalidade) }}</td>
+              <td data-label="Finalidade">{{ modelo.finalidade.rotulo }}</td>
               <td data-label="Tipo de processo">
                 @if (modelo.descritivo.tipoProcessoCodigo; as codigo) {
                   <code [attr.title]="rotuloDoTipo(codigo)">{{ codigo }}</code>

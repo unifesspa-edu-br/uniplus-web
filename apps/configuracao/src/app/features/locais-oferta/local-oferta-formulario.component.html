@@ -30,11 +30,16 @@
               aria-required="true"
               [attr.aria-invalid]="erroDoCampo('tipo') ? 'true' : null"
             >
-              <option value="" disabled>Selecione o tipo</option>
-              @for (opcao of tipoOptions; track opcao.value) {
-                <option [value]="opcao.value">{{ opcao.label }}</option>
+              <option [ngValue]="null" disabled>Selecione o tipo</option>
+              @for (opcao of tipos.opcoes(); track opcao.codigo) {
+                <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
               }
             </select>
+            @if (tipos.falhou()) {
+              <span class="field__error" role="alert"
+                >Não foi possível carregar os tipos de local.</span
+              >
+            }
             @if (erroDoCampo('tipo')) {
               <span class="field__error"> {{ erroDoCampo('tipo') }}</span>
             }

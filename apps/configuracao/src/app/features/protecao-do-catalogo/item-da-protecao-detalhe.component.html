@@ -35,11 +35,11 @@
     @if (d.fato; as fato) {
       <div>
         <dt>Tipo do dado</dt>
-        <dd>{{ rotulo(dominios, fato.dominio) }}</dd>
+        <dd>{{ fato.dominio.rotulo }}</dd>
       </div>
       <div>
         <dt>Cardinalidade</dt>
-        <dd>{{ rotulo(cardinalidades, fato.cardinalidade) }}</dd>
+        <dd>{{ fato.cardinalidade.rotulo }}</dd>
       </div>
       <div>
         <dt>Componente de exibição</dt>

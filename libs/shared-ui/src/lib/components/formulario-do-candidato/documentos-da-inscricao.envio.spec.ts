@@ -76,8 +76,12 @@ describe('Bloco de documentos da inscrição — envio do arquivo exigido', () =
       );
 
       const [laudo, atestado] = [...bloco(tela).querySelectorAll('ui-envio-do-documento')];
-      expect(laudo.querySelector('ui-tag')?.textContent?.trim()).toBe('Satisfeita');
-      expect(atestado.querySelector('ui-tag')?.textContent?.trim()).toBe('Pendente');
+      expect(laudo.querySelector('ui-tag')?.textContent?.trim()).toBe(
+        'Exigido pelas suas respostas',
+      );
+      expect(atestado.querySelector('ui-tag')?.textContent?.trim()).toBe(
+        'Exigido pelas suas respostas',
+      );
       expect(laudo.querySelector('.uni-uploader__item-name')?.textContent).toContain('Arquivo 1');
       expect(laudo.textContent).toContain('Envie 2 arquivos');
       expect(laudo.textContent).toContain('PDF, JPG - tamanho máximo: 3MB');

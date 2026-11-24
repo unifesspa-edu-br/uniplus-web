@@ -13,6 +13,15 @@ import {
   resumoDoAgregado,
 } from './fato-candidato.regras';
 import { citacoesDaRecusa } from './citacoes-do-fato';
+import {
+  fonteCatalogo,
+  fonteDoProcesso,
+  origemCalculada,
+  origemDeclarada,
+  tipoNumerico,
+  tipoOpcao,
+  tipoSimOuNao,
+} from './fatos-candidato.fixtures';
 
 const vinculo = (binding: string) => ({ definicao: { resolucao: { binding } } });
 
@@ -20,11 +29,11 @@ const fato = (
   binding: string,
   extra: Partial<{
     semeadoPeloSistema: boolean;
-    dominio: string;
-    fonteValores: string | null;
+    dominio: typeof tipoOpcao | typeof tipoNumerico;
+    fonteValores: typeof fonteCatalogo | typeof fonteDoProcesso | null;
   }> = {},
 ) => {
-  const { semeadoPeloSistema = false, dominio = 'CATEGORICO', fonteValores = 'GLOBAL' } = extra;
+  const { semeadoPeloSistema = false, dominio = tipoOpcao, fonteValores = fonteCatalogo } = extra;
   return {
     semeadoPeloSistema,
     definicao: {
@@ -47,9 +56,11 @@ describe('o que cada fato deixa manter', () => {
       podeTerValores(fato('CAMPO_INSCRICAO:COR', { semeadoPeloSistema: true })),
       'o de sistema só muda por versão',
     ).toBe(false);
-    expect(podeTerValores(fato('CAMPO_INSCRICAO:OPCAO', { fonteValores: 'PROCESSO' }))).toBe(false);
+    expect(podeTerValores(fato('CAMPO_INSCRICAO:OPCAO', { fonteValores: fonteDoProcesso }))).toBe(
+      false,
+    );
     expect(
-      podeTerValores(fato('CAMPO_INSCRICAO:IDADE', { dominio: 'NUMERICO', fonteValores: null })),
+      podeTerValores(fato('CAMPO_INSCRICAO:IDADE', { dominio: tipoNumerico, fonteValores: null })),
     ).toBe(false);
   });
 
@@ -70,7 +81,7 @@ describe('o que a API recusa e a tela não oferece', () => {
     const valores = (dominio: string) => classificacoesDoDominio(dominio).map((c) => c.valor);
     expect(valores('TEXTO')).toEqual(['PESSOAL', 'IDENTIFICADOR', 'SENSIVEL']);
     expect(valores('DATA')).toEqual(['PESSOAL', 'SENSIVEL']);
-    expect(valores('BOOLEANO')).toEqual(['PUBLICO', 'INTERNO', 'PESSOAL', 'SENSIVEL']);
+    expect(valores('SIM_OU_NAO')).toEqual(['PUBLICO', 'INTERNO', 'PESSOAL', 'SENSIVEL']);
   });
 
   it('a regra padrão não cita fato desativado, fato de membro nem o próprio derivado', () => {
@@ -95,16 +106,16 @@ describe('agregado de grupo', () => {
     const membro = {
       ativo: true,
       escopo: 'MEMBRO_GRUPO',
-      origem: 'DECLARADO',
-      dominio: 'BOOLEANO',
+      origem: origemDeclarada,
+      dominio: tipoSimOuNao,
     };
     const catalogo = [
       { ...membro, codigo: 'TRABALHA' },
-      { ...membro, codigo: 'PARENTESCO', dominio: 'CATEGORICO' },
-      { ...membro, codigo: 'RENDA', dominio: 'NUMERICO' },
+      { ...membro, codigo: 'PARENTESCO', dominio: tipoOpcao },
+      { ...membro, codigo: 'RENDA', dominio: tipoNumerico },
       { ...membro, codigo: 'ANTIGO', ativo: false },
       { ...membro, codigo: 'QUILOMBOLA', escopo: 'CANDIDATO' },
-      { ...membro, codigo: 'IDOSO', origem: 'DERIVADO' },
+      { ...membro, codigo: 'IDOSO', origem: origemCalculada },
     ];
     expect(fatosDeMembroAgregaveis(catalogo).map((f) => f.codigo)).toEqual([
       'TRABALHA',
@@ -113,8 +124,8 @@ describe('agregado de grupo', () => {
   });
 
   it('o membro sim ou não dá "existe membro que…"; o de lista de valores, os valores presentes', () => {
-    expect(resumoDoAgregado('BOOLEANO')).toContain('ao menos um membro');
-    expect(resumoDoAgregado('CATEGORICO')).toContain('valores que aparecem');
+    expect(resumoDoAgregado('SIM_OU_NAO')).toContain('ao menos um membro');
+    expect(resumoDoAgregado('OPCAO')).toContain('valores que aparecem');
   });
 });
 
@@ -129,8 +140,8 @@ describe('ativação do fato', () => {
 describe('a definição que o administrador altera', () => {
   const v = {
     dominio: 'TEXTO',
-    cardinalidade: 'ESCALAR',
-    fonteValores: 'GLOBAL',
+    cardinalidade: 'VALOR_UNICO',
+    fonteValores: 'CATALOGO',
     formato: 'CPF',
     escopo: 'CANDIDATO',
     pontoResolucao: 'INSCRICAO',
@@ -143,12 +154,12 @@ describe('a definição que o administrador altera', () => {
     expect(corpoDaDefinicao('DECLARADO', v)).toMatchObject({
       formato: 'CPF',
       fonteValores: null,
-      cardinalidade: 'ESCALAR',
+      cardinalidade: 'VALOR_UNICO',
       finalidadeTratamento: 'Identificar.',
     });
-    expect(corpoDaDefinicao('DECLARADO', { ...v, dominio: 'CATEGORICO' })).toMatchObject({
+    expect(corpoDaDefinicao('DECLARADO', { ...v, dominio: 'OPCAO' })).toMatchObject({
       formato: null,
-      fonteValores: 'GLOBAL',
+      fonteValores: 'CATALOGO',
     });
   });
 

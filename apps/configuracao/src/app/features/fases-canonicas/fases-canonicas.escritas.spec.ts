@@ -229,7 +229,7 @@ describe('FasesCanonicasPage — escritas pela interface', () => {
     it('envio barrado com o foco no botão de salvar leva o foco ao primeiro campo inválido', async () => {
       await abrirEdicao(cena);
       cena.edicao.form.controls.nome.setValue('');
-      cena.edicao.form.controls.origemData.setValue('');
+      cena.edicao.form.controls.origemData.setValue(null);
       botaoSalvar(cena).focus();
       submeter();
       await propagarRenderizando(cena);

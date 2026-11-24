@@ -9,7 +9,7 @@ import type {
   AtoPublicadoDto,
   CampoDivulgacaoDto,
   DocumentoAPublicarDto,
-  FinalidadeDoDocumento,
+  FinalidadeDoDocumentoCodigo,
   IniciarEnvioDoDocumentoAPublicarDto,
   IniciarEnvioDoDocumentoAPublicarRequest,
   IniciarEnvioDoModeloDeDocumentoDto,
@@ -45,7 +45,7 @@ export class DocumentosEAtosDoProcessoApi {
    */
   listarDocumentosAPublicar(
     processoSeletivoId: string,
-    finalidade?: FinalidadeDoDocumento,
+    finalidade?: FinalidadeDoDocumentoCodigo,
   ): Observable<ApiResult<readonly DocumentoAPublicarDto[]>> {
     const params =
       finalidade === undefined ? new HttpParams() : new HttpParams().set('finalidade', finalidade);

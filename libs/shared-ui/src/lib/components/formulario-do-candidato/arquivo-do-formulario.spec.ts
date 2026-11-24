@@ -18,7 +18,7 @@ const BASE = {
 };
 const APRESENTACAO = {
   rotulo: 'Parentesco',
-  tipoRenderizacao: 'SELECAO_UNICA',
+  tipoRenderizacao: 'ESCOLHA_UNICA',
   pedirConfirmacao: false,
 };
 const OCORRENCIAS = { minimo: 0, incluiCandidato: false };
@@ -146,7 +146,7 @@ describe('arquivo importado no simulador', () => {
     expect(
       lido.formulario.coleta.itens.find((c) => c.fatoCodigo === 'TIPO_ENDERECO')?.apresentacao
         .tipoRenderizacao,
-    ).toBe('SELECAO_UNICA');
+    ).toBe('ESCOLHA_UNICA');
     expect(lido.simulacao?.respostas).toEqual({ TIPO_ENDERECO: 'URBANO' });
   });
 
@@ -180,7 +180,7 @@ describe('arquivo importado no simulador', () => {
       lido.valido &&
         lido.formulario.coleta.itens.find((c) => c.fatoCodigo === 'ESPERA')?.apresentacao
           .tipoRenderizacao,
-    ).toBe('SELECAO_UNICA');
+    ).toBe('ESCOLHA_UNICA');
   });
 
   it('o tipo do campo de um caso sai das condições que o citam, inclusive as de grupo', () => {
@@ -222,7 +222,7 @@ describe('arquivo importado no simulador', () => {
             .tipoRenderizacao
         : undefined;
 
-    expect([tipo('TEM_DEPENDENTES'), tipo('IDADE')]).toEqual(['BOOLEANO', 'NUMERO']);
+    expect([tipo('TEM_DEPENDENTES'), tipo('IDADE')]).toEqual(['SIM_OU_NAO', 'NUMERO']);
   });
 
   it('o formulário exportado, importado de volta, produz a mesma simulação', () => {

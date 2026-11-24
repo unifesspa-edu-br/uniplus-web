@@ -11,6 +11,7 @@ import {
   OfertaCursoDto,
 } from '@uniplus/shared-data/configuracao';
 import { expect } from 'vitest';
+import { valoresDaOferta } from '../ofertas-curso/valores-da-oferta.testing';
 import { CursosPage } from './cursos.page';
 import { CursosStore } from './cursos.store';
 import { EdicaoDosCursos } from './edicao-dos-cursos';
@@ -50,11 +51,11 @@ export const ofertaSeed: OfertaCursoDto = {
     nome: 'Instituto de Geociências e Engenharias',
     tipo: 'Instituto',
   },
-  programaDeOferta: 'REGULAR',
-  regimeDeFuncionamento: 'EXTENSIVO',
-  formatoPedagogico: 'PRESENCIAL',
-  regimeDeTurno: 'REGULAR',
-  turnos: ['MATUTINO'],
+  programaDeOferta: valoresDaOferta.programa,
+  regimeDeFuncionamento: valoresDaOferta.funcionamento,
+  formatoPedagogico: valoresDaOferta.formato,
+  regimeDeTurno: valoresDaOferta.regime,
+  turnos: [valoresDaOferta.turnos[0]],
   eMecCodigo: '123456',
   codigoSga: null,
   vagasAnuaisAutorizadas: 40,

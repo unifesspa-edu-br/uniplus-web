@@ -6,7 +6,13 @@ import {
   urlDoFato,
   compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
-import { comDefinicao, comProtecao, corRaca, emManutencao } from './fatos-candidato.fixtures';
+import {
+  comDefinicao,
+  comProtecao,
+  corRaca,
+  emManutencao,
+  tipoTexto,
+} from './fatos-candidato.fixtures';
 import { type FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 import {
   campo,
@@ -42,10 +48,10 @@ describe('FatosCandidatoPage — definição do fato', () => {
         classificacaoProtecao: 'SENSIVEL',
         finalidadeTratamento: 'Reserva de vagas.',
         hipoteseLegal: 'CUMPRIMENTO_OBRIGACAO_LEGAL',
-        dominio: 'CATEGORICO',
+        dominio: 'OPCAO',
         escopo: 'CANDIDATO',
-        cardinalidade: 'ESCALAR',
-        fonteValores: 'GLOBAL',
+        cardinalidade: 'VALOR_UNICO',
+        fonteValores: 'CATALOGO',
         formato: null,
       });
       await entregar(corRaca, pedido);
@@ -140,7 +146,7 @@ describe('FatosCandidatoPage — definição do fato', () => {
 
   describe('os apoios e as dependências entre campos', () => {
     it('o agregado mantém o tipo de dado do servidor e calcula as classificações por ele', async () => {
-      const texto = comProtecao(comDefinicao(agregadoDeRenda, { dominio: 'TEXTO' }), {
+      const texto = comProtecao(comDefinicao(agregadoDeRenda, { dominio: tipoTexto }), {
         classificacao: 'IDENTIFICADOR',
       });
       await abrir(texto);

@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiResultInterceptor, buildVendorMimeAccept, isApiOk } from '@uniplus/shared-core/http';
-import { NaturezaConceitoCodigo } from './schema';
+import { FormaDoConceitoCodigo } from './schema';
 import { TipoConceitoDto, TiposConceitoApi } from './tipos-conceito.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
@@ -17,7 +17,7 @@ const aprovacao: TipoConceitoDto = {
   definicao: {
     nome: 'Resultado da análise',
     descricao: null,
-    natureza: { codigo: NaturezaConceitoCodigo.CATEGORICO, rotulo: 'Categórico' },
+    natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Categórico' },
     numerico: null,
     valores: [{ codigo: 'APTO', rotulo: 'Apto', contaComoAprovacao: true }],
   },

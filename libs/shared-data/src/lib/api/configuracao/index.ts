@@ -15,13 +15,10 @@ export {
 } from './reserva-demografica.api';
 export {
   LocaisOfertaApi,
-  TIPOS_LOCAL_OFERTA,
-  TipoLocalOferta,
   type AtualizarLocalOfertaCommand,
   type CriarLocalOfertaCommand,
   type LocaisOfertaQuery,
   type LocalOfertaDto,
-  type TipoLocalOfertaOption,
 } from './locais-oferta.api';
 export {
   PesosEnemApi,
@@ -106,22 +103,10 @@ export {
 export { CategoriasDocumentoApi, type CategoriaDocumentoDto } from './categorias-documento.api';
 export {
   ModalidadesApi,
-  ACOES_QUANDO_INDEFERIDO,
-  COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE,
-  COMPOSICAO_VAGAS_DEFAULT,
-  COMPOSICOES_VAGAS,
-  NATUREZA_LEGAL_DEFAULT,
-  NATUREZAS_LEGAIS,
-  REGRAS_REMANEJAMENTO,
-  type AcaoQuandoIndeferidoToken,
   type AtualizarModalidadeCommand,
-  type ComposicaoVagasToken,
   type CriarModalidadeCommand,
-  type DominioOption,
   type ModalidadeDto,
   type ModalidadesQuery,
-  type NaturezaLegalToken,
-  type RegraRemanejamentoToken,
 } from './modalidades.api';
 
 export {
@@ -260,12 +245,30 @@ export type {
   ModelosFormularioQuery,
 } from './modelos-formulario.api';
 export {
-  NaturezaConceitoCodigo,
+  TipoLocalOfertaCodigo,
+  AbrangenciaCodigo,
+  OrigemDataFaseCodigo,
+  AcaoQuandoIndeferidoCodigo,
+  ComposicaoVagasCodigo,
+  FormatoPedagogicoCodigo,
+  FormaAceiteCodigo,
+  RegimeDeFuncionamentoCodigo,
+  RegimeDeTurnoCodigo,
+  TurnoOfertaCodigo,
+  ProgramaDeOfertaCodigo,
+  NaturezaLegalCodigo,
+  FormaDoConceitoCodigo,
+  FinalidadeFormularioCodigo,
+  FonteValoresFatoCodigo,
+  OrigemFatoCodigo,
+  QuantidadeDeValoresCodigo,
+  TipoDoDadoCodigo,
   OperadorCodigo,
   PapelDaBancaCodigo,
   TipoDeBancaCodigo,
   TipoMotivoDeDecisaoCodigo,
   TipoRenderizacaoCodigo,
+  RegraRemanejamentoCodigo,
 } from './schema';
 export { TiposDeDecisaoApi, type TipoDeDecisao } from './tipos-de-decisao.api';
 export {
@@ -280,3 +283,8 @@ export {
   VOCABULARIO_DE_PAPEIS_DE_BANCA,
   VOCABULARIO_DE_TIPOS_DE_DECISAO,
 } from './vocabularios';
+
+export {
+  VocabulariosDeConfiguracaoApi,
+  type VocabulariosDeConfiguracao,
+} from './vocabularios-de-configuracao.api';

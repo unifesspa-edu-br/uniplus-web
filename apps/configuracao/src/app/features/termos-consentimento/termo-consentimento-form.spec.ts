@@ -1,3 +1,4 @@
+import { FormaAceiteCodigo } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import {
   BASE_LEGAL_MAX,
@@ -32,12 +33,17 @@ describe('formulário de criação do termo', () => {
 
   it('prepara o comando com os textos aparados e os vazios como ausência', () => {
     const form = criarFormulario();
-    form.setValue({ nome: ' Termo ', texto: '  ', baseLegal: ' Lei ', formaAceite: 'A_DEFINIR' });
+    form.setValue({
+      nome: ' Termo ',
+      texto: '  ',
+      baseLegal: ' Lei ',
+      formaAceite: FormaAceiteCodigo.A_DEFINIR,
+    });
     expect(comandoDeCriacao(form)).toEqual({
       nome: 'Termo',
       textoRascunho: null,
       baseLegalRascunho: 'Lei',
-      formaAceiteRascunho: 'A_DEFINIR',
+      formaAceiteRascunho: FormaAceiteCodigo.A_DEFINIR,
     });
   });
 });
@@ -47,18 +53,22 @@ describe('formulário do rascunho', () => {
     expect(valoresDoRascunho(termo({ textoRascunho: null, baseLegalRascunho: null }))).toEqual({
       texto: '',
       baseLegal: '',
-      formaAceite: 'A_DEFINIR',
+      formaAceite: FormaAceiteCodigo.A_DEFINIR,
     });
   });
 
   it('prepara o comando de edição com o id do termo', () => {
     const form = criarFormularioRascunho();
-    form.setValue({ texto: ' Texto ', baseLegal: '', formaAceite: 'REGISTRO_DIGITAL_COM_LOG_IP' });
+    form.setValue({
+      texto: ' Texto ',
+      baseLegal: '',
+      formaAceite: FormaAceiteCodigo.REGISTRO_COM_ENDERECO_IP,
+    });
     expect(comandoDeRascunho('t1', form)).toEqual({
       id: 't1',
       textoRascunho: 'Texto',
       baseLegalRascunho: null,
-      formaAceiteRascunho: 'REGISTRO_DIGITAL_COM_LOG_IP',
+      formaAceiteRascunho: FormaAceiteCodigo.REGISTRO_COM_ENDERECO_IP,
     });
   });
 });

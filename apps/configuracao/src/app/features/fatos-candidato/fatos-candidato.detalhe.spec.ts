@@ -22,6 +22,10 @@ import {
   quilombola,
   emManutencao,
   noCatalogo,
+  origemCalculada,
+  origemDeclarada,
+  tipoOpcao,
+  tipoSimOuNao,
 } from './fatos-candidato.fixtures';
 
 const categorico: FatoCandidatoDto = {
@@ -76,8 +80,8 @@ describe('FatosCandidatoPage — detalhe do fato', () => {
     for (const esperado of [
       'IDENTIDADE_GENERO',
       'Como o candidato se identifica.',
-      'Declarado pelo candidato',
-      'Lista de valores',
+      origemDeclarada.rotulo,
+      tipoOpcao.rotulo,
       'MULHER_CIS',
       'Marque se a identidade coincide com o sexo de nascimento.',
       'Valor antigo',
@@ -149,7 +153,7 @@ describe('FatosCandidatoPage — detalhe do fato', () => {
 
   describe('regras padrão do derivado', () => {
     const comRegra: FatoCandidatoDto = {
-      ...comResolucao(categorico, { origem: 'DERIVADO' }),
+      ...comResolucao(categorico, { origem: origemCalculada }),
       regrasPadrao: [
         {
           contribui: 'MULHER_CIS',
@@ -242,7 +246,7 @@ describe('FatosCandidatoPage — detalhe do fato', () => {
 
     it('a regra que não contribui valor vale "sim"', async () => {
       const booleana: FatoCandidatoDto = {
-        ...comValoresDeclarados(comDefinicao(comRegra, { dominio: 'BOOLEANO' }), []),
+        ...comValoresDeclarados(comDefinicao(comRegra, { dominio: tipoSimOuNao }), []),
         regrasPadrao: [
           {
             contribui: null,

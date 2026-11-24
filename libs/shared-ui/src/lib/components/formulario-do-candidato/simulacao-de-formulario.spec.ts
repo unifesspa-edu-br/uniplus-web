@@ -70,7 +70,7 @@ const FORMULARIO: FormularioDoCandidato = {
   ],
   termos: [],
   coleta: {
-    itens: [campoRenderizavel('TURNO_NOTURNO', 'Prefere o turno noturno?', 'BOOLEANO')],
+    itens: [campoRenderizavel('TURNO_NOTURNO', 'Prefere o turno noturno?', 'SIM_OU_NAO')],
     grupos: [],
   },
   regras: {
@@ -125,7 +125,7 @@ describe('SimulacaoDeFormularioComponent', () => {
     expect(tela.textContent).not.toContain('Prefere o turno noturno?');
 
     const forma = tela.querySelector('select') as HTMLSelectElement;
-    forma.value = 'BOOLEANO';
+    forma.value = 'SIM_OU_NAO';
     forma.dispatchEvent(new Event('change'));
     fixture.detectChanges();
     clicar(opcao(tela, 'Sim'));

@@ -1,6 +1,6 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import type { CausaDeCampo } from '@uniplus/shared-core/http';
-import type { DiaNaoUtilCommandItem } from '@uniplus/shared-data/configuracao';
+import { AbrangenciaCodigo, type DiaNaoUtilCommandItem } from '@uniplus/shared-data/configuracao';
 import {
   controlNameFromBackendField,
   marcarRecusaDoServidor,
@@ -34,26 +34,34 @@ const CAMPOS_DO_DIA: readonly CampoDoDia[] = [
 
 const REGRAS_DA_UF = [Validators.required, Validators.pattern(/^[A-Z]{2}$/)];
 
+function controlesDoDia(): DiaNaoUtilFormGroup {
+  return {
+    abrangencia: new FormControl<AbrangenciaCodigo | null>(AbrangenciaCodigo.ESTADUAL, {
+      validators: [Validators.required],
+    }),
+    codigoMunicipio: new FormControl(''),
+    municipioNome: new FormControl(null),
+    municipioUf: new FormControl(null),
+    buscaMunicipio: new FormControl('', { nonNullable: true }),
+    ...controlesDaData(),
+  };
+}
+
+function controlesDaData(): Pick<DiaNaoUtilFormGroup, 'uf' | 'data' | 'descricao'> {
+  return {
+    uf: new FormControl(PARA_SIGLA, { validators: REGRAS_DA_UF }),
+    data: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    descricao: new FormControl('', {
+      nonNullable: true,
+      validators: [textoNormalizado(200)],
+    }),
+  };
+}
+
 export function criarGrupoDeDiaNaoUtil(): GrupoDoDia {
-  return new FormGroup<DiaNaoUtilFormGroup>(
-    {
-      abrangencia: new FormControl('ESTADUAL', {
-        nonNullable: true,
-        validators: [Validators.required],
-      }),
-      codigoMunicipio: new FormControl(''),
-      municipioNome: new FormControl(null),
-      municipioUf: new FormControl(null),
-      buscaMunicipio: new FormControl('', { nonNullable: true }),
-      uf: new FormControl(PARA_SIGLA, { validators: REGRAS_DA_UF }),
-      data: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-      descricao: new FormControl('', {
-        nonNullable: true,
-        validators: [textoNormalizado(200)],
-      }),
-    },
-    { validators: [snapshotMunicipalCoerente] },
-  );
+  return new FormGroup<DiaNaoUtilFormGroup>(controlesDoDia(), {
+    validators: [snapshotMunicipalCoerente],
+  });
 }
 
 /** Código, nome e UF andam juntos: sobrar um deles seria exibir um município que já não é o escolhido. */
@@ -68,30 +76,38 @@ export function limparSnapshotMunicipal(grupo: GrupoDoDia): void {
  * pois a API recusa `uf` fora da estadual; a UF do município vem no snapshot.
  */
 export function aplicarAbrangencia(grupo: GrupoDoDia): void {
-  const { abrangencia, codigoMunicipio, uf, buscaMunicipio } = grupo.controls;
+  const { abrangencia, codigoMunicipio, uf } = grupo.controls;
   const tipo = abrangencia.value;
 
   codigoMunicipio.clearValidators();
   uf.clearValidators();
   limparSnapshotMunicipal(grupo);
 
-  if (tipo === 'MUNICIPAL' || tipo === 'ESTADUAL') {
+  configurarUf(grupo, tipo);
+  configurarMunicipio(grupo, tipo);
+  codigoMunicipio.updateValueAndValidity();
+  uf.updateValueAndValidity();
+}
+
+function configurarUf(grupo: GrupoDoDia, tipo: AbrangenciaCodigo | null): void {
+  const { uf } = grupo.controls;
+  if (tipo === AbrangenciaCodigo.MUNICIPAL || tipo === AbrangenciaCodigo.ESTADUAL) {
     uf.setValue(PARA_SIGLA);
     uf.setValidators(REGRAS_DA_UF);
   } else {
     uf.reset('');
   }
-  if (tipo === 'MUNICIPAL') {
-    codigoMunicipio.setValidators([
+}
+
+function configurarMunicipio(grupo: GrupoDoDia, tipo: AbrangenciaCodigo | null): void {
+  if (tipo === AbrangenciaCodigo.MUNICIPAL) {
+    grupo.controls.codigoMunicipio.setValidators([
       Validators.required,
       Validators.pattern(CODIGO_MUNICIPIO_PATTERN),
     ]);
   } else {
-    buscaMunicipio.reset('');
+    grupo.controls.buscaMunicipio.reset('');
   }
-
-  codigoMunicipio.updateValueAndValidity();
-  uf.updateValueAndValidity();
 }
 
 /** Trocar o estado da busca invalida o município escolhido no estado anterior. */
@@ -124,11 +140,12 @@ export function ufDaBuscaDe(grupo: GrupoDoDia): string {
 /** Os campos regionais que não se aplicam à abrangência vão nulos: a API recusa o excesso. */
 export function comandoDoDiaNaoUtil(grupo: GrupoDoDia): DiaNaoUtilCommandItem {
   const { abrangencia, data, uf, descricao } = grupo.controls;
-  const municipio = abrangencia.value === 'MUNICIPAL' ? municipioSelecionadoDe(grupo) : null;
+  const municipio =
+    abrangencia.value === AbrangenciaCodigo.MUNICIPAL ? municipioSelecionadoDe(grupo) : null;
   return {
     abrangencia: abrangencia.value,
     data: data.value,
-    uf: abrangencia.value === 'ESTADUAL' ? uf.value || null : null,
+    uf: abrangencia.value === AbrangenciaCodigo.ESTADUAL ? uf.value || null : null,
     municipioIbge: municipio?.codigoIbge ?? null,
     municipioNome: municipio?.nome ?? null,
     municipioUf: municipio?.uf ?? null,
@@ -142,14 +159,9 @@ function erroDoCampoDoDia(
   dataDuplicada: boolean,
 ): string | null {
   const controle = grupo.controls[campo];
-  if (!controle.touched && !controle.dirty) {
-    return null;
-  }
-  if (campo === 'data' && dataDuplicada) {
-    return DATA_DUPLICADA_MESSAGE;
-  }
-  // O snapshot incompleto é erro do grupo, pois nome e UF não têm campo próprio, mas quem o
-  // resolve é a escolha no campo Município.
+  if (!controle.touched && !controle.dirty) return null;
+  if (campo === 'data' && dataDuplicada) return DATA_DUPLICADA_MESSAGE;
+  // Nome e UF não têm campo próprio; a escolha do município resolve o snapshot incompleto.
   if (campo === 'codigoMunicipio' && grupo.errors?.['snapshotMunicipal']) {
     return MUNICIPIO_OBRIGATORIO_MESSAGE;
   }

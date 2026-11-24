@@ -1,14 +1,6 @@
 import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 import { rotuloDe } from '../../shared/protecao-do-catalogo';
-import {
-  CARDINALIDADES,
-  DOMINIOS,
-  ESCOPOS,
-  FONTES_DE_VALORES,
-  FORMATOS_DE_TEXTO,
-  eixosDoTipo,
-  type TipoDoFato,
-} from './fato-candidato.regras';
+import { ESCOPOS, FORMATOS_DE_TEXTO, eixosDoTipo, type TipoDoFato } from './fato-candidato.regras';
 
 /** Um eixo da definição que o fato não edita, com o valor que tem e de onde ele vem. */
 export interface EixoSomenteLeitura {
@@ -18,9 +10,9 @@ export interface EixoSomenteLeitura {
 }
 
 const EIXOS = [
-  { campo: 'dominio', rotulo: 'Tipo de dado', vocabulario: DOMINIOS },
-  { campo: 'cardinalidade', rotulo: 'Quantos valores', vocabulario: CARDINALIDADES },
-  { campo: 'fonteValores', rotulo: 'De onde vêm os valores', vocabulario: FONTES_DE_VALORES },
+  { campo: 'dominio', rotulo: 'Tipo de dado' },
+  { campo: 'cardinalidade', rotulo: 'Quantos valores' },
+  { campo: 'fonteValores', rotulo: 'De onde vêm os valores' },
   { campo: 'formato', rotulo: 'Formato do texto', vocabulario: FORMATOS_DE_TEXTO },
   { campo: 'escopo', rotulo: 'De quem é o dado', vocabulario: ESCOPOS },
 ] as const;
@@ -29,11 +21,11 @@ function valoresDosEixos({
   definicao,
 }: FatoCandidatoDto): Record<(typeof EIXOS)[number]['campo'], string> {
   return {
-    dominio: definicao.dominio,
-    cardinalidade: definicao.cardinalidade,
-    fonteValores: definicao.valores.fonte ?? '',
-    formato: definicao.formato ?? '',
-    escopo: definicao.escopo,
+    dominio: definicao.dominio.rotulo,
+    cardinalidade: definicao.cardinalidade.rotulo,
+    fonteValores: definicao.valores.fonte?.rotulo ?? '',
+    formato: definicao.formato ? rotuloDe(FORMATOS_DE_TEXTO, definicao.formato) : '',
+    escopo: rotuloDe(ESCOPOS, definicao.escopo),
   };
 }
 
@@ -49,11 +41,9 @@ export function eixosSomenteLeitura(
   if (fato === null || tipo === 'DECLARADO') return [];
   const doTipo = eixosDoTipo(tipo);
   const valores = valoresDosEixos(fato);
-  return EIXOS.filter(({ campo }) => !doTipo[campo] && valores[campo]).map(
-    ({ campo, rotulo, vocabulario }) => ({
-      rotulo,
-      valor: rotuloDe(vocabulario, valores[campo]),
-      origem: origemDoEixo(tipo),
-    }),
-  );
+  return EIXOS.filter(({ campo }) => !doTipo[campo] && valores[campo]).map(({ campo, rotulo }) => ({
+    rotulo,
+    valor: valores[campo],
+    origem: origemDoEixo(tipo),
+  }));
 }

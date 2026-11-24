@@ -11,21 +11,38 @@
       aria-required="true"
       [id]="'abrangencia-' + sufixoDeId()"
       [attr.aria-invalid]="erros().abrangencia ? 'true' : null"
+      [attr.aria-describedby]="
+        leituraDasAbrangencias.visivel() ? 'falha-abrangencia-' + sufixoDeId() : null
+      "
       (change)="alteracao.emit({ tipo: 'abrangencia' })"
     >
-      @for (abrangencia of abrangencias; track abrangencia.value) {
-        <option [value]="abrangencia.value">{{ abrangencia.label }}</option>
+      @for (abrangencia of abrangencias.opcoes(); track abrangencia.codigo) {
+        <option [value]="abrangencia.codigo">{{ abrangencia.rotulo }}</option>
       }
     </select>
+    @if (abrangencias.carregando() && !leituraDasAbrangencias.visivel()) {
+      <span role="status">Carregando abrangências…</span>
+    }
     @if (erros().abrangencia) {
       <span class="field__error">{{ erros().abrangencia }}</span>
     }
   </label>
+  <ui-falha-de-leitura-do-campo
+    [id]="'falha-abrangencia-' + sufixoDeId()"
+    [leitura]="leituraDasAbrangencias"
+  />
 
-  @if (abrangenciaAtual() === 'MUNICIPAL' || abrangenciaAtual() === 'ESTADUAL') {
+  @if (
+    abrangenciaAtual() === abrangenciaCodigo.MUNICIPAL ||
+    abrangenciaAtual() === abrangenciaCodigo.ESTADUAL
+  ) {
     <label class="field form-grid__full" [class.is-error]="erros().uf">
       <span class="field__label is-required">
-        {{ abrangenciaAtual() === 'MUNICIPAL' ? 'Estado para busca' : 'Unidade Federativa (UF)' }}
+        {{
+          abrangenciaAtual() === abrangenciaCodigo.MUNICIPAL
+            ? 'Estado para busca'
+            : 'Unidade Federativa (UF)'
+        }}
       </span>
       <select
         class="select"
@@ -47,7 +64,7 @@
     </label>
   }
 
-  @if (abrangenciaAtual() === 'MUNICIPAL') {
+  @if (abrangenciaAtual() === abrangenciaCodigo.MUNICIPAL) {
     <div
       class="field form-grid__full cfg-dia-card__municipio"
       [class.is-error]="erros().codigoMunicipio"

@@ -1,3 +1,6 @@
+import { VocabulariosDeConfiguracaoApi } from '@uniplus/shared-data/configuracao';
+import { of } from 'rxjs';
+import { ABRANGENCIAS } from './abrangencias.testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -15,7 +18,13 @@ describe('CalendarioFormularioComponent', () => {
   beforeEach(async () => {
     TestBed.configureTestingModule({
       imports: [CalendarioFormularioComponent],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        {
+          provide: VocabulariosDeConfiguracaoApi,
+          useValue: { listar: () => of({ ok: true, data: Object.values(ABRANGENCIAS) }) },
+        },
+      ],
     });
     form.controls.diasNaoUteis.clear();
     form.controls.diasNaoUteis.push(criarGrupoDeDiaNaoUtil());

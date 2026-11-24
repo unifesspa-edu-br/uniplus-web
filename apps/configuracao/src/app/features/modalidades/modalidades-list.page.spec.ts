@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { PaginaDaListaDeModalidades, V } from './modalidades-list.page.testing';
 import { AC, URL, URL_CATALOGO } from './modalidades-de-teste.testing';
 import { CATALOGO } from './catalogo-de-fatos.fixture';
+import { NATUREZAS } from './modalidades-tabela.testing';
 
 describe('ModalidadesListPage', () => {
   let pagina: PaginaDaListaDeModalidades;
@@ -20,7 +21,7 @@ describe('ModalidadesListPage', () => {
     const texto = pagina.fixture.nativeElement.textContent as string;
     expect(pagina.component['modalidadesFiltradas']()).toHaveLength(2);
     expect(texto).toContain('AC');
-    expect(texto).toContain('Ampla concorrência');
+    expect(texto).toContain(AC.naturezaLegal.rotulo);
   });
 
   it('mostra a composição seguida do código da modalidade de origem', async () => {
@@ -35,8 +36,8 @@ describe('ModalidadesListPage', () => {
       ).textContent
         ?.replace(/\s+/g, ' ')
         .trim();
-    expect(composicao('V')).toBe('Retirada de outra modalidade AC');
-    expect(composicao('AC')).toBe('Restante das vagas ofertadas');
+    expect(composicao('V')).toBe(`${V.composicaoVagas.rotulo} AC`);
+    expect(composicao('AC')).toBe(AC.composicaoVagas.rotulo);
   });
 
   it('resume a regra de aplicabilidade pelos nomes do catálogo, e a regra sem condição como todos', async () => {
@@ -108,10 +109,10 @@ describe('ModalidadesListPage', () => {
   it('CA-01: chips de natureza contam por token e filtram client-side', async () => {
     await pagina.flushLista([AC, V]);
     const chips = pagina.component['chipsNatureza']();
-    expect(chips.find((c) => c.value === 'AMPLA')?.count).toBe(1);
-    expect(chips.find((c) => c.value === 'ACAO_AFIRMATIVA')?.count).toBe(1);
+    expect(chips.find((c) => c.value === NATUREZAS.ampla.codigo)?.count).toBe(1);
+    expect(chips.find((c) => c.value === NATUREZAS.acao.codigo)?.count).toBe(1);
 
-    pagina.component['naturezaSelecionada'].set('ACAO_AFIRMATIVA');
+    pagina.component['naturezaSelecionada'].set(NATUREZAS.acao.codigo);
     expect(pagina.component['modalidadesFiltradas']().map((m) => m.codigo)).toEqual(['V']);
   });
 

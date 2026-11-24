@@ -2,7 +2,7 @@ import { HttpContext, HttpClient, HttpHeaders, HttpParams } from '@angular/commo
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
-import type { components } from './schema';
+import type { CategoriaObrigatoriedadeCodigo, components } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 
 export type ObrigatoriedadeLegalDto = components['schemas']['ObrigatoriedadeLegalDto'];
@@ -15,7 +15,7 @@ export type CategoriaObrigatoriedade = components['schemas']['CategoriaObrigator
 /** Filtro de listagem de obrigatoriedades legais (cursor pagination, ADR-0026). */
 export interface ObrigatoriedadesLegaisQuery {
   readonly tipoEdital?: string;
-  readonly categoria?: CategoriaObrigatoriedade;
+  readonly categoria?: CategoriaObrigatoriedadeCodigo | null;
   readonly vigentes?: boolean;
   readonly cursor?: string;
   readonly limit?: number;
@@ -97,7 +97,7 @@ export class ObrigatoriedadesLegaisApi {
 function filtrosDaListagem(query: ObrigatoriedadesLegaisQuery): HttpParams {
   let params = new HttpParams();
   if (query.tipoEdital !== undefined) params = params.set('tipoEdital', query.tipoEdital);
-  if (query.categoria !== undefined) params = params.set('categoria', query.categoria);
+  if (query.categoria != null) params = params.set('categoria', query.categoria);
   if (query.vigentes !== undefined) params = params.set('vigentes', String(query.vigentes));
   return params;
 }

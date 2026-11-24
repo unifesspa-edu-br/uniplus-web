@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { LocalOfertaDto, TipoLocalOferta } from '@uniplus/shared-data/configuracao';
+import { LocalOfertaDto } from '@uniplus/shared-data/configuracao';
+import { TIPO_LOCAL_DE_TESTE } from './locais-oferta.testing';
 import {
   LOCAL_EM_BRANCO,
   comandoDeAtualizacao,
@@ -11,7 +12,7 @@ import {
 
 const local: LocalOfertaDto = {
   id: 'local-1',
-  tipo: TipoLocalOferta.poloEad,
+  tipo: TIPO_LOCAL_DE_TESTE,
   codigoEmec: null,
   campusResponsavelId: null,
   cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
@@ -35,7 +36,7 @@ describe('formulário de local de oferta', () => {
 
     expect(comando).toMatchObject({
       id: local.id,
-      tipo: 'poloEad',
+      tipo: TIPO_LOCAL_DE_TESTE.codigo,
       cidadeCodigoIbge: '1504208',
     });
   });

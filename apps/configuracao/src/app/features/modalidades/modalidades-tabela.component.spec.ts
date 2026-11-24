@@ -4,23 +4,12 @@ import { ModalidadeDto } from '@uniplus/shared-data/configuracao';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ModalidadesTabelaComponent } from './modalidades-tabela.component';
 
-const modalidade: ModalidadeDto = {
-  id: 'id-v',
-  codigo: 'V',
-  legalFixa: false,
-  descricao: 'Modalidade V',
-  naturezaLegal: 'AMPLA',
-  composicaoVagas: 'RESTANTE_DAS_VAGAS_OFERTADAS',
-  composicaoOrigem: null,
-  regraRemanejamento: null,
-  remanejamentoDestino: null,
-  remanejamentoPar: null,
-  remanejamentoFallback: null,
-  regraDeAplicabilidade: [],
-  acaoQuandoIndeferido: null,
-  baseLegal: null,
-  criadoEm: '2026-07-03T12:00:00Z',
-};
+import {
+  COMPOSICOES,
+  MODALIDADE as modalidade,
+  NATUREZAS,
+  REGRAS,
+} from './modalidades-tabela.testing';
 
 describe('ModalidadesTabelaComponent', () => {
   let fixture: ComponentFixture<ModalidadesTabelaComponent>;
@@ -82,36 +71,31 @@ describe('ModalidadesTabelaComponent', () => {
       ...parte,
     });
 
-    it('resume o remanejamento por regra e traduz natureza e composição', () => {
+    it('exibe os rótulos recebidos e resume o remanejamento', () => {
       const itens = [
         com('A', {}),
         com('B', {
-          naturezaLegal: 'COTA_RESERVADA',
-          regraRemanejamento: 'SEGUE_CASCATA',
+          naturezaLegal: NATUREZAS.cota,
+          remanejamento: { regra: REGRAS.cascata, destino: null, par: null, fallback: null },
         }),
         com('C', {
-          naturezaLegal: 'ACAO_AFIRMATIVA',
-          composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
+          naturezaLegal: NATUREZAS.acao,
+          composicaoVagas: COMPOSICOES.retirada,
           composicaoOrigem: 'A',
-          regraRemanejamento: 'DESTINO_UNICO',
-          remanejamentoDestino: 'A',
+          remanejamento: { regra: REGRAS.destino, destino: 'A', par: null, fallback: null },
         }),
         com('D', {
-          naturezaLegal: 'ACAO_AFIRMATIVA',
-          regraRemanejamento: 'CRUZADO',
-          remanejamentoPar: 'B',
-          remanejamentoFallback: null,
+          remanejamento: { regra: REGRAS.cruzado, destino: null, par: 'B', fallback: null },
         }),
-        com('E', { naturezaLegal: 'INEDITA', composicaoVagas: 'INEDITA' }),
       ];
       montar(itens, false);
       expect(linha('A', 'Remanejamento')).toBe('—');
-      expect(linha('B', 'Remanejamento')).toMatch(/^Segue .+$/i);
-      expect(linha('C', 'Remanejamento')).toMatch(/ → A$/);
-      expect(linha('C', 'Composição de vagas')).toMatch(/ A$/);
-      expect(linha('D', 'Remanejamento')).toMatch(/\(B \/ —\)$/);
-      expect(linha('E', 'Natureza')).toBe('INEDITA');
-      expect(linha('E', 'Composição de vagas')).toBe('INEDITA');
+      expect(linha('B', 'Natureza')).toBe(NATUREZAS.cota.rotulo);
+      expect(linha('B', 'Remanejamento')).toBe(REGRAS.cascata.rotulo);
+      expect(linha('C', 'Natureza')).toBe(NATUREZAS.acao.rotulo);
+      expect(linha('C', 'Remanejamento')).toBe(`${REGRAS.destino.rotulo} → A`);
+      expect(linha('C', 'Composição de vagas')).toBe(`${COMPOSICOES.retirada.rotulo} A`);
+      expect(linha('D', 'Remanejamento')).toBe(`${REGRAS.cruzado.rotulo} (B / —)`);
     });
 
     it('lista as modalidades que referenciam a da linha, ou "Nenhuma"', () => {

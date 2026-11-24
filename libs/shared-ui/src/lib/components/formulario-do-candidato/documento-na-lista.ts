@@ -1,11 +1,4 @@
-import {
-  chaveDaExigencia,
-  classeDaSituacao,
-  DEPENDE_DE_FASE_POSTERIOR,
-  type DocumentoAvaliado,
-  EXIGIDO,
-  PODE_SER_EXIGIDO,
-} from './documentos-avaliados';
+import { chaveDaExigencia, type DocumentoAvaliado } from './documentos-avaliados';
 import type { DocumentoNaTela, ExigenciaPedida } from './regras-de-documentos';
 import { formatosDaExigencia } from './envio-de-documentos';
 import type { GrupoRenderizavel } from './formulario-do-candidato.model';
@@ -14,21 +7,35 @@ import type { GrupoRenderizavel } from './formulario-do-candidato.model';
 export interface IntegranteDoItem {
   readonly titulo: string | null;
   readonly ocorrenciaId: string | null;
-  readonly situacao: string;
+  readonly exigido: boolean;
+  readonly atendido: boolean;
+  readonly rotuloDaSituacao: string;
 }
 
 function situacaoDosIntegrantes(
   documento: DocumentoAvaliado,
   integrantes: readonly IntegranteDoItem[],
 ): Pick<DocumentoNaTela, 'exigido' | 'situacao'> & { readonly unica: boolean } {
-  const situacoes = new Set(integrantes.map((i) => i.situacao));
-  if (situacoes.size === 1)
-    return { ...situacaoNaLista(classeDaSituacao(documento.situacao)), unica: true };
+  const situacoes = new Set(integrantes.map((i) => (i.exigido ? '' : i.rotuloDaSituacao)));
+  const pendente = integrantes
+    .filter((integrante) => integrante.exigido && !integrante.atendido)
+    .map((integrante) => integrante.rotuloDaSituacao)
+    .sort()[0];
   return {
-    situacao: 'Conforme o integrante, como indicado no nome',
-    exigido: situacoes.has(EXIGIDO),
-    unica: false,
+    situacao: rotulosDosIntegrantes(integrantes, pendente) || documento.situacao.rotulo,
+    exigido: integrantes.some((i) => i.exigido),
+    unica: situacoes.size === 1,
   };
+}
+
+function rotulosDosIntegrantes(
+  integrantes: readonly IntegranteDoItem[],
+  pendente?: string,
+): string {
+  const rotulos = integrantes.map((integrante) =>
+    integrante.exigido ? (pendente ?? integrante.rotuloDaSituacao) : integrante.rotuloDaSituacao,
+  );
+  return [...new Set(rotulos)].sort().join(' / ');
 }
 
 export function documentoJuntado(
@@ -48,7 +55,7 @@ function exigidasDosIntegrantes(
   integrantes: readonly IntegranteDoItem[],
 ): ExigenciaPedida[] {
   return integrantes
-    .filter((i) => i.situacao === EXIGIDO)
+    .filter((i) => i.exigido)
     .map((i) => ({
       chave: chaveDaExigencia({ exigenciaId: documento.exigenciaId, ocorrenciaId: i.ocorrenciaId }),
       exigenciaId: documento.exigenciaId,
@@ -57,13 +64,6 @@ function exigidasDosIntegrantes(
       texto: i.titulo === null ? documento.nome : `${documento.nome} — ${i.titulo}`,
     }));
 }
-
-/** Como a situação de parte dos integrantes entra no nome do documento, quando ela varia entre eles. */
-const PREFIXO_DA_SITUACAO: Readonly<Record<string, string>> = {
-  [EXIGIDO]: '',
-  [PODE_SER_EXIGIDO]: 'pode ser exigido ',
-  [DEPENDE_DE_FASE_POSTERIOR]: 'pode ser exigido, conforme uma fase posterior, ',
-};
 
 /** "de cada integrante (familiares)", para quando não se sabe quais integrantes há. */
 export function deCadaIntegrante(grupo: GrupoRenderizavel | undefined): string {
@@ -75,17 +75,11 @@ function titulosPorSituacao(
   integrantes: readonly IntegranteDoItem[],
 ): ReadonlyMap<string, readonly string[]> {
   const porSituacao = new Map<string, string[]>();
-  for (const { titulo, situacao } of integrantes) {
+  for (const { titulo, exigido, rotuloDaSituacao } of integrantes) {
+    const situacao = exigido ? '' : rotuloDaSituacao;
     porSituacao.set(situacao, [...(porSituacao.get(situacao) ?? []), titulo as string]);
   }
   return porSituacao;
-}
-
-/** As situações presentes, as conhecidas primeiro, na ordem de gravidade, e sem repetir. */
-function situacoesEmOrdem(porSituacao: ReadonlyMap<string, unknown>): string[] {
-  return [EXIGIDO, PODE_SER_EXIGIDO, DEPENDE_DE_FASE_POSTERIOR, ...porSituacao.keys()].filter(
-    (situacao, i, todas) => porSituacao.has(situacao) && todas.indexOf(situacao) === i,
-  );
 }
 
 /**
@@ -101,12 +95,22 @@ function deQuem(
   if (integrantes.some((i) => i.ocorrenciaId === null || i.titulo === null))
     return deCadaIntegrante(grupo);
   const porSituacao = titulosPorSituacao(integrantes);
-  return situacoesEmOrdem(porSituacao)
+  return [...porSituacao.keys()]
+    .sort((a, b) => Number(b === '') - Number(a === ''))
     .map((situacao) => {
-      const prefixo = situacaoUnica ? '' : (PREFIXO_DA_SITUACAO[situacao] ?? '');
-      return `${prefixo}${comPreposicao(porSituacao.get(situacao) ?? [])}`;
+      return `${prefixoDaSituacao(integrantes, situacao, situacaoUnica)}${comPreposicao(porSituacao.get(situacao) ?? [])}`;
     })
     .join('; ');
+}
+
+function prefixoDaSituacao(
+  integrantes: readonly IntegranteDoItem[],
+  situacao: string,
+  unica: boolean,
+): string {
+  if (unica || situacao === '') return '';
+  const rotulo = integrantes.find((i) => i.rotuloDaSituacao === situacao)?.rotuloDaSituacao ?? '';
+  return `${rotulo} `;
 }
 
 function comPreposicao(titulos: readonly string[]): string {
@@ -114,17 +118,12 @@ function comPreposicao(titulos: readonly string[]): string {
   return comDe.length === 1 ? comDe[0] : `${comDe.slice(0, -1).join(', ')} e ${comDe.at(-1)}`;
 }
 
-/** O que a lista diz da situação do documento, no lugar de a quem a exigência se aplica. */
-const TEXTO_DA_SITUACAO: Readonly<Record<string, string>> = {
-  [EXIGIDO]: 'Exigido pelas suas respostas',
-  [PODE_SER_EXIGIDO]: 'Pode ser exigido, conforme as respostas',
-  [DEPENDE_DE_FASE_POSTERIOR]: 'Pode ser exigido, conforme uma fase posterior do processo',
-};
-
-function situacaoNaLista(situacao: string): Pick<DocumentoNaTela, 'exigido' | 'situacao'> {
+function situacaoNaLista(
+  documento: DocumentoAvaliado,
+): Pick<DocumentoNaTela, 'exigido' | 'situacao'> {
   return {
-    exigido: situacao === EXIGIDO,
-    situacao: TEXTO_DA_SITUACAO[situacao] ?? TEXTO_DA_SITUACAO[PODE_SER_EXIGIDO],
+    exigido: documento.exigido,
+    situacao: documento.situacao.rotulo,
   };
 }
 
@@ -150,7 +149,7 @@ export function paraALista(documento: DocumentoAvaliado, rotulo: string): Docume
     juntado: false,
     rotulo,
     exigidas: exigidasDoDocumento(documento, chave, rotulo),
-    ...situacaoNaLista(classeDaSituacao(documento.situacao)),
+    ...situacaoNaLista(documento),
     obrigatorio: documento.obrigatorio,
     ...limitesDoDocumento(documento),
   };
@@ -161,7 +160,7 @@ function exigidasDoDocumento(
   chave: string,
   rotulo: string,
 ): ExigenciaPedida[] {
-  if (classeDaSituacao(documento.situacao) !== EXIGIDO) return [];
+  if (!documento.exigido) return [];
   const { exigenciaId, ocorrenciaId } = documento;
   return [{ chave, exigenciaId, ocorrenciaId, enviavel: ehEnviavel(documento), texto: rotulo }];
 }

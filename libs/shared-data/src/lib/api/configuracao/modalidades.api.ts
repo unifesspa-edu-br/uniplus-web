@@ -10,66 +10,6 @@ export type CriarModalidadeCommand = components['schemas']['CriarModalidadeComma
 export type AtualizarModalidadeCommand = components['schemas']['AtualizarModalidadeCommand'];
 
 /**
- * Rosters dos domínios fechados de Modalidade de concorrência — tokens
- * UPPER_SNAKE persistidos e aceitos pelo contrato (ver `NaturezasLegais`,
- * `ComposicoesVagas`, `RegrasRemanejamento` e `AcoesQuandoIndeferido` em
- * `Unifesspa.UniPlus.Configuracao.Domain.Enums`). Não são enums
- * gerados pelo `openapi-typescript` — os campos chegam como `string` no
- * `schema.ts`; os tokens abaixo são copiados 1:1 do código-fonte do backend e o
- * domínio é a fonte de verdade das invariantes de coerência.
- */
-export interface DominioOption<T extends string = string> {
-  readonly value: T;
-  readonly label: string;
-}
-
-export type NaturezaLegalToken = 'AMPLA' | 'COTA_RESERVADA' | 'ACAO_AFIRMATIVA';
-
-export const NATUREZAS_LEGAIS: readonly DominioOption<NaturezaLegalToken>[] = [
-  { value: 'AMPLA', label: 'Ampla concorrência' },
-  { value: 'COTA_RESERVADA', label: 'Cota (Lei 12.711)' },
-  { value: 'ACAO_AFIRMATIVA', label: 'Ação afirmativa' },
-] as const;
-
-/** Natureza legal default de uma nova modalidade. */
-export const NATUREZA_LEGAL_DEFAULT: NaturezaLegalToken = 'AMPLA';
-
-export type ComposicaoVagasToken =
-  | 'RESTANTE_DAS_VAGAS_OFERTADAS'
-  | 'DENTRO_DA_RESERVA_LEGAL'
-  | 'RETIRADA_DE_OUTRA_MODALIDADE'
-  | 'SUPLEMENTAR_AO_TOTAL';
-
-export const COMPOSICOES_VAGAS: readonly DominioOption<ComposicaoVagasToken>[] = [
-  { value: 'RESTANTE_DAS_VAGAS_OFERTADAS', label: 'Restante das vagas ofertadas' },
-  { value: 'DENTRO_DA_RESERVA_LEGAL', label: 'Dentro da reserva legal' },
-  { value: 'RETIRADA_DE_OUTRA_MODALIDADE', label: 'Retirada de outra modalidade' },
-  { value: 'SUPLEMENTAR_AO_TOTAL', label: 'Suplementar ao total' },
-] as const;
-
-/** Composição default de uma nova modalidade. */
-export const COMPOSICAO_VAGAS_DEFAULT: ComposicaoVagasToken = 'RESTANTE_DAS_VAGAS_OFERTADAS';
-
-/** Única composição que exige `composicaoOrigem` (equivalência exata, invariante do agregado). */
-export const COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE: ComposicaoVagasToken =
-  'RETIRADA_DE_OUTRA_MODALIDADE';
-
-export type RegraRemanejamentoToken = 'SEGUE_CASCATA' | 'DESTINO_UNICO' | 'CRUZADO';
-
-export const REGRAS_REMANEJAMENTO: readonly DominioOption<RegraRemanejamentoToken>[] = [
-  { value: 'SEGUE_CASCATA', label: 'Segue cascata' },
-  { value: 'DESTINO_UNICO', label: 'Destino único' },
-  { value: 'CRUZADO', label: 'Cruzado' },
-] as const;
-
-export type AcaoQuandoIndeferidoToken = 'RECLASSIFICAR_AC' | 'RECLASSIFICAR_REGRA_EDITAL';
-
-export const ACOES_QUANDO_INDEFERIDO: readonly DominioOption<AcaoQuandoIndeferidoToken>[] = [
-  { value: 'RECLASSIFICAR_AC', label: 'Reclassificar em ampla concorrência' },
-  { value: 'RECLASSIFICAR_REGRA_EDITAL', label: 'Reclassificar conforme regra do edital' },
-] as const;
-
-/**
  * Filtro de listagem de Modalidades (cursor pagination bidirecional, ADR-0026/0089).
  * A filtragem por Natureza/busca é client-side sobre a página carregada — o
  * contrato de listagem não expõe filtros de query além de cursor/limit/direction.

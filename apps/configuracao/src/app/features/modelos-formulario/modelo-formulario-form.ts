@@ -1,5 +1,8 @@
 import { FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
-import { CriarModeloFormularioCommand } from '@uniplus/shared-data/configuracao';
+import {
+  CriarModeloFormularioCommand,
+  type FinalidadeFormularioCodigo,
+} from '@uniplus/shared-data/configuracao';
 import { conteudoInicial } from '@uniplus/shared-ui/components';
 import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
@@ -9,7 +12,7 @@ export interface CriacaoForm {
   codigo: FormControl<string>;
   nome: FormControl<string>;
   descricao: FormControl<string>;
-  finalidade: FormControl<string>;
+  finalidade: FormControl<FinalidadeFormularioCodigo | null>;
   tipoProcessoCodigo: FormControl<string>;
 }
 
@@ -36,7 +39,7 @@ export function criarFormularioDeModelo(): FormGroup<CriacaoForm> {
     ),
     nome: campoDeTexto(Validators.required, Validators.maxLength(200)),
     descricao: campoDeTexto(Validators.maxLength(1000)),
-    finalidade: campoDeTexto(Validators.required),
+    finalidade: new FormControl<FinalidadeFormularioCodigo | null>(null, Validators.required),
     tipoProcessoCodigo: campoDeTexto(),
   });
 }
@@ -44,6 +47,7 @@ export function criarFormularioDeModelo(): FormGroup<CriacaoForm> {
 /** O comando de criação: o modelo nasce com o conteúdo inicial e é montado na edição. */
 export function comandoDeCriacao(form: FormGroup<CriacaoForm>): CriarModeloFormularioCommand {
   const valores = form.getRawValue();
+  if (valores.finalidade === null) throw new Error('Finalidade obrigatória.');
   return {
     codigo: valores.codigo.trim(),
     finalidade: valores.finalidade,
@@ -66,7 +70,7 @@ export function campoDaRecusa(campo: string): CampoDaCriacao | null {
 }
 
 /** A mensagem do campo; o formato do código tem texto próprio. */
-export function mensagemDoCampo(controle: FormControl<string>): string | null {
+export function mensagemDoCampo(controle: FormControl<string | null>): string | null {
   const mensagem = mensagemDeErroDoControle(controle);
   if (mensagem === null || controle.errors === null) return mensagem;
   if (controle.errors['backend'] || controle.errors['required']) return mensagem;

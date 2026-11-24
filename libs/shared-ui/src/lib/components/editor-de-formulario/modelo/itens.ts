@@ -15,8 +15,8 @@ import {
   ChaveDaEntrada,
   ConteudoDoFormulario,
   EntradaDaSecao,
-  FONTE_GEO_MUNICIPIO,
-  FONTE_GEO_UF,
+  FONTE_MUNICIPIOS,
+  FONTE_UNIDADES_FEDERATIVAS,
   FatoDoFormulario,
   GrupoDoFormulario,
   ItemDoFormulario,
@@ -52,7 +52,7 @@ export function acrescentarCampo(
   citacoes: ContextoDeCitacao,
 ): ResultadoDaEdicao {
   const comCampo = acrescentarItem(conteudo, fato, etapaCodigo);
-  if (fato.fonteValores !== FONTE_GEO_MUNICIPIO) return { ok: true, conteudo: comCampo };
+  if (fato.fonteValores?.codigo !== FONTE_MUNICIPIOS) return { ok: true, conteudo: comCampo };
   return municipioRestritoAUfAnterior(comCampo, fato, citacoes);
 }
 
@@ -102,7 +102,7 @@ export function ufsAnteriores(
 }
 
 function ehUfDeRespostaUnica(fato: FatoDoFormulario): boolean {
-  return fato.fonteValores === FONTE_GEO_UF && fato.cardinalidade !== MULTIVALORADO;
+  return fato.fonteValores?.codigo === FONTE_UNIDADES_FEDERATIVAS && fato.cardinalidade.codigo !== MULTIVALORADO;
 }
 
 /** Os pressupostos, conhecidos antes de todo o formulário, e depois os itens anteriores ao campo, em ordem. */

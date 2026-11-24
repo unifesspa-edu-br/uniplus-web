@@ -12,12 +12,12 @@ import {
 } from './logica';
 import type { ValorJson } from './regras-do-formulario';
 
-/** Os operadores de uma condição. DIFERENTE e NAO_EM são a negação de IGUAL e EM. */
+/** Os operadores de uma condição. DIFERENTE e NENHUM_DE são a negação de IGUAL e ALGUM_DE. */
 export const OPERADORES = [
   'IGUAL',
   'DIFERENTE',
-  'EM',
-  'NAO_EM',
+  'ALGUM_DE',
+  'NENHUM_DE',
   'MAIOR_IGUAL',
   'MENOR_IGUAL',
 ] as const;
@@ -29,10 +29,10 @@ export function ehOperador(token: string): token is Operador {
 
 /** Se o operador compara contra uma LISTA de valores, e não contra um só. */
 export function comparaComLista(operador: string): boolean {
-  return operador === 'EM' || operador === 'NAO_EM';
+  return operador === 'ALGUM_DE' || operador === 'NENHUM_DE';
 }
 
-/** Se a comparação é a negação de outra: DIFERENTE nega IGUAL, e NAO_EM nega EM. */
+/** Se a comparação é a negação de outra: DIFERENTE nega IGUAL, e NENHUM_DE nega ALGUM_DE. */
 export function ehNegacao(operador: string): boolean {
   return Object.hasOwn(OPERADOR_NEGADO, operador);
 }
@@ -100,7 +100,7 @@ function avaliarCondicao(condicao: Condicao, fatos: Fatos): Ternario | typeof NA
   return avaliarComNegacao(condicao.operador, fato.valor, condicao.valor);
 }
 
-const OPERADOR_NEGADO: Partial<Record<Operador, Operador>> = { DIFERENTE: 'IGUAL', NAO_EM: 'EM' };
+const OPERADOR_NEGADO: Partial<Record<Operador, Operador>> = { DIFERENTE: 'IGUAL', NENHUM_DE: 'ALGUM_DE' };
 
 /** A negação inverte o resultado do operador positivo; o indeterminado continua indeterminado. */
 function avaliarComNegacao(
@@ -137,7 +137,7 @@ function avaliarSobreConjunto(
   switch (operador) {
     case 'IGUAL':
       return comoTernario(candidato.some((item) => valoresIguais(item, configurado)));
-    case 'EM':
+    case 'ALGUM_DE':
       return comoTernario(temItemEmComum(candidato, configurado as readonly ValorJson[]));
     default:
       return INDETERMINADO;
@@ -159,7 +159,7 @@ function avaliarSobreValorUnico(
   configurado: ValorJson,
 ): Ternario {
   if (operador === 'IGUAL') return compararIgualdade(candidato, configurado);
-  if (operador === 'EM') return pertenceALista(candidato, configurado as readonly ValorJson[]);
+  if (operador === 'ALGUM_DE') return pertenceALista(candidato, configurado as readonly ValorJson[]);
   const satisfaz = COMPARACOES_NUMERICAS[operador];
   if (satisfaz === undefined) return INDETERMINADO;
   return compararNumerico(candidato, configurado, satisfaz);

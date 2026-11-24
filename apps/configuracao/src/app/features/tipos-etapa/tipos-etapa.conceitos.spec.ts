@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { NaturezaConceitoCodigo, type TipoConceitoDto } from '@uniplus/shared-data/configuracao';
+import { FormaDoConceitoCodigo, type TipoConceitoDto } from '@uniplus/shared-data/configuracao';
 import {
   CONCEITOS,
   ESCRITA,
@@ -18,7 +18,7 @@ const conceito = (codigo: string, nome: string, ativo = true): TipoConceitoDto =
   definicao: {
     nome,
     descricao: null,
-    natureza: { codigo: NaturezaConceitoCodigo.CATEGORICO, rotulo: 'Categórico' },
+    natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Categórico' },
     numerico: null,
     valores: [],
   },
@@ -74,7 +74,7 @@ describe('TiposEtapaPage — conceitos admitidos', () => {
           {
             codigo: 'PARECER',
             nome: 'Parecer',
-            natureza: { codigo: NaturezaConceitoCodigo.CATEGORICO, rotulo: 'Categórico' },
+            natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Categórico' },
           },
         ],
       },
@@ -100,7 +100,7 @@ describe('TiposEtapaPage — conceitos admitidos', () => {
           {
             codigo: 'ANTIGO',
             nome: 'Antigo',
-            natureza: { codigo: NaturezaConceitoCodigo.CATEGORICO, rotulo: 'Categórico' },
+            natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Categórico' },
           },
         ],
       },
@@ -125,7 +125,7 @@ describe('TiposEtapaPage — conceitos admitidos', () => {
           {
             codigo: 'PARECER',
             nome: 'Parecer',
-            natureza: { codigo: NaturezaConceitoCodigo.CATEGORICO, rotulo: 'Categórico' },
+            natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Categórico' },
           },
         ],
       },

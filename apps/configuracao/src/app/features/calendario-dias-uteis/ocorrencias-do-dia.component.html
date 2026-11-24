@@ -16,7 +16,7 @@
           <dt>Data</dt>
           <dd>{{ formatarData(ocorrencia.data) }}</dd>
         </div>
-        @if (ocorrencia.abrangencia === 'MUNICIPAL') {
+        @if (ocorrencia.abrangencia.codigo === abrangencias.MUNICIPAL) {
           <div>
             <dt>Município</dt>
             <dd>
@@ -25,7 +25,7 @@
             </dd>
           </div>
         }
-        @if (ocorrencia.abrangencia === 'ESTADUAL') {
+        @if (ocorrencia.abrangencia.codigo === abrangencias.ESTADUAL) {
           <div>
             <dt>Unidade Federativa (UF)</dt>
             <dd>{{ ufLegivel(ocorrencia.uf) }}</dd>
