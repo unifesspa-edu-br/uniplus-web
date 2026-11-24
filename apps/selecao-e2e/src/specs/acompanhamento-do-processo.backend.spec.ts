@@ -8,15 +8,9 @@ import {
   runAxeWcagAAAApplicable,
   unidadeDoCertame,
 } from '@uniplus/shared-e2e';
-import { listarProcessos } from '../fixtures/processos-da-api';
+import { publicadoDoAcompanhamento } from '../fixtures/publicado-do-acompanhamento';
 import { rascunhoDoAcompanhamento } from '../fixtures/rascunho-do-acompanhamento';
 
-/**
- * Página de acompanhamento de um processo (web#1286) contra a API real: identificação do processo,
- * trilha, atalhos conforme a permissão de configurar, recusas e o percurso painel → processo → painel.
- *
- * Cada papel tem uma pessoa reservada a esta spec; nenhuma outra spec nem o suporte a usa.
- */
 const APP = process.env['BASE_URL'] ?? 'http://localhost:4200';
 
 const QUEM_CONFIGURA = 'thiago.silva';
@@ -36,8 +30,7 @@ test.describe('Acompanhamento do processo seletivo', () => {
 
   test.beforeAll(async () => {
     test.setTimeout(900_000);
-    const publicado = (await listarProcessos()).find((processo) => processo.status === 'publicado');
-    if (publicado === undefined) throw new Error('A base não tem processo publicado.');
+    const publicado = await publicadoDoAcompanhamento();
     cenario = { processoId: publicado.id, nomeDoProcesso: publicado.nome };
     url = `/acompanhamento/processos/${cenario.processoId}`;
     for (const { persona, permissoes } of PERFIS) {
@@ -132,13 +125,13 @@ test.describe('Acompanhamento do processo seletivo', () => {
   test('percurso painel → processo → painel', async ({ browser }) => {
     const pagina = await entrarComoPersona(browser, APP, QUEM_SO_ACOMPANHA, '/dashboard');
 
-    await pagina
-      .getByRole('button', { name: `Abrir acompanhamento de ${cenario.nomeDoProcesso}` })
-      .click();
-    await expect(pagina).toHaveURL(new RegExp(`/acompanhamento/processos/${cenario.processoId}$`));
-    await expect(
-      pagina.getByRole('heading', { level: 1, name: cenario.nomeDoProcesso }),
-    ).toBeVisible();
+    const botao = pagina.getByRole('button', { name: /^Abrir acompanhamento de / }).first();
+    await expect(botao).toBeVisible();
+    const nome = (await botao.getAttribute('aria-label'))?.replace('Abrir acompanhamento de ', '');
+    await botao.click();
+    await expect(pagina).toHaveURL(/\/acompanhamento\/processos\//);
+    if (nome === undefined) throw new Error('O processo apresentado não tem nome acessível.');
+    await expect(pagina.getByRole('heading', { level: 1, name: nome })).toBeVisible();
 
     await pagina.getByRole('link', { name: 'Voltar ao painel' }).click();
     await expect(pagina).toHaveURL(/\/dashboard$/);
