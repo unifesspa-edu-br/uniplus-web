@@ -9,7 +9,7 @@ export const FASE_DA_MATRICULA = { faseChave: 'matricula' } as const;
 export const ETAPA_DA_PROVA = { etapaChave: 'prova-escrita' } as const;
 
 interface CamposDoMotivoNoDocumento {
-  readonly tipoCodigo?: string;
+  readonly tipoDeDecisaoCodigo?: string;
   readonly codigo?: string;
   readonly descricao?: string;
   readonly subclassificacao?: string;
@@ -23,7 +23,7 @@ export function umMotivoNoDocumento(
 ): MotivoNoDocumento {
   return {
     ...faseOuEtapa,
-    tipoCodigo: 'HOMOLOGACAO_DAS_INSCRICOES',
+    tipoDeDecisaoCodigo: 'HOMOLOGACAO_DAS_INSCRICOES',
     codigo: 'SEM_RESULTADO_NO_ENEM',
     ...campos,
   };

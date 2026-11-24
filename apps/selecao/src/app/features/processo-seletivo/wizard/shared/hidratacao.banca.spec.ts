@@ -1,14 +1,12 @@
-import {
-  CriterioDeVotacaoCodigo,
-  DesempateDaVotacaoCodigo,
-  EncerramentoDaVotacaoCodigo,
-  type EtapaProcessoDto,
-  ModoDeDeliberacao,
-  TipoDeBancaCodigo,
-} from '@uniplus/shared-data/selecao';
+import { type EtapaProcessoDto, TipoDeBancaCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
-import { COLEGIADA } from './deliberacao/regra-de-deliberacao.testing';
+import {
+  CRITERIOS,
+  DESEMPATES,
+  ENCERRAMENTOS,
+  MODOS,
+} from './deliberacao/regra-de-deliberacao.testing';
 import {
   etapaDoServidor,
   faseDoServidor,
@@ -20,32 +18,24 @@ import { DRAFT, FASE_COM_RECURSO, dtoComCronograma } from './hidratacao.testing'
 type RegraDoServidor = NonNullable<EtapaProcessoDto['bancas'][number]['regraDeDeliberacao']>;
 
 const REGRA_DA_API: RegraDoServidor = {
-  modo: { codigo: ModoDeDeliberacao.COLEGIADA_COM_VOTACAO, rotulo: 'Colegiada' },
+  modo: MODOS.colegiadaComVotacao,
   integrantes: 5,
   suplentes: 2,
   quorum: 3,
-  criterio: {
-    codigo: CriterioDeVotacaoCodigo.MAIORIA_SIMPLES as NonNullable<
-      RegraDoServidor['criterio']
-    >['codigo'],
-    rotulo: 'teste',
-  },
-  desempate: {
-    codigo: DesempateDaVotacaoCodigo.VOTO_DA_PRESIDENCIA as NonNullable<
-      RegraDoServidor['desempate']
-    >['codigo'],
-    rotulo: 'teste',
-  },
-  encerramento: {
-    codigo: EncerramentoDaVotacaoCodigo.PRESIDENCIA_NO_QUORUM as NonNullable<
-      RegraDoServidor['encerramento']
-    >['codigo'],
-    rotulo: 'teste',
-  },
+  criterio: CRITERIOS.maioriaSimples,
+  desempate: DESEMPATES.votoDaPresidencia,
+  encerramento: ENCERRAMENTOS.presidenciaNoQuorum,
   semUnanimidade: null,
 };
 const REGRA_LIDA = {
-  ...COLEGIADA,
+  modo: MODOS.colegiadaComVotacao.codigo,
+  integrantes: '5',
+  suplentes: '2',
+  quorum: '3',
+  criterio: CRITERIOS.maioriaSimples.codigo,
+  desempate: DESEMPATES.votoDaPresidencia.codigo,
+  encerramento: ENCERRAMENTOS.presidenciaNoQuorum.codigo,
+  semUnanimidade: '',
   rotulos: {
     modo: REGRA_DA_API.modo,
     criterio: REGRA_DA_API.criterio,
@@ -85,6 +75,7 @@ describe('hidratarDraft — regra de deliberação da banca', () => {
     const etapa = comBancasNaEtapa([
       {
         id: 'banca-da-etapa-1',
+        chave: 'banca-da-etapa-1',
         tipoBancaOrigemId: 'tipo-banca-1',
         ...tipoDeBancaDoServidor(TipoDeBancaCodigo.BANCA_ENTREVISTA),
         nome: 'Entrevista',
@@ -92,6 +83,7 @@ describe('hidratarDraft — regra de deliberação da banca', () => {
       },
       {
         id: 'banca-da-etapa-2',
+        chave: 'banca-da-etapa-2',
         tipoBancaOrigemId: 'tipo-banca-2',
         ...tipoDeBancaDoServidor(TipoDeBancaCodigo.BANCA_CORRECAO_REDACOES),
         nome: 'Redação',

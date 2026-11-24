@@ -15,7 +15,7 @@ import { comoComandoDeEtapa, comoComandoDeFase } from './cronograma-para-comando
 type AlvoDoServidor = { itemDeAvaliacaoId: string | null; areaDoEnem: string | null } | null;
 
 const REGRA = { codigo: 'PROCEDIMENTO-RECURSO-COLEGIADO', versao: 'v1', hash: 'h1' };
-const ITEM = { id: 'item-1', rotulo: 'Clareza', pontuacaoMaxima: 4 };
+const ITEM = { ordem: 1, chave: 'item-1', id: 'item-1', rotulo: 'Clareza', pontuacaoMaxima: 4 };
 
 const ALVOS: readonly {
   readonly caso: string;

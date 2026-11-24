@@ -83,7 +83,7 @@ export class PrazoDeEmissaoComponent {
   }
 
   protected escolher(escolha: string): void {
-    if (escolha === 'semPrazo') {
+    if (escolha === 'SEM_PRAZO') {
       this.recusas?.limparCampo(this.documentoId(), this.caminho, this.faseCodigo());
     }
     this.gravar(escolherPrazo(escolha), 'escolha');

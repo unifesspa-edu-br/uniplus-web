@@ -7,7 +7,6 @@ import type {
   DocumentoExigidoDto,
   RegraDeComprovacaoDto,
   ProcessoSeletivoDto,
-  RequisitosDoDocumentoDtoProvisorio,
 } from '@uniplus/shared-data/selecao';
 
 import { regrasDeComprovacaoParaEnvio } from './gravacao-das-exigencias';
@@ -108,8 +107,7 @@ export interface AlteracoesDoDocumentoDaApi {
   readonly finalidade?: string | null;
   readonly aplicabilidade?: DocumentoExigidoDto['aplicabilidade'];
   readonly indeferimento?: Partial<DocumentoExigidoDto['indeferimento']>;
-  readonly requisitos?: Partial<DocumentoExigidoDto['requisitos']> &
-    RequisitosDoDocumentoDtoProvisorio;
+  readonly requisitos?: Partial<DocumentoExigidoDto['requisitos']>;
 }
 
 export function exigenciaDaApi(alteracoes: AlteracoesDoDocumentoDaApi = {}): RegraDeComprovacaoDto {
@@ -167,6 +165,7 @@ const APLICABILIDADE_GERAL = {
 function documentoDaApi(alteracoes: AlteracoesDoDocumentoDaApi): DocumentoExigidoDto {
   return {
     id: 'doc-1',
+    chave: 'doc-1',
     tipoDocumento: TIPO_RG,
     momento: momentoDaApi(alteracoes),
     aplicabilidade: alteracoes.aplicabilidade ?? APLICABILIDADE_GERAL,

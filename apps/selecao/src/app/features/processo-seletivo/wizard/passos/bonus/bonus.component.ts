@@ -41,11 +41,11 @@ import {
 } from './fato-de-elegibilidade';
 
 const MENSAGEM_SEM_CADASTRO =
-  'O cadastro do processo precisa estar concluído antes de configurar o bônus.';
+  'O cadastro do processo precisa estar concluído antes de configurar o FADA.';
 
 /**
- * Bônus regional (`PUT …/bonus-regional`) — o processo declara se aplica o bônus ou não, e a
- * ausência da configuração só significa "sem bônus" quando a declaração é falsa. Não existe
+ * FADA (`PUT …/bonus-regional`) — o processo declara se aplica o FADA ou não, e a
+ * ausência da configuração só significa "sem FADA" quando a declaração é falsa. Não existe
  * "BONUS-NENHUM". Reconstrução conforme o contrato: nenhum campo da tela anterior (`tipo`,
  * `valor`, `criterio`, `modalidades`) tem correspondente aqui.
  */
@@ -73,7 +73,7 @@ export class BonusPassoComponent {
   private readonly problemI18n = inject(ProblemI18nService);
 
   /**
-   * A resposta de aplicar ou não o bônus. O rascunho do store é a fonte da verdade: o controle
+   * A resposta de aplicar ou não o FADA. O rascunho do store é a fonte da verdade: o controle
    * grava nele ao mudar e o acompanha quando o rascunho é hidratado ou a edição é bloqueada.
    */
   readonly aplica = new FormControl<boolean | null>(null);
@@ -123,7 +123,7 @@ export class BonusPassoComponent {
       : `${fato.codigo} (derivado pelo processo)`;
   }
 
-  /** O bônus como se lê em consulta, com o rótulo de cada escolha. */
+  /** O FADA como se lê em consulta, com o rótulo de cada escolha. */
   readonly leitura = computed(() => {
     const bonus = this.store.draft().bonus;
     const base = this.basesLegais
@@ -194,7 +194,7 @@ export class BonusPassoComponent {
     return messages.length ? { valid: false, messages: [...messages] } : { valid: true };
   }
 
-  /** Grava a declaração do bônus regional — aplica ou não, o passo sempre grava. */
+  /** Grava a declaração do FADA — aplica ou não, o passo sempre grava. */
   async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) return { valid: false, messages: [MENSAGEM_SEM_CADASTRO] };

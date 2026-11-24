@@ -26,34 +26,30 @@ export function foraDaPrecisao(valor: string, rotulo: string): readonly string[]
   return problemas;
 }
 
-/** O que impede de gravar o bônus declarado, ou nada quando ele pode ser gravado. */
+/** O que impede de gravar o FADA declarado, ou nada quando ele pode ser gravado. */
 export function validarBonus(bonus: WizardDraft['bonus']): readonly string[] {
-  if (bonus.aplica === null) return ['Informe se o processo aplica o bônus regional.'];
+  if (bonus.aplica === null) return ['Informe se o processo aplica o FADA.'];
   if (!bonus.aplica) return [];
 
   const messages: string[] = [];
-
-  if (!bonus.regraCodigo) messages.push('Selecione a regra do bônus.');
-
-  const fator = decimalNaForma(bonus.fator);
-  if (fator === null || fator <= 0) {
-    messages.push('Informe o fator do bônus, maior que zero.');
-  } else {
-    messages.push(...foraDaPrecisao(bonus.fator, 'O fator do bônus'));
-  }
-
-  if (bonus.teto.trim() !== '') {
-    const teto = decimalNaForma(bonus.teto);
-    if (teto === null || teto <= 0) {
-      messages.push('O teto do bônus, quando informado, deve ser maior que zero.');
-    } else {
-      messages.push(...foraDaPrecisao(bonus.teto, 'O teto do bônus'));
-    }
-  }
-
-  if (!bonus.baseLegalBonusRegionalId) {
-    messages.push('Selecione a base legal do bônus regional.');
-  }
-
+  if (!bonus.regraCodigo) messages.push('Selecione a regra do FADA.');
+  messages.push(...validarFator(bonus.fator), ...validarTeto(bonus.teto));
+  if (!bonus.baseLegalBonusRegionalId) messages.push('Selecione a base legal do FADA.');
   return messages;
+}
+
+function validarFator(valor: string): readonly string[] {
+  const fator = decimalNaForma(valor);
+  if (fator === null || fator <= 0) {
+    return ['Informe o fator do FADA, maior que zero.'];
+  }
+  return foraDaPrecisao(valor, 'O fator do FADA');
+}
+
+function validarTeto(valor: string): readonly string[] {
+  if (valor.trim() === '') return [];
+  const teto = decimalNaForma(valor);
+  if (teto === null || teto <= 0)
+    return ['O teto do FADA, quando informado, deve ser maior que zero.'];
+  return foraDaPrecisao(valor, 'O teto do FADA');
 }

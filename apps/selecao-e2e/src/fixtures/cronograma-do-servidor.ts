@@ -62,6 +62,7 @@ const PUBLICACOES_DA_FASE: FaseCronogramaDto['publicacoes'] = {
 /** Fase de coleta de inscrição, sem produto, banca nem recurso. */
 export function faseDoServidor(parcial: FaseDoServidorParcial = {}): FaseCronogramaDto {
   return {
+    chave: 'fase-1',
     id: parcial.id ?? '01960000-0000-7000-0000-000000000a01',
     codigo: parcial.codigo ?? 'INSCRICAO',
     faseCanonica: { ...FASE_CANONICA, ...parcial.faseCanonica },
@@ -109,6 +110,7 @@ const PUBLICACOES_DA_ETAPA: EtapaProcessoDto['publicacoes'] = {
 /** Etapa classificatória de prova, sem janela, banca nem recurso. */
 export function etapaDoServidor(parcial: EtapaDoServidorParcial = {}): EtapaProcessoDto {
   return {
+    chave: 'etapa-1',
     id: parcial.id ?? '01960000-0000-7000-0000-0000000000f1',
     identificacao: { ...IDENTIFICACAO_DA_ETAPA, ...parcial.identificacao },
     nota: { ...NOTA_DA_ETAPA, ...parcial.nota },
@@ -214,6 +216,7 @@ export function bancaDaEtapaDoServidor(
 ): BancaDaEtapaLida {
   return {
     id: '01a0d640-0000-7000-8000-00000000b001',
+    chave: 'banca-1',
     ...copiaDoTipoNaBanca(tipo),
     posicaoNoTipo: 1,
     regraDeDeliberacao: null,

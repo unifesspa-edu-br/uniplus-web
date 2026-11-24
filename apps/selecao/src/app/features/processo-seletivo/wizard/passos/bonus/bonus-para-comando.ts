@@ -15,14 +15,14 @@ function baseLegalDe(id: string): DefinirBonusRegionalRequest['baseLegal'] {
 }
 
 /**
- * Converte o rascunho de bônus no `DefinirBonusRegionalRequest`. A declaração é obrigatória: só
- * se grava depois de o operador responder se o processo aplica o bônus. `aplica === false` grava
- * a declaração com os campos `null` — o servidor recusa qualquer campo do bônus nesse caso.
+ * Converte o rascunho de FADA no `DefinirBonusRegionalRequest`. A declaração é obrigatória: só
+ * se grava depois de o operador responder se o processo aplica o FADA. `aplica === false` grava
+ * a declaração com os campos `null` — o servidor recusa qualquer campo do FADA nesse caso.
  * Nenhum default é inventado quando aplica.
  */
 export function comoComandoDeBonus(bonus: WizardDraft['bonus']): DefinirBonusRegionalRequest {
   if (bonus.aplica === null) {
-    throw new Error('A declaração do bônus regional precisa ser respondida antes de gravar.');
+    throw new Error('A declaração do FADA precisa ser respondida antes de gravar.');
   }
   return bonus.aplica ? bonusAplicado(bonus) : BONUS_NAO_APLICADO;
 }

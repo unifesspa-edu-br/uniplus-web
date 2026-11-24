@@ -9,7 +9,7 @@ export function identidadeDoMotivoOferecido(
   faseOuEtapa: FaseOuEtapaDoMotivo,
   motivo: MotivoOferecido,
 ): IdentidadeDoMotivo {
-  return { ...faseOuEtapa, tipoCodigo: motivo.tipoCodigo, codigo: motivo.codigo };
+  return { ...faseOuEtapa, tipoDeDecisaoCodigo: motivo.tipoDeDecisaoCodigo, codigo: motivo.codigo };
 }
 
 /** O motivo oferecido como entra no documento: a referência e a cópia do que o cadastro diz dele. */

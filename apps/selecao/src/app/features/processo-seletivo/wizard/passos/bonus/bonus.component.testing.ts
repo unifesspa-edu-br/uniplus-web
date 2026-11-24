@@ -50,7 +50,7 @@ function responderAsLeiturasIniciais(fixture: ComponentFixture<BonusPassoCompone
   fixture.detectChanges();
 }
 
-/** O passo de bônus montado, com as leituras iniciais respondidas vazias e o processo já cadastrado. */
+/** O passo de FADA montado, com as leituras iniciais respondidas vazias e o processo já cadastrado. */
 export function montarPasso() {
   configurarModuloDoPasso();
   const fixture = TestBed.createComponent(BonusPassoComponent);

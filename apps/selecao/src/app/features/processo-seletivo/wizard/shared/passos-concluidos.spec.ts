@@ -28,10 +28,10 @@ describe('passosConcluidosDe', () => {
     expect(rotulos).toContain('Eliminação');
   });
 
-  it('conta o Bônus nas duas respostas e não conta enquanto o servidor não tem a declaração', () => {
-    expect(rotulosConcluidos({ aplicaBonusRegional: true })).toContain('Bônus');
-    expect(rotulosConcluidos({ aplicaBonusRegional: false })).toContain('Bônus');
-    expect(rotulosConcluidos({ aplicaBonusRegional: null })).not.toContain('Bônus');
+  it('conta o FADA nas duas respostas e não conta enquanto o servidor não tem a declaração', () => {
+    expect(rotulosConcluidos({ aplicaBonusRegional: true })).toContain('FADA');
+    expect(rotulosConcluidos({ aplicaBonusRegional: false })).toContain('FADA');
+    expect(rotulosConcluidos({ aplicaBonusRegional: null })).not.toContain('FADA');
   });
 
   it('exige critério de desempate com inscrição própria e dispensa com resultado importado', () => {
@@ -39,7 +39,10 @@ describe('passosConcluidosDe', () => {
     expect(rotulosConcluidos({ criteriosDesempate: [{}] as never })).toContain('Desempate');
     expect(
       rotulosConcluidos({
-        origemCandidatos: { codigo: OrigemCandidatosCodigo.IMPORTACAO_EXTERNA, rotulo: 'Importação externa' },
+        origemCandidatos: {
+          codigo: OrigemCandidatosCodigo.IMPORTACAO_EXTERNA,
+          rotulo: 'Importação externa',
+        },
         criteriosDesempate: [],
       }),
     ).toContain('Desempate');
@@ -67,7 +70,7 @@ describe('passosConcluidosDe', () => {
     expect(rotulos).toContain('Fórmula e precisão');
   });
 
-  it('aponta o Bônus e o Desempate pelas dimensões novas do checklist', () => {
+  it('aponta o FADA e o Desempate pelas dimensões novas do checklist', () => {
     const checklist: ItemConformidadeDto[] = [
       {
         codigo: 'bonus_regional_nao_declarado',
@@ -83,7 +86,7 @@ describe('passosConcluidosDe', () => {
       checklist,
     );
 
-    expect(rotulos).not.toContain('Bônus');
+    expect(rotulos).not.toContain('FADA');
     expect(rotulos).not.toContain('Desempate');
   });
 

@@ -19,7 +19,7 @@ function bonus(patch: Partial<WizardDraft['bonus']>): WizardDraft['bonus'] {
 }
 
 describe('comoComandoDeBonus', () => {
-  it('grava a declaração de que não aplica, com os campos null, quando o bônus não se aplica', () => {
+  it('grava a declaração de que não aplica, com os campos null, quando o FADA não se aplica', () => {
     const comando = comoComandoDeBonus(
       bonus({
         aplica: false,
@@ -105,7 +105,7 @@ describe('comoComandoDeBonus', () => {
 
   it('não grava enquanto a declaração não foi respondida', () => {
     expect(() => comoComandoDeBonus(bonus({ aplica: null }))).toThrow(
-      'A declaração do bônus regional precisa ser respondida',
+      'A declaração do FADA precisa ser respondida',
     );
   });
 });

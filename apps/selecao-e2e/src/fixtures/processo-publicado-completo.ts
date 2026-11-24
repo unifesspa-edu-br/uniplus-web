@@ -151,6 +151,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
       bancas: [
         {
           id: '01a0d640-0000-7000-8000-0000000000f2',
+          chave: '01a0d640-0000-7000-8000-0000000000f2',
           tipoBancaOrigemId: ID_DO_TIPO_ENTREVISTA,
           ...TIPO_DA_BANCA,
           nome: 'Banca geral',
@@ -183,6 +184,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
       bancasRequeridas: [
         {
           id: '01a0d640-0000-7000-8000-0000000000c3',
+          chave: '01a0d640-0000-7000-8000-0000000000c3',
           tipoBancaOrigemId: ID_DO_TIPO_ENTREVISTA,
           ...TIPO_DA_BANCA,
           nome: 'Banca geral',

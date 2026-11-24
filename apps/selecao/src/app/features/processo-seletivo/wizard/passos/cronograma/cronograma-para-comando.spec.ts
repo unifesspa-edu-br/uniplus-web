@@ -28,7 +28,7 @@ type ParametrosDoRecurso = EtapaProcessoDto['publicacoes']['recursos'][number]['
 
 /**
  * O certame como o servidor o devolve, reduzido à etapa e à janela recursal — é o único
- * recorte que estes testes leem, e montar o DTO inteiro só esconderia o que está em jogo.
+ * trecho que estes testes leem, e montar o DTO inteiro só esconderia o que está em jogo.
  */
 function detalheComRecursoDaEtapa(
   parametros: Partial<ParametrosDoRecurso> = {},
@@ -56,7 +56,12 @@ describe('avaliação da etapa no ida-e-volta', () => {
     const etapa = lida({
       nota: { notaMaxima: 10, passoDoLancamento: 0.5 },
       avaliacao: {
-        formaDeAvaliacao: { codigo: 'HUMANA' as NonNullable<EtapaProcessoDto['avaliacao']['formaDeAvaliacao']>['codigo'], rotulo: 'Humana' },
+        formaDeAvaliacao: {
+          codigo: 'HUMANA' as NonNullable<
+            EtapaProcessoDto['avaliacao']['formaDeAvaliacao']
+          >['codigo'],
+          rotulo: 'Humana',
+        },
         regraConsolidacao: { codigo: 'CONSOLIDACAO-AVALIACAO-UNICA', versao: 'v1', hash: 'h' },
       },
     });
@@ -73,7 +78,17 @@ describe('avaliação da etapa no ida-e-volta', () => {
 
   it('a forma objetiva envia regra e passo nulos, ainda que a etapa os carregue', () => {
     const etapa = {
-      ...lida({ nota: { notaMaxima: 10 }, avaliacao: { formaDeAvaliacao: { codigo: 'OBJETIVA' as NonNullable<EtapaProcessoDto['avaliacao']['formaDeAvaliacao']>['codigo'], rotulo: 'Objetiva' } } }),
+      ...lida({
+        nota: { notaMaxima: 10 },
+        avaliacao: {
+          formaDeAvaliacao: {
+            codigo: 'OBJETIVA' as NonNullable<
+              EtapaProcessoDto['avaliacao']['formaDeAvaliacao']
+            >['codigo'],
+            rotulo: 'Objetiva',
+          },
+        },
+      }),
       passoDoLancamento: '0.5',
       regraConsolidacaoCodigo: 'CONSOLIDACAO-AVALIACAO-UNICA',
       regraConsolidacaoVersao: 'v1',
@@ -91,13 +106,24 @@ describe('avaliação da etapa no ida-e-volta', () => {
     const etapa = lida({
       nota: { notaMaxima: 10 },
       avaliacao: {
-        formaDeAvaliacao: { codigo: 'HUMANA' as NonNullable<EtapaProcessoDto['avaliacao']['formaDeAvaliacao']>['codigo'], rotulo: 'Humana' },
+        formaDeAvaliacao: {
+          codigo: 'HUMANA' as NonNullable<
+            EtapaProcessoDto['avaliacao']['formaDeAvaliacao']
+          >['codigo'],
+          rotulo: 'Humana',
+        },
         itensDeAvaliacao: [
-          { id: '01960000-0000-7000-0000-0000000000i1', rotulo: 'Clareza', pontuacaoMaxima: 4 },
+          {
+            id: '01960000-0000-7000-0000-0000000000i1',
+            chave: 'clareza',
+            ordem: 1,
+            rotulo: 'Clareza',
+            pontuacaoMaxima: 4,
+          },
         ],
         escalaDeAtendimento: [
-          { rotulo: 'Atendeu', fracao: 1 },
-          { rotulo: 'Parcial', fracao: 0.5 },
+          { chave: 'atendeu', ordem: 1, rotulo: 'Atendeu', fracao: 1 },
+          { chave: 'parcial', ordem: 2, rotulo: 'Parcial', fracao: 0.5 },
         ],
       },
     });

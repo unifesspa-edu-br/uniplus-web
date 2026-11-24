@@ -333,7 +333,7 @@ describe('hidratarDraft — cronograma e etapas', () => {
   it('renumera as etapas na chegada, corrigindo ordem ausente', () => {
     const semOrdem = dtoComCronograma({
       etapas: [
-        etapaDoServidor({ id: 'etapa-sem-ordem', identificacao: { ordem: null } }),
+        etapaDoServidor({ id: 'etapa-sem-ordem', identificacao: { ordem: 0 } }),
         etapaDoServidor({ id: 'etapa-com-ordem', identificacao: { ordem: 7 } }),
       ],
     });

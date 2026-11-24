@@ -131,8 +131,8 @@ function alvoDoPrazoOuValidade(campo: string, fase: string, identificador: strin
   const destino =
     partes[2] === 'escolha'
       ? prazo
-        ? 'semPrazo'
-        : 'naoExigeDocumentoValido'
+        ? 'SEM_PRAZO'
+        : 'NAO_EXIGE_DOCUMENTO_VALIDO'
       : CAMPOS_DO_PRAZO_E_DA_VALIDADE[partes[2]];
   return destino ? `${base}-${destino}` : null;
 }

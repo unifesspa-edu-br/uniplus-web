@@ -1,47 +1,41 @@
 <p class="step-subtitle">
-  Bônus regional. O processo declara se aplica o bônus ou não: a resposta é obrigatória para
+  FADA. O processo declara se aplica o FADA ou não: a resposta é obrigatória para
   publicar, e "não aplica" é uma resposta válida.
 </p>
 @if (!store.emConsulta()) {
   <ui-falha-de-leitura titulo="Catálogos de regras" [leitura]="catalogos.leitura" />
   <ui-falha-de-leitura
-    titulo="Bases legais do bônus regional"
+    titulo="Bases legais do FADA"
     [leitura]="basesLegais.leituraDasBasesLegais"
   />
 }
 <div class="step-card">
   @if (store.emConsulta()) {
     <ui-valor-em-consulta
-      rotulo="Bônus regional"
+      rotulo="FADA"
       seVazio="Ainda não declarado"
       [valor]="leitura().aplicacao"
     />
   } @else {
     <fieldset class="form-field">
-      <legend class="label">Este processo seletivo aplica o bônus regional?</legend>
+      <legend class="label">Este processo seletivo aplica o FADA?</legend>
       <div class="checkbox-grid">
         <label class="check-item"
-          ><input
-            type="radio"
-            name="bonus-aplica"
-            [value]="true"
-            [formControl]="aplica"
-          /><span>Aplica o bônus regional</span></label
+          ><input type="radio" name="bonus-aplica" [value]="true" [formControl]="aplica" /><span
+            >Aplica o FADA</span
+          ></label
         >
         <label class="check-item"
-          ><input
-            type="radio"
-            name="bonus-aplica"
-            [value]="false"
-            [formControl]="aplica"
-          /><span>Não aplica o bônus regional</span></label
+          ><input type="radio" name="bonus-aplica" [value]="false" [formControl]="aplica" /><span
+            >Não aplica o FADA</span
+          ></label
         >
       </div>
     </fieldset>
   }
   @if (store.draft().bonus.aplica === false && !store.emConsulta()) {
     <div class="bonus-info">
-      O processo não aplica o bônus regional — a gravação declara isso ao servidor.
+      O processo não aplica o FADA — a gravação declara isso ao servidor.
     </div>
   }
   @if (store.draft().bonus.aplica === true) {
@@ -50,14 +44,14 @@
         <div class="form-grid">
           <ui-valor-em-consulta
             class="form-grid__full"
-            rotulo="Regra do bônus"
+            rotulo="Regra do FADA"
             [valor]="leitura().regra"
           />
           <ui-valor-em-consulta rotulo="Fator" [valor]="leitura().fator" />
           <ui-valor-em-consulta rotulo="Teto" seVazio="Sem teto" [valor]="leitura().teto" />
           <ui-valor-em-consulta
             class="form-grid__full"
-            rotulo="Base Legal do bônus"
+            rotulo="Base Legal do FADA"
             [valor]="leitura().baseLegal"
             [dica]="basesLegais.descricaoDaSelecionada() || null"
           />
@@ -73,7 +67,7 @@
       } @else {
         <div class="form-grid form-grid--3">
           <div class="form-field">
-            <label class="label" for="f-bonus-regra">Regra do bônus</label
+            <label class="label" for="f-bonus-regra">Regra do FADA</label
             ><select
               class="input"
               id="f-bonus-regra"
@@ -108,7 +102,7 @@
         </div>
         <div class="form-grid form-grid--3" style="margin-top: var(--space-4)">
           <div class="form-field">
-            <label class="label" for="f-bonus-base-legal">Base Legal do bônus</label
+            <label class="label" for="f-bonus-base-legal">Base Legal do FADA</label
             ><select
               class="input"
               id="f-bonus-base-legal"
@@ -180,8 +174,8 @@
               }
             </select>
             <span class="field__hint" id="f-bonus-elegibilidade-ajuda">
-              O acréscimo vale para o candidato em quem este fato resulta em "sim": um campo de
-              sim ou não do formulário de inscrição, como o pedido do acréscimo, ou um fato que o
+              O acréscimo vale para o candidato em quem este fato resulta em "sim": um campo de sim
+              ou não do formulário de inscrição, como o pedido do acréscimo, ou um fato que o
               processo deriva assim, sem depender do que só o formulário de isenção coleta. A
               publicação exige a escolha.
               @if (fatosDeElegibilidade().length === 0) {
@@ -218,7 +212,10 @@
                 </tr>
               </thead>
               <tbody>
-                @for (municipio of basesLegais.municipiosDaSelecionada(); track municipio.codigoIbge) {
+                @for (
+                  municipio of basesLegais.municipiosDaSelecionada();
+                  track municipio.codigoIbge
+                ) {
                   <tr>
                     <td data-label="Nome">{{ municipio.nome }}</td>
                     <td data-label="UF">{{ municipio.uf }}</td>

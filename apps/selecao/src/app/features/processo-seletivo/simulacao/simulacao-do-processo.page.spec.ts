@@ -57,6 +57,8 @@ const FORMULARIO_DA_HABILITACAO: FormularioRenderizavelDto = {
           },
         ],
       },
+      prazoDeEmissao: null,
+      validade: null,
       modelo: null,
     },
   ],

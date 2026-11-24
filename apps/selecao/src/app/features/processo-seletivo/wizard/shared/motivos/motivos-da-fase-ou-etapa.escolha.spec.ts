@@ -43,7 +43,7 @@ describe('MotivosDaFaseOuEtapaComponent: escolher e retirar', () => {
     expect(pedidosDeEscolha).toEqual([
       {
         faseChave: 'inscricao',
-        tipoCodigo: HOMOLOGACAO,
+        tipoDeDecisaoCodigo: HOMOLOGACAO,
         codigo: 'FORA_DA_COTA',
         descricao: 'Fora da cota.',
         sentido: 'DESFAVORAVEL',
@@ -72,7 +72,7 @@ describe('MotivosDaFaseOuEtapaComponent: escolher e retirar', () => {
     caixaDoMotivo(fixture, 'SEM_ENEM')?.click();
 
     expect(pedidosDeRetirada).toEqual([
-      { faseChave: 'inscricao', tipoCodigo: HOMOLOGACAO, codigo: 'SEM_ENEM' },
+      { faseChave: 'inscricao', tipoDeDecisaoCodigo: HOMOLOGACAO, codigo: 'SEM_ENEM' },
     ]);
     expect(pedidosDeEscolha).toEqual([]);
   });

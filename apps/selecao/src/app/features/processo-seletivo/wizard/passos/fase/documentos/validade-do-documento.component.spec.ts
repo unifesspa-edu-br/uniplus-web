@@ -26,9 +26,9 @@ const PROVEDORES = [
     useValue: {
       exigenciaDoDocumento: () => ({
         validade: {
-          escolha: 'exigeDocumentoValido',
+          escolha: 'EXIGE_DOCUMENTO_VALIDO',
           referencia: null,
-          efeitoDoVencimento: 'recusarDocumento',
+          efeitoDoVencimento: 'RECUSAR_DOCUMENTO',
         },
       }),
       escreverExigencia: escrever,
@@ -37,7 +37,7 @@ const PROVEDORES = [
   {
     provide: CatalogoDasEscolhasDaValidade,
     useValue: catalogo('escolhasDaValidade', [
-      { codigo: 'naoExigeDocumentoValido', rotulo: 'Escolha recebida' },
+      { codigo: 'NAO_EXIGE_DOCUMENTO_VALIDO', rotulo: 'Escolha recebida' },
     ]),
   },
   {
@@ -67,10 +67,13 @@ describe('validade-do-documento', () => {
     const elemento = tela.nativeElement as HTMLElement;
     expect(elemento.textContent).toContain('Escolha recebida');
     elemento
-      .querySelector<HTMLInputElement>('#campo-naoExigeDocumentoValido')
+      .querySelector<HTMLInputElement>('#campo-NAO_EXIGE_DOCUMENTO_VALIDO')
       ?.dispatchEvent(new Event('change'));
     expect(escrever).toHaveBeenCalledWith('documento', {
-      validade: expect.objectContaining({ escolha: 'naoExigeDocumentoValido', referencia: null }),
+      validade: expect.objectContaining({
+        escolha: 'NAO_EXIGE_DOCUMENTO_VALIDO',
+        referencia: null,
+      }),
     });
   });
 });

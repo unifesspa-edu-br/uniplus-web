@@ -58,7 +58,7 @@ function catalogosValidos(catalogos: CatalogosLidos): catalogos is CatalogosVali
 }
 
 /**
- * Catálogos que os passos de Fórmula, Eliminação, Bônus e Desempate
+ * Catálogos que os passos de Fórmula, Eliminação, FADA e Desempate
  * referenciam — as seis dimensões de regra que compõem a classificação do
  * processo (UNI-REQ-0482). Todas do mesmo `rol_de_regras` versionado que o
  * Cronograma já consulta para o algoritmo de contagem, então o formato de
@@ -135,7 +135,7 @@ export class CatalogosDeClassificacao {
   private areasBuscando = false;
 
   /**
-   * Já buscou, ou está buscando. Fórmula, Eliminação, Bônus e Desempate pedem
+   * Já buscou, ou está buscando. Fórmula, Eliminação, FADA e Desempate pedem
    * o carregamento ao nascer; sem a guarda, cada abertura do editor faria a
    * mesma rodada de requisições quatro vezes.
    */

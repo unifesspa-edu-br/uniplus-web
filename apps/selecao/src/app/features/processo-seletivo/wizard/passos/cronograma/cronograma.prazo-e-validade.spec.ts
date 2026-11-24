@@ -23,17 +23,17 @@ const opcao = (codigo: string) => ({ codigo, rotulo: codigo });
 
 function preencherCatalogos(): void {
   TestBed.inject(CatalogoDasEscolhasDoPrazoDeEmissao).escolhasDoPrazoDeEmissao.set([
-    opcao('comPrazo'),
+    opcao('COM_PRAZO'),
   ]);
   TestBed.inject(CatalogoDasEscolhasDaValidade).escolhasDaValidade.set([
-    opcao('exigeDocumentoValido'),
+    opcao('EXIGE_DOCUMENTO_VALIDO'),
   ]);
   TestBed.inject(CatalogoDasUnidadesDoPrazoDeEmissao).unidadesDoPrazoDeEmissao.set([opcao('DIAS')]);
   TestBed.inject(CatalogoDosTiposDaDataDeReferencia).tiposDaDataDeReferencia.set([
-    opcao('fimDasInscricoes'),
+    opcao('DATA_DA_APRESENTACAO'),
   ]);
   TestBed.inject(CatalogoDosEfeitosNaAnaliseDoDocumento).efeitosNaAnaliseDoDocumento.set([
-    opcao('recusarDocumento'),
+    opcao('RECUSAR_DOCUMENTO'),
   ]);
 }
 
@@ -69,23 +69,23 @@ function abrirDocumento(tela: ContextoDoCronograma): string {
 }
 
 function configurarPrazo(tela: ContextoDoCronograma, id: string): void {
-  mudar(tela.nativo, `prazo-${id}-comPrazo`);
+  mudar(tela.nativo, `prazo-${id}-COM_PRAZO`);
   tela.detectar();
   TestBed.inject(CatalogoDosTiposDaDataDeReferencia).tiposDaDataDeReferencia.set([
-    opcao('fimDasInscricoes'),
+    opcao('DATA_DA_APRESENTACAO'),
   ]);
   tela.detectar();
   mudar(tela.nativo, `-prazo-${id}-valor`, '30');
   mudar(tela.nativo, `-prazo-${id}-unidade`, 'DIAS');
-  mudar(tela.nativo, `-prazo-${id}-referencia-tipo`, 'fimDasInscricoes');
-  mudar(tela.nativo, `-prazo-${id}-efeito`, 'recusarDocumento');
+  mudar(tela.nativo, `-prazo-${id}-referencia-tipo`, 'DATA_DA_APRESENTACAO');
+  mudar(tela.nativo, `-prazo-${id}-efeito`, 'RECUSAR_DOCUMENTO');
 }
 
 function configurarValidade(tela: ContextoDoCronograma, id: string): void {
-  mudar(tela.nativo, `validade-${id}-exigeDocumentoValido`);
+  mudar(tela.nativo, `validade-${id}-EXIGE_DOCUMENTO_VALIDO`);
   tela.detectar();
-  mudar(tela.nativo, `-validade-${id}-referencia-tipo`, 'fimDasInscricoes');
-  mudar(tela.nativo, `-validade-${id}-efeito`, 'recusarDocumento');
+  mudar(tela.nativo, `-validade-${id}-referencia-tipo`, 'DATA_DA_APRESENTACAO');
+  mudar(tela.nativo, `-validade-${id}-efeito`, 'RECUSAR_DOCUMENTO');
 }
 
 async function avancarGravacao(tela: ContextoDoCronograma): Promise<void> {
@@ -101,16 +101,16 @@ async function avancarGravacao(tela: ContextoDoCronograma): Promise<void> {
 
 const REQUISITOS_CONFIGURADOS = {
   prazoDeEmissao: {
-    escolha: 'comPrazo',
+    escolha: 'COM_PRAZO',
     valor: 30,
     unidade: 'DIAS',
-    referencia: { tipo: 'fimDasInscricoes' },
-    efeitoForaDoPrazo: 'recusarDocumento',
+    referencia: { tipo: 'DATA_DA_APRESENTACAO' },
+    efeitoForaDoPrazo: 'RECUSAR_DOCUMENTO',
   },
   validade: {
-    escolha: 'exigeDocumentoValido',
-    referencia: { tipo: 'fimDasInscricoes' },
-    efeitoDoVencimento: 'recusarDocumento',
+    escolha: 'EXIGE_DOCUMENTO_VALIDO',
+    referencia: { tipo: 'DATA_DA_APRESENTACAO' },
+    efeitoDoVencimento: 'RECUSAR_DOCUMENTO',
   },
 };
 
@@ -129,6 +129,31 @@ describe('edição do prazo e da validade no cronograma', () => {
     await avancarGravacao(tela);
     const requisicao = tela.controller.expectOne(ROTA_DOCUMENTOS);
     expect(requisicao.request.body[0].documento.requisitos).toMatchObject(REQUISITOS_CONFIGURADOS);
+    requisicao.flush(null, { status: 204, statusText: 'No Content' });
+    await gravacao;
+  });
+
+  it('envia os códigos do contrato na requisição de documentos', async () => {
+    const id = abrirDocumento(tela);
+    configurarPrazo(tela, id);
+    configurarValidade(tela, id);
+    vi.spyOn(tela.conferencia, 'validar').mockReturnValue({ valid: true });
+    const gravacao = tela.componente.persistir();
+    await avancarGravacao(tela);
+    const requisicao = tela.controller.expectOne(ROTA_DOCUMENTOS);
+    expect(requisicao.request.body[0].documento.requisitos).toMatchObject({
+      prazoDeEmissao: {
+        escolha: 'COM_PRAZO',
+        unidade: 'DIAS',
+        efeitoForaDoPrazo: 'RECUSAR_DOCUMENTO',
+        referencia: { tipo: 'DATA_DA_APRESENTACAO' },
+      },
+      validade: {
+        escolha: 'EXIGE_DOCUMENTO_VALIDO',
+        efeitoDoVencimento: 'RECUSAR_DOCUMENTO',
+        referencia: { tipo: 'DATA_DA_APRESENTACAO' },
+      },
+    });
     requisicao.flush(null, { status: 204, statusText: 'No Content' });
     await gravacao;
   });

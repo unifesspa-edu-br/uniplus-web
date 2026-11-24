@@ -166,7 +166,7 @@ function lerGrupoDeExigencias(
   codigoPorFaseId: ReadonlyMap<string, string>,
 ): RegraDeComprovacao | null {
   const itensDoGrupo = lerExigencias(regra.itens ?? [], codigoPorFaseId);
-  const forma = regra.forma.codigo as RegraDeComprovacao['forma'];
+  const forma = regra.forma.codigo;
   return { ...camposDaRegra(regra), forma, documento: null, itens: itensDoGrupo };
 }
 
@@ -250,10 +250,7 @@ function criteriosDoComprovanteLidos(
   codigoPorFaseId: ReadonlyMap<string, string>,
 ): CriteriosDoComprovante {
   return {
-    ...lerPrazoEValidade(
-      requisitos as unknown as import('@uniplus/shared-data/selecao').RequisitosDoDocumentoDtoProvisorio,
-      codigoPorFaseId,
-    ),
+    ...lerPrazoEValidade(requisitos, codigoPorFaseId),
     formatosPermitidos: lerFormatosAceitos(requisitos.formatosPermitidos),
     tamanhoMaximoBytes: requisitos.tamanhoMaximoBytes,
     modelo: modeloDe(requisitos.modelo),

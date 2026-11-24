@@ -17,7 +17,7 @@ import {
   DocumentoDaConfiguracaoEtapasCarater as CaraterDaEtapa,
   DocumentoDaConfiguracaoEtapasFormaDeAvaliacao as FormaDeAvaliacaoDaEtapa,
   DocumentoDaConfiguracaoEtapasRecursoDaEtapaEventoInicialDoPrazo as EventoInicialDoPrazoDoRecursoDaEtapa,
-  DocumentoDaConfiguracaoExigenciasIdadeMaximaEmissaoUnidade as UnidadeDaIdadeMaxima,
+  DocumentoDaConfiguracaoExigenciasPrazoDeEmissaoUnidade as UnidadeDoPrazoDeEmissao,
   DocumentoDaConfiguracaoCondicoesBaseLegalAbrangencia as AbrangenciaDaBaseLegal,
   DocumentoDaConfiguracaoCondicoesCondicaoOperador as OperadorDaCondicao,
   DocumentoDaConfiguracaoCondicoesBaseLegalSituacao as SituacaoDaBaseLegal,
@@ -38,7 +38,7 @@ export type DocumentoDaConfiguracaoDistribuicaoDeVagas =
   Esquemas['DocumentoDaConfiguracaoDistribuicaoDeVagas'];
 export type DocumentoDaConfiguracaoCascataDeRemanejamento =
   Esquemas['DocumentoDaConfiguracaoCascataDeRemanejamento'];
-export type DocumentoDaConfiguracaoBonusRegional = Esquemas['DocumentoDaConfiguracaoBonusRegional'];
+export type DocumentoDaConfiguracaoFada = Esquemas['DocumentoDaConfiguracaoFada'];
 export type DocumentoDaConfiguracaoAtendimento = Esquemas['DocumentoDaConfiguracaoAtendimento'];
 export type DocumentoDaConfiguracaoClassificacao = Esquemas['DocumentoDaConfiguracaoClassificacao'];
 export type DocumentoDaConfiguracaoReferenciaDeRegra =
@@ -89,7 +89,7 @@ export {
   SemUnanimidadeNaDeliberacao,
   SituacaoDaBaseLegal,
   FormaDeComprovacaoDaConfiguracao,
-  UnidadeDaIdadeMaxima,
+  UnidadeDoPrazoDeEmissao,
   EventoInicialDoPrazoDoRecursoDaEtapa,
   AreaDoEnemDoProcedimento,
   CaraterDaEtapa,

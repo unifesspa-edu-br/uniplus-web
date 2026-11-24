@@ -9,7 +9,7 @@
     [attr.aria-describedby]="
       idBase() +
       '-tipo-recusas' +
-      (referencia()?.tipo === 'fimDasInscricoes' ? ' ' + idBase() + '-tipo-ajuda' : '')
+      (referencia()?.tipo === 'FIM_DAS_INSCRICOES' ? ' ' + idBase() + '-tipo-ajuda' : '')
     "
     (change)="escolherTipo($event)"
   >
@@ -21,7 +21,7 @@
   <ui-recusa-do-campo [id]="idBase() + '-tipo-recusas'" [recusas]="recusasDoCampo('tipo')" />
   <ui-falha-de-leitura-do-campo [leitura]="leituraDeCatalogo" />
 </div>
-@if (referencia()?.tipo === 'dataEspecifica') {
+@if (referencia()?.tipo === 'DATA_ESPECIFICA') {
   <div class="form-field">
     <label [for]="idBase() + '-data'">Data específica</label>
     <input
@@ -57,7 +57,7 @@
     <ui-recusa-do-campo [id]="idBase() + '-fase-recusas'" [recusas]="recusasDoCampo('faseId')" />
   </div>
 }
-@if (referencia()?.tipo === 'fimDasInscricoes') {
+@if (referencia()?.tipo === 'FIM_DAS_INSCRICOES') {
   <p class="field__hint" [id]="idBase() + '-tipo-ajuda'">
     O fim das inscrições é o maior término entre as fases que coletam inscrição.
   </p>

@@ -117,6 +117,7 @@ const PUBLICACOES_DA_FASE: FaseCronogramaDto['publicacoes'] = {
 
 const BANCA_REQUERIDA: FaseCronogramaDto['bancasRequeridas'][number] = {
   id: 'snapshot-banca',
+  chave: 'banca-1',
   tipoBancaOrigemId: 'tipo-banca-1',
   ...tipoDeBancaDoServidor(TipoDeBancaCodigo.BANCA_ANALISE_RECURSOS),
   nome: 'Análise de recursos',
@@ -133,6 +134,7 @@ const BANCA_REQUERIDA: FaseCronogramaDto['bancasRequeridas'][number] = {
  */
 export function faseDoServidor(parcial: FaseDoServidorParcial = {}): FaseCronogramaDto {
   return {
+    chave: 'fase-1',
     id: parcial.id ?? 'snapshot-fase-1',
     codigo: parcial.codigo ?? 'HOMOLOGACAO',
     faseCanonica: { ...FASE_CANONICA, ...parcial.faseCanonica },
@@ -180,6 +182,7 @@ const PUBLICACOES_DA_ETAPA: EtapaProcessoDto['publicacoes'] = {
 /** Etapa classificatória de prova, sem janela, banca nem recurso. */
 export function etapaDoServidor(parcial: EtapaDoServidorParcial = {}): EtapaProcessoDto {
   return {
+    chave: 'etapa-1',
     id: parcial.id ?? 'etapa-persistida-1',
     identificacao: { ...IDENTIFICACAO_DA_ETAPA, ...parcial.identificacao },
     nota: { ...NOTA_DA_ETAPA, ...parcial.nota },

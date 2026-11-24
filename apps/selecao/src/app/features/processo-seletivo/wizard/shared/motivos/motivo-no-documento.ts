@@ -8,7 +8,7 @@ export type FaseOuEtapaDoMotivo =
 
 /** O que distingue um motivo no documento: a fase ou etapa, o tipo de decisão e o código. */
 export type IdentidadeDoMotivo = FaseOuEtapaDoMotivo & {
-  readonly tipoCodigo: string;
+  readonly tipoDeDecisaoCodigo: string;
   readonly codigo: string;
 };
 
@@ -32,7 +32,7 @@ export interface LugarDoMotivo {
 
 /** Um motivo reconhecível pelo lugar, pelo tipo de decisão e pelo código. */
 export interface MotivoReconhecivel extends LugarDoMotivo {
-  readonly tipoCodigo: string;
+  readonly tipoDeDecisaoCodigo: string;
   readonly codigo: string;
 }
 
@@ -45,7 +45,7 @@ export function daMesmaFaseOuEtapa(uma: LugarDoMotivo, outra: LugarDoMotivo): bo
 export function ehOMesmoMotivo(um: MotivoReconhecivel, outro: MotivoReconhecivel): boolean {
   return (
     daMesmaFaseOuEtapa(um, outro) &&
-    um.tipoCodigo === outro.tipoCodigo &&
+    um.tipoDeDecisaoCodigo === outro.tipoDeDecisaoCodigo &&
     um.codigo === outro.codigo
   );
 }
