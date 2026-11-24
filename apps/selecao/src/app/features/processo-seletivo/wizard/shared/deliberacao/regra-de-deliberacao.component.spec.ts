@@ -1,3 +1,4 @@
+import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 import { proverVocabulariosDaDeliberacao } from './regra-de-deliberacao.testing';
 import { MODOS, CRITERIOS, ENCERRAMENTOS } from './regra-de-deliberacao.testing';
 import type { ComponentFixture } from '@angular/core/testing';
@@ -52,9 +53,8 @@ describe('RegraDeDeliberacaoComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      providers: [fornecerVocabulariosDaRegra()],
+      providers: [fornecerVocabulariosDaRegra(), proverVocabulariosDaDeliberacao()],
       imports: [RegraDeDeliberacaoComponent],
-      providers: [proverVocabulariosDaDeliberacao()],
     }).compileComponents();
     fixture = TestBed.createComponent(RegraDeDeliberacaoComponent);
     fixture.componentRef.setInput('idBase', ID);
@@ -106,7 +106,7 @@ describe('RegraDeDeliberacaoComponent', () => {
 
       expect(emitidas).toEqual([
         expect.objectContaining({
-          modo: MODOS.colegiadaComVotacao,
+          modo: MODOS.colegiadaComVotacao.codigo,
           integrantes: '',
           suplentes: '0',
         }),
@@ -142,7 +142,10 @@ describe('RegraDeDeliberacaoComponent', () => {
     it('troca de critério e já tira o desempate que ele não admite', () => {
       escolher('criterio', 'UNANIMIDADE');
 
-      expect(emitidas.at(-1)).toMatchObject({ criterio: CRITERIOS.unanimidade, desempate: null });
+      expect(emitidas.at(-1)).toMatchObject({
+        criterio: CRITERIOS.unanimidade.codigo,
+        desempate: '',
+      });
     });
 
     it('volta a banca ao estado sem regra', () => {
@@ -155,14 +158,14 @@ describe('RegraDeDeliberacaoComponent', () => {
       escolher('modo', MODOS.atoIndividual.codigo);
 
       expect(emitidas.at(-1)).toMatchObject({
-        modo: MODOS.atoIndividual,
-        criterio: CRITERIOS.maioriaSimples,
+        modo: MODOS.atoIndividual.codigo,
+        criterio: CRITERIOS.maioriaSimples.codigo,
         quorum: '3',
       });
     });
 
     it('pede o resultado sem unanimidade só no critério que o admite', () => {
-      exibe(comRegra({ criterio: CRITERIOS.unanimidade, desempate: null }));
+      exibe(comRegra({ criterio: CRITERIOS.unanimidade.codigo, desempate: '' }));
 
       expect(controle('semUnanimidade')).not.toBeNull();
       expect(controle('desempate')).toBeNull();
@@ -178,7 +181,7 @@ describe('RegraDeDeliberacaoComponent', () => {
 
   describe('quórum que acompanha os integrantes', () => {
     beforeEach(() =>
-      exibe(comRegra({ encerramento: ENCERRAMENTOS.todosOsTitulares, quorum: '5' })),
+      exibe(comRegra({ encerramento: ENCERRAMENTOS.todosOsTitulares.codigo, quorum: '5' })),
     );
 
     it('não deixa digitar o quórum e explica por quê', () => {
@@ -201,7 +204,7 @@ describe('RegraDeDeliberacaoComponent', () => {
     });
 
     it('retira a votação, anuncia e devolve o foco ao seletor de modo', () => {
-      exibe(comRegra({ modo: MODOS.atoIndividual }));
+      exibe(comRegra({ modo: MODOS.atoIndividual.codigo }));
       document.body.appendChild(nativo());
       const botao = Array.from(nativo().querySelectorAll('button')).find((item) =>
         item.textContent?.includes('Retirar a votação do recurso'),
@@ -211,12 +214,12 @@ describe('RegraDeDeliberacaoComponent', () => {
 
       expect(emitidas.at(-1)).toEqual(
         comRegra({
-          modo: MODOS.atoIndividual,
+          modo: MODOS.atoIndividual.codigo,
           quorum: '',
-          criterio: null,
-          encerramento: null,
-          desempate: null,
-          semUnanimidade: null,
+          criterio: '',
+          encerramento: '',
+          desempate: '',
+          semUnanimidade: '',
         }),
       );
       expect(nativo().querySelector('[role="status"]')?.textContent).toContain(
@@ -273,7 +276,7 @@ describe('RegraDeDeliberacaoComponent', () => {
     });
 
     it('descreve o campo pela dica e pela recusa do servidor, que vale no lugar do erro da conferência', () => {
-      exibe(comRegra({ encerramento: ENCERRAMENTOS.todosOsTitulares, quorum: '5' }), {
+      exibe(comRegra({ encerramento: ENCERRAMENTOS.todosOsTitulares.codigo, quorum: '5' }), {
         erros: { quorum: 'Confira o quórum.' },
         recusas: { quorum: [doQuorum] },
       });

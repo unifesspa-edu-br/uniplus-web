@@ -1,4 +1,4 @@
-import { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
+import type { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 import { ORIGEM_NO_EDITAL, valorDoEnum } from './valor-do-enum';
 import type {
   EtapaProcessoDto,
@@ -74,7 +74,7 @@ export function faseDoServidor(parcial: FaseDoServidorParcial = {}): FaseCronogr
 
 const IDENTIFICACAO_DA_ETAPA: EtapaProcessoDto['identificacao'] = {
   nome: 'Prova objetiva',
-  carater: valorDoEnum(CaraterEtapaCodigo.CLASSIFICATORIA, 'Classificatória'),
+  carater: valorDoEnum('CLASSIFICATORIA' as CaraterEtapaCodigo.CLASSIFICATORIA, 'Classificatória'),
   tipoEtapa: {
     origemId: '01960000-0000-7000-0000-0000000000b1',
     codigo: 'PROVA_OBJETIVA',

@@ -1,9 +1,5 @@
 import { json } from './resposta-da-api';
 import { respostasDa, type Pessoa } from './respostas-da-persona';
-import {
-  SituacaoDoArquivoDoCandidatoCodigo,
-  SituacaoInscricaoCodigo,
-} from '@uniplus/shared-data/selecao';
 import { readFile } from 'node:fs/promises';
 import * as path from 'node:path';
 import { API_URL, PDF_MINIMO, enviarPelaUrlAssinada, tokenDaPersona } from '@uniplus/shared-e2e';
@@ -94,9 +90,7 @@ function arquivosVerificados(rascunho: Rascunho, enviados: number): boolean {
     .flatMap((documento) => documento.arquivos ?? []);
   return (
     arquivos.length >= enviados &&
-    arquivos.every(
-      (arquivo) => arquivo.situacao.codigo === SituacaoDoArquivoDoCandidatoCodigo.VERIFICADO,
-    )
+    arquivos.every((arquivo) => arquivo.situacao.codigo === 'VERIFICADO')
   );
 }
 
@@ -123,6 +117,14 @@ interface TermoDoFormulario {
   readonly codigo: string;
   readonly versaoId: string;
   readonly conteudo: { readonly hashVersao: string };
+}
+
+function aceitesDosTermos(termos: TermoDoFormulario[]): CorpoDaInscricao['aceites'] {
+  return termos.map(({ codigo, versaoId, conteudo }) => ({
+    codigo,
+    versaoId,
+    hashVersao: conteudo.hashVersao,
+  }));
 }
 
 /**
@@ -173,7 +175,7 @@ class InscricaoDaPersona {
 
   async inscrever(p: Pessoa, comLaudo: boolean): Promise<RascunhoComSituacao> {
     let rascunho = await this.obterRascunho();
-    if (rascunho.situacao.codigo !== SituacaoInscricaoCodigo.RASCUNHO) return rascunho;
+    if (rascunho.situacao.codigo !== 'RASCUNHO') return rascunho;
     const corpo = await this.montarRespostas(p, comLaudo);
     rascunho = await this.salvarRespostas(rascunho, corpo);
     if (comLaudo) rascunho = await this.enviarLaudos(rascunho);
@@ -190,29 +192,35 @@ class InscricaoDaPersona {
   }
 
   async montarRespostas(p: Pessoa, comLaudo: boolean): Promise<CorpoDaInscricao> {
-    const aceites = await this.aceitesDoFormulario();
+    const formulario = await this.formulario();
     return {
       ofertaCursoId: await ofertaDeMedicina(this.processoId),
       ofertaCursoSegundaOpcaoId: null,
-      respostas: await respostasDa(p, this.token, comLaudo),
+      respostas: await respostasDa(
+        p,
+        this.token,
+        comLaudo,
+        formulario.coleta.itens.some((item) => item.fatoCodigo === 'CIDADE_DE_PROVA'),
+      ),
       grupos: {},
-      aceites,
+      aceites: aceitesDosTermos(formulario.termos),
     };
   }
 
-  private async aceitesDoFormulario(): Promise<CorpoDaInscricao['aceites']> {
-    const { formulario } = await json<{ formulario: { termos: TermoDoFormulario[] } }>(
+  private async formulario(): Promise<{
+    termos: TermoDoFormulario[];
+    coleta: { itens: { fatoCodigo: string }[] };
+  }> {
+    const { formulario } = await json<{
+      formulario: { termos: TermoDoFormulario[]; coleta: { itens: { fatoCodigo: string }[] } };
+    }>(
       await fetch(
         `${API_URL}/api/selecao/processos-seletivos/${this.processoId}/formularios/INSCRICAO`,
       ),
       200,
       'formulário de inscrição',
     );
-    return formulario.termos.map(({ codigo, versaoId, conteudo }) => ({
-      codigo,
-      versaoId,
-      hashVersao: conteudo.hashVersao,
-    }));
+    return formulario;
   }
 
   async salvarRespostas(

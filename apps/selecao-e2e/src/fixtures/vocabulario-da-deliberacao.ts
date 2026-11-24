@@ -1,4 +1,4 @@
-import {
+import type {
   CriterioDeVotacaoCodigo,
   DesempateDaVotacaoCodigo,
   EncerramentoDaVotacaoCodigo,
@@ -8,26 +8,26 @@ import {
 import { valorDoEnum } from './valor-do-enum';
 
 export const MODOS = {
-  [ModoDeDeliberacao.ATO_INDIVIDUAL]: 'Ato individual',
-  [ModoDeDeliberacao.COLEGIADA_COM_VOTACAO]: 'Colegiada, com votação',
+  ATO_INDIVIDUAL: 'Ato individual',
+  COLEGIADA_COM_VOTACAO: 'Colegiada, com votação',
 } satisfies Record<ModoDeDeliberacao, string>;
 export const CRITERIOS = {
-  [CriterioDeVotacaoCodigo.MAIORIA_SIMPLES]: 'Maioria simples',
-  [CriterioDeVotacaoCodigo.MAIORIA_ABSOLUTA]: 'Maioria absoluta',
-  [CriterioDeVotacaoCodigo.UNANIMIDADE]: 'Unanimidade',
+  MAIORIA_SIMPLES: 'Maioria simples',
+  MAIORIA_ABSOLUTA: 'Maioria absoluta',
+  UNANIMIDADE: 'Unanimidade',
 } satisfies Record<CriterioDeVotacaoCodigo, string>;
 export const DESEMPATES = {
-  [DesempateDaVotacaoCodigo.VOTO_DA_PRESIDENCIA]: 'Voto da presidência',
-  [DesempateDaVotacaoCodigo.NOVA_VOTACAO]: 'Nova votação',
+  VOTO_DA_PRESIDENCIA: 'Voto da presidência',
+  NOVA_VOTACAO: 'Nova votação',
 } satisfies Record<DesempateDaVotacaoCodigo, string>;
 export const ENCERRAMENTOS = {
-  [EncerramentoDaVotacaoCodigo.TODOS_OS_TITULARES]: 'Todos os titulares',
-  [EncerramentoDaVotacaoCodigo.PRESIDENCIA_NO_QUORUM]: 'A presidência encerra ao atingir o quórum',
+  TODOS_OS_TITULARES: 'Todos os titulares',
+  PRESIDENCIA_NO_QUORUM: 'A presidência encerra ao atingir o quórum',
 } satisfies Record<EncerramentoDaVotacaoCodigo, string>;
 export const RESULTADOS = {
-  [ResultadoSemUnanimidadeCodigo.FAVORAVEL]: 'Favorável',
-  [ResultadoSemUnanimidadeCodigo.DESFAVORAVEL]: 'Desfavorável',
-  [ResultadoSemUnanimidadeCodigo.NOVA_VOTACAO]: 'Nova votação',
+  FAVORAVEL: 'Favorável',
+  DESFAVORAVEL: 'Desfavorável',
+  NOVA_VOTACAO: 'Nova votação',
 } satisfies Record<ResultadoSemUnanimidadeCodigo, string>;
 
 export function valorDaDeliberacao<Codigo extends string>(

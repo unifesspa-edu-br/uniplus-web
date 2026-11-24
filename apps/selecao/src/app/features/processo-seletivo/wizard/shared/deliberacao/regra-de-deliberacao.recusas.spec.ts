@@ -43,9 +43,8 @@ describe('RegraDeDeliberacaoComponent: recusas do servidor', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      providers: [fornecerVocabulariosDaRegra()],
+      providers: [fornecerVocabulariosDaRegra(), proverVocabulariosDaDeliberacao()],
       imports: [RegraDeDeliberacaoComponent],
-      providers: [proverVocabulariosDaDeliberacao()],
     }).compileComponents();
     fixture = TestBed.createComponent(RegraDeDeliberacaoComponent);
     fixture.componentRef.setInput('idBase', ID);
@@ -92,7 +91,7 @@ describe('RegraDeDeliberacaoComponent: recusas do servidor', () => {
 
   it('junta a dica, o erro da tela e a recusa, nessa ordem, no quórum fixo', () => {
     exibe(
-      comRegra({ encerramento: ENCERRAMENTOS.todosOsTitulares, quorum: '5' }),
+      comRegra({ encerramento: ENCERRAMENTOS.todosOsTitulares.codigo, quorum: '5' }),
       { quorum: [recusa('quorum', 'Antiga.', true)] },
       { quorum: 'Da tela.' },
     );

@@ -1,5 +1,5 @@
+import type { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 import { expect, test } from '@playwright/test';
-import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 import { bancaDaFaseDoServidor, idDaBancaGravada } from '../fixtures/cronograma-do-servidor';
 import {
   ID_DO_TIPO_ANALISE_DE_RECURSOS,
@@ -48,7 +48,7 @@ const NOME_DA_BANCA = 'Banca de homologação das inscrições 1';
 const ID_DA_BANCA = idDaBancaGravada(1);
 
 const SO_O_ATO_INDIVIDUAL: RegraLida = {
-  modo: { codigo: ModoDeDeliberacao.ATO_INDIVIDUAL, rotulo: 'Ato individual' },
+  modo: { codigo: 'ATO_INDIVIDUAL' as ModoDeDeliberacao.ATO_INDIVIDUAL, rotulo: 'Ato individual' },
   integrantes: 1,
   suplentes: 0,
   quorum: null,
@@ -95,7 +95,7 @@ test.describe('Votação do recurso na banca de ato individual — matriz DS @ds
     await conferirATela(page, lista);
     await gravarOCronograma(page, servidor);
     expect(servidor.fasesEnviadas.at(-1)?.[0].bancasRequeridas[0].regraDeDeliberacao).toEqual({
-      modo: ModoDeDeliberacao.ATO_INDIVIDUAL,
+      modo: 'ATO_INDIVIDUAL',
       integrantes: 3,
       suplentes: 0,
       quorum: 2,
@@ -108,7 +108,7 @@ test.describe('Votação do recurso na banca de ato individual — matriz DS @ds
     await reabrirOCronograma(page, testInfo);
     await abrirAFase(page);
     const reaberta = bancaDaLista(listaDaFase(page), NOME_DA_BANCA);
-    await expect(modoDaBanca(reaberta)).toHaveValue(ModoDeDeliberacao.ATO_INDIVIDUAL);
+    await expect(modoDaBanca(reaberta)).toHaveValue('ATO_INDIVIDUAL');
     await expect(integrantesDaBanca(reaberta)).toHaveValue('3');
     await expect(encerramentoDaVotacao(reaberta)).toHaveValue('PRESIDENCIA_NO_QUORUM');
     await expect(quorumDaVotacao(reaberta)).toHaveValue('2');
@@ -138,7 +138,7 @@ test.describe('Votação do recurso na banca de ato individual — matriz DS @ds
     await gravarOCronograma(page, servidor);
     expect(servidor.fasesEnviadas.at(-1)?.[0].bancasRequeridas[0]).toMatchObject({
       id: ID_DA_BANCA,
-      regraDeDeliberacao: { modo: ModoDeDeliberacao.ATO_INDIVIDUAL, quorum: 2 },
+      regraDeDeliberacao: { modo: 'ATO_INDIVIDUAL', quorum: 2 },
     });
   });
 
@@ -155,7 +155,7 @@ test.describe('Votação do recurso na banca de ato individual — matriz DS @ds
 
     await banca.getByRole('button', { name: 'Retirar a votação do recurso' }).click();
 
-    await expect(modoDaBanca(banca)).toHaveValue(ModoDeDeliberacao.ATO_INDIVIDUAL);
+    await expect(modoDaBanca(banca)).toHaveValue('ATO_INDIVIDUAL');
     await expect(modoDaBanca(banca)).toBeFocused();
     await expect(banca.getByText('Votação do recurso retirada.')).toBeVisible();
     await conferirATela(page, lista);
@@ -163,7 +163,7 @@ test.describe('Votação do recurso na banca de ato individual — matriz DS @ds
     await gravarOCronograma(page, servidor);
     expect(servidor.fasesEnviadas.at(-1)?.[0].bancasRequeridas[0].regraDeDeliberacao).toEqual({
       ...SO_O_ATO_INDIVIDUAL,
-      modo: ModoDeDeliberacao.ATO_INDIVIDUAL,
+      modo: 'ATO_INDIVIDUAL',
       integrantes: 3,
     });
   });
@@ -247,7 +247,7 @@ test.describe('Votação do recurso na banca de ato individual — matriz DS @ds
         (item) => item.tipoBancaOrigemId === ID_DO_TIPO_ANALISE_DE_RECURSOS,
       );
       const regra = banca?.regraDeDeliberacao;
-      return regra?.modo.codigo === ModoDeDeliberacao.COLEGIADA_COM_VOTACAO &&
+      return regra?.modo.codigo === 'COLEGIADA_COM_VOTACAO' &&
         regra.integrantes &&
         regra.quorum &&
         regra.criterio &&

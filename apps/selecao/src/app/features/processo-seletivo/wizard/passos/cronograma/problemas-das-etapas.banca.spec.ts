@@ -45,7 +45,7 @@ describe('regra de deliberação das bancas da etapa', () => {
   });
 
   it('cobra a regra incompleta nomeando a etapa', () => {
-    expect(problemasDaRegra({ ...COLEGIADA, criterio: null })).toEqual([
+    expect(problemasDaRegra({ ...COLEGIADA, criterio: '' })).toEqual([
       'A regra de deliberação de uma banca da etapa "Entrevista" está incompleta: corrija os campos marcados.',
     ]);
   });
