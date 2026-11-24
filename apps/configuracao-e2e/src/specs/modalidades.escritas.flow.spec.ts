@@ -1,5 +1,6 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
+import { MODALIDADE_AC } from '../support/dados-de-modalidade';
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -7,23 +8,7 @@ const CORS_HEADERS = {
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
 };
 
-const MODALIDADE = {
-  id: '01960000-0000-7000-0000-0000000000a1',
-  codigo: 'AC',
-  legalFixa: false,
-  descricao: 'Ampla concorrência',
-  naturezaLegal: 'AMPLA',
-  composicaoVagas: 'RESTANTE_DAS_VAGAS_OFERTADAS',
-  composicaoOrigem: null,
-  regraRemanejamento: null,
-  remanejamentoDestino: null,
-  remanejamentoPar: null,
-  remanejamentoFallback: null,
-  regraDeAplicabilidade: [],
-  acaoQuandoIndeferido: null,
-  baseLegal: null,
-  criadoEm: '2026-07-03T12:00:00Z',
-};
+const MODALIDADE = { ...MODALIDADE_AC, legalFixa: false };
 
 async function responder(route: Route, status: number, corpo?: unknown): Promise<void> {
   await route.fulfill({

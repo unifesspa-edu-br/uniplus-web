@@ -235,7 +235,9 @@ test.describe('Precedência de fase — CRUD (#497)', () => {
     await expect(page.locator('#cfg-precedencia-fase-form')).toBeVisible();
   });
 
-  test('CA-05: aresta que fecharia um ciclo (422) vira banner geral do drawer', async ({ page }) => {
+  test('CA-05: aresta que fecharia um ciclo (422) vira banner geral do drawer', async ({
+    page,
+  }) => {
     await mockApi(page, novoCapturado(), [], {
       criarStatus: 422,
       criarBody: {

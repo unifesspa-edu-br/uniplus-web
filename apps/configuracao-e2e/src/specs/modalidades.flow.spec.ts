@@ -1,5 +1,6 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
+import { MODALIDADE_AC, MODALIDADE_V, V_ID } from '../support/dados-de-modalidade';
 import { assertSemViolacoesGraves } from '../support/a11y';
 import { abrirFiltros } from '../support/filtros';
 
@@ -16,47 +17,8 @@ const CORS_HEADERS = {
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
 };
 
-const AC_ID = '01960000-0000-7000-0000-0000000000a1';
-const V_ID = '01960000-0000-7000-0000-0000000000b1';
-
-const acSeed = {
-  id: AC_ID,
-  codigo: 'AC',
-  legalFixa: true,
-  descricao: 'Ampla concorrência',
-  naturezaLegal: { codigo: 'AMPLA', rotulo: 'Ampla' },
-  composicaoVagas: {
-    codigo: 'RESTANTE_DAS_VAGAS_OFERTADAS',
-    rotulo: 'Restante das vagas ofertadas',
-  },
-  composicaoOrigem: null,
-  regraRemanejamento: null,
-  remanejamentoDestino: null,
-  remanejamentoPar: null,
-  remanejamentoFallback: null,
-  regraDeAplicabilidade: [],
-  acaoQuandoIndeferido: null,
-  baseLegal: null,
-  criadoEm: '2026-07-03T12:00:00Z',
-};
-
-// V retira suas vagas de AC e remaneja para AC — referencia AC (bloqueia a remoção de AC).
-const vSeed = {
-  ...acSeed,
-  id: V_ID,
-  codigo: 'V',
-  legalFixa: false,
-  descricao: 'PcD ampla concorrência',
-  naturezaLegal: { codigo: 'ACAO_AFIRMATIVA', rotulo: 'Ação afirmativa' },
-  composicaoVagas: {
-    codigo: 'RETIRADA_DE_OUTRA_MODALIDADE',
-    rotulo: 'Retirada de outra modalidade',
-  },
-  composicaoOrigem: 'AC',
-  regraRemanejamento: { codigo: 'DESTINO_UNICO', rotulo: 'Destino único' },
-  remanejamentoDestino: 'AC',
-  regraDeAplicabilidade: [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]],
-};
+const acSeed = MODALIDADE_AC;
+const vSeed = MODALIDADE_V;
 
 const catalogoDeFatos = [
   {
@@ -192,7 +154,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await abrirLista(page);
 
     await abrirFiltros(page);
-    await page.getByRole('button', { name: /Ação afirmativa/ }).click();
+    await page.getByRole('button', { name: /Acao afirmativa/ }).click();
     await expect(page.locator('tbody tr')).toHaveCount(1);
     await expect(page.locator('tbody')).toContainText('PcD ampla concorrência');
   });
@@ -301,8 +263,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
       naturezaLegal: 'ACAO_AFIRMATIVA',
       composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
       composicaoOrigem: 'AC',
-      regraRemanejamento: 'DESTINO_UNICO',
-      remanejamentoDestino: 'AC',
+      remanejamento: { regra: 'DESTINO_UNICO', destino: 'AC' },
     });
     await expect(page).toHaveURL(/\/modalidades$/);
   });

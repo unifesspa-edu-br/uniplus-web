@@ -1,11 +1,12 @@
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import type { Page, Route } from '@playwright/test';
-import { OrigemDataFaseCodigo, type FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
+import type { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { responder, responderPreflight, servirLeitura } from './escritas-retidas';
 
 /** API mockada da Fase canônica para os specs que só leem a lista e capturam a atualização. */
 
 /** A fase sem nada admitido nem coletado; o teste troca só o que mede. */
-const FASE_SEM_SINALIZADORES: FaseCanonicaDto = {
+const FASE_SEM_SINALIZADORES: JsonDaApi<FaseCanonicaDto> = {
   id: '01960000-0000-7000-0000-0000000000f1',
   codigo: 'AVALIACAO',
   nome: 'Avaliação',
@@ -18,11 +19,13 @@ const FASE_SEM_SINALIZADORES: FaseCanonicaDto = {
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
-  origemData: { codigo: OrigemDataFaseCodigo.NO_EDITAL, rotulo: 'Definida no edital' },
+  origemData: { codigo: 'NO_EDITAL', rotulo: 'Definida no edital' },
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
-export function faseCanonica(parcial: Partial<FaseCanonicaDto> = {}): FaseCanonicaDto {
+export function faseCanonica(
+  parcial: Partial<JsonDaApi<FaseCanonicaDto>> = {},
+): JsonDaApi<FaseCanonicaDto> {
   return { ...FASE_SEM_SINALIZADORES, ...parcial };
 }
 
@@ -50,7 +53,7 @@ function aoAtualizar(atualizacoes: unknown[]) {
 /** Serve `fases` e a lista vazia de unidades; devolve o corpo de cada atualização recebida. */
 export async function mockApiDeFasesCanonicas(
   page: Page,
-  fases: readonly FaseCanonicaDto[],
+  fases: readonly JsonDaApi<FaseCanonicaDto>[],
 ): Promise<unknown[]> {
   const atualizacoes: unknown[] = [];
   await servirLeitura(page, /\/api\/configuracao\/fases-canonicas(\?.*)?$/, fases);

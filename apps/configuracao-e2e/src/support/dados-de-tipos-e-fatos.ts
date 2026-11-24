@@ -1,10 +1,5 @@
-import {
-  FonteValoresFatoCodigo,
-  OrigemFatoCodigo,
-  QuantidadeDeValoresCodigo,
-  TipoDoDadoCodigo,
-  type FatoCandidatoDto,
-} from '@uniplus/shared-data/configuracao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
+import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 
 /**
  * Os tipos de documento, os fatos do candidato e a proteção de dados deles nos testes visuais, com as
@@ -88,12 +83,12 @@ export const FATOS = [
       componenteExibicao: null,
     },
     definicao: {
-      dominio: { codigo: TipoDoDadoCodigo.OPCAO, rotulo: 'Opção' },
-      cardinalidade: { codigo: QuantidadeDeValoresCodigo.VALOR_UNICO, rotulo: 'Valor único' },
+      dominio: { codigo: 'OPCAO', rotulo: 'Opção' },
+      cardinalidade: { codigo: 'VALOR_UNICO', rotulo: 'Valor único' },
       escopo: 'CANDIDATO',
       formato: null,
       resolucao: {
-        origem: { codigo: OrigemFatoCodigo.DECLARADO, rotulo: 'Declarado' },
+        origem: { codigo: 'DECLARADO', rotulo: 'Declarado' },
         pontoResolucao: 'INSCRICAO',
         binding: 'CAMPO_INSCRICAO:IDENTIDADE_GENERO',
       },
@@ -104,7 +99,7 @@ export const FATOS = [
         aprovacao: AJUSTE,
       },
       valores: {
-        fonte: { codigo: FonteValoresFatoCodigo.CATALOGO, rotulo: 'Catálogo' },
+        fonte: { codigo: 'CATALOGO', rotulo: 'Catálogo' },
         declarados: [
           {
             codigo: 'MULHER_CIS',
@@ -136,12 +131,12 @@ export const FATOS = [
       componenteExibicao: 'MOEDA',
     },
     definicao: {
-      dominio: { codigo: TipoDoDadoCodigo.NUMERICO, rotulo: 'Numérico' },
-      cardinalidade: { codigo: QuantidadeDeValoresCodigo.VALOR_UNICO, rotulo: 'Valor único' },
+      dominio: { codigo: 'NUMERICO', rotulo: 'Numérico' },
+      cardinalidade: { codigo: 'VALOR_UNICO', rotulo: 'Valor único' },
       escopo: 'CANDIDATO',
       formato: null,
       resolucao: {
-        origem: { codigo: OrigemFatoCodigo.DECLARADO, rotulo: 'Declarado' },
+        origem: { codigo: 'DECLARADO', rotulo: 'Declarado' },
         pontoResolucao: 'INSCRICAO',
         binding: 'CAMPO_INSCRICAO:RENDA',
       },
@@ -157,7 +152,7 @@ export const FATOS = [
     ativo: true,
     regrasPadrao: [],
   },
-] satisfies FatoCandidatoDto[];
+] satisfies JsonDaApi<FatoCandidatoDto>[];
 
 export const PENDENCIAS = [
   {

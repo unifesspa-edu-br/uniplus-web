@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
 import { TODAS_AS_PERMISSOES_DA_CONFIGURACAO } from './permissoes';
+import { mockVocabulariosDeConfiguracao } from './vocabularios-simulados';
 
 const CONFIGURACAO_E2E_RUNTIME_CONFIG = {
   apiUrl: 'http://localhost:5000',
@@ -17,6 +18,7 @@ const CONFIGURACAO_E2E_RUNTIME_CONFIG = {
  */
 export async function mockConfiguracaoRuntimeConfig(page: Page): Promise<void> {
   await mockPermissoesEfetivas(page, TODAS_AS_PERMISSOES_DA_CONFIGURACAO);
+  await mockVocabulariosDeConfiguracao(page);
   await page.route(/\/assets\/runtime-config\.json(\?.*)?$/, async (route) => {
     await route.fulfill({
       status: 200,

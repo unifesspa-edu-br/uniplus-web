@@ -1,5 +1,6 @@
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import {
-  FinalidadeFormularioCodigo,
+  type FinalidadeFormularioCodigo,
   type ModeloFormularioView,
 } from '@uniplus/shared-data/configuracao';
 import { expect, test, type Page, type Route } from '@playwright/test';
@@ -15,7 +16,7 @@ const ID_DO_MODELO = '01960000-0000-7000-0000-0000000000a1';
 const MODELO = {
   id: ID_DO_MODELO,
   codigo: 'INSCRICAO',
-  finalidade: { codigo: FinalidadeFormularioCodigo.INSCRICAO, rotulo: 'Inscrição' },
+  finalidade: { codigo: 'INSCRICAO', rotulo: 'Inscrição' },
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   ativo: true,
   conteudo: {
@@ -27,7 +28,7 @@ const MODELO = {
     grupos: [],
     documentosExigidos: [],
   },
-} satisfies ModeloFormularioView;
+} satisfies JsonDaApi<ModeloFormularioView>;
 const NOME_GRAVADO = 'Inscrição revisada';
 
 /** Atraso da releitura do modelo após a gravação: a tela ainda espera por ela quando o PUT termina. */

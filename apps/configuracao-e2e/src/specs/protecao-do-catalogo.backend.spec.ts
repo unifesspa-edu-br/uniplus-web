@@ -23,7 +23,10 @@ interface TipoGravado {
 
 interface ItemDaProtecao {
   readonly codigo: string;
-  readonly aprovacao: { readonly situacao: string; readonly classificacaoRecomendada: string | null };
+  readonly aprovacao: {
+    readonly situacao: string;
+    readonly classificacaoRecomendada: string | null;
+  };
 }
 
 interface SituacaoDoTipo {
@@ -63,8 +66,12 @@ async function cadastrarTipo(pagina: Page, nome: string, codigo: string): Promis
   await form.locator('input[formcontrolname="nome"]').fill(nome);
   await form.locator('select[formcontrolname="categoria"]').selectOption({ index: 1 });
   await form.locator('select[formcontrolname="classificacaoProtecao"]').selectOption('INTERNO');
-  await form.locator('select[formcontrolname="hipoteseLegal"]').selectOption('CUMPRIMENTO_OBRIGACAO_LEGAL');
-  await form.locator('textarea[formcontrolname="finalidadeTratamento"]').fill('Conferência de documento complementar do atendimento especializado.');
+  await form
+    .locator('select[formcontrolname="hipoteseLegal"]')
+    .selectOption('CUMPRIMENTO_OBRIGACAO_LEGAL');
+  await form
+    .locator('textarea[formcontrolname="finalidadeTratamento"]')
+    .fill('Conferência de documento complementar do atendimento especializado.');
   await pagina.getByRole('button', { name: 'Criar tipo de documento' }).click();
   await expect.poll(async () => (await tipoNaApi(codigo))?.situacao).toBe('PENDENTE');
 }
@@ -98,7 +105,9 @@ test.describe('Aprovação da proteção de dados dos tipos de documento e dos f
     await aprovarCatalogoInicial();
   });
 
-  test('o tipo novo nasce pendente e a solicitação lista os pendentes antes de enviar', async ({ browser }) => {
+  test('o tipo novo nasce pendente e a solicitação lista os pendentes antes de enviar', async ({
+    browser,
+  }) => {
     const pagina = await entrarComoPersona(browser, APP, 'isabella.figueiredo', '/tipos-documento');
     await cadastrarTipo(pagina, nome, codigo);
 
@@ -114,7 +123,12 @@ test.describe('Aprovação da proteção de dados dos tipos de documento e dos f
 
   test('o ajuste sem classificação recomendada não é enviado', async ({ browser }) => {
     const pagina = await comoCaroline(browser);
-    await expect(pagina.getByRole('heading', { level: 1, name: 'Proteção de dados dos tipos de documento e dos fatos do candidato' })).toBeVisible();
+    await expect(
+      pagina.getByRole('heading', {
+        level: 1,
+        name: 'Proteção de dados dos tipos de documento e dos fatos do candidato',
+      }),
+    ).toBeVisible();
 
     const dialogo = await abrirRecomendacaoDeAjuste(pagina, nome);
     await dialogo.getByRole('button', { name: 'Recomendar ajuste' }).click();
@@ -123,7 +137,9 @@ test.describe('Aprovação da proteção de dados dos tipos de documento e dos f
     expect((await tipoNaApi(codigo))?.situacao).toBe('SOLICITADA');
   });
 
-  test('o ajuste recomendado volta ao administrador, que aceita e o tipo fica aprovado como sensível', async ({ browser }) => {
+  test('o ajuste recomendado volta ao administrador, que aceita e o tipo fica aprovado como sensível', async ({
+    browser,
+  }) => {
     const caroline = await comoCaroline(browser);
     const dialogo = await abrirRecomendacaoDeAjuste(caroline, nome);
     await dialogo.getByLabel('Classificação recomendada').selectOption('SENSIVEL');
@@ -131,18 +147,28 @@ test.describe('Aprovação da proteção de dados dos tipos de documento e dos f
     await expect.poll(async () => (await tipoNaApi(codigo))?.situacao).toBe('AJUSTE_RECOMENDADO');
     expect((await tipoNaApi(codigo))?.recomendada).toBe('SENSIVEL');
 
-    const isabella = await entrarComoPersona(browser, APP, 'isabella.figueiredo', '/tipos-documento');
+    const isabella = await entrarComoPersona(
+      browser,
+      APP,
+      'isabella.figueiredo',
+      '/tipos-documento',
+    );
     const linha = await linhaDoTipo(isabella, codigo);
     await expect(linha).toContainText(/Ajuste recomendado/i);
     await linha.getByRole('button', { name: `Ver o detalhe de ${nome}` }).click();
     await isabella.getByRole('button', { name: 'Aceitar recomendação' }).click();
-    await isabella.getByRole('dialog', { name: 'Aceitar a recomendação' }).getByRole('button', { name: 'Aceitar recomendação' }).click();
+    await isabella
+      .getByRole('dialog', { name: 'Aceitar a recomendação' })
+      .getByRole('button', { name: 'Aceitar recomendação' })
+      .click();
 
     await expect.poll(async () => (await tipoNaApi(codigo))?.situacao).toBe('APROVADA');
     expect((await tipoNaApi(codigo))?.classificacao).toBe('SENSIVEL');
   });
 
-  test('reclassificar item aprovado avisa que ele volta a pendente, e mudar só o nome não avisa', async ({ browser }) => {
+  test('reclassificar item aprovado avisa que ele volta a pendente, e mudar só o nome não avisa', async ({
+    browser,
+  }) => {
     const pagina = await entrarComoPersona(browser, APP, 'isabella.figueiredo', '/tipos-documento');
     await linhaDoTipo(pagina, codigo);
     await pagina.getByRole('button', { name: `Editar tipo de documento ${codigo}` }).click();
@@ -155,9 +181,16 @@ test.describe('Aprovação da proteção de dados dos tipos de documento e dos f
     await expect(pagina.getByText('O item volta a pendente')).toBeVisible();
   });
 
-  test('quem mantém o cadastro, sem aprovar, consultar nem se manifestar, não entra na fila da proteção de dados', async ({ browser }) => {
+  test('quem mantém o cadastro, sem aprovar, consultar nem se manifestar, não entra na fila da proteção de dados', async ({
+    browser,
+  }) => {
     await garantirOperadorDoRoteiro();
-    const pagina = await entrarComoPersona(browser, APP, OPERADOR_DO_ROTEIRO, '/protecao-do-catalogo');
+    const pagina = await entrarComoPersona(
+      browser,
+      APP,
+      OPERADOR_DO_ROTEIRO,
+      '/protecao-do-catalogo',
+    );
 
     await expect(pagina).toHaveURL(/acesso-negado/);
   });
