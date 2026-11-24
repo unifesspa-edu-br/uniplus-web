@@ -283,3 +283,5 @@ export {
   TipoMotivoDeDecisaoCodigo,
   TipoRenderizacaoCodigo,
 } from './schema';
+
+export { processoSeletivoRequest } from './processo-seletivo.request';
