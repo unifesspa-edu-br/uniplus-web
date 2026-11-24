@@ -14,7 +14,7 @@ const PRIMEIRA_EDICAO = 1998;
 export function declaraEdicoesDoEnem(draft: WizardDraft): boolean {
   return (
     draft.classificacao.baseadoEmEnem &&
-    draft.identificacao.origemCandidatos === OrigemCandidatosCodigo.inscricaoPropria
+    draft.identificacao.origemCandidatos === OrigemCandidatosCodigo.INSCRICAO_PROPRIA
   );
 }
 

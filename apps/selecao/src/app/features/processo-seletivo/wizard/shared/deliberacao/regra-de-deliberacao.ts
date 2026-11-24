@@ -24,7 +24,7 @@ export function regraNova(modo: RegraDeDeliberacaoDaBanca['modo']): RegraDeDelib
 }
 
 export const ehColegiada = (regra: RegraDeDeliberacaoDaBanca): boolean =>
-  regra.modo.codigo === ModoDeDeliberacao.colegiadaComVotacao;
+  regra.modo.codigo === ModoDeDeliberacao.COLEGIADA_COM_VOTACAO;
 
 export const modoConhecido = (regra: RegraDeDeliberacaoDaBanca): boolean =>
   ehColegiada(regra) || regra.modo === ModoDeDeliberacao.atoIndividual;
@@ -33,13 +33,13 @@ const integrantesLidos = (regra: RegraDeDeliberacaoDaBanca): number | null =>
   inteiroDoCampo(regra.integrantes);
 
 const ehMaioria = (regra: RegraDeDeliberacaoDaBanca): boolean =>
-  (regra.criterio !== null && regra.criterio.codigo === CriterioDeVotacaoCodigo.maioriaSimples) ||
-  (regra.criterio !== null && regra.criterio.codigo === CriterioDeVotacaoCodigo.maioriaAbsoluta);
+  (regra.criterio !== null && regra.criterio.codigo === CriterioDeVotacaoCodigo.MAIORIA_SIMPLES) ||
+  (regra.criterio !== null && regra.criterio.codigo === CriterioDeVotacaoCodigo.MAIORIA_ABSOLUTA);
 
 /** Com todos os titulares votando, o quórum é o número de integrantes: não se digita. */
 export const quorumSegueOsIntegrantes = (regra: RegraDeDeliberacaoDaBanca): boolean =>
   regra.encerramento !== null &&
-  regra.encerramento.codigo === EncerramentoDaVotacaoCodigo.todosOsTitulares;
+  regra.encerramento.codigo === EncerramentoDaVotacaoCodigo.TODOS_OS_TITULARES;
 
 /** Só a maioria, com mais de um integrante, pode empatar. */
 export const pedeDesempate = (regra: RegraDeDeliberacaoDaBanca): boolean =>
@@ -48,7 +48,7 @@ export const pedeDesempate = (regra: RegraDeDeliberacaoDaBanca): boolean =>
 /** Só a unanimidade, com mais de um integrante, pode não ser alcançada. */
 export const pedeResultadoSemUnanimidade = (regra: RegraDeDeliberacaoDaBanca): boolean =>
   regra.criterio !== null &&
-  regra.criterio.codigo === CriterioDeVotacaoCodigo.unanimidade &&
+  regra.criterio.codigo === CriterioDeVotacaoCodigo.UNANIMIDADE &&
   (integrantesLidos(regra) ?? 0) > 1;
 
 const CONTROLES_SEMPRE_A_VISTA: readonly CampoDaRegra[] = [
@@ -93,7 +93,7 @@ export function normalizarRegra(regra: RegraDeDeliberacaoDaBanca): RegraDeDelibe
     semUnanimidade:
       varios &&
       regra.criterio !== null &&
-      regra.criterio.codigo === CriterioDeVotacaoCodigo.unanimidade
+      regra.criterio.codigo === CriterioDeVotacaoCodigo.UNANIMIDADE
         ? regra.semUnanimidade
         : null,
   };

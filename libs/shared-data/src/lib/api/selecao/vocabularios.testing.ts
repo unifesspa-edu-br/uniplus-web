@@ -11,24 +11,24 @@ import {
 } from './schema';
 
 export const situacaoDoProcesso = {
-  codigo: StatusProcessoCodigo.rascunho,
+  codigo: StatusProcessoCodigo.RASCUNHO,
   rotulo: 'Em preparação',
 };
 export const arquivoConfirmado = {
-  codigo: StatusArquivoEnviadoCodigo.Confirmado,
+  codigo: StatusArquivoEnviadoCodigo.CONFIRMADO,
   rotulo: 'Confirmado',
 };
-export const arquivoPendente = { codigo: StatusArquivoEnviadoCodigo.Pendente, rotulo: 'Pendente' };
+export const arquivoPendente = { codigo: StatusArquivoEnviadoCodigo.PENDENTE, rotulo: 'Pendente' };
 export const sentidoDesfavoravel = {
   codigo: SentidoDoMotivoCodigo.DESFAVORAVEL,
   rotulo: 'Desfavorável',
 };
 export const tipoDeRegra = {
-  codigo: TipoRegraCodigo.regra_distribuicao_vagas,
+  codigo: TipoRegraCodigo.REGRA_DISTRIBUICAO_VAGAS,
   rotulo: 'Distribuição de vagas',
 };
 export const finalidadeDoDocumento = {
-  codigo: FinalidadeDoDocumentoCodigo.documentoDoEdital,
+  codigo: FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL,
   rotulo: 'Documento do edital',
 };
 

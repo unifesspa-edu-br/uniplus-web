@@ -19,7 +19,7 @@ const CONFIRMADO: ArquivoEnviado = {
   chave: ALVO.chave,
   tipoDeMidia: 'application/pdf',
   tamanhoBytes: 2048,
-  situacao: 'verificado',
+  situacao: 'VERIFICADO',
   mensagem: null,
   rotulo: 'Arquivo 1',
   // 09:33 no fuso institucional (America/Belem)
@@ -179,7 +179,7 @@ describe('Envio do arquivo de um documento exigido', () => {
       arquivos: [
         {
           ...CONFIRMADO,
-          situacao: 'emVerificacao',
+          situacao: 'EM_VERIFICACAO',
           mensagem: 'Arquivo em verificação. Isso costuma levar poucos segundos.',
         },
       ],
@@ -197,7 +197,7 @@ describe('Envio do arquivo de um documento exigido', () => {
       arquivos: [
         {
           ...CONFIRMADO,
-          situacao: 'recusado',
+          situacao: 'RECUSADO',
           mensagem: 'Este PDF está protegido por senha. Envie o arquivo sem senha.',
         },
       ],
@@ -214,7 +214,7 @@ describe('Envio do arquivo de um documento exigido', () => {
     envio.arquivos.set([
       {
         ...CONFIRMADO,
-        situacao: 'emVerificacao',
+        situacao: 'EM_VERIFICACAO',
         mensagem: 'Em verificação.',
       },
     ]);
@@ -228,7 +228,7 @@ describe('Envio do arquivo de um documento exigido', () => {
     envio.arquivos.set([
       {
         ...CONFIRMADO,
-        situacao: 'emVerificacao',
+        situacao: 'EM_VERIFICACAO',
         mensagem: 'Em verificação.',
       },
     ]);
@@ -255,7 +255,7 @@ describe('Envio do arquivo de um documento exigido', () => {
 
     it('arquivo em verificação: não oferece Baixar', () => {
       const tela = montar({
-        arquivos: [{ ...CONFIRMADO, situacao: 'emVerificacao', mensagem: 'Em verificação.' }],
+        arquivos: [{ ...CONFIRMADO, situacao: 'EM_VERIFICACAO', mensagem: 'Em verificação.' }],
       });
 
       expect(baixar(tela)).toBeNull();

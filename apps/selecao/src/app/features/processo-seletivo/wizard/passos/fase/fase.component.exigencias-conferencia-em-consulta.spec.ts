@@ -151,7 +151,7 @@ describe('FasePassoComponent', () => {
       it('em consulta, lê o detalhe do documento como texto, sem campo nem botão', () => {
         exigencias().alternarExigencia(ID_CPF, true);
         store.remoteSnapshot.set({
-          status: StatusProcessoCodigo.publicado,
+          status: StatusProcessoCodigo.PUBLICADO,
         } as unknown as ProcessoSeletivoDto);
         detectar();
 
@@ -173,7 +173,7 @@ describe('FasePassoComponent', () => {
         ]);
         exigencias().alternarExigencia(ID_CPF, true);
         store.remoteSnapshot.set({
-          status: StatusProcessoCodigo.publicado,
+          status: StatusProcessoCodigo.PUBLICADO,
         } as unknown as ProcessoSeletivoDto);
         detectar();
 
@@ -188,7 +188,7 @@ describe('FasePassoComponent', () => {
       it('em consulta, lê os formatos e o limite do cadastro à parte da descrição ausente', () => {
         exigencias().alternarExigencia(ID_CPF, true);
         store.remoteSnapshot.set({
-          status: StatusProcessoCodigo.publicado,
+          status: StatusProcessoCodigo.PUBLICADO,
         } as unknown as ProcessoSeletivoDto);
         detectar();
 
@@ -216,7 +216,7 @@ describe('FasePassoComponent', () => {
           },
         ]);
         store.remoteSnapshot.set({
-          status: StatusProcessoCodigo.publicado,
+          status: StatusProcessoCodigo.PUBLICADO,
         } as unknown as ProcessoSeletivoDto);
         detectar();
 
@@ -231,7 +231,7 @@ describe('FasePassoComponent', () => {
         exigencias().alternarExigencia(ID_CPF, true);
         TestBed.inject(CatalogoDeDocumentos).tiposDocumento.set([]);
         store.remoteSnapshot.set({
-          status: StatusProcessoCodigo.publicado,
+          status: StatusProcessoCodigo.PUBLICADO,
         } as unknown as ProcessoSeletivoDto);
         detectar();
 
@@ -252,7 +252,7 @@ describe('FasePassoComponent', () => {
         expect(documentos().resumos()[0].orientacao).toContain('Remova-o');
 
         store.remoteSnapshot.set({
-          status: StatusProcessoCodigo.publicado,
+          status: StatusProcessoCodigo.PUBLICADO,
         } as unknown as ProcessoSeletivoDto);
         detectar();
 

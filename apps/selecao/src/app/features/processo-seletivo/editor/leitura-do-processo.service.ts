@@ -172,7 +172,7 @@ export class LeituraDoProcesso {
     const resultado = await firstValueFrom(
       this.documentosApi.listarDocumentosAPublicar(
         processoSeletivoId,
-        FinalidadeDoDocumentoCodigo.documentoDoEdital,
+        FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL,
       ),
     );
     if (superada()) return;

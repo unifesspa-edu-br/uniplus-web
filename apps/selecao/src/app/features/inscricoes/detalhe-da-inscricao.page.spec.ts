@@ -80,7 +80,7 @@ function arquivo(
     nomeDoDocumento,
     tipoDeMidia: 'application/pdf',
     classificacaoProtecao: 'SENSIVEL',
-    situacao: { codigo: SituacaoDoArquivoDoCandidatoCodigo.verificado, rotulo: 'Verificado' },
+    situacao: { codigo: SituacaoDoArquivoDoCandidatoCodigo.VERIFICADO, rotulo: 'Verificado' },
     tamanhoBytes: 2048,
     confirmadoEm: '2026-12-10T15:00:00Z',
     ...extra,
@@ -410,7 +410,7 @@ describe('DetalheDaInscricaoPage', () => {
   it('mostra o motivo e o instante do cancelamento quando a API os devolve', async () => {
     await abrir({
       ...FERNANDA,
-      situacao: { codigo: SituacaoInscricaoCodigo.cancelada, rotulo: 'Cancelada' },
+      situacao: { codigo: SituacaoInscricaoCodigo.CANCELADA, rotulo: 'Cancelada' },
       canceladaEm: '2026-12-11T15:00:00Z',
       motivoDoCancelamento: 'A pedido da candidata',
     });

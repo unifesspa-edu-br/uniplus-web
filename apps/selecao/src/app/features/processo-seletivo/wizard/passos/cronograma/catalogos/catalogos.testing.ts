@@ -24,14 +24,14 @@ export function falhaDoServidor() {
 }
 
 export const UNIDADES_DO_PRAZO_DE_TESTE = [
-  { codigo: UnidadePrazoCodigo.horas, rotulo: 'Horas' },
-  { codigo: UnidadePrazoCodigo.dias, rotulo: 'Dias corridos' },
-  { codigo: UnidadePrazoCodigo.diasUteis, rotulo: 'Dias úteis' },
+  { codigo: UnidadePrazoCodigo.HORAS, rotulo: 'Horas' },
+  { codigo: UnidadePrazoCodigo.DIAS, rotulo: 'Dias corridos' },
+  { codigo: UnidadePrazoCodigo.DIAS_UTEIS, rotulo: 'Dias úteis' },
 ] as const;
 
 export const EFEITOS_SUSPENSIVOS_DE_TESTE = [
   {
-    codigo: EfeitoSuspensivoCodigo.semEfeitoSuspensivo,
+    codigo: EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO,
     rotulo: 'Sem efeito suspensivo',
     descricao: 'O recurso não suspende o processo.',
   },
@@ -39,12 +39,12 @@ export const EFEITOS_SUSPENSIVOS_DE_TESTE = [
 
 export const GUARDAS_DA_VAGA_DE_TESTE = [
   {
-    codigo: GuardaDaVagaCodigo.ateOResultadoDefinitivo,
+    codigo: GuardaDaVagaCodigo.ATE_O_RESULTADO_DEFINITIVO,
     rotulo: 'Guarda até o resultado definitivo',
     descricao: 'A vaga fica guardada até o resultado definitivo.',
   },
   {
-    codigo: GuardaDaVagaCodigo.naoGuarda,
+    codigo: GuardaDaVagaCodigo.NAO_GUARDA,
     rotulo: 'Não guarda',
     descricao: 'A vaga não fica guardada.',
   },

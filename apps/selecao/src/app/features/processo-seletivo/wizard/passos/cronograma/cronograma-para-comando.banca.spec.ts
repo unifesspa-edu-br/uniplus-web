@@ -30,7 +30,7 @@ const faseComRegra = (
 const etapaComBancas = (bancas: EtapaPontuada['bancas']): EtapaPontuada => ({ ...etapa, bancas });
 
 const atoIndividualSemVotacao = {
-  modo: ModoDeDeliberacao.atoIndividual,
+  modo: ModoDeDeliberacao.ATO_INDIVIDUAL,
   integrantes: 1,
   suplentes: 0,
   quorum: null,
@@ -51,13 +51,13 @@ describe('regra de deliberação da banca no comando da fase', () => {
     const [banca] = comoComandoDeFase(faseComRegra(COLEGIADA)).bancasRequeridas ?? [];
 
     expect(banca.regraDeDeliberacao).toEqual({
-      modo: ModoDeDeliberacao.colegiadaComVotacao,
+      modo: ModoDeDeliberacao.COLEGIADA_COM_VOTACAO,
       integrantes: 5,
       suplentes: 2,
       quorum: 3,
-      criterio: 'maioriaSimples',
-      desempate: 'votoDaPresidencia',
-      encerramento: 'presidenciaNoQuorum',
+      criterio: 'MAIORIA_SIMPLES',
+      desempate: 'VOTO_DA_PRESIDENCIA',
+      encerramento: 'PRESIDENCIA_NO_QUORUM',
       semUnanimidade: null,
     });
   });
@@ -68,7 +68,7 @@ describe('regra de deliberação da banca no comando da fase', () => {
     expect(banca.regraDeDeliberacao).toEqual(atoIndividualSemVotacao);
   });
 
-  it('mantém o recorte de competência ao lado da regra', () => {
+  it('mantém a competência ao lado da regra', () => {
     const [banca] = comoComandoDeFase(faseComRegra(COLEGIADA)).bancasRequeridas ?? [];
 
     expect(banca.categoriasDocumentoIds).toEqual(['categoria-renda']);

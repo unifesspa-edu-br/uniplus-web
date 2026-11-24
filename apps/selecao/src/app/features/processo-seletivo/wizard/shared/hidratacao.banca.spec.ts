@@ -1,4 +1,7 @@
 import {
+  CriterioDeVotacaoCodigo,
+  DesempateDaVotacaoCodigo,
+  EncerramentoDaVotacaoCodigo,
   type EtapaProcessoDto,
   ModoDeDeliberacao,
   TipoDeBancaCodigo,
@@ -17,20 +20,26 @@ import { DRAFT, FASE_COM_RECURSO, dtoComCronograma } from './hidratacao.testing'
 type RegraDoServidor = NonNullable<EtapaProcessoDto['bancas'][number]['regraDeDeliberacao']>;
 
 const REGRA_DA_API: RegraDoServidor = {
-  modo: { codigo: ModoDeDeliberacao.colegiadaComVotacao, rotulo: 'Colegiada' },
+  modo: { codigo: ModoDeDeliberacao.COLEGIADA_COM_VOTACAO, rotulo: 'Colegiada' },
   integrantes: 5,
   suplentes: 2,
   quorum: 3,
   criterio: {
-    codigo: 'maioriaSimples' as NonNullable<RegraDoServidor['criterio']>['codigo'],
+    codigo: CriterioDeVotacaoCodigo.MAIORIA_SIMPLES as NonNullable<
+      RegraDoServidor['criterio']
+    >['codigo'],
     rotulo: 'teste',
   },
   desempate: {
-    codigo: 'votoDaPresidencia' as NonNullable<RegraDoServidor['desempate']>['codigo'],
+    codigo: DesempateDaVotacaoCodigo.VOTO_DA_PRESIDENCIA as NonNullable<
+      RegraDoServidor['desempate']
+    >['codigo'],
     rotulo: 'teste',
   },
   encerramento: {
-    codigo: 'presidenciaNoQuorum' as NonNullable<RegraDoServidor['encerramento']>['codigo'],
+    codigo: EncerramentoDaVotacaoCodigo.PRESIDENCIA_NO_QUORUM as NonNullable<
+      RegraDoServidor['encerramento']
+    >['codigo'],
     rotulo: 'teste',
   },
   semUnanimidade: null,

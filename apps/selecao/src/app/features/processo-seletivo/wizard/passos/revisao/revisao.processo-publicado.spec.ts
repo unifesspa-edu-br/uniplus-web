@@ -142,7 +142,7 @@ describe('RevisaoPassoComponent', () => {
 
     // Cancelado e encerrado não dizem se houve publicação: um rascunho cancelado não tem
     // snapshot vigente, e a transcrição que ele guarda precisa continuar na tela.
-    it.each([StatusProcessoCodigo.rascunho, StatusProcessoCodigo.cancelado, StatusProcessoCodigo.encerrado])(
+    it.each([StatusProcessoCodigo.RASCUNHO, StatusProcessoCodigo.CANCELADO, StatusProcessoCodigo.ENCERRADO])(
       'em %s não lê ato nenhum e mantém a transcrição',
       async (status) => {
         store.remoteSnapshot.set({
@@ -157,8 +157,8 @@ describe('RevisaoPassoComponent', () => {
         expect(cenario.atosLidos).toEqual([]);
         const tela = fixture.nativeElement as HTMLElement;
         // Rascunho a edita; cancelado e encerrado a leem como texto, sem campo.
-        expect(tela.querySelector('#rev-numero') !== null).toBe(status === StatusProcessoCodigo.rascunho);
-        if (status !== StatusProcessoCodigo.rascunho) {
+        expect(tela.querySelector('#rev-numero') !== null).toBe(status === StatusProcessoCodigo.RASCUNHO);
+        if (status !== StatusProcessoCodigo.RASCUNHO) {
           expect(tela.textContent).toContain('Número do ato');
         }
       },

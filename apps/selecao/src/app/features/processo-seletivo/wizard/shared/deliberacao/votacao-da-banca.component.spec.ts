@@ -19,10 +19,10 @@ describe('VotacaoDaBancaComponent', () => {
       '#banca-criterio',
     );
     if (criterio === null) throw new Error('Critério ausente');
-    criterio.value = 'unanimidade';
+    criterio.value = 'UNANIMIDADE';
     criterio.dispatchEvent(new Event('change'));
 
-    expect(emitidas).toEqual([expect.objectContaining({ criterio: 'unanimidade', desempate: '' })]);
+    expect(emitidas).toEqual([expect.objectContaining({ criterio: 'UNANIMIDADE', desempate: '' })]);
   });
 
   it('para um integrante, omite desempate e resultado sem unanimidade e associa dica e erro ao quórum', () => {
@@ -30,7 +30,7 @@ describe('VotacaoDaBancaComponent', () => {
     fixture.componentRef.setInput('idBase', 'banca');
     fixture.componentRef.setInput(
       'regra',
-      comRegra({ integrantes: '1', encerramento: 'todosOsTitulares' }),
+      comRegra({ integrantes: '1', encerramento: 'TODOS_OS_TITULARES' }),
     );
     fixture.componentRef.setInput('erros', { quorum: 'Confira o quórum.' });
     fixture.detectChanges();
@@ -123,7 +123,7 @@ describe('VotacaoDaBancaComponent', () => {
 
     it('não mostra o controle de desempate, nem a recusa dele, quando o critério não o pede', () => {
       const host = exibir({
-        regra: comRegra({ criterio: 'unanimidade', desempate: '' }),
+        regra: comRegra({ criterio: 'UNANIMIDADE', desempate: '' }),
         recusas: { desempate: [recusa('desempate')] },
       });
 

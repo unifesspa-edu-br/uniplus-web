@@ -45,9 +45,9 @@ const CATALOGOS_DE_CONFIGURACAO: readonly (readonly [RegExp, readonly unknown[]]
 
 /** Cada regra do catálogo é lida pelo tipo; devolver a mesma lista a qualquer tipo mascararia um filtro quebrado. */
 const REGRAS_POR_TIPO: Record<string, readonly unknown[]> = {
-  regra_distribuicao_vagas: REGRAS_DE_DISTRIBUICAO_DA_MEDICINA,
-  regra_ajuste_distribuicao_vagas: REGRAS_DE_AJUSTE_DA_MEDICINA,
-  criterio_remanejamento: REGRAS_DE_CASCATA_DA_MEDICINA,
+  REGRA_DISTRIBUICAO_VAGAS: REGRAS_DE_DISTRIBUICAO_DA_MEDICINA,
+  REGRA_AJUSTE_DISTRIBUICAO_VAGAS: REGRAS_DE_AJUSTE_DA_MEDICINA,
+  CRITERIO_REMANEJAMENTO: REGRAS_DE_CASCATA_DA_MEDICINA,
 };
 
 /**
@@ -115,10 +115,20 @@ function corpoDoProcesso(
   caminho: string,
   { status = 'publicado', simulacao = [] }: OpcoesDoPassoDeVagas,
 ): unknown {
-  if (caminho.endsWith(PROCESSO_DA_MEDICINA.id)) return { ...PROCESSO_DA_MEDICINA, status };
+  if (caminho.endsWith(PROCESSO_DA_MEDICINA.id)) return processoDaMedicinaComSituacao(status);
   if (caminho.endsWith('/documentos-a-publicar')) return [];
   if (metodo === 'POST' && caminho.endsWith(ROTA_DE_SIMULACAO)) return simulacao;
   return undefined;
+}
+
+function processoDaMedicinaComSituacao(status: string) {
+  return {
+    ...PROCESSO_DA_MEDICINA,
+    status: {
+      codigo: status.toUpperCase(),
+      rotulo: status === 'rascunho' ? 'Rascunho' : 'Publicado',
+    },
+  };
 }
 
 async function mockarRegrasCatalogo(page: Page): Promise<void> {

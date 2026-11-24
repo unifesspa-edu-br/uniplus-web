@@ -18,7 +18,7 @@ async function comandoDeCriacao(criador: string): Promise<object> {
   return {
     nome: NOME,
     tipoProcessoOrigemId: await idDoTipoPsr(criador),
-    origemCandidatos: 'inscricaoPropria',
+    origemCandidatos: 'INSCRICAO_PROPRIA',
     unidadeAdministradoraOrigemId: await unidadeDoCertame(),
     localidadeCodigoIbge: '1504208',
     localidadeNome: 'Marabá',

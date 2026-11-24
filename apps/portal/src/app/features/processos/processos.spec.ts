@@ -54,12 +54,16 @@ describe('ProcessosComponent', () => {
   });
 
   it('chips de situação usam os contadores dos headers X-Certames-*, não a página carregada', async () => {
-    await cenario.responderLista([sisu, tecnicoEnfermagem], contadoresHeaders);
+    const { 'X-Certames-Em-Breve': _emBreve, ...demaisContadores } = contadoresHeaders;
+    const headers = { ...demaisContadores, 'X-Certames-Inscricoes-Abertas': '7' };
+    void _emBreve;
+    await cenario.responderLista([sisu, tecnicoEnfermagem], headers);
     cenario.fixture.detectChanges();
 
-    expect(cenario.chip(sisu.situacao.rotulo)?.textContent).toContain('1');
+    expect(cenario.chip(sisu.situacao.rotulo)?.textContent).toContain('7');
     expect(cenario.chip(tecnicoEnfermagem.situacao.rotulo)?.textContent).toContain('1');
-    expect(cenario.chip('Em breve')).toBeNull();
+    expect(cenario.chip('Em breve')).toBeTruthy();
+    expect(cenario.chip('Em breve')?.querySelector('.filter-chip__count')).toBeNull();
   });
 
   it('chip fica sem contador quando a resposta não traz os headers X-Certames-*', async () => {
@@ -142,7 +146,7 @@ describe('ProcessosComponent', () => {
       ...sisu,
       inscricoesDe,
       inscricoesAte: '2026-11-13T15:00:00Z',
-      situacao: { codigo: SituacaoDoCertameCodigo.emBreve, rotulo: 'Situação de teste' },
+      situacao: { codigo: SituacaoDoCertameCodigo.EM_BREVE, rotulo: 'Situação de teste' },
     });
 
     const metaDoPrimeiroItem = (): string =>

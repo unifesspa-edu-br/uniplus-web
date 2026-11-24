@@ -97,7 +97,7 @@ describe('LeituraDoCadastroDePesos', () => {
       expect(cadastroDePesos.leitura().lido).toBe(true);
 
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.publicado,
+        status: StatusProcessoCodigo.PUBLICADO,
       } as unknown as ProcessoSeletivoDto);
       store.classificacao.registrarLida({
         resolucaoPesoAreaEnem: RESOLUCAO,
@@ -132,7 +132,7 @@ describe('LeituraDoCadastroDePesos', () => {
       TestBed.tick();
       // Só para consulta, com a cópia: a classificação nova não pede outra leitura.
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.publicado,
+        status: StatusProcessoCodigo.PUBLICADO,
       } as unknown as ProcessoSeletivoDto);
       store.classificacao.registrarLida(CLASSIFICACAO_COM_COPIA);
       TestBed.tick();

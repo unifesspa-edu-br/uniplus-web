@@ -8,14 +8,14 @@ import {
   store,
 } from '../eliminacao/eliminacao.testing';
 
-const REGRA_POR_AREA = 'DESEMPATE-MAIOR-NOTA-AREA-ENEM';
+const REGRA_POR_AREA = 'DESEMPATE_MAIOR_NOTA_AREA_ENEM';
 
 describe('confirmação da classificação', () => {
   montarEliminacao();
 
   describe('confirmacaoDeGravacao()', () => {
     const MAIOR_IDADE = {
-      regraCodigo: 'DESEMPATE-MAIOR-IDADE',
+      regraCodigo: 'DESEMPATE_MAIOR_IDADE',
       regraVersao: '1',
       etapaRef: '',
       idadeMinima: '',
@@ -72,7 +72,7 @@ describe('confirmação da classificação', () => {
       expect(confirmacao?.aviso).toContain('critérios de desempate');
       expect(confirmacao?.itens).toContainEqual({
         rotulo: '1º critério de desempate',
-        valor: 'DESEMPATE-MAIOR-IDADE',
+        valor: 'DESEMPATE_MAIOR_IDADE',
       });
     });
 

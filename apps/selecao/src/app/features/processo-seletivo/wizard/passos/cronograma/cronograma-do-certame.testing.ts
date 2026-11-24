@@ -22,7 +22,7 @@ export const nomeDaBanca = (id: string): string => id;
 
 /**
  * Tipo de etapa que admite qualquer caráter — o caso comum dos cenários de outro assunto. Quem
- * testa o recorte do cadastro passa o seu por `problemasDoCronograma` diretamente.
+ * testa a definição dos tipos de fase no cadastro passa o seu por `problemasDoCronograma` diretamente.
  */
 export const tipoQueAdmiteTudo = (): TipoDeEtapaDoCatalogo => ({
   nome: 'Prova objetiva',
@@ -105,7 +105,7 @@ export function aresta(parcial: Partial<PrecedenciaFaseDto>): PrecedenciaFaseDto
 const ETAPA_PADRAO: EtapaPontuada = {
   id: null,
   nome: 'Prova Objetiva',
-  carater: CaraterEtapaCodigo.classificatoria,
+  carater: CaraterEtapaCodigo.CLASSIFICATORIA,
   tipoEtapaOrigemId: 'tipo-1',
   peso: '2',
   notaMinima: '',
@@ -174,7 +174,7 @@ export const catalogoDeFases = new Map([
 
 export const etapaValida = etapa({
   nome: 'Prova',
-  carater: CaraterEtapaCodigo.classificatoria,
+  carater: CaraterEtapaCodigo.CLASSIFICATORIA,
   tipoEtapaOrigemId: 'tipo-1',
   peso: '1',
 });

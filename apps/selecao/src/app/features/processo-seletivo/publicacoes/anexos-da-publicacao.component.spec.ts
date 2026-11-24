@@ -14,7 +14,7 @@ describe('AnexosDaPublicacaoComponent', () => {
 
   beforeEach(() => {
     envios = new EnviosDeArquivos({
-      finalidade: FinalidadeDoDocumentoCodigo.documentoDeAto,
+      finalidade: FinalidadeDoDocumentoCodigo.DOCUMENTO_DE_ATO,
       processoId: () => null,
       abrirEnvio: () => {
         throw new Error('o envio não é aberto sem processo');

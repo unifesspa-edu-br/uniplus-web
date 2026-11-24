@@ -6,13 +6,19 @@ import {
   runAxeWcagAAAApplicable,
 } from '@uniplus/shared-e2e';
 import type { CertamePublicoResponse } from '@uniplus/shared-data/portal';
-import type { CertameNaVitrineDto, SituacaoDoCertame } from '@uniplus/shared-data/selecao';
+import type { CertameNaVitrineDto, SituacaoDoCertameCodigo } from '@uniplus/shared-data/selecao';
 import { test, expect, type Page } from '@playwright/test';
 
 type AaaTheme = 'light' | 'dark' | 'contrast';
 type AaaFontMode = 'default' | 'legible';
 // O enum é só tipo aqui: importá-lo como valor carrega o Angular no processo do Playwright.
-type Situacao = `${SituacaoDoCertame}`;
+type Situacao = `${SituacaoDoCertameCodigo}`;
+const ROTULOS: Record<Situacao, string> = {
+  EM_BREVE: 'Em breve',
+  INSCRICOES_ABERTAS: 'Inscrições abertas',
+  ULTIMOS_DIAS: 'Últimos dias',
+  ENCERRADAS: 'Encerradas',
+};
 type Cenario = 'sucesso' | 'erro';
 
 // A API fica em outra origem; sem expor `Link` e os `X-Certames-*` os chips ficam sem contagem.
@@ -34,38 +40,38 @@ const CORS_HEADERS = {
 
 /** Uma de cada situação, para exercitar o contraste de todas as variantes de tag. */
 const CERTAMES_POPULADOS = [
-  certame(
-    1,
-    'ultimosDias',
-    'Processo Seletivo Especial — Ingresso 2026.2',
-    '012/2026',
-    '2026-10-20T23:59:00Z',
-    120,
-  ),
-  certame(
-    2,
-    'inscricoesAbertas',
-    'Processo Seletivo de Pós-Graduação em Educação',
-    '015/2026',
-    '2026-12-05T23:59:00Z',
-    40,
-  ),
-  certame(
-    3,
-    'emBreve',
-    'Processo Seletivo de Mobilidade Acadêmica',
-    null,
-    '2027-01-15T23:59:00Z',
-    18,
-  ),
-  certame(
-    4,
-    'encerradas',
-    'Processo Seletivo de Transferência Externa 2026.1',
-    '004/2026',
-    '2026-03-10T23:59:00Z',
-    1250,
-  ),
+  certame({
+    indice: 1,
+    situacao: 'ULTIMOS_DIAS',
+    nome: 'Processo Seletivo Especial — Ingresso 2026.2',
+    numero: '012/2026',
+    inscricoesAte: '2026-10-20T23:59:00Z',
+    totalDeVagas: 120,
+  }),
+  certame({
+    indice: 2,
+    situacao: 'INSCRICOES_ABERTAS',
+    nome: 'Processo Seletivo de Pós-Graduação em Educação',
+    numero: '015/2026',
+    inscricoesAte: '2026-12-05T23:59:00Z',
+    totalDeVagas: 40,
+  }),
+  certame({
+    indice: 3,
+    situacao: 'EM_BREVE',
+    nome: 'Processo Seletivo de Mobilidade Acadêmica',
+    numero: null,
+    inscricoesAte: '2027-01-15T23:59:00Z',
+    totalDeVagas: 18,
+  }),
+  certame({
+    indice: 4,
+    situacao: 'ENCERRADAS',
+    nome: 'Processo Seletivo de Transferência Externa 2026.1',
+    numero: '004/2026',
+    inscricoesAte: '2026-03-10T23:59:00Z',
+    totalDeVagas: 1250,
+  }),
 ];
 
 // O portão não pode depender de servidor real: a vitrine é simulada na rede, em
@@ -83,7 +89,7 @@ test.describe('Portal do Candidato — gate AAA aplicável @aaa', () => {
     const { theme, fontMode } = settingsFromProjectName(testInfo.project.name);
     await mockVitrine(page, CERTAMES_POPULADOS);
 
-    await abrirVitrine(page, theme, fontMode, 'sucesso');
+    await abrirVitrine(page, { theme, fontMode, cenario: 'sucesso' });
 
     await expect(page.locator('.portal-hero')).toBeVisible();
     for (const { nome } of CERTAMES_POPULADOS) {
@@ -105,7 +111,7 @@ test.describe('Portal do Candidato — gate AAA aplicável @aaa', () => {
     const { theme, fontMode } = settingsFromProjectName(testInfo.project.name);
     await mockVitrine(page, []);
 
-    await abrirVitrine(page, theme, fontMode, 'sucesso');
+    await abrirVitrine(page, { theme, fontMode, cenario: 'sucesso' });
 
     await expect(
       page.getByRole('heading', { name: 'Nenhum certame publicado no momento' }),
@@ -119,7 +125,7 @@ test.describe('Portal do Candidato — gate AAA aplicável @aaa', () => {
     const { theme, fontMode } = settingsFromProjectName(testInfo.project.name);
     await mockVitrine(page, 'indisponivel');
 
-    await abrirVitrine(page, theme, fontMode, 'erro');
+    await abrirVitrine(page, { theme, fontMode, cenario: 'erro' });
 
     await expect(page.getByRole('alert')).toContainText('Serviço temporariamente indisponível');
     await expect(page.getByRole('button', { name: 'Tentar novamente' })).toBeVisible();
@@ -135,7 +141,12 @@ test.describe('Portal do Candidato — gate AAA aplicável @aaa', () => {
     // Sem resposta do provedor, a inicialização só falha depois do tempo de espera do
     // `keycloak-js`; só então a app sobe e mostra o aviso.
     test.setTimeout(PRAZO_DA_AUTENTICACAO_INDISPONIVEL * 2);
-    await abrirVitrine(page, theme, fontMode, 'erro', PRAZO_DA_AUTENTICACAO_INDISPONIVEL);
+    await abrirVitrine(page, {
+      theme,
+      fontMode,
+      cenario: 'erro',
+      prazoDaInicializacao: PRAZO_DA_AUTENTICACAO_INDISPONIVEL,
+    });
 
     const aviso = page.locator('auth-error-banner [role="alert"]');
     await expect(aviso).toContainText('Serviço de autenticação indisponível');
@@ -145,12 +156,16 @@ test.describe('Portal do Candidato — gate AAA aplicável @aaa', () => {
   });
 });
 
+interface OpcoesDaVitrine {
+  theme: AaaTheme;
+  fontMode: AaaFontMode;
+  cenario: Cenario;
+  prazoDaInicializacao?: number;
+}
+
 async function abrirVitrine(
   page: Page,
-  theme: AaaTheme,
-  fontMode: AaaFontMode,
-  cenario: Cenario,
-  prazoDaInicializacao?: number,
+  { theme, fontMode, cenario, prazoDaInicializacao }: OpcoesDaVitrine,
 ): Promise<void> {
   await page.goto('/processos');
   await expect(page.locator('html')).toHaveAttribute('data-theme', theme, {
@@ -182,14 +197,23 @@ async function assertAcessibilidade(page: Page, fontMode: AaaFontMode): Promise<
   await assertTextSpacingResilience(page);
 }
 
-function certame(
-  indice: number,
-  situacao: Situacao,
-  nome: string,
-  numero: string | null,
-  inscricoesAte: string,
-  totalDeVagas: number,
-): CertameNaVitrineDto {
+interface CertameDaVitrine {
+  indice: number;
+  situacao: Situacao;
+  nome: string;
+  numero: string | null;
+  inscricoesAte: string;
+  totalDeVagas: number;
+}
+
+function certame({
+  indice,
+  situacao,
+  nome,
+  numero,
+  inscricoesAte,
+  totalDeVagas,
+}: CertameDaVitrine): CertameNaVitrineDto {
   return {
     processoSeletivoId: `01960000-0000-7000-0000-${String(indice).padStart(12, '0')}`,
     identificadorLegivel: `PS-2026-${String(indice).padStart(3, '0')}`,
@@ -199,7 +223,7 @@ function certame(
     modalidadesOfertadas: ['AC', 'PCD'],
     inscricoesDe: '2026-01-01T12:00:00Z',
     inscricoesAte,
-    situacao: situacao as SituacaoDoCertame,
+    situacao: { codigo: situacao as SituacaoDoCertameCodigo, rotulo: ROTULOS[situacao] },
     totalDeVagas,
   };
 }
@@ -255,7 +279,7 @@ async function mockVitrine(
 
   const lista = certames === 'indisponivel' ? [] : certames;
   const contar = (situacao: Situacao): string =>
-    String(lista.filter((item) => item.situacao === situacao).length);
+    String(lista.filter((item) => item.situacao.codigo === situacao).length);
 
   await page.route(/\/api\/selecao\/certames(\?.*)?$/, (route) => {
     if (route.request().method() === 'OPTIONS') {
@@ -279,10 +303,10 @@ async function mockVitrine(
       contentType: 'application/vnd.uniplus.certame.v1+json',
       headers: {
         ...CORS_HEADERS,
-        'X-Certames-Em-Breve': contar('emBreve'),
-        'X-Certames-Inscricoes-Abertas': contar('inscricoesAbertas'),
-        'X-Certames-Ultimos-Dias': contar('ultimosDias'),
-        'X-Certames-Encerrados': contar('encerradas'),
+        'X-Certames-Em-Breve': contar('EM_BREVE'),
+        'X-Certames-Inscricoes-Abertas': contar('INSCRICOES_ABERTAS'),
+        'X-Certames-Ultimos-Dias': contar('ULTIMOS_DIAS'),
+        'X-Certames-Encerrados': contar('ENCERRADAS'),
       },
       body: JSON.stringify(lista),
     });

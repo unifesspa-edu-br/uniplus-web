@@ -44,7 +44,7 @@ describe('gravação da classificação', () => {
       store.patchObjectSection('classificacao', {
         regrasEliminacao: [
           {
-            regraCodigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA',
+            regraCodigo: 'ELIMINACAO_NOTA_MINIMA_ETAPA',
             regraVersao: '1.0',
             etapaRef: 'etapa-1',
             notaMinima: '5',
@@ -65,7 +65,7 @@ describe('gravação da classificação', () => {
         casasArredondamento: 2,
         regrasEliminacao: [
           {
-            regraCodigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA',
+            regraCodigo: 'ELIMINACAO_NOTA_MINIMA_ETAPA',
             etapaRef: 'etapa-1',
             notaMinima: 5,
             minimo: null,
@@ -411,7 +411,7 @@ describe('gravação da classificação', () => {
     }
 
     it('grava as edições depois da classificação aceita, na ordem que o candidato vê', async () => {
-      prepararImportadaComEnem(OrigemCandidatosCodigo.inscricaoPropria);
+      prepararImportadaComEnem(OrigemCandidatosCodigo.INSCRICAO_PROPRIA);
 
       const gravacao = componente.persistir();
       await aceitarClassificacao();
@@ -429,7 +429,7 @@ describe('gravação da classificação', () => {
     });
 
     it('a recusa do servidor às edições volta o passo inválido e fica guardada para o passo Fórmula', async () => {
-      prepararImportadaComEnem(OrigemCandidatosCodigo.inscricaoPropria);
+      prepararImportadaComEnem(OrigemCandidatosCodigo.INSCRICAO_PROPRIA);
 
       const gravacao = componente.persistir();
       await aceitarClassificacao();
@@ -457,7 +457,7 @@ describe('gravação da classificação', () => {
     });
 
     it('não grava edições no processo que só importa o resultado', async () => {
-      prepararImportadaComEnem(OrigemCandidatosCodigo.importacaoExterna);
+      prepararImportadaComEnem(OrigemCandidatosCodigo.IMPORTACAO_EXTERNA);
 
       const gravacao = componente.persistir();
       await aceitarClassificacao();

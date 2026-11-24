@@ -27,12 +27,12 @@ function criterio(patch: Partial<CriterioDesempateConfigurado>): CriterioDesempa
 }
 
 describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () => {
-  it('DESEMPATE-MAIOR-NOTA-ETAPA usa só etapaRef', () => {
-    expect(desempateUsaEtapa('DESEMPATE-MAIOR-NOTA-ETAPA')).toBe(true);
+  it('DESEMPATE_MAIOR_NOTA_ETAPA usa só etapaRef', () => {
+    expect(desempateUsaEtapa('DESEMPATE_MAIOR_NOTA_ETAPA')).toBe(true);
 
     const comando = comoComandoDeCriterioDesempate(
       criterio({
-        regraCodigo: 'DESEMPATE-MAIOR-NOTA-ETAPA',
+        regraCodigo: 'DESEMPATE_MAIOR_NOTA_ETAPA',
         regraVersao: '1.0',
         etapaRef: 'etapa-1',
         idadeMinima: '60', // resíduo — não pode vazar
@@ -42,7 +42,7 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
 
     expect(comando).toEqual({
       ordem: 1,
-      regra: { codigo: 'DESEMPATE-MAIOR-NOTA-ETAPA', versao: '1.0' },
+      regra: { codigo: 'DESEMPATE_MAIOR_NOTA_ETAPA', versao: '1.0' },
       parametros: {
         etapaRef: 'etapa-1',
         idadeMinima: null,
@@ -54,15 +54,15 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
     });
   });
 
-  it('DESEMPATE-MAIOR-IDADE não usa nenhum argumento', () => {
+  it('DESEMPATE_MAIOR_IDADE não usa nenhum argumento', () => {
     const comando = comoComandoDeCriterioDesempate(
-      criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: '1.0', idadeMinima: '60' }),
+      criterio({ regraCodigo: 'DESEMPATE_MAIOR_IDADE', regraVersao: '1.0', idadeMinima: '60' }),
       2,
     );
 
     expect(comando).toEqual({
       ordem: 2,
-      regra: { codigo: 'DESEMPATE-MAIOR-IDADE', versao: '1.0' },
+      regra: { codigo: 'DESEMPATE_MAIOR_IDADE', versao: '1.0' },
       parametros: {
         etapaRef: null,
         idadeMinima: null,
@@ -74,11 +74,11 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
     });
   });
 
-  it('DESEMPATE-IDOSO usa só idadeMinima', () => {
-    expect(desempateUsaIdadeMinima('DESEMPATE-IDOSO')).toBe(true);
+  it('DESEMPATE_IDOSO usa só idadeMinima', () => {
+    expect(desempateUsaIdadeMinima('DESEMPATE_IDOSO')).toBe(true);
 
     const comando = comoComandoDeCriterioDesempate(
-      criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: '1.0', idadeMinima: '60' }),
+      criterio({ regraCodigo: 'DESEMPATE_IDOSO', regraVersao: '1.0', idadeMinima: '60' }),
       1,
     );
 
@@ -86,12 +86,12 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
     expect(comando.parametros?.etapaRef).toBeNull();
   });
 
-  it('DESEMPATE-CONDICAO-SOBRE-DADO usa fato, operador e valor', () => {
-    expect(desempateUsaPredicadoFato('DESEMPATE-CONDICAO-SOBRE-DADO')).toBe(true);
+  it('DESEMPATE_CONDICAO_SOBRE_DADO usa fato, operador e valor', () => {
+    expect(desempateUsaPredicadoFato('DESEMPATE_CONDICAO_SOBRE_DADO')).toBe(true);
 
     const comando = comoComandoDeCriterioDesempate(
       criterio({
-        regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
+        regraCodigo: 'DESEMPATE_CONDICAO_SOBRE_DADO',
         regraVersao: '1.0',
         fato: 'RENDA_PER_CAPITA',
         operador: OperadorCodigo.MENOR_IGUAL,
@@ -102,7 +102,7 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
 
     expect(comando).toEqual({
       ordem: 1,
-      regra: { codigo: 'DESEMPATE-CONDICAO-SOBRE-DADO', versao: '1.0' },
+      regra: { codigo: 'DESEMPATE_CONDICAO_SOBRE_DADO', versao: '1.0' },
       parametros: {
         etapaRef: null,
         idadeMinima: null,
@@ -114,13 +114,13 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
     });
   });
 
-  it('DESEMPATE-MAIOR-NOTA-AREA-ENEM usa só as áreas, na ordem da lista', () => {
-    expect(desempateUsaAreas('DESEMPATE-MAIOR-NOTA-AREA-ENEM')).toBe(true);
-    expect(desempateTemShapeConhecido('DESEMPATE-MAIOR-NOTA-AREA-ENEM')).toBe(true);
+  it('DESEMPATE_MAIOR_NOTA_AREA_ENEM usa só as áreas, na ordem da lista', () => {
+    expect(desempateUsaAreas('DESEMPATE_MAIOR_NOTA_AREA_ENEM')).toBe(true);
+    expect(desempateTemShapeConhecido('DESEMPATE_MAIOR_NOTA_AREA_ENEM')).toBe(true);
 
     const comando = comoComandoDeCriterioDesempate(
       criterio({
-        regraCodigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM',
+        regraCodigo: 'DESEMPATE_MAIOR_NOTA_AREA_ENEM',
         regraVersao: '1',
         areas: ['REDACAO', 'MATEMATICA'],
         idadeMinima: '60', // resíduo — não pode vazar
@@ -130,7 +130,7 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
 
     expect(comando).toEqual({
       ordem: 1,
-      regra: { codigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM', versao: '1' },
+      regra: { codigo: 'DESEMPATE_MAIOR_NOTA_AREA_ENEM', versao: '1' },
       parametros: {
         etapaRef: null,
         idadeMinima: null,
@@ -144,7 +144,7 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
 
   it('as áreas não viajam em outra regra', () => {
     const comando = comoComandoDeCriterioDesempate(
-      criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: '1.0', areas: ['REDACAO'] }),
+      criterio({ regraCodigo: 'DESEMPATE_MAIOR_IDADE', regraVersao: '1.0', areas: ['REDACAO'] }),
       1,
     );
 
@@ -155,8 +155,8 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
 describe('comoComandoDeCriteriosDesempate', () => {
   it('atribui a ordem pela posição no array, 1-based', () => {
     const comando = comoComandoDeCriteriosDesempate([
-      criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: '1.0' }),
-      criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: '1.0', idadeMinima: '60' }),
+      criterio({ regraCodigo: 'DESEMPATE_MAIOR_IDADE', regraVersao: '1.0' }),
+      criterio({ regraCodigo: 'DESEMPATE_IDOSO', regraVersao: '1.0', idadeMinima: '60' }),
     ]);
 
     expect(comando.map((item) => item.ordem)).toEqual([1, 2]);

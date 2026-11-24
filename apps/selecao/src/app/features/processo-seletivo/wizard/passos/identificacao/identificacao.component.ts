@@ -40,8 +40,8 @@ export const ORIGENS_CANDIDATOS: readonly {
   readonly value: OrigemCandidatosSelecionada;
   readonly label: string;
 }[] = [
-  { value: OrigemCandidatosCodigo.inscricaoPropria, label: 'Inscrição neste sistema' },
-  { value: OrigemCandidatosCodigo.importacaoExterna, label: 'Importação externa' },
+  { value: OrigemCandidatosCodigo.INSCRICAO_PROPRIA, label: 'Inscrição neste sistema' },
+  { value: OrigemCandidatosCodigo.IMPORTACAO_EXTERNA, label: 'Importação externa' },
 ];
 
 @Component({

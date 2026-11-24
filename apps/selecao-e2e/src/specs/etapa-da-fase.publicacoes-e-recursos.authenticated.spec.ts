@@ -81,20 +81,20 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     const recursos = blocoDaEtapa(page, 'Recursos que esta etapa admite');
     await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
     await prazo(recursos, 'Prazo de interposição', 0).valor.fill('24');
-    await prazo(recursos, 'Prazo de interposição', 0).unidade.selectOption('horas');
+    await prazo(recursos, 'Prazo de interposição', 0).unidade.selectOption('HORAS');
 
     await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
     await recursos.getByLabel('Contra qual publicação').nth(1).selectOption('RESULTADO_FINAL');
     await prazo(recursos, 'Prazo de interposição', 1).valor.fill('2');
-    await prazo(recursos, 'Prazo de interposição', 1).unidade.selectOption('diasUteis');
+    await prazo(recursos, 'Prazo de interposição', 1).unidade.selectOption('DIAS_UTEIS');
 
     await expect(prazo(recursos, 'Prazo de interposição', 0).valor).toHaveValue('24');
-    await expect(prazo(recursos, 'Prazo de interposição', 0).unidade).toHaveValue('horas');
+    await expect(prazo(recursos, 'Prazo de interposição', 0).unidade).toHaveValue('HORAS');
     await expect(recursos.getByLabel('Contra qual publicação').nth(0)).toHaveValue(
       'RESULTADO_PRELIMINAR',
     );
     await expect(prazo(recursos, 'Prazo de interposição', 1).valor).toHaveValue('2');
-    await expect(prazo(recursos, 'Prazo de interposição', 1).unidade).toHaveValue('diasUteis');
+    await expect(prazo(recursos, 'Prazo de interposição', 1).unidade).toHaveValue('DIAS_UTEIS');
     await expect(recursos.getByLabel('Contra qual publicação').nth(1)).toHaveValue(
       'RESULTADO_FINAL',
     );
@@ -125,7 +125,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
 
     await escolher(recursos, 'Admite instância superior?', 'Sim');
     await prazo(recursos, 'Prazo para recorrer em 2ª instância').valor.fill('48');
-    await prazo(recursos, 'Prazo para recorrer em 2ª instância').unidade.selectOption('horas');
+    await prazo(recursos, 'Prazo para recorrer em 2ª instância').unidade.selectOption('HORAS');
 
     await expect(recursos.getByRole('radio', { name: 'Sem efeito suspensivo' })).toBeChecked();
     await expect(
@@ -133,7 +133,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     ).toBeChecked();
     await expect(prazo(recursos, 'Prazo para recorrer em 2ª instância').valor).toHaveValue('48');
     await expect(prazo(recursos, 'Prazo para recorrer em 2ª instância').unidade).toHaveValue(
-      'horas',
+      'HORAS',
     );
   });
 
@@ -159,7 +159,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
     await escolher(recursos, 'Admite instância superior?', 'Sim');
     await prazo(recursos, 'Prazo para recorrer em 2ª instância').valor.fill('48');
-    await prazo(recursos, 'Prazo para recorrer em 2ª instância').unidade.selectOption('horas');
+    await prazo(recursos, 'Prazo para recorrer em 2ª instância').unidade.selectOption('HORAS');
 
     await escolher(recursos, 'Admite instância superior?', 'Não');
 
@@ -182,7 +182,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
 
     await expect(recursos.getByLabel('Contra qual publicação')).toBeVisible();
 
-    await recursos.getByLabel('O prazo corre de').selectOption('cienciaIndividual');
+    await recursos.getByLabel('O prazo corre de').selectOption('CIENCIA_INDIVIDUAL');
 
     await expect(recursos.getByLabel('Contra qual publicação')).toHaveCount(0);
   });

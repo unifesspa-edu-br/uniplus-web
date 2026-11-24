@@ -128,7 +128,7 @@ describe('DesempatePassoComponent', () => {
     storeLocal.processoSeletivoId.set(PROCESSO_ID);
     storeLocal.patchSection('desempate', [
       criterio({
-        regraCodigo: 'DESEMPATE-CONDICAO-SOBRE-DADO',
+        regraCodigo: 'DESEMPATE_CONDICAO_SOBRE_DADO',
         regraVersao: '1.0',
         fato: 'RENDA_PER_CAPITA',
         operador: 'MENOR_OU_IGUAL',
@@ -137,7 +137,7 @@ describe('DesempatePassoComponent', () => {
     ]);
     storeLocal.remoteSnapshot.set({
       id: PROCESSO_ID,
-      status: StatusProcessoCodigo.publicado,
+      status: StatusProcessoCodigo.PUBLICADO,
     } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
 
@@ -188,7 +188,7 @@ describe('DesempatePassoComponent', () => {
     expect(componente.semDataDeNascimento()).toBe(false);
 
     store.patchSection('desempate', [
-      criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: 'v1' }),
+      criterio({ regraCodigo: 'DESEMPATE_MAIOR_IDADE', regraVersao: 'v1' }),
     ]);
     expect(componente.semDataDeNascimento()).toBe(true);
 
@@ -203,7 +203,7 @@ describe('DesempatePassoComponent', () => {
 
   it('em consulta, não acusa a idade: o processo publicado não admite a correção', () => {
     store.patchSection('desempate', [
-      criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: 'v1', idadeMinima: '60' }),
+      criterio({ regraCodigo: 'DESEMPATE_IDOSO', regraVersao: 'v1', idadeMinima: '60' }),
     ]);
     expect(componente.idosoSemApuracao()).toBe(true);
 
@@ -214,13 +214,13 @@ describe('DesempatePassoComponent', () => {
 
   it('não exige a apuração da idade do maior idade, só do idoso', () => {
     store.patchSection('desempate', [
-      criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: 'v1' }),
+      criterio({ regraCodigo: 'DESEMPATE_MAIOR_IDADE', regraVersao: 'v1' }),
     ]);
     expect(store.draft().formulario.referenciaTemporal.tipo).toBe('');
     expect(componente.idosoSemApuracao()).toBe(false);
 
     store.patchSection('desempate', [
-      criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: 'v1', idadeMinima: '60' }),
+      criterio({ regraCodigo: 'DESEMPATE_IDOSO', regraVersao: 'v1', idadeMinima: '60' }),
     ]);
     expect(componente.idosoSemApuracao()).toBe(true);
 
@@ -232,7 +232,7 @@ describe('DesempatePassoComponent', () => {
 
   it('exige ao menos um critério quando a inscrição é feita no sistema', () => {
     store.patchObjectSection('identificacao', {
-      origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
+      origemCandidatos: OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
     });
 
     const resultado = componente.validar();
@@ -245,7 +245,7 @@ describe('DesempatePassoComponent', () => {
 
   it('é válido sem critério quando o resultado é importado: a lista já vem classificada', () => {
     store.patchObjectSection('identificacao', {
-      origemCandidatos: OrigemCandidatosCodigo.importacaoExterna,
+      origemCandidatos: OrigemCandidatosCodigo.IMPORTACAO_EXTERNA,
     });
 
     expect(componente.validar().valid).toBe(true);
@@ -253,21 +253,21 @@ describe('DesempatePassoComponent', () => {
 
   it('reordena com mover()', () => {
     store.patchSection('desempate', [
-      criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: '1.0' }),
-      criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: '1.0', idadeMinima: '60' }),
+      criterio({ regraCodigo: 'DESEMPATE_MAIOR_IDADE', regraVersao: '1.0' }),
+      criterio({ regraCodigo: 'DESEMPATE_IDOSO', regraVersao: '1.0', idadeMinima: '60' }),
     ]);
 
     edicao().mover(1, -1);
 
     expect(store.draft().desempate.map((item) => item.regraCodigo)).toEqual([
-      'DESEMPATE-IDOSO',
-      'DESEMPATE-MAIOR-IDADE',
+      'DESEMPATE_IDOSO',
+      'DESEMPATE_MAIOR_IDADE',
     ]);
   });
 
   it('remove um critério pelo índice', () => {
     store.patchSection('desempate', [
-      criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: '1.0' }),
+      criterio({ regraCodigo: 'DESEMPATE_MAIOR_IDADE', regraVersao: '1.0' }),
     ]);
 
     edicao().remover(0);

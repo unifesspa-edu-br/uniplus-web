@@ -269,7 +269,7 @@ describe('BonusPassoComponent', () => {
   describe('quem recebe o acréscimo', () => {
     function comInscricaoPropriaEFormulario(): void {
       store.patchObjectSection('identificacao', {
-        origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
+        origemCandidatos: OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
       });
       store.patchObjectSection('formulario', {
         conteudo: {

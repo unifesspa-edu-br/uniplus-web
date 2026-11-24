@@ -1,4 +1,11 @@
-export { FormaDeComprovacaoCodigo, SentidoDoMotivoCodigo } from './schema';
+export {
+  BlocoSistemaCodigo,
+  FormaDeComprovacaoCodigo,
+  SentidoDoMotivoCodigo,
+  TipoEtapaFormularioCodigo,
+  TipoObrigatoriedadeCodigo,
+  TipoRegraCodigo,
+} from './schema';
 export { SELECAO_BASE_PATH } from './tokens';
 export {
   PARAMETROS_DA_ELIMINACAO,

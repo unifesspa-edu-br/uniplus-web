@@ -1,25 +1,36 @@
 import type { RegraDeDeliberacaoDto } from '@uniplus/shared-data/selecao';
-import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
+import {
+  CriterioDeVotacaoCodigo,
+  DesempateDaVotacaoCodigo,
+  EncerramentoDaVotacaoCodigo,
+  ModoDeDeliberacao,
+} from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { regraComoInput, regraDoDto } from './regra-de-deliberacao-contrato';
 import { ATO_INDIVIDUAL, COLEGIADA, comRegra } from './regra-de-deliberacao.testing';
 
 const DTO_COLEGIADA: RegraDeDeliberacaoDto = {
-  modo: { codigo: ModoDeDeliberacao.colegiadaComVotacao, rotulo: 'Colegiada' },
+  modo: { codigo: ModoDeDeliberacao.COLEGIADA_COM_VOTACAO, rotulo: 'Colegiada' },
   integrantes: 5,
   suplentes: 2,
   quorum: 3,
   criterio: {
-    codigo: 'maioriaSimples' as NonNullable<RegraDeDeliberacaoDto['criterio']>['codigo'],
+    codigo: CriterioDeVotacaoCodigo.MAIORIA_SIMPLES as NonNullable<
+      RegraDeDeliberacaoDto['criterio']
+    >['codigo'],
     rotulo: 'teste',
   },
   desempate: {
-    codigo: 'votoDaPresidencia' as NonNullable<RegraDeDeliberacaoDto['desempate']>['codigo'],
+    codigo: DesempateDaVotacaoCodigo.VOTO_DA_PRESIDENCIA as NonNullable<
+      RegraDeDeliberacaoDto['desempate']
+    >['codigo'],
     rotulo: 'teste',
   },
   encerramento: {
-    codigo: 'presidenciaNoQuorum' as NonNullable<RegraDeDeliberacaoDto['encerramento']>['codigo'],
+    codigo: EncerramentoDaVotacaoCodigo.PRESIDENCIA_NO_QUORUM as NonNullable<
+      RegraDeDeliberacaoDto['encerramento']
+    >['codigo'],
     rotulo: 'teste',
   },
   semUnanimidade: null,
@@ -45,7 +56,7 @@ describe('regraDoDto', () => {
 
   it('lê o ato individual sem nenhum campo de votação', () => {
     const dto: RegraDeDeliberacaoDto = {
-      modo: { codigo: ModoDeDeliberacao.atoIndividual, rotulo: 'Individual' },
+      modo: { codigo: ModoDeDeliberacao.ATO_INDIVIDUAL, rotulo: 'Individual' },
       integrantes: 1,
       suplentes: 0,
       quorum: null,
@@ -60,13 +71,13 @@ describe('regraDoDto', () => {
 });
 
 const INPUT_COLEGIADA = {
-  modo: ModoDeDeliberacao.colegiadaComVotacao,
+  modo: ModoDeDeliberacao.COLEGIADA_COM_VOTACAO,
   integrantes: 5,
   suplentes: 2,
   quorum: 3,
-  criterio: 'maioriaSimples',
-  desempate: 'votoDaPresidencia',
-  encerramento: 'presidenciaNoQuorum',
+  criterio: CriterioDeVotacaoCodigo.MAIORIA_SIMPLES,
+  desempate: DesempateDaVotacaoCodigo.VOTO_DA_PRESIDENCIA,
+  encerramento: EncerramentoDaVotacaoCodigo.PRESIDENCIA_NO_QUORUM,
   semUnanimidade: null,
 };
 
@@ -81,7 +92,7 @@ describe('regraComoInput', () => {
 
   it('leva o ato individual sem votação com os campos nulos', () => {
     expect(regraComoInput(ATO_INDIVIDUAL)).toEqual({
-      modo: ModoDeDeliberacao.atoIndividual,
+      modo: ModoDeDeliberacao.ATO_INDIVIDUAL,
       integrantes: 1,
       suplentes: 0,
       quorum: null,
@@ -93,11 +104,11 @@ describe('regraComoInput', () => {
   });
 
   it('envia a votação do recurso no ato individual', () => {
-    const regra = comRegra({ modo: ModoDeDeliberacao.atoIndividual });
+    const regra = comRegra({ modo: ModoDeDeliberacao.ATO_INDIVIDUAL });
 
     expect(regraComoInput(regra)).toEqual({
       ...INPUT_COLEGIADA,
-      modo: ModoDeDeliberacao.atoIndividual,
+      modo: ModoDeDeliberacao.ATO_INDIVIDUAL,
     });
   });
 

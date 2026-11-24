@@ -328,14 +328,14 @@ function faseDaVerificacao(
   arquivo: ArquivoEnviado,
 ): Pick<ArquivoEmEnvio, 'fase' | 'mensagem' | 'podeTentarDeNovo'> {
   switch (arquivo.situacao) {
-    case 'verificado':
+    case 'VERIFICADO':
       return { fase: 'confirmado' };
-    case 'emVerificacao':
+    case 'EM_VERIFICACAO':
       return { fase: 'verificando', mensagem: arquivo.mensagem };
-    case 'pendente':
+    case 'PENDENTE':
       return { fase: 'iniciando' };
-    case 'recusado':
-    case 'reenvioNecessario':
+    case 'RECUSADO':
+    case 'REENVIO_NECESSARIO':
       return { fase: 'erro', mensagem: arquivo.mensagem, podeTentarDeNovo: false };
   }
 }

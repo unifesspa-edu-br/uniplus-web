@@ -36,12 +36,12 @@ describe('NotasDoEnemApi', () => {
   afterEach(() => controller.verify());
 
   it('pede o catálogo pelo tipo, com o vendor MIME do leiaute', async () => {
-    const promessa = firstValueFrom(api.listarLeiautes('retorno'));
+    const promessa = firstValueFrom(api.listarLeiautes('RETORNO'));
 
     const req = controller.expectOne(
       (r) => r.url === `${BASE}/api/selecao/leiautes-de-arquivo-do-inep`,
     );
-    expect(req.request.params.get('tipo')).toBe('retorno');
+    expect(req.request.params.get('tipo')).toBe('RETORNO');
     expect(req.request.headers.get('Accept')).toBe(
       buildVendorMimeAccept('leiaute-de-arquivo-do-inep', 1),
     );

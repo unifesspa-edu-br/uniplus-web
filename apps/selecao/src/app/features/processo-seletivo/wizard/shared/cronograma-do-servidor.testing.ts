@@ -52,16 +52,16 @@ type RecursoDaFaseDoServidor = NonNullable<FaseCronogramaDto['publicacoes']['reg
 
 export const PARAMETROS_DO_RECURSO: RecursoDaFaseDoServidor['parametros'] = {
   prazoValor: 2,
-  prazoUnidade: { codigo: UnidadePrazoCodigo.diasUteis, rotulo: 'Dias úteis' },
+  prazoUnidade: { codigo: UnidadePrazoCodigo.DIAS_UTEIS, rotulo: 'Dias úteis' },
   admiteInstanciaSuperior: true,
   prazoSegundaInstanciaValor: 3,
-  prazoSegundaInstanciaUnidade: { codigo: UnidadePrazoCodigo.diasUteis, rotulo: 'Dias úteis' },
+  prazoSegundaInstanciaUnidade: { codigo: UnidadePrazoCodigo.DIAS_UTEIS, rotulo: 'Dias úteis' },
   efeitoSuspensivo: {
-    codigo: EfeitoSuspensivoCodigo.semEfeitoSuspensivo,
+    codigo: EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO,
     rotulo: 'Sem efeito suspensivo',
   },
   guardaDaVaga: {
-    codigo: GuardaDaVagaCodigo.ateOResultadoDefinitivo,
+    codigo: GuardaDaVagaCodigo.ATE_O_RESULTADO_DEFINITIVO,
     rotulo: 'Guarda a vaga até o resultado definitivo',
   },
 };
@@ -144,7 +144,7 @@ export function faseDoServidor(parcial: FaseDoServidorParcial = {}): FaseCronogr
 
 const IDENTIFICACAO_DA_ETAPA: EtapaProcessoDto['identificacao'] = {
   nome: 'Prova Objetiva',
-  carater: { codigo: CaraterEtapaCodigo.classificatoria, rotulo: 'Classificatória' },
+  carater: { codigo: CaraterEtapaCodigo.CLASSIFICATORIA, rotulo: 'Classificatória' },
   tipoEtapa: {
     origemId: 'tipo-etapa-1',
     codigo: 'PROVA_OBJETIVA',
@@ -193,7 +193,7 @@ export function etapaDoServidor(parcial: EtapaDoServidorParcial = {}): EtapaProc
 type RecursoDaEtapaDoServidor = EtapaProcessoDto['publicacoes']['recursos'][number];
 
 const ATO_PUBLICADO = {
-  codigo: 'atoPublicado' as RecursoDaEtapaDoServidor['ancora']['codigo'],
+  codigo: 'PUBLICACAO_DO_ATO' as RecursoDaEtapaDoServidor['ancora']['codigo'],
   rotulo: 'Ato publicado',
 };
 

@@ -68,7 +68,7 @@ const PARAMETROS_DO_RECURSO: RecursoDaEtapa['parametros'] = {
   ...PARAMETROS_DO_RECURSO_DO_SERVIDOR,
   admiteInstanciaSuperior: true,
   prazoSegundaInstanciaValor: 3,
-  prazoSegundaInstanciaUnidade: { codigo: 'diasUteis', rotulo: 'Dias úteis' },
+  prazoSegundaInstanciaUnidade: { codigo: 'DIAS_UTEIS', rotulo: 'Dias úteis' },
 } as RecursoDaEtapa['parametros'];
 
 export const PROCESSO_PUBLICADO_COMPLETO = {
@@ -93,7 +93,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
     {
       id: '01a0d640-0000-7000-8000-0000000000e2',
       ordem: 1,
-      regra: referencia('DESEMPATE-MAIOR-IDADE'),
+      regra: referencia('DESEMPATE_MAIOR_IDADE'),
       parametros: PARAMETROS_SEM_VALOR,
     },
   ] satisfies readonly JsonDaApi<CriterioDesempateDto>[],
@@ -106,7 +106,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
     regrasEliminacao: [
       {
         id: '01a0d640-0000-7000-8000-0000000000e4',
-        regra: referencia('ELIMINACAO-ZERO-EM-AREA'),
+        regra: referencia('ELIMINACAO_ZERO_EM_AREA'),
         etapaRef: null,
         notaMinima: null,
         minimo: null,
@@ -300,7 +300,7 @@ export const ATO_DO_PROCESSO = {
 export const DOCUMENTO_DO_EDITAL = {
   id: '01a0d640-0000-7000-8000-0000000000ac',
   processoSeletivoId: ID_DO_PROCESSO_COMPLETO,
-  finalidade: 'documentoDoEdital',
+  finalidade: 'DOCUMENTO_DO_EDITAL',
   nomeArquivo: 'edital.pdf',
   tipoDeMidia: 'application/pdf',
   status: 'Confirmado',

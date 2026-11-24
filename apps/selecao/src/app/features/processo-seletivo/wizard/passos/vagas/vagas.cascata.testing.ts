@@ -51,7 +51,7 @@ export async function montarPassoComCascata(): Promise<PassoDeVagasComCascata> {
 }
 
 function regrasDeRemanejamento(tipo: string | null): readonly unknown[] {
-  return tipo === 'criterio_remanejamento' ? [REGRA_CASCATA, REGRA_CASCATA_SEM_MATRIZ] : [];
+  return tipo === 'CRITERIO_REMANEJAMENTO' ? [REGRA_CASCATA, REGRA_CASCATA_SEM_MATRIZ] : [];
 }
 
 function comCascata(passo: PassoDeVagas): PassoDeVagasComCascata {

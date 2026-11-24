@@ -31,7 +31,7 @@ describe('CronogramaPassoComponent: recusas das etapas no campo', () => {
   function etapaFechadaComRecurso(): void {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);
-    const recurso = umRecursoDaEtapa({ ancora: 'cienciaIndividual', atoAncoraCodigo: '' });
+    const recurso = umRecursoDaEtapa({ ancora: 'CIENCIA_INDIVIDUAL', atoAncoraCodigo: '' });
     cronograma.etapas.at(0).controls.recursos.setValue([recurso]);
     expansao.alternarFase(0);
     detectar();
@@ -141,11 +141,11 @@ describe('CronogramaPassoComponent: recusas das etapas no campo', () => {
     etapaFechadaComRecurso();
     cronograma.etapas.at(0).controls.recursos.setValue([
       umRecursoDaEtapa({
-        ancora: 'cienciaIndividual',
+        ancora: 'CIENCIA_INDIVIDUAL',
         atoAncoraCodigo: '',
         admiteInstanciaSuperior: true,
         prazoSegundaInstanciaValor: '3',
-        prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.diasUteis,
+        prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.DIAS_UTEIS,
       }),
     ]);
     detectar();

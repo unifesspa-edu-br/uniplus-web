@@ -1,3 +1,7 @@
+import {
+  SituacaoDoArquivoDoCandidatoCodigo,
+  SituacaoInscricaoCodigo,
+} from '@uniplus/shared-data/selecao';
 import { readFile } from 'node:fs/promises';
 import * as path from 'node:path';
 import { API_URL, PDF_MINIMO, enviarPelaUrlAssinada, tokenDaPersona } from '@uniplus/shared-e2e';
@@ -57,7 +61,11 @@ async function json<T>(resposta: Response, esperado: number, contexto: string): 
   return (texto === '' ? null : JSON.parse(texto)) as T;
 }
 
-async function respostasDa(p: Pessoa, token: string, comLaudo: boolean): Promise<Record<string, unknown>> {
+async function respostasDa(
+  p: Pessoa,
+  token: string,
+  comLaudo: boolean,
+): Promise<Record<string, unknown>> {
   const cep = p.cep.replace(/\D/g, '');
   const geo = await json<{ codigoIbge: string; cidade: string; uf: string }>(
     await fetch(`${GEO_URL}/api/cep/${cep}`, { headers: { authorization: `Bearer ${token}` } }),
@@ -118,7 +126,9 @@ async function respostasDa(p: Pessoa, token: string, comLaudo: boolean): Promise
     BAIXA_RENDA: false,
     CONCORRER_RENDA: false,
     SOLICITA_ATENDIMENTO_ESPECIALIZADO: comLaudo,
-    ...(comLaudo ? { CONDICAO_ATENDIMENTO: ['PCD'], RECURSO_ACESSIBILIDADE: ['TEMPO_ADICIONAL'] } : {}),
+    ...(comLaudo
+      ? { CONDICAO_ATENDIMENTO: ['PCD'], RECURSO_ACESSIBILIDADE: ['TEMPO_ADICIONAL'] }
+      : {}),
   };
 }
 
@@ -133,7 +143,9 @@ interface Rascunho {
           readonly ocorrenciaId: string | null;
           readonly tipoDocumentoCodigo: string;
           readonly obrigatorio: boolean;
-          readonly arquivos?: readonly { readonly situacao: string }[];
+          readonly arquivos?: readonly {
+            readonly situacao: { readonly codigo: string; readonly rotulo: string };
+          }[];
         }[];
       }[];
     };
@@ -148,10 +160,10 @@ async function aguardarVerificacaoDosArquivos(
   base: string,
   cabecalho: () => Record<string, string>,
   enviados: number,
-): Promise<Rascunho & { situacao: string }> {
+): Promise<Rascunho & { situacao: { codigo: string; rotulo: string } }> {
   const limite = Date.now() + 60_000;
   for (;;) {
-    const rascunho = await json<Rascunho & { situacao: string }>(
+    const rascunho = await json<Rascunho & { situacao: { codigo: string; rotulo: string } }>(
       await fetch(base, { headers: cabecalho() }),
       200,
       'rascunho com o laudo',
@@ -159,7 +171,12 @@ async function aguardarVerificacaoDosArquivos(
     const arquivos = rascunho.avaliacao.documentos.fases
       .flatMap((fase) => fase.documentos)
       .flatMap((documento) => documento.arquivos ?? []);
-    if (arquivos.length >= enviados && arquivos.every((arquivo) => arquivo.situacao === 'verificado')) {
+    if (
+      arquivos.length >= enviados &&
+      arquivos.every(
+        (arquivo) => arquivo.situacao.codigo === SituacaoDoArquivoDoCandidatoCodigo.VERIFICADO,
+      )
+    ) {
       return rascunho;
     }
     if (Date.now() > limite) {
@@ -218,8 +235,12 @@ export async function inscreverPersona(
   if (resposta.status === 404) {
     resposta = await fetch(base, { method: 'POST', headers: cabecalho() });
   }
-  let rascunho = await json<Rascunho & { situacao: string }>(resposta, 200, `rascunho de ${username}`);
-  if (rascunho.situacao !== 'rascunho') {
+  let rascunho = await json<Rascunho & { situacao: { codigo: string; rotulo: string } }>(
+    resposta,
+    200,
+    `rascunho de ${username}`,
+  );
+  if (rascunho.situacao.codigo !== SituacaoInscricaoCodigo.RASCUNHO) {
     return { username, inscricaoId: rascunho.id, cpf: p.cpf, rg: p.rg, nome: p.nome };
   }
 
@@ -245,7 +266,11 @@ export async function inscreverPersona(
     headers: cabecalho({ 'if-match': rascunho.eTag, 'content-type': 'application/json' }),
     body: JSON.stringify(corpo),
   });
-  rascunho = await json<Rascunho & { situacao: string }>(resposta, 200, `respostas de ${username}`);
+  rascunho = await json<Rascunho & { situacao: { codigo: string; rotulo: string } }>(
+    resposta,
+    200,
+    `respostas de ${username}`,
+  );
 
   if (comLaudo) {
     const exigencias = rascunho.avaliacao.documentos.fases
@@ -255,7 +280,11 @@ export async function inscreverPersona(
       throw new Error('O processo não pediu laudo a quem declarou deficiência.');
     }
     for (const exigencia of exigencias) {
-      const envio = await json<{ arquivoId: string; urlUpload: string; contentTypeExigido: string }>(
+      const envio = await json<{
+        arquivoId: string;
+        urlUpload: string;
+        contentTypeExigido: string;
+      }>(
         await fetch(`${base}/documentos/envios`, {
           method: 'POST',
           headers: cabecalho({ 'content-type': 'application/json' }),
@@ -270,7 +299,11 @@ export async function inscreverPersona(
         201,
         'iniciar o envio do laudo',
       );
-      const etag = await enviarPelaUrlAssinada(envio.urlUpload, envio.contentTypeExigido, PDF_MINIMO);
+      const etag = await enviarPelaUrlAssinada(
+        envio.urlUpload,
+        envio.contentTypeExigido,
+        PDF_MINIMO,
+      );
       await json(
         await fetch(`${base}/documentos/envios/${envio.arquivoId}/confirmacao`, {
           method: 'POST',

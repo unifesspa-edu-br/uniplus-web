@@ -1,4 +1,7 @@
 import {
+  BlocoSistemaCodigo,
+  TipoEtapaFormularioCodigo,
+  TipoObrigatoriedadeCodigo,
   FinalidadeFormularioCodigo,
   type FatoColetadoDto,
   type FormularioDto,
@@ -11,13 +14,13 @@ type EtapaDoServidor = FormularioDto['etapas'][number];
 export function etapaDoServidor(
   codigo: string,
   ordem: number,
-  bloco: string | null = null,
+  bloco: BlocoSistemaCodigo | null = null,
   titulo: string = codigo,
 ): EtapaDoServidor {
   return {
     codigo,
     ordem,
-    tipo: bloco === null ? 'SECAO' : 'BLOCO',
+    tipo: bloco === null ? TipoEtapaFormularioCodigo.SECAO : TipoEtapaFormularioCodigo.BLOCO,
     bloco,
     apresentacao: { titulo, descricao: null, aviso: null },
     exibicao: null,
@@ -27,7 +30,7 @@ export function etapaDoServidor(
 const SEM_FORMATO_NEM_OPCOES: Pick<FatoColetadoDto, 'regras' | 'formato' | 'opcoes'> = {
   regras: {
     exibicao: null,
-    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+    obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null },
     restricoes: [],
     impedimento: null,
   },

@@ -30,7 +30,7 @@ const PROCESSO_EM_RASCUNHO: ProcessoSeletivoResumoDto = {
     codigo: 'VESTIBULAR',
     nome: 'Vestibular',
   },
-  status: { codigo: StatusProcessoCodigo.rascunho, rotulo: 'Rascunho' },
+  status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: 'Rascunho' },
   criadoEm: '2026-08-20T13:23:42.707136+00:00',
 };
 

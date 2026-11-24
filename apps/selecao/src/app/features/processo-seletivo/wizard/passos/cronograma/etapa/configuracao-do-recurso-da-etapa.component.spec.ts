@@ -46,7 +46,7 @@ import { ConfiguracaoDoRecursoDaEtapaComponent } from './configuracao-do-recurso
 import { SEM_RECUSAS_DA_PUBLICACAO } from '../servicos/recusas-da-publicacao-no-cronograma.testing';
 
 const RECURSO: RecursoDaEtapa = {
-  ancora: 'cienciaIndividual',
+  ancora: 'CIENCIA_INDIVIDUAL',
   regraCodigo: 'PRAZO',
   regraVersao: 'v1',
   ...PARAMETROS_COM_INSTANCIA_SUPERIOR,
@@ -114,8 +114,8 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
   it('o prazo de interposição oferece as unidades que a API devolve', () => {
     expect(unidadesDe(`${P}-prazo-interposicao-unidade`)).toEqual([
       '',
-      UnidadePrazoCodigo.diasUteis,
-      UnidadePrazoCodigo.horas,
+      UnidadePrazoCodigo.DIAS_UTEIS,
+      UnidadePrazoCodigo.HORAS,
     ]);
   });
 
@@ -142,27 +142,27 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
   it('leva ao rascunho do recurso a unidade escolhida no prazo de interposição', () => {
     const campo = seletor(`${P}-prazo-interposicao-unidade`) as HTMLSelectElement;
 
-    campo.value = UnidadePrazoCodigo.horas;
+    campo.value = UnidadePrazoCodigo.HORAS;
     campo.dispatchEvent(new Event('change'));
 
-    expect(recursoNoRascunho()?.prazoUnidade).toBe(UnidadePrazoCodigo.horas);
+    expect(recursoNoRascunho()?.prazoUnidade).toBe(UnidadePrazoCodigo.HORAS);
   });
 
   it('mantém à vista e marcada a unidade gravada que a API não oferece', () => {
     fixture.componentRef.setInput('recursoDaEtapa', {
       ...RECURSO,
-      prazoUnidade: UnidadePrazoCodigo.dias,
+      prazoUnidade: UnidadePrazoCodigo.DIAS,
     });
     fixture.detectChanges();
 
-    expect(seletor(`${P}-prazo-interposicao-unidade`)?.value).toBe(UnidadePrazoCodigo.dias);
-    expect(unidadesDe(`${P}-prazo-interposicao-unidade`)).toContain(UnidadePrazoCodigo.dias);
+    expect(seletor(`${P}-prazo-interposicao-unidade`)?.value).toBe(UnidadePrazoCodigo.DIAS);
+    expect(unidadesDe(`${P}-prazo-interposicao-unidade`)).toContain(UnidadePrazoCodigo.DIAS);
   });
 
   it('leva ao rascunho o efeito suspensivo escolhido', () => {
-    entrada(`${P}-efeito-opcao-${EfeitoSuspensivoCodigo.semEfeitoSuspensivo}`)?.click();
+    entrada(`${P}-efeito-opcao-${EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO}`)?.click();
 
-    expect(recursoNoRascunho()?.efeitoSuspensivo).toBe(EfeitoSuspensivoCodigo.semEfeitoSuspensivo);
+    expect(recursoNoRascunho()?.efeitoSuspensivo).toBe(EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO);
   });
 
   it('marcar Não leva ao rascunho a resposta e retira o prazo da 2ª instância', () => {
@@ -344,7 +344,7 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
       recusar('etapas[0].recursos[0].ancora');
 
       const campo = seletor(ANCORA) as HTMLSelectElement;
-      campo.value = 'atoPublicado';
+      campo.value = 'PUBLICACAO_DO_ATO';
       campo.dispatchEvent(new Event('change'));
       fixture.detectChanges();
 

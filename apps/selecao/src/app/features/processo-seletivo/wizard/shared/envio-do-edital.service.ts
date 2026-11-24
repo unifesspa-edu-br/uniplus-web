@@ -30,7 +30,7 @@ export class EnvioDoEdital {
     return firstValueFrom(
       this.api.listarDocumentosAPublicar(
         processoSeletivoId,
-        FinalidadeDoDocumentoCodigo.documentoDoEdital,
+        FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL,
       ),
     );
   }
@@ -51,7 +51,7 @@ export class EnvioDoEdital {
     nomeArquivo: string,
   ): Promise<ResultadoIniciacao> {
     const request = {
-      finalidade: FinalidadeDoDocumentoCodigo.documentoDoEdital,
+      finalidade: FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL,
       nomeArquivo,
       tipoDeMidia: TIPO_DE_MIDIA_DO_EDITAL,
     };

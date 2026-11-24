@@ -22,7 +22,10 @@ describe('ProcessoSeletivoPage — edital na retomada', MONTAGEM_LENTA, () => {
     await propagar();
 
     // Os anexos do edital vivem na mesma coleção e não disputam o posto de oficial.
-    expect(listar).toHaveBeenCalledWith(PROCESSO_ID, FinalidadeDoDocumentoCodigo.documentoDoEdital);
+    expect(listar).toHaveBeenCalledWith(
+      PROCESSO_ID,
+      FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL,
+    );
 
     const uploads = cenario.store.draft().identificacao.uploads;
     expect(uploads).toHaveLength(1);
@@ -128,7 +131,17 @@ describe('ProcessoSeletivoPage — edital na retomada', MONTAGEM_LENTA, () => {
   it('ignora documentos pendentes ao restaurar o vínculo', async () => {
     const cenario = montar({
       listarDocumentos: vi.fn(() =>
-        of(okResult([documento({ status: { codigo: 'Pendente' as DocumentoAPublicarDto['status']['codigo'], rotulo: 'Pendente' }, confirmadoEm: null })])),
+        of(
+          okResult([
+            documento({
+              status: {
+                codigo: 'PENDENTE' as DocumentoAPublicarDto['status']['codigo'],
+                rotulo: 'Pendente',
+              },
+              confirmadoEm: null,
+            }),
+          ]),
+        ),
       ),
     });
     await propagar();

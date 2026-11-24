@@ -53,7 +53,7 @@ import type { CriterioDesempateConfigurado } from './wizard/processo-seletivo.mo
 import { provideApiDosTiposDeDecisao } from './wizard/shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 
 export const CRITERIO_POR_AREA: CriterioDesempateConfigurado = {
-  regraCodigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM',
+  regraCodigo: 'DESEMPATE_MAIOR_NOTA_AREA_ENEM',
   regraVersao: '1',
   etapaRef: '',
   idadeMinima: '',

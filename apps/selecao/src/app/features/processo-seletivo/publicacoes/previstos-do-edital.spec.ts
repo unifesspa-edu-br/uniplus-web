@@ -42,7 +42,7 @@ function item(id: string, sobrescritas: Partial<ProdutoPrevistoDto> = {}): Produ
     tipoCodigo: 'RESULTADO_HOMOLOGACAO',
     tipoNome: 'Resultado da homologação',
     papel: { codigo: 'PRELIMINAR' as NonNullable<ProdutoPrevistoDto['papel']>['codigo'], rotulo: 'Preliminar' },
-    situacao: { codigo: SituacaoDoProdutoPrevistoCodigo.aberto, rotulo: 'Aberto' },
+    situacao: { codigo: SituacaoDoProdutoPrevistoCodigo.ABERTO, rotulo: 'Aberto' },
     ato: null,
     correcoes: [],
     podePublicar: true,

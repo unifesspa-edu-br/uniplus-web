@@ -50,7 +50,7 @@ describe('ProcessoSeletivoStore — processo fora de rascunho', () => {
   it('o status publicado confirma o processo fora de rascunho e encerra a edição', () => {
     const store = new ProcessoSeletivoStore();
 
-    store.remoteSnapshot.set(comStatus(StatusProcessoCodigo.publicado));
+    store.remoteSnapshot.set(comStatus(StatusProcessoCodigo.PUBLICADO));
 
     expect(store.processoForaDeRascunho()).toBe(true);
     expect(store.edicaoPermitida()).toBe(false);
@@ -58,7 +58,7 @@ describe('ProcessoSeletivoStore — processo fora de rascunho', () => {
 
   it('a publicação não confirmada bloqueia a edição sem dizer que o processo saiu do rascunho', () => {
     const store = new ProcessoSeletivoStore();
-    store.remoteSnapshot.set(comStatus(StatusProcessoCodigo.rascunho));
+    store.remoteSnapshot.set(comStatus(StatusProcessoCodigo.RASCUNHO));
 
     store.publicacaoNaoConfirmada.set(true);
 
@@ -87,7 +87,7 @@ describe('ProcessoSeletivoStore — várias seções numa só escrita', () => {
 
   it('não escreve com o processo fora de rascunho', () => {
     const store = new ProcessoSeletivoStore();
-    store.remoteSnapshot.set(detalhe({ id: 'p1', status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' } }));
+    store.remoteSnapshot.set(detalhe({ id: 'p1', status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' } }));
 
     escreverCronogramaEDocumentos(store);
 

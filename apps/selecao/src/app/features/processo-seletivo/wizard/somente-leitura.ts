@@ -13,14 +13,14 @@ export function motivoDeSomenteLeitura(
     return 'A publicação foi aceita, mas ainda não foi possível confirmar o novo estado do processo. A configuração fica bloqueada até a confirmação ser refeita — recarregue a página.';
   }
 
-  if (status === undefined || status === StatusProcessoCodigo.rascunho) return null;
+  if (status === undefined || status === StatusProcessoCodigo.RASCUNHO) return null;
 
-  if (status === StatusProcessoCodigo.publicado) {
+  if (status === StatusProcessoCodigo.PUBLICADO) {
     return 'Este processo já foi publicado. A configuração fica disponível para consulta; alterá-la depende de abrir uma retificação.';
   }
 
-  if (status === StatusProcessoCodigo.encerrado || status === StatusProcessoCodigo.cancelado) {
-    const situacao = status === StatusProcessoCodigo.encerrado ? 'encerrado' : 'cancelado';
+  if (status === StatusProcessoCodigo.ENCERRADO || status === StatusProcessoCodigo.CANCELADO) {
+    const situacao = status === StatusProcessoCodigo.ENCERRADO ? 'encerrado' : 'cancelado';
     return `Este processo está ${situacao} e não aceita alteração. A configuração fica disponível para consulta.`;
   }
 

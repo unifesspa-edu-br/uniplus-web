@@ -22,8 +22,8 @@ export const PROCESSO_DA_MEDICINA = {
     codigo: 'PSM',
     nome: 'Processo Seletivo de Medicina',
   },
-  status: 'publicado',
-  origemCandidatos: 'inscricaoPropria',
+  status: { codigo: 'PUBLICADO', rotulo: 'Publicado' },
+  origemCandidatos: { codigo: 'INSCRICAO_PROPRIA', rotulo: 'Inscrição própria' },
   unidadeAdministradora: {
     origemId: '01a07d6a-a0b2-7448-89a6-a2c7867a0e38',
     sigla: 'CEPS-971713',

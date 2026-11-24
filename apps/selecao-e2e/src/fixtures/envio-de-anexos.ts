@@ -25,7 +25,7 @@ export function iniciacaoDoEnvio(documentoAPublicarId: string, tipoDeMidia: stri
 }
 
 const DOCUMENTO_SELADO = {
-  finalidade: 'anexoDoEdital',
+  finalidade: 'ANEXO_DO_EDITAL',
   status: 'Confirmado',
   criadoEm: '2027-01-01T00:00:00Z',
   expiraEm: PRAZO_DA_URL_ASSINADA,

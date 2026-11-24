@@ -89,12 +89,12 @@ export class DesempatePassoComponent {
    * vem classificada e o passo não o exige (a API aceita critérios, mas não os cobra).
    */
   readonly desempateObrigatorio = computed(
-    () => this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.inscricaoPropria,
+    () => this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
   );
 
   /** Só diz que o desempate não é obrigatório quando a origem já foi escolhida como importação. */
   readonly desempateDispensado = computed(
-    () => this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.importacaoExterna,
+    () => this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.IMPORTACAO_EXTERNA,
   );
 
   /**

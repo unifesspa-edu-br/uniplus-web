@@ -123,11 +123,11 @@ describe('adaptador do passo Identificação', () => {
 
   it('grava a origem escolhida e devolve intacto o que o passo não edita', () => {
     const documento = exemploDoContrato('resultado-importado');
-    const valores = { ...valoresDe('resultado-importado'), origem: Origem.inscricaoPropria };
+    const valores = { ...valoresDe('resultado-importado'), origem: Origem.INSCRICAO_PROPRIA };
 
     const editado = edicaoDoPasso(valores)(documento);
 
-    expect(editado.identificacao?.origemCandidatos).toBe(Origem.inscricaoPropria);
+    expect(editado.identificacao?.origemCandidatos).toBe(Origem.INSCRICAO_PROPRIA);
     expect({ ...editado, identificacao: undefined }).toEqual({
       ...documento,
       identificacao: undefined,

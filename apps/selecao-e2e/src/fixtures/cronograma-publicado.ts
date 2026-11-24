@@ -9,7 +9,7 @@ import {
 
 /**
  * Documentos publicados: o processo da consulta, com uma fase e dois documentos — um cobrado de
- * todo candidato e outro só de quem concorre por LB_PPI. `status: 'publicado'` põe o editor em
+ * todo candidato e outro só de quem concorre por LB_PPI. O estado publicado põe o editor em
  * somente leitura.
  */
 export const PROCESSO_PUBLICADO_ID = '01960000-0000-7000-0000-000000000a01';
@@ -18,8 +18,8 @@ export const DETALHE_PUBLICADO = {
   id: PROCESSO_PUBLICADO_ID,
   nome: 'Processo seletivo publicado',
   tipoProcesso: { origemId: TIPOS_PROCESSO[0].id, codigo: 'SISU', nome: 'SISU' },
-  status: 'publicado',
-  origemCandidatos: 'inscricaoPropria',
+  status: { codigo: 'PUBLICADO', rotulo: 'Publicado' },
+  origemCandidatos: { codigo: 'INSCRICAO_PROPRIA', rotulo: 'Inscrição própria' },
   unidadeAdministradora: {
     origemId: '01960000-0000-7000-0000-000000000906',
     sigla: 'CEPS',

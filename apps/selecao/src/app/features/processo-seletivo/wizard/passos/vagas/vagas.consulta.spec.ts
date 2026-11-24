@@ -69,7 +69,7 @@ describe('VagasPassoComponent — consulta', () => {
       ofertas: [distribuicao(OFERTA), distribuicao(OUTRA_OFERTA)],
     });
     store.remoteSnapshot.set({
-      status: StatusProcessoCodigo.publicado,
+      status: StatusProcessoCodigo.PUBLICADO,
     } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
   });

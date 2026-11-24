@@ -50,7 +50,7 @@ describe('CronogramaPassoComponent: itens de avaliação e escala', () => {
       expansao.alternarFase(0);
       expansao.alternarEtapa(0);
       const etapa = cronograma.etapas.at(0);
-      edicao.escolherCarater(etapa, 'classificatoria');
+      edicao.escolherCarater(etapa, 'CLASSIFICATORIA');
       etapa.controls.notaMaxima.setValue('10');
       detectar();
       return etapa;

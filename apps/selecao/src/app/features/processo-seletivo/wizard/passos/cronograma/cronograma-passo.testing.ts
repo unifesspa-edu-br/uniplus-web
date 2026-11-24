@@ -114,7 +114,7 @@ function congeladosDaFase(agrupaEtapas: boolean): FaseDoCronograma['congelados']
 
 const ETAPA_SEM_DECLARACAO = {
   id: null,
-  carater: CaraterEtapaCodigo.classificatoria,
+  carater: CaraterEtapaCodigo.CLASSIFICATORIA,
   tipoEtapaOrigemId: TIPO_ETAPA,
   peso: '1',
   notaMinima: '',

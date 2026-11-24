@@ -56,7 +56,7 @@ describe('RevisaoPassoComponent — ato e período', () => {
       store.patchObjectSection('publicacao', { numero: '', ato: atoCompleto() });
       store.remoteSnapshot.set({
         ...PROCESSO_DTO_MINIMO,
-        status: StatusProcessoCodigo.cancelado,
+        status: StatusProcessoCodigo.CANCELADO,
       } as never);
       await criarProcesso(cenario);
       await flushProntidaoVerde(cenario);

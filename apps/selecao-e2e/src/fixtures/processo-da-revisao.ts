@@ -59,7 +59,7 @@ export const PREVISTOS_DO_PROCESSO = {
 export const DOCUMENTO_CONFIRMADO_DO_EDITAL = {
   id: DOCUMENTO_ID,
   processoSeletivoId: PROCESSO_ID,
-  finalidade: 'documentoDoEdital',
+  finalidade: 'DOCUMENTO_DO_EDITAL',
   nomeArquivo: 'edital.pdf',
   tipoDeMidia: 'application/pdf',
   status: 'Confirmado',
@@ -122,7 +122,7 @@ const IDENTIFICACAO_DO_PROCESSO = {
     codigo: 'GRAD',
     nome: 'Graduação',
   },
-  origemCandidatos: 'inscricaoPropria',
+  origemCandidatos: { codigo: 'INSCRICAO_PROPRIA', rotulo: 'Inscrição própria' },
   unidadeAdministradora: {
     origemId: '01960000-0000-7000-0000-000000000906',
     sigla: 'CEPS',
@@ -156,11 +156,6 @@ const DIMENSOES_SEM_CADASTRO = {
   criadoEm: '2027-01-01T00:00:00Z',
 };
 
-/**
- * O `status` usa o vocabulário do wire, camelCase, e não o nome do enum C#: `status: 'Rascunho'`
- * faria hidratar() marcar o processo como somente leitura (edicaoPermitida() compara com
- * StatusProcesso.rascunho === 'rascunho') e todo campo do formulário nasceria desabilitado.
- */
 export function processoDto(
   cronogramaFases: readonly unknown[],
   status: string,
@@ -168,9 +163,13 @@ export function processoDto(
 ) {
   return {
     ...IDENTIFICACAO_DO_PROCESSO,
-    status,
+    status: situacaoDoProcesso(status),
     ...DIMENSOES_SEM_CADASTRO,
     classificacao,
     cronogramaFases,
   };
+}
+
+function situacaoDoProcesso(status: string) {
+  return { codigo: status.toUpperCase(), rotulo: status === 'rascunho' ? 'Rascunho' : 'Publicado' };
 }

@@ -72,7 +72,7 @@ export class PublicacaoDoProcesso {
    * e ler o snapshot vigente de um rascunho cancelado falharia e esconderia a transcrição que ele guarda.
    */
   readonly jaPublicado = computed(
-    () => this.store.remoteSnapshot()?.status.codigo === StatusProcessoCodigo.publicado,
+    () => this.store.remoteSnapshot()?.status.codigo === StatusProcessoCodigo.PUBLICADO,
   );
 
   /** O ato da versão vigente, quando já foi lido: é nele que estão os anexos publicados do edital. */
@@ -219,7 +219,7 @@ export class PublicacaoDoProcesso {
   private async confirmarPublicacao(processoId: string): Promise<boolean> {
     const [detalhe, snapshot] = await this.releituraDaPublicacao(processoId);
 
-    if (!detalhe.ok || detalhe.data.status.codigo === StatusProcessoCodigo.rascunho) {
+    if (!detalhe.ok || detalhe.data.status.codigo === StatusProcessoCodigo.RASCUNHO) {
       return this.semConfirmacao();
     }
 
@@ -227,7 +227,7 @@ export class PublicacaoDoProcesso {
     if (!snapshot.ok) return false;
 
     this.snapshotConfirmado.set(snapshot.data);
-    return detalhe.data.status.codigo === StatusProcessoCodigo.publicado;
+    return detalhe.data.status.codigo === StatusProcessoCodigo.PUBLICADO;
   }
 
   private releituraDaPublicacao(processoId: string) {

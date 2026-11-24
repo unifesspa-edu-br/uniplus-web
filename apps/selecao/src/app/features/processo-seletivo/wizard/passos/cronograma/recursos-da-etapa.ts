@@ -25,7 +25,7 @@ export function regraDoCatalogo(
   regras: readonly RegraCatalogoDto[],
   ancora: RecursoDaEtapa['ancora'],
 ): RegraCatalogoDto | undefined {
-  const alvo = ancora === 'atoPublicado' ? 'ANCORADO-EM-ATO' : 'ANCORADO-EM-CIENCIA';
+  const alvo = ancora === 'PUBLICACAO_DO_ATO' ? 'ANCORADO-EM-ATO' : 'ANCORADO-EM-CIENCIA';
   return regras.find((regra) => regra.codigo.includes(alvo)) ?? regras[0];
 }
 
@@ -44,7 +44,7 @@ export function acrescentarRecurso(
   regras: readonly RegraCatalogoDto[],
 ): void {
   const preliminar = grupo.controls.produtos.value.find((p) => p.papel === PAPEL_PRELIMINAR);
-  const regra = regraDoCatalogo(regras, 'atoPublicado');
+  const regra = regraDoCatalogo(regras, 'PUBLICACAO_DO_ATO');
   escreverRecursos(grupo, [
     ...grupo.controls.recursos.value,
     recursoNovo(regra, preliminar?.atoCodigo ?? ''),
@@ -59,9 +59,9 @@ export function acrescentarRecurso(
 function recursoNovo(regra: RegraCatalogoDto | undefined, atoAncoraCodigo: string): RecursoDaEtapa {
   return {
     ...PARAMETROS_EM_BRANCO,
-    prazoUnidade: UnidadePrazoCodigo.diasUteis,
+    prazoUnidade: UnidadePrazoCodigo.DIAS_UTEIS,
     leitura: LEITURA_EM_BRANCO,
-    ancora: 'atoPublicado',
+    ancora: 'PUBLICACAO_DO_ATO',
     regraCodigo: regra?.codigo ?? '',
     regraVersao: regra?.versao ?? '',
     atoAncoraCodigo,
@@ -169,7 +169,7 @@ function recursoComAncora(
     ancora,
     regraCodigo: regra?.codigo ?? recurso.regraCodigo,
     regraVersao: regra?.versao ?? recurso.regraVersao,
-    atoAncoraCodigo: ancora === 'atoPublicado' ? recurso.atoAncoraCodigo : '',
+    atoAncoraCodigo: ancora === 'PUBLICACAO_DO_ATO' ? recurso.atoAncoraCodigo : '',
   };
 }
 

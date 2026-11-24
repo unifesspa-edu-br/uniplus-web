@@ -24,7 +24,7 @@ describe('regra de recurso', () => {
    * enviado, e quem recusa é a API.
    */
   it.each([
-    ['prazo em dias corridos', { prazoUnidade: UnidadePrazoCodigo.dias }],
+    ['prazo em dias corridos', { prazoUnidade: UnidadePrazoCodigo.DIAS }],
     ['fração de dia útil', { prazoValor: '1,5' }],
     ['prazo zero', { prazoValor: '0' }],
     ['prazo em branco', { prazoValor: '' }],

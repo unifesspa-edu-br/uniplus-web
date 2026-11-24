@@ -149,11 +149,11 @@ function valorGravadoComoTexto(valor: number | null | undefined): string {
 }
 
 export function decodificarOrigemCandidatos(valor: string): OrigemCandidatosSelecionada {
-  if (valor === OrigemCandidatosCodigo.inscricaoPropria) {
-    return OrigemCandidatosCodigo.inscricaoPropria;
+  if (valor === OrigemCandidatosCodigo.INSCRICAO_PROPRIA) {
+    return OrigemCandidatosCodigo.INSCRICAO_PROPRIA;
   }
-  if (valor === OrigemCandidatosCodigo.importacaoExterna) {
-    return OrigemCandidatosCodigo.importacaoExterna;
+  if (valor === OrigemCandidatosCodigo.IMPORTACAO_EXTERNA) {
+    return OrigemCandidatosCodigo.IMPORTACAO_EXTERNA;
   }
   return '';
 }

@@ -188,4 +188,4 @@ export const NENHUMA_EXIGENCIA: ExigenciasDoRascunho = {
   regrasDeComprovacao: [],
   emTodasAsFases: [],
 };
-export const MAIOR_IDADE = { regraCodigo: 'DESEMPATE-MAIOR-IDADE' } as CriterioDesempateConfigurado;
+export const MAIOR_IDADE = { regraCodigo: 'DESEMPATE_MAIOR_IDADE' } as CriterioDesempateConfigurado;

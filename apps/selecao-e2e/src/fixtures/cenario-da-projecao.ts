@@ -1,3 +1,4 @@
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import * as path from 'node:path';
 import {
   aprovarCatalogoInicial,
@@ -6,7 +7,11 @@ import {
   prepararAcessosDaSimulacao,
   SENHA_DAS_PERSONAS,
 } from '@uniplus/shared-e2e';
-import { inscricoesDoProcesso, listarProcessos, processosPublicadosComNome } from './processos-da-api';
+import {
+  inscricoesDoProcesso,
+  listarProcessos,
+  processosPublicadosComNome,
+} from './processos-da-api';
 import { rodarRoteiroDeProcesso } from './roteiro-da-api';
 import { inscreverPersona, type InscricaoCriada } from './inscricoes-reais';
 
@@ -44,10 +49,17 @@ export interface CenarioDaProjecao {
 }
 
 async function acharProcesso(nome: string): Promise<string | undefined> {
-  return (await listarProcessos()).find((processo) => processo.nome === nome && processo.status === 'publicado')?.id;
+  return (await listarProcessos()).find(
+    (processo) =>
+      processo.nome === nome && processo.status.codigo === StatusProcessoCodigo.PUBLICADO,
+  )?.id;
 }
 
-async function garantirProcesso(nome: string, identificador: string, modelo: string): Promise<string> {
+async function garantirProcesso(
+  nome: string,
+  identificador: string,
+  modelo: string,
+): Promise<string> {
   const existente = await acharProcesso(nome);
   if (existente !== undefined) {
     return existente;
@@ -79,7 +91,11 @@ async function processoSemInscricao(): Promise<string> {
     }
   }
   const identificador = `e2e-sem-inscricao-${Date.now()}`;
-  return garantirProcesso(`${NOME_SEM_INSCRICAO} ${identificador}`, identificador, MODELO_SEM_PROVA);
+  return garantirProcesso(
+    `${NOME_SEM_INSCRICAO} ${identificador}`,
+    identificador,
+    MODELO_SEM_PROVA,
+  );
 }
 
 let guardado: Promise<CenarioDaProjecao> | undefined;
@@ -88,7 +104,11 @@ export function cenarioDaProjecao(): Promise<CenarioDaProjecao> {
   guardado ??= (async () => {
     await prepararAcessosDaSimulacao();
     await aprovarCatalogoInicial();
-    const processoId = await garantirProcesso(NOME_COM_PROVA, `psm-2027-projecao-prova-${GERACAO}`, MODELO_COM_PROVA);
+    const processoId = await garantirProcesso(
+      NOME_COM_PROVA,
+      `psm-2027-projecao-prova-${GERACAO}`,
+      MODELO_COM_PROVA,
+    );
     const processoSemInscricaoId = await processoSemInscricao();
     const fernanda = await inscreverPersona(processoId, 'fernanda.drumond', true);
     const erick = await inscreverPersona(processoId, 'erick.ramos', false);
@@ -108,12 +128,25 @@ criar_processo; definir_cronograma_fases
 echo "PROCESSO_ID=$PROCESSO_ID"`;
 
 /** O processo em rascunho onde a configuração das exigências é testada, reaproveitado se já existe. */
-export async function rascunhoParaConfiguracao(): Promise<{ readonly processoId: string; readonly faseHabilitacaoId: string }> {
+export async function rascunhoParaConfiguracao(): Promise<{
+  readonly processoId: string;
+  readonly faseHabilitacaoId: string;
+}> {
   const id =
-    (await listarProcessos()).find((p) => p.nome === NOME_DO_RASCUNHO && p.status === 'rascunho')?.id ??
+    (await listarProcessos()).find(
+      (p) => p.nome === NOME_DO_RASCUNHO && p.status.codigo === StatusProcessoCodigo.RASCUNHO,
+    )?.id ??
     (await rodarRoteiroDeProcesso(
       'bash',
-      ['-c', SNIPPET_DO_RASCUNHO, 'bash', `psm-2027-projecao-rascunho-${Date.now()}`, NOME_DO_RASCUNHO, ROTEIRO, SENHA_DAS_PERSONAS],
+      [
+        '-c',
+        SNIPPET_DO_RASCUNHO,
+        'bash',
+        `psm-2027-projecao-rascunho-${Date.now()}`,
+        NOME_DO_RASCUNHO,
+        ROTEIRO,
+        SENHA_DAS_PERSONAS,
+      ],
       process.env,
       600_000,
     ));

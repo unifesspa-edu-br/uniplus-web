@@ -21,22 +21,22 @@ const textos = (valor: unknown): valor is readonly string[] =>
   Array.isArray(valor) && valor.every(texto);
 
 const notaMinima = { etapaChave: texto, notaMinima: numero } satisfies FormaDosParametros<
-  ParametrosDaEliminacao['ELIMINACAO-NOTA-MINIMA-ETAPA']
+  ParametrosDaEliminacao['ELIMINACAO_NOTA_MINIMA_ETAPA']
 >;
 const corte = { areaCodigo: texto, minimo: numero } satisfies FormaDosParametros<
-  ParametrosDaEliminacao['ELIMINACAO-CORTE-EM-AREA']
+  ParametrosDaEliminacao['ELIMINACAO_CORTE_EM_AREA']
 >;
 const ausencia = { etapaChave: texto } satisfies FormaDosParametros<
-  ParametrosDaEliminacao['ELIMINACAO-AUSENCIA-NA-ETAPA']
+  ParametrosDaEliminacao['ELIMINACAO_AUSENCIA_NA_ETAPA']
 >;
 const etapa = { etapaChave: texto } satisfies FormaDosParametros<
-  ParametrosDoDesempate['DESEMPATE-MAIOR-NOTA-ETAPA']
+  ParametrosDoDesempate['DESEMPATE_MAIOR_NOTA_ETAPA']
 >;
 const idoso = { idadeMinima: numero } satisfies FormaDosParametros<
-  ParametrosDoDesempate['DESEMPATE-IDOSO']
+  ParametrosDoDesempate['DESEMPATE_IDOSO']
 >;
 const areas = { areas: textos } satisfies FormaDosParametros<
-  ParametrosDoDesempate['DESEMPATE-MAIOR-NOTA-AREA-ENEM']
+  ParametrosDoDesempate['DESEMPATE_MAIOR_NOTA_AREA_ENEM']
 >;
 
 export function camposComForma<T>(
@@ -55,13 +55,13 @@ export function lerParametrosDaEliminacao(
   codigo: string,
   parametros: Parametros = {},
 ): Leitura<ParametrosDaEliminacao> {
-  if (codigo === 'ELIMINACAO-ZERO-EM-AREA' || codigo === 'ELIMINACAO-FALTA-EM-DIA-DE-PROVA-ENEM')
+  if (codigo === 'ELIMINACAO_ZERO_EM_AREA' || codigo === 'ELIMINACAO_FALTA_EM_DIA_DE_PROVA_ENEM')
     return { conhecida: true, codigo, valores: {} };
-  if (codigo === 'ELIMINACAO-AUSENCIA-NA-ETAPA')
+  if (codigo === 'ELIMINACAO_AUSENCIA_NA_ETAPA')
     return { conhecida: true, codigo, valores: camposComForma(parametros, ausencia) };
-  if (codigo === 'ELIMINACAO-NOTA-MINIMA-ETAPA')
+  if (codigo === 'ELIMINACAO_NOTA_MINIMA_ETAPA')
     return { conhecida: true, codigo, valores: camposComForma(parametros, notaMinima) };
-  if (codigo === 'ELIMINACAO-CORTE-EM-AREA')
+  if (codigo === 'ELIMINACAO_CORTE_EM_AREA')
     return { conhecida: true, codigo, valores: camposComForma(parametros, corte) };
   return { conhecida: false };
 }
@@ -70,12 +70,12 @@ export function lerParametrosDoDesempate(
   codigo: string,
   parametros: Parametros = {},
 ): Leitura<ParametrosDoDesempate> {
-  if (codigo === 'DESEMPATE-MAIOR-IDADE') return { conhecida: true, codigo, valores: {} };
-  if (codigo === 'DESEMPATE-MAIOR-NOTA-AREA-ENEM')
+  if (codigo === 'DESEMPATE_MAIOR_IDADE') return { conhecida: true, codigo, valores: {} };
+  if (codigo === 'DESEMPATE_MAIOR_NOTA_AREA_ENEM')
     return { conhecida: true, codigo, valores: camposComForma(parametros, areas) };
-  if (codigo === 'DESEMPATE-MAIOR-NOTA-ETAPA')
+  if (codigo === 'DESEMPATE_MAIOR_NOTA_ETAPA')
     return { conhecida: true, codigo, valores: camposComForma(parametros, etapa) };
-  if (codigo === 'DESEMPATE-IDOSO')
+  if (codigo === 'DESEMPATE_IDOSO')
     return { conhecida: true, codigo, valores: camposComForma(parametros, idoso) };
   return { conhecida: false };
 }

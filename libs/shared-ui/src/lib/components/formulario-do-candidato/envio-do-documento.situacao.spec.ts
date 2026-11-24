@@ -20,7 +20,7 @@ const CONFIRMADO: ArquivoEnviado = {
   chave: ALVO.chave,
   tipoDeMidia: 'application/pdf',
   tamanhoBytes: 2048,
-  situacao: 'verificado',
+  situacao: 'VERIFICADO',
   mensagem: null,
   rotulo: 'Arquivo 1',
   // 09:33 no fuso institucional (America/Belem)
@@ -36,9 +36,9 @@ describe('Envio do arquivo de um documento exigido', () => {
     arquivos: ReturnType<typeof signal<readonly ArquivoEnviado[]>>;
     mudancas: ReturnType<typeof signal<number>>;
     ocupado: ReturnType<typeof signal<boolean>>;
-    enviar: ReturnType<typeof vi.fn>;
-    remover: ReturnType<typeof vi.fn>;
-    baixar: ReturnType<typeof vi.fn>;
+    enviar: ReturnType<typeof vi.fn<EnvioDeDocumentos['enviar']>>;
+    remover: ReturnType<typeof vi.fn<EnvioDeDocumentos['remover']>>;
+    baixar: ReturnType<typeof vi.fn<EnvioDeDocumentos['baixar']>>;
   };
 
   // Como o envio de quem hospeda: o arquivo confirmado fica na lista dele, e a remoção o tira.
@@ -48,15 +48,15 @@ describe('Envio do arquivo de um documento exigido', () => {
       arquivos,
       mudancas: signal(0),
       ocupado: signal(false),
-      enviar: vi.fn().mockImplementation(async () => {
+      enviar: vi.fn<EnvioDeDocumentos['enviar']>().mockImplementation(async () => {
         arquivos.update((lista) => [...lista, CONFIRMADO]);
         return { ok: true, arquivo: CONFIRMADO };
       }),
-      remover: vi.fn().mockImplementation(async (id: string) => {
+      remover: vi.fn<EnvioDeDocumentos['remover']>().mockImplementation(async (id: string) => {
         arquivos.update((lista) => lista.filter((a) => a.arquivoId !== id));
         return { ok: true };
       }),
-      baixar: vi.fn().mockResolvedValue({ ok: true }),
+      baixar: vi.fn<EnvioDeDocumentos['baixar']>().mockResolvedValue({ ok: true }),
     };
   });
 
@@ -65,7 +65,7 @@ describe('Envio do arquivo de um documento exigido', () => {
     fixture.componentRef.setInput('alvo', ALVO);
     fixture.componentRef.setInput('formatos', { qualquer: false, lista: ['PDF'] });
     fixture.componentRef.setInput('tamanhoMaximoBytes', 10 * 1024 * 1024);
-    fixture.componentRef.setInput('envio', envio as unknown as EnvioDeDocumentos);
+    fixture.componentRef.setInput('envio', envio satisfies EnvioDeDocumentos);
     for (const [nome, valor] of Object.entries(entradas))
       fixture.componentRef.setInput(nome, valor);
     fixture.detectChanges();

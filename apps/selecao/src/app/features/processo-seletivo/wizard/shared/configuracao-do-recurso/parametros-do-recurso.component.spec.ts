@@ -45,12 +45,12 @@ describe('ParametrosDoRecursoComponent', () => {
       const { raiz } = montarParametrosDoRecurso();
 
       expect(por(raiz, `${P}-prazo-interposicao-valor`)).toHaveProperty('value', '2');
-      expect(por(raiz, `${P}-prazo-interposicao-unidade`)).toHaveProperty('value', 'diasUteis');
+      expect(por(raiz, `${P}-prazo-interposicao-unidade`)).toHaveProperty('value', 'DIAS_UTEIS');
       expect(radio(raiz, `${P}-superior-nao`)?.checked).toBe(true);
       expect(radio(raiz, `${P}-superior-sim`)?.checked).toBe(false);
-      expect(radio(raiz, `${P}-efeito-opcao-semEfeitoSuspensivo`)?.checked).toBe(true);
-      expect(radio(raiz, `${P}-guarda-opcao-ateOResultadoDefinitivo`)?.checked).toBe(true);
-      expect(radio(raiz, `${P}-guarda-opcao-naoGuarda`)?.checked).toBe(false);
+      expect(radio(raiz, `${P}-efeito-opcao-SEM_EFEITO_SUSPENSIVO`)?.checked).toBe(true);
+      expect(radio(raiz, `${P}-guarda-opcao-ATE_O_RESULTADO_DEFINITIVO`)?.checked).toBe(true);
+      expect(radio(raiz, `${P}-guarda-opcao-NAO_GUARDA`)?.checked).toBe(false);
     });
 
     it('explica cada efeito e cada guarda com o texto que a API deu', () => {
@@ -133,10 +133,10 @@ describe('ParametrosDoRecursoComponent', () => {
       const { raiz, alteracoes } = montarParametrosDoRecurso();
       const campo = por(raiz, `${P}-prazo-interposicao-unidade`) as HTMLSelectElement;
 
-      campo.value = 'horas';
+      campo.value = 'HORAS';
       campo.dispatchEvent(new Event('change'));
 
-      expect(alteracoes).toEqual([{ campo: 'prazoUnidade', valor: 'horas' }]);
+      expect(alteracoes).toEqual([{ campo: 'prazoUnidade', valor: 'HORAS' }]);
     });
 
     it('emite a resposta da instância superior como booleano', () => {
@@ -152,12 +152,12 @@ describe('ParametrosDoRecursoComponent', () => {
         parametros: { ...PARAMETROS_SEM_INSTANCIA_SUPERIOR, efeitoSuspensivo: '' },
       });
 
-      radio(raiz, `${P}-efeito-opcao-semEfeitoSuspensivo`)?.click();
-      radio(raiz, `${P}-guarda-opcao-naoGuarda`)?.click();
+      radio(raiz, `${P}-efeito-opcao-SEM_EFEITO_SUSPENSIVO`)?.click();
+      radio(raiz, `${P}-guarda-opcao-NAO_GUARDA`)?.click();
 
       expect(alteracoes).toEqual([
-        { campo: 'efeitoSuspensivo', valor: 'semEfeitoSuspensivo' },
-        { campo: 'guardaDaVaga', valor: 'naoGuarda' },
+        { campo: 'efeitoSuspensivo', valor: 'SEM_EFEITO_SUSPENSIVO' },
+        { campo: 'guardaDaVaga', valor: 'NAO_GUARDA' },
       ]);
     });
   });
@@ -169,19 +169,19 @@ describe('ParametrosDoRecursoComponent', () => {
 
     it('deixa de oferecer "não guarda"', () => {
       const { raiz } = montarParametrosDoRecurso(
-        comInstanciaSuperior(GuardaDaVagaCodigo.ateOResultadoDefinitivo),
+        comInstanciaSuperior(GuardaDaVagaCodigo.ATE_O_RESULTADO_DEFINITIVO),
       );
 
-      expect(radio(raiz, `${P}-guarda-opcao-naoGuarda`)).toBeNull();
-      expect(radio(raiz, `${P}-guarda-opcao-ateOResultadoDefinitivo`)).not.toBeNull();
+      expect(radio(raiz, `${P}-guarda-opcao-NAO_GUARDA`)).toBeNull();
+      expect(radio(raiz, `${P}-guarda-opcao-ATE_O_RESULTADO_DEFINITIVO`)).not.toBeNull();
     });
 
     it('mantém "não guarda" à vista enquanto for o valor gravado, e explica que a vaga é fixa', () => {
       const { raiz } = montarParametrosDoRecurso(
-        comInstanciaSuperior(GuardaDaVagaCodigo.naoGuarda),
+        comInstanciaSuperior(GuardaDaVagaCodigo.NAO_GUARDA),
       );
 
-      expect(radio(raiz, `${P}-guarda-opcao-naoGuarda`)?.checked).toBe(true);
+      expect(radio(raiz, `${P}-guarda-opcao-NAO_GUARDA`)?.checked).toBe(true);
       expect(raiz.textContent).toContain(
         'Com 2ª instância, a vaga fica sempre guardada até o resultado definitivo.',
       );
@@ -207,7 +207,7 @@ describe('ParametrosDoRecursoComponent', () => {
         parametros: {
           ...PARAMETROS_SEM_INSTANCIA_SUPERIOR,
           prazoSegundaInstanciaValor: '3',
-          prazoSegundaInstanciaUnidade: 'diasUteis',
+          prazoSegundaInstanciaUnidade: 'DIAS_UTEIS',
         },
         leitura: umaLeituraDoRecurso({ prazoDaSegundaInstanciaSemInstanciaSuperior: true }),
       });
@@ -221,7 +221,7 @@ describe('ParametrosDoRecursoComponent', () => {
         parametros: {
           ...PARAMETROS_SEM_INSTANCIA_SUPERIOR,
           prazoSegundaInstanciaValor: '3',
-          prazoSegundaInstanciaUnidade: 'diasUteis',
+          prazoSegundaInstanciaUnidade: 'DIAS_UTEIS',
         },
         leitura: umaLeituraDoRecurso({ prazoDaSegundaInstanciaSemInstanciaSuperior: true }),
       });
@@ -293,7 +293,7 @@ describe('ParametrosDoRecursoComponent', () => {
       const { raiz, fixture } = montarParametrosDoRecurso({
         parametros: {
           ...PARAMETROS_SEM_INSTANCIA_SUPERIOR,
-          guardaDaVaga: GuardaDaVagaCodigo.naoGuarda,
+          guardaDaVaga: GuardaDaVagaCodigo.NAO_GUARDA,
         },
       });
 

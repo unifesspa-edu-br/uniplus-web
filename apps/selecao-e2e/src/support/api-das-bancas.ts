@@ -17,6 +17,7 @@ import {
   PROCESSO_PUBLICADO_COMPLETO,
 } from '../fixtures/processo-publicado-completo';
 import { TIPOS_DE_BANCA, type TipoDeBancaDoCatalogo } from '../fixtures/tipos-de-banca';
+import { situacaoDoProcesso } from '../fixtures/valor-do-enum';
 import {
   CORS,
   mockarCatalogos,
@@ -96,25 +97,25 @@ function novoId(servidor: ServidorDasBancas): string {
 }
 
 const ROTULOS_DA_REGRA: Readonly<Record<string, string>> = {
-  colegiadaComVotacao: 'Colegiada, com votação',
-  atoIndividual: 'Ato individual',
-  maioriaSimples: 'Maioria simples',
-  maioriaAbsoluta: 'Maioria absoluta',
-  unanimidade: 'Unanimidade',
-  votoDaPresidencia: 'Voto da presidência',
-  novaVotacao: 'Nova votação',
-  todosOsTitulares: 'Todos os titulares votam',
-  presidenciaNoQuorum: 'A presidência encerra ao atingir o quórum',
-  favoravel: 'Favorável',
-  desfavoravel: 'Desfavorável',
+  COLEGIADA_COM_VOTACAO: 'Colegiada, com votação',
+  ATO_INDIVIDUAL: 'Ato individual',
+  MAIORIA_SIMPLES: 'Maioria simples',
+  MAIORIA_ABSOLUTA: 'Maioria absoluta',
+  UNANIMIDADE: 'Unanimidade',
+  VOTO_DA_PRESIDENCIA: 'Voto da presidência',
+  NOVA_VOTACAO: 'Nova votação',
+  TODOS_OS_TITULARES: 'Todos os titulares votam',
+  PRESIDENCIA_NO_QUORUM: 'A presidência encerra ao atingir o quórum',
+  FAVORAVEL: 'Favorável',
+  DESFAVORAVEL: 'Desfavorável',
 };
 
 const CODIGOS_DOS_VOCABULARIOS = {
-  'modos-deliberacao': ['colegiadaComVotacao', 'atoIndividual'],
-  'criterios-votacao': ['maioriaSimples', 'maioriaAbsoluta', 'unanimidade'],
-  'desempates-votacao': ['votoDaPresidencia', 'novaVotacao'],
-  'encerramentos-votacao': ['todosOsTitulares', 'presidenciaNoQuorum'],
-  'resultados-sem-unanimidade': ['favoravel', 'desfavoravel', 'novaVotacao'],
+  'modos-deliberacao': ['COLEGIADA_COM_VOTACAO', 'ATO_INDIVIDUAL'],
+  'criterios-votacao': ['MAIORIA_SIMPLES', 'MAIORIA_ABSOLUTA', 'UNANIMIDADE'],
+  'desempates-votacao': ['VOTO_DA_PRESIDENCIA', 'NOVA_VOTACAO'],
+  'encerramentos-votacao': ['TODOS_OS_TITULARES', 'PRESIDENCIA_NO_QUORUM'],
+  'resultados-sem-unanimidade': ['FAVORAVEL', 'DESFAVORAVEL', 'NOVA_VOTACAO'],
 } as const;
 
 const VOCABULARIOS_DA_REGRA = Object.entries(CODIGOS_DOS_VOCABULARIOS).map(
@@ -266,7 +267,7 @@ async function publicar(route: Route, servidor: ServidorDasBancas): Promise<void
 function detalheDoProcesso(servidor: ServidorDasBancas) {
   return {
     ...PROCESSO_PUBLICADO_COMPLETO,
-    status: servidor.situacao,
+    status: situacaoDoProcesso(servidor.situacao),
     cronogramaFases: [servidor.fase],
     etapas: [servidor.etapa],
     atendimentoEspecializado: null,

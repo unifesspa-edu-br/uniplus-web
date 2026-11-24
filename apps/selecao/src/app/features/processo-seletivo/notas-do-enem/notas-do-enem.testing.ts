@@ -8,6 +8,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotasDoEnemPage } from './notas-do-enem.page';
 import {
   SELECAO_BASE_PATH,
+  StatusProcessoCodigo,
   type LeiauteDoInepDto,
   type ProcessoSeletivoDto,
   type SnapshotVigenteDto,
@@ -37,9 +38,9 @@ export function providersDaTela(): (Provider | EnvironmentProviders)[] {
 
 /** O processo como a configuração administrativa o mostra; etapas e edições vêm da versão publicada. */
 export function processo(
-  sobrescritas: { status?: string; identificadorLegivel?: string | null } = {},
+  sobrescritas: { status?: StatusProcessoCodigo; identificadorLegivel?: string | null } = {},
 ): ProcessoSeletivoDto {
-  const { status = 'publicado', identificadorLegivel = null } = sobrescritas;
+  const { status = StatusProcessoCodigo.PUBLICADO, identificadorLegivel = null } = sobrescritas;
   return {
     id: PROCESSO_ID,
     nome: 'Medicina 2027',
@@ -81,13 +82,13 @@ function dadoDasEdicoes(edicoes: readonly string[]) {
 }
 
 const TIPOS_DE_LEIAUTE = {
-  envio: { codigo: 'envio' as LeiauteDoInepDto['tipo']['codigo'], rotulo: 'Envio' },
-  retorno: { codigo: 'retorno' as LeiauteDoInepDto['tipo']['codigo'], rotulo: 'Retorno' },
+  ENVIO: { codigo: 'ENVIO' as LeiauteDoInepDto['tipo']['codigo'], rotulo: 'Envio' },
+  RETORNO: { codigo: 'RETORNO' as LeiauteDoInepDto['tipo']['codigo'], rotulo: 'Retorno' },
 };
 
 export function leiaute(
   codigo: string,
-  tipo: 'envio' | 'retorno',
+  tipo: 'ENVIO' | 'RETORNO',
   sobrescritas: Partial<LeiauteDoInepDto> = {},
 ): LeiauteDoInepDto {
   return {
@@ -101,10 +102,10 @@ export function leiaute(
   };
 }
 
-export const LEIAUTES_DE_ENVIO = [leiaute('ENVIO_CPF', 'envio')];
+export const LEIAUTES_DE_ENVIO = [leiaute('ENVIO_CPF', 'ENVIO')];
 export const LEIAUTES_DE_RETORNO = [
-  leiaute('RETORNO_20', 'retorno', { descricao: 'Retorno do INEP com 20 campos' }),
-  leiaute('RETORNO_21', 'retorno', { descricao: 'Retorno do INEP com 21 campos' }),
+  leiaute('RETORNO_20', 'RETORNO', { descricao: 'Retorno do INEP com 20 campos' }),
+  leiaute('RETORNO_21', 'RETORNO', { descricao: 'Retorno do INEP com 21 campos' }),
 ];
 
 /** Cede o event loop para a cadeia de `await` da página avançar até a próxima requisição. */
@@ -123,12 +124,12 @@ export async function responderALeituraInicial(
   publicada: SnapshotVigenteDto | null = snapshotVigente(),
 ): Promise<void> {
   controller.expectOne(ROTA_PROCESSO).flush(processoLido);
-  if (processoLido.status.codigo !== 'rascunho') await responderSnapshot(controller, publicada);
+  if (processoLido.status.codigo !== StatusProcessoCodigo.RASCUNHO) await responderSnapshot(controller, publicada);
   controller
-    .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'envio')
+    .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'ENVIO')
     .flush(leiautes.envio ?? LEIAUTES_DE_ENVIO);
   controller
-    .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'retorno')
+    .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'RETORNO')
     .flush(leiautes.retorno ?? LEIAUTES_DE_RETORNO);
 }
 

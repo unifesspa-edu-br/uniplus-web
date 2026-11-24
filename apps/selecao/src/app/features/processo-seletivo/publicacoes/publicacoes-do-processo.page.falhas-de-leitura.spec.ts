@@ -46,7 +46,7 @@ describe('PublicacoesDoProcessoPage — falhas de leitura', () => {
     );
     expect(tentar).toBeDefined();
     tentar?.click();
-    pagina.responderProcesso(StatusProcessoCodigo.rascunho);
+    pagina.responderProcesso(StatusProcessoCodigo.RASCUNHO);
     await pagina.fixture.whenStable();
     pagina.fixture.detectChanges();
 

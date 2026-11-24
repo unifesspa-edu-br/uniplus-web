@@ -58,7 +58,7 @@ describe('CronogramaPassoComponent: recusa da instância superior pela publicaç
       umRecursoDaEtapa({
         ...PARAMETROS_COM_INSTANCIA_SUPERIOR,
         id: RECURSO,
-        ancora: 'cienciaIndividual',
+        ancora: 'CIENCIA_INDIVIDUAL',
         atoAncoraCodigo: '',
       }),
     ]);

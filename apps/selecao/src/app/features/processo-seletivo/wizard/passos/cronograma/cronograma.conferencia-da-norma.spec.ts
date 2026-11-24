@@ -1,3 +1,4 @@
+import { BlocoSistemaCodigo } from '@uniplus/shared-data/selecao';
 import { ORIGEM_DECLARADA, VALORES_MODALIDADE, VALOR_UNICO } from '../../shared/valores-do-catalogo.testing';
 import { FAIXA_ETARIA, MODALIDADE } from '../../shared/gatilho-de-exigencia.testing';
 import { TestBed } from '@angular/core/testing';
@@ -240,7 +241,7 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
         etapas: [
           etapaDoServidor('DADOS_BASICOS', 0),
           etapaDoServidor('OUTROS_DADOS_EXIGIDOS', 1),
-          etapaDoServidor('REVISAO_E_ACEITE', 2, 'REVISAO_E_ACEITE'),
+          etapaDoServidor('REVISAO_E_ACEITE', 2, BlocoSistemaCodigo.REVISAO_E_ACEITE),
         ],
         coleta: { itens: [campoDoServidor('NOME', 0, 'DADOS_BASICOS')], grupos: [] },
       });

@@ -1,19 +1,10 @@
+import { type FatoColetadoDto, type FormularioDto } from '@uniplus/shared-data/selecao';
+import { cabecalhoParaEnvio, itensParaEnvio, termosParaEnvio } from './codigos-do-formulario';
+export { cabecalhoParaEnvio, itensParaEnvio, termosParaEnvio } from './codigos-do-formulario';
 import {
-  OperadorCodigo,
-  TipoRenderizacaoCodigo,
-  type DefinirFormularioRequest,
-  type DefinirItensDoFormularioRequest,
-  type DefinirTermosDoFormularioRequest,
-  type FatoColetadoDto,
-  type FormularioDto,
-} from '@uniplus/shared-data/selecao';
-import { codigosDoContrato } from '@uniplus/shared-data/utils';
-import {
-  conteudoComCodigos,
   conteudoInicial,
   etapasEmOrdem,
   FINALIDADE_INSCRICAO,
-  conteudoParaEnvio,
   semDadosBasicos,
   todosOsCampos,
   type ConteudoDoFormulario,
@@ -27,8 +18,6 @@ import {
   type RestricaoDeValor,
   type TermoDoFormulario,
 } from '@uniplus/shared-ui/components';
-
-const CODIGOS_DA_SELECAO = codigosDoContrato(OperadorCodigo, TipoRenderizacaoCodigo);
 
 /**
  * O formulário de uma finalidade do processo entre a forma em que a API o devolve (`FormularioDto`,
@@ -168,41 +157,6 @@ export function conteudoDoFormulario(dto: FormularioDto): ConteudoDoFormulario {
     termos: dto.termos.map(termoDoDto),
     pressupostos: [],
   };
-}
-
-/** O cabeçalho para o PUT: fase, título e etapas, sem a seção dos dados básicos, que a API repõe. */
-export function cabecalhoParaEnvio(
-  faseId: string,
-  conteudo: ConteudoDoFormulario,
-): DefinirFormularioRequest {
-  return {
-    faseId,
-    titulo: conteudo.titulo,
-    etapas: conteudoComCodigos(semDadosBasicos(conteudo), CODIGOS_DA_SELECAO).etapas ?? [],
-  };
-}
-
-/**
- * Os itens e os grupos para o PUT, sem os dados básicos. `semSecao` tira a seção de todos — o
- * rascunho aceita item sem seção —, para gravar os itens antes de um cabeçalho que muda as seções.
- * `grupos` vai sempre como lista: nulo manteria os grupos gravados. Nulo quando algum limite digitado
- * não é número: a API recusa número em texto, então o corpo não se monta.
- */
-export function itensParaEnvio(
-  conteudo: ConteudoDoFormulario,
-  semSecao = false,
-): DefinirItensDoFormularioRequest | null {
-  const enviado = conteudoParaEnvio(semDadosBasicos(conteudo));
-  if (enviado === null) return null;
-  const { itens, grupos } = conteudoComCodigos(enviado, CODIGOS_DA_SELECAO);
-  return {
-    itens: (itens ?? []).map((item) => (semSecao ? { ...item, etapaCodigo: null } : item)),
-    grupos: (grupos ?? []).map((grupo) => (semSecao ? { ...grupo, etapaCodigo: null } : grupo)),
-  };
-}
-
-export function termosParaEnvio(conteudo: ConteudoDoFormulario): DefinirTermosDoFormularioRequest {
-  return { termos: conteudoComCodigos(conteudo, CODIGOS_DA_SELECAO).termos ?? [] };
 }
 
 /** Um passo da gravação de um formulário, na ordem em que a API o aceita. */

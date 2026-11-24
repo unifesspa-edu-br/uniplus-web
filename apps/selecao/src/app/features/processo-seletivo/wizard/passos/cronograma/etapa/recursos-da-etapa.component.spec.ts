@@ -32,7 +32,7 @@ import { RecursosDaEtapaComponent } from './recursos-da-etapa.component';
 import { SEM_RECUSAS_DA_PUBLICACAO } from '../servicos/recusas-da-publicacao-no-cronograma.testing';
 
 const RECURSO: RecursoDaEtapa = {
-  ancora: 'cienciaIndividual',
+  ancora: 'CIENCIA_INDIVIDUAL',
   regraCodigo: 'PRAZO',
   regraVersao: 'v1',
   ...PARAMETROS_COM_INSTANCIA_SUPERIOR,
@@ -140,7 +140,7 @@ describe('RecursosDaEtapaComponent', () => {
       edicao.acrescentarRecursoNaEtapa(grupo);
 
       expect(grupo.controls.recursos.value).toHaveLength(1);
-      expect(grupo.controls.recursos.value[0]?.ancora).toBe('atoPublicado');
+      expect(grupo.controls.recursos.value[0]?.ancora).toBe('PUBLICACAO_DO_ATO');
     });
   });
 

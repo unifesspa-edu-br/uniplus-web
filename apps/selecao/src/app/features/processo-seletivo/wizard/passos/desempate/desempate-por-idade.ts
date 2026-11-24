@@ -4,8 +4,8 @@ import type {
   ReferenciaTemporalConfig,
 } from '../../processo-seletivo.models';
 
-export const CRITERIO_MAIOR_IDADE = 'DESEMPATE-MAIOR-IDADE';
-export const CRITERIO_IDOSO = 'DESEMPATE-IDOSO';
+export const CRITERIO_MAIOR_IDADE = 'DESEMPATE_MAIOR_IDADE';
+export const CRITERIO_IDOSO = 'DESEMPATE_IDOSO';
 
 /** O dado pelo qual o desempate por maior idade ordena: o nascido mais cedo vence. */
 export const FATO_DATA_NASCIMENTO = 'DATA_NASCIMENTO';

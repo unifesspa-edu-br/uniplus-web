@@ -102,7 +102,7 @@ describe('AnexosDoEditalComponent', () => {
 
     const inicioA = controller.expectOne(ROTA_DOCUMENTOS);
     expect(inicioA.request.body).toEqual({
-      finalidade: 'anexoDoEdital',
+      finalidade: 'ANEXO_DO_EDITAL',
       nomeArquivo: 'cronograma.pdf',
       tipoDeMidia: 'application/pdf',
     });

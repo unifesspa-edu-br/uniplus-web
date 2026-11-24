@@ -1,5 +1,6 @@
 import {
   FinalidadeFormularioCodigo,
+  TipoObrigatoriedadeCodigo,
   type AplicacaoDeModeloDto,
   type FormularioDto,
   TipoRenderizacaoCodigo,
@@ -59,7 +60,7 @@ const doServidor = (
       },
       regras: {
         exibicao: null,
-        obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+        obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null },
         restricoes: [],
         impedimento: null,
       },

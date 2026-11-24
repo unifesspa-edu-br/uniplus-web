@@ -54,7 +54,7 @@ export class PrevistosNoEditalComponent {
 
   protected readonly rotuloDoAto = rotuloDoAto;
   protected readonly rotuloDoPapel = rotuloDoPapel;
-  protected readonly aberto = SituacaoDoProdutoPrevistoCodigo.aberto;
+  protected readonly aberto = SituacaoDoProdutoPrevistoCodigo.ABERTO;
 
   protected readonly fases = computed(() => {
     const { consulta, nomeDaFase } = this.previstos();

@@ -1,4 +1,8 @@
-import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
+import {
+  CriterioDeVotacaoCodigo,
+  ResultadoSemUnanimidadeCodigo,
+  ModoDeDeliberacao,
+} from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { descricaoDaRegra, SEM_REGRA_DE_DELIBERACAO } from './descricao-da-regra';
@@ -19,9 +23,9 @@ describe('descricaoDaRegra', () => {
 
   it('descreve a unanimidade com o resultado sem unanimidade e sem suplentes', () => {
     const regra = comRegra({
-      criterio: 'unanimidade',
+      criterio: CriterioDeVotacaoCodigo.UNANIMIDADE,
       desempate: '',
-      semUnanimidade: 'novaVotacao',
+      semUnanimidade: ResultadoSemUnanimidadeCodigo.NOVA_VOTACAO,
       suplentes: '0',
     });
 
@@ -38,7 +42,7 @@ describe('descricaoDaRegra', () => {
   });
 
   it('descreve a votação do recurso no ato individual', () => {
-    const regra = comRegra({ modo: ModoDeDeliberacao.atoIndividual });
+    const regra = comRegra({ modo: ModoDeDeliberacao.ATO_INDIVIDUAL });
 
     expect(descricaoDaRegra(comRotulos(regra))).toBe(
       '5 titulares, 2 suplentes; Ato individual; recurso: quórum 3; Maioria simples; encerra: A presidência encerra ao atingir o quórum; desempate: Voto da presidência',

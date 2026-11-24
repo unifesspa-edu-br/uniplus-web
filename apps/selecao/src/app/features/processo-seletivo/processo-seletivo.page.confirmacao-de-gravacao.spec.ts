@@ -38,7 +38,7 @@ function preencherCadastroInicial(store: ProcessoSeletivoStore): void {
   store.patchObjectSection('identificacao', {
     nome: 'Vestibular 2027',
     unidadeAdministradoraId: 'unidade-1',
-    origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
+    origemCandidatos: OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
     localidade: MARABA,
     identificadorLegivel: 'vestibular-2027',
   });

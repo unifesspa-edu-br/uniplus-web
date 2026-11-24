@@ -175,7 +175,7 @@ export const PROCESSO_COM_ETAPA_GRAVADA = {
     nome: 'Vestibular',
   },
   status: 'rascunho',
-  origemCandidatos: 'inscricaoPropria',
+  origemCandidatos: 'INSCRICAO_PROPRIA',
   unidadeAdministradora: {
     origemId: '01960000-0000-7000-0000-0000000000u1',
     sigla: 'IGE',

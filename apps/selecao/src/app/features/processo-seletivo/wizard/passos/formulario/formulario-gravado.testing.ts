@@ -11,6 +11,9 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import {
   type FormularioDto,
+  BlocoSistemaCodigo,
+  TipoEtapaFormularioCodigo,
+  TipoObrigatoriedadeCodigo,
   FinalidadeFormularioCodigo,
   OperadorCodigo,
   TipoRenderizacaoCodigo,
@@ -70,7 +73,7 @@ const APRESENTACAO_BOOLEANA: Omit<ItemDoFormulario['apresentacao'], 'rotulo'> = 
 
 const REGRAS_SEMPRE_OBRIGATORIO: ItemDoFormulario['regras'] = {
   exibicao: null,
-  obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+  obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null },
   restricoes: [],
   impedimento: null,
 };
@@ -95,11 +98,11 @@ const tituloDaEtapa = (codigo: string): string =>
 export const etapa = (
   codigo: string,
   ordem: number,
-  bloco: string | null = null,
+  bloco: BlocoSistemaCodigo | null = null,
 ): EtapaDoFormulario => ({
   codigo,
   ordem,
-  tipo: bloco === null ? 'SECAO' : 'BLOCO',
+  tipo: bloco === null ? TipoEtapaFormularioCodigo.SECAO : TipoEtapaFormularioCodigo.BLOCO,
   bloco,
   apresentacao: { titulo: tituloDaEtapa(codigo), descricao: null, aviso: null },
   exibicao: null,
@@ -114,7 +117,7 @@ export const GRAVADO: FormularioDto = {
   etapas: [
     etapa('DADOS_BASICOS', 0),
     etapa('S1', 1),
-    etapa('REVISAO_E_ACEITE', 2, 'REVISAO_E_ACEITE'),
+    etapa('REVISAO_E_ACEITE', 2, BlocoSistemaCodigo.REVISAO_E_ACEITE),
   ],
   coleta: {
     itens: [
@@ -124,7 +127,7 @@ export const GRAVADO: FormularioDto = {
         regras: {
           ...REGRAS_SEMPRE_OBRIGATORIO,
           obrigatoriedade: {
-            tipo: 'QUANDO',
+            tipo: TipoObrigatoriedadeCodigo.QUANDO,
             predicado: [[{ fato: 'NOME', operador: OperadorCodigo.IGUAL, valor: 'x' }]],
           },
         },
@@ -137,7 +140,7 @@ export const GRAVADO: FormularioDto = {
         etapaCodigo: 'S1',
         rotulo: 'FAMILIA',
         ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
-        regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
+        regras: { exibicao: null, obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null } },
         subitens: [],
       },
     ],
@@ -182,7 +185,7 @@ export const HABILITACAO_GRAVADA = {
   ...GRAVADO,
   finalidade: { codigo: FinalidadeFormularioCodigo.HABILITACAO, rotulo: 'Habilitação' },
   faseId: 'F-HABILITACAO',
-  etapas: [etapa('REVISAO_E_ACEITE', 0, 'REVISAO_E_ACEITE')],
+  etapas: [etapa('REVISAO_E_ACEITE', 0, BlocoSistemaCodigo.REVISAO_E_ACEITE)],
   coleta: { itens: [], grupos: [] },
 };
 

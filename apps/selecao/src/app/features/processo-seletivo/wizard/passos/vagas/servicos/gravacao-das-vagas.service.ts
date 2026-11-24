@@ -216,7 +216,7 @@ export class GravacaoDasVagas {
 
   /** O candidato se inscreve no processo: é da inscrição que a modalidade dele se deriva. */
   private derivaAModalidade(): boolean {
-    return this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.inscricaoPropria;
+    return this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.INSCRICAO_PROPRIA;
   }
 
   /**

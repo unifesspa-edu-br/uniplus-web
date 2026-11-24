@@ -305,7 +305,7 @@ function navegacaoDePassos(page: Page, largura: number): () => Promise<void> {
 async function servirRegrasDeDistribuicao(page: Page): Promise<void> {
   await responder(
     page,
-    /\/api\/selecao\/regras-catalogo\?.*tipo=regra_distribuicao_vagas/,
+    /\/api\/selecao\/regras-catalogo\?.*tipo=REGRA_DISTRIBUICAO_VAGAS/,
     REGRAS_DE_DISTRIBUICAO_DA_MEDICINA,
     CORS_HEADERS,
   );

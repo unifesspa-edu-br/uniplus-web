@@ -174,7 +174,7 @@ describe('ProcessoSeletivoPage — ato digitado na Revisão', MONTAGEM_LENTA, ()
     expect(cenario.componente.atoDigitadoPendente(), 'pré-condição: há ato a perder').toBe(true);
 
     cenario.store.remoteSnapshot.set(
-      detalhe({ status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' } }),
+      detalhe({ status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' } }),
     );
 
     expect(cenario.componente.atoDigitadoPendente()).toBe(false);
@@ -204,7 +204,7 @@ describe('ProcessoSeletivoPage — ato digitado na Revisão', MONTAGEM_LENTA, ()
       const cenario = await comAtoEPublicacaoNaoConfirmada();
 
       cenario.store.hidratar(
-        detalhe({ status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' } }),
+        detalhe({ status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' } }),
       );
 
       expect(cenario.componente.atoDigitadoPendente()).toBe(false);

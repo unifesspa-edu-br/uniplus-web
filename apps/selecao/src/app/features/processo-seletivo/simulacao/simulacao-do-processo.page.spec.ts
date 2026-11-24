@@ -1,4 +1,8 @@
-import { AplicabilidadeCodigo } from '@uniplus/shared-data/selecao';
+import {
+  BlocoSistemaCodigo,
+  TipoEtapaFormularioCodigo,
+  AplicabilidadeCodigo,
+} from '@uniplus/shared-data/selecao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -25,8 +29,8 @@ const FORMULARIO_DA_HABILITACAO: FormularioRenderizavelDto = {
         codigo: 'DOCUMENTOS',
         codigoNasRegras: null,
         ordem: 0,
-        tipo: 'BLOCO',
-        bloco: 'COMPROVACAO_DOCUMENTAL',
+        tipo: TipoEtapaFormularioCodigo.BLOCO,
+        bloco: BlocoSistemaCodigo.COMPROVACAO_DOCUMENTAL,
         apresentacao: { titulo: 'Documentos', descricao: null, aviso: null },
       },
     ],
@@ -40,7 +44,19 @@ const FORMULARIO_DA_HABILITACAO: FormularioRenderizavelDto = {
       rotulo: 'Histórico escolar',
       aplicabilidade: { codigo: AplicabilidadeCodigo.GERAL, rotulo: 'Geral' },
       obrigatorio: true,
-      formatos: { qualquer: false, lista: [{ codigo: 'PDF' as NonNullable<NonNullable<FormularioRenderizavelDto['comprovacaoDocumental']>[number]['formatos']['lista']>[number]['codigo'], rotulo: 'PDF' }] },
+      formatos: {
+        qualquer: false,
+        lista: [
+          {
+            codigo: 'PDF' as NonNullable<
+              NonNullable<
+                FormularioRenderizavelDto['comprovacaoDocumental']
+              >[number]['formatos']['lista']
+            >[number]['codigo'],
+            rotulo: 'PDF',
+          },
+        ],
+      },
       modelo: null,
     },
   ],

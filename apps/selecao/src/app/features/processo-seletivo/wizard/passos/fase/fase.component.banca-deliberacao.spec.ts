@@ -1,7 +1,7 @@
 import {
   ModoDeDeliberacao,
   PapelDaBancaCodigo,
-  StatusProcesso,
+  StatusProcessoCodigo,
 } from '@uniplus/shared-data/selecao';
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
@@ -12,7 +12,7 @@ import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 import { fase, ID_BANCA_HETERO } from './fase.testing';
 
 const ID_DA_REGRA = 'fase-AVALIACAO-regra-banca-teste';
-const SEM_RECORTE = { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [] };
+const SEM_CATEGORIAS = { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [] };
 
 describe('FasePassoComponent', () => {
   let componente: ContextoDaFase['componente'];
@@ -53,7 +53,7 @@ describe('FasePassoComponent', () => {
               id: null,
               identificadorLocal: 'banca-teste',
               copiaDoTipo: null,
-              ...SEM_RECORTE,
+              ...SEM_CATEGORIAS,
               regraDeDeliberacao: null,
             },
           ],
@@ -72,19 +72,19 @@ describe('FasePassoComponent', () => {
               id: null,
               identificadorLocal: 'banca-teste',
               copiaDoTipo: null,
-              ...SEM_RECORTE,
+              ...SEM_CATEGORIAS,
               regraDeDeliberacao: null,
             },
           ],
         }),
       );
 
-      escolher('modo', ModoDeDeliberacao.colegiadaComVotacao);
+      escolher('modo', ModoDeDeliberacao.COLEGIADA_COM_VOTACAO);
       digitar('integrantes', '5');
-      escolher('encerramento', 'presidenciaNoQuorum');
+      escolher('encerramento', 'PRESIDENCIA_NO_QUORUM');
       digitar('quorum', '3');
-      escolher('criterio', 'maioriaSimples');
-      escolher('desempate', 'votoDaPresidencia');
+      escolher('criterio', 'MAIORIA_SIMPLES');
+      escolher('desempate', 'VOTO_DA_PRESIDENCIA');
       digitar('suplentes', '2');
 
       expect(regraDoRascunho()).toEqual(comRotulos(COLEGIADA));
@@ -99,7 +99,7 @@ describe('FasePassoComponent', () => {
               id: null,
               identificadorLocal: 'banca-teste',
               copiaDoTipo: null,
-              ...SEM_RECORTE,
+              ...SEM_CATEGORIAS,
               regraDeDeliberacao: comRegra({ criterio: '' }),
             },
           ],
@@ -119,7 +119,7 @@ describe('FasePassoComponent', () => {
               id: null,
               identificadorLocal: 'banca-teste',
               copiaDoTipo: null,
-              ...SEM_RECORTE,
+              ...SEM_CATEGORIAS,
               regraDeDeliberacao: COLEGIADA,
             },
           ],
@@ -140,24 +140,24 @@ describe('FasePassoComponent', () => {
               id: null,
               identificadorLocal: 'banca-teste',
               copiaDoTipo: null,
-              ...SEM_RECORTE,
+              ...SEM_CATEGORIAS,
               regraDeDeliberacao: COLEGIADA,
             },
           ],
         }),
       );
 
-      escolher('modo', ModoDeDeliberacao.atoIndividual);
+      escolher('modo', ModoDeDeliberacao.ATO_INDIVIDUAL);
       digitar('integrantes', '1');
       digitar('suplentes', '0');
 
       expect(regraDoRascunho()).toEqual({
         ...COLEGIADA,
-        modo: ModoDeDeliberacao.atoIndividual,
+        modo: ModoDeDeliberacao.ATO_INDIVIDUAL,
         integrantes: '1',
         suplentes: '0',
         desempate: '',
-        rotulos: { modo: { codigo: 'atoIndividual', rotulo: 'Ato individual' } },
+        rotulos: { modo: { codigo: ModoDeDeliberacao.ATO_INDIVIDUAL, rotulo: 'Ato individual' } },
       });
       expect(campo('criterio')).not.toBeNull();
     });
@@ -170,7 +170,7 @@ describe('FasePassoComponent', () => {
               id: null,
               identificadorLocal: 'banca-teste',
               copiaDoTipo: null,
-              ...SEM_RECORTE,
+              ...SEM_CATEGORIAS,
               regraDeDeliberacao: COLEGIADA,
             },
           ],
@@ -192,14 +192,14 @@ describe('FasePassoComponent', () => {
               id: null,
               identificadorLocal: 'banca-teste',
               copiaDoTipo: null,
-              ...SEM_RECORTE,
+              ...SEM_CATEGORIAS,
               regraDeDeliberacao: comRotulos(COLEGIADA),
             },
           ],
         }),
       );
       store.remoteSnapshot.set({
-        status: StatusProcesso.publicado,
+        status: StatusProcessoCodigo.PUBLICADO,
       } as unknown as ProcessoSeletivoDto);
       detectar();
 
@@ -218,14 +218,14 @@ describe('FasePassoComponent', () => {
               id: null,
               identificadorLocal: 'banca-teste',
               copiaDoTipo: null,
-              ...SEM_RECORTE,
+              ...SEM_CATEGORIAS,
               regraDeDeliberacao: null,
             },
           ],
         }),
       );
       store.remoteSnapshot.set({
-        status: StatusProcesso.publicado,
+        status: StatusProcessoCodigo.PUBLICADO,
       } as unknown as ProcessoSeletivoDto);
       detectar();
 
@@ -243,7 +243,7 @@ describe('FasePassoComponent', () => {
         id: 'gravada',
         identificadorLocal: 'banca-gravada',
         copiaDoTipo,
-        ...SEM_RECORTE,
+        ...SEM_CATEGORIAS,
         regraDeDeliberacao: null,
       };
       comCronograma(
@@ -252,7 +252,7 @@ describe('FasePassoComponent', () => {
         }),
       );
       store.remoteSnapshot.set({
-        status: StatusProcesso.publicado,
+        status: StatusProcessoCodigo.PUBLICADO,
       } as unknown as ProcessoSeletivoDto);
       detectar();
 

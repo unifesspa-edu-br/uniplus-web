@@ -8,26 +8,26 @@ import {
 import { valorDoEnum } from './valor-do-enum';
 
 export const MODOS = {
-  [ModoDeDeliberacao.atoIndividual]: 'Ato individual',
-  [ModoDeDeliberacao.colegiadaComVotacao]: 'Colegiada, com votação',
+  [ModoDeDeliberacao.ATO_INDIVIDUAL]: 'Ato individual',
+  [ModoDeDeliberacao.COLEGIADA_COM_VOTACAO]: 'Colegiada, com votação',
 } satisfies Record<ModoDeDeliberacao, string>;
 export const CRITERIOS = {
-  [CriterioDeVotacaoCodigo.maioriaSimples]: 'Maioria simples',
-  [CriterioDeVotacaoCodigo.maioriaAbsoluta]: 'Maioria absoluta',
-  [CriterioDeVotacaoCodigo.unanimidade]: 'Unanimidade',
+  [CriterioDeVotacaoCodigo.MAIORIA_SIMPLES]: 'Maioria simples',
+  [CriterioDeVotacaoCodigo.MAIORIA_ABSOLUTA]: 'Maioria absoluta',
+  [CriterioDeVotacaoCodigo.UNANIMIDADE]: 'Unanimidade',
 } satisfies Record<CriterioDeVotacaoCodigo, string>;
 export const DESEMPATES = {
-  [DesempateDaVotacaoCodigo.votoDaPresidencia]: 'Voto da presidência',
-  [DesempateDaVotacaoCodigo.novaVotacao]: 'Nova votação',
+  [DesempateDaVotacaoCodigo.VOTO_DA_PRESIDENCIA]: 'Voto da presidência',
+  [DesempateDaVotacaoCodigo.NOVA_VOTACAO]: 'Nova votação',
 } satisfies Record<DesempateDaVotacaoCodigo, string>;
 export const ENCERRAMENTOS = {
-  [EncerramentoDaVotacaoCodigo.todosOsTitulares]: 'Todos os titulares',
-  [EncerramentoDaVotacaoCodigo.presidenciaNoQuorum]: 'A presidência encerra ao atingir o quórum',
+  [EncerramentoDaVotacaoCodigo.TODOS_OS_TITULARES]: 'Todos os titulares',
+  [EncerramentoDaVotacaoCodigo.PRESIDENCIA_NO_QUORUM]: 'A presidência encerra ao atingir o quórum',
 } satisfies Record<EncerramentoDaVotacaoCodigo, string>;
 export const RESULTADOS = {
-  [ResultadoSemUnanimidadeCodigo.favoravel]: 'Favorável',
-  [ResultadoSemUnanimidadeCodigo.desfavoravel]: 'Desfavorável',
-  [ResultadoSemUnanimidadeCodigo.novaVotacao]: 'Nova votação',
+  [ResultadoSemUnanimidadeCodigo.FAVORAVEL]: 'Favorável',
+  [ResultadoSemUnanimidadeCodigo.DESFAVORAVEL]: 'Desfavorável',
+  [ResultadoSemUnanimidadeCodigo.NOVA_VOTACAO]: 'Nova votação',
 } satisfies Record<ResultadoSemUnanimidadeCodigo, string>;
 
 export function valorDaDeliberacao<Codigo extends string>(

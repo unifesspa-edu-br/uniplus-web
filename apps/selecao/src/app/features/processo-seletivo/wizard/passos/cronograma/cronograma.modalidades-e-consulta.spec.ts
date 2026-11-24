@@ -1,3 +1,4 @@
+import { BlocoSistemaCodigo } from '@uniplus/shared-data/selecao';
 import { PCD } from '../../shared/gatilho-de-exigencia.testing';
 import { TestBed } from '@angular/core/testing';
 import {
@@ -54,7 +55,7 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
   /**
    * O processo em que o candidato se inscreve deriva a modalidade da inscrição: o cronograma põe no
    * formulário as perguntas que as regras das modalidades ofertadas citam, mesmo sem exigência que
-   * recorte por modalidade, e, sem a fase de inscrição, as deixa esperar por ela em vez de recusar
+   * seleção de modalidades, e, sem a fase de inscrição, as deixa esperar por ela em vez de recusar
    * o cronograma.
    */
   describe('perguntas das modalidades ofertadas', () => {
@@ -77,14 +78,19 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
       faseId: FASE.id,
       etapas: [
         etapaDoServidor('DADOS_BASICOS', 0, null, 'Dados básicos'),
-        etapaDoServidor('REVISAO_E_ACEITE', 1, 'REVISAO_E_ACEITE', 'Revisão e aceite'),
+        etapaDoServidor(
+          'REVISAO_E_ACEITE',
+          1,
+          BlocoSistemaCodigo.REVISAO_E_ACEITE,
+          'Revisão e aceite',
+        ),
       ],
       coleta: { itens: [campoDoServidor('NOME', 0, 'DADOS_BASICOS')], grupos: [] },
     });
 
     beforeEach(() => {
       store.patchObjectSection('identificacao', {
-        origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
+        origemCandidatos: OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
       });
       TestBed.inject(CatalogoDeFatos).fatos.set([
         {
@@ -100,7 +106,7 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
     const gravarExigencias = (): Promise<{ valid: boolean; messages?: string[] }> =>
       exigencias.gravar(PROCESSO_ID);
 
-    it('põe a pergunta das regras congeladas no processo com inscrição própria, sem exigência que recorte', async () => {
+    it('põe a pergunta das regras congeladas no processo com inscrição própria, sem exigência que restrinja as modalidades', async () => {
       const gravacao = gravarExigencias();
       controller.expectOne(ROTA_PROCESSO).flush({
         ...PROCESSO_COM_ETAPA_GRAVADA,
@@ -153,7 +159,7 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
       detectar();
       cronograma.acrescentarEtapa('COLETA_INSCRICAO');
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.publicado,
+        status: StatusProcessoCodigo.PUBLICADO,
       } as unknown as ProcessoSeletivoDto);
       detectar();
     }
@@ -190,7 +196,7 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
         fim: '2026-03-10T18:00:00-03:00',
       });
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.publicado,
+        status: StatusProcessoCodigo.PUBLICADO,
       } as unknown as ProcessoSeletivoDto);
       detectar();
 
@@ -204,7 +210,7 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
     it('lê o Fim guardado da fase que o catálogo e o processo não descrevem', () => {
       comFaseAjustada(FASE_SUMIDA, { fim: '2026-03-10T18:00:00-03:00' });
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.publicado,
+        status: StatusProcessoCodigo.PUBLICADO,
       } as unknown as ProcessoSeletivoDto);
       detectar();
 
@@ -216,7 +222,7 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
     it('diz que o Fim da fase que o catálogo e o processo não descrevem está no horário de Belém', () => {
       comFaseAjustada(FASE_SUMIDA, { fim: '2026-03-10T18:00:00-03:00' });
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.publicado,
+        status: StatusProcessoCodigo.PUBLICADO,
       } as unknown as ProcessoSeletivoDto);
       detectar();
 

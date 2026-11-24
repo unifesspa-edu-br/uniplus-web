@@ -1,4 +1,7 @@
-import type { AvaliacaoDaInscricaoDto } from '@uniplus/shared-data/selecao';
+import {
+  SituacaoDoDocumentoCodigo,
+  type AvaliacaoDaInscricaoDto,
+} from '@uniplus/shared-data/selecao';
 import type { DocumentosAvaliados } from '@uniplus/shared-ui/components';
 
 type DocumentoDaApi = AvaliacaoDaInscricaoDto['documentos']['fases'][number]['documentos'][number];
@@ -12,11 +15,19 @@ const APRESENTACAO: Record<
     readonly variante: DocumentoAvaliado['situacao']['variante'];
   }
 > = {
-  naoExigido: { variante: 'neutral', exigido: false, atendido: false },
-  PENDENTE: { variante: 'warning', exigido: true, atendido: false },
-  PODE_SER_EXIGIDO: { variante: 'info', exigido: false, atendido: false },
-  DEPENDE_DE_FASE_POSTERIOR: { variante: 'neutral', exigido: false, atendido: false },
-  SATISFEITA: { variante: 'success', exigido: true, atendido: true },
+  [SituacaoDoDocumentoCodigo.NAO_EXIGIDO]: { variante: 'neutral', exigido: false, atendido: false },
+  [SituacaoDoDocumentoCodigo.PENDENTE]: { variante: 'warning', exigido: true, atendido: false },
+  [SituacaoDoDocumentoCodigo.PODE_SER_EXIGIDO]: {
+    variante: 'info',
+    exigido: false,
+    atendido: false,
+  },
+  [SituacaoDoDocumentoCodigo.DEPENDE_DE_FASE_POSTERIOR]: {
+    variante: 'neutral',
+    exigido: false,
+    atendido: false,
+  },
+  [SituacaoDoDocumentoCodigo.SATISFEITA]: { variante: 'success', exigido: true, atendido: true },
 };
 
 function apresentarDocumento(documento: DocumentoDaApi): DocumentoAvaliado {

@@ -16,48 +16,55 @@ import {
 import { umaLeituraDoRecurso } from './parametros-do-recurso.testing';
 
 const VOCABULARIO = [
-  { codigo: 'diasUteis', rotulo: 'dias úteis' },
-  { codigo: 'horas', rotulo: 'horas' },
+  { codigo: UnidadePrazoCodigo.DIAS_UTEIS, rotulo: 'dias úteis' },
+  { codigo: UnidadePrazoCodigo.HORAS, rotulo: 'horas' },
 ];
 
 describe('opcoesParaEscolha', () => {
   it('oferece só as opções do vocabulário quando o valor atual é uma delas', () => {
-    expect(opcoesParaEscolha(VOCABULARIO, 'horas')).toEqual([
-      { codigo: 'diasUteis', rotulo: 'dias úteis', foraDoVocabulario: false },
-      { codigo: 'horas', rotulo: 'horas', foraDoVocabulario: false },
+    expect(opcoesParaEscolha(VOCABULARIO, UnidadePrazoCodigo.HORAS)).toEqual([
+      { codigo: UnidadePrazoCodigo.DIAS_UTEIS, rotulo: 'dias úteis', foraDoVocabulario: false },
+      { codigo: UnidadePrazoCodigo.HORAS, rotulo: 'horas', foraDoVocabulario: false },
     ]);
   });
 
   it('oferece só as opções do vocabulário quando ainda não há valor', () => {
     const opcoes = opcoesParaEscolha(VOCABULARIO, '');
 
-    expect(opcoes.map((opcao) => opcao.codigo)).toEqual(['diasUteis', 'horas']);
+    expect(opcoes.map((opcao) => opcao.codigo)).toEqual([
+      UnidadePrazoCodigo.DIAS_UTEIS,
+      UnidadePrazoCodigo.HORAS,
+    ]);
     expect(opcoes.some((opcao) => opcao.foraDoVocabulario)).toBe(false);
   });
 
   it('acrescenta o valor atual que o vocabulário não oferece, marcado e com o código como nome', () => {
-    const opcoes = opcoesParaEscolha(VOCABULARIO, 'dias');
+    const opcoes = opcoesParaEscolha(VOCABULARIO, UnidadePrazoCodigo.DIAS);
 
-    expect(opcoes.map((opcao) => opcao.codigo)).toEqual(['diasUteis', 'horas', 'dias']);
+    expect(opcoes.map((opcao) => opcao.codigo)).toEqual([
+      UnidadePrazoCodigo.DIAS_UTEIS,
+      UnidadePrazoCodigo.HORAS,
+      UnidadePrazoCodigo.DIAS,
+    ]);
     expect(opcoes[2]).toEqual({
-      codigo: 'dias',
-      rotulo: 'dias',
+      codigo: UnidadePrazoCodigo.DIAS,
+      rotulo: UnidadePrazoCodigo.DIAS,
       descricao: EXPLICACAO_DA_OPCAO_FORA_DO_VOCABULARIO,
       foraDoVocabulario: true,
     });
   });
 
   it('prefere o nome que a leitura deu ao valor fora do vocabulário', () => {
-    expect(opcoesParaEscolha(VOCABULARIO, 'dias', 'Dias corridos')[2]?.rotulo).toBe(
-      'Dias corridos',
-    );
+    expect(
+      opcoesParaEscolha(VOCABULARIO, UnidadePrazoCodigo.DIAS, 'Dias corridos')[2]?.rotulo,
+    ).toBe('Dias corridos');
   });
 
   it('com vocabulário vazio, mostra só o valor atual', () => {
-    expect(opcoesParaEscolha([], 'horas')).toEqual([
+    expect(opcoesParaEscolha([], UnidadePrazoCodigo.HORAS)).toEqual([
       {
-        codigo: 'horas',
-        rotulo: 'horas',
+        codigo: UnidadePrazoCodigo.HORAS,
+        rotulo: UnidadePrazoCodigo.HORAS,
         descricao: EXPLICACAO_DA_OPCAO_FORA_DO_VOCABULARIO,
         foraDoVocabulario: true,
       },
@@ -71,22 +78,28 @@ describe('opcoesParaEscolha', () => {
 
 describe('opcoesDaGuarda', () => {
   const GUARDAS = [
-    { codigo: GuardaDaVagaCodigo.ateOResultadoDefinitivo, rotulo: 'Até o definitivo' },
-    { codigo: GuardaDaVagaCodigo.naoGuarda, rotulo: 'Não guarda' },
+    { codigo: GuardaDaVagaCodigo.ATE_O_RESULTADO_DEFINITIVO, rotulo: 'Até o definitivo' },
+    { codigo: GuardaDaVagaCodigo.NAO_GUARDA, rotulo: 'Não guarda' },
   ];
   const codigos = (admite: boolean | null, atual: string) =>
     opcoesDaGuarda(GUARDAS, admite, atual).map((opcao) => opcao.codigo);
 
   it.each([false, null])('com instância superior %s, oferece as duas opções', (admite) => {
-    expect(codigos(admite, '')).toEqual(['ateOResultadoDefinitivo', 'naoGuarda']);
+    expect(codigos(admite, '')).toEqual([
+      GuardaDaVagaCodigo.ATE_O_RESULTADO_DEFINITIVO,
+      GuardaDaVagaCodigo.NAO_GUARDA,
+    ]);
   });
 
   it('com instância superior, deixa de oferecer "não guarda"', () => {
-    expect(codigos(true, '')).toEqual(['ateOResultadoDefinitivo']);
+    expect(codigos(true, '')).toEqual([GuardaDaVagaCodigo.ATE_O_RESULTADO_DEFINITIVO]);
   });
 
   it('com instância superior, mantém "não guarda" quando é o valor atual', () => {
-    expect(codigos(true, 'naoGuarda')).toEqual(['ateOResultadoDefinitivo', 'naoGuarda']);
+    expect(codigos(true, GuardaDaVagaCodigo.NAO_GUARDA)).toEqual([
+      GuardaDaVagaCodigo.ATE_O_RESULTADO_DEFINITIVO,
+      GuardaDaVagaCodigo.NAO_GUARDA,
+    ]);
   });
 });
 
@@ -115,7 +128,7 @@ describe('parametrosAlterados', () => {
     ...PARAMETROS_EM_BRANCO,
     admiteInstanciaSuperior: true,
     prazoSegundaInstanciaValor: '3',
-    prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.diasUteis,
+    prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.DIAS_UTEIS,
   };
   const leituraComRotulos: LeituraDoRecurso = umaLeituraDoRecurso({
     rotulos: {
@@ -138,21 +151,21 @@ describe('parametrosAlterados', () => {
   it('guarda o código do vocabulário e deixa vazio o que o vocabulário não conhece', () => {
     const conhecido = parametrosAlterados(PARAMETROS_EM_BRANCO, LEITURA_EM_BRANCO, {
       campo: 'prazoUnidade',
-      valor: 'horas',
+      valor: UnidadePrazoCodigo.HORAS,
     });
     const desconhecido = parametrosAlterados(PARAMETROS_EM_BRANCO, LEITURA_EM_BRANCO, {
       campo: 'prazoUnidade',
       valor: 'semanas',
     });
 
-    expect(conhecido.parametros.prazoUnidade).toBe('horas');
+    expect(conhecido.parametros.prazoUnidade).toBe(UnidadePrazoCodigo.HORAS);
     expect(desconhecido.parametros.prazoUnidade).toBe('');
   });
 
   it('trocar um campo tira dele o nome que a leitura tinha dado', () => {
     const { leitura } = parametrosAlterados(comPrazoDaSegunda, leituraComRotulos, {
       campo: 'prazoUnidade',
-      valor: 'horas',
+      valor: UnidadePrazoCodigo.HORAS,
     });
 
     expect(leitura.rotulos).toEqual({
@@ -162,7 +175,7 @@ describe('parametrosAlterados', () => {
   });
 
   it('marcar Sim com "não guarda" escolhida deixa a guarda vazia e anuncia a retirada', () => {
-    const parametros = { ...PARAMETROS_EM_BRANCO, guardaDaVaga: GuardaDaVagaCodigo.naoGuarda };
+    const parametros = { ...PARAMETROS_EM_BRANCO, guardaDaVaga: GuardaDaVagaCodigo.NAO_GUARDA };
 
     const resultado = parametrosAlterados(parametros, leituraComRotulos, {
       campo: 'admiteInstanciaSuperior',
@@ -177,7 +190,7 @@ describe('parametrosAlterados', () => {
   it('marcar Sim com outra guarda não retira nada', () => {
     const parametros = {
       ...PARAMETROS_EM_BRANCO,
-      guardaDaVaga: GuardaDaVagaCodigo.ateOResultadoDefinitivo,
+      guardaDaVaga: GuardaDaVagaCodigo.ATE_O_RESULTADO_DEFINITIVO,
     };
 
     const resultado = parametrosAlterados(parametros, LEITURA_EM_BRANCO, {
@@ -185,7 +198,7 @@ describe('parametrosAlterados', () => {
       valor: true,
     });
 
-    expect(resultado.parametros.guardaDaVaga).toBe('ateOResultadoDefinitivo');
+    expect(resultado.parametros.guardaDaVaga).toBe(GuardaDaVagaCodigo.ATE_O_RESULTADO_DEFINITIVO);
     expect(resultado.retirado).toBeNull();
   });
 
@@ -229,7 +242,7 @@ describe('parametrosAlterados', () => {
   });
 
   it('desfazer não restaura "não guarda": marcar Não depois de Sim não o devolve', () => {
-    const comNaoGuarda = { ...PARAMETROS_EM_BRANCO, guardaDaVaga: GuardaDaVagaCodigo.naoGuarda };
+    const comNaoGuarda = { ...PARAMETROS_EM_BRANCO, guardaDaVaga: GuardaDaVagaCodigo.NAO_GUARDA };
     const sim = parametrosAlterados(comNaoGuarda, LEITURA_EM_BRANCO, {
       campo: 'admiteInstanciaSuperior',
       valor: true,
@@ -250,7 +263,7 @@ describe('prazoDaSegundaInstanciaRetirado', () => {
       ...PARAMETROS_EM_BRANCO,
       admiteInstanciaSuperior: false,
       prazoSegundaInstanciaValor: '3',
-      prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.diasUteis,
+      prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.DIAS_UTEIS,
     };
     const leitura = umaLeituraDoRecurso({
       rotulos: { prazoSegundaInstanciaUnidade: 'Dias úteis' },

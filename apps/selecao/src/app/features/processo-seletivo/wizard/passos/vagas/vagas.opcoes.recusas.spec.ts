@@ -160,7 +160,7 @@ describe('VagasPassoComponent — recusas e consulta do número de opções de c
   it('em consulta, lê o número gravado como texto', () => {
     store.patchObjectSection('opcoesDeCurso', { numero: '2' });
     store.remoteSnapshot.set({
-      status: StatusProcessoCodigo.publicado,
+      status: StatusProcessoCodigo.PUBLICADO,
     } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
 

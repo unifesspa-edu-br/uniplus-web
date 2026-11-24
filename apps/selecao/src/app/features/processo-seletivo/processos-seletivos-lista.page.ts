@@ -41,10 +41,10 @@ import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 const PAGE_SIZE = 50;
 
 const STATUS_VARIANTE: Record<StatusProcessoCodigo, UiTagVariant> = {
-  [StatusProcessoCodigo.rascunho]: 'warning',
-  [StatusProcessoCodigo.publicado]: 'success',
-  [StatusProcessoCodigo.encerrado]: 'neutral',
-  [StatusProcessoCodigo.cancelado]: 'danger',
+  [StatusProcessoCodigo.RASCUNHO]: 'warning',
+  [StatusProcessoCodigo.PUBLICADO]: 'success',
+  [StatusProcessoCodigo.ENCERRADO]: 'neutral',
+  [StatusProcessoCodigo.CANCELADO]: 'danger',
 };
 
 /**
@@ -343,7 +343,7 @@ export class ProcessosSeletivosListaPage {
    * listar de publicado nem notas do ENEM a enviar ou importar.
    */
   protected foiPublicado(status: StatusProcessoCodigo): boolean {
-    return status !== StatusProcessoCodigo.rascunho;
+    return status !== StatusProcessoCodigo.RASCUNHO;
   }
 
   protected statusVariante(status: StatusProcessoCodigo): UiTagVariant {

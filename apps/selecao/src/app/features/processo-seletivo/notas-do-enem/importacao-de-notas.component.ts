@@ -13,7 +13,12 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { isApiOk } from '@uniplus/shared-core/http';
+import {
+  isApiOk,
+  type ApiOk,
+  type ApiResult,
+  type ProblemDetails,
+} from '@uniplus/shared-core/http';
 import {
   NotasDoEnemApi,
   type RetornoDoInep,
@@ -125,14 +130,24 @@ export class ImportacaoDeNotasComponent {
 
   protected async importar(): Promise<void> {
     if (this.importando()) return;
-    this.recusa.set(null);
-    this.resultado.set(null);
+    this.limparResultado();
 
     const escolhido = this.notas.escolhidoDeRetorno();
     if (escolhido === null) return;
     const pedido = this.pedidoCompleto();
     if (pedido === null) return;
+    await this.executarImportacao(escolhido, pedido);
+  }
 
+  private limparResultado(): void {
+    this.recusa.set(null);
+    this.resultado.set(null);
+  }
+
+  private async executarImportacao(
+    escolhido: EscopoEscolhido,
+    pedido: RetornoDoInep,
+  ): Promise<void> {
     this.importando.set(true);
     try {
       await this.importarLote(escolhido, pedido);
@@ -162,23 +177,42 @@ export class ImportacaoDeNotasComponent {
     const resposta = await firstValueFrom(
       this.api.importarNotas(escolhido.processoId, escolhido.etapaId, escolhido.edicao, retorno),
     );
+    this.tratarRespostaDaImportacao(resposta, escolhido, haviaLoteAnterior);
+  }
+
+  private tratarRespostaDaImportacao(
+    resposta: ApiResult<LoteDeNotasDoEnemDto>,
+    escolhido: EscopoEscolhido,
+    haviaLoteAnterior: boolean,
+  ): void {
     // O arquivo sai da tela quando a importação dá certo; na recusa ele fica, para o operador
     // trocar só o leiaute e reenviar.
     if (isApiOk(resposta)) this.arquivo.set(null);
     if (!mesmoEscopo(this.notas.escolhidoDeRetorno(), escolhido)) return;
     if (isApiOk(resposta)) {
-      this.mostrarResultado({
-        lote: resposta.data,
-        criado: resposta.status === 201,
-        haviaLoteAnterior,
-      });
+      this.tratarSucessoDaImportacao(resposta, haviaLoteAnterior);
     } else {
-      this.mostrarRecusa(
-        explicarRecusa(resposta.problem, 'importacao', { variosLeiautes: this.variosLeiautes() }),
-      );
-      // Na falha incerta o lote pode ter sido gravado: o histórico é o que o operador confere.
-      if (falhaIncerta(resposta.problem)) void this.notas.recarregarLotes();
+      this.tratarFalhaDaImportacao(resposta.problem);
     }
+  }
+
+  private tratarSucessoDaImportacao(
+    resposta: ApiOk<LoteDeNotasDoEnemDto>,
+    haviaLoteAnterior: boolean,
+  ): void {
+    this.mostrarResultado({
+      lote: resposta.data,
+      criado: resposta.status === 201,
+      haviaLoteAnterior,
+    });
+  }
+
+  private tratarFalhaDaImportacao(problema: ProblemDetails): void {
+    this.mostrarRecusa(
+      explicarRecusa(problema, 'importacao', { variosLeiautes: this.variosLeiautes() }),
+    );
+    // Na falha incerta o lote pode ter sido gravado: o histórico é o que o operador confere.
+    if (falhaIncerta(problema)) void this.notas.recarregarLotes();
   }
 
   private mostrarResultado(resultado: ResultadoDaImportacao): void {
@@ -196,7 +230,7 @@ export class ImportacaoDeNotasComponent {
 
   protected recarregarCatalogo(): void {
     this.leiaute.setValue('');
-    void this.notas.recarregarLeiautes('retorno');
+    void this.notas.recarregarLeiautes('RETORNO');
   }
 
   private recusarPedidoIncompleto(faltaLeiaute: boolean, faltaArquivo: boolean): void {

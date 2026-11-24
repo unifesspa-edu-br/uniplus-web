@@ -212,7 +212,7 @@ describe('GravacaoDoProcesso', () => {
       const comando = {
         nome: 'Processo Seletivo A',
         tipoProcessoOrigemId: '01960000-0000-7000-0000-000000000001',
-        origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
+        origemCandidatos: OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
         unidadeAdministradoraOrigemId: '01960000-0000-7000-0000-000000000002',
         localidadeCodigoIbge: null,
         localidadeNome: null,

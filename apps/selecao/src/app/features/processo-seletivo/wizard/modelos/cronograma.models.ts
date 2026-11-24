@@ -209,7 +209,7 @@ export interface RecursoDaEtapa extends ParametrosDoRecurso {
    */
   readonly id?: string;
   readonly leitura: LeituraDoRecurso;
-  readonly ancora: 'atoPublicado' | 'cienciaIndividual';
+  readonly ancora: 'PUBLICACAO_DO_ATO' | 'CIENCIA_INDIVIDUAL';
   readonly regraCodigo: string;
   readonly regraVersao: string;
   readonly atoAncoraCodigo: string;

@@ -11,7 +11,7 @@ function rotulosConcluidos(
   checklist: ItemConformidadeDto[] = [],
 ) {
   const completo = {
-    origemCandidatos: OrigemCandidatosCodigo.inscricaoPropria,
+    origemCandidatos: OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
     ...dto,
   } as ProcessoSeletivoDto;
   const concluidos = passosConcluidosDe(completo, checklist);
@@ -39,7 +39,7 @@ describe('passosConcluidosDe', () => {
     expect(rotulosConcluidos({ criteriosDesempate: [{}] as never })).toContain('Desempate');
     expect(
       rotulosConcluidos({
-        origemCandidatos: { codigo: OrigemCandidatosCodigo.importacaoExterna, rotulo: 'Importação externa' },
+        origemCandidatos: { codigo: OrigemCandidatosCodigo.IMPORTACAO_EXTERNA, rotulo: 'Importação externa' },
         criteriosDesempate: [],
       }),
     ).toContain('Desempate');

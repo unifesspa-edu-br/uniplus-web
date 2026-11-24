@@ -18,8 +18,8 @@ export const IDS = {
 export const IDS_COM_AJUDA = { ...IDS, ajuda: 'prazo-ajuda' } satisfies IdsDoPrazo;
 
 export const UNIDADES = [
-  { codigo: 'diasUteis', rotulo: 'dias úteis' },
-  { codigo: 'horas', rotulo: 'horas' },
+  { codigo: 'DIAS_UTEIS', rotulo: 'dias úteis' },
+  { codigo: 'HORAS', rotulo: 'horas' },
 ];
 
 type Entradas = Partial<{

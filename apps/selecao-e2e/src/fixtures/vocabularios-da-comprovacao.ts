@@ -4,40 +4,40 @@ export const VOCABULARIOS_DA_COMPROVACAO: readonly CatalogoMockado[] = [
   [
     'selecao/vocabularios/escolhas-prazo-emissao',
     [
-      { codigo: 'semPrazo', rotulo: 'Sem prazo' },
-      { codigo: 'comPrazo', rotulo: 'Com prazo' },
+      { codigo: 'SEM_PRAZO', rotulo: 'Sem prazo' },
+      { codigo: 'COM_PRAZO', rotulo: 'Com prazo' },
     ],
   ],
   [
     'selecao/vocabularios/escolhas-validade',
     [
-      { codigo: 'naoExigeDocumentoValido', rotulo: 'Não exige documento válido' },
-      { codigo: 'exigeDocumentoValido', rotulo: 'Exige documento válido' },
+      { codigo: 'NAO_EXIGE_DOCUMENTO_VALIDO', rotulo: 'Não exige documento válido' },
+      { codigo: 'EXIGE_DOCUMENTO_VALIDO', rotulo: 'Exige documento válido' },
     ],
   ],
   [
     'selecao/vocabularios/unidades-prazo-emissao',
     [
-      { codigo: 'dias', rotulo: 'Dias' },
-      { codigo: 'meses', rotulo: 'Meses' },
-      { codigo: 'anos', rotulo: 'Anos' },
+      { codigo: 'DIAS', rotulo: 'Dias' },
+      { codigo: 'MESES', rotulo: 'Meses' },
+      { codigo: 'ANOS', rotulo: 'Anos' },
     ],
   ],
   [
     'selecao/vocabularios/tipos-data-referencia',
     [
-      { codigo: 'fimDasInscricoes', rotulo: 'Fim das inscrições' },
-      { codigo: 'inicioDaFase', rotulo: 'Início da fase' },
-      { codigo: 'fimDaFase', rotulo: 'Fim da fase' },
-      { codigo: 'dataEspecifica', rotulo: 'Data específica' },
-      { codigo: 'dataDaApresentacao', rotulo: 'Data da apresentação' },
+      { codigo: 'FIM_DAS_INSCRICOES', rotulo: 'Fim das inscrições' },
+      { codigo: 'INICIO_DA_FASE', rotulo: 'Início da fase' },
+      { codigo: 'FIM_DA_FASE', rotulo: 'Fim da fase' },
+      { codigo: 'DATA_ESPECIFICA', rotulo: 'Data específica' },
+      { codigo: 'DATA_DA_APRESENTACAO', rotulo: 'Data da apresentação' },
     ],
   ],
   [
     'selecao/vocabularios/efeitos-analise-documento',
     [
-      { codigo: 'recusarDocumento', rotulo: 'Recusar documento' },
-      { codigo: 'aceitarComAviso', rotulo: 'Aceitar com aviso' },
+      { codigo: 'RECUSAR_DOCUMENTO', rotulo: 'Recusar documento' },
+      { codigo: 'ACEITAR_COM_AVISO', rotulo: 'Aceitar com aviso' },
     ],
   ],
   [

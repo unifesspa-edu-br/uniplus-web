@@ -164,7 +164,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: origem das área
         antesDeMontar: (store) => {
           store.patchSection('desempate', [criterio(['REDACAO'])]);
           store.remoteSnapshot.set({
-            status: StatusProcessoCodigo.publicado,
+            status: StatusProcessoCodigo.PUBLICADO,
           } as unknown as ProcessoSeletivoDto);
         },
       });
@@ -248,7 +248,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: origem das área
             ...grupo,
             areas: [...grupo.areas, area('MATEMATICA', 'Matemática')],
           })),
-          StatusProcessoCodigo.publicado,
+          StatusProcessoCodigo.PUBLICADO,
         )(store);
       },
       // Uma leitura do cadastro sairia sem resposta, e a conferência do fim do teste a acusaria.

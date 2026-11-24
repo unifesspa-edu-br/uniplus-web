@@ -130,7 +130,7 @@ describe('RegraDeDeliberacaoComponent', () => {
       }
       expect(controle('semUnanimidade')).toBeNull();
       expect(controle<HTMLInputElement>('integrantes')?.value).toBe('5');
-      expect(controle<HTMLSelectElement>('criterio')?.value).toBe('maioriaSimples');
+      expect(controle<HTMLSelectElement>('criterio')?.value).toBe('MAIORIA_SIMPLES');
     });
 
     it('devolve a regra com o campo digitado', () => {
@@ -140,7 +140,7 @@ describe('RegraDeDeliberacaoComponent', () => {
     });
 
     it('troca de critério e já tira o desempate que ele não admite', () => {
-      escolher('criterio', 'unanimidade');
+      escolher('criterio', 'UNANIMIDADE');
 
       expect(emitidas.at(-1)).toMatchObject({ criterio: CRITERIOS.unanimidade, desempate: null });
     });

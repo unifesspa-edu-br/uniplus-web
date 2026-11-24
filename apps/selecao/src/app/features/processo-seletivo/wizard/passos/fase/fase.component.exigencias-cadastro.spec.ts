@@ -171,7 +171,7 @@ describe('FasePassoComponent', () => {
           {
             id: ID_ETAPA_DOCUMENTAL,
             nome: 'Análise documental',
-            carater: CaraterEtapaCodigo.eliminatoria,
+            carater: CaraterEtapaCodigo.ELIMINATORIA,
             tipoEtapaOrigemId: ID_TIPO_ETAPA,
             peso: '',
             notaMinima: '',

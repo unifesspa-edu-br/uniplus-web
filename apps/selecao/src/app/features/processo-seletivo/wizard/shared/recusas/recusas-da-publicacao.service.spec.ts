@@ -186,7 +186,7 @@ describe('RecusasDaPublicacao', () => {
   it('esvazia quando o servidor diz que o processo saiu do rascunho', () => {
     recusas.registrar(problema(comCampo('/a')), TITULO);
 
-    store.remoteSnapshot.set(detalhe({ id: 'p1', status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'publicado' } }));
+    store.remoteSnapshot.set(detalhe({ id: 'p1', status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'publicado' } }));
     TestBed.tick();
 
     expect(recusas.recusas()).toEqual([]);
@@ -195,7 +195,7 @@ describe('RecusasDaPublicacao', () => {
   it('mantém as recusas enquanto o processo segue em rascunho', () => {
     recusas.registrar(problema(comCampo('/a')), TITULO);
 
-    store.remoteSnapshot.set(detalhe({ id: 'p1', status: { codigo: StatusProcessoCodigo.rascunho, rotulo: 'rascunho' } }));
+    store.remoteSnapshot.set(detalhe({ id: 'p1', status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: 'rascunho' } }));
     TestBed.tick();
 
     expect(recusas.recusas()).toHaveLength(1);

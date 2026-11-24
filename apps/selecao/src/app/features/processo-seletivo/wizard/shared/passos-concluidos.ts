@@ -29,7 +29,7 @@ function gravadoPorPasso(dto: ProcessoSeletivoDto): Record<PassoQueGrava, boolea
     Bônus: dto.aplicaBonusRegional != null,
     Desempate:
       (dto.criteriosDesempate ?? []).length > 0 ||
-      dto.origemCandidatos.codigo === OrigemCandidatosCodigo.importacaoExterna,
+      dto.origemCandidatos.codigo === OrigemCandidatosCodigo.IMPORTACAO_EXTERNA,
     Eliminação: classificacaoGravada,
     'Atend. especial': dto.atendimentoEspecializado != null,
     Formulários: (dto.formularios ?? []).length > 0,

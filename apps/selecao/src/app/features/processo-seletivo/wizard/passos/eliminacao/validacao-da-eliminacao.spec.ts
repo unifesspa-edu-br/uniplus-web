@@ -8,7 +8,7 @@ import type { EtapaReferenciavel } from './regras-de-eliminacao';
 const ETAPA: EtapaReferenciavel = {
   id: 'etapa-1',
   nome: 'Prova objetiva',
-  carater: CaraterEtapaCodigo.classificatoria,
+  carater: CaraterEtapaCodigo.CLASSIFICATORIA,
   tipoEtapaOrigemId: 'tipo-1',
   peso: '1',
   notaMinima: '',
@@ -48,8 +48,8 @@ function conferir(regras: RegraEliminacaoConfigurada[], baseadoEmEnem = false): 
 }
 
 describe('mensagensDasRegras', () => {
-  describe('ELIMINACAO-NOTA-MINIMA-ETAPA — exige etapaRef e notaMinima', () => {
-    const NOTA = regra({ regraCodigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA' });
+  describe('ELIMINACAO_NOTA_MINIMA_ETAPA — exige etapaRef e notaMinima', () => {
+    const NOTA = regra({ regraCodigo: 'ELIMINACAO_NOTA_MINIMA_ETAPA' });
 
     it('recusa sem etapaRef nem notaMinima', () => {
       expect(conferir([NOTA])).not.toBe('');
@@ -66,8 +66,8 @@ describe('mensagensDasRegras', () => {
     });
   });
 
-  describe('ELIMINACAO-ZERO-EM-AREA — não usa argumento', () => {
-    const ZERO = regra({ regraCodigo: 'ELIMINACAO-ZERO-EM-AREA' });
+  describe('ELIMINACAO_ZERO_EM_AREA — não usa argumento', () => {
+    const ZERO = regra({ regraCodigo: 'ELIMINACAO_ZERO_EM_AREA' });
 
     it('recusa sem baseadoEmEnem — a exigência não é exclusiva do corte por área', () => {
       expect(conferir([ZERO])).toContain('baseada em ENEM');
@@ -78,8 +78,8 @@ describe('mensagensDasRegras', () => {
     });
   });
 
-  describe('ELIMINACAO-FALTA-EM-DIA-DE-PROVA-ENEM — sem argumento e uma só vez', () => {
-    const FALTA = regra({ regraCodigo: 'ELIMINACAO-FALTA-EM-DIA-DE-PROVA-ENEM' });
+  describe('ELIMINACAO_FALTA_EM_DIA_DE_PROVA_ENEM — sem argumento e uma só vez', () => {
+    const FALTA = regra({ regraCodigo: 'ELIMINACAO_FALTA_EM_DIA_DE_PROVA_ENEM' });
 
     it('mostra a pendência sem baseadoEmEnem, antes de gravar', () => {
       expect(conferir([FALTA])).toContain('baseada em ENEM');

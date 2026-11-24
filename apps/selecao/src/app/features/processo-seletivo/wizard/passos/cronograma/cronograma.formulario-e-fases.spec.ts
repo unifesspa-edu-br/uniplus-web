@@ -299,7 +299,7 @@ describe('CronogramaPassoComponent: formulário e fases', () => {
   });
 
   /**
-   * O recorte vem do cadastro, não de uma lista de códigos na tela: um tipo que não compõe a
+   * A definição dos tipos de fase vem do cadastro, não de uma lista de códigos na tela: um tipo que não compõe a
    * nota final não pode oferecer caráter que pontua, e é isso que faz o peso desaparecer.
    */
   it('o caráter oferecido segue o que o tipo de etapa admite', () => {
@@ -308,16 +308,16 @@ describe('CronogramaPassoComponent: formulário e fases', () => {
     const etapa = cronograma.etapas.at(0);
 
     expect(edicao.caracteresPara(etapa).map((o) => o.valor)).toEqual([
-      'classificatoria',
-      'eliminatoria',
-      'ambas',
+      'CLASSIFICATORIA',
+      'ELIMINATORIA',
+      'AMBAS',
     ]);
 
     edicao.escolherTipoEtapa(etapa, TIPO_ETAPA_SO_ELIMINA);
     detectar();
 
-    expect(edicao.caracteresPara(etapa).map((o) => o.valor)).toContain('eliminatoria');
-    expect(edicao.caracteresPara(etapa).map((o) => o.valor)).not.toContain('ambas');
+    expect(edicao.caracteresPara(etapa).map((o) => o.valor)).toContain('ELIMINATORIA');
+    expect(edicao.caracteresPara(etapa).map((o) => o.valor)).not.toContain('AMBAS');
   });
 
   /**
@@ -332,8 +332,8 @@ describe('CronogramaPassoComponent: formulário e fases', () => {
     edicao.escolherTipoEtapa(etapa, TIPO_ETAPA_SO_ELIMINA);
     detectar();
 
-    expect(etapa.controls.carater.value, 'o valor declarado permanece').toBe('classificatoria');
-    const marcada = edicao.caracteresPara(etapa).find((opcao) => opcao.valor === 'classificatoria');
+    expect(etapa.controls.carater.value, 'o valor declarado permanece').toBe('CLASSIFICATORIA');
+    const marcada = edicao.caracteresPara(etapa).find((opcao) => opcao.valor === 'CLASSIFICATORIA');
     expect(marcada?.rotulo).toContain('não mais admitido');
   });
 

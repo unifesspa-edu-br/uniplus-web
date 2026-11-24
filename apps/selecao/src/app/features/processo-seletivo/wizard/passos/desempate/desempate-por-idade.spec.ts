@@ -28,8 +28,8 @@ const coletados = (...fatos: string[]): ReadonlySet<string> => new Set(fatos);
 const SEM_APURACAO: ReferenciaTemporalConfig = { tipo: '', data: '', faseCodigo: '' };
 const FIM_INSCRICAO: ReferenciaTemporalConfig = { ...SEM_APURACAO, tipo: 'FIM_INSCRICAO' };
 
-const MAIOR_IDADE = criterio('DESEMPATE-MAIOR-IDADE');
-const IDOSO = criterio('DESEMPATE-IDOSO');
+const MAIOR_IDADE = criterio('DESEMPATE_MAIOR_IDADE');
+const IDOSO = criterio('DESEMPATE_IDOSO');
 
 describe('desempateSemDataDeNascimento', () => {
   it('acusa o maior idade quando o formulário não coleta a data de nascimento', () => {

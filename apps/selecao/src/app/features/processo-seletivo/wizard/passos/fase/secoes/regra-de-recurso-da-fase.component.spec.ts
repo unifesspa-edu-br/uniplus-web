@@ -81,11 +81,11 @@ describe('RegraDeRecursoDaFaseComponent', () => {
   it('mostra o que a regra já traz: prazos, efeito suspensivo e guarda da vaga', () => {
     expect(campo<HTMLInputElement>('prazo-interposicao-valor').value).toBe('2');
     expect(campo<HTMLSelectElement>('prazo-interposicao-unidade').value).toBe(
-      UnidadePrazoCodigo.diasUteis,
+      UnidadePrazoCodigo.DIAS_UTEIS,
     );
     expect(campo<HTMLInputElement>('prazo-segunda-valor').value).toBe('3');
-    expect(opcao('efeito', EfeitoSuspensivoCodigo.semEfeitoSuspensivo).checked).toBe(true);
-    expect(opcao('guarda', GuardaDaVagaCodigo.ateOResultadoDefinitivo).checked).toBe(true);
+    expect(opcao('efeito', EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO).checked).toBe(true);
+    expect(opcao('guarda', GuardaDaVagaCodigo.ATE_O_RESULTADO_DEFINITIVO).checked).toBe(true);
   });
 
   it('oferece as unidades que a API devolve, com a opção em branco "Escolha a unidade"', () => {
@@ -93,20 +93,20 @@ describe('RegraDeRecursoDaFaseComponent', () => {
 
     expect(Array.from(seletor.options).map((o) => o.value)).toEqual([
       '',
-      UnidadePrazoCodigo.diasUteis,
-      UnidadePrazoCodigo.horas,
+      UnidadePrazoCodigo.DIAS_UTEIS,
+      UnidadePrazoCodigo.HORAS,
     ]);
     expect(seletor.options[0]?.textContent?.trim()).toBe('Escolha a unidade');
   });
 
   it('mantém à vista e marcada a unidade gravada que a API não oferece, com o nome lido', () => {
     comRegra({
-      prazoUnidade: UnidadePrazoCodigo.dias,
+      prazoUnidade: UnidadePrazoCodigo.DIAS,
       leitura: umaLeituraDoRecurso({ rotulos: { prazoUnidade: 'Dias corridos' } }),
     });
 
     const seletor = campo<HTMLSelectElement>('prazo-interposicao-unidade');
-    expect(seletor.value).toBe(UnidadePrazoCodigo.dias);
+    expect(seletor.value).toBe(UnidadePrazoCodigo.DIAS);
     expect(seletor.selectedOptions[0]?.textContent?.trim()).toBe(
       'Dias corridos — não é mais oferecida',
     );
@@ -151,16 +151,16 @@ describe('RegraDeRecursoDaFaseComponent', () => {
     it('leva ao rascunho da fase a unidade escolhida', () => {
       const seletor = campo<HTMLSelectElement>('prazo-interposicao-unidade');
 
-      seletor.value = UnidadePrazoCodigo.horas;
+      seletor.value = UnidadePrazoCodigo.HORAS;
       seletor.dispatchEvent(new Event('change'));
       detectar();
 
-      expect(regraNoRascunho()?.prazoUnidade).toBe(UnidadePrazoCodigo.horas);
+      expect(regraNoRascunho()?.prazoUnidade).toBe(UnidadePrazoCodigo.HORAS);
     });
 
     it.each([
-      ['zero', '0', UnidadePrazoCodigo.horas],
-      ['fracionário em dias úteis', '1,5', UnidadePrazoCodigo.diasUteis],
+      ['zero', '0', UnidadePrazoCodigo.HORAS],
+      ['fracionário em dias úteis', '1,5', UnidadePrazoCodigo.DIAS_UTEIS],
     ])('com o prazo %s, mostra como veio e não marca erro: quem confere é a API', (_, v, u) => {
       comRegra({ prazoValor: v, prazoUnidade: u });
 
@@ -172,7 +172,7 @@ describe('RegraDeRecursoDaFaseComponent', () => {
     it('preserva o valor lido ao mudar outro campo', () => {
       comRegra({ prazoValor: '0' });
 
-      opcao('guarda', GuardaDaVagaCodigo.ateOResultadoDefinitivo).click();
+      opcao('guarda', GuardaDaVagaCodigo.ATE_O_RESULTADO_DEFINITIVO).click();
       detectar();
 
       expect(regraNoRascunho()?.prazoValor).toBe('0');
@@ -183,29 +183,29 @@ describe('RegraDeRecursoDaFaseComponent', () => {
     it('grava o efeito escolhido', () => {
       comRegra({ efeitoSuspensivo: '' });
 
-      opcao('efeito', EfeitoSuspensivoCodigo.semEfeitoSuspensivo).click();
+      opcao('efeito', EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO).click();
       detectar();
 
-      expect(regraNoRascunho()?.efeitoSuspensivo).toBe(EfeitoSuspensivoCodigo.semEfeitoSuspensivo);
+      expect(regraNoRascunho()?.efeitoSuspensivo).toBe(EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO);
     });
 
     it('com instância superior, não oferece "não guarda"', () => {
-      expect(opcao('guarda', GuardaDaVagaCodigo.naoGuarda)).toBeNull();
+      expect(opcao('guarda', GuardaDaVagaCodigo.NAO_GUARDA)).toBeNull();
     });
 
     it('sem instância superior, oferece "não guarda" e grava a escolha', () => {
       comRegra({ admiteInstanciaSuperior: false });
 
-      opcao('guarda', GuardaDaVagaCodigo.naoGuarda).click();
+      opcao('guarda', GuardaDaVagaCodigo.NAO_GUARDA).click();
       detectar();
 
-      expect(regraNoRascunho()?.guardaDaVaga).toBe(GuardaDaVagaCodigo.naoGuarda);
+      expect(regraNoRascunho()?.guardaDaVaga).toBe(GuardaDaVagaCodigo.NAO_GUARDA);
     });
 
     it('marcar Sim com "não guarda" escolhida deixa a guarda vazia e anuncia a retirada', () => {
       comRegra({
         admiteInstanciaSuperior: false,
-        guardaDaVaga: GuardaDaVagaCodigo.naoGuarda,
+        guardaDaVaga: GuardaDaVagaCodigo.NAO_GUARDA,
         prazoSegundaInstanciaValor: '',
         prazoSegundaInstanciaUnidade: '',
       });

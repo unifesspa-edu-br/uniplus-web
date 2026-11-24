@@ -147,7 +147,7 @@ describe('VagasPassoComponent — gravação da cascata de remanejamento', () =>
     // O que a retomada faz: reprojeta o snapshot remoto por cima do que está em tela.
     store.remoteSnapshot.set({
       cascata: null,
-      status: { codigo: StatusProcessoCodigo.rascunho, rotulo: 'Rascunho' },
+      status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: 'Rascunho' },
     } as unknown as ProcessoSeletivoDto);
     detectar();
 

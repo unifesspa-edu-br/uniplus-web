@@ -1,3 +1,4 @@
+import { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 import type { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 
 import type { EtapaPontuada, FaseDoCronograma } from '../../processo-seletivo.models';
@@ -38,7 +39,10 @@ function problemasDaEtapaDeNotaDoEnem(etapa: EtapaPontuada): readonly string[] {
 }
 
 function caraterNaoCompoeANota(etapa: EtapaPontuada): boolean {
-  return etapa.carater === 'eliminatoria' || (etapa.carater !== '' && !componeNota(etapa));
+  return (
+    etapa.carater === CaraterEtapaCodigo.ELIMINATORIA ||
+    (etapa.carater !== '' && !componeNota(etapa))
+  );
 }
 
 function declaraOQueANotaDoEnemNaoTem(etapa: EtapaPontuada): boolean {

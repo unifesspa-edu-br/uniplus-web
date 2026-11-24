@@ -22,7 +22,7 @@ describe('regra gravada no select, passo lido como texto em consulta — desempa
 
   describe('Desempate', () => {
     const criterio = {
-      regraCodigo: 'DESEMPATE-MAIOR-IDADE',
+      regraCodigo: 'DESEMPATE_MAIOR_IDADE',
       regraVersao: '1.0',
       etapaRef: '',
       idadeMinima: '',
@@ -38,24 +38,24 @@ describe('regra gravada no select, passo lido como texto em consulta — desempa
       store.patchSection('desempate', [criterio]);
       detectar(fixture);
 
-      catalogos.criteriosDesempate.set([regra('DESEMPATE-IDOSO'), regra('DESEMPATE-MAIOR-IDADE')]);
+      catalogos.criteriosDesempate.set([regra('DESEMPATE_IDOSO'), regra('DESEMPATE_MAIOR_IDADE')]);
       detectar(fixture);
 
-      expect(valorDoSelect(host, 'desemp-regra-0')).toBe('DESEMPATE-MAIOR-IDADE|1.0');
+      expect(valorDoSelect(host, 'desemp-regra-0')).toBe('DESEMPATE_MAIOR_IDADE|1.0');
     });
 
     it('com o processo publicado, lê cada critério como texto, na ordem, sem ações', async () => {
       const { fixture, host, store, catalogos } = await montar(DesempatePassoComponent);
-      const idoso = { ...criterio, regraCodigo: 'DESEMPATE-IDOSO', idadeMinima: '60' };
+      const idoso = { ...criterio, regraCodigo: 'DESEMPATE_IDOSO', idadeMinima: '60' };
       store.patchSection('desempate', [criterio, idoso]);
       publicar(store);
-      catalogos.criteriosDesempate.set([regra('DESEMPATE-MAIOR-IDADE'), regra('DESEMPATE-IDOSO')]);
+      catalogos.criteriosDesempate.set([regra('DESEMPATE_MAIOR_IDADE'), regra('DESEMPATE_IDOSO')]);
       detectar(fixture);
 
       expect(semControles(host)).toEqual([]);
       expect(leitura(host)).toEqual([
-        ['Regra do critério', 'DESEMPATE-MAIOR-IDADE — Base de DESEMPATE-MAIOR-IDADE'],
-        ['Regra do critério', 'DESEMPATE-IDOSO — Base de DESEMPATE-IDOSO'],
+        ['Regra do critério', 'DESEMPATE_MAIOR_IDADE — Base de DESEMPATE_MAIOR_IDADE'],
+        ['Regra do critério', 'DESEMPATE_IDOSO — Base de DESEMPATE_IDOSO'],
         ['Idade mínima', '60'],
       ]);
       expect(Array.from(host.querySelectorAll('.desempate-num'), (num) => num.textContent)).toEqual(
@@ -75,7 +75,7 @@ describe('regra gravada no select, passo lido como texto em consulta — desempa
 
     it('com o processo publicado, acrescentar, mover e remover pelo código não mudam o rascunho', async () => {
       const { fixture, store } = await montar(DesempatePassoComponent);
-      const segundo = { ...criterio, regraCodigo: 'DESEMPATE-IDOSO' };
+      const segundo = { ...criterio, regraCodigo: 'DESEMPATE_IDOSO' };
       store.patchSection('desempate', [criterio, segundo]);
       publicar(store);
       detectar(fixture);
@@ -91,7 +91,7 @@ describe('regra gravada no select, passo lido como texto em consulta — desempa
 
   describe('Eliminação', () => {
     const regraGravada = {
-      regraCodigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA',
+      regraCodigo: 'ELIMINACAO_NOTA_MINIMA_ETAPA',
       regraVersao: '1.0',
       etapaRef: '',
       notaMinima: '400',
@@ -107,10 +107,10 @@ describe('regra gravada no select, passo lido como texto em consulta — desempa
       });
       detectar(fixture);
 
-      catalogos.regrasEliminacao.set([regra('ELIMINACAO-ZERO-EM-AREA'), regra('ELIMINACAO-NOTA-MINIMA-ETAPA')]);
+      catalogos.regrasEliminacao.set([regra('ELIMINACAO_ZERO_EM_AREA'), regra('ELIMINACAO_NOTA_MINIMA_ETAPA')]);
       detectar(fixture);
 
-      expect(valorDoSelect(host, 'elim-regra-0')).toBe('ELIMINACAO-NOTA-MINIMA-ETAPA|1.0');
+      expect(valorDoSelect(host, 'elim-regra-0')).toBe('ELIMINACAO_NOTA_MINIMA_ETAPA|1.0');
     });
 
     it('com o processo publicado, lê cada regra como texto, sem ações', async () => {
@@ -120,12 +120,12 @@ describe('regra gravada no select, passo lido como texto em consulta — desempa
         regrasEliminacao: [regraGravada],
       });
       publicar(store);
-      catalogos.regrasEliminacao.set([regra('ELIMINACAO-NOTA-MINIMA-ETAPA')]);
+      catalogos.regrasEliminacao.set([regra('ELIMINACAO_NOTA_MINIMA_ETAPA')]);
       detectar(fixture);
 
       expect(semControles(host)).toEqual([]);
       expect(leitura(host)).toEqual([
-        ['Regra de eliminação 1', 'ELIMINACAO-NOTA-MINIMA-ETAPA — Base de ELIMINACAO-NOTA-MINIMA-ETAPA'],
+        ['Regra de eliminação 1', 'ELIMINACAO_NOTA_MINIMA_ETAPA — Base de ELIMINACAO_NOTA_MINIMA_ETAPA'],
         ['Etapa', 'Não informado'],
         ['Nota mínima', '400'],
       ]);
@@ -181,7 +181,7 @@ describe('regra gravada no select, passo lido como texto em consulta — desempa
 
       componente.acrescentarRegra();
       store.patchObjectSection('classificacao', {
-        regrasEliminacao: [{ ...regraGravada, regraCodigo: 'ELIMINACAO-ZERO-EM-AREA' }],
+        regrasEliminacao: [{ ...regraGravada, regraCodigo: 'ELIMINACAO_ZERO_EM_AREA' }],
       });
       componente.removerRegra(0);
 

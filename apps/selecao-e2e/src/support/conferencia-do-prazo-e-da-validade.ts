@@ -9,9 +9,9 @@ export async function abrirDocumento(page: Page): Promise<void> {
 export async function preencherPrazo(page: Page): Promise<void> {
   await page.getByLabel('Com prazo', { exact: true }).check();
   await page.getByLabel('Prazo', { exact: true }).fill('30');
-  await page.getByLabel('Unidade do prazo').selectOption('dias');
-  await page.getByLabel('Data de referência').selectOption('fimDasInscricoes');
-  await page.getByLabel('Efeito fora do prazo').selectOption('recusarDocumento');
+  await page.getByLabel('Unidade do prazo').selectOption('DIAS');
+  await page.getByLabel('Data de referência').selectOption('FIM_DAS_INSCRICOES');
+  await page.getByLabel('Efeito fora do prazo').selectOption('RECUSAR_DOCUMENTO');
 }
 
 export async function gravarExigencias(page: Page, gravadas: ExigenciasGravadas) {

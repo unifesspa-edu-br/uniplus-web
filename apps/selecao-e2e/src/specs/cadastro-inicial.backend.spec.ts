@@ -101,7 +101,7 @@ test.describe('Cadastro inicial do processo seletivo', () => {
     const unidade = page.locator('#f-unidade');
     await expect(unidade.locator(`option[value="${unidadeId}"]`)).toHaveCount(1, { timeout: 15_000 });
     await unidade.selectOption(unidadeId);
-    await page.locator('#f-origem').selectOption('inscricaoPropria');
+    await page.locator('#f-origem').selectOption('INSCRICAO_PROPRIA');
 
     // O município que rege os prazos é declarado, não deduzido da unidade: o
     // servidor recusa a criação sem ele. A busca da Geo casa por trecho do

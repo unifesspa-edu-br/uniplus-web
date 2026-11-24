@@ -12294,7 +12294,7 @@
             "type": "string"
           },
           "operacao": {
-            "type": "string"
+            "$ref": "#/components/schemas/OperacaoAgregadoCodigo"
           }
         }
       },
@@ -13601,6 +13601,15 @@
           }
         }
       },
+      "BlocoSistemaCodigo": {
+        "enum": [
+          "COMPROVACAO_DOCUMENTAL",
+          "MODALIDADES_CALCULADAS",
+          "REVISAO_E_ACEITE"
+        ],
+        "type": "string",
+        "description": "Os blocos que o sistema monta no formul\u00E1rio a partir da configura\u00E7\u00E3o do processo seletivo.\n\n- \u0060COMPROVACAO_DOCUMENTAL\u0060: Comprova\u00E7\u00E3o documental \u2014 Os documentos que o candidato envia, conforme a exig\u00EAncia de cada situa\u00E7\u00E3o dele.\n- \u0060MODALIDADES_CALCULADAS\u0060: Modalidades calculadas \u2014 As modalidades de concorr\u00EAncia em que o candidato se enquadra, calculadas pelas respostas dele.\n- \u0060REVISAO_E_ACEITE\u0060: Revis\u00E3o e aceite \u2014 A confer\u00EAncia das respostas e o aceite dos termos, sempre a \u00FAltima etapa do formul\u00E1rio."
+      },
       "CampoDivulgacaoDto": {
         "required": [
           "codigo",
@@ -13764,12 +13773,12 @@
       },
       "CaraterEtapaCodigo": {
         "enum": [
-          "classificatoria",
-          "eliminatoria",
-          "ambas"
+          "CLASSIFICATORIA",
+          "ELIMINATORIA",
+          "AMBAS"
         ],
         "type": "string",
-        "description": "- \u0060classificatoria\u0060: Classificat\u00F3ria \u2014 A nota da etapa entra na nota final e na ordem de classifica\u00E7\u00E3o dos candidatos.\n- \u0060eliminatoria\u0060: Eliminat\u00F3ria \u2014 A etapa aprova ou reprova o candidato, sem pontuar.\n- \u0060ambas\u0060: Classificat\u00F3ria e eliminat\u00F3ria \u2014 A nota da etapa entra na nota final e, al\u00E9m disso, pode eliminar o candidato."
+        "description": "- \u0060CLASSIFICATORIA\u0060: Classificat\u00F3ria \u2014 A nota da etapa entra na nota final e na ordem de classifica\u00E7\u00E3o dos candidatos.\n- \u0060ELIMINATORIA\u0060: Eliminat\u00F3ria \u2014 A etapa aprova ou reprova o candidato, sem pontuar.\n- \u0060AMBAS\u0060: Classificat\u00F3ria e eliminat\u00F3ria \u2014 A nota da etapa entra na nota final e, al\u00E9m disso, pode eliminar o candidato."
       },
       "CardinalidadeQualificadaDto": {
         "required": [
@@ -13857,16 +13866,16 @@
       },
       "CategoriaObrigatoriedadeCodigo": {
         "enum": [
-          "etapa",
-          "modalidade",
-          "desempate",
-          "documento",
-          "fada",
-          "atendimento",
-          "outros"
+          "ETAPA",
+          "MODALIDADE",
+          "DESEMPATE",
+          "DOCUMENTO",
+          "FADA",
+          "ATENDIMENTO",
+          "OUTROS"
         ],
         "type": "string",
-        "description": "- \u0060etapa\u0060: Etapa \u2014 Regra sobre as etapas do processo seletivo.\n- \u0060modalidade\u0060: Modalidade \u2014 Regra sobre as modalidades de concorr\u00EAncia e a reserva de vagas.\n- \u0060desempate\u0060: Desempate \u2014 Regra sobre os crit\u00E9rios de desempate.\n- \u0060documento\u0060: Documento \u2014 Regra sobre os documentos exigidos dos candidatos.\n- \u0060fada\u0060: Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA) \u2014 Regra sobre o Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA).\n- \u0060atendimento\u0060: Atendimento \u2014 Regra sobre o atendimento especializado.\n- \u0060outros\u0060: Outros \u2014 Regra que n\u00E3o pertence a nenhuma das outras categorias."
+        "description": "- \u0060ETAPA\u0060: Etapa \u2014 Regra sobre as etapas do processo seletivo.\n- \u0060MODALIDADE\u0060: Modalidade \u2014 Regra sobre as modalidades de concorr\u00EAncia e a reserva de vagas.\n- \u0060DESEMPATE\u0060: Desempate \u2014 Regra sobre os crit\u00E9rios de desempate.\n- \u0060DOCUMENTO\u0060: Documento \u2014 Regra sobre os documentos exigidos dos candidatos.\n- \u0060FADA\u0060: Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA) \u2014 Regra sobre o Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA).\n- \u0060ATENDIMENTO\u0060: Atendimento \u2014 Regra sobre o atendimento especializado.\n- \u0060OUTROS\u0060: Outros \u2014 Regra que n\u00E3o pertence a nenhuma das outras categorias."
       },
       "CertameNaVitrineDto": {
         "required": [
@@ -15339,12 +15348,12 @@
       },
       "CriterioDeVotacaoCodigo": {
         "enum": [
-          "maioriaSimples",
-          "maioriaAbsoluta",
-          "unanimidade"
+          "MAIORIA_SIMPLES",
+          "MAIORIA_ABSOLUTA",
+          "UNANIMIDADE"
         ],
         "type": "string",
-        "description": "- \u0060maioriaSimples\u0060: Maioria simples\n- \u0060maioriaAbsoluta\u0060: Maioria absoluta\n- \u0060unanimidade\u0060: Unanimidade"
+        "description": "- \u0060MAIORIA_SIMPLES\u0060: Maioria simples\n- \u0060MAIORIA_ABSOLUTA\u0060: Maioria absoluta\n- \u0060UNANIMIDADE\u0060: Unanimidade"
       },
       "CronogramaDaFaseDto": {
         "required": [
@@ -15672,9 +15681,9 @@
             ],
             "items": {
               "enum": [
-                "numero_inscricao",
-                "nome_abreviado",
-                "nome"
+                "NUMERO_INSCRICAO",
+                "NOME_ABREVIADO",
+                "NOME"
               ],
               "type": "string"
             }
@@ -15948,11 +15957,11 @@
       },
       "DesempateDaVotacaoCodigo": {
         "enum": [
-          "votoDaPresidencia",
-          "novaVotacao"
+          "VOTO_DA_PRESIDENCIA",
+          "NOVA_VOTACAO"
         ],
         "type": "string",
-        "description": "- \u0060votoDaPresidencia\u0060: Voto da presid\u00EAncia\n- \u0060novaVotacao\u0060: Nova vota\u00E7\u00E3o"
+        "description": "- \u0060VOTO_DA_PRESIDENCIA\u0060: Voto da presid\u00EAncia\n- \u0060NOVA_VOTACAO\u0060: Nova vota\u00E7\u00E3o"
       },
       "DestinoRemanejamentoDto": {
         "required": [
@@ -16463,10 +16472,10 @@
         "properties": {
           "modo": {
             "title": "Modo de delibera\u00E7\u00E3o",
-            "description": "Vota\u00E7\u00E3o do colegiado (colegiadaComVotacao) ou ato individual (atoIndividual).",
+            "description": "Vota\u00E7\u00E3o do colegiado (COLEGIADA_COM_VOTACAO) ou ato individual (ATO_INDIVIDUAL).",
             "enum": [
-              "colegiadaComVotacao",
-              "atoIndividual"
+              "COLEGIADA_COM_VOTACAO",
+              "ATO_INDIVIDUAL"
             ]
           },
           "integrantes": {
@@ -16491,34 +16500,34 @@
             "title": "Crit\u00E9rio de vota\u00E7\u00E3o",
             "description": "Maioria simples, maioria absoluta ou unanimidade. S\u00F3 quando h\u00E1 vota\u00E7\u00E3o: no colegiado ou no ato individual que julga o recurso.",
             "enum": [
-              "maioriaSimples",
-              "maioriaAbsoluta",
-              "unanimidade"
+              "MAIORIA_SIMPLES",
+              "MAIORIA_ABSOLUTA",
+              "UNANIMIDADE"
             ]
           },
           "desempate": {
             "title": "Desempate",
             "description": "Como se desempata nos crit\u00E9rios de maioria: voto da presid\u00EAncia ou nova vota\u00E7\u00E3o.",
             "enum": [
-              "votoDaPresidencia",
-              "novaVotacao"
+              "VOTO_DA_PRESIDENCIA",
+              "NOVA_VOTACAO"
             ]
           },
           "encerramento": {
             "title": "Encerramento da vota\u00E7\u00E3o",
             "description": "Quando a vota\u00E7\u00E3o termina: com o voto de todos os titulares ou quando a presid\u00EAncia v\u00EA o qu\u00F3rum atingido.",
             "enum": [
-              "todosOsTitulares",
-              "presidenciaNoQuorum"
+              "TODOS_OS_TITULARES",
+              "PRESIDENCIA_NO_QUORUM"
             ]
           },
           "semUnanimidade": {
             "title": "Resultado sem unanimidade",
             "description": "O que vale quando a unanimidade \u00E9 o crit\u00E9rio e ela n\u00E3o ocorre: favor\u00E1vel, desfavor\u00E1vel ou nova vota\u00E7\u00E3o.",
             "enum": [
-              "favoravel",
-              "desfavoravel",
-              "novaVotacao"
+              "FAVORAVEL",
+              "DESFAVORAVEL",
+              "NOVA_VOTACAO"
             ]
           }
         }
@@ -16971,10 +16980,10 @@
                 "title": "C\u00F3digo da regra do procedimento",
                 "description": "C\u00F3digo de um procedimento de recurso do cat\u00E1logo: nova corre\u00E7\u00E3o, confer\u00EAncia, corre\u00E7\u00E3o de erro de registro ou rec\u00E1lculo.",
                 "enum": [
-                  "PROCEDIMENTO-RECURSO-RECORRECAO",
-                  "PROCEDIMENTO-RECURSO-CONFERENCIA",
-                  "PROCEDIMENTO-RECURSO-CORRECAO-MATERIAL",
-                  "PROCEDIMENTO-RECURSO-RECALCULO"
+                  "PROCEDIMENTO_RECURSO_RECORRECAO",
+                  "PROCEDIMENTO_RECURSO_CONFERENCIA",
+                  "PROCEDIMENTO_RECURSO_CORRECAO_MATERIAL",
+                  "PROCEDIMENTO_RECURSO_RECALCULO"
                 ]
               }
             }
@@ -17012,11 +17021,11 @@
           },
           "prazoUnidade": {
             "title": "Unidade do prazo",
-            "description": "Unidade do prazo de interposi\u00E7\u00E3o: horas, dias \u00FAteis (diasUteis) ou dias corridos (dias). S\u00F3 horas e dias \u00FAteis s\u00E3o aceitos pelo dom\u00EDnio; dias corridos chegam a ele para receber a recusa pr\u00F3pria.",
+            "description": "Unidade do prazo de interposi\u00E7\u00E3o: horas, dias \u00FAteis (DIAS_UTEIS) ou dias corridos (DIAS). S\u00F3 horas e dias \u00FAteis s\u00E3o aceitos pelo dom\u00EDnio; dias corridos chegam a ele para receber a recusa pr\u00F3pria.",
             "enum": [
-              "horas",
-              "dias",
-              "diasUteis"
+              "HORAS",
+              "DIAS",
+              "DIAS_UTEIS"
             ]
           },
           "publicacaoDeReferenciaAtoCodigo": {
@@ -17040,26 +17049,26 @@
           },
           "prazoSegundaInstanciaUnidade": {
             "title": "Unidade do prazo da 2\u00AA inst\u00E2ncia",
-            "description": "Unidade do prazo da 2\u00AA inst\u00E2ncia: horas, dias \u00FAteis (diasUteis) ou dias corridos (dias). Como no prazo de interposi\u00E7\u00E3o, s\u00F3 horas e dias \u00FAteis s\u00E3o aceitos pelo dom\u00EDnio.",
+            "description": "Unidade do prazo da 2\u00AA inst\u00E2ncia: horas, dias \u00FAteis (DIAS_UTEIS) ou dias corridos (DIAS). Como no prazo de interposi\u00E7\u00E3o, s\u00F3 horas e dias \u00FAteis s\u00E3o aceitos pelo dom\u00EDnio.",
             "enum": [
-              "horas",
-              "dias",
-              "diasUteis"
+              "HORAS",
+              "DIAS",
+              "DIAS_UTEIS"
             ]
           },
           "efeitoSuspensivo": {
             "title": "Efeito suspensivo na 1\u00AA inst\u00E2ncia",
-            "description": "Efeito suspensivo do recurso na 1\u00AA inst\u00E2ncia, escolhido pelo edital. A \u00FAnica op\u00E7\u00E3o aceita \u00E9 sem efeito suspensivo (semEfeitoSuspensivo). A 2\u00AA inst\u00E2ncia sempre tem efeito suspensivo, sem escolha.",
+            "description": "Efeito suspensivo do recurso na 1\u00AA inst\u00E2ncia, escolhido pelo edital. A \u00FAnica op\u00E7\u00E3o aceita \u00E9 sem efeito suspensivo (SEM_EFEITO_SUSPENSIVO). A 2\u00AA inst\u00E2ncia sempre tem efeito suspensivo, sem escolha.",
             "enum": [
-              "semEfeitoSuspensivo"
+              "SEM_EFEITO_SUSPENSIVO"
             ]
           },
           "guardaDaVaga": {
             "title": "Guarda da vaga",
-            "description": "Se a vaga em disputa fica guardada enquanto o recurso corre: at\u00E9 o resultado definitivo (ateOResultadoDefinitivo) ou n\u00E3o guarda (naoGuarda). Quando ausente, vale guardar at\u00E9 o resultado definitivo. Com inst\u00E2ncia superior, a vaga fica guardada at\u00E9 o resultado definitivo.",
+            "description": "Se a vaga em disputa fica guardada enquanto o recurso corre: at\u00E9 o resultado definitivo (ATE_O_RESULTADO_DEFINITIVO) ou n\u00E3o guarda (NAO_GUARDA). Quando ausente, vale guardar at\u00E9 o resultado definitivo. Com inst\u00E2ncia superior, a vaga fica guardada at\u00E9 o resultado definitivo.",
             "enum": [
-              "ateOResultadoDefinitivo",
-              "naoGuarda"
+              "ATE_O_RESULTADO_DEFINITIVO",
+              "NAO_GUARDA"
             ]
           },
           "procedimentosDeRecurso": {
@@ -17512,7 +17521,7 @@
                 "regra": {
                   "properties": {
                     "codigo": {
-                      "const": "DESEMPATE-MAIOR-NOTA-ETAPA"
+                      "const": "DESEMPATE_MAIOR_NOTA_ETAPA"
                     }
                   },
                   "required": [
@@ -17538,7 +17547,7 @@
                 "regra": {
                   "properties": {
                     "codigo": {
-                      "const": "DESEMPATE-MAIOR-IDADE"
+                      "const": "DESEMPATE_MAIOR_IDADE"
                     }
                   },
                   "required": [
@@ -17564,7 +17573,7 @@
                 "regra": {
                   "properties": {
                     "codigo": {
-                      "const": "DESEMPATE-IDOSO"
+                      "const": "DESEMPATE_IDOSO"
                     }
                   },
                   "required": [
@@ -17590,7 +17599,7 @@
                 "regra": {
                   "properties": {
                     "codigo": {
-                      "const": "DESEMPATE-CONDICAO-SOBRE-DADO"
+                      "const": "DESEMPATE_CONDICAO_SOBRE_DADO"
                     }
                   },
                   "required": [
@@ -17616,7 +17625,7 @@
                 "regra": {
                   "properties": {
                     "codigo": {
-                      "const": "DESEMPATE-MAIOR-NOTA-AREA-ENEM"
+                      "const": "DESEMPATE_MAIOR_NOTA_AREA_ENEM"
                     }
                   },
                   "required": [
@@ -17962,14 +17971,14 @@
         "properties": {
           "camposPublicos": {
             "title": "Campos p\u00FAblicos",
-            "description": "Dados do candidato divulgados nas listas p\u00FAblicas: numero_inscricao, nome_abreviado ou nome. N\u00E3o se repetem.",
+            "description": "Dados do candidato divulgados nas listas p\u00FAblicas: NUMERO_INSCRICAO, NOME_ABREVIADO ou NOME. N\u00E3o se repetem.",
             "type": "array",
             "uniqueItems": true,
             "items": {
               "enum": [
-                "numero_inscricao",
-                "nome_abreviado",
-                "nome"
+                "NUMERO_INSCRICAO",
+                "NOME_ABREVIADO",
+                "NOME"
               ]
             }
           },
@@ -17981,7 +17990,7 @@
           },
           "regraNomeAbreviado": {
             "title": "Regra do nome abreviado",
-            "description": "Identificador da regra vigente que abrevia o nome do candidato, presente quando nome_abreviado \u00E9 divulgado. Definido pelo servidor na publica\u00E7\u00E3o. Campo s\u00F3 de leitura: a exporta\u00E7\u00E3o o traz para quem l\u00EA o arquivo, e ele \u00E9 ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 camposPublicos.",
+            "description": "Identificador da regra vigente que abrevia o nome do candidato, presente quando NOME_ABREVIADO \u00E9 divulgado. Definido pelo servidor na publica\u00E7\u00E3o. Campo s\u00F3 de leitura: a exporta\u00E7\u00E3o o traz para quem l\u00EA o arquivo, e ele \u00E9 ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 camposPublicos.",
             "type": "string",
             "maxLength": 100,
             "readOnly": true
@@ -18016,7 +18025,7 @@
                 "regra": {
                   "properties": {
                     "codigo": {
-                      "const": "ELIMINACAO-NOTA-MINIMA-ETAPA"
+                      "const": "ELIMINACAO_NOTA_MINIMA_ETAPA"
                     }
                   },
                   "required": [
@@ -18042,7 +18051,7 @@
                 "regra": {
                   "properties": {
                     "codigo": {
-                      "const": "ELIMINACAO-CORTE-EM-AREA"
+                      "const": "ELIMINACAO_CORTE_EM_AREA"
                     }
                   },
                   "required": [
@@ -18068,7 +18077,7 @@
                 "regra": {
                   "properties": {
                     "codigo": {
-                      "const": "ELIMINACAO-ZERO-EM-AREA"
+                      "const": "ELIMINACAO_ZERO_EM_AREA"
                     }
                   },
                   "required": [
@@ -18094,7 +18103,7 @@
                 "regra": {
                   "properties": {
                     "codigo": {
-                      "const": "ELIMINACAO-FALTA-EM-DIA-DE-PROVA-ENEM"
+                      "const": "ELIMINACAO_FALTA_EM_DIA_DE_PROVA_ENEM"
                     }
                   },
                   "required": [
@@ -18120,7 +18129,7 @@
                 "regra": {
                   "properties": {
                     "codigo": {
-                      "const": "ELIMINACAO-AUSENCIA-NA-ETAPA"
+                      "const": "ELIMINACAO_AUSENCIA_NA_ETAPA"
                     }
                   },
                   "required": [
@@ -18232,11 +18241,11 @@
           },
           "carater": {
             "title": "Car\u00E1ter da etapa",
-            "description": "Se a etapa classifica (classificatoria), elimina (eliminatoria) ou faz as duas coisas (ambas).",
+            "description": "Se a etapa classifica (CLASSIFICATORIA), elimina (ELIMINATORIA) ou faz as duas coisas (AMBAS).",
             "enum": [
-              "classificatoria",
-              "eliminatoria",
-              "ambas"
+              "CLASSIFICATORIA",
+              "ELIMINATORIA",
+              "AMBAS"
             ]
           },
           "tipoEtapaCodigo": {
@@ -18416,7 +18425,7 @@
       },
       "DocumentoDaConfiguracaoEtapasRecursoDaEtapa": {
         "title": "Recurso da etapa",
-        "description": "Recurso que a etapa admite: o evento que inicia o prazo e as mesmas propriedades de prazos, efeito suspensivo e guarda da vaga do recurso da fase. Quando o evento que inicia o prazo \u00E9 publicacaoDoAto, o ato de refer\u00EAncia \u00E9 um ato preliminar da pr\u00F3pria etapa.",
+        "description": "Recurso que a etapa admite: o evento que inicia o prazo e as mesmas propriedades de prazos, efeito suspensivo e guarda da vaga do recurso da fase. Quando o evento que inicia o prazo \u00E9 PUBLICACAO_DO_ATO, o ato de refer\u00EAncia \u00E9 um ato preliminar da pr\u00F3pria etapa.",
         "type": "object",
         "allOf": [
           {
@@ -18426,10 +18435,10 @@
         "properties": {
           "eventoInicialDoPrazo": {
             "title": "Evento que inicia o prazo",
-            "description": "De onde o prazo corre: da publica\u00E7\u00E3o do ato (publicacaoDoAto) ou da ci\u00EAncia individual do candidato (cienciaIndividual).",
+            "description": "De onde o prazo corre: da publica\u00E7\u00E3o do ato (PUBLICACAO_DO_ATO) ou da ci\u00EAncia individual do candidato (CIENCIA_INDIVIDUAL).",
             "enum": [
-              "publicacaoDoAto",
-              "cienciaIndividual"
+              "PUBLICACAO_DO_ATO",
+              "CIENCIA_INDIVIDUAL"
             ]
           }
         },
@@ -19134,10 +19143,10 @@
           },
           "origemCandidatos": {
             "title": "Origem dos candidatos",
-            "description": "Como os candidatos chegam ao processo: inscrevendo-se pelo sistema (inscricaoPropria) ou por importa\u00E7\u00E3o de uma lista externa (importacaoExterna).",
+            "description": "Como os candidatos chegam ao processo: inscrevendo-se pelo sistema (INSCRICAO_PROPRIA) ou por importa\u00E7\u00E3o de uma lista externa (IMPORTACAO_EXTERNA).",
             "enum": [
-              "inscricaoPropria",
-              "importacaoExterna"
+              "INSCRICAO_PROPRIA",
+              "IMPORTACAO_EXTERNA"
             ]
           },
           "localidadeCodigoIbge": {
@@ -20287,10 +20296,10 @@
       },
       "EfeitoSuspensivoCodigo": {
         "enum": [
-          "semEfeitoSuspensivo"
+          "SEM_EFEITO_SUSPENSIVO"
         ],
         "type": "string",
-        "description": "- \u0060semEfeitoSuspensivo\u0060: Sem efeito suspensivo \u2014 O recurso n\u00E3o suspende o processo: as fases seguintes come\u00E7am nas datas do cronograma, mesmo com recurso em an\u00E1lise."
+        "description": "- \u0060SEM_EFEITO_SUSPENSIVO\u0060: Sem efeito suspensivo \u2014 O recurso n\u00E3o suspende o processo: as fases seguintes come\u00E7am nas datas do cronograma, mesmo com recurso em an\u00E1lise."
       },
       "EfeitoSuspensivoComDescricao": {
         "required": [
@@ -20328,11 +20337,11 @@
       },
       "EncerramentoDaVotacaoCodigo": {
         "enum": [
-          "todosOsTitulares",
-          "presidenciaNoQuorum"
+          "TODOS_OS_TITULARES",
+          "PRESIDENCIA_NO_QUORUM"
         ],
         "type": "string",
-        "description": "- \u0060todosOsTitulares\u0060: Todos os titulares votam\n- \u0060presidenciaNoQuorum\u0060: A presid\u00EAncia encerra ao atingir o qu\u00F3rum"
+        "description": "- \u0060TODOS_OS_TITULARES\u0060: Todos os titulares votam\n- \u0060PRESIDENCIA_NO_QUORUM\u0060: A presid\u00EAncia encerra ao atingir o qu\u00F3rum"
       },
       "EnvioDoComprovanteDto": {
         "required": [
@@ -20545,12 +20554,16 @@
             "format": "int32"
           },
           "tipo": {
-            "type": "string"
+            "$ref": "#/components/schemas/TipoEtapaFormularioCodigo"
           },
           "bloco": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BlocoSistemaCodigo"
+              }
             ]
           },
           "apresentacao": {
@@ -20588,12 +20601,16 @@
             "format": "int32"
           },
           "tipo": {
-            "type": "string"
+            "$ref": "#/components/schemas/TipoEtapaFormularioCodigo"
           },
           "bloco": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BlocoSistemaCodigo"
+              }
             ]
           },
           "apresentacao": {
@@ -20880,11 +20897,11 @@
       },
       "EventoInicialDoPrazoCodigo": {
         "enum": [
-          "publicacaoDoAto",
-          "cienciaIndividual"
+          "PUBLICACAO_DO_ATO",
+          "CIENCIA_INDIVIDUAL"
         ],
         "type": "string",
-        "description": "- \u0060publicacaoDoAto\u0060: Publica\u00E7\u00E3o do ato \u2014 O prazo conta da publica\u00E7\u00E3o do ato e vale igual para todos os candidatos (UNI-REQ-0115).\n- \u0060cienciaIndividual\u0060: Ci\u00EAncia individual do candidato \u2014 O prazo conta da data em que cada candidato toma ci\u00EAncia da decis\u00E3o que o alcan\u00E7a."
+        "description": "- \u0060PUBLICACAO_DO_ATO\u0060: Publica\u00E7\u00E3o do ato \u2014 O prazo conta da publica\u00E7\u00E3o do ato e vale igual para todos os candidatos (UNI-REQ-0115).\n- \u0060CIENCIA_INDIVIDUAL\u0060: Ci\u00EAncia individual do candidato \u2014 O prazo conta da data em que cada candidato toma ci\u00EAncia da decis\u00E3o que o alcan\u00E7a."
       },
       "ExibicaoEObrigatoriedadeDto": {
         "required": [
@@ -21356,12 +21373,12 @@
       },
       "FinalidadeDoDocumentoCodigo": {
         "enum": [
-          "documentoDoEdital",
-          "anexoDoEdital",
-          "documentoDeAto"
+          "DOCUMENTO_DO_EDITAL",
+          "ANEXO_DO_EDITAL",
+          "DOCUMENTO_DE_ATO"
         ],
         "type": "string",
-        "description": "- \u0060documentoDoEdital\u0060: Documento do edital \u2014 Documento principal do edital.\n- \u0060anexoDoEdital\u0060: Anexo do edital \u2014 Documento que acompanha o edital.\n- \u0060documentoDeAto\u0060: Documento de ato \u2014 Documento de um ato do processo."
+        "description": "- \u0060DOCUMENTO_DO_EDITAL\u0060: Documento do edital \u2014 Documento principal do edital.\n- \u0060ANEXO_DO_EDITAL\u0060: Anexo do edital \u2014 Documento que acompanha o edital.\n- \u0060DOCUMENTO_DE_ATO\u0060: Documento de ato \u2014 Documento de um ato do processo."
       },
       "FinalidadeFormulario": {
         "required": [
@@ -22280,11 +22297,11 @@
       },
       "GuardaDaVagaCodigo": {
         "enum": [
-          "ateOResultadoDefinitivo",
-          "naoGuarda"
+          "ATE_O_RESULTADO_DEFINITIVO",
+          "NAO_GUARDA"
         ],
         "type": "string",
-        "description": "- \u0060ateOResultadoDefinitivo\u0060: Guarda a vaga at\u00E9 o resultado definitivo \u2014 Se quem recorre seria chamado para a vaga, ela fica guardada at\u00E9 a publica\u00E7\u00E3o do resultado definitivo.\n- \u0060naoGuarda\u0060: N\u00E3o guarda a vaga \u2014 A vaga n\u00E3o fica guardada durante o recurso. Se o recurso for deferido com a vaga j\u00E1 ocupada, a unidade resolve a situa\u00E7\u00E3o."
+        "description": "- \u0060ATE_O_RESULTADO_DEFINITIVO\u0060: Guarda a vaga at\u00E9 o resultado definitivo \u2014 Se quem recorre seria chamado para a vaga, ela fica guardada at\u00E9 a publica\u00E7\u00E3o do resultado definitivo.\n- \u0060NAO_GUARDA\u0060: N\u00E3o guarda a vaga \u2014 A vaga n\u00E3o fica guardada durante o recurso. Se o recurso for deferido com a vaga j\u00E1 ocupada, a unidade resolve a situa\u00E7\u00E3o."
       },
       "GuardaDaVagaComDescricao": {
         "required": [
@@ -22452,12 +22469,12 @@
       },
       "ImpedimentoDoProdutoCodigo": {
         "enum": [
-          "jaPublicado",
-          "preliminarNaoPublicado",
-          "tipoDeAtoNaoVigente"
+          "JA_PUBLICADO",
+          "PRELIMINAR_NAO_PUBLICADO",
+          "TIPO_DE_ATO_NAO_VIGENTE"
         ],
         "type": "string",
-        "description": "- \u0060jaPublicado\u0060: J\u00E1 publicada \u2014 A publica\u00E7\u00E3o prevista j\u00E1 foi realizada.\n- \u0060preliminarNaoPublicado\u0060: Preliminar n\u00E3o publicado \u2014 O resultado preliminar ainda n\u00E3o foi publicado.\n- \u0060tipoDeAtoNaoVigente\u0060: Tipo de ato n\u00E3o vigente \u2014 O tipo de ato n\u00E3o tem vers\u00E3o vigente."
+        "description": "- \u0060JA_PUBLICADO\u0060: J\u00E1 publicada \u2014 A publica\u00E7\u00E3o prevista j\u00E1 foi realizada.\n- \u0060PRELIMINAR_NAO_PUBLICADO\u0060: Preliminar n\u00E3o publicado \u2014 O resultado preliminar ainda n\u00E3o foi publicado.\n- \u0060TIPO_DE_ATO_NAO_VIGENTE\u0060: Tipo de ato n\u00E3o vigente \u2014 O tipo de ato n\u00E3o tem vers\u00E3o vigente."
       },
       "ImpedimentoDoProdutoDto": {
         "type": "object",
@@ -24131,11 +24148,11 @@
       },
       "ModoDeDeliberacaoCodigo": {
         "enum": [
-          "colegiadaComVotacao",
-          "atoIndividual"
+          "COLEGIADA_COM_VOTACAO",
+          "ATO_INDIVIDUAL"
         ],
         "type": "string",
-        "description": "- \u0060colegiadaComVotacao\u0060: Colegiada, com vota\u00E7\u00E3o\n- \u0060atoIndividual\u0060: Ato individual"
+        "description": "- \u0060COLEGIADA_COM_VOTACAO\u0060: Colegiada, com vota\u00E7\u00E3o\n- \u0060ATO_INDIVIDUAL\u0060: Ato individual"
       },
       "MomentoDaExigenciaDto": {
         "required": [
@@ -24409,7 +24426,7 @@
         "type": "object",
         "properties": {
           "tipo": {
-            "type": "string"
+            "$ref": "#/components/schemas/TipoObrigatoriedadeCodigo"
           },
           "predicado": {
             "type": [
@@ -24432,9 +24449,13 @@
         "type": "object",
         "properties": {
           "tipo": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TipoObrigatoriedadeCodigo"
+              }
             ]
           },
           "predicado": {
@@ -25002,6 +25023,14 @@
           }
         }
       },
+      "OperacaoAgregadoCodigo": {
+        "enum": [
+          "EXISTE",
+          "VALORES_PRESENTES"
+        ],
+        "type": "string",
+        "description": "O que o fato agregado calcula a partir das ocorr\u00EAncias de um grupo repet\u00EDvel.\n\n- \u0060EXISTE\u0060: Existe alguma ocorr\u00EAncia \u2014 Verdadeiro quando ao menos uma ocorr\u00EAncia do grupo respondeu sim.\n- \u0060VALORES_PRESENTES\u0060: Valores presentes nas ocorr\u00EAncias \u2014 Os valores diferentes que as ocorr\u00EAncias do grupo responderam."
+      },
       "OperadorCodigo": {
         "enum": [
           "IGUAL",
@@ -25031,11 +25060,11 @@
       },
       "OrigemCandidatosCodigo": {
         "enum": [
-          "inscricaoPropria",
-          "importacaoExterna"
+          "INSCRICAO_PROPRIA",
+          "IMPORTACAO_EXTERNA"
         ],
         "type": "string",
-        "description": "- \u0060inscricaoPropria\u0060: Inscri\u00E7\u00E3o pr\u00F3pria \u2014 O processo coleta a pr\u00F3pria inscri\u00E7\u00E3o: exige ao menos uma fase de coleta de inscri\u00E7\u00E3o.\n- \u0060importacaoExterna\u0060: Importa\u00E7\u00E3o externa \u2014 Os candidatos v\u00EAm de importa\u00E7\u00E3o externa, como a do SiSU: nenhuma fase de coleta \u00E9 exigida."
+        "description": "- \u0060INSCRICAO_PROPRIA\u0060: Inscri\u00E7\u00E3o pr\u00F3pria \u2014 O processo coleta a pr\u00F3pria inscri\u00E7\u00E3o: exige ao menos uma fase de coleta de inscri\u00E7\u00E3o.\n- \u0060IMPORTACAO_EXTERNA\u0060: Importa\u00E7\u00E3o externa \u2014 Os candidatos v\u00EAm de importa\u00E7\u00E3o externa, como a do SiSU: nenhuma fase de coleta \u00E9 exigida."
       },
       "OrigemDataFase": {
         "required": [
@@ -28229,12 +28258,12 @@
       },
       "ResultadoSemUnanimidadeCodigo": {
         "enum": [
-          "favoravel",
-          "desfavoravel",
-          "novaVotacao"
+          "FAVORAVEL",
+          "DESFAVORAVEL",
+          "NOVA_VOTACAO"
         ],
         "type": "string",
-        "description": "- \u0060favoravel\u0060: Favor\u00E1vel\n- \u0060desfavoravel\u0060: Desfavor\u00E1vel\n- \u0060novaVotacao\u0060: Nova vota\u00E7\u00E3o"
+        "description": "- \u0060FAVORAVEL\u0060: Favor\u00E1vel\n- \u0060DESFAVORAVEL\u0060: Desfavor\u00E1vel\n- \u0060NOVA_VOTACAO\u0060: Nova vota\u00E7\u00E3o"
       },
       "RetificacaoCertameDto": {
         "required": [
@@ -28389,12 +28418,16 @@
             "format": "int32"
           },
           "tipo": {
-            "type": "string"
+            "$ref": "#/components/schemas/TipoEtapaFormularioCodigo"
           },
           "bloco": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BlocoSistemaCodigo"
+              }
             ]
           },
           "apresentacao": {
@@ -28481,14 +28514,14 @@
       },
       "SituacaoDoArquivoDoCandidatoCodigo": {
         "enum": [
-          "pendente",
-          "emVerificacao",
-          "verificado",
-          "recusado",
-          "reenvioNecessario"
+          "PENDENTE",
+          "EM_VERIFICACAO",
+          "VERIFICADO",
+          "RECUSADO",
+          "REENVIO_NECESSARIO"
         ],
         "type": "string",
-        "description": "- \u0060pendente\u0060: Pendente \u2014 O envio do arquivo est\u00E1 pendente.\n- \u0060emVerificacao\u0060: Em verifica\u00E7\u00E3o \u2014 O arquivo est\u00E1 em verifica\u00E7\u00E3o.\n- \u0060verificado\u0060: Verificado \u2014 O arquivo foi verificado.\n- \u0060recusado\u0060: Recusado \u2014 O arquivo foi recusado.\n- \u0060reenvioNecessario\u0060: Reenvio necess\u00E1rio \u2014 O arquivo precisa ser enviado novamente."
+        "description": "- \u0060PENDENTE\u0060: Pendente \u2014 O envio do arquivo est\u00E1 pendente.\n- \u0060EM_VERIFICACAO\u0060: Em verifica\u00E7\u00E3o \u2014 O arquivo est\u00E1 em verifica\u00E7\u00E3o.\n- \u0060VERIFICADO\u0060: Verificado \u2014 O arquivo foi verificado.\n- \u0060RECUSADO\u0060: Recusado \u2014 O arquivo foi recusado.\n- \u0060REENVIO_NECESSARIO\u0060: Reenvio necess\u00E1rio \u2014 O arquivo precisa ser enviado novamente."
       },
       "SituacaoDoCertame": {
         "required": [
@@ -28507,13 +28540,13 @@
       },
       "SituacaoDoCertameCodigo": {
         "enum": [
-          "emBreve",
-          "inscricoesAbertas",
-          "ultimosDias",
-          "encerradas"
+          "EM_BREVE",
+          "INSCRICOES_ABERTAS",
+          "ULTIMOS_DIAS",
+          "ENCERRADAS"
         ],
         "type": "string",
-        "description": "- \u0060emBreve\u0060: Em breve \u2014 As inscri\u00E7\u00F5es ainda n\u00E3o come\u00E7aram.\n- \u0060inscricoesAbertas\u0060: Inscri\u00E7\u00F5es abertas \u2014 As inscri\u00E7\u00F5es est\u00E3o abertas.\n- \u0060ultimosDias\u0060: \u00DAltimos dias \u2014 As inscri\u00E7\u00F5es est\u00E3o nos \u00FAltimos dias.\n- \u0060encerradas\u0060: Encerradas \u2014 As inscri\u00E7\u00F5es est\u00E3o encerradas."
+        "description": "- \u0060EM_BREVE\u0060: Em breve \u2014 As inscri\u00E7\u00F5es ainda n\u00E3o come\u00E7aram.\n- \u0060INSCRICOES_ABERTAS\u0060: Inscri\u00E7\u00F5es abertas \u2014 As inscri\u00E7\u00F5es est\u00E3o abertas.\n- \u0060ULTIMOS_DIAS\u0060: \u00DAltimos dias \u2014 As inscri\u00E7\u00F5es est\u00E3o nos \u00FAltimos dias.\n- \u0060ENCERRADAS\u0060: Encerradas \u2014 As inscri\u00E7\u00F5es est\u00E3o encerradas."
       },
       "SituacaoDoDocumento": {
         "required": [
@@ -28532,14 +28565,14 @@
       },
       "SituacaoDoDocumentoCodigo": {
         "enum": [
-          "naoExigido",
+          "NAO_EXIGIDO",
           "PENDENTE",
           "PODE_SER_EXIGIDO",
           "DEPENDE_DE_FASE_POSTERIOR",
           "SATISFEITA"
         ],
         "type": "string",
-        "description": "- \u0060naoExigido\u0060: N\u00E3o exigido \u2014 A exig\u00EAncia n\u00E3o se aplica.\n- \u0060PENDENTE\u0060: Pendente \u2014 A exig\u00EAncia ainda n\u00E3o foi atendida.\n- \u0060PODE_SER_EXIGIDO\u0060: Pode ser exigido \u2014 Uma resposta pendente decide a exig\u00EAncia.\n- \u0060DEPENDE_DE_FASE_POSTERIOR\u0060: Depende de fase posterior \u2014 A exig\u00EAncia depende de uma fase posterior.\n- \u0060SATISFEITA\u0060: Satisfeita \u2014 A exig\u00EAncia foi atendida."
+        "description": "- \u0060NAO_EXIGIDO\u0060: N\u00E3o exigido \u2014 A exig\u00EAncia n\u00E3o se aplica.\n- \u0060PENDENTE\u0060: Pendente \u2014 A exig\u00EAncia ainda n\u00E3o foi atendida.\n- \u0060PODE_SER_EXIGIDO\u0060: Pode ser exigido \u2014 Uma resposta pendente decide a exig\u00EAncia.\n- \u0060DEPENDE_DE_FASE_POSTERIOR\u0060: Depende de fase posterior \u2014 A exig\u00EAncia depende de uma fase posterior.\n- \u0060SATISFEITA\u0060: Satisfeita \u2014 A exig\u00EAncia foi atendida."
       },
       "SituacaoDoProdutoPrevisto": {
         "required": [
@@ -28558,11 +28591,11 @@
       },
       "SituacaoDoProdutoPrevistoCodigo": {
         "enum": [
-          "aberto",
-          "publicado"
+          "ABERTO",
+          "PUBLICADO"
         ],
         "type": "string",
-        "description": "- \u0060aberto\u0060: Aberta \u2014 A publica\u00E7\u00E3o prevista ainda n\u00E3o foi realizada.\n- \u0060publicado\u0060: Publicada \u2014 A publica\u00E7\u00E3o prevista foi realizada."
+        "description": "- \u0060ABERTO\u0060: Aberta \u2014 A publica\u00E7\u00E3o prevista ainda n\u00E3o foi realizada.\n- \u0060PUBLICADO\u0060: Publicada \u2014 A publica\u00E7\u00E3o prevista foi realizada."
       },
       "SituacaoInscricao": {
         "required": [
@@ -28581,12 +28614,12 @@
       },
       "SituacaoInscricaoCodigo": {
         "enum": [
-          "rascunho",
-          "submetida",
-          "cancelada"
+          "RASCUNHO",
+          "SUBMETIDA",
+          "CANCELADA"
         ],
         "type": "string",
-        "description": "- \u0060rascunho\u0060: Rascunho \u2014 A inscri\u00E7\u00E3o est\u00E1 em preenchimento.\n- \u0060submetida\u0060: Submetida \u2014 A inscri\u00E7\u00E3o foi enviada.\n- \u0060cancelada\u0060: Cancelada \u2014 A inscri\u00E7\u00E3o enviada foi cancelada."
+        "description": "- \u0060RASCUNHO\u0060: Rascunho \u2014 A inscri\u00E7\u00E3o est\u00E1 em preenchimento.\n- \u0060SUBMETIDA\u0060: Submetida \u2014 A inscri\u00E7\u00E3o foi enviada.\n- \u0060CANCELADA\u0060: Cancelada \u2014 A inscri\u00E7\u00E3o enviada foi cancelada."
       },
       "SnapshotVigenteDto": {
         "required": [
@@ -28642,11 +28675,11 @@
       },
       "StatusArquivoEnviadoCodigo": {
         "enum": [
-          "Pendente",
-          "Confirmado"
+          "PENDENTE",
+          "CONFIRMADO"
         ],
         "type": "string",
-        "description": "- \u0060Pendente\u0060: Pendente \u2014 O envio ainda n\u00E3o foi confirmado.\n- \u0060Confirmado\u0060: Confirmado \u2014 O conte\u00FAdo do envio foi confirmado."
+        "description": "- \u0060PENDENTE\u0060: Pendente \u2014 O envio ainda n\u00E3o foi confirmado.\n- \u0060CONFIRMADO\u0060: Confirmado \u2014 O conte\u00FAdo do envio foi confirmado."
       },
       "StatusBaseLegal": {
         "required": [
@@ -28688,13 +28721,13 @@
       },
       "StatusProcessoCodigo": {
         "enum": [
-          "rascunho",
-          "publicado",
-          "encerrado",
-          "cancelado"
+          "RASCUNHO",
+          "PUBLICADO",
+          "ENCERRADO",
+          "CANCELADO"
         ],
         "type": "string",
-        "description": "- \u0060rascunho\u0060: Rascunho \u2014 O processo est\u00E1 em prepara\u00E7\u00E3o.\n- \u0060publicado\u0060: Publicado \u2014 O processo foi publicado.\n- \u0060encerrado\u0060: Encerrado \u2014 O processo foi encerrado.\n- \u0060cancelado\u0060: Cancelado \u2014 O processo foi cancelado."
+        "description": "- \u0060RASCUNHO\u0060: Rascunho \u2014 O processo est\u00E1 em prepara\u00E7\u00E3o.\n- \u0060PUBLICADO\u0060: Publicado \u2014 O processo foi publicado.\n- \u0060ENCERRADO\u0060: Encerrado \u2014 O processo foi encerrado.\n- \u0060CANCELADO\u0060: Cancelado \u2014 O processo foi cancelado."
       },
       "TaxaInscricaoCertameDto": {
         "required": [
@@ -29058,6 +29091,14 @@
           }
         }
       },
+      "TipoEtapaFormularioCodigo": {
+        "enum": [
+          "SECAO",
+          "BLOCO"
+        ],
+        "type": "string",
+        "description": "O que a etapa do formul\u00E1rio \u00E9: uma se\u00E7\u00E3o com itens de resposta ou um bloco que o sistema monta.\n\n- \u0060SECAO\u0060: Se\u00E7\u00E3o \u2014 Etapa com os itens que o candidato responde.\n- \u0060BLOCO\u0060: Bloco do sistema \u2014 Etapa que o sistema monta a partir da configura\u00E7\u00E3o do processo; o bloco diz qual."
+      },
       "TipoEtapaSnapshotDto": {
         "required": [
           "origemId",
@@ -29115,6 +29156,15 @@
         "type": "string",
         "description": "A decis\u00E3o individual a que um motivo serve. O tipo separa as listas do cadastro de motivos, e o c\u00F3digo do motivo s\u00F3 \u00E9 \u00FAnico dentro dele. O recurso n\u00E3o \u00E9 tipo pr\u00F3prio: o motivo do recurso \u00E9 o da decis\u00E3o recorrida.\n\n- \u0060ISENCAO_DA_TAXA\u0060: Isen\u00E7\u00E3o da taxa\n- \u0060HOMOLOGACAO_DAS_INSCRICOES\u0060: Homologa\u00E7\u00E3o das inscri\u00E7\u00F5es\n- \u0060ANALISE_DOCUMENTAL\u0060: An\u00E1lise documental\n- \u0060HETEROIDENTIFICACAO\u0060: Heteroidentifica\u00E7\u00E3o\n- \u0060AVALIACAO_BIOPSICOSSOCIAL\u0060: Avalia\u00E7\u00E3o biopsicossocial\n- \u0060CLASSIFICACAO\u0060: Classifica\u00E7\u00E3o\n- \u0060GABARITO_DA_PROVA\u0060: Gabarito da prova\n- \u0060NOTA_DA_ETAPA\u0060: Nota da etapa"
       },
+      "TipoObrigatoriedadeCodigo": {
+        "enum": [
+          "SEMPRE",
+          "NUNCA",
+          "QUANDO"
+        ],
+        "type": "string",
+        "description": "Quando o item ou o termo do formul\u00E1rio \u00E9 de resposta obrigat\u00F3ria.\n\n- \u0060SEMPRE\u0060: Sempre obrigat\u00F3rio \u2014 O candidato sempre precisa responder. N\u00E3o tem condi\u00E7\u00E3o.\n- \u0060NUNCA\u0060: Nunca obrigat\u00F3rio \u2014 A resposta \u00E9 sempre opcional. N\u00E3o tem condi\u00E7\u00E3o.\n- \u0060QUANDO\u0060: Obrigat\u00F3rio quando a condi\u00E7\u00E3o \u00E9 verdadeira \u2014 O candidato precisa responder quando a condi\u00E7\u00E3o sobre as respostas anteriores \u00E9 verdadeira. Tem sempre uma condi\u00E7\u00E3o."
+      },
       "TipoProcessoSnapshotDto": {
         "required": [
           "origemId",
@@ -29152,23 +29202,23 @@
       },
       "TipoRegraCodigo": {
         "enum": [
-          "regra_calculo",
-          "regra_arredondamento",
-          "regra_eliminacao",
-          "regra_fada",
-          "criterio_desempate",
-          "criterio_remanejamento",
-          "regra_ordem_alocacao",
-          "regra_elegibilidade",
-          "regra_distribuicao_vagas",
-          "regra_ajuste_distribuicao_vagas",
-          "regra_prazo_recurso",
-          "convencao_contagem_prazo",
-          "regra_apuracao_avaliacao",
-          "regra_procedimento_recurso"
+          "REGRA_CALCULO",
+          "REGRA_ARREDONDAMENTO",
+          "REGRA_ELIMINACAO",
+          "REGRA_FADA",
+          "CRITERIO_DESEMPATE",
+          "CRITERIO_REMANEJAMENTO",
+          "REGRA_ORDEM_ALOCACAO",
+          "REGRA_ELEGIBILIDADE",
+          "REGRA_DISTRIBUICAO_VAGAS",
+          "REGRA_AJUSTE_DISTRIBUICAO_VAGAS",
+          "REGRA_PRAZO_RECURSO",
+          "CONVENCAO_CONTAGEM_PRAZO",
+          "REGRA_APURACAO_AVALIACAO",
+          "REGRA_PROCEDIMENTO_RECURSO"
         ],
         "type": "string",
-        "description": "- \u0060regra_calculo\u0060: C\u00E1lculo da nota \u2014 C\u00E1lculo da nota.\n- \u0060regra_arredondamento\u0060: Arredondamento da nota \u2014 Arredondamento da nota.\n- \u0060regra_eliminacao\u0060: Elimina\u00E7\u00E3o \u2014 Elimina\u00E7\u00E3o.\n- \u0060regra_fada\u0060: Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA) \u2014 Regra do Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA).\n- \u0060criterio_desempate\u0060: Crit\u00E9rio de desempate \u2014 Crit\u00E9rio de desempate.\n- \u0060criterio_remanejamento\u0060: Crit\u00E9rio de remanejamento \u2014 Crit\u00E9rio de remanejamento.\n- \u0060regra_ordem_alocacao\u0060: Ordem de aloca\u00E7\u00E3o \u2014 Ordem de aloca\u00E7\u00E3o.\n- \u0060regra_elegibilidade\u0060: Elegibilidade \u2014 Elegibilidade.\n- \u0060regra_distribuicao_vagas\u0060: Distribui\u00E7\u00E3o de vagas \u2014 Distribui\u00E7\u00E3o de vagas.\n- \u0060regra_ajuste_distribuicao_vagas\u0060: Ajuste da distribui\u00E7\u00E3o de vagas \u2014 Ajuste da distribui\u00E7\u00E3o de vagas.\n- \u0060regra_prazo_recurso\u0060: Prazo de recurso \u2014 Prazo de recurso.\n- \u0060convencao_contagem_prazo\u0060: Conven\u00E7\u00E3o de contagem do prazo \u2014 Conven\u00E7\u00E3o de contagem do prazo.\n- \u0060regra_apuracao_avaliacao\u0060: Apura\u00E7\u00E3o da avalia\u00E7\u00E3o \u2014 Apura\u00E7\u00E3o da avalia\u00E7\u00E3o.\n- \u0060regra_procedimento_recurso\u0060: Procedimento de recurso \u2014 Procedimento de recurso."
+        "description": "- \u0060REGRA_CALCULO\u0060: C\u00E1lculo da nota \u2014 C\u00E1lculo da nota.\n- \u0060REGRA_ARREDONDAMENTO\u0060: Arredondamento da nota \u2014 Arredondamento da nota.\n- \u0060REGRA_ELIMINACAO\u0060: Elimina\u00E7\u00E3o \u2014 Elimina\u00E7\u00E3o.\n- \u0060REGRA_FADA\u0060: Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA) \u2014 Regra do Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso (FADA).\n- \u0060CRITERIO_DESEMPATE\u0060: Crit\u00E9rio de desempate \u2014 Crit\u00E9rio de desempate.\n- \u0060CRITERIO_REMANEJAMENTO\u0060: Crit\u00E9rio de remanejamento \u2014 Crit\u00E9rio de remanejamento.\n- \u0060REGRA_ORDEM_ALOCACAO\u0060: Ordem de aloca\u00E7\u00E3o \u2014 Ordem de aloca\u00E7\u00E3o.\n- \u0060REGRA_ELEGIBILIDADE\u0060: Elegibilidade \u2014 Elegibilidade.\n- \u0060REGRA_DISTRIBUICAO_VAGAS\u0060: Distribui\u00E7\u00E3o de vagas \u2014 Distribui\u00E7\u00E3o de vagas.\n- \u0060REGRA_AJUSTE_DISTRIBUICAO_VAGAS\u0060: Ajuste da distribui\u00E7\u00E3o de vagas \u2014 Ajuste da distribui\u00E7\u00E3o de vagas.\n- \u0060REGRA_PRAZO_RECURSO\u0060: Prazo de recurso \u2014 Prazo de recurso.\n- \u0060CONVENCAO_CONTAGEM_PRAZO\u0060: Conven\u00E7\u00E3o de contagem do prazo \u2014 Conven\u00E7\u00E3o de contagem do prazo.\n- \u0060REGRA_APURACAO_AVALIACAO\u0060: Apura\u00E7\u00E3o da avalia\u00E7\u00E3o \u2014 Apura\u00E7\u00E3o da avalia\u00E7\u00E3o.\n- \u0060REGRA_PROCEDIMENTO_RECURSO\u0060: Procedimento de recurso \u2014 Procedimento de recurso."
       },
       "TipoRenderizacaoCodigo": {
         "enum": [
@@ -29307,12 +29357,12 @@
       },
       "UnidadePrazoCodigo": {
         "enum": [
-          "horas",
-          "dias",
-          "diasUteis"
+          "HORAS",
+          "DIAS",
+          "DIAS_UTEIS"
         ],
         "type": "string",
-        "description": "- \u0060horas\u0060: Horas\n- \u0060dias\u0060: Dias corridos\n- \u0060diasUteis\u0060: Dias \u00FAteis"
+        "description": "- \u0060HORAS\u0060: Horas\n- \u0060DIAS\u0060: Dias corridos\n- \u0060DIAS_UTEIS\u0060: Dias \u00FAteis"
       },
       "UnidadeResponsavelDto": {
         "required": [

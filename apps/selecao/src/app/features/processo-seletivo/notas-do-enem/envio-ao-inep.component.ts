@@ -12,7 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { isApiOk, salvarArquivo } from '@uniplus/shared-core/http';
+import { isApiOk, salvarArquivo, type ProblemDetails } from '@uniplus/shared-core/http';
 import { NotasDoEnemApi, type LeiauteEscolhido } from '@uniplus/shared-data/selecao';
 
 import { AlertaDeRecusaComponent } from './alerta-de-recusa.component';
@@ -94,14 +94,24 @@ export class EnvioAoInepComponent {
 
   protected async baixar(): Promise<void> {
     if (this.gerando()) return;
-    this.gerado.set(null);
-    this.recusa.set(null);
+    this.limparResultado();
 
     const escolhido = this.notas.escolhidoDeEnvio();
     if (escolhido === null) return;
     const leiaute = this.leiauteEscolhido();
     if (leiaute === null) return;
+    await this.executarEnvio(escolhido, leiaute);
+  }
 
+  private limparResultado(): void {
+    this.gerado.set(null);
+    this.recusa.set(null);
+  }
+
+  private async executarEnvio(
+    escolhido: EscopoEscolhido,
+    leiaute: LeiauteEscolhido,
+  ): Promise<void> {
     this.gerando.set(true);
     try {
       await this.gerarEnvio(escolhido, leiaute);
@@ -129,20 +139,28 @@ export class EnvioAoInepComponent {
       this.api.gerarEnvio(escolhido.processoId, escolhido.etapaId, escolhido.edicao, leiaute),
     );
     if (isApiOk(resultado)) {
-      // O arquivo é da edição pedida, e o nome já a leva: baixa mesmo que a tela tenha mudado.
-      salvarArquivo(
-        new Blob([resultado.data], { type: 'text/plain;charset=utf-8' }),
-        this.nomeDoArquivo(escolhido.edicao),
-      );
-      if (mesmoEscopo(this.notas.escolhidoDeEnvio(), escolhido)) {
-        this.gerado.set(totalDeCpfs(resultado.data));
-        void this.notas.recarregarEnvios();
-      }
+      this.entregarArquivo(resultado.data, escolhido);
     } else if (mesmoEscopo(this.notas.escolhidoDeEnvio(), escolhido)) {
-      this.mostrarRecusa(explicarRecusa(resultado.problem, 'envio'));
-      // Na falha incerta a geração pode ter sido registrada: o histórico é o que o operador confere.
-      if (falhaIncerta(resultado.problem)) void this.notas.recarregarEnvios();
+      this.tratarFalhaDoEnvio(resultado.problem);
     }
+  }
+
+  private entregarArquivo(arquivo: string, escolhido: EscopoEscolhido): void {
+    // O arquivo é da edição pedida, e o nome já a leva: baixa mesmo que a tela tenha mudado.
+    salvarArquivo(
+      new Blob([arquivo], { type: 'text/plain;charset=utf-8' }),
+      this.nomeDoArquivo(escolhido.edicao),
+    );
+    if (mesmoEscopo(this.notas.escolhidoDeEnvio(), escolhido)) {
+      this.gerado.set(totalDeCpfs(arquivo));
+      void this.notas.recarregarEnvios();
+    }
+  }
+
+  private tratarFalhaDoEnvio(problema: ProblemDetails): void {
+    this.mostrarRecusa(explicarRecusa(problema, 'envio'));
+    // Na falha incerta a geração pode ter sido registrada: o histórico é o que o operador confere.
+    if (falhaIncerta(problema)) void this.notas.recarregarEnvios();
   }
 
   /** O identificador do processo no início separa os arquivos de processos diferentes na mesma pasta. */
@@ -154,7 +172,7 @@ export class EnvioAoInepComponent {
 
   protected recarregarCatalogo(): void {
     this.leiaute.setValue('');
-    void this.notas.recarregarLeiautes('envio');
+    void this.notas.recarregarLeiautes('ENVIO');
   }
 
   private mostrarRecusa(recusa: RecusaExplicada): void {

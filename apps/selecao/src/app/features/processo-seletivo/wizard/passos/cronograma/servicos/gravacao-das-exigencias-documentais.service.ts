@@ -25,7 +25,7 @@ import {
   type OrigemDaRegraEnviada,
 } from '../../../shared/exigencias/gravacao-das-exigencias';
 import { identificarRecusaDaExigencia } from '../../../shared/exigencias/caminho-da-recusa-das-exigencias';
-import { modalidadesDaExigencia } from '../../../shared/exigencias/recorte-por-modalidade';
+import { modalidadesDaExigencia } from '../../../shared/exigencias/modalidades-da-exigencia';
 import { recusaDaExigenciaDoServidor } from '../../../shared/orientacao-da-recusa-do-fato';
 import { quemCitaNoProcesso } from '../../formulario/citantes-no-processo';
 import { finalidadesQueAtende } from '../../formulario/formularios-por-finalidade';
@@ -247,7 +247,7 @@ export class GravacaoDasExigenciasDocumentais {
   private pedePerguntasDasModalidades(recorta: boolean): boolean {
     return (
       recorta ||
-      this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.inscricaoPropria
+      this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.INSCRICAO_PROPRIA
     );
   }
 }

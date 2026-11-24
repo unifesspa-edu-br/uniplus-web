@@ -1,24 +1,35 @@
+import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
 import { acharNaListagem, chamarApi } from '@uniplus/shared-e2e';
 
 export interface ProcessoListado {
   readonly id: string;
   readonly nome: string;
-  readonly status: string;
+  readonly status: { readonly codigo: StatusProcessoCodigo; readonly rotulo: string };
 }
 
 /** Todos os processos da listagem, percorrendo as páginas até o fim. */
 export async function listarProcessos(): Promise<readonly ProcessoListado[]> {
   const todos: ProcessoListado[] = [];
-  await acharNaListagem<ProcessoListado>('manoel.aparicio', '/api/selecao/processos-seletivos?limit=100', (processo) => {
-    todos.push(processo);
-    return false;
-  });
+  await acharNaListagem<ProcessoListado>(
+    'manoel.aparicio',
+    '/api/selecao/processos-seletivos?limit=100',
+    (processo) => {
+      todos.push(processo);
+      return false;
+    },
+  );
   return todos;
 }
 
 /** Os processos publicados cujo nome começa por `prefixo`. */
-export async function processosPublicadosComNome(prefixo: string): Promise<readonly ProcessoListado[]> {
-  return (await listarProcessos()).filter((processo) => processo.nome.startsWith(prefixo) && processo.status === 'publicado');
+export async function processosPublicadosComNome(
+  prefixo: string,
+): Promise<readonly ProcessoListado[]> {
+  return (await listarProcessos()).filter(
+    (processo) =>
+      processo.nome.startsWith(prefixo) &&
+      processo.status.codigo === StatusProcessoCodigo.PUBLICADO,
+  );
 }
 
 /** Quantas inscrições a primeira página da listagem do processo traz (até 100). */

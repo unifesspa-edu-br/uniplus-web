@@ -74,7 +74,7 @@ describe('VagasPassoComponent — regra determina o rol de modalidades', () => {
       else if (url.includes('regras-catalogo')) {
         const tipo = requisicao.request.params.get('tipo');
         requisicao.flush(
-          tipo === 'regra_distribuicao_vagas' ? [REGRA_INSTITUCIONAL, REGRA_PSIQ] : [],
+          tipo === 'REGRA_DISTRIBUICAO_VAGAS' ? [REGRA_INSTITUCIONAL, REGRA_PSIQ] : [],
         );
       } else requisicao.flush([]);
     }

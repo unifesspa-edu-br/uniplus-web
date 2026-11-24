@@ -27,21 +27,21 @@ describe('CatalogoDeRegras', () => {
     const { catalogo, listar } = montar();
 
     expect(listar.mock.calls.map(([query]) => query.tipo).sort()).toEqual([
+      'REGRA_PRAZO_RECURSO',
+      'REGRA_PROCEDIMENTO_RECURSO',
       'algoritmo_contagem_prazo',
       'regra_consolidacao',
-      'regra_prazo_recurso',
-      'regra_procedimento_recurso',
     ]);
     expect(catalogo.regrasProcedimento().map((regra) => regra.codigo)).toEqual([
-      'R-regra_procedimento_recurso',
+      'R-REGRA_PROCEDIMENTO_RECURSO',
     ]);
     expect(catalogo.regrasRecurso().map((regra) => regra.codigo)).toEqual([
-      'R-regra_prazo_recurso',
+      'R-REGRA_PRAZO_RECURSO',
     ]);
   });
 
   it('acusa erro e não aplica regra alguma quando o tipo do procedimento falha', () => {
-    const { catalogo } = montar('regra_procedimento_recurso');
+    const { catalogo } = montar('REGRA_PROCEDIMENTO_RECURSO');
 
     expect(catalogo.erro()).not.toBeNull();
     expect(catalogo.regrasProcedimento()).toEqual([]);

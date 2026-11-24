@@ -43,12 +43,12 @@ describe('ProcessosSeletivosListaPage', () => {
       processo({
         id: 'rascunho',
         nome: 'Em cadastro',
-        status: { codigo: StatusProcessoCodigo.rascunho, rotulo: 'Rascunho' },
+        status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: 'Rascunho' },
       }),
       processo({
         id: 'publicado',
         nome: 'No ar',
-        status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' },
+        status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' },
       }),
     ]);
 
@@ -73,7 +73,7 @@ describe('ProcessosSeletivosListaPage', () => {
     await cenario.responderLista([
       processo({
         id: 'publicado',
-        status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' },
+        status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' },
       }),
     ]);
     expect(hrefs()).not.toContain('/processo-seletivo/publicado/inscricoes');
@@ -83,7 +83,7 @@ describe('ProcessosSeletivosListaPage', () => {
     await cenario.responderLista([
       processo({
         id: 'publicado',
-        status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' },
+        status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' },
       }),
     ]);
 
@@ -97,11 +97,11 @@ describe('ProcessosSeletivosListaPage', () => {
     await cenario.responderLista([
       processo({
         id: 'rascunho',
-        status: { codigo: StatusProcessoCodigo.rascunho, rotulo: 'Rascunho' },
+        status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: 'Rascunho' },
       }),
       processo({
         id: 'publicado',
-        status: { codigo: StatusProcessoCodigo.publicado, rotulo: 'Publicado' },
+        status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' },
       }),
     ]);
 

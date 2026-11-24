@@ -116,7 +116,7 @@ describe('RevisaoPassoComponent — publicação aceita pelo servidor', () => {
         .expectOne(ROTA_DETALHE)
         .flush({
           ...PROCESSO_DTO_MINIMO,
-          status: { ...PROCESSO_DTO_MINIMO.status, codigo: StatusProcessoCodigo.rascunho },
+          status: { ...PROCESSO_DTO_MINIMO.status, codigo: StatusProcessoCodigo.RASCUNHO },
         });
       controller.expectOne(ROTA_SNAPSHOT).flush(SNAPSHOT_DTO);
 

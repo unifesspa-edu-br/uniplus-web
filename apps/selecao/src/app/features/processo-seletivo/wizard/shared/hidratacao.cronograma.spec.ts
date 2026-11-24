@@ -20,7 +20,7 @@ const COM_CRONOGRAMA = dtoComCronograma({
   },
 });
 
-const UNIDADE = { codigo: UnidadePrazoCodigo.diasUteis, rotulo: 'Dias úteis' };
+const UNIDADE = { codigo: UnidadePrazoCodigo.DIAS_UTEIS, rotulo: 'Dias úteis' };
 
 function comParametros(parcial: Partial<typeof PARAMETROS_DO_RECURSO>) {
   return { ...RECURSO_DA_FASE, parametros: { ...PARAMETROS_DO_RECURSO, ...parcial } };
@@ -191,12 +191,12 @@ describe('hidratarDraft — cronograma e etapas', () => {
 
     expect(fase.regraRecurso).toMatchObject({
       prazoValor: '2',
-      prazoUnidade: 'diasUteis',
+      prazoUnidade: 'DIAS_UTEIS',
       admiteInstanciaSuperior: true,
       prazoSegundaInstanciaValor: '3',
-      prazoSegundaInstanciaUnidade: 'diasUteis',
-      efeitoSuspensivo: 'semEfeitoSuspensivo',
-      guardaDaVaga: 'ateOResultadoDefinitivo',
+      prazoSegundaInstanciaUnidade: 'DIAS_UTEIS',
+      efeitoSuspensivo: 'SEM_EFEITO_SUSPENSIVO',
+      guardaDaVaga: 'ATE_O_RESULTADO_DEFINITIVO',
     });
     expect(fase.regraRecurso?.leitura).toEqual({
       rotulos: {
@@ -284,8 +284,8 @@ describe('hidratarDraft — cronograma e etapas', () => {
     const [etapa] = hidratarDraft(DRAFT, dto).cronograma.etapas;
 
     expect(etapa.recursos[0]).toMatchObject({
-      prazoUnidade: 'diasUteis',
-      efeitoSuspensivo: 'semEfeitoSuspensivo',
+      prazoUnidade: 'DIAS_UTEIS',
+      efeitoSuspensivo: 'SEM_EFEITO_SUSPENSIVO',
     });
     expect(etapa.recursos[0]?.leitura.rotulos.efeitoSuspensivo).toBe('Sem efeito suspensivo');
   });

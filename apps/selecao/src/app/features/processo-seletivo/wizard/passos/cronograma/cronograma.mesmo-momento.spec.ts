@@ -129,7 +129,7 @@ describe('Cronograma: marca do mesmo momento', () => {
   it('mostra a marca publicada na consulta', () => {
     tela.comFaseAjustada(ID_INSCRICAO, { noMesmoMomentoDaAnterior: true });
     tela.store.remoteSnapshot.set({
-      status: StatusProcessoCodigo.publicado,
+      status: StatusProcessoCodigo.PUBLICADO,
     } as unknown as ProcessoSeletivoDto);
     tela.detectar();
     const texto = tela.nativo.querySelector('sel-fase-em-consulta')?.textContent ?? '';

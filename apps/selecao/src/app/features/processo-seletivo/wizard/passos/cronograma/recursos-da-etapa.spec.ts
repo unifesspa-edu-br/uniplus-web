@@ -22,7 +22,7 @@ function regra(codigo: string, versao: string): RegraCatalogoDto {
   return {
     codigo,
     versao,
-    tipo: { codigo: 'regra_prazo_recurso' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Prazo de recurso' },
+    tipo: { codigo: 'REGRA_PRAZO_RECURSO' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Prazo de recurso' },
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: 'Base legal de teste',
@@ -40,10 +40,10 @@ function grupoCom(produtos: { atoCodigo: string; papel: string | null }[] = []) 
 
 describe('recursos da etapa', () => {
   it('escolhe no catálogo a regra do relógio de cada âncora', () => {
-    expect(regraDoCatalogo(REGRAS, 'atoPublicado')?.versao).toBe('v1');
-    expect(regraDoCatalogo(REGRAS, 'cienciaIndividual')?.versao).toBe('v2');
-    expect(regraDoCatalogo([regra('OUTRA', 'v9')], 'atoPublicado')?.codigo).toBe('OUTRA');
-    expect(regraDoCatalogo([], 'atoPublicado')).toBeUndefined();
+    expect(regraDoCatalogo(REGRAS, 'PUBLICACAO_DO_ATO')?.versao).toBe('v1');
+    expect(regraDoCatalogo(REGRAS, 'CIENCIA_INDIVIDUAL')?.versao).toBe('v2');
+    expect(regraDoCatalogo([regra('OUTRA', 'v9')], 'PUBLICACAO_DO_ATO')?.codigo).toBe('OUTRA');
+    expect(regraDoCatalogo([], 'PUBLICACAO_DO_ATO')).toBeUndefined();
   });
 
   it('lista só os produtos preliminares', () => {
@@ -62,12 +62,12 @@ describe('recursos da etapa', () => {
 
     expect(grupo.controls.recursos.value).toEqual([
       expect.objectContaining({
-        ancora: 'atoPublicado',
+        ancora: 'PUBLICACAO_DO_ATO',
         regraCodigo: 'PRAZO-ANCORADO-EM-ATO',
         regraVersao: 'v1',
         atoAncoraCodigo: 'PRE',
         prazoValor: '',
-        prazoUnidade: UnidadePrazoCodigo.diasUteis,
+        prazoUnidade: UnidadePrazoCodigo.DIAS_UTEIS,
         admiteInstanciaSuperior: null,
         efeitoSuspensivo: '',
         guardaDaVaga: '',
@@ -114,11 +114,11 @@ describe('recursos da etapa', () => {
     const grupo = grupoCom([{ atoCodigo: 'PRE', papel: PAPEL_PRELIMINAR }]);
     acrescentarRecurso(grupo, REGRAS);
 
-    alterarRecurso(grupo, 0, { campo: 'ancora', valor: 'cienciaIndividual' }, REGRAS);
+    alterarRecurso(grupo, 0, { campo: 'ancora', valor: 'CIENCIA_INDIVIDUAL' }, REGRAS);
 
     expect(grupo.controls.recursos.value[0]).toEqual(
       expect.objectContaining({
-        ancora: 'cienciaIndividual',
+        ancora: 'CIENCIA_INDIVIDUAL',
         regraCodigo: 'PRAZO-ANCORADO-EM-CIENCIA',
         atoAncoraCodigo: '',
       }),
@@ -129,7 +129,7 @@ describe('recursos da etapa', () => {
     const grupo = grupoCom([{ atoCodigo: 'PRE', papel: PAPEL_PRELIMINAR }]);
     acrescentarRecurso(grupo, REGRAS);
 
-    alterarRecurso(grupo, 0, { campo: 'ancora', valor: 'atoPublicado' }, REGRAS);
+    alterarRecurso(grupo, 0, { campo: 'ancora', valor: 'PUBLICACAO_DO_ATO' }, REGRAS);
 
     expect(grupo.controls.recursos.value[0].atoAncoraCodigo).toBe('PRE');
   });
@@ -151,13 +151,13 @@ describe('recursos da etapa', () => {
     const grupo = grupoCom();
     acrescentarRecurso(grupo, REGRAS);
 
-    alterarRecurso(grupo, 0, { campo: 'efeitoSuspensivo', valor: 'semEfeitoSuspensivo' }, REGRAS);
-    alterarRecurso(grupo, 0, { campo: 'guardaDaVaga', valor: 'naoGuarda' }, REGRAS);
+    alterarRecurso(grupo, 0, { campo: 'efeitoSuspensivo', valor: 'SEM_EFEITO_SUSPENSIVO' }, REGRAS);
+    alterarRecurso(grupo, 0, { campo: 'guardaDaVaga', valor: 'NAO_GUARDA' }, REGRAS);
     alterarRecurso(grupo, 0, { campo: 'prazoUnidade', valor: 'semanas' }, REGRAS);
 
     expect(grupo.controls.recursos.value[0]).toMatchObject({
-      efeitoSuspensivo: EfeitoSuspensivoCodigo.semEfeitoSuspensivo,
-      guardaDaVaga: GuardaDaVagaCodigo.naoGuarda,
+      efeitoSuspensivo: EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO,
+      guardaDaVaga: GuardaDaVagaCodigo.NAO_GUARDA,
       prazoUnidade: '',
     });
   });
@@ -165,7 +165,7 @@ describe('recursos da etapa', () => {
   it('marcar Sim com "não guarda" deixa a guarda vazia, e marcar Não retira o prazo da 2ª instância', () => {
     const grupo = grupoCom();
     acrescentarRecurso(grupo, REGRAS);
-    alterarRecurso(grupo, 0, { campo: 'guardaDaVaga', valor: 'naoGuarda' }, REGRAS);
+    alterarRecurso(grupo, 0, { campo: 'guardaDaVaga', valor: 'NAO_GUARDA' }, REGRAS);
 
     alterarRecurso(grupo, 0, { campo: 'admiteInstanciaSuperior', valor: true }, REGRAS);
     expect(grupo.controls.recursos.value[0].guardaDaVaga).toBe('');
@@ -196,7 +196,7 @@ describe('recursos da etapa', () => {
     acrescentarRecurso(grupo, REGRAS);
     alterarRecurso(grupo, 0, { campo: 'prazoValor', valor: '0' }, REGRAS);
 
-    alterarRecurso(grupo, 0, { campo: 'efeitoSuspensivo', valor: 'semEfeitoSuspensivo' }, REGRAS);
+    alterarRecurso(grupo, 0, { campo: 'efeitoSuspensivo', valor: 'SEM_EFEITO_SUSPENSIVO' }, REGRAS);
 
     expect(grupo.controls.recursos.value[0].prazoValor).toBe('0');
   });

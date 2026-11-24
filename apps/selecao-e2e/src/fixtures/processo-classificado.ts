@@ -34,7 +34,7 @@ function etapaGravada(id: string, nome: string, ordem: number, notaDeOrigemNoEne
 
 /**
  * Um processo publicado com as quatro seções declaradas — o que a consulta precisa ler.
- * `status: 'publicado'` é o que põe o editor em somente leitura.
+ * O estado publicado é o que põe o editor em somente leitura.
  */
 export const DETALHE_PUBLICADO = {
   id: PROCESSO_PUBLICADO_ID,
@@ -44,8 +44,8 @@ export const DETALHE_PUBLICADO = {
     codigo: 'GRAD',
     nome: 'Graduação',
   },
-  status: 'publicado',
-  origemCandidatos: 'inscricaoPropria',
+  status: { codigo: 'PUBLICADO', rotulo: 'Publicado' },
+  origemCandidatos: { codigo: 'INSCRICAO_PROPRIA', rotulo: 'Inscrição própria' },
   unidadeAdministradora: {
     origemId: '01960000-0000-7000-0000-000000000906',
     sigla: 'CEPS',
@@ -84,7 +84,7 @@ export const DETALHE_PUBLICADO = {
     {
       id: '01960000-0000-7000-0000-0000000008d1',
       ordem: 1,
-      regra: referencia('DESEMPATE-MAIOR-IDADE'),
+      regra: referencia('DESEMPATE_MAIOR_IDADE'),
       parametros: PARAMETROS_DO_DESEMPATE_SEM_VALOR,
     },
   ] satisfies readonly JsonDaApi<CriterioDesempateDto>[],
@@ -97,7 +97,7 @@ export const DETALHE_PUBLICADO = {
     regrasEliminacao: [
       {
         id: '01960000-0000-7000-0000-0000000008e1',
-        regra: referencia('ELIMINACAO-ZERO-EM-AREA'),
+        regra: referencia('ELIMINACAO_ZERO_EM_AREA'),
         etapaRef: null,
         notaMinima: null,
         minimo: null,
@@ -105,7 +105,7 @@ export const DETALHE_PUBLICADO = {
       },
       {
         id: '01960000-0000-7000-0000-0000000008e2',
-        regra: referencia('ELIMINACAO-AUSENCIA-NA-ETAPA'),
+        regra: referencia('ELIMINACAO_AUSENCIA_NA_ETAPA'),
         etapaRef: ETAPA_ENTREVISTA_ID,
         notaMinima: null,
         minimo: null,
@@ -140,17 +140,17 @@ export const LEITURAS: Record<string, Record<string, string>> = {
     'Ordem de alocação': 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
     'Escala da nota final': '0 a 100',
   },
-  Bônus: {
-    'Bônus regional': 'Aplicado neste processo',
-    'Regra do bônus': 'BONUS-MULTIPLICATIVO',
+  FADA: {
+    FADA: 'Aplicado neste processo',
+    'Regra do FADA': 'BONUS-MULTIPLICATIVO',
     Fator: '1,2',
-    'Base Legal do bônus': 'Portaria Unifesspa nº 2514/2023',
+    'Base Legal do FADA': 'Portaria Unifesspa nº 2514/2023',
     'Quem recebe o acréscimo': 'PEDE_O_ACRESCIMO',
   },
-  Desempate: { 'Regra do critério': 'DESEMPATE-MAIOR-IDADE — Costume administrativo' },
+  Desempate: { 'Regra do critério': 'DESEMPATE_MAIOR_IDADE — Costume administrativo' },
   Eliminação: {
-    'Regra de eliminação 1': 'ELIMINACAO-ZERO-EM-AREA — Resolução 805/2020, art. 5º',
-    'Regra de eliminação 2': 'ELIMINACAO-AUSENCIA-NA-ETAPA — Edital do processo',
+    'Regra de eliminação 1': 'ELIMINACAO_ZERO_EM_AREA — Resolução 805/2020, art. 5º',
+    'Regra de eliminação 2': 'ELIMINACAO_AUSENCIA_NA_ETAPA — Edital do processo',
     Etapa: 'Entrevista',
   },
 };
@@ -167,7 +167,7 @@ export const DETALHE_DESEMPATE_POR_AREA = {
   criteriosDesempate: [
     {
       ...DETALHE_PUBLICADO.criteriosDesempate[0],
-      regra: referencia('DESEMPATE-MAIOR-NOTA-AREA-ENEM'),
+      regra: referencia('DESEMPATE_MAIOR_NOTA_AREA_ENEM'),
       parametros: {
         ...PARAMETROS_DO_DESEMPATE_SEM_VALOR,
         areas: AREAS_ENEM.map((area) => area.codigo),

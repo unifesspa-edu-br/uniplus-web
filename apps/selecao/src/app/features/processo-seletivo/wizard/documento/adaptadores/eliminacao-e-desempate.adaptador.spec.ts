@@ -26,23 +26,23 @@ describe('eliminação e desempate', () => {
 
   it('lê somente campos válidos de rascunhos e ignora códigos sem forma', () => {
     expect(
-      lerParametrosDaEliminacao('ELIMINACAO-NOTA-MINIMA-ETAPA', {
+      lerParametrosDaEliminacao('ELIMINACAO_NOTA_MINIMA_ETAPA', {
         etapaChave: ' etapa ',
         notaMinima: 'errada',
         extra: true,
       }),
     ).toEqual({
       conhecida: true,
-      codigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA',
+      codigo: 'ELIMINACAO_NOTA_MINIMA_ETAPA',
       valores: { etapaChave: ' etapa ' },
     });
     expect(lerParametrosDaEliminacao('OUTRA', {})).toEqual({ conhecida: false });
-    expect(lerParametrosDoDesempate('DESEMPATE-CONDICAO-SOBRE-DADO', {})).toEqual({
+    expect(lerParametrosDoDesempate('DESEMPATE_CONDICAO_SOBRE_DADO', {})).toEqual({
       conhecida: false,
     });
-    expect(lerParametrosDoDesempate('DESEMPATE-IDOSO', { idadeMinima: Infinity })).toEqual({
+    expect(lerParametrosDoDesempate('DESEMPATE_IDOSO', { idadeMinima: Infinity })).toEqual({
       conhecida: true,
-      codigo: 'DESEMPATE-IDOSO',
+      codigo: 'DESEMPATE_IDOSO',
       valores: {},
     });
   });
@@ -50,7 +50,7 @@ describe('eliminação e desempate', () => {
   it('preserva campos desconhecidos, inválidos, ordem e itens repetidos', () => {
     const item = {
       parametros: { extra: 1, notaMinima: 'inválida', etapaChave: ' etapa ' },
-      regra: { codigo: 'ELIMINACAO-NOTA-MINIMA-ETAPA', versao: ' v1 ' },
+      regra: { codigo: 'ELIMINACAO_NOTA_MINIMA_ETAPA', versao: ' v1 ' },
     };
     const documento = {
       ...documentoSemNada(),
@@ -69,7 +69,7 @@ describe('eliminação e desempate', () => {
   it('preserva critérios repetidos com ordem e parâmetros desconhecidos', () => {
     const item = {
       parametros: { extra: true, idadeMinima: 'incorreta' },
-      regra: { codigo: 'DESEMPATE-IDOSO' },
+      regra: { codigo: 'DESEMPATE_IDOSO' },
       ordem: 7,
     };
     const documento = {
@@ -82,7 +82,7 @@ describe('eliminação e desempate', () => {
     );
     expect(valores.itens[0].parametros).toEqual({
       conhecida: true,
-      codigo: 'DESEMPATE-IDOSO',
+      codigo: 'DESEMPATE_IDOSO',
       valores: {},
     });
   });
@@ -93,7 +93,7 @@ describe('eliminação e desempate', () => {
       classificacao: {
         regrasEliminacao: [
           {
-            regra: { codigo: 'ELIMINACAO-CORTE-EM-AREA' },
+            regra: { codigo: 'ELIMINACAO_CORTE_EM_AREA' },
             parametros: { minimo: 10, extra: true },
           },
         ],
@@ -103,10 +103,10 @@ describe('eliminação e desempate', () => {
     const item = valores.itens[0];
     expect(eliminacao.edicaoDoPasso(valores)(documento)).toEqual(documento);
     const alterado = eliminacao.edicaoDoPasso({
-      itens: [{ ...item, codigo: 'ELIMINACAO-ZERO-EM-AREA' }],
+      itens: [{ ...item, codigo: 'ELIMINACAO_ZERO_EM_AREA' }],
     })(documento);
     expect(alterado.classificacao?.regrasEliminacao?.[0]).toEqual({
-      regra: { codigo: 'ELIMINACAO-ZERO-EM-AREA' },
+      regra: { codigo: 'ELIMINACAO_ZERO_EM_AREA' },
     });
   });
 
@@ -117,7 +117,7 @@ describe('eliminação e desempate', () => {
         criteriosDeDesempate: [
           {
             ordem: 3,
-            regra: { codigo: 'DESEMPATE-IDOSO' },
+            regra: { codigo: 'DESEMPATE_IDOSO' },
             parametros: { idadeMinima: 60, extra: true },
           },
         ],
@@ -125,11 +125,11 @@ describe('eliminação e desempate', () => {
     };
     const valores = desempate.valoresDoFormulario(documento, catalogo);
     const alterado = desempate.edicaoDoPasso({
-      itens: [{ ...valores.itens[0], codigo: 'DESEMPATE-MAIOR-IDADE' }],
+      itens: [{ ...valores.itens[0], codigo: 'DESEMPATE_MAIOR_IDADE' }],
     })(documento);
     expect(alterado.classificacao?.criteriosDeDesempate?.[0]).toEqual({
       ordem: 3,
-      regra: { codigo: 'DESEMPATE-MAIOR-IDADE' },
+      regra: { codigo: 'DESEMPATE_MAIOR_IDADE' },
     });
   });
 });

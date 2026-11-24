@@ -209,7 +209,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: montagem da orde
       criterioPorArea(m);
       acrescentarPelaTela(m, 0, 'REDACAO');
 
-      edicaoDosCriterios(m).escolherRegra(0, 'DESEMPATE-MAIOR-IDADE|1.0');
+      edicaoDosCriterios(m).escolherRegra(0, 'DESEMPATE_MAIOR_IDADE|1.0');
 
       expect(m.componente.criterios()[0].areas).toEqual([]);
     });
@@ -221,7 +221,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: montagem da orde
       acrescentarPelaTela(m, 0, 'REDACAO');
 
       expect(m.componente.confirmacaoDeGravacao()?.itens).toEqual([
-        { rotulo: '1º critério', valor: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM: Matemática, Redação' },
+        { rotulo: '1º critério', valor: 'DESEMPATE_MAIOR_NOTA_AREA_ENEM: Matemática, Redação' },
       ]);
     });
 

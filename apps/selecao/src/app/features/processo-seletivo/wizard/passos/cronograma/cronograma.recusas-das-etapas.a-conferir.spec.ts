@@ -38,7 +38,7 @@ describe('CronogramaPassoComponent: recusas das etapas a conferir de novo', () =
   const recusarNotaEPrazo = async () => {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);
-    const recurso = umRecursoDaEtapa({ ancora: 'cienciaIndividual', atoAncoraCodigo: '' });
+    const recurso = umRecursoDaEtapa({ ancora: 'CIENCIA_INDIVIDUAL', atoAncoraCodigo: '' });
     etapa().controls.recursos.setValue([recurso]);
     expansao.alternarFase(0);
     detectar();

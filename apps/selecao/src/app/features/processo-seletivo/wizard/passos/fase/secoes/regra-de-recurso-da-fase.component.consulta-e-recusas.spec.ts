@@ -27,7 +27,7 @@ describe('RegraDeRecursoDaFaseComponent: consulta e recusas', () => {
 
   const emConsulta = () => {
     store.remoteSnapshot.set({
-      status: StatusProcessoCodigo.publicado,
+      status: StatusProcessoCodigo.PUBLICADO,
     } as unknown as ProcessoSeletivoDto);
     detectar();
   };

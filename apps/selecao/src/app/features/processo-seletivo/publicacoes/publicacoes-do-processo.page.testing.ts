@@ -89,7 +89,7 @@ const ITEM_PADRAO: Omit<ProdutoPrevistoDto, 'id' | 'correcoes'> = {
     codigo: 'PRELIMINAR' as NonNullable<ProdutoPrevistoDto['papel']>['codigo'],
     rotulo: 'Preliminar',
   },
-  situacao: { codigo: SituacaoDoProdutoPrevistoCodigo.aberto, rotulo: 'Aberto' },
+  situacao: { codigo: SituacaoDoProdutoPrevistoCodigo.ABERTO, rotulo: 'Aberto' },
   ato: null,
   podePublicar: true,
   impedimento: null,
@@ -231,7 +231,7 @@ export class PaginaDePublicacoes {
   ): Promise<void> {
     this.iniciar();
     this.responderLeituraInicial(status, atos);
-    if (status !== StatusProcessoCodigo.rascunho) {
+    if (status !== StatusProcessoCodigo.RASCUNHO) {
       // Os itens do edital só são pedidos depois de o processo dizer que já não é rascunho.
       await tick();
       this.responderPrevistos(itensPrevistos, camposFalham);
@@ -241,7 +241,7 @@ export class PaginaDePublicacoes {
 
   async abrirPublicadoComFalhaEm(onde: 'tipos' | 'previstos'): Promise<void> {
     this.iniciar();
-    this.responderProcesso(StatusProcessoCodigo.publicado);
+    this.responderProcesso(StatusProcessoCodigo.PUBLICADO);
     this.controller.expectOne(ROTA_ATOS).flush([]);
     if (onde === 'tipos') this.falharTipos();
     else this.responderTipos();

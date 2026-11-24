@@ -6,17 +6,17 @@ import { inteiroNaForma } from '../../shared/numero-do-campo';
 
 /**
  * Códigos de `CriterioDesempateCodigo` — o discriminador do shape de args de
- * `ArgsCriterioDesempate` (`DESEMPATE-MAIOR-NOTA-ETAPA` usa `etapaRef`;
- * `DESEMPATE-IDOSO` usa `idadeMinima`; `DESEMPATE-CONDICAO-SOBRE-DADO` usa
- * `fato`+`operador`+`valor`; `DESEMPATE-MAIOR-NOTA-AREA-ENEM` usa `areas`;
- * `DESEMPATE-MAIOR-IDADE` não usa nenhum). Não é
+ * `ArgsCriterioDesempate` (`DESEMPATE_MAIOR_NOTA_ETAPA` usa `etapaRef`;
+ * `DESEMPATE_IDOSO` usa `idadeMinima`; `DESEMPATE_CONDICAO_SOBRE_DADO` usa
+ * `fato`+`operador`+`valor`; `DESEMPATE_MAIOR_NOTA_AREA_ENEM` usa `areas`;
+ * `DESEMPATE_MAIOR_IDADE` não usa nenhum). Não é
  * rótulo do frontend: é o mesmo discriminador que
  * `DefinirCriteriosDesempateCommandHandler.MontarArgs` aplica no servidor.
  */
-const DESEMPATE_MAIOR_NOTA_ETAPA = 'DESEMPATE-MAIOR-NOTA-ETAPA';
-const DESEMPATE_IDOSO = 'DESEMPATE-IDOSO';
-const DESEMPATE_PREDICADO_FATO = 'DESEMPATE-CONDICAO-SOBRE-DADO';
-const DESEMPATE_MAIOR_NOTA_AREA_ENEM = 'DESEMPATE-MAIOR-NOTA-AREA-ENEM';
+const DESEMPATE_MAIOR_NOTA_ETAPA = 'DESEMPATE_MAIOR_NOTA_ETAPA';
+const DESEMPATE_IDOSO = 'DESEMPATE_IDOSO';
+const DESEMPATE_PREDICADO_FATO = 'DESEMPATE_CONDICAO_SOBRE_DADO';
+const DESEMPATE_MAIOR_NOTA_AREA_ENEM = 'DESEMPATE_MAIOR_NOTA_AREA_ENEM';
 
 export function desempateUsaEtapa(regraCodigo: string): boolean {
   return regraCodigo === DESEMPATE_MAIOR_NOTA_ETAPA;
@@ -34,7 +34,7 @@ export function desempateUsaAreas(regraCodigo: string): boolean {
   return regraCodigo === DESEMPATE_MAIOR_NOTA_AREA_ENEM;
 }
 
-const DESEMPATE_MAIOR_IDADE = 'DESEMPATE-MAIOR-IDADE';
+const DESEMPATE_MAIOR_IDADE = 'DESEMPATE_MAIOR_IDADE';
 
 /**
  * Se a tela sabe montar os argumentos desta regra.
