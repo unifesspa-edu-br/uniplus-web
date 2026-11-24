@@ -9,7 +9,8 @@ import { type CodigoComRotulo } from '../../codigo-com-rotulo';
 /**
  * O conteúdo de um formulário — o do modelo, na Configuração, e o do processo, na Seleção — na
  * forma das entradas da API (ADR-0136). Os tipos são estruturais: os DTOs gerados satisfazem esta
- * forma, nos dois sentidos, sem que a biblioteca dependa deles.
+ * forma, nos dois sentidos, sem que a biblioteca dependa deles. A exceção são os documentos
+ * exigidos, que o contrato traz em blocos e que o app Configuração converte na leitura e na gravação.
  *
  * A gravação substitui o conteúdo inteiro, então o que o editor não edita viaja como veio: as
  * edições copiam o item com `...item` e o bloco que mudam (`apresentacao`, `regras`, `ocorrencias`)
