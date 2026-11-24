@@ -61,21 +61,27 @@ async function garantirProcesso(
   modelo: string,
 ): Promise<string> {
   const existente = await acharProcesso(nome);
-  if (existente !== undefined) {
-    return existente;
-  }
-  return await rodarRoteiroDeProcesso(
+  if (existente !== undefined) return existente;
+  return rodarRoteiroDeProcesso(
     ROTEIRO,
     [],
-    {
-      ...process.env,
-      ADMIN_PASS: SENHA_DAS_PERSONAS,
-      IDENTIFICADOR_PROCESSO: identificador,
-      NOME_PROCESSO: nome,
-      MODELO_INSCRICAO_ID: modelo,
-    },
+    ambienteDoProcesso(nome, identificador, modelo),
     600_000,
   );
+}
+
+function ambienteDoProcesso(
+  nome: string,
+  identificador: string,
+  modelo: string,
+): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    ADMIN_PASS: SENHA_DAS_PERSONAS,
+    IDENTIFICADOR_PROCESSO: identificador,
+    NOME_PROCESSO: nome,
+    MODELO_INSCRICAO_ID: modelo,
+  };
 }
 
 /**
@@ -101,20 +107,22 @@ async function processoSemInscricao(): Promise<string> {
 let guardado: Promise<CenarioDaProjecao> | undefined;
 
 export function cenarioDaProjecao(): Promise<CenarioDaProjecao> {
-  guardado ??= (async () => {
-    await prepararAcessosDaSimulacao();
-    await aprovarCatalogoInicial();
-    const processoId = await garantirProcesso(
-      NOME_COM_PROVA,
-      `psm-2027-projecao-prova-${GERACAO}`,
-      MODELO_COM_PROVA,
-    );
-    const processoSemInscricaoId = await processoSemInscricao();
-    const fernanda = await inscreverPersona(processoId, 'fernanda.drumond', true);
-    const erick = await inscreverPersona(processoId, 'erick.ramos', false);
-    return { processoId, nomeDoProcesso: NOME_COM_PROVA, processoSemInscricaoId, fernanda, erick };
-  })();
+  guardado ??= prepararCenarioDaProjecao();
   return guardado;
+}
+
+async function prepararCenarioDaProjecao(): Promise<CenarioDaProjecao> {
+  await prepararAcessosDaSimulacao();
+  await aprovarCatalogoInicial();
+  const processoId = await garantirProcesso(
+    NOME_COM_PROVA,
+    `psm-2027-projecao-prova-${GERACAO}`,
+    MODELO_COM_PROVA,
+  );
+  const processoSemInscricaoId = await processoSemInscricao();
+  const fernanda = await inscreverPersona(processoId, 'fernanda.drumond', true);
+  const erick = await inscreverPersona(processoId, 'erick.ramos', false);
+  return { processoId, nomeDoProcesso: NOME_COM_PROVA, processoSemInscricaoId, fernanda, erick };
 }
 
 const NOME_DO_RASCUNHO = 'Processo Seletivo Medicina 2027 (projeção, rascunho)';
@@ -132,37 +140,49 @@ export async function rascunhoParaConfiguracao(): Promise<{
   readonly processoId: string;
   readonly faseHabilitacaoId: string;
 }> {
-  const id =
-    (await listarProcessos()).find(
-      (p) => p.nome === NOME_DO_RASCUNHO && p.status.codigo === StatusProcessoCodigo.RASCUNHO,
-    )?.id ??
-    (await rodarRoteiroDeProcesso(
-      'bash',
-      [
-        '-c',
-        SNIPPET_DO_RASCUNHO,
-        'bash',
-        `psm-2027-projecao-rascunho-${Date.now()}`,
-        NOME_DO_RASCUNHO,
-        ROTEIRO,
-        SENHA_DAS_PERSONAS,
-      ],
-      process.env,
-      600_000,
-    ));
+  const id = await garantirRascunho();
+  const faseHabilitacaoId = await buscarFaseDeHabilitacao(id);
+  return { processoId: id, faseHabilitacaoId };
+}
+
+async function garantirRascunho(): Promise<string> {
+  const existente = (await listarProcessos()).find(
+    (p) => p.nome === NOME_DO_RASCUNHO && p.status.codigo === StatusProcessoCodigo.RASCUNHO,
+  );
+  return existente?.id ?? criarRascunho();
+}
+
+function criarRascunho(): Promise<string> {
+  const argumentos = [
+    '-c',
+    SNIPPET_DO_RASCUNHO,
+    'bash',
+    `psm-2027-projecao-rascunho-${Date.now()}`,
+    NOME_DO_RASCUNHO,
+    ROTEIRO,
+    SENHA_DAS_PERSONAS,
+  ];
+  return rodarRoteiroDeProcesso('bash', argumentos, process.env, 600_000);
+}
+
+async function buscarFaseDeHabilitacao(id: string): Promise<string> {
   const processo = await chamarApi<{ cronogramaFases?: { id: string; codigo: string }[] }>(
     OPERADOR_DO_ROTEIRO,
     'GET',
     `/api/selecao/processos-seletivos/${id}`,
   );
   if (processo.status !== 200 || processo.corpo.cronogramaFases === undefined) {
-    throw new Error(
-      `Ler o processo ${id} como ${OPERADOR_DO_ROTEIRO} respondeu ${processo.status} sem cronogramaFases: ${JSON.stringify(processo.corpo).slice(0, 300)}`,
-    );
+    throw erroAoLerCronograma(id, processo.status, processo.corpo);
   }
   const fase = processo.corpo.cronogramaFases.find((f) => f.codigo === 'HABILITACAO');
   if (fase === undefined) {
     throw new Error('O rascunho não tem a fase de habilitação.');
   }
-  return { processoId: id, faseHabilitacaoId: fase.id };
+  return fase.id;
+}
+
+function erroAoLerCronograma(id: string, status: number, corpo: unknown): Error {
+  return new Error(
+    `Ler o processo ${id} como ${OPERADOR_DO_ROTEIRO} respondeu ${status} sem cronogramaFases: ${JSON.stringify(corpo).slice(0, 300)}`,
+  );
 }

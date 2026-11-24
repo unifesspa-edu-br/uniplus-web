@@ -171,20 +171,27 @@ export class PublicacoesDoProcessoPage {
     this.abrindo.set(documentoAPublicarId);
     this.erroDeAbertura.set(null);
     try {
-      const desfecho = await abrirAcessoEmNovaAba(
-        () =>
-          firstValueFrom(this.api.obterAcessoDocumentoAPublicar(processoId, documentoAPublicarId)),
-        () => processoId === this.publicacoes.processoId(),
-      );
-      if (desfecho.situacao === 'bloqueada') {
-        this.erroDeAbertura.set(
-          'O navegador bloqueou a abertura do documento. Permita pop-ups para este endereço e tente de novo.',
-        );
-      } else if (desfecho.situacao === 'recusada') {
-        this.erroDeAbertura.set(this.problemI18n.resolve(desfecho.problem).title);
-      }
+      const desfecho = await this.abrirDocumentoDoProcesso(processoId, documentoAPublicarId);
+      this.informarFalhaDeAbertura(desfecho);
     } finally {
       this.abrindo.set(null);
+    }
+  }
+
+  private abrirDocumentoDoProcesso(processoId: string, documentoAPublicarId: string) {
+    return abrirAcessoEmNovaAba(
+      () => firstValueFrom(this.api.obterAcessoDocumentoAPublicar(processoId, documentoAPublicarId)),
+      () => processoId === this.publicacoes.processoId(),
+    );
+  }
+
+  private informarFalhaDeAbertura(desfecho: Awaited<ReturnType<typeof abrirAcessoEmNovaAba>>): void {
+    if (desfecho.situacao === 'bloqueada') {
+      this.erroDeAbertura.set(
+        'O navegador bloqueou a abertura do documento. Permita pop-ups para este endereço e tente de novo.',
+      );
+    } else if (desfecho.situacao === 'recusada') {
+      this.erroDeAbertura.set(this.problemI18n.resolve(desfecho.problem).title);
     }
   }
 }

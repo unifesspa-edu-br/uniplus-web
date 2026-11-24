@@ -89,12 +89,16 @@ export class DesempatePassoComponent {
    * vem classificada e o passo não o exige (a API aceita critérios, mas não os cobra).
    */
   readonly desempateObrigatorio = computed(
-    () => this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
+    () =>
+      this.store.draft().identificacao.origemCandidatos ===
+      OrigemCandidatosCodigo.INSCRICAO_PROPRIA,
   );
 
   /** Só diz que o desempate não é obrigatório quando a origem já foi escolhida como importação. */
   readonly desempateDispensado = computed(
-    () => this.store.draft().identificacao.origemCandidatos === OrigemCandidatosCodigo.IMPORTACAO_EXTERNA,
+    () =>
+      this.store.draft().identificacao.origemCandidatos ===
+      OrigemCandidatosCodigo.IMPORTACAO_EXTERNA,
   );
 
   /**
@@ -154,6 +158,12 @@ export class DesempatePassoComponent {
       };
     }
 
+    return this.confirmacaoDosCriterios(criterios);
+  }
+
+  private confirmacaoDosCriterios(
+    criterios: readonly CriterioDesempateConfigurado[],
+  ): ConfirmacaoDeGravacao {
     const adia = this.areas.adiaAGravacao();
     return {
       titulo: 'Confirmar os critérios de desempate',
@@ -161,10 +171,14 @@ export class DesempatePassoComponent {
         ? 'A ordem exibida é a ordem em que os critérios serão avaliados. Eles serão gravados junto com a classificação, no passo Eliminação.'
         : 'A ordem exibida é a ordem em que os critérios serão avaliados.',
       rotuloDeConfirmar: adia ? 'Confirmar critérios' : 'Gravar critérios',
-      itens: criterios.map((criterio, indice) => ({
-        rotulo: `${indice + 1}º critério`,
-        valor: textoDoCriterio(criterio, (codigo) => this.areas.rotuloDaArea(codigo)),
-      })),
+      itens: criterios.map((criterio, indice) => this.itemDoCriterio(criterio, indice)),
+    };
+  }
+
+  private itemDoCriterio(criterio: CriterioDesempateConfigurado, indice: number) {
+    return {
+      rotulo: `${indice + 1}º critério`,
+      valor: textoDoCriterio(criterio, (codigo) => this.areas.rotuloDaArea(codigo)),
     };
   }
 

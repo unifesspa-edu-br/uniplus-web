@@ -207,7 +207,10 @@ export class PublicarDocumentoComponent {
       const modo = untracked(() => this.modo());
       untracked(() => this.iniciar(modo));
     });
+    this.acompanharObrigatoriedadeDosCampos();
+  }
 
+  private acompanharObrigatoriedadeDosCampos(): void {
     effect(() => {
       const exigencias = {
         motivoDaCorrecao: this.corrige(),
@@ -234,15 +237,20 @@ export class PublicarDocumentoComponent {
     this.recusa.set([]);
     this.form.markAllAsTouched();
 
+    if (!this.podeConfirmar()) return;
+    this.confirmando.set(true);
+  }
+
+  private podeConfirmar(): boolean {
     if (this.impedimentos().length > 0) {
       this.focarResumo();
-      return;
+      return false;
     }
     if (this.form.invalid) {
       this.focarPrimeiroCampoInvalido();
-      return;
+      return false;
     }
-    this.confirmando.set(true);
+    return true;
   }
 
   protected async publicar(): Promise<void> {

@@ -31,6 +31,11 @@ const FORMATO_POR_EXTENSAO = new Map([
   ['odt', 'ODT'],
 ]);
 
+type ModeloConfirmado = Extract<
+  Awaited<ReturnType<EnvioDoModelo['confirmar']>>['resultado'],
+  { ok: true }
+>['data'];
+
 type FaseDoEnvio = 'iniciando' | 'enviando' | 'confirmando' | 'erro';
 
 /**
@@ -107,20 +112,20 @@ export class ModeloDaExigenciaComponent {
   readonly itens = computed<readonly ArquivoEmEnvio[]>(() => {
     const envio = this.envio();
     if (envio === null) return [];
-    return [
-      {
-        id: envio.id,
-        nome: envio.nome,
-        fase: envio.fase,
-        progresso: envio.progresso,
-        mensagem: envio.erro,
-        podeTentarDeNovo: envio.retomavel,
-        // Com a confirmação sem resposta o modelo pode já estar selado: abandonar o envio agora
-        // esconderia isso de quem decide.
-        podeRetirar: envio.fase === 'erro' && !this.bloqueado(),
-      },
-    ];
+    return [this.itemDoEnvio(envio)];
   });
+
+  private itemDoEnvio(envio: EnvioEmCurso): ArquivoEmEnvio {
+    return {
+      id: envio.id,
+      nome: envio.nome,
+      fase: envio.fase,
+      progresso: envio.progresso,
+      mensagem: envio.erro,
+      podeTentarDeNovo: envio.retomavel,
+      podeRetirar: envio.fase === 'erro' && !this.bloqueado(),
+    };
+  }
 
   /** Impede que uma segunda escolha atropele o envio em andamento. */
   private operacaoEmCurso = false;
@@ -163,13 +168,24 @@ export class ModeloDaExigenciaComponent {
       return;
     }
 
+    this.prepararEnvio(arquivo);
+    await this.executar();
+  }
+
+  private prepararEnvio(arquivo: File): void {
     this.recusa.set(null);
     this.arquivo = arquivo;
     this.destino = null;
     this.modeloEnviadoId = null;
     this.geracaoDoEnvio = this.store.geracao();
-    this.envio.set({ id: crypto.randomUUID(), nome: arquivo.name, fase: 'iniciando', progresso: 0, erro: null, retomavel: false });
-    await this.executar();
+    this.envio.set({
+      id: crypto.randomUUID(),
+      nome: arquivo.name,
+      fase: 'iniciando',
+      progresso: 0,
+      erro: null,
+      retomavel: false,
+    });
   }
 
   /** Retoma da fase que falhou, sem repetir o que já concluiu. */
@@ -199,26 +215,34 @@ export class ModeloDaExigenciaComponent {
     const destino = await this.destinoDoEnvio(processoId, arquivo);
     if (destino === null) return null;
 
+    const enviado = await this.enviarArquivo(destino, arquivo);
+    if (!enviado) return null;
+    // A URL cumpriu o papel; some da memória para não ficar credencial viva à toa.
+    this.destino = null;
+    return destino.modeloDeDocumentoId;
+  }
+
+  private async enviarArquivo(
+    destino: IniciarEnvioDoModeloDeDocumentoDto,
+    arquivo: File,
+  ): Promise<boolean> {
     this.atualizar({ fase: 'enviando', erro: null });
     const envio = await this.envioDoModelo.enviarArquivo(destino, arquivo, (progresso) =>
       this.atualizar({ progresso }),
     );
-    if (!this.aindaVale()) return null;
-    if (!envio.ok) {
-      // A assinatura recusada não volta a valer: a retentativa pede outra URL.
-      if (envio.expirada) this.destino = null;
-      this.falhar(
-        envio.expirada
-          ? 'O endereço de envio não é mais válido. Tente novamente para obter um novo.'
-          : 'Falha ao enviar o arquivo. Verifique a conexão e tente novamente.',
-        true,
-      );
-      return null;
-    }
+    if (!this.aindaVale()) return false;
+    if (!envio.ok) this.registrarFalhaNoEnvio(envio.expirada);
+    return envio.ok;
+  }
 
-    // A URL cumpriu o papel; some da memória para não ficar credencial viva à toa.
-    this.destino = null;
-    return destino.modeloDeDocumentoId;
+  private registrarFalhaNoEnvio(expirada: boolean): void {
+    if (expirada) this.destino = null;
+    this.falhar(
+      expirada
+        ? 'O endereço de envio não é mais válido. Tente novamente para obter um novo.'
+        : 'Falha ao enviar o arquivo. Verifique a conexão e tente novamente.',
+      true,
+    );
   }
 
   /** O destino ainda válido do envio, ou um novo pedido ao servidor; `null` se não se obteve. */
@@ -227,12 +251,8 @@ export class ModeloDaExigenciaComponent {
     arquivo: File,
   ): Promise<IniciarEnvioDoModeloDeDocumentoDto | null> {
     if (this.destino !== null && !destinoExpirado(this.destino)) return this.destino;
-
     this.atualizar({ fase: 'iniciando', progresso: 0, erro: null });
-    const { resultado, inconclusiva } = await this.envioDoModelo.iniciar(processoId, {
-      nomeArquivo: arquivo.name,
-      formato: formatoDoArquivo(arquivo.name),
-    });
+    const { resultado, inconclusiva } = await this.iniciarEnvio(processoId, arquivo);
     if (!this.aindaVale()) return null;
     if (!isApiOk(resultado)) {
       this.falhar(this.mensagemDaRecusa(resultado.problem), inconclusiva);
@@ -242,6 +262,13 @@ export class ModeloDaExigenciaComponent {
     return resultado.data;
   }
 
+  private iniciarEnvio(processoId: string, arquivo: File) {
+    return this.envioDoModelo.iniciar(processoId, {
+      nomeArquivo: arquivo.name,
+      formato: formatoDoArquivo(arquivo.name),
+    });
+  }
+
   private async confirmar(processoId: string, modeloId: string): Promise<void> {
     this.atualizar({ fase: 'confirmando', progresso: 100, erro: null });
     const { resultado, inconclusiva } = await this.envioDoModelo.confirmar(processoId, modeloId);
@@ -249,17 +276,24 @@ export class ModeloDaExigenciaComponent {
 
     this.confirmacaoIndefinida.set(!isApiOk(resultado) && inconclusiva);
     if (!isApiOk(resultado)) {
-      const mensagem = this.mensagemDaRecusa(resultado.problem);
-      this.falhar(
-        inconclusiva
-          ? `${mensagem} Não é possível saber se o modelo foi registrado; use "Tentar novamente" para repetir a mesma confirmação.`
-          : mensagem,
-        inconclusiva,
-      );
+      this.registrarRecusaDaConfirmacao(resultado.problem, inconclusiva);
       return;
     }
 
-    const modelo = resultado.data;
+    this.vincularModeloConfirmado(resultado.data);
+  }
+
+  private registrarRecusaDaConfirmacao(problema: ProblemDetails, inconclusiva: boolean): void {
+    const mensagem = this.mensagemDaRecusa(problema);
+    this.falhar(
+      inconclusiva
+        ? `${mensagem} Não é possível saber se o modelo foi registrado; use "Tentar novamente" para repetir a mesma confirmação.`
+        : mensagem,
+      inconclusiva,
+    );
+  }
+
+  private vincularModeloConfirmado(modelo: ModeloConfirmado): void {
     this.envio.set(null);
     this.arquivo = null;
     this.modeloEnviadoId = null;
@@ -287,19 +321,29 @@ export class ModeloDaExigenciaComponent {
     this.abrindo.set(true);
     this.erroDeAbertura.set(null);
     try {
-      const desfecho = await abrirAcessoEmNovaAba(
-        () => this.envioDoModelo.obterAcesso(processoId, modelo.modeloId),
-        () => this.vivo && geracao === this.store.geracao(),
-      );
-      if (desfecho.situacao === 'bloqueada') {
-        this.erroDeAbertura.set(
-          'O navegador bloqueou a abertura do modelo. Permita pop-ups para este endereço e tente de novo.',
-        );
-      } else if (desfecho.situacao === 'recusada') {
-        this.erroDeAbertura.set(this.mensagemDaRecusa(desfecho.problem));
-      }
+      await this.abrirModelo(processoId, modelo.modeloId, geracao);
     } finally {
       this.abrindo.set(false);
+    }
+  }
+
+  private async abrirModelo(processoId: string, modeloId: string, geracao: number): Promise<void> {
+    const desfecho = await abrirAcessoEmNovaAba(
+      () => this.envioDoModelo.obterAcesso(processoId, modeloId),
+      () => this.vivo && geracao === this.store.geracao(),
+    );
+    this.registrarFalhaDeAbertura(desfecho);
+  }
+
+  private registrarFalhaDeAbertura(
+    desfecho: Awaited<ReturnType<typeof abrirAcessoEmNovaAba>>,
+  ): void {
+    if (desfecho.situacao === 'bloqueada') {
+      this.erroDeAbertura.set(
+        'O navegador bloqueou a abertura do modelo. Permita pop-ups para este endereço e tente de novo.',
+      );
+    } else if (desfecho.situacao === 'recusada') {
+      this.erroDeAbertura.set(this.mensagemDaRecusa(desfecho.problem));
     }
   }
 

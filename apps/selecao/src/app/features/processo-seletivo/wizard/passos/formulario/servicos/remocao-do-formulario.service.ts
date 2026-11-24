@@ -71,22 +71,39 @@ export class RemocaoDoFormulario {
 
     const processoId = this.store.processoSeletivoId();
     if (processoId !== null) {
-      const geracao = this.store.geracao();
-      // Trava avançar, gravar e editar: um PUT da aba chegando depois do DELETE recriaria o formulário.
-      this.store.salvando.set(true);
-      let recusa: string | null;
-      try {
-        recusa = await this.removerDoServidor(processoId, finalidade);
-      } finally {
-        if (geracao === this.store.geracao()) this.store.salvando.set(false);
-      }
-      if (geracao !== this.store.geracao()) return null;
-      if (recusa !== null) {
-        this.recusas.update((atuais) => new Map([...atuais, [finalidade, recusa]]));
-        return { finalidade, recusa };
-      }
+      const resultado = await this.confirmarRemocaoNoServidor(processoId, finalidade);
+      if (resultado !== undefined) return resultado;
     }
+    this.removerDoRascunho(finalidade);
+    return { finalidade, recusa: null };
+  }
 
+  private async confirmarRemocaoNoServidor(
+    processoId: string,
+    finalidade: string,
+  ): Promise<DesfechoDaRemocao | null | undefined> {
+    const geracao = this.store.geracao();
+    const recusa = await this.removerComEdicaoBloqueada(processoId, finalidade, geracao);
+    if (geracao !== this.store.geracao()) return null;
+    if (recusa === null) return undefined;
+    this.recusas.update((atuais) => new Map([...atuais, [finalidade, recusa]]));
+    return { finalidade, recusa };
+  }
+
+  private async removerComEdicaoBloqueada(
+    processoId: string,
+    finalidade: string,
+    geracao: number,
+  ): Promise<string | null> {
+    this.store.salvando.set(true);
+    try {
+      return await this.removerDoServidor(processoId, finalidade);
+    } finally {
+      if (geracao === this.store.geracao()) this.store.salvando.set(false);
+    }
+  }
+
+  private removerDoRascunho(finalidade: string): void {
     const formulario = this.store.draft().formulario;
     this.store.patchSection('formulario', {
       ...formulario,
@@ -94,7 +111,6 @@ export class RemocaoDoFormulario {
         (outro) => outro.finalidade !== finalidade,
       ),
     });
-    return { finalidade, recusa: null };
   }
 
   /**
@@ -109,14 +125,20 @@ export class RemocaoDoFormulario {
 
     const remocao = await this.cadastro.removerFormulario(processoId, finalidade);
     if (remocao.ok) {
-      // A leitura guardada é de antes do DELETE: sem o formulário removido, ela volta a ser o gravado.
-      this.leitura.processoLido.update((lido) =>
-        lido === null
-          ? lido
-          : { ...lido, formularios: lido.formularios.filter((f) => f.finalidade.codigo !== finalidade) },
-      );
+      this.retirarFormularioDaLeitura(finalidade);
       return null;
     }
     return textoDaRecusa(remocao.problem, this.problemI18n);
+  }
+
+  private retirarFormularioDaLeitura(finalidade: string): void {
+    this.leitura.processoLido.update((lido) =>
+      lido === null
+        ? lido
+        : {
+            ...lido,
+            formularios: lido.formularios.filter((f) => f.finalidade.codigo !== finalidade),
+          },
+    );
   }
 }

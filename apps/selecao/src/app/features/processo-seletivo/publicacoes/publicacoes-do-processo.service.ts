@@ -26,6 +26,10 @@ export interface PrevistosLidos {
   readonly nomeDaFase: (codigo: string) => string;
 }
 
+type RespostasDosPrevistos = Awaited<
+  ReturnType<PublicacoesDoProcesso['consultarDadosDosPrevistos']>
+>;
+
 /**
  * O que a página Publicações do processo sabe: o processo, os atos já publicados e o catálogo de
  * tipos de ato. Provido pela página, e não pela raiz, porque descreve um processo só.
@@ -80,8 +84,15 @@ export class PublicacoesDoProcesso {
     if (leitura.estado !== 'lido') return new Set<string>();
     const { fases, etapasSemFase } = leitura.dados.consulta;
     const etapas = [...fases.flatMap((fase) => fase.etapas), ...etapasSemFase];
-    const itens = [...fases.flatMap((fase) => fase.produtos), ...etapas.flatMap((etapa) => etapa.produtos)];
-    return new Set(itens.flatMap((item) => [item.ato, ...item.correcoes]).flatMap((ato) => (ato ? [ato.id] : [])));
+    const itens = [
+      ...fases.flatMap((fase) => fase.produtos),
+      ...etapas.flatMap((etapa) => etapa.produtos),
+    ];
+    return new Set(
+      itens
+        .flatMap((item) => [item.ato, ...item.correcoes])
+        .flatMap((ato) => (ato ? [ato.id] : [])),
+    );
   });
 
   /** Os tipos que o catálogo declara publicáveis como documento avulso e que vigoram hoje. */
@@ -104,18 +115,17 @@ export class PublicacoesDoProcesso {
   );
 
   /** Lê tudo o que a página mostra, para o processo indicado. */
-  async abrir(processoId: string): Promise<void> {
+  async abrir(id: string): Promise<void> {
     const leitura = ++this.leituraAtual;
-    this.processoId.set(processoId);
+    this.processoId.set(id);
     this.processo.set(LENDO);
     this.atos.set(LENDO);
     this.tipos.set(LENDO);
     this.previstos.set(LENDO);
     this.diaDeReferencia.set(hojeNoFusoInstitucional());
-
     await Promise.all([
-      this.lerProcesso(processoId, leitura).then(() => this.lerPrevistosDoProcessoPublicado(processoId, leitura)),
-      this.lerAtos(processoId),
+      this.lerProcesso(id, leitura).then(() => this.lerPrevistosDoProcessoPublicado(id, leitura)),
+      this.lerAtos(id),
       this.lerTipos(leitura),
     ]);
   }
@@ -161,36 +171,61 @@ export class PublicacoesDoProcesso {
   }
 
   /** O processo em rascunho ainda não tem edital vigente, e portanto nenhum item a publicar. */
-  private async lerPrevistosDoProcessoPublicado(processoId: string, leitura: number): Promise<void> {
+  private async lerPrevistosDoProcessoPublicado(
+    processoId: string,
+    leitura: number,
+  ): Promise<void> {
     const processo = this.processo();
-    if (processo.estado !== 'lido' || processo.dados.status.codigo === StatusProcessoCodigo.RASCUNHO) return;
+    if (
+      processo.estado !== 'lido' ||
+      processo.dados.status.codigo === StatusProcessoCodigo.RASCUNHO
+    )
+      return;
     await this.lerPrevistos(processoId, leitura);
   }
 
   private async lerPrevistos(processoId: string, leitura: number): Promise<void> {
     const aindaVale = this.ordemDosPrevistos.iniciar();
-    const [consulta, campos, fases] = await Promise.all([
+    const dados = await this.consultarDadosDosPrevistos(processoId);
+    if (leitura !== this.leituraAtual || !aindaVale()) return;
+    this.guardarPrevistos(dados);
+  }
+
+  private consultarDadosDosPrevistos(processoId: string) {
+    return Promise.all([
       firstValueFrom(this.documentosApi.obterProdutosPrevistos(processoId)),
       firstValueFrom(this.documentosApi.listarCamposDivulgacao()),
       firstValueFrom(coletarPaginas((cursor) => this.fasesApi.listar({ cursor }))),
     ]);
-    if (leitura !== this.leituraAtual || !aindaVale()) return;
+  }
 
+  private guardarPrevistos([consulta, campos, fases]: RespostasDosPrevistos): void {
     // Sem a consulta não há o que publicar. Os nomes das fases e dos campos da política só
     // traduzem códigos: faltando um deles, a seção continua útil, com o código no lugar.
     if (!isApiOk(consulta)) {
-      this.previstos.set({ estado: 'falha', mensagem: this.problemI18n.resolve(consulta.problem).title });
-    } else {
-      const nomes = new Map(isApiOk(fases) ? fases.data.map((fase) => [fase.codigo, fase.nome]) : []);
       this.previstos.set({
-        estado: 'lido',
-        dados: {
-          consulta: consulta.data,
-          camposDeDivulgacao: isApiOk(campos) ? campos.data : [],
-          nomeDaFase: (codigo) => nomes.get(codigo) ?? codigo,
-        },
+        estado: 'falha',
+        mensagem: this.problemI18n.resolve(consulta.problem).title,
       });
+      return;
     }
+    this.previstos.set({
+      estado: 'lido',
+      dados: this.prepararPrevistos(consulta.data, campos, fases),
+    });
+  }
+
+  private prepararPrevistos(
+    consulta: ProdutosPrevistosDoProcessoDto,
+    campos: RespostasDosPrevistos[1],
+    fases: RespostasDosPrevistos[2],
+  ): PrevistosLidos {
+    const nomes = new Map(isApiOk(fases) ? fases.data.map((fase) => [fase.codigo, fase.nome]) : []);
+    return {
+      consulta,
+      camposDeDivulgacao: isApiOk(campos) ? campos.data : [],
+      nomeDaFase: (codigo) => nomes.get(codigo) ?? codigo,
+    };
   }
 
   private async lerAtos(processoId: string): Promise<void> {
@@ -209,7 +244,7 @@ export class PublicacoesDoProcesso {
 
   private async lerTipos(leitura: number): Promise<void> {
     // A série completa: o ato já publicado cujo tipo teve a vigência encerrada ainda precisa
-    // dizer se o tipo congela. Quais tipos podem ser escolhidos é recorte de `tiposDeDocumentoAvulso`.
+    // dizer se o tipo congela. Quais tipos podem ser escolhidos é definido por `tiposDeDocumentoAvulso`.
     const resultado = await firstValueFrom(
       coletarPaginas((cursor) => this.tiposApi.listar({ cursor, vigentes: false })),
     );

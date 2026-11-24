@@ -141,9 +141,30 @@ export class GravacaoDaIdentificacao {
 
   private async criar(): Promise<string | null> {
     const geracao = this.store.geracao();
+    const identificador = normalizarIdentificadorLegivel(
+      this.store.draft().identificacao.identificadorLegivel,
+    );
+    const resultado = await this.cadastro.criar(this.comandoDeCriacao(identificador));
+
+    if (geracao !== this.store.geracao()) return null;
+    if (!resultado.ok) {
+      this.registrarRecusaDaCriacao(resultado.problem);
+      return null;
+    }
+
+    return this.registrarCriacao(resultado.processoSeletivoId, identificador);
+  }
+
+  private registrarCriacao(processoId: string, identificador: string): string {
+    this.store.criacaoIndefinida.set(false);
+    this.identificadorGravado.set(identificador);
+    this.store.processoSeletivoId.set(processoId);
+    return processoId;
+  }
+
+  private comandoDeCriacao(identificador: string) {
     const identificacao = this.store.draft().identificacao;
-    const identificador = normalizarIdentificadorLegivel(identificacao.identificadorLegivel);
-    const resultado = await this.cadastro.criar({
+    return {
       nome: identificacao.nome.trim(),
       identificadorLegivel: identificador,
       tipoProcessoOrigemId: this.store.draft().tipoProcesso.selected,
@@ -152,27 +173,18 @@ export class GravacaoDaIdentificacao {
       localidadeCodigoIbge: identificacao.localidade?.codigoIbge ?? null,
       localidadeNome: identificacao.localidade?.nome ?? null,
       localidadeUf: identificacao.localidade?.uf ?? null,
-    });
+    };
+  }
 
-    // O editor pode ter passado a outro processo enquanto a criação corria: registrar o id agora
-    // o atribuiria ao processo que está em tela.
-    if (geracao !== this.store.geracao()) return null;
-
-    if (!resultado.ok) {
-      this.store.criacaoIndefinida.set(this.cadastro.temCriacaoPendente());
-      this.apontarRecusaDoIdentificador(resultado.problem);
-      this.erroDeCriacao.set(
-        this.store.criacaoIndefinida()
-          ? `${this.problemI18n.resolve(resultado.problem).title} Não é possível saber se o cadastro chegou a ser criado; use "Tentar novamente" para repetir o mesmo envio.`
-          : this.problemI18n.resolve(resultado.problem).title,
-      );
-      return null;
-    }
-
-    this.store.criacaoIndefinida.set(false);
-    this.identificadorGravado.set(identificador);
-    this.store.processoSeletivoId.set(resultado.processoSeletivoId);
-    return resultado.processoSeletivoId;
+  private registrarRecusaDaCriacao(problem: ProblemDetails): void {
+    this.store.criacaoIndefinida.set(this.cadastro.temCriacaoPendente());
+    this.apontarRecusaDoIdentificador(problem);
+    const titulo = this.problemI18n.resolve(problem).title;
+    this.erroDeCriacao.set(
+      this.store.criacaoIndefinida()
+        ? `${titulo} Não é possível saber se o cadastro chegou a ser criado; use "Tentar novamente" para repetir o mesmo envio.`
+        : titulo,
+    );
   }
 
   /** Grava o identificador de um processo já criado, quando ele mudou. */
@@ -181,22 +193,22 @@ export class GravacaoDaIdentificacao {
     if (identificador === null) return { valid: true };
     if (this.store.salvando()) return { valid: false, messages: [] };
 
-    return gravarNoPasso(this.store, async () => {
-      const geracao = this.store.geracao();
-      const resultado = await this.cadastro.definirIdentificadorLegivel(processoId, {
-        identificadorLegivel: identificador,
-      });
-      if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
+    return gravarNoPasso(this.store, () => this.declararIdentificador(processoId, identificador));
+  }
 
-      if (!resultado.ok) {
-        if (resultado.inconclusiva) this.identificadorGravado.set(undefined);
-        this.apontarRecusaDoIdentificador(resultado.problem);
-        return { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
-      }
-
-      this.identificadorGravado.set(identificador);
-      return { valid: true };
+  private async declararIdentificador(processoId: string, identificador: string) {
+    const geracao = this.store.geracao();
+    const resultado = await this.cadastro.definirIdentificadorLegivel(processoId, {
+      identificadorLegivel: identificador,
     });
+    if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
+    if (!resultado.ok) {
+      if (resultado.inconclusiva) this.identificadorGravado.set(undefined);
+      this.apontarRecusaDoIdentificador(resultado.problem);
+      return { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
+    }
+    this.identificadorGravado.set(identificador);
+    return { valid: true };
   }
 
   /** Recusa do servidor sobre o identificador vai para junto do campo, além do aviso do passo. */
