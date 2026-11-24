@@ -301,3 +301,18 @@ export type {
 } from './prazo-e-validade-do-documento.provisorio';
 
 export { VocabulariosDoPrazoEDaValidadeApi } from './vocabularios-do-prazo-e-da-validade.api';
+
+export { AplicabilidadeCodigo } from './schema';
+
+export { VocabulariosDaDeliberacaoApi } from './vocabularios-da-deliberacao.api';
+
+export { CriterioDeVotacaoCodigo, EncerramentoDaVotacaoCodigo } from './schema';
+export type {
+  ModoDeDeliberacaoDto,
+  CriterioDeVotacaoDto,
+  DesempateDaVotacaoDto,
+  EncerramentoDaVotacaoDto,
+  ResultadoSemUnanimidadeDto,
+} from './vocabularios-da-deliberacao.api';
+
+export { DesempateDaVotacaoCodigo, ResultadoSemUnanimidadeCodigo } from './schema';
