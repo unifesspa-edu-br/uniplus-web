@@ -58,7 +58,12 @@ function membroDoContrato<E extends Record<string, string>>(contrato: E, codigo:
   return membro;
 }
 
-/** As etapas, com o tipo e o bloco no membro do enum; a etapa fora do contrato é defeito da tela. */
+/**
+ * As etapas, com o tipo e o bloco no membro do enum do contrato.
+ *
+ * @throws Error quando o tipo ou o bloco não existe no contrato: os dois vêm da API ou das
+ * constantes do editor, então um valor desconhecido é defeito do código, não da pessoa que preenche.
+ */
 export function etapasParaOModelo<
   E extends { readonly tipo: string; readonly bloco: string | null },
 >(etapas: readonly E[] | null | undefined) {

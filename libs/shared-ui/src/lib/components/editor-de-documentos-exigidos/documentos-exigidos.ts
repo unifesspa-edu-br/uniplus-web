@@ -45,7 +45,10 @@ export interface RequisitosDoDocumento {
   readonly validade: null | ValidadeDoDocumento;
 }
 
-/** Um documento do conjunto padrão do modelo, na forma do contrato. */
+/**
+ * Um documento do conjunto padrão do modelo, na forma que o editor edita: o indeferimento do
+ * contrato vem desdobrado em campos, e o app que grava o devolve ao bloco.
+ */
 export interface DocumentoExigidoDoFormulario<O = string> {
   readonly faseCodigo: string;
   readonly tipoDocumentoCodigo: string;

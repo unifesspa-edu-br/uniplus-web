@@ -203,6 +203,20 @@ describe('conteudoParaOModelo', () => {
     );
   });
 
+  it('recusa gravar etapa com tipo ou bloco que o contrato não conhece', () => {
+    const etapa = (conteudo.etapas ?? [])[0];
+
+    expect(() =>
+      conteudoParaOModelo({ ...conteudo, etapas: [{ ...etapa, tipo: 'INVENTADO' }] }),
+    ).toThrow('Código fora do contrato: INVENTADO');
+    expect(() =>
+      conteudoParaOModelo({
+        ...conteudo,
+        etapas: [{ ...etapa, tipo: 'BLOCO', bloco: 'INVENTADO' }],
+      }),
+    ).toThrow('Código fora do contrato: INVENTADO');
+  });
+
   it('agrupa o indeferimento do documento e leva os grupos dentro do conjunto', () => {
     const { documentosExigidos, gruposDeDocumentos } = gravado.conjuntoDeDocumentos ?? {};
 

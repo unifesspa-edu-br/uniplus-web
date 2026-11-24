@@ -34,8 +34,16 @@ type ReferenciaParaOModelo = NonNullable<
 const codigoDe = (escolha: { readonly codigo: string } | null): string | null =>
   escolha?.codigo ?? null;
 
-function referenciaDoModelo(r: ReferenciaDoModelo | null): DataDeReferenciaDoDocumento | null {
-  return r && { tipo: r.tipo.codigo, data: r.data, faseCodigo: r.faseCodigo };
+function referenciaDoModelo(
+  referencia: ReferenciaDoModelo | null,
+): DataDeReferenciaDoDocumento | null {
+  return (
+    referencia && {
+      tipo: referencia.tipo.codigo,
+      data: referencia.data,
+      faseCodigo: referencia.faseCodigo,
+    }
+  );
 }
 
 type PrazoDoModelo = NonNullable<RequisitosDoModelo['prazoDeEmissao']>;
@@ -71,13 +79,13 @@ function requisitosDoModelo({
 }
 
 function referenciaParaOModelo(
-  r: DataDeReferenciaDoDocumento | null,
+  referencia: DataDeReferenciaDoDocumento | null,
 ): ReferenciaParaOModelo | null {
   return (
-    r && {
-      tipo: codigoDoContrato(TipoDaDataDeReferenciaCodigo, r.tipo ?? ''),
-      data: r.data,
-      faseCodigo: r.faseCodigo,
+    referencia && {
+      tipo: codigoDoContrato(TipoDaDataDeReferenciaCodigo, referencia.tipo ?? ''),
+      data: referencia.data,
+      faseCodigo: referencia.faseCodigo,
     }
   );
 }
