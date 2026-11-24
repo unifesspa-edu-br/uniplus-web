@@ -1,3 +1,7 @@
+import { HttpHeaders } from '@angular/common/http';
+import { of } from 'rxjs';
+import { apiOk } from '@uniplus/shared-core/http';
+import { VocabulariosDaDeliberacaoApi } from './vocabularios-da-deliberacao.api';
 import {
   FinalidadeDoDocumentoCodigo,
   SentidoDoMotivoCodigo,
@@ -27,3 +31,17 @@ export const finalidadeDoDocumento = {
   codigo: FinalidadeDoDocumentoCodigo.documentoDoEdital,
   rotulo: 'Documento do edital',
 };
+
+export function proverVocabulariosDaDeliberacao() {
+  const resposta = () => of(apiOk([], 200, new HttpHeaders()));
+  return {
+    provide: VocabulariosDaDeliberacaoApi,
+    useValue: {
+      listarModosDeDeliberacao: resposta,
+      listarCriteriosDeVotacao: resposta,
+      listarDesempatesDaVotacao: resposta,
+      listarEncerramentosDaVotacao: resposta,
+      listarResultadosSemUnanimidade: resposta,
+    },
+  };
+}
