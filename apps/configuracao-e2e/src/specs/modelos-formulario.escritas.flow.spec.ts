@@ -1,4 +1,7 @@
-import type { ModeloFormularioView } from '@uniplus/shared-data/configuracao';
+import {
+  FinalidadeFormularioCodigo,
+  type ModeloFormularioView,
+} from '@uniplus/shared-data/configuracao';
 import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
@@ -13,7 +16,7 @@ const ID_DO_NOVO_MODELO = '01960000-0000-7000-0000-0000000000a2';
 const MODELO = {
   id: ID_DO_MODELO,
   codigo: 'INSCRICAO',
-  finalidade: 'INSCRICAO',
+  finalidade: { codigo: FinalidadeFormularioCodigo.INSCRICAO, rotulo: 'Inscrição' },
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   ativo: true,
   conteudo: {
@@ -102,6 +105,9 @@ async function mockApi(
     /\/api\/configuracao\/(fatos-candidato|fases-canonicas|tipos-documento|termos-consentimento)(\?.*)?$/,
     (r) => responder(r, { status: 200, corpo: [] }),
   );
+  const deveFalharPrimeiraConsulta = () => primeiraConsulta === 'falha' && consultas === 1;
+  const deveFalharRecarga = () => aceita && recarga === 'com-falha';
+  const deveOmitirModelo = () => aceita && recarga === 'sem-o-modelo';
   await page.route(/\/api\/configuracao\/admin\/modelos-formulario(\?.*)?$/, async (route) => {
     const requisicao = route.request();
     if (requisicao.method() === 'OPTIONS') {
@@ -118,21 +124,20 @@ async function mockApi(
       return;
     }
     consultas += 1;
-    if (primeiraConsulta === 'falha' && consultas === 1) {
+    if (deveFalharPrimeiraConsulta()) {
       await responder(route, { status: 500, corpo: ERRO_INTERNO });
       return;
     }
     if (aceita || consultas > 1) {
       await new Promise((resolve) => setTimeout(resolve, ATRASO_DA_RECARGA_EM_MS));
     }
-    if (aceita && recarga === 'com-falha') {
+    if (deveFalharRecarga()) {
       await responder(route, { status: 500, corpo: ERRO_INTERNO });
       return;
     }
-    const corpo =
-      aceita && recarga === 'sem-o-modelo'
-        ? []
-        : [{ ...MODELO, ativo: aceita ? !MODELO.ativo : MODELO.ativo }];
+    const corpo = deveOmitirModelo()
+      ? []
+      : [{ ...MODELO, ativo: aceita ? !MODELO.ativo : MODELO.ativo }];
     await responder(route, { status: 200, corpo });
   });
   await page.route(

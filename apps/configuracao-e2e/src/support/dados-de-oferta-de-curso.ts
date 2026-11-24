@@ -1,5 +1,12 @@
 import type { Page } from '@playwright/test';
-import type { OfertaCursoDto } from '@uniplus/shared-data/configuracao';
+import {
+  FormatoPedagogicoCodigo,
+  ProgramaDeOfertaCodigo,
+  RegimeDeFuncionamentoCodigo,
+  RegimeDeTurnoCodigo,
+  TurnoOfertaCodigo,
+  type OfertaCursoDto,
+} from '@uniplus/shared-data/configuracao';
 
 /** Os dados do cadastro de Oferta de curso que os specs de fluxo compartilham. */
 
@@ -51,11 +58,11 @@ export const OFERTA: OfertaCursoDto = {
     nome: UNIDADE.nome,
     tipo: 'Instituto',
   },
-  programaDeOferta: 'REGULAR',
-  formatoPedagogico: 'PRESENCIAL',
-  regimeDeFuncionamento: 'EXTENSIVO',
-  regimeDeTurno: 'REGULAR',
-  turnos: ['MATUTINO'],
+  programaDeOferta: { codigo: ProgramaDeOfertaCodigo.REGULAR, rotulo: 'Regular' },
+  formatoPedagogico: { codigo: FormatoPedagogicoCodigo.PRESENCIAL, rotulo: 'Presencial' },
+  regimeDeFuncionamento: { codigo: RegimeDeFuncionamentoCodigo.EXTENSIVO, rotulo: 'Extensivo' },
+  regimeDeTurno: { codigo: RegimeDeTurnoCodigo.REGULAR, rotulo: 'Regular' },
+  turnos: [{ codigo: TurnoOfertaCodigo.MATUTINO, rotulo: 'Matutino' }],
   eMecCodigo: '123456',
   codigoSga: null,
   vagasAnuaisAutorizadas: 40,

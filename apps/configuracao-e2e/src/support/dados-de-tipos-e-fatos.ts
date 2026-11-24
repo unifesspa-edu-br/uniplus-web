@@ -1,4 +1,10 @@
-import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
+import {
+  FonteValoresFatoCodigo,
+  OrigemFatoCodigo,
+  QuantidadeDeValoresCodigo,
+  TipoDoDadoCodigo,
+  type FatoCandidatoDto,
+} from '@uniplus/shared-data/configuracao';
 
 /**
  * Os tipos de documento, os fatos do candidato e a proteção de dados deles nos testes visuais, com as
@@ -82,12 +88,12 @@ export const FATOS = [
       componenteExibicao: null,
     },
     definicao: {
-      dominio: 'CATEGORICO',
-      cardinalidade: 'ESCALAR',
+      dominio: { codigo: TipoDoDadoCodigo.OPCAO, rotulo: 'Opção' },
+      cardinalidade: { codigo: QuantidadeDeValoresCodigo.VALOR_UNICO, rotulo: 'Valor único' },
       escopo: 'CANDIDATO',
       formato: null,
       resolucao: {
-        origem: 'DECLARADO',
+        origem: { codigo: OrigemFatoCodigo.DECLARADO, rotulo: 'Declarado' },
         pontoResolucao: 'INSCRICAO',
         binding: 'CAMPO_INSCRICAO:IDENTIDADE_GENERO',
       },
@@ -98,7 +104,7 @@ export const FATOS = [
         aprovacao: AJUSTE,
       },
       valores: {
-        fonte: 'GLOBAL',
+        fonte: { codigo: FonteValoresFatoCodigo.CATALOGO, rotulo: 'Catálogo' },
         declarados: [
           {
             codigo: 'MULHER_CIS',
@@ -130,12 +136,12 @@ export const FATOS = [
       componenteExibicao: 'MOEDA',
     },
     definicao: {
-      dominio: 'NUMERICO',
-      cardinalidade: 'ESCALAR',
+      dominio: { codigo: TipoDoDadoCodigo.NUMERICO, rotulo: 'Numérico' },
+      cardinalidade: { codigo: QuantidadeDeValoresCodigo.VALOR_UNICO, rotulo: 'Valor único' },
       escopo: 'CANDIDATO',
       formato: null,
       resolucao: {
-        origem: 'DECLARADO',
+        origem: { codigo: OrigemFatoCodigo.DECLARADO, rotulo: 'Declarado' },
         pontoResolucao: 'INSCRICAO',
         binding: 'CAMPO_INSCRICAO:RENDA',
       },

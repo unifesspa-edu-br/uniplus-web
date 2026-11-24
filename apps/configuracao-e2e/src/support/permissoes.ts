@@ -25,7 +25,7 @@ export const TODAS_AS_PERMISSOES_DA_CONFIGURACAO = [
   'configuracao:modelos-formulario:consultar',
   'configuracao:tipos-documento:manter',
   'configuracao:protecao-do-catalogo:aprovar',
-  'configuracao:base-legal-bonus-regional:manter',
+  'configuracao:base-legal-do-fada:manter',
   'configuracao:condicoes-atendimento:manter',
   'configuracao:recursos-acessibilidade:manter',
   'configuracao:tipos-deficiencia:manter',

@@ -1,4 +1,7 @@
-import type { ModeloFormularioView } from '@uniplus/shared-data/configuracao';
+import {
+  FinalidadeFormularioCodigo,
+  type ModeloFormularioView,
+} from '@uniplus/shared-data/configuracao';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
@@ -12,7 +15,7 @@ const ID_DO_MODELO = '01960000-0000-7000-0000-0000000000a1';
 const MODELO = {
   id: ID_DO_MODELO,
   codigo: 'INSCRICAO',
-  finalidade: 'INSCRICAO',
+  finalidade: { codigo: FinalidadeFormularioCodigo.INSCRICAO, rotulo: 'Inscrição' },
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   ativo: true,
   conteudo: {
