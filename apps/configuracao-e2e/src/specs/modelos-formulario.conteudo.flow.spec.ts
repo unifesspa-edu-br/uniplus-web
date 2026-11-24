@@ -25,7 +25,7 @@ const REGRAS_DO_CAMPO = {
 const MODELO: JsonDaApi<ModeloFormularioView> = {
   id: ID_DO_MODELO,
   codigo: 'INSCRICAO',
-  finalidade: 'INSCRICAO',
+  finalidade: { codigo: 'INSCRICAO', rotulo: 'Inscrição' },
   ativo: true,
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   conteudo: {
@@ -59,7 +59,7 @@ const MODELO: JsonDaApi<ModeloFormularioView> = {
         etapaCodigo: 'SECAO_1',
         apresentacao: {
           rotulo: ROTULO_DA_ESCOLA,
-          tipoRenderizacao: 'BOOLEANO',
+          tipoRenderizacao: 'SIM_OU_NAO',
           ajuda: AJUDA_DA_ESCOLA,
           pedirConfirmacao: false,
         },
@@ -92,9 +92,11 @@ function fatoDoCatalogo(codigo: string): JsonDaApi<FatoDoCatalogoDto> {
       codigo,
       nome: codigo,
       descricao: 'Dado do candidato.',
-      dominio: texto ? 'TEXTO' : 'BOOLEANO',
-      origem: 'DECLARADO',
-      cardinalidade: 'ESCALAR',
+      dominio: texto
+        ? { codigo: 'TEXTO', rotulo: 'Texto' }
+        : { codigo: 'SIM_OU_NAO', rotulo: 'Sim ou não' },
+      origem: { codigo: 'DECLARADO', rotulo: 'Declarado' },
+      cardinalidade: { codigo: 'VALOR_UNICO', rotulo: 'Um valor' },
       valoresDominio: null,
       pontoResolucao: 'INSCRICAO',
       binding: `CAMPO_FORMULARIO:${codigo}`,

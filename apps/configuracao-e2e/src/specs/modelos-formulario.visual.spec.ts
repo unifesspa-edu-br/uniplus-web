@@ -13,7 +13,7 @@ const MODELO = {
   codigo: 'INSCRICAO',
   nome: 'Inscrição',
   descricao: null,
-  finalidade: 'INSCRICAO',
+  finalidade: { codigo: 'INSCRICAO', rotulo: 'Inscrição' },
   tipoProcessoCodigo: null,
   ativo: true,
   conteudo: {

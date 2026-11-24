@@ -24,8 +24,11 @@ const acSeed = {
   codigo: 'AC',
   legalFixa: true,
   descricao: 'Ampla concorrência',
-  naturezaLegal: 'AMPLA',
-  composicaoVagas: 'RESTANTE_DAS_VAGAS_OFERTADAS',
+  naturezaLegal: { codigo: 'AMPLA', rotulo: 'Ampla' },
+  composicaoVagas: {
+    codigo: 'RESTANTE_DAS_VAGAS_OFERTADAS',
+    rotulo: 'Restante das vagas ofertadas',
+  },
   composicaoOrigem: null,
   regraRemanejamento: null,
   remanejamentoDestino: null,
@@ -44,10 +47,13 @@ const vSeed = {
   codigo: 'V',
   legalFixa: false,
   descricao: 'PcD ampla concorrência',
-  naturezaLegal: 'ACAO_AFIRMATIVA',
-  composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
+  naturezaLegal: { codigo: 'ACAO_AFIRMATIVA', rotulo: 'Ação afirmativa' },
+  composicaoVagas: {
+    codigo: 'RETIRADA_DE_OUTRA_MODALIDADE',
+    rotulo: 'Retirada de outra modalidade',
+  },
   composicaoOrigem: 'AC',
-  regraRemanejamento: 'DESTINO_UNICO',
+  regraRemanejamento: { codigo: 'DESTINO_UNICO', rotulo: 'Destino único' },
   remanejamentoDestino: 'AC',
   regraDeAplicabilidade: [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]],
 };
@@ -59,9 +65,9 @@ const catalogoDeFatos = [
       codigo: 'PCD',
       nome: 'Pessoa com deficiência',
       descricao: null,
-      dominio: 'BOOLEANO',
-      origem: 'DECLARADO',
-      cardinalidade: 'ESCALAR',
+      dominio: { codigo: 'SIM_OU_NAO', rotulo: 'Sim ou não' },
+      origem: { codigo: 'DECLARADO', rotulo: 'Declarado' },
+      cardinalidade: { codigo: 'VALOR_UNICO', rotulo: 'Um valor' },
       valoresDominio: null,
       pontoResolucao: 'INSCRICAO',
       binding: 'CAMPO_INSCRICAO:PCD',
@@ -237,12 +243,15 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await natureza.selectOption('COTA_RESERVADA');
     await expect(page.locator('#cfg-mod-remanejamento')).toBeVisible();
     const regra = page.locator('[formControlName="regraRemanejamento"]');
-    await expect(regra).toHaveValue('SEGUE_CASCATA');
+    await expect(regra).toHaveValue('SEGUE_ORDEM_DE_REMANEJAMENTO');
     // Playwright toBeDisabled é instável em <option>; checa a propriedade DOM diretamente.
     await expect(regra.locator('option[value="DESTINO_UNICO"]')).toHaveJSProperty('disabled', true);
 
     await natureza.selectOption('ACAO_AFIRMATIVA');
-    await expect(regra.locator('option[value="SEGUE_CASCATA"]')).toHaveJSProperty('disabled', true);
+    await expect(regra.locator('option[value="SEGUE_ORDEM_DE_REMANEJAMENTO"]')).toHaveJSProperty(
+      'disabled',
+      true,
+    );
     await expect(regra.locator('option[value="DESTINO_UNICO"]')).toHaveJSProperty(
       'disabled',
       false,

@@ -1,5 +1,5 @@
 import type { Page, Route } from '@playwright/test';
-import type { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
+import { OrigemDataFaseCodigo, type FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { responder, responderPreflight, servirLeitura } from './escritas-retidas';
 
 /** API mockada da Fase canônica para os specs que só leem a lista e capturam a atualização. */
@@ -18,7 +18,7 @@ const FASE_SEM_SINALIZADORES: FaseCanonicaDto = {
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
-  origemData: 'NO_EDITAL',
+  origemData: { codigo: OrigemDataFaseCodigo.NO_EDITAL, rotulo: 'Definida no edital' },
   criadoEm: '2026-06-10T12:00:00Z',
 };
 

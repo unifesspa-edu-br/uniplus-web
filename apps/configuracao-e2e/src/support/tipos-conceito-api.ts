@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import type { TipoConceitoDto } from '@uniplus/shared-data/configuracao';
+import { FormaDoConceitoCodigo, type TipoConceitoDto } from '@uniplus/shared-data/configuracao';
 import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { servirLeitura } from './escritas-retidas';
 
@@ -11,7 +11,7 @@ export const PARECER_FINAL: JsonDaApi<TipoConceitoDto> = {
   definicao: {
     nome: 'Parecer final',
     descricao: null,
-    natureza: { codigo: 'CATEGORICO', rotulo: 'Categórico' },
+    natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Categórico' },
     numerico: null,
     valores: [
       { codigo: 'APTO', rotulo: 'Apto', contaComoAprovacao: true },
