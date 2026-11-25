@@ -1,8 +1,8 @@
 ---
-status: "accepted"
-date: "2026-11-17"
+status: accepted
+date: 2026-11-17
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0032: Apoio de teste unitário em lib restrita aos testes
@@ -47,6 +47,14 @@ espera de tempo real em teste unitário dá lugar ao relógio controlado, salvo 
 entre temporizador e atualização da tela previsto na ADR-0004. A lib também reexporta as respostas
 simuladas da API que o `shared-core` mantém em arquivo de teste próprio; a dependência vai só da lib
 ao `shared-core`, que não a importa, e assim não há ciclo.
+
+> **Emenda (2026-11-25).** A [ADR-0033](0033-conferencia-dos-testes-com-o-contrato-da-api.md)
+> propõe que a `shared-testing` ofereça um ponto de entrada sem Angular para a conferência do
+> contrato da API, quando implementado. Ele dependerá dos documentos
+> OpenAPI de `shared-data`, acessados por apelido de caminho. A dependência continua em um só
+> sentido: `shared-core` não importa `shared-testing`, e seus testes ficam fora da obrigação de
+> conferir o contrato. A `shared-testing` continua restrita a arquivos de teste, sem integrar
+> o build nem o pacote de produção.
 
 ## Consequências
 
