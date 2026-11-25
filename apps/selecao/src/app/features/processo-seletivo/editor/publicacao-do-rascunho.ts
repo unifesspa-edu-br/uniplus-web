@@ -120,10 +120,11 @@ async function rascunhoInteiroValido(
  * nunca chegou lá.
  *
  * Detectar o passo "sujo" exigiria um mapeamento de passo para seção do `WizardDraft` que o wizard
- * não tem de propósito, e o rascunho tem mais de um caminho de escrita. Um retrato comparado após
- * a hidratação já quebrou toda retomada com edital confirmado, porque a restauração do anexo muda
- * o rascunho depois dele. Gravar de novo custa uma chamada a mais por passo, mas é correto por
- * construção: o `persistir()` de cada passo já é reenvio idempotente.
+ * não tem de propósito, e o rascunho tem mais de um caminho de escrita. Comparar o rascunho salvo
+ * antes de carregar os dados com o rascunho após o carregamento marca como alterado um processo
+ * retomado com edital confirmado, porque a restauração do anexo muda o rascunho depois do
+ * carregamento. Gravar de novo custa uma chamada a mais por passo, mas é correto por construção:
+ * o `persistir()` de cada passo já é reenvio idempotente.
  */
 async function gravarPassosAnteriores(conducao: ConducaoDoWizard): Promise<string[]> {
   const { store } = conducao;
