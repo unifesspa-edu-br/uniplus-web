@@ -202,6 +202,9 @@ npx nx affected --target=build
 ### 3. Testar
 
 ```bash
+# Verificação completa dos projetos afetados (as mesmas quatro verificações do CI, mais os testes)
+npx nx affected -t lint typecheck typecheck-spec build test
+
 # Lint (todas as apps afetadas)
 npx nx affected --target=lint
 
@@ -217,6 +220,8 @@ npx nx affected --target=build --configuration=production
 
 Todos os comandos acima devem passar antes de abrir o PR.
 
+O `build` das apps confere os templates (`ngc`), o `typecheck` confere o código e o `typecheck-spec` confere os specs. A [ADR-0033](docs/adrs/0033-conferencia-dos-testes-com-o-contrato-da-api.md) propõe conferir os testes que simulam a API contra o contrato versionado em `libs/shared-data/openapi`, nos projetos migrados.
+
 #### Estratégia de lint em três camadas
 
 O lint é checado em três pontos distintos, do mais rápido ao mais abrangente, para evitar acúmulo silencioso de débito em projetos não afetados:
@@ -225,7 +230,7 @@ O lint é checado em três pontos distintos, do mais rápido ao mais abrangente,
 | --------------------------------- | ------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | **Pre-commit local**              | Automático em cada `git commit` | `lint-staged` → `eslint --fix` apenas nos arquivos staged | Sim (impede commit)                                                                                                            |
 | **Lint afetado local**            | Manual antes do push da PR      | `npx nx affected --target=lint`                           | Recomendado (o CI roda `gate (lint)` sobre os projetos afetados, quando o PR toca o frontend, e o `lint-full.yml` sobre todos) |
-| **CI completo (`lint-full.yml`)** | Em cada PR e push para `main`   | `npx nx run-many --target=lint --all`                     | Sim (gate de merge)                                                                                                            |
+| **CI completo (`lint-full.yml`)** | Em cada PR e push para `main`   | `npx nx run-many --target=lint --all`                     | Sim (verificação obrigatória para o merge)                                                                                     |
 
 O hook de pre-commit é configurado via `husky` (`.husky/pre-commit`) e roda automaticamente após `npm install`. Em casos excepcionais, pode-se contornar com `git commit --no-verify` — mas a CI rejeitará o PR se o lint completo falhar.
 
