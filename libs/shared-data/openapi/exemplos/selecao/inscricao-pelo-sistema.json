@@ -211,7 +211,7 @@
       "totalDeVagasDoEdital": 40
     }
   ],
-  "cascataRemanejamento": {
+  "ordemDeRemanejamento": {
     "regra": {
       "codigo": "REMANEJ-CASCATA-LEI-12711",
       "versao": "v1"
@@ -436,7 +436,7 @@
       "nome_abreviado"
     ]
   },
-  "tiposDeAtoCongelados": [
+  "tiposDeAto": [
     {
       "codigo": "RESULTADO_PRELIMINAR",
       "unicoPorObjeto": true,

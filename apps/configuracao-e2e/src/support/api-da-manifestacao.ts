@@ -1,3 +1,4 @@
+import type { RegistrarManifestacaoDaProtecaoRequestParecer } from '@uniplus/shared-data/configuracao';
 import type { Page } from '@playwright/test';
 import { PENDENCIAS, SOLICITADA } from './dados-de-tipos-e-fatos';
 import { mockRota, type Chamada, type Resposta } from './api-de-perfis-filas';
@@ -10,7 +11,7 @@ const ITEM = PENDENCIAS[0];
 export const MANIFESTACAO_DESFAVORAVEL = {
   id: '01960000-0000-7000-0000-0000000000f1',
   ciclo: 1,
-  parecer: 'INADEQUADA',
+  parecer: 'RECOMENDA_NAO_USO' satisfies `${RegistrarManifestacaoDaProtecaoRequestParecer}`,
   texto: 'O laudo revela condição de saúde: a classificação deve ser sensível.',
   autorNome: 'Isabella Priscila Figueiredo',
   instante: '2026-11-02T14:00:00Z',

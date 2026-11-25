@@ -1,3 +1,8 @@
+import {
+  DecidirProtecaoDoCatalogoRequestDecisao,
+  RegistrarManifestacaoDaProtecaoRequestParecer,
+} from '@uniplus/shared-data/configuracao';
+import { ItemParaSolicitarRequestCadastro } from '@uniplus/shared-data/configuracao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef, type Signal } from '@angular/core';
@@ -58,7 +63,7 @@ export const laudo: ItemDaProtecaoDoCatalogoDto = {
 
 export const rural: ItemDaProtecaoDoCatalogoDto = {
   ...laudo,
-  tipo: 'FATO',
+  tipo: ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO,
   id: '01960000-0000-7000-0000-0000000000d3',
   codigo: 'RESIDE_EM_AREA_RURAL',
   nome: 'Reside em área rural',
@@ -113,7 +118,7 @@ export function manifestacao(
   return {
     id: 'manifestacao-1',
     ciclo: 2,
-    parecer: 'INADEQUADA',
+    parecer: RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO,
     texto: 'O laudo revela condição de saúde: a classificação deve ser sensível.',
     autorNome: 'Isabella Figueiredo',
     instante: '2026-11-02T14:00:00Z',
@@ -123,13 +128,13 @@ export function manifestacao(
   };
 }
 
-/** A reprovação do fato da renda; a base das decisões da aba. */
+/** A devolução do fato da renda; a base das decisões da aba. */
 export const decisaoDoFato: DecisaoDaProtecaoDto = {
-  cadastro: 'FATO',
+  cadastro: ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO,
   itemId: rural.id,
   itemCodigo: 'RENDA_FAMILIAR_BRUTA',
   itemNome: 'Renda familiar bruta',
-  ato: 'REPROVACAO',
+  ato: DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO,
   instante: '2026-10-31T13:00:00Z',
   atorNome: 'Betina Albuquerque',
   classificacaoProtecao: 'PESSOAL',
@@ -148,7 +153,7 @@ export const decisaoDoTipo: DecisaoDaProtecaoDto = {
   itemId: laudo.id,
   itemCodigo: laudo.codigo,
   itemNome: laudo.nome,
-  ato: 'AJUSTE_RECOMENDADO',
+  ato: DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO,
   instante: '2026-10-30T15:00:00Z',
   atorNome: 'Caroline Ribeiro',
   classificacaoProtecao: 'INTERNO',
@@ -255,7 +260,8 @@ export async function abrirItem(
     'a linha',
   );
   await pagina.assentar();
-  const segmento = item.tipo === 'FATO' ? 'fatos' : 'tipos-documento';
+  const segmento =
+    item.tipo === ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO ? 'fatos' : 'tipos-documento';
   pagina.controller.expectOne(`${URL_DA_FILA}/${segmento}/${item.id}`).flush(detalhe);
   await pagina.assentar();
 }

@@ -17,10 +17,10 @@ export const MENSAGENS_DA_PROTECAO_DO_CATALOGO: Readonly<Record<string, Mensagem
   },
   parecer_invalido: {
     titulo: 'Parecer fora do vocabulário da manifestação',
-    resolver: 'Escolha adequada, recomenda ajuste ou inadequada.',
+    resolver: 'Escolha recomenda aprovação, recomenda ajuste ou recomenda não uso.',
   },
   texto_da_manifestacao_obrigatorio: {
-    titulo: 'Os pareceres recomenda ajuste e inadequada exigem o texto',
+    titulo: 'Os pareceres recomenda ajuste e recomenda não uso exigem o texto',
     resolver: 'Explique, no texto, o que precisa mudar na proteção proposta.',
   },
   texto_da_manifestacao_muito_longo: {

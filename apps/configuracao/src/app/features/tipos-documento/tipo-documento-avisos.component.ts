@@ -41,8 +41,8 @@ export class TipoDocumentoAvisosComponent {
   protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
   protected readonly rotulo = rotuloDe;
   protected readonly tituloDaDecisao = computed(() =>
-    this.decisao()?.situacao === 'REPROVADA'
-      ? 'Reprovado pela proteção de dados'
+    this.decisao()?.situacao === 'DEVOLVIDA'
+      ? 'Devolvido pela proteção de dados'
       : 'Ajuste recomendado pela proteção de dados',
   );
 }

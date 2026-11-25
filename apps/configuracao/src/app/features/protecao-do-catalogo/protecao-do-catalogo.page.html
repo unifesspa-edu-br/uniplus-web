@@ -111,15 +111,15 @@
         type="button"
         class="btn btn--danger"
         [disabled]="edicao.decidindo()"
-        (click)="edicao.abrirDecisao('REPROVAR')"
+        (click)="edicao.abrirDecisao(decisoes.DEVOLUCAO)"
       >
-        Reprovar
+        Devolver
       </button>
       <button
         type="button"
         class="btn btn--secondary"
         [disabled]="edicao.decidindo()"
-        (click)="edicao.abrirDecisao('RECOMENDAR_AJUSTE')"
+        (click)="edicao.abrirDecisao(decisoes.AJUSTE_RECOMENDADO)"
       >
         Recomendar ajuste
       </button>

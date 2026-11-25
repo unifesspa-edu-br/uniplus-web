@@ -1,3 +1,4 @@
+import type { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { expect } from '@playwright/test';
 
 import { SEGUNDO_GESTOR_DE_ACESSOS, chamarApi } from './backend-real';
@@ -177,7 +178,7 @@ async function aprovarItem(item: ItemDaProtecao): Promise<void> {
     corpo: {
       cadastro: item.tipo,
       itemId: item.id,
-      decisao: 'APROVAR',
+      decisao: 'APROVACAO' satisfies `${DecidirProtecaoDoCatalogoRequestDecisao}`,
       ...{ classificacaoProtecao, hipoteseLegal, finalidadeTratamento },
       ...{ ciclo, manifestacoesNoCiclo },
     },

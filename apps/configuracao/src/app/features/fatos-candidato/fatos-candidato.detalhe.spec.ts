@@ -1,3 +1,4 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { OperadorCodigo, type FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import { atenderHistoricosDoDrawer } from '../../shared/protecao-do-catalogo/historicos-do-drawer.testing';
@@ -97,7 +98,7 @@ describe('FatosCandidatoPage — detalhe do fato', () => {
 
   describe('histórico da proteção', () => {
     const ato = {
-      ato: 'REPROVACAO',
+      ato: DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO,
       instante: '2026-10-31T13:00:00Z',
       atorNome: 'Betina Albuquerque',
       classificacaoProtecao: 'PESSOAL',
@@ -118,7 +119,7 @@ describe('FatosCandidatoPage — detalhe do fato', () => {
       const secao = p.texto('dialog[aria-label="Detalhe do fato do candidato"]');
       for (const esperado of [
         'Histórico da proteção',
-        'Reprovação',
+        'Devolução',
         '31/10/2026',
         'Betina Albuquerque',
         'Justificativa: A renda familiar é dado sensível.',
@@ -276,8 +277,8 @@ describe('FatosCandidatoPage — detalhe do fato', () => {
     });
   });
 
-  it('no fato reprovado mostra a justificativa e oferece "Editar", sem "Aceitar recomendação"', async () => {
-    p = await montarPagina([comAprovacao(categorico, 'REPROVADA', null, 'Falta base legal.')]);
+  it('no fato devolvido mostra a justificativa e oferece "Editar", sem "Aceitar recomendação"', async () => {
+    p = await montarPagina([comAprovacao(categorico, 'DEVOLVIDA', null, 'Falta base legal.')]);
 
     await p.acionar(p.nomeDaLinha(categorico));
     p.http.match((r) => r.url === atosDe(categorico)).forEach((r) => r.flush([]));
@@ -307,9 +308,18 @@ describe('FatosCandidatoPage — detalhe do fato', () => {
   });
 
   it('com a lista carregando ou gravando, "Editar" e "Aceitar recomendação" ficam indisponíveis', async () => {
-    p = await montarPagina([comAprovacao(categorico, 'AJUSTE_RECOMENDADO', 'SENSIVEL')], {
-      concedidas: [PERMISSAO_DE_MANTER],
-    });
+    p = await montarPagina(
+      [
+        comAprovacao(
+          categorico,
+          DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO,
+          'SENSIVEL',
+        ),
+      ],
+      {
+        concedidas: [PERMISSAO_DE_MANTER],
+      },
+    );
     await p.acionar(p.nomeDaLinha(categorico));
     p.http.match((r) => r.url === atosDe(categorico)).forEach((r) => r.flush([]));
 

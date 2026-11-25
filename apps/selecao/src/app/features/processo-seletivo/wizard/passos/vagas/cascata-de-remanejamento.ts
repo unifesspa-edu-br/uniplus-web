@@ -1,18 +1,16 @@
 import {
   DefinirCascataRemanejamentoRequest,
   DestinoRemanejamentoInput,
+  RegraRemanejamentoModalidadeCodigo,
 } from '@uniplus/shared-data/selecao';
 
 import type {
-  MatrizDaCascata,
+  MatrizDaOrdemDeRemanejamento,
   OrdemDeOrigem,
-} from '../../documento/edicoes/cascata-de-remanejamento.edicao';
+} from '../../documento/edicoes/ordem-de-remanejamento.edicao';
 import { CascataSelecionada, DistribuicaoDeVagas } from '../../processo-seletivo.models';
 import { ehRamoFederal } from './composicao-de-vagas';
 import { ModalidadeDoCatalogo } from './modalidades-da-distribuicao';
-
-/** Vocabulário fechado que a API devolve para a modalidade: ela segue a cascata única do processo. */
-const SEGUE_CASCATA = 'SEGUE_CASCATA';
 
 /**
  * Lê o `declaracaoDaRegra` da regra de remanejamento — shape `{"fallbackCodigo":
@@ -24,7 +22,7 @@ const SEGUE_CASCATA = 'SEGUE_CASCATA';
  * poderia declarar um esquema diferente no futuro. `null` aqui vira "regra sem
  * matriz reconhecida" na tela, nunca uma matriz inventada.
  */
-export function matrizDaRegra(declaracaoDaRegra: unknown): MatrizDaCascata | null {
+export function matrizDaRegra(declaracaoDaRegra: unknown): MatrizDaOrdemDeRemanejamento | null {
   if (typeof declaracaoDaRegra !== 'object' || declaracaoDaRegra === null) return null;
 
   const bruto = declaracaoDaRegra as Record<string, unknown>;
@@ -32,14 +30,9 @@ export function matrizDaRegra(declaracaoDaRegra: unknown): MatrizDaCascata | nul
   const ordensBrutas = bruto['ordens'];
   if (typeof fallbackCodigo !== 'string' || !Array.isArray(ordensBrutas)) return null;
 
-  const ordens: OrdemDeOrigem[] = [];
-  for (const itemBruto of ordensBrutas) {
-    const ordem = ordemDaMatriz(itemBruto);
-    if (ordem === null) return null;
-    ordens.push(ordem);
-  }
-
-  return { fallbackCodigo, ordens };
+  const ordens = ordensBrutas.map(ordemDaMatriz);
+  if (ordens.some((ordem) => ordem === null)) return null;
+  return { fallbackCodigo, ordens: ordens as OrdemDeOrigem[] };
 }
 
 function ordemDaMatriz(itemBruto: unknown): OrdemDeOrigem | null {
@@ -59,7 +52,10 @@ function segueCascata(
   modalidadeId: string,
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
 ): boolean {
-  return catalogo.get(modalidadeId)?.regraRemanejamento === SEGUE_CASCATA;
+  return (
+    catalogo.get(modalidadeId)?.regraRemanejamento ===
+    RegraRemanejamentoModalidadeCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO
+  );
 }
 
 /** A oferta tem ao menos uma modalidade selecionada que segue a cascata única do processo (UNI-REQ-0056). */
@@ -126,14 +122,14 @@ export interface ProblemaDaCascata {
  * **Por oferta** — nunca contra a união —, espelhando
  * `FallbackNaoSelecionadoNaOferta` e `DestinoDaOrigemNaoResolvivelNaOferta`:
  * o destino final tem de estar selecionado em cada oferta federal que exige
- * cascata, e cada origem que ela declara com `SEGUE_CASCATA` precisa de ao
+ * cascata, e cada origem que ela declara com `SEGUE_ORDEM_DE_REMANEJAMENTO` precisa de ao
  * menos um destino, entre os que a regra ordena para ela, também selecionado
  * na mesma oferta.
  *
  * **Sobre a união de todas as ofertas** — espelhando
  * `ExisteCascataOrigemNaoSegueCascata` e `ExisteCascataDestinoDesconhecido`:
  * a tela sempre envia a matriz **inteira** que a regra declara (a cascata
- * de remanejamento não admite recorte), então uma origem ou destino que a regra declara mas
+ * de remanejamento não admite matriz parcial), então uma origem ou destino que a regra declara mas
  * nenhuma oferta do processo cobre passa despercebido pela checagem por
  * oferta — e o handler de gravação também não o rejeita, porque
  * `BateComDeclaracaoDaRegra` só confere a matriz contra o `declaracaoDaRegra`, nunca
@@ -145,16 +141,14 @@ export interface ProblemaDaCascata {
 export function problemasDaCascata(
   ofertas: readonly DistribuicaoDeVagas[],
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
-  matriz: MatrizDaCascata,
+  matriz: MatrizDaOrdemDeRemanejamento,
 ): readonly ProblemaDaCascata[] {
-  const destinosPorOrigem = new Map(matriz.ordens.map((ordem) => [ordem.origem, ordem.destinos]));
-
   return [
     ...ofertas
       .filter(
         (oferta) => ofertaExigeCascata(oferta, catalogo) && !ofertaForaDoRegimeFederal(oferta),
       )
-      .flatMap((oferta) => problemasDaOferta(oferta, catalogo, matriz, destinosPorOrigem)),
+      .flatMap((oferta) => problemasDaOferta(oferta, catalogo, matriz)),
     ...problemasDeCoberturaDaMatriz(ofertas, catalogo, matriz),
   ];
 }
@@ -162,29 +156,27 @@ export function problemasDaCascata(
 function problemasDaOferta(
   oferta: DistribuicaoDeVagas,
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
-  matriz: MatrizDaCascata,
-  destinosPorOrigem: ReadonlyMap<string, readonly string[]>,
+  matriz: MatrizDaOrdemDeRemanejamento,
 ): readonly ProblemaDaCascata[] {
+  const codigos = new Set(oferta.modalidades.map((modalidade) => modalidade.codigo));
+  const destinos = new Map(matriz.ordens.map((ordem) => [ordem.origem, ordem.destinos]));
   const problemas: ProblemaDaCascata[] = [];
-  const codigosDaOferta = new Set(oferta.modalidades.map((modalidade) => modalidade.codigo));
-
-  if (!codigosDaOferta.has(matriz.fallbackCodigo)) {
-    problemas.push({
-      ofertaCursoId: oferta.ofertaCursoId,
-      mensagem: `O destino final da cascata (${matriz.fallbackCodigo}) não está selecionado no quadro de vagas desta oferta.`,
-    });
-  }
-
-  const origensDaOferta = oferta.modalidades.filter((modalidade) =>
-    segueCascata(modalidade.id, catalogo),
-  );
-  for (const origem of origensDaOferta) {
-    const destinos = destinosPorOrigem.get(origem.codigo);
-    const mensagem = recusaDaOrigem(origem.codigo, destinos, codigosDaOferta);
+  if (!codigos.has(matriz.fallbackCodigo)) problemas.push(fallbackAusente(oferta, matriz));
+  for (const modalidade of oferta.modalidades.filter((item) => segueCascata(item.id, catalogo))) {
+    const mensagem = recusaDaOrigem(modalidade.codigo, destinos.get(modalidade.codigo), codigos);
     if (mensagem !== null) problemas.push({ ofertaCursoId: oferta.ofertaCursoId, mensagem });
   }
-
   return problemas;
+}
+
+function fallbackAusente(
+  oferta: DistribuicaoDeVagas,
+  matriz: MatrizDaOrdemDeRemanejamento,
+): ProblemaDaCascata {
+  return {
+    ofertaCursoId: oferta.ofertaCursoId,
+    mensagem: `O destino final da cascata (${matriz.fallbackCodigo}) não está selecionado no quadro de vagas desta oferta.`,
+  };
 }
 
 function recusaDaOrigem(
@@ -205,12 +197,12 @@ function recusaDaOrigem(
  * PUT aceito — o handler de gravação não confere isso, só a prontidão de
  * conformidade, na publicação. `union` é deliberadamente **sobre todas as
  * ofertas**, diferente da checagem por oferta acima: uma origem pode ser
- * `SEGUE_CASCATA` na oferta A e o destino dela estar ofertado só na B.
+ * `SEGUE_ORDEM_DE_REMANEJAMENTO` na oferta A e o destino dela estar ofertado só na B.
  */
 function problemasDeCoberturaDaMatriz(
   ofertas: readonly DistribuicaoDeVagas[],
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
-  matriz: MatrizDaCascata,
+  matriz: MatrizDaOrdemDeRemanejamento,
 ): readonly ProblemaDaCascata[] {
   const codigosOfertados = new Set(
     ofertas.flatMap((oferta) => oferta.modalidades.map((modalidade) => modalidade.codigo)),
@@ -218,14 +210,21 @@ function problemasDeCoberturaDaMatriz(
   return [
     ...origensSemMarcaDeCascata(ofertas, catalogo, matriz),
     ...destinosNaoOfertados(codigosOfertados, matriz),
-    ...(codigosOfertados.has(matriz.fallbackCodigo)
-      ? []
-      : [
-          semOferta(
-            `A regra declara ${matriz.fallbackCodigo} como destino final, mas nenhuma oferta do processo o oferece no quadro de vagas.`,
-          ),
-        ]),
+    ...destinoFinalNaoOfertado(codigosOfertados, matriz.fallbackCodigo),
   ];
+}
+
+function destinoFinalNaoOfertado(
+  codigos: ReadonlySet<string>,
+  destino: string,
+): ProblemaDaCascata[] {
+  return codigos.has(destino)
+    ? []
+    : [
+        semOferta(
+          `A regra declara ${destino} como destino final, mas nenhuma oferta do processo o oferece no quadro de vagas.`,
+        ),
+      ];
 }
 
 function semOferta(mensagem: string): ProblemaDaCascata {
@@ -235,22 +234,29 @@ function semOferta(mensagem: string): ProblemaDaCascata {
 function origensSemMarcaDeCascata(
   ofertas: readonly DistribuicaoDeVagas[],
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
-  matriz: MatrizDaCascata,
+  matriz: MatrizDaOrdemDeRemanejamento,
 ): readonly ProblemaDaCascata[] {
-  const origensSegueCascata = new Set(
+  const origensSegueCascata = codigosQueSeguemCascata(ofertas, catalogo);
+  return matriz.ordens
+    .filter((ordem) => !origensSegueCascata.has(ordem.origem))
+    .map((ordem) =>
+      semOferta(
+        `A regra declara a origem ${ordem.origem}, mas nenhuma oferta do processo a marca como seguidora da ordem de remanejamento no quadro de vagas.`,
+      ),
+    );
+}
+
+function codigosQueSeguemCascata(
+  ofertas: readonly DistribuicaoDeVagas[],
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+): ReadonlySet<string> {
+  return new Set(
     ofertas.flatMap((oferta) =>
       oferta.modalidades
         .filter((modalidade) => segueCascata(modalidade.id, catalogo))
         .map((modalidade) => modalidade.codigo),
     ),
   );
-  return matriz.ordens
-    .filter((ordem) => !origensSegueCascata.has(ordem.origem))
-    .map((ordem) =>
-      semOferta(
-        `A regra declara a origem ${ordem.origem}, mas nenhuma oferta do processo a marca como SEGUE_CASCATA no quadro de vagas.`,
-      ),
-    );
 }
 
 // Uma mensagem por destino ausente, não por par origem-destino: no
@@ -259,7 +265,7 @@ function origensSemMarcaDeCascata(
 // vez por origem que a referencia.
 function destinosNaoOfertados(
   codigosOfertados: ReadonlySet<string>,
-  matriz: MatrizDaCascata,
+  matriz: MatrizDaOrdemDeRemanejamento,
 ): readonly ProblemaDaCascata[] {
   const destinosDaMatriz = new Set(matriz.ordens.flatMap((ordem) => ordem.destinos));
   const faltantes = [...destinosDaMatriz].filter((destino) => !codigosOfertados.has(destino));
@@ -273,29 +279,29 @@ function destinosNaoOfertados(
 
 /**
  * O comando de gravação: a matriz inteira que a regra declarou, célula a
- * célula (UNI-REQ-0056) — nunca um recorte. O handler recusa com
+ * célula (UNI-REQ-0056) — nunca uma parte da matriz. O handler recusa com
  * `MatrizDivergenteDaRegra` qualquer payload que não seja idêntico ao
  * `declaracaoDaRegra` congelado, então enviar menos do que a regra declara já é
  * recusa certa.
  */
 export function comandoDaCascata(
   selecao: CascataSelecionada,
-  matriz: MatrizDaCascata,
+  matriz: MatrizDaOrdemDeRemanejamento,
 ): DefinirCascataRemanejamentoRequest {
-  const destinos: DestinoRemanejamentoInput[] = matriz.ordens.flatMap((ordem) =>
-    ordem.destinos.map((destino, indice) => ({
-      modalidadeOrigemCodigo: ordem.origem,
-      ordem: indice + 1,
-      modalidadeDestinoCodigo: destino,
-    })),
-  );
-
   return {
     regraCodigo: selecao.regraCodigo,
     regraVersao: selecao.regraVersao,
     fallbackCodigo: matriz.fallbackCodigo,
-    destinos,
+    destinos: matriz.ordens.flatMap(destinosDaOrdem),
   };
+}
+
+function destinosDaOrdem(ordem: OrdemDeOrigem): DestinoRemanejamentoInput[] {
+  return ordem.destinos.map((destino, indice) => ({
+    modalidadeOrigemCodigo: ordem.origem,
+    ordem: indice + 1,
+    modalidadeDestinoCodigo: destino,
+  }));
 }
 
 /** Os quatro campos nulos removem a cascata do processo (contrato do handler). */

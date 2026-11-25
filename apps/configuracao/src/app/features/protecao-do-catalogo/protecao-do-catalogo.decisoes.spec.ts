@@ -1,3 +1,4 @@
+import { ItemParaSolicitarRequestCadastro } from '@uniplus/shared-data/configuracao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -56,14 +57,22 @@ describe('ProtecaoDoCatalogoPage — páginas e detalhe das decisões', () => {
     );
 
   it('pagina pelo cursor do Link, reenviando os filtros, e volta pelo anterior', async () => {
-    const tela = await abrirAba('?aba=decisoes&cadastro=FATO', [decisaoDoFato], { Link: LINK });
+    const tela = await abrirAba(
+      `?aba=decisoes&cadastro=${ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO}`,
+      [decisaoDoFato],
+      {
+        Link: LINK,
+      },
+    );
 
     clicar(botoes(tela, 'Próximo')[0]);
     await assentar();
     const proxima = controller.expectOne((r) => r.url === DECISOES);
     expect(proxima.request.params.get('cursor')).toBe('PROX');
     expect(proxima.request.params.get('direction')).toBe('next');
-    expect(proxima.request.params.get('cadastro')).toBe('FATO');
+    expect(proxima.request.params.get('cadastro')).toBe(
+      ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO,
+    );
     expect(proxima.request.params.has('limit')).toBe(false);
     proxima.flush([decisaoDoTipo], {
       headers: { Link: '</api/x?cursor=ANT&direction=prev>; rel="prev"' },
@@ -91,7 +100,10 @@ describe('ProtecaoDoCatalogoPage — páginas e detalhe das decisões', () => {
   });
 
   it('sem resultado, com filtro, oferece limpar os filtros e a URL volta ao início da aba', async () => {
-    const tela = await abrirAba('?aba=decisoes&cadastro=FATO&minhas=true', []);
+    const tela = await abrirAba(
+      `?aba=decisoes&cadastro=${ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO}&minhas=true`,
+      [],
+    );
     expect(tela.textContent).toContain('Nenhuma decisão encontrada');
 
     botoes(tela, 'Limpar filtros')[0].click();

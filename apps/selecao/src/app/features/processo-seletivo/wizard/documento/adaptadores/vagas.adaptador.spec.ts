@@ -13,7 +13,7 @@ import {
   definirModalidades,
   removerOferta,
 } from '../edicoes/distribuicao-de-vagas.edicao';
-import { removerCascata } from '../edicoes/cascata-de-remanejamento.edicao';
+import { removerOrdemDeRemanejamento } from '../edicoes/ordem-de-remanejamento.edicao';
 import {
   edicaoDoPasso,
   valoresDoFormulario,
@@ -91,8 +91,8 @@ describe('adaptador do passo Vagas', () => {
 
   it('lê o número de opções, a oferta e a cascata do exemplo', () => {
     const exemplo = exemploDoContrato('inscricao-pelo-sistema');
-    const cascataRemanejamento = { ...exemplo.cascataRemanejamento, destinoFinalCodigo: 'AC' };
-    const valores = valoresDe({ ...exemplo, cascataRemanejamento });
+    const ordemDeRemanejamento = { ...exemplo.ordemDeRemanejamento, destinoFinalCodigo: 'AC' };
+    const valores = valoresDe({ ...exemplo, ordemDeRemanejamento });
 
     expect(valores.numeroDeOpcoes).toBe('1');
     expect(valores.ofertas).toHaveLength(1);
@@ -196,7 +196,7 @@ describe('adaptador do passo Vagas', () => {
 
     expect(editado.distribuicaoVagas).toEqual([]);
     expect(editado.opcoesDeCurso).toEqual(documento.opcoesDeCurso);
-    expect(editado.cascataRemanejamento).toEqual(documento.cascataRemanejamento);
+    expect(editado.ordemDeRemanejamento).toEqual(documento.ordemDeRemanejamento);
   });
 
   it('a oferta que saiu do formulário sai do documento e a nova entra no fim', () => {
@@ -280,7 +280,7 @@ describe('adaptador do passo Vagas', () => {
     ];
     const desordenado = {
       ...documento,
-      cascataRemanejamento: { ...documento.cascataRemanejamento, destinos },
+      ordemDeRemanejamento: { ...documento.ordemDeRemanejamento, destinos },
     };
 
     expect(valoresDe(desordenado).cascata?.matriz.ordens).toEqual([
@@ -292,8 +292,8 @@ describe('adaptador do passo Vagas', () => {
     const documento = exemploDoContrato('inscricao-pelo-sistema');
     const semOBloco = edicaoDoPasso({ ...valoresDe(documento), cascata: null })(documento);
 
-    expect(semOBloco).not.toHaveProperty('cascataRemanejamento');
-    expect(removerCascata(semOBloco)).toBe(semOBloco);
+    expect(semOBloco).not.toHaveProperty('ordemDeRemanejamento');
+    expect(removerOrdemDeRemanejamento(semOBloco)).toBe(semOBloco);
   });
 
   it('não altera o documento recebido nem o que o passo não edita', () => {

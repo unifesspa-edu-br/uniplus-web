@@ -7621,9 +7621,9 @@ export interface paths {
         readonly get: {
             readonly parameters: {
                 readonly query?: {
-                    /** @description Decisão: APROVACAO, AJUSTE_RECOMENDADO ou REPROVACAO. Repetível; sem o parâmetro, as três. */
+                    /** @description Decisão: APROVACAO, AJUSTE_RECOMENDADO ou DEVOLUCAO. Repetível; sem o parâmetro, as três. */
                     readonly ato?: readonly string[];
-                    /** @description Cadastro do item: TIPO_DOCUMENTO ou FATO. */
+                    /** @description Cadastro do item: TIPO_DOCUMENTO ou DADO_DO_CANDIDATO. */
                     readonly cadastro?: string;
                     /** @description Data inicial da decisão, inclusive (AAAA-MM-DD), no fuso de Belém. */
                     readonly de?: string;
@@ -15968,12 +15968,12 @@ export enum ComposicaoVagasCodigo {
 }
 export enum DecidirProtecaoDoCatalogoRequestCadastro {
     TIPO_DOCUMENTO = "TIPO_DOCUMENTO",
-    FATO = "FATO"
+    DADO_DO_CANDIDATO = "DADO_DO_CANDIDATO"
 }
 export enum DecidirProtecaoDoCatalogoRequestDecisao {
-    APROVAR = "APROVAR",
-    RECOMENDAR_AJUSTE = "RECOMENDAR_AJUSTE",
-    REPROVAR = "REPROVAR"
+    APROVACAO = "APROVACAO",
+    AJUSTE_RECOMENDADO = "AJUSTE_RECOMENDADO",
+    DEVOLUCAO = "DEVOLUCAO"
 }
 export enum EfeitoNaAnaliseDoDocumentoCodigo {
     RECUSAR_DOCUMENTO = "RECUSAR_DOCUMENTO",
@@ -16024,7 +16024,7 @@ export enum FormatoPedagogicoCodigo {
 }
 export enum ItemParaSolicitarRequestCadastro {
     TIPO_DOCUMENTO = "TIPO_DOCUMENTO",
-    FATO = "FATO"
+    DADO_DO_CANDIDATO = "DADO_DO_CANDIDATO"
 }
 export enum NaturezaLegalCodigo {
     COTA_RESERVADA = "COTA_RESERVADA",
@@ -16083,12 +16083,12 @@ export enum RegimeDeTurnoCodigo {
 }
 export enum RegistrarManifestacaoDaProtecaoRequestCadastro {
     TIPO_DOCUMENTO = "TIPO_DOCUMENTO",
-    FATO = "FATO"
+    DADO_DO_CANDIDATO = "DADO_DO_CANDIDATO"
 }
 export enum RegistrarManifestacaoDaProtecaoRequestParecer {
-    ADEQUADA = "ADEQUADA",
+    RECOMENDA_APROVACAO = "RECOMENDA_APROVACAO",
     RECOMENDA_AJUSTE = "RECOMENDA_AJUSTE",
-    INADEQUADA = "INADEQUADA"
+    RECOMENDA_NAO_USO = "RECOMENDA_NAO_USO"
 }
 export enum RegraRemanejamentoCodigo {
     SEGUE_ORDEM_DE_REMANEJAMENTO = "SEGUE_ORDEM_DE_REMANEJAMENTO",

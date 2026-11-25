@@ -1,3 +1,4 @@
+import type { RegistrarManifestacaoDaProtecaoRequestParecer } from '@uniplus/shared-data/configuracao';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import { MANIFESTACAO_DESFAVORAVEL } from '../support/api-da-manifestacao';
@@ -9,7 +10,7 @@ const ADMIN = '/api/configuracao/admin';
 const MANIFESTACAO_SUBSTITUIDA = {
   ...MANIFESTACAO_DESFAVORAVEL,
   id: '01960000-0000-7000-0000-0000000000f0',
-  parecer: 'RECOMENDA_AJUSTE',
+  parecer: 'RECOMENDA_AJUSTE' satisfies `${RegistrarManifestacaoDaProtecaoRequestParecer}`,
   texto: 'Recomendo a classificação pessoal.',
   instante: '2026-11-01T10:00:00Z',
   situacao: 'SUBSTITUIDA',
@@ -71,7 +72,7 @@ test.describe('Manifestações técnicas nas telas de tipos de documento e de fa
     const secao = await abrir(page, '/tipos-documento', 'Laudo médico complementar');
 
     const lista = secao.getByRole('list', { name: 'Histórico das manifestações técnicas' });
-    await expect(lista).toContainText('Inadequada');
+    await expect(lista).toContainText('Recomenda não uso');
     await expect(lista).toContainText('Isabella Priscila Figueiredo');
     await expect(lista).toContainText('a classificação deve ser sensível');
     await expect(lista).toContainText('Vigente');

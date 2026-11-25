@@ -1,3 +1,5 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
+import { ItemParaSolicitarRequestCadastro } from '@uniplus/shared-data/configuracao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -42,7 +44,7 @@ describe('HistoricoDaProtecaoComponent', () => {
   afterEach(() => controller.verify());
 
   function montar(
-    cadastro: 'TIPO_DOCUMENTO' | 'FATO',
+    cadastro: 'TIPO_DOCUMENTO' | ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO,
   ): ComponentFixture<HistoricoDaProtecaoComponent> {
     const fixture = TestBed.createComponent(HistoricoDaProtecaoComponent);
     fixture.componentRef.setInput('cadastro', cadastro);
@@ -63,7 +65,7 @@ describe('HistoricoDaProtecaoComponent', () => {
     req.flush([
       ato({}),
       ato({
-        ato: 'AJUSTE_RECOMENDADO',
+        ato: DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO,
         instante: '2026-10-31T13:00:00Z',
         atorNome: 'Caroline Ribeiro',
         classificacaoRecomendada: 'PESSOAL',
@@ -89,17 +91,17 @@ describe('HistoricoDaProtecaoComponent', () => {
   });
 
   it('lê os atos do fato na rota do fato', async () => {
-    const fixture = montar('FATO');
+    const fixture = montar(ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO);
     controller
       .expectOne(`${ADMIN}/fatos-candidato/${ID}/protecao/atos`)
-      .flush([ato({ ato: 'REPROVACAO' })]);
+      .flush([ato({ ato: DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO })]);
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(texto(fixture)).toContain('Reprovação');
+    expect(texto(fixture)).toContain('Devolução');
   });
 
   it('sem atos diz que o item ainda não passou pela proteção de dados', async () => {
-    const fixture = montar('FATO');
+    const fixture = montar(ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO);
     controller.expectOne(`${ADMIN}/fatos-candidato/${ID}/protecao/atos`).flush([]);
     await fixture.whenStable();
     fixture.detectChanges();

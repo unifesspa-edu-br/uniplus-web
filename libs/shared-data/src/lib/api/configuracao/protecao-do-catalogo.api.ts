@@ -2,13 +2,17 @@ import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
-import type { components } from './schema';
+import {
+  type components,
+  DecidirProtecaoDoCatalogoRequestDecisao,
+  RegistrarManifestacaoDaProtecaoRequestParecer,
+} from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 export type SolicitacaoDaProtecaoDto = components['schemas']['SolicitacaoDaProtecaoDto'];
 
 /** O parecer de quem se manifesta sobre a proteção proposta para o item. */
-export type ParecerDaManifestacao = 'ADEQUADA' | 'RECOMENDA_AJUSTE' | 'INADEQUADA';
+export type ParecerDaManifestacao = `${RegistrarManifestacaoDaProtecaoRequestParecer}`;
 
 /** A manifestação vale no ciclo atual, foi substituída por outra da mesma pessoa ou é de ciclo encerrado. */
 export type SituacaoDaManifestacao = 'VIGENTE' | 'SUBSTITUIDA' | 'ENCERRADA';
@@ -44,14 +48,21 @@ export type AprovacaoDaProtecaoDto = components['schemas']['AprovacaoDaProtecaoD
 
 /** Os atos e as decisões trazem o ciclo e se a decisão foi tomada diante de manifestação desfavorável vigente. */
 export type AtoDaProtecaoDto = components['schemas']['AtoDaProtecaoDto'];
-export type DecisaoDaProtecaoDto = components['schemas']['DecisaoDaProtecaoDto'];
+export type DecisaoDaProtecaoDto = Omit<
+  components['schemas']['DecisaoDaProtecaoDto'],
+  'cadastro'
+> & { readonly cadastro: CadastroDoCatalogo };
 
-export type ItemDaProtecaoDoCatalogoDto = components['schemas']['ItemDaProtecaoDoCatalogoDto'];
+export type ItemDaProtecaoDoCatalogoDto = Omit<
+  components['schemas']['ItemDaProtecaoDoCatalogoDto'],
+  'tipo'
+> & { readonly tipo: CadastroDoCatalogo };
 
 export type DetalheDaProtecaoDoCatalogoDto = Omit<
   components['schemas']['DetalheDaProtecaoDoCatalogoDto'],
-  'manifestacoesVigentes'
+  'manifestacoesVigentes' | 'tipo'
 > & {
+  readonly tipo: CadastroDoCatalogo;
   readonly manifestacoesVigentes: readonly ManifestacaoDaProtecaoDto[];
 };
 export type DetalheDoFatoDto = components['schemas']['DetalheDoFatoDto'];
@@ -64,18 +75,18 @@ export type SituacaoDaAprovacao =
   | 'SOLICITADA'
   | 'APROVADA'
   | 'AJUSTE_RECOMENDADO'
-  | 'REPROVADA';
+  | 'DEVOLVIDA';
 
 /** A decisão da proteção de dados sobre um item solicitado. */
-export type DecisaoDaProtecao = 'APROVAR' | 'RECOMENDAR_AJUSTE' | 'REPROVAR';
+export type DecisaoDaProtecao = `${DecidirProtecaoDoCatalogoRequestDecisao}`;
 
 /** Qual cadastro do catálogo o item pertence. */
-export type CadastroDoCatalogo = 'TIPO_DOCUMENTO' | 'FATO';
+export type CadastroDoCatalogo = `${components['schemas']['ItemParaSolicitarRequest']['cadastro']}`;
 
 /** O segmento de cada cadastro nas rotas da proteção do catálogo. */
 export const SEGMENTO_DO_CADASTRO: Readonly<Record<CadastroDoCatalogo, string>> = {
   TIPO_DOCUMENTO: 'tipos-documento',
-  FATO: 'fatos',
+  DADO_DO_CANDIDATO: 'fatos',
 };
 
 /**
@@ -101,18 +112,10 @@ export type ItemParaSolicitarRequest = Omit<
 };
 
 /** O ato que fica registrado na proteção de um item: o pedido, a decisão da proteção de dados e o aceite do administrador. */
-export type AtoDaProtecao =
-  | 'SOLICITACAO'
-  | 'APROVACAO'
-  | 'AJUSTE_RECOMENDADO'
-  | 'REPROVACAO'
-  | 'ACEITE';
+export type AtoDaProtecao = 'SOLICITACAO' | `${DecidirProtecaoDoCatalogoRequestDecisao}` | 'ACEITE';
 
 /** Os atos de decisão, que a lista de decisões traz. */
-export type AtoDeDecisao = Extract<
-  AtoDaProtecao,
-  'APROVACAO' | 'AJUSTE_RECOMENDADO' | 'REPROVACAO'
->;
+export type AtoDeDecisao = Extract<AtoDaProtecao, `${DecidirProtecaoDoCatalogoRequestDecisao}`>;
 
 /**
  * Cliente do circuito de aprovação da proteção de dados do catálogo (UNI-REQ-0205): o que aguarda a
@@ -176,7 +179,7 @@ export class ProtecaoDoCatalogoApi {
     );
   }
 
-  /** POST `/api/configuracao/admin/protecao-do-catalogo` — aprova, recomenda ajuste ou reprova um item da solicitação. */
+  /** POST `/api/configuracao/admin/protecao-do-catalogo` — aprova, recomenda ajuste ou devolve um item da solicitação. */
   decidir(
     command: DecidirProtecaoDoCatalogoRequest,
     context: HttpContext,

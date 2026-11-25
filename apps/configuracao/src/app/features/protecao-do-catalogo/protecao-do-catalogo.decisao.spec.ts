@@ -67,15 +67,15 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
     return { aprovar, envio: umaPostagem() };
   }
 
-  async function reprovarComJustificativa(): Promise<HTMLButtonElement> {
+  async function devolverComJustificativa(): Promise<HTMLButtonElement> {
     await pagina.abrirDetalhe();
-    clicar(botaoPorTexto(drawer(), 'Reprovar'));
+    clicar(botaoPorTexto(drawer(), 'Devolver'));
     await pagina.assentar();
     const campo = dialogoDaDecisao().querySelector('textarea') as HTMLTextAreaElement;
     campo.value = 'Falta a base legal.';
     campo.dispatchEvent(new Event('input'));
     await pagina.assentar();
-    const confirmar = botaoPorTexto(dialogoDaDecisao(), 'Reprovar item');
+    const confirmar = botaoPorTexto(dialogoDaDecisao(), 'Devolver item');
     confirmar.focus();
     clicar(confirmar);
     await pagina.assentar();
@@ -216,15 +216,15 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
     expect(pagina.tela.textContent).toContain('O item mudou');
   });
 
-  it('reprovar com sucesso avisa "Item reprovado"', async () => {
-    await reprovarComJustificativa();
+  it('devolver com sucesso avisa "Item devolvido"', async () => {
+    await devolverComJustificativa();
 
     umaPostagem().flush(null, SEM_CONTEUDO);
     await pagina.assentar();
     leituraDaFila().flush([]);
     await pagina.assentar();
 
-    expect(avisoDeSucesso).toHaveBeenCalledExactlyOnceWith('Item reprovado', laudo.nome);
+    expect(avisoDeSucesso).toHaveBeenCalledExactlyOnceWith('Item devolvido', laudo.nome);
   });
 
   it('recomendar ajuste com sucesso avisa "Ajuste recomendado"', async () => {
@@ -265,8 +265,8 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
     leituraDaFila().flush([]);
   });
 
-  it('reprovar ainda em processamento mantém o diálogo com a mensagem e a mesma chave', async () => {
-    const confirmar = await reprovarComJustificativa();
+  it('devolver ainda em processamento mantém o diálogo com a mensagem e a mesma chave', async () => {
+    const confirmar = await devolverComJustificativa();
     const primeira = umaPostagem();
     const chave = primeira.request.headers.get('Idempotency-Key');
 
@@ -291,7 +291,7 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
   });
 
   it('diálogo que se fecha sozinho pela proteção alterada deixa o foco no título da fila', async () => {
-    await reprovarComJustificativa();
+    await devolverComJustificativa();
 
     umaPostagem().flush(...problema(409, CODIGO_PROTECAO_MUDOU, 'A proteção do item mudou'));
     await pagina.assentar();

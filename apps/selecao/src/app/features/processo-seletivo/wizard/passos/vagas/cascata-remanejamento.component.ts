@@ -1,14 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  signal,
-  untracked,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 import { RegraCatalogoDto } from '@uniplus/shared-data/selecao';
 import {
   FalhaDeLeituraComponent,
@@ -17,7 +8,7 @@ import {
   ValorEmConsultaComponent,
 } from '@uniplus/shared-ui/components';
 
-import type { MatrizDaCascata } from '../../documento/edicoes/cascata-de-remanejamento.edicao';
+import type { MatrizDaOrdemDeRemanejamento } from '../../documento/edicoes/ordem-de-remanejamento.edicao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import {
   matrizDaRegra,
@@ -36,6 +27,7 @@ import {
 import { regraPorChave } from '../../shared/regra-por-chave';
 import { RegraExplicadaComponent } from '../../shared/regra-explicada/regra-explicada.component';
 import { LeituraDaVersaoForaDaListagem } from './leitura-da-versao-fora-da-listagem.service';
+import { SeletorDaRegraDaCascata } from './seletor-da-regra-da-cascata.service';
 
 /**
  * A seção da cascata de remanejamento, dentro do passo Vagas (UNI-REQ-0134 e
@@ -67,12 +59,13 @@ import { LeituraDaVersaoForaDaListagem } from './leitura-da-versao-fora-da-lista
     FalhaDeLeituraComponent,
   ],
   templateUrl: './cascata-remanejamento.component.html',
-  providers: [LeituraDaVersaoForaDaListagem],
+  providers: [LeituraDaVersaoForaDaListagem, SeletorDaRegraDaCascata],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CascataRemanejamentoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeDistribuicao);
+  readonly seletor = inject(SeletorDaRegraDaCascata);
   private readonly versaoDaRegra = inject(LeituraDaVersaoForaDaListagem);
 
   private readonly ofertas = computed(() => this.store.draft().vagas.ofertas);
@@ -124,27 +117,11 @@ export class CascataRemanejamentoComponent {
     ofertasComCascataForaDoRegimeFederal(this.ofertas(), this.modalidadePorId()),
   );
 
-  /** `"codigo|versao"`, ou `"|"` enquanto não há escolha — mesmo molde do seletor de regra da distribuição. */
-  readonly valorDoSelect = computed(() => {
-    const selecao = this.cascata();
-    return selecao === null ? '|' : `${selecao.regraCodigo}|${selecao.regraVersao}`;
-  });
-
   /** A regra de remanejamento que o processo gravou, em texto — o que a consulta lê. */
   readonly regraLida = computed(() => {
     const selecao = this.cascata();
     return selecao === null ? null : `${selecao.regraCodigo} · versão ${selecao.regraVersao}`;
   });
-
-  /**
-   * Controle reativo e tipado do seletor de regra (AGENTS.md: "formulários
-   * reativos tipados"). `valorDoSelect()` continua sendo a fonte de verdade —
-   * o rascunho é quem decide o que está selecionado, inclusive depois de
-   * hidratação ou troca de processo —, e um `effect` mantém o controle em
-   * sincronia sem realimentar o próprio evento (`emitEvent: false`); o
-   * `valueChanges` é o único caminho de volta para `escolherRegra`.
-   */
-  readonly regraControl = new FormControl<string>('|', { nonNullable: true });
 
   readonly regraNaoEncontrada = this.versaoDaRegra.regraNaoEncontrada;
   readonly falhaAoConsultarRegra = this.versaoDaRegra.falhaAoConsultarRegra;
@@ -172,7 +149,7 @@ export class CascataRemanejamentoComponent {
   });
 
   /** A matriz que a regra escolhida congela — o que a tela apresenta e envia, sem editar. */
-  readonly matriz = computed<MatrizDaCascata | null>(() => {
+  readonly matriz = computed<MatrizDaOrdemDeRemanejamento | null>(() => {
     const regra = this.versaoDaRegra.regraEscolhida();
     return regra === undefined ? null : matrizDaRegra(regra.declaracaoDaRegra);
   });
@@ -201,57 +178,9 @@ export class CascataRemanejamentoComponent {
    * (`true` numa gravação normal, `false` numa remoção) — por isso é
    * `WritableSignal`, não só leitura.
    */
-  readonly existeNoServidor = signal(false);
+  readonly existeNoServidor = linkedSignal(() => this.store.remoteSnapshot()?.cascata != null);
 
-  constructor() {
-    // As rotas do editor reusam a mesma instância de componente ao trocar de
-    // processo (`ProcessoSeletivoStore.reset()` muda a geração, não destrói
-    // a página) — sem isto, o rastro de "existe no servidor" do processo
-    // anterior vazaria para o processo que acabou de hidratar.
-    effect(() => {
-      const snapshot = this.store.remoteSnapshot();
-      this.existeNoServidor.set(snapshot?.cascata !== null && snapshot?.cascata !== undefined);
-    });
-
-    // Empurra o rascunho para o controle sem disparar `valueChanges` — quem
-    // decide o que está selecionado é `cascata()` (hidratação, troca de
-    // processo, remoção após gravação), nunca o controle por si.
-    effect(() => {
-      const valor = this.valorDoSelect();
-      untracked(() => {
-        if (this.regraControl.value !== valor) {
-          this.regraControl.setValue(valor, { emitEvent: false });
-        }
-      });
-    });
-
-    // Reactive Forms desabilita pelo próprio controle, não por `[disabled]`
-    // no template — os dois juntos disparam aviso do Angular e o binding de
-    // atributo perde a corrida contra o `FormControl`.
-    effect(() => {
-      const habilitado = this.store.aceitaEdicao();
-      untracked(() => {
-        if (habilitado && this.regraControl.disabled)
-          this.regraControl.enable({ emitEvent: false });
-        if (!habilitado && this.regraControl.enabled)
-          this.regraControl.disable({ emitEvent: false });
-      });
-    });
-
-    // O único caminho de volta: interação do operador com o seletor.
-    this.regraControl.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe((valor) => this.escolherRegra(valor));
-  }
-
-  /**
-   * A cascata está pronta para gravar: regra escolhida, matriz reconhecida e sem pendência.
-   *
-   * Não depende mais de o operador ter marcado nada. Enquanto dependia, um simples
-   * recarregamento a derrubava — o efeito acima zerava a marca a cada hidratação — e a varredura
-   * de gravação da publicação falhava com "confirme a matriz" num passo que o operador não
-   * tinha aberto.
-   */
+  /** A cascata está pronta para gravar quando a regra tem matriz reconhecida e sem pendências. */
   readonly pronta = computed(
     () => this.cascata() !== null && this.matriz() !== null && this.problemas().length === 0,
   );
@@ -278,40 +207,28 @@ export class CascataRemanejamentoComponent {
    * operador avançaria com `cascata_modalidade_fora_do_regime_federal` vermelho, que bloqueia a
    * publicação sem nenhuma pista de onde a correção mora.
    */
-  readonly pendenciasParaGravar = computed<readonly string[]>(() => {
-    const foraDoRegime = this.ofertasForaDoRegime().map(
+  readonly pendenciasForaDoRegime = computed(() =>
+    this.ofertasForaDoRegime().map(
       (oferta) =>
         `Cascata — ${this.catalogos.rotuloDaOfertaOuSemNome(oferta.ofertaCursoId)}: tem modalidade que segue a cascata fora do ramo federal. Corrija a regra de distribuição ou a modalidade desta oferta.`,
-    );
+    ),
+  );
 
-    if (!this.precisaExibir()) return foraDoRegime;
-    if (this.cascata() === null)
-      return [...foraDoRegime, 'Escolha a regra de remanejamento da cascata.'];
+  readonly matrizIndisponivel = computed(
+    () => this.esquemaNaoReconhecido() || this.regraNaoEncontrada() || this.falhaAoConsultarRegra(),
+  );
 
-    // A tabela não aparece quando `matriz()` é nulo: pedir para "confirmar a cascata" mandaria o
-    // operador a um controle que não existe, e tratar as causas como a mesma coisa esconderia se
-    // vale tentar de novo ou trocar de regra.
-    const naoResolveMatriz =
-      this.esquemaNaoReconhecido() || this.regraNaoEncontrada() || this.falhaAoConsultarRegra();
-    if (naoResolveMatriz) {
-      return [...foraDoRegime, `Cascata — ${this.mensagemDeMatrizIndisponivel()}`];
-    }
-
-    const problemas = this.problemas().map(
-      (problema) => `Cascata — ${this.rotuloDoProblema(problema)}`,
-    );
-    return [...foraDoRegime, ...problemas];
+  readonly pendenciasDaRegraDeRemanejamento = computed(() => {
+    if (!this.precisaExibir()) return [];
+    if (this.cascata() === null) return ['Escolha a regra de remanejamento da cascata.'];
+    if (this.matrizIndisponivel()) return [`Cascata — ${this.mensagemDeMatrizIndisponivel()}`];
+    return this.problemas().map((problema) => `Cascata — ${this.rotuloDoProblema(problema)}`);
   });
 
-  escolherRegra(valor: string): void {
-    const [codigo, versao] = valor.split('|');
-    this.store.patchObjectSection('vagas', {
-      cascata:
-        codigo === '' || versao === undefined || versao === ''
-          ? null
-          : { regraCodigo: codigo, regraVersao: versao },
-    });
-  }
+  readonly pendenciasParaGravar = computed(() => [
+    ...this.pendenciasForaDoRegime(),
+    ...this.pendenciasDaRegraDeRemanejamento(),
+  ]);
 
   rotuloDaOferta(ofertaCursoId: string): string {
     return this.catalogos.rotuloDaOferta().get(ofertaCursoId) ?? ofertaCursoId;

@@ -5,11 +5,11 @@ import type {
 
 import { rotuloDoCodigo, type CatalogoPorCodigo } from '../catalogos-por-codigo';
 import {
-  definirCascata,
+  definirOrdemDeRemanejamento,
   ordensDoDocumento,
-  removerCascata,
-  type MatrizDaCascata,
-} from '../edicoes/cascata-de-remanejamento.edicao';
+  removerOrdemDeRemanejamento,
+  type MatrizDaOrdemDeRemanejamento,
+} from '../edicoes/ordem-de-remanejamento.edicao';
 import {
   definirModalidades,
   definirPercentualDaReservaLegal,
@@ -56,7 +56,7 @@ export interface OfertaDasVagas {
 
 export interface CascataDasVagas {
   readonly regra: RegraEscolhida | null;
-  readonly matriz: MatrizDaCascata;
+  readonly matriz: MatrizDaOrdemDeRemanejamento;
 }
 
 export interface ValoresDasVagas {
@@ -120,7 +120,7 @@ function ofertaDe(
 }
 
 function cascataDe(documento: DocumentoDaConfiguracao): CascataDasVagas | null {
-  const cascata = documento.cascataRemanejamento;
+  const cascata = documento.ordemDeRemanejamento;
   if (cascata === undefined) return null;
   return {
     regra: regraEscolhida(cascata.regra),
@@ -170,8 +170,8 @@ function edicaoDaOferta(oferta: OfertaDasVagas, posicao: number): EdicaoDoDocume
 
 function edicaoDaCascata(cascata: CascataDasVagas | null): EdicaoDoDocumento {
   return cascata === null
-    ? removerCascata
-    : (documento) => definirCascata(documento, cascata.regra, cascata.matriz);
+    ? removerOrdemDeRemanejamento
+    : (documento) => definirOrdemDeRemanejamento(documento, cascata.regra, cascata.matriz);
 }
 
 export function edicaoDoPasso(valores: ValoresDasVagas): EdicaoDoDocumento {

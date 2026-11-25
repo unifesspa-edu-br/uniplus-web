@@ -1,3 +1,5 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
+import { ItemParaSolicitarRequestCadastro } from '@uniplus/shared-data/configuracao';
 import { convertToParamMap } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import {
@@ -15,7 +17,11 @@ describe('filtros das decisões na URL', () => {
   it('descarta o que o vocabulário não conhece e ordena as decisões como a tela as oferece', () => {
     const filtros = filtrosDaUrl(
       convertToParamMap({
-        ato: ['REPROVACAO', 'SOLICITACAO', 'APROVACAO'],
+        ato: [
+          DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO,
+          'SOLICITACAO',
+          DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO,
+        ],
         cadastro: 'OUTRO',
         de: '01/10/2026',
         ate: '2026-10-31',
@@ -25,7 +31,10 @@ describe('filtros das decisões na URL', () => {
     );
 
     expect(filtros).toEqual({
-      ato: ['APROVACAO', 'REPROVACAO'],
+      ato: [
+        DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO,
+        DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO,
+      ],
       cadastro: null,
       de: '',
       ate: '2026-10-31',
@@ -44,10 +53,15 @@ describe('filtros das decisões na URL', () => {
       minhas: null,
     });
     expect(
-      paramsDosFiltros({ ...SEM_FILTROS, ato: ['APROVACAO'], cadastro: 'FATO', minhas: true }),
+      paramsDosFiltros({
+        ...SEM_FILTROS,
+        ato: [DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO],
+        cadastro: ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO,
+        minhas: true,
+      }),
     ).toMatchObject({
-      ato: ['APROVACAO'],
-      cadastro: 'FATO',
+      ato: [DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO],
+      cadastro: ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO,
       minhas: 'true',
     });
   });

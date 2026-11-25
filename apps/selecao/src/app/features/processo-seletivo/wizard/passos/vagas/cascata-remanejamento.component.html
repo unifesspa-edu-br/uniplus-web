@@ -54,7 +54,7 @@
         />
       } @else {
         <label class="label" for="c-regra-cascata">Regra de remanejamento</label>
-        <select class="input" id="c-regra-cascata" [formControl]="regraControl">
+        <select class="input" id="c-regra-cascata" [formControl]="seletor.controle">
           <option value="|">Selecione a regra…</option>
           @for (regra of opcoesDoSeletor(); track regra.codigo + regra.versao) {
             <option [value]="regra.codigo + '|' + regra.versao">

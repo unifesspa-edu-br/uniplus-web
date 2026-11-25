@@ -132,10 +132,8 @@ export {
 
 export {
   TermosConsentimentoApi,
-  FORMAS_ACEITE,
   type CriarTermoConsentimentoCommand,
   type EditarRascunhoTermoConsentimentoCommand,
-  type FormaAceiteOption,
   type TermoConsentimentoDto,
   type TermoConsentimentoResumoDto,
   type TermoConsentimentoVersaoDto,
@@ -254,6 +252,9 @@ export {
   FormaAceiteCodigo,
   RegimeDeFuncionamentoCodigo,
   RegimeDeTurnoCodigo,
+  ItemParaSolicitarRequestCadastro,
+  DecidirProtecaoDoCatalogoRequestDecisao,
+  RegistrarManifestacaoDaProtecaoRequestParecer,
   TurnoOfertaCodigo,
   ProgramaDeOfertaCodigo,
   NaturezaLegalCodigo,

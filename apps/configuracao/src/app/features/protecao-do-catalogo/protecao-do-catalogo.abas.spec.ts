@@ -1,3 +1,5 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
+import { ItemParaSolicitarRequestCadastro } from '@uniplus/shared-data/configuracao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -133,7 +135,7 @@ describe('ProtecaoDoCatalogoPage — abas e decisões registradas', () => {
     const linha = Array.from(tela.querySelectorAll('tbody tr')).map((tr) =>
       tr.textContent?.replace(/\s+/gu, ' ').trim(),
     );
-    expect(linha[0]).toBe('Renda familiar bruta Fato do candidato Reprovação Pessoal 31/10/2026');
+    expect(linha[0]).toBe('Renda familiar bruta Fato do candidato Devolução Pessoal 31/10/2026');
     expect(linha[1]).toContain('Ajuste recomendado');
     expect(
       Array.from(tela.querySelectorAll('tbody td')).every((td) =>
@@ -148,12 +150,17 @@ describe('ProtecaoDoCatalogoPage — abas e decisões registradas', () => {
   it('lê os filtros da URL, manda-os à API e os mostra marcados', async () => {
     controller.expectOne((r) => r.url === URL).flush([]);
     await router().navigateByUrl(
-      '/?aba=decisoes&ato=REPROVACAO&ato=AJUSTE_RECOMENDADO&cadastro=FATO&de=2026-10-01&ate=2026-10-31&busca=renda&minhas=true&ato=INVALIDO',
+      `/?aba=decisoes&ato=${DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO}&ato=${DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO}&cadastro=${ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO}&de=2026-10-01&ate=2026-10-31&busca=renda&minhas=true&ato=INVALIDO`,
     );
     await assentar();
     const pedido = controller.expectOne((r) => r.url === DECISOES);
-    expect(pedido.request.params.getAll('ato')).toEqual(['AJUSTE_RECOMENDADO', 'REPROVACAO']);
-    expect(pedido.request.params.get('cadastro')).toBe('FATO');
+    expect(pedido.request.params.getAll('ato')).toEqual([
+      DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO,
+      DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO,
+    ]);
+    expect(pedido.request.params.get('cadastro')).toBe(
+      ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO,
+    );
     expect(pedido.request.params.get('de')).toBe('2026-10-01');
     expect(pedido.request.params.get('ate')).toBe('2026-10-31');
     expect(pedido.request.params.get('busca')).toBe('renda');
@@ -162,7 +169,7 @@ describe('ProtecaoDoCatalogoPage — abas e decisões registradas', () => {
     await assentar();
 
     const tela = fixture.nativeElement as HTMLElement;
-    expect(botoes(tela, 'Reprovado')[0].getAttribute('aria-pressed')).toBe('true');
+    expect(botoes(tela, 'Devolvido')[0].getAttribute('aria-pressed')).toBe('true');
     expect(botoes(tela, 'Ajuste recomendado')[0].getAttribute('aria-pressed')).toBe('true');
     expect(botoes(tela, 'Aprovado')[0].getAttribute('aria-pressed')).toBe('false');
     expect(botoes(tela, 'Fato do candidato')[0].getAttribute('aria-pressed')).toBe('true');
@@ -180,18 +187,26 @@ describe('ProtecaoDoCatalogoPage — abas e decisões registradas', () => {
   it('escolher uma decisão, um cadastro e "só as minhas" atualiza a URL e relê a primeira página', async () => {
     const tela = await abrirAba('?aba=decisoes');
 
-    botoes(tela, 'Reprovado')[0].click();
+    botoes(tela, 'Devolvido')[0].click();
     await navegar();
-    const reprovado = controller.expectOne((r) => r.url === DECISOES);
-    expect(reprovado.request.params.getAll('ato')).toEqual(['REPROVACAO']);
-    reprovado.flush([decisaoDoFato]);
+    const devolvido = controller.expectOne((r) => r.url === DECISOES);
+    expect(devolvido.request.params.getAll('ato')).toEqual([
+      DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO,
+    ]);
+    devolvido.flush([decisaoDoFato]);
     await assentar();
-    expect(router().url).toBe('/?aba=decisoes&ato=REPROVACAO');
+    expect(router().url).toBe(
+      `/?aba=decisoes&ato=${DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO}`,
+    );
 
     botoes(tela, 'Fato do candidato')[0].click();
     await navegar();
     controller
-      .expectOne((r) => r.url === DECISOES && r.params.get('cadastro') === 'FATO')
+      .expectOne(
+        (r) =>
+          r.url === DECISOES &&
+          r.params.get('cadastro') === ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO,
+      )
       .flush([decisaoDoFato]);
     await assentar();
 
@@ -199,11 +214,15 @@ describe('ProtecaoDoCatalogoPage — abas e decisões registradas', () => {
     await navegar();
     controller.expectOne((r) => r.url === DECISOES && r.params.get('minhas') === 'true').flush([]);
     await assentar();
-    expect(router().url).toBe('/?aba=decisoes&ato=REPROVACAO&cadastro=FATO&minhas=true');
+    expect(router().url).toBe(
+      `/?aba=decisoes&ato=${DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO}&cadastro=${ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO}&minhas=true`,
+    );
 
-    botoes(tela, 'Reprovado')[0].click();
+    botoes(tela, 'Devolvido')[0].click();
     await navegar();
-    expect(router().url).toBe('/?aba=decisoes&cadastro=FATO&minhas=true');
+    expect(router().url).toBe(
+      `/?aba=decisoes&cadastro=${ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO}&minhas=true`,
+    );
     controller.expectOne((r) => r.url === DECISOES && !r.params.has('ato')).flush([]);
   });
 

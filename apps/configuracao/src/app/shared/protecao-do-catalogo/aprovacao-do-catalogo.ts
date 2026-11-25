@@ -16,7 +16,7 @@ import {
 
 const PERMISSAO_DE_MANTER: Readonly<Record<CadastroDoCatalogo, CodigoDePermissao>> = {
   TIPO_DOCUMENTO: PERMISSAO.configuracao.tiposDocumentoManter,
-  FATO: PERMISSAO.configuracao.fatosCandidatoManter,
+  DADO_DO_CANDIDATO: PERMISSAO.configuracao.fatosCandidatoManter,
 };
 
 /** Quem pode ler a lista de pendências: a API responde 403 aos demais, e o 403 leva a tela ao acesso negado. */
@@ -72,7 +72,7 @@ export class AprovacaoDoCatalogo {
     this._itens().filter(
       (item) =>
         item.aprovacao.situacao === 'PENDENTE' &&
-        this.permissoes.tem(PERMISSAO_DE_MANTER[item.tipo as CadastroDoCatalogo]),
+        this.permissoes.tem(PERMISSAO_DE_MANTER[item.tipo]),
     ),
   );
 

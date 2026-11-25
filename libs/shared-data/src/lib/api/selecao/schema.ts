@@ -11363,7 +11363,7 @@ export interface components {
              * Cascata de remanejamento
              * @description A cascata de remanejamento entre modalidades. Ausente quando o processo não tem cascata.
              */
-            readonly cascataRemanejamento?: components["schemas"]["DocumentoDaConfiguracaoCascataDeRemanejamento"];
+            readonly ordemDeRemanejamento?: components["schemas"]["DocumentoDaConfiguracaoOrdemDeRemanejamento"];
             readonly cronograma?: components["schemas"]["DocumentoDaConfiguracaoCronograma"];
             /**
              * Etapas
@@ -11376,7 +11376,7 @@ export interface components {
              * Tipos de ato congelados
              * @description Cópia, congelada na publicação, dos tipos de ato do catálogo de Publicações que o processo usa, com o que cada um significa. Existe só no processo publicado. Campo só de leitura: ignorado na importação; a referência é o código do tipo de ato em cada produto de fase e de etapa.
              */
-            readonly tiposDeAtoCongelados?: readonly {
+            readonly tiposDeAto?: readonly {
                 /**
                  * Código do tipo de ato
                  * @description Código do tipo de ato no catálogo de Publicações.
@@ -11586,43 +11586,6 @@ export interface components {
              * @enum {unknown}
              */
             readonly semUnanimidade?: DocumentoDaConfiguracaoBancasRegraDeDeliberacaoSemUnanimidade;
-        };
-        /**
-         * Cascata de remanejamento
-         * @description A ordem em que as vagas não preenchidas de uma modalidade passam a outras. No máximo uma cascata por processo; sem o objeto, o processo não tem cascata.
-         */
-        readonly DocumentoDaConfiguracaoCascataDeRemanejamento: {
-            /**
-             * Regra de remanejamento
-             * @description Regra do catálogo que define o remanejamento.
-             */
-            readonly regra?: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
-            /**
-             * Modalidade de destino final
-             * @description Código da modalidade que recebe as vagas quando nenhum destino da cascata as absorve, em geral a ampla concorrência.
-             */
-            readonly destinoFinalCodigo?: string;
-            /**
-             * Destinos
-             * @description Os destinos de cada modalidade de origem, até 56 no total e até 8 origens distintas.
-             */
-            readonly destinos?: readonly {
-                /**
-                 * Modalidade de origem
-                 * @description Código da modalidade que cede as vagas.
-                 */
-                readonly modalidadeOrigemCodigo: string;
-                /**
-                 * Ordem
-                 * @description Posição do destino na cascata da origem, a partir de 1. A ordem é semântica: decide quem recebe primeiro.
-                 */
-                readonly ordem: number;
-                /**
-                 * Modalidade de destino
-                 * @description Código da modalidade que recebe as vagas.
-                 */
-                readonly modalidadeDestinoCodigo: string;
-            }[];
         };
         /**
          * Classificação
@@ -13402,6 +13365,43 @@ export interface components {
          * @description Código do motivo no catálogo: maiúscula inicial, depois maiúsculas, dígitos e sublinhado, de 2 a 50 caracteres.
          */
         readonly DocumentoDaConfiguracaoMotivoCodigoDoMotivo: string;
+        /**
+         * Ordem de remanejamento
+         * @description A ordem em que as vagas não preenchidas de uma modalidade passam a outras. No máximo uma ordem por processo; sem o objeto, o processo não tem ordem de remanejamento.
+         */
+        readonly DocumentoDaConfiguracaoOrdemDeRemanejamento: {
+            /**
+             * Regra de remanejamento
+             * @description Regra do catálogo que define o remanejamento.
+             */
+            readonly regra?: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
+            /**
+             * Modalidade de destino final
+             * @description Código da modalidade que recebe as vagas quando nenhum destino da ordem as absorve, em geral a ampla concorrência.
+             */
+            readonly destinoFinalCodigo?: string;
+            /**
+             * Destinos
+             * @description Os destinos de cada modalidade de origem, até 56 no total e até 8 origens distintas.
+             */
+            readonly destinos?: readonly {
+                /**
+                 * Modalidade de origem
+                 * @description Código da modalidade que cede as vagas.
+                 */
+                readonly modalidadeOrigemCodigo: string;
+                /**
+                 * Ordem
+                 * @description Posição do destino na ordem da origem, a partir de 1. A ordem é semântica: decide quem recebe primeiro.
+                 */
+                readonly ordem: number;
+                /**
+                 * Modalidade de destino
+                 * @description Código da modalidade que recebe as vagas.
+                 */
+                readonly modalidadeDestinoCodigo: string;
+            }[];
+        };
         /**
          * Grupo de pesos por área
          * @description Os pesos e cortes das áreas do Enem de um grupo, congelados do catálogo. Campo só de leitura: ignorado na importação, porque é congelado do catálogo pela resolução.

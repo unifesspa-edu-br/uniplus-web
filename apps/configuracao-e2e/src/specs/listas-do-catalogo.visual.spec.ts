@@ -180,7 +180,7 @@ test.describe('Listas de tipos de documento e de fatos do candidato — linha cl
     await page.screenshot({ path: testInfo.outputPath('tipos-documento-historico.png') });
   });
 
-  test('Fato do Candidato: o drawer mostra o histórico, inclusive a reprovação que a correção não apagou', async ({
+  test('Fato do Candidato: o drawer mostra o histórico, inclusive a devolução que a correção não apagou', async ({
     page,
   }, testInfo) => {
     await page.goto('/fatos-candidato');
@@ -192,7 +192,7 @@ test.describe('Listas de tipos de documento e de fatos do candidato — linha cl
       has: page.getByRole('heading', { name: 'Histórico da proteção', level: 3 }),
     });
     await expect(secao.locator('.cfg-atos__item')).toHaveCount(3);
-    await expect(secao.locator('.cfg-atos__item').nth(1)).toContainText('Reprovação');
+    await expect(secao.locator('.cfg-atos__item').nth(1)).toContainText('Devolução');
     await expect(secao.locator('.cfg-atos__item').nth(1)).toContainText(
       'Betina Marina Valentina das Neves',
     );

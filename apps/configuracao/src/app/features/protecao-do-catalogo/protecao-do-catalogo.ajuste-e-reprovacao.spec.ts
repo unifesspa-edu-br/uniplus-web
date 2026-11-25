@@ -1,3 +1,4 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
@@ -30,7 +31,7 @@ import {
   compilarPaginaUmaVez,
 } from './protecao-do-catalogo.testing';
 
-describe('ProtecaoDoCatalogoPage — recomendar ajuste e reprovar', () => {
+describe('ProtecaoDoCatalogoPage — recomendar ajuste e devolver', () => {
   beforeAll(compilarPaginaUmaVez);
   const concedidas = signal<readonly string[]>([APROVAR]);
   let pagina: PaginaMontada;
@@ -151,7 +152,7 @@ describe('ProtecaoDoCatalogoPage — recomendar ajuste e reprovar', () => {
 
       const post = controller.expectOne((r) => r.method === 'POST' && r.url === URL);
       expect(post.request.body).toMatchObject({
-        decisao: 'RECOMENDAR_AJUSTE',
+        decisao: DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO,
         classificacaoRecomendada: 'SENSIVEL',
         classificacaoProtecao: 'INTERNO',
         justificativa: 'O laudo traz dado de saúde.',
@@ -202,11 +203,11 @@ describe('ProtecaoDoCatalogoPage — recomendar ajuste e reprovar', () => {
     });
   });
 
-  describe('reprovar', () => {
+  describe('devolver', () => {
     const abrirDialogo = async (): Promise<HTMLElement> => {
       const tela = await carregar([laudo]);
       await abrir(tela, laudo, detalheDoLaudo);
-      clicar(botaoDoRodape(tela, 'Reprovar'));
+      clicar(botaoDoRodape(tela, 'Devolver'));
       fixture.detectChanges();
       return tela;
     };
@@ -215,7 +216,7 @@ describe('ProtecaoDoCatalogoPage — recomendar ajuste e reprovar', () => {
       const tela = await abrirDialogo();
       const campo = campoDaJustificativa(tela);
       digitar(campo, 'Falta a base legal.');
-      const botao = confirmar(tela, 'Reprovar item') as HTMLButtonElement;
+      const botao = confirmar(tela, 'Devolver item') as HTMLButtonElement;
       botao.focus();
       botao.click();
       fixture.detectChanges();
@@ -241,14 +242,14 @@ describe('ProtecaoDoCatalogoPage — recomendar ajuste e reprovar', () => {
       const tela = await abrirDialogo();
       digitar(campoDaJustificativa(tela), '   ');
 
-      clicar(confirmar(tela, 'Reprovar item'));
+      clicar(confirmar(tela, 'Devolver item'));
       fixture.detectChanges();
       await assentar();
 
       controller.expectNone((r) => r.method === 'POST');
       const campo = campoDaJustificativa(tela);
       expect(tela.querySelector('#cfg-justificativa-erro')?.textContent).toContain(
-        'Informe a justificativa da reprovação.',
+        'Informe a justificativa da devolução.',
       );
       expect(campo.getAttribute('aria-invalid')).toBe('true');
       expect(campo.getAttribute('aria-describedby')).toContain('cfg-justificativa-erro');
@@ -277,7 +278,7 @@ describe('ProtecaoDoCatalogoPage — recomendar ajuste e reprovar', () => {
       const tela = await abrirDialogo();
       digitar(campoDaJustificativa(tela), '😀'.repeat(2000));
 
-      clicar(confirmar(tela, 'Reprovar item'));
+      clicar(confirmar(tela, 'Devolver item'));
 
       const post = controller.expectOne((r) => r.method === 'POST' && r.url === URL);
       expect(post.request.body.justificativa).toBe('😀'.repeat(2000));
@@ -290,7 +291,7 @@ describe('ProtecaoDoCatalogoPage — recomendar ajuste e reprovar', () => {
       const tela = await abrirDialogo();
       digitar(campoDaJustificativa(tela), 'a'.repeat(2001));
 
-      clicar(confirmar(tela, 'Reprovar item'));
+      clicar(confirmar(tela, 'Devolver item'));
       fixture.detectChanges();
 
       controller.expectNone((r) => r.method === 'POST');
@@ -303,11 +304,11 @@ describe('ProtecaoDoCatalogoPage — recomendar ajuste e reprovar', () => {
       const tela = await abrirDialogo();
       digitar(campoDaJustificativa(tela), '  Falta a base legal.  ');
 
-      clicar(confirmar(tela, 'Reprovar item'));
+      clicar(confirmar(tela, 'Devolver item'));
 
       const post = controller.expectOne((r) => r.method === 'POST' && r.url === URL);
       expect(post.request.body).toMatchObject({
-        decisao: 'REPROVAR',
+        decisao: DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO,
         justificativa: 'Falta a base legal.',
       });
       expect(post.request.body.classificacaoRecomendada).toBeUndefined();

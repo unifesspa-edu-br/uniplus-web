@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  type ApiResult,
   type CausaDeCampo,
   type ProblemDetails,
   ProblemI18nService,
@@ -26,7 +27,6 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   ProtecaoDoCatalogoApi,
-  type CadastroDoCatalogo,
   type ItemDaProtecaoDoCatalogoDto,
   type SolicitacaoDaProtecaoDto,
 } from '@uniplus/shared-data/configuracao';
@@ -63,7 +63,7 @@ const chaveDe = (item: ItemDaProtecaoDoCatalogoDto): string => `${item.tipo}:${i
         }}</ui-alert>
       }
       <p id="cfg-solicitacao-descricao">
-        Os itens marcados vão para a proteção de dados, que aprova, recomenda ajuste ou reprova cada
+        Os itens marcados vão para a proteção de dados, que aprova, recomenda ajuste ou devolve cada
         um. O item que não for aprovado não pode ser usado na configuração de um processo seletivo.
       </p>
       <label class="checkbox cfg-marcar-todos-cartao">
@@ -253,7 +253,7 @@ export class SolicitacaoDaProtecaoDialogComponent {
 
   protected enviar(): void {
     const itens = this.marcados().map((item) => ({
-      cadastro: item.tipo as CadastroDoCatalogo,
+      cadastro: item.tipo,
       id: item.id,
     }));
     if (this.enviando() || itens.length === 0) return;
@@ -264,14 +264,16 @@ export class SolicitacaoDaProtecaoDialogComponent {
     this.api
       .solicitar(itens, withIdempotencyKey(this.chave))
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((resultado) => {
-        this.enviando.set(false);
-        if (resultado.ok) {
-          this.concluirEnvio(resultado.data);
-          return;
-        }
-        this.recusarEnvio(resultado.problem, enviados);
-      });
+      .subscribe((resultado) => this.receberEnvio(resultado, enviados));
+  }
+
+  private receberEnvio(
+    resultado: ApiResult<SolicitacaoDaProtecaoDto>,
+    enviados: readonly ItemDaProtecaoDoCatalogoDto[],
+  ): void {
+    this.enviando.set(false);
+    if (resultado.ok) this.concluirEnvio(resultado.data);
+    else this.recusarEnvio(resultado.problem, enviados);
   }
 
   private recusarEnvio(
@@ -304,19 +306,26 @@ export class SolicitacaoDaProtecaoDialogComponent {
     erros: readonly CausaDeCampo[],
     enviados: readonly ItemDaProtecaoDoCatalogoDto[],
   ): void {
+    const recusas = this.identificarRecusados(erros, enviados);
+    if (recusas.size === 0) return;
+    this.recusas.set(recusas);
+    this.chave = idempotencyKey.create();
+    this.chavesMarcadas.update(
+      (chaves) => new Set([...chaves].filter((chave) => !recusas.has(chave))),
+    );
+    this.desatualizada.emit();
+  }
+
+  private identificarRecusados(
+    erros: readonly CausaDeCampo[],
+    enviados: readonly ItemDaProtecaoDoCatalogoDto[],
+  ): Map<string, string> {
     const recusas = new Map<string, string>();
     for (const erro of erros) {
       const indice = /^itens\[(\d+)\]\.id$/u.exec(erro.field)?.[1];
       const item = indice === undefined ? undefined : enviados[Number(indice)];
       if (item !== undefined) recusas.set(chaveDe(item), erro.message);
     }
-    if (recusas.size === 0) return;
-    this.recusas.set(recusas);
-    // O corpo mudou: a mesma chave com outro corpo seria recusada.
-    this.chave = idempotencyKey.create();
-    this.chavesMarcadas.update(
-      (chaves) => new Set([...chaves].filter((chave) => !recusas.has(chave))),
-    );
-    this.desatualizada.emit();
+    return recusas;
   }
 }

@@ -99,7 +99,7 @@ const ATIPICOS: readonly [string, IdaEVolta, DocumentoDaConfiguracao][] = [
           modalidades: [{ codigo: 'AC' }, { codigo: 'LB', quantidadeDeclarada: 3 }],
         },
       ],
-      cascataRemanejamento: {
+      ordemDeRemanejamento: {
         regra: {},
         destinoFinalCodigo: ' AC ',
         destinos: [
@@ -172,7 +172,7 @@ const ATIPICOS: readonly [string, IdaEVolta, DocumentoDaConfiguracao][] = [
     'Cascata com o mesmo destino repetido e a mesma ordem em dois destinos',
     VAGAS,
     comSecao({
-      cascataRemanejamento: {
+      ordemDeRemanejamento: {
         destinos: [
           { modalidadeOrigemCodigo: 'A', ordem: 1, modalidadeDestinoCodigo: 'B' },
           { modalidadeOrigemCodigo: 'A', ordem: 1, modalidadeDestinoCodigo: 'B' },

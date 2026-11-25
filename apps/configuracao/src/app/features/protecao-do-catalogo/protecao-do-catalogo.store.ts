@@ -4,7 +4,6 @@ import { ProblemI18nService, useApiResource, withVendorMime } from '@uniplus/sha
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
-  type CadastroDoCatalogo,
   type ItemDaProtecaoDoCatalogoDto,
 } from '@uniplus/shared-data/configuracao';
 import { LeituraDoDetalhe } from '../../shared/detalhe-do-catalogo';
@@ -81,7 +80,7 @@ export class ProtecaoDoCatalogoStore {
 
   abrirDetalhe(item: ItemDaProtecaoDoCatalogoDto): void {
     this.itemAbertoId.set(item.id);
-    this.leituraDoDetalhe.ler(item.tipo as CadastroDoCatalogo, item.id);
+    this.leituraDoDetalhe.ler(item.tipo, item.id);
   }
 
   recarregarDetalhe(): void {

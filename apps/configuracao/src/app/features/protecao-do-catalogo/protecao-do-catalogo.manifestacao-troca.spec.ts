@@ -1,3 +1,5 @@
+import { RegistrarManifestacaoDaProtecaoRequestParecer } from '@uniplus/shared-data/configuracao';
+import { ItemParaSolicitarRequestCadastro } from '@uniplus/shared-data/configuracao';
 import { TestBed } from '@angular/core/testing';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { afterEach, beforeEach, describe, expect, it, vi, beforeAll } from 'vitest';
@@ -65,7 +67,10 @@ describe('ProtecaoDoCatalogoPage — o formulário da manifestação de um item 
 
   it('o texto só de espaços no parecer desfavorável não é enviado e o erro fica ligado ao campo', async () => {
     await abrirItem(pagina, laudo, detalheDoLaudo);
-    clicar(parecer('INADEQUADA'), 'o parecer inadequada');
+    clicar(
+      parecer(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO),
+      'o parecer recomenda não uso',
+    );
     digitar(texto(), '     ');
     await pagina.assentar();
     await enviar();
@@ -79,7 +84,10 @@ describe('ProtecaoDoCatalogoPage — o formulário da manifestação de um item 
 
   it('fechar o item A sem enviar e abrir o B não leva parecer, texto nem erros do A', async () => {
     await abrirItem(pagina, laudo, detalheDoLaudo);
-    clicar(parecer('INADEQUADA'), 'o parecer inadequada');
+    clicar(
+      parecer(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO),
+      'o parecer recomenda não uso',
+    );
     digitar(texto(), '   ');
     await pagina.assentar();
     await enviar();
@@ -90,19 +98,24 @@ describe('ProtecaoDoCatalogoPage — o formulário da manifestação de um item 
 
     await abrirItem(pagina, rural, detalheDoFato());
 
-    expect(parecer('INADEQUADA')?.checked).toBe(false);
+    expect(parecer(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO)?.checked).toBe(
+      false,
+    );
     expect(texto().value).toBe('');
     expect(texto().getAttribute('aria-invalid')).toBeNull();
     expect(formulario().querySelector('.field__error')).toBeNull();
 
-    clicar(parecer('ADEQUADA'), 'o parecer adequada');
+    clicar(
+      parecer(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_APROVACAO),
+      'o parecer recomenda aprovação',
+    );
     await pagina.assentar();
     await enviar();
     const [envio] = manifestacoes();
     expect(envio?.request.body).toMatchObject({
-      cadastro: 'FATO',
+      cadastro: ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO,
       itemId: rural.id,
-      parecer: 'ADEQUADA',
+      parecer: RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_APROVACAO,
       texto: null,
     });
     envio?.flush(null, SEM_CONTEUDO);
@@ -137,7 +150,10 @@ describe('ProtecaoDoCatalogoPage — a resposta atrasada do item A com o item B 
   /** Envia a manifestação do laudo, fecha sem resposta e deixa o rascunho no fato rural. */
   async function enviarAEAbrirB() {
     await abrirItem(pagina, laudo, detalheDoLaudo);
-    clicar(parecer('ADEQUADA'), 'o parecer adequada');
+    clicar(
+      parecer(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_APROVACAO),
+      'o parecer recomenda aprovação',
+    );
     await pagina.assentar();
     formulario().dispatchEvent(new Event('submit'));
     await pagina.assentar();
@@ -147,7 +163,10 @@ describe('ProtecaoDoCatalogoPage — a resposta atrasada do item A com o item B 
     clicar(botaoDoRodape(pagina.tela, 'Fechar'), 'Fechar');
     await pagina.assentar();
     await abrirItem(pagina, rural, detalheDoFato());
-    clicar(parecer('INADEQUADA'), 'o parecer inadequada');
+    clicar(
+      parecer(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO),
+      'o parecer recomenda não uso',
+    );
     digitar(texto(), RASCUNHO_DE_B);
     await pagina.assentar();
     return envioDeA;
@@ -159,7 +178,9 @@ describe('ProtecaoDoCatalogoPage — a resposta atrasada do item A com o item B 
   }
 
   function esperarRascunhoDeBIntacto(): void {
-    expect(parecer('INADEQUADA')?.checked).toBe(true);
+    expect(parecer(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO)?.checked).toBe(
+      true,
+    );
     expect(texto().value).toBe(RASCUNHO_DE_B);
     expect(texto().getAttribute('aria-invalid')).toBeNull();
     expect(secao().querySelector('ui-alert')).toBeNull();
@@ -183,7 +204,9 @@ describe('ProtecaoDoCatalogoPage — a resposta atrasada do item A com o item B 
     expect(formulario().getAttribute('aria-busy')).not.toBe('true');
     expect(botao.getAttribute('aria-disabled')).toBeNull();
     expect(botao.getAttribute('aria-busy')).not.toBe('true');
-    expect(parecer('INADEQUADA')?.disabled).toBe(false);
+    expect(parecer(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO)?.disabled).toBe(
+      false,
+    );
     expect(texto().disabled).toBe(false);
 
     formulario().dispatchEvent(new Event('submit'));
@@ -256,13 +279,18 @@ describe('ProtecaoDoCatalogoPage — a resposta atrasada do item A com o item B 
 
   it('com o envio pendente o parecer e o texto ficam travados e voltam com os valores na recusa', async () => {
     await abrirItem(pagina, laudo, detalheDoLaudo);
-    clicar(parecer('INADEQUADA'), 'o parecer inadequada');
+    clicar(
+      parecer(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO),
+      'o parecer recomenda não uso',
+    );
     digitar(texto(), 'Texto enviado.');
     await pagina.assentar();
     formulario().dispatchEvent(new Event('submit'));
     await pagina.assentar();
 
-    expect(parecer('INADEQUADA')?.disabled).toBe(true);
+    expect(parecer(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO)?.disabled).toBe(
+      true,
+    );
     expect(texto().disabled).toBe(true);
     expect(formulario().getAttribute('aria-busy')).toBe('true');
 
@@ -272,8 +300,12 @@ describe('ProtecaoDoCatalogoPage — a resposta atrasada do item A com o item B 
       .flush(corpo, cabecalhos);
     await chegarResposta();
 
-    expect(parecer('INADEQUADA')?.disabled).toBe(false);
-    expect(parecer('INADEQUADA')?.checked).toBe(true);
+    expect(parecer(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO)?.disabled).toBe(
+      false,
+    );
+    expect(parecer(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO)?.checked).toBe(
+      true,
+    );
     expect(texto().disabled).toBe(false);
     expect(texto().value).toBe('Texto enviado.');
     expect(texto().getAttribute('aria-invalid')).toBe('true');

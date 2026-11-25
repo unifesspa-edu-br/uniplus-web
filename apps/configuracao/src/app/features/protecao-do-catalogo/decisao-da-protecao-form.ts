@@ -1,6 +1,6 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { AbstractControl, ValidationErrors } from '@angular/forms';
 import {
-  CadastroDoCatalogo,
   DecidirProtecaoDoCatalogoRequest,
   DecisaoDaProtecao,
   DetalheDaProtecaoDoCatalogoDto,
@@ -40,9 +40,9 @@ export function comandoPara(
   item: DetalheDaProtecaoDoCatalogoDto,
 ): DecidirProtecaoDoCatalogoRequest {
   return {
-    cadastro: item.tipo as CadastroDoCatalogo,
+    cadastro: item.tipo,
     itemId: item.id,
-    decisao: 'APROVAR',
+    decisao: DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO,
     classificacaoProtecao: item.classificacaoProtecao,
     hipoteseLegal: item.hipoteseLegal,
     finalidadeTratamento: item.finalidadeTratamento,
@@ -59,7 +59,7 @@ export function comandoDeJustificativa(
   recomendada: string,
 ): DecidirProtecaoDoCatalogoRequest {
   const comando = { ...comandoPara(item), decisao, justificativa: justificativa || null };
-  return decisao === 'RECOMENDAR_AJUSTE'
+  return decisao === DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO
     ? { ...comando, classificacaoRecomendada: recomendada }
     : comando;
 }

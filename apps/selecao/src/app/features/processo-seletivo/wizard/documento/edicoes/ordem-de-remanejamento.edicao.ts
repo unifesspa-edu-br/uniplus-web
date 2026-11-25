@@ -1,6 +1,6 @@
 import type {
   DocumentoDaConfiguracao,
-  DocumentoDaConfiguracaoCascataDeRemanejamento,
+  DocumentoDaConfiguracaoOrdemDeRemanejamento,
 } from '@uniplus/shared-data/selecao';
 
 import { referenciaQueVale, type RegraEscolhida } from '../regra-escolhida';
@@ -18,17 +18,17 @@ export interface OrdemDeOrigem {
 }
 
 /**
- * A cascata como a regra do catálogo a congela (`RegraCatalogoDto.declaracaoDaRegra` de
+ * A ordem de remanejamento como a regra do catálogo a congela (`RegraCatalogoDto.declaracaoDaRegra` de
  * `criterio_remanejamento`): a modalidade de reserva e a ordem de cada origem. A tela só lê o que
  * a regra declarou e apresenta; nunca monta a matriz.
  */
-export interface MatrizDaCascata {
+export interface MatrizDaOrdemDeRemanejamento {
   readonly fallbackCodigo: string;
   readonly ordens: readonly OrdemDeOrigem[];
 }
 
 export type DestinoDoDocumento = NonNullable<
-  DocumentoDaConfiguracaoCascataDeRemanejamento['destinos']
+  DocumentoDaConfiguracaoOrdemDeRemanejamento['destinos']
 >[number];
 
 /** Os destinos de cada origem, na ordem em que a origem aparece e ordenados por `ordem`. */
@@ -89,7 +89,7 @@ function entradasDasOrigensDoDocumento(
  */
 function destinosAtualizados(
   atuais: readonly DestinoDoDocumento[],
-  matriz: MatrizDaCascata,
+  matriz: MatrizDaOrdemDeRemanejamento,
 ): DestinoDoDocumento[] {
   const lidas = codigosPorOrigem(ordensDoDocumento(atuais));
   const novas = matriz.ordens.filter(({ origem }) => !lidas.has(origem));
@@ -99,42 +99,54 @@ function destinosAtualizados(
   ];
 }
 
-type Cascata = NonNullable<DocumentoDaConfiguracao['cascataRemanejamento']>;
+type OrdemDeRemanejamento = NonNullable<DocumentoDaConfiguracao['ordemDeRemanejamento']>;
 
 function comRegraEReserva(
-  cascata: Cascata,
+  ordemDeRemanejamento: OrdemDeRemanejamento,
   regra: RegraEscolhida | null,
   fallbackCodigo: string,
-): Cascata {
-  const comRegra = comCampo(cascata, 'regra', referenciaQueVale(cascata.regra, regra));
-  const reserva = textoQueVale(cascata.destinoFinalCodigo, fallbackCodigo);
+): OrdemDeRemanejamento {
+  const comRegra = comCampo(
+    ordemDeRemanejamento,
+    'regra',
+    referenciaQueVale(ordemDeRemanejamento.regra, regra),
+  );
+  const reserva = textoQueVale(ordemDeRemanejamento.destinoFinalCodigo, fallbackCodigo);
   return comCampo(comRegra, 'destinoFinalCodigo', reserva);
 }
 
 /**
- * Declara a cascata a partir da regra escolhida e da matriz dela. Matriz igual à que o documento
+ * Declara a ordem de remanejamento a partir da regra escolhida e da matriz dela. Matriz igual à que o documento
  * já traz deixa os destinos como estão.
  */
-export function definirCascata(
+export function definirOrdemDeRemanejamento(
   documento: DocumentoDaConfiguracao,
   regra: RegraEscolhida | null,
-  matriz: MatrizDaCascata,
+  matriz: MatrizDaOrdemDeRemanejamento,
 ): DocumentoDaConfiguracao {
-  return naSecao(documento, 'cascataRemanejamento', (cascata) => {
-    const comReserva = comRegraEReserva(cascata, regra, matriz.fallbackCodigo);
-    return comLista(comReserva, 'destinos', destinosAtualizados(cascata.destinos ?? [], matriz));
+  return naSecao(documento, 'ordemDeRemanejamento', (ordemDeRemanejamento) => {
+    const comReserva = comRegraEReserva(ordemDeRemanejamento, regra, matriz.fallbackCodigo);
+    return comLista(
+      comReserva,
+      'destinos',
+      destinosAtualizados(ordemDeRemanejamento.destinos ?? [], matriz),
+    );
   });
 }
 
-/** A cascata que decidiu não ter destinos declara a lista vazia; ausente é "ainda não decidiu". */
-export function declararCascataSemDestinos(
+/** A ordem de remanejamento que decidiu não ter destinos declara a lista vazia; ausente é "ainda não decidiu". */
+export function declararOrdemDeRemanejamentoSemDestinos(
   documento: DocumentoDaConfiguracao,
 ): DocumentoDaConfiguracao {
-  return naSecao(documento, 'cascataRemanejamento', (cascata) => comCampo(cascata, 'destinos', []));
+  return naSecao(documento, 'ordemDeRemanejamento', (ordemDeRemanejamento) =>
+    comCampo(ordemDeRemanejamento, 'destinos', []),
+  );
 }
 
-/** Processo sem cascata: o bloco inteiro sai do documento. */
-export function removerCascata(documento: DocumentoDaConfiguracao): DocumentoDaConfiguracao {
-  const { cascataRemanejamento, ...resto } = documento;
-  return cascataRemanejamento === undefined ? documento : resto;
+/** Processo sem ordem de remanejamento: o bloco inteiro sai do documento. */
+export function removerOrdemDeRemanejamento(
+  documento: DocumentoDaConfiguracao,
+): DocumentoDaConfiguracao {
+  const { ordemDeRemanejamento, ...resto } = documento;
+  return ordemDeRemanejamento === undefined ? documento : resto;
 }

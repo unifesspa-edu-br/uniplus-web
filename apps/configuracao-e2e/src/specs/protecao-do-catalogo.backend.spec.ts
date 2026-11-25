@@ -1,3 +1,4 @@
+import type { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { test, expect, type Browser, type Locator, type Page } from '@playwright/test';
 import {
   OPERADOR_DO_ROTEIRO,
@@ -144,7 +145,9 @@ test.describe('Aprovação da proteção de dados dos tipos de documento e dos f
     const dialogo = await abrirRecomendacaoDeAjuste(caroline, nome);
     await dialogo.getByLabel('Classificação recomendada').selectOption('SENSIVEL');
     await dialogo.getByRole('button', { name: 'Recomendar ajuste' }).click();
-    await expect.poll(async () => (await tipoNaApi(codigo))?.situacao).toBe('AJUSTE_RECOMENDADO');
+    await expect
+      .poll(async () => (await tipoNaApi(codigo))?.situacao)
+      .toBe('AJUSTE_RECOMENDADO' satisfies `${DecidirProtecaoDoCatalogoRequestDecisao}`);
     expect((await tipoNaApi(codigo))?.recomendada).toBe('SENSIVEL');
 
     const isabella = await entrarComoPersona(

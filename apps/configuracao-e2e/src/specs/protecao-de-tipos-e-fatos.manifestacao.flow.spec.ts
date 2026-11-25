@@ -1,3 +1,7 @@
+import type {
+  DecidirProtecaoDoCatalogoRequestDecisao,
+  RegistrarManifestacaoDaProtecaoRequestParecer,
+} from '@uniplus/shared-data/configuracao';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import { MANIFESTACAO_DESFAVORAVEL, mockManifestacoes } from '../support/api-da-manifestacao';
@@ -20,7 +24,7 @@ async function abrirItem(page: Page, permissoes: readonly string[]): Promise<voi
   ).toBeVisible();
 }
 
-/** Escolhe o parecer pelo nome exato do rádio: "Adequada" não pode casar com "Inadequada". */
+/** Escolhe o parecer pelo nome exato do rádio: "Recomenda aprovação" não pode casar com "Recomenda não uso". */
 async function escolherParecer(drawer: Locator, parecer: string): Promise<void> {
   await drawer
     .locator('label.radio')
@@ -42,10 +46,10 @@ test.describe('Proteção dos tipos de documento e dos fatos — manifestação 
     const drawer = page.getByRole('dialog', { name: 'Detalhe do item aguardando a decisão' });
 
     await expect(drawer.getByRole('button', { name: 'Aprovar' })).toHaveCount(0);
-    await escolherParecer(drawer, 'Inadequada');
+    await escolherParecer(drawer, 'Recomenda não uso');
     await drawer.getByRole('button', { name: 'Registrar manifestação' }).click();
     await expect(
-      drawer.getByText('Os pareceres recomenda ajuste e inadequada exigem o texto.'),
+      drawer.getByText('Os pareceres recomenda ajuste e recomenda não uso exigem o texto.'),
     ).toBeVisible();
     expect(escritas).toHaveLength(0);
 
@@ -54,7 +58,12 @@ test.describe('Proteção dos tipos de documento e dos fatos — manifestação 
     await expect.poll(() => escritas.length).toBe(1);
     expect(escritas[0]).toMatchObject({
       metodo: 'POST',
-      corpo: { cadastro: 'TIPO_DOCUMENTO', itemId: ITEM.id, ciclo: 1, parecer: 'INADEQUADA' },
+      corpo: {
+        cadastro: 'TIPO_DOCUMENTO',
+        itemId: ITEM.id,
+        ciclo: 1,
+        parecer: 'RECOMENDA_NAO_USO' satisfies `${RegistrarManifestacaoDaProtecaoRequestParecer}`,
+      },
     });
     expect(escritas[0]?.chave).toBeTruthy();
     await semViolacoes(page);
@@ -72,7 +81,7 @@ test.describe('Proteção dos tipos de documento e dos fatos — manifestação 
     await abrirItem(page, PERMISSOES_DA_ISABELLA_MANIFESTA);
     const drawer = page.getByRole('dialog', { name: 'Detalhe do item aguardando a decisão' });
 
-    await escolherParecer(drawer, 'Adequada');
+    await escolherParecer(drawer, 'Recomenda aprovação');
     await drawer.getByRole('button', { name: 'Registrar manifestação' }).click();
 
     await expect(drawer.getByText('O item foi relido')).toBeVisible();
@@ -90,7 +99,7 @@ test.describe('Proteção dos tipos de documento e dos fatos — manifestação 
       .click();
     const dialogo = page.getByRole('dialog', { name: 'Aprovar a proteção de dados do item' });
 
-    await expect(dialogo.getByText('Inadequada')).toBeVisible();
+    await expect(dialogo.getByText('Recomenda não uso')).toBeVisible();
     await dialogo.getByRole('button', { name: 'Aprovar item' }).click();
     await expect(
       dialogo.getByText(
@@ -105,7 +114,7 @@ test.describe('Proteção dos tipos de documento e dos fatos — manifestação 
     await dialogo.getByRole('button', { name: 'Aprovar item' }).click();
     await expect.poll(() => escritas.length).toBe(1);
     expect(escritas[0]?.corpo).toMatchObject({
-      decisao: 'APROVAR',
+      decisao: 'APROVACAO' satisfies `${DecidirProtecaoDoCatalogoRequestDecisao}`,
       justificativa: 'A classificação interna basta.',
     });
   });

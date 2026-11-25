@@ -13,7 +13,7 @@ describe('passoDoPonteiro', () => {
     ['/taxaDeInscricao/valor', { passo: 'Pagamento' }],
     ['/opcoesDeCurso/numero', { passo: 'Vagas' }],
     ['/distribuicaoVagas/0/percentualDaReservaLegal', { passo: 'Vagas' }],
-    ['/cascataRemanejamento/destinos/2/ordem', { passo: 'Vagas' }],
+    ['/ordemDeRemanejamento/destinos/2/ordem', { passo: 'Vagas' }],
     ['/cronograma/fases/1/inicio', { passo: 'Cronograma', detalhe: 'fase' }],
     ['/cronograma', { passo: 'Cronograma' }],
     ['/etapas/0/peso', { passo: 'Cronograma', detalhe: 'etapa' }],

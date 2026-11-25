@@ -89,7 +89,7 @@ export function esvaziarSeForaDas(
 
 const NOME_DO_CADASTRO: Readonly<Record<string, string>> = {
   TIPO_DOCUMENTO: 'Tipo de documento',
-  FATO: 'Fato do candidato',
+  DADO_DO_CANDIDATO: 'Fato do candidato',
 };
 
 /** O nome que a tela dá ao cadastro de um item do catálogo. */

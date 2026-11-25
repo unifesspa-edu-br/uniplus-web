@@ -1,3 +1,4 @@
+import { RegraRemanejamentoModalidadeCodigo } from '@uniplus/shared-data/selecao';
 import { HttpInterceptorFn, HttpResponse } from '@angular/common/http';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { type ComponentFixture } from '@angular/core/testing';
@@ -152,7 +153,10 @@ export const MODALIDADES_CASCATA = [
     },
     composicaoOrigem: 'AC',
     remanejamento: {
-      regra: { codigo: 'SEGUE_CASCATA', rotulo: 'Segue cascata' },
+      regra: {
+        codigo: RegraRemanejamentoModalidadeCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO,
+        rotulo: 'Segue a ordem de remanejamento',
+      },
       destino: null,
       par: null,
       fallback: null,
@@ -313,7 +317,9 @@ export function servicosDe(fixture: ComponentFixture<VagasPassoComponent>): Serv
 }
 
 function responderReleituras(controller: HttpTestingController): void {
-  for (const releitura of controller.match((r) => r.method === 'GET' && ROTA_PROCESSO_LIDO.test(r.url))) {
+  for (const releitura of controller.match(
+    (r) => r.method === 'GET' && ROTA_PROCESSO_LIDO.test(r.url),
+  )) {
     releitura.flush({ distribuicaoVagas: [], regrasDerivacao: [] });
   }
 }
