@@ -49,32 +49,30 @@ export class NavegacaoDosPassos {
   private readonly escolhida: WritableSignal<{ chave: string | null; indice: number }>;
 
   /** As chaves de todos os passos na ordem em que aparecem: os prefixados e, depois, as seções. */
-  readonly chaves: Signal<readonly string[]>;
-  readonly total: Signal<number>;
+  readonly chaves = computed(() =>
+    [...this.fontes.passosPrefixados(), ...this.fontes.passos()].map((p) => p.chave),
+  );
+  readonly total = computed(() => this.chaves().length);
   /** O índice entre todos os passos — os prefixados primeiro, depois as seções. */
-  readonly indice: Signal<number>;
-  readonly chaveAtual: Signal<string | null>;
-  readonly passoAtual: Signal<PassoDoFormulario | null>;
-  readonly prefixadoAtual: Signal<PassoPrefixado | null>;
+  readonly indice = computed(() => {
+    const { chave, indice } = this.escolhida();
+    const achado = chave === null ? -1 : this.chaves().indexOf(chave);
+    return achado >= 0 ? achado : Math.max(0, Math.min(indice, this.total() - 1));
+  });
+  readonly chaveAtual = computed(() => this.chaves()[this.indice()] ?? null);
+  readonly passoAtual = computed(
+    () => this.fontes.passos().find((p) => p.chave === this.chaveAtual()) ?? null,
+  );
+  readonly prefixadoAtual = computed(
+    () => this.fontes.passosPrefixados().find((p) => p.chave === this.chaveAtual()) ?? null,
+  );
 
   constructor(private readonly fontes: FontesDaNavegacao) {
-    const { partida, inicial, passos, passosPrefixados } = fontes;
+    const { partida, inicial } = fontes;
     this.concluidas = aCadaPartida(partida, () => new Set(inicial()?.paginasConcluidas ?? []));
     this.blocosConcluidos = aCadaPartida(partida, () => new Set<string>());
     this.pendenciaMostrada = aCadaPartida(partida, () => new Set<string>());
     this.escolhida = aCadaPartida(partida, () => ({ chave: null as string | null, indice: 0 }));
-    this.chaves = computed(() => [...passosPrefixados(), ...passos()].map((p) => p.chave));
-    this.total = computed(() => this.chaves().length);
-    this.indice = computed(() => {
-      const { chave, indice } = this.escolhida();
-      const achado = chave === null ? -1 : this.chaves().indexOf(chave);
-      return achado >= 0 ? achado : Math.max(0, Math.min(indice, this.total() - 1));
-    });
-    this.chaveAtual = computed(() => this.chaves()[this.indice()] ?? null);
-    this.passoAtual = computed(() => passos().find((p) => p.chave === this.chaveAtual()) ?? null);
-    this.prefixadoAtual = computed(
-      () => passosPrefixados().find((p) => p.chave === this.chaveAtual()) ?? null,
-    );
   }
 
   concluido(passo: PassoDoFormulario): boolean {
