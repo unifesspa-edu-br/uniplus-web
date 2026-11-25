@@ -288,6 +288,8 @@ export {
   type Vocabulario,
 } from './vocabulario';
 export {
+  fornecerVocabularioDeTiposDoDado,
+  VOCABULARIO_DE_TIPOS_DO_DADO,
   fornecerVocabularioDePapeisDeBanca,
   fornecerVocabularioDeTiposDeDecisao,
   VOCABULARIO_DE_PAPEIS_DE_BANCA,
@@ -297,4 +299,5 @@ export {
 export {
   VocabulariosDeConfiguracaoApi,
   type VocabulariosDeConfiguracao,
+  type TipoDoDado,
 } from './vocabularios-de-configuracao.api';

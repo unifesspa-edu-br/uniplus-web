@@ -5,7 +5,10 @@ import { type ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
+export type TipoDoDado = components['schemas']['TipoDoDado'];
+
 export interface VocabulariosDeConfiguracao {
+  readonly 'tipos-do-dado': TipoDoDado;
   readonly 'abrangencias-dia-nao-util': components['schemas']['Abrangencia'];
   readonly 'acoes-quando-indeferido': components['schemas']['AcaoQuandoIndeferido'];
   readonly 'composicoes-vagas': components['schemas']['ComposicaoVagas'];
@@ -22,6 +25,7 @@ export interface VocabulariosDeConfiguracao {
 }
 
 const MIME: Readonly<Record<keyof VocabulariosDeConfiguracao, string>> = {
+  'tipos-do-dado': 'tipo-do-dado',
   'abrangencias-dia-nao-util': 'codigo-abrangencia-dia-nao-util',
   'acoes-quando-indeferido': 'codigo-acao-quando-indeferido',
   'composicoes-vagas': 'codigo-composicao-vagas',

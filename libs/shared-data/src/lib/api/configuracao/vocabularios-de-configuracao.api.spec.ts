@@ -12,6 +12,7 @@ import { CONFIGURACAO_BASE_PATH } from './tokens';
 import { ITENS_DE_VOCABULARIO } from './vocabularios-de-configuracao.testing';
 
 const vocabularios: ReadonlyArray<readonly [keyof VocabulariosDeConfiguracao, string]> = [
+  ['tipos-do-dado', 'tipo-do-dado'],
   ['abrangencias-dia-nao-util', 'codigo-abrangencia-dia-nao-util'],
   ['acoes-quando-indeferido', 'codigo-acao-quando-indeferido'],
   ['composicoes-vagas', 'codigo-composicao-vagas'],
