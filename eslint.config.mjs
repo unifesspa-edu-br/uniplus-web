@@ -5,6 +5,7 @@ import { builtinRules } from 'eslint/use-at-your-own-risk';
 import sonarjs from 'eslint-plugin-sonarjs';
 import css from '@eslint/css';
 import { tailwind4 } from 'tailwind-csstree';
+import { fileURLToPath } from 'node:url';
 
 const ARQUIVOS_DE_CODIGO = ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'];
 
@@ -194,6 +195,23 @@ export default [
       '**/vitest.config.*.timestamp*',
       'libs/shared-ui/src/assets/**',
     ],
+  },
+  {
+    basePath: fileURLToPath(new URL('.', import.meta.url)),
+    files: ['apps/*/src/app/app.config.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/environments/environment', '**/environments/environment.*'],
+              message: 'A configuração vem do runtime-config, conforme a ADR-0021.',
+            },
+          ],
+        },
+      ],
+    },
   },
   {
     files: ['**/*.ts'],
