@@ -132,6 +132,45 @@ describe('EditorDeFormularioComponent: opções que dependem das respostas anter
     expect(restricaoDe('ESPERA').textContent).not.toContain('Condição inválida.');
   });
 
+  const termo = (codigo: string, ordem: number) => ({
+    codigo,
+    ordem,
+    termo: { termoId: codigo, versaoId: 'V' },
+    regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
+  });
+  const revisao = {
+    codigo: 'REVISAO_E_ACEITE',
+    ordem: 1,
+    tipo: 'BLOCO',
+    bloco: 'REVISAO_E_ACEITE',
+    apresentacao: { titulo: 'Revisão', descricao: null, aviso: null },
+  };
+  const artigoDoTermo = (codigo: string): HTMLElement =>
+    cenario.tela.querySelector(`[aria-labelledby="f-termo-${codigo}-titulo"]`) as HTMLElement;
+  const comRecusaNoTermo = (): void => {
+    const atual = {
+      ...conteudo,
+      paginas: [...(conteudo.paginas ?? []), revisao],
+      termos: [termo('A', 0), termo('B', 1), termo('C', 2)],
+    };
+    cenario.entrada('conteudo', atual);
+    cenario.entrada(
+      'recusas',
+      distribuirRecusas([{ field: 'termos[1].codigo', message: 'Termo recusado.' }], atual),
+    );
+    cenario.detectar();
+  };
+
+  it.each(['removido', 'movido'])('a recusa fica no termo depois que outro termo é %s', (acao) => {
+    comRecusaNoTermo();
+    expect(artigoDoTermo('B').textContent).toContain('Termo recusado.');
+    botao(artigoDoTermo('A'), acao === 'removido' ? 'Remover' : 'Descer').click();
+    cenario.detectar();
+    expect(artigoDoTermo('B').textContent).toContain('Termo recusado.');
+    expect(artigoDoTermo('C').textContent).not.toContain('Termo recusado.');
+    if (acao === 'movido') expect(artigoDoTermo('A').textContent).not.toContain('Termo recusado.');
+  });
+
   it('as opções das respostas escolhem entre os campos anteriores cujas opções cabem nas do campo', () => {
     cenario.entrada('catalogo', [
       curso('OPCOES', ['MED', 'DIR']),
