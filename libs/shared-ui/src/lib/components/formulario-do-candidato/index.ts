@@ -1,7 +1,7 @@
 export {
   FormularioDoCandidatoComponent,
   type PendenciaDaSecao,
-} from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato';
+} from './formulario-do-candidato';
 export type {
   CampoApresentado,
   DependenciasDaAvaliacao,
@@ -15,7 +15,7 @@ export type {
   PaginaApresentada,
   TermoApresentado,
   ValorSelecionavel,
-} from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato.model';
+} from './formulario-do-candidato.model';
 export {
   CONCORRE,
   FALTA_RESPONDER,
@@ -23,41 +23,41 @@ export {
   nomesPelaOrdem,
   type AvaliacaoNaTela,
   type ModalidadesAvaliadas,
-} from '../../src/lib/components/formulario-do-candidato/modalidades-avaliadas';
+} from './modalidades-avaliadas';
 export {
   AGUARDE_A_VERIFICACAO,
   type DocumentosAvaliados,
-} from '../../src/lib/components/formulario-do-candidato/documentos-avaliados';
+} from './documentos-avaliados';
 export {
   derivadosDoSistema,
   type DerivadoDoSistema,
-} from '../../src/lib/components/formulario-do-candidato/derivados-do-sistema';
+} from './derivados-do-sistema';
 export {
   casoDaSimulacao,
   lerArquivoDoFormulario,
   type ArquivoDoFormulario,
-} from '../../src/lib/components/formulario-do-candidato/arquivo-do-formulario';
+} from './arquivo-do-formulario';
 export {
   SimulacaoDeFormularioComponent,
   type ConferenciaComOServidor,
   type SimulacaoParaConferir,
-} from '../../src/lib/components/formulario-do-candidato/simulacao-de-formulario';
-export { PressupostosDaSimulacaoComponent } from '../../src/lib/components/formulario-do-candidato/pressupostos-da-simulacao';
+} from './simulacao-de-formulario';
+export { PressupostosDaSimulacaoComponent } from './pressupostos-da-simulacao';
 export {
   separarMunicipiosGravados,
   type MunicipiosGravados,
   type MunicipiosSeparados,
-} from '../../src/lib/components/formulario-do-candidato/valor-de-municipio-gravado';
-export { baixarJson } from '../../src/lib/components/formulario-do-candidato/baixar-json';
+} from './valor-de-municipio-gravado';
+export { baixarJson } from './baixar-json';
 export {
   divergenciasEntre,
   type Divergencia,
-} from '../../src/lib/components/formulario-do-candidato/divergencias';
+} from './divergencias';
 export {
   interpretarFormulario,
   type InterpretacaoDoFormulario,
-} from '../../src/lib/components/formulario-do-candidato/interpretador/interpretador';
-export type { RegrasInvalidas } from '../../src/lib/components/formulario-do-candidato/interpretador/definicao-do-formulario';
+} from './interpretador/interpretador';
+export type { RegrasInvalidas } from './interpretador/definicao-do-formulario';
 export type {
   AvaliacaoDoFormulario,
   CampoAvaliado,
@@ -65,7 +65,7 @@ export type {
   RegrasDoFormulario,
   SimulacaoDoFormulario,
   ValorJson,
-} from '../../src/lib/components/formulario-do-candidato/interpretador/regras-do-formulario';
+} from './interpretador/regras-do-formulario';
 export {
   detalheDoArquivoEnviado,
   regrasDoArquivo,
@@ -80,4 +80,5 @@ export {
   type EnvioDeDocumentos,
   type SituacaoDaExigencia,
   type SituacaoDoArquivo,
-} from '../../src/lib/components/formulario-do-candidato/envio-de-documentos';
+} from './envio-de-documentos';
+export { comparaComLista, ehNegacao } from './interpretador/predicado';

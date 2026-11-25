@@ -1,6 +1,6 @@
-export { CondicaoDeFatoComponent } from '../../src/lib/components/editor-de-condicoes/condicao-de-fato';
-export { EditorDeCondicoesComponent } from '../../src/lib/components/editor-de-condicoes/editor-de-condicoes';
-export * from '../../src/lib/components/editor-de-condicoes/motivo-da-protecao-pendente';
+export { CondicaoDeFatoComponent } from './condicao-de-fato';
+export { EditorDeCondicoesComponent } from './editor-de-condicoes';
+export * from './motivo-da-protecao-pendente';
 export {
   type ClausulaDeCondicoes,
   type CondicaoEmClausula,
@@ -14,19 +14,19 @@ export {
   renumerarClausulas,
   semClausulaEm,
   semCondicaoEm,
-} from '../../src/lib/components/editor-de-condicoes/condicoes/condicoes-em-clausulas';
+} from './condicoes/condicoes-em-clausulas';
 export {
   type ClausulasNoWire,
   type CondicaoNoWire,
   deClausulasDoWire,
   paraClausulasDoWire,
   predicadoComOperadores,
-} from '../../src/lib/components/editor-de-condicoes/condicoes/condicoes-no-wire';
+} from './condicoes/condicoes-no-wire';
 export {
   alcanceDaCondicao,
   problemaDaCondicao,
   problemasDeCondicoes,
-} from '../../src/lib/components/editor-de-condicoes/condicoes/conferencia-da-condicao';
+} from './condicoes/conferencia-da-condicao';
 export {
   FONTE_MUNICIPIOS,
   type FatoDoCatalogo,
@@ -39,7 +39,7 @@ export {
   operadorPadrao,
   rotuloDoOperador,
   rotuloDoValor,
-} from '../../src/lib/components/editor-de-condicoes/condicoes/fatos-escolhiveis';
+} from './condicoes/fatos-escolhiveis';
 export {
   type CondicaoDeFato,
   type OpcaoDeValor,
@@ -51,12 +51,8 @@ export {
   comValoresDeLista,
   valorEscalarDe,
   valoresDeListaDe,
-} from '../../src/lib/components/editor-de-condicoes/condicoes/valor-da-condicao';
-export {
-  comparaComLista,
-  ehNegacao,
-} from '../../src/lib/components/formulario-do-candidato/interpretador/predicado';
-export * from '../../src/lib/components/editor-de-condicoes/leitura-de-condicoes';
+} from './condicoes/valor-da-condicao';
+export * from './leitura-de-condicoes';
 
 export {
   BUSCA_DE_MUNICIPIOS,
@@ -66,4 +62,4 @@ export {
   type BuscaDeMunicipios,
   type LeituraDeMunicipio,
   type MunicipioEncontrado,
-} from '../../src/lib/components/editor-de-condicoes/valor-de-municipio';
+} from './valor-de-municipio';
