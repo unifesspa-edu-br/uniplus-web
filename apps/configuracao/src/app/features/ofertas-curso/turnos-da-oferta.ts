@@ -24,7 +24,7 @@ export function ordenarTurnos(turnos: readonly TurnoOfertaCodigo[]): readonly Tu
 export function turnosExigidosPorRegime(
   regime: RegimeDeTurnoCodigo | null | undefined,
 ): number | null {
-  return (regime && (TURNOS_POR_REGIME as Readonly<Record<string, number>>)[regime]) ?? null;
+  return (regime && TURNOS_POR_REGIME[regime]) ?? null;
 }
 
 /** Descarta os turnos marcados há mais tempo até caber no limite do regime. */

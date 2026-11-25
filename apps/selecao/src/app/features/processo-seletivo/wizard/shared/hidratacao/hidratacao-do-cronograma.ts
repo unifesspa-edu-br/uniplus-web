@@ -338,7 +338,7 @@ function instanteDe(instante: string | null): string {
 function recursoDaEtapaDe(recurso: RecursoDaEtapaDoDto): RecursoDaEtapa {
   return {
     id: recurso.id,
-    ancora: recurso.ancora.codigo as RecursoDaEtapa['ancora'],
+    ancora: recurso.ancora.codigo,
     regraCodigo: recurso.regra.codigo,
     regraVersao: recurso.regra.versao,
     atoAncoraCodigo: recurso.atoAncoraCodigo ?? '',
