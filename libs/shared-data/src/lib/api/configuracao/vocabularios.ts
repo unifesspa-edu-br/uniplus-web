@@ -1,6 +1,7 @@
 import { InjectionToken, inject, type Provider } from '@angular/core';
 import { TiposBancaApi, type PapelDaBanca } from './tipos-banca.api';
 import { TiposDeDecisaoApi, type TipoDeDecisao } from './tipos-de-decisao.api';
+import { VocabulariosDeConfiguracaoApi, type TipoDoDado } from './vocabularios-de-configuracao.api';
 import { criarVocabulario, type Vocabulario } from './vocabulario';
 
 /**
@@ -36,6 +37,23 @@ export function fornecerVocabularioDePapeisDeBanca(): Provider {
       return criarVocabulario(
         () => api.listarPapeis(),
         'Não foi possível carregar os papéis de banca.',
+      );
+    },
+  };
+}
+
+export const VOCABULARIO_DE_TIPOS_DO_DADO = new InjectionToken<Vocabulario<TipoDoDado>>(
+  'VOCABULARIO_DE_TIPOS_DO_DADO',
+);
+
+export function fornecerVocabularioDeTiposDoDado(): Provider {
+  return {
+    provide: VOCABULARIO_DE_TIPOS_DO_DADO,
+    useFactory: () => {
+      const api = inject(VocabulariosDeConfiguracaoApi);
+      return criarVocabulario(
+        () => api.listar('tipos-do-dado'),
+        'Não foi possível carregar os tipos de dado.',
       );
     },
   };
