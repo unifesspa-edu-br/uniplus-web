@@ -15,3 +15,5 @@ export {
   provedoresDeHttpComConferencia,
   encerrarConferenciaDoContrato,
 } from './lib/interceptador-de-conferencia.testing';
+export * from './lib/folha-de-estilo.testing';
+export * from './lib/glifos-do-primeicons.testing';
