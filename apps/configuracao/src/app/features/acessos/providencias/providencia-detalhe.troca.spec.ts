@@ -1,4 +1,4 @@
-import { SituacaoDaProvidencia } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDaProvidenciaCodigo } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProvidenciaDetalhePage } from './providencia-detalhe.page';
@@ -72,11 +72,11 @@ describe('ProvidenciaDetalhePage — o diálogo preso à providência em que abr
     const envio = tela.http.expectOne(`${DETALHE_A}/resposta`);
     expect(envio.request.body).toEqual({ motivo: 'Motivo novo para A.' });
     tela.http.expectNone(`${DETALHE_B}/resposta`);
-    envio.flush(providencia({ situacao: SituacaoDaProvidencia.RESPONDIDA }));
+    envio.flush(providencia({ situacao: SituacaoDaProvidenciaCodigo.RESPONDIDA }));
     await assentar();
     tela.http
       .expectOne(DETALHE_A)
-      .flush(providencia({ situacao: SituacaoDaProvidencia.RESPONDIDA }));
+      .flush(providencia({ situacao: SituacaoDaProvidenciaCodigo.RESPONDIDA }));
     await assentar();
   });
 
@@ -87,7 +87,7 @@ describe('ProvidenciaDetalhePage — o diálogo preso à providência em que abr
     const envioDeA = tela.http.expectOne(`${DETALHE_A}/resposta`);
 
     await irPara(ID_B, DETALHE_B);
-    envioDeA.flush(providencia({ situacao: SituacaoDaProvidencia.RESPONDIDA }));
+    envioDeA.flush(providencia({ situacao: SituacaoDaProvidenciaCodigo.RESPONDIDA }));
     await assentar();
 
     expect(notificacoes.success).not.toHaveBeenCalled();
@@ -106,7 +106,7 @@ describe('ProvidenciaDetalhePage — o diálogo preso à providência em que abr
     await assentar();
     tela.http
       .expectOne(DETALHE_A)
-      .flush(providencia({ situacao: SituacaoDaProvidencia.RESPONDIDA }));
+      .flush(providencia({ situacao: SituacaoDaProvidenciaCodigo.RESPONDIDA }));
     await assentar();
 
     expect(dialogoDaResposta().hasAttribute('open')).toBe(false);
@@ -123,7 +123,7 @@ describe('ProvidenciaDetalhePage — o diálogo preso à providência em que abr
     const envio = tela.http.expectOne(`${DETALHE_A}/resposta`);
 
     tela.fixture.destroy();
-    envio.flush(providencia({ situacao: SituacaoDaProvidencia.RESPONDIDA }));
+    envio.flush(providencia({ situacao: SituacaoDaProvidenciaCodigo.RESPONDIDA }));
     await new Promise((resolver) => setTimeout(resolver));
 
     expect(notificacoes.success).not.toHaveBeenCalled();

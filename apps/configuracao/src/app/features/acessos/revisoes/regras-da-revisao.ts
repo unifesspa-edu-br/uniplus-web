@@ -1,6 +1,6 @@
 import {
   QuemDecideOItem,
-  SituacaoDaRevisao,
+  SituacaoDaRevisaoCodigo,
   SituacaoDoItemDaRevisao,
 } from '@uniplus/shared-data/autorizacao';
 import { PERMISSAO, type CodigoDePermissao } from '@uniplus/shared-auth/bootstrap';
@@ -43,7 +43,7 @@ export function decideOItem(
   quemLe: QuemLe,
 ): boolean {
   if (
-    revisao.situacao !== SituacaoDaRevisao.EM_ANDAMENTO ||
+    revisao.situacao !== SituacaoDaRevisaoCodigo.EM_ANDAMENTO ||
     item.situacao !== SituacaoDoItemDaRevisao.PENDENTE
   )
     return false;

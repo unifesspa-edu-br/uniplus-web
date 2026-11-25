@@ -37,7 +37,7 @@ async function concessaoAtivaDa(persona: string): Promise<Concessao> {
   const { sub: contaId } = identidadeDoToken(await tokenDaPersona(persona));
   const concessao = await acharNaListagem<Concessao>(
     GESTOR_DE_ACESSOS,
-    '/api/autorizacao/concessoes?situacao=ativa&limit=100',
+    '/api/autorizacao/concessoes?situacao=ATIVA&limit=100',
     (c) => c.beneficiario.contaId === contaId,
   );
   if (concessao === undefined) throw new Error(`${persona} não tem concessão ativa nesta base.`);
@@ -48,7 +48,7 @@ async function concessaoAtivaDa(persona: string): Promise<Concessao> {
 async function encerrarAberta(concessaoId: string): Promise<void> {
   const aberta = await acharNaListagem<Providencia>(
     GESTOR_DE_ACESSOS,
-    `${ROTA}?situacao=aberta&concessao=${concessaoId}&limit=20`,
+    `${ROTA}?situacao=ABERTA&concessao=${concessaoId}&limit=20`,
     () => true,
   );
   if (aberta === undefined) return;

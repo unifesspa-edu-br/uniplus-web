@@ -1,3 +1,7 @@
+import {
+  SituacaoDaConcessaoNaRevisaoCodigo,
+  SituacaoDaRevisaoDasConcessoesCodigo,
+} from '@uniplus/shared-data/autorizacao';
 import { TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import type { ItemDaJanelaDto, JanelaDeMigracaoDto } from '@uniplus/shared-data/autorizacao';
 
@@ -15,7 +19,10 @@ const ITEM_AGUARDANDO_DECISAO = {
   validaAte: null,
   versaoAtual: 1,
   exigeProtecaoDeDados: false,
-  situacao: 'aguardando_decisoes',
+  situacao: {
+    codigo: SituacaoDaConcessaoNaRevisaoCodigo.AGUARDANDO_DECISOES,
+    rotulo: 'Aguarda decisão',
+  },
   ehDoLeitor: false,
 } as const satisfies Partial<ItemDaJanelaDto>;
 
@@ -32,7 +39,7 @@ const REVISAO_ABERTA = {
   abertaEm: ABERTA_EM,
   terminaEm: PRAZO,
   encerradaEm: null,
-  situacao: 'aberta',
+  situacao: { codigo: SituacaoDaRevisaoDasConcessoesCodigo.ABERTA, rotulo: 'Aberta' },
   forma: null,
   decisoesEnviadas: false,
 } as const satisfies Partial<JanelaDeMigracaoDto>;

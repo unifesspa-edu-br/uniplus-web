@@ -5,7 +5,7 @@ import {
   ResultadoDaDecisao,
   TipoDoEventoDaContencao,
   SituacaoDoAnexo,
-  SituacaoDoPedido,
+  SituacaoDoPedidoCodigo,
 } from '@uniplus/shared-data/autorizacao';
 import type { UiTagVariant } from '@uniplus/shared-ui/components';
 
@@ -14,27 +14,27 @@ interface Rotulo {
   readonly variante: UiTagVariant;
 }
 
-const SITUACAO_DO_PEDIDO: Readonly<Record<SituacaoDoPedido, Rotulo>> = {
-  [SituacaoDoPedido.AGUARDANDO_DOCUMENTO]: {
+const SITUACAO_DO_PEDIDO: Readonly<Record<SituacaoDoPedidoCodigo, Rotulo>> = {
+  [SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO]: {
     texto: 'Aguardando o documento de designação',
     variante: 'warning',
   },
-  [SituacaoDoPedido.AGUARDANDO_BENEFICIARIO]: {
+  [SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO]: {
     texto: 'Aguardando o aceite do beneficiário',
     variante: 'warning',
   },
-  [SituacaoDoPedido.AGUARDANDO_GESTOR]: {
+  [SituacaoDoPedidoCodigo.AGUARDANDO_GESTOR]: {
     texto: 'Aguardando a gestão de acessos',
     variante: 'info',
   },
-  [SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS]: {
+  [SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS]: {
     texto: 'Aguardando o Representante do controlador',
     variante: 'info',
   },
-  [SituacaoDoPedido.APROVADO]: { texto: 'Aprovado', variante: 'success' },
-  [SituacaoDoPedido.RECUSADO]: { texto: 'Recusado', variante: 'danger' },
-  [SituacaoDoPedido.DEVOLVIDO]: { texto: 'Devolvido', variante: 'warning' },
-  [SituacaoDoPedido.CANCELADO]: { texto: 'Cancelado', variante: 'neutral' },
+  [SituacaoDoPedidoCodigo.APROVADO]: { texto: 'Aprovado', variante: 'success' },
+  [SituacaoDoPedidoCodigo.RECUSADO]: { texto: 'Recusado', variante: 'danger' },
+  [SituacaoDoPedidoCodigo.DEVOLVIDO]: { texto: 'Devolvido', variante: 'warning' },
+  [SituacaoDoPedidoCodigo.CANCELADO]: { texto: 'Cancelado', variante: 'neutral' },
 };
 
 const SITUACAO_DO_ANEXO: Readonly<Record<SituacaoDoAnexo, string>> = {
@@ -117,7 +117,9 @@ export function motivoDaDispensa(codigo: string): string {
 }
 
 export function situacaoDoPedido(codigo: string): Rotulo {
-  return SITUACAO_DO_PEDIDO[codigo as SituacaoDoPedido] ?? { texto: codigo, variante: 'neutral' };
+  return (
+    SITUACAO_DO_PEDIDO[codigo as SituacaoDoPedidoCodigo] ?? { texto: codigo, variante: 'neutral' }
+  );
 }
 
 export function situacaoDoAnexo(codigo: string): string {

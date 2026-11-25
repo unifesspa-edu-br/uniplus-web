@@ -45,7 +45,7 @@ export class LoteDaMigracaoComponent {
   protected readonly proprias = computed(() => {
     const grupos = new Map<OrientacaoDaPropria, ItemDaJanelaDto[]>();
     for (const item of this.itens().proprias) {
-      const orientacao = orientacaoDaPropria(item.situacao);
+      const orientacao = orientacaoDaPropria(item.situacao.codigo);
       grupos.set(orientacao, [...(grupos.get(orientacao) ?? []), item]);
     }
     return [...grupos].map(([orientacao, itens]) => ({ orientacao, itens }));

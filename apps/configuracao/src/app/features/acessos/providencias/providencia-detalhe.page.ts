@@ -1,4 +1,4 @@
-import { SituacaoDaProvidencia } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDaProvidenciaCodigo } from '@uniplus/shared-data/autorizacao';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -60,7 +60,7 @@ const ID_DO_TITULO = 'cfg-providencia-titulo';
   templateUrl: './providencia-detalhe.page.html',
 })
 export class ProvidenciaDetalhePage {
-  protected readonly situacoes = SituacaoDaProvidencia;
+  protected readonly situacoes = SituacaoDaProvidenciaCodigo;
   /** Vem do parâmetro `:id` da rota. */
   readonly id = input.required<string>();
 
@@ -77,7 +77,7 @@ export class ProvidenciaDetalhePage {
   protected readonly podeTramitar = computed(() => {
     const providencia = this.store.dados();
     return (
-      providencia?.situacao === SituacaoDaProvidencia.ABERTA &&
+      providencia?.situacao === SituacaoDaProvidenciaCodigo.ABERTA &&
       !providencia.impedidoDeResponder &&
       this.permissoes.tem(PERMISSAO.autorizacao.concessoesAdministrar)
     );

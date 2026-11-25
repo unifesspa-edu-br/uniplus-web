@@ -1,4 +1,4 @@
-import { SituacaoDaRevisao } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDaRevisaoCodigo } from '@uniplus/shared-data/autorizacao';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { NEVER, of, throwError } from 'rxjs';
@@ -20,7 +20,7 @@ const RESUMO: RevisaoResumoDto = {
   id: 'r1',
   abertaEm: '2026-11-09T12:00:00Z',
   abertaPor: pessoa('conta-betina', 'Betina Neves'),
-  situacao: SituacaoDaRevisao.EM_ANDAMENTO,
+  situacao: SituacaoDaRevisaoCodigo.EM_ANDAMENTO,
   totalDeItens: 4,
   pendentes: 3,
 };
@@ -87,7 +87,7 @@ describe('lista de revisões: nenhum dado antigo à vista', () => {
 
     const filtro = host.querySelector<HTMLSelectElement>('select');
     if (filtro === null) throw new Error('filtro ausente');
-    filtro.value = SituacaoDaRevisao.CONCLUIDA;
+    filtro.value = SituacaoDaRevisaoCodigo.CONCLUIDA;
     filtro.dispatchEvent(new Event('change'));
     await assentar();
 

@@ -40,7 +40,6 @@ export {
   type ConcessaoDto,
   type EventoDaTrilhaDto,
   type RevogarConcessaoRequest,
-  type SituacaoDaConcessao,
 } from './concessoes.api';
 export {
   ProvidenciasApi,
@@ -49,7 +48,6 @@ export {
   type ConcessaoDaProvidenciaDto,
   type DesfechoDaProvidenciaDto,
   type EncerramentoDaConcessaoDto,
-  type FiltroDaSituacaoDaProvidencia,
   type ProvidenciaDto,
   type ProvidenciaResumoDto,
   type ResponderProvidenciaRequest,
@@ -109,3 +107,13 @@ export {
   type VersaoDoTermoDto,
   type VersaoDoTermoResumoDto,
 } from './termos-de-responsabilidade.api';
+
+export {
+  SituacaoDaConcessaoCodigo,
+  SituacaoDaProvidenciaCodigo,
+  SituacaoDaRevisaoCodigo,
+  SituacaoDoPedidoCodigo,
+  SituacaoDaConcessaoNaRevisaoCodigo,
+  SituacaoDaRevisaoDasConcessoesCodigo,
+  FormaDoEncerramentoCodigo,
+} from './schema';

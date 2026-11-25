@@ -14,7 +14,7 @@ import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import type { ApiResult } from '@uniplus/shared-core/http';
 import {
   PedidosDeConcessaoApi,
-  SituacaoDoPedido,
+  SituacaoDoPedidoCodigo,
   type PedidoResumoDto,
 } from '@uniplus/shared-data/autorizacao';
 import { TagComponent } from '@uniplus/shared-ui/components';
@@ -23,10 +23,10 @@ import { situacaoDoPedido } from '../features/acessos/rotulos-de-acesso';
 
 /** Situações em que o pedido ainda espera alguém; as demais já foram decididas ou canceladas. */
 const EM_ABERTO: readonly string[] = [
-  SituacaoDoPedido.AGUARDANDO_DOCUMENTO,
-  SituacaoDoPedido.AGUARDANDO_BENEFICIARIO,
-  SituacaoDoPedido.AGUARDANDO_GESTOR,
-  SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+  SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO,
+  SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO,
+  SituacaoDoPedidoCodigo.AGUARDANDO_GESTOR,
+  SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
 ];
 
 /** Recusa da API a quem não tem e-mail institucional verificado nem a permissão de manter perfis. */
@@ -53,9 +53,9 @@ function acaoDo(
   pedido: PedidoResumoDto,
   eu: { readonly id: string; readonly email: string } | null,
 ): PedidoEmAberto['acao'] {
-  if (pedido.situacao === SituacaoDoPedido.AGUARDANDO_DOCUMENTO) return 'anexar';
+  if (pedido.situacao === SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO) return 'anexar';
   const aceitavel =
-    pedido.situacao === SituacaoDoPedido.AGUARDANDO_BENEFICIARIO &&
+    pedido.situacao === SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO &&
     eu !== null &&
     ehOBeneficiario(pedido.beneficiario, eu);
   return aceitavel ? 'aceitar' : 'ver';

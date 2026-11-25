@@ -1,4 +1,8 @@
-import { FormaDoEncerramento, SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
+import {
+  SituacaoDaConcessaoNaRevisaoCodigo,
+  SituacaoDaRevisaoDasConcessoesCodigo,
+  FormaDoEncerramentoCodigo,
+} from '@uniplus/shared-data/autorizacao';
 import { HttpHeaders } from '@angular/common/http';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -18,7 +22,12 @@ import {
 
 const REVISAO = janelaDeMigracao({
   decisoesEnviadas: true,
-  itens: [itemDaJanela({ concessaoId: 'c1', situacao: SituacaoDaMigracao.RETIDA })],
+  itens: [
+    itemDaJanela({
+      concessaoId: 'c1',
+      situacao: { codigo: SituacaoDaConcessaoNaRevisaoCodigo.RETIDA, rotulo: 'Retida' },
+    }),
+  ],
 });
 
 describe('encerramento manual da revisão', () => {
@@ -83,11 +92,22 @@ describe('encerramento manual da revisão', () => {
     presente(botao(host, 'Encerrar a revisão das concessões')).click();
     await responder(
       janelaDeMigracao({
-        situacao: 'encerrada',
-        forma: FormaDoEncerramento.MANUAL,
+        situacao: { codigo: SituacaoDaRevisaoDasConcessoesCodigo.ENCERRADA, rotulo: 'Encerrada' },
+        forma: {
+          codigo: FormaDoEncerramentoCodigo.MANUAL,
+          rotulo: 'Encerramento informado',
+        },
         encerradaEm: '2026-11-10T09:00:00Z',
         decisoesEnviadas: true,
-        itens: [itemDaJanela({ concessaoId: 'c1', situacao: SituacaoDaMigracao.NAO_MIGRADA })],
+        itens: [
+          itemDaJanela({
+            concessaoId: 'c1',
+            situacao: {
+              codigo: SituacaoDaConcessaoNaRevisaoCodigo.NAO_MIGRADA,
+              rotulo: 'Não aprovada no prazo',
+            },
+          }),
+        ],
       }),
     );
 
@@ -97,9 +117,7 @@ describe('encerramento manual da revisão', () => {
       expect.anything(),
     );
     expect(notificacoes.success).toHaveBeenCalledWith('Revisão das concessões encerrada');
-    expect(host.textContent).toContain(
-      'A gestão de acessos encerrou a revisão das concessões antes do prazo.',
-    );
+    expect(host.textContent).toContain('Encerramento informado');
     expect(host.querySelector('cfg-encerramento-da-janela')).toBeNull();
   });
 
@@ -179,8 +197,11 @@ describe('encerramento manual da revisão', () => {
     presente(botao(host, 'Encerrar a revisão das concessões')).click();
     await responder(
       janelaDeMigracao({
-        situacao: 'encerrada',
-        forma: FormaDoEncerramento.CONCLUIDA,
+        situacao: { codigo: SituacaoDaRevisaoDasConcessoesCodigo.ENCERRADA, rotulo: 'Encerrada' },
+        forma: {
+          codigo: FormaDoEncerramentoCodigo.CONCLUIDA,
+          rotulo: 'Encerramento informado',
+        },
         encerradaEm: '2026-11-10T09:00:00Z',
       }),
     );

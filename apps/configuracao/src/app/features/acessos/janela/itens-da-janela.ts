@@ -1,4 +1,8 @@
-import { ResultadoDaMigracao, SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
+import {
+  ResultadoDaMigracao,
+  SituacaoDaConcessaoNaRevisaoCodigo,
+  SituacaoDaRevisaoDasConcessoesCodigo,
+} from '@uniplus/shared-data/autorizacao';
 import type {
   DecisaoDaMigracao,
   ItemDaJanelaDto,
@@ -24,15 +28,17 @@ export interface ItensDaJanela {
 
 type GrupoComAcao = 'aguardandoDecisao' | 'retidas' | 'naProtecaoDeDados';
 
-const GRUPO_DA_SITUACAO: Readonly<Record<string, GrupoComAcao>> = {
-  aguardando_decisoes: 'aguardandoDecisao',
-  [SituacaoDaMigracao.RETIDA]: 'retidas',
-  [SituacaoDaMigracao.AGUARDANDO_PROTECAO_DE_DADOS]: 'naProtecaoDeDados',
+const GRUPO_DA_SITUACAO: Readonly<
+  Partial<Record<SituacaoDaConcessaoNaRevisaoCodigo, GrupoComAcao>>
+> = {
+  [SituacaoDaConcessaoNaRevisaoCodigo.AGUARDANDO_DECISOES]: 'aguardandoDecisao',
+  [SituacaoDaConcessaoNaRevisaoCodigo.RETIDA]: 'retidas',
+  [SituacaoDaConcessaoNaRevisaoCodigo.AGUARDANDO_PROTECAO_DE_DADOS]: 'naProtecaoDeDados',
 };
 
 /** A revisão aceita decisão enquanto está aberta; encerrando ou encerrada, só mostra a situação final. */
 export function janelaAceitaDecisao(revisao: Pick<JanelaDeMigracaoDto, 'situacao'>): boolean {
-  return revisao.situacao === 'aberta';
+  return revisao.situacao.codigo === SituacaoDaRevisaoDasConcessoesCodigo.ABERTA;
 }
 
 export function separarItens(revisao: JanelaDeMigracaoDto): ItensDaJanela {
@@ -49,7 +55,7 @@ export function separarItens(revisao: JanelaDeMigracaoDto): ItensDaJanela {
 }
 
 function grupoDe(item: ItemDaJanelaDto, aceitaDecisao: boolean): keyof ItensDaJanela {
-  const comAcao = GRUPO_DA_SITUACAO[item.situacao];
+  const comAcao = GRUPO_DA_SITUACAO[item.situacao.codigo];
   if (!aceitaDecisao || comAcao === undefined) return 'decididas';
   return item.ehDoLeitor ? 'proprias' : comAcao;
 }

@@ -1,8 +1,9 @@
 import {
-  FormaDoEncerramento,
-  ResultadoDaMigracao,
-  SituacaoDaMigracao,
+  SituacaoDaConcessaoNaRevisaoCodigo,
+  SituacaoDaRevisaoDasConcessoesCodigo,
+  FormaDoEncerramentoCodigo,
 } from '@uniplus/shared-data/autorizacao';
+import { ResultadoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { NEVER, of, throwError } from 'rxjs';
@@ -31,11 +32,22 @@ const REBECA = itemDaJanela({
 });
 const CONJUNTO_DE_CONCESSOES = janelaDeMigracao({ itens: [BETINA, LEANDRO, REBECA] });
 const ENCERRADA = janelaDeMigracao({
-  situacao: 'encerrada',
+  situacao: {
+    codigo: SituacaoDaRevisaoDasConcessoesCodigo.ENCERRADA,
+    rotulo: 'Finalizada pela API',
+  },
   encerradaEm: '2026-11-11T09:00:00Z',
-  forma: FormaDoEncerramento.PRAZO,
+  forma: { codigo: FormaDoEncerramentoCodigo.PRAZO, rotulo: 'Encerramento informado' },
   decisoesEnviadas: true,
-  itens: [itemDaJanela({ concessaoId: 'c1', situacao: SituacaoDaMigracao.NAO_MIGRADA })],
+  itens: [
+    itemDaJanela({
+      concessaoId: 'c1',
+      situacao: {
+        codigo: SituacaoDaConcessaoNaRevisaoCodigo.NAO_MIGRADA,
+        rotulo: 'Não aprovada no prazo',
+      },
+    }),
+  ],
 });
 const CONJUNTO_ENVIADO = janelaDeMigracao({ ...CONJUNTO_DE_CONCESSOES, decisoesEnviadas: true });
 const TODAS_APROVADAS = {
@@ -101,9 +113,15 @@ describe('página de revisão das concessões', () => {
       const { host } = await abrirJanela(ENCERRADA);
 
       const prazo = presente(host.querySelector('cfg-prazo-da-janela')).textContent;
+      expect(prazo).toContain('Finalizada pela API');
       expect(prazo).toContain('Encerrada em');
-      expect(prazo).toContain('O prazo de 72 horas terminou.');
+      expect(prazo).toContain('Encerramento informado');
       expect(prazo).not.toContain('Tempo restante');
+    });
+
+    it('não mostra motivo quando a forma é nula', async () => {
+      const { host } = await abrirJanela({ ...ENCERRADA, forma: null });
+      expect(host.querySelector('cfg-prazo-da-janela')?.textContent).not.toContain('Motivo do fim');
     });
 
     it('revisão encerrada mostra a concessão sem aprovação e nenhuma ação', async () => {

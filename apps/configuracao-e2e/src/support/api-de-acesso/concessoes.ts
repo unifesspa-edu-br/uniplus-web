@@ -1,11 +1,14 @@
 import { json, semConteudo, type Requisicao, type Rota } from './resposta';
 
 function listar({ route, url, estado }: Requisicao): Promise<void> {
-  const situacao = url.searchParams.get('situacao') ?? 'ativa';
+  const situacao = url.searchParams.get('situacao');
+  if (situacao !== null && situacao !== 'ATIVA' && situacao !== 'REVOGADA') {
+    return json(route, {}, 400);
+  }
   return json(
     route,
     estado.concessoes.filter(
-      (c) => situacao === 'todas' || (situacao === 'ativa' ? c.ativa : !c.ativa),
+      (c) => situacao === null || (situacao === 'ATIVA' ? c.ativa : !c.ativa),
     ),
   );
 }

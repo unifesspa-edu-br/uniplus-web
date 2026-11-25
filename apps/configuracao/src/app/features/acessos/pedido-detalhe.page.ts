@@ -1,7 +1,7 @@
 import {
   EtapaDoPedido,
   ResultadoDaDecisao,
-  SituacaoDoPedido,
+  SituacaoDoPedidoCodigo,
 } from '@uniplus/shared-data/autorizacao';
 import { EdicaoDoPedido } from './edicao-do-pedido';
 import {
@@ -46,9 +46,9 @@ import { TermoDeResponsabilidadeComponent } from './termo/termo-de-responsabilid
 import { TermoDoPedido } from './termo/termo-do-pedido';
 
 const ENCERRADOS: readonly string[] = [
-  SituacaoDoPedido.APROVADO,
-  SituacaoDoPedido.RECUSADO,
-  SituacaoDoPedido.CANCELADO,
+  SituacaoDoPedidoCodigo.APROVADO,
+  SituacaoDoPedidoCodigo.RECUSADO,
+  SituacaoDoPedidoCodigo.CANCELADO,
 ];
 
 import { CONFIRMACOES, type Acao } from './confirmacoes-do-pedido';
@@ -133,7 +133,7 @@ export class PedidoDetalhePage {
 
   private readonly encerrado = computed(() => ENCERRADOS.includes(this.pedido()?.situacao ?? ''));
   protected readonly aguardandoDocumento = computed(
-    () => this.pedido()?.situacao === SituacaoDoPedido.AGUARDANDO_DOCUMENTO,
+    () => this.pedido()?.situacao === SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO,
   );
   protected readonly ehSolicitante = computed(
     () => this.pedido()?.solicitante.contaId === this.usuario.user()?.id,
@@ -169,7 +169,8 @@ export class PedidoDetalhePage {
 
   protected readonly podeAceitar = computed(
     () =>
-      this.pedido()?.situacao === SituacaoDoPedido.AGUARDANDO_BENEFICIARIO && this.ehBeneficiario(),
+      this.pedido()?.situacao === SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO &&
+      this.ehBeneficiario(),
   );
   /**
    * O termo fixado que o beneficiário aceita junto com o pedido. O pedido que ainda espera o

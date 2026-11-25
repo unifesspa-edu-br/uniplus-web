@@ -1,6 +1,6 @@
 import {
   CausaDoEncerramento,
-  SituacaoDaProvidencia,
+  SituacaoDaProvidenciaCodigo,
   TipoDaProvidencia,
 } from '@uniplus/shared-data/autorizacao';
 import { describe, expect, it } from 'vitest';
@@ -17,10 +17,10 @@ describe('rótulos da providência', () => {
     expect(
       (
         [
-          SituacaoDaProvidencia.ABERTA,
-          SituacaoDaProvidencia.RESPONDIDA,
-          SituacaoDaProvidencia.ATENDIDA,
-          SituacaoDaProvidencia.PREJUDICADA,
+          SituacaoDaProvidenciaCodigo.ABERTA,
+          SituacaoDaProvidenciaCodigo.RESPONDIDA,
+          SituacaoDaProvidenciaCodigo.ATENDIDA,
+          SituacaoDaProvidenciaCodigo.PREJUDICADA,
         ] as const
       ).map((s) => situacaoDaProvidencia(s).texto),
     ).toEqual(['Aberta', 'Respondida', 'Atendida', 'Prejudicada']);
@@ -35,10 +35,10 @@ describe('rótulos da providência', () => {
 
   it('o filtro da fila começa pelas abertas e termina em todas', () => {
     expect(FILTROS_DA_FILA.map((f) => f.valor)).toEqual([
-      SituacaoDaProvidencia.ABERTA,
-      SituacaoDaProvidencia.RESPONDIDA,
-      SituacaoDaProvidencia.ATENDIDA,
-      SituacaoDaProvidencia.PREJUDICADA,
+      SituacaoDaProvidenciaCodigo.ABERTA,
+      SituacaoDaProvidenciaCodigo.RESPONDIDA,
+      SituacaoDaProvidenciaCodigo.ATENDIDA,
+      SituacaoDaProvidenciaCodigo.PREJUDICADA,
       'todas',
     ]);
     expect(TIPOS_DA_PROVIDENCIA.map((t) => t.valor)).toEqual([

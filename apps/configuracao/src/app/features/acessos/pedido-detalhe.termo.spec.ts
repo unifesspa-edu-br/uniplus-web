@@ -1,4 +1,4 @@
-import { SituacaoDoPedido } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDoPedidoCodigo } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
@@ -26,7 +26,7 @@ const TERMO_FIXADO: TermoDoPedidoDto = {
 /** Pedido protegido para a pessoa autenticada, já verificado, que espera o aceite dela. */
 const aguardandoMeuAceite = (termo: TermoDoPedidoDto | null = TERMO_FIXADO) =>
   pedido({
-    situacao: SituacaoDoPedido.AGUARDANDO_BENEFICIARIO,
+    situacao: SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO,
     etapaAtual: null,
     beneficiario: { email: EU.email, identidade: null, nome: null },
     anexaraDocumento: true,
@@ -91,7 +91,7 @@ describe('PedidoDetalhePage — aceite do termo fixado', () => {
   it('o pedido que espera o documento não oferece o aceite nem apresenta o termo', async () => {
     const { host } = await abrir(
       [],
-      pedido({ ...aguardandoMeuAceite(), situacao: SituacaoDoPedido.AGUARDANDO_DOCUMENTO }),
+      pedido({ ...aguardandoMeuAceite(), situacao: SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO }),
     );
 
     expect(host.textContent).not.toContain('Aceitar o pedido');

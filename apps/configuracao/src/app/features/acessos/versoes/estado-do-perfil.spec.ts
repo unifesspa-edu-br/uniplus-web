@@ -1,3 +1,4 @@
+import { SituacaoDaRevisaoDasConcessoesCodigo } from '@uniplus/shared-data/autorizacao';
 import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { describe, expect, it } from 'vitest';
 import {
@@ -23,6 +24,7 @@ const EM_VIGOR: ResumoDoDetalheDoPerfil = {
   temVigente: true,
   temPendente: false,
   emJanelaDeMigracao: false,
+  situacaoDaRevisao: null,
   suspensoDesde: null,
   desativadoDesde: null,
   etapasDaRetomadaPorDecidir: [],
@@ -84,19 +86,31 @@ describe('etiquetasDoDetalhe', () => {
   });
 
   it('mostra a revisão das concessões do perfil aberta depois da desativação', () => {
-    const comJanela = { ...DESATIVADO, emJanelaDeMigracao: true };
+    const situacaoDaRevisao = {
+      codigo: SituacaoDaRevisaoDasConcessoesCodigo.ABERTA,
+      rotulo: 'Em curso',
+    };
+    const comJanela = { ...DESATIVADO, emJanelaDeMigracao: true, situacaoDaRevisao };
 
     expect(textos(etiquetasDoDetalhe(comJanela))).toEqual([
       'Desativado',
-      'Revisão das concessões do perfil aberta',
+      `Revisão das concessões: ${situacaoDaRevisao.rotulo}`,
     ]);
   });
 
   it('a revisão das concessões do perfil aberta é uma etiqueta de aviso', () => {
-    const [janela] = etiquetasDoDetalhe({ ...EM_VIGOR, emJanelaDeMigracao: true });
+    const situacaoDaRevisao = {
+      codigo: SituacaoDaRevisaoDasConcessoesCodigo.ABERTA,
+      rotulo: 'Em curso',
+    };
+    const [janela] = etiquetasDoDetalhe({
+      ...EM_VIGOR,
+      emJanelaDeMigracao: true,
+      situacaoDaRevisao,
+    });
 
     expect(janela).toEqual({
-      texto: 'Revisão das concessões do perfil aberta',
+      texto: `Revisão das concessões: ${situacaoDaRevisao.rotulo}`,
       variante: 'warning',
     });
   });
@@ -244,7 +258,11 @@ describe('resumo da lista e do detalhe', () => {
   });
 
   it('o detalhe informa se há revisão das concessões do perfil', () => {
-    const janela = { id: 'j1', terminaEm: '2026-11-12T12:00:00Z', situacao: 'aberta' };
+    const janela = {
+      id: 'j1',
+      terminaEm: '2026-11-12T12:00:00Z',
+      situacao: { codigo: SituacaoDaRevisaoDasConcessoesCodigo.ABERTA, rotulo: 'Aberta' },
+    };
 
     expect(
       resumoDoDetalhe(perfilDoDetalhe({ revisaoDasConcessoes: janela })).emJanelaDeMigracao,

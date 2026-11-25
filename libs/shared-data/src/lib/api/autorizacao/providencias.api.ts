@@ -1,13 +1,6 @@
-import type {
-  TipoDaProvidencia,
-  SituacaoDaProvidencia,
-  CausaDoEncerramento,
-} from './codigos-de-autorizacao';
-export type {
-  TipoDaProvidencia,
-  SituacaoDaProvidencia,
-  CausaDoEncerramento,
-} from './codigos-de-autorizacao';
+import type { SituacaoDaProvidenciaCodigo } from './schema';
+import type { TipoDaProvidencia, CausaDoEncerramento } from './codigos-de-autorizacao';
+export type { TipoDaProvidencia, CausaDoEncerramento } from './codigos-de-autorizacao';
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -16,9 +9,6 @@ import type { components } from './schema';
 import { AUTORIZACAO_BASE_PATH } from './tokens';
 
 type Esquemas = components['schemas'];
-
-/** O filtro da fila: uma situação ou todas; sem filtro, a API lista as abertas. */
-export type FiltroDaSituacaoDaProvidencia = SituacaoDaProvidencia | 'todas';
 
 export type ConcessaoDaProvidenciaDto = Esquemas['ConcessaoDaProvidenciaDto'];
 
@@ -33,7 +23,7 @@ export type DesfechoDaProvidenciaDto = Esquemas['DesfechoDaProvidenciaDto'];
 /** Os vocabulários da providência, que o contrato tipa como texto. */
 interface VocabulariosDaProvidencia {
   readonly tipo: TipoDaProvidencia;
-  readonly situacao: SituacaoDaProvidencia;
+  readonly situacao: SituacaoDaProvidenciaCodigo;
   readonly encerramentoDaConcessao: EncerramentoDaConcessaoDto | null;
 }
 

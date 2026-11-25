@@ -2,7 +2,7 @@ import {
   EtapaDoPedido,
   ResultadoDaDecisao,
   SituacaoDoAnexo,
-  SituacaoDoPedido,
+  SituacaoDoPedidoCodigo,
 } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
@@ -34,7 +34,7 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
 
   it('o beneficiário nomeado aceita o pedido que espera por ele', async () => {
     const aguardando = pedido({
-      situacao: SituacaoDoPedido.AGUARDANDO_BENEFICIARIO,
+      situacao: SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO,
       etapaAtual: null,
       beneficiario: { email: EU.email, identidade: null, nome: null },
     });
@@ -75,7 +75,7 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
 
     const encerrado = await abrir([], {
       ...solicitadoPorMim(),
-      situacao: SituacaoDoPedido.APROVADO,
+      situacao: SituacaoDoPedidoCodigo.APROVADO,
     });
     expect(botao(noResumo(encerrado.host), 'Cancelar o pedido')).toBeUndefined();
   });
@@ -110,7 +110,7 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
       [],
       pedido({
         ...solicitadoPorMim(),
-        situacao: SituacaoDoPedido.AGUARDANDO_DOCUMENTO,
+        situacao: SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO,
         etapaAtual: null,
       }),
     );
@@ -139,7 +139,7 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
           ...solicitadoPorMim(),
           termo: TERMO,
           anexaraDocumento: true,
-          situacao: SituacaoDoPedido.AGUARDANDO_DOCUMENTO,
+          situacao: SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO,
           etapaAtual: null,
         }),
       );

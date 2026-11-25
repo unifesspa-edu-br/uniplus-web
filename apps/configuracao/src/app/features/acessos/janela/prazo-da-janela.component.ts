@@ -10,8 +10,8 @@ import {
 import type { JanelaDeMigracaoDto } from '@uniplus/shared-data/autorizacao';
 import { TagComponent } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
-import { tempoRestante } from './itens-da-janela';
-import { formaDoEncerramento, situacaoDaJanela } from './rotulos-da-janela';
+import { janelaAceitaDecisao, tempoRestante } from './itens-da-janela';
+import { situacaoDaJanela } from './rotulos-da-janela';
 
 const UM_MINUTO = 60_000;
 
@@ -37,10 +37,12 @@ const UM_MINUTO = 60_000;
             <dt>Encerrada em</dt>
             <dd>{{ encerradaEm | dateBr: 'datetime' }}</dd>
           </div>
-          <div>
-            <dt>Motivo do fim</dt>
-            <dd>{{ forma() }}</dd>
-          </div>
+          @if (forma(); as motivo) {
+            <div>
+              <dt>Motivo do fim</dt>
+              <dd>{{ motivo }}</dd>
+            </div>
+          }
         } @else if (restante(); as tempo) {
           <div>
             <dt>Tempo restante</dt>
@@ -60,9 +62,9 @@ export class PrazoDaJanelaComponent {
 
   private readonly agora = signal(Date.now());
   protected readonly situacao = computed(() => situacaoDaJanela(this.janela().situacao));
-  protected readonly forma = computed(() => formaDoEncerramento(this.janela().forma));
+  protected readonly forma = computed(() => this.janela().forma?.rotulo ?? null);
   protected readonly restante = computed(() =>
-    this.janela().situacao === 'aberta'
+    janelaAceitaDecisao(this.janela())
       ? tempoRestante(this.janela().terminaEm, this.agora())
       : null,
   );

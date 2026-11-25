@@ -30,13 +30,6 @@ export const EtapaDoPedido = {
 } as const;
 export type EtapaDoPedido = (typeof EtapaDoPedido)[keyof typeof EtapaDoPedido];
 
-export const FormaDoEncerramento = {
-  CONCLUIDA: 'CONCLUIDA',
-  PRAZO: 'PRAZO',
-  MANUAL: 'MANUAL',
-} as const;
-export type FormaDoEncerramento = (typeof FormaDoEncerramento)[keyof typeof FormaDoEncerramento];
-
 export const OrigemDaRetomada = {
   DECISAO_DA_ETAPA: 'DECISAO_DA_ETAPA',
   TROCA_DE_VIGENCIA: 'TROCA_DE_VIGENCIA',
@@ -99,31 +92,6 @@ export const SituacaoDaInstalacao = {
 } as const;
 export type SituacaoDaInstalacao = (typeof SituacaoDaInstalacao)[keyof typeof SituacaoDaInstalacao];
 
-export const SituacaoDaMigracao = {
-  RETIDA: 'RETIDA',
-  AGUARDANDO_PROTECAO_DE_DADOS: 'AGUARDANDO_PROTECAO_DE_DADOS',
-  MIGRADA: 'MIGRADA',
-  RECUSADA: 'RECUSADA',
-  NAO_MIGRADA: 'NAO_MIGRADA',
-  FORA_DA_LISTA: 'FORA_DA_LISTA',
-} as const;
-export type SituacaoDaMigracao = (typeof SituacaoDaMigracao)[keyof typeof SituacaoDaMigracao];
-
-export const SituacaoDaProvidencia = {
-  ABERTA: 'ABERTA',
-  RESPONDIDA: 'RESPONDIDA',
-  ATENDIDA: 'ATENDIDA',
-  PREJUDICADA: 'PREJUDICADA',
-} as const;
-export type SituacaoDaProvidencia =
-  (typeof SituacaoDaProvidencia)[keyof typeof SituacaoDaProvidencia];
-
-export const SituacaoDaRevisao = {
-  EM_ANDAMENTO: 'EM_ANDAMENTO',
-  CONCLUIDA: 'CONCLUIDA',
-} as const;
-export type SituacaoDaRevisao = (typeof SituacaoDaRevisao)[keyof typeof SituacaoDaRevisao];
-
 export const SituacaoDaVersao = {
   PENDENTE: 'PENDENTE',
   VIGENTE: 'VIGENTE',
@@ -141,18 +109,6 @@ export const SituacaoDoAnexo = {
   RECUSADO: 'RECUSADO',
 } as const;
 export type SituacaoDoAnexo = (typeof SituacaoDoAnexo)[keyof typeof SituacaoDoAnexo];
-
-export const SituacaoDoPedido = {
-  AGUARDANDO_BENEFICIARIO: 'AGUARDANDO_BENEFICIARIO',
-  AGUARDANDO_GESTOR: 'AGUARDANDO_GESTOR',
-  AGUARDANDO_PROTECAO_DE_DADOS: 'AGUARDANDO_PROTECAO_DE_DADOS',
-  APROVADO: 'APROVADO',
-  RECUSADO: 'RECUSADO',
-  CANCELADO: 'CANCELADO',
-  AGUARDANDO_DOCUMENTO: 'AGUARDANDO_DOCUMENTO',
-  DEVOLVIDO: 'DEVOLVIDO',
-} as const;
-export type SituacaoDoPedido = (typeof SituacaoDoPedido)[keyof typeof SituacaoDoPedido];
 
 export const TipoDaProvidencia = {
   RETIRADA: 'RETIRADA',

@@ -4,7 +4,7 @@ import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap';
-import { PedidosDeConcessaoApi, SituacaoDoPedido } from '@uniplus/shared-data/autorizacao';
+import { PedidosDeConcessaoApi, SituacaoDoPedidoCodigo } from '@uniplus/shared-data/autorizacao';
 import { EU, ok, pedido, recusa } from '../features/acessos/testes';
 import { AcessoNegadoPage } from './acesso-negado.page';
 
@@ -45,14 +45,14 @@ describe('AcessoNegadoPage', () => {
         ok([
           pedido({
             id: 'pedido-aceite',
-            situacao: SituacaoDoPedido.AGUARDANDO_BENEFICIARIO,
+            situacao: SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO,
             beneficiario: {
               email: EU.email,
               identidade: { emissor: 'unifesspa', contaId: EU.id },
               nome: EU.nomeCivil,
             },
           }),
-          pedido({ id: 'pedido-antigo', situacao: SituacaoDoPedido.RECUSADO }),
+          pedido({ id: 'pedido-antigo', situacao: SituacaoDoPedidoCodigo.RECUSADO }),
         ]),
       ),
     );
@@ -61,7 +61,7 @@ describe('AcessoNegadoPage', () => {
 
     expect(api.listar).toHaveBeenCalledWith({
       fila: 'meus',
-      situacao: SituacaoDoPedido.AGUARDANDO_BENEFICIARIO,
+      situacao: SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO,
     });
     expect(host.querySelectorAll('a[href="/acessos/pedidos/pedido-aceite"]')).toHaveLength(1);
     expect(host.textContent).toContain('Aguardando o aceite do beneficiário');
@@ -81,7 +81,7 @@ describe('AcessoNegadoPage', () => {
         ok([
           pedido({
             id: 'pedido-doc',
-            situacao: SituacaoDoPedido.AGUARDANDO_DOCUMENTO,
+            situacao: SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO,
             etapaAtual: null,
           }),
         ]),
@@ -92,7 +92,7 @@ describe('AcessoNegadoPage', () => {
 
     expect(api.listar).toHaveBeenCalledWith({
       fila: 'meus',
-      situacao: SituacaoDoPedido.AGUARDANDO_DOCUMENTO,
+      situacao: SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO,
     });
     const anexar = host.querySelector('a[href="/acessos/pedidos/pedido-doc"]');
     expect(anexar?.textContent?.trim()).toBe('Anexar o documento');
@@ -101,7 +101,7 @@ describe('AcessoNegadoPage', () => {
   });
 
   it('sem pedido em aberto mantém o acesso negado com o link para pedir perfil', () => {
-    api.listar.mockReturnValue(of(ok([pedido({ situacao: SituacaoDoPedido.APROVADO })])));
+    api.listar.mockReturnValue(of(ok([pedido({ situacao: SituacaoDoPedidoCodigo.APROVADO })])));
 
     const host = abrir();
 

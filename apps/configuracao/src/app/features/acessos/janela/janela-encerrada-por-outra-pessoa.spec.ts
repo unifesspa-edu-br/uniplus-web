@@ -1,4 +1,7 @@
-import { SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
+import {
+  SituacaoDaConcessaoNaRevisaoCodigo,
+  SituacaoDaRevisaoDasConcessoesCodigo,
+} from '@uniplus/shared-data/autorizacao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
@@ -11,13 +14,21 @@ const NAO_ENCONTRADA = 'uniplus.autorizacao.revisao_das_concessoes.revisao_nao_e
 const BETINA = itemDaJanela({
   concessaoId: 'c1',
   beneficiarioNome: 'Betina Teste',
-  situacao: SituacaoDaMigracao.RETIDA,
+  situacao: { codigo: SituacaoDaConcessaoNaRevisaoCodigo.RETIDA, rotulo: 'Retida' },
 });
 const ABERTA = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA] });
 const ENCERRADA = janelaDeMigracao({
-  situacao: 'encerrada',
+  situacao: { codigo: SituacaoDaRevisaoDasConcessoesCodigo.ENCERRADA, rotulo: 'Encerrada' },
   decisoesEnviadas: true,
-  itens: [{ ...BETINA, situacao: SituacaoDaMigracao.NAO_MIGRADA }],
+  itens: [
+    {
+      ...BETINA,
+      situacao: {
+        codigo: SituacaoDaConcessaoNaRevisaoCodigo.NAO_MIGRADA,
+        rotulo: 'Não aprovada no prazo',
+      },
+    },
+  ],
 });
 
 describe('revisão encerrada por outra pessoa durante a ação', () => {

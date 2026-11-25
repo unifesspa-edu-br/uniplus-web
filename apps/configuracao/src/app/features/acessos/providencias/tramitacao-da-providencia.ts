@@ -1,4 +1,4 @@
-import { SituacaoDaProvidencia } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDaProvidenciaCodigo } from '@uniplus/shared-data/autorizacao';
 import {
   DestroyRef,
   ElementRef,
@@ -131,7 +131,7 @@ export class TramitacaoDaProvidencia {
   private aindaElegivel(providencia: ProvidenciaDto): boolean {
     return (
       providencia.id === this.idDaAbertura &&
-      providencia.situacao === SituacaoDaProvidencia.ABERTA &&
+      providencia.situacao === SituacaoDaProvidenciaCodigo.ABERTA &&
       !providencia.impedidoDeResponder
     );
   }

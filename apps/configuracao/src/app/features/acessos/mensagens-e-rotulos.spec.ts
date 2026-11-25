@@ -1,4 +1,8 @@
-import { EtapaDoPedido, SituacaoDoAnexo, SituacaoDoPedido } from '@uniplus/shared-data/autorizacao';
+import {
+  EtapaDoPedido,
+  SituacaoDoAnexo,
+  SituacaoDoPedidoCodigo,
+} from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { describe, expect, it } from 'vitest';
@@ -89,7 +93,7 @@ describe('mensagens de acesso', () => {
 
 describe('rótulos de acesso', () => {
   it('traduz o vocabulário da API e devolve o código desconhecido como veio', () => {
-    expect(situacaoDoPedido(SituacaoDoPedido.AGUARDANDO_GESTOR).texto).toBe(
+    expect(situacaoDoPedido(SituacaoDoPedidoCodigo.AGUARDANDO_GESTOR).texto).toBe(
       'Aguardando a gestão de acessos',
     );
     expect(situacaoDoPedido('novo').texto).toBe('novo');

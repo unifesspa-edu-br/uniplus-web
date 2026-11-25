@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import type { ConcessaoDto, SituacaoDaConcessao } from '@uniplus/shared-data/autorizacao';
+import { type ConcessaoDto, SituacaoDaConcessaoCodigo } from '@uniplus/shared-data/autorizacao';
 import {
   EmptyStateComponent,
   IconButtonComponent,
@@ -32,25 +32,25 @@ export class ConcessoesListaComponent {
   readonly carregando = input.required<boolean>();
   readonly gravando = input.required<boolean>();
   readonly erro = input.required<string | null>();
-  readonly situacao = input.required<SituacaoDaConcessao>();
+  readonly situacao = input.required<SituacaoDaConcessaoCodigo | 'todas'>();
   readonly nomeDoEscopo = input.required<(escopo: ConcessaoDto['escopo']) => string>();
   readonly temAnterior = input.required<boolean>();
   readonly temProximo = input.required<boolean>();
   /** Quem só consulta as concessões não vê a revogação. */
   readonly podeRevogar = input.required<boolean>();
-  readonly filtrar = output<SituacaoDaConcessao>();
+  readonly filtrar = output<SituacaoDaConcessaoCodigo | 'todas'>();
   readonly verTrilha = output<ConcessaoDto>();
   readonly revogar = output<ConcessaoDto>();
   readonly anterior = output<void>();
   readonly proximo = output<void>();
   protected readonly indisponivel = computed(() => this.carregando() || this.gravando());
   protected readonly situacoes: readonly {
-    readonly value: SituacaoDaConcessao;
+    readonly value: SituacaoDaConcessaoCodigo | 'todas';
     readonly label: string;
   }[] = [
-    { value: 'ativa', label: 'Ativas' },
-    { value: 'vencida', label: 'Vencidas' },
-    { value: 'revogada', label: 'Revogadas' },
+    { value: SituacaoDaConcessaoCodigo.ATIVA, label: 'Ativas' },
+    { value: SituacaoDaConcessaoCodigo.VENCIDA, label: 'Vencidas' },
+    { value: SituacaoDaConcessaoCodigo.REVOGADA, label: 'Revogadas' },
     { value: 'todas', label: 'Todas' },
   ];
   protected pessoa(concessao: ConcessaoDto): string {

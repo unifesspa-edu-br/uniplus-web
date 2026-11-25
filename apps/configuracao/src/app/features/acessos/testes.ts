@@ -1,4 +1,8 @@
-import { EtapaDoPedido, SituacaoDoPedido, TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
+import {
+  EtapaDoPedido,
+  SituacaoDoPedidoCodigo,
+  TipoDeEscopo,
+} from '@uniplus/shared-data/autorizacao';
 import { HttpErrorResponse, HttpHeaders, HttpRequest, HttpResponse } from '@angular/common/http';
 import { throwError } from 'rxjs';
 import {
@@ -58,7 +62,7 @@ export function concedidas(...codigos: string[]) {
 
 const PEDIDO_AGUARDANDO_O_GESTOR = {
   id: 'pedido-1',
-  situacao: SituacaoDoPedido.AGUARDANDO_GESTOR,
+  situacao: SituacaoDoPedidoCodigo.AGUARDANDO_GESTOR,
   etapaAtual: EtapaDoPedido.GESTOR,
   solicitante: { emissor: 'unifesspa', contaId: 'conta-outra-pessoa' },
   beneficiario: {

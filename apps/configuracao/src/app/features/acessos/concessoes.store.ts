@@ -12,7 +12,7 @@ import {
   AUTORIZACAO_BASE_PATH,
   type ConcessaoDto,
   type EventoDaTrilhaDto,
-  type SituacaoDaConcessao,
+  SituacaoDaConcessaoCodigo,
 } from '@uniplus/shared-data/autorizacao';
 import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
 import { desfechoDaLeitura } from './desfecho-da-leitura';
@@ -23,7 +23,7 @@ export class ConcessoesStore {
   private readonly basePath = inject(AUTORIZACAO_BASE_PATH);
   private readonly problemas = inject(ProblemI18nService);
   private readonly notificacoes = inject(NotificationService);
-  readonly situacao = signal<SituacaoDaConcessao>('ativa');
+  readonly situacao = signal<SituacaoDaConcessaoCodigo | 'todas'>(SituacaoDaConcessaoCodigo.ATIVA);
   private readonly pagina = linkedSignal<string, CursorPagina | undefined>({
     source: () => this.situacao(),
     computation: () => undefined,
@@ -91,7 +91,7 @@ export class ConcessoesStore {
   paginaAnterior(): void {
     this.navegacao.irParaAnterior();
   }
-  filtrarPor(situacao: SituacaoDaConcessao): void {
+  filtrarPor(situacao: SituacaoDaConcessaoCodigo | 'todas'): void {
     if (this.situacao() === situacao) {
       this.recarregar();
       return;
@@ -110,7 +110,10 @@ export class ConcessoesStore {
     return this.consultaDaTrilha.reload();
   }
   private montarParams(): HttpParams {
-    let params = new HttpParams().set('situacao', this.situacao());
+    let params =
+      this.situacao() === 'todas'
+        ? new HttpParams()
+        : new HttpParams().set('situacao', this.situacao());
     const pagina = this.pagina();
     if (pagina)
       params = params

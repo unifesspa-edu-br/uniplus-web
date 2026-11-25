@@ -1,4 +1,5 @@
-import { ResultadoDaMigracao, SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDaConcessaoNaRevisaoCodigo } from '@uniplus/shared-data/autorizacao';
+import { ResultadoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
@@ -20,7 +21,10 @@ const naEtapa = (concessaoId: string, beneficiarioNome: string) =>
   itemDaJanela({
     concessaoId,
     beneficiarioNome,
-    situacao: SituacaoDaMigracao.AGUARDANDO_PROTECAO_DE_DADOS,
+    situacao: {
+      codigo: SituacaoDaConcessaoNaRevisaoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
+      rotulo: 'Aguarda o Representante do controlador',
+    },
     exigeProtecaoDeDados: true,
   });
 const BETINA = naEtapa('c1', 'Betina Teste');
@@ -28,7 +32,7 @@ const LEANDRO = naEtapa('c2', 'Leandro Teste');
 const APROVADA = itemDaJanela({
   concessaoId: 'c4',
   beneficiarioNome: 'Aline Teste',
-  situacao: SituacaoDaMigracao.MIGRADA,
+  situacao: { codigo: SituacaoDaConcessaoNaRevisaoCodigo.MIGRADA, rotulo: 'Aprovada' },
 });
 const REVISAO = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA, LEANDRO, APROVADA] });
 
