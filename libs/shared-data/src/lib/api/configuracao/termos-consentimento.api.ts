@@ -21,18 +21,6 @@ export type CriarTermoConsentimentoCommand =
 export type EditarRascunhoTermoConsentimentoCommand =
   components['schemas']['EditarRascunhoTermoConsentimentoCommand'];
 
-/** Filtro de listagem (cursor pagination, ADR-0026). */
-export interface FormaAceiteOption {
-  readonly value: string;
-  readonly label: string;
-}
-
-export const FORMAS_ACEITE: readonly FormaAceiteOption[] = [
-  { value: 'A_DEFINIR', label: 'A definir' },
-  { value: 'REGISTRO_DIGITAL_SEM_LOG_IP', label: 'Registro digital (sem log de IP)' },
-  { value: 'REGISTRO_DIGITAL_COM_LOG_IP', label: 'Registro digital (com log de IP)' },
-] as const;
-
 type TermosComVersoes = ApiResult<readonly TermoConsentimentoDto[]>;
 
 export interface TermosConsentimentoQuery {
