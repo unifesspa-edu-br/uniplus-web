@@ -130,21 +130,23 @@ export class ConferenciaDasSecoes {
   concluirTodas(navegar = true): number {
     const secoes = this.pendenciasCompletas();
     const total = secoes.reduce((soma, s) => soma + s.pendencias.length, 0);
-    if (total === 0) {
-      while (this.fontes.navegacao.concluir(this.fontes.passos())) {
-        // Concluir pode mostrar outra seção, que também é concluída.
-      }
-      return 0;
-    }
-    if (navegar) {
-      const [primeira] = secoes;
-      this.irAPendenciaDe(primeira.passo.chave);
-      this.fontes.avisos.dizer(
-        `${total === 1 ? 'Há 1 item a corrigir' : `Há ${total} itens a corrigir`}. ` +
-          `O primeiro está na seção ${primeira.passo.titulo}.`,
-      );
-    }
+    if (total === 0) this.concluirTodasSemPendencia();
+    else if (navegar) this.levarAPrimeiraPendencia(secoes[0].passo, total);
     return total;
+  }
+
+  private concluirTodasSemPendencia(): void {
+    while (this.fontes.navegacao.concluir(this.fontes.passos())) {
+      // Concluir pode mostrar outra seção, que também é concluída.
+    }
+  }
+
+  private levarAPrimeiraPendencia(passo: PassoDoFormulario, total: number): void {
+    this.irAPendenciaDe(passo.chave);
+    this.fontes.avisos.dizer(
+      `${total === 1 ? 'Há 1 item a corrigir' : `Há ${total} itens a corrigir`}. ` +
+        `O primeiro está na seção ${passo.titulo}.`,
+    );
   }
 
   /**
@@ -154,24 +156,33 @@ export class ConferenciaDasSecoes {
    * seção fica com o estado de erro. Sem pendência, leva só à seção.
    */
   irAPendenciaDe(chave: string): void {
-    const { navegacao, passos } = this.fontes;
+    const { navegacao } = this.fontes;
     const primeira = this.pendenciasCompletas().find((s) => s.passo.chave === chave)?.pendencias[0];
     if (!primeira) {
       navegacao.irAoPasso(chave);
       return;
     }
     navegacao.mostrarPendenciaDe(chave);
+    this.concluirAteOCampoAparecer(chave, primeira.campo);
+    this.irAoCampoPendente(chave, primeira);
+  }
+
+  private concluirAteOCampoAparecer(chave: string, campo: string): void {
+    const { navegacao, passos } = this.fontes;
     const aparece = (): boolean =>
-      passos().some((p) => p.chave === chave && contemOCampo(p, primeira.campo));
-    // Relidos a cada volta: concluir uma seção pode revelar outra, que também precisa ser concluída.
+      passos().some((p) => p.chave === chave && contemOCampo(p, campo));
     while (!aparece()) {
       const proxima = passos().find((p) => !navegacao.concluido(p));
       if (!proxima || !navegacao.concluir([proxima])) break;
     }
-    // O campo revelado só existe na tela depois da renderização.
+  }
+
+  /** O controle só existe depois de a tela desenhar o campo. */
+  private irAoCampoPendente(chave: string, pendencia: PendenciaDoPasso): void {
+    const { navegacao } = this.fontes;
     navegacao.irAoPasso(
       chave,
-      () => navegacao.controleDe(primeira.campo, primeira.naConfirmacao),
+      () => navegacao.controleDe(pendencia.campo, pendencia.naConfirmacao),
       true,
     );
   }
@@ -198,22 +209,29 @@ export class ConferenciaDasSecoes {
   }
 
   private barraNoPasso(chave: string): boolean {
-    const { navegacao, passosPrefixados, passos, avisos, aguardaVerificacaoDosDocumentos } =
-      this.fontes;
-    const prefixado = passosPrefixados().find((p) => p.chave === chave);
-    if (prefixado) {
-      if (prefixado.concluido === true) return false;
-      avisos.barrarAvanco(chave);
-      return true;
-    }
-    const secao = passos().find((p) => p.chave === chave);
+    const prefixado = this.fontes.passosPrefixados().find((p) => p.chave === chave);
+    if (prefixado) return this.barraNoPrefixado(prefixado);
+    const secao = this.fontes.passos().find((p) => p.chave === chave);
     if (!secao) return false;
-    if (secao.bloco === BLOCO_COMPROVACAO_DOCUMENTAL && aguardaVerificacaoDosDocumentos()) {
-      navegacao.irAoPasso(chave);
-      avisos.dizer(AGUARDE_A_VERIFICACAO);
-      return true;
-    }
+    if (this.aguardaVerificacaoNa(secao)) return true;
     return this.barraNaSecao(secao);
+  }
+
+  private barraNoPrefixado(prefixado: PassoPrefixado): boolean {
+    if (prefixado.concluido === true) return false;
+    this.fontes.avisos.barrarAvanco(prefixado.chave);
+    return true;
+  }
+
+  private aguardaVerificacaoNa(secao: PassoDoFormulario): boolean {
+    if (
+      secao.bloco !== BLOCO_COMPROVACAO_DOCUMENTAL ||
+      !this.fontes.aguardaVerificacaoDosDocumentos()
+    )
+      return false;
+    this.fontes.navegacao.irAoPasso(secao.chave);
+    this.fontes.avisos.dizer(AGUARDE_A_VERIFICACAO);
+    return true;
   }
 
   private barraNaSecao(secao: PassoDoFormulario): boolean {
@@ -223,17 +241,8 @@ export class ConferenciaDasSecoes {
     const passo = passos().find((p) => p.chave === secao.chave) ?? secao;
     const pendentes = this.pendenciasDoPasso(passo);
     if (pendentes.length === 0) return false;
-    const [primeira] = pendentes;
-    navegacao.irAoPasso(
-      passo.chave,
-      () => navegacao.controleDe(primeira.campo, primeira.naConfirmacao),
-      true,
-    );
-    avisos.dizer(
-      pendentes.length === 1
-        ? `Há 1 item a corrigir na seção ${passo.titulo}.`
-        : `Há ${pendentes.length} itens a corrigir na seção ${passo.titulo}.`,
-    );
+    this.irAoCampoPendente(passo.chave, pendentes[0]);
+    avisos.dizer(textoDasPendenciasDaSecao(pendentes.length, passo.titulo));
     return true;
   }
 
@@ -258,4 +267,10 @@ export class ConferenciaDasSecoes {
     if (passo) navegacao.concluir([passo]);
     if (navegacao.indice() < navegacao.total() - 1) navegacao.irPara(navegacao.indice() + 1);
   }
+}
+
+function textoDasPendenciasDaSecao(quantidade: number, titulo: string): string {
+  return quantidade === 1
+    ? `Há 1 item a corrigir na seção ${titulo}.`
+    : `Há ${quantidade} itens a corrigir na seção ${titulo}.`;
 }
