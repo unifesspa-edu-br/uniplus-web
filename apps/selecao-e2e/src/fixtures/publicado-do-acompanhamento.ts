@@ -1,19 +1,16 @@
-import * as path from 'node:path';
 import {
   aprovarCatalogoInicial,
   prepararAcessosDaSimulacao,
   SENHA_DAS_PERSONAS,
 } from '@uniplus/shared-e2e';
 import { listarProcessos, type ProcessoListado } from './processos-da-api';
-import { rodarRoteiroDeProcesso } from './roteiro-da-api';
+import { caminhoDoRoteiro, rodarRoteiroDeProcesso } from './roteiro-da-api';
 
 const NOME = 'E2E Acompanhamento — processo publicado';
 const IDENTIFICADOR = 'e2e-acompanhamento-publicado';
-const ROTEIRO =
-  process.env['E2E_ROTEIRO_DO_PROCESSO'] ??
-  path.resolve(__dirname, '../../../../../uniplus-api/scripts/roteiro-processo-teste-inscricao.sh');
 
 export async function publicadoDoAcompanhamento(): Promise<ProcessoListado> {
+  caminhoDoRoteiro('E2E_ROTEIRO_DO_PROCESSO');
   const publicados = (await listarProcessos())
     .filter((processo) => processo.situacao.codigo === 'PUBLICADO')
     .sort(compararProcessos);
@@ -37,7 +34,7 @@ function compararProcessos(primeiro: ProcessoListado, segundo: ProcessoListado):
 
 function criarProcesso(): Promise<string> {
   return rodarRoteiroDeProcesso(
-    ROTEIRO,
+    caminhoDoRoteiro('E2E_ROTEIRO_DO_PROCESSO'),
     [],
     {
       ...process.env,

@@ -1,4 +1,3 @@
-import * as path from 'node:path';
 import {
   aprovarCatalogoInicial,
   chamarApi,
@@ -11,7 +10,7 @@ import {
   listarProcessos,
   processosPublicadosComNome,
 } from './processos-da-api';
-import { rodarRoteiroDeProcesso } from './roteiro-da-api';
+import { caminhoDoRoteiro, rodarRoteiroDeProcesso } from './roteiro-da-api';
 import { inscreverPersona, type InscricaoCriada } from './inscricoes-reais';
 
 /**
@@ -21,7 +20,7 @@ import { inscreverPersona, type InscricaoCriada } from './inscricoes-reais';
  * sem inscrição) e as inscrições enviadas de Fernanda (com laudo) e Erick.
  *
  * O processo nasce do roteiro `roteiro-processo-teste-inscricao.sh` da uniplus-api, que a spec
- * localiza em `E2E_ROTEIRO_DO_PROCESSO` (padrão: o checkout irmão `uniplus-api`).
+ * localiza em `E2E_ROTEIRO_DO_PROCESSO`.
  */
 
 /**
@@ -34,10 +33,6 @@ const NOME_COM_PROVA = `Processo Seletivo Medicina 2027 (simulação da projeç�
 const NOME_SEM_INSCRICAO = 'E2E Processo Seletivo Medicina 2027 (sem inscrição)';
 const MODELO_COM_PROVA = '5e3d0006-0000-7000-8000-000000000003';
 const MODELO_SEM_PROVA = '5e3d0006-0000-7000-8000-000000000004';
-
-const ROTEIRO =
-  process.env['E2E_ROTEIRO_DO_PROCESSO'] ??
-  path.resolve(__dirname, '../../../../../uniplus-api/scripts/roteiro-processo-teste-inscricao.sh');
 
 export interface CenarioDaProjecao {
   readonly processoId: string;
@@ -61,7 +56,7 @@ async function garantirProcesso(
   const existente = await acharProcesso(nome);
   if (existente !== undefined) return existente;
   return rodarRoteiroDeProcesso(
-    ROTEIRO,
+    caminhoDoRoteiro('E2E_ROTEIRO_DO_PROCESSO'),
     [],
     ambienteDoProcesso(nome, identificador, modelo),
     600_000,
@@ -105,6 +100,7 @@ async function processoSemInscricao(): Promise<string> {
 let guardado: Promise<CenarioDaProjecao> | undefined;
 
 export function cenarioDaProjecao(): Promise<CenarioDaProjecao> {
+  caminhoDoRoteiro('E2E_ROTEIRO_DO_PROCESSO');
   guardado ??= prepararCenarioDaProjecao();
   return guardado;
 }
@@ -138,6 +134,7 @@ export async function rascunhoParaConfiguracao(): Promise<{
   readonly processoId: string;
   readonly faseHabilitacaoId: string;
 }> {
+  caminhoDoRoteiro('E2E_ROTEIRO_DO_PROCESSO');
   const id = await garantirRascunho();
   const faseHabilitacaoId = await buscarFaseDeHabilitacao(id);
   return { processoId: id, faseHabilitacaoId };
@@ -157,7 +154,7 @@ function criarRascunho(): Promise<string> {
     'bash',
     `psm-2027-projecao-rascunho-${Date.now()}`,
     NOME_DO_RASCUNHO,
-    ROTEIRO,
+    caminhoDoRoteiro('E2E_ROTEIRO_DO_PROCESSO'),
     SENHA_DAS_PERSONAS,
   ];
   return rodarRoteiroDeProcesso('bash', argumentos, process.env, 600_000);
