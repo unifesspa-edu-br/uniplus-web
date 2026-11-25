@@ -35,6 +35,33 @@ describe('distribuirRecusas', () => {
     expect(recusas.gerais).toEqual(['O item B cita fato posterior.']);
   });
 
+  it.each(['termos[0].codigo', 'conteudo.termos[0].codigo'])(
+    'leva %s ao termo apontado',
+    (field) => {
+      const termo = {
+        codigo: 'T',
+        ordem: 0,
+        termo: { termoId: 'T', versaoId: 'V' },
+        regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
+      };
+      const recusas = distribuirRecusas(
+        [{ field, message: 'Termo inválido.' }],
+        conteudo({ termos: [termo] }),
+      );
+      expect(recusas.porTermo.get('T')).toEqual(['Termo inválido.']);
+      expect(recusas.gerais).toEqual([]);
+    },
+  );
+
+  it('leva o índice de termo fora da lista ao resumo geral', () => {
+    const recusas = distribuirRecusas(
+      [{ field: 'termos[1].codigo', message: 'Termo ausente.' }],
+      conteudo({}),
+    );
+    expect(recusas.gerais).toEqual(['Termo ausente.']);
+    expect(recusas.porTermo.size).toBe(0);
+  });
+
   it('a recusa da API no campo do grupo vai ao campo, e a do grupo, ao grupo', () => {
     const enviado = conteudo({ grupos: [grupoDeExemplo()] });
 
