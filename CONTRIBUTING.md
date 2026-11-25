@@ -8,12 +8,12 @@ Este documento descreve como contribuir com o frontend da plataforma Uni+. Leia-
 
 ## Pré-requisitos
 
-| Ferramenta | Versão mínima | Verificação |
-|---|---|---|
-| Node.js | 22 LTS | `node --version` |
-| npm | 10+ | `npm --version` |
-| Git | 2.40+ | `git --version` |
-| GitHub CLI | 2.50+ | `gh --version` |
+| Ferramenta | Versão mínima | Verificação      |
+| ---------- | ------------- | ---------------- |
+| Node.js    | 22 LTS        | `node --version` |
+| npm        | 10+           | `npm --version`  |
+| Git        | 2.40+         | `git --version`  |
+| GitHub CLI | 2.50+         | `gh --version`   |
 
 ### Setup inicial
 
@@ -78,18 +78,18 @@ libs/
       guards/             → AuthGuard, RoleGuard
       models/             → UserProfile, AuthConfig
 
-  shared-data/            → Clients TypeScript gerados do OpenAPI
+  shared-data/            → Tipos TypeScript gerados do OpenAPI e serviços de acesso à API
     src/lib/
-      api/                → Clients gerados (NSwag/Kiota)
+      api/                → Tipos gerados por openapi-typescript e serviços Angular escritos à mão
       models/             → DTOs tipados
       services/           → Wrappers com cache e error handling
 ```
 
 ### Apps vs Libs
 
-| Tipo | Regra |
-|---|---|
-| **App** | Contém roteamento, layout e composição de features. Não exporta nada. |
+| Tipo    | Regra                                                                  |
+| ------- | ---------------------------------------------------------------------- |
+| **App** | Contém roteamento, layout e composição de features. Não exporta nada.  |
 | **Lib** | Exporta componentes, services e modelos. Nunca tem roteamento próprio. |
 
 ---
@@ -103,15 +103,15 @@ libs/
 
 ### 2. Escopo canônico das libs `shared-*`
 
-| Lib | Escopo |
-|---|---|
-| `@uniplus/shared-core` | Infra HTTP Angular: `LoadingService`, `NotificationService`, `ProblemI18nService`, `ApiResultInterceptor`, `HttpContext` tokens (vendor MIME, idempotency), `useApiResource`, `parseLink`, paginação cursor |
-| `@uniplus/shared-data` | DTOs, `schema.ts` gerado por OpenAPI, classes de serviço, `InjectionToken` de base paths, `ValidatorFn` de domínio (CPF, cota), runtime config (`provideRuntimeConfig`), utilidades puras de dados |
-| `@uniplus/shared-ui` | Componentes Angular standalone, pipes, shells e wrappers do Uni+ DS CSS-only; PrimeNG apenas quando encapsulado e justificado |
-| `@uniplus/shared-auth` | Integração OIDC: `AuthService`, `UserContextService`, route guards, HTTP interceptors, `provideAuth`, `AUTH_CONFIG` token |
-| `@uniplus/shared-utils` | Utilitários TypeScript puros, sem runtime Angular (ex: `formatCpfProgressive`) |
-| `@uniplus/shared-inscricao/*` | Apresentação do domínio da inscrição usada por mais de um app (ex.: o comprovante); recebe o DTO pronto e só importa tipos de `@uniplus/shared-data` ([ADR-0030](docs/adrs/0030-lib-de-apresentacao-do-dominio-da-inscricao.md)) |
-| `@uniplus/shared-testing` | Apoio de teste unitário: relógio controlado e respostas simuladas da API do `shared-core`; depende só do `shared-core`, e o `shared-core` não o importa; só `*.spec.ts`, `*.testing.ts` e arquivos de setup o importam, e produção nunca importa a lib nem o Vitest ([ADR-0032](docs/adrs/0032-apoio-de-teste-unitario-em-lib-restrita-aos-testes.md)) |
+| Lib                           | Escopo                                                                                                                                                                                                                                                                                                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@uniplus/shared-core`        | Infra HTTP Angular: `LoadingService`, `NotificationService`, `ProblemI18nService`, `ApiResultInterceptor`, `HttpContext` tokens (vendor MIME, idempotency), `useApiResource`, `parseLink`, paginação cursor                                                                                                                                            |
+| `@uniplus/shared-data`        | DTOs, `schema.ts` gerado por OpenAPI, classes de serviço, `InjectionToken` de base paths, `ValidatorFn` de domínio (CPF, cota), runtime config (`provideRuntimeConfig`), utilidades puras de dados                                                                                                                                                     |
+| `@uniplus/shared-ui`          | Componentes Angular standalone, pipes, shells e wrappers do Uni+ DS CSS-only; PrimeNG apenas quando encapsulado e justificado                                                                                                                                                                                                                          |
+| `@uniplus/shared-auth`        | Integração OIDC: `AuthService`, `UserContextService`, route guards, HTTP interceptors, `provideAuth`, `AUTH_CONFIG` token                                                                                                                                                                                                                              |
+| `@uniplus/shared-utils`       | Utilitários TypeScript puros, sem runtime Angular (ex: `formatCpfProgressive`)                                                                                                                                                                                                                                                                         |
+| `@uniplus/shared-inscricao/*` | Apresentação do domínio da inscrição usada por mais de um app (ex.: o comprovante); recebe o DTO pronto e só importa tipos de `@uniplus/shared-data` ([ADR-0030](docs/adrs/0030-lib-de-apresentacao-do-dominio-da-inscricao.md))                                                                                                                       |
+| `@uniplus/shared-testing`     | Apoio de teste unitário: relógio controlado e respostas simuladas da API do `shared-core`; depende só do `shared-core`, e o `shared-core` não o importa; só `*.spec.ts`, `*.testing.ts` e arquivos de setup o importam, e produção nunca importa a lib nem o Vitest ([ADR-0032](docs/adrs/0032-apoio-de-teste-unitario-em-lib-restrita-aos-testes.md)) |
 
 ### 3. Onde nasce cada peça
 
@@ -181,14 +181,14 @@ git checkout -b feature/{issue-number}-{slug}
 
 **Convenção de nomes:**
 
-| Prefixo | Quando usar |
-|---|---|
-| `feature/` | Nova funcionalidade ou componente |
-| `fix/` | Correção de bug |
-| `refactor/` | Refatoração sem mudança de comportamento |
-| `test/` | Adição ou correção de testes |
-| `chore/` | Configuração, dependências, CI/CD |
-| `style/` | Ajustes visuais (CSS, layout, responsividade) |
+| Prefixo     | Quando usar                                   |
+| ----------- | --------------------------------------------- |
+| `feature/`  | Nova funcionalidade ou componente             |
+| `fix/`      | Correção de bug                               |
+| `refactor/` | Refatoração sem mudança de comportamento      |
+| `test/`     | Adição ou correção de testes                  |
+| `chore/`    | Configuração, dependências, CI/CD             |
+| `style/`    | Ajustes visuais (CSS, layout, responsividade) |
 
 ### 2. Implementar
 
@@ -221,11 +221,11 @@ Todos os comandos acima devem passar antes de abrir o PR.
 
 O lint é checado em três pontos distintos, do mais rápido ao mais abrangente, para evitar acúmulo silencioso de débito em projetos não afetados:
 
-| Camada | Quando roda | O que executa | Bloqueante? |
-|---|---|---|---|
-| **Pre-commit local** | Automático em cada `git commit` | `lint-staged` → `eslint --fix` apenas nos arquivos staged | Sim (impede commit) |
-| **Lint afetado local** | Manual antes do push da PR | `npx nx affected --target=lint` | Recomendado (o CI roda `gate (lint)` sobre os projetos afetados, quando o PR toca o frontend, e o `lint-full.yml` sobre todos) |
-| **CI completo (`lint-full.yml`)** | Em cada PR e push para `main` | `npx nx run-many --target=lint --all` | Sim (gate de merge) |
+| Camada                            | Quando roda                     | O que executa                                             | Bloqueante?                                                                                                                    |
+| --------------------------------- | ------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Pre-commit local**              | Automático em cada `git commit` | `lint-staged` → `eslint --fix` apenas nos arquivos staged | Sim (impede commit)                                                                                                            |
+| **Lint afetado local**            | Manual antes do push da PR      | `npx nx affected --target=lint`                           | Recomendado (o CI roda `gate (lint)` sobre os projetos afetados, quando o PR toca o frontend, e o `lint-full.yml` sobre todos) |
+| **CI completo (`lint-full.yml`)** | Em cada PR e push para `main`   | `npx nx run-many --target=lint --all`                     | Sim (gate de merge)                                                                                                            |
 
 O hook de pre-commit é configurado via `husky` (`.husky/pre-commit`) e roda automaticamente após `npm install`. Em casos excepcionais, pode-se contornar com `git commit --no-verify` — mas a CI rejeitará o PR se o lint completo falhar.
 
@@ -239,43 +239,43 @@ As regras de formato, tipos permitidos e convenções gerais de mensagem estão 
 
 > Esta tabela é uma lista de apoio, não um conjunto fechado. A regra geral é preferir o nome da **app** ou **lib** afetada — um projeto novo em `apps/` ou `libs/` sem linha aqui usa o nome do próprio diretório, sem esperar que a tabela seja atualizada primeiro.
 
-| Escopo | Quando usar |
-|---|---|
-| `selecao` | App Seleção (`apps/selecao/`) |
-| `selecao-e2e` | Testes E2E Playwright da app Seleção (`apps/selecao-e2e/`) |
-| `ingresso` | App Ingresso (`apps/ingresso/`) |
-| `ingresso-e2e` | Testes E2E Playwright da app Ingresso (`apps/ingresso-e2e/`) |
-| `portal` | App Portal público (`apps/portal/`) |
-| `portal-e2e` | Testes E2E Playwright do Portal (`apps/portal-e2e/`) |
-| `configuracao` | App Configuração — cadastros base e organização institucional (`apps/configuracao/`) |
-| `configuracao-e2e` | Testes E2E Playwright da app Configuração (`apps/configuracao-e2e/`) |
-| `shared-ui` | Componentes reutilizáveis do Uni+ DS (`libs/shared-ui/`) |
-| `shared-core` | Infra HTTP transversal, interceptors, notificações (`libs/shared-core/`) |
-| `shared-data` | API clients, DTOs, utilitários (`libs/shared-data/`) |
-| `shared-inscricao` | Apresentação do domínio da inscrição (`libs/shared-inscricao/`) |
-| `shared-auth` | OIDC, `libs/shared-auth/` (guards, interceptor, tokens) |
-| `shared-utils` | Utilitários puros, pipes, helpers (`libs/shared-utils/`) |
-| `shared-e2e` | Fixtures e utilitários Playwright compartilhados (`libs/shared-e2e/`) |
-| `shared-testing` | Apoio de teste unitário, sem build (`libs/shared-testing/`) |
-| `ds` | Tokens, foundation e mapeamento CSS do Uni+ DS |
-| `poc-primeng` | POC histórica read-only, fora do workspace Nx (`docs/referencias/poc-primeng/`) — ADR-0022 |
-| `poc-primeng-e2e` | Suíte E2E histórica da POC (`docs/referencias/poc-primeng-e2e/`) — ADR-0022 |
-| `routing` | Roteamento que atravessa mais de uma app (base href, redirects, deep links) |
-| `fitness` | Mudança na própria regra de arquitetura (`**/__fitness__/*.fitness.spec.ts`), não no código que ela verifica |
-| `adrs` | Registro ou emenda de Architecture Decision Record (`docs/adrs/`) |
-| `nx` | Configuração Nx (workspace, targets, caching, affected) |
-| `ci` | GitHub Actions, workflows, pipeline |
-| `docker` | Dockerfiles, `docker-compose` |
-| `deps` | Atualização de pacotes npm |
+| Escopo             | Quando usar                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `selecao`          | App Seleção (`apps/selecao/`)                                                                                |
+| `selecao-e2e`      | Testes E2E Playwright da app Seleção (`apps/selecao-e2e/`)                                                   |
+| `ingresso`         | App Ingresso (`apps/ingresso/`)                                                                              |
+| `ingresso-e2e`     | Testes E2E Playwright da app Ingresso (`apps/ingresso-e2e/`)                                                 |
+| `portal`           | App Portal público (`apps/portal/`)                                                                          |
+| `portal-e2e`       | Testes E2E Playwright do Portal (`apps/portal-e2e/`)                                                         |
+| `configuracao`     | App Configuração — cadastros base e organização institucional (`apps/configuracao/`)                         |
+| `configuracao-e2e` | Testes E2E Playwright da app Configuração (`apps/configuracao-e2e/`)                                         |
+| `shared-ui`        | Componentes reutilizáveis do Uni+ DS (`libs/shared-ui/`)                                                     |
+| `shared-core`      | Infra HTTP transversal, interceptors, notificações (`libs/shared-core/`)                                     |
+| `shared-data`      | API clients, DTOs, utilitários (`libs/shared-data/`)                                                         |
+| `shared-inscricao` | Apresentação do domínio da inscrição (`libs/shared-inscricao/`)                                              |
+| `shared-auth`      | OIDC, `libs/shared-auth/` (guards, interceptor, tokens)                                                      |
+| `shared-utils`     | Utilitários puros, pipes, helpers (`libs/shared-utils/`)                                                     |
+| `shared-e2e`       | Fixtures e utilitários Playwright compartilhados (`libs/shared-e2e/`)                                        |
+| `shared-testing`   | Apoio de teste unitário, sem build (`libs/shared-testing/`)                                                  |
+| `ds`               | Tokens, foundation e mapeamento CSS do Uni+ DS                                                               |
+| `poc-primeng`      | POC histórica read-only, fora do workspace Nx (`docs/referencias/poc-primeng/`) — ADR-0022                   |
+| `poc-primeng-e2e`  | Suíte E2E histórica da POC (`docs/referencias/poc-primeng-e2e/`) — ADR-0022                                  |
+| `routing`          | Roteamento que atravessa mais de uma app (base href, redirects, deep links)                                  |
+| `fitness`          | Mudança na própria regra de arquitetura (`**/__fitness__/*.fitness.spec.ts`), não no código que ela verifica |
+| `adrs`             | Registro ou emenda de Architecture Decision Record (`docs/adrs/`)                                            |
+| `nx`               | Configuração Nx (workspace, targets, caching, affected)                                                      |
+| `ci`               | GitHub Actions, workflows, pipeline                                                                          |
+| `docker`           | Dockerfiles, `docker-compose`                                                                                |
+| `deps`             | Atualização de pacotes npm                                                                                   |
 
 **Sinônimos obsoletos** — aparecem no histórico, não usar em commits novos:
 
-| Obsoleto | Canônico | Motivo |
-|---|---|---|
-| `auth` | `shared-auth` | `shared-auth` é o nome do projeto no workspace (`libs/shared-auth/`) |
+| Obsoleto  | Canônico                                                                  | Motivo                                                                                                                |
+| --------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `auth`    | `shared-auth`                                                             | `shared-auth` é o nome do projeto no workspace (`libs/shared-auth/`)                                                  |
 | `primeng` | `poc-primeng` (POC histórica) ou `shared-ui` (wrapper `ui-*` encapsulado) | nunca teve uso real; os commits existentes usam `poc-primeng` para a POC e `shared-ui` para o encapsulamento corrente |
-| `e2e` | `<app>-e2e` ou `shared-e2e` | genérico demais desde que cada app ganhou seu próprio projeto `*-e2e` |
-| `adr` | `adrs` | o diretório é `docs/adrs/`, no plural |
+| `e2e`     | `<app>-e2e` ou `shared-e2e`                                               | genérico demais desde que cada app ganhou seu próprio projeto `*-e2e`                                                 |
+| `adr`     | `adrs`                                                                    | o diretório é `docs/adrs/`, no plural                                                                                 |
 
 Mudanças transversais de tokens ou estilo global usam `ds` ou `shared-ui`.
 
@@ -325,8 +325,8 @@ Este repositório adota políticas de proteção da branch `main` para garantir 
     - `PR author is org member` (workflow homônimo — bloqueia PRs de não-membros da organização)
   - Branch atualizada com a `main` antes do merge
   - Todas as conversas do review resolvidas
-  - Aprovações anteriores são descartadas a cada novo commit (*dismiss stale reviews*)
-  - O último push da branch deve ser feito por usuário diferente do aprovador (*require last push approval*)
+  - Aprovações anteriores são descartadas a cada novo commit (_dismiss stale reviews_)
+  - O último push da branch deve ser feito por usuário diferente do aprovador (_require last push approval_)
 
 Casos excepcionais podem ser tratados por admins do repositório. A política operacional completa — incluindo procedimento de rebase, regras de ouro e troubleshooting — vive no **[Guia de Commits e Integração § 5](https://github.com/unifesspa-edu-br/uniplus-docs/blob/main/docs/guia-commits-e-integracao.md)**, fonte de verdade para todos os repositórios do projeto.
 
@@ -352,12 +352,12 @@ features/
 
 ### Componentes
 
-| Regra | Detalhe |
-|---|---|
-| Um componente, uma responsabilidade | Componentes grandes devem ser decompostos |
-| Inputs e Outputs tipados | Usar `input()` e `output()` signals do Angular 20 |
-| OnPush por padrão | `changeDetection: ChangeDetectionStrategy.OnPush` |
-| Standalone components | Não usar NgModules — tudo standalone |
+| Regra                               | Detalhe                                           |
+| ----------------------------------- | ------------------------------------------------- |
+| Um componente, uma responsabilidade | Componentes grandes devem ser decompostos         |
+| Inputs e Outputs tipados            | Usar `input()` e `output()` signals do Angular 20 |
+| OnPush por padrão                   | `changeDetection: ChangeDetectionStrategy.OnPush` |
+| Standalone components               | Não usar NgModules — tudo standalone              |
 
 ### State management
 
@@ -374,16 +374,16 @@ features/
 
 ### Naming
 
-| Elemento | Convenção | Exemplo |
-|---|---|---|
-| Componentes | kebab-case (seletor) | `app-formulario-inscricao` |
-| Arquivos | kebab-case | `formulario-inscricao.component.ts` |
-| Classes | PascalCase (inglês) | `FormularioInscricaoComponent` |
-| Services | PascalCase + `Service` | `InscricaoService` |
-| Interfaces/Models | PascalCase | `Candidato`, `InscricaoDto` |
-| Variáveis | camelCase (inglês) | `candidatoId`, `listaInscricoes` |
-| Strings user-facing | pt-BR | `'Inscrição realizada com sucesso'` |
-| Labels, placeholders, mensagens | pt-BR | `'Digite seu CPF'` |
+| Elemento                        | Convenção              | Exemplo                             |
+| ------------------------------- | ---------------------- | ----------------------------------- |
+| Componentes                     | kebab-case (seletor)   | `app-formulario-inscricao`          |
+| Arquivos                        | kebab-case             | `formulario-inscricao.component.ts` |
+| Classes                         | PascalCase (inglês)    | `FormularioInscricaoComponent`      |
+| Services                        | PascalCase + `Service` | `InscricaoService`                  |
+| Interfaces/Models               | PascalCase             | `Candidato`, `InscricaoDto`         |
+| Variáveis                       | camelCase (inglês)     | `candidatoId`, `listaInscricoes`    |
+| Strings user-facing             | pt-BR                  | `'Inscrição realizada com sucesso'` |
+| Labels, placeholders, mensagens | pt-BR                  | `'Digite seu CPF'`                  |
 
 ### CSS / Tailwind
 
@@ -397,19 +397,23 @@ features/
 
 Os `.css` passam pelo [`@eslint/css`](https://github.com/eslint/css), com a sintaxe do Tailwind 4 (`tailwind-csstree`), no mesmo `nx lint` de cada projeto. O que o lint aponta é erro e barra o CI. Valem as regras recomendadas do plugin, com estes ajustes no `eslint.config.mjs`:
 
-| Regra | O que cobra | Ajuste |
-|---|---|---|
-| `css/no-invalid-properties` | propriedade ou valor inexistente (`colr: red`) | variável CSS definida em outro arquivo, como os tokens do Uni+ DS, não é erro |
-| `css/relative-font-units` | `font-size` em `rem` ou `em`, para o texto acompanhar o zoom e a preferência de fonte (WCAG 2.1 AA) | no papel (`*-impressao.css`) a unidade é `pt` |
-| `css/use-baseline` | só recurso de CSS com suporte amplo nos navegadores | acabamento que o navegador sem suporte ignora sem prejuízo do uso fica liberado: barra de rolagem, `accent-color`, `user-select`, `resize`, `overscroll-behavior`, `::marker` e os recursos de impressão (`@page`, `print-color-adjust`, `break-after: avoid`) |
-| `css/no-important` | `!important` | liberado só nas camadas que precisam vencer qualquer componente: utilitários de leitor de tela e de impressão (`base.css`), movimento reduzido (`preferencias-do-usuario.css`) e o documento no papel (`*-impressao.css`) |
+| Regra                       | O que cobra                                                                                         | Ajuste                                                                                                                                                                                                                                                         |
+| --------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `css/no-invalid-properties` | propriedade ou valor inexistente (`colr: red`)                                                      | variável CSS definida em outro arquivo, como os tokens do Uni+ DS, não é erro                                                                                                                                                                                  |
+| `css/relative-font-units`   | `font-size` em `rem` ou `em`, para o texto acompanhar o zoom e a preferência de fonte (WCAG 2.1 AA) | no papel (`*-impressao.css`) a unidade é `pt`                                                                                                                                                                                                                  |
+| `css/use-baseline`          | só recurso de CSS com suporte amplo nos navegadores                                                 | acabamento que o navegador sem suporte ignora sem prejuízo do uso fica liberado: barra de rolagem, `accent-color`, `user-select`, `resize`, `overscroll-behavior`, `::marker` e os recursos de impressão (`@page`, `print-color-adjust`, `break-after: avoid`) |
+| `css/no-important`          | `!important`                                                                                        | liberado só nas camadas que precisam vencer qualquer componente: utilitários de leitor de tela e de impressão (`base.css`), movimento reduzido (`preferencias-do-usuario.css`) e o documento no papel (`*-impressao.css`)                                      |
 
 ```css
 /* Recusado: a fonte não acompanha a preferência de tamanho do usuário. */
-.spinner--sm { font-size: 14px; }
+.spinner--sm {
+  font-size: 14px;
+}
 
 /* Aceito. */
-.spinner--sm { font-size: 0.875rem; }
+.spinner--sm {
+  font-size: 0.875rem;
+}
 ```
 
 Liberar recurso novo ou camada nova é mudança na configuração, com o motivo no PR; comentário de supressão no CSS é proibido, como no TypeScript. O lint não mede tamanho de arquivo CSS: ele fica com a revisão ([§ Métricas de qualidade](#métricas-de-qualidade)). O VLibras (`libs/shared-ui/src/assets/`) é de terceiro e fica fora.
@@ -420,13 +424,13 @@ O código é a primeira documentação. Quem lê um componente ou uma função p
 
 **Nomes expressivos e semânticos.** O nome diz o que a coisa é ou faz no domínio, não como é feita.
 
-| Evite | Prefira | Por quê |
-|---|---|---|
-| `processar()`, `handleClick()` | `homologarInscricoes()`, `abrirRecurso()` | o verbo e o objeto dizem a intenção |
-| `data`, `lista`, `res`, `item`, `aux` | `inscricoesHomologadas` | a variável diz o que guarda |
-| `flag`, `status: boolean` | `estaVigente`, `podeRecorrer` | booleano se lê como pergunta |
-| `tipo: number` com números mágicos | união de literais ou `enum` (`'pendente' \| 'aprovado'`) | o valor tem nome e o compilador confere |
-| `qtdInscCand` | `quantidadeDeInscricoesDoCandidato` | abreviação só se for do domínio (CPF, ENEM) |
+| Evite                                 | Prefira                                                  | Por quê                                     |
+| ------------------------------------- | -------------------------------------------------------- | ------------------------------------------- |
+| `processar()`, `handleClick()`        | `homologarInscricoes()`, `abrirRecurso()`                | o verbo e o objeto dizem a intenção         |
+| `data`, `lista`, `res`, `item`, `aux` | `inscricoesHomologadas`                                  | a variável diz o que guarda                 |
+| `flag`, `status: boolean`             | `estaVigente`, `podeRecorrer`                            | booleano se lê como pergunta                |
+| `tipo: number` com números mágicos    | união de literais ou `enum` (`'pendente' \| 'aprovado'`) | o valor tem nome e o compilador confere     |
+| `qtdInscCand`                         | `quantidadeDeInscricoesDoCandidato`                      | abreviação só se for do domínio (CPF, ENEM) |
 
 **TypeScript e Angular idiomáticos.** Use a linguagem e o framework em vez de código feito à mão:
 
@@ -530,15 +534,15 @@ interface OpcoesDoEnvio {
 
 As métricas abaixo valem para todo código que o PR cria ou altera, de produção e de teste (specs, mocks, utilitários de teste e E2E). As regras numéricas (1 a 4) são medidas pelo ESLint, e **o número que vale é o do aviso do lint**: não há contagem paralela. O texto abaixo explica como cada regra conta, para você prever o aviso antes de rodar o lint. A revisão cobra os limites no código novo ou alterado e julga o que o lint não mede: o tamanho de CSS, o tamanho de cada caso de teste e as regras 5 e 6.
 
-| # | Regra | Limite | Regra do ESLint | Produção | Specs e E2E |
-|---|---|---|---|---|---|
-| 1 | Linhas físicas por função | 15 | `max-lines-per-function` | sim | não nos `*.spec.ts` e `*.setup.ts`; sim nos demais arquivos de teste e de E2E |
-| 2 | Linhas físicas por arquivo `.ts` e `.html` | 400 | `max-lines` | sim | sim |
-| 3 | Parâmetros por função, método ou construtor | 4 | `max-params` | sim | sim |
-| 4 | Complexidade ciclomática por função | 10 | `complexity` | sim | sim |
-| 4 | Complexidade cognitiva por função | 15 | `sonarjs/cognitive-complexity` | sim | sim |
-| 5 | Supressão de aviso | proibida | revisão | sim | sim |
-| 6 | Código escrito só para caber na métrica | reprovado | revisão | sim | sim |
+| #   | Regra                                       | Limite    | Regra do ESLint                | Produção | Specs e E2E                                                                   |
+| --- | ------------------------------------------- | --------- | ------------------------------ | -------- | ----------------------------------------------------------------------------- |
+| 1   | Linhas físicas por função                   | 15        | `max-lines-per-function`       | sim      | não nos `*.spec.ts` e `*.setup.ts`; sim nos demais arquivos de teste e de E2E |
+| 2   | Linhas físicas por arquivo `.ts` e `.html`  | 400       | `max-lines`                    | sim      | sim                                                                           |
+| 3   | Parâmetros por função, método ou construtor | 4         | `max-params`                   | sim      | sim                                                                           |
+| 4   | Complexidade ciclomática por função         | 10        | `complexity`                   | sim      | sim                                                                           |
+| 4   | Complexidade cognitiva por função           | 15        | `sonarjs/cognitive-complexity` | sim      | sim                                                                           |
+| 5   | Supressão de aviso                          | proibida  | revisão                        | sim      | sim                                                                           |
+| 6   | Código escrito só para caber na métrica     | reprovado | revisão                        | sim      | sim                                                                           |
 
 Os limites ficam no bloco de métricas do `eslint.config.mjs` da raiz.
 
@@ -671,16 +675,16 @@ A dívida é paga por projeto (cada app e cada lib), cada um com sua issue. Quan
 
 **Obrigatório em toda contribuição.** O sistema é de uma universidade federal — acessibilidade é exigência legal (Lei 13.146/2015).
 
-| Regra | Detalhe |
-|---|---|
-| Labels em todos os inputs | `<label for="...">` ou `aria-label` |
-| Navegação por teclado | Todo elemento interativo acessível via Tab |
-| Contraste de cores | Mínimo 4.5:1 para texto normal, 3:1 para texto grande |
-| Mensagens de erro | Associadas ao campo via `aria-describedby` |
-| Imagens | Atributo `alt` descritivo ou `role="presentation"` |
-| Modais | Focus trap ativo, fechamento via Esc |
-| Loading states | `aria-busy="true"` e `aria-live="polite"` para anúncios |
-| Nome acessível de botão/link | Precisa **conter** o texto visível (SC 2.5.3). `aria-label` que reescreve o rótulo quebra comando de voz — "Próximo" com nome "Próxima página" não ativa |
+| Regra                                 | Detalhe                                                                                                                                                     |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Labels em todos os inputs             | `<label for="...">` ou `aria-label`                                                                                                                         |
+| Navegação por teclado                 | Todo elemento interativo acessível via Tab                                                                                                                  |
+| Contraste de cores                    | Mínimo 4.5:1 para texto normal, 3:1 para texto grande                                                                                                       |
+| Mensagens de erro                     | Associadas ao campo via `aria-describedby`                                                                                                                  |
+| Imagens                               | Atributo `alt` descritivo ou `role="presentation"`                                                                                                          |
+| Modais                                | Focus trap ativo, fechamento via Esc                                                                                                                        |
+| Loading states                        | `aria-busy="true"` e `aria-live="polite"` para anúncios                                                                                                     |
+| Nome acessível de botão/link          | Precisa **conter** o texto visível (SC 2.5.3). `aria-label` que reescreve o rótulo quebra comando de voz — "Próximo" com nome "Próxima página" não ativa    |
 | Texto decorativo dentro de botão/link | Fora do nó de texto: expor por `data-*` e pintar em `::before`. `aria-hidden` esconde do leitor, não da vista, e o critério compara com o que se lê na tela |
 
 ### Verificação
@@ -712,17 +716,17 @@ Em qualquer tela que exiba nome de candidato, verificar se existe nome social ca
 
 ### Obrigatório
 
-| Tipo | Onde | Framework | Quando |
-|---|---|---|---|
+| Tipo     | Onde                        | Framework                                | Quando                              |
+| -------- | --------------------------- | ---------------------------------------- | ----------------------------------- |
 | Unitário | Components, Services, Pipes | Vitest + `TestBed` do Angular (ADR-0004) | Toda lógica de componente e service |
-| E2E | Fluxos completos | Playwright | Todo fluxo crítico do usuário |
+| E2E      | Fluxos completos            | Playwright                               | Todo fluxo crítico do usuário       |
 
 ### Recomendado
 
-| Tipo | Onde | Framework | Quando |
-|---|---|---|---|
-| Acessibilidade | Páginas completas | axe-core + Playwright | Toda nova página |
-| Visual regression | Componentes UI | Playwright screenshots | Mudanças em shared-ui |
+| Tipo              | Onde              | Framework              | Quando                |
+| ----------------- | ----------------- | ---------------------- | --------------------- |
+| Acessibilidade    | Páginas completas | axe-core + Playwright  | Toda nova página      |
+| Visual regression | Componentes UI    | Playwright screenshots | Mudanças em shared-ui |
 
 ### Convenções de teste
 

@@ -5,27 +5,45 @@ Lib de dados do `uniplus-web`: DTOs, validators, utilitários de domínio (CPF, 
 ## Estrutura
 
 ```text
+# Árvore resumida: lista apenas schema.ts e tokens.ts; cada módulo também tem serviços e testes.
 libs/shared-data/
-├── openapi/                       # baselines OpenAPI 3.1 (sincronizados de uniplus-api)
+├── openapi/                       # baselines OpenAPI 3.1
 │   ├── selecao.openapi.json
 │   ├── ingresso.openapi.json
-│   └── organizacao.openapi.json
+│   ├── organizacao.openapi.json
+│   ├── configuracao.openapi.json
+│   ├── geo.openapi.json
+│   ├── publicacoes.openapi.json
+│   ├── portal.openapi.json
+│   └── autorizacao.openapi.json
 ├── scripts/
 │   └── generate-api-clients.sh   # codegen openapi-typescript (Node-only, ADR-0013)
 └── src/lib/
     ├── api/                       # clientes do contrato V1
     │   ├── selecao/
     │   │   ├── schema.ts          # GERADO — paths + components do módulo Seleção
-    │   │   ├── tokens.ts          # SELECAO_BASE_PATH InjectionToken
-    │   │   ├── editais.api.ts     # service Angular thin
-    │   │   └── *.spec.ts
+    │   │   └── tokens.ts          # SELECAO_BASE_PATH InjectionToken
     │   ├── ingresso/
     │   │   ├── schema.ts
     │   │   └── tokens.ts
-    │   └── organizacao/
+    │   ├── organizacao/
+    │   │   ├── schema.ts
+    │   │   └── tokens.ts
+    │   ├── configuracao/
+    │   │   ├── schema.ts
+    │   │   └── tokens.ts
+    │   ├── geo/
+    │   │   ├── schema.ts
+    │   │   └── tokens.ts
+    │   ├── publicacoes/
+    │   │   ├── schema.ts
+    │   │   └── tokens.ts
+    │   ├── portal/
+    │   │   ├── schema.ts
+    │   │   └── tokens.ts
+    │   └── autorizacao/
     │       ├── schema.ts
-    │       ├── tokens.ts
-    │       └── unidades.api.ts
+    │       └── tokens.ts
     ├── models/                    # DTOs canônicos do projeto (não gerados)
     ├── utils/                     # cpf.util, date.util
     └── validators/                # cpfValidator (Reactive Forms)
@@ -42,10 +60,9 @@ export class FooApi {
   private readonly basePath = inject(SELECAO_BASE_PATH); // ou INGRESSO_BASE_PATH/ORGANIZACAO_BASE_PATH
 
   listar(): Observable<ApiResult<readonly FooDto[]>> {
-    return this.http.get<ApiResult<readonly FooDto[]>>(
-      `${this.basePath}/api/foos`,
-      { context: withVendorMime('foo', 1) },
-    );
+    return this.http.get<ApiResult<readonly FooDto[]>>(`${this.basePath}/api/foos`, {
+      context: withVendorMime('foo', 1),
+    });
   }
 }
 ```
@@ -69,17 +86,22 @@ Quando a `uniplus-api` publicar um spec novo:
 cp ../uniplus-api/contracts/openapi.selecao.json   libs/shared-data/openapi/selecao.openapi.json
 cp ../uniplus-api/contracts/openapi.ingresso.json  libs/shared-data/openapi/ingresso.openapi.json
 cp ../uniplus-api/contracts/openapi.organizacao.json  libs/shared-data/openapi/organizacao.openapi.json
+cp ../uniplus-api/contracts/openapi.configuracao.json  libs/shared-data/openapi/configuracao.openapi.json
+cp ../unifesspa-geo-api/contracts/openapi.geo.json  libs/shared-data/openapi/geo.openapi.json
+cp ../uniplus-api/contracts/openapi.publicacoes.json  libs/shared-data/openapi/publicacoes.openapi.json
+cp ../uniplus-api/contracts/openapi.portal.json  libs/shared-data/openapi/portal.openapi.json
+cp ../uniplus-api/contracts/openapi.autorizacao.json  libs/shared-data/openapi/autorizacao.openapi.json
 
 # 2. Regerar schema.ts dos módulos
 npx nx run shared-data:codegen-api
 
 # 3. Commitar baselines + schema.ts juntos
-git add libs/shared-data/openapi/ libs/shared-data/src/lib/api/{selecao,ingresso,organizacao}/schema.ts
+git add libs/shared-data/openapi/ libs/shared-data/src/lib/api/{selecao,ingresso,organizacao,configuracao,geo,publicacoes,portal,autorizacao}/schema.ts
 ```
 
 ## Drift check em CI
 
-O workflow `.github/workflows/ci.yml` roda `npx nx run shared-data:codegen-api-check` em cada push/PR: regenera os schemas e falha se houver diff contra o committed. Garante que toda mudança no contrato seja refletida em `schema.ts` no mesmo PR.
+O workflow `.github/workflows/ci.yml` roda `npx nx run shared-data:codegen-api-check` em pull requests e em push na `main`: compara os tipos gerados apenas com a cópia do contrato no web.
 
 ## Por que `openapi-typescript` em vez de `openapi-generator-cli`
 

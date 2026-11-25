@@ -1,8 +1,8 @@
 ---
-status: "accepted"
-date: "2026-05-05"
+status: accepted
+date: 2026-05-05
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0013: Gerador OpenAPI Node-only (`openapi-typescript`) em vez de `openapi-generator-cli`
@@ -147,6 +147,17 @@ A migração é trivial porque o gerador atual nunca produziu artefato em `main`
 1. **Lint do PR de implementação** rejeita qualquer arquivo gerado contendo `@NgModule` ou `forRoot(`.
 2. **Nx target `codegen-api`** roda em CI e como pre-commit hook; diff em `schema.ts` falha o build.
 3. **Drift contra backend.** Workflow CI compara `libs/shared-data/openapi/*.json` com `uniplus-api/contracts/openapi.*.json` (via download artifact ou submodule reference) e falha se houver divergência sem PR de sincronização.
+
+> **Emenda (2026-11-25).** A comparação prevista no item 3 de Confirmação, entre
+> `libs/shared-data/openapi/*.json` e os contratos da API, não existe no CI. O
+> `codegen-api-check` confere se os tipos gerados em `schema.ts` correspondem à cópia do
+> contrato no próprio web. Essa cópia é sincronizada por comando a cada mudança da API
+> consumida pelo web, como descrito no README de `shared-data`.
+> A [ADR-0033](0033-conferencia-dos-testes-com-o-contrato-da-api.md) propõe conferir cada pedido
+> e resposta simulada dos testes contra essa cópia nos projetos migrados; isso ainda não foi implementado.
+> Se ela estiver desatualizada, a conferência valerá contra um contrato antigo.
+> Se o CI deve comparar a cópia com o contrato publicado pela API é decisão pendente do
+> líder técnico, registrada em uniplus-developers#637; esta emenda não toma essa decisão.
 
 ## Mais informações
 
