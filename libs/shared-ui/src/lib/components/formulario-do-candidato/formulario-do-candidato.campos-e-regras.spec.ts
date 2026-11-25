@@ -5,7 +5,7 @@ import { CenarioDoFormularioDoCandidato } from './formulario-do-candidato.testin
 import {
   CODIGO_DA_SECAO_DE_DADOS,
   FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-  apresentacaoDaEtapa,
+  apresentacaoDaPagina,
   campoApresentado,
   itemDasRegras,
 } from './formularios-de-exemplo.testing';
@@ -47,7 +47,7 @@ describe('FormularioDoCandidatoComponent', () => {
         grupos: [],
       },
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
             itens: [
@@ -78,7 +78,7 @@ describe('FormularioDoCandidatoComponent', () => {
         grupos: [],
       },
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
             itens: [
@@ -109,7 +109,7 @@ describe('FormularioDoCandidatoComponent', () => {
         grupos: [],
       },
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
             itens: [
@@ -145,7 +145,7 @@ describe('FormularioDoCandidatoComponent', () => {
         grupos: [],
       },
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
             itens: [
@@ -177,27 +177,27 @@ describe('FormularioDoCandidatoComponent', () => {
   it('a resposta que esconde uma seção anterior não tira o candidato da seção em que está', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      etapas: [
+      paginas: [
         {
           codigo: 'A',
           codigoNasRegras: 'Inscricao:A',
           ordem: 0,
           tipo: 'SECAO',
-          apresentacao: apresentacaoDaEtapa('Seção A'),
+          apresentacao: apresentacaoDaPagina('Seção A'),
         },
         {
           codigo: 'B',
           codigoNasRegras: 'Inscricao:B',
           ordem: 1,
           tipo: 'SECAO',
-          apresentacao: apresentacaoDaEtapa('Seção B'),
+          apresentacao: apresentacaoDaPagina('Seção B'),
         },
         {
           codigo: 'C',
           codigoNasRegras: 'Inscricao:C',
           ordem: 2,
           tipo: 'SECAO',
-          apresentacao: apresentacaoDaEtapa('Seção C'),
+          apresentacao: apresentacaoDaPagina('Seção C'),
         },
       ],
       coleta: {
@@ -205,7 +205,7 @@ describe('FormularioDoCandidatoComponent', () => {
         grupos: [],
       },
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: 'Inscricao:A',
             exibicao: [[{ fato: 'QUER_A', operador: 'IGUAL', valor: true }]],
@@ -226,7 +226,7 @@ describe('FormularioDoCandidatoComponent', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
       coleta: { itens: [campoApresentado('NOTA', 'Nota', 'NUMERO')], grupos: [] },
-      regras: { etapas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('NOTA')] }] },
+      regras: { paginas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('NOTA')] }] },
     });
 
     cenario.digitar(tela.querySelector('input') as HTMLInputElement, '1,');
@@ -239,7 +239,7 @@ describe('FormularioDoCandidatoComponent', () => {
     const formulario = {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
       coleta: { itens: [campoApresentado('NOTA', 'Nota', 'NUMERO')], grupos: [] },
-      regras: { etapas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('NOTA')] }] },
+      regras: { paginas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('NOTA')] }] },
     };
     const tela = cenario.montar(formulario);
     cenario.digitar(tela.querySelector('input') as HTMLInputElement, '7,a');
@@ -252,12 +252,12 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(tela.textContent).not.toContain('Escreva um número');
   });
 
-  it('a etapa das regras sem seção, como a dos campos do rascunho ainda sem seção, vira o passo "Outros dados"', () => {
+  it('a página das regras sem seção, como a dos campos do rascunho ainda sem seção, vira o passo "Outros dados"', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
       coleta: { itens: [campoApresentado('NOME_SOCIAL', 'Nome social', 'TEXTO')], grupos: [] },
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: 'Inscricao',
             itens: [itemDasRegras('NOME_SOCIAL', { obrigatoriedade: { tipo: 'NUNCA' } })],
@@ -275,7 +275,7 @@ describe('FormularioDoCandidatoComponent', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
             itens: [itemDasRegras('NOME', { obrigatoriedade: { tipo: 'QUANDO' } })],
@@ -284,7 +284,7 @@ describe('FormularioDoCandidatoComponent', () => {
       },
     });
 
-    expect(tela.textContent).toContain('etapas[0].itens[0].regras.obrigatoriedade');
+    expect(tela.textContent).toContain('paginas[0].itens[0].regras.obrigatoriedade');
   });
 
   it('a orientação da opção aparece abaixo dela e descreve o controle; a opção sem orientação não tem descrição', () => {
@@ -308,7 +308,7 @@ describe('FormularioDoCandidatoComponent', () => {
         grupos: [],
       },
       regras: {
-        etapas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('COR_RACA')] }],
+        paginas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('COR_RACA')] }],
       },
     });
 

@@ -146,7 +146,7 @@ describe('EditorDeFormularioComponent: faixa de datas', () => {
           codigo: 'FILHOS',
           ordem: 1,
           rotulo: 'Filhos',
-          etapaCodigo: 'S1',
+          paginaCodigo: 'S1',
           ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
           regras: { exibicao: null, obrigatoriedade: { tipo: 'NUNCA', predicado: null } },
           subitens: [item('NASCIMENTO_FILHO', 0, { apresentacao: { tipoDeCampo: 'DATA' } })],

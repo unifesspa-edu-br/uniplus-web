@@ -1,7 +1,7 @@
 <ui-falha-de-leitura titulo="Consequências de indeferimento" [leitura]="leituraDasConsequencias" />
 <p class="step-subtitle">
   O que o candidato lê e preenche em cada finalidade do processo — a inscrição e, quando houver, a
-  solicitação de isenção da taxa e a habilitação: as etapas, os campos e os termos que aceita. O
+  solicitação de isenção da taxa e a habilitação: as páginas, os campos e os termos que aceita. O
   portal do candidato renderiza cada um deles.
 </p>
 
@@ -212,31 +212,31 @@
             [valor]="aba.modeloOrigemCodigo"
           />
         </div>
-        @for (etapa of aba.leitura; track etapa.codigo) {
-          <h3 class="form-section__title">{{ etapa.titulo }}</h3>
-          @if (etapa.bloco === blocoDocumental) {
+        @for (pagina of aba.leitura; track pagina.codigo) {
+          <h3 class="form-section__title">{{ pagina.titulo }}</h3>
+          @if (pagina.bloco === blocoDocumental) {
             <sel-documentos-do-formulario
               [documentos]="aba.documentos.documentos"
               [semFormulario]="aba.documentos.semFormulario"
               [semFase]="aba.semFaseParaDocumentos"
             />
           }
-          @if (etapa.bloco !== blocoDocumental || etapa.entradas.length > 0) {
-          <ul class="doc-list">
-            @for (entrada of etapa.entradas; track entrada.chave) {
-              <li class="doc-item">
-                <div class="doc-item__head doc-item__head--consulta">
-                  <span class="doc-item__name">{{ entrada.rotulo }}</span>
-                  &ngsp;
-                  <span class="field__hint"
-                    ><span aria-hidden="true">·</span> {{ entrada.obrigatoriedade }}</span
-                  >
-                </div>
-              </li>
-            } @empty {
-              <li class="field__hint">Nenhum campo nesta etapa.</li>
-            }
-          </ul>
+          @if (pagina.bloco !== blocoDocumental || pagina.entradas.length > 0) {
+            <ul class="doc-list">
+              @for (entrada of pagina.entradas; track entrada.chave) {
+                <li class="doc-item">
+                  <div class="doc-item__head doc-item__head--consulta">
+                    <span class="doc-item__name">{{ entrada.rotulo }}</span>
+                    &ngsp;
+                    <span class="field__hint"
+                      ><span aria-hidden="true">·</span> {{ entrada.obrigatoriedade }}</span
+                    >
+                  </div>
+                </li>
+              } @empty {
+                <li class="field__hint">Nenhum campo nesta página.</li>
+              }
+            </ul>
           }
         }
       } @else {
@@ -305,8 +305,8 @@
   -->
   <p class="field__hint" role="status">
     O formulário pergunta {{ camposSemValoresOfertados().join(' e ') }} ao candidato, e a oferta de
-    atendimento especializado não declara nenhum valor para escolher. Declare ao menos um em
-    "Atend. especial", ou retire o campo daqui.
+    atendimento especializado não declara nenhum valor para escolher. Declare ao menos um em "Atend.
+    especial", ou retire o campo daqui.
   </p>
 }
 

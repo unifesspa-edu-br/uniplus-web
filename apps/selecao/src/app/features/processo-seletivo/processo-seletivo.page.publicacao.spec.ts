@@ -80,7 +80,7 @@ describe('ProcessoSeletivoPage — publicação: pendências do rascunho', () =>
   describe('número inválido no formulário', () => {
     const conteudoComLimiteInvalido = (): ConteudoDoFormulario => ({
       titulo: null,
-      etapas: [secao('S1', 0)],
+      paginas: [secao('S1', 0)],
       itens: [
         item('NOTA', 0, 'S1', {
           regras: {

@@ -19,7 +19,7 @@ const MODELO = {
   ativo: true,
   conteudo: {
     titulo: 'Inscrição',
-    etapas: [],
+    paginas: [],
     itens: [],
     termos: [],
     pressupostos: [],

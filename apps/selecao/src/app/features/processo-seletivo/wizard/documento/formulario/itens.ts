@@ -56,7 +56,7 @@ function apresentacaoDoItem(item: ItemDoFormulario) {
   return {
     codigoDoDado: item.fatoCodigo,
     ordem: item.ordem,
-    paginaCodigo: item.etapaCodigo,
+    paginaCodigo: item.paginaCodigo,
     rotulo: item.apresentacao.rotulo,
     ajuda: item.apresentacao.ajuda ?? undefined,
     pedirConfirmacao: item.apresentacao.pedirConfirmacao,

@@ -26,7 +26,7 @@ import {
 const item = (fatoCodigo: string): ItemDoFormulario => ({
   fatoCodigo,
   ordem: 0,
-  etapaCodigo: null,
+  paginaCodigo: null,
   apresentacao: apresentacaoDoCampo(fatoCodigo, 'SIM_OU_NAO'),
   regras: REGRAS_INICIAIS,
 });
@@ -46,12 +46,12 @@ const doServidor = (
   faseId,
   titulo: null,
   modeloOrigem: modeloOrigemCodigo === null ? null : { id: 'm', codigo: modeloOrigemCodigo },
-  etapas: [],
+  paginas: [],
   coleta: {
     itens: fatos.map((fatoCodigo, ordem) => ({
       fatoCodigo,
       ordem,
-      etapaCodigo: null,
+      paginaCodigo: null,
       apresentacao: {
         rotulo: fatoCodigo,
         tipoDeCampo: TipoDeCampoCodigo.SIM_OU_NAO,

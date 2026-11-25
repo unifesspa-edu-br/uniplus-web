@@ -9,7 +9,7 @@ import {
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   campoDoServidor,
-  etapaDoServidor,
+  paginaDoServidor,
   formularioDoServidor,
 } from '../../shared/formulario-do-servidor.testing';
 import { CatalogoDeFatos } from './catalogos/catalogo-de-fatos.service';
@@ -76,9 +76,9 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
     ];
     const FORMULARIO = formularioDoServidor({
       faseId: FASE.id,
-      etapas: [
-        etapaDoServidor('DADOS_BASICOS', 0, null, 'Dados básicos'),
-        etapaDoServidor(
+      paginas: [
+        paginaDoServidor('DADOS_BASICOS', 0, null, 'Dados básicos'),
+        paginaDoServidor(
           'REVISAO_E_ACEITE',
           1,
           BlocoSistemaCodigo.REVISAO_E_ACEITE,

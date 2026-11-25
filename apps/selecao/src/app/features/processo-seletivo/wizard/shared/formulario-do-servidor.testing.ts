@@ -1,6 +1,6 @@
 import {
   BlocoSistemaCodigo,
-  TipoEtapaFormularioCodigo,
+  TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
   FinalidadeFormularioCodigo,
   type FatoColetadoDto,
@@ -8,19 +8,19 @@ import {
   TipoDeCampoCodigo,
 } from '@uniplus/shared-data/selecao';
 
-type EtapaDoServidor = FormularioDto['etapas'][number];
+type PaginaDoServidor = FormularioDto['paginas'][number];
 
-/** A seção ou o bloco como o servidor devolve a etapa de um formulário. */
-export function etapaDoServidor(
+/** A seção ou o bloco como o servidor devolve a página de um formulário. */
+export function paginaDoServidor(
   codigo: string,
   ordem: number,
   bloco: BlocoSistemaCodigo | null = null,
   titulo: string = codigo,
-): EtapaDoServidor {
+): PaginaDoServidor {
   return {
     codigo,
     ordem,
-    tipo: bloco === null ? TipoEtapaFormularioCodigo.SECAO : TipoEtapaFormularioCodigo.BLOCO,
+    tipo: bloco === null ? TipoPaginaFormularioCodigo.SECAO : TipoPaginaFormularioCodigo.BLOCO,
     bloco,
     apresentacao: { titulo, descricao: null, aviso: null },
     exibicao: null,
@@ -49,13 +49,13 @@ function apresentacaoDoCampo(
 export function campoDoServidor(
   fatoCodigo: string,
   ordem: number,
-  etapaCodigo: string,
+  paginaCodigo: string,
   tipoDeCampo = TipoDeCampoCodigo.TEXTO,
 ): FatoColetadoDto {
   return {
     fatoCodigo,
     ordem,
-    etapaCodigo,
+    paginaCodigo,
     apresentacao: apresentacaoDoCampo(fatoCodigo, tipoDeCampo),
     ...SEM_FORMATO_NEM_OPCOES,
   };
@@ -68,7 +68,7 @@ export function formularioDoServidor(extra: Partial<FormularioDto> = {}): Formul
     faseId: null,
     titulo: null,
     modeloOrigem: null,
-    etapas: [],
+    paginas: [],
     coleta: { itens: [], grupos: [] },
     termos: [],
     ...extra,

@@ -38,7 +38,7 @@ export const MAXIMO_DE_CAMPOS_DO_GRUPO = 30;
  */
 export interface NovoGrupo {
   readonly rotulo: string;
-  readonly etapaCodigo: string;
+  readonly paginaCodigo: string;
   readonly primeiroCampo: FatoDoFormulario;
 }
 
@@ -82,9 +82,9 @@ function grupoNovo(
 ): GrupoDoFormulario {
   return {
     codigo: codigoLivre(codigoDoNome(novo.rotulo, 'GRUPO'), usados),
-    ordem: ordemNoFimDaSecao(conteudo, novo.etapaCodigo),
+    ordem: ordemNoFimDaSecao(conteudo, novo.paginaCodigo),
     rotulo: novo.rotulo.trim().slice(0, LIMITES_DO_FORMULARIO.rotulo),
-    etapaCodigo: novo.etapaCodigo,
+    paginaCodigo: novo.paginaCodigo,
     ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
     regras: REGRAS_INICIAIS,
     subitens: [campoNovo(novo.primeiroCampo, 0, null)],

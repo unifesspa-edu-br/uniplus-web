@@ -6,7 +6,7 @@ import { removerPressuposto } from './pressupostos';
 describe('removerPressuposto', () => {
   it('recusa retirar o pressuposto que uma regra cita', () => {
     const atual = conteudo({
-      etapas: [secao('S1', 0)],
+      paginas: [secao('S1', 0)],
       pressupostos: ['P'],
       itens: [item('A', 0, 'S1', { regras: { exibicao: exibidoQuando('P') } })],
     });

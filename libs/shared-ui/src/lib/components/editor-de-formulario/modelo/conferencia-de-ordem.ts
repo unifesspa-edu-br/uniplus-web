@@ -1,9 +1,9 @@
 import { fatosCitadosPeloCampo, fatosDoPredicado, predicadosDasRegras } from './citacoes';
 import { nomeDoFato } from './codigos';
-import { etapasEmOrdem, primeiraOrdemDaEtapa } from './ordem-das-entradas';
+import { paginasEmOrdem, primeiraOrdemDaPagina } from './ordem-das-entradas';
 import {
   ConteudoDoFormulario,
-  EtapaDoFormulario,
+  PaginaDoFormulario,
   GrupoDoFormulario,
   ItemDoFormulario,
   ResultadoDaEdicao,
@@ -42,12 +42,12 @@ function verificacaoDoGrupo(grupo: GrupoDoFormulario): VerificacaoDeOrdem {
 
 function verificacaoDaSecao(
   conteudo: ConteudoDoFormulario,
-  etapa: EtapaDoFormulario,
+  pagina: PaginaDoFormulario,
 ): VerificacaoDeOrdem {
   return {
-    ordem: primeiraOrdemDaEtapa(conteudo, etapa.ordem),
-    citados: fatosDoPredicado(etapa.exibicao ?? null),
-    descricao: `A seção “${etapa.apresentacao.titulo}”`,
+    ordem: primeiraOrdemDaPagina(conteudo, pagina.ordem),
+    citados: fatosDoPredicado(pagina.exibicao ?? null),
+    descricao: `A seção “${pagina.apresentacao.titulo}”`,
   };
 }
 
@@ -55,7 +55,7 @@ function verificacoesDeOrdem(conteudo: ConteudoDoFormulario): readonly Verificac
   return [
     ...(conteudo.itens ?? []).map(verificacaoDoItem),
     ...(conteudo.grupos ?? []).map(verificacaoDoGrupo),
-    ...etapasEmOrdem(conteudo).map((etapa) => verificacaoDaSecao(conteudo, etapa)),
+    ...paginasEmOrdem(conteudo).map((pagina) => verificacaoDaSecao(conteudo, pagina)),
   ];
 }
 

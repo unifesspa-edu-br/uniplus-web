@@ -1,6 +1,6 @@
 import type {
   DefinicaoAgregado,
-  DefinicaoEtapa,
+  DefinicaoPagina,
   DefinicaoFormulario,
   DefinicaoTermo,
   LeituraDasRegras,
@@ -10,7 +10,7 @@ import { lerGrupo } from './leitura-do-grupo';
 import { lerItem } from './leitura-do-item';
 import { lerExibicaoEObrigatoriedade, lerPredicado } from './leitura-do-predicado';
 import { codigo, ehObjeto, garantirUnicos, lista, Recusa } from './leitura-dos-valores';
-import type { EtapaDasRegras, RegrasDoFormulario, TermoDasRegras } from './regras-do-formulario';
+import type { PaginaDasRegras, RegrasDoFormulario, TermoDasRegras } from './regras-do-formulario';
 
 type ElementosLidos = Omit<DefinicaoFormulario, 'ofertas'>;
 
@@ -32,36 +32,36 @@ export function lerRegras(regras: RegrasDoFormulario | null | undefined): Leitur
 
 function lerFormulario(regras: RegrasDoFormulario): DefinicaoFormulario {
   const lidos: ElementosLidos = {
-    etapas: lista(regras.etapas, 'etapas', lerEtapa),
+    paginas: lista(regras.paginas, 'paginas', lerPagina),
     termos: lista(regras.termos, 'termos', lerTermo),
     derivacoes: lista(regras.derivacoes, 'derivacoes', lerDerivacao),
     agregados: lista(regras.agregados, 'agregados', lerAgregado),
   };
   garantirCodigosUnicos(lidos);
-  garantirGruposDosAgregados(lidos.etapas, lidos.agregados);
+  garantirGruposDosAgregados(lidos.paginas, lidos.agregados);
   return { ...lidos, ofertas: ofertasDe(regras) };
 }
 
-function garantirCodigosUnicos({ etapas, termos, ...produtores }: ElementosLidos): void {
+function garantirCodigosUnicos({ paginas, termos, ...produtores }: ElementosLidos): void {
   garantirUnicos(
-    etapas.map((e) => e.codigo),
-    'etapa',
+    paginas.map((e) => e.codigo),
+    'pagina',
   );
   garantirUnicos(
     termos.map((t) => t.codigo),
     'termo',
   );
-  garantirUnicos(codigosProduzidos(etapas, produtores), 'fato produzido ou grupo do formulário');
+  garantirUnicos(codigosProduzidos(paginas, produtores), 'fato produzido ou grupo do formulário');
 }
 
 /** Os códigos que o formulário produz — fatos dos campos, dos subitens, derivados e agregados — e os dos grupos. */
 function codigosProduzidos(
-  etapas: readonly DefinicaoEtapa[],
+  paginas: readonly DefinicaoPagina[],
   { derivacoes, agregados }: Pick<ElementosLidos, 'derivacoes' | 'agregados'>,
 ): string[] {
-  const grupos = etapas.flatMap((e) => e.grupos);
+  const grupos = paginas.flatMap((e) => e.grupos);
   return [
-    ...etapas.flatMap((e) => e.itens.map((i) => i.fatoCodigo)),
+    ...paginas.flatMap((e) => e.itens.map((i) => i.fatoCodigo)),
     ...grupos.flatMap((g) => g.subitens.map((s) => s.fatoCodigo)),
     ...derivacoes.map((d) => d.fatoCodigo),
     ...agregados.map((a) => a.codigo),
@@ -70,10 +70,10 @@ function codigosProduzidos(
 }
 
 function garantirGruposDosAgregados(
-  etapas: readonly DefinicaoEtapa[],
+  paginas: readonly DefinicaoPagina[],
   agregados: readonly DefinicaoAgregado[],
 ): void {
-  const codigosDosGrupos = new Set(etapas.flatMap((e) => e.grupos).map((g) => g.codigo));
+  const codigosDosGrupos = new Set(paginas.flatMap((e) => e.grupos).map((g) => g.codigo));
   agregados.forEach((agregado, i) => {
     if (!codigosDosGrupos.has(agregado.grupoCodigo)) {
       throw new Recusa(
@@ -84,12 +84,12 @@ function garantirGruposDosAgregados(
   });
 }
 
-function lerEtapa(etapa: EtapaDasRegras, caminho: string): DefinicaoEtapa {
+function lerPagina(pagina: PaginaDasRegras, caminho: string): DefinicaoPagina {
   return {
-    codigo: codigo(etapa.codigo, `${caminho}.codigo`),
-    exibicao: lerPredicado(etapa.exibicao, `${caminho}.exibicao`),
-    itens: lista(etapa.itens, `${caminho}.itens`, lerItem),
-    grupos: lista(etapa.grupos, `${caminho}.grupos`, lerGrupo),
+    codigo: codigo(pagina.codigo, `${caminho}.codigo`),
+    exibicao: lerPredicado(pagina.exibicao, `${caminho}.exibicao`),
+    itens: lista(pagina.itens, `${caminho}.itens`, lerItem),
+    grupos: lista(pagina.grupos, `${caminho}.grupos`, lerGrupo),
   };
 }
 
@@ -104,7 +104,7 @@ function lerTermo(termo: TermoDasRegras, caminho: string): DefinicaoTermo {
 /** A oferta de valores de cada campo — itens e subitens. */
 function ofertasDe(regras: RegrasDoFormulario): ReadonlyMap<string, ReadonlySet<string>> {
   const ofertas = new Map<string, ReadonlySet<string>>();
-  for (const item of (regras.etapas ?? []).flatMap((e) => [
+  for (const item of (regras.paginas ?? []).flatMap((e) => [
     ...(e.itens ?? []),
     ...(e.grupos ?? []).flatMap((g) => g.subitens ?? []),
   ])) {

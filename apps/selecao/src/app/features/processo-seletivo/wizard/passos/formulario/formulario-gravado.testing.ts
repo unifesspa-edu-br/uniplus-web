@@ -12,7 +12,7 @@ import {
 import {
   type FormularioDto,
   BlocoSistemaCodigo,
-  TipoEtapaFormularioCodigo,
+  TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
   FinalidadeFormularioCodigo,
   OperadorCodigo,
@@ -32,7 +32,7 @@ export const ROTA_MODELOS = `${BASE}/api/configuracao/admin/modelos-formulario`;
 export const PROBLEM_JSON = { 'content-type': 'application/problem+json' };
 
 type ItemDoFormulario = FormularioDto['coleta']['itens'][number];
-type EtapaDoFormulario = FormularioDto['etapas'][number];
+type PaginaDoFormulario = FormularioDto['paginas'][number];
 
 export const CONGELADOS_DA_INSCRICAO: AtributosCongeladosDaFase = {
   origemData: 'NO_EDITAL',
@@ -81,30 +81,30 @@ const REGRAS_SEMPRE_OBRIGATORIO: ItemDoFormulario['regras'] = {
 export const campo = (
   fatoCodigo: string,
   ordem: number,
-  etapaCodigo: string,
+  paginaCodigo: string,
 ): ItemDoFormulario => ({
   fatoCodigo,
   ordem,
-  etapaCodigo,
+  paginaCodigo,
   apresentacao: { ...APRESENTACAO_BOOLEANA, rotulo: fatoCodigo },
   regras: REGRAS_SEMPRE_OBRIGATORIO,
   opcoes: null,
   formato: null,
 });
 
-const tituloDaEtapa = (codigo: string): string =>
+const tituloDaPagina = (codigo: string): string =>
   codigo === 'S1' ? 'Condições especiais' : codigo;
 
-export const etapa = (
+export const pagina = (
   codigo: string,
   ordem: number,
   bloco: BlocoSistemaCodigo | null = null,
-): EtapaDoFormulario => ({
+): PaginaDoFormulario => ({
   codigo,
   ordem,
-  tipo: bloco === null ? TipoEtapaFormularioCodigo.SECAO : TipoEtapaFormularioCodigo.BLOCO,
+  tipo: bloco === null ? TipoPaginaFormularioCodigo.SECAO : TipoPaginaFormularioCodigo.BLOCO,
   bloco,
-  apresentacao: { titulo: tituloDaEtapa(codigo), descricao: null, aviso: null },
+  apresentacao: { titulo: tituloDaPagina(codigo), descricao: null, aviso: null },
   exibicao: null,
 });
 
@@ -114,10 +114,10 @@ export const GRAVADO: FormularioDto = {
   faseId: 'F-INSCRICAO',
   titulo: 'Inscrição — Medicina 2027',
   modeloOrigem: null,
-  etapas: [
-    etapa('DADOS_BASICOS', 0),
-    etapa('S1', 1),
-    etapa('REVISAO_E_ACEITE', 2, BlocoSistemaCodigo.REVISAO_E_ACEITE),
+  paginas: [
+    pagina('DADOS_BASICOS', 0),
+    pagina('S1', 1),
+    pagina('REVISAO_E_ACEITE', 2, BlocoSistemaCodigo.REVISAO_E_ACEITE),
   ],
   coleta: {
     itens: [
@@ -137,7 +137,7 @@ export const GRAVADO: FormularioDto = {
       {
         codigo: 'FAMILIA',
         ordem: 3,
-        etapaCodigo: 'S1',
+        paginaCodigo: 'S1',
         rotulo: 'FAMILIA',
         ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
         regras: {
@@ -188,13 +188,13 @@ export const HABILITACAO_GRAVADA = {
   ...GRAVADO,
   finalidade: { codigo: FinalidadeFormularioCodigo.HABILITACAO, rotulo: 'Habilitação' },
   faseId: 'F-HABILITACAO',
-  etapas: [etapa('REVISAO_E_ACEITE', 0, BlocoSistemaCodigo.REVISAO_E_ACEITE)],
+  paginas: [pagina('REVISAO_E_ACEITE', 0, BlocoSistemaCodigo.REVISAO_E_ACEITE)],
   coleta: { itens: [], grupos: [] },
 };
 
 const CONTEUDO_VAZIO_DO_MODELO: ModeloFormularioView['conteudo'] = {
   titulo: null,
-  etapas: [],
+  paginas: [],
   itens: [],
   termos: [],
   pressupostos: [],

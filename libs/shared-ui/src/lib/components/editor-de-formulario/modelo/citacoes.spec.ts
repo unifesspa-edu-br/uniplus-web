@@ -6,7 +6,7 @@ import { conteudo, item, secao } from './conteudos-de-exemplo.testing';
 describe('citações entre campos', () => {
   it('as condições do item citam só os campos anteriores e os pressupostos, nunca o próprio', () => {
     const atual = conteudo({
-      etapas: [secao('S1', 0)],
+      paginas: [secao('S1', 0)],
       pressupostos: ['P'],
       itens: [item('A', 0, 'S1'), item('B', 1, 'S1'), item('C', 2, 'S1')],
     });

@@ -71,12 +71,12 @@ describe('FasePassoComponent', () => {
         protecaoAprovada: true,
         operadoresAdmitidos: [{ codigo: OperadorCodigo.IGUAL, rotulo: 'é' }],
       };
-      const SUBITEM = item('PARENTESCO', 0, '', { etapaCodigo: null });
+      const SUBITEM = item('PARENTESCO', 0, '', { paginaCodigo: null });
       const FAMILIA: GrupoDoFormulario = {
         codigo: 'FAMILIA',
         ordem: 0,
         rotulo: 'Composição familiar',
-        etapaCodigo: null,
+        paginaCodigo: null,
         ocorrencias: { minimo: 1, maximo: null, incluiCandidato: true },
         regras: REGRAS_INICIAIS,
         subitens: [SUBITEM],
@@ -91,7 +91,7 @@ describe('FasePassoComponent', () => {
               faseCodigo: 'HOMOLOGACAO_INSCRICOES',
               conteudo: {
                 titulo: null,
-                etapas: [],
+                paginas: [],
                 termos: [],
                 pressupostos: null,
                 itens: [],

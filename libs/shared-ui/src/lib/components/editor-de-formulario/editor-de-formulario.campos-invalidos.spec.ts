@@ -29,16 +29,16 @@ describe('EditorDeFormularioComponent: campos inválidos', () => {
 
   it('abre a seção recolhida que guarda o campo inválido e leva o foco a ele', async () => {
     cenario.comGrupo(1, 'dez');
-    (cenario.tela.querySelector('#f-etapa-S1-nome button') as HTMLButtonElement).click();
+    (cenario.tela.querySelector('#f-pagina-S1-nome button') as HTMLButtonElement).click();
     cenario.detectar();
-    expect((cenario.tela.querySelector('#f-etapa-S1-corpo') as HTMLElement).hidden).toBe(true);
+    expect((cenario.tela.querySelector('#f-pagina-S1-corpo') as HTMLElement).hidden).toBe(true);
 
     const chegou = cenario.fixture.componentInstance.focarPrimeiroCampoInvalido();
     cenario.detectar();
     await TestBed.inject(ApplicationRef).whenStable();
 
     expect(await chegou).toBe(true);
-    expect((cenario.tela.querySelector('#f-etapa-S1-corpo') as HTMLElement).hidden).toBe(false);
+    expect((cenario.tela.querySelector('#f-pagina-S1-corpo') as HTMLElement).hidden).toBe(false);
     expect(document.activeElement).toBe(cenario.tela.querySelector('#f-grupo-FAMILIA-maximo'));
   });
 });

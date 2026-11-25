@@ -46,7 +46,7 @@ function campoDoPressuposto(pressuposto: PressupostoDoFormulario, tipo: string):
 function avaliadoDoPressuposto(fatoCodigo: string): CampoAvaliado {
   return {
     fatoCodigo,
-    etapaCodigo: '',
+    paginaCodigo: '',
     estado: 'RESOLVIDO',
     regras: {
       visivel: 'VERDADEIRO',

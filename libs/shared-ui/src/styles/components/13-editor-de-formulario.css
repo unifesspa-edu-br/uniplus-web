@@ -1,5 +1,5 @@
 /*
- * Editor de formulário (ui-editor-de-formulario): etapas empilhadas, cada uma com os campos em
+ * Editor de formulário (ui-editor-de-formulario): páginas empilhadas, cada uma com os campos em
  * lista numerada; o anúncio de mover e recusar é texto visível acima das etapas.
  */
 ui-editor-de-formulario {
@@ -17,7 +17,7 @@ ui-secao-do-formulario {
   gap: var(--space-3);
 }
 
-.editor-formulario__etapa {
+.editor-formulario__pagina {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
@@ -39,7 +39,7 @@ ui-secao-do-formulario {
   overflow-wrap: anywhere;
 }
 
-.editor-formulario__titulo-etapa,
+.editor-formulario__titulo-pagina,
 .editor-formulario__titulo-item {
   margin: 0;
   font-size: var(--text-md);

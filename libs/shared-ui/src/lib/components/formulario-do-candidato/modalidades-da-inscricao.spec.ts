@@ -7,7 +7,7 @@ import { BUSCA_DE_CEP } from '../endereco-geo/endereco-geo.model';
 import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
 import type { FormularioDoCandidato, FormularioNoProcesso } from './formulario-do-candidato.model';
 import {
-  apresentacaoDaEtapa,
+  apresentacaoDaPagina,
   campoApresentado,
   itemDasRegras,
 } from './formularios-de-exemplo.testing';
@@ -19,20 +19,20 @@ import type { AvaliacaoNaTela, ModalidadesAvaliadas } from './modalidades-avalia
  */
 const FORMULARIO: FormularioDoCandidato = {
   finalidade: 'INSCRICAO',
-  etapas: [
+  paginas: [
     {
       codigo: 'CONTATO',
       codigoNasRegras: 'Inscricao:CONTATO',
       ordem: 0,
       tipo: 'SECAO',
-      apresentacao: apresentacaoDaEtapa('Contato'),
+      apresentacao: apresentacaoDaPagina('Contato'),
     },
     {
       codigo: 'RESERVA',
       codigoNasRegras: 'Inscricao:RESERVA',
       ordem: 1,
       tipo: 'SECAO',
-      apresentacao: apresentacaoDaEtapa('Reserva de vagas'),
+      apresentacao: apresentacaoDaPagina('Reserva de vagas'),
     },
     {
       codigo: 'MODALIDADES',
@@ -40,7 +40,7 @@ const FORMULARIO: FormularioDoCandidato = {
       ordem: 2,
       tipo: 'BLOCO',
       bloco: 'MODALIDADES_CALCULADAS',
-      apresentacao: apresentacaoDaEtapa('Modalidades de concorrência'),
+      apresentacao: apresentacaoDaPagina('Modalidades de concorrência'),
     },
     {
       codigo: 'REVISAO',
@@ -48,7 +48,7 @@ const FORMULARIO: FormularioDoCandidato = {
       ordem: 3,
       tipo: 'BLOCO',
       bloco: 'REVISAO_E_ACEITE',
-      apresentacao: apresentacaoDaEtapa('Revisão e aceite'),
+      apresentacao: apresentacaoDaPagina('Revisão e aceite'),
     },
   ],
   termos: [],
@@ -63,7 +63,7 @@ const FORMULARIO: FormularioDoCandidato = {
     grupos: [],
   },
   regras: {
-    etapas: [
+    paginas: [
       {
         codigo: 'Inscricao:CONTATO',
         itens: [itemDasRegras('EMAIL')],

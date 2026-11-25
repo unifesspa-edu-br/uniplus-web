@@ -154,7 +154,7 @@ export function camposSemUsoDeclarado(
   ]);
 
   return todosOsCampos(formulario.conteudo).filter(
-    (campo) => campo.etapaCodigo !== SECAO_DADOS_BASICOS && !usados.has(campo.fatoCodigo),
+    (campo) => campo.paginaCodigo !== SECAO_DADOS_BASICOS && !usados.has(campo.fatoCodigo),
   );
 }
 

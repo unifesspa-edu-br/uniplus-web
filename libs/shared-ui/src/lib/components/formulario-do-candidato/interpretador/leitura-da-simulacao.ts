@@ -164,7 +164,7 @@ export function entradaDaAvaliacao(
   return {
     respostas: dentroDaOferta(definicao, Object.entries(simulacao.respostas ?? {})),
     grupos: ocorrenciasDentroDaOferta(definicao, grupos),
-    etapasConcluidas: new Set(simulacao.etapasConcluidas ?? []),
+    paginasConcluidas: new Set(simulacao.paginasConcluidas ?? []),
     fatosConhecidos: comoFatosConhecidos(simulacao.pressupostos),
     diaDoEnvio,
     fatosFixos,

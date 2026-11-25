@@ -13,9 +13,9 @@ describe('incluirCandidatoComoMembro', () => {
   it('incluir o candidato põe o parentesco primeiro, obrigatório, sem exibição e com o próprio candidato entre as opções fixas', () => {
     const comParentescoCondicional = grupo({
       subitens: [
-        item('RENDA', 0, 'S1', { etapaCodigo: null }),
+        item('RENDA', 0, 'S1', { paginaCodigo: null }),
         item('PARENTESCO', 1, 'S1', {
-          etapaCodigo: null,
+          paginaCodigo: null,
           regras: {
             obrigatoriedade: { tipo: 'NUNCA', predicado: null },
             exibicao: exibidoQuando('X'),

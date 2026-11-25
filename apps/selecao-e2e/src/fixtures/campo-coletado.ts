@@ -9,7 +9,7 @@ export interface DadosDoCampo {
   readonly ordem: number;
   readonly rotulo: string;
   readonly tipoDeCampo: CampoColetado['apresentacao']['tipoDeCampo'];
-  readonly etapaCodigo?: string;
+  readonly paginaCodigo?: string;
   readonly obrigatoriedade?: CampoColetado['regras']['obrigatoriedade'];
   readonly ajuda?: string;
   readonly restricoes?: CampoColetado['regras']['restricoes'];
@@ -34,7 +34,7 @@ export function campoColetado(dados: DadosDoCampo): CampoColetado {
   return {
     fatoCodigo: dados.fatoCodigo,
     ordem: dados.ordem,
-    etapaCodigo: dados.etapaCodigo ?? 'SECAO_1',
+    paginaCodigo: dados.paginaCodigo ?? 'SECAO_1',
     apresentacao: apresentacaoDoCampo(dados),
     regras: regrasDoCampo(dados),
     formato: null,

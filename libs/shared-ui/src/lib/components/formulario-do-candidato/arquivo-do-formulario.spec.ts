@@ -1,6 +1,6 @@
 import { lerArquivoDoFormulario } from './arquivo-do-formulario';
 import type { FormularioDoCandidato } from './formulario-do-candidato.model';
-import { apresentacaoDaEtapa, campoApresentado } from './formularios-de-exemplo.testing';
+import { apresentacaoDaPagina, campoApresentado } from './formularios-de-exemplo.testing';
 import { interpretarFormulario } from './interpretador/interpretador';
 
 const casos = import.meta.glob<Record<string, unknown>>('./interpretador/casos/*.json', {
@@ -11,7 +11,7 @@ const casos = import.meta.glob<Record<string, unknown>>('./interpretador/casos/*
 const BASE = {
   finalidade: 'INSCRICAO',
   regras: {},
-  etapas: [],
+  paginas: [],
   termos: [],
   coleta: { itens: [], grupos: [] },
   pressupostos: { fatos: [] },
@@ -28,20 +28,20 @@ describe('arquivo importado no simulador', () => {
   it('o arquivo fora da forma é recusado com o caminho do problema, antes de qualquer interpretação', () => {
     expect(
       lerArquivoDoFormulario(
-        '{"regras": {}, "finalidade": "INSCRICAO", "coleta": {"itens": [], "grupos": []}, "etapas": "x"}',
+        '{"regras": {}, "finalidade": "INSCRICAO", "coleta": {"itens": [], "grupos": []}, "paginas": "x"}',
       ),
     ).toEqual({
       valido: false,
-      caminho: 'etapas',
+      caminho: 'paginas',
       mensagem: expect.any(String),
     });
     expect(lerArquivoDoFormulario('{').valido).toBe(false);
   });
 
   it('as regras do arquivo são conferidas antes de montar a apresentação, com o caminho dentro delas', () => {
-    expect(lerArquivoDoFormulario('{"regras": {"etapas": {}}}')).toEqual({
+    expect(lerArquivoDoFormulario('{"regras": {"paginas": {}}}')).toEqual({
       valido: false,
-      caminho: 'regras.etapas',
+      caminho: 'regras.paginas',
       mensagem: expect.any(String),
     });
   });
@@ -99,8 +99,8 @@ describe('arquivo importado no simulador', () => {
       lerArquivoDoFormulario(JSON.stringify({ regras: {}, grupos: { BENS: {} } })),
     ).toMatchObject({ valido: false, caminho: 'grupos.BENS' });
     expect(
-      lerArquivoDoFormulario(JSON.stringify({ regras: {}, etapasConcluidas: 1 })),
-    ).toMatchObject({ valido: false, caminho: 'etapasConcluidas' });
+      lerArquivoDoFormulario(JSON.stringify({ regras: {}, paginasConcluidas: 1 })),
+    ).toMatchObject({ valido: false, caminho: 'paginasConcluidas' });
   });
 
   it('os pressupostos do formulário importado são conferidos, com o caminho', () => {
@@ -126,13 +126,13 @@ describe('arquivo importado no simulador', () => {
   it('o termo de um caso aparece no bloco de revisão e aceite, que o caso não declara', () => {
     const caso = {
       regras: {
-        etapas: [],
+        paginas: [],
         termos: [{ codigo: 'VERACIDADE', regras: { obrigatoriedade: { tipo: 'SEMPRE' } } }],
       },
     };
     const lido = lerArquivoDoFormulario(JSON.stringify(caso));
 
-    expect(lido.valido && lido.formulario.etapas.map((e) => e.bloco ?? null)).toEqual([
+    expect(lido.valido && lido.formulario.paginas.map((e) => e.bloco ?? null)).toEqual([
       'REVISAO_E_ACEITE',
     ]);
   });
@@ -153,7 +153,7 @@ describe('arquivo importado no simulador', () => {
   it('o campo cujas opções vêm de outras respostas abre como seleção no caso importado', () => {
     const caso = {
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: 'DADOS',
             itens: [
@@ -186,7 +186,7 @@ describe('arquivo importado no simulador', () => {
   it('o tipo do campo de um caso sai das condições que o citam, inclusive as de grupo', () => {
     const caso = {
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: 'DADOS',
             itens: [
@@ -227,20 +227,20 @@ describe('arquivo importado no simulador', () => {
   it('o formulário exportado, importado de volta, produz a mesma simulação', () => {
     const formulario: FormularioDoCandidato = {
       finalidade: 'INSCRICAO',
-      etapas: [
+      paginas: [
         {
           codigo: 'DADOS',
           codigoNasRegras: 'DADOS',
           ordem: 0,
           tipo: 'SECAO',
-          apresentacao: apresentacaoDaEtapa('Dados'),
+          apresentacao: apresentacaoDaPagina('Dados'),
         },
       ],
       termos: [],
       coleta: { itens: [campoApresentado('IDADE', 'Idade', 'NUMERO')], grupos: [] },
       pressupostos: { fatos: [] },
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: 'DADOS',
             itens: [

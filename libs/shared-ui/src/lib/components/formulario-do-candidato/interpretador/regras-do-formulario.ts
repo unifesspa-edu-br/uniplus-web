@@ -102,7 +102,7 @@ export interface GrupoDasRegras {
   readonly subitens?: readonly ItemDasRegras[] | null;
 }
 
-export interface EtapaDasRegras {
+export interface PaginaDasRegras {
   readonly codigo: string;
   readonly exibicao?: PredicadoDasRegras;
   readonly itens?: readonly ItemDasRegras[] | null;
@@ -134,7 +134,7 @@ export interface AgregadoDasRegras {
 
 /** As regras de um formulário, como o formulário apresentado as traz em `regras`. */
 export interface RegrasDoFormulario {
-  readonly etapas?: readonly EtapaDasRegras[] | null;
+  readonly paginas?: readonly PaginaDasRegras[] | null;
   readonly termos?: readonly TermoDasRegras[] | null;
   readonly derivacoes?: readonly DerivacaoDasRegras[] | null;
   readonly agregados?: readonly AgregadoDasRegras[] | null;
@@ -154,7 +154,7 @@ export interface OcorrenciaSimulada {
 export interface SimulacaoDoFormulario {
   readonly respostas?: Readonly<Record<string, ValorJson>> | null;
   readonly grupos?: Readonly<Record<string, readonly OcorrenciaSimulada[] | null>> | null;
-  readonly etapasConcluidas?: readonly string[] | null;
+  readonly paginasConcluidas?: readonly string[] | null;
   readonly pressupostos?: Readonly<Record<string, ValorJson>> | null;
   /** O envio contra o qual contam os limites de data; sem ele, o limite contado do envio fica indeterminado. */
   readonly envio?: EnvioDasRespostas | null;
@@ -173,7 +173,7 @@ export interface OpcoesVigentes {
   readonly definitivas: boolean;
 }
 
-export interface EtapaAvaliada {
+export interface PaginaAvaliada {
   readonly codigo: string;
   readonly visivel: string;
 }
@@ -187,7 +187,7 @@ export interface RegrasDoCampoAvaliadas {
 
 export interface CampoAvaliado {
   readonly fatoCodigo: string;
-  readonly etapaCodigo: string;
+  readonly paginaCodigo: string;
   readonly estado: string;
   readonly regras: RegrasDoCampoAvaliadas;
   readonly opcoes: OpcoesVigentes | null;
@@ -212,7 +212,7 @@ export interface OcorrenciasAvaliadas {
 
 export interface GrupoAvaliado {
   readonly codigo: string;
-  readonly etapaCodigo: string;
+  readonly paginaCodigo: string;
   readonly estado: string;
   readonly regras: ExibicaoEObrigatoriedadeAvaliadas;
   readonly ocorrencias: OcorrenciasAvaliadas;
@@ -226,7 +226,7 @@ export interface TermoAvaliado {
 
 /** A avaliação do formulário, na forma que a avaliação sem cadastro da API devolve. */
 export interface AvaliacaoDoFormulario {
-  readonly etapas: readonly EtapaAvaliada[];
+  readonly paginas: readonly PaginaAvaliada[];
   readonly campos: readonly CampoAvaliado[];
   readonly grupos: readonly GrupoAvaliado[];
   readonly termos: readonly TermoAvaliado[];

@@ -16,7 +16,7 @@ import { conteudoDoFormulario } from './formulario-do-processo';
 import {
   campo,
   CONGELADOS_DA_INSCRICAO,
-  etapa,
+  pagina,
   FASE_INSCRICAO,
   GRAVADO,
   PCD_NO_CATALOGO,
@@ -35,14 +35,14 @@ describe('FormularioPassoComponent: documentos da fase', () => {
     ({ fixture, store, host } = contexto);
   });
 
-  describe('etapa dos documentos do formulário', () => {
+  describe('página dos documentos do formulário', () => {
     const TIPO_LAUDO = '01960000-0000-7000-0000-0000000000d1';
-    const COM_ETAPA_DE_DOCUMENTOS = {
+    const COM_PAGINA_DE_DOCUMENTOS = {
       ...GRAVADO,
-      etapas: [
-        etapa('DADOS_BASICOS', 0),
-        etapa('DOCUMENTOS', 1, BlocoSistemaCodigo.COMPROVACAO_DOCUMENTAL),
-        etapa('REVISAO_E_ACEITE', 2, BlocoSistemaCodigo.REVISAO_E_ACEITE),
+      paginas: [
+        pagina('DADOS_BASICOS', 0),
+        pagina('DOCUMENTOS', 1, BlocoSistemaCodigo.COMPROVACAO_DOCUMENTAL),
+        pagina('REVISAO_E_ACEITE', 2, BlocoSistemaCodigo.REVISAO_E_ACEITE),
       ],
       coleta: { itens: [campo('NOME', 0, 'DADOS_BASICOS')], grupos: [] },
     };
@@ -51,7 +51,7 @@ describe('FormularioPassoComponent: documentos da fase', () => {
     function emConsulta(): void {
       TestBed.inject(CatalogoDeFatos).fatos.set([fatoComOperadores(PCD_NO_CATALOGO)]);
       store.patchObjectSection('formulario', {
-        conteudo: conteudoDoFormulario(COM_ETAPA_DE_DOCUMENTOS),
+        conteudo: conteudoDoFormulario(COM_PAGINA_DE_DOCUMENTOS),
       });
       store.remoteSnapshot.set({
         ...PROCESSO,
@@ -154,7 +154,7 @@ describe('FormularioPassoComponent: documentos da fase', () => {
 
     it('sem documento na fase, diz que nenhum é exigido e leva ao Cronograma', () => {
       store.patchObjectSection('formulario', {
-        conteudo: conteudoDoFormulario(COM_ETAPA_DE_DOCUMENTOS),
+        conteudo: conteudoDoFormulario(COM_PAGINA_DE_DOCUMENTOS),
       });
       fixture.detectChanges();
 

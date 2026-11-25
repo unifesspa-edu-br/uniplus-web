@@ -21,7 +21,7 @@ const modelo = (codigo: string, nome: string): ModeloFormularioView => ({
   descritivo: { nome, descricao: null, tipoProcessoCodigo: null },
   conteudo: {
     titulo: nome,
-    etapas: [],
+    paginas: [],
     itens: [],
     termos: [],
     pressupostos: [],

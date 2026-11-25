@@ -3,13 +3,13 @@ import {
   type CampoApresentado,
   type ColetaDoFormulario,
   type FormularioDoCandidato,
-  type SecaoRenderizavel,
+  type PaginaApresentada,
   type TermoApresentado,
   type GrupoApresentado,
   type ValorSelecionavel,
 } from './formulario-do-candidato.model';
 import type {
-  EtapaDasRegras,
+  PaginaDasRegras,
   ExibicaoEObrigatoriedadeDasRegras,
   GrupoDasRegras,
   ItemDasRegras,
@@ -22,7 +22,7 @@ import type {
 type Comparados = ReadonlyMap<string, readonly ValorJson[]>;
 
 /**
- * A apresentação mínima que as regras permitem: uma seção por etapa, cada campo rotulado pelo próprio
+ * A apresentação mínima que as regras permitem: uma seção por página, cada campo rotulado pelo próprio
  * código, e o tipo de campo deduzido do que as regras e as respostas dizem dele — oferta, opções
  * permitidas ou opções formadas por outras respostas fazem seleção, faixa faz número, município da
  * UF faz município, condição ou resposta booleana faz sim/não, e a numérica faz número. O que nada
@@ -35,7 +35,7 @@ export function apresentacaoDasRegras(
   return {
     finalidade: 'SIMULACAO',
     titulo: null,
-    etapas: secoesDasRegras(regras),
+    paginas: secoesDasRegras(regras),
     termos: termosDasRegras(regras),
     coleta: coletaDasRegras(regras, fabricaDeCampos(regras, simulacao)),
     regras,
@@ -65,19 +65,19 @@ function fabricaDeCampos(
 }
 
 function coletaDasRegras(regras: RegrasDoFormulario, campo: FabricaDeCampos): ColetaDoFormulario {
-  const etapas = regras.etapas ?? [];
+  const paginas = regras.paginas ?? [];
   return {
-    itens: etapas.flatMap((etapa) => etapa.itens ?? []).map(campo),
-    grupos: gruposDasRegras(etapas, campo),
+    itens: paginas.flatMap((pagina) => pagina.itens ?? []).map(campo),
+    grupos: gruposDasRegras(paginas, campo),
   };
 }
 
 function gruposDasRegras(
-  etapas: NonNullable<RegrasDoFormulario['etapas']>,
+  paginas: NonNullable<RegrasDoFormulario['paginas']>,
   campo: FabricaDeCampos,
 ): GrupoApresentado[] {
-  return etapas
-    .flatMap((etapa) => etapa.grupos ?? [])
+  return paginas
+    .flatMap((pagina) => pagina.grupos ?? [])
     .map((grupo, ordem) => grupoApresentado(grupo, ordem, campo));
 }
 
@@ -114,25 +114,25 @@ function respostasDaSimulacao(simulacao: SimulacaoDoFormulario | null): Map<stri
   return respostas;
 }
 
-/** Uma seção por etapa e, havendo termos, o bloco de revisão e aceite, que o caso não declara. */
-function secoesDasRegras(regras: RegrasDoFormulario): SecaoRenderizavel[] {
-  const etapas = regras.etapas ?? [];
-  const secoes = etapas.map(secaoDaEtapa);
-  if ((regras.termos ?? []).length > 0) secoes.push(secaoDeRevisaoEAceite(etapas.length));
+/** Uma seção por página e, havendo termos, o bloco de revisão e aceite, que o caso não declara. */
+function secoesDasRegras(regras: RegrasDoFormulario): PaginaApresentada[] {
+  const paginas = regras.paginas ?? [];
+  const secoes = paginas.map(secaoDaPagina);
+  if ((regras.termos ?? []).length > 0) secoes.push(secaoDeRevisaoEAceite(paginas.length));
   return secoes;
 }
 
-function secaoDaEtapa(etapa: EtapaDasRegras, ordem: number): SecaoRenderizavel {
+function secaoDaPagina(pagina: PaginaDasRegras, ordem: number): PaginaApresentada {
   return {
-    codigo: etapa.codigo,
-    codigoNasRegras: etapa.codigo,
+    codigo: pagina.codigo,
+    codigoNasRegras: pagina.codigo,
     ordem,
     tipo: 'SECAO',
-    apresentacao: { titulo: etapa.codigo, descricao: null, aviso: null },
+    apresentacao: { titulo: pagina.codigo, descricao: null, aviso: null },
   };
 }
 
-function secaoDeRevisaoEAceite(ordem: number): SecaoRenderizavel {
+function secaoDeRevisaoEAceite(ordem: number): PaginaApresentada {
   return {
     codigo: BLOCO_REVISAO_E_ACEITE,
     codigoNasRegras: null,
@@ -208,14 +208,14 @@ function valoresDasCondicoes(regras: RegrasDoFormulario): Comparados {
 }
 
 /**
- * As regras já foram conferidas: toda condição — de etapa, item, grupo, termo, opções e derivação — diz
+ * As regras já foram conferidas: toda condição — de página, item, grupo, termo, opções e derivação — diz
  * com que valor o fato é comparado.
  */
 function predicadosDasRegras(regras: RegrasDoFormulario): PredicadoDasRegras[] {
-  const etapas = regras.etapas ?? [];
-  const donos = [...etapas.flatMap((e) => e.grupos ?? []), ...(regras.termos ?? [])];
+  const paginas = regras.paginas ?? [];
+  const donos = [...paginas.flatMap((e) => e.grupos ?? []), ...(regras.termos ?? [])];
   return [
-    ...etapas.map((etapa) => etapa.exibicao),
+    ...paginas.map((pagina) => pagina.exibicao),
     ...donos.flatMap((dono) => predicadosDoElemento(dono.regras)),
     ...itensDasRegras(regras).flatMap(predicadosDoItem),
     ...(regras.derivacoes ?? []).flatMap((d) => (d?.regras ?? []).map((regra) => regra?.quando)),
@@ -235,9 +235,9 @@ function predicadosDoItem(item: ItemDasRegras): PredicadoDasRegras[] {
   ];
 }
 
-/** Os campos das etapas e os subitens dos grupos. */
+/** Os campos das páginas e os subitens dos grupos. */
 function itensDasRegras(regras: RegrasDoFormulario): ItemDasRegras[] {
-  return (regras.etapas ?? []).flatMap((e) => [
+  return (regras.paginas ?? []).flatMap((e) => [
     ...(e.itens ?? []),
     ...(e.grupos ?? []).flatMap((g) => g.subitens ?? []),
   ]);

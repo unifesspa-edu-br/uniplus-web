@@ -30,7 +30,7 @@ describe('FormularioDoCandidatoComponent', () => {
         ],
       },
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
             grupos: [grupoDasRegras('FAMILIA', [itemDasRegras('RENDA')])],
@@ -65,7 +65,7 @@ describe('FormularioDoCandidatoComponent', () => {
         ],
       },
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
             grupos: [
@@ -101,7 +101,7 @@ describe('FormularioDoCandidatoComponent', () => {
         ],
       },
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
             grupos: [
@@ -142,7 +142,7 @@ describe('FormularioDoCandidatoComponent', () => {
         ],
       },
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
             grupos: [

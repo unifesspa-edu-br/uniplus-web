@@ -37,7 +37,7 @@ export interface SimulacaoParaConferir {
   readonly regras: RegrasDoFormulario;
   readonly respostas: Readonly<Record<string, ValorJson>> | null;
   readonly grupos: NonNullable<SimulacaoDoFormulario['grupos']> | null;
-  readonly etapasConcluidas: readonly string[] | null;
+  readonly paginasConcluidas: readonly string[] | null;
   readonly pressupostos: Readonly<Record<string, ValorJson>> | null;
   readonly envio: EnvioDasRespostas | null;
 }
@@ -58,7 +58,7 @@ function pedidoDeConferencia(
     regras,
     respostas: simulacao.respostas ?? null,
     grupos: simulacao.grupos ?? null,
-    etapasConcluidas: simulacao.etapasConcluidas ?? null,
+    paginasConcluidas: simulacao.paginasConcluidas ?? null,
     pressupostos: simulacao.pressupostos ?? null,
     envio: simulacao.envio ?? null,
   };

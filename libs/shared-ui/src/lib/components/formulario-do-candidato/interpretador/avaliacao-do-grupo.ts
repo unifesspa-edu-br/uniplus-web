@@ -5,8 +5,8 @@ import type {
   OcorrenciaAvaliadaInterna,
   OcorrenciaRespondida,
 } from './avaliacao-interna';
-import { avaliarItem, type ContextoDaEtapa, obrigatorioSeVisivel } from './avaliacao-do-item';
-import type { DefinicaoEtapa, DefinicaoGrupo } from './definicao-do-formulario';
+import { avaliarItem, type ContextoDaPagina, obrigatorioSeVisivel } from './avaliacao-do-item';
+import type { DefinicaoPagina, DefinicaoGrupo } from './definicao-do-formulario';
 import {
   e,
   type EstadoDoFato,
@@ -31,7 +31,7 @@ type FabricaDoGrupo = (
 ) => GrupoAvaliadoInterno;
 
 interface ContextoDoGrupo {
-  readonly etapa: DefinicaoEtapa;
+  readonly pagina: DefinicaoPagina;
   readonly grupo: DefinicaoGrupo;
   readonly entrada: EntradaDaAvaliacao;
   readonly fatos: Fatos;
@@ -45,32 +45,32 @@ interface ContextoDoGrupo {
  * sem exatamente uma ocorrência dele, não valem como resposta.
  */
 export function avaliarGrupo(
-  etapa: DefinicaoEtapa,
+  pagina: DefinicaoPagina,
   grupo: DefinicaoGrupo,
   entrada: EntradaDaAvaliacao,
   fatos: Fatos,
 ): GrupoAvaliadoInterno {
   const visivel = e(
-    avaliarOuVerdadeiro(etapa.exibicao, fatos),
+    avaliarOuVerdadeiro(pagina.exibicao, fatos),
     avaliarOuVerdadeiro(grupo.exibicao, fatos),
   );
   const obrigatorio = obrigatorioSeVisivel(visivel, grupo.obrigatoriedade, fatos);
-  const avaliacao = fabricaDoGrupo(etapa, grupo, { visivel, obrigatorio });
+  const avaliacao = fabricaDoGrupo(pagina, grupo, { visivel, obrigatorio });
 
   if (visivel === FALSO) return avaliacao(NAO_APLICAVEL, []);
   if (visivel === INDETERMINADO) return avaliacao(INDETERMINADO, []);
-  return avaliarOcorrenciasDoGrupo({ etapa, grupo, entrada, fatos, obrigatorio, avaliacao });
+  return avaliarOcorrenciasDoGrupo({ pagina, grupo, entrada, fatos, obrigatorio, avaliacao });
 }
 
 /** O grupo avaliado, com o que já se sabe dele; falta dizer o estado e as ocorrências. */
 function fabricaDoGrupo(
-  etapa: DefinicaoEtapa,
+  pagina: DefinicaoPagina,
   grupo: DefinicaoGrupo,
   { visivel, obrigatorio }: { visivel: Ternario; obrigatorio: Ternario },
 ): FabricaDoGrupo {
   return (estado, ocorrencias, contagemValida = true, ocorrenciaDoCandidatoValida = true) => ({
     codigo: grupo.codigo,
-    etapaCodigo: etapa.codigo,
+    paginaCodigo: pagina.codigo,
     visivel,
     obrigatorio,
     estado,
@@ -81,20 +81,20 @@ function fabricaDoGrupo(
 }
 
 function avaliarOcorrenciasDoGrupo(contexto: ContextoDoGrupo): GrupoAvaliadoInterno {
-  const { etapa, grupo, entrada, fatos, obrigatorio, avaliacao } = contexto;
-  const etapaConcluida = entrada.etapasConcluidas.has(etapa.codigo);
+  const { pagina, grupo, entrada, fatos, obrigatorio, avaliacao } = contexto;
+  const paginaConcluida = entrada.paginasConcluidas.has(pagina.codigo);
   const semResposta: EstadoDoFato =
-    obrigatorio === FALSO && etapaConcluida ? NAO_INFORMADO : INDETERMINADO;
+    obrigatorio === FALSO && paginaConcluida ? NAO_INFORMADO : INDETERMINADO;
   const respondidas = entrada.grupos.get(grupo.codigo);
   if (!respondidas) return avaliacao(semResposta, []);
 
-  const daEtapa = {
-    etapaCodigo: etapa.codigo,
-    etapaConcluida,
+  const daPagina = {
+    paginaCodigo: pagina.codigo,
+    paginaConcluida,
     diaDoEnvio: entrada.diaDoEnvio,
     fatos,
   };
-  const ocorrencias = respondidas.map((o) => avaliarOcorrencia(grupo, o, daEtapa));
+  const ocorrencias = respondidas.map((o) => avaliarOcorrencia(grupo, o, daPagina));
   const contagemValida = contagemDeOcorrenciasValida(grupo, obrigatorio, ocorrencias.length);
   // A lista vazia, que só vale no grupo opcional, não tem ocorrência do candidato a conferir.
   const candidatoValido =
@@ -141,14 +141,14 @@ function temUmaOcorrenciaDoCandidato(ocorrencias: readonly OcorrenciaRespondida[
 function avaliarOcorrencia(
   grupo: DefinicaoGrupo,
   ocorrencia: OcorrenciaRespondida,
-  contextoDaEtapa: ContextoDaEtapa,
+  contextoDaPagina: ContextoDaPagina,
 ): OcorrenciaAvaliadaInterna {
-  const contexto = new Map(contextoDaEtapa.fatos);
+  const contexto = new Map(contextoDaPagina.fatos);
   const daOcorrencia = new Map<string, FatoResolvido>();
   const itens: ItemAvaliado[] = [];
   for (const subitem of grupo.subitens) {
     const { fato, avaliacao } = avaliarItem(subitem, ocorrencia.respostas.get(subitem.fatoCodigo), {
-      ...contextoDaEtapa,
+      ...contextoDaPagina,
       visivelDoContentor: VERDADEIRO,
       fatos: contexto,
     });

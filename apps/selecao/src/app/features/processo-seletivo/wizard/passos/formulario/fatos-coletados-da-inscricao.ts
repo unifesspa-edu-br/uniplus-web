@@ -51,7 +51,7 @@ export const TITULO_SECAO_OUTROS_DADOS = 'Outros dados exigidos pelo certame';
 
 /** O conjunto básico enquanto a seção dele ainda não chegou do servidor; depois, a seção o traz. */
 function basicosAindaNaoGravados(conteudo: ConteudoDoFormulario): readonly string[] {
-  return (conteudo.etapas ?? []).some((etapa) => etapa.codigo === SECAO_DADOS_BASICOS)
+  return (conteudo.paginas ?? []).some((pagina) => pagina.codigo === SECAO_DADOS_BASICOS)
     ? []
     : FATOS_DO_CONJUNTO_BASICO;
 }

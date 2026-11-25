@@ -20,25 +20,25 @@ import {
 
 describe('acrescentarGrupo', () => {
   it('o grupo nasce com o primeiro campo, sem seção própria, e com código do rótulo que não colide com fato', () => {
-    const atual = conteudo({ etapas: [secao('S1', 0)], itens: [item('A', 0, 'S1')] });
+    const atual = conteudo({ paginas: [secao('S1', 0)], itens: [item('A', 0, 'S1')] });
 
     const resultado = acrescentarGrupo(
       atual,
-      { rotulo: 'Renda', etapaCodigo: 'S1', primeiroCampo: membro('RENDA') },
+      { rotulo: 'Renda', paginaCodigo: 'S1', primeiroCampo: membro('RENDA') },
       [fato('RENDA'), membro('RENDA')],
     );
 
     const novo = resultado.ok ? resultado.conteudo.grupos?.[0] : undefined;
     expect(novo?.codigo, 'RENDA é código de fato').toBe('RENDA_2');
-    expect(novo?.subitens.map((c) => [c.fatoCodigo, c.etapaCodigo])).toEqual([['RENDA', null]]);
+    expect(novo?.subitens.map((c) => [c.fatoCodigo, c.paginaCodigo])).toEqual([['RENDA', null]]);
     expect(novo?.ordem).toBe(1);
   });
 
   it('o grupo sem rótulo é recusado antes de existir', () => {
     expect(
       acrescentarGrupo(
-        conteudo({ etapas: [secao('S1', 0)] }),
-        { rotulo: '  ', etapaCodigo: 'S1', primeiroCampo: membro('RENDA') },
+        conteudo({ paginas: [secao('S1', 0)] }),
+        { rotulo: '  ', paginaCodigo: 'S1', primeiroCampo: membro('RENDA') },
         [],
       ).ok,
     ).toBe(false);
@@ -73,7 +73,7 @@ describe('campos do grupo', () => {
 
   it('o campo do grupo cita o conhecido antes do grupo e os campos anteriores da ocorrência', () => {
     const atual = conteudo({
-      etapas: [secao('S1', 0)],
+      paginas: [secao('S1', 0)],
       itens: [item('A', 0, 'S1'), item('DEPOIS', 2, 'S1')],
       grupos: [grupo()],
     });
@@ -110,7 +110,7 @@ describe('teto de campos', () => {
           codigo: 'G',
           ordem: 1,
           rotulo: 'G',
-          etapaCodigo: 'S1',
+          paginaCodigo: 'S1',
           ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
           regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
           subitens: [item('M1', 0, 'S1'), item('M2', 1, 'S1')],

@@ -11,7 +11,7 @@ export interface OcorrenciaRespondida {
 export interface EntradaDaAvaliacao {
   readonly respostas: ReadonlyMap<string, ValorJson>;
   readonly grupos: ReadonlyMap<string, readonly OcorrenciaRespondida[]>;
-  readonly etapasConcluidas: ReadonlySet<string>;
+  readonly paginasConcluidas: ReadonlySet<string>;
   readonly fatosConhecidos: Fatos;
   /** O dia do envio, `AAAA-MM-DD`; nulo quando o envio não se sabe. */
   readonly diaDoEnvio: string | null;
@@ -24,7 +24,7 @@ export interface EntradaDaAvaliacao {
 
 export interface ItemAvaliado {
   readonly fatoCodigo: string;
-  readonly etapaCodigo: string;
+  readonly paginaCodigo: string;
   readonly visivel: Ternario;
   readonly obrigatorio: Ternario;
   readonly restricoesVioladas: readonly string[];
@@ -41,7 +41,7 @@ export interface OcorrenciaAvaliadaInterna {
 
 export interface GrupoAvaliadoInterno {
   readonly codigo: string;
-  readonly etapaCodigo: string;
+  readonly paginaCodigo: string;
   readonly visivel: Ternario;
   readonly obrigatorio: Ternario;
   readonly estado: EstadoDoFato;
@@ -52,7 +52,7 @@ export interface GrupoAvaliadoInterno {
 
 export interface AvaliacaoInterna {
   readonly fatos: Fatos;
-  readonly etapas: readonly { readonly codigo: string; readonly visivel: Ternario }[];
+  readonly paginas: readonly { readonly codigo: string; readonly visivel: Ternario }[];
   readonly itens: readonly ItemAvaliado[];
   readonly grupos: readonly GrupoAvaliadoInterno[];
   readonly termos: readonly {

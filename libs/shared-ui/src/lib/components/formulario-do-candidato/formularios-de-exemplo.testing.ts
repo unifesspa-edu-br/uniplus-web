@@ -1,7 +1,7 @@
 import type { CepEncontrado } from '../endereco-geo/endereco-geo.model';
 
 import type {
-  ApresentacaoDaEtapa,
+  ApresentacaoDaPagina,
   ApresentacaoDoCampo,
 } from '../editor-de-formulario/modelo/tipos';
 
@@ -56,7 +56,7 @@ export const campoApresentado = (
   ...outros,
 });
 
-export const apresentacaoDaEtapa = (titulo: string): ApresentacaoDaEtapa => ({
+export const apresentacaoDaPagina = (titulo: string): ApresentacaoDaPagina => ({
   titulo,
   descricao: null,
   aviso: null,
@@ -64,13 +64,13 @@ export const apresentacaoDaEtapa = (titulo: string): ApresentacaoDaEtapa => ({
 
 export const FORMULARIO_DE_ENDERECO_COM_ALDEIA: FormularioDoCandidato = {
   finalidade: 'INSCRICAO',
-  etapas: [
+  paginas: [
     {
       codigo: 'DADOS',
       codigoNasRegras: CODIGO_DA_SECAO_DE_DADOS,
       ordem: 0,
       tipo: 'SECAO',
-      apresentacao: apresentacaoDaEtapa('Dados'),
+      apresentacao: apresentacaoDaPagina('Dados'),
     },
   ],
   termos: [],
@@ -88,7 +88,7 @@ export const FORMULARIO_DE_ENDERECO_COM_ALDEIA: FormularioDoCandidato = {
   },
   pressupostos: { fatos: [] },
   regras: {
-    etapas: [
+    paginas: [
       {
         codigo: CODIGO_DA_SECAO_DE_DADOS,
         itens: [
@@ -125,21 +125,21 @@ export const FORMULARIO_DE_ENDERECO_RESIDENCIAL: FormularioDoCandidato = {
     grupos: [],
   },
   regras: {
-    etapas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('ENDERECO_RESIDENCIAL')] }],
+    paginas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('ENDERECO_RESIDENCIAL')] }],
   },
 };
 
 export const FORMULARIO_COM_TERMO_DE_VERACIDADE: FormularioDoCandidato = {
   ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
   coleta: { itens: [], grupos: [] },
-  etapas: [
+  paginas: [
     {
       codigo: 'REVISAO',
       codigoNasRegras: null,
       ordem: 0,
       tipo: 'BLOCO',
       bloco: 'REVISAO_E_ACEITE',
-      apresentacao: apresentacaoDaEtapa('Revisão e aceite'),
+      apresentacao: apresentacaoDaPagina('Revisão e aceite'),
     },
   ],
   termos: [
@@ -151,27 +151,27 @@ export const FORMULARIO_COM_TERMO_DE_VERACIDADE: FormularioDoCandidato = {
     },
   ],
   regras: {
-    etapas: [],
+    paginas: [],
     termos: [{ codigo: 'Inscricao:VERACIDADE', regras: { obrigatoriedade: { tipo: 'SEMPRE' } } }],
   },
 };
 
 export const FORMULARIO_DE_DUAS_SECOES: FormularioDoCandidato = {
   finalidade: 'INSCRICAO',
-  etapas: [
+  paginas: [
     {
       codigo: 'CONTATO',
       codigoNasRegras: 'Inscricao:CONTATO',
       ordem: 0,
       tipo: 'SECAO',
-      apresentacao: apresentacaoDaEtapa('Contato'),
+      apresentacao: apresentacaoDaPagina('Contato'),
     },
     {
       codigo: 'NOME',
       codigoNasRegras: 'Inscricao:NOME',
       ordem: 1,
       tipo: 'SECAO',
-      apresentacao: apresentacaoDaEtapa('Nome'),
+      apresentacao: apresentacaoDaPagina('Nome'),
     },
   ],
   termos: [],
@@ -184,7 +184,7 @@ export const FORMULARIO_DE_DUAS_SECOES: FormularioDoCandidato = {
   },
   pressupostos: { fatos: [] },
   regras: {
-    etapas: [
+    paginas: [
       { codigo: 'Inscricao:CONTATO', itens: [itemDasRegras('EMAIL')] },
       { codigo: 'Inscricao:NOME', itens: [itemDasRegras('NOME_SOCIAL')] },
     ],
@@ -206,7 +206,7 @@ export const FORMULARIO_COM_GRUPO_DA_FAMILIA: FormularioDoCandidato = {
     ],
   },
   regras: {
-    etapas: [
+    paginas: [
       {
         codigo: CODIGO_DA_SECAO_DE_DADOS,
         grupos: [grupoDasRegras('FAMILIA', [itemDasRegras('RENDA')])],
@@ -230,7 +230,7 @@ export const FORMULARIO_DA_FAMILIA_COM_DOIS_SUBCAMPOS: FormularioDoCandidato = {
     ],
   },
   regras: {
-    etapas: [
+    paginas: [
       {
         codigo: CODIGO_DA_SECAO_DE_DADOS,
         grupos: [grupoDasRegras('FAMILIA', [itemDasRegras('RENDA'), itemDasRegras('PROFISSAO')])],
@@ -245,7 +245,7 @@ export const FORMULARIO_COM_CONFIRMACAO_DO_EMAIL: FormularioDoCandidato = {
     itens: [campoApresentado('EMAIL', 'E-mail', 'TEXTO', { pedirConfirmacao: true })],
     grupos: [],
   },
-  regras: { etapas: [{ codigo: 'Inscricao:CONTATO', itens: [itemDasRegras('EMAIL')] }] },
+  regras: { paginas: [{ codigo: 'Inscricao:CONTATO', itens: [itemDasRegras('EMAIL')] }] },
 };
 
 export const FORMULARIO_DA_FAMILIA_COM_CONFIRMACAO: FormularioDoCandidato = {
@@ -260,7 +260,7 @@ export const FORMULARIO_DA_FAMILIA_COM_CONFIRMACAO: FormularioDoCandidato = {
     ],
   },
   regras: {
-    etapas: [
+    paginas: [
       {
         codigo: CODIGO_DA_SECAO_DE_DADOS,
         grupos: [grupoDasRegras('FAMILIA', [itemDasRegras('EMAIL')])],
@@ -275,5 +275,5 @@ export const FORMULARIO_COM_TELEFONE: FormularioDoCandidato = {
     itens: [campoApresentado('TELEFONE', 'Telefone', 'TEXTO', { formato: 'TELEFONE' })],
     grupos: [],
   },
-  regras: { etapas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('TELEFONE')] }] },
+  regras: { paginas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('TELEFONE')] }] },
 };

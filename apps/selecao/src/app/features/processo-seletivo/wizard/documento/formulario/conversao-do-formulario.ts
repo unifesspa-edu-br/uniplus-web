@@ -2,10 +2,10 @@ import type { DocumentoDaConfiguracaoFormulario } from '@uniplus/shared-data/sel
 import type { ConteudoDoFormulario, EdicaoDoFormulario } from '@uniplus/shared-ui/components';
 import { CamposEmEdicao, camposAlterados } from './campos-em-edicao';
 import { ContextoDaConversao as Contexto } from './contexto-da-conversao';
-import { gravarEtapa } from './etapas';
+import { gravarPagina } from './paginas';
 import { gravarGrupo } from './grupos';
 import { gravarItem } from './itens';
-import { lerEtapa, lerGrupo, lerItem } from './leitura-das-partes';
+import { lerPagina, lerGrupo, lerItem } from './leitura-das-partes';
 import { gravarTermo, lerTermo } from './termos';
 import type {
   CatalogosDaConversaoDoFormulario,
@@ -31,7 +31,7 @@ function lerConteudo(formulario: Formulario, contexto: Contexto): ConteudoDoForm
   return {
     titulo: formulario.titulo ?? null,
     pressupostos: [],
-    etapas: formulario.paginas?.map(lerEtapa) ?? null,
+    paginas: formulario.paginas?.map(lerPagina) ?? null,
     itens:
       formulario.itens?.map((item, indice) => lerItem(item, contexto, ['itens', String(indice)])) ??
       null,
@@ -62,17 +62,17 @@ export function conteudoDoDocumento(
   return resultado(formulario, conteudo, contexto);
 }
 
-function etapasDoConteudo(
+function paginasDoConteudo(
   conteudo: ConteudoDoFormulario,
   original: Formulario,
   contexto: Contexto,
 ): Formulario['paginas'] {
-  return conteudo.etapas?.flatMap((etapa) => {
-    const convertida = gravarEtapa(
-      etapa,
-      original.paginas?.find((atual) => atual.codigo === etapa.codigo),
+  return conteudo.paginas?.flatMap((pagina) => {
+    const convertida = gravarPagina(
+      pagina,
+      original.paginas?.find((atual) => atual.codigo === pagina.codigo),
       contexto,
-      ['paginas', etapa.codigo],
+      ['paginas', pagina.codigo],
     );
     return convertida === undefined ? [] : [convertida];
   });
@@ -120,7 +120,7 @@ function converterPartes(
   return {
     ...original,
     titulo: conteudo.titulo ?? undefined,
-    paginas: etapasDoConteudo(conteudo, original, contexto),
+    paginas: paginasDoConteudo(conteudo, original, contexto),
     itens: itensDoConteudo(conteudo, original, contexto),
     grupos: gruposDoConteudo(conteudo, original, contexto),
     termos: termosDoConteudo(conteudo, original, contexto),

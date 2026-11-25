@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 import { okResult } from '@uniplus/shared-testing';
 
 import type { FormularioDoCandidato } from './formulario-do-candidato.model';
-import { apresentacaoDaEtapa, campoApresentado } from './formularios-de-exemplo.testing';
+import { apresentacaoDaPagina, campoApresentado } from './formularios-de-exemplo.testing';
 import { interpretarFormulario } from './interpretador/interpretador';
 import type { SimulacaoDoFormulario } from './interpretador/regras-do-formulario';
 import {
@@ -17,13 +17,13 @@ const SECAO = 'Inscricao:DADOS';
 /** O nascimento de até 120 anos antes do envio até o envio: a faixa que o editor declara. */
 const COM_FAIXA_DE_DATA: FormularioDoCandidato = {
   finalidade: 'INSCRICAO',
-  etapas: [
+  paginas: [
     {
       codigo: 'DADOS',
       codigoNasRegras: SECAO,
       ordem: 0,
       tipo: 'SECAO',
-      apresentacao: apresentacaoDaEtapa('Dados'),
+      apresentacao: apresentacaoDaPagina('Dados'),
     },
   ],
   termos: [],
@@ -33,7 +33,7 @@ const COM_FAIXA_DE_DATA: FormularioDoCandidato = {
   },
   pressupostos: { fatos: [] },
   regras: {
-    etapas: [
+    paginas: [
       {
         codigo: SECAO,
         itens: [
@@ -59,13 +59,13 @@ const COM_FAIXA_DE_DATA: FormularioDoCandidato = {
 /** Um formulário cujo campo depende de um fato que ele não pergunta: o pressuposto TRABALHA. */
 const FORMULARIO: FormularioDoCandidato = {
   finalidade: 'INSCRICAO',
-  etapas: [
+  paginas: [
     {
       codigo: 'DADOS',
       codigoNasRegras: SECAO,
       ordem: 0,
       tipo: 'SECAO',
-      apresentacao: apresentacaoDaEtapa('Dados'),
+      apresentacao: apresentacaoDaPagina('Dados'),
     },
   ],
   termos: [],
@@ -74,7 +74,7 @@ const FORMULARIO: FormularioDoCandidato = {
     grupos: [],
   },
   regras: {
-    etapas: [
+    paginas: [
       {
         codigo: SECAO,
         itens: [
@@ -120,7 +120,7 @@ describe('SimulacaoDeFormularioComponent', () => {
   beforeEach(() => (enviadas = []));
 
   it('o pressuposto sem apresentação é informado na forma escolhida e muda o que o formulário mostra', () => {
-    const tela = montar(() => of(okResult({ etapas: [], campos: [], grupos: [], termos: [] })));
+    const tela = montar(() => of(okResult({ paginas: [], campos: [], grupos: [], termos: [] })));
     expect(tela.textContent).toContain('Calculado pelo sistema a partir de VINCULO_EMPREGATICIO.');
     expect(tela.textContent).not.toContain('Prefere o turno noturno?');
 
@@ -140,7 +140,7 @@ describe('SimulacaoDeFormularioComponent', () => {
       return of(
         local.valida
           ? okResult(local.avaliacao)
-          : okResult({ etapas: [], campos: [], grupos: [], termos: [] }),
+          : okResult({ paginas: [], campos: [], grupos: [], termos: [] }),
       );
     });
 
@@ -159,7 +159,7 @@ describe('SimulacaoDeFormularioComponent', () => {
     const conferirTudo = (): HTMLElement => {
       const tela = montar((simulacao) => {
         enviadas.push(simulacao);
-        return of(okResult({ etapas: [], campos: [], grupos: [], termos: [] }));
+        return of(okResult({ paginas: [], campos: [], grupos: [], termos: [] }));
       });
       clicar(
         [...tela.querySelectorAll('button')].find(
@@ -181,7 +181,7 @@ describe('SimulacaoDeFormularioComponent', () => {
       const tela = montar(
         (simulacao) => {
           enviadas.push(simulacao);
-          return of(okResult({ etapas: [], campos: [], grupos: [], termos: [] }));
+          return of(okResult({ paginas: [], campos: [], grupos: [], termos: [] }));
         },
         { envio },
       );
@@ -198,7 +198,7 @@ describe('SimulacaoDeFormularioComponent', () => {
   describe('avaliação da faixa de data', () => {
     const envio = { instante: '2026-10-12T02:30:00Z', fuso: 'America/Belem' };
     const sempreOk = (): ReturnType<ConferenciaComOServidor> =>
-      of(okResult({ etapas: [], campos: [], grupos: [], termos: [] }));
+      of(okResult({ paginas: [], campos: [], grupos: [], termos: [] }));
     const digitar = (tela: HTMLElement, valor: string): HTMLInputElement => {
       const input = tela.querySelector('input[type="date"]') as HTMLInputElement;
       input.value = valor;

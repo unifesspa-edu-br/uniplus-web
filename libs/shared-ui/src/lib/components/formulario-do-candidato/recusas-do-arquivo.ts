@@ -1,5 +1,5 @@
 import type {
-  ApresentacaoDaEtapa,
+  ApresentacaoDaPagina,
   ApresentacaoDoCampo,
 } from '../editor-de-formulario/modelo/tipos';
 import type {
@@ -10,7 +10,7 @@ import type {
   GrupoApresentado,
   PressupostoDoFormulario,
   PressupostosDoFormulario,
-  SecaoRenderizavel,
+  PaginaApresentada,
   TermoApresentado,
   ValorSelecionavel,
 } from './formulario-do-candidato.model';
@@ -113,16 +113,16 @@ const GRUPO = objeto<GrupoApresentado>({
   ocorrencias: OCORRENCIAS,
   subitens: lista(CAMPO),
 });
-const APRESENTACAO_DA_ETAPA = objeto<ApresentacaoDaEtapa>({
+const APRESENTACAO_DA_PAGINA = objeto<ApresentacaoDaPagina>({
   titulo: texto,
   descricao: opcional(texto),
   aviso: opcional(texto),
 });
-const SECAO = objeto<SecaoRenderizavel>({
+const SECAO = objeto<PaginaApresentada>({
   codigo: texto,
   ordem: numero,
   tipo: texto,
-  apresentacao: APRESENTACAO_DA_ETAPA,
+  apresentacao: APRESENTACAO_DA_PAGINA,
   codigoNasRegras: opcional(texto),
   bloco: opcional(texto),
 });
@@ -152,7 +152,7 @@ const COLETA = objeto<ColetaDoFormulario>({
 const PRESSUPOSTOS = objeto<PressupostosDoFormulario>({ fatos: lista(PRESSUPOSTO) });
 const FORMULARIO = objeto<FormularioDoCandidato>({
   finalidade: texto,
-  etapas: lista(SECAO),
+  paginas: lista(SECAO),
   termos: lista(TERMO),
   coleta: COLETA,
   regras: regrasJaLidas,
@@ -204,11 +204,11 @@ function ocorrenciaValida(ocorrencia: unknown): boolean {
 }
 
 function recusaDasConcluidas(caso: Objeto): RecusaDoArquivo | null {
-  const concluidas = caso['etapasConcluidas'];
+  const concluidas = caso['paginasConcluidas'];
   if (concluidas === undefined || concluidas === null) return null;
   if (Array.isArray(concluidas) && concluidas.every((c) => typeof c === 'string')) return null;
   return {
-    caminho: 'etapasConcluidas',
+    caminho: 'paginasConcluidas',
     mensagem: 'As seções concluídas são uma lista de códigos.',
   };
 }

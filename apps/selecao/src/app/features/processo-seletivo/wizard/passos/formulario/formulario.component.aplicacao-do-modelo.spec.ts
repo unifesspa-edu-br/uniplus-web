@@ -9,7 +9,7 @@ import {
 } from '../../shared/exigencias/exigencias-documentais';
 import {
   CONGELADOS_DA_INSCRICAO,
-  etapa,
+  pagina,
   FASE_INSCRICAO,
   GRAVADO,
   HABILITACAO_GRAVADA,
@@ -183,7 +183,7 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
         ...HABILITACAO_GRAVADA,
         faseId: null,
         modeloOrigem: { id: 'hab', codigo: 'HAB' },
-        etapas: [etapa('REVISAO_E_ACEITE', 0, BlocoSistemaCodigo.REVISAO_E_ACEITE)],
+        paginas: [pagina('REVISAO_E_ACEITE', 0, BlocoSistemaCodigo.REVISAO_E_ACEITE)],
         coleta: { itens: [], grupos: [] },
       };
 

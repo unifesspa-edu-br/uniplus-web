@@ -8,11 +8,11 @@ import {
 } from '../../shared/valores-do-catalogo.testing';
 import { OperadorCodigo, type FatoCandidatoComOperadores } from '@uniplus/shared-data/configuracao';
 import {
-  apresentacaoDaEtapa,
+  apresentacaoDaPagina,
   apresentacaoDoCampo,
   REGRAS_INICIAIS,
   type ConteudoDoFormulario,
-  type EtapaDoFormulario,
+  type PaginaDoFormulario,
   type ItemDoFormulario,
 } from '@uniplus/shared-ui/components';
 import type {
@@ -98,17 +98,17 @@ export const CATALOGO = [SEXO, PCD, RENDA, MODALIDADE];
 export const secao = (
   codigo: string,
   ordem: number,
-  extra: Partial<EtapaDoFormulario> = {},
-): EtapaDoFormulario => ({
+  extra: Partial<PaginaDoFormulario> = {},
+): PaginaDoFormulario => ({
   codigo,
   ordem,
   tipo: 'SECAO',
   bloco: null,
-  apresentacao: apresentacaoDaEtapa(codigo),
+  apresentacao: apresentacaoDaPagina(codigo),
   exibicao: null,
   ...extra,
 });
-export const bloco = (codigo: string, ordem: number): EtapaDoFormulario => ({
+export const bloco = (codigo: string, ordem: number): PaginaDoFormulario => ({
   ...secao(codigo, ordem),
   tipo: 'BLOCO',
   bloco: codigo,
@@ -116,12 +116,12 @@ export const bloco = (codigo: string, ordem: number): EtapaDoFormulario => ({
 export const item = (
   fatoCodigo: string,
   ordem: number,
-  etapaCodigo: string,
+  paginaCodigo: string,
   extra: Partial<ItemDoFormulario> = {},
 ): ItemDoFormulario => ({
   fatoCodigo,
   ordem,
-  etapaCodigo,
+  paginaCodigo,
   apresentacao: apresentacaoDoCampo(fatoCodigo, 'SIM_OU_NAO'),
   regras: REGRAS_INICIAIS,
   ...extra,
@@ -131,7 +131,7 @@ export const item = (
 export function inscricaoGravada(extra: Partial<ConteudoDoFormulario> = {}): ConteudoDoFormulario {
   return {
     titulo: null,
-    etapas: etapasDaInscricao(),
+    paginas: paginasDaInscricao(),
     itens: [
       item('NOME', 0, 'DADOS_BASICOS'),
       item('SEXO', 1, 'DADOS_BASICOS'),
@@ -144,7 +144,7 @@ export function inscricaoGravada(extra: Partial<ConteudoDoFormulario> = {}): Con
   };
 }
 
-const etapasDaInscricao = (): EtapaDoFormulario[] => [
+const paginasDaInscricao = (): PaginaDoFormulario[] => [
   secao('DADOS_BASICOS', 0),
   secao('S1', 1),
   bloco('COMPROVACAO_DOCUMENTAL', 2),

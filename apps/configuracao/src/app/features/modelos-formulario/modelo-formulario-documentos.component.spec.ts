@@ -4,7 +4,7 @@ import { ModeloFormularioDocumentosComponent } from './modelo-formulario-documen
 
 const conteudo = {
   titulo: 'Inscrição',
-  etapas: [],
+  paginas: [],
   itens: [],
   termos: [],
   pressupostos: [],

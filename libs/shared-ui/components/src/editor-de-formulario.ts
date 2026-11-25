@@ -34,7 +34,7 @@ export {
   SECAO_DADOS_BASICOS,
   TIPO_BLOCO,
   TIPO_SECAO,
-  apresentacaoDaEtapa,
+  apresentacaoDaPagina,
   apresentacaoDoCampo,
   blocosAdmitidos,
   conteudoInicial,
@@ -77,7 +77,7 @@ export {
 } from '../../src/lib/components/editor-de-formulario/modelo/itens';
 export {
   entradasDaSecao,
-  etapasEmOrdem,
+  paginasEmOrdem,
   renumerar,
 } from '../../src/lib/components/editor-de-formulario/modelo/ordem-das-entradas';
 export {
@@ -123,11 +123,11 @@ export {
 export {
   acrescentarBloco,
   acrescentarSecao,
-  comEtapa,
-  etapaFixa,
-  moverEtapa,
-  podeMoverEtapa,
-  removerEtapa,
+  comPagina,
+  paginaFixa,
+  moverPagina,
+  podeMoverPagina,
+  removerPagina,
 } from '../../src/lib/components/editor-de-formulario/modelo/secoes';
 export {
   acrescentarTermo,
@@ -138,7 +138,7 @@ export {
   termosParaAcrescentar,
 } from '../../src/lib/components/editor-de-formulario/modelo/termos';
 export {
-  type ApresentacaoDaEtapa,
+  type ApresentacaoDaPagina,
   type ApresentacaoDoCampo,
   type ChaveDaEntrada,
   type ConteudoDoFormulario,
@@ -146,7 +146,7 @@ export {
   ESCOPO_MEMBRO,
   type EntradaDaSecao,
   type EscopoDoCampo,
-  type EtapaDoFormulario,
+  type PaginaDoFormulario,
   type ExibicaoEObrigatoriedade,
   type FatoDoFormulario,
   type GrupoDoFormulario,

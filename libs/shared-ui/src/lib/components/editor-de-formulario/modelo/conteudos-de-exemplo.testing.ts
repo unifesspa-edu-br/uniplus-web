@@ -2,7 +2,7 @@ import { COM_LISTA, SO_IGUALDADE } from '../../editor-de-condicoes/operadores-de
 import type {
   ApresentacaoDoCampo,
   ConteudoDoFormulario,
-  EtapaDoFormulario,
+  PaginaDoFormulario,
   FatoDoFormulario,
   GrupoDoFormulario,
   ItemDoFormulario,
@@ -19,7 +19,7 @@ export const REGRAS_PADRAO: RegrasDoCampo = {
   obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
 };
 
-export const REVISAO: EtapaDoFormulario = {
+export const REVISAO: PaginaDoFormulario = {
   codigo: 'REVISAO_E_ACEITE',
   ordem: 9,
   tipo: 'BLOCO',
@@ -32,8 +32,8 @@ export const NOMES = new Map<string, string>([['A', 'Campo A']]);
 export function secao(
   codigo: string,
   ordem: number,
-  exibicao: EtapaDoFormulario['exibicao'] = null,
-): EtapaDoFormulario {
+  exibicao: PaginaDoFormulario['exibicao'] = null,
+): PaginaDoFormulario {
   return {
     codigo,
     ordem,
@@ -45,7 +45,7 @@ export function secao(
 }
 
 interface ExtraDoItem {
-  readonly etapaCodigo?: null | string;
+  readonly paginaCodigo?: null | string;
   readonly apresentacao?: Partial<ApresentacaoDoCampo>;
   readonly regras?: Partial<RegrasDoCampo>;
 }
@@ -53,13 +53,13 @@ interface ExtraDoItem {
 export function item(
   fatoCodigo: string,
   ordem: number,
-  etapaCodigo: string,
+  paginaCodigo: string,
   extra: ExtraDoItem = {},
 ): ItemDoFormulario {
   return {
     fatoCodigo,
     ordem,
-    etapaCodigo: extra.etapaCodigo === undefined ? etapaCodigo : extra.etapaCodigo,
+    paginaCodigo: extra.paginaCodigo === undefined ? paginaCodigo : extra.paginaCodigo,
     apresentacao: { rotulo: fatoCodigo, ...APRESENTACAO_PADRAO, ...extra.apresentacao },
     regras: { ...REGRAS_PADRAO, ...extra.regras },
   };
@@ -72,7 +72,7 @@ export const exibidoQuando = (fato: string, operador = 'IGUAL'): RegrasDoCampo['
 export function conteudo(parcial: Partial<ConteudoDoFormulario>): ConteudoDoFormulario {
   return {
     titulo: null,
-    etapas: [],
+    paginas: [],
     itens: [],
     termos: [],
     pressupostos: [],
@@ -110,12 +110,12 @@ export function grupoDeExemplo(extra: Partial<GrupoDoFormulario> = {}): GrupoDoF
     codigo: 'FAMILIA',
     ordem: 1,
     rotulo: 'Composição familiar',
-    etapaCodigo: 'S1',
+    paginaCodigo: 'S1',
     ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
     regras: REGRAS_PADRAO,
     subitens: [
-      item('RENDA', 0, 'S1', { etapaCodigo: null }),
-      item('IDADE', 1, 'S1', { etapaCodigo: null }),
+      item('RENDA', 0, 'S1', { paginaCodigo: null }),
+      item('IDADE', 1, 'S1', { paginaCodigo: null }),
     ],
     ...extra,
   };

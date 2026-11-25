@@ -5,7 +5,7 @@ import {
   EscolhaDoPrazoDeEmissaoCodigo,
   OperadorCodigo,
   TipoDaDataDeReferenciaCodigo,
-  TipoEtapaFormularioCodigo,
+  TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
   TipoDeCampoCodigo,
   UnidadeDoPrazoDeEmissaoCodigo,
@@ -35,7 +35,7 @@ const item: ItemDoFormulario<number> = {
 
 const conteudo: ConteudoDoFormulario<number> = {
   titulo: 'Inscrição',
-  etapas: [
+  paginas: [
     {
       codigo: 'SECAO_1',
       ordem: 1,
@@ -51,7 +51,7 @@ const conteudo: ConteudoDoFormulario<number> = {
       codigo: 'FAMILIA',
       ordem: 2,
       rotulo: 'Composição familiar',
-      etapaCodigo: null,
+      paginaCodigo: null,
       ocorrencias: { minimo: 1, maximo: null, incluiCandidato: true },
       regras: { exibicao: QUANDO, obrigatoriedade: { tipo: 'QUANDO', predicado: QUANDO } },
       subitens: [item],
@@ -113,8 +113,8 @@ const operadorDe = (predicado: readonly (readonly { operador: unknown }[])[] | n
 describe('conteudoParaOModelo', () => {
   const gravado = conteudoParaOModelo(conteudo);
 
-  it('põe o operador da exibição da etapa no código do contrato', () => {
-    expect(gravado.etapas?.[0].exibicao?.[0][0].operador).toBe(OperadorCodigo.IGUAL);
+  it('põe o operador da exibição da página no código do contrato', () => {
+    expect(gravado.paginas?.[0].exibicao?.[0][0].operador).toBe(OperadorCodigo.IGUAL);
   });
 
   it('põe o operador de cada predicado do item no código do contrato', () => {
@@ -165,7 +165,7 @@ describe('conteudoParaOModelo', () => {
     const sem = conteudoParaOModelo({
       ...conteudo,
       itens: [{ ...item, regras: semPredicado }],
-      etapas: null,
+      paginas: null,
       grupos: undefined,
       termos: null,
       documentosExigidos: undefined,
@@ -174,25 +174,25 @@ describe('conteudoParaOModelo', () => {
 
     expect(sem.itens?.[0].regras?.exibicao).toBeNull();
     expect(sem.itens?.[0].regras?.impedimento).toBeUndefined();
-    expect(sem.etapas).toBeNull();
+    expect(sem.paginas).toBeNull();
   });
 
-  it('põe o tipo e o bloco da etapa e a obrigatoriedade nos códigos do contrato', () => {
+  it('põe o tipo e o bloco da página e a obrigatoriedade nos códigos do contrato', () => {
     const gravadoComBloco = conteudoParaOModelo({
       ...conteudo,
-      etapas: (conteudo.etapas ?? []).map((etapa) => ({
-        ...etapa,
+      paginas: (conteudo.paginas ?? []).map((pagina) => ({
+        ...pagina,
         tipo: 'BLOCO',
         bloco: 'REVISAO_E_ACEITE',
       })),
     });
 
-    expect(gravadoComBloco.etapas?.[0]).toMatchObject({
-      tipo: TipoEtapaFormularioCodigo.BLOCO,
+    expect(gravadoComBloco.paginas?.[0]).toMatchObject({
+      tipo: TipoPaginaFormularioCodigo.BLOCO,
       bloco: BlocoSistemaCodigo.REVISAO_E_ACEITE,
     });
-    expect(gravado.etapas?.[0]).toMatchObject({
-      tipo: TipoEtapaFormularioCodigo.SECAO,
+    expect(gravado.paginas?.[0]).toMatchObject({
+      tipo: TipoPaginaFormularioCodigo.SECAO,
       bloco: null,
     });
     expect(gravado.itens?.[0].regras?.obrigatoriedade?.tipo).toBe(TipoObrigatoriedadeCodigo.QUANDO);
@@ -201,16 +201,16 @@ describe('conteudoParaOModelo', () => {
     );
   });
 
-  it('recusa gravar etapa com tipo ou bloco que o contrato não conhece', () => {
-    const etapa = (conteudo.etapas ?? [])[0];
+  it('recusa gravar página com tipo ou bloco que o contrato não conhece', () => {
+    const pagina = (conteudo.paginas ?? [])[0];
 
     expect(() =>
-      conteudoParaOModelo({ ...conteudo, etapas: [{ ...etapa, tipo: 'INVENTADO' }] }),
+      conteudoParaOModelo({ ...conteudo, paginas: [{ ...pagina, tipo: 'INVENTADO' }] }),
     ).toThrow('Código fora do contrato: INVENTADO');
     expect(() =>
       conteudoParaOModelo({
         ...conteudo,
-        etapas: [{ ...etapa, tipo: 'BLOCO', bloco: 'INVENTADO' }],
+        paginas: [{ ...pagina, tipo: 'BLOCO', bloco: 'INVENTADO' }],
       }),
     ).toThrow('Código fora do contrato: INVENTADO');
   });

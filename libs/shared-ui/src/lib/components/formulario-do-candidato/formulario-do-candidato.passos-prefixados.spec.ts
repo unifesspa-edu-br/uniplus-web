@@ -115,7 +115,7 @@ describe('FormularioDoCandidatoComponent', () => {
     it('o formulário sem seções ainda mostra o passo prefixado', () => {
       const semSecoes: FormularioDoCandidato = {
         ...FORMULARIO_DE_DUAS_SECOES,
-        etapas: [],
+        paginas: [],
         coleta: { itens: [], grupos: [] },
       };
       const tela = cenario.montar(semSecoes, { passosPrefixados: [CURSO] });

@@ -29,7 +29,7 @@ export interface DefinicaoGrupo {
   readonly fatosDoCandidatoCitados: readonly string[];
 }
 
-export interface DefinicaoEtapa {
+export interface DefinicaoPagina {
   readonly codigo: string;
   readonly exibicao: Predicado | null;
   readonly itens: readonly DefinicaoItem[];
@@ -59,7 +59,7 @@ export interface DefinicaoAgregado {
 }
 
 export interface DefinicaoFormulario {
-  readonly etapas: readonly DefinicaoEtapa[];
+  readonly paginas: readonly DefinicaoPagina[];
   readonly termos: readonly DefinicaoTermo[];
   readonly derivacoes: readonly DefinicaoDerivacao[];
   readonly agregados: readonly DefinicaoAgregado[];

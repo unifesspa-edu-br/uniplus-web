@@ -13,14 +13,14 @@ const REGRAS_DO_CAMPO: CampoAvaliado['regras'] = {
 };
 const campo = (fatoCodigo: string, outros: Partial<CampoAvaliado> = {}): CampoAvaliado => ({
   fatoCodigo,
-  etapaCodigo: 'DADOS',
+  paginaCodigo: 'DADOS',
   estado: 'RESOLVIDO',
   regras: REGRAS_DO_CAMPO,
   opcoes: null,
   ...outros,
 });
 const avaliacao = (campos: CampoAvaliado[]): AvaliacaoDoFormulario => ({
-  etapas: [],
+  paginas: [],
   campos,
   grupos: [],
   termos: [],
@@ -50,7 +50,7 @@ describe('divergências entre o interpretador e o servidor', () => {
   it('aponta a contagem do grupo e o campo da ocorrência que o interpretador decidiu diferente', () => {
     const grupo = (contagemValida: boolean, estado: string): GrupoAvaliado => ({
       codigo: 'FAMILIA',
-      etapaCodigo: 'DADOS',
+      paginaCodigo: 'DADOS',
       estado: 'RESOLVIDO',
       regras: { visivel: 'VERDADEIRO', obrigatorio: 'VERDADEIRO' },
       ocorrencias: {

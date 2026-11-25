@@ -26,7 +26,7 @@ export interface AvaliacaoDeFormularioInput {
       | null
     >
   > | null;
-  readonly etapasConcluidas: readonly string[] | null;
+  readonly paginasConcluidas: readonly string[] | null;
   readonly pressupostos: Readonly<Record<string, unknown>> | null;
   /** O envio contra o qual contam os limites de data da faixa; sem ele, o limite do envio fica indeterminado. */
   readonly envio?: components['schemas']['EnvioSimuladoInput'] | null;

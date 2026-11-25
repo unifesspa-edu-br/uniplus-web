@@ -33,7 +33,7 @@ const REFERENCIAS = [
 
 /**
  * Matriz do Uni+ DS para o editor do passo Formulários, com o processo da Medicina 2027 em
- * rascunho: o editor de formulário compartilhado (título, etapas, campos e termos) e a apuração da
+ * rascunho: o editor de formulário compartilhado (título, páginas, campos e termos) e a apuração da
  * idade em cada referência.
  *
  * A consulta do mesmo passo (processo publicado, lido como texto) é coberta por

@@ -169,7 +169,7 @@ export class GravacaoDosFormularios {
   }
 
   /**
-   * A recusa que aponta um item, uma etapa, um grupo ou um termo vai para ele no editor da aba; o
+   * A recusa que aponta um item, uma página, um grupo ou um termo vai para ele no editor da aba; o
    * resto — a do grafo, que só cita o fato na mensagem — volta como mensagem do passo.
    */
   private aplicarRecusa(

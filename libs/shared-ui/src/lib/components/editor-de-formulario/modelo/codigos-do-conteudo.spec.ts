@@ -28,7 +28,7 @@ const item: ItemDoFormulario<number> = {
 
 const conteudo: ConteudoDoFormulario<number> = {
   titulo: 'Inscrição',
-  etapas: [
+  paginas: [
     {
       codigo: 'SECAO_1',
       ordem: 1,
@@ -44,7 +44,7 @@ const conteudo: ConteudoDoFormulario<number> = {
       codigo: 'FAMILIA',
       ordem: 2,
       rotulo: 'Composição familiar',
-      etapaCodigo: null,
+      paginaCodigo: null,
       ocorrencias: { minimo: 1, maximo: null, incluiCandidato: true },
       regras: { exibicao: QUANDO, obrigatoriedade: { tipo: 'QUANDO', predicado: QUANDO } },
       subitens: [item],
@@ -75,8 +75,8 @@ describe('conteudoComCodigos', () => {
   const trocado = conteudoComCodigos(conteudo, EM_MAIUSCULAS);
   const [itemTrocado] = trocado.itens ?? [];
 
-  it('troca o operador da exibição da etapa', () => {
-    expect(trocado.etapas?.[0].exibicao).toEqual(QUANDO_TROCADO);
+  it('troca o operador da exibição da página', () => {
+    expect(trocado.paginas?.[0].exibicao).toEqual(QUANDO_TROCADO);
   });
 
   it('troca o tipo de renderização e todos os predicados do item', () => {
@@ -131,7 +131,7 @@ describe('conteudoComCodigos', () => {
             regras: { ...item.regras, exibicao: null, impedimento: null, restricoes: undefined },
           },
         ],
-        etapas: null,
+        paginas: null,
         grupos: undefined,
         termos: null,
         documentosExigidos: undefined,
@@ -142,7 +142,7 @@ describe('conteudoComCodigos', () => {
     expect(semNada.itens?.[0].regras.exibicao).toBeNull();
     expect(semNada.itens?.[0].regras.impedimento).toBeNull();
     expect(semNada.itens?.[0].regras.restricoes).toBeUndefined();
-    expect(semNada.etapas).toBeNull();
+    expect(semNada.paginas).toBeNull();
     expect(semNada.grupos).toBeUndefined();
     expect(semNada.termos).toBeNull();
     expect(semNada.documentosExigidos).toBeUndefined();
@@ -169,7 +169,7 @@ describe('conteudoComCodigos', () => {
 
     expect(desconhecido.itens?.[0].apresentacao.tipoDeCampo).toBeNull();
     expect(desconhecido.itens?.[0].regras.exibicao?.[0][0].operador).toBeNull();
-    expect(desconhecido.etapas?.[0].exibicao?.[0][0].operador).toBe('IGUAL');
+    expect(desconhecido.paginas?.[0].exibicao?.[0][0].operador).toBe('IGUAL');
   });
 });
 

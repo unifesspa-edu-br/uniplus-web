@@ -3,7 +3,7 @@ import {
   type FatoEscolhivel,
 } from '../../editor-de-condicoes/condicoes/fatos-escolhiveis';
 import { ehNegacao } from '../../formulario-do-candidato/interpretador/predicado';
-import { primeiraOrdemDaEtapa } from './ordem-das-entradas';
+import { primeiraOrdemDaPagina } from './ordem-das-entradas';
 import {
   ConteudoDoFormulario,
   ExibicaoEObrigatoriedade,
@@ -29,10 +29,10 @@ export function fatosCitaveisPeloItem(
 /** Os fatos que a exibição de uma seção pode citar: os das seções anteriores e os pressupostos. */
 export function fatosCitaveisPelaSecao(
   conteudo: ConteudoDoFormulario,
-  etapaCodigo: string,
+  paginaCodigo: string,
 ): ReadonlySet<string> {
-  const etapa = (conteudo.etapas ?? []).find((e) => e.codigo === etapaCodigo);
-  const limite = etapa === undefined ? -Infinity : primeiraOrdemDaEtapa(conteudo, etapa.ordem);
+  const pagina = (conteudo.paginas ?? []).find((e) => e.codigo === paginaCodigo);
+  const limite = pagina === undefined ? -Infinity : primeiraOrdemDaPagina(conteudo, pagina.ordem);
   return citaveisAntesDe(conteudo, limite, null);
 }
 
@@ -163,7 +163,7 @@ export function fatosDoPredicado(predicado: PredicadoNoWire): readonly string[] 
 function todosOsPredicados(conteudo: ConteudoDoFormulario): readonly PredicadoNoWire[] {
   return [
     ...todosOsCampos(conteudo).flatMap(predicadosDoCampo),
-    ...(conteudo.etapas ?? []).map((etapa) => etapa.exibicao ?? null),
+    ...(conteudo.paginas ?? []).map((pagina) => pagina.exibicao ?? null),
     ...(conteudo.grupos ?? []).flatMap((grupo) => predicadosDasRegras(grupo.regras)),
     ...(conteudo.termos ?? []).flatMap((termo) => predicadosDasRegras(termo.regras)),
     ...(conteudo.documentosExigidos ?? []).map((documento) => documento.quando),
@@ -194,10 +194,10 @@ function citantesDosCampos(conteudo: ConteudoDoFormulario): readonly PossivelCit
   }));
 }
 
-function citantesDasEtapas(conteudo: ConteudoDoFormulario): readonly PossivelCitante[] {
-  return (conteudo.etapas ?? []).map((etapa) => ({
-    citados: dePredicados([etapa.exibicao ?? null]),
-    citante: citanteSemCampo(`a seção “${etapa.apresentacao.titulo}”`),
+function citantesDasPaginas(conteudo: ConteudoDoFormulario): readonly PossivelCitante[] {
+  return (conteudo.paginas ?? []).map((pagina) => ({
+    citados: dePredicados([pagina.exibicao ?? null]),
+    citante: citanteSemCampo(`a seção “${pagina.apresentacao.titulo}”`),
   }));
 }
 
@@ -225,7 +225,7 @@ function citantesDosDocumentos(conteudo: ConteudoDoFormulario): readonly Possive
 function possiveisCitantes(conteudo: ConteudoDoFormulario): readonly PossivelCitante[] {
   return [
     ...citantesDosCampos(conteudo),
-    ...citantesDasEtapas(conteudo),
+    ...citantesDasPaginas(conteudo),
     ...citantesDosGrupos(conteudo),
     ...citantesDosTermos(conteudo),
     ...citantesDosDocumentos(conteudo),

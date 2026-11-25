@@ -4,7 +4,7 @@ import {
   FORMULARIO_COM_TERMO_DE_VERACIDADE,
   FORMULARIO_DE_DUAS_SECOES,
   FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-  apresentacaoDaEtapa,
+  apresentacaoDaPagina,
   campoApresentado,
   itemDasRegras,
 } from './formularios-de-exemplo.testing';
@@ -23,7 +23,7 @@ describe('FormularioDoCandidatoComponent', () => {
     cenario.clicar(cenario.botao('Concluir a seção'));
 
     expect(tela.querySelector('.field__error')?.textContent).toContain('Responda este campo.');
-    expect(cenario.simulacoes.at(-1)?.etapasConcluidas).toEqual([CODIGO_DA_SECAO_DE_DADOS]);
+    expect(cenario.simulacoes.at(-1)?.paginasConcluidas).toEqual([CODIGO_DA_SECAO_DE_DADOS]);
   });
 
   it('concluir de novo uma seção já concluída não muda a simulação', () => {
@@ -108,8 +108,8 @@ describe('FormularioDoCandidatoComponent', () => {
       const tela = cenario.montar(
         {
           ...FORMULARIO_DE_DUAS_SECOES,
-          etapas: [FORMULARIO_DE_DUAS_SECOES.etapas[0]],
-          regras: { etapas: FORMULARIO_DE_DUAS_SECOES.regras.etapas?.slice(0, 1) },
+          paginas: [FORMULARIO_DE_DUAS_SECOES.paginas[0]],
+          regras: { paginas: FORMULARIO_DE_DUAS_SECOES.regras.paginas?.slice(0, 1) },
         },
         { exigirSecaoValida: true },
       );
@@ -184,7 +184,7 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(tela.querySelector(`#${input.getAttribute('aria-describedby')}`)?.textContent).toContain(
       'Responda este campo.',
     );
-    expect(cenario.simulacoes.at(-1)?.etapasConcluidas ?? []).toEqual([]);
+    expect(cenario.simulacoes.at(-1)?.paginasConcluidas ?? []).toEqual([]);
     expect(cenario.itemDoPasso('2').classList).not.toContain('is-done');
   });
 
@@ -192,34 +192,34 @@ describe('FormularioDoCandidatoComponent', () => {
     const tela = cenario.montar(
       {
         ...FORMULARIO_DE_DUAS_SECOES,
-        etapas: [
+        paginas: [
           {
             codigo: 'A',
             codigoNasRegras: 'Inscricao:A',
             ordem: 0,
             tipo: 'SECAO',
-            apresentacao: apresentacaoDaEtapa('Seção A'),
+            apresentacao: apresentacaoDaPagina('Seção A'),
           },
           {
             codigo: 'B',
             codigoNasRegras: 'Inscricao:B',
             ordem: 1,
             tipo: 'SECAO',
-            apresentacao: apresentacaoDaEtapa('Seção B'),
+            apresentacao: apresentacaoDaPagina('Seção B'),
           },
           {
             codigo: 'C',
             codigoNasRegras: 'Inscricao:C',
             ordem: 2,
             tipo: 'SECAO',
-            apresentacao: apresentacaoDaEtapa('Seção C'),
+            apresentacao: apresentacaoDaPagina('Seção C'),
           },
           {
             codigo: 'D',
             codigoNasRegras: 'Inscricao:D',
             ordem: 3,
             tipo: 'SECAO',
-            apresentacao: apresentacaoDaEtapa('Seção D'),
+            apresentacao: apresentacaoDaPagina('Seção D'),
           },
         ],
         coleta: {
@@ -231,7 +231,7 @@ describe('FormularioDoCandidatoComponent', () => {
           grupos: [],
         },
         regras: {
-          etapas: [
+          paginas: [
             {
               codigo: 'Inscricao:A',
               itens: [itemDasRegras('TEM_BOLSA', { obrigatoriedade: { tipo: 'NUNCA' } })],
@@ -276,7 +276,7 @@ describe('FormularioDoCandidatoComponent', () => {
         grupos: [],
       },
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: 'Inscricao:CONTATO',
             itens: [

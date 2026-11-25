@@ -19,14 +19,14 @@ import type { ValorJson } from './regras-do-formulario';
 import { juntarOpcoes, type OpcoesDaRestricao, type Restricao } from './restricoes';
 
 /** Onde o campo está: a seção, se já foi concluída, o dia do envio e os fatos conhecidos até ele. */
-export interface ContextoDaEtapa {
-  readonly etapaCodigo: string;
-  readonly etapaConcluida: boolean;
+export interface ContextoDaPagina {
+  readonly paginaCodigo: string;
+  readonly paginaConcluida: boolean;
   readonly diaDoEnvio: string | null;
   readonly fatos: Fatos;
 }
 
-export interface ContextoDoItem extends ContextoDaEtapa {
+export interface ContextoDoItem extends ContextoDaPagina {
   /** Se quem contém o campo (a seção ou o grupo) aparece. */
   readonly visivelDoContentor: Ternario;
   /** O campo de resposta fixa, que vem da conta, vale como está. */
@@ -70,7 +70,7 @@ export function avaliarItem(
   // Sem resposta que valha: o candidato ainda deve a resposta, salvo o opcional numa seção concluída,
   // que resolve como não informado e não trava as regras seguintes.
   return concluir(
-    obrigatorio === FALSO && contexto.etapaConcluida ? FATO_NAO_INFORMADO : FATO_INDETERMINADO,
+    obrigatorio === FALSO && contexto.paginaConcluida ? FATO_NAO_INFORMADO : FATO_INDETERMINADO,
     conferida.violadas,
   );
 }
@@ -136,7 +136,7 @@ function resolverItem(
     fato,
     avaliacao: {
       fatoCodigo: item.fatoCodigo,
-      etapaCodigo: contexto.etapaCodigo,
+      paginaCodigo: contexto.paginaCodigo,
       ...aparencia,
       restricoesVioladas: violadas.map((r) => r.tipo),
       impedido: item.impedimento

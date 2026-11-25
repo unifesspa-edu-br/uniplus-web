@@ -20,7 +20,7 @@ describe('FormularioDoCandidatoComponent', () => {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
       coleta: { itens: [campoApresentado('NOTA', 'Nota', 'NUMERO')], grupos: [] },
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
             itens: [
@@ -49,7 +49,7 @@ describe('FormularioDoCandidatoComponent', () => {
         grupos: [],
       },
       regras: {
-        etapas: [
+        paginas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
             itens: [
@@ -88,7 +88,7 @@ describe('FormularioDoCandidatoComponent', () => {
         cenario.montar({
           ...NASCIMENTO,
           regras: {
-            etapas: [
+            paginas: [
               { codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('DATA_NASCIMENTO')] },
             ],
           },
@@ -153,7 +153,7 @@ describe('FormularioDoCandidatoComponent', () => {
           itens: [campoApresentado('CPF', 'CPF', 'TEXTO', { formato: 'CPF' })],
           grupos: [],
         },
-        regras: { etapas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('CPF')] }] },
+        regras: { paginas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('CPF')] }] },
       },
       { respostasFixas: { CPF: { valor: '69959836371', exibicao: '***.598.363-**' } } },
     );
@@ -173,7 +173,7 @@ describe('FormularioDoCandidatoComponent', () => {
           grupos: [],
         },
         regras: {
-          etapas: [
+          paginas: [
             {
               codigo: CODIGO_DA_SECAO_DE_DADOS,
               itens: [itemDasRegras('NOME', { formato: 'NOME_PESSOA' })],

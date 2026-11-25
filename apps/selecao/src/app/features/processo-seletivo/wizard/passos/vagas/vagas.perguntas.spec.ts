@@ -19,7 +19,7 @@ import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import {
   campoDoServidor,
-  etapaDoServidor,
+  paginaDoServidor,
   formularioDoServidor,
 } from '../../shared/formulario-do-servidor.testing';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
@@ -153,9 +153,9 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
   function formularioDeInscricao(coletados: readonly string[]): FormularioDto {
     return formularioDoServidor({
       faseId: FASE_DE_INSCRICAO.id,
-      etapas: [
-        etapaDoServidor('DADOS_BASICOS', 0),
-        etapaDoServidor('REVISAO_E_ACEITE', 1, BlocoSistemaCodigo.REVISAO_E_ACEITE),
+      paginas: [
+        paginaDoServidor('DADOS_BASICOS', 0),
+        paginaDoServidor('REVISAO_E_ACEITE', 1, BlocoSistemaCodigo.REVISAO_E_ACEITE),
       ],
       coleta: {
         itens: coletados.map((codigo, ordem) =>
@@ -217,7 +217,7 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
 
     // A pergunta entra na seção dos outros dados, que o cabeçalho do formulário cria antes dos itens.
     const cabecalho = controller.expectOne((r) => r.method === 'PUT' && r.url === ROTA_INSCRICAO);
-    expect(cabecalho.request.body.etapas.map((e: { codigo: string }) => e.codigo)).toContain(
+    expect(cabecalho.request.body.paginas.map((e: { codigo: string }) => e.codigo)).toContain(
       'OUTROS_DADOS_EXIGIDOS',
     );
     cabecalho.flush(null, { status: 204, statusText: 'No Content' });

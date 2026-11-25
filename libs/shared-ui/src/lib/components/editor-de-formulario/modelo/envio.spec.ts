@@ -7,13 +7,13 @@ import type { GrupoDoFormulario } from './tipos';
 describe('semDadosBasicos', () => {
   it('o envio deixa de fora a seção dos dados básicos, que a API repõe', () => {
     const atual = conteudo({
-      etapas: [secao('DADOS_BASICOS', 0), secao('S1', 1)],
+      paginas: [secao('DADOS_BASICOS', 0), secao('S1', 1)],
       itens: [item('NOME', 0, 'DADOS_BASICOS'), item('A', 1, 'S1')],
     });
 
     const enviado = semDadosBasicos(atual);
 
-    expect(enviado.etapas?.map((e) => e.codigo)).toEqual(['S1']);
+    expect(enviado.paginas?.map((e) => e.codigo)).toEqual(['S1']);
     expect(enviado.itens?.map((i) => i.fatoCodigo)).toEqual(['A']);
   });
 });
@@ -49,7 +49,7 @@ describe('conteudoParaEnvio', () => {
       codigo: 'G',
       ordem: 1,
       rotulo: 'Grupo',
-      etapaCodigo: 'S1',
+      paginaCodigo: 'S1',
       ocorrencias: { minimo: 1, maximo: null, incluiCandidato: false },
       regras: { exibicao: null, obrigatoriedade: { tipo: null, predicado: null } },
       subitens: [],

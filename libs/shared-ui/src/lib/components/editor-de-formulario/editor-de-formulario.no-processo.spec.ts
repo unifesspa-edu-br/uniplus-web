@@ -38,7 +38,7 @@ describe('EditorDeFormularioComponent: no processo', () => {
     expect(editado?.pressupostos ?? [], 'o fato da inscrição não é gravado').toEqual([]);
     expect(cenario.tela.textContent).not.toContain('Fatos pressupostos');
     expect(
-      cenario.ofertadosEm('f-etapa-S1-acrescentar'),
+      cenario.ofertadosEm('f-pagina-S1-acrescentar'),
       'o fato que a inscrição coleta não é oferecido como campo',
     ).not.toContain('DA_INSCRICAO');
   });
@@ -63,7 +63,7 @@ describe('EditorDeFormularioComponent: no processo', () => {
     expect(alternativa.disabled, 'só o fato de membro viria antes, e ele não é citável').toBe(true);
 
     const grupoNovo = [
-      ...((cenario.tela.querySelector('#f-etapa-S1-grupo-campo') as HTMLSelectElement | null)
+      ...((cenario.tela.querySelector('#f-pagina-S1-grupo-campo') as HTMLSelectElement | null)
         ?.options ?? []),
     ].map((o) => o.value);
     expect(
@@ -104,7 +104,7 @@ describe('EditorDeFormularioComponent: no processo', () => {
     );
     cenario.detectar();
 
-    const ofertados = cenario.ofertadosEm('f-etapa-S1-acrescentar');
+    const ofertados = cenario.ofertadosEm('f-pagina-S1-acrescentar');
     expect(ofertados).toContain('LIVRE');
     expect(ofertados).not.toContain('DE_OUTRA');
 
@@ -116,7 +116,7 @@ describe('EditorDeFormularioComponent: no processo', () => {
   });
 
   it('o grupo cujo campo está travado não pode ser removido, e diz por quê', () => {
-    const grupo = { ...FAMILIA, subitens: [item('RENDA', 0, { etapaCodigo: null })] };
+    const grupo = { ...FAMILIA, subitens: [item('RENDA', 0, { paginaCodigo: null })] };
     cenario.entrada('conteudo', { ...conteudo, grupos: [grupo] });
     cenario.entrada(
       'remocoesTravadas',

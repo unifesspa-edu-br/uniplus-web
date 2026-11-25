@@ -10,7 +10,7 @@ import type {
 import type {
   DefinicaoAgregado,
   DefinicaoDerivacao,
-  DefinicaoEtapa,
+  DefinicaoPagina,
   DefinicaoFormulario,
   DefinicaoGrupo,
   DefinicaoItem,
@@ -28,22 +28,22 @@ export type {
   OcorrenciaRespondida,
 } from './avaliacao-interna';
 
-interface ItemDaEtapa {
-  readonly etapa: DefinicaoEtapa;
+interface ItemDaPagina {
+  readonly pagina: DefinicaoPagina;
   readonly item: DefinicaoItem;
 }
 
-interface GrupoDaEtapa {
-  readonly etapa: DefinicaoEtapa;
+interface GrupoDaPagina {
+  readonly pagina: DefinicaoPagina;
   readonly grupo: DefinicaoGrupo;
 }
 
 /** O formulário indexado pelos códigos que a avaliação resolve, na ordem em que as regras os declaram. */
 interface Indice {
-  readonly itens: readonly ItemDaEtapa[];
-  readonly grupos: readonly GrupoDaEtapa[];
-  readonly itemPorFato: ReadonlyMap<string, ItemDaEtapa>;
-  readonly grupoPorCodigo: ReadonlyMap<string, GrupoDaEtapa>;
+  readonly itens: readonly ItemDaPagina[];
+  readonly grupos: readonly GrupoDaPagina[];
+  readonly itemPorFato: ReadonlyMap<string, ItemDaPagina>;
+  readonly grupoPorCodigo: ReadonlyMap<string, GrupoDaPagina>;
   readonly derivacaoPorFato: ReadonlyMap<string, DefinicaoDerivacao>;
   readonly agregadoPorFato: ReadonlyMap<string, DefinicaoAgregado>;
 }
@@ -84,9 +84,11 @@ export function avaliar(
 }
 
 function indexar(definicao: DefinicaoFormulario): Indice {
-  const itens = definicao.etapas.flatMap((etapa) => etapa.itens.map((item) => ({ etapa, item })));
-  const grupos = definicao.etapas.flatMap((etapa) =>
-    etapa.grupos.map((grupo) => ({ etapa, grupo })),
+  const itens = definicao.paginas.flatMap((pagina) =>
+    pagina.itens.map((item) => ({ pagina, item })),
+  );
+  const grupos = definicao.paginas.flatMap((pagina) =>
+    pagina.grupos.map((grupo) => ({ pagina, grupo })),
   );
   return {
     itens,
@@ -99,17 +101,17 @@ function indexar(definicao: DefinicaoFormulario): Indice {
 }
 
 function nosDa(definicao: DefinicaoFormulario, { itens, grupos }: Indice): readonly No[] {
-  const citadosPelaEtapa = (etapa: DefinicaoEtapa): readonly string[] =>
-    fatosCitadosPor(etapa.exibicao);
+  const citadosPelaPagina = (pagina: DefinicaoPagina): readonly string[] =>
+    fatosCitadosPor(pagina.exibicao);
   return [
     ...itens.map((par, posicao) => ({
       codigo: par.item.fatoCodigo,
-      citados: [...citadosPelaEtapa(par.etapa), ...par.item.fatosCitados],
+      citados: [...citadosPelaPagina(par.pagina), ...par.item.fatosCitados],
       prioridade: posicao,
     })),
     ...grupos.map((par, posicao) => ({
       codigo: par.grupo.codigo,
-      citados: [...citadosPelaEtapa(par.etapa), ...par.grupo.fatosDoCandidatoCitados],
+      citados: [...citadosPelaPagina(par.pagina), ...par.grupo.fatosDoCandidatoCitados],
       prioridade: itens.length + posicao,
     })),
     ...definicao.derivacoes.map((d) => ({
@@ -144,11 +146,11 @@ function resolverNo(
   }
   const doGrupo = indice.grupoPorCodigo.get(codigo);
   if (doGrupo) {
-    grupos.set(codigo, avaliarGrupo(doGrupo.etapa, doGrupo.grupo, entrada, fatos));
+    grupos.set(codigo, avaliarGrupo(doGrupo.pagina, doGrupo.grupo, entrada, fatos));
     return;
   }
-  const avaliado = avaliarItemDaEtapa(
-    indice.itemPorFato.get(codigo) as ItemDaEtapa,
+  const avaliado = avaliarItemDaPagina(
+    indice.itemPorFato.get(codigo) as ItemDaPagina,
     entrada,
     fatos,
   );
@@ -156,15 +158,15 @@ function resolverNo(
   itens.set(codigo, avaliado.avaliacao);
 }
 
-function avaliarItemDaEtapa(
-  { etapa, item }: ItemDaEtapa,
+function avaliarItemDaPagina(
+  { pagina, item }: ItemDaPagina,
   entrada: EntradaDaAvaliacao,
   fatos: Fatos,
 ): ItemResolvido {
   return avaliarItem(item, entrada.respostas.get(item.fatoCodigo), {
-    etapaCodigo: etapa.codigo,
-    visivelDoContentor: avaliarOuVerdadeiro(etapa.exibicao, fatos),
-    etapaConcluida: entrada.etapasConcluidas.has(etapa.codigo),
+    paginaCodigo: pagina.codigo,
+    visivelDoContentor: avaliarOuVerdadeiro(pagina.exibicao, fatos),
+    paginaConcluida: entrada.paginasConcluidas.has(pagina.codigo),
     diaDoEnvio: entrada.diaDoEnvio,
     fatos,
     fixo: entrada.fatosFixos?.has(item.fatoCodigo) ?? false,
@@ -177,7 +179,7 @@ function deixarIndeterminado(codigo: string, indice: Indice, andamento: Andament
   if (doGrupo) {
     andamento.grupos.set(codigo, {
       codigo,
-      etapaCodigo: doGrupo.etapa.codigo,
+      paginaCodigo: doGrupo.pagina.codigo,
       visivel: INDETERMINADO,
       obrigatorio: INDETERMINADO,
       estado: INDETERMINADO,
@@ -192,7 +194,7 @@ function deixarIndeterminado(codigo: string, indice: Indice, andamento: Andament
   if (par) {
     andamento.itens.set(codigo, {
       fatoCodigo: codigo,
-      etapaCodigo: par.etapa.codigo,
+      paginaCodigo: par.pagina.codigo,
       visivel: INDETERMINADO,
       obrigatorio: INDETERMINADO,
       restricoesVioladas: [],
@@ -209,9 +211,9 @@ function montarAvaliacao(
 ): AvaliacaoInterna {
   return {
     fatos,
-    etapas: definicao.etapas.map((etapa) => ({
-      codigo: etapa.codigo,
-      visivel: avaliarOuVerdadeiro(etapa.exibicao, fatos),
+    paginas: definicao.paginas.map((pagina) => ({
+      codigo: pagina.codigo,
+      visivel: avaliarOuVerdadeiro(pagina.exibicao, fatos),
     })),
     itens: indice.itens.map((par) => itens.get(par.item.fatoCodigo) as ItemAvaliado),
     grupos: indice.grupos.map((par) => grupos.get(par.grupo.codigo) as GrupoAvaliadoInterno),

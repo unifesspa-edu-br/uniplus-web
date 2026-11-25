@@ -1,7 +1,7 @@
 import type { CaminhoDoCampo as Caminho } from '@uniplus/shared-ui/components';
 import type { DocumentoDaConfiguracaoFormulario } from '@uniplus/shared-data/selecao';
 import type {
-  EtapaDoFormulario,
+  PaginaDoFormulario,
   ItemDoFormulario,
   GrupoDoFormulario,
 } from '@uniplus/shared-ui/components';
@@ -12,20 +12,20 @@ import type { ContextoDaConversao as Contexto } from './contexto-da-conversao';
 type Formulario = DocumentoDaConfiguracaoFormulario;
 type Item = NonNullable<Formulario['itens']>[number];
 type Grupo = NonNullable<Formulario['grupos']>[number];
-type Etapa = NonNullable<Formulario['paginas']>[number];
+type Pagina = NonNullable<Formulario['paginas']>[number];
 
-export function lerEtapa(etapa: Etapa): EtapaDoFormulario {
+export function lerPagina(pagina: Pagina): PaginaDoFormulario {
   return {
-    codigo: etapa.codigo,
-    ordem: etapa.ordem ?? 0,
-    tipo: etapa.tipo,
-    bloco: etapa.bloco ?? null,
+    codigo: pagina.codigo,
+    ordem: pagina.ordem ?? 0,
+    tipo: pagina.tipo,
+    bloco: pagina.bloco ?? null,
     apresentacao: {
-      titulo: etapa.titulo ?? '',
-      descricao: etapa.descricao ?? null,
-      aviso: etapa.aviso ?? null,
+      titulo: pagina.titulo ?? '',
+      descricao: pagina.descricao ?? null,
+      aviso: pagina.aviso ?? null,
     },
-    exibicao: lerPredicado(etapa.exibicao),
+    exibicao: lerPredicado(pagina.exibicao),
   };
 }
 
@@ -65,7 +65,7 @@ export function lerItem(item: Item, contexto: Contexto, caminho: Caminho): ItemD
   return {
     fatoCodigo: item.codigoDoDado,
     ordem: item.ordem ?? 0,
-    etapaCodigo: item.paginaCodigo,
+    paginaCodigo: item.paginaCodigo,
     apresentacao: apresentacaoDoItem(item, tipoDeCampo),
     regras: regrasDoItem(item),
   };
@@ -76,7 +76,7 @@ export function lerGrupo(grupo: Grupo, contexto: Contexto, caminho: Caminho): Gr
     codigo: grupo.codigo,
     ordem: grupo.ordem ?? 0,
     rotulo: grupo.rotulo ?? '',
-    etapaCodigo: grupo.paginaCodigo ?? null,
+    paginaCodigo: grupo.paginaCodigo ?? null,
     ocorrencias: ocorrenciasDoGrupo(grupo),
     regras: lerExibicaoEObrigatoriedade(grupo.exibicao, grupo.obrigatoriedade),
     subitens: grupo.subitens.map((item, indice) =>

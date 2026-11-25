@@ -15,22 +15,22 @@ import {
 import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import { AcrescentarNoFimComponent } from './editor/acrescentar-no-fim';
-import { EtapaDoFormularioComponent } from './editor/etapa-do-formulario';
+import { PaginaDoFormularioComponent } from './editor/pagina-do-formulario';
 import { PressupostosDoFormularioComponent } from './editor/pressupostos-do-formulario';
-import { idDaEtapa } from './ids';
+import { idDaPagina } from './ids';
 import { LIMITES_DO_FORMULARIO } from './modelo/constantes';
 import { contextoDoEditor } from './modelo/contexto-do-editor';
-import { etapasEmOrdem } from './modelo/ordem-das-entradas';
+import { paginasEmOrdem } from './modelo/ordem-das-entradas';
 import { type RecusasDoConteudo } from './modelo/recusas';
 import {
   type ConteudoDoFormulario,
-  type EtapaDoFormulario,
+  type PaginaDoFormulario,
   type FatoDoFormulario,
   type TermoDisponivel,
 } from './modelo/tipos';
 
 /**
- * O editor de um formulário por finalidade (ADR-0136): etapas e blocos, os campos de cada seção,
+ * O editor de um formulário por finalidade (ADR-0136): páginas e blocos, os campos de cada seção,
  * quando cada um é obrigatório e exibido, e a ordem — com a recusa explicada do movimento que
  * poria uma condição antes do campo que ela cita. Serve ao modelo, na Configuração, e ao
  * formulário do processo, na Seleção.
@@ -39,7 +39,7 @@ import {
  * termos, os pressupostos, os grupos repetíveis, as restrições — inclusive as opções condicionadas
  * a respostas anteriores e as formadas por elas — e o impedimento de cada campo.
  *
- * Acessibilidade: cada etapa é uma região nomeada pelo título; mover, acrescentar e remover são
+ * Acessibilidade: cada página é uma região nomeada pelo título; mover, acrescentar e remover são
  * anunciados numa região de status visível, que também mostra a recusa; o foco volta ao botão
  * que moveu o campo, ou vai ao campo acrescentado.
  */
@@ -49,7 +49,7 @@ import {
   imports: [
     ValorLegivelDirective,
     PressupostosDoFormularioComponent,
-    EtapaDoFormularioComponent,
+    PaginaDoFormularioComponent,
     AcrescentarNoFimComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -82,13 +82,13 @@ import {
       (anuncio)="anuncio.set($event)"
     />
 
-    @for (etapa of etapas(); track etapa.codigo; let posicao = $index) {
-      <ui-etapa-do-formulario
+    @for (pagina of paginas(); track pagina.codigo; let posicao = $index) {
+      <ui-pagina-do-formulario
         [contexto]="contexto()"
-        [etapa]="etapa"
+        [pagina]="pagina"
         [posicao]="posicao + 1"
-        [aberta]="etapaAberta(etapa)"
-        (alternar)="alternarEtapa(etapa)"
+        [aberta]="paginaAberta(pagina)"
+        (alternar)="alternarPagina(pagina)"
         (camposEditados)="camposEditados = $event"
         (conteudoChange)="emitir($event)"
         (anuncio)="anuncio.set($event)"
@@ -122,7 +122,7 @@ export class EditorDeFormularioComponent {
   /** Prefixo dos ids — único na tela. */
   readonly idBase = input<string>('formulario');
   readonly disabled = input<boolean>(false);
-  /** As recusas da última gravação, já distribuídas por item e etapa. */
+  /** As recusas da última gravação, já distribuídas por item e página. */
   readonly recusas = input<RecusasDoConteudo | null>(null);
   /** Os termos de consentimento que o formulário pode exigir, com as versões promovidas. */
   readonly termosDisponiveis = input<readonly TermoDisponivel[]>([]);
@@ -147,10 +147,10 @@ export class EditorDeFormularioComponent {
 
   protected readonly limites = LIMITES_DO_FORMULARIO;
   protected readonly anuncio = signal('');
-  /** As etapas que o usuário recolheu, pelo código — que acompanha a etapa quando ela é movida. */
-  private readonly etapasRecolhidas = signal<ReadonlySet<string>>(new Set());
+  /** As páginas que o usuário recolheu, pelo código — que acompanha a página quando ela é movida. */
+  private readonly paginasRecolhidas = signal<ReadonlySet<string>>(new Set());
 
-  protected readonly etapas = computed(() => etapasEmOrdem(this.conteudo()));
+  protected readonly paginas = computed(() => paginasEmOrdem(this.conteudo()));
   protected readonly contexto = computed(() =>
     contextoDoEditor({
       conteudo: this.conteudo(),
@@ -181,14 +181,14 @@ export class EditorDeFormularioComponent {
     this.emitir({ ...this.conteudo(), titulo: titulo.trim() === '' ? null : titulo });
   }
 
-  protected etapaAberta(etapa: Pick<EtapaDoFormulario, 'codigo'>): boolean {
-    return !this.etapasRecolhidas().has(etapa.codigo);
+  protected paginaAberta(pagina: Pick<PaginaDoFormulario, 'codigo'>): boolean {
+    return !this.paginasRecolhidas().has(pagina.codigo);
   }
 
-  protected alternarEtapa(etapa: Pick<EtapaDoFormulario, 'codigo'>): void {
-    this.etapasRecolhidas.update((recolhidas) => {
+  protected alternarPagina(pagina: Pick<PaginaDoFormulario, 'codigo'>): void {
+    this.paginasRecolhidas.update((recolhidas) => {
       const proximas = new Set(recolhidas);
-      if (!proximas.delete(etapa.codigo)) proximas.add(etapa.codigo);
+      if (!proximas.delete(pagina.codigo)) proximas.add(pagina.codigo);
       return proximas;
     });
   }
@@ -206,14 +206,14 @@ export class EditorDeFormularioComponent {
       campo.focus();
       return Promise.resolve(document.activeElement === campo);
     }
-    const etapa = this.etapas().find(
-      (candidata) => `${idDaEtapa(this.idBase(), candidata.codigo)}-corpo` === corpo.id,
+    const pagina = this.paginas().find(
+      (candidata) => `${idDaPagina(this.idBase(), candidata.codigo)}-corpo` === corpo.id,
     );
-    if (etapa !== undefined) this.alternarEtapa(etapa);
-    return this.focarAposAbrirEtapa();
+    if (pagina !== undefined) this.alternarPagina(pagina);
+    return this.focarAposAbrirPagina();
   }
 
-  private focarAposAbrirEtapa(): Promise<boolean> {
+  private focarAposAbrirPagina(): Promise<boolean> {
     return new Promise((resolve) => {
       afterNextRender(
         () => {

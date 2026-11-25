@@ -1,7 +1,7 @@
 import {
   BlocoSistemaCodigo,
   type OperadorCodigo,
-  TipoEtapaFormularioCodigo,
+  TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
   type TipoDeCampoCodigo,
 } from '@uniplus/shared-data/configuracao';
@@ -59,19 +59,19 @@ function membroDoContrato<E extends Record<string, string>>(contrato: E, codigo:
 }
 
 /**
- * As etapas, com o tipo e o bloco no membro do enum do contrato.
+ * As páginas, com o tipo e o bloco no membro do enum do contrato.
  *
  * @throws Error quando o tipo ou o bloco não existe no contrato: os dois vêm da API ou das
  * constantes do editor, então um valor desconhecido é defeito do código, não da pessoa que preenche.
  */
-export function etapasParaOModelo<
+export function paginasParaOModelo<
   E extends { readonly tipo: string; readonly bloco: string | null },
->(etapas: readonly E[] | null | undefined) {
+>(paginas: readonly E[] | null | undefined) {
   return (
-    etapas?.map((etapa) => ({
-      ...etapa,
-      tipo: membroDoContrato(TipoEtapaFormularioCodigo, etapa.tipo),
-      bloco: etapa.bloco === null ? null : membroDoContrato(BlocoSistemaCodigo, etapa.bloco),
+    paginas?.map((pagina) => ({
+      ...pagina,
+      tipo: membroDoContrato(TipoPaginaFormularioCodigo, pagina.tipo),
+      bloco: pagina.bloco === null ? null : membroDoContrato(BlocoSistemaCodigo, pagina.bloco),
     })) ?? null
   );
 }

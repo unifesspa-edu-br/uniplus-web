@@ -3,12 +3,12 @@ import { cabecalhoParaEnvio, itensParaEnvio, termosParaEnvio } from './codigos-d
 export { cabecalhoParaEnvio, itensParaEnvio, termosParaEnvio } from './codigos-do-formulario';
 import {
   conteudoInicial,
-  etapasEmOrdem,
+  paginasEmOrdem,
   FINALIDADE_INSCRICAO,
   semDadosBasicos,
   todosOsCampos,
   type ConteudoDoFormulario,
-  type EtapaDoFormulario,
+  type PaginaDoFormulario,
   type ExibicaoEObrigatoriedade,
   type GrupoDoFormulario,
   type Impedimento,
@@ -57,7 +57,7 @@ function restricaoDoDto(restricao: RestricaoDoDto): RestricaoDeValor {
 
 type GrupoDoFormularioDto = FormularioDto['coleta']['grupos'][number];
 type TermoDoFormularioDto = FormularioDto['termos'][number];
-type EtapaDoFormularioDto = FormularioDto['etapas'][number];
+type PaginaDoFormularioDto = FormularioDto['paginas'][number];
 type RegrasDoGrupoOuTermoDto = GrupoDoFormularioDto['regras'];
 
 function regrasDoDto(regras: RegrasDoGrupoOuTermoDto): ExibicaoEObrigatoriedade {
@@ -83,7 +83,7 @@ function itemDoDto(fato: FatoColetadoDto): ItemDoFormulario {
   return {
     fatoCodigo: fato.fatoCodigo,
     ordem: fato.ordem,
-    etapaCodigo: fato.etapaCodigo,
+    paginaCodigo: fato.paginaCodigo,
     apresentacao: {
       rotulo: apresentacao.rotulo,
       tipoDeCampo: apresentacao.tipoDeCampo,
@@ -115,7 +115,7 @@ function grupoDoDto(grupo: GrupoDoFormularioDto): GrupoDoFormulario {
     codigo: grupo.codigo,
     ordem: grupo.ordem,
     rotulo: grupo.rotulo,
-    etapaCodigo: grupo.etapaCodigo,
+    paginaCodigo: grupo.paginaCodigo,
     ocorrencias: ocorrenciasDoDto(grupo.ocorrencias),
     regras: regrasDoDto(grupo.regras),
     subitens: grupo.subitens.map(itemDoDto),
@@ -131,19 +131,19 @@ function termoDoDto(termo: TermoDoFormularioDto): TermoDoFormulario {
   };
 }
 
-function etapaDoDto(etapa: EtapaDoFormularioDto): EtapaDoFormulario {
-  const { apresentacao } = etapa;
+function paginaDoDto(pagina: PaginaDoFormularioDto): PaginaDoFormulario {
+  const { apresentacao } = pagina;
   return {
-    codigo: etapa.codigo,
-    ordem: etapa.ordem,
-    tipo: etapa.tipo,
-    bloco: etapa.bloco,
+    codigo: pagina.codigo,
+    ordem: pagina.ordem,
+    tipo: pagina.tipo,
+    bloco: pagina.bloco,
     apresentacao: {
       titulo: apresentacao.titulo,
       descricao: apresentacao.descricao,
       aviso: apresentacao.aviso,
     },
-    exibicao: predicado(etapa.exibicao),
+    exibicao: predicado(pagina.exibicao),
   };
 }
 
@@ -151,7 +151,7 @@ function etapaDoDto(etapa: EtapaDoFormularioDto): EtapaDoFormulario {
 export function conteudoDoFormulario(dto: FormularioDto): ConteudoDoFormulario {
   return {
     titulo: dto.titulo,
-    etapas: dto.etapas.map(etapaDoDto),
+    paginas: dto.paginas.map(paginaDoDto),
     itens: dto.coleta.itens.map(itemDoDto),
     grupos: dto.coleta.grupos.map(grupoDoDto),
     termos: dto.termos.map(termoDoDto),
@@ -171,33 +171,33 @@ export interface FormularioParaGravar {
 const mesmo = (um: unknown, outro: unknown): boolean =>
   JSON.stringify(um) === JSON.stringify(outro);
 
-/** A etapa sem a posição: o que a distingue de si mesma noutro lugar. */
-function semOrdem(etapa: EtapaDoFormulario): EtapaDoFormulario {
-  return { ...etapa, ordem: 0 };
+/** A página sem a posição: o que a distingue de si mesma noutro lugar. */
+function semOrdem(pagina: PaginaDoFormulario): PaginaDoFormulario {
+  return { ...pagina, ordem: 0 };
 }
 
 /**
- * Se a única mudança nas etapas foi acrescentar seções: as do servidor continuam todas, iguais e na
+ * Se a única mudança nas páginas foi acrescentar seções: as do servidor continuam todas, iguais e na
  * mesma ordem relativa. Aí o cabeçalho pode ir primeiro, porque os itens gravados continuam
  * dentro de seções que existem e na ordem delas.
  */
-function soAcrescentouEtapas(
+function soAcrescentouPaginas(
   servidor: ConteudoDoFormulario,
   desejado: ConteudoDoFormulario,
 ): boolean {
-  const antes = etapasEmOrdem(semDadosBasicos(servidor));
-  const depois = etapasEmOrdem(semDadosBasicos(desejado)).filter((etapa) =>
-    antes.some((a) => a.codigo === etapa.codigo),
+  const antes = paginasEmOrdem(semDadosBasicos(servidor));
+  const depois = paginasEmOrdem(semDadosBasicos(desejado)).filter((pagina) =>
+    antes.some((a) => a.codigo === pagina.codigo),
   );
   return (
     antes.length === depois.length &&
-    antes.every((etapa, indice) => mesmo(semOrdem(etapa), semOrdem(depois[indice])))
+    antes.every((pagina, indice) => mesmo(semOrdem(pagina), semOrdem(depois[indice])))
   );
 }
 
 /**
  * A ordem dos PUTs de uma finalidade. A API confere cada parte contra o que está gravado da outra
- * — o cabeçalho contra os itens gravados, os itens contra as etapas gravadas —, então reordenar ou
+ * — o cabeçalho contra os itens gravados, os itens contra as páginas gravadas —, então reordenar ou
  * remover seção com itens não tem ordem simples que funcione. Nesse caso os itens vão antes sem
  * seção (o rascunho aceita), o cabeçalho depois, e os itens de novo com a seção. Só o que mudou em
  * relação ao servidor é enviado, cada parte comparada pelo mesmo mapeamento do envio.
@@ -232,10 +232,10 @@ function cabecalhoMudou(servidor: FormularioParaGravar, desejado: FormularioComF
   );
 }
 
-function etapasMudaram(servidor: FormularioParaGravar, desejado: FormularioComFase): boolean {
+function paginasMudaram(servidor: FormularioParaGravar, desejado: FormularioComFase): boolean {
   return !mesmo(
-    semDadosBasicos(desejado.conteudo).etapas,
-    semDadosBasicos(servidor.conteudo).etapas,
+    semDadosBasicos(desejado.conteudo).paginas,
+    semDadosBasicos(servidor.conteudo).paginas,
   );
 }
 
@@ -244,8 +244,8 @@ function passosDeAtualizacao(
   desejado: FormularioComFase,
 ): readonly PassoDaGravacao[] {
   const itensMudaram = !mesmo(itensParaEnvio(desejado.conteudo), itensParaEnvio(servidor.conteudo));
-  if (etapasMudaram(servidor, desejado) && itensMudaram) {
-    return soAcrescentouEtapas(servidor.conteudo, desejado.conteudo)
+  if (paginasMudaram(servidor, desejado) && itensMudaram) {
+    return soAcrescentouPaginas(servidor.conteudo, desejado.conteudo)
       ? ['cabecalho', 'itens']
       : ['itensSemSecao', 'cabecalho', 'itens'];
   }
