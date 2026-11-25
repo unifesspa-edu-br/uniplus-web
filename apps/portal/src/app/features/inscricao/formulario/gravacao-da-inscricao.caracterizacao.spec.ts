@@ -49,7 +49,7 @@ function prepararAGravacao() {
   const formulario = {
     simulacao,
     termosAceitos,
-    concluirTodas: vi.fn(() => 0),
+    conferencia: { concluirTodas: vi.fn(() => 0) },
   } as unknown as FormularioParaGravar;
   TestBed.configureTestingModule({
     providers: [
@@ -246,11 +246,11 @@ describe('GravacaoDaInscricao: o envio', () => {
   });
 
   it('com seção pendente, não envia nem ocupa a tela', () => {
-    (c.formulario.concluirTodas as ReturnType<typeof vi.fn>).mockReturnValue(2);
+    (c.formulario.conferencia.concluirTodas as ReturnType<typeof vi.fn>).mockReturnValue(2);
 
     c.gravacao.enviar(c.formulario);
 
-    expect(c.formulario.concluirTodas).toHaveBeenCalledWith();
+    expect(c.formulario.conferencia.concluirTodas).toHaveBeenCalledWith();
     expect(c.servico.submeter).not.toHaveBeenCalled();
     expect(c.gravacao.operacao()).toBeNull();
   });
@@ -260,7 +260,7 @@ describe('GravacaoDaInscricao: o envio', () => {
 
     c.gravacao.enviar(c.formulario);
 
-    expect(c.formulario.concluirTodas).not.toHaveBeenCalled();
+    expect(c.formulario.conferencia.concluirTodas).not.toHaveBeenCalled();
     expect(c.servico.submeter).not.toHaveBeenCalled();
   });
 

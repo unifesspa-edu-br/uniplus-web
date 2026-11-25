@@ -129,7 +129,7 @@ describe('FormularioDoCandidatoComponent', () => {
     it('concluirTodas sem navegar conta as pendências e deixa o candidato onde está', () => {
       const tela = cenario.montar(FORMULARIO_DE_DUAS_SECOES, { passosPrefixados: [CURSO] });
 
-      expect(cenario.fixture.componentInstance.concluirTodas()).toBe(2);
+      expect(cenario.fixture.componentInstance.conferencia.concluirTodas()).toBe(2);
       cenario.fixture.detectChanges();
 
       expect(cenario.fixture.componentInstance.passoPrefixadoAtual()).toBe('curso');

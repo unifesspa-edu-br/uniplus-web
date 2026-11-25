@@ -35,7 +35,7 @@ describe('GravacaoDaInscricao: recusa só com causa geral', () => {
   const formulario: FormularioParaGravar = {
     simulacao: () => ({ respostas: {}, grupos: {} }),
     termosAceitos: () => [],
-    concluirTodas: () => 0,
+    conferencia: { concluirTodas: () => 0 },
   } as unknown as FormularioParaGravar;
 
   beforeEach(() => {
