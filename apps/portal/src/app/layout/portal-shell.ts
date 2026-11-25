@@ -1,10 +1,6 @@
+import { NAVEGACAO_DO_PORTAL } from './navegacao-do-portal';
 import { DOCUMENT } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
@@ -17,13 +13,6 @@ import {
   VlibrasLoaderComponent,
 } from '@uniplus/shared-ui/components';
 import { mediaQuerySignal } from '@uniplus/shared-core/dom';
-
-interface PortalNavItem {
-  readonly label: string;
-  readonly icon: string;
-  readonly routerLink?: string;
-  readonly requiresAuth?: boolean;
-}
 
 interface PortalFooterLink {
   readonly label: string;
@@ -163,21 +152,6 @@ export class PortalShellComponent {
   protected readonly paginaRaiz = this.document.documentElement;
   protected readonly rolaPelaPagina = mediaQuerySignal(PortalShellComponent.ALTURA_JANELA_BAIXA);
 
-  // "Meu perfil" vive no menu do avatar (auth-user-header-info), não aqui.
-  // "Documentos" fica de fora enquanto for placeholder vazio — pô-lo no menu
-  // principal cria uma expectativa que a tela não entrega; a rota continua
-  // acessível por URL direta e ganha link aqui quando houver conteúdo por trás.
-  private readonly allNavItems: readonly PortalNavItem[] = [
-    { label: 'Editais', icon: 'pi-calendar', routerLink: '/processos' },
-    {
-      label: 'Minhas inscrições',
-      icon: 'pi-check-square',
-      routerLink: '/inscricao',
-      requiresAuth: true,
-    },
-    { label: 'Ajuda', icon: 'pi-question-circle' },
-  ];
-
   private readonly allFooterGroups: readonly PortalFooterGroup[] = [
     {
       label: 'Candidato',
@@ -200,16 +174,15 @@ export class PortalShellComponent {
     },
   ];
 
+  // "Meu perfil" fica no menu do avatar; "Documentos" aguarda conteúdo antes de entrar no menu.
   protected readonly navItems = computed(() =>
-    this.allNavItems.filter((item) => !item.requiresAuth || this.userContext.isAuthenticated()),
+    NAVEGACAO_DO_PORTAL.filter((item) => !item.requiresAuth || this.userContext.isAuthenticated()),
   );
 
   protected readonly footerGroups = computed(() =>
     this.allFooterGroups.map((group) => ({
       ...group,
-      links: group.links.filter(
-        (link) => !link.requiresAuth || this.userContext.isAuthenticated(),
-      ),
+      links: group.links.filter((link) => !link.requiresAuth || this.userContext.isAuthenticated()),
     })),
   );
 }
