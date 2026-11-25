@@ -1,30 +1,17 @@
+import { MENU_LATERAL } from './menu-lateral';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 import { PermissoesService, UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { PerfisDaBarraComponent, UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
-import { PERMISSOES_DAS_TELAS, type CaminhoDeTela } from '../acesso/permissoes-das-telas';
+import { PERMISSOES_DAS_TELAS } from '../acesso/permissoes-das-telas';
 import { TrilhaContextual } from '../trilha-contextual';
 import {
   AppShellComponent,
   UiShellBreadcrumbItem,
   UiShellNavGroup,
 } from '@uniplus/shared-ui/shell';
-
-interface SelNavItem {
-  readonly label: string;
-  readonly icon: string;
-  readonly routerLink?: string;
-  readonly exact?: boolean;
-  /** Tela protegida cuja permissão libera a entrada; ausente, basta a sessão. */
-  readonly tela?: CaminhoDeTela;
-}
-
-interface SelNavGroup {
-  readonly label: string;
-  readonly items: readonly SelNavItem[];
-}
 
 @Component({
   selector: 'sel-layout',
@@ -79,47 +66,21 @@ export class LayoutComponent {
 
   protected readonly sidebarUserInitials = computed(() => initials(this.userContext.displayName()));
 
-  /** Menu único do acompanhamento; Notas, Homologação e Classificação não têm entrada. */
-  private readonly navGroupsDeclarados: readonly SelNavGroup[] = [
-    {
-      label: 'Acompanhamento',
-      items: [
-        {
-          label: 'Painel de processos',
-          icon: 'pi-table',
-          routerLink: '/dashboard',
-        },
-      ],
-    },
-    {
-      label: 'Cadastro',
-      items: [
-        {
-          label: 'Processos seletivos',
-          icon: 'pi-file',
-          routerLink: '/processo-seletivo',
-          tela: 'processo-seletivo',
-        },
-      ],
-    },
-  ];
-
   /**
+   * Menu único do acompanhamento; Notas, Homologação e Classificação não têm entrada.
    * Mostra entradas protegidas apenas após carregar as permissões efetivas. Durante a recarga ou
    * em caso de falha, só o painel permanece visível. Grupos vazios não aparecem.
    */
   protected readonly navGroups = computed<readonly UiShellNavGroup[]>(() =>
-    this.navGroupsDeclarados
-      .map((grupo) => ({
-        ...grupo,
-        items: grupo.items.filter(
-          (item) =>
-            item.tela === undefined ||
-            (this.permissoes.estado() === 'carregada' &&
-              this.permissoes.temAlguma(...PERMISSOES_DAS_TELAS[item.tela])),
-        ),
-      }))
-      .filter((grupo) => grupo.items.length > 0),
+    MENU_LATERAL.map((grupo) => ({
+      ...grupo,
+      items: grupo.items.filter(
+        (item) =>
+          item.tela === undefined ||
+          (this.permissoes.estado() === 'carregada' &&
+            this.permissoes.temAlguma(...PERMISSOES_DAS_TELAS[item.tela])),
+      ),
+    })).filter((grupo) => grupo.items.length > 0),
   );
 
   private breadcrumbDaRotaAtiva(): UiShellBreadcrumbItem[] {
