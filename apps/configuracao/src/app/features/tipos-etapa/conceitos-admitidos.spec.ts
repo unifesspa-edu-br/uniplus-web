@@ -12,7 +12,7 @@ function conceito(codigo: string, nome: string, ativo = true): TipoConceitoDto {
     definicao: {
       nome,
       descricao: null,
-      natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Categórico' },
+      natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Por opções' },
       numerico: null,
       valores: [],
     },

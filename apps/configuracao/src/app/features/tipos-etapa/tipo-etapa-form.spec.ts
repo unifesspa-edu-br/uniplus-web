@@ -24,7 +24,7 @@ const tipo: TipoEtapaDto = {
       {
         codigo: 'CONCEITO_A',
         nome: 'Conceito A',
-        natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Categórico' },
+        natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Por opções' },
       },
     ],
   },

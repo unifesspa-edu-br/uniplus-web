@@ -11,7 +11,7 @@ export const PARECER_FINAL: JsonDaApi<TipoConceitoDto> = {
   definicao: {
     nome: 'Parecer final',
     descricao: null,
-    natureza: { codigo: 'POR_OPCOES', rotulo: 'Categórico' },
+    natureza: { codigo: 'POR_OPCOES', rotulo: 'Por opções' },
     numerico: null,
     valores: [
       { codigo: 'APTO', rotulo: 'Apto', contaComoAprovacao: true },
