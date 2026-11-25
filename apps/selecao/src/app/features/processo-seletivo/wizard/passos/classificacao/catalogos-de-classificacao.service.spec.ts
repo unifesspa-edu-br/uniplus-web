@@ -9,6 +9,7 @@ import {
   RegraCatalogoDto,
   RegrasCatalogoApi,
   RegrasCatalogoQuery,
+  TipoRegraCodigo,
 } from '@uniplus/shared-data/selecao';
 import { errorResult, mockProblemDetails } from '@uniplus/shared-testing';
 
@@ -33,12 +34,25 @@ function regra(codigo: string, tipo: RegraCatalogoDto['tipo']['codigo']): RegraC
 }
 
 const POR_TIPO: Record<string, readonly RegraCatalogoDto[]> = {
-  REGRA_CALCULO: [regra('FORMULA-MEDIA-PONDERADA', 'REGRA_CALCULO' as RegraCatalogoDto['tipo']['codigo'])],
-  REGRA_ARREDONDAMENTO: [regra('ARRED-TRUNCAR', 'REGRA_ARREDONDAMENTO' as RegraCatalogoDto['tipo']['codigo'])],
-  REGRA_ORDEM_ALOCACAO: [regra('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA', 'REGRA_ORDEM_ALOCACAO' as RegraCatalogoDto['tipo']['codigo'])],
-  REGRA_ELIMINACAO: [regra('ELIMINACAO_ZERO_EM_AREA', 'REGRA_ELIMINACAO' as RegraCatalogoDto['tipo']['codigo'])],
-  regra_bonus: [regra('BONUS-MULTIPLICATIVO', 'regra_bonus' as RegraCatalogoDto['tipo']['codigo'])],
-  CRITERIO_DESEMPATE: [regra('DESEMPATE_MAIOR_IDADE', 'CRITERIO_DESEMPATE' as RegraCatalogoDto['tipo']['codigo'])],
+  REGRA_CALCULO: [
+    regra('FORMULA-MEDIA-PONDERADA', 'REGRA_CALCULO' as RegraCatalogoDto['tipo']['codigo']),
+  ],
+  REGRA_ARREDONDAMENTO: [
+    regra('ARRED-TRUNCAR', 'REGRA_ARREDONDAMENTO' as RegraCatalogoDto['tipo']['codigo']),
+  ],
+  REGRA_ORDEM_ALOCACAO: [
+    regra(
+      'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
+      'REGRA_ORDEM_ALOCACAO' as RegraCatalogoDto['tipo']['codigo'],
+    ),
+  ],
+  REGRA_ELIMINACAO: [
+    regra('ELIMINACAO_ZERO_EM_AREA', 'REGRA_ELIMINACAO' as RegraCatalogoDto['tipo']['codigo']),
+  ],
+  [TipoRegraCodigo.REGRA_FADA]: [regra('BONUS-MULTIPLICATIVO', TipoRegraCodigo.REGRA_FADA)],
+  CRITERIO_DESEMPATE: [
+    regra('DESEMPATE_MAIOR_IDADE', 'CRITERIO_DESEMPATE' as RegraCatalogoDto['tipo']['codigo']),
+  ],
 };
 
 const RESOLUCAO = 'Resolução nº 805/2024/Consepe';
@@ -112,7 +126,7 @@ describe('CatalogosDeClassificacao', () => {
         'REGRA_ARREDONDAMENTO',
         'REGRA_ORDEM_ALOCACAO',
         'REGRA_ELIMINACAO',
-        'regra_bonus',
+        TipoRegraCodigo.REGRA_FADA,
         'CRITERIO_DESEMPATE',
       ]),
     );
@@ -128,7 +142,7 @@ describe('CatalogosDeClassificacao', () => {
 
   it('anuncia erro quando um dos seis catálogos falha, e libera nova tentativa', () => {
     const listar = vi.fn((query: RegrasCatalogoQuery) =>
-      query.tipo === 'regra_bonus'
+      query.tipo === TipoRegraCodigo.REGRA_FADA
         ? throwError(() => new Error('falhou'))
         : pagina(POR_TIPO[query.tipo ?? ''] ?? []),
     );
