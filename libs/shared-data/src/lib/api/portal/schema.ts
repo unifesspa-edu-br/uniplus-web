@@ -11,70 +11,7 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: {
-                    readonly "If-None-Match"?: string;
-                };
-                readonly path: {
-                    readonly identificador: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        /** @description Selo da página composta. Devolva-o no If-None-Match da próxima leitura: a resposta é de revalidação obrigatória (Cache-Control: no-cache), e o selo permite receber 304 em vez da página inteira. Ausente quando a linha do tempo está incompleta, porque essa resposta não é guardada. */
-                        readonly ETag?: string;
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/vnd.uniplus.certame-publico.v1+json": components["schemas"]["CertamePublicoResponse"];
-                    };
-                };
-                /** @description Not Modified */
-                readonly 304: {
-                    headers: {
-                        /** @description Selo da página composta. Devolva-o no If-None-Match da próxima leitura: a resposta é de revalidação obrigatória (Cache-Control: no-cache), e o selo permite receber 304 em vez da página inteira. Ausente quando a linha do tempo está incompleta, porque essa resposta não é guardada. */
-                        readonly ETag?: string;
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Acceptable */
-                readonly 406: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Service Unavailable */
-                readonly 503: {
-                    headers: {
-                        /** @description Em quantos segundos vale tentar de novo. Presente quando os dados do certame estão temporariamente indisponíveis. */
-                        readonly "Retry-After"?: number;
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly get: operations["ObterCertamePublico"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -90,28 +27,7 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path?: never;
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "text/plain": components["schemas"]["PingResponse"];
-                        readonly "application/json": components["schemas"]["PingResponse"];
-                        readonly "text/json": components["schemas"]["PingResponse"];
-                    };
-                };
-            };
-        };
+        readonly get: operations["VerificarDisponibilidade"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -207,6 +123,94 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
+export interface operations {
+    readonly ObterCertamePublico: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: {
+                readonly "If-None-Match"?: string;
+            };
+            readonly path: {
+                readonly identificador: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    /** @description Selo da página composta. Devolva-o no If-None-Match da próxima leitura: a resposta é de revalidação obrigatória (Cache-Control: no-cache), e o selo permite receber 304 em vez da página inteira. Ausente quando a linha do tempo está incompleta, porque essa resposta não é guardada. */
+                    readonly ETag?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.certame-publico.v1+json": components["schemas"]["CertamePublicoResponse"];
+                };
+            };
+            /** @description Not Modified */
+            readonly 304: {
+                headers: {
+                    /** @description Selo da página composta. Devolva-o no If-None-Match da próxima leitura: a resposta é de revalidação obrigatória (Cache-Control: no-cache), e o selo permite receber 304 em vez da página inteira. Ausente quando a linha do tempo está incompleta, porque essa resposta não é guardada. */
+                    readonly ETag?: string;
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Service Unavailable */
+            readonly 503: {
+                headers: {
+                    /** @description Em quantos segundos vale tentar de novo. Presente quando os dados do certame estão temporariamente indisponíveis. */
+                    readonly "Retry-After"?: number;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly VerificarDisponibilidade: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "text/plain": components["schemas"]["PingResponse"];
+                    readonly "application/json": components["schemas"]["PingResponse"];
+                    readonly "text/json": components["schemas"]["PingResponse"];
+                };
+            };
+        };
+    };
+}
 export enum PapelDoDocumento {
     principal = "principal",
     anexo = "anexo"
@@ -217,4 +221,3 @@ export enum SituacaoDaInscricao {
     ultimosDias = "ultimosDias",
     encerradas = "encerradas"
 }
-export type operations = Record<string, never>;

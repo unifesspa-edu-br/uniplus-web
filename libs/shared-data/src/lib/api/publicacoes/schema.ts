@@ -31,73 +31,7 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: {
-                    /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
-                    readonly cursor?: string;
-                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
-                    readonly limit?: number;
-                    /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
-                    readonly direction?: PathsApiPublicacoesAtosGetParametersQueryDirection;
-                };
-                readonly header?: never;
-                readonly path?: never;
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
-                        readonly Link?: string;
-                        /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
-                        readonly "X-Page-Size"?: number;
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/vnd.uniplus.ato-normativo.v1+json": readonly components["schemas"]["AtoNormativoDto"][];
-                    };
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Acceptable */
-                readonly 406: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Gone */
-                readonly 410: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly get: operations["ListarAtosNormativos"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -113,76 +47,7 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: {
-                    /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
-                    readonly cursor?: string;
-                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
-                    readonly limit?: number;
-                    /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
-                    readonly direction?: PathsApiPublicacoesEntidadesEntidadeTipoEntidadeIdAtosGetParametersQueryDirection;
-                };
-                readonly header?: never;
-                readonly path: {
-                    readonly entidadeTipo: string;
-                    readonly entidadeId: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
-                        readonly Link?: string;
-                        /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
-                        readonly "X-Page-Size"?: number;
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/vnd.uniplus.ato-normativo.v1+json": readonly components["schemas"]["AtoNormativoDto"][];
-                    };
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Acceptable */
-                readonly 406: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Gone */
-                readonly 410: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly get: operations["ListarAtosNormativosDaEntidade"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -198,46 +63,7 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/vnd.uniplus.ato-normativo.v1+json": components["schemas"]["AtoNormativoDto"];
-                    };
-                };
-                /** @description O ato não existe (uniplus.publicacoes.ato_normativo.nao_encontrado). */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Acceptable */
-                readonly 406: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly get: operations["ObterAtoNormativo"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -255,91 +81,7 @@ export interface paths {
         };
         readonly get?: never;
         readonly put?: never;
-        readonly post: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path?: never;
-                readonly cookie?: never;
-            };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["RegistrarAtoNormativoCommand"];
-                    readonly "text/json": components["schemas"]["RegistrarAtoNormativoCommand"];
-                    readonly "application/*+json": components["schemas"]["RegistrarAtoNormativoCommand"];
-                };
-            };
-            readonly responses: {
-                /** @description Created */
-                readonly 201: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "text/plain": components["schemas"]["RegistrarAtoNormativoResult"];
-                        readonly "application/json": components["schemas"]["RegistrarAtoNormativoResult"];
-                        readonly "text/json": components["schemas"]["RegistrarAtoNormativoResult"];
-                    };
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unauthorized */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-                readonly 413: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly post: operations["RegistrarAtoNormativo"];
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -353,74 +95,7 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: {
-                    readonly vigentes?: boolean;
-                    /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
-                    readonly cursor?: string;
-                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
-                    readonly limit?: number;
-                    /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
-                    readonly direction?: PathsApiPublicacoesTiposAtoGetParametersQueryDirection;
-                };
-                readonly header?: never;
-                readonly path?: never;
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
-                        readonly Link?: string;
-                        /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
-                        readonly "X-Page-Size"?: number;
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/vnd.uniplus.tipo-ato.v1+json": readonly components["schemas"]["TipoAtoPublicadoDto"][];
-                    };
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Acceptable */
-                readonly 406: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Gone */
-                readonly 410: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly get: operations["ListarTiposDeAto"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -436,46 +111,7 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/vnd.uniplus.tipo-ato.v1+json": components["schemas"]["TipoAtoPublicadoDto"];
-                    };
-                };
-                /** @description O tipo de ato não existe ou foi removido (uniplus.publicacoes.tipo_ato.nao_encontrado). */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Acceptable */
-                readonly 406: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly get: operations["ObterTipoDeAto"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -491,57 +127,7 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: {
-                    readonly data?: string;
-                };
-                readonly header?: never;
-                readonly path: {
-                    readonly codigo: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/vnd.uniplus.tipo-ato.v1+json": components["schemas"]["TipoAtoPublicadoDto"];
-                    };
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Nenhuma versão do tipo de ato vale na data (uniplus.publicacoes.tipo_ato.nao_encontrado). */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Acceptable */
-                readonly 406: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly get: operations["ObterTipoDeAtoVigente"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -559,91 +145,7 @@ export interface paths {
         };
         readonly get?: never;
         readonly put?: never;
-        readonly post: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path?: never;
-                readonly cookie?: never;
-            };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["CriarTipoAtoPublicadoCommand"];
-                    readonly "text/json": components["schemas"]["CriarTipoAtoPublicadoCommand"];
-                    readonly "application/*+json": components["schemas"]["CriarTipoAtoPublicadoCommand"];
-                };
-            };
-            readonly responses: {
-                /** @description Created */
-                readonly 201: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "text/plain": string;
-                        readonly "application/json": string;
-                        readonly "text/json": string;
-                    };
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unauthorized */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-                readonly 413: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly post: operations["CadastrarTipoDeAto"];
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -658,134 +160,9 @@ export interface paths {
             readonly cookie?: never;
         };
         readonly get?: never;
-        readonly put: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["AtualizarTipoAtoPublicadoCommand"];
-                    readonly "text/json": components["schemas"]["AtualizarTipoAtoPublicadoCommand"];
-                    readonly "application/*+json": components["schemas"]["AtualizarTipoAtoPublicadoCommand"];
-                };
-            };
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unauthorized */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly put: operations["AlterarTipoDeAto"];
         readonly post?: never;
-        readonly delete: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Unauthorized */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly delete: operations["ExcluirTipoDeAto"];
         readonly options?: never;
         readonly head?: never;
         readonly patch?: never;
@@ -1009,6 +386,639 @@ export interface operations {
             };
             /** @description Unauthorized */
             readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ListarAtosNormativos: {
+        readonly parameters: {
+            readonly query?: {
+                /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
+                readonly cursor?: string;
+                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                readonly limit?: number;
+                /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
+                readonly direction?: PathsApiPublicacoesAtosGetParametersQueryDirection;
+            };
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
+                    readonly Link?: string;
+                    /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
+                    readonly "X-Page-Size"?: number;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.ato-normativo.v1+json": readonly components["schemas"]["AtoNormativoDto"][];
+                };
+            };
+            /** @description Bad Request */
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Gone */
+            readonly 410: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ListarAtosNormativosDaEntidade: {
+        readonly parameters: {
+            readonly query?: {
+                /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
+                readonly cursor?: string;
+                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                readonly limit?: number;
+                /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
+                readonly direction?: PathsApiPublicacoesEntidadesEntidadeTipoEntidadeIdAtosGetParametersQueryDirection;
+            };
+            readonly header?: never;
+            readonly path: {
+                readonly entidadeTipo: string;
+                readonly entidadeId: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
+                    readonly Link?: string;
+                    /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
+                    readonly "X-Page-Size"?: number;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.ato-normativo.v1+json": readonly components["schemas"]["AtoNormativoDto"][];
+                };
+            };
+            /** @description Bad Request */
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Gone */
+            readonly 410: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ObterAtoNormativo: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.ato-normativo.v1+json": components["schemas"]["AtoNormativoDto"];
+                };
+            };
+            /** @description O ato não existe (uniplus.publicacoes.ato_normativo.nao_encontrado). */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly RegistrarAtoNormativo: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                readonly "Idempotency-Key": string;
+            };
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["RegistrarAtoNormativoCommand"];
+                readonly "text/json": components["schemas"]["RegistrarAtoNormativoCommand"];
+                readonly "application/*+json": components["schemas"]["RegistrarAtoNormativoCommand"];
+            };
+        };
+        readonly responses: {
+            /** @description Created */
+            readonly 201: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "text/plain": components["schemas"]["RegistrarAtoNormativoResult"];
+                    readonly "application/json": components["schemas"]["RegistrarAtoNormativoResult"];
+                    readonly "text/json": components["schemas"]["RegistrarAtoNormativoResult"];
+                };
+            };
+            /** @description Bad Request */
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            readonly 413: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ListarTiposDeAto: {
+        readonly parameters: {
+            readonly query?: {
+                readonly vigentes?: boolean;
+                /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
+                readonly cursor?: string;
+                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                readonly limit?: number;
+                /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
+                readonly direction?: PathsApiPublicacoesTiposAtoGetParametersQueryDirection;
+            };
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
+                    readonly Link?: string;
+                    /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
+                    readonly "X-Page-Size"?: number;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.tipo-ato.v1+json": readonly components["schemas"]["TipoAtoPublicadoDto"][];
+                };
+            };
+            /** @description Bad Request */
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Gone */
+            readonly 410: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ObterTipoDeAto: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.tipo-ato.v1+json": components["schemas"]["TipoAtoPublicadoDto"];
+                };
+            };
+            /** @description O tipo de ato não existe ou foi removido (uniplus.publicacoes.tipo_ato.nao_encontrado). */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ObterTipoDeAtoVigente: {
+        readonly parameters: {
+            readonly query?: {
+                readonly data?: string;
+            };
+            readonly header?: never;
+            readonly path: {
+                readonly codigo: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.tipo-ato.v1+json": components["schemas"]["TipoAtoPublicadoDto"];
+                };
+            };
+            /** @description Bad Request */
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Nenhuma versão do tipo de ato vale na data (uniplus.publicacoes.tipo_ato.nao_encontrado). */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly CadastrarTipoDeAto: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                readonly "Idempotency-Key": string;
+            };
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["CriarTipoAtoPublicadoCommand"];
+                readonly "text/json": components["schemas"]["CriarTipoAtoPublicadoCommand"];
+                readonly "application/*+json": components["schemas"]["CriarTipoAtoPublicadoCommand"];
+            };
+        };
+        readonly responses: {
+            /** @description Created */
+            readonly 201: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "text/plain": string;
+                    readonly "application/json": string;
+                    readonly "text/json": string;
+                };
+            };
+            /** @description Bad Request */
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            readonly 413: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly AlterarTipoDeAto: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["AtualizarTipoAtoPublicadoCommand"];
+                readonly "text/json": components["schemas"]["AtualizarTipoAtoPublicadoCommand"];
+                readonly "application/*+json": components["schemas"]["AtualizarTipoAtoPublicadoCommand"];
+            };
+        };
+        readonly responses: {
+            /** @description No Content */
+            readonly 204: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ExcluirTipoDeAto: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description No Content */
+            readonly 204: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            readonly 404: {
                 headers: {
                     readonly [name: string]: unknown;
                 };
