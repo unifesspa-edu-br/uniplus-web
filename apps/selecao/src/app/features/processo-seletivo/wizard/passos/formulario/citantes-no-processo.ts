@@ -54,12 +54,14 @@ export function quemCitaNoProcesso(
     ...citacoesDosDocumentos(processo, nomes),
     ...citacoesDaDerivacao(processo, nomes),
     ...citacoesDasModalidades(processo),
-    ...(desempateUsaDataDeNascimento(processo.desempate)
-      ? [{ fato: FATO_DATA_NASCIMENTO, quem: 'o desempate por maior idade' }]
-      : []),
+    ...citacoesDoDesempate(processo),
     ...citacoesDasOutrasFinalidades(processo),
   ];
 
+  return agruparPorFato(citacoes);
+}
+
+function agruparPorFato(citacoes: Citacao[]): ReadonlyMap<string, readonly string[]> {
   const citantes = new Map<string, string[]>();
   for (const { fato, quem } of citacoes) {
     const atuais = citantes.get(fato) ?? [];
@@ -103,6 +105,12 @@ function citacoesDasModalidades(processo: CitantesNoProcesso): Citacao[] {
   );
 }
 
+function citacoesDoDesempate(processo: CitantesNoProcesso): Citacao[] {
+  return desempateUsaDataDeNascimento(processo.desempate)
+    ? [{ fato: FATO_DATA_NASCIMENTO, quem: 'o desempate por maior idade' }]
+    : [];
+}
+
 /** O que o formulário cita dos próprios campos não depende da inscrição. */
 function citacoesDasOutrasFinalidades(processo: CitantesNoProcesso): Citacao[] {
   return (processo.outrasFinalidades ?? []).flatMap((outra) => {
@@ -142,19 +150,36 @@ export function camposSemUsoDeclarado(
   desempate: readonly CriterioDesempateConfigurado[] = [],
   modalidades: readonly RegraDaModalidadeOfertada[] = [],
 ): readonly ItemDoFormulario[] {
-  const usados = new Set([
-    ...quemCitaNoProcesso({
-      documentos: exigencias,
-      derivacao: formulario.derivacao,
-      desempate,
-      outrasFinalidades: formulario.outrasFinalidades,
-      modalidades,
-    }).keys(),
+  const citantes = citantesDoFormulario(formulario, exigencias, desempate, modalidades);
+  const citados = new Set([
+    ...quemCitaNoProcesso(citantes).keys(),
     ...fatosCitadosPeloConteudo(formulario.conteudo),
   ]);
+  return camposSemCitacao(formulario.conteudo, citados);
+}
 
-  return todosOsCampos(formulario.conteudo).filter(
-    (campo) => campo.paginaCodigo !== SECAO_DADOS_BASICOS && !usados.has(campo.fatoCodigo),
+function citantesDoFormulario(
+  formulario: FormularioDeInscricao,
+  exigencias: ExigenciasDoRascunho,
+  desempate: readonly CriterioDesempateConfigurado[],
+  modalidades: readonly RegraDaModalidadeOfertada[],
+): CitantesNoProcesso {
+  return {
+    documentos: exigencias,
+    derivacao: formulario.derivacao,
+    desempate,
+    outrasFinalidades: formulario.outrasFinalidades,
+    modalidades,
+  };
+}
+
+/** Os dados básicos ficam de fora, pois são coletados em toda inscrição. */
+function camposSemCitacao(
+  conteudo: FormularioDeInscricao['conteudo'],
+  citados: ReadonlySet<string>,
+): readonly ItemDoFormulario[] {
+  return todosOsCampos(conteudo).filter(
+    (campo) => campo.paginaCodigo !== SECAO_DADOS_BASICOS && !citados.has(campo.fatoCodigo),
   );
 }
 

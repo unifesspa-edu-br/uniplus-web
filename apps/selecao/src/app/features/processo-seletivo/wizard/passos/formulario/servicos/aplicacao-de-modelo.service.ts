@@ -1,8 +1,8 @@
 import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DestroyRef } from '@angular/core';
-import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
-import { ModelosFormularioApi } from '@uniplus/shared-data/configuracao';
+import { isApiOk, ProblemI18nService, type ApiResult } from '@uniplus/shared-core/http';
+import { ModelosFormularioApi, type ModeloFormularioView } from '@uniplus/shared-data/configuracao';
 import { acompanharLeitura, FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
@@ -14,12 +14,32 @@ import {
   resumoDaAplicacao,
   textoDaAplicacaoEmAberto,
   type ModeloOferecido,
+  type AplicacaoEmAberto,
 } from '../modelo-de-formulario';
 import { nomeDaFinalidade } from '../formularios-por-finalidade';
 import { CatalogosDoFormulario } from './catalogos-do-formulario.service';
 import { GravacaoDosFormularios } from './gravacao-dos-formularios.service';
 import { AplicacaoNoServidor, type DesfechoDaAplicacao } from './aplicacao-no-servidor.service';
 import { semChave } from './sem-chave';
+
+interface AplicacaoPedida {
+  readonly finalidade: string;
+  readonly modelo: ModeloOferecido;
+}
+
+function textoDaRecusa(
+  finalidade: string,
+  desfecho: Extract<DesfechoDaAplicacao, { ok: false }>,
+  emAberto: AplicacaoEmAberto | undefined,
+): string {
+  const nome = nomeDaFinalidade(finalidade);
+  if (emAberto === undefined)
+    return `O modelo não foi aplicado ao formulário de ${nome}. ${desfecho.recusa}`;
+  const texto = textoDaAplicacaoEmAberto(nome, emAberto);
+  return desfecho.copiaConfirmada === null
+    ? `A nova tentativa foi recusada: ${desfecho.recusa} ${texto}`
+    : texto;
+}
 
 /**
  * Partir de um modelo da Configuração: os modelos que servem ao tipo do processo, a escolha em
@@ -50,10 +70,7 @@ export class AplicacaoDeModelo {
   /** O modelo escolhido em cada aba, pelo id. */
   readonly escolhidos = signal<ReadonlyMap<string, string>>(new Map());
   /** A aplicação que aguarda confirmação: a finalidade e o modelo. */
-  readonly pendente = signal<{
-    readonly finalidade: string;
-    readonly modelo: ModeloOferecido;
-  } | null>(null);
+  readonly pendente = signal<AplicacaoPedida | null>(null);
   /** O resumo da última aplicação, por finalidade: fica na aba do formulário que a recebeu. */
   readonly resumos = signal<ReadonlyMap<string, readonly string[]>>(new Map());
   /** A recusa da aplicação, por finalidade, já com o desfecho dito: fica na aba do formulário. */
@@ -71,17 +88,15 @@ export class AplicacaoDeModelo {
     // Os modelos só servem para editar, e dependem do tipo, que o passo 1 escolhe.
     effect(() => {
       if (this.store.emConsulta()) return;
-      // Sem tipo não há o que ler: a espera da leitura anterior não terminaria, pois a resposta
-      // dela é descartada abaixo.
-      if (this.tipoDoProcesso() === '') {
-        untracked(() => {
-          this.ordemDosModelos.descartar();
-          this.modelosCarregando.set(false);
-        });
-        return;
-      }
-      untracked(() => this.carregarModelos());
+      const tipo = this.tipoDoProcesso();
+      untracked(() => (tipo === '' ? this.abandonarLeituraDosModelos() : this.carregarModelos()));
     });
+  }
+
+  /** Sem tipo não há o que ler. */
+  private abandonarLeituraDosModelos(): void {
+    this.ordemDosModelos.descartar();
+    this.modelosCarregando.set(false);
   }
 
   private esquecerOProcessoAnterior(): void {
@@ -118,15 +133,19 @@ export class AplicacaoDeModelo {
         // A resposta de uma leitura anterior (outro tipo, ou o mesmo pedido de novo) chegaria por
         // cima da atual.
         if (!aindaVale()) return;
-        this.modelosCarregando.set(false);
-        if (!isApiOk(resultado)) {
-          this.modelosErro.set(
-            `Não foi possível carregar os modelos de formulário. ${this.problemI18n.resolve(resultado.problem).title}`,
-          );
-          return;
-        }
-        this.modelos.set(modelosPorFinalidade(resultado.data));
+        this.receberModelos(resultado);
       });
+  }
+
+  private receberModelos(resultado: ApiResult<readonly ModeloFormularioView[]>): void {
+    this.modelosCarregando.set(false);
+    if (!isApiOk(resultado)) {
+      this.modelosErro.set(
+        `Não foi possível carregar os modelos de formulário. ${this.problemI18n.resolve(resultado.problem).title}`,
+      );
+      return;
+    }
+    this.modelos.set(modelosPorFinalidade(resultado.data));
   }
 
   escolher(finalidade: string, modeloId: string): void {
@@ -135,26 +154,41 @@ export class AplicacaoDeModelo {
 
   /** Pede a aplicação do modelo escolhido na aba. Devolve a recusa a anunciar, quando houver. */
   pedir(finalidade: string): string | null {
-    const escolhido = this.escolhidos().get(finalidade);
-    const modelo = this.modelos()
-      .get(finalidade)
-      ?.find((oferecido) => oferecido.id === escolhido);
+    const modelo = this.modeloEscolhidoNa(finalidade);
     if (modelo === undefined) return null;
-    // Uma aplicação sem desfecho, em qualquer aba, só admite a nova tentativa dela: as cópias
-    // mexem no que é do processo inteiro (fatos da inscrição, derivações) e dividem a mesma chave.
-    const bloqueio = [...this.store.aplicacoesDeModeloEmAberto()].find(
-      ([outra, emAberto]) =>
-        emAberto.copiaConfirmada || outra !== finalidade || emAberto.modeloId !== modelo.id,
-    );
-    if (bloqueio !== undefined) {
-      const [outra, emAberto] = bloqueio;
-      const texto = textoDaAplicacaoEmAberto(nomeDaFinalidade(outra), emAberto);
-      this.mostrarRecusa(finalidade, texto);
-      this.bloqueadasPorCopiaEmAberto.update((atuais) => new Set([...atuais, finalidade]));
-      return texto;
-    }
+    const bloqueio = this.aplicacaoQueBloqueia(finalidade, modelo.id);
+    if (bloqueio !== undefined) return this.recusarPorCopiaEmAberto(finalidade, ...bloqueio);
     this.pendente.set({ finalidade, modelo });
     return null;
+  }
+
+  private modeloEscolhidoNa(finalidade: string): ModeloOferecido | undefined {
+    const escolhido = this.escolhidos().get(finalidade);
+    return this.modelos()
+      .get(finalidade)
+      ?.find((modelo) => modelo.id === escolhido);
+  }
+
+  /** As cópias compartilham fatos, derivações e chave em todo o processo. */
+  private aplicacaoQueBloqueia(
+    finalidade: string,
+    modeloId: string,
+  ): [string, AplicacaoEmAberto] | undefined {
+    return [...this.store.aplicacoesDeModeloEmAberto()].find(
+      ([outra, emAberto]) =>
+        emAberto.copiaConfirmada || outra !== finalidade || emAberto.modeloId !== modeloId,
+    );
+  }
+
+  private recusarPorCopiaEmAberto(
+    finalidade: string,
+    outra: string,
+    emAberto: AplicacaoEmAberto,
+  ): string {
+    const texto = textoDaAplicacaoEmAberto(nomeDaFinalidade(outra), emAberto);
+    this.mostrarRecusa(finalidade, texto);
+    this.bloqueadasPorCopiaEmAberto.update((atuais) => new Set([...atuais, finalidade]));
+    return texto;
   }
 
   private mostrarRecusa(finalidade: string, texto: string): void {
@@ -194,19 +228,26 @@ export class AplicacaoDeModelo {
     this.pendente.set(null);
     const processoId = this.store.processoSeletivoId();
     if (pendente === null || processoId === null) return null;
-    const { finalidade, modelo } = pendente;
-    const faseDaAba = faseDaAbaPor(finalidade);
-    this.esquecerAplicacaoAnterior(finalidade);
-
-    const desfecho = await this.aplicarTravandoOPasso(processoId, finalidade, modelo.id, faseDaAba);
+    const faseDaAba = faseDaAbaPor(pendente.finalidade);
+    this.esquecerAplicacaoAnterior(pendente.finalidade);
+    const desfecho = await this.aplicarTravandoOPasso(processoId, pendente, faseDaAba);
     if (desfecho === null) return null;
+    if (!desfecho.ok) return this.registrarRecusa(pendente, desfecho);
+    return this.registrarAplicacao(pendente, desfecho, faseDaAba, reconciliar);
+  }
 
-    if (!desfecho.ok) return this.registrarRecusa(finalidade, modelo, desfecho);
-
-    this.store.aplicacoesDeModeloEmAberto.update((atuais) => semChave(atuais, finalidade));
+  private registrarAplicacao(
+    pedida: AplicacaoPedida,
+    desfecho: Extract<DesfechoDaAplicacao, { ok: true }>,
+    faseDaAba: string,
+    reconciliar: () => readonly string[],
+  ): string {
+    this.store.aplicacoesDeModeloEmAberto.update((atuais) => semChave(atuais, pedida.finalidade));
     if (this.store.aplicacoesDeModeloEmAberto().size === 0) this.esquecerBloqueios();
-    this.projetar(finalidade, desfecho, faseDaAba);
-    return this.registrarResumo(finalidade, modelo, desfecho, reconciliar());
+    if (pedida.finalidade === FINALIDADE_INSCRICAO)
+      this.store.camposPostosPelasExigencias.set(new Set());
+    this.projetar(pedida.finalidade, desfecho, faseDaAba);
+    return this.registrarResumo(pedida.finalidade, pedida.modelo, desfecho, reconciliar());
   }
 
   private esquecerAplicacaoAnterior(finalidade: string): void {
@@ -220,14 +261,14 @@ export class AplicacaoDeModelo {
   /** Aplica no servidor com o passo travado; `null` quando o processo mudou no meio. */
   private async aplicarTravandoOPasso(
     processoId: string,
-    finalidade: string,
-    modeloId: string,
+    pedida: AplicacaoPedida,
     faseDaAba: string,
   ): Promise<DesfechoDaAplicacao | null> {
     const geracao = this.store.geracao();
+    const { finalidade, modelo } = pedida;
     this.store.salvando.set(true);
     try {
-      const desfecho = await this.servidor.aplicar(processoId, finalidade, modeloId, faseDaAba);
+      const desfecho = await this.servidor.aplicar(processoId, finalidade, modelo.id, faseDaAba);
       return geracao === this.store.geracao() ? desfecho : null;
     } finally {
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
@@ -240,31 +281,26 @@ export class AplicacaoDeModelo {
    * ter chegado. A recusa da nova tentativa vem antes, para o operador saber o que corrigir.
    */
   private registrarRecusa(
-    finalidade: string,
-    modelo: ModeloOferecido,
+    pedida: AplicacaoPedida,
     desfecho: Extract<DesfechoDaAplicacao, { ok: false }>,
   ): string {
-    if (desfecho.copiaConfirmada !== null) {
-      const emAberto = {
-        modeloId: modelo.id,
-        modeloNome: modelo.nome,
-        copiaConfirmada: desfecho.copiaConfirmada,
-      };
-      this.store.aplicacoesDeModeloEmAberto.update(
-        (atuais) => new Map([...atuais, [finalidade, emAberto]]),
-      );
-    }
-    const emAberto = this.store.aplicacoesDeModeloEmAberto().get(finalidade);
-    const nome = nomeDaFinalidade(finalidade);
-    const textoEmAberto = emAberto === undefined ? null : textoDaAplicacaoEmAberto(nome, emAberto);
-    const texto =
-      textoEmAberto === null
-        ? `O modelo não foi aplicado ao formulário de ${nome}. ${desfecho.recusa}`
-        : desfecho.copiaConfirmada === null
-          ? `A nova tentativa foi recusada: ${desfecho.recusa} ${textoEmAberto}`
-          : textoEmAberto;
-    this.mostrarRecusa(finalidade, texto);
+    if (desfecho.copiaConfirmada !== null)
+      this.guardarCopiaSemDesfecho(pedida, desfecho.copiaConfirmada);
+    const emAberto = this.store.aplicacoesDeModeloEmAberto().get(pedida.finalidade);
+    const texto = textoDaRecusa(pedida.finalidade, desfecho, emAberto);
+    this.mostrarRecusa(pedida.finalidade, texto);
     return texto;
+  }
+
+  private guardarCopiaSemDesfecho(pedida: AplicacaoPedida, copiaConfirmada: boolean): void {
+    const emAberto = {
+      modeloId: pedida.modelo.id,
+      modeloNome: pedida.modelo.nome,
+      copiaConfirmada,
+    };
+    this.store.aplicacoesDeModeloEmAberto.update(
+      (atuais) => new Map([...atuais, [pedida.finalidade, emAberto]]),
+    );
   }
 
   /**
@@ -276,7 +312,6 @@ export class AplicacaoDeModelo {
     desfecho: Extract<DesfechoDaAplicacao, { ok: true }>,
     faseDaAba: string,
   ): void {
-    if (finalidade === FINALIDADE_INSCRICAO) this.store.camposPostosPelasExigencias.set(new Set());
     this.store.projetarSecao(
       'formulario',
       comAplicacaoDoServidor(
@@ -296,17 +331,20 @@ export class AplicacaoDeModelo {
     acrescentados: readonly string[],
   ): string {
     this.gravacao.esquecerRecusasDa(finalidade);
-    const nomeDoFato = new Map(this.dados.catalogo().map((fato) => [fato.codigo, fato.nome]));
-    const resumo = [
-      ...resumoDaAplicacao(
-        desfecho.relato,
-        modelo.nome,
-        acrescentados,
-        (codigo) => nomeDoFato.get(codigo) ?? codigo,
-      ),
-      ...(desfecho.avisoDaFase === null ? [] : [desfecho.avisoDaFase]),
-    ];
+    const resumo = this.linhasDoResumo(modelo, desfecho, acrescentados);
     this.resumos.update((atuais) => new Map([...atuais, [finalidade, resumo]]));
     return resumo.join(' ');
+  }
+  private linhasDoResumo(
+    modelo: ModeloOferecido,
+    desfecho: Extract<DesfechoDaAplicacao, { ok: true }>,
+    acrescentados: readonly string[],
+  ): readonly string[] {
+    const nomeDoFato = new Map(this.dados.catalogo().map((fato) => [fato.codigo, fato.nome]));
+    const nome = (codigo: string) => nomeDoFato.get(codigo) ?? codigo;
+    return [
+      ...resumoDaAplicacao(desfecho.relato, modelo.nome, acrescentados, nome),
+      ...(desfecho.avisoDaFase === null ? [] : [desfecho.avisoDaFase]),
+    ];
   }
 }
