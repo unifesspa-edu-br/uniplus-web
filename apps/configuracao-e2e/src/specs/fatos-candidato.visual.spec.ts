@@ -51,6 +51,10 @@ test.describe('Fatos do candidato — geometria da página e do formulário', ()
     }, metadataTheme(testInfo));
     await page.route(/\/api\/configuracao\/admin\/protecao-do-catalogo(\?.*)?$/, json([]));
     await page.route(/\/api\/configuracao\/fases-canonicas(\?.*)?$/, json([]));
+    await page.route(
+      /\/api\/configuracao\/vocabularios\/tipos-do-dado$/,
+      json([{ codigo: 'OPCAO', rotulo: 'Opção' }]),
+    );
     await page.route(/\/api\/configuracao\/fatos-candidato(\?.*)?$/, json([]));
     await page.route(
       /\/api\/configuracao\/admin\/fatos-candidato(\?.*)?$/,

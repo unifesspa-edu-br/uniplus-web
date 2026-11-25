@@ -1,9 +1,14 @@
+import { ID_DO_TIPO_DE_DADO_DA_DEFINICAO } from './ids-do-fato';
+import { acompanharTiposDoDado } from './leituras-do-fato';
+import { VOCABULARIO_DE_TIPOS_DO_DADO } from '@uniplus/shared-data/configuracao';
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
   AlertComponent,
   FalhaDeLeituraComponent,
+  FalhaDeLeituraDoCampoComponent,
+  IndicadorDaLeituraDirective,
   RecolhivelComponent,
 } from '@uniplus/shared-ui/components';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
@@ -38,6 +43,8 @@ type CampoDaDefinicao = keyof EdicaoDoFato['definicao']['controls'];
     ReactiveFormsModule,
     AlertComponent,
     FalhaDeLeituraComponent,
+    FalhaDeLeituraDoCampoComponent,
+    IndicadorDaLeituraDirective,
     FatoProtecaoDaDefinicaoComponent,
     RecolhivelComponent,
   ],
@@ -46,6 +53,13 @@ type CampoDaDefinicao = keyof EdicaoDoFato['definicao']['controls'];
   styleUrl: './fato-edicao.css',
 })
 export class FatoDefinicaoComponent {
+  protected readonly tiposDoDado = inject(VOCABULARIO_DE_TIPOS_DO_DADO);
+  protected readonly leituraDosTipos = acompanharTiposDoDado(ID_DO_TIPO_DE_DADO_DA_DEFINICAO);
+
+  constructor() {
+    this.tiposDoDado.carregar();
+  }
+
   private readonly edicao = inject(EdicaoDoFato);
 
   protected readonly leitura = this.edicao.leitura;

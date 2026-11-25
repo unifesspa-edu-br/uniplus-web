@@ -9,6 +9,7 @@ import type {
   DefinicaoDoFatoInput,
   FatoCandidatoDto,
   FatoCandidatoView,
+  TipoDoDado,
 } from '@uniplus/shared-data/configuracao';
 import {
   FonteValoresFatoCodigo,
@@ -35,19 +36,13 @@ export const ORIGENS: readonly OpcaoDeVocabulario[] = [
   { valor: OrigemFatoCodigo.INTEGRACAO, rotulo: 'Integração' },
 ];
 
-export const DOMINIOS: readonly OpcaoDeVocabulario[] = [
-  { valor: TipoDoDadoCodigo.SIM_OU_NAO, rotulo: 'Sim ou não' },
-  { valor: TipoDoDadoCodigo.NUMERICO, rotulo: 'Número' },
-  { valor: TipoDoDadoCodigo.OPCAO, rotulo: 'Lista de valores' },
-  { valor: TipoDoDadoCodigo.TEXTO, rotulo: 'Texto' },
-  { valor: TipoDoDadoCodigo.DATA, rotulo: 'Data' },
-  { valor: TipoDoDadoCodigo.ENDERECO, rotulo: 'Endereço' },
-];
+export function aceitoNoDerivado(codigo: string): boolean {
+  return codigo === TipoDoDadoCodigo.SIM_OU_NAO || codigo === TipoDoDadoCodigo.OPCAO;
+}
 
-/** O derivado por regra é booleano ou categórico: são os domínios que uma regra contribui. */
-export const DOMINIOS_DO_DERIVADO: readonly OpcaoDeVocabulario[] = DOMINIOS.filter((d) =>
-  [TipoDoDadoCodigo.SIM_OU_NAO, TipoDoDadoCodigo.OPCAO].some((codigo) => codigo === d.valor),
-);
+export function tiposDoDadoDoDerivado(itens: readonly TipoDoDado[]): readonly TipoDoDado[] {
+  return itens.filter((item) => aceitoNoDerivado(item.codigo));
+}
 
 export const CARDINALIDADES: readonly OpcaoDeVocabulario[] = [
   { valor: QuantidadeDeValoresCodigo.VALOR_UNICO, rotulo: 'Um valor' },
@@ -192,7 +187,7 @@ export function fatosCitaveisPelaRegra<
 
 /**
  * Os fatos de membro que um agregado de grupo pode resumir: os declarados ativos de membro de grupo,
- * sim ou não ou lista de valores — só esses dois domínios a API sabe agregar.
+ * sim ou não ou com opções — só esses dois domínios a API sabe agregar.
  */
 export function fatosDeMembroAgregaveis<
   T extends Pick<FatoCandidatoView, 'ativo' | 'escopo' | 'origem' | 'dominio'>,

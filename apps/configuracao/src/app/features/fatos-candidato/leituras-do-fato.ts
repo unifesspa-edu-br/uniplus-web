@@ -9,6 +9,7 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
+  VOCABULARIO_DE_TIPOS_DO_DADO,
   FaseCanonicaDto,
   fatoComOperadores,
   FatoCandidatoComOperadores,
@@ -149,4 +150,15 @@ export function lerCatalogoDeFatos(
     aviso,
   );
   return { ...leitura, itens: computed(() => leitura.itens().map(fatoComOperadores)) };
+}
+
+export function acompanharTiposDoDado(id: string): LeituraAcompanhada {
+  const tipos = inject(VOCABULARIO_DE_TIPOS_DO_DADO);
+  return acompanharLeitura({
+    falha: tipos.erro,
+    pendente: tipos.carregando,
+    recarregar: () => tipos.recarregar(),
+    destino: () => document.getElementById(id),
+    assunto: 'os tipos de dado',
+  });
 }

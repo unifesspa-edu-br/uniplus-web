@@ -8,7 +8,10 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
+import {
+  FatoCandidatoDto,
+  fornecerVocabularioDeTiposDoDado,
+} from '@uniplus/shared-data/configuracao';
 import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import {
@@ -40,6 +43,7 @@ import { ID_DO_TITULO_DA_LISTA } from './ids-do-fato';
     SolicitacaoDaProtecaoDialogComponent,
   ],
   providers: [
+    fornecerVocabularioDeTiposDoDado(),
     AprovacaoDoCatalogo,
     FatosCandidatoStore,
     FatoDetalheStore,

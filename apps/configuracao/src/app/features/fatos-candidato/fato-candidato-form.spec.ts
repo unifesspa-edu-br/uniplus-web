@@ -1,6 +1,12 @@
-import { Injector, runInInjectionContext } from '@angular/core';
+import { Injector, runInInjectionContext, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
+import {
+  criarFormularioDaDefinicao,
+  ligarDependenciasDaDefinicao,
+  valoresDaDefinicao,
+} from './fato-candidato-edicao-form';
+import { trabalha } from './fatos-candidato.fixtures';
 import {
   LIMITES_DO_FATO,
   controleDoCampoDoServidor,
@@ -12,7 +18,7 @@ import {
 const ligado = () => {
   const form = criarFormularioDeFato();
   const dep = runInInjectionContext(TestBed.inject(Injector), () =>
-    ligarDependenciasDaCriacao(form),
+    ligarDependenciasDaCriacao(form, signal([])),
   );
   return { form, dep };
 };
@@ -70,6 +76,13 @@ describe('o formulário de criação do fato', () => {
     expect(dep.declarado()).toBe(false);
   });
 
+  it('mantém opção ao trocar para derivado com a lista vazia', () => {
+    const { form } = ligado();
+    form.patchValue({ dominio: 'OPCAO', tipo: 'DERIVADO' });
+    TestBed.tick();
+    expect(form.controls.dominio.value).toBe('OPCAO');
+  });
+
   it('a hipótese e a classificação fora das opções se esvaziam ao trocar o que as determina', () => {
     const { form } = ligado();
     form.patchValue({
@@ -100,5 +113,18 @@ describe('o formulário de criação do fato', () => {
     form.patchValue({ tipo: 'AGREGADO' });
     TestBed.tick();
     expect(form.controls.fatoDeMembro.hasError('required')).toBe(true);
+  });
+});
+
+describe('o formulário da definição', () => {
+  it('preserva o tipo e o rótulo do fato enquanto a lista está vazia', () => {
+    const form = criarFormularioDaDefinicao();
+    form.patchValue(valoresDaDefinicao(trabalha));
+    const dep = runInInjectionContext(TestBed.inject(Injector), () =>
+      ligarDependenciasDaDefinicao(form, signal(trabalha), signal('DECLARADO'), signal([])),
+    );
+    TestBed.tick();
+    expect(form.controls.dominio.value).toBe(trabalha.definicao.dominio.codigo);
+    expect(dep.dominios()).toEqual([trabalha.definicao.dominio]);
   });
 });

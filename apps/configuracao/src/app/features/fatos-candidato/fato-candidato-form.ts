@@ -9,14 +9,14 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, Validators, type ValidatorFn } from '@angular/forms';
 import type { HttpContext } from '@angular/common/http';
 import type { ApiResult } from '@uniplus/shared-core/http';
-import type { FatosCandidatoApi } from '@uniplus/shared-data/configuracao';
+import type { FatosCandidatoApi, TipoDoDado } from '@uniplus/shared-data/configuracao';
 import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
 import { mensagemDeErroDoCampoComFormato } from '../../shared/formulario';
 import { esvaziarSeForaDas, hipotesesDaClassificacao } from '../../shared/protecao-do-catalogo';
 import { Observable, map } from 'rxjs';
 import {
-  DOMINIOS,
-  DOMINIOS_DO_DERIVADO,
+  aceitoNoDerivado,
+  tiposDoDadoDoDerivado,
   campoDaRecusa,
   classificacoesDoDominio,
   exigirSe,
@@ -184,7 +184,7 @@ export interface DependenciasDaCriacao {
   readonly agregado: Signal<boolean>;
   readonly temFonte: Signal<boolean>;
   readonly temFormatoDeTexto: Signal<boolean>;
-  readonly dominios: Signal<typeof DOMINIOS>;
+  readonly dominios: Signal<readonly TipoDoDado[]>;
   readonly classificacoes: Signal<ReturnType<typeof classificacoesDoDominio>>;
   readonly hipoteses: Signal<ReturnType<typeof hipotesesDaClassificacao>>;
 }
@@ -195,15 +195,26 @@ export interface DependenciasDaCriacao {
  * depois de trocar a classificação) se esvazia, e fonte, formato e fato de membro só são exigidos
  * onde existem. Chamar em contexto de injeção.
  */
-export function ligarDependenciasDaCriacao(form: FormGroup<CriacaoForm>): DependenciasDaCriacao {
-  const valores = toSignal(form.valueChanges.pipe(map(() => form.getRawValue())), {
-    initialValue: form.getRawValue(),
-  });
+export function ligarDependenciasDaCriacao(
+  form: FormGroup<CriacaoForm>,
+  tiposDoDado: Signal<readonly TipoDoDado[]>,
+): DependenciasDaCriacao {
+  const valores = valoresDaCriacao(form);
   const tipos = tiposDaCriacao(valores);
-  const dependencias = { valores, ...tipos, ...opcoesDaCriacao(valores, tipos.declarado) };
+  const dependencias = {
+    valores,
+    ...tipos,
+    ...opcoesDaCriacao(valores, tipos.declarado, tiposDoDado),
+  };
   manterEscolhasCompativeis(form, dependencias);
   exigirCamposDoTipo(form, dependencias);
   return dependencias;
+}
+
+function valoresDaCriacao(form: FormGroup<CriacaoForm>): Signal<ValoresDaCriacao> {
+  return toSignal(form.valueChanges.pipe(map(() => form.getRawValue())), {
+    initialValue: form.getRawValue(),
+  });
 }
 
 function tiposDaCriacao(valores: Signal<ValoresDaCriacao>) {
@@ -215,24 +226,41 @@ function tiposDaCriacao(valores: Signal<ValoresDaCriacao>) {
   };
 }
 
-function opcoesDaCriacao(valores: Signal<ValoresDaCriacao>, declarado: Signal<boolean>) {
+function opcoesDaCriacao(
+  valores: Signal<ValoresDaCriacao>,
+  declarado: Signal<boolean>,
+  tiposDoDado: Signal<readonly TipoDoDado[]>,
+) {
   return {
-    dominios: computed(() => (declarado() ? DOMINIOS : DOMINIOS_DO_DERIVADO)),
+    dominios: computed(() => (declarado() ? tiposDoDado() : tiposDoDadoDoDerivado(tiposDoDado()))),
     classificacoes: computed(() => classificacoesDoDominio(valores().dominio)),
     hipoteses: computed(() => hipotesesDaClassificacao(valores().classificacaoProtecao)),
   };
 }
 
-/** A escolha que deixou de estar entre as opções se esvazia: ficaria no controle, invisível. */
 function manterEscolhasCompativeis(form: FormGroup<CriacaoForm>, dep: DependenciasDaCriacao): void {
   effect(() => {
-    const [d, c, h] = [dep.dominios(), dep.classificacoes(), dep.hipoteses()];
+    const [declarado, dominio, c, h] = [
+      dep.declarado(),
+      dep.valores().dominio,
+      dep.classificacoes(),
+      dep.hipoteses(),
+    ];
     untracked(() => {
-      esvaziarSeForaDas(form.controls.dominio, d);
+      esvaziarDominioIncompativel(form, declarado, dominio);
       esvaziarSeForaDas(form.controls.classificacaoProtecao, c);
       esvaziarSeForaDas(form.controls.hipoteseLegal, h);
     });
   });
+}
+
+function esvaziarDominioIncompativel(
+  form: FormGroup<CriacaoForm>,
+  declarado: boolean,
+  dominio: string,
+): void {
+  if (!declarado && dominio !== '' && !aceitoNoDerivado(dominio))
+    form.controls.dominio.setValue('');
 }
 
 /** Fonte e formato só são exigidos onde existem, e o agregado exige o fato de membro no lugar do tipo de dado. */

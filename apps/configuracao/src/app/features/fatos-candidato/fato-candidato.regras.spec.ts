@@ -1,3 +1,5 @@
+import { TipoDoDadoCodigo } from '@uniplus/shared-data/configuracao';
+import { aceitoNoDerivado, tiposDoDadoDoDerivado } from './fato-candidato.regras';
 import { describe, expect, it } from 'vitest';
 import {
   fatoDeMembroDoBinding,
@@ -102,7 +104,7 @@ describe('o que a API recusa e a tela não oferece', () => {
 });
 
 describe('agregado de grupo', () => {
-  it('resume só fato declarado ativo de membro de grupo, sim ou não ou lista de valores', () => {
+  it('resume só fato declarado ativo de membro de grupo, sim ou não ou com opções', () => {
     const membro = {
       ativo: true,
       escopo: 'MEMBRO_GRUPO',
@@ -123,7 +125,7 @@ describe('agregado de grupo', () => {
     ]);
   });
 
-  it('o membro sim ou não dá "existe membro que…"; o de lista de valores, os valores presentes', () => {
+  it('o membro sim ou não dá "existe membro que…"; o com opções, os valores presentes', () => {
     expect(resumoDoAgregado('SIM_OU_NAO')).toContain('ao menos um membro');
     expect(resumoDoAgregado('OPCAO')).toContain('valores que aparecem');
   });
@@ -204,5 +206,22 @@ describe('o fato de membro do agregado', () => {
   it('sai do binding do agregado e é nulo nos outros tipos', () => {
     expect(fatoDeMembroDoBinding(vinculo('AGREGACAO_GRUPO:RENDA'))).toBe('RENDA');
     expect(fatoDeMembroDoBinding(vinculo('REGRA_DERIVACAO:RENDA'))).toBeNull();
+  });
+});
+
+describe('tipos de dado do derivado', () => {
+  it('aceita apenas sim ou não e opção', () => {
+    expect(aceitoNoDerivado('SIM_OU_NAO')).toBe(true);
+    expect(aceitoNoDerivado('OPCAO')).toBe(true);
+    expect(aceitoNoDerivado('TEXTO')).toBe(false);
+  });
+
+  it('preserva a ordem e os rótulos recebidos', () => {
+    const itens = [
+      { codigo: TipoDoDadoCodigo.OPCAO, rotulo: 'Segundo a API' },
+      { codigo: TipoDoDadoCodigo.TEXTO, rotulo: 'Texto da API' },
+      { codigo: TipoDoDadoCodigo.SIM_OU_NAO, rotulo: 'Primeiro da API' },
+    ];
+    expect(tiposDoDadoDoDerivado(itens)).toEqual([itens[0], itens[2]]);
   });
 });

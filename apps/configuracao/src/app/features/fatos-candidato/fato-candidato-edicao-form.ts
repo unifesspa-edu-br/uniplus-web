@@ -7,7 +7,10 @@ import type {
   DescritivoDoFatoInput,
   FatoCandidatoDto,
   ValorDominioInput,
+  TipoDoDado,
+  ItemDeVocabulario,
 } from '@uniplus/shared-data/configuracao';
+import { opcoesDoVocabulario } from '@uniplus/shared-data/configuracao';
 import { controleDaQuantidade } from './codigos-do-fato';
 import { nullIfBlank } from '../../shared/formulario';
 import {
@@ -17,8 +20,7 @@ import {
 } from '../../shared/protecao-do-catalogo';
 import { LIMITES_DO_FATO } from './fato-candidato-form';
 import {
-  DOMINIOS,
-  DOMINIOS_DO_DERIVADO,
+  tiposDoDadoDoDerivado,
   classificacoesDoDominio,
   eixosDoTipo,
   eixosEditaveis,
@@ -154,7 +156,7 @@ export function comandoDaCorrecao(form: CorrecaoForm): CorrecaoDeValorDominioInp
 export interface DependenciasDaDefinicao {
   readonly valores: Signal<DefinicaoEmEdicao>;
   readonly eixos: Signal<ReturnType<typeof eixosEditaveis>>;
-  readonly dominios: Signal<typeof DOMINIOS>;
+  readonly dominios: Signal<readonly ItemDeVocabulario[]>;
   readonly classificacoes: Signal<ReturnType<typeof classificacoesDoDominio>>;
   readonly hipoteses: Signal<ReturnType<typeof hipotesesDaClassificacao>>;
   readonly avisaNovaAprovacao: Signal<boolean>;
@@ -170,15 +172,28 @@ export function ligarDependenciasDaDefinicao(
   form: DefinicaoForm,
   fato: Signal<FatoCandidatoDto | null>,
   tipo: Signal<TipoDoFato>,
+  tiposDoDado: Signal<readonly TipoDoDado[]>,
 ): DependenciasDaDefinicao {
   const valores = valoresDoFormulario(form);
   const eixos = computed(() => eixosEditaveis(tipo(), valores().dominio));
   const classificacoes = computed(() => classificacoesDoDominio(valores().dominio));
   const hipoteses = computed(() => hipotesesDaClassificacao(valores().classificacaoProtecao));
-  const dominios = computed(() => (tipo() === 'DECLARADO' ? DOMINIOS : DOMINIOS_DO_DERIVADO));
+  const dominios = opcoesDeDominio(fato, tipo, tiposDoDado);
   const avisaNovaAprovacao = computed(() => exigeNovaAprovacao(fato(), valores()));
   ajustarOsCamposAoQueMudou(form, fato, tipo, { eixos, classificacoes, hipoteses });
   return { valores, eixos, dominios, classificacoes, hipoteses, avisaNovaAprovacao };
+}
+
+function opcoesDeDominio(
+  fato: Signal<FatoCandidatoDto | null>,
+  tipo: Signal<TipoDoFato>,
+  tipos: Signal<readonly TipoDoDado[]>,
+): Signal<readonly ItemDeVocabulario[]> {
+  return computed(() => {
+    const oferecidos = tipo() === 'DECLARADO' ? tipos() : tiposDoDadoDoDerivado(tipos());
+    const atual = fato()?.definicao.dominio;
+    return opcoesDoVocabulario(oferecidos, atual ? [atual] : []);
+  });
 }
 
 function valoresDoFormulario(form: DefinicaoForm): Signal<DefinicaoEmEdicao> {

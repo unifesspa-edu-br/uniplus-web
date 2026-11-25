@@ -14,7 +14,11 @@ import {
   withIdempotencyKey,
 } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { FatoCandidatoDto, FatosCandidatoApi } from '@uniplus/shared-data/configuracao';
+import {
+  FatoCandidatoDto,
+  FatosCandidatoApi,
+  VOCABULARIO_DE_TIPOS_DO_DADO,
+} from '@uniplus/shared-data/configuracao';
 import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
 import { aguardarRecarga } from '../../shared/foco';
 import { CLASSIFICACOES_DE_PROTECAO, rotuloDe } from '../../shared/protecao-do-catalogo';
@@ -65,7 +69,10 @@ export class EdicaoDosFatos {
   readonly editor = inject(EdicaoDoFato);
 
   readonly form = criarFormularioDeFato();
-  readonly dependencias = ligarDependenciasDaCriacao(this.form);
+  readonly dependencias = ligarDependenciasDaCriacao(
+    this.form,
+    inject(VOCABULARIO_DE_TIPOS_DO_DADO).itens,
+  );
   private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
     this.form.controls,
     () => this.modo() === 'criar',
