@@ -51,16 +51,16 @@ export function numerosDeClausula(condicoes: readonly CondicaoEmClausula[]): rea
 }
 
 /**
- * As alternativas, na ordem, sem as condições sobre `fatoDoRecorte` — que a tela edita por um
- * controle próprio e mostraria aqui como uma segunda verdade sobre o mesmo recorte.
+ * As alternativas, na ordem, sem as condições sobre `fatoExterno` — que a tela edita por um
+ * controle próprio e mostraria aqui como uma segunda verdade sobre o mesmo fato.
  */
 export function clausulasDe<T extends CondicaoEmClausula>(
   condicoes: readonly T[],
-  fatoDoRecorte = '',
+  fatoExterno = '',
 ): readonly ClausulaDeCondicoes<T>[] {
   const posicionadas = condicoes
     .map((condicao, indice) => ({ indice, condicao }))
-    .filter(({ condicao }) => fatoDoRecorte === '' || condicao.fato !== fatoDoRecorte);
+    .filter(({ condicao }) => fatoExterno === '' || condicao.fato !== fatoExterno);
 
   const numeros = numerosEmOrdem(posicionadas.map(({ condicao }) => condicao));
   return numeros.map((numero) => ({
@@ -103,31 +103,29 @@ export function semCondicaoEm<T extends CondicaoEmClausula>(
  * A lista com uma alternativa a mais — a segunda via pela qual o predicado passa a valer,
  * combinada por OU com as que já existem.
  *
- * O recorte acompanha: ele vale para o predicado inteiro, e deixá-lo de fora da alternativa
- * nova a faria valer sem o recorte.
+ * A condição acompanha: ela vale para o predicado inteiro, e deixá-la de fora da alternativa
+ * nova a faria valer sem a condição.
  */
 export function comClausulaEm<T extends CondicaoEmClausula>(
   condicoes: readonly T[],
   fato: FatoEscolhivel,
-  fatoDoRecorte = '',
+  fatoExterno = '',
 ): readonly (T | CondicaoEmClausula)[] {
   const numero = Math.max(...numerosDeClausula(condicoes)) + 1;
   return [
     ...condicoes,
     condicaoNova(fato, numero),
-    ...condicaoFixaNaClausula(condicoes, fatoDoRecorte, numero),
+    ...condicaoFixaNaClausula(condicoes, fatoExterno, numero),
   ];
 }
 
 function condicaoFixaNaClausula(
   condicoes: readonly CondicaoEmClausula[],
-  fatoDoRecorte: string,
+  fatoExterno: string,
   numero: number,
 ): readonly CondicaoEmClausula[] {
   const condicaoFixa =
-    fatoDoRecorte === ''
-      ? undefined
-      : condicoes.find((condicao) => condicao.fato === fatoDoRecorte);
+    fatoExterno === '' ? undefined : condicoes.find((condicao) => condicao.fato === fatoExterno);
   return condicaoFixa === undefined ? [] : [{ ...condicaoFixa, clausula: numero }];
 }
 

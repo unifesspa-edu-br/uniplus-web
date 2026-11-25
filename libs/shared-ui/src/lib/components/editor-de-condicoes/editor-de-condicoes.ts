@@ -21,9 +21,9 @@ import { type CondicaoDeFato } from './condicoes/valor-da-condicao';
  * dezoito, salvo indígena" sem precisar de uma segunda regra.
  *
  * O componente não guarda estado: recebe a lista de condições e devolve a lista inteira a
- * cada mudança, já renumerada. `fatoDoRecorte` é o fato que outro controle da tela escreve
+ * cada mudança, já renumerada. `fatoDoControleExterno` é o fato que outro controle da tela escreve
  * (a modalidade, no gatilho de documentos): o editor não o mostra, e o leva para toda
- * alternativa nova, porque o recorte vale para o predicado inteiro.
+ * alternativa nova, porque a condição vale para o predicado inteiro.
  *
  * Acessibilidade: o conjunto é um `fieldset` com legenda; cada alternativa é um grupo
  * nomeado quando há mais de uma; os rótulos, a navegação por teclado e o anúncio do que a
@@ -114,7 +114,7 @@ import { type CondicaoDeFato } from './condicoes/valor-da-condicao';
   `,
 })
 export class EditorDeCondicoesComponent {
-  /** Todas as condições do predicado, inclusive as do recorte que o editor não mostra. */
+  /** Todas as condições do predicado, inclusive as do controle externo que o editor não mostra. */
   readonly condicoes = input.required<readonly CondicaoEmClausula[]>();
   readonly fatos = input.required<readonly FatoEscolhivel[]>();
   /** Os fatos que uma condição nova pode citar: o que aguarda a aprovação da proteção de dados só se mantém onde já está. */
@@ -125,8 +125,8 @@ export class EditorDeCondicoesComponent {
   readonly idBase = input.required<string>();
   readonly disabled = input<boolean>(false);
   readonly legenda = input<string>('Condições');
-  /** O fato que outro controle escreve; vazio quando não há recorte. */
-  readonly fatoDoRecorte = input<string>('');
+  /** O fato que outro controle escreve; vazio quando não há controle externo. */
+  readonly fatoDoControleExterno = input<string>('');
   readonly rotuloDosValores = input<string>('Valores que satisfazem a condição');
   readonly textoSemFatos = input<string>(
     'O catálogo de fatos do candidato não foi carregado. Recarregue a página para declarar condições.',
@@ -138,7 +138,7 @@ export class EditorDeCondicoesComponent {
   readonly condicoesChange = output<readonly CondicaoEmClausula[]>();
 
   protected readonly clausulas = computed(() =>
-    clausulasDe(this.condicoes(), this.fatoDoRecorte()),
+    clausulasDe(this.condicoes(), this.fatoDoControleExterno()),
   );
 
   protected trocar(indice: number, nova: CondicaoDeFato): void {
@@ -166,7 +166,9 @@ export class EditorDeCondicoesComponent {
     const [primeiro] = this.disponiveis();
     if (primeiro === undefined) return;
 
-    this.condicoesChange.emit(comClausulaEm(this.condicoes(), primeiro, this.fatoDoRecorte()));
+    this.condicoesChange.emit(
+      comClausulaEm(this.condicoes(), primeiro, this.fatoDoControleExterno()),
+    );
   }
 
   protected removerCondicao(indice: number): void {
