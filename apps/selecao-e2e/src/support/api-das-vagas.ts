@@ -124,7 +124,7 @@ function corpoDoProcesso(
 function processoDaMedicinaComSituacao(status: string) {
   return {
     ...PROCESSO_DA_MEDICINA,
-    status: {
+    situacao: {
       codigo: status.toUpperCase(),
       rotulo: status === 'rascunho' ? 'Rascunho' : 'Publicado',
     },

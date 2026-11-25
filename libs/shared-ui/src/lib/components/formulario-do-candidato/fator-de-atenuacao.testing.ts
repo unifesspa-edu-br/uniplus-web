@@ -170,7 +170,7 @@ const municipioPorBusca = (campo: CampoRenderizavel): CampoRenderizavel =>
     ? {
         ...campo,
         valoresSelecionaveis: undefined,
-        apresentacao: { ...campo.apresentacao, tipoRenderizacao: 'MUNICIPIO' },
+        apresentacao: { ...campo.apresentacao, tipoDeCampo: 'MUNICIPIO' },
       }
     : campo;
 

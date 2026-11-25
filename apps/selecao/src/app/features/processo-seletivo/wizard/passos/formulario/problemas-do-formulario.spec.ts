@@ -43,7 +43,7 @@ describe('o que impede gravar o formulário', () => {
     const problemas = problemasDoFormulario(
       formularioCom(
         inscricaoGravada({
-          itens: [item('PCD', 0, 'S1', { apresentacao: apresentacaoDoCampo('  ', 'BOOLEANO') })],
+          itens: [item('PCD', 0, 'S1', { apresentacao: apresentacaoDoCampo('  ', 'SIM_OU_NAO') })],
         }),
       ),
       NENHUMA_EXIGENCIA,
@@ -67,15 +67,15 @@ describe('campos cujo domínio sai do atendimento especializado', () => {
 
   it('acusa a condição de atendimento sem valor nenhum ofertado, e não o tipo de deficiência, que vem do cadastro', () => {
     const formulario = comCampos(
-      ['TIPO_DEFICIENCIA', 'SELECAO_UNICA'],
-      ['CONDICAO_ATENDIMENTO', 'SELECAO_UNICA'],
+      ['TIPO_DEFICIENCIA', 'ESCOLHA_UNICA'],
+      ['CONDICAO_ATENDIMENTO', 'ESCOLHA_UNICA'],
     );
 
     expect(camposSemValoresOfertados(formulario, semOferta)).toEqual(['a condição de atendimento']);
   });
 
   it('acusa o recurso de acessibilidade perguntado como seleção com a oferta sem recursos', () => {
-    const formulario = comCampos(['RECURSO_ACESSIBILIDADE', 'SELECAO_MULTIPLA']);
+    const formulario = comCampos(['RECURSO_ACESSIBILIDADE', 'ESCOLHA_MULTIPLA']);
 
     expect(camposSemValoresOfertados(formulario, semOferta)).toEqual([
       'o recurso de acessibilidade',
@@ -87,7 +87,7 @@ describe('campos cujo domínio sai do atendimento especializado', () => {
 
     expect(
       camposSemValoresOfertados(
-        comCampos(['RECURSO_ACESSIBILIDADE', 'SELECAO_MULTIPLA']),
+        comCampos(['RECURSO_ACESSIBILIDADE', 'ESCOLHA_MULTIPLA']),
         comRecurso,
       ),
     ).toEqual([]);
@@ -100,7 +100,7 @@ describe('campos cujo domínio sai do atendimento especializado', () => {
     const habilitacao = inscricaoGravada({
       itens: [
         item('CONDICAO_ATENDIMENTO', 0, 'S1', {
-          apresentacao: apresentacaoDoCampo('CONDICAO_ATENDIMENTO', 'SELECAO_MULTIPLA'),
+          apresentacao: apresentacaoDoCampo('CONDICAO_ATENDIMENTO', 'ESCOLHA_MULTIPLA'),
         }),
       ],
     });
@@ -118,7 +118,7 @@ describe('campos cujo domínio sai do atendimento especializado', () => {
     const comOferta = { ...semOferta, condicoes: [{ id: 'c1', codigo: 'PCD', nome: 'PcD' }] };
 
     expect(
-      camposSemValoresOfertados(comCampos(['CONDICAO_ATENDIMENTO', 'SELECAO_UNICA']), comOferta),
+      camposSemValoresOfertados(comCampos(['CONDICAO_ATENDIMENTO', 'ESCOLHA_UNICA']), comOferta),
     ).toEqual([]);
     expect(
       camposSemValoresOfertados(comCampos(['CONDICAO_ATENDIMENTO', 'TEXTO']), semOferta),

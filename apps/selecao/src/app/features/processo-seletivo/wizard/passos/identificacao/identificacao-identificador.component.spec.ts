@@ -1,3 +1,4 @@
+import { tick } from './identificacao-identificador.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -5,7 +6,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   OrigemCandidatosCodigo,
   type ProcessoSeletivoDto,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
 } from '@uniplus/shared-data/selecao';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
@@ -36,15 +37,6 @@ const unidadeSeed = {
   vigenciaFim: null,
   criadoEm: '2026-06-10T12:00:00Z',
 };
-
-/**
- * Cede o event loop para que a cadeia de `await` do componente avance até a
- * próxima requisição. `Promise.resolve()` sozinho não basta: cada fase do
- * fluxo passa por `firstValueFrom` e por mais de um microtask.
- */
-function tick(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0));
-}
 
 /**
  * Recusa no formato que a API realmente emite. O `apiResultInterceptor` só
@@ -121,11 +113,14 @@ describe('IdentificacaoPassoComponent', () => {
   }
 
   /** O processo já criado, com o detalhe lido do servidor só no que o passo consulta. */
-  function lerDetalhe(status: StatusProcessoCodigo, identificadorLegivel: string | null): void {
+  function lerDetalhe(
+    status: SituacaoDoProcessoSeletivoCodigo,
+    identificadorLegivel: string | null,
+  ): void {
     store.processoSeletivoId.set(PROCESSO_ID);
     store.remoteSnapshot.set({
       id: PROCESSO_ID,
-      status: { codigo: status, rotulo: status },
+      situacao: { codigo: status, rotulo: status },
       identificadorLegivel,
     } as unknown as ProcessoSeletivoDto);
     store.patchObjectSection('identificacao', { identificadorLegivel: identificadorLegivel ?? '' });
@@ -216,7 +211,7 @@ describe('IdentificacaoPassoComponent', () => {
 
     it('grava pelo PUT do campo o identificador trocado depois da criação', async () => {
       preencherCamposDoComando();
-      lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
+      lerDetalhe(SituacaoDoProcessoSeletivoCodigo.RASCUNHO, 'ps-2027');
       detectar();
       store.patchObjectSection('identificacao', { identificadorLegivel: 'ps-2027-medicina' });
 
@@ -234,7 +229,7 @@ describe('IdentificacaoPassoComponent', () => {
 
     it('não regrava o identificador que o servidor já tem', async () => {
       preencherCamposDoComando();
-      lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
+      lerDetalhe(SituacaoDoProcessoSeletivoCodigo.RASCUNHO, 'ps-2027');
       detectar();
 
       expect((await componente.persistir()).valid).toBe(true);
@@ -243,7 +238,7 @@ describe('IdentificacaoPassoComponent', () => {
 
     it('mostra junto ao campo a recusa do PUT', async () => {
       preencherCamposDoComando();
-      lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
+      lerDetalhe(SituacaoDoProcessoSeletivoCodigo.RASCUNHO, 'ps-2027');
       detectar();
       store.patchObjectSection('identificacao', { identificadorLegivel: 'medicina-2027' });
 
@@ -267,7 +262,7 @@ describe('IdentificacaoPassoComponent', () => {
      */
     it('confere e grava o identificador editado durante a varredura da publicação', async () => {
       preencherCamposDoComando();
-      lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
+      lerDetalhe(SituacaoDoProcessoSeletivoCodigo.RASCUNHO, 'ps-2027');
       detectar();
       store.patchObjectSection('identificacao', { identificadorLegivel: 'medicina-2027' });
       store.travamentoDeOrquestracao.set(true);
@@ -284,7 +279,7 @@ describe('IdentificacaoPassoComponent', () => {
 
     it('barra a publicação com o identificador inválido e mostra o erro no campo', () => {
       preencherCamposDoComando();
-      lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
+      lerDetalhe(SituacaoDoProcessoSeletivoCodigo.RASCUNHO, 'ps-2027');
       store.patchObjectSection('identificacao', { identificadorLegivel: 'Medicina 2027' });
       store.travamentoDeOrquestracao.set(true);
 
@@ -303,7 +298,7 @@ describe('IdentificacaoPassoComponent', () => {
      */
     it('reenvia depois de uma gravação inconclusiva, mesmo de volta ao valor anterior', async () => {
       preencherCamposDoComando();
-      lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
+      lerDetalhe(SituacaoDoProcessoSeletivoCodigo.RASCUNHO, 'ps-2027');
       detectar();
       store.patchObjectSection('identificacao', { identificadorLegivel: 'medicina-2027' });
 
@@ -327,7 +322,7 @@ describe('IdentificacaoPassoComponent', () => {
 
     it('não reenvia o valor anterior depois de uma recusa definitiva', async () => {
       preencherCamposDoComando();
-      lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
+      lerDetalhe(SituacaoDoProcessoSeletivoCodigo.RASCUNHO, 'ps-2027');
       detectar();
       store.patchObjectSection('identificacao', { identificadorLegivel: 'medicina-2027' });
 
@@ -349,7 +344,7 @@ describe('IdentificacaoPassoComponent', () => {
     /** Publicado, o campo não muda por aqui — nem exige o que o operador não pode corrigir. */
     it('lê o identificador como texto e não o confere com o processo publicado', () => {
       // Publicado sem identificador: a leitura diz que falta, e a validação não o exige.
-      lerDetalhe(StatusProcessoCodigo.PUBLICADO, null);
+      lerDetalhe(SituacaoDoProcessoSeletivoCodigo.PUBLICADO, null);
       detectar();
 
       expect(host.querySelector('#f-identificador')).toBeNull();
@@ -373,7 +368,7 @@ describe('IdentificacaoPassoComponent', () => {
 
   it('em consulta, lê o cadastro como texto, com o rótulo de cada escolha', () => {
     preencherCamposDoComando();
-    lerDetalhe(StatusProcessoCodigo.PUBLICADO, 'ps-2027');
+    lerDetalhe(SituacaoDoProcessoSeletivoCodigo.PUBLICADO, 'ps-2027');
     detectar();
 
     expect(host.querySelector('input, select, textarea, button')).toBeNull();

@@ -13412,13 +13412,13 @@ export interface components {
         };
         readonly ApresentacaoDoCampoDto: {
             readonly rotulo: string;
-            readonly tipoRenderizacao: components["schemas"]["TipoRenderizacaoCodigo"];
+            readonly tipoDeCampo: components["schemas"]["TipoDeCampoCodigo"];
             readonly ajuda: null | string;
             readonly pedirConfirmacao: boolean;
         };
         readonly ApresentacaoDoCampoInput: {
             readonly rotulo: null | string;
-            readonly tipoRenderizacao: null | components["schemas"]["TipoRenderizacaoCodigo"];
+            readonly tipoDeCampo: null | components["schemas"]["TipoDeCampoCodigo"];
             readonly ajuda?: null | string;
             /** @default false */
             readonly pedirConfirmacao: boolean;
@@ -13554,8 +13554,8 @@ export interface components {
             readonly regimeDeTurno: null | components["schemas"]["RegimeDeTurnoCodigo"];
             readonly turnos: null | readonly components["schemas"]["TurnoOfertaCodigo"][];
             readonly formatoPedagogico?: null | components["schemas"]["FormatoPedagogicoCodigo"];
-            readonly eMecCodigo?: null | string;
-            readonly codigoSga?: null | string;
+            readonly codigoEmec?: null | string;
+            readonly codigoNoSistemaAcademico?: null | string;
             /** Format: int32 */
             readonly vagasAnuaisAutorizadas?: null | number;
             readonly baseLegal?: null | string;
@@ -13717,7 +13717,7 @@ export interface components {
         readonly CalendarioDiasUteisDto: {
             /** Format: uuid */
             readonly id: string;
-            readonly versaoDataset: string;
+            readonly versaoDoCalendario: string;
             readonly vigente: boolean;
             readonly diasNaoUteis: readonly components["schemas"]["DiaNaoUtilDto"][];
             /** Format: date-time */
@@ -13729,7 +13729,7 @@ export interface components {
         readonly CalendarioDiasUteisResumoDto: {
             /** Format: uuid */
             readonly id: string;
-            readonly versaoDataset: string;
+            readonly versaoDoCalendario: string;
             readonly vigente: boolean;
             /** Format: date-time */
             readonly criadoEm: string;
@@ -13896,7 +13896,7 @@ export interface components {
             readonly uf: null | string;
         };
         readonly CriarCalendarioDiasUteisCommand: {
-            readonly versaoDataset: null | string;
+            readonly versaoDoCalendario: null | string;
             readonly diasNaoUteis: null | readonly components["schemas"]["DiaNaoUtilCommandItem"][];
         };
         readonly CriarCampusCommand: {
@@ -14022,8 +14022,8 @@ export interface components {
             readonly regimeDeTurno: null | components["schemas"]["RegimeDeTurnoCodigo"];
             readonly turnos: null | readonly components["schemas"]["TurnoOfertaCodigo"][];
             readonly formatoPedagogico?: null | components["schemas"]["FormatoPedagogicoCodigo"];
-            readonly eMecCodigo?: null | string;
-            readonly codigoSga?: null | string;
+            readonly codigoEmec?: null | string;
+            readonly codigoNoSistemaAcademico?: null | string;
             /** Format: int32 */
             readonly vagasAnuaisAutorizadas?: null | number;
             readonly baseLegal?: null | string;
@@ -14911,8 +14911,8 @@ export interface components {
             readonly regimeDeFuncionamento: components["schemas"]["RegimeDeFuncionamento"];
             readonly regimeDeTurno: components["schemas"]["RegimeDeTurno"];
             readonly turnos: readonly components["schemas"]["TurnoOferta"][];
-            readonly eMecCodigo: null | string;
-            readonly codigoSga: null | string;
+            readonly codigoEmec: null | string;
+            readonly codigoNoSistemaAcademico: null | string;
             /** Format: int32 */
             readonly vagasAnuaisAutorizadas: null | number;
             readonly baseLegal: null | string;
@@ -15077,7 +15077,7 @@ export interface components {
         readonly PressupostoRenderizavel: {
             readonly fatoCodigo: string;
             readonly rotulo: null | string;
-            readonly tipoRenderizacao: null | components["schemas"]["TipoRenderizacaoCodigo"];
+            readonly tipoDeCampo: null | components["schemas"]["TipoDeCampoCodigo"];
             readonly formato: null | string;
             readonly valoresSelecionaveis: null | readonly components["schemas"]["ValorSelecionavel"][];
             readonly calculadoDe: null | readonly string[];
@@ -15492,6 +15492,20 @@ export interface components {
          * @enum {string}
          */
         readonly TipoDeBancaCodigo: TipoDeBancaCodigo;
+        /**
+         * @description Como o campo do formulário é apresentado e respondido pelo candidato.
+         *
+         *     - `NUMERO`: Número — Campo em que o candidato digita um número inteiro.
+         *     - `SIM_OU_NAO`: Sim ou não — Campo em que o candidato responde sim ou não.
+         *     - `ESCOLHA_UNICA`: Escolha de um valor — Campo em que o candidato escolhe uma opção entre as oferecidas.
+         *     - `ESCOLHA_MULTIPLA`: Escolha de vários valores — Campo em que o candidato escolhe uma ou mais opções entre as oferecidas.
+         *     - `TEXTO`: Texto — Campo em que o candidato digita um texto, conferido pelo formato do dado.
+         *     - `DATA`: Data — Campo em que o candidato informa uma data do calendário.
+         *     - `ENDERECO`: Endereço — Campo de endereço completo, preenchido a partir da busca do CEP.
+         *     - `MUNICIPIO`: Município — Campo em que o candidato escolhe o município entre os da unidade federativa já respondida.
+         * @enum {string}
+         */
+        readonly TipoDeCampoCodigo: TipoDeCampoCodigo;
         readonly TipoDeficienciaDto: {
             /** Format: uuid */
             readonly id: string;
@@ -15640,20 +15654,6 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
-        /**
-         * @description Como o campo do formulário é apresentado e respondido pelo candidato.
-         *
-         *     - `NUMERO`: Número — Campo em que o candidato digita um número inteiro.
-         *     - `SIM_OU_NAO`: Sim ou não — Campo em que o candidato responde sim ou não.
-         *     - `ESCOLHA_UNICA`: Escolha de um valor — Campo em que o candidato escolhe uma opção entre as oferecidas.
-         *     - `ESCOLHA_MULTIPLA`: Escolha de vários valores — Campo em que o candidato escolhe uma ou mais opções entre as oferecidas.
-         *     - `TEXTO`: Texto — Campo em que o candidato digita um texto, conferido pelo formato do dado.
-         *     - `DATA`: Data — Campo em que o candidato informa uma data do calendário.
-         *     - `ENDERECO`: Endereço — Campo de endereço completo, preenchido a partir da busca do CEP.
-         *     - `MUNICIPIO`: Município — Campo em que o candidato escolhe o município entre os da unidade federativa já respondida.
-         * @enum {string}
-         */
-        readonly TipoRenderizacaoCodigo: TipoRenderizacaoCodigo;
         readonly TurnoOferta: {
             readonly codigo: components["schemas"]["TurnoOfertaCodigo"];
             readonly rotulo: string;
@@ -16119,6 +16119,16 @@ export enum TipoDeBancaCodigo {
     BANCA_IMPORTACAO_CANDIDATOS = "BANCA_IMPORTACAO_CANDIDATOS",
     BANCA_ANALISE_RECURSOS_SEGUNDA_INSTANCIA = "BANCA_ANALISE_RECURSOS_SEGUNDA_INSTANCIA"
 }
+export enum TipoDeCampoCodigo {
+    NUMERO = "NUMERO",
+    SIM_OU_NAO = "SIM_OU_NAO",
+    ESCOLHA_UNICA = "ESCOLHA_UNICA",
+    ESCOLHA_MULTIPLA = "ESCOLHA_MULTIPLA",
+    TEXTO = "TEXTO",
+    DATA = "DATA",
+    ENDERECO = "ENDERECO",
+    MUNICIPIO = "MUNICIPIO"
+}
 export enum TipoDoDadoCodigo {
     SIM_OU_NAO = "SIM_OU_NAO",
     OPCAO = "OPCAO",
@@ -16162,16 +16172,6 @@ export enum TipoObrigatoriedadeCodigo {
     SEMPRE = "SEMPRE",
     NUNCA = "NUNCA",
     QUANDO = "QUANDO"
-}
-export enum TipoRenderizacaoCodigo {
-    NUMERO = "NUMERO",
-    SIM_OU_NAO = "SIM_OU_NAO",
-    ESCOLHA_UNICA = "ESCOLHA_UNICA",
-    ESCOLHA_MULTIPLA = "ESCOLHA_MULTIPLA",
-    TEXTO = "TEXTO",
-    DATA = "DATA",
-    ENDERECO = "ENDERECO",
-    MUNICIPIO = "MUNICIPIO"
 }
 export enum TurnoOfertaCodigo {
     MATUTINO = "MATUTINO",

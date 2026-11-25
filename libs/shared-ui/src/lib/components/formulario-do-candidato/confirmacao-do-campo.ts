@@ -27,7 +27,7 @@ export function pedeConfirmacao(campo: CampoRenderizavel, fixa: boolean): boolea
   return (
     campo.apresentacao.pedirConfirmacao &&
     !fixa &&
-    controleDoTipo(campo.apresentacao.tipoRenderizacao) === 'texto'
+    controleDoTipo(campo.apresentacao.tipoDeCampo) === 'texto'
   );
 }
 

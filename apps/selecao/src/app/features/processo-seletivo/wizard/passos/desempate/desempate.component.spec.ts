@@ -7,7 +7,7 @@ import {
   OrigemCandidatosCodigo,
   ProcessoSeletivoDto,
   SELECAO_BASE_PATH,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
 } from '@uniplus/shared-data/selecao';
 import { apresentacaoDaEtapa, apresentacaoDoCampo } from '@uniplus/shared-ui/components';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -137,7 +137,10 @@ describe('DesempatePassoComponent', () => {
     ]);
     storeLocal.remoteSnapshot.set({
       id: PROCESSO_ID,
-      status: StatusProcessoCodigo.PUBLICADO,
+      situacao: {
+        codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+      },
     } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
 
@@ -207,7 +210,12 @@ describe('DesempatePassoComponent', () => {
     ]);
     expect(componente.idosoSemApuracao()).toBe(true);
 
-    store.remoteSnapshot.set({ status: 'publicado' } as never);
+    store.remoteSnapshot.set({
+      situacao: {
+        codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+      },
+    } as never);
 
     expect(componente.idosoSemApuracao()).toBe(false);
   });

@@ -31,7 +31,7 @@ function respostasDoProcesso(status: string): Record<string, unknown> {
   return {
     [ID_DO_PROCESSO_COMPLETO]: {
       ...PROCESSO_PUBLICADO_COMPLETO,
-      status: situacaoDoProcesso(status),
+      situacao: situacaoDoProcesso(status),
     },
     'documentos-a-publicar': [DOCUMENTO_DO_EDITAL],
     atos: [ATO_DO_PROCESSO],

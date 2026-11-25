@@ -23,17 +23,17 @@ const BINDINGS_DE_CAMPO = ['CAMPO_INSCRICAO:', 'CAMPO_FORMULARIO:'];
  * (`CoerenciaDoCampo`): nulo quando não há campo que o colete — texto, data e endereço só têm
  * resposta única.
  */
-export function renderizacaoDe(
+export function tipoDeCampoDe(
   fato: Pick<FatoDoFormulario, 'dominio' | 'cardinalidade' | 'fonteValores'>,
 ): string | null {
   const multivalorado = fato.cardinalidade.codigo === MULTIVALORADO;
   if (fato.dominio.codigo === 'OPCAO') {
-    return renderizacaoDoCategorico(fato.fonteValores?.codigo ?? null, multivalorado);
+    return tipoDeCampoDoCategorico(fato.fonteValores?.codigo ?? null, multivalorado);
   }
-  return renderizacaoDoDominioSimples(fato.dominio.codigo, multivalorado);
+  return tipoDeCampoDoDominioSimples(fato.dominio.codigo, multivalorado);
 }
 
-function renderizacaoDoDominioSimples(dominio: string, multivalorado: boolean): string | null {
+function tipoDeCampoDoDominioSimples(dominio: string, multivalorado: boolean): string | null {
   switch (dominio) {
     case 'SIM_OU_NAO':
       return 'SIM_OU_NAO';
@@ -48,7 +48,7 @@ function renderizacaoDoDominioSimples(dominio: string, multivalorado: boolean): 
   }
 }
 
-function renderizacaoDoCategorico(
+function tipoDeCampoDoCategorico(
   fonteValores: null | string,
   multivalorado: boolean,
 ): string | null {
@@ -66,7 +66,7 @@ export function campoNovo(
   etapaCodigo: string | null,
 ): ItemDoFormulario {
   const rotulo = fato.nome.slice(0, LIMITES_DO_FORMULARIO.rotulo);
-  const apresentacao = apresentacaoDoCampo(rotulo, renderizacaoDe(fato) ?? '');
+  const apresentacao = apresentacaoDoCampo(rotulo, tipoDeCampoDe(fato) ?? '');
   return { fatoCodigo: fato.codigo, ordem, etapaCodigo, apresentacao, regras: REGRAS_INICIAIS };
 }
 
@@ -81,7 +81,7 @@ export function ehColetavel(
   return (
     BINDINGS_DE_CAMPO.some((prefixo) => fato.binding.startsWith(prefixo)) &&
     fato.escopo === escopo &&
-    renderizacaoDe(fato) !== null
+    tipoDeCampoDe(fato) !== null
   );
 }
 

@@ -24,7 +24,7 @@ import type {
  */
 export interface TrocaDeCodigos<O1, T1, O2, T2> {
   readonly operador: (codigo: O1) => O2;
-  readonly tipoRenderizacao: (codigo: T1) => T2;
+  readonly tipoDeCampo: (codigo: T1) => T2;
 }
 
 /**
@@ -33,7 +33,7 @@ export interface TrocaDeCodigos<O1, T1, O2, T2> {
  */
 export const CODIGOS_EM_TEXTO: TrocaDeCodigos<string | null, string | null, string, string> = {
   operador: (codigo) => codigo ?? '',
-  tipoRenderizacao: (codigo) => codigo ?? '',
+  tipoDeCampo: (codigo) => codigo ?? '',
 };
 
 function opcoesComCodigos<O1, T1, O2, T2>(
@@ -96,7 +96,7 @@ function itemComCodigos<N, O1, T1, O2, T2>(
     ...item,
     apresentacao: {
       ...item.apresentacao,
-      tipoRenderizacao: troca.tipoRenderizacao(item.apresentacao.tipoRenderizacao),
+      tipoDeCampo: troca.tipoDeCampo(item.apresentacao.tipoDeCampo),
     },
     regras: regrasDoCampoComCodigos(item.regras, troca),
   };

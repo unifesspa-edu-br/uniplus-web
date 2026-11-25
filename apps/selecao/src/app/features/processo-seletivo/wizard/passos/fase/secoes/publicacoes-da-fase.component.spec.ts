@@ -3,7 +3,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { HttpTestingController } from '@angular/common/http/testing';
 import type { DebugElement } from '@angular/core';
 
-import { StatusProcessoCodigo, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import {
+  SituacaoDoProcessoSeletivoCodigo,
+  type ProcessoSeletivoDto,
+} from '@uniplus/shared-data/selecao';
 
 import type { FaseDoCronograma } from '../../../processo-seletivo.models';
 import type { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
@@ -114,7 +117,10 @@ describe('PublicacoesDaFaseComponent', () => {
     it('em consulta, lê a promessa como texto, sem caixa', () => {
       comCronograma({ ...publicaDefinitivo, emiteParecerIndividual: true });
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.PUBLICADO,
+        situacao: {
+          codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        },
       } as unknown as ProcessoSeletivoDto);
       detectar();
 

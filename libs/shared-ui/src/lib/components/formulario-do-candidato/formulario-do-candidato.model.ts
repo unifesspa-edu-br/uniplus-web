@@ -71,7 +71,7 @@ export interface TermoRenderizavel {
 export interface PressupostoDoFormulario {
   readonly fatoCodigo: string;
   readonly rotulo?: string | null;
-  readonly tipoRenderizacao?: string | null;
+  readonly tipoDeCampo?: string | null;
   readonly formato?: string | null;
   readonly valoresSelecionaveis?: readonly ValorSelecionavel[] | null;
   readonly calculadoDe?: readonly string[] | null;

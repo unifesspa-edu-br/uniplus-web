@@ -44,7 +44,7 @@ export const DETALHE_PUBLICADO = {
     codigo: 'GRAD',
     nome: 'Graduação',
   },
-  status: { codigo: 'PUBLICADO', rotulo: 'Publicado' },
+  situacao: { codigo: 'PUBLICADO', rotulo: 'Publicado' },
   origemCandidatos: { codigo: 'INSCRICAO_PROPRIA', rotulo: 'Inscrição própria' },
   unidadeAdministradora: {
     origemId: '01960000-0000-7000-0000-000000000906',

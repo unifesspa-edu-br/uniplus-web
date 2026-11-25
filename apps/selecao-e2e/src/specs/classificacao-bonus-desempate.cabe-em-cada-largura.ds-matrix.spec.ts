@@ -153,7 +153,7 @@ async function abrirDesempatePorArea(
 ): Promise<void> {
   await abrirProcessoDoCenario(page, testInfo, PROCESSO_DESEMPATE_POR_AREA_ID, {
     ...DETALHE_DESEMPATE_POR_AREA,
-    status: {
+    situacao: {
       codigo: status.toUpperCase(),
       rotulo: status === 'rascunho' ? 'Rascunho' : 'Publicado',
     },

@@ -149,7 +149,7 @@ describe('EditorDeFormularioComponent: faixa de datas', () => {
           etapaCodigo: 'S1',
           ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
           regras: { exibicao: null, obrigatoriedade: { tipo: 'NUNCA', predicado: null } },
-          subitens: [item('NASCIMENTO_FILHO', 0, { apresentacao: { tipoRenderizacao: 'DATA' } })],
+          subitens: [item('NASCIMENTO_FILHO', 0, { apresentacao: { tipoDeCampo: 'DATA' } })],
         },
       ],
     });

@@ -30,8 +30,8 @@ export interface OfertaCursoForm {
   formatoPedagogico: FormControl<FormatoPedagogicoCodigo>;
   regimeDeTurno: FormControl<RegimeDeTurnoCodigo>;
   turnos: FormControl<readonly TurnoOfertaCodigo[]>;
-  eMecCodigo: FormControl<string>;
-  codigoSga: FormControl<string>;
+  codigoEmec: FormControl<string>;
+  codigoNoSistemaAcademico: FormControl<string>;
   vagasAnuaisAutorizadas: FormControl<number | null>;
   baseLegal: FormControl<string>;
   atoAutorizacaoMec: FormControl<string>;
@@ -49,8 +49,8 @@ export const OFERTA_EM_BRANCO: ValoresDaOferta = {
   formatoPedagogico: FormatoPedagogicoCodigo.PRESENCIAL,
   regimeDeTurno: RegimeDeTurnoCodigo.REGULAR,
   turnos: [],
-  eMecCodigo: '',
-  codigoSga: '',
+  codigoEmec: '',
+  codigoNoSistemaAcademico: '',
   vagasAnuaisAutorizadas: null,
   baseLegal: '',
   atoAutorizacaoMec: '',
@@ -65,8 +65,8 @@ const CAMPOS: ReadonlySet<string> = new Set<keyof OfertaCursoForm>([
   'formatoPedagogico',
   'regimeDeTurno',
   'turnos',
-  'eMecCodigo',
-  'codigoSga',
+  'codigoEmec',
+  'codigoNoSistemaAcademico',
   'vagasAnuaisAutorizadas',
   'baseLegal',
   'atoAutorizacaoMec',
@@ -146,8 +146,8 @@ function controlesDeTurnos() {
 
 function controlesComplementares() {
   return {
-    eMecCodigo: opcional(20),
-    codigoSga: opcional(30),
+    codigoEmec: opcional(20),
+    codigoNoSistemaAcademico: opcional(30),
     vagasAnuaisAutorizadas: new FormControl<number | null>(null, {
       validators: [Validators.min(0)],
     }),
@@ -163,8 +163,8 @@ export function valoresDaOferta(oferta: OfertaCursoDto): ValoresDaOferta {
     localOfertaId: oferta.localOfertaId,
     unidadeOfertanteOrigemId: oferta.unidadeOfertante.origemId,
     ...valoresDoRegime(oferta),
-    eMecCodigo: oferta.eMecCodigo ?? '',
-    codigoSga: oferta.codigoSga ?? '',
+    codigoEmec: oferta.codigoEmec ?? '',
+    codigoNoSistemaAcademico: oferta.codigoNoSistemaAcademico ?? '',
     vagasAnuaisAutorizadas: oferta.vagasAnuaisAutorizadas,
     baseLegal: oferta.baseLegal ?? '',
     atoAutorizacaoMec: oferta.atoAutorizacaoMec ?? '',
@@ -201,8 +201,8 @@ function camposDaOferta(valores: ValoresDaOferta) {
     formatoPedagogico: valores.formatoPedagogico,
     regimeDeTurno: valores.regimeDeTurno,
     turnos: ordenarTurnos(valores.turnos),
-    eMecCodigo: nullIfBlank(valores.eMecCodigo),
-    codigoSga: nullIfBlank(valores.codigoSga),
+    codigoEmec: nullIfBlank(valores.codigoEmec),
+    codigoNoSistemaAcademico: nullIfBlank(valores.codigoNoSistemaAcademico),
     vagasAnuaisAutorizadas: valores.vagasAnuaisAutorizadas,
     baseLegal: nullIfBlank(valores.baseLegal),
     atoAutorizacaoMec: nullIfBlank(valores.atoAutorizacaoMec),

@@ -3,7 +3,7 @@ import { ProblemDetails, separarCausas } from '@uniplus/shared-core/http';
 import {
   OperadorCodigo,
   TipoDoDadoCodigo,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
   type FatoCandidatoDto,
   type RegrasPadraoInput,
 } from '@uniplus/shared-data/configuracao';
@@ -87,7 +87,7 @@ export class RegrasEmEdicao {
         contribui: regra.contribui,
         quando: predicadoComOperadores(
           paraClausulasDoWire(regra.condicoes),
-          codigosDoContrato(OperadorCodigo, TipoRenderizacaoCodigo).operador,
+          codigosDoContrato(OperadorCodigo, TipoDeCampoCodigo).operador,
         ),
       })),
     };

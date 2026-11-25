@@ -5,7 +5,7 @@ import {
   FinalidadeFormularioCodigo,
   type FatoColetadoDto,
   type FormularioDto,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
 } from '@uniplus/shared-data/selecao';
 
 type EtapaDoServidor = FormularioDto['etapas'][number];
@@ -40,9 +40,9 @@ const SEM_FORMATO_NEM_OPCOES: Pick<FatoColetadoDto, 'regras' | 'formato' | 'opco
 
 function apresentacaoDoCampo(
   rotulo: string,
-  tipoRenderizacao: TipoRenderizacaoCodigo,
+  tipoDeCampo: TipoDeCampoCodigo,
 ): FatoColetadoDto['apresentacao'] {
-  return { rotulo, tipoRenderizacao, ajuda: null, pedirConfirmacao: false };
+  return { rotulo, tipoDeCampo, ajuda: null, pedirConfirmacao: false };
 }
 
 /** O campo obrigatório de um fato como o servidor o devolve, sem restrição nem impedimento. */
@@ -50,13 +50,13 @@ export function campoDoServidor(
   fatoCodigo: string,
   ordem: number,
   etapaCodigo: string,
-  tipoRenderizacao = TipoRenderizacaoCodigo.TEXTO,
+  tipoDeCampo = TipoDeCampoCodigo.TEXTO,
 ): FatoColetadoDto {
   return {
     fatoCodigo,
     ordem,
     etapaCodigo,
-    apresentacao: apresentacaoDoCampo(fatoCodigo, tipoRenderizacao),
+    apresentacao: apresentacaoDoCampo(fatoCodigo, tipoDeCampo),
     ...SEM_FORMATO_NEM_OPCOES,
   };
 }

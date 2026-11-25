@@ -8,7 +8,7 @@ import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   SELECAO_BASE_PATH,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
   type AtoDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
 import { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
@@ -83,7 +83,7 @@ export const PROCESSO_DTO_MINIMO = {
   id: PROCESSO_ID,
   nome: 'x',
   tipoProcesso: { origemId: 't1', codigo: 'T', nome: 'x' },
-  status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' },
+  situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO, rotulo: 'Publicado' },
   origemCandidatos: 'InscricaoPropria',
   unidadeAdministradora: {
     origemId: 'u1',

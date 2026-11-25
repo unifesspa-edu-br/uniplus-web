@@ -9,7 +9,7 @@ import { AppConfigService, type AppConfig } from '@uniplus/shared-data/config';
 import { CONFIGURACAO_BASE_PATH, PesosEnemApi } from '@uniplus/shared-data/configuracao';
 import {
   SELECAO_BASE_PATH,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
   type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
 import { vi } from 'vitest';
@@ -257,7 +257,7 @@ export function rascunhoComResolucao(resolucao: string) {
 export function processoGravadoCom(
   resolucao: string,
   quadro: unknown[],
-  status: StatusProcessoCodigo = StatusProcessoCodigo.RASCUNHO,
+  status: SituacaoDoProcessoSeletivoCodigo = SituacaoDoProcessoSeletivoCodigo.RASCUNHO,
 ) {
   return (store: ProcessoSeletivoStore) => {
     rascunhoComResolucao(resolucao)(store);
@@ -270,10 +270,10 @@ export function processoGravadoCom(
 }
 
 function detalheComClassificacao(
-  status: StatusProcessoCodigo,
+  status: SituacaoDoProcessoSeletivoCodigo,
   classificacao: object,
 ): ProcessoSeletivoDto {
-  return { status: { codigo: status, rotulo: status }, classificacao } as ProcessoSeletivoDto;
+  return { situacao: { codigo: status, rotulo: status }, classificacao } as ProcessoSeletivoDto;
 }
 
 /** As cinco áreas, na ordem canônica do cadastro — a Redação primeiro. */

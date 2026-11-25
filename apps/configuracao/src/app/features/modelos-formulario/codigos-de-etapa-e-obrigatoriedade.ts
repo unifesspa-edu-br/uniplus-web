@@ -3,12 +3,12 @@ import {
   type OperadorCodigo,
   TipoEtapaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
-  type TipoRenderizacaoCodigo,
+  type TipoDeCampoCodigo,
 } from '@uniplus/shared-data/configuracao';
 import { codigoDoContrato } from '@uniplus/shared-data/utils';
 import type { ConteudoDoFormulario } from '@uniplus/shared-ui/components';
 
-type Conteudo = ConteudoDoFormulario<number, OperadorCodigo | null, TipoRenderizacaoCodigo | null>;
+type Conteudo = ConteudoDoFormulario<number, OperadorCodigo | null, TipoDeCampoCodigo | null>;
 type Item = NonNullable<Conteudo['itens']>[number];
 type Grupo = NonNullable<Conteudo['grupos']>[number];
 type Termo = NonNullable<Conteudo['termos']>[number];

@@ -29,13 +29,10 @@ export function lerEtapa(etapa: Etapa): EtapaDoFormulario {
   };
 }
 
-function apresentacaoDoItem(
-  item: Item,
-  tipoRenderizacao: string,
-): ItemDoFormulario['apresentacao'] {
+function apresentacaoDoItem(item: Item, tipoDeCampo: string): ItemDoFormulario['apresentacao'] {
   return {
     rotulo: item.rotulo ?? '',
-    tipoRenderizacao,
+    tipoDeCampo,
     ajuda: item.ajuda,
     pedirConfirmacao: item.pedirConfirmacao ?? false,
   };
@@ -64,13 +61,12 @@ function ocorrenciasDoGrupo(grupo: Grupo): GrupoDoFormulario['ocorrencias'] {
 }
 
 export function lerItem(item: Item, contexto: Contexto, caminho: Caminho): ItemDoFormulario {
-  const tipoRenderizacao =
-    contexto.tipoDoCampo(item.codigoDoDado, [...caminho, 'fatoCodigo']) ?? '';
+  const tipoDeCampo = contexto.tipoDoCampo(item.codigoDoDado, [...caminho, 'fatoCodigo']) ?? '';
   return {
     fatoCodigo: item.codigoDoDado,
     ordem: item.ordem ?? 0,
     etapaCodigo: item.paginaCodigo,
-    apresentacao: apresentacaoDoItem(item, tipoRenderizacao),
+    apresentacao: apresentacaoDoItem(item, tipoDeCampo),
     regras: regrasDoItem(item),
   };
 }

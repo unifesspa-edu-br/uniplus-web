@@ -4,7 +4,7 @@ import type { ConteudoDoFormulario, ItemDoFormulario } from './tipos';
 
 const EM_MAIUSCULAS: TrocaDeCodigos<string, string, string, string> = {
   operador: (codigo) => codigo.toUpperCase(),
-  tipoRenderizacao: (codigo) => codigo.toUpperCase(),
+  tipoDeCampo: (codigo) => codigo.toUpperCase(),
 };
 
 const QUANDO = [[{ fato: 'ESCOLA_PUBLICA', operador: 'igual', valor: true }]];
@@ -15,7 +15,7 @@ const item: ItemDoFormulario<number> = {
   ordem: 1,
   apresentacao: {
     rotulo: 'Estudou em escola pública?',
-    tipoRenderizacao: 'booleano',
+    tipoDeCampo: 'booleano',
     pedirConfirmacao: false,
   },
   regras: {
@@ -80,7 +80,7 @@ describe('conteudoComCodigos', () => {
   });
 
   it('troca o tipo de renderização e todos os predicados do item', () => {
-    expect(itemTrocado.apresentacao.tipoRenderizacao).toBe('BOOLEANO');
+    expect(itemTrocado.apresentacao.tipoDeCampo).toBe('BOOLEANO');
     expect(itemTrocado.regras.exibicao).toEqual(QUANDO_TROCADO);
     expect(itemTrocado.regras.obrigatoriedade.predicado).toEqual(QUANDO_TROCADO);
   });
@@ -95,7 +95,7 @@ describe('conteudoComCodigos', () => {
 
     expect(grupo.regras.exibicao).toEqual(QUANDO_TROCADO);
     expect(grupo.regras.obrigatoriedade.predicado).toEqual(QUANDO_TROCADO);
-    expect(grupo.subitens[0].apresentacao.tipoRenderizacao).toBe('BOOLEANO');
+    expect(grupo.subitens[0].apresentacao.tipoDeCampo).toBe('BOOLEANO');
     expect(grupo.subitens[0].regras.exibicao).toEqual(QUANDO_TROCADO);
   });
 
@@ -115,7 +115,7 @@ describe('conteudoComCodigos', () => {
   it('lido e não editado, o conteúdo serializa igual: cada bloco mantém a ordem das chaves', () => {
     const mesmoCodigo = conteudoComCodigos(conteudo, {
       operador: (codigo: string) => codigo,
-      tipoRenderizacao: (codigo: string) => codigo,
+      tipoDeCampo: (codigo: string) => codigo,
     });
 
     expect(JSON.stringify(mesmoCodigo)).toBe(JSON.stringify(conteudo));
@@ -151,7 +151,7 @@ describe('conteudoComCodigos', () => {
   it('entrega a cada código o que o tradutor devolve para ele, também quando é desconhecido', () => {
     const somenteConhecidos: TrocaDeCodigos<string, string, string | null, number | null> = {
       operador: (codigo) => (codigo === 'igual' ? 'IGUAL' : null),
-      tipoRenderizacao: (codigo) => (codigo === 'booleano' ? 1 : null),
+      tipoDeCampo: (codigo) => (codigo === 'booleano' ? 1 : null),
     };
     const desconhecido = conteudoComCodigos(
       {
@@ -159,7 +159,7 @@ describe('conteudoComCodigos', () => {
         itens: [
           {
             ...item,
-            apresentacao: { ...item.apresentacao, tipoRenderizacao: 'inventado' },
+            apresentacao: { ...item.apresentacao, tipoDeCampo: 'inventado' },
             regras: { ...item.regras, exibicao: [[{ fato: 'A', operador: 'parecido', valor: 1 }]] },
           },
         ],
@@ -167,7 +167,7 @@ describe('conteudoComCodigos', () => {
       somenteConhecidos,
     );
 
-    expect(desconhecido.itens?.[0].apresentacao.tipoRenderizacao).toBeNull();
+    expect(desconhecido.itens?.[0].apresentacao.tipoDeCampo).toBeNull();
     expect(desconhecido.itens?.[0].regras.exibicao?.[0][0].operador).toBeNull();
     expect(desconhecido.etapas?.[0].exibicao?.[0][0].operador).toBe('IGUAL');
   });
@@ -176,11 +176,11 @@ describe('conteudoComCodigos', () => {
 describe('CODIGOS_EM_TEXTO', () => {
   it('mantém o texto que o contrato informa', () => {
     expect(CODIGOS_EM_TEXTO.operador('IGUAL')).toBe('IGUAL');
-    expect(CODIGOS_EM_TEXTO.tipoRenderizacao('TEXTO')).toBe('TEXTO');
+    expect(CODIGOS_EM_TEXTO.tipoDeCampo('TEXTO')).toBe('TEXTO');
   });
 
   it('troca o código que o contrato não informa por texto vazio', () => {
     expect(CODIGOS_EM_TEXTO.operador(null)).toBe('');
-    expect(CODIGOS_EM_TEXTO.tipoRenderizacao(null)).toBe('');
+    expect(CODIGOS_EM_TEXTO.tipoDeCampo(null)).toBe('');
   });
 });

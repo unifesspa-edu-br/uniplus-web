@@ -66,7 +66,7 @@ describe('EditorDeFormularioComponent: problemas da faixa de datas', () => {
       itens: [
         item('A', 0),
         item('IDADE', 1, {
-          apresentacao: { tipoRenderizacao: 'TEXTO' },
+          apresentacao: { tipoDeCampo: 'TEXTO' },
           regras: { restricoes: [{ tipo: 'TAMANHO_TEXTO', minimo: 'dez', maximo: 20 }] },
         }),
       ],

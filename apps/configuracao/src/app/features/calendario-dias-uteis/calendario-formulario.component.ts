@@ -83,7 +83,7 @@ export class CalendarioFormularioComponent {
   }
 
   protected erroDaVersao(): string | null {
-    return mensagemDeErroDoControle(this.form().controls.versaoDataset);
+    return mensagemDeErroDoControle(this.form().controls.versaoDoCalendario);
   }
 
   private focarAposRemocao(indice: number): void {

@@ -97,7 +97,7 @@ describe('adaptador do passo Vagas', () => {
     expect(valores.numeroDeOpcoes).toBe('1');
     expect(valores.ofertas).toHaveLength(1);
     expect(valores.cascata).toEqual({
-      regra: { codigo: 'REMANEJ-CASCATA-LEI-12711', versao: 'v1' },
+      regra: { codigo: 'REMANEJAMENTO_ORDEM_LEI_12711', versao: 'v1' },
       matriz: { fallbackCodigo: 'AC', ordens: [{ origem: 'LB_PPI', destinos: ['AC'] }] },
     });
   });

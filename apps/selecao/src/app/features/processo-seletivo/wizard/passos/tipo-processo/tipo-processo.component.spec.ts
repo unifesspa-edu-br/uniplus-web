@@ -1,3 +1,4 @@
+import { SituacaoDoProcessoSeletivoCodigo } from '@uniplus/shared-data/selecao';
 import { HttpHeaders } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Observable, Subject, of, throwError } from 'rxjs';
@@ -81,8 +82,17 @@ describe('TipoProcessoPassoComponent', () => {
   it('em consulta, lê o tipo gravado como texto, com a descrição do catálogo', () => {
     const component = montar();
     const host = fixture.nativeElement as HTMLElement;
-    component.store.patchSection('tipoProcesso', { selected: ID_SISU, rotulo: 'SiSU', codigo: 'SISU' });
-    component.store.remoteSnapshot.set({ status: 'publicado' } as never);
+    component.store.patchSection('tipoProcesso', {
+      selected: ID_SISU,
+      rotulo: 'SiSU',
+      codigo: 'SISU',
+    });
+    component.store.remoteSnapshot.set({
+      situacao: {
+        codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+      },
+    } as never);
     fixture.detectChanges();
 
     expect(host.querySelector('input, button')).toBeNull();

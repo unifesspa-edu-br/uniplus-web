@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import {
   OperadorCodigo,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
   type ModalidadeDto,
 } from '@uniplus/shared-data/configuracao';
 import { codigosDoContrato } from '@uniplus/shared-data/utils';
@@ -73,7 +73,7 @@ export class EdicaoDaRegraDeAplicabilidade {
   paraOContrato(): ClausulasNoWire<OperadorCodigo | null> {
     return predicadoComOperadores(
       paraClausulasDoWire(this.condicoes()),
-      codigosDoContrato(OperadorCodigo, TipoRenderizacaoCodigo).operador,
+      codigosDoContrato(OperadorCodigo, TipoDeCampoCodigo).operador,
     );
   }
 

@@ -47,12 +47,12 @@ type OutrosDoCampo = Partial<Omit<CampoRenderizavel, 'apresentacao'>> &
 export const campoRenderizavel = (
   fatoCodigo: string,
   rotulo: string,
-  tipoRenderizacao: string,
+  tipoDeCampo: string,
   { ajuda, pedirConfirmacao = false, ...outros }: OutrosDoCampo = {},
 ): CampoRenderizavel => ({
   fatoCodigo,
   ordem: 0,
-  apresentacao: { rotulo, tipoRenderizacao, ajuda, pedirConfirmacao },
+  apresentacao: { rotulo, tipoDeCampo, ajuda, pedirConfirmacao },
   ...outros,
 });
 

@@ -1,9 +1,14 @@
+import { SituacaoDoProcessoSeletivoCodigo } from '@uniplus/shared-data/selecao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
-import { CaraterEtapaCodigo, OrigemCandidatosCodigo, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import {
+  CaraterEtapaCodigo,
+  OrigemCandidatosCodigo,
+  SELECAO_BASE_PATH,
+} from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { EtapaPontuada } from '../../processo-seletivo.models';
@@ -233,7 +238,12 @@ describe('FormulaPassoComponent', () => {
 
     it('em consulta, exibe a faixa da nota final congelada', () => {
       passoValidoComEscala('1000');
-      store.remoteSnapshot.set({ status: 'publicado' } as never);
+      store.remoteSnapshot.set({
+        situacao: {
+          codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        },
+      } as never);
       fixture.detectChanges();
 
       expect((fixture.nativeElement as HTMLElement).textContent).toContain('0 a 1000');

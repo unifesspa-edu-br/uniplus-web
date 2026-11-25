@@ -61,7 +61,7 @@ describe('OfertasCursoPage — causa geral na recusa ao salvar', () => {
     const primeira = await p.enviar();
     const chave = chaveDe(primeira);
     const [corpo, opcoes] = recusaDeCampos({
-      field: 'eMecCodigo',
+      field: 'codigoEmec',
       code: 'e_mec_codigo_tamanho',
       message: 'Código longo.',
     });
@@ -72,7 +72,7 @@ describe('OfertasCursoPage — causa geral na recusa ao salvar', () => {
     primeira.flush(JSON.stringify(comCausaGeral), opcoes);
     await p.propagar();
 
-    expect(p.campo('eMecCodigo').getAttribute('aria-invalid')).toBe('true');
+    expect(p.campo('codigoEmec').getAttribute('aria-invalid')).toBe('true');
     expect(alertaDoDrawer().textContent).toContain('A oferta está bloqueada.');
     expect(p.erros).not.toHaveBeenCalled();
     expect(chaveDe(await p.enviar())).not.toBe(chave);

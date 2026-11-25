@@ -170,6 +170,6 @@ describe('dia não útil — recusas do servidor', () => {
 
   it('lê a posição do dia no nome do campo', () => {
     expect(indiceDoDiaNoServidor('diasNaoUteis[3].data')).toBe(3);
-    expect(indiceDoDiaNoServidor('versaoDataset')).toBeNull();
+    expect(indiceDoDiaNoServidor('versaoDoCalendario')).toBeNull();
   });
 });

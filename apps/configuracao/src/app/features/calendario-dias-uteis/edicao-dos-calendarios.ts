@@ -61,7 +61,7 @@ function itemDaConfirmacao(
   calendario: CalendarioDiasUteisResumoDto | null,
   abertura: string,
 ): ItemDaConfirmacao | null {
-  return calendario ? { abertura, nome: calendario.versaoDataset } : null;
+  return calendario ? { abertura, nome: calendario.versaoDoCalendario } : null;
 }
 
 /** O que o diálogo anuncia: o andamento e a recusa, que só fazem sentido com ele aberto. */
@@ -72,7 +72,7 @@ function anuncioDaConfirmacao(
   verbo: Verbo,
 ): string {
   if (calendario === null) return '';
-  const versao = calendario.versaoDataset;
+  const versao = calendario.versaoDoCalendario;
   if (emCurso) return `${verbo.gerundio} o calendário ${versao}.`;
   return motivo ? `Não foi possível ${verbo.infinitivo} o calendário ${versao}. ${motivo}` : '';
 }
@@ -201,7 +201,7 @@ export class EdicaoDosCalendarios {
       return;
     }
     this.acionadorAposRecusa = null;
-    this.resultado.set(`Calendário ${calendario.versaoDataset} removido.`);
+    this.resultado.set(`Calendário ${calendario.versaoDoCalendario} removido.`);
     this.notifications.success('Calendário removido');
     this.confirmandoRemocao.set(false);
     this.paraRemover.set(null);
@@ -213,19 +213,25 @@ export class EdicaoDosCalendarios {
     result: ApiResult<void>,
   ): void {
     if (!result.ok) {
-      if (deveRotacionarIdempotencyKey(result.problem)) {
-        this.chaveDaVigencia.set(idempotencyKey.create());
-      }
-      this.erroVigencia.set(this.recusar(result.problem, { acao: 'marcar', id: calendario.id }));
+      this.recusarVigencia(calendario, result.problem);
       return;
     }
-    this.acionadorAposRecusa = null;
-    this.resultado.set(`Calendário ${calendario.versaoDataset} marcado como vigente.`);
+    this.anunciarVigencia(calendario);
     this.notifications.success('Vigência de calendário atualizada');
     this.chaveDaVigencia.set(idempotencyKey.create());
     this.confirmandoVigencia.set(false);
     this.paraMarcar.set(null);
     this.recarregar();
+  }
+
+  private anunciarVigencia(calendario: CalendarioDiasUteisResumoDto): void {
+    this.acionadorAposRecusa = null;
+    this.resultado.set(`Calendário ${calendario.versaoDoCalendario} marcado como vigente.`);
+  }
+
+  private recusarVigencia(calendario: CalendarioDiasUteisResumoDto, problem: ProblemDetails): void {
+    if (deveRotacionarIdempotencyKey(problem)) this.chaveDaVigencia.set(idempotencyKey.create());
+    this.erroVigencia.set(this.recusar(problem, { acao: 'marcar', id: calendario.id }));
   }
 
   /**

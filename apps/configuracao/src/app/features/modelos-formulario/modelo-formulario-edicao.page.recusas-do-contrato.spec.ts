@@ -1,9 +1,6 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture } from '@angular/core/testing';
-import {
-  TipoRenderizacaoCodigo,
-  type ModeloFormularioView,
-} from '@uniplus/shared-data/configuracao';
+import { TipoDeCampoCodigo, type ModeloFormularioView } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ModeloFormularioEdicaoPage } from './modelo-formulario-edicao.page';
 import {
@@ -34,7 +31,7 @@ const umCampo = (fatoCodigo: string, ordem: number, etapaCodigo: string | null):
   ordem,
   apresentacao: {
     rotulo: `Campo ${fatoCodigo}`,
-    tipoRenderizacao: TipoRenderizacaoCodigo.SIM_OU_NAO,
+    tipoDeCampo: TipoDeCampoCodigo.SIM_OU_NAO,
     ajuda: null,
     pedirConfirmacao: false,
   },

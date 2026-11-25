@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
+import { SituacaoDoProcessoSeletivoCodigo } from '@uniplus/shared-data/selecao';
 import { okResult } from '@uniplus/shared-testing';
 import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -174,7 +174,9 @@ describe('ProcessoSeletivoPage — ato digitado na Revisão', MONTAGEM_LENTA, ()
     expect(cenario.componente.atoDigitadoPendente(), 'pré-condição: há ato a perder').toBe(true);
 
     cenario.store.remoteSnapshot.set(
-      detalhe({ status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' } }),
+      detalhe({
+        situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO, rotulo: 'Publicado' },
+      }),
     );
 
     expect(cenario.componente.atoDigitadoPendente()).toBe(false);
@@ -204,7 +206,9 @@ describe('ProcessoSeletivoPage — ato digitado na Revisão', MONTAGEM_LENTA, ()
       const cenario = await comAtoEPublicacaoNaoConfirmada();
 
       cenario.store.hidratar(
-        detalhe({ status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' } }),
+        detalhe({
+          situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO, rotulo: 'Publicado' },
+        }),
       );
 
       expect(cenario.componente.atoDigitadoPendente()).toBe(false);

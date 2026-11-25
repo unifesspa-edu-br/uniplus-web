@@ -9,7 +9,7 @@ import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import {
   SELECAO_BASE_PATH,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
   type FormularioDto,
 } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach } from 'vitest';
@@ -105,7 +105,10 @@ export class ContextoDoPasso {
       ...PROCESSO,
       formularios,
       id: PROCESSO_ID,
-      status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: StatusProcessoCodigo.RASCUNHO },
+      situacao: {
+        codigo: SituacaoDoProcessoSeletivoCodigo.RASCUNHO,
+        rotulo: SituacaoDoProcessoSeletivoCodigo.RASCUNHO,
+      },
     } as never);
     this.fixture.detectChanges();
   };

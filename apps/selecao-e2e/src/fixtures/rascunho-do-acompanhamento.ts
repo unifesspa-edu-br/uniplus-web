@@ -56,7 +56,7 @@ export async function rascunhoDoAcompanhamento(criador: string): Promise<Process
     existente ?? {
       id: await criarRascunho(criador),
       nome: NOME,
-      status: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
+      situacao: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
     }
   );
 }

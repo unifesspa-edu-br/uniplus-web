@@ -60,7 +60,7 @@ describe('recusa que aponta uma restrição', () => {
   const enviado = conteudo({
     itens: [
       item('ESPERA', 0, 'S1', {
-        apresentacao: { tipoRenderizacao: 'ESCOLHA_UNICA' },
+        apresentacao: { tipoDeCampo: 'ESCOLHA_UNICA' },
         regras: { restricoes: [opcoes, dasRespostas] },
       }),
     ],
@@ -144,7 +144,7 @@ describe('recusa da API à restrição da faixa de datas', () => {
       etapas: [secao('S1', 0)],
       itens: [
         item('NASCIMENTO', 0, 'S1', {
-          apresentacao: { tipoRenderizacao: 'DATA' },
+          apresentacao: { tipoDeCampo: 'DATA' },
           regras: { restricoes: [faixa] },
         }),
       ],
@@ -158,7 +158,7 @@ describe('recusa da API à restrição da faixa de datas', () => {
           regras: { exibicao: null, obrigatoriedade: { tipo: 'NUNCA', predicado: null } },
           subitens: [
             item('FILHO', 0, 'S1', {
-              apresentacao: { tipoRenderizacao: 'DATA' },
+              apresentacao: { tipoDeCampo: 'DATA' },
               regras: { restricoes: [faixa] },
             }),
           ],

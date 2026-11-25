@@ -9,7 +9,7 @@ import {
   ProcessoSeletivoDto,
   RegraCatalogoDto,
   SELECAO_BASE_PATH,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
 } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -23,11 +23,16 @@ import { LeituraDoCadastroDePesos } from './leitura-do-cadastro-de-pesos.service
 export const BASE = 'http://localhost:5000';
 export const PROCESSO_ID = '01960000-0000-7000-0000-000000000898';
 
+const TIPO_REGRA = {
+  codigo: 'REGRA_CALCULO' as RegraCatalogoDto['tipo']['codigo'],
+  rotulo: 'Regra de cálculo',
+};
+
 export function regra(codigo: string): RegraCatalogoDto {
   return {
     codigo,
     versao: '1.0',
-    tipo: { codigo: 'REGRA_CALCULO' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Regra de cálculo' },
+    tipo: TIPO_REGRA,
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: `Base de ${codigo}`,
@@ -98,7 +103,10 @@ export function valorDoSelect(host: HTMLElement, id: string): string | undefined
 export function publicar(store: ProcessoSeletivoStore): void {
   store.remoteSnapshot.set({
     id: PROCESSO_ID,
-    status: StatusProcessoCodigo.PUBLICADO,
+    situacao: {
+      codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+      rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+    },
   } as unknown as ProcessoSeletivoDto);
 }
 

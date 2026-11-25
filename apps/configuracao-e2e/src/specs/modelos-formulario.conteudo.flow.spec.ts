@@ -47,7 +47,7 @@ const MODELO: JsonDaApi<ModeloFormularioView> = {
         etapaCodigo: 'SECAO_1',
         apresentacao: {
           rotulo: 'Nome',
-          tipoRenderizacao: 'TEXTO',
+          tipoDeCampo: 'TEXTO',
           ajuda: null,
           pedirConfirmacao: false,
         },
@@ -59,7 +59,7 @@ const MODELO: JsonDaApi<ModeloFormularioView> = {
         etapaCodigo: 'SECAO_1',
         apresentacao: {
           rotulo: ROTULO_DA_ESCOLA,
-          tipoRenderizacao: 'SIM_OU_NAO',
+          tipoDeCampo: 'SIM_OU_NAO',
           ajuda: AJUDA_DA_ESCOLA,
           pedirConfirmacao: false,
         },

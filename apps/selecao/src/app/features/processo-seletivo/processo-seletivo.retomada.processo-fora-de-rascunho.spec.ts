@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
+import { SituacaoDoProcessoSeletivoCodigo } from '@uniplus/shared-data/selecao';
 import { okResult } from '@uniplus/shared-testing';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -28,7 +28,9 @@ describe('ProcessoSeletivoPage — processo fora de rascunho', MONTAGEM_LENTA, (
       obter: vi.fn(() =>
         of(
           okResult(
-            detalhe({ status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' } }),
+            detalhe({
+              situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO, rotulo: 'Publicado' },
+            }),
           ),
         ),
       ),
@@ -84,7 +86,9 @@ describe('ProcessoSeletivoPage — processo fora de rascunho', MONTAGEM_LENTA, (
       obter: vi.fn(() =>
         of(
           okResult(
-            detalhe({ status: { codigo: StatusProcessoCodigo.CANCELADO, rotulo: 'Cancelado' } }),
+            detalhe({
+              situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.CANCELADO, rotulo: 'Cancelado' },
+            }),
           ),
         ),
       ),
@@ -104,7 +108,9 @@ describe('ProcessoSeletivoPage — processo fora de rascunho', MONTAGEM_LENTA, (
       obter: vi.fn(() =>
         of(
           okResult(
-            detalhe({ status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' } }),
+            detalhe({
+              situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO, rotulo: 'Publicado' },
+            }),
           ),
         ),
       ),
@@ -123,7 +129,10 @@ describe('ProcessoSeletivoPage — processo fora de rascunho', MONTAGEM_LENTA, (
         of(
           okResult(
             detalhe({
-              status: { codigo: 'Arquivado' as StatusProcessoCodigo, rotulo: 'Arquivado' },
+              situacao: {
+                codigo: 'Arquivado' as SituacaoDoProcessoSeletivoCodigo,
+                rotulo: 'Arquivado',
+              },
             }),
           ),
         ),

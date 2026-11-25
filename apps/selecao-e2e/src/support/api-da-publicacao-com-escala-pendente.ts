@@ -140,7 +140,7 @@ function detalheDoProcesso(recebido: PublicacaoRecebida): unknown {
     atendimentoEspecializado: null,
     cascata: null,
     cronogramaFases: PROCESSO_PUBLICADO_COMPLETO.cronogramaFases.map(comProdutoDefinitivo),
-    status: recebido.publicou
+    situacao: recebido.publicou
       ? { codigo: 'PUBLICADO', rotulo: 'Publicado' }
       : { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
     classificacao: classificacaoComEscala(recebido),

@@ -21,7 +21,7 @@ function apresentacaoDoPressuposto(
 ): ApresentacaoDoCampo {
   return {
     rotulo: pressuposto.rotulo?.trim() || pressuposto.fatoCodigo,
-    tipoRenderizacao: tipo,
+    tipoDeCampo: tipo,
     ajuda: null,
     pedirConfirmacao: false,
   };
@@ -96,7 +96,7 @@ function avaliadoDoPressuposto(fatoCodigo: string): CampoAvaliado {
                   @for (forma of formas; track forma.tipo) {
                     <option
                       [value]="forma.tipo"
-                      [selected]="forma.tipo === item.campo.campo.apresentacao.tipoRenderizacao"
+                      [selected]="forma.tipo === item.campo.campo.apresentacao.tipoDeCampo"
                     >
                       {{ forma.rotulo }}
                     </option>
@@ -135,9 +135,9 @@ export class PressupostosDaSimulacaoComponent {
   /** Cada pressuposto como um campo sempre visível e opcional, sem regra própria. */
   protected readonly itens = computed(() =>
     this.pressupostos().map((pressuposto) => {
-      const semApresentacao = !pressuposto.tipoRenderizacao;
+      const semApresentacao = !pressuposto.tipoDeCampo;
       const tipo =
-        pressuposto.tipoRenderizacao ?? this.formaEscolhida()[pressuposto.fatoCodigo] ?? 'TEXTO';
+        pressuposto.tipoDeCampo ?? this.formaEscolhida()[pressuposto.fatoCodigo] ?? 'TEXTO';
       const campo = campoDoPressuposto(pressuposto, tipo);
       return { pressuposto, semApresentacao, campo };
     }),

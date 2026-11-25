@@ -301,7 +301,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await expect(page.locator('#cfg-oferta-curso-id')).toHaveCount(0);
     await expect(page.getByText('Bacharelado · Graduação')).toBeVisible();
 
-    await page.locator('[formControlName="eMecCodigo"]').fill('999999');
+    await page.locator('[formControlName="codigoEmec"]').fill('999999');
     await page.getByRole('button', { name: 'Salvar oferta' }).click();
 
     await expect.poll(() => capturado.puts.length).toBe(1);
@@ -311,6 +311,6 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     expect(put['unidadeOfertanteOrigemId']).toBeUndefined();
     expect(put['regimeDeFuncionamento']).toBe('EXTENSIVO');
     expect(put['codigo']).toBe(CODIGO_DA_OFERTA);
-    expect(put['eMecCodigo']).toBe('999999');
+    expect(put['codigoEmec']).toBe('999999');
   });
 });

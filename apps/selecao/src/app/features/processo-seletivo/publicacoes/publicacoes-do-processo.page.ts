@@ -14,7 +14,7 @@ import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { ProblemI18nService, abrirAcessoEmNovaAba } from '@uniplus/shared-core/http';
 import {
   DocumentosEAtosDoProcessoApi,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
   type AtoDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
 import {
@@ -113,7 +113,10 @@ export class PublicacoesDoProcessoPage {
   /** O processo ainda não foi publicado: não há página pública para receber documentos. */
   protected readonly emRascunho = computed(() => {
     const processo = this.publicacoes.processo();
-    return processo.estado === 'lido' && processo.dados.status.codigo === StatusProcessoCodigo.RASCUNHO;
+    return (
+      processo.estado === 'lido' &&
+      processo.dados.situacao.codigo === SituacaoDoProcessoSeletivoCodigo.RASCUNHO
+    );
   });
 
   /** Publicar documento é de quem tem a permissão de publicar; as demais permissões não bastam. */
@@ -180,12 +183,15 @@ export class PublicacoesDoProcessoPage {
 
   private abrirDocumentoDoProcesso(processoId: string, documentoAPublicarId: string) {
     return abrirAcessoEmNovaAba(
-      () => firstValueFrom(this.api.obterAcessoDocumentoAPublicar(processoId, documentoAPublicarId)),
+      () =>
+        firstValueFrom(this.api.obterAcessoDocumentoAPublicar(processoId, documentoAPublicarId)),
       () => processoId === this.publicacoes.processoId(),
     );
   }
 
-  private informarFalhaDeAbertura(desfecho: Awaited<ReturnType<typeof abrirAcessoEmNovaAba>>): void {
+  private informarFalhaDeAbertura(
+    desfecho: Awaited<ReturnType<typeof abrirAcessoEmNovaAba>>,
+  ): void {
     if (desfecho.situacao === 'bloqueada') {
       this.erroDeAbertura.set(
         'O navegador bloqueou a abertura do documento. Permita pop-ups para este endereço e tente de novo.',

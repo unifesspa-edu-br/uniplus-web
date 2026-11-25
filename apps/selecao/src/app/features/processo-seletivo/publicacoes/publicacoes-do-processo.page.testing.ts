@@ -11,7 +11,7 @@ import { PUBLICACOES_BASE_PATH, type TipoAtoPublicadoDto } from '@uniplus/shared
 import {
   SELECAO_BASE_PATH,
   SituacaoDoProdutoPrevistoCodigo,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
   type AtoDoProcessoDto,
   type ProcessoSeletivoDto,
   type ProdutoPrevistoDto,
@@ -181,11 +181,11 @@ export class PaginaDePublicacoes {
     this.fixture.detectChanges();
   }
 
-  responderProcesso(status: StatusProcessoCodigo): void {
+  responderProcesso(status: SituacaoDoProcessoSeletivoCodigo): void {
     this.controller.expectOne(ROTA_PROCESSO).flush({
       id: PROCESSO_ID,
       nome: 'Medicina 2027',
-      status: { codigo: status, rotulo: status },
+      situacao: { codigo: status, rotulo: status },
     } as ProcessoSeletivoDto);
   }
 
@@ -215,7 +215,7 @@ export class PaginaDePublicacoes {
   }
 
   private responderLeituraInicial(
-    status: StatusProcessoCodigo,
+    status: SituacaoDoProcessoSeletivoCodigo,
     atos: readonly AtoDoProcessoDto[],
   ): void {
     this.responderProcesso(status);
@@ -224,14 +224,14 @@ export class PaginaDePublicacoes {
   }
 
   async abrir(
-    status: StatusProcessoCodigo,
+    status: SituacaoDoProcessoSeletivoCodigo,
     atos: readonly AtoDoProcessoDto[],
     itensPrevistos: ProdutosPrevistosDoProcessoDto = previstos(),
     camposFalham = false,
   ): Promise<void> {
     this.iniciar();
     this.responderLeituraInicial(status, atos);
-    if (status !== StatusProcessoCodigo.RASCUNHO) {
+    if (status !== SituacaoDoProcessoSeletivoCodigo.RASCUNHO) {
       // Os itens do edital só são pedidos depois de o processo dizer que já não é rascunho.
       await tick();
       this.responderPrevistos(itensPrevistos, camposFalham);
@@ -241,7 +241,7 @@ export class PaginaDePublicacoes {
 
   async abrirPublicadoComFalhaEm(onde: 'tipos' | 'previstos'): Promise<void> {
     this.iniciar();
-    this.responderProcesso(StatusProcessoCodigo.PUBLICADO);
+    this.responderProcesso(SituacaoDoProcessoSeletivoCodigo.PUBLICADO);
     this.controller.expectOne(ROTA_ATOS).flush([]);
     if (onde === 'tipos') this.falharTipos();
     else this.responderTipos();

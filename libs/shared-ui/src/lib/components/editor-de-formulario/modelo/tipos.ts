@@ -80,7 +80,7 @@ export interface RegrasDoCampo<N = NumeroDigitado, O = string> extends ExibicaoE
 
 export interface ApresentacaoDoCampo<T = string> {
   readonly rotulo: string;
-  readonly tipoRenderizacao: T;
+  readonly tipoDeCampo: T;
   readonly ajuda?: null | string;
   readonly pedirConfirmacao: boolean;
 }

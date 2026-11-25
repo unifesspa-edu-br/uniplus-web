@@ -6,12 +6,8 @@ const OCORRENCIAS_DA_COMPOSICAO = { minimo: 1, maximo: 3, incluiCandidato: false
 
 type Condicao = Record<string, unknown>;
 
-function apresentacaoDoCampo(
-  rotulo: string,
-  tipoRenderizacao: string,
-  ajuda: string | null = null,
-) {
-  return { rotulo, tipoRenderizacao, ajuda, pedirConfirmacao: false };
+function apresentacaoDoCampo(rotulo: string, tipoDeCampo: string, ajuda: string | null = null) {
+  return { rotulo, tipoDeCampo, ajuda, pedirConfirmacao: false };
 }
 
 function secao(codigo: string, ordem: number, titulo: string, descricao: string | null) {
@@ -29,7 +25,7 @@ const ITENS_DA_COLETA = [
   {
     fatoCodigo: 'TIPO_ENDERECO',
     ordem: 0,
-    apresentacao: apresentacaoDoCampo('Tipo de endereço', 'SELECAO_UNICA'),
+    apresentacao: apresentacaoDoCampo('Tipo de endereço', 'ESCOLHA_UNICA'),
     valoresSelecionaveis: [
       { codigo: 'URBANO', descricao: 'Urbano', ordem: 0 },
       { codigo: 'ALDEIA', descricao: 'Aldeia indígena', ordem: 1 },

@@ -10,7 +10,7 @@ import {
   type FormularioRenderizavelDto,
   type InscricaoDto,
   SELECAO_BASE_PATH,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
 } from '@uniplus/shared-data/selecao';
 import { LEITURA_DE_MUNICIPIO_POR_CODIGO, NomesDeMunicipios } from '@uniplus/shared-ui/components';
 
@@ -38,14 +38,11 @@ const COM_NATURALIDADE: FormularioRenderizavelDto = {
   ...comCampoColetado(
     comCampoColetado(
       FORMULARIO_DE_INSCRICAO_MOCK,
-      campoColetado('NATURALIDADE', 'Naturalidade', TipoRenderizacaoCodigo.MUNICIPIO, { ordem: 4 }),
+      campoColetado('NATURALIDADE', 'Naturalidade', TipoDeCampoCodigo.MUNICIPIO, { ordem: 4 }),
     ),
-    campoColetado(
-      'DESEJA_NOME_SOCIAL',
-      'Deseja usar nome social',
-      TipoRenderizacaoCodigo.SIM_OU_NAO,
-      { ordem: 5 },
-    ),
+    campoColetado('DESEJA_NOME_SOCIAL', 'Deseja usar nome social', TipoDeCampoCodigo.SIM_OU_NAO, {
+      ordem: 5,
+    }),
   ),
   dependenciasDaAvaliacao: { fatos: ['NOME'], grupos: [] },
 };

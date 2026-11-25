@@ -4,7 +4,7 @@ import { lerMunicipio, municipioParaExibir } from './valor-de-municipio-gravado'
 
 /** O que a exibição precisa saber do campo para mostrar a resposta. */
 export interface CampoExibido {
-  readonly apresentacao: { readonly tipoRenderizacao: string };
+  readonly apresentacao: { readonly tipoDeCampo: string };
   /** O formato de texto do catálogo, como TELEFONE. */
   readonly formato?: string | null;
   readonly valoresSelecionaveis?: readonly { codigo: string; descricao?: string | null }[] | null;
@@ -47,7 +47,7 @@ const textoExibido: Exibicao = (campo, valor) =>
  * município pelo nome que ficou gravado no envio.
  */
 export function respostaExibida(campo: CampoExibido, valor: unknown): string {
-  return (EXIBICAO_POR_TIPO[campo.apresentacao.tipoRenderizacao] ?? textoExibido)(campo, valor);
+  return (EXIBICAO_POR_TIPO[campo.apresentacao.tipoDeCampo] ?? textoExibido)(campo, valor);
 }
 
 function municipioExibido(valor: unknown): string {

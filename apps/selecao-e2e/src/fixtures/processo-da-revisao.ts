@@ -163,7 +163,7 @@ export function processoDto(
 ) {
   return {
     ...IDENTIFICACAO_DO_PROCESSO,
-    status: situacaoDoProcesso(status),
+    situacao: situacaoDoProcesso(status),
     ...DIMENSOES_SEM_CADASTRO,
     classificacao,
     cronogramaFases,

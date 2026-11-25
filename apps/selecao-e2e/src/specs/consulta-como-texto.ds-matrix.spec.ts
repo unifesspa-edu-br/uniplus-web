@@ -200,7 +200,7 @@ async function mockarApi(page: Page, status: Status): Promise<void> {
     if (caminho.endsWith(PROCESSO_PUBLICADO_DA_MEDICINA.id)) {
       await responderCom(
         route,
-        { ...PROCESSO_PUBLICADO_DA_MEDICINA, status: situacaoDoProcesso(status) },
+        { ...PROCESSO_PUBLICADO_DA_MEDICINA, situacao: situacaoDoProcesso(status) },
         CORS_HEADERS,
       );
       return;

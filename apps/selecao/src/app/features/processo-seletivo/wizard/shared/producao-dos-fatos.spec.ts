@@ -157,7 +157,7 @@ describe('a produção dos fatos no rascunho', () => {
     fatoCodigo,
     ordem: 0,
     etapaCodigo: null,
-    apresentacao: apresentacaoDoCampo(fatoCodigo, 'BOOLEANO'),
+    apresentacao: apresentacaoDoCampo(fatoCodigo, 'SIM_OU_NAO'),
     regras: REGRAS_INICIAIS,
   });
 

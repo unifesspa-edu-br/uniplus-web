@@ -16,7 +16,7 @@ import {
   TipoObrigatoriedadeCodigo,
   FinalidadeFormularioCodigo,
   OperadorCodigo,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
 } from '@uniplus/shared-data/selecao';
 
 import type { AtributosCongeladosDaFase, FaseDoCronograma } from '../../processo-seletivo.models';
@@ -66,7 +66,7 @@ export const FASE_HABILITACAO: FaseDoCronograma = {
 };
 
 const APRESENTACAO_BOOLEANA: Omit<ItemDoFormulario['apresentacao'], 'rotulo'> = {
-  tipoRenderizacao: TipoRenderizacaoCodigo.SIM_OU_NAO,
+  tipoDeCampo: TipoDeCampoCodigo.SIM_OU_NAO,
   ajuda: null,
   pedirConfirmacao: false,
 };
@@ -140,7 +140,10 @@ export const GRAVADO: FormularioDto = {
         etapaCodigo: 'S1',
         rotulo: 'FAMILIA',
         ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
-        regras: { exibicao: null, obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null } },
+        regras: {
+          exibicao: null,
+          obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null },
+        },
         subitens: [],
       },
     ],

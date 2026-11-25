@@ -81,7 +81,7 @@ describe('moverItem', () => {
       itens: [
         item('A', 0, 'S1'),
         item('B', 1, 'S1', {
-          apresentacao: { tipoRenderizacao: 'ESCOLHA_UNICA' },
+          apresentacao: { tipoDeCampo: 'ESCOLHA_UNICA' },
           regras: { restricoes: [restricao] },
         }),
       ],

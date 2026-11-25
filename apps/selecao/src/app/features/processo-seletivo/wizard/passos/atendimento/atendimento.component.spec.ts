@@ -1,3 +1,4 @@
+import { SituacaoDoProcessoSeletivoCodigo } from '@uniplus/shared-data/selecao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture } from '@angular/core/testing';
 import { apresentacaoDoCampo } from '@uniplus/shared-ui/components';
@@ -70,7 +71,7 @@ describe('AtendimentoPassoComponent', () => {
         etapas: [],
         itens: [
           item('TIPO_DEFICIENCIA', 0, 'S1', {
-            apresentacao: apresentacaoDoCampo('Tipo de deficiência', 'SELECAO_UNICA'),
+            apresentacao: apresentacaoDoCampo('Tipo de deficiência', 'ESCOLHA_UNICA'),
           }),
         ],
         termos: [],
@@ -327,7 +328,12 @@ describe('AtendimentoPassoComponent', () => {
       tiposDeficiencia: [{ id: 'id-antigo', nome: 'Tipo já removido' }],
       recursos: [],
     });
-    store.remoteSnapshot.set({ status: 'publicado' } as never);
+    store.remoteSnapshot.set({
+      situacao: {
+        codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+      },
+    } as never);
     detectar();
 
     expect(elemento.querySelector('input, button')).toBeNull();

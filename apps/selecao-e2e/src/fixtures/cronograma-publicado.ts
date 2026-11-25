@@ -18,7 +18,7 @@ export const DETALHE_PUBLICADO = {
   id: PROCESSO_PUBLICADO_ID,
   nome: 'Processo seletivo publicado',
   tipoProcesso: { origemId: TIPOS_PROCESSO[0].id, codigo: 'SISU', nome: 'SISU' },
-  status: { codigo: 'PUBLICADO', rotulo: 'Publicado' },
+  situacao: { codigo: 'PUBLICADO', rotulo: 'Publicado' },
   origemCandidatos: { codigo: 'INSCRICAO_PROPRIA', rotulo: 'Inscrição própria' },
   unidadeAdministradora: {
     origemId: '01960000-0000-7000-0000-000000000906',

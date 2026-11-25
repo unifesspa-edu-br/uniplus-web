@@ -1,4 +1,4 @@
-import { OperadorCodigo, TipoRenderizacaoCodigo } from '@uniplus/shared-data/configuracao';
+import { OperadorCodigo, TipoDeCampoCodigo } from '@uniplus/shared-data/configuracao';
 import type {
   ConteudoDoModeloInput,
   ModeloFormularioView,
@@ -38,7 +38,7 @@ function conjuntoParaOModelo({ documentosExigidos, gruposDeDocumentos }: Documen
 export function conteudoParaOModelo(conteudo: ConteudoDoFormulario<number>): ConteudoDoModeloInput {
   const { documentosExigidos, gruposDeDocumentos, ...convertido } = conteudoComCodigos(
     conteudo,
-    codigosDoContrato(OperadorCodigo, TipoRenderizacaoCodigo),
+    codigosDoContrato(OperadorCodigo, TipoDeCampoCodigo),
   );
   return {
     ...convertido,

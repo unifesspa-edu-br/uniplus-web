@@ -83,7 +83,7 @@ export class CampoDoCandidatoComponent {
     opcoesDoCampo(this.campo(), this.noPasso().avaliado, codigosDa(this.resposta()) ?? []),
   );
   protected readonly multipla = computed(
-    () => this.apresentacao().tipoRenderizacao === 'ESCOLHA_MULTIPLA',
+    () => this.apresentacao().tipoDeCampo === 'ESCOLHA_MULTIPLA',
   );
   protected readonly vazia = computed(() => estaVazia(this.resposta()));
   /** O telefone vai à API só com os dígitos e aparece com a máscara (formato do catálogo). */
@@ -106,7 +106,7 @@ export class CampoDoCandidatoComponent {
   protected readonly controle = computed<ControleDoCampo>(() =>
     this.fixa()
       ? 'fixa'
-      : controleDoTipo(this.apresentacao().tipoRenderizacao, {
+      : controleDoTipo(this.apresentacao().tipoDeCampo, {
           semValoresConhecidos: this.semValoresConhecidos(),
           opcoes: this.opcoes().length,
         }),

@@ -1,3 +1,4 @@
+import { SituacaoDoProcessoSeletivoCodigo } from '@uniplus/shared-data/selecao';
 import { BlocoSistemaCodigo } from '@uniplus/shared-data/selecao';
 import { TestBed } from '@angular/core/testing';
 import { fatoComOperadores } from '@uniplus/shared-data/configuracao';
@@ -52,7 +53,14 @@ describe('FormularioPassoComponent: documentos da fase', () => {
       store.patchObjectSection('formulario', {
         conteudo: conteudoDoFormulario(COM_ETAPA_DE_DOCUMENTOS),
       });
-      store.remoteSnapshot.set({ ...PROCESSO, id: PROCESSO_ID, status: 'publicado' } as never);
+      store.remoteSnapshot.set({
+        ...PROCESSO,
+        id: PROCESSO_ID,
+        situacao: {
+          codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        },
+      } as never);
       fixture.detectChanges();
     }
 

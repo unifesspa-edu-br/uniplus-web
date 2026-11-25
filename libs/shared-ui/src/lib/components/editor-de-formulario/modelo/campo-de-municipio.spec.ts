@@ -16,7 +16,7 @@ describe('campo de município', () => {
   it('o município nasce restrito à UF respondida antes', () => {
     const comUf = conteudo({
       etapas: [secao('S1', 0)],
-      itens: [item('UF', 0, 'S1', { apresentacao: { tipoRenderizacao: 'ESCOLHA_UNICA' } })],
+      itens: [item('UF', 0, 'S1', { apresentacao: { tipoDeCampo: 'ESCOLHA_UNICA' } })],
     });
 
     const resultado = acrescentarCampo(comUf, municipio, 'S1', { catalogo: [uf, municipio] });

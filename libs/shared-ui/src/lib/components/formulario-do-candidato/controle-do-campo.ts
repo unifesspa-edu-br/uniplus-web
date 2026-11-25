@@ -29,18 +29,16 @@ const CONTROLE_PELO_TIPO: Readonly<Record<string, Exclude<ControleDoCampo, 'fixa
  * única com muitas opções, lista suspensa. Os dois dados da escolha só importam a ela.
  */
 export function controleDoTipo(
-  tipoRenderizacao: string,
+  tipoDeCampo: string,
   escolha: { readonly semValoresConhecidos: boolean; readonly opcoes: number } = {
     semValoresConhecidos: false,
     opcoes: 0,
   },
 ): Exclude<ControleDoCampo, 'fixa'> {
-  if (tipoRenderizacao === 'ESCOLHA_UNICA') return controleDaEscolhaUnica(escolha);
-  if (tipoRenderizacao === 'ESCOLHA_MULTIPLA')
+  if (tipoDeCampo === 'ESCOLHA_UNICA') return controleDaEscolhaUnica(escolha);
+  if (tipoDeCampo === 'ESCOLHA_MULTIPLA')
     return escolha.semValoresConhecidos ? 'codigos' : 'escolha';
-  return Object.hasOwn(CONTROLE_PELO_TIPO, tipoRenderizacao)
-    ? CONTROLE_PELO_TIPO[tipoRenderizacao]
-    : 'texto';
+  return Object.hasOwn(CONTROLE_PELO_TIPO, tipoDeCampo) ? CONTROLE_PELO_TIPO[tipoDeCampo] : 'texto';
 }
 
 function controleDaEscolhaUnica(escolha: {

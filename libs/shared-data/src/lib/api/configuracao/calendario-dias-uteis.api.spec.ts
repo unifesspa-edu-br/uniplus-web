@@ -47,7 +47,7 @@ const diaMunicipal: DiaNaoUtilDto = {
 };
 
 const comandoValido: CriarCalendarioDiasUteisCommand = {
-  versaoDataset: '2026.1',
+  versaoDoCalendario: '2026.1',
   diasNaoUteis: [itemMunicipal],
 };
 
@@ -118,7 +118,7 @@ describe('CalendarioDiasUteisApi', () => {
     );
     req.flush({
       id: CALENDARIO_ID,
-      versaoDataset: '2026.1',
+      versaoDoCalendario: '2026.1',
       vigente: true,
       criadoEm: '2026-08-13T00:00:00Z',
       diasNaoUteis: [diaMunicipal],

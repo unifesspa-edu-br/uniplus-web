@@ -8,7 +8,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotasDoEnemPage } from './notas-do-enem.page';
 import {
   SELECAO_BASE_PATH,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
   type LeiauteDoInepDto,
   type ProcessoSeletivoDto,
   type SnapshotVigenteDto,
@@ -38,13 +38,17 @@ export function providersDaTela(): (Provider | EnvironmentProviders)[] {
 
 /** O processo como a configuração administrativa o mostra; etapas e edições vêm da versão publicada. */
 export function processo(
-  sobrescritas: { status?: StatusProcessoCodigo; identificadorLegivel?: string | null } = {},
+  sobrescritas: {
+    status?: SituacaoDoProcessoSeletivoCodigo;
+    identificadorLegivel?: string | null;
+  } = {},
 ): ProcessoSeletivoDto {
-  const { status = StatusProcessoCodigo.PUBLICADO, identificadorLegivel = null } = sobrescritas;
+  const { status = SituacaoDoProcessoSeletivoCodigo.PUBLICADO, identificadorLegivel = null } =
+    sobrescritas;
   return {
     id: PROCESSO_ID,
     nome: 'Medicina 2027',
-    status: { codigo: status, rotulo: status },
+    situacao: { codigo: status, rotulo: status },
     identificadorLegivel,
   } as unknown as ProcessoSeletivoDto;
 }
@@ -124,13 +128,20 @@ export async function responderALeituraInicial(
   publicada: SnapshotVigenteDto | null = snapshotVigente(),
 ): Promise<void> {
   controller.expectOne(ROTA_PROCESSO).flush(processoLido);
-  if (processoLido.status.codigo !== StatusProcessoCodigo.RASCUNHO) await responderSnapshot(controller, publicada);
+  if (processoLido.situacao.codigo !== SituacaoDoProcessoSeletivoCodigo.RASCUNHO)
+    await responderSnapshot(controller, publicada);
+  responderLeiautes(controller, 'ENVIO', leiautes.envio ?? LEIAUTES_DE_ENVIO);
+  responderLeiautes(controller, 'RETORNO', leiautes.retorno ?? LEIAUTES_DE_RETORNO);
+}
+
+function responderLeiautes(
+  controller: HttpTestingController,
+  tipo: 'ENVIO' | 'RETORNO',
+  leiautes: readonly LeiauteDoInepDto[],
+): void {
   controller
-    .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'ENVIO')
-    .flush(leiautes.envio ?? LEIAUTES_DE_ENVIO);
-  controller
-    .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'RETORNO')
-    .flush(leiautes.retorno ?? LEIAUTES_DE_RETORNO);
+    .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === tipo)
+    .flush(leiautes);
 }
 
 async function responderSnapshot(

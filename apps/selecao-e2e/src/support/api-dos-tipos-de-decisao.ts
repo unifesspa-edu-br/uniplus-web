@@ -60,7 +60,7 @@ const emOrdemAlfabetica = (tipos: readonly string[]): string[] => [...new Set(ti
 function detalheDoProcesso(servidor: ServidorDosTiposDeDecisao) {
   return {
     ...PROCESSO_PUBLICADO_COMPLETO,
-    status: situacaoDoProcesso(servidor.situacao),
+    situacao: situacaoDoProcesso(servidor.situacao),
     cronogramaFases: [servidor.fase],
     etapas: [servidor.etapa],
     atendimentoEspecializado: null,

@@ -10,7 +10,7 @@ const CORS_HEADERS = {
 const CALENDARIO_ID = '019ff7ee-3c00-7976-860c-eb2f61c9b2d1';
 const CALENDARIO = {
   id: CALENDARIO_ID,
-  versaoDataset: '2026.1',
+  versaoDoCalendario: '2026.1',
   vigente: true,
   criadoEm: '2026-08-13T12:00:00Z',
   diasNaoUteis: [
@@ -62,7 +62,7 @@ const PROBLEMA_500 = problema(500, 'uniplus.internal.unexpected', 'Erro interno'
 const VERSAO_TAMANHO = 'uniplus.configuracao.calendario_dias_uteis.versao_dataset_tamanho';
 const DESCRICAO_TAMANHO = 'uniplus.configuracao.calendario_dias_uteis.descricao_tamanho';
 const RECUSA_DE_VERSAO = problema(422, VERSAO_TAMANHO, 'Tamanho da versão do dataset inválido', [
-  { field: 'versaoDataset', code: VERSAO_TAMANHO, message: 'Versão fora do padrão.' },
+  { field: 'versaoDoCalendario', code: VERSAO_TAMANHO, message: 'Versão fora do padrão.' },
 ]);
 const RECUSA_DE_DESCRICAO = problema(422, DESCRICAO_TAMANHO, 'Tamanho da descrição inválido', [
   { field: 'item.descricao', code: DESCRICAO_TAMANHO, message: 'Descrição fora do padrão.' },

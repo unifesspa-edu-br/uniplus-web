@@ -18,7 +18,7 @@ const CORS_HEADERS = {
  */
 const CALENDARIO = {
   id: CALENDARIO_ID,
-  versaoDataset: '2026.1',
+  versaoDoCalendario: '2026.1',
   vigente: true,
   criadoEm: '2026-08-13T12:00:00Z',
   diasNaoUteis: [

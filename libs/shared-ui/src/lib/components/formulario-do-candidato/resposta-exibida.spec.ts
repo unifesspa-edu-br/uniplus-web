@@ -5,7 +5,7 @@ import { respostaExibida } from './resposta-exibida';
 describe('respostaExibida', () => {
   it('mostra a opção escolhida pelo nome que o formulário dá, e o código quando não o dá', () => {
     const campo = {
-      apresentacao: { tipoRenderizacao: 'ESCOLHA_MULTIPLA' },
+      apresentacao: { tipoDeCampo: 'ESCOLHA_MULTIPLA' },
       valoresSelecionaveis: [
         { codigo: 'LB_PPI', descricao: 'Escola pública, preto, pardo ou indígena' },
       ],
@@ -17,13 +17,13 @@ describe('respostaExibida', () => {
   });
 
   it('mostra sim ou não, a data no formato brasileiro e o endereço por extenso', () => {
-    expect(respostaExibida({ apresentacao: { tipoRenderizacao: 'SIM_OU_NAO' } }, false)).toBe('Não');
-    expect(respostaExibida({ apresentacao: { tipoRenderizacao: 'DATA' } }, '2001-03-09')).toBe(
+    expect(respostaExibida({ apresentacao: { tipoDeCampo: 'SIM_OU_NAO' } }, false)).toBe('Não');
+    expect(respostaExibida({ apresentacao: { tipoDeCampo: 'DATA' } }, '2001-03-09')).toBe(
       '09/03/2001',
     );
     expect(
       respostaExibida(
-        { apresentacao: { tipoRenderizacao: 'ENDERECO' } },
+        { apresentacao: { tipoDeCampo: 'ENDERECO' } },
         {
           cep: '68500000',
           logradouro: 'Folha 31',
@@ -38,7 +38,7 @@ describe('respostaExibida', () => {
 
 describe('respostaExibida de telefone', () => {
   it('mostra o telefone com a máscara, e o que não é telefone como foi gravado', () => {
-    const campo = { apresentacao: { tipoRenderizacao: 'TEXTO' }, formato: 'TELEFONE' };
+    const campo = { apresentacao: { tipoDeCampo: 'TEXTO' }, formato: 'TELEFONE' };
 
     expect(respostaExibida(campo, '61981951555')).toBe('(61) 98195-1555');
     expect(respostaExibida(campo, '6133334444')).toBe('(61) 3333-4444');
@@ -48,14 +48,12 @@ describe('respostaExibida de telefone', () => {
 
 describe('respostaExibida de número', () => {
   it('mostra o número com todas as casas que o candidato digitou', () => {
-    expect(respostaExibida({ apresentacao: { tipoRenderizacao: 'NUMERO' } }, 2.5678)).toBe(
-      '2,5678',
-    );
+    expect(respostaExibida({ apresentacao: { tipoDeCampo: 'NUMERO' } }, 2.5678)).toBe('2,5678');
   });
 });
 
 describe('respostaExibida de município', () => {
-  const campo = { apresentacao: { tipoRenderizacao: 'MUNICIPIO' } };
+  const campo = { apresentacao: { tipoDeCampo: 'MUNICIPIO' } };
 
   it('mostra só o nome que ficou gravado no envio', () => {
     expect(respostaExibida(campo, { codigo: '2927408', rotulo: 'Salvador' })).toBe('Salvador');
@@ -71,7 +69,7 @@ describe('respostaExibida de município', () => {
   it('mostra a cidade do endereço como veio gravada', () => {
     expect(
       respostaExibida(
-        { apresentacao: { tipoRenderizacao: 'ENDERECO' } },
+        { apresentacao: { tipoDeCampo: 'ENDERECO' } },
         { cep: '40020000', cidade: { codigoIbge: '2927408', nome: 'Salvador', uf: 'BA' } },
       ),
     ).toBe('Salvador/BA — CEP 40020000');

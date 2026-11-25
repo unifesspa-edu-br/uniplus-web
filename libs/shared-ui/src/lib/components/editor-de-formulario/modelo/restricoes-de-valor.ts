@@ -49,10 +49,10 @@ export function restricoesParaAcrescentar(
   temFontesDeOpcoes = false,
 ): readonly OpcaoDoFormulario[] {
   const presentes = new Set((item.regras.restricoes ?? []).map((restricao) => restricao.tipo));
-  const selecao = TIPOS_DE_SELECAO.has(item.apresentacao.tipoRenderizacao);
+  const selecao = TIPOS_DE_SELECAO.has(item.apresentacao.tipoDeCampo);
   const cabe = (tipo: string): boolean => {
     const campo = CAMPO_DA_RESTRICAO.get(tipo);
-    if (campo !== undefined) return item.apresentacao.tipoRenderizacao === campo;
+    if (campo !== undefined) return item.apresentacao.tipoDeCampo === campo;
     if (tipo === RESTRICAO_OPCOES_PERMITIDAS) return selecao && temValoresConhecidos;
     return tipo === RESTRICAO_OPCOES_DAS_RESPOSTAS && selecao && temFontesDeOpcoes;
   };
@@ -98,8 +98,7 @@ export function opcoesDaFonteCabemNoAlvo(
   if (fonte.dominio.codigo !== alvo.dominio.codigo) return false;
   const daFonte = valoresDoDominio(fonte, dominiosDinamicos);
   const doAlvo = valoresDoDominio(alvo, dominiosDinamicos);
-  if (daFonte === null && doAlvo === null)
-    return mesmaFonteDeValores(fonte, alvo);
+  if (daFonte === null && doAlvo === null) return mesmaFonteDeValores(fonte, alvo);
   return daFonte !== null && doAlvo !== null && [...daFonte].every((valor) => doAlvo.has(valor));
 }
 

@@ -24,9 +24,9 @@ describe('lerMunicipio', () => {
 });
 
 describe('separarMunicipiosGravados', () => {
-  const campo = (fatoCodigo: string, tipoRenderizacao: string) => ({
+  const campo = (fatoCodigo: string, tipoDeCampo: string) => ({
     fatoCodigo,
-    apresentacao: { tipoRenderizacao },
+    apresentacao: { tipoDeCampo },
   });
   const formulario = {
     coleta: {

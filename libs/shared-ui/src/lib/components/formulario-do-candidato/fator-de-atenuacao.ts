@@ -171,7 +171,7 @@ function textoDa(
 ): string | null {
   if (valor === undefined || valor === null || valor === '') return null;
   if (Array.isArray(valor) && valor.length === 0) return null;
-  if (typeof valor === 'string' && campo.apresentacao.tipoRenderizacao === 'MUNICIPIO')
+  if (typeof valor === 'string' && campo.apresentacao.tipoDeCampo === 'MUNICIPIO')
     return rotuloGravadoDa(gravados, chave, valor) ?? municipios.rotulo(valor);
   return respostaExibida(campo, valor);
 }

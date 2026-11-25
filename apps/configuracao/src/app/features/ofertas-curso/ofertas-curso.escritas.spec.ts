@@ -38,7 +38,7 @@ describe('OfertasCursoPage — escritas pela interface', () => {
       const post = await p.enviar();
       const botao = p.salvar();
 
-      expect(p.campo('eMecCodigo').matches(':disabled')).toBe(true);
+      expect(p.campo('codigoEmec').matches(':disabled')).toBe(true);
       expect(p.campo('cursoId').matches(':disabled')).toBe(true);
       expect(botao.getAttribute('aria-disabled')).toBe('true');
       expect(botao.getAttribute('aria-busy')).toBe('true');
@@ -111,18 +111,18 @@ describe('OfertasCursoPage — escritas pela interface', () => {
 
     it('Enter num campo leva o foco ao botão e, na falha 500, o envio segue disponível', async () => {
       await p.abrirCadastro();
-      p.campo('eMecCodigo').focus();
+      p.campo('codigoEmec').focus();
       submeter();
       await p.propagar();
       const post = p.http.expectOne(ESCRITA);
 
-      expect(p.campo('eMecCodigo').matches(':disabled')).toBe(true);
+      expect(p.campo('codigoEmec').matches(':disabled')).toBe(true);
       expect(document.activeElement).toBe(p.salvar());
       post.flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
       await p.propagar();
       await p.propagar();
 
-      expect(p.campo('eMecCodigo').matches(':disabled')).toBe(false);
+      expect(p.campo('codigoEmec').matches(':disabled')).toBe(false);
       expect(p.elemento('ui-drawer ui-alert').textContent).toContain('Falha');
       expect(document.activeElement).toBe(p.salvar());
       expect(p.salvar().getAttribute('aria-disabled')).toBeNull();
@@ -133,12 +133,12 @@ describe('OfertasCursoPage — escritas pela interface', () => {
 
     it('outra edição não abre enquanto o envio corre', async () => {
       await p.abrirEdicao();
-      p.preencher('eMecCodigo', '999999');
+      p.preencher('codigoEmec', '999999');
       const put = await p.enviar(`${ESCRITA}/${oferta.id}`);
 
       p.edicao.abrirCadastro();
       expect(p.edicao.modo()).toBe('editar');
-      expect(p.campo('eMecCodigo').value).toBe('999999');
+      expect(p.campo('codigoEmec').value).toBe('999999');
 
       put.flush(...sucesso());
       await p.recarregarCom([oferta]);
@@ -241,12 +241,12 @@ describe('OfertasCursoPage — escritas pela interface', () => {
       const put = await p.enviar(`${ESCRITA}/${oferta.id}`);
 
       p.edicao.fechar();
-      p.edicao.abrirEdicao({ ...oferta, id: 'outra', eMecCodigo: '777' });
+      p.edicao.abrirEdicao({ ...oferta, id: 'outra', codigoEmec: '777' });
       p.edicao.pedirRemocao(oferta);
 
       expect(p.edicao.aberto()).toBe(true);
       expect(p.edicao.confirmando()).toBe(false);
-      expect(p.edicao.form.controls.eMecCodigo.value).toBe(oferta.eMecCodigo);
+      expect(p.edicao.form.controls.codigoEmec.value).toBe(oferta.codigoEmec);
       put.flush(...sucesso());
       await p.recarregarCom([oferta]);
     });
@@ -298,19 +298,19 @@ describe('OfertasCursoPage — escritas pela interface', () => {
   describe('campo desabilitado por regra de negócio', () => {
     it('continua desabilitado depois do sucesso, e os demais seguem habilitados', async () => {
       await p.abrirCadastro();
-      p.edicao.form.controls.codigoSga.disable();
+      p.edicao.form.controls.codigoNoSistemaAcademico.disable();
       const post = await p.enviar();
-      expect(p.campo('codigoSga').matches(':disabled')).toBe(true);
+      expect(p.campo('codigoNoSistemaAcademico').matches(':disabled')).toBe(true);
       post.flush(...criado());
       await p.recarregarCom([oferta]);
 
-      expect(p.edicao.form.controls.codigoSga.disabled).toBe(true);
-      expect(p.edicao.form.controls.eMecCodigo.enabled).toBe(true);
+      expect(p.edicao.form.controls.codigoNoSistemaAcademico.disabled).toBe(true);
+      expect(p.edicao.form.controls.codigoEmec.enabled).toBe(true);
     });
 
     it('continua desabilitado depois da recusa do servidor', async () => {
       await p.abrirCadastro();
-      p.edicao.form.controls.codigoSga.disable();
+      p.edicao.form.controls.codigoNoSistemaAcademico.disable();
       (await p.enviar()).flush(
         ...recusaDeCampos({
           field: 'regimeDeFuncionamento',
@@ -320,7 +320,7 @@ describe('OfertasCursoPage — escritas pela interface', () => {
       );
       await p.propagar();
 
-      expect(p.campo('codigoSga').matches(':disabled')).toBe(true);
+      expect(p.campo('codigoNoSistemaAcademico').matches(':disabled')).toBe(true);
       expect(p.campo('regimeDeFuncionamento').matches(':disabled')).toBe(false);
       expect(p.campo('regimeDeFuncionamento').getAttribute('aria-invalid')).toBe('true');
     });

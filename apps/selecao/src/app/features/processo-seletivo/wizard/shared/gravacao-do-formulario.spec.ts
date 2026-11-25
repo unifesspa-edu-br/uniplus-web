@@ -40,7 +40,7 @@ describe('gravarFormulario', () => {
           fatoCodigo: 'IDADE',
           ordem: 1,
           etapaCodigo: 'S1',
-          apresentacao: { rotulo: 'Idade', tipoRenderizacao: 'NUMERO', pedirConfirmacao: false },
+          apresentacao: { rotulo: 'Idade', tipoDeCampo: 'NUMERO', pedirConfirmacao: false },
           regras: {
             ...REGRAS_INICIAIS,
             restricoes: [{ tipo: 'FAIXA_NUMERICA', minimo: 'abc' }],

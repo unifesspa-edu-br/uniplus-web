@@ -11,7 +11,7 @@ import { type DiaNaoUtilFormGroup, textoNormalizado } from './calendario-dias-ut
 import { comandoDoDiaNaoUtil, type GrupoDoDia } from './dia-nao-util-form';
 
 export interface CalendarioForm {
-  versaoDataset: FormControl<string>;
+  versaoDoCalendario: FormControl<string>;
   diasNaoUteis: FormArray<FormGroup<DiaNaoUtilFormGroup>>;
 }
 
@@ -52,7 +52,7 @@ function datasNaoUteisSemDuplicidade(control: AbstractControl): ValidationErrors
 
 export function criarFormularioDeCalendario(): FormGroup<CalendarioForm> {
   return new FormGroup<CalendarioForm>({
-    versaoDataset: new FormControl('', {
+    versaoDoCalendario: new FormControl('', {
       nonNullable: true,
       validators: [textoNormalizado(VERSAO_DATASET_MAXIMO)],
     }),
@@ -64,7 +64,7 @@ export function comandoDeCriacaoDoCalendario(
   form: FormGroup<CalendarioForm>,
 ): CriarCalendarioDiasUteisCommand {
   return {
-    versaoDataset: nullIfBlank(form.controls.versaoDataset.value),
+    versaoDoCalendario: nullIfBlank(form.controls.versaoDoCalendario.value),
     diasNaoUteis: form.controls.diasNaoUteis.controls.map(comandoDoDiaNaoUtil),
   };
 }

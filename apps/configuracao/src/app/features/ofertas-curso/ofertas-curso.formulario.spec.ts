@@ -136,13 +136,13 @@ describe('OfertasCursoPage — regras do formulário', () => {
       expect(p.fixture.nativeElement.textContent).toContain('Bacharelado · Graduação');
       expect(p.fixture.nativeElement.textContent).toContain('IGE · Instituto de Geociências');
 
-      p.preencher('eMecCodigo', '999999');
+      p.preencher('codigoEmec', '999999');
       const put = await p.enviar(`${ESCRITA}/${oferta.id}`);
       expect(put.request.method).toBe('PUT');
       for (const campo of ['cursoId', 'localOfertaId', 'unidadeOfertanteOrigemId']) {
         expect(put.request.body[campo]).toBeUndefined();
       }
-      expect(put.request.body.eMecCodigo).toBe('999999');
+      expect(put.request.body.codigoEmec).toBe('999999');
       put.flush(...sucesso());
       await p.recarregarCom([oferta]);
     });
@@ -163,7 +163,7 @@ describe('OfertasCursoPage — regras do formulário', () => {
       await p.abrirEdicao();
       expect(p.campo('atoAutorizacaoMec').value).toBe('Portaria SERES/MEC nº 270/2021');
 
-      p.preencher('eMecCodigo', '999999');
+      p.preencher('codigoEmec', '999999');
       const put = await p.enviar(`${ESCRITA}/${oferta.id}`);
       expect(put.request.body.atoAutorizacaoMec).toBe('Portaria SERES/MEC nº 270/2021');
       put.flush(...sucesso());
@@ -183,19 +183,22 @@ describe('OfertasCursoPage — regras do formulário', () => {
       );
     });
 
-    it.each([[null, '—'], ['TIPO_DESCONHECIDO', 'TIPO_DESCONHECIDO']])(
-      'mostra o tipo %s da unidade como %s',
-      async (tipo, rotulo) => {
-        p = await montarPagina([]);
-        p.novo().click();
-        await p.responderUnidades([{ ...ige, tipo: tipo as typeof ige.tipo }]);
-        p.preencher('unidadeOfertanteOrigemId', ige.id);
-        await p.propagar();
-        const dica = p.campo('unidadeOfertanteOrigemId').closest('.field')
-          ?.querySelector('.field__hint')?.textContent?.trim();
-        expect(dica).toBe(`IGE · Instituto de Geociências e Engenharias · ${rotulo}`);
-      },
-    );
+    it.each([
+      [null, '—'],
+      ['TIPO_DESCONHECIDO', 'TIPO_DESCONHECIDO'],
+    ])('mostra o tipo %s da unidade como %s', async (tipo, rotulo) => {
+      p = await montarPagina([]);
+      p.novo().click();
+      await p.responderUnidades([{ ...ige, tipo: tipo as typeof ige.tipo }]);
+      p.preencher('unidadeOfertanteOrigemId', ige.id);
+      await p.propagar();
+      const dica = p
+        .campo('unidadeOfertanteOrigemId')
+        .closest('.field')
+        ?.querySelector('.field__hint')
+        ?.textContent?.trim();
+      expect(dica).toBe(`IGE · Instituto de Geociências e Engenharias · ${rotulo}`);
+    });
 
     it('os controles obrigatórios de entrada nativa são identificados para tecnologias assistivas', async () => {
       p = await montarPagina([]);
@@ -216,8 +219,8 @@ describe('OfertasCursoPage — regras do formulário', () => {
         expect(p.campo(nome).getAttribute('aria-required'), nome).toBe('true');
       }
       for (const nome of [
-        'eMecCodigo',
-        'codigoSga',
+        'codigoEmec',
+        'codigoNoSistemaAcademico',
         'atoAutorizacaoMec',
         'vagasAnuaisAutorizadas',
       ]) {

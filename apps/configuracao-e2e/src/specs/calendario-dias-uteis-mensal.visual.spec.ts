@@ -18,7 +18,7 @@ const CORS_HEADERS = {
  */
 const CALENDARIO = {
   id: CALENDARIO_ID,
-  versaoDataset: '2026.1',
+  versaoDoCalendario: '2026.1',
   vigente: true,
   criadoEm: '2026-08-13T12:00:00Z',
   diasNaoUteis: [
@@ -333,7 +333,7 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
         await route.fulfill({
           status: 200,
           headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
-          body: JSON.stringify({ ...CALENDARIO, versaoDataset: versaoLonga }),
+          body: JSON.stringify({ ...CALENDARIO, versaoDoCalendario: versaoLonga }),
         });
       },
     );

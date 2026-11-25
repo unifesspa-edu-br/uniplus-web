@@ -6,7 +6,7 @@ import type {
 import type { ReferenciasDosTermosDoFormulario } from './referencias-dos-termos';
 
 export interface CatalogosDaConversaoDoFormulario {
-  readonly fatos: readonly { readonly codigo: string; readonly tipoRenderizacao: string }[] | null;
+  readonly fatos: readonly { readonly codigo: string; readonly tipoDeCampo: string }[] | null;
   readonly termos: ReferenciasDosTermosDoFormulario | null;
 }
 

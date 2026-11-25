@@ -13,7 +13,7 @@ describe('faixa de datas', () => {
   });
 
   it('é oferecida só no campo de data, uma por tipo', () => {
-    const data = item('NASCIMENTO', 0, 'S1', { apresentacao: { tipoRenderizacao: 'DATA' } });
+    const data = item('NASCIMENTO', 0, 'S1', { apresentacao: { tipoDeCampo: 'DATA' } });
 
     expect(restricoesParaAcrescentar(data, false).map((r) => r.valor)).toEqual(['FAIXA_DE_DATA']);
     expect(
@@ -25,7 +25,7 @@ describe('faixa de datas', () => {
     for (const tipo of ['NUMERO', 'TEXTO', 'SIM_OU_NAO', 'ESCOLHA_UNICA']) {
       expect(
         restricoesParaAcrescentar(
-          item('X', 0, 'S1', { apresentacao: { tipoRenderizacao: tipo } }),
+          item('X', 0, 'S1', { apresentacao: { tipoDeCampo: tipo } }),
           true,
           true,
         ).map((r) => r.valor),

@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  type FormularioRenderizavelDto,
-  TipoRenderizacaoCodigo,
-} from '@uniplus/shared-data/selecao';
+import { type FormularioRenderizavelDto, TipoDeCampoCodigo } from '@uniplus/shared-data/selecao';
 
 import {
   FORMULARIO_DE_INSCRICAO_MOCK,
@@ -19,7 +16,7 @@ const formularioQueColeta = (...fatos: string[]): FormularioRenderizavelDto =>
   comFormulario(FORMULARIO_DE_INSCRICAO_MOCK, {
     coleta: {
       itens: fatos.map((fato, ordem) =>
-        campoColetado(fato, fato, TipoRenderizacaoCodigo.TEXTO, { ordem }),
+        campoColetado(fato, fato, TipoDeCampoCodigo.TEXTO, { ordem }),
       ),
       grupos: [],
     },

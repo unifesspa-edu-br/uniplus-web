@@ -1,7 +1,7 @@
 import {
   ModoDeDeliberacao,
   PapelDaBancaCodigo,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
 } from '@uniplus/shared-data/selecao';
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
@@ -199,7 +199,10 @@ describe('FasePassoComponent', () => {
         }),
       );
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.PUBLICADO,
+        situacao: {
+          codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        },
       } as unknown as ProcessoSeletivoDto);
       detectar();
 
@@ -225,7 +228,10 @@ describe('FasePassoComponent', () => {
         }),
       );
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.PUBLICADO,
+        situacao: {
+          codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        },
       } as unknown as ProcessoSeletivoDto);
       detectar();
 
@@ -252,7 +258,10 @@ describe('FasePassoComponent', () => {
         }),
       );
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.PUBLICADO,
+        situacao: {
+          codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        },
       } as unknown as ProcessoSeletivoDto);
       detectar();
 

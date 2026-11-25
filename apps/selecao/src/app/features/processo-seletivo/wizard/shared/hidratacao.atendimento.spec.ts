@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   type FormularioDto,
   type ProcessoSeletivoDto,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
 } from '@uniplus/shared-data/selecao';
 import {
   campoDoServidor,
@@ -122,8 +122,8 @@ describe('hidratarDraft — formulário de inscrição', () => {
       etapas: [etapaDoServidor('DADOS_BASICOS', 0), etapaDoServidor('S1', 1)],
       coleta: {
         itens: [
-          campoDoServidor('NOME', 0, 'DADOS_BASICOS', TipoRenderizacaoCodigo.ESCOLHA_UNICA),
-          campoDoServidor('SEXO', 1, 'S1', TipoRenderizacaoCodigo.ESCOLHA_UNICA),
+          campoDoServidor('NOME', 0, 'DADOS_BASICOS', TipoDeCampoCodigo.ESCOLHA_UNICA),
+          campoDoServidor('SEXO', 1, 'S1', TipoDeCampoCodigo.ESCOLHA_UNICA),
         ],
         grupos: [],
       },
@@ -158,7 +158,7 @@ describe('hidratarDraft — formulário de inscrição', () => {
           formulario(FinalidadeFormularioCodigo.ISENCAO_TAXA, {
             etapas: [etapaDoServidor('S1', 0)],
             coleta: {
-              itens: [campoDoServidor('RENDA', 0, 'S1', TipoRenderizacaoCodigo.ESCOLHA_UNICA)],
+              itens: [campoDoServidor('RENDA', 0, 'S1', TipoDeCampoCodigo.ESCOLHA_UNICA)],
               grupos: [],
             },
           }),

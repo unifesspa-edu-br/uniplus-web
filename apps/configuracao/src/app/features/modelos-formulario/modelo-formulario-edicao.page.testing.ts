@@ -16,7 +16,7 @@ import {
   OperadorCodigo,
   TipoEtapaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
   type FatoCandidatoView,
   type FatoDoCatalogoDto,
   type ModeloFormularioView,
@@ -120,7 +120,7 @@ export const modelo: ModeloFormularioView = {
         ordem: 0,
         apresentacao: {
           rotulo: 'Nome',
-          tipoRenderizacao: TipoRenderizacaoCodigo.TEXTO,
+          tipoDeCampo: TipoDeCampoCodigo.TEXTO,
           ajuda: null,
           pedirConfirmacao: false,
         },
@@ -132,7 +132,7 @@ export const modelo: ModeloFormularioView = {
         ordem: 1,
         apresentacao: {
           rotulo: 'Estudou em escola pública?',
-          tipoRenderizacao: TipoRenderizacaoCodigo.SIM_OU_NAO,
+          tipoDeCampo: TipoDeCampoCodigo.SIM_OU_NAO,
           ajuda: null,
           pedirConfirmacao: false,
         },

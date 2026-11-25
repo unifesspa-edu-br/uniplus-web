@@ -5,7 +5,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   ProcessoSeletivoDto,
   SELECAO_BASE_PATH,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
 } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -189,7 +189,10 @@ describe('AnexoEditalComponent', () => {
     await anexarComSucesso(pdf('edital-de-abertura-do-processo-seletivo-de-medicina-2027.pdf'));
 
     store.remoteSnapshot.set({
-      status: StatusProcessoCodigo.PUBLICADO,
+      situacao: {
+        codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+      },
     } as unknown as ProcessoSeletivoDto);
     detectar();
 

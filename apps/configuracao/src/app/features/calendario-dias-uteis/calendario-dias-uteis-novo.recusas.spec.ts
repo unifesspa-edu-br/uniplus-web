@@ -80,7 +80,7 @@ describe('CalendarioDiasUteisNovoPage — recusas do servidor', () => {
       await diaNacional();
       const post = await p.enviar();
 
-      post.flush(...recusaDeCampo('versaoDataset', VERSAO_TAMANHO, 'Versão fora do padrão.'));
+      post.flush(...recusaDeCampo('versaoDoCalendario', VERSAO_TAMANHO, 'Versão fora do padrão.'));
       await p.propagar();
       await p.propagar();
 

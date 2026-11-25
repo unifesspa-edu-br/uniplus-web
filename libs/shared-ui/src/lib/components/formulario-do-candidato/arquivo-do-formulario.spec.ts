@@ -18,7 +18,7 @@ const BASE = {
 };
 const APRESENTACAO = {
   rotulo: 'Parentesco',
-  tipoRenderizacao: 'ESCOLHA_UNICA',
+  tipoDeCampo: 'ESCOLHA_UNICA',
   pedirConfirmacao: false,
 };
 const OCORRENCIAS = { minimo: 0, incluiCandidato: false };
@@ -145,7 +145,7 @@ describe('arquivo importado no simulador', () => {
     if (!lido.valido) return;
     expect(
       lido.formulario.coleta.itens.find((c) => c.fatoCodigo === 'TIPO_ENDERECO')?.apresentacao
-        .tipoRenderizacao,
+        .tipoDeCampo,
     ).toBe('ESCOLHA_UNICA');
     expect(lido.simulacao?.respostas).toEqual({ TIPO_ENDERECO: 'URBANO' });
   });
@@ -179,7 +179,7 @@ describe('arquivo importado no simulador', () => {
     expect(
       lido.valido &&
         lido.formulario.coleta.itens.find((c) => c.fatoCodigo === 'ESPERA')?.apresentacao
-          .tipoRenderizacao,
+          .tipoDeCampo,
     ).toBe('ESCOLHA_UNICA');
   });
 
@@ -218,8 +218,7 @@ describe('arquivo importado no simulador', () => {
     const lido = lerArquivoDoFormulario(JSON.stringify(caso));
     const tipo = (fato: string): string | undefined =>
       lido.valido
-        ? lido.formulario.coleta.itens.find((c) => c.fatoCodigo === fato)?.apresentacao
-            .tipoRenderizacao
+        ? lido.formulario.coleta.itens.find((c) => c.fatoCodigo === fato)?.apresentacao.tipoDeCampo
         : undefined;
 
     expect([tipo('TEM_DEPENDENTES'), tipo('IDADE')]).toEqual(['SIM_OU_NAO', 'NUMERO']);

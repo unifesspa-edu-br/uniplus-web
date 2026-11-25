@@ -1,7 +1,7 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { describe, expect, it } from 'vitest';
-import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
+import { SituacaoDoProcessoSeletivoCodigo } from '@uniplus/shared-data/selecao';
 import { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -54,12 +54,18 @@ describe('RevisaoPassoComponent — publicação aceita pelo servidor', () => {
       requisicaoPublicacao.flush(null, { status: 204, statusText: 'No Content' });
 
       await flushMicrotasks();
-      controller.expectOne(ROTA_DETALHE).flush(PROCESSO_DTO_MINIMO);
+      const detalhePublicado = {
+        ...PROCESSO_DTO_MINIMO,
+        situacao: { ...PROCESSO_DTO_MINIMO.situacao, rotulo: 'Rótulo da API' },
+      };
+      controller.expectOne(ROTA_DETALHE).flush(detalhePublicado);
       controller.expectOne(ROTA_SNAPSHOT).flush(SNAPSHOT_DTO);
 
       const resultado = await gravacao;
       expect(resultado).toEqual({ valid: true });
-      expect(store.remoteSnapshot()?.status).toEqual(PROCESSO_DTO_MINIMO.status);
+      expect(store.remoteSnapshot()?.situacao).toEqual(detalhePublicado.situacao);
+      fixture.detectChanges();
+      expect(textoDaTela(cenario)).toContain('status confirmado em Rótulo da API');
       expect(publicacaoDe(cenario).snapshotConfirmado()?.snapshotPublicacaoId).toBe(
         SNAPSHOT_DTO.snapshotPublicacaoId,
       );
@@ -91,7 +97,7 @@ describe('RevisaoPassoComponent — publicação aceita pelo servidor', () => {
       const resultado = await gravacao;
       expect(resultado.valid).toBe(false);
       // O snapshot não confirmou, mas o detalhe publicado já está no store.
-      expect(store.remoteSnapshot()?.status).toEqual(PROCESSO_DTO_MINIMO.status);
+      expect(store.remoteSnapshot()?.situacao).toEqual(PROCESSO_DTO_MINIMO.situacao);
       expect(store.edicaoPermitida()).toBe(false);
       expect(publicacaoDe(cenario).snapshotConfirmado()).toBeNull();
     });
@@ -112,12 +118,13 @@ describe('RevisaoPassoComponent — publicação aceita pelo servidor', () => {
       controller.expectOne(ROTA_PUBLICACAO).flush(null, { status: 204, statusText: 'No Content' });
 
       await flushMicrotasks();
-      controller
-        .expectOne(ROTA_DETALHE)
-        .flush({
-          ...PROCESSO_DTO_MINIMO,
-          status: { ...PROCESSO_DTO_MINIMO.status, codigo: StatusProcessoCodigo.RASCUNHO },
-        });
+      controller.expectOne(ROTA_DETALHE).flush({
+        ...PROCESSO_DTO_MINIMO,
+        situacao: {
+          ...PROCESSO_DTO_MINIMO.situacao,
+          codigo: SituacaoDoProcessoSeletivoCodigo.RASCUNHO,
+        },
+      });
       controller.expectOne(ROTA_SNAPSHOT).flush(SNAPSHOT_DTO);
 
       const resultado = await gravacao;

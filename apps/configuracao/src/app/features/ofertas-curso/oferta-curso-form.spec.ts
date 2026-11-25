@@ -43,8 +43,8 @@ describe('formulário de oferta de curso', () => {
   });
 
   it.each([
-    ['eMecCodigo', 20],
-    ['codigoSga', 30],
+    ['codigoEmec', 20],
+    ['codigoNoSistemaAcademico', 30],
     ['baseLegal', 500],
     ['atoAutorizacaoMec', 300],
   ] as const)('respeita o tamanho máximo de %s (%i)', (campo, maximo) => {
@@ -116,16 +116,16 @@ describe('formulário de oferta de curso', () => {
     expect(mensagemDeErroDaOferta(form.controls.codigo)).toBe('Informe no máximo 50 caracteres.');
     form.controls.codigo.setValue('');
     expect(mensagemDeErroDaOferta(form.controls.codigo)).toBe('Campo obrigatório.');
-    marcarRecusaDoServidor(form.controls.eMecCodigo, 'x', 'Do servidor.');
-    expect(mensagemDeErroDaOferta(form.controls.eMecCodigo)).toBe('Do servidor.');
-    expect(mensagemDeErroDaOferta(preenchido().controls.codigoSga)).toBeNull();
+    marcarRecusaDoServidor(form.controls.codigoEmec, 'x', 'Do servidor.');
+    expect(mensagemDeErroDaOferta(form.controls.codigoEmec)).toBe('Do servidor.');
+    expect(mensagemDeErroDaOferta(preenchido().controls.codigoNoSistemaAcademico)).toBeNull();
   });
 
   it('os valores da oferta trazem a origem da unidade e ordenam os turnos canonicamente', () => {
     const valores = valoresDaOferta({
       ...oferta,
       turnos: [dadosDaOferta.turnos[2], dadosDaOferta.turnos[0]],
-      eMecCodigo: null,
+      codigoEmec: null,
       baseLegal: null,
     });
     expect(valores).toMatchObject({
@@ -133,7 +133,7 @@ describe('formulário de oferta de curso', () => {
       cursoId: oferta.cursoId,
       unidadeOfertanteOrigemId: oferta.unidadeOfertante.origemId,
       turnos: [TurnoOfertaCodigo.MATUTINO, TurnoOfertaCodigo.NOTURNO],
-      eMecCodigo: '',
+      codigoEmec: '',
       baseLegal: '',
     });
   });
@@ -145,20 +145,20 @@ describe('formulário de oferta de curso', () => {
   });
 
   it('o comando manda nulo no que está em branco e a atualização leva o id sem os vínculos', () => {
-    const valores = { ...valoresDaOferta(oferta), eMecCodigo: ' ' };
+    const valores = { ...valoresDaOferta(oferta), codigoEmec: ' ' };
     const criacao = comandoDeCriacao(valores);
     expect(criacao).toMatchObject({
       codigo: oferta.codigo,
       cursoId: oferta.cursoId,
-      eMecCodigo: null,
+      codigoEmec: null,
     });
     const atualizacao = comandoDeAtualizacao('o1', valores);
-    expect(atualizacao).toMatchObject({ id: 'o1', codigo: oferta.codigo, eMecCodigo: null });
+    expect(atualizacao).toMatchObject({ id: 'o1', codigo: oferta.codigo, codigoEmec: null });
     expect(Object.keys(atualizacao)).not.toContain('cursoId');
   });
 
   it('o campo do servidor vira o controle do formulário, inclusive com caminho, e o desconhecido, nulo', () => {
-    expect(controleDoCampoDoServidor('eMecCodigo')).toBe('eMecCodigo');
+    expect(controleDoCampoDoServidor('codigoEmec')).toBe('codigoEmec');
     expect(controleDoCampoDoServidor('Codigo')).toBe('codigo');
     expect(controleDoCampoDoServidor('Turnos')).toBe('turnos');
     expect(controleDoCampoDoServidor('cursoId')).toBeNull();

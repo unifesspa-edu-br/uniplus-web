@@ -1,20 +1,17 @@
-import {
-  TipoRenderizacaoCodigo,
-  type FormularioRenderizavelDto,
-} from '@uniplus/shared-data/selecao';
+import { TipoDeCampoCodigo, type FormularioRenderizavelDto } from '@uniplus/shared-data/selecao';
 
 type Formulario = FormularioRenderizavelDto['formulario'];
 type Campo = Formulario['coleta']['itens'][number];
 
-const TIPO_DE_CONTROLE: Record<TipoRenderizacaoCodigo, string> = {
-  [TipoRenderizacaoCodigo.NUMERO]: 'NUMERO',
-  [TipoRenderizacaoCodigo.SIM_OU_NAO]: 'SIM_OU_NAO',
-  [TipoRenderizacaoCodigo.ESCOLHA_UNICA]: 'ESCOLHA_UNICA',
-  [TipoRenderizacaoCodigo.ESCOLHA_MULTIPLA]: 'ESCOLHA_MULTIPLA',
-  [TipoRenderizacaoCodigo.TEXTO]: 'TEXTO',
-  [TipoRenderizacaoCodigo.DATA]: 'DATA',
-  [TipoRenderizacaoCodigo.ENDERECO]: 'ENDERECO',
-  [TipoRenderizacaoCodigo.MUNICIPIO]: 'MUNICIPIO',
+const TIPO_DE_CONTROLE: Record<TipoDeCampoCodigo, string> = {
+  [TipoDeCampoCodigo.NUMERO]: 'NUMERO',
+  [TipoDeCampoCodigo.SIM_OU_NAO]: 'SIM_OU_NAO',
+  [TipoDeCampoCodigo.ESCOLHA_UNICA]: 'ESCOLHA_UNICA',
+  [TipoDeCampoCodigo.ESCOLHA_MULTIPLA]: 'ESCOLHA_MULTIPLA',
+  [TipoDeCampoCodigo.TEXTO]: 'TEXTO',
+  [TipoDeCampoCodigo.DATA]: 'DATA',
+  [TipoDeCampoCodigo.ENDERECO]: 'ENDERECO',
+  [TipoDeCampoCodigo.MUNICIPIO]: 'MUNICIPIO',
 };
 
 function campoParaExibicao(campo: Campo) {
@@ -22,7 +19,7 @@ function campoParaExibicao(campo: Campo) {
     ...campo,
     apresentacao: {
       ...campo.apresentacao,
-      tipoRenderizacao: TIPO_DE_CONTROLE[campo.apresentacao.tipoRenderizacao],
+      tipoDeCampo: TIPO_DE_CONTROLE[campo.apresentacao.tipoDeCampo],
     },
   };
 }
@@ -45,8 +42,7 @@ export function formularioParaExibicao(formulario: Formulario) {
       ...formulario.pressupostos,
       fatos: formulario.pressupostos.fatos.map((fato) => ({
         ...fato,
-        tipoRenderizacao:
-          fato.tipoRenderizacao === null ? null : TIPO_DE_CONTROLE[fato.tipoRenderizacao],
+        tipoDeCampo: fato.tipoDeCampo === null ? null : TIPO_DE_CONTROLE[fato.tipoDeCampo],
       })),
     },
   };
