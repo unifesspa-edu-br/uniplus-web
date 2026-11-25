@@ -50,6 +50,16 @@ async function responder(route: Route, status: number, corpo?: unknown): Promise
   });
 }
 
+async function instalarTiposDoDado(page: Page): Promise<void> {
+  await page.route(/\/api\/configuracao\/vocabularios\/tipos-do-dado$/, (r) =>
+    responder(r, 200, [
+      { codigo: 'SIM_OU_NAO', rotulo: 'Sim ou não' },
+      { codigo: 'OPCAO', rotulo: 'Opção' },
+      { codigo: 'TEXTO', rotulo: 'Texto' },
+    ]),
+  );
+}
+
 type Recarga = 'com-o-fato' | 'sem-o-fato' | 'com-falha';
 
 interface RespostaDaEscrita {
@@ -88,6 +98,7 @@ class ApiDosFatos {
     await page.route(/\/api\/configuracao\/admin\/protecao-do-catalogo(\?.*)?$/, (r) =>
       responder(r, 200, []),
     );
+    await instalarTiposDoDado(page);
     await page.route(ROTA_DA_LISTA, (route) => this.naLista(route));
     await page.route(ROTA_DO_FATO, (route) => this.noFato(route));
   }

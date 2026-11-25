@@ -7,6 +7,7 @@ import {
   FatoCandidatoDto,
   FatosCandidatoApi,
   OrigemFatoCodigo,
+  VOCABULARIO_DE_TIPOS_DO_DADO,
   type CorrecaoDeValorDominioInput,
   type DefinicaoDoFatoInput,
 } from '@uniplus/shared-data/configuracao';
@@ -69,6 +70,7 @@ export class EdicaoDoFato extends EscritorDeFato {
     this.definicao,
     this.leitura.fato,
     this.leitura.tipo,
+    inject(VOCABULARIO_DE_TIPOS_DO_DADO).itens,
   );
 
   /** A recusa da definição que não cabe num campo da tela: fica junto do botão que salva. */

@@ -42,7 +42,7 @@ export const noCatalogo = (fato: FatoCandidatoView): FatoDoCatalogoDto => ({
 type Definicao = FatoCandidatoDto['definicao'];
 
 export const tipoSimOuNao = { codigo: TipoDoDadoCodigo.SIM_OU_NAO, rotulo: 'Sim ou não' };
-export const tipoOpcao = { codigo: TipoDoDadoCodigo.OPCAO, rotulo: 'Lista de valores' };
+export const tipoOpcao = { codigo: TipoDoDadoCodigo.OPCAO, rotulo: 'Opção' };
 export const tipoNumerico = { codigo: TipoDoDadoCodigo.NUMERICO, rotulo: 'Número' };
 export const tipoTexto = { codigo: TipoDoDadoCodigo.TEXTO, rotulo: 'Texto' };
 export const valorUnico = { codigo: QuantidadeDeValoresCodigo.VALOR_UNICO, rotulo: 'Um valor' };

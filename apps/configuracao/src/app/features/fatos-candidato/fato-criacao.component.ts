@@ -1,8 +1,13 @@
+import { ID_DO_TIPO_DE_DADO_DA_CRIACAO } from './ids-do-fato';
+import { acompanharTiposDoDado } from './leituras-do-fato';
+import { VOCABULARIO_DE_TIPOS_DO_DADO } from '@uniplus/shared-data/configuracao';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
   AlertComponent,
   FalhaDeLeituraComponent,
+  FalhaDeLeituraDoCampoComponent,
+  IndicadorDaLeituraDirective,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
@@ -29,12 +34,26 @@ import { lerCatalogoDeFatos, lerFasesCanonicas } from './leituras-do-fato';
  */
 @Component({
   selector: 'cfg-fato-criacao',
-  imports: [ReactiveFormsModule, AlertComponent, FalhaDeLeituraComponent, SpinnerComponent],
+  imports: [
+    ReactiveFormsModule,
+    AlertComponent,
+    FalhaDeLeituraComponent,
+    FalhaDeLeituraDoCampoComponent,
+    IndicadorDaLeituraDirective,
+    SpinnerComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './fato-criacao.component.html',
   styleUrl: './fato-drawer.css',
 })
 export class FatoCriacaoComponent {
+  protected readonly tiposDoDado = inject(VOCABULARIO_DE_TIPOS_DO_DADO);
+  protected readonly leituraDosTipos = acompanharTiposDoDado(ID_DO_TIPO_DE_DADO_DA_CRIACAO);
+
+  constructor() {
+    this.tiposDoDado.carregar();
+  }
+
   private readonly edicao = inject(EdicaoDosFatos);
 
   protected readonly form = this.edicao.form;

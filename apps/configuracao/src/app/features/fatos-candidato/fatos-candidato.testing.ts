@@ -12,6 +12,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
+  TipoDoDadoCodigo,
   type FatoCandidatoDto,
   type FatoCandidatoView,
 } from '@uniplus/shared-data/configuracao';
@@ -31,6 +32,7 @@ import { FatosCandidatoStore } from './fatos-candidato.store';
 const BASE = 'http://localhost:5000';
 export const LISTA = `${BASE}/api/configuracao/admin/fatos-candidato`;
 export const CATALOGO = `${BASE}/api/configuracao/fatos-candidato`;
+export const TIPOS_DO_DADO = `${BASE}/api/configuracao/vocabularios/tipos-do-dado`;
 export const FASES = `${BASE}/api/configuracao/fases-canonicas`;
 export const PROTECAO = `${BASE}/api/configuracao/admin/protecao-do-catalogo`;
 export const TITULO_DA_LISTA = 'cfg-fatos-list-title';
@@ -153,7 +155,18 @@ export class PaginaDosFatos {
       new Event('submit', { cancelable: true }),
     );
   };
+  readonly atenderTiposDoDado = (): void => {
+    for (const req of this.http.match((r) => r.url === TIPOS_DO_DADO)) {
+      if (!req.cancelled)
+        req.flush([
+          { codigo: TipoDoDadoCodigo.SIM_OU_NAO, rotulo: 'Sim ou não' },
+          { codigo: TipoDoDadoCodigo.OPCAO, rotulo: 'Opção' },
+          { codigo: TipoDoDadoCodigo.TEXTO, rotulo: 'Texto' },
+        ]);
+    }
+  };
   readonly atenderApoios = (catalogo: readonly FatoCandidatoView[] = []): void => {
+    this.atenderTiposDoDado();
     for (const req of this.http.match((r) => r.url === CATALOGO && r.method === 'GET')) {
       if (!req.cancelled) req.flush(catalogo.map(noCatalogo));
     }

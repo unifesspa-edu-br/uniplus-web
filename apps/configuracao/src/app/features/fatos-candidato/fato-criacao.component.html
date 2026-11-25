@@ -134,9 +134,9 @@
             {{ nomeDaFase(membro.pontoResolucao) }}; o agregado não pode ser conhecido antes dela
             nem ter proteção de dados mais fraca.
           } @else if (!catalogo.pendente() && !catalogo.falhou() && fatosDeMembro().length === 0) {
-            Nenhum fato de membro de grupo ativo, de sim ou não ou de lista de valores, no catálogo.
+            Nenhum fato de membro de grupo ativo, de sim ou não ou com opções, no catálogo.
           } @else {
-            Fatos declarados de membro de grupo, de sim ou não ou de lista de valores.
+            Fatos declarados de membro de grupo, de sim ou não ou com opções.
           }
         </span>
         @if (erroMembro) {
@@ -152,16 +152,24 @@
           <span class="field__label is-required">Tipo de dado</span>
           <select
             class="select"
+            id="cfg-fato-dominio"
+            [attr.aria-busy]="tiposDoDado.carregando() ? 'true' : null"
             formControlName="dominio"
             aria-required="true"
             [attr.aria-invalid]="erroDominio ? 'true' : null"
             [attr.aria-describedby]="erroDominio ? 'cfg-fato-dominio-erro' : null"
           >
             <option value="">Selecione…</option>
-            @for (opcao of dep.dominios(); track opcao.valor) {
-              <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+            @for (opcao of dep.dominios(); track opcao.codigo) {
+              <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
             }
           </select>
+          @if (tiposDoDado.carregando()) {
+            <span class="field__hint" [uiIndicadorDaLeitura]="leituraDosTipos"
+              >Carregando os tipos de dado…</span
+            >
+          }
+          <ui-falha-de-leitura-do-campo [leitura]="leituraDosTipos" />
           @if (erroDominio) {
             <span class="field__error" id="cfg-fato-dominio-erro">{{ erroDominio }}</span>
           }
