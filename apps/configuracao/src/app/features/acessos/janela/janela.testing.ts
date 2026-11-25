@@ -7,7 +7,7 @@ export const PRAZO = '2026-11-12T12:00:00Z';
 
 const ACRESCIMO = 'selecao:processos:aprovar';
 
-const ITEM_AGUARDANDO_O_LOTE = {
+const ITEM_AGUARDANDO_DECISAO = {
   concessaoId: 'c1',
   beneficiarioNome: 'Betina Teste',
   escopoTipo: TipoDeEscopo.UNIDADE,
@@ -15,16 +15,16 @@ const ITEM_AGUARDANDO_O_LOTE = {
   validaAte: null,
   versaoAtual: 1,
   exigeProtecaoDeDados: false,
-  situacao: 'aguardando_lote',
+  situacao: 'aguardando_decisoes',
   ehDoLeitor: false,
 } as const satisfies Partial<ItemDaJanelaDto>;
 
-/** Uma concessão aguardando o lote; o acréscimo é novo a cada chamada. */
+/** Uma concessão aguardando decisão; o acréscimo é novo a cada chamada. */
 export function itemDaJanela(parcial: Partial<ItemDaJanelaDto> = {}): ItemDaJanelaDto {
-  return { ...ITEM_AGUARDANDO_O_LOTE, acrescimo: [ACRESCIMO], ...parcial };
+  return { ...ITEM_AGUARDANDO_DECISAO, acrescimo: [ACRESCIMO], ...parcial };
 }
 
-const JANELA_ABERTA = {
+const REVISAO_ABERTA = {
   id: 'janela-1',
   perfilId: PERFIL,
   versaoNova: 2,
@@ -37,7 +37,7 @@ const JANELA_ABERTA = {
   decisoesEnviadas: false,
 } as const satisfies Partial<JanelaDeMigracaoDto>;
 
-/** Uma janela aberta, sem lote enviado; a lista de itens é nova a cada chamada. */
+/** Uma revisão aberta, sem decisões enviadas; a lista de itens é nova a cada chamada. */
 export function janelaDeMigracao(parcial: Partial<JanelaDeMigracaoDto> = {}): JanelaDeMigracaoDto {
-  return { ...JANELA_ABERTA, itens: [], ...parcial };
+  return { ...REVISAO_ABERTA, itens: [], ...parcial };
 }

@@ -6,8 +6,8 @@ export interface RotuloDaJanela {
   readonly variante: UiTagVariant;
 }
 
-const SITUACAO_DO_ITEM: Readonly<Record<SituacaoDaMigracao | 'aguardando_lote', RotuloDaJanela>> = {
-  aguardando_lote: { texto: 'Aguarda o lote', variante: 'info' },
+const SITUACAO_DO_ITEM: Readonly<Record<string, RotuloDaJanela>> = {
+  aguardando_decisoes: { texto: 'Aguarda a decisão', variante: 'info' },
   [SituacaoDaMigracao.RETIDA]: { texto: 'Retida', variante: 'warning' },
   [SituacaoDaMigracao.AGUARDANDO_PROTECAO_DE_DADOS]: {
     texto: 'Aguarda o Representante do controlador',
@@ -19,7 +19,7 @@ const SITUACAO_DO_ITEM: Readonly<Record<SituacaoDaMigracao | 'aguardando_lote', 
   [SituacaoDaMigracao.FORA_DA_LISTA]: { texto: 'Fora da lista', variante: 'neutral' },
 };
 
-const SITUACAO_DA_JANELA: Readonly<Record<string, RotuloDaJanela>> = {
+const SITUACAO_DA_REVISAO: Readonly<Record<string, RotuloDaJanela>> = {
   aberta: { texto: 'Aberta', variante: 'warning' },
   encerrando: { texto: 'Em encerramento', variante: 'info' },
   encerrada: { texto: 'Encerrada', variante: 'neutral' },
@@ -28,12 +28,13 @@ const SITUACAO_DA_JANELA: Readonly<Record<string, RotuloDaJanela>> = {
 const FORMA_DO_ENCERRAMENTO: Readonly<Record<FormaDoEncerramento, string>> = {
   [FormaDoEncerramento.CONCLUIDA]: 'Todas as concessões foram decididas.',
   [FormaDoEncerramento.PRAZO]: 'O prazo de 72 horas terminou.',
-  [FormaDoEncerramento.MANUAL]: 'A gestão de acessos encerrou a janela antes do prazo.',
+  [FormaDoEncerramento.MANUAL]:
+    'A gestão de acessos encerrou a revisão das concessões antes do prazo.',
 };
 
 export function situacaoDoItem(codigo: string): RotuloDaJanela {
   return (
-    SITUACAO_DO_ITEM[codigo as SituacaoDaMigracao | 'aguardando_lote'] ?? {
+    SITUACAO_DO_ITEM[codigo] ?? {
       texto: codigo,
       variante: 'neutral',
     }
@@ -41,7 +42,7 @@ export function situacaoDoItem(codigo: string): RotuloDaJanela {
 }
 
 export function situacaoDaJanela(codigo: string): RotuloDaJanela {
-  return SITUACAO_DA_JANELA[codigo] ?? { texto: codigo, variante: 'neutral' };
+  return SITUACAO_DA_REVISAO[codigo] ?? { texto: codigo, variante: 'neutral' };
 }
 
 export function formaDoEncerramento(codigo: string | null): string | null {

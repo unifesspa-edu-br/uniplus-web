@@ -1,45 +1,48 @@
 <section class="panel" aria-labelledby="cfg-lote-titulo">
   <div class="panel-head">
-    <h2 id="cfg-lote-titulo" class="panel-head__title">Lote da gestão de acessos</h2>
+    <h2 id="cfg-lote-titulo" class="panel-head__title">Envio das decisões</h2>
   </div>
   @if (janela().decisoesEnviadas) {
-    <p class="panel-body">O lote da gestão de acessos já foi enviado e não se altera.</p>
+    <p class="panel-body">
+      As decisões da gestão de acessos já foram enviadas e não podem ser alteradas.
+    </p>
   } @else if (!podeDecidir()) {
     <p class="panel-body">
-      O lote cabe à gestão de acessos. Você consulta a janela, mas não decide as concessões.
+      O envio das decisões cabe à gestão de acessos. Você consulta a revisão das concessões, mas não
+      decide as concessões.
     </p>
-  } @else if (itens().doLote.length === 0) {
+  } @else if (itens().aguardandoDecisao.length === 0) {
     <p class="panel-body">
       @if (itens().proprias.length > 0) {
-        Nenhuma concessão aguarda decisão sua. Enviar o lote retém as suas para outra pessoa da
+        Nenhuma concessão aguarda decisão sua. Enviar as decisões retém as suas para outra pessoa da
         gestão de acessos.
       } @else {
-        Nenhuma concessão aguarda o lote.
+        Nenhuma concessão aguarda decisão.
       }
     </p>
   } @else {
     <p class="panel-body">
       Decida todas as concessões da versão anterior: quem migra passa à versão nova e quem é
-      recusado perde o acesso. O lote vale por inteiro e se envia uma só vez.
+      recusado perde o acesso. As decisões são enviadas juntas e uma só vez.
     </p>
   }
 
   @if (lote.erro() && !lote.confirmando()) {
     <div class="panel-body" [id]="idDoErro" tabindex="-1">
-      <ui-alert variant="danger" heading="Não foi possível enviar o lote">{{
+      <ui-alert variant="danger" heading="Não foi possível enviar as decisões">{{
         lote.erro()
       }}</ui-alert>
     </div>
   }
 
-  @if (itens().doLote.length > 0) {
+  @if (itens().aguardandoDecisao.length > 0) {
     @if (decidiveis()) {
       <div class="cfg-acoes panel-body">
         <button
           type="button"
           class="btn btn--secondary btn--rect"
           [disabled]="gravando()"
-          (click)="lote.decidirTodas(itens().doLote, ResultadoDaMigracao.MIGRAR)"
+          (click)="lote.decidirTodas(itens().aguardandoDecisao, ResultadoDaMigracao.MIGRAR)"
         >
           Migrar todas
         </button>
@@ -47,16 +50,16 @@
           type="button"
           class="btn btn--secondary btn--rect"
           [disabled]="gravando()"
-          (click)="lote.decidirTodas(itens().doLote, ResultadoDaMigracao.RECUSAR)"
+          (click)="lote.decidirTodas(itens().aguardandoDecisao, ResultadoDaMigracao.RECUSAR)"
         >
           Recusar todas
         </button>
       </div>
     }
     <cfg-tabela-da-janela
-      [itens]="itens().doLote"
+      [itens]="itens().aguardandoDecisao"
       [nomeDoEscopo]="nomeDoEscopo()"
-      legenda="Concessões da versão anterior que aguardam o lote"
+      legenda="Concessões da versão anterior que aguardam decisão"
     >
       @if (decidiveis()) {
         <ng-template #acao let-item>
@@ -96,12 +99,12 @@
         @if (gravando()) {
           <ui-spinner spinnerSize="sm" />
         }
-        Enviar o lote
+        Enviar as decisões
       </button>
       @if (faltam() > 0) {
         <p id="cfg-lote-faltam" class="cfg-muted">
           {{ faltam() === 1 ? 'Falta 1 concessão' : 'Faltam ' + faltam() + ' concessões' }} para
-          enviar o lote.
+          enviar as decisões.
         </p>
       }
     </div>
@@ -110,8 +113,8 @@
 
 <cfg-exclusao-dialog
   [(visible)]="lote.confirmando"
-  heading="Enviar o lote com recusas"
-  confirmLabel="Recusar e enviar o lote"
+  heading="Enviar as decisões com recusas"
+  confirmLabel="Recusar e enviar as decisões"
   confirmacao="Entendo que as concessões recusadas serão revogadas."
   [erro]="lote.erro()"
   [enviando]="gravando()"
@@ -122,5 +125,5 @@
       ? '1 concessão recusada perde'
       : lote.recusas() + ' concessões recusadas perdem'
   }}
-  o acesso ao perfil assim que o lote é enviado.
+  o acesso ao perfil assim que as decisões são enviadas.
 </cfg-exclusao-dialog>

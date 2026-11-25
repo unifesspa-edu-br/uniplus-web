@@ -8,43 +8,43 @@ import type {
 /** O que cada pessoa decide, por concessão. */
 export type DecisoesDaMigracao = ReadonlyMap<string, DecisaoDaMigracao>;
 
-/** As concessões da janela, separadas pelo que a pessoa que lê pode fazer com cada uma. */
+/** As concessões da revisão, separadas pelo que a pessoa que lê pode fazer com cada uma. */
 export interface ItensDaJanela {
-  /** Aguardam o lote da gestão de acessos e não são da pessoa que lê. */
-  readonly doLote: readonly ItemDaJanelaDto[];
-  /** O lote as reteve para outra pessoa da gestão de acessos decidir. */
+  /** Aguardam a decisão da gestão de acessos e não são da pessoa que lê. */
+  readonly aguardandoDecisao: readonly ItemDaJanelaDto[];
+  /** O envio das decisões as reteve para outra pessoa da gestão de acessos decidir. */
   readonly retidas: readonly ItemDaJanelaDto[];
   /** Migram só depois da decisão do Representante do controlador. */
   readonly naProtecaoDeDados: readonly ItemDaJanelaDto[];
   /** São da pessoa que lê e ainda aguardam decisão: outra pessoa decide, e a tela não oferece ação. */
   readonly proprias: readonly ItemDaJanelaDto[];
-  /** Têm situação final, ou a janela já não aceita decisão. */
+  /** Têm situação final, ou a revisão já não aceita decisão. */
   readonly decididas: readonly ItemDaJanelaDto[];
 }
 
-type GrupoComAcao = 'doLote' | 'retidas' | 'naProtecaoDeDados';
+type GrupoComAcao = 'aguardandoDecisao' | 'retidas' | 'naProtecaoDeDados';
 
 const GRUPO_DA_SITUACAO: Readonly<Record<string, GrupoComAcao>> = {
-  aguardando_lote: 'doLote',
+  aguardando_decisoes: 'aguardandoDecisao',
   [SituacaoDaMigracao.RETIDA]: 'retidas',
   [SituacaoDaMigracao.AGUARDANDO_PROTECAO_DE_DADOS]: 'naProtecaoDeDados',
 };
 
-/** A janela aceita decisão enquanto está aberta; encerrando ou encerrada, só mostra a situação final. */
-export function janelaAceitaDecisao(janela: Pick<JanelaDeMigracaoDto, 'situacao'>): boolean {
-  return janela.situacao === 'aberta';
+/** A revisão aceita decisão enquanto está aberta; encerrando ou encerrada, só mostra a situação final. */
+export function janelaAceitaDecisao(revisao: Pick<JanelaDeMigracaoDto, 'situacao'>): boolean {
+  return revisao.situacao === 'aberta';
 }
 
-export function separarItens(janela: JanelaDeMigracaoDto): ItensDaJanela {
+export function separarItens(revisao: JanelaDeMigracaoDto): ItensDaJanela {
   const grupos: Record<keyof ItensDaJanela, ItemDaJanelaDto[]> = {
-    doLote: [],
+    aguardandoDecisao: [],
     retidas: [],
     naProtecaoDeDados: [],
     proprias: [],
     decididas: [],
   };
-  const aceita = janelaAceitaDecisao(janela);
-  for (const item of janela.itens) grupos[grupoDe(item, aceita)].push(item);
+  const aceita = janelaAceitaDecisao(revisao);
+  for (const item of revisao.itens) grupos[grupoDe(item, aceita)].push(item);
   return grupos;
 }
 
@@ -54,7 +54,7 @@ function grupoDe(item: ItemDaJanelaDto, aceitaDecisao: boolean): keyof ItensDaJa
   return item.ehDoLeitor ? 'proprias' : comAcao;
 }
 
-/** Quantas concessões do lote ainda não têm decisão. */
+/** Quantas concessões aguardando decisão ainda não têm decisão. */
 export function semDecisao(
   itens: readonly ItemDaJanelaDto[],
   decisoes: DecisoesDaMigracao,
@@ -66,7 +66,7 @@ export function quantidadeDeRecusas(decisoes: DecisoesDaMigracao): number {
   return [...decisoes.values()].filter((decisao) => decisao === ResultadoDaMigracao.RECUSAR).length;
 }
 
-/** As decisões na ordem das concessões da janela, só das que pertencem à etapa. */
+/** As decisões na ordem das concessões da revisão, só das que pertencem à etapa. */
 export function decisoesDaEtapa(
   itens: readonly ItemDaJanelaDto[],
   decisoes: DecisoesDaMigracao,
