@@ -6,7 +6,7 @@ import { apiOk } from '@uniplus/shared-core/http';
 import axe from 'axe-core';
 import { Subject, of } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
+import { BUSCA_DE_MUNICIPIOS } from '../valor-de-municipio/valor-de-municipio';
 import { EnderecoGeoComponent } from './endereco-geo';
 import { BUSCA_DE_CEP, type CepEncontrado, type EnderecoEstruturado } from './endereco-geo.model';
 import { CEP_DO_GEO } from './endereco-geo.testing';

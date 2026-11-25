@@ -18,7 +18,7 @@ const ORIGENS_SEM_CONFIRMACAO: readonly string[] = [
   'grande-usuario',
   ORIGEM_CEP_GERAL,
 ];
-const DIGITOS_DO_CEP = 8;
+export const DIGITOS_DO_CEP = 8;
 
 export function somenteDigitos(texto: string): string {
   return texto.replace(/\D/g, '');
@@ -93,6 +93,11 @@ export class ResolucaoDoEndereco {
    * exatamente o CEP resolvido (8 dígitos) é pendente.
    */
   readonly cepPendente = computed(() => this.cepTextoAtual().length > 0 && !this.cepVigente());
+
+  readonly faltaCepObrigatorio = computed(
+    () =>
+      this.exigeCep() && this.cidade() !== null && this.cepResolvido().length !== DIGITOS_DO_CEP,
+  );
 
   /**
    * Os campos de logradouro, número, complemento, bairro e distrito só aparecem com um CEP

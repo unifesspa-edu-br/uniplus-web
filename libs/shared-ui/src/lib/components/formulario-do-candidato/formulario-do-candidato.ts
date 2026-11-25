@@ -15,7 +15,7 @@ import {
 } from '@angular/core';
 
 import { AlertComponent } from '../alert/alert';
-import { NomesDeMunicipios } from '../editor-de-condicoes/valor-de-municipio';
+import { NomesDeMunicipios } from '../valor-de-municipio/valor-de-municipio';
 import {
   type DocumentoExigido,
   ListaDeDocumentosComponent,

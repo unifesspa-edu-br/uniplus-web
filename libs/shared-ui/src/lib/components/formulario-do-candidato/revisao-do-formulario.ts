@@ -1,6 +1,6 @@
 import { computed, type Signal } from '@angular/core';
 
-import type { NomesDeMunicipios } from '../editor-de-condicoes/valor-de-municipio';
+import type { NomesDeMunicipios } from '../valor-de-municipio/valor-de-municipio';
 import { resumoDoFator } from './fator-de-atenuacao';
 import {
   type ErroDoServidor,

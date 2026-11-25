@@ -2,7 +2,7 @@ import { MOTIVO_DA_PROTECAO_PENDENTE } from './motivo-da-protecao-pendente';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { ComboboxComponent, type UiComboboxGroup } from '../combobox/combobox';
-import { ValorDeMunicipioComponent } from './valor-de-municipio';
+import { ValorDeMunicipioComponent } from '../valor-de-municipio/valor-de-municipio';
 import { alcanceDaCondicao } from './condicoes/conferencia-da-condicao';
 import { operadorPadrao, rotuloDoValor, type FatoEscolhivel } from './condicoes/fatos-escolhiveis';
 import {

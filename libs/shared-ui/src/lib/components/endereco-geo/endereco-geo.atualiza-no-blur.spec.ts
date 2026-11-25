@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   BUSCA_DE_MUNICIPIOS,
   ESPERA_DA_DIGITACAO_MS,
-} from '../editor-de-condicoes/valor-de-municipio';
+} from '../valor-de-municipio/valor-de-municipio';
 import { EnderecoGeoComponent } from './endereco-geo';
 import { BUSCA_DE_CEP, type CepEncontrado, type EnderecoEstruturado } from './endereco-geo.model';
 import { CEP_DO_GEO, CIDADE_DE_MARABA, enderecoEstruturado } from './endereco-geo.testing';

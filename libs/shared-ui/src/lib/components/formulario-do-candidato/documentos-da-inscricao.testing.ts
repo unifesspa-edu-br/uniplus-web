@@ -1,7 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { of } from 'rxjs';
 
-import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
+import { BUSCA_DE_MUNICIPIOS } from '../valor-de-municipio/valor-de-municipio';
 import { BUSCA_DE_CEP } from '../endereco-geo/endereco-geo.model';
 
 import type {

@@ -1,5 +1,3 @@
-import { HttpHeaders } from '@angular/common/http';
-import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { of, Subject } from 'rxjs';
@@ -9,14 +7,7 @@ import type { ApiResult } from '@uniplus/shared-core/http';
 import { ligarRelogioControlado, passarOTempo } from '@uniplus/shared-testing';
 
 import { ComboboxComponent, type UiComboboxGroup } from '../combobox/combobox';
-import { CondicaoDeFatoComponent } from './condicao-de-fato';
-import {
-  fatosEscolhiveis,
-  type FatoDoCatalogo,
-  type FatoEscolhivel,
-} from './condicoes/fatos-escolhiveis';
-import { type CondicaoDeFato } from './condicoes/valor-da-condicao';
-import { COM_LISTA } from './operadores-de-exemplo.testing';
+import { MARABA } from './valor-de-municipio.testing';
 import {
   BUSCA_DE_MUNICIPIOS,
   ESPERA_DA_DIGITACAO_MS,
@@ -24,119 +15,6 @@ import {
   ValorDeMunicipioComponent,
   type MunicipioEncontrado,
 } from './valor-de-municipio';
-
-const MUNICIPIO_DE_RESIDENCIA: FatoDoCatalogo = {
-  codigo: 'MUNICIPIO_RESIDENCIA',
-  nome: 'Município de residência',
-  dominio: { codigo: 'OPCAO', rotulo: 'OPCAO' },
-  valoresDominio: null,
-  binding: 'CAMPO_FORMULARIO:MUNICIPIO_RESIDENCIA',
-  fonteValores: { codigo: 'MUNICIPIOS', rotulo: 'MUNICIPIOS' },
-  operadoresAdmitidos: COM_LISTA,
-};
-
-const MARABA: MunicipioEncontrado = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' };
-
-describe('o fato de município no catálogo do editor', () => {
-  it('só é oferecido quando o hospedeiro tem a busca de onde sai o valor', () => {
-    expect(fatosEscolhiveis([MUNICIPIO_DE_RESIDENCIA])).toEqual([]);
-    expect(fatosEscolhiveis([MUNICIPIO_DE_RESIDENCIA], new Map(), [], true)).toEqual([
-      expect.objectContaining({
-        codigo: 'MUNICIPIO_RESIDENCIA',
-        tipoDominio: 'CATEGORICO_DINAMICO',
-        municipio: true,
-      }),
-    ]);
-  });
-});
-
-@Component({
-  standalone: true,
-  imports: [CondicaoDeFatoComponent],
-  template: `
-    <ui-condicao-de-fato
-      idBase="teste"
-      [condicao]="condicao()"
-      [fatos]="fatos"
-      (condicaoChange)="condicao.set($event)"
-    />
-  `,
-})
-class HospedeiroDeTeste {
-  readonly condicao = signal<CondicaoDeFato>({
-    fato: 'MUNICIPIO_RESIDENCIA',
-    operador: 'IGUAL',
-    valor: '',
-  });
-  readonly fatos: readonly FatoEscolhivel[] = fatosEscolhiveis(
-    [MUNICIPIO_DE_RESIDENCIA],
-    new Map(),
-    [],
-    true,
-  );
-}
-
-describe('a condição sobre fato de município', () => {
-  let fixture: ComponentFixture<HospedeiroDeTeste>;
-  let raiz: HTMLElement;
-  const busca = vi.fn((termo: string) =>
-    of({
-      ok: true as const,
-      data: termo === 'Mar' ? [MARABA] : [],
-      status: 200,
-      headers: new HttpHeaders(),
-    }),
-  );
-
-  beforeEach(async () => {
-    ligarRelogioControlado();
-    busca.mockClear();
-    await TestBed.configureTestingModule({
-      imports: [HospedeiroDeTeste],
-      providers: [{ provide: BUSCA_DE_MUNICIPIOS, useValue: busca }],
-    }).compileComponents();
-    fixture = TestBed.createComponent(HospedeiroDeTeste);
-    fixture.detectChanges();
-    raiz = fixture.nativeElement as HTMLElement;
-  });
-
-  afterEach(() => vi.useRealTimers());
-
-  function digitar(texto: string): void {
-    const campo = raiz.querySelector('input[role="combobox"]') as HTMLInputElement;
-    campo.value = texto;
-    campo.dispatchEvent(new Event('input'));
-  }
-
-  it('só busca quando passa a espera da digitação, nem um milissegundo antes', async () => {
-    digitar('Mar');
-
-    await passarOTempo(ESPERA_DA_DIGITACAO_MS - 1);
-    expect(busca).not.toHaveBeenCalled();
-
-    await passarOTempo(1);
-    expect(busca).toHaveBeenCalledWith('Mar');
-  });
-
-  it('escolhe o município pela busca e grava o código IBGE dele', async () => {
-    digitar('Mar');
-    await passarOTempo(ESPERA_DA_DIGITACAO_MS);
-    fixture.detectChanges();
-
-    const opcao = [...raiz.querySelectorAll<HTMLElement>('[role="option"]')].find((item) =>
-      item.textContent?.includes('Marabá (PA)'),
-    );
-    opcao?.dispatchEvent(new MouseEvent('mousedown'));
-    fixture.detectChanges();
-
-    expect(busca).toHaveBeenCalledWith('Mar');
-    expect(fixture.componentInstance.condicao()).toEqual({
-      fato: 'MUNICIPIO_RESIDENCIA',
-      operador: 'IGUAL',
-      valor: '"1504208"',
-    });
-  });
-});
 
 describe('o campo de município limitado à UF', () => {
   beforeEach(() => ligarRelogioControlado());
@@ -274,6 +152,11 @@ describe('os grupos que o campo de município entrega à lista', () => {
     fixture.componentRef.setInput('values', cenario.escolhidos ?? []);
     fixture.componentRef.setInput('multiplo', (cenario.escolhidos ?? []).length > 1);
     fixture.componentRef.setInput('rotulosGravados', cenario.gravados ?? {});
+    await buscarGrupos(fixture);
+    return fixture.debugElement.query(By.directive(ComboboxComponent)).componentInstance.grupos();
+  }
+
+  async function buscarGrupos(fixture: ComponentFixture<ValorDeMunicipioComponent>): Promise<void> {
     fixture.detectChanges();
     const campo = (fixture.nativeElement as HTMLElement).querySelector(
       'input[role="combobox"]',
@@ -282,7 +165,6 @@ describe('os grupos que o campo de município entrega à lista', () => {
     campo.dispatchEvent(new Event('input'));
     await passarOTempo(ESPERA_DA_DIGITACAO_MS);
     fixture.detectChanges();
-    return fixture.debugElement.query(By.directive(ComboboxComponent)).componentInstance.grupos();
   }
 
   it('um município escolhido forma o grupo "Escolhido" com ele', async () => {

@@ -24,7 +24,7 @@ import { UNIDADES_FEDERATIVAS } from '@uniplus/shared-utils';
 import {
   NomesDeMunicipios,
   ValorDeMunicipioComponent,
-} from '../editor-de-condicoes/valor-de-municipio';
+} from '../valor-de-municipio/valor-de-municipio';
 import { SpinnerComponent } from '../spinner/spinner';
 import { ConducaoDoEndereco } from './endereco-geo.conducao';
 import { BUSCA_DE_CEP, type EnderecoEstruturado } from './endereco-geo.model';
