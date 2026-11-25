@@ -9,7 +9,7 @@ import type {
 import { ehObjeto, recusaDaApresentacao, recusaDaSimulacao } from './recusas-do-arquivo';
 
 /**
- * O que um arquivo importado no simulador traz: um formulário renderizável — o que a exportação de um
+ * O que um arquivo importado no simulador traz: um formulário apresentado — o que a exportação de um
  * modelo ou processo baixa —, ou um caso do corpus compartilhado com a API, com as regras e as
  * respostas. O caso não tem apresentação: ela é montada a partir das regras.
  */
@@ -49,14 +49,14 @@ export function lerArquivoDoFormulario(texto: string): ArquivoDoFormulario {
   // partir delas, e a do formulário só vale sobre regras que formam formulário.
   const leitura = lerRegras(conteudo['regras'] as RegrasDoFormulario);
   if (!leitura.valida) return recusado(`regras.${leitura.erro.caminho}`, leitura.erro.mensagem);
-  return 'coleta' in conteudo ? lerFormularioRenderizavel(conteudo) : lerCaso(conteudo);
+  return 'coleta' in conteudo ? lerFormularioApresentado(conteudo) : lerCaso(conteudo);
 }
 
 function recusado(caminho: string, mensagem: string): ArquivoRecusado {
   return { valido: false, caminho, mensagem };
 }
 
-function lerFormularioRenderizavel(conteudo: Record<string, unknown>): ArquivoDoFormulario {
+function lerFormularioApresentado(conteudo: Record<string, unknown>): ArquivoDoFormulario {
   const recusa = recusaDaApresentacao(conteudo);
   if (recusa) return { valido: false, ...recusa };
   return {

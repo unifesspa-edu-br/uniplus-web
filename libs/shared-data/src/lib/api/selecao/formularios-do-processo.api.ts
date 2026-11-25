@@ -9,7 +9,7 @@ import type {
   DefinirItensDoFormularioRequest,
   DefinirReferenciaTemporalFatosRequest,
   DefinirTermosDoFormularioRequest,
-  FormularioRenderizavelDto,
+  FormularioApresentadoDoProcessoDto,
 } from './processos-seletivos.contrato';
 import { rotasDoProcesso } from './rotas-do-processo';
 import { SELECAO_BASE_PATH } from './tokens';
@@ -148,16 +148,16 @@ export class FormulariosDoProcessoApi {
   }
 
   /**
-   * GET `/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}/renderizavel` — o
+   * GET `/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}/apresentacao` — o
    * formulário da finalidade pronto para o candidato ver, com as regras que o interpretador avalia,
    * montado da configuração viva: serve também ao rascunho, para a simulação.
    */
-  obterFormularioRenderizavel(
+  obterApresentacao(
     processoSeletivoId: string,
     finalidade: string,
-  ): Observable<ApiResult<FormularioRenderizavelDto>> {
-    return this.http.get<ApiResult<FormularioRenderizavelDto>>(
-      `${this.urlDoFormulario(processoSeletivoId, finalidade)}/renderizavel`,
+  ): Observable<ApiResult<FormularioApresentadoDoProcessoDto>> {
+    return this.http.get<ApiResult<FormularioApresentadoDoProcessoDto>>(
+      `${this.urlDoFormulario(processoSeletivoId, finalidade)}/apresentacao`,
       {
         context: withVendorMime('formulario', 2),
       },

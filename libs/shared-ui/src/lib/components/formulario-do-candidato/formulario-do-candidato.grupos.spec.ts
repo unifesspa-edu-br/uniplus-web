@@ -2,7 +2,7 @@ import { CenarioDoFormularioDoCandidato } from './formulario-do-candidato.testin
 import {
   CODIGO_DA_SECAO_DE_DADOS,
   FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-  campoRenderizavel,
+  campoApresentado,
   grupoDasRegras,
   itemDasRegras,
 } from './formularios-de-exemplo.testing';
@@ -25,7 +25,7 @@ describe('FormularioDoCandidatoComponent', () => {
             ordem: 0,
             rotulo: 'Integrante',
             ocorrencias: { minimo: 1, maximo: 2, incluiCandidato: false },
-            subitens: [campoRenderizavel('RENDA', 'Renda', 'NUMERO')],
+            subitens: [campoApresentado('RENDA', 'Renda', 'NUMERO')],
           },
         ],
       },
@@ -60,7 +60,7 @@ describe('FormularioDoCandidatoComponent', () => {
             ordem: 0,
             rotulo: 'Bem',
             ocorrencias: { minimo: 0, incluiCandidato: false },
-            subitens: [campoRenderizavel('VALOR', 'Valor', 'NUMERO')],
+            subitens: [campoApresentado('VALOR', 'Valor', 'NUMERO')],
           },
         ],
       },
@@ -96,7 +96,7 @@ describe('FormularioDoCandidatoComponent', () => {
             ordem: 0,
             rotulo: 'Bem',
             ocorrencias: { minimo: 0, incluiCandidato: false },
-            subitens: [campoRenderizavel('VALOR', 'Valor', 'NUMERO')],
+            subitens: [campoApresentado('VALOR', 'Valor', 'NUMERO')],
           },
         ],
       },
@@ -121,7 +121,7 @@ describe('FormularioDoCandidatoComponent', () => {
   });
 
   it('no grupo que inclui o candidato, os outros integrantes não oferecem o parentesco de próprio candidato', () => {
-    const parentesco = campoRenderizavel('PARENTESCO', 'Parentesco', 'ESCOLHA_UNICA', {
+    const parentesco = campoApresentado('PARENTESCO', 'Parentesco', 'ESCOLHA_UNICA', {
       valoresSelecionaveis: [
         { codigo: 'PROPRIO_CANDIDATO', descricao: 'Próprio candidato', ordem: 0 },
         { codigo: 'MAE', descricao: 'Mãe', ordem: 1 },

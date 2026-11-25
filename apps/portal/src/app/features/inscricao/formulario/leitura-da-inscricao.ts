@@ -13,7 +13,7 @@ import type { Subscription } from 'rxjs';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { ProblemI18nService, useApiResource } from '@uniplus/shared-core/http';
 import {
-  type FormularioRenderizavelDto,
+  type FormularioApresentadoDoProcessoDto,
   type InscricaoDto,
   SELECAO_BASE_PATH,
   formularioDaInscricaoRequest,
@@ -41,7 +41,7 @@ import { respostasIniciaisDoNomeSocial } from './respostas-da-conta';
 /** A inscrição e o formulário como chegaram do servidor ao abrir a página, e o que se tira deles. */
 export interface InscricaoCarregada {
   readonly inscricao: InscricaoDto;
-  readonly formulario: FormularioRenderizavelDto;
+  readonly formulario: FormularioApresentadoDoProcessoDto;
   /** As ofertas da versão em que está a inscrição, não as do certame ao vivo. */
   readonly ofertas: readonly OfertaDaInscricao[];
   /** Quantas opções de curso a versão da inscrição admite. */
@@ -102,7 +102,7 @@ export class LeituraDaInscricao {
   private readonly iniciada = signal<InscricaoIniciada | null>(null);
   private readonly falhaDaLeitura = signal<string | null>(null);
   /** O formulário só é pedido depois de a inscrição ser iniciada: a versão que vale é a dela. */
-  private readonly formularioLido = useApiResource<FormularioRenderizavelDto>(() => {
+  private readonly formularioLido = useApiResource<FormularioApresentadoDoProcessoDto>(() => {
     const iniciada = this.iniciada();
     return iniciada ? formularioDaInscricaoRequest(this.basePath, iniciada.processoId) : undefined;
   });
@@ -173,7 +173,10 @@ export class LeituraDaInscricao {
   }
 
   /** Uma resposta que a tela não sabe montar vira o erro da leitura, não um carregamento sem fim. */
-  private montarCarga(iniciada: InscricaoIniciada, formulario: FormularioRenderizavelDto): void {
+  private montarCarga(
+    iniciada: InscricaoIniciada,
+    formulario: FormularioApresentadoDoProcessoDto,
+  ): void {
     try {
       this.adotarCarga(iniciada, formulario);
     } catch {
@@ -184,7 +187,7 @@ export class LeituraDaInscricao {
 
   private adotarCarga(
     { processoId, inscricao }: InscricaoIniciada,
-    formulario: FormularioRenderizavelDto,
+    formulario: FormularioApresentadoDoProcessoDto,
   ): void {
     const municipios = this.respostasIniciais(inscricao, formulario);
     const carga = inscricaoCarregada(inscricao, formulario, municipios);
@@ -208,7 +211,7 @@ export class LeituraDaInscricao {
 
   private respostasIniciais(
     inscricao: InscricaoDto,
-    formulario: FormularioRenderizavelDto,
+    formulario: FormularioApresentadoDoProcessoDto,
   ): MunicipiosSeparados {
     // As respostas chegam em JSON: são os valores que o formulário lê.
     const gravadas = inscricao.formulario.respostas as Readonly<Record<string, ValorJson>>;
@@ -224,7 +227,7 @@ export class LeituraDaInscricao {
 
 function inscricaoCarregada(
   inscricao: InscricaoDto,
-  formulario: FormularioRenderizavelDto,
+  formulario: FormularioApresentadoDoProcessoDto,
   municipios: MunicipiosSeparados,
 ): InscricaoCarregada {
   return {

@@ -14,7 +14,7 @@ import { AvaliacoesDeFormularioApi } from '@uniplus/shared-data/configuracao';
 import { buscaDeCepNoGeo, buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
 import {
   FormulariosDoProcessoApi,
-  type FormularioRenderizavelDto,
+  type FormularioApresentadoDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
 import {
   acompanharLeitura,
@@ -71,11 +71,11 @@ import {
       <div [uiIndicadorDaLeitura]="leitura">
         <ui-spinner spinnerSize="md" [decorativo]="true" /> Carregando o formulário...
       </div>
-    } @else if (formulario(); as renderizavel) {
+    } @else if (formulario(); as apresentacao) {
       <ui-simulacao-de-formulario
         idBase="simulacao-processo"
         [nomeDoArquivo]="'formulario-' + finalidade.toLocaleLowerCase('pt-BR')"
-        [formulario]="renderizavel"
+        [formulario]="apresentacao"
         [noProcesso]="lido()"
         [documentos]="documentos()"
         [conferir]="conferir"
@@ -107,19 +107,26 @@ export class SimulacaoDoProcessoPage {
     destino: () => this.host.nativeElement.querySelector('h1'),
   });
   /** O formulário com a comprovação documental, que só o processo tem. */
-  protected readonly lido = signal<FormularioRenderizavelDto | null>(null);
-  /** O renderizável do contrato é o formulário que o candidato vê: o compilador acusa se divergirem. */
+  protected readonly lido = signal<FormularioApresentadoDoProcessoDto | null>(null);
+  /** O formulário apresentado do contrato é o formulário que o candidato vê: o compilador acusa se divergirem. */
   protected readonly formulario = computed<FormularioDoCandidato | null>(
     () => this.lido()?.formulario ?? null,
   );
   /** A lista do bloco de comprovação documental; o rascunho não a tem, porque ela sai da publicação. */
   protected readonly documentos = computed<readonly DocumentoExigido[] | null>(
-    () => this.lido()?.comprovacaoDocumental?.map((documento) => ({
-      ...documento,
-      aplicabilidade: documento.aplicabilidade.codigo,
-      formatos: { ...documento.formatos, lista: documento.formatos.lista?.map((f) => f.rotulo) ?? null },
-      modelo: documento.modelo === null ? null : { ...documento.modelo, formato: documento.modelo.formato.rotulo },
-    })) ?? null,
+    () =>
+      this.lido()?.comprovacaoDocumental?.map((documento) => ({
+        ...documento,
+        aplicabilidade: documento.aplicabilidade.codigo,
+        formatos: {
+          ...documento.formatos,
+          lista: documento.formatos.lista?.map((f) => f.rotulo) ?? null,
+        },
+        modelo:
+          documento.modelo === null
+            ? null
+            : { ...documento.modelo, formato: documento.modelo.formato.rotulo },
+      })) ?? null,
   );
 
   protected readonly conferir: ConferenciaComOServidor = (simulacao) =>
@@ -133,7 +140,7 @@ export class SimulacaoDoProcessoPage {
     this.carregando.set(true);
     this.erroAoCarregar.set(null);
     this.formularios
-      .obterFormularioRenderizavel(this.id, this.finalidade)
+      .obterApresentacao(this.id, this.finalidade)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
         this.carregando.set(false);

@@ -1,4 +1,4 @@
-import type { CampoRenderizavel } from './formulario-do-candidato.model';
+import type { CampoApresentado } from './formulario-do-candidato.model';
 import { respostaDoTextoLivre } from './confirmacao-do-campo';
 import type { ControleDoCampo } from './controle-do-campo';
 import type { ValorJson } from './interpretador/regras-do-formulario';
@@ -48,7 +48,7 @@ export function numeroNaoReconhecido(texto: string): boolean {
 /** A resposta que o texto digitado dá: o número em pt-BR, os códigos separados por ponto e vírgula, ou o texto. */
 export function respostaDoTexto(
   controle: ControleDoCampo,
-  campo: CampoRenderizavel,
+  campo: CampoApresentado,
   texto: string,
 ): ValorJson | undefined {
   const limpo = texto.trim();

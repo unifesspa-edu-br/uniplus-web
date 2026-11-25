@@ -1,10 +1,10 @@
 import {
   BLOCO_REVISAO_E_ACEITE,
-  type CampoRenderizavel,
+  type CampoApresentado,
   type FormularioDoCandidato,
-  type GrupoRenderizavel,
+  type GrupoApresentado,
   type SecaoRenderizavel,
-  type TermoRenderizavel,
+  type TermoApresentado,
 } from './formulario-do-candidato.model';
 import type {
   AvaliacaoDoFormulario,
@@ -17,20 +17,20 @@ import { regrasPorFato } from './regras-do-campo';
 
 /** Um campo do passo, com a avaliação dele e a regra que o descreve. */
 export interface CampoNoPasso {
-  readonly campo: CampoRenderizavel;
+  readonly campo: CampoApresentado;
   readonly avaliado: CampoAvaliado;
   readonly regra: ItemDasRegras | null;
 }
 
 export interface GrupoNoPasso {
-  readonly grupo: GrupoRenderizavel;
+  readonly grupo: GrupoApresentado;
   readonly avaliado: GrupoAvaliado;
   /** As regras dos subitens, pelo fato. */
   readonly regras: ReadonlyMap<string, ItemDasRegras>;
 }
 
 export interface TermoNoPasso {
-  readonly termo: TermoRenderizavel;
+  readonly termo: TermoApresentado;
   readonly avaliado: TermoAvaliado;
 }
 

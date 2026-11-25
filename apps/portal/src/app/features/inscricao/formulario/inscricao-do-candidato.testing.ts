@@ -2,11 +2,11 @@ import {
   BlocoSistemaCodigo,
   TipoEtapaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
-  type FormularioRenderizavelDto,
+  type FormularioApresentadoDoProcessoDto,
   TipoDeCampoCodigo,
 } from '@uniplus/shared-data/selecao';
 
-type Formulario = FormularioRenderizavelDto['formulario'];
+type Formulario = FormularioApresentadoDoProcessoDto['formulario'];
 type EtapaDoFormulario = Formulario['etapas'][number];
 type CampoColetado = Formulario['coleta']['itens'][number];
 type ItemDasRegras = Formulario['regras']['etapas'][number]['itens'][number];
@@ -34,7 +34,7 @@ export function campoColetado(
 }
 
 /** Um formulário de inscrição no contrato atual, para os testes da tela. */
-export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
+export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioApresentadoDoProcessoDto = {
   comprovacaoDocumental: null,
   dependenciasDaAvaliacao: null,
   dependenciasDoFator: null,
@@ -67,7 +67,7 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
           baseLegal: 'Edital do processo seletivo',
           formaAceite: {
             codigo:
-              'A_DEFINIR' as FormularioRenderizavelDto['formulario']['termos'][number]['conteudo']['formaAceite']['codigo'],
+              'A_DEFINIR' as FormularioApresentadoDoProcessoDto['formulario']['termos'][number]['conteudo']['formaAceite']['codigo'],
             rotulo: 'Aceite de teste',
           },
           hashVersao: 'sha256-veracidade-v1',
@@ -157,17 +157,17 @@ export function item(fatoCodigo: string, formato: string | null = null): ItemDas
 
 /** O mesmo envelope, com o formulário trocado nos blocos que `mudancas` dá. */
 export function comFormulario(
-  base: FormularioRenderizavelDto,
+  base: FormularioApresentadoDoProcessoDto,
   mudancas: Partial<Formulario>,
-): FormularioRenderizavelDto {
+): FormularioApresentadoDoProcessoDto {
   return { ...base, formulario: { ...base.formulario, ...mudancas } };
 }
 
 /** O formulário que também coleta o campo, com a regra de sempre obrigatório na primeira seção. */
 export function comCampoColetado(
-  base: FormularioRenderizavelDto,
+  base: FormularioApresentadoDoProcessoDto,
   campo: CampoColetado,
-): FormularioRenderizavelDto {
+): FormularioApresentadoDoProcessoDto {
   const { coleta, regras } = base.formulario;
   return comFormulario(base, {
     coleta: { ...coleta, itens: [...coleta.itens, campo] },

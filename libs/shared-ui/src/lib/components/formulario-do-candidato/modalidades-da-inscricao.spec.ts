@@ -8,7 +8,7 @@ import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
 import type { FormularioDoCandidato, FormularioNoProcesso } from './formulario-do-candidato.model';
 import {
   apresentacaoDaEtapa,
-  campoRenderizavel,
+  campoApresentado,
   itemDasRegras,
 } from './formularios-de-exemplo.testing';
 import type { AvaliacaoNaTela, ModalidadesAvaliadas } from './modalidades-avaliadas';
@@ -55,8 +55,8 @@ const FORMULARIO: FormularioDoCandidato = {
   pressupostos: { fatos: [] },
   coleta: {
     itens: [
-      campoRenderizavel('EMAIL', 'E-mail', 'TEXTO'),
-      campoRenderizavel('CONCORRER_EP', 'Deseja concorrer às vagas de escola pública?', 'TEXTO', {
+      campoApresentado('EMAIL', 'E-mail', 'TEXTO'),
+      campoApresentado('CONCORRER_EP', 'Deseja concorrer às vagas de escola pública?', 'TEXTO', {
         ordem: 1,
       }),
     ],

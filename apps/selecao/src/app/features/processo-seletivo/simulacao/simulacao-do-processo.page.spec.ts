@@ -10,14 +10,17 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
-import { type FormularioRenderizavelDto, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import {
+  type FormularioApresentadoDoProcessoDto,
+  SELECAO_BASE_PATH,
+} from '@uniplus/shared-data/selecao';
 import { afterEach, describe, expect, it } from 'vitest';
 import { SimulacaoDoProcessoPage } from './simulacao-do-processo.page';
 
 const BASE = 'http://localhost:5000';
 const ID = '01960000-0000-7000-0000-000000000515';
 
-const FORMULARIO_DA_HABILITACAO: FormularioRenderizavelDto = {
+const FORMULARIO_DA_HABILITACAO: FormularioApresentadoDoProcessoDto = {
   faseId: null,
   dependenciasDaAvaliacao: null,
   dependenciasDoFator: null,
@@ -50,7 +53,7 @@ const FORMULARIO_DA_HABILITACAO: FormularioRenderizavelDto = {
           {
             codigo: 'PDF' as NonNullable<
               NonNullable<
-                FormularioRenderizavelDto['comprovacaoDocumental']
+                FormularioApresentadoDoProcessoDto['comprovacaoDocumental']
               >[number]['formatos']['lista']
             >[number]['codigo'],
             rotulo: 'PDF',
@@ -90,7 +93,7 @@ describe('SimulacaoDoProcessoPage', () => {
 
     TestBed.inject(HttpTestingController)
       .expectOne(
-        `${BASE}/api/selecao/admin/processos-seletivos/${ID}/formularios/HABILITACAO/renderizavel`,
+        `${BASE}/api/selecao/admin/processos-seletivos/${ID}/formularios/HABILITACAO/apresentacao`,
       )
       .flush(FORMULARIO_DA_HABILITACAO);
     fixture.detectChanges();

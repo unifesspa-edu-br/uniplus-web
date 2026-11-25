@@ -11,7 +11,7 @@ import {
   type IntegranteDoItem,
   paraALista,
 } from './documento-na-lista';
-import type { GrupoRenderizavel } from './formulario-do-candidato.model';
+import type { GrupoApresentado } from './formulario-do-candidato.model';
 import { titulosDasOcorrencias } from './interpretador/ocorrencia-do-candidato';
 import type { OcorrenciaSimulada } from './interpretador/regras-do-formulario';
 
@@ -81,7 +81,7 @@ interface Montagem {
 /** O documento que se repete sob um grupo escolhido uma vez, com o integrante desta avaliação. */
 interface DocumentoQueSeRepete {
   readonly documento: DocumentoAvaliado;
-  readonly grupo: GrupoRenderizavel | undefined;
+  readonly grupo: GrupoApresentado | undefined;
   readonly integrante: string | null;
 }
 
@@ -98,7 +98,7 @@ interface DocumentoQueSeRepete {
  */
 export function regrasDeDocumentos(
   documentos: readonly DocumentoAvaliado[],
-  gruposDoFormulario: readonly GrupoRenderizavel[],
+  gruposDoFormulario: readonly GrupoApresentado[],
   ocorrencias: Ocorrencias,
 ): readonly ItemDeComprovacao[] {
   const montagem: Montagem = { itensPrincipais: [], integrantesDeTodos: new Map() };
@@ -278,7 +278,7 @@ function substituirOuAcrescentar(
  */
 function tituloDoIntegrante(
   documento: DocumentoAvaliado,
-  grupo: GrupoRenderizavel | undefined,
+  grupo: GrupoApresentado | undefined,
   ocorrencias: Ocorrencias,
 ): string | null | undefined {
   const codigo = documento.grupoCodigo;
@@ -289,7 +289,7 @@ function tituloDoIntegrante(
 
 function tituloDaOcorrencia(
   ocorrenciaId: string,
-  grupo: GrupoRenderizavel | undefined,
+  grupo: GrupoApresentado | undefined,
   lista: readonly OcorrenciaSimulada[],
 ): string | undefined {
   const indice = lista.findIndex((o) => o.id === ocorrenciaId);

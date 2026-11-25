@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 import { okResult } from '@uniplus/shared-testing';
 
 import type { FormularioDoCandidato } from './formulario-do-candidato.model';
-import { apresentacaoDaEtapa, campoRenderizavel } from './formularios-de-exemplo.testing';
+import { apresentacaoDaEtapa, campoApresentado } from './formularios-de-exemplo.testing';
 import { interpretarFormulario } from './interpretador/interpretador';
 import type { SimulacaoDoFormulario } from './interpretador/regras-do-formulario';
 import {
@@ -28,7 +28,7 @@ const COM_FAIXA_DE_DATA: FormularioDoCandidato = {
   ],
   termos: [],
   coleta: {
-    itens: [campoRenderizavel('NASCIMENTO', 'Data de nascimento', 'DATA')],
+    itens: [campoApresentado('NASCIMENTO', 'Data de nascimento', 'DATA')],
     grupos: [],
   },
   pressupostos: { fatos: [] },
@@ -70,7 +70,7 @@ const FORMULARIO: FormularioDoCandidato = {
   ],
   termos: [],
   coleta: {
-    itens: [campoRenderizavel('TURNO_NOTURNO', 'Prefere o turno noturno?', 'SIM_OU_NAO')],
+    itens: [campoApresentado('TURNO_NOTURNO', 'Prefere o turno noturno?', 'SIM_OU_NAO')],
     grupos: [],
   },
   regras: {

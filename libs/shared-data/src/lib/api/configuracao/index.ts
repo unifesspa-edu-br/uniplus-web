@@ -239,7 +239,7 @@ export type {
   ConteudoDoModeloInput,
   CriarModeloFormularioCommand,
   EdicaoDoModeloInput,
-  FormularioRenderizavel,
+  FormularioApresentado,
   ModeloFormularioView,
   ModelosFormularioQuery,
 } from './modelos-formulario.api';

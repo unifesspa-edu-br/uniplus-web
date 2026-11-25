@@ -11,7 +11,7 @@ import type {
 } from './interpretador/regras-do-formulario';
 
 /**
- * O formulário que o candidato vê, como a API o publica no formulário renderizável: a apresentação de
+ * O formulário que o candidato vê, como a API o publica no formulário apresentado: a apresentação de
  * cada seção, campo, grupo e termo, mais as regras que o interpretador avalia. Espelha o contrato; quem
  * hospeda passa o tipo gerado do OpenAPI.
  */
@@ -24,7 +24,7 @@ export interface ValorSelecionavel {
   readonly orientacao?: string | null;
 }
 
-export interface CampoRenderizavel {
+export interface CampoApresentado {
   readonly fatoCodigo: string;
   readonly ordem: number;
   readonly apresentacao: ApresentacaoDoCampo;
@@ -32,12 +32,12 @@ export interface CampoRenderizavel {
   readonly valoresSelecionaveis?: readonly ValorSelecionavel[] | null;
 }
 
-export interface GrupoRenderizavel {
+export interface GrupoApresentado {
   readonly codigo: string;
   readonly ordem: number;
   readonly rotulo: string;
   readonly ocorrencias: OcorrenciasDoGrupoDasRegras;
-  readonly subitens: readonly CampoRenderizavel[];
+  readonly subitens: readonly CampoApresentado[];
 }
 
 export interface SecaoRenderizavel {
@@ -57,7 +57,7 @@ export interface ConteudoDoTermo {
   readonly baseLegal: string;
 }
 
-export interface TermoRenderizavel {
+export interface TermoApresentado {
   readonly codigo: string;
   readonly codigoNasRegras: string;
   readonly ordem: number;
@@ -79,8 +79,8 @@ export interface PressupostoDoFormulario {
 
 /** O que o formulário pergunta: os fatos soltos e os grupos de ocorrências. */
 export interface ColetaDoFormulario {
-  readonly itens: readonly CampoRenderizavel[];
-  readonly grupos: readonly GrupoRenderizavel[];
+  readonly itens: readonly CampoApresentado[];
+  readonly grupos: readonly GrupoApresentado[];
 }
 
 export interface PressupostosDoFormulario {
@@ -92,7 +92,7 @@ export interface FormularioDoCandidato {
   readonly finalidade: string;
   readonly titulo?: string | null;
   readonly etapas: readonly SecaoRenderizavel[];
-  readonly termos: readonly TermoRenderizavel[];
+  readonly termos: readonly TermoApresentado[];
   readonly coleta: ColetaDoFormulario;
   readonly regras: RegrasDoFormulario;
   readonly pressupostos: PressupostosDoFormulario;

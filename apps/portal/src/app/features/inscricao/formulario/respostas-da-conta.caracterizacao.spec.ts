@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { type FormularioRenderizavelDto, TipoDeCampoCodigo } from '@uniplus/shared-data/selecao';
+import {
+  type FormularioApresentadoDoProcessoDto,
+  TipoDeCampoCodigo,
+} from '@uniplus/shared-data/selecao';
 
 import {
   FORMULARIO_DE_INSCRICAO_MOCK,
@@ -12,7 +15,7 @@ import { respostasFixasDaConta } from './respostas-da-conta';
 const CPF_DA_PERSONA = '69959836371';
 const NOME_DA_PERSONA = 'Fernanda Laura Nicole Drumond';
 
-const formularioQueColeta = (...fatos: string[]): FormularioRenderizavelDto =>
+const formularioQueColeta = (...fatos: string[]): FormularioApresentadoDoProcessoDto =>
   comFormulario(FORMULARIO_DE_INSCRICAO_MOCK, {
     coleta: {
       itens: fatos.map((fato, ordem) =>

@@ -19,7 +19,7 @@ import type {
   ReciboDaInscricaoDto,
 } from './inscricoes.contrato';
 import { formularioDaInscricaoRequest } from './formulario-da-inscricao.request';
-import type { FormularioRenderizavelDto } from './processos-seletivos.contrato';
+import type { FormularioApresentadoDoProcessoDto } from './processos-seletivos.contrato';
 import { SELECAO_BASE_PATH } from './tokens';
 
 /**
@@ -46,9 +46,11 @@ export class InscricoesApi {
   }
 
   /** GET `…/inscricao/formulario` — o formulário da versão que a inscrição fixou ao nascer. */
-  obterFormulario(processoSeletivoId: string): Observable<ApiResult<FormularioRenderizavelDto>> {
+  obterFormulario(
+    processoSeletivoId: string,
+  ): Observable<ApiResult<FormularioApresentadoDoProcessoDto>> {
     const { url, context } = formularioDaInscricaoRequest(this.basePath, processoSeletivoId);
-    return this.http.get<ApiResult<FormularioRenderizavelDto>>(url, { context });
+    return this.http.get<ApiResult<FormularioApresentadoDoProcessoDto>>(url, { context });
   }
 
   /** PUT `…/inscricao` — salva o rascunho. */

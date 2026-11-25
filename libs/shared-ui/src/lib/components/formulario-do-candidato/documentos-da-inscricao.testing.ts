@@ -14,7 +14,7 @@ import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
 import type { FormularioDoCandidato, FormularioNoProcesso } from './formulario-do-candidato.model';
 import {
   apresentacaoDaEtapa,
-  campoRenderizavel,
+  campoApresentado,
   itemDasRegras,
 } from './formularios-de-exemplo.testing';
 import type { AvaliacaoNaTela } from './modalidades-avaliadas';
@@ -41,7 +41,7 @@ export const FORMULARIO: FormularioDoCandidato = {
   ],
   termos: [],
   coleta: {
-    itens: [campoRenderizavel('PCD', 'Você é pessoa com deficiência?', 'TEXTO')],
+    itens: [campoApresentado('PCD', 'Você é pessoa com deficiência?', 'TEXTO')],
     grupos: [],
   },
   pressupostos: { fatos: [] },

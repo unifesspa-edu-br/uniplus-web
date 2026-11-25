@@ -38,10 +38,10 @@ describe('FormulariosDoProcessoApi', () => {
   });
 
   afterEach(() => controller.verify());
-  it('obterFormularioRenderizavel() pede o formulário v2 da finalidade, rascunho incluído', async () => {
-    const promise = firstValueFrom(api.obterFormularioRenderizavel(ID, 'INSCRICAO'));
+  it('obterApresentacao() pede o formulário v2 da finalidade, rascunho incluído', async () => {
+    const promise = firstValueFrom(api.obterApresentacao(ID, 'INSCRICAO'));
     const req = controller.expectOne(
-      `${BASE}/api/selecao/admin/processos-seletivos/${ID}/formularios/INSCRICAO/renderizavel`,
+      `${BASE}/api/selecao/admin/processos-seletivos/${ID}/formularios/INSCRICAO/apresentacao`,
     );
     expect(req.request.method).toBe('GET');
     expect(req.request.context.get(VENDOR_MIME_TOKEN)).toEqual({

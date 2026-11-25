@@ -6,7 +6,7 @@ import {
   CODIGO_DA_SECAO_DE_DADOS,
   FORMULARIO_DE_ENDERECO_COM_ALDEIA,
   apresentacaoDaEtapa,
-  campoRenderizavel,
+  campoApresentado,
   itemDasRegras,
 } from './formularios-de-exemplo.testing';
 
@@ -39,10 +39,10 @@ describe('FormularioDoCandidatoComponent', () => {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
       coleta: {
         itens: [
-          campoRenderizavel('CURSOS', 'Cursos', 'ESCOLHA_MULTIPLA', {
+          campoApresentado('CURSOS', 'Cursos', 'ESCOLHA_MULTIPLA', {
             valoresSelecionaveis: [{ codigo: 'MED', descricao: 'Medicina', ordem: 0 }],
           }),
-          campoRenderizavel('ESPERA', 'Lista de espera', 'ESCOLHA_UNICA', { ordem: 1 }),
+          campoApresentado('ESPERA', 'Lista de espera', 'ESCOLHA_UNICA', { ordem: 1 }),
         ],
         grupos: [],
       },
@@ -70,8 +70,8 @@ describe('FormularioDoCandidatoComponent', () => {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
       coleta: {
         itens: [
-          campoRenderizavel('NATURALIDADE', 'Naturalidade', 'MUNICIPIO'),
-          campoRenderizavel('MUNICIPIO_RESIDENCIA', 'Município de residência', 'MUNICIPIO', {
+          campoApresentado('NATURALIDADE', 'Naturalidade', 'MUNICIPIO'),
+          campoApresentado('MUNICIPIO_RESIDENCIA', 'Município de residência', 'MUNICIPIO', {
             ordem: 1,
           }),
         ],
@@ -105,7 +105,7 @@ describe('FormularioDoCandidatoComponent', () => {
     cenario.fixture.componentRef.setInput('formulario', {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
       coleta: {
-        itens: [campoRenderizavel('MUNICIPIO_RESIDENCIA', 'Município de residência', 'MUNICIPIO')],
+        itens: [campoApresentado('MUNICIPIO_RESIDENCIA', 'Município de residência', 'MUNICIPIO')],
         grupos: [],
       },
       regras: {
@@ -138,7 +138,7 @@ describe('FormularioDoCandidatoComponent', () => {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
       coleta: {
         itens: [
-          campoRenderizavel('TURNO', 'Turno', 'ESCOLHA_UNICA', {
+          campoApresentado('TURNO', 'Turno', 'ESCOLHA_UNICA', {
             valoresSelecionaveis: [{ codigo: 'NOITE', descricao: 'Noite', ordem: 0 }],
           }),
         ],
@@ -201,7 +201,7 @@ describe('FormularioDoCandidatoComponent', () => {
         },
       ],
       coleta: {
-        itens: [campoRenderizavel('QUER_A', 'Mostrar a seção A?', 'SIM_OU_NAO')],
+        itens: [campoApresentado('QUER_A', 'Mostrar a seção A?', 'SIM_OU_NAO')],
         grupos: [],
       },
       regras: {
@@ -225,7 +225,7 @@ describe('FormularioDoCandidatoComponent', () => {
   it('o número pela metade, como "1,", não é erro e vale o que já foi escrito', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      coleta: { itens: [campoRenderizavel('NOTA', 'Nota', 'NUMERO')], grupos: [] },
+      coleta: { itens: [campoApresentado('NOTA', 'Nota', 'NUMERO')], grupos: [] },
       regras: { etapas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('NOTA')] }] },
     });
 
@@ -238,7 +238,7 @@ describe('FormularioDoCandidatoComponent', () => {
   it('uma partida nova recria os campos: o número digitado pela metade não passa para ela', () => {
     const formulario = {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      coleta: { itens: [campoRenderizavel('NOTA', 'Nota', 'NUMERO')], grupos: [] },
+      coleta: { itens: [campoApresentado('NOTA', 'Nota', 'NUMERO')], grupos: [] },
       regras: { etapas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('NOTA')] }] },
     };
     const tela = cenario.montar(formulario);
@@ -255,7 +255,7 @@ describe('FormularioDoCandidatoComponent', () => {
   it('a etapa das regras sem seção, como a dos campos do rascunho ainda sem seção, vira o passo "Outros dados"', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      coleta: { itens: [campoRenderizavel('NOME_SOCIAL', 'Nome social', 'TEXTO')], grupos: [] },
+      coleta: { itens: [campoApresentado('NOME_SOCIAL', 'Nome social', 'TEXTO')], grupos: [] },
       regras: {
         etapas: [
           {
@@ -292,7 +292,7 @@ describe('FormularioDoCandidatoComponent', () => {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
       coleta: {
         itens: [
-          campoRenderizavel('COR_RACA', 'Cor ou raça', 'ESCOLHA_UNICA', {
+          campoApresentado('COR_RACA', 'Cor ou raça', 'ESCOLHA_UNICA', {
             valoresSelecionaveis: [
               { codigo: 'BRANCA', descricao: 'Branca', ordem: 0 },
               {

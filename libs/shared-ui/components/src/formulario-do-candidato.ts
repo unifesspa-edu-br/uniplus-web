@@ -3,17 +3,17 @@ export {
   type PendenciaDaSecao,
 } from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato';
 export type {
-  CampoRenderizavel,
+  CampoApresentado,
   DependenciasDaAvaliacao,
   ErroDoServidor,
   FormularioDoCandidato,
   FormularioNoProcesso,
-  GrupoRenderizavel,
+  GrupoApresentado,
   PressupostoDoFormulario,
   PassoPrefixado,
   RespostaFixa,
   SecaoRenderizavel,
-  TermoRenderizavel,
+  TermoApresentado,
   ValorSelecionavel,
 } from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato.model';
 export {

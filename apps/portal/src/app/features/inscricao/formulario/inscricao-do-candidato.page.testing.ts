@@ -15,7 +15,7 @@ import {
   type AvaliacaoDaInscricaoDto,
   type AvaliacaoDaInscricaoRequest,
   type ReciboDaInscricaoDto,
-  type FormularioRenderizavelDto,
+  type FormularioApresentadoDoProcessoDto,
   type InscricaoDto,
   type InscricaoRequest,
   SELECAO_BASE_PATH,
@@ -92,7 +92,7 @@ export const SEM_DERIVACAO: AvaliacaoDaInscricaoDto = {
 };
 
 /** O formulário de teste com o bloco das modalidades, que dependem do nome. */
-export const COM_MODALIDADES: FormularioRenderizavelDto = {
+export const COM_MODALIDADES: FormularioApresentadoDoProcessoDto = {
   ...comFormulario(FORMULARIO_DE_INSCRICAO_MOCK, {
     etapas: [
       ...FORMULARIO_DE_INSCRICAO_MOCK.formulario.etapas,
@@ -196,7 +196,7 @@ export const RESPONDIDA: AjustesDaInscricao = {
 
 export class ServicoDublê extends InscricaoDoCandidatoService {
   inscricao = inscricao();
-  formulario: FormularioRenderizavelDto = FORMULARIO_DE_INSCRICAO_MOCK;
+  formulario: FormularioApresentadoDoProcessoDto = FORMULARIO_DE_INSCRICAO_MOCK;
   ofertas: readonly OfertaDaInscricao[] = [MEDICINA];
   /** Quantas opções de curso a versão fixada admite. */
   opcoes = 1;

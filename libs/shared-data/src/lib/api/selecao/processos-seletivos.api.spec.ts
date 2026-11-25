@@ -36,7 +36,7 @@ const resumoSeed: ProcessoSeletivoResumoDto = {
   id: ID,
   nome: 'Processo Seletivo 2027',
   tipoProcesso,
-  status: situacaoDoProcesso,
+  situacao: situacaoDoProcesso,
   criadoEm: '2026-08-11T12:00:00Z',
 };
 

@@ -4,7 +4,7 @@ import {
   CODIGO_DA_SECAO_DE_DADOS,
   FORMULARIO_COM_TELEFONE,
   FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-  campoRenderizavel,
+  campoApresentado,
   itemDasRegras,
 } from './formularios-de-exemplo.testing';
 
@@ -18,7 +18,7 @@ describe('FormularioDoCandidatoComponent', () => {
   it('a resposta que viola a faixa mostra a mensagem com os limites ao lado do campo', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      coleta: { itens: [campoRenderizavel('NOTA', 'Nota', 'NUMERO')], grupos: [] },
+      coleta: { itens: [campoApresentado('NOTA', 'Nota', 'NUMERO')], grupos: [] },
       regras: {
         etapas: [
           {
@@ -45,7 +45,7 @@ describe('FormularioDoCandidatoComponent', () => {
     const NASCIMENTO: FormularioDoCandidato = {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
       coleta: {
-        itens: [campoRenderizavel('DATA_NASCIMENTO', 'Data de nascimento', 'DATA')],
+        itens: [campoApresentado('DATA_NASCIMENTO', 'Data de nascimento', 'DATA')],
         grupos: [],
       },
       regras: {
@@ -150,7 +150,7 @@ describe('FormularioDoCandidatoComponent', () => {
       {
         ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
         coleta: {
-          itens: [campoRenderizavel('CPF', 'CPF', 'TEXTO', { formato: 'CPF' })],
+          itens: [campoApresentado('CPF', 'CPF', 'TEXTO', { formato: 'CPF' })],
           grupos: [],
         },
         regras: { etapas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('CPF')] }] },
@@ -169,7 +169,7 @@ describe('FormularioDoCandidatoComponent', () => {
       {
         ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
         coleta: {
-          itens: [campoRenderizavel('NOME', 'Nome completo', 'TEXTO', { formato: 'NOME_PESSOA' })],
+          itens: [campoApresentado('NOME', 'Nome completo', 'TEXTO', { formato: 'NOME_PESSOA' })],
           grupos: [],
         },
         regras: {

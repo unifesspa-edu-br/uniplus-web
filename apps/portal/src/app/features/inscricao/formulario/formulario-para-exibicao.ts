@@ -1,6 +1,9 @@
-import { TipoDeCampoCodigo, type FormularioRenderizavelDto } from '@uniplus/shared-data/selecao';
+import {
+  TipoDeCampoCodigo,
+  type FormularioApresentadoDoProcessoDto,
+} from '@uniplus/shared-data/selecao';
 
-type Formulario = FormularioRenderizavelDto['formulario'];
+type Formulario = FormularioApresentadoDoProcessoDto['formulario'];
 type Campo = Formulario['coleta']['itens'][number];
 
 const TIPO_DE_CONTROLE: Record<TipoDeCampoCodigo, string> = {

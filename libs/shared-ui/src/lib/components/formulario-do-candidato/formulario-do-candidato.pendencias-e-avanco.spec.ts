@@ -5,7 +5,7 @@ import {
   FORMULARIO_DE_DUAS_SECOES,
   FORMULARIO_DE_ENDERECO_COM_ALDEIA,
   apresentacaoDaEtapa,
-  campoRenderizavel,
+  campoApresentado,
   itemDasRegras,
 } from './formularios-de-exemplo.testing';
 
@@ -224,9 +224,9 @@ describe('FormularioDoCandidatoComponent', () => {
         ],
         coleta: {
           itens: [
-            campoRenderizavel('TEM_BOLSA', 'Tem bolsa', 'TEXTO'),
-            campoRenderizavel('APELIDO', 'Apelido', 'TEXTO', { ordem: 1 }),
-            campoRenderizavel('EMAIL', 'E-mail', 'TEXTO', { ordem: 2 }),
+            campoApresentado('TEM_BOLSA', 'Tem bolsa', 'TEXTO'),
+            campoApresentado('APELIDO', 'Apelido', 'TEXTO', { ordem: 1 }),
+            campoApresentado('EMAIL', 'E-mail', 'TEXTO', { ordem: 2 }),
           ],
           grupos: [],
         },
@@ -270,8 +270,8 @@ describe('FormularioDoCandidatoComponent', () => {
       ...FORMULARIO_DE_DUAS_SECOES,
       coleta: {
         itens: [
-          campoRenderizavel('TEM_BOLSA', 'Tem bolsa', 'TEXTO'),
-          campoRenderizavel('JUSTIFICATIVA', 'Justificativa', 'TEXTO', { ordem: 1 }),
+          campoApresentado('TEM_BOLSA', 'Tem bolsa', 'TEXTO'),
+          campoApresentado('JUSTIFICATIVA', 'Justificativa', 'TEXTO', { ordem: 1 }),
         ],
         grupos: [],
       },

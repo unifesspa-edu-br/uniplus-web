@@ -1,6 +1,6 @@
 import { lerArquivoDoFormulario } from './arquivo-do-formulario';
 import type { FormularioDoCandidato } from './formulario-do-candidato.model';
-import { apresentacaoDaEtapa, campoRenderizavel } from './formularios-de-exemplo.testing';
+import { apresentacaoDaEtapa, campoApresentado } from './formularios-de-exemplo.testing';
 import { interpretarFormulario } from './interpretador/interpretador';
 
 const casos = import.meta.glob<Record<string, unknown>>('./interpretador/casos/*.json', {
@@ -237,7 +237,7 @@ describe('arquivo importado no simulador', () => {
         },
       ],
       termos: [],
-      coleta: { itens: [campoRenderizavel('IDADE', 'Idade', 'NUMERO')], grupos: [] },
+      coleta: { itens: [campoApresentado('IDADE', 'Idade', 'NUMERO')], grupos: [] },
       pressupostos: { fatos: [] },
       regras: {
         etapas: [
