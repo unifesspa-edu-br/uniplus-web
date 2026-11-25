@@ -11,6 +11,8 @@ informed:
 
 # ADR-0030: Lib de apresentação do domínio da inscrição
 
+> **Emenda (2026-11-25).** A `shared-inscricao` também guarda a apresentação do formulário de inscrição para inscrição, isenção de taxa e habilitação, na edição no catálogo, no preenchimento e na simulação. Guarda ainda a apresentação das condições e dos documentos exigidos que se apoiam nos fatos coletados pelo formulário. Essas partes ficam no único ponto de entrada `formulario`, pois se importam entre si. O estilo de domínio fica na lib e é importado pelos apps. O `shared-ui` mantém apenas o que não conhece domínio, como os campos de município e endereço, pois é `type:ui` e não conhece domínio.
+
 ## Contexto e enunciado do problema
 
 O comprovante de inscrição passa a ser emitido pelo Portal (candidato) e pela Seleção (gestão), com o
