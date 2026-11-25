@@ -9,8 +9,10 @@ informed:
   - "Equipe `uniplus-web`"
 ---
 
-# ADR-0021: Runtime config via `AUTH_CONFIG` InjectionToken + fitness cross-app
+# ADR-0021: Runtime config via `AUTH_CONFIG` InjectionToken + testes de inicialização
 
+> **Emenda (2026-11-25).** A conferência textual do app.config.ts deixa de existir. A ordem entre provideRuntimeConfig() e provideAuth() não tem efeito: a configuração é carregada e a autenticação é iniciada num único inicializador. Cada aplicativo prova por teste de comportamento que a inicialização carrega o runtime-config e inicia a autenticação com ele. A origem dos provedores é garantida pelo compilador e pela regra de pontos de entrada públicos.
+>
 > **Emenda (2026-11-17).** O alvo de teste do workspace é `test`, o canônico da ADR-0004; o alvo `vite:test` deixou de existir. Onde este texto cita `vite:test`, leia `test`.
 
 ## Contexto e enunciado do problema
@@ -35,15 +37,15 @@ A pergunta operacional, que conduziu o debate desta ADR, foi: **como o `provideA
 - **A — `provideAuth()` lê `AppConfigService` internamente.** Boilerplate zero. **Acoplamento `shared-auth → shared-data`** — viola separação de concerns e contraria a topologia futura discutida na ideia `frontend-libs-architecture` (`type:auth → type:core, type:util`, sem `type:data`).
 - **B — `provideAuth(() => AuthConfig)` factory.** Boilerplate moderado, desacopla. Sem proteção arquitetural contra factory mal-construída — erro só aparece em runtime DI.
 - **C — `AUTH_CONFIG` InjectionToken** + `provideRuntimeConfig()` provê o token via factory derivando de `AppConfigService`. **Boilerplate zero por app** + idiomático + desacoplado.
-- **C + fitness cross-app** (escolhida) — adiciona spec Vitest que valida estaticamente cada `app.config.ts`: import de `provideRuntimeConfig`, import de `provideAuth`, ordem `provideRuntimeConfig()` antes de `provideAuth()`, ausência de `import from '../environments/environment'`. Falha no CI se um app esquece o pattern.
+- **C + verificação cross-app** (escolhida) — testes de comportamento verificam a inicialização em cada aplicativo.
 
 ## Resultado da decisão
 
-**Escolhida: "C + fitness cross-app"**, porque é a única opção que combina:
+**Escolhida: "C + testes de comportamento da inicialização"**, porque é a única opção que combina:
 
 1. **Pattern Angular canônico** — `InjectionToken<AuthConfig>` resolvido por factory que depende de `AppConfigService`. Zero magia oculta; cada peça aparece como provider explícito no DI tree.
 2. **Boilerplate zero por app** — apps fazem apenas `provideRuntimeConfig() + provideAuth()`. O token e os `BASE_PATH` são providos pela própria `provideRuntimeConfig`, eliminando a duplicação que tornava C verboso na configuração tradicional.
-3. **Fitness garante invariantes cross-app** — esquecer `provideRuntimeConfig` em uma app, ou inverter ordem com `provideAuth`, ou re-introduzir `import '../environments/environment'` falham no CI antes do merge. Pattern obrigatório por contrato testável.
+3. **Testes garantem a inicialização cross-app** — cada aplicativo verifica o carregamento e a autenticação com a configuração recebida.
 4. **Desacoplamento `shared-auth ↔ shared-data`** — `shared-auth` exporta apenas o token; `shared-data` (orquestrador de runtime) importa o token e provê via factory. Quando a topologia estrutural da ideia Compozy `frontend-libs-architecture` (Onda 1) chegar e demote `shared-data` para `@nx/js:tsc`, o token continua válido — só a factory muda.
 
 ### Forma da implementação
@@ -54,67 +56,9 @@ A pergunta operacional, que conduziu o debate desta ADR, foi: **como o `provideA
 export const AUTH_CONFIG = new InjectionToken<AuthConfig>('AUTH_CONFIG');
 ```
 
-Sem `providedIn: 'root'` por design — apps que esquecem `provideRuntimeConfig()` falham com erro DI claro (e fitness pega no CI antes do merge).
+Sem `providedIn: 'root'` por design — apps que esquecem `provideRuntimeConfig()` falham com erro DI claro (e o teste de comportamento pega no CI antes do merge).
 
-**`shared-auth/lib/providers/auth.provider.ts`:**
-
-```ts
-export function provideAuth(): EnvironmentProviders {
-  return makeEnvironmentProviders([
-    {
-      provide: AUTH_ALLOWED_URLS,
-      useFactory: (config: AuthConfig) => Object.freeze([...config.allowedUrls]),
-      deps: [AUTH_CONFIG],
-    },
-    {
-      provide: APP_INITIALIZER,
-      useFactory: (auth: AuthService, config: AuthConfig) => () => auth.init(config),
-      deps: [AuthService, AUTH_CONFIG],
-      multi: true,
-    },
-  ]);
-}
-```
-
-**`shared-data/lib/config/runtime-config.provider.ts`:**
-
-```ts
-export function provideRuntimeConfig(): EnvironmentProviders {
-  return makeEnvironmentProviders([
-    {
-      provide: APP_INITIALIZER,
-      useFactory: (http: HttpClient, store: AppConfigService) => async () => {
-        const cfg = await firstValueFrom(http.get<AppConfig>('/assets/runtime-config.json'));
-        store.load(cfg);
-      },
-      deps: [HttpClient, AppConfigService],
-      multi: true,
-    },
-    {
-      provide: AUTH_CONFIG,
-      useFactory: (store: AppConfigService): AuthConfig => {
-        const cfg = store.get();
-        return {
-          issuerUrl: cfg.oidc.issuerUrl,
-          clientId: cfg.oidc.clientId,
-          allowedUrls: Object.freeze([cfg.apiUrl, cfg.oidc.issuerUrl]),
-        };
-      },
-      deps: [AppConfigService],
-    },
-    {
-      provide: SELECAO_BASE_PATH,
-      useFactory: (store: AppConfigService) => store.get().apiUrl,
-      deps: [AppConfigService],
-    },
-    {
-      provide: INGRESSO_BASE_PATH,
-      useFactory: (store: AppConfigService) => store.get().apiUrl,
-      deps: [AppConfigService],
-    },
-  ]);
-}
-```
+**Inicialização:** `provideAuth()` registra os provedores de autenticação. Em `provideRuntimeConfig()`, um único `APP_INITIALIZER` carrega a configuração via `HttpBackend`, popula `AppConfigService` e chama `AuthService.init()` com a configuração derivada. Os tokens são providos por factories que leem o serviço após o carregamento.
 
 **`apps/<app>/src/app/app.config.ts`:**
 
@@ -125,16 +69,7 @@ provideAuth(),
 
 Apenas. Sem importar `environment`.
 
-**Fitness em `libs/shared-data/src/lib/__fitness__/runtime-config-providers.fitness.spec.ts`:**
-
-Para cada app em `['selecao', 'ingresso', 'portal']`, valida via parsing de string:
-
-1. `app.config.ts` importa `provideRuntimeConfig` de `@uniplus/shared-data`.
-2. `app.config.ts` importa `provideAuth` de `@uniplus/shared-auth`.
-3. `provideRuntimeConfig()` aparece **antes** de `provideAuth()` no source (após strip de comentários).
-4. `app.config.ts` **não** importa de `'../environments/environment'`.
-
-Adicionar 4º app: append em `APPS` array — fitness adiciona automaticamente.
+**Testes de comportamento:** cada `apps/<app>/src/app/app.config.spec.ts` verifica o carregamento, a autenticação e a falha de inicialização, usando apoio compartilhado de teste. A ordem dos provedores também é exercitada nas duas possibilidades.
 
 ### Esta ADR não decide
 
@@ -148,7 +83,7 @@ Adicionar 4º app: append em `APPS` array — fitness adiciona automaticamente.
 
 - 1 imagem Docker por app, promovida entre ambientes via `ConfigMap` (cumpre ADR-0020).
 - `app.config.ts` das 3 apps com 2 linhas relevantes — `provideRuntimeConfig() + provideAuth()`.
-- Fitness garante o pattern obrigatório no CI; esquecimento vira erro antes do merge.
+- Testes de comportamento verificam a inicialização no CI.
 - `shared-auth` desacoplada de `shared-data` (apenas o token cruza fronteira).
 - `AppConfigService.get()` lança claramente se chamado antes do load — bug de bootstrap order visível em vez de silencioso.
 - Testes unitários trivialmente mockam `{ provide: AUTH_CONFIG, useValue: stub }`.
@@ -166,12 +101,12 @@ Adicionar 4º app: append em `APPS` array — fitness adiciona automaticamente.
 
 - `npx nx run-many --target=build --projects=selecao,ingresso,portal` verde.
 - `npx nx run-many --target=lint,typecheck,vite:test --projects=shared-utils,shared-core,shared-auth,shared-data,shared-ui,selecao,ingresso,portal` verde.
-- Fitness spec `runtime-config-providers.fitness.spec.ts` verde para cada app (4 invariantes × 3 apps = 12 specs).
+- Testes de inicialização verdes para cada aplicativo.
 - `apps/<app>/public/assets/runtime-config.json` placeholder existe em cada app.
 
 ### Trigger de reavaliação
 
-- Se um 4º app entrar (ex.: `developers` portal pós-Story uniplus-developers), append em `APPS` do fitness — pattern aplica automaticamente.
+- Quando um novo aplicativo entrar, adicionar seu teste de inicialização com o apoio compartilhado.
 - Se a topologia Compozy `frontend-libs-architecture` (Onda 1) demove `shared-data` para `@nx/js:tsc`, este ADR continua válido — apenas a localização dos providers pode migrar para uma `shared-config` lib dedicada.
 
 ## Prós e contras das opções
@@ -187,14 +122,14 @@ Adicionar 4º app: append em `APPS` array — fitness adiciona automaticamente.
 - **Bom** porque desacopla `shared-auth ↔ shared-data`.
 - **Bom** porque o ponto de leitura fica explícito no `app.config.ts`.
 - **Ruim** porque boilerplate de 5-7 linhas por app.
-- **Ruim** porque proteção contra factory mal-construída é apenas runtime DI (sem fitness).
+- **Ruim** porque proteção contra factory mal-construída é apenas runtime DI (sem testes de comportamento da inicialização).
 
 ### C — `AUTH_CONFIG` InjectionToken (escolhida)
 
 - **Bom** porque idiomático Angular puro.
 - **Bom** porque desacoplado.
 - **Bom** porque zero boilerplate por app (token provido pela própria `provideRuntimeConfig`).
-- **Bom** porque fitness garante invariantes cross-app — esquecimento vira erro CI.
+- **Bom** porque os testes garantem a inicialização cross-app no CI.
 - **Ruim** porque adiciona um cross-import `shared-data → shared-auth` (mitigado por `paths` override no `tsconfig.lib.prod.json`, pattern já estabelecido pela ADR-0020).
 
 ### Status quo (`environment.prod.ts` + `fileReplacements`)
