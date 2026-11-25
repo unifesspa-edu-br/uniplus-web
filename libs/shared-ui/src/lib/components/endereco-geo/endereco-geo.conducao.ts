@@ -2,7 +2,7 @@ import { DestroyRef, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { ValidationErrors } from '@angular/forms';
 import { type ApiFailure, type ApiResult, STATUS_HTTP } from '@uniplus/shared-core/http';
-import type { NomesDeMunicipios } from '../editor-de-condicoes/valor-de-municipio';
+import type { NomesDeMunicipios } from '../valor-de-municipio/valor-de-municipio';
 import {
   ENDERECO_VAZIO,
   criarFormularioDoEndereco,
@@ -16,9 +16,8 @@ import {
   type EnderecoEstruturado,
   ORIGEM_MANUAL,
 } from './endereco-geo.model';
-import { ResolucaoDoEndereco, somenteDigitos } from './endereco-geo.resolucao';
+import { DIGITOS_DO_CEP, ResolucaoDoEndereco, somenteDigitos } from './endereco-geo.resolucao';
 
-const DIGITOS_DO_CEP = 8;
 /** Sentinela do erro de CEP inexistente quando o endereço exige CEP (mensagem com link). */
 export const CEP_SEM_REGISTRO = 'CEP_SEM_REGISTRO';
 
@@ -79,17 +78,7 @@ export class ConducaoDoEndereco {
 
   /** Recebe o valor do formulário pai; `null` volta ao endereço novo. */
   escrever(valor: EnderecoEstruturado | null): void {
-    if (valor === null) {
-      this.form.reset(ENDERECO_VAZIO, { emitEvent: false });
-      this.resolucao.limpar();
-    } else {
-      this.form.setValue(textosDoEndereco(valor), { emitEvent: false });
-      this.resolucao.restaurar(valor);
-      // O nome da cidade gravada aparece no campo de município sem passar pela busca.
-      if (valor.cidade) {
-        this.dependencias.municipios.lembrar([valor.cidade]);
-      }
-    }
+    this.restaurarEndereco(valor);
     this.tamanhoDoComplemento.set((valor?.complemento ?? '').length);
     this.ufEscolhida.set(valor?.cidade?.uf ?? '');
     // Endereço gravado manualmente reabre em modo manual (tudo editável).
@@ -97,6 +86,17 @@ export class ConducaoDoEndereco {
     this.cepErro.set(null);
     this.editandoCep.set(false);
     this.anuncioDoCep.set('');
+  }
+
+  private restaurarEndereco(valor: EnderecoEstruturado | null): void {
+    if (valor === null) {
+      this.form.reset(ENDERECO_VAZIO, { emitEvent: false });
+      this.resolucao.limpar();
+    } else {
+      this.form.setValue(textosDoEndereco(valor), { emitEvent: false });
+      this.resolucao.restaurar(valor);
+      if (valor.cidade) this.dependencias.municipios.lembrar([valor.cidade]);
+    }
   }
 
   desabilitar(desabilitado: boolean): void {
@@ -121,13 +121,7 @@ export class ConducaoDoEndereco {
     if (resolucao.cepDeFaixaSemConfirmacao()) {
       return { cepNaoConfirmado: true };
     }
-    if (
-      this.dependencias.exigeCep() &&
-      resolucao.cidade() !== null &&
-      resolucao.cepResolvido().length !== DIGITOS_DO_CEP
-    ) {
-      return { cepObrigatorio: true };
-    }
+    if (resolucao.faltaCepObrigatorio()) return { cepObrigatorio: true };
     return this.logradouroOuBairroVazios() ? { logradouroBairroObrigatorios: true } : null;
   }
 
@@ -171,6 +165,10 @@ export class ConducaoDoEndereco {
       this.cepErro.set('Informe um CEP com 8 dígitos.');
       return;
     }
+    this.iniciarBuscaDoCep(digitos);
+  }
+
+  private iniciarBuscaDoCep(digitos: string): void {
     this.resolvendoCep.set(true);
     this.cepErro.set(null);
     this.anuncioDoCep.set('Buscando CEP…');

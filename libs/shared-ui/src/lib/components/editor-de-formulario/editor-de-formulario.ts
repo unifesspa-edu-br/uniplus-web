@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 
 import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
-import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
+import { BUSCA_DE_MUNICIPIOS } from '../valor-de-municipio/valor-de-municipio';
 import { AcrescentarNoFimComponent } from './editor/acrescentar-no-fim';
 import { PaginaDoFormularioComponent } from './editor/pagina-do-formulario';
 import { PressupostosDoFormularioComponent } from './editor/pressupostos-do-formulario';

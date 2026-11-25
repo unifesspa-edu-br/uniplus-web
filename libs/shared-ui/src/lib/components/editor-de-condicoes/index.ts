@@ -53,13 +53,3 @@ export {
   valoresDeListaDe,
 } from './condicoes/valor-da-condicao';
 export * from './leitura-de-condicoes';
-
-export {
-  BUSCA_DE_MUNICIPIOS,
-  ESPERA_DA_DIGITACAO_MS,
-  LEITURA_DE_MUNICIPIO_POR_CODIGO,
-  NomesDeMunicipios,
-  type BuscaDeMunicipios,
-  type LeituraDeMunicipio,
-  type MunicipioEncontrado,
-} from './valor-de-municipio';

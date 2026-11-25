@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 import {
   BUSCA_DE_MUNICIPIOS,
   type MunicipioEncontrado,
-} from '../editor-de-condicoes/valor-de-municipio';
+} from '../valor-de-municipio/valor-de-municipio';
 import { BUSCA_DE_CEP } from '../endereco-geo/endereco-geo.model';
 
 import { FormularioDoCandidatoComponent } from './formulario-do-candidato';

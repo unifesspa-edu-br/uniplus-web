@@ -13,7 +13,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { digitosDoTelefone, formatarTelefone } from '@uniplus/shared-utils';
 
 import { DadoRevelavelComponent } from '../dado-revelavel/dado-revelavel';
-import { ValorDeMunicipioComponent } from '../editor-de-condicoes/valor-de-municipio';
+import { ValorDeMunicipioComponent } from '../valor-de-municipio/valor-de-municipio';
 import { EnderecoGeoComponent } from '../endereco-geo/endereco-geo';
 import type { EnderecoEstruturado } from '../endereco-geo/endereco-geo.model';
 import { pedeConfirmacao } from './confirmacao-do-campo';

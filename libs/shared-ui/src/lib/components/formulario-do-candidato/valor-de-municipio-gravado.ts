@@ -1,6 +1,6 @@
 import type { MunicipioGravado } from '@uniplus/shared-utils';
 
-import { nomeComUf, nomeDoMunicipioNaoCarregado } from '../editor-de-condicoes/valor-de-municipio';
+import { nomeComUf, nomeDoMunicipioNaoCarregado } from '../valor-de-municipio/valor-de-municipio';
 import { ufDoCodigoIbge } from './interpretador/formatos';
 import type { SimulacaoDoFormulario, ValorJson } from './interpretador/regras-do-formulario';
 

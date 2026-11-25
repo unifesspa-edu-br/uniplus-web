@@ -1,7 +1,7 @@
 import { EMPTY } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
+import { BUSCA_DE_MUNICIPIOS } from '../valor-de-municipio/valor-de-municipio';
 import { CenarioDoEditorDeFormulario, conteudo, fato, item } from './editor-de-formulario.testing';
 import type { ConteudoDoFormulario, FatoDoFormulario } from './modelo/tipos';
 

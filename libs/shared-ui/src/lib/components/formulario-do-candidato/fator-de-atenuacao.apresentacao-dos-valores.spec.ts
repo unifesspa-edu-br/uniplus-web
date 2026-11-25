@@ -5,7 +5,7 @@ import { ligarRelogioControlado, passarOTempo } from '@uniplus/shared-testing';
 import {
   ESPERA_DA_DIGITACAO_MS,
   NomesDeMunicipios,
-} from '../editor-de-condicoes/valor-de-municipio';
+} from '../valor-de-municipio/valor-de-municipio';
 
 import {
   ATIVIDADES_NA_AREA,

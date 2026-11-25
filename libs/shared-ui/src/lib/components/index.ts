@@ -117,6 +117,16 @@ export { TextInputComponent } from './text-input/text-input';
 export { TextareaComponent } from './textarea/textarea';
 export { VlibrasLoaderComponent } from './vlibras-loader/vlibras-loader';
 export {
+  BUSCA_DE_MUNICIPIOS,
+  ESPERA_DA_DIGITACAO_MS,
+  LEITURA_DE_MUNICIPIO_POR_CODIGO,
+  NomesDeMunicipios,
+  type BuscaDeMunicipios,
+  type LeituraDeMunicipio,
+  type MunicipioEncontrado,
+} from './valor-de-municipio/valor-de-municipio';
+
+export {
   ValorEmConsultaComponent,
   type UiValorEmConsulta,
 } from './valor-em-consulta/valor-em-consulta';

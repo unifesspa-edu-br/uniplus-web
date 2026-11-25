@@ -2,7 +2,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { okResult } from '@uniplus/shared-testing';
 
-import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
+import { BUSCA_DE_MUNICIPIOS } from '../valor-de-municipio/valor-de-municipio';
 import { BUSCA_DE_CEP, type BuscaDeCep } from '../endereco-geo/endereco-geo.model';
 
 import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
