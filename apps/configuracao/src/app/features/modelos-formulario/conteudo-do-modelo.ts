@@ -10,11 +10,11 @@ import {
   type ConteudoDoFormulario,
 } from '@uniplus/shared-ui/components';
 import {
-  etapasParaOModelo,
+  paginasParaOModelo,
   gruposParaOModelo,
   itensParaOModelo,
   termosParaOModelo,
-} from './codigos-de-etapa-e-obrigatoriedade';
+} from './codigos-de-pagina-e-obrigatoriedade';
 import { documentoDoModelo, documentoParaOModelo } from './documentos-do-modelo';
 
 type DocumentosDoEditor = Pick<
@@ -42,7 +42,7 @@ export function conteudoParaOModelo(conteudo: ConteudoDoFormulario<number>): Con
   );
   return {
     ...convertido,
-    etapas: etapasParaOModelo(convertido.etapas),
+    paginas: paginasParaOModelo(convertido.paginas),
     itens: itensParaOModelo(convertido.itens),
     grupos: gruposParaOModelo(convertido.grupos),
     termos: termosParaOModelo(convertido.termos),

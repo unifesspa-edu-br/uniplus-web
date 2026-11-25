@@ -12,7 +12,7 @@ export type {
   PressupostoDoFormulario,
   PassoPrefixado,
   RespostaFixa,
-  SecaoRenderizavel,
+  PaginaApresentada,
   TermoApresentado,
   ValorSelecionavel,
 } from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato.model';

@@ -11,8 +11,8 @@ import {
 export function semDadosBasicos(conteudo: ConteudoDoFormulario): ConteudoDoFormulario {
   return {
     ...conteudo,
-    etapas: (conteudo.etapas ?? []).filter((etapa) => etapa.codigo !== SECAO_DADOS_BASICOS),
-    itens: (conteudo.itens ?? []).filter((item) => item.etapaCodigo !== SECAO_DADOS_BASICOS),
+    paginas: (conteudo.paginas ?? []).filter((pagina) => pagina.codigo !== SECAO_DADOS_BASICOS),
+    itens: (conteudo.itens ?? []).filter((item) => item.paginaCodigo !== SECAO_DADOS_BASICOS),
   };
 }
 

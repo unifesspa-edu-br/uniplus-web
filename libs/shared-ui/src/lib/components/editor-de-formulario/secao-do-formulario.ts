@@ -17,8 +17,8 @@ import { type CondicaoEmClausula } from '../editor-de-condicoes/condicoes/condic
 import { type FatoEscolhivel } from '../editor-de-condicoes/condicoes/fatos-escolhiveis';
 import { LIMITES_DO_FORMULARIO } from './modelo/constantes';
 import {
-  type ApresentacaoDaEtapa,
-  type EtapaDoFormulario,
+  type ApresentacaoDaPagina,
+  type PaginaDoFormulario,
   type PredicadoNoWire,
 } from './modelo/tipos';
 import {
@@ -30,7 +30,7 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
 
 /**
  * O que a seção diz ao candidato — título, descrição e aviso — e quando ela aparece. Devolve a
- * etapa inteira a cada mudança; os itens da seção são do editor.
+ * página inteira a cada mudança; os itens da seção são do editor.
  */
 @Component({
   selector: 'ui-secao-do-formulario',
@@ -45,8 +45,8 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
           class="input"
           type="text"
           [id]="idDe('titulo')"
-          [value]="etapa().apresentacao.titulo"
-          [maxLength]="limites.tituloDaEtapa"
+          [value]="pagina().apresentacao.titulo"
+          [maxLength]="limites.tituloDaPagina"
           [disabled]="disabled()"
           [attr.aria-invalid]="tituloVazio() ? 'true' : null"
           [attr.aria-describedby]="tituloVazio() ? idDe('titulo-erro') : null"
@@ -63,8 +63,8 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
           class="textarea"
           rows="2"
           [id]="idDe('descricao')"
-          [value]="etapa().apresentacao.descricao ?? ''"
-          [maxLength]="limites.textoDaEtapa"
+          [value]="pagina().apresentacao.descricao ?? ''"
+          [maxLength]="limites.textoDaPagina"
           [disabled]="disabled()"
           (input)="trocar({ descricao: textoOuNulo($event) })"
         ></textarea>
@@ -76,8 +76,8 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
           class="textarea"
           rows="2"
           [id]="idDe('aviso')"
-          [value]="etapa().apresentacao.aviso ?? ''"
-          [maxLength]="limites.textoDaEtapa"
+          [value]="pagina().apresentacao.aviso ?? ''"
+          [maxLength]="limites.textoDaPagina"
           [disabled]="disabled()"
           [attr.aria-describedby]="idDe('aviso-nota')"
           (input)="trocar({ aviso: textoOuNulo($event) })"
@@ -102,20 +102,20 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
   `,
 })
 export class SecaoDoFormularioComponent {
-  readonly etapa = input.required<EtapaDoFormulario>();
+  readonly pagina = input.required<PaginaDoFormulario>();
   /** Os fatos que a exibição da seção pode citar. */
   readonly fatos = input.required<readonly FatoEscolhivel[]>();
   readonly idBase = input.required<string>();
   readonly disabled = input<boolean>(false);
 
   readonly camposEditados = output<CamposEditadosDoFormulario>();
-  readonly etapaChange = output<EtapaDoFormulario>();
+  readonly paginaChange = output<PaginaDoFormulario>();
 
   protected readonly limites = LIMITES_DO_FORMULARIO;
-  protected readonly tituloVazio = computed(() => this.etapa().apresentacao.titulo.trim() === '');
+  protected readonly tituloVazio = computed(() => this.pagina().apresentacao.titulo.trim() === '');
 
   protected readonly condicoes = linkedSignal<PredicadoNoWire, readonly CondicaoEmClausula[]>({
-    source: () => this.etapa().exibicao ?? null,
+    source: () => this.pagina().exibicao ?? null,
     computation: recopiarSeMudouPorFora,
   });
 
@@ -136,15 +136,15 @@ export class SecaoDoFormularioComponent {
     return valor.trim() === '' ? null : valor;
   }
 
-  protected trocar(mudanca: Partial<ApresentacaoDaEtapa>): void {
+  protected trocar(mudanca: Partial<ApresentacaoDaPagina>): void {
     this.camposEditados.emit(camposNaParte(['apresentacao'], camposDaMudanca(mudanca)));
-    const apresentacao = { ...this.etapa().apresentacao, ...mudanca };
-    this.etapaChange.emit({ ...this.etapa(), apresentacao });
+    const apresentacao = { ...this.pagina().apresentacao, ...mudanca };
+    this.paginaChange.emit({ ...this.pagina(), apresentacao });
   }
 
   protected trocarExibicao(condicoes: readonly CondicaoEmClausula[]): void {
     this.condicoes.set(condicoes);
     this.camposEditados.emit([['exibicao']]);
-    this.etapaChange.emit({ ...this.etapa(), exibicao: paraPredicado(condicoes) });
+    this.paginaChange.emit({ ...this.pagina(), exibicao: paraPredicado(condicoes) });
   }
 }

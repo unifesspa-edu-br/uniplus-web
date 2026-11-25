@@ -25,7 +25,7 @@ const [dadosBasicos, escolaPublica] = modelo.conteudo.itens;
 const [termoLgpd] = modelo.conteudo.termos;
 const [grupoFamilia] = modelo.conteudo.grupos;
 
-const umCampo = (fatoCodigo: string, ordem: number, etapaCodigo: string | null): Campo => ({
+const umCampo = (fatoCodigo: string, ordem: number, paginaCodigo: string | null): Campo => ({
   ...escolaPublica,
   fatoCodigo,
   ordem,
@@ -35,7 +35,7 @@ const umCampo = (fatoCodigo: string, ordem: number, etapaCodigo: string | null):
     ajuda: null,
     pedirConfirmacao: false,
   },
-  etapaCodigo,
+  paginaCodigo,
   regras: SEM_REGRAS_DO_CAMPO,
 });
 

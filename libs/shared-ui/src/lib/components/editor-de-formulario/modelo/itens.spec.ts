@@ -13,7 +13,7 @@ import { moverEntrada, moverItem, removerItem } from './itens';
 
 describe('moverItem', () => {
   const base = conteudo({
-    etapas: [secao('S1', 0), REVISAO],
+    paginas: [secao('S1', 0), REVISAO],
     itens: [
       item('A', 0, 'S1'),
       item('B', 1, 'S1', { regras: { exibicao: exibidoQuando('A') } }),
@@ -45,14 +45,14 @@ describe('moverItem', () => {
 
   it('recusa descer o campo para depois do grupo cujo campo o cita', () => {
     const comGrupo = conteudo({
-      etapas: [secao('S1', 0)],
+      paginas: [secao('S1', 0)],
       itens: [item('A', 0, 'S1')],
       grupos: [
         {
           codigo: 'FAMILIA',
           ordem: 1,
           rotulo: 'Família',
-          etapaCodigo: 'S1',
+          paginaCodigo: 'S1',
           ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
           regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
           subitens: [item('PARENTESCO', 0, 'S1', { regras: { exibicao: exibidoQuando('A') } })],
@@ -77,7 +77,7 @@ describe('moverItem', () => {
     ],
   ])('recusa pôr o campo antes do que %s cita', (_caso, restricao) => {
     const atual = conteudo({
-      etapas: [secao('S1', 0), REVISAO],
+      paginas: [secao('S1', 0), REVISAO],
       itens: [
         item('A', 0, 'S1'),
         item('B', 1, 'S1', {
@@ -107,7 +107,7 @@ describe('moverItem', () => {
 describe('moverEntrada', () => {
   it('o grupo troca de lugar com o item vizinho como qualquer entrada da seção', () => {
     const atual = conteudo({
-      etapas: [secao('S1', 0)],
+      paginas: [secao('S1', 0)],
       itens: [item('A', 0, 'S1')],
       grupos: [grupoDeExemplo()],
     });
@@ -123,7 +123,7 @@ describe('moverEntrada', () => {
 describe('removerItem', () => {
   it('recusa remover o campo que outra regra cita, inclusive o impedimento de outro campo', () => {
     const atual = conteudo({
-      etapas: [secao('S1', 0)],
+      paginas: [secao('S1', 0)],
       itens: [
         item('A', 0, 'S1'),
         item('B', 1, 'S1', {
@@ -141,7 +141,7 @@ describe('removerItem', () => {
 
   it('recusa remover o campo que a condição de um documento exigido cita', () => {
     const atual = conteudo({
-      etapas: [secao('S1', 0)],
+      paginas: [secao('S1', 0)],
       itens: [item('A', 0, 'S1')],
       documentosExigidos: [
         {

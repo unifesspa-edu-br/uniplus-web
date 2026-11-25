@@ -1,7 +1,7 @@
 import {
   OBRIGATORIEDADES,
   entradasDaSecao,
-  etapasEmOrdem,
+  paginasEmOrdem,
   type ConteudoDoFormulario,
   type EntradaDaSecao,
   type GrupoDoFormulario,
@@ -33,12 +33,12 @@ function linhaDoGrupo(grupo: GrupoDoFormulario) {
 const linhaDaEntrada = (entrada: EntradaDaSecao) =>
   entrada.tipo === 'item' ? linhaDoItem(entrada.item) : linhaDoGrupo(entrada.grupo);
 
-/** O formulário como texto, para o processo em consulta: cada etapa com os campos e os grupos dela, e se a resposta é obrigatória. */
+/** O formulário como texto, para o processo em consulta: cada página com os campos e os grupos dela, e se a resposta é obrigatória. */
 export function leituraDe(conteudo: ConteudoDoFormulario) {
-  return etapasEmOrdem(conteudo).map((etapa) => ({
-    codigo: etapa.codigo,
-    bloco: etapa.bloco,
-    titulo: etapa.apresentacao.titulo,
-    entradas: entradasDaSecao(conteudo, etapa.codigo).map(linhaDaEntrada),
+  return paginasEmOrdem(conteudo).map((pagina) => ({
+    codigo: pagina.codigo,
+    bloco: pagina.bloco,
+    titulo: pagina.apresentacao.titulo,
+    entradas: entradasDaSecao(conteudo, pagina.codigo).map(linhaDaEntrada),
   }));
 }

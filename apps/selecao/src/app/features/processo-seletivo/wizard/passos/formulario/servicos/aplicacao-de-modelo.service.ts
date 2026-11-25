@@ -18,10 +18,7 @@ import {
 import { nomeDaFinalidade } from '../formularios-por-finalidade';
 import { CatalogosDoFormulario } from './catalogos-do-formulario.service';
 import { GravacaoDosFormularios } from './gravacao-dos-formularios.service';
-import {
-  AplicacaoNoServidor,
-  type DesfechoDaAplicacao,
-} from './aplicacao-no-servidor.service';
+import { AplicacaoNoServidor, type DesfechoDaAplicacao } from './aplicacao-no-servidor.service';
 import { semChave } from './sem-chave';
 
 /**
@@ -178,7 +175,7 @@ export class AplicacaoDeModelo {
         : '';
     return (
       `O formulário de ${nomeDaFinalidade(pendente.finalidade)} passa a ser a cópia do modelo "${pendente.modelo.nome}": ` +
-      `as etapas, os campos e os termos que ele tem agora saem, inclusive as edições desta aba ainda não gravadas.${inscricao} Não há como desfazer.`
+      `as páginas, os campos e os termos que ele tem agora saem, inclusive as edições desta aba ainda não gravadas.${inscricao} Não há como desfazer.`
     );
   });
 

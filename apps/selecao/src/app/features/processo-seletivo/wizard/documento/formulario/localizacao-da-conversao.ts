@@ -24,8 +24,7 @@ export function localizacaoDaConversao(caminho: Caminho, conteudo?: Conteudo): s
       atual = atual[indice];
       return Number.isInteger(indice) ? String(indice) : chave;
     }
-    const campo = chave === 'paginas' ? 'etapas' : chave;
-    atual = objeto(atual) ? atual[campo] : undefined;
+    atual = objeto(atual) ? atual[chave] : undefined;
     return chave;
   });
   return '/' + partes.map(escaparSegmento).join('/');

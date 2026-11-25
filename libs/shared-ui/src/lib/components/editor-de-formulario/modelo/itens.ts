@@ -28,9 +28,9 @@ import {
 export function acrescentarItem(
   conteudo: ConteudoDoFormulario,
   fato: FatoDoFormulario,
-  etapaCodigo: string,
+  paginaCodigo: string,
 ): ConteudoDoFormulario {
-  const novo = campoNovo(fato, ordemNoFimDaSecao(conteudo, etapaCodigo), etapaCodigo);
+  const novo = campoNovo(fato, ordemNoFimDaSecao(conteudo, paginaCodigo), paginaCodigo);
   return renumerar({ ...conteudo, itens: [...(conteudo.itens ?? []), novo] });
 }
 
@@ -48,10 +48,10 @@ export interface ContextoDeCitacao {
 export function acrescentarCampo(
   conteudo: ConteudoDoFormulario,
   fato: FatoDoFormulario,
-  etapaCodigo: string,
+  paginaCodigo: string,
   citacoes: ContextoDeCitacao,
 ): ResultadoDaEdicao {
-  const comCampo = acrescentarItem(conteudo, fato, etapaCodigo);
+  const comCampo = acrescentarItem(conteudo, fato, paginaCodigo);
   if (fato.fonteValores?.codigo !== FONTE_MUNICIPIOS) return { ok: true, conteudo: comCampo };
   return municipioRestritoAUfAnterior(comCampo, fato, citacoes);
 }
@@ -102,7 +102,10 @@ export function ufsAnteriores(
 }
 
 function ehUfDeRespostaUnica(fato: FatoDoFormulario): boolean {
-  return fato.fonteValores?.codigo === FONTE_UNIDADES_FEDERATIVAS && fato.cardinalidade.codigo !== MULTIVALORADO;
+  return (
+    fato.fonteValores?.codigo === FONTE_UNIDADES_FEDERATIVAS &&
+    fato.cardinalidade.codigo !== MULTIVALORADO
+  );
 }
 
 /** Os pressupostos, conhecidos antes de todo o formulário, e depois os itens anteriores ao campo, em ordem. */
@@ -135,12 +138,12 @@ export function ehAEntrada(entrada: EntradaDaSecao, chave: ChaveDaEntrada): bool
     : entrada.tipo === 'grupo' && entrada.grupo.codigo === chave.codigo;
 }
 
-function etapaDaEntrada(conteudo: ConteudoDoFormulario, chave: ChaveDaEntrada): string | null {
-  const etapa =
+function paginaDaEntrada(conteudo: ConteudoDoFormulario, chave: ChaveDaEntrada): string | null {
+  const pagina =
     chave.tipo === 'item'
-      ? (conteudo.itens ?? []).find((item) => item.fatoCodigo === chave.fatoCodigo)?.etapaCodigo
-      : (conteudo.grupos ?? []).find((grupo) => grupo.codigo === chave.codigo)?.etapaCodigo;
-  return etapa ?? null;
+      ? (conteudo.itens ?? []).find((item) => item.fatoCodigo === chave.fatoCodigo)?.paginaCodigo
+      : (conteudo.grupos ?? []).find((grupo) => grupo.codigo === chave.codigo)?.paginaCodigo;
+  return pagina ?? null;
 }
 
 function entradaEVizinha(
@@ -148,9 +151,9 @@ function entradaEVizinha(
   chave: ChaveDaEntrada,
   direcao: -1 | 1,
 ): TrocaComAVizinha<EntradaDaSecao> | null {
-  const etapa = etapaDaEntrada(conteudo, chave);
-  if (etapa === null || etapa === SECAO_DADOS_BASICOS) return null;
-  const entradas = entradasDaSecao(conteudo, etapa);
+  const pagina = paginaDaEntrada(conteudo, chave);
+  if (pagina === null || pagina === SECAO_DADOS_BASICOS) return null;
+  const entradas = entradasDaSecao(conteudo, pagina);
   const indice = entradas.findIndex((entrada) => ehAEntrada(entrada, chave));
   const vizinha = indice >= 0 ? entradas[indice + direcao] : undefined;
   return vizinha === undefined ? null : { atual: entradas[indice], vizinha };

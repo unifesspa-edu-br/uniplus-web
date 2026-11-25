@@ -21,7 +21,7 @@ import type {
   ValorJson,
 } from './interpretador/regras-do-formulario';
 import {
-  apresentacaoDaEtapa,
+  apresentacaoDaPagina,
   campoApresentado,
   grupoDasRegras,
   itemDasRegras,
@@ -38,7 +38,7 @@ export const ATIVIDADES_NA_AREA = 'ATIVIDADES_NA_AREA';
 export const DATA_INICIO_NA_AREA = 'DATA_INICIO_NA_AREA';
 export const TELEFONE_DO_CONTATO = 'TELEFONE_DO_CONTATO';
 
-const ETAPA_DO_FATOR_NAS_REGRAS = 'Inscricao:FATOR';
+const PAGINA_DO_FATOR_NAS_REGRAS = 'Inscricao:FATOR';
 
 const FATOS_COM_O_FATOR = [
   SOLICITA_O_FATOR,
@@ -56,13 +56,13 @@ const DEPENDENCIAS_PADRAO = {
   grupos: [],
 };
 
-const ETAPAS_DO_FATOR: FormularioDoCandidato['etapas'] = [
+const PAGINAS_DO_FATOR: FormularioDoCandidato['paginas'] = [
   {
     codigo: 'FATOR',
-    codigoNasRegras: ETAPA_DO_FATOR_NAS_REGRAS,
+    codigoNasRegras: PAGINA_DO_FATOR_NAS_REGRAS,
     ordem: 0,
     tipo: 'SECAO',
-    apresentacao: apresentacaoDaEtapa('Fator de Atenuação'),
+    apresentacao: apresentacaoDaPagina('Fator de Atenuação'),
   },
   {
     codigo: 'REVISAO',
@@ -70,7 +70,7 @@ const ETAPAS_DO_FATOR: FormularioDoCandidato['etapas'] = [
     ordem: 1,
     tipo: 'BLOCO',
     bloco: 'REVISAO_E_ACEITE',
-    apresentacao: apresentacaoDaEtapa('Revisão e aceite'),
+    apresentacao: apresentacaoDaPagina('Revisão e aceite'),
   },
 ];
 
@@ -147,14 +147,14 @@ const regraDoItem = (fatoCodigo: string): ItemDasRegras =>
 
 const formularioDaInscricao = (
   itens: CampoApresentado[],
-  fatosDaEtapa: string[],
+  fatosDaPagina: string[],
 ): FormularioDoCandidato => ({
   finalidade: 'INSCRICAO',
-  etapas: ETAPAS_DO_FATOR,
+  paginas: PAGINAS_DO_FATOR,
   termos: [],
   coleta: { itens, grupos: [] },
   regras: {
-    etapas: [{ codigo: ETAPA_DO_FATOR_NAS_REGRAS, itens: fatosDaEtapa.map(regraDoItem) }],
+    paginas: [{ codigo: PAGINA_DO_FATOR_NAS_REGRAS, itens: fatosDaPagina.map(regraDoItem) }],
   },
   pressupostos: { fatos: [] },
 });
@@ -185,10 +185,10 @@ export const comOGrupo = (base: FormularioDoCandidato): FormularioDoCandidato =>
   ...base,
   coleta: { ...base.coleta, grupos: [GRUPO_DA_FAMILIA] },
   regras: {
-    etapas: [
+    paginas: [
       {
-        codigo: ETAPA_DO_FATOR_NAS_REGRAS,
-        itens: base.regras.etapas?.[0]?.itens ?? [],
+        codigo: PAGINA_DO_FATOR_NAS_REGRAS,
+        itens: base.regras.paginas?.[0]?.itens ?? [],
         grupos: [REGRA_DO_GRUPO_DA_FAMILIA],
       },
     ],
@@ -212,7 +212,7 @@ const noProcessoDoFator = ({ dependenciasDoFator }: PreenchimentoDaInscricao) =>
 const partidaDaInscricao = (preenchimento: PreenchimentoDaInscricao) => ({
   respostas: preenchimento.respostas,
   grupos: preenchimento.grupos ?? {},
-  etapasConcluidas: [],
+  paginasConcluidas: [],
   pressupostos: {},
   envio: {},
 });

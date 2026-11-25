@@ -30,7 +30,7 @@ const MODELO: JsonDaApi<ModeloFormularioView> = {
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   conteudo: {
     titulo: 'Inscrição',
-    etapas: [
+    paginas: [
       {
         codigo: 'SECAO_1',
         ordem: 0,
@@ -44,7 +44,7 @@ const MODELO: JsonDaApi<ModeloFormularioView> = {
       {
         fatoCodigo: 'NOME',
         ordem: 0,
-        etapaCodigo: 'SECAO_1',
+        paginaCodigo: 'SECAO_1',
         apresentacao: {
           rotulo: 'Nome',
           tipoDeCampo: 'TEXTO',
@@ -56,7 +56,7 @@ const MODELO: JsonDaApi<ModeloFormularioView> = {
       {
         fatoCodigo: 'ESCOLA_PUBLICA',
         ordem: 1,
-        etapaCodigo: 'SECAO_1',
+        paginaCodigo: 'SECAO_1',
         apresentacao: {
           rotulo: ROTULO_DA_ESCOLA,
           tipoDeCampo: 'SIM_OU_NAO',
@@ -73,7 +73,7 @@ const MODELO: JsonDaApi<ModeloFormularioView> = {
         codigo: 'FAMILIA',
         ordem: 2,
         rotulo: 'Composição familiar',
-        etapaCodigo: 'SECAO_1',
+        paginaCodigo: 'SECAO_1',
         ocorrencias: { minimo: 1, maximo: 4, incluiCandidato: true },
         regras: { exibicao: null, obrigatoriedade: OBRIGATORIEDADE_SEMPRE },
         subitens: [],
@@ -224,7 +224,7 @@ test.describe('Modelo de formulário — conteúdo na forma do contrato', () => 
       maximo: 4,
       incluiCandidato: true,
     });
-    expect(conteudo.etapas?.[0]?.apresentacao).toMatchObject({ titulo: 'Escolaridade' });
+    expect(conteudo.paginas?.[0]?.apresentacao).toMatchObject({ titulo: 'Escolaridade' });
   });
 
   test('a recusa do rótulo aninhado aparece junto do campo e não no resumo', async ({ page }) => {

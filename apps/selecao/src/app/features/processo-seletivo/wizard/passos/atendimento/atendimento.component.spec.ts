@@ -68,7 +68,7 @@ describe('AtendimentoPassoComponent', () => {
       ...store.draft().formulario,
       conteudo: {
         titulo: null,
-        etapas: [],
+        paginas: [],
         itens: [
           item('TIPO_DEFICIENCIA', 0, 'S1', {
             apresentacao: apresentacaoDoCampo('Tipo de deficiência', 'ESCOLHA_UNICA'),

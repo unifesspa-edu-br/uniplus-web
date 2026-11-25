@@ -1,8 +1,8 @@
 import {
-  ApresentacaoDaEtapa,
+  ApresentacaoDaPagina,
   ApresentacaoDoCampo,
   ConteudoDoFormulario,
-  EtapaDoFormulario,
+  PaginaDoFormulario,
   ExibicaoEObrigatoriedade,
   Obrigatoriedade,
   OpcaoDoFormulario,
@@ -32,8 +32,8 @@ export const REGRAS_INICIAIS: ExibicaoEObrigatoriedade = {
   obrigatoriedade: OBRIGATORIEDADE_INICIAL,
 };
 
-/** A apresentação da etapa nova: só o título, sem descrição nem aviso. */
-export function apresentacaoDaEtapa(titulo: string): ApresentacaoDaEtapa {
+/** A apresentação da página nova: só o título, sem descrição nem aviso. */
+export function apresentacaoDaPagina(titulo: string): ApresentacaoDaPagina {
   return { titulo, descricao: null, aviso: null };
 }
 
@@ -42,31 +42,31 @@ export function apresentacaoDoCampo(rotulo: string, tipoDeCampo: string): Aprese
   return { rotulo, tipoDeCampo, ajuda: null, pedirConfirmacao: false };
 }
 
-/** A etapa nova, sem itens: seção quando não há bloco, ou o bloco do sistema dado. */
-export function etapaNova(
+/** A página nova, sem itens: seção quando não há bloco, ou o bloco do sistema dado. */
+export function paginaNova(
   codigo: string,
   titulo: string,
   bloco: string | null = null,
-): EtapaDoFormulario {
+): PaginaDoFormulario {
   return {
     codigo,
     ordem: 0,
     tipo: bloco === null ? TIPO_SECAO : TIPO_BLOCO,
     bloco,
-    apresentacao: apresentacaoDaEtapa(titulo),
+    apresentacao: apresentacaoDaPagina(titulo),
     exibicao: null,
   };
 }
 
 export const FINALIDADE_INSCRICAO = 'INSCRICAO';
 
-/** Os tetos da API (`FormaDoItem`, `FormaDaEtapa`): os dados básicos contam no total de itens. */
+/** Os tetos da API (`FormaDoItem`, `FormaDaPagina`): os dados básicos contam no total de itens. */
 export const LIMITES_DO_FORMULARIO = {
   itens: 200,
   rotulo: 300,
   ajuda: 1000,
-  tituloDaEtapa: 300,
-  textoDaEtapa: 2000,
+  tituloDaPagina: 300,
+  textoDaPagina: 2000,
   tituloDoFormulario: 300,
 } as const;
 
@@ -109,12 +109,12 @@ export function blocosAdmitidos(finalidade: string): readonly OpcaoDoFormulario[
 
 /**
  * O conteúdo com que um formulário nasce: só a revisão e aceite, que toda finalidade exige como
- * última etapa. Na inscrição, a API acrescenta a seção dos dados básicos.
+ * última página. Na inscrição, a API acrescenta a seção dos dados básicos.
  */
 export function conteudoInicial(): ConteudoDoFormulario<number> {
   return {
     titulo: null,
-    etapas: [etapaNova(BLOCO_REVISAO_E_ACEITE, 'Revisão e aceite', BLOCO_REVISAO_E_ACEITE)],
+    paginas: [paginaNova(BLOCO_REVISAO_E_ACEITE, 'Revisão e aceite', BLOCO_REVISAO_E_ACEITE)],
     itens: [],
     termos: [],
     pressupostos: [],

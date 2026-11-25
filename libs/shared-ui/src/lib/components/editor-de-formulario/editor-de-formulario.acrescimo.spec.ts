@@ -20,16 +20,16 @@ describe('EditorDeFormularioComponent: acréscimo de campos, pressupostos e grup
     ]);
     cenario.detectar();
 
-    const ofertados = cenario.ofertadosEm('f-etapa-S1-acrescentar');
+    const ofertados = cenario.ofertadosEm('f-pagina-S1-acrescentar');
     expect(ofertados).toEqual(['RENDA — aguarda a aprovação da proteção de dados']);
     expect(
       cenario.tela
-        .querySelector('#f-etapa-S1-acrescentar [role="option"]')
+        .querySelector('#f-pagina-S1-acrescentar [role="option"]')
         ?.getAttribute('aria-disabled'),
     ).toBe('true');
 
     cenario.escolherEm(
-      'f-etapa-S1-acrescentar',
+      'f-pagina-S1-acrescentar',
       'RENDA — aguarda a aprovação da proteção de dados',
     );
     cenario.acrescentarCampo();
@@ -48,7 +48,7 @@ describe('EditorDeFormularioComponent: acréscimo de campos, pressupostos e grup
       },
     ]);
     cenario.detectar();
-    cenario.escolherEm('f-etapa-S1-acrescentar', 'MUNICIPIO');
+    cenario.escolherEm('f-pagina-S1-acrescentar', 'MUNICIPIO');
     cenario.acrescentarCampo();
 
     expect(cenario.emitidos).toEqual([]);
@@ -66,16 +66,16 @@ describe('EditorDeFormularioComponent: acréscimo de campos, pressupostos e grup
     ]);
     cenario.detectar();
 
-    expect(cenario.ofertadosEm('f-etapa-S1-acrescentar', 'renda')).toEqual([
+    expect(cenario.ofertadosEm('f-pagina-S1-acrescentar', 'renda')).toEqual([
       'RENDA_FAMILIAR',
       'RENDA_PROPRIA',
     ]);
-    expect(cenario.ofertadosEm('f-etapa-S1-acrescentar', 'inexistente')).toEqual([]);
-    expect(cenario.tela.querySelector('#f-etapa-S1-acrescentar')?.textContent).toContain(
+    expect(cenario.ofertadosEm('f-pagina-S1-acrescentar', 'inexistente')).toEqual([]);
+    expect(cenario.tela.querySelector('#f-pagina-S1-acrescentar')?.textContent).toContain(
       'Nenhum fato do candidato casa com o que você digitou.',
     );
 
-    cenario.escolherEm('f-etapa-S1-acrescentar', 'RENDA_PROPRIA', 'propria');
+    cenario.escolherEm('f-pagina-S1-acrescentar', 'RENDA_PROPRIA', 'propria');
     cenario.acrescentarCampo();
 
     expect(cenario.emitidos.at(-1)?.itens?.map((i) => i.fatoCodigo)).toEqual([
@@ -102,7 +102,7 @@ describe('EditorDeFormularioComponent: acréscimo de campos, pressupostos e grup
 
     // O fato de outra finalidade não é campo aqui, mas pode vir do formulário anterior.
     expect(cenario.ofertadosEm('f-pressuposto')).toEqual(['DE_OUTRA', 'LIVRE']);
-    expect(cenario.ofertadosEm('f-etapa-S1-acrescentar')).toEqual(['LIVRE']);
+    expect(cenario.ofertadosEm('f-pagina-S1-acrescentar')).toEqual(['LIVRE']);
 
     cenario.escolherEm('f-pressuposto', 'LIVRE', 'liv');
     (
@@ -138,10 +138,10 @@ describe('EditorDeFormularioComponent: acréscimo de campos, pressupostos e grup
     ]);
     cenario.detectar();
 
-    const rotulo = cenario.tela.querySelector('#f-etapa-S1-grupo-rotulo') as HTMLInputElement;
+    const rotulo = cenario.tela.querySelector('#f-pagina-S1-grupo-rotulo') as HTMLInputElement;
     rotulo.value = 'Composição familiar';
     rotulo.dispatchEvent(new Event('input'));
-    const campo = cenario.tela.querySelector('#f-etapa-S1-grupo-campo') as HTMLSelectElement;
+    const campo = cenario.tela.querySelector('#f-pagina-S1-grupo-campo') as HTMLSelectElement;
     campo.value = 'RENDA';
     campo.dispatchEvent(new Event('change'));
     cenario.detectar();
@@ -174,12 +174,12 @@ describe('EditorDeFormularioComponent: acréscimo de campos, pressupostos e grup
       codigo: 'FAMILIA',
       ordem: 3,
       rotulo: 'Família',
-      etapaCodigo: 'S1',
+      paginaCodigo: 'S1',
       ocorrencias: { minimo: 1, maximo: null, incluiCandidato: true },
       regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
       subitens: [
-        item('PARENTESCO', 0, { etapaCodigo: null }),
-        item('RENDA', 1, { etapaCodigo: null }),
+        item('PARENTESCO', 0, { paginaCodigo: null }),
+        item('RENDA', 1, { paginaCodigo: null }),
       ],
     };
     cenario.entrada('conteudo', { ...conteudo, grupos: [grupoComCandidato] });
@@ -205,10 +205,10 @@ describe('EditorDeFormularioComponent: acréscimo de campos, pressupostos e grup
       codigo,
       ordem: 3,
       rotulo: codigo,
-      etapaCodigo: 'S1',
+      paginaCodigo: 'S1',
       ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
       regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
-      subitens: campos.map((c, i) => item(c, i, { etapaCodigo: null })),
+      subitens: campos.map((c, i) => item(c, i, { paginaCodigo: null })),
     });
     cenario.entrada('conteudo', {
       ...conteudo,

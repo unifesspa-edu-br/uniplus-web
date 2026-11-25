@@ -3,7 +3,7 @@ import {
   type CampoApresentado,
   type FormularioDoCandidato,
   type GrupoApresentado,
-  type SecaoRenderizavel,
+  type PaginaApresentada,
   type TermoApresentado,
 } from './formulario-do-candidato.model';
 import type {
@@ -36,7 +36,7 @@ export interface TermoNoPasso {
 
 /**
  * Um passo do formulário: uma seção, um bloco do sistema ou, no rascunho, os campos ainda sem seção.
- * Os campos e grupos entram no passo pela etapa em que a avaliação os põe, e só os que aparecem.
+ * Os campos e grupos entram no passo pela página em que a avaliação os põe, e só os que aparecem.
  */
 export interface PassoDoFormulario {
   readonly chave: string;
@@ -44,8 +44,8 @@ export interface PassoDoFormulario {
   readonly descricao: string | null;
   readonly aviso: string | null;
   readonly bloco: string | null;
-  /** As etapas das regras que o passo conclui ao avançar. */
-  readonly etapasNasRegras: readonly string[];
+  /** As páginas das regras que o passo conclui ao avançar. */
+  readonly paginasNasRegras: readonly string[];
   readonly campos: readonly CampoNoPasso[];
   readonly grupos: readonly GrupoNoPasso[];
   readonly termos: readonly TermoNoPasso[];
@@ -64,7 +64,7 @@ const OCULTO = 'FALSO';
 /**
  * Os passos na ordem das seções. A ligação com as regras é pelo código nas regras — no processo, o
  * código da seção é prefixado pela finalidade; no modelo, é o mesmo —, e cada campo entra no passo da
- * etapa em que a avaliação o põe. A etapa das regras sem seção, como a dos campos do rascunho ainda sem
+ * página em que a avaliação o põe. A página das regras sem seção, como a dos campos do rascunho ainda sem
  * seção, vira um passo "Outros dados" antes das seções. A seção oculta pelas regras some; os blocos do
  * sistema ficam sempre.
  */
@@ -92,12 +92,12 @@ function conteudoVisivel(
 function secoesVisiveis(
   formulario: FormularioDoCandidato,
   avaliacao: AvaliacaoDoFormulario,
-): SecaoRenderizavel[] {
-  const etapaVisivel = new Map(avaliacao.etapas.map((e) => [e.codigo, e.visivel]));
-  return [...formulario.etapas]
+): PaginaApresentada[] {
+  const paginaVisivel = new Map(avaliacao.paginas.map((e) => [e.codigo, e.visivel]));
+  return [...formulario.paginas]
     .sort((a, b) => a.ordem - b.ordem)
     .filter(
-      (secao) => !secao.codigoNasRegras || etapaVisivel.get(secao.codigoNasRegras) !== OCULTO,
+      (secao) => !secao.codigoNasRegras || paginaVisivel.get(secao.codigoNasRegras) !== OCULTO,
     );
 }
 
@@ -146,24 +146,24 @@ function termosVisiveis(
     });
 }
 
-function naEtapa<T extends { avaliado: { etapaCodigo: string } }>(
+function naPagina<T extends { avaliado: { paginaCodigo: string } }>(
   itens: readonly T[],
-  etapas: readonly string[],
+  paginas: readonly string[],
 ): T[] {
-  return itens.filter((item) => etapas.includes(item.avaliado.etapaCodigo));
+  return itens.filter((item) => paginas.includes(item.avaliado.paginaCodigo));
 }
 
-function passoDaSecao(secao: SecaoRenderizavel, conteudo: ConteudoVisivel): PassoDoFormulario {
-  const etapas = secao.codigoNasRegras ? [secao.codigoNasRegras] : [];
+function passoDaSecao(secao: PaginaApresentada, conteudo: ConteudoVisivel): PassoDoFormulario {
+  const paginas = secao.codigoNasRegras ? [secao.codigoNasRegras] : [];
   return {
     chave: `secao-${secao.codigo}`,
     titulo: secao.apresentacao.titulo,
     descricao: secao.apresentacao.descricao,
     aviso: secao.apresentacao.aviso,
     bloco: secao.tipo === 'BLOCO' ? (secao.bloco ?? null) : null,
-    etapasNasRegras: etapas,
-    campos: naEtapa(conteudo.campos, etapas),
-    grupos: naEtapa(conteudo.grupos, etapas),
+    paginasNasRegras: paginas,
+    campos: naPagina(conteudo.campos, paginas),
+    grupos: naPagina(conteudo.grupos, paginas),
     termos: secao.bloco === BLOCO_REVISAO_E_ACEITE ? conteudo.termos : [],
   };
 }
@@ -172,30 +172,30 @@ function passoDosOutrosDados(
   formulario: FormularioDoCandidato,
   conteudo: ConteudoVisivel,
 ): PassoDoFormulario[] {
-  const semSecao = etapasSemSecao(formulario);
+  const semSecao = paginasSemSecao(formulario);
   return semSecao.length === 0 ? [] : [outrosDados(semSecao, conteudo)];
 }
 
-function outrosDados(etapas: readonly string[], conteudo: ConteudoVisivel): PassoDoFormulario {
+function outrosDados(paginas: readonly string[], conteudo: ConteudoVisivel): PassoDoFormulario {
   return {
     chave: 'outros-dados',
     titulo: 'Outros dados',
     descricao: 'Campos que ainda não estão em nenhuma seção do formulário.',
     aviso: null,
     bloco: null,
-    etapasNasRegras: etapas,
-    campos: naEtapa(conteudo.campos, etapas),
-    grupos: naEtapa(conteudo.grupos, etapas),
+    paginasNasRegras: paginas,
+    campos: naPagina(conteudo.campos, paginas),
+    grupos: naPagina(conteudo.grupos, paginas),
     termos: [],
   };
 }
 
-/** As etapas das regras que nenhuma seção do formulário cita. */
-function etapasSemSecao(formulario: FormularioDoCandidato): string[] {
+/** As páginas das regras que nenhuma seção do formulário cita. */
+function paginasSemSecao(formulario: FormularioDoCandidato): string[] {
   const codigosDasSecoes = new Set(
-    formulario.etapas.flatMap((s) => (s.codigoNasRegras ? [s.codigoNasRegras] : [])),
+    formulario.paginas.flatMap((s) => (s.codigoNasRegras ? [s.codigoNasRegras] : [])),
   );
-  return (formulario.regras.etapas ?? [])
+  return (formulario.regras.paginas ?? [])
     .map((e) => e.codigo)
     .filter((codigo) => !codigosDasSecoes.has(codigo));
 }

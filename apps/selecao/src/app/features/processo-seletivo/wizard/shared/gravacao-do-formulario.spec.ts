@@ -26,7 +26,7 @@ describe('gravarFormulario', () => {
     const http = TestBed.inject(HttpTestingController);
     const conteudo: ConteudoDoFormulario = {
       titulo: 'Inscrição',
-      etapas: [
+      paginas: [
         {
           codigo: 'S1',
           ordem: 1,
@@ -39,7 +39,7 @@ describe('gravarFormulario', () => {
         {
           fatoCodigo: 'IDADE',
           ordem: 1,
-          etapaCodigo: 'S1',
+          paginaCodigo: 'S1',
           apresentacao: { rotulo: 'Idade', tipoDeCampo: 'NUMERO', pedirConfirmacao: false },
           regras: {
             ...REGRAS_INICIAIS,

@@ -54,7 +54,7 @@ const GRUPOS_DA_COLETA = [
   },
 ];
 
-function etapaDoEndereco(condicaoDaAldeia: Condicao) {
+function paginaDoEndereco(condicaoDaAldeia: Condicao) {
   const regrasDoItem = { obrigatoriedade: SEMPRE, restricoes: [] };
   return {
     codigo: 'ENDERECO',
@@ -82,7 +82,7 @@ const GRUPO_DA_COMPOSICAO = {
   subitens: [RENDA_DA_COMPOSICAO],
 };
 
-const ETAPA_DA_FAMILIA = {
+const PAGINA_DA_FAMILIA = {
   codigo: 'FAMILIA',
   exibicao: null,
   itens: [],
@@ -98,7 +98,7 @@ const SEM_TERMOS_NEM_DERIVACOES = { termos: [], derivacoes: [], agregados: [] };
 
 /**
  * O formulário exportado que o simulador abre, na forma do formulário apresentado: apresentação em
- * `etapas`, o que se pergunta em `coleta`, as regras em `regras` e os fatos de fora em `pressupostos`.
+ * `paginas`, o que se pergunta em `coleta`, as regras em `regras` e os fatos de fora em `pressupostos`.
  * A condição de exibição do campo da aldeia é a que o caso quer exercitar; o operador fora do
  * vocabulário só cabe por extenso, porque o tipo gerado não o admitiria.
  */
@@ -106,11 +106,11 @@ export function formularioDoSimulador(condicaoDaAldeia: Condicao = CONDICAO_DA_A
   return {
     finalidade: 'INSCRICAO',
     titulo: 'Inscrição',
-    etapas: SECOES,
+    paginas: SECOES,
     termos: [],
     coleta: { itens: ITENS_DA_COLETA, grupos: GRUPOS_DA_COLETA },
     regras: {
-      etapas: [etapaDoEndereco(condicaoDaAldeia), ETAPA_DA_FAMILIA],
+      paginas: [paginaDoEndereco(condicaoDaAldeia), PAGINA_DA_FAMILIA],
       ...SEM_TERMOS_NEM_DERIVACOES,
     },
     pressupostos: { fatos: [] },

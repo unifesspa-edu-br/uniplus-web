@@ -276,7 +276,7 @@ export {
   EscolhaDaValidadeCodigo,
   EscolhaDoPrazoDeEmissaoCodigo,
   TipoDaDataDeReferenciaCodigo,
-  TipoEtapaFormularioCodigo,
+  TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
   UnidadeDoPrazoDeEmissaoCodigo,
 } from './schema';

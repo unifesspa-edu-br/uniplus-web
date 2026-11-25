@@ -14,7 +14,7 @@ import {
   criarFormulario,
   definirFaseDoFormulario,
   definirTitulo,
-  ETAPAS,
+  PAGINAS,
   formularioDaFinalidade,
   ITENS,
   moverParte,
@@ -126,13 +126,13 @@ describe('partes do formulário', () => {
   it('mover para a mesma posição devolve o documento como estava', () => {
     const documento = umDocumento();
 
-    expect(moverParte(documento, INSCRICAO, ETAPAS, { de: 1, para: 1 })).toBe(documento);
+    expect(moverParte(documento, INSCRICAO, PAGINAS, { de: 1, para: 1 })).toBe(documento);
   });
 
   it('mover uma posição que não existe não muda nada', () => {
     const documento = umDocumento();
 
-    expect(moverParte(documento, INSCRICAO, ETAPAS, { de: 9, para: 0 })).toBe(documento);
+    expect(moverParte(documento, INSCRICAO, PAGINAS, { de: 9, para: 0 })).toBe(documento);
   });
 
   it('acrescentar põe ao fim e retirar não renumera as que ficam', () => {

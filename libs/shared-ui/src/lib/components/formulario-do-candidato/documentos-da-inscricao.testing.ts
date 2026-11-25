@@ -13,7 +13,7 @@ import type { EnvioDeDocumentos } from './envio-de-documentos';
 import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
 import type { FormularioDoCandidato, FormularioNoProcesso } from './formulario-do-candidato.model';
 import {
-  apresentacaoDaEtapa,
+  apresentacaoDaPagina,
   campoApresentado,
   itemDasRegras,
 } from './formularios-de-exemplo.testing';
@@ -22,13 +22,13 @@ import type { AvaliacaoNaTela } from './modalidades-avaliadas';
 export const FASE = 'fase-da-inscricao';
 export const FORMULARIO: FormularioDoCandidato = {
   finalidade: 'INSCRICAO',
-  etapas: [
+  paginas: [
     {
       codigo: 'RESERVA',
       codigoNasRegras: 'Inscricao:RESERVA',
       ordem: 0,
       tipo: 'SECAO',
-      apresentacao: apresentacaoDaEtapa('Reserva de vagas'),
+      apresentacao: apresentacaoDaPagina('Reserva de vagas'),
     },
     {
       codigo: 'DOCUMENTOS',
@@ -36,7 +36,7 @@ export const FORMULARIO: FormularioDoCandidato = {
       ordem: 1,
       tipo: 'BLOCO',
       bloco: 'COMPROVACAO_DOCUMENTAL',
-      apresentacao: apresentacaoDaEtapa('Documentos'),
+      apresentacao: apresentacaoDaPagina('Documentos'),
     },
   ],
   termos: [],
@@ -46,7 +46,7 @@ export const FORMULARIO: FormularioDoCandidato = {
   },
   pressupostos: { fatos: [] },
   regras: {
-    etapas: [
+    paginas: [
       {
         codigo: 'Inscricao:RESERVA',
         itens: [itemDasRegras('PCD')],

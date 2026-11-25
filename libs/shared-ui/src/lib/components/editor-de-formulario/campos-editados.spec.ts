@@ -10,7 +10,7 @@ const conteudo: ConteudoDoFormulario = {
   pressupostos: [],
   termos: [],
   itens: [],
-  etapas: [
+  paginas: [
     {
       codigo: 'secao',
       ordem: 0,
@@ -24,7 +24,7 @@ const conteudo: ConteudoDoFormulario = {
       codigo: 'familia',
       ordem: 0,
       rotulo: 'Composição familiar',
-      etapaCodigo: 'secao',
+      paginaCodigo: 'secao',
       ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
       regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
       subitens: [],

@@ -10427,12 +10427,12 @@ export interface components {
             /** Format: uuid */
             readonly modeloId: string;
         };
-        readonly ApresentacaoDaEtapaDto: {
+        readonly ApresentacaoDaPaginaDto: {
             readonly titulo: string;
             readonly descricao: null | string;
             readonly aviso: null | string;
         };
-        readonly ApresentacaoDaEtapaInput: {
+        readonly ApresentacaoDaPaginaInput: {
             readonly titulo: null | string;
             readonly descricao: null | string;
             readonly aviso: null | string;
@@ -10669,7 +10669,7 @@ export interface components {
          *
          *     - `COMPROVACAO_DOCUMENTAL`: Comprovação documental — Os documentos que o candidato envia, conforme a exigência de cada situação dele.
          *     - `MODALIDADES_CALCULADAS`: Modalidades calculadas — As modalidades de concorrência em que o candidato se enquadra, calculadas pelas respostas dele.
-         *     - `REVISAO_E_ACEITE`: Revisão e aceite — A conferência das respostas e o aceite dos termos, sempre a última etapa do formulário.
+         *     - `REVISAO_E_ACEITE`: Revisão e aceite — A conferência das respostas e o aceite dos termos, sempre a última página do formulário.
          * @enum {string}
          */
         readonly BlocoSistemaCodigo: BlocoSistemaCodigo;
@@ -10677,7 +10677,7 @@ export interface components {
             readonly fatoCodigo: string;
             /** Format: int32 */
             readonly ordem: number;
-            readonly etapaCodigo: null | string;
+            readonly paginaCodigo: null | string;
             readonly apresentacao: components["schemas"]["ApresentacaoDoCampoDto"];
             readonly formato: null | string;
             readonly valoresSelecionaveis: null | readonly components["schemas"]["ValorSelecionavel"][];
@@ -11197,7 +11197,7 @@ export interface components {
             /** Format: uuid */
             readonly faseId: null | string;
             readonly titulo: null | string;
-            readonly etapas: readonly components["schemas"]["EtapaFormularioInput"][];
+            readonly paginas: readonly components["schemas"]["PaginaDoFormularioInput"][];
         };
         readonly DefinirIdentificadorLegivelRequest: {
             readonly identificadorLegivel: null | string;
@@ -13219,8 +13219,8 @@ export interface components {
              */
             readonly codigoDoDado: string;
             /**
-             * Etapa
-             * @description Código da etapa do tipo SECAO, do mesmo formulário, em que o item aparece. Nulo ou ausente em subitem de grupo.
+             * Página
+             * @description Código da página do tipo SECAO, do mesmo formulário, em que o item aparece. Nulo ou ausente em subitem de grupo.
              */
             readonly paginaCodigo?: null | components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
             /**
@@ -13853,34 +13853,6 @@ export interface components {
             readonly ordem: null | number;
             readonly produtos: readonly components["schemas"]["ProdutoPrevistoDto"][];
         };
-        readonly EtapaConcluidaInput: {
-            readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
-            readonly etapa: string;
-        };
-        readonly EtapaFormularioDto: {
-            readonly codigo: string;
-            /** Format: int32 */
-            readonly ordem: number;
-            readonly tipo: components["schemas"]["TipoEtapaFormularioCodigo"];
-            readonly bloco: null | components["schemas"]["BlocoSistemaCodigo"];
-            readonly apresentacao: components["schemas"]["ApresentacaoDaEtapaDto"];
-            readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
-        };
-        readonly EtapaFormularioInput: {
-            readonly codigo: string;
-            /** Format: int32 */
-            readonly ordem: number;
-            readonly tipo: components["schemas"]["TipoEtapaFormularioCodigo"];
-            readonly bloco: null | components["schemas"]["BlocoSistemaCodigo"];
-            readonly apresentacao: null | components["schemas"]["ApresentacaoDaEtapaInput"];
-            readonly exibicao?: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
-        };
-        readonly EtapaPortavel: {
-            readonly codigo: string;
-            readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
-            readonly itens: readonly components["schemas"]["ItemPortavel"][];
-            readonly grupos: readonly components["schemas"]["GrupoPortavel"][];
-        };
         readonly EtapaProcessoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -14025,7 +13997,7 @@ export interface components {
             readonly fatoCodigo: string;
             /** Format: int32 */
             readonly ordem: number;
-            readonly etapaCodigo: null | string;
+            readonly paginaCodigo: null | string;
             readonly apresentacao: components["schemas"]["ApresentacaoDoCampoDto"];
             readonly regras: components["schemas"]["RegrasDoCampoDto"];
             readonly formato: null | string;
@@ -14037,7 +14009,7 @@ export interface components {
             readonly ordem: number;
             readonly apresentacao: null | components["schemas"]["ApresentacaoDoCampoInput"];
             readonly regras: null | components["schemas"]["RegrasDoCampoInput"];
-            readonly etapaCodigo?: null | string;
+            readonly paginaCodigo?: null | string;
         };
         readonly FatoPressuposto: {
             readonly fatoCodigo: string;
@@ -14134,7 +14106,7 @@ export interface components {
         readonly FormularioApresentado: {
             readonly finalidade: string;
             readonly titulo: null | string;
-            readonly etapas: readonly components["schemas"]["SecaoRenderizavel"][];
+            readonly paginas: readonly components["schemas"]["PaginaApresentada"][];
             readonly termos: readonly components["schemas"]["TermoApresentado"][];
             readonly coleta: components["schemas"]["ColetaApresentada"];
             readonly regras: components["schemas"]["FormularioPortavel"];
@@ -14166,7 +14138,7 @@ export interface components {
             readonly faseId: null | string;
             readonly titulo: null | string;
             readonly modeloOrigem: null | components["schemas"]["ModeloDeOrigemDto"];
-            readonly etapas: readonly components["schemas"]["EtapaFormularioDto"][];
+            readonly paginas: readonly components["schemas"]["PaginaDoFormularioDto"][];
             readonly coleta: components["schemas"]["ColetaDoFormularioDto"];
             readonly termos: readonly components["schemas"]["TermoExigidoDto"][];
         };
@@ -14177,7 +14149,7 @@ export interface components {
             readonly documentos: readonly components["schemas"]["DocumentoDoComprovanteDto"][];
         };
         readonly FormularioPortavel: {
-            readonly etapas: readonly components["schemas"]["EtapaPortavel"][];
+            readonly paginas: readonly components["schemas"]["PaginaPortavel"][];
             readonly termos: readonly components["schemas"]["TermoPortavel"][];
             readonly derivacoes: readonly components["schemas"]["DerivacaoPortavel"][];
             readonly agregados: readonly components["schemas"]["AgregadoPortavel"][];
@@ -14230,7 +14202,7 @@ export interface components {
             readonly codigo: string;
             /** Format: int32 */
             readonly ordem: number;
-            readonly etapaCodigo: null | string;
+            readonly paginaCodigo: null | string;
             readonly rotulo: string;
             readonly ocorrencias: components["schemas"]["OcorrenciasDoGrupoDto"];
             readonly subitens: readonly components["schemas"]["CampoApresentado"][];
@@ -14243,7 +14215,7 @@ export interface components {
             readonly codigo: string;
             /** Format: int32 */
             readonly ordem: number;
-            readonly etapaCodigo: null | string;
+            readonly paginaCodigo: null | string;
             readonly rotulo: string;
             readonly ocorrencias: components["schemas"]["OcorrenciasDoGrupoDto"];
             readonly regras: components["schemas"]["ExibicaoEObrigatoriedadeDto"];
@@ -14257,7 +14229,7 @@ export interface components {
             readonly ocorrencias: null | components["schemas"]["OcorrenciasDoGrupoInput"];
             readonly regras: null | components["schemas"]["ExibicaoEObrigatoriedadeInput"];
             readonly subitens: readonly components["schemas"]["FatoColetadoInput"][];
-            readonly etapaCodigo?: null | string;
+            readonly paginaCodigo?: null | string;
         };
         readonly GrupoDaInscricaoDto: {
             readonly codigo: string;
@@ -14290,7 +14262,7 @@ export interface components {
         };
         readonly GrupoSimuladoDto: {
             readonly codigo: string;
-            readonly etapaCodigo: null | string;
+            readonly paginaCodigo: null | string;
             readonly visivel: components["schemas"]["Ternario"];
             readonly obrigatorio: components["schemas"]["Ternario"];
             readonly contagemValida: boolean;
@@ -14564,7 +14536,7 @@ export interface components {
         };
         readonly ItemSimuladoDto: {
             readonly fatoCodigo: string;
-            readonly etapaCodigo: null | string;
+            readonly paginaCodigo: null | string;
             readonly visivel: components["schemas"]["Ternario"];
             readonly obrigatorio: components["schemas"]["Ternario"];
             readonly restricoesVioladas: readonly string[];
@@ -15020,6 +14992,43 @@ export interface components {
          * @enum {string}
          */
         readonly OrigemDataFaseCodigo: OrigemDataFaseCodigo;
+        readonly PaginaApresentada: {
+            readonly codigo: string;
+            readonly codigoNasRegras: null | string;
+            /** Format: int32 */
+            readonly ordem: number;
+            readonly tipo: components["schemas"]["TipoPaginaFormularioCodigo"];
+            readonly bloco: null | components["schemas"]["BlocoSistemaCodigo"];
+            readonly apresentacao: components["schemas"]["ApresentacaoDaPaginaDto"];
+        };
+        readonly PaginaConcluidaInput: {
+            readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
+            readonly pagina: string;
+        };
+        readonly PaginaDoFormularioDto: {
+            readonly codigo: string;
+            /** Format: int32 */
+            readonly ordem: number;
+            readonly tipo: components["schemas"]["TipoPaginaFormularioCodigo"];
+            readonly bloco: null | components["schemas"]["BlocoSistemaCodigo"];
+            readonly apresentacao: components["schemas"]["ApresentacaoDaPaginaDto"];
+            readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
+        };
+        readonly PaginaDoFormularioInput: {
+            readonly codigo: string;
+            /** Format: int32 */
+            readonly ordem: number;
+            readonly tipo: components["schemas"]["TipoPaginaFormularioCodigo"];
+            readonly bloco: null | components["schemas"]["BlocoSistemaCodigo"];
+            readonly apresentacao: null | components["schemas"]["ApresentacaoDaPaginaInput"];
+            readonly exibicao?: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+        };
+        readonly PaginaPortavel: {
+            readonly codigo: string;
+            readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
+            readonly itens: readonly components["schemas"]["ItemPortavel"][];
+            readonly grupos: readonly components["schemas"]["GrupoPortavel"][];
+        };
         readonly PapelDaBanca: {
             readonly codigo: components["schemas"]["PapelDaBancaCodigo"];
             readonly rotulo: string;
@@ -15200,7 +15209,7 @@ export interface components {
             readonly grupos: null | {
                 readonly [key: string]: readonly components["schemas"]["OcorrenciaSimuladaInput"][];
             };
-            readonly etapasConcluidas: null | readonly components["schemas"]["EtapaConcluidaInput"][];
+            readonly paginasConcluidas: null | readonly components["schemas"]["PaginaConcluidaInput"][];
             readonly pressupostos: null | Record<string, never>;
         };
         readonly ProblemDetails: {
@@ -15768,15 +15777,6 @@ export interface components {
             readonly itens: readonly components["schemas"]["ItemDoComprovanteDto"][];
             readonly grupos: readonly components["schemas"]["GrupoDoComprovanteDto"][];
         };
-        readonly SecaoRenderizavel: {
-            readonly codigo: string;
-            readonly codigoNasRegras: null | string;
-            /** Format: int32 */
-            readonly ordem: number;
-            readonly tipo: components["schemas"]["TipoEtapaFormularioCodigo"];
-            readonly bloco: null | components["schemas"]["BlocoSistemaCodigo"];
-            readonly apresentacao: components["schemas"]["ApresentacaoDaEtapaDto"];
-        };
         readonly SecaoSimuladaDto: {
             readonly codigo: string;
             readonly visivel: components["schemas"]["Ternario"];
@@ -16062,14 +16062,6 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
         };
-        /**
-         * @description O que a etapa do formulário é: uma seção com itens de resposta ou um bloco que o sistema monta.
-         *
-         *     - `SECAO`: Seção — Etapa com os itens que o candidato responde.
-         *     - `BLOCO`: Bloco do sistema — Etapa que o sistema monta a partir da configuração do processo; o bloco diz qual.
-         * @enum {string}
-         */
-        readonly TipoEtapaFormularioCodigo: TipoEtapaFormularioCodigo;
         readonly TipoEtapaSnapshotDto: {
             /** Format: uuid */
             readonly origemId: string;
@@ -16105,6 +16097,14 @@ export interface components {
          * @enum {string}
          */
         readonly TipoObrigatoriedadeCodigo: TipoObrigatoriedadeCodigo;
+        /**
+         * @description O que a página do formulário é: uma seção com itens de resposta ou um bloco que o sistema monta.
+         *
+         *     - `SECAO`: Seção — Página com os itens que o candidato responde.
+         *     - `BLOCO`: Bloco do sistema — Página que o sistema monta a partir da configuração do processo; o bloco diz qual.
+         * @enum {string}
+         */
+        readonly TipoPaginaFormularioCodigo: TipoPaginaFormularioCodigo;
         readonly TipoProcessoSnapshotDto: {
             /** Format: uuid */
             readonly origemId: string;
@@ -16929,10 +16929,6 @@ export enum TipoDeOcorrenciaDoLoteCodigo {
     LINHA_SEM_INSCRITO = "LINHA_SEM_INSCRITO",
     CONFLITO = "CONFLITO"
 }
-export enum TipoEtapaFormularioCodigo {
-    SECAO = "SECAO",
-    BLOCO = "BLOCO"
-}
 export enum TipoMotivoDeDecisaoCodigo {
     ISENCAO_DA_TAXA = "ISENCAO_DA_TAXA",
     HOMOLOGACAO_DAS_INSCRICOES = "HOMOLOGACAO_DAS_INSCRICOES",
@@ -16947,6 +16943,10 @@ export enum TipoObrigatoriedadeCodigo {
     SEMPRE = "SEMPRE",
     NUNCA = "NUNCA",
     QUANDO = "QUANDO"
+}
+export enum TipoPaginaFormularioCodigo {
+    SECAO = "SECAO",
+    BLOCO = "BLOCO"
 }
 export enum TipoRegraCodigo {
     REGRA_CALCULO = "REGRA_CALCULO",

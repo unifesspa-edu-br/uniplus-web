@@ -58,16 +58,16 @@ function tipoDeCampoDoCategorico(
 
 /**
  * O campo novo do fato: obrigatório e sem condição, com o nome do fato como rótulo. O de membro não
- * tem seção própria (`etapaCodigo` nulo): aparece onde o grupo aparece.
+ * tem seção própria (`paginaCodigo` nulo): aparece onde o grupo aparece.
  */
 export function campoNovo(
   fato: FatoDoFormulario,
   ordem: number,
-  etapaCodigo: string | null,
+  paginaCodigo: string | null,
 ): ItemDoFormulario {
   const rotulo = fato.nome.slice(0, LIMITES_DO_FORMULARIO.rotulo);
   const apresentacao = apresentacaoDoCampo(rotulo, tipoDeCampoDe(fato) ?? '');
-  return { fatoCodigo: fato.codigo, ordem, etapaCodigo, apresentacao, regras: REGRAS_INICIAIS };
+  return { fatoCodigo: fato.codigo, ordem, paginaCodigo, apresentacao, regras: REGRAS_INICIAIS };
 }
 
 /**

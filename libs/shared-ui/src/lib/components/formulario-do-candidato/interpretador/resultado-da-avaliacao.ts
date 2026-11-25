@@ -15,7 +15,7 @@ import type { GrupoAvaliadoInterno } from './avaliacao-interna';
 /** O resultado da avaliação na forma aninhada da avaliação sem cadastro da API. */
 export function comoAvaliacaoDoFormulario(avaliacao: AvaliacaoInterna): AvaliacaoDoFormulario {
   return {
-    etapas: avaliacao.etapas.map((e) => ({ codigo: e.codigo, visivel: e.visivel })),
+    paginas: avaliacao.paginas.map((e) => ({ codigo: e.codigo, visivel: e.visivel })),
     campos: avaliacao.itens.map((i) => campo(i, avaliacao.fatos)),
     grupos: avaliacao.grupos.map(grupo),
     termos: avaliacao.termos.map((t) => ({
@@ -29,7 +29,7 @@ export function comoAvaliacaoDoFormulario(avaliacao: AvaliacaoInterna): Avaliaca
 function grupo(grupoInterno: GrupoAvaliadoInterno): GrupoAvaliado {
   return {
     codigo: grupoInterno.codigo,
-    etapaCodigo: grupoInterno.etapaCodigo,
+    paginaCodigo: grupoInterno.paginaCodigo,
     estado: grupoInterno.estado,
     regras: { visivel: grupoInterno.visivel, obrigatorio: grupoInterno.obrigatorio },
     ocorrencias: {
@@ -51,7 +51,7 @@ function ocorrencia(interna: OcorrenciaAvaliadaInterna): OcorrenciaAvaliada {
 function campo(item: ItemAvaliado, fatos: Fatos): CampoAvaliado {
   return {
     fatoCodigo: item.fatoCodigo,
-    etapaCodigo: item.etapaCodigo,
+    paginaCodigo: item.paginaCodigo,
     estado: fatos.get(item.fatoCodigo)?.estado ?? INDETERMINADO,
     regras: {
       visivel: item.visivel,

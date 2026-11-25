@@ -40,8 +40,8 @@ function manterOuPrimeira(
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'editor-formulario' },
   template: `
-    <section class="editor-formulario__etapa" [attr.aria-labelledby]="idDe('titulo')">
-      <h3 class="editor-formulario__titulo-etapa" [id]="idDe('titulo')">
+    <section class="editor-formulario__pagina" [attr.aria-labelledby]="idDe('titulo')">
+      <h3 class="editor-formulario__titulo-pagina" [id]="idDe('titulo')">
         Documentos exigidos (padrão)
       </h3>
       <p class="field__hint">

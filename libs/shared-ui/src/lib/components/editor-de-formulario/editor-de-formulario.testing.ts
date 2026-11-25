@@ -25,7 +25,7 @@ export const fato = (codigo: string): FatoDoFormulario => ({
 });
 
 interface ExtraDoItem {
-  readonly etapaCodigo?: null | string;
+  readonly paginaCodigo?: null | string;
   readonly apresentacao?: Partial<ApresentacaoDoCampo>;
   readonly regras?: Partial<RegrasDoCampo>;
 }
@@ -52,14 +52,14 @@ export const item = (
 ): ItemDoFormulario => ({
   fatoCodigo,
   ordem,
-  etapaCodigo: extra.etapaCodigo === undefined ? 'S1' : extra.etapaCodigo,
+  paginaCodigo: extra.paginaCodigo === undefined ? 'S1' : extra.paginaCodigo,
   apresentacao: apresentacaoDe(fatoCodigo, extra.apresentacao),
   regras: { ...REGRAS_PADRAO, ...extra.regras },
 });
 
 export const conteudo: ConteudoDoFormulario = {
   titulo: null,
-  etapas: [
+  paginas: [
     {
       codigo: 'S1',
       ordem: 0,
@@ -82,7 +82,7 @@ export const FAMILIA: GrupoDoFormulario = {
   codigo: 'FAMILIA',
   ordem: 3,
   rotulo: 'Família',
-  etapaCodigo: 'S1',
+  paginaCodigo: 'S1',
   ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
   regras: REGRAS_PADRAO,
   subitens: [],

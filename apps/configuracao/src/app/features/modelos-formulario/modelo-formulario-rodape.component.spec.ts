@@ -8,7 +8,7 @@ import { ModeloFormularioRodapeComponent } from './modelo-formulario-rodape.comp
 
 const conteudoGravado = {
   titulo: 'Inscrição',
-  etapas: [],
+  paginas: [],
   itens: [],
   termos: [],
   pressupostos: [],

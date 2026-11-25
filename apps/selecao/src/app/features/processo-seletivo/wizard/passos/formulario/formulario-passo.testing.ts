@@ -47,7 +47,7 @@ export {
   FASE_INSCRICAO,
   FASE_HABILITACAO,
   campo,
-  etapa,
+  pagina,
   GRAVADO,
   HABILITACAO_GRAVADA,
   PROCESSO,

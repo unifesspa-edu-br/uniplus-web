@@ -156,7 +156,7 @@ describe('a produção dos fatos no rascunho', () => {
   const item = (fatoCodigo: string): ItemDoFormulario => ({
     fatoCodigo,
     ordem: 0,
-    etapaCodigo: null,
+    paginaCodigo: null,
     apresentacao: apresentacaoDoCampo(fatoCodigo, 'SIM_OU_NAO'),
     regras: REGRAS_INICIAIS,
   });
@@ -192,7 +192,7 @@ describe('a produção dos fatos no rascunho', () => {
       codigo: 'FAMILIA',
       ordem: 0,
       rotulo: 'Composição familiar',
-      etapaCodigo: null,
+      paginaCodigo: null,
       ocorrencias: { minimo: 1, maximo: null, incluiCandidato: true },
       regras: REGRAS_INICIAIS,
       subitens: [item('SEM_RENDA')],

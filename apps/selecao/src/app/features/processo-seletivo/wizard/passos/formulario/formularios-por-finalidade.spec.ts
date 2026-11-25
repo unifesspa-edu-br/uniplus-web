@@ -23,7 +23,7 @@ const item = (
 ): ItemDoFormulario => ({
   fatoCodigo,
   ordem,
-  etapaCodigo: null,
+  paginaCodigo: null,
   apresentacao: apresentacaoDoCampo(fatoCodigo, 'SIM_OU_NAO'),
   regras: REGRAS_INICIAIS,
   ...extra,

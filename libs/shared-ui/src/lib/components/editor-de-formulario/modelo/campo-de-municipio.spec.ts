@@ -15,7 +15,7 @@ describe('campo de município', () => {
 
   it('o município nasce restrito à UF respondida antes', () => {
     const comUf = conteudo({
-      etapas: [secao('S1', 0)],
+      paginas: [secao('S1', 0)],
       itens: [item('UF', 0, 'S1', { apresentacao: { tipoDeCampo: 'ESCOLHA_UNICA' } })],
     });
 
@@ -28,7 +28,7 @@ describe('campo de município', () => {
   });
 
   it('a UF conhecida antes do formulário — pressuposto ou coletada pela inscrição — também serve ao município', () => {
-    const semUf = conteudo({ etapas: [secao('S1', 0)] });
+    const semUf = conteudo({ paginas: [secao('S1', 0)] });
 
     const resultado = acrescentarCampo(semUf, municipio, 'S1', {
       catalogo: [uf, municipio],
@@ -46,7 +46,7 @@ describe('campo de município', () => {
   });
 
   it('sem campo de UF antes, o município é recusado com a orientação', () => {
-    const resultado = acrescentarCampo(conteudo({ etapas: [secao('S1', 0)] }), municipio, 'S1', {
+    const resultado = acrescentarCampo(conteudo({ paginas: [secao('S1', 0)] }), municipio, 'S1', {
       catalogo: [uf, municipio],
     });
 

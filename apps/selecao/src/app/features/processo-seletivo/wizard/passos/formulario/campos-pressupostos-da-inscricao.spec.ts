@@ -16,17 +16,17 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       fatosDeOutrasFinalidades: [],
     });
 
-    const etapas = [...(resultado.etapas ?? [])].sort((a, b) => a.ordem - b.ordem);
-    expect(etapas.map((e) => e.codigo)).toEqual([
+    const paginas = [...(resultado.paginas ?? [])].sort((a, b) => a.ordem - b.ordem);
+    expect(paginas.map((e) => e.codigo)).toEqual([
       'DADOS_BASICOS',
       'S1',
       SECAO_OUTROS_DADOS,
       'COMPROVACAO_DOCUMENTAL',
       'REVISAO_E_ACEITE',
     ]);
-    expect(etapas[2].exibicao).toBeNull();
+    expect(paginas[2].exibicao).toBeNull();
     expect(resultado.itens?.find((i) => i.fatoCodigo === 'RENDA_FAMILIAR')).toMatchObject({
-      etapaCodigo: SECAO_OUTROS_DADOS,
+      paginaCodigo: SECAO_OUTROS_DADOS,
       apresentacao: { tipoDeCampo: 'NUMERO' },
       regras: { obrigatoriedade: { tipo: 'SEMPRE' } },
     });
@@ -38,7 +38,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
     const base = inscricaoGravada();
     const comSecao = {
       ...base,
-      etapas: [...(base.etapas ?? []), secao(SECAO_OUTROS_DADOS, 1.5, { exibicao: condicional })],
+      paginas: [...(base.paginas ?? []), secao(SECAO_OUTROS_DADOS, 1.5, { exibicao: condicional })],
     };
 
     const resultado = comCamposQueAsExigenciasPressupoem(comSecao, {
@@ -48,8 +48,8 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       fatosDeOutrasFinalidades: [],
     });
 
-    expect(resultado.etapas?.filter((e) => e.codigo === SECAO_OUTROS_DADOS)).toHaveLength(1);
-    expect(resultado.etapas?.find((e) => e.codigo === SECAO_OUTROS_DADOS)?.exibicao).toBeNull();
+    expect(resultado.paginas?.filter((e) => e.codigo === SECAO_OUTROS_DADOS)).toHaveLength(1);
+    expect(resultado.paginas?.find((e) => e.codigo === SECAO_OUTROS_DADOS)?.exibicao).toBeNull();
   });
 
   /** Fora da seção reservada, o fato básico seria recusado como alteração dos dados básicos. */
@@ -84,7 +84,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
           codigo: 'FAMILIA',
           ordem: 3,
           rotulo: 'Família',
-          etapaCodigo: 'S1',
+          paginaCodigo: 'S1',
           ocorrencias: { minimo: 1, maximo: null, incluiCandidato: false },
           regras: REGRAS_INICIAIS,
           subitens: [item('RENDA_FAMILIAR', 0, 'S1')],
@@ -129,7 +129,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
     });
 
     expect(semGatilho.itens?.map((i) => i.fatoCodigo)).not.toContain('RENDA_FAMILIAR');
-    expect(semGatilho.etapas?.map((e) => e.codigo)).not.toContain(SECAO_OUTROS_DADOS);
+    expect(semGatilho.paginas?.map((e) => e.codigo)).not.toContain(SECAO_OUTROS_DADOS);
   });
 
   /** Removê-lo apagaria no servidor uma configuração que ninguém pediu para tirar. */

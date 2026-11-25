@@ -42,7 +42,7 @@ const FAIXA_DE_NASCIMENTO = (
   dataMaxima: unknown,
 ): Parameters<typeof interpretarFormulario>[0] =>
   ({
-    etapas: [
+    paginas: [
       {
         codigo: 'DADOS',
         itens: [
@@ -71,7 +71,7 @@ describe('interpretador do formulário — faixa de data', () => {
     expect(resultado).toEqual({
       valida: false,
       erro: {
-        caminho: 'etapas[0].itens[0].regras.restricoes[0]',
+        caminho: 'paginas[0].itens[0].regras.restricoes[0]',
         mensagem: expect.stringContaining('mínima'),
       },
     });
@@ -97,7 +97,7 @@ describe('interpretador do formulário — faixa de data', () => {
       ),
     ).toMatchObject({
       valida: false,
-      erro: { caminho: 'etapas[0].itens[0].regras.restricoes[0].dataMinima' },
+      erro: { caminho: 'paginas[0].itens[0].regras.restricoes[0].dataMinima' },
     });
     expect(
       interpretarFormulario(
@@ -106,7 +106,7 @@ describe('interpretador do formulário — faixa de data', () => {
       ),
     ).toMatchObject({
       valida: false,
-      erro: { caminho: 'etapas[0].itens[0].regras.restricoes[0].dataMaxima.data' },
+      erro: { caminho: 'paginas[0].itens[0].regras.restricoes[0].dataMaxima.data' },
     });
   });
 
@@ -132,7 +132,7 @@ describe('interpretador do formulário — recusas', () => {
   it('recusa as regras fora da forma com o caminho do problema', () => {
     const resultado = interpretarFormulario(
       {
-        etapas: [
+        paginas: [
           {
             codigo: 'DADOS',
             itens: [{ fatoCodigo: 'IDADE', regras: { obrigatoriedade: { tipo: 'QUANDO' } } }],
@@ -145,7 +145,7 @@ describe('interpretador do formulário — recusas', () => {
     expect(resultado).toEqual({
       valida: false,
       erro: {
-        caminho: 'etapas[0].itens[0].regras.obrigatoriedade',
+        caminho: 'paginas[0].itens[0].regras.obrigatoriedade',
         mensagem: expect.stringContaining('QUANDO com ele'),
       },
     });
@@ -153,20 +153,23 @@ describe('interpretador do formulário — recusas', () => {
 
   it('recusa o campo sem `regras` e o grupo sem `ocorrencias` ou sem `regras`', () => {
     const grupo = { codigo: 'FAMILIA', subitens: [] };
-    const recusaDe = (etapa: object): unknown =>
-      interpretarFormulario({ etapas: [{ codigo: 'DADOS', ...etapa }] } as RegrasDoFormulario, {});
+    const recusaDe = (pagina: object): unknown =>
+      interpretarFormulario(
+        { paginas: [{ codigo: 'DADOS', ...pagina }] } as RegrasDoFormulario,
+        {},
+      );
 
     expect(recusaDe({ itens: [{ fatoCodigo: 'IDADE' }] })).toMatchObject({
       valida: false,
-      erro: { caminho: 'etapas[0].itens[0].regras' },
+      erro: { caminho: 'paginas[0].itens[0].regras' },
     });
     expect(recusaDe({ grupos: [{ ...grupo, regras: SEMPRE }] })).toMatchObject({
       valida: false,
-      erro: { caminho: 'etapas[0].grupos[0].ocorrencias' },
+      erro: { caminho: 'paginas[0].grupos[0].ocorrencias' },
     });
     expect(
       recusaDe({ grupos: [{ ...grupo, ocorrencias: { minimo: 0, incluiCandidato: false } }] }),
-    ).toMatchObject({ valida: false, erro: { caminho: 'etapas[0].grupos[0].regras' } });
+    ).toMatchObject({ valida: false, erro: { caminho: 'paginas[0].grupos[0].regras' } });
   });
 
   it('recusa o máximo de ocorrências menor que o mínimo, com o caminho dentro de `ocorrencias`', () => {
@@ -178,10 +181,10 @@ describe('interpretador do formulário — recusas', () => {
     };
 
     expect(
-      interpretarFormulario({ etapas: [{ codigo: 'DADOS', grupos: [grupo] }] }, {}),
+      interpretarFormulario({ paginas: [{ codigo: 'DADOS', grupos: [grupo] }] }, {}),
     ).toMatchObject({
       valida: false,
-      erro: { caminho: 'etapas[0].grupos[0].ocorrencias.maximo' },
+      erro: { caminho: 'paginas[0].grupos[0].ocorrencias.maximo' },
     });
   });
 
@@ -226,7 +229,7 @@ function ehObjeto(valor: unknown): valor is Record<string, unknown> {
 }
 
 const NOME_CIVIL = {
-  etapas: [
+  paginas: [
     {
       codigo: 'DADOS',
       itens: [

@@ -7,11 +7,11 @@ const regrasDoCampo = (obrigatoriedade: object, exibicao: unknown = null): objec
   impedimento: null,
 });
 
-/** O formulário apresentado mínimo de um modelo: uma etapa com um campo. */
+/** O formulário apresentado mínimo de um modelo: uma página com um campo. */
 export const APRESENTACAO = {
   finalidade: 'INSCRICAO',
   titulo: null,
-  etapas: [
+  paginas: [
     {
       codigo: 'DADOS',
       codigoNasRegras: 'DADOS',
@@ -27,7 +27,7 @@ export const APRESENTACAO = {
       {
         fatoCodigo: 'NOME_SOCIAL',
         ordem: 0,
-        etapaCodigo: 'DADOS',
+        paginaCodigo: 'DADOS',
         apresentacao: {
           rotulo: 'Nome social',
           tipoDeCampo: 'TEXTO',
@@ -41,7 +41,7 @@ export const APRESENTACAO = {
     grupos: [],
   },
   regras: {
-    etapas: [
+    paginas: [
       {
         codigo: 'DADOS',
         exibicao: null,
@@ -67,7 +67,7 @@ export const APRESENTACAO = {
 export const CASO = {
   descricao: 'Endereço urbano esconde a aldeia.',
   regras: {
-    etapas: [
+    paginas: [
       {
         codigo: 'DADOS',
         exibicao: null,
@@ -96,6 +96,6 @@ export const CASO = {
   },
   respostas: { TIPO_ENDERECO: 'URBANO' },
   grupos: {},
-  etapasConcluidas: [],
+  paginasConcluidas: [],
   pressupostos: {},
 };

@@ -8,7 +8,7 @@ export {
   EfeitoNaAnaliseDoDocumentoCodigo,
   FormaDeComprovacaoCodigo,
   SentidoDoMotivoCodigo,
-  TipoEtapaFormularioCodigo,
+  TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
   TipoRegraCodigo,
 } from './schema';

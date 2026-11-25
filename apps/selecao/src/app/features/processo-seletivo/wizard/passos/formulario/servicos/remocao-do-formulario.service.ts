@@ -47,7 +47,7 @@ export class RemocaoDoFormulario {
     const finalidade = this.pendente();
     return finalidade === null
       ? ''
-      : `O formulário de ${nomeDaFinalidade(finalidade)} sai do processo com as etapas, os campos e os termos dele. Não há como desfazer.`;
+      : `O formulário de ${nomeDaFinalidade(finalidade)} sai do processo com as páginas, os campos e os termos dele. Não há como desfazer.`;
   });
 
   pedir(finalidade: string): void {

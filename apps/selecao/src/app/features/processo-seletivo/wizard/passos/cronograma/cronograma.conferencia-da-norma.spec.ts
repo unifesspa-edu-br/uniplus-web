@@ -1,5 +1,9 @@
 import { BlocoSistemaCodigo } from '@uniplus/shared-data/selecao';
-import { ORIGEM_DECLARADA, VALORES_MODALIDADE, VALOR_UNICO } from '../../shared/valores-do-catalogo.testing';
+import {
+  ORIGEM_DECLARADA,
+  VALORES_MODALIDADE,
+  VALOR_UNICO,
+} from '../../shared/valores-do-catalogo.testing';
 import { FAIXA_ETARIA, MODALIDADE } from '../../shared/gatilho-de-exigencia.testing';
 import { TestBed } from '@angular/core/testing';
 import { type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
@@ -9,7 +13,7 @@ import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.
 import { faseDoServidor } from '../../shared/cronograma-do-servidor.testing';
 import {
   campoDoServidor,
-  etapaDoServidor,
+  paginaDoServidor,
   formularioDoServidor,
 } from '../../shared/formulario-do-servidor.testing';
 import { CatalogoDeFatos } from './catalogos/catalogo-de-fatos.service';
@@ -173,7 +177,7 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
       );
       const habilitacao = {
         ...conteudoInicial(),
-        itens: [{ fatoCodigo: 'RENDA_FAMILIAR', ordem: 0, etapaCodigo: null } as never],
+        itens: [{ fatoCodigo: 'RENDA_FAMILIAR', ordem: 0, paginaCodigo: null } as never],
       };
       store.patchObjectSection('formulario', {
         outrasFinalidades: [
@@ -238,10 +242,10 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
       });
       const criado = formularioDoServidor({
         faseId: FASE.id,
-        etapas: [
-          etapaDoServidor('DADOS_BASICOS', 0),
-          etapaDoServidor('OUTROS_DADOS_EXIGIDOS', 1),
-          etapaDoServidor('REVISAO_E_ACEITE', 2, BlocoSistemaCodigo.REVISAO_E_ACEITE),
+        paginas: [
+          paginaDoServidor('DADOS_BASICOS', 0),
+          paginaDoServidor('OUTROS_DADOS_EXIGIDOS', 1),
+          paginaDoServidor('REVISAO_E_ACEITE', 2, BlocoSistemaCodigo.REVISAO_E_ACEITE),
         ],
         coleta: { itens: [campoDoServidor('NOME', 0, 'DADOS_BASICOS')], grupos: [] },
       });
@@ -259,7 +263,7 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
 
       const cabecalho = controller.expectOne((r) => r.method === 'PUT' && r.url === ROTA_INSCRICAO);
       expect(cabecalho.request.body).toMatchObject({ faseId: FASE.id });
-      expect(cabecalho.request.body.etapas.map((e: { codigo: string }) => e.codigo)).toEqual([
+      expect(cabecalho.request.body.paginas.map((e: { codigo: string }) => e.codigo)).toEqual([
         'OUTROS_DADOS_EXIGIDOS',
         'REVISAO_E_ACEITE',
       ]);
@@ -273,9 +277,9 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
         (r) => r.method === 'PUT' && r.url === `${ROTA_INSCRICAO}/itens`,
       );
       expect(
-        itens.request.body.itens.map((i: { fatoCodigo: string; etapaCodigo: string }) => [
+        itens.request.body.itens.map((i: { fatoCodigo: string; paginaCodigo: string }) => [
           i.fatoCodigo,
-          i.etapaCodigo,
+          i.paginaCodigo,
         ]),
       ).toEqual([['RENDA_FAMILIAR', 'OUTROS_DADOS_EXIGIDOS']]);
       expect(itens.request.body.grupos).toEqual([]);

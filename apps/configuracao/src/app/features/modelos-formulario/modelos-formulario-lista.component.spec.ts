@@ -8,7 +8,7 @@ import { ModelosFormularioListaComponent } from './modelos-formulario-lista.comp
 
 const conteudo = {
   titulo: 'Inscrição',
-  etapas: [],
+  paginas: [],
   itens: [],
   termos: [],
   pressupostos: [],

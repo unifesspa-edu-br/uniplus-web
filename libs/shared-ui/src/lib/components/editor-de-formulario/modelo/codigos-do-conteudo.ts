@@ -6,7 +6,7 @@ import type {
 } from '../../editor-de-documentos-exigidos/documentos-exigidos';
 import type {
   ConteudoDoFormulario,
-  EtapaDoFormulario,
+  PaginaDoFormulario,
   ExibicaoEObrigatoriedade,
   GrupoDoFormulario,
   Impedimento,
@@ -120,11 +120,11 @@ function termoComCodigos<O1, T1, O2, T2>(
   return { ...termo, regras: regrasComCodigos(termo.regras, troca) };
 }
 
-function etapaComCodigos<O1, T1, O2, T2>(
-  etapa: EtapaDoFormulario<O1>,
+function paginaComCodigos<O1, T1, O2, T2>(
+  pagina: PaginaDoFormulario<O1>,
   troca: TrocaDeCodigos<O1, T1, O2, T2>,
-): EtapaDoFormulario<O2> {
-  return { ...etapa, exibicao: predicadoComOperadores(etapa.exibicao, troca.operador) };
+): PaginaDoFormulario<O2> {
+  return { ...pagina, exibicao: predicadoComOperadores(pagina.exibicao, troca.operador) };
 }
 
 function documentoComCodigos<O1, T1, O2, T2>(
@@ -164,7 +164,7 @@ function documentosDoConteudoComCodigos<N, O1, T1, O2, T2>(
 }
 
 /**
- * O conteúdo do formulário com cada operador e cada tipo de renderização trocados, em etapas, itens,
+ * O conteúdo do formulário com cada operador e cada tipo de renderização trocados, em páginas, itens,
  * grupos e seus subitens, termos, restrições, impedimentos e documentos exigidos. O que o conteúdo
  * não codifica segue como veio, e as listas opcionais ausentes (`null` ou `undefined`) continuam
  * ausentes.
@@ -175,7 +175,7 @@ export function conteudoComCodigos<N, O1, T1, O2, T2>(
 ): ConteudoDoFormulario<N, O2, T2> {
   return {
     ...conteudo,
-    etapas: converterLista(conteudo.etapas, (etapa) => etapaComCodigos(etapa, troca)),
+    paginas: converterLista(conteudo.paginas, (pagina) => paginaComCodigos(pagina, troca)),
     itens: converterLista(conteudo.itens, (item) => itemComCodigos(item, troca)),
     grupos: converterLista(conteudo.grupos, (grupo) => grupoComCodigos(grupo, troca)),
     termos: converterLista(conteudo.termos, (termo) => termoComCodigos(termo, troca)),

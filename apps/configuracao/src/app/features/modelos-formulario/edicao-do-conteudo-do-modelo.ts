@@ -184,7 +184,7 @@ export class EdicaoDoConteudoDoModelo {
   }
 
   /**
-   * A recusa que aponta um item ou uma etapa vai para ele; a do cabeçalho, para o campo; o resto —
+   * A recusa que aponta um item ou uma página vai para ele; a do cabeçalho, para o campo; o resto —
    * a do grafo, que só cita o fato na mensagem — para o resumo, que recebe o foco.
    */
   private aplicarFalha(problem: ProblemDetails, enviado: ConteudoDoFormulario): void {

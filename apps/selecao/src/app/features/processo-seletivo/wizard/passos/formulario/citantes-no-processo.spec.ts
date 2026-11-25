@@ -85,7 +85,7 @@ describe('quem cita cada fato no processo', () => {
           faseCodigo: 'HABILITACAO',
           conteudo: {
             ...habilitacao,
-            etapas: [secao('H1', 0), ...(habilitacao.etapas ?? [])],
+            paginas: [secao('H1', 0), ...(habilitacao.paginas ?? [])],
             itens: [
               item('LAUDO', 0, 'H1', { regras: { ...REGRAS_INICIAIS, exibicao: citaPcd } }),
               item('CID', 1, 'H1', {
@@ -138,7 +138,7 @@ describe('campos que nada no certame usa', () => {
       camposSemUsoDeclarado(
         formularioCom({
           ...citadoPorSecao,
-          etapas: [...(citadoPorSecao.etapas ?? []), secao('S2', 1.5, { exibicao: quando })],
+          paginas: [...(citadoPorSecao.paginas ?? []), secao('S2', 1.5, { exibicao: quando })],
         }),
         NENHUMA_EXIGENCIA,
       ),

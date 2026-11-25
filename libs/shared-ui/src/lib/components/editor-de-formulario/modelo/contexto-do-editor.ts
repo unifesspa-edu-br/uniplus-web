@@ -162,9 +162,9 @@ function fatosQueASecaoPodeCitar(
   escolhiveis: Escolhiveis,
 ): ReadonlyMap<string, readonly FatoEscolhivel[]> {
   return new Map(
-    (conteudo.etapas ?? []).map((etapa) => [
-      etapa.codigo,
-      escolhiveis(fatosCitaveisPelaSecao(conteudo, etapa.codigo), [etapa.exibicao ?? null]),
+    (conteudo.paginas ?? []).map((pagina) => [
+      pagina.codigo,
+      escolhiveis(fatosCitaveisPelaSecao(conteudo, pagina.codigo), [pagina.exibicao ?? null]),
     ]),
   );
 }

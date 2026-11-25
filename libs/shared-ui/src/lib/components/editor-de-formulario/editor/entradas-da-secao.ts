@@ -12,7 +12,7 @@ import {
 import { aplicarEdicao } from '../edicao';
 import { focarDepois } from '../foco';
 import { GrupoDoFormularioComponent } from '../grupo-do-formulario';
-import { idDaEtapa, idDoGrupo, idDoItem } from '../ids';
+import { idDaPagina, idDoGrupo, idDoItem } from '../ids';
 import { ItemDoFormularioComponent } from '../item-do-formulario';
 import { type ContextoDoEditor } from '../modelo/contexto-do-editor';
 import { comGrupo, motivoDaRemocaoTravadaDoGrupo, removerGrupo } from '../modelo/grupos';
@@ -22,7 +22,7 @@ import {
   type ChaveDaEntrada,
   type ConteudoDoFormulario,
   type EntradaDaSecao,
-  type EtapaDoFormulario,
+  type PaginaDoFormulario,
   type ItemDoFormulario,
 } from '../modelo/tipos';
 
@@ -39,7 +39,7 @@ const SEM_RECUSAS = new Map<string, never[]>();
     @if (entradas().length > 0) {
       <ol
         class="editor-formulario__itens"
-        [attr.aria-label]="'Campos de ' + etapa().apresentacao.titulo"
+        [attr.aria-label]="'Campos de ' + pagina().apresentacao.titulo"
       >
         @for (entrada of entradas(); track chaveDa(entrada); let posicao = $index) {
           <li>
@@ -106,7 +106,7 @@ export class EntradasDaSecaoComponent {
   private readonly injector = inject(Injector);
 
   readonly contexto = input.required<ContextoDoEditor>();
-  readonly etapa = input.required<EtapaDoFormulario>();
+  readonly pagina = input.required<PaginaDoFormulario>();
 
   readonly conteudoChange = output<ConteudoDoFormulario>();
   readonly camposEditados = output<CamposEditadosDoFormulario>();
@@ -128,7 +128,7 @@ export class EntradasDaSecaoComponent {
 
   protected readonly idBase = computed(() => this.contexto().idBase);
   protected readonly entradas = computed(() =>
-    entradasDaSecao(this.contexto().conteudo, this.etapa().codigo),
+    entradasDaSecao(this.contexto().conteudo, this.pagina().codigo),
   );
 
   protected chaveDa(entrada: EntradaDaSecao): string {
@@ -149,10 +149,10 @@ export class EntradasDaSecaoComponent {
     const chave = chaveDe(entrada);
     const resultado = moverEntrada(this.contexto().conteudo, chave, direcao, this.contexto().nomes);
     aplicarEdicao(resultado, this, (conteudo) => {
-      const entradas = entradasDaSecao(conteudo, this.etapa().codigo);
+      const entradas = entradasDaSecao(conteudo, this.pagina().codigo);
       const posicao = entradas.findIndex((e) => ehAEntrada(e, chave)) + 1;
       this.anuncio.emit(
-        `${descricaoDe(entrada)} movido para a posição ${posicao} de ${entradas.length} em ${this.etapa().apresentacao.titulo}.`,
+        `${descricaoDe(entrada)} movido para a posição ${posicao} de ${entradas.length} em ${this.pagina().apresentacao.titulo}.`,
       );
       this.focarMovimento(entrada, direcao);
     });
@@ -176,7 +176,7 @@ export class EntradasDaSecaoComponent {
     const resultado = removerItem(this.contexto().conteudo, item.fatoCodigo, this.contexto().nomes);
     aplicarEdicao(resultado, this, () => {
       this.anuncio.emit(
-        `Campo “${item.apresentacao.rotulo}” removido de ${this.etapa().apresentacao.titulo}.`,
+        `Campo “${item.apresentacao.rotulo}” removido de ${this.pagina().apresentacao.titulo}.`,
       );
       this.devolverOFoco();
     });
@@ -192,12 +192,12 @@ export class EntradasDaSecaoComponent {
       return;
     }
     this.conteudoChange.emit(removerGrupo(conteudo, codigo));
-    this.anuncio.emit(`Grupo “${rotulo}” removido de ${this.etapa().apresentacao.titulo}.`);
+    this.anuncio.emit(`Grupo “${rotulo}” removido de ${this.pagina().apresentacao.titulo}.`);
     this.devolverOFoco();
   }
 
   private devolverOFoco(): void {
-    focarDepois(this.injector, `${idDaEtapa(this.idBase(), this.etapa().codigo)}-acrescentar`);
+    focarDepois(this.injector, `${idDaPagina(this.idBase(), this.pagina().codigo)}-acrescentar`);
   }
 }
 

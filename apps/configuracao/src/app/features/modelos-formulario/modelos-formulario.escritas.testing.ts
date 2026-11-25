@@ -21,7 +21,7 @@ export const modelo: ModeloFormularioView = {
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   conteudo: {
     titulo: 'Inscrição',
-    etapas: [],
+    paginas: [],
     itens: [],
     termos: [],
     pressupostos: [],

@@ -11,7 +11,7 @@ import { RELOGIO } from '@uniplus/shared-core/relogio';
 import { type ApiResult, apiFailure, apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   BlocoSistemaCodigo,
-  TipoEtapaFormularioCodigo,
+  TipoPaginaFormularioCodigo,
   type AvaliacaoDaInscricaoDto,
   type AvaliacaoDaInscricaoRequest,
   type ReciboDaInscricaoDto,
@@ -94,13 +94,13 @@ export const SEM_DERIVACAO: AvaliacaoDaInscricaoDto = {
 /** O formulário de teste com o bloco das modalidades, que dependem do nome. */
 export const COM_MODALIDADES: FormularioApresentadoDoProcessoDto = {
   ...comFormulario(FORMULARIO_DE_INSCRICAO_MOCK, {
-    etapas: [
-      ...FORMULARIO_DE_INSCRICAO_MOCK.formulario.etapas,
+    paginas: [
+      ...FORMULARIO_DE_INSCRICAO_MOCK.formulario.paginas,
       {
         codigo: 'MODALIDADES',
         codigoNasRegras: null,
         ordem: 3,
-        tipo: TipoEtapaFormularioCodigo.BLOCO,
+        tipo: TipoPaginaFormularioCodigo.BLOCO,
         bloco: BlocoSistemaCodigo.MODALIDADES_CALCULADAS,
         apresentacao: { titulo: 'Modalidades de concorrência', descricao: null, aviso: null },
       },

@@ -7,7 +7,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 import {
   campoDoServidor,
-  etapaDoServidor,
+  paginaDoServidor,
   formularioDoServidor,
 } from './formulario-do-servidor.testing';
 import { hidratarDraft } from './hidratacao';
@@ -119,7 +119,7 @@ describe('hidratarDraft — formulário de inscrição', () => {
       finalidade: { codigo: finalidade, rotulo: finalidade },
       faseId: ID_INSCRICAO,
       titulo: 'Inscrição 2027',
-      etapas: [etapaDoServidor('DADOS_BASICOS', 0), etapaDoServidor('S1', 1)],
+      paginas: [paginaDoServidor('DADOS_BASICOS', 0), paginaDoServidor('S1', 1)],
       coleta: {
         itens: [
           campoDoServidor('NOME', 0, 'DADOS_BASICOS', TipoDeCampoCodigo.ESCOLHA_UNICA),
@@ -156,7 +156,7 @@ describe('hidratarDraft — formulário de inscrição', () => {
         formularios: [
           formulario(FinalidadeFormularioCodigo.INSCRICAO),
           formulario(FinalidadeFormularioCodigo.ISENCAO_TAXA, {
-            etapas: [etapaDoServidor('S1', 0)],
+            paginas: [paginaDoServidor('S1', 0)],
             coleta: {
               itens: [campoDoServidor('RENDA', 0, 'S1', TipoDeCampoCodigo.ESCOLHA_UNICA)],
               grupos: [],
@@ -184,7 +184,7 @@ describe('hidratarDraft — formulário de inscrição', () => {
             modeloOrigem: { id: 'm1', codigo: 'MEDICINA-INSCRICAO' },
           }),
           formulario(FinalidadeFormularioCodigo.ISENCAO_TAXA, {
-            etapas: [etapaDoServidor('S1', 0)],
+            paginas: [paginaDoServidor('S1', 0)],
             modeloOrigem: { id: 'm2', codigo: 'ISENCAO-PADRAO' },
           }),
         ],
@@ -261,7 +261,7 @@ describe('hidratarDraft — formulário de inscrição', () => {
     // Sem formulário de inscrição, o conteúdo nasce só com a revisão e aceite; a seção dos dados
     // básicos chega com a criação.
     expect(draft.formulario.faseCodigo).toBe('');
-    expect(draft.formulario.conteudo.etapas?.map((e) => e.codigo)).toEqual(['REVISAO_E_ACEITE']);
+    expect(draft.formulario.conteudo.paginas?.map((e) => e.codigo)).toEqual(['REVISAO_E_ACEITE']);
     expect(draft.formulario.conteudo.itens).toEqual([]);
     expect(draft.formulario.derivacao).toEqual([]);
   });

@@ -5,7 +5,7 @@ describe('recusas do arquivo', () => {
   it('recusa máximo de grupo escrito como texto', () => {
     const formulario = {
       finalidade: '',
-      etapas: [],
+      paginas: [],
       termos: [],
       regras: {},
       pressupostos: { fatos: [] },

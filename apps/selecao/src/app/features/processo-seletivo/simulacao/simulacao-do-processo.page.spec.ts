@@ -1,6 +1,6 @@
 import {
   BlocoSistemaCodigo,
-  TipoEtapaFormularioCodigo,
+  TipoPaginaFormularioCodigo,
   AplicabilidadeCodigo,
 } from '@uniplus/shared-data/selecao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -27,19 +27,19 @@ const FORMULARIO_DA_HABILITACAO: FormularioApresentadoDoProcessoDto = {
   formulario: {
     finalidade: 'HABILITACAO',
     titulo: null,
-    etapas: [
+    paginas: [
       {
         codigo: 'DOCUMENTOS',
         codigoNasRegras: null,
         ordem: 0,
-        tipo: TipoEtapaFormularioCodigo.BLOCO,
+        tipo: TipoPaginaFormularioCodigo.BLOCO,
         bloco: BlocoSistemaCodigo.COMPROVACAO_DOCUMENTAL,
         apresentacao: { titulo: 'Documentos', descricao: null, aviso: null },
       },
     ],
     termos: [],
     coleta: { itens: [], grupos: [] },
-    regras: { etapas: [], termos: [], derivacoes: [], agregados: [] },
+    regras: { paginas: [], termos: [], derivacoes: [], agregados: [] },
     pressupostos: { fatos: [], dataReferenciaFatos: null, fusoDoEnvio: null },
   },
   comprovacaoDocumental: [

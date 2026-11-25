@@ -35,8 +35,11 @@ const SEM_FATO_QUE_CASE = 'Nenhum fato do candidato casa com o que você digitou
   styleUrl: '../anfitriao.css',
   template: `
     @if (aparece()) {
-      <section class="editor-formulario__etapa" [attr.aria-labelledby]="idBase() + '-pressupostos'">
-        <h3 class="editor-formulario__titulo-etapa" [id]="idBase() + '-pressupostos'">
+      <section
+        class="editor-formulario__pagina"
+        [attr.aria-labelledby]="idBase() + '-pressupostos'"
+      >
+        <h3 class="editor-formulario__titulo-pagina" [id]="idBase() + '-pressupostos'">
           Fatos pressupostos
         </h3>
         <p class="field__hint">

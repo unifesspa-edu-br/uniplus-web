@@ -1,6 +1,6 @@
 import {
   BlocoSistemaCodigo,
-  TipoEtapaFormularioCodigo,
+  TipoPaginaFormularioCodigo,
   FinalidadeFormularioCodigo,
 } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -74,13 +74,13 @@ describe('InscricaoDoCandidatoPage', () => {
 
   /** O formulário de teste com o bloco de comprovação documental. */
   const COM_DOCUMENTOS = comFormulario(FORMULARIO_DE_INSCRICAO_MOCK, {
-    etapas: [
-      ...FORMULARIO_DE_INSCRICAO_MOCK.formulario.etapas,
+    paginas: [
+      ...FORMULARIO_DE_INSCRICAO_MOCK.formulario.paginas,
       {
         codigo: 'DOCUMENTOS',
         codigoNasRegras: null,
         ordem: 3,
-        tipo: TipoEtapaFormularioCodigo.BLOCO,
+        tipo: TipoPaginaFormularioCodigo.BLOCO,
         bloco: BlocoSistemaCodigo.COMPROVACAO_DOCUMENTAL,
         apresentacao: { titulo: 'Documentos', descricao: null, aviso: null },
       },

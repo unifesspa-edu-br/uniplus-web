@@ -73,7 +73,7 @@ const anuncioDoAcrescimo = (finalidade: string): string =>
 
 /**
  * Formulários — um por finalidade do processo (inscrição, isenção da taxa, habilitação), cada um
- * numa aba, com as etapas, os campos e os termos editados pelo editor de formulário compartilhado
+ * numa aba, com as páginas, os campos e os termos editados pelo editor de formulário compartilhado
  * com os modelos da Configuração.
  *
  * O passo vem depois do Cronograma porque depende dele em três frentes: cada formulário é
@@ -259,7 +259,7 @@ export class FormularioPassoComponent {
 
   /**
    * Acrescenta o formulário da finalidade escolhida com a revisão e aceite, que toda finalidade
-   * exige como última etapa. Ele é criado no servidor quando o passo for gravado. A aba nova recebe
+   * exige como última página. Ele é criado no servidor quando o passo for gravado. A aba nova recebe
    * o foco, e o leitor de tela ouve o que aconteceu.
    */
   acrescentarFinalidade(): void {

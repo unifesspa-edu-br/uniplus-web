@@ -3,8 +3,8 @@ export function idsDescritivos(ids: readonly (string | null)[]): string | null {
   return ids.filter((id) => id !== null).join(' ') || null;
 }
 
-export function idDaEtapa(idBase: string, codigo: string): string {
-  return `${idBase}-etapa-${codigo}`;
+export function idDaPagina(idBase: string, codigo: string): string {
+  return `${idBase}-pagina-${codigo}`;
 }
 
 export function idDoItem(idBase: string, fatoCodigo: string): string {

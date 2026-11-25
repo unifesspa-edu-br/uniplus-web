@@ -47,7 +47,7 @@ describe('fatosParaAcrescentar', () => {
       }),
     ];
     const atual = conteudo({
-      etapas: [secao('S1', 0)],
+      paginas: [secao('S1', 0)],
       itens: [item('JA_NO_FORMULARIO', 0, 'S1')],
     });
 
@@ -58,7 +58,7 @@ describe('fatosParaAcrescentar', () => {
   });
 
   it('o fato pressuposto não é oferecido como campo: vem do formulário anterior ou é coletado aqui, nunca os dois', () => {
-    const atual = conteudo({ etapas: [secao('S1', 0)], pressupostos: ['P'] });
+    const atual = conteudo({ paginas: [secao('S1', 0)], pressupostos: ['P'] });
 
     expect(fatosParaAcrescentar(atual, [fato('P'), fato('Q')]).map((f) => f.codigo)).toEqual(['Q']);
   });
@@ -66,7 +66,7 @@ describe('fatosParaAcrescentar', () => {
 
 describe('pressupostosParaAcrescentar', () => {
   it('a inscrição não tem pressuposto, e o fato já coletado pelo formulário não é oferecido', () => {
-    const atual = conteudo({ etapas: [secao('S1', 0)], itens: [item('A', 0, 'S1')] });
+    const atual = conteudo({ paginas: [secao('S1', 0)], itens: [item('A', 0, 'S1')] });
     const catalogo = [fato('A'), fato('B')];
 
     expect(pressupostosParaAcrescentar(atual, catalogo, 'INSCRICAO')).toEqual([]);

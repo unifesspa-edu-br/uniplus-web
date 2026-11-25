@@ -60,7 +60,7 @@ export const PROCESSO_PUBLICADO_DA_MEDICINA = {
       faseId: null,
       titulo: 'Inscrição — Processo Seletivo de Medicina 2027',
       modeloOrigem: null,
-      etapas: [
+      paginas: [
         {
           codigo: 'SECAO_1',
           ordem: 0,

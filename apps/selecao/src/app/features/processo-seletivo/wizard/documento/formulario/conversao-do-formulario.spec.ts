@@ -344,12 +344,12 @@ describe('conversão do documento e do conteúdo do editor', () => {
     expect(volta.formulario).not.toHaveProperty('titulo');
   });
 
-  it('as etapas novas usam os enums do contrato e conservam seu predicado vazio', () => {
+  it('as páginas novas usam os enums do contrato e conservam seu predicado vazio', () => {
     const volta = aceita(
       editar(formulario(), (conteudo) => ({
         ...conteudo,
-        etapas: [
-          ...(conteudo.etapas ?? []),
+        paginas: [
+          ...(conteudo.paginas ?? []),
           {
             codigo: 'outra',
             ordem: 1,
@@ -368,10 +368,11 @@ describe('conversão do documento e do conteúdo do editor', () => {
     });
   });
 
-  it('recusa uma etapa com tipo desconhecido sem substituir as outras partes', () => {
+  it('recusa uma página com tipo desconhecido sem substituir as outras partes', () => {
     const recusada = editar(formulario(), (conteudo) => ({
       ...conteudo,
-      etapas: conteudo.etapas?.map((etapa) => ({ ...etapa, tipo: 'tipo desconhecido' })) ?? null,
+      paginas:
+        conteudo.paginas?.map((pagina) => ({ ...pagina, tipo: 'tipo desconhecido' })) ?? null,
     }));
     expect(recusada.ok).toBe(false);
     if (!recusada.ok) expect(recusada.impedimentos[0].mensagem).toBe('Selecione uma opção válida.');

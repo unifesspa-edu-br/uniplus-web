@@ -24,7 +24,7 @@ function apresentacaoDoGrupo(grupo: GrupoDoFormulario) {
     codigo: grupo.codigo,
     ordem: grupo.ordem,
     rotulo: grupo.rotulo,
-    paginaCodigo: grupo.etapaCodigo ?? undefined,
+    paginaCodigo: grupo.paginaCodigo ?? undefined,
     incluiCandidato: grupo.ocorrencias.incluiCandidato,
   };
 }

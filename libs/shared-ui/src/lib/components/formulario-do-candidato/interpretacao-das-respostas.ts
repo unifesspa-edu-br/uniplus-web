@@ -24,7 +24,7 @@ export interface FontesDaInterpretacao {
 
 /**
  * As regras do formulário avaliadas contra as respostas dadas: o que o interpretador devolve e os passos
- * que dele saem. Também diz como os passos ficariam com outras etapas concluídas, sem concluí-las.
+ * que dele saem. Também diz como os passos ficariam com outras páginas concluídas, sem concluí-las.
  */
 export class InterpretacaoDasRespostas {
   readonly resultado: Signal<InterpretacaoDoFormulario>;
@@ -42,17 +42,17 @@ export class InterpretacaoDasRespostas {
     });
   }
 
-  /** Os passos como ficariam com estas etapas concluídas; nulo quando as regras não se interpretam. */
-  passosComEtapasConcluidas(etapas: ReadonlySet<string>): readonly PassoDoFormulario[] | null {
-    const interpretacao = this.interpretar(etapas);
+  /** Os passos como ficariam com estas páginas concluídas; nulo quando as regras não se interpretam. */
+  passosComPaginasConcluidas(paginas: ReadonlySet<string>): readonly PassoDoFormulario[] | null {
+    const interpretacao = this.interpretar(paginas);
     return interpretacao.valida ? this.passosDa(interpretacao.avaliacao) : null;
   }
 
-  private interpretar(etapasConcluidas: ReadonlySet<string>): InterpretacaoDoFormulario {
+  private interpretar(paginasConcluidas: ReadonlySet<string>): InterpretacaoDoFormulario {
     const { formulario, simulacao, respostasFixas } = this.fontes;
     return interpretarFormulario(
       formulario().regras,
-      { ...simulacao(), etapasConcluidas: [...etapasConcluidas] },
+      { ...simulacao(), paginasConcluidas: [...paginasConcluidas] },
       new Set(Object.keys(respostasFixas())),
     );
   }

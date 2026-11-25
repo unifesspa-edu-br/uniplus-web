@@ -18,7 +18,7 @@ import {
 import type { EnvioDeDocumentos } from './envio-de-documentos';
 import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
 import type { FormularioDoCandidato } from './formulario-do-candidato.model';
-import { apresentacaoDaEtapa } from './formularios-de-exemplo.testing';
+import { apresentacaoDaPagina } from './formularios-de-exemplo.testing';
 import type { AvaliacaoNaTela } from './modalidades-avaliadas';
 
 describe('Bloco de documentos da inscrição', () => {
@@ -59,15 +59,15 @@ describe('Bloco de documentos da inscrição', () => {
     /** Os documentos antes de outra seção, para haver para onde avançar. */
     const DOCUMENTOS_E_CONTATO: FormularioDoCandidato = {
       ...FORMULARIO,
-      etapas: [
-        FORMULARIO.etapas[1],
+      paginas: [
+        FORMULARIO.paginas[1],
         {
           codigo: 'FIM',
           codigoNasRegras: null,
           ordem: 2,
           tipo: 'BLOCO',
           bloco: 'REVISAO_E_ACEITE',
-          apresentacao: apresentacaoDaEtapa('Revisão'),
+          apresentacao: apresentacaoDaPagina('Revisão'),
         },
       ],
     };

@@ -3,7 +3,7 @@ import type { ItemDasRegras, RegrasDoFormulario } from './interpretador/regras-d
 /** A regra de cada campo e subitem, pelo fato. */
 export function regrasPorFato(regras: RegrasDoFormulario): ReadonlyMap<string, ItemDasRegras> {
   return new Map(
-    (regras.etapas ?? [])
+    (regras.paginas ?? [])
       .flatMap((e) => [...(e.itens ?? []), ...(e.grupos ?? []).flatMap((g) => g.subitens ?? [])])
       .map((item) => [item.fatoCodigo, item]),
   );

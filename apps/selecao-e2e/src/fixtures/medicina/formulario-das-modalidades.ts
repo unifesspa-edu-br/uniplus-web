@@ -126,7 +126,7 @@ export const FORMULARIO_DAS_MODALIDADES_DA_MEDICINA = {
   faseId: null,
   titulo: null,
   modeloOrigem: null,
-  etapas: [
+  paginas: [
     {
       codigo: 'SECAO_1',
       ordem: 0,

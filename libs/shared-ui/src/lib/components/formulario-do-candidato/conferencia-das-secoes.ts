@@ -40,9 +40,9 @@ export interface FontesDaConferencia {
   readonly exigirSecaoValida: () => boolean;
   readonly aguardaVerificacaoDosDocumentos: () => boolean;
   readonly problemasDaConfirmacao: () => ReadonlyMap<string, ProblemaDaConfirmacao>;
-  /** Os passos como ficariam com estas etapas concluídas; nulo quando as regras não se interpretam. */
-  readonly passosComEtapasConcluidas: (
-    etapas: ReadonlySet<string>,
+  /** Os passos como ficariam com estas páginas concluídas; nulo quando as regras não se interpretam. */
+  readonly passosComPaginasConcluidas: (
+    paginas: ReadonlySet<string>,
   ) => readonly PassoDoFormulario[] | null;
   readonly avisos: AvisosDaTela;
 }
@@ -100,13 +100,13 @@ export class ConferenciaDasSecoes {
    * informado o opcional em branco e mostrar um obrigatório, e o motivo do envio precisa contar com ele.
    */
   private passosComTodasConcluidas(): readonly PassoDoFormulario[] {
-    let etapas: ReadonlySet<string> = new Set(this.fontes.navegacao.concluidas());
+    let paginas: ReadonlySet<string> = new Set(this.fontes.navegacao.concluidas());
     let passos = this.fontes.passos();
     for (;;) {
-      const novas = passos.flatMap((p) => p.etapasNasRegras).filter((e) => !etapas.has(e));
+      const novas = passos.flatMap((p) => p.paginasNasRegras).filter((e) => !paginas.has(e));
       if (novas.length === 0) return passos;
-      etapas = new Set([...etapas, ...novas]);
-      const interpretados = this.fontes.passosComEtapasConcluidas(etapas);
+      paginas = new Set([...paginas, ...novas]);
+      const interpretados = this.fontes.passosComPaginasConcluidas(paginas);
       if (interpretados === null) return passos;
       passos = interpretados;
     }

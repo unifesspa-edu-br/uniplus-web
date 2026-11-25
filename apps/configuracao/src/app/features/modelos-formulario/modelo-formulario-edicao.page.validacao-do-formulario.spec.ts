@@ -69,9 +69,9 @@ describe('ModeloFormularioEdicaoPage', () => {
     const tela = await carregar();
     const campo = digitarNoMaximoDoGrupo(tela, 'dez');
     await propagar();
-    (tela.querySelector('#cfg-modelo-etapa-SECAO_1-nome button') as HTMLButtonElement).click();
+    (tela.querySelector('#cfg-modelo-pagina-SECAO_1-nome button') as HTMLButtonElement).click();
     await propagar();
-    expect((tela.querySelector('#cfg-modelo-etapa-SECAO_1-corpo') as HTMLElement).hidden).toBe(
+    expect((tela.querySelector('#cfg-modelo-pagina-SECAO_1-corpo') as HTMLElement).hidden).toBe(
       true,
     );
 
@@ -79,7 +79,7 @@ describe('ModeloFormularioEdicaoPage', () => {
     await propagar();
     await new Promise((resolve) => setTimeout(resolve));
 
-    expect((tela.querySelector('#cfg-modelo-etapa-SECAO_1-corpo') as HTMLElement).hidden).toBe(
+    expect((tela.querySelector('#cfg-modelo-pagina-SECAO_1-corpo') as HTMLElement).hidden).toBe(
       false,
     );
     expect(tela.ownerDocument.activeElement).toBe(campo);

@@ -234,7 +234,7 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
     exigirSecaoValida: this.exigirSecaoValida,
     aguardaVerificacaoDosDocumentos: () => this.aguardaVerificacaoDosDocumentos(),
     problemasDaConfirmacao: () => this.problemasDaConfirmacao(),
-    passosComEtapasConcluidas: (etapas) => this.interpretacao.passosComEtapasConcluidas(etapas),
+    passosComPaginasConcluidas: (paginas) => this.interpretacao.passosComPaginasConcluidas(paginas),
     avisos: this,
   });
 
@@ -300,7 +300,7 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
   readonly simulacao = computed<SimulacaoDoFormulario>(() => ({
     respostas: this.dados.respostasComAsFixas(),
     grupos: this.dados.grupos(),
-    etapasConcluidas: [...this.navegacao.concluidas()],
+    paginasConcluidas: [...this.navegacao.concluidas()],
     pressupostos: this.pressupostos(),
     envio: this.envio(),
   }));

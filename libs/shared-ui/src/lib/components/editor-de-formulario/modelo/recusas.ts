@@ -12,12 +12,12 @@ export interface RecusaDaRestricao {
   readonly mensagem: string;
 }
 
-/** As recusas da API distribuídas pelo que a tela mostra: o item, a restrição dele, a etapa, ou o resumo. */
+/** As recusas da API distribuídas pelo que a tela mostra: o item, a restrição dele, a página, ou o resumo. */
 export interface RecusasDoConteudo {
   readonly porItem: ReadonlyMap<string, readonly string[]>;
   /** As que apontam uma restrição, pelo fato do campo — do item ou do campo de grupo. */
   readonly porRestricao: ReadonlyMap<string, readonly RecusaDaRestricao[]>;
-  readonly porEtapa: ReadonlyMap<string, readonly string[]>;
+  readonly porPagina: ReadonlyMap<string, readonly string[]>;
   readonly porTermo: ReadonlyMap<string, readonly string[]>;
   readonly porGrupo: ReadonlyMap<string, readonly string[]>;
   readonly gerais: readonly string[];
@@ -40,7 +40,7 @@ export function distribuirRecusas(
 
 type DestinoDaRecusa =
   | { readonly tipo: 'campo'; readonly campo: ItemDoFormulario }
-  | { readonly tipo: 'grupo' | 'etapa' | 'termo'; readonly codigo: string }
+  | { readonly tipo: 'grupo' | 'pagina' | 'termo'; readonly codigo: string }
   | { readonly tipo: 'geral' };
 
 /** Onde a tela mostra a recusa, pelo índice que a API apontou na lista enviada. */
@@ -49,8 +49,8 @@ function destinoDaRecusa(campo: string, enviado: ConteudoDoFormulario): DestinoD
   if (noGrupo !== undefined) return noGrupo;
   const item = elementoApontado(campo, 'itens', enviado.itens ?? []);
   if (item !== undefined) return { tipo: 'campo', campo: item };
-  const etapa = elementoApontado(campo, 'etapas', enviado.etapas ?? []);
-  if (etapa !== undefined) return { tipo: 'etapa', codigo: etapa.codigo };
+  const pagina = elementoApontado(campo, 'paginas', enviado.paginas ?? []);
+  if (pagina !== undefined) return { tipo: 'pagina', codigo: pagina.codigo };
   const termo = elementoApontado(campo, 'termos', enviado.termos ?? []);
   return termo === undefined ? { tipo: 'geral' } : { tipo: 'termo', codigo: termo.codigo };
 }
@@ -73,7 +73,7 @@ interface Recusa {
 class DistribuicaoDasRecusas {
   private readonly porItem = new Map<string, string[]>();
   private readonly porRestricao = new Map<string, RecusaDaRestricao[]>();
-  private readonly porEtapa = new Map<string, string[]>();
+  private readonly porPagina = new Map<string, string[]>();
   private readonly porTermo = new Map<string, string[]>();
   private readonly porGrupo = new Map<string, string[]>();
   private readonly gerais: string[] = [];
@@ -82,13 +82,13 @@ class DistribuicaoDasRecusas {
     if (destino.tipo === 'campo') this.acumularNoCampo(destino.campo, recusa);
     else if (destino.tipo === 'geral') this.gerais.push(recusa.message);
     else if (destino.tipo === 'grupo') acumular(this.porGrupo, destino.codigo, recusa.message);
-    else if (destino.tipo === 'etapa') acumular(this.porEtapa, destino.codigo, recusa.message);
+    else if (destino.tipo === 'pagina') acumular(this.porPagina, destino.codigo, recusa.message);
     else acumular(this.porTermo, destino.codigo, recusa.message);
   }
 
   recusas(): RecusasDoConteudo {
-    const { porItem, porRestricao, porEtapa, porTermo, porGrupo, gerais } = this;
-    return { porItem, porRestricao, porEtapa, porTermo, porGrupo, gerais };
+    const { porItem, porRestricao, porPagina, porTermo, porGrupo, gerais } = this;
+    return { porItem, porRestricao, porPagina, porTermo, porGrupo, gerais };
   }
 
   /**

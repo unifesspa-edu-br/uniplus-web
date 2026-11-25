@@ -11,7 +11,7 @@ import type {
  * virar caso do corpus compartilhado.
  */
 export interface Divergencia {
-  /** Onde: a etapa, o campo, o grupo, a ocorrência ou o termo, pelo código. */
+  /** Onde: a página, o campo, o grupo, a ocorrência ou o termo, pelo código. */
   readonly onde: string;
   readonly propriedade: string;
   readonly interpretador: string;
@@ -61,12 +61,12 @@ function parear<T>({ meus, deles, chave, rotulo, conferir }: Pareamento<T>): voi
 class ConferenciaDasAvaliacoes {
   readonly divergencias: Divergencia[] = [];
 
-  etapas(meus: AvaliacaoDoFormulario['etapas'], deles: AvaliacaoDoFormulario['etapas']): void {
+  paginas(meus: AvaliacaoDoFormulario['paginas'], deles: AvaliacaoDoFormulario['paginas']): void {
     parear({
       meus,
       deles,
       chave: (e) => e.codigo,
-      rotulo: 'Etapa',
+      rotulo: 'Pagina',
       conferir: (onde, meu, dele) => this.comparar(onde, 'visivel', meu?.visivel, dele?.visivel),
     });
   }
@@ -149,7 +149,7 @@ export function divergenciasEntre(
   servidor: AvaliacaoDoFormulario,
 ): Divergencia[] {
   const conferencia = new ConferenciaDasAvaliacoes();
-  conferencia.etapas(local.etapas, servidor.etapas);
+  conferencia.paginas(local.paginas, servidor.paginas);
   conferencia.campos('', local.campos, servidor.campos);
   conferencia.grupos(local.grupos, servidor.grupos);
   conferencia.termos(local.termos, servidor.termos);

@@ -14,7 +14,7 @@ import {
   BlocoSistemaCodigo,
   CONFIGURACAO_BASE_PATH,
   OperadorCodigo,
-  TipoEtapaFormularioCodigo,
+  TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
   TipoDeCampoCodigo,
   type FatoCandidatoView,
@@ -88,11 +88,11 @@ export const modelo: ModeloFormularioView = {
   descritivo: { nome: 'Inscrição Medicina', descricao: null, tipoProcessoCodigo: null },
   conteudo: {
     titulo: 'Inscrição',
-    etapas: [
+    paginas: [
       {
         codigo: 'DADOS_BASICOS',
         ordem: 0,
-        tipo: TipoEtapaFormularioCodigo.SECAO,
+        tipo: TipoPaginaFormularioCodigo.SECAO,
         bloco: null,
         apresentacao: { titulo: 'Dados do candidato', descricao: null, aviso: null },
         exibicao: null,
@@ -100,7 +100,7 @@ export const modelo: ModeloFormularioView = {
       {
         codigo: 'SECAO_1',
         ordem: 1,
-        tipo: TipoEtapaFormularioCodigo.SECAO,
+        tipo: TipoPaginaFormularioCodigo.SECAO,
         bloco: null,
         apresentacao: { titulo: 'Escolaridade', descricao: null, aviso: null },
         exibicao: null,
@@ -108,7 +108,7 @@ export const modelo: ModeloFormularioView = {
       {
         codigo: 'REVISAO_E_ACEITE',
         ordem: 2,
-        tipo: TipoEtapaFormularioCodigo.BLOCO,
+        tipo: TipoPaginaFormularioCodigo.BLOCO,
         bloco: BlocoSistemaCodigo.REVISAO_E_ACEITE,
         apresentacao: { titulo: 'Revisão e aceite', descricao: null, aviso: null },
         exibicao: null,
@@ -125,7 +125,7 @@ export const modelo: ModeloFormularioView = {
           pedirConfirmacao: false,
         },
         regras: SEM_REGRAS_DO_CAMPO,
-        etapaCodigo: 'DADOS_BASICOS',
+        paginaCodigo: 'DADOS_BASICOS',
       },
       {
         fatoCodigo: 'ESCOLA_PUBLICA',
@@ -155,7 +155,7 @@ export const modelo: ModeloFormularioView = {
             mensagem: 'Só para egressos.',
           },
         },
-        etapaCodigo: 'SECAO_1',
+        paginaCodigo: 'SECAO_1',
       },
     ],
     termos: [
@@ -175,7 +175,7 @@ export const modelo: ModeloFormularioView = {
         codigo: 'FAMILIA',
         ordem: 2,
         rotulo: 'Composição familiar',
-        etapaCodigo: 'SECAO_1',
+        paginaCodigo: 'SECAO_1',
         ocorrencias: { minimo: 1, maximo: null, incluiCandidato: true },
         regras: {
           exibicao: null,

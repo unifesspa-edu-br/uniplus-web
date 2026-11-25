@@ -12,7 +12,7 @@ import {
 import { TagComponent } from '../../tag/tag';
 import { aplicarEdicao } from '../edicao';
 import { focarDepois } from '../foco';
-import { idDaEtapa } from '../ids';
+import { idDaPagina } from '../ids';
 import { type ContextoDoEditor } from '../modelo/contexto-do-editor';
 import {
   BLOCO_COMPROVACAO_DOCUMENTAL,
@@ -21,9 +21,15 @@ import {
   SECAO_DADOS_BASICOS,
   TIPO_SECAO,
 } from '../modelo/constantes';
-import { entradasDaSecao, etapasEmOrdem } from '../modelo/ordem-das-entradas';
-import { comEtapa, etapaFixa, moverEtapa, podeMoverEtapa, removerEtapa } from '../modelo/secoes';
-import { type ConteudoDoFormulario, type EtapaDoFormulario } from '../modelo/tipos';
+import { entradasDaSecao, paginasEmOrdem } from '../modelo/ordem-das-entradas';
+import {
+  comPagina,
+  paginaFixa,
+  moverPagina,
+  podeMoverPagina,
+  removerPagina,
+} from '../modelo/secoes';
+import { type ConteudoDoFormulario, type PaginaDoFormulario } from '../modelo/tipos';
 import { SecaoDoFormularioComponent } from '../secao-do-formulario';
 import { AcrescentarNaSecaoComponent } from './acrescentar-na-secao';
 import { EntradasDaSecaoComponent } from './entradas-da-secao';
@@ -39,12 +45,12 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
 };
 
 /**
- * Uma etapa do formulário — seção, bloco do sistema ou os dados básicos —: o título que abre e fecha
- * o corpo, as ações de mover e remover, e o que cada tipo mostra. Acessibilidade: a etapa é uma
+ * Uma página do formulário — seção, bloco do sistema ou os dados básicos —: o título que abre e fecha
+ * o corpo, as ações de mover e remover, e o que cada tipo mostra. Acessibilidade: a página é uma
  * região nomeada pelo título.
  */
 @Component({
-  selector: 'ui-etapa-do-formulario',
+  selector: 'ui-pagina-do-formulario',
   standalone: true,
   imports: [
     TagComponent,
@@ -56,10 +62,10 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: '../anfitriao.css',
   template: `
-    <section class="editor-formulario__etapa" [attr.aria-labelledby]="idDaSecao() + '-nome'">
+    <section class="editor-formulario__pagina" [attr.aria-labelledby]="idDaSecao() + '-nome'">
       <div class="editor-formulario__cabecalho">
-        <!-- O título abre e fecha a etapa: o formulário inteiro aberto é longo demais para achar a seção. -->
-        <h3 class="editor-formulario__titulo-etapa" [id]="idDaSecao() + '-nome'">
+        <!-- O título abre e fecha a pagina: o formulário inteiro aberto é longo demais para achar a seção. -->
+        <h3 class="editor-formulario__titulo-pagina" [id]="idDaSecao() + '-nome'">
           <button
             class="editor-formulario__alternar"
             type="button"
@@ -69,7 +75,8 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
           >
             <span class="editor-formulario__seta" aria-hidden="true"></span>
             <span
-              >{{ posicao() }}. {{ etapa().apresentacao.titulo.trim() || 'Seção sem título' }}</span
+              >{{ posicao() }}.
+              {{ pagina().apresentacao.titulo.trim() || 'Seção sem título' }}</span
             >
           </button>
         </h3>
@@ -84,14 +91,14 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
           <div
             class="editor-formulario__acoes-do-cabecalho"
             role="group"
-            [attr.aria-label]="'Ações ' + daEtapa()"
+            [attr.aria-label]="'Ações ' + daPagina()"
           >
             <button
               class="btn btn--tertiary btn--sm"
               type="button"
               [id]="idDaSecao() + '-subir'"
               [disabled]="contexto().disabled || !podeMover(-1)"
-              [attr.aria-label]="'Subir ' + nomeDaEtapa()"
+              [attr.aria-label]="'Subir ' + nomeDaPagina()"
               (click)="mover(-1)"
             >
               Subir
@@ -101,7 +108,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
               type="button"
               [id]="idDaSecao() + '-descer'"
               [disabled]="contexto().disabled || !podeMover(1)"
-              [attr.aria-label]="'Descer ' + nomeDaEtapa()"
+              [attr.aria-label]="'Descer ' + nomeDaPagina()"
               (click)="mover(1)"
             >
               Descer
@@ -110,7 +117,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
               class="btn btn--tertiary btn--sm"
               type="button"
               [disabled]="contexto().disabled"
-              [attr.aria-label]="'Remover ' + nomeDaEtapa()"
+              [attr.aria-label]="'Remover ' + nomeDaPagina()"
               (click)="remover()"
             >
               Remover
@@ -128,7 +135,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
       }
 
       <div class="editor-formulario__corpo" [id]="idDaSecao() + '-corpo'" [hidden]="!aberta()">
-        @if (etapa().codigo === dadosBasicos) {
+        @if (pagina().codigo === dadosBasicos) {
           <p class="field__hint">
             Os dados de identificação e contato que toda inscrição coleta. O sistema mantém esta
             seção, que não pode ser alterada.
@@ -142,7 +149,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
           </ol>
         } @else if (!ehSecao()) {
           <p class="field__hint">{{ descricaoDoBloco() }}</p>
-          @if (etapa().bloco === revisaoEAceite) {
+          @if (pagina().bloco === revisaoEAceite) {
             <ui-termos-exigidos
               [contexto]="contexto()"
               (camposEditados)="camposEditados.emit($event)"
@@ -152,23 +159,23 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
           }
         } @else {
           <ui-secao-do-formulario
-            [etapa]="etapa()"
-            [fatos]="contexto().fatosDaSecao.get(etapa().codigo) ?? []"
+            [pagina]="pagina()"
+            [fatos]="contexto().fatosDaSecao.get(pagina().codigo) ?? []"
             [idBase]="idDaSecao()"
             [disabled]="contexto().disabled"
-            (camposEditados)="registrarEtapa($event)"
-            (etapaChange)="conteudoChange.emit(comEtapa(contexto().conteudo, $event))"
+            (camposEditados)="registrarPagina($event)"
+            (paginaChange)="conteudoChange.emit(comPagina(contexto().conteudo, $event))"
           />
           <ui-entradas-da-secao
             [contexto]="contexto()"
-            [etapa]="etapa()"
+            [pagina]="pagina()"
             (camposEditados)="camposEditados.emit($event)"
             (conteudoChange)="conteudoChange.emit($event)"
             (anuncio)="anuncio.emit($event)"
           />
           <ui-acrescentar-na-secao
             [contexto]="contexto()"
-            [etapa]="etapa()"
+            [pagina]="pagina()"
             (conteudoChange)="conteudoChange.emit($event)"
             (anuncio)="anuncio.emit($event)"
           />
@@ -177,12 +184,12 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
     </section>
   `,
 })
-export class EtapaDoFormularioComponent {
+export class PaginaDoFormularioComponent {
   private readonly injector = inject(Injector);
 
   readonly contexto = input.required<ContextoDoEditor>();
-  readonly etapa = input.required<EtapaDoFormulario>();
-  /** A posição da etapa no formulário, a partir de um. */
+  readonly pagina = input.required<PaginaDoFormulario>();
+  /** A posição da página no formulário, a partir de um. */
   readonly posicao = input.required<number>();
   readonly aberta = input<boolean>(true);
 
@@ -192,30 +199,30 @@ export class EtapaDoFormularioComponent {
   /** Pede para abrir ou fechar o corpo; quem guarda o que está aberto é o editor. */
   readonly alternar = output<void>();
 
-  protected registrarEtapa(campos: CamposEditadosDoFormulario): void {
-    this.camposEditados.emit(camposNaParte(['etapas', this.etapa().codigo], campos));
+  protected registrarPagina(campos: CamposEditadosDoFormulario): void {
+    this.camposEditados.emit(camposNaParte(['paginas', this.pagina().codigo], campos));
   }
 
   protected readonly dadosBasicos = SECAO_DADOS_BASICOS;
   protected readonly revisaoEAceite = BLOCO_REVISAO_E_ACEITE;
-  protected readonly comEtapa = comEtapa;
+  protected readonly comPagina = comPagina;
 
   protected readonly idDaSecao = computed(() =>
-    idDaEtapa(this.contexto().idBase, this.etapa().codigo),
+    idDaPagina(this.contexto().idBase, this.pagina().codigo),
   );
-  protected readonly ehSecao = computed(() => this.etapa().tipo === TIPO_SECAO);
-  protected readonly fixa = computed(() => etapaFixa(this.etapa()));
+  protected readonly ehSecao = computed(() => this.pagina().tipo === TIPO_SECAO);
+  protected readonly fixa = computed(() => paginaFixa(this.pagina()));
   protected readonly entradas = computed(() =>
-    entradasDaSecao(this.contexto().conteudo, this.etapa().codigo),
+    entradasDaSecao(this.contexto().conteudo, this.pagina().codigo),
   );
   protected readonly erros = computed(
-    () => this.contexto().recusas?.porEtapa?.get(this.etapa().codigo) ?? [],
+    () => this.contexto().recusas?.porPagina?.get(this.pagina().codigo) ?? [],
   );
   protected readonly descricaoDoBloco = computed(
-    () => DESCRICAO_DO_BLOCO[this.etapa().bloco ?? ''] ?? '',
+    () => DESCRICAO_DO_BLOCO[this.pagina().bloco ?? ''] ?? '',
   );
 
-  /** O que a etapa tem, para quem a vê recolhida; bloco do sistema não tem campos a contar. */
+  /** O que a página tem, para quem a vê recolhida; bloco do sistema não tem campos a contar. */
   protected readonly resumo = computed(() => {
     if (!this.ehSecao()) return '';
     const campos = this.entradas().filter((entrada) => entrada.tipo === 'item').length;
@@ -225,40 +232,40 @@ export class EtapaDoFormularioComponent {
     return partes.join(' · ');
   });
 
-  /** Como a tela chama a etapa: seção ou bloco do sistema — "etapa" é termo do cronograma do processo. */
-  protected nomeDaEtapa(): string {
-    const titulo = this.etapa().apresentacao.titulo.trim() || 'sem título';
+  /** Como a tela chama a página: seção ou bloco do sistema — "página" é termo do cronograma do processo. */
+  protected nomeDaPagina(): string {
+    const titulo = this.pagina().apresentacao.titulo.trim() || 'sem título';
     return this.ehSecao() ? `a seção ${titulo}` : `o bloco ${titulo}`;
   }
 
-  protected daEtapa(): string {
-    const titulo = this.etapa().apresentacao.titulo.trim() || 'sem título';
+  protected daPagina(): string {
+    const titulo = this.pagina().apresentacao.titulo.trim() || 'sem título';
     return this.ehSecao() ? `da seção ${titulo}` : `do bloco ${titulo}`;
   }
 
   protected podeMover(direcao: -1 | 1): boolean {
-    return podeMoverEtapa(this.contexto().conteudo, this.etapa().codigo, direcao);
+    return podeMoverPagina(this.contexto().conteudo, this.pagina().codigo, direcao);
   }
 
   protected mover(direcao: -1 | 1): void {
     const { conteudo, nomes, idBase } = this.contexto();
-    const etapa = this.etapa();
-    aplicarEdicao(moverEtapa(conteudo, etapa.codigo, direcao, nomes), this, (editado) => {
-      const etapas = etapasEmOrdem(editado);
-      const posicao = etapas.findIndex((e) => e.codigo === etapa.codigo) + 1;
+    const pagina = this.pagina();
+    aplicarEdicao(moverPagina(conteudo, pagina.codigo, direcao, nomes), this, (editado) => {
+      const paginas = paginasEmOrdem(editado);
+      const posicao = paginas.findIndex((e) => e.codigo === pagina.codigo) + 1;
       this.anuncio.emit(
-        `“${etapa.apresentacao.titulo}” foi para a posição ${posicao} de ${etapas.length}.`,
+        `“${pagina.apresentacao.titulo}” foi para a posição ${posicao} de ${paginas.length}.`,
       );
-      const prefixo = idDaEtapa(idBase, etapa.codigo);
+      const prefixo = idDaPagina(idBase, pagina.codigo);
       const [mesmo, oposto] = direcao < 0 ? ['subir', 'descer'] : ['descer', 'subir'];
       focarDepois(this.injector, `${prefixo}-${mesmo}`, `${prefixo}-${oposto}`);
     });
   }
 
   protected remover(): void {
-    const etapa = this.etapa();
-    aplicarEdicao(removerEtapa(this.contexto().conteudo, etapa.codigo), this, () => {
-      this.anuncio.emit(`${etapa.apresentacao.titulo} removida.`);
+    const pagina = this.pagina();
+    aplicarEdicao(removerPagina(this.contexto().conteudo, pagina.codigo), this, () => {
+      this.anuncio.emit(`${pagina.apresentacao.titulo} removida.`);
       focarDepois(this.injector, `${this.contexto().idBase}-titulo`);
     });
   }

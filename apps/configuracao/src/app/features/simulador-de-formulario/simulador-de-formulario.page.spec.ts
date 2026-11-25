@@ -80,7 +80,7 @@ describe('SimuladorDeFormularioPage', () => {
 
   it('o arquivo fora da forma mostra o erro com o caminho do problema', async () => {
     await abrir();
-    await importar('{"etapas": []}');
+    await importar('{"paginas": []}');
 
     expect(tela().querySelector('#simulador-arquivo-erro')?.textContent).toContain('(em regras)');
   });
@@ -112,11 +112,11 @@ describe('SimuladorDeFormularioPage', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body.respostas).toEqual({ TIPO_ENDERECO: 'URBANO' });
     req.flush({
-      etapas: [{ codigo: 'DADOS', visivel: 'VERDADEIRO' }],
+      paginas: [{ codigo: 'DADOS', visivel: 'VERDADEIRO' }],
       campos: [
         {
           fatoCodigo: 'TIPO_ENDERECO',
-          etapaCodigo: 'DADOS',
+          paginaCodigo: 'DADOS',
           estado: 'RESOLVIDO',
           regras: {
             visivel: 'VERDADEIRO',
@@ -128,7 +128,7 @@ describe('SimuladorDeFormularioPage', () => {
         },
         {
           fatoCodigo: 'NOME_ALDEIA',
-          etapaCodigo: 'DADOS',
+          paginaCodigo: 'DADOS',
           estado: 'INDETERMINADO',
           regras: {
             visivel: 'VERDADEIRO',

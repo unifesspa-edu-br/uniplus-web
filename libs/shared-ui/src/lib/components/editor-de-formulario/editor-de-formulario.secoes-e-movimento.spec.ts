@@ -28,9 +28,9 @@ describe('EditorDeFormularioComponent: seções e movimento', () => {
     expect(cenario.status()).toBe('“Campo C” movido para a posição 2 de 3 em Escolaridade.');
   });
 
-  it('põe as ações da seção na linha do título e não chama a seção de etapa', () => {
-    const cabecalho = cenario.tela.querySelector('#f-etapa-S1-nome')?.parentElement as HTMLElement;
-    const subir = cenario.tela.querySelector('#f-etapa-S1-subir') as HTMLButtonElement;
+  it('põe as ações da seção na linha do título e não chama a seção de página', () => {
+    const cabecalho = cenario.tela.querySelector('#f-pagina-S1-nome')?.parentElement as HTMLElement;
+    const subir = cenario.tela.querySelector('#f-pagina-S1-subir') as HTMLButtonElement;
 
     expect(cabecalho.contains(subir)).toBe(true);
     expect(subir.textContent?.trim()).toBe('Subir');
@@ -39,7 +39,7 @@ describe('EditorDeFormularioComponent: seções e movimento', () => {
       (e) => e.getAttribute('aria-label') ?? '',
     );
     expect([cenario.tela.textContent ?? '', ...nomesAcessiveis].join(' ')).not.toMatch(
-      /\betapas?\b/i,
+      /\bpaginas?\b/i,
     );
   });
 
@@ -51,12 +51,12 @@ describe('EditorDeFormularioComponent: seções e movimento', () => {
     expect(subir.getAttribute('aria-label')).toBe('Subir Campo C');
   });
 
-  it('recolhe e expande a etapa pelo título, mantendo à vista o resumo do que ela tem', () => {
-    const alternar = cenario.tela.querySelector('#f-etapa-S1-nome button') as HTMLButtonElement;
-    const corpo = cenario.tela.querySelector('#f-etapa-S1-corpo') as HTMLElement;
+  it('recolhe e expande a página pelo título, mantendo à vista o resumo do que ela tem', () => {
+    const alternar = cenario.tela.querySelector('#f-pagina-S1-nome button') as HTMLButtonElement;
+    const corpo = cenario.tela.querySelector('#f-pagina-S1-corpo') as HTMLElement;
 
     expect(alternar.getAttribute('aria-expanded')).toBe('true');
-    expect(alternar.getAttribute('aria-controls')).toBe('f-etapa-S1-corpo');
+    expect(alternar.getAttribute('aria-controls')).toBe('f-pagina-S1-corpo');
     expect(corpo.hidden).toBe(false);
     expect(cenario.tela.querySelector('.editor-formulario__resumo')?.textContent?.trim()).toBe(
       '3 campos',
@@ -67,7 +67,7 @@ describe('EditorDeFormularioComponent: seções e movimento', () => {
 
     expect(alternar.getAttribute('aria-expanded')).toBe('false');
     expect(corpo.hidden).toBe(true);
-    expect(cenario.tela.querySelector('#f-etapa-S1-nome')?.textContent).toContain(
+    expect(cenario.tela.querySelector('#f-pagina-S1-nome')?.textContent).toContain(
       '1. Escolaridade',
     );
 

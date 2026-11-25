@@ -14,12 +14,12 @@ import {
 } from '@uniplus/shared-ui/components';
 import {
   BlocoSistemaCodigo,
-  TipoEtapaFormularioCodigo,
+  TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
 } from '@uniplus/shared-data/selecao';
 import { codigoDoContrato } from '@uniplus/shared-data/utils';
 import type {
-  EtapaDoFormulario,
+  PaginaDoFormulario,
   ExibicaoEObrigatoriedade,
   GrupoDoFormulario,
   ItemDoFormulario,
@@ -36,10 +36,10 @@ function regras<O>(valor: ExibicaoEObrigatoriedade<O>) {
   };
 }
 
-export function etapaParaEnvio<O>(etapa: EtapaDoFormulario<O>) {
-  const tipo = codigoDoContrato(TipoEtapaFormularioCodigo, etapa.tipo);
-  if (tipo === null) throw new Error('Tipo de etapa do formulário desconhecido.');
-  return { ...etapa, tipo, bloco: codigoDoContrato(BlocoSistemaCodigo, etapa.bloco ?? '') };
+export function paginaParaEnvio<O>(pagina: PaginaDoFormulario<O>) {
+  const tipo = codigoDoContrato(TipoPaginaFormularioCodigo, pagina.tipo);
+  if (tipo === null) throw new Error('Tipo de página do formulário desconhecido.');
+  return { ...pagina, tipo, bloco: codigoDoContrato(BlocoSistemaCodigo, pagina.bloco ?? '') };
 }
 
 export function itemParaEnvio<N, O, T>(item: ItemDoFormulario<N, O, T>) {
@@ -54,16 +54,16 @@ export function termoParaEnvio<O>(termo: TermoDoFormulario<O>) {
   return { ...termo, regras: regras(termo.regras) };
 }
 
-function semSecaoSeNecessario<T extends { readonly etapaCodigo?: string | null }>(
+function semSecaoSeNecessario<T extends { readonly paginaCodigo?: string | null }>(
   item: T,
   semSecao: boolean,
 ): T {
-  return semSecao ? { ...item, etapaCodigo: null } : item;
+  return semSecao ? { ...item, paginaCodigo: null } : item;
 }
 
 const CODIGOS_DA_SELECAO = codigosDoContrato(OperadorCodigo, TipoDeCampoCodigo);
 
-/** O cabeçalho para o PUT: fase, título e etapas, sem a seção dos dados básicos, que a API repõe. */
+/** O cabeçalho para o PUT: fase, título e páginas, sem a seção dos dados básicos, que a API repõe. */
 export function cabecalhoParaEnvio(
   faseId: string,
   conteudo: ConteudoDoFormulario,
@@ -71,8 +71,8 @@ export function cabecalhoParaEnvio(
   return {
     faseId,
     titulo: conteudo.titulo,
-    etapas: (conteudoComCodigos(semDadosBasicos(conteudo), CODIGOS_DA_SELECAO).etapas ?? []).map(
-      etapaParaEnvio,
+    paginas: (conteudoComCodigos(semDadosBasicos(conteudo), CODIGOS_DA_SELECAO).paginas ?? []).map(
+      paginaParaEnvio,
     ),
   };
 }

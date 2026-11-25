@@ -1,32 +1,32 @@
 import {
   BlocoSistemaCodigo,
-  TipoEtapaFormularioCodigo,
+  TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
   type FormularioApresentadoDoProcessoDto,
   TipoDeCampoCodigo,
 } from '@uniplus/shared-data/selecao';
 
 type Formulario = FormularioApresentadoDoProcessoDto['formulario'];
-type EtapaDoFormulario = Formulario['etapas'][number];
+type PaginaDoFormulario = Formulario['paginas'][number];
 type CampoColetado = Formulario['coleta']['itens'][number];
-type ItemDasRegras = Formulario['regras']['etapas'][number]['itens'][number];
+type ItemDasRegras = Formulario['regras']['paginas'][number]['itens'][number];
 
 export const DADOS = 'Inscricao:DADOS_PESSOAIS';
 const ENDERECO = 'Inscricao:ENDERECO';
 
-type OutrosDoCampo = Partial<Pick<CampoColetado, 'ordem' | 'etapaCodigo' | 'formato'>>;
+type OutrosDoCampo = Partial<Pick<CampoColetado, 'ordem' | 'paginaCodigo' | 'formato'>>;
 
 /** Um campo coletado da seção dos dados pessoais, sem opções fixas, sem formato, sem ajuda e sem confirmação. */
 export function campoColetado(
   fatoCodigo: string,
   rotulo: string,
   tipoDeCampo: CampoColetado['apresentacao']['tipoDeCampo'],
-  { ordem = 0, etapaCodigo = DADOS, formato = null }: OutrosDoCampo = {},
+  { ordem = 0, paginaCodigo = DADOS, formato = null }: OutrosDoCampo = {},
 ): CampoColetado {
   return {
     fatoCodigo,
     ordem,
-    etapaCodigo,
+    paginaCodigo,
     formato,
     valoresSelecionaveis: null,
     apresentacao: { rotulo, tipoDeCampo, ajuda: null, pedirConfirmacao: false },
@@ -42,14 +42,14 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioApresentadoDoProcessoDto = 
   formulario: {
     finalidade: 'INSCRICAO',
     titulo: 'Inscrição',
-    etapas: [
+    paginas: [
       secao('DADOS_PESSOAIS', 0, 'Dados pessoais'),
       secao('ENDERECO', 1, 'Endereço'),
       {
         codigo: 'REVISAO',
         codigoNasRegras: null,
         ordem: 2,
-        tipo: TipoEtapaFormularioCodigo.BLOCO,
+        tipo: TipoPaginaFormularioCodigo.BLOCO,
         bloco: BlocoSistemaCodigo.REVISAO_E_ACEITE,
         apresentacao: { titulo: 'Revisão e aceite', descricao: null, aviso: null },
       },
@@ -85,7 +85,7 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioApresentadoDoProcessoDto = 
         }),
         campoColetado('ENDERECO_RESIDENCIAL', 'Endereço residencial', TipoDeCampoCodigo.ENDERECO, {
           ordem: 3,
-          etapaCodigo: ENDERECO,
+          paginaCodigo: ENDERECO,
         }),
       ],
       grupos: [],
@@ -105,7 +105,7 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioApresentadoDoProcessoDto = 
       ],
     },
     regras: {
-      etapas: [
+      paginas: [
         {
           codigo: DADOS,
           exibicao: null,
@@ -129,12 +129,12 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioApresentadoDoProcessoDto = 
   },
 };
 
-function secao(codigo: string, ordem: number, titulo: string): EtapaDoFormulario {
+function secao(codigo: string, ordem: number, titulo: string): PaginaDoFormulario {
   return {
     codigo,
     codigoNasRegras: `Inscricao:${codigo}`,
     ordem,
-    tipo: TipoEtapaFormularioCodigo.SECAO,
+    tipo: TipoPaginaFormularioCodigo.SECAO,
     bloco: null,
     apresentacao: { titulo, descricao: null, aviso: null },
   };
@@ -173,8 +173,8 @@ export function comCampoColetado(
     coleta: { ...coleta, itens: [...coleta.itens, campo] },
     regras: {
       ...regras,
-      etapas: regras.etapas.map((etapa, posicao) =>
-        posicao === 0 ? { ...etapa, itens: [...etapa.itens, item(campo.fatoCodigo)] } : etapa,
+      paginas: regras.paginas.map((pagina, posicao) =>
+        posicao === 0 ? { ...pagina, itens: [...pagina.itens, item(campo.fatoCodigo)] } : pagina,
       ),
     },
   });

@@ -19,7 +19,7 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(cenario.fixture.componentInstance.concluirTodas()).toBe(2);
     cenario.fixture.detectChanges();
 
-    expect(cenario.simulacoes.at(-1)?.etapasConcluidas ?? []).toEqual([]);
+    expect(cenario.simulacoes.at(-1)?.paginasConcluidas ?? []).toEqual([]);
     expect(tela.querySelectorAll('nav li.is-done')).toHaveLength(0);
   });
 
@@ -36,7 +36,7 @@ describe('FormularioDoCandidatoComponent', () => {
     const input = tela.querySelector('input') as HTMLInputElement;
     expect(tela.querySelector('h3')?.textContent).toContain('Nome');
     expect(document.activeElement).toBe(input);
-    expect(cenario.simulacoes.at(-1)?.etapasConcluidas ?? []).toEqual([]);
+    expect(cenario.simulacoes.at(-1)?.paginasConcluidas ?? []).toEqual([]);
     expect(tela.querySelector('[aria-live="polite"]')?.textContent).toBe(
       'Há 1 item a corrigir. O primeiro está na seção Nome.',
     );
@@ -46,7 +46,7 @@ describe('FormularioDoCandidatoComponent', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_DUAS_SECOES,
       regras: {
-        etapas: [
+        paginas: [
           { codigo: 'Inscricao:CONTATO', itens: [itemDasRegras('EMAIL')] },
           {
             codigo: 'Inscricao:NOME',
@@ -63,7 +63,7 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(cenario.fixture.componentInstance.concluirTodas()).toBe(0);
     cenario.fixture.detectChanges();
 
-    expect(cenario.simulacoes.at(-1)?.etapasConcluidas).toEqual([
+    expect(cenario.simulacoes.at(-1)?.paginasConcluidas).toEqual([
       'Inscricao:CONTATO',
       'Inscricao:NOME',
     ]);

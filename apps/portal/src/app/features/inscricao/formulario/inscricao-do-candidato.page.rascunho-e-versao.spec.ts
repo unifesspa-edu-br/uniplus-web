@@ -76,7 +76,7 @@ describe('InscricaoDoCandidatoPage', () => {
           {
             codigo: 'FAMILIA',
             ordem: 0,
-            etapaCodigo: DADOS,
+            paginaCodigo: DADOS,
             rotulo: 'Integrante',
             ocorrencias,
             subitens: [campoColetado('RENDA', 'Renda', TipoDeCampoCodigo.NUMERO)],
@@ -85,11 +85,11 @@ describe('InscricaoDoCandidatoPage', () => {
       },
       regras: {
         ...regras,
-        etapas: regras.etapas.map((etapa, posicao) =>
+        paginas: regras.paginas.map((pagina, posicao) =>
           posicao > 0
-            ? etapa
+            ? pagina
             : {
-                ...etapa,
+                ...pagina,
                 grupos: [
                   {
                     codigo: 'FAMILIA',

@@ -1,7 +1,7 @@
 import type { DadoRevelavel } from '@uniplus/shared-utils';
 
 import type {
-  ApresentacaoDaEtapa,
+  ApresentacaoDaPagina,
   ApresentacaoDoCampo,
 } from '../editor-de-formulario/modelo/tipos';
 import type {
@@ -40,7 +40,7 @@ export interface GrupoApresentado {
   readonly subitens: readonly CampoApresentado[];
 }
 
-export interface SecaoRenderizavel {
+export interface PaginaApresentada {
   readonly codigo: string;
   /** O código com que a seção aparece nas regras; nulo nos blocos do sistema, que não têm regra. */
   readonly codigoNasRegras?: string | null;
@@ -48,7 +48,7 @@ export interface SecaoRenderizavel {
   /** `SECAO` ou `BLOCO`. */
   readonly tipo: string;
   readonly bloco?: string | null;
-  readonly apresentacao: ApresentacaoDaEtapa;
+  readonly apresentacao: ApresentacaoDaPagina;
 }
 
 export interface ConteudoDoTermo {
@@ -91,7 +91,7 @@ export interface PressupostosDoFormulario {
 export interface FormularioDoCandidato {
   readonly finalidade: string;
   readonly titulo?: string | null;
-  readonly etapas: readonly SecaoRenderizavel[];
+  readonly paginas: readonly PaginaApresentada[];
   readonly termos: readonly TermoApresentado[];
   readonly coleta: ColetaDoFormulario;
   readonly regras: RegrasDoFormulario;

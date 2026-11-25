@@ -9,7 +9,7 @@ import {
   SELECAO_BASE_PATH,
   SituacaoDoProcessoSeletivoCodigo,
 } from '@uniplus/shared-data/selecao';
-import { apresentacaoDaEtapa, apresentacaoDoCampo } from '@uniplus/shared-ui/components';
+import { apresentacaoDaPagina, apresentacaoDoCampo } from '@uniplus/shared-ui/components';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -174,14 +174,14 @@ describe('DesempatePassoComponent', () => {
 
   it('avisa que o maior idade não tem data de nascimento no formulário e leva a ele', () => {
     // A data de nascimento é dos dados básicos: só falta quando a seção deles veio sem ela.
-    const dadosBasicos = secao('DADOS_BASICOS', 0, { apresentacao: apresentacaoDaEtapa('Dados') });
+    const dadosBasicos = secao('DADOS_BASICOS', 0, { apresentacao: apresentacaoDaPagina('Dados') });
     const campo = (fatoCodigo: string, ordem: number) =>
       item(fatoCodigo, ordem, 'DADOS_BASICOS', {
         apresentacao: apresentacaoDoCampo(fatoCodigo, 'TEXTO'),
       });
     const conteudo = (...itens: ReturnType<typeof campo>[]) => ({
       titulo: null,
-      etapas: [dadosBasicos],
+      paginas: [dadosBasicos],
       itens,
       termos: [],
       pressupostos: [],

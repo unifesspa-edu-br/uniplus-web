@@ -12,7 +12,7 @@ import {
 } from './inscricao-do-candidato.page.testing';
 
 type RestricaoDoItem =
-  FormularioApresentadoDoProcessoDto['formulario']['regras']['etapas'][number]['itens'][number]['regras']['restricoes'][number];
+  FormularioApresentadoDoProcessoDto['formulario']['regras']['paginas'][number]['itens'][number]['regras']['restricoes'][number];
 
 /** De 23h50 à meia-noite no fuso do envio. */
 const ATE_O_ENVIO: RestricaoDoItem = {
@@ -44,9 +44,9 @@ describe('InscricaoDoCandidatoPage', () => {
     return comFormulario(FORMULARIO_DE_INSCRICAO_MOCK, {
       regras: {
         ...regras,
-        etapas: regras.etapas.map((etapa) => ({
-          ...etapa,
-          itens: etapa.itens.map((item) =>
+        paginas: regras.paginas.map((pagina) => ({
+          ...pagina,
+          itens: pagina.itens.map((item) =>
             item.fatoCodigo === 'DATA_NASCIMENTO'
               ? { ...item, regras: { ...item.regras, restricoes: [ATE_O_ENVIO] } }
               : item,

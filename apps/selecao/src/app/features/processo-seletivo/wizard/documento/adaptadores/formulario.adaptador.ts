@@ -22,7 +22,7 @@ import {
 import { emSequencia, type EdicaoDoDocumento } from '../edicoes/secao-do-documento';
 
 /**
- * O que o passo mostra do cabeçalho do formulário de uma finalidade. O conteúdo (etapas, itens,
+ * O que o passo mostra do cabeçalho do formulário de uma finalidade. O conteúdo (páginas, itens,
  * grupos e termos) não passa por aqui: voltam como estão, e têm as edições próprias.
  */
 export interface ValoresDoFormulario {

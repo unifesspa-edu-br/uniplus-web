@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  TipoEtapaFormularioCodigo,
+  TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
   FinalidadeFormularioCodigo,
   type FatoColetadoDto,
@@ -24,12 +24,12 @@ const regras = (extra: Partial<RegrasDoFato> = {}): RegrasDoFato => ({
 const fato = (
   fatoCodigo: string,
   ordem: number,
-  etapaCodigo: string,
+  paginaCodigo: string,
   extra: Partial<FatoColetadoDto> = {},
 ): FatoColetadoDto => ({
   fatoCodigo,
   ordem,
-  etapaCodigo,
+  paginaCodigo,
   apresentacao: {
     rotulo: fatoCodigo,
     tipoDeCampo: TipoDeCampoCodigo.SIM_OU_NAO,
@@ -42,10 +42,10 @@ const fato = (
   ...extra,
 });
 
-const etapa = (codigo: string, ordem: number): FormularioDto['etapas'][number] => ({
+const pagina = (codigo: string, ordem: number): FormularioDto['paginas'][number] => ({
   codigo,
   ordem,
-  tipo: TipoEtapaFormularioCodigo.SECAO,
+  tipo: TipoPaginaFormularioCodigo.SECAO,
   bloco: null,
   apresentacao: { titulo: codigo, descricao: null, aviso: null },
   exibicao: null,
@@ -56,7 +56,7 @@ const inscricao: FormularioDto = {
   faseId: 'F1',
   titulo: 'Inscrição',
   modeloOrigem: null,
-  etapas: [etapa('DADOS_BASICOS', 0), etapa('S1', 1), etapa('S2', 2)],
+  paginas: [pagina('DADOS_BASICOS', 0), pagina('S1', 1), pagina('S2', 2)],
   coleta: {
     itens: [
       fato('NOME', 0, 'DADOS_BASICOS'),
@@ -74,7 +74,7 @@ const inscricao: FormularioDto = {
       {
         codigo: 'FAMILIA',
         ordem: 3,
-        etapaCodigo: 'S2',
+        paginaCodigo: 'S2',
         rotulo: 'Família',
         ocorrencias: { minimo: 1, maximo: null, incluiCandidato: true },
         regras: {
@@ -146,8 +146,8 @@ describe('planoDeGravacao', () => {
   it('seções trocadas de lugar com os itens: itens sem seção, cabeçalho, e itens de novo', () => {
     const trocado = com((c) => ({
       ...c,
-      etapas:
-        c.etapas?.map((e) =>
+      paginas:
+        c.paginas?.map((e) =>
           e.codigo === 'S1' ? { ...e, ordem: 2 } : e.codigo === 'S2' ? { ...e, ordem: 1 } : e,
         ) ?? [],
       itens:
@@ -162,14 +162,14 @@ describe('planoDeGravacao', () => {
   it('só uma seção acrescentada, com um item nela: cabeçalho, depois itens', () => {
     const comSecao = com((c) => ({
       ...c,
-      etapas: [...(c.etapas ?? []), etapa('S3', 3)],
+      paginas: [...(c.paginas ?? []), pagina('S3', 3)],
       itens: [
         ...(c.itens ?? []),
         {
           ...(c.itens?.[2] as NonNullable<typeof c.itens>[number]),
           fatoCodigo: 'C',
           ordem: 4,
-          etapaCodigo: 'S3',
+          paginaCodigo: 'S3',
         },
       ],
     }));
@@ -182,7 +182,7 @@ describe('planoDeGravacao', () => {
     if (enviado === null) throw new Error('Esperava o corpo dos itens.');
     expect(
       [...enviado.itens, ...(enviado.grupos ?? [])].every(
-        (entrada) => entrada.etapaCodigo === null,
+        (entrada) => entrada.paginaCodigo === null,
       ),
     ).toBe(true);
   });

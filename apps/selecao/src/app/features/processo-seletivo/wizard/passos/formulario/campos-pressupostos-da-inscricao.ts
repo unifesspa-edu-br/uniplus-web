@@ -1,16 +1,16 @@
 import {
   acrescentarItem,
-  apresentacaoDaEtapa,
-  comEtapa,
+  apresentacaoDaPagina,
+  comPagina,
   ehColetavel,
   entradasDaSecao,
-  etapasEmOrdem,
+  paginasEmOrdem,
   fatosCitadosPeloConteudo,
   renumerar,
   TIPO_BLOCO,
   TIPO_SECAO,
   type ConteudoDoFormulario,
-  type EtapaDoFormulario,
+  type PaginaDoFormulario,
   type FatoDoFormulario,
   type ItemDoFormulario,
 } from '@uniplus/shared-ui/components';
@@ -48,7 +48,7 @@ export function comCamposQueAsExigenciasPressupoem(
   const comNovos = comCamposNovos(semOrfaos, pressupostos);
 
   const esvaziouOutrosDados =
-    orfaos.some((item) => item.etapaCodigo === SECAO_OUTROS_DADOS) &&
+    orfaos.some((item) => item.paginaCodigo === SECAO_OUTROS_DADOS) &&
     entradasDaSecao(comNovos, SECAO_OUTROS_DADOS).length === 0;
   return esvaziouOutrosDados ? semSecaoDeOutrosDados(comNovos) : comNovos;
 }
@@ -129,33 +129,33 @@ function comCamposNovos(
 function semSecaoDeOutrosDados(conteudo: ConteudoDoFormulario): ConteudoDoFormulario {
   return renumerar({
     ...conteudo,
-    etapas: (conteudo.etapas ?? []).filter((etapa) => etapa.codigo !== SECAO_OUTROS_DADOS),
+    paginas: (conteudo.paginas ?? []).filter((pagina) => pagina.codigo !== SECAO_OUTROS_DADOS),
   });
 }
 
 /** A seção dos outros dados, sem exibição condicional; criada antes do primeiro bloco do sistema se faltar. */
 function comSecaoDeOutrosDados(conteudo: ConteudoDoFormulario): ConteudoDoFormulario {
-  const existente = (conteudo.etapas ?? []).find((etapa) => etapa.codigo === SECAO_OUTROS_DADOS);
+  const existente = (conteudo.paginas ?? []).find((pagina) => pagina.codigo === SECAO_OUTROS_DADOS);
   if (existente !== undefined) {
     return existente.exibicao === null || existente.exibicao === undefined
       ? conteudo
-      : comEtapa(conteudo, { ...existente, exibicao: null });
+      : comPagina(conteudo, { ...existente, exibicao: null });
   }
 
   return renumerar({
     ...conteudo,
-    etapas: [...(conteudo.etapas ?? []), secaoDeOutrosDados(conteudo)],
+    paginas: [...(conteudo.paginas ?? []), secaoDeOutrosDados(conteudo)],
   });
 }
 
-function secaoDeOutrosDados(conteudo: ConteudoDoFormulario): EtapaDoFormulario {
-  const primeiroBloco = etapasEmOrdem(conteudo).find((etapa) => etapa.tipo === TIPO_BLOCO);
+function secaoDeOutrosDados(conteudo: ConteudoDoFormulario): PaginaDoFormulario {
+  const primeiroBloco = paginasEmOrdem(conteudo).find((pagina) => pagina.tipo === TIPO_BLOCO);
   return {
     codigo: SECAO_OUTROS_DADOS,
     ordem: primeiroBloco === undefined ? Number.MAX_SAFE_INTEGER : primeiroBloco.ordem - 0.5,
     tipo: TIPO_SECAO,
     bloco: null,
-    apresentacao: apresentacaoDaEtapa(TITULO_SECAO_OUTROS_DADOS),
+    apresentacao: apresentacaoDaPagina(TITULO_SECAO_OUTROS_DADOS),
     exibicao: null,
   };
 }

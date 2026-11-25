@@ -64,7 +64,7 @@ describe('FormularioDoCandidatoComponent', () => {
       await cenario.fixture.whenStable();
 
       expect(document.activeElement).toBe(confirmacao);
-      expect(cenario.simulacoes.at(-1)?.etapasConcluidas ?? []).toEqual([]);
+      expect(cenario.simulacoes.at(-1)?.paginasConcluidas ?? []).toEqual([]);
     });
 
     it('a resposta gravada sem confirmação também bloqueia o envio, como a digitada', () => {

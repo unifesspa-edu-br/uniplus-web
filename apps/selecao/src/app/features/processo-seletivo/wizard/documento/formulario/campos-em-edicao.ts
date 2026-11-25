@@ -48,9 +48,7 @@ const BLOCOS_ACHATADOS_NO_DOCUMENTO: ReadonlySet<string> = new Set([
 const PARTES_DA_OBRIGATORIEDADE: ReadonlySet<string> = new Set(['tipo', 'predicado']);
 
 const NOMES_NO_DOCUMENTO: Readonly<Record<string, string>> = {
-  etapas: 'paginas',
   fatoCodigo: 'codigoDoDado',
-  etapaCodigo: 'paginaCodigo',
   fatos: 'codigosDosDados',
   ancora: 'referenciaDaData',
   fato: 'codigoDoDado',

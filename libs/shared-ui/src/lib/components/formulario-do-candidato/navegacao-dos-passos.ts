@@ -36,9 +36,9 @@ function aCadaPartida<T>(partida: Signal<unknown>, inicio: () => T): WritableSig
  * concluído e o caminho até um passo ou campo, com o foco. É a única dona desse estado.
  */
 export class NavegacaoDosPassos {
-  /** As etapas das regras dadas como concluídas: entram na simulação. */
+  /** As páginas das regras dadas como concluídas: entram na simulação. */
   readonly concluidas: WritableSignal<ReadonlySet<string>>;
-  /** Os blocos do sistema dados como concluídos, pela chave do passo: eles não têm etapa nas regras. */
+  /** Os blocos do sistema dados como concluídos, pela chave do passo: eles não têm página nas regras. */
   private readonly blocosConcluidos: WritableSignal<ReadonlySet<string>>;
   /** As seções a que o link da pendência levou: mostram as pendências sem serem dadas como concluídas. */
   private readonly pendenciaMostrada: WritableSignal<ReadonlySet<string>>;
@@ -59,7 +59,7 @@ export class NavegacaoDosPassos {
 
   constructor(private readonly fontes: FontesDaNavegacao) {
     const { partida, inicial, passos, passosPrefixados } = fontes;
-    this.concluidas = aCadaPartida(partida, () => new Set(inicial()?.etapasConcluidas ?? []));
+    this.concluidas = aCadaPartida(partida, () => new Set(inicial()?.paginasConcluidas ?? []));
     this.blocosConcluidos = aCadaPartida(partida, () => new Set<string>());
     this.pendenciaMostrada = aCadaPartida(partida, () => new Set<string>());
     this.escolhida = aCadaPartida(partida, () => ({ chave: null as string | null, indice: 0 }));
@@ -78,8 +78,8 @@ export class NavegacaoDosPassos {
   }
 
   concluido(passo: PassoDoFormulario): boolean {
-    return passo.etapasNasRegras.length > 0
-      ? passo.etapasNasRegras.every((e) => this.concluidas().has(e))
+    return passo.paginasNasRegras.length > 0
+      ? passo.paginasNasRegras.every((e) => this.concluidas().has(e))
       : this.blocosConcluidos().has(passo.chave);
   }
 
@@ -97,21 +97,21 @@ export class NavegacaoDosPassos {
   }
 
   /**
-   * Dá os passos como concluídos — as etapas das regras e, no bloco do sistema, a chave — e diz se algo
+   * Dá os passos como concluídos — as páginas das regras e, no bloco do sistema, a chave — e diz se algo
    * mudou. O passo já concluído não muda a simulação: o conjunto só é trocado quando ganha algo novo.
    */
   concluir(passos: readonly PassoDoFormulario[]): boolean {
-    const etapasNovas = passos
-      .flatMap((p) => p.etapasNasRegras)
+    const paginasNovas = passos
+      .flatMap((p) => p.paginasNasRegras)
       .filter((e) => !this.concluidas().has(e));
     const blocosNovos = passos
-      .filter((p) => p.etapasNasRegras.length === 0 && !this.blocosConcluidos().has(p.chave))
+      .filter((p) => p.paginasNasRegras.length === 0 && !this.blocosConcluidos().has(p.chave))
       .map((p) => p.chave);
-    if (etapasNovas.length > 0)
-      this.concluidas.update((atual) => new Set([...atual, ...etapasNovas]));
+    if (paginasNovas.length > 0)
+      this.concluidas.update((atual) => new Set([...atual, ...paginasNovas]));
     if (blocosNovos.length > 0)
       this.blocosConcluidos.update((atual) => new Set([...atual, ...blocosNovos]));
-    return etapasNovas.length > 0 || blocosNovos.length > 0;
+    return paginasNovas.length > 0 || blocosNovos.length > 0;
   }
 
   /**

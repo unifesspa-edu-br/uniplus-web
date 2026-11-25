@@ -2,7 +2,7 @@ import {
   BLOCO_COMPROVACAO_DOCUMENTAL,
   FINALIDADE_INSCRICAO,
   FINALIDADES,
-  etapasEmOrdem,
+  paginasEmOrdem,
   type RecusasDoConteudo,
 } from '@uniplus/shared-ui/components';
 
@@ -143,8 +143,8 @@ function conteudoDaAba(
   return {
     conteudo: formulario.conteudo,
     leitura: leituraDe(formulario.conteudo),
-    temBlocoDocumental: etapasEmOrdem(formulario.conteudo).some(
-      (etapa) => etapa.bloco === BLOCO_COMPROVACAO_DOCUMENTAL,
+    temBlocoDocumental: paginasEmOrdem(formulario.conteudo).some(
+      (pagina) => pagina.bloco === BLOCO_COMPROVACAO_DOCUMENTAL,
     ),
     documentos: documentosDaAba(entrada, formulario, finalidadesDaFase),
   };

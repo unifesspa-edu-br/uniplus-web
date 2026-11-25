@@ -9,10 +9,10 @@ import {
 } from '@angular/core';
 
 import { focarDepois } from '../foco';
-import { idDaEtapa } from '../ids';
+import { idDaPagina } from '../ids';
 import { blocosAdmitidos } from '../modelo/constantes';
 import { type ContextoDoEditor } from '../modelo/contexto-do-editor';
-import { etapasEmOrdem } from '../modelo/ordem-das-entradas';
+import { paginasEmOrdem } from '../modelo/ordem-das-entradas';
 import { acrescentarBloco, acrescentarSecao } from '../modelo/secoes';
 import { type ConteudoDoFormulario } from '../modelo/tipos';
 
@@ -56,21 +56,21 @@ export class AcrescentarNoFimComponent {
   /** Os blocos que a finalidade admite e o formulário ainda não tem. */
   protected readonly blocos = computed(() => {
     const { finalidade, conteudo } = this.contexto();
-    const etapas = etapasEmOrdem(conteudo);
+    const paginas = paginasEmOrdem(conteudo);
     return blocosAdmitidos(finalidade).filter(
-      (bloco) => !etapas.some((etapa) => etapa.bloco === bloco.valor),
+      (bloco) => !paginas.some((pagina) => pagina.bloco === bloco.valor),
     );
   });
 
   protected acrescentarASecao(): void {
     const { conteudo, idBase } = this.contexto();
     const editado = acrescentarSecao(conteudo, 'Nova seção');
-    const nova = (editado.etapas ?? []).find(
-      (etapa) => !(conteudo.etapas ?? []).some((e) => e.codigo === etapa.codigo),
+    const nova = (editado.paginas ?? []).find(
+      (pagina) => !(conteudo.paginas ?? []).some((e) => e.codigo === pagina.codigo),
     );
     this.conteudoChange.emit(editado);
     this.anuncio.emit('Seção nova acrescentada antes da revisão e aceite.');
-    if (nova !== undefined) focarDepois(this.injector, `${idDaEtapa(idBase, nova.codigo)}-titulo`);
+    if (nova !== undefined) focarDepois(this.injector, `${idDaPagina(idBase, nova.codigo)}-titulo`);
   }
 
   protected acrescentarOBloco(valor: string): void {

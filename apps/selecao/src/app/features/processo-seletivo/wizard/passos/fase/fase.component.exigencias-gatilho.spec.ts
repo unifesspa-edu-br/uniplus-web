@@ -81,11 +81,11 @@ describe('FasePassoComponent', () => {
               faseCodigo: 'HOMOLOGACAO_INSCRICOES',
               conteudo: {
                 titulo: null,
-                etapas: [],
+                paginas: [],
                 termos: [],
                 pressupostos: null,
                 grupos: [],
-                itens: [item('LAUDO_RECENTE', 0, '', { etapaCodigo: null })],
+                itens: [item('LAUDO_RECENTE', 0, '', { paginaCodigo: null })],
               },
             },
           ],

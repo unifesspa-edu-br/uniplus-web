@@ -30,10 +30,10 @@ describe('AvaliacoesDeFormularioApi', () => {
   it('avaliar() pede o media type da avaliação, sem Idempotency-Key por ser leitura', async () => {
     const promise = firstValueFrom(
       api.avaliar({
-        regras: { etapas: [] },
+        regras: { paginas: [] },
         respostas: { IDADE: 18 },
         grupos: null,
-        etapasConcluidas: null,
+        paginasConcluidas: null,
         pressupostos: null,
       }),
     );
@@ -45,7 +45,7 @@ describe('AvaliacoesDeFormularioApi', () => {
     });
     expect(req.request.headers.has('Idempotency-Key')).toBe(false);
     expect(req.request.body.respostas).toEqual({ IDADE: 18 });
-    req.flush({ etapas: [], campos: [], grupos: [], termos: [] });
+    req.flush({ paginas: [], campos: [], grupos: [], termos: [] });
     await promise;
   });
 });

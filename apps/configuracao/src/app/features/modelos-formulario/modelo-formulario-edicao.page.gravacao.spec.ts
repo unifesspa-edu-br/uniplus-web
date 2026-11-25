@@ -48,7 +48,7 @@ describe('ModeloFormularioEdicaoPage', () => {
     const req = controller.expectOne((r) => r.method === 'PUT' && r.url === MODELO);
     const conteudo = req.request.body.conteudo;
 
-    expect(conteudo.etapas.map((e: { codigo: string }) => e.codigo)).toEqual([
+    expect(conteudo.paginas.map((e: { codigo: string }) => e.codigo)).toEqual([
       'SECAO_1',
       'REVISAO_E_ACEITE',
     ]);

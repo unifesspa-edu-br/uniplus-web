@@ -91,7 +91,7 @@ export interface OcorrenciasDoGrupo<N = NumeroDigitado> {
   readonly incluiCandidato: boolean;
 }
 
-export interface ApresentacaoDaEtapa {
+export interface ApresentacaoDaPagina {
   readonly titulo: string;
   readonly descricao: null | string;
   readonly aviso: null | string;
@@ -105,17 +105,17 @@ export interface VersaoDoTermo {
 export interface ItemDoFormulario<N = NumeroDigitado, O = string, T = string> {
   readonly fatoCodigo: string;
   readonly ordem: number;
-  readonly etapaCodigo?: null | string;
+  readonly paginaCodigo?: null | string;
   readonly apresentacao: ApresentacaoDoCampo<T>;
   readonly regras: RegrasDoCampo<N, O>;
 }
 
-export interface EtapaDoFormulario<O = string> {
+export interface PaginaDoFormulario<O = string> {
   readonly codigo: string;
   readonly ordem: number;
   readonly tipo: string;
   readonly bloco: null | string;
-  readonly apresentacao: ApresentacaoDaEtapa;
+  readonly apresentacao: ApresentacaoDaPagina;
   readonly exibicao?: ClausulasNoWire<O> | null;
 }
 
@@ -123,7 +123,7 @@ export interface GrupoDoFormulario<N = NumeroDigitado, O = string, T = string> {
   readonly codigo: string;
   readonly ordem: number;
   readonly rotulo: string;
-  readonly etapaCodigo: null | string;
+  readonly paginaCodigo: null | string;
   readonly ocorrencias: OcorrenciasDoGrupo<N>;
   readonly regras: ExibicaoEObrigatoriedade<O>;
   readonly subitens: readonly ItemDoFormulario<N, O, T>[];
@@ -138,7 +138,7 @@ export interface TermoDoFormulario<O = string> {
 
 export interface ConteudoDoFormulario<N = NumeroDigitado, O = string, T = string> {
   readonly titulo: null | string;
-  readonly etapas: null | readonly EtapaDoFormulario<O>[];
+  readonly paginas: null | readonly PaginaDoFormulario<O>[];
   readonly itens: null | readonly ItemDoFormulario<N, O, T>[];
   readonly termos: null | readonly TermoDoFormulario<O>[];
   readonly pressupostos: null | readonly string[];

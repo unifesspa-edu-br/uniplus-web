@@ -14,14 +14,14 @@ import { ComboboxComponent } from '../../combobox/combobox';
 import { aplicarEdicao } from '../edicao';
 import { fatosEmGrupo } from '../fatos-em-grupo';
 import { focarDepois } from '../foco';
-import { idDaEtapa, idDoGrupo, idDoItem } from '../ids';
+import { idDaPagina, idDoGrupo, idDoItem } from '../ids';
 import { type ContextoDoEditor } from '../modelo/contexto-do-editor';
 import { LIMITES_DO_FORMULARIO } from '../modelo/constantes';
 import { acrescentarGrupo, grupoAcrescentado } from '../modelo/grupos';
 import { acrescentarCampo } from '../modelo/itens';
 import {
   type ConteudoDoFormulario,
-  type EtapaDoFormulario,
+  type PaginaDoFormulario,
   type GrupoDoFormulario,
 } from '../modelo/tipos';
 
@@ -112,7 +112,7 @@ export class AcrescentarNaSecaoComponent {
   private readonly injector = inject(Injector);
 
   readonly contexto = input.required<ContextoDoEditor>();
-  readonly etapa = input.required<EtapaDoFormulario>();
+  readonly pagina = input.required<PaginaDoFormulario>();
 
   readonly conteudoChange = output<ConteudoDoFormulario>();
   readonly anuncio = output<string>();
@@ -125,7 +125,7 @@ export class AcrescentarNaSecaoComponent {
   protected readonly membroEscolhido = signal('');
 
   protected readonly idDaSecao = computed(() =>
-    idDaEtapa(this.contexto().idBase, this.etapa().codigo),
+    idDaPagina(this.contexto().idBase, this.pagina().codigo),
   );
   protected readonly paraAcrescentar = computed(() => this.contexto().paraAcrescentar);
   protected readonly grupos = computed(() => fatosEmGrupo(this.paraAcrescentar()));
@@ -151,10 +151,10 @@ export class AcrescentarNaSecaoComponent {
     const fato = this.paraAcrescentar().find((f) => f.codigo === this.escolha());
     if (fato === undefined) return;
     const citacoes = { catalogo, fatosConhecidosAntes: conteudoParaCitacoes.pressupostos ?? [] };
-    aplicarEdicao(acrescentarCampo(conteudo, fato, this.etapa().codigo, citacoes), this, () => {
+    aplicarEdicao(acrescentarCampo(conteudo, fato, this.pagina().codigo, citacoes), this, () => {
       this.fatoEscolhido.set('');
       this.anuncio.emit(
-        `Campo “${fato.nome}” acrescentado ao fim de ${this.etapa().apresentacao.titulo}.`,
+        `Campo “${fato.nome}” acrescentado ao fim de ${this.pagina().apresentacao.titulo}.`,
       );
       focarDepois(this.injector, `${idDoItem(this.contexto().idBase, fato.codigo)}-rotulo`);
     });
@@ -165,7 +165,7 @@ export class AcrescentarNaSecaoComponent {
     const rotulo = this.rotuloDoGrupo();
     const primeiroCampo = fatosDeMembro.find((f) => f.codigo === this.membro());
     if (primeiroCampo === undefined) return;
-    const novo = { rotulo, etapaCodigo: this.etapa().codigo, primeiroCampo };
+    const novo = { rotulo, paginaCodigo: this.pagina().codigo, primeiroCampo };
     aplicarEdicao(acrescentarGrupo(conteudo, novo, catalogo), this, (editado) =>
       this.anunciarOGrupoNovo(rotulo, grupoAcrescentado(conteudo, editado)),
     );
@@ -175,7 +175,7 @@ export class AcrescentarNaSecaoComponent {
     this.rotuloDoGrupo.set('');
     this.membroEscolhido.set('');
     this.anuncio.emit(
-      `Grupo repetível “${rotulo.trim()}” acrescentado ao fim de ${this.etapa().apresentacao.titulo}.`,
+      `Grupo repetível “${rotulo.trim()}” acrescentado ao fim de ${this.pagina().apresentacao.titulo}.`,
     );
     if (grupo === undefined) return;
     focarDepois(this.injector, `${idDoGrupo(this.contexto().idBase, grupo.codigo)}-rotulo`);

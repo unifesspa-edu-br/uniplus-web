@@ -72,7 +72,7 @@ function simulacaoDoCaso(caso: CasoDoCorpus): SimulacaoDoFormulario {
   return {
     respostas: caso.respostas ?? null,
     grupos: caso.grupos ?? null,
-    etapasConcluidas: caso.etapasConcluidas ?? null,
+    paginasConcluidas: caso.paginasConcluidas ?? null,
     pressupostos: caso.pressupostos ?? null,
   };
 }
@@ -103,7 +103,7 @@ export function casoDaSimulacao(
     regras,
     respostas: simulacao.respostas ?? {},
     grupos: simulacao.grupos ?? {},
-    etapasConcluidas: simulacao.etapasConcluidas ?? [],
+    paginasConcluidas: simulacao.paginasConcluidas ?? [],
     pressupostos: simulacao.pressupostos ?? {},
     esperado: avaliacao,
   };

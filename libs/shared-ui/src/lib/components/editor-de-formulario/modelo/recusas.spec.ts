@@ -15,23 +15,23 @@ import {
 } from './recusas';
 
 describe('distribuirRecusas', () => {
-  it('leva a recusa ao item e à etapa pelo índice enviado, e a sem índice ao resumo', () => {
+  it('leva a recusa ao item e à página pelo índice enviado, e a sem índice ao resumo', () => {
     const enviado = conteudo({
-      etapas: [secao('S1', 0)],
+      paginas: [secao('S1', 0)],
       itens: [item('A', 0, 'S1'), item('B', 1, 'S1')],
     });
 
     const recusas = distribuirRecusas(
       [
         { field: 'conteudo.itens[1].rotulo', message: 'Rótulo longo.' },
-        { field: 'Conteudo.Etapas[0].titulo', message: 'Título vazio.' },
+        { field: 'Conteudo.Paginas[0].titulo', message: 'Título vazio.' },
         { field: 'conteudo', message: 'O item B cita fato posterior.' },
       ],
       enviado,
     );
 
     expect(recusas.porItem.get('B')).toEqual(['Rótulo longo.']);
-    expect(recusas.porEtapa.get('S1')).toEqual(['Título vazio.']);
+    expect(recusas.porPagina.get('S1')).toEqual(['Título vazio.']);
     expect(recusas.gerais).toEqual(['O item B cita fato posterior.']);
   });
 
@@ -141,7 +141,7 @@ describe('recusa da API à restrição da faixa de datas', () => {
       dataMaxima: dataFixa('2030-01-01'),
     };
     const enviado = conteudo({
-      etapas: [secao('S1', 0)],
+      paginas: [secao('S1', 0)],
       itens: [
         item('NASCIMENTO', 0, 'S1', {
           apresentacao: { tipoDeCampo: 'DATA' },
@@ -153,7 +153,7 @@ describe('recusa da API à restrição da faixa de datas', () => {
           codigo: 'G',
           ordem: 1,
           rotulo: 'G',
-          etapaCodigo: 'S1',
+          paginaCodigo: 'S1',
           ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
           regras: { exibicao: null, obrigatoriedade: { tipo: 'NUNCA', predicado: null } },
           subitens: [
