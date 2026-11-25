@@ -5,7 +5,7 @@ import {
 import { campoNovo } from './catalogo-de-campos';
 import { recusaDaCitacaoPosterior } from './conferencia-de-ordem';
 import { citaveisAntesDe, fatosCitadosPeloCampo, todosOsCampos } from './citacoes';
-import { codigoDoNome, codigoLivre, nomeDoFato } from './codigos';
+import { codigoLivre, nomeDoFato } from './codigos';
 import { LIMITES_DO_FORMULARIO, REGRAS_INICIAIS } from './constantes';
 import { ordemNoFimDaSecao, renumerar } from './ordem-das-entradas';
 import {
@@ -81,7 +81,7 @@ function grupoNovo(
   usados: ReadonlySet<string>,
 ): GrupoDoFormulario {
   return {
-    codigo: codigoLivre(codigoDoNome(novo.rotulo, 'GRUPO'), usados),
+    codigo: codigoLivre(novo.rotulo, 'GRUPO', usados),
     ordem: ordemNoFimDaSecao(conteudo, novo.paginaCodigo),
     rotulo: novo.rotulo.trim().slice(0, LIMITES_DO_FORMULARIO.rotulo),
     paginaCodigo: novo.paginaCodigo,

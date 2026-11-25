@@ -1,4 +1,4 @@
-import { codigoDoNome, codigoLivre } from './codigos';
+import { codigoLivre } from './codigos';
 import { REGRAS_INICIAIS } from './constantes';
 import { ConteudoDoFormulario, TermoDisponivel, TermoDoFormulario } from './tipos';
 
@@ -26,7 +26,7 @@ export function acrescentarTermo(
 ): ConteudoDoFormulario {
   const termos = termosEmOrdem(conteudo);
   const novo: TermoDoFormulario = {
-    codigo: codigoLivre(codigoDoNome(termo.nome, 'TERMO'), new Set(termos.map((t) => t.codigo))),
+    codigo: codigoLivre(termo.nome, 'TERMO', new Set(termos.map((t) => t.codigo))),
     // Depois da maior ordem gravada: a gravada pode ter buraco, e ordem repetida é recusada.
     ordem: Math.max(-1, ...termos.map((t) => t.ordem)) + 1,
     termo: { termoId: termo.termoId, versaoId: termo.versoes[0]?.versaoId ?? '' },
