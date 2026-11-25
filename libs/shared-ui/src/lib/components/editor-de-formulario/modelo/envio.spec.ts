@@ -57,7 +57,7 @@ describe('conteudoParaEnvio', () => {
   }
 
   it('o campo e o grupo sem seção vão com a seção nula', () => {
-    const campo = { ...item('A', 0, 'S1'), paginaCodigo: undefined };
+    const campo = { ...item('A', 0, 'S1'), paginaCodigo: null };
     const enviado = conteudoParaEnvio(
       conteudo({
         itens: [campo],

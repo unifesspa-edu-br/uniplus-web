@@ -65,7 +65,7 @@ export function lerItem(item: Item, contexto: Contexto, caminho: Caminho): ItemD
   return {
     fatoCodigo: item.codigoDoDado,
     ordem: item.ordem ?? 0,
-    paginaCodigo: item.paginaCodigo,
+    paginaCodigo: item.paginaCodigo ?? null,
     apresentacao: apresentacaoDoItem(item, tipoDeCampo),
     regras: regrasDoItem(item),
   };

@@ -52,7 +52,6 @@ function restricoesParaEnvio(regras: ItemDoFormulario['regras']) {
 function itemParaEnvio(item: ItemDoFormulario): ItemDoFormulario<number> {
   return {
     ...item,
-    paginaCodigo: item.paginaCodigo ?? null,
     regras: { ...item.regras, restricoes: restricoesParaEnvio(item.regras) },
   };
 }
@@ -60,7 +59,6 @@ function itemParaEnvio(item: ItemDoFormulario): ItemDoFormulario<number> {
 function grupoParaEnvio(grupo: GrupoDoFormulario): GrupoDoFormulario<number> {
   return {
     ...grupo,
-    paginaCodigo: grupo.paginaCodigo ?? null,
     ocorrencias: {
       ...grupo.ocorrencias,
       minimo: comoNumero(grupo.ocorrencias.minimo),
