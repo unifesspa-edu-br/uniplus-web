@@ -1,0 +1,5 @@
+{
+  "name": "contrato-da-api",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:contrato"]
+}

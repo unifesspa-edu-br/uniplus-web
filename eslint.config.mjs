@@ -155,12 +155,17 @@ function usaOApoioDeTeste(restricao) {
   );
 }
 
+// App e data acessam documentos do contrato somente em arquivos de teste.
 function comApoioDeTeste(restricoes) {
   return restricoes.map((restricao) =>
     usaOApoioDeTeste(restricao)
       ? {
           ...restricao,
-          onlyDependOnLibsWithTags: [...restricao.onlyDependOnLibsWithTags, 'type:testing'],
+          onlyDependOnLibsWithTags: [
+            ...restricao.onlyDependOnLibsWithTags,
+            'type:testing',
+            ...(['type:app', 'type:data'].includes(restricao.sourceTag) ? ['type:contrato'] : []),
+          ],
         }
       : restricao,
   );
