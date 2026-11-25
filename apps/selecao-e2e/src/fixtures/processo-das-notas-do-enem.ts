@@ -1,5 +1,4 @@
 import { readFile } from 'node:fs/promises';
-import * as path from 'node:path';
 import {
   API_URL,
   chamarApi,
@@ -10,13 +9,13 @@ import {
 } from '@uniplus/shared-e2e';
 import { ARQUIVO_DE_PESSOAS } from './inscricoes-reais';
 import { inscricoesDoProcesso, processosPublicadosComNome } from './processos-da-api';
-import { rodarRoteiroDeProcesso } from './roteiro-da-api';
+import { caminhoDoRoteiro, rodarRoteiroDeProcesso } from './roteiro-da-api';
 
 /**
  * O processo das notas do ENEM da spec contra a API real: divulgado, com a etapa de nota do ENEM,
  * as edições declaradas e as inscrições enviadas das personas fictícias do portal. Quem o monta é
  * o roteiro `roteiro-processo-teste-notas-do-enem.sh` da uniplus-api, que a spec localiza em
- * `E2E_ROTEIRO_DAS_NOTAS_DO_ENEM` (padrão: o checkout irmão `uniplus-api`).
+ * `E2E_ROTEIRO_DAS_NOTAS_DO_ENEM`.
  *
  * O envio e a importação só existem depois do encerramento das inscrições, e a inscrição só
  * aceita envio com o período aberto. O roteiro abre o período por um mês; aqui ele encerra minutos
@@ -27,10 +26,6 @@ import { rodarRoteiroDeProcesso } from './roteiro-da-api';
  * quando já existe publicado e com todas as inscrições: o roteiro inscreve dezenas de personas e leva minutos.
  */
 const NOME_DO_PROCESSO = 'E2E Processo Seletivo Medicina 2027 (notas do ENEM)';
-
-const ROTEIRO =
-  process.env['E2E_ROTEIRO_DAS_NOTAS_DO_ENEM'] ??
-  path.resolve(__dirname, '../../../../../uniplus-api/scripts/roteiro-processo-teste-notas-do-enem.sh');
 
 /** Quanto o período de inscrição dura a partir da gravação do cronograma: cabem a publicação e as 56 inscrições. */
 const MINUTOS_DE_INSCRICAO_ABERTA = 8;
@@ -72,7 +67,8 @@ const INSCRICOES_DO_ROTEIRO = 56;
 
 async function acharCompleto(): Promise<string | undefined> {
   for (const processo of await processosPublicadosComNome(NOME_DO_PROCESSO)) {
-    const feitoAqui = (await fimDasInscricoes(processo.id)) < Date.now() + 2 * MINUTOS_DE_INSCRICAO_ABERTA * 60_000;
+    const feitoAqui =
+      (await fimDasInscricoes(processo.id)) < Date.now() + 2 * MINUTOS_DE_INSCRICAO_ABERTA * 60_000;
     if (feitoAqui && (await inscricoesDoProcesso(processo.id)) >= INSCRICOES_DO_ROTEIRO) {
       return processo.id;
     }
@@ -85,7 +81,9 @@ async function fimDasInscricoes(processoId: string): Promise<number> {
   const certame = (await resposta.json()) as { periodo?: { fim?: string } };
   const fim = Date.parse(certame.periodo?.fim ?? '');
   if (Number.isNaN(fim)) {
-    throw new Error(`O certame ${processoId} não publica o fim do período de inscrição (${resposta.status}).`);
+    throw new Error(
+      `O certame ${processoId} não publica o fim do período de inscrição (${resposta.status}).`,
+    );
   }
   return fim;
 }
@@ -98,30 +96,34 @@ async function aguardarEncerramentoDasInscricoes(processoId: string): Promise<vo
   }
 }
 
-export async function processoDasNotasDoEnem(): Promise<string> {
-  const existente = await acharCompleto();
-  if (existente !== undefined) {
-    await aguardarEncerramentoDasInscricoes(existente);
-    return existente;
-  }
+function ambienteDoProcessoDasNotas(identificador: string): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    ADMIN_PASS: SENHA_DAS_PERSONAS,
+    IDENTIFICADOR_PROCESSO: identificador,
+    NOME_PROCESSO: `${NOME_DO_PROCESSO} ${identificador}`,
+    FAKE_PEOPLE: ARQUIVO_DE_PESSOAS,
+  };
+}
+
+async function criarProcessoDasNotasDoEnem(): Promise<string> {
   await prepararAcessosDaSimulacao();
   await aprovarCatalogoInicial();
   await definirSenhaDasCandidatas();
   const identificador = `e2e-psm-2027-notas-do-enem-${Date.now()}`;
-  const criado = await rodarRoteiroDeProcesso(
+  return rodarRoteiroDeProcesso(
     'bash',
-    ['-c', EXECUCAO_COM_INSCRICAO_CURTA, 'bash', ROTEIRO],
-    {
-      ...process.env,
-      ADMIN_PASS: SENHA_DAS_PERSONAS,
-      IDENTIFICADOR_PROCESSO: identificador,
-      NOME_PROCESSO: `${NOME_DO_PROCESSO} ${identificador}`,
-      FAKE_PEOPLE: ARQUIVO_DE_PESSOAS,
-    },
+    ['-c', EXECUCAO_COM_INSCRICAO_CURTA, 'bash', caminhoDoRoteiro('E2E_ROTEIRO_DAS_NOTAS_DO_ENEM')],
+    ambienteDoProcessoDasNotas(identificador),
     1_500_000,
   );
-  await aguardarEncerramentoDasInscricoes(criado);
-  return criado;
+}
+
+export async function processoDasNotasDoEnem(): Promise<string> {
+  caminhoDoRoteiro('E2E_ROTEIRO_DAS_NOTAS_DO_ENEM');
+  const processo = (await acharCompleto()) ?? (await criarProcessoDasNotasDoEnem());
+  await aguardarEncerramentoDasInscricoes(processo);
+  return processo;
 }
 
 export interface LoteDeNotas {
@@ -132,21 +134,40 @@ export interface LoteDeNotas {
   readonly totalDeLinhas: number;
 }
 
-/** Os lotes de notas da edição, do mais recente para o mais antigo, como a API os lista. */
-export async function lotesDeNotasDoEnem(processoId: string, edicao: string): Promise<readonly LoteDeNotas[]> {
-  const processo = await chamarApi<{ etapas: { id: string }[] }>('diogo.souza', 'GET', `/api/selecao/processos-seletivos/${processoId}`);
+async function etapaDeNotasDoEnem(processoId: string): Promise<string> {
+  const processo = await chamarApi<{ etapas: { id: string }[] }>(
+    'diogo.souza',
+    'GET',
+    `/api/selecao/processos-seletivos/${processoId}`,
+  );
   const etapaId = processo.corpo.etapas[0]?.id;
   if (etapaId === undefined) {
     throw new Error(`O processo ${processoId} não tem etapa de nota do ENEM.`);
   }
+  return etapaId;
+}
+
+function validarLotesDeNotas(
+  processoId: string,
+  lotes: { corpo: LoteDeNotas[]; status: number },
+): void {
+  if (!Array.isArray(lotes.corpo)) {
+    throw new Error(`Listar os lotes de notas de ${processoId} respondeu ${lotes.status}.`);
+  }
+}
+
+/** Os lotes de notas da edição, do mais recente para o mais antigo, como a API os lista. */
+export async function lotesDeNotasDoEnem(
+  processoId: string,
+  edicao: string,
+): Promise<readonly LoteDeNotas[]> {
+  const etapaId = await etapaDeNotasDoEnem(processoId);
   const lotes = await chamarApi<LoteDeNotas[]>(
     'diogo.souza',
     'GET',
     `/api/selecao/processos-seletivos/${processoId}/etapas/${etapaId}/edicoes-do-enem/${edicao}/lotes-de-notas`,
     { cabecalhos: { accept: 'application/vnd.uniplus.lote-de-notas-do-enem.v1+json' } },
   );
-  if (!Array.isArray(lotes.corpo)) {
-    throw new Error(`Listar os lotes de notas de ${processoId} respondeu ${lotes.status}.`);
-  }
+  validarLotesDeNotas(processoId, lotes);
   return lotes.corpo;
 }
