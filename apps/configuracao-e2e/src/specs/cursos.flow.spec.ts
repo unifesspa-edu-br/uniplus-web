@@ -1,3 +1,5 @@
+import type { OfertaCursoDto } from '@uniplus/shared-data/configuracao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
@@ -35,6 +37,7 @@ const GRUPOS_AREA_ENEM = [
 
 const ofertaSeed = {
   id: '01960000-0000-7000-0000-0000000000f1',
+  codigo: 'ENGENHARIA_CIVIL_MARABA',
   cursoId: CURSO_ID,
   localOfertaId: '01960000-0000-7000-0000-0000000000d1',
   unidadeOfertante: {
@@ -43,17 +46,18 @@ const ofertaSeed = {
     nome: 'Instituto de Geociências e Engenharias',
     tipo: 'Instituto',
   },
-  programaDeOferta: 'REGULAR',
-  formatoPedagogico: 'PRESENCIAL',
-  regimeDeTurno: 'REGULAR',
-  turnos: ['MATUTINO'],
+  programaDeOferta: { codigo: 'REGULAR', rotulo: 'Regular' },
+  formatoPedagogico: { codigo: 'PRESENCIAL', rotulo: 'Presencial' },
+  regimeDeFuncionamento: { codigo: 'EXTENSIVO', rotulo: 'Extensivo' },
+  regimeDeTurno: { codigo: 'REGULAR', rotulo: 'Regular' },
+  turnos: [{ codigo: 'MATUTINO', rotulo: 'Matutino' }],
   codigoEmec: '123456',
   codigoNoSistemaAcademico: null,
   vagasAnuaisAutorizadas: 40,
   baseLegal: null,
   atoAutorizacaoMec: null,
   criadoEm: '2026-06-10T12:00:00Z',
-};
+} satisfies JsonDaApi<OfertaCursoDto>;
 
 async function jsonRoute(route: Route, body: unknown, status = 200): Promise<void> {
   if (route.request().method() === 'OPTIONS') {

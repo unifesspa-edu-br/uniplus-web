@@ -1,8 +1,11 @@
+import type { OfertaCursoDto } from '@uniplus/shared-data/configuracao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { REGRAS_DE_APLICABILIDADE } from './regras-das-modalidades';
 /** A oferta do quadro. */
 export const OFERTAS_DA_MEDICINA = [
   {
     id: '01a0d635-226e-76d9-b01f-30e5d2da7ada',
+    codigo: 'MEDICINA_MARABA',
     cursoId: '01a0d635-136c-7eda-ba66-dd84f5dad3eb',
     localOfertaId: '01a07d6a-a1f4-76d0-953c-3934c062492c',
     unidadeOfertante: {
@@ -11,11 +14,11 @@ export const OFERTAS_DA_MEDICINA = [
       nome: 'Instituto de Estudos em Saúde e Biológicas',
       tipo: 'Instituto',
     },
-    programaDeOferta: 'REGULAR',
-    formatoPedagogico: 'PRESENCIAL',
-    regimeDeFuncionamento: 'EXTENSIVO',
-    regimeDeTurno: 'REGULAR',
-    turnos: ['MATUTINO'],
+    programaDeOferta: { codigo: 'REGULAR', rotulo: 'Regular' },
+    formatoPedagogico: { codigo: 'PRESENCIAL', rotulo: 'Presencial' },
+    regimeDeFuncionamento: { codigo: 'EXTENSIVO', rotulo: 'Extensivo' },
+    regimeDeTurno: { codigo: 'REGULAR', rotulo: 'Regular' },
+    turnos: [{ codigo: 'MATUTINO', rotulo: 'Matutino' }],
     codigoEmec: null,
     codigoNoSistemaAcademico: null,
     vagasAnuaisAutorizadas: 30,
@@ -23,7 +26,7 @@ export const OFERTAS_DA_MEDICINA = [
     atoAutorizacaoMec: null,
     criadoEm: '2026-09-25T01:36:41.608106+00:00',
   },
-] as const;
+] as const satisfies readonly JsonDaApi<OfertaCursoDto>[];
 
 /** O curso da oferta. */
 export const CURSOS_DA_MEDICINA = [

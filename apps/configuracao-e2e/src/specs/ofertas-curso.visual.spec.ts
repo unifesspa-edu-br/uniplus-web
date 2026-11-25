@@ -1,3 +1,5 @@
+import type { OfertaCursoDto, LocalOfertaDto } from '@uniplus/shared-data/configuracao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { expect, test, type Locator, type Page, type Route, type TestInfo } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
@@ -28,13 +30,13 @@ const CURSO = {
 
 const LOCAL = {
   id: '01960000-0000-7000-0000-0000000000e1',
-  tipo: 'campusSede',
+  tipo: { codigo: 'CAMPUS_SEDE', rotulo: 'Campus sede' },
   campusResponsavelId: null,
   cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
   endereco: null,
   codigoEmec: null,
   criadoEm: '2026-06-10T12:00:00Z',
-};
+} satisfies JsonDaApi<LocalOfertaDto>;
 
 const UNIDADE = {
   id: '01960000-0000-7000-0000-0000000000f1',
@@ -63,20 +65,23 @@ const OFERTA = {
     origemId: UNIDADE.id,
     sigla: UNIDADE.sigla,
     nome: UNIDADE.nome,
-    tipo: UNIDADE.tipo,
+    tipo: 'Instituto',
   },
-  programaDeOferta: 'CONVENIO_OUTRO',
-  formatoPedagogico: 'PRESENCIAL',
-  regimeDeFuncionamento: 'INTENSIVO',
-  regimeDeTurno: 'INTEGRAL',
-  turnos: ['MATUTINO', 'VESPERTINO'],
+  programaDeOferta: { codigo: 'CONVENIO_OUTRO', rotulo: 'Outro convênio' },
+  formatoPedagogico: { codigo: 'PRESENCIAL', rotulo: 'Presencial' },
+  regimeDeFuncionamento: { codigo: 'INTENSIVO', rotulo: 'Intensivo' },
+  regimeDeTurno: { codigo: 'INTEGRAL', rotulo: 'Integral' },
+  turnos: [
+    { codigo: 'MATUTINO', rotulo: 'Matutino' },
+    { codigo: 'VESPERTINO', rotulo: 'Vespertino' },
+  ],
   codigoEmec: '123456',
   codigoNoSistemaAcademico: null,
   vagasAnuaisAutorizadas: 40,
   baseLegal: 'Convênio nº 004/2020',
   atoAutorizacaoMec: null,
   criadoEm: '2026-06-10T12:00:00Z',
-};
+} satisfies JsonDaApi<OfertaCursoDto>;
 
 async function mockApi(page: Page): Promise<void> {
   const json = async (route: Route, body: unknown): Promise<void> => {

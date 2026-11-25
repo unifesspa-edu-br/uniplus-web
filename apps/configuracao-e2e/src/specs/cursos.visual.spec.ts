@@ -1,3 +1,5 @@
+import type { OfertaCursoDto } from '@uniplus/shared-data/configuracao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { expect, test, type Locator, type Page, type Route, type TestInfo } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
@@ -39,7 +41,7 @@ const GRUPOS_AREA_ENEM = [
 
 /**
  * A combinação mais larga do vocabulário de Oferta (UNI-REQ-0137): programa
- * `Convênio (outro)`, regime `Integral` e os dois turnos que ele exige. É ela
+ * `Outro convênio`, regime `Integral` e os dois turnos que ele exige. É ela
  * que espreme a linha de tags quando a linha não quebra.
  */
 const UNIDADES = [
@@ -49,27 +51,35 @@ const UNIDADES = [
   ['FACEEL', 'Faculdade de Engenharia Elétrica'],
 ] as const;
 
-const OFERTAS = UNIDADES.map(([sigla, nome], indice) => ({
-  id: `01960000-0000-7000-0000-0000000000f${indice + 1}`,
-  cursoId: CURSO_ID,
-  localOfertaId: '01960000-0000-7000-0000-0000000000d1',
-  unidadeOfertante: {
-    origemId: `01960000-0000-7000-0000-0000000000e${indice + 1}`,
-    sigla,
-    nome,
-    tipo: 'Instituto',
-  },
-  programaDeOferta: 'CONVENIO_OUTRO',
-  formatoPedagogico: 'PRESENCIAL',
-  regimeDeTurno: 'INTEGRAL',
-  turnos: ['MATUTINO', 'VESPERTINO'],
-  codigoEmec: '123456',
-  codigoNoSistemaAcademico: null,
-  vagasAnuaisAutorizadas: 40,
-  baseLegal: null,
-  atoAutorizacaoMec: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-}));
+const OFERTAS = UNIDADES.map(
+  ([sigla, nome], indice) =>
+    ({
+      id: `01960000-0000-7000-0000-0000000000f${indice + 1}`,
+      codigo: `ENGENHARIA_CIVIL_${sigla}`,
+      cursoId: CURSO_ID,
+      localOfertaId: '01960000-0000-7000-0000-0000000000d1',
+      unidadeOfertante: {
+        origemId: `01960000-0000-7000-0000-0000000000e${indice + 1}`,
+        sigla,
+        nome,
+        tipo: 'Instituto',
+      },
+      programaDeOferta: { codigo: 'CONVENIO_OUTRO', rotulo: 'Outro convênio' },
+      formatoPedagogico: { codigo: 'PRESENCIAL', rotulo: 'Presencial' },
+      regimeDeFuncionamento: { codigo: 'EXTENSIVO', rotulo: 'Extensivo' },
+      regimeDeTurno: { codigo: 'INTEGRAL', rotulo: 'Integral' },
+      turnos: [
+        { codigo: 'MATUTINO', rotulo: 'Matutino' },
+        { codigo: 'VESPERTINO', rotulo: 'Vespertino' },
+      ],
+      codigoEmec: '123456',
+      codigoNoSistemaAcademico: null,
+      vagasAnuaisAutorizadas: 40,
+      baseLegal: null,
+      atoAutorizacaoMec: null,
+      criadoEm: '2026-06-10T12:00:00Z',
+    }) satisfies JsonDaApi<OfertaCursoDto>,
+);
 
 async function mockApi(page: Page): Promise<void> {
   const json = async (route: Route, body: unknown): Promise<void> => {
