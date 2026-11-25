@@ -1,3 +1,5 @@
+import { seletoresDoEspecificador } from './tools/eslint/especificador-de-modulo.mjs';
+import { restricoesDePontosPublicos } from './tools/eslint/pontos-de-entrada-publicos.mjs';
 import nx from '@nx/eslint-plugin';
 import { builtinRules } from 'eslint/use-at-your-own-risk';
 import sonarjs from 'eslint-plugin-sonarjs';
@@ -25,20 +27,16 @@ const ESPECIFICADOR_DE_TESTE = String.raw`/(${[
   PONTO_DE_ENTRADA_DE_TESTE,
 ].join('|')})${EXTENSAO_OPCIONAL}$/`;
 
-// Cada forma de trazer um módulo por especificador (import, reexportação, `import()` e `require`).
-const SELETORES_DE_ESPECIFICADOR = [
-  `:matches(ImportDeclaration, ExportAllDeclaration, ExportNamedDeclaration, ImportExpression)[source.value=${ESPECIFICADOR_DE_TESTE}]`,
-  `CallExpression[callee.name='require'][arguments.0.value=${ESPECIFICADOR_DE_TESTE}]`,
-];
-
 // O `@nx/enforce-module-boundaries` não olha import relativo dentro do mesmo projeto; esta regra do
 // núcleo, com nome que nenhum projeto redefine, fecha essa brecha para arquivo ou ponto de entrada de
 // teste (`@angular/core/testing`, `@uniplus/shared-core/http/testing`).
-const IMPORTA_ARQUIVO_DE_TESTE = SELETORES_DE_ESPECIFICADOR.map((selector) => ({
-  selector,
-  message:
-    'Arquivo de produção não importa nem reexporta arquivo ou ponto de entrada de teste (.spec, .testing, .setup, test-setup, /testing): o apoio de teste entraria no build.',
-}));
+const IMPORTA_ARQUIVO_DE_TESTE = seletoresDoEspecificador(ESPECIFICADOR_DE_TESTE).map(
+  (selector) => ({
+    selector,
+    message:
+      'Arquivo de produção não importa nem reexporta arquivo ou ponto de entrada de teste (.spec, .testing, .setup, test-setup, /testing): o apoio de teste entraria no build.',
+  }),
+);
 
 // `import x = require()` não passa pelo `@nx/enforce-module-boundaries`: a forma inteira fica proibida.
 const IMPORT_COM_REQUIRE = {
@@ -196,6 +194,20 @@ export default [
       '**/vitest.config.*.timestamp*',
       'libs/shared-ui/src/assets/**',
     ],
+  },
+  {
+    files: ['**/*.ts'],
+    plugins: {
+      'fronteira-das-bibliotecas': {
+        rules: { 'ponto-de-entrada-publico': builtinRules.get('no-restricted-syntax') },
+      },
+    },
+    rules: {
+      'fronteira-das-bibliotecas/ponto-de-entrada-publico': [
+        'error',
+        ...restricoesDePontosPublicos(),
+      ],
+    },
   },
   {
     // Produção não importa o apoio de teste nem o Vitest; `noInlineConfig` impede silenciar a regra.

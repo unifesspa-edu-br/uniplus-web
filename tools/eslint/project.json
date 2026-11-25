@@ -18,9 +18,19 @@
         "{workspaceRoot}/apps/*/project.json",
         "{workspaceRoot}/libs/*/project.json",
         "{workspaceRoot}/tsconfig.base.json",
-        { "externalDependencies": ["vitest"] },
-        { "env": "CI" },
-        { "dependentTasksOutputFiles": "**/*.js", "transitive": true }
+        {
+          "externalDependencies": ["vitest"]
+        },
+        {
+          "env": "CI"
+        },
+        {
+          "dependentTasksOutputFiles": "**/*.js",
+          "transitive": true
+        },
+        "{workspaceRoot}/libs/*/*/ng-package.json",
+        "{workspaceRoot}/libs/*/*/project.json",
+        "{workspaceRoot}/libs/*/package.json"
       ]
     }
   }
