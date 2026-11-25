@@ -288,7 +288,7 @@ async function conferirModalidades(page: Page): Promise<void> {
   // Quem cursou o ensino médio em escola privada concorre só na ampla concorrência: a lista é a que a
   // API calcula das respostas, já gravadas ou ainda na tela.
   await irParaSecao(page, 'Modalidades de concorrência');
-  const modalidades = page.locator('ui-modalidades-da-inscricao');
+  const modalidades = page.locator('insc-modalidades-da-inscricao');
   await expect(
     modalidades
       .getByRole('list', { name: 'Modalidades em que você concorre' })
@@ -300,7 +300,7 @@ async function conferirModalidades(page: Page): Promise<void> {
 async function conferirDocumentos(page: Page): Promise<void> {
   // O processo de validação só pede documentos na habilitação: nesta fase a avaliação não pede nada.
   await irParaSecao(page, 'Documentos');
-  const documentos = page.locator('ui-documentos-da-inscricao');
+  const documentos = page.locator('insc-documentos-da-inscricao');
   await expect(documentos).toHaveAttribute('aria-busy', 'false', { timeout: 10_000 });
   await expect(documentos).toContainText('Você não envia documentos nesta etapa.');
   await expect(documentos.getByRole('heading', { level: 4 })).toHaveCount(0);
@@ -310,7 +310,7 @@ async function revisarEAceitarTermos(page: Page): Promise<void> {
   await irParaSecao(page, 'Revisão e aceite');
   await expect(
     page
-      .locator('ui-modalidades-da-inscricao')
+      .locator('insc-modalidades-da-inscricao')
       .getByRole('list', { name: 'Modalidades em que você concorre' })
       .getByRole('listitem'),
   ).toHaveText([/Ampla concorrência/i]);

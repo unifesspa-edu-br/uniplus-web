@@ -1,12 +1,14 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import {
-  type CatalogoAcompanhado,
   type CondicaoEmClausula,
   EditorDeCondicoesComponent,
-  FalhaDeLeituraComponent,
   type FatoEscolhivel,
-  IndicadorDaLeituraDirective,
   TODOS_OS_CANDIDATOS,
+} from '@uniplus/shared-inscricao/formulario';
+import {
+  type CatalogoAcompanhado,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
 } from '@uniplus/shared-ui/components';
 
 /** A regra de aplicabilidade: quem concorre na modalidade, lida em prosa e, quando cabe, editável. */

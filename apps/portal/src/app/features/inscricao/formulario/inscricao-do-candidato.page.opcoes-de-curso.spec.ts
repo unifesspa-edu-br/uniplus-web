@@ -230,7 +230,7 @@ describe('InscricaoDoCandidatoPage', () => {
       });
       let tela = await cenario.abrir();
       await cenario.irAoPasso(tela, 'Revisão e aceite');
-      let revisao = tela.querySelector('ui-formulario-do-candidato')?.textContent ?? '';
+      let revisao = tela.querySelector('insc-formulario-do-candidato')?.textContent ?? '';
       expect(revisao).toContain('1ª opção');
       expect(revisao).toContain(DIREITO.nome);
       expect(revisao).toContain('2ª opção');
@@ -239,7 +239,7 @@ describe('InscricaoDoCandidatoPage', () => {
       cenario.servico.inscricao = inscricao({ ...RESPONDIDA, ofertaCursoId: DIREITO.id });
       tela = await cenario.abrir();
       await cenario.irAoPasso(tela, 'Revisão e aceite');
-      revisao = tela.querySelector('ui-formulario-do-candidato')?.textContent ?? '';
+      revisao = tela.querySelector('insc-formulario-do-candidato')?.textContent ?? '';
       expect(revisao).toContain('Não declarada');
     });
   });

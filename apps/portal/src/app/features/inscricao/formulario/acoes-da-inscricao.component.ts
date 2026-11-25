@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import type { PendenciaDaSecao } from '@uniplus/shared-ui/components';
+import type { PendenciaDaSecao } from '@uniplus/shared-inscricao/formulario';
 
 import type { Operacao } from './gravacao-da-inscricao';
 

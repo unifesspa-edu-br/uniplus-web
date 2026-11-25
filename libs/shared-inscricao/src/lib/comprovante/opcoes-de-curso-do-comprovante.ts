@@ -1,5 +1,5 @@
 import type { ComprovanteDaInscricaoDto } from '@uniplus/shared-data/selecao';
-import { nomesPelaOrdem } from '@uniplus/shared-ui/components';
+import { nomesPelaOrdem } from '@uniplus/shared-inscricao/formulario';
 
 /** Uma opção de curso do envio, como o comprovante a mostra. */
 export interface OpcaoDeCursoExibida {

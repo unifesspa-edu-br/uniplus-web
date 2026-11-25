@@ -6,7 +6,6 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { codigosDoContrato } from '@uniplus/shared-data/utils';
 import {
-  acompanharCatalogo,
   deClausulasDoWire,
   descreverAlternativas,
   fatosParaLeitura,
@@ -15,7 +14,8 @@ import {
   problemaDaCondicao,
   type ClausulasNoWire,
   type CondicaoEmClausula,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
+import { acompanharCatalogo } from '@uniplus/shared-ui/components';
 
 import { ModalidadeFormStore } from './modalidade-form.store';
 import { fatosDaRegraDeAplicabilidade } from './regra-de-aplicabilidade';

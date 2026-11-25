@@ -12,7 +12,7 @@ import {
   exigenciaNova,
   regraDeDocumento,
 } from '../../shared/exigencias/exigencias-documentais';
-import { REGRAS_INICIAIS, type GrupoDoFormulario } from '@uniplus/shared-ui/components';
+import { REGRAS_INICIAIS, type GrupoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 import { item } from '../formulario/formulario-de-inscricao.testing';
 import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
 import { fase, ID_AVALIACAO, ID_CPF, ID_HOMOLOGACAO } from './fase.testing';

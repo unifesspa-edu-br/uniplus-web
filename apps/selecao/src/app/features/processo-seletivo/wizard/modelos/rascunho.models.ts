@@ -195,3 +195,14 @@ type SecaoNaoListada = Exclude<keyof WizardDraft, (typeof SECOES_DO_RASCUNHO)[nu
 /** Seção nova do rascunho fora de `SECOES_DO_RASCUNHO` quebra a compilação: o tipo vira `never`. */
 const TODAS_AS_SECOES_LISTADAS: [SecaoNaoListada] extends [never] ? true : never = true;
 void TODAS_AS_SECOES_LISTADAS;
+
+export type RegrasDaClassificacao = Pick<WizardDraft, 'classificacao' | 'bonus' | 'desempate'>;
+
+export type CalculoDaClassificacao = Pick<
+  WizardDraft['classificacao'],
+  | 'regraCalculoCodigo'
+  | 'regraCalculoVersao'
+  | 'regraArredondamentoCodigo'
+  | 'regraArredondamentoVersao'
+  | 'casasArredondamento'
+>;

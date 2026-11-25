@@ -17,10 +17,7 @@ export {
 export { BackToTopComponent } from './back-to-top/back-to-top';
 export { BackToTopContainerDirective } from './back-to-top/back-to-top-container.directive';
 export { BackToTopScrollService } from './back-to-top/back-to-top.service';
-export {
-  BreadcrumbComponent,
-  type UiBreadcrumbItem,
-} from './breadcrumb/breadcrumb';
+export { BreadcrumbComponent, type UiBreadcrumbItem } from './breadcrumb/breadcrumb';
 export {
   ButtonComponent,
   type UiButtonSize,
@@ -35,10 +32,7 @@ export {
 } from './combobox/combobox';
 export { CpfInputComponent } from './cpf-input/cpf-input';
 export { DadoRevelavelComponent } from './dado-revelavel/dado-revelavel';
-export {
-  DataTableComponent,
-  type UiDataTableColumn,
-} from './data-table/data-table';
+export { DataTableComponent, type UiDataTableColumn } from './data-table/data-table';
 export { DialogComponent } from './dialog/dialog';
 export { DrawerComponent } from './drawer/drawer';
 export { EmptyStateComponent } from './empty-state/empty-state';
@@ -49,29 +43,16 @@ export {
   type SituacaoDasOpcoes,
 } from './escolha-com-explicacao/escolha-com-explicacao';
 export {
-  ListaDeDocumentosComponent,
-  type DocumentoExigido,
-} from './lista-de-documentos/lista-de-documentos';
-export {
   FileUploadComponent,
   type ArquivoEmEnvio,
   type FaseDoArquivo,
 } from './file-upload/file-upload';
-export {
-  FilterBarComponent,
-  type UiFiltroAtivo,
-} from './filter-bar/filter-bar';
-export {
-  FilterChipsComponent,
-  type UiFilterChipOption,
-} from './filter-chips/filter-chips';
+export { FilterBarComponent, type UiFiltroAtivo } from './filter-bar/filter-bar';
+export { FilterChipsComponent, type UiFilterChipOption } from './filter-chips/filter-chips';
 export { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog';
 export { FormFieldComponent } from './form-field/form-field';
 export { InstitutionalBarComponent } from './institutional-bar/institutional-bar';
-export {
-  IconButtonComponent,
-  type UiTooltipPosition,
-} from './icon-button/icon-button';
+export { IconButtonComponent, type UiTooltipPosition } from './icon-button/icon-button';
 export { LoadingOverlayComponent } from './loading-overlay/loading-overlay';
 export { LookupAlertComponent } from './lookup-alert/lookup-alert';
 export { LookupLabelComponent } from './lookup-label/lookup-label';
@@ -82,37 +63,21 @@ export {
   ListFooterComponent,
 } from './list-footer/list-footer';
 export { PagerComponent } from './pager/pager';
-export {
-  RecusaDoCampoComponent,
-  type RecusaDoCampo,
-} from './recusa-do-campo/recusa-do-campo';
+export { RecusaDoCampoComponent, type RecusaDoCampo } from './recusa-do-campo/recusa-do-campo';
 export { RecolhivelComponent } from './recolhivel/recolhivel';
 export { RolagemFocavelDirective } from './rolagem-focavel/rolagem-focavel.directive';
 export { ValorLegivelDirective } from './valor-legivel/valor-legivel.directive';
-export {
-  SegmentedComponent,
-  type UiSegmentedOption,
-} from './segmented/segmented';
+export { SegmentedComponent, type UiSegmentedOption } from './segmented/segmented';
 export type { CodigoComRotulo } from './codigo-com-rotulo';
 export { SelectComponent, type UiSelectOption } from './select/select';
 export { opcoesDosCodigos } from './select/opcoes-dos-codigos';
 export { EnderecoGeoComponent } from './endereco-geo/endereco-geo';
 export * from './endereco-geo/endereco-geo.model';
-export * from './editor-de-documentos-exigidos/documentos-exigidos';
-export { DocumentoExigidoComponent } from './editor-de-documentos-exigidos/documento-exigido';
-export { EditorDeDocumentosExigidosComponent } from './editor-de-documentos-exigidos/editor-de-documentos-exigidos';
-export {
-  NormasDoDocumentoComponent,
-  type TextosDasNormas,
-} from './editor-de-documentos-exigidos/normas-do-documento';
 export { SkeletonComponent } from './skeleton/skeleton';
 export { SkipLinkComponent } from './skip-link/skip-link';
 export { SpinnerComponent } from './spinner/spinner';
 export { TagComponent, type UiTagVariant } from './tag/tag';
-export {
-  TagDoCodigoComponent,
-  type VariantesDosCodigos,
-} from './tag-do-codigo/tag-do-codigo';
+export { TagDoCodigoComponent, type VariantesDosCodigos } from './tag-do-codigo/tag-do-codigo';
 export { TextInputComponent } from './text-input/text-input';
 export { TextareaComponent } from './textarea/textarea';
 export { VlibrasLoaderComponent } from './vlibras-loader/vlibras-loader';
@@ -121,6 +86,9 @@ export {
   ESPERA_DA_DIGITACAO_MS,
   LEITURA_DE_MUNICIPIO_POR_CODIGO,
   NomesDeMunicipios,
+  ValorDeMunicipioComponent,
+  nomeComUf,
+  nomeDoMunicipioNaoCarregado,
   type BuscaDeMunicipios,
   type LeituraDeMunicipio,
   type MunicipioEncontrado,
@@ -135,10 +103,7 @@ export {
   rotuloDaSituacaoDaInscricao,
   varianteDaSituacaoDaInscricao,
 } from './lista-de-dados/situacao-da-inscricao';
-export {
-  valorExibido,
-  type ValorExibido,
-} from './lista-de-dados/valor-da-resposta';
+export { valorExibido, type ValorExibido } from './lista-de-dados/valor-da-resposta';
 export { RespostaExibidaComponent } from './lista-de-dados/resposta-exibida.component';
 export { DadoDirective } from './lista-de-dados/dado';
 export {
@@ -161,6 +126,3 @@ export {
   type StepsVariant,
 } from './steps/steps.component';
 export { StepsResponsivoComponent } from './steps-responsivo/steps-responsivo.component';
-export * from './editor-de-condicoes';
-export * from './editor-de-formulario';
-export * from './formulario-do-candidato';

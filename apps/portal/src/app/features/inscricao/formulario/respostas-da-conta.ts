@@ -1,6 +1,6 @@
 import type { FormularioApresentadoDoProcessoDto } from '@uniplus/shared-data/selecao';
 import { isValidCpf } from '@uniplus/shared-data/utils';
-import type { RespostaFixa, ValorJson } from '@uniplus/shared-ui/components';
+import type { RespostaFixa, ValorJson } from '@uniplus/shared-inscricao/formulario';
 import { cpfRevelavel, mascararCpf } from '@uniplus/shared-utils';
 
 /** O que a conta do candidato traz e a inscrição usa; o CPF vem só com dígitos ou formatado. */

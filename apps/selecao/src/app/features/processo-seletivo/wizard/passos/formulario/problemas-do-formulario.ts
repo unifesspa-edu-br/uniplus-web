@@ -1,6 +1,6 @@
 import { TipoDeCampoCodigo } from '@uniplus/shared-data/selecao';
 import { referenciaEmFase } from './apuracao-da-idade';
-import { todosOsCampos } from '@uniplus/shared-ui/components';
+import { todosOsCampos } from '@uniplus/shared-inscricao/formulario';
 import type {
   ExigenciasDoRascunho,
   FormularioDeInscricao,

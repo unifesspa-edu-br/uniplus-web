@@ -1,5 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { deClausulasDoWire, fatosParaLeitura, resumoDaRegra } from '@uniplus/shared-ui/components';
+import {
+  deClausulasDoWire,
+  fatosParaLeitura,
+  resumoDaRegra,
+} from '@uniplus/shared-inscricao/formulario';
 
 import { CatalogoDeFatos } from '../passos/cronograma/catalogos/catalogo-de-fatos.service';
 import type { RegraDaModalidadeOfertada } from './regras-das-modalidades';

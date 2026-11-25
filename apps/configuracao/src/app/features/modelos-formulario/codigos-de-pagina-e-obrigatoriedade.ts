@@ -6,7 +6,7 @@ import {
   type TipoDeCampoCodigo,
 } from '@uniplus/shared-data/configuracao';
 import { codigoDoContrato } from '@uniplus/shared-data/utils';
-import type { ConteudoDoFormulario } from '@uniplus/shared-ui/components';
+import type { ConteudoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 
 type Conteudo = ConteudoDoFormulario<number, OperadorCodigo | null, TipoDeCampoCodigo | null>;
 type Item = NonNullable<Conteudo['itens']>[number];

@@ -11,7 +11,8 @@ import {
   FatoCandidatoDto,
   FatoDeManutencaoDto,
 } from '@uniplus/shared-data/configuracao';
-import { acompanharLeitura, fatosEscolhiveis } from '@uniplus/shared-ui/components';
+import { fatosEscolhiveis } from '@uniplus/shared-inscricao/formulario';
+import { acompanharLeitura } from '@uniplus/shared-ui/components';
 import {
   ID_DAS_REGRAS_PADRAO,
   ID_DO_INICIO_DA_EDICAO,

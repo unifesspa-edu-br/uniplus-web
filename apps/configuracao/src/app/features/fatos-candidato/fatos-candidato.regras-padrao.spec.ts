@@ -62,7 +62,7 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
   };
   /** O editor de condições é um componente de apresentação: a tela o conduz pelas suas saídas. */
   const editarCondicoes = async (indice: number, condicoes: readonly unknown[]): Promise<void> => {
-    const editores = p.fixture.debugElement.queryAll(By.css('ui-editor-de-condicoes'));
+    const editores = p.fixture.debugElement.queryAll(By.css('insc-editor-de-condicoes'));
     editores[indice].triggerEventHandler('condicoesChange', condicoes);
     await p.propagar();
   };
@@ -126,7 +126,7 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
       ]),
     );
 
-    expect(p.drawerDoFato().querySelectorAll('ui-editor-de-condicoes')).toHaveLength(1);
+    expect(p.drawerDoFato().querySelectorAll('insc-editor-de-condicoes')).toHaveLength(1);
   });
 
   it('a regra salva que cita fato desativado não trava o salvamento das demais', async () => {
@@ -172,7 +172,7 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
     await editarCondicoes(0, [semValor, completa]);
     await acao('Salvar regras');
     const editor = () =>
-      p.fixture.debugElement.query(By.css('ui-editor-de-condicoes')).componentInstance;
+      p.fixture.debugElement.query(By.css('insc-editor-de-condicoes')).componentInstance;
     expect(Object.keys(editor().erros())).toEqual(['0']);
 
     await editarCondicoes(0, [completa]);
@@ -261,11 +261,11 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
     expect(p.texto()).toContain('O fato vale "sim" quando alguma regra se cumpre.');
     await acao('Acrescentar regra');
     await acao('Acrescentar regra');
-    expect(p.drawerDoFato().querySelectorAll('ui-editor-de-condicoes')).toHaveLength(2);
+    expect(p.drawerDoFato().querySelectorAll('insc-editor-de-condicoes')).toHaveLength(2);
 
     await acao('Remover a regra 1');
 
-    expect(p.drawerDoFato().querySelectorAll('ui-editor-de-condicoes')).toHaveLength(1);
+    expect(p.drawerDoFato().querySelectorAll('insc-editor-de-condicoes')).toHaveLength(1);
   });
 
   it('a falha do servidor (5xx) ao salvar avisa por toast e a recusa 422 mostra o erro na tela', async () => {

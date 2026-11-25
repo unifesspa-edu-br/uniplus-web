@@ -193,7 +193,7 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(passos(tela)[0].textContent).toContain('Curso');
     expect(passos(tela)[1].textContent).toContain('Dados pessoais');
     expect(passos(tela)[0].getAttribute('aria-current')).toBe('step');
-    expect(tela.querySelector('ui-formulario-do-candidato #inscricao-oferta')).not.toBeNull();
+    expect(tela.querySelector('insc-formulario-do-candidato #inscricao-oferta')).not.toBeNull();
     expect(tela.querySelector('ui-page-header ~ #inscricao-oferta')).toBeNull();
   });
 

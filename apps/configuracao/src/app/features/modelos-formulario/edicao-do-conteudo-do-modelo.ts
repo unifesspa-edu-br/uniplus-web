@@ -36,7 +36,7 @@ import {
   type DocumentoExigidoDoFormulario,
   type RecusasDoDocumento,
   type RecusasDoConteudo,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 import { conteudoDoModelo, conteudoParaOModelo } from './conteudo-do-modelo';
 import { focoEstaLivre } from '../../shared/foco';
 import { validarParaEnvio, marcarRecusasDosCampos } from '../../shared/formulario';

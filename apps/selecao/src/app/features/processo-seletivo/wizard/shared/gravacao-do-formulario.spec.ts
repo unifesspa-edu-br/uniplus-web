@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { FormulariosDoProcessoApi, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
-import { REGRAS_INICIAIS, type ConteudoDoFormulario } from '@uniplus/shared-ui/components';
+import { REGRAS_INICIAIS, type ConteudoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { gravarFormulario } from './gravacao-do-formulario';

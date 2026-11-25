@@ -1,0 +1,276 @@
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+
+import { CampoDoCandidatoComponent } from './campo-do-candidato';
+import { type CampoNoPasso, type GrupoNoPasso } from './passos-do-formulario';
+import { type OcorrenciaNaTela, ocorrenciasNaTela } from './ocorrencias-na-tela';
+import { fatoDaUf } from './regras-do-campo';
+import { type ErroDoServidor, mensagemDosErros } from './formulario-do-candidato.model';
+import { type ProblemaDaConfirmacao } from './pendencias-do-passo';
+import {
+  FATO_PARENTESCO,
+  indiceDaOcorrenciaDoCandidato,
+  PROPRIO_CANDIDATO,
+} from './interpretador/ocorrencia-do-candidato';
+import type { OcorrenciaSimulada, ValorJson } from './interpretador/regras-do-formulario';
+import {
+  chaveDaResposta,
+  rotuloGravadoDa,
+  type MunicipiosGravados,
+} from './valor-de-municipio-gravado';
+
+/**
+ * Um grupo repetível, como a composição familiar: cada ocorrência com os campos dela, e acrescentar ou
+ * remover ocorrência dentro do mínimo e do máximo. No grupo de mínimo zero, o candidato pode declarar
+ * que não há ocorrência — a lista vazia é resposta, diferente de não responder. No grupo que inclui o
+ * candidato, a ocorrência dele nasce com o parentesco de próprio candidato e não sai da lista.
+ */
+@Component({
+  selector: 'insc-grupo-do-candidato',
+  standalone: true,
+  imports: [CampoDoCandidatoComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <fieldset class="formulario-candidato__grupo" [attr.aria-describedby]="descritoPor()">
+      <legend class="field__label" [class.is-required]="obrigatorio()">{{ grupo().rotulo }}</legend>
+      <p class="field__hint" [id]="id() + '-limites'">{{ limites() }}</p>
+
+      @if (ocorrencias() === undefined) {
+        <!-- Sem resposta ainda: nenhuma ocorrência na lista. -->
+      } @else if (naTela().length === 0 && minimo() === 0) {
+        <p class="formulario-candidato__declaracao">
+          Declarado: não há {{ grupo().rotulo.toLocaleLowerCase('pt-BR') }}.
+        </p>
+        <button
+          type="button"
+          class="btn btn--tertiary btn--sm"
+          (click)="ocorrenciasChange.emit(undefined)"
+        >
+          Desfazer a declaração
+        </button>
+      }
+
+      @for (ocorrencia of naTela(); track ocorrencia.id; let i = $index) {
+        <section
+          class="formulario-candidato__ocorrencia"
+          [attr.aria-labelledby]="id() + '-' + i + '-titulo'"
+        >
+          <h4 class="formulario-candidato__ocorrencia-titulo" [id]="id() + '-' + i + '-titulo'">
+            {{ ocorrencia.titulo }}
+          </h4>
+          @for (campo of ocorrencia.campos; track campo.campo.fatoCodigo) {
+            <insc-campo-do-candidato
+              [attr.data-campo]="campoNoServidor(ocorrencia.id, campo.campo.fatoCodigo)"
+              [noPasso]="campo"
+              [id]="id() + '-' + i + '-' + campo.campo.fatoCodigo"
+              [resposta]="ocorrencia.respostas[campo.campo.fatoCodigo]"
+              [rotuloGravado]="rotuloGravado(ocorrencia, campo.campo.fatoCodigo)"
+              [respostaDaUf]="respostaDaUf(campo, ocorrencia.respostas)"
+              [mostrarPendencia]="mostrarPendencia()"
+              [diaDoEnvio]="diaDoEnvio()"
+              [erroDoServidor]="
+                mensagemDosErros(
+                  errosDoServidor(),
+                  campoNoServidor(ocorrencia.id, campo.campo.fatoCodigo)
+                )
+              "
+              [confirmacao]="
+                confirmacoes()[campoNoServidor(ocorrencia.id, campo.campo.fatoCodigo)] ?? ''
+              "
+              [problemaDaConfirmacao]="
+                problemasDaConfirmacao().get(
+                  campoNoServidor(ocorrencia.id, campo.campo.fatoCodigo)
+                ) ?? null
+              "
+              (respondida)="responder(i, campo.campo.fatoCodigo, $event)"
+              (confirmada)="
+                confirmada.emit({
+                  campo: campoNoServidor(ocorrencia.id, campo.campo.fatoCodigo),
+                  texto: $event,
+                })
+              "
+            />
+          }
+          @if (!ocorrencia.doCandidato) {
+            <button type="button" class="btn btn--tertiary btn--sm" (click)="remover(i)">
+              Remover {{ ocorrencia.titulo }}
+            </button>
+          }
+        </section>
+      }
+
+      <div class="formulario-candidato__acoes-do-grupo">
+        @if (grupo().ocorrencias.incluiCandidato && !temOcorrenciaDoCandidato()) {
+          <button
+            type="button"
+            class="btn btn--secondary btn--sm"
+            [disabled]="cheio()"
+            (click)="acrescentar(true)"
+          >
+            Incluir você na lista
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="btn btn--secondary btn--sm"
+            [disabled]="cheio()"
+            (click)="acrescentar(false)"
+          >
+            Acrescentar a {{ grupo().rotulo.toLocaleLowerCase('pt-BR') }}
+          </button>
+        }
+        @if (minimo() === 0 && naTela().length === 0 && ocorrencias() === undefined) {
+          <button
+            type="button"
+            class="btn btn--tertiary btn--sm"
+            (click)="ocorrenciasChange.emit([])"
+          >
+            Declarar que não há {{ grupo().rotulo.toLocaleLowerCase('pt-BR') }}
+          </button>
+        }
+      </div>
+
+      @if (problemas().length > 0) {
+        <span class="field__error" [id]="id() + '-erro'">
+          @for (problema of problemas(); track problema) {
+            {{ problema }}
+          }
+        </span>
+      }
+    </fieldset>
+  `,
+})
+export class GrupoDoCandidatoComponent {
+  readonly noPasso = input.required<GrupoNoPasso>();
+  /** As ocorrências respondidas; `undefined` é o grupo ainda sem resposta. */
+  readonly ocorrencias = input<readonly OcorrenciaSimulada[] | undefined>(undefined);
+  /** As respostas do candidato fora do grupo, para a UF de um campo de município. */
+  readonly respostasDoCandidato = input<Readonly<Record<string, ValorJson>>>({});
+  /** O nome gravado de cada município da inscrição enviada, pela chave da resposta. */
+  readonly municipiosGravados = input<MunicipiosGravados>({});
+  readonly id = input.required<string>();
+  readonly mostrarPendencia = input<boolean>(false);
+  /** O dia do envio, `AAAA-MM-DD`, que os campos de data usam para dizer os limites. */
+  readonly diaDoEnvio = input<string | null>(null);
+  /** As recusas do servidor dentro do grupo: as do grupo, as de uma ocorrência e as de um campo dela. */
+  readonly errosDoServidor = input<readonly ErroDoServidor[]>([]);
+
+  /** A confirmação digitada de cada subitem, pelo código com que o servidor o nomeia. */
+  readonly confirmacoes = input<Readonly<Partial<Record<string, string>>>>({});
+  /** O problema da confirmação de cada subitem, pelo mesmo código. */
+  readonly problemasDaConfirmacao = input<ReadonlyMap<string, ProblemaDaConfirmacao>>(new Map());
+
+  readonly ocorrenciasChange = output<readonly OcorrenciaSimulada[] | undefined>();
+  /** O candidato digitou a confirmação de um subitem; o grupo não a guarda. */
+  readonly confirmada = output<{ readonly campo: string; readonly texto: string }>();
+
+  protected readonly grupo = computed(() => this.noPasso().grupo);
+  protected readonly obrigatorio = computed(
+    () => this.noPasso().avaliado.regras.obrigatorio === 'VERDADEIRO',
+  );
+  private readonly lista = computed(() => this.ocorrencias() ?? []);
+  /** O mínimo e o máximo de ocorrências; o máximo nulo é sem limite. */
+  protected readonly minimo = computed(() => this.grupo().ocorrencias.minimo);
+  protected readonly maximo = computed(() => this.grupo().ocorrencias.maximo ?? null);
+  protected readonly cheio = computed(() => {
+    const maximo = this.maximo();
+    return maximo !== null && this.lista().length >= maximo;
+  });
+  /**
+   * A ocorrência do candidato: a primeira com o parentesco de próprio candidato, no grupo que o inclui.
+   * Outra com o mesmo parentesco é um integrante como os demais, que se corrige ou remove.
+   */
+  private readonly indiceDoCandidato = computed(() =>
+    indiceDaOcorrenciaDoCandidato(
+      this.grupo().ocorrencias.incluiCandidato,
+      this.lista().map((o) => o.respostas),
+    ),
+  );
+  protected readonly temOcorrenciaDoCandidato = computed(() => this.indiceDoCandidato() !== null);
+
+  protected readonly limites = computed(() => {
+    const minimo = this.minimo();
+    const maximo = this.maximo();
+    if (maximo !== null)
+      return minimo === maximo ? `Informe ${minimo}.` : `Informe de ${minimo} a ${maximo}.`;
+    return minimo > 0 ? `Informe ao menos ${minimo}.` : 'Informe quantos houver.';
+  });
+
+  /** Cada ocorrência com os campos que aparecem nela, na ordem do grupo. */
+  protected readonly naTela = computed(() =>
+    ocorrenciasNaTela(this.noPasso(), this.lista(), this.indiceDoCandidato()),
+  );
+
+  protected readonly problemas = computed(() => [
+    ...(this.mostrarPendencia() && this.obrigatorio() && this.ocorrencias() === undefined
+      ? ['Responda este grupo.']
+      : []),
+    ...this.problemasDaContagem(),
+    // As recusas de um campo de ocorrência ficam ao lado dele; as demais são do grupo.
+    ...this.errosDoServidor()
+      .filter((e) => e.campo.split('.').length < 3)
+      .map((e) => e.mensagem),
+  ]);
+
+  protected readonly mensagemDosErros = mensagemDosErros;
+
+  private problemasDaContagem(): string[] {
+    const { ocorrencias } = this.noPasso().avaliado;
+    return [
+      ...(ocorrencias.contagemValida ? [] : [this.limites()]),
+      ...(ocorrencias.ocorrenciaDoCandidatoValida ? [] : ['Inclua você na lista uma única vez.']),
+    ];
+  }
+
+  protected rotuloGravado(ocorrencia: OcorrenciaNaTela, fato: string): string | null {
+    return rotuloGravadoDa(
+      this.municipiosGravados(),
+      chaveDaResposta(fato, { grupo: this.grupo().codigo, id: ocorrencia.id }),
+      ocorrencia.respostas[fato],
+    );
+  }
+
+  /** Como o servidor nomeia o campo de uma ocorrência. */
+  protected campoNoServidor(ocorrencia: string, fato: string): string {
+    return `${this.grupo().codigo}.${ocorrencia}.${fato}`;
+  }
+
+  protected readonly descritoPor = computed(() =>
+    [`${this.id()}-limites`, ...(this.problemas().length > 0 ? [`${this.id()}-erro`] : [])].join(
+      ' ',
+    ),
+  );
+
+  protected respostaDaUf(
+    campo: CampoNoPasso,
+    daOcorrencia: Readonly<Record<string, ValorJson>>,
+  ): ValorJson | undefined {
+    const fato = fatoDaUf(campo.regra);
+    return fato === null ? undefined : (daOcorrencia[fato] ?? this.respostasDoCandidato()[fato]);
+  }
+
+  protected acrescentar(doCandidato: boolean): void {
+    const nova: OcorrenciaSimulada = {
+      id: crypto.randomUUID(),
+      respostas: doCandidato ? { [FATO_PARENTESCO]: PROPRIO_CANDIDATO } : {},
+    };
+    this.ocorrenciasChange.emit(doCandidato ? [nova, ...this.lista()] : [...this.lista(), nova]);
+  }
+
+  /** Remover o último integrante volta o grupo a sem resposta: declarar que não há é uma escolha à parte. */
+  protected remover(indice: number): void {
+    const restantes = this.lista().filter((_, i) => i !== indice);
+    this.ocorrenciasChange.emit(restantes.length === 0 ? undefined : restantes);
+  }
+
+  protected responder(indice: number, fato: string, valor: ValorJson | undefined): void {
+    this.ocorrenciasChange.emit(
+      this.lista().map((ocorrencia, i) => {
+        if (i !== indice) return ocorrencia;
+        const respostas = { ...(ocorrencia.respostas ?? {}) };
+        if (valor === undefined) delete respostas[fato];
+        else respostas[fato] = valor;
+        return { ...ocorrencia, respostas };
+      }),
+    );
+  }
+}

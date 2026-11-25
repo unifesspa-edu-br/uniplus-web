@@ -8,7 +8,7 @@ import { FAIXA_ETARIA, MODALIDADE } from '../../shared/gatilho-de-exigencia.test
 import { TestBed } from '@angular/core/testing';
 import { type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
-import { conteudoInicial } from '@uniplus/shared-ui/components';
+import { conteudoInicial } from '@uniplus/shared-inscricao/formulario';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { faseDoServidor } from '../../shared/cronograma-do-servidor.testing';
 import {

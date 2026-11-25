@@ -1,5 +1,8 @@
 import type { DocumentoDaConfiguracaoFormulario } from '@uniplus/shared-data/selecao';
-import type { ConteudoDoFormulario, EdicaoDoFormulario } from '@uniplus/shared-ui/components';
+import type {
+  ConteudoDoFormulario,
+  EdicaoDoFormulario,
+} from '@uniplus/shared-inscricao/formulario';
 import { CamposEmEdicao, camposAlterados } from './campos-em-edicao';
 import { ContextoDaConversao as Contexto } from './contexto-da-conversao';
 import { gravarPagina } from './paginas';

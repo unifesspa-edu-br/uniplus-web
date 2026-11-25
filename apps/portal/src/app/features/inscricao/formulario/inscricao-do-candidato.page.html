@@ -47,7 +47,7 @@
 </p>
 } @if (leitura.carregada(); as carregada) {
 <fieldset class="inscricao-formulario" role="none" [disabled]="gravacao.ocupada()">
-  <ui-formulario-do-candidato
+  <insc-formulario-do-candidato
     #formDoCandidato
     idBase="inscricao"
     apresentacaoDosPassos="lateral"
@@ -90,7 +90,7 @@
       (escolherSegundaOferta)="escolherSegundaOferta($event)"
     />
     }
-  </ui-formulario-do-candidato>
+  </insc-formulario-do-candidato>
 </fieldset>
 } @if (derivados().length > 0) {
 <section class="inscricao-derivados" aria-labelledby="inscricao-derivados-titulo">

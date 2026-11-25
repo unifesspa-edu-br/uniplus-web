@@ -1,0 +1,266 @@
+import {
+  CAMINHO_DA_EXIBICAO,
+  CAMINHO_DO_PREDICADO_DA_OBRIGATORIEDADE,
+  CAMINHO_DO_TIPO_DA_OBRIGATORIEDADE,
+  type CamposEditadosDoFormulario,
+} from './modelo/campos-editados';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  linkedSignal,
+  output,
+} from '@angular/core';
+
+import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
+import { type CondicaoEmClausula } from '../editor-de-condicoes/condicoes/condicoes-em-clausulas';
+import { type FatoEscolhivel } from '../editor-de-condicoes/condicoes/fatos-escolhiveis';
+import {
+  OBRIGATORIEDADE_NUNCA,
+  OBRIGATORIEDADE_QUANDO,
+  OBRIGATORIEDADE_SEMPRE,
+} from './modelo/constantes';
+import {
+  type ExibicaoEObrigatoriedade,
+  type PredicadoNoWire,
+  type TermoDisponivel,
+  type TermoDoFormulario,
+} from './modelo/tipos';
+import {
+  paraPredicado,
+  problemasDasCondicoes,
+  recopiarSeMudouPorFora,
+} from './predicado-em-edicao';
+
+const ACEITES = [
+  { valor: OBRIGATORIEDADE_SEMPRE, rotulo: 'Aceite obrigatório' },
+  { valor: OBRIGATORIEDADE_NUNCA, rotulo: 'Aceite opcional' },
+  { valor: OBRIGATORIEDADE_QUANDO, rotulo: 'Aceite obrigatório conforme respostas' },
+] as const;
+
+/**
+ * Um termo de consentimento exigido pelo formulário: a versão aceita, se o aceite é obrigatório e
+ * quando o termo aparece — o consentimento de consulta a dados de renda, por exemplo, só para quem
+ * concorre a cota de renda. Devolve o termo inteiro a cada mudança.
+ */
+@Component({
+  selector: 'insc-termo-do-formulario',
+  standalone: true,
+  imports: [EditorDeCondicoesComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <article class="editor-formulario__item" [attr.aria-labelledby]="idDe('titulo')">
+      <div class="editor-formulario__cabecalho">
+        <h4 class="editor-formulario__titulo-item" [id]="idDe('titulo')">
+          {{ posicao() }}. {{ nome() }}
+        </h4>
+        <code>{{ termo().codigo }}</code>
+        <div
+          class="editor-formulario__acoes-do-cabecalho"
+          role="group"
+          [attr.aria-label]="'Ações do termo ' + nome()"
+        >
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [id]="idDe('subir')"
+            [disabled]="disabled() || !podeSubir()"
+            [attr.aria-label]="'Subir ' + nome()"
+            (click)="mover.emit(-1)"
+          >
+            Subir
+          </button>
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [id]="idDe('descer')"
+            [disabled]="disabled() || !podeDescer()"
+            [attr.aria-label]="'Descer ' + nome()"
+            (click)="mover.emit(1)"
+          >
+            Descer
+          </button>
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [disabled]="disabled()"
+            [attr.aria-label]="'Remover a exigência do termo ' + nome()"
+            (click)="remover.emit()"
+          >
+            Remover
+          </button>
+        </div>
+      </div>
+
+      @if (erros().length > 0) {
+        <ul class="editor-formulario__erros u-list">
+          @for (erro of erros(); track $index) {
+            <li class="field__error">{{ erro }}</li>
+          }
+        </ul>
+      }
+
+      <div class="form-grid">
+        <div class="field">
+          <label class="field__label" [for]="idDe('versao')">Versão aceita</label>
+          <select
+            class="select"
+            [id]="idDe('versao')"
+            [disabled]="disabled()"
+            (change)="trocarVersao(valorDe($event))"
+          >
+            @for (versao of versoes(); track versao.versaoId) {
+              <option
+                [value]="versao.versaoId"
+                [selected]="versao.versaoId === termo().termo.versaoId"
+              >
+                {{ versao.rotulo }}
+              </option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field__label" [for]="idDe('aceite')">Aceite</label>
+          <select
+            class="select"
+            [id]="idDe('aceite')"
+            [disabled]="disabled()"
+            (change)="trocarAceite(valorDe($event))"
+          >
+            @for (opcao of aceites; track opcao.valor) {
+              <option
+                [value]="opcao.valor"
+                [selected]="opcao.valor === termo().regras.obrigatoriedade.tipo"
+              >
+                {{ opcao.rotulo }}
+              </option>
+            }
+          </select>
+        </div>
+      </div>
+
+      @if (termo().regras.obrigatoriedade.tipo === quando) {
+        <insc-editor-de-condicoes
+          legenda="Aceite obrigatório quando"
+          textoSemCondicao="Declare ao menos uma condição: sem ela, escolha obrigatório ou opcional."
+          [condicoes]="condicoesDoAceite()"
+          [fatos]="fatos()"
+          [idBase]="idDe('aceite-quando')"
+          [disabled]="disabled()"
+          [erros]="problemas(condicoesDoAceite())"
+          (condicoesChange)="trocarAceiteQuando($event)"
+        />
+      }
+
+      <insc-editor-de-condicoes
+        legenda="Exibir o termo só quando"
+        textoSemCondicao="O termo é exibido sempre."
+        [condicoes]="condicoesDaExibicao()"
+        [fatos]="fatos()"
+        [idBase]="idDe('exibicao')"
+        [disabled]="disabled()"
+        [erros]="problemas(condicoesDaExibicao())"
+        (condicoesChange)="trocarExibicao($event)"
+      />
+    </article>
+  `,
+})
+export class TermoDoFormularioComponent {
+  readonly termo = input.required<TermoDoFormulario>();
+  /** O termo no catálogo; ausente quando o catálogo não o traz mais. */
+  readonly disponivel = input<TermoDisponivel | undefined>(undefined);
+  readonly posicao = input.required<number>();
+  readonly fatos = input.required<readonly FatoEscolhivel[]>();
+  readonly idBase = input.required<string>();
+  readonly podeSubir = input<boolean>(false);
+  readonly podeDescer = input<boolean>(false);
+  readonly disabled = input<boolean>(false);
+  readonly erros = input<readonly string[]>([]);
+
+  readonly camposEditados = output<CamposEditadosDoFormulario>();
+  readonly termoChange = output<TermoDoFormulario>();
+  readonly mover = output<-1 | 1>();
+  readonly remover = output<void>();
+
+  protected readonly aceites = ACEITES;
+  protected readonly quando = OBRIGATORIEDADE_QUANDO;
+
+  protected readonly nome = computed(() => this.disponivel()?.nome ?? 'Termo fora do catálogo');
+
+  /** As versões promovidas; a gravada aparece mesmo se não estiver entre elas, para não trocar sem aviso. */
+  protected readonly versoes = computed(() => {
+    const versoes = this.disponivel()?.versoes ?? [];
+    return versoes.some((versao) => versao.versaoId === this.termo().termo.versaoId)
+      ? versoes
+      : [
+          { versaoId: this.termo().termo.versaoId, rotulo: 'Versão gravada (fora do catálogo)' },
+          ...versoes,
+        ];
+  });
+
+  protected readonly condicoesDaExibicao = linkedSignal<
+    PredicadoNoWire,
+    readonly CondicaoEmClausula[]
+  >({
+    source: () => this.termo().regras.exibicao,
+    computation: recopiarSeMudouPorFora,
+  });
+
+  protected readonly condicoesDoAceite = linkedSignal<
+    PredicadoNoWire,
+    readonly CondicaoEmClausula[]
+  >({
+    source: () => this.termo().regras.obrigatoriedade.predicado,
+    computation: recopiarSeMudouPorFora,
+  });
+
+  protected idDe(parte: string): string {
+    return `${this.idBase()}-${parte}`;
+  }
+
+  protected valorDe(evento: Event): string {
+    return (evento.target as HTMLSelectElement).value;
+  }
+
+  protected problemas(
+    condicoes: readonly CondicaoEmClausula[],
+  ): Readonly<Record<number, string | undefined>> {
+    return problemasDasCondicoes(condicoes, this.fatos());
+  }
+
+  protected trocarVersao(versaoId: string): void {
+    this.camposEditados.emit([['termo', 'versaoId']]);
+    this.termoChange.emit({ ...this.termo(), termo: { ...this.termo().termo, versaoId } });
+  }
+
+  /** Fora do aceite condicional, o predicado sai: a API recusa predicado sem a condicional. */
+  protected trocarAceite(tipo: string): void {
+    const condicional = tipo === OBRIGATORIEDADE_QUANDO;
+    if (!condicional) this.condicoesDoAceite.set([]);
+    const predicado = condicional ? paraPredicado(this.condicoesDoAceite()) : null;
+    this.trocarRegras({ ...this.termo().regras, obrigatoriedade: { tipo, predicado } }, [
+      CAMINHO_DO_TIPO_DA_OBRIGATORIEDADE,
+      CAMINHO_DO_PREDICADO_DA_OBRIGATORIEDADE,
+    ]);
+  }
+
+  protected trocarAceiteQuando(condicoes: readonly CondicaoEmClausula[]): void {
+    this.condicoesDoAceite.set(condicoes);
+    const { regras } = this.termo();
+    const obrigatoriedade = { ...regras.obrigatoriedade, predicado: paraPredicado(condicoes) };
+    this.trocarRegras({ ...regras, obrigatoriedade }, [CAMINHO_DO_PREDICADO_DA_OBRIGATORIEDADE]);
+  }
+
+  protected trocarExibicao(condicoes: readonly CondicaoEmClausula[]): void {
+    this.condicoesDaExibicao.set(condicoes);
+    const regras = { ...this.termo().regras, exibicao: paraPredicado(condicoes) };
+    this.trocarRegras(regras, [CAMINHO_DA_EXIBICAO]);
+  }
+
+  private trocarRegras(regras: ExibicaoEObrigatoriedade, campos: CamposEditadosDoFormulario): void {
+    this.camposEditados.emit(campos);
+    this.termoChange.emit({ ...this.termo(), regras });
+  }
+}

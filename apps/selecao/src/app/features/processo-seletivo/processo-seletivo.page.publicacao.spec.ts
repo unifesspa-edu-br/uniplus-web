@@ -1,6 +1,6 @@
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { REGRAS_INICIAIS, type ConteudoDoFormulario } from '@uniplus/shared-ui/components';
+import { REGRAS_INICIAIS, type ConteudoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 import { item, secao } from './wizard/passos/formulario/formulario-de-inscricao.testing';
 import { ROTULOS_DOS_PASSOS } from './wizard/processo-seletivo.data';
 import { configurarPagina, montarPagina } from './processo-seletivo.page.testing';

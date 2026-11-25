@@ -43,7 +43,7 @@ describe('InscricaoDoCandidatoPage', () => {
     const tela = await cenario.abrir();
     await irAsModalidades(tela);
 
-    expect(tela.querySelector('ui-modalidades-da-inscricao')?.textContent).toContain(
+    expect(tela.querySelector('insc-modalidades-da-inscricao')?.textContent).toContain(
       'Ampla concorrência',
     );
     expect(cenario.servico.avaliacoes).toHaveLength(0);
@@ -130,7 +130,7 @@ describe('InscricaoDoCandidatoPage', () => {
     await cenario.clicar(botao(tela, 'Salvar rascunho'));
     await irAsModalidades(tela);
 
-    expect(tela.querySelector('ui-modalidades-da-inscricao')?.textContent).toContain('Cotas');
+    expect(tela.querySelector('insc-modalidades-da-inscricao')?.textContent).toContain('Cotas');
   });
 
   it('a releitura sem gravação, depois da falha sem resposta, mantém a avaliação das respostas da tela', async () => {
@@ -152,7 +152,7 @@ describe('InscricaoDoCandidatoPage', () => {
     await cenario.clicar(botao(tela, 'Salvar rascunho'));
     await irAsModalidades(tela);
 
-    const modalidades = tela.querySelector('ui-modalidades-da-inscricao')?.textContent;
+    const modalidades = tela.querySelector('insc-modalidades-da-inscricao')?.textContent;
     expect(modalidades).toContain('Cotas da tela');
     expect(modalidades).not.toContain('Gravada antiga');
     expect(tela.textContent).toContain('Não conseguimos confirmar a gravação');

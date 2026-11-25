@@ -53,7 +53,7 @@ describe('FormularioPassoComponent: consulta e avisos de idade', () => {
     it('lê o formulário como texto, sem controle nem ação de edição', () => {
       // Com a inscrição só, não há aba: nada entre o que navegar.
       expect(
-        host.querySelector('input, select, textarea, button, ui-editor-de-formulario'),
+        host.querySelector('input, select, textarea, button, insc-editor-de-formulario'),
       ).toBeNull();
       expect(valor('Título do formulário')).toEqual(['Inscrição — Medicina 2027']);
       expect(valor('Fase da inscrição')).toEqual(['INSCRICAO']);

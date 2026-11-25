@@ -18,7 +18,7 @@ import {
   type DesfechoDoEnvio,
   type EnvioDeDocumentos,
   tipoDeMidiaDoArquivo,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 
 import { ComandosDoEnvio } from './comandos-do-envio';
 import { type DestinoDoArquivo, TentativaDeEnvio } from './tentativa-de-envio';

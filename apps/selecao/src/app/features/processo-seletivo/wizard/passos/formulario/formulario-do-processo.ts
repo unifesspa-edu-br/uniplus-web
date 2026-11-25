@@ -17,7 +17,7 @@ import {
   type RegrasDoCampo,
   type RestricaoDeValor,
   type TermoDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 
 /**
  * O formulário de uma finalidade do processo entre a forma em que a API o devolve (`FormularioDto`,
@@ -269,6 +269,15 @@ export function fatosColetadosPor(conteudo: ConteudoDoFormulario): readonly stri
     ...todosOsCampos(conteudo).map((campo) => campo.fatoCodigo),
     ...(conteudo.grupos ?? []).map((grupo) => grupo.codigo),
   ];
+}
+
+/** Registra o que entrou agora para que possa sair quando deixar de ser exigido. */
+export function fatosAcrescentados(
+  antes: ConteudoDoFormulario,
+  depois: ConteudoDoFormulario,
+): readonly string[] {
+  const anteriores = new Set(fatosColetadosPor(antes));
+  return fatosColetadosPor(depois).filter((codigo) => !anteriores.has(codigo));
 }
 
 /** Os fatos que os formulários das outras finalidades coletam no servidor. */

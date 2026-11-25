@@ -194,7 +194,7 @@ describe('InscricaoDoCandidatoPage: nova tentativa da leitura', () => {
     await atualizar();
 
     expect(tela().querySelector('.alert__title')).toBeNull();
-    expect(tela().querySelector('ui-formulario-do-candidato')).not.toBeNull();
+    expect(tela().querySelector('insc-formulario-do-candidato')).not.toBeNull();
     expect(document.activeElement).toBe(tela().querySelector('h1'));
   });
 
@@ -220,7 +220,7 @@ describe('InscricaoDoCandidatoPage: nova tentativa da leitura', () => {
     await atualizar();
 
     expect(tela().querySelector('.alert__title')).toBeNull();
-    expect(tela().querySelector('ui-formulario-do-candidato')).not.toBeNull();
+    expect(tela().querySelector('insc-formulario-do-candidato')).not.toBeNull();
     expect(document.activeElement).toBe(tela().querySelector('h1'));
   });
 
@@ -252,6 +252,6 @@ describe('InscricaoDoCandidatoPage: nova tentativa da leitura', () => {
       'Não foi possível abrir a inscrição',
     );
     expect(tela().textContent).not.toContain('A inscrição foi atualizada');
-    expect(tela().querySelector('ui-formulario-do-candidato')).toBeNull();
+    expect(tela().querySelector('insc-formulario-do-candidato')).toBeNull();
   });
 });

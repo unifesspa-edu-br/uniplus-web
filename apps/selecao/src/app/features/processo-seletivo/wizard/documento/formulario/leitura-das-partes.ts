@@ -1,10 +1,10 @@
-import type { CaminhoDoCampo as Caminho } from '@uniplus/shared-ui/components';
+import type { CaminhoDoCampo as Caminho } from '@uniplus/shared-inscricao/formulario';
 import type { DocumentoDaConfiguracaoFormulario } from '@uniplus/shared-data/selecao';
 import type {
   PaginaDoFormulario,
   ItemDoFormulario,
   GrupoDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 import { lerExibicaoEObrigatoriedade, lerPredicado } from './obrigatoriedade';
 import { lerRestricao } from './restricoes';
 import type { ContextoDaConversao as Contexto } from './contexto-da-conversao';

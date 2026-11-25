@@ -1,5 +1,5 @@
 import { localizacaoDaConversao } from './localizacao-da-conversao';
-import type { ConteudoDoFormulario, NumeroDigitado } from '@uniplus/shared-ui/components';
+import type { ConteudoDoFormulario, NumeroDigitado } from '@uniplus/shared-inscricao/formulario';
 import { membroDoEnum } from '../membro-do-enum';
 import { CamposEmEdicao } from './campos-em-edicao';
 import type {

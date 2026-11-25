@@ -113,6 +113,8 @@ libs/
 | `@uniplus/shared-inscricao/*` | Apresentação do domínio da inscrição usada por mais de um app (ex.: o comprovante); recebe o DTO pronto e só importa tipos de `@uniplus/shared-data` ([ADR-0030](docs/adrs/0030-lib-de-apresentacao-do-dominio-da-inscricao.md))                                                                                                                       |
 | `@uniplus/shared-testing`     | Apoio de teste unitário: relógio controlado e respostas simuladas da API do `shared-core`; depende só do `shared-core`, e o `shared-core` não o importa; só `*.spec.ts`, `*.testing.ts` e arquivos de setup o importam, e produção nunca importa a lib nem o Vitest ([ADR-0032](docs/adrs/0032-apoio-de-teste-unitario-em-lib-restrita-aos-testes.md)) |
 
+Em lib cujo ponto de entrada importa outro da mesma lib, cada ponto tem `<ponto>/src/index.ts` ao lado do `ng-package.json`, e o tsconfig aponta para ele.
+
 ### 3. Onde nasce cada peça
 
 O lugar segue as ADRs [0017](docs/adrs/0017-pattern-feature-page-container-presentational.md), [0023](docs/adrs/0023-uniplus-ds-como-contrato-visual-vigente.md), [0030](docs/adrs/0030-lib-de-apresentacao-do-dominio-da-inscricao.md) e [0031](docs/adrs/0031-recusa-da-api-junto-ao-campo.md); esta seção só as resume.

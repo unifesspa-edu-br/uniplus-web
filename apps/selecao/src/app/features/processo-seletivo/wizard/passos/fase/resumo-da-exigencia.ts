@@ -1,5 +1,5 @@
 import { OperadorCodigo } from '@uniplus/shared-data/selecao';
-import { descreverCondicao } from '@uniplus/shared-ui/components';
+import { descreverCondicao } from '@uniplus/shared-inscricao/formulario';
 
 import type { BaseLegalConfig, ExigenciaDeDocumento } from '../../processo-seletivo.models';
 import { type GrupoDaExigencia } from '../../shared/exigencias/consulta-das-exigencias';

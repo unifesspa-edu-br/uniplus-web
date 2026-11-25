@@ -12,7 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type {
   FormularioDoCandidatoComponent,
   SimulacaoDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 
 import { AcompanhamentoDaVerificacao } from './acompanhamento-da-verificacao';
 import { AvaliacaoDaInscricaoEstado } from './avaliacao-da-inscricao.estado';

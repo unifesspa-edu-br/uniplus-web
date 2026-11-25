@@ -21,12 +21,11 @@ import {
 import {
   type MunicipiosGravados,
   type MunicipiosSeparados,
-  LEITURA_DE_MUNICIPIO_POR_CODIGO,
-  NomesDeMunicipios,
   type SimulacaoDoFormulario,
   type ValorJson,
   separarMunicipiosGravados,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
+import { LEITURA_DE_MUNICIPIO_POR_CODIGO, NomesDeMunicipios } from '@uniplus/shared-ui/components';
 
 import {
   escolhaInicialDeOfertas,

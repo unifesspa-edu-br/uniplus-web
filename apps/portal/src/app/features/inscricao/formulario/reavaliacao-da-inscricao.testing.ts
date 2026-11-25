@@ -8,7 +8,7 @@ import {
   type InscricaoDto,
   SituacaoInscricaoCodigo,
 } from '@uniplus/shared-data/selecao';
-import type { SimulacaoDoFormulario } from '@uniplus/shared-ui/components';
+import type { SimulacaoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 
 import { AvaliacaoDaInscricaoEstado } from './avaliacao-da-inscricao.estado';
 import { ServicoDublê, avaliacao, inicioPadrao, ok } from './avaliacao-da-inscricao.estado.testing';

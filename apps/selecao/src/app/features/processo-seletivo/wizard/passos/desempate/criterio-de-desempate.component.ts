@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
-import { CondicaoDeFatoComponent, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import { CondicaoDeFatoComponent } from '@uniplus/shared-inscricao/formulario';
+import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
 import type { CriterioDesempateConfigurado, EtapaPontuada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';

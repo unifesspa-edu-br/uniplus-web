@@ -167,7 +167,7 @@ describe('FatosCandidatoPage — proteção de dados e tipo de dado na definiç�
       p.atenderPendencias();
       await p.propagar();
 
-      expect(p.drawerDoFato().querySelectorAll('ui-editor-de-condicoes')).toHaveLength(1);
+      expect(p.drawerDoFato().querySelectorAll('insc-editor-de-condicoes')).toHaveLength(1);
     });
   });
 });

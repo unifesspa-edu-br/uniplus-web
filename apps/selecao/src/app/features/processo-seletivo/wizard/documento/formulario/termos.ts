@@ -1,4 +1,7 @@
-import type { CaminhoDoCampo as Caminho, TermoDoFormulario } from '@uniplus/shared-ui/components';
+import type {
+  CaminhoDoCampo as Caminho,
+  TermoDoFormulario,
+} from '@uniplus/shared-inscricao/formulario';
 import type { DocumentoDaConfiguracaoFormulario as Formulario } from '@uniplus/shared-data/selecao';
 import type { ContextoDaConversao as Contexto } from './contexto-da-conversao';
 import { lerExibicaoEObrigatoriedade, regrasDoDocumento } from './obrigatoriedade';

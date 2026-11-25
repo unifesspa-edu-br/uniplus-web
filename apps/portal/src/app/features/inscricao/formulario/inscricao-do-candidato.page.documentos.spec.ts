@@ -150,7 +150,9 @@ describe('InscricaoDoCandidatoPage', () => {
     // Com um envio em andamento a zona de escolha segue habilitada: desabilitá-la tira o foco do teclado.
     cenario.ocupadoDoEnvio.set(true);
     cenario.fixture.detectChanges();
-    const campo = secao.querySelector<HTMLInputElement>('ui-envio-do-documento input[type="file"]');
+    const campo = secao.querySelector<HTMLInputElement>(
+      'insc-envio-do-documento input[type="file"]',
+    );
     expect(campo).not.toBeNull();
     expect(campo?.disabled).toBe(false);
     expect(secao.textContent).toContain('Exigido pelas suas respostas');

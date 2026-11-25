@@ -5,7 +5,7 @@ import { Subject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ApiResult, apiOk } from '@uniplus/shared-core/http';
 import { type InscricaoDto, SituacaoInscricaoCodigo } from '@uniplus/shared-data/selecao';
-import type { SimulacaoDoFormulario } from '@uniplus/shared-ui/components';
+import type { SimulacaoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 
 import { AnuncioDaInscricao } from './anuncio-da-inscricao';
 import { AvaliacaoDaInscricaoEstado } from './avaliacao-da-inscricao.estado';

@@ -33,11 +33,12 @@
       "@uniplus/shared-testing/contrato": ["libs/shared-testing/src/lib/contrato/index.testing.ts"],
       "@uniplus/shared-testing": ["libs/shared-testing/src/index.testing.ts"],
       "@uniplus/shared-inscricao": ["libs/shared-inscricao/src/index.ts"],
-      "@uniplus/shared-inscricao/comprovante": [
-        "libs/shared-inscricao/src/lib/comprovante/index.ts"
-      ],
+      "@uniplus/shared-inscricao/formulario": ["libs/shared-inscricao/formulario/src/index.ts"],
+      "@uniplus/shared-inscricao/comprovante": ["libs/shared-inscricao/comprovante/src/index.ts"],
       "@uniplus/shared-ui/shell": ["libs/shared-ui/src/lib/components/shell.ts"],
-      "@uniplus/shared-ui/notifications": ["libs/shared-ui/src/lib/components/notification-host/notification-host.ts"],
+      "@uniplus/shared-ui/notifications": [
+        "libs/shared-ui/src/lib/components/notification-host/notification-host.ts"
+      ],
       "@uniplus/shared-ui/components": ["libs/shared-ui/src/lib/components/index.ts"],
       "@uniplus/shared-ui/pipes": ["libs/shared-ui/src/lib/pipes/index.ts"],
       "@uniplus/shared-auth/bootstrap": ["libs/shared-auth/bootstrap/src/index.ts"],

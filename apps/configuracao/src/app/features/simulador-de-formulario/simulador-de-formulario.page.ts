@@ -19,17 +19,19 @@ import {
   type ModeloFormularioView,
 } from '@uniplus/shared-data/configuracao';
 import {
-  acompanharLeitura,
-  AlertComponent,
   type ArquivoDoFormulario,
   type ConferenciaComOServidor,
-  FalhaDeLeituraComponent,
   type FormularioDoCandidato,
-  IndicadorDaLeituraDirective,
   lerArquivoDoFormulario,
+  SimulacaoDeFormularioComponent,
+} from '@uniplus/shared-inscricao/formulario';
+import {
+  acompanharLeitura,
+  AlertComponent,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
   SegmentedComponent,
   SelectComponent,
-  SimulacaoDeFormularioComponent,
   SpinnerComponent,
   type UiSegmentedOption,
   type UiSelectOption,
@@ -121,7 +123,7 @@ const ORIGENS: readonly UiSegmentedOption<Origem>[] = [
           <ui-spinner spinnerSize="md" [decorativo]="true" /> Carregando o modelo...
         </div>
       } @else if (formulario(); as apresentacao) {
-        <ui-simulacao-de-formulario
+        <insc-simulacao-de-formulario
           idBase="simulacao-modelo"
           nomeDoArquivo="modelo-de-formulario"
           [formulario]="apresentacao"
@@ -155,7 +157,7 @@ const ORIGENS: readonly UiSegmentedOption<Origem>[] = [
 
       @if (arquivo(); as aberto) {
         @if (aberto.valido) {
-          <ui-simulacao-de-formulario
+          <insc-simulacao-de-formulario
             idBase="simulador"
             [formulario]="aberto.formulario"
             [inicial]="aberto.simulacao"

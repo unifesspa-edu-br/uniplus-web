@@ -20,12 +20,14 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { SELECAO_BASE_PATH, type OpcaoDeComprovacaoDto } from '@uniplus/shared-data/selecao';
 import {
-  acompanharLeitura,
   termoDisponivelDe,
-  type LeituraAcompanhada,
   type OpcaoDoDocumento,
-  type OpcoesDaLeitura,
   type TermoDisponivel,
+} from '@uniplus/shared-inscricao/formulario';
+import {
+  acompanharLeitura,
+  type LeituraAcompanhada,
+  type OpcoesDaLeitura,
 } from '@uniplus/shared-ui/components';
 
 /** O título do modelo fica na tela quando o aviso de falha sai com o botão: é para onde o foco volta. */

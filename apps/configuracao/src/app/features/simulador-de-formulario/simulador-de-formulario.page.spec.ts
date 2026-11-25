@@ -60,7 +60,7 @@ describe('SimuladorDeFormularioPage', () => {
     await vi.waitFor(() => {
       fixture.detectChanges();
       expect(
-        tela().querySelector('#simulador-arquivo-erro, ui-formulario-do-candidato'),
+        tela().querySelector('#simulador-arquivo-erro, insc-formulario-do-candidato'),
       ).not.toBeNull();
     });
   };

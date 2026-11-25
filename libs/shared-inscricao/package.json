@@ -12,7 +12,8 @@
     "@uniplus/shared-utils": "*",
     "vite": "^7.0.0",
     "@analogjs/vite-plugin-angular": "^2.2.0",
-    "@nx/vite": "^22.6.0"
+    "@nx/vite": "^22.6.0",
+    "@angular/forms": "^21.2.0"
   },
   "sideEffects": false
 }

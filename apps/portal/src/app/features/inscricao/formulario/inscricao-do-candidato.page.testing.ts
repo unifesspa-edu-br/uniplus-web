@@ -22,8 +22,8 @@ import {
   SituacaoInscricaoCodigo,
   TipoDeCampoCodigo,
 } from '@uniplus/shared-data/selecao';
+import { type ArquivoEnviado } from '@uniplus/shared-inscricao/formulario';
 import {
-  type ArquivoEnviado,
   BUSCA_DE_CEP,
   BUSCA_DE_MUNICIPIOS,
   LEITURA_DE_MUNICIPIO_POR_CODIGO,
@@ -252,7 +252,7 @@ export const indisponivel = (botao: HTMLElement | undefined): boolean =>
   botao?.getAttribute('aria-disabled') === 'true';
 
 export const passos = (tela: HTMLElement): HTMLButtonElement[] => [
-  ...tela.querySelectorAll<HTMLButtonElement>('ui-formulario-do-candidato nav button'),
+  ...tela.querySelectorAll<HTMLButtonElement>('insc-formulario-do-candidato nav button'),
 ];
 
 export const campoDe = (tela: HTMLElement, fato: string): HTMLInputElement =>

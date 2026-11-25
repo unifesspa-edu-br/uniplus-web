@@ -5,7 +5,7 @@ import {
   fatosOferecidos,
   type ConteudoDoFormulario,
   type DocumentoExigidoDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 import type { EdicaoDoConteudoDoModelo } from './edicao-do-conteudo-do-modelo';
 import type { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.store';
 

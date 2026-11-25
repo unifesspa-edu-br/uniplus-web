@@ -1,6 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
-import { deClausulasDoWire, fatosParaLeitura, resumoDaRegra } from '@uniplus/shared-ui/components';
+import {
+  deClausulasDoWire,
+  fatosParaLeitura,
+  resumoDaRegra,
+} from '@uniplus/shared-inscricao/formulario';
 import { lerCatalogoDeFatos } from './leituras-do-fato';
 import { FatosCandidatoStore } from './fatos-candidato.store';
 import { ID_DAS_REGRAS_DO_DETALHE } from './ids-do-fato';

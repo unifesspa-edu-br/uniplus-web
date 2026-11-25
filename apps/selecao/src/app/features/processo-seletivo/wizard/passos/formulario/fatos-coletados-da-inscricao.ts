@@ -1,4 +1,7 @@
-import { SECAO_DADOS_BASICOS, type ConteudoDoFormulario } from '@uniplus/shared-ui/components';
+import {
+  SECAO_DADOS_BASICOS,
+  type ConteudoDoFormulario,
+} from '@uniplus/shared-inscricao/formulario';
 import type { ExigenciasDoRascunho } from '../../processo-seletivo.models';
 import { todasAsExigencias } from '../../shared/exigencias/consulta-das-exigencias';
 import { fatosColetadosPor } from './formulario-do-processo';

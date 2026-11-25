@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ligarRelogioControlado, passarOTempo } from '@uniplus/shared-testing';
-import type { DependenciasDaAvaliacao, SimulacaoDoFormulario } from '@uniplus/shared-ui/components';
+import type {
+  DependenciasDaAvaliacao,
+  SimulacaoDoFormulario,
+} from '@uniplus/shared-inscricao/formulario';
 
 import {
   ESPERA_DA_CONSULTA_MS,

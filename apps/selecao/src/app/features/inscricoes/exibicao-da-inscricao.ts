@@ -4,7 +4,7 @@ import {
   type InscricaoAdministrativaDto,
   type OfertaExibida,
 } from '@uniplus/shared-data/selecao';
-import { detalheDoArquivoEnviado } from '@uniplus/shared-ui/components';
+import { detalheDoArquivoEnviado } from '@uniplus/shared-inscricao/formulario';
 import { formatarDataBr } from '@uniplus/shared-utils';
 
 /** O que a lista de um arquivo mostra e o nome acessível do "Abrir" dele. */

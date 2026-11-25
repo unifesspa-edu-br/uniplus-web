@@ -6,7 +6,7 @@ import type {
   AvaliacaoDaInscricaoDto,
   AvaliacaoDaInscricaoRequest,
 } from '@uniplus/shared-data/selecao';
-import type { SimulacaoDoFormulario } from '@uniplus/shared-ui/components';
+import type { SimulacaoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 
 import {
   AvaliacaoDaInscricaoEstado,

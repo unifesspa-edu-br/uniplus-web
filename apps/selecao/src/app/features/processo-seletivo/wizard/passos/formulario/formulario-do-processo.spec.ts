@@ -8,8 +8,13 @@ import {
   OperadorCodigo,
   TipoDeCampoCodigo,
 } from '@uniplus/shared-data/selecao';
-import type { ConteudoDoFormulario } from '@uniplus/shared-ui/components';
-import { conteudoDoFormulario, itensParaEnvio, planoDeGravacao } from './formulario-do-processo';
+import type { ConteudoDoFormulario } from '@uniplus/shared-inscricao/formulario';
+import {
+  conteudoDoFormulario,
+  fatosAcrescentados,
+  itensParaEnvio,
+  planoDeGravacao,
+} from './formulario-do-processo';
 
 type RegrasDoFato = FatoColetadoDto['regras'];
 
@@ -297,5 +302,14 @@ describe('planoDeGravacao', () => {
     };
 
     expect(itensParaEnvio(comTexto)).toBeNull();
+  });
+});
+
+describe('fatos acrescentados', () => {
+  it('retorna somente os fatos novos, inclusive grupos', () => {
+    const depois = conteudoDoFormulario(inscricao);
+    const antes = { ...depois, itens: (depois.itens ?? []).slice(0, 1), grupos: [] };
+    expect(fatosAcrescentados(antes, depois)).toEqual(['A', 'B', 'PARENTESCO', 'FAMILIA']);
+    expect(fatosAcrescentados(depois, depois)).toEqual([]);
   });
 });

@@ -6,7 +6,7 @@ import { SignedUploadClient } from '@uniplus/shared-core/http';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
 import { InscricoesApi, SituacaoDoArquivoDoCandidatoCodigo } from '@uniplus/shared-data/selecao';
 import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-testing';
-import type { AlvoDoEnvio, EnvioDeDocumentos } from '@uniplus/shared-ui/components';
+import type { AlvoDoEnvio, EnvioDeDocumentos } from '@uniplus/shared-inscricao/formulario';
 
 import { EnvioDeDocumentosDaInscricao } from './envio-de-documentos-da-inscricao';
 
