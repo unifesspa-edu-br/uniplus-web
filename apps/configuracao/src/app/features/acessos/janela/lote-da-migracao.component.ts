@@ -38,7 +38,9 @@ export class LoteDaMigracaoComponent {
   protected readonly lote = inject(LoteDaMigracao);
   protected readonly gravando = inject(EscritaDoPerfil).gravando;
   protected readonly idDoErro = ID_DO_ERRO;
-  protected readonly faltam = computed(() => semDecisao(this.itens().doLote, this.lote.decisoes()));
+  protected readonly faltam = computed(() =>
+    semDecisao(this.itens().aguardandoDecisao, this.lote.decisoes()),
+  );
   /** As concessões do leitor, agrupadas pela orientação de quem as decide. */
   protected readonly proprias = computed(() => {
     const grupos = new Map<OrientacaoDaPropria, ItemDaJanelaDto[]>();
@@ -50,7 +52,7 @@ export class LoteDaMigracaoComponent {
   });
   /** O lote tem o que enviar: decisões de outras pessoas ou, só, concessões suas a reter. */
   protected readonly enviavel = computed(
-    () => this.itens().doLote.length > 0 || this.itens().proprias.length > 0,
+    () => this.itens().aguardandoDecisao.length > 0 || this.itens().proprias.length > 0,
   );
   protected readonly decidiveis = computed(
     () => this.podeDecidir() && !this.janela().decisoesEnviadas && this.enviavel(),
@@ -61,10 +63,10 @@ export class LoteDaMigracaoComponent {
   }
 
   protected enviar(): void {
-    this.lote.pedirEnvio(this.janela().perfilId, this.itens().doLote);
+    this.lote.pedirEnvio(this.janela().perfilId, this.itens().aguardandoDecisao);
   }
 
   protected confirmarExclusao(): void {
-    void this.lote.confirmarExclusao(this.janela().perfilId, this.itens().doLote);
+    void this.lote.confirmarExclusao(this.janela().perfilId, this.itens().aguardandoDecisao);
   }
 }

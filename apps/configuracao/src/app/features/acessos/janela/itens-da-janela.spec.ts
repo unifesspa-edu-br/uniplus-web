@@ -23,13 +23,13 @@ const MIGRADA = itemDaJanela({ concessaoId: 'c6', situacao: SituacaoDaMigracao.M
 
 describe('separarItens', () => {
   it('separa o que a pessoa que lê decide, o que é dela e o que já tem situação final', () => {
-    const janela = janelaDeMigracao({
+    const revisao = janelaDeMigracao({
       itens: [BETINA, LEANDRO, PROPRIA, RETIDA, NA_PROTECAO, MIGRADA],
     });
 
-    const itens = separarItens(janela);
+    const itens = separarItens(revisao);
 
-    expect(itens.doLote).toEqual([BETINA, LEANDRO]);
+    expect(itens.aguardandoDecisao).toEqual([BETINA, LEANDRO]);
     expect(itens.proprias).toEqual([PROPRIA]);
     expect(itens.retidas).toEqual([RETIDA]);
     expect(itens.naProtecaoDeDados).toEqual([NA_PROTECAO]);
@@ -47,15 +47,15 @@ describe('separarItens', () => {
   });
 
   it.each(['encerrando', 'encerrada'])(
-    'com a janela %s nada aceita decisão e tudo aparece como situação',
+    'com a revisão das concessões %s nada aceita decisão e tudo aparece como situação',
     (situacao) => {
-      const janela = janelaDeMigracao({ situacao, itens: [BETINA, RETIDA, NA_PROTECAO] });
+      const revisao = janelaDeMigracao({ situacao, itens: [BETINA, RETIDA, NA_PROTECAO] });
 
-      const itens = separarItens(janela);
+      const itens = separarItens(revisao);
 
       expect(itens.decididas).toEqual([BETINA, RETIDA, NA_PROTECAO]);
-      expect(itens.doLote).toHaveLength(0);
-      expect(janelaAceitaDecisao(janela)).toBe(false);
+      expect(itens.aguardandoDecisao).toHaveLength(0);
+      expect(janelaAceitaDecisao(revisao)).toBe(false);
     },
   );
 });
