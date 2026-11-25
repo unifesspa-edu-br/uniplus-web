@@ -8,6 +8,7 @@
     "lint": {
       "executor": "@nx/eslint:lint"
     },
+    "test": {},
     "typecheck-spec": {
       "options": {
         "command": "tsc --noEmit -p {projectRoot}/tsconfig.json"

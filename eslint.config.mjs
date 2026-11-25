@@ -64,11 +64,12 @@ const IMPORTS_DE_TESTE_BANIDOS = ['vitest', 'vitest/*', '@vitest/*', '@analogjs/
 
 // Eixo `scope:*` (vertical) + eixo `type:*` (horizontal). Toda lib carrega
 // `[scope:<X>, type:<Y>]`. Apps de produção (`type:app`) e suítes E2E
-// (`type:e2e`) ficam fora do eixo `type` como leaf consumers — não há
-// entrada `sourceTag: 'type:app'` ou `'type:e2e'` aqui porque eles
-// dependem de qualquer combinação `scope:*` permitida pelo eixo scope
-// sem restrição adicional no eixo type.
+// (`type:e2e`) podem consumir os tipos de produção; apps não dependem de E2E.
 const RESTRICOES_POR_TAG = [
+  {
+    sourceTag: 'type:app',
+    onlyDependOnLibsWithTags: TIPOS_DE_PRODUCAO.filter((tipo) => tipo !== 'type:e2e'),
+  },
   {
     sourceTag: 'scope:shared',
     onlyDependOnLibsWithTags: ['scope:shared'],
@@ -230,7 +231,7 @@ export default [
       enforceBuildableLibDependency: false,
       depConstraints: [
         ...comApoioDeTeste(RESTRICOES_POR_TAG),
-        { sourceTag: 'type:testing', onlyDependOnLibsWithTags: ['type:core'] },
+        { sourceTag: 'type:testing', onlyDependOnLibsWithTags: ['type:core', 'type:contrato'] },
       ],
     }),
   },

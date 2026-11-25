@@ -10,3 +10,8 @@ export {
   mockValidationError,
   okResult,
 } from '@uniplus/shared-core/http/testing';
+
+export {
+  provedoresDeHttpComConferencia,
+  encerrarConferenciaDoContrato,
+} from './lib/interceptador-de-conferencia.testing';

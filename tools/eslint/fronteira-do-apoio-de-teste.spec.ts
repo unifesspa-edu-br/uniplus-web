@@ -90,6 +90,36 @@ describe('fronteira do apoio de teste unitário', () => {
         importacao('@uniplus/shared-ui'),
       ],
       [
+        'apoio importa shared-data inteiro',
+        'libs/shared-testing',
+        'src/lib/x/prova.testing.ts',
+        importacao('@uniplus/shared-data'),
+      ],
+      [
+        'app importa e2e',
+        'apps/portal',
+        'src/app/features/x/prova.ts',
+        importacao('@uniplus/shared-e2e'),
+      ],
+      [
+        'app importa conferência e2e',
+        'apps/portal',
+        'src/app/features/x/prova.ts',
+        importacao('@uniplus/shared-e2e/conferencia-do-contrato'),
+      ],
+      [
+        'app importa documento',
+        'apps/portal',
+        'src/app/features/x/prova.ts',
+        importacao('@uniplus/shared-data/openapi/portal.openapi.json'),
+      ],
+      [
+        'shared-data de produção importa documento',
+        'libs/shared-data',
+        'src/lib/x/prova.ts',
+        importacao('@uniplus/shared-data/openapi/selecao.openapi.json'),
+      ],
+      [
         'app, por caminho relativo',
         'apps/portal',
         'src/app/features/x/prova.ts',
@@ -137,11 +167,50 @@ describe('fronteira do apoio de teste unitário', () => {
     });
   });
 
+  it('recusa reexportação da conferência no índice e2e', async () => {
+    const { regras } = await analisar(
+      'libs/shared-e2e',
+      'src/index.ts',
+      "export * from './lib/conferencia-do-contrato.testing';",
+    );
+    expect(regras).toContain(REGRA_DO_ARQUIVO_DE_TESTE);
+  });
+
   describe('aceita o que a fronteira permite', () => {
     const PRODUCAO = 'src/app/features/x/prova.ts';
     const SPEC = 'src/app/features/x/prova.spec.ts';
 
     it.each([
+      [
+        'apoio importa documento',
+        'libs/shared-testing',
+        'src/lib/x/prova.testing.ts',
+        "import('@uniplus/shared-data/openapi/portal.openapi.json');",
+      ],
+      [
+        'spec do shared-data importa documento',
+        'libs/shared-data',
+        'src/lib/x/prova.spec.ts',
+        importacao('@uniplus/shared-data/openapi/selecao.openapi.json'),
+      ],
+      [
+        'arquivo .testing do app importa documento',
+        'apps/selecao',
+        'src/app/features/x/prova.testing.ts',
+        importacao('@uniplus/shared-data/openapi/selecao.openapi.json'),
+      ],
+      [
+        'e2e importa conferência',
+        'apps/selecao-e2e',
+        'src/prova.spec.ts',
+        importacao('@uniplus/shared-e2e/conferencia-do-contrato'),
+      ],
+      [
+        'shared-data importa apoio',
+        'libs/shared-data',
+        'src/lib/prova.spec.ts',
+        importacao(APOIO_DE_TESTE),
+      ],
       ['spec importa o apoio de teste', 'apps/portal', SPEC, importacao(APOIO_DE_TESTE)],
       ['spec importa as respostas da API pelo apoio', 'apps/selecao', SPEC, RESPOSTAS_PELO_APOIO],
       ['spec usa import com require', 'apps/portal', SPEC, "import v = require('vitest');"],
