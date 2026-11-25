@@ -213,7 +213,7 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
   });
   protected readonly recusa = this.interpretacao.recusa;
   protected readonly passos = this.interpretacao.passos;
-  protected readonly navegacao: NavegacaoDosPassos = new NavegacaoDosPassos({
+  readonly navegacao: NavegacaoDosPassos = new NavegacaoDosPassos({
     partida: this.partida,
     inicial: this.inicial,
     passos: () => this.passos(),
@@ -222,7 +222,7 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
     raiz: () => this.elemento.nativeElement,
     titulo: () => this.titulo()?.nativeElement ?? null,
   });
-  protected readonly conferencia = new ConferenciaDasSecoes({
+  readonly conferencia = new ConferenciaDasSecoes({
     navegacao: this.navegacao,
     respostas: this.dados,
     respostasFixas: this.respostasFixas,
@@ -363,38 +363,11 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
     );
   }
 
-  /**
-   * Leva a um passo pela chave — de quem hospeda ou uma seção — e põe o foco no título dele, ou no
-   * elemento que `foco` indicar depois de o passo aparecer.
-   */
-  irAoPasso(chave: string, foco?: () => HTMLElement | null, depoisDeRenderizar = false): void {
-    this.navegacao.irAoPasso(chave, foco, depoisDeRenderizar);
-  }
-
   dizer(texto: string): void {
     this.anuncio();
     this.anuncio.set(texto);
   }
   barrarAvanco(chavePrefixada: string): void {
     this.avancoBarrado.emit(chavePrefixada);
-  }
-  /**
-   * Como no envio, conclui todas as seções se não há pendências e devolve a quantidade delas.
-   * Com pendências, não conclui nenhuma; quem hospeda decide para onde levar.
-   */
-  concluirTodas(): number {
-    return this.conferencia.concluirTodas();
-  }
-  /**
-   * Conclui e conta como `concluirTodas`; com pendências, leva à seção da primeira,
-   * põe o foco no campo e anuncia a quantidade.
-   */
-  concluirTodasENavegar(): number {
-    return this.conferencia.concluirTodasENavegar();
-  }
-
-  /** Leva à seção e põe o foco no primeiro campo pendente dela; ver `ConferenciaDasSecoes`. */
-  irAPendenciaDe(chave: string): void {
-    this.conferencia.irAPendenciaDe(chave);
   }
 }

@@ -32,7 +32,7 @@ import { CONFLITOS, type RecusaDaSegundaOpcao, separarRecusas } from './recusas-
 /** O que a gravação lê do formulário no clique: a emissão das mudanças só chega no ciclo seguinte. */
 export type FormularioParaGravar = Pick<
   FormularioDoCandidatoComponent,
-  'simulacao' | 'termosAceitos' | 'concluirTodas'
+  'simulacao' | 'termosAceitos' | 'conferencia'
 >;
 
 export type Operacao = 'salvando' | 'enviando';
@@ -122,7 +122,7 @@ export class GravacaoDaInscricao {
   enviar(formulario: FormularioParaGravar): void {
     if (this.bloqueada()) return;
     // Só o envio de um formulário válido conclui as seções.
-    if (formulario.concluirTodas() > 0) return;
+    if (formulario.conferencia.concluirTodas() > 0) return;
     this.gravar(
       formulario,
       'enviando',

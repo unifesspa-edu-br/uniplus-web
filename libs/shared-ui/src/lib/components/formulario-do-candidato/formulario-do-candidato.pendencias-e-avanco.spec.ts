@@ -173,7 +173,7 @@ describe('FormularioDoCandidatoComponent', () => {
     const tela = cenario.montar(FORMULARIO_DE_DUAS_SECOES);
     const chaveDoNome = cenario.fixture.componentInstance.pendenciasPorSecao()[1].chave;
 
-    cenario.fixture.componentInstance.irAPendenciaDe(chaveDoNome);
+    cenario.fixture.componentInstance.conferencia.irAPendenciaDe(chaveDoNome);
     cenario.fixture.detectChanges();
     await cenario.fixture.whenStable();
 
@@ -305,7 +305,7 @@ describe('FormularioDoCandidatoComponent', () => {
 
     const { chave } = cenario.fixture.componentInstance.pendenciasPorSecao()[0];
 
-    cenario.fixture.componentInstance.irAPendenciaDe(chave);
+    cenario.fixture.componentInstance.conferencia.irAPendenciaDe(chave);
     cenario.fixture.detectChanges();
     await cenario.fixture.whenStable();
 

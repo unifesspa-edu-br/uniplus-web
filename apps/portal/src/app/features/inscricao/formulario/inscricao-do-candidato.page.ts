@@ -204,7 +204,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
 
   /** O candidato vai ao curso que falta escolher, com o foco no campo e sem mostrar recusa. */
   protected irAoCurso(): void {
-    this.formularioDoCandidato()?.irAoPasso(
+    this.formularioDoCandidato()?.navegacao.irAoPasso(
       PASSO_DO_CURSO,
       () => this.cursoDaTela()?.campoDaPrimeira() ?? null,
     );
@@ -212,7 +212,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
 
   /** O candidato vai à seção pendente, com o foco no primeiro campo que falta e nada concluído. */
   protected irAPendencia(chave: string): void {
-    this.formularioDoCandidato()?.irAPendenciaDe(chave);
+    this.formularioDoCandidato()?.conferencia.irAPendenciaDe(chave);
   }
 
   protected salvar(): void {
@@ -228,7 +228,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
 
   /** O campo só existe depois de o passo aparecer: a escolha do foco espera por ele. */
   private irAoCampoRecusado(primeiraRecusada: boolean): void {
-    this.formularioDoCandidato()?.irAoPasso(
+    this.formularioDoCandidato()?.navegacao.irAoPasso(
       PASSO_DO_CURSO,
       () => this.cursoDaTela()?.campoRecusado(primeiraRecusada) ?? null,
     );
