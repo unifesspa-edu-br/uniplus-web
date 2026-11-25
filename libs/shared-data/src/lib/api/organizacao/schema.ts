@@ -31,44 +31,7 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path?: never;
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/vnd.uniplus.instituicao.v1+json": components["schemas"]["InstituicaoDto"];
-                    };
-                };
-                /** @description Nenhuma Instituição foi cadastrada (uniplus.organizacao.instituicao.nao_encontrada). */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Acceptable */
-                readonly 406: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly get: operations["ObterInstituicao"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -86,91 +49,7 @@ export interface paths {
         };
         readonly get?: never;
         readonly put?: never;
-        readonly post: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path?: never;
-                readonly cookie?: never;
-            };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["CriarInstituicaoCommand"];
-                    readonly "text/json": components["schemas"]["CriarInstituicaoCommand"];
-                    readonly "application/*+json": components["schemas"]["CriarInstituicaoCommand"];
-                };
-            };
-            readonly responses: {
-                /** @description Created */
-                readonly 201: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "text/plain": string;
-                        readonly "application/json": string;
-                        readonly "text/json": string;
-                    };
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unauthorized */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-                readonly 413: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly post: operations["CadastrarInstituicao"];
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -185,146 +64,9 @@ export interface paths {
             readonly cookie?: never;
         };
         readonly get?: never;
-        readonly put: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["AtualizarInstituicaoCommand"];
-                    readonly "text/json": components["schemas"]["AtualizarInstituicaoCommand"];
-                    readonly "application/*+json": components["schemas"]["AtualizarInstituicaoCommand"];
-                };
-            };
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unauthorized */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-                readonly 413: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly put: operations["AlterarInstituicao"];
         readonly post?: never;
-        readonly delete: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Unauthorized */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly delete: operations["ExcluirInstituicao"];
         readonly options?: never;
         readonly head?: never;
         readonly patch?: never;
@@ -337,75 +79,7 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: {
-                    readonly q?: string;
-                    readonly tipo?: readonly number[];
-                    /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
-                    readonly cursor?: string;
-                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
-                    readonly limit?: number;
-                    /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
-                    readonly direction?: PathsApiOrganizacaoUnidadesGetParametersQueryDirection;
-                };
-                readonly header?: never;
-                readonly path?: never;
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
-                        readonly Link?: string;
-                        /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
-                        readonly "X-Page-Size"?: number;
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/vnd.uniplus.unidade.v1+json": readonly components["schemas"]["UnidadeDto"][];
-                    };
-                };
-                /** @description Valor de tipo que não é um tipo de unidade filtrável (uniplus.organizacao.unidade.filtro_de_tipo_invalido). */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Acceptable */
-                readonly 406: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Gone */
-                readonly 410: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description O texto pesquisado excede 200 caracteres (uniplus.consulta.busca_muito_longa). */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly get: operations["ListarUnidadesInstitucionais"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -421,46 +95,7 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/vnd.uniplus.unidade.v1+json": components["schemas"]["UnidadeDto"];
-                    };
-                };
-                /** @description A Unidade não existe ou foi removida (uniplus.organizacao.unidade.nao_encontrada). */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Acceptable */
-                readonly 406: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly get: operations["ObterUnidadeInstitucional"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -478,91 +113,7 @@ export interface paths {
         };
         readonly get?: never;
         readonly put?: never;
-        readonly post: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path?: never;
-                readonly cookie?: never;
-            };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["CriarUnidadeCommand"];
-                    readonly "text/json": components["schemas"]["CriarUnidadeCommand"];
-                    readonly "application/*+json": components["schemas"]["CriarUnidadeCommand"];
-                };
-            };
-            readonly responses: {
-                /** @description Created */
-                readonly 201: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "text/plain": string;
-                        readonly "application/json": string;
-                        readonly "text/json": string;
-                    };
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unauthorized */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-                readonly 413: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly post: operations["CadastrarUnidadeInstitucional"];
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -577,155 +128,9 @@ export interface paths {
             readonly cookie?: never;
         };
         readonly get?: never;
-        readonly put: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["AtualizarUnidadeCommand"];
-                    readonly "text/json": components["schemas"]["AtualizarUnidadeCommand"];
-                    readonly "application/*+json": components["schemas"]["AtualizarUnidadeCommand"];
-                };
-            };
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unauthorized */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-                readonly 413: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly put: operations["AlterarUnidadeInstitucional"];
         readonly post?: never;
-        readonly delete: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Unauthorized */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
+        readonly delete: operations["ExcluirUnidadeInstitucional"];
         readonly options?: never;
         readonly head?: never;
         readonly patch?: never;
@@ -1012,6 +417,610 @@ export interface operations {
             };
             /** @description Unauthorized */
             readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ObterInstituicao: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.instituicao.v1+json": components["schemas"]["InstituicaoDto"];
+                };
+            };
+            /** @description Nenhuma Instituição foi cadastrada (uniplus.organizacao.instituicao.nao_encontrada). */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly CadastrarInstituicao: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                readonly "Idempotency-Key": string;
+            };
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["CriarInstituicaoCommand"];
+                readonly "text/json": components["schemas"]["CriarInstituicaoCommand"];
+                readonly "application/*+json": components["schemas"]["CriarInstituicaoCommand"];
+            };
+        };
+        readonly responses: {
+            /** @description Created */
+            readonly 201: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "text/plain": string;
+                    readonly "application/json": string;
+                    readonly "text/json": string;
+                };
+            };
+            /** @description Bad Request */
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            readonly 413: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly AlterarInstituicao: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                readonly "Idempotency-Key": string;
+            };
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["AtualizarInstituicaoCommand"];
+                readonly "text/json": components["schemas"]["AtualizarInstituicaoCommand"];
+                readonly "application/*+json": components["schemas"]["AtualizarInstituicaoCommand"];
+            };
+        };
+        readonly responses: {
+            /** @description No Content */
+            readonly 204: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            readonly 413: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ExcluirInstituicao: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description No Content */
+            readonly 204: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ListarUnidadesInstitucionais: {
+        readonly parameters: {
+            readonly query?: {
+                readonly q?: string;
+                readonly tipo?: readonly number[];
+                /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
+                readonly cursor?: string;
+                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                readonly limit?: number;
+                /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
+                readonly direction?: PathsApiOrganizacaoUnidadesGetParametersQueryDirection;
+            };
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
+                    readonly Link?: string;
+                    /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
+                    readonly "X-Page-Size"?: number;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.unidade.v1+json": readonly components["schemas"]["UnidadeDto"][];
+                };
+            };
+            /** @description Valor de tipo que não é um tipo de unidade filtrável (uniplus.organizacao.unidade.filtro_de_tipo_invalido). */
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Gone */
+            readonly 410: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description O texto pesquisado excede 200 caracteres (uniplus.consulta.busca_muito_longa). */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ObterUnidadeInstitucional: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.unidade.v1+json": components["schemas"]["UnidadeDto"];
+                };
+            };
+            /** @description A Unidade não existe ou foi removida (uniplus.organizacao.unidade.nao_encontrada). */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly CadastrarUnidadeInstitucional: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                readonly "Idempotency-Key": string;
+            };
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["CriarUnidadeCommand"];
+                readonly "text/json": components["schemas"]["CriarUnidadeCommand"];
+                readonly "application/*+json": components["schemas"]["CriarUnidadeCommand"];
+            };
+        };
+        readonly responses: {
+            /** @description Created */
+            readonly 201: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "text/plain": string;
+                    readonly "application/json": string;
+                    readonly "text/json": string;
+                };
+            };
+            /** @description Bad Request */
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            readonly 413: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly AlterarUnidadeInstitucional: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                readonly "Idempotency-Key": string;
+            };
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["AtualizarUnidadeCommand"];
+                readonly "text/json": components["schemas"]["AtualizarUnidadeCommand"];
+                readonly "application/*+json": components["schemas"]["AtualizarUnidadeCommand"];
+            };
+        };
+        readonly responses: {
+            /** @description No Content */
+            readonly 204: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            readonly 413: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ExcluirUnidadeInstitucional: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description No Content */
+            readonly 204: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            readonly 409: {
                 headers: {
                     readonly [name: string]: unknown;
                 };
