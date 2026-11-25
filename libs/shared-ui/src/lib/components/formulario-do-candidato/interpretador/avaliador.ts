@@ -16,7 +16,7 @@ import type {
   DefinicaoItem,
 } from './definicao-do-formulario';
 import { FALSO, FATO_INDETERMINADO, type FatoResolvido, type Fatos, INDETERMINADO } from './logica';
-import { type FatoAOrdenar, ordenar, PRIORIDADE_DERIVADO } from './ordem-de-avaliacao';
+import { type FatoOuGrupoAOrdenar, ordenar, PRIORIDADE_DERIVADO } from './ordem-de-avaliacao';
 import { avaliarOuVerdadeiro, fatosCitadosPor } from './predicado';
 
 export type {
@@ -72,13 +72,13 @@ export function avaliar(
   entrada: EntradaDaAvaliacao,
 ): AvaliacaoInterna {
   const indice = indexar(definicao);
-  const { ordem, foraDeOrdem } = ordenar(fatosAOrdenarDa(definicao, indice));
+  const { ordem, foraDeOrdem } = ordenar(fatosEGruposAOrdenarDa(definicao, indice));
   const andamento: Andamento = {
     fatos: new Map(entrada.fatosConhecidos),
     itens: new Map(),
     grupos: new Map(),
   };
-  for (const codigo of ordem) resolverFatoAOrdenar(codigo, indice, entrada, andamento);
+  for (const codigo of ordem) resolverFatoOuGrupo(codigo, indice, entrada, andamento);
   for (const codigo of foraDeOrdem) deixarIndeterminado(codigo, indice, andamento);
   return montarAvaliacao(definicao, indice, andamento);
 }
@@ -104,10 +104,10 @@ function gruposComAPagina(definicao: DefinicaoFormulario): GrupoDaPagina[] {
   return definicao.paginas.flatMap((pagina) => pagina.grupos.map((grupo) => ({ pagina, grupo })));
 }
 
-function fatosAOrdenarDa(
+function fatosEGruposAOrdenarDa(
   definicao: DefinicaoFormulario,
   { itens, grupos }: Indice,
-): readonly FatoAOrdenar[] {
+): readonly FatoOuGrupoAOrdenar[] {
   return [
     ...dependenciasDosCampos(itens),
     ...dependenciasDosGrupos(grupos, itens.length),
@@ -115,14 +115,10 @@ function fatosAOrdenarDa(
   ];
 }
 
-function fatosCitadosPelaPagina(pagina: DefinicaoPagina): readonly string[] {
-  return fatosCitadosPor(pagina.exibicao);
-}
-
-function dependenciasDosCampos(itens: readonly ItemDaPagina[]): FatoAOrdenar[] {
+function dependenciasDosCampos(itens: readonly ItemDaPagina[]): FatoOuGrupoAOrdenar[] {
   return itens.map((par, posicao) => ({
     codigo: par.item.fatoCodigo,
-    citados: [...fatosCitadosPelaPagina(par.pagina), ...par.item.fatosCitados],
+    citados: [...fatosCitadosPor(par.pagina.exibicao), ...par.item.fatosCitados],
     prioridade: posicao,
   }));
 }
@@ -130,15 +126,15 @@ function dependenciasDosCampos(itens: readonly ItemDaPagina[]): FatoAOrdenar[] {
 function dependenciasDosGrupos(
   grupos: readonly GrupoDaPagina[],
   primeiraPrioridade: number,
-): FatoAOrdenar[] {
+): FatoOuGrupoAOrdenar[] {
   return grupos.map((par, posicao) => ({
     codigo: par.grupo.codigo,
-    citados: [...fatosCitadosPelaPagina(par.pagina), ...par.grupo.fatosDoCandidatoCitados],
+    citados: [...fatosCitadosPor(par.pagina.exibicao), ...par.grupo.fatosDoCandidatoCitados],
     prioridade: primeiraPrioridade + posicao,
   }));
 }
 
-function dependenciasDosDerivados(definicao: DefinicaoFormulario): FatoAOrdenar[] {
+function dependenciasDosDerivados(definicao: DefinicaoFormulario): FatoOuGrupoAOrdenar[] {
   return [
     ...definicao.derivacoes.map((d) => ({
       codigo: d.fatoCodigo,
@@ -153,7 +149,7 @@ function dependenciasDosDerivados(definicao: DefinicaoFormulario): FatoAOrdenar[
   ];
 }
 
-function resolverFatoAOrdenar(
+function resolverFatoOuGrupo(
   codigo: string,
   indice: Indice,
   entrada: EntradaDaAvaliacao,
