@@ -28,14 +28,14 @@ describe('ObrigatoriedadesLegaisApi', () => {
   it('envia os filtros por código e omite a categoria ausente', async () => {
     const result = firstValueFrom(
       api.listar({
-        tipoEdital: 'edital',
+        tipoProcesso: 'edital',
         categoria: CategoriaObrigatoriedadeCodigo.ETAPA,
         vigentes: false,
       }),
     );
     const req = http.expectOne((request) => request.url === base);
     expect(req.request.params.get('categoria')).toBe(CategoriaObrigatoriedadeCodigo.ETAPA);
-    expect(req.request.params.get('tipoEdital')).toBe('edital');
+    expect(req.request.params.get('tipoProcesso')).toBe('edital');
     expect(req.request.params.get('vigentes')).toBe('false');
     req.flush([]);
     await result;

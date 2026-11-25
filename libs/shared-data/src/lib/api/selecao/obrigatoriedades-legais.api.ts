@@ -14,7 +14,7 @@ export type CategoriaObrigatoriedade = components['schemas']['CategoriaObrigator
 
 /** Filtro de listagem de obrigatoriedades legais (cursor pagination, ADR-0026). */
 export interface ObrigatoriedadesLegaisQuery {
-  readonly tipoEdital?: string;
+  readonly tipoProcesso?: string;
   readonly categoria?: CategoriaObrigatoriedadeCodigo | null;
   readonly vigentes?: boolean;
   readonly cursor?: string;
@@ -96,7 +96,7 @@ export class ObrigatoriedadesLegaisApi {
 
 function filtrosDaListagem(query: ObrigatoriedadesLegaisQuery): HttpParams {
   let params = new HttpParams();
-  if (query.tipoEdital !== undefined) params = params.set('tipoEdital', query.tipoEdital);
+  if (query.tipoProcesso !== undefined) params = params.set('tipoProcesso', query.tipoProcesso);
   if (query.categoria != null) params = params.set('categoria', query.categoria);
   if (query.vigentes !== undefined) params = params.set('vigentes', String(query.vigentes));
   return params;
