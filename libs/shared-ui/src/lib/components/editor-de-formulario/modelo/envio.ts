@@ -39,25 +39,28 @@ function limiteParaEnvio(
     : { ...limite, anos: comoNumero(limite.anos), dias: comoNumero(limite.dias) };
 }
 
+function restricoesParaEnvio(regras: ItemDoFormulario['regras']) {
+  return regras.restricoes?.map((restricao) => ({
+    ...restricao,
+    minimo: comoNumero(restricao.minimo),
+    maximo: comoNumero(restricao.maximo),
+    dataMinima: limiteParaEnvio(restricao.dataMinima),
+    dataMaxima: limiteParaEnvio(restricao.dataMaxima),
+  }));
+}
+
 function itemParaEnvio(item: ItemDoFormulario): ItemDoFormulario<number> {
   return {
     ...item,
-    regras: {
-      ...item.regras,
-      restricoes: item.regras.restricoes?.map((restricao) => ({
-        ...restricao,
-        minimo: comoNumero(restricao.minimo),
-        maximo: comoNumero(restricao.maximo),
-        dataMinima: limiteParaEnvio(restricao.dataMinima),
-        dataMaxima: limiteParaEnvio(restricao.dataMaxima),
-      })),
-    },
+    paginaCodigo: item.paginaCodigo ?? null,
+    regras: { ...item.regras, restricoes: restricoesParaEnvio(item.regras) },
   };
 }
 
 function grupoParaEnvio(grupo: GrupoDoFormulario): GrupoDoFormulario<number> {
   return {
     ...grupo,
+    paginaCodigo: grupo.paginaCodigo ?? null,
     ocorrencias: {
       ...grupo.ocorrencias,
       minimo: comoNumero(grupo.ocorrencias.minimo),

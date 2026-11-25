@@ -56,6 +56,31 @@ describe('conteudoParaEnvio', () => {
     };
   }
 
+  it('o campo e o grupo sem seção vão com a seção nula', () => {
+    const campo = { ...item('A', 0, 'S1'), paginaCodigo: undefined };
+    const enviado = conteudoParaEnvio(
+      conteudo({
+        itens: [campo],
+        grupos: [{ ...grupo(), paginaCodigo: null, subitens: [campo] }],
+      }),
+    );
+
+    expect(enviado?.itens?.[0].paginaCodigo).toBeNull();
+    expect(enviado?.grupos?.[0].paginaCodigo).toBeNull();
+    expect(enviado?.grupos?.[0].subitens[0].paginaCodigo).toBeNull();
+  });
+
+  it('preserva a seção vazia para expor o defeito', () => {
+    const campo = { ...item('A', 0, 'S1'), paginaCodigo: '' };
+    const enviado = conteudoParaEnvio(
+      conteudo({ itens: [campo], grupos: [{ ...grupo(), paginaCodigo: '', subitens: [campo] }] }),
+    );
+
+    expect(enviado?.itens?.[0].paginaCodigo).toBe('');
+    expect(enviado?.grupos?.[0].paginaCodigo).toBe('');
+    expect(enviado?.grupos?.[0].subitens[0].paginaCodigo).toBe('');
+  });
+
   it('converte o número digitado em texto e mantém o que já é número', () => {
     const enviado = conteudoParaEnvio(comLimites('18', -18));
 
