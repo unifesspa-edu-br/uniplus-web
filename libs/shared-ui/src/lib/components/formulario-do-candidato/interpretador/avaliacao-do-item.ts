@@ -50,29 +50,35 @@ export function avaliarItem(
   resposta: ValorJson | undefined,
   contexto: ContextoDoItem,
 ): ItemResolvido {
+  const aparencia = aparenciaDoItem(item, contexto);
+  const concluir = (fato: FatoResolvido, violadas: readonly Restricao[] = []): ItemResolvido =>
+    resolverItem(item, contexto, aparencia, { fato, violadas });
+  if (aparencia.visivel === FALSO) return concluir(FATO_NAO_APLICAVEL);
+  if (aparencia.visivel === INDETERMINADO) return concluir(FATO_INDETERMINADO);
+  const conferida = conferirResposta(item, resposta, contexto);
+  if (conferida.fato !== null) return concluir(conferida.fato);
+  return concluir(fatoSemResposta(aparencia, contexto), conferida.violadas);
+}
+
+function aparenciaDoItem(item: DefinicaoItem, contexto: ContextoDoItem): Aparencia {
   const { fatos } = contexto;
   const visivel = e(contexto.visivelDoContentor, avaliarOuVerdadeiro(item.exibicao, fatos));
   const obrigatorio = obrigatorioSeVisivel(visivel, item.obrigatoriedade, fatos);
-  const aparencia = {
-    visivel,
-    obrigatorio,
-    opcoes: visivel === FALSO ? null : opcoesDoItem(item, fatos),
-  };
-  const concluir = (fato: FatoResolvido, violadas: readonly Restricao[] = []): ItemResolvido =>
-    resolverItem(item, contexto, aparencia, { fato, violadas });
+  return { visivel, obrigatorio, opcoes: visivel === FALSO ? null : opcoesDoItem(item, fatos) };
+}
 
-  if (visivel === FALSO) return concluir(FATO_NAO_APLICAVEL);
-  if (visivel === INDETERMINADO) return concluir(FATO_INDETERMINADO);
+/** O opcional sem resposta em página concluída vale como não informado. */
+export function opcionalEmPaginaConcluida(
+  obrigatorio: Ternario,
+  paginaConcluida: boolean,
+): boolean {
+  return obrigatorio === FALSO && paginaConcluida;
+}
 
-  const conferida = conferirResposta(item, resposta, contexto);
-  if (conferida.fato !== null) return concluir(conferida.fato);
-
-  // Sem resposta que valha: o candidato ainda deve a resposta, salvo o opcional numa seção concluída,
-  // que resolve como não informado e não trava as regras seguintes.
-  return concluir(
-    obrigatorio === FALSO && contexto.paginaConcluida ? FATO_NAO_INFORMADO : FATO_INDETERMINADO,
-    conferida.violadas,
-  );
+function fatoSemResposta(aparencia: Aparencia, contexto: ContextoDoItem): FatoResolvido {
+  return opcionalEmPaginaConcluida(aparencia.obrigatorio, contexto.paginaConcluida)
+    ? FATO_NAO_INFORMADO
+    : FATO_INDETERMINADO;
 }
 
 /** Obrigatório só o que aparece; a obrigatoriedade já falsa decide mesmo com a exibição indeterminada. */
@@ -104,22 +110,32 @@ function opcoesDoItem(item: DefinicaoItem, fatos: Fatos): OpcoesDaRestricao | nu
  * Confere a resposta contra as restrições: o fato resolvido quando nenhuma é violada, e nulo quando
  * não há resposta que valha.
  */
+interface RespostaConferida {
+  fato: FatoResolvido | null;
+  violadas: readonly Restricao[];
+}
+
 function conferirResposta(
   item: DefinicaoItem,
   resposta: ValorJson | undefined,
   contexto: ContextoDoItem,
-): { fato: FatoResolvido | null; violadas: readonly Restricao[] } {
+): RespostaConferida {
   if (resposta === undefined || estaVazia(resposta)) return { fato: null, violadas: [] };
-  const { fatos, diaDoEnvio } = contexto;
-  const violadas: Restricao[] = [];
-  let algumaIndeterminada = false;
-  for (const restricao of contexto.fixo ? [] : item.restricoesDaResposta) {
-    const atende = restricao.avaliar(resposta, { fatos, diaDoEnvio });
-    if (atende === FALSO) violadas.push(restricao);
-    else if (atende === INDETERMINADO) algumaIndeterminada = true;
-  }
+  const conferidas = restricoesConferidas(item, resposta, contexto);
+  const violadas = conferidas
+    .filter(({ atende }) => atende === FALSO)
+    .map(({ restricao }) => restricao);
+  const algumaIndeterminada = conferidas.some(({ atende }) => atende === INDETERMINADO);
   if (violadas.length > 0) return { fato: null, violadas };
   return { fato: algumaIndeterminada ? FATO_INDETERMINADO : resolvido(resposta), violadas };
+}
+
+function restricoesConferidas(item: DefinicaoItem, resposta: ValorJson, contexto: ContextoDoItem) {
+  const { fatos, diaDoEnvio } = contexto;
+  return (contexto.fixo ? [] : item.restricoesDaResposta).map((restricao) => ({
+    restricao,
+    atende: restricao.avaliar(resposta, { fatos, diaDoEnvio }),
+  }));
 }
 
 /**
@@ -132,16 +148,18 @@ function resolverItem(
   aparencia: Aparencia,
   { fato, violadas }: { fato: FatoResolvido; violadas: readonly Restricao[] },
 ): ItemResolvido {
-  return {
-    fato,
-    avaliacao: {
-      fatoCodigo: item.fatoCodigo,
-      paginaCodigo: contexto.paginaCodigo,
-      ...aparencia,
-      restricoesVioladas: violadas.map((r) => r.tipo),
-      impedido: item.impedimento
-        ? avaliarPredicado(item.impedimento, new Map(contexto.fatos).set(item.fatoCodigo, fato))
-        : FALSO,
-    },
+  const avaliacao: ItemAvaliado = {
+    fatoCodigo: item.fatoCodigo,
+    paginaCodigo: contexto.paginaCodigo,
+    ...aparencia,
+    restricoesVioladas: violadas.map((r) => r.tipo),
+    impedido: impedimentoDoItem(item, contexto.fatos, fato),
   };
+  return { fato, avaliacao };
+}
+
+function impedimentoDoItem(item: DefinicaoItem, fatos: Fatos, fato: FatoResolvido): Ternario {
+  return item.impedimento
+    ? avaliarPredicado(item.impedimento, new Map(fatos).set(item.fatoCodigo, fato))
+    : FALSO;
 }
