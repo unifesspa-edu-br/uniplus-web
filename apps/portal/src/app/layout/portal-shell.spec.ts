@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -11,6 +10,7 @@ import {
 } from '@uniplus/shared-auth/bootstrap';
 import { BackToTopComponent } from '@uniplus/shared-ui/components';
 import { PortalShellComponent } from './portal-shell';
+import { declaracoesDaRegra, lerFolhaDeEstilo } from '@uniplus/shared-testing';
 
 const isAuthenticated = signal(false);
 const authServiceStub = { logout: () => undefined, login: () => undefined };
@@ -99,106 +99,42 @@ describe('PortalShellComponent — navegação por autenticação', () => {
   });
 });
 
-describe('PortalShellComponent — contrato de rolagem', () => {
-  const css = readFileSync(resolve(__dirname, 'portal-shell.css'), 'utf-8').replace(
-    /\/\*[\s\S]*?\*\//gu,
-    '',
-  );
-  const area = css.match(/\.portal-scroll\s*\{[^{}]*\}/u)?.[0] ?? '';
+describe('PortalShellComponent — rolagem e impressão', () => {
+  const folha = lerFolhaDeEstilo(resolve(__dirname, 'portal-shell.css'));
+  const regra = (seletor: string, midia?: string) => declaracoesDaRegra(folha, seletor, midia);
+  const janelaBaixa = '(max-height: 500px)';
+  const indiceDaMidia = (condicao: string) =>
+    folha.nodes.findIndex(
+      (no) => no.type === 'atrule' && no.name === 'media' && no.params === condicao,
+    );
 
-  it('a area de conteudo rola por dentro e ancora o conteudo posicionado, que senao esticaria a pagina', () => {
-    expect(area).toContain('overflow-y: auto');
-    expect(area).toContain('position: relative');
+  it('permite rolagem vertical e ancora o conteúdo', () => {
+    expect(regra('.portal-scroll').get('overflow-y')).toBe('auto');
+    expect(regra('.portal-scroll').get('position')).toBe('relative');
+    const base = folha.nodes.findIndex(
+      (no) => no.type === 'rule' && no.selectors.includes('.portal-scroll'),
+    );
+    expect(base).toBeGreaterThanOrEqual(0);
+    expect(indiceDaMidia(janelaBaixa)).toBeGreaterThan(base);
   });
 
-  /** Corpo do `@media (max-height: 500px)`, sem as chaves externas. */
-  function blocoDeJanelaBaixa(): string {
-    const inicio = css.search(/@media\s*\(max-height:\s*500px\)\s*\{/u);
-    if (inicio < 0) return '';
-    const abertura = css.indexOf('{', inicio);
-    let profundidade = 0;
-    for (let i = abertura; i < css.length; i++) {
-      if (css[i] === '{') profundidade++;
-      else if (css[i] === '}' && --profundidade === 0) return css.slice(abertura + 1, i);
+  it('em janela baixa libera a rolagem vertical sem corte horizontal', () => {
+    expect(regra('.portal-scroll', janelaBaixa).get('flex')).toBe('1 0 auto');
+    for (const seletor of [':host', '.portal-scroll']) {
+      expect(regra(seletor, janelaBaixa).get('overflow-y')).toBe('visible');
+      expect(['clip', 'hidden']).toContain(regra(seletor, janelaBaixa).get('overflow-x'));
     }
-    return '';
-  }
-
-  it('a regra de janela baixa vem depois da regra base, que senão a anularia na cascata', () => {
-    const janelaBaixa = css.search(/@media\s*\(max-height:\s*500px\)\s*\{/u);
-
-    expect(janelaBaixa).toBeGreaterThan(css.search(/\.portal-scroll\s*\{/u));
   });
 
-  it('em janela baixa, o conteúdo preenche o min-height do host sem encolher', () => {
-    const regra = blocoDeJanelaBaixa()
-      .split('}')
-      .find((r) => r.split('{')[0].trim() === '.portal-scroll');
-
-    expect(regra).toMatch(/flex:\s*1 0 auto/u);
-  });
-
-  it.each([':host', '.portal-scroll'])(
-    'em janela baixa, %s libera só o eixo y e mantém o corte horizontal',
-    (seletor) => {
-      const regra = blocoDeJanelaBaixa()
-        .split('}')
-        .find((r) => r.split('{')[0].trim() === seletor);
-
-      expect(regra, seletor).toBeDefined();
-      expect(regra).toMatch(/overflow-y:\s*visible/u);
-      expect(regra).toMatch(/overflow-x:\s*(clip|hidden)/u);
-    },
-  );
-});
-
-describe('PortalShellComponent — contrato de impressão', () => {
-  const css = readFileSync(resolve(__dirname, 'portal-shell.css'), 'utf-8').replace(
-    /\/\*[\s\S]*?\*\//gu,
-    '',
-  );
-
-  /** Corpo do `@media print`, com os blocos aninhados. */
-  function blocoDeImpressao(): string {
-    const inicio = css.search(/@media\s+print\s*\{/u);
-    if (inicio < 0) return '';
-    const abertura = css.indexOf('{', inicio);
-    let profundidade = 0;
-    for (let i = abertura; i < css.length; i++) {
-      if (css[i] === '{') profundidade++;
-      else if (css[i] === '}' && --profundidade === 0) return css.slice(abertura + 1, i);
+  it('na impressão libera a altura e desfaz as restrições da janela baixa', () => {
+    expect(indiceDaMidia('print')).toBeGreaterThan(indiceDaMidia(janelaBaixa));
+    for (const seletor of [':host', '.portal-scroll']) {
+      expect(regra(seletor, 'print').get('height')).toBe('auto');
+      expect(regra(seletor, 'print').get('overflow')).toBe('visible');
     }
-    return '';
-  }
-
-  /** Declarações das regras do bloco de impressão que alcançam `seletor`. */
-  function declaracoesNaImpressao(seletor: string): string {
-    return Array.from(blocoDeImpressao().matchAll(/([^{}]+)\{([^{}]*)\}/gu))
-      .filter(([, seletores]) => seletores.split(',').some((s) => s.trim() === seletor))
-      .map(([, , declaracoes]) => declaracoes)
-      .join(';');
-  }
-
-  it.each([':host', '.portal-scroll'])(
-    'no papel, %s solta a altura do viewport e não corta o conteúdo',
-    (seletor) => {
-      const declaracoes = declaracoesNaImpressao(seletor);
-
-      expect(declaracoes).toContain('height: auto');
-      expect(declaracoes).toContain('overflow: visible');
-    },
-  );
-
-  it('no papel, vem depois da janela baixa e desfaz a altura mínima e o crescimento do conteúdo', () => {
-    const janelaBaixa = css.search(/@media\s*\(max-height:\s*500px\)\s*\{/u);
-
-    expect(css.search(/@media\s+print\s*\{/u)).toBeGreaterThan(janelaBaixa);
-    expect(declaracoesNaImpressao(':host')).toMatch(/min-height:\s*auto/u);
-    expect(declaracoesNaImpressao('.portal-scroll')).toMatch(/flex:\s*none/u);
-  });
-
-  it('no papel, o conteúdo não leva o respiro de tela, que empurraria uma última página em branco', () => {
-    expect(declaracoesNaImpressao('.portal-main')).toMatch(/padding:\s*0\s*(;|$)/u);
+    expect(regra(':host', 'print').get('min-height')).toBe('auto');
+    expect(regra('.portal-scroll', 'print').get('flex')).toBe('none');
+    expect(regra('.portal-main', 'print').get('padding')).toBe('0');
   });
 
   it('cabeçalho, navegação, rodapé e controles flutuantes não vão para o papel', async () => {
@@ -258,7 +194,6 @@ describe('PortalShellComponent — contêiner de rolagem do "Voltar ao topo"', (
         removidos.push(ouvinte),
     })) as unknown as typeof window.matchMedia;
   }
-
 
   function containerObservado(fixture: ComponentFixture<PortalShellComponent>): HTMLElement {
     const voltarAoTopo = fixture.debugElement.query(By.directive(BackToTopComponent));
