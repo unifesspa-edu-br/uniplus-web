@@ -13,7 +13,7 @@ import {
   type PaginaDoFormulario,
   type FatoDoFormulario,
   type ItemDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 import {
   SECAO_OUTROS_DADOS,
   TITULO_SECAO_OUTROS_DADOS,

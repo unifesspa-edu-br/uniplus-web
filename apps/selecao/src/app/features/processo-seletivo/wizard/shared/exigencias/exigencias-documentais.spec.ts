@@ -1,4 +1,4 @@
-import { documentoExigidoNovo } from '@uniplus/shared-ui/components';
+import { documentoExigidoNovo } from '@uniplus/shared-inscricao/formulario';
 import { describe, expect, it } from 'vitest';
 
 import type {

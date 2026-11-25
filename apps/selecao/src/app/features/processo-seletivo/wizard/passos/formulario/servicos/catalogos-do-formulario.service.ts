@@ -9,11 +9,8 @@ import {
   TermosConsentimentoApi,
   type TermoConsentimentoDto,
 } from '@uniplus/shared-data/configuracao';
-import {
-  acompanharLeitura,
-  termoDisponivelDe,
-  type TermoDisponivel,
-} from '@uniplus/shared-ui/components';
+import { termoDisponivelDe, type TermoDisponivel } from '@uniplus/shared-inscricao/formulario';
+import { acompanharLeitura } from '@uniplus/shared-ui/components';
 
 import {
   referenciasDosTermos,

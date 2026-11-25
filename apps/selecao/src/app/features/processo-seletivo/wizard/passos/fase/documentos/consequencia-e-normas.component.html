@@ -31,7 +31,7 @@
   [attr.aria-describedby]="recusasDasNormas().length ? idDasNormas() + '-recusas' : null"
 >
   <ui-recusa-do-campo [id]="idDasNormas() + '-recusas'" [recusas]="recusasDasNormas()" />
-  <ui-normas-do-documento
+  <insc-normas-do-documento
     disposicao="na-grade"
     [bases]="bases()"
     [idBase]="idDasNormas()"
@@ -44,5 +44,5 @@
     (basesChange)="basesChange.emit($event)"
   >
     <ng-content></ng-content>
-  </ui-normas-do-documento>
+  </insc-normas-do-documento>
 </div>

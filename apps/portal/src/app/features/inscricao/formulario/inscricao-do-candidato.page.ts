@@ -15,17 +15,19 @@ import { RouterLink } from '@angular/router';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import {
   AGUARDE_A_VERIFICACAO,
-  acompanharLeitura,
-  AlertComponent,
   derivadosDoSistema,
-  FalhaDeLeituraComponent,
   FormularioDoCandidatoComponent,
-  IndicadorDaLeituraDirective,
-  PageHeaderComponent,
   type PendenciaDaSecao,
   type SimulacaoDoFormulario,
-  SpinnerComponent,
   type ValorJson,
+} from '@uniplus/shared-inscricao/formulario';
+import {
+  acompanharLeitura,
+  AlertComponent,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
+  PageHeaderComponent,
+  SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 
 import { AcoesDaInscricaoComponent } from './acoes-da-inscricao.component';

@@ -1,4 +1,4 @@
-import { conteudoInicial } from '@uniplus/shared-ui/components';
+import { conteudoInicial } from '@uniplus/shared-inscricao/formulario';
 import { describe, expect, it } from 'vitest';
 
 import { FasesDosFormularios } from './servicos/fases-dos-formularios.service';

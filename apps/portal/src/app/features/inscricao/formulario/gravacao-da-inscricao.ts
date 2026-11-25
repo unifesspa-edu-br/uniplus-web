@@ -13,7 +13,10 @@ import {
   type InscricaoRequest,
   SituacaoInscricaoCodigo,
 } from '@uniplus/shared-data/selecao';
-import type { ErroDoServidor, FormularioDoCandidatoComponent } from '@uniplus/shared-ui/components';
+import type {
+  ErroDoServidor,
+  FormularioDoCandidatoComponent,
+} from '@uniplus/shared-inscricao/formulario';
 
 import { AnuncioDaInscricao } from './anuncio-da-inscricao';
 import { AvaliacaoDaInscricaoEstado } from './avaliacao-da-inscricao.estado';

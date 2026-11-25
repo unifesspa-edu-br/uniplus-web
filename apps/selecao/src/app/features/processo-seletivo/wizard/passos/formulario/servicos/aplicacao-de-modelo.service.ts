@@ -3,7 +3,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DestroyRef } from '@angular/core';
 import { isApiOk, ProblemI18nService, type ApiResult } from '@uniplus/shared-core/http';
 import { ModelosFormularioApi, type ModeloFormularioView } from '@uniplus/shared-data/configuracao';
-import { acompanharLeitura, FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
+import { FINALIDADE_INSCRICAO } from '@uniplus/shared-inscricao/formulario';
+import { acompanharLeitura } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { LeiturasEmOrdem } from '../../../../leitura';

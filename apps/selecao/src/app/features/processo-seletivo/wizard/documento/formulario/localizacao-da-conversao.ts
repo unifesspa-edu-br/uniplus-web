@@ -1,7 +1,7 @@
 import type {
   ConteudoDoFormulario as Conteudo,
   CaminhoDoCampo as Caminho,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 
 function objeto(valor: unknown): valor is Readonly<Record<string, unknown>> {
   return typeof valor === 'object' && valor !== null && !Array.isArray(valor);

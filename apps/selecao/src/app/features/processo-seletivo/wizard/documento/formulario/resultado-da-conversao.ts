@@ -2,7 +2,7 @@ import type { DocumentoDaConfiguracaoFormulario } from '@uniplus/shared-data/sel
 import type {
   ConteudoDoFormulario,
   CamposEditadosDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 import type { ReferenciasDosTermosDoFormulario } from './referencias-dos-termos';
 
 export interface CatalogosDaConversaoDoFormulario {

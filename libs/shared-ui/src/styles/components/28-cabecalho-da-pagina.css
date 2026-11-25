@@ -16,6 +16,11 @@
   margin: 0;
   line-height: var(--leading-tight);
 }
+/* O título recebe apenas foco programático e, por não ser controle, não leva anel. */
+.page-header__title:focus-visible {
+  box-shadow: none;
+  outline: none;
+}
 .page-header__desc {
   font-size: var(--text-sm);
   color: var(--text-secondary);

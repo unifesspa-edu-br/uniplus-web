@@ -9,7 +9,7 @@ import type {
   ExibicaoEObrigatoriedade,
   Obrigatoriedade as ObrigatoriedadeEditada,
   PredicadoNoWire,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 import type { ContextoDaConversao as Contexto } from './contexto-da-conversao';
 
 type Obrigatoriedade = NonNullable<NonNullable<Formulario['itens']>[number]['obrigatoriedade']>;

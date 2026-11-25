@@ -43,6 +43,15 @@ describe('fronteira do apoio de teste unitário', () => {
     await createProjectGraphAsync();
   });
 
+  it('recusa formulário de inscrição no shared-ui', async () => {
+    const { regras } = await analisar(
+      'libs/shared-ui',
+      'src/lib/x/prova.ts',
+      importacao('@uniplus/shared-inscricao/formulario'),
+    );
+    expect(regras).toContain(REGRA_DE_FRONTEIRA);
+  });
+
   describe('recusa o apoio de teste e o Vitest', () => {
     it.each([
       ['app', 'apps/portal', 'src/app/features/x/prova.ts', importacao(APOIO_DE_TESTE)],

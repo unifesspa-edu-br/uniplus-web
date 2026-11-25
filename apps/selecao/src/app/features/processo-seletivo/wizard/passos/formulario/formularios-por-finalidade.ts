@@ -5,7 +5,7 @@ import {
   fatosQueExigemResposta,
   type ConteudoDoFormulario,
   type OpcaoDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 
 import type { FormularioDaFinalidade, FormularioDeInscricao } from '../../processo-seletivo.models';
 import {

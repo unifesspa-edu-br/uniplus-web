@@ -11,7 +11,7 @@ import {
   conteudoParaEnvio,
   semDadosBasicos,
   type ConteudoDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 import {
   BlocoSistemaCodigo,
   TipoPaginaFormularioCodigo,
@@ -24,7 +24,7 @@ import type {
   GrupoDoFormulario,
   ItemDoFormulario,
   TermoDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 
 function regras<O>(valor: ExibicaoEObrigatoriedade<O>) {
   return {

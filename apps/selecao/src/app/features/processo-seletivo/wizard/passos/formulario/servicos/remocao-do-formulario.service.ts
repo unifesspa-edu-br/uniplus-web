@@ -1,6 +1,6 @@
 import { effect, computed, inject, Injectable, signal, untracked } from '@angular/core';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
-import { FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
+import { FINALIDADE_INSCRICAO } from '@uniplus/shared-inscricao/formulario';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';

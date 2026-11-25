@@ -9,11 +9,8 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import {
-  ComboboxComponent,
-  MOTIVO_DA_PROTECAO_PENDENTE,
-  type UiComboboxGroup,
-} from '@uniplus/shared-ui/components';
+import { MOTIVO_DA_PROTECAO_PENDENTE } from '@uniplus/shared-inscricao/formulario';
+import { ComboboxComponent, type UiComboboxGroup } from '@uniplus/shared-ui/components';
 
 import type { DocumentoDefinicao } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';

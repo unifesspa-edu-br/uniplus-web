@@ -9,7 +9,7 @@ import type {
   ConfirmarEnvioDeDocumentoDaInscricaoRequest,
   IniciarEnvioDeDocumentoDaInscricaoRequest,
 } from '@uniplus/shared-data/selecao';
-import type { AlvoDoEnvio, ArquivoEnviado } from '@uniplus/shared-ui/components';
+import type { AlvoDoEnvio, ArquivoEnviado } from '@uniplus/shared-inscricao/formulario';
 
 export type DestinoDoArquivo = DestinoPreAssinado & { readonly arquivoId: string };
 

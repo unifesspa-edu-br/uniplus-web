@@ -1,5 +1,5 @@
 import type { CausaDeCampo } from '@uniplus/shared-core/http';
-import type { ErroDoServidor } from '@uniplus/shared-ui/components';
+import type { ErroDoServidor } from '@uniplus/shared-inscricao/formulario';
 
 /**
  * As recusas de quem gravou sobre uma revisão defasada: outra janela gravou, ou a retificação trocou a

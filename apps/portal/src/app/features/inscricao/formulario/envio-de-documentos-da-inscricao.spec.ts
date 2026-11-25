@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignedUploadClient } from '@uniplus/shared-core/http';
 import { InscricoesApi } from '@uniplus/shared-data/selecao';
 import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-testing';
-import type { AlvoDoEnvio } from '@uniplus/shared-ui/components';
+import type { AlvoDoEnvio } from '@uniplus/shared-inscricao/formulario';
 
 import { CONFIRMADO } from './envio-de-documentos-da-inscricao.testing';
 import { EnvioDeDocumentosDaInscricao } from './envio-de-documentos-da-inscricao';

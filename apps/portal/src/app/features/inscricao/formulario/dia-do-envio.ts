@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { RELOGIO } from '@uniplus/shared-core/relogio';
-import type { EnvioDasRespostas } from '@uniplus/shared-ui/components';
+import type { EnvioDasRespostas } from '@uniplus/shared-inscricao/formulario';
 import { deslocarDia, diaNoFuso, instanteDaHoraDeParede } from '@uniplus/shared-utils';
 
 import { LeituraDaInscricao } from './leitura-da-inscricao';

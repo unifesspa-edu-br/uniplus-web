@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { SpinnerComponent, type ConteudoDoFormulario } from '@uniplus/shared-ui/components';
+import { type ConteudoDoFormulario } from '@uniplus/shared-inscricao/formulario';
+import { SpinnerComponent } from '@uniplus/shared-ui/components';
 import { conteudoDoModelo } from './conteudo-do-modelo';
 import type { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.store';
 

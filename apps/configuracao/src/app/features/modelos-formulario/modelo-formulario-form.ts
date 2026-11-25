@@ -3,7 +3,7 @@ import {
   CriarModeloFormularioCommand,
   type FinalidadeFormularioCodigo,
 } from '@uniplus/shared-data/configuracao';
-import { conteudoInicial } from '@uniplus/shared-ui/components';
+import { conteudoInicial } from '@uniplus/shared-inscricao/formulario';
 import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { conteudoParaOModelo } from './conteudo-do-modelo';

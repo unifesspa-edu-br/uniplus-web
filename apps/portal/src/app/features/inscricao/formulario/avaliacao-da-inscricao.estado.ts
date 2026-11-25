@@ -12,7 +12,7 @@ import type {
   DocumentosAvaliados,
   ModalidadesAvaliadas,
   SimulacaoDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 
 import { InscricaoDoCandidatoService } from './inscricao-do-candidato.service';
 import { apresentarDocumentos } from './documentos-da-avaliacao';

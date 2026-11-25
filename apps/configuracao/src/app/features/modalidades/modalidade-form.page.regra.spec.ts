@@ -67,7 +67,7 @@ describe('ModalidadeFormPage', () => {
     it('mostra a regra da modalidade legal fixa só para leitura e a reenvia como veio', async () => {
       await pagina.editar(LB_PPI);
 
-      expect(pagina.fixture.nativeElement.querySelector('ui-editor-de-condicoes')).toBeNull();
+      expect(pagina.fixture.nativeElement.querySelector('insc-editor-de-condicoes')).toBeNull();
       expect(pagina.textoDaRegra()).toContain(
         'Quem atende: Cor/raça é um de Preta, Parda, Indígena.',
       );
@@ -80,7 +80,7 @@ describe('ModalidadeFormPage', () => {
 
     it('edita a regra da modalidade institucional e envia o que o editor escreveu', async () => {
       await pagina.editar(BONUS);
-      expect(pagina.fixture.nativeElement.querySelector('ui-editor-de-condicoes')).not.toBeNull();
+      expect(pagina.fixture.nativeElement.querySelector('insc-editor-de-condicoes')).not.toBeNull();
 
       pagina.edicao.aplicabilidade.trocar([
         { clausula: 1, fato: 'COR_RACA', operador: 'NENHUM_DE', valor: '["PRETA"]' },

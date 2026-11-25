@@ -1,4 +1,4 @@
-import type { CamposEditadosDoFormulario } from '@uniplus/shared-ui/components';
+import type { CamposEditadosDoFormulario } from '@uniplus/shared-inscricao/formulario';
 import { comCampo } from '../edicoes/secao-do-documento';
 
 function objeto(valor: unknown): valor is Readonly<Record<string, unknown>> {

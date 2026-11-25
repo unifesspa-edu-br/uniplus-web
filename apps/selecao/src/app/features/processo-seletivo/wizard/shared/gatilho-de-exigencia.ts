@@ -15,7 +15,7 @@ import {
   type CondicaoDeFato,
   type CondicaoPosicionada as CondicaoPosicionadaGenerica,
   type FatoEscolhivel,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 
 import type { CondicaoGatilhoConfig, ExigenciaDeDocumento } from '../processo-seletivo.models';
 import { FATO_MODALIDADE } from './exigencias/exigencias-documentais';
@@ -45,7 +45,7 @@ import {
  * O título de eleitor não se cobra de estrangeiro, de mulher nem de menor de dezoito; a
  * quitação com o serviço militar só se cobra de homem maior de dezoito, e nem dele quando é
  * indígena. As regras de predicado — forma do valor, alcance,
- * conferência — são do editor compartilhado em `@uniplus/shared-ui`, reexportado daqui para
+ * conferência — são do editor compartilhado em `@uniplus/shared-inscricao/formulario`, reexportado daqui para
  * que o resto do módulo tenha um só lugar de onde importar. O que fica neste arquivo é o que
  * é DESTA exigência: a restrição às modalidades, que tem controle próprio, e o modelo do
  * documento.
@@ -70,7 +70,7 @@ export {
   type FatoEscolhivel,
   type OpcaoDeValor,
   type TipoDeDominio,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 
 /** Uma condição junto com a posição que ela ocupa no gatilho — é por ela que a tela a edita. */
 export type CondicaoPosicionada = CondicaoPosicionadaGenerica<CondicaoGatilhoConfig>;

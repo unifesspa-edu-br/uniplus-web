@@ -8,7 +8,7 @@ import {
   CODIGOS_EM_TEXTO,
   conteudoComCodigos,
   type ConteudoDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 import {
   paginasParaOModelo,
   gruposParaOModelo,

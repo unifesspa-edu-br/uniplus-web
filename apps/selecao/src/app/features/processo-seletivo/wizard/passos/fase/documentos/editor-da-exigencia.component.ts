@@ -1,6 +1,7 @@
 import { FormularioDoCronograma } from '../../cronograma/servicos/formulario-do-cronograma.service';
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
-import { ComboboxComponent, EditorDeCondicoesComponent } from '@uniplus/shared-ui/components';
+import { EditorDeCondicoesComponent } from '@uniplus/shared-inscricao/formulario';
+import { ComboboxComponent } from '@uniplus/shared-ui/components';
 import { consequenciasDaFase } from '@uniplus/shared-utils';
 
 import type { BaseLegalConfig, ModeloDaExigencia } from '../../../processo-seletivo.models';

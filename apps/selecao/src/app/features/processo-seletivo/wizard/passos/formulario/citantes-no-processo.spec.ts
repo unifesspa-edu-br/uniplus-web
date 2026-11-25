@@ -1,9 +1,10 @@
 import { OperadorCodigo } from '@uniplus/shared-data/selecao';
-import { conteudoInicial, REGRAS_INICIAIS } from '@uniplus/shared-ui/components';
+import { conteudoInicial, REGRAS_INICIAIS } from '@uniplus/shared-inscricao/formulario';
 import { describe, expect, it } from 'vitest';
 
 import {
   camposSemUsoDeclarado,
+  citantesDoRascunho,
   quemCitaNoProcesso,
   remocoesTravadasPor,
 } from './citantes-no-processo';
@@ -109,7 +110,11 @@ describe('quem cita cada fato no processo', () => {
 
 describe('campos que nada no certame usa', () => {
   it('aponta o campo do certame que nada usa, e não os dados básicos', () => {
-    const semUso = camposSemUsoDeclarado(formularioCom(inscricaoGravada()), NENHUMA_EXIGENCIA);
+    const semUso = camposSemUsoDeclarado({
+      formulario: formularioCom(inscricaoGravada()),
+      documentos: NENHUMA_EXIGENCIA,
+      desempate: [],
+    });
 
     expect(semUso.map((c) => c.fatoCodigo)).toEqual(['PCD']);
   });
@@ -118,30 +123,47 @@ describe('campos que nada no certame usa', () => {
     const quando = [[{ fato: 'PCD', operador: OperadorCodigo.IGUAL, valor: true }]];
 
     expect(
-      camposSemUsoDeclarado(
-        formularioCom(inscricaoGravada()),
-        rascunhoCom(
+      camposSemUsoDeclarado({
+        formulario: formularioCom(inscricaoGravada()),
+        documentos: rascunhoCom(
           exigenciaCom(ID_TITULO, [{ fato: 'PCD', operador: OperadorCodigo.IGUAL, valor: 'true' }]),
         ),
-      ),
+        desempate: [],
+      }),
     ).toEqual([]);
     expect(
-      camposSemUsoDeclarado(
-        formularioCom(inscricaoGravada(), {
+      camposSemUsoDeclarado({
+        formulario: formularioCom(inscricaoGravada(), {
           derivacao: [{ codigoFato: 'MODALIDADE', regras: [{ quando }] }],
         }),
-        NENHUMA_EXIGENCIA,
-      ),
+        documentos: NENHUMA_EXIGENCIA,
+        desempate: [],
+      }),
     ).toEqual([]);
     const citadoPorSecao = inscricaoGravada();
     expect(
-      camposSemUsoDeclarado(
-        formularioCom({
+      camposSemUsoDeclarado({
+        formulario: formularioCom({
           ...citadoPorSecao,
           paginas: [...(citadoPorSecao.paginas ?? []), secao('S2', 1.5, { exibicao: quando })],
         }),
-        NENHUMA_EXIGENCIA,
-      ),
+        documentos: NENHUMA_EXIGENCIA,
+        desempate: [],
+      }),
     ).toEqual([]);
+  });
+});
+
+describe('citantes do rascunho', () => {
+  it('reúne as referências e as modalidades recebidas', () => {
+    const formulario = formularioCom(inscricaoGravada());
+    const rascunho = { formulario, documentos: NENHUMA_EXIGENCIA, desempate: [MAIOR_IDADE] };
+    expect(citantesDoRascunho(rascunho, [])).toEqual({
+      documentos: rascunho.documentos,
+      derivacao: formulario.derivacao,
+      desempate: rascunho.desempate,
+      outrasFinalidades: formulario.outrasFinalidades,
+      modalidades: [],
+    });
   });
 });

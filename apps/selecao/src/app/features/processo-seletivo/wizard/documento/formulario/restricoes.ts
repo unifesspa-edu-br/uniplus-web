@@ -7,7 +7,7 @@ import type {
   CaminhoDoCampo as Caminho,
   RestricaoDeValor as RestricaoEditada,
   LimiteDeDataNoWire as LimiteEditado,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 import type { ContextoDaConversao as Contexto } from './contexto-da-conversao';
 import { lerPredicado, predicadoDoDocumento } from './obrigatoriedade';
 

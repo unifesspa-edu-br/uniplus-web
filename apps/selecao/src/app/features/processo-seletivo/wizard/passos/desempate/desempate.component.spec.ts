@@ -9,7 +9,7 @@ import {
   SELECAO_BASE_PATH,
   SituacaoDoProcessoSeletivoCodigo,
 } from '@uniplus/shared-data/selecao';
-import { apresentacaoDaPagina, apresentacaoDoCampo } from '@uniplus/shared-ui/components';
+import { apresentacaoDaPagina, apresentacaoDoCampo } from '@uniplus/shared-inscricao/formulario';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';

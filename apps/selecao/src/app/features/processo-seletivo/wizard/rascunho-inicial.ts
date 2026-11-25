@@ -1,6 +1,10 @@
-import { conteudoInicial } from '@uniplus/shared-ui/components';
+import { conteudoInicial } from '@uniplus/shared-inscricao/formulario';
 
-import type { WizardDraft } from './processo-seletivo.models';
+import type {
+  CalculoDaClassificacao,
+  RegrasDaClassificacao,
+  WizardDraft,
+} from './processo-seletivo.models';
 import { exigenciasVazias } from './shared/exigencias/exigencias-documentais';
 
 /**
@@ -9,6 +13,7 @@ import { exigenciasVazias } from './shared/exigencias/exigencias-documentais';
  *
  * Os documentos exigidos, em particular, dependem do cadastro de Configuração, que cresce sem
  * deploy: uma lista local envelheceria junto com ele.
+ * A classificação importada não tem etapa pontuada, portanto o cronograma nasce sem etapas.
  */
 export function rascunhoInicial(): WizardDraft {
   return {
@@ -17,17 +22,17 @@ export function rascunhoInicial(): WizardDraft {
     pagamento: { cobra: null, valor: '', fundamentos: [] },
     opcoesDeCurso: { numero: '' },
     vagas: { ofertas: [], cascata: null },
-    // Processo de classificação importada não tem etapa pontuada, e a etapa fictícia o faria
-    // nascer com uma linha que o operador não pediu.
     cronograma: { fases: [], etapas: [], algoritmoContagemCodigo: '', algoritmoContagemVersao: '' },
-    classificacao: classificacaoInicial(),
-    bonus: bonusInicial(),
-    desempate: [],
+    ...regrasDaClassificacaoIniciais(),
     documentos: exigenciasVazias(),
     formulario: formularioInicial(),
     atendimento: { condicoes: [], recursos: [], tiposDeficiencia: [] },
     publicacao: publicacaoInicial(),
   };
+}
+
+export function regrasDaClassificacaoIniciais(): RegrasDaClassificacao {
+  return { classificacao: classificacaoInicial(), bonus: bonusInicial(), desempate: [] };
 }
 
 function identificacaoInicial(): WizardDraft['identificacao'] {
@@ -43,11 +48,7 @@ function identificacaoInicial(): WizardDraft['identificacao'] {
 
 export function classificacaoInicial(): WizardDraft['classificacao'] {
   return {
-    regraCalculoCodigo: '',
-    regraCalculoVersao: '',
-    regraArredondamentoCodigo: '',
-    regraArredondamentoVersao: '',
-    casasArredondamento: '',
+    ...calculoInicial(),
     regraOrdemAlocacaoCodigo: '',
     regraOrdemAlocacaoVersao: '',
     baseadoEmEnem: false,
@@ -55,6 +56,16 @@ export function classificacaoInicial(): WizardDraft['classificacao'] {
     resolucaoPesoAreaEnem: '',
     regrasEliminacao: [],
     edicoesEnem: [],
+  };
+}
+
+export function calculoInicial(): CalculoDaClassificacao {
+  return {
+    regraCalculoCodigo: '',
+    regraCalculoVersao: '',
+    regraArredondamentoCodigo: '',
+    regraArredondamentoVersao: '',
+    casasArredondamento: '',
   };
 }
 

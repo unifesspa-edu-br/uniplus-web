@@ -4,7 +4,7 @@ import {
   REGRAS_INICIAIS,
   type ConteudoDoFormulario,
   type ItemDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 import { describe, expect, it } from 'vitest';
 
 import {

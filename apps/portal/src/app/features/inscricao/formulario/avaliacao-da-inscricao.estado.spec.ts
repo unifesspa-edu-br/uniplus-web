@@ -2,7 +2,7 @@ import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiFailure } from '@uniplus/shared-core/http';
-import type { SimulacaoDoFormulario } from '@uniplus/shared-ui/components';
+import type { SimulacaoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 
 import { AvaliacaoDaInscricaoEstado, ESPERA_DA_CONSULTA_MS } from './avaliacao-da-inscricao.estado';
 import {

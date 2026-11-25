@@ -4,6 +4,7 @@ import type { FundamentoIsencaoCodigo, ProcessoSeletivoDto } from '@uniplus/shar
 import type {
   FormularioDeInscricao,
   OrigemCandidatosSelecionada,
+  RegrasDaClassificacao,
   WizardDraft,
 } from '../processo-seletivo.models';
 import { formulariosDoServidor } from '../passos/formulario/formularios-por-finalidade';
@@ -42,19 +43,19 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
     opcoesDeCurso: { numero: comoTexto(dto.opcoesDeCurso?.numero) },
     vagas: { ofertas: distribuicoesDe(dto), cascata: cascataDe(dto) },
     cronograma: cronogramaDe(dto),
-    ...resultadosDe(dto),
+    ...regrasDaClassificacaoDe(dto),
+    atendimento: atendimentoDe(dto),
     documentos: exigenciasDe(dto),
     formulario: formularioDe(dto),
     identificacao: identificacaoDe(draft.identificacao, dto),
   };
 }
 
-function resultadosDe(dto: ProcessoSeletivoDto) {
+function regrasDaClassificacaoDe(dto: ProcessoSeletivoDto): RegrasDaClassificacao {
   return {
     classificacao: classificacaoDe(dto),
     bonus: bonusDe(dto),
     desempate: desempateDe(dto),
-    atendimento: atendimentoDe(dto),
   };
 }
 

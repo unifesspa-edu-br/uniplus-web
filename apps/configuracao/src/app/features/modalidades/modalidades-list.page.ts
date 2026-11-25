@@ -14,13 +14,15 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { ModalidadeDto, VocabulariosDeConfiguracaoApi } from '@uniplus/shared-data/configuracao';
 import {
-  acompanharLeitura,
-  AlertComponent,
   deClausulasDoWire,
-  DialogComponent,
-  FalhaDeLeituraComponent,
   fatosParaLeitura,
   resumoDaRegra,
+} from '@uniplus/shared-inscricao/formulario';
+import {
+  acompanharLeitura,
+  AlertComponent,
+  DialogComponent,
+  FalhaDeLeituraComponent,
   SpinnerComponent,
   type UiFilterChipOption,
   type UiFiltroAtivo,

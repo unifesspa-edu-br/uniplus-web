@@ -10,19 +10,21 @@ import {
 } from '@angular/core';
 import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
 import {
-  BUSCA_DE_MUNICIPIOS,
-  ConfirmDialogComponent,
   EditorDeFormularioComponent,
-  FalhaDeLeituraComponent,
-  IndicadorDaLeituraDirective,
   FINALIDADE_INSCRICAO,
   BLOCO_COMPROVACAO_DOCUMENTAL,
-  ValorEmConsultaComponent,
-  acompanharLeitura,
   conteudoInicial,
   conteudoParaEnvio,
   semDadosBasicos,
   type ConteudoDoFormulario,
+} from '@uniplus/shared-inscricao/formulario';
+import {
+  BUSCA_DE_MUNICIPIOS,
+  ConfirmDialogComponent,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
+  ValorEmConsultaComponent,
+  acompanharLeitura,
 } from '@uniplus/shared-ui/components';
 
 import type { FormularioDaFinalidade, ValidacaoDoPasso } from '../../processo-seletivo.models';
@@ -330,14 +332,9 @@ export class FormularioPassoComponent {
    * quando o gatilho é apagado hoje — dado pessoal pedido sem finalidade declarada.
    */
   readonly camposSemUso = computed(() => {
-    const draft = this.store.draft();
-    return camposSemUsoDeclarado(
-      draft.formulario,
-      draft.documentos,
-      draft.desempate,
-      this.store.regrasDasModalidades(),
-    ).map((campo) =>
-      campo.apresentacao.rotulo.trim() === '' ? campo.fatoCodigo : campo.apresentacao.rotulo,
+    return camposSemUsoDeclarado(this.store.draft(), this.store.regrasDasModalidades()).map(
+      (campo) =>
+        campo.apresentacao.rotulo.trim() === '' ? campo.fatoCodigo : campo.apresentacao.rotulo,
     );
   });
 

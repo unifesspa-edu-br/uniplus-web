@@ -1,4 +1,4 @@
-import { FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
+import { FINALIDADE_INSCRICAO } from '@uniplus/shared-inscricao/formulario';
 
 import type { WizardDraft } from '../../processo-seletivo.models';
 import type { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -30,25 +30,31 @@ export function mensagensDoFormulario(entrada: FormularioParaConferir): string[]
   const { abas, draft } = entrada;
   return [
     ...mensagensDasAbas(abas, draft.pagamento.cobra === true),
-    ...[...entrada.aplicacoesEmAberto].map(([finalidade, emAberto]) =>
-      textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto),
-    ),
-    ...abas
-      .filter((aba) => aba.numeroInvalido)
-      .map(
-        (aba) =>
-          `O formulário de ${aba.nome} tem campos que não são números: veja os campos marcados na aba dele.`,
-      ),
+    ...mensagensDasAplicacoesEmAberto(entrada.aplicacoesEmAberto),
+    ...abas.filter((aba) => aba.numeroInvalido).map(mensagemDoNumeroInvalido),
     ...problemasDoFormulario(
       draft.formulario,
       draft.documentos,
       new Set(draft.cronograma.fases.map((fase) => fase.codigo)),
     ),
-    ...entrada.camposSemValoresOfertados.map(
-      (campo) =>
-        `O formulário pergunta ${campo} ao candidato, e a oferta de atendimento especializado não declara nenhum valor para escolher. Declare ao menos um em "Atend. especial", ou retire o campo daqui.`,
-    ),
+    ...entrada.camposSemValoresOfertados.map(mensagemDoCampoSemValoresOfertados),
   ];
+}
+
+function mensagensDasAplicacoesEmAberto(
+  aplicacoes: FormularioParaConferir['aplicacoesEmAberto'],
+): string[] {
+  return [...aplicacoes].map(([finalidade, emAberto]) =>
+    textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto),
+  );
+}
+
+function mensagemDoNumeroInvalido(aba: AbaParaConferir): string {
+  return `O formulário de ${aba.nome} tem campos que não são números: veja os campos marcados na aba dele.`;
+}
+
+function mensagemDoCampoSemValoresOfertados(campo: string): string {
+  return `O formulário pergunta ${campo} ao candidato, e a oferta de atendimento especializado não declara nenhum valor para escolher. Declare ao menos um em "Atend. especial", ou retire o campo daqui.`;
 }
 
 /** A fase que falta em cada aba e a aba que só existe com cobrança de taxa. */

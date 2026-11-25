@@ -6,7 +6,7 @@ import {
   type EntradaDaSecao,
   type GrupoDoFormulario,
   type ItemDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 
 function obrigatoriedadeDe(tipo: string | null): string {
   return (

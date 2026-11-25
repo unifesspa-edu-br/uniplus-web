@@ -17,17 +17,19 @@ import {
   type FormularioApresentadoDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
 import {
+  FINALIDADES,
+  SimulacaoDeFormularioComponent,
+  type ConferenciaComOServidor,
+  type DocumentoExigido,
+  type FormularioDoCandidato,
+} from '@uniplus/shared-inscricao/formulario';
+import {
   acompanharLeitura,
   BUSCA_DE_CEP,
   BUSCA_DE_MUNICIPIOS,
   FalhaDeLeituraComponent,
-  FINALIDADES,
   IndicadorDaLeituraDirective,
-  SimulacaoDeFormularioComponent,
   SpinnerComponent,
-  type ConferenciaComOServidor,
-  type DocumentoExigido,
-  type FormularioDoCandidato,
 } from '@uniplus/shared-ui/components';
 
 /**
@@ -72,7 +74,7 @@ import {
         <ui-spinner spinnerSize="md" [decorativo]="true" /> Carregando o formulário...
       </div>
     } @else if (formulario(); as apresentacao) {
-      <ui-simulacao-de-formulario
+      <insc-simulacao-de-formulario
         idBase="simulacao-processo"
         [nomeDoArquivo]="'formulario-' + finalidade.toLocaleLowerCase('pt-BR')"
         [formulario]="apresentacao"

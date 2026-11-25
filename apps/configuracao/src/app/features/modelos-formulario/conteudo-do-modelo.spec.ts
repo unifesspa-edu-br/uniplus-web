@@ -10,7 +10,10 @@ import {
   TipoDeCampoCodigo,
   UnidadeDoPrazoDeEmissaoCodigo,
 } from '@uniplus/shared-data/configuracao';
-import { type ConteudoDoFormulario, type ItemDoFormulario } from '@uniplus/shared-ui/components';
+import {
+  type ConteudoDoFormulario,
+  type ItemDoFormulario,
+} from '@uniplus/shared-inscricao/formulario';
 import { describe, expect, it } from 'vitest';
 import { conteudoDoModelo, conteudoParaOModelo } from './conteudo-do-modelo';
 import { modelo } from './modelo-formulario-edicao.page.testing';

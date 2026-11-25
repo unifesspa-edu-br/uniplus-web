@@ -13,3 +13,5 @@ npx nx run shared-inscricao:test -- --run
 npx nx run shared-inscricao:lint
 npx nx run shared-inscricao:build
 ```
+
+O ponto `@uniplus/shared-inscricao/formulario` reúne a edição, a simulação e o preenchimento do formulário.

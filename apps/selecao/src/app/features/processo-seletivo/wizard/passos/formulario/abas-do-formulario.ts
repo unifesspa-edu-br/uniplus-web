@@ -4,7 +4,7 @@ import {
   FINALIDADES,
   paginasEmOrdem,
   type RecusasDoConteudo,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 
 import type { FormularioDaFinalidade, WizardDraft } from '../../processo-seletivo.models';
 import {

@@ -1,4 +1,4 @@
-import { apresentacaoDoCampo } from '@uniplus/shared-ui/components';
+import { apresentacaoDoCampo } from '@uniplus/shared-inscricao/formulario';
 import { describe, expect, it } from 'vitest';
 
 import { camposSemValoresOfertados, problemasDoFormulario } from './problemas-do-formulario';

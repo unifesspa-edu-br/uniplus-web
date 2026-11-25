@@ -1,10 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import {
   NormasDoDocumentoComponent,
-  RecusaDoCampoComponent,
-  type RecusaDoCampo,
   type TextosDasNormas,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
+import { RecusaDoCampoComponent, type RecusaDoCampo } from '@uniplus/shared-ui/components';
 
 import type { BaseLegalConfig } from '../../../processo-seletivo.models';
 

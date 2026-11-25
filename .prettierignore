@@ -11,9 +11,9 @@
 libs/shared-data/src/lib/api/*/schema.ts
 
 # Corpus de casos do formulário, copiado do uniplus-api por
-# libs/shared-ui/scripts/sincronizar-casos-do-formulario.sh: fica idêntico à
+# libs/shared-inscricao/scripts/sincronizar-casos-do-formulario.sh: fica idêntico à
 # fonte, para a cópia não divergir só por formatação.
-libs/shared-ui/src/lib/components/formulario-do-candidato/interpretador/casos/
+libs/shared-inscricao/src/lib/formulario/formulario-do-candidato/interpretador/casos/
 
 # Exemplos do contrato copiados da API sem reformatar: o arquivo é o mesmo que ela publica.
 /libs/shared-data/openapi/exemplos

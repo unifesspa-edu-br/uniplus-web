@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import {
   type CondicaoEmClausula,
   EditorDeCondicoesComponent,
-  FalhaDeLeituraComponent,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
+import { FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import { TipoDoDadoCodigo } from '@uniplus/shared-data/configuracao';
 import { EdicaoDoFato } from './edicao-do-fato';
 

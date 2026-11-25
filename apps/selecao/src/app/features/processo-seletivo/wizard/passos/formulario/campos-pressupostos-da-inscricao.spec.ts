@@ -1,4 +1,4 @@
-import { conteudoInicial, REGRAS_INICIAIS } from '@uniplus/shared-ui/components';
+import { conteudoInicial, REGRAS_INICIAIS } from '@uniplus/shared-inscricao/formulario';
 import { describe, expect, it } from 'vitest';
 
 import { SECAO_OUTROS_DADOS } from './fatos-coletados-da-inscricao';

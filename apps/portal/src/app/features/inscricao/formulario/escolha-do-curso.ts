@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, linkedSignal } from '@angular/core';
-import type { AvaliacaoNaTela, PassoPrefixado } from '@uniplus/shared-ui/components';
+import type { AvaliacaoNaTela, PassoPrefixado } from '@uniplus/shared-inscricao/formulario';
 
 import { escolhaInicialDeOfertas } from '../oferta-da-inscricao';
 import { AnuncioDaInscricao } from './anuncio-da-inscricao';

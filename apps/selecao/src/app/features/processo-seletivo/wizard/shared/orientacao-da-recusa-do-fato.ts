@@ -1,7 +1,7 @@
 import { RECUSAS_DA_COMPROVACAO } from './recusas-da-comprovacao';
 
 import type { ProblemDetails } from '@uniplus/shared-core/http';
-import { ehColetavel } from '@uniplus/shared-ui/components';
+import { ehColetavel } from '@uniplus/shared-inscricao/formulario';
 
 import { nomeDaFinalidade } from '../passos/formulario/formularios-por-finalidade';
 import {

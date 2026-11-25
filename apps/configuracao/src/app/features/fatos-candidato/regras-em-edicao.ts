@@ -15,7 +15,7 @@ import {
   problemaDaCondicao,
   type CondicaoEmClausula,
   type FatoEscolhivel,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 import { indiceDaRegra } from './fato-candidato.regras';
 
 /** Uma regra padrão em edição: o valor que contribui (nulo no booleano) e o predicado na forma do editor. */

@@ -12,7 +12,7 @@ import {
   semDadosBasicos,
   type ConteudoDoFormulario,
   type RecusasDoConteudo,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 
 import type { FormularioDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import type { FormularioDeInscricao, ValidacaoDoPasso } from '../../../processo-seletivo.models';

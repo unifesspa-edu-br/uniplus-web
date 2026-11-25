@@ -2,7 +2,7 @@ import {
   SituacaoDoDocumentoCodigo,
   type AvaliacaoDaInscricaoDto,
 } from '@uniplus/shared-data/selecao';
-import type { DocumentosAvaliados } from '@uniplus/shared-ui/components';
+import type { DocumentosAvaliados } from '@uniplus/shared-inscricao/formulario';
 
 type DocumentoDaApi = AvaliacaoDaInscricaoDto['documentos']['fases'][number]['documentos'][number];
 type DocumentoAvaliado = DocumentosAvaliados['fases'][number]['documentos'][number];

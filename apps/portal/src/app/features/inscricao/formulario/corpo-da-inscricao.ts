@@ -5,7 +5,7 @@ import {
   type InscricaoRequest,
   SituacaoInscricaoCodigo,
 } from '@uniplus/shared-data/selecao';
-import type { SimulacaoDoFormulario } from '@uniplus/shared-ui/components';
+import type { SimulacaoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 
 /** As ofertas de curso escolhidas na tela: a 2ª só existe com a 1ª. */
 export interface OfertasEscolhidas {

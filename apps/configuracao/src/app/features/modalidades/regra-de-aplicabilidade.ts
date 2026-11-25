@@ -1,5 +1,5 @@
 import type { FatoCandidatoComOperadores } from '@uniplus/shared-data/configuracao';
-import { fatosEscolhiveis, type FatoEscolhivel } from '@uniplus/shared-ui/components';
+import { fatosEscolhiveis, type FatoEscolhivel } from '@uniplus/shared-inscricao/formulario';
 
 import { fatosCitaveisPelaRegra } from '../fatos-candidato/fato-candidato.regras';
 

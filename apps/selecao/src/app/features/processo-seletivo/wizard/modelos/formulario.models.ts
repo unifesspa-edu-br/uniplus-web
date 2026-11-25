@@ -1,4 +1,4 @@
-import type { ConteudoDoFormulario } from '@uniplus/shared-ui/components';
+import type { ConteudoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 
 /**
  * O instante contra o qual a idade do candidato é apurada, uma política por certame que ancora

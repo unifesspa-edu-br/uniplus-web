@@ -6,6 +6,7 @@ import type {
 
 import type {
   AtendimentoCondicaoSelecionada,
+  CalculoDaClassificacao,
   CriterioDesempateConfigurado,
   ReferenciaDeAtendimento,
   RegraEliminacaoConfigurada,
@@ -36,15 +37,6 @@ export function classificacaoDe(dto: ProcessoSeletivoDto): WizardDraft['classifi
     regrasEliminacao: classificacao.regrasEliminacao.map(regraEliminacaoDe),
   };
 }
-
-type CalculoDaClassificacao = Pick<
-  WizardDraft['classificacao'],
-  | 'regraCalculoCodigo'
-  | 'regraCalculoVersao'
-  | 'regraArredondamentoCodigo'
-  | 'regraArredondamentoVersao'
-  | 'casasArredondamento'
->;
 
 function calculoDe(classificacao: ConfiguracaoClassificacaoDto): CalculoDaClassificacao {
   return {

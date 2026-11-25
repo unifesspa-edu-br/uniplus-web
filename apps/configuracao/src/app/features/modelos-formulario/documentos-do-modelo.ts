@@ -16,7 +16,7 @@ import type {
   PrazoDeEmissaoDoDocumento,
   RequisitosDoDocumento,
   ValidadeDoDocumento,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 
 type DocumentoDoConteudo =
   ModeloFormularioView['conteudo']['conjuntoDeDocumentos']['documentosExigidos'][number];

@@ -6,7 +6,7 @@ import {
 import type {
   ConteudoDoFormulario,
   CamposEditadosDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 import { conteudoDoDocumento, documentoDoConteudo } from './conversao-do-formulario';
 import type {
   CatalogosDaConversaoDoFormulario,

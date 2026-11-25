@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, viewChild } from '@angular/core';
 import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
+import { EditorDeFormularioComponent } from '@uniplus/shared-inscricao/formulario';
 import {
   AlertComponent,
   BUSCA_DE_MUNICIPIOS,
-  EditorDeFormularioComponent,
   FalhaDeLeituraComponent,
   IndicadorDaLeituraDirective,
   SpinnerComponent,

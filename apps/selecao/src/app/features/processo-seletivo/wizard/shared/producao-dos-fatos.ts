@@ -5,7 +5,7 @@ import {
   ehColetavel,
   todosOsCampos,
   type FatoDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 
 import type { FaseDoCronograma, FormularioDeInscricao } from '../processo-seletivo.models';
 import { finalidadesDaFase } from './descricao-da-fase';
@@ -118,18 +118,22 @@ export function producaoDoRascunho(
 ): ProducaoDosFatos {
   return {
     fases,
-    formularios: formulariosDoRascunho(formulario).map((daFinalidade) => ({
-      finalidade: daFinalidade.finalidade,
-      faseCodigo: daFinalidade.faseCodigo,
-      fatos:
-        daFinalidade.finalidade === FINALIDADE_INSCRICAO
-          ? fatosColetadosPelaInscricao(daFinalidade.conteudo)
-          : new Set(todosOsCampos(daFinalidade.conteudo).map((campo) => campo.fatoCodigo)),
-    })),
+    formularios: formulariosQueColetam(formulario),
     derivacoes: derivacoesDoRascunho(formulario),
     catalogo: new Map(catalogo.map((fato) => [fato.codigo, fato])),
     grupos: gruposDoRascunho(formulario),
   };
+}
+
+function formulariosQueColetam(formulario: FormularioDeInscricao): readonly FormularioQueColeta[] {
+  return formulariosDoRascunho(formulario).map((daFinalidade) => ({
+    finalidade: daFinalidade.finalidade,
+    faseCodigo: daFinalidade.faseCodigo,
+    fatos:
+      daFinalidade.finalidade === FINALIDADE_INSCRICAO
+        ? fatosColetadosPelaInscricao(daFinalidade.conteudo)
+        : new Set(todosOsCampos(daFinalidade.conteudo).map((campo) => campo.fatoCodigo)),
+  }));
 }
 
 function derivacoesDoRascunho(formulario: FormularioDeInscricao): ProducaoDosFatos['derivacoes'] {
@@ -186,26 +190,38 @@ export function recusaDeFaseDoGatilho(
   if (formulario.situacao !== 'DEFINIDO') return null;
   const { finalidade } = formulario;
 
+  return (
+    recusaPelaFase(fato, daExigencia, producao) ?? recusaPelaIsencao(fato, finalidade, producao)
+  );
+}
+
+function recusaPelaFase(
+  fato: string,
+  faseDaExigencia: FaseNoCronograma,
+  producao: ProducaoDosFatos,
+): RecusaDeFase | null {
   const efetiva = faseEfetiva(fato, producao, new Set());
   if ('foraDoCronograma' in efetiva) {
     return { tipo: 'FASE_FORA_DO_CRONOGRAMA', fato, ...efetiva.foraDoCronograma };
   }
-  if (efetiva.fase !== null && efetiva.fase.ordem > daExigencia.ordem) {
+  if (efetiva.fase !== null && efetiva.fase.ordem > faseDaExigencia.ordem) {
     return { tipo: 'FASE_POSTERIOR', fato, faseCodigo: efetiva.fase.codigo };
   }
+  return null;
+}
 
+function recusaPelaIsencao(
+  fato: string,
+  finalidade: string | null,
+  producao: ProducaoDosFatos,
+): RecusaDeFase | null {
   const isencao = producao.formularios.find(
     (formulario) => formulario.finalidade === FINALIDADE_ISENCAO_TAXA,
   );
-  if (
-    isencao !== undefined &&
-    finalidade !== FINALIDADE_ISENCAO_TAXA &&
-    dependeSoDaIsencao(fato, isencao, producao, new Set())
-  ) {
-    return { tipo: 'SO_DA_ISENCAO', fato, faseCodigo: isencao.faseCodigo };
-  }
-
-  return null;
+  if (isencao === undefined || finalidade === FINALIDADE_ISENCAO_TAXA) return null;
+  return dependeSoDaIsencao(fato, isencao, producao, new Set())
+    ? { tipo: 'SO_DA_ISENCAO', fato, faseCodigo: isencao.faseCodigo }
+    : null;
 }
 
 /** Por que um documento não pode se repetir pelo grupo nomeado onde ele é cobrado. */
@@ -255,9 +271,11 @@ export function ehCampoDeMembro(fato: Pick<FatoDoFormulario, 'escopo'>): boolean
   return fato.escopo === ESCOPO_MEMBRO;
 }
 
-type FaseEfetiva =
-  | { readonly fase: FaseNoCronograma | null }
-  | { readonly foraDoCronograma: { readonly origem: string; readonly faseCodigo: string } };
+type ForaDoCronograma = {
+  readonly foraDoCronograma: { readonly origem: string; readonly faseCodigo: string };
+};
+type FasesDoFato = { readonly fases: readonly FaseNoCronograma[] } | ForaDoCronograma;
+type FaseEfetiva = { readonly fase: FaseNoCronograma | null } | ForaDoCronograma;
 
 function faseEfetiva(
   fato: string,
@@ -266,34 +284,31 @@ function faseEfetiva(
 ): FaseEfetiva {
   const proprias = fasesProprias(fato, producao);
   if ('foraDoCronograma' in proprias) return proprias;
-
-  const fases = [...proprias.fases];
-  if (!emAvaliacao.has(fato)) {
-    emAvaliacao.add(fato);
-    for (const dependencia of dependenciasDoFato(fato, producao)) {
-      const daDependencia = faseEfetiva(dependencia, producao, emAvaliacao);
-      if ('foraDoCronograma' in daDependencia) return daDependencia;
-      if (daDependencia.fase !== null) fases.push(daDependencia.fase);
-    }
-  }
-  return { fase: maisTardia(fases) };
+  const dependencias = fasesDasDependencias(fato, producao, emAvaliacao);
+  if ('foraDoCronograma' in dependencias) return dependencias;
+  return { fase: maisTardia([...proprias.fases, ...dependencias.fases]) };
 }
 
-/** A fase do ponto de resolução do fato e a do formulário que o coleta. */
-function fasesProprias(
+function fasesDasDependencias(
   fato: string,
   producao: ProducaoDosFatos,
-):
-  | { readonly fases: readonly FaseNoCronograma[] }
-  | Extract<FaseEfetiva, { foraDoCronograma: unknown }> {
+  emAvaliacao: Set<string>,
+): FasesDoFato {
   const fases: FaseNoCronograma[] = [];
-  const ponto = producao.catalogo.get(fato)?.pontoResolucao;
-  if (ponto !== undefined) {
-    const doPonto = producao.fases.find((fase) => fase.codigo === ponto);
-    if (doPonto === undefined) return { foraDoCronograma: { origem: fato, faseCodigo: ponto } };
-    fases.push(doPonto);
+  if (emAvaliacao.has(fato)) return { fases };
+  emAvaliacao.add(fato);
+  for (const dependencia of dependenciasDoFato(fato, producao)) {
+    const efetiva = faseEfetiva(dependencia, producao, emAvaliacao);
+    if ('foraDoCronograma' in efetiva) return efetiva;
+    if (efetiva.fase !== null) fases.push(efetiva.fase);
   }
+  return { fases };
+}
 
+function fasesProprias(fato: string, producao: ProducaoDosFatos): FasesDoFato {
+  const doPonto = faseDoPontoDeResolucao(fato, producao);
+  if ('foraDoCronograma' in doPonto) return doPonto;
+  const fases = [...doPonto.fases];
   const coletor = formularioQueColeta(fato, producao);
   const doColetor =
     coletor === null
@@ -301,6 +316,15 @@ function fasesProprias(
       : producao.fases.find((fase) => fase.codigo === coletor.faseCodigo);
   if (doColetor !== undefined) fases.push(doColetor);
   return { fases };
+}
+
+function faseDoPontoDeResolucao(fato: string, producao: ProducaoDosFatos): FasesDoFato {
+  const ponto = producao.catalogo.get(fato)?.pontoResolucao;
+  if (ponto === undefined) return { fases: [] };
+  const fase = producao.fases.find((item) => item.codigo === ponto);
+  return fase === undefined
+    ? { foraDoCronograma: { origem: fato, faseCodigo: ponto } }
+    : { fases: [fase] };
 }
 
 /** A de maior ordem; na igualdade, a primeira. */

@@ -1,7 +1,10 @@
 import { DADO_NUMERICO, DADO_OPCAO, VALOR_UNICO } from '../../shared/valores-do-catalogo.testing';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
-import { EditorDeFormularioComponent, type FatoDoFormulario } from '@uniplus/shared-ui/components';
+import {
+  EditorDeFormularioComponent,
+  type FatoDoFormulario,
+} from '@uniplus/shared-inscricao/formulario';
 import { TipoDaObrigatoriedadeDoFormulario as Obrigatoriedade } from '@uniplus/shared-data/selecao';
 import { conteudoDoDocumento, documentoDoConteudo } from './conversao-do-formulario';
 import { aceita, formulario, CATALOGOS } from './conversao.testing';

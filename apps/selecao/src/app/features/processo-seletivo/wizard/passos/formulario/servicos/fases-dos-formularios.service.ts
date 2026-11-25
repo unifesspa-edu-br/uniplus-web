@@ -1,5 +1,5 @@
 import { computed, inject, Injectable } from '@angular/core';
-import { FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
+import { FINALIDADE_INSCRICAO } from '@uniplus/shared-inscricao/formulario';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { descreverFase } from '../../../shared/descricao-da-fase';

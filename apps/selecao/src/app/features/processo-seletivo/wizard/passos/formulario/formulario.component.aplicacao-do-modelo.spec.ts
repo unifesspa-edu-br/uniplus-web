@@ -1,5 +1,5 @@
 import { BlocoSistemaCodigo } from '@uniplus/shared-data/selecao';
-import { conteudoInicial } from '@uniplus/shared-ui/components';
+import { conteudoInicial } from '@uniplus/shared-inscricao/formulario';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { ExigenciaDeDocumento, FaseDoCronograma } from '../../processo-seletivo.models';

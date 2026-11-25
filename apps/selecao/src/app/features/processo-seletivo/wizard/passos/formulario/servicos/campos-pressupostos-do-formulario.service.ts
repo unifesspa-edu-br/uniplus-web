@@ -1,11 +1,19 @@
 import { computed, effect, inject, Injectable, untracked } from '@angular/core';
-import { FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
+import { FINALIDADE_INSCRICAO } from '@uniplus/shared-inscricao/formulario';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
-import { comCamposQueAsExigenciasPressupoem } from '../campos-pressupostos-da-inscricao';
-import { quemCitaNoProcesso, remocoesTravadasPor } from '../citantes-no-processo';
-import { fatosColetadosPor } from '../formulario-do-processo';
+import {
+  comCamposQueAsExigenciasPressupoem,
+  type PressupostosDoProcesso,
+} from '../campos-pressupostos-da-inscricao';
+import {
+  citantesDoRascunho,
+  quemCitaNoProcesso,
+  remocoesTravadasPor,
+  type NomesDosCitantes,
+} from '../citantes-no-processo';
+import { fatosAcrescentados } from '../formulario-do-processo';
 import { fatosColetadosPelasOutras, formulariosDoRascunho } from '../formularios-por-finalidade';
 import { CatalogosDoFormulario } from './catalogos-do-formulario.service';
 
@@ -32,23 +40,20 @@ export class CamposPressupostosDoFormulario {
   }
 
   /** Quem, no processo, cita cada fato — a fonte única do que entra sozinho e do que não sai. */
-  readonly citantes = computed(() => {
-    const draft = this.store.draft();
-    const tipoDocumento = this.catalogoDeDocumentos.tipoDocumentoPorId();
-    const nomeDoFato = new Map(this.dados.catalogo().map((fato) => [fato.codigo, fato.nome]));
-    return quemCitaNoProcesso(
-      {
-        documentos: draft.documentos,
-        derivacao: draft.formulario.derivacao,
-        desempate: draft.desempate,
-        outrasFinalidades: draft.formulario.outrasFinalidades,
-        modalidades: this.store.regrasDasModalidades(),
-      },
-      {
-        documento: (id) => tipoDocumento.get(id)?.nome ?? id,
-        fato: (codigo) => nomeDoFato.get(codigo) ?? codigo,
-      },
-    );
+  readonly citantes = computed(() =>
+    quemCitaNoProcesso(
+      citantesDoRascunho(this.store.draft(), this.store.regrasDasModalidades()),
+      this.nomesDosCitantes(),
+    ),
+  );
+
+  private readonly nomesDosCitantes = computed<NomesDosCitantes>(() => {
+    const tipos = this.catalogoDeDocumentos.tipoDocumentoPorId();
+    const fatos = new Map(this.dados.catalogo().map((fato) => [fato.codigo, fato.nome]));
+    return {
+      documento: (id) => tipos.get(id)?.nome ?? id,
+      fato: (codigo) => fatos.get(codigo) ?? codigo,
+    };
   });
 
   readonly remocoesTravadas = computed(() => remocoesTravadasPor(this.citantes()));
@@ -61,21 +66,10 @@ export class CamposPressupostosDoFormulario {
    */
   reconciliar(): readonly string[] {
     const formulario = this.store.draft().formulario;
-    const antes = new Set(fatosColetadosPor(formulario.conteudo));
-    const reconciliado = comCamposQueAsExigenciasPressupoem(formulario.conteudo, {
-      citados: new Set(this.citantes().keys()),
-      catalogo: this.dados.catalogo(),
-      postosPelasExigencias: this.store.camposPostosPelasExigencias(),
-      fatosDeOutrasFinalidades: fatosColetadosPelasOutras(
-        formulariosDoRascunho(this.store.draft().formulario),
-        FINALIDADE_INSCRICAO,
-      ),
-    });
+    const pressupostos = this.pressupostosDoRascunho();
+    const reconciliado = comCamposQueAsExigenciasPressupoem(formulario.conteudo, pressupostos);
     if (reconciliado === formulario.conteudo) return [];
-
-    // Registra o que ENTROU agora: é esse conjunto que a reconciliação seguinte pode remover
-    // quando a exigência que o pediu deixar de existir.
-    const acrescentados = fatosColetadosPor(reconciliado).filter((codigo) => !antes.has(codigo));
+    const acrescentados = fatosAcrescentados(formulario.conteudo, reconciliado);
     if (acrescentados.length > 0) {
       this.store.camposPostosPelasExigencias.update(
         (atual) => new Set([...atual, ...acrescentados]),
@@ -83,5 +77,17 @@ export class CamposPressupostosDoFormulario {
     }
     this.store.patchSection('formulario', { ...formulario, conteudo: reconciliado });
     return acrescentados;
+  }
+  private pressupostosDoRascunho(): PressupostosDoProcesso {
+    const rascunho = this.store.draft();
+    return {
+      citados: new Set(this.citantes().keys()),
+      catalogo: this.dados.catalogo(),
+      postosPelasExigencias: this.store.camposPostosPelasExigencias(),
+      fatosDeOutrasFinalidades: fatosColetadosPelasOutras(
+        formulariosDoRascunho(rascunho.formulario),
+        FINALIDADE_INSCRICAO,
+      ),
+    };
   }
 }

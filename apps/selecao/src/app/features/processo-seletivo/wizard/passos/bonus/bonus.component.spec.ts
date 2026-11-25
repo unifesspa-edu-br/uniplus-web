@@ -1,7 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture } from '@angular/core/testing';
 import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
-import { apresentacaoDoCampo } from '@uniplus/shared-ui/components';
+import { apresentacaoDoCampo } from '@uniplus/shared-inscricao/formulario';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';

@@ -14,7 +14,7 @@ import {
   type ConteudoDoFormulario,
   type PaginaDoFormulario,
   type ItemDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 import type {
   CriterioDesempateConfigurado,
   ExigenciaDeDocumento,

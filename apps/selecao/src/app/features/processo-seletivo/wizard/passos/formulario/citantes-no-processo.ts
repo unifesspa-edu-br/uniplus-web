@@ -3,13 +3,14 @@ import {
   SECAO_DADOS_BASICOS,
   todosOsCampos,
   type ItemDoFormulario,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/formulario';
 import type {
   CriterioDesempateConfigurado,
   DerivacaoDeFato,
   ExigenciasDoRascunho,
   FormularioDaFinalidade,
   FormularioDeInscricao,
+  WizardDraft,
 } from '../../processo-seletivo.models';
 import { todasAsExigencias } from '../../shared/exigencias/consulta-das-exigencias';
 import type { RegraDaModalidadeOfertada } from '../../shared/regras-das-modalidades';
@@ -28,6 +29,19 @@ export interface CitantesNoProcesso {
   readonly outrasFinalidades?: readonly FormularioDaFinalidade[];
   /** As regras de aplicabilidade das modalidades ofertadas, como o servidor as congelou. */
   readonly modalidades?: readonly RegraDaModalidadeOfertada[];
+}
+
+export function citantesDoRascunho(
+  rascunho: Pick<WizardDraft, 'documentos' | 'formulario' | 'desempate'>,
+  modalidades: readonly RegraDaModalidadeOfertada[],
+): CitantesNoProcesso {
+  return {
+    documentos: rascunho.documentos,
+    derivacao: rascunho.formulario.derivacao,
+    desempate: rascunho.desempate,
+    outrasFinalidades: rascunho.formulario.outrasFinalidades,
+    modalidades,
+  };
 }
 
 /** Como a frase de recusa nomeia o documento e o fato. */
@@ -145,19 +159,11 @@ export function remocoesTravadasPor(
  * Enquanto sobrevive, é dado pessoal pedido ao candidato sem finalidade declarada.
  */
 export function camposSemUsoDeclarado(
-  formulario: FormularioDeInscricao,
-  exigencias: ExigenciasDoRascunho,
-  desempate: readonly CriterioDesempateConfigurado[] = [],
+  rascunho: Pick<WizardDraft, 'documentos' | 'formulario' | 'desempate'>,
   modalidades: readonly RegraDaModalidadeOfertada[] = [],
 ): readonly ItemDoFormulario[] {
-  const citantes = quemCitaNoProcesso({
-    documentos: exigencias,
-    derivacao: formulario.derivacao,
-    desempate,
-    outrasFinalidades: formulario.outrasFinalidades,
-    modalidades,
-  });
-  return camposSemCitacao(formulario.conteudo, citantes);
+  const citantes = quemCitaNoProcesso(citantesDoRascunho(rascunho, modalidades));
+  return camposSemCitacao(rascunho.formulario.conteudo, citantes);
 }
 
 /** Os dados básicos ficam de fora, pois são coletados em toda inscrição. */
