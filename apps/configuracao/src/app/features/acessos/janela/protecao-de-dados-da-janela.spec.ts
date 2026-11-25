@@ -57,14 +57,14 @@ describe('etapa da proteção de dados da revisão', () => {
 
     const enviar = presente(botao(host, 'Enviar as decisões'));
     expect(enviar.disabled).toBe(true);
-    expect(host.textContent).toContain('Escolha migrar ou recusar em ao menos uma concessão.');
+    expect(host.textContent).toContain('Escolha aprovar ou recusar ao menos uma concessão.');
   });
 
   it('decide só as concessões escolhidas, e as demais seguem aguardando', async () => {
     api.decidirProtecaoDeDados.mockReturnValue(of(ok(REVISAO)));
     const { host, assentar, responder } = await abrirJanela(REVISAO);
 
-    escolher(linhaDe(host, 'c2'), 'Migrar');
+    escolher(linhaDe(host, 'c2'), 'Aprovar');
     await assentar();
     expect(host.textContent).toContain('1 concessão escolhida; as demais seguem aguardando.');
     presente(botao(host, 'Enviar as decisões')).click();
@@ -87,7 +87,7 @@ describe('etapa da proteção de dados da revisão', () => {
     api.decidirProtecaoDeDados.mockReturnValue(of(ok(REVISAO)));
     const { host, assentar, responder } = await abrirJanela(REVISAO);
 
-    escolher(linhaDe(host, 'c1'), 'Migrar');
+    escolher(linhaDe(host, 'c1'), 'Aprovar');
     escolher(linhaDe(host, 'c2'), 'Recusar');
     await assentar();
     presente(botao(host, 'Enviar as decisões')).click();
@@ -128,7 +128,7 @@ describe('etapa da proteção de dados da revisão', () => {
       of(recusa('uniplus.autorizacao.revisao_das_concessoes.mesma_pessoa_nas_duas_etapas', 422)),
     );
     const { host, assentar } = await abrirJanela(REVISAO);
-    escolher(linhaDe(host, 'c1'), 'Migrar');
+    escolher(linhaDe(host, 'c1'), 'Aprovar');
     await assentar();
 
     presente(botao(host, 'Enviar as decisões')).click();
@@ -142,7 +142,7 @@ describe('etapa da proteção de dados da revisão', () => {
   it('falha que não veio da API explica junto ao envio', async () => {
     api.decidirProtecaoDeDados.mockReturnValue(throwError(() => new Error('rede')));
     const { host, assentar } = await abrirJanela(REVISAO);
-    escolher(linhaDe(host, 'c1'), 'Migrar');
+    escolher(linhaDe(host, 'c1'), 'Aprovar');
     await assentar();
 
     presente(botao(host, 'Enviar as decisões')).click();

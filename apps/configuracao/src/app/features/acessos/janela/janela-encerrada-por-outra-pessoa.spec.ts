@@ -35,13 +35,13 @@ describe('revisão encerrada por outra pessoa durante a ação', () => {
     api.decidirRetida.mockReturnValue(of(recusa(NAO_ENCONTRADA, 404)));
     const { host, responder } = await abrirJanela(ABERTA);
 
-    presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
+    presente(botao(linhaDe(host, 'c1'), 'Aprovar')).click();
     await responder(ENCERRADA);
 
     expect(host.textContent).toContain('A revisão das concessões mudou');
-    expect(host.textContent).toContain('Não migrada no prazo');
+    expect(host.textContent).toContain('Não aprovada no prazo');
     expect(host.querySelector('cfg-retidas-da-janela')).toBeNull();
-    expect(botao(host, 'Migrar')).toBeUndefined();
+    expect(botao(host, 'Aprovar')).toBeUndefined();
   });
 
   it.each([

@@ -30,7 +30,7 @@ export const MENSAGENS_DA_JANELA: Readonly<Record<string, MensagemDaRecusa>> = {
   'revisao_das_concessoes.decisoes_incompletas': {
     titulo: 'O envio não decide todas as concessões da versão anterior.',
     resolver:
-      'Recarregue a revisão, decida cada concessão da lista, migrando ou recusando, e envie as decisões novamente. As concessões de quem envia ficam retidas para outra pessoa da gestão de acessos.',
+      'Recarregue a revisão, decida cada concessão da lista, aprovando ou recusando, e envie as decisões novamente. As concessões de quem envia ficam retidas para outra pessoa da gestão de acessos.',
   },
   'revisao_das_concessoes.decisoes_invalidas': {
     titulo: 'Decisões inválidas.',
@@ -50,7 +50,7 @@ export const MENSAGENS_DA_JANELA: Readonly<Record<string, MensagemDaRecusa>> = {
   'revisao_das_concessoes.exclusao_nao_confirmada': {
     titulo: 'A exclusão da lista exige confirmação.',
     resolver:
-      'Repita a decisão confirmando que entende que as concessões recusadas, ou as que não foram migradas, serão revogadas.',
+      'Repita a decisão confirmando que entende que as concessões recusadas, ou as que não foram aprovadas, serão revogadas.',
   },
   'revisao_das_concessoes.mesma_pessoa_nas_duas_etapas': {
     titulo: 'A mesma pessoa não decide as duas etapas.',
@@ -79,7 +79,7 @@ export const MENSAGENS_DA_JANELA: Readonly<Record<string, MensagemDaRecusa>> = {
   'revisao_das_concessoes.revisao_nao_encontrada': {
     titulo: 'Revisão das concessões não encontrada.',
     resolver:
-      'Confira se o perfil informado está em revisão. Se a revisão já terminou, não há mais o que decidir: quem não foi migrado perdeu o acesso e volta por pedido novo.',
+      'Confira se o perfil informado está em revisão. Se a revisão já terminou, não há mais o que decidir: quem não foi aprovado perdeu o acesso e volta por pedido novo.',
   },
   'revisao_das_concessoes.sem_permissao_na_etapa': {
     titulo: 'Acesso negado: a operação exige a permissão da etapa.',

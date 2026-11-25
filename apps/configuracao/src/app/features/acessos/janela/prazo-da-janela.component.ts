@@ -24,7 +24,7 @@ const UM_MINUTO = 60_000;
   template: `
     <section class="panel" aria-labelledby="cfg-prazo-titulo">
       <div class="panel-head">
-        <h2 id="cfg-prazo-titulo" class="panel-head__title">Prazo da janela</h2>
+        <h2 id="cfg-prazo-titulo" class="panel-head__title">Prazo da revisão das concessões</h2>
         <ui-tag [variant]="situacao().variante">{{ situacao().texto }}</ui-tag>
       </div>
       <dl class="cfg-detail-list panel-body">

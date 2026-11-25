@@ -13,9 +13,9 @@ const SITUACAO_DO_ITEM: Readonly<Record<string, RotuloDaJanela>> = {
     texto: 'Aguarda o Representante do controlador',
     variante: 'info',
   },
-  [SituacaoDaMigracao.MIGRADA]: { texto: 'Migrada', variante: 'success' },
+  [SituacaoDaMigracao.MIGRADA]: { texto: 'Aprovada', variante: 'success' },
   [SituacaoDaMigracao.RECUSADA]: { texto: 'Recusada', variante: 'danger' },
-  [SituacaoDaMigracao.NAO_MIGRADA]: { texto: 'Não migrada no prazo', variante: 'danger' },
+  [SituacaoDaMigracao.NAO_MIGRADA]: { texto: 'Não aprovada no prazo', variante: 'danger' },
   [SituacaoDaMigracao.FORA_DA_LISTA]: { texto: 'Fora da lista', variante: 'neutral' },
 };
 

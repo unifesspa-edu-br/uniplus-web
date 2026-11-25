@@ -56,13 +56,13 @@ const UMA_RECUSADA = {
 type Revisao = Awaited<ReturnType<typeof abrirJanela>>;
 
 async function aprovarTodasEEnviar({ host, assentar }: Revisao): Promise<void> {
-  presente(botao(host, 'Migrar todas')).click();
+  presente(botao(host, 'Aprovar todas')).click();
   await assentar();
   presente(botao(host, 'Enviar as decisões')).click();
 }
 
 async function pedirConfirmacaoDaExclusao({ host, assentar }: Revisao): Promise<HTMLElement> {
-  presente(botao(host, 'Migrar todas')).click();
+  presente(botao(host, 'Aprovar todas')).click();
   escolher(linhaDe(host, 'c2'), 'Recusar');
   await assentar();
   presente(botao(host, 'Enviar as decisões')).click();
@@ -109,7 +109,7 @@ describe('página de revisão das concessões', () => {
     it('revisão encerrada mostra a concessão sem aprovação e nenhuma ação', async () => {
       const { host } = await abrirJanela(ENCERRADA);
 
-      expect(host.textContent).toContain('Não migrada no prazo');
+      expect(host.textContent).toContain('Não aprovada no prazo');
       expect(host.querySelector('cfg-encerramento-da-janela')).toBeNull();
       expect(host.querySelector('input[type="radio"]')).toBeNull();
     });
@@ -191,7 +191,7 @@ describe('página de revisão das concessões', () => {
       expect(presente(botao(host, 'Enviar as decisões')).disabled).toBe(true);
       expect(host.textContent).toContain('Faltam 2 concessões para enviar as decisões.');
 
-      escolher(linhaDe(host, 'c1'), 'Migrar');
+      escolher(linhaDe(host, 'c1'), 'Aprovar');
       await assentar();
 
       expect(host.textContent).toContain('Falta 1 concessão para enviar as decisões.');
@@ -201,8 +201,8 @@ describe('página de revisão das concessões', () => {
     it('habilita o envio quando a lista está completa', async () => {
       const { host, fixture, assentar } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
 
-      escolher(linhaDe(host, 'c1'), 'Migrar');
-      escolher(linhaDe(host, 'c2'), 'Migrar');
+      escolher(linhaDe(host, 'c1'), 'Aprovar');
+      escolher(linhaDe(host, 'c2'), 'Aprovar');
       await assentar();
       fixture.detectChanges();
 
@@ -212,7 +212,7 @@ describe('página de revisão das concessões', () => {
     it('aprovar todas e recusar todas preenchem a lista inteira', async () => {
       const { host, assentar } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
 
-      presente(botao(host, 'Migrar todas')).click();
+      presente(botao(host, 'Aprovar todas')).click();
       await assentar();
       expect(presente(botao(host, 'Enviar as decisões')).disabled).toBe(false);
 
@@ -316,7 +316,7 @@ describe('página de revisão das concessões', () => {
         of(recusa('uniplus.autorizacao.revisao_das_concessoes.decisoes_ja_enviadas', 409)),
       );
       const { host, assentar, responder } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
-      presente(botao(host, 'Migrar todas')).click();
+      presente(botao(host, 'Aprovar todas')).click();
       await assentar();
 
       presente(botao(host, 'Enviar as decisões')).click();
@@ -330,7 +330,7 @@ describe('página de revisão das concessões', () => {
     it('falha que não veio da API libera o envio e explica junto ao botão', async () => {
       api.enviarLote.mockReturnValue(throwError(() => new Error('rede')));
       const { host, assentar } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
-      presente(botao(host, 'Migrar todas')).click();
+      presente(botao(host, 'Aprovar todas')).click();
       await assentar();
 
       presente(botao(host, 'Enviar as decisões')).click();
@@ -354,14 +354,14 @@ describe('página de revisão das concessões', () => {
     it('bloqueia a decisão enquanto o envio é gravado', async () => {
       api.enviarLote.mockReturnValue(NEVER);
       const { host, assentar } = await abrirJanela(CONJUNTO_DE_CONCESSOES);
-      presente(botao(host, 'Migrar todas')).click();
+      presente(botao(host, 'Aprovar todas')).click();
       await assentar();
 
       presente(botao(host, 'Enviar as decisões')).click();
       await assentar();
 
       expect(presente(botao(host, 'Enviar as decisões')).disabled).toBe(true);
-      expect(presente(botao(host, 'Migrar todas')).disabled).toBe(true);
+      expect(presente(botao(host, 'Aprovar todas')).disabled).toBe(true);
       expect(
         host.querySelector<HTMLInputElement>('input[type="radio"]')?.closest('fieldset')?.disabled,
       ).toBe(true);

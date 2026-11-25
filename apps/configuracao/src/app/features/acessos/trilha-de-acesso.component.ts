@@ -7,7 +7,7 @@ const EMISSOR_DO_SISTEMA = 'uniplus:sistema';
 const TAMANHO_DO_IDENTIFICADOR = 8;
 
 /**
- * Quem agiu: o sistema (evento sem autor, como a revogação pela janela de migração), o sistema
+ * Quem agiu: o sistema (evento sem autor, como a revogação pela revisão das concessões do perfil), o sistema
  * verificador, o nome que a API gravou no instante da ação ou, no registro que não o tem, o início
  * do `contaId` sem expor o identificador inteiro.
  */

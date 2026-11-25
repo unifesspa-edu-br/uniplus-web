@@ -14,7 +14,10 @@ const DESATIVADO: EtiquetaDoPerfil = {
   variante: 'neutral',
   desde: '2026-11-08T15:00:00Z',
 };
-const JANELA_ABERTA: EtiquetaDoPerfil = { texto: 'Janela de migração aberta', variante: 'warning' };
+const JANELA_ABERTA: EtiquetaDoPerfil = {
+  texto: 'Revisão das concessões do perfil aberta',
+  variante: 'warning',
+};
 
 interface Entradas {
   readonly situacaoDoAcesso?: { readonly codigo: string; readonly rotulo: string };

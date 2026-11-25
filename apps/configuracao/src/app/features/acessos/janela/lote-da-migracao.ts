@@ -73,7 +73,7 @@ export class LoteDaMigracao {
   private concluir(): void {
     this.confirmando.set(false);
     this.decisoes.set(new Map());
-    this.envio.concluir('Lote enviado');
+    this.envio.concluir('Decisões enviadas');
   }
 
   private recusar(texto: string | null): void {

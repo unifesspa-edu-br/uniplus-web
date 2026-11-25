@@ -22,7 +22,7 @@
           · versão {{ item.versaoAlvo }}
         </h2>
         <ui-tag [variant]="item.decisoesEnviadas ? 'info' : 'warning'">
-          {{ item.decisoesEnviadas ? 'Lote enviado' : 'Lote ainda não enviado' }}
+          {{ item.decisoesEnviadas ? 'Decisões enviadas' : 'Decisões ainda não enviadas' }}
         </ui-tag>
       </div>
       <dl class="cfg-detail-list panel-body">
@@ -40,5 +40,5 @@
   }
 </ul>
 } @else if (!store.carregando() && !store.mensagemDeErro()) {
-<p class="cfg-muted">Nenhuma janela de migração aguarda a sua decisão.</p>
+<p class="cfg-muted">Nenhuma revisão das concessões do perfil aguarda a sua decisão.</p>
 }

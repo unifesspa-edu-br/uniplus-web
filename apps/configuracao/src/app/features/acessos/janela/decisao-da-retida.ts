@@ -67,7 +67,7 @@ export class DecisaoDaRetida {
     this.confirmando.set(false);
     this.recusando.set(null);
     this.envio.concluir(
-      decisao === ResultadoDaMigracao.MIGRAR ? 'Concessão migrada' : 'Concessão recusada',
+      decisao === ResultadoDaMigracao.MIGRAR ? 'Concessão aprovada' : 'Concessão recusada',
     );
   }
 
