@@ -105,7 +105,7 @@ export interface VersaoDoTermo {
 export interface ItemDoFormulario<N = NumeroDigitado, O = string, T = string> {
   readonly fatoCodigo: string;
   readonly ordem: number;
-  readonly paginaCodigo?: null | string;
+  readonly paginaCodigo: null | string;
   readonly apresentacao: ApresentacaoDoCampo<T>;
   readonly regras: RegrasDoCampo<N, O>;
 }

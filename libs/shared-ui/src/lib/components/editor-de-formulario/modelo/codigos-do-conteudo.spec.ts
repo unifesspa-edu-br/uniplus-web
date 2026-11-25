@@ -13,6 +13,7 @@ const QUANDO_TROCADO = [[{ fato: 'ESCOLA_PUBLICA', operador: 'IGUAL', valor: tru
 const item: ItemDoFormulario<number> = {
   fatoCodigo: 'ESCOLA_PUBLICA',
   ordem: 1,
+  paginaCodigo: null,
   apresentacao: {
     rotulo: 'Estudou em escola pública?',
     tipoDeCampo: 'booleano',

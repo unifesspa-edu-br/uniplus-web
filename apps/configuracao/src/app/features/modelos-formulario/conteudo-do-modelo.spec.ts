@@ -20,6 +20,7 @@ const QUANDO = [[{ fato: 'ESCOLA_PUBLICA', operador: 'IGUAL', valor: true }]];
 const item: ItemDoFormulario<number> = {
   fatoCodigo: 'ESCOLA_PUBLICA',
   ordem: 1,
+  paginaCodigo: null,
   apresentacao: {
     rotulo: 'Estudou em escola pública?',
     tipoDeCampo: 'SIM_OU_NAO',
