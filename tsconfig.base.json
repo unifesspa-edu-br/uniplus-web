@@ -36,10 +36,10 @@
       "@uniplus/shared-inscricao/comprovante": [
         "libs/shared-inscricao/src/lib/comprovante/index.ts"
       ],
-      "@uniplus/shared-ui/shell": ["libs/shared-ui/shell/src/index.ts"],
-      "@uniplus/shared-ui/notifications": ["libs/shared-ui/notifications/src/index.ts"],
-      "@uniplus/shared-ui/components": ["libs/shared-ui/components/src/index.ts"],
-      "@uniplus/shared-ui/pipes": ["libs/shared-ui/pipes/src/index.ts"],
+      "@uniplus/shared-ui/shell": ["libs/shared-ui/src/lib/components/shell.ts"],
+      "@uniplus/shared-ui/notifications": ["libs/shared-ui/src/lib/components/notification-host/notification-host.ts"],
+      "@uniplus/shared-ui/components": ["libs/shared-ui/src/lib/components/index.ts"],
+      "@uniplus/shared-ui/pipes": ["libs/shared-ui/src/lib/pipes/index.ts"],
       "@uniplus/shared-auth/bootstrap": ["libs/shared-auth/bootstrap/src/index.ts"],
       "@uniplus/shared-auth/guards": ["libs/shared-auth/guards/src/index.ts"],
       "@uniplus/shared-auth/components": ["libs/shared-auth/components/src/index.ts"],

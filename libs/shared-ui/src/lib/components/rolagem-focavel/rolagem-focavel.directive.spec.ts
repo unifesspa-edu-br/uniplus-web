@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { RolagemFocavelDirective } from './rolagem-focavel.directive';
@@ -12,6 +12,28 @@ import { RolagemFocavelDirective } from './rolagem-focavel.directive';
   `,
 })
 class HospedeiroComponent {}
+
+afterEach(() => vi.unstubAllGlobals());
+
+it('observa a caixa e seu conteúdo e desliga o observador ao destruir', async () => {
+  const observe = vi.fn();
+  const disconnect = vi.fn();
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe = observe;
+      disconnect = disconnect;
+    },
+  );
+  const fixture = TestBed.createComponent(HospedeiroComponent);
+  fixture.detectChanges();
+  await fixture.whenStable();
+  const caixa = fixture.nativeElement.querySelector('.caixa') as HTMLElement;
+  expect(observe).toHaveBeenCalledWith(caixa);
+  expect(observe).toHaveBeenCalledWith(caixa.querySelector('table'));
+  fixture.destroy();
+  expect(disconnect).toHaveBeenCalledOnce();
+});
 
 /** jsdom não faz layout: as medidas da caixa são instaladas pelo teste. */
 function definirMedidas(

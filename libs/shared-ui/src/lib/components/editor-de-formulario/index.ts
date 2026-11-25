@@ -1,11 +1,11 @@
-export { EditorDeFormularioComponent } from '../../src/lib/components/editor-de-formulario/editor-de-formulario';
+export { EditorDeFormularioComponent } from './editor-de-formulario';
 export {
   ehColetavel,
   fatosDeMembroParaAcrescentar,
   fatosParaAcrescentar,
   pressupostosParaAcrescentar,
   tipoDeCampoDe,
-} from '../../src/lib/components/editor-de-formulario/modelo/catalogo-de-campos';
+} from './modelo/catalogo-de-campos';
 export {
   comFatosConhecidosAntes,
   fatosCitadosPeloConteudo,
@@ -16,7 +16,7 @@ export {
   fatosQueExigemResposta,
   predicadosSobreRespostasAnteriores,
   todosOsCampos,
-} from '../../src/lib/components/editor-de-formulario/modelo/citacoes';
+} from './modelo/citacoes';
 export {
   BLOCOS,
   BLOCO_COMPROVACAO_DOCUMENTAL,
@@ -38,12 +38,12 @@ export {
   apresentacaoDoCampo,
   blocosAdmitidos,
   conteudoInicial,
-} from '../../src/lib/components/editor-de-formulario/modelo/constantes';
+} from './modelo/constantes';
 export {
   conteudoParaEnvio,
   numeroDigitadoInvalido,
   semDadosBasicos,
-} from '../../src/lib/components/editor-de-formulario/modelo/envio';
+} from './modelo/envio';
 export {
   FATO_PARENTESCO,
   MAXIMO_DE_CAMPOS_DO_GRUPO,
@@ -59,12 +59,12 @@ export {
   quantidadeNoTeto,
   removerCampoDoGrupo,
   removerGrupo,
-} from '../../src/lib/components/editor-de-formulario/modelo/grupos';
+} from './modelo/grupos';
 export {
   alternativaSemOProprioCampo,
   comImpedimento,
   impedimentoCabe,
-} from '../../src/lib/components/editor-de-formulario/modelo/impedimento';
+} from './modelo/impedimento';
 export {
   acrescentarItem,
   comItem,
@@ -74,35 +74,35 @@ export {
   podeMoverItem,
   removerItem,
   ufsAnteriores,
-} from '../../src/lib/components/editor-de-formulario/modelo/itens';
+} from './modelo/itens';
 export {
   entradasDaSecao,
   paginasEmOrdem,
   renumerar,
-} from '../../src/lib/components/editor-de-formulario/modelo/ordem-das-entradas';
+} from './modelo/ordem-das-entradas';
 export {
   CODIGOS_EM_TEXTO,
   conteudoComCodigos,
   type TrocaDeCodigos,
-} from '../../src/lib/components/editor-de-formulario/modelo/codigos-do-conteudo';
+} from './modelo/codigos-do-conteudo';
 export {
   acrescentarPressuposto,
   removerPressuposto,
-} from '../../src/lib/components/editor-de-formulario/modelo/pressupostos';
+} from './modelo/pressupostos';
 export {
   problemaDaRestricao,
   problemaDoGrupoDeOpcoes,
   problemaDoLimiteDeData,
   problemaDosAnos,
   problemaDosDias,
-} from '../../src/lib/components/editor-de-formulario/modelo/problemas-da-restricao';
+} from './modelo/problemas-da-restricao';
 export {
   type RecusaDaRestricao,
   type RecusasDoConteudo,
   distribuirRecusas,
   recusasDaRestricao,
   recusasDoGrupoDeOpcoes,
-} from '../../src/lib/components/editor-de-formulario/modelo/recusas';
+} from './modelo/recusas';
 export {
   LIMITE_EM_DATA_FIXA,
   LIMITE_CONTADO_DO_ENVIO,
@@ -119,7 +119,7 @@ export {
   opcoesDaFonteCabemNoAlvo,
   restricaoNova,
   restricoesParaAcrescentar,
-} from '../../src/lib/components/editor-de-formulario/modelo/restricoes-de-valor';
+} from './modelo/restricoes-de-valor';
 export {
   acrescentarBloco,
   acrescentarSecao,
@@ -128,7 +128,7 @@ export {
   moverPagina,
   podeMoverPagina,
   removerPagina,
-} from '../../src/lib/components/editor-de-formulario/modelo/secoes';
+} from './modelo/secoes';
 export {
   acrescentarTermo,
   comTermo,
@@ -136,7 +136,7 @@ export {
   removerTermo,
   termosEmOrdem,
   termosParaAcrescentar,
-} from '../../src/lib/components/editor-de-formulario/modelo/termos';
+} from './modelo/termos';
 export {
   type ApresentacaoDaPagina,
   type ApresentacaoDoCampo,
@@ -166,11 +166,11 @@ export {
   type TermoDisponivel,
   type TermoDoFormulario,
   type VersaoDoTermo,
-} from '../../src/lib/components/editor-de-formulario/modelo/tipos';
-export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis';
+} from './modelo/tipos';
+export * from './termos-disponiveis';
 
 export type {
   CaminhoDoCampo,
   CamposEditadosDoFormulario,
   EdicaoDoFormulario,
-} from '../../src/lib/components/editor-de-formulario/modelo/campos-editados';
+} from './modelo/campos-editados';

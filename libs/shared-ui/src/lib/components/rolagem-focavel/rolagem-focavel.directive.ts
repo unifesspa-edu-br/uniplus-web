@@ -37,25 +37,30 @@ export class RolagemFocavelDirective {
   protected readonly rola = signal(false);
 
   private readonly elemento = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
-    const destroyRef = inject(DestroyRef);
-
     afterNextRender(() => {
       this.medir();
-
-      const remedir = (): void => this.medir();
-      window.addEventListener('resize', remedir);
-      destroyRef.onDestroy(() => window.removeEventListener('resize', remedir));
-
-      if (typeof ResizeObserver === 'undefined') return;
-      const observador = new ResizeObserver(remedir);
-      observador.observe(this.elemento);
-      for (const filho of Array.from(this.elemento.children)) {
-        observador.observe(filho);
-      }
-      destroyRef.onDestroy(() => observador.disconnect());
+      this.remedirAoRedimensionarJanela();
+      this.remedirAoRedimensionarCaixaOuConteudo();
     });
+  }
+
+  private remedirAoRedimensionarJanela(): void {
+    const remedir = (): void => this.medir();
+    window.addEventListener('resize', remedir);
+    this.destroyRef.onDestroy(() => window.removeEventListener('resize', remedir));
+  }
+
+  private remedirAoRedimensionarCaixaOuConteudo(): void {
+    if (typeof ResizeObserver === 'undefined') return;
+    const observador = new ResizeObserver(() => this.medir());
+    observador.observe(this.elemento);
+    for (const filho of Array.from(this.elemento.children)) {
+      observador.observe(filho);
+    }
+    this.destroyRef.onDestroy(() => observador.disconnect());
   }
 
   private medir(): void {
