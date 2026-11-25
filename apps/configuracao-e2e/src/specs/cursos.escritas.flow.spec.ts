@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { OFERTA } from '../support/dados-de-oferta-de-curso';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
@@ -13,7 +14,6 @@ const CORS_HEADERS = {
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
 };
-
 const CURSO = {
   id: '01960000-0000-7000-0000-0000000000c1',
   codigo: 'ENG-CIV',
@@ -23,26 +23,10 @@ const CURSO = {
   grupoAreaEnem: null,
   criadoEm: '2026-06-10T12:00:00Z',
 };
-
-const OFERTA = {
-  id: '01960000-0000-7000-0000-0000000000f1',
-  cursoId: CURSO.id,
-  unidadeOfertante: {
-    origemId: 'u1',
-    sigla: 'IGE',
-    nome: 'Instituto de Geociências',
-    tipo: 'Instituto',
-  },
-  programaDeOferta: 'REGULAR',
-  regimeDeTurno: 'REGULAR',
-  turnos: ['MATUTINO'],
-};
-
 /** Atraso da recarga da lista após a escrita: o botão da linha ainda está indisponível quando o drawer fecha. */
 const ATRASO_DA_RECARGA_EM_MS = 1500;
 
 const BLOQUEIO = 'Não é possível remover um curso referenciado por uma oferta de curso ativa';
-
 const ERRO_INTERNO = {
   type: 'about:blank',
   title: 'Erro interno',
