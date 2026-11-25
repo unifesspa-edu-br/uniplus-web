@@ -1,13 +1,20 @@
-import { resolve } from 'node:path';
 import { Component, signal } from '@angular/core';
+import { resolve } from 'node:path';
+import { declaracoesDaRegra, lerFolhaDeEstilo } from '@uniplus/shared-testing';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import { FilterBarComponent as PublicFilterBarComponent } from '../../index';
 import { FilterBarComponent } from './filter-bar';
-import { lerFolha } from '../../../styles/testing/ler-folha.testing';
 
 describe('FilterBarComponent', () => {
+  it('mantém o grupo secundário em coluna com espaçamento do sistema', () => {
+    const folha = lerFolhaDeEstilo(resolve(__dirname, '../../../styles/components.css'));
+    const grupo = declaracoesDaRegra(folha, '.filter-bar__group');
+    expect(grupo.get('display')).toBe('flex');
+    expect(grupo.get('flex-direction')).toBe('column');
+    expect(grupo.get('gap')).toBe('var(--space-2)');
+  });
   function setup() {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -123,17 +130,6 @@ describe('FilterBarComponent', () => {
     const group = fixture.debugElement.query(By.css('.filter-bar__group'))
       .nativeElement as HTMLElement;
     expect(group.childNodes.length).toBe(0);
-  });
-
-  it('mantém o layout do grupo secundário no stylesheet compartilhado', () => {
-    const styles = lerFolha(resolve(__dirname, '../../../styles/components.css'));
-    const groupRule = styles.match(/\.filter-bar__group\s*\{(?<declarations>[^}]*)\}/u)?.groups?.[
-      'declarations'
-    ];
-
-    expect(groupRule).toContain('display: flex;');
-    expect(groupRule).toContain('flex-direction: column;');
-    expect(groupRule).toContain('gap: var(--space-2);');
   });
 });
 

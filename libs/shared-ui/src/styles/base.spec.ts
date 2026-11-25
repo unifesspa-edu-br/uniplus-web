@@ -1,46 +1,26 @@
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { declaracoesDaRegra, lerFolhaDeEstilo } from '@uniplus/shared-testing';
 
-/** O primeiro `@media print` (com os blocos aninhados) e o resto da folha, sem ele. */
-function separarImpressao(css: string): { readonly impressao: string; readonly tela: string } {
-  const inicio = css.search(/@media\s+print\s*\{/u);
-  if (inicio < 0) return { impressao: '', tela: css };
-  const abertura = css.indexOf('{', inicio);
-  let profundidade = 0;
-  for (let i = abertura; i < css.length; i++) {
-    if (css[i] === '{') profundidade++;
-    else if (css[i] === '}' && --profundidade === 0) {
-      return {
-        impressao: css.slice(abertura + 1, i),
-        tela: css.slice(0, inicio) + css.slice(i + 1),
-      };
-    }
-  }
-  return { impressao: '', tela: css };
-}
+describe('folha de estilo base — impressão', () => {
+  const folha = lerFolhaDeEstilo(resolve(__dirname, 'base.css'));
 
-describe('base.css — impressão', () => {
-  // Comentários removidos: a asserção tem de casar CSS aplicado, nunca uma declaração comentada.
-  const css = readFileSync(resolve(__dirname, 'base.css'), 'utf-8').replace(
-    /\/\*[\s\S]*?\*\//gu,
-    '',
-  );
-
-  it('.u-no-print some do papel, e só do papel', () => {
-    const { impressao, tela } = separarImpressao(css);
-
-    expect(impressao.match(/\.u-no-print\s*\{([^{}]*)\}/u)?.[1]).toContain(
-      'display: none !important',
+  it('oculta no papel o conteúdo exclusivo da tela', () => {
+    folha.walkRules((regra) => {
+      if (!regra.selectors.some((seletor) => /\.u-no-print(?![\w-])/u.test(seletor))) return;
+      expect(regra.parent?.type).toBe('atrule');
+      expect(regra.parent?.type === 'atrule' && regra.parent.name).toBe('media');
+      expect(regra.parent?.type === 'atrule' && regra.parent.params).toBe('print');
+      expect(regra.parent?.parent?.type).toBe('root');
+    });
+    expect(declaracoesDaRegra(folha, '.u-no-print', 'print').get('display')).toBe(
+      'none !important',
     );
-    expect(tela).not.toContain('.u-no-print');
   });
 
-  it('.u-print-only só existe no papel', () => {
-    const { impressao, tela } = separarImpressao(css);
-
-    expect(tela.match(/\.u-print-only\s*\{([^{}]*)\}/u)?.[1]).toContain('display: none !important');
-    expect(impressao.match(/\.u-print-only\s*\{([^{}]*)\}/u)?.[1]).toContain(
-      'display: revert !important',
+  it('mostra o conteúdo exclusivo do papel somente na impressão', () => {
+    expect(declaracoesDaRegra(folha, '.u-print-only').get('display')).toBe('none !important');
+    expect(declaracoesDaRegra(folha, '.u-print-only', 'print').get('display')).toBe(
+      'revert !important',
     );
   });
 });
