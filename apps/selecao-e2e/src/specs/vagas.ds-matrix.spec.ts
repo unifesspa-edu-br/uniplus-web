@@ -117,9 +117,11 @@ test.describe('Vagas — matriz DS @ds', () => {
 
       expect(oferta).not.toBeNull();
       expect(totais).not.toBeNull();
-      expect(Math.abs((totais?.x ?? 0) - (oferta?.x ?? 0))).toBeLessThanOrEqual(1);
-      expect(Math.abs((totais?.width ?? 0) - (oferta?.width ?? 0))).toBeLessThanOrEqual(1);
-      expect(Math.abs((rotuloDosTotais?.x ?? 0) - (rotuloDaOferta?.x ?? 0))).toBeLessThanOrEqual(1);
+      expect(Math.abs(Number(totais?.x) - Number(oferta?.x))).toBeLessThanOrEqual(1);
+      expect(Math.abs(Number(totais?.width) - Number(oferta?.width))).toBeLessThanOrEqual(1);
+      expect(Math.abs(Number(rotuloDosTotais?.x) - Number(rotuloDaOferta?.x))).toBeLessThanOrEqual(
+        1,
+      );
     });
 
     /** Cartão dentro de cartão não pode deixar o conteúdo mais interno sem largura útil. */

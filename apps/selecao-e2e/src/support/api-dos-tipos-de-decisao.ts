@@ -20,6 +20,7 @@ import {
 import { leituraDoProcessoCompleto } from './leituras-do-processo-completo';
 import { responderCom } from './responder';
 import { TIPO_RECUSADO } from './tipos-do-cenario-fora-do-vocabulario';
+import { situacaoDoProcesso } from '../fixtures/valor-do-enum';
 
 const ROTA_DO_PROCESSO = new RegExp(`/api/selecao/processos-seletivos/${ID_DO_PROCESSO_COMPLETO}`);
 
@@ -59,7 +60,7 @@ const emOrdemAlfabetica = (tipos: readonly string[]): string[] => [...new Set(ti
 function detalheDoProcesso(servidor: ServidorDosTiposDeDecisao) {
   return {
     ...PROCESSO_PUBLICADO_COMPLETO,
-    status: servidor.situacao,
+    status: situacaoDoProcesso(servidor.situacao),
     cronogramaFases: [servidor.fase],
     etapas: [servidor.etapa],
     atendimentoEspecializado: null,

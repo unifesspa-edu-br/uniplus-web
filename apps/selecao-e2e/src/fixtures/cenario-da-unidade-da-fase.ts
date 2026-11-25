@@ -52,8 +52,8 @@ export const TIPOS_DE_ATO = ['RESULTADO_PRELIMINAR', 'RESULTADO_FINAL'].map((cod
 
 const FATO_DECLARADO_NA_INSCRICAO = {
   descricao: null,
-  origem: 'DECLARADO',
-  cardinalidade: 'UNICO',
+  origem: { codigo: 'DECLARADO', rotulo: 'Declarado' },
+  cardinalidade: { codigo: 'VALOR_UNICO', rotulo: 'Valor único' },
   valoresDominio: null,
   pontoResolucao: 'INSCRICAO',
   binding: 'CAMPO',
@@ -76,17 +76,17 @@ function fatoDoCandidato([codigo, nome, dominio]: readonly string[], i: number) 
       id: `01a0d640-0000-7000-8000-0000000000f${i + 1}`,
       codigo,
       nome,
-      dominio,
+      dominio: { codigo: dominio, rotulo: dominio },
       ...FATO_DECLARADO_NA_INSCRICAO,
     },
-    operadoresAdmitidos: dominio === 'BOOLEANO' ? IGUALDADE : [],
+    operadoresAdmitidos: dominio === 'SIM_OU_NAO' ? IGUALDADE : [],
   };
 }
 
 export const FATOS_DO_CANDIDATO = [
   ['MODALIDADE', 'Modalidade', 'TEXTO'],
   ['DATA_NASCIMENTO', 'Data de nascimento', 'DATA'],
-  ['OPTOU_PELAS_COTAS_DA_LEI', 'Optou pelas cotas da Lei', 'BOOLEANO'],
+  ['OPTOU_PELAS_COTAS_DA_LEI', 'Optou pelas cotas da Lei', 'SIM_OU_NAO'],
 ].map(fatoDoCandidato);
 
 export const FASES_DO_CATALOGO = [

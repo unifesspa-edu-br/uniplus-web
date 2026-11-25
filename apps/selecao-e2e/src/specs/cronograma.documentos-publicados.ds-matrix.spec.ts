@@ -37,7 +37,7 @@ test.describe('Documentos da fase em consulta — matriz DS @ds', () => {
     ).toContainText('Todo candidato');
     await expect(autodeclaracao).toContainText('Modalidades LB_PPI');
     await expect(autodeclaracao).toContainText('Facultativa');
-    await expect(autodeclaracao).toContainText('Reclassifica para ampla concorrência');
+    await expect(autodeclaracao).toContainText('Reclassificação para ampla concorrência');
     await expect(autodeclaracao).toContainText('Na fase inteira');
     await expect(page.getByText('Norma de todos os documentos:')).toBeVisible();
     await expect(tabela.locator('button[aria-expanded="true"]')).toHaveCount(0);

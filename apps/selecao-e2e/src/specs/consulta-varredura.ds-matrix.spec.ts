@@ -1,32 +1,17 @@
-import { expect, test, type Page, type Route, type TestInfo } from '@playwright/test';
-import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
-import { FUNDAMENTOS_DE_ISENCAO, TIPOS_DE_PROCESSO } from '../fixtures/consulta-da-medicina';
-import {
-  ATO_DO_PROCESSO,
-  ATO_PUBLICADO,
-  DOCUMENTO_DO_EDITAL,
-  FASES_CANONICAS,
-  ID_DO_PROCESSO_COMPLETO,
-  PROCESSO_PUBLICADO_COMPLETO,
-  SNAPSHOT_VIGENTE,
-} from '../fixtures/processo-publicado-completo';
+import { ID_DO_PROCESSO_COMPLETO } from '../fixtures/processo-publicado-completo';
+import { mockarApiDaConsulta as mockarApi } from '../support/api-da-consulta-varredura';
 import { conferirObrigatoriedadeSeInformada } from '../support/consulta-do-formulario';
 import { blocosColados, espacosEntreBlocos, ritmoDoPasso } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
-import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 
 type DsTheme = 'light' | 'dark' | 'contrast';
 type Status = 'rascunho' | 'publicado';
 
 /** Abaixo desta largura o stepper lateral dá lugar à barra com diálogo. */
 const LARGURA_STEPPER_LATERAL = 768;
-
-const CORS_HEADERS = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, OPTIONS',
-  'access-control-allow-headers': 'authorization, accept',
-};
 
 /**
  * Os 12 passos do wizard, na ordem do stepper, e o que a leitura de cada um tem de mostrar.
@@ -45,7 +30,7 @@ const PASSOS: readonly Passo[] = [
     esperado: 'Documentos exigidos nesta fase',
   },
   { numero: 6, rotulo: 'Fórmula e precisão', esperado: 'Regra de cálculo' },
-  { numero: 7, rotulo: 'Bônus', esperado: 'Bônus regional' },
+  { numero: 7, rotulo: 'FADA', esperado: 'FADA' },
   { numero: 8, rotulo: 'Desempate', esperado: 'Regra do critério' },
   { numero: 9, rotulo: 'Eliminação', esperado: 'Regra de eliminação 1' },
   { numero: 10, rotulo: 'Atend. especial', esperado: 'Prova ampliada' },
@@ -365,75 +350,4 @@ async function instalarPreferencia(page: Page, theme: DsTheme): Promise<void> {
 function temaDoProject(projectName: string): DsTheme {
   const parte = projectName.split('-').at(-1);
   return parte === 'dark' || parte === 'contrast' ? parte : 'light';
-}
-
-/**
- * O processo, o ato publicado e os catálogos que os passos leem. Toda outra consulta à API
- * responde vazia: os passos também carregam catálogos ao abrir o processo, e sem a API no CI
- * eles falhariam por conexão recusada.
- *
- * A rota genérica é registrada primeiro porque o Playwright consulta as rotas da mais
- * recente para a mais antiga.
- */
-async function mockarApi(page: Page, status: Status): Promise<void> {
-  await responder(page, /\/api\//, []);
-  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
-  await responder(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, TIPOS_DE_PROCESSO);
-  await responder(page, /\/api\/configuracao\/fases-canonicas(\?.*)?$/, FASES_CANONICAS);
-  await responder(page, /\/api\/selecao\/fundamentos-isencao(\?.*)?$/, FUNDAMENTOS_DE_ISENCAO);
-  await responder(page, new RegExp(`/api/publicacoes/atos/${ATO_PUBLICADO.id}$`), ATO_PUBLICADO);
-
-  const processo = new RegExp(`/api/selecao/processos-seletivos/${ID_DO_PROCESSO_COMPLETO}`);
-  await page.route(processo, async (route: Route) => {
-    const request = route.request();
-    if (request.method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-
-    const caminho = new URL(request.url()).pathname;
-    if (caminho.endsWith(ID_DO_PROCESSO_COMPLETO)) {
-      await responderCom(route, { ...PROCESSO_PUBLICADO_COMPLETO, status });
-    } else if (caminho.endsWith('/documentos-a-publicar')) {
-      await responderCom(route, [DOCUMENTO_DO_EDITAL]);
-    } else if (caminho.endsWith('/atos')) {
-      await responderCom(route, [ATO_DO_PROCESSO]);
-    } else if (caminho.endsWith('/snapshot-vigente')) {
-      await responderCom(route, SNAPSHOT_VIGENTE);
-    } else if (caminho.endsWith('/conformidade-legal')) {
-      await responderCom(route, {
-        processoSeletivoId: ID_DO_PROCESSO_COMPLETO,
-        dataReferencia: '2027-01-01',
-        regras: [],
-        avisos: [],
-      });
-    } else if (caminho.endsWith('/conformidade')) {
-      await responderCom(route, {
-        processoSeletivoId: ID_DO_PROCESSO_COMPLETO,
-        itens: [],
-        avisos: [],
-      });
-    } else {
-      await route.fulfill({ status: 404, headers: CORS_HEADERS });
-    }
-  });
-}
-
-async function responder(page: Page, rota: RegExp, corpo: unknown): Promise<void> {
-  await page.route(rota, async (route: Route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-    await responderCom(route, corpo);
-  });
-}
-
-async function responderCom(route: Route, corpo: unknown): Promise<void> {
-  await route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    headers: CORS_HEADERS,
-    body: JSON.stringify(corpo),
-  });
 }
