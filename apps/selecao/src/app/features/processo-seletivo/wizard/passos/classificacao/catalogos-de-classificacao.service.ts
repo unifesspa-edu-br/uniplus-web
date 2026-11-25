@@ -17,7 +17,7 @@ const TIPO_REGRA_CALCULO = TipoRegraCodigo.REGRA_CALCULO;
 const TIPO_REGRA_ARREDONDAMENTO = TipoRegraCodigo.REGRA_ARREDONDAMENTO;
 const TIPO_REGRA_ORDEM_ALOCACAO = TipoRegraCodigo.REGRA_ORDEM_ALOCACAO;
 const TIPO_REGRA_ELIMINACAO = TipoRegraCodigo.REGRA_ELIMINACAO;
-const TIPO_REGRA_BONUS = 'regra_bonus';
+const TIPO_REGRA_BONUS = TipoRegraCodigo.REGRA_FADA;
 const TIPO_CRITERIO_DESEMPATE = TipoRegraCodigo.CRITERIO_DESEMPATE;
 
 const COMPARADOR_DE_RESOLUCAO = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
