@@ -1,4 +1,4 @@
-import { SituacaoDaRevisao } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDaRevisaoCodigo } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
@@ -24,7 +24,7 @@ const ABERTA: RevisaoResumoDto = {
   id: 'r1',
   abertaEm: '2026-11-09T12:00:00Z',
   abertaPor: pessoa('conta-betina', 'Betina Neves'),
-  situacao: SituacaoDaRevisao.EM_ANDAMENTO,
+  situacao: SituacaoDaRevisaoCodigo.EM_ANDAMENTO,
   totalDeItens: 4,
   pendentes: 3,
 };
@@ -32,7 +32,7 @@ const ENCERRADA: RevisaoResumoDto = {
   ...ABERTA,
   id: 'r0',
   abertaEm: '2026-05-04T12:00:00Z',
-  situacao: SituacaoDaRevisao.CONCLUIDA,
+  situacao: SituacaoDaRevisaoCodigo.CONCLUIDA,
   pendentes: 0,
 };
 
@@ -89,7 +89,7 @@ describe('RevisoesPage', () => {
     const { fixture, host } = await abrirLista([CONSULTAR]);
     leituras.mockReturnValue(of(ok([ENCERRADA])));
 
-    escolher(host, SituacaoDaRevisao.CONCLUIDA);
+    escolher(host, SituacaoDaRevisaoCodigo.CONCLUIDA);
     fixture.detectChanges();
     await assentar();
 
@@ -106,7 +106,7 @@ describe('RevisoesPage', () => {
     await assentar();
     expect(leituras.mock.lastCall?.[0]).toContain('cursor=');
 
-    escolher(host, SituacaoDaRevisao.EM_ANDAMENTO);
+    escolher(host, SituacaoDaRevisaoCodigo.EM_ANDAMENTO);
     fixture.detectChanges();
     await assentar();
 

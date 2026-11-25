@@ -1,4 +1,4 @@
-import { EtapaDoPedido, SituacaoDoPedido } from '@uniplus/shared-data/autorizacao';
+import { EtapaDoPedido, SituacaoDoPedidoCodigo } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -28,7 +28,7 @@ describe('PedidoDetalhePage — foco e falha da recarga', () => {
   describe('foco depois de uma decisão aceita', () => {
     const seguinte = () =>
       pedido({
-        situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+        situacao: SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
         etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
       });
 

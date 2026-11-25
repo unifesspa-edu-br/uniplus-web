@@ -1,6 +1,6 @@
 import {
   QuemDecideOItem,
-  SituacaoDaRevisao,
+  SituacaoDaRevisaoCodigo,
   SituacaoDoItemDaRevisao,
 } from '@uniplus/shared-data/autorizacao';
 import type { UiTagVariant } from '@uniplus/shared-ui/components';
@@ -10,9 +10,9 @@ export interface RotuloDaRevisao {
   readonly variante: UiTagVariant;
 }
 
-const SITUACAO_DA_REVISAO: Readonly<Record<SituacaoDaRevisao, RotuloDaRevisao>> = {
-  [SituacaoDaRevisao.EM_ANDAMENTO]: { texto: 'Aberta', variante: 'warning' },
-  [SituacaoDaRevisao.CONCLUIDA]: { texto: 'Encerrada', variante: 'neutral' },
+const SITUACAO_DA_REVISAO: Readonly<Record<SituacaoDaRevisaoCodigo, RotuloDaRevisao>> = {
+  [SituacaoDaRevisaoCodigo.EM_ANDAMENTO]: { texto: 'Aberta', variante: 'warning' },
+  [SituacaoDaRevisaoCodigo.CONCLUIDA]: { texto: 'Encerrada', variante: 'neutral' },
 };
 
 const SITUACAO_DO_ITEM: Readonly<Record<SituacaoDoItemDaRevisao, RotuloDaRevisao>> = {
@@ -34,13 +34,13 @@ const QUEM_DECIDE: Readonly<Record<QuemDecideOItem, string>> = {
 /** O que o filtro da lista oferece; a API filtra pela situação, e "todas" não manda o parâmetro. */
 export const OPCOES_DO_FILTRO = [
   { valor: 'todas', texto: 'Todas' },
-  { valor: SituacaoDaRevisao.EM_ANDAMENTO, texto: 'Abertas' },
-  { valor: SituacaoDaRevisao.CONCLUIDA, texto: 'Encerradas' },
+  { valor: SituacaoDaRevisaoCodigo.EM_ANDAMENTO, texto: 'Abertas' },
+  { valor: SituacaoDaRevisaoCodigo.CONCLUIDA, texto: 'Encerradas' },
 ] as const;
 
 export type FiltroDaRevisao = (typeof OPCOES_DO_FILTRO)[number]['valor'];
 
-export function situacaoDaRevisao(situacao: SituacaoDaRevisao): RotuloDaRevisao {
+export function situacaoDaRevisao(situacao: SituacaoDaRevisaoCodigo): RotuloDaRevisao {
   return SITUACAO_DA_REVISAO[situacao];
 }
 

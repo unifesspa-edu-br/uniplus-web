@@ -1,6 +1,6 @@
 import {
   QuemDecideOItem,
-  SituacaoDaRevisao,
+  SituacaoDaRevisaoCodigo,
   SituacaoDoItemDaRevisao,
 } from '@uniplus/shared-data/autorizacao';
 import { describe, expect, it } from 'vitest';
@@ -71,7 +71,7 @@ describe('quem decide o item da revisão', () => {
   it('revisão encerrada é somente leitura', () => {
     expect(
       decideOItem(
-        revisao({ situacao: SituacaoDaRevisao.CONCLUIDA }),
+        revisao({ situacao: SituacaoDaRevisaoCodigo.CONCLUIDA }),
         item(),
         quemLe(CONDUZIR, REVER),
       ),

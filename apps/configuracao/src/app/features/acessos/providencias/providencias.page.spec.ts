@@ -1,4 +1,4 @@
-import { SituacaoDaProvidencia } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDaProvidenciaCodigo } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildVendorMimeAccept } from '@uniplus/shared-core/http';
@@ -44,7 +44,7 @@ describe('ProvidenciasPage', () => {
 
   it('lê as abertas por padrão, no media type da providência, na ordem da API', async () => {
     const req = leitura();
-    expect(req.request.params.get('situacao')).toBe(SituacaoDaProvidencia.ABERTA);
+    expect(req.request.params.get('situacao')).toBe(SituacaoDaProvidenciaCodigo.ABERTA);
     expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('providencia', 1));
     req.flush(FILA);
     await assentar();
@@ -56,16 +56,20 @@ describe('ProvidenciasPage', () => {
     );
   });
 
-  it('o filtro de situação relê a fila com a situação escolhida', async () => {
-    leitura().flush(FILA);
-    await assentar();
-    const filtro = tela.host.querySelector('select') as HTMLSelectElement;
-    filtro.value = 'todas';
-    filtro.dispatchEvent(new Event('change'));
-    await assentar();
-
-    expect(leitura().request.params.get('situacao')).toBe('todas');
-  });
+  it.each(['ABERTA', 'RESPONDIDA', 'ATENDIDA', 'PREJUDICADA', 'todas'] as const)(
+    'envia o filtro %s conforme a seleção',
+    async (situacao) => {
+      leitura().flush(FILA);
+      await assentar();
+      const filtro = tela.host.querySelector('select') as HTMLSelectElement;
+      filtro.value = situacao;
+      filtro.dispatchEvent(new Event('change'));
+      await assentar();
+      const req = leitura();
+      expect(req.request.params.get('situacao')).toBe(situacao === 'todas' ? null : situacao);
+      req.flush([]);
+    },
+  );
 
   it('a página seguinte segue o cursor do header Link', async () => {
     leitura().flush(FILA, {

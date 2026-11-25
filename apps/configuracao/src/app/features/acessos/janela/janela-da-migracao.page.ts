@@ -30,6 +30,7 @@ import { EncerramentoDaJanelaComponent } from './encerramento-da-janela.componen
 import { EnvioNaJanela } from './envio-na-janela';
 import { EtapaDaProtecaoDeDados } from './etapa-da-protecao-de-dados';
 import { CatalogoDePermissoesStore } from '../versoes/catalogo-de-permissoes.store';
+import { janelaAceitaDecisao } from './itens-da-janela';
 import { JanelaDaMigracaoStore } from './janela-da-migracao.store';
 import { LoteDaMigracao } from './lote-da-migracao';
 import { LoteDaMigracaoComponent } from './lote-da-migracao.component';
@@ -83,6 +84,7 @@ export class JanelaDaMigracaoPage {
   private readonly escrita = inject(EscritaDoPerfil);
   private readonly permissoes = inject(PermissoesService);
   protected readonly idDoTitulo = ID_DO_TITULO;
+  protected readonly janelaAceitaDecisao = janelaAceitaDecisao;
   protected readonly escopos = nomesDeEscopo();
   protected readonly nomeDoEscopo = (item: ItemDaJanelaDto): string => this.escopos.nome(item);
   protected readonly podeComoGestao = computed(() =>

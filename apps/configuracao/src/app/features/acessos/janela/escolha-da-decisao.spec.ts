@@ -1,4 +1,4 @@
-import { SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDaConcessaoNaRevisaoCodigo } from '@uniplus/shared-data/autorizacao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,7 +9,10 @@ const BETINA = itemDaJanela({ concessaoId: 'c1', beneficiarioNome: 'Betina Teste
 const LEANDRO = itemDaJanela({
   concessaoId: 'c2',
   beneficiarioNome: 'Leandro Teste',
-  situacao: SituacaoDaMigracao.AGUARDANDO_PROTECAO_DE_DADOS,
+  situacao: {
+    codigo: SituacaoDaConcessaoNaRevisaoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
+    rotulo: 'Aguarda o Representante do controlador',
+  },
   exigeProtecaoDeDados: true,
 });
 

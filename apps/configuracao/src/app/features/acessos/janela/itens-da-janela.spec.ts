@@ -1,4 +1,8 @@
-import { ResultadoDaMigracao, SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
+import {
+  SituacaoDaConcessaoNaRevisaoCodigo,
+  SituacaoDaRevisaoDasConcessoesCodigo,
+} from '@uniplus/shared-data/autorizacao';
+import { ResultadoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { describe, expect, it } from 'vitest';
 import {
   decisoesDaEtapa,
@@ -13,13 +17,22 @@ import { itemDaJanela, janelaDeMigracao } from './janela.testing';
 const BETINA = itemDaJanela({ concessaoId: 'c1', beneficiarioNome: 'Betina Teste' });
 const LEANDRO = itemDaJanela({ concessaoId: 'c2', beneficiarioNome: 'Leandro Teste' });
 const PROPRIA = itemDaJanela({ concessaoId: 'c3', ehDoLeitor: true });
-const RETIDA = itemDaJanela({ concessaoId: 'c4', situacao: SituacaoDaMigracao.RETIDA });
+const RETIDA = itemDaJanela({
+  concessaoId: 'c4',
+  situacao: { codigo: SituacaoDaConcessaoNaRevisaoCodigo.RETIDA, rotulo: 'Outro rótulo' },
+});
 const NA_PROTECAO = itemDaJanela({
   concessaoId: 'c5',
-  situacao: SituacaoDaMigracao.AGUARDANDO_PROTECAO_DE_DADOS,
+  situacao: {
+    codigo: SituacaoDaConcessaoNaRevisaoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
+    rotulo: 'Aguarda o Representante do controlador',
+  },
   exigeProtecaoDeDados: true,
 });
-const MIGRADA = itemDaJanela({ concessaoId: 'c6', situacao: SituacaoDaMigracao.MIGRADA });
+const MIGRADA = itemDaJanela({
+  concessaoId: 'c6',
+  situacao: { codigo: SituacaoDaConcessaoNaRevisaoCodigo.MIGRADA, rotulo: 'Aprovada' },
+});
 
 describe('separarItens', () => {
   it('separa o que a pessoa que lê decide, o que é dela e o que já tem situação final', () => {
@@ -39,17 +52,26 @@ describe('separarItens', () => {
   it('a concessão própria que aguarda a proteção de dados também fica sem ação', () => {
     const propria = itemDaJanela({
       concessaoId: 'c7',
-      situacao: SituacaoDaMigracao.AGUARDANDO_PROTECAO_DE_DADOS,
+      situacao: {
+        codigo: SituacaoDaConcessaoNaRevisaoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
+        rotulo: 'Aguarda o Representante do controlador',
+      },
       ehDoLeitor: true,
     });
 
     expect(separarItens(janelaDeMigracao({ itens: [propria] })).proprias).toEqual([propria]);
   });
 
-  it.each(['encerrando', 'encerrada'])(
+  it.each([
+    SituacaoDaRevisaoDasConcessoesCodigo.ENCERRANDO,
+    SituacaoDaRevisaoDasConcessoesCodigo.ENCERRADA,
+  ])(
     'com a revisão das concessões %s nada aceita decisão e tudo aparece como situação',
     (situacao) => {
-      const revisao = janelaDeMigracao({ situacao, itens: [BETINA, RETIDA, NA_PROTECAO] });
+      const revisao = janelaDeMigracao({
+        situacao: { codigo: situacao, rotulo: 'Outro rótulo' },
+        itens: [BETINA, RETIDA, NA_PROTECAO],
+      });
 
       const itens = separarItens(revisao);
 

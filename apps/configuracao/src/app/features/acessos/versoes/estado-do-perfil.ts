@@ -1,11 +1,13 @@
 import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import {
   SituacaoDoAcessoDoPerfilCodigo,
+  SituacaoDaRevisaoDasConcessoesCodigo,
   type PerfilDto,
   type PerfilListadoDto,
   type SituacaoDoAcessoDoPerfilDto,
 } from '@uniplus/shared-data/autorizacao';
 import type { UiTagVariant, VariantesDosCodigos } from '@uniplus/shared-ui/components';
+import { situacaoDaJanela } from '../janela/rotulos-da-janela';
 
 /** O que decide as situações de um perfil, igual para o resumo da lista e para o detalhe. */
 export interface ResumoDoPerfil {
@@ -26,6 +28,7 @@ export interface ResumoDoPerfil {
 export interface ResumoDoDetalheDoPerfil extends ResumoDoPerfil {
   readonly temVigente: boolean;
   readonly emJanelaDeMigracao: boolean;
+  readonly situacaoDaRevisao: NonNullable<PerfilDto['revisaoDasConcessoes']>['situacao'] | null;
 }
 
 export interface EtiquetaDoPerfil {
@@ -81,8 +84,16 @@ export function resumoDoDetalhe(perfil: PerfilDto): ResumoDoDetalheDoPerfil {
     ...resumoComum(perfil),
     temVigente: perfil.composicaoEmVigor !== null,
     temPendente: perfil.versaoPendente !== null,
-    emJanelaDeMigracao: perfil.revisaoDasConcessoes != null,
+    emJanelaDeMigracao: revisaoEmCurso(perfil.revisaoDasConcessoes?.situacao.codigo),
+    situacaoDaRevisao: perfil.revisaoDasConcessoes?.situacao ?? null,
   };
+}
+
+export function revisaoEmCurso(codigo: SituacaoDaRevisaoDasConcessoesCodigo | undefined): boolean {
+  return (
+    codigo === SituacaoDaRevisaoDasConcessoesCodigo.ABERTA ||
+    codigo === SituacaoDaRevisaoDasConcessoesCodigo.ENCERRANDO
+  );
 }
 
 function etapasPorDecidir(suspensao: PerfilDto['suspensao']): readonly string[] {
@@ -98,10 +109,6 @@ export const VARIANTES_DO_ACESSO: VariantesDosCodigos<SituacaoDoAcessoDoPerfilCo
   [SituacaoDoAcessoDoPerfilCodigo.EM_VIGOR]: 'success',
   [SituacaoDoAcessoDoPerfilCodigo.SEM_VERSAO_EM_VIGOR]: 'warning',
 };
-const JANELA_DE_MIGRACAO: EtiquetaDoPerfil = {
-  texto: 'Revisão das concessões do perfil aberta',
-  variante: 'warning',
-};
 
 /**
  * As etiquetas que o web monta de estados do perfil que a API entrega como booleano ou data, sem
@@ -114,7 +121,17 @@ export function etiquetasDoPerfil(perfil: ResumoDoPerfil): readonly EtiquetaDoPe
 }
 
 export function etiquetasDoDetalhe(perfil: ResumoDoDetalheDoPerfil): readonly EtiquetaDoPerfil[] {
-  return [...etiquetasDoPerfil(perfil), ...(perfil.emJanelaDeMigracao ? [JANELA_DE_MIGRACAO] : [])];
+  const situacao = perfil.situacaoDaRevisao;
+  const revisao =
+    situacao === null
+      ? []
+      : [
+          {
+            ...situacaoDaJanela(situacao),
+            texto: `Revisão das concessões: ${situacao.rotulo}`,
+          },
+        ];
+  return [...etiquetasDoPerfil(perfil), ...revisao];
 }
 
 function etiquetaDeDesativado(perfil: ResumoDoPerfil): EtiquetaDoPerfil {

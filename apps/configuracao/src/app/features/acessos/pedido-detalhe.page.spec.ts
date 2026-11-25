@@ -1,7 +1,7 @@
 import {
   EtapaDoPedido,
   ResultadoDaDecisao,
-  SituacaoDoPedido,
+  SituacaoDoPedidoCodigo,
 } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of } from 'rxjs';
@@ -96,7 +96,7 @@ describe('PedidoDetalhePage — leitura e quem decide', () => {
     const { host } = await abrir(
       [PROTECAO_DE_DADOS],
       pedido({
-        situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+        situacao: SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
         etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
       }),
     );
@@ -127,7 +127,7 @@ describe('PedidoDetalhePage — leitura e quem decide', () => {
       dispensa: null,
     };
     const naEtapaDaProtecaoDeDados = pedido({
-      situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+      situacao: SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
       etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
       decisoes: [decisao],
     });
@@ -173,7 +173,7 @@ describe('PedidoDetalhePage — leitura e quem decide', () => {
     expect(decisoesOferecidas(gestor.host)).toEqual([true, true]);
 
     const naEtapaDaProtecaoDeDados = pedido({
-      situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+      situacao: SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
       etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
       decisoes: [
         decisao(EtapaDoPedido.GESTOR, ResultadoDaDecisao.APROVADO, EU.id),

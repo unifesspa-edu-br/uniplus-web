@@ -34,7 +34,7 @@
 <ui-alert variant="warning" heading="A revisão das concessões mudou">{{ aviso }}</ui-alert>
 } @if (store.janela(); as janela) { @if (store.itens(); as itens) {
 <cfg-prazo-da-janela [janela]="janela" />
-@if (janela.situacao === 'aberta' || janela.decisoesEnviadas) {
+@if (janelaAceitaDecisao(janela) || janela.decisoesEnviadas) {
 <cfg-lote-da-migracao
   [janela]="janela"
   [itens]="itens"
@@ -66,6 +66,6 @@
     legenda="Concessões com situação final"
   />
 </section>
-} @if (janela.situacao === 'aberta' && podeComoGestao()) {
+} @if (janelaAceitaDecisao(janela) && podeComoGestao()) {
 <cfg-encerramento-da-janela [perfilId]="janela.perfilId" />
 } } }

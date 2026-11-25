@@ -1,6 +1,6 @@
 import {
   QuemDecideOItem,
-  SituacaoDaRevisao,
+  SituacaoDaRevisaoCodigo,
   SituacaoDoItemDaRevisao,
 } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
@@ -117,7 +117,7 @@ describe('RevisaoDetalhePage', () => {
 
     it('revisão encerrada é somente leitura e diz isso', async () => {
       const encerrada = revisao({
-        situacao: SituacaoDaRevisao.CONCLUIDA,
+        situacao: SituacaoDaRevisaoCodigo.CONCLUIDA,
         pendentes: 0,
         itens: [itemDecidido()],
       });

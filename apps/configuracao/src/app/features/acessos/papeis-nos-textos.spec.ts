@@ -1,4 +1,4 @@
-import { SituacaoDoPedido } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDaConcessaoNaRevisaoCodigo } from '@uniplus/shared-data/autorizacao';
 import { describe, expect, it } from 'vitest';
 import { MENSAGENS_DA_JANELA } from './janela/mensagens-da-janela';
 import { orientacaoDaPropria } from './janela/rotulos-da-janela';
@@ -10,7 +10,9 @@ const TEXTOS = [
   ...Object.values(MENSAGENS_DA_JANELA).flatMap((m) => [m.titulo, m.resolver]),
   ...Object.values(MENSAGENS_DA_RECLASSIFICACAO).flatMap((m) => [m.titulo, m.resolver]),
   ...Object.values(TEXTOS_DA_CONTENCAO).flatMap((t) => Object.values(t).map(String)),
-  ...Object.values(orientacaoDaPropria(SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS)),
+  ...Object.values(
+    orientacaoDaPropria(SituacaoDaConcessaoNaRevisaoCodigo.AGUARDANDO_PROTECAO_DE_DADOS),
+  ),
 ];
 
 describe('papéis nos textos de versões, revisão e reclassificação', () => {
@@ -43,7 +45,9 @@ describe('papéis nos textos de versões, revisão e reclassificação', () => {
   });
 
   it('a concessão própria na etapa protegida aguarda outro Representante do controlador', () => {
-    expect(orientacaoDaPropria(SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS)).toEqual({
+    expect(
+      orientacaoDaPropria(SituacaoDaConcessaoNaRevisaoCodigo.AGUARDANDO_PROTECAO_DE_DADOS),
+    ).toEqual({
       titulo: 'Na etapa de proteção de dados: outro Representante do controlador decide',
       dica: 'Concessões em que você é a pessoa beneficiada aguardam a decisão de outro Representante do controlador.',
       legenda: 'Concessões suas que aguardam outro Representante do controlador',

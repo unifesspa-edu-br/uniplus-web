@@ -1,5 +1,5 @@
 import {
-  SituacaoDaProvidencia,
+  SituacaoDaProvidenciaCodigo,
   TipoDaProvidencia,
   TipoDeEscopo,
 } from '@uniplus/shared-data/autorizacao';
@@ -44,7 +44,7 @@ const ABERTA: Omit<ProvidenciaDto, 'solicitadaPor' | 'concessao'> = {
   id: ID,
   tipo: TipoDaProvidencia.RETIRADA,
   fundamento: 'Deixou a banca e mantém acesso a documentos sensíveis.',
-  situacao: SituacaoDaProvidencia.ABERTA,
+  situacao: SituacaoDaProvidenciaCodigo.ABERTA,
   abertaEm: '2026-11-10T12:00:00Z',
   encerramentoDaConcessao: null,
   desfecho: null,

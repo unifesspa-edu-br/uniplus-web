@@ -1,6 +1,6 @@
 import {
   QuemDecideOItem,
-  SituacaoDaRevisao,
+  SituacaoDaRevisaoCodigo,
   SituacaoDoItemDaRevisao,
   TipoDeEscopo,
 } from '@uniplus/shared-data/autorizacao';
@@ -83,7 +83,7 @@ export function itemDecidido(parcial: Partial<ItemDaRevisaoDto> = {}): ItemDaRev
 const REVISAO_ABERTA = {
   id: ID,
   abertaEm: '2026-11-09T12:00:00Z',
-  situacao: SituacaoDaRevisao.EM_ANDAMENTO,
+  situacao: SituacaoDaRevisaoCodigo.EM_ANDAMENTO,
   totalDeItens: 4,
   pendentes: 3,
 } as const satisfies Partial<RevisaoDeAcessosDto>;

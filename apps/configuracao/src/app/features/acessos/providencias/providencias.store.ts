@@ -1,4 +1,3 @@
-import { SituacaoDaProvidencia } from '@uniplus/shared-data/autorizacao';
 import { HttpParams } from '@angular/common/http';
 import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import {
@@ -11,7 +10,7 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AUTORIZACAO_BASE_PATH,
-  type FiltroDaSituacaoDaProvidencia,
+  SituacaoDaProvidenciaCodigo,
   type ProvidenciaResumoDto,
 } from '@uniplus/shared-data/autorizacao';
 import {
@@ -30,7 +29,9 @@ export class ProvidenciasStore {
   private readonly basePath = inject(AUTORIZACAO_BASE_PATH);
   private readonly problemas = inject(ProblemI18nService);
   private readonly notificacoes = inject(NotificationService);
-  readonly situacao = signal<FiltroDaSituacaoDaProvidencia>(SituacaoDaProvidencia.ABERTA);
+  readonly situacao = signal<SituacaoDaProvidenciaCodigo | 'todas'>(
+    SituacaoDaProvidenciaCodigo.ABERTA,
+  );
   private readonly pagina = linkedSignal<string, CursorPagina | undefined>({
     source: () => this.situacao(),
     computation: () => undefined,
@@ -79,7 +80,7 @@ export class ProvidenciasStore {
     this.navegacao.irParaAnterior();
   }
 
-  filtrarPor(situacao: FiltroDaSituacaoDaProvidencia): void {
+  filtrarPor(situacao: SituacaoDaProvidenciaCodigo | 'todas'): void {
     if (this.situacao() === situacao) this.lista.reload();
     else this.situacao.set(situacao);
   }
@@ -90,7 +91,10 @@ export class ProvidenciasStore {
   }
 
   private montarParams(): HttpParams {
-    let params = new HttpParams().set('situacao', this.situacao());
+    let params =
+      this.situacao() === 'todas'
+        ? new HttpParams()
+        : new HttpParams().set('situacao', this.situacao());
     const pagina = this.pagina();
     if (pagina)
       params = params

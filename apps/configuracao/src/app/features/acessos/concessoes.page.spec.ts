@@ -34,7 +34,7 @@ describe('ConcessoesPage — lista e trilha', () => {
     const fixture = TestBed.createComponent(ConcessoesPage);
     fixture.detectChanges();
     const req = http.expectOne((r) => r.url === URL);
-    expect(req.request.params.get('situacao')).toBe('ativa');
+    expect(req.request.params.get('situacao')).toBe('ATIVA');
     req.flush([ativa]);
     await atualizar();
     expect(fixture.nativeElement.textContent).toContain('Pessoa 01234567');
@@ -47,6 +47,23 @@ describe('ConcessoesPage — lista e trilha', () => {
       fixture.nativeElement.querySelector('button[aria-label^="Revogar a concessão"]'),
     ).not.toBeNull();
   });
+
+  it.each(['ATIVA', 'REVOGADA', 'VENCIDA', 'todas'] as const)(
+    'envia o filtro %s conforme a seleção',
+    async (situacao) => {
+      const fixture = TestBed.createComponent(ConcessoesPage);
+      fixture.detectChanges();
+      http.expectOne((r) => r.url === URL).flush([]);
+      await atualizar();
+      const filtro = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
+      filtro.value = situacao;
+      filtro.dispatchEvent(new Event('change'));
+      await atualizar();
+      const req = http.expectOne((r) => r.url === URL);
+      expect(req.request.params.get('situacao')).toBe(situacao === 'todas' ? null : situacao);
+      req.flush([]);
+    },
+  );
 
   it('a quem só consulta, mostra a trilha e esconde a revogação', async () => {
     dubles.concedidas.splice(
@@ -240,7 +257,7 @@ describe('ConcessoesPage — lista e trilha', () => {
     expect(store.trilha()[0]?.tipo).toBe('revogada');
   });
 
-  it('recarrega pela situação escolhida', async () => {
+  it('"Todas" recarrega sem enviar a situação', async () => {
     const fixture = TestBed.createComponent(ConcessoesPage);
     fixture.detectChanges();
     http.expectOne((r) => r.url === URL).flush([ativa]);
@@ -250,7 +267,7 @@ describe('ConcessoesPage — lista e trilha', () => {
     select.dispatchEvent(new Event('change'));
     await atualizar();
     const filtro = http.expectOne((r) => r.url === URL);
-    expect(filtro.request.params.get('situacao')).toBe('todas');
+    expect(filtro.request.params.has('situacao')).toBe(false);
     filtro.flush([]);
     await atualizar();
   });

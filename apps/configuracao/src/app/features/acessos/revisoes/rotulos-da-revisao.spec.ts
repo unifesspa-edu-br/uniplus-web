@@ -1,6 +1,6 @@
 import {
   QuemDecideOItem,
-  SituacaoDaRevisao,
+  SituacaoDaRevisaoCodigo,
   SituacaoDoItemDaRevisao,
 } from '@uniplus/shared-data/autorizacao';
 import { describe, expect, it } from 'vitest';
@@ -14,8 +14,8 @@ import {
 
 describe('rótulos da revisão', () => {
   it('chama a revisão em andamento de aberta e a concluída de encerrada', () => {
-    expect(situacaoDaRevisao(SituacaoDaRevisao.EM_ANDAMENTO).texto).toBe('Aberta');
-    expect(situacaoDaRevisao(SituacaoDaRevisao.CONCLUIDA).texto).toBe('Encerrada');
+    expect(situacaoDaRevisao(SituacaoDaRevisaoCodigo.EM_ANDAMENTO).texto).toBe('Aberta');
+    expect(situacaoDaRevisao(SituacaoDaRevisaoCodigo.CONCLUIDA).texto).toBe('Encerrada');
   });
 
   it('traduz o resultado de cada item', () => {

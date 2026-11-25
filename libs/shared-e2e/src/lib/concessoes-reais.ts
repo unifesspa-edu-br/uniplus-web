@@ -124,7 +124,7 @@ async function contasDosRepresentantesVigentes(): Promise<string[]> {
   const ativas = await chamarApi<ConcessaoExistente[]>(
     SEGUNDO_GESTOR_DE_ACESSOS,
     'GET',
-    `/api/autorizacao/concessoes?perfil=${PERFIL_DO_REPRESENTANTE}&situacao=ativa&limit=100`,
+    `/api/autorizacao/concessoes?perfil=${PERFIL_DO_REPRESENTANTE}&situacao=ATIVA&limit=100`,
   );
   return ativas.corpo.filter((concessao) => concessao.ativa).map((c) => c.beneficiario.contaId);
 }
@@ -133,7 +133,7 @@ async function concessaoAtiva(pedido: PedidoDeConcessao): Promise<boolean> {
   const ativas = await chamarApi<ConcessaoExistente[]>(
     SEGUNDO_GESTOR_DE_ACESSOS,
     'GET',
-    `/api/autorizacao/concessoes?perfil=${pedido.perfilId}&situacao=ativa&limit=100`,
+    `/api/autorizacao/concessoes?perfil=${pedido.perfilId}&situacao=ATIVA&limit=100`,
   );
   return ativas.corpo.some((concessao) => concedeOPedido(concessao, pedido));
 }

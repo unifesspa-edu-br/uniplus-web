@@ -1,4 +1,8 @@
-import { ResultadoDaMigracao, SituacaoDaMigracao } from '@uniplus/shared-data/autorizacao';
+import {
+  SituacaoDaConcessaoNaRevisaoCodigo,
+  SituacaoDaRevisaoDasConcessoesCodigo,
+} from '@uniplus/shared-data/autorizacao';
+import { ResultadoDaMigracao } from '@uniplus/shared-data/autorizacao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
@@ -18,12 +22,12 @@ import {
 const BETINA = itemDaJanela({
   concessaoId: 'c1',
   beneficiarioNome: 'Betina Teste',
-  situacao: SituacaoDaMigracao.RETIDA,
+  situacao: { codigo: SituacaoDaConcessaoNaRevisaoCodigo.RETIDA, rotulo: 'Retida' },
 });
 const REBECA = itemDaJanela({
   concessaoId: 'c3',
   beneficiarioNome: 'Rebeca Teste',
-  situacao: SituacaoDaMigracao.RETIDA,
+  situacao: { codigo: SituacaoDaConcessaoNaRevisaoCodigo.RETIDA, rotulo: 'Retida' },
   ehDoLeitor: true,
 });
 const DEPOIS_DO_ENVIO = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA, REBECA] });
@@ -59,7 +63,12 @@ describe('concessões retidas da revisão', () => {
     await responder(
       janelaDeMigracao({
         decisoesEnviadas: true,
-        itens: [{ ...BETINA, situacao: SituacaoDaMigracao.MIGRADA }],
+        itens: [
+          {
+            ...BETINA,
+            situacao: { codigo: SituacaoDaConcessaoNaRevisaoCodigo.MIGRADA, rotulo: 'Aprovada' },
+          },
+        ],
       }),
     );
 
@@ -135,9 +144,17 @@ describe('concessões retidas da revisão', () => {
     presente(botao(linhaDe(host, 'c1'), 'Aprovar')).click();
     await responder(
       janelaDeMigracao({
-        situacao: 'encerrada',
+        situacao: { codigo: SituacaoDaRevisaoDasConcessoesCodigo.ENCERRADA, rotulo: 'Encerrada' },
         decisoesEnviadas: true,
-        itens: [{ ...BETINA, situacao: SituacaoDaMigracao.NAO_MIGRADA }],
+        itens: [
+          {
+            ...BETINA,
+            situacao: {
+              codigo: SituacaoDaConcessaoNaRevisaoCodigo.NAO_MIGRADA,
+              rotulo: 'Não aprovada no prazo',
+            },
+          },
+        ],
       }),
     );
 

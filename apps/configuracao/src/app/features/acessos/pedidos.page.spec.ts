@@ -1,4 +1,4 @@
-import { SituacaoDoPedido, TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDoPedidoCodigo, TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
@@ -46,10 +46,10 @@ describe('PedidosPage', () => {
     await atualizar();
     expect(store.itens()).toHaveLength(1);
     expect(fixture.nativeElement.textContent).toContain('Betina Teste');
-    store.filtrarPor(SituacaoDoPedido.RECUSADO);
+    store.filtrarPor(SituacaoDoPedidoCodigo.RECUSADO);
     await atualizar();
     const filtro = http.expectOne((r) => r.url === URL);
-    expect(filtro.request.params.get('situacao')).toBe(SituacaoDoPedido.RECUSADO);
+    expect(filtro.request.params.get('situacao')).toBe(SituacaoDoPedidoCodigo.RECUSADO);
     filtro.flush([]);
     await atualizar();
     expect(store.itens()).toHaveLength(0);
@@ -140,7 +140,7 @@ describe('PedidosPage', () => {
     fixture.detectChanges();
     const req = http.expectOne((r) => r.url === URL);
     expect(req.request.params.get('fila')).toBe('meus');
-    req.flush([pedido({ situacao: SituacaoDoPedido.AGUARDANDO_GESTOR })]);
+    req.flush([pedido({ situacao: SituacaoDoPedidoCodigo.AGUARDANDO_GESTOR })]);
     await atualizar();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('h1')?.textContent).toContain('Meus pedidos de acesso');
@@ -171,11 +171,11 @@ describe('PedidosPage', () => {
     http.expectOne((r) => r.url === URL).flush([]);
     await atualizar();
     const select = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
-    select.value = SituacaoDoPedido.APROVADO;
+    select.value = SituacaoDoPedidoCodigo.APROVADO;
     select.dispatchEvent(new Event('change'));
     await atualizar();
     const req = http.expectOne((r) => r.url === URL);
-    expect(req.request.params.get('situacao')).toBe(SituacaoDoPedido.APROVADO);
+    expect(req.request.params.get('situacao')).toBe(SituacaoDoPedidoCodigo.APROVADO);
     req.flush([]);
     await atualizar();
   });
@@ -187,19 +187,19 @@ describe('PedidosPage', () => {
     const inicial = http.expectOne((r) => r.url === URL);
     expect(inicial.request.params.get('fila')).toBe('todos');
     expect(inicial.request.params.has('situacao')).toBe(false);
-    inicial.flush([pedido({ situacao: SituacaoDoPedido.RECUSADO })]);
+    inicial.flush([pedido({ situacao: SituacaoDoPedidoCodigo.RECUSADO })]);
     await atualizar();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('h1')?.textContent).toContain('Histórico de pedidos');
     expect(host.textContent).toContain('Recusado');
     expect(host.querySelector('a[href="/acessos/pedidos/novo"]')).toBeNull();
     const select = host.querySelector('select') as HTMLSelectElement;
-    select.value = SituacaoDoPedido.RECUSADO;
+    select.value = SituacaoDoPedidoCodigo.RECUSADO;
     select.dispatchEvent(new Event('change'));
     await atualizar();
     const filtro = http.expectOne((r) => r.url === URL);
     expect(filtro.request.params.get('fila')).toBe('todos');
-    expect(filtro.request.params.get('situacao')).toBe(SituacaoDoPedido.RECUSADO);
+    expect(filtro.request.params.get('situacao')).toBe(SituacaoDoPedidoCodigo.RECUSADO);
     filtro.flush([]);
     await atualizar();
   });
@@ -209,7 +209,9 @@ describe('PedidosPage', () => {
     const fixture = TestBed.createComponent(PedidosPage);
     fixture.componentRef.setInput('fila', 'todos');
     fixture.detectChanges();
-    http.expectOne((r) => r.url === URL).flush([pedido({ situacao: SituacaoDoPedido.RECUSADO })]);
+    http
+      .expectOne((r) => r.url === URL)
+      .flush([pedido({ situacao: SituacaoDoPedidoCodigo.RECUSADO })]);
     await atualizar();
     const linha = fixture.nativeElement.querySelector('tbody tr') as HTMLElement;
     expect(linha.getAttribute('tabindex')).toBe('0');

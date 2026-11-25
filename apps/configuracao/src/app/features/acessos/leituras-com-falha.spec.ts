@@ -52,7 +52,7 @@ const LEITURAS: readonly Leitura[] = [
     nome: 'trilha da concessão',
     store: ConcessoesStore,
     url: `${BASE}/concessoes/c1/trilha`,
-    vizinhas: [{ url: `${BASE}/concessoes?situacao=ativa`, corpo: [] }],
+    vizinhas: [{ url: `${BASE}/concessoes?situacao=ATIVA`, corpo: [] }],
     iniciar: (store: ConcessoesStore) => store.carregarTrilha('c1'),
   },
   {

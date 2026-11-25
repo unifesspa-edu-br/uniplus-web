@@ -1,4 +1,4 @@
-import { SituacaoDaRevisao } from './codigos-de-autorizacao';
+import { SituacaoDaRevisaoCodigo } from './schema';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -57,9 +57,9 @@ describe('RevisoesApi', () => {
   });
 
   it('filtra pela situação no servidor, junto do cursor', () => {
-    void firstValueFrom(api.listar({ situacao: SituacaoDaRevisao.CONCLUIDA, cursor: 'c1' }));
+    void firstValueFrom(api.listar({ situacao: SituacaoDaRevisaoCodigo.CONCLUIDA, cursor: 'c1' }));
     const req = controller.expectOne((r) => r.url === RAIZ);
-    expect(req.request.params.get('situacao')).toBe(SituacaoDaRevisao.CONCLUIDA);
+    expect(req.request.params.get('situacao')).toBe(SituacaoDaRevisaoCodigo.CONCLUIDA);
     expect(req.request.params.get('cursor')).toBe('c1');
     req.flush([]);
   });

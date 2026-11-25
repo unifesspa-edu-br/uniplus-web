@@ -1,3 +1,5 @@
+import type { ItemDaJanelaDto, JanelaDeMigracaoDto } from '@uniplus/shared-data/autorizacao';
+import type { ComoAApiEnvia } from '../support/como-a-api-envia';
 import { expect, test, type Page } from '@playwright/test';
 import { assertReflowContract, mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import { UNIDADE_CEPS, mockRota, mockUnidades } from '../support/api-de-perfis-filas';
@@ -23,9 +25,9 @@ const ITEM = {
   versaoAtual: 1,
   acrescimo: ['selecao:processos:aprovar'],
   exigeProtecaoDeDados: true,
-  situacao: 'AGUARDANDO_PROTECAO_DE_DADOS',
+  situacao: { codigo: 'AGUARDANDO_PROTECAO_DE_DADOS', rotulo: 'Aguarda proteção de dados' },
   ehDoLeitor: false,
-};
+} satisfies ComoAApiEnvia<ItemDaJanelaDto>;
 
 const JANELA_COM_ETAPA_PROTEGIDA = {
   id: 'janela-1',
@@ -35,11 +37,11 @@ const JANELA_COM_ETAPA_PROTEGIDA = {
   abertaEm: '2026-11-09T12:00:00Z',
   terminaEm: '2026-12-15T15:00:00Z',
   encerradaEm: null,
-  situacao: 'aberta',
+  situacao: { codigo: 'ABERTA', rotulo: 'Aberta' },
   forma: null,
   decisoesEnviadas: true,
   itens: [ITEM],
-};
+} satisfies ComoAApiEnvia<JanelaDeMigracaoDto>;
 
 /** Atende as leituras das filas da etapa protegida e da janela do perfil. */
 async function abrir(page: Page, permissoes: readonly string[], rota: string): Promise<void> {
@@ -92,7 +94,7 @@ test.describe('Versões e janela — quem decide a etapa de proteção de dados'
     await expect(etapa).toContainText(
       'só são aprovadas com a decisão do Representante do controlador',
     );
-    await expect(etapa.getByText('Aguarda o Representante do controlador')).toBeVisible();
+    await expect(etapa.getByText(ITEM.situacao.rotulo)).toBeVisible();
     await expect(etapa.getByText('Passa pelo Representante do controlador.')).toBeVisible();
     await semViolacoes(page);
   });
@@ -112,7 +114,7 @@ test.describe('Versões e janela — quem decide a etapa de proteção de dados'
     test(`a janela se reorganiza sem rolagem horizontal em ${nome}`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: altura });
       await abrir(page, PERMISSOES_DA_BETINA_SO_APROVA, JANELA);
-      await expect(page.getByText('Aguarda o Representante do controlador')).toBeVisible();
+      await expect(page.getByText(ITEM.situacao.rotulo)).toBeVisible();
 
       await assertReflowContract(page);
     });

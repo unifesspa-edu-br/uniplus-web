@@ -1,4 +1,4 @@
-import { EtapaDoPedido, SituacaoDoPedido } from '@uniplus/shared-data/autorizacao';
+import { EtapaDoPedido, SituacaoDoPedidoCodigo } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -32,7 +32,7 @@ describe('PedidoDetalhePage — fim de vigência', () => {
         pedido({ validaAteSugerida: '2099-06-15T15:00:00Z' }),
       );
       api.aprovar.mockReturnValue(
-        of(ok(pedido({ situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS }))),
+        of(ok(pedido({ situacao: SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS }))),
       );
 
       expect(campo(host)?.value).toBe('2099-06-15');
@@ -117,7 +117,7 @@ describe('PedidoDetalhePage — fim de vigência', () => {
       const { fixture, host } = await abrir(
         [PROTECAO_DE_DADOS],
         pedido({
-          situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+          situacao: SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
           etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
           validaAte: '2099-06-15T23:59:59-03:00',
         }),

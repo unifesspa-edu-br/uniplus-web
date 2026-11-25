@@ -1,4 +1,4 @@
-import { EtapaDoPedido, SituacaoDoPedido } from '@uniplus/shared-data/autorizacao';
+import { EtapaDoPedido, SituacaoDoPedidoCodigo } from '@uniplus/shared-data/autorizacao';
 import { signal } from '@angular/core';
 import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
@@ -43,7 +43,7 @@ describe('PedidoDetalhePage — decisões', () => {
       of(
         ok(
           pedido({
-            situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+            situacao: SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
             etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
           }),
         ),
@@ -88,7 +88,7 @@ describe('PedidoDetalhePage — decisões', () => {
       of(
         ok(
           pedido({
-            situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+            situacao: SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
             etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
           }),
         ),
@@ -115,7 +115,7 @@ describe('PedidoDetalhePage — decisões', () => {
       of(
         ok(
           pedido({
-            situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+            situacao: SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
             etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
           }),
         ),
@@ -147,7 +147,7 @@ describe('PedidoDetalhePage — decisões', () => {
     recarga.next(
       ok(
         pedido({
-          situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+          situacao: SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
           etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
         }),
       ),
@@ -162,7 +162,7 @@ describe('PedidoDetalhePage — decisões', () => {
   it('aprova e recarrega o pedido', async () => {
     const { host, fixture } = await abrir([GESTOR]);
     api.aprovar.mockReturnValue(
-      of(ok(pedido({ situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS }))),
+      of(ok(pedido({ situacao: SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS }))),
     );
 
     await decidirNoResumo(fixture, host, 'Aprovar');
@@ -325,7 +325,7 @@ describe('PedidoDetalhePage — decisões', () => {
   it('recusa com motivo e fecha o diálogo', async () => {
     const { fixture, host } = await abrir([GESTOR]);
     api.recusar.mockReturnValue(
-      of(ok(pedido({ situacao: SituacaoDoPedido.RECUSADO, etapaAtual: null }))),
+      of(ok(pedido({ situacao: SituacaoDoPedidoCodigo.RECUSADO, etapaAtual: null }))),
     );
 
     await recusarComMotivo(fixture, host, 'Sem necessidade funcional.');
@@ -366,7 +366,7 @@ describe('PedidoDetalhePage — decisões', () => {
       of(
         ok(
           pedido({
-            situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+            situacao: SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
             etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
           }),
         ),
@@ -379,7 +379,7 @@ describe('PedidoDetalhePage — decisões', () => {
     recarga.next(
       ok(
         pedido({
-          situacao: SituacaoDoPedido.AGUARDANDO_PROTECAO_DE_DADOS,
+          situacao: SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
           etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
         }),
       ),

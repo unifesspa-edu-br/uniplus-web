@@ -1,3 +1,4 @@
+import { SituacaoDaRevisaoDasConcessoesCodigo } from '@uniplus/shared-data/autorizacao';
 import { EtapaDaVersao, SituacaoDaVersao } from '@uniplus/shared-data/autorizacao';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -67,17 +68,38 @@ describe('PerfilDetalhePage', () => {
     expect(host.textContent).not.toContain('Você propôs esta versão.');
   });
 
-  it('com a revisão das concessões do perfil aberta, mostra o prazo e o caminho para a janela e não propõe versão nova', async () => {
-    const janela = { id: 'j1', terminaEm: '2026-11-12T12:00:00Z', situacao: 'aberta' };
+  it('com revisão aberta, mostra o rótulo, o prazo e o caminho para a janela', async () => {
+    const situacao = {
+      codigo: SituacaoDaRevisaoDasConcessoesCodigo.ABERTA,
+      rotulo: 'Rótulo da API',
+    };
+    const janela = { id: 'j1', terminaEm: '2026-11-12T12:00:00Z', situacao };
     const { host } = await abrir(ok(perfilDoDetalhe({ revisaoDasConcessoes: janela })));
-
-    expect(host.textContent).toContain('Revisão das concessões do perfil aberta');
-    expect(host.textContent).toContain('12/11/2026');
+    const aviso = host.querySelector('cfg-janela-aberta');
+    expect(aviso?.textContent).toContain('Revisão das concessões do perfil');
+    expect(aviso?.textContent).toContain(`Situação: ${situacao.rotulo}.`);
+    expect(aviso?.textContent).toContain('Enquanto ela dura, o perfil');
+    expect(aviso?.textContent).toContain('12/11/2026');
     expect(host.querySelector('a[href="/acessos/perfis/p1/janela"]')?.textContent).toContain(
       'Abrir a revisão das concessões do perfil',
     );
     expect(botao(host, 'Propor nova versão')).toBeUndefined();
     expect(botao(host, 'Remover permissões')).toBeDefined();
+  });
+
+  it.each([
+    { codigo: SituacaoDaRevisaoDasConcessoesCodigo.ENCERRANDO, bloqueada: true },
+    { codigo: SituacaoDaRevisaoDasConcessoesCodigo.ENCERRADA, bloqueada: false },
+  ])('mostra a situação $codigo e o bloqueio quando aplicável', async ({ codigo, bloqueada }) => {
+    const situacao = { codigo, rotulo: 'Rótulo recebido' };
+    const janela = { id: 'j1', terminaEm: '2026-11-12T12:00:00Z', situacao };
+    const { host } = await abrir(ok(perfilDoDetalhe({ revisaoDasConcessoes: janela })));
+    const aviso = host.querySelector('cfg-janela-aberta');
+
+    expect(aviso?.textContent).toContain(`Situação: ${situacao.rotulo}.`);
+    expect(aviso?.textContent?.includes('Enquanto ela dura, o perfil')).toBe(bloqueada);
+    expect(botao(host, 'Propor nova versão') === undefined).toBe(bloqueada);
+    expect(host.querySelector('.cfg-tags')?.textContent).toContain(situacao.rotulo);
   });
 
   it('sem revisão das concessões do perfil, não mostra o aviso', async () => {
@@ -129,7 +151,11 @@ describe('PerfilDetalhePage', () => {
   );
 
   it('depois da situação do acesso vêm a desativação e a revisão das concessões do perfil, nessa ordem', async () => {
-    const janela = { id: 'j1', terminaEm: '2026-11-12T12:00:00Z', situacao: 'aberta' };
+    const janela = {
+      id: 'j1',
+      terminaEm: '2026-11-12T12:00:00Z',
+      situacao: { codigo: SituacaoDaRevisaoDasConcessoesCodigo.ABERTA, rotulo: 'Aberta' },
+    };
     const { host } = await abrir(
       ok(
         perfilDoDetalhe({
@@ -146,7 +172,7 @@ describe('PerfilDetalhePage', () => {
     expect(etiquetas).toEqual([
       ACESSO_EM_VIGOR.rotulo,
       'Desativado',
-      'Revisão das concessões do perfil aberta',
+      `Revisão das concessões: ${janela.situacao.rotulo}`,
     ]);
   });
 

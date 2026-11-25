@@ -849,7 +849,7 @@ export interface paths {
                     readonly emissor?: string;
                     readonly unidade?: string;
                     readonly perfil?: string;
-                    readonly situacao?: string;
+                    readonly situacao?: components["schemas"]["SituacaoDaConcessaoCodigo"];
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
                     /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
@@ -2395,7 +2395,7 @@ export interface paths {
             readonly parameters: {
                 readonly query?: {
                     readonly fila?: string;
-                    readonly situacao?: string;
+                    readonly situacao?: components["schemas"]["SituacaoDoPedidoCodigo"];
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
                     /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
@@ -3534,7 +3534,7 @@ export interface paths {
         readonly get: {
             readonly parameters: {
                 readonly query?: {
-                    readonly situacao?: string;
+                    readonly situacao?: components["schemas"]["SituacaoDaProvidenciaCodigo"];
                     readonly concessao?: string;
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
@@ -4934,7 +4934,7 @@ export interface paths {
         readonly get: {
             readonly parameters: {
                 readonly query?: {
-                    readonly situacao?: string;
+                    readonly situacao?: components["schemas"]["SituacaoDaRevisaoCodigo"];
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
                     /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
@@ -6289,7 +6289,7 @@ export interface components {
             readonly versaoAtual: null | number;
             readonly acrescimo: readonly string[];
             readonly exigeProtecaoDeDados: boolean;
-            readonly situacao: string;
+            readonly situacao: components["schemas"]["SituacaoDaConcessaoNaRevisao"];
             readonly ehDoLeitor: boolean;
         };
         readonly ConcessaoDto: {
@@ -6486,6 +6486,17 @@ export interface components {
             /** @default humano */
             readonly ator: string;
         };
+        readonly FormaDoEncerramento: {
+            readonly codigo: components["schemas"]["FormaDoEncerramentoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `CONCLUIDA`: Concluída
+         *     - `PRAZO`: Prazo
+         *     - `MANUAL`: Manual
+         * @enum {string}
+         */
+        readonly FormaDoEncerramentoCodigo: FormaDoEncerramentoCodigo;
         readonly IdentidadeDto: {
             readonly emissor: string;
             readonly contaId: string;
@@ -6871,8 +6882,8 @@ export interface components {
             readonly terminaEm: string;
             /** Format: date-time */
             readonly encerradaEm: null | string;
-            readonly situacao: string;
-            readonly forma: null | string;
+            readonly situacao: components["schemas"]["SituacaoDaRevisaoDasConcessoes"];
+            readonly forma: null | components["schemas"]["FormaDoEncerramento"];
             readonly decisoesEnviadas: boolean;
             readonly itens: readonly components["schemas"]["ConcessaoDaRevisaoDto"][];
         };
@@ -6894,7 +6905,7 @@ export interface components {
             readonly id: string;
             /** Format: date-time */
             readonly terminaEm: string;
-            readonly situacao: string;
+            readonly situacao: components["schemas"]["SituacaoDaRevisaoDasConcessoes"];
         };
         readonly RevisaoResumoDto: {
             /** Format: uuid */
@@ -6915,6 +6926,53 @@ export interface components {
         readonly RevogarItemDaRevisaoRequest: {
             readonly motivo: null | string;
         };
+        /**
+         * @description - `ATIVA`: Ativa
+         *     - `REVOGADA`: Revogada
+         *     - `VENCIDA`: Vencida
+         * @enum {string}
+         */
+        readonly SituacaoDaConcessaoCodigo: SituacaoDaConcessaoCodigo;
+        readonly SituacaoDaConcessaoNaRevisao: {
+            readonly codigo: components["schemas"]["SituacaoDaConcessaoNaRevisaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `AGUARDANDO_DECISOES`: Aguardando decisão da gestão
+         *     - `RETIDA`: Retida
+         *     - `AGUARDANDO_PROTECAO_DE_DADOS`: Aguardando proteção de dados
+         *     - `MIGRADA`: Migrada
+         *     - `RECUSADA`: Recusada
+         *     - `NAO_MIGRADA`: Não migrada
+         *     - `FORA_DA_LISTA`: Fora da lista
+         * @enum {string}
+         */
+        readonly SituacaoDaConcessaoNaRevisaoCodigo: SituacaoDaConcessaoNaRevisaoCodigo;
+        /**
+         * @description - `ABERTA`: Aberta
+         *     - `RESPONDIDA`: Respondida
+         *     - `ATENDIDA`: Atendida
+         *     - `PREJUDICADA`: Prejudicada
+         * @enum {string}
+         */
+        readonly SituacaoDaProvidenciaCodigo: SituacaoDaProvidenciaCodigo;
+        /**
+         * @description - `EM_ANDAMENTO`: Em Andamento
+         *     - `CONCLUIDA`: Concluída
+         * @enum {string}
+         */
+        readonly SituacaoDaRevisaoCodigo: SituacaoDaRevisaoCodigo;
+        readonly SituacaoDaRevisaoDasConcessoes: {
+            readonly codigo: components["schemas"]["SituacaoDaRevisaoDasConcessoesCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `ABERTA`: Aberta
+         *     - `ENCERRANDO`: Em encerramento
+         *     - `ENCERRADA`: Encerrada
+         * @enum {string}
+         */
+        readonly SituacaoDaRevisaoDasConcessoesCodigo: SituacaoDaRevisaoDasConcessoesCodigo;
         readonly SituacaoDoAcessoDoPerfil: {
             readonly codigo: components["schemas"]["SituacaoDoAcessoDoPerfilCodigo"];
             readonly rotulo: string;
@@ -6928,6 +6986,18 @@ export interface components {
          * @enum {string}
          */
         readonly SituacaoDoAcessoDoPerfilCodigo: SituacaoDoAcessoDoPerfilCodigo;
+        /**
+         * @description - `AGUARDANDO_BENEFICIARIO`: Aguardando beneficiário
+         *     - `AGUARDANDO_GESTOR`: Aguardando gestor
+         *     - `AGUARDANDO_PROTECAO_DE_DADOS`: Aguardando proteção de dados
+         *     - `APROVADO`: Aprovado
+         *     - `RECUSADO`: Recusado
+         *     - `CANCELADO`: Cancelado
+         *     - `AGUARDANDO_DOCUMENTO`: Aguardando documento
+         *     - `DEVOLVIDO`: Devolvido
+         * @enum {string}
+         */
+        readonly SituacaoDoPedidoCodigo: SituacaoDoPedidoCodigo;
         readonly SolicitarProvidenciaRequest: {
             /** Format: uuid */
             readonly concessaoId: string;
@@ -7199,8 +7269,52 @@ export enum PathsApiAutorizacaoTermosDeResponsabilidadeVersoesGetParametersQuery
     next = "next",
     prev = "prev"
 }
+export enum FormaDoEncerramentoCodigo {
+    CONCLUIDA = "CONCLUIDA",
+    PRAZO = "PRAZO",
+    MANUAL = "MANUAL"
+}
+export enum SituacaoDaConcessaoCodigo {
+    ATIVA = "ATIVA",
+    REVOGADA = "REVOGADA",
+    VENCIDA = "VENCIDA"
+}
+export enum SituacaoDaConcessaoNaRevisaoCodigo {
+    AGUARDANDO_DECISOES = "AGUARDANDO_DECISOES",
+    RETIDA = "RETIDA",
+    AGUARDANDO_PROTECAO_DE_DADOS = "AGUARDANDO_PROTECAO_DE_DADOS",
+    MIGRADA = "MIGRADA",
+    RECUSADA = "RECUSADA",
+    NAO_MIGRADA = "NAO_MIGRADA",
+    FORA_DA_LISTA = "FORA_DA_LISTA"
+}
+export enum SituacaoDaProvidenciaCodigo {
+    ABERTA = "ABERTA",
+    RESPONDIDA = "RESPONDIDA",
+    ATENDIDA = "ATENDIDA",
+    PREJUDICADA = "PREJUDICADA"
+}
+export enum SituacaoDaRevisaoCodigo {
+    EM_ANDAMENTO = "EM_ANDAMENTO",
+    CONCLUIDA = "CONCLUIDA"
+}
+export enum SituacaoDaRevisaoDasConcessoesCodigo {
+    ABERTA = "ABERTA",
+    ENCERRANDO = "ENCERRANDO",
+    ENCERRADA = "ENCERRADA"
+}
 export enum SituacaoDoAcessoDoPerfilCodigo {
     SUSPENSO = "SUSPENSO",
     EM_VIGOR = "EM_VIGOR",
     SEM_VERSAO_EM_VIGOR = "SEM_VERSAO_EM_VIGOR"
+}
+export enum SituacaoDoPedidoCodigo {
+    AGUARDANDO_BENEFICIARIO = "AGUARDANDO_BENEFICIARIO",
+    AGUARDANDO_GESTOR = "AGUARDANDO_GESTOR",
+    AGUARDANDO_PROTECAO_DE_DADOS = "AGUARDANDO_PROTECAO_DE_DADOS",
+    APROVADO = "APROVADO",
+    RECUSADO = "RECUSADO",
+    CANCELADO = "CANCELADO",
+    AGUARDANDO_DOCUMENTO = "AGUARDANDO_DOCUMENTO",
+    DEVOLVIDO = "DEVOLVIDO"
 }

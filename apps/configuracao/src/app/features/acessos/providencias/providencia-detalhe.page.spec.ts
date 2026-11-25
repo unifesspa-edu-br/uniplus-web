@@ -1,4 +1,4 @@
-import { CausaDoEncerramento, SituacaoDaProvidencia } from '@uniplus/shared-data/autorizacao';
+import { CausaDoEncerramento, SituacaoDaProvidenciaCodigo } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildVendorMimeAccept } from '@uniplus/shared-core/http';
@@ -68,7 +68,7 @@ describe('ProvidenciaDetalhePage', () => {
   it('na prejudicada mostra o que encerrou a concessão e não oferece ação', async () => {
     await abrir(
       providencia({
-        situacao: SituacaoDaProvidencia.PREJUDICADA,
+        situacao: SituacaoDaProvidenciaCodigo.PREJUDICADA,
         encerramentoDaConcessao: { causa: CausaDoEncerramento.VENCIDA, em: '2026-11-11T03:00:00Z' },
       }),
     );
@@ -81,7 +81,7 @@ describe('ProvidenciaDetalhePage', () => {
   it('no desfecho mostra quando, quem e o motivo', async () => {
     await abrir(
       providencia({
-        situacao: SituacaoDaProvidencia.RESPONDIDA,
+        situacao: SituacaoDaProvidenciaCodigo.RESPONDIDA,
         desfecho: {
           em: '2026-11-12T14:00:00Z',
           por: pessoa('conta-diogo', 'Diogo Souza'),
@@ -120,11 +120,13 @@ describe('ProvidenciaDetalhePage', () => {
     const envio = tela.http.expectOne(`${DETALHE}/resposta`);
     expect(envio.request.body).toEqual({ motivo: 'Segue na banca.' });
     expect(envio.request.headers.get('Idempotency-Key')).toBeTruthy();
-    envio.flush(providencia({ situacao: SituacaoDaProvidencia.RESPONDIDA }));
+    envio.flush(providencia({ situacao: SituacaoDaProvidenciaCodigo.RESPONDIDA }));
     await assentar();
 
     expect(notificacoes.success).toHaveBeenCalledWith('Providência respondida');
-    tela.http.expectOne(DETALHE).flush(providencia({ situacao: SituacaoDaProvidencia.RESPONDIDA }));
+    tela.http
+      .expectOne(DETALHE)
+      .flush(providencia({ situacao: SituacaoDaProvidenciaCodigo.RESPONDIDA }));
     await assentar();
   });
 
@@ -166,9 +168,11 @@ describe('ProvidenciaDetalhePage', () => {
     await assentar();
     const segunda = tela.http.expectOne(`${DETALHE}/resposta`);
     expect(segunda.request.headers.get('Idempotency-Key')).toBe(chave);
-    segunda.flush(providencia({ situacao: SituacaoDaProvidencia.RESPONDIDA }));
+    segunda.flush(providencia({ situacao: SituacaoDaProvidenciaCodigo.RESPONDIDA }));
     await assentar();
-    tela.http.expectOne(DETALHE).flush(providencia({ situacao: SituacaoDaProvidencia.RESPONDIDA }));
+    tela.http
+      .expectOne(DETALHE)
+      .flush(providencia({ situacao: SituacaoDaProvidenciaCodigo.RESPONDIDA }));
     await assentar();
   });
 
@@ -206,7 +210,9 @@ describe('ProvidenciaDetalhePage', () => {
     await assentar();
 
     expect(document.body.textContent).toContain('A providência já foi respondida.');
-    tela.http.expectOne(DETALHE).flush(providencia({ situacao: SituacaoDaProvidencia.RESPONDIDA }));
+    tela.http
+      .expectOne(DETALHE)
+      .flush(providencia({ situacao: SituacaoDaProvidenciaCodigo.RESPONDIDA }));
     await assentar();
   });
 
@@ -225,10 +231,12 @@ describe('ProvidenciaDetalhePage', () => {
       motivo: 'Deixou a banca.',
       confirmacaoEmail: 'leandro-viana84@agenciadbd.com',
     });
-    envio.flush(providencia({ situacao: SituacaoDaProvidencia.ATENDIDA }));
+    envio.flush(providencia({ situacao: SituacaoDaProvidenciaCodigo.ATENDIDA }));
     await assentar();
     expect(notificacoes.success).toHaveBeenCalledWith('Providência atendida e concessão revogada');
-    tela.http.expectOne(DETALHE).flush(providencia({ situacao: SituacaoDaProvidencia.ATENDIDA }));
+    tela.http
+      .expectOne(DETALHE)
+      .flush(providencia({ situacao: SituacaoDaProvidenciaCodigo.ATENDIDA }));
     await assentar();
   });
 

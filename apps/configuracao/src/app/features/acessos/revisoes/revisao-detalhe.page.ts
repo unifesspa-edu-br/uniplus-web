@@ -1,4 +1,4 @@
-import { SituacaoDaRevisao } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDaRevisaoCodigo } from '@uniplus/shared-data/autorizacao';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -76,7 +76,7 @@ export class RevisaoDetalhePage {
   protected readonly pendentes = pendentes;
   protected readonly grupos = computed(() => porBeneficiario(this.store.revisao()?.itens ?? []));
   protected readonly encerrada = computed(
-    () => this.store.revisao()?.situacao === SituacaoDaRevisao.CONCLUIDA,
+    () => this.store.revisao()?.situacao === SituacaoDaRevisaoCodigo.CONCLUIDA,
   );
   private readonly quemLe: QuemLe = { tem: (codigo) => this.permissoes.tem(codigo) };
   protected readonly decide = computed(() => {
