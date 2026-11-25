@@ -27,16 +27,22 @@ describe('CatalogoDeRegras', () => {
     const { catalogo, listar } = montar();
 
     expect(listar.mock.calls.map(([query]) => query.tipo).sort()).toEqual([
+      'CONVENCAO_CONTAGEM_PRAZO',
+      'REGRA_APURACAO_AVALIACAO',
       'REGRA_PRAZO_RECURSO',
       'REGRA_PROCEDIMENTO_RECURSO',
-      'algoritmo_contagem_prazo',
-      'regra_consolidacao',
     ]);
     expect(catalogo.regrasProcedimento().map((regra) => regra.codigo)).toEqual([
       'R-REGRA_PROCEDIMENTO_RECURSO',
     ]);
     expect(catalogo.regrasRecurso().map((regra) => regra.codigo)).toEqual([
       'R-REGRA_PRAZO_RECURSO',
+    ]);
+    expect(catalogo.regrasContagem().map((regra) => regra.codigo)).toEqual([
+      'R-CONVENCAO_CONTAGEM_PRAZO',
+    ]);
+    expect(catalogo.regrasConsolidacao().map((regra) => regra.codigo)).toEqual([
+      'R-REGRA_APURACAO_AVALIACAO',
     ]);
   });
 

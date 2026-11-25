@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import type { TipoRegraCodigo } from '@uniplus/shared-data/selecao';
 import { CORS_DE_LEITURA } from '../support/processo-mockado';
 import { OPCOES_DO_RECURSO } from './opcoes-do-recurso';
 import { TIPOS_DE_BANCA } from './tipos-de-banca';
@@ -98,7 +99,7 @@ export const REGRAS_CONTAGEM = [
   {
     codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
     versao: 'v1',
-    tipo: 'algoritmo_contagem_prazo',
+    tipo: 'CONVENCAO_CONTAGEM_PRAZO' satisfies `${TipoRegraCodigo}`,
     declaracaoDaRegra: {},
     invariantes: ['o dia da âncora não conta'],
     baseLegal: 'Lei 9.784/1999, art. 66',
@@ -135,7 +136,7 @@ const CATALOGOS: readonly CatalogoMockado[] = [
  * Os catálogos que a linha do tempo e o seletor de convenção consultam. Vazio
  * onde a tela não precisa da lista, com conteúdo onde ela é o que se exercita.
  *
- * `regras-catalogo` é filtrado por `tipo`: só `algoritmo_contagem_prazo`
+ * `regras-catalogo` é filtrado por `tipo`: só `CONVENCAO_CONTAGEM_PRAZO`
  * devolve conteúdo — é a única dimensão que este passo exercita aqui, e
  * devolver a mesma lista para qualquer tipo mascararia um filtro quebrado.
  */
@@ -143,7 +144,9 @@ export async function mockarCatalogos(page: Page): Promise<void> {
   await responderCatalogos(page, CATALOGOS, CORS_DE_LEITURA);
   await responderRegrasDoCatalogo(
     page,
-    { algoritmo_contagem_prazo: REGRAS_CONTAGEM },
+    { CONVENCAO_CONTAGEM_PRAZO: REGRAS_CONTAGEM } satisfies Partial<
+      Record<`${TipoRegraCodigo}`, readonly unknown[]>
+    >,
     CORS_DE_LEITURA,
   );
 }
