@@ -31,14 +31,14 @@
         "cwd": "{workspaceRoot}"
       },
       "inputs": [
-        "{projectRoot}/openapi/selecao.openapi.json",
-        "{projectRoot}/openapi/ingresso.openapi.json",
-        "{projectRoot}/openapi/organizacao.openapi.json",
-        "{projectRoot}/openapi/configuracao.openapi.json",
-        "{projectRoot}/openapi/geo.openapi.json",
-        "{projectRoot}/openapi/publicacoes.openapi.json",
-        "{projectRoot}/openapi/portal.openapi.json",
-        "{projectRoot}/openapi/autorizacao.openapi.json",
+        "{workspaceRoot}/libs/shared-data/openapi/selecao.openapi.json",
+        "{workspaceRoot}/libs/shared-data/openapi/ingresso.openapi.json",
+        "{workspaceRoot}/libs/shared-data/openapi/organizacao.openapi.json",
+        "{workspaceRoot}/libs/shared-data/openapi/configuracao.openapi.json",
+        "{workspaceRoot}/libs/shared-data/openapi/geo.openapi.json",
+        "{workspaceRoot}/libs/shared-data/openapi/publicacoes.openapi.json",
+        "{workspaceRoot}/libs/shared-data/openapi/portal.openapi.json",
+        "{workspaceRoot}/libs/shared-data/openapi/autorizacao.openapi.json",
         "{projectRoot}/scripts/generate-api-clients.sh"
       ],
       "outputs": [

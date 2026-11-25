@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import openapi from '../../../../openapi/selecao.openapi.json';
+import openapi from '@uniplus/shared-data/openapi/selecao.openapi.json';
 import {
   PARAMETROS_DA_ELIMINACAO,
   PARAMETROS_DO_DESEMPATE,

@@ -3,11 +3,9 @@ import * as path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Fitness dos contratos publicos granulares das libs Angular.
- *
- * precisou trocar root barrels por subpaths para preservar bundle.
- * Este gate garante que os subpaths usados por apps sao secondary entrypoints
- * reais de ng-packagr, nao aliases wildcard para `src/lib/*`.
+ * Garante que os aplicativos importem somente pontos de entrada públicos e
+ * granulares das bibliotecas compartilhadas. Esses pontos são pacotes reais
+ * do ng-packagr, não apelidos coringa para `src/lib/*`.
  */
 
 const WORKSPACE_ROOT = path.resolve(__dirname, '../../../../..');
@@ -80,8 +78,24 @@ function importsUniplusShared(source: string): string[] {
   return imports;
 }
 
-describe('Fitness — public secondary entrypoints das apps', () => {
-  it('todo entrypoint permitido e um secondary entrypoint ng-packagr real', () => {
+function importacaoDeContratoPermitida(importacao: string): boolean {
+  return importacao.startsWith('@uniplus/shared-data/openapi/') && !importacao.includes('..');
+}
+
+function importacaoPermitida(importacao: string, permitidos: Set<string>): boolean {
+  return permitidos.has(importacao) || importacaoDeContratoPermitida(importacao);
+}
+
+describe('Pontos de entrada públicos das bibliotecas compartilhadas', () => {
+  it('permite somente apelidos válidos dos documentos do contrato', () => {
+    const documento = '@uniplus/shared-data/openapi/exemplos/selecao/documento.json';
+
+    expect(importacaoDeContratoPermitida(documento)).toBe(true);
+    expect(importacaoDeContratoPermitida('@uniplus/shared-ui/openapi/documento.json')).toBe(false);
+    expect(importacaoDeContratoPermitida('@uniplus/shared-data/openapi/../src/lib/x')).toBe(false);
+  });
+
+  it('todo ponto de entrada permitido é um pacote real do ng-packagr', () => {
     const ausentes: string[] = [];
 
     for (const [specifier, relativeRoot] of Object.entries(ENTRYPOINTS)) {
@@ -95,12 +109,12 @@ describe('Fitness — public secondary entrypoints das apps', () => {
     expect(
       ausentes,
       ausentes.length > 0
-        ? `\nEntrypoints permitidos sem ng-package.json ou src/index.ts:\n${ausentes.join('\n')}`
+        ? `\nPontos de entrada permitidos sem ng-package.json ou src/index.ts:\n${ausentes.join('\n')}`
         : '',
     ).toEqual([]);
   });
 
-  it('apps importam somente entrypoints publicos granulares das libs shared-*', () => {
+  it('aplicativos importam somente pontos de entrada públicos granulares das bibliotecas shared-*', () => {
     const permitidos = new Set(Object.keys(ENTRYPOINTS));
     const violacoes: string[] = [];
 
@@ -112,12 +126,12 @@ describe('Fitness — public secondary entrypoints das apps', () => {
 
         for (const specifier of importsUniplusShared(source)) {
           if (ROOT_BARRELS.has(specifier)) {
-            violacoes.push(`${relativo}: usa root barrel ${specifier}`);
+            violacoes.push(`${relativo}: usa a raiz da biblioteca ${specifier}`);
             continue;
           }
 
-          if (!permitidos.has(specifier)) {
-            violacoes.push(`${relativo}: usa subpath nao publico ${specifier}`);
+          if (!importacaoPermitida(specifier, permitidos)) {
+            violacoes.push(`${relativo}: usa ponto de entrada não público ${specifier}`);
           }
         }
       }
@@ -126,12 +140,12 @@ describe('Fitness — public secondary entrypoints das apps', () => {
     expect(
       violacoes,
       violacoes.length > 0
-        ? `\nImports shared-* fora dos secondary entrypoints publicos:\n${violacoes.join('\n')}`
+        ? `\nImportações shared-* fora dos pontos de entrada públicos:\n${violacoes.join('\n')}`
         : '',
     ).toEqual([]);
   });
 
-  it('tsconfig.base.json nao expoe wildcard shared-* para src/lib/*', () => {
+  it('tsconfig.base.json não expõe apelido coringa shared-* para src/lib/*', () => {
     const tsconfig = JSON.parse(
       fs.readFileSync(path.join(WORKSPACE_ROOT, 'tsconfig.base.json'), 'utf-8'),
     ) as { compilerOptions?: { paths?: Record<string, string[]> } };
@@ -143,7 +157,7 @@ describe('Fitness — public secondary entrypoints das apps', () => {
     expect(
       wildcards,
       wildcards.length > 0
-        ? `\nAliases wildcard shared-* removidos sao proibidos:\n${wildcards.join('\n')}`
+        ? `\nApelidos coringa shared-* removidos são proibidos:\n${wildcards.join('\n')}`
         : '',
     ).toEqual([]);
   });
