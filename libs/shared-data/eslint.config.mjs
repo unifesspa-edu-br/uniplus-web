@@ -6,6 +6,36 @@ export default [
   ...nx.configs['flat/angular-template'],
   ...baseConfig,
   {
+    files: ['**/src/lib/api/**/*.api.ts'],
+    ignores: ['**/*.spec.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            ":matches(Program, ExportNamedDeclaration, ExportDefaultDeclaration) > ClassDeclaration:not(:has(Decorator > CallExpression[callee.name='Injectable'] > ObjectExpression > Property[key.name='providedIn'][value.value='root']))",
+          message:
+            "Toda classe declarada no arquivo deve usar @Injectable({ providedIn: 'root' }).",
+        },
+        {
+          selector:
+            "MethodDefinition[kind='method'][static!=true][accessibility!=private][accessibility!=protected] > FunctionExpression > TSTypeAnnotation.returnType > TSTypeReference[typeName.name='Promise']",
+          message: 'Método público não deve retornar Promise.',
+        },
+        {
+          selector:
+            "MethodDefinition[kind='method'][static!=true][accessibility!=private][accessibility!=protected] > FunctionExpression > TSTypeAnnotation.returnType > TSTypeReference[typeName.name='Observable']:not([typeArguments.params.0.typeName.name='ApiResult'][typeArguments.params.0.typeArguments.params.0.type])",
+          message: 'Método público deve retornar Observable<ApiResult<T>>.',
+        },
+        {
+          selector:
+            "MethodDefinition[kind='method'][static!=true][accessibility!=private][accessibility!=protected] > FunctionExpression:not([returnType])",
+          message: 'Método público deve declarar o tipo de retorno.',
+        },
+      ],
+    },
+  },
+  {
     // Projeto sem dívida de métricas: o CI barra. O `schema.ts` é gerado pelo OpenAPI.
     files: ['**/*.ts'],
     ignores: ['**/src/lib/api/*/schema.ts'],
