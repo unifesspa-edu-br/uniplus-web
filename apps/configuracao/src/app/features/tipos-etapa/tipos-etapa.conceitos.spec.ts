@@ -18,7 +18,7 @@ const conceito = (codigo: string, nome: string, ativo = true): TipoConceitoDto =
   definicao: {
     nome,
     descricao: null,
-    natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Categórico' },
+    natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Por opções' },
     numerico: null,
     valores: [],
   },
@@ -74,7 +74,7 @@ describe('TiposEtapaPage — conceitos admitidos', () => {
           {
             codigo: 'PARECER',
             nome: 'Parecer',
-            natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Categórico' },
+            natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Por opções' },
           },
         ],
       },
@@ -100,7 +100,7 @@ describe('TiposEtapaPage — conceitos admitidos', () => {
           {
             codigo: 'ANTIGO',
             nome: 'Antigo',
-            natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Categórico' },
+            natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Por opções' },
           },
         ],
       },
@@ -125,7 +125,7 @@ describe('TiposEtapaPage — conceitos admitidos', () => {
           {
             codigo: 'PARECER',
             nome: 'Parecer',
-            natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Categórico' },
+            natureza: { codigo: FormaDoConceitoCodigo.POR_OPCOES, rotulo: 'Por opções' },
           },
         ],
       },
