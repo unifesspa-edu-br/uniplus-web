@@ -150,34 +150,22 @@ export function camposSemUsoDeclarado(
   desempate: readonly CriterioDesempateConfigurado[] = [],
   modalidades: readonly RegraDaModalidadeOfertada[] = [],
 ): readonly ItemDoFormulario[] {
-  const citantes = citantesDoFormulario(formulario, exigencias, desempate, modalidades);
-  const citados = new Set([
-    ...quemCitaNoProcesso(citantes).keys(),
-    ...fatosCitadosPeloConteudo(formulario.conteudo),
-  ]);
-  return camposSemCitacao(formulario.conteudo, citados);
-}
-
-function citantesDoFormulario(
-  formulario: FormularioDeInscricao,
-  exigencias: ExigenciasDoRascunho,
-  desempate: readonly CriterioDesempateConfigurado[],
-  modalidades: readonly RegraDaModalidadeOfertada[],
-): CitantesNoProcesso {
-  return {
+  const citantes = quemCitaNoProcesso({
     documentos: exigencias,
     derivacao: formulario.derivacao,
     desempate,
     outrasFinalidades: formulario.outrasFinalidades,
     modalidades,
-  };
+  });
+  return camposSemCitacao(formulario.conteudo, citantes);
 }
 
 /** Os dados básicos ficam de fora, pois são coletados em toda inscrição. */
 function camposSemCitacao(
   conteudo: FormularioDeInscricao['conteudo'],
-  citados: ReadonlySet<string>,
+  citantes: ReadonlyMap<string, readonly string[]>,
 ): readonly ItemDoFormulario[] {
+  const citados = new Set([...citantes.keys(), ...fatosCitadosPeloConteudo(conteudo)]);
   return todosOsCampos(conteudo).filter(
     (campo) => campo.paginaCodigo !== SECAO_DADOS_BASICOS && !citados.has(campo.fatoCodigo),
   );

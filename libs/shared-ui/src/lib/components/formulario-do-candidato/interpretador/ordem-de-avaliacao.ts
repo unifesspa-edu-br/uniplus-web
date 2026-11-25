@@ -1,24 +1,24 @@
 /** Os derivados e os agregados entram assim que as dependências estão prontas. */
 export const PRIORIDADE_DERIVADO = -1;
 
-export interface FatoAOrdenar {
+export interface FatoOuGrupoAOrdenar {
   readonly codigo: string;
   readonly citados: readonly string[];
   readonly prioridade: number;
 }
 
-/** A prioridade e a posição desempatarão fatos cujas dependências estão prontas. */
-export function ordenar(fatos: readonly FatoAOrdenar[]): {
+/** A prioridade e a posição desempatarão fatos e grupos cujas dependências estão prontas. */
+export function ordenar(fatos: readonly FatoOuGrupoAOrdenar[]): {
   ordem: readonly string[];
   foraDeOrdem: readonly string[];
 } {
-  const { pendentes, dependentes } = dependenciasDosFatos(fatos);
-  const ordem = ordenarFatosProntos(fatos, pendentes, dependentes);
+  const { pendentes, dependentes } = dependenciasDosFatosEGrupos(fatos);
+  const ordem = ordenarFatosEGruposProntos(fatos, pendentes, dependentes);
   const ordenados = new Set(ordem);
   return { ordem, foraDeOrdem: fatos.map((f) => f.codigo).filter((c) => !ordenados.has(c)) };
 }
 
-function dependenciasDosFatos(fatos: readonly FatoAOrdenar[]): {
+function dependenciasDosFatosEGrupos(fatos: readonly FatoOuGrupoAOrdenar[]): {
   pendentes: number[];
   dependentes: number[][];
 } {
@@ -30,7 +30,7 @@ function dependenciasDosFatos(fatos: readonly FatoAOrdenar[]): {
 }
 
 function registrarDependencias(
-  fato: FatoAOrdenar,
+  fato: FatoOuGrupoAOrdenar,
   i: number,
   indice: Map<string, number>,
   { pendentes, dependentes }: { pendentes: number[]; dependentes: number[][] },
@@ -43,8 +43,8 @@ function registrarDependencias(
   }
 }
 
-function ordenarFatosProntos(
-  fatos: readonly FatoAOrdenar[],
+function ordenarFatosEGruposProntos(
+  fatos: readonly FatoOuGrupoAOrdenar[],
   pendentes: number[],
   dependentes: number[][],
 ): string[] {
