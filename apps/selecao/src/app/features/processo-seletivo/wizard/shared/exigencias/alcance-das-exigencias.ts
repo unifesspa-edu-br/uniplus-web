@@ -68,10 +68,10 @@ export interface ContextoDoAlcance {
 }
 
 /**
- * Troca "vale em todas as fases" pelo recorte explícito, materializando antes: largar o alcance
+ * Troca "vale em todas as fases" pelas fases escolhidas, materializando antes: largar o alcance
  * sem materializar tiraria o documento também de toda fase que só o tinha por herança.
  */
-export function recortadoPorFase(
+export function restritoAsFases(
   exigencias: ExigenciasDoRascunho,
   id: string,
   contexto: ContextoDoAlcance,
