@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { type FormularioRenderizavelDto } from '@uniplus/shared-data/selecao';
+import { type FormularioApresentadoDoProcessoDto } from '@uniplus/shared-data/selecao';
 import { passarOTempo } from '@uniplus/shared-testing';
 import { FORMULARIO_DE_INSCRICAO_MOCK, comFormulario } from './inscricao-do-candidato.testing';
 import {
@@ -12,7 +12,7 @@ import {
 } from './inscricao-do-candidato.page.testing';
 
 type RestricaoDoItem =
-  FormularioRenderizavelDto['formulario']['regras']['etapas'][number]['itens'][number]['regras']['restricoes'][number];
+  FormularioApresentadoDoProcessoDto['formulario']['regras']['etapas'][number]['itens'][number]['regras']['restricoes'][number];
 
 /** De 23h50 à meia-noite no fuso do envio. */
 const ATE_O_ENVIO: RestricaoDoItem = {
@@ -39,7 +39,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   /** A data de nascimento até o dia do envio, como o conjunto básico a declara. */
-  const comNascimentoAteOEnvio = (): FormularioRenderizavelDto => {
+  const comNascimentoAteOEnvio = (): FormularioApresentadoDoProcessoDto => {
     const { regras } = FORMULARIO_DE_INSCRICAO_MOCK.formulario;
     return comFormulario(FORMULARIO_DE_INSCRICAO_MOCK, {
       regras: {

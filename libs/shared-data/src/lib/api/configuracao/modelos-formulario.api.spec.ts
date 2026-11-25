@@ -3,11 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Observable, firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  VENDOR_MIME_TOKEN,
-  apiResultInterceptor,
-  createCursor,
-} from '@uniplus/shared-core/http';
+import { VENDOR_MIME_TOKEN, apiResultInterceptor, createCursor } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { ModelosFormularioApi } from './modelos-formulario.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
@@ -103,9 +99,9 @@ describe('ModelosFormularioApi', () => {
     expect(resultado.ok).toBe(false);
   });
 
-  it('obterRenderizavel() pede o formulário v2 do modelo', async () => {
-    const promise = firstValueFrom(api.obterRenderizavel(ID));
-    const req = controller.expectOne(`${ADMIN}/${ID}/renderizavel`);
+  it('obterApresentacao() pede o formulário v2 do modelo', async () => {
+    const promise = firstValueFrom(api.obterApresentacao(ID));
+    const req = controller.expectOne(`${ADMIN}/${ID}/apresentacao`);
     expect(req.request.context.get(VENDOR_MIME_TOKEN)).toEqual({
       resource: 'formulario',
       version: 2,

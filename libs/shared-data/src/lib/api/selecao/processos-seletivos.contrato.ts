@@ -8,7 +8,8 @@ import type { components } from './schema';
 
 export type CriarProcessoSeletivoCommand = components['schemas']['CriarProcessoSeletivoCommand'];
 export type ProcessoSeletivoDto = components['schemas']['ProcessoSeletivoDto'];
-export type FormularioRenderizavelDto = components['schemas']['FormularioRenderizavelDto'];
+export type FormularioApresentadoDoProcessoDto =
+  components['schemas']['FormularioApresentadoDoProcessoDto'];
 export type ProcessoSeletivoResumoDto = components['schemas']['ProcessoSeletivoResumoDto'];
 export type TipoProcessoSnapshotDto = components['schemas']['TipoProcessoSnapshotDto'];
 export type IniciarEnvioDoDocumentoAPublicarRequest =

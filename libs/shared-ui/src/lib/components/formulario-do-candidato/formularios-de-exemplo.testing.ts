@@ -5,7 +5,7 @@ import type {
   ApresentacaoDoCampo,
 } from '../editor-de-formulario/modelo/tipos';
 
-import type { CampoRenderizavel, FormularioDoCandidato } from './formulario-do-candidato.model';
+import type { CampoApresentado, FormularioDoCandidato } from './formulario-do-candidato.model';
 import type {
   GrupoDasRegras,
   ItemDasRegras,
@@ -41,15 +41,15 @@ export const grupoDasRegras = (
   ...outros,
 });
 
-type OutrosDoCampo = Partial<Omit<CampoRenderizavel, 'apresentacao'>> &
+type OutrosDoCampo = Partial<Omit<CampoApresentado, 'apresentacao'>> &
   Partial<Pick<ApresentacaoDoCampo, 'ajuda' | 'pedirConfirmacao'>>;
 
-export const campoRenderizavel = (
+export const campoApresentado = (
   fatoCodigo: string,
   rotulo: string,
   tipoDeCampo: string,
   { ajuda, pedirConfirmacao = false, ...outros }: OutrosDoCampo = {},
-): CampoRenderizavel => ({
+): CampoApresentado => ({
   fatoCodigo,
   ordem: 0,
   apresentacao: { rotulo, tipoDeCampo, ajuda, pedirConfirmacao },
@@ -76,13 +76,13 @@ export const FORMULARIO_DE_ENDERECO_COM_ALDEIA: FormularioDoCandidato = {
   termos: [],
   coleta: {
     itens: [
-      campoRenderizavel('TIPO_ENDERECO', 'Tipo de endereço', 'ESCOLHA_UNICA', {
+      campoApresentado('TIPO_ENDERECO', 'Tipo de endereço', 'ESCOLHA_UNICA', {
         valoresSelecionaveis: [
           { codigo: 'URBANO', descricao: 'Urbano', ordem: 0 },
           { codigo: 'ALDEIA', descricao: 'Aldeia', ordem: 1 },
         ],
       }),
-      campoRenderizavel('NOME_ALDEIA', 'Nome da aldeia', 'TEXTO', { ordem: 1 }),
+      campoApresentado('NOME_ALDEIA', 'Nome da aldeia', 'TEXTO', { ordem: 1 }),
     ],
     grupos: [],
   },
@@ -121,7 +121,7 @@ export const CEP_DE_MARABA: CepEncontrado = {
 export const FORMULARIO_DE_ENDERECO_RESIDENCIAL: FormularioDoCandidato = {
   ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
   coleta: {
-    itens: [campoRenderizavel('ENDERECO_RESIDENCIAL', 'Endereço residencial', 'ENDERECO')],
+    itens: [campoApresentado('ENDERECO_RESIDENCIAL', 'Endereço residencial', 'ENDERECO')],
     grupos: [],
   },
   regras: {
@@ -177,8 +177,8 @@ export const FORMULARIO_DE_DUAS_SECOES: FormularioDoCandidato = {
   termos: [],
   coleta: {
     itens: [
-      campoRenderizavel('EMAIL', 'E-mail', 'TEXTO'),
-      campoRenderizavel('NOME_SOCIAL', 'Nome social', 'TEXTO', { ordem: 1 }),
+      campoApresentado('EMAIL', 'E-mail', 'TEXTO'),
+      campoApresentado('NOME_SOCIAL', 'Nome social', 'TEXTO', { ordem: 1 }),
     ],
     grupos: [],
   },
@@ -201,7 +201,7 @@ export const FORMULARIO_COM_GRUPO_DA_FAMILIA: FormularioDoCandidato = {
         ordem: 0,
         rotulo: 'Integrante',
         ocorrencias: { minimo: 1, maximo: 2, incluiCandidato: false },
-        subitens: [campoRenderizavel('RENDA', 'Renda', 'NUMERO')],
+        subitens: [campoApresentado('RENDA', 'Renda', 'NUMERO')],
       },
     ],
   },
@@ -223,8 +223,8 @@ export const FORMULARIO_DA_FAMILIA_COM_DOIS_SUBCAMPOS: FormularioDoCandidato = {
       {
         ...FORMULARIO_COM_GRUPO_DA_FAMILIA.coleta.grupos[0],
         subitens: [
-          campoRenderizavel('RENDA', 'Renda', 'NUMERO'),
-          campoRenderizavel('PROFISSAO', 'Profissão', 'TEXTO'),
+          campoApresentado('RENDA', 'Renda', 'NUMERO'),
+          campoApresentado('PROFISSAO', 'Profissão', 'TEXTO'),
         ],
       },
     ],
@@ -242,7 +242,7 @@ export const FORMULARIO_DA_FAMILIA_COM_DOIS_SUBCAMPOS: FormularioDoCandidato = {
 export const FORMULARIO_COM_CONFIRMACAO_DO_EMAIL: FormularioDoCandidato = {
   ...FORMULARIO_DE_DUAS_SECOES,
   coleta: {
-    itens: [campoRenderizavel('EMAIL', 'E-mail', 'TEXTO', { pedirConfirmacao: true })],
+    itens: [campoApresentado('EMAIL', 'E-mail', 'TEXTO', { pedirConfirmacao: true })],
     grupos: [],
   },
   regras: { etapas: [{ codigo: 'Inscricao:CONTATO', itens: [itemDasRegras('EMAIL')] }] },
@@ -255,7 +255,7 @@ export const FORMULARIO_DA_FAMILIA_COM_CONFIRMACAO: FormularioDoCandidato = {
     grupos: [
       {
         ...FORMULARIO_COM_GRUPO_DA_FAMILIA.coleta.grupos[0],
-        subitens: [campoRenderizavel('EMAIL', 'E-mail', 'TEXTO', { pedirConfirmacao: true })],
+        subitens: [campoApresentado('EMAIL', 'E-mail', 'TEXTO', { pedirConfirmacao: true })],
       },
     ],
   },
@@ -272,7 +272,7 @@ export const FORMULARIO_DA_FAMILIA_COM_CONFIRMACAO: FormularioDoCandidato = {
 export const FORMULARIO_COM_TELEFONE: FormularioDoCandidato = {
   ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
   coleta: {
-    itens: [campoRenderizavel('TELEFONE', 'Telefone', 'TEXTO', { formato: 'TELEFONE' })],
+    itens: [campoApresentado('TELEFONE', 'Telefone', 'TEXTO', { formato: 'TELEFONE' })],
     grupos: [],
   },
   regras: { etapas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('TELEFONE')] }] },

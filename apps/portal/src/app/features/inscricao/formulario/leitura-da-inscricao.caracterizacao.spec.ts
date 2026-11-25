@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
-  type FormularioRenderizavelDto,
+  type FormularioApresentadoDoProcessoDto,
   type InscricaoDto,
   SELECAO_BASE_PATH,
   TipoDeCampoCodigo,
@@ -34,7 +34,7 @@ const oferta = (id: string, cursoNome: string) => ({
   turnos: [],
 });
 
-const COM_NATURALIDADE: FormularioRenderizavelDto = {
+const COM_NATURALIDADE: FormularioApresentadoDoProcessoDto = {
   ...comCampoColetado(
     comCampoColetado(
       FORMULARIO_DE_INSCRICAO_MOCK,
@@ -80,7 +80,7 @@ describe('LeituraDaInscricao: a carga que a tela adota', () => {
 
   async function carregarCom(
     iniciada: InscricaoDto,
-    formulario: FormularioRenderizavelDto | null = COM_NATURALIDADE,
+    formulario: FormularioApresentadoDoProcessoDto | null = COM_NATURALIDADE,
   ): Promise<void> {
     iniciar.mockReturnValue(of(apiOk(iniciada, 200, new HttpHeaders())));
     leitura.carregar(PROCESSO);

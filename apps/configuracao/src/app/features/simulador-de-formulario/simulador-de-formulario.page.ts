@@ -15,7 +15,7 @@ import { ApiResult, ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core
 import {
   AvaliacoesDeFormularioApi,
   ModelosFormularioApi,
-  type FormularioRenderizavel,
+  type FormularioApresentado,
   type ModeloFormularioView,
 } from '@uniplus/shared-data/configuracao';
 import {
@@ -46,7 +46,7 @@ const ORIGENS: readonly UiSegmentedOption<Origem>[] = [
 
 /**
  * O simulador de formulário: o formulário como o candidato o veria, a partir de um modelo gravado,
- * montado pela API com o catálogo vivo, ou de um arquivo — um formulário renderizável exportado de um
+ * montado pela API com o catálogo vivo, ou de um arquivo — um formulário apresentado exportado de um
  * modelo ou de um processo, ou um caso do corpus compartilhado com a API. Nada é gravado ao responder,
  * e o arquivo não é enviado ao abri-lo. Confere com a avaliação sem cadastro da API, que é a
  * autoridade. A origem e o modelo ficam na URL (`?modelo=<id>`), para que um link abra o modelo.
@@ -120,11 +120,11 @@ const ORIGENS: readonly UiSegmentedOption<Origem>[] = [
         <div class="cfg-form__loading" [uiIndicadorDaLeitura]="leituraDoModelo">
           <ui-spinner spinnerSize="md" [decorativo]="true" /> Carregando o modelo...
         </div>
-      } @else if (formulario(); as renderizavel) {
+      } @else if (formulario(); as apresentacao) {
         <ui-simulacao-de-formulario
           idBase="simulacao-modelo"
           nomeDoArquivo="modelo-de-formulario"
-          [formulario]="renderizavel"
+          [formulario]="apresentacao"
           [conferir]="conferir"
         />
       }
@@ -201,7 +201,7 @@ export class SimuladorDeFormularioPage {
     const erro = this.erroAoCarregar();
     return erro?.naoEncontrado ? erro.mensagem : null;
   });
-  /** O renderizável do contrato é o formulário que o candidato vê: o compilador acusa se divergirem. */
+  /** O formulário apresentado do contrato é o formulário que o candidato vê: o compilador acusa se divergirem. */
   protected readonly formulario = signal<FormularioDoCandidato | null>(null);
 
   protected readonly arquivo = signal<ArquivoDoFormulario | null>(null);
@@ -261,13 +261,13 @@ export class SimuladorDeFormularioPage {
     }
     this.carregando.set(true);
     this.carregamento = this.modelos
-      .obterRenderizavel(this.modeloId())
+      .obterApresentacao(this.modeloId())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => this.concluirCarga(resultado));
     return true;
   }
 
-  private concluirCarga(resultado: ApiResult<FormularioRenderizavel>): void {
+  private concluirCarga(resultado: ApiResult<FormularioApresentado>): void {
     this.carregando.set(false);
     if (!resultado.ok) {
       this.erroAoCarregar.set({

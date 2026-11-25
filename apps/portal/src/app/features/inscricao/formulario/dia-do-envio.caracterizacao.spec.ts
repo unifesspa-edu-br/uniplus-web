@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RELOGIO } from '@uniplus/shared-core/relogio';
-import type { FormularioRenderizavelDto } from '@uniplus/shared-data/selecao';
+import type { FormularioApresentadoDoProcessoDto } from '@uniplus/shared-data/selecao';
 import { ligarRelogioControlado, passarOTempo } from '@uniplus/shared-testing';
 
 import { DiaDoEnvio } from './dia-do-envio';
@@ -15,7 +15,9 @@ const ANTES_DA_MEIA_NOITE = new Date('2026-12-12T02:50:00Z'); // 23h50 de 11/12 
 const DEPOIS_DA_MEIA_NOITE = new Date('2026-12-12T03:00:01Z'); // 00h00 de 12/12 em Belém
 
 describe('DiaDoEnvio: o dia contra o qual a tela confere os limites de data', () => {
-  const formulario = signal<FormularioRenderizavelDto | null>(FORMULARIO_DE_INSCRICAO_MOCK);
+  const formulario = signal<FormularioApresentadoDoProcessoDto | null>(
+    FORMULARIO_DE_INSCRICAO_MOCK,
+  );
   const carregada = signal<object | null>(null);
   let agora: Date;
   let dia: DiaDoEnvio;

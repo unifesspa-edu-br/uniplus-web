@@ -1,5 +1,5 @@
 import type { CampoAvaliado } from './interpretador/regras-do-formulario';
-import type { CampoRenderizavel, ValorSelecionavel } from './formulario-do-candidato.model';
+import type { CampoApresentado, ValorSelecionavel } from './formulario-do-candidato.model';
 
 /** Uma opção do campo de escolha; a já escolhida que as regras deixaram de permitir vem marcada. */
 export interface OpcaoDoCampo extends ValorSelecionavel {
@@ -12,7 +12,7 @@ export interface OpcaoDoCampo extends ValorSelecionavel {
  * permitir continua na lista, marcada, para o candidato poder desfazê-la.
  */
 export function opcoesDoCampo(
-  campo: CampoRenderizavel,
+  campo: CampoApresentado,
   avaliado: CampoAvaliado,
   escolhidos: readonly string[] = [],
 ): readonly OpcaoDoCampo[] {

@@ -9,10 +9,10 @@ import { BUSCA_DE_CEP } from '../endereco-geo/endereco-geo.model';
 
 import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
 import type {
-  CampoRenderizavel,
+  CampoApresentado,
   DependenciasDaAvaliacao,
   FormularioDoCandidato,
-  GrupoRenderizavel,
+  GrupoApresentado,
   RespostaFixa,
 } from './formulario-do-candidato.model';
 import type {
@@ -22,7 +22,7 @@ import type {
 } from './interpretador/regras-do-formulario';
 import {
   apresentacaoDaEtapa,
-  campoRenderizavel,
+  campoApresentado,
   grupoDasRegras,
   itemDasRegras,
 } from './formularios-de-exemplo.testing';
@@ -74,9 +74,9 @@ const ETAPAS_DO_FATOR: FormularioDoCandidato['etapas'] = [
   },
 ];
 
-const CAMPOS_DO_FATOR: CampoRenderizavel[] = [
-  campoRenderizavel(SOLICITA_O_FATOR, 'Deseja solicitar o Fator?', 'SIM_OU_NAO'),
-  campoRenderizavel(
+const CAMPOS_DO_FATOR: CampoApresentado[] = [
+  campoApresentado(SOLICITA_O_FATOR, 'Deseja solicitar o Fator?', 'SIM_OU_NAO'),
+  campoApresentado(
     CAMINHO_DO_FATOR,
     'Por qual vínculo com a área você solicita o Fator?',
     'ESCOLHA_UNICA',
@@ -88,38 +88,38 @@ const CAMPOS_DO_FATOR: CampoRenderizavel[] = [
       ],
     },
   ),
-  campoRenderizavel(MUNICIPIO_DO_FATOR, 'Em qual município você residiu?', 'ESCOLHA_UNICA', {
+  campoApresentado(MUNICIPIO_DO_FATOR, 'Em qual município você residiu?', 'ESCOLHA_UNICA', {
     ordem: 2,
     valoresSelecionaveis: [{ codigo: '2105302', descricao: 'Imperatriz — MA', ordem: 0 }],
   }),
-  campoRenderizavel(MESES_NA_AREA, 'Meses na área', 'NUMERO', { ordem: 4 }),
-  campoRenderizavel(ATIVIDADES_NA_AREA, 'Atividades na área', 'ESCOLHA_MULTIPLA', {
+  campoApresentado(MESES_NA_AREA, 'Meses na área', 'NUMERO', { ordem: 4 }),
+  campoApresentado(ATIVIDADES_NA_AREA, 'Atividades na área', 'ESCOLHA_MULTIPLA', {
     ordem: 5,
     valoresSelecionaveis: [
       { codigo: 'PESCA', descricao: 'Pesca artesanal', ordem: 0 },
       { codigo: 'ROCA', descricao: 'Roça de subsistência', ordem: 1 },
     ],
   }),
-  campoRenderizavel(DATA_INICIO_NA_AREA, 'Início na área', 'DATA', { ordem: 6 }),
-  campoRenderizavel(TELEFONE_DO_CONTATO, 'Telefone de contato', 'TEXTO', {
+  campoApresentado(DATA_INICIO_NA_AREA, 'Início na área', 'DATA', { ordem: 6 }),
+  campoApresentado(TELEFONE_DO_CONTATO, 'Telefone de contato', 'TEXTO', {
     ordem: 7,
     formato: 'TELEFONE',
   }),
 ];
 
-const CAMPO_FORA_DO_FATOR = campoRenderizavel(FATO_FORA_DO_FATOR, 'Outra pergunta', 'TEXTO', {
+const CAMPO_FORA_DO_FATOR = campoApresentado(FATO_FORA_DO_FATOR, 'Outra pergunta', 'TEXTO', {
   ordem: 3,
 });
 
-const GRUPO_DA_FAMILIA: GrupoRenderizavel = {
+const GRUPO_DA_FAMILIA: GrupoApresentado = {
   codigo: 'FAMILIA',
   ordem: 0,
   rotulo: 'Integrante da família',
   ocorrencias: { minimo: 0, maximo: 3, incluiCandidato: false },
   subitens: [
-    campoRenderizavel('RENDA', 'Renda', 'NUMERO'),
-    campoRenderizavel('NOME', 'Nome', 'TEXTO', { ordem: 1 }),
-    campoRenderizavel('BONUS', 'Bônus', 'NUMERO', { ordem: 2 }),
+    campoApresentado('RENDA', 'Renda', 'NUMERO'),
+    campoApresentado('NOME', 'Nome', 'TEXTO', { ordem: 1 }),
+    campoApresentado('BONUS', 'Bônus', 'NUMERO', { ordem: 2 }),
   ],
 };
 
@@ -146,7 +146,7 @@ const regraDoItem = (fatoCodigo: string): ItemDasRegras =>
   );
 
 const formularioDaInscricao = (
-  itens: CampoRenderizavel[],
+  itens: CampoApresentado[],
   fatosDaEtapa: string[],
 ): FormularioDoCandidato => ({
   finalidade: 'INSCRICAO',
@@ -163,9 +163,9 @@ export const formularioComOFator = (): FormularioDoCandidato =>
   formularioDaInscricao([...CAMPOS_DO_FATOR, CAMPO_FORA_DO_FATOR], FATOS_COM_O_FATOR);
 
 export const formularioSemOFator = (): FormularioDoCandidato =>
-  formularioDaInscricao([campoRenderizavel('EMAIL', 'E-mail', 'TEXTO')], ['EMAIL']);
+  formularioDaInscricao([campoApresentado('EMAIL', 'E-mail', 'TEXTO')], ['EMAIL']);
 
-const municipioPorBusca = (campo: CampoRenderizavel): CampoRenderizavel =>
+const municipioPorBusca = (campo: CampoApresentado): CampoApresentado =>
   campo.fatoCodigo === MUNICIPIO_DO_FATOR
     ? {
         ...campo,

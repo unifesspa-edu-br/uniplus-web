@@ -5862,7 +5862,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/configuracao/admin/modelos-formulario/{id}/renderizavel": {
+    readonly "/api/configuracao/admin/modelos-formulario/{id}/apresentacao": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -5886,7 +5886,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "application/vnd.uniplus.formulario.v2+json": components["schemas"]["FormularioRenderizavel"];
+                        readonly "application/vnd.uniplus.formulario.v2+json": components["schemas"]["FormularioApresentado"];
                     };
                 };
                 /** @description Unauthorized */
@@ -13737,14 +13737,7 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
-        readonly CampoAvaliado: {
-            readonly fatoCodigo: string;
-            readonly etapaCodigo: string;
-            readonly estado: components["schemas"]["EstadoFatoCodigo"];
-            readonly regras: components["schemas"]["RegrasDoCampoAvaliadas"];
-            readonly opcoes: null | components["schemas"]["OpcoesVigentes"];
-        };
-        readonly CampoRenderizavel: {
+        readonly CampoApresentado: {
             readonly fatoCodigo: string;
             /** Format: int32 */
             readonly ordem: number;
@@ -13752,6 +13745,13 @@ export interface components {
             readonly apresentacao: components["schemas"]["ApresentacaoDoCampoDto"];
             readonly formato: null | string;
             readonly valoresSelecionaveis: null | readonly components["schemas"]["ValorSelecionavel"][];
+        };
+        readonly CampoAvaliado: {
+            readonly fatoCodigo: string;
+            readonly etapaCodigo: string;
+            readonly estado: components["schemas"]["EstadoFatoCodigo"];
+            readonly regras: components["schemas"]["RegrasDoCampoAvaliadas"];
+            readonly opcoes: null | components["schemas"]["OpcoesVigentes"];
         };
         readonly CampusDto: {
             /** Format: uuid */
@@ -13794,9 +13794,9 @@ export interface components {
             readonly nome: null | string;
             readonly uf: null | string;
         };
-        readonly ColetaRenderizavel: {
-            readonly itens: readonly components["schemas"]["CampoRenderizavel"][];
-            readonly grupos: readonly components["schemas"]["GrupoRenderizavel"][];
+        readonly ColetaApresentada: {
+            readonly itens: readonly components["schemas"]["CampoApresentado"][];
+            readonly grupos: readonly components["schemas"]["GrupoApresentado"][];
         };
         readonly ComposicaoVagas: {
             readonly codigo: components["schemas"]["ComposicaoVagasCodigo"];
@@ -14538,6 +14538,14 @@ export interface components {
             readonly fato: components["schemas"]["FatoCandidatoView"];
             readonly operadoresAdmitidos: readonly components["schemas"]["Operador"][];
         };
+        readonly FatoPressuposto: {
+            readonly fatoCodigo: string;
+            readonly rotulo: null | string;
+            readonly tipoDeCampo: null | components["schemas"]["TipoDeCampoCodigo"];
+            readonly formato: null | string;
+            readonly valoresSelecionaveis: null | readonly components["schemas"]["ValorSelecionavel"][];
+            readonly calculadoDe: null | readonly string[];
+        };
         readonly FatoValorDominioDto: {
             readonly codigo: string;
             readonly descricao: null | string;
@@ -14621,20 +14629,29 @@ export interface components {
          * @enum {string}
          */
         readonly FormatoPedagogicoCodigo: FormatoPedagogicoCodigo;
+        readonly FormularioApresentado: {
+            readonly finalidade: string;
+            readonly titulo: null | string;
+            readonly etapas: readonly components["schemas"]["SecaoRenderizavel"][];
+            readonly termos: readonly components["schemas"]["TermoApresentado"][];
+            readonly coleta: components["schemas"]["ColetaApresentada"];
+            readonly regras: components["schemas"]["FormularioPortavel"];
+            readonly pressupostos: components["schemas"]["PressupostosDoFormulario"];
+        };
         readonly FormularioPortavel: {
             readonly etapas: readonly components["schemas"]["EtapaPortavel"][];
             readonly termos: readonly components["schemas"]["TermoPortavel"][];
             readonly derivacoes: readonly components["schemas"]["DerivacaoPortavel"][];
             readonly agregados: readonly components["schemas"]["AgregadoPortavel"][];
         };
-        readonly FormularioRenderizavel: {
-            readonly finalidade: string;
-            readonly titulo: null | string;
-            readonly etapas: readonly components["schemas"]["SecaoRenderizavel"][];
-            readonly termos: readonly components["schemas"]["TermoRenderizavel"][];
-            readonly coleta: components["schemas"]["ColetaRenderizavel"];
-            readonly regras: components["schemas"]["FormularioPortavel"];
-            readonly pressupostos: components["schemas"]["PressupostosDoFormulario"];
+        readonly GrupoApresentado: {
+            readonly codigo: string;
+            /** Format: int32 */
+            readonly ordem: number;
+            readonly etapaCodigo: null | string;
+            readonly rotulo: string;
+            readonly ocorrencias: components["schemas"]["OcorrenciasDoGrupoDto"];
+            readonly subitens: readonly components["schemas"]["CampoApresentado"][];
         };
         readonly GrupoAreaEnemDto: {
             readonly codigo: string;
@@ -14693,15 +14710,6 @@ export interface components {
             readonly contagemValida: boolean;
             readonly ocorrenciaDoCandidatoValida: boolean;
             readonly ocorrencias: readonly components["schemas"]["OcorrenciaPreVisualizadaDto"][];
-        };
-        readonly GrupoRenderizavel: {
-            readonly codigo: string;
-            /** Format: int32 */
-            readonly ordem: number;
-            readonly etapaCodigo: null | string;
-            readonly rotulo: string;
-            readonly ocorrencias: components["schemas"]["OcorrenciasDoGrupoDto"];
-            readonly subitens: readonly components["schemas"]["CampoRenderizavel"][];
         };
         readonly ImpedimentoDto: {
             readonly quando: readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
@@ -15074,16 +15082,8 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
-        readonly PressupostoRenderizavel: {
-            readonly fatoCodigo: string;
-            readonly rotulo: null | string;
-            readonly tipoDeCampo: null | components["schemas"]["TipoDeCampoCodigo"];
-            readonly formato: null | string;
-            readonly valoresSelecionaveis: null | readonly components["schemas"]["ValorSelecionavel"][];
-            readonly calculadoDe: null | readonly string[];
-        };
         readonly PressupostosDoFormulario: {
-            readonly fatos: readonly components["schemas"]["PressupostoRenderizavel"][];
+            readonly fatos: readonly components["schemas"]["FatoPressuposto"][];
             /** Format: date */
             readonly dataReferenciaFatos: null | string;
             readonly fusoDoEnvio: null | string;
@@ -15335,6 +15335,17 @@ export interface components {
         readonly SolicitarAprovacaoDaProtecaoRequest: {
             readonly itens: null | readonly components["schemas"]["ItemParaSolicitarRequest"][];
         };
+        readonly TermoApresentado: {
+            readonly codigo: string;
+            readonly codigoNasRegras: string;
+            /** Format: int32 */
+            readonly ordem: number;
+            /** Format: uuid */
+            readonly termoId: string;
+            /** Format: uuid */
+            readonly versaoId: string;
+            readonly conteudo: components["schemas"]["ConteudoDoTermoDto"];
+        };
         readonly TermoAvaliado: {
             readonly codigo: string;
             readonly visivel: components["schemas"]["TernarioCodigo"];
@@ -15405,17 +15416,6 @@ export interface components {
             readonly codigo: string;
             readonly visivel: components["schemas"]["TernarioCodigo"];
             readonly obrigatorio: components["schemas"]["TernarioCodigo"];
-        };
-        readonly TermoRenderizavel: {
-            readonly codigo: string;
-            readonly codigoNasRegras: string;
-            /** Format: int32 */
-            readonly ordem: number;
-            /** Format: uuid */
-            readonly termoId: string;
-            /** Format: uuid */
-            readonly versaoId: string;
-            readonly conteudo: components["schemas"]["ConteudoDoTermoDto"];
         };
         readonly Ternario: {
             readonly codigo: components["schemas"]["TernarioCodigo"];

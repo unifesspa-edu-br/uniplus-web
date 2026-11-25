@@ -1,4 +1,4 @@
-import type { FormularioRenderizavelDto } from '@uniplus/shared-data/selecao';
+import type { FormularioApresentadoDoProcessoDto } from '@uniplus/shared-data/selecao';
 import { isValidCpf } from '@uniplus/shared-data/utils';
 import type { RespostaFixa, ValorJson } from '@uniplus/shared-ui/components';
 import { cpfRevelavel, mascararCpf } from '@uniplus/shared-utils';
@@ -11,7 +11,7 @@ export interface ContaDoCandidato {
 }
 
 /** Se o formulário coleta o fato. */
-function coletaO(formulario: FormularioRenderizavelDto, fato: string): boolean {
+function coletaO(formulario: FormularioApresentadoDoProcessoDto, fato: string): boolean {
   return formulario.formulario.coleta.itens.some((c) => c.fatoCodigo === fato);
 }
 
@@ -49,7 +49,7 @@ function respostasDaConta(conta: ContaDoCandidato | null): Record<string, Respos
 /** As respostas da conta entram no formulário que coleta o fato. */
 export function respostasFixasDaConta(
   conta: ContaDoCandidato | null,
-  formulario: FormularioRenderizavelDto | null,
+  formulario: FormularioApresentadoDoProcessoDto | null,
 ): Readonly<Record<string, RespostaFixa>> {
   if (formulario === null) return {};
   return Object.fromEntries(
@@ -66,7 +66,7 @@ export function respostasFixasDaConta(
 export function respostasIniciaisDoNomeSocial(
   conta: ContaDoCandidato | null,
   gravadas: Readonly<Record<string, ValorJson>>,
-  formulario: FormularioRenderizavelDto,
+  formulario: FormularioApresentadoDoProcessoDto,
 ): Record<string, ValorJson> {
   const jaEscolhido = 'DESEJA_NOME_SOCIAL' in gravadas;
   if (

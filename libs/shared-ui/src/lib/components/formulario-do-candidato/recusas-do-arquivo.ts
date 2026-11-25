@@ -3,15 +3,15 @@ import type {
   ApresentacaoDoCampo,
 } from '../editor-de-formulario/modelo/tipos';
 import type {
-  CampoRenderizavel,
+  CampoApresentado,
   ColetaDoFormulario,
   ConteudoDoTermo,
   FormularioDoCandidato,
-  GrupoRenderizavel,
+  GrupoApresentado,
   PressupostoDoFormulario,
   PressupostosDoFormulario,
   SecaoRenderizavel,
-  TermoRenderizavel,
+  TermoApresentado,
   ValorSelecionavel,
 } from './formulario-do-candidato.model';
 import type { OcorrenciasDoGrupoDasRegras } from './interpretador/regras-do-formulario';
@@ -94,7 +94,7 @@ const APRESENTACAO_DO_CAMPO = objeto<ApresentacaoDoCampo>({
   pedirConfirmacao: booleano,
   ajuda: opcional(texto),
 });
-const CAMPO = objeto<CampoRenderizavel>({
+const CAMPO = objeto<CampoApresentado>({
   fatoCodigo: texto,
   ordem: numero,
   apresentacao: APRESENTACAO_DO_CAMPO,
@@ -106,7 +106,7 @@ const OCORRENCIAS = objeto<OcorrenciasDoGrupoDasRegras>({
   incluiCandidato: booleano,
   maximo: opcional(numeroEstrito),
 });
-const GRUPO = objeto<GrupoRenderizavel>({
+const GRUPO = objeto<GrupoApresentado>({
   codigo: texto,
   ordem: numero,
   rotulo: texto,
@@ -131,7 +131,7 @@ const CONTEUDO_DO_TERMO = objeto<ConteudoDoTermo>({
   texto,
   baseLegal: texto,
 });
-const TERMO = objeto<TermoRenderizavel>({
+const TERMO = objeto<TermoApresentado>({
   codigo: texto,
   codigoNasRegras: texto,
   ordem: numero,
@@ -161,7 +161,7 @@ const FORMULARIO = objeto<FormularioDoCandidato>({
 });
 
 /**
- * A apresentação do formulário renderizável, conferida no que o formulário do candidato lê: cada seção,
+ * A apresentação do formulário apresentado, conferida no que o formulário do candidato lê: cada seção,
  * campo, grupo e termo com os códigos e textos dele. O primeiro problema sai com o caminho.
  */
 export function recusaDaApresentacao(conteudo: Objeto): RecusaDoArquivo | null {

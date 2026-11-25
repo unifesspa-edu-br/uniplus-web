@@ -7,8 +7,8 @@ const regrasDoCampo = (obrigatoriedade: object, exibicao: unknown = null): objec
   impedimento: null,
 });
 
-/** O renderizável mínimo de um modelo: uma etapa com um campo. */
-export const RENDERIZAVEL = {
+/** O formulário apresentado mínimo de um modelo: uma etapa com um campo. */
+export const APRESENTACAO = {
   finalidade: 'INSCRICAO',
   titulo: null,
   etapas: [

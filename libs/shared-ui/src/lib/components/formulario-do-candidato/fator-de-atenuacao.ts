@@ -1,9 +1,9 @@
 import type { NomesDeMunicipios } from '../editor-de-condicoes/valor-de-municipio';
 
 import {
-  type CampoRenderizavel,
+  type CampoApresentado,
   type DependenciasDaAvaliacao,
-  type GrupoRenderizavel,
+  type GrupoApresentado,
   type RespostaFixa,
 } from './formulario-do-candidato.model';
 import { type GrupoNoPasso, type PassoDoFormulario } from './passos-do-formulario';
@@ -97,7 +97,7 @@ function linhasDosCampos(
   });
 }
 
-function valorDoCampo(campo: CampoRenderizavel, entrada: EntradaDoResumoDoFator): string | null {
+function valorDoCampo(campo: CampoApresentado, entrada: EntradaDoResumoDoFator): string | null {
   const fixa = entrada.fixas?.[campo.fatoCodigo];
   // A resposta fixa aparece como o campo a mostra (o CPF mascarado), nunca pelo valor.
   if (fixa) return fixa.exibicao || null;
@@ -131,7 +131,7 @@ function linhasDoGrupo(
 
 /** Uma ocorrência do grupo: o título dela e as respostas, para rotular cada linha. */
 interface OcorrenciaDoFator {
-  readonly grupo: GrupoRenderizavel;
+  readonly grupo: GrupoApresentado;
   readonly ocorrencia: OcorrenciaAvaliada;
   readonly titulo: string;
   readonly resposta: OcorrenciaSimulada;
@@ -153,7 +153,7 @@ function linhasDaOcorrencia(
 }
 
 function linhaDoSubitem(
-  subitem: CampoRenderizavel,
+  subitem: CampoApresentado,
   { grupo, ocorrencia, titulo, resposta }: OcorrenciaDoFator,
   entrada: EntradaDoResumoDoFator,
 ): LinhaDoFator[] {
@@ -164,7 +164,7 @@ function linhaDoSubitem(
 }
 
 function textoDa(
-  campo: CampoRenderizavel,
+  campo: CampoApresentado,
   valor: ValorJson | undefined,
   chave: string,
   { municipios, gravados }: EntradaDoResumoDoFator,

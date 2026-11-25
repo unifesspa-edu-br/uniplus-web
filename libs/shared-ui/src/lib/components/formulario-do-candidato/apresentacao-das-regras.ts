@@ -1,11 +1,11 @@
 import {
   BLOCO_REVISAO_E_ACEITE,
-  type CampoRenderizavel,
+  type CampoApresentado,
   type ColetaDoFormulario,
   type FormularioDoCandidato,
   type SecaoRenderizavel,
-  type TermoRenderizavel,
-  type GrupoRenderizavel,
+  type TermoApresentado,
+  type GrupoApresentado,
   type ValorSelecionavel,
 } from './formulario-do-candidato.model';
 import type {
@@ -43,7 +43,7 @@ export function apresentacaoDasRegras(
   };
 }
 
-type FabricaDeCampos = (item: ItemDasRegras, ordem: number) => CampoRenderizavel;
+type FabricaDeCampos = (item: ItemDasRegras, ordem: number) => CampoApresentado;
 
 /** O que a simulação e as condições das regras dizem do tipo de um campo. */
 interface Indicios {
@@ -75,17 +75,17 @@ function coletaDasRegras(regras: RegrasDoFormulario, campo: FabricaDeCampos): Co
 function gruposDasRegras(
   etapas: NonNullable<RegrasDoFormulario['etapas']>,
   campo: FabricaDeCampos,
-): GrupoRenderizavel[] {
+): GrupoApresentado[] {
   return etapas
     .flatMap((etapa) => etapa.grupos ?? [])
-    .map((grupo, ordem) => grupoRenderizavel(grupo, ordem, campo));
+    .map((grupo, ordem) => grupoApresentado(grupo, ordem, campo));
 }
 
-function grupoRenderizavel(
+function grupoApresentado(
   grupo: GrupoDasRegras,
   ordem: number,
   campo: FabricaDeCampos,
-): GrupoRenderizavel {
+): GrupoApresentado {
   return {
     codigo: grupo.codigo,
     ordem,
@@ -95,7 +95,7 @@ function grupoRenderizavel(
   };
 }
 
-function termosDasRegras(regras: RegrasDoFormulario): TermoRenderizavel[] {
+function termosDasRegras(regras: RegrasDoFormulario): TermoApresentado[] {
   return (regras.termos ?? []).map((termo, ordem) => ({
     codigo: termo.codigo,
     codigoNasRegras: termo.codigo,
@@ -143,7 +143,7 @@ function secaoDeRevisaoEAceite(ordem: number): SecaoRenderizavel {
   };
 }
 
-function campoDoItem(item: ItemDasRegras, ordem: number, indicios: Indicios): CampoRenderizavel {
+function campoDoItem(item: ItemDasRegras, ordem: number, indicios: Indicios): CampoApresentado {
   const valores = valoresOferecidos(item);
   return {
     fatoCodigo: item.fatoCodigo,

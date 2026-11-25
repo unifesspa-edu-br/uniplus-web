@@ -9,7 +9,7 @@ import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SimuladorDeFormularioPage } from './simulador-de-formulario.page';
-import { CASO, RENDERIZAVEL } from './simulador-de-formulario.page.testing';
+import { CASO, APRESENTACAO } from './simulador-de-formulario.page.testing';
 
 const BASE = 'http://localhost:5000';
 
@@ -161,15 +161,15 @@ describe('SimuladorDeFormularioPage', () => {
     );
     req.flush([{ id: ID, codigo: 'INSC', descritivo: { nome: 'Inscrição' }, ativo }]);
   };
-  const renderizavel = (): void => {
+  const apresentacao = (): void => {
     const req = http.expectOne(
-      `${BASE}/api/configuracao/admin/modelos-formulario/${ID}/renderizavel`,
+      `${BASE}/api/configuracao/admin/modelos-formulario/${ID}/apresentacao`,
     );
     expect(req.request.context.get(VENDOR_MIME_TOKEN)).toEqual({
       resource: 'formulario',
       version: 2,
     });
-    req.flush(RENDERIZAVEL);
+    req.flush(APRESENTACAO);
     harness.detectChanges();
   };
 
@@ -180,10 +180,10 @@ describe('SimuladorDeFormularioPage', () => {
     expect(tela().querySelector('ui-select')).toBeNull();
   });
 
-  it('?modelo= na URL lista os modelos e carrega o renderizável do modelo', async () => {
+  it('?modelo= na URL lista os modelos e carrega a apresentação do modelo', async () => {
     await abrir(`/simulador?modelo=${ID}`);
     listaDeModelos();
-    renderizavel();
+    apresentacao();
 
     expect(tela().querySelector('input[type="file"]')).toBeNull();
     expect((tela().querySelector('select') as HTMLSelectElement).value).toBe(ID);
@@ -195,7 +195,7 @@ describe('SimuladorDeFormularioPage', () => {
   it('o link para editar o modelo aparece só com a permissão de manter modelos', async () => {
     await abrir(`/simulador?modelo=${ID}`);
     listaDeModelos();
-    renderizavel();
+    apresentacao();
     expect(tela().textContent).toContain('Editar o modelo');
   });
 
@@ -203,14 +203,14 @@ describe('SimuladorDeFormularioPage', () => {
     permissoesConcedidas = ['configuracao:modelos-formulario:consultar'];
     await abrir(`/simulador?modelo=${ID}`);
     listaDeModelos();
-    renderizavel();
+    apresentacao();
     expect(tela().textContent).not.toContain('Editar o modelo');
   });
 
   it('?modelo= de um modelo desativado o mostra escolhido, marcado como desativado', async () => {
     await abrir(`/simulador?modelo=${ID}`);
     listaDeModelos(false);
-    renderizavel();
+    apresentacao();
 
     const select = tela().querySelector('select') as HTMLSelectElement;
     expect(select.value).toBe(ID);
@@ -228,7 +228,7 @@ describe('SimuladorDeFormularioPage', () => {
     const segunda = http.expectOne((r) => r.url === listagem && r.params.get('cursor') === 'p2');
     expect(segunda.request.params.get('direction')).toBe('next');
     segunda.flush([{ id: ID, codigo: 'INSC', descritivo: { nome: 'Inscrição' }, ativo: true }]);
-    renderizavel();
+    apresentacao();
 
     const select = tela().querySelector('select') as HTMLSelectElement;
     expect(Array.from(select.options).map((o) => o.value)).toEqual(['', 'outro', ID]);
@@ -249,13 +249,13 @@ describe('SimuladorDeFormularioPage', () => {
     await harness.fixture.whenStable();
 
     expect(TestBed.inject(Router).url).toBe(`/simulador?modelo=${ID}`);
-    renderizavel();
+    apresentacao();
     expect(tela().textContent).toContain('Nome social');
   });
 
-  const RENDERIZAVEL_URL = `${BASE}/api/configuracao/admin/modelos-formulario/${ID}/renderizavel`;
+  const APRESENTACAO_URL = `${BASE}/api/configuracao/admin/modelos-formulario/${ID}/apresentacao`;
   const recusar = (status: number, title: string): void =>
-    http.expectOne(RENDERIZAVEL_URL).flush(
+    http.expectOne(APRESENTACAO_URL).flush(
       { type: 'about:blank', title, status },
       {
         status,
@@ -277,7 +277,7 @@ describe('SimuladorDeFormularioPage', () => {
     tentar.focus();
     tentar.click();
     harness.detectChanges();
-    renderizavel();
+    apresentacao();
     await harness.fixture.whenStable();
     harness.detectChanges();
 

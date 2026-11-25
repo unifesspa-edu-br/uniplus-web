@@ -1,7 +1,7 @@
 import { chaveDaExigencia, type DocumentoAvaliado } from './documentos-avaliados';
 import type { DocumentoNaTela, ExigenciaPedida } from './regras-de-documentos';
 import { formatosDaExigencia } from './envio-de-documentos';
-import type { GrupoRenderizavel } from './formulario-do-candidato.model';
+import type { GrupoApresentado } from './formulario-do-candidato.model';
 
 /** Um integrante de quem a avaliação pede o documento que se repete, e como pede. */
 export interface IntegranteDoItem {
@@ -41,7 +41,7 @@ function rotulosDosIntegrantes(
 export function documentoJuntado(
   chave: string,
   documento: DocumentoAvaliado,
-  grupo: GrupoRenderizavel | undefined,
+  grupo: GrupoApresentado | undefined,
   integrantes: readonly IntegranteDoItem[],
 ): DocumentoNaTela {
   const { unica, ...situacao } = situacaoDosIntegrantes(documento, integrantes);
@@ -66,7 +66,7 @@ function exigidasDosIntegrantes(
 }
 
 /** "de cada integrante (familiares)", para quando não se sabe quais integrantes há. */
-export function deCadaIntegrante(grupo: GrupoRenderizavel | undefined): string {
+export function deCadaIntegrante(grupo: GrupoApresentado | undefined): string {
   const doGrupo = grupo ? ` (${grupo.rotulo.toLocaleLowerCase('pt-BR')})` : '';
   return `de cada integrante${doGrupo}`;
 }
@@ -90,7 +90,7 @@ function titulosPorSituacao(
 function deQuem(
   integrantes: readonly IntegranteDoItem[],
   situacaoUnica: boolean,
-  grupo: GrupoRenderizavel | undefined,
+  grupo: GrupoApresentado | undefined,
 ): string {
   if (integrantes.some((i) => i.ocorrenciaId === null || i.titulo === null))
     return deCadaIntegrante(grupo);

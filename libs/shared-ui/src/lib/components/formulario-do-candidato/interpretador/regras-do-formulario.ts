@@ -132,7 +132,7 @@ export interface AgregadoDasRegras {
   readonly operacao: string;
 }
 
-/** As regras de um formulário, como o formulário renderizável as traz em `regras`. */
+/** As regras de um formulário, como o formulário apresentado as traz em `regras`. */
 export interface RegrasDoFormulario {
   readonly etapas?: readonly EtapaDasRegras[] | null;
   readonly termos?: readonly TermoDasRegras[] | null;

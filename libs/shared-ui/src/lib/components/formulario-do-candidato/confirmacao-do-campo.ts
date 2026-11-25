@@ -1,8 +1,8 @@
 import { digitosDoTelefone } from '@uniplus/shared-utils';
 
 import {
-  type CampoRenderizavel,
-  type GrupoRenderizavel,
+  type CampoApresentado,
+  type GrupoApresentado,
   type RespostaFixa,
 } from './formulario-do-candidato.model';
 import { controleDoTipo } from './controle-do-campo';
@@ -23,7 +23,7 @@ import type {
  */
 
 /** O campo mostra a confirmação: pede, é de texto digitado e o candidato pode alterá-lo. */
-export function pedeConfirmacao(campo: CampoRenderizavel, fixa: boolean): boolean {
+export function pedeConfirmacao(campo: CampoApresentado, fixa: boolean): boolean {
   return (
     campo.apresentacao.pedirConfirmacao &&
     !fixa &&
@@ -33,7 +33,7 @@ export function pedeConfirmacao(campo: CampoRenderizavel, fixa: boolean): boolea
 
 /** A resposta que o texto digitado num campo de texto dá: o telefone só com os dígitos, ou o próprio texto. */
 export function respostaDoTextoLivre(
-  campo: Pick<CampoRenderizavel, 'formato'>,
+  campo: Pick<CampoApresentado, 'formato'>,
   texto: string,
 ): ValorJson | undefined {
   if (texto.trim() === '') return undefined;
@@ -47,7 +47,7 @@ export function respostaDoTextoLivre(
  * confirmar.
  */
 export function problemaDaConfirmacao(
-  campo: CampoRenderizavel,
+  campo: CampoApresentado,
   resposta: ValorJson | undefined,
   confirmacao: string,
 ): ProblemaDaConfirmacao | null {
@@ -86,7 +86,7 @@ export function avaliarConfirmacoes(
 /** Um campo e a resposta que a confirmação confere, pelo código com que a tela o marca. */
 interface CampoConfirmavel {
   readonly caminho: string;
-  readonly campo: CampoRenderizavel;
+  readonly campo: CampoApresentado;
   readonly fixa: boolean;
   readonly resposta: ValorJson | undefined;
 }
@@ -129,7 +129,7 @@ function problemasDosGrupos(
 
 /** O subitem de uma ocorrência e o que a confirmação dele confere. */
 interface SubitemConfirmavel {
-  readonly grupo: GrupoRenderizavel;
+  readonly grupo: GrupoApresentado;
   readonly ocorrencia: OcorrenciaAvaliada;
   readonly avaliadoDoSubitem: CampoAvaliado;
   readonly atuais: Readonly<Record<string, ValorJson>> | null | undefined;

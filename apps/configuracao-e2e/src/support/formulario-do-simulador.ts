@@ -97,7 +97,7 @@ const SECOES = [
 const SEM_TERMOS_NEM_DERIVACOES = { termos: [], derivacoes: [], agregados: [] };
 
 /**
- * O formulário exportado que o simulador abre, na forma do formulário renderizável: apresentação em
+ * O formulário exportado que o simulador abre, na forma do formulário apresentado: apresentação em
  * `etapas`, o que se pergunta em `coleta`, as regras em `regras` e os fatos de fora em `pressupostos`.
  * A condição de exibição do campo da aldeia é a que o caso quer exercitar; o operador fora do
  * vocabulário só cabe por extenso, porque o tipo gerado não o admitiria.

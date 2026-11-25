@@ -1,4 +1,4 @@
-import type { CampoRenderizavel } from './formulario-do-candidato.model';
+import type { CampoApresentado } from './formulario-do-candidato.model';
 import {
   FATO_PARENTESCO,
   PROPRIO_CANDIDATO,
@@ -68,7 +68,7 @@ function avaliadosDaOcorrencia(
 }
 
 function campoComRegra(
-  campo: CampoRenderizavel,
+  campo: CampoApresentado,
   avaliado: CampoAvaliado | undefined,
   contexto: ContextoDaOcorrencia,
   regras: ReadonlyMap<string, ItemDasRegras>,
@@ -78,7 +78,7 @@ function campoComRegra(
 }
 
 function campoDaOcorrencia(
-  campo: CampoRenderizavel,
+  campo: CampoApresentado,
   avaliado: CampoAvaliado | undefined,
   contexto: ContextoDaOcorrencia,
 ): Pick<CampoNoPasso, 'campo' | 'avaliado'> | null {
@@ -91,7 +91,7 @@ function campoDaOcorrencia(
   return { campo: semOProprioCandidato(campo), avaliado: semOProprioCandidatoNasOpcoes(avaliado) };
 }
 
-function semOProprioCandidato(campo: CampoRenderizavel): CampoRenderizavel {
+function semOProprioCandidato(campo: CampoApresentado): CampoApresentado {
   return {
     ...campo,
     valoresSelecionaveis: campo.valoresSelecionaveis?.filter((v) => v.codigo !== PROPRIO_CANDIDATO),

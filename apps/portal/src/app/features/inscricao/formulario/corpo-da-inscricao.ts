@@ -1,6 +1,6 @@
 import {
   type AvaliacaoDaInscricaoRequest,
-  type FormularioRenderizavelDto,
+  type FormularioApresentadoDoProcessoDto,
   type InscricaoDto,
   type InscricaoRequest,
   SituacaoInscricaoCodigo,
@@ -66,7 +66,7 @@ export function corpoDaAvaliacao(
   };
 }
 
-type TermosDoFormulario = FormularioRenderizavelDto['formulario']['termos'];
+type TermosDoFormulario = FormularioApresentadoDoProcessoDto['formulario']['termos'];
 
 function aceitesDosTermos(
   termosAceitos: readonly string[],

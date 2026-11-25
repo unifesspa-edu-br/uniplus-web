@@ -196,7 +196,7 @@ export {
   FinalidadeDoDocumentoCodigo,
   type IniciarEnvioDoDocumentoAPublicarDto,
   type IniciarEnvioDoDocumentoAPublicarRequest,
-  type FormularioRenderizavelDto,
+  type FormularioApresentadoDoProcessoDto,
   type ProcessoSeletivoDto,
   type ProcessoSeletivoResumoDto,
   type PublicarAtoAvulsoDoProcessoRequest,

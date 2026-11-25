@@ -1,6 +1,6 @@
 import type { ItemDeComprovacao } from './regras-de-documentos';
 import type { DocumentoAvaliado, GrupoDoDocumento } from './documentos-avaliados';
-import type { GrupoRenderizavel } from './formulario-do-candidato.model';
+import type { GrupoApresentado } from './formulario-do-candidato.model';
 import { textoDoGrupo } from './textos-das-regras-de-documentos';
 
 const DOCUMENTO_PADRAO = {
@@ -67,7 +67,7 @@ export const e = (grupoId: string): GrupoDoDocumento => ({
   grupoDoFormularioParaRepeticao: null,
 });
 
-export const FAMILIA: GrupoRenderizavel = {
+export const FAMILIA: GrupoApresentado = {
   codigo: 'FAMILIA',
   ordem: 0,
   rotulo: 'Composição familiar',

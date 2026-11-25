@@ -12,7 +12,7 @@ import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 export type ModeloFormularioView = components['schemas']['ModeloFormularioDto'];
-export type FormularioRenderizavel = components['schemas']['FormularioRenderizavel'];
+export type FormularioApresentado = components['schemas']['FormularioApresentado'];
 export type CriarModeloFormularioCommand = components['schemas']['CriarModeloFormularioCommand'];
 export type EdicaoDoModeloInput = components['schemas']['EdicaoDoModeloInput'];
 export type ConteudoDoModeloInput = components['schemas']['ConteudoDoModeloInput'];
@@ -107,11 +107,11 @@ export class ModelosFormularioApi {
   }
 
   /**
-   * GET `/api/configuracao/admin/modelos-formulario/{id}/renderizavel` — o modelo no formato que o
+   * GET `/api/configuracao/admin/modelos-formulario/{id}/apresentacao` — o modelo no formato que o
    * candidato veria, com as regras que o interpretador avalia, para a simulação antes de aplicá-lo.
    */
-  obterRenderizavel(id: string): Observable<ApiResult<FormularioRenderizavel>> {
-    return this.http.get<ApiResult<FormularioRenderizavel>>(this.admin(id, 'renderizavel'), {
+  obterApresentacao(id: string): Observable<ApiResult<FormularioApresentado>> {
+    return this.http.get<ApiResult<FormularioApresentado>>(this.admin(id, 'apresentacao'), {
       context: withVendorMime('formulario', 2),
     });
   }
