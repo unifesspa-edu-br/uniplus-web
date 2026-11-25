@@ -5,8 +5,8 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
  * página a trata como descarte calado: não há o que exibir nem o que concluir.
  */
 export const RESPOSTA_DESCARTADA = Object.freeze({
-  valid: false as const,
-  messages: [] as never[],
+  valid: false,
+  messages: [],
 });
 
 export type RespostaDescartada = typeof RESPOSTA_DESCARTADA;
