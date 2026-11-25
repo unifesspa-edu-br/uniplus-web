@@ -68,7 +68,7 @@ export class ConferenciaDasSecoes {
 
   /**
    * As pendências das seções, sem dar nenhuma como concluída: o que o candidato ainda tem de resolver.
-   * Quem hospeda monta daqui o motivo de o envio não seguir; `concluirTodas()` é a conta que vale.
+   * Quem hospeda monta daqui o motivo de o envio não seguir; as duas formas de concluir usam essa conta.
    */
   readonly pendenciasPorSecao = computed<readonly PendenciaDaSecao[]>(() =>
     this.pendenciasCompletas().map(({ passo, pendencias }) => ({
@@ -123,15 +123,22 @@ export class ConferenciaDasSecoes {
   }
 
   /**
-   * Dá todas as seções como concluídas, como o envio faz, quando nenhuma tem pendência, e devolve
-   * quantas pendências há. Com pendência nada é concluído: com `navegar`, leva à seção da primeira, põe
-   * o foco no campo e anuncia quantas são; sem ele, só conta, e quem hospeda decide para onde levar.
+   * Como no envio, conclui todas as seções se não há pendências e devolve a quantidade delas.
+   * Com pendências, não conclui nenhuma; quem hospeda decide para onde levar.
    */
-  concluirTodas(navegar = true): number {
-    const secoes = this.pendenciasCompletas();
-    const total = secoes.reduce((soma, s) => soma + s.pendencias.length, 0);
+  concluirTodas(): number {
+    const total = this.pendenciasCompletas().reduce((soma, s) => soma + s.pendencias.length, 0);
     if (total === 0) this.concluirTodasSemPendencia();
-    else if (navegar) this.levarAPrimeiraPendencia(secoes[0].passo, total);
+    return total;
+  }
+
+  /**
+   * Conclui e conta como `concluirTodas`; com pendências, leva à seção da primeira,
+   * põe o foco no campo e anuncia a quantidade.
+   */
+  concluirTodasENavegar(): number {
+    const total = this.concluirTodas();
+    if (total > 0) this.levarAPrimeiraPendencia(this.pendenciasCompletas()[0].passo, total);
     return total;
   }
 

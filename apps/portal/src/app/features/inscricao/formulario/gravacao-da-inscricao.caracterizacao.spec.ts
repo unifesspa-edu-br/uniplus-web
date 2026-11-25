@@ -250,7 +250,7 @@ describe('GravacaoDaInscricao: o envio', () => {
 
     c.gravacao.enviar(c.formulario);
 
-    expect(c.formulario.concluirTodas).toHaveBeenCalledWith(false);
+    expect(c.formulario.concluirTodas).toHaveBeenCalledWith();
     expect(c.servico.submeter).not.toHaveBeenCalled();
     expect(c.gravacao.operacao()).toBeNull();
   });

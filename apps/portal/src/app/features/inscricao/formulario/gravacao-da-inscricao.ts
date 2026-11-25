@@ -122,7 +122,7 @@ export class GravacaoDaInscricao {
   enviar(formulario: FormularioParaGravar): void {
     if (this.bloqueada()) return;
     // Só o envio de um formulário válido conclui as seções.
-    if (formulario.concluirTodas(false) > 0) return;
+    if (formulario.concluirTodas() > 0) return;
     this.gravar(
       formulario,
       'enviando',

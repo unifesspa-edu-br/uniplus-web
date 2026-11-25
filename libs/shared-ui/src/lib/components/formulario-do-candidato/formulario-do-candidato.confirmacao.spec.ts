@@ -43,7 +43,7 @@ describe('FormularioDoCandidatoComponent', () => {
       cenario.digitar(resposta, EMAIL);
       cenario.digitar(confirmacao, 'outro_valor@lhp.com.br');
 
-      expect(cenario.fixture.componentInstance.concluirTodas()).toBe(1);
+      expect(cenario.fixture.componentInstance.concluirTodasENavegar()).toBe(1);
       cenario.fixture.detectChanges();
       await cenario.fixture.whenStable();
 
@@ -59,7 +59,7 @@ describe('FormularioDoCandidatoComponent', () => {
       const { resposta, confirmacao } = entradas(tela);
       cenario.digitar(resposta, EMAIL);
 
-      expect(cenario.fixture.componentInstance.concluirTodas()).toBe(1);
+      expect(cenario.fixture.componentInstance.concluirTodasENavegar()).toBe(1);
       cenario.fixture.detectChanges();
       await cenario.fixture.whenStable();
 
@@ -70,7 +70,7 @@ describe('FormularioDoCandidatoComponent', () => {
     it('a resposta gravada sem confirmação também bloqueia o envio, como a digitada', () => {
       cenario.montar(FORMULARIO_COM_CONFIRMACAO_DO_EMAIL, { inicial: { respostas: { EMAIL } } });
 
-      expect(cenario.fixture.componentInstance.concluirTodas()).toBe(1);
+      expect(cenario.fixture.componentInstance.concluirTodasENavegar()).toBe(1);
     });
 
     it('a resposta gravada deixa enviar quando a confirmação confere', () => {
@@ -79,7 +79,7 @@ describe('FormularioDoCandidatoComponent', () => {
       });
       cenario.digitar(entradas(tela).confirmacao, EMAIL);
 
-      expect(cenario.fixture.componentInstance.concluirTodas()).toBe(0);
+      expect(cenario.fixture.componentInstance.concluirTodasENavegar()).toBe(0);
     });
 
     it('a confirmação que confere deixa enviar, e vale depois de trocar de seção', () => {
@@ -89,7 +89,7 @@ describe('FormularioDoCandidatoComponent', () => {
       cenario.digitar(confirmacao, EMAIL);
       cenario.clicar(cenario.botao('Próxima seção'));
 
-      expect(cenario.fixture.componentInstance.concluirTodas()).toBe(0);
+      expect(cenario.fixture.componentInstance.concluirTodasENavegar()).toBe(0);
     });
 
     it('a confirmação do campo de uma ocorrência do grupo também bloqueia o envio', async () => {
@@ -101,7 +101,7 @@ describe('FormularioDoCandidatoComponent', () => {
         EMAIL,
       );
 
-      expect(cenario.fixture.componentInstance.concluirTodas()).toBe(1);
+      expect(cenario.fixture.componentInstance.concluirTodasENavegar()).toBe(1);
       cenario.fixture.detectChanges();
       await cenario.fixture.whenStable();
 
