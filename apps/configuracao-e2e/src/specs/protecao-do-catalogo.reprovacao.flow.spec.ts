@@ -8,7 +8,7 @@ import {
   ERRO_INTERNO,
   ITEM,
   type Leitura,
-  abrirReprovacao,
+  abrirDevolucao,
   linha,
   mockApi,
   painel,
@@ -17,16 +17,16 @@ import {
 } from '../support/escritas-da-protecao';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
-test.describe('Proteção de dados do catálogo — reprovação e nova tentativa', () => {
+test.describe('Proteção de dados do catálogo — devolução e nova tentativa', () => {
   test.beforeEach(async ({ page }) => {
     await mockConfiguracaoRuntimeConfig(page);
   });
 
-  test('reprovação pendente deixa o diálogo somente leitura, com o botão focado e Esc e X recusados', async ({
+  test('devolução pendente deixa o diálogo somente leitura, com o botão focado e Esc e X recusados', async ({
     page,
   }) => {
     const mock = await mockApi(page, { decisoes: [{ status: 204 }] });
-    const { dialogo, campo, confirmar } = await abrirReprovacao(page, 'Falta a base legal.');
+    const { dialogo, campo, confirmar } = await abrirDevolucao(page, 'Falta a base legal.');
 
     await confirmar.click();
     await expect(confirmar).toBeFocused();
@@ -55,22 +55,22 @@ test.describe('Proteção de dados do catálogo — reprovação e nova tentativ
     page,
   }) => {
     const mock = await mockApi(page, { decisoes: [] });
-    const { campo, confirmar } = await abrirReprovacao(page, null);
+    const { campo, confirmar } = await abrirDevolucao(page, null);
 
     await confirmar.focus();
     await page.keyboard.press('Enter');
 
     await expect(campo).toBeFocused();
     await expect(campo).toHaveAttribute('aria-invalid', 'true');
-    await expect(page.getByText('Informe a justificativa da reprovação.')).toBeVisible();
+    await expect(page.getByText('Informe a justificativa da devolução.')).toBeVisible();
     expect(mock.chaves()).toHaveLength(0);
   });
 
-  test('reprovação recusada pelo servidor mantém o diálogo, o foco no botão e a recusa visível', async ({
+  test('devolução recusada pelo servidor mantém o diálogo, o foco no botão e a recusa visível', async ({
     page,
   }) => {
     const mock = await mockApi(page, { decisoes: [{ status: 500, corpo: ERRO_INTERNO }] });
-    const { dialogo, confirmar } = await abrirReprovacao(page, 'Falta a base legal.');
+    const { dialogo, confirmar } = await abrirDevolucao(page, 'Falta a base legal.');
 
     await confirmar.click();
     mock.liberar();
@@ -86,7 +86,7 @@ test.describe('Proteção de dados do catálogo — reprovação e nova tentativ
     const mock = await mockApi(page, {
       decisoes: [{ status: 409, corpo: EM_PROCESSAMENTO }, { status: 204 }],
     });
-    const { dialogo, confirmar } = await abrirReprovacao(page, 'Falta a base legal.');
+    const { dialogo, confirmar } = await abrirDevolucao(page, 'Falta a base legal.');
 
     await confirmar.click();
     mock.liberar(0);
@@ -107,7 +107,7 @@ test.describe('Proteção de dados do catálogo — reprovação e nova tentativ
       decisoes: [{ status: 409, corpo: CONCORRENCIA }],
       recarga: 'sem-o-item',
     });
-    const { dialogo, confirmar } = await abrirReprovacao(page, 'Falta a base legal.');
+    const { dialogo, confirmar } = await abrirDevolucao(page, 'Falta a base legal.');
 
     await confirmar.click();
     mock.liberar();

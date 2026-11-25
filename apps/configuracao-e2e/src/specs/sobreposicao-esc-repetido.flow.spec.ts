@@ -231,8 +231,8 @@ test.describe('Sobreposição com escrita pendente — Esc repetido', () => {
     await page.goto('/protecao-do-catalogo');
     await page.getByRole('button', { name: `Ver o detalhe de ${ITEM.nome}` }).click();
     const drawer = page.getByRole('dialog', { name: 'Detalhe do item aguardando a decisão' });
-    await drawer.getByRole('button', { name: 'Reprovar' }).click();
-    const dialogo = page.getByRole('dialog', { name: 'Reprovar a proteção de dados do item' });
+    await drawer.getByRole('button', { name: 'Devolver' }).click();
+    const dialogo = page.getByRole('dialog', { name: 'Devolver a proteção de dados do item' });
     await dialogo.getByRole('textbox', { name: /Justificativa/ }).fill('Falta a base legal.');
     const confirmar = dialogo.locator('.uni-dialog__footer .btn--danger');
     await confirmar.click();

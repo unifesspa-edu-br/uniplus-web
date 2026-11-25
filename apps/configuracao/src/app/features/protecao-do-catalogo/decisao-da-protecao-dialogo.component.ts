@@ -1,3 +1,4 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import {
@@ -21,12 +22,18 @@ interface TextosDaDecisao {
 }
 
 const TEXTOS: Readonly<Record<DecisaoDaProtecao, TextosDaDecisao>> = {
-  APROVAR: { titulo: 'Aprovar a proteção de dados do item', confirmar: 'Aprovar item' },
-  RECOMENDAR_AJUSTE: {
+  [DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO]: {
+    titulo: 'Aprovar a proteção de dados do item',
+    confirmar: 'Aprovar item',
+  },
+  [DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO]: {
     titulo: 'Recomendar ajuste da proteção de dados',
     confirmar: 'Recomendar ajuste',
   },
-  REPROVAR: { titulo: 'Reprovar a proteção de dados do item', confirmar: 'Reprovar item' },
+  [DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO]: {
+    titulo: 'Devolver a proteção de dados do item',
+    confirmar: 'Devolver item',
+  },
 };
 
 @Component({
@@ -44,6 +51,7 @@ const TEXTOS: Readonly<Record<DecisaoDaProtecao, TextosDaDecisao>> = {
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class DecisaoDaProtecaoDialogoComponent {
+  protected readonly decisoes = DecidirProtecaoDoCatalogoRequestDecisao;
   readonly aberto = input.required<boolean>();
   readonly detalhe = input.required<DetalheDaProtecaoDoCatalogoDto | null>();
   readonly decisao = input.required<DecisaoDaProtecao>();
@@ -56,7 +64,7 @@ export class DecisaoDaProtecaoDialogoComponent {
   readonly erroDaJustificativa = input.required<string | null>();
   readonly tamanhoDaJustificativa = input.required<number>();
   readonly manifestacoes = input<readonly ManifestacaoDaProtecaoDto[]>([]);
-  /** A reprovação e a decisão diante de manifestação desfavorável vigente exigem a justificativa. */
+  /** A devolução e a decisão diante de manifestação desfavorável vigente exigem a justificativa. */
   readonly exigeJustificativa = input(false);
   readonly fechar = output<void>();
   readonly confirmar = output<void>();

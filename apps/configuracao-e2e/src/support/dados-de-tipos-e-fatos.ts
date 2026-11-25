@@ -1,3 +1,4 @@
+import type { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import type { JsonDaApi } from '@uniplus/shared-e2e';
 import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 
@@ -19,7 +20,7 @@ export const APROVADA = {
 };
 export const AJUSTE = {
   ...APROVADA,
-  situacao: 'AJUSTE_RECOMENDADO',
+  situacao: 'AJUSTE_RECOMENDADO' satisfies `${DecidirProtecaoDoCatalogoRequestDecisao}`,
   classificacaoRecomendada: 'SENSIVEL',
   justificativa: 'O dado revela a identidade de gênero.',
 };
@@ -194,7 +195,7 @@ export const ATOS_DO_TIPO = [
     classificacaoProtecao: 'INTERNO',
   },
   {
-    ato: 'AJUSTE_RECOMENDADO',
+    ato: 'AJUSTE_RECOMENDADO' satisfies `${DecidirProtecaoDoCatalogoRequestDecisao}`,
     instante: '2026-10-30T13:30:00Z',
     atorNome: 'Caroline Stefany Jesus',
     ...ATO,
@@ -219,7 +220,7 @@ export const ATOS_DO_FATO = [
     ...ATO,
   },
   {
-    ato: 'REPROVACAO',
+    ato: 'DEVOLUCAO' satisfies `${DecidirProtecaoDoCatalogoRequestDecisao}`,
     instante: '2026-10-29T09:20:00Z',
     atorNome: 'Betina Marina Valentina das Neves',
     ...ATO,
@@ -254,7 +255,7 @@ export const DECISOES = [
     itemId: FATOS[0].id,
     itemCodigo: FATOS[0].codigo,
     itemNome: FATOS[0].descritivo.nome,
-    ato: 'APROVACAO',
+    ato: 'APROVACAO' satisfies `${DecidirProtecaoDoCatalogoRequestDecisao}`,
     instante: '2026-10-27T11:00:00Z',
     atorNome: 'Caroline Stefany Jesus',
     ...ATO,

@@ -25,7 +25,7 @@
       </section>
     }
     <fieldset class="form-drawer__campos" role="none" [disabled]="decidindo()">
-      @if (decisao() === 'RECOMENDAR_AJUSTE') {
+      @if (decisao() === decisoes.AJUSTE_RECOMENDADO) {
         <label class="field" [class.is-error]="tentouDecidir() && recomendada().invalid">
           <span class="field__label is-required">Classificação recomendada</span>
           <select
@@ -51,7 +51,7 @@
           </span>
           @if (opcoes().length === 0) {
             <span class="field__error">
-              Nenhuma outra classificação combina com a hipótese legal declarada. Cancele e reprove
+              Nenhuma outra classificação combina com a hipótese legal declarada. Cancele e devolva
               o item ou deixe-o com o administrador, que pode editar a hipótese.
             </span>
           }
@@ -76,8 +76,8 @@
           "
         ></textarea>
         <span class="field__hint" id="cfg-justificativa-ajuda">
-          @if (decisao() === 'REPROVAR') {
-            Obrigatória. Explique o motivo da reprovação; o administrador a lê ao editar o item.
+          @if (decisao() === decisoes.DEVOLUCAO) {
+            Obrigatória. Explique o motivo da devolução; o administrador a lê ao editar o item.
           } @else if (exigeJustificativa()) {
             Obrigatória: há manifestação desfavorável vigente. Explique por que decide assim.
           } @else {
@@ -106,8 +106,8 @@
     <button
       type="button"
       class="btn"
-      [class.btn--danger]="decisao() === 'REPROVAR'"
-      [class.btn--primary]="decisao() !== 'REPROVAR'"
+      [class.btn--danger]="decisao() === decisoes.DEVOLUCAO"
+      [class.btn--primary]="decisao() !== decisoes.DEVOLUCAO"
       [attr.aria-disabled]="decidindo()"
       [attr.aria-busy]="decidindo()"
       (click)="decidindo() ? $event.preventDefault() : enviar()"

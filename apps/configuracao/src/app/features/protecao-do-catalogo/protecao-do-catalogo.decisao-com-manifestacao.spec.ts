@@ -1,3 +1,7 @@
+import {
+  DecidirProtecaoDoCatalogoRequestDecisao,
+  RegistrarManifestacaoDaProtecaoRequestParecer,
+} from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it, beforeAll } from 'vitest';
 import {
   APROVAR,
@@ -32,7 +36,13 @@ const comManifestacao = (desfavoravel: boolean) => ({
     manifestacaoDesfavoravel: desfavoravel,
     manifestacoesNoCiclo: 1,
   },
-  manifestacoesVigentes: [manifestacao({ parecer: desfavoravel ? 'INADEQUADA' : 'ADEQUADA' })],
+  manifestacoesVigentes: [
+    manifestacao({
+      parecer: desfavoravel
+        ? RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO
+        : RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_APROVACAO,
+    }),
+  ],
 });
 
 describe('ProtecaoDoCatalogoPage — decisão diante de manifestação técnica', () => {
@@ -62,7 +72,7 @@ describe('ProtecaoDoCatalogoPage — decisão diante de manifestação técnica'
     await abrirItem(pagina, laudo, comManifestacao(true));
     await aprovarPeloDialogo();
 
-    expect(dialogo().textContent).toContain('Inadequada');
+    expect(dialogo().textContent).toContain('Recomenda não uso');
     expect(decisoes()).toHaveLength(0);
     expect(campoDaJustificativa(pagina.tela).getAttribute('aria-invalid')).toBe('true');
     expect(dialogo().textContent).toContain(
@@ -76,7 +86,7 @@ describe('ProtecaoDoCatalogoPage — decisão diante de manifestação técnica'
 
     const [envio] = decisoes();
     expect(envio?.request.body).toMatchObject({
-      decisao: 'APROVAR',
+      decisao: DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO,
       justificativa: 'A classificação interna basta.',
     });
     envio?.flush(null, SEM_CONTEUDO);
@@ -87,7 +97,10 @@ describe('ProtecaoDoCatalogoPage — decisão diante de manifestação técnica'
     await aprovarPeloDialogo();
 
     const [envio] = decisoes();
-    expect(envio?.request.body).toMatchObject({ decisao: 'APROVAR', justificativa: null });
+    expect(envio?.request.body).toMatchObject({
+      decisao: DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO,
+      justificativa: null,
+    });
     envio?.flush(null, SEM_CONTEUDO);
   });
 
@@ -96,7 +109,7 @@ describe('ProtecaoDoCatalogoPage — decisão diante de manifestação técnica'
     await aprovarPeloDialogo('  Conferida com a área.  ');
 
     expect(decisoes()[0]?.request.body).toMatchObject({
-      decisao: 'APROVAR',
+      decisao: DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO,
       justificativa: 'Conferida com a área.',
     });
   });
@@ -266,7 +279,7 @@ describe('ProtecaoDoCatalogoPage — decisão diante de manifestação técnica'
       manifestacao({ id: 'a', situacao: 'SUBSTITUIDA', instante: '2026-11-02T14:00:00Z' }),
       manifestacao({
         id: 'b',
-        parecer: 'ADEQUADA',
+        parecer: RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_APROVACAO,
         texto: null,
         substituiId: 'a',
         instante: '2026-11-03T10:00:00Z',

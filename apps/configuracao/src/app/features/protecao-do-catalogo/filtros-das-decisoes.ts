@@ -29,22 +29,23 @@ export const ATOS_DE_DECISAO: readonly AtoDeDecisao[] = DECISOES_FILTRAVEIS.map(
 );
 
 /** Os cadastros que o filtro oferece. */
-export const CADASTROS: readonly CadastroDoCatalogo[] = ['TIPO_DOCUMENTO', 'FATO'];
+export const CADASTROS: readonly CadastroDoCatalogo[] = ['TIPO_DOCUMENTO', 'DADO_DO_CANDIDATO'];
 const DATA = /^\d{4}-\d{2}-\d{2}$/u;
+
+function dataDaUrl(params: ParamMap, nome: string): string {
+  const valor = params.get(nome) ?? '';
+  return DATA.test(valor) ? valor : '';
+}
 
 /** Lê os filtros da query string; o valor que o vocabulário não conhece é descartado. */
 export function filtrosDaUrl(params: ParamMap): FiltrosDasDecisoes {
   const atos = new Set(params.getAll('ato'));
   const cadastro = params.get('cadastro');
-  const data = (nome: string): string => {
-    const valor = params.get(nome) ?? '';
-    return DATA.test(valor) ? valor : '';
-  };
   return {
     ato: ATOS_DE_DECISAO.filter((ato) => atos.has(ato)),
     cadastro: CADASTROS.find((valor) => valor === cadastro) ?? null,
-    de: data('de'),
-    ate: data('ate'),
+    de: dataDaUrl(params, 'de'),
+    ate: dataDaUrl(params, 'ate'),
     busca: params.get('busca')?.trim() ?? '',
     minhas: params.get('minhas') === 'true',
   };

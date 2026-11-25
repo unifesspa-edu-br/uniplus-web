@@ -24,7 +24,6 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
-  type CadastroDoCatalogo,
   type DecisaoDaProtecaoDto,
 } from '@uniplus/shared-data/configuracao';
 import { DEFAULT_PAGE_SIZE } from '@uniplus/shared-ui/components';
@@ -100,17 +99,13 @@ export class DecisoesDaProtecaoStore {
         untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
       }
     });
+    this.acompanharFiltros();
+  }
+
+  private acompanharFiltros(): void {
     effect((aoLimpar) => {
       if (this.periodoInvalido()) return;
-      const lista = untracked(() =>
-        runInInjectionContext(this.injector, () =>
-          useApiResource<readonly DecisaoDaProtecaoDto[]>(() => ({
-            url: `${this.basePath}/api/configuracao/admin/protecao-do-catalogo/decisoes`,
-            params: this.montarParams(),
-            context: withVendorMime('protecao-do-catalogo-decisao', 1),
-          })),
-        ),
-      );
+      const lista = this.criarLista();
       untracked(() => this.lista.set(lista));
       aoLimpar(() => {
         lista.destroy();
@@ -118,6 +113,18 @@ export class DecisoesDaProtecaoStore {
         this.navegacao.esvaziar();
       });
     });
+  }
+
+  private criarLista() {
+    return untracked(() =>
+      runInInjectionContext(this.injector, () =>
+        useApiResource<readonly DecisaoDaProtecaoDto[]>(() => ({
+          url: `${this.basePath}/api/configuracao/admin/protecao-do-catalogo/decisoes`,
+          params: this.montarParams(),
+          context: withVendorMime('protecao-do-catalogo-decisao', 1),
+        })),
+      ),
+    );
   }
 
   /** Devolve se a leitura começou: um período inválido ou a falta da lista não leem nada. */
@@ -134,7 +141,7 @@ export class DecisoesDaProtecaoStore {
     this.navegacao.irParaAnterior();
   }
   lerHistorico(decisao: DecisaoDaProtecaoDto): void {
-    this.leituraDoItem.ler(decisao.cadastro as CadastroDoCatalogo, decisao.itemId);
+    this.leituraDoItem.ler(decisao.cadastro, decisao.itemId);
   }
 
   /** Repete a leitura do histórico que falhou. */

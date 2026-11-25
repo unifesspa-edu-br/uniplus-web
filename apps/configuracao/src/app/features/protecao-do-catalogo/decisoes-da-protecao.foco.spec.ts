@@ -1,3 +1,4 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { NotificationService } from '@uniplus/shared-core/notifications';
@@ -33,7 +34,7 @@ const decisao: DecisaoDaProtecaoDto = {
   itemId: laudo.id,
   itemCodigo: laudo.codigo,
   itemNome: laudo.nome,
-  ato: 'REPROVACAO',
+  ato: DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO,
   instante: '2026-10-31T13:00:00Z',
   atorNome: 'Caroline Ribeiro',
   classificacaoProtecao: 'INTERNO',

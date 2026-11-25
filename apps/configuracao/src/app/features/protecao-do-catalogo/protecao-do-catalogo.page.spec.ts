@@ -1,3 +1,4 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
@@ -142,7 +143,7 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
       Array.from(drawer(tela)?.querySelectorAll('.form-drawer__footer button') ?? []).map((b) =>
         b.textContent?.trim(),
       ),
-    ).toEqual(['Fechar', 'Reprovar', 'Recomendar ajuste', 'Aprovar']);
+    ).toEqual(['Fechar', 'Devolver', 'Recomendar ajuste', 'Aprovar']);
   });
 
   it('o detalhe do fato mostra o tipo do dado, a cardinalidade e os valores possíveis com a orientação', async () => {
@@ -190,7 +191,7 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
     });
 
     expect(botaoDoRodape(tela, 'Aprovar')).toBeUndefined();
-    expect(botaoDoRodape(tela, 'Reprovar')).toBeUndefined();
+    expect(botaoDoRodape(tela, 'Devolver')).toBeUndefined();
   });
 
   it('aprovar leva a proteção conferida, com Idempotency-Key; o drawer fecha e a lista é relida', async () => {
@@ -203,7 +204,7 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
     expect(post.request.body).toMatchObject({
       cadastro: 'TIPO_DOCUMENTO',
       itemId: laudo.id,
-      decisao: 'APROVAR',
+      decisao: DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO,
       classificacaoProtecao: 'INTERNO',
       hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
       finalidadeTratamento: 'Conferir o laudo do candidato com deficiência.',
@@ -229,12 +230,12 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
     const post = controller.expectOne((r) => r.method === 'POST' && r.url === URL);
 
     edicao.confirmarDecisao();
-    edicao.abrirDecisao('REPROVAR');
+    edicao.abrirDecisao(DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO);
     edicao.fecharDecisao();
     edicao.fecharDetalhe();
     expect(edicao.detalheAberto()).toBe(true);
     expect(edicao.decisaoAberta()).toBe(true);
-    expect(edicao.decisaoEmCurso()).toBe('APROVAR');
+    expect(edicao.decisaoEmCurso()).toBe(DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO);
     controller.expectNone((r) => r.method === 'POST');
 
     post.flush(null, { status: 204, statusText: 'No Content' });
@@ -370,7 +371,7 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
 
     expect(botaoDoRodape(tela, 'Aprovar')).toBeUndefined();
     expect(botaoDoRodape(tela, 'Recomendar ajuste')).toBeUndefined();
-    expect(botaoDoRodape(tela, 'Reprovar')).toBeUndefined();
+    expect(botaoDoRodape(tela, 'Devolver')).toBeUndefined();
     expect(drawer(tela)?.querySelector('.uni-drawer__title')?.textContent?.trim()).toBe(
       'Laudo médico complementar',
     );

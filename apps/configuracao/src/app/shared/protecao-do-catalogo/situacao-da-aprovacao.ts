@@ -1,3 +1,4 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { TagComponent, type UiTagVariant } from '@uniplus/shared-ui/components';
 import { CLASSIFICACOES_DE_PROTECAO, rotuloDe } from './protecao-de-dados';
@@ -12,7 +13,7 @@ const SITUACOES: Readonly<Record<string, Rotulo>> = {
   SOLICITADA: { texto: 'Em análise', variante: 'info' },
   APROVADA: { texto: 'Aprovada', variante: 'success' },
   AJUSTE_RECOMENDADO: { texto: 'Ajuste recomendado', variante: 'warning' },
-  REPROVADA: { texto: 'Reprovada', variante: 'danger' },
+  DEVOLVIDA: { texto: 'Devolvida', variante: 'danger' },
 };
 
 /** O rótulo da situação de aprovação, ou o próprio token quando o vocabulário não o conhece. */
@@ -23,7 +24,7 @@ export function rotuloDaSituacao(situacao: string): Rotulo {
 /**
  * Onde o item do catálogo está no circuito de aprovação da proteção de dados. A situação sai
  * sempre como texto; o ajuste recomendado traz a classificação que a proteção de dados indicou, e
- * ele e a reprovação trazem a justificativa quando houver. Na lista só a tag aparece.
+ * ele e a devolução trazem a justificativa quando houver. Na lista só a tag aparece.
  */
 @Component({
   selector: 'cfg-situacao-da-aprovacao',
@@ -52,7 +53,7 @@ export class SituacaoDaAprovacaoComponent {
   protected readonly rotulo = computed(() => rotuloDaSituacao(this.situacao()));
   protected readonly recomendada = computed(() => {
     const token = this.classificacaoRecomendada();
-    return this.situacao() === 'AJUSTE_RECOMENDADO' && token
+    return this.situacao() === DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO && token
       ? rotuloDe(CLASSIFICACOES_DE_PROTECAO, token)
       : null;
   });

@@ -1,3 +1,4 @@
+import type { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { expect, test, type Page } from '@playwright/test';
 import {
   REPRESENTANTE_DO_CONTROLADOR,
@@ -106,7 +107,7 @@ test.describe('Manifestação técnica na proteção de dados dos tipos de docum
 
     await drawer
       .locator('label.radio')
-      .filter({ has: pagina.getByRole('radio', { name: 'Inadequada', exact: true }) })
+      .filter({ has: pagina.getByRole('radio', { name: 'Recomenda não uso', exact: true }) })
       .click();
     await drawer.getByRole('textbox', { name: 'Texto' }).fill(TEXTO);
     await drawer.getByRole('button', { name: 'Registrar manifestação' }).click();
@@ -127,7 +128,7 @@ test.describe('Manifestação técnica na proteção de dados dos tipos de docum
     );
     const drawer = await abrirNaFila(pagina, nome);
     await expect(drawer.getByRole('region', { name: 'Manifestações vigentes' })).toContainText(
-      'Inadequada',
+      'Recomenda não uso',
     );
     await drawer.getByRole('button', { name: 'Aprovar' }).click();
     const dialogo = pagina.getByRole('dialog', { name: 'Aprovar a proteção de dados do item' });
@@ -147,8 +148,10 @@ test.describe('Manifestação técnica na proteção de dados dos tipos de docum
     await expect
       .poll(
         async () =>
-          (await atosDo(id)).find((ato) => ato.ato === 'APROVACAO')
-            ?.dianteDeManifestacaoDesfavoravel,
+          (await atosDo(id)).find(
+            (ato) =>
+              ato.ato === ('APROVACAO' satisfies `${DecidirProtecaoDoCatalogoRequestDecisao}`),
+          )?.dianteDeManifestacaoDesfavoravel,
       )
       .toBe(true);
   });
@@ -163,7 +166,7 @@ test.describe('Manifestação técnica na proteção de dados dos tipos de docum
       .getByRole('dialog', { name: 'Detalhe do tipo de documento' })
       .getByRole('region', { name: 'Histórico das manifestações' });
 
-    await expect(historico).toContainText('Inadequada');
+    await expect(historico).toContainText('Recomenda não uso');
     await expect(historico).toContainText(TEXTO);
     await expect(historico.getByRole('button')).toHaveCount(0);
   });

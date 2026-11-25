@@ -1,3 +1,4 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { FormControl } from '@angular/forms';
 import { describe, expect, it, beforeAll } from 'vitest';
 import {
@@ -34,7 +35,7 @@ describe('formulário da decisão da proteção', () => {
     expect(comandoPara(detalheDoLaudo)).toEqual({
       cadastro: 'TIPO_DOCUMENTO',
       itemId: detalheDoLaudo.id,
-      decisao: 'APROVAR',
+      decisao: DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO,
       classificacaoProtecao: 'INTERNO',
       hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
       finalidadeTratamento: detalheDoLaudo.finalidadeTratamento,
@@ -43,27 +44,48 @@ describe('formulário da decisão da proteção', () => {
     });
   });
 
-  it('a reprovação leva a justificativa e nenhuma classificação recomendada', () => {
-    const comando = comandoDeJustificativa(detalheDoLaudo, 'REPROVAR', 'Falta a base.', 'PESSOAL');
+  it('a devolução leva a justificativa e nenhuma classificação recomendada', () => {
+    const comando = comandoDeJustificativa(
+      detalheDoLaudo,
+      DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO,
+      'Falta a base.',
+      'PESSOAL',
+    );
 
-    expect(comando).toMatchObject({ decisao: 'REPROVAR', justificativa: 'Falta a base.' });
+    expect(comando).toMatchObject({
+      decisao: DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO,
+      justificativa: 'Falta a base.',
+    });
     expect('classificacaoRecomendada' in comando).toBe(false);
   });
 
   it('o ajuste sem justificativa leva a justificativa nula', () => {
-    const comando = comandoDeJustificativa(detalheDoLaudo, 'RECOMENDAR_AJUSTE', '', 'SENSIVEL');
+    const comando = comandoDeJustificativa(
+      detalheDoLaudo,
+      DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO,
+      '',
+      'SENSIVEL',
+    );
 
     expect(comando).toMatchObject({
-      decisao: 'RECOMENDAR_AJUSTE',
+      decisao: DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO,
       classificacaoRecomendada: 'SENSIVEL',
       justificativa: null,
     });
   });
 
   it('a aprovação diante de manifestação leva a justificativa, sem classificação recomendada', () => {
-    const comando = comandoDeJustificativa(detalheDoLaudo, 'APROVAR', 'A classificação basta.', '');
+    const comando = comandoDeJustificativa(
+      detalheDoLaudo,
+      DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO,
+      'A classificação basta.',
+      '',
+    );
 
-    expect(comando).toMatchObject({ decisao: 'APROVAR', justificativa: 'A classificação basta.' });
+    expect(comando).toMatchObject({
+      decisao: DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO,
+      justificativa: 'A classificação basta.',
+    });
     expect('classificacaoRecomendada' in comando).toBe(false);
   });
 });

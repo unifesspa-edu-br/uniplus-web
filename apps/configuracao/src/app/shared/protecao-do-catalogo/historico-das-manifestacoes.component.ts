@@ -38,7 +38,7 @@ interface ItemDoHistorico {
 /** A rota do histórico de cada cadastro na tela de cadastro do item. */
 const ROTA_NO_CADASTRO: Readonly<Record<CadastroDoCatalogo, string>> = {
   TIPO_DOCUMENTO: 'tipos-documento',
-  FATO: 'fatos-candidato',
+  DADO_DO_CANDIDATO: 'fatos-candidato',
 };
 
 /** O caminho do histórico do item, a partir de `/api/configuracao/admin`. */

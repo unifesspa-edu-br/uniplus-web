@@ -1,3 +1,8 @@
+import {
+  DecidirProtecaoDoCatalogoRequestDecisao,
+  RegistrarManifestacaoDaProtecaoRequestParecer,
+} from './schema';
+import { ItemParaSolicitarRequestCadastro } from './schema';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -45,7 +50,9 @@ describe('ProtecaoDoCatalogoApi', () => {
   });
 
   it('solicitar() envia só os itens escolhidos, com Idempotency-Key', async () => {
-    const itens = [{ cadastro: 'FATO', id: ID }] as const;
+    const itens = [
+      { cadastro: ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO, id: ID },
+    ] as const;
     const promise = firstValueFrom(api.solicitar(itens, withIdempotencyKey('k')));
     const req = controller.expectOne(`${URL}/solicitacoes`);
     expect(req.request.method).toBe('POST');
@@ -59,7 +66,7 @@ describe('ProtecaoDoCatalogoApi', () => {
     const command = {
       cadastro: 'TIPO_DOCUMENTO',
       itemId: ID,
-      decisao: 'RECOMENDAR_AJUSTE',
+      decisao: DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO,
       classificacaoProtecao: 'INTERNO',
       hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
       finalidadeTratamento: 'Conferir o laudo.',
@@ -79,10 +86,10 @@ describe('ProtecaoDoCatalogoApi', () => {
 
   it('manifestar() leva o ciclo lido, o parecer e o texto, com Idempotency-Key', async () => {
     const corpo = {
-      cadastro: 'FATO',
+      cadastro: ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO,
       itemId: ID,
       ciclo: 2,
-      parecer: 'INADEQUADA',
+      parecer: RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO,
       texto: 'O laudo revela condição de saúde.',
     } as const;
     const promise = firstValueFrom(api.manifestar(corpo, withIdempotencyKey('k')));
@@ -96,7 +103,7 @@ describe('ProtecaoDoCatalogoApi', () => {
 
   it.each([
     ['TIPO_DOCUMENTO', 'tipos-documento'],
-    ['FATO', 'fatos'],
+    [ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO, 'fatos'],
   ] as const)(
     'manifestacoes() lê o histórico de %s pelo segmento do cadastro',
     async (cadastro, segmento) => {

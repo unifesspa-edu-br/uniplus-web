@@ -38,7 +38,7 @@ export class ManifestacaoDoItemComponent {
     if (controle.hasError('required')) {
       return campo === 'parecer'
         ? 'Escolha o parecer.'
-        : 'Os pareceres recomenda ajuste e inadequada exigem o texto.';
+        : 'Os pareceres recomenda ajuste e recomenda não uso exigem o texto.';
     }
     return mensagemDeErroDoControle(controle);
   }

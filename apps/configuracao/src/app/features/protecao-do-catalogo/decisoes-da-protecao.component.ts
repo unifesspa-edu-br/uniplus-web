@@ -49,7 +49,7 @@ const OPCOES_DE_CADASTRO: readonly UiFilterChipOption[] = CADASTROS.map((valor) 
 
 /**
  * A aba "Decisões" da proteção de dados do catálogo: o que foi decidido (aprovação, ajuste recomendado
- * e reprovação), da decisão mais recente à mais antiga, com filtros que ficam na query string para a
+ * e devolução), da decisão mais recente à mais antiga, com filtros que ficam na query string para a
  * pessoa voltar ao mesmo recorte. Clicar numa linha abre a decisão e o histórico completo do item.
  */
 @Component({
@@ -84,25 +84,31 @@ export class DecisoesDaProtecaoComponent {
     () => JSON.stringify(this.filtros()) !== JSON.stringify(SEM_FILTROS),
   );
 
-  protected readonly filtrosAtivos = computed<readonly UiFiltroAtivo[]>(() => {
-    const f = this.filtros();
+  protected readonly filtrosAtivos = computed(() => this.descreverFiltrosAtivos());
+
+  private descreverFiltrosAtivos(): readonly UiFiltroAtivo[] {
+    const filtros = this.filtros();
     const ativos: UiFiltroAtivo[] = [];
-    if (f.ato.length > 0) {
+    if (filtros.ato.length > 0) {
       ativos.push({
         nome: 'Decisão',
-        valor: f.ato.map((ato) => rotuloDoAto(ato).texto).join(', '),
+        valor: filtros.ato.map((ato) => rotuloDoAto(ato).texto).join(', '),
       });
     }
-    if (f.cadastro !== null) ativos.push({ nome: 'Cadastro', valor: nomeDoCadastro(f.cadastro) });
-    if (f.de !== '' || f.ate !== '') {
-      ativos.push({
-        nome: 'Período',
-        valor: `${formatarDataBr(f.de) || 'início'} a ${formatarDataBr(f.ate) || 'hoje'}`,
-      });
-    }
-    if (f.minhas) ativos.push({ nome: 'Só as minhas', valor: 'sim' });
+    if (filtros.cadastro !== null)
+      ativos.push({ nome: 'Cadastro', valor: nomeDoCadastro(filtros.cadastro) });
+    this.adicionarFiltroDePeriodo(ativos, filtros);
+    if (filtros.minhas) ativos.push({ nome: 'Só as minhas', valor: 'sim' });
     return ativos;
-  });
+  }
+
+  private adicionarFiltroDePeriodo(ativos: UiFiltroAtivo[], filtros: FiltrosDasDecisoes): void {
+    if (filtros.de === '' && filtros.ate === '') return;
+    ativos.push({
+      nome: 'Período',
+      valor: `${formatarDataBr(filtros.de) || 'início'} a ${formatarDataBr(filtros.ate) || 'hoje'}`,
+    });
+  }
 
   protected readonly mensagemDeErro = this.pagina.mensagemDeErro;
   protected readonly drawerAberto = signal(false);
@@ -131,16 +137,12 @@ export class DecisoesDaProtecaoComponent {
   /** A busca que a tela mandou para a URL: a que volta dela não reescreve o campo enquanto a pessoa digita. */
   private buscaEnviada = this.filtros().busca;
 
+  private readonly sincronizarBuscaDaUrl = effect(() => {
+    const busca = this.filtros().busca;
+    untracked(() => this.receberBuscaDaUrl(busca));
+  });
+
   constructor() {
-    effect(() => {
-      const busca = this.filtros().busca;
-      untracked(() => {
-        if (busca !== this.buscaEnviada) {
-          this.buscaEnviada = busca;
-          this.termoBusca.set(busca);
-        }
-      });
-    });
     toObservable(this.termoBusca)
       .pipe(
         debounceTime(ESPERA_DA_BUSCA_MS),
@@ -148,11 +150,19 @@ export class DecisoesDaProtecaoComponent {
         distinctUntilChanged(),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((busca) => {
-        if (busca === this.filtros().busca) return;
-        this.buscaEnviada = busca;
-        this.aplicar({ busca });
-      });
+      .subscribe((busca) => this.enviarBuscaParaUrl(busca));
+  }
+
+  private receberBuscaDaUrl(busca: string): void {
+    if (busca === this.buscaEnviada) return;
+    this.buscaEnviada = busca;
+    this.termoBusca.set(busca);
+  }
+
+  private enviarBuscaParaUrl(busca: string): void {
+    if (busca === this.filtros().busca) return;
+    this.buscaEnviada = busca;
+    this.aplicar({ busca });
   }
 
   protected aoTrocarLimite(valor: number | null): void {

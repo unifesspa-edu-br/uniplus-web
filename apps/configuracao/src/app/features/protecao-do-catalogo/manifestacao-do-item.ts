@@ -12,7 +12,6 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   ProtecaoDoCatalogoApi,
-  type CadastroDoCatalogo,
   type DetalheDaProtecaoDoCatalogoDto,
   type RegistrarManifestacaoDaProtecaoRequest,
   type ParecerDaManifestacao,
@@ -167,7 +166,7 @@ export class ManifestacaoDoItem {
   private corpo(detalhe: DetalheDaProtecaoDoCatalogoDto): RegistrarManifestacaoDaProtecaoRequest {
     const { parecer, texto } = this.form.getRawValue();
     return {
-      cadastro: detalhe.tipo as CadastroDoCatalogo,
+      cadastro: detalhe.tipo,
       itemId: detalhe.id,
       ciclo: detalhe.aprovacao.ciclo,
       parecer: parecer as ParecerDaManifestacao,

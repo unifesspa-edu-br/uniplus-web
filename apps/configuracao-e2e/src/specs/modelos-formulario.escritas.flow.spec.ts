@@ -1,5 +1,5 @@
 import type { JsonDaApi } from '@uniplus/shared-e2e';
-import { type ModeloFormularioView } from '@uniplus/shared-data/configuracao';
+import type { ModeloFormularioView } from '@uniplus/shared-data/configuracao';
 import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 

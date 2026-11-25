@@ -42,7 +42,7 @@ test.describe('Proteção de dados dos tipos de documento e dos fatos do candida
     await expect(drawer.getByText('LAUDO_MEDICO')).toBeVisible();
     await expect(drawer.getByRole('button', { name: 'Aprovar' })).toBeVisible();
     await expect(drawer.getByRole('button', { name: 'Recomendar ajuste' })).toBeVisible();
-    await expect(drawer.getByRole('button', { name: 'Reprovar' })).toBeVisible();
+    await expect(drawer.getByRole('button', { name: 'Devolver' })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath('protecao-drawer.png') });
     await page.keyboard.press('Escape');
     await expect(drawer).toBeHidden();
@@ -53,7 +53,7 @@ test.describe('Proteção de dados dos tipos de documento e dos fatos do candida
     );
   });
 
-  test('Proteção dos tipos de documento e dos fatos: reprovar exige a justificativa, com contador e erro associado', async ({
+  test('Proteção dos tipos de documento e dos fatos: devolver exige a justificativa, com contador e erro associado', async ({
     page,
   }, testInfo) => {
     await page.goto('/protecao-do-catalogo');
@@ -61,23 +61,23 @@ test.describe('Proteção de dados dos tipos de documento e dos fatos do candida
     await page
       .getByRole('button', { name: 'Ver o detalhe de Laudo médico complementar', exact: true })
       .click();
-    await expect(drawer.getByRole('button', { name: 'Reprovar' })).toBeVisible();
-    await drawer.getByRole('button', { name: 'Reprovar' }).click();
+    await expect(drawer.getByRole('button', { name: 'Devolver' })).toBeVisible();
+    await drawer.getByRole('button', { name: 'Devolver' }).click();
 
-    const dialogo = page.getByRole('dialog', { name: 'Reprovar a proteção de dados do item' });
+    const dialogo = page.getByRole('dialog', { name: 'Devolver a proteção de dados do item' });
     await expect(dialogo).toBeVisible();
     await expect(dialogo).not.toContainText('LAUDO_MEDICO');
     const campo = dialogo.getByRole('textbox', { name: 'Justificativa' });
     await expect(dialogo.getByText('0 de 2.000')).toBeVisible();
-    await dialogo.getByRole('button', { name: 'Reprovar item' }).click();
-    await expect(dialogo.getByText('Informe a justificativa da reprovação.')).toBeVisible();
+    await dialogo.getByRole('button', { name: 'Devolver item' }).click();
+    await expect(dialogo.getByText('Informe a justificativa da devolução.')).toBeVisible();
     await expect(campo).toBeFocused();
     await expect(campo).toHaveAttribute('aria-invalid', 'true');
     await campo.fill('Falta a base legal.');
     await expect(dialogo.getByText('19 de 2.000')).toBeVisible();
     const axe = await runAxeWcagAA(page);
     expect(axe.violations, JSON.stringify(axe.violations, null, 2)).toEqual([]);
-    await page.screenshot({ path: testInfo.outputPath('protecao-reprovar.png') });
+    await page.screenshot({ path: testInfo.outputPath('protecao-devolver.png') });
 
     await page.keyboard.press('Escape');
     await expect(dialogo).toBeHidden();
@@ -112,11 +112,11 @@ test.describe('Proteção de dados dos tipos de documento e dos fatos do candida
 
     // Os filtros ficam na URL e a lista os respeita; o bloco recolhido resume os ativos.
     await page.getByRole('button', { name: /^Filtros/u }).click();
-    await page.getByRole('button', { name: 'Reprovado', exact: true }).click();
-    await expect(page).toHaveURL(/ato=REPROVACAO/u);
+    await page.getByRole('button', { name: 'Devolvido', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`ato=DEVOLUCAO`, 'u'));
     await expect(page.locator('.panel tbody tr')).toHaveCount(1);
     await expect(page.locator('.panel tbody')).toContainText('Renda familiar bruta');
-    await expect(page.getByRole('button', { name: 'Reprovado', exact: true })).toHaveAttribute(
+    await expect(page.getByRole('button', { name: 'Devolvido', exact: true })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
@@ -132,9 +132,9 @@ test.describe('Proteção de dados dos tipos de documento e dos fatos do candida
 
     // Recarregar a página volta ao mesmo recorte.
     await page.reload();
-    await expect(page.getByRole('button', { name: /^Filtros/u })).toContainText('Reprovação');
+    await expect(page.getByRole('button', { name: /^Filtros/u })).toContainText('Devolução');
     await page.getByRole('button', { name: /^Filtros/u }).click();
-    await expect(page.getByRole('button', { name: 'Reprovado', exact: true })).toHaveAttribute(
+    await expect(page.getByRole('button', { name: 'Devolvido', exact: true })).toHaveAttribute(
       'aria-pressed',
       'true',
     );

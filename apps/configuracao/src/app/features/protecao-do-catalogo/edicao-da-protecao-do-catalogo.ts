@@ -1,3 +1,4 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
@@ -63,9 +64,9 @@ function temManifestacaoNaoLida(problem: ProblemDetails): boolean {
 }
 
 const SUCESSO: Readonly<Record<DecisaoDaProtecao, string>> = {
-  APROVAR: 'Item aprovado',
-  RECOMENDAR_AJUSTE: 'Ajuste recomendado',
-  REPROVAR: 'Item reprovado',
+  [DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO]: 'Item aprovado',
+  [DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO]: 'Ajuste recomendado',
+  [DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO]: 'Item devolvido',
 };
 
 @Injectable()
@@ -86,7 +87,9 @@ export class EdicaoDaProtecaoDoCatalogo {
   /** A decisão está sendo gravada ou a fila que a segue ainda é relida. */
   readonly gravando = computed(() => this.decidindo() || this.recarga.aguardando());
   readonly decisaoAberta = signal(false);
-  readonly decisaoEmCurso = signal<DecisaoDaProtecao>('APROVAR');
+  readonly decisaoEmCurso = signal<DecisaoDaProtecao>(
+    DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO,
+  );
   readonly erroDaDecisaoNoDialogo = signal<string | null>(null);
   readonly erroDaDecisaoNoDrawer = signal<string | null>(null);
   readonly tentouDecidir = signal(false);
@@ -108,10 +111,10 @@ export class EdicaoDaProtecaoDoCatalogo {
   readonly manifestacoesVigentes = computed(
     () => this.store.detalhe()?.manifestacoesVigentes ?? [],
   );
-  /** A reprovação sempre exige justificativa; as demais decisões, diante de manifestação desfavorável vigente. */
+  /** A devolução sempre exige justificativa; as demais decisões, diante de manifestação desfavorável vigente. */
   readonly exigeJustificativa = computed(
     () =>
-      this.decisaoEmCurso() === 'REPROVAR' ||
+      this.decisaoEmCurso() === DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO ||
       this.store.detalhe()?.aprovacao.manifestacaoDesfavoravel === true,
   );
 
@@ -136,7 +139,7 @@ export class EdicaoDaProtecaoDoCatalogo {
    * opcional, e obrigatória diante de manifestação desfavorável (UNI-REQ-0374).
    */
   aprovar(): void {
-    this.abrirDecisao('APROVAR');
+    this.abrirDecisao(DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO);
   }
 
   abrirDecisao(decisao: DecisaoDaProtecao): void {
@@ -175,14 +178,17 @@ export class EdicaoDaProtecaoDoCatalogo {
   }
 
   private faltaDeJustificativa(): string {
-    return this.decisaoEmCurso() === 'REPROVAR'
-      ? 'Informe a justificativa da reprovação.'
+    return this.decisaoEmCurso() === DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO
+      ? 'Informe a justificativa da devolução.'
       : 'Há manifestação desfavorável vigente: informe a justificativa da decisão.';
   }
 
   private dialogoValido(): boolean {
     if (contarCaracteres(this.justificativa.value.trim()) > JUSTIFICATIVA_MAXIMA) return false;
-    if (this.decisaoEmCurso() === 'RECOMENDAR_AJUSTE' && this.recomendada.value === '') {
+    if (
+      this.decisaoEmCurso() === DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO &&
+      this.recomendada.value === ''
+    ) {
       this.recomendada.setErrors({ required: true });
       return false;
     }

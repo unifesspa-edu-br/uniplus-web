@@ -230,7 +230,7 @@ export {
   type RascunhoSubstituidoResponse,
   type DocumentoDaConfiguracaoAtendimento,
   type DocumentoDaConfiguracaoFada,
-  type DocumentoDaConfiguracaoCascataDeRemanejamento,
+  type DocumentoDaConfiguracaoOrdemDeRemanejamento,
   type DocumentoDaConfiguracaoClassificacao,
   type DocumentoDaConfiguracaoColeta,
   type DocumentoDaConfiguracaoFormulario,
@@ -301,20 +301,22 @@ export {
   type OpcaoDeComprovacaoDto,
 } from './vocabularios-da-comprovacao.api';
 
-export type {
-  DataDeReferenciaDoDocumentoInput,
-  DataDeReferenciaDoDocumentoDto,
-  PrazoDeEmissaoInput,
-  PrazoDeEmissaoDto,
-  ValidadeDoDocumentoInput,
-  ValidadeDoDocumentoDto,
-  RequisitosDoDocumentoDtoProvisorio,
-  RequisitosDoDocumentoInputProvisorio,
-} from './prazo-e-validade-do-documento.provisorio';
+import type { components } from './schema';
+
+export type DataDeReferenciaDoDocumentoInput =
+  components['schemas']['DataDeReferenciaDoDocumentoInput'];
+export type DataDeReferenciaDoDocumentoDto =
+  components['schemas']['DataDeReferenciaDoDocumentoDto'];
+export type PrazoDeEmissaoInput = components['schemas']['PrazoDeEmissaoInput'];
+export type PrazoDeEmissaoDto = components['schemas']['PrazoDeEmissaoDto'];
+export type ValidadeDoDocumentoInput = components['schemas']['ValidadeDoDocumentoInput'];
+export type ValidadeDoDocumentoDto = components['schemas']['ValidadeDoDocumentoDto'];
+export type RequisitosDoDocumentoDto = components['schemas']['RequisitosDoDocumentoDto'];
+export type RequisitosDoDocumentoInput = components['schemas']['RequisitosDoDocumentoInput'];
 
 export { VocabulariosDoPrazoEDaValidadeApi } from './vocabularios-do-prazo-e-da-validade.api';
 
-export { AplicabilidadeCodigo } from './schema';
+export { AplicabilidadeCodigo, RegraRemanejamentoModalidadeCodigo } from './schema';
 
 export { VocabulariosDaDeliberacaoApi } from './vocabularios-da-deliberacao.api';
 

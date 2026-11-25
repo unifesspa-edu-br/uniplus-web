@@ -1,3 +1,4 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import type { AprovacaoDaProtecaoDto, AtoDaProtecaoDto } from '@uniplus/shared-data/configuracao';
 import { justificativaDaSituacao } from './justificativa-da-situacao';
@@ -16,7 +17,7 @@ const APROVADA: AprovacaoDaProtecaoDto = {
 };
 
 const aprovacao = (ciclo: number, justificativa: string | null): AtoDaProtecaoDto => ({
-  ato: 'APROVACAO',
+  ato: DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO,
   instante: '2026-11-10T12:00:00Z',
   atorNome: 'Betina Neves',
   classificacaoProtecao: 'PESSOAL',
@@ -39,9 +40,9 @@ describe('justificativa da situação do item', () => {
     expect(justificativaDaSituacao(APROVADA, [aprovacao(1, 'Do ciclo anterior.')])).toBeNull();
   });
 
-  it('no ajuste e na reprovação, vale a justificativa da própria aprovação', () => {
-    const reprovada = { ...APROVADA, situacao: 'REPROVADA', justificativa: 'Falta a base.' };
+  it('no ajuste e na devolução, vale a justificativa da própria aprovação', () => {
+    const devolvida = { ...APROVADA, situacao: 'DEVOLVIDA', justificativa: 'Falta a base.' };
 
-    expect(justificativaDaSituacao(reprovada, [aprovacao(2, 'Ignorada.')])).toBe('Falta a base.');
+    expect(justificativaDaSituacao(devolvida, [aprovacao(2, 'Ignorada.')])).toBe('Falta a base.');
   });
 });

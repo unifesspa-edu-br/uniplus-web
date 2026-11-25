@@ -1,3 +1,4 @@
+import { RegistrarManifestacaoDaProtecaoRequestParecer } from '@uniplus/shared-data/configuracao';
 import { TestBed } from '@angular/core/testing';
 import { buildVendorMimeAccept } from '@uniplus/shared-core/http';
 import { afterEach, beforeEach, describe, expect, it, beforeAll } from 'vitest';
@@ -72,7 +73,7 @@ describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de d
 
   it('o Encarregado de dados vê o formulário e o histórico, mas não as ações de decidir', () => {
     expect(formulario()).not.toBeNull();
-    for (const acao of ['Aprovar', 'Reprovar', 'Recomendar ajuste']) {
+    for (const acao of ['Aprovar', 'Devolver', 'Recomendar ajuste']) {
       expect(botaoDoRodape(pagina.tela, acao), acao).toBeUndefined();
     }
     const historico = pagina.controller.expectOne(URL_DO_HISTORICO);
@@ -82,8 +83,8 @@ describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de d
     historico.flush([]);
   });
 
-  it('o parecer adequado vai sem texto, no ciclo lido, com Idempotency-Key, e relê o item e o histórico', async () => {
-    await escolher('ADEQUADA');
+  it('a recomendação de aprovação vai sem texto, no ciclo lido, com Idempotency-Key, e relê o item e o histórico', async () => {
+    await escolher(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_APROVACAO);
     await enviar();
 
     const [envio] = manifestacoes();
@@ -91,7 +92,7 @@ describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de d
       cadastro: 'TIPO_DOCUMENTO',
       itemId: laudo.id,
       ciclo: 2,
-      parecer: 'ADEQUADA',
+      parecer: RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_APROVACAO,
       texto: null,
     });
     expect(envio?.request.headers.get('Idempotency-Key')).toBeTruthy();
@@ -99,24 +100,30 @@ describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de d
     await new Promise((resolver) => setTimeout(resolver));
     await pagina.assentar();
 
-    expect(parecer('ADEQUADA')?.checked, 'o formulário volta ao início').toBe(false);
+    expect(
+      parecer(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_APROVACAO)?.checked,
+      'o formulário volta ao início',
+    ).toBe(false);
     pagina.controller.expectOne(URL_DO_DETALHE).flush(detalheDoLaudo);
     expect(pagina.controller.match(URL_DO_HISTORICO).length).toBeGreaterThan(0);
   });
 
   it('o parecer desfavorável sem texto não é enviado e o erro fica no campo', async () => {
-    await escolher('INADEQUADA');
+    await escolher(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO);
     await enviar();
 
     expect(manifestacoes()).toHaveLength(0);
     expect(texto().getAttribute('aria-invalid')).toBe('true');
     expect(pagina.tela.textContent).toContain(
-      'Os pareceres recomenda ajuste e inadequada exigem o texto.',
+      'Os pareceres recomenda ajuste e recomenda não uso exigem o texto.',
     );
   });
 
   it('a recusa por campo (422) fica no campo do texto', async () => {
-    await escolher('RECOMENDA_AJUSTE', 'Recomendo sensível.');
+    await escolher(
+      RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_AJUSTE,
+      'Recomendo sensível.',
+    );
     await enviar();
 
     const recusa = {
@@ -140,7 +147,7 @@ describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de d
   it.each(['ciclo_mudou', 'decisao_ja_tomada'])(
     'com o 409 %s, avisa, relê o item e não reenvia sozinho',
     async (codigo) => {
-      await escolher('ADEQUADA');
+      await escolher(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_APROVACAO);
       await enviar();
       await responder(problema(409, `${RAIZ}${codigo}`, 'O item mudou'));
 
@@ -151,7 +158,10 @@ describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de d
   );
 
   it('conta o texto em caracteres: 2.000 fora do plano básico cabem e são enviados', async () => {
-    await escolher('INADEQUADA', '😀'.repeat(2000));
+    await escolher(
+      RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO,
+      '😀'.repeat(2000),
+    );
 
     expect(formulario().textContent).toContain('2000 de 2.000');
     await enviar();
@@ -164,7 +174,10 @@ describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de d
   });
 
   it('acima de 2.000 caracteres o texto não é enviado', async () => {
-    await escolher('INADEQUADA', '😀'.repeat(2001));
+    await escolher(
+      RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO,
+      '😀'.repeat(2001),
+    );
     await enviar();
 
     expect(manifestacoes()).toHaveLength(0);
@@ -172,7 +185,7 @@ describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de d
   });
 
   it('o conflito retentável (409) se repete uma vez, com a mesma chave', async () => {
-    await escolher('ADEQUADA');
+    await escolher(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_APROVACAO);
     await enviar();
     const [primeira] = manifestacoes();
     const chave = primeira?.request.headers.get('Idempotency-Key');
@@ -196,7 +209,7 @@ describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de d
   });
 
   it('o conflito retentável repetido com a mesma chave que recebe decisao_ja_tomada não se repete de novo: relê o item e mostra a recusa', async () => {
-    await escolher('ADEQUADA');
+    await escolher(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_APROVACAO);
     await enviar();
     const [primeira] = manifestacoes();
     const chave = primeira?.request.headers.get('Idempotency-Key');
@@ -226,7 +239,7 @@ describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de d
   });
 
   it('o item nunca solicitado no ciclo (422) mostra a recusa e não relê o item', async () => {
-    await escolher('ADEQUADA');
+    await escolher(RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_APROVACAO);
     await enviar();
     await responder(
       problema(422, `${RAIZ}item_fora_de_solicitacao`, 'O item não está numa solicitação'),
@@ -245,7 +258,7 @@ describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de d
     await abrirItem(pagina, laudo, { ...detalheDoLaudo, manifestacoesVigentes: [manifestacao()] });
 
     const vigentes = pagina.tela.querySelector('[aria-label="Manifestações vigentes no ciclo"]');
-    expect(vigentes?.textContent).toContain('Inadequada');
+    expect(vigentes?.textContent).toContain('Recomenda não uso');
     expect(vigentes?.textContent).toContain('Isabella Figueiredo');
     expect(vigentes?.textContent).toContain('ciclo 2');
   });

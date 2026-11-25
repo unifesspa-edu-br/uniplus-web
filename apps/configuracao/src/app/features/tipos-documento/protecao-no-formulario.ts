@@ -24,7 +24,7 @@ export interface OrigemDaProtecao {
 export interface ProtecaoNoFormulario {
   /** As hipóteses legais que cabem na classificação escolhida (art. 7º ou art. 11 da LGPD). */
   readonly hipotesesPermitidas: Signal<readonly OpcaoDeVocabulario[]>;
-  /** A decisão da proteção de dados (ajuste recomendado ou reprovação) sobre o tipo em edição. */
+  /** A decisão da proteção de dados (ajuste recomendado ou devolução) sobre o tipo em edição. */
   readonly decididoEmEdicao: Signal<AprovacaoDaProtecaoDto | null>;
   /**
    * Salvar devolve a pendente o tipo que já passou pela aprovação (ou está nela) quando muda a
@@ -59,22 +59,27 @@ function esvaziarHipoteseIncompativel(
 ): void {
   effect(() => {
     const hipoteses = hipotesesPermitidas();
-    untracked(() => {
-      const original = origem.original();
-      const { classificacaoProtecao, hipoteseLegal } = origem.form.controls;
-      const pessoaMudou =
-        original === null ||
-        classificacaoProtecao.value !== original.classificacaoProtecao ||
-        hipoteseLegal.value !== original.hipoteseLegal;
-      if (pessoaMudou) esvaziarSeForaDas(hipoteseLegal, hipoteses);
-    });
+    untracked(() => esvaziarHipoteseAlterada(origem, hipoteses));
   });
+}
+
+function esvaziarHipoteseAlterada(
+  origem: OrigemDaProtecao,
+  hipoteses: readonly OpcaoDeVocabulario[],
+): void {
+  const original = origem.original();
+  const { classificacaoProtecao, hipoteseLegal } = origem.form.controls;
+  const pessoaMudou =
+    original === null ||
+    classificacaoProtecao.value !== original.classificacaoProtecao ||
+    hipoteseLegal.value !== original.hipoteseLegal;
+  if (pessoaMudou) esvaziarSeForaDas(hipoteseLegal, hipoteses);
 }
 
 function decisaoEmEdicao(origem: OrigemDaProtecao): AprovacaoDaProtecaoDto | null {
   const id = origem.tipoEmEdicaoId();
   const situacao = id === null || !origem.emEdicao() ? null : origem.aprovacao.aprovacaoDe(id);
-  return situacao?.situacao === 'AJUSTE_RECOMENDADO' || situacao?.situacao === 'REPROVADA'
+  return situacao?.situacao === 'AJUSTE_RECOMENDADO' || situacao?.situacao === 'DEVOLVIDA'
     ? situacao
     : null;
 }

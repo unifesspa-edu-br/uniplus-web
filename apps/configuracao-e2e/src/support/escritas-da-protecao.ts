@@ -1,3 +1,4 @@
+import type { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { expect, type Locator, type Page, type Route } from '@playwright/test';
 import { mockManifestacoesDaFila } from './listas-de-tipos-e-fatos';
 
@@ -45,7 +46,7 @@ export const DECISAO = {
   itemId: ITEM.id,
   itemCodigo: ITEM.codigo,
   itemNome: ITEM.nome,
-  ato: 'REPROVACAO',
+  ato: 'DEVOLUCAO' satisfies `${DecidirProtecaoDoCatalogoRequestDecisao}`,
   instante: '2026-10-31T13:00:00Z',
   atorNome: 'Caroline Ribeiro',
   classificacaoProtecao: 'INTERNO',
@@ -195,8 +196,8 @@ export const linha = (page: Page) =>
   page.getByRole('button', { name: `Ver o detalhe de ${ITEM.nome}` });
 export const painel = (page: Page) =>
   page.getByRole('dialog', { name: 'Detalhe do item aguardando a decisão' });
-export const dialogoDeReprovacao = (page: Page) =>
-  page.getByRole('dialog', { name: 'Reprovar a proteção de dados do item' });
+export const dialogoDeDevolucao = (page: Page) =>
+  page.getByRole('dialog', { name: 'Devolver a proteção de dados do item' });
 
 export async function abrirItem(page: Page): Promise<{ drawer: Locator; aprovar: Locator }> {
   await page.goto('/protecao-do-catalogo');
@@ -225,10 +226,10 @@ export async function abrirAprovacao(
   return { drawer, dialogo, aprovar };
 }
 
-export async function abrirReprovacao(page: Page, justificativa: string | null) {
+export async function abrirDevolucao(page: Page, justificativa: string | null) {
   const { drawer } = await abrirItem(page);
-  await drawer.getByRole('button', { name: 'Reprovar' }).click();
-  const dialogo = dialogoDeReprovacao(page);
+  await drawer.getByRole('button', { name: 'Devolver' }).click();
+  const dialogo = dialogoDeDevolucao(page);
   const campo = dialogo.getByRole('textbox', { name: /Justificativa/ });
   if (justificativa !== null) await campo.fill(justificativa);
   const confirmar = dialogo.locator('.uni-dialog__footer .btn--danger');

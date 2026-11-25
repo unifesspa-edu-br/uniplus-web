@@ -36,8 +36,8 @@ export type RascunhoSubstituidoResponse = Esquemas['RascunhoSubstituidoResponse'
 export type DocumentoDaConfiguracaoIdentificacao = Esquemas['DocumentoDaConfiguracaoIdentificacao'];
 export type DocumentoDaConfiguracaoDistribuicaoDeVagas =
   Esquemas['DocumentoDaConfiguracaoDistribuicaoDeVagas'];
-export type DocumentoDaConfiguracaoCascataDeRemanejamento =
-  Esquemas['DocumentoDaConfiguracaoCascataDeRemanejamento'];
+export type DocumentoDaConfiguracaoOrdemDeRemanejamento =
+  Esquemas['DocumentoDaConfiguracaoOrdemDeRemanejamento'];
 export type DocumentoDaConfiguracaoFada = Esquemas['DocumentoDaConfiguracaoFada'];
 export type DocumentoDaConfiguracaoAtendimento = Esquemas['DocumentoDaConfiguracaoAtendimento'];
 export type DocumentoDaConfiguracaoClassificacao = Esquemas['DocumentoDaConfiguracaoClassificacao'];

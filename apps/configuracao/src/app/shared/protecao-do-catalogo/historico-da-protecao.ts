@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ProblemI18nService } from '@uniplus/shared-core/http';
+import { type ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
 import {
   FatosCandidatoApi,
   TiposDocumentoApi,
@@ -105,18 +105,24 @@ export class HistoricoDaProtecaoComponent {
     this.atos.set(null);
     const id = this.itemId();
     const busca =
-      this.cadastro() === 'FATO' ? this.fatos.atosDaProtecao(id) : this.tipos.atosDaProtecao(id);
-    this.assinatura = busca.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((resultado) => {
-      this.carregando.set(false);
-      if (resultado.ok) {
-        this.erro.set(null);
-        this.recusa.set(null);
-        this.atos.set(resultado.data);
-      } else {
-        const texto = this.problemI18n.resolve(resultado.problem).title;
-        this.recusa.set(recusaDe(resultado.problem, texto));
-        this.erro.set(texto);
-      }
-    });
+      this.cadastro() === 'DADO_DO_CANDIDATO'
+        ? this.fatos.atosDaProtecao(id)
+        : this.tipos.atosDaProtecao(id);
+    this.assinatura = busca
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((resultado) => this.receberAtos(resultado));
+  }
+
+  private receberAtos(resultado: ApiResult<readonly AtoDaProtecaoDto[]>): void {
+    this.carregando.set(false);
+    if (resultado.ok) {
+      this.erro.set(null);
+      this.recusa.set(null);
+      this.atos.set(resultado.data);
+    } else {
+      const texto = this.problemI18n.resolve(resultado.problem).title;
+      this.recusa.set(recusaDe(resultado.problem, texto));
+      this.erro.set(texto);
+    }
   }
 }

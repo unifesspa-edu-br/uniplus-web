@@ -1,6 +1,7 @@
+import { RegraRemanejamentoModalidadeCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
-import type { MatrizDaCascata } from '../../documento/edicoes/cascata-de-remanejamento.edicao';
+import type { MatrizDaOrdemDeRemanejamento } from '../../documento/edicoes/ordem-de-remanejamento.edicao';
 import { CascataSelecionada, DistribuicaoDeVagas } from '../../processo-seletivo.models';
 import {
   comandoDaCascata,
@@ -28,7 +29,7 @@ const ESQUEMA_ARGS_REAL = {
 };
 
 /** A fixture já é provada válida em `describe('matrizDaRegra', …)`; aqui só evita `!` nos testes seguintes. */
-function matrizReal(): MatrizDaCascata {
+function matrizReal(): MatrizDaOrdemDeRemanejamento {
   const matriz = matrizDaRegra(ESQUEMA_ARGS_REAL);
   if (matriz === null) throw new Error('ESQUEMA_ARGS_REAL deveria produzir uma matriz válida.');
   return matriz;
@@ -53,11 +54,14 @@ function modalidade(
 
 // As duas origens que ESQUEMA_ARGS_REAL declara (LB_PPI e LB_Q) seguem a
 // cascata no catálogo — como no seed real, onde toda origem que a regra
-// ordena é também a modalidade marcada SEGUE_CASCATA. AC é só o fallback
+// ordena é também a modalidade marcada ordem de remanejamento. AC é só o fallback
 // terminal: nunca origem, por isso nunca marcado.
 const CATALOGO = new Map<string, ModalidadeDoCatalogo>([
-  [LB_PPI, modalidade(LB_PPI, 'LB_PPI', 'SEGUE_CASCATA')],
-  [LB_Q, modalidade(LB_Q, 'LB_Q', 'SEGUE_CASCATA')],
+  [
+    LB_PPI,
+    modalidade(LB_PPI, 'LB_PPI', RegraRemanejamentoModalidadeCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO),
+  ],
+  [LB_Q, modalidade(LB_Q, 'LB_Q', RegraRemanejamentoModalidadeCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO)],
   [AC, modalidade(AC, 'AC')],
 ]);
 
@@ -109,7 +113,7 @@ describe('ofertaExigeCascata / ofertaForaDoRegimeFederal', () => {
     expect(ofertaExigeCascata(oferta, CATALOGO)).toBe(true);
   });
 
-  it('não exige cascata sem modalidade SEGUE_CASCATA selecionada', () => {
+  it('não exige cascata sem modalidade ordem de remanejamento selecionada', () => {
     const oferta = ofertaFederal([{ id: AC, codigo: 'AC' }]);
     expect(ofertaExigeCascata(oferta, CATALOGO)).toBe(false);
   });
@@ -139,7 +143,7 @@ describe('precisaExibirSecaoDaCascata', () => {
     expect(precisaExibirSecaoDaCascata([institucional], CATALOGO)).toBe(false);
   });
 
-  it('não sem nenhuma modalidade SEGUE_CASCATA', () => {
+  it('não sem nenhuma modalidade ordem de remanejamento', () => {
     const federal = ofertaFederal([{ id: AC, codigo: 'AC' }]);
     expect(precisaExibirSecaoDaCascata([federal], CATALOGO)).toBe(false);
   });
@@ -174,7 +178,7 @@ describe('problemasDaCascata', () => {
 
   /**
    * A tela sempre envia a matriz INTEIRA que a regra declara (cascata de remanejamento de cotas, UNI-REQ-0056) —
-   * nunca um recorte. Uma oferta pode passar em todas as checagens por oferta
+   * nunca uma parte da matriz. Uma oferta pode passar em todas as checagens por oferta
    * (fallback presente, cada origem que ELA declara resolve) e mesmo assim
    * deixar de cobrir uma origem ou destino que a matriz declara e nenhuma
    * oferta do processo usa: o handler de gravação aceita — só confere a
@@ -197,14 +201,14 @@ describe('problemasDaCascata', () => {
     // AC também é destino dela e está selecionado) e o fallback está lá.
     expect(problemas.some((p) => p.ofertaCursoId === 'oferta-1')).toBe(false);
 
-    // Mas a origem LB_Q que a regra declara não é SEGUE_CASCATA em oferta
+    // Mas a origem LB_Q que a regra declara não é ordem de remanejamento em oferta
     // nenhuma do processo — é este o problema que o handler não pega.
     expect(
       problemas.some(
         (p) =>
           p.ofertaCursoId === null &&
           p.mensagem.includes('origem LB_Q') &&
-          p.mensagem.includes('SEGUE_CASCATA'),
+          p.mensagem.includes('seguidora da ordem de remanejamento'),
       ),
     ).toBe(true);
   });
@@ -253,7 +257,7 @@ describe('problemasDaCascata', () => {
       ...ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI' }]),
       ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
     };
-    // Federal e sem SEGUE_CASCATA — ofereceria o fallback à União, se
+    // Federal e sem ordem de remanejamento — ofereceria o fallback à União, se
     // precisasse: aqui cobre AC para a matriz fechar sem pendência.
     const semCascata = ofertaFederal([{ id: AC, codigo: 'AC' }]);
 
@@ -263,7 +267,11 @@ describe('problemasDaCascata', () => {
   it('aponta origem que a regra escolhida não declara', () => {
     const catalogoComOrigemDesconhecida = new Map(CATALOGO).set(
       'mod-outra',
-      modalidade('mod-outra', 'LI_EP', 'SEGUE_CASCATA'),
+      modalidade(
+        'mod-outra',
+        'LI_EP',
+        RegraRemanejamentoModalidadeCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO,
+      ),
     );
     // O fallback (AC) está selecionado — só a origem desconhecida sobra como problema.
     const oferta = ofertaFederal([

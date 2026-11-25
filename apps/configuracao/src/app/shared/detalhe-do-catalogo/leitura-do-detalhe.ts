@@ -19,7 +19,7 @@ interface Pedido {
 
 const SEGMENTOS: Readonly<Record<CadastroDoCatalogo, string>> = {
   TIPO_DOCUMENTO: 'tipos-documento',
-  FATO: 'fatos',
+  DADO_DO_CANDIDATO: 'fatos',
 };
 
 /** Leitura reativa do detalhe de um item do catálogo; a falha do servidor (5xx) também é avisada. */

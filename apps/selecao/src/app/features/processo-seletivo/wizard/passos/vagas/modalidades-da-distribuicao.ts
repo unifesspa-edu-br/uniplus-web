@@ -1,3 +1,5 @@
+import { RegraRemanejamentoModalidadeCodigo } from '@uniplus/shared-data/selecao';
+
 import { DistribuicaoDeVagas } from '../../processo-seletivo.models';
 
 import { semGrafia } from './composicao-de-vagas';
@@ -18,9 +20,9 @@ export interface ModalidadeDoCatalogo {
   readonly remanejamentoFallback: string | null;
 }
 
-const REGRAS_DE_REMANEJAMENTO = ['SEGUE_CASCATA', 'DESTINO_UNICO', 'CRUZADO'];
+const REGRAS_DE_REMANEJAMENTO = Object.values(RegraRemanejamentoModalidadeCodigo);
 
-/** O detalhe pode serializar o nome do membro do enum (`SegueCascata`); a tela compara o token canônico. */
+/** O detalhe pode serializar o nome do membro do enum (`SegueOrdemDeRemanejamento`); a tela compara o token canônico. */
 function canonicaDaRegraDeRemanejamento(valor: string | null): string | null {
   if (valor === null) return null;
   const procurada = semGrafia(valor);
@@ -38,25 +40,33 @@ export function modalidadesGravadasPorId(
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
 ): ReadonlyMap<string, ModalidadeDoCatalogo> {
   const mapa = new Map(catalogo);
-
   for (const modalidade of ofertas.flatMap((oferta) => oferta.modalidades)) {
     const gravada = modalidade.gravada;
     if (gravada === undefined) continue;
 
-    const vigente = catalogo.get(modalidade.id);
-    mapa.set(modalidade.id, {
-      id: modalidade.id,
-      codigo: modalidade.codigo,
-      composicaoVagas: gravada.composicaoVagas ?? vigente?.composicaoVagas ?? '',
-      composicaoOrigemCodigo: gravada.composicaoOrigemCodigo,
-      regraRemanejamento: canonicaDaRegraDeRemanejamento(gravada.regraRemanejamento),
-      remanejamentoDestino: gravada.remanejamentoDestino,
-      remanejamentoPar: gravada.remanejamentoPar,
-      remanejamentoFallback: gravada.remanejamentoFallback,
-    });
+    const normalizada = modalidadeGravada({ ...modalidade, gravada }, catalogo.get(modalidade.id));
+    mapa.set(modalidade.id, normalizada);
   }
 
   return mapa;
+}
+
+type ModalidadeGravada = DistribuicaoDeVagas['modalidades'][number] & {
+  gravada: NonNullable<DistribuicaoDeVagas['modalidades'][number]['gravada']>;
+};
+
+function modalidadeGravada(modalidade: ModalidadeGravada, vigente?: ModalidadeDoCatalogo) {
+  const gravada = modalidade.gravada;
+  return {
+    id: modalidade.id,
+    codigo: modalidade.codigo,
+    composicaoVagas: gravada.composicaoVagas ?? vigente?.composicaoVagas ?? '',
+    composicaoOrigemCodigo: gravada.composicaoOrigemCodigo,
+    regraRemanejamento: canonicaDaRegraDeRemanejamento(gravada.regraRemanejamento),
+    remanejamentoDestino: gravada.remanejamentoDestino,
+    remanejamentoPar: gravada.remanejamentoPar,
+    remanejamentoFallback: gravada.remanejamentoFallback,
+  };
 }
 
 /**

@@ -1,3 +1,4 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { formatarDataBr } from '@uniplus/shared-utils';
 import type { AtoDaProtecaoDto, AtoDeDecisao } from '@uniplus/shared-data/configuracao';
@@ -11,9 +12,12 @@ interface RotuloDoAto {
 
 const ATOS: Readonly<Record<string, RotuloDoAto>> = {
   SOLICITACAO: { texto: 'Solicitação', variante: 'info' },
-  APROVACAO: { texto: 'Aprovação', variante: 'success' },
-  AJUSTE_RECOMENDADO: { texto: 'Ajuste recomendado', variante: 'warning' },
-  REPROVACAO: { texto: 'Reprovação', variante: 'danger' },
+  [DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO]: { texto: 'Aprovação', variante: 'success' },
+  [DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO]: {
+    texto: 'Ajuste recomendado',
+    variante: 'warning',
+  },
+  [DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO]: { texto: 'Devolução', variante: 'danger' },
   ACEITE: { texto: 'Aceite da recomendação', variante: 'success' },
 };
 
@@ -27,15 +31,18 @@ export const DECISOES_FILTRAVEIS: readonly {
   readonly valor: AtoDeDecisao;
   readonly rotulo: string;
 }[] = [
-  { valor: 'APROVACAO', rotulo: 'Aprovado' },
-  { valor: 'AJUSTE_RECOMENDADO', rotulo: 'Ajuste recomendado' },
-  { valor: 'REPROVACAO', rotulo: 'Reprovado' },
+  { valor: DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO, rotulo: 'Aprovado' },
+  {
+    valor: DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO,
+    rotulo: 'Ajuste recomendado',
+  },
+  { valor: DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO, rotulo: 'Devolvido' },
 ];
 
 /**
  * Os atos da proteção de dados de um item, em ordem cronológica: o que aconteceu, quando, quem agiu e
  * a proteção que valia no instante. O ajuste recomendado traz a classificação indicada, e ele e a
- * reprovação trazem a justificativa quando houver; a aprovação também, desde a manifestação técnica.
+ * devolução trazem a justificativa quando houver; a aprovação também, desde a manifestação técnica.
  * Cada ato diz o ciclo e se a decisão foi tomada diante de manifestação desfavorável vigente.
  */
 @Component({

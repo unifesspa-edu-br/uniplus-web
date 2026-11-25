@@ -1,3 +1,5 @@
+import { RegistrarManifestacaoDaProtecaoRequestParecer } from '@uniplus/shared-data/configuracao';
+import { ItemParaSolicitarRequestCadastro } from '@uniplus/shared-data/configuracao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -20,7 +22,7 @@ const ADMIN = `${BASE}/api/configuracao/admin`;
 const manifestacao = (extra: Partial<ManifestacaoDaProtecaoDto>): ManifestacaoDaProtecaoDto => ({
   id: 'm1',
   ciclo: 2,
-  parecer: 'INADEQUADA',
+  parecer: RegistrarManifestacaoDaProtecaoRequestParecer.RECOMENDA_NAO_USO,
   texto: 'O laudo identifica o candidato; a classificação interna não basta.',
   autorNome: 'Isabella Figueiredo',
   instante: '2026-11-02T14:00:00Z',
@@ -77,7 +79,10 @@ describe('HistoricoDasManifestacoesComponent', () => {
 
   it.each([
     ['TIPO_DOCUMENTO', `${ADMIN}/tipos-documento/${ID}/protecao/manifestacoes`],
-    ['FATO', `${ADMIN}/fatos-candidato/${ID}/protecao/manifestacoes`],
+    [
+      ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO,
+      `${ADMIN}/fatos-candidato/${ID}/protecao/manifestacoes`,
+    ],
   ] as const)(
     'na tela de cadastro (%s), lê da rota do cadastro com o media type do histórico',
     async (cadastro, url) => {
@@ -94,7 +99,7 @@ describe('HistoricoDasManifestacoesComponent', () => {
   );
 
   it('na fila da proteção de dados, lê da rota da fila', () => {
-    montar('FATO');
+    montar(ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO);
     controller.expectOne(`${ADMIN}/protecao-do-catalogo/fatos/${ID}/manifestacoes`).flush([]);
   });
 
@@ -106,7 +111,7 @@ describe('HistoricoDasManifestacoesComponent', () => {
     const tela = await assentar(fixture);
 
     const lido = texto(tela);
-    expect(lido).toContain('Inadequada');
+    expect(lido).toContain('Recomenda não uso');
     expect(lido).toContain('O laudo identifica o candidato');
     expect(lido).toContain('Isabella Figueiredo');
     expect(lido).toContain('02/11/2026');
@@ -116,7 +121,7 @@ describe('HistoricoDasManifestacoesComponent', () => {
   });
 
   it('com o registro de acesso fora do ar (503), mostra a falha sem dado e tenta de novo', async () => {
-    const fixture = montar('FATO', 'cadastro');
+    const fixture = montar(ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO, 'cadastro');
     const url = `${ADMIN}/fatos-candidato/${ID}/protecao/manifestacoes`;
     controller
       .expectOne(url)

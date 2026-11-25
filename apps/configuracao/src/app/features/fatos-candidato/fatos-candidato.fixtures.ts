@@ -1,3 +1,4 @@
+import { ItemParaSolicitarRequestCadastro } from '@uniplus/shared-data/configuracao';
 import {
   OperadorCodigo,
   TipoDoDadoCodigo,
@@ -206,7 +207,7 @@ export const FASES_DA_API = [
 ];
 
 export const pendencia = (fato: FatoCandidatoDto) => ({
-  tipo: 'FATO',
+  tipo: ItemParaSolicitarRequestCadastro.DADO_DO_CANDIDATO,
   id: fato.id,
   codigo: fato.codigo,
   nome: fato.descritivo.nome,

@@ -1,3 +1,4 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
@@ -107,7 +108,7 @@ describe('ProtecaoDoCatalogoPage — escritas pela interface', () => {
     await propagar();
     controller.expectOne(`${URL}/tipos-documento/${detalhe.id}`).flush(detalhe);
     await propagar();
-    botao('dialog[aria-label^="Detalhe do item"] button', 'Reprovar').click();
+    botao('dialog[aria-label^="Detalhe do item"] button', 'Devolver').click();
     await propagar();
   }
 
@@ -116,7 +117,7 @@ describe('ProtecaoDoCatalogoPage — escritas pela interface', () => {
     const campo = elemento<HTMLTextAreaElement>('cfg-decisao-da-protecao-dialogo textarea');
     campo.value = 'Falta a base legal.';
     campo.dispatchEvent(new Event('input'));
-    const confirmar = botao('ui-dialog dialog button', 'Reprovar item');
+    const confirmar = botao('ui-dialog dialog button', 'Devolver item');
     const confirmarNaEdicao = vi.spyOn(edicao, 'confirmarDecisao');
     confirmar.focus();
     confirmar.click();
@@ -161,7 +162,7 @@ describe('ProtecaoDoCatalogoPage — escritas pela interface', () => {
     edicao.abrirDetalhe(detalhe);
     edicao.fecharDecisao();
     edicao.fecharDetalhe();
-    expect(edicao.decisaoEmCurso()).toBe('REPROVAR');
+    expect(edicao.decisaoEmCurso()).toBe(DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO);
     controller.expectNone(`${URL}/tipos-documento/${detalhe.id}`);
     expect(edicao.decisaoAberta()).toBe(true);
     expect(edicao.detalheAberto()).toBe(true);
@@ -174,7 +175,7 @@ describe('ProtecaoDoCatalogoPage — escritas pela interface', () => {
 
   it('recusa justificativa vazia e leva o foco ao campo com erro', async () => {
     await abrirDialogo();
-    const confirmar = botao('ui-dialog dialog button', 'Reprovar item');
+    const confirmar = botao('ui-dialog dialog button', 'Devolver item');
     confirmar.focus();
     confirmar.click();
     await propagar();
@@ -192,7 +193,7 @@ describe('ProtecaoDoCatalogoPage — escritas pela interface', () => {
     await abrirDialogo();
     edicao.justificativa.setValue('a'.repeat(2001));
     await propagar();
-    const confirmar = botao('ui-dialog dialog button', 'Reprovar item');
+    const confirmar = botao('ui-dialog dialog button', 'Devolver item');
     confirmar.focus();
     confirmar.click();
     await propagar();

@@ -1,3 +1,4 @@
+import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -58,7 +59,7 @@ const ABAS: readonly UiSegmentedOption<Aba>[] = [
 /**
  * A aprovação da proteção de dados do catálogo: lista o que o administrador enviou na solicitação e
  * abre cada item num drawer com o que ele é, para a proteção de dados aprovar, recomendar ajuste ou
- * reprovar. A decisão vale sobre a proteção que a tela mostrou: se o item foi editado depois, a API
+ * devolver. A decisão vale sobre a proteção que a tela mostrou: se o item foi editado depois, a API
  * recusa e a lista é relida.
  */
 @Component({
@@ -87,6 +88,7 @@ const ABAS: readonly UiSegmentedOption<Aba>[] = [
   providers: [ProtecaoDoCatalogoStore, EdicaoDaProtecaoDoCatalogo, ManifestacaoDoItem],
 })
 export class ProtecaoDoCatalogoPage {
+  protected readonly decisoes = DecidirProtecaoDoCatalogoRequestDecisao;
   protected readonly edicao = inject(EdicaoDaProtecaoDoCatalogo);
   protected readonly manifestacao = inject(ManifestacaoDoItem);
   protected readonly store = inject(ProtecaoDoCatalogoStore);
@@ -115,7 +117,7 @@ export class ProtecaoDoCatalogoPage {
     PERMISSAO.configuracao.protecaoDoCatalogoConsultar,
   ];
   protected readonly cadastroDe = (detalhe: DetalheDaProtecaoDoCatalogoDto): CadastroDoCatalogo =>
-    detalhe.tipo as CadastroDoCatalogo;
+    detalhe.tipo;
 
   protected readonly itens = this.store.itens;
   protected readonly carregando = this.store.carregando;

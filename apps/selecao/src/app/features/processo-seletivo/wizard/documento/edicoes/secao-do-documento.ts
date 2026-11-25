@@ -6,7 +6,7 @@ export type EdicaoDoDocumento = (documento: DocumentoDaConfiguracao) => Document
 export type NomeDaSecao =
   | 'identificacao'
   | 'opcoesDeCurso'
-  | 'cascataRemanejamento'
+  | 'ordemDeRemanejamento'
   | 'taxaDeInscricao'
   | 'classificacao'
   | 'atendimento'
@@ -103,7 +103,7 @@ function mesmosItens(atuais: unknown, itens: readonly unknown[]): boolean {
 const SECAO_SEM_CAMPOS: { readonly [S in NomeDaSecao]: SecaoDoDocumento<S> } = {
   identificacao: {},
   opcoesDeCurso: {},
-  cascataRemanejamento: {},
+  ordemDeRemanejamento: {},
   taxaDeInscricao: {},
   classificacao: {},
   atendimento: {},
