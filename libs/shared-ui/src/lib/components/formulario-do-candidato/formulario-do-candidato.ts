@@ -146,10 +146,7 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
    * nova de recusas não leva o candidato ao primeiro campo recusado: quem hospeda o levou ao passo.
    */
   readonly passoDaRecusa = input<string | null>(null);
-  /**
-   * Se a última seção tem o botão que a conclui. Quem hospeda uma ação final própria, como o envio da
-   * inscrição, o desliga e chama `concluirTodas()` nela.
-   */
+  /** Quem hospeda uma ação final própria, como o envio, desliga o botão de concluir da última seção. */
   readonly concluirNaUltimaSecao = input(true);
   /**
    * Se avançar exige a seção atual sem pendência: com pendência, o candidato fica onde está, com o
@@ -378,18 +375,22 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
     this.anuncio();
     this.anuncio.set(texto);
   }
-
   barrarAvanco(chavePrefixada: string): void {
     this.avancoBarrado.emit(chavePrefixada);
   }
-
   /**
-   * Dá todas as seções como concluídas, como o envio faz, quando nenhuma tem pendência, e devolve
-   * quantas pendências há. Com pendência nada é concluído: com `navegar`, leva à seção da primeira, põe
-   * o foco no campo e anuncia quantas são; sem ele, só conta, e quem hospeda decide para onde levar.
+   * Como no envio, conclui todas as seções se não há pendências e devolve a quantidade delas.
+   * Com pendências, não conclui nenhuma; quem hospeda decide para onde levar.
    */
-  concluirTodas(navegar = true): number {
-    return this.conferencia.concluirTodas(navegar);
+  concluirTodas(): number {
+    return this.conferencia.concluirTodas();
+  }
+  /**
+   * Conclui e conta como `concluirTodas`; com pendências, leva à seção da primeira,
+   * põe o foco no campo e anuncia a quantidade.
+   */
+  concluirTodasENavegar(): number {
+    return this.conferencia.concluirTodasENavegar();
   }
 
   /** Leva à seção e põe o foco no primeiro campo pendente dela; ver `ConferenciaDasSecoes`. */

@@ -16,7 +16,7 @@ describe('FormularioDoCandidatoComponent', () => {
   it('concluir todas com pendência não dá seção nenhuma como concluída nem muda o indicador', () => {
     const tela = cenario.montar(FORMULARIO_DE_DUAS_SECOES);
 
-    expect(cenario.fixture.componentInstance.concluirTodas()).toBe(2);
+    expect(cenario.fixture.componentInstance.concluirTodasENavegar()).toBe(2);
     cenario.fixture.detectChanges();
 
     expect(cenario.simulacoes.at(-1)?.paginasConcluidas ?? []).toEqual([]);
@@ -30,7 +30,7 @@ describe('FormularioDoCandidatoComponent', () => {
       'fernanda_laura_drumond@lhp.com.br',
     );
 
-    expect(cenario.fixture.componentInstance.concluirTodas()).toBe(1);
+    expect(cenario.fixture.componentInstance.concluirTodasENavegar()).toBe(1);
     cenario.fixture.detectChanges();
 
     const input = tela.querySelector('input') as HTMLInputElement;
@@ -60,7 +60,7 @@ describe('FormularioDoCandidatoComponent', () => {
       'fernanda_laura_drumond@lhp.com.br',
     );
 
-    expect(cenario.fixture.componentInstance.concluirTodas()).toBe(0);
+    expect(cenario.fixture.componentInstance.concluirTodasENavegar()).toBe(0);
     cenario.fixture.detectChanges();
 
     expect(cenario.simulacoes.at(-1)?.paginasConcluidas).toEqual([
@@ -73,7 +73,7 @@ describe('FormularioDoCandidatoComponent', () => {
   it('concluir todas conta o termo obrigatório sem aceite e leva o foco a ele', () => {
     const tela = cenario.montar(FORMULARIO_COM_TERMO_DE_VERACIDADE);
 
-    expect(cenario.fixture.componentInstance.concluirTodas()).toBe(1);
+    expect(cenario.fixture.componentInstance.concluirTodasENavegar()).toBe(1);
     cenario.fixture.detectChanges();
 
     expect(document.activeElement).toBe(
@@ -84,7 +84,7 @@ describe('FormularioDoCandidatoComponent', () => {
   it('concluir todas conta o grupo obrigatório sem integrante', () => {
     cenario.montar(FORMULARIO_COM_GRUPO_DA_FAMILIA);
 
-    expect(cenario.fixture.componentInstance.concluirTodas()).toBe(1);
+    expect(cenario.fixture.componentInstance.concluirTodasENavegar()).toBe(1);
   });
 
   it('concluir todas leva o foco ao subitem pendente da ocorrência em que ele está', async () => {
@@ -99,7 +99,7 @@ describe('FormularioDoCandidatoComponent', () => {
       },
     });
 
-    expect(cenario.fixture.componentInstance.concluirTodas()).toBe(1);
+    expect(cenario.fixture.componentInstance.concluirTodasENavegar()).toBe(1);
     cenario.fixture.detectChanges();
     await cenario.fixture.whenStable();
 
