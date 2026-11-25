@@ -58,8 +58,11 @@ Nos testes de ponta a ponta, uma resposta simulada sem `Content-Type` usa o `Acc
 desde que esteja declarado em uma resposta 2xx da operação. Sem correspondência, o teste falha.
 
 O núcleo sem Angular ficará em `@uniplus/shared-testing/contrato` e acessará os documentos de
-`shared-data` por apelido de caminho. `shared-testing` é restrita a arquivos de teste e não
-integra o build nem o pacote de produção; `shared-core` não depende dela, conforme a ADR-0032.
+`shared-data` por apelido de caminho. Os documentos OpenAPI formam um projeto à parte,
+permitindo que os testes de `shared-data` usem a conferência sem criar um ciclo; aplicativos e
+`shared-data` só usam esses documentos em arquivos de teste. `shared-testing` é restrita a
+arquivos de teste e não integra o build nem o pacote de produção; `shared-core` não depende dela,
+conforme a ADR-0032.
 Nos unitários, o interceptador de conferência será o último da cadeia e o teste reprovará ao fim
 se houver divergência. Em `shared-e2e`, um apoio automático do Playwright fará a conferência e
 reprovará o teste ao fim se houver divergência.
