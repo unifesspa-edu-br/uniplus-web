@@ -3,11 +3,31 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AppShellComponent, UiShellNavGroup } from './app-shell';
-import { lerFolha } from '../../../styles/testing/ler-folha.testing';
+import { declaracoesDaRegra, lerFolhaDeEstilo } from '@uniplus/shared-testing';
+import postcss, { type Rule } from 'postcss';
+
+function pertenceARegiaoRolavel(seletor: string): boolean {
+  return ['.page', '.sidebar nav'].some(
+    (prefixo) =>
+      seletor === prefixo ||
+      (seletor.startsWith(prefixo) && /^[^-\w]/u.test(seletor.slice(prefixo.length))),
+  );
+}
+
+function pertenceAMidia(regra: Rule, midia?: string): boolean {
+  const pai = regra.parent;
+  if (midia === undefined) return pai?.type === 'root';
+  return (
+    pai?.type === 'atrule' &&
+    pai.name === 'media' &&
+    pai.params === midia &&
+    pai.parent?.type === 'root'
+  );
+}
 
 const groups: readonly UiShellNavGroup[] = [
   {
-    label: 'Paineis',
+    label: 'Painéis',
     items: [
       { label: 'Painel', icon: 'pi-table', routerLink: '/dashboard' },
       { label: 'Bloqueado', routerLink: '/bloqueado', disabled: true },
@@ -45,15 +65,15 @@ async function montarHost() {
 }
 
 describe('AppShellComponent', () => {
-  it('renderiza grupos de navegacao recebidos pelo app', async () => {
+  it('renderiza grupos de navegação recebidos pelo app', async () => {
     const { fixture, host } = await montarShell();
     fixture.componentRef.setInput('navGroups', groups);
     fixture.detectChanges();
-    expect(host.querySelector('.sidebar__label')?.textContent).toContain('Paineis');
+    expect(host.querySelector('.sidebar__label')?.textContent).toContain('Painéis');
     expect(host.querySelectorAll('.sidebar a').length).toBe(1);
   });
 
-  it('marca item desabilitado sem vinculo', async () => {
+  it('marca item desabilitado sem vínculo', async () => {
     const { fixture, host } = await montarShell();
     fixture.componentRef.setInput('navGroups', groups);
     fixture.detectChanges();
@@ -62,13 +82,13 @@ describe('AppShellComponent', () => {
     );
   });
 
-  it('renderiza projecoes [uiShellActions] e [uiShellUser]', async () => {
+  it('renderiza projeções [uiShellActions] e [uiShellUser]', async () => {
     const { host } = await montarHost();
     expect(host.querySelector('[uiShellActions]')?.textContent).toBe('acao');
     expect(host.querySelector('[uiShellUser]')?.textContent).toBe('usuario');
   });
 
-  it('renderiza breadcrumb resolvido e marca o ultimo como atual', async () => {
+  it('renderiza breadcrumb resolvido e marca o último como atual', async () => {
     const { fixture, host } = await montarShell();
     fixture.componentRef.setInput('breadcrumb', [
       { label: 'Inicio', routerLink: '/dashboard' },
@@ -119,7 +139,7 @@ describe('AppShellComponent', () => {
     expect(botao?.getAttribute('aria-label')).toBe('Voltar ao topo do conteúdo');
   });
 
-  it('abre um unico drawer mobile, sem duplicar a sidebar fixa como segundo painel', async () => {
+  it('abre um único drawer mobile, sem duplicar a sidebar fixa como segundo painel', async () => {
     const { fixture, host } = await montarShell();
     fixture.componentRef.setInput('navGroups', groups);
     fixture.detectChanges();
@@ -136,108 +156,122 @@ describe('AppShellComponent', () => {
     expect(dialog?.id).toBe(botaoAbrirMenu?.getAttribute('aria-controls'));
   });
 
-  it('nao duplica a navegacao da sidebar numa topbar redundante', async () => {
+  it('não duplica a navegação da sidebar numa topbar redundante', async () => {
     const { fixture, host } = await montarShell();
     fixture.componentRef.setInput('navGroups', groups);
     fixture.detectChanges();
     expect(host.querySelector('.topbar__nav')).toBeNull();
   });
 
-  describe('contrato de rolagem (stylesheet compartilhado)', () => {
-    // Comentários removidos: as asserções abaixo têm de casar CSS aplicado, nunca
-    // uma declaração comentada.
-    const styles = lerFolha(resolve(__dirname, '../../../styles/components.css')).replace(
-      /\/\*[\s\S]*?\*\//gu,
-      '',
-    );
+  describe('contrato de rolagem da folha de estilo compartilhada', () => {
+    const folha = lerFolhaDeEstilo(resolve(__dirname, '../../../styles/components.css'));
+    const regra = (seletor: string, midia?: string) => declaracoesDaRegra(folha, seletor, midia);
 
-    /** Um bloco cujo seletor é exatamente `selector`; `marker` desambigua blocos
-     * homônimos (ex.: `.sidebar` base vs `.sidebar` do `position: sticky`). */
-    const rule = (selector: string, marker = ''): string => {
-      const escaped = selector.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-      const re = new RegExp(`(?:^|[^-\\w.])${escaped}\\s*\\{[^{}]*${marker}[^{}]*\\}`, 'u');
-      return styles.match(re)?.[0] ?? '';
-    };
+    function verificarDeclaracoesNaMesmaRegra(
+      seletor: string,
+      marcador: readonly [string, string],
+      esperadas: Readonly<Record<string, string | RegExp>>,
+      midia?: string,
+    ) {
+      let encontrada = false;
+      folha.walkRules((no) => {
+        if (!no.selectors.includes(seletor) || !pertenceAMidia(no, midia)) return;
+        const declaracoes = declaracoesDaRegra(postcss.root({ nodes: [no.clone()] }), seletor);
+        if (declaracoes.get(marcador[0]) !== marcador[1]) return;
+        for (const [propriedade, esperado] of Object.entries(esperadas)) {
+          if (typeof esperado === 'string') expect(declaracoes.get(propriedade)).toBe(esperado);
+          else expect(declaracoes.get(propriedade)).toMatch(esperado);
+        }
+        encontrada = true;
+      });
+      expect(encontrada, seletor).toBe(true);
+    }
 
-    /** Concatena TODOS os blocos cujo seletor começa por `prefix` — inclui as
-     * regras derivadas (`:hover`, `::-webkit-scrollbar*`), onde uma cor fixa
-     * escaparia de uma verificação feita só sobre o bloco base. */
-    const rules = (prefix: string): string => {
-      const encontrados: string[] = [];
-      const re = /([^{}]+?)\s*\{([^{}]*)\}/gu;
-      const casaSeletor = (s: string): boolean =>
-        s === prefix || (s.startsWith(prefix) && /^[^-\w]/u.test(s.slice(prefix.length)));
-      let m: RegExpExecArray | null;
-      while ((m = re.exec(styles)) !== null) {
-        const seletores = m[1].split(',').map((s) => s.trim());
-        if (seletores.some(casaSeletor)) encontrados.push(m[0].trim());
+    it('limita a altura da página e permite rolagem vertical do conteúdo', () => {
+      expect(regra('ui-app-shell').get('height')).toBe('100dvh');
+      expect(regra('ui-app-shell').get('overflow')).toBe('hidden');
+      expect(regra('.page').get('overflow-y')).toBe('auto');
+      expect(regra('.page').get('overflow-x')).toBe('hidden');
+      expect(regra('.page').get('overscroll-behavior')).toBe('contain');
+      expect(regra('.page').get('position')).toBe('relative');
+    });
+
+    it('contém os campos de marcação e oferece rolagem lateral própria', () => {
+      for (const seletor of ['.checkbox', '.radio', '.switch'])
+        expect(regra(seletor).get('position')).toBe('relative');
+      expect(regra('.sidebar nav').get('overflow-y')).toBe('auto');
+      expect(regra('.sidebar nav').get('overscroll-behavior')).toBe('contain');
+      expect(regra('.sidebar', '(min-width: 1024px)').get('max-height')).toBe('100dvh');
+      expect(regra('.sidebar', '(min-width: 1024px)').get('min-height')).toBe('0');
+      expect(regra('.sidebar', '(min-width: 1024px)').get('align-self')).toBe('stretch');
+      expect(regra('.uni-drawer').get('max-height')).toBe('100dvh');
+      expect(regra('.uni-drawer__panel').get('height')).toBe('100dvh');
+    });
+
+    it('mantém posição e altura da barra lateral na mesma regra para telas largas', () => {
+      verificarDeclaracoesNaMesmaRegra(
+        '.sidebar',
+        ['position', 'sticky'],
+        { 'max-height': '100dvh', 'align-self': 'stretch', 'min-height': '0' },
+        '(min-width: 1024px)',
+      );
+    });
+
+    it('limita largura e altura da gaveta na mesma regra', () => {
+      verificarDeclaracoesNaMesmaRegra('.uni-drawer', ['max-width', '100vw'], {
+        'max-height': '100dvh',
+      });
+    });
+
+    it('limita largura e define altura do painel da gaveta na mesma regra', () => {
+      verificarDeclaracoesNaMesmaRegra('.uni-drawer__panel', ['max-width', '320px'], {
+        height: '100dvh',
+      });
+    });
+
+    it('associa a altura do shell à regra que oculta sua rolagem', () => {
+      verificarDeclaracoesNaMesmaRegra('ui-app-shell', ['overflow', 'hidden'], {
+        height: /^100dvh$/u,
+      });
+    });
+
+    it('associa posição e cor do trilho à regra de rolagem da página', () => {
+      verificarDeclaracoesNaMesmaRegra('.page', ['overflow-y', 'auto'], {
+        position: /^relative$/u,
+        'scrollbar-color': /^var\(--/u,
+      });
+    });
+
+    it('associa a cor do trilho à regra de rolagem da navegação lateral', () => {
+      verificarDeclaracoesNaMesmaRegra('.sidebar nav', ['overflow-y', 'auto'], {
+        'scrollbar-color': /^color-mix\(/u,
+      });
+    });
+
+    it('pinta o trilho das duas regiões roláveis', () => {
+      for (const seletor of ['.page', '.sidebar nav']) {
+        const valor = regra(seletor).get('scrollbar-color');
+        expect(valor).toBeDefined();
+        expect(postcss.list.space(valor ?? '')[0]).not.toBe('transparent');
       }
-      return encontrados.join('\n');
-    };
-
-    it('o proprio ui-app-shell trava a altura no viewport dinamico', () => {
-      const shell = rule('ui-app-shell', 'overflow: hidden');
-      expect(shell).toContain('height: 100dvh');
-      expect(shell).toContain('overflow: hidden');
     });
 
-    it('a area de conteudo e o unico contedor de rolagem vertical, sem rolagem horizontal', () => {
-      const page = rules('.page');
-      expect(page).toContain('overflow-y: auto');
-      expect(page).toContain('overflow-x: hidden');
-      expect(page).toContain('overscroll-behavior: contain');
+    it('usa tokens na cor base dos trilhos', () => {
+      expect(regra('.page').get('scrollbar-color')).toMatch(/^var\(--/u);
+      expect(regra('.sidebar nav').get('scrollbar-color')).toMatch(/^color-mix\(.*var\(--/u);
     });
 
-    it('a area de conteudo ancora o conteudo posicionado, que senao escaparia da rolagem', () => {
-      expect(rule('.page', 'overflow-y: auto')).toContain('position: relative');
-    });
-
-    it('caixa de marcar, opcao e interruptor contem o input escondido', () => {
-      /** O bloco base do controle: o seletor o lista sozinho, sem descendente. */
-      const base = (controle: string): string =>
-        [...styles.matchAll(/([^{}]+?)\s*\{([^{}]*)\}/gu)].find((m) =>
-          m[1].split(',').some((s) => s.trim() === controle),
-        )?.[2] ?? '';
-      for (const controle of ['.checkbox', '.radio', '.switch']) {
-        expect(base(controle), controle).toContain('position: relative');
-      }
-    });
-
-    it('a navegacao lateral tem rolagem vertical propria', () => {
-      const nav = rules('.sidebar nav');
-      expect(nav).toContain('overflow-y: auto');
-      expect(nav).toContain('overscroll-behavior: contain');
-    });
-
-    it('a coluna lateral acompanha a area e se limita ao viewport dinamico', () => {
-      const sidebar = rule('.sidebar', 'position: sticky');
-      expect(sidebar).toContain('align-self: stretch');
-      expect(sidebar).toContain('max-height: 100dvh');
-      expect(sidebar).toContain('min-height: 0');
-    });
-
-    it('o painel do menu movel se limita ao viewport dinamico', () => {
-      // Com `100vh` em navegador móvel de barra retrátil o painel passa da área
-      // visível e o fim da lista fica atrás da barra, com o fundo travado por
-      // `body.uni-drawer-open`.
-      expect(rule('.uni-drawer', 'max-width: 100vw')).toContain('max-height: 100dvh');
-      expect(rule('.uni-drawer__panel', 'max-width: 320px')).toContain('height: 100dvh');
-    });
-
-    it('as regioes rolaveis usam tokens do DS, sem cores fixas — inclusive nas regras derivadas', () => {
-      const page = rules('.page');
-      const nav = rules('.sidebar nav');
-      // Ancorado na regra base, e não no conjunto: é ela que tem de pintar o
-      // trilho. Casar numa derivada aceitaria um trilho que só existe no hover.
-      expect(rule('.page', 'overflow-y: auto')).toMatch(/scrollbar-color:\s*var\(--/u);
-      expect(rule('.sidebar nav', 'overflow-y: auto')).toMatch(/scrollbar-color:\s*color-mix\(/u);
-      const scrollCss = `${page}\n${nav}`;
-      expect(scrollCss).not.toMatch(/#[0-9a-fA-F]{3,8}\b/u);
-      expect(scrollCss).not.toMatch(/\brgba?\(/u);
+    it('evita cores fixas nas regiões roláveis e em seus seletores derivados', () => {
+      folha.walkRules((regraDaFolha) => {
+        if (!regraDaFolha.selectors.some(pertenceARegiaoRolavel)) return;
+        regraDaFolha.walkDecls((declaracao) => {
+          expect(declaracao.value).not.toMatch(/#[0-9a-f]{3,8}\b|\brgba?\(/iu);
+        });
+      });
     });
   });
 
-  it('expoe main.page e aside > nav como as duas regioes rolaveis', async () => {
+  it('expõe main.page e aside > nav como as duas regiões roláveis', async () => {
     const { fixture, host } = await montarShell();
     fixture.componentRef.setInput('navGroups', groups);
     fixture.detectChanges();

@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CodigoDeVerificacaoComponent } from './codigo-de-verificacao';
-import { lerFolha } from '../../../styles/testing/ler-folha.testing';
+import { declaracoesDaRegra, lerFolhaDeEstilo } from '@uniplus/shared-testing';
 
 const CODIGO = '9e036c76130c5f7b0e8f9241ae1b6cdf';
 
@@ -53,14 +53,15 @@ describe('CodigoDeVerificacaoComponent', () => {
   });
 });
 
-describe('components.css — código de verificação', () => {
-  const folha = lerFolha(resolve(__dirname, '../../../styles/components.css')).replace(
-    /\/\*[\s\S]*?\*\//gu,
-    '',
-  );
+describe('folha de estilo compartilhada — código de verificação', () => {
+  const folha = lerFolhaDeEstilo(resolve(__dirname, '../../../styles/components.css'));
 
-  it('os grupos são caixas em linha, e não itens flex, para a seleção copiar sem quebras', () => {
-    expect(folha).toMatch(/\.codigo-de-verificacao__codigo\s*\{[^}]*display:\s*block/u);
-    expect(folha).toMatch(/\.codigo-de-verificacao__grupo\s*\{[^}]*display:\s*inline-block/u);
+  it('permite selecionar o código sem quebras entre os grupos', () => {
+    expect(declaracoesDaRegra(folha, '.codigo-de-verificacao__codigo').get('display')).toBe(
+      'block',
+    );
+    expect(declaracoesDaRegra(folha, '.codigo-de-verificacao__grupo').get('display')).toBe(
+      'inline-block',
+    );
   });
 });

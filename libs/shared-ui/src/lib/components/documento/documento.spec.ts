@@ -3,10 +3,12 @@ import { resolve } from 'node:path';
 import { DOCUMENT } from '@angular/common';
 import { Component, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { parse, type Root } from 'postcss';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { DocumentoComponent } from './documento';
-import { lerFolha } from '../../../styles/testing/ler-folha.testing';
+import { declaracoesDaRegra, lerFolhaDeEstilo } from '@uniplus/shared-testing';
+import { razaoDeContraste } from '../../../styles/testing/contraste.testing';
 
 @Component({
   standalone: true,
@@ -34,6 +36,18 @@ const impressoEm = (tela: HTMLElement): string =>
   [...tela.querySelectorAll('.documento__papel p')]
     .map((p) => p.textContent?.trim() ?? '')
     .find((texto) => texto.startsWith('Impresso em')) ?? '';
+
+function esperarAvisoSemFundo(folha: Root): void {
+  const fundos: string[] = [];
+  folha.walkRules((regra) => {
+    if (regra.selectors.includes('.documento__aviso')) {
+      for (const no of regra.nodes) {
+        if (no.type === 'decl' && /^background(?:-|$)/iu.test(no.prop)) fundos.push(no.prop);
+      }
+    }
+  });
+  expect(fundos).toEqual([]);
+}
 
 describe('DocumentoComponent', () => {
   afterEach(() => vi.useRealTimers());
@@ -129,68 +143,94 @@ describe('DocumentoComponent — aviso', () => {
   });
 });
 
-describe('components.css — papel do documento', () => {
-  const folha = lerFolha(resolve(__dirname, '../../../styles/components.css')).replace(
-    /\/\*[\s\S]*?\*\//gu,
-    '',
-  );
-  /** O bloco de impressão que trata do documento. */
-  const impressao =
-    folha.match(/@media print \{\s*:root:has\(\.documento\)[\s\S]*?\n\}/u)?.[0] ?? '';
+describe('folha de estilo compartilhada — papel do documento', () => {
+  const folha = lerFolhaDeEstilo(resolve(__dirname, '../../../styles/components.css'));
+  const regra = (seletor: string, midia?: string) => declaracoesDaRegra(folha, seletor, midia);
+  const papel = regra(':root:has(.documento)', 'print');
 
-  it('imprime em fundo branco e texto escuro, seja qual for o tema', () => {
-    expect(impressao).toMatch(/--surface-card:\s*#ffffff/u);
-    expect(impressao).toMatch(/background:\s*#ffffff/u);
-    expect(impressao).toMatch(/--text-primary:\s*#111111/u);
-    expect(impressao).toMatch(/\.documento__papel\s*\{[^}]*display:\s*flex/u);
+  it('imprime em papel branco com texto escuro e contraste suficiente', () => {
+    expect(papel.get('background')).toBe('#ffffff');
+    expect(papel.get('--surface-card')).toBe('#ffffff');
+    expect(papel.get('--text-primary')).toBe('#111111');
+    expect(regra('.documento__papel', 'print').get('display')).toMatch(/^flex(?: !important)?$/u);
+    expect(
+      razaoDeContraste(papel.get('--text-primary') ?? '', papel.get('--surface-card') ?? ''),
+    ).toBeGreaterThanOrEqual(4.5);
   });
 
-  it('a página A4 é nomeada e vale só para o documento', () => {
-    expect(folha).toMatch(/@page documento\s*\{[^}]*size:\s*A4/u);
-    expect(folha).not.toMatch(/@page\s*\{/u);
-    // Na raiz: num descendente, os ancestrais ficariam na página padrão e abririam uma folha em branco.
-    expect(folha).toMatch(/:root:has\(\.documento\)\s*\{[^}]*page:\s*documento/u);
+  it('mantém o fragmento sem caixa e espaça seus filhos na impressão', () => {
+    expect(regra('.documento__fragmento').get('display')).toBe('contents');
+    const filhos = regra('.documento__corpo > .documento__fragmento > *', 'print');
+    expect(filhos.get('margin-block-start')).toBe('3mm');
   });
 
-  it('solta a altura travada no viewport da cadeia inteira, para o documento de várias folhas não sair cortado', () => {
-    const regra = impressao.match(/(:root:has\(\.documento\),[^{]*)\{([^}]*)\}/u);
-    const seletores = regra?.[1] ?? '';
-    const declaracoes = regra?.[2] ?? '';
+  it('usa página A4 nomeada somente para o documento', () => {
+    const paginas: { nome: string; tamanho: string | undefined }[] = [];
+    folha.walkAtRules('page', (pagina) => {
+      let tamanho: string | undefined;
+      pagina.walkDecls('size', (declaracao) => {
+        tamanho = declaracao.value;
+      });
+      paginas.push({ nome: pagina.params, tamanho });
+    });
+    expect(paginas).toEqual([{ nome: 'documento', tamanho: 'A4' }]);
+    expect(regra(':root:has(.documento)').get('page')).toBe('documento');
+  });
 
-    for (const parte of ['body', 'body > *', 'ui-app-shell', '.ui-app-shell', '.page']) {
-      expect(seletores).toContain(`:root:has(.documento) ${parte}`);
+  it('libera a altura e o conteúdo da cadeia inteira no papel', () => {
+    for (const sufixo of ['', ' body', ' body > *', ' ui-app-shell', ' .ui-app-shell', ' .page']) {
+      const declaracoes = regra(':root:has(.documento)' + sufixo, 'print');
+      expect(declaracoes.get('height')).toBe('auto');
+      expect(declaracoes.get('max-height')).toBe('none');
+      expect(declaracoes.get('overflow')).toBe('visible');
     }
-    expect(declaracoes).toMatch(/height:\s*auto/u);
-    expect(declaracoes).toMatch(/max-height:\s*none/u);
-    expect(declaracoes).toMatch(/overflow:\s*visible/u);
   });
 
-  it('o fragmento some da grade, e no papel as seções dele se espaçam como as do corpo', () => {
-    expect(folha).toMatch(/\.documento__fragmento\s*\{[^}]*display:\s*contents/u);
-    expect(impressao).toMatch(/\.documento__corpo > \.documento__fragmento > \*/u);
+  it('apresenta aviso com borda e sem fundo', () => {
+    const aviso = regra('.documento__aviso');
+    expect(aviso.get('border')).toMatch(/^0\.25rem solid(?:\s|$)/u);
+    esperarAvisoSemFundo(folha);
   });
 
-  it("o aviso é bloco de texto e borda, sem fundo, e a cópia é marca d'água fixa em cinza claro", () => {
-    expect(folha).toMatch(/\.documento__aviso\s*\{[^}]*border:\s*0\.25rem solid/u);
-    expect(folha).not.toMatch(/\.documento__aviso\s*\{[^}]*background/u);
-    expect(impressao).toMatch(/\.documento__aviso-marca\s*\{[^}]*position:\s*fixed/u);
-    expect(impressao).toMatch(/\.documento__aviso-marca\s*\{[^}]*color:\s*#d1d5db/u);
-    expect(impressao).toMatch(/\.documento__aviso-marca\s*\{[^}]*mix-blend-mode:\s*multiply/u);
-    expect(impressao).toMatch(/\.documento__aviso-marca\s*\{[^}]*print-color-adjust:\s*exact/u);
-    expect(impressao).toMatch(
-      /\.documento__aviso-marca\s*\{[^}]*-webkit-print-color-adjust:\s*exact/u,
-    );
-    expect(impressao).toMatch(/\.documento__aviso-marca\s*\{[^}]*font-size:\s*28pt/u);
+  it('rejeita fundo no aviso dentro de uma regra de mídia', () => {
+    const folhaComFundo = parse('@media print { .documento__aviso { background-color: red } }');
+    expect(() => esperarAvisoSemFundo(folhaComFundo)).toThrow();
   });
 
-  it('o título com foco programático não leva anel', () => {
-    expect(folha).toMatch(/\.page-header__title:focus-visible\s*\{[^}]*box-shadow:\s*none/u);
+  it('apresenta a marca de impressão fixa e legível', () => {
+    const marca = regra('.documento__aviso-marca', 'print');
+    expect(marca.get('position')).toBe('fixed');
+    expect(marca.get('mix-blend-mode')).toBe('multiply');
+    expect(marca.get('font-size')).toBe('28pt');
+    // A marca clara preserva a leitura do texto sobreposto na impressão.
+    expect(marca.get('color')).toBe('#d1d5db');
+    expect(marca.get('print-color-adjust')).toBe('exact');
+    expect(marca.get('-webkit-print-color-adjust')).toBe('exact');
   });
 
-  it('as cores de feedback e de link voltam às do tema claro, para o tema de contraste não sumir no papel', () => {
-    expect(impressao).toMatch(/--color-success-700:\s*#0a5a16/u);
-    expect(impressao).toMatch(/--color-success-50:\s*#e7f4e9/u);
-    expect(impressao).toMatch(/--text-link:\s*#1351b4/u);
-    expect(impressao).toMatch(/--color-primary:\s*#1351b4/u);
+  it('não mostra anel no título com foco programático', () => {
+    expect(regra('.page-header__title:focus-visible').get('box-shadow')).toBe('none');
+  });
+
+  it('mantém contraste dos sinais e links no papel', () => {
+    for (const nome of ['--text-link', '--color-primary']) {
+      expect(papel.has(nome)).toBe(true);
+      expect(razaoDeContraste(papel.get(nome) ?? '', '#ffffff')).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(papel.has('--color-success-700')).toBe(true);
+    expect(papel.has('--color-success-50')).toBe(true);
+    expect(
+      razaoDeContraste(
+        papel.get('--color-success-700') ?? '',
+        papel.get('--color-success-50') ?? '',
+      ),
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('restaura os valores claros dos tokens de sucesso, link e primário', () => {
+    expect(papel.get('--color-success-700')).toBe('#0a5a16');
+    expect(papel.get('--color-success-50')).toBe('#e7f4e9');
+    expect(papel.get('--text-link')).toBe('#1351b4');
+    expect(papel.get('--color-primary')).toBe('#1351b4');
   });
 });
