@@ -44,12 +44,12 @@ function conferirTipo(ok: boolean): Conferencia {
 
 const texto: Conferencia = (v, caminho) => conferirTipo(typeof v === 'string')(v, caminho);
 const booleano: Conferencia = (v, caminho) => conferirTipo(typeof v === 'boolean')(v, caminho);
-// O inteiro do contrato vem como número ou, como a API também o lê, como número escrito em texto.
 const numero: Conferencia = (v, caminho) =>
   conferirTipo(typeof v === 'number' || (typeof v === 'string' && /^-?[0-9]+$/.test(v)))(
     v,
     caminho,
   );
+const numeroEstrito: Conferencia = (v, caminho) => conferirTipo(typeof v === 'number')(v, caminho);
 // As regras já foram conferidas por `lerRegras`, antes de a apresentação ser olhada.
 const regrasJaLidas: Conferencia = () => null;
 
@@ -104,7 +104,7 @@ const CAMPO = objeto<CampoRenderizavel>({
 const OCORRENCIAS = objeto<OcorrenciasDoGrupoDasRegras>({
   minimo: numero,
   incluiCandidato: booleano,
-  maximo: opcional(numero),
+  maximo: opcional(numeroEstrito),
 });
 const GRUPO = objeto<GrupoRenderizavel>({
   codigo: texto,
@@ -190,7 +190,7 @@ function recusaDasOcorrencias(grupos: Objeto | null): RecusaDoArquivo | null {
     if (errada >= 0)
       return {
         caminho: `grupos.${grupo}[${errada}]`,
-        mensagem: 'A ocorrência é um objeto com as respostas dela.',
+        mensagem: 'A ocorrência deve ter um identificador e respostas em um objeto.',
       };
   }
   return null;
@@ -198,6 +198,7 @@ function recusaDasOcorrencias(grupos: Objeto | null): RecusaDoArquivo | null {
 
 function ocorrenciaValida(ocorrencia: unknown): boolean {
   if (!ehObjeto(ocorrencia)) return false;
+  if (typeof ocorrencia['id'] !== 'string') return false;
   const respostas = ocorrencia['respostas'];
   return respostas === undefined || respostas === null || ehObjeto(respostas);
 }
