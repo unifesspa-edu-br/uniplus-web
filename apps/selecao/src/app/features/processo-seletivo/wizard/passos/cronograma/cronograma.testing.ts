@@ -113,7 +113,7 @@ export const REGRAS_CONTAGEM = [
   {
     codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
     versao: 'v1',
-    tipo: 'algoritmo_contagem_prazo',
+    tipo: 'CONVENCAO_CONTAGEM_PRAZO',
     declaracaoDaRegra: {},
     // O catálogo publica os invariantes como lista de prosa — é deles que sai a descrição
     // do que a convenção faz, e é o que separa uma convenção da outra.
@@ -128,7 +128,7 @@ export const REGRAS_CONTAGEM = [
   {
     codigo: 'SEM-INVARIANTE',
     versao: 'v1',
-    tipo: 'algoritmo_contagem_prazo',
+    tipo: 'CONVENCAO_CONTAGEM_PRAZO',
     declaracaoDaRegra: {},
     // O contrato tipa o campo como JSON solto: o que não for lista de texto é descartado.
     invariantes: {},
@@ -143,7 +143,7 @@ export const REGRAS_CONSOLIDACAO = [
   {
     codigo: 'CONSOLIDACAO-AVALIACAO-UNICA',
     versao: 'v1',
-    tipo: 'regra_consolidacao',
+    tipo: 'REGRA_APURACAO_AVALIACAO',
     declaracaoDaRegra: {},
     invariantes: ['um só avaliador lança a nota de cada candidato'],
     baseLegal: 'Decisão institucional da Unifesspa',
@@ -153,7 +153,7 @@ export const REGRAS_CONSOLIDACAO = [
   {
     codigo: 'CONSOLIDACAO-CORRECAO-INDEPENDENTE',
     versao: 'v1',
-    tipo: 'regra_consolidacao',
+    tipo: 'REGRA_APURACAO_AVALIACAO',
     declaracaoDaRegra: {},
     invariantes: ['mais de um avaliador corrige cada candidato sem conhecer a nota do outro'],
     baseLegal: 'Decisão institucional da Unifesspa',

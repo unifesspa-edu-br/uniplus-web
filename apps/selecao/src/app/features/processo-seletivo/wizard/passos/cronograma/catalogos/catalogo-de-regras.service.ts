@@ -6,8 +6,8 @@ import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/seleca
 
 import { dadosOuNulo, LeituraDeCatalogo } from './leitura-de-catalogo';
 
-const TIPO_REGRA_CONTAGEM = 'algoritmo_contagem_prazo';
-const TIPO_REGRA_CONSOLIDACAO = 'regra_consolidacao';
+const TIPO_REGRA_CONTAGEM = TipoRegraCodigo.CONVENCAO_CONTAGEM_PRAZO;
+const TIPO_REGRA_CONSOLIDACAO = TipoRegraCodigo.REGRA_APURACAO_AVALIACAO;
 const TIPO_REGRA_RECURSO = TipoRegraCodigo.REGRA_PRAZO_RECURSO;
 const TIPO_REGRA_PROCEDIMENTO = TipoRegraCodigo.REGRA_PROCEDIMENTO_RECURSO;
 

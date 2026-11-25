@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import type { TipoEtapaDto } from '@uniplus/shared-data/configuracao';
+import type { TipoRegraCodigo } from '@uniplus/shared-data/selecao';
 import { OPCOES_DO_RECURSO } from './opcoes-do-recurso';
 import { TIPOS_DE_BANCA } from './tipos-de-banca';
 import { TIPOS_DE_DECISAO_DA_API } from '../support/vocabulario-de-tipos-de-decisao';
@@ -147,7 +148,7 @@ const REGRAS_CONSOLIDACAO = [
   {
     codigo: 'CONSOLIDACAO-AVALIACAO-UNICA',
     versao: 'v1',
-    tipo: 'regra_consolidacao',
+    tipo: 'REGRA_APURACAO_AVALIACAO' satisfies `${TipoRegraCodigo}`,
     declaracaoDaRegra: {},
     invariantes: ['um só avaliador lança a nota de cada candidato na etapa'],
     baseLegal: 'Decisão institucional da Unifesspa',
@@ -157,7 +158,7 @@ const REGRAS_CONSOLIDACAO = [
   {
     codigo: 'CONSOLIDACAO-CORRECAO-INDEPENDENTE',
     versao: 'v1',
-    tipo: 'regra_consolidacao',
+    tipo: 'REGRA_APURACAO_AVALIACAO' satisfies `${TipoRegraCodigo}`,
     declaracaoDaRegra: {},
     invariantes: ['mais de um avaliador corrige cada candidato sem conhecer a nota do outro'],
     baseLegal: 'Decisão institucional da Unifesspa',
@@ -185,7 +186,10 @@ export async function mockarCatalogos(page: Page): Promise<void> {
   await responderCatalogos(page, CATALOGOS, CORS_DA_ETAPA);
   await responderRegrasDoCatalogo(
     page,
-    { REGRA_PRAZO_RECURSO: REGRAS_RECURSO, regra_consolidacao: REGRAS_CONSOLIDACAO },
+    {
+      REGRA_PRAZO_RECURSO: REGRAS_RECURSO,
+      REGRA_APURACAO_AVALIACAO: REGRAS_CONSOLIDACAO,
+    } satisfies Partial<Record<`${TipoRegraCodigo}`, readonly unknown[]>>,
     CORS_DA_ETAPA,
   );
 }

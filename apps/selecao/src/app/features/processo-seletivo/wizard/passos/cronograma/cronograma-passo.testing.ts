@@ -157,8 +157,8 @@ function respostaDaLeitura(requisicao: TestRequest): object {
   if (opcoes !== null) return [...opcoes];
   if (url.includes('fases-canonicas')) return FASES_CANONICAS;
   if (url.includes('tipos-etapa')) return TIPOS_ETAPA;
-  if (tipo === 'algoritmo_contagem_prazo') return REGRAS_CONTAGEM;
-  if (tipo === 'regra_consolidacao') return REGRAS_CONSOLIDACAO;
+  if (tipo === 'CONVENCAO_CONTAGEM_PRAZO') return REGRAS_CONTAGEM;
+  if (tipo === 'REGRA_APURACAO_AVALIACAO') return REGRAS_CONSOLIDACAO;
   return [];
 }
 
