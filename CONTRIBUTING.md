@@ -537,7 +537,7 @@ interface OpcoesDoEnvio {
 
 ### Métricas de qualidade
 
-As métricas abaixo valem para todo código que o PR cria ou altera, de produção e de teste (specs, mocks, utilitários de teste e E2E). As regras numéricas (1 a 4) são medidas pelo ESLint, e **o número que vale é o do aviso do lint**: não há contagem paralela. O texto abaixo explica como cada regra conta, para você prever o aviso antes de rodar o lint. A revisão cobra os limites no código novo ou alterado e julga o que o lint não mede: o tamanho de CSS, o tamanho de cada caso de teste e as regras 5 e 6.
+As métricas abaixo valem para o código que o PR cria ou altera e para os arquivos que ele toca, de produção e de teste (specs, mocks, utilitários de teste e E2E), conforme a seção de dívida existente. As regras numéricas (1 a 4) são medidas pelo ESLint, e **o número que vale é o do aviso do lint**: não há contagem paralela. O texto abaixo explica como cada regra conta, para você prever o aviso antes de rodar o lint. A revisão cobra os limites no código novo ou alterado e nos arquivos tocados, conforme a seção de dívida existente, e julga o que o lint não mede: o tamanho de CSS, o tamanho de cada caso de teste e as regras 5 e 6.
 
 | #   | Regra                                       | Limite    | Regra do ESLint                | Produção | Specs e E2E                                                                   |
 | --- | ------------------------------------------- | --------- | ------------------------------ | -------- | ----------------------------------------------------------------------------- |
@@ -644,12 +644,13 @@ private enviarInterno(contexto: ContextoDoEnvio): void {
 
 #### Dívida existente e CI
 
-O CI **não barra** a dívida antiga. As regras de métrica são aviso, e o lint completo só reprova por erro. Elas valem para o que o PR cria ou altera:
+O CI **não barra** a dívida antiga. As regras de métrica são aviso, e o lint completo só reprova por erro. No que o PR cria ou altera:
 
 - função nova ou alterada cumpre os limites;
+- onde vale o limite de linhas por função, arquivo criado ou alterado sai sem função acima desse limite: mesmo que o trabalho não altere a função longa, ela é dividida por responsabilidade no mesmo trabalho, com responsabilidade própria em cada parte, sem função que só repassa, objeto artificial ou supressão de aviso; nos `*.spec.ts` e `*.setup.ts`, o tamanho de cada caso de teste é cobrado na revisão;
 - arquivo que o PR cria ou altera termina com até 400 linhas; se já passava, o PR o divide por assunto.
 
-A dívida é paga por projeto (cada app e cada lib), cada um com sua issue. Quando um projeto zera, o `eslint.config.mjs` dele passa as regras a erro, e o CI barra aquele projeto. Três cuidados, porque o último bloco que casa com o arquivo vence: no projeto que tem clientes OpenAPI gerados (`shared-data`), o bloco de erro repete a exclusão deles, o bloco que desliga o limite por função nos testes vem depois dele, e o `.html` fica num bloco próprio, porque o plugin `sonarjs` só existe para `.ts`:
+A dívida dos arquivos não tocados é paga por projeto (cada app e cada lib), cada um com sua issue. Quando um projeto zera, o `eslint.config.mjs` dele passa as regras a erro, e o CI barra aquele projeto. Três cuidados, porque o último bloco que casa com o arquivo vence: no projeto que tem clientes OpenAPI gerados (`shared-data`), o bloco de erro repete a exclusão deles, o bloco que desliga o limite por função nos testes vem depois dele, e o `.html` fica num bloco próprio, porque o plugin `sonarjs` só existe para `.ts`:
 
 ```js
   {
@@ -812,7 +813,7 @@ Complementa os Quality gates acima (verificações de CI automáticas) com higie
 - [ ] Commits "WIP" / "ajustes do PR" foram **squashados** via `git rebase -i`
 - [ ] PR vinculado à issue com `Closes #N` na descrição
 - [ ] Conceitos de domínio modelados com tipos próprios, sem primitivos soltos nem agrupamento artificial para caber na métrica, e builders/fábricas de dados só nos specs ([§ Tipos de domínio no lugar de primitivos](#tipos-de-domínio-no-lugar-de-primitivos))
-- [ ] Nenhum aviso novo de `max-lines-per-function`, `max-lines`, `max-params`, `complexity` ou `sonarjs/cognitive-complexity` no código criado ou alterado, specs incluídos, e nenhuma supressão de aviso ([§ Métricas de qualidade](#métricas-de-qualidade)) — o CI ainda não os barra
+- [ ] Nenhum aviso de `max-lines-per-function` onde a regra vale, nem de `max-lines`, nos arquivos criados ou alterados; nos `*.spec.ts` e `*.setup.ts`, o tamanho de cada caso de teste é cobrado na revisão. Nenhum aviso novo de `max-params`, `complexity` ou `sonarjs/cognitive-complexity` no código criado ou alterado, specs incluídos, e nenhuma supressão de aviso ([§ Métricas de qualidade](#métricas-de-qualidade)) — o CI ainda não os barra
 
 ---
 
