@@ -30,7 +30,7 @@ interface RegistroDeAcesso {
   readonly permissao: string;
   readonly sensibilidade: string;
   readonly inscricaoId: string | null;
-  readonly fatoCodigo: string | null;
+  readonly codigoDoDado: string | null;
   readonly permitido: boolean;
   readonly origem: string;
 }
@@ -243,7 +243,7 @@ test.describe('Revelação de identificadores', () => {
           (r) =>
             r.permissao === 'selecao:dados-identificadores:revelar' &&
             r.inscricaoId === cenario.fernanda.inscricaoId &&
-            r.fatoCodigo === 'CPF' &&
+            r.codigoDoDado === 'CPF' &&
             r.permitido,
         ),
       };

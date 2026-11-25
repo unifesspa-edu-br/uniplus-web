@@ -28,7 +28,9 @@ const CONSULTAR = 'selecao:inscricoes:consultar';
 const EMITIR = 'selecao:inscricoes:emitir-comprovante';
 
 interface ComprovanteLido {
-  readonly cancelamento?: { readonly aviso: string } | null;
+  readonly inscricao: {
+    readonly cancelamento?: { readonly aviso: string } | null;
+  };
 }
 
 function exigir(
@@ -61,7 +63,7 @@ async function lerComprovante(processoId: string, inscricaoId: string): Promise<
 }
 
 async function cancelarSeAindaNao(processoId: string, inscricao: InscricaoCriada): Promise<void> {
-  if ((await lerComprovante(processoId, inscricao.inscricaoId)).cancelamento) return;
+  if ((await lerComprovante(processoId, inscricao.inscricaoId)).inscricao.cancelamento) return;
 
   const rota = `/api/selecao/processos-seletivos/${processoId}/inscricao`;
   const atual = await chamarApi<{ eTag: string }>(inscricao.username, 'GET', rota, {
@@ -75,7 +77,7 @@ async function cancelarSeAindaNao(processoId: string, inscricao: InscricaoCriada
   exigir(cancelamento, 204, `cancelar a inscrição de ${inscricao.username}`);
   const depois = await lerComprovante(processoId, inscricao.inscricaoId);
   expect(
-    depois.cancelamento,
+    depois.inscricao.cancelamento,
     'a inscrição cancelada traz o cancelamento no comprovante',
   ).toBeTruthy();
 }
