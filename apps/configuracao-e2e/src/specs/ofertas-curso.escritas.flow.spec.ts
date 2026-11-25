@@ -38,8 +38,12 @@ function recusaDeCampos(...erros: { field: string; code: string; message: string
 }
 
 const RECUSA_DE_CODIGO = recusaDeCampos(
-  { field: 'eMecCodigo', code: 'e_mec_codigo_tamanho', message: 'Código e-MEC fora do padrão.' },
-  { field: 'codigoSga', code: 'codigo_sga_tamanho', message: 'Código SGA fora do padrão.' },
+  { field: 'codigoEmec', code: 'e_mec_codigo_tamanho', message: 'Código e-MEC fora do padrão.' },
+  {
+    field: 'codigoNoSistemaAcademico',
+    code: 'codigo_sga_tamanho',
+    message: 'Código SGA fora do padrão.',
+  },
 );
 
 async function responder(route: Route, status: number, corpo?: unknown): Promise<void> {
@@ -129,7 +133,7 @@ test.describe('Oferta de curso — escritas', () => {
     await drawer.getByRole('button', { name: 'Criar oferta' }).focus();
     await drawer.getByRole('button', { name: 'Criar oferta' }).click();
 
-    const eMec = page.locator('input[formcontrolname="eMecCodigo"]');
+    const eMec = page.locator('input[formcontrolname="codigoEmec"]');
     const salvar = drawer.getByRole('button', { name: 'Salvando...' });
     await expect(eMec).toBeDisabled();
     await expect(page.locator('#cfg-oferta-curso-id')).toBeDisabled();
@@ -156,7 +160,7 @@ test.describe('Oferta de curso — escritas', () => {
       'Código e-MEC fora do padrão.',
       'Código SGA fora do padrão.',
     ]);
-    await expect(page.locator('input[formcontrolname="codigoSga"]')).toHaveAttribute(
+    await expect(page.locator('input[formcontrolname="codigoNoSistemaAcademico"]')).toHaveAttribute(
       'aria-invalid',
       'true',
     );
@@ -198,7 +202,7 @@ test.describe('Oferta de curso — escritas', () => {
     await novo(page).click();
     const drawer = formulario(page);
     await preencherCadastroDaOferta(page);
-    const eMec = page.locator('input[formcontrolname="eMecCodigo"]');
+    const eMec = page.locator('input[formcontrolname="codigoEmec"]');
     await eMec.focus();
     await page.keyboard.press('Enter');
 

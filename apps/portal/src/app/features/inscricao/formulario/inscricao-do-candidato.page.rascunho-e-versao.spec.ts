@@ -10,7 +10,7 @@ import {
   type InscricaoDto,
   type InscricaoRequest,
   SituacaoInscricaoCodigo,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
 } from '@uniplus/shared-data/selecao';
 import {
   DADOS,
@@ -79,7 +79,7 @@ describe('InscricaoDoCandidatoPage', () => {
             etapaCodigo: DADOS,
             rotulo: 'Integrante',
             ocorrencias,
-            subitens: [campoColetado('RENDA', 'Renda', TipoRenderizacaoCodigo.NUMERO)],
+            subitens: [campoColetado('RENDA', 'Renda', TipoDeCampoCodigo.NUMERO)],
           },
         ],
       },

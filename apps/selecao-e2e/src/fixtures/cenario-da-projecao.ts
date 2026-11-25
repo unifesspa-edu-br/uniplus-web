@@ -49,8 +49,7 @@ export interface CenarioDaProjecao {
 
 async function acharProcesso(nome: string): Promise<string | undefined> {
   return (await listarProcessos()).find(
-    (processo) =>
-      processo.nome === nome && processo.status.codigo === 'PUBLICADO',
+    (processo) => processo.nome === nome && processo.situacao.codigo === 'PUBLICADO',
   )?.id;
 }
 
@@ -146,7 +145,7 @@ export async function rascunhoParaConfiguracao(): Promise<{
 
 async function garantirRascunho(): Promise<string> {
   const existente = (await listarProcessos()).find(
-    (p) => p.nome === NOME_DO_RASCUNHO && p.status.codigo === 'RASCUNHO',
+    (p) => p.nome === NOME_DO_RASCUNHO && p.situacao.codigo === 'RASCUNHO',
   );
   return existente?.id ?? criarRascunho();
 }

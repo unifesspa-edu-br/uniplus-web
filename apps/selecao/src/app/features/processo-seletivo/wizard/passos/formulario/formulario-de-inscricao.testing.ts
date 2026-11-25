@@ -122,7 +122,7 @@ export const item = (
   fatoCodigo,
   ordem,
   etapaCodigo,
-  apresentacao: apresentacaoDoCampo(fatoCodigo, 'BOOLEANO'),
+  apresentacao: apresentacaoDoCampo(fatoCodigo, 'SIM_OU_NAO'),
   regras: REGRAS_INICIAIS,
   ...extra,
 });

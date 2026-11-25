@@ -1,5 +1,5 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
+import { SituacaoDoProcessoSeletivoCodigo } from '@uniplus/shared-data/selecao';
 import type { DocumentoAPublicarDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import type { StepStatus } from '@uniplus/shared-ui/components';
 import { ROTULOS_DOS_PASSOS } from './processo-seletivo.data';
@@ -16,6 +16,7 @@ import {
 import { concorrenciaDuplaAplicavel, modalidadesDasOfertas } from './modalidades-do-processo';
 import { rascunhoInicial } from './rascunho-inicial';
 import { motivoDeSomenteLeitura } from './somente-leitura';
+import { descricaoDoPasso } from './descricao-do-passo';
 
 const INDICE_DO_CRONOGRAMA = ROTULOS_DOS_PASSOS.indexOf('Cronograma');
 
@@ -199,7 +200,9 @@ export class ProcessoSeletivoStore {
    */
   readonly processoForaDeRascunho = computed(() => {
     const detalhe = this.remoteSnapshot();
-    return detalhe !== null && detalhe.status.codigo !== StatusProcessoCodigo.RASCUNHO;
+    return (
+      detalhe !== null && detalhe.situacao.codigo !== SituacaoDoProcessoSeletivoCodigo.RASCUNHO
+    );
   });
 
   /**
@@ -221,7 +224,7 @@ export class ProcessoSeletivoStore {
   readonly aceitaEdicao = computed(() => this.edicaoPermitida() && !this.operacaoEmAndamento());
 
   readonly motivoDeSomenteLeitura = computed(() =>
-    motivoDeSomenteLeitura(this.remoteSnapshot()?.status.codigo, this.publicacaoNaoConfirmada()),
+    motivoDeSomenteLeitura(this.remoteSnapshot()?.situacao.codigo, this.publicacaoNaoConfirmada()),
   );
 
   readonly modalidadesDoProcesso = computed(() => modalidadesDasOfertas(this.draft()));
@@ -231,10 +234,7 @@ export class ProcessoSeletivoStore {
   );
 
   readonly currentLabel = computed(() => this.labels[this.passoAtual()]);
-  readonly currentMeta = computed(() => {
-    const index = this.passoAtual();
-    return `Etapa ${index + 1} de ${this.totalDePassos} (${String(index + 1).padStart(2, '0')} ${this.labels[index]})`;
-  });
+  readonly currentMeta = computed(() => descricaoDoPasso(this.passoAtual(), this.labels));
   readonly progress = computed(() => ((this.passoAtual() + 1) / this.totalDePassos) * 100);
   readonly isFirst = computed(() => this.passoAtual() === 0);
   readonly isLast = computed(() => this.passoAtual() === this.totalDePassos - 1);

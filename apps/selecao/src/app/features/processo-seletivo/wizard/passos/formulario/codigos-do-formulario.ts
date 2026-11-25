@@ -1,6 +1,6 @@
 import {
   OperadorCodigo,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
   type DefinirFormularioRequest,
   type DefinirItensDoFormularioRequest,
   type DefinirTermosDoFormularioRequest,
@@ -61,7 +61,7 @@ function semSecaoSeNecessario<T extends { readonly etapaCodigo?: string | null }
   return semSecao ? { ...item, etapaCodigo: null } : item;
 }
 
-const CODIGOS_DA_SELECAO = codigosDoContrato(OperadorCodigo, TipoRenderizacaoCodigo);
+const CODIGOS_DA_SELECAO = codigosDoContrato(OperadorCodigo, TipoDeCampoCodigo);
 
 /** O cabeçalho para o PUT: fase, título e etapas, sem a seção dos dados básicos, que a API repõe. */
 export function cabecalhoParaEnvio(

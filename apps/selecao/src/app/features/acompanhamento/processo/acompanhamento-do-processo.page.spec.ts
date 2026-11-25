@@ -48,7 +48,9 @@ describe('AcompanhamentoDoProcessoPage', () => {
 
   const responder = async (nome: string, status: string) => {
     TestBed.tick();
-    http.expectOne(`/api/selecao/processos-seletivos/${ID}`).flush({ id: ID, nome, status });
+    http
+      .expectOne(`/api/selecao/processos-seletivos/${ID}`)
+      .flush({ id: ID, nome, situacao: { codigo: status.toUpperCase(), rotulo: status } });
     await Promise.resolve();
     harness.detectChanges();
   };

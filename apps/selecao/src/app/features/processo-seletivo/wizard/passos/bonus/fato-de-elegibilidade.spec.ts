@@ -10,9 +10,9 @@ const rascunho = (aplica: boolean | null, origem: OrigemCandidatosCodigo): Wizar
     identificacao: { origemCandidatos: origem },
   }) as unknown as WizardDraft;
 
-const item = (fatoCodigo: string, tipoRenderizacao: string, rotulo = fatoCodigo) => ({
+const item = (fatoCodigo: string, tipoDeCampo: string, rotulo = fatoCodigo) => ({
   fatoCodigo,
-  apresentacao: { tipoRenderizacao, rotulo },
+  apresentacao: { tipoDeCampo, rotulo },
 });
 
 const formulario = (
@@ -23,9 +23,15 @@ const formulario = (
 
 describe('citaFatoDeElegibilidade', () => {
   it('só quando o processo aplica o acréscimo e o candidato se inscreve nele', () => {
-    expect(citaFatoDeElegibilidade(rascunho(true, OrigemCandidatosCodigo.INSCRICAO_PROPRIA))).toBe(true);
-    expect(citaFatoDeElegibilidade(rascunho(true, OrigemCandidatosCodigo.IMPORTACAO_EXTERNA))).toBe(false);
-    expect(citaFatoDeElegibilidade(rascunho(false, OrigemCandidatosCodigo.INSCRICAO_PROPRIA))).toBe(false);
+    expect(citaFatoDeElegibilidade(rascunho(true, OrigemCandidatosCodigo.INSCRICAO_PROPRIA))).toBe(
+      true,
+    );
+    expect(citaFatoDeElegibilidade(rascunho(true, OrigemCandidatosCodigo.IMPORTACAO_EXTERNA))).toBe(
+      false,
+    );
+    expect(citaFatoDeElegibilidade(rascunho(false, OrigemCandidatosCodigo.INSCRICAO_PROPRIA))).toBe(
+      false,
+    );
   });
 });
 
@@ -34,7 +40,7 @@ describe('fatosDeElegibilidade', () => {
     const fatos = fatosDeElegibilidade(
       formulario(
         [
-          item('PEDE_O_ACRESCIMO', 'BOOLEANO', 'Deseja solicitar o acréscimo?'),
+          item('PEDE_O_ACRESCIMO', 'SIM_OU_NAO', 'Deseja solicitar o acréscimo?'),
           item('MUNICIPIO_DE_RESIDENCIA', 'MUNICIPIO'),
         ],
         [

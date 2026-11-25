@@ -1,4 +1,4 @@
-import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
+import { SituacaoDoProcessoSeletivoCodigo } from '@uniplus/shared-data/selecao';
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
@@ -76,7 +76,10 @@ describe('FasePassoComponent: tipos de decisão da fase', () => {
     comCronograma(fase({ tiposDeDecisao: ['CLASSIFICACAO', 'TIPO_DO_FUTURO'] }));
     store.remoteSnapshot.set({
       ...umProcessoLidoComOsTiposDeDecisao(),
-      status: StatusProcessoCodigo.PUBLICADO,
+      situacao: {
+        codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+      },
     } as unknown as ProcessoSeletivoDto);
     detectar();
 
@@ -90,7 +93,10 @@ describe('FasePassoComponent: tipos de decisão da fase', () => {
   it('diz que nenhuma decisão foi declarada quando a fase publicada não declara tipo', () => {
     comCronograma(fase({}));
     store.remoteSnapshot.set({
-      status: StatusProcessoCodigo.PUBLICADO,
+      situacao: {
+        codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+      },
     } as unknown as ProcessoSeletivoDto);
     detectar();
 

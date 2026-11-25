@@ -15,8 +15,8 @@ import type {
 
 export const CATALOGOS: CatalogosDaConversaoDoFormulario = {
   fatos: [
-    { codigo: 'RENDA', tipoRenderizacao: 'NUMERO' },
-    { codigo: 'PARENTESCO', tipoRenderizacao: 'SELECAO_UNICA' },
+    { codigo: 'RENDA', tipoDeCampo: 'NUMERO' },
+    { codigo: 'PARENTESCO', tipoDeCampo: 'ESCOLHA_UNICA' },
   ],
   termos: [
     { termoId: 'termo', termoCodigo: 'CONSENTIMENTO', versaoId: 'primeira', versaoNumero: 1 },

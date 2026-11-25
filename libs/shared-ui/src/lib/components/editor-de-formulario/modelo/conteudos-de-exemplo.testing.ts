@@ -10,7 +10,7 @@ import type {
 } from './tipos';
 
 export const APRESENTACAO_PADRAO = {
-  tipoRenderizacao: 'SIM_OU_NAO',
+  tipoDeCampo: 'SIM_OU_NAO',
   pedirConfirmacao: false,
 } satisfies Omit<ApresentacaoDoCampo, 'rotulo'>;
 

@@ -27,7 +27,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
     expect(etapas[2].exibicao).toBeNull();
     expect(resultado.itens?.find((i) => i.fatoCodigo === 'RENDA_FAMILIAR')).toMatchObject({
       etapaCodigo: SECAO_OUTROS_DADOS,
-      apresentacao: { tipoRenderizacao: 'NUMERO' },
+      apresentacao: { tipoDeCampo: 'NUMERO' },
       regras: { obrigatoriedade: { tipo: 'SEMPRE' } },
     });
   });

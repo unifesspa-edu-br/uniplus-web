@@ -30,7 +30,7 @@ export const RENDERIZAVEL = {
         etapaCodigo: 'DADOS',
         apresentacao: {
           rotulo: 'Nome social',
-          tipoRenderizacao: 'TEXTO',
+          tipoDeCampo: 'TEXTO',
           ajuda: null,
           pedirConfirmacao: false,
         },

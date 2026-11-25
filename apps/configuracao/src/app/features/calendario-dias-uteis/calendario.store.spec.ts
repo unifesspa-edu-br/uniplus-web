@@ -60,7 +60,7 @@ describe('CalendarioStore', () => {
         .flush(calendarioCom([DIA_ESTADUAL]));
       await tick();
 
-      expect(store.calendario()?.versaoDataset).toBe('2026.1');
+      expect(store.calendario()?.versaoDoCalendario).toBe('2026.1');
       expect(store.carregandoPrimeiraVez()).toBe(false);
       expect(store.totalDiasNaoUteis()).toBe(1);
       expect(store.mensagemDeErro()).toBeNull();

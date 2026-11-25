@@ -9,7 +9,7 @@ export const data = (codigo: string): FatoDoFormulario => ({
 });
 
 const nascimento = (restricoes?: RegrasDoCampo['restricoes']): ItemDoFormulario =>
-  item('NASCIMENTO', 1, { apresentacao: { tipoRenderizacao: 'DATA' }, regras: { restricoes } });
+  item('NASCIMENTO', 1, { apresentacao: { tipoDeCampo: 'DATA' }, regras: { restricoes } });
 
 export class CenarioDaFaixaDeDatas {
   constructor(readonly editor: CenarioDoEditorDeFormulario) {}

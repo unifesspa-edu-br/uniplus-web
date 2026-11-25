@@ -6,7 +6,7 @@ import {
   type FatoColetadoDto,
   type FormularioDto,
   OperadorCodigo,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
 } from '@uniplus/shared-data/selecao';
 import type { ConteudoDoFormulario } from '@uniplus/shared-ui/components';
 import { conteudoDoFormulario, itensParaEnvio, planoDeGravacao } from './formulario-do-processo';
@@ -32,7 +32,7 @@ const fato = (
   etapaCodigo,
   apresentacao: {
     rotulo: fatoCodigo,
-    tipoRenderizacao: TipoRenderizacaoCodigo.SIM_OU_NAO,
+    tipoDeCampo: TipoDeCampoCodigo.SIM_OU_NAO,
     ajuda: null,
     pedirConfirmacao: false,
   },
@@ -269,7 +269,7 @@ describe('planoDeGravacao', () => {
           fato('NASCIMENTO', 0, 'S1', {
             apresentacao: {
               rotulo: 'NASCIMENTO',
-              tipoRenderizacao: TipoRenderizacaoCodigo.DATA,
+              tipoDeCampo: TipoDeCampoCodigo.DATA,
               ajuda: null,
               pedirConfirmacao: false,
             },

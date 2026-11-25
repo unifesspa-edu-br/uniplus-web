@@ -1,4 +1,4 @@
-import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
+import { SituacaoDoProcessoSeletivoCodigo } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -46,7 +46,7 @@ describe('PublicacoesDoProcessoPage — falhas de leitura', () => {
     );
     expect(tentar).toBeDefined();
     tentar?.click();
-    pagina.responderProcesso(StatusProcessoCodigo.RASCUNHO);
+    pagina.responderProcesso(SituacaoDoProcessoSeletivoCodigo.RASCUNHO);
     await pagina.fixture.whenStable();
     pagina.fixture.detectChanges();
 

@@ -10,8 +10,8 @@ import type { FatoDoFormulario } from './tipos';
 
 describe('restricoesParaAcrescentar', () => {
   it('oferece só a restrição que cabe no tipo do campo, uma por tipo', () => {
-    const numero = item('IDADE', 0, 'S1', { apresentacao: { tipoRenderizacao: 'NUMERO' } });
-    const selecao = item('COR', 0, 'S1', { apresentacao: { tipoRenderizacao: 'ESCOLHA_UNICA' } });
+    const numero = item('IDADE', 0, 'S1', { apresentacao: { tipoDeCampo: 'NUMERO' } });
+    const selecao = item('COR', 0, 'S1', { apresentacao: { tipoDeCampo: 'ESCOLHA_UNICA' } });
 
     expect(restricoesParaAcrescentar(numero, false).map((r) => r.valor)).toEqual([
       'FAIXA_NUMERICA',
@@ -36,7 +36,7 @@ describe('restricoesParaAcrescentar', () => {
 
   it('oferece as opções das respostas anteriores na seleção só quando há campo anterior de onde elas venham', () => {
     const selecao = item('LISTA_DE_ESPERA', 1, 'S1', {
-      apresentacao: { tipoRenderizacao: 'ESCOLHA_UNICA' },
+      apresentacao: { tipoDeCampo: 'ESCOLHA_UNICA' },
     });
 
     expect(restricoesParaAcrescentar(selecao, false, false)).toEqual([]);
@@ -89,7 +89,9 @@ describe('de onde vêm as opções formadas pelas respostas', () => {
       'nenhum enumera e a fonte dos valores é outra',
       false,
       curso('ESPERA', null, { fonteValores: { codigo: 'PROCESSO', rotulo: 'PROCESSO' } }),
-      curso('OPCOES', null, { fonteValores: { codigo: 'UNIDADES_FEDERATIVAS', rotulo: 'UNIDADES_FEDERATIVAS' } }),
+      curso('OPCOES', null, {
+        fonteValores: { codigo: 'UNIDADES_FEDERATIVAS', rotulo: 'UNIDADES_FEDERATIVAS' },
+      }),
     ],
     [
       'só um enumera',

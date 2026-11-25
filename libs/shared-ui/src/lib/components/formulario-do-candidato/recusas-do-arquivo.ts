@@ -90,7 +90,7 @@ const VALOR = objeto<ValorSelecionavel>({
 const VALORES = opcional(lista(VALOR));
 const APRESENTACAO_DO_CAMPO = objeto<ApresentacaoDoCampo>({
   rotulo: texto,
-  tipoRenderizacao: texto,
+  tipoDeCampo: texto,
   pedirConfirmacao: booleano,
   ajuda: opcional(texto),
 });
@@ -140,7 +140,7 @@ const TERMO = objeto<TermoRenderizavel>({
 const PRESSUPOSTO = objeto<PressupostoDoFormulario>({
   fatoCodigo: texto,
   rotulo: opcional(texto),
-  tipoRenderizacao: opcional(texto),
+  tipoDeCampo: opcional(texto),
   formato: opcional(texto),
   calculadoDe: opcional(lista(texto)),
   valoresSelecionaveis: VALORES,

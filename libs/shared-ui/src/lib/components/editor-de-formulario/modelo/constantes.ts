@@ -38,8 +38,8 @@ export function apresentacaoDaEtapa(titulo: string): ApresentacaoDaEtapa {
 }
 
 /** A apresentação do campo novo: sem ajuda e sem pedido de confirmação. */
-export function apresentacaoDoCampo(rotulo: string, tipoRenderizacao: string): ApresentacaoDoCampo {
-  return { rotulo, tipoRenderizacao, ajuda: null, pedirConfirmacao: false };
+export function apresentacaoDoCampo(rotulo: string, tipoDeCampo: string): ApresentacaoDoCampo {
+  return { rotulo, tipoDeCampo, ajuda: null, pedirConfirmacao: false };
 }
 
 /** A etapa nova, sem itens: seção quando não há bloco, ou o bloco do sistema dado. */

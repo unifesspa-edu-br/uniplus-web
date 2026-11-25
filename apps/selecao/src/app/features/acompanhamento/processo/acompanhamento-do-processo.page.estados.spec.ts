@@ -1,3 +1,4 @@
+import { SituacaoDoProcessoSeletivoCodigo } from '@uniplus/shared-data/selecao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
@@ -50,12 +51,22 @@ describe('AcompanhamentoDoProcessoPage — estados', () => {
   };
   const responder = async (id: string, nome: string, status = 200) => {
     TestBed.tick();
-    http
-      .expectOne(`/api/selecao/processos-seletivos/${id}`)
-      .flush(status === 200 ? { id, nome, status: 'publicado' } : {}, {
+    http.expectOne(`/api/selecao/processos-seletivos/${id}`).flush(
+      status === 200
+        ? {
+            id,
+            nome,
+            situacao: {
+              codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+              rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+            },
+          }
+        : {},
+      {
         status,
         statusText: status === 200 ? 'OK' : 'Erro',
-      });
+      },
+    );
     await Promise.resolve();
     harness.detectChanges();
   };

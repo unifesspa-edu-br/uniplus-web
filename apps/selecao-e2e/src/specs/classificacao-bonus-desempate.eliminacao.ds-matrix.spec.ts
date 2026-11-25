@@ -110,7 +110,7 @@ test.describe('Eliminação por ausência na etapa em edição — matriz DS @ds
     await abrirProcessoDoCenario(page, testInfo, PROCESSO_AUSENCIA_ID, {
       ...DETALHE_PUBLICADO,
       id: PROCESSO_AUSENCIA_ID,
-      status: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
+      situacao: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
     });
     await irAoPasso(page, 'Eliminação', testInfo);
   });

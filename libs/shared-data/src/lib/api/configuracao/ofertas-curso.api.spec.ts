@@ -43,8 +43,8 @@ const ofertaSeed: OfertaCursoDto = {
   regimeDeFuncionamento: valorDeTeste(RegimeDeFuncionamentoCodigo.EXTENSIVO),
   regimeDeTurno: valorDeTeste(RegimeDeTurnoCodigo.REGULAR),
   turnos: [valorDeTeste(TurnoOfertaCodigo.MATUTINO)],
-  eMecCodigo: '123456',
-  codigoSga: null,
+  codigoEmec: '123456',
+  codigoNoSistemaAcademico: null,
   vagasAnuaisAutorizadas: 40,
   baseLegal: null,
   atoAutorizacaoMec: null,
@@ -61,7 +61,7 @@ const criarCommand: CriarOfertaCursoCommand = {
   regimeDeFuncionamento: null,
   regimeDeTurno: null,
   turnos: [TurnoOfertaCodigo.MATUTINO],
-  eMecCodigo: '123456',
+  codigoEmec: '123456',
   vagasAnuaisAutorizadas: 40,
 };
 
@@ -198,7 +198,7 @@ describe('OfertasCursoApi', () => {
           regimeDeFuncionamento: null,
           regimeDeTurno: null,
           turnos: [TurnoOfertaCodigo.MATUTINO],
-          eMecCodigo: '123456',
+          codigoEmec: '123456',
           vagasAnuaisAutorizadas: 40,
         },
         withIdempotencyKey('k'),

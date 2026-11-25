@@ -125,7 +125,7 @@ export {
   fatosDeMembroParaAcrescentar,
   fatosParaAcrescentar,
   pressupostosParaAcrescentar,
-  renderizacaoDe,
+  tipoDeCampoDe,
 } from './editor-de-formulario/modelo/catalogo-de-campos';
 export {
   comFatosConhecidosAntes,

@@ -13,7 +13,7 @@ import {
   type GeracaoDeEnvioDto,
   type LeiauteDoInepDto,
   type LoteDeNotasDoEnemDto,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
   type ProcessoSeletivoDto,
   type TipoDeLeiaute,
 } from '@uniplus/shared-data/selecao';
@@ -244,7 +244,8 @@ export class NotasDoEnemDoProcesso {
     processoId: string,
     processo: ProcessoSeletivoDto,
   ): Promise<EscopoDoEnem | ApiFailure> {
-    if (processo.status.codigo === StatusProcessoCodigo.RASCUNHO) return ESCOPO_DE_RASCUNHO;
+    if (processo.situacao.codigo === SituacaoDoProcessoSeletivoCodigo.RASCUNHO)
+      return ESCOPO_DE_RASCUNHO;
 
     const snapshot = await firstValueFrom(this.publicacaoApi.obterSnapshotVigente(processoId));
     if (isApiOk(snapshot)) return escopoDoEnem(snapshot.data.configuracao);

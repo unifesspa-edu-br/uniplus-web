@@ -14,7 +14,7 @@ describe('conversão do documento e do conteúdo do editor', () => {
     const lido = aceita(conteudoDoDocumento(original, CATALOGOS));
     expect(lido.conteudo.itens?.[0]).toMatchObject({
       ordem: 0,
-      apresentacao: { pedirConfirmacao: false, tipoRenderizacao: 'NUMERO' },
+      apresentacao: { pedirConfirmacao: false, tipoDeCampo: 'NUMERO' },
     });
     expect(lido.conteudo.grupos?.[0].ocorrencias).toEqual({
       minimo: 0,
@@ -95,7 +95,7 @@ describe('conversão do documento e do conteúdo do editor', () => {
         [{ codigoDoDado: 'PARENTESCO', operador: OperadorDaCondicao.IGUAL, valor: 'PROPRIO' }],
       ],
     });
-    expect(volta.formulario.itens?.[0]).not.toHaveProperty('tipoRenderizacao');
+    expect(volta.formulario.itens?.[0]).not.toHaveProperty('tipoDeCampo');
     expect(volta.formulario.itens?.[0]).not.toHaveProperty('predicadoObrigatoriedade');
     expect(volta.formulario.itens?.[0].opcoes).toEqual(formulario().itens?.[0].opcoes);
   });

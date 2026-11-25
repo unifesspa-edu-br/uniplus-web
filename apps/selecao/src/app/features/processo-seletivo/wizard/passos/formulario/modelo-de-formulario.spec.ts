@@ -3,7 +3,7 @@ import {
   TipoObrigatoriedadeCodigo,
   type AplicacaoDeModeloDto,
   type FormularioDto,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
 } from '@uniplus/shared-data/selecao';
 import {
   apresentacaoDoCampo,
@@ -27,7 +27,7 @@ const item = (fatoCodigo: string): ItemDoFormulario => ({
   fatoCodigo,
   ordem: 0,
   etapaCodigo: null,
-  apresentacao: apresentacaoDoCampo(fatoCodigo, 'BOOLEANO'),
+  apresentacao: apresentacaoDoCampo(fatoCodigo, 'SIM_OU_NAO'),
   regras: REGRAS_INICIAIS,
 });
 const com = (...fatos: string[]): ConteudoDoFormulario => ({
@@ -54,7 +54,7 @@ const doServidor = (
       etapaCodigo: null,
       apresentacao: {
         rotulo: fatoCodigo,
-        tipoRenderizacao: TipoRenderizacaoCodigo.SIM_OU_NAO,
+        tipoDeCampo: TipoDeCampoCodigo.SIM_OU_NAO,
         ajuda: null,
         pedirConfirmacao: false,
       },

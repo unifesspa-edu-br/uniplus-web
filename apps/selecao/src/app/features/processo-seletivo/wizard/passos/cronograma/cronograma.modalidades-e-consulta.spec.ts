@@ -3,7 +3,7 @@ import { PCD } from '../../shared/gatilho-de-exigencia.testing';
 import { TestBed } from '@angular/core/testing';
 import {
   OrigemCandidatosCodigo,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
   type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -159,7 +159,10 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
       detectar();
       cronograma.acrescentarEtapa('COLETA_INSCRICAO');
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.PUBLICADO,
+        situacao: {
+          codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        },
       } as unknown as ProcessoSeletivoDto);
       detectar();
     }
@@ -196,7 +199,10 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
         fim: '2026-03-10T18:00:00-03:00',
       });
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.PUBLICADO,
+        situacao: {
+          codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        },
       } as unknown as ProcessoSeletivoDto);
       detectar();
 
@@ -210,7 +216,10 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
     it('lê o Fim guardado da fase que o catálogo e o processo não descrevem', () => {
       comFaseAjustada(FASE_SUMIDA, { fim: '2026-03-10T18:00:00-03:00' });
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.PUBLICADO,
+        situacao: {
+          codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        },
       } as unknown as ProcessoSeletivoDto);
       detectar();
 
@@ -222,7 +231,10 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
     it('diz que o Fim da fase que o catálogo e o processo não descrevem está no horário de Belém', () => {
       comFaseAjustada(FASE_SUMIDA, { fim: '2026-03-10T18:00:00-03:00' });
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.PUBLICADO,
+        situacao: {
+          codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        },
       } as unknown as ProcessoSeletivoDto);
       detectar();
 

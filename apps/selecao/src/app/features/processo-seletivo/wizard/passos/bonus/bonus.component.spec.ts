@@ -276,7 +276,7 @@ describe('BonusPassoComponent', () => {
           ...store.draft().formulario.conteudo,
           itens: [
             item('PEDE_O_ACRESCIMO', 1, 'DADOS_BASICOS', {
-              apresentacao: apresentacaoDoCampo('Deseja solicitar o acréscimo?', 'BOOLEANO'),
+              apresentacao: apresentacaoDoCampo('Deseja solicitar o acréscimo?', 'SIM_OU_NAO'),
             }),
           ],
         },

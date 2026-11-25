@@ -243,9 +243,9 @@ function impedimentoProprioDo(
   const anteriores = (base.fatosDoItem.get(item.fatoCodigo) ?? []).filter(
     (fato) => fato.codigo !== item.fatoCodigo,
   );
-  const renderizacao = item.apresentacao.tipoRenderizacao;
+  const tipoDeCampo = item.apresentacao.tipoDeCampo;
   return {
-    impedimentoPermitido: impedimentoCabe(finalidade, renderizacao, proprio !== undefined),
+    impedimentoPermitido: impedimentoCabe(finalidade, tipoDeCampo, proprio !== undefined),
     fatosDoImpedimento: proprio === undefined ? anteriores : [proprio, ...anteriores],
   };
 }

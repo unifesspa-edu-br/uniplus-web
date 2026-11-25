@@ -46,7 +46,7 @@ describe('EditorDeFormularioComponent: impedimento com a busca de municípios', 
     };
     cenario.entrada('conteudo', {
       ...conteudo,
-      itens: [item('MUNICIPIO', 0, { apresentacao: { tipoRenderizacao: 'MUNICIPIO' } })],
+      itens: [item('MUNICIPIO', 0, { apresentacao: { tipoDeCampo: 'MUNICIPIO' } })],
     });
     cenario.entrada('catalogo', [municipio]);
     cenario.detectar();

@@ -1,3 +1,4 @@
+import { TipoDeCampoCodigo } from '@uniplus/shared-data/selecao';
 import { referenciaEmFase } from './apuracao-da-idade';
 import { todosOsCampos } from '@uniplus/shared-ui/components';
 import type {
@@ -75,7 +76,11 @@ function fatosDeSelecaoPerguntados(formulario: FormularioDeInscricao): ReadonlyS
   return new Set(
     formulariosDoRascunho(formulario)
       .flatMap((outro) => todosOsCampos(outro.conteudo))
-      .filter((campo) => campo.apresentacao.tipoRenderizacao.startsWith('SELECAO'))
+      .filter((campo) =>
+        [TipoDeCampoCodigo.ESCOLHA_UNICA, TipoDeCampoCodigo.ESCOLHA_MULTIPLA].some(
+          (tipo) => campo.apresentacao.tipoDeCampo === tipo,
+        ),
+      )
       .map((campo) => campo.fatoCodigo),
   );
 }

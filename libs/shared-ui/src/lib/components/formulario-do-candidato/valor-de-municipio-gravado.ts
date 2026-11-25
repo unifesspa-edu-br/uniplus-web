@@ -52,7 +52,7 @@ export function rotuloGravadoDa(
 
 interface CampoDoFormulario {
   readonly fatoCodigo: string;
-  readonly apresentacao: { readonly tipoRenderizacao: string };
+  readonly apresentacao: { readonly tipoDeCampo: string };
 }
 
 /** O que o formulário diz de onde há município: os fatos coletados e os subitens de cada grupo. */
@@ -78,7 +78,7 @@ export interface MunicipiosSeparados extends RespostasComMunicipios {
 }
 
 const deMunicipio = (campo: CampoDoFormulario): boolean =>
-  campo.apresentacao.tipoRenderizacao === 'MUNICIPIO';
+  campo.apresentacao.tipoDeCampo === 'MUNICIPIO';
 
 type OcorrenciaDoGrupo = { readonly grupo: string; readonly id: string };
 type OcorrenciasDoGrupo = NonNullable<RespostasComMunicipios['grupos'][string]>;

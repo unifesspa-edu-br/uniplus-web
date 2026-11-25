@@ -47,8 +47,12 @@ const RECUSAS_POR_CAMPO: readonly (readonly [string, string, string])[] = [
     'regimeDeFuncionamento',
     '[formcontrolname="regimeDeFuncionamento"]',
   ],
-  ['e_mec_codigo_tamanho', 'eMecCodigo', '[formcontrolname="eMecCodigo"]'],
-  ['codigo_sga_tamanho', 'codigoSga', '[formcontrolname="codigoSga"]'],
+  ['e_mec_codigo_tamanho', 'codigoEmec', '[formcontrolname="codigoEmec"]'],
+  [
+    'codigo_sga_tamanho',
+    'codigoNoSistemaAcademico',
+    '[formcontrolname="codigoNoSistemaAcademico"]',
+  ],
   ['ato_autorizacao_mec_tamanho', 'atoAutorizacaoMec', '[formcontrolname="atoAutorizacaoMec"]'],
   [
     'base_legal_obrigatoria_para_programa_nao_regular',
@@ -123,14 +127,14 @@ describe('OfertasCursoPage — recusas ao salvar', () => {
     const chave = chaveDe(primeira);
     primeira.flush(
       ...recusaDeCampos({
-        field: 'eMecCodigo',
+        field: 'codigoEmec',
         code: 'e_mec_codigo_tamanho',
         message: 'Código longo.',
       }),
     );
     await p.propagar();
     await p.propagar();
-    p.preencher('eMecCodigo', '123');
+    p.preencher('codigoEmec', '123');
 
     const segunda = await p.enviar();
     expect(chaveDe(segunda)).not.toBe(chave);
@@ -198,7 +202,7 @@ describe('OfertasCursoPage — recusas ao salvar', () => {
     expect(p.statusDaPagina()).toBe('Oferta de curso criada.');
 
     await p.abrirEdicao();
-    p.preencher('eMecCodigo', '999999');
+    p.preencher('codigoEmec', '999999');
     (await p.enviar(`${ESCRITA}/${oferta.id}`)).flush(...sucesso());
     await p.recarregarCom([oferta]);
     expect(p.sucessos).toHaveBeenLastCalledWith('Oferta de curso atualizada');
@@ -237,13 +241,13 @@ describe('OfertasCursoPage — recusas ao salvar', () => {
     await p.abrirCadastro();
     (await p.enviar()).flush(
       ...recusaDeCampos({
-        field: 'eMecCodigo',
+        field: 'codigoEmec',
         code: 'e_mec_codigo_tamanho',
         message: 'Código longo.',
       }),
     );
     await p.propagar();
-    expect(p.campo('eMecCodigo').getAttribute('aria-invalid')).toBe('true');
+    expect(p.campo('codigoEmec').getAttribute('aria-invalid')).toBe('true');
 
     const segunda = await p.enviar();
     expect(segunda.request.method).toBe('POST');
@@ -255,7 +259,7 @@ describe('OfertasCursoPage — recusas ao salvar', () => {
     await p.abrirCadastro();
     (await p.enviar()).flush(
       ...recusaDeCampos({
-        field: 'eMecCodigo',
+        field: 'codigoEmec',
         code: 'e_mec_codigo_tamanho',
         message: 'Código longo.',
       }),
@@ -294,22 +298,22 @@ describe('OfertasCursoPage — recusas ao salvar', () => {
     const regime = p.campo('regimeDeFuncionamento');
     expect(regime.getAttribute('aria-invalid')).toBe('true');
 
-    p.preencher('eMecCodigo', '999999');
+    p.preencher('codigoEmec', '999999');
     await p.propagar();
 
     expect(regime.getAttribute('aria-invalid')).toBe('true');
     expect(regime.closest('.field')?.querySelector('.field__error')?.textContent?.trim()).toBe(
       'Regime de funcionamento inválido.',
     );
-    expect(p.campo('eMecCodigo').getAttribute('aria-invalid')).toBeNull();
+    expect(p.campo('codigoEmec').getAttribute('aria-invalid')).toBeNull();
   });
 
   it('duas recusas na mesma resposta marcam cada campo com a própria mensagem e focam o primeiro do formulário', async () => {
     await p.abrirCadastro();
     (await p.enviar()).flush(
       ...recusaDeCampos(
-        { field: 'codigoSga', code: 'codigo_sga_tamanho', message: 'SGA longo.' },
-        { field: 'eMecCodigo', code: 'e_mec_codigo_tamanho', message: 'e-MEC longo.' },
+        { field: 'codigoNoSistemaAcademico', code: 'codigo_sga_tamanho', message: 'SGA longo.' },
+        { field: 'codigoEmec', code: 'e_mec_codigo_tamanho', message: 'e-MEC longo.' },
       ),
     );
     await p.propagar();
@@ -317,11 +321,11 @@ describe('OfertasCursoPage — recusas ao salvar', () => {
 
     const mensagem = (nome: string) =>
       p.campo(nome).closest('.field')?.querySelector('.field__error')?.textContent?.trim();
-    expect(mensagem('eMecCodigo')).toBe('e-MEC longo.');
-    expect(mensagem('codigoSga')).toBe('SGA longo.');
-    expect(p.campo('eMecCodigo').getAttribute('aria-invalid')).toBe('true');
-    expect(p.campo('codigoSga').getAttribute('aria-invalid')).toBe('true');
-    expect(document.activeElement).toBe(p.campo('eMecCodigo'));
+    expect(mensagem('codigoEmec')).toBe('e-MEC longo.');
+    expect(mensagem('codigoNoSistemaAcademico')).toBe('SGA longo.');
+    expect(p.campo('codigoEmec').getAttribute('aria-invalid')).toBe('true');
+    expect(p.campo('codigoNoSistemaAcademico').getAttribute('aria-invalid')).toBe('true');
+    expect(document.activeElement).toBe(p.campo('codigoEmec'));
     expect(p.edicao.erro()).toBeNull();
     expect(p.erros).not.toHaveBeenCalled();
   });

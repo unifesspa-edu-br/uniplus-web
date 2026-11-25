@@ -268,7 +268,7 @@ export {
   PapelDaBancaCodigo,
   TipoDeBancaCodigo,
   TipoMotivoDeDecisaoCodigo,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
   RegraRemanejamentoCodigo,
   BlocoSistemaCodigo,
   EfeitoNaAnaliseDoDocumentoCodigo,

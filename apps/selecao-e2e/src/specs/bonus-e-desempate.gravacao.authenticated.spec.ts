@@ -26,7 +26,7 @@ const BONUS_LIDO = DETALHE_PUBLICADO.bonusRegional;
 /** O bônus sem o fato de elegibilidade, que o catálogo desta fixture não traz. */
 const DETALHE_DO_BONUS = {
   ...DETALHE_PUBLICADO,
-  status: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
+  situacao: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
   bonusRegional: { ...BONUS_LIDO, fatoElegibilidadeCodigo: null },
 };
 
@@ -86,7 +86,7 @@ test.describe('Bônus regional e desempate — gravação na forma do contrato',
   }, testInfo) => {
     const detalhe = {
       ...DETALHE_DESEMPATE_POR_AREA,
-      status: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
+      situacao: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
     };
     const [criterioLido] = DETALHE_DESEMPATE_POR_AREA.criteriosDesempate;
     const gravados = await abrirNoPasso(

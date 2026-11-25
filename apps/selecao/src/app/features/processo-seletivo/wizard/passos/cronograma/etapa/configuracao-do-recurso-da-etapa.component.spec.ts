@@ -162,7 +162,9 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
   it('leva ao rascunho o efeito suspensivo escolhido', () => {
     entrada(`${P}-efeito-opcao-${EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO}`)?.click();
 
-    expect(recursoNoRascunho()?.efeitoSuspensivo).toBe(EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO);
+    expect(recursoNoRascunho()?.efeitoSuspensivo).toBe(
+      EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO,
+    );
   });
 
   it('marcar Não leva ao rascunho a resposta e retira o prazo da 2ª instância', () => {
@@ -194,7 +196,7 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
 
   it('em consulta, lê os parâmetros em texto e não desenha os controles', () => {
     TestBed.inject(ProcessoSeletivoStore).remoteSnapshot.set({
-      status: PROCESSO_DTO_MINIMO.status,
+      situacao: PROCESSO_DTO_MINIMO.situacao,
     } as unknown as ProcessoSeletivoDto);
     fixture.componentRef.setInput('recursoDaEtapa', {
       ...RECURSO,
@@ -210,7 +212,7 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
   it('lista os procedimentos declarados, nomeando o item contestado pelo rótulo da etapa', () => {
     TestBed.inject(ProcessoSeletivoStore).remoteSnapshot.set({
       ...umProcessoLidoComOsTiposDeDecisao(),
-      status: PROCESSO_DTO_MINIMO.status,
+      situacao: PROCESSO_DTO_MINIMO.situacao,
     });
     grupo.controls.itensDeAvaliacao.setValue([
       { id: 'item-1', rotulo: 'Clareza', pontuacaoMaxima: '4' },

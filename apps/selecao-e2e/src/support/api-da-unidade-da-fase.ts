@@ -100,7 +100,7 @@ export async function mockarCatalogos(page: Page): Promise<void> {
 function detalheDoProcesso(capturado: Capturado) {
   return {
     ...PROCESSO_PUBLICADO_COMPLETO,
-    status: capturado.publicado
+    situacao: capturado.publicado
       ? { codigo: 'PUBLICADO', rotulo: 'Publicado' }
       : { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
     cronogramaFases: [capturado.fase],

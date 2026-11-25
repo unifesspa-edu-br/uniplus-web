@@ -9,7 +9,7 @@ import { aplicarAbrangencia, criarGrupoDeDiaNaoUtil } from './dia-nao-util-form'
 
 function formularioComDias(...dias: Array<[AbrangenciaCodigo, string]>) {
   const form = criarFormularioDeCalendario();
-  form.controls.versaoDataset.setValue('2026.1');
+  form.controls.versaoDoCalendario.setValue('2026.1');
   for (const [abrangencia, data] of dias) {
     const grupo = criarGrupoDeDiaNaoUtil();
     grupo.controls.abrangencia.setValue(abrangencia);
@@ -73,16 +73,16 @@ describe('formulário de calendário', () => {
 
   it('bloqueia a versão do dataset composta só por espaços', () => {
     const form = criarFormularioDeCalendario();
-    form.controls.versaoDataset.setValue('   ');
+    form.controls.versaoDoCalendario.setValue('   ');
 
-    expect(form.controls.versaoDataset.errors?.['required']).toBe(true);
+    expect(form.controls.versaoDoCalendario.errors?.['required']).toBe(true);
   });
 
   it('recusa a versão acima de 60 caracteres', () => {
     const form = criarFormularioDeCalendario();
-    form.controls.versaoDataset.setValue('v'.repeat(61));
+    form.controls.versaoDoCalendario.setValue('v'.repeat(61));
 
-    expect(form.controls.versaoDataset.errors?.['maxlength']).toBeDefined();
+    expect(form.controls.versaoDoCalendario.errors?.['maxlength']).toBeDefined();
   });
 
   it('o comando leva a versão aparada e os dias na ordem da tela', () => {
@@ -90,11 +90,11 @@ describe('formulário de calendário', () => {
       [AbrangenciaCodigo.NACIONAL, '2026-09-07'],
       [AbrangenciaCodigo.INSTITUCIONAL, '2026-10-01'],
     );
-    form.controls.versaoDataset.setValue('  2026.1 ');
+    form.controls.versaoDoCalendario.setValue('  2026.1 ');
 
     const comando = comandoDeCriacaoDoCalendario(form);
 
-    expect(comando.versaoDataset).toBe('2026.1');
+    expect(comando.versaoDoCalendario).toBe('2026.1');
     expect(comando.diasNaoUteis?.map((dia) => dia.data)).toEqual(['2026-09-07', '2026-10-01']);
   });
 });

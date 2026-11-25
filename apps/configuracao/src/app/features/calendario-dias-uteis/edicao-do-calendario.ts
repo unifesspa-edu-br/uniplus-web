@@ -35,7 +35,7 @@ import { aplicarPoliticaDaFalha } from './falha-do-calendario';
 
 export const SEM_DIA_NAO_UTIL = 'Ao menos um dia não útil é obrigatório';
 const ROTA_DA_LISTA = '/calendario-dias-uteis';
-const CAMPO_DA_VERSAO: ReadonlySet<string> = new Set(['versaoDataset']);
+const CAMPO_DA_VERSAO: ReadonlySet<string> = new Set(['versaoDoCalendario']);
 
 /**
  * A escrita da tela de novo calendário: o formulário com os dias, a criação e o estado dela.
@@ -74,11 +74,7 @@ export class EdicaoDoCalendario {
   }
 
   salvar(): void {
-    this.erro.set(null);
-    this.recusa.set('');
-    descartarRecusasDoServidor(this.form);
-    // A tela do campo reavalia os erros por evento do grupo do dia, e o descarte não emite.
-    this.form.controls.diasNaoUteis.controls.forEach((dia) => dia.updateValueAndValidity());
+    this.prepararValidacao();
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -89,6 +85,13 @@ export class EdicaoDoCalendario {
     }
     const comando = comandoDeCriacaoDoCalendario(this.form);
     this.gravar(this.api.criar(comando, withIdempotencyKey(this.chave())));
+  }
+
+  private prepararValidacao(): void {
+    this.erro.set(null);
+    this.recusa.set('');
+    descartarRecusasDoServidor(this.form);
+    this.form.controls.diasNaoUteis.controls.forEach((dia) => dia.updateValueAndValidity());
   }
 
   private gravar(operacao: Observable<ApiResult<string>>): void {
@@ -141,7 +144,7 @@ export class EdicaoDoCalendario {
     if (controlNameFromBackendField(erro.field, CAMPO_DA_VERSAO) === null) {
       return false;
     }
-    marcarRecusaDoServidor(this.form.controls.versaoDataset, erro.code, erro.message);
+    marcarRecusaDoServidor(this.form.controls.versaoDoCalendario, erro.code, erro.message);
     return true;
   }
 }

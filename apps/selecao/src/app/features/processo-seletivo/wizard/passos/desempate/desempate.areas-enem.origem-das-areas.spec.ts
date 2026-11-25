@@ -1,4 +1,7 @@
-import { StatusProcessoCodigo, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import {
+  SituacaoDoProcessoSeletivoCodigo,
+  type ProcessoSeletivoDto,
+} from '@uniplus/shared-data/selecao';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -164,7 +167,10 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: origem das área
         antesDeMontar: (store) => {
           store.patchSection('desempate', [criterio(['REDACAO'])]);
           store.remoteSnapshot.set({
-            status: StatusProcessoCodigo.PUBLICADO,
+            situacao: {
+              codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+              rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+            },
           } as unknown as ProcessoSeletivoDto);
         },
       });
@@ -248,7 +254,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: origem das área
             ...grupo,
             areas: [...grupo.areas, area('MATEMATICA', 'Matemática')],
           })),
-          StatusProcessoCodigo.PUBLICADO,
+          SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
         )(store);
       },
       // Uma leitura do cadastro sairia sem resposta, e a conferência do fim do teste a acusaria.

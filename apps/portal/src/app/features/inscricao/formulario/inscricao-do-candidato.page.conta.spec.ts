@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpHeaders } from '@angular/common/http';
 import { of } from 'rxjs';
 import { apiFailure } from '@uniplus/shared-core/http';
-import { SituacaoInscricaoCodigo, TipoRenderizacaoCodigo } from '@uniplus/shared-data/selecao';
+import { SituacaoInscricaoCodigo, TipoDeCampoCodigo } from '@uniplus/shared-data/selecao';
 import {
   FORMULARIO_DE_INSCRICAO_MOCK,
   campoColetado,
@@ -61,7 +61,7 @@ describe('InscricaoDoCandidatoPage', () => {
     campoColetado(
       'NATURALIDADE_MUNICIPIO',
       'Município de nascimento',
-      TipoRenderizacaoCodigo.MUNICIPIO,
+      TipoDeCampoCodigo.MUNICIPIO,
       { ordem: 8 },
     ),
   );

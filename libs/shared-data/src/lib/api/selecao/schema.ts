@@ -10439,13 +10439,13 @@ export interface components {
         };
         readonly ApresentacaoDoCampoDto: {
             readonly rotulo: string;
-            readonly tipoRenderizacao: components["schemas"]["TipoRenderizacaoCodigo"];
+            readonly tipoDeCampo: components["schemas"]["TipoDeCampoCodigo"];
             readonly ajuda: null | string;
             readonly pedirConfirmacao: boolean;
         };
         readonly ApresentacaoDoCampoInput: {
             readonly rotulo: null | string;
-            readonly tipoRenderizacao: null | components["schemas"]["TipoRenderizacaoCodigo"];
+            readonly tipoDeCampo: null | components["schemas"]["TipoDeCampoCodigo"];
             readonly ajuda?: null | string;
             /** @default false */
             readonly pedirConfirmacao: boolean;
@@ -13210,7 +13210,7 @@ export interface components {
         };
         /**
          * Item do formulário
-         * @description Um fato do catálogo coletado pelo formulário. O item aponta o fato pelo código; tipo de renderização, formato, classificação de proteção e demais propriedades do fato vêm do catálogo e não se declaram aqui.
+         * @description Um fato do catálogo coletado pelo formulário. O item aponta o fato pelo código; tipo de campo, formato, classificação de proteção e demais propriedades do fato vêm do catálogo e não se declaram aqui.
          */
         readonly DocumentoDaConfiguracaoItemDoFormulario: {
             /**
@@ -13553,7 +13553,7 @@ export interface components {
         };
         /**
          * Restrição de valor
-         * @description Limite que o formulário impõe à resposta de um campo. O tipo escolhe quais outras propriedades valem; a coerência com o tipo de renderização do fato é regra do domínio, não do esquema.
+         * @description Limite que o formulário impõe à resposta de um campo. O tipo escolhe quais outras propriedades valem; a coerência com o tipo de campo do fato é regra do domínio, não do esquema.
          */
         readonly DocumentoDaConfiguracaoRestricaoDeValor: {
             /**
@@ -15180,7 +15180,7 @@ export interface components {
         readonly PressupostoRenderizavel: {
             readonly fatoCodigo: string;
             readonly rotulo: null | string;
-            readonly tipoRenderizacao: null | components["schemas"]["TipoRenderizacaoCodigo"];
+            readonly tipoDeCampo: null | components["schemas"]["TipoDeCampoCodigo"];
             readonly formato: null | string;
             readonly valoresSelecionaveis: null | readonly components["schemas"]["ValorSelecionavel"][];
             readonly calculadoDe: null | readonly string[];
@@ -15259,7 +15259,7 @@ export interface components {
             readonly nome: string;
             readonly identificadorLegivel: null | string;
             readonly tipoProcesso: components["schemas"]["TipoProcessoSnapshotDto"];
-            readonly status: components["schemas"]["StatusProcesso"];
+            readonly situacao: components["schemas"]["SituacaoDoProcessoSeletivo"];
             readonly origemCandidatos: components["schemas"]["OrigemCandidatos"];
             readonly unidadeAdministradora: components["schemas"]["UnidadeAdministradoraSnapshotDto"];
             readonly localidade: components["schemas"]["LocalidadeRegenteDto"];
@@ -15294,7 +15294,7 @@ export interface components {
             readonly id: string;
             readonly nome: string;
             readonly tipoProcesso: components["schemas"]["TipoProcessoSnapshotDto"];
-            readonly status: components["schemas"]["StatusProcesso"];
+            readonly situacao: components["schemas"]["SituacaoDoProcessoSeletivo"];
             /** Format: date-time */
             readonly criadoEm: string;
         };
@@ -15840,6 +15840,18 @@ export interface components {
          * @enum {string}
          */
         readonly SituacaoDoDocumentoCodigo: SituacaoDoDocumentoCodigo;
+        readonly SituacaoDoProcessoSeletivo: {
+            readonly codigo: components["schemas"]["SituacaoDoProcessoSeletivoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `RASCUNHO`: Rascunho — O processo está em preparação.
+         *     - `PUBLICADO`: Publicado — O processo foi publicado.
+         *     - `ENCERRADO`: Encerrado — O processo foi encerrado.
+         *     - `CANCELADO`: Cancelado — O processo foi cancelado.
+         * @enum {string}
+         */
+        readonly SituacaoDoProcessoSeletivoCodigo: SituacaoDoProcessoSeletivoCodigo;
         readonly SituacaoDoProdutoPrevisto: {
             readonly codigo: components["schemas"]["SituacaoDoProdutoPrevistoCodigo"];
             readonly rotulo: string;
@@ -15892,18 +15904,6 @@ export interface components {
          * @enum {string}
          */
         readonly StatusBaseLegalCodigo: StatusBaseLegalCodigo;
-        readonly StatusProcesso: {
-            readonly codigo: components["schemas"]["StatusProcessoCodigo"];
-            readonly rotulo: string;
-        };
-        /**
-         * @description - `RASCUNHO`: Rascunho — O processo está em preparação.
-         *     - `PUBLICADO`: Publicado — O processo foi publicado.
-         *     - `ENCERRADO`: Encerrado — O processo foi encerrado.
-         *     - `CANCELADO`: Cancelado — O processo foi cancelado.
-         * @enum {string}
-         */
-        readonly StatusProcessoCodigo: StatusProcessoCodigo;
         readonly TaxaInscricaoCertameDto: {
             readonly cobra: boolean;
             readonly valor: null | string;
@@ -16015,6 +16015,20 @@ export interface components {
          * @enum {string}
          */
         readonly TipoDeBancaCodigo: TipoDeBancaCodigo;
+        /**
+         * @description Como o campo do formulário é apresentado e respondido pelo candidato.
+         *
+         *     - `NUMERO`: Número — Campo em que o candidato digita um número inteiro.
+         *     - `SIM_OU_NAO`: Sim ou não — Campo em que o candidato responde sim ou não.
+         *     - `ESCOLHA_UNICA`: Escolha de um valor — Campo em que o candidato escolhe uma opção entre as oferecidas.
+         *     - `ESCOLHA_MULTIPLA`: Escolha de vários valores — Campo em que o candidato escolhe uma ou mais opções entre as oferecidas.
+         *     - `TEXTO`: Texto — Campo em que o candidato digita um texto, conferido pelo formato do dado.
+         *     - `DATA`: Data — Campo em que o candidato informa uma data do calendário.
+         *     - `ENDERECO`: Endereço — Campo de endereço completo, preenchido a partir da busca do CEP.
+         *     - `MUNICIPIO`: Município — Campo em que o candidato escolhe o município entre os da unidade federativa já respondida.
+         * @enum {string}
+         */
+        readonly TipoDeCampoCodigo: TipoDeCampoCodigo;
         readonly TipoDeLeiauteDoInep: {
             readonly codigo: components["schemas"]["TipoDeLeiauteDoInepCodigo"];
             readonly rotulo: string;
@@ -16119,20 +16133,6 @@ export interface components {
          * @enum {string}
          */
         readonly TipoRegraCodigo: TipoRegraCodigo;
-        /**
-         * @description Como o campo do formulário é apresentado e respondido pelo candidato.
-         *
-         *     - `NUMERO`: Número — Campo em que o candidato digita um número inteiro.
-         *     - `SIM_OU_NAO`: Sim ou não — Campo em que o candidato responde sim ou não.
-         *     - `ESCOLHA_UNICA`: Escolha de um valor — Campo em que o candidato escolhe uma opção entre as oferecidas.
-         *     - `ESCOLHA_MULTIPLA`: Escolha de vários valores — Campo em que o candidato escolhe uma ou mais opções entre as oferecidas.
-         *     - `TEXTO`: Texto — Campo em que o candidato digita um texto, conferido pelo formato do dado.
-         *     - `DATA`: Data — Campo em que o candidato informa uma data do calendário.
-         *     - `ENDERECO`: Endereço — Campo de endereço completo, preenchido a partir da busca do CEP.
-         *     - `MUNICIPIO`: Município — Campo em que o candidato escolhe o município entre os da unidade federativa já respondida.
-         * @enum {string}
-         */
-        readonly TipoRenderizacaoCodigo: TipoRenderizacaoCodigo;
         readonly UnidadeAdministradoraCertameDto: {
             readonly sigla: string;
             readonly nome: string;
@@ -16856,6 +16856,12 @@ export enum SituacaoDoDocumentoCodigo {
     DEPENDE_DE_FASE_POSTERIOR = "DEPENDE_DE_FASE_POSTERIOR",
     SATISFEITA = "SATISFEITA"
 }
+export enum SituacaoDoProcessoSeletivoCodigo {
+    RASCUNHO = "RASCUNHO",
+    PUBLICADO = "PUBLICADO",
+    ENCERRADO = "ENCERRADO",
+    CANCELADO = "CANCELADO"
+}
 export enum SituacaoDoProdutoPrevistoCodigo {
     ABERTO = "ABERTO",
     PUBLICADO = "PUBLICADO"
@@ -16872,12 +16878,6 @@ export enum StatusArquivoEnviadoCodigo {
 export enum StatusBaseLegalCodigo {
     PENDENTE = "PENDENTE",
     RESOLVIDO = "RESOLVIDO"
-}
-export enum StatusProcessoCodigo {
-    RASCUNHO = "RASCUNHO",
-    PUBLICADO = "PUBLICADO",
-    ENCERRADO = "ENCERRADO",
-    CANCELADO = "CANCELADO"
 }
 export enum TernarioCodigo {
     INDETERMINADO = "INDETERMINADO",
@@ -16909,6 +16909,16 @@ export enum TipoDeBancaCodigo {
     BANCA_IMPORTACAO_NOTAS_INEP = "BANCA_IMPORTACAO_NOTAS_INEP",
     BANCA_IMPORTACAO_CANDIDATOS = "BANCA_IMPORTACAO_CANDIDATOS",
     BANCA_ANALISE_RECURSOS_SEGUNDA_INSTANCIA = "BANCA_ANALISE_RECURSOS_SEGUNDA_INSTANCIA"
+}
+export enum TipoDeCampoCodigo {
+    NUMERO = "NUMERO",
+    SIM_OU_NAO = "SIM_OU_NAO",
+    ESCOLHA_UNICA = "ESCOLHA_UNICA",
+    ESCOLHA_MULTIPLA = "ESCOLHA_MULTIPLA",
+    TEXTO = "TEXTO",
+    DATA = "DATA",
+    ENDERECO = "ENDERECO",
+    MUNICIPIO = "MUNICIPIO"
 }
 export enum TipoDeLeiauteDoInepCodigo {
     ENVIO = "ENVIO",
@@ -16953,16 +16963,6 @@ export enum TipoRegraCodigo {
     CONVENCAO_CONTAGEM_PRAZO = "CONVENCAO_CONTAGEM_PRAZO",
     REGRA_APURACAO_AVALIACAO = "REGRA_APURACAO_AVALIACAO",
     REGRA_PROCEDIMENTO_RECURSO = "REGRA_PROCEDIMENTO_RECURSO"
-}
-export enum TipoRenderizacaoCodigo {
-    NUMERO = "NUMERO",
-    SIM_OU_NAO = "SIM_OU_NAO",
-    ESCOLHA_UNICA = "ESCOLHA_UNICA",
-    ESCOLHA_MULTIPLA = "ESCOLHA_MULTIPLA",
-    TEXTO = "TEXTO",
-    DATA = "DATA",
-    ENDERECO = "ENDERECO",
-    MUNICIPIO = "MUNICIPIO"
 }
 export enum UnidadeDoPrazoDeEmissaoCodigo {
     DIAS = "DIAS",

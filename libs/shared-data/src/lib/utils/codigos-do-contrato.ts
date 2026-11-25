@@ -6,20 +6,18 @@ type Enum = Record<string, string>;
  * Os tradutores do código em texto para o membro do enum gerado do contrato, um para o operador e
  * outro para o tipo de renderização; cada um devolve `null` quando o contrato não conhece o código.
  */
-export interface CodigosDoContrato<Operadores extends Enum, TiposDeRenderizacao extends Enum> {
+export interface CodigosDoContrato<Operadores extends Enum, TiposDeCampo extends Enum> {
   readonly operador: (codigo: string) => Operadores[keyof Operadores] | null;
-  readonly tipoRenderizacao: (
-    codigo: string,
-  ) => TiposDeRenderizacao[keyof TiposDeRenderizacao] | null;
+  readonly tipoDeCampo: (codigo: string) => TiposDeCampo[keyof TiposDeCampo] | null;
 }
 
 /** Cada módulo da API tem os próprios enums, por isso eles vêm por argumento. */
-export function codigosDoContrato<Operadores extends Enum, TiposDeRenderizacao extends Enum>(
+export function codigosDoContrato<Operadores extends Enum, TiposDeCampo extends Enum>(
   operadores: Operadores,
-  tiposDeRenderizacao: TiposDeRenderizacao,
-): CodigosDoContrato<Operadores, TiposDeRenderizacao> {
+  tiposDeCampo: TiposDeCampo,
+): CodigosDoContrato<Operadores, TiposDeCampo> {
   return {
     operador: (codigo) => codigoDoContrato(operadores, codigo),
-    tipoRenderizacao: (codigo) => codigoDoContrato(tiposDeRenderizacao, codigo),
+    tipoDeCampo: (codigo) => codigoDoContrato(tiposDeCampo, codigo),
   };
 }

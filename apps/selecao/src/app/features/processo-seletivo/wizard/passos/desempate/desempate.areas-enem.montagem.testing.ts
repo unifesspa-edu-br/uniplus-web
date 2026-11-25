@@ -5,7 +5,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import {
   SELECAO_BASE_PATH,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
   type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
 
@@ -139,12 +139,12 @@ export function responderPendentes(
 export function classificacaoGravada(
   resolucao: string | null,
   quadro: unknown[],
-  status: StatusProcessoCodigo = StatusProcessoCodigo.RASCUNHO,
+  status: SituacaoDoProcessoSeletivoCodigo = SituacaoDoProcessoSeletivoCodigo.RASCUNHO,
 ) {
   return (store: ProcessoSeletivoStore) => {
     const classificacao = { resolucaoPesoAreaEnem: resolucao, quadroPesoAreaEnem: quadro };
     const situacao = { codigo: status, rotulo: status };
-    store.remoteSnapshot.set({ status: situacao, classificacao } as unknown as ProcessoSeletivoDto);
+    store.remoteSnapshot.set({ situacao, classificacao } as unknown as ProcessoSeletivoDto);
     store.classificacao.registrarLida(
       classificacao as unknown as ProcessoSeletivoDto['classificacao'],
     );

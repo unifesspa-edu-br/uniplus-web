@@ -72,7 +72,7 @@ export class ContextoDaConversao {
       );
     const fatos = this.catalogos.fatos.filter((fato) => fato.codigo === codigo);
     return fatos.length === 1
-      ? fatos[0].tipoRenderizacao
+      ? fatos[0].tipoDeCampo
       : this.recusar('catalogo', caminho, CAMPO_SEM_CORRESPONDENCIA);
   }
 }

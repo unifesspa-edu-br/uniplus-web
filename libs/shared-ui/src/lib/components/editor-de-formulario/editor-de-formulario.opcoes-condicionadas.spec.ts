@@ -47,7 +47,7 @@ describe('EditorDeFormularioComponent: opções que dependem das respostas anter
       itens: [
         item('A', 0),
         item('ESPERA', 1, {
-          apresentacao: { tipoRenderizacao: 'ESCOLHA_UNICA' },
+          apresentacao: { tipoDeCampo: 'ESCOLHA_UNICA' },
           regras: {
             restricoes: [
               { tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: null, valores: ['MED'] }] },
@@ -106,7 +106,7 @@ describe('EditorDeFormularioComponent: opções que dependem das respostas anter
       itens: [
         item('A', 0),
         item('ESPERA', 1, {
-          apresentacao: { tipoRenderizacao: 'ESCOLHA_UNICA' },
+          apresentacao: { tipoDeCampo: 'ESCOLHA_UNICA' },
           regras: {
             restricoes: [
               {
@@ -141,9 +141,9 @@ describe('EditorDeFormularioComponent: opções que dependem das respostas anter
     cenario.entrada('conteudo', {
       ...conteudo,
       itens: [
-        item('OPCOES', 0, { apresentacao: { tipoRenderizacao: 'ESCOLHA_MULTIPLA' } }),
-        item('OUTRO', 1, { apresentacao: { tipoRenderizacao: 'ESCOLHA_MULTIPLA' } }),
-        item('ESPERA', 2, { apresentacao: { tipoRenderizacao: 'ESCOLHA_UNICA' } }),
+        item('OPCOES', 0, { apresentacao: { tipoDeCampo: 'ESCOLHA_MULTIPLA' } }),
+        item('OUTRO', 1, { apresentacao: { tipoDeCampo: 'ESCOLHA_MULTIPLA' } }),
+        item('ESPERA', 2, { apresentacao: { tipoDeCampo: 'ESCOLHA_UNICA' } }),
       ],
     });
     cenario.detectar();

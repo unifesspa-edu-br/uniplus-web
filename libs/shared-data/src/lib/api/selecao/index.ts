@@ -266,7 +266,7 @@ export {
   SituacaoDasModalidadesCodigo,
   SituacaoDoDocumentoCodigo,
   SituacaoInscricaoCodigo,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
   UnidadePrazoCodigo,
 } from './schema';
 export {
@@ -291,7 +291,7 @@ export {
   PapelDaBancaCodigo,
   TipoDeBancaCodigo,
   TipoMotivoDeDecisaoCodigo,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
 } from './schema';
 
 export { processoSeletivoRequest } from './processo-seletivo.request';

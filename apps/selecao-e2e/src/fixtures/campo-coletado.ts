@@ -8,7 +8,7 @@ export interface DadosDoCampo {
   readonly fatoCodigo: string;
   readonly ordem: number;
   readonly rotulo: string;
-  readonly tipoRenderizacao: CampoColetado['apresentacao']['tipoRenderizacao'];
+  readonly tipoDeCampo: CampoColetado['apresentacao']['tipoDeCampo'];
   readonly etapaCodigo?: string;
   readonly obrigatoriedade?: CampoColetado['regras']['obrigatoriedade'];
   readonly ajuda?: string;
@@ -16,8 +16,8 @@ export interface DadosDoCampo {
 }
 
 function apresentacaoDoCampo(dados: DadosDoCampo): CampoColetado['apresentacao'] {
-  const { rotulo, tipoRenderizacao, ajuda = null } = dados;
-  return { rotulo, tipoRenderizacao, ajuda, pedirConfirmacao: false };
+  const { rotulo, tipoDeCampo, ajuda = null } = dados;
+  return { rotulo, tipoDeCampo, ajuda, pedirConfirmacao: false };
 }
 
 function regrasDoCampo(dados: DadosDoCampo): CampoColetado['regras'] {

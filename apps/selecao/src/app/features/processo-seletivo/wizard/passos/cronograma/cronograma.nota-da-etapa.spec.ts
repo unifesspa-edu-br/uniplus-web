@@ -1,7 +1,7 @@
 import type { FormGroup } from '@angular/forms';
 import {
   PapelDaBancaCodigo,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
   type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
@@ -112,7 +112,10 @@ describe('CronogramaPassoComponent: nota da etapa', () => {
         }),
       ]);
       store.remoteSnapshot.set({
-        status: StatusProcessoCodigo.PUBLICADO,
+        situacao: {
+          codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        },
       } as unknown as ProcessoSeletivoDto);
       detectar();
 

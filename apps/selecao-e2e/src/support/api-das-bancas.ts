@@ -267,7 +267,7 @@ async function publicar(route: Route, servidor: ServidorDasBancas): Promise<void
 function detalheDoProcesso(servidor: ServidorDasBancas) {
   return {
     ...PROCESSO_PUBLICADO_COMPLETO,
-    status: situacaoDoProcesso(servidor.situacao),
+    situacao: situacaoDoProcesso(servidor.situacao),
     cronogramaFases: [servidor.fase],
     etapas: [servidor.etapa],
     atendimentoEspecializado: null,

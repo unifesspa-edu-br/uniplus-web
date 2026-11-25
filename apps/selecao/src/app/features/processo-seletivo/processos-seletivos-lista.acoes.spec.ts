@@ -1,4 +1,4 @@
-import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
+import { SituacaoDoProcessoSeletivoCodigo } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -43,12 +43,12 @@ describe('ProcessosSeletivosListaPage', () => {
       processo({
         id: 'rascunho',
         nome: 'Em cadastro',
-        status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: 'Rascunho' },
+        situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.RASCUNHO, rotulo: 'Rascunho' },
       }),
       processo({
         id: 'publicado',
         nome: 'No ar',
-        status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' },
+        situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO, rotulo: 'Publicado' },
       }),
     ]);
 
@@ -73,7 +73,7 @@ describe('ProcessosSeletivosListaPage', () => {
     await cenario.responderLista([
       processo({
         id: 'publicado',
-        status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' },
+        situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO, rotulo: 'Publicado' },
       }),
     ]);
     expect(hrefs()).not.toContain('/processo-seletivo/publicado/inscricoes');
@@ -83,7 +83,7 @@ describe('ProcessosSeletivosListaPage', () => {
     await cenario.responderLista([
       processo({
         id: 'publicado',
-        status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' },
+        situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO, rotulo: 'Publicado' },
       }),
     ]);
 
@@ -97,11 +97,11 @@ describe('ProcessosSeletivosListaPage', () => {
     await cenario.responderLista([
       processo({
         id: 'rascunho',
-        status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: 'Rascunho' },
+        situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.RASCUNHO, rotulo: 'Rascunho' },
       }),
       processo({
         id: 'publicado',
-        status: { codigo: StatusProcessoCodigo.PUBLICADO, rotulo: 'Publicado' },
+        situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO, rotulo: 'Publicado' },
       }),
     ]);
 

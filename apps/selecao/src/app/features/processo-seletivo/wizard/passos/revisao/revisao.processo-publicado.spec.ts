@@ -4,7 +4,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { HttpHeaders } from '@angular/common/http';
 import { of } from 'rxjs';
 import { apiOk } from '@uniplus/shared-core/http';
-import { StatusProcessoCodigo, type DocumentoDoAtoDto } from '@uniplus/shared-data/selecao';
+import {
+  SituacaoDoProcessoSeletivoCodigo,
+  type DocumentoDoAtoDto,
+} from '@uniplus/shared-data/selecao';
 import { errorResult, mockProblemDetails } from '@uniplus/shared-testing';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { RevisaoPassoComponent } from './revisao.component';
@@ -142,26 +145,29 @@ describe('RevisaoPassoComponent', () => {
 
     // Cancelado e encerrado não dizem se houve publicação: um rascunho cancelado não tem
     // snapshot vigente, e a transcrição que ele guarda precisa continuar na tela.
-    it.each([StatusProcessoCodigo.RASCUNHO, StatusProcessoCodigo.CANCELADO, StatusProcessoCodigo.ENCERRADO])(
-      'em %s não lê ato nenhum e mantém a transcrição',
-      async (status) => {
-        store.remoteSnapshot.set({
-          ...PROCESSO_DTO_MINIMO,
-          status: { ...PROCESSO_DTO_MINIMO.status, codigo: status },
-        } as never);
-        await criarProcesso(cenario);
-        await flushProntidaoVerde(cenario);
-        fixture.detectChanges();
+    it.each([
+      SituacaoDoProcessoSeletivoCodigo.RASCUNHO,
+      SituacaoDoProcessoSeletivoCodigo.CANCELADO,
+      SituacaoDoProcessoSeletivoCodigo.ENCERRADO,
+    ])('em %s não lê ato nenhum e mantém a transcrição', async (status) => {
+      store.remoteSnapshot.set({
+        ...PROCESSO_DTO_MINIMO,
+        situacao: { ...PROCESSO_DTO_MINIMO.situacao, codigo: status },
+      } as never);
+      await criarProcesso(cenario);
+      await flushProntidaoVerde(cenario);
+      fixture.detectChanges();
 
-        controller.expectNone(ROTA_SNAPSHOT);
-        expect(cenario.atosLidos).toEqual([]);
-        const tela = fixture.nativeElement as HTMLElement;
-        // Rascunho a edita; cancelado e encerrado a leem como texto, sem campo.
-        expect(tela.querySelector('#rev-numero') !== null).toBe(status === StatusProcessoCodigo.RASCUNHO);
-        if (status !== StatusProcessoCodigo.RASCUNHO) {
-          expect(tela.textContent).toContain('Número do ato');
-        }
-      },
-    );
+      controller.expectNone(ROTA_SNAPSHOT);
+      expect(cenario.atosLidos).toEqual([]);
+      const tela = fixture.nativeElement as HTMLElement;
+      // Rascunho a edita; cancelado e encerrado a leem como texto, sem campo.
+      expect(tela.querySelector('#rev-numero') !== null).toBe(
+        status === SituacaoDoProcessoSeletivoCodigo.RASCUNHO,
+      );
+      if (status !== SituacaoDoProcessoSeletivoCodigo.RASCUNHO) {
+        expect(tela.textContent).toContain('Número do ato');
+      }
+    });
   });
 });

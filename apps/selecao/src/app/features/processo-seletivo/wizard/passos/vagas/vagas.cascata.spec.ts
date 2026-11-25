@@ -1,5 +1,8 @@
 import { HttpTestingController } from '@angular/common/http/testing';
-import { ProcessoSeletivoDto, StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
+import {
+  ProcessoSeletivoDto,
+  SituacaoDoProcessoSeletivoCodigo,
+} from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -147,7 +150,7 @@ describe('VagasPassoComponent — gravação da cascata de remanejamento', () =>
     // O que a retomada faz: reprojeta o snapshot remoto por cima do que está em tela.
     store.remoteSnapshot.set({
       cascata: null,
-      status: { codigo: StatusProcessoCodigo.RASCUNHO, rotulo: 'Rascunho' },
+      situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.RASCUNHO, rotulo: 'Rascunho' },
     } as unknown as ProcessoSeletivoDto);
     detectar();
 

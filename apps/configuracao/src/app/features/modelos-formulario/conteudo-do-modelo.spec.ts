@@ -7,7 +7,7 @@ import {
   TipoDaDataDeReferenciaCodigo,
   TipoEtapaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
   UnidadeDoPrazoDeEmissaoCodigo,
 } from '@uniplus/shared-data/configuracao';
 import { type ConteudoDoFormulario, type ItemDoFormulario } from '@uniplus/shared-ui/components';
@@ -22,7 +22,7 @@ const item: ItemDoFormulario<number> = {
   ordem: 1,
   apresentacao: {
     rotulo: 'Estudou em escola pública?',
-    tipoRenderizacao: 'SIM_OU_NAO',
+    tipoDeCampo: 'SIM_OU_NAO',
     pedirConfirmacao: false,
   },
   regras: {
@@ -101,7 +101,7 @@ const comCodigosDesconhecidos: ConteudoDoFormulario<number> = {
   itens: [
     {
       ...item,
-      apresentacao: { ...item.apresentacao, tipoRenderizacao: 'INVENTADO' },
+      apresentacao: { ...item.apresentacao, tipoDeCampo: 'INVENTADO' },
       regras: { ...item.regras, exibicao: [[{ ...QUANDO[0][0], operador: 'PARECIDO' }]] },
     },
   ],
@@ -151,15 +151,13 @@ describe('conteudoParaOModelo', () => {
   });
 
   it('põe o tipo de renderização no código do contrato', () => {
-    expect(gravado.itens?.[0].apresentacao?.tipoRenderizacao).toBe(
-      TipoRenderizacaoCodigo.SIM_OU_NAO,
-    );
+    expect(gravado.itens?.[0].apresentacao?.tipoDeCampo).toBe(TipoDeCampoCodigo.SIM_OU_NAO);
   });
 
   it('deixa nulo o código que o contrato não conhece, para a API recusar', () => {
     const [desconhecido] = conteudoParaOModelo(comCodigosDesconhecidos).itens ?? [];
 
-    expect(desconhecido.apresentacao?.tipoRenderizacao).toBeNull();
+    expect(desconhecido.apresentacao?.tipoDeCampo).toBeNull();
     expect(desconhecido.regras?.exibicao?.[0][0].operador).toBeNull();
   });
 
@@ -267,7 +265,7 @@ describe('conteudoDoModelo', () => {
   const [nome, escolaPublica] = lido.itens ?? [];
 
   it('troca o tipo de renderização e o operador pelo texto do código', () => {
-    expect(escolaPublica.apresentacao.tipoRenderizacao).toBe('SIM_OU_NAO');
+    expect(escolaPublica.apresentacao.tipoDeCampo).toBe('SIM_OU_NAO');
     expect(escolaPublica.regras.impedimento?.quando?.[0][0].operador).toBe('IGUAL');
   });
 

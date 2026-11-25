@@ -12,7 +12,7 @@ import { PROCESSO_DA_MEDICINA } from './vagas-da-medicina';
  */
 export const PROCESSO_PUBLICADO_DA_MEDICINA = {
   ...PROCESSO_DA_MEDICINA,
-  status: { codigo: 'PUBLICADO', rotulo: 'Publicado' },
+  situacao: { codigo: 'PUBLICADO', rotulo: 'Publicado' },
   identificadorLegivel: 'medicina-2027',
   configuracaoTaxaInscricao: {
     cobra: true,
@@ -84,13 +84,13 @@ export const PROCESSO_PUBLICADO_DA_MEDICINA = {
             fatoCodigo: 'COR_RACA',
             ordem: 0,
             rotulo: 'Cor ou raça',
-            tipoRenderizacao: 'ESCOLHA_UNICA',
+            tipoDeCampo: 'ESCOLHA_UNICA',
           }),
           campoColetado({
             fatoCodigo: 'RENDA_FAMILIAR_PER_CAPITA_ATE_UM_SALARIO_MINIMO',
             ordem: 1,
             rotulo: 'Renda familiar per capita igual ou inferior a um salário mínimo',
-            tipoRenderizacao: 'SIM_OU_NAO',
+            tipoDeCampo: 'SIM_OU_NAO',
             obrigatoriedade: { tipo: 'NUNCA', predicado: null },
           }),
           // As perguntas que as regras das modalidades fazem, depois dos dois campos acima.

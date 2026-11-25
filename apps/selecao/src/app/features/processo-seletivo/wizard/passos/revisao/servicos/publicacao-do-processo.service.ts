@@ -1,7 +1,7 @@
 import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
 import { AtoNormativoDto, AtosApi } from '@uniplus/shared-data/publicacoes';
-import { SnapshotVigenteDto, StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
+import { SnapshotVigenteDto, SituacaoDoProcessoSeletivoCodigo } from '@uniplus/shared-data/selecao';
 import { acompanharLeitura } from '@uniplus/shared-ui/components';
 import { firstValueFrom } from 'rxjs';
 
@@ -72,7 +72,8 @@ export class PublicacaoDoProcesso {
    * e ler o snapshot vigente de um rascunho cancelado falharia e esconderia a transcrição que ele guarda.
    */
   readonly jaPublicado = computed(
-    () => this.store.remoteSnapshot()?.status.codigo === StatusProcessoCodigo.PUBLICADO,
+    () =>
+      this.store.remoteSnapshot()?.situacao.codigo === SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
   );
 
   /** O ato da versão vigente, quando já foi lido: é nele que estão os anexos publicados do edital. */
@@ -219,7 +220,7 @@ export class PublicacaoDoProcesso {
   private async confirmarPublicacao(processoId: string): Promise<boolean> {
     const [detalhe, snapshot] = await this.releituraDaPublicacao(processoId);
 
-    if (!detalhe.ok || detalhe.data.status.codigo === StatusProcessoCodigo.RASCUNHO) {
+    if (!detalhe.ok || detalhe.data.situacao.codigo === SituacaoDoProcessoSeletivoCodigo.RASCUNHO) {
       return this.semConfirmacao();
     }
 
@@ -227,7 +228,7 @@ export class PublicacaoDoProcesso {
     if (!snapshot.ok) return false;
 
     this.snapshotConfirmado.set(snapshot.data);
-    return detalhe.data.status.codigo === StatusProcessoCodigo.PUBLICADO;
+    return detalhe.data.situacao.codigo === SituacaoDoProcessoSeletivoCodigo.PUBLICADO;
   }
 
   private releituraDaPublicacao(processoId: string) {

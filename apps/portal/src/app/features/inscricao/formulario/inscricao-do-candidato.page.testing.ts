@@ -20,7 +20,7 @@ import {
   type InscricaoRequest,
   SELECAO_BASE_PATH,
   SituacaoInscricaoCodigo,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
 } from '@uniplus/shared-data/selecao';
 import {
   type ArquivoEnviado,
@@ -114,14 +114,11 @@ export const COM_MODALIDADES: FormularioRenderizavelDto = {
 export const COM_NOME_SOCIAL = comCampoColetado(
   comCampoColetado(
     FORMULARIO_DE_INSCRICAO_MOCK,
-    campoColetado(
-      'DESEJA_NOME_SOCIAL',
-      'Deseja usar nome social',
-      TipoRenderizacaoCodigo.SIM_OU_NAO,
-      { ordem: 8 },
-    ),
+    campoColetado('DESEJA_NOME_SOCIAL', 'Deseja usar nome social', TipoDeCampoCodigo.SIM_OU_NAO, {
+      ordem: 8,
+    }),
   ),
-  campoColetado('NOME_SOCIAL', 'Nome social', TipoRenderizacaoCodigo.TEXTO, { ordem: 9 }),
+  campoColetado('NOME_SOCIAL', 'Nome social', TipoDeCampoCodigo.TEXTO, { ordem: 9 }),
 );
 
 const INSCRICAO_EM_RASCUNHO: InscricaoDto = {

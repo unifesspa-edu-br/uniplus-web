@@ -6,13 +6,13 @@ enum OperadorDeTeste {
   DIFERENTE = 'DIFERENTE',
 }
 
-enum RenderizacaoDeTeste {
+enum TipoDeCampoDeTeste {
   TEXTO = 'TEXTO',
   DATA = 'DATA',
 }
 
 describe('codigosDoContrato', () => {
-  const codigos = codigosDoContrato(OperadorDeTeste, RenderizacaoDeTeste);
+  const codigos = codigosDoContrato(OperadorDeTeste, TipoDeCampoDeTeste);
 
   it('traduz o operador conhecido para o membro do enum de operadores', () => {
     expect(codigos.operador('DIFERENTE')).toBe(OperadorDeTeste.DIFERENTE);
@@ -23,10 +23,10 @@ describe('codigosDoContrato', () => {
   });
 
   it('traduz o tipo de renderização conhecido para o membro do enum de renderizações', () => {
-    expect(codigos.tipoRenderizacao('DATA')).toBe(RenderizacaoDeTeste.DATA);
+    expect(codigos.tipoDeCampo('DATA')).toBe(TipoDeCampoDeTeste.DATA);
   });
 
   it('devolve null para o tipo de renderização que o contrato não conhece', () => {
-    expect(codigos.tipoRenderizacao('IGUAL')).toBeNull();
+    expect(codigos.tipoDeCampo('IGUAL')).toBeNull();
   });
 });

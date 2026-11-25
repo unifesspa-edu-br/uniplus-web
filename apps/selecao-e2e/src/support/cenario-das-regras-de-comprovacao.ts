@@ -37,7 +37,7 @@ export async function prepararCenario(page: Page, testInfo: TestInfo) {
 async function responderDetalhe(page: Page): Promise<void> {
   const detalhe = {
     ...PROCESSO_PUBLICADO_COMPLETO,
-    status: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
+    situacao: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
     regrasDeComprovacao: REGRAS_DE_IDENTIFICACAO,
   };
   await responder(

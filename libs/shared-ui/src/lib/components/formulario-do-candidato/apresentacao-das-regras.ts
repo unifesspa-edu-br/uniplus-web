@@ -150,7 +150,7 @@ function campoDoItem(item: ItemDasRegras, ordem: number, indicios: Indicios): Ca
     ordem,
     apresentacao: {
       rotulo: item.fatoCodigo,
-      tipoRenderizacao: tipoDoCampo(item, valores.length > 0, indicios),
+      tipoDeCampo: tipoDoCampo(item, valores.length > 0, indicios),
       ajuda: null,
       pedirConfirmacao: false,
     },

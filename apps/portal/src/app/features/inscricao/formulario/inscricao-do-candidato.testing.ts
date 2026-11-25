@@ -3,7 +3,7 @@ import {
   TipoEtapaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
   type FormularioRenderizavelDto,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
 } from '@uniplus/shared-data/selecao';
 
 type Formulario = FormularioRenderizavelDto['formulario'];
@@ -20,7 +20,7 @@ type OutrosDoCampo = Partial<Pick<CampoColetado, 'ordem' | 'etapaCodigo' | 'form
 export function campoColetado(
   fatoCodigo: string,
   rotulo: string,
-  tipoRenderizacao: CampoColetado['apresentacao']['tipoRenderizacao'],
+  tipoDeCampo: CampoColetado['apresentacao']['tipoDeCampo'],
   { ordem = 0, etapaCodigo = DADOS, formato = null }: OutrosDoCampo = {},
 ): CampoColetado {
   return {
@@ -29,7 +29,7 @@ export function campoColetado(
     etapaCodigo,
     formato,
     valoresSelecionaveis: null,
-    apresentacao: { rotulo, tipoRenderizacao, ajuda: null, pedirConfirmacao: false },
+    apresentacao: { rotulo, tipoDeCampo, ajuda: null, pedirConfirmacao: false },
   };
 }
 
@@ -76,22 +76,17 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
     ],
     coleta: {
       itens: [
-        campoColetado('NOME', 'Nome completo', TipoRenderizacaoCodigo.TEXTO, {
+        campoColetado('NOME', 'Nome completo', TipoDeCampoCodigo.TEXTO, {
           formato: 'NOME_PESSOA',
         }),
-        campoColetado('CPF', 'CPF', TipoRenderizacaoCodigo.TEXTO, { ordem: 1, formato: 'CPF' }),
-        campoColetado('DATA_NASCIMENTO', 'Data de nascimento', TipoRenderizacaoCodigo.DATA, {
+        campoColetado('CPF', 'CPF', TipoDeCampoCodigo.TEXTO, { ordem: 1, formato: 'CPF' }),
+        campoColetado('DATA_NASCIMENTO', 'Data de nascimento', TipoDeCampoCodigo.DATA, {
           ordem: 2,
         }),
-        campoColetado(
-          'ENDERECO_RESIDENCIAL',
-          'Endereço residencial',
-          TipoRenderizacaoCodigo.ENDERECO,
-          {
-            ordem: 3,
-            etapaCodigo: ENDERECO,
-          },
-        ),
+        campoColetado('ENDERECO_RESIDENCIAL', 'Endereço residencial', TipoDeCampoCodigo.ENDERECO, {
+          ordem: 3,
+          etapaCodigo: ENDERECO,
+        }),
       ],
       grupos: [],
     },
@@ -102,7 +97,7 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
         {
           fatoCodigo: 'FAIXA_ETARIA',
           rotulo: 'Idade na data de referência',
-          tipoRenderizacao: TipoRenderizacaoCodigo.NUMERO,
+          tipoDeCampo: TipoDeCampoCodigo.NUMERO,
           formato: null,
           valoresSelecionaveis: null,
           calculadoDe: ['DATA_NASCIMENTO'],

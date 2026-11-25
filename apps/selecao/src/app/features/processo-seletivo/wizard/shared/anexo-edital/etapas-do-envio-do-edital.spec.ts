@@ -1,3 +1,4 @@
+import { SituacaoDoProcessoSeletivoCodigo } from '@uniplus/shared-data/selecao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -323,7 +324,12 @@ describe('EtapasDoEnvioDoEdital', () => {
    * dos outros bloqueios pega — só o estado do processo.
    */
   it('bloqueia o anexo em processo fora de rascunho', () => {
-    store.remoteSnapshot.set({ status: 'cancelado' } as never);
+    store.remoteSnapshot.set({
+      situacao: {
+        codigo: SituacaoDoProcessoSeletivoCodigo.CANCELADO,
+        rotulo: SituacaoDoProcessoSeletivoCodigo.CANCELADO,
+      },
+    } as never);
 
     expect(etapas.anexoBloqueado()).toBe(true);
   });

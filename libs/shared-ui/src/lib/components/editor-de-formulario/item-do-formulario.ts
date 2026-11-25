@@ -306,8 +306,8 @@ export class ItemDoFormularioComponent {
     () => this.item().apresentacao.rotulo.trim() || this.item().fatoCodigo,
   );
   protected readonly tipoDeCampo = computed(() => {
-    const { tipoRenderizacao } = this.item().apresentacao;
-    return TIPOS_DE_CAMPO[tipoRenderizacao] ?? tipoRenderizacao;
+    const { tipoDeCampo } = this.item().apresentacao;
+    return TIPOS_DE_CAMPO[tipoDeCampo] ?? tipoDeCampo;
   });
   protected readonly rotuloVazio = computed(() => this.item().apresentacao.rotulo.trim() === '');
   protected readonly obrigatoriedade = computed(

@@ -86,7 +86,7 @@ function itemDoDto(fato: FatoColetadoDto): ItemDoFormulario {
     etapaCodigo: fato.etapaCodigo,
     apresentacao: {
       rotulo: apresentacao.rotulo,
-      tipoRenderizacao: apresentacao.tipoRenderizacao,
+      tipoDeCampo: apresentacao.tipoDeCampo,
       ajuda: apresentacao.ajuda,
       pedirConfirmacao: apresentacao.pedirConfirmacao,
     },

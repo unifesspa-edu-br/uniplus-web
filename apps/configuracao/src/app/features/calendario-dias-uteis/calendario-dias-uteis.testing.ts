@@ -71,7 +71,7 @@ export const DIA_NACIONAL_JANEIRO = {
 
 export const calendarioCom = (diasNaoUteis: readonly unknown[], vigente = false) => ({
   id: CALENDARIO_ID,
-  versaoDataset: '2026.1',
+  versaoDoCalendario: '2026.1',
   vigente,
   criadoEm: '2026-08-13T00:00:00Z',
   diasNaoUteis,
@@ -278,7 +278,7 @@ function servicosDoCalendarioNovo(fixture: ComponentFixture<CalendarioDiasUteisN
 
 function consultasDoCalendarioNovo(base: Ferramentas) {
   return {
-    versao: (): HTMLInputElement => base.elemento('[formcontrolname="versaoDataset"]'),
+    versao: (): HTMLInputElement => base.elemento('[formcontrolname="versaoDoCalendario"]'),
     ...controlesDoFormulario(base),
   };
 }

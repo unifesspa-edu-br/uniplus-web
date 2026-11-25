@@ -11,7 +11,7 @@ import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import {
   OrigemCandidatosCodigo,
   SELECAO_BASE_PATH,
-  TipoRenderizacaoCodigo,
+  TipoDeCampoCodigo,
   type FormularioDto,
 } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -159,7 +159,7 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
       ],
       coleta: {
         itens: coletados.map((codigo, ordem) =>
-          campoDoServidor(codigo, ordem, 'DADOS_BASICOS', TipoRenderizacaoCodigo.SIM_OU_NAO),
+          campoDoServidor(codigo, ordem, 'DADOS_BASICOS', TipoDeCampoCodigo.SIM_OU_NAO),
         ),
         grupos: [],
       },

@@ -18,12 +18,12 @@ const CAMPOS_COM_IMPEDIMENTO = new Set([
  */
 export function impedimentoCabe(
   finalidade: string,
-  tipoRenderizacao: string,
+  tipoDeCampo: string,
   proprioFatoCitavel: boolean,
 ): boolean {
   return (
     finalidade === FINALIDADE_INSCRICAO &&
-    CAMPOS_COM_IMPEDIMENTO.has(tipoRenderizacao) &&
+    CAMPOS_COM_IMPEDIMENTO.has(tipoDeCampo) &&
     proprioFatoCitavel
   );
 }

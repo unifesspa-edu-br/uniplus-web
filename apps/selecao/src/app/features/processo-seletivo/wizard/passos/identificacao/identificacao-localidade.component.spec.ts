@@ -5,7 +5,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   OrigemCandidatosCodigo,
   type ProcessoSeletivoDto,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
 } from '@uniplus/shared-data/selecao';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
@@ -96,11 +96,14 @@ describe('IdentificacaoPassoComponent', () => {
   }
 
   /** O processo já criado, com o detalhe lido do servidor só no que o passo consulta. */
-  function lerDetalhe(status: StatusProcessoCodigo, identificadorLegivel: string | null): void {
+  function lerDetalhe(
+    status: SituacaoDoProcessoSeletivoCodigo,
+    identificadorLegivel: string | null,
+  ): void {
     store.processoSeletivoId.set(PROCESSO_ID);
     store.remoteSnapshot.set({
       id: PROCESSO_ID,
-      status: { codigo: status, rotulo: status },
+      situacao: { codigo: status, rotulo: status },
       identificadorLegivel,
     } as unknown as ProcessoSeletivoDto);
     store.patchObjectSection('identificacao', { identificadorLegivel: identificadorLegivel ?? '' });
@@ -286,7 +289,7 @@ describe('IdentificacaoPassoComponent', () => {
   /** Com o processo criado não há o que gravar: o passo volta a ser navegação. */
   it('dispensa a confirmação quando o processo já existe', () => {
     preencherCamposDoComando();
-    lerDetalhe(StatusProcessoCodigo.RASCUNHO, 'ps-2027');
+    lerDetalhe(SituacaoDoProcessoSeletivoCodigo.RASCUNHO, 'ps-2027');
     detectar();
 
     expect(componente.confirmacaoDeGravacao()).toBeNull();

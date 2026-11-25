@@ -1,6 +1,9 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ProcessoSeletivoDto, StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
+import {
+  ProcessoSeletivoDto,
+  SituacaoDoProcessoSeletivoCodigo,
+} from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -160,7 +163,10 @@ describe('VagasPassoComponent — recusas e consulta do número de opções de c
   it('em consulta, lê o número gravado como texto', () => {
     store.patchObjectSection('opcoesDeCurso', { numero: '2' });
     store.remoteSnapshot.set({
-      status: StatusProcessoCodigo.PUBLICADO,
+      situacao: {
+        codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+        rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+      },
     } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
 

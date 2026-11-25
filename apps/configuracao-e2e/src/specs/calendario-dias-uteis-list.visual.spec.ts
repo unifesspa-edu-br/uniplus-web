@@ -22,13 +22,13 @@ const CORS_HEADERS = {
 const CALENDARIOS = [
   {
     id: '019ff7ee-3c00-7976-860c-eb2f61c9b2d1',
-    versaoDataset: '2026.1',
+    versaoDoCalendario: '2026.1',
     vigente: true,
     criadoEm: '2026-08-13T12:00:00Z',
   },
   {
     id: '019ff7ee-3c00-7976-860c-eb2f61c9b2d2',
-    versaoDataset: '2025.2',
+    versaoDoCalendario: '2025.2',
     vigente: false,
     criadoEm: '2025-11-04T12:00:00Z',
   },

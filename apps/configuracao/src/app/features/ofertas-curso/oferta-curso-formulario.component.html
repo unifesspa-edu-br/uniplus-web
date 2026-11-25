@@ -237,34 +237,34 @@
       <section aria-labelledby="cfg-oferta-codigos">
         <h3 id="cfg-oferta-codigos" class="form-section__title">Códigos externos</h3>
         <div class="form-grid form-grid--pair">
-          <label class="field" [class.is-error]="erroDoCampo('eMecCodigo')">
+          <label class="field" [class.is-error]="erroDoCampo('codigoEmec')">
             <span class="field__label">Código e-MEC</span>
             <input
               class="input"
               type="text"
               inputmode="numeric"
-              formControlName="eMecCodigo"
-              [attr.aria-invalid]="erroDoCampo('eMecCodigo') ? 'true' : null"
-              [attr.aria-describedby]="descritoPor('eMecCodigo')"
+              formControlName="codigoEmec"
+              [attr.aria-invalid]="erroDoCampo('codigoEmec') ? 'true' : null"
+              [attr.aria-describedby]="descritoPor('codigoEmec')"
             />
-            @if (erroDoCampo('eMecCodigo')) {
-              <span class="field__error" [id]="idDoErro('eMecCodigo')">{{
-                erroDoCampo('eMecCodigo')
+            @if (erroDoCampo('codigoEmec')) {
+              <span class="field__error" [id]="idDoErro('codigoEmec')">{{
+                erroDoCampo('codigoEmec')
               }}</span>
             }
           </label>
-          <label class="field" [class.is-error]="erroDoCampo('codigoSga')">
+          <label class="field" [class.is-error]="erroDoCampo('codigoNoSistemaAcademico')">
             <span class="field__label">Código SGA</span>
             <input
               class="input"
               type="text"
-              formControlName="codigoSga"
-              [attr.aria-invalid]="erroDoCampo('codigoSga') ? 'true' : null"
-              [attr.aria-describedby]="descritoPor('codigoSga')"
+              formControlName="codigoNoSistemaAcademico"
+              [attr.aria-invalid]="erroDoCampo('codigoNoSistemaAcademico') ? 'true' : null"
+              [attr.aria-describedby]="descritoPor('codigoNoSistemaAcademico')"
             />
-            @if (erroDoCampo('codigoSga')) {
-              <span class="field__error" [id]="idDoErro('codigoSga')">{{
-                erroDoCampo('codigoSga')
+            @if (erroDoCampo('codigoNoSistemaAcademico')) {
+              <span class="field__error" [id]="idDoErro('codigoNoSistemaAcademico')">{{
+                erroDoCampo('codigoNoSistemaAcademico')
               }}</span>
             }
           </label>

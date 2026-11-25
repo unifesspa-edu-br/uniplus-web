@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
   fatosParaAcrescentar,
   pressupostosParaAcrescentar,
-  renderizacaoDe,
+  tipoDeCampoDe,
 } from './catalogo-de-campos';
 import { conteudo, fato, item, secao } from './conteudos-de-exemplo.testing';
 
-describe('renderizacaoDe', () => {
+describe('tipoDeCampoDe', () => {
   it.each([
     ['SIM_OU_NAO', 'VALOR_UNICO', null, 'SIM_OU_NAO'],
     ['NUMERICO', 'VALOR_UNICO', null, 'NUMERO'],
@@ -20,7 +20,7 @@ describe('renderizacaoDe', () => {
     ['TEXTO', 'VARIOS_VALORES', null, null],
   ])('%s %s (%s) → %s, como a API confere', (dominio, cardinalidade, fonteValores, esperado) => {
     expect(
-      renderizacaoDe({
+      tipoDeCampoDe({
         dominio: { codigo: dominio, rotulo: dominio },
         cardinalidade: { codigo: cardinalidade, rotulo: cardinalidade },
         fonteValores: fonteValores === null ? null : { codigo: fonteValores, rotulo: fonteValores },

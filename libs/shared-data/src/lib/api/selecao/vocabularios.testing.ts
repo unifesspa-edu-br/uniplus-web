@@ -6,12 +6,12 @@ import {
   FinalidadeDoDocumentoCodigo,
   SentidoDoMotivoCodigo,
   StatusArquivoEnviadoCodigo,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
   TipoRegraCodigo,
 } from './schema';
 
 export const situacaoDoProcesso = {
-  codigo: StatusProcessoCodigo.RASCUNHO,
+  codigo: SituacaoDoProcessoSeletivoCodigo.RASCUNHO,
   rotulo: 'Em preparação',
 };
 export const arquivoConfirmado = {

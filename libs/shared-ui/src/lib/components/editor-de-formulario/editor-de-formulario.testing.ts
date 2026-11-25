@@ -40,7 +40,7 @@ const apresentacaoDe = (
   extra?: Partial<ApresentacaoDoCampo>,
 ): ApresentacaoDoCampo => ({
   rotulo: `Campo ${fatoCodigo}`,
-  tipoRenderizacao: 'SIM_OU_NAO',
+  tipoDeCampo: 'SIM_OU_NAO',
   pedirConfirmacao: false,
   ...extra,
 });

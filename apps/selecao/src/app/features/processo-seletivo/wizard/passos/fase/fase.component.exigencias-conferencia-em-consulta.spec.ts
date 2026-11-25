@@ -1,7 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { StatusProcessoCodigo, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import {
+  SituacaoDoProcessoSeletivoCodigo,
+  type ProcessoSeletivoDto,
+} from '@uniplus/shared-data/selecao';
 import { CatalogoDeDocumentos } from '../cronograma/catalogos/catalogo-de-documentos.service';
 import { DocumentosDaFaseComponent } from './documentos/documentos-da-fase.component';
 import { ExigenciasDaFaseStore } from './documentos/exigencias-da-fase.store';
@@ -151,7 +154,10 @@ describe('FasePassoComponent', () => {
       it('em consulta, lê o detalhe do documento como texto, sem campo nem botão', () => {
         exigencias().alternarExigencia(ID_CPF, true);
         store.remoteSnapshot.set({
-          status: StatusProcessoCodigo.PUBLICADO,
+          situacao: {
+            codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+            rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          },
         } as unknown as ProcessoSeletivoDto);
         detectar();
 
@@ -173,7 +179,10 @@ describe('FasePassoComponent', () => {
         ]);
         exigencias().alternarExigencia(ID_CPF, true);
         store.remoteSnapshot.set({
-          status: StatusProcessoCodigo.PUBLICADO,
+          situacao: {
+            codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+            rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          },
         } as unknown as ProcessoSeletivoDto);
         detectar();
 
@@ -188,7 +197,10 @@ describe('FasePassoComponent', () => {
       it('em consulta, lê os formatos e o limite do cadastro à parte da descrição ausente', () => {
         exigencias().alternarExigencia(ID_CPF, true);
         store.remoteSnapshot.set({
-          status: StatusProcessoCodigo.PUBLICADO,
+          situacao: {
+            codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+            rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          },
         } as unknown as ProcessoSeletivoDto);
         detectar();
 
@@ -216,7 +228,10 @@ describe('FasePassoComponent', () => {
           },
         ]);
         store.remoteSnapshot.set({
-          status: StatusProcessoCodigo.PUBLICADO,
+          situacao: {
+            codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+            rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          },
         } as unknown as ProcessoSeletivoDto);
         detectar();
 
@@ -231,7 +246,10 @@ describe('FasePassoComponent', () => {
         exigencias().alternarExigencia(ID_CPF, true);
         TestBed.inject(CatalogoDeDocumentos).tiposDocumento.set([]);
         store.remoteSnapshot.set({
-          status: StatusProcessoCodigo.PUBLICADO,
+          situacao: {
+            codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+            rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          },
         } as unknown as ProcessoSeletivoDto);
         detectar();
 
@@ -252,7 +270,10 @@ describe('FasePassoComponent', () => {
         expect(documentos().resumos()[0].orientacao).toContain('Remova-o');
 
         store.remoteSnapshot.set({
-          status: StatusProcessoCodigo.PUBLICADO,
+          situacao: {
+            codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+            rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
+          },
         } as unknown as ProcessoSeletivoDto);
         detectar();
 

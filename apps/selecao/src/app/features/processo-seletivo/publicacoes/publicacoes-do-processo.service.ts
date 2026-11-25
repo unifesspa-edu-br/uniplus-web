@@ -6,7 +6,7 @@ import { TiposAtoApi, type TipoAtoPublicadoDto } from '@uniplus/shared-data/publ
 import {
   ProcessosSeletivosApi,
   DocumentosEAtosDoProcessoApi,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
   type AtoDoProcessoDto,
   type CampoDivulgacaoDto,
   type ProcessoSeletivoDto,
@@ -178,7 +178,7 @@ export class PublicacoesDoProcesso {
     const processo = this.processo();
     if (
       processo.estado !== 'lido' ||
-      processo.dados.status.codigo === StatusProcessoCodigo.RASCUNHO
+      processo.dados.situacao.codigo === SituacaoDoProcessoSeletivoCodigo.RASCUNHO
     )
       return;
     await this.lerPrevistos(processoId, leitura);

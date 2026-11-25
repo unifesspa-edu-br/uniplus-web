@@ -136,7 +136,7 @@ describe('CalendarioDiasUteisDetalhePage — leitura', () => {
       expect(p.selecao.previa()).toBeNull();
       p.http
         .expectOne(`${LEITURA.replace(/[^/]+$/, OUTRO_ID)}`)
-        .flush({ ...calendarioCom([DIA_ESTADUAL]), id: OUTRO_ID, versaoDataset: '2027.1' });
+        .flush({ ...calendarioCom([DIA_ESTADUAL]), id: OUTRO_ID, versaoDoCalendario: '2027.1' });
       await p.propagar();
       expect(p.selecao.painelAberto()).toBe(false);
       expect(p.fixture.nativeElement.querySelector('dialog[open]')).toBeNull();

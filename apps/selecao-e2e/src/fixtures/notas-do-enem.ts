@@ -61,7 +61,7 @@ export function processo(sobrescritas: { status?: string } = {}): unknown {
     id: PROCESSO_ID,
     identificadorLegivel: 'medicina-2027',
     nome: 'Medicina 2027 — Processo Seletivo Unificado com Nota do ENEM e Reserva de Vagas',
-    status: {
+    situacao: {
       codigo: status.toUpperCase(),
       rotulo: status === 'rascunho' ? 'Rascunho' : 'Publicado',
     },

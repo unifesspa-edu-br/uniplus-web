@@ -35,7 +35,7 @@ describe('adaptador do passo Formulários', () => {
     expect(valores).toEqual({
       formulario: {
         titulo: 'Formulário de inscrição',
-        faseChave: 'inscricao',
+        faseChave: 'fase_inscricao',
         modeloOrigemCodigo: '',
       },
       referenciaTemporal: { tipo: 'FIM_INSCRICAO', data: '', faseChave: '' },

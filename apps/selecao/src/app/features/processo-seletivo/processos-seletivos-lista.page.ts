@@ -21,7 +21,7 @@ import {
 import {
   ProcessosSeletivosApi,
   ProcessoSeletivoResumoDto,
-  StatusProcessoCodigo,
+  SituacaoDoProcessoSeletivoCodigo,
 } from '@uniplus/shared-data/selecao';
 import {
   acompanharLeitura,
@@ -40,11 +40,11 @@ import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 /** Itens por página iniciais; o operador troca pelo seletor do rodapé. */
 const PAGE_SIZE = 50;
 
-const STATUS_VARIANTE: Record<StatusProcessoCodigo, UiTagVariant> = {
-  [StatusProcessoCodigo.RASCUNHO]: 'warning',
-  [StatusProcessoCodigo.PUBLICADO]: 'success',
-  [StatusProcessoCodigo.ENCERRADO]: 'neutral',
-  [StatusProcessoCodigo.CANCELADO]: 'danger',
+const STATUS_VARIANTE: Record<SituacaoDoProcessoSeletivoCodigo, UiTagVariant> = {
+  [SituacaoDoProcessoSeletivoCodigo.RASCUNHO]: 'warning',
+  [SituacaoDoProcessoSeletivoCodigo.PUBLICADO]: 'success',
+  [SituacaoDoProcessoSeletivoCodigo.ENCERRADO]: 'neutral',
+  [SituacaoDoProcessoSeletivoCodigo.CANCELADO]: 'danger',
 };
 
 /**
@@ -142,8 +142,8 @@ const STATUS_VARIANTE: Record<StatusProcessoCodigo, UiTagVariant> = {
                     </td>
 
                     <td data-label="Status">
-                      <ui-tag [variant]="statusVariante(processo.status.codigo)">
-                        {{ processo.status.rotulo }}
+                      <ui-tag [variant]="statusVariante(processo.situacao.codigo)">
+                        {{ processo.situacao.rotulo }}
                       </ui-tag>
                     </td>
 
@@ -160,10 +160,10 @@ const STATUS_VARIANTE: Record<StatusProcessoCodigo, UiTagVariant> = {
                           [link]="['/processo-seletivo', processo.id]"
                         />
                       }
-                      @if (!foiPublicado(processo.status.codigo) && !podeConfigurarProcesso()) {
+                      @if (!foiPublicado(processo.situacao.codigo) && !podeConfigurarProcesso()) {
                         <span>Inscrições disponíveis após a publicação</span>
                       }
-                      @if (foiPublicado(processo.status.codigo)) {
+                      @if (foiPublicado(processo.situacao.codigo)) {
                         @if (podeConfigurarProcesso()) {
                           <ui-icon-button
                             icon="pi-file"
@@ -342,11 +342,11 @@ export class ProcessosSeletivosListaPage {
    * Antes da publicação o processo não tem página pública nem edital divulgado: não há o que
    * listar de publicado nem notas do ENEM a enviar ou importar.
    */
-  protected foiPublicado(status: StatusProcessoCodigo): boolean {
-    return status !== StatusProcessoCodigo.RASCUNHO;
+  protected foiPublicado(status: SituacaoDoProcessoSeletivoCodigo): boolean {
+    return status !== SituacaoDoProcessoSeletivoCodigo.RASCUNHO;
   }
 
-  protected statusVariante(status: StatusProcessoCodigo): UiTagVariant {
+  protected statusVariante(status: SituacaoDoProcessoSeletivoCodigo): UiTagVariant {
     return Object.hasOwn(STATUS_VARIANTE, status) ? STATUS_VARIANTE[status] : 'neutral';
   }
 }

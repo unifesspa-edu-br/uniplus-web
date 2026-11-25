@@ -1,4 +1,4 @@
-import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatosCodigo, TipoDeCampoCodigo } from '@uniplus/shared-data/selecao';
 
 import type { FormularioDeInscricao, WizardDraft } from '../../processo-seletivo.models';
 
@@ -32,7 +32,7 @@ export function fatosDeElegibilidade(
 
 function camposBooleanos(formulario: FormularioDeInscricao): readonly FatoDeElegibilidade[] {
   return (formulario.conteudo.itens ?? [])
-    .filter((item) => item.apresentacao.tipoRenderizacao === 'BOOLEANO')
+    .filter((item) => item.apresentacao.tipoDeCampo === TipoDeCampoCodigo.SIM_OU_NAO)
     .map((item) => ({
       codigo: item.fatoCodigo,
       rotulo: item.apresentacao.rotulo,

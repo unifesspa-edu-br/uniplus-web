@@ -1,11 +1,11 @@
-import { StatusProcessoCodigo } from '@uniplus/shared-data/selecao';
+import { SituacaoDoProcessoSeletivoCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { atalhosDoAcompanhamento } from './atalhos-do-acompanhamento';
 
 const com = (status: string) => ({
   id: 'p1',
-  status: { codigo: status as StatusProcessoCodigo, rotulo: status },
+  situacao: { codigo: status as SituacaoDoProcessoSeletivoCodigo, rotulo: status },
 });
 const rotulos = (status: string, pode: boolean) =>
   atalhosDoAcompanhamento(com(status), pode).map((a) => a.rotulo);
