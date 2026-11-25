@@ -144,8 +144,8 @@
 </ui-dialog>
 
 <ng-template #situacaoDaInscricao let-inscricao>
-  <ui-tag [dot]="true" [variant]="exibeInscricaoStatusVariantLabel(inscricao.situacao.codigo)">
-    {{ inscricao.situacao.rotulo }}
+  <ui-tag [dot]="true" [variant]="exibeInscricaoStatusVariantLabel(inscricao)">
+    {{ inscricao.rotuloDaSituacao }}
   </ui-tag>
   @if (inscricao.numero) {
   <span class="ptl-meta">Nº {{ inscricao.numero }}</span>

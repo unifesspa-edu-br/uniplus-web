@@ -11,6 +11,10 @@ export interface ItemDaLista {
   readonly id: string;
   readonly processoId: string;
   readonly situacao: MinhaInscricaoDto['situacao'];
+  /** O rótulo que o card mostra: o da API, ou "Não enviada" para o rascunho que o prazo deixou para trás. */
+  readonly rotuloDaSituacao: string;
+  /** O rascunho que ficou sem envio e já não pode ser concluído porque o prazo de inscrições encerrou. */
+  readonly naoEnviada: boolean;
   readonly nome: string;
   /** Só a inscrição enviada ou cancelada tem número. */
   readonly numero: string | null;
@@ -30,17 +34,36 @@ export interface CursoDaInscricao {
   readonly nome: string;
 }
 
+export const ROTULO_NAO_ENVIADA = 'Não enviada';
+
+export const MENSAGEM_NAO_ENVIADA =
+  'O prazo de inscrições foi encerrado. Como sua inscrição não foi enviada dentro do prazo, ela não foi efetivada e não poderá mais ser concluída.';
+
+/**
+ * A API só permite continuar o rascunho com as inscrições abertas (`AcoesPermitidas`); sem essa
+ * permissão, o rascunho que existe é o que o prazo deixou sem envio.
+ */
+function ficouSemEnvio(inscricao: MinhaInscricaoDto): boolean {
+  return (
+    inscricao.situacao.codigo === SituacaoInscricaoCodigo.RASCUNHO && !inscricao.acoes.podeContinuar
+  );
+}
+
+function mensagemDoCancelamento(inscricao: MinhaInscricaoDto): string | null {
+  const quando = formatarDataBr(inscricao.canceladaEm);
+  const cancelada = quando ? `Cancelada em ${quando}.` : null;
+  return inscricao.motivoDoCancelamento
+    ? [cancelada, `Motivo: ${inscricao.motivoDoCancelamento}`].filter(Boolean).join(' ')
+    : cancelada;
+}
+
 function mensagemDa(inscricao: MinhaInscricaoDto): string | null {
+  if (ficouSemEnvio(inscricao)) return MENSAGEM_NAO_ENVIADA;
   switch (inscricao.situacao.codigo) {
     case SituacaoInscricaoCodigo.ENVIADA:
       return null;
-    case SituacaoInscricaoCodigo.CANCELADA: {
-      const quando = formatarDataBr(inscricao.canceladaEm);
-      const cancelada = quando ? `Cancelada em ${quando}.` : null;
-      return inscricao.motivoDoCancelamento
-        ? [cancelada, `Motivo: ${inscricao.motivoDoCancelamento}`].filter(Boolean).join(' ')
-        : cancelada;
-    }
+    case SituacaoInscricaoCodigo.CANCELADA:
+      return mensagemDoCancelamento(inscricao);
     default:
       return 'Sua inscrição está em rascunho. Conclua e envie dentro do prazo.';
   }
@@ -55,6 +78,8 @@ export function itemDaLista(inscricao: MinhaInscricaoDto): ItemDaLista {
     id: inscricao.inscricaoId,
     processoId: inscricao.processoSeletivoId,
     situacao: inscricao.situacao,
+    rotuloDaSituacao: ficouSemEnvio(inscricao) ? ROTULO_NAO_ENVIADA : inscricao.situacao.rotulo,
+    naoEnviada: ficouSemEnvio(inscricao),
     nome: inscricao.nomeDoProcesso ?? 'Processo seletivo',
     numero: inscricao.numeroInscricao,
     mensagem: mensagemDa(inscricao),
