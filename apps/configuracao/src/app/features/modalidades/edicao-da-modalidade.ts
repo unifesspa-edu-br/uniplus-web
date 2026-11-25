@@ -78,7 +78,9 @@ export class EdicaoDaModalidade {
   readonly natureza = signal<NaturezaLegalCodigo | ''>('');
   private readonly composicao = signal<ComposicaoVagasCodigo | ''>('');
   private readonly regra = signal<RegraSelecao>('');
-  readonly mostraRemanejamento = computed(() => this.natureza() !== '' && this.natureza() !== NaturezaLegalCodigo.AMPLA);
+  readonly mostraRemanejamento = computed(
+    () => this.natureza() !== '' && this.natureza() !== NaturezaLegalCodigo.AMPLA,
+  );
   readonly mostraOrigem = computed(
     () => this.composicao() === ComposicaoVagasCodigo.RETIRADA_DE_OUTRA_MODALIDADE,
   );
@@ -182,7 +184,7 @@ export class EdicaoDaModalidade {
   verificarCodigoDuplicado(): void {
     if (this.modoEdicao) return;
     const control = this.form.controls.codigo;
-    const codigo = control.value.trim();
+    const codigo = control.value;
     const repetido = codigo.length > 0 && this.store.opcoes().some((m) => m.codigo === codigo);
     marcarCodigoRepetido(control, repetido);
   }

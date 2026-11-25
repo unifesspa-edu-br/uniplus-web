@@ -109,7 +109,6 @@ export class EdicaoDasCondicoesAtendimento {
   readonly anuncioDaPagina = computed(() => (this.confirmando() ? '' : this.resultadoDaRemocao()));
 
   constructor() {
-    this.maiusculasNoCodigo();
     this.liberarAoFimDaRecarga();
   }
 
@@ -242,13 +241,6 @@ export class EdicaoDasCondicoesAtendimento {
 
   private renovarChave(): void {
     this.chave.set(idempotencyKey.create());
-  }
-
-  private maiusculasNoCodigo(): void {
-    const codigo = this.form.controls.codigo;
-    codigo.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((valor) => {
-      codigo.setValue(valor.toUpperCase(), { emitEvent: false, emitModelToViewChange: false });
-    });
   }
 
   private liberarAoFimDaRecarga(): void {

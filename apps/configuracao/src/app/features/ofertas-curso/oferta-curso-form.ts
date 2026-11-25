@@ -1,4 +1,5 @@
 import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
+import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 import {
   AtualizarOfertaCursoCommand,
   CriarOfertaCursoCommand,
@@ -9,7 +10,7 @@ import {
   RegimeDeTurnoCodigo,
   TurnoOfertaCodigo,
 } from '@uniplus/shared-data/configuracao';
-import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import {
   controlNameFromBackendField,
   mensagemDeErroDoControle,
@@ -110,11 +111,7 @@ function controlesDeIdentificacao() {
   return {
     codigo: new FormControl('', {
       nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
-        Validators.pattern(CODIGO_CADASTRO_FORMATO),
-      ],
+      validators: [Validators.required, ...validadoresDoCodigo(50)],
     }),
     cursoId: obrigatorio(),
     localOfertaId: obrigatorio(),
@@ -196,7 +193,7 @@ export function controleDoCodigoDoServidor(code: string | undefined): keyof Ofer
 
 function camposDaOferta(valores: ValoresDaOferta) {
   return {
-    codigo: valores.codigo.trim(),
+    codigo: valores.codigo,
     programaDeOferta: valores.programaDeOferta,
     formatoPedagogico: valores.formatoPedagogico,
     regimeDeTurno: valores.regimeDeTurno,
@@ -240,8 +237,7 @@ export function mensagemDeErroDaOferta(controle: AbstractControl): string | null
   return erros['maxlength'] ? mensagem : (mensagemDaRegraDaOferta(erros) ?? mensagem);
 }
 
-const MENSAGEM_DE_FORMATO_DO_CODIGO =
-  'Formato inválido. Use letras maiúsculas, números e sublinhado, iniciando por letra, de 2 a 50 caracteres (ex.: ENGENHARIA_CIVIL_MARABA).';
+const MENSAGEM_DE_FORMATO_DO_CODIGO = textoDoFormatoDoCodigo(50);
 
 function mensagemDaRegraDaOferta(erros: Record<string, unknown>): string | null {
   if (erros['pattern']) return MENSAGEM_DE_FORMATO_DO_CODIGO;

@@ -10,6 +10,12 @@ import {
   sucesso,
 } from './tipos-documento.testing';
 
+const RECUSA_DE_FORMATO = recusaDeCampo(
+  'codigo',
+  'O formato do código é inválido.',
+  'uniplus.configuracao.tipo_documento.codigo_formato_invalido',
+);
+
 const PROCESSANDO = { code: 'uniplus.idempotency.processing_conflict', title: 'Em processamento' };
 const DUPLICADO = {
   code: 'uniplus.configuracao.tipo_documento.codigo_ja_existe',
@@ -31,6 +37,20 @@ describe('TiposDocumentoPage — recusas do servidor ao salvar', () => {
   const chaveDe = (req: { request: { headers: { get(n: string): string | null } } }) =>
     req.request.headers.get('Idempotency-Key');
   const alerta = (): HTMLElement => p.elemento('ui-drawer ui-alert');
+
+  it('exibe no código a recusa de formato recebida da API', async () => {
+    p = await montarPagina([]);
+    await p.abrirCadastro();
+    const codigo = p.campo('codigo').value;
+    const mensagem = 'O formato do código é inválido.';
+    (await p.enviar()).flush(...RECUSA_DE_FORMATO);
+    await p.propagar();
+    await p.propagar();
+    const erro = p.campo('codigo').closest('.field')?.querySelector('.field__error')?.textContent;
+    expect(erro?.trim()).toBe(mensagem);
+    expect(erro).not.toContain(codigo);
+    expect(p.campo('codigo').getAttribute('aria-invalid')).toBe('true');
+  });
 
   it.each([
     ['codigo', 'codigo', 'uniplus.configuracao.tipo_documento.codigo_formato_invalido'],

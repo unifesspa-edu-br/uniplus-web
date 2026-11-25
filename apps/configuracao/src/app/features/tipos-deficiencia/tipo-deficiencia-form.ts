@@ -1,10 +1,11 @@
 import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
+import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 import {
   AtualizarTipoDeficienciaCommand,
   CriarTipoDeficienciaCommand,
   TipoDeficienciaDto,
 } from '@uniplus/shared-data/configuracao';
-import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import {
   controlNameFromBackendField,
   mensagemDeErroDoCampoComFormato,
@@ -20,8 +21,7 @@ export type ValoresDoTipoDeficiencia = ReturnType<FormGroup<TipoDeficienciaForm>
 
 export const TIPO_EM_BRANCO: ValoresDoTipoDeficiencia = { nome: '', codigo: '', descricao: '' };
 
-const MENSAGEM_DE_FORMATO =
-  'Formato inválido. Use letras maiúsculas, números e sublinhado, iniciando por letra (ex.: VISUAL, DEFICIENCIA_VISUAL).';
+const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(50);
 
 const MENSAGEM_DE_DESCRICAO_EM_BRANCO = 'Informe um texto — apenas espaços não valem.';
 
@@ -31,6 +31,15 @@ const CONTROLES_DO_SERVIDOR: ReadonlySet<string> = new Set<keyof TipoDeficiencia
   'descricao',
 ]);
 
+function controleDoDescricao(): FormControl<string> {
+  return new FormControl('', {
+    nonNullable: true,
+    // `Validators.required` aceita só espaços, que o `trim()` do comando reduziria a vazio e a
+    // API recusaria; o padrão exige ao menos um caractere significativo.
+    validators: [Validators.required, Validators.pattern(/\S/), Validators.maxLength(1000)],
+  });
+}
+
 export function criarFormularioDeTipoDeficiencia(): FormGroup<TipoDeficienciaForm> {
   return new FormGroup<TipoDeficienciaForm>({
     nome: new FormControl('', {
@@ -39,19 +48,9 @@ export function criarFormularioDeTipoDeficiencia(): FormGroup<TipoDeficienciaFor
     }),
     codigo: new FormControl('', {
       nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.minLength(2),
-        Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
-        Validators.pattern(CODIGO_CADASTRO_FORMATO),
-      ],
+      validators: [Validators.required, ...validadoresDoCodigo(50)],
     }),
-    descricao: new FormControl('', {
-      nonNullable: true,
-      // `Validators.required` aceita só espaços, que o `trim()` do comando reduziria a vazio e a
-      // API recusaria; o padrão exige ao menos um caractere significativo.
-      validators: [Validators.required, Validators.pattern(/\S/), Validators.maxLength(1000)],
-    }),
+    descricao: controleDoDescricao(),
   });
 }
 
@@ -69,7 +68,7 @@ export function controleDoCampoDoServidor(field: string): keyof TipoDeficienciaF
 
 export function comandoDeCriacao(valores: ValoresDoTipoDeficiencia): CriarTipoDeficienciaCommand {
   return {
-    codigo: valores.codigo.trim(),
+    codigo: valores.codigo,
     nome: valores.nome.trim(),
     descricao: valores.descricao.trim(),
   };

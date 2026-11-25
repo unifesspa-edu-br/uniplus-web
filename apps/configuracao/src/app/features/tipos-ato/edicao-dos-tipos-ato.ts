@@ -24,7 +24,6 @@ import {
   comandoDeCriacao,
   controleDoCampoDoServidor,
   criarFormularioDeAto,
-  normalizarCaixaDoCodigo,
   valoresDoAto,
   valoresEmBrancoDoAto,
 } from './tipo-ato-form';
@@ -106,10 +105,6 @@ export class EdicaoDosTiposAto {
   readonly anuncioDaPagina = computed(() =>
     this.confirmando() || this.aberto() ? '' : this.resultado(),
   );
-
-  constructor() {
-    normalizarCaixaDoCodigo(this.form, () => this.modo() === 'criar');
-  }
 
   abrirCadastro(): void {
     this.abrirFormulario('criar', null, valoresEmBrancoDoAto());

@@ -8,7 +8,8 @@ export {
 export { normalizarParaBusca } from './utils/busca.util';
 export {
   CODIGO_CADASTRO_FORMATO,
-  CODIGO_CADASTRO_TAMANHO_MAXIMO,
+  CODIGO_TAMANHO_MAXIMO,
+  textoDoFormatoDoCodigo,
   sugerirCodigoDeCadastro,
 } from './utils/codigo-cadastro.util';
 export {

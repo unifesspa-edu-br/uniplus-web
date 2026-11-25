@@ -7,18 +7,20 @@
         class="input"
         type="text"
         formControlName="codigo"
-        [attr.aria-describedby]="erroDoCampo('codigo') ? 'cfg-mod-codigo-erro' : null"
+        [attr.aria-describedby]="
+          erroDoCampo('codigo')
+            ? 'cfg-mod-codigo-ajuda cfg-mod-codigo-erro'
+            : 'cfg-mod-codigo-ajuda'
+        "
         aria-required="true"
-        autocapitalize="characters"
         [readonly]="modoEdicao()"
         [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
-        (input)="normalizarCodigo($event)"
         (blur)="codigoSaiu.emit()"
       />
-      <span class="field__hint">
-        Maiúsculas, dígitos e sublinhado (ex.: <code>LB_PPI</code>). Único entre as modalidades
-        vivas. {{ modoEdicao() ? 'Não pode ser alterado após a criação.' : '' }}
-      </span>
+      <span class="field__hint" id="cfg-mod-codigo-ajuda"
+        >{{ ajudaDoCodigo }} Único entre as modalidades vivas. Não pode ser alterado após a
+        criação.</span
+      >
       @if (erroDoCampo('codigo')) {
         <span id="cfg-mod-codigo-erro" class="field__error">{{ erroDoCampo('codigo') }}</span>
       }

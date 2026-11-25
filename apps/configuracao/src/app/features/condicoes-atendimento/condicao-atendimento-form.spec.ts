@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { FormControl } from '@angular/forms';
 import { CondicaoAtendimentoDto } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
@@ -76,8 +77,8 @@ describe('formulário de condição de atendimento', () => {
     it('descreve o tamanho mínimo, o excesso e o formato do código', () => {
       expect(tocar('A', 'nome')).toBe('Informe ao menos 2 caracteres.');
       expect(tocar('x'.repeat(1001), 'descricao')).toBe('Informe no máximo 1000 caracteres.');
-      expect(tocar('9', 'codigo')).toContain('Informe ao menos');
-      expect(tocar('9X', 'codigo')).toContain('Formato inválido');
+      expect(tocar('9', 'codigo')).toBe(textoDoFormatoDoCodigo(50));
+      expect(tocar('9X', 'codigo')).toBe(textoDoFormatoDoCodigo(50));
       expect(tocar('A'.repeat(300), 'codigo')).toBe('Informe no máximo 50 caracteres.');
     });
 

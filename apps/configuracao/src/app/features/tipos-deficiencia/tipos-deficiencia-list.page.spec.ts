@@ -34,6 +34,12 @@ const auditiva: TipoDeficienciaDto = {
   permanente: null,
 };
 
+const deficienciaVisualParaCriacao = {
+  codigo: 'DEF_VISUAL',
+  nome: 'Visual',
+  descricao: 'Baixa visão',
+};
+
 describe('TiposDeficienciaListPage', () => {
   let fixture: ComponentFixture<TiposDeficienciaListPage>;
   let controller: HttpTestingController;
@@ -181,9 +187,9 @@ describe('TiposDeficienciaListPage', () => {
     edicao.form.controls.nome.setValue('Auditiva');
     expect(edicao.form.controls.codigo.value).toBe('AUDITIVA');
     edicao.form.controls.codigo.setValue('apoio');
-    expect(edicao.form.controls.codigo.value).toBe('APOIO');
+    expect(edicao.form.controls.codigo.value).toBe('apoio');
     edicao.form.controls.nome.setValue('Outro nome');
-    expect(edicao.form.controls.codigo.value).toBe('APOIO');
+    expect(edicao.form.controls.codigo.value).toBe('apoio');
   });
 
   it('na edição, o código vigente não acompanha o nome', async () => {
@@ -196,16 +202,12 @@ describe('TiposDeficienciaListPage', () => {
   it('cria com o texto sem os brancos, o código em caixa alta e a chave de idempotência', async () => {
     await listar([]);
     edicao.abrirCadastro();
-    edicao.form.setValue({ nome: ' Visual ', codigo: 'def_visual', descricao: ' Baixa visão ' });
+    edicao.form.setValue({ nome: ' Visual ', codigo: 'DEF_VISUAL', descricao: ' Baixa visão ' });
     edicao.salvar();
     const post = controller.expectOne(ESCRITA);
     expect(post.request.method).toBe('POST');
     expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
-    expect(post.request.body).toEqual({
-      codigo: 'DEF_VISUAL',
-      nome: 'Visual',
-      descricao: 'Baixa visão',
-    });
+    expect(post.request.body).toEqual(deficienciaVisualParaCriacao);
     post.flush('novo-id', { status: 201, statusText: 'Created' });
     await propagar();
     expect(edicao.aberto()).toBe(false);

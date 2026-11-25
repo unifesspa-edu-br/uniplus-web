@@ -270,10 +270,11 @@ describe('Modalidades — envio do formulário', () => {
     expect(campo().getAttribute('aria-invalid')).not.toBe('true');
   });
 
-  it('escreve o código sempre em maiúsculas na criação', async () => {
+  it('preserva e recusa o código em minúsculas na criação', async () => {
     digitarCodigo('nova_1');
     await propagar();
-    expect(campo().value).toBe('NOVA_1');
+    expect(campo().value).toBe('nova_1');
+    expect(campo().getAttribute('aria-invalid')).toBe('true');
   });
 
   it('marca os campos obrigatórios com aria-required', () => {

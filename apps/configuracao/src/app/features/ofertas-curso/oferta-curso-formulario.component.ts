@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TurnoOfertaCodigo } from '@uniplus/shared-data/configuracao';
@@ -67,6 +68,7 @@ const SELECOES_DE_VINCULO: readonly SelecaoDeVinculo[] = [
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class OfertaCursoFormularioComponent {
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(50);
   readonly aberto = model.required<boolean>();
   readonly form = input.required<FormGroup<OfertaCursoForm>>();
   readonly modo = input.required<'criar' | 'editar'>();

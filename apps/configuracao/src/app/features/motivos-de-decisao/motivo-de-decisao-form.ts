@@ -1,10 +1,11 @@
 import { AbstractControl, FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
+import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 import {
   AtualizarMotivoDeDecisaoCommand,
   CriarMotivoDeDecisaoCommand,
   MotivoDeDecisaoDto,
 } from '@uniplus/shared-data/selecao';
-import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import {
   controlNameFromBackendField,
   mensagemDeErroDoCampoComFormato,
@@ -29,8 +30,7 @@ export const MOTIVO_EM_BRANCO: ValoresDoMotivo = {
 
 const DESCRICAO_TAMANHO_MAXIMO = 500;
 
-const MENSAGEM_DE_FORMATO =
-  'Formato inválido. Use letras maiúsculas, números e sublinhado, iniciando por letra (ex.: SEM_RESULTADO_NO_ENEM).';
+const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(50);
 
 const CONTROLES_DO_SERVIDOR: ReadonlySet<string> = new Set<keyof MotivoForm>([
   'codigo',
@@ -39,12 +39,7 @@ const CONTROLES_DO_SERVIDOR: ReadonlySet<string> = new Set<keyof MotivoForm>([
   'descricao',
 ]);
 
-const VALIDADORES_DO_CODIGO = [
-  Validators.required,
-  Validators.minLength(2),
-  Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
-  Validators.pattern(CODIGO_CADASTRO_FORMATO),
-];
+const VALIDADORES_DO_CODIGO = [Validators.required, ...validadoresDoCodigo(50)];
 
 const VALIDADORES_DA_DESCRICAO = [
   Validators.required,
@@ -114,7 +109,7 @@ export function comandoDeCriacao(
 ): CriarMotivoDeDecisaoCommand {
   return {
     tipo,
-    codigo: nullIfBlank(valores.codigo),
+    codigo: valores.codigo || null,
     descricao: nullIfBlank(valores.descricao),
     subclassificacao: nullIfBlank(valores.subclassificacao),
     sentido: valores.sentido,

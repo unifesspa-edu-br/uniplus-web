@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { TurnoOfertaCodigo } from '@uniplus/shared-data/configuracao';
 import { valoresDaOferta as dadosDaOferta } from './valores-da-oferta.testing';
 import { describe, expect, it } from 'vitest';
@@ -64,7 +65,7 @@ describe('formulário de oferta de curso', () => {
     },
   );
 
-  it.each(['A', '1ENG', '_ENG', 'eng_civil', 'ENG-CIVIL', 'ENG CIVIL', 'ENGENHARIA É', ' '])(
+  it.each(['1ENG', '_ENG', 'eng_civil', 'ENG-CIVIL', 'ENG CIVIL', 'ENGENHARIA É', ' '])(
     'recusa o código "%s" fora do formato do cadastro',
     (codigo) => {
       const form = preenchido();
@@ -96,6 +97,11 @@ describe('formulário de oferta de curso', () => {
     expect(mensagemDeErroDaOferta(form.controls.vagasAnuaisAutorizadas)).toBe(
       'Valor não pode ser negativo.',
     );
+  });
+
+  it('traduz os erros de turnos ausentes ou repetidos', () => {
+    const form = preenchido();
+    form.markAllAsTouched();
     form.controls.turnos.setValue([]);
     expect(mensagemDeErroDaOferta(form.controls.turnos)).toBe(
       'Marque ao menos um turno — nenhum formato pedagógico dispensa o turno.',
@@ -104,18 +110,33 @@ describe('formulário de oferta de curso', () => {
     expect(mensagemDeErroDaOferta(form.controls.turnos)).toBe(
       'Os turnos devem ser distintos entre si.',
     );
+  });
+
+  it('traduz o erro de regime e turnos incompatíveis', () => {
+    const form = preenchido();
+    form.markAllAsTouched();
     form.controls.turnos.setValue([TurnoOfertaCodigo.MATUTINO, TurnoOfertaCodigo.NOTURNO]);
     expect(mensagemDeErroDaOferta(form.controls.turnos)).toBe(
       'O regime selecionado exige exatamente um turno.',
     );
+  });
+
+  it('traduz os erros do código e dos campos obrigatórios', () => {
+    const form = preenchido();
+    form.markAllAsTouched();
     form.controls.cursoId.setValue('');
     expect(mensagemDeErroDaOferta(form.controls.cursoId)).not.toBeNull();
     form.controls.codigo.setValue('eng civil');
-    expect(mensagemDeErroDaOferta(form.controls.codigo)).toContain('Formato inválido.');
+    expect(mensagemDeErroDaOferta(form.controls.codigo)).toBe(textoDoFormatoDoCodigo(50));
     form.controls.codigo.setValue('A'.repeat(51));
     expect(mensagemDeErroDaOferta(form.controls.codigo)).toBe('Informe no máximo 50 caracteres.');
     form.controls.codigo.setValue('');
     expect(mensagemDeErroDaOferta(form.controls.codigo)).toBe('Campo obrigatório.');
+  });
+
+  it('prioriza a mensagem do servidor e não mostra erro em campo válido', () => {
+    const form = preenchido();
+    form.markAllAsTouched();
     marcarRecusaDoServidor(form.controls.codigoEmec, 'x', 'Do servidor.');
     expect(mensagemDeErroDaOferta(form.controls.codigoEmec)).toBe('Do servidor.');
     expect(mensagemDeErroDaOferta(preenchido().controls.codigoNoSistemaAcademico)).toBeNull();
@@ -138,10 +159,10 @@ describe('formulário de oferta de curso', () => {
     });
   });
 
-  it('o comando leva o código aparado, sem espaços nas pontas', () => {
+  it('o comando preserva espaços no código', () => {
     const valores = { ...valoresDaOferta(oferta), codigo: ' ENG_CIVIL_MARABA ' };
-    expect(comandoDeCriacao(valores).codigo).toBe('ENG_CIVIL_MARABA');
-    expect(comandoDeAtualizacao('o1', valores).codigo).toBe('ENG_CIVIL_MARABA');
+    expect(comandoDeCriacao(valores).codigo).toBe(' ENG_CIVIL_MARABA ');
+    expect(comandoDeAtualizacao('o1', valores).codigo).toBe(' ENG_CIVIL_MARABA ');
   });
 
   it('o comando manda nulo no que está em branco e a atualização leva o id sem os vínculos', () => {

@@ -4,13 +4,14 @@ import {
   quantidadeEscolhida,
   tipoDoDadoEscolhido,
 } from './codigos-do-fato';
+import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 import { Signal, computed, effect, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, Validators, type ValidatorFn } from '@angular/forms';
 import type { HttpContext } from '@angular/common/http';
 import type { ApiResult } from '@uniplus/shared-core/http';
 import type { FatosCandidatoApi, TipoDoDado } from '@uniplus/shared-data/configuracao';
-import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { mensagemDeErroDoCampoComFormato } from '../../shared/formulario';
 import { esvaziarSeForaDas, hipotesesDaClassificacao } from '../../shared/protecao-do-catalogo';
 import { Observable, map } from 'rxjs';
@@ -61,8 +62,7 @@ export const LIMITES_DO_FATO = {
   textoDoValor: 500,
 } as const;
 
-const MENSAGEM_DE_FORMATO =
-  'Use caixa alta, começando por letra, com letras, números e sublinhado.';
+const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(50);
 
 const CAMPOS_DA_CRIACAO: ReadonlySet<string> = new Set<CampoDaCriacao>([
   'codigo',
@@ -100,11 +100,7 @@ const textoComLimite = (limite: number, ...validadores: ValidatorFn[]) =>
 
 function controlesDeIdentificacao() {
   return {
-    codigo: textoComLimite(
-      CODIGO_CADASTRO_TAMANHO_MAXIMO,
-      Validators.required,
-      Validators.pattern(CODIGO_CADASTRO_FORMATO),
-    ),
+    codigo: textoComLimite(50, Validators.required, ...validadoresDoCodigo(50)),
     nome: textoComLimite(LIMITES_DO_FATO.nome, Validators.required),
     descricao: textoComLimite(LIMITES_DO_FATO.descricao, obrigatorioNaoEmBranco),
     componenteExibicao: new FormControl('', { nonNullable: true }),
@@ -158,7 +154,7 @@ export function criarNaApi(
 
 function identificacaoDoFato(v: ValoresDaCriacao) {
   return {
-    codigo: v.codigo.trim(),
+    codigo: v.codigo,
     nome: v.nome.trim(),
     descricao: v.descricao.trim(),
     componenteExibicao: v.componenteExibicao || null,

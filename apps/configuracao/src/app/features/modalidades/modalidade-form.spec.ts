@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import {
   NaturezaLegalCodigo,
   ComposicaoVagasCodigo,
@@ -41,7 +42,7 @@ describe('modalidade-form', () => {
     codigo.setValue('a-b');
     expect(mensagemDoCampo(codigo)).toBeNull();
     codigo.markAsTouched();
-    expect(mensagemDoCampo(codigo)).toBe('Use apenas maiúsculas, dígitos e sublinhado.');
+    expect(mensagemDoCampo(codigo)).toBe(textoDoFormatoDoCodigo(60));
     marcarCodigoRepetido(codigo, true);
     expect(mensagemDoCampo(codigo)).toBe('Código já utilizado por outra modalidade viva.');
   });

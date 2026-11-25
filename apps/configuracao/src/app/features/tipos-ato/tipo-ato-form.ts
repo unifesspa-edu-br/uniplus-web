@@ -1,5 +1,5 @@
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 import {
   TipoAtoPublicadoDto,
   type AtualizarTipoAtoPublicadoCommand,
@@ -37,24 +37,34 @@ const CAMPOS: ReadonlySet<string> = new Set<keyof AtoForm>([
   'baseLegal',
 ]);
 
-export function criarFormularioDeAto(): FormGroup<AtoForm> {
-  return new FormGroup<AtoForm>({
-    codigo: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(60)],
-    }),
-    nome: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.minLength(2), Validators.maxLength(200)],
-    }),
-    vigenciaInicio: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    vigenciaFim: new FormControl('', { nonNullable: true }),
+function controleDoCodigo(): FormControl<string> {
+  return new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, ...validadoresDoCodigo(60)],
+  });
+}
+
+function controlesDePublicacao() {
+  return {
     congelaConfiguracao: new FormControl(false, { nonNullable: true }),
     unicoPorObjeto: new FormControl(false, { nonNullable: true }),
     efeitoIrreversivel: new FormControl(false, { nonNullable: true }),
     ehResultado: new FormControl(false, { nonNullable: true }),
     publicavelComoAvulso: new FormControl<boolean | null>(null, Validators.required),
     exigeAtoCorrigido: new FormControl<boolean | null>(null, Validators.required),
+  };
+}
+
+export function criarFormularioDeAto(): FormGroup<AtoForm> {
+  return new FormGroup<AtoForm>({
+    codigo: controleDoCodigo(),
+    nome: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.minLength(2), Validators.maxLength(200)],
+    }),
+    vigenciaInicio: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    vigenciaFim: new FormControl('', { nonNullable: true }),
+    ...controlesDePublicacao(),
     baseLegal: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(500)] }),
   });
 }
@@ -96,17 +106,23 @@ export function controleDoCampoDoServidor(field: string): keyof AtoForm | null {
   return controlNameFromBackendField<keyof AtoForm>(field, CAMPOS);
 }
 
-export function comandoDeCriacao(form: FormGroup<AtoForm>): CriarTipoAtoPublicadoCommand {
-  const valor = form.getRawValue();
+function atributosDePublicacao(valor: ValoresDoAto) {
   return {
-    codigo: valor.codigo.trim(),
-    nome: valor.nome.trim(),
     congelaConfiguracao: valor.congelaConfiguracao,
     unicoPorObjeto: valor.unicoPorObjeto,
     efeitoIrreversivel: valor.efeitoIrreversivel,
     ehResultado: valor.ehResultado,
     publicavelComoAvulso: valor.publicavelComoAvulso as boolean,
     exigeAtoCorrigido: valor.exigeAtoCorrigido as boolean,
+  };
+}
+
+export function comandoDeCriacao(form: FormGroup<AtoForm>): CriarTipoAtoPublicadoCommand {
+  const valor = form.getRawValue();
+  return {
+    codigo: valor.codigo,
+    nome: valor.nome.trim(),
+    ...atributosDePublicacao(valor),
     vigenciaInicio: valor.vigenciaInicio,
     vigenciaFim: nullIfBlank(valor.vigenciaFim),
     baseLegal: nullIfBlank(valor.baseLegal),
@@ -119,19 +135,4 @@ export function comandoDeAtualizacao(
   form: FormGroup<AtoForm>,
 ): AtualizarTipoAtoPublicadoCommand {
   return { id, ...comandoDeCriacao(form) };
-}
-
-/**
- * Normaliza o código em caixa alta no modelo, sem reescrever a view (`emitModelToViewChange:
- * false`), para não reposicionar o cursor; a apresentação em caixa alta fica por conta do
- * `text-transform` do campo. Fora da criação nunca escreve: o código vigente é imutável.
- *
- * Chamar em contexto de injeção: a inscrição termina com a tela.
- */
-export function normalizarCaixaDoCodigo(form: FormGroup<AtoForm>, emCriacao: () => boolean): void {
-  form.controls.codigo.valueChanges.pipe(takeUntilDestroyed()).subscribe((codigo) => {
-    const emCaixaAlta = codigo.toLocaleUpperCase('pt-BR');
-    if (!emCriacao() || emCaixaAlta === codigo) return;
-    form.controls.codigo.setValue(emCaixaAlta, { emitEvent: false, emitModelToViewChange: false });
-  });
 }

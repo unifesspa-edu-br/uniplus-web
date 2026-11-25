@@ -1,4 +1,5 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 import {
   TipoEtapaDto,
   type AvaliacaoDasEtapasInput,
@@ -37,7 +38,7 @@ const CAMPOS: ReadonlySet<string> = new Set<keyof EtapaForm>([
 
 export function criarFormularioDeEtapa(): FormGroup<EtapaForm> {
   return new FormGroup<EtapaForm>({
-    codigo: controleDeTexto(Validators.required, Validators.maxLength(64)),
+    codigo: controleDeTexto(Validators.required, ...validadoresDoCodigo(80)),
     nome: controleDeTexto(Validators.required, Validators.maxLength(200)),
     admitePontuacao: controleDeMarca(true),
     admiteEliminacao: controleDeMarca(true),
@@ -87,7 +88,7 @@ function avaliacaoDoFormulario(valor: ValoresDaEtapa): AvaliacaoDasEtapasInput {
 export function comandoDeCriacao(form: FormGroup<EtapaForm>): CriarTipoEtapaCommand {
   const valor = form.getRawValue();
   return {
-    codigo: valor.codigo.trim(),
+    codigo: valor.codigo,
     nome: valor.nome.trim(),
     avaliacao: avaliacaoDoFormulario(valor),
     descricao: nullIfBlank(valor.descricao),

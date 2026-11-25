@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { SENTIDOS_DE_DECISAO } from '@uniplus/shared-data/selecao';
@@ -15,6 +16,7 @@ import { ModoDoMotivo, MotivoForm, mensagemDoCampo } from './motivo-de-decisao-f
   styles: [':host, :host > ui-drawer { display: contents; }'],
 })
 export class MotivoDeDecisaoFormularioComponent {
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(50);
   readonly aberto = input.required<boolean>();
   readonly form = input.required<FormGroup<MotivoForm>>();
   readonly titulo = input.required<string>();

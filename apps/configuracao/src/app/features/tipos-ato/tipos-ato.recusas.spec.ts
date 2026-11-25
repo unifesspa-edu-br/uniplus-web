@@ -11,7 +11,7 @@ import {
   problema,
   recusaDeCampo,
   sucesso,
-} from './tipos-ato.testing';
+} from './tipos-ato-cadastro.testing';
 import {
   TEXTO_TENTANDO,
   situacaoDoBotao,

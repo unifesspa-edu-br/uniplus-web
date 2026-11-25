@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { FinalidadeFormularioCodigo } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import {
@@ -8,21 +9,23 @@ import {
 } from './modelo-formulario-form';
 import { marcarRecusaDoServidor } from '../../shared/formulario';
 
+const modeloComOpcionaisEmBranco = {
+  codigo: ' INSCRICAO ',
+  nome: ' Inscrição ',
+  descricao: '   ',
+  finalidade: FinalidadeFormularioCodigo.INSCRICAO,
+  tipoProcessoCodigo: '',
+};
+
 describe('formulário de criação do modelo', () => {
   it('monta o comando sem espaços nas pontas e com nulo nos opcionais em branco', () => {
     const form = criarFormularioDeModelo();
-    form.setValue({
-      codigo: ' INSCRICAO ',
-      nome: ' Inscrição ',
-      descricao: '   ',
-      finalidade: FinalidadeFormularioCodigo.INSCRICAO,
-      tipoProcessoCodigo: '',
-    });
+    form.setValue(modeloComOpcionaisEmBranco);
 
     const comando = comandoDeCriacao(form);
 
     expect(comando).toMatchObject({
-      codigo: 'INSCRICAO',
+      codigo: ' INSCRICAO ',
       finalidade: FinalidadeFormularioCodigo.INSCRICAO,
       descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
     });
@@ -78,9 +81,7 @@ describe('formulário de criação do modelo', () => {
       form.controls.codigo.setValue('1abc');
       form.controls.codigo.markAsTouched();
 
-      expect(mensagemDoCampo(form.controls.codigo)).toBe(
-        'Use caixa alta, começando por letra, com letras, números e sublinhado.',
-      );
+      expect(mensagemDoCampo(form.controls.codigo)).toBe(textoDoFormatoDoCodigo(60));
     });
 
     it('aponta o tamanho acima do permitido', () => {

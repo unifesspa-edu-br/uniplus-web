@@ -5,12 +5,13 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
+import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 import {
   TipoDocumentoDto,
   type AtualizarTipoDocumentoCommand,
   type CriarTipoDocumentoCommand,
 } from '@uniplus/shared-data/configuracao';
-import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import {
   controlNameFromBackendField,
   mensagemDeErroDoCampoComFormato,
@@ -56,7 +57,6 @@ export interface TipoDocumentoForm {
 export type ValoresDoTipoDocumento = ReturnType<FormGroup<TipoDocumentoForm>['getRawValue']>;
 
 /** Limites dos campos editáveis (Domain `TipoDocumento`, uniplus-api). */
-const CODIGO_TAMANHO_MINIMO = 2;
 const NOME_TAMANHO_MINIMO = 2;
 export const NOME_TAMANHO_MAXIMO = 200;
 export const DESCRICAO_TAMANHO_MAXIMO = 1000;
@@ -64,8 +64,7 @@ export const FINALIDADE_TAMANHO_MAXIMO = 500;
 /** O servidor só exige `> 0` no tamanho máximo; não há teto superior no contrato. */
 const TAMANHO_MAXIMO_MB_MINIMO = 1;
 
-const MENSAGEM_DE_FORMATO =
-  'Use caixa alta, começando por letra, com letras, números e sublinhado.';
+const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(50);
 const MENSAGEM_DO_TAMANHO_MINIMO = 'Deve ser um inteiro positivo (≥ 1).';
 const MENSAGEM_DA_AUTO_EQUIVALENCIA = 'O tipo equivalente não pode ser igual ao próprio código.';
 
@@ -108,28 +107,31 @@ const textoOpcional = (maximo: number): FormControl<string> =>
   new FormControl('', { nonNullable: true, validators: [Validators.maxLength(maximo)] });
 const caixa = (): FormControl<boolean> => new FormControl(false, { nonNullable: true });
 
+function controleDoCodigo(): FormControl<string> {
+  return new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, ...validadoresDoCodigo(50)],
+  });
+}
+
+function controleDoNome(): FormControl<string> {
+  return new FormControl('', {
+    nonNullable: true,
+    validators: [
+      Validators.required,
+      Validators.minLength(NOME_TAMANHO_MINIMO),
+      Validators.maxLength(NOME_TAMANHO_MAXIMO),
+    ],
+  });
+}
+
 function controlesDoDocumento() {
   return {
-    codigo: new FormControl('', {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.minLength(CODIGO_TAMANHO_MINIMO),
-        Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
-        Validators.pattern(CODIGO_CADASTRO_FORMATO),
-      ],
-    }),
+    codigo: controleDoCodigo(),
     categoria: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    nome: new FormControl('', {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.minLength(NOME_TAMANHO_MINIMO),
-        Validators.maxLength(NOME_TAMANHO_MAXIMO),
-      ],
-    }),
+    nome: controleDoNome(),
     descricao: textoOpcional(DESCRICAO_TAMANHO_MAXIMO),
-    tipoEquivalente: textoOpcional(CODIGO_CADASTRO_TAMANHO_MAXIMO),
+    tipoEquivalente: textoOpcional(50),
   };
 }
 
@@ -166,10 +168,7 @@ export function valoresEmBrancoDoTipoDocumento(): ValoresDoTipoDocumento {
     nome: '',
     descricao: '',
     tipoEquivalente: '',
-    formatoPdf: false,
-    formatoJpeg: false,
-    formatoPng: false,
-    formatoTiff: false,
+    ...desserializarFormatosAceitos(null),
     tamanhoMaximoMb: null,
     classificacaoProtecao: '',
     hipoteseLegal: '',
@@ -199,7 +198,7 @@ export function controleDoCampoDoServidor(field: string): keyof TipoDocumentoFor
 export function comandoDeCriacao(form: FormGroup<TipoDocumentoForm>): CriarTipoDocumentoCommand {
   const valor = form.getRawValue();
   return {
-    codigo: nullIfBlank(valor.codigo),
+    codigo: valor.codigo || null,
     nome: nullIfBlank(valor.nome),
     categoria: nullIfBlank(valor.categoria),
     descricao: nullIfBlank(valor.descricao),
@@ -229,16 +228,20 @@ export function serializarFormatosAceitos(
   return extensoes.length > 0 ? extensoes.join(',') : null;
 }
 
-/** Desserializa a string guardada (ex.: `"pdf,jpg,png"`) para o estado das quatro caixas. */
-export function desserializarFormatosAceitos(
-  valor: string | null | undefined,
-): Record<FormatoAceitoChave, boolean> {
-  const extensoes = new Set(
+function extensoesDosFormatos(valor: string | null | undefined): Set<string> {
+  return new Set(
     (valor ?? '')
       .split(',')
       .map((item) => item.trim().toLocaleLowerCase('pt-BR'))
       .filter((item) => item.length > 0),
   );
+}
+
+/** Desserializa a string guardada (ex.: `"pdf,jpg,png"`) para o estado das quatro caixas. */
+export function desserializarFormatosAceitos(
+  valor: string | null | undefined,
+): Record<FormatoAceitoChave, boolean> {
+  const extensoes = extensoesDosFormatos(valor);
   return {
     formatoPdf: extensoes.has('pdf'),
     formatoJpeg: extensoes.has('jpg') || extensoes.has('jpeg'),
