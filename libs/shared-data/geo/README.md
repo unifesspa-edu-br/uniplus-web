@@ -4,7 +4,7 @@ Entrypoint público dos clientes e tipos do módulo Geo (resolução de endereç
 CEP e seletor de cidades).
 
 DTOs são tipados a partir de `libs/shared-data/openapi/geo.openapi.json`,
-sincronizado de `uniplus-api/contracts/openapi.geo.json`.
+sincronizado do repositório dedicado `unifesspa-geo-api` (ADR-0099 do `uniplus-api`).
 
 Consumido pelo componente de endereço estruturado (`ui-endereco-form`) para
 autofill por CEP (`GET /api/cep/{cep}`) e preenchimento manual via seletor de
