@@ -78,10 +78,19 @@ export function anunciarMudancaDasModalidades(
   atuais: ModalidadesAvaliadas | null,
 ): string {
   if (!conhecidas(anteriores) || !conhecidas(atuais)) return '';
+  return fraseDaMudanca(mudancaDasModalidades(anteriores, atuais));
+}
+
+function mudancaDasModalidades(anteriores: ModalidadesAvaliadas, atuais: ModalidadesAvaliadas) {
   const antes = nomesNaOrdem(anteriores);
   const depois = nomesNaOrdem(atuais);
-  const entraram = depois.filter((nome) => !antes.includes(nome));
-  const sairam = antes.filter((nome) => !depois.includes(nome));
+  return {
+    entraram: depois.filter((nome) => !antes.includes(nome)),
+    sairam: antes.filter((nome) => !depois.includes(nome)),
+  };
+}
+
+function fraseDaMudanca({ entraram, sairam }: ReturnType<typeof mudancaDasModalidades>): string {
   const passou = `passou a concorrer em: ${entraram.join(', ')}`;
   const deixou = `deixou de concorrer em: ${sairam.join(', ')}`;
   if (entraram.length > 0 && sairam.length > 0) return `Você ${passou}; ${deixou}.`;
@@ -112,17 +121,29 @@ export function secoesQueDefinemAsModalidades(
   dependencias: DependenciasDaAvaliacao | null | undefined,
 ): SecaoQueDefineAsModalidades[] {
   if (!dependencias) return [];
-  const fatos = new Set(dependencias.fatos);
-  const grupos = new Set([
-    ...dependencias.grupos,
-    ...dependencias.fatos.filter((f) => f.includes('.')).map((f) => f.split('.')[0]),
-  ]);
+  const consultados = consultadosPelaAvaliacao(dependencias);
   return passos
-    .filter(
-      (passo) =>
-        passo.bloco === null &&
-        (passo.campos.some((c) => fatos.has(c.campo.fatoCodigo)) ||
-          passo.grupos.some((g) => grupos.has(g.grupo.codigo))),
-    )
+    .filter((passo) => secaoDefineAsModalidades(passo, consultados))
     .map((passo) => ({ chave: passo.chave, titulo: passo.titulo }));
+}
+
+function consultadosPelaAvaliacao(dependencias: DependenciasDaAvaliacao) {
+  return {
+    fatos: new Set(dependencias.fatos),
+    grupos: new Set([
+      ...dependencias.grupos,
+      ...dependencias.fatos.filter((f) => f.includes('.')).map((f) => f.split('.')[0]),
+    ]),
+  };
+}
+
+function secaoDefineAsModalidades(
+  passo: PassoDoFormulario,
+  consultados: ReturnType<typeof consultadosPelaAvaliacao>,
+): boolean {
+  return (
+    passo.bloco === null &&
+    (passo.campos.some((c) => consultados.fatos.has(c.campo.fatoCodigo)) ||
+      passo.grupos.some((g) => consultados.grupos.has(g.grupo.codigo)))
+  );
 }

@@ -51,46 +51,66 @@ export interface Restricao {
   opcoes(fatos: Fatos): OpcoesDaRestricao | null;
 }
 
-const semOpcoes = (): null => null;
+export class FaixaNumerica implements Restricao {
+  readonly tipo = FAIXA_NUMERICA;
+  readonly fatosCitados: readonly string[] = [];
 
-export function faixaNumerica(minimo: number | null, maximo: number | null): Restricao {
-  return {
-    tipo: FAIXA_NUMERICA,
-    fatosCitados: [],
-    avaliar: (resposta) =>
-      typeof resposta === 'number'
-        ? comoTernario(
-            (minimo === null || resposta >= minimo) && (maximo === null || resposta <= maximo),
-          )
-        : FALSO,
-    opcoes: semOpcoes,
-  };
+  constructor(
+    private readonly minimo: number | null,
+    private readonly maximo: number | null,
+  ) {}
+
+  avaliar(resposta: ValorJson): Ternario {
+    return typeof resposta === 'number'
+      ? comoTernario(
+          (this.minimo === null || resposta >= this.minimo) &&
+            (this.maximo === null || resposta <= this.maximo),
+        )
+      : FALSO;
+  }
+
+  opcoes(): null {
+    return null;
+  }
 }
 
 /** O tamanho conta sem os espaços das pontas. */
-export function tamanhoDeTexto(minimo: number | null, maximo: number | null): Restricao {
-  return {
-    tipo: TAMANHO_TEXTO,
-    fatosCitados: [],
-    avaliar: (resposta) => {
-      if (typeof resposta !== 'string') return FALSO;
-      const tamanho = resposta.trim().length;
-      return comoTernario(
-        (minimo === null || tamanho >= minimo) && (maximo === null || tamanho <= maximo),
-      );
-    },
-    opcoes: semOpcoes,
-  };
+export class TamanhoDeTexto implements Restricao {
+  readonly tipo = TAMANHO_TEXTO;
+  readonly fatosCitados: readonly string[] = [];
+
+  constructor(
+    private readonly minimo: number | null,
+    private readonly maximo: number | null,
+  ) {}
+
+  avaliar(resposta: ValorJson): Ternario {
+    if (typeof resposta !== 'string') return FALSO;
+    const tamanho = resposta.trim().length;
+    return comoTernario(
+      (this.minimo === null || tamanho >= this.minimo) &&
+        (this.maximo === null || tamanho <= this.maximo),
+    );
+  }
+
+  opcoes(): null {
+    return null;
+  }
 }
 
-export function formatoDeTexto(formato: string): Restricao {
-  return {
-    tipo: FORMATO_TEXTO,
-    fatosCitados: [],
-    avaliar: (resposta) =>
-      comoTernario(typeof resposta === 'string' && atendeAoFormato(formato, resposta)),
-    opcoes: semOpcoes,
-  };
+export class FormatoDeTexto implements Restricao {
+  readonly tipo = FORMATO_TEXTO;
+  readonly fatosCitados: readonly string[] = [];
+
+  constructor(private readonly formato: string) {}
+
+  avaliar(resposta: ValorJson): Ternario {
+    return comoTernario(typeof resposta === 'string' && atendeAoFormato(this.formato, resposta));
+  }
+
+  opcoes(): null {
+    return null;
+  }
 }
 
 export interface OpcoesCondicionadas {
@@ -104,85 +124,99 @@ export interface OpcoesCondicionadas {
  * condição ainda desconhecida só pode acrescentar opções, então a resposta dentro das vigentes vale
  * em definitivo, e só o que depende das desconhecidas fica indeterminado.
  */
-export function opcoesPermitidas(entradas: readonly OpcoesCondicionadas[]): Restricao {
-  const vigentes = (fatos: Fatos): { vigentes: Set<string>; talvez: Set<string> } => {
+export class OpcoesPermitidas implements Restricao {
+  readonly tipo = OPCOES_PERMITIDAS;
+  readonly fatosCitados: readonly string[];
+
+  constructor(private readonly entradas: readonly OpcoesCondicionadas[]) {
+    this.fatosCitados = [
+      ...new Set(entradas.flatMap((entrada) => fatosCitadosPor(entrada.quando))),
+    ];
+  }
+
+  private vigentes(fatos: Fatos): { vigentes: Set<string>; talvez: Set<string> } {
     const certas = new Set<string>();
     const talvez = new Set<string>();
-    for (const entrada of entradas) {
+    for (const entrada of this.entradas) {
       const vale = avaliarOuVerdadeiro(entrada.quando, fatos);
-      if (vale === VERDADEIRO) entrada.valores.forEach((v) => certas.add(v));
-      else if (vale === INDETERMINADO) entrada.valores.forEach((v) => talvez.add(v));
+      if (vale === VERDADEIRO) entrada.valores.forEach((valor) => certas.add(valor));
+      else if (vale === INDETERMINADO) entrada.valores.forEach((valor) => talvez.add(valor));
     }
     return { vigentes: certas, talvez };
-  };
+  }
 
-  return {
-    tipo: OPCOES_PERMITIDAS,
-    fatosCitados: [...new Set(entradas.flatMap((e) => fatosCitadosPor(e.quando)))],
-    avaliar: (resposta, { fatos }) => {
-      const { vigentes: certas, talvez } = vigentes(fatos);
-      return escolheSoEntre(resposta, certas, talvez);
-    },
-    opcoes: (fatos) => {
-      const { vigentes: certas, talvez } = vigentes(fatos);
-      return opcoesVigentes(
-        certas,
-        [...talvez].every((v) => certas.has(v)),
-      );
-    },
-  };
+  avaliar(resposta: ValorJson, { fatos }: ContextoDaResposta): Ternario {
+    const { vigentes, talvez } = this.vigentes(fatos);
+    return escolheSoEntre(resposta, vigentes, talvez);
+  }
+
+  opcoes(fatos: Fatos): OpcoesDaRestricao {
+    const { vigentes, talvez } = this.vigentes(fatos);
+    return opcoesVigentes(
+      vigentes,
+      [...talvez].every((valor) => vigentes.has(valor)),
+    );
+  }
 }
 
 /**
  * A resposta escolhe só entre as respostas dadas a campos anteriores. O fato não aplicável ou não
  * informado não contribui; só o ainda indeterminado deixa as opções em aberto.
  */
-export function opcoesDasRespostas(fatosDeOrigem: readonly string[]): Restricao {
-  const ordenados = [...new Set(fatosDeOrigem)].sort(compararOrdinal);
-  const opcoes = (fatos: Fatos): OpcoesDaRestricao => {
+export class OpcoesDasRespostas implements Restricao {
+  readonly tipo = OPCOES_DAS_RESPOSTAS;
+  readonly fatosCitados: readonly string[];
+
+  constructor(fatosDeOrigem: readonly string[]) {
+    this.fatosCitados = codigosEmOrdem(fatosDeOrigem);
+  }
+
+  avaliar(resposta: ValorJson, { fatos }: ContextoDaResposta): Ternario {
+    const vigentes = this.opcoes(fatos);
+    const resultado = escolheSoEntre(resposta, new Set(vigentes.codigos), new Set());
+    // Uma resposta ainda desconhecida pode trazer qualquer opção: o que não está entre as conhecidas
+    // fica indeterminado, salvo a resposta de forma inválida.
+    return resultado === FALSO && !vigentes.definitivas && codigosDa(resposta) !== null
+      ? INDETERMINADO
+      : resultado;
+  }
+
+  opcoes(fatos: Fatos): OpcoesDaRestricao {
     const codigos = new Set<string>();
     let definitivas = true;
-    for (const codigo of ordenados) {
+    for (const codigo of this.fatosCitados) {
       const fato = fatos.get(codigo);
       if (!fato || fato.estado === INDETERMINADO) definitivas = false;
-      else if (fato.estado === RESOLVIDO) codigosDa(fato.valor)?.forEach((c) => codigos.add(c));
+      else if (fato.estado === RESOLVIDO)
+        codigosDa(fato.valor)?.forEach((codigo) => codigos.add(codigo));
     }
     return opcoesVigentes(codigos, definitivas);
-  };
-
-  return {
-    tipo: OPCOES_DAS_RESPOSTAS,
-    fatosCitados: ordenados,
-    avaliar: (resposta, { fatos }) => {
-      const vigentes = opcoes(fatos);
-      const resultado = escolheSoEntre(resposta, new Set(vigentes.codigos), new Set());
-      // Uma resposta ainda desconhecida pode trazer qualquer opção: o que não está entre as conhecidas
-      // fica indeterminado, salvo a resposta de forma inválida.
-      return resultado === FALSO && !vigentes.definitivas && codigosDa(resposta) !== null
-        ? INDETERMINADO
-        : resultado;
-    },
-    opcoes,
-  };
+  }
 }
 
 /** O município da UF respondida antes, conferido pelo prefixo do código IBGE. */
-export function municipiosDaUf(fatoUf: string): Restricao {
-  return {
-    tipo: MUNICIPIOS_DA_UF,
-    fatosCitados: [fatoUf],
-    avaliar: (resposta, { fatos }) => {
-      const uf = fatos.get(fatoUf);
-      if (!uf || uf.estado === INDETERMINADO) return INDETERMINADO;
-      return comoTernario(
-        uf.estado === RESOLVIDO &&
-          typeof uf.valor === 'string' &&
-          typeof resposta === 'string' &&
-          ufDoCodigoIbge(resposta) === uf.valor,
-      );
-    },
-    opcoes: semOpcoes,
-  };
+export class MunicipiosDaUf implements Restricao {
+  readonly tipo = MUNICIPIOS_DA_UF;
+  readonly fatosCitados: readonly string[];
+
+  constructor(private readonly fatoUf: string) {
+    this.fatosCitados = [fatoUf];
+  }
+
+  avaliar(resposta: ValorJson, { fatos }: ContextoDaResposta): Ternario {
+    const uf = fatos.get(this.fatoUf);
+    if (!uf || uf.estado === INDETERMINADO) return INDETERMINADO;
+    return comoTernario(
+      uf.estado === RESOLVIDO &&
+        typeof uf.valor === 'string' &&
+        typeof resposta === 'string' &&
+        ufDoCodigoIbge(resposta) === uf.valor,
+    );
+  }
+
+  opcoes(): null {
+    return null;
+  }
 }
 
 /** O maior deslocamento do dia do envio, em anos e em dias, para mais ou para menos, como na API. */
@@ -218,8 +252,10 @@ export function minimaDepoisDaMaxima(minima: LimiteDeData, maxima: LimiteDeData)
   return false;
 }
 
-const diaDoLimiteOpcional = (limite: LimiteDeData | null, diaDoEnvio: string | null): string | null =>
-  limite === null ? null : diaDoLimite(limite, diaDoEnvio);
+const diaDoLimiteOpcional = (
+  limite: LimiteDeData | null,
+  diaDoEnvio: string | null,
+): string | null => (limite === null ? null : diaDoLimite(limite, diaDoEnvio));
 
 const foraDosDias = (data: string, inicio: string | null, fim: string | null): boolean =>
   (inicio !== null && data < inicio) || (fim !== null && data > fim);
@@ -233,20 +269,29 @@ const limiteSemDia = (limite: LimiteDeData | null, dia: string | null): boolean 
  * ordena como o calendário. A data fora de um limite conhecido viola em definitivo; dentro dos
  * conhecidos, com um limite contado do envio que não se sabe, fica indeterminada.
  */
-export function faixaDeData(minima: LimiteDeData | null, maxima: LimiteDeData | null): Restricao {
-  return {
-    tipo: FAIXA_DE_DATA,
-    fatosCitados: [],
-    avaliar: (resposta, { diaDoEnvio }) => {
-      const data = typeof resposta === 'string' ? diaDoCalendario(resposta) : null;
-      if (data === null) return FALSO;
-      const inicio = diaDoLimiteOpcional(minima, diaDoEnvio);
-      const fim = diaDoLimiteOpcional(maxima, diaDoEnvio);
-      if (foraDosDias(data, inicio, fim)) return FALSO;
-      return limiteSemDia(minima, inicio) || limiteSemDia(maxima, fim) ? INDETERMINADO : VERDADEIRO;
-    },
-    opcoes: semOpcoes,
-  };
+export class FaixaDeData implements Restricao {
+  readonly tipo = FAIXA_DE_DATA;
+  readonly fatosCitados: readonly string[] = [];
+
+  constructor(
+    private readonly minima: LimiteDeData | null,
+    private readonly maxima: LimiteDeData | null,
+  ) {}
+
+  avaliar(resposta: ValorJson, { diaDoEnvio }: ContextoDaResposta): Ternario {
+    const data = typeof resposta === 'string' ? diaDoCalendario(resposta) : null;
+    if (data === null) return FALSO;
+    const inicio = diaDoLimiteOpcional(this.minima, diaDoEnvio);
+    const fim = diaDoLimiteOpcional(this.maxima, diaDoEnvio);
+    if (foraDosDias(data, inicio, fim)) return FALSO;
+    return limiteSemDia(this.minima, inicio) || limiteSemDia(this.maxima, fim)
+      ? INDETERMINADO
+      : VERDADEIRO;
+  }
+
+  opcoes(): null {
+    return null;
+  }
 }
 
 function escolheSoEntre(
@@ -261,7 +306,7 @@ function escolheSoEntre(
 }
 
 function opcoesVigentes(codigos: Iterable<string>, definitivas: boolean): OpcoesDaRestricao {
-  return { codigos: [...new Set(codigos)].sort(compararOrdinal), definitivas };
+  return { codigos: codigosEmOrdem(codigos), definitivas };
 }
 
 /** A interseção das opções de duas restrições: definitivas só se as duas forem. */
@@ -279,4 +324,8 @@ export function juntarOpcoes(
 /** A ordem ordinal dos códigos, a mesma da API. */
 export function compararOrdinal(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
+}
+
+export function codigosEmOrdem(codigos: Iterable<string>): string[] {
+  return [...new Set(codigos)].sort(compararOrdinal);
 }

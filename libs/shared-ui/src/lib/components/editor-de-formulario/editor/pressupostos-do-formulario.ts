@@ -16,7 +16,11 @@ import { focarDepois } from '../foco';
 import { pressupostosParaAcrescentar } from '../modelo/catalogo-de-campos';
 import { FINALIDADE_INSCRICAO } from '../modelo/constantes';
 import { type ContextoDoEditor } from '../modelo/contexto-do-editor';
-import { acrescentarPressuposto, removerPressuposto } from '../modelo/pressupostos';
+import {
+  acrescentarPressuposto,
+  conteudoSemOPressuposto,
+  removerPressuposto,
+} from '../modelo/pressupostos';
 import { type ConteudoDoFormulario, type ResultadoDaEdicao } from '../modelo/tipos';
 
 const SEM_FATO_QUE_CASE = 'Nenhum fato do candidato casa com o que você digitou.';
@@ -149,8 +153,7 @@ export class PressupostosDoFormularioComponent {
   private resultadoDaRetirada(fato: string): ResultadoDaEdicao {
     const { conteudo, fatosDaInscricao, nomes } = this.contexto();
     if (!(fatosDaInscricao ?? []).includes(fato)) return removerPressuposto(conteudo, fato, nomes);
-    const pressupostos = (conteudo.pressupostos ?? []).filter((p) => p !== fato);
-    return { ok: true, conteudo: { ...conteudo, pressupostos } };
+    return { ok: true, conteudo: conteudoSemOPressuposto(conteudo, fato) };
   }
 
   /** Sem o combo, que some quando a seção some ou fica sem opção, o foco volta ao título do formulário. */

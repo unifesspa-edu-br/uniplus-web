@@ -2,11 +2,11 @@ import {
   afterNextRender,
   computed,
   type Injector,
-  linkedSignal,
   type Signal,
   type WritableSignal,
 } from '@angular/core';
 
+import { aCadaPartida } from './a-cada-partida';
 import type { PassoPrefixado } from './formulario-do-candidato.model';
 import { contemOCampo } from './recusas-do-servidor';
 import type { SimulacaoDoFormulario } from './interpretador/regras-do-formulario';
@@ -24,11 +24,6 @@ export interface FontesDaNavegacao {
   readonly raiz: () => HTMLElement;
   /** O título da seção atual, onde o foco cai quando nada mais é indicado. */
   readonly titulo: () => HTMLElement | null;
-}
-
-/** O estado que recomeça a cada partida nova: outro formulário ou outra simulação inicial. */
-function aCadaPartida<T>(partida: Signal<unknown>, inicio: () => T): WritableSignal<T> {
-  return linkedSignal<unknown, T>({ source: partida, computation: inicio });
 }
 
 /**

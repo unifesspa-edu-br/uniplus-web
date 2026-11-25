@@ -7,18 +7,11 @@ import { type FatoDoFormulario } from './modelo/tipos';
  * cuja proteção de dados ainda não foi aprovada aparece indisponível, com o motivo no rótulo.
  */
 export function fatosEmGrupo(fatos: readonly FatoDoFormulario[]): readonly UiComboboxGroup[] {
-  return [
-    {
-      label: 'Fatos do candidato',
-      options: fatos.map((fato) =>
-        fato.protecaoAprovada === false
-          ? {
-              value: fato.codigo,
-              label: `${fato.nome} — ${MOTIVO_DA_PROTECAO_PENDENTE}`,
-              disabled: true,
-            }
-          : { value: fato.codigo, label: fato.nome },
-      ),
-    },
-  ];
+  return [{ label: 'Fatos do candidato', options: fatos.map(opcaoDoFato) }];
+}
+
+function opcaoDoFato(fato: FatoDoFormulario) {
+  return fato.protecaoAprovada === false
+    ? { value: fato.codigo, label: `${fato.nome} — ${MOTIVO_DA_PROTECAO_PENDENTE}`, disabled: true }
+    : { value: fato.codigo, label: fato.nome };
 }

@@ -1,4 +1,4 @@
-import { comoObjeto } from './endereco-do-campo';
+import { cidadeDa, comoObjeto } from './endereco-do-campo';
 import type { ValorJson } from './interpretador/regras-do-formulario';
 
 /** Um fato que o sistema calcula das respostas: o valor e como ele aparece ao candidato. */
@@ -17,26 +17,32 @@ export function derivadosDoSistema(
   respostas: Readonly<Record<string, ValorJson>>,
   dataReferenciaFatos: string | null | undefined,
 ): DerivadoDoSistema[] {
-  const derivados: DerivadoDoSistema[] = [];
+  return [...faixaEtariaDerivada(respostas, dataReferenciaFatos), ...residenciaDerivada(respostas)];
+}
 
+function faixaEtariaDerivada(
+  respostas: Readonly<Record<string, ValorJson>>,
+  referencia: string | null | undefined,
+): DerivadoDoSistema[] {
   const nascimento = respostas['DATA_NASCIMENTO'];
-  if (typeof nascimento === 'string' && dataReferenciaFatos) {
-    const idade = idadeEmAnos(nascimento, dataReferenciaFatos);
-    if (idade !== null)
-      derivados.push({ fatoCodigo: 'FAIXA_ETARIA', valor: idade, exibicao: `${idade} anos` });
-  }
+  if (typeof nascimento !== 'string' || !referencia) return [];
+  const idade = idadeEmAnos(nascimento, referencia);
+  return idade === null
+    ? []
+    : [{ fatoCodigo: 'FAIXA_ETARIA', valor: idade, exibicao: `${idade} anos` }];
+}
 
+function residenciaDerivada(respostas: Readonly<Record<string, ValorJson>>): DerivadoDoSistema[] {
   const cidade = cidadeDo(respostas['ENDERECO_RESIDENCIAL']);
-  if (cidade) {
-    derivados.push({ fatoCodigo: 'UF_RESIDENCIA', valor: cidade.uf, exibicao: cidade.uf });
-    derivados.push({
+  if (!cidade) return [];
+  return [
+    { fatoCodigo: 'UF_RESIDENCIA', valor: cidade.uf, exibicao: cidade.uf },
+    {
       fatoCodigo: 'MUNICIPIO_RESIDENCIA',
       valor: cidade.codigoIbge,
       exibicao: cidade.nome ? `${cidade.nome} (${cidade.uf})` : cidade.codigoIbge,
-    });
-  }
-
-  return derivados;
+    },
+  ];
 }
 
 const DATA_ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -52,17 +58,7 @@ function idadeEmAnos(nascimento: string, referencia: string): number | null {
   return anoR - anoN - (fezAniversario ? 0 : 1);
 }
 
-interface Cidade {
-  readonly codigoIbge: string;
-  readonly nome: string | null;
-  readonly uf: string;
-}
-
-function cidadeDo(endereco: ValorJson | undefined): Cidade | null {
-  const cidade = comoObjeto(comoObjeto(endereco)?.['cidade']);
-  if (cidade === null) return null;
-  const { codigoIbge, nome, uf } = cidade;
-  return typeof codigoIbge === 'string' && codigoIbge !== '' && typeof uf === 'string' && uf !== ''
-    ? { codigoIbge, nome: typeof nome === 'string' ? nome : null, uf }
-    : null;
+function cidadeDo(endereco: ValorJson | undefined) {
+  const cidade = cidadeDa(comoObjeto(endereco)?.['cidade']);
+  return cidade && cidade.codigoIbge !== '' && cidade.uf !== '' ? cidade : null;
 }

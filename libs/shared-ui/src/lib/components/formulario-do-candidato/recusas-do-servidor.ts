@@ -19,17 +19,26 @@ export function erroSobrevive(
   depois: readonly OcorrenciaSimulada[] | undefined,
 ): boolean {
   if (!antes || !depois) return false;
-  for (const anterior of antes) {
-    const atual = depois.find((o) => o.id === anterior.id);
-    if (!atual) continue;
-    const ocorrencia = `${grupo}.${anterior.id}`;
-    if (erro.campo === ocorrencia) return mesmoValor(anterior.respostas, atual.respostas);
-    if (erro.campo.startsWith(`${ocorrencia}.`)) {
-      const fato = erro.campo.slice(ocorrencia.length + 1);
-      return mesmoValor(anterior.respostas?.[fato], atual.respostas?.[fato]);
-    }
+  const anterioresPresentes = antes.filter((anterior) => depois.some((o) => o.id === anterior.id));
+  const ponto = pontoDaRecusa(erro.campo, grupo, anterioresPresentes);
+  if (!ponto) return false;
+  const atual = depois.find((ocorrencia) => ocorrencia.id === ponto.ocorrencia.id);
+  const anterior = respostaRecusada(ponto.ocorrencia, ponto.fato);
+  return atual !== undefined && mesmoValor(anterior, respostaRecusada(atual, ponto.fato));
+}
+
+function pontoDaRecusa(campo: string, grupo: string, antes: readonly OcorrenciaSimulada[]) {
+  for (const ocorrencia of antes) {
+    const caminho = `${grupo}.${ocorrencia.id}`;
+    if (campo === caminho) return { ocorrencia, fato: null };
+    if (campo.startsWith(`${caminho}.`))
+      return { ocorrencia, fato: campo.slice(caminho.length + 1) };
   }
-  return false;
+  return null;
+}
+
+function respostaRecusada(ocorrencia: OcorrenciaSimulada, fato: string | null) {
+  return fato === null ? ocorrencia.respostas : ocorrencia.respostas?.[fato];
 }
 
 function mesmoValor(a: unknown, b: unknown): boolean {
