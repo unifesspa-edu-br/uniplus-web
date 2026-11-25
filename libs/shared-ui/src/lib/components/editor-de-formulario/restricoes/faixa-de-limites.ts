@@ -65,23 +65,17 @@ export class FaixaDeLimitesComponent {
   protected readonly campos = computed(() => {
     const { minimo, maximo } = this.restricao();
     return [
-      {
-        limite: 'minimo',
-        rotulo: this.rotuloDoMinimo(),
-        valor: minimo,
-        invalido: numeroDigitadoInvalido(minimo),
-      },
-      {
-        limite: 'maximo',
-        rotulo: this.rotuloDoMaximo(),
-        valor: maximo,
-        invalido: numeroDigitadoInvalido(maximo),
-      },
-    ] as const;
+      campoDoLimite('minimo', this.rotuloDoMinimo(), minimo),
+      campoDoLimite('maximo', this.rotuloDoMaximo(), maximo),
+    ];
   });
 
   protected trocar(limite: NomeDoLimite, evento: Event): void {
     const texto = (evento.target as HTMLInputElement).value;
     this.limiteChange.emit({ limite, valor: limiteDigitado(texto) });
   }
+}
+
+function campoDoLimite(limite: NomeDoLimite, rotulo: string, valor: RestricaoDeValor['minimo']) {
+  return { limite, rotulo, valor, invalido: numeroDigitadoInvalido(valor) };
 }

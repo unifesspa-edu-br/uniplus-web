@@ -1,5 +1,6 @@
-import { computed, linkedSignal, type Signal, type WritableSignal } from '@angular/core';
+import { computed, linkedSignal, type Signal } from '@angular/core';
 
+import { aCadaPartida } from './a-cada-partida';
 import type { ErroDoServidor, RespostaFixa } from './formulario-do-candidato.model';
 import { estaVazia } from './interpretador/logica';
 import type {
@@ -53,51 +54,37 @@ export interface FontesDasRespostas {
  * desse estado: a resposta mudada leva a recusa dela.
  */
 export class RespostasDoFormulario {
-  readonly respostas: WritableSignal<Readonly<Record<string, ValorJson>>>;
-  readonly grupos: WritableSignal<Readonly<Record<string, readonly OcorrenciaSimulada[]>>>;
-  /**
-   * A confirmação digitada de cada campo que a pede, pelo código da tela: o fato ou `grupo.ocorrência.fato`.
-   * Mora aqui, e não no campo, porque o envio confere também as seções que não estão na tela e porque a
-   * seção trocada recria o campo, que perderia o que se digitou.
-   */
-  readonly confirmacoes: WritableSignal<Readonly<Partial<Record<string, string>>>>;
-  /** Os termos aceitos. O aceite não é fato das regras: não entra na simulação. */
-  readonly aceitos: WritableSignal<ReadonlySet<string>>;
-  /** As recusas do servidor que ainda não foram descartadas. */
-  readonly errosRecebidos: WritableSignal<readonly ErroDoServidor[]>;
+  readonly respostas = aCadaPartida(
+    () => this.fontes.partida(),
+    () => ({ ...(this.fontes.inicial()?.respostas ?? {}) }),
+  );
+  readonly grupos = aCadaPartida(
+    () => this.fontes.partida(),
+    () => gruposDe(this.fontes.inicial()),
+  );
+  /** A confirmação digitada persiste ao trocar de seção e é conferida no envio. */
+  readonly confirmacoes = aCadaPartida<Readonly<Partial<Record<string, string>>>>(
+    () => this.fontes.partida(),
+    () => ({}),
+  );
+  /** Os termos aceitos não entram na simulação como fatos. */
+  readonly aceitos = aCadaPartida<ReadonlySet<string>>(
+    () => this.fontes.partida(),
+    () => new Set(this.fontes.termosAceitosIniciais()),
+  );
+  /** As recusas do servidor ainda não descartadas. */
+  readonly errosRecebidos = linkedSignal({
+    source: () => this.fontes.errosDoServidor(),
+    computation: (erros) => erros,
+  });
+  /** As respostas fixas da conta prevalecem sobre as dadas pelo candidato. */
+  readonly respostasComAsFixas = computed(() =>
+    comAsFixas(this.respostas(), this.fontes.respostasFixas()),
+  );
+  /** Respostas fixas ausentes da conta são recusadas pelo servidor. */
+  readonly fixasSemResposta = computed(() => fixasSemResposta(this.fontes.respostasFixas()));
 
-  /** As respostas que o candidato deu e as fixas da conta, que prevalecem. */
-  readonly respostasComAsFixas: Signal<Readonly<Record<string, ValorJson>>>;
-  /**
-   * As respostas fixas que a conta não tem: o candidato não pode dá-las, então o formulário não as
-   * cobra — a recusa é do servidor, que a aponta no campo.
-   */
-  readonly fixasSemResposta: Signal<ReadonlySet<string>>;
-
-  constructor(fontes: FontesDasRespostas) {
-    const { partida, inicial } = fontes;
-    this.respostas = linkedSignal({
-      source: partida,
-      computation: () => ({ ...(inicial()?.respostas ?? {}) }),
-    });
-    this.grupos = linkedSignal({
-      source: partida,
-      computation: () => gruposDe(inicial()),
-    });
-    this.confirmacoes = linkedSignal({ source: partida, computation: () => ({}) });
-    this.aceitos = linkedSignal<unknown, ReadonlySet<string>>({
-      source: partida,
-      computation: () => new Set(fontes.termosAceitosIniciais()),
-    });
-    this.errosRecebidos = linkedSignal({
-      source: fontes.errosDoServidor,
-      computation: (erros) => erros,
-    });
-    this.respostasComAsFixas = computed(() =>
-      comAsFixas(this.respostas(), fontes.respostasFixas()),
-    );
-    this.fixasSemResposta = computed(() => fixasSemResposta(fontes.respostasFixas()));
-  }
+  constructor(private readonly fontes: FontesDasRespostas) {}
 
   confirmar(caminho: string, texto: string): void {
     this.confirmacoes.update((atuais) => ({ ...atuais, [caminho]: texto }));

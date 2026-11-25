@@ -1,4 +1,4 @@
-import type { EnderecoEstruturado } from '../endereco-geo/endereco-geo.model';
+import type { CidadeRef, EnderecoEstruturado } from '../endereco-geo/endereco-geo.model';
 import type { ValorJson } from './interpretador/regras-do-formulario';
 
 export type ObjetoJson = { readonly [chave: string]: ValorJson };
@@ -13,7 +13,6 @@ export function comoObjeto(valor: ValorJson | undefined): ObjetoJson | null {
 export function enderecoDa(resposta: ValorJson | undefined): EnderecoEstruturado | null {
   const objeto = comoObjeto(resposta);
   if (objeto === null) return null;
-  const cidade = comoObjeto(objeto['cidade']);
   return {
     cep: textoOuNulo(objeto['cep']),
     logradouro: textoOuNulo(objeto['logradouro']),
@@ -21,14 +20,24 @@ export function enderecoDa(resposta: ValorJson | undefined): EnderecoEstruturado
     complemento: textoOuNulo(objeto['complemento']),
     bairro: textoOuNulo(objeto['bairro']),
     distrito: textoOuNulo(objeto['distrito']),
-    cidade:
-      cidade === null
-        ? null
-        : {
-            codigoIbge: textoOuNulo(cidade['codigoIbge']) ?? '',
-            nome: textoOuNulo(cidade['nome']) ?? '',
-            uf: textoOuNulo(cidade['uf']) ?? '',
-          },
+    cidade: cidadeDa(objeto['cidade']),
+    ...localizacaoResolvida(objeto),
+  };
+}
+
+export function cidadeDa(valor: ValorJson | undefined): CidadeRef | null {
+  const cidade = comoObjeto(valor);
+  return cidade === null
+    ? null
+    : {
+        codigoIbge: textoOuNulo(cidade['codigoIbge']) ?? '',
+        nome: textoOuNulo(cidade['nome']) ?? '',
+        uf: textoOuNulo(cidade['uf']) ?? '',
+      };
+}
+
+function localizacaoResolvida(objeto: ObjetoJson) {
+  return {
     latitude: textoOuNulo(objeto['latitude']),
     longitude: textoOuNulo(objeto['longitude']),
     nivelResolucao: textoOuNulo(objeto['nivelResolucao']),

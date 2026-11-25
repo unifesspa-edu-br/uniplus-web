@@ -5,7 +5,7 @@ import { lerExibicaoEObrigatoriedade, lerImpedimento } from './leitura-do-predic
 import { codigo, lista, Recusa } from './leitura-dos-valores';
 import { fatosCitadosPor } from './predicado';
 import type { ItemDasRegras, RegrasDoItemDasRegras } from './regras-do-formulario';
-import { formatoDeTexto, type Restricao } from './restricoes';
+import { FormatoDeTexto, type Restricao } from './restricoes';
 
 type RegrasLidasDoItem = Omit<
   DefinicaoItem,
@@ -23,7 +23,8 @@ export function lerItem(item: ItemDasRegras, caminho: string): DefinicaoItem {
   const lido = {
     fatoCodigo,
     ...regras,
-    restricoesDaResposta: formato === null ? restricoes : [...restricoes, formatoDeTexto(formato)],
+    restricoesDaResposta:
+      formato === null ? restricoes : [...restricoes, new FormatoDeTexto(formato)],
   };
   return { ...lido, fatosCitados: fatosCitadosPeloItem(lido, restricoes) };
 }

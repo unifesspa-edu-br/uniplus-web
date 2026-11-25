@@ -15,18 +15,28 @@ export function removerPressuposto(
   fatoCodigo: string,
   nomes: ReadonlyMap<string, string>,
 ): ResultadoDaEdicao {
+  const recusa = recusaDaRetiradaDoPressuposto(conteudo, fatoCodigo, nomes);
+  if (recusa !== null) return { ok: false, recusa };
+  return { ok: true, conteudo: conteudoSemOPressuposto(conteudo, fatoCodigo) };
+}
+
+function recusaDaRetiradaDoPressuposto(
+  conteudo: ConteudoDoFormulario,
+  fatoCodigo: string,
+  nomes: ReadonlyMap<string, string>,
+): string | null {
   const quem = quemCita(conteudo, fatoCodigo)[0];
-  if (quem !== undefined) {
-    return {
-      ok: false,
-      recusa: `Não é possível retirar “${nomeDoFato(nomes, fatoCodigo)}”: ${quem.descricao} cita esse fato.`,
-    };
-  }
+  return quem === undefined
+    ? null
+    : `Não é possível retirar “${nomeDoFato(nomes, fatoCodigo)}”: ${quem.descricao} cita esse fato.`;
+}
+
+export function conteudoSemOPressuposto(
+  conteudo: ConteudoDoFormulario,
+  fatoCodigo: string,
+): ConteudoDoFormulario {
   return {
-    ok: true,
-    conteudo: {
-      ...conteudo,
-      pressupostos: (conteudo.pressupostos ?? []).filter((fato) => fato !== fatoCodigo),
-    },
+    ...conteudo,
+    pressupostos: (conteudo.pressupostos ?? []).filter((fato) => fato !== fatoCodigo),
   };
 }

@@ -6,39 +6,10 @@ import {
   CONCORRE,
   FALTA_RESPONDER,
   NAO_CONCORRE,
-  type ModalidadesAvaliadas,
-  nomesNaOrdem,
-  type PendenciaDaAvaliacao,
   type SecaoQueDefineAsModalidades,
 } from './modalidades-avaliadas';
 
-interface BlocoDeOpcao {
-  readonly chave: 'unica' | 'primeira' | 'segunda';
-  readonly titulo: string | null;
-  readonly situacao: string | null;
-  readonly nomes: readonly string[];
-  readonly pendencias: readonly PendenciaDaAvaliacao[];
-}
-
-const tituloDaOpcao = (opcao: string, curso: string | null | undefined): string =>
-  curso ? `${opcao} — ${curso}` : opcao;
-
-function blocoDe(
-  chave: BlocoDeOpcao['chave'],
-  titulo: string | null,
-  modalidades: ModalidadesAvaliadas | null,
-  pendenciasJaPedidas: ReadonlySet<string>,
-): BlocoDeOpcao {
-  return {
-    chave,
-    titulo,
-    situacao: modalidades?.situacao ?? null,
-    nomes: nomesNaOrdem(modalidades),
-    pendencias: (modalidades?.pendencias ?? []).filter(
-      (p) => !pendenciasJaPedidas.has(p.fatoCodigo),
-    ),
-  };
-}
+import { blocosDasOpcoes } from './modalidades-por-opcao-de-curso';
 
 /**
  * As modalidades em que o candidato concorre com as respostas dadas até agora, como a API as calcula
@@ -215,25 +186,7 @@ export class ModalidadesDaInscricaoComponent {
    * Um bloco por opção de curso quando a avaliação traz as modalidades da 2ª; senão, um só, sem título.
    * A pendência que a 2ª opção repete da 1ª aparece uma vez, no bloco da 1ª.
    */
-  protected readonly blocos = computed<readonly BlocoDeOpcao[]>(() => {
-    const { modalidades, modalidadesSegundaOpcao, opcoesDeCurso } = this.avaliacao();
-    if (!modalidadesSegundaOpcao) return [blocoDe('unica', null, modalidades, new Set())];
-    const jaPedidas = new Set((modalidades?.pendencias ?? []).map((p) => p.fatoCodigo));
-    return [
-      blocoDe(
-        'primeira',
-        tituloDaOpcao('1ª opção', opcoesDeCurso?.primeira),
-        modalidades,
-        new Set(),
-      ),
-      blocoDe(
-        'segunda',
-        tituloDaOpcao('2ª opção', opcoesDeCurso?.segunda),
-        modalidadesSegundaOpcao,
-        jaPedidas,
-      ),
-    ];
-  });
+  protected readonly blocos = computed(() => blocosDasOpcoes(this.avaliacao()));
   /** Alguma opção tem as modalidades decididas: a lista é o que as respostas dão até agora. */
   protected readonly decidida = computed(() =>
     this.blocos().some((b) => b.situacao === CONCORRE || b.situacao === NAO_CONCORRE),

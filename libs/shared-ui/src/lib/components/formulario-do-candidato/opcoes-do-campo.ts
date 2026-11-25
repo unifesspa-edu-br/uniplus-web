@@ -1,3 +1,4 @@
+import { compararOrdinal } from './interpretador/restricoes';
 import type { CampoAvaliado } from './interpretador/regras-do-formulario';
 import type { CampoApresentado, ValorSelecionavel } from './formulario-do-candidato.model';
 
@@ -16,20 +17,31 @@ export function opcoesDoCampo(
   avaliado: CampoAvaliado,
   escolhidos: readonly string[] = [],
 ): readonly OpcaoDoCampo[] {
-  const valores = [...(campo.valoresSelecionaveis ?? [])].sort(
-    (a, b) => a.ordem - b.ordem || (a.codigo < b.codigo ? -1 : 1),
-  );
-  const porCodigo = new Map(valores.map((v) => [v.codigo, v]));
+  const valores = valoresNaOrdem(campo);
   const opcoes = avaliado.opcoes ? opcoesVigentes(valores, avaliado.opcoes.codigos ?? []) : valores;
-  const mostradas = new Set(opcoes.map((o) => o.codigo));
-  const foraDasOpcoes = escolhidos
-    .filter((c) => !mostradas.has(c))
-    .map((codigo, i) => ({
+  return [...opcoes, ...escolhidasForaDasOpcoes(escolhidos, opcoes, valores)];
+}
+
+function valoresNaOrdem(campo: CampoApresentado): ValorSelecionavel[] {
+  return [...(campo.valoresSelecionaveis ?? [])].sort(
+    (a, b) => a.ordem - b.ordem || compararOrdinal(a.codigo, b.codigo),
+  );
+}
+
+function escolhidasForaDasOpcoes(
+  escolhidos: readonly string[],
+  opcoes: readonly OpcaoDoCampo[],
+  valores: readonly ValorSelecionavel[],
+): OpcaoDoCampo[] {
+  const porCodigo = new Map(valores.map((valor) => [valor.codigo, valor]));
+  const mostradas = new Set(opcoes.map((opcao) => opcao.codigo));
+  return escolhidos
+    .filter((codigo) => !mostradas.has(codigo))
+    .map((codigo, indice) => ({
       ...(porCodigo.get(codigo) ?? { codigo, descricao: null }),
-      ordem: valores.length + opcoes.length + i,
+      ordem: valores.length + opcoes.length + indice,
       foraDasOpcoes: true,
     }));
-  return [...opcoes, ...foraDasOpcoes];
 }
 
 /** Os valores conhecidos que as regras permitem e, depois, os códigos permitidos que o campo não conhece. */

@@ -12,7 +12,7 @@ import {
 } from './logica';
 import { avaliarPredicado } from './predicado';
 import type { ValorJson } from './regras-do-formulario';
-import { compararOrdinal } from './restricoes';
+import { codigosEmOrdem } from './restricoes';
 
 /**
  * O derivado: indeterminado enquanto alguma dependência está; senão, verdadeiro se alguma regra ativa
@@ -23,18 +23,32 @@ export function derivar(derivacao: DefinicaoDerivacao, fatos: Fatos): FatoResolv
   if (derivacao.dependencias.some((d) => (fatos.get(d)?.estado ?? INDETERMINADO) === INDETERMINADO))
     return FATO_INDETERMINADO;
 
-  const contribuidos = new Set<string>();
-  let algumaAtiva = false;
+  const ativas = regrasAtivas(derivacao, fatos);
+  return ativas === null ? FATO_INDETERMINADO : resolvido(valorDoDerivado(derivacao, ativas));
+}
+
+function regrasAtivas(
+  derivacao: DefinicaoDerivacao,
+  fatos: Fatos,
+): DefinicaoDerivacao['regras'] | null {
+  const ativas: DefinicaoDerivacao['regras'][number][] = [];
   for (const regra of derivacao.regras) {
     const ativa =
       regra.quando.clausulas.length === 0 ? VERDADEIRO : avaliarPredicado(regra.quando, fatos);
-    if (ativa === INDETERMINADO) return FATO_INDETERMINADO;
-    if (ativa === VERDADEIRO) {
-      algumaAtiva = true;
-      if (regra.contribui !== null) contribuidos.add(regra.contribui);
-    }
+    if (ativa === INDETERMINADO) return null;
+    if (ativa === VERDADEIRO) ativas.push(regra);
   }
-  return resolvido(derivacao.booleano ? algumaAtiva : [...contribuidos].sort(compararOrdinal));
+  return ativas;
+}
+
+function valorDoDerivado(
+  derivacao: DefinicaoDerivacao,
+  ativas: DefinicaoDerivacao['regras'],
+): boolean | string[] {
+  if (derivacao.booleano) return ativas.length > 0;
+  return codigosEmOrdem(
+    ativas.flatMap((regra) => (regra.contribui === null ? [] : [regra.contribui])),
+  );
 }
 
 /** O agregado sobre o grupo: se algum membro responde verdadeiro, ou os códigos presentes entre eles. */
@@ -49,6 +63,6 @@ export function agregar(grupo: GrupoAvaliadoInterno, agregado: DefinicaoAgregado
   return resolvido(
     agregado.operacao === 'EXISTE'
       ? respostas.some((r) => r === true)
-      : [...new Set(respostas.flatMap((r) => codigosDa(r) ?? []))].sort(compararOrdinal),
+      : codigosEmOrdem(respostas.flatMap((r) => codigosDa(r) ?? [])),
   );
 }
