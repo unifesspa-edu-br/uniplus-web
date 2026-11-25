@@ -1,3 +1,4 @@
+import { situacaoDoProcesso } from '../fixtures/valor-do-enum';
 import { expect, test, type Page, type Route, type TestInfo } from '@playwright/test';
 import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
@@ -141,7 +142,11 @@ async function mockarApi(page: Page, status: Status): Promise<void> {
 
     const caminho = new URL(request.url()).pathname;
     if (caminho.endsWith(PROCESSO_PUBLICADO_DA_MEDICINA.id)) {
-      await responderCom(route, { ...PROCESSO_PUBLICADO_DA_MEDICINA, status }, CORS_HEADERS);
+      await responderCom(
+        route,
+        { ...PROCESSO_PUBLICADO_DA_MEDICINA, status: situacaoDoProcesso(status) },
+        CORS_HEADERS,
+      );
       return;
     }
     if (caminho.endsWith('/documentos-a-publicar')) {

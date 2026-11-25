@@ -51,7 +51,7 @@ test.describe('Cronograma — documentos exigidos na forma do contrato', () => {
         momento: { faseId: FASE_DO_PROCESSO.id },
         aplicabilidade: { tipo: 'GERAL' },
         indeferimento: { obrigatorio: true, consequencia: 'ELIMINA' },
-        requisitos: { formatosPermitidos: ['pdf'] },
+        requisitos: { formatosPermitidos: [{ formato: 'PDF', tamanhoMaximoBytesMax: null }] },
       },
     });
     expect(regra.documento).not.toHaveProperty('tipoDocumentoId');

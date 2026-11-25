@@ -252,6 +252,10 @@ test.describe('Cronograma — matriz DS @ds', () => {
     await exigirDocumento(page);
 
     await page.getByRole('button', { name: `Remover ${NOME_DOCUMENTO}` }).click();
+    await page
+      .getByRole('dialog', { name: 'Remover documento' })
+      .getByRole('button', { name: 'Remover', exact: true })
+      .click();
 
     await expect(page.locator('.doc-item--exigido')).toHaveCount(0);
     const seletor = page.getByLabel('Documento a exigir');
