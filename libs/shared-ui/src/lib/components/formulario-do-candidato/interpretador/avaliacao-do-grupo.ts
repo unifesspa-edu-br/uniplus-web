@@ -5,8 +5,14 @@ import type {
   OcorrenciaAvaliadaInterna,
   OcorrenciaRespondida,
 } from './avaliacao-interna';
-import { avaliarItem, type ContextoDaPagina, obrigatorioSeVisivel } from './avaliacao-do-item';
-import type { DefinicaoPagina, DefinicaoGrupo } from './definicao-do-formulario';
+import {
+  avaliarItem,
+  type ContextoDaPagina,
+  type ContextoDoItem,
+  obrigatorioSeVisivel,
+  opcionalEmPaginaConcluida,
+} from './avaliacao-do-item';
+import type { DefinicaoPagina, DefinicaoGrupo, DefinicaoItem } from './definicao-do-formulario';
 import {
   e,
   type EstadoDoFato,
@@ -30,6 +36,8 @@ type FabricaDoGrupo = (
   ocorrenciaDoCandidatoValida?: boolean,
 ) => GrupoAvaliadoInterno;
 
+type ContextoDosSubitens = ContextoDoItem & { fatos: Map<string, FatoResolvido> };
+
 interface ContextoDoGrupo {
   readonly pagina: DefinicaoPagina;
   readonly grupo: DefinicaoGrupo;
@@ -50,10 +58,7 @@ export function avaliarGrupo(
   entrada: EntradaDaAvaliacao,
   fatos: Fatos,
 ): GrupoAvaliadoInterno {
-  const visivel = e(
-    avaliarOuVerdadeiro(pagina.exibicao, fatos),
-    avaliarOuVerdadeiro(grupo.exibicao, fatos),
-  );
+  const visivel = visibilidadeDoGrupo(pagina, grupo, fatos);
   const obrigatorio = obrigatorioSeVisivel(visivel, grupo.obrigatoriedade, fatos);
   const avaliacao = fabricaDoGrupo(pagina, grupo, { visivel, obrigatorio });
 
@@ -62,17 +67,29 @@ export function avaliarGrupo(
   return avaliarOcorrenciasDoGrupo({ pagina, grupo, entrada, fatos, obrigatorio, avaliacao });
 }
 
+function visibilidadeDoGrupo(
+  pagina: DefinicaoPagina,
+  grupo: DefinicaoGrupo,
+  fatos: Fatos,
+): Ternario {
+  return e(avaliarOuVerdadeiro(pagina.exibicao, fatos), avaliarOuVerdadeiro(grupo.exibicao, fatos));
+}
+
+interface AparenciaDoGrupo {
+  visivel: Ternario;
+  obrigatorio: Ternario;
+}
+
 /** O grupo avaliado, com o que já se sabe dele; falta dizer o estado e as ocorrências. */
 function fabricaDoGrupo(
   pagina: DefinicaoPagina,
   grupo: DefinicaoGrupo,
-  { visivel, obrigatorio }: { visivel: Ternario; obrigatorio: Ternario },
+  aparencia: AparenciaDoGrupo,
 ): FabricaDoGrupo {
   return (estado, ocorrencias, contagemValida = true, ocorrenciaDoCandidatoValida = true) => ({
     codigo: grupo.codigo,
     paginaCodigo: pagina.codigo,
-    visivel,
-    obrigatorio,
+    ...aparencia,
     estado,
     contagemValida,
     ocorrenciaDoCandidatoValida,
@@ -81,27 +98,38 @@ function fabricaDoGrupo(
 }
 
 function avaliarOcorrenciasDoGrupo(contexto: ContextoDoGrupo): GrupoAvaliadoInterno {
-  const { pagina, grupo, entrada, fatos, obrigatorio, avaliacao } = contexto;
-  const paginaConcluida = entrada.paginasConcluidas.has(pagina.codigo);
-  const semResposta: EstadoDoFato =
-    obrigatorio === FALSO && paginaConcluida ? NAO_INFORMADO : INDETERMINADO;
+  const { grupo, entrada, obrigatorio, avaliacao } = contexto;
+  const daPagina = contextoDaPagina(contexto);
+  const semResposta = opcionalEmPaginaConcluida(obrigatorio, daPagina.paginaConcluida)
+    ? NAO_INFORMADO
+    : INDETERMINADO;
   const respondidas = entrada.grupos.get(grupo.codigo);
   if (!respondidas) return avaliacao(semResposta, []);
-
-  const daPagina = {
-    paginaCodigo: pagina.codigo,
-    paginaConcluida,
-    diaDoEnvio: entrada.diaDoEnvio,
-    fatos,
-  };
   const ocorrencias = respondidas.map((o) => avaliarOcorrencia(grupo, o, daPagina));
   const contagemValida = contagemDeOcorrenciasValida(grupo, obrigatorio, ocorrencias.length);
-  // A lista vazia, que só vale no grupo opcional, não tem ocorrência do candidato a conferir.
-  const candidatoValido =
-    !grupo.incluiCandidato || ocorrencias.length === 0 || temUmaOcorrenciaDoCandidato(respondidas);
+  const candidatoValido = ocorrenciaDoCandidatoValida(grupo, respondidas);
   if (!contagemValida || !candidatoValido)
     return avaliacao(semResposta, ocorrencias, contagemValida, candidatoValido);
   return avaliacao(estadoDoGrupoRespondido(obrigatorio, ocorrencias), ocorrencias);
+}
+
+function contextoDaPagina({ pagina, entrada, fatos }: ContextoDoGrupo): ContextoDaPagina {
+  return {
+    paginaCodigo: pagina.codigo,
+    paginaConcluida: entrada.paginasConcluidas.has(pagina.codigo),
+    diaDoEnvio: entrada.diaDoEnvio,
+    fatos,
+  };
+}
+
+function ocorrenciaDoCandidatoValida(
+  grupo: DefinicaoGrupo,
+  respondidas: readonly OcorrenciaRespondida[],
+): boolean {
+  // A lista vazia, que só vale no grupo opcional, não tem ocorrência do candidato a conferir.
+  return (
+    !grupo.incluiCandidato || respondidas.length === 0 || temUmaOcorrenciaDoCandidato(respondidas)
+  );
 }
 
 function contagemDeOcorrenciasValida(
@@ -143,21 +171,45 @@ function avaliarOcorrencia(
   ocorrencia: OcorrenciaRespondida,
   contextoDaPagina: ContextoDaPagina,
 ): OcorrenciaAvaliadaInterna {
-  const contexto = new Map(contextoDaPagina.fatos);
-  const daOcorrencia = new Map<string, FatoResolvido>();
+  const { itens, fatos } = avaliarSubitensEmOrdem(grupo, ocorrencia, contextoDaPagina);
+  const estado = estadoDaOcorrencia(fatos);
+  return { id: ocorrencia.id, itens, fatos, estado };
+}
+
+function avaliarSubitensEmOrdem(
+  grupo: DefinicaoGrupo,
+  ocorrencia: OcorrenciaRespondida,
+  contextoDaPagina: ContextoDaPagina,
+): { itens: ItemAvaliado[]; fatos: Map<string, FatoResolvido> } {
+  const fatos = new Map<string, FatoResolvido>();
+  const contextoDoItem = contextoDosSubitens(contextoDaPagina);
   const itens: ItemAvaliado[] = [];
   for (const subitem of grupo.subitens) {
-    const { fato, avaliacao } = avaliarItem(subitem, ocorrencia.respostas.get(subitem.fatoCodigo), {
-      ...contextoDaPagina,
-      visivelDoContentor: VERDADEIRO,
-      fatos: contexto,
-    });
-    contexto.set(subitem.fatoCodigo, fato);
-    daOcorrencia.set(subitem.fatoCodigo, fato);
-    itens.push(avaliacao);
+    itens.push(avaliarSubitem(subitem, ocorrencia, contextoDoItem, fatos));
   }
-  const estado = [...daOcorrencia.values()].some((f) => f.estado === INDETERMINADO)
-    ? INDETERMINADO
-    : RESOLVIDO;
-  return { id: ocorrencia.id, itens, fatos: daOcorrencia, estado };
+  return { itens, fatos };
+}
+
+function contextoDosSubitens(pagina: ContextoDaPagina): ContextoDosSubitens {
+  return { ...pagina, visivelDoContentor: VERDADEIRO, fatos: new Map(pagina.fatos) };
+}
+
+function avaliarSubitem(
+  subitem: DefinicaoItem,
+  ocorrencia: OcorrenciaRespondida,
+  contexto: ContextoDosSubitens,
+  fatos: Map<string, FatoResolvido>,
+): ItemAvaliado {
+  const { fato, avaliacao } = avaliarItem(
+    subitem,
+    ocorrencia.respostas.get(subitem.fatoCodigo),
+    contexto,
+  );
+  contexto.fatos.set(subitem.fatoCodigo, fato);
+  fatos.set(subitem.fatoCodigo, fato);
+  return avaliacao;
+}
+
+function estadoDaOcorrencia(fatos: Fatos): EstadoDoFato {
+  return [...fatos.values()].some((f) => f.estado === INDETERMINADO) ? INDETERMINADO : RESOLVIDO;
 }

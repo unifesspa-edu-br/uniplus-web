@@ -16,7 +16,7 @@ import type {
   DefinicaoItem,
 } from './definicao-do-formulario';
 import { FALSO, FATO_INDETERMINADO, type FatoResolvido, type Fatos, INDETERMINADO } from './logica';
-import { type No, ordenar, PRIORIDADE_DERIVADO } from './ordem-de-avaliacao';
+import { type FatoAOrdenar, ordenar, PRIORIDADE_DERIVADO } from './ordem-de-avaliacao';
 import { avaliarOuVerdadeiro, fatosCitadosPor } from './predicado';
 
 export type {
@@ -72,24 +72,20 @@ export function avaliar(
   entrada: EntradaDaAvaliacao,
 ): AvaliacaoInterna {
   const indice = indexar(definicao);
-  const { ordem, foraDeOrdem } = ordenar(nosDa(definicao, indice));
+  const { ordem, foraDeOrdem } = ordenar(fatosAOrdenarDa(definicao, indice));
   const andamento: Andamento = {
     fatos: new Map(entrada.fatosConhecidos),
     itens: new Map(),
     grupos: new Map(),
   };
-  for (const codigo of ordem) resolverNo(codigo, indice, entrada, andamento);
+  for (const codigo of ordem) resolverFatoAOrdenar(codigo, indice, entrada, andamento);
   for (const codigo of foraDeOrdem) deixarIndeterminado(codigo, indice, andamento);
   return montarAvaliacao(definicao, indice, andamento);
 }
 
 function indexar(definicao: DefinicaoFormulario): Indice {
-  const itens = definicao.paginas.flatMap((pagina) =>
-    pagina.itens.map((item) => ({ pagina, item })),
-  );
-  const grupos = definicao.paginas.flatMap((pagina) =>
-    pagina.grupos.map((grupo) => ({ pagina, grupo })),
-  );
+  const itens = itensComAPagina(definicao);
+  const grupos = gruposComAPagina(definicao);
   return {
     itens,
     grupos,
@@ -100,20 +96,50 @@ function indexar(definicao: DefinicaoFormulario): Indice {
   };
 }
 
-function nosDa(definicao: DefinicaoFormulario, { itens, grupos }: Indice): readonly No[] {
-  const citadosPelaPagina = (pagina: DefinicaoPagina): readonly string[] =>
-    fatosCitadosPor(pagina.exibicao);
+function itensComAPagina(definicao: DefinicaoFormulario): ItemDaPagina[] {
+  return definicao.paginas.flatMap((pagina) => pagina.itens.map((item) => ({ pagina, item })));
+}
+
+function gruposComAPagina(definicao: DefinicaoFormulario): GrupoDaPagina[] {
+  return definicao.paginas.flatMap((pagina) => pagina.grupos.map((grupo) => ({ pagina, grupo })));
+}
+
+function fatosAOrdenarDa(
+  definicao: DefinicaoFormulario,
+  { itens, grupos }: Indice,
+): readonly FatoAOrdenar[] {
   return [
-    ...itens.map((par, posicao) => ({
-      codigo: par.item.fatoCodigo,
-      citados: [...citadosPelaPagina(par.pagina), ...par.item.fatosCitados],
-      prioridade: posicao,
-    })),
-    ...grupos.map((par, posicao) => ({
-      codigo: par.grupo.codigo,
-      citados: [...citadosPelaPagina(par.pagina), ...par.grupo.fatosDoCandidatoCitados],
-      prioridade: itens.length + posicao,
-    })),
+    ...dependenciasDosCampos(itens),
+    ...dependenciasDosGrupos(grupos, itens.length),
+    ...dependenciasDosDerivados(definicao),
+  ];
+}
+
+function fatosCitadosPelaPagina(pagina: DefinicaoPagina): readonly string[] {
+  return fatosCitadosPor(pagina.exibicao);
+}
+
+function dependenciasDosCampos(itens: readonly ItemDaPagina[]): FatoAOrdenar[] {
+  return itens.map((par, posicao) => ({
+    codigo: par.item.fatoCodigo,
+    citados: [...fatosCitadosPelaPagina(par.pagina), ...par.item.fatosCitados],
+    prioridade: posicao,
+  }));
+}
+
+function dependenciasDosGrupos(
+  grupos: readonly GrupoDaPagina[],
+  primeiraPrioridade: number,
+): FatoAOrdenar[] {
+  return grupos.map((par, posicao) => ({
+    codigo: par.grupo.codigo,
+    citados: [...fatosCitadosPelaPagina(par.pagina), ...par.grupo.fatosDoCandidatoCitados],
+    prioridade: primeiraPrioridade + posicao,
+  }));
+}
+
+function dependenciasDosDerivados(definicao: DefinicaoFormulario): FatoAOrdenar[] {
+  return [
     ...definicao.derivacoes.map((d) => ({
       codigo: d.fatoCodigo,
       citados: d.dependencias,
@@ -127,35 +153,45 @@ function nosDa(definicao: DefinicaoFormulario, { itens, grupos }: Indice): reado
   ];
 }
 
-function resolverNo(
+function resolverFatoAOrdenar(
   codigo: string,
   indice: Indice,
   entrada: EntradaDaAvaliacao,
   andamento: Andamento,
 ): void {
-  const { fatos, itens, grupos } = andamento;
+  const derivado = fatoDerivado(codigo, indice, andamento);
+  if (derivado) andamento.fatos.set(codigo, derivado);
+  else if (indice.grupoPorCodigo.has(codigo)) {
+    const par = indice.grupoPorCodigo.get(codigo) as GrupoDaPagina;
+    andamento.grupos.set(codigo, avaliarGrupo(par.pagina, par.grupo, entrada, andamento.fatos));
+  } else resolverCampo(codigo, indice, entrada, andamento);
+}
+
+function fatoDerivado(
+  codigo: string,
+  indice: Indice,
+  { fatos, grupos }: Andamento,
+): FatoResolvido | undefined {
   const derivacao = indice.derivacaoPorFato.get(codigo);
-  if (derivacao) {
-    fatos.set(codigo, derivar(derivacao, fatos));
-    return;
-  }
+  if (derivacao) return derivar(derivacao, fatos);
   const agregado = indice.agregadoPorFato.get(codigo);
-  if (agregado) {
-    fatos.set(codigo, agregar(grupos.get(agregado.grupoCodigo) as GrupoAvaliadoInterno, agregado));
-    return;
-  }
-  const doGrupo = indice.grupoPorCodigo.get(codigo);
-  if (doGrupo) {
-    grupos.set(codigo, avaliarGrupo(doGrupo.pagina, doGrupo.grupo, entrada, fatos));
-    return;
-  }
+  if (agregado) return agregar(grupos.get(agregado.grupoCodigo) as GrupoAvaliadoInterno, agregado);
+  return undefined;
+}
+
+function resolverCampo(
+  codigo: string,
+  indice: Indice,
+  entrada: EntradaDaAvaliacao,
+  andamento: Andamento,
+): void {
   const avaliado = avaliarItemDaPagina(
     indice.itemPorFato.get(codigo) as ItemDaPagina,
     entrada,
-    fatos,
+    andamento.fatos,
   );
-  fatos.set(codigo, avaliado.fato);
-  itens.set(codigo, avaliado.avaliacao);
+  andamento.fatos.set(codigo, avaliado.fato);
+  andamento.itens.set(codigo, avaliado.avaliacao);
 }
 
 function avaliarItemDaPagina(
@@ -177,31 +213,37 @@ function avaliarItemDaPagina(
 function deixarIndeterminado(codigo: string, indice: Indice, andamento: Andamento): void {
   const doGrupo = indice.grupoPorCodigo.get(codigo);
   if (doGrupo) {
-    andamento.grupos.set(codigo, {
-      codigo,
-      paginaCodigo: doGrupo.pagina.codigo,
-      visivel: INDETERMINADO,
-      obrigatorio: INDETERMINADO,
-      estado: INDETERMINADO,
-      contagemValida: true,
-      ocorrenciaDoCandidatoValida: true,
-      ocorrencias: [],
-    });
+    andamento.grupos.set(codigo, grupoIndeterminado(codigo, doGrupo.pagina.codigo));
     return;
   }
   andamento.fatos.set(codigo, FATO_INDETERMINADO);
   const par = indice.itemPorFato.get(codigo);
-  if (par) {
-    andamento.itens.set(codigo, {
-      fatoCodigo: codigo,
-      paginaCodigo: par.pagina.codigo,
-      visivel: INDETERMINADO,
-      obrigatorio: INDETERMINADO,
-      restricoesVioladas: [],
-      impedido: par.item.impedimento ? INDETERMINADO : FALSO,
-      opcoes: null,
-    });
-  }
+  if (par) andamento.itens.set(codigo, campoIndeterminado(codigo, par));
+}
+
+function grupoIndeterminado(codigo: string, paginaCodigo: string): GrupoAvaliadoInterno {
+  return {
+    codigo,
+    paginaCodigo,
+    visivel: INDETERMINADO,
+    obrigatorio: INDETERMINADO,
+    estado: INDETERMINADO,
+    contagemValida: true,
+    ocorrenciaDoCandidatoValida: true,
+    ocorrencias: [],
+  };
+}
+
+function campoIndeterminado(codigo: string, par: ItemDaPagina): ItemAvaliado {
+  return {
+    fatoCodigo: codigo,
+    paginaCodigo: par.pagina.codigo,
+    visivel: INDETERMINADO,
+    obrigatorio: INDETERMINADO,
+    restricoesVioladas: [],
+    impedido: par.item.impedimento ? INDETERMINADO : FALSO,
+    opcoes: null,
+  };
 }
 
 function montarAvaliacao(
@@ -211,19 +253,33 @@ function montarAvaliacao(
 ): AvaliacaoInterna {
   return {
     fatos,
-    paginas: definicao.paginas.map((pagina) => ({
-      codigo: pagina.codigo,
-      visivel: avaliarOuVerdadeiro(pagina.exibicao, fatos),
-    })),
+    paginas: paginasAvaliadas(definicao.paginas, fatos),
     itens: indice.itens.map((par) => itens.get(par.item.fatoCodigo) as ItemAvaliado),
     grupos: indice.grupos.map((par) => grupos.get(par.grupo.codigo) as GrupoAvaliadoInterno),
-    termos: definicao.termos.map((termo) => {
-      const visivel = avaliarOuVerdadeiro(termo.exibicao, fatos);
-      return {
-        codigo: termo.codigo,
-        visivel,
-        obrigatorio: obrigatorioSeVisivel(visivel, termo.obrigatoriedade, fatos),
-      };
-    }),
+    termos: termosAvaliados(definicao.termos, fatos),
   };
+}
+
+function paginasAvaliadas(
+  paginas: DefinicaoFormulario['paginas'],
+  fatos: Fatos,
+): AvaliacaoInterna['paginas'] {
+  return paginas.map((pagina) => ({
+    codigo: pagina.codigo,
+    visivel: avaliarOuVerdadeiro(pagina.exibicao, fatos),
+  }));
+}
+
+function termosAvaliados(
+  termos: DefinicaoFormulario['termos'],
+  fatos: Fatos,
+): AvaliacaoInterna['termos'] {
+  return termos.map((termo) => {
+    const visivel = avaliarOuVerdadeiro(termo.exibicao, fatos);
+    return {
+      codigo: termo.codigo,
+      visivel,
+      obrigatorio: obrigatorioSeVisivel(visivel, termo.obrigatoriedade, fatos),
+    };
+  });
 }
