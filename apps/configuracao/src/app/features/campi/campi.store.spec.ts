@@ -4,7 +4,11 @@ import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { CampusDto, CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
+import {
+  CampusDto,
+  CONFIGURACAO_BASE_PATH,
+  PathsApiConfiguracaoCampiGetParametersQueryDirection,
+} from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CampiStore } from './campi.store';
 import { CAMPI_ROUTES } from './campi.routes';
@@ -108,11 +112,16 @@ describe('CampiStore', () => {
 
   it('recarregar fora da primeira página volta à primeira', async () => {
     await propagar();
-    await responder([campus], `<${URL_DA_LISTA}?cursor=abc&direction=forward>; rel="next"`);
+    await responder(
+      [campus],
+      `<${URL_DA_LISTA}?cursor=abc&direction=${PathsApiConfiguracaoCampiGetParametersQueryDirection.next}>; rel="next"`,
+    );
     store.proximaPagina();
     await propagar();
     const segunda = controller.expectOne((r) => r.url === URL_DA_LISTA);
-    expect(segunda.request.params.get('direction')).toBe('next');
+    expect(segunda.request.params.get('direction')).toBe(
+      PathsApiConfiguracaoCampiGetParametersQueryDirection.next,
+    );
     segunda.flush([]);
     await propagar();
 
