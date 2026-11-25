@@ -234,6 +234,7 @@ export class InscricaoListaPage {
    * seguir, ver o comprovante é a ação principal.
    */
   protected acoesDe(item: ItemDaLista): readonly AcaoDaInscricao[] {
+    if (item.naoEnviada) return [];
     const { acoes } = item;
     const comprovante =
       acoes.podeContinuar || acoes.podeCorrigir
@@ -334,8 +335,8 @@ export class InscricaoListaPage {
     }
   }
 
-  protected exibeInscricaoStatusVariantLabel(status: SituacaoInscricaoCodigo): UiTagVariant {
-    return INSCRICAO_STATUS_VARIANT[status];
+  protected exibeInscricaoStatusVariantLabel(item: ItemDaLista): UiTagVariant {
+    return item.naoEnviada ? 'danger' : INSCRICAO_STATUS_VARIANT[item.situacao.codigo];
   }
 
   private normalizaTexto(texto: string): string {
