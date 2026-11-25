@@ -1,7 +1,17 @@
+import { restricoesDePontosPublicos } from '../../tools/eslint/pontos-de-entrada-publicos.mjs';
 import baseConfig from '../../eslint.config.mjs';
 
 export default [
   ...baseConfig,
+  {
+    files: ['**/*.ts'],
+    rules: {
+      'fronteira-das-bibliotecas/ponto-de-entrada-publico': [
+        'error',
+        ...restricoesDePontosPublicos(true),
+      ],
+    },
+  },
   {
     // Projeto sem dívida de métricas: o CI barra.
     files: ['**/*.ts'],

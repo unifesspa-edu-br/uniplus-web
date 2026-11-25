@@ -1,6 +1,5 @@
-import { join } from 'node:path';
-import { createProjectGraphAsync, workspaceRoot } from '@nx/devkit';
-import { ESLint } from 'eslint';
+import { analisar, importacao } from './analise-do-lint.testing';
+import { createProjectGraphAsync } from '@nx/devkit';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 const REGRA_DE_FRONTEIRA = '@nx/enforce-module-boundaries';
@@ -9,31 +8,9 @@ const APOIO_DE_TESTE = '@uniplus/shared-testing';
 const APOIO_POR_CAMINHO_RELATIVO =
   '../../../../../../libs/shared-testing/src/lib/relogio-controlado.testing';
 
-interface Analise {
-  regras: string[];
-  analiseSemFalha: boolean;
-}
-
 interface ArquivoDeProducao {
   projeto: string;
   arquivo: string;
-}
-
-async function analisar(projeto: string, arquivo: string, codigo: string): Promise<Analise> {
-  const raiz = join(workspaceRoot, projeto);
-  const [resultado] = await new ESLint({ cwd: raiz }).lintText(`${codigo}\n`, {
-    filePath: join(raiz, arquivo),
-  });
-  const mensagens = resultado.messages;
-  return {
-    regras: mensagens.flatMap((mensagem) => (mensagem.ruleId ? [mensagem.ruleId] : [])),
-    analiseSemFalha:
-      resultado.fatalErrorCount === 0 && mensagens.every((mensagem) => mensagem.ruleId !== null),
-  };
-}
-
-function importacao(origem: string): string {
-  return `import '${origem}';`;
 }
 
 const RESPOSTAS_PELO_APOIO = `import { okResult } from '${APOIO_DE_TESTE}';\nokResult(1);`;
