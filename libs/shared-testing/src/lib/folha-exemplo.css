@@ -1,0 +1,20 @@
+@import 'pacote';
+@import './folha-importada.css';
+/* .exemplo { color: red; } */
+.exemplo,
+.outra {
+  color: blue;
+  font-weight: normal;
+}
+.exemplo {
+  color: green;
+}
+@media print {
+  .exemplo {
+    color: black;
+  }
+}
+:root {
+  --um: var(--dois);
+  --dois: light-dark(#ffffff, #111111);
+}
