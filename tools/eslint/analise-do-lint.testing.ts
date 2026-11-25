@@ -9,6 +9,7 @@ export async function analisar(projeto: string, arquivo: string, codigo: string)
   });
   const mensagens = resultado.messages;
   return {
+    mensagens,
     regras: mensagens.flatMap((mensagem) => (mensagem.ruleId ? [mensagem.ruleId] : [])),
     analiseSemFalha:
       resultado.fatalErrorCount === 0 && mensagens.every((mensagem) => mensagem.ruleId !== null),
