@@ -1,4 +1,8 @@
-import { FinalidadeDoDocumentoCodigo, type DocumentoAPublicarDto } from '@uniplus/shared-data/selecao';
+import {
+  FinalidadeDoDocumentoCodigo,
+  StatusArquivoEnviadoCodigo,
+  type DocumentoAPublicarDto,
+} from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { classificarDocumentos, descreverDocumento } from './documentos-do-edital';
@@ -7,10 +11,13 @@ describe('descreverDocumento', () => {
   const documento: DocumentoAPublicarDto = {
     id: '019f41cf-69fd-759a-ac6d-09acabc1b030',
     processoSeletivoId: '019f41cf-69fd-759a-ac6d-09acabc1b031',
-    finalidade: { codigo: FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL, rotulo: 'Documento do edital' },
+    finalidade: {
+      codigo: FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL,
+      rotulo: 'Documento do edital',
+    },
     nomeArquivo: 'edital-de-abertura.pdf',
     tipoDeMidia: 'application/pdf',
-    status: { codigo: 'Confirmado' as DocumentoAPublicarDto['status']['codigo'], rotulo: 'Confirmado' },
+    status: { codigo: StatusArquivoEnviadoCodigo.CONFIRMADO, rotulo: 'Confirmado' },
     criadoEm: '2026-08-20T12:00:00Z',
     expiraEm: '2026-08-20T12:15:00Z',
     tamanhoBytes: 2048,
@@ -33,10 +40,13 @@ describe('classificarDocumentos', () => {
   const pdf: DocumentoAPublicarDto = {
     id: '019f41cf-69fd-759a-ac6d-09acabc1b040',
     processoSeletivoId: '019f41cf-69fd-759a-ac6d-09acabc1b031',
-    finalidade: { codigo: FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL, rotulo: 'Documento do edital' },
+    finalidade: {
+      codigo: FinalidadeDoDocumentoCodigo.DOCUMENTO_DO_EDITAL,
+      rotulo: 'Documento do edital',
+    },
     nomeArquivo: 'edital-de-abertura.pdf',
     tipoDeMidia: 'application/pdf',
-    status: { codigo: 'Confirmado' as DocumentoAPublicarDto['status']['codigo'], rotulo: 'Confirmado' },
+    status: { codigo: StatusArquivoEnviadoCodigo.CONFIRMADO, rotulo: 'Confirmado' },
     criadoEm: '2026-08-20T12:00:00Z',
     expiraEm: '2026-08-20T12:15:00Z',
     tamanhoBytes: 2048,

@@ -1,4 +1,5 @@
 export { CONFIGURACAO_BASE_PATH } from './tokens';
+export { PathsApiConfiguracaoCampiGetParametersQueryDirection } from './schema';
 export {
   CampiApi,
   type AtualizarCampusCommand,

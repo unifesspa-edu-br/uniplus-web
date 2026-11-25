@@ -1,3 +1,4 @@
+export { StatusArquivoEnviadoCodigo } from './schema';
 export {
   BlocoSistemaCodigo,
   EscolhaDoPrazoDeEmissaoCodigo,

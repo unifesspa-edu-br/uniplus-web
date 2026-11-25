@@ -1,6 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import {
   FinalidadeDoDocumentoCodigo,
+  StatusArquivoEnviadoCodigo,
   type DocumentoAPublicarDto,
 } from '@uniplus/shared-data/selecao';
 import { expect } from 'vitest';
@@ -60,7 +61,7 @@ const FINALIDADE_EDITAL = {
   rotulo: 'Documento do edital',
 };
 const STATUS_CONFIRMADO = {
-  codigo: 'Confirmado' as DocumentoAPublicarDto['status']['codigo'],
+  codigo: StatusArquivoEnviadoCodigo.CONFIRMADO,
   rotulo: 'Confirmado',
 };
 
@@ -77,7 +78,7 @@ export function documentoConfirmado(id: string, hash: string, confirmadoEm: stri
     tamanhoBytes: 2048,
     hashSha256: hash,
     confirmadoEm,
-  };
+  } satisfies DocumentoAPublicarDto;
 }
 
 /** Percorre as três fases até o documento selado. */
