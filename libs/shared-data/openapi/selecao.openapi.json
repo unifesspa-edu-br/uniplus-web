@@ -3948,7 +3948,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "pattern": "^[A-Z][A-Z0-9_]{0,59}$",
+              "pattern": "^(?=.{1,50}$)[A-Z][A-Z0-9]*(_[A-Z0-9]\u002B)*$",
               "type": "string"
             }
           },
@@ -16893,9 +16893,9 @@
         "properties": {
           "condicaoCodigo": {
             "title": "C\u00F3digo",
-            "description": "C\u00F3digo est\u00E1vel no cat\u00E1logo: mai\u00FAscula inicial, depois mai\u00FAsculas, d\u00EDgitos e sublinhado, de 2 a 50 caracteres.",
-            "type": "string",
-            "pattern": "^[A-Z][A-Z0-9_]{1,49}$"
+            "description": "C\u00F3digo est\u00E1vel no cat\u00E1logo: letra mai\u00FAscula inicial, letras mai\u00FAsculas e algarismos, com palavras separadas por sublinhado, de 1 a 50 caracteres.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
+            "maxLength": 50
           },
           "condicaoNome": {
             "title": "Nome",
@@ -16917,9 +16917,9 @@
         "properties": {
           "recursoCodigo": {
             "title": "C\u00F3digo",
-            "description": "C\u00F3digo est\u00E1vel no cat\u00E1logo: mai\u00FAscula inicial, depois mai\u00FAsculas, d\u00EDgitos e sublinhado, de 2 a 50 caracteres.",
-            "type": "string",
-            "pattern": "^[A-Z][A-Z0-9_]{1,49}$"
+            "description": "C\u00F3digo est\u00E1vel no cat\u00E1logo: letra mai\u00FAscula inicial, letras mai\u00FAsculas e algarismos, com palavras separadas por sublinhado, de 1 a 50 caracteres.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
+            "maxLength": 50
           },
           "recursoNome": {
             "title": "Nome",
@@ -16941,9 +16941,9 @@
         "properties": {
           "tipoDeficienciaCodigo": {
             "title": "C\u00F3digo",
-            "description": "C\u00F3digo est\u00E1vel no cat\u00E1logo: mai\u00FAscula inicial, depois mai\u00FAsculas, d\u00EDgitos e sublinhado, de 2 a 50 caracteres.",
-            "type": "string",
-            "pattern": "^[A-Z][A-Z0-9_]{1,49}$"
+            "description": "C\u00F3digo est\u00E1vel no cat\u00E1logo: letra mai\u00FAscula inicial, letras mai\u00FAsculas e algarismos, com palavras separadas por sublinhado, de 1 a 50 caracteres.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
+            "maxLength": 50
           },
           "tipoDeficienciaNome": {
             "title": "Nome",
@@ -16990,8 +16990,7 @@
             "type": "array",
             "uniqueItems": true,
             "items": {
-              "type": "string",
-              "pattern": "^[A-Z][A-Z0-9_]{1,49}$",
+              "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
               "maxLength": 50
             }
           },
@@ -17200,10 +17199,10 @@
               "properties": {
                 "codigoDoDado": {
                   "title": "Fato derivado",
-                  "description": "C\u00F3digo do fato derivado no cat\u00E1logo, de 1 a 60 caracteres.",
+                  "description": "C\u00F3digo do fato derivado no cat\u00E1logo, de 1 a 50 caracteres.",
                   "type": "string",
                   "minLength": 1,
-                  "maxLength": 60,
+                  "maxLength": 50,
                   "pattern": "\\S"
                 },
                 "regras": {
@@ -17282,6 +17281,12 @@
         "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]\u002B)*$",
         "minLength": 1,
         "maxLength": 64
+      },
+      "DocumentoDaConfiguracaoComunsCodigoDeCadastro": {
+        "title": "C\u00F3digo de cadastro",
+        "description": "C\u00F3digo com letra mai\u00FAscula inicial, seguido de letras mai\u00FAsculas e algarismos, com palavras separadas por sublinhado.",
+        "type": "string",
+        "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]\u002B)*$"
       },
       "DocumentoDaConfiguracaoComunsCodigoDeCatalogo": {
         "title": "C\u00F3digo est\u00E1vel de cat\u00E1logo",
@@ -17575,10 +17580,10 @@
         "properties": {
           "codigoDoDado": {
             "title": "Dado",
-            "description": "C\u00F3digo do fato que a condi\u00E7\u00E3o examina, de 1 a 60 caracteres (o limite do armazenamento), com ao menos um caractere que n\u00E3o seja espa\u00E7o.",
+            "description": "C\u00F3digo do fato que a condi\u00E7\u00E3o examina, de 1 a 50 caracteres (o limite do armazenamento), com ao menos um caractere que n\u00E3o seja espa\u00E7o.",
             "type": "string",
             "minLength": 1,
-            "maxLength": 60,
+            "maxLength": 50,
             "pattern": "\\S"
           },
           "operador": {
@@ -18094,11 +18099,9 @@
         "properties": {
           "ofertaCursoCodigo": {
             "title": "Oferta de curso",
-            "description": "C\u00F3digo da oferta de curso no cadastro, de letras mai\u00FAsculas, d\u00EDgitos e sublinhado, de 2 a 50 caracteres. \u00C9 a chave da distribui\u00E7\u00E3o.",
-            "type": "string",
-            "minLength": 2,
-            "maxLength": 50,
-            "pattern": "^[A-Z][A-Z0-9_]{1,49}$"
+            "description": "C\u00F3digo da oferta de curso no cadastro, de 1 a 50 caracteres. \u00C9 a chave da distribui\u00E7\u00E3o.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
+            "maxLength": 50
           },
           "vagasOfertadasBase": {
             "title": "Vagas ofertadas base",
@@ -18233,20 +18236,16 @@
           "modalidadeCodigo": {
             "title": "Modalidade reduzida",
             "description": "C\u00F3digo da modalidade de onde se reduz. Usado em reduzirDe.",
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 60,
-            "pattern": "^[A-Z0-9_]\u002B$"
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
+            "maxLength": 60
           },
           "modalidadeCodigos": {
             "title": "Modalidades reduzidas",
             "description": "C\u00F3digos das modalidades em que se reduz proporcionalmente. Usado em reduzirProporcionalEm.",
             "type": "array",
             "items": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 60,
-              "pattern": "^[A-Z0-9_]\u002B$"
+              "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
+              "maxLength": 60
             }
           }
         },
@@ -18289,11 +18288,9 @@
         "properties": {
           "codigo": {
             "title": "C\u00F3digo da modalidade",
-            "description": "C\u00F3digo da modalidade no cadastro, de letras mai\u00FAsculas, d\u00EDgitos e sublinhado, de 1 a 60 caracteres.",
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 60,
-            "pattern": "^[A-Z0-9_]\u002B$"
+            "description": "C\u00F3digo da modalidade no cadastro, de 1 a 60 caracteres.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
+            "maxLength": 60
           },
           "quantidadeDeclarada": {
             "title": "Quantidade declarada",
@@ -18325,10 +18322,8 @@
           "modalidadeCodigo": {
             "title": "C\u00F3digo da modalidade",
             "description": "C\u00F3digo da modalidade no cadastro.",
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 60,
-            "pattern": "^[A-Z0-9_]\u002B$"
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
+            "maxLength": 60
           },
           "quantidade": {
             "title": "Quantidade",
@@ -19235,15 +19230,15 @@
           },
           "codigoDoDadoDeElegibilidade": {
             "title": "Fato de elegibilidade",
-            "description": "C\u00F3digo do fato que decide quem recebe o FADA, quando o processo o declara, de 1 a 60 caracteres.",
-            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCatalogo",
-            "maxLength": 60
+            "description": "C\u00F3digo do fato que decide quem recebe o FADA, quando o processo o declara, de 1 a 50 caracteres.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
+            "maxLength": 50
           },
           "baseLegalCodigo": {
             "title": "Base legal",
-            "description": "C\u00F3digo est\u00E1vel da base legal do FADA no cat\u00E1logo: mai\u00FAscula inicial, depois mai\u00FAsculas, d\u00EDgitos e sublinhado, de 2 a 100 caracteres.",
-            "type": "string",
-            "pattern": "^[A-Z][A-Z0-9_]{1,99}$"
+            "description": "C\u00F3digo est\u00E1vel da base legal do FADA no cat\u00E1logo: de 1 a 80 caracteres.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
+            "maxLength": 80
           },
           "tipoInstrumento": {
             "title": "Tipo do instrumento",
@@ -19595,11 +19590,9 @@
           },
           "termoCodigo": {
             "title": "Termo",
-            "description": "C\u00F3digo est\u00E1vel do termo no cat\u00E1logo de termos de consentimento, de at\u00E9 100 caracteres.",
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 100,
-            "pattern": "^[A-Z][A-Z0-9_]\u002B$"
+            "description": "C\u00F3digo est\u00E1vel do termo no cat\u00E1logo de termos de consentimento, de at\u00E9 80 caracteres.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
+            "maxLength": 80
           },
           "versaoNumero": {
             "title": "Vers\u00E3o do termo",
@@ -19849,11 +19842,9 @@
         "properties": {
           "codigoDoDado": {
             "title": "Fato",
-            "description": "C\u00F3digo do fato no cat\u00E1logo, de 1 a 60 caracteres. Cada fato \u00E9 coletado por um s\u00F3 formul\u00E1rio do processo.",
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 60,
-            "pattern": "\\S"
+            "description": "C\u00F3digo do fato no cat\u00E1logo, de 1 a 50 caracteres. Cada fato \u00E9 coletado por um s\u00F3 formul\u00E1rio do processo.",
+            "maxLength": 50,
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro"
           },
           "paginaCodigo": {
             "title": "P\u00E1gina",
@@ -19938,13 +19929,19 @@
           }
         }
       },
-      "DocumentoDaConfiguracaoItemDoFormularioCodigoLocal": {
-        "title": "C\u00F3digo local",
-        "description": "C\u00F3digo escolhido por quem escreve o formul\u00E1rio, de 1 a 60 caracteres, \u00FAnico no formul\u00E1rio.",
+      "DocumentoDaConfiguracaoItemDoFormularioCodigoDaOpcao": {
+        "title": "C\u00F3digo da op\u00E7\u00E3o",
+        "description": "Texto de 1 a 60 caracteres, \u00FAnico no fato.",
         "type": "string",
         "minLength": 1,
         "maxLength": 60,
         "pattern": "\\S"
+      },
+      "DocumentoDaConfiguracaoItemDoFormularioCodigoLocal": {
+        "title": "C\u00F3digo local",
+        "description": "C\u00F3digo de 1 a 60 caracteres, com letra mai\u00FAscula inicial, letras mai\u00FAsculas e algarismos separados por sublinhado.",
+        "maxLength": 60,
+        "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro"
       },
       "DocumentoDaConfiguracaoItemDoFormularioImpedimento": {
         "title": "Impedimento de inscri\u00E7\u00E3o",
@@ -19983,7 +19980,7 @@
           "codigo": {
             "title": "C\u00F3digo",
             "description": "C\u00F3digo da op\u00E7\u00E3o, de 1 a 60 caracteres, \u00FAnico no fato.",
-            "$ref": "#/components/schemas/DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoItemDoFormularioCodigoDaOpcao"
           },
           "rotulo": {
             "title": "R\u00F3tulo",
@@ -20081,9 +20078,9 @@
       },
       "DocumentoDaConfiguracaoMotivoCodigoDoMotivo": {
         "title": "C\u00F3digo do motivo",
-        "description": "C\u00F3digo do motivo no cat\u00E1logo: mai\u00FAscula inicial, depois mai\u00FAsculas, d\u00EDgitos e sublinhado, de 2 a 50 caracteres.",
-        "type": "string",
-        "pattern": "^[A-Z][A-Z0-9_]{1,49}$"
+        "description": "C\u00F3digo do motivo no cat\u00E1logo: letra mai\u00FAscula inicial, letras mai\u00FAsculas e algarismos, com palavras separadas por sublinhado, de 1 a 50 caracteres.",
+        "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
+        "maxLength": 50
       },
       "DocumentoDaConfiguracaoOrdemDeRemanejamento": {
         "title": "Ordem de remanejamento",
@@ -20099,10 +20096,8 @@
           "destinoFinalCodigo": {
             "title": "Modalidade de destino final",
             "description": "C\u00F3digo da modalidade que recebe as vagas quando nenhum destino da ordem as absorve, em geral a ampla concorr\u00EAncia.",
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 60,
-            "pattern": "^[A-Z0-9_]\u002B$"
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
+            "maxLength": 60
           },
           "destinos": {
             "title": "Destinos",
@@ -20121,10 +20116,8 @@
                 "modalidadeOrigemCodigo": {
                   "title": "Modalidade de origem",
                   "description": "C\u00F3digo da modalidade que cede as vagas.",
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 60,
-                  "pattern": "^[A-Z0-9_]\u002B$"
+                  "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
+                  "maxLength": 60
                 },
                 "ordem": {
                   "title": "Ordem",
@@ -20135,10 +20128,8 @@
                 "modalidadeDestinoCodigo": {
                   "title": "Modalidade de destino",
                   "description": "C\u00F3digo da modalidade que recebe as vagas.",
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 60,
-                  "pattern": "^[A-Z0-9_]\u002B$"
+                  "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
+                  "maxLength": 60
                 }
               }
             }
@@ -20357,9 +20348,7 @@
           "grupoDoFormularioParaRepeticao": {
             "title": "Grupo do formul\u00E1rio para repeti\u00E7\u00E3o",
             "description": "C\u00F3digo do grupo do formul\u00E1rio para cujos registros a regra \u00E9 aplicada.",
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 60
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"
           },
           "itens": {
             "title": "Itens",

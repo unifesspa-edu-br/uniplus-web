@@ -11462,9 +11462,9 @@ export interface components {
         readonly DocumentoDaConfiguracaoAtendimentoCondicao: {
             /**
              * Código
-             * @description Código estável no catálogo: maiúscula inicial, depois maiúsculas, dígitos e sublinhado, de 2 a 50 caracteres.
+             * @description Código estável no catálogo: letra maiúscula inicial, letras maiúsculas e algarismos, com palavras separadas por sublinhado, de 1 a 50 caracteres.
              */
-            readonly condicaoCodigo: string;
+            readonly condicaoCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
             /**
              * Nome
              * @description Nome no catálogo, copiado na exportação. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
@@ -11478,9 +11478,9 @@ export interface components {
         readonly DocumentoDaConfiguracaoAtendimentoRecurso: {
             /**
              * Código
-             * @description Código estável no catálogo: maiúscula inicial, depois maiúsculas, dígitos e sublinhado, de 2 a 50 caracteres.
+             * @description Código estável no catálogo: letra maiúscula inicial, letras maiúsculas e algarismos, com palavras separadas por sublinhado, de 1 a 50 caracteres.
              */
-            readonly recursoCodigo: string;
+            readonly recursoCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
             /**
              * Nome
              * @description Nome no catálogo, copiado na exportação. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
@@ -11494,9 +11494,9 @@ export interface components {
         readonly DocumentoDaConfiguracaoAtendimentoTipoDeficiencia: {
             /**
              * Código
-             * @description Código estável no catálogo: maiúscula inicial, depois maiúsculas, dígitos e sublinhado, de 2 a 50 caracteres.
+             * @description Código estável no catálogo: letra maiúscula inicial, letras maiúsculas e algarismos, com palavras separadas por sublinhado, de 1 a 50 caracteres.
              */
-            readonly tipoDeficienciaCodigo: string;
+            readonly tipoDeficienciaCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
             /**
              * Nome
              * @description Nome no catálogo, copiado na exportação. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
@@ -11528,7 +11528,7 @@ export interface components {
              * Candidatos atendidos
              * @description Códigos das categorias de documento que a banca analisa. Lista vazia quando a banca não define candidatos atendidos por categoria.
              */
-            readonly categoriasDocumentoCodigos?: readonly string[];
+            readonly categoriasDocumentoCodigos?: readonly components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"][];
             /**
              * Nomes dos candidatos atendidos
              * @description Nomes das categorias de documento que a banca analisa, na mesma ordem dos códigos. Campo só de leitura: ignorado na importação; a referência são os códigos.
@@ -11678,7 +11678,7 @@ export interface components {
             readonly calculosDosDados?: readonly {
                 /**
                  * Fato derivado
-                 * @description Código do fato derivado no catálogo, de 1 a 60 caracteres.
+                 * @description Código do fato derivado no catálogo, de 1 a 50 caracteres.
                  */
                 readonly codigoDoDado: string;
                 /**
@@ -11726,6 +11726,11 @@ export interface components {
          * @description Identificador local de uma parte do documento, que as outras partes usam para se referir a ela; as referências a uma parte (por exemplo a chave da fase ou da etapa) têm este mesmo formato. É único entre as partes do mesmo tipo no documento ou, quando a parte pertence a outra (os itens de uma etapa), dentro da parte que a contém. Letras minúsculas, números e sublinhados, começando por letra. Quem escreve o documento escolhe a chave; na gravação pela tela, o sistema a atribui uma vez ao criar a parte. Ela não muda ao renomear nem ao reordenar.
          */
         readonly DocumentoDaConfiguracaoComunsChave: string;
+        /**
+         * Código de cadastro
+         * @description Código com letra maiúscula inicial, seguido de letras maiúsculas e algarismos, com palavras separadas por sublinhado.
+         */
+        readonly DocumentoDaConfiguracaoComunsCodigoDeCadastro: string;
         /**
          * Código estável de catálogo
          * @description Código estável e legível de um item de catálogo ou de uma unidade. Nunca o identificador interno do banco: um valor com a forma de identificador único (UUID) é recusado.
@@ -11917,7 +11922,7 @@ export interface components {
         readonly DocumentoDaConfiguracaoCondicoesCondicao: {
             /**
              * Dado
-             * @description Código do fato que a condição examina, de 1 a 60 caracteres (o limite do armazenamento), com ao menos um caractere que não seja espaço.
+             * @description Código do fato que a condição examina, de 1 a 50 caracteres (o limite do armazenamento), com ao menos um caractere que não seja espaço.
              */
             readonly codigoDoDado: string;
             /**
@@ -12131,9 +12136,9 @@ export interface components {
         readonly DocumentoDaConfiguracaoDistribuicaoDeVagas: {
             /**
              * Oferta de curso
-             * @description Código da oferta de curso no cadastro, de letras maiúsculas, dígitos e sublinhado, de 2 a 50 caracteres. É a chave da distribuição.
+             * @description Código da oferta de curso no cadastro, de 1 a 50 caracteres. É a chave da distribuição.
              */
-            readonly ofertaCursoCodigo: string;
+            readonly ofertaCursoCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
             /**
              * Vagas ofertadas base
              * @description Número de vagas que a oferta tem antes da distribuição por modalidade. Maior que zero.
@@ -12215,12 +12220,12 @@ export interface components {
              * Modalidade reduzida
              * @description Código da modalidade de onde se reduz. Usado em reduzirDe.
              */
-            readonly modalidadeCodigo?: string;
+            readonly modalidadeCodigo?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
             /**
              * Modalidades reduzidas
              * @description Códigos das modalidades em que se reduz proporcionalmente. Usado em reduzirProporcionalEm.
              */
-            readonly modalidadeCodigos?: readonly string[];
+            readonly modalidadeCodigos?: readonly components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"][];
         };
         /**
          * Modalidade da oferta
@@ -12229,9 +12234,9 @@ export interface components {
         readonly DocumentoDaConfiguracaoDistribuicaoDeVagasModalidade: {
             /**
              * Código da modalidade
-             * @description Código da modalidade no cadastro, de letras maiúsculas, dígitos e sublinhado, de 1 a 60 caracteres.
+             * @description Código da modalidade no cadastro, de 1 a 60 caracteres.
              */
-            readonly codigo: string;
+            readonly codigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
             /**
              * Quantidade declarada
              * @description Quantidade de vagas que o edital fixa para a modalidade. Nula ou ausente quando o sistema a calcula.
@@ -12252,7 +12257,7 @@ export interface components {
              * Código da modalidade
              * @description Código da modalidade no cadastro.
              */
-            readonly modalidadeCodigo?: string;
+            readonly modalidadeCodigo?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
             /**
              * Quantidade
              * @description Vagas da modalidade no quadro.
@@ -12814,14 +12819,14 @@ export interface components {
             readonly teto?: number;
             /**
              * Fato de elegibilidade
-             * @description Código do fato que decide quem recebe o FADA, quando o processo o declara, de 1 a 60 caracteres.
+             * @description Código do fato que decide quem recebe o FADA, quando o processo o declara, de 1 a 50 caracteres.
              */
-            readonly codigoDoDadoDeElegibilidade?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
+            readonly codigoDoDadoDeElegibilidade?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
             /**
              * Base legal
-             * @description Código estável da base legal do FADA no catálogo: maiúscula inicial, depois maiúsculas, dígitos e sublinhado, de 2 a 100 caracteres.
+             * @description Código estável da base legal do FADA no catálogo: de 1 a 80 caracteres.
              */
-            readonly baseLegalCodigo?: string;
+            readonly baseLegalCodigo?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
             /**
              * Tipo do instrumento
              * @description Tipo do instrumento normativo da base legal. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
@@ -13037,9 +13042,9 @@ export interface components {
             readonly ordem?: number;
             /**
              * Termo
-             * @description Código estável do termo no catálogo de termos de consentimento, de até 100 caracteres.
+             * @description Código estável do termo no catálogo de termos de consentimento, de até 80 caracteres.
              */
-            readonly termoCodigo: string;
+            readonly termoCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
             /**
              * Versão do termo
              * @description Número da versão publicada do termo, a partir de 1.
@@ -13215,9 +13220,9 @@ export interface components {
         readonly DocumentoDaConfiguracaoItemDoFormulario: {
             /**
              * Fato
-             * @description Código do fato no catálogo, de 1 a 60 caracteres. Cada fato é coletado por um só formulário do processo.
+             * @description Código do fato no catálogo, de 1 a 50 caracteres. Cada fato é coletado por um só formulário do processo.
              */
-            readonly codigoDoDado: string;
+            readonly codigoDoDado: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
             /**
              * Página
              * @description Código da página do tipo SECAO, do mesmo formulário, em que o item aparece. Nulo ou ausente em subitem de grupo.
@@ -13270,10 +13275,15 @@ export interface components {
             readonly opcoes?: readonly components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioOpcao"][];
         };
         /**
-         * Código local
-         * @description Código escolhido por quem escreve o formulário, de 1 a 60 caracteres, único no formulário.
+         * Código da opção
+         * @description Texto de 1 a 60 caracteres, único no fato.
          */
-        readonly DocumentoDaConfiguracaoItemDoFormularioCodigoLocal: string;
+        readonly DocumentoDaConfiguracaoItemDoFormularioCodigoDaOpcao: string;
+        /**
+         * Código local
+         * @description Código de 1 a 60 caracteres, com letra maiúscula inicial, letras maiúsculas e algarismos separados por sublinhado.
+         */
+        readonly DocumentoDaConfiguracaoItemDoFormularioCodigoLocal: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
         /**
          * Impedimento de inscrição
          * @description Condição sobre a resposta do próprio campo que impede a inscrição.
@@ -13299,7 +13309,7 @@ export interface components {
              * Código
              * @description Código da opção, de 1 a 60 caracteres, único no fato.
              */
-            readonly codigo: components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
+            readonly codigo: components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoDaOpcao"];
             /**
              * Rótulo
              * @description Texto da opção exibido ao candidato, de até 300 caracteres.
@@ -13362,9 +13372,9 @@ export interface components {
         } & (unknown | unknown);
         /**
          * Código do motivo
-         * @description Código do motivo no catálogo: maiúscula inicial, depois maiúsculas, dígitos e sublinhado, de 2 a 50 caracteres.
+         * @description Código do motivo no catálogo: letra maiúscula inicial, letras maiúsculas e algarismos, com palavras separadas por sublinhado, de 1 a 50 caracteres.
          */
-        readonly DocumentoDaConfiguracaoMotivoCodigoDoMotivo: string;
+        readonly DocumentoDaConfiguracaoMotivoCodigoDoMotivo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
         /**
          * Ordem de remanejamento
          * @description A ordem em que as vagas não preenchidas de uma modalidade passam a outras. No máximo uma ordem por processo; sem o objeto, o processo não tem ordem de remanejamento.
@@ -13379,7 +13389,7 @@ export interface components {
              * Modalidade de destino final
              * @description Código da modalidade que recebe as vagas quando nenhum destino da ordem as absorve, em geral a ampla concorrência.
              */
-            readonly destinoFinalCodigo?: string;
+            readonly destinoFinalCodigo?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
             /**
              * Destinos
              * @description Os destinos de cada modalidade de origem, até 56 no total e até 8 origens distintas.
@@ -13389,7 +13399,7 @@ export interface components {
                  * Modalidade de origem
                  * @description Código da modalidade que cede as vagas.
                  */
-                readonly modalidadeOrigemCodigo: string;
+                readonly modalidadeOrigemCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
                 /**
                  * Ordem
                  * @description Posição do destino na ordem da origem, a partir de 1. A ordem é semântica: decide quem recebe primeiro.
@@ -13399,7 +13409,7 @@ export interface components {
                  * Modalidade de destino
                  * @description Código da modalidade que recebe as vagas.
                  */
-                readonly modalidadeDestinoCodigo: string;
+                readonly modalidadeDestinoCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
             }[];
         };
         /**
@@ -13544,7 +13554,7 @@ export interface components {
              * Grupo do formulário para repetição
              * @description Código do grupo do formulário para cujos registros a regra é aplicada.
              */
-            readonly grupoDoFormularioParaRepeticao?: string;
+            readonly grupoDoFormularioParaRepeticao?: components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
             /**
              * Itens
              * @description Regras contidas no grupo de comprovação.
