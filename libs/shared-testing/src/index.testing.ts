@@ -17,3 +17,4 @@ export {
 } from './lib/interceptador-de-conferencia.testing';
 export * from './lib/folha-de-estilo.testing';
 export * from './lib/glifos-do-primeicons.testing';
+export { testarInicializacaoDoAplicativo } from './lib/inicializacao-do-aplicativo.testing';

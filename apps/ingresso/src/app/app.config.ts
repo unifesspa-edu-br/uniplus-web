@@ -26,7 +26,7 @@ export const appConfig: ApplicationConfig = {
     ),
     // Runtime config (ADR-0021) — fetch /assets/runtime-config.json antes
     // do bootstrap das rotas + provê AUTH_CONFIG e BASE_PATHs a partir do
-    // AppConfigService. DEVE vir antes de provideAuth().
+    // AppConfigService.
     provideRuntimeConfig(),
     provideAuth(),
   ],
