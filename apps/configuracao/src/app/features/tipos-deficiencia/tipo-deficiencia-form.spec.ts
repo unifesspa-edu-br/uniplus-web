@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { FormControl } from '@angular/forms';
 import { TipoDeficienciaDto } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
@@ -84,8 +85,8 @@ describe('formulário de tipo de deficiência', () => {
       expect(tocar('x'.repeat(200), 'nome')).toBeNull();
       expect(tocar('x'.repeat(201), 'nome')).toBe('Informe no máximo 200 caracteres.');
       expect(tocar('x'.repeat(1001), 'descricao')).toBe('Informe no máximo 1000 caracteres.');
-      expect(tocar('9', 'codigo')).toContain('Informe ao menos');
-      expect(tocar('9X', 'codigo')).toContain('Formato inválido');
+      expect(tocar('9', 'codigo')).toBe(textoDoFormatoDoCodigo(50));
+      expect(tocar('9X', 'codigo')).toBe(textoDoFormatoDoCodigo(50));
       expect(tocar('A'.repeat(60), 'codigo')).toBe('Informe no máximo 50 caracteres.');
     });
 

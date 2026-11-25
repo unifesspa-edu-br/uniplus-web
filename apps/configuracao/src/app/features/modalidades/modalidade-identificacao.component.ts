@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 
@@ -13,16 +14,9 @@ import { ModalidadeSecao } from './modalidade-secao';
   styleUrl: '../../shared/formulario/secao-do-formulario.css',
 })
 export class ModalidadeIdentificacaoComponent extends ModalidadeSecao {
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(60);
   readonly modoEdicao = input.required<boolean>();
   readonly codigoSaiu = output<void>();
 
   protected readonly descricaoMax = DESCRICAO_TAMANHO_MAXIMO;
-
-  /** O código é sempre maiúsculo; na edição ele é somente leitura. */
-  protected normalizarCodigo(evento: Event): void {
-    const alvo = evento.target;
-    if (this.modoEdicao() || !(alvo instanceof HTMLInputElement)) return;
-    const normalizado = alvo.value.toLocaleUpperCase('pt-BR');
-    if (normalizado !== alvo.value) this.form().controls.codigo.setValue(normalizado);
-  }
 }

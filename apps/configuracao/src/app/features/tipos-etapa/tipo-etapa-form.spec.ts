@@ -31,6 +31,17 @@ const tipo: TipoEtapaDto = {
   criadoEm: '',
 };
 
+const comandoEsperado = {
+  nome: 'Nome',
+  avaliacao: {
+    admitePontuacao: false,
+    admiteEliminacao: true,
+    exigeCorrecaoIndependente: false,
+    conceitosAdmitidos: ['CONCEITO_A'],
+  },
+  descricao: null,
+};
+
 describe('formulário de tipo de etapa', () => {
   it('nasce inválido, admitindo os dois caracteres, e exige código e nome', () => {
     const form = criarFormularioDeEtapa();
@@ -59,29 +70,20 @@ describe('formulário de tipo de etapa', () => {
       descricao: '',
       conceitosAdmitidos: ['CONCEITO_A'],
     });
+  });
+
+  it('preserva o código e apara os demais textos nos comandos', () => {
+    const form = criarFormularioDeEtapa();
+    form.reset(valoresDaEtapa(tipo));
     form.patchValue({ codigo: ' NOVA ', nome: ' Nome ', descricao: '  ' });
-    expect(comandoDeCriacao(form)).toEqual({
-      codigo: 'NOVA',
-      nome: 'Nome',
-      avaliacao: {
-        admitePontuacao: false,
-        admiteEliminacao: true,
-        exigeCorrecaoIndependente: false,
-        conceitosAdmitidos: ['CONCEITO_A'],
-      },
-      descricao: null,
-    });
-    expect(comandoDeAtualizacao('1', form)).toEqual({
-      id: '1',
-      nome: 'Nome',
-      avaliacao: {
-        admitePontuacao: false,
-        admiteEliminacao: true,
-        exigeCorrecaoIndependente: false,
-        conceitosAdmitidos: ['CONCEITO_A'],
-      },
-      descricao: null,
-    });
+    expect(comandoDeCriacao(form)).toEqual({ codigo: ' NOVA ', ...comandoEsperado });
+  });
+
+  it('atualiza com textos aparados e avaliação preservada', () => {
+    const form = criarFormularioDeEtapa();
+    form.reset(valoresDaEtapa(tipo));
+    form.patchValue({ codigo: ' NOVA ', nome: ' Nome ', descricao: '  ' });
+    expect(comandoDeAtualizacao('1', form)).toEqual({ id: '1', ...comandoEsperado });
   });
 
   it('cria o tipo sem conceitos admitidos e mantém os que o tipo já tinha ao atualizar', () => {

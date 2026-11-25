@@ -12,7 +12,7 @@ import {
   problema,
   recusaDeCampo,
   sucesso,
-} from './tipos-ato.testing';
+} from './tipos-ato-cadastro.testing';
 
 describe('TiposAtoPage — escritas pela interface', () => {
   let p: Pagina;

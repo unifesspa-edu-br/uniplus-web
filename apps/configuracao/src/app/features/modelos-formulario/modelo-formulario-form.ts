@@ -1,10 +1,11 @@
 import { FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
+import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 import {
   CriarModeloFormularioCommand,
   type FinalidadeFormularioCodigo,
 } from '@uniplus/shared-data/configuracao';
 import { conteudoInicial } from '@uniplus/shared-inscricao/formulario';
-import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { conteudoParaOModelo } from './conteudo-do-modelo';
 
@@ -32,11 +33,7 @@ function campoDeTexto(...validators: ValidatorFn[]): FormControl<string> {
 
 export function criarFormularioDeModelo(): FormGroup<CriacaoForm> {
   return new FormGroup<CriacaoForm>({
-    codigo: campoDeTexto(
-      Validators.required,
-      Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
-      Validators.pattern(CODIGO_CADASTRO_FORMATO),
-    ),
+    codigo: campoDeTexto(Validators.required, ...validadoresDoCodigo(60)),
     nome: campoDeTexto(Validators.required, Validators.maxLength(200)),
     descricao: campoDeTexto(Validators.maxLength(1000)),
     finalidade: new FormControl<FinalidadeFormularioCodigo | null>(null, Validators.required),
@@ -49,7 +46,7 @@ export function comandoDeCriacao(form: FormGroup<CriacaoForm>): CriarModeloFormu
   const valores = form.getRawValue();
   if (valores.finalidade === null) throw new Error('Finalidade obrigatória.');
   return {
-    codigo: valores.codigo.trim(),
+    codigo: valores.codigo,
     finalidade: valores.finalidade,
     descritivo: {
       nome: valores.nome.trim(),
@@ -74,7 +71,5 @@ export function mensagemDoCampo(controle: FormControl<string | null>): string | 
   const mensagem = mensagemDeErroDoControle(controle);
   if (mensagem === null || controle.errors === null) return mensagem;
   if (controle.errors['backend'] || controle.errors['required']) return mensagem;
-  return controle.errors['pattern']
-    ? 'Use caixa alta, começando por letra, com letras, números e sublinhado.'
-    : mensagem;
+  return controle.errors['pattern'] ? textoDoFormatoDoCodigo(60) : mensagem;
 }

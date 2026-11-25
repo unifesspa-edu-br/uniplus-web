@@ -14,12 +14,14 @@ import { isencao } from './motivos-de-decisao.testing';
 import { tipoPedeSubclassificacao } from './tipos-de-motivo';
 
 describe('formulário de motivo de decisão', () => {
-  it('na criação, todos os campos valem e só o código e a descrição são validados pelo tamanho', () => {
+  it('na criação, valida o formato do código e o tamanho da descrição', () => {
     const form = criarFormularioDeMotivo();
     ajustarAoModo(form, 'criar', false);
     form.reset({ ...MOTIVO_EM_BRANCO, codigo: 'a', descricao: 'ab' });
 
-    expect(form.controls.codigo.hasError('minlength')).toBe(true);
+    expect(form.controls.codigo.hasError('pattern')).toBe(true);
+    form.controls.codigo.setValue('A');
+    expect(form.controls.codigo.valid).toBe(true);
     expect(form.controls.descricao.hasError('minlength')).toBe(true);
     expect(form.controls.sentido.hasError('required')).toBe(true);
     expect(form.controls.subclassificacao.disabled).toBe(true);

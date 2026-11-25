@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import type { AprovacaoDaProtecaoDto } from '@uniplus/shared-data/configuracao';
@@ -38,6 +39,7 @@ import {
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class TipoDocumentoFormularioComponent {
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(50);
   readonly aberto = model.required<boolean>();
   readonly form = input.required<FormGroup<TipoDocumentoForm>>();
   readonly modo = input.required<'criar' | 'editar'>();

@@ -25,7 +25,7 @@
           <label class="field" [class.is-error]="erroDoCampo('codigo')">
             <span class="field__label is-required">Código</span>
             <input
-              class="input cfg-input-uppercase"
+              class="input"
               type="text"
               formControlName="codigo"
               aria-required="true"
@@ -36,7 +36,7 @@
               @if (modo() === 'editar') {
                 Imutável: é a identidade da série de vigências.
               } @else {
-                Em maiúsculas, separado por underscore — por exemplo, RESULTADO_PRELIMINAR.
+                {{ ajudaDoCodigo }}
               }
             </span>
             @if (erroDoCampo('codigo')) {

@@ -184,9 +184,9 @@ describe('RecursosAcessibilidadeListPage', () => {
     edicao.form.controls.nome.setValue('Sala de apoio');
     expect(edicao.form.controls.codigo.value).toBe('SALA_DE_APOIO');
     edicao.form.controls.codigo.setValue('apoio');
-    expect(edicao.form.controls.codigo.value).toBe('APOIO');
+    expect(edicao.form.controls.codigo.value).toBe('apoio');
     edicao.form.controls.nome.setValue('Outro nome');
-    expect(edicao.form.controls.codigo.value).toBe('APOIO');
+    expect(edicao.form.controls.codigo.value).toBe('apoio');
   });
 
   it('na edição, o código vigente não acompanha o nome', async () => {

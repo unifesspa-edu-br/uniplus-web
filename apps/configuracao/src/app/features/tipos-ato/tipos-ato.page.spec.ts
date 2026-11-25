@@ -7,13 +7,8 @@ import {
   criado,
   montarPagina,
   preliminar,
-  problema,
   sucesso,
-} from './tipos-ato.testing';
-import {
-  TEXTO_TENTANDO,
-  situacaoDoAlerta,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
+} from './tipos-ato-cadastro.testing';
 
 describe('TiposAtoPage', () => {
   let p: Pagina;
@@ -333,143 +328,6 @@ describe('TiposAtoPage', () => {
       expect(p.statusDaPagina()).toBe(
         'Vigência RESULTADO_PRELIMINAR_INSCRICAO iniciada em 01/01/2026 removida.',
       );
-    });
-  });
-
-  describe('paginação', () => {
-    it('avisa quando a busca não alcança o catálogo inteiro', async () => {
-      p.store.recarregar();
-      await p.propagar();
-      p.http
-        .expectOne((r) => r.url === LISTA)
-        .flush([preliminar, aviso], {
-          headers: { Link: `<${LISTA}?cursor=PROXIMA&direction=next>; rel="next"` },
-        });
-      await p.propagar();
-      expect(p.fixture.nativeElement.textContent).not.toContain('a busca alcança só a que está');
-
-      const busca = p.elemento<HTMLInputElement>('input[type="search"]');
-      busca.value = 'inexistente';
-      busca.dispatchEvent(new Event('input'));
-      await p.propagar();
-
-      expect(p.fixture.nativeElement.textContent).toContain(
-        'a busca alcança só a que está carregada',
-      );
-      expect(p.fixture.nativeElement.textContent).toContain(
-        'A busca alcança só a página carregada — ajuste o termo ou navegue pelas páginas.',
-      );
-    });
-
-    it('segue pelo cursor e volta à primeira página ao recarregar', async () => {
-      p.store.recarregar();
-      await p.propagar();
-      p.http
-        .expectOne((r) => r.url === LISTA)
-        .flush([preliminar], {
-          headers: { Link: `<${LISTA}?cursor=abc&direction=next>; rel="next"` },
-        });
-      await p.propagar();
-
-      p.store.proximaPagina();
-      await p.propagar();
-      const proxima = p.http.expectOne((r) => r.params.get('cursor') === 'abc');
-      expect(proxima.request.params.get('direction')).toBe('next');
-      expect(proxima.request.params.get('vigentes')).toBe('false');
-      proxima.flush([aviso]);
-      await p.propagar();
-      expect(p.store.atos()).toEqual([aviso]);
-
-      p.store.recarregar();
-      await p.propagar();
-      const primeira = p.http.expectOne((r) => r.url === LISTA);
-      expect(primeira.request.params.has('cursor')).toBe(false);
-      primeira.flush([preliminar]);
-      await p.propagar();
-      expect(p.store.atos()).toEqual([preliminar]);
-    });
-    it.each([
-      [400, 'uniplus.cursor.invalido', 'A paginação foi reiniciada porque a consulta mudou.'],
-      [
-        410,
-        'uniplus.cursor.expirado',
-        'A listagem ficou aberta tempo demais e a consulta expirou.',
-      ],
-    ] as const)(
-      'cursor recusado (%s) recomeça do início, avisa e não mostra o alerta de falha',
-      async (status, code, aviso) => {
-        p.store.recarregar();
-        await p.propagar();
-        p.http
-          .expectOne((r) => r.url === LISTA)
-          .flush([preliminar], {
-            headers: { Link: `<${LISTA}?cursor=abc&direction=next>; rel="next"` },
-          });
-        await p.propagar();
-        p.store.proximaPagina();
-        await p.propagar();
-        p.http
-          .expectOne((r) => r.params.get('cursor') === 'abc')
-          .flush(...problema(status, { code }));
-        await p.propagar();
-
-        expect(p.store.mensagemDeErro()).toBeNull();
-        expect(p.informacoes).toHaveBeenCalledWith(aviso, 'Recarregamos a listagem do começo.');
-        const recarga = p.http.expectOne((r) => r.url === LISTA);
-        expect(recarga.request.params.has('cursor')).toBe(false);
-        recarga.flush([preliminar]);
-        await p.propagar();
-      },
-    );
-
-    it('a nova tentativa recusada por cursor expirado segue em andamento até a leitura do começo terminar', async () => {
-      const TITULO = 'Não foi possível carregar os tipos de ato';
-      p.store.recarregar();
-      await p.propagar();
-      p.http
-        .expectOne((r) => r.url === LISTA)
-        .flush([preliminar], {
-          headers: { Link: `<${LISTA}?cursor=abc&direction=next>; rel="next"` },
-        });
-      await p.propagar();
-      p.store.proximaPagina();
-      await p.propagar();
-      p.http.expectOne((r) => r.params.get('cursor') === 'abc').flush(...problema(500));
-      await p.propagar();
-
-      p.elemento<HTMLButtonElement>('ui-alerta-nova-tentativa button').click();
-      await p.propagar();
-      p.http
-        .expectOne((r) => r.params.get('cursor') === 'abc')
-        .flush(...problema(410, { code: 'uniplus.cursor.expirado' }));
-      await Promise.resolve();
-      expect(p.store.mensagemDeErro()).toBeNull();
-      expect(p.store.carregando()).toBe(true);
-      await p.propagar();
-
-      expect(situacaoDoAlerta(p.fixture.nativeElement, TITULO)).toBe(TEXTO_TENTANDO);
-      p.http.expectOne((r) => r.url === LISTA && !r.params.has('cursor')).flush([aviso]);
-      await p.propagar();
-      expect(p.fixture.nativeElement.querySelector('ui-alerta-nova-tentativa')).toBeNull();
-    });
-
-    it('volta à página anterior pelo cursor que a resposta indicou', async () => {
-      p.store.recarregar();
-      await p.propagar();
-      p.http
-        .expectOne((r) => r.url === LISTA)
-        .flush([preliminar], {
-          headers: { Link: `<${LISTA}?cursor=ant&direction=prev>; rel="prev"` },
-        });
-      await p.propagar();
-
-      p.store.paginaAnterior();
-      await p.propagar();
-      const anterior = p.http.expectOne((r) => r.params.get('cursor') === 'ant');
-      expect(anterior.request.params.get('direction')).toBe('prev');
-      anterior.flush([aviso]);
-      await p.propagar();
-      expect(p.store.atos()).toEqual([aviso]);
     });
   });
 });

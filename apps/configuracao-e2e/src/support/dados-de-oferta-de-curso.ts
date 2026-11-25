@@ -38,7 +38,7 @@ export const UNIDADE = {
   vigenciaFim: null,
 };
 
-/** A identidade da oferta: caixa alta, começando por letra, de 2 a 50 caracteres. */
+/** A identidade da oferta: letras maiúsculas e algarismos, com sublinhado entre palavras, até 50 caracteres. */
 export const CODIGO_DA_OFERTA = 'ENGENHARIA_CIVIL_MARABA';
 
 export const OFERTA: JsonDaApi<OfertaCursoDto> = {

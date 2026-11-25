@@ -7,7 +7,6 @@ import {
   RegimeDeTurnoCodigo,
   TurnoOfertaCodigo,
 } from '@uniplus/shared-data/configuracao';
-import { manterEmCaixaAlta } from '../../shared/codigo-de-cadastro';
 import type { OfertaCursoForm } from './oferta-curso-form';
 import { dicaDosTurnos, manterOsMaisRecentes, turnosExigidosPorRegime } from './turnos-da-oferta';
 import type { VinculosEscolhidos } from './vinculos-da-oferta';
@@ -143,7 +142,6 @@ export function acompanharRegrasDaOferta(
   _ofertaEmEdicao: Signal<OfertaCursoDto | null>,
 ): AcompanhamentoDoFormulario {
   const sinais = sinaisDasRegras(form);
-  manterEmCaixaAlta(form.controls.codigo);
   aplicarRegras(form, sinais);
   return {
     escolhidos: vinculosEscolhidos(form),

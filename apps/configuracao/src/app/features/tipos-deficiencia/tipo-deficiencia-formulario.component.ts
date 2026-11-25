@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
@@ -12,6 +13,7 @@ import { TipoDeficienciaForm, mensagemDoCampo } from './tipo-deficiencia-form';
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class TipoDeficienciaFormularioComponent {
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(50);
   readonly aberto = model.required<boolean>();
   readonly form = input.required<FormGroup<TipoDeficienciaForm>>();
   readonly titulo = input.required<string>();

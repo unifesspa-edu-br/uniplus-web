@@ -50,7 +50,7 @@
       <label class="field" [class.is-error]="erroCodigo">
         <span class="field__label is-required">Código</span>
         <input
-          class="input cfg-input-uppercase"
+          class="input"
           type="text"
           formControlName="codigo"
           aria-required="true"
@@ -59,9 +59,10 @@
             erroCodigo ? 'cfg-fato-codigo-dica cfg-fato-codigo-erro' : 'cfg-fato-codigo-dica'
           "
         />
-        <span class="field__hint" id="cfg-fato-codigo-dica">
-          Caixa alta, letras, números e sublinhado. Nunca se reutiliza.
-        </span>
+        <span class="field__hint" id="cfg-fato-codigo-dica"
+          >{{ ajudaDoCodigo }} Único e não pode ser alterado após a criação. Nunca se
+          reutiliza.</span
+        >
         @if (erroCodigo) {
           <span class="field__error" id="cfg-fato-codigo-erro">{{ erroCodigo }}</span>
         }

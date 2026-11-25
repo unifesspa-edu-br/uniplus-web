@@ -49,9 +49,9 @@
                   : 'cfg-motivo-codigo-ajuda'
               "
             />
-            <span class="field__hint" id="cfg-motivo-codigo-ajuda">
-              {{ criando() ? 'Imutável após a criação.' : 'Imutável.' }}
-            </span>
+            <span class="field__hint" id="cfg-motivo-codigo-ajuda"
+              >{{ ajudaDoCodigo }} Não pode ser alterado após a criação.</span
+            >
             @if (erroDoCampo('codigo')) {
               <span class="field__error" id="cfg-motivo-codigo-erro">{{
                 erroDoCampo('codigo')

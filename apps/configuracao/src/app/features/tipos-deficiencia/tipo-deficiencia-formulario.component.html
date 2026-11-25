@@ -49,7 +49,6 @@
             aria-required="true"
             class="input"
             type="text"
-            style="text-transform: uppercase"
             placeholder="Ex.: VISUAL"
             formControlName="codigo"
             [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
@@ -57,11 +56,10 @@
               erroCampoCodigo ? 'cfg-td-codigo-dica cfg-td-codigo-erro' : 'cfg-td-codigo-dica'
             "
           />
-          <span class="field__hint" id="cfg-td-codigo-dica">
-            Identidade do cadastro: caixa alta, começando por letra, com letras, números e
-            sublinhado, de 2 a 50 caracteres. Único entre os tipos de deficiência ativos. Sugerido a
-            partir do nome e editável antes de salvar.
-          </span>
+          <span class="field__hint" id="cfg-td-codigo-dica"
+            >{{ ajudaDoCodigo }} Único entre os tipos de deficiência ativos. Sugerido a partir do
+            nome e editável antes de salvar.</span
+          >
           @if (erroCampoCodigo) {
             <span class="field__error" id="cfg-td-codigo-erro">{{ erroCampoCodigo }}</span>
           }

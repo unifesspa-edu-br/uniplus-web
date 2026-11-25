@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   CATEGORIAS,
@@ -34,7 +35,6 @@ describe('TiposDocumentoPage — formulário', () => {
   const opcoesDaCategoria = (): HTMLOptionElement[] => [
     ...p.fixture.nativeElement.querySelectorAll('select[formcontrolname="categoria"] option'),
   ];
-
   it('identifica como obrigatórios, para tecnologias assistivas, todos os controles obrigatórios', async () => {
     p = await montarPagina([]);
     await p.abrirCadastro();
@@ -50,14 +50,12 @@ describe('TiposDocumentoPage — formulário', () => {
     }
     expect(p.campo('descricao').hasAttribute('aria-required')).toBe(false);
   });
-
   it('bloqueia salvar com os obrigatórios vazios, marca os campos e leva o foco ao primeiro', async () => {
     p = await montarPagina([]);
     await p.acionarNovo();
     p.salvar().focus();
     p.salvar().click();
     await submeter();
-
     p.http.expectNone(ESCRITA);
     for (const nome of ['codigo', 'categoria', 'nome']) {
       expect(p.campo(nome).getAttribute('aria-invalid'), nome).toBe('true');
@@ -65,7 +63,6 @@ describe('TiposDocumentoPage — formulário', () => {
     expect(mensagem('nome')).toBe('Campo obrigatório.');
     expect(document.activeElement).toBe(p.campo('codigo'));
   });
-
   describe('código', () => {
     it('é sugerido a partir do nome ao criar, em caixa alta sem acento', async () => {
       p = await montarPagina([]);
@@ -73,7 +70,6 @@ describe('TiposDocumentoPage — formulário', () => {
       p.preencher('nome', 'Laudo médico');
       expect(p.campo('codigo').value).toBe('LAUDO_MEDICO');
     });
-
     it('a edição manual do código não é sobrescrita pela sugestão', async () => {
       p = await montarPagina([]);
       await p.acionarNovo();
@@ -82,7 +78,6 @@ describe('TiposDocumentoPage — formulário', () => {
       p.preencher('nome', 'Laudo médico para PcD');
       expect(p.campo('codigo').value).toBe('LAUDO_MEDICO_PCD');
     });
-
     it('na edição, digitar o nome não altera o código já gravado', async () => {
       p = await montarPagina([rg]);
       await p.abrirEdicao(rg);
@@ -90,23 +85,18 @@ describe('TiposDocumentoPage — formulário', () => {
       expect(p.campo('codigo').value).toBe('RG');
       expect(p.campo('codigo').readOnly).toBe(false);
     });
-
     it('nome que não produz código válido não deixa sugestão no campo', async () => {
       p = await montarPagina([]);
       await p.acionarNovo();
       p.preencher('nome', '21 de abril');
       expect(p.campo('codigo').value).toBe('');
     });
-
     it('fora do formato fechado é recusado no cliente, com a regra à vista e associada ao campo', async () => {
       p = await montarPagina([]);
       await p.abrirCadastro();
       p.preencher('codigo', '01');
       await p.enviarSemRequisicao();
-
-      expect(mensagem('codigo')).toBe(
-        'Use caixa alta, começando por letra, com letras, números e sublinhado.',
-      );
+      expect(mensagem('codigo')).toBe(textoDoFormatoDoCodigo(50));
       expect(p.campo('codigo').getAttribute('aria-invalid')).toBe('true');
       expect(p.campo('codigo').getAttribute('aria-describedby')).toBe(
         'cfg-tdoc-codigo-dica cfg-tdoc-codigo-erro',
@@ -114,7 +104,6 @@ describe('TiposDocumentoPage — formulário', () => {
       expect(document.activeElement).toBe(p.campo('codigo'));
     });
   });
-
   describe('tipo equivalente', () => {
     it('igual ao próprio código é recusado no cliente, e o foco vai ao campo', async () => {
       p = await montarPagina([]);
@@ -122,13 +111,11 @@ describe('TiposDocumentoPage — formulário', () => {
       p.preencher('codigo', 'RG');
       p.preencher('tipoEquivalente', 'RG');
       await p.enviarSemRequisicao();
-
       expect(mensagem('tipoEquivalente')).toBe(
         'O tipo equivalente não pode ser igual ao próprio código.',
       );
       expect(document.activeElement).toBe(p.campo('tipoEquivalente'));
     });
-
     it('a recusa aparece assim que o código passa a repetir o equivalente', async () => {
       p = await montarPagina([]);
       await p.abrirCadastro();
@@ -136,12 +123,10 @@ describe('TiposDocumentoPage — formulário', () => {
       p.preencher('codigo', 'DECLARACAO_DE_RENDA');
       await p.propagar();
       expect(mensagem('tipoEquivalente')).toContain('não pode ser igual');
-
       p.preencher('codigo', 'DECLARACAO_RENDA');
       await p.propagar();
       expect(mensagem('tipoEquivalente')).toBeUndefined();
     });
-
     it('diferente do código não gera erro e o envio segue', async () => {
       p = await montarPagina([]);
       await p.abrirCadastro();
@@ -153,7 +138,6 @@ describe('TiposDocumentoPage — formulário', () => {
       await p.recarregarCom([rg]);
     });
   });
-
   describe('tamanho máximo', () => {
     it.each(['0', '-5'])(
       '%s é recusado no cliente com a regra do inteiro positivo',
@@ -166,7 +150,6 @@ describe('TiposDocumentoPage — formulário', () => {
         expect(document.activeElement).toBe(p.campo('tamanhoMaximoMb'));
       },
     );
-
     it('positivo ou vazio é aceito e viaja no comando', async () => {
       p = await montarPagina([]);
       await p.abrirCadastro();
@@ -177,7 +160,6 @@ describe('TiposDocumentoPage — formulário', () => {
       await p.recarregarCom([rg]);
     });
   });
-
   it.each([
     ['codigo', 51, 'Informe no máximo 50 caracteres.'],
     ['nome', 201, 'Informe no máximo 200 caracteres.'],
@@ -194,7 +176,6 @@ describe('TiposDocumentoPage — formulário', () => {
       expect(mensagem(campo)).toBe(texto);
     },
   );
-
   it('o nome com menos de dois caracteres pede ao menos dois', async () => {
     p = await montarPagina([]);
     await p.abrirCadastro();
@@ -202,7 +183,6 @@ describe('TiposDocumentoPage — formulário', () => {
     await p.enviarSemRequisicao();
     expect(mensagem('nome')).toBe('Informe ao menos 2 caracteres.');
   });
-
   describe('formatos aceitos', () => {
     it('serializa as caixas marcadas para "pdf,jpg,png"', async () => {
       p = await montarPagina([]);
@@ -214,7 +194,6 @@ describe('TiposDocumentoPage — formulário', () => {
       post.flush(...criado());
       await p.recarregarCom([rg]);
     });
-
     it('nenhum formato marcado vai como null', async () => {
       p = await montarPagina([]);
       await p.abrirCadastro();
@@ -223,7 +202,6 @@ describe('TiposDocumentoPage — formulário', () => {
       post.flush(...criado());
       await p.recarregarCom([rg]);
     });
-
     it('ao abrir a edição, marca as caixas da string guardada', async () => {
       p = await montarPagina([rg]);
       await p.abrirEdicao(rg);
@@ -231,7 +209,6 @@ describe('TiposDocumentoPage — formulário', () => {
       expect(marcadas).toEqual([true, true, false, false]);
     });
   });
-
   it('o nome só com espaços viaja como null, para o servidor responder sobre a ausência', async () => {
     p = await montarPagina([]);
     await p.abrirCadastro();
@@ -242,12 +219,10 @@ describe('TiposDocumentoPage — formulário', () => {
     post.flush(...criado());
     await p.recarregarCom([rg]);
   });
-
   describe('categoria', () => {
     it('oferece as categorias do cadastro com o nome do cadastro', async () => {
       p = await montarPagina([]);
       await p.acionarNovo();
-
       expect(opcoesDaCategoria()).toHaveLength(CATEGORIAS.length + 1);
       expect(
         opcoesDaCategoria()
@@ -255,7 +230,6 @@ describe('TiposDocumentoPage — formulário', () => {
           ?.textContent?.trim(),
       ).toBe('Titulação e experiência');
     });
-
     it('cadastro numa categoria nova envia o código e conclui', async () => {
       p = await montarPagina([]);
       await p.abrirCadastro();
@@ -267,7 +241,6 @@ describe('TiposDocumentoPage — formulário', () => {
       expect(p.fixture.nativeElement.textContent).toContain('Documento processual');
       expect(p.edicao.aberto()).toBe(false);
     });
-
     it('categoria criada no cadastro ganha opção e chip sem alteração de código', async () => {
       const militar = {
         ...CATEGORIAS[0],
@@ -278,16 +251,13 @@ describe('TiposDocumentoPage — formulário', () => {
       };
       p = await montarPagina([orfao], { categorias: [...CATEGORIAS, militar] });
       await p.acionarNovo();
-
       expect(opcoesDaCategoria().map((o) => o.value)).toContain('DOCUMENTO_MILITAR');
       expect(p.store.categoriaChips().map((c) => c.label)).toContain('Documento militar');
       expect(p.store.categoriaChips().map((c) => c.label)).not.toContain('Fora do cadastro');
     });
-
     it('editar um tipo de categoria removida preserva o código no select e explica', async () => {
       p = await montarPagina([orfao]);
       await p.abrirEdicao(orfao);
-
       const select = p.campo('categoria') as unknown as HTMLSelectElement;
       expect(select.value).toBe('DOCUMENTO_MILITAR');
       expect(opcoesDaCategoria().find((o) => o.value === 'DOCUMENTO_MILITAR')?.textContent).toBe(
@@ -297,11 +267,9 @@ describe('TiposDocumentoPage — formulário', () => {
         'não está mais no cadastro',
       );
     });
-
     it('enquanto o catálogo não chega, a opção do código atual não inventa rótulo', async () => {
       p = await montarPagina([diploma], { categorias: 'pendente' });
       await p.abrirEdicao(diploma);
-
       const opcao = opcoesDaCategoria().find((o) => o.value === 'TITULACAO_EXPERIENCIA');
       expect(opcao?.textContent).toBe('Carregando…');
       expect(p.campo('categoria').getAttribute('aria-busy')).toBe('true');
@@ -310,11 +278,9 @@ describe('TiposDocumentoPage — formulário', () => {
       );
       p.atenderCategorias();
     });
-
     it('a recusa do catálogo aparece no campo Categoria e a nova tentativa leva o foco ao campo', async () => {
       p = await montarPagina([], { categorias: 'falha' });
       await p.acionarNovo();
-
       const campo = p.campo('categoria').closest('.field') as HTMLElement;
       expect(campo.querySelector('[role="alert"]')?.textContent).toContain(
         'Não foi possível carregar as categorias.',
@@ -327,32 +293,26 @@ describe('TiposDocumentoPage — formulário', () => {
       p.atenderCategorias();
       await p.propagar();
       await p.propagar();
-
       expect(campo.querySelector('[role="alert"]')).toBeNull();
       expect(document.activeElement).toBe(p.campo('categoria'));
     });
-
     it('durante o salvamento o botão do aviso fica indisponível e não pede o catálogo', async () => {
       p = await montarPagina([], { categorias: 'falha' });
       await p.abrirCadastro();
       p.edicao.form.controls.categoria.setValue('RENDA');
       const post = await p.enviar();
       const tentar = p.elemento<HTMLButtonElement>('ui-drawer button.link-button');
-
       expect(tentar.getAttribute('aria-disabled')).toBe('true');
       tentar.click();
       await p.propagar();
       p.http.expectNone((r) => r.url === CATEGORIAS_URL);
-
       post.flush(...criado());
       await p.recarregarCom([rg]);
     });
-
     it('associa a dica e a mensagem de erro ao campo para leitor de tela', async () => {
       p = await montarPagina([]);
       await p.acionarNovo();
       expect(p.campo('categoria').getAttribute('aria-describedby')).toBe('cfg-td-categoria-dica');
-
       await p.enviarSemRequisicao();
       expect(p.campo('categoria').getAttribute('aria-invalid')).toBe('true');
       expect(p.campo('categoria').getAttribute('aria-describedby')).toBe(
@@ -361,7 +321,6 @@ describe('TiposDocumentoPage — formulário', () => {
       expect(p.elemento('#cfg-td-categoria-erro').textContent?.trim()).toBe('Campo obrigatório.');
     });
   });
-
   describe('proteção de dados', () => {
     it('esvazia a hipótese legal que não cabe na nova classificação', async () => {
       p = await montarPagina([]);
@@ -370,12 +329,10 @@ describe('TiposDocumentoPage — formulário', () => {
       await p.propagar();
       p.preencher('hipoteseLegal', 'INTERESSE_LEGITIMO');
       expect(p.edicao.form.controls.hipoteseLegal.value).toBe('INTERESSE_LEGITIMO');
-
       p.preencher('classificacaoProtecao', 'SENSIVEL');
       await p.propagar();
       expect(p.edicao.form.controls.hipoteseLegal.value).toBe('');
     });
-
     it('ao abrir a edição mantém a hipótese do servidor; só esvazia a que a pessoa tornou incompatível', async () => {
       const antigo = {
         ...rg,
@@ -386,21 +343,18 @@ describe('TiposDocumentoPage — formulário', () => {
       await p.abrirEdicao(antigo);
       await p.propagar();
       expect(p.edicao.form.controls.hipoteseLegal.value).toBe('INTERESSE_LEGITIMO');
-
       p.preencher('classificacaoProtecao', 'PESSOAL');
       await p.propagar();
       p.preencher('hipoteseLegal', 'PREVENCAO_A_FRAUDE');
       await p.propagar();
       expect(p.edicao.form.controls.hipoteseLegal.value).toBe('');
     });
-
     it('avisa que o tipo aprovado volta a pendente ao mudar a classificação, e não ao mudar o nome', async () => {
       p = await montarPagina([rg]);
       await p.abrirEdicao(rg);
       p.preencher('nome', 'Registro Geral revisado');
       await p.propagar();
       expect(p.edicao.avisaNovaAprovacao()).toBe(false);
-
       p.preencher('classificacaoProtecao', 'SENSIVEL');
       await p.propagar();
       expect(p.edicao.avisaNovaAprovacao()).toBe(true);
@@ -409,7 +363,6 @@ describe('TiposDocumentoPage — formulário', () => {
       );
     });
   });
-
   it('o sucesso do criar fecha o drawer, envia a chave, anuncia e recarrega a lista', async () => {
     p = await montarPagina([]);
     await p.abrirCadastro();

@@ -1,3 +1,5 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
+import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
 import {
   AcaoQuandoIndeferidoCodigo,
@@ -14,16 +16,11 @@ import {
   nullIfBlank,
 } from '../../shared/formulario';
 
-const CODIGO_REGEX = /^[A-Z0-9_]+$/u;
 const CODIGO_TAMANHO_MAX = 60;
 const DESCRICAO_MAX = 300;
 const BASE_LEGAL_MAX = 500;
 const CODIGO_REFERENCIA_MAX = 60;
-const VALIDADORES_DO_CODIGO = [
-  Validators.required,
-  Validators.maxLength(CODIGO_TAMANHO_MAX),
-  Validators.pattern(CODIGO_REGEX),
-];
+const VALIDADORES_DO_CODIGO = [Validators.required, ...validadoresDoCodigo(CODIGO_TAMANHO_MAX)];
 
 export type RegraSelecao = RegraRemanejamentoCodigo | '';
 export type AcaoSelecao = AcaoQuandoIndeferidoCodigo | '';
@@ -206,7 +203,7 @@ export function comandoDeCriacao(
   regraDeAplicabilidade: CriarModalidadeCommand['regraDeAplicabilidade'],
 ): CriarModalidadeCommand {
   return {
-    codigo: nullIfBlank(valores.codigo),
+    codigo: valores.codigo || null,
     ...camposComuns(valores, regraDeAplicabilidade),
   };
 }
@@ -250,7 +247,7 @@ export function mensagemDoCampo(control: AbstractControl): string | null {
   const exibir = control.touched || control.dirty;
   if (!exibir || erros === null || erros['backend']) return mensagemDeErroDoControle(control);
   if (erros['duplicado']) return 'Código já utilizado por outra modalidade viva.';
-  if (erros['pattern']) return 'Use apenas maiúsculas, dígitos e sublinhado.';
+  if (erros['pattern']) return textoDoFormatoDoCodigo(60);
   return mensagemDeErroDoControle(control);
 }
 

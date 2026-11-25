@@ -59,9 +59,6 @@ export class EdicaoDosModelosFormulario {
     this.form.controls.nome.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((nome) => this.sugerirCodigo(nome));
-    this.form.controls.codigo.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe((codigo) => this.normalizarCaixaDoCodigo(codigo));
     this.acompanharRecarga();
   }
 
@@ -93,7 +90,7 @@ export class EdicaoDosModelosFormulario {
     this.escrita.set('salvando');
     this.erroDaCriacao.set(null);
     this.recusaDaCriacao.set('');
-    const codigo = this.form.controls.codigo.value.trim();
+    const codigo = this.form.controls.codigo.value;
     this.api
       .criar(comandoDeCriacao(this.form), withIdempotencyKey(this.chaveDaCriacao))
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -204,22 +201,12 @@ export class EdicaoDosModelosFormulario {
     });
   }
 
-  /** A API só aceita código em caixa alta; a caixa alta na tela é do estilo do campo. */
-  private normalizarCaixaDoCodigo(codigo: string): void {
-    const emCaixaAlta = codigo.toLocaleUpperCase('pt-BR');
-    if (emCaixaAlta !== codigo) {
-      this.form.controls.codigo.setValue(emCaixaAlta, {
-        emitEvent: false,
-        emitModelToViewChange: false,
-      });
-    }
-  }
-
   /** A sugestão de código acompanha o nome até o administrador escrever outro código. */
   private sugerirCodigo(nome: string): void {
     const atual = this.form.controls.codigo.value;
     if (atual !== '' && atual !== this.ultimaSugestao) return;
     this.ultimaSugestao = sugerirCodigoDeCadastro(nome);
     this.form.controls.codigo.setValue(this.ultimaSugestao, { emitEvent: false });
+    if (this.form.controls.codigo.hasError('maxlength')) this.form.controls.codigo.markAsDirty();
   }
 }

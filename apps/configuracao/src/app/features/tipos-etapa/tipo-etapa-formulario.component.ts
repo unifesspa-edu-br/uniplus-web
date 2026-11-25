@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import type { LookupCompleto } from '@uniplus/shared-core/http';
@@ -10,7 +11,7 @@ import {
   type RecusaDoCampo,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
-import { mensagemDeErroDoControle, recusasDoControle } from '../../shared/formulario';
+import { mensagemDeErroDoCampoComFormato, recusasDoControle } from '../../shared/formulario';
 import { ConceitosAdmitidosComponent } from './conceitos-admitidos.component';
 import { EtapaForm } from './tipo-etapa-form';
 
@@ -30,6 +31,7 @@ import { EtapaForm } from './tipo-etapa-form';
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class TipoEtapaFormularioComponent {
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(80);
   readonly aberto = model.required<boolean>();
   readonly form = input.required<FormGroup<EtapaForm>>();
   readonly modo = input.required<'criar' | 'editar'>();
@@ -53,7 +55,7 @@ export class TipoEtapaFormularioComponent {
   }
 
   protected erroDoCampo(nome: keyof EtapaForm): string | null {
-    return mensagemDeErroDoControle(this.form().controls[nome]);
+    return mensagemDeErroDoCampoComFormato(this.form().controls[nome], textoDoFormatoDoCodigo(80));
   }
 
   protected recusasDoCampo(nome: keyof EtapaForm): readonly RecusaDoCampo[] {

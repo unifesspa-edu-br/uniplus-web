@@ -46,7 +46,6 @@
             aria-required="true"
             class="input"
             type="text"
-            style="text-transform: uppercase"
             placeholder="Ex.: LEDOR"
             formControlName="codigo"
             [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
@@ -54,11 +53,10 @@
               erroCampoCodigo ? 'cfg-ra-codigo-dica cfg-ra-codigo-erro' : 'cfg-ra-codigo-dica'
             "
           />
-          <span class="field__hint" id="cfg-ra-codigo-dica">
-            Identidade do recurso, que o candidato escolhe na inscrição: caixa alta, começando por
-            letra, com letras, números e sublinhado, de 2 a 50 caracteres. Único entre os recursos
-            ativos. Sugerido a partir do nome e editável.
-          </span>
+          <span class="field__hint" id="cfg-ra-codigo-dica"
+            >{{ ajudaDoCodigo }} Único entre os recursos ativos. Sugerido a partir do nome e
+            editável.</span
+          >
           @if (erroCampoCodigo) {
             <span class="field__error" id="cfg-ra-codigo-erro">{{ erroCampoCodigo }}</span>
           }

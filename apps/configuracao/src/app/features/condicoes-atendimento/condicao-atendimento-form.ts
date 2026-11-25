@@ -1,3 +1,5 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
+import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
 import {
   AtualizarCondicaoAtendimentoCommand,
@@ -23,8 +25,7 @@ export type ValoresDaCondicao = ReturnType<FormGroup<CondicaoAtendimentoForm>['g
 
 export const CONDICAO_EM_BRANCO: ValoresDaCondicao = { codigo: '', nome: '', descricao: '' };
 
-const MENSAGEM_DE_FORMATO =
-  'Formato inválido. Use letras maiúsculas, números e sublinhado, iniciando por letra (ex.: DISLEXIA, TDAH).';
+const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(50);
 
 const CONTROLES_DO_SERVIDOR: ReadonlySet<string> = new Set<keyof CondicaoAtendimentoForm>([
   'codigo',
@@ -32,17 +33,16 @@ const CONTROLES_DO_SERVIDOR: ReadonlySet<string> = new Set<keyof CondicaoAtendim
   'descricao',
 ]);
 
+function controleDoCodigo(): FormControl<string> {
+  return new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, ...validadoresDoCodigo(50)],
+  });
+}
+
 export function criarFormularioDeCondicao(): FormGroup<CondicaoAtendimentoForm> {
   return new FormGroup<CondicaoAtendimentoForm>({
-    codigo: new FormControl('', {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.minLength(2),
-        Validators.maxLength(50),
-        Validators.pattern('^[A-Z][A-Z0-9_]{1,49}$'),
-      ],
-    }),
+    codigo: controleDoCodigo(),
     nome: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required, Validators.minLength(2), Validators.maxLength(200)],
@@ -68,7 +68,7 @@ export function controleDoCampoDoServidor(field: string): keyof CondicaoAtendime
 
 export function comandoDeCriacao(valores: ValoresDaCondicao): CriarCondicaoAtendimentoCommand {
   return {
-    codigo: nullIfBlank(valores.codigo),
+    codigo: valores.codigo || null,
     nome: nullIfBlank(valores.nome),
     descricao: nullIfBlank(valores.descricao),
   };

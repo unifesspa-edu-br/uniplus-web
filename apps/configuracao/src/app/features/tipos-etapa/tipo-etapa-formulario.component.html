@@ -38,10 +38,10 @@
                   : 'cfg-etapa-codigo-ajuda'
               "
             />
-            <span class="field__hint" id="cfg-etapa-codigo-ajuda">
-              Identifica o tipo para sempre — nem a remoção libera o código para reuso. Por
-              convenção, maiúsculas separadas por sublinhado, como ANALISE_DOCUMENTAL.
-            </span>
+            <span class="field__hint" id="cfg-etapa-codigo-ajuda"
+              >{{ ajudaDoCodigo }} Identifica o tipo para sempre; a remoção não libera o código para
+              reuso.</span
+            >
             @if (recusasDoCampo('codigo').length > 0) {
               <ui-recusa-do-campo id="cfg-etapa-codigo-erro" [recusas]="recusasDoCampo('codigo')" />
             } @else if (erroDoCampo('codigo')) {
@@ -139,10 +139,16 @@
             mínima.
           </span>
           @if (recusasDoCampo('admitePontuacao').length > 0) {
-            <ui-recusa-do-campo id="cfg-etapa-pontuacao-erro" [recusas]="recusasDoCampo('admitePontuacao')" />
+            <ui-recusa-do-campo
+              id="cfg-etapa-pontuacao-erro"
+              [recusas]="recusasDoCampo('admitePontuacao')"
+            />
           }
           @if (recusasDoCampo('admiteEliminacao').length > 0) {
-            <ui-recusa-do-campo id="cfg-etapa-eliminacao-erro" [recusas]="recusasDoCampo('admiteEliminacao')" />
+            <ui-recusa-do-campo
+              id="cfg-etapa-eliminacao-erro"
+              [recusas]="recusasDoCampo('admiteEliminacao')"
+            />
           }
         </fieldset>
       </section>

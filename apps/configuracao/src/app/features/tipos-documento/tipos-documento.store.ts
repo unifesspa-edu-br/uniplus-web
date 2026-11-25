@@ -33,7 +33,7 @@ const PAGE_SIZE = 50;
 
 /**
  * Valor do chip que recolhe os registros cuja categoria saiu do cadastro. Não colide com código
- * de categoria, que é `^[A-Z][A-Z0-9_]{1,49}$`.
+ * de categoria.
  */
 const FILTRO_FORA_DO_CATALOGO = '*fora-do-cadastro*';
 
@@ -106,11 +106,7 @@ export class TiposDocumentoStore {
    */
   readonly categoriaChips = computed<readonly UiFilterChipOption[]>(() => {
     const registros = this.buscados();
-    const contagem = new Map<string, number>();
-    for (const registro of registros) {
-      contagem.set(registro.categoria, (contagem.get(registro.categoria) ?? 0) + 1);
-    }
-    const orfaos = this.codigosForaDoCatalogo();
+    const contagem = this.contarPorCategoria(registros);
     const chips: UiFilterChipOption[] = [
       { value: '', label: 'Todas', count: registros.length },
       ...this.categorias.opcoes().map((categoria) => ({
@@ -119,13 +115,8 @@ export class TiposDocumentoStore {
         count: contagem.get(categoria.codigo) ?? 0,
       })),
     ];
-    if (orfaos.size > 0) {
-      chips.push({
-        value: FILTRO_FORA_DO_CATALOGO,
-        label: 'Fora do cadastro',
-        count: registros.filter((tipo) => orfaos.has(tipo.categoria)).length,
-      });
-    }
+    const foraDoCadastro = this.chipForaDoCadastro(registros);
+    if (foraDoCadastro) chips.push(foraDoCadastro);
     return chips;
   });
 
@@ -261,6 +252,24 @@ export class TiposDocumentoStore {
       this.categorias.porCodigo().get(codigo),
       (categoria) => categoria.nome,
     );
+  }
+
+  private chipForaDoCadastro(registros: readonly TipoDocumentoDto[]): UiFilterChipOption | null {
+    const orfaos = this.codigosForaDoCatalogo();
+    if (orfaos.size === 0) return null;
+    return {
+      value: FILTRO_FORA_DO_CATALOGO,
+      label: 'Fora do cadastro',
+      count: registros.filter((tipo) => orfaos.has(tipo.categoria)).length,
+    };
+  }
+
+  private contarPorCategoria(registros: readonly TipoDocumentoDto[]): Map<string, number> {
+    const contagem = new Map<string, number>();
+    for (const registro of registros) {
+      contagem.set(registro.categoria, (contagem.get(registro.categoria) ?? 0) + 1);
+    }
+    return contagem;
   }
 
   private situacaoDe(id: string): SituacaoNaLinha {

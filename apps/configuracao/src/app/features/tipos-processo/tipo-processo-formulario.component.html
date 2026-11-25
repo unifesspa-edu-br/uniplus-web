@@ -26,7 +26,7 @@
           <label class="field" [class.is-error]="erroCampoCodigo">
             <span class="field__label is-required">Código</span>
             <input
-              class="input cfg-input-uppercase"
+              class="input"
               type="text"
               placeholder="Ex.: SISU"
               formControlName="codigo"
@@ -39,15 +39,10 @@
                   : 'cfg-tproc-codigo-dica'
               "
             />
-            <span class="field__hint" id="cfg-tproc-codigo-dica">
-              @if (modo() === 'criar') {
-                Chave natural do cadastro: caixa alta, começando por letra, com letras, números e
-                sublinhado. Imutável após a criação e não reutilizável — sugerido a partir do nome e
-                editável antes de salvar.
-              } @else {
-                Imutável após a criação. Para corrigir, desative este tipo e cadastre outro.
-              }
-            </span>
+            <span class="field__hint" id="cfg-tproc-codigo-dica"
+              >{{ ajudaDoCodigo }} Não pode ser alterado após a criação nem reutilizado. Para
+              corrigir, desative este tipo e cadastre outro.</span
+            >
             @if (erroCampoCodigo) {
               <span class="field__error" id="cfg-tproc-codigo-erro">{{ erroCampoCodigo }}</span>
             }

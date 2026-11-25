@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
-import { ligarCodigoDeCadastro, manterEmCaixaAlta } from './codigo-de-cadastro';
+import { ligarCodigoDeCadastro } from './codigo-de-cadastro';
 
 function montar(emCriacao: () => boolean) {
   const campos = {
@@ -56,38 +56,9 @@ describe('ligarCodigoDeCadastro', () => {
     expect(codigo.value).toBe('LEDOR');
   });
 
-  it('o código digitado em minúsculas vai em caixa alta', () => {
+  it('preserva o código digitado em minúsculas', () => {
     const { codigo } = montar(() => true);
-
     codigo.setValue('ledor');
-
-    expect(codigo.value).toBe('LEDOR');
-  });
-});
-
-describe('manterEmCaixaAlta', () => {
-  function montarSozinho() {
-    const codigo = new FormControl('', { nonNullable: true });
-    TestBed.runInInjectionContext(() => manterEmCaixaAlta(codigo));
-    return codigo;
-  }
-
-  it('leva o código digitado em minúsculas para caixa alta, sem emitir nova edição', () => {
-    const codigo = montarSozinho();
-    const emissoes: string[] = [];
-    codigo.valueChanges.subscribe((valor) => emissoes.push(valor));
-
-    codigo.setValue('engenharia_01');
-
-    expect(codigo.value).toBe('ENGENHARIA_01');
-    expect(emissoes).toEqual(['engenharia_01']);
-  });
-
-  it('não reescreve o código que já está em caixa alta', () => {
-    const codigo = montarSozinho();
-
-    codigo.setValue('ENGENHARIA_01');
-
-    expect(codigo.value).toBe('ENGENHARIA_01');
+    expect(codigo.value).toBe('ledor');
   });
 });

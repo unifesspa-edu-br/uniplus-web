@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { ID_DO_TIPO_DE_DADO_DA_CRIACAO } from './ids-do-fato';
 import { acompanharTiposDoDado } from './leituras-do-fato';
 import { VOCABULARIO_DE_TIPOS_DO_DADO } from '@uniplus/shared-data/configuracao';
@@ -47,6 +48,7 @@ import { lerCatalogoDeFatos, lerFasesCanonicas } from './leituras-do-fato';
   styleUrl: './fato-drawer.css',
 })
 export class FatoCriacaoComponent {
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(50);
   protected readonly tiposDoDado = inject(VOCABULARIO_DE_TIPOS_DO_DADO);
   protected readonly leituraDosTipos = acompanharTiposDoDado(ID_DO_TIPO_DE_DADO_DA_CRIACAO);
 

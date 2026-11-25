@@ -11,6 +11,14 @@ import {
 } from './tipo-documento-form';
 import { PROTECAO_PREENCHIDA, rg } from './tipos-documento.testing';
 
+const dadosParaComando = {
+  codigo: ' NOVO ',
+  nome: ' Nome ',
+  descricao: '  ',
+  tipoEquivalente: '',
+  finalidadeTratamento: ' Finalidade ',
+};
+
 describe('formulário de tipo de documento', () => {
   it('nasce vazio e exige código, categoria, nome e a proteção de dados', () => {
     const form = criarFormularioDeTipoDocumento();
@@ -74,22 +82,21 @@ describe('formulário de tipo de documento', () => {
       formatoPng: false,
       tamanhoMaximoMb: 10,
     });
-    form.patchValue({
-      codigo: ' NOVO ',
-      nome: ' Nome ',
-      descricao: '  ',
-      tipoEquivalente: '',
-      finalidadeTratamento: ' Finalidade ',
-    });
+  });
+
+  it('preserva o código e apara os demais textos nos comandos', () => {
+    const form = criarFormularioDeTipoDocumento();
+    form.reset(valoresDoTipoDocumento(rg));
+    form.patchValue(dadosParaComando);
     expect(comandoDeCriacao(form)).toMatchObject({
-      codigo: 'NOVO',
+      codigo: ' NOVO ',
       nome: 'Nome',
       descricao: null,
       tipoEquivalente: null,
       finalidadeTratamento: 'Finalidade',
       formatosAceitos: 'pdf,jpg',
     });
-    expect(comandoDeAtualizacao('1', form)).toMatchObject({ id: '1', codigo: 'NOVO' });
+    expect(comandoDeAtualizacao('1', form)).toMatchObject({ id: '1', codigo: ' NOVO ' });
   });
 
   it('um tipo sem descrição, equivalente e formatos volta a campos vazios', () => {
@@ -138,4 +145,31 @@ describe('formulário de tipo de documento', () => {
     expect(controleDoCampoDoServidor('tipoEquivalente')).toBe('tipoEquivalente');
     expect(controleDoCampoDoServidor('Desconhecido')).toBeNull();
   });
+});
+
+describe('limites do código (50 caracteres)', () => {
+  it.each(['A', 'A'.repeat(50)])('aceita o código válido %s', (valor) => {
+    const codigo = criarFormularioDeTipoDocumento().controls.codigo;
+    codigo.setValue(valor);
+    expect(codigo.valid).toBe(true);
+  });
+
+  it.each([
+    ['', 'required'],
+    ['A'.repeat(51), 'maxlength'],
+  ] as const)('recusa o código %s por %s', (valor, erro) => {
+    const codigo = criarFormularioDeTipoDocumento().controls.codigo;
+    codigo.setValue(valor);
+    expect(codigo.hasError(erro)).toBe(true);
+  });
+
+  it.each(['a', ' A', 'A ', '1A', 'A__B', 'A_'])(
+    'preserva e recusa o código fora do formato %s',
+    (valor) => {
+      const codigo = criarFormularioDeTipoDocumento().controls.codigo;
+      codigo.setValue(valor);
+      expect(codigo.hasError('pattern')).toBe(true);
+      expect(codigo.value).toBe(valor);
+    },
+  );
 });

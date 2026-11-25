@@ -15,19 +15,6 @@ export interface CodigoDeCadastroLigado {
 }
 
 /**
- * Mantém o código em caixa alta no modelo, sem reescrever a view (`emitModelToViewChange: false`),
- * para não reposicionar o cursor; a apresentação em caixa alta fica por conta do `text-transform`
- * do campo. Chamar em contexto de injeção: a inscrição termina com a tela.
- */
-export function manterEmCaixaAlta(codigo: FormControl<string>): void {
-  codigo.valueChanges.pipe(takeUntilDestroyed()).subscribe((valor) => {
-    const emCaixaAlta = valor.toLocaleUpperCase('pt-BR');
-    if (emCaixaAlta === valor) return;
-    codigo.setValue(emCaixaAlta, { emitEvent: false, emitModelToViewChange: false });
-  });
-}
-
-/**
  * Sugere o código a partir do nome enquanto o que está no campo é obra da própria sugestão:
  * o operador que troca o código por outro encerra a sugestão.
  */
@@ -35,16 +22,13 @@ function criarSugestorDeCodigo(codigo: FormControl<string>): CodigoDeCadastroLig
   sugerirPara(nome: string): void;
 } {
   let ultimaSugestao = '';
-  return {
-    sugerirPara(nome: string): void {
-      if (codigo.value !== '' && codigo.value !== ultimaSugestao) return;
-      ultimaSugestao = sugerirCodigoDeCadastro(nome);
-      codigo.setValue(ultimaSugestao, { emitEvent: false });
-    },
-    reiniciar(): void {
-      ultimaSugestao = '';
-    },
-  };
+  function sugerirPara(nome: string): void {
+    if (codigo.value !== '' && codigo.value !== ultimaSugestao) return;
+    ultimaSugestao = sugerirCodigoDeCadastro(nome);
+    codigo.setValue(ultimaSugestao, { emitEvent: false });
+    if (codigo.hasError('maxlength')) codigo.markAsDirty();
+  }
+  return { sugerirPara, reiniciar: () => void (ultimaSugestao = '') };
 }
 
 /**
@@ -53,10 +37,6 @@ function criarSugestorDeCodigo(codigo: FormControl<string>): CodigoDeCadastroLig
  * - **sugestão:** na criação, o código acompanha o nome enquanto o que está nele é obra da
  *   própria sugestão, e para no instante em que o operador troca o código por outro. Fora da
  *   criação, nunca escreve: o código vigente é do registro;
- * - **caixa alta:** o código é normalizado no modelo sem reescrever a view
- *   (`emitModelToViewChange: false`), para não reposicionar o cursor; a apresentação em caixa
- *   alta fica por conta do `text-transform` do campo.
- *
  * Chamar em contexto de injeção (construtor ou inicialização de campo): as inscrições terminam
  * com a tela.
  */
@@ -68,6 +48,5 @@ export function ligarCodigoDeCadastro(
   campos.nome.valueChanges.pipe(takeUntilDestroyed()).subscribe((nome) => {
     if (emCriacao()) sugestor.sugerirPara(nome);
   });
-  manterEmCaixaAlta(campos.codigo);
   return sugestor;
 }

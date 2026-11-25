@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ModeloFormularioView, TipoProcessoDto } from '@uniplus/shared-data/configuracao';
@@ -26,6 +27,7 @@ import { FINALIDADES_DO_FORMULARIO } from './finalidades-do-formulario';
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class ModeloFormularioCriacaoComponent {
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(60);
   readonly form = input.required<FormGroup<CriacaoForm>>();
   readonly aberto = input.required<boolean>();
   readonly salvando = input.required<boolean>();

@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
@@ -12,6 +13,7 @@ import { TipoProcessoForm, mensagemDoCampo } from './tipo-processo-form';
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class TipoProcessoFormularioComponent {
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(80);
   readonly aberto = model.required<boolean>();
   readonly form = input.required<FormGroup<TipoProcessoForm>>();
   readonly modo = input.required<'criar' | 'editar'>();

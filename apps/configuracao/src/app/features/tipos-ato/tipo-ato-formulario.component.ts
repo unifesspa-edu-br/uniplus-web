@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
@@ -6,8 +7,7 @@ import { mensagemDeErroDoCampoComFormato } from '../../shared/formulario';
 import { DECLARACOES_DE_PUBLICACAO, SINALIZADORES } from './tipo-ato-campos';
 import { AtoForm } from './tipo-ato-form';
 
-/** Nenhum campo do tipo de ato tem validador de formato: a mensagem de formato nunca é a escolhida. */
-const MENSAGEM_DE_FORMATO = 'Valor inválido.';
+const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(60);
 
 /** O drawer do cadastro e da edição de uma vigência de tipo de ato. */
 @Component({
@@ -19,6 +19,7 @@ const MENSAGEM_DE_FORMATO = 'Valor inválido.';
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class TipoAtoFormularioComponent {
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(60);
   readonly aberto = model.required<boolean>();
   readonly form = input.required<FormGroup<AtoForm>>();
   readonly modo = input.required<'criar' | 'editar'>();

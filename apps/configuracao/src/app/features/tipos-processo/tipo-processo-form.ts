@@ -1,10 +1,11 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 import {
   TipoProcessoDto,
   type AtualizarTipoProcessoCommand,
   type CriarTipoProcessoCommand,
 } from '@uniplus/shared-data/configuracao';
-import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import {
   controlNameFromBackendField,
   mensagemDeErroDoCampoComFormato,
@@ -22,10 +23,8 @@ export type ValoresDoTipoProcesso = ReturnType<FormGroup<TipoProcessoForm>['getR
 /** Limites de tamanho dos campos editáveis (Domain `TipoProcesso`, uniplus-api). */
 const NOME_TAMANHO_MAXIMO = 200;
 const DESCRICAO_TAMANHO_MAXIMO = 1000;
-const CODIGO_TAMANHO_MINIMO = 2;
 
-const MENSAGEM_DE_FORMATO =
-  'Use caixa alta, começando por letra, com letras, números e sublinhado.';
+const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(80);
 
 const CAMPOS: ReadonlySet<string> = new Set<keyof TipoProcessoForm>([
   'codigo',
@@ -33,17 +32,16 @@ const CAMPOS: ReadonlySet<string> = new Set<keyof TipoProcessoForm>([
   'descricao',
 ]);
 
+function controleDoCodigo(): FormControl<string> {
+  return new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, ...validadoresDoCodigo(80)],
+  });
+}
+
 export function criarFormularioDeTipoProcesso(): FormGroup<TipoProcessoForm> {
   return new FormGroup<TipoProcessoForm>({
-    codigo: new FormControl('', {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.minLength(CODIGO_TAMANHO_MINIMO),
-        Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
-        Validators.pattern(CODIGO_CADASTRO_FORMATO),
-      ],
-    }),
+    codigo: controleDoCodigo(),
     nome: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required, Validators.maxLength(NOME_TAMANHO_MAXIMO)],
@@ -70,7 +68,7 @@ export function controleDoCampoDoServidor(field: string): keyof TipoProcessoForm
 export function comandoDeCriacao(form: FormGroup<TipoProcessoForm>): CriarTipoProcessoCommand {
   const valor = form.getRawValue();
   return {
-    codigo: valor.codigo.trim(),
+    codigo: valor.codigo,
     nome: valor.nome.trim(),
     descricao: nullIfBlank(valor.descricao),
   };

@@ -203,11 +203,12 @@ describe('CondicoesAtendimentoPage', () => {
     expect(edicao.form.controls.codigo.enabled).toBe(true);
   });
 
-  it('o código é digitado em caixa alta', async () => {
+  it('preserva a digitação e recusa código em minúsculas', async () => {
     await listar([]);
     edicao.abrirCadastro();
     edicao.form.controls.codigo.setValue('tdah');
-    expect(edicao.form.controls.codigo.value).toBe('TDAH');
+    expect(edicao.form.controls.codigo.value).toBe('tdah');
+    expect(edicao.form.controls.codigo.hasError('pattern')).toBe(true);
   });
 
   it('cria com o código, o nome e a descrição sem os brancos e com a chave de idempotência', async () => {

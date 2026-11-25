@@ -1,3 +1,4 @@
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { Injector, runInInjectionContext, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
@@ -49,9 +50,7 @@ describe('o formulário de criação do fato', () => {
     form.controls.codigo.setValue('minúsculo');
     form.controls.codigo.markAsTouched();
 
-    expect(mensagemDoCampo(form.controls.codigo)).toBe(
-      'Use caixa alta, começando por letra, com letras, números e sublinhado.',
-    );
+    expect(mensagemDoCampo(form.controls.codigo)).toBe(textoDoFormatoDoCodigo(50));
     form.controls.codigo.setValue('PERFIL_2');
     expect(mensagemDoCampo(form.controls.codigo)).toBeNull();
   });

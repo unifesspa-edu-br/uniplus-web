@@ -26,18 +26,24 @@
             aria-required="true"
             class="input"
             type="text"
-            style="text-transform: uppercase"
             inputmode="text"
             placeholder="Ex.: DISLEXIA"
             formControlName="codigo"
             [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
+            [attr.aria-describedby]="
+              erroDoCampo('codigo')
+                ? 'cfg-condicao-codigo-ajuda cfg-condicao-codigo-erro'
+                : 'cfg-condicao-codigo-ajuda'
+            "
           />
-          <span class="field__hint"
-            >Caixa alta, iniciando por letra; letras, números e sublinhado. Único entre as condições
-            ativas. Editável, exceto o código {{ codigoReservado }} (reservado).
-          </span>
+          <span class="field__hint" id="cfg-condicao-codigo-ajuda"
+            >{{ ajudaDoCodigo }} Único entre as condições ativas. Editável, exceto o código
+            {{ codigoReservado }} (reservado).</span
+          >
           @if (erroDoCampo('codigo')) {
-            <span class="field__error">{{ erroDoCampo('codigo') }}</span>
+            <span class="field__error" id="cfg-condicao-codigo-erro">{{
+              erroDoCampo('codigo')
+            }}</span>
           }
         </label>
 

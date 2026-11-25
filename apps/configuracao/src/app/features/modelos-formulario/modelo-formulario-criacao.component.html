@@ -47,14 +47,14 @@
           <span class="field__label is-required">Código</span>
           <input
             aria-required="true"
-            class="input cfg-input-uppercase"
+            class="input"
             type="text"
             formControlName="codigo"
             [attr.aria-invalid]="erro('codigo') ? 'true' : null"
             aria-describedby="cfg-modelo-codigo-nota cfg-modelo-codigo-erro"
           />
           <span class="field__hint" id="cfg-modelo-codigo-nota"
-            >Caixa alta, com letras, números e sublinhado. Não muda depois de criado.</span
+            >{{ ajudaDoCodigo }} Único e não pode ser alterado após a criação.</span
           >
           @if (erro('codigo')) {
             <span class="field__error" id="cfg-modelo-codigo-erro">{{ erro('codigo') }}</span>
