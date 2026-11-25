@@ -61,7 +61,7 @@ export class EncerramentoDaJanela {
     if (recusa === null) {
       this.form.reset();
       this.tentou.set(false);
-      this.envio.concluir('Janela encerrada');
+      this.envio.concluir('Revisão das concessões encerrada');
     } else {
       this.recusar(recusa);
     }

@@ -227,13 +227,13 @@ export class LayoutComponent {
           exact: true,
         },
         {
-          label: 'Janelas na gestão de acessos',
+          label: 'Revisões das concessões na gestão de acessos',
           icon: 'pi-clock',
           routerLink: '/acessos/janelas-de-migracao/gestao-de-acessos',
           exact: true,
         },
         {
-          label: 'Janelas na proteção de dados',
+          label: 'Revisões das concessões na proteção de dados',
           icon: 'pi-hourglass',
           routerLink: '/acessos/janelas-de-migracao/protecao-de-dados',
           exact: true,

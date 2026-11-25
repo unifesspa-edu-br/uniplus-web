@@ -3,10 +3,10 @@
     <h2 id="cfg-retidas-titulo" class="panel-head__title">Concessões retidas</h2>
   </div>
   <p class="panel-body">
-    O lote reteve estas concessões porque a pessoa beneficiada é quem o enviou. Outra pessoa da
-    gestão de acessos decide cada uma.
+    O envio das decisões reteve estas concessões porque a pessoa beneficiada é quem o enviou. Outra
+    pessoa da gestão de acessos decide cada uma.
     @if (!podeDecidir()) {
-      Você consulta a janela, mas a decisão cabe à gestão de acessos.
+      Você consulta a revisão das concessões, mas a decisão cabe à gestão de acessos.
     }
   </p>
   <cfg-tabela-da-janela
@@ -23,7 +23,7 @@
             [disabled]="gravando()"
             (click)="migrar(item)"
           >
-            Migrar
+            Aprovar
             <span class="sr-only">{{ item.beneficiarioNome ?? 'pessoa sem nome informado' }}</span>
           </button>
           <button

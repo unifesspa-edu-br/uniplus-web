@@ -146,6 +146,8 @@ describe('detalhe da trilha', () => {
       'Etapa: Gestão de acessos.',
     );
     expect(tipoDeEvento('migracao_recusar')).toBe('Concessão recusada na revisão');
+    expect(tipoDeEvento('migracao_migrar')).toBe('Concessão aprovada na versão nova');
+    expect(tipoDeEvento('migracao_nao_migrada')).toBe('Concessão não aprovada no prazo da revisão');
   });
 
   it('nomeia em pt-BR os eventos do termo de responsabilidade nas trilhas do pedido e da concessão', () => {

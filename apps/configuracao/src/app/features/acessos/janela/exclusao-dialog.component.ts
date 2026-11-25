@@ -18,7 +18,7 @@ import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shar
 let proximoId = 0;
 
 /**
- * Confirmação de que recusar, ou encerrar a janela, revoga o acesso. O botão só segue adiante com
+ * Confirmação de que recusar, ou encerrar a revisão das concessões, revoga o acesso. O botão só segue adiante com
  * a caixa marcada; quem hospeda faz a chamada e informa `erro` e `enviando`.
  */
 @Component({

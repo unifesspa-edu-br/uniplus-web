@@ -89,7 +89,9 @@ test.describe('Versões e janela — quem decide a etapa de proteção de dados'
     const etapa = page.locator('section', {
       has: page.getByRole('heading', { name: 'Etapa da proteção de dados' }),
     });
-    await expect(etapa).toContainText('só migram com a decisão do Representante do controlador');
+    await expect(etapa).toContainText(
+      'só são aprovadas com a decisão do Representante do controlador',
+    );
     await expect(etapa.getByText('Aguarda o Representante do controlador')).toBeVisible();
     await expect(etapa.getByText('Passa pelo Representante do controlador.')).toBeVisible();
     await semViolacoes(page);

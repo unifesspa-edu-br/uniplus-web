@@ -22,8 +22,8 @@
     </p>
   } @else {
     <p class="panel-body">
-      Decida todas as concessões da versão anterior: quem migra passa à versão nova e quem é
-      recusado perde o acesso. As decisões são enviadas juntas e uma só vez.
+      Decida todas as concessões da versão anterior: quem é aprovado na versão nova continua com
+      acesso e quem é recusado perde o acesso. As decisões são enviadas juntas e uma só vez.
     </p>
   }
 
@@ -44,7 +44,7 @@
           [disabled]="gravando()"
           (click)="lote.decidirTodas(itens().aguardandoDecisao, ResultadoDaMigracao.MIGRAR)"
         >
-          Migrar todas
+          Aprovar todas
         </button>
         <button
           type="button"

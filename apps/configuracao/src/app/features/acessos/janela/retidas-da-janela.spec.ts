@@ -45,7 +45,7 @@ describe('concessões retidas da revisão', () => {
     const retidas = presente(host.querySelector('cfg-retidas-da-janela'));
     expect(retidas.querySelector('tr[data-concessao-id="c1"]')).not.toBeNull();
     expect(retidas.querySelector('tr[data-concessao-id="c3"]')).toBeNull();
-    expect(botao(linhaDe(host, 'c1'), 'Migrar')).toBeDefined();
+    expect(botao(linhaDe(host, 'c1'), 'Aprovar')).toBeDefined();
     expect(botao(linhaDe(host, 'c1'), 'Recusar')).toBeDefined();
     expect(linhaDe(host, 'c3').querySelector('button')).toBeNull();
     expect(host.textContent).toContain('Retidas: outra pessoa decide');
@@ -55,7 +55,7 @@ describe('concessões retidas da revisão', () => {
     api.decidirRetida.mockReturnValue(of(ok(DEPOIS_DO_ENVIO)));
     const { host, responder } = await abrirJanela(DEPOIS_DO_ENVIO);
 
-    presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
+    presente(botao(linhaDe(host, 'c1'), 'Aprovar')).click();
     await responder(
       janelaDeMigracao({
         decisoesEnviadas: true,
@@ -69,9 +69,9 @@ describe('concessões retidas da revisão', () => {
       { decisao: ResultadoDaMigracao.MIGRAR, confirmacaoDeExclusao: false },
       expect.anything(),
     );
-    expect(notificacoes.success).toHaveBeenCalledWith('Concessão migrada');
+    expect(notificacoes.success).toHaveBeenCalledWith('Concessão aprovada');
     expect(host.querySelector('cfg-retidas-da-janela')).toBeNull();
-    expect(host.textContent).toContain('Migrada');
+    expect(host.textContent).toContain('Aprovada');
   });
 
   it('recusa a retida só depois de a pessoa confirmar a revogação', async () => {
@@ -104,26 +104,26 @@ describe('concessões retidas da revisão', () => {
     );
     const { host, assentar } = await abrirJanela(DEPOIS_DO_ENVIO);
 
-    presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
+    presente(botao(linhaDe(host, 'c1'), 'Aprovar')).click();
     await assentar();
 
     expect(linhaDe(host, 'c1').querySelector('ui-alert')?.textContent).toContain(
       'Ninguém decide a própria concessão.',
     );
-    expect(botao(linhaDe(host, 'c1'), 'Migrar')?.disabled).toBe(false);
+    expect(botao(linhaDe(host, 'c1'), 'Aprovar')?.disabled).toBe(false);
   });
 
   it('falha que não veio da API explica junto à concessão e libera a decisão', async () => {
     api.decidirRetida.mockReturnValue(throwError(() => new Error('rede')));
     const { host, assentar } = await abrirJanela(DEPOIS_DO_ENVIO);
 
-    presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
+    presente(botao(linhaDe(host, 'c1'), 'Aprovar')).click();
     await assentar();
 
     expect(linhaDe(host, 'c1').querySelector('ui-alert')?.textContent).toContain(
       'Não foi possível concluir a operação.',
     );
-    expect(botao(linhaDe(host, 'c1'), 'Migrar')?.disabled).toBe(false);
+    expect(botao(linhaDe(host, 'c1'), 'Aprovar')?.disabled).toBe(false);
   });
 
   it('prazo encerrado relê a revisão e mantém a explicação no aviso da página', async () => {
@@ -132,7 +132,7 @@ describe('concessões retidas da revisão', () => {
     );
     const { host, responder } = await abrirJanela(DEPOIS_DO_ENVIO);
 
-    presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
+    presente(botao(linhaDe(host, 'c1'), 'Aprovar')).click();
     await responder(
       janelaDeMigracao({
         situacao: 'encerrada',
@@ -143,7 +143,7 @@ describe('concessões retidas da revisão', () => {
 
     expect(host.textContent).toContain('A revisão das concessões mudou');
     expect(host.textContent).toContain('O prazo da revisão das concessões terminou.');
-    expect(host.textContent).toContain('Não migrada no prazo');
+    expect(host.textContent).toContain('Não aprovada no prazo');
     expect(host.querySelector('cfg-retidas-da-janela')).toBeNull();
   });
 

@@ -96,7 +96,7 @@ export class JanelaDaMigracaoPage {
     this.permissoes.temAlguma(...PERMISSOES_DO_PERFIL),
   );
   protected readonly leitura = acompanharLeitura({
-    assunto: 'janela de migração',
+    assunto: 'revisão das concessões do perfil',
     falha: this.store.falha,
     pendente: this.store.carregando,
     indisponivel: this.escrita.gravando,

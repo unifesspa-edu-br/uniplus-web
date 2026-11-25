@@ -41,9 +41,9 @@ describe('chaves de idempotência da revisão', () => {
     api.decidirRetida.mockImplementationOnce(SEM_RESPOSTA).mockImplementationOnce(RECUSADA);
     const { host, assentar } = await abrirJanela(DEPOIS_DO_ENVIO);
 
-    presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
+    presente(botao(linhaDe(host, 'c1'), 'Aprovar')).click();
     await assentar();
-    presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
+    presente(botao(linhaDe(host, 'c1'), 'Aprovar')).click();
     await assentar();
 
     expect(api.decidirRetida).toHaveBeenCalledTimes(2);
@@ -57,11 +57,11 @@ describe('chaves de idempotência da revisão', () => {
       .mockImplementationOnce(() => of(ok(DEPOIS_DO_ENVIO)));
     const { host, assentar, responder } = await abrirJanela(DEPOIS_DO_ENVIO);
 
-    presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
+    presente(botao(linhaDe(host, 'c1'), 'Aprovar')).click();
     await assentar();
-    presente(botao(linhaDe(host, 'c2'), 'Migrar')).click();
+    presente(botao(linhaDe(host, 'c2'), 'Aprovar')).click();
     await assentar();
-    presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
+    presente(botao(linhaDe(host, 'c1'), 'Aprovar')).click();
     await responder(DEPOIS_DO_ENVIO);
 
     expect(chaveDa(1)).not.toBe(chaveDa(0));

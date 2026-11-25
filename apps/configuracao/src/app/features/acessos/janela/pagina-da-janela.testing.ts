@@ -140,7 +140,7 @@ export function linhaDe(host: HTMLElement, concessaoId: string): HTMLElement {
   return presente(host.querySelector<HTMLElement>(`tr[data-concessao-id="${concessaoId}"]`));
 }
 
-export function escolher(linha: HTMLElement, opcao: 'Migrar' | 'Recusar'): void {
+export function escolher(linha: HTMLElement, opcao: 'Aprovar' | 'Recusar'): void {
   const radio = [...linha.querySelectorAll('label.radio')].find((l) =>
     l.textContent?.includes(opcao),
   );

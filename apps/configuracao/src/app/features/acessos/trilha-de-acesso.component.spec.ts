@@ -100,7 +100,7 @@ describe('TrilhaDeAcessoComponent', () => {
     expect(host.querySelector('.cfg-trilha__completo')).not.toBeNull();
   });
 
-  it('mostra o sistema como autor da revogação pela janela de migração, sem identidade humana', () => {
+  it('mostra o sistema como autor da revogação pela revisão das concessões do perfil, sem identidade humana', () => {
     const { linha } = montar([
       {
         tipo: 'revogada_pela_migracao',
@@ -111,7 +111,7 @@ describe('TrilhaDeAcessoComponent', () => {
       },
     ]);
 
-    expect(linha.textContent).toContain('Acesso revogado na migração de versão');
+    expect(linha.textContent).toContain('Acesso revogado na revisão das concessões');
     expect(linha.querySelector('[data-label="Quem"]')?.textContent).toBe('Sistema');
   });
 });

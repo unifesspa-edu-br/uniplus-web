@@ -3,8 +3,8 @@
     <h2 id="cfg-protecao-titulo" class="panel-head__title">Etapa da proteção de dados</h2>
   </div>
   <p class="panel-body">
-    Estas concessões ganham permissão pessoal ou sensível na versão nova e só migram com a decisão
-    do Representante do controlador. Quem a gestão de acessos recusou não chega aqui.
+    Estas concessões ganham permissão pessoal ou sensível na versão nova e só são aprovadas com a
+    decisão do Representante do controlador. Quem a gestão de acessos recusou não chega aqui.
     @if (!podeDecidir()) {
       Você consulta a revisão das concessões, mas a decisão cabe ao Representante do controlador.
     }
@@ -26,7 +26,7 @@
         [disabled]="gravando()"
         (click)="etapa.decidirTodas(itens(), ResultadoDaMigracao.MIGRAR)"
       >
-        Migrar todas
+        Aprovar todas
       </button>
       <button
         type="button"
@@ -72,7 +72,7 @@
       </button>
       <p id="cfg-protecao-ajuda" class="cfg-muted">
         @if (escolhidas() === 0) {
-          Escolha migrar ou recusar em ao menos uma concessão. As demais seguem aguardando.
+          Escolha aprovar ou recusar ao menos uma concessão. As demais seguem aguardando.
         } @else {
           {{
             escolhidas() === 1 ? '1 concessão escolhida' : escolhidas() + ' concessões escolhidas'

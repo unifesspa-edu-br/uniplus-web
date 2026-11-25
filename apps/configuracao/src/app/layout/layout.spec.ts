@@ -125,7 +125,7 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
       'Meus pedidos',
       'Perfis de acesso',
       'Versões na gestão de acessos',
-      'Janelas na gestão de acessos',
+      'Revisões das concessões na gestão de acessos',
       'Reclassificações na gestão de acessos',
     ]);
   });
@@ -133,7 +133,7 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
   it('não oferece as janelas da proteção de dados a quem só aprova pela gestão de acessos', () => {
     concedidas.set(['autorizacao:perfis:aprovar-funcional']);
 
-    expect(itensDoMenu()).not.toContain('Janelas na proteção de dados');
+    expect(itensDoMenu()).not.toContain('Revisões das concessões na proteção de dados');
   });
 
   it('oferece a reclassificação da etapa e as divergências a quem tem a permissão de cada tela', () => {
@@ -143,7 +143,7 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
       'Meus pedidos',
       'Perfis de acesso',
       'Versões na proteção de dados',
-      'Janelas na proteção de dados',
+      'Revisões das concessões na proteção de dados',
       'Reclassificações na proteção de dados',
       'Divergências da governança',
     ]);

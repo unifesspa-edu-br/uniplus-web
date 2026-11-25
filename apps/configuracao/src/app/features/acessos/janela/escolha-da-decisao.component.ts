@@ -18,7 +18,7 @@ import type { DecisaoDaMigracao } from '@uniplus/shared-data/autorizacao';
           (change)="escolhida.emit(ResultadoDaMigracao.MIGRAR)"
         />
         <span class="radio__dot" aria-hidden="true"></span>
-        Migrar
+        Aprovar
       </label>
       <label class="radio">
         <input

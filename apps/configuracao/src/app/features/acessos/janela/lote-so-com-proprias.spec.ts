@@ -28,9 +28,9 @@ describe('lote em que todas as concessões são de quem envia', () => {
     api.enviarLote.mockReturnValue(of(ok(janela)));
     const { host, responder } = await abrirJanela(janela);
 
-    expect(host.textContent).toContain('Enviar o lote retém as suas');
+    expect(host.textContent).toContain('Enviar as decisões retém as suas');
     expect(linhaDe(host, 'c3').querySelector('input')).toBeNull();
-    presente(botao(host, 'Enviar o lote')).click();
+    presente(botao(host, 'Enviar as decisões')).click();
     await responder(janelaDeMigracao({ itens: [PROPRIA], decisoesEnviadas: true }));
 
     expect(host.querySelector('cfg-exclusao-dialog dialog')?.hasAttribute('open')).toBe(false);
@@ -44,7 +44,7 @@ describe('lote em que todas as concessões são de quem envia', () => {
   it('sem nenhuma concessão para o lote, não oferece o envio', async () => {
     const { host } = await abrirJanela(janelaDeMigracao({ itens: [] }));
 
-    expect(host.textContent).toContain('Nenhuma concessão aguarda o lote.');
-    expect(botao(host, 'Enviar o lote')).toBeUndefined();
+    expect(host.textContent).toContain('Nenhuma concessão aguarda decisão.');
+    expect(botao(host, 'Enviar as decisões')).toBeUndefined();
   });
 });
