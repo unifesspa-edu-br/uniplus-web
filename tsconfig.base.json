@@ -5,6 +5,7 @@
     "sourceMap": true,
     "declaration": false,
     "moduleResolution": "bundler",
+    "resolveJsonModule": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
@@ -25,10 +26,16 @@
       "@uniplus/shared-core": ["libs/shared-core/src/index.ts"],
       "@uniplus/shared-data": ["libs/shared-data/src/index.ts"],
       "@uniplus/shared-utils": ["libs/shared-utils/src/index.ts"],
+      "@uniplus/shared-e2e/conferencia-do-contrato": [
+        "libs/shared-e2e/src/lib/conferencia-do-contrato.testing.ts"
+      ],
       "@uniplus/shared-e2e": ["libs/shared-e2e/src/index.ts"],
+      "@uniplus/shared-testing/contrato": ["libs/shared-testing/src/lib/contrato/index.testing.ts"],
       "@uniplus/shared-testing": ["libs/shared-testing/src/index.testing.ts"],
       "@uniplus/shared-inscricao": ["libs/shared-inscricao/src/index.ts"],
-      "@uniplus/shared-inscricao/comprovante": ["libs/shared-inscricao/src/lib/comprovante/index.ts"],
+      "@uniplus/shared-inscricao/comprovante": [
+        "libs/shared-inscricao/src/lib/comprovante/index.ts"
+      ],
       "@uniplus/shared-ui/shell": ["libs/shared-ui/shell/src/index.ts"],
       "@uniplus/shared-ui/notifications": ["libs/shared-ui/notifications/src/index.ts"],
       "@uniplus/shared-ui/components": ["libs/shared-ui/components/src/index.ts"],
@@ -39,11 +46,13 @@
       "@uniplus/shared-auth/interceptors": ["libs/shared-auth/interceptors/src/index.ts"],
       "@uniplus/shared-data/config": ["libs/shared-data/config/src/index.ts"],
       "@uniplus/shared-data/openapi/*": ["libs/shared-data/openapi/*"],
-      "@uniplus/shared-data/*/schema": ["libs/shared-data/src/lib/api/*/schema.ts"],
       "@uniplus/shared-data/selecao": ["libs/shared-data/selecao/src/index.ts"],
       "@uniplus/shared-data/organizacao": ["libs/shared-data/organizacao/src/index.ts"],
       "@uniplus/shared-data/configuracao": ["libs/shared-data/configuracao/src/index.ts"],
       "@uniplus/shared-core/http": ["libs/shared-core/http/src/index.ts"],
+      "@uniplus/shared-core/http/interceptor-testing": [
+        "libs/shared-core/src/lib/http/api-result.interceptor.testing.ts"
+      ],
       "@uniplus/shared-core/http/testing": ["libs/shared-core/src/lib/http/api-result.testing.ts"],
       "@uniplus/shared-core/idempotency": ["libs/shared-core/idempotency/src/index.ts"],
       "@uniplus/shared-core/interceptors": ["libs/shared-core/interceptors/src/index.ts"],
