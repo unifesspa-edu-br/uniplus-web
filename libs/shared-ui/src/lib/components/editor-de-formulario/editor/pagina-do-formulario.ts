@@ -232,7 +232,7 @@ export class PaginaDoFormularioComponent {
     return partes.join(' · ');
   });
 
-  /** Como a tela chama a página: seção ou bloco do sistema — "página" é termo do cronograma do processo. */
+  /** Como a tela chama a página: seção ou bloco do sistema. */
   protected nomeDaPagina(): string {
     const titulo = this.pagina().apresentacao.titulo.trim() || 'sem título';
     return this.ehSecao() ? `a seção ${titulo}` : `o bloco ${titulo}`;
