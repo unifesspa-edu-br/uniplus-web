@@ -39,11 +39,13 @@ describe('CalendarioDiasUteisDetalhePage — leitura', () => {
       p = await montarDetalhe([DIA_MUNICIPAL, DIA_ESTADUAL]);
     });
 
-    it('não renderiza controles de formulário para o dataset', () => {
+    it('não renderiza controles de formulário para o dataset, só o filtro da grade', () => {
       const raiz = p.fixture.nativeElement as HTMLElement;
-      expect(raiz.querySelectorAll('input')).toHaveLength(0);
-      expect(raiz.querySelectorAll('select')).toHaveLength(0);
-      expect(raiz.querySelectorAll('textarea')).toHaveLength(0);
+      const foraDoFiltro = (seletor: string) =>
+        [...raiz.querySelectorAll(seletor)].filter((c) => !c.closest('cfg-recorte-da-grade'));
+      expect(foraDoFiltro('input')).toHaveLength(0);
+      expect(foraDoFiltro('select')).toHaveLength(0);
+      expect(foraDoFiltro('textarea')).toHaveLength(0);
     });
 
     it('apresenta a versão, a situação de vigência e o total no resumo', () => {

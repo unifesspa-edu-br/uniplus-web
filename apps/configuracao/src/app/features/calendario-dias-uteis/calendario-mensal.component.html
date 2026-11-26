@@ -56,6 +56,16 @@
                           </span>
                         }
                       </button>
+                    } @else if (celula.ocultas.length > 0) {
+                      <button
+                        type="button"
+                        class="cfg-calendario-mensal__dia cfg-calendario-mensal__dia--oculto"
+                        [attr.data-dia]="celula.data"
+                        [attr.aria-label]="rotuloDoDiaOculto(celula)"
+                        (click)="diaEscolhido.emit(celula)"
+                      >
+                        {{ celula.dia }}
+                      </button>
                     } @else {
                       <button
                         type="button"

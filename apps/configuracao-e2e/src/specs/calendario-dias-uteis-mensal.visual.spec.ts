@@ -24,7 +24,7 @@ const CALENDARIO = {
   diasNaoUteis: [
     {
       id: '019ff7ee-3c00-7976-860c-eb2f61c9b301',
-      abrangencia: 'MUNICIPAL',
+      abrangencia: { codigo: 'MUNICIPAL', rotulo: 'Municipal' },
       municipioIbge: '1504208',
       municipioNome: 'Marabá',
       municipioUf: 'PA',
@@ -34,7 +34,7 @@ const CALENDARIO = {
     },
     {
       id: '019ff7ee-3c00-7976-860c-eb2f61c9b302',
-      abrangencia: 'NACIONAL',
+      abrangencia: { codigo: 'NACIONAL', rotulo: 'Nacional' },
       municipioIbge: null,
       municipioNome: null,
       municipioUf: null,
@@ -44,7 +44,7 @@ const CALENDARIO = {
     },
     {
       id: '019ff7ee-3c00-7976-860c-eb2f61c9b303',
-      abrangencia: 'INSTITUCIONAL',
+      abrangencia: { codigo: 'INSTITUCIONAL', rotulo: 'Institucional' },
       municipioIbge: null,
       municipioNome: null,
       municipioUf: null,
@@ -54,7 +54,7 @@ const CALENDARIO = {
     },
     {
       id: '019ff7ee-3c00-7976-860c-eb2f61c9b304',
-      abrangencia: 'NACIONAL',
+      abrangencia: { codigo: 'NACIONAL', rotulo: 'Nacional' },
       municipioIbge: null,
       municipioNome: null,
       municipioUf: null,
@@ -64,7 +64,7 @@ const CALENDARIO = {
     },
     {
       id: '019ff7ee-3c00-7976-860c-eb2f61c9b305',
-      abrangencia: 'INSTITUCIONAL',
+      abrangencia: { codigo: 'INSTITUCIONAL', rotulo: 'Institucional' },
       municipioIbge: null,
       municipioNome: null,
       municipioUf: null,

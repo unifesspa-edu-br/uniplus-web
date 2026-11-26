@@ -92,6 +92,12 @@ button.cfg-calendario-mensal__dia--feriado {
   outline-offset: var(--focus-ring-offset);
 }
 
+/* O dia com feriado oculto pelo filtro não pode parecer um dia útil comum: a borda tracejada, em cor de
+   contraste não textual (WCAG 1.4.11), marca, pela forma e não só pela cor, que há algo cadastrado ali, e o painel do dia mostra o quê. */
+button.cfg-calendario-mensal__dia--oculto {
+  border: 1px dashed var(--border-strong);
+}
+
 .cfg-calendario-mensal__marcador {
   position: absolute;
   bottom: 3px;

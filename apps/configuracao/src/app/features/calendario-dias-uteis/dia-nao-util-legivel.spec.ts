@@ -6,6 +6,7 @@ import {
   abrangenciaLegivel,
   municipioLegivel,
   rotuloDoDia,
+  rotuloDoDiaOculto,
   rotuloDoDiaSemOcorrencia,
   textoDaPrevia,
   ufLegivel,
@@ -15,6 +16,14 @@ const celula = (...ocorrencias: unknown[]): CelulaCalendarioMensal => ({
   data: '2026-04-05',
   dia: 5,
   ocorrencias: ocorrencias as DiaNaoUtilDto[],
+  ocultas: [],
+});
+const comOcultas = (
+  base: CelulaCalendarioMensal,
+  ...ocultas: unknown[]
+): CelulaCalendarioMensal => ({
+  ...base,
+  ocultas: ocultas as DiaNaoUtilDto[],
 });
 
 describe('apresentação do dia não útil', () => {
@@ -47,10 +56,31 @@ describe('apresentação do dia não útil', () => {
     );
   });
 
+  it('o nome acessível conta o que o filtro oculta, sem dizer que a data não tem dia não útil', () => {
+    expect(rotuloDoDia(comOcultas(celula(DIA_MUNICIPAL), DIA_ESTADUAL))).toBe(
+      `5 de abril de 2026: Aniversário de Marabá (${DIA_MUNICIPAL.abrangencia.rotulo}); e 1 dia não útil oculto pelo filtro`,
+    );
+    expect(rotuloDoDiaOculto(comOcultas(celula(), DIA_MUNICIPAL))).toBe(
+      '5 de abril de 2026: 1 dia não útil oculto pelo filtro',
+    );
+    expect(rotuloDoDiaOculto(comOcultas(celula(), DIA_MUNICIPAL, DIA_ESTADUAL))).toBe(
+      '5 de abril de 2026: 2 dias não úteis ocultos pelo filtro',
+    );
+  });
+
   it('a prévia resume a ocorrência única ou conta as várias', () => {
     expect(textoDaPrevia(celula(DIA_MUNICIPAL))).toBe(
       `Aniversário de Marabá — ${DIA_MUNICIPAL.abrangencia.rotulo}`,
     );
     expect(textoDaPrevia(celula(DIA_MUNICIPAL, DIA_ESTADUAL))).toBe('2 ocorrências nesta data');
+  });
+
+  it('a prévia da data com dias ocultos conta quantos o filtro esconde', () => {
+    expect(textoDaPrevia(comOcultas(celula(DIA_MUNICIPAL), DIA_ESTADUAL))).toBe(
+      `Aniversário de Marabá — ${DIA_MUNICIPAL.abrangencia.rotulo} (+1 oculto pelo filtro)`,
+    );
+    expect(
+      textoDaPrevia(comOcultas(celula(DIA_MUNICIPAL, DIA_ESTADUAL), DIA_ESTADUAL, DIA_ESTADUAL)),
+    ).toBe('2 ocorrências nesta data (+2 ocultos pelo filtro)');
   });
 });

@@ -1,0 +1,37 @@
+<section class="cfg-recorte" aria-labelledby="cfg-recorte-titulo">
+  <h2 id="cfg-recorte-titulo" class="cfg-recorte__titulo">Dias à vista na grade</h2>
+  <div class="cfg-recorte__campos">
+    <ui-select
+      #abrangencia
+      fieldLabel="Abrangência"
+      placeholderText="Todas"
+      [idDoCampo]="idDaAbrangencia"
+      [descritoPor]="avisoDosCampos()"
+      [choices]="recorte.abrangencias()"
+      [formControl]="recorte.form.controls.abrangencia"
+    />
+    @if (recorte.campoDaLocalidade(); as campo) {
+      <ui-select
+        idDoCampo="cfg-recorte-localidade"
+        [descritoPor]="avisoDosCampos()"
+        [fieldLabel]="campo.rotulo"
+        [placeholderText]="campo.todas"
+        [choices]="recorte.localidades()"
+        [formControl]="recorte.form.controls.localidade"
+      />
+    }
+    @if (recorte.ativo()) {
+      <button
+        type="button"
+        class="btn btn--tertiary btn--sm btn--rect cfg-recorte__limpar"
+        (click)="mostrarTodos()"
+      >
+        Mostrar todos os dias
+      </button>
+    }
+  </div>
+  @if (recorte.ativo()) {
+    <p [id]="idDoAviso" class="field__hint">{{ recorte.aviso() }}</p>
+  }
+  <p class="cfg-recorte__contagem" role="status">{{ recorte.contagem() }}</p>
+</section>

@@ -10,9 +10,8 @@ import {
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CalendarioDiasUteisDto, CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
-import { agruparPorMes, anosDoCalendario } from './calendario-mensal.util';
 
-/** A leitura do calendário aberto, do dataset inteiro, para o resumo e a grade de meses. */
+/** A leitura do calendário aberto, do dataset inteiro: o recorte da grade é feito sobre ela. */
 @Injectable()
 export class CalendarioStore {
   private readonly route = inject(ActivatedRoute);
@@ -54,11 +53,6 @@ export class CalendarioStore {
       return this.problemI18n.resolve(problem).title;
     }
     return this.recurso.error() ? 'Erro inesperado ao carregar o calendário.' : null;
-  });
-
-  readonly meses = computed(() => {
-    const dias = this.calendario()?.diasNaoUteis ?? [];
-    return anosDoCalendario(dias).flatMap((ano) => agruparPorMes(dias, ano));
   });
 
   /**

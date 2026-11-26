@@ -27,3 +27,22 @@
   color: var(--text-heading);
   overflow-wrap: anywhere;
 }
+
+/* A região de status fica sempre no documento, vazia e sem moldura: o leitor de tela só anuncia
+   o que entra numa região que já existia. A moldura aparece com o aviso. */
+.cfg-filtro-removido--aberto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+}
+
+.cfg-filtro-removido__texto {
+  margin: 0;
+  color: var(--text-heading);
+}

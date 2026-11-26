@@ -52,3 +52,13 @@
 .cfg-calendario-mensal__ocorrencia-vazia {
   padding: var(--space-3);
 }
+
+.cfg-calendario-mensal__aviso-ocultas {
+  margin: 0 0 var(--space-4);
+  padding: 0 var(--space-5);
+}
+
+.cfg-calendario-mensal__ocorrencia ui-tag {
+  display: inline-block;
+  margin-bottom: var(--space-2);
+}

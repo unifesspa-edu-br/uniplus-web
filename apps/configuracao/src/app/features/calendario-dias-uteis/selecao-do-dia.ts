@@ -10,6 +10,7 @@ export class SelecaoDoDia {
   readonly previa = signal<string | null>(null);
 
   readonly ocorrencias = computed(() => this.dia()?.ocorrencias ?? []);
+  readonly ocultas = computed(() => this.dia()?.ocultas ?? []);
   readonly titulo = computed(() => {
     const celula = this.dia();
     return celula ? formatIsoDateLong(celula.data) : '';

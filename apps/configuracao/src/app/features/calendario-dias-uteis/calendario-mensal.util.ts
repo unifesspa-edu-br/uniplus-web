@@ -2,14 +2,26 @@ import { parseIsoDate } from '@uniplus/shared-data/utils';
 import type { DiaNaoUtilDto } from '@uniplus/shared-data/configuracao';
 
 /**
- * Uma célula de dia do calendário mensal. `ocorrencias` vazio representa um
- * dia civil sem feriado (renderizado como texto neutro); mais de um item
- * representa múltiplos dias não úteis na mesma data.
+ * Uma célula de dia do calendário mensal. `ocorrencias` são os dias não úteis à vista e `ocultas`,
+ * os que o recorte da exibição esconde da grade: escondidos, eles continuam cadastrados e valendo.
+ * As duas listas vazias representam um dia civil sem feriado.
  */
 export interface CelulaCalendarioMensal {
   readonly data: string; // YYYY-MM-DD
   readonly dia: number; // 1-31, número civil do dia
   readonly ocorrencias: readonly DiaNaoUtilDto[];
+  readonly ocultas: readonly DiaNaoUtilDto[];
+}
+
+/** Diz se o dia não útil fica à vista na grade. */
+export type VisibilidadeDoDia = (dia: DiaNaoUtilDto) => boolean;
+
+const TODOS_VISIVEIS: VisibilidadeDoDia = () => true;
+
+/** Os dias não úteis do ano, pela data, e o que decide quais deles ficam à vista. */
+interface OcorrenciasDoAno {
+  readonly porData: ReadonlyMap<string, readonly DiaNaoUtilDto[]>;
+  readonly visivel: VisibilidadeDoDia;
 }
 
 /** Um mês do calendário, em semanas de 7 colunas (domingo a sábado). Células `null` são padding civil. */
@@ -42,16 +54,13 @@ const NOMES_MES = [
  * Dias não úteis de outros anos são ignorados — quem decide quais anos mostrar é o
  * chamador, via {@link anosDoCalendario}, não esta função.
  */
-export function agruparPorMes(dias: readonly DiaNaoUtilDto[], ano: number): MesCalendarioMensal[] {
-  const porMes = agruparPorAnoMes(dias, ano);
-
-  const resultado: MesCalendarioMensal[] = [];
-  for (let mesIndice = 1; mesIndice <= 12; mesIndice++) {
-    const chave = chaveAnoMes(ano, mesIndice);
-    resultado.push(construirMes(chave, porMes.get(chave) ?? new Map()));
-  }
-
-  return resultado;
+export function agruparPorMes(
+  dias: readonly DiaNaoUtilDto[],
+  ano: number,
+  visivel: VisibilidadeDoDia = TODOS_VISIVEIS,
+): MesCalendarioMensal[] {
+  const ocorrencias = { porData: diasPorData(dias, ano), visivel };
+  return Array.from({ length: 12 }, (_, indice) => construirMes(ano, indice + 1, ocorrencias));
 }
 
 /**
@@ -78,70 +87,76 @@ function chaveAnoMes(ano: number, mes: number): string {
   return `${String(ano).padStart(4, '0')}-${String(mes).padStart(2, '0')}`;
 }
 
-function agruparPorAnoMes(
-  dias: readonly DiaNaoUtilDto[],
-  ano: number,
-): Map<string, Map<number, DiaNaoUtilDto[]>> {
-  const porMes = new Map<string, Map<number, DiaNaoUtilDto[]>>();
+function dataDaCelula(ano: number, mes: number, dia: number): string {
+  return `${chaveAnoMes(ano, mes)}-${String(dia).padStart(2, '0')}`;
+}
 
+function diasPorData(dias: readonly DiaNaoUtilDto[], ano: number): Map<string, DiaNaoUtilDto[]> {
+  const porData = new Map<string, DiaNaoUtilDto[]>();
   for (const dia of dias) {
     const parsed = parseIsoDate(dia.data);
     if (!parsed || parsed.getUTCFullYear() !== ano) continue;
-
-    const chave = chaveAnoMes(ano, parsed.getUTCMonth() + 1);
-    const porDiaDoMes = porMes.get(chave) ?? new Map<number, DiaNaoUtilDto[]>();
-    porMes.set(chave, porDiaDoMes);
-
-    const diaDoMes = parsed.getUTCDate();
-    const ocorrencias = porDiaDoMes.get(diaDoMes) ?? [];
-    ocorrencias.push(dia);
-    porDiaDoMes.set(diaDoMes, ocorrencias);
+    const data = dataDaCelula(ano, parsed.getUTCMonth() + 1, parsed.getUTCDate());
+    porData.set(data, [...(porData.get(data) ?? []), dia]);
   }
+  return porData;
+}
 
-  return porMes;
+function celulaDoDia(
+  ano: number,
+  mes: number,
+  dia: number,
+  ocorrencias: OcorrenciasDoAno,
+): CelulaCalendarioMensal {
+  const data = dataDaCelula(ano, mes, dia);
+  const doDia = ocorrencias.porData.get(data) ?? [];
+  return {
+    dia,
+    data,
+    ocorrencias: doDia.filter(ocorrencias.visivel),
+    ocultas: doDia.filter((ocorrencia) => !ocorrencias.visivel(ocorrencia)),
+  };
+}
+
+/** `setUTCFullYear` sobre a época, e não o construtor, porque este trata anos de 0 a 99 como 19xx. */
+function diaCivil(ano: number, mes: number, dia: number): Date {
+  const data = new Date(0);
+  data.setUTCFullYear(ano, mes - 1, dia);
+  return data;
 }
 
 function celulasDoMes(
-  ano: string,
-  mes: string,
-  porDiaDoMes: Map<number, DiaNaoUtilDto[]>,
+  ano: number,
+  mes: number,
+  ocorrencias: OcorrenciasDoAno,
 ): (CelulaCalendarioMensal | null)[] {
-  const primeiroDia = new Date(0);
-  primeiroDia.setUTCFullYear(Number(ano), Number(mes) - 1, 1);
-
-  const ultimoDiaDoMes = new Date(0);
-  ultimoDiaDoMes.setUTCFullYear(Number(ano), Number(mes), 0);
-
-  const celulas: (CelulaCalendarioMensal | null)[] = [
-    ...Array.from({ length: primeiroDia.getUTCDay() }, () => null),
-    ...Array.from({ length: ultimoDiaDoMes.getUTCDate() }, (_, indice) => {
-      const dia = indice + 1;
-      return {
-        dia,
-        data: `${ano}-${mes}-${String(dia).padStart(2, '0')}`,
-        ocorrencias: porDiaDoMes.get(dia) ?? [],
-      };
-    }),
+  const vazia = (): null => null;
+  const celulas = [
+    ...Array.from({ length: diaCivil(ano, mes, 1).getUTCDay() }, vazia),
+    ...Array.from({ length: diaCivil(ano, mes + 1, 0).getUTCDate() }, (_, indice) =>
+      celulaDoDia(ano, mes, indice + 1, ocorrencias),
+    ),
   ];
+  const sobra = Math.ceil(celulas.length / 7) * 7 - celulas.length;
+  return [...celulas, ...Array.from({ length: sobra }, vazia)];
+}
 
-  const totalCelulas = Math.ceil(celulas.length / 7) * 7;
-  while (celulas.length < totalCelulas) celulas.push(null);
-  return celulas;
+function emSemanas<T>(celulas: readonly T[]): T[][] {
+  return Array.from({ length: celulas.length / 7 }, (_, semana) =>
+    celulas.slice(semana * 7, semana * 7 + 7),
+  );
 }
 
 function construirMes(
-  chave: string,
-  porDiaDoMes: Map<number, DiaNaoUtilDto[]>,
+  ano: number,
+  mes: number,
+  ocorrencias: OcorrenciasDoAno,
 ): MesCalendarioMensal {
-  const [anoStr, mesStr] = chave.split('-');
-  const ano = Number(anoStr);
-  const mes = Number(mesStr);
-  const celulas = celulasDoMes(anoStr, mesStr, porDiaDoMes);
-
-  const semanas: (CelulaCalendarioMensal | null)[][] = [];
-  for (let inicio = 0; inicio < celulas.length; inicio += 7) {
-    semanas.push(celulas.slice(inicio, inicio + 7));
-  }
-
-  return { chave, ano, mes, rotulo: `${NOMES_MES[mes - 1]} de ${ano}`, semanas };
+  return {
+    chave: chaveAnoMes(ano, mes),
+    ano,
+    mes,
+    rotulo: `${NOMES_MES[mes - 1]} de ${ano}`,
+    semanas: emSemanas(celulasDoMes(ano, mes, ocorrencias)),
+  };
 }
