@@ -6,10 +6,22 @@ import { type Observable, of } from 'rxjs';
 import { vi } from 'vitest';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { type ApiResult, apiFailure, apiOk } from '@uniplus/shared-core/http';
-import type { ComprovanteDaInscricaoDto } from '@uniplus/shared-data/selecao';
+import {
+  ExibicaoDoValorDoItemCodigo,
+  FormaDoValorDoItemCodigo,
+  type ComprovanteDaInscricaoDto,
+} from '@uniplus/shared-data/selecao';
 
 import { MinhasInscricoesService } from '../minhas-inscricoes.service';
 import { ComprovanteDaInscricaoPage } from './comprovante-da-inscricao.page';
+
+const forma = (codigo: FormaDoValorDoItemCodigo): { codigo: FormaDoValorDoItemCodigo; rotulo: string } => ({
+  codigo,
+  rotulo: codigo,
+});
+const exibicao = (
+  codigo: ExibicaoDoValorDoItemCodigo,
+): { codigo: ExibicaoDoValorDoItemCodigo; rotulo: string } => ({ codigo, rotulo: codigo });
 
 const SEM_CABECALHOS = new HttpHeaders();
 
@@ -73,15 +85,15 @@ export const COMPROVANTE_BASE: ComprovanteDaInscricaoDto = {
           {
             rotulo: 'Município de nascimento',
             descricao: '',
-            tipo: 'opcao',
-            componente: 'padrao',
+            tipo: forma(FormaDoValorDoItemCodigo.OPCAO),
+            componente: exibicao(ExibicaoDoValorDoItemCodigo.PADRAO),
             valor: { codigo: '2927408', rotulo: 'Salvador' },
           },
           {
             rotulo: 'Data de nascimento',
             descricao: '',
-            tipo: 'data',
-            componente: 'padrao',
+            tipo: forma(FormaDoValorDoItemCodigo.DATA),
+            componente: exibicao(ExibicaoDoValorDoItemCodigo.PADRAO),
             valor: '2001-03-09',
           },
         ],
@@ -97,8 +109,8 @@ export const COMPROVANTE_BASE: ComprovanteDaInscricaoDto = {
                   {
                     rotulo: 'Renda mensal',
                     descricao: '',
-                    tipo: 'numero',
-                    componente: 'moeda',
+                    tipo: forma(FormaDoValorDoItemCodigo.NUMERO),
+                    componente: exibicao(ExibicaoDoValorDoItemCodigo.MOEDA),
                     valor: '1234.5',
                   },
                 ],
@@ -110,8 +122,8 @@ export const COMPROVANTE_BASE: ComprovanteDaInscricaoDto = {
                   {
                     rotulo: 'Renda mensal',
                     descricao: '',
-                    tipo: 'numero',
-                    componente: 'moeda',
+                    tipo: forma(FormaDoValorDoItemCodigo.NUMERO),
+                    componente: exibicao(ExibicaoDoValorDoItemCodigo.MOEDA),
                     valor: '800',
                   },
                 ],
@@ -125,8 +137,8 @@ export const COMPROVANTE_BASE: ComprovanteDaInscricaoDto = {
       {
         rotulo: 'Faixa etária',
         descricao: '',
-        tipo: 'texto',
-        componente: 'padrao',
+        tipo: forma(FormaDoValorDoItemCodigo.TEXTO),
+        componente: exibicao(ExibicaoDoValorDoItemCodigo.PADRAO),
         valor: '25 a 29 anos',
       },
     ],

@@ -302,7 +302,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
   test('Enter e Espaço em Enviar inscrição durante a gravação não geram segunda requisição', async ({
     page,
   }) => {
-    const gravacao = await segurarGravacao(page, 'inscricao/submissao', 'POST');
+    const gravacao = await segurarGravacao(page, 'inscricao/envio', 'POST');
     await abrirInscricaoComo(page, PERSONA.usuario);
     const enviar = page.getByRole('button', { name: 'Enviar inscrição' });
     await expect(enviar).not.toHaveAttribute('aria-disabled', 'true');

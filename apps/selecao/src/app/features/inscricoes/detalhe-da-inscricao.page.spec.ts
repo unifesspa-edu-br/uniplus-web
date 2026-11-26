@@ -8,6 +8,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
+  ExibicaoDoValorDoItemCodigo,
+  FormaDoValorDoItemCodigo,
   SELECAO_BASE_PATH,
   SituacaoInscricaoCodigo,
   type InscricaoAdministrativaDto,
@@ -25,6 +27,7 @@ import {
   DIREITO,
   FERNANDA,
   INSCRICAO_ID,
+  exibicao,
   item,
   MEDICINA,
   oferta,
@@ -190,11 +193,11 @@ describe('DetalheDaInscricaoPage', () => {
           grupos: [],
           itens: [
             {
-              ...item('CPF', 'CPF', 'texto', '***.598.363-**'),
-              componente: 'cpf',
+              ...item('CPF', 'CPF', FormaDoValorDoItemCodigo.TEXTO, '***.598.363-**'),
+              componente: exibicao(ExibicaoDoValorDoItemCodigo.CPF),
               podeRevelar: true,
             },
-            { ...item('RG', 'RG', 'texto', '*********'), componente: 'identificador' },
+            { ...item('RG', 'RG', FormaDoValorDoItemCodigo.TEXTO, '*********'), componente: exibicao(ExibicaoDoValorDoItemCodigo.IDENTIFICADOR) },
           ],
         },
       ],
@@ -217,8 +220,8 @@ describe('DetalheDaInscricaoPage', () => {
           grupos: [],
           itens: [
             {
-              ...item('PASSAPORTE', 'Passaporte', 'numero', '*********'),
-              componente: 'identificador',
+              ...item('PASSAPORTE', 'Passaporte', FormaDoValorDoItemCodigo.NUMERO, '*********'),
+              componente: exibicao(ExibicaoDoValorDoItemCodigo.IDENTIFICADOR),
               podeRevelar: true,
             },
           ],

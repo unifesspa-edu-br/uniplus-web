@@ -101,6 +101,7 @@ export type ArquivoDaApresentacaoDto = Schemas['ArquivoDaApresentacaoDto'];
 
 /** Onde o arquivo está na verificação feita depois da confirmação. */
 export { SituacaoDoArquivoDoCandidatoCodigo } from './schema';
+export { ExibicaoDoValorDoItemCodigo, FormaDoValorDoItemCodigo } from './schema';
 
 /**
  * Uma inscrição na listagem de quem opera o processo. A API omite o campo que a permissão da pessoa

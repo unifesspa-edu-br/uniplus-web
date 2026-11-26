@@ -8,6 +8,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
+  ExibicaoDoValorDoItemCodigo,
+  FormaDoValorDoItemCodigo,
   SELECAO_BASE_PATH,
   type InscricaoAdministrativaDto,
   type ItemDeRespostaDto,
@@ -22,6 +24,7 @@ import {
   BASE,
   FERNANDA,
   INSCRICAO_ID,
+  exibicao,
   item,
   OUTRA_INSCRICAO_ID,
   PROCESSO_ID,
@@ -103,13 +106,13 @@ describe('DetalheDaInscricaoPage', () => {
           grupos: [],
           itens: [
             {
-              ...item('CPF', 'CPF', 'texto', '***.598.363-**'),
-              componente: 'cpf',
+              ...item('CPF', 'CPF', FormaDoValorDoItemCodigo.TEXTO, '***.598.363-**'),
+              componente: exibicao(ExibicaoDoValorDoItemCodigo.CPF),
               podeRevelar: true,
             },
             {
-              ...item('PASSAPORTE', 'Passaporte', 'texto', '*********'),
-              componente: 'identificador',
+              ...item('PASSAPORTE', 'Passaporte', FormaDoValorDoItemCodigo.TEXTO, '*********'),
+              componente: exibicao(ExibicaoDoValorDoItemCodigo.IDENTIFICADOR),
               podeRevelar: true,
             },
             ...extra,
@@ -257,8 +260,8 @@ describe('DetalheDaInscricaoPage', () => {
             grupos: [],
             itens: [
               {
-                ...item('SITUACAO', 'Situação do vínculo', 'texto', 'cancelada'),
-                componente: 'situacao',
+                ...item('SITUACAO', 'Situação do vínculo', FormaDoValorDoItemCodigo.TEXTO, 'cancelada'),
+                componente: exibicao(ExibicaoDoValorDoItemCodigo.SITUACAO),
               },
             ],
           },
@@ -280,8 +283,8 @@ describe('DetalheDaInscricaoPage', () => {
             grupos: [],
             itens: [
               {
-                ...item('SITUACAO', 'Situação do vínculo', 'texto', 'deferida'),
-                componente: 'situacao',
+                ...item('SITUACAO', 'Situação do vínculo', FormaDoValorDoItemCodigo.TEXTO, 'deferida'),
+                componente: exibicao(ExibicaoDoValorDoItemCodigo.SITUACAO),
               },
             ],
           },

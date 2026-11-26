@@ -8,6 +8,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
+  ExibicaoDoValorDoItemCodigo,
+  FormaDoValorDoItemCodigo,
   SELECAO_BASE_PATH,
   type InscricaoAdministrativaDto,
   type ItemDeRespostaDto,
@@ -21,6 +23,7 @@ import {
   BASE,
   FERNANDA,
   INSCRICAO_ID,
+  exibicao,
   item,
   PROCESSO_ID,
   ROTA_DETALHE,
@@ -101,13 +104,13 @@ describe('DetalheDaInscricaoPage', () => {
           grupos: [],
           itens: [
             {
-              ...item('CPF', 'CPF', 'texto', '***.598.363-**'),
-              componente: 'cpf',
+              ...item('CPF', 'CPF', FormaDoValorDoItemCodigo.TEXTO, '***.598.363-**'),
+              componente: exibicao(ExibicaoDoValorDoItemCodigo.CPF),
               podeRevelar: true,
             },
             {
-              ...item('PASSAPORTE', 'Passaporte', 'texto', '*********'),
-              componente: 'identificador',
+              ...item('PASSAPORTE', 'Passaporte', FormaDoValorDoItemCodigo.TEXTO, '*********'),
+              componente: exibicao(ExibicaoDoValorDoItemCodigo.IDENTIFICADOR),
               podeRevelar: true,
             },
             ...extra,
@@ -184,8 +187,8 @@ describe('DetalheDaInscricaoPage', () => {
             grupos: [],
             itens: [
               {
-                ...item('RENDA', 'Renda familiar', 'numero', '***'),
-                componente: 'moeda',
+                ...item('RENDA', 'Renda familiar', FormaDoValorDoItemCodigo.NUMERO, '***'),
+                componente: exibicao(ExibicaoDoValorDoItemCodigo.MOEDA),
                 podeRevelar: true,
               },
             ],
@@ -273,8 +276,8 @@ describe('DetalheDaInscricaoPage', () => {
 
     it('leva a ocorrência quando o campo está em grupo e revela só aquela ocorrência', async () => {
       const identificador = (): ItemDeRespostaDto => ({
-        ...item('PASSAPORTE', 'Passaporte', 'texto', '*********'),
-        componente: 'identificador',
+        ...item('PASSAPORTE', 'Passaporte', FormaDoValorDoItemCodigo.TEXTO, '*********'),
+        componente: exibicao(ExibicaoDoValorDoItemCodigo.IDENTIFICADOR),
         podeRevelar: true,
       });
       await abrir({

@@ -30,7 +30,7 @@ export class ItensDoComprovanteComponent {
   protected readonly respostas = computed(() =>
     this.itens().map((item) => ({
       rotulo: item.rotulo,
-      exibido: valorExibido(item.tipo, item.valor, item.componente),
+      exibido: valorExibido(item.tipo.codigo, item.valor, item.componente.codigo),
     })),
   );
 }

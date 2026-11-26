@@ -12,8 +12,8 @@ import { InscricaoDoCandidatoHttp } from './inscricao-do-candidato.http';
 const BASE = 'http://localhost:5000';
 const PROCESSO = '0199e000-0000-7000-8000-0000000000d1';
 const OUTRO_PROCESSO = '0199e000-0000-7000-8000-0000000000d2';
-const submissaoDe = (processo: string): string =>
-  `${BASE}/api/selecao/processos-seletivos/${processo}/inscricao/submissao`;
+const envioDe = (processo: string): string =>
+  `${BASE}/api/selecao/processos-seletivos/${processo}/inscricao/envio`;
 const REQUEST: InscricaoRequest = { ofertaCursoId: null, respostas: {}, grupos: null, aceites: [] };
 const OUTRO_REQUEST: InscricaoRequest = { ...REQUEST, respostas: { NOME: 'Fernanda Laura' } };
 const CONFLITO_DE_PROCESSAMENTO = 'uniplus.idempotency.processing_conflict';
@@ -51,7 +51,7 @@ describe('InscricaoDoCandidatoHttp: Idempotency-Key do envio', () => {
     processo = PROCESSO,
   ): Promise<string> => {
     const resultado = firstValueFrom(servico.submeter(processo, structuredClone(request), '"i:1"'));
-    const req = controller.expectOne(submissaoDe(processo));
+    const req = controller.expectOne(envioDe(processo));
     const chave = req.request.headers.get('Idempotency-Key') ?? '';
     expect(chave).not.toBe('');
     if (desfecho === 'sem_resposta') {

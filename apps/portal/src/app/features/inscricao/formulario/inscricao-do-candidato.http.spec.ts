@@ -10,7 +10,7 @@ import { InscricaoDoCandidatoHttp } from './inscricao-do-candidato.http';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO = '0199e000-0000-7000-8000-0000000000d1';
-const SUBMISSAO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO}/inscricao/submissao`;
+const ENVIO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO}/inscricao/envio`;
 const REQUEST: InscricaoRequest = { ofertaCursoId: null, respostas: {}, grupos: null, aceites: [] };
 
 describe('InscricaoDoCandidatoHttp', () => {
@@ -38,7 +38,7 @@ describe('InscricaoDoCandidatoHttp', () => {
     request: InscricaoRequest = REQUEST,
   ): Promise<string> => {
     const resultado = firstValueFrom(servico.submeter(PROCESSO, request, '"i:1"'));
-    const req = controller.expectOne(SUBMISSAO);
+    const req = controller.expectOne(ENVIO);
     const chave = req.request.headers.get('Idempotency-Key') ?? '';
     if (status === 0) {
       req.error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });

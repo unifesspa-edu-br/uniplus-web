@@ -54,12 +54,12 @@ function avisoDa(revelacao: RevelacaoDoCampo | null, rotulo: string): string {
   return revelacao?.estado === 'falha' ? revelacao.mensagem : '';
 }
 
-function respostaExibida(
+function dadosDaResposta(
   item: ItemDeRespostaDto,
   ocorrenciaId: string | null,
   revelacao: RevelacaoDoCampo | null,
-): RespostaExibida {
-  const base = {
+): Omit<RespostaExibida, 'exibido' | 'mascarado'> {
+  return {
     chave: chaveDoCampo(item.fatoCodigo, ocorrenciaId),
     fatoCodigo: item.fatoCodigo,
     rotulo: item.rotulo,
@@ -68,11 +68,19 @@ function respostaExibida(
     revelacao,
     aviso: avisoDa(revelacao, item.rotulo),
   };
-  const original = valorExibido(item.tipo, item.valor, item.componente);
+}
+
+function respostaExibida(
+  item: ItemDeRespostaDto,
+  ocorrenciaId: string | null,
+  revelacao: RevelacaoDoCampo | null,
+): RespostaExibida {
+  const exibir = (valor: unknown): ValorExibido =>
+    valorExibido(item.tipo.codigo, valor, item.componente.codigo);
+  const original = exibir(item.valor);
   const mascarado = 'valor' in original ? original.valor : null;
   const valor = revelacao?.estado === 'revelado' ? revelacao.valor : item.valor;
-  const exibido = valorExibido(item.tipo, valor, item.componente);
-  return { ...base, mascarado, exibido };
+  return { ...dadosDaResposta(item, ocorrenciaId, revelacao), mascarado, exibido: exibir(valor) };
 }
 
 /**
@@ -211,15 +219,22 @@ export class RespostasDaInscricaoComponent {
       );
       const antes = this.estados;
       this.estados = agora;
-      for (const [chave, estado] of agora) {
-        const terminou = estado === 'revelado' || estado === 'indisponivel';
-        if (antes?.get(chave) === 'pendente' && terminou && this.focoEstaNoBotao(chave)) {
-          const atributo = estado === 'revelado' ? 'data-chave' : 'data-aviso';
-          afterNextRender(() => this.focar(atributo, chave), { injector: this.injector });
-          return;
-        }
-      }
+      this.levarOFocoAoResultado(antes, agora);
     });
+  }
+
+  private levarOFocoAoResultado(
+    antes: ReadonlyMap<string, string> | null,
+    agora: ReadonlyMap<string, string>,
+  ): void {
+    for (const [chave, estado] of agora) {
+      const terminou = estado === 'revelado' || estado === 'indisponivel';
+      if (antes?.get(chave) === 'pendente' && terminou && this.focoEstaNoBotao(chave)) {
+        const atributo = estado === 'revelado' ? 'data-chave' : 'data-aviso';
+        afterNextRender(() => this.focar(atributo, chave), { injector: this.injector });
+        return;
+      }
+    }
   }
 
   /** Só quem ainda está no botão "Revelar" do campo, quando a resposta chega, tem o foco levado adiante. */

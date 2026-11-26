@@ -20,6 +20,7 @@ export {
   type ParametrosDoDesempate,
 } from './parametros-das-regras.contrato';
 export { SituacaoDoArquivoDoCandidatoCodigo } from './inscricoes.contrato';
+export { ExibicaoDoValorDoItemCodigo, FormaDoValorDoItemCodigo } from './inscricoes.contrato';
 export {
   CERTAMES_PUBLICOS_PATH,
   SituacaoDoCertameCodigo,

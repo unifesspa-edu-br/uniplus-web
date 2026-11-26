@@ -7,7 +7,7 @@ const SEM_VALOR = { valor: null };
 describe('valorExibido: formas descritas no contrato do comprovante', () => {
   it('lê o endereço pelas chaves do contrato, sem exibir o código IBGE nem o nome da UF por extenso', () => {
     expect(
-      valorExibido('endereco', {
+      valorExibido('ENDERECO', {
         cep: '68500-000',
         logradouro: 'Folha 31',
         numero: '10',
@@ -24,9 +24,9 @@ describe('valorExibido: formas descritas no contrato do comprovante', () => {
   });
 
   it('lê a opção e a lista de opções pelo rótulo, não pelo código', () => {
-    expect(valorExibido('opcao', { codigo: 'PARDA', rotulo: 'Parda' })).toEqual({ valor: 'Parda' });
+    expect(valorExibido('OPCAO', { codigo: 'PARDA', rotulo: 'Parda' })).toEqual({ valor: 'Parda' });
     expect(
-      valorExibido('opcoes', [
+      valorExibido('OPCOES', [
         { codigo: 'LI_EP', rotulo: 'Escola pública' },
         { codigo: 'AC', rotulo: 'Ampla concorrência' },
       ]),
@@ -36,34 +36,21 @@ describe('valorExibido: formas descritas no contrato do comprovante', () => {
 
 describe('valorExibido', () => {
   it('passa o texto como está e deixa o vazio ao componente de valor', () => {
-    expect(valorExibido('texto', 'Fernanda')).toEqual({ valor: 'Fernanda' });
-    expect(valorExibido('texto', null)).toEqual(SEM_VALOR);
+    expect(valorExibido('TEXTO', 'Fernanda')).toEqual({ valor: 'Fernanda' });
+    expect(valorExibido('TEXTO', null)).toEqual(SEM_VALOR);
   });
 
   it('mostra a data em dd/mm/aaaa sem mudar o dia', () => {
-    expect(valorExibido('data', '2000-03-09')).toEqual({ valor: '09/03/2000' });
-  });
-
-  it('mostra a data e hora no fuso institucional', () => {
-    expect(valorExibido('data-hora', '2026-12-10T15:30:00Z')).toEqual({
-      valor: '10/12/2026, 12:30',
-    });
-  });
-
-  it('mostra a hora pelo formatador de hora e mantém o que não é hora', () => {
-    expect(valorExibido('hora', '08:30')).toEqual({ valor: '08:30' });
-    expect(valorExibido('hora', '08:30:15')).toEqual({ valor: '08:30' });
-    expect(valorExibido('hora', '25:99')).toEqual({ valor: '25:99' });
-    expect(valorExibido('hora', 'cedo')).toEqual({ valor: 'cedo' });
+    expect(valorExibido('DATA', '2000-03-09')).toEqual({ valor: '09/03/2000' });
   });
 
   it('entrega o booleano ao componente, que o diz como Sim ou Não', () => {
-    expect(valorExibido('booleano', true)).toEqual({ valor: true });
-    expect(valorExibido('booleano', false)).toEqual({ valor: false });
+    expect(valorExibido('SIM_OU_NAO', true)).toEqual({ valor: true });
+    expect(valorExibido('SIM_OU_NAO', false)).toEqual({ valor: false });
   });
 
   it('formata o decimal exato com vírgula e sem milhar, sem passar por número', () => {
-    expect(valorExibido('numero', '1234567.50')).toEqual({ valor: '1234567,50' });
+    expect(valorExibido('NUMERO', '1234567.50')).toEqual({ valor: '1234567,50' });
     expect(formatarDecimalExato('12345678901234567890.123456789')).toBe(
       '12345678901234567890,123456789',
     );
@@ -74,21 +61,21 @@ describe('valorExibido', () => {
   });
 
   it('mostra a opção pelo rótulo e a lista de opções pelos rótulos', () => {
-    expect(valorExibido('opcao', { codigo: '1505502', rotulo: 'Marabá' })).toEqual({
+    expect(valorExibido('OPCAO', { codigo: '1505502', rotulo: 'Marabá' })).toEqual({
       valor: 'Marabá',
     });
     expect(
-      valorExibido('opcoes', [
+      valorExibido('OPCOES', [
         { codigo: 'a', rotulo: 'Escola pública' },
         { codigo: 'b', rotulo: 'Renda baixa' },
       ]),
     ).toEqual({ valor: ['Escola pública', 'Renda baixa'] });
-    expect(valorExibido('opcoes', [])).toEqual({ valor: [] });
+    expect(valorExibido('OPCOES', [])).toEqual({ valor: [] });
   });
 
   it('mostra o endereço em linhas e omite a parte que não veio', () => {
     expect(
-      valorExibido('endereco', {
+      valorExibido('ENDERECO', {
         cep: '68500-000',
         logradouro: 'Folha 31',
         numero: '12',
@@ -100,62 +87,61 @@ describe('valorExibido', () => {
     ).toEqual({
       linhas: ['Folha 31, 12 — Quadra 7', 'Nova Marabá', 'Marabá/PA', 'CEP 68500-000'],
     });
-    expect(valorExibido('endereco', { municipio: 'Marabá' })).toEqual({ linhas: ['Marabá'] });
-    expect(valorExibido('endereco', {})).toEqual(SEM_VALOR);
-    expect(valorExibido('endereco', { logradouro: 'Folha 31' })).toEqual({
+    expect(valorExibido('ENDERECO', { municipio: 'Marabá' })).toEqual({ linhas: ['Marabá'] });
+    expect(valorExibido('ENDERECO', {})).toEqual(SEM_VALOR);
+    expect(valorExibido('ENDERECO', { logradouro: 'Folha 31' })).toEqual({
       linhas: ['Folha 31'],
     });
   });
 
   it('mostra o identificador mascarado qualquer que seja o tipo declarado', () => {
-    for (const tipo of ['texto', 'numero', 'data', 'booleano', 'opcao', 'opcoes', 'endereco']) {
+    for (const tipo of ['TEXTO', 'NUMERO', 'DATA', 'SIM_OU_NAO', 'OPCAO', 'OPCOES', 'ENDERECO']) {
       expect(valorExibido(tipo, '***.598.363-**')).toEqual({ valor: '***.598.363-**' });
     }
-    expect(valorExibido('hora', '***')).toEqual({ valor: '***' });
   });
 
   it('aceita o número JSON e a string decimal no tipo numero', () => {
-    expect(valorExibido('numero', 1234.5)).toEqual({ valor: '1234,5' });
-    expect(valorExibido('numero', '1234.50')).toEqual({ valor: '1234,50' });
-    expect(valorExibido('numero', true)).toEqual({ valor: true });
+    expect(valorExibido('NUMERO', 1234.5)).toEqual({ valor: '1234,5' });
+    expect(valorExibido('NUMERO', '1234.50')).toEqual({ valor: '1234,50' });
+    expect(valorExibido('NUMERO', true)).toEqual({ valor: true });
   });
 
   it('repassa o booleano e o número de tipo inesperado ou desconhecido, sem deixá-los sumir', () => {
-    expect(valorExibido('texto', true)).toEqual({ valor: true });
-    expect(valorExibido('texto', 42)).toEqual({ valor: 42 });
-    expect(valorExibido('booleano', 3)).toEqual({ valor: 3 });
+    expect(valorExibido('TEXTO', true)).toEqual({ valor: true });
+    expect(valorExibido('TEXTO', 42)).toEqual({ valor: 42 });
+    expect(valorExibido('SIM_OU_NAO', 3)).toEqual({ valor: 3 });
     expect(valorExibido('tipo-novo', false)).toEqual({ valor: false });
     expect(valorExibido('tipo-novo', 7)).toEqual({ valor: 7 });
     expect(valorExibido('tipo-novo', 'texto')).toEqual({ valor: 'texto' });
   });
 
   it('não inventa valor para a forma que o tipo não admite e não é texto', () => {
-    expect(valorExibido('opcao', { sem: 'rotulo' })).toEqual(SEM_VALOR);
-    expect(valorExibido('endereco', [1, 2])).toEqual(SEM_VALOR);
+    expect(valorExibido('OPCAO', { sem: 'rotulo' })).toEqual(SEM_VALOR);
+    expect(valorExibido('ENDERECO', [1, 2])).toEqual(SEM_VALOR);
   });
 
   it('mostra o componente moeda em reais a partir do decimal exato, string ou número JSON', () => {
-    expect(valorExibido('numero', '1234.56', 'moeda')).toEqual({ valor: 'R$ 1.234,56' });
-    expect(valorExibido('numero', 1234.5, 'moeda')).toEqual({ valor: 'R$ 1.234,50' });
-    expect(valorExibido('numero', '7', 'moeda')).toEqual({ valor: 'R$ 7,00' });
+    expect(valorExibido('NUMERO', '1234.56', 'MOEDA')).toEqual({ valor: 'R$ 1.234,56' });
+    expect(valorExibido('NUMERO', 1234.5, 'MOEDA')).toEqual({ valor: 'R$ 1.234,50' });
+    expect(valorExibido('NUMERO', '7', 'MOEDA')).toEqual({ valor: 'R$ 7,00' });
     expect(formatarMoeda('12345678901234567890.123')).toBe('R$ 12.345.678.901.234.567.890,123');
     expect(formatarMoeda('-1000.5')).toBe('-R$ 1.000,50');
     expect(formatarMoeda('abc')).toBe('abc');
   });
 
   it('mostra o CPF e o identificador como a API os devolve, qualquer que seja o tipo', () => {
-    expect(valorExibido('texto', '***.598.363-**', 'cpf')).toEqual({ valor: '***.598.363-**' });
-    expect(valorExibido('numero', '*********', 'identificador')).toEqual({ valor: '*********' });
+    expect(valorExibido('TEXTO', '***.598.363-**', 'CPF')).toEqual({ valor: '***.598.363-**' });
+    expect(valorExibido('NUMERO', '*********', 'IDENTIFICADOR')).toEqual({ valor: '*********' });
   });
 
   it('entrega o componente situacao para a etiqueta de situação', () => {
-    expect(valorExibido('texto', 'enviada', 'situacao')).toEqual({ situacao: 'enviada' });
-    expect(valorExibido('texto', 'deferida', 'situacao')).toEqual({ valor: 'deferida' });
+    expect(valorExibido('TEXTO', 'enviada', 'SITUACAO')).toEqual({ situacao: 'enviada' });
+    expect(valorExibido('TEXTO', 'deferida', 'SITUACAO')).toEqual({ valor: 'deferida' });
   });
 
   it('volta à exibição pelo tipo no componente padrão, desconhecido ou sem a forma dele', () => {
-    expect(valorExibido('numero', '1234.56', 'padrao')).toEqual({ valor: '1234,56' });
-    expect(valorExibido('numero', '1234.56', 'novo-componente')).toEqual({ valor: '1234,56' });
-    expect(valorExibido('numero', true, 'moeda')).toEqual({ valor: true });
+    expect(valorExibido('NUMERO', '1234.56', 'PADRAO')).toEqual({ valor: '1234,56' });
+    expect(valorExibido('NUMERO', '1234.56', 'novo-componente')).toEqual({ valor: '1234,56' });
+    expect(valorExibido('NUMERO', true, 'MOEDA')).toEqual({ valor: true });
   });
 });

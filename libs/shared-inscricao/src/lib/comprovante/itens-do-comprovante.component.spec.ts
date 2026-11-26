@@ -1,15 +1,28 @@
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
-import type { ItemDoComprovanteDto } from '@uniplus/shared-data/selecao';
+import type {
+  ExibicaoDoValorDoItemCodigo,
+  FormaDoValorDoItemCodigo,
+  ItemDoComprovanteDto,
+} from '@uniplus/shared-data/selecao';
 
 import { ItensDoComprovanteComponent } from './itens-do-comprovante.component';
 
+type Forma = `${FormaDoValorDoItemCodigo}`;
+type Exibicao = `${ExibicaoDoValorDoItemCodigo}`;
+
 const item = (
   rotulo: string,
-  tipo: string,
+  forma: Forma,
   valor: unknown,
-  componente = 'padrao',
-): ItemDoComprovanteDto => ({ rotulo, descricao: '', tipo, componente, valor: valor as never });
+  exibicao: Exibicao = 'PADRAO',
+): ItemDoComprovanteDto => ({
+  rotulo,
+  descricao: '',
+  tipo: { codigo: forma as FormaDoValorDoItemCodigo, rotulo: forma },
+  componente: { codigo: exibicao as ExibicaoDoValorDoItemCodigo, rotulo: exibicao },
+  valor: valor as never,
+});
 
 async function montar(itens: readonly ItemDoComprovanteDto[]): Promise<HTMLElement> {
   const fixture: ComponentFixture<ItensDoComprovanteComponent> = TestBed.createComponent(
@@ -30,12 +43,12 @@ const valorDe = (tela: HTMLElement, rotulo: string): string | undefined =>
     .replace(/\s+/g, ' ');
 
 const ITENS_DE_TIPOS_DIFERENTES = [
-  item('Aceita ser contatado', 'booleano', true),
-  item('Data de nascimento', 'data', '2001-03-09'),
-  item('Cor ou raça', 'opcao', { codigo: 'PARDA', rotulo: 'Parda' }),
+  item('Aceita ser contatado', 'SIM_OU_NAO', true),
+  item('Data de nascimento', 'DATA', '2001-03-09'),
+  item('Cor ou raça', 'OPCAO', { codigo: 'PARDA', rotulo: 'Parda' }),
 ];
 
-const ITEM_DE_ENDERECO = item('Endereço', 'endereco', {
+const ITEM_DE_ENDERECO = item('Endereço', 'ENDERECO', {
   logradouro: 'Folha 31',
   numero: '10',
   municipio: 'Marabá',
@@ -58,7 +71,7 @@ describe('ItensDoComprovanteComponent', () => {
   });
 
   it('o endereço sai em linhas e o item sem valor diz que não foi informado', async () => {
-    const tela = await montar([ITEM_DE_ENDERECO, item('Complemento', 'texto', null)]);
+    const tela = await montar([ITEM_DE_ENDERECO, item('Complemento', 'TEXTO', null)]);
 
     const linhas = Array.from(tela.querySelectorAll('.resposta__linha')).map((l) =>
       l.textContent?.trim(),

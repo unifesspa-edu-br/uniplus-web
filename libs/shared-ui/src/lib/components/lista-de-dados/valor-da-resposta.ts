@@ -16,9 +16,6 @@ const SEM_VALOR: ValorExibido = { valor: null };
 
 const DECIMAL_EXATO = /^(-?)(\d+)(?:\.(\d+))?$/;
 const MILHAR = /\B(?=(\d{3})+(?!\d))/g;
-const HORA_DO_DIA = /^\d{2}:\d{2}(?::\d{2})?$/;
-/** Dia fixo para ler a hora de parede pelo formatador de data, que só lê instante ou data e hora. */
-const DIA_DA_HORA = '1970-01-01';
 
 function ehRegistro(valor: unknown): valor is Readonly<Record<string, unknown>> {
   return typeof valor === 'object' && valor !== null && !Array.isArray(valor);
@@ -70,40 +67,28 @@ function endereco(valor: Readonly<Record<string, unknown>>): ValorExibido {
   return linhas.length === 0 ? SEM_VALOR : { linhas };
 }
 
-function hora(valor: string): string {
-  if (!HORA_DO_DIA.test(valor)) return valor;
-  const formatada = formatarDataBr(`${DIA_DA_HORA}T${valor}`, 'hora');
-  return formatada === '' ? valor : formatada;
-}
-
 type Leitor = (valor: unknown) => ValorExibido | undefined;
 
-function dataLidaComo(formato: 'short' | 'datetime'): Leitor {
-  return (valor) => {
-    if (typeof valor !== 'string') return undefined;
-    const formatada = formatarDataBr(valor, formato);
-    return { valor: formatada === '' ? valor : formatada };
-  };
-}
-
 const LEITORES_POR_TIPO: Readonly<Record<string, Leitor>> = {
-  booleano: (valor) => (typeof valor === 'boolean' ? { valor } : undefined),
-  data: dataLidaComo('short'),
-  'data-hora': dataLidaComo('datetime'),
-  hora: (valor) => (typeof valor === 'string' ? { valor: hora(valor) } : undefined),
-  numero: (valor) =>
+  SIM_OU_NAO: (valor) => (typeof valor === 'boolean' ? { valor } : undefined),
+  DATA: (valor) => {
+    if (typeof valor !== 'string') return undefined;
+    const formatada = formatarDataBr(valor, 'short');
+    return { valor: formatada === '' ? valor : formatada };
+  },
+  NUMERO: (valor) =>
     typeof valor === 'string' || typeof valor === 'number'
       ? { valor: formatarDecimalExato(String(valor)) }
       : undefined,
-  opcao: (valor) => {
+  OPCAO: (valor) => {
     const rotulo = opcaoRotulo(valor);
     return rotulo === null ? undefined : { valor: rotulo };
   },
-  opcoes: (valor) =>
+  OPCOES: (valor) =>
     Array.isArray(valor)
       ? { valor: valor.map(opcaoRotulo).filter((r): r is string => r !== null) }
       : undefined,
-  endereco: (valor) => (ehRegistro(valor) ? endereco(valor) : undefined),
+  ENDERECO: (valor) => (ehRegistro(valor) ? endereco(valor) : undefined),
 };
 
 /** O valor na forma que o `tipo` define; `undefined` quando o valor não tem essa forma. */
@@ -111,33 +96,34 @@ function lidoPeloTipo(tipo: string, valor: unknown): ValorExibido | undefined {
   return Object.hasOwn(LEITORES_POR_TIPO, tipo) ? LEITORES_POR_TIPO[tipo](valor) : undefined;
 }
 
+const comoVeio: Leitor = (valor) => (typeof valor === 'string' ? { valor } : undefined);
+
+const LEITORES_POR_EXIBICAO: Readonly<Record<string, Leitor>> = {
+  CPF: comoVeio,
+  IDENTIFICADOR: comoVeio,
+  MOEDA: (valor) =>
+    typeof valor === 'string' || typeof valor === 'number'
+      ? { valor: formatarMoeda(String(valor)) }
+      : undefined,
+  SITUACAO: (valor) =>
+    typeof valor === 'string' && ehSituacaoConhecida(valor) ? { situacao: valor } : undefined,
+};
+
 function lidoPeloComponente(componente: string, valor: unknown): ValorExibido | undefined {
-  switch (componente) {
-    case 'cpf':
-    case 'identificador':
-      return typeof valor === 'string' ? { valor } : undefined;
-    case 'moeda':
-      return typeof valor === 'string' || typeof valor === 'number'
-        ? { valor: formatarMoeda(String(valor)) }
-        : undefined;
-    case 'situacao':
-      return typeof valor === 'string' && ehSituacaoConhecida(valor)
-        ? { situacao: valor }
-        : undefined;
-    default:
-      return undefined;
-  }
+  return Object.hasOwn(LEITORES_POR_EXIBICAO, componente)
+    ? LEITORES_POR_EXIBICAO[componente](valor)
+    : undefined;
 }
 
 /**
  * O valor de uma resposta segundo o `componente` e o `tipo` que a API declara. O componente
  * específico (CPF e identificador, que chegam já mascarados e a tela exibe como vieram; moeda;
- * situação) vale quando o valor tem a forma dele; senão, e no `padrao` ou em componente que a tela
+ * situação) vale quando o valor tem a forma dele; senão, e no `PADRAO` ou em componente que a tela
  * não conhece, a exibição é a do `tipo`. O valor que não tem a forma do tipo, ou de um tipo que a
  * tela não conhece, passa ao componente de valor quando é texto, número ou booleano, e some quando
  * não há o que mostrar (objeto ou lista sem forma conhecida).
  */
-export function valorExibido(tipo: string, valor: unknown, componente = 'padrao'): ValorExibido {
+export function valorExibido(tipo: string, valor: unknown, componente = 'PADRAO'): ValorExibido {
   if (valor === null || valor === undefined) return SEM_VALOR;
   const lido = lidoPeloComponente(componente, valor) ?? lidoPeloTipo(tipo, valor);
   if (lido !== undefined) return lido;

@@ -83,7 +83,7 @@ export class InscricoesApi {
   }
 
   /**
-   * POST `…/inscricao/submissao` — envia ou corrige a inscrição. A Idempotency-Key vem do `context`
+   * POST `…/inscricao/envio` — envia ou corrige a inscrição. A Idempotency-Key vem do `context`
    * de quem chama: repetir a mesma chave devolve o recibo já emitido.
    */
   submeter(
@@ -93,7 +93,7 @@ export class InscricoesApi {
     context: HttpContext,
   ): Observable<ApiResult<ReciboDaInscricaoDto>> {
     return this.http.post<ApiResult<ReciboDaInscricaoDto>>(
-      `${this.url(processoSeletivoId)}/submissao`,
+      `${this.url(processoSeletivoId)}/envio`,
       request,
       { headers: { 'If-Match': eTag }, context: contextoDaSubmissao(context) },
     );

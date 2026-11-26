@@ -15,7 +15,7 @@ export interface paths {
          * Retorna o perfil do usuário autenticado
          * @description Retorna a identidade do access token (nome, e-mail, CPF, NomeSocial) e os perfis de acesso que a pessoa tem por concessão vigente, cada um com o escopo (unidade ou instituição) e o prazo. O token identifica a pessoa e não concede acesso. Requer autenticação.
          */
-        readonly get: operations["GetAuthenticatedUserProfile"];
+        readonly get: operations["ConsultarUsuarioAutenticado"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -305,7 +305,7 @@ export interface paths {
         };
         /**
          * Obtém os indicadores quantitativos do processo seletivo
-         * @description Retorna inscrições submetidas não canceladas, inscritos distintos e rascunhos do processo seletivo. A consulta exige autenticação e autorização conforme o estado e a unidade do processo.
+         * @description Retorna inscrições enviadas não canceladas, inscritos distintos e rascunhos do processo seletivo. A consulta exige autenticação e autorização conforme o estado e a unidade do processo.
          */
         readonly get: operations["ObterIndicadoresDoProcesso"];
         readonly put?: never;
@@ -380,7 +380,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/processos-seletivos/{id}/inscricao/submissao": {
+    readonly "/api/selecao/processos-seletivos/{id}/inscricao/envio": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -389,7 +389,7 @@ export interface paths {
         };
         readonly get?: never;
         readonly put?: never;
-        readonly post: operations["SubmeterInscricao"];
+        readonly post: operations["EnviarInscricao"];
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -2161,8 +2161,8 @@ export interface components {
             readonly editaisPublicados?: null | readonly components["schemas"]["EditalPublicadoCertameDto"][];
         };
         /**
-         * @description - `INSCRICOES`: Inscrições — Submetidas e não canceladas
-         *     - `INSCRITOS`: Inscritos — Pessoas distintas com inscrição submetida e não cancelada
+         * @description - `INSCRICOES`: Inscrições — Enviadas e não canceladas
+         *     - `INSCRITOS`: Inscritos — Pessoas distintas com inscrição enviada e não cancelada
          *     - `RASCUNHOS`: Rascunhos
          * @enum {string}
          */
@@ -5289,6 +5289,19 @@ export interface components {
          * @enum {string}
          */
         readonly EventoInicialDoPrazoCodigo: EventoInicialDoPrazoCodigo;
+        readonly ExibicaoDoValorDoItem: {
+            readonly codigo: components["schemas"]["ExibicaoDoValorDoItemCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `PADRAO`: Padrão — O valor aparece conforme sua forma.
+         *     - `CPF`: CPF — O CPF aparece mascarado.
+         *     - `IDENTIFICADOR`: Identificador — O identificador aparece mascarado.
+         *     - `MOEDA`: Valor em reais — O valor aparece em reais, como R$ 1.234,56.
+         *     - `SITUACAO`: Situação — A tela mostra o rótulo numa etiqueta, sem mudar a forma do valor.
+         * @enum {string}
+         */
+        readonly ExibicaoDoValorDoItemCodigo: ExibicaoDoValorDoItemCodigo;
         readonly ExibicaoEObrigatoriedadeDto: {
             readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
             readonly obrigatoriedade: components["schemas"]["ObrigatoriedadeDto"];
@@ -5458,6 +5471,21 @@ export interface components {
          * @enum {string}
          */
         readonly FormaDeComprovacaoCodigo: FormaDeComprovacaoCodigo;
+        readonly FormaDoValorDoItem: {
+            readonly codigo: components["schemas"]["FormaDoValorDoItemCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `TEXTO`: Texto — O valor é um texto.
+         *     - `NUMERO`: Número — O valor é um número em texto, como foi respondido.
+         *     - `SIM_OU_NAO`: Sim ou não — O valor é verdadeiro ou falso.
+         *     - `DATA`: Data — O valor é uma data em texto, no formato AAAA-MM-DD.
+         *     - `OPCAO`: Opção — O valor é um objeto com código e rótulo da opção.
+         *     - `OPCOES`: Opções — O valor é uma lista de objetos com código e rótulo de cada opção.
+         *     - `ENDERECO`: Endereço — O valor é um objeto com cep, logradouro, numero, complemento, bairro, municipio, municipioCodigoIbge, uf e ufNome, em texto.
+         * @enum {string}
+         */
+        readonly FormaDoValorDoItemCodigo: FormaDoValorDoItemCodigo;
         readonly FormatoDeDocumento: {
             readonly codigo: components["schemas"]["FormatoDeDocumentoCodigo"];
             readonly rotulo: string;
@@ -5805,7 +5833,7 @@ export interface components {
             readonly ofertas?: null | readonly components["schemas"]["OfertaEscolhidaDto"][];
             readonly numeroInscricao?: null | string;
             /** Format: date-time */
-            readonly submetidaEm?: null | string;
+            readonly enviadaEm?: null | string;
             /** Format: date-time */
             readonly canceladaEm?: null | string;
             readonly motivoDoCancelamento?: null | string;
@@ -5826,7 +5854,7 @@ export interface components {
             readonly nome?: null | components["schemas"]["NomeClassificadoDto"];
             readonly cpf?: null | components["schemas"]["CpfMascaradoDto"];
             /** Format: date-time */
-            readonly submetidaEm?: null | string;
+            readonly enviadaEm?: null | string;
         };
         readonly InscricaoDto: {
             /** Format: uuid */
@@ -5900,16 +5928,16 @@ export interface components {
             readonly fatoCodigo: string;
             readonly rotulo: string;
             readonly descricao: string;
-            readonly tipo: string;
-            readonly componente: string;
+            readonly tipo: components["schemas"]["FormaDoValorDoItem"];
+            readonly componente: components["schemas"]["ExibicaoDoValorDoItem"];
             readonly valor?: null | components["schemas"]["JsonElement"];
             readonly podeRevelar: boolean;
         };
         readonly ItemDoComprovanteDto: {
             readonly rotulo: string;
             readonly descricao: string;
-            readonly tipo: string;
-            readonly componente: string;
+            readonly tipo: components["schemas"]["FormaDoValorDoItem"];
+            readonly componente: components["schemas"]["ExibicaoDoValorDoItem"];
             readonly valor?: null | components["schemas"]["JsonElement"];
         };
         readonly ItemDocumentoExigidoInput: {
@@ -7261,7 +7289,7 @@ export interface components {
         };
         /**
          * @description - `RASCUNHO`: Rascunho — A inscrição está em preenchimento.
-         *     - `SUBMETIDA`: Submetida — A inscrição foi enviada.
+         *     - `ENVIADA`: Enviada — A inscrição foi enviada.
          *     - `CANCELADA`: Cancelada — A inscrição enviada foi cancelada.
          * @enum {string}
          */
@@ -7679,7 +7707,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    readonly GetAuthenticatedUserProfile: {
+    readonly ConsultarUsuarioAutenticado: {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -9984,7 +10012,7 @@ export interface operations {
             };
         };
     };
-    readonly SubmeterInscricao: {
+    readonly EnviarInscricao: {
         readonly parameters: {
             readonly query?: never;
             readonly header: {
@@ -14876,7 +14904,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Outra publicação concorrente congelou uma versão da configuração entre a leitura e a gravação desta (reler o processo e resubmeter), o identificador legível já é de outro certame (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso), o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo) ou o ato que se corrige já foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado). Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+            /** @description Outra publicação concorrente congelou uma versão da configuração entre a leitura e a gravação desta (reler o processo e enviar novamente), o identificador legível já é de outro certame (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso), o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo) ou o ato que se corrige já foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado). Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
             readonly 409: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -14977,7 +15005,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Responde 409 quando outra publicação ou retificação concorrente congelou uma versão da configuração entre a leitura e a gravação desta (reler o processo e resubmeter), quando o identificador legível já é de outro certame (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso), o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato que se corrige já foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) e quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+            /** @description Responde 409 quando outra publicação ou retificação concorrente congelou uma versão da configuração entre a leitura e a gravação desta (reler o processo e enviar novamente), quando o identificador legível já é de outro certame (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso), o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato que se corrige já foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) e quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
             readonly 409: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -16858,6 +16886,13 @@ export enum EventoInicialDoPrazoCodigo {
     PUBLICACAO_DO_ATO = "PUBLICACAO_DO_ATO",
     CIENCIA_INDIVIDUAL = "CIENCIA_INDIVIDUAL"
 }
+export enum ExibicaoDoValorDoItemCodigo {
+    PADRAO = "PADRAO",
+    CPF = "CPF",
+    IDENTIFICADOR = "IDENTIFICADOR",
+    MOEDA = "MOEDA",
+    SITUACAO = "SITUACAO"
+}
 export enum FinalidadeDoDocumentoCodigo {
     DOCUMENTO_DO_EDITAL = "DOCUMENTO_DO_EDITAL",
     ANEXO_DO_EDITAL = "ANEXO_DO_EDITAL",
@@ -16881,6 +16916,15 @@ export enum FormaDeComprovacaoCodigo {
     DOCUMENTO = "DOCUMENTO",
     TODOS_OS_ITENS = "TODOS_OS_ITENS",
     QUANTIDADE_MINIMA_DE_ITENS = "QUANTIDADE_MINIMA_DE_ITENS"
+}
+export enum FormaDoValorDoItemCodigo {
+    TEXTO = "TEXTO",
+    NUMERO = "NUMERO",
+    SIM_OU_NAO = "SIM_OU_NAO",
+    DATA = "DATA",
+    OPCAO = "OPCAO",
+    OPCOES = "OPCOES",
+    ENDERECO = "ENDERECO"
 }
 export enum FormatoDeDocumentoCodigo {
     DOCX = "DOCX",
@@ -17038,7 +17082,7 @@ export enum SituacaoDoProdutoPrevistoCodigo {
 }
 export enum SituacaoInscricaoCodigo {
     RASCUNHO = "RASCUNHO",
-    SUBMETIDA = "SUBMETIDA",
+    ENVIADA = "ENVIADA",
     CANCELADA = "CANCELADA"
 }
 export enum StatusArquivoEnviadoCodigo {

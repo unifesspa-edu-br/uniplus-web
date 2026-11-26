@@ -32,7 +32,7 @@
         ],
         "summary": "Retorna o perfil do usu\u00E1rio autenticado",
         "description": "Retorna a identidade do access token (nome, e-mail, CPF, NomeSocial) e os perfis de acesso que a pessoa tem por concess\u00E3o vigente, cada um com o escopo (unidade ou institui\u00E7\u00E3o) e o prazo. O token identifica a pessoa e n\u00E3o concede acesso. Requer autentica\u00E7\u00E3o.",
-        "operationId": "GetAuthenticatedUserProfile",
+        "operationId": "ConsultarUsuarioAutenticado",
         "responses": {
           "200": {
             "description": "OK",
@@ -2516,7 +2516,7 @@
           "IndicadoresDoProcesso"
         ],
         "summary": "Obt\u00E9m os indicadores quantitativos do processo seletivo",
-        "description": "Retorna inscri\u00E7\u00F5es submetidas n\u00E3o canceladas, inscritos distintos e rascunhos do processo seletivo. A consulta exige autentica\u00E7\u00E3o e autoriza\u00E7\u00E3o conforme o estado e a unidade do processo.",
+        "description": "Retorna inscri\u00E7\u00F5es enviadas n\u00E3o canceladas, inscritos distintos e rascunhos do processo seletivo. A consulta exige autentica\u00E7\u00E3o e autoriza\u00E7\u00E3o conforme o estado e a unidade do processo.",
         "operationId": "ObterIndicadoresDoProcesso",
         "parameters": [
           {
@@ -3382,12 +3382,12 @@
         "x-uniplus-idempotent": true
       }
     },
-    "/api/selecao/processos-seletivos/{id}/inscricao/submissao": {
+    "/api/selecao/processos-seletivos/{id}/inscricao/envio": {
       "post": {
         "tags": [
           "Inscricoes"
         ],
-        "operationId": "SubmeterInscricao",
+        "operationId": "EnviarInscricao",
         "parameters": [
           {
             "name": "id",
@@ -10531,7 +10531,7 @@
             }
           },
           "409": {
-            "description": "Outra publica\u00E7\u00E3o concorrente congelou uma vers\u00E3o da configura\u00E7\u00E3o entre a leitura e a grava\u00E7\u00E3o desta (reler o processo e resubmeter), o identificador leg\u00EDvel j\u00E1 \u00E9 de outro certame (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso), o objeto j\u00E1 tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo) ou o ato que se corrige j\u00E1 foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado). Tamb\u00E9m responde 409 quando outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
+            "description": "Outra publica\u00E7\u00E3o concorrente congelou uma vers\u00E3o da configura\u00E7\u00E3o entre a leitura e a grava\u00E7\u00E3o desta (reler o processo e enviar novamente), o identificador leg\u00EDvel j\u00E1 \u00E9 de outro certame (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso), o objeto j\u00E1 tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo) ou o ato que se corrige j\u00E1 foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado). Tamb\u00E9m responde 409 quando outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -10673,7 +10673,7 @@
             }
           },
           "409": {
-            "description": "Responde 409 quando outra publica\u00E7\u00E3o ou retifica\u00E7\u00E3o concorrente congelou uma vers\u00E3o da configura\u00E7\u00E3o entre a leitura e a grava\u00E7\u00E3o desta (reler o processo e resubmeter), quando o identificador leg\u00EDvel j\u00E1 \u00E9 de outro certame (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso), o objeto j\u00E1 tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato que se corrige j\u00E1 foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) e quando outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
+            "description": "Responde 409 quando outra publica\u00E7\u00E3o ou retifica\u00E7\u00E3o concorrente congelou uma vers\u00E3o da configura\u00E7\u00E3o entre a leitura e a grava\u00E7\u00E3o desta (reler o processo e enviar novamente), quando o identificador leg\u00EDvel j\u00E1 \u00E9 de outro certame (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso), o objeto j\u00E1 tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato que se corrige j\u00E1 foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) e quando outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -14647,7 +14647,7 @@
           "RASCUNHOS"
         ],
         "type": "string",
-        "description": "- \u0060INSCRICOES\u0060: Inscri\u00E7\u00F5es \u2014 Submetidas e n\u00E3o canceladas\n- \u0060INSCRITOS\u0060: Inscritos \u2014 Pessoas distintas com inscri\u00E7\u00E3o submetida e n\u00E3o cancelada\n- \u0060RASCUNHOS\u0060: Rascunhos"
+        "description": "- \u0060INSCRICOES\u0060: Inscri\u00E7\u00F5es \u2014 Enviadas e n\u00E3o canceladas\n- \u0060INSCRITOS\u0060: Inscritos \u2014 Pessoas distintas com inscri\u00E7\u00E3o enviada e n\u00E3o cancelada\n- \u0060RASCUNHOS\u0060: Rascunhos"
       },
       "ColetaApresentada": {
         "required": [
@@ -21635,6 +21635,32 @@
         "type": "string",
         "description": "- \u0060PUBLICACAO_DO_ATO\u0060: Publica\u00E7\u00E3o do ato \u2014 O prazo conta da publica\u00E7\u00E3o do ato e vale igual para todos os candidatos (UNI-REQ-0115).\n- \u0060CIENCIA_INDIVIDUAL\u0060: Ci\u00EAncia individual do candidato \u2014 O prazo conta da data em que cada candidato toma ci\u00EAncia da decis\u00E3o que o alcan\u00E7a."
       },
+      "ExibicaoDoValorDoItem": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/ExibicaoDoValorDoItemCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "ExibicaoDoValorDoItemCodigo": {
+        "enum": [
+          "PADRAO",
+          "CPF",
+          "IDENTIFICADOR",
+          "MOEDA",
+          "SITUACAO"
+        ],
+        "type": "string",
+        "description": "- \u0060PADRAO\u0060: Padr\u00E3o \u2014 O valor aparece conforme sua forma.\n- \u0060CPF\u0060: CPF \u2014 O CPF aparece mascarado.\n- \u0060IDENTIFICADOR\u0060: Identificador \u2014 O identificador aparece mascarado.\n- \u0060MOEDA\u0060: Valor em reais \u2014 O valor aparece em reais, como R$ 1.234,56.\n- \u0060SITUACAO\u0060: Situa\u00E7\u00E3o \u2014 A tela mostra o r\u00F3tulo numa etiqueta, sem mudar a forma do valor."
+      },
       "ExibicaoEObrigatoriedadeDto": {
         "required": [
           "exibicao",
@@ -22289,6 +22315,34 @@
         ],
         "type": "string",
         "description": "- \u0060DOCUMENTO\u0060: Documento\n- \u0060TODOS_OS_ITENS\u0060: Todos estes itens\n- \u0060QUANTIDADE_MINIMA_DE_ITENS\u0060: Pelo menos a quantidade indicada destes itens"
+      },
+      "FormaDoValorDoItem": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/FormaDoValorDoItemCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "FormaDoValorDoItemCodigo": {
+        "enum": [
+          "TEXTO",
+          "NUMERO",
+          "SIM_OU_NAO",
+          "DATA",
+          "OPCAO",
+          "OPCOES",
+          "ENDERECO"
+        ],
+        "type": "string",
+        "description": "- \u0060TEXTO\u0060: Texto \u2014 O valor \u00E9 um texto.\n- \u0060NUMERO\u0060: N\u00FAmero \u2014 O valor \u00E9 um n\u00FAmero em texto, como foi respondido.\n- \u0060SIM_OU_NAO\u0060: Sim ou n\u00E3o \u2014 O valor \u00E9 verdadeiro ou falso.\n- \u0060DATA\u0060: Data \u2014 O valor \u00E9 uma data em texto, no formato AAAA-MM-DD.\n- \u0060OPCAO\u0060: Op\u00E7\u00E3o \u2014 O valor \u00E9 um objeto com c\u00F3digo e r\u00F3tulo da op\u00E7\u00E3o.\n- \u0060OPCOES\u0060: Op\u00E7\u00F5es \u2014 O valor \u00E9 uma lista de objetos com c\u00F3digo e r\u00F3tulo de cada op\u00E7\u00E3o.\n- \u0060ENDERECO\u0060: Endere\u00E7o \u2014 O valor \u00E9 um objeto com cep, logradouro, numero, complemento, bairro, municipio, municipioCodigoIbge, uf e ufNome, em texto."
       },
       "FormatoDeDocumento": {
         "required": [
@@ -23678,7 +23732,7 @@
               "string"
             ]
           },
-          "submetidaEm": {
+          "enviadaEm": {
             "type": [
               "null",
               "string"
@@ -23787,7 +23841,7 @@
               }
             ]
           },
-          "submetidaEm": {
+          "enviadaEm": {
             "type": [
               "null",
               "string"
@@ -24084,10 +24138,10 @@
             "type": "string"
           },
           "tipo": {
-            "type": "string"
+            "$ref": "#/components/schemas/FormaDoValorDoItem"
           },
           "componente": {
-            "type": "string"
+            "$ref": "#/components/schemas/ExibicaoDoValorDoItem"
           },
           "valor": {
             "oneOf": [
@@ -24095,6 +24149,7 @@
                 "type": "null"
               },
               {
+                "description": "O valor do item, na forma que \u0060tipo\u0060 define (a forma de cada c\u00F3digo est\u00E1 em \u0060FormaDoValorDoItemCodigo\u0060). O \u0060componente\u0060 s\u00F3 diz como a tela mostra o valor, sem mudar a forma. Com tipo \u0060OPCAO\u0060 ou \u0060OPCOES\u0060, o valor sai como c\u00F3digo e r\u00F3tulo (uma lista no caso de \u0060OPCOES\u0060). O r\u00F3tulo pode vir das op\u00E7\u00F5es declaradas pelo processo e congeladas na publica\u00E7\u00E3o ou dos valores de dom\u00EDnio congelados; para UF, vem da lista oficial. Se n\u00E3o houver r\u00F3tulo, usa-se o pr\u00F3prio c\u00F3digo. No caso de munic\u00EDpio, o c\u00F3digo e o nome gravados na resposta saem como foram gravados. Ausente quando o item n\u00E3o foi respondido.",
                 "$ref": "#/components/schemas/JsonElement"
               }
             ]
@@ -24120,10 +24175,10 @@
             "type": "string"
           },
           "tipo": {
-            "type": "string"
+            "$ref": "#/components/schemas/FormaDoValorDoItem"
           },
           "componente": {
-            "type": "string"
+            "$ref": "#/components/schemas/ExibicaoDoValorDoItem"
           },
           "valor": {
             "oneOf": [
@@ -24131,7 +24186,7 @@
                 "type": "null"
               },
               {
-                "description": "O valor respondido; a forma depende de \u0060tipo\u0060. \u0060texto\u0060, \u0060data\u0060 (AAAA-MM-DD), \u0060data-hora\u0060 (ISO 8601 com deslocamento), \u0060hora\u0060 (HH:mm), \u0060numero\u0060 (em texto, como foi respondido) e \u0060booleano\u0060 (verdadeiro ou falso) trazem um valor simples. \u0060opcao\u0060 traz \u0060{ codigo, rotulo }\u0060. \u0060opcoes\u0060 traz uma lista de \u0060{ codigo, rotulo }\u0060. \u0060endereco\u0060 traz \u0060{ cep, logradouro, numero, complemento, bairro, municipio, municipioCodigoIbge, uf, ufNome }\u0060, todos em texto. Ausente quando o item n\u00E3o foi respondido.",
+                "description": "O valor do item, na forma que \u0060tipo\u0060 define (a forma de cada c\u00F3digo est\u00E1 em \u0060FormaDoValorDoItemCodigo\u0060). O \u0060componente\u0060 s\u00F3 diz como a tela mostra o valor, sem mudar a forma. Com tipo \u0060OPCAO\u0060 ou \u0060OPCOES\u0060, o valor sai como c\u00F3digo e r\u00F3tulo (uma lista no caso de \u0060OPCOES\u0060). O r\u00F3tulo pode vir das op\u00E7\u00F5es declaradas pelo processo e congeladas na publica\u00E7\u00E3o ou dos valores de dom\u00EDnio congelados; para UF, vem da lista oficial. Se n\u00E3o houver r\u00F3tulo, usa-se o pr\u00F3prio c\u00F3digo. No caso de munic\u00EDpio, o c\u00F3digo e o nome gravados na resposta saem como foram gravados. Ausente quando o item n\u00E3o foi respondido.",
                 "$ref": "#/components/schemas/JsonElement"
               }
             ]
@@ -29869,11 +29924,11 @@
       "SituacaoInscricaoCodigo": {
         "enum": [
           "RASCUNHO",
-          "SUBMETIDA",
+          "ENVIADA",
           "CANCELADA"
         ],
         "type": "string",
-        "description": "- \u0060RASCUNHO\u0060: Rascunho \u2014 A inscri\u00E7\u00E3o est\u00E1 em preenchimento.\n- \u0060SUBMETIDA\u0060: Submetida \u2014 A inscri\u00E7\u00E3o foi enviada.\n- \u0060CANCELADA\u0060: Cancelada \u2014 A inscri\u00E7\u00E3o enviada foi cancelada."
+        "description": "- \u0060RASCUNHO\u0060: Rascunho \u2014 A inscri\u00E7\u00E3o est\u00E1 em preenchimento.\n- \u0060ENVIADA\u0060: Enviada \u2014 A inscri\u00E7\u00E3o foi enviada.\n- \u0060CANCELADA\u0060: Cancelada \u2014 A inscri\u00E7\u00E3o enviada foi cancelada."
       },
       "SnapshotVigenteDto": {
         "required": [
