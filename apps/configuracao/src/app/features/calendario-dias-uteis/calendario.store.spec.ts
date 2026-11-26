@@ -49,7 +49,6 @@ describe('CalendarioStore', () => {
 
       expect(store.carregandoPrimeiraVez()).toBe(true);
       expect(store.totalDiasNaoUteis()).toBe(0);
-      expect(store.meses()).toHaveLength(12);
       http.expectOne(`${BASE}/api/configuracao/calendarios-dias-uteis/${CALENDARIO_ID}`);
     });
 

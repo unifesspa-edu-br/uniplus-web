@@ -1,7 +1,12 @@
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { DIAS_SEMANA } from './calendario-dias-uteis.util';
 import type { CelulaCalendarioMensal, MesCalendarioMensal } from './calendario-mensal.util';
-import { rotuloDoDia, rotuloDoDiaSemOcorrencia, textoDaPrevia } from './dia-nao-util-legivel';
+import {
+  rotuloDoDia,
+  rotuloDoDiaOculto,
+  rotuloDoDiaSemOcorrencia,
+  textoDaPrevia,
+} from './dia-nao-util-legivel';
 
 /** A grade dos meses do calendário, com a prévia de cada dia que tem ocorrência. */
 @Component({
@@ -19,6 +24,7 @@ export class CalendarioMensalComponent {
 
   protected readonly diasSemana = DIAS_SEMANA;
   protected readonly rotuloDoDia = rotuloDoDia;
+  protected readonly rotuloDoDiaOculto = rotuloDoDiaOculto;
   protected readonly rotuloDoDiaSemOcorrencia = rotuloDoDiaSemOcorrencia;
   protected readonly textoDaPrevia = textoDaPrevia;
 

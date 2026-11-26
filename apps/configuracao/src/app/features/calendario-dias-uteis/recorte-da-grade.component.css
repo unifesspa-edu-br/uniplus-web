@@ -1,0 +1,37 @@
+.cfg-recorte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.cfg-recorte__titulo {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+}
+
+.cfg-recorte__campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  align-items: end;
+  gap: var(--space-4);
+}
+
+.cfg-recorte__limpar {
+  justify-self: start;
+}
+
+.cfg-recorte .field__hint,
+.cfg-recorte__contagem {
+  margin: 0;
+}
+
+.cfg-recorte__contagem {
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+}

@@ -4,9 +4,16 @@
   [ariaLabel]="titulo()"
   (closed)="fechado.emit()"
 >
-  @for (ocorrencia of ocorrencias(); track ocorrencia.id) {
+  @if (avisoDasOcultas()) {
+    <p class="field__hint cfg-calendario-mensal__aviso-ocultas">{{ avisoDasOcultas() }}</p>
+  }
+  @for (item of itens(); track item.dia.id) {
+    @let ocorrencia = item.dia;
     <article class="cfg-calendario-mensal__ocorrencia">
       <h3>{{ ocorrencia.descricao }}</h3>
+      @if (item.oculta) {
+        <ui-tag>Oculto pelo filtro</ui-tag>
+      }
       <dl>
         <div>
           <dt>Abrangência</dt>

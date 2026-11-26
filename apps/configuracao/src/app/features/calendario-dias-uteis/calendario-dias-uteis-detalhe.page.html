@@ -4,7 +4,9 @@
     Voltar à lista
   </a>
   <div class="page-header__content">
-    <h1 id="cfg-calendario-detalhe-title" class="page-header__title" tabindex="-1">Detalhes</h1>
+    <h1 #titulo id="cfg-calendario-detalhe-title" class="page-header__title" tabindex="-1">
+      Detalhes
+    </h1>
   </div>
 </div>
 <ui-falha-de-leitura titulo="Não foi possível carregar o calendário" [leitura]="leitura" />
@@ -41,8 +43,25 @@
   </div>
 </dl>
 
+<div class="cfg-filtro-removido" [class.cfg-filtro-removido--aberto]="recorte.filtroRemovido()">
+  <p role="status" class="cfg-filtro-removido__texto">
+    {{ recorte.filtroRemovido() ? avisoDoFiltroRemovido : '' }}
+  </p>
+  @if (recorte.filtroRemovido()) {
+  <button
+    type="button"
+    class="btn btn--tertiary btn--sm btn--rect"
+    (click)="dispensarAvisoDoFiltro()"
+  >
+    Fechar aviso
+  </button>
+  }
+</div>
+@if (store.totalDiasNaoUteis() > 0) {
+<cfg-recorte-da-grade />
+}
 <cfg-calendario-mensal
-  [meses]="store.meses()"
+  [meses]="recorte.meses()"
   [(previa)]="selecao.previa"
   (diaEscolhido)="selecao.abrir($event)"
 />
@@ -50,6 +69,7 @@
   [(aberto)]="selecao.painelAberto"
   [titulo]="selecao.titulo()"
   [ocorrencias]="selecao.ocorrencias()"
+  [ocultas]="selecao.ocultas()"
   (adicionar)="edicao.abrirCadastro()"
   (fechado)="selecao.aoFecharPainel()"
 />
