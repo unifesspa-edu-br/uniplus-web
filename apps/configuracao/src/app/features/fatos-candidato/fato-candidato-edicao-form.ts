@@ -11,7 +11,7 @@ import type {
   ItemDeVocabulario,
 } from '@uniplus/shared-data/configuracao';
 import { opcoesDoVocabulario } from '@uniplus/shared-data/configuracao';
-import { controleDaQuantidade } from './codigos-do-fato';
+import { componenteEscolhido, controleDaQuantidade } from './codigos-do-fato';
 import { nullIfBlank } from '../../shared/formulario';
 import {
   esvaziarSeForaDas,
@@ -64,7 +64,7 @@ export function comandoDoDescritivo(form: DescritivoForm): DescritivoDoFatoInput
   return {
     nome: nome.trim(),
     descricao: descricao.trim(),
-    componenteExibicao: componenteExibicao || null,
+    componenteExibicao: componenteEscolhido(componenteExibicao),
   };
 }
 

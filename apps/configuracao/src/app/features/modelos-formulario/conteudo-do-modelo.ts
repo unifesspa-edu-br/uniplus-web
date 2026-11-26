@@ -15,7 +15,11 @@ import {
   itensParaOModelo,
   termosParaOModelo,
 } from './codigos-de-pagina-e-obrigatoriedade';
-import { documentoDoModelo, documentoParaOModelo } from './documentos-do-modelo';
+import {
+  documentoDoModelo,
+  documentoParaOModelo,
+  indeferimentoParaOModelo,
+} from './documentos-do-modelo';
 
 type DocumentosDoEditor = Pick<
   ConteudoDoFormulario<number, OperadorCodigo | null>,
@@ -26,11 +30,19 @@ type DocumentosDoEditor = Pick<
 function conjuntoParaOModelo({ documentosExigidos, gruposDeDocumentos }: DocumentosDoEditor) {
   return {
     documentosExigidos: documentosExigidos?.map(documentoParaOModelo) ?? null,
-    gruposDeDocumentos:
-      gruposDeDocumentos?.map((grupo) => ({
-        ...grupo,
-        documentos: grupo.documentos.map(documentoParaOModelo),
-      })) ?? null,
+    gruposDeDocumentos: gruposDeDocumentos?.map(grupoDeDocumentosParaOModelo) ?? null,
+  };
+}
+
+function grupoDeDocumentosParaOModelo(
+  grupo: NonNullable<DocumentosDoEditor['gruposDeDocumentos']>[number],
+) {
+  return {
+    ...grupo,
+    indeferimento:
+      grupo.indeferimento &&
+      indeferimentoParaOModelo(grupo.indeferimento.consequencia, grupo.indeferimento.basesLegais),
+    documentos: grupo.documentos.map(documentoParaOModelo),
   };
 }
 

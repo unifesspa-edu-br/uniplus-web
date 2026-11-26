@@ -9,6 +9,10 @@ import {
   CLASSIFICACOES_DE_PROTECAO,
   hipotesesDaClassificacao,
 } from '../../shared/protecao-do-catalogo';
+import {
+  classificacaoEscolhida,
+  hipoteseEscolhida,
+} from '../../shared/protecao-do-catalogo/protecao-de-dados';
 import { classificacoesDoDominio } from '../fatos-candidato/fato-candidato.regras';
 
 export const JUSTIFICATIVA_MAXIMA = 2000;
@@ -43,8 +47,8 @@ export function comandoPara(
     cadastro: item.tipo,
     itemId: item.id,
     decisao: DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO,
-    classificacaoProtecao: item.classificacaoProtecao,
-    hipoteseLegal: item.hipoteseLegal,
+    classificacaoProtecao: classificacaoEscolhida(item.classificacaoProtecao),
+    hipoteseLegal: hipoteseEscolhida(item.hipoteseLegal),
     finalidadeTratamento: item.finalidadeTratamento,
     ciclo: item.aprovacao.ciclo,
     manifestacoesNoCiclo: item.aprovacao.manifestacoesNoCiclo,
@@ -60,6 +64,6 @@ export function comandoDeJustificativa(
 ): DecidirProtecaoDoCatalogoRequest {
   const comando = { ...comandoPara(item), decisao, justificativa: justificativa || null };
   return decisao === DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO
-    ? { ...comando, classificacaoRecomendada: recomendada }
+    ? { ...comando, classificacaoRecomendada: classificacaoEscolhida(recomendada) }
     : comando;
 }

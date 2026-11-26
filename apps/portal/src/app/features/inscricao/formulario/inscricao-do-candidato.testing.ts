@@ -1,5 +1,6 @@
 import {
   BlocoSistemaCodigo,
+  FormatoTextoCodigo,
   TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
   type FormularioApresentadoDoProcessoDto,
@@ -110,7 +111,11 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioApresentadoDoProcessoDto = 
           codigo: DADOS,
           exibicao: null,
           grupos: [],
-          itens: [item('NOME', 'NOME_PESSOA'), item('CPF', 'CPF'), item('DATA_NASCIMENTO')],
+          itens: [
+            item('NOME', FormatoTextoCodigo.NOME_PESSOA),
+            item('CPF', FormatoTextoCodigo.CPF),
+            item('DATA_NASCIMENTO'),
+          ],
         },
         { codigo: ENDERECO, exibicao: null, grupos: [], itens: [item('ENDERECO_RESIDENCIAL')] },
       ],
@@ -141,7 +146,7 @@ function secao(codigo: string, ordem: number, titulo: string): PaginaDoFormulari
 }
 
 /** O item das regras: sempre obrigatório e sem restrição. */
-export function item(fatoCodigo: string, formato: string | null = null): ItemDasRegras {
+export function item(fatoCodigo: string, formato: ItemDasRegras['formato'] = null): ItemDasRegras {
   return {
     fatoCodigo,
     regras: {

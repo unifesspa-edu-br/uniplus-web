@@ -5,5 +5,7 @@ import { tipoDoDadoEscolhido } from './codigos-do-fato';
 it('aceita apenas tipos de dado do contrato', () => {
   const codigo = Object.values(TipoDoDadoCodigo)[0];
   expect(tipoDoDadoEscolhido(codigo)).toBe(codigo);
-  expect(() => tipoDoDadoEscolhido('desconhecido')).toThrow('Código de fato desconhecido.');
+  expect(() => tipoDoDadoEscolhido('desconhecido')).toThrow(
+    'O valor informado para código de fato é inválido.',
+  );
 });

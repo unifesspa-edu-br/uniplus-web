@@ -1,3 +1,4 @@
+import { FormatoDeDocumentoCodigo } from '@uniplus/shared-data/selecao';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -27,8 +28,8 @@ const TAMANHO_MAXIMO_MB = 10;
 
 /** Os formatos editáveis que o contrato aceita, pela extensão do arquivo escolhido. */
 const FORMATO_POR_EXTENSAO = new Map([
-  ['docx', 'DOCX'],
-  ['odt', 'ODT'],
+  ['docx', FormatoDeDocumentoCodigo.DOCX],
+  ['odt', FormatoDeDocumentoCodigo.ODT],
 ]);
 
 type ModeloConfirmado = Extract<
@@ -378,7 +379,7 @@ export class ModeloDaExigenciaComponent {
 }
 
 /** O formato do contrato pela extensão do arquivo; `null` quando não é editável. */
-function formatoDoArquivo(nome: string): string | null {
+function formatoDoArquivo(nome: string): FormatoDeDocumentoCodigo | null {
   const extensao = nome.split('.').pop()?.toLowerCase() ?? '';
   return FORMATO_POR_EXTENSAO.get(extensao) ?? null;
 }

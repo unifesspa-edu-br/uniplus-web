@@ -32,7 +32,7 @@ const item: ItemDoFormulario<number> = {
   regras: {
     exibicao: QUANDO,
     obrigatoriedade: { tipo: 'QUANDO', predicado: QUANDO },
-    restricoes: [{ tipo: 'SUBCONJUNTO', entradas: [{ quando: QUANDO, valores: ['true'] }] }],
+    restricoes: [{ tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: QUANDO, valores: ['true'] }] }],
     impedimento: { quando: QUANDO, mensagem: 'Só para egressos.' },
   },
 };
@@ -210,13 +210,13 @@ describe('conteudoParaOModelo', () => {
 
     expect(() =>
       conteudoParaOModelo({ ...conteudo, paginas: [{ ...pagina, tipo: 'INVENTADO' }] }),
-    ).toThrow('Código fora do contrato: INVENTADO');
+    ).toThrow('O valor informado para tipo de página é inválido.');
     expect(() =>
       conteudoParaOModelo({
         ...conteudo,
         paginas: [{ ...pagina, tipo: 'BLOCO', bloco: 'INVENTADO' }],
       }),
-    ).toThrow('Código fora do contrato: INVENTADO');
+    ).toThrow('O valor informado para bloco da página é inválido.');
   });
 
   it('agrupa o indeferimento do documento e leva os grupos dentro do conjunto', () => {

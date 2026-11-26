@@ -39,7 +39,7 @@ const motivo: MotivoDeDecisaoDto = {
 };
 
 const criacao: CriarMotivoDeDecisaoCommand = {
-  tipo: 'HOMOLOGACAO_DAS_INSCRICOES',
+  tipo: TipoMotivoDeDecisaoCodigo.HOMOLOGACAO_DAS_INSCRICOES,
   codigo: 'SEM_RESULTADO_NO_ENEM',
   descricao: 'Sem resultado no ENEM informado.',
   subclassificacao: null,

@@ -1,4 +1,6 @@
 import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
   DecidirProtecaoDoCatalogoRequestDecisao,
   RegistrarManifestacaoDaProtecaoRequestParecer,
 } from './schema';
@@ -67,10 +69,10 @@ describe('ProtecaoDoCatalogoApi', () => {
       cadastro: 'TIPO_DOCUMENTO',
       itemId: ID,
       decisao: DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO,
-      classificacaoProtecao: 'INTERNO',
-      hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+      classificacaoProtecao: ClassificacaoDeProtecaoCodigo.INTERNO,
+      hipoteseLegal: HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
       finalidadeTratamento: 'Conferir o laudo.',
-      classificacaoRecomendada: 'SENSIVEL',
+      classificacaoRecomendada: ClassificacaoDeProtecaoCodigo.SENSIVEL,
       justificativa: 'O laudo traz dado de saúde.',
       ciclo: 2,
       manifestacoesNoCiclo: 1,

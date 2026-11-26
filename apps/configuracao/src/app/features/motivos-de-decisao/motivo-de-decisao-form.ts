@@ -4,7 +4,10 @@ import {
   AtualizarMotivoDeDecisaoCommand,
   CriarMotivoDeDecisaoCommand,
   MotivoDeDecisaoDto,
+  TipoMotivoDeDecisaoCodigo,
+  FundamentoIsencao,
 } from '@uniplus/shared-data/selecao';
+import { codigoExigidoDoContrato } from '@uniplus/shared-data/utils';
 import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import {
   controlNameFromBackendField,
@@ -108,10 +111,12 @@ export function comandoDeCriacao(
   valores: ValoresDoMotivo,
 ): CriarMotivoDeDecisaoCommand {
   return {
-    tipo,
+    tipo: codigoExigidoDoContrato(TipoMotivoDeDecisaoCodigo, tipo, 'tipo de motivo'),
     codigo: valores.codigo || null,
     descricao: nullIfBlank(valores.descricao),
-    subclassificacao: nullIfBlank(valores.subclassificacao),
+    subclassificacao: valores.subclassificacao.trim()
+      ? codigoExigidoDoContrato(FundamentoIsencao, valores.subclassificacao.trim(), 'fundamento')
+      : null,
     sentido: valores.sentido,
   };
 }

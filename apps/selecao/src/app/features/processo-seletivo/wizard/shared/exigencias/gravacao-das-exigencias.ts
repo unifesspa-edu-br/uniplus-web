@@ -1,4 +1,8 @@
 import {
+  CriterioDeDistincaoDasApresentacoesCodigo,
+  ConsequenciaDoIndeferimentoCodigo,
+  TipoAbrangenciaCodigo,
+  StatusBaseLegalCodigo,
   OperadorCodigo,
   AplicabilidadeCodigo,
   FinalidadeFormularioCodigo,
@@ -6,8 +10,8 @@ import {
   type ItemDocumentoExigidoInput,
   type RegraDeComprovacaoInformada,
 } from '@uniplus/shared-data/selecao';
-import { codigoDoContrato } from '@uniplus/shared-data/utils';
-import { baseLegalParaEnvio, basesLegaisParaEnvio } from '@uniplus/shared-utils';
+import { codigoDoContrato, codigoExigidoDoContrato } from '@uniplus/shared-data/utils';
+import { baseLegalParaEnvio, basesLegaisParaEnvio, type BaseLegal } from '@uniplus/shared-utils';
 
 import type {
   CondicaoGatilhoConfig,
@@ -176,9 +180,17 @@ function cardinalidadeParaEnvio(
   const semDistincao =
     criterioDeDistincao === null && dataReferencia === null && ocorrenciasEsperadas === null;
   if (quantidadeMinima === null && semDistincao) return null;
+  return { quantidadeMinima, distincao: semDistincao ? null : distincaoParaEnvio(regra) };
+}
+
+function distincaoParaEnvio(regra: RegraDeComprovacao) {
   return {
-    quantidadeMinima,
-    distincao: semDistincao ? null : { criterioDeDistincao, dataReferencia, ocorrenciasEsperadas },
+    criterioDeDistincao: codigoOpcional(
+      CriterioDeDistincaoDasApresentacoesCodigo,
+      regra.criterioDeDistincao,
+    ),
+    dataReferencia: regra.dataReferencia,
+    ocorrenciasEsperadas: regra.ocorrenciasEsperadas,
   };
 }
 
@@ -187,8 +199,8 @@ function indeferimentoDoGrupoParaEnvio(
 ): RegraDeComprovacaoInformada['indeferimento'] {
   if (regra.consequencia === null && regra.basesLegais === null) return null;
   return {
-    consequencia: regra.consequencia,
-    basesLegais: regra.basesLegais === null ? null : regra.basesLegais.map(baseLegalParaEnvio),
+    consequencia: codigoOpcional(ConsequenciaDoIndeferimentoCodigo, regra.consequencia),
+    basesLegais: regra.basesLegais === null ? null : regra.basesLegais.map(baseParaEnvio),
   };
 }
 
@@ -243,9 +255,11 @@ function indeferimentoDoDocumentoParaEnvio(
 ): ItemDocumentoExigidoInput['indeferimento'] {
   return {
     obrigatorio: documento.obrigatorio,
-    consequencia:
-      documento.consequenciaIndeferimento === '' ? null : documento.consequenciaIndeferimento,
-    basesLegais: basesLegaisParaEnvio(documento.basesLegais),
+    consequencia: codigoOpcional(
+      ConsequenciaDoIndeferimentoCodigo,
+      documento.consequenciaIndeferimento || null,
+    ),
+    basesLegais: basesLegaisParaEnvio(documento.basesLegais).map(baseParaEnvio),
   };
 }
 
@@ -291,4 +305,20 @@ function etapaDeColetaValida(
 ): string | null {
   const etapaId = documento.etapaId;
   return etapaId !== null && etapaId !== '' && etapasVivas.has(etapaId) ? etapaId : null;
+}
+
+function codigoOpcional<E extends Record<string, string>>(contrato: E, valor: string | null) {
+  if (valor === null) return null;
+  return codigoExigidoDoContrato(contrato, valor, 'exigência');
+}
+
+function baseParaEnvio(base: BaseLegal) {
+  const normalizada = baseLegalParaEnvio(base);
+  const abrangencia = codigoExigidoDoContrato(
+    TipoAbrangenciaCodigo,
+    normalizada.abrangencia,
+    'abrangência',
+  );
+  const situacao = codigoExigidoDoContrato(StatusBaseLegalCodigo, normalizada.situacao, 'situação');
+  return { ...normalizada, abrangencia, situacao };
 }

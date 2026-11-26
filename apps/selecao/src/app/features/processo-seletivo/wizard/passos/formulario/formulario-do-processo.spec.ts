@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  TipoRestricaoValorCodigo,
   TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
   FinalidadeFormularioCodigo,
@@ -259,7 +260,7 @@ describe('planoDeGravacao', () => {
 
   it('a faixa de data lida do processo volta inteira no envio, com os dois limites', () => {
     const faixa = {
-      tipo: 'FAIXA_DE_DATA',
+      tipo: TipoRestricaoValorCodigo.FAIXA_DE_DATA,
       minimo: null,
       maximo: null,
       entradas: null,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { codigoDoContrato } from './codigo-do-contrato';
+import { codigoDoContrato, codigoExigidoDoContrato } from './codigo-do-contrato';
 
 enum SituacaoDeTeste {
   ABERTA = 'ABERTA',
@@ -25,5 +25,19 @@ describe('codigoDoContrato', () => {
 
   it('recusa o texto vazio', () => {
     expect(codigoDoContrato(SituacaoDeTeste, '')).toBeNull();
+  });
+});
+
+describe('codigoExigidoDoContrato', () => {
+  it('devolve o código válido', () => {
+    expect(codigoExigidoDoContrato(SituacaoDeTeste, 'ENCERRADA', 'situação')).toBe(
+      SituacaoDeTeste.ENCERRADA,
+    );
+  });
+
+  it.each(['SUSPENSA', ''])('recusa valor desconhecido ou vazio sem expô-lo', (valor) => {
+    expect(() => codigoExigidoDoContrato(SituacaoDeTeste, valor, 'situação')).toThrow(
+      'O valor informado para situação é inválido.',
+    );
   });
 });

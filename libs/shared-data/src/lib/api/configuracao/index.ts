@@ -244,6 +244,15 @@ export type {
   ModelosFormularioQuery,
 } from './modelos-formulario.api';
 export {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+  ComponenteDeExibicaoCodigo,
+  EscopoFatoCodigo,
+  FormatoTextoCodigo,
+  TipoRestricaoValorCodigo,
+  ConsequenciaDoIndeferimentoCodigo,
+  TipoAbrangenciaCodigo,
+  StatusBaseLegalCodigo,
   TipoLocalOfertaCodigo,
   AbrangenciaCodigo,
   OrigemDataFaseCodigo,

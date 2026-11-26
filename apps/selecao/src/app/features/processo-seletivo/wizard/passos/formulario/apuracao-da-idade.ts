@@ -1,3 +1,8 @@
+import {
+  ReferenciaTipoCodigo,
+  type DefinirReferenciaTemporalFatosRequest,
+} from '@uniplus/shared-data/selecao';
+import { codigoExigidoDoContrato } from '@uniplus/shared-data/utils';
 import type { ReferenciaTemporalConfig } from '../../processo-seletivo.models';
 
 /**
@@ -7,10 +12,10 @@ import type { ReferenciaTemporalConfig } from '../../processo-seletivo.models';
 export function comoComandoDeReferenciaTemporal(
   referencia: ReferenciaTemporalConfig,
   faseIdPorCodigo: ReadonlyMap<string, string>,
-): { tipo: string | null; data: string | null; faseId: string | null } {
+): DefinirReferenciaTemporalFatosRequest {
   if (referencia.tipo === '') return { tipo: null, data: null, faseId: null };
   return {
-    tipo: referencia.tipo,
+    tipo: codigoExigidoDoContrato(ReferenciaTipoCodigo, referencia.tipo, 'referência temporal'),
     data: referencia.tipo === 'DATA_ESPECIFICA' && referencia.data !== '' ? referencia.data : null,
     faseId: referenciaEmFase(referencia.tipo)
       ? (faseIdPorCodigo.get(referencia.faseCodigo) ?? null)

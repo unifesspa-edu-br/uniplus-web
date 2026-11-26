@@ -1,4 +1,11 @@
 import {
+  classificacaoEscolhida,
+  hipoteseEscolhida,
+} from '../../shared/protecao-do-catalogo/protecao-de-dados';
+import {
+  componenteEscolhido,
+  escopoEscolhido,
+  formatoEscolhido,
   controleDaQuantidade,
   fonteEscolhida,
   quantidadeEscolhida,
@@ -147,9 +154,13 @@ export function criarNaApi(
   if (v.tipo === 'AGREGADO') {
     return api.criarAgregado({ ...identificacao, fatoDeMembro: v.fatoDeMembro }, contexto);
   }
-  const comum = { ...identificacao, dominio: tipoDoDadoEscolhido(v.dominio), escopo: v.escopo };
+  const comum = { ...identificacao, ...definicaoDoFato(v) };
   if (v.tipo === 'DERIVADO') return api.criarDerivado(comum, contexto);
   return api.criar({ ...comum, ...eixosDoDeclarado(v) }, contexto);
+}
+
+function definicaoDoFato(v: ValoresDaCriacao) {
+  return { dominio: tipoDoDadoEscolhido(v.dominio), escopo: escopoEscolhido(v.escopo) };
 }
 
 function identificacaoDoFato(v: ValoresDaCriacao) {
@@ -157,11 +168,11 @@ function identificacaoDoFato(v: ValoresDaCriacao) {
     codigo: v.codigo,
     nome: v.nome.trim(),
     descricao: v.descricao.trim(),
-    componenteExibicao: v.componenteExibicao || null,
+    componenteExibicao: componenteEscolhido(v.componenteExibicao),
     pontoResolucao: v.pontoResolucao,
-    classificacaoProtecao: v.classificacaoProtecao,
+    classificacaoProtecao: classificacaoEscolhida(v.classificacaoProtecao),
     finalidadeTratamento: v.finalidadeTratamento.trim(),
-    hipoteseLegal: v.hipoteseLegal,
+    hipoteseLegal: hipoteseEscolhida(v.hipoteseLegal),
   };
 }
 
@@ -169,7 +180,7 @@ function eixosDoDeclarado(v: ValoresDaCriacao) {
   return {
     cardinalidade: quantidadeEscolhida(v.cardinalidade),
     fonteValores: temFonteDeValores(v.dominio) ? fonteEscolhida(v.fonteValores) : null,
-    formato: temFormato(v.dominio) ? v.formato : null,
+    formato: temFormato(v.dominio) ? formatoEscolhido(v.formato) : null,
   };
 }
 

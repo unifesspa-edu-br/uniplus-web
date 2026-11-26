@@ -36,7 +36,7 @@ describe('MotivosDeDecisaoPage — escritas', () => {
     p.edicao.form.setValue({
       codigo: 'RENDA_ACIMA_DO_LIMITE',
       sentido: SentidoDoMotivoCodigo.DESFAVORAVEL,
-      subclassificacao: 'BAIXA_RENDA',
+      subclassificacao: 'CARENCIA_SOCIOECONOMICA',
       descricao: 'A renda supera o limite.',
     });
     p.edicao.salvar();
@@ -48,7 +48,7 @@ describe('MotivosDeDecisaoPage — escritas', () => {
       tipo: 'ISENCAO_DA_TAXA',
       codigo: 'RENDA_ACIMA_DO_LIMITE',
       descricao: 'A renda supera o limite.',
-      subclassificacao: 'BAIXA_RENDA',
+      subclassificacao: 'CARENCIA_SOCIOECONOMICA',
       sentido: SentidoDoMotivoCodigo.DESFAVORAVEL,
     });
     post.flush(...CRIADO);
@@ -183,7 +183,7 @@ describe('MotivosDeDecisaoPage — escritas', () => {
     p.edicao.form.setValue({
       codigo: 'RENDA_ACIMA_DO_LIMITE',
       sentido: SentidoDoMotivoCodigo.DESFAVORAVEL,
-      subclassificacao: 'BAIXA_RENDA',
+      subclassificacao: 'CARENCIA_SOCIOECONOMICA',
       descricao: 'A renda supera o limite.',
     });
     p.edicao.salvar();

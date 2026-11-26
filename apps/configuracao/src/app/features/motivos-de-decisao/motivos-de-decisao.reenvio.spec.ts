@@ -19,7 +19,7 @@ const CRIADO = [
 const valido = {
   codigo: 'RENDA_ACIMA_DO_LIMITE',
   sentido: SentidoDoMotivoCodigo.DESFAVORAVEL,
-  subclassificacao: 'BAIXA_RENDA',
+  subclassificacao: 'CARENCIA_SOCIOECONOMICA',
   descricao: 'A renda supera o limite.',
 };
 

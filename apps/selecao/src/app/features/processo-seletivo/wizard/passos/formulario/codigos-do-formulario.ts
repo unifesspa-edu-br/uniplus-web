@@ -1,6 +1,7 @@
 import {
   OperadorCodigo,
   TipoDeCampoCodigo,
+  TipoRestricaoValorCodigo,
   type DefinirFormularioRequest,
   type DefinirItensDoFormularioRequest,
   type DefinirTermosDoFormularioRequest,
@@ -17,7 +18,7 @@ import {
   TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
 } from '@uniplus/shared-data/selecao';
-import { codigoDoContrato } from '@uniplus/shared-data/utils';
+import { codigoDoContrato, codigoExigidoDoContrato } from '@uniplus/shared-data/utils';
 import type {
   PaginaDoFormulario,
   ExibicaoEObrigatoriedade,
@@ -37,13 +38,32 @@ function regras<O>(valor: ExibicaoEObrigatoriedade<O>) {
 }
 
 export function paginaParaEnvio<O>(pagina: PaginaDoFormulario<O>) {
-  const tipo = codigoDoContrato(TipoPaginaFormularioCodigo, pagina.tipo);
-  if (tipo === null) throw new Error('Tipo de página do formulário desconhecido.');
+  const tipo = codigoExigidoDoContrato(TipoPaginaFormularioCodigo, pagina.tipo, 'tipo de página');
   return { ...pagina, tipo, bloco: codigoDoContrato(BlocoSistemaCodigo, pagina.bloco ?? '') };
 }
 
+function restricoesParaEnvio<N, O>(restricoes: ItemDoFormulario<N, O>['regras']['restricoes']) {
+  return restricoes == null
+    ? restricoes
+    : restricoes.map((restricao) => ({
+        ...restricao,
+        tipo: codigoExigidoDoContrato(
+          TipoRestricaoValorCodigo,
+          restricao.tipo,
+          'tipo de restrição',
+        ),
+      }));
+}
+
 export function itemParaEnvio<N, O, T>(item: ItemDoFormulario<N, O, T>) {
-  return { ...item, regras: { ...item.regras, ...regras(item.regras) } };
+  return {
+    ...item,
+    regras: {
+      ...item.regras,
+      ...regras(item.regras),
+      restricoes: restricoesParaEnvio(item.regras.restricoes),
+    },
+  };
 }
 
 export function grupoParaEnvio<N, O, T>(grupo: GrupoDoFormulario<N, O, T>) {
