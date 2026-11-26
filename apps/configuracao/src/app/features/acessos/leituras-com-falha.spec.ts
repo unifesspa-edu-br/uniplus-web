@@ -121,6 +121,28 @@ describe('falhas de leitura dos acessos', () => {
     }
   });
 
+  it('pede a fila de versões com o tipo de mídia da etapa', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
+        { provide: NotificationService, useValue: notificacoes },
+        FilaDeVersoesStore,
+      ],
+    });
+    http = TestBed.inject(HttpTestingController);
+    TestBed.inject(FilaDeVersoesStore).etapa.set(EtapaDaVersao.GESTAO_DE_ACESSOS);
+    await Promise.resolve();
+    TestBed.tick();
+    const req = http.expectOne((r) => r.url === `${BASE}/versoes-de-perfil`);
+    expect(req.request.params.get('fila')).toBe(EtapaDaVersao.GESTAO_DE_ACESSOS);
+    expect(req.request.headers.get('Accept')).toBe(
+      'application/vnd.uniplus.fila-de-versoes.v1+json',
+    );
+    req.flush([]);
+  });
+
   it.each(LEITURAS)('$nome: a falha de servidor (5xx) vira notificação', async (leitura) => {
     await falhar(leitura, 503);
 
