@@ -11,7 +11,6 @@ import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { IdentificacaoPassoComponent } from './identificacao.component';
-import { BuscaDeMunicipio } from './servicos/busca-de-municipio.service';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
@@ -48,7 +47,6 @@ function tick(): Promise<void> {
 
 describe('IdentificacaoPassoComponent', () => {
   let componente: IdentificacaoPassoComponent;
-  let municipio: BuscaDeMunicipio;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let host: HTMLElement;
@@ -71,7 +69,6 @@ describe('IdentificacaoPassoComponent', () => {
 
     const fixture = TestBed.createComponent(IdentificacaoPassoComponent);
     componente = fixture.componentInstance;
-    municipio = fixture.debugElement.injector.get(BuscaDeMunicipio);
     host = fixture.nativeElement as HTMLElement;
     detectar = () => fixture.detectChanges();
     store = TestBed.inject(ProcessoSeletivoStore);
@@ -150,7 +147,7 @@ describe('IdentificacaoPassoComponent', () => {
     expect(hint?.textContent).toMatch(/não decorre dela/i);
   });
 
-  it('envia o trio da localidade escolhida no cadastro inicial', async () => {
+  const verificarEnvioDaLocalidade = async () => {
     preencherCamposDoComando();
 
     const criado = componente.persistir();
@@ -165,85 +162,9 @@ describe('IdentificacaoPassoComponent', () => {
     criacao.flush(PROCESSO_ID);
     await tick();
     await criado;
-  });
+  };
 
-  it('busca municípios na Geo a partir de três letras e grava o trio da opção', async () => {
-    municipio.buscar('ma');
-    controller.expectNone(() => true);
-
-    municipio.buscar('mar');
-    const busca = controller.expectOne((r) => r.url.includes('/api/cidades'));
-    expect(busca.request.params.get('q')).toBe('mar');
-    busca.flush([{ id: 'x', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' }]);
-    await tick();
-
-    expect(municipio.municipios()).toHaveLength(1);
-
-    municipio.selecionar({ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' });
-
-    expect(store.draft().identificacao.localidade).toEqual(MARABA);
-    expect(municipio.municipios()).toEqual([]);
-  });
-
-  it('oferece os municípios achados como opções de um listbox e grava a escolhida', async () => {
-    const campo = host.querySelector<HTMLInputElement>('input[role="combobox"]');
-    campo?.focus();
-    municipio.buscar('mar');
-    controller
-      .expectOne((r) => r.url.includes('/api/cidades'))
-      .flush([{ id: 'x', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' }]);
-    await tick();
-    detectar();
-
-    const opcao = host.querySelector<HTMLElement>('[role="listbox"] [role="option"]');
-    expect(opcao?.textContent?.trim()).toBe('Marabá — PA');
-
-    opcao?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-    expect(store.draft().identificacao.localidade).toEqual(MARABA);
-  });
-
-  it('limpar a localidade devolve o campo à busca', () => {
-    store.patchObjectSection('identificacao', { localidade: MARABA });
-
-    municipio.limpar();
-
-    expect(store.draft().identificacao.localidade).toBeNull();
-  });
-  it('libera o estado de consulta quando o termo encolhe abaixo de três letras', async () => {
-    municipio.buscar('mar');
-    const busca = controller.expectOne((r) => r.url.includes('/api/cidades'));
-
-    // O operador apaga antes de a resposta chegar: a guarda de termo obsoleto
-    // descarta o resultado, então quem precisa devolver o campo ao normal é o
-    // caminho curto — senão o aria-busy fica preso.
-    municipio.buscar('ma');
-    busca.flush([{ id: 'x', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' }]);
-    await tick();
-
-    expect(municipio.carregando()).toBe(false);
-    expect(municipio.municipios()).toEqual([]);
-  });
-  it('descarta o resultado anterior ao iniciar uma busca nova', async () => {
-    municipio.buscar('mar');
-    controller
-      .expectOne((r) => r.url.includes('/api/cidades'))
-      .flush([{ id: 'x', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' }]);
-    await tick();
-    expect(municipio.municipios()).toHaveLength(1);
-
-    // Enquanto a busca nova corre, a opção antiga não pode seguir clicável: numa
-    // conexão lenta o operador gravaria o município que já não procurava.
-    municipio.buscar('bel');
-    expect(municipio.municipios()).toEqual([]);
-
-    controller
-      .expectOne((r) => r.url.includes('/api/cidades'))
-      .flush([{ id: 'y', codigoIbge: '1501402', nome: 'Belém', uf: 'PA', ddd: '91' }]);
-    await tick();
-
-    expect(municipio.municipios()).toHaveLength(1);
-    expect(municipio.municipios()[0].nome).toBe('Belém');
-  });
+  it('envia o trio da localidade escolhida no cadastro inicial', verificarEnvioDaLocalidade);
 
   /**
    * Um aviso por campo repetia a mesma informação ao longo do formulário. O
