@@ -59,6 +59,14 @@
         "cwd": "{workspaceRoot}"
       }
     },
+    "contract-copies-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bash libs/shared-data/scripts/verify-contract-copies.sh",
+        "cwd": "{workspaceRoot}"
+      },
+      "cache": false
+    },
     "test": {
       "inputs": [
         "default",
