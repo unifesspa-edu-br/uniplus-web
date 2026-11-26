@@ -286,6 +286,9 @@
 .portal-footer__group a:hover {
   text-decoration: underline;
 }
+.portal-footer__externo::after {
+  content: ' ↗' / '';
+}
 .portal-footer__group span.is-disabled {
   color: color-mix(in srgb, var(--text-on-inverse) 55%, transparent);
 }

@@ -98,14 +98,26 @@ describe('PortalShellComponent — navegação por autenticação', () => {
     expect(footer?.textContent).toContain('Minhas inscrições');
   });
 
+  it('mantém no rodapé, ainda indisponíveis, as entradas de acessibilidade e privacidade', () => {
+    const fixture = TestBed.createComponent(PortalShellComponent);
+    fixture.detectChanges();
+    const rodape = (fixture.nativeElement as HTMLElement).querySelector('footer');
+
+    expect(rodape?.textContent).toContain('Política de privacidade');
+    expect(rodape?.textContent).toContain('Acessibilidade');
+  });
+
   it('não apresenta Ajuda na navegação principal', () => {
     expect(rotulosDeNavegacao()).not.toContain('Ajuda');
   });
 
   it.each([
-    ['CEPS', 'https://ceps.unifesspa.edu.br'],
-    ['CGA', 'https://cga.unifesspa.edu.br'],
-    ['Calendário acadêmico', 'https://cga.unifesspa.edu.br/documentos/calendário-acadêmico.html'],
+    ['Centro de Processos Seletivos', 'https://ceps.unifesspa.edu.br'],
+    ['Centro de Gestão Acadêmica', 'https://cga.unifesspa.edu.br'],
+    [
+      'Calendário acadêmico',
+      'https://cga.unifesspa.edu.br/documentos/calend%C3%A1rio-acad%C3%AAmico.html',
+    ],
   ])('abre %s em uma nova aba', (rotulo, endereco) => {
     const fixture = TestBed.createComponent(PortalShellComponent);
     fixture.detectChanges();

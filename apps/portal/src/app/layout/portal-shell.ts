@@ -14,12 +14,19 @@ import {
 } from '@uniplus/shared-ui/components';
 import { mediaQuerySignal } from '@uniplus/shared-core/dom';
 
-interface PortalFooterLink {
+interface PortalFooterLinkInterno {
   readonly label: string;
   readonly routerLink?: string;
-  readonly href?: string;
   readonly requiresAuth?: boolean;
 }
+
+interface PortalFooterLinkExterno {
+  readonly label: string;
+  readonly href: string;
+  readonly requiresAuth?: boolean;
+}
+
+type PortalFooterLink = PortalFooterLinkInterno | PortalFooterLinkExterno;
 
 interface PortalFooterGroup {
   readonly label: string;
@@ -118,17 +125,18 @@ interface PortalFooterGroup {
               <ul>
                 @for (link of group.links; track link.label) {
                   <li>
-                    @if (link.href) {
+                    @if (enderecoExterno(link); as href) {
                       <a
-                        [href]="link.href"
+                        class="portal-footer__externo"
+                        [href]="href"
                         rel="noopener noreferrer"
                         target="_blank"
                         [aria-label]="link.label + ' (abre em nova aba)'"
                       >
                         {{ link.label }}
                       </a>
-                    } @else if (link.routerLink) {
-                      <a [routerLink]="link.routerLink">{{ link.label }}</a>
+                    } @else if (rotaInterna(link); as rota) {
+                      <a [routerLink]="rota">{{ link.label }}</a>
                     } @else {
                       <span class="is-disabled" aria-disabled="true">{{ link.label }}</span>
                     }
@@ -173,18 +181,31 @@ export class PortalShellComponent {
     {
       label: 'Institucional',
       links: [
-        { label: 'CEPS', href: 'https://ceps.unifesspa.edu.br' },
-        {
-          label: 'CGA',
-          href: 'https://cga.unifesspa.edu.br',
-        },
+        { label: 'Centro de Processos Seletivos', href: 'https://ceps.unifesspa.edu.br' },
+        { label: 'Centro de Gestão Acadêmica', href: 'https://cga.unifesspa.edu.br' },
         {
           label: 'Calendário acadêmico',
-          href: 'https://cga.unifesspa.edu.br/documentos/calendário-acadêmico.html',
+          href: 'https://cga.unifesspa.edu.br/documentos/calend%C3%A1rio-acad%C3%AAmico.html',
         },
       ],
     },
+    {
+      label: 'Acessibilidade',
+      links: [
+        { label: 'Mapa do site' },
+        { label: 'Política de privacidade' },
+        { label: 'Acessibilidade' },
+      ],
+    },
   ];
+
+  protected enderecoExterno(link: PortalFooterLink): string | null {
+    return 'href' in link ? link.href : null;
+  }
+
+  protected rotaInterna(link: PortalFooterLink): string | null {
+    return 'routerLink' in link ? (link.routerLink ?? null) : null;
+  }
 
   // "Meu perfil" fica no menu do avatar; "Documentos" aguarda conteúdo antes de entrar no menu.
   protected readonly navItems = computed(() =>
