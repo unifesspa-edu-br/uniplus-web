@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import {
   CLASSIFICACAO_COM_QUADRO,
   ROTA_PESOS,
@@ -40,7 +41,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: sem área a ofer
       expect(m.componente.validar()).toEqual({
         valid: false,
         messages: [
-          'Critério de desempate 1: a nota de área do ENEM só desempata quando a classificação é baseada no ENEM pela média ponderada, com a resolução de Peso por Área escolhida no passo Fórmula.',
+          `Critério de desempate 1: a nota de área do ENEM só desempata quando a classificação é baseada no ENEM pela média ponderada, com a resolução de Peso por Área escolhida no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
         ],
       });
 
@@ -56,12 +57,14 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: sem área a ofer
       criterioPorArea(m);
 
       expect(seletor(m, 0)).toBeNull();
-      expect(textoDaTela(m)).toContain('Escolha a resolução de Peso por Área no passo Fórmula');
+      expect(textoDaTela(m)).toContain(
+        `Escolha a resolução de Peso por Área no passo ${NOME_DO_PASSO_DA_FORMULA}`,
+      );
       expect(textoDaTela(m)).not.toContain('Todas as áreas do quadro já estão na ordem');
       expect(m.componente.validar()).toEqual({
         valid: false,
         messages: [
-          'Critério de desempate 1: escolha a resolução de Peso por Área no passo Fórmula: as áreas que o desempate pode citar vêm do quadro dela.',
+          `Critério de desempate 1: escolha a resolução de Peso por Área no passo ${NOME_DO_PASSO_DA_FORMULA}: as áreas que o desempate pode citar vêm do quadro dela.`,
         ],
       });
     });

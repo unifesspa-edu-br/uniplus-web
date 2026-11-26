@@ -165,7 +165,7 @@ describe('HomologacaoDaFaseComponent: edição do exame e motivo desfavorável',
         expect(campo.disabled).toBe(true);
         expect(campo.getAttribute('aria-describedby')?.split(' ')).toContain(aviso.id);
         expect(aviso.textContent).toContain(
-          'O processo não declarou edições do ENEM. Declare-as no passo Fórmula.',
+          'O processo não declarou edições do ENEM. Declare-as no passo Fórmula e precisão.',
         );
       });
 

@@ -1,3 +1,4 @@
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import { PREFIXO_DA_RECUSA } from '../classificacao/recusas-da-classificacao';
 
 /**
@@ -11,7 +12,7 @@ const RECUSA_DA_ELIMINACAO: ReadonlyMap<string, string> = new Map([
   ],
   [
     `${PREFIXO_DA_RECUSA}corte_em_area_fora_do_quadro`,
-    'a área não está em todos os grupos da resolução de Peso por Área; escolha outra área ou outra resolução no passo Fórmula',
+    `a área não está em todos os grupos da resolução de Peso por Área; escolha outra área ou outra resolução no passo ${NOME_DO_PASSO_DA_FORMULA}`,
   ],
   [
     `${PREFIXO_DA_RECUSA}falta_em_dia_de_prova_enem_repetida`,
@@ -39,7 +40,7 @@ const RECUSA_DA_ELIMINACAO: ReadonlyMap<string, string> = new Map([
   ],
   [
     'uniplus.selecao.processo_seletivo.eliminacao_enem_fora_de_processo_enem',
-    'as regras de eliminação do ENEM só se aplicam à classificação baseada em ENEM; marque o ENEM no passo Fórmula ou retire essas regras',
+    `as regras de eliminação do ENEM só se aplicam à classificação baseada em ENEM; marque o ENEM no passo ${NOME_DO_PASSO_DA_FORMULA} ou retire essas regras`,
   ],
 ]);
 

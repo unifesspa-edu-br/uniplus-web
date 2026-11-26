@@ -1,3 +1,4 @@
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import type { CriterioDesempateConfigurado, WizardDraft } from '../../processo-seletivo.models';
 import { motivoDaReleitura, type ClassificacaoGravada } from '../../classificacao-no-servidor';
 import {
@@ -211,16 +212,11 @@ export const DEPENDEM_DA_RELEITURA = 'as áreas que o desempate pode citar depen
  * maiúscula e o ponto, na recusa da validação.
  */
 const TEXTO_SEM_AREAS: Partial<Record<SituacaoDoQuadro['tipo'], string>> = {
-  'sem-quadro':
-    'A nota de área do ENEM só desempata quando a classificação é baseada no ENEM pela média ponderada, com a resolução de Peso por Área escolhida no passo Fórmula.',
-  'rascunho-sem-quadro':
-    'A classificação escolhida no passo Fórmula não é baseada no ENEM pela média ponderada, e a gravação dela vai recusar o critério por área; troque a regra do critério ou remova-o, ou volte a classificação para o ENEM no passo Fórmula.',
-  'sem-resolucao':
-    'Escolha a resolução de Peso por Área no passo Fórmula: as áreas que o desempate pode citar vêm do quadro dela.',
-  'fora-do-cadastro':
-    'A resolução de Peso por Área escolhida não está no cadastro lido; escolha outra no passo Fórmula, ou atualize a lista lá se ela foi criada agora.',
-  'sem-area-em-todos-os-grupos':
-    'Nenhuma área do ENEM está em todos os grupos do quadro de Peso por Área, e só uma área comum a todos desempata; troque a regra do critério ou escolha outra resolução no passo Fórmula.',
+  'sem-quadro': `A nota de área do ENEM só desempata quando a classificação é baseada no ENEM pela média ponderada, com a resolução de Peso por Área escolhida no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
+  'rascunho-sem-quadro': `A classificação escolhida no passo ${NOME_DO_PASSO_DA_FORMULA} não é baseada no ENEM pela média ponderada, e a gravação dela vai recusar o critério por área; troque a regra do critério ou remova-o, ou volte a classificação para o ENEM no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
+  'sem-resolucao': `Escolha a resolução de Peso por Área no passo ${NOME_DO_PASSO_DA_FORMULA}: as áreas que o desempate pode citar vêm do quadro dela.`,
+  'fora-do-cadastro': `A resolução de Peso por Área escolhida não está no cadastro lido; escolha outra no passo ${NOME_DO_PASSO_DA_FORMULA}, ou atualize a lista lá se ela foi criada agora.`,
+  'sem-area-em-todos-os-grupos': `Nenhuma área do ENEM está em todos os grupos do quadro de Peso por Área, e só uma área comum a todos desempata; troque a regra do critério ou escolha outra resolução no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
 };
 
 function textoSemAreas(situacao: SituacaoDoQuadro): string | null {
@@ -237,7 +233,7 @@ function textoSemAreas(situacao: SituacaoDoQuadro): string | null {
 function textoDasResolucoesSemAreaEmComum(gravada: string, escolhida: string): string {
   return gravada === escolhida
     ? `A cópia gravada da resolução ${gravada} e o cadastro atual dela não têm área em comum a todos os grupos; troque a regra do critério, ou corrija a resolução no cadastro de Peso por Área.`
-    : `A resolução ${gravada}, gravada, e a ${escolhida}, escolhida no passo Fórmula, não têm área em comum a todos os grupos; troque a regra do critério ou escolha outra resolução no passo Fórmula.`;
+    : `A resolução ${gravada}, gravada, e a ${escolhida}, escolhida no passo ${NOME_DO_PASSO_DA_FORMULA}, não têm área em comum a todos os grupos; troque a regra do critério ou escolha outra resolução no passo ${NOME_DO_PASSO_DA_FORMULA}.`;
 }
 
 /**
@@ -260,11 +256,11 @@ export function dicaDaSituacao(situacao: SituacaoDoQuadro): string | null {
 function dicaDaDivergencia(divergencia: Divergencia): string {
   switch (divergencia.tipo) {
     case 'outra-resolucao':
-      return `Só as áreas que a resolução ${divergencia.gravada}, gravada, e a ${divergencia.escolhida}, escolhida no passo Fórmula, têm em todos os grupos podem desempatar: o critério vale antes e depois de a classificação ser gravada.`;
+      return `Só as áreas que a resolução ${divergencia.gravada}, gravada, e a ${divergencia.escolhida}, escolhida no passo ${NOME_DO_PASSO_DA_FORMULA}, têm em todos os grupos podem desempatar: o critério vale antes e depois de a classificação ser gravada.`;
     case 'cadastro-alterado':
       return `A resolução ${divergencia.gravada} mudou no cadastro desde a gravação da classificação, e a próxima gravação copia o quadro de novo: só as áreas que a cópia gravada e o cadastro atual têm em todos os grupos podem desempatar.`;
     case 'a-confirmar':
-      return `As áreas vêm da resolução ${divergencia.gravada}, a da classificação gravada. O que mudou no passo Fórmula só vale para o desempate depois de gravado com a classificação.`;
+      return `As áreas vêm da resolução ${divergencia.gravada}, a da classificação gravada. O que mudou no passo ${NOME_DO_PASSO_DA_FORMULA} só vale para o desempate depois de gravado com a classificação.`;
   }
 }
 

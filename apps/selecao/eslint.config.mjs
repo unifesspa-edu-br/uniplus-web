@@ -27,7 +27,8 @@ const NAO_DECLARA_CATALOGO = [
     'Catálogo institucional vem de um cliente de @uniplus/shared-data, não de uma lista declarada no wizard.',
 }));
 
-const ROTULOS_DE_NAVEGACAO = 'PASSOS|ROTULOS_DOS_PASSOS|REVIEW_NAMES|PASSO_FORMULARIO';
+const ROTULOS_DE_NAVEGACAO =
+  'PASSOS|ROTULOS_DOS_PASSOS|REVIEW_NAMES|PASSO_FORMULARIO|NOME_DO_PASSO_DA_FORMULA';
 const SOMENTE_ROTULOS_DE_NAVEGACAO = [
   `ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[id.name!=/^(${ROTULOS_DE_NAVEGACAO})$/]`,
   `ExportNamedDeclaration > ExportSpecifier[local.name!=/^(${ROTULOS_DE_NAVEGACAO})$/]`,

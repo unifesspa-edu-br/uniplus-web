@@ -1,8 +1,8 @@
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import type { CriterioDesempateConfigurado } from '../../processo-seletivo.models';
 import { ehCampoDaResolucao } from '../classificacao/classificacao-para-comando';
 
-const CRITERIO_GRAVADO_SEM_QUADRO =
-  'compara a nota de área do ENEM, que só existe com a classificação baseada no ENEM pela média ponderada. Troque a regra do critério ou remova-o no passo Desempate e grave o passo, ou marque o ENEM e a média ponderada no passo Fórmula.';
+const CRITERIO_GRAVADO_SEM_QUADRO = `compara a nota de área do ENEM, que só existe com a classificação baseada no ENEM pela média ponderada. Troque a regra do critério ou remova-o no passo Desempate e grave o passo, ou marque o ENEM e a média ponderada no passo ${NOME_DO_PASSO_DA_FORMULA}.`;
 
 /**
  * A recusa por um critério de desempate gravado que compara a nota de área do ENEM, com a
@@ -57,7 +57,7 @@ export function recusaDaClassificacaoPeloDesempate(erro: {
   }
   if (erro.code !== SEM_QUADRO) return null;
   return ehCampoDaResolucao(erro.field)
-    ? 'Um critério de desempate gravado compara a nota de área do ENEM, que exige o quadro da resolução de Peso por Área. Troque a regra do critério no passo Desempate e grave o passo, ou escolha a resolução no passo Fórmula.'
+    ? `Um critério de desempate gravado compara a nota de área do ENEM, que exige o quadro da resolução de Peso por Área. Troque a regra do critério no passo Desempate e grave o passo, ou escolha a resolução no passo ${NOME_DO_PASSO_DA_FORMULA}.`
     : recusaPorCriterioGravadoSemQuadro(null);
 }
 
@@ -78,7 +78,7 @@ const RECUSA_AO_GRAVAR_O_DESEMPATE: ReadonlyMap<string, TextoDaRecusa> = new Map
   [
     SEM_QUADRO,
     () =>
-      'a classificação gravada não tem o quadro de Peso por Área; escolha a resolução no passo Fórmula, se ainda não escolheu, e grave a classificação',
+      `a classificação gravada não tem o quadro de Peso por Área; escolha a resolução no passo ${NOME_DO_PASSO_DA_FORMULA}, se ainda não escolheu, e grave a classificação`,
   ],
 ]);
 

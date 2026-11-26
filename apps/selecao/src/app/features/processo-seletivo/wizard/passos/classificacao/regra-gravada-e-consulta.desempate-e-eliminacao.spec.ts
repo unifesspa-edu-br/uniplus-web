@@ -2,6 +2,7 @@ import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import { DesempatePassoComponent } from '../desempate/desempate.component';
 import { EdicaoDosCriterios } from '../desempate/edicao-dos-criterios.service';
 import { EliminacaoPassoComponent } from '../eliminacao/eliminacao.component';
@@ -107,7 +108,10 @@ describe('regra gravada no select, passo lido como texto em consulta — desempa
       });
       detectar(fixture);
 
-      catalogos.regrasEliminacao.set([regra('ELIMINACAO_ZERO_EM_AREA'), regra('ELIMINACAO_NOTA_MINIMA_ETAPA')]);
+      catalogos.regrasEliminacao.set([
+        regra('ELIMINACAO_ZERO_EM_AREA'),
+        regra('ELIMINACAO_NOTA_MINIMA_ETAPA'),
+      ]);
       detectar(fixture);
 
       expect(valorDoSelect(host, 'elim-regra-0')).toBe('ELIMINACAO_NOTA_MINIMA_ETAPA|1.0');
@@ -125,7 +129,10 @@ describe('regra gravada no select, passo lido como texto em consulta — desempa
 
       expect(semControles(host)).toEqual([]);
       expect(leitura(host)).toEqual([
-        ['Regra de eliminação 1', 'ELIMINACAO_NOTA_MINIMA_ETAPA — Base de ELIMINACAO_NOTA_MINIMA_ETAPA'],
+        [
+          'Regra de eliminação 1',
+          'ELIMINACAO_NOTA_MINIMA_ETAPA — Base de ELIMINACAO_NOTA_MINIMA_ETAPA',
+        ],
         ['Etapa', 'Não informado'],
         ['Nota mínima', '400'],
       ]);
@@ -152,7 +159,9 @@ describe('regra gravada no select, passo lido como texto em consulta — desempa
       detectar(fixture);
 
       expect(semControles(host)).toEqual([]);
-      expect(host.textContent).toContain('Nenhuma regra de cálculo declarada no passo Fórmula.');
+      expect(host.textContent).toContain(
+        `Nenhuma regra de cálculo declarada no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
+      );
       expect(host.textContent).not.toContain('importada');
     });
 
