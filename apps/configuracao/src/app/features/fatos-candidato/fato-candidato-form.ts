@@ -33,6 +33,8 @@ import {
   temFormato,
 } from './fato-candidato.regras';
 
+export const LIMITE_DO_CODIGO_DO_FATO = 50;
+
 /**
  * O que o administrador cria: um fato perguntado ao candidato, um derivado por regra, ou um agregado
  * que resume o que os membros de um grupo repetível responderam.
@@ -69,7 +71,7 @@ export const LIMITES_DO_FATO = {
   textoDoValor: 500,
 } as const;
 
-const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(50);
+const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(LIMITE_DO_CODIGO_DO_FATO);
 
 const CAMPOS_DA_CRIACAO: ReadonlySet<string> = new Set<CampoDaCriacao>([
   'codigo',
@@ -107,7 +109,11 @@ const textoComLimite = (limite: number, ...validadores: ValidatorFn[]) =>
 
 function controlesDeIdentificacao() {
   return {
-    codigo: textoComLimite(50, Validators.required, ...validadoresDoCodigo(50)),
+    codigo: textoComLimite(
+      LIMITE_DO_CODIGO_DO_FATO,
+      Validators.required,
+      ...validadoresDoCodigo(LIMITE_DO_CODIGO_DO_FATO),
+    ),
     nome: textoComLimite(LIMITES_DO_FATO.nome, Validators.required),
     descricao: textoComLimite(LIMITES_DO_FATO.descricao, obrigatorioNaoEmBranco),
     componenteExibicao: new FormControl('', { nonNullable: true }),

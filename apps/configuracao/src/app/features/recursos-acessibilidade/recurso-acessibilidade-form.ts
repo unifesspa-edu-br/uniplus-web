@@ -12,6 +12,8 @@ import {
   nullIfBlank,
 } from '../../shared/formulario';
 
+export const LIMITE_DO_CODIGO_DO_RECURSO_DE_ACESSIBILIDADE = 50;
+
 export interface RecursoAcessibilidadeForm {
   nome: FormControl<string>;
   codigo: FormControl<string>;
@@ -22,7 +24,7 @@ export type ValoresDoRecurso = ReturnType<FormGroup<RecursoAcessibilidadeForm>['
 
 export const RECURSO_EM_BRANCO: ValoresDoRecurso = { nome: '', codigo: '', descricao: '' };
 
-const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(50);
+const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(LIMITE_DO_CODIGO_DO_RECURSO_DE_ACESSIBILIDADE);
 
 const CONTROLES_DO_SERVIDOR: ReadonlySet<string> = new Set<keyof RecursoAcessibilidadeForm>([
   'nome',
@@ -33,7 +35,10 @@ const CONTROLES_DO_SERVIDOR: ReadonlySet<string> = new Set<keyof RecursoAcessibi
 function controleDoCodigo(): FormControl<string> {
   return new FormControl('', {
     nonNullable: true,
-    validators: [Validators.required, ...validadoresDoCodigo(50)],
+    validators: [
+      Validators.required,
+      ...validadoresDoCodigo(LIMITE_DO_CODIGO_DO_RECURSO_DE_ACESSIBILIDADE),
+    ],
   });
 }
 

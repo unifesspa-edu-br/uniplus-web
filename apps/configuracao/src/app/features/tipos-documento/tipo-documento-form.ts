@@ -22,6 +22,8 @@ import {
   nullIfBlank,
 } from '../../shared/formulario';
 
+export const LIMITE_DO_CODIGO_DO_TIPO_DE_DOCUMENTO = 50;
+
 export type FormatoAceitoChave = 'formatoPdf' | 'formatoJpeg' | 'formatoPng' | 'formatoTiff';
 
 interface FormatoAceitoOpcao {
@@ -68,7 +70,7 @@ export const FINALIDADE_TAMANHO_MAXIMO = 500;
 /** O servidor só exige `> 0` no tamanho máximo; não há teto superior no contrato. */
 const TAMANHO_MAXIMO_MB_MINIMO = 1;
 
-const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(50);
+const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(LIMITE_DO_CODIGO_DO_TIPO_DE_DOCUMENTO);
 const MENSAGEM_DO_TAMANHO_MINIMO = 'Deve ser um inteiro positivo (≥ 1).';
 const MENSAGEM_DA_AUTO_EQUIVALENCIA = 'O tipo equivalente não pode ser igual ao próprio código.';
 
@@ -114,7 +116,10 @@ const caixa = (): FormControl<boolean> => new FormControl(false, { nonNullable: 
 function controleDoCodigo(): FormControl<string> {
   return new FormControl('', {
     nonNullable: true,
-    validators: [Validators.required, ...validadoresDoCodigo(50)],
+    validators: [
+      Validators.required,
+      ...validadoresDoCodigo(LIMITE_DO_CODIGO_DO_TIPO_DE_DOCUMENTO),
+    ],
   });
 }
 

@@ -17,6 +17,7 @@ import {
 import type { CategoriasDoFormulario } from './categorias-do-formulario';
 import { TipoDocumentoAvisosComponent } from './tipo-documento-avisos.component';
 import {
+  LIMITE_DO_CODIGO_DO_TIPO_DE_DOCUMENTO,
   FORMATOS_ACEITOS_OPCOES,
   TipoDocumentoForm,
   mensagemDoCampo,
@@ -39,7 +40,7 @@ import {
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class TipoDocumentoFormularioComponent {
-  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(50);
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(LIMITE_DO_CODIGO_DO_TIPO_DE_DOCUMENTO);
   readonly aberto = model.required<boolean>();
   readonly form = input.required<FormGroup<TipoDocumentoForm>>();
   readonly modo = input.required<'criar' | 'editar'>();

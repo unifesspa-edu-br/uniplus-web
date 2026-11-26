@@ -11,6 +11,8 @@ import {
   mensagemDeErroDoCampoComFormato,
 } from '../../shared/formulario';
 
+export const LIMITE_DO_CODIGO_DO_TIPO_DE_DEFICIENCIA = 50;
+
 export interface TipoDeficienciaForm {
   nome: FormControl<string>;
   codigo: FormControl<string>;
@@ -21,7 +23,12 @@ export type ValoresDoTipoDeficiencia = ReturnType<FormGroup<TipoDeficienciaForm>
 
 export const TIPO_EM_BRANCO: ValoresDoTipoDeficiencia = { nome: '', codigo: '', descricao: '' };
 
-const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(50);
+const VALIDADORES_DO_CODIGO = [
+  Validators.required,
+  ...validadoresDoCodigo(LIMITE_DO_CODIGO_DO_TIPO_DE_DEFICIENCIA),
+];
+
+const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(LIMITE_DO_CODIGO_DO_TIPO_DE_DEFICIENCIA);
 
 const MENSAGEM_DE_DESCRICAO_EM_BRANCO = 'Informe um texto — apenas espaços não valem.';
 
@@ -48,7 +55,7 @@ export function criarFormularioDeTipoDeficiencia(): FormGroup<TipoDeficienciaFor
     }),
     codigo: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, ...validadoresDoCodigo(50)],
+      validators: VALIDADORES_DO_CODIGO,
     }),
     descricao: controleDoDescricao(),
   });

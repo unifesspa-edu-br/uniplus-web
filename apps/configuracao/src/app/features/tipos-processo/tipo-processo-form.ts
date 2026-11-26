@@ -12,6 +12,8 @@ import {
   nullIfBlank,
 } from '../../shared/formulario';
 
+export const LIMITE_DO_CODIGO_DO_TIPO_DE_PROCESSO = 80;
+
 export interface TipoProcessoForm {
   codigo: FormControl<string>;
   nome: FormControl<string>;
@@ -24,7 +26,7 @@ export type ValoresDoTipoProcesso = ReturnType<FormGroup<TipoProcessoForm>['getR
 const NOME_TAMANHO_MAXIMO = 200;
 const DESCRICAO_TAMANHO_MAXIMO = 1000;
 
-const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(80);
+const MENSAGEM_DE_FORMATO = textoDoFormatoDoCodigo(LIMITE_DO_CODIGO_DO_TIPO_DE_PROCESSO);
 
 const CAMPOS: ReadonlySet<string> = new Set<keyof TipoProcessoForm>([
   'codigo',
@@ -35,7 +37,7 @@ const CAMPOS: ReadonlySet<string> = new Set<keyof TipoProcessoForm>([
 function controleDoCodigo(): FormControl<string> {
   return new FormControl('', {
     nonNullable: true,
-    validators: [Validators.required, ...validadoresDoCodigo(80)],
+    validators: [Validators.required, ...validadoresDoCodigo(LIMITE_DO_CODIGO_DO_TIPO_DE_PROCESSO)],
   });
 }
 

@@ -3,7 +3,11 @@ import { ChangeDetectionStrategy, Component, computed, input, model, output } fr
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
-import { TipoDeficienciaForm, mensagemDoCampo } from './tipo-deficiencia-form';
+import {
+  LIMITE_DO_CODIGO_DO_TIPO_DE_DEFICIENCIA,
+  TipoDeficienciaForm,
+  mensagemDoCampo,
+} from './tipo-deficiencia-form';
 
 @Component({
   selector: 'cfg-tipo-deficiencia-formulario',
@@ -13,7 +17,9 @@ import { TipoDeficienciaForm, mensagemDoCampo } from './tipo-deficiencia-form';
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class TipoDeficienciaFormularioComponent {
-  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(50);
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(
+    LIMITE_DO_CODIGO_DO_TIPO_DE_DEFICIENCIA,
+  );
   readonly aberto = model.required<boolean>();
   readonly form = input.required<FormGroup<TipoDeficienciaForm>>();
   readonly titulo = input.required<string>();

@@ -3,7 +3,11 @@ import { ChangeDetectionStrategy, Component, computed, input, model, output } fr
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
-import { RecursoAcessibilidadeForm, mensagemDoCampo } from './recurso-acessibilidade-form';
+import {
+  LIMITE_DO_CODIGO_DO_RECURSO_DE_ACESSIBILIDADE,
+  RecursoAcessibilidadeForm,
+  mensagemDoCampo,
+} from './recurso-acessibilidade-form';
 
 @Component({
   selector: 'cfg-recurso-acessibilidade-formulario',
@@ -13,7 +17,9 @@ import { RecursoAcessibilidadeForm, mensagemDoCampo } from './recurso-acessibili
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class RecursoAcessibilidadeFormularioComponent {
-  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(50);
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(
+    LIMITE_DO_CODIGO_DO_RECURSO_DE_ACESSIBILIDADE,
+  );
   readonly aberto = model.required<boolean>();
   readonly form = input.required<FormGroup<RecursoAcessibilidadeForm>>();
   readonly titulo = input.required<string>();
