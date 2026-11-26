@@ -111,7 +111,7 @@ export function detalheDoFato(
   return { ...base, atos: [], manifestacoesVigentes: [], fato: FATO_CATEGORICO, ...extra };
 }
 
-/** Uma manifestação vigente do Encarregado de dados no ciclo 2. */
+/** Uma manifestação vigente do Gestor de proteção de dados no ciclo 2. */
 export function manifestacao(
   parcial: Partial<ManifestacaoDaProtecaoDto> = {},
 ): ManifestacaoDaProtecaoDto {

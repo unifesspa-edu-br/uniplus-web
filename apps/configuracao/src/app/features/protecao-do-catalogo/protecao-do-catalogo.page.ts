@@ -109,7 +109,7 @@ export class ProtecaoDoCatalogoPage {
   );
 
   protected readonly permissaoDeAprovar = PERMISSAO.configuracao.protecaoDoCatalogoAprovar;
-  /** O Encarregado de dados se manifesta, mas não decide: a manifestação tem permissão própria. */
+  /** O Gestor de proteção de dados se manifesta, mas não decide: a manifestação tem permissão própria. */
   protected readonly permissaoDeManifestar = PERMISSAO.configuracao.protecaoDoCatalogoManifestar;
   /** O histórico das manifestações é de quem aprova ou consulta, porque a leitura é registrada. */
   protected readonly permissoesDoHistorico = [

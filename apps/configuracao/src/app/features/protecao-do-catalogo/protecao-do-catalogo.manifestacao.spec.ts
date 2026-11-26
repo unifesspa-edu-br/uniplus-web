@@ -26,7 +26,7 @@ const URL_DO_DETALHE = `${URL_DA_FILA}/tipos-documento/${laudo.id}`;
 const URL_DO_HISTORICO = `${URL_DO_DETALHE}/manifestacoes`;
 const RAIZ = 'uniplus.configuracao.protecao_do_catalogo.';
 
-describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de dados', () => {
+describe('ProtecaoDoCatalogoPage — manifestação técnica do Gestor de proteção de dados', () => {
   beforeAll(compilarPaginaUmaVez);
   let pagina: PaginaMontada;
 
@@ -71,7 +71,7 @@ describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de d
     await pagina.assentar();
   }
 
-  it('o Encarregado de dados vê o formulário e o histórico, mas não as ações de decidir', () => {
+  it('o Gestor de proteção de dados vê o formulário e o histórico, mas não as ações de decidir', () => {
     expect(formulario()).not.toBeNull();
     for (const acao of ['Aprovar', 'Devolver', 'Recomendar ajuste']) {
       expect(botaoDoRodape(pagina.tela, acao), acao).toBeUndefined();

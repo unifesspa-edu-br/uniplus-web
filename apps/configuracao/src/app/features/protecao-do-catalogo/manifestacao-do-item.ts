@@ -46,7 +46,7 @@ function textoPreenchido(controle: AbstractControl<string>) {
 type CampoDaManifestacao = 'parecer' | 'texto';
 
 /**
- * A manifestação técnica do Encarregado de dados sobre a proteção proposta, no ciclo lido no
+ * A manifestação técnica do Gestor de proteção de dados sobre a proteção proposta, no ciclo lido no
  * detalhe. A nova manifestação da mesma pessoa substitui a vigente. Se o ciclo mudou ou o item foi
  * decidido entre a leitura e o envio, o item é relido e a pessoa decide se registra de novo.
  */

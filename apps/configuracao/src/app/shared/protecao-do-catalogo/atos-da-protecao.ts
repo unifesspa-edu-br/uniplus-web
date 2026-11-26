@@ -1,7 +1,11 @@
 import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { formatarDataBr } from '@uniplus/shared-utils';
-import type { AtoDaProtecaoDto, AtoDeDecisao } from '@uniplus/shared-data/configuracao';
+import type {
+  AtoDaProtecao,
+  AtoDaProtecaoDto,
+  AtoDeDecisao,
+} from '@uniplus/shared-data/configuracao';
 import { TagComponent, type UiTagVariant } from '@uniplus/shared-ui/components';
 import { CLASSIFICACOES_DE_PROTECAO, rotuloDe } from './protecao-de-dados';
 
@@ -10,7 +14,7 @@ interface RotuloDoAto {
   readonly variante: UiTagVariant;
 }
 
-const ATOS: Readonly<Record<string, RotuloDoAto>> = {
+const ATOS: Readonly<Record<AtoDaProtecao, RotuloDoAto>> = {
   SOLICITACAO: { texto: 'Solicitação', variante: 'info' },
   [DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO]: { texto: 'Aprovação', variante: 'success' },
   [DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO]: {
@@ -23,7 +27,7 @@ const ATOS: Readonly<Record<string, RotuloDoAto>> = {
 
 /** O rótulo do ato registrado, ou o próprio token quando o vocabulário não o conhece. */
 export function rotuloDoAto(ato: string): RotuloDoAto {
-  return ATOS[ato] ?? { texto: ato, variante: 'neutral' };
+  return ATOS[ato as AtoDaProtecao] ?? { texto: ato, variante: 'neutral' };
 }
 
 /** As decisões que a lista da proteção de dados filtra, com o texto da decisão tomada. */
