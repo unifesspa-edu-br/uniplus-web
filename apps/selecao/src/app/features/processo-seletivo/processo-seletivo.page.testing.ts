@@ -167,7 +167,10 @@ export const PAGE_PROVIDERS = [
   // E os termos de consentimento que ele pode exigir.
   { provide: TermosConsentimentoApi, useValue: { listarComVersoes: () => NEVER } },
   // E os modelos de que cada formulário pode partir.
-  { provide: ModelosFormularioApi, useValue: catalogoVazioStub },
+  {
+    provide: ModelosFormularioApi,
+    useValue: { listar: catalogoVazioStub.listar, listarTodos: catalogoVazioStub.listar },
+  },
   { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
   { provide: DocumentosEAtosDoProcessoApi, useValue: {} },
   { provide: PublicacaoDoProcessoApi, useValue: {} },
