@@ -25,7 +25,7 @@ const PASSO_POR_DIMENSAO: ReadonlyMap<string, RotuloDePasso> = new Map<string, R
   ['cronograma', 'Cronograma'],
   ['exigencias_documentais', 'Cronograma'],
   ['contagem_de_prazos', 'Cronograma'],
-  // A classificação inteira — regra de cálculo, precisão e eliminação — é gravada no passo Eliminação.
+  // A classificação inteira — regra de cálculo, precisão e eliminação — é gravada pelos passos Fórmula e precisão e Eliminação; a pendência abre a Eliminação.
   ['classificacao', 'Eliminação'],
   ['atendimento_especializado', 'Atend. especial'],
   ['coleta_de_fatos', 'Formulários'],
@@ -59,7 +59,7 @@ export function nomeDoPasso(rotulo: RotuloDePasso): string {
 }
 
 /** A mudança feita na fórmula não é gravada pela fórmula: ela vai junto com a classificação. */
-const GRAVADA_COM_A_CLASSIFICACAO = `é gravada quando a classificação é gravada, no passo ${nomeDoPasso('Eliminação')}, ou na publicação do processo, e até lá esta pendência continua aqui`;
+const GRAVADA_COM_A_CLASSIFICACAO = `é gravada quando a classificação é gravada, ao avançar do passo ${nomeDoPasso('Fórmula e precisão')} ou do passo ${nomeDoPasso('Eliminação')}, ou na publicação do processo, e até lá esta pendência continua aqui`;
 
 const REGRAVAR_VAGAS = `e depois regrave o passo ${nomeDoPasso('Vagas')}: o grupo é copiado para o processo quando a distribuição é gravada, e não se atualiza sozinho`;
 

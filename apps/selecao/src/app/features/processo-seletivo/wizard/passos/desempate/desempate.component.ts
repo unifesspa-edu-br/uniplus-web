@@ -165,7 +165,7 @@ export class DesempatePassoComponent {
     return {
       titulo: 'Confirmar os critérios de desempate',
       aviso: adia
-        ? 'A ordem exibida é a ordem em que os critérios serão avaliados. Eles serão gravados junto com a classificação, no passo Eliminação.'
+        ? 'A ordem exibida é a ordem em que os critérios serão avaliados. Eles serão gravados junto com a classificação, ao avançar dos passos Fórmula e precisão ou Eliminação.'
         : 'A ordem exibida é a ordem em que os critérios serão avaliados.',
       rotuloDeConfirmar: adia ? 'Confirmar critérios' : 'Gravar critérios',
       itens: criterios.map((criterio, indice) => this.itemDoCriterio(criterio, indice)),
