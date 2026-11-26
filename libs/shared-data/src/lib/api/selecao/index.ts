@@ -264,6 +264,7 @@ export {
   FormatoPermitidoCodigo,
   GuardaDaVagaCodigo,
   ModoDeDeliberacaoCodigo as ModoDeDeliberacao,
+  MotivoDasInscricoesFechadasCodigo,
   OrigemCandidatosCodigo,
   SituacaoDasModalidadesCodigo,
   SituacaoDoDocumentoCodigo,
