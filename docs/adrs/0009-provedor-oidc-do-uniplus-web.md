@@ -8,6 +8,8 @@ decision-makers:
 # ADR-0009: Provedor OIDC do `uniplus-web`
 
 > **Emenda (2026-10-23).** A diretriz 6 passou a fixar a máscara de CPF `***.999.999-**`, conforme o Parecer DPO 002/2026. A forma anterior, que ocultava os dígitos centrais e deixava os verificadores à mostra, foi substituída.
+>
+> **Emenda (2026-11-26).** A diretriz 4 passou a dizer que os tokens ficam só em memória: o `keycloak-js` 26 não os grava em storage algum, e o que ele grava no navegador é o estado do retorno do login, sem token. Nada do que a pessoa preencheu é guardado no navegador. A sessão é dada por encerrada quando o provedor recusa a renovação e o cliente descarta a credencial; então a aplicação avisa que o que não foi gravado se perdeu e, a pedido da pessoa, volta à mesma rota depois do login. A renovação do acesso é antecipada pelo prazo que o login informa, com antecedência configurada e só enquanto a pessoa usa a aplicação; o fim da sessão é dado pela recusa do provedor, não pela hora do computador. O realm não troca a credencial de renovação a cada uso.
 
 ## Contexto e enunciado do problema
 
@@ -39,7 +41,7 @@ Diretrizes derivadas da decisão para o `uniplus-web`:
 1. Inicializar o cliente OIDC via `APP_INITIALIZER` (`provideAuth()`) no bootstrap de cada app.
 2. Configurar `tokenInterceptor` em `libs/shared-auth` para injetar `Authorization: Bearer <jwt>` em todas as requisições HTTP que tenham o backend Uni+ como destino.
 3. Implementar `authGuard` e `roleGuard` em `libs/shared-auth` para proteger rotas por perfil.
-4. Persistência de sessão usando o storage padrão do `keycloak-js` (sessionStorage) com silent SSO check via iframe — **nunca** armazenar tokens em `localStorage`.
+4. Tokens somente em memória, com silent SSO check via iframe — **nunca** armazenar tokens em `localStorage` nem em `sessionStorage`.
 5. Logout iniciado no provedor OIDC para garantir invalidação da sessão SSO entre as três apps.
 6. Atributos como `nome_social` e `cpf` consumidos via claims do token; LGPD obriga masking em logs, com o CPF como `***.999.999-**` (Parecer DPO 002/2026).
 
