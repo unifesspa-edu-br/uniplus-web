@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
+import type { AbrangenciaCodigo, CalendarioDiasUteisDto } from '@uniplus/shared-data/configuracao';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 import { assertSemViolacoesGraves } from '../support/a11y';
 
@@ -24,7 +25,7 @@ const CALENDARIO = {
   diasNaoUteis: [
     {
       id: '019ff7ee-3c00-7976-860c-eb2f61c9b201',
-      abrangencia: 'MUNICIPAL',
+      abrangencia: { codigo: 'MUNICIPAL' as AbrangenciaCodigo.MUNICIPAL, rotulo: 'Municipal' },
       municipioIbge: '1504208',
       municipioNome: 'Marabá',
       municipioUf: 'PA',
@@ -34,7 +35,7 @@ const CALENDARIO = {
     },
     {
       id: '019ff7ee-3c00-7976-860c-eb2f61c9b202',
-      abrangencia: 'ESTADUAL',
+      abrangencia: { codigo: 'ESTADUAL' as AbrangenciaCodigo.ESTADUAL, rotulo: 'Estadual' },
       municipioIbge: null,
       municipioNome: null,
       municipioUf: null,
@@ -44,7 +45,7 @@ const CALENDARIO = {
     },
     {
       id: '019ff7ee-3c00-7976-860c-eb2f61c9b203',
-      abrangencia: 'NACIONAL',
+      abrangencia: { codigo: 'NACIONAL' as AbrangenciaCodigo.NACIONAL, rotulo: 'Nacional' },
       municipioIbge: null,
       municipioNome: null,
       municipioUf: null,
@@ -53,7 +54,7 @@ const CALENDARIO = {
       descricao: 'Independência do Brasil',
     },
   ],
-} as const;
+} as const satisfies CalendarioDiasUteisDto;
 
 test.describe('Calendário de dias úteis — localidade no detalhe (#524)', () => {
   test.beforeEach(async ({ page }, testInfo) => {
