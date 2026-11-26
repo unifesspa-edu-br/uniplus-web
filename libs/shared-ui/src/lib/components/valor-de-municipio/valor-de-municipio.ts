@@ -17,6 +17,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ProblemI18nService, type ApiResult } from '@uniplus/shared-core/http';
 import { Subject, of, switchMap, timer, type Observable } from 'rxjs';
 
+import { FalhaDeLeituraDoCampoComponent } from '../alerta-nova-tentativa/falha-de-leitura-do-campo';
+import { acompanharLeitura } from '../alerta-nova-tentativa/leitura-acompanhada';
 import {
   ComboboxComponent,
   type UiComboboxGroup,
@@ -124,18 +126,19 @@ export function nomeComUf(nome: string, uf: string): string {
  * desmarcado sem buscar de novo.
  *
  * Acessibilidade: é o combobox do WAI-ARIA, rotulado pelo hospedeiro, que aponta o rótulo para `campoId`; o andamento da
- * busca e a falha são ditos na região de status dele.
+ * busca é dito na região de status dele e a falha é anunciada junto ao campo.
  */
 @Component({
   selector: 'ui-valor-de-municipio',
   standalone: true,
-  imports: [ComboboxComponent],
+  imports: [ComboboxComponent, FalhaDeLeituraDoCampoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (multiplo()) {
       <ui-combobox
         multiplo
         buscaExterna
+        [class.combobox-com-aviso]="leitura.visivel()"
         [rotulo]="rotulo()"
         placeholder="Digite o nome do município"
         [textoSemResultado]="textoSemResultado()"
@@ -145,7 +148,7 @@ export function nomeComUf(nome: string, uf: string): string {
         [estadoDaBusca]="estadoDaBusca()"
         [invalido]="invalido()"
         [obrigatorio]="obrigatorio()"
-        [descritoPor]="descritoPor()"
+        [descritoPor]="descricoes()"
         [contagemVisivel]="contagemVisivel()"
         (buscaChange)="buscar($event)"
         (valuesChange)="valuesChange.emit($event)"
@@ -153,6 +156,7 @@ export function nomeComUf(nome: string, uf: string): string {
     } @else {
       <ui-combobox
         buscaExterna
+        [class.combobox-com-aviso]="leitura.visivel()"
         [rotulo]="rotulo()"
         placeholder="Digite o nome do município"
         [textoSemResultado]="textoSemResultado()"
@@ -162,12 +166,13 @@ export function nomeComUf(nome: string, uf: string): string {
         [estadoDaBusca]="estadoDaBusca()"
         [invalido]="invalido()"
         [obrigatorio]="obrigatorio()"
-        [descritoPor]="descritoPor()"
+        [descritoPor]="descricoes()"
         [contagemVisivel]="contagemVisivel()"
         (buscaChange)="buscar($event)"
         (valueChange)="valuesChange.emit([$event])"
       />
     }
+    <ui-falha-de-leitura-do-campo [leitura]="leitura" />
   `,
 })
 export class ValorDeMunicipioComponent {
@@ -194,6 +199,7 @@ export class ValorDeMunicipioComponent {
   readonly valuesChange = output<readonly string[]>();
 
   private readonly campo = viewChild(ComboboxComponent);
+  private readonly aviso = viewChild(FalhaDeLeituraDoCampoComponent);
   /** O id do campo de busca, para o rótulo do hospedeiro apontar para ele. */
   readonly campoId = computed(() => this.campo()?.campoId ?? null);
 
@@ -202,6 +208,19 @@ export class ValorDeMunicipioComponent {
   private readonly buscando = signal(false);
   private readonly falha = signal<string | null>(null);
   private readonly encontrados = signal<readonly MunicipioEncontrado[]>([]);
+  protected readonly leitura = acompanharLeitura({
+    falha: this.falha,
+    pendente: this.buscando,
+    recarregar: () => this.buscar(this.termo()),
+    destino: () => this.campo()?.abrirComTermo(this.termo()),
+    assunto: 'municípios',
+  });
+  protected readonly descricoes = computed(() => {
+    const ids = (this.descritoPor() ?? '').trim().split(/\s+/).filter(Boolean);
+    const avisoId = this.leitura.visivel() ? this.aviso()?.id : undefined;
+    if (avisoId) ids.push(avisoId);
+    return [...new Set(ids)].join(' ') || null;
+  });
 
   constructor() {
     this.buscarAoMudarOTermo();
@@ -247,13 +266,14 @@ export class ValorDeMunicipioComponent {
       this.encontrados.set(resultado.data);
     } else {
       this.encontrados.set([]);
-      this.falha.set(this.problemI18n.resolve(resultado.problem).title);
+      this.falha.set(
+        `Não foi possível buscar os municípios. ${this.problemI18n.resolve(resultado.problem).title}`,
+      );
     }
   }
 
   protected readonly textoSemResultado = computed(() => {
-    const falha = this.falha();
-    if (falha !== null) return `Não foi possível buscar os municípios: ${falha}`;
+    if (this.falha() !== null) return '';
     if (this.termo().length < TERMO_MINIMO)
       return 'Digite ao menos três letras do nome do município.';
     if (this.buscando()) return 'Buscando municípios…';
