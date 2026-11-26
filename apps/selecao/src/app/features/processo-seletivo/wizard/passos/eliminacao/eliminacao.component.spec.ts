@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
+import { ROTULOS_DOS_PASSOS } from '../../processo-seletivo.data';
 import {
   componente,
+  fixture,
   montarEliminacao,
   prepararClassificacaoLocal,
   store,
@@ -57,5 +59,26 @@ describe('EliminacaoPassoComponent', () => {
     const resultado = componente.validar();
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.join(' ')).toContain('compõe a nota');
+  });
+
+  describe('abertura do passo', () => {
+    const abertura = (): string =>
+      (fixture.nativeElement as HTMLElement).querySelector('.step-subtitle')?.textContent ?? '';
+
+    it('diz em linguagem clara o que é gravado de uma só vez junto com as regras', () => {
+      fixture.detectChanges();
+
+      expect(abertura().replace(/\s+/g, ' ')).toContain(
+        'o sistema grava de uma só vez as regras de eliminação e o que foi escolhido no passo',
+      );
+      expect(abertura()).not.toMatch(/comando|os quatro/i);
+    });
+
+    it('cita o passo da fórmula pelo nome que o menu lateral mostra', () => {
+      fixture.detectChanges();
+
+      expect(ROTULOS_DOS_PASSOS).toContain('Fórmula e precisão');
+      expect(abertura()).toContain('passo Fórmula e precisão:');
+    });
   });
 });
