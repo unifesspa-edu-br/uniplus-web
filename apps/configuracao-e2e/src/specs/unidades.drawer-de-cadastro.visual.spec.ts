@@ -40,7 +40,7 @@ test.describe('Unidade — cobertura visual DS', () => {
       return {
         bodyOverflowY: getComputedStyle(body).overflowY,
         formOverflowY: getComputedStyle(form).overflowY,
-        formScrolls: form.scrollHeight > form.clientHeight,
+        bodyScrolls: body.scrollHeight > body.clientHeight,
         bodyOverflow: getComputedStyle(document.body).overflow,
         // A grade é flex (quebra por espaço): as colunas são as posições à esquerda distintas.
         gridColumns: new Set(
@@ -51,9 +51,9 @@ test.describe('Unidade — cobertura visual DS', () => {
       };
     });
 
-    expect(drawerMetrics.bodyOverflowY).toBe('hidden');
-    expect(drawerMetrics.formOverflowY).toBe('auto');
-    expect(drawerMetrics.formScrolls).toBe(true);
+    expect(drawerMetrics.bodyOverflowY).toBe('auto');
+    expect(drawerMetrics.formOverflowY).toBe('visible');
+    expect(drawerMetrics.bodyScrolls).toBe(true);
     expect(drawerMetrics.bodyOverflow).toBe('hidden');
     expect(drawerMetrics.footerInsideViewport).toBe(true);
     expect(drawerMetrics.panelWidth).toBeGreaterThan(viewport === 'desktop' ? 600 : 0);

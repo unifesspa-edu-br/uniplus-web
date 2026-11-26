@@ -1,5 +1,5 @@
-/* O corpo do drawer não rola: o host fica fora do fluxo e o .form-drawer__form de dentro é o único
-   container de rolagem, com o recuo do conteúdo. */
+/* O host fica fora do fluxo: o corpo do drawer é o container de rolagem, e o .form-drawer__form
+   de dentro carrega o recuo do conteúdo. */
 :host {
   display: contents;
 }

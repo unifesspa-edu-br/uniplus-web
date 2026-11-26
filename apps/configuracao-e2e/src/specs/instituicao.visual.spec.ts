@@ -1,56 +1,9 @@
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
+import { INSTITUICAO, mockInstituicaoApi, mockReitoriasApi } from '../support/api-da-instituicao';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
 type VisualViewport = 'mobile' | 'desktop';
-
-const REITORIA_ID = '01960000-0000-7000-0000-000000000001';
-const INSTITUICAO_ID = '01960000-0000-7000-0000-0000000000a1';
-
-const REITORIAS = [
-  {
-    id: REITORIA_ID,
-    nome: 'Reitoria',
-    alias: null,
-    slug: 'reitoria',
-    sigla: 'REITORIA',
-    codigo: 'REITORIA',
-    unidadeSuperiorId: null,
-    tipo: 'REITORIA',
-    unidadeAcademica: false,
-    vigenciaInicio: '2026-01-01',
-    vigenciaFim: null,
-    criadoEm: '2026-06-10T12:00:00Z',
-  },
-] as const;
-
-const INSTITUICAO = {
-  id: INSTITUICAO_ID,
-  codigoEmec: '3990',
-  nome: 'Universidade Federal do Sul e Sudeste do Pará',
-  sigla: 'Unifesspa',
-  organizacaoAcademica: 'Universidade',
-  categoriaAdministrativa: 'Pública Federal',
-  cnpj: null,
-  mantenedora: null,
-  codigoMantenedoraEmec: null,
-  situacao: null,
-  atoCredenciamento: null,
-  atoRecredenciamento: null,
-  conceitoInstitucional: null,
-  igc: null,
-  website: null,
-  cidade: null,
-  endereco: null,
-  unidadeRaizId: REITORIA_ID,
-  criadoEm: '2026-06-10T12:00:00Z',
-} as const;
-
-const CORS_HEADERS = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
-};
 
 const TOLERANCIA = 1;
 
@@ -176,8 +129,8 @@ test.describe('Instituição — cobertura visual DS', () => {
       };
     });
 
-    expect(metrics.bodyOverflowY).toBe('hidden');
-    expect(metrics.formOverflowY).toBe('auto');
+    expect(metrics.bodyOverflowY).toBe('auto');
+    expect(metrics.formOverflowY).toBe('visible');
     expect(metrics.bodyOverflow).toBe('hidden');
     expect(metrics.footerInsideViewport).toBe(true);
 
@@ -244,67 +197,6 @@ test.describe('Instituição — cobertura visual DS', () => {
     await attachScreenshot(page, testInfo, 'instituicao-criacao');
   });
 });
-
-async function mockReitoriasApi(page: Page): Promise<void> {
-  await page.route(/\/api\/organizacao\/unidades(\?.*)?$/, async (route, request) => {
-    if (request.method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-    if (request.method() !== 'GET') {
-      await route.continue();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
-      body: JSON.stringify(REITORIAS),
-    });
-  });
-}
-
-async function mockInstituicaoApi(page: Page, options: { existe: boolean }): Promise<void> {
-  let existe = options.existe;
-
-  // GET /api/organizacao/instituicao (singleton): 200 quando existe, 404 quando não.
-  await page.route(/\/api\/organizacao\/instituicao$/, async (route, request) => {
-    if (request.method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-    if (request.method() !== 'GET') {
-      await route.continue();
-      return;
-    }
-    if (existe) {
-      await route.fulfill({
-        status: 200,
-        headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
-        body: JSON.stringify(INSTITUICAO),
-      });
-    } else {
-      await route.fulfill({ status: 404, headers: CORS_HEADERS });
-    }
-  });
-
-  // POST /api/organizacao/admin/instituicao: cria e liga o flag para a ficha aparecer.
-  await page.route(/\/api\/organizacao\/admin\/instituicao$/, async (route, request) => {
-    if (request.method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-    if (request.method() !== 'POST') {
-      await route.continue();
-      return;
-    }
-    existe = true;
-    await route.fulfill({
-      status: 201,
-      headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
-      body: JSON.stringify(INSTITUICAO_ID),
-    });
-  });
-}
 
 async function assertNoHorizontalOverflow(page: Page): Promise<void> {
   const viewport = await page.evaluate(() => ({
