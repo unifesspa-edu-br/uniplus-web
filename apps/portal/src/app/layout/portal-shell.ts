@@ -17,7 +17,7 @@ import { mediaQuerySignal } from '@uniplus/shared-core/dom';
 interface PortalFooterLink {
   readonly label: string;
   readonly routerLink?: string;
-  readonly externalLink?: boolean;
+  readonly href?: string;
   readonly requiresAuth?: boolean;
 }
 
@@ -118,19 +118,17 @@ interface PortalFooterGroup {
               <ul>
                 @for (link of group.links; track link.label) {
                   <li>
-                    @if (link.routerLink) {
-                      @if (link.externalLink) {
-                        <a
-                          [href]="link.routerLink"
-                          rel="noopener noreferrer"
-                          target="_blank"
-                          [aria-label]="link.label + ' (abre em nova aba)'"
-                        >
-                          {{ link.label }}
-                        </a>
-                      } @else {
-                        <a [routerLink]="link.routerLink">{{ link.label }}</a>
-                      }
+                    @if (link.href) {
+                      <a
+                        [href]="link.href"
+                        rel="noopener noreferrer"
+                        target="_blank"
+                        [aria-label]="link.label + ' (abre em nova aba)'"
+                      >
+                        {{ link.label }}
+                      </a>
+                    } @else if (link.routerLink) {
+                      <a [routerLink]="link.routerLink">{{ link.label }}</a>
                     } @else {
                       <span class="is-disabled" aria-disabled="true">{{ link.label }}</span>
                     }
@@ -175,16 +173,14 @@ export class PortalShellComponent {
     {
       label: 'Institucional',
       links: [
-        { label: 'CEPS', routerLink: 'https://ceps.unifesspa.edu.br', externalLink: true },
+        { label: 'CEPS', href: 'https://ceps.unifesspa.edu.br' },
         {
           label: 'CGA',
-          routerLink: 'https://cga.unifesspa.edu.br',
-          externalLink: true,
+          href: 'https://cga.unifesspa.edu.br',
         },
         {
           label: 'Calendário acadêmico',
-          routerLink: 'https://cga.unifesspa.edu.br/documentos/calendário-acadêmico.html',
-          externalLink: true,
+          href: 'https://cga.unifesspa.edu.br/documentos/calendário-acadêmico.html',
         },
       ],
     },
