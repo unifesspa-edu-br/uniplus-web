@@ -14,8 +14,10 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
 import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
 import {
+  BUSCA_DE_MUNICIPIOS,
   FalhaDeLeituraDoCampoComponent,
   ValorEmConsultaComponent,
   ValorLegivelDirective,
@@ -25,7 +27,6 @@ import { OrigemCandidatosSelecionada, ValidacaoDoPasso } from '../../processo-se
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { IdentificadorLegivelComponent } from './identificador-legivel.component';
 import { MunicipioDoProcessoComponent } from './municipio-do-processo.component';
-import { BuscaDeMunicipio } from './servicos/busca-de-municipio.service';
 import { CatalogoDeUnidades } from './servicos/catalogo-de-unidades.service';
 import { GravacaoDaIdentificacao } from './servicos/gravacao-da-identificacao.service';
 import { validarIdentificacao } from './validacao-da-identificacao';
@@ -59,7 +60,7 @@ export const ORIGENS_CANDIDATOS: readonly {
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     CatalogoDeUnidades,
-    BuscaDeMunicipio,
+    { provide: BUSCA_DE_MUNICIPIOS, useFactory: buscaDeMunicipiosNoGeo },
     GravacaoDaIdentificacao,
     provePassoDoWizard(IdentificacaoPassoComponent),
   ],
