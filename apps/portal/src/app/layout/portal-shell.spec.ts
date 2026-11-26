@@ -97,6 +97,26 @@ describe('PortalShellComponent — navegação por autenticação', () => {
 
     expect(footer?.textContent).toContain('Minhas inscrições');
   });
+
+  it('não apresenta Ajuda na navegação principal', () => {
+    expect(rotulosDeNavegacao()).not.toContain('Ajuda');
+  });
+
+  it.each([
+    ['CEPS', 'https://ceps.unifesspa.edu.br'],
+    ['CGA', 'https://cga.unifesspa.edu.br'],
+    ['Calendário acadêmico', 'https://cga.unifesspa.edu.br/documentos/calendário-acadêmico.html'],
+  ])('abre %s em uma nova aba', (rotulo, endereco) => {
+    const fixture = TestBed.createComponent(PortalShellComponent);
+    fixture.detectChanges();
+    const links = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('footer a'));
+    const link = links.find((elemento) => elemento.textContent?.trim() === rotulo);
+
+    expect(link?.getAttribute('href')).toBe(endereco);
+    expect(link?.getAttribute('target')).toBe('_blank');
+    expect(link?.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(link?.getAttribute('aria-label')).toBe(`${rotulo} (abre em nova aba)`);
+  });
 });
 
 describe('PortalShellComponent — rolagem e impressão', () => {
