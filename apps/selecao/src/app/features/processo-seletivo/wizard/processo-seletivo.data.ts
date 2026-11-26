@@ -56,3 +56,6 @@ export const ROTULOS_DOS_PASSOS = PASSOS.map((passo) => passo.rotulo);
 
 /** O painel de revisão lista os passos anteriores, não a si mesmo. */
 export const REVIEW_NAMES = PASSOS.slice(0, -1).map((passo) => passo.revisao);
+
+/** Posição do passo em que o formulário de inscrição é montado, derivada da ordem única dos passos. */
+export const PASSO_FORMULARIO = ROTULOS_DOS_PASSOS.indexOf('Formulários');

@@ -28,7 +28,7 @@ import {
   PROCESSO_ID,
 } from './desempate.component.testing';
 import { EdicaoDosCriterios } from './edicao-dos-criterios.service';
-import { PASSO_FORMULARIO } from './desempate-por-idade';
+import { PASSO_FORMULARIO } from '../../processo-seletivo.data';
 
 describe('DesempatePassoComponent', () => {
   let componente: DesempatePassoComponent;
