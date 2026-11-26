@@ -74,5 +74,5 @@ export const NOME_SOCIAL_DA_HELENA = 'Helena Rezende';
 /** Uma das edições que o roteiro da API declara como aceitas pelo processo de validação. */
 export const EDICAO_DO_ENEM = 'ENEM 2026';
 export const MUNICIPIO_DO_FATOR = 'Marabá/PA';
-export const MUNICIPIO_DE_RESIDENCIA_DO_FATOR = 'Imperatriz/MA';
+export const MUNICIPIO_DE_RESIDENCIA_DO_FATOR = 'Itupiranga/PA';
 export const ORGAO_EMISSOR = 'Secretaria de Segurança Pública (SSP)';
