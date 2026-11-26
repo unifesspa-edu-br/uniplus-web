@@ -43,7 +43,7 @@ const ID_DO_CAMPO_ESCALA = 'f-escala-nota-final';
  * `regrasEliminacao` vazio na primeira e derrubaria o item de conformidade que a Eliminação
  * acabou de levantar.
  *
- * A classificação é bimodal: sob `CLASSIFICACAO-IMPORTADA`, precisão e eliminação não se
+ * A classificação é bimodal: sob `CLASSIFICACAO_IMPORTADA`, precisão e eliminação não se
  * aplicam e a seção some em vez de ficar desabilitada, porque o que o operador vê tem de bater
  * com o que será enviado (`null` nos dois campos).
  *

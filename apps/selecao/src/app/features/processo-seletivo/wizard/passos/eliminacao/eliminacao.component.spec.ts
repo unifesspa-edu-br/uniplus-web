@@ -6,6 +6,7 @@ import {
   prepararClassificacaoLocal,
   store,
 } from './eliminacao.testing';
+import { REGRA_ELIMINACAO_VAZIA } from './regras-de-eliminacao';
 
 describe('EliminacaoPassoComponent', () => {
   montarEliminacao();
@@ -16,7 +17,7 @@ describe('EliminacaoPassoComponent', () => {
 
   it('sob classificação importada, ainda exige a ordem de alocação', () => {
     store.patchObjectSection('classificacao', {
-      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
       regraCalculoVersao: '1.0',
     });
 
@@ -27,10 +28,11 @@ describe('EliminacaoPassoComponent', () => {
 
   it('sob classificação importada com Fórmula completa, ignora regras de eliminação e valida', () => {
     store.patchObjectSection('classificacao', {
-      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
       regraCalculoVersao: '1.0',
       regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
+      regrasEliminacao: [REGRA_ELIMINACAO_VAZIA],
     });
 
     expect(componente.validar().valid).toBe(true);

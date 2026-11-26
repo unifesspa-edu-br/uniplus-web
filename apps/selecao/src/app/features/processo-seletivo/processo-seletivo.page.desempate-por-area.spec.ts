@@ -190,7 +190,7 @@ describe('ProcessoSeletivoPage — publicação: critérios de desempate por ár
       vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
       store.processoSeletivoId.set('processo-1');
       store.patchObjectSection('classificacao', {
-        regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+        regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
         baseadoEmEnem: true,
         resolucaoPesoAreaEnem: RESOLUCAO,
       });

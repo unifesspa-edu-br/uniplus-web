@@ -114,7 +114,7 @@ export function lerCadastroComPeso(peso: number): void {
 /** Base local completa e válida — cada teste desvia dela para provocar uma recusa. */
 export function prepararClassificacaoLocal(): void {
   store.patchObjectSection('classificacao', {
-    regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+    regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
     regraCalculoVersao: '1.0',
     regraArredondamentoCodigo: 'ARRED-TRUNCAR',
     regraArredondamentoVersao: '1.0',

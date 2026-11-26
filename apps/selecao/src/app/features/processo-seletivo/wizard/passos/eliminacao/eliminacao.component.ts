@@ -46,7 +46,7 @@ import { recusaPorCriterioGravadoSemQuadro } from '../desempate/recusas-do-desem
  * o comando inteiro — regra de cálculo e precisão vêm do passo Fórmula, que
  * não persiste nada por conta própria.
  *
- * Sob `CLASSIFICACAO-IMPORTADA`, esta seção não se aplica: a lista
+ * Sob `CLASSIFICACAO_IMPORTADA`, esta seção não se aplica: a lista
  * de regras é ignorada na gravação (o mapeador força `[]`), e a tela não
  * oferece edição.
  */
@@ -190,7 +190,7 @@ export class EliminacaoPassoComponent {
     ];
 
     if (!this.usaFormulaLocal()) {
-      // CLASSIFICACAO-IMPORTADA (ou regra ainda não escolhida) não usa
+      // CLASSIFICACAO_IMPORTADA (ou regra ainda não escolhida) não usa
       // eliminação local — nada além da base acima a validar aqui.
       return messages.length ? { valid: false, messages } : { valid: true };
     }

@@ -64,7 +64,7 @@ function montar(areasDaSaude: readonly string[] = ['MATEMATICA']) {
   });
   const store = TestBed.inject(ProcessoSeletivoStore);
   store.patchObjectSection('classificacao', {
-    regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+    regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
     baseadoEmEnem: true,
     resolucaoPesoAreaEnem: RESOLUCAO,
   });

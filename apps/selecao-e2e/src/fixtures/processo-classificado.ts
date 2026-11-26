@@ -90,7 +90,7 @@ export const DETALHE_PUBLICADO = {
   ] satisfies readonly JsonDaApi<CriterioDesempateDto>[],
   classificacao: {
     id: '01960000-0000-7000-0000-0000000008c1',
-    regraCalculo: referencia('FORMULA-MEDIA-PONDERADA'),
+    regraCalculo: referencia('FORMULA_MEDIA_PONDERADA'),
     regraArredondamento: referencia('ARRED-TRUNCAR'),
     casasArredondamento: 2,
     regraOrdemAlocacao: referencia('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA'),
@@ -134,7 +134,7 @@ export const DETALHE_PUBLICADO = {
 /** O que cada passo lê em consulta: o rótulo do campo e o trecho que o valor tem de trazer. */
 export const LEITURAS: Record<string, Record<string, string>> = {
   'Fórmula e precisão': {
-    'Regra de cálculo': 'FORMULA-MEDIA-PONDERADA — Resolução CEPS 12/2026',
+    'Regra de cálculo': 'FORMULA_MEDIA_PONDERADA — Resolução CEPS 12/2026',
     'Regra de arredondamento': 'ARRED-TRUNCAR — Edital padrão PSIQ',
     'Casas decimais': '2',
     'Ordem de alocação': 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',

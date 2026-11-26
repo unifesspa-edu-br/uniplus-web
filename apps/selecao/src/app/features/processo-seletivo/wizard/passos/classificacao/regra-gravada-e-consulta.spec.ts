@@ -26,14 +26,14 @@ describe('regra gravada no select, passo lido como texto em consulta — fórmul
       detectar(fixture);
 
       catalogos.regrasCalculo.set([
-        regra('CLASSIFICACAO-IMPORTADA'),
-        regra('FORMULA-MEDIA-PONDERADA'),
+        regra('CLASSIFICACAO_IMPORTADA'),
+        regra('FORMULA_MEDIA_PONDERADA'),
       ]);
       catalogos.regrasArredondamento.set([regra('ARRED-TRUNCAR')]);
       catalogos.regrasOrdemAlocacao.set([regra('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA')]);
       detectar(fixture);
 
-      expect(valorDoSelect(host, 'f-regra-calculo')).toBe('FORMULA-MEDIA-PONDERADA|1.0');
+      expect(valorDoSelect(host, 'f-regra-calculo')).toBe('FORMULA_MEDIA_PONDERADA|1.0');
       expect(valorDoSelect(host, 'f-regra-arredondamento')).toBe('ARRED-TRUNCAR|1.0');
       expect(valorDoSelect(host, 'f-ordem-alocacao')).toBe(
         'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA|1.0',
@@ -44,13 +44,13 @@ describe('regra gravada no select, passo lido como texto em consulta — fórmul
       const { fixture, host, store, catalogos } = await montar(FormulaPassoComponent);
       store.patchObjectSection('classificacao', CLASSIFICACAO_LOCAL);
       publicar(store);
-      catalogos.regrasCalculo.set([regra('FORMULA-MEDIA-PONDERADA')]);
+      catalogos.regrasCalculo.set([regra('FORMULA_MEDIA_PONDERADA')]);
       catalogos.regrasArredondamento.set([regra('ARRED-TRUNCAR')]);
       detectar(fixture);
 
       expect(semControles(host)).toEqual([]);
       expect(leitura(host)).toEqual([
-        ['Regra de cálculo', 'FORMULA-MEDIA-PONDERADA — Base de FORMULA-MEDIA-PONDERADA'],
+        ['Regra de cálculo', 'FORMULA_MEDIA_PONDERADA — Base de FORMULA_MEDIA_PONDERADA'],
         ['Regra de arredondamento', 'ARRED-TRUNCAR — Base de ARRED-TRUNCAR'],
         ['Casas decimais', '2'],
         ['Escala da nota final', '0 a 100'],

@@ -52,7 +52,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       await irAoPasso(page, 'Fórmula e precisão', testInfo);
       await page
         .getByLabel('Regra de cálculo', { exact: true })
-        .selectOption('CLASSIFICACAO-IMPORTADA|1.0');
+        .selectOption('CLASSIFICACAO_IMPORTADA|1.0');
 
       await expect(page.getByLabel('Regra de arredondamento', { exact: true })).toBeHidden();
 

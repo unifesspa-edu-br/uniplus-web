@@ -498,7 +498,7 @@ describe('recusa por um critério de desempate já gravado', () => {
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
-    expect(store.draft().classificacao.regraCalculoCodigo).toBe('FORMULA-MEDIA-PONDERADA');
+    expect(store.draft().classificacao.regraCalculoCodigo).toBe('FORMULA_MEDIA_PONDERADA');
     expect(store.salvando()).toBe(false);
   });
 });
