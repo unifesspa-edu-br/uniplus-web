@@ -2,6 +2,8 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { AuthService } from '@uniplus/shared-auth/bootstrap';
+import { authErrorInterceptor } from '@uniplus/shared-auth/interceptors';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
@@ -148,7 +150,8 @@ const PROVEDORES_DO_PASSO = [
   CadastroInicial,
   GravacaoDoProcesso,
   ...CATALOGOS_DO_CRONOGRAMA,
-  provideHttpClient(withInterceptors([apiResultInterceptor])),
+  provideHttpClient(withInterceptors([authErrorInterceptor, apiResultInterceptor])),
+  { provide: AuthService, useValue: { login: () => Promise.resolve() } },
   provideHttpClientTesting(),
   { provide: SELECAO_BASE_PATH, useValue: BASE },
   { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },

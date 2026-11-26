@@ -1,7 +1,12 @@
 import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DestroyRef } from '@angular/core';
-import { isApiOk, ProblemI18nService, type ApiResult } from '@uniplus/shared-core/http';
+import {
+  comRecusaDePermissaoTratadaNaChamada,
+  isApiOk,
+  ProblemI18nService,
+  type ApiResult,
+} from '@uniplus/shared-core/http';
 import { ModelosFormularioApi, type ModeloFormularioView } from '@uniplus/shared-data/configuracao';
 import { FINALIDADE_INSCRICAO } from '@uniplus/shared-inscricao/formulario';
 import { acompanharLeitura } from '@uniplus/shared-ui/components';
@@ -128,7 +133,7 @@ export class AplicacaoDeModelo {
     this.modelosCarregando.set(true);
     this.modelosErro.set(null);
     this.modelosApi
-      .listar({ tipoProcesso: tipo, ativo: true })
+      .listarTodos({ tipoProcesso: tipo, ativo: true }, comRecusaDePermissaoTratadaNaChamada())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
         // A resposta de uma leitura anterior (outro tipo, ou o mesmo pedido de novo) chegaria por
