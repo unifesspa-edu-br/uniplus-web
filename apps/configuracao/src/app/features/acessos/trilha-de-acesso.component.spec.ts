@@ -1,5 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
+import {
+  AtorDoEventoDoHistoricoDaConcessaoCodigo,
+  TipoDoEventoDoHistoricoDaConcessaoCodigo,
+} from '@uniplus/shared-data/autorizacao';
 import type { EventoDaTrilhaDto } from '@uniplus/shared-data/autorizacao';
 import { origemDaFila } from './origens-do-pedido';
 import { autorDoEvento, TrilhaDeAcessoComponent } from './trilha-de-acesso.component';
@@ -35,16 +39,22 @@ describe('origemDaFila', () => {
   });
 });
 
+const ROTULO_DA_REVOGACAO = 'Acesso revogado na revisão das concessões';
+const ROTULO_DO_ATOR_SISTEMA = 'Processo automático';
+
 describe('TrilhaDeAcessoComponent', () => {
   const sha = 'a'.repeat(64);
   const anexo = '01a18900-0000-7000-8000-000000000001';
   const eventos: readonly EventoDaTrilhaDto[] = [
     {
-      tipo: 'anexo_verificado',
+      tipo: {
+        codigo: TipoDoEventoDoHistoricoDaConcessaoCodigo.ANEXO_VERIFICADO,
+        rotulo: 'Documento verificado',
+      },
       instante: '2026-10-29T15:00:00Z',
       autor: { emissor: 'uniplus:sistema', contaId: 'verificador' },
       detalhe: `Anexo ${anexo}. SHA-256 do PDF: ${sha}.`,
-      ator: 'humano',
+      ator: { codigo: AtorDoEventoDoHistoricoDaConcessaoCodigo.HUMANO, rotulo: 'Pessoa' },
     },
   ];
 
@@ -103,15 +113,21 @@ describe('TrilhaDeAcessoComponent', () => {
   it('mostra o sistema como autor da revogação pela revisão das concessões do perfil, sem identidade humana', () => {
     const { linha } = montar([
       {
-        tipo: 'revogada_pela_migracao',
+        tipo: {
+          codigo: TipoDoEventoDoHistoricoDaConcessaoCodigo.REVOGADA_PELA_MIGRACAO,
+          rotulo: ROTULO_DA_REVOGACAO,
+        },
         instante: '2026-11-09T15:00:00Z',
         autor: null,
         detalhe: 'recusado na migração',
-        ator: 'sistema',
+        ator: {
+          codigo: AtorDoEventoDoHistoricoDaConcessaoCodigo.SISTEMA,
+          rotulo: ROTULO_DO_ATOR_SISTEMA,
+        },
       },
     ]);
 
-    expect(linha.textContent).toContain('Acesso revogado na revisão das concessões');
-    expect(linha.querySelector('[data-label="Quem"]')?.textContent).toBe('Sistema');
+    expect(linha.textContent).toContain(ROTULO_DA_REVOGACAO);
+    expect(linha.querySelector('[data-label="Quem"]')?.textContent).toBe(ROTULO_DO_ATOR_SISTEMA);
   });
 });

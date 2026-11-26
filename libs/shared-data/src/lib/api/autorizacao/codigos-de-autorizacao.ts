@@ -30,13 +30,6 @@ export const EtapaDoPedido = {
 } as const;
 export type EtapaDoPedido = (typeof EtapaDoPedido)[keyof typeof EtapaDoPedido];
 
-export const OrigemDaRetomada = {
-  DECISAO_DA_ETAPA: 'DECISAO_DA_ETAPA',
-  TROCA_DE_VIGENCIA: 'TROCA_DE_VIGENCIA',
-  RECLASSIFICACAO: 'RECLASSIFICACAO',
-} as const;
-export type OrigemDaRetomada = (typeof OrigemDaRetomada)[keyof typeof OrigemDaRetomada];
-
 export const OrigemDaVersao = {
   PROPOSTA: 'PROPOSTA',
   REMOCAO: 'REMOCAO',
@@ -142,22 +135,6 @@ export const TipoDeOrigem = {
   INSTALACAO: 'INSTALACAO',
 } as const;
 export type TipoDeOrigem = (typeof TipoDeOrigem)[keyof typeof TipoDeOrigem];
-
-export const TipoDoEventoDaContencao = {
-  SUSPENSAO: 'SUSPENSAO',
-  RETOMADA: 'RETOMADA',
-  DESATIVACAO: 'DESATIVACAO',
-  REATIVACAO: 'REATIVACAO',
-} as const;
-export type TipoDoEventoDaContencao =
-  (typeof TipoDoEventoDaContencao)[keyof typeof TipoDoEventoDaContencao];
-
-export const AtorDoEventoDaContencao = {
-  HUMANO: 'HUMANO',
-  SISTEMA: 'SISTEMA',
-} as const;
-export type AtorDoEventoDaContencao =
-  (typeof AtorDoEventoDaContencao)[keyof typeof AtorDoEventoDaContencao];
 
 export const SituacaoDoItemDaRevisao = {
   PENDENTE: 'PENDENTE',

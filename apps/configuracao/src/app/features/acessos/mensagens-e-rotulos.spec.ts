@@ -102,7 +102,6 @@ describe('rótulos de acesso', () => {
     expect(tipoDeEvento('pedido_criado')).toBe('Pedido criado');
     expect(tipoDeEvento('APROVADO')).toBe('Aprovação');
     expect(tipoDeEvento('RECUSADO')).toBe('Recusa');
-    expect(tipoDeEvento('SUSPENSAO')).toBe('Perfil suspenso');
     expect(tipoDeEvento('prazo_vencido_entre_etapas')).toBe('Prazo vencido entre as etapas');
     expect(sensibilidade('Sensivel')).toBe('Dado sensível');
     expect(etapa(EtapaDoPedido.PROTECAO_DE_DADOS)).toBe('Proteção de dados');

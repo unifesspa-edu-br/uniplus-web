@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
 import type { EventoDaTrilhaDto } from '@uniplus/shared-data/autorizacao';
 import { formatarDataBr } from '@uniplus/shared-utils';
-import { detalheDaTrilha, tipoDeEvento } from './rotulos-de-acesso';
+import { detalheDaTrilha } from './rotulos-de-acesso';
 
 const EMISSOR_DO_SISTEMA = 'uniplus:sistema';
 const TAMANHO_DO_IDENTIFICADOR = 8;
@@ -16,6 +16,15 @@ export function autorDoEvento(autor: EventoDaTrilhaDto['autor']): string {
   if (autor.emissor === EMISSOR_DO_SISTEMA) return 'Verificador de documentos';
   const nome = autor.nome?.trim();
   return nome ? nome : `Pessoa ${autor.contaId.slice(0, TAMANHO_DO_IDENTIFICADOR)}`;
+}
+
+/** O que a tabela mostra de cada evento; tipo e ator vêm da API com o rótulo pronto. */
+export interface EventoDaTabela {
+  readonly tipo: { readonly rotulo: string };
+  readonly ator: { readonly rotulo: string };
+  readonly instante: string;
+  readonly autor: EventoDaTrilhaDto['autor'];
+  readonly detalhe: string | null;
 }
 
 /** Eventos de um pedido ou de uma concessão, em ordem cronológica. */
@@ -55,7 +64,7 @@ export function autorDoEvento(autor: EventoDaTrilhaDto['autor']): string {
                 (keydown.space)="alternarPeloTeclado($index, $event)"
               >
                 <td data-label="Quando">{{ quando(evento) }}</td>
-                <td data-label="Evento">{{ rotulo(evento.tipo) }}</td>
+                <td data-label="Evento">{{ evento.tipo.rotulo }}</td>
                 <td data-label="Quem">{{ autor(evento) }}</td>
                 <td data-label="Detalhe">
                   <span class="cfg-trilha__detalhe">{{ detalhe(evento) }}</span>
@@ -71,7 +80,7 @@ export function autorDoEvento(autor: EventoDaTrilhaDto['autor']): string {
                       </div>
                       <div>
                         <dt>Evento</dt>
-                        <dd>{{ rotulo(evento.tipo) }}</dd>
+                        <dd>{{ evento.tipo.rotulo }}</dd>
                       </div>
                       <div>
                         <dt>Quem</dt>
@@ -93,7 +102,7 @@ export function autorDoEvento(autor: EventoDaTrilhaDto['autor']): string {
   `,
 })
 export class TrilhaDeAcessoComponent {
-  readonly eventos = input.required<readonly EventoDaTrilhaDto[]>();
+  readonly eventos = input.required<readonly EventoDaTabela[]>();
   readonly legenda = input('Trilha de eventos');
 
   /** Posição do evento com o detalhe completo aberto, abaixo da linha; um por vez. */
@@ -110,20 +119,16 @@ export class TrilhaDeAcessoComponent {
     this.alternar(posicao);
   }
 
-  protected rotulo(tipo: string): string {
-    return tipoDeEvento(tipo);
-  }
-
   /** Data e hora numa linha só: `29/10/2026 15:02`. */
-  protected quando(evento: EventoDaTrilhaDto): string {
+  protected quando(evento: EventoDaTabela): string {
     return formatarDataBr(evento.instante, 'datetime').replace(', ', ' ');
   }
 
-  protected detalhe(evento: EventoDaTrilhaDto): string {
+  protected detalhe(evento: EventoDaTabela): string {
     return detalheDaTrilha(evento.detalhe);
   }
 
-  protected autor(evento: EventoDaTrilhaDto): string {
-    return autorDoEvento(evento.autor);
+  protected autor(evento: EventoDaTabela): string {
+    return evento.autor === null ? evento.ator.rotulo : autorDoEvento(evento.autor);
   }
 }
