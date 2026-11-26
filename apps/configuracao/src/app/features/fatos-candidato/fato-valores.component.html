@@ -1,5 +1,7 @@
 @if (fato(); as f) {
-  @if (temValores() || f.definicao.valores.declarados.length > 0) {
+  @if (valoresDeCadaProcesso()) {
+    <p role="status">Os valores vêm da declaração de cada processo.</p>
+  } @else if (temValores() || f.definicao.valores.declarados.length > 0) {
     <ui-recolhivel titulo="Valores">
       @if (f.definicao.valores.declarados.length > 0) {
         <div class="table-responsive">
