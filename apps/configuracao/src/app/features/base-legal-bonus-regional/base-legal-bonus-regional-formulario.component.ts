@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { type CidadeResumoDto } from '@uniplus/shared-data/geo';
 import {
   AlertComponent,
   DrawerComponent,
@@ -51,8 +50,7 @@ export class BaseLegalBonusRegionalFormularioComponent {
 
   readonly salvar = output<void>();
   readonly cancelar = output<void>();
-  readonly buscarMunicipio = output<string>();
-  readonly adicionarMunicipio = output<CidadeResumoDto>();
+  readonly escolherMunicipios = output<readonly string[]>();
   readonly removerMunicipio = output<string>();
 
   private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });

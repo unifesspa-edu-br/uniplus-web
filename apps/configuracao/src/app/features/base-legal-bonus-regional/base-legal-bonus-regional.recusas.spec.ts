@@ -9,6 +9,7 @@ import {
   portaria,
   problema,
   recusaDeCampo,
+  verificarErroDeMunicipioObrigatorio,
 } from './base-legal-bonus-regional.testing';
 
 const PROCESSANDO = { code: 'uniplus.idempotency.processing_conflict', title: 'Em processamento' };
@@ -54,11 +55,6 @@ describe('BaseLegalBonusRegionalPage — recusas e validação', () => {
       ]) {
         expect(controle.getAttribute('aria-required')).toBe('true');
       }
-    });
-
-    it('limita a busca de município ao tamanho que a API de geografia aceita', async () => {
-      await p.abrirCadastro();
-      expect(p.buscaDeMunicipio().getAttribute('maxlength')).toBe('256');
     });
 
     it('mostra o aviso de limite em cada campo de texto acima do que o servidor aceita', async () => {
@@ -134,24 +130,31 @@ describe('BaseLegalBonusRegionalPage — recusas e validação', () => {
       expect(p.campo('descricao').getAttribute('aria-invalid')).toBe('true');
     });
 
-    it('sem nenhum município, o envio é barrado, a falta é apontada e o foco vai à busca', async () => {
+    const verificarEnvioSemMunicipio = async () => {
       await p.abrirCadastro();
       p.elemento<HTMLButtonElement>('button[aria-label="Remover Marabá"]').click();
       await p.propagar();
       await tentarEnviar();
 
       p.http.expectNone(ESCRITA);
-      const erro = p.elemento('#cfg-blbr-municipios-erro');
-      expect(erro.textContent?.trim()).toBe('Adicione ao menos um município.');
-      expect(erro.getAttribute('role')).toBe('alert');
-      expect(p.buscaDeMunicipio().getAttribute('aria-invalid')).toBe('true');
-      expect(p.buscaDeMunicipio().getAttribute('aria-describedby')).toBe(
-        'cfg-blbr-municipios-erro',
-      );
-      expect(document.activeElement).toBe(p.buscaDeMunicipio());
-    });
+      verificarErroDeMunicipioObrigatorio(p);
+    };
 
-    it('reabrir o formulário não herda a recusa nem o foco da vez anterior', async () => {
+    it(
+      'sem nenhum município, o envio é barrado, a falta é apontada e o foco vai à busca',
+      verificarEnvioSemMunicipio,
+    );
+
+    const verificarFormularioReaberto = () => {
+      expect(p.campo('descricao').getAttribute('aria-invalid')).toBeNull();
+      expect(p.fixture.nativeElement.querySelector('ui-drawer ui-alert')).toBeNull();
+      expect(p.fixture.nativeElement.querySelector('.cfg-municipio-selecionados')).toBeNull();
+      expect(p.elemento('cfg-campo-de-municipios').textContent).toContain(
+        'Nenhum município adicionado ainda.',
+      );
+    };
+
+    const verificarReabertura = async () => {
       await p.abrirCadastro();
       (await p.enviar()).flush(...recusaDeCampo('descricao', 'Descrição recusada.'));
       await p.propagar();
@@ -160,72 +163,79 @@ describe('BaseLegalBonusRegionalPage — recusas e validação', () => {
 
       p.edicao.abrirCadastro();
       await p.propagar();
-      expect(p.campo('descricao').getAttribute('aria-invalid')).toBeNull();
-      expect(p.fixture.nativeElement.querySelector('ui-drawer ui-alert')).toBeNull();
-      expect(p.fixture.nativeElement.querySelector('.cfg-municipio-selecionados')).toBeNull();
-      expect(p.elemento('cfg-campo-de-municipios').textContent).toContain(
-        'Nenhum município adicionado ainda.',
-      );
-    });
+      verificarFormularioReaberto();
+    };
+
+    it('reabrir o formulário não herda a recusa nem o foco da vez anterior', verificarReabertura);
   });
 
   describe('ao salvar', () => {
+    const verificarRecusaDoCampo = async (campo: string) => {
+      await p.abrirCadastro();
+      (await p.enviar()).flush(...recusaDeCampo(campo, 'Valor recusado.'));
+      await p.propagar();
+      await p.propagar();
+
+      const controle = p.campo(campo);
+      expect(controle.getAttribute('aria-invalid')).toBe('true');
+      expect(controle.closest('.field')?.classList.contains('is-error')).toBe(true);
+      expect(mensagemDe(campo)).toBe('Valor recusado.');
+      expect(controle.getAttribute('aria-describedby')).toContain('-erro');
+      expect(document.activeElement).toBe(controle);
+      expect(p.elemento('ui-drawer [role="status"]').textContent).toContain('Revise os campos');
+      expect(p.erros).not.toHaveBeenCalled();
+    };
+
     it.each(['tipoInstrumento', 'identificacao', 'descricao'] as const)(
       'mostra a recusa de %s no campo e o foca',
-      async (campo) => {
-        await p.abrirCadastro();
-        (await p.enviar()).flush(...recusaDeCampo(campo, 'Valor recusado.'));
-        await p.propagar();
-        await p.propagar();
-
-        const controle = p.campo(campo);
-        expect(controle.getAttribute('aria-invalid')).toBe('true');
-        expect(controle.closest('.field')?.classList.contains('is-error')).toBe(true);
-        expect(mensagemDe(campo)).toBe('Valor recusado.');
-        expect(controle.getAttribute('aria-describedby')).toContain('-erro');
-        expect(document.activeElement).toBe(controle);
-        expect(p.elemento('ui-drawer [role="status"]').textContent).toContain('Revise os campos');
-        expect(p.erros).not.toHaveBeenCalled();
-      },
+      verificarRecusaDoCampo,
     );
+
+    const conferirRecusaDosMunicipios = () => {
+      expect(p.elemento('#cfg-blbr-municipios-erro').textContent?.trim()).toBe(
+        'Município inválido.',
+      );
+      expect(p.buscaDeMunicipio().getAttribute('aria-invalid')).toBe('true');
+      expect(p.buscaDeMunicipio().getAttribute('aria-describedby')).toContain(
+        'cfg-blbr-municipios-erro',
+      );
+      expect(document.activeElement).toBe(p.buscaDeMunicipio());
+      expect(p.erros).not.toHaveBeenCalled();
+    };
+
+    const verificarRecusaDosMunicipios = async (campo: string) => {
+      await p.abrirCadastro();
+      (await p.enviar()).flush(...recusaDeCampo(campo, 'Município inválido.'));
+      await p.propagar();
+      await p.propagar();
+
+      conferirRecusaDosMunicipios();
+    };
 
     it.each(['municipios', 'municipios[0]'])(
       'a recusa de %s aparece junto da busca de município, que é marcada e focada',
-      async (campo) => {
-        await p.abrirCadastro();
-        (await p.enviar()).flush(...recusaDeCampo(campo, 'Município inválido.'));
-        await p.propagar();
-        await p.propagar();
-
-        expect(p.elemento('#cfg-blbr-municipios-erro').textContent?.trim()).toBe(
-          'Município inválido.',
-        );
-        expect(p.buscaDeMunicipio().getAttribute('aria-invalid')).toBe('true');
-        expect(p.buscaDeMunicipio().getAttribute('aria-describedby')).toBe(
-          'cfg-blbr-municipios-erro',
-        );
-        expect(document.activeElement).toBe(p.buscaDeMunicipio());
-        expect(p.erros).not.toHaveBeenCalled();
-      },
+      verificarRecusaDosMunicipios,
     );
 
-    it('a recusa dos municípios some ao escolher outro município', async () => {
+    const escolherOutroMunicipio = () => {
+      p.escolherMunicipios(
+        { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+        { codigoIbge: '1503606', nome: 'Itupiranga', uf: 'PA' },
+      );
+    };
+
+    const verificarCorrecaoDosMunicipios = async () => {
       await p.abrirCadastro();
       (await p.enviar()).flush(...recusaDeCampo('municipios', 'Município inválido.'));
       await p.propagar();
 
-      p.municipios.buscar('');
-      p.municipios.adicionar({
-        id: 'x',
-        codigoIbge: '1503606',
-        nome: 'Itupiranga',
-        uf: 'PA',
-        ddd: '94',
-      });
+      escolherOutroMunicipio();
       await p.propagar();
 
       expect(p.fixture.nativeElement.querySelector('#cfg-blbr-municipios-erro')).toBeNull();
-    });
+    };
+
+    it('a recusa dos municípios some ao escolher outro município', verificarCorrecaoDosMunicipios);
 
     it('a recusa dos municípios some no reenvio, mesmo que ele falhe por outro motivo', async () => {
       await p.abrirCadastro();
@@ -239,14 +249,19 @@ describe('BaseLegalBonusRegionalPage — recusas e validação', () => {
       expect(p.fixture.nativeElement.querySelector('#cfg-blbr-municipios-erro')).toBeNull();
     });
 
-    it('reenviar depois de recusa corrigida emite o POST com chave nova, fecha e devolve o foco', async () => {
-      await p.abrirCadastro();
+    const corrigirIdentificacaoRecusada = async () => {
       const primeira = await p.enviar();
       const chave = chaveDe(primeira);
       primeira.flush(...recusaDeCampo('identificacao', 'Identificação longa.'));
       await p.propagar();
       await p.propagar();
       p.preencher('identificacao', 'Portaria revisada');
+      return chave;
+    };
+
+    const verificarReenvioCorrigido = async () => {
+      await p.abrirCadastro();
+      const chave = await corrigirIdentificacaoRecusada();
 
       const segunda = await p.enviar();
       expect(chaveDe(segunda)).not.toBe(chave);
@@ -255,7 +270,12 @@ describe('BaseLegalBonusRegionalPage — recusas e validação', () => {
 
       expect(p.edicao.aberto()).toBe(false);
       expect(document.activeElement).toBe(p.novo());
-    });
+    };
+
+    it(
+      'reenviar depois de recusa corrigida emite o POST com chave nova, fecha e devolve o foco',
+      verificarReenvioCorrigido,
+    );
 
     it('a recusa de um campo não impede reenviar sem alterá-lo, pois só a validação local barra', async () => {
       await p.abrirCadastro();
@@ -269,11 +289,15 @@ describe('BaseLegalBonusRegionalPage — recusas e validação', () => {
       await p.recarregarCom([portaria]);
     });
 
-    it('descartar a recusa do servidor no reenvio não emite valueChanges', async () => {
+    const recusarDescricao = async () => {
       await p.abrirCadastro();
       (await p.enviar()).flush(...recusaDeCampo('descricao', 'Descrição recusada.'));
       await p.propagar();
       await p.propagar();
+    };
+
+    const verificarEmissoesNoReenvio = async () => {
+      await recusarDescricao();
       let emissoes = 0;
       const inscricoes = [
         p.edicao.form.valueChanges.subscribe(() => emissoes++),
@@ -285,7 +309,12 @@ describe('BaseLegalBonusRegionalPage — recusas e validação', () => {
       expect(emissoes).toBe(0);
       segunda.flush(...criado());
       await p.recarregarCom([portaria]);
-    });
+    };
+
+    it(
+      'descartar a recusa do servidor no reenvio não emite valueChanges',
+      verificarEmissoesNoReenvio,
+    );
 
     it('conflito de processamento mantém a chave e mostra a mensagem no alerta, sem marcar campo', async () => {
       await p.abrirCadastro();

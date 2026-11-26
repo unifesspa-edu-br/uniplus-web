@@ -150,6 +150,7 @@ export function nomeComUf(nome: string, uf: string): string {
         [obrigatorio]="obrigatorio()"
         [descritoPor]="descricoes()"
         [contagemVisivel]="contagemVisivel()"
+        (keydown.enter)="aoApertarEnterNaBusca($event)"
         (buscaChange)="buscar($event)"
         (valuesChange)="valuesChange.emit($event)"
       />
@@ -292,6 +293,11 @@ export class ValorDeMunicipioComponent {
   /** O nome gravado vale no lugar do nome que a busca achou. */
   private rotuloDaOpcao(codigo: string): string {
     return this.rotulosGravados()[codigo] ?? this.nomes.rotulo(codigo);
+  }
+
+  protected aoApertarEnterNaBusca(evento: Event): void {
+    if (evento instanceof KeyboardEvent && (evento.isComposing || evento.keyCode === 229)) return;
+    if (this.multiplo() && evento.target instanceof HTMLInputElement) evento.preventDefault();
   }
 
   protected buscar(termo: string): void {

@@ -14,6 +14,8 @@ import {
   editar,
   campoDaIdentificacao,
   novo,
+  pesquisarBelemEApertarEnter,
+  verificarCadastroAberto,
   titulo,
 } from '../support/passos-da-base-legal-bonus-regional';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
@@ -21,6 +23,14 @@ import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 test.describe('Base legal de bônus regional — escritas', () => {
   test.beforeEach(async ({ page }) => {
     await mockConfiguracaoRuntimeConfig(page);
+  });
+
+  test('Enter na busca sem opção ativa não cria a base legal', async ({ page }) => {
+    const { envios } = await mockApi(page, [CRIADO], { recarga: 'com-o-item' });
+    const formulario = await abrirCadastro(page);
+    await pesquisarBelemEApertarEnter(formulario);
+    await verificarCadastroAberto(formulario);
+    expect(envios).toEqual([]);
   });
 
   test('criação pendente preserva foco e valores, recusa reenvio, Esc e X; a recusa foca o campo', async ({

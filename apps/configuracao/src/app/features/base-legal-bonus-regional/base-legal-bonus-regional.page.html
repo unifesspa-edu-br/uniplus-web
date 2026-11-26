@@ -45,8 +45,7 @@
   [municipios]="municipios.campo()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
-  (buscarMunicipio)="municipios.buscar($event)"
-  (adicionarMunicipio)="municipios.adicionar($event)"
+  (escolherMunicipios)="municipios.escolher($event)"
   (removerMunicipio)="municipios.remover($event)"
 />
 <cfg-confirmacao-de-remocao

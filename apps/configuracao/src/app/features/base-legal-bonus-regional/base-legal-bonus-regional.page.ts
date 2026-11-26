@@ -1,5 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
+import {
+  acompanharLeitura,
+  BUSCA_DE_MUNICIPIOS,
+  FalhaDeLeituraComponent,
+} from '@uniplus/shared-ui/components';
+import { buscaDeMunicipiosDaConfiguracao } from '../../shared/geo/busca-de-municipios-da-configuracao';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { BaseLegalBonusRegionalFormularioComponent } from './base-legal-bonus-regional-formulario.component';
 import { BaseLegalBonusRegionalListaComponent } from './base-legal-bonus-regional-lista.component';
@@ -20,6 +25,7 @@ import { TiposDeInstrumento } from './tipos-de-instrumento';
     FalhaDeLeituraComponent,
   ],
   providers: [
+    { provide: BUSCA_DE_MUNICIPIOS, useFactory: buscaDeMunicipiosDaConfiguracao },
     BaseLegalBonusRegionalStore,
     CatalogoDeTiposDeInstrumento,
     EdicaoDasBasesLegais,
