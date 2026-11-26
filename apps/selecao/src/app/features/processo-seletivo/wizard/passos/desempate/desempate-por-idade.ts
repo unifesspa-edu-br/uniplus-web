@@ -12,7 +12,6 @@ export const FATO_DATA_NASCIMENTO = 'DATA_NASCIMENTO';
 
 /** Posição dos passos que as incoerências ligam, derivada da ordem única dos passos. */
 export const PASSO_DESEMPATE = ROTULOS_DOS_PASSOS.indexOf('Desempate');
-export const PASSO_FORMULARIO = ROTULOS_DOS_PASSOS.indexOf('Formulários');
 
 function declara(criterios: readonly CriterioDesempateConfigurado[], regraCodigo: string): boolean {
   return criterios.some((criterio) => criterio.regraCodigo === regraCodigo);

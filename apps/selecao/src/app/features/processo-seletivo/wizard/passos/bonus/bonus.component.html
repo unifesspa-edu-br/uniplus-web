@@ -1,6 +1,6 @@
 <p class="step-subtitle">
-  FADA. O processo declara se aplica o FADA ou não: a resposta é obrigatória para
-  publicar, e "não aplica" é uma resposta válida.
+  FADA. O processo declara se aplica o FADA ou não: a resposta é obrigatória para publicar, e "não
+  aplica" é uma resposta válida.
 </p>
 @if (!store.emConsulta()) {
   <ui-falha-de-leitura titulo="Catálogos de regras" [leitura]="catalogos.leitura" />
@@ -178,10 +178,32 @@
               ou não do formulário de inscrição, como o pedido do acréscimo, ou um fato que o
               processo deriva assim, sem depender do que só o formulário de isenção coleta. A
               publicação exige a escolha.
-              @if (fatosDeElegibilidade().length === 0) {
-                Monte antes o formulário de inscrição no passo Formulários.
-              }
             </span>
+            @if (fatosDeElegibilidade().length === 0 && store.aceitaEdicao()) {
+              <div class="alert alert--info" role="status" id="f-bonus-elegibilidade-vazia">
+                @if (formularioMontado()) {
+                  <p>
+                    A lista está vazia porque o formulário de inscrição não tem um campo de sim ou
+                    não que diga quem recebe o acréscimo. Inclua esse campo no passo Formulários; o
+                    que já foi preenchido neste passo continua aqui quando você voltar.
+                  </p>
+                } @else {
+                  <p>
+                    A lista está vazia porque o formulário de inscrição ainda não foi montado.
+                    Monte-o no passo Formulários; o que já foi preenchido neste passo continua aqui
+                    quando você voltar.
+                  </p>
+                }
+                <button
+                  type="button"
+                  class="btn btn--secondary btn--sm"
+                  id="f-bonus-ir-formularios"
+                  (click)="irParaFormularios()"
+                >
+                  Ir para o passo Formulários
+                </button>
+              </div>
+            }
             @if (fatoEscolhidoForaDoFormulario(); as codigo) {
               <span class="field__hint" id="f-bonus-elegibilidade-erro" role="alert">
                 O fato {{ codigo }} não está mais no formulário de inscrição como campo de sim ou
