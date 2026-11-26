@@ -15,7 +15,7 @@ import {
 } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { ModeloFormularioView, ModelosFormularioApi } from '@uniplus/shared-data/configuracao';
-import { sugerirCodigoDeCadastro } from '@uniplus/shared-utils';
+import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
 import { campoDaRecusa, comandoDeCriacao, criarFormularioDeModelo } from './modelo-formulario-form';
 import { ModelosFormularioStore } from './modelos-formulario.store';
 import {
@@ -52,22 +52,19 @@ export class EdicaoDosModelosFormulario {
   readonly emAndamento = signal<string | null>(null);
   readonly anuncioDaSituacao = signal('');
   private chaveDaCriacao = idempotencyKey.create();
-  private ultimaSugestao = '';
   readonly form = criarFormularioDeModelo();
+  private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(this.form.controls, () => true);
 
   constructor() {
-    this.form.controls.nome.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe((nome) => this.sugerirCodigo(nome));
     this.acompanharRecarga();
   }
 
   abrirCriacao(): void {
     if (this.gravando()) return;
+    this.ligacaoDoCodigo.reiniciar();
     this.form.reset();
     this.erroDaCriacao.set(null);
     this.recusaDaCriacao.set('');
-    this.ultimaSugestao = '';
     this.chaveDaCriacao = idempotencyKey.create();
     this.drawerAberto.set(true);
   }
@@ -199,14 +196,5 @@ export class EdicaoDosModelosFormulario {
         this.emAndamento.set(null);
       }
     });
-  }
-
-  /** A sugestão de código acompanha o nome até o administrador escrever outro código. */
-  private sugerirCodigo(nome: string): void {
-    const atual = this.form.controls.codigo.value;
-    if (atual !== '' && atual !== this.ultimaSugestao) return;
-    this.ultimaSugestao = sugerirCodigoDeCadastro(nome);
-    this.form.controls.codigo.setValue(this.ultimaSugestao, { emitEvent: false });
-    if (this.form.controls.codigo.hasError('maxlength')) this.form.controls.codigo.markAsDirty();
   }
 }
