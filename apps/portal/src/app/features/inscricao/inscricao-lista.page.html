@@ -59,15 +59,13 @@
 <ul class="inscricao-lista" role="list">
   @for (inscricao of inscricoesFiltradas(); track inscricao.id) {
   <li class="edital-row inscricao-lista-item">
-    <div class="inscricao-lista-item__cabecalho">
-      <ng-container *ngTemplateOutlet="situacaoDaInscricao; context: { $implicit: inscricao }" />
-    </div>
     <div class="inscricao-lista-item__corpo">
       <h2 class="inscricao-lista-item__titulo">{{ inscricao.nome }}</h2>
-      <ng-container *ngTemplateOutlet="cursosDaInscricao; context: { $implicit: inscricao }" />
+      <ng-container *ngTemplateOutlet="situacaoDaInscricao; context: { $implicit: inscricao }" />
       @if (inscricao.mensagem) {
       <p>{{ inscricao.mensagem }}</p>
       }
+      <ng-container *ngTemplateOutlet="cursosDaInscricao; context: { $implicit: inscricao }" />
     </div>
     <div class="inscricao-lista-item__rodape">
       <ng-container *ngTemplateOutlet="acoesDaInscricao; context: { $implicit: inscricao }" />
@@ -79,14 +77,12 @@
 <div class="inscricoes-grid">
   @for(inscricao of inscricoesFiltradas(); track inscricao.id) {
   <article class="card">
-    <div class="card__header">
-      <ng-container *ngTemplateOutlet="situacaoDaInscricao; context: { $implicit: inscricao }" />
-    </div>
     <h2 class="inscricao-lista-item__titulo">{{ inscricao.nome }}</h2>
-    <ng-container *ngTemplateOutlet="cursosDaInscricao; context: { $implicit: inscricao }" />
+    <ng-container *ngTemplateOutlet="situacaoDaInscricao; context: { $implicit: inscricao }" />
     @if (inscricao.mensagem) {
     <p>{{ inscricao.mensagem }}</p>
     }
+    <ng-container *ngTemplateOutlet="cursosDaInscricao; context: { $implicit: inscricao }" />
     <div class="card__footer inscricao-card__rodape">
       <ng-container *ngTemplateOutlet="acoesDaInscricao; context: { $implicit: inscricao }" />
     </div>
@@ -144,12 +140,14 @@
 </ui-dialog>
 
 <ng-template #situacaoDaInscricao let-inscricao>
-  <ui-tag [dot]="true" [variant]="exibeInscricaoStatusVariantLabel(inscricao)">
-    {{ inscricao.rotuloDaSituacao }}
-  </ui-tag>
-  @if (inscricao.numero) {
-  <span class="ptl-meta">Nº {{ inscricao.numero }}</span>
-  }
+  <div class="inscricao-situacao">
+    <ui-tag [dot]="true" [variant]="exibeInscricaoStatusVariantLabel(inscricao)">
+      {{ inscricao.rotuloDaSituacao }}
+    </ui-tag>
+    @if (inscricao.numero) {
+    <span class="ptl-meta">Nº {{ inscricao.numero }}</span>
+    }
+  </div>
 </ng-template>
 
 <ng-template #cursosDaInscricao let-inscricao>

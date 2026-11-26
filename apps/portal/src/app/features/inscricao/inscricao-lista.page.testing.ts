@@ -9,6 +9,7 @@ import { type ApiResult, apiOk } from '@uniplus/shared-core/http';
 import {
   type AcoesDaInscricaoDto,
   type MinhaInscricaoDto,
+  type MotivoDasInscricoesFechadasCodigo,
   SituacaoInscricaoCodigo,
 } from '@uniplus/shared-data/selecao';
 
@@ -29,6 +30,12 @@ interface ComVisao {
   visaoEfetiva: () => Visao;
 }
 
+const ROTULO_DA_SITUACAO: Record<SituacaoInscricaoCodigo, string> = {
+  [SituacaoInscricaoCodigo.RASCUNHO]: 'Rascunho',
+  [SituacaoInscricaoCodigo.ENVIADA]: 'Enviada',
+  [SituacaoInscricaoCodigo.CANCELADA]: 'Cancelada',
+};
+
 const CURSO_ESCOLHIDO = { ordem: 1, cursoNome: 'Medicina', cursoGrau: 'Bacharelado' };
 
 type DadosDaSituacao = Pick<
@@ -46,7 +53,7 @@ function dadosDaSituacao(situacao: SituacaoInscricaoCodigo): DadosDaSituacao {
   const rascunho = situacao === SituacaoInscricaoCodigo.RASCUNHO;
   const semComprovante = rascunho || situacao === SituacaoInscricaoCodigo.CANCELADA;
   return {
-    situacao: { codigo: situacao, rotulo: 'Situação de teste' },
+    situacao: { codigo: situacao, rotulo: ROTULO_DA_SITUACAO[situacao] },
     numeroInscricao: rascunho ? null : '00000042',
     opcoesDeCurso: rascunho ? [] : [CURSO_ESCOLHIDO],
     canceladaEm: null,
@@ -79,6 +86,24 @@ export function inscricao(
     nomeDoProcesso,
     ...dadosDaSituacao(situacao),
     acoes: acoesDe(situacao, aberta),
+    motivoDasInscricoesFechadas: null,
+  };
+}
+
+/**
+ * O rascunho que a API não deixa continuar, com o motivo que ela informa. O código entra como texto
+ * para o teste poder levar à lista um valor que o contrato ainda não tem.
+ */
+export function rascunhoSemContinuar(
+  id: string,
+  nomeDoProcesso: string,
+  motivo: string | null,
+): MinhaInscricaoDto {
+  return {
+    ...inscricao(id, SituacaoInscricaoCodigo.RASCUNHO, nomeDoProcesso, false),
+    motivoDasInscricoesFechadas: motivo
+      ? { codigo: motivo as MotivoDasInscricoesFechadasCodigo, rotulo: 'Rótulo do motivo' }
+      : null,
   };
 }
 
