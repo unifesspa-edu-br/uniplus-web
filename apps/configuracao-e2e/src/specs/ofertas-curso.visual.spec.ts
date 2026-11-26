@@ -175,6 +175,7 @@ test.describe('Oferta de curso — geometria', () => {
     await aguardarFimDaEntrada(drawer);
     const painel = drawer.locator('.uni-drawer__panel');
     const formulario = drawer.locator('form.form-drawer__form');
+    const corpo = drawer.locator('.uni-drawer__body');
     const rodape = drawer.locator('.form-drawer__footer');
 
     const geoPainel = await caixa(painel);
@@ -183,7 +184,7 @@ test.describe('Oferta de curso — geometria', () => {
     expect(Math.abs(geoRodape.x - geoPainel.x)).toBeLessThanOrEqual(TOLERANCIA);
     expect(Math.abs(geoRodape.base - geoPainel.base)).toBeLessThanOrEqual(TOLERANCIA);
 
-    const overflowY = await formulario.evaluate((el) => getComputedStyle(el).overflowY);
+    const overflowY = await corpo.evaluate((el) => getComputedStyle(el).overflowY);
     expect(overflowY).toBe('auto');
 
     await testInfo.attach(`${testInfo.project.name}-oferta-form-drawer`, {
@@ -193,15 +194,15 @@ test.describe('Oferta de curso — geometria', () => {
 
     await page.setViewportSize({ width: 320, height: 640 });
     await expect(formulario).toBeVisible();
-    const precisaRolar = await formulario.evaluate((el) => el.scrollHeight > el.clientHeight);
+    const precisaRolar = await corpo.evaluate((el) => el.scrollHeight > el.clientHeight);
     expect(precisaRolar).toBe(true);
 
-    await formulario.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
-    const geoFormulario = await caixa(formulario);
+    await corpo.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+    const geoRodapeRolado = await caixa(rodape);
     const geoUltimoCampo = await caixa(
       drawer.locator('input[formcontrolname="atoAutorizacaoMec"]'),
     );
-    expect(geoUltimoCampo.base).toBeLessThanOrEqual(geoFormulario.base + TOLERANCIA);
+    expect(geoUltimoCampo.base).toBeLessThanOrEqual(geoRodapeRolado.y + TOLERANCIA);
 
     for (const nome of ['Cancelar', 'Criar oferta']) {
       const geoBotao = await caixa(drawer.getByRole('button', { name: nome }));

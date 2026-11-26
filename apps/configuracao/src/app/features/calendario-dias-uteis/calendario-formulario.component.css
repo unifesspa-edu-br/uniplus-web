@@ -7,7 +7,6 @@
 
 .cfg-calendario-form {
   gap: var(--space-7);
-  overflow: visible;
 }
 
 .cfg-calendario-form__campos {
