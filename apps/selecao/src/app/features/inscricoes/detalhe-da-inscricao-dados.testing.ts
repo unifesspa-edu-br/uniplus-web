@@ -77,7 +77,7 @@ export const FERNANDA: InscricaoAdministrativaDto = {
   situacao: INSCRICAO_ENVIADA,
   ofertas: [oferta(1, MEDICINA), oferta(2, DIREITO)],
   numeroInscricao: '2027-000101',
-  submetidaEm: '2026-12-10T15:00:00Z',
+  enviadaEm: '2026-12-10T15:00:00Z',
   secoes: [
     {
       codigo: 'identificacao',

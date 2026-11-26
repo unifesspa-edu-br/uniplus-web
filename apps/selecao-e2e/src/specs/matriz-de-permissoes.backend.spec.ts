@@ -48,7 +48,7 @@ interface Resposta {
   readonly secoes?: readonly { readonly itens?: readonly ItemDaResposta[] }[];
   readonly derivados?: readonly ItemDaResposta[];
   readonly numeroInscricao?: string;
-  readonly submetidaEm?: string;
+  readonly enviadaEm?: string;
   readonly situacao?: string;
   readonly ofertas?: readonly OfertaEscolhida[];
 }
@@ -61,7 +61,7 @@ interface Linha {
   readonly cpf?: { readonly valor: string; readonly podeRevelar: boolean };
   readonly situacao?: string;
   readonly ofertas?: readonly OfertaEscolhida[];
-  readonly submetidaEm?: string;
+  readonly enviadaEm?: string;
 }
 
 /** As respostas e os derivados que a API devolveu, de qualquer seção. */
@@ -225,7 +225,7 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
     expect(publico.ofertas?.length).toBeGreaterThan(0);
     expect(publico.numeroInscricao).toBeUndefined();
     expect(interno.numeroInscricao).toBeDefined();
-    expect(interno.submetidaEm).toBeDefined();
+    expect(interno.enviadaEm).toBeDefined();
     expect(interno.situacao).toBeUndefined();
     expect(interno.ofertas).toBeUndefined();
     // O processo acompanha o acesso ao resource, qualquer que seja a classe.
@@ -266,7 +266,7 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
     expect(publico?.nome).toBeUndefined();
     expect(publico?.cpf).toBeUndefined();
     expect(interno?.numeroInscricao).toBe(numeroDoErick);
-    expect(interno?.submetidaEm).toBeDefined();
+    expect(interno?.enviadaEm).toBeDefined();
     expect(interno?.nome).toBeUndefined();
   });
 

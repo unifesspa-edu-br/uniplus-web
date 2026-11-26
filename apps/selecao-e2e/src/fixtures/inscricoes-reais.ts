@@ -129,7 +129,7 @@ function aceitesDosTermos(termos: TermoDoFormulario[]): CorpoDaInscricao['aceite
 
 /**
  * Inscreve a persona no processo. Com `comLaudo`, ela declara deficiência e envia o laudo
- * médico que o processo exige; devolve a inscrição já submetida. Repetir a chamada para quem
+ * médico que o processo exige; devolve a inscrição já enviada. Repetir a chamada para quem
  * já tem inscrição enviada devolve a existente.
  */
 export async function inscreverPersona(

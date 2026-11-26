@@ -22,10 +22,10 @@ describe('RespostaExibidaComponent', () => {
   });
 
   it('a situação conhecida sai em etiqueta, pelo rótulo e não pelo código', async () => {
-    const tela = await montar({ situacao: 'submetida' });
+    const tela = await montar({ situacao: 'enviada' });
 
     expect(tela.querySelector('ui-tag')?.textContent?.trim()).toBe('Enviada');
-    expect(tela.textContent).not.toContain('submetida');
+    expect(tela.textContent).not.toContain('enviada');
   });
 
   it('o valor comum passa pela apresentação do valor: booleano em Sim/Não e vazio como não informado', async () => {

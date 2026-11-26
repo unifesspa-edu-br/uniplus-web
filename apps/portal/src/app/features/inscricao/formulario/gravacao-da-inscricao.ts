@@ -109,7 +109,7 @@ export class GravacaoDaInscricao {
   readonly enviada = computed(
     () =>
       this.recibo() !== null ||
-      this.leitura.inscricao()?.situacao.codigo === SituacaoInscricaoCodigo.SUBMETIDA,
+      this.leitura.inscricao()?.situacao.codigo === SituacaoInscricaoCodigo.ENVIADA,
   );
 
   salvar(formulario: FormularioParaGravar): void {

@@ -56,7 +56,7 @@ function dadosDaSituacao(situacao: SituacaoInscricaoCodigo): DadosDaSituacao {
 }
 
 function acoesDe(situacao: SituacaoInscricaoCodigo, aberta: boolean): AcoesDaInscricaoDto {
-  const enviada = situacao === SituacaoInscricaoCodigo.SUBMETIDA;
+  const enviada = situacao === SituacaoInscricaoCodigo.ENVIADA;
   const rascunho = situacao === SituacaoInscricaoCodigo.RASCUNHO;
   return {
     podeContinuar: rascunho && aberta,
@@ -84,8 +84,8 @@ export function inscricao(
 
 export const INSCRICOES: readonly MinhaInscricaoDto[] = [
   inscricao('p1', SituacaoInscricaoCodigo.RASCUNHO, 'Auxílio estudantil 2026'),
-  inscricao('p2', SituacaoInscricaoCodigo.SUBMETIDA, 'Bolsa de iniciação científica'),
-  inscricao('p3', SituacaoInscricaoCodigo.SUBMETIDA, 'Morada estudantil'),
+  inscricao('p2', SituacaoInscricaoCodigo.ENVIADA, 'Bolsa de iniciação científica'),
+  inscricao('p3', SituacaoInscricaoCodigo.ENVIADA, 'Morada estudantil'),
   inscricao('p4', SituacaoInscricaoCodigo.RASCUNHO, 'Auxílio transporte'),
 ];
 

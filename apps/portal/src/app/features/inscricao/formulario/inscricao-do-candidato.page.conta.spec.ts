@@ -76,7 +76,7 @@ describe('InscricaoDoCandidatoPage', () => {
     cenario.servico.formulario = COM_MUNICIPIO;
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
-      situacao: { codigo: SituacaoInscricaoCodigo.SUBMETIDA, rotulo: 'Situação de teste' },
+      situacao: { codigo: SituacaoInscricaoCodigo.ENVIADA, rotulo: 'Situação de teste' },
       respostas: {
         ...RESPONDIDA.respostas,
         NATURALIDADE_MUNICIPIO: { codigo: '2927408', rotulo: 'Salvador' },

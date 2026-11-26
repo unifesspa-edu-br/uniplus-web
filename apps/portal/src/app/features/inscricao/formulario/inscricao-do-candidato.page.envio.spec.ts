@@ -36,7 +36,7 @@ describe('InscricaoDoCandidatoPage', () => {
     const tela = await cenario.abrir();
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
-      situacao: { codigo: SituacaoInscricaoCodigo.SUBMETIDA, rotulo: 'Situação de teste' },
+      situacao: { codigo: SituacaoInscricaoCodigo.ENVIADA, rotulo: 'Situação de teste' },
       eTag: '"inscricao-1:2"',
     });
     await cenario.clicar(botao(tela, 'Enviar inscrição'));
@@ -77,7 +77,7 @@ describe('InscricaoDoCandidatoPage', () => {
   it('a inscrição enviada não oferece rascunho: o aviso diz que corrigir é enviar de novo', async () => {
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
-      situacao: { codigo: SituacaoInscricaoCodigo.SUBMETIDA, rotulo: 'Situação de teste' },
+      situacao: { codigo: SituacaoInscricaoCodigo.ENVIADA, rotulo: 'Situação de teste' },
     });
     const tela = await cenario.abrir();
 
@@ -181,7 +181,7 @@ describe('InscricaoDoCandidatoPage', () => {
     cenario.servico.recusaDoEnvio = problema(503, 'uniplus.teste');
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
-      situacao: { codigo: SituacaoInscricaoCodigo.SUBMETIDA, rotulo: 'Situação de teste' },
+      situacao: { codigo: SituacaoInscricaoCodigo.ENVIADA, rotulo: 'Situação de teste' },
       numeroInscricao: '2027-000001',
       eTag: '"inscricao-1:2"',
     });
@@ -202,7 +202,7 @@ describe('InscricaoDoCandidatoPage', () => {
     cenario.servico.recusaDoEnvio = problema(0, 'uniplus.client.network_error');
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
-      situacao: { codigo: SituacaoInscricaoCodigo.SUBMETIDA, rotulo: 'Situação de teste' },
+      situacao: { codigo: SituacaoInscricaoCodigo.ENVIADA, rotulo: 'Situação de teste' },
       eTag: '"inscricao-1:2"',
     });
     await cenario.clicar(botao(tela, 'Enviar inscrição'));

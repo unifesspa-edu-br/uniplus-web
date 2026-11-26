@@ -149,7 +149,7 @@ describe('valorExibido', () => {
   });
 
   it('entrega o componente situacao para a etiqueta de situação', () => {
-    expect(valorExibido('texto', 'submetida', 'situacao')).toEqual({ situacao: 'submetida' });
+    expect(valorExibido('texto', 'enviada', 'situacao')).toEqual({ situacao: 'enviada' });
     expect(valorExibido('texto', 'deferida', 'situacao')).toEqual({ valor: 'deferida' });
   });
 
