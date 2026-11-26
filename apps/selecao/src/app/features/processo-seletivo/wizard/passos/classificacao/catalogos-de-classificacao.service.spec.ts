@@ -35,7 +35,7 @@ function regra(codigo: string, tipo: RegraCatalogoDto['tipo']['codigo']): RegraC
 
 const POR_TIPO: Record<string, readonly RegraCatalogoDto[]> = {
   REGRA_CALCULO: [
-    regra('FORMULA-MEDIA-PONDERADA', 'REGRA_CALCULO' as RegraCatalogoDto['tipo']['codigo']),
+    regra('FORMULA_MEDIA_PONDERADA', 'REGRA_CALCULO' as RegraCatalogoDto['tipo']['codigo']),
   ],
   REGRA_ARREDONDAMENTO: [
     regra('ARRED-TRUNCAR', 'REGRA_ARREDONDAMENTO' as RegraCatalogoDto['tipo']['codigo']),
@@ -109,7 +109,7 @@ describe('CatalogosDeClassificacao', () => {
     const { servico, listar } = montar();
     servico.carregar();
 
-    expect(servico.regrasCalculo().map((r) => r.codigo)).toEqual(['FORMULA-MEDIA-PONDERADA']);
+    expect(servico.regrasCalculo().map((r) => r.codigo)).toEqual(['FORMULA_MEDIA_PONDERADA']);
     expect(servico.regrasArredondamento().map((r) => r.codigo)).toEqual(['ARRED-TRUNCAR']);
     expect(servico.regrasOrdemAlocacao().map((r) => r.codigo)).toEqual([
       'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',

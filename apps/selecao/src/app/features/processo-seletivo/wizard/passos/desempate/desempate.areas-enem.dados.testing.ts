@@ -81,7 +81,7 @@ export const COPIA_COM_LINGUAGENS_E_REDACAO = [TECNOLOGICA, SAUDE].map((grupo) =
 }));
 
 export const CLASSIFICACAO_COM_QUADRO = {
-  regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+  regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
   regraCalculoVersao: '1.0',
   baseadoEmEnem: true,
   resolucaoPesoAreaEnem: RESOLUCAO,

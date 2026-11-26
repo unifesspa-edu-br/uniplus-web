@@ -5,7 +5,7 @@ import { hidratarDraft } from './hidratacao';
 import { DRAFT, dtoComCronograma } from './hidratacao.testing';
 
 const CLASSIFICACAO = {
-  regraCalculo: { codigo: 'FORMULA-MEDIA-PONDERADA', versao: '1.0' },
+  regraCalculo: { codigo: 'FORMULA_MEDIA_PONDERADA', versao: '1.0' },
   regraArredondamento: { codigo: 'ARRED-TRUNCAR', versao: '1.0' },
   casasArredondamento: 2,
   regraOrdemAlocacao: { codigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA', versao: '1.0' },
@@ -106,7 +106,7 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
     const dto = dtoComCronograma({ classificacao: CLASSIFICACAO });
 
     expect(hidratarDraft(DRAFT, dto).classificacao).toEqual({
-      regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+      regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
       regraCalculoVersao: '1.0',
       regraArredondamentoCodigo: 'ARRED-TRUNCAR',
       regraArredondamentoVersao: '1.0',
@@ -184,7 +184,7 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
   it('projeta classificação importada sem arredondamento como campo vazio', () => {
     const importada = {
       ...CLASSIFICACAO,
-      regraCalculo: { codigo: 'CLASSIFICACAO-IMPORTADA', versao: '1.0' },
+      regraCalculo: { codigo: 'CLASSIFICACAO_IMPORTADA', versao: '1.0' },
       regraArredondamento: null,
       casasArredondamento: null,
       regrasEliminacao: [],

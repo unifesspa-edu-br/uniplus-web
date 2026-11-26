@@ -7,8 +7,8 @@ import {
 import type { RegraEscolhida } from '../../documento/regra-escolhida';
 
 // UNI-REQ-0383: códigos do rol de procedimentos de recurso da API.
-const RECORRECAO = 'PROCEDIMENTO-RECURSO-RECORRECAO';
-const RECALCULO = 'PROCEDIMENTO-RECURSO-RECALCULO';
+const RECORRECAO = 'PROCEDIMENTO_RECURSO_RECORRECAO';
+const RECALCULO = 'PROCEDIMENTO_RECURSO_RECALCULO';
 
 function codigoPelaForma(
   forma: FormaDeAvaliacaoDaEtapa | null,

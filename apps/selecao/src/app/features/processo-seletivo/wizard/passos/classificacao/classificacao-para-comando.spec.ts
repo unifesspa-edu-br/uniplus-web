@@ -70,16 +70,16 @@ function etapa(patch: Partial<EtapaPontuada>): EtapaPontuada {
 }
 
 describe('classificacaoUsaFormulaLocal', () => {
-  it('é falso para CLASSIFICACAO-IMPORTADA', () => {
-    expect(classificacaoUsaFormulaLocal('CLASSIFICACAO-IMPORTADA')).toBe(false);
+  it('é falso para CLASSIFICACAO_IMPORTADA', () => {
+    expect(classificacaoUsaFormulaLocal('CLASSIFICACAO_IMPORTADA')).toBe(false);
   });
 
   it('é falso enquanto nenhuma regra foi escolhida', () => {
     expect(classificacaoUsaFormulaLocal('')).toBe(false);
   });
 
-  it('é verdadeiro para FORMULA-MEDIA-PONDERADA', () => {
-    expect(classificacaoUsaFormulaLocal('FORMULA-MEDIA-PONDERADA')).toBe(true);
+  it('é verdadeiro para FORMULA_MEDIA_PONDERADA', () => {
+    expect(classificacaoUsaFormulaLocal('FORMULA_MEDIA_PONDERADA')).toBe(true);
   });
 });
 
@@ -87,7 +87,7 @@ describe('comoComandoDeClassificacao — bimodalidade (INV-B8)', () => {
   it('sob classificação importada, força null nos campos de precisão e vazio na eliminação', () => {
     const classificacao: WizardDraft['classificacao'] = {
       ...classificacaoBase(),
-      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
       regraCalculoVersao: '1.0',
       // Digitado antes de trocar para importada — não pode vazar no comando.
       regraArredondamentoCodigo: 'ARRED-TRUNCAR',
@@ -109,7 +109,7 @@ describe('comoComandoDeClassificacao — bimodalidade (INV-B8)', () => {
   it('sob fórmula local, envia arredondamento, casas e as regras de eliminação', () => {
     const classificacao: WizardDraft['classificacao'] = {
       ...classificacaoBase(),
-      regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+      regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
       regraCalculoVersao: '1.0',
       regraArredondamentoCodigo: 'ARRED-TRUNCAR',
       regraArredondamentoVersao: '1.0',
@@ -134,7 +134,7 @@ describe('exigeResolucaoPesoAreaEnem — espelha o servidor', () => {
   it('é verdadeiro só com ENEM e média ponderada local', () => {
     expect(
       exigeResolucaoPesoAreaEnem({
-        regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+        regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
         baseadoEmEnem: true,
       }),
     ).toBe(true);
@@ -143,13 +143,13 @@ describe('exigeResolucaoPesoAreaEnem — espelha o servidor', () => {
   it('é falso sem ENEM, com a nota importada ou sem regra escolhida', () => {
     expect(
       exigeResolucaoPesoAreaEnem({
-        regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+        regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
         baseadoEmEnem: false,
       }),
     ).toBe(false);
     expect(
       exigeResolucaoPesoAreaEnem({
-        regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+        regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
         baseadoEmEnem: true,
       }),
     ).toBe(false);
@@ -160,7 +160,7 @@ describe('exigeResolucaoPesoAreaEnem — espelha o servidor', () => {
 describe('comoComandoDeClassificacao — resolução de Peso por Área', () => {
   const enemLocal = (): WizardDraft['classificacao'] => ({
     ...classificacaoBase(),
-    regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+    regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
     regraCalculoVersao: '1.0',
     regraArredondamentoCodigo: 'ARRED-TRUNCAR',
     regraArredondamentoVersao: '1.0',
@@ -177,7 +177,7 @@ describe('comoComandoDeClassificacao — resolução de Peso por Área', () => {
     const semEnem = comoComandoDeClassificacao({ ...enemLocal(), baseadoEmEnem: false });
     const importada = comoComandoDeClassificacao({
       ...enemLocal(),
-      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
     });
 
     expect(semEnem.resolucaoPesoAreaEnem).toBeNull();
@@ -195,7 +195,7 @@ describe('comoComandoDeClassificacao — resolução de Peso por Área', () => {
 describe('escala da nota final no comando', () => {
   const local = (): WizardDraft['classificacao'] => ({
     ...classificacaoBase(),
-    regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+    regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
     regraCalculoVersao: '1.0',
     regraArredondamentoCodigo: 'ARRED-TRUNCAR',
     regraArredondamentoVersao: '1.0',
@@ -215,7 +215,7 @@ describe('escala da nota final no comando', () => {
   it('sob classificação importada, não envia a escala que o rascunho guarda', () => {
     const comando = comoComandoDeClassificacao({
       ...local(),
-      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
       escalaNotaFinal: '100',
     });
 
