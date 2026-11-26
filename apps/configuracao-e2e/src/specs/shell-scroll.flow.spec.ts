@@ -48,8 +48,8 @@ const ULTIMO_CAMPUS = CAMPI[CAMPI.length - 1].nome;
  * acessível, que carrega a sigla do campus.
  */
 const EDITAR_ULTIMO_CAMPUS = `Editar campus ${CAMPI[CAMPI.length - 1].sigla}`;
-/** Último item do menu lateral declarado em `cfg-layout`. */
-const ULTIMO_MENU = 'Calendários';
+// Último item exibido para a pessoa do teste, que não vê todos os itens do menu.
+const ULTIMO_MENU = 'Meus pedidos';
 
 async function mockCampiApi(page: Page): Promise<void> {
   await page.route(/\/api\/configuracao\/campi(\?.*)?$/u, async (route) => {
@@ -146,9 +146,9 @@ test.describe('Shell administrativo — rolagem vertical', () => {
     // Rolar a navegação até o fim revela o último item, sem mover o conteúdo.
     const conteudoAntes = await page.locator('main.page').evaluate((el) => el.scrollTop);
     await nav.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
-    await expect(
-      page.locator('aside.sidebar').getByRole('link', { name: ULTIMO_MENU }),
-    ).toBeInViewport();
+    const ultimoLink = nav.getByRole('link').last();
+    await expect(ultimoLink).toHaveText(ULTIMO_MENU);
+    await expect(ultimoLink).toBeInViewport({ ratio: 1 });
     const conteudoDepois = await page.locator('main.page').evaluate((el) => el.scrollTop);
     expect(conteudoDepois).toBe(conteudoAntes);
   });
@@ -187,9 +187,10 @@ test.describe('Shell administrativo — rolagem vertical', () => {
     await expect(page.locator('body')).toHaveClass(/uni-drawer-open/);
     await expect(page.locator('body')).toHaveCSS('overflow-y', 'hidden');
 
-    const item = drawer.getByRole('link', { name: ULTIMO_MENU });
+    const item = drawer.getByRole('link').last();
+    await expect(item).toHaveText(ULTIMO_MENU);
     await item.scrollIntoViewIfNeeded();
-    await expect(item).toBeInViewport();
+    await expect(item).toBeInViewport({ ratio: 1 });
 
     // O conteúdo por trás não rolou.
     const docScroll = await page.evaluate(() => document.documentElement.scrollTop);
