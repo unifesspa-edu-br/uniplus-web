@@ -1,3 +1,4 @@
+import { seletorDoCampo } from './seletor-do-campo.testing';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
   LISTA,
@@ -13,7 +14,7 @@ const CAUSA_GERAL = {
 };
 const CODIGO_JA_EXISTE = 'uniplus.configuracao.fato_candidato.codigo_ja_existe';
 const CRIACAO = '#cfg-fato-criacao';
-const campo = (nome: string): string => `[formcontrolname="${nome}"]`;
+const campo = (nome: string): string => seletorDoCampo(nome);
 
 const PREENCHIMENTO_DO_DERIVADO: Record<string, string> = {
   nome: 'Perfil socioeconômico',

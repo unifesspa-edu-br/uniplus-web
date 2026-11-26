@@ -321,18 +321,14 @@
               }
             </label>
           </div>
-          <div id="cfg-fato-def-hipoteses" tabindex="-1">
-            @if (hipoteses.vocabulario.carregando()) {
-              <span [uiIndicadorDaLeitura]="hipoteses.leitura">Carregando hipóteses legais…</span>
-            }
-            <ui-falha-de-leitura-do-campo [leitura]="hipoteses.leitura" />
-          </div>
           <cfg-fato-protecao-da-definicao
-            [form]="form"
+            [classificacao]="form.controls.classificacaoProtecao"
+            [hipotese]="form.controls.hipoteseLegal"
+            [finalidade]="form.controls.finalidadeTratamento"
             [classificacoes]="dep.classificacoes()"
             [hipoteses]="opcoesDasHipoteses()"
-            [carregandoHipoteses]="hipoteses.vocabulario.carregando()"
-            idDoAvisoDasHipoteses="cfg-fato-def-hipoteses"
+            prefixoDosIds="cfg-fato-def"
+            [leituraDasHipoteses]="hipoteses"
             [avisaNovaAprovacao]="dep.avisaNovaAprovacao()"
           />
         </fieldset>
@@ -357,18 +353,14 @@
         novalidate
       >
         <fieldset class="form-drawer__campos" role="none" [disabled]="bloqueado()">
-          <div id="cfg-fato-def-hipoteses" tabindex="-1">
-            @if (hipoteses.vocabulario.carregando()) {
-              <span [uiIndicadorDaLeitura]="hipoteses.leitura">Carregando hipóteses legais…</span>
-            }
-            <ui-falha-de-leitura-do-campo [leitura]="hipoteses.leitura" />
-          </div>
           <cfg-fato-protecao-da-definicao
-            [form]="form"
+            [classificacao]="form.controls.classificacaoProtecao"
+            [hipotese]="form.controls.hipoteseLegal"
+            [finalidade]="form.controls.finalidadeTratamento"
             [classificacoes]="dep.classificacoes()"
             [hipoteses]="opcoesDasHipoteses()"
-            [carregandoHipoteses]="hipoteses.vocabulario.carregando()"
-            idDoAvisoDasHipoteses="cfg-fato-def-hipoteses"
+            prefixoDosIds="cfg-fato-def"
+            [leituraDasHipoteses]="hipoteses"
             [avisaNovaAprovacao]="dep.avisaNovaAprovacao()"
           />
         </fieldset>

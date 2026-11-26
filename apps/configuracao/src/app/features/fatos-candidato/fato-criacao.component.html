@@ -321,81 +321,15 @@
       </label>
     </div>
 
-    <fieldset class="field form-grid__full">
-      <legend class="form-section__title">Proteção de dados (LGPD)</legend>
-      <div class="form-grid">
-        @let erroClassificacao = erroDoCampo('classificacaoProtecao');
-        <label class="field" [class.is-error]="erroClassificacao">
-          <span class="field__label is-required">Classificação</span>
-          <select
-            class="select"
-            formControlName="classificacaoProtecao"
-            aria-required="true"
-            [attr.aria-invalid]="erroClassificacao ? 'true' : null"
-            [attr.aria-describedby]="
-              erroClassificacao ? 'cfg-fato-classificacaoProtecao-erro' : null
-            "
-          >
-            <option value="">Selecione…</option>
-            @for (opcao of dep.classificacoes(); track opcao.valor) {
-              <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
-            }
-          </select>
-          @if (erroClassificacao) {
-            <span class="field__error" id="cfg-fato-classificacaoProtecao-erro">{{
-              erroClassificacao
-            }}</span>
-          }
-        </label>
-        @let erroHipotese = erroDoCampo('hipoteseLegal');
-        <label class="field" [class.is-error]="erroHipotese">
-          <span class="field__label is-required">Hipótese legal</span>
-          <select
-            class="select"
-            id="cfg-fato-hipoteses"
-            [attr.aria-busy]="hipoteses.vocabulario.carregando() ? 'true' : null"
-            formControlName="hipoteseLegal"
-            aria-required="true"
-            [attr.aria-invalid]="erroHipotese ? 'true' : null"
-            [attr.aria-describedby]="erroHipotese ? 'cfg-fato-hipoteseLegal-erro' : null"
-          >
-            <option value="">Selecione…</option>
-            @if (dep.vocabularioDasHipoteses() === null && form.controls.hipoteseLegal.value) {
-              <option [value]="form.controls.hipoteseLegal.value">
-                {{ form.controls.hipoteseLegal.value }}
-              </option>
-            }
-            @for (opcao of dep.hipoteses(); track opcao.valor) {
-              <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
-            }
-          </select>
-          @if (hipoteses.vocabulario.carregando()) {
-            <span class="field__hint" [uiIndicadorDaLeitura]="hipoteses.leitura">Carregando…</span>
-          }
-          <ui-falha-de-leitura-do-campo [leitura]="hipoteses.leitura" />
-          @if (erroHipotese) {
-            <span class="field__error" id="cfg-fato-hipoteseLegal-erro">{{ erroHipotese }}</span>
-          }
-        </label>
-      </div>
-      @let erroFinalidade = erroDoCampo('finalidadeTratamento');
-      <label class="field form-grid__full" [class.is-error]="erroFinalidade">
-        <span class="field__label is-required">Finalidade do tratamento</span>
-        <textarea
-          class="textarea"
-          rows="2"
-          formControlName="finalidadeTratamento"
-          aria-required="true"
-          [attr.aria-invalid]="erroFinalidade ? 'true' : null"
-          [attr.aria-describedby]="erroFinalidade ? 'cfg-fato-finalidadeTratamento-erro' : null"
-        ></textarea>
-        @if (erroFinalidade) {
-          <span class="field__error" id="cfg-fato-finalidadeTratamento-erro">{{
-            erroFinalidade
-          }}</span>
-        }
-      </label>
-    </fieldset>
+    <cfg-fato-protecao-da-definicao
+      [classificacao]="form.controls.classificacaoProtecao"
+      [hipotese]="form.controls.hipoteseLegal"
+      [finalidade]="form.controls.finalidadeTratamento"
+      prefixoDosIds="cfg-fato"
+      [classificacoes]="dep.classificacoes()"
+      [hipoteses]="opcoesDasHipoteses()"
+      [leituraDasHipoteses]="hipoteses"
+    />
   </fieldset>
 </form>
 

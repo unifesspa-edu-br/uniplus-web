@@ -1,7 +1,8 @@
+import { seletorDoCampo } from './seletor-do-campo.testing';
 import { type Pagina, urlDoFato } from './fatos-candidato.testing';
 import { corRaca } from './fatos-candidato.fixtures';
 
-export const campo = (nome: string): string => `[formcontrolname="${nome}"]`;
+export const campo = (nome: string): string => seletorDoCampo(nome);
 export const DESCRITIVO = '#cfg-fato-descritivo';
 export const botaoDoValor = (codigo: string, acao: string): string =>
   `#cfg-fato-valor-${codigo}-${acao}`;
