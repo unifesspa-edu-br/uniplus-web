@@ -1,3 +1,5 @@
+import { CODIGO_CADASTRO_FORMATO } from '@uniplus/shared-utils';
+
 import { codigoDoNome, codigoLivre } from './codigos';
 
 describe('codigoDoNome', () => {
@@ -9,8 +11,20 @@ describe('codigoDoNome', () => {
     expect(codigoDoNome('123', 'TERMO')).toBe('TERMO');
   });
 
-  it('remove números e sublinhados do início', () => {
+  it('remove caracteres iniciais que não são letras', () => {
     expect(codigoDoNome('1_ETAPA', 'TERMO')).toBe('ETAPA');
+    expect(codigoDoNome('2ª fase', 'TERMO')).toBe('FASE');
+    expect(codigoDoNome('21 de abril', 'TERMO')).toBe('DE_ABRIL');
+    expect(codigoDoNome(' ! 1_ÉTAPA', 'TERMO')).toBe('ETAPA');
+  });
+
+  it('usa a reserva quando há apenas símbolos', () => {
+    expect(codigoDoNome('!@#', 'GRUPO')).toBe('GRUPO');
+  });
+
+  it('mantém 60 caracteres e corta o caractere excedente', () => {
+    expect(codigoDoNome('A'.repeat(60), 'TERMO')).toBe('A'.repeat(60));
+    expect(codigoDoNome('A'.repeat(61), 'TERMO')).toBe('A'.repeat(60));
   });
 
   it('remove o sublinhado deixado pelo corte em 60 caracteres', () => {
@@ -45,11 +59,22 @@ describe('codigoLivre', () => {
     expect(codigoLivre(base, 'TERMO', new Set([base, segundo]))).toBe(`${'A'.repeat(57)}_3`);
   });
 
-  it('remove números e sublinhados do início do nome', () => {
-    expect(codigoLivre('1_ETAPA', 'TERMO', new Set())).toBe('ETAPA');
+  it('remove dígitos iniciais antes de procurar um código livre', () => {
+    expect(codigoLivre('1_ETAPA', 'TERMO', new Set(['ETAPA']))).toBe('ETAPA_2');
   });
 
   it('usa a reserva quando o nome contém apenas números', () => {
     expect(codigoLivre('123', 'TERMO', new Set())).toBe('TERMO');
+  });
+
+  it('gera códigos válidos para nomes e colisões nas bordas', () => {
+    const nomes = ['Inscrição pública', '!@#', '1_ETAPA', 'A'.repeat(60), 'A'.repeat(61)];
+    for (const nome of nomes) {
+      const codigo = codigoDoNome(nome, 'GRUPO');
+      const livre = codigoLivre(nome, 'GRUPO', new Set([codigo, `${codigo.slice(0, 58)}_2`]));
+      expect(codigo).toMatch(CODIGO_CADASTRO_FORMATO);
+      expect(livre).toMatch(CODIGO_CADASTRO_FORMATO);
+      expect(livre.length).toBeLessThanOrEqual(60);
+    }
   });
 });
