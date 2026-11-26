@@ -1,4 +1,5 @@
 import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
+import type { SituacaoDaAprovacao } from '@uniplus/shared-data/configuracao';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { TagComponent, type UiTagVariant } from '@uniplus/shared-ui/components';
 import { CLASSIFICACOES_DE_PROTECAO, rotuloDe } from './protecao-de-dados';
@@ -8,7 +9,7 @@ interface Rotulo {
   readonly variante: UiTagVariant;
 }
 
-const SITUACOES: Readonly<Record<string, Rotulo>> = {
+const SITUACOES: Readonly<Record<SituacaoDaAprovacao, Rotulo>> = {
   PENDENTE: { texto: 'Pendente', variante: 'warning' },
   SOLICITADA: { texto: 'Em análise', variante: 'info' },
   APROVADA: { texto: 'Aprovada', variante: 'success' },
@@ -18,7 +19,7 @@ const SITUACOES: Readonly<Record<string, Rotulo>> = {
 
 /** O rótulo da situação de aprovação, ou o próprio token quando o vocabulário não o conhece. */
 export function rotuloDaSituacao(situacao: string): Rotulo {
-  return SITUACOES[situacao] ?? { texto: situacao, variante: 'neutral' };
+  return SITUACOES[situacao as SituacaoDaAprovacao] ?? { texto: situacao, variante: 'neutral' };
 }
 
 /**

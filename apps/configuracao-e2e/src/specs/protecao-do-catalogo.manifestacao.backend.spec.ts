@@ -10,15 +10,15 @@ import {
 } from '@uniplus/shared-e2e';
 
 /**
- * A manifestação técnica contra a API real, com os perfis de sistema 2 e 3: o Encarregado de dados
+ * A manifestação técnica contra a API real, com os perfis de sistema 2 e 3: o Gestor de proteção de dados
  * se manifesta de forma desfavorável, o Representante do controlador só aprova com justificativa
  * diante dela, e quem administra os tipos de documento lê o histórico sem nenhuma ação. Cada
  * execução cria um tipo de documento novo.
  */
 const APP = process.env['BASE_URL'] ?? 'http://localhost:4203';
-const ENCARREGADO_DE_DADOS = 'isabella.figueiredo';
+const GESTOR_DE_PROTECAO_DE_DADOS = 'isabella.figueiredo';
 const PERFIL_DO_REPRESENTANTE = '019a0000-0000-7000-8000-000000000002';
-const PERFIL_DO_ENCARREGADO = '019a0000-0000-7000-8000-000000000003';
+const PERFIL_DO_GESTOR_DE_PROTECAO_DE_DADOS = '019a0000-0000-7000-8000-000000000003';
 const TEXTO = 'O laudo revela condição de saúde: a classificação deve ser sensível.';
 const ADMIN = '/api/configuracao/admin';
 
@@ -35,11 +35,11 @@ interface Ato {
 /** Cria o tipo de documento e o envia à proteção de dados; devolve o id. */
 async function tipoSolicitado(nome: string, codigo: string): Promise<string> {
   const categorias = await chamarApi<Categoria[]>(
-    ENCARREGADO_DE_DADOS,
+    GESTOR_DE_PROTECAO_DE_DADOS,
     'GET',
     '/api/configuracao/categorias-documento',
   );
-  const criado = await chamarApi<string>(ENCARREGADO_DE_DADOS, 'POST', `${ADMIN}/tipos-documento`, {
+  const criado = await chamarApi<string>(GESTOR_DE_PROTECAO_DE_DADOS, 'POST', `${ADMIN}/tipos-documento`, {
     corpo: {
       codigo,
       nome,
@@ -52,7 +52,7 @@ async function tipoSolicitado(nome: string, codigo: string): Promise<string> {
   expect(criado.status, JSON.stringify(criado.corpo)).toBe(201);
   const id = String(criado.corpo).replace(/"/g, '');
   const pedido = await chamarApi(
-    ENCARREGADO_DE_DADOS,
+    GESTOR_DE_PROTECAO_DE_DADOS,
     'POST',
     `${ADMIN}/protecao-do-catalogo/solicitacoes`,
     {
@@ -65,7 +65,7 @@ async function tipoSolicitado(nome: string, codigo: string): Promise<string> {
 
 async function atosDo(id: string): Promise<Ato[]> {
   const atos = await chamarApi<Ato[]>(
-    ENCARREGADO_DE_DADOS,
+    GESTOR_DE_PROTECAO_DE_DADOS,
     'GET',
     `${ADMIN}/tipos-documento/${id}/protecao/atos`,
   );
@@ -88,18 +88,18 @@ test.describe('Manifestação técnica na proteção de dados dos tipos de docum
     test.setTimeout(600_000);
     await prepararAcessosDaSimulacao();
     await aprovarCatalogoInicial();
-    await garantirConcessao(ENCARREGADO_DE_DADOS, PERFIL_DO_ENCARREGADO, '');
+    await garantirConcessao(GESTOR_DE_PROTECAO_DE_DADOS, PERFIL_DO_GESTOR_DE_PROTECAO_DE_DADOS, '');
     await garantirConcessao(REPRESENTANTE_DO_CONTROLADOR, PERFIL_DO_REPRESENTANTE, '');
     id = await tipoSolicitado(nome, `LAUDO_MANIFESTACAO_${sufixo}`);
   });
 
-  test('o Encarregado de dados registra o parecer desfavorável e não vê as ações de decidir', async ({
+  test('o Gestor de proteção de dados registra o parecer desfavorável e não vê as ações de decidir', async ({
     browser,
   }) => {
     const pagina = await entrarComoPersona(
       browser,
       APP,
-      ENCARREGADO_DE_DADOS,
+      GESTOR_DE_PROTECAO_DE_DADOS,
       '/protecao-do-catalogo',
     );
     const drawer = await abrirNaFila(pagina, nome);
@@ -159,7 +159,7 @@ test.describe('Manifestação técnica na proteção de dados dos tipos de docum
   test('quem administra os tipos de documento lê o histórico das manifestações, sem nenhuma ação', async ({
     browser,
   }) => {
-    const pagina = await entrarComoPersona(browser, APP, ENCARREGADO_DE_DADOS, '/tipos-documento');
+    const pagina = await entrarComoPersona(browser, APP, GESTOR_DE_PROTECAO_DE_DADOS, '/tipos-documento');
     await pagina.getByRole('searchbox', { name: 'Buscar tipo de documento' }).fill(nome);
     await pagina.getByRole('button', { name: `Ver o detalhe de ${nome}` }).click();
     const historico = pagina

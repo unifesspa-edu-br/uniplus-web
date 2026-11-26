@@ -1,4 +1,4 @@
-import type { RegistrarManifestacaoDaProtecaoRequestParecer } from '@uniplus/shared-data/configuracao';
+import type { ManifestacaoDaProtecaoDto } from '@uniplus/shared-data/configuracao';
 import type { Page } from '@playwright/test';
 import { PENDENCIAS, SOLICITADA } from './dados-de-tipos-e-fatos';
 import { mockRota, type Chamada, type Resposta } from './api-de-perfis-filas';
@@ -7,17 +7,17 @@ import { json } from './listas-de-tipos-e-fatos';
 const RAIZ = '\\/api\\/configuracao\\/admin\\/protecao-do-catalogo';
 const ITEM = PENDENCIAS[0];
 
-/** Uma manifestação vigente desfavorável do Encarregado de dados, no ciclo 1. */
+/** Uma manifestação vigente desfavorável do Gestor de proteção de dados, no ciclo 1. */
 export const MANIFESTACAO_DESFAVORAVEL = {
   id: '01960000-0000-7000-0000-0000000000f1',
   ciclo: 1,
-  parecer: 'RECOMENDA_NAO_USO' satisfies `${RegistrarManifestacaoDaProtecaoRequestParecer}`,
+  parecer: 'RECOMENDA_NAO_USO',
   texto: 'O laudo revela condição de saúde: a classificação deve ser sensível.',
   autorNome: 'Isabella Priscila Figueiredo',
   instante: '2026-11-02T14:00:00Z',
   substituiId: null,
   situacao: 'VIGENTE',
-};
+} satisfies ManifestacaoDaProtecaoDto;
 
 const LAUDO = {
   ...ITEM,
@@ -28,7 +28,7 @@ const LAUDO = {
 };
 
 /** O detalhe do laudo, que aguarda a decisão, com as manifestações vigentes dadas. */
-export function detalheDoLaudo(vigentes: readonly object[]) {
+export function detalheDoLaudo(vigentes: readonly ManifestacaoDaProtecaoDto[]) {
   const desfavoravel = vigentes.length > 0;
   const aprovacao = {
     ...SOLICITADA,
@@ -40,7 +40,7 @@ export function detalheDoLaudo(vigentes: readonly object[]) {
 }
 
 /** As leituras: categorias, fila, detalhe e histórico das manifestações. */
-async function mockLeituras(page: Page, vigentes: readonly object[]): Promise<void> {
+async function mockLeituras(page: Page, vigentes: readonly ManifestacaoDaProtecaoDto[]): Promise<void> {
   await page.route(/\/api\/configuracao\/categorias-documento(\?.*)?$/, (r) => json(r, []));
   await page.route(new RegExp(`${RAIZ}\\/tipos-documento\\/[^/?]+\\/manifestacoes$`), (r) =>
     json(r, vigentes),
@@ -56,7 +56,7 @@ async function mockLeituras(page: Page, vigentes: readonly object[]): Promise<vo
 /** A fila, o detalhe, o histórico e as escritas da proteção; devolve as escritas recebidas. */
 export async function mockManifestacoes(
   page: Page,
-  vigentes: readonly object[],
+  vigentes: readonly ManifestacaoDaProtecaoDto[],
   escrita: Resposta = { status: 204 },
 ): Promise<Chamada[]> {
   await mockLeituras(page, vigentes);

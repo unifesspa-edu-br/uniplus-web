@@ -38,7 +38,7 @@ async function semViolacoes(page: Page): Promise<void> {
 }
 
 test.describe('Proteção dos tipos de documento e dos fatos — manifestação técnica', () => {
-  test('o Encarregado de dados registra o parecer desfavorável com texto, sem ver as ações de decidir', async ({
+  test('o Gestor de proteção de dados registra o parecer desfavorável com texto, sem ver as ações de decidir', async ({
     page,
   }) => {
     const escritas = await mockManifestacoes(page, []);
