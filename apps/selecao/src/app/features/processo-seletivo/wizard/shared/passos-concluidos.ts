@@ -3,6 +3,7 @@ import type { ItemConformidadeDto, ProcessoSeletivoDto } from '@uniplus/shared-d
 
 import { PASSOS } from '../processo-seletivo.data';
 import type { RotuloDePasso } from '../processo-seletivo.data';
+import { REGRA_CALCULO_IMPORTADA } from '../passos/classificacao/classificacao-para-comando';
 import { passosComPendencia } from '../passos/revisao/grupos-da-revisao';
 
 /** Os passos que gravam conteúdo: a Revisão publica, não declara nada que o servidor devolva. */
@@ -15,7 +16,9 @@ type PassoQueGrava = Exclude<RotuloDePasso, 'Revisão e publicação'>;
  * O FADA conta quando o processo declarou se aplica ou não o bônus (`aplicaBonusRegional`
  * existe, nas duas respostas). O Desempate conta com ao menos um critério, ou quando o resultado
  * é importado: a lista já vem classificada e o desempate não é obrigatório. Fórmula e Eliminação
- * compartilham a classificação, gravada junto no passo Eliminação.
+ * gravam a mesma classificação, mas só a Eliminação a completa: a classificação gravada pela
+ * Fórmula vem sem regra de eliminação, e a Eliminação conta como feita quando a classificação é
+ * importada, que dispensa a lista, ou tem ao menos uma regra.
  */
 function gravadoPorPasso(dto: ProcessoSeletivoDto): Record<PassoQueGrava, boolean> {
   return {
@@ -27,10 +30,19 @@ function gravadoPorPasso(dto: ProcessoSeletivoDto): Record<PassoQueGrava, boolea
     'Fórmula e precisão': dto.classificacao != null,
     FADA: dto.aplicaBonusRegional != null,
     Desempate: desempateGravado(dto),
-    Eliminação: dto.classificacao != null,
+    Eliminação: eliminacaoGravada(dto),
     'Atend. especial': dto.atendimentoEspecializado != null,
     Formulários: (dto.formularios ?? []).length > 0,
   };
+}
+
+function eliminacaoGravada(dto: ProcessoSeletivoDto): boolean {
+  const classificacao = dto.classificacao;
+  if (classificacao == null) return false;
+  return (
+    classificacao.regraCalculo.codigo === REGRA_CALCULO_IMPORTADA ||
+    classificacao.regrasEliminacao.length > 0
+  );
 }
 
 function desempateGravado(dto: ProcessoSeletivoDto): boolean {

@@ -27,23 +27,23 @@ export function textoDoCriterio(
     : criterio.regraCodigo;
 }
 
+const NAO_SE_APLICA_IMPORTADA = 'não se aplica (classificação importada)';
+
 /** A confirmação da gravação da classificação inteira, com a precisão e a eliminação. */
 export function confirmacaoDaClassificacao(conteudo: ConteudoDaConfirmacao): ConfirmacaoDeGravacao {
   return {
     titulo: 'Confirmar a classificação do processo',
-    aviso: [
-      avisoDaGravacao(conteudo.criteriosAdiados.length > 0),
-      ...conteudo.avisosDoDesempate,
-    ].join(' '),
+    aviso: avisoDaConfirmacao(conteudo),
     rotuloDeConfirmar: 'Gravar classificação',
-    itens: [
-      ...itensDaClassificacao(conteudo.draft),
-      ...conteudo.criteriosAdiados.map((criterio, indice) => ({
-        rotulo: `${indice + 1}º critério de desempate`,
-        valor: textoDoCriterio(criterio, conteudo.rotuloDaArea),
-      })),
-    ],
+    itens: [...itensDaClassificacao(conteudo.draft), ...itensDosCriteriosAdiados(conteudo)],
   };
+}
+
+function avisoDaConfirmacao(conteudo: ConteudoDaConfirmacao): string {
+  return [
+    avisoDaGravacao(conteudo.criteriosAdiados.length > 0),
+    ...conteudo.avisosDoDesempate,
+  ].join(' ');
 }
 
 function avisoDaGravacao(comDesempate: boolean): string {
@@ -52,25 +52,21 @@ function avisoDaGravacao(comDesempate: boolean): string {
     : 'A classificação, a precisão e a eliminação serão gravadas juntas nesta confirmação.';
 }
 
+function itensDosCriteriosAdiados(conteudo: ConteudoDaConfirmacao): ItemDeConfirmacao[] {
+  return conteudo.criteriosAdiados.map((criterio, indice) => ({
+    rotulo: `${indice + 1}º critério de desempate`,
+    valor: textoDoCriterio(criterio, conteudo.rotuloDaArea),
+  }));
+}
+
 function itensDaClassificacao(draft: WizardDraft): ItemDeConfirmacao[] {
   const classificacao = draft.classificacao;
   const local = classificacaoUsaFormulaLocal(classificacao.regraCalculoCodigo);
 
   return [
     ...itensDoCalculo(classificacao, local),
-    { rotulo: 'Baseada em ENEM', valor: classificacao.baseadoEmEnem ? 'Sim' : 'Não' },
-    {
-      rotulo: 'Resolução de Peso por Área',
-      valor: exigeResolucaoPesoAreaEnem(classificacao)
-        ? classificacao.resolucaoPesoAreaEnem
-        : 'não se aplica',
-    },
-    {
-      rotulo: 'Regras de eliminação',
-      valor: local
-        ? `${classificacao.regrasEliminacao.length} regra(s)`
-        : 'nenhuma (classificação importada)',
-    },
+    ...itensDoEnem(classificacao),
+    { rotulo: 'Regras de eliminação', valor: regrasDeEliminacao(classificacao, local) },
     { rotulo: 'Edições do ENEM aceitas', valor: edicoesAceitas(draft) },
   ];
 }
@@ -80,21 +76,42 @@ function itensDoCalculo(
   classificacao: WizardDraft['classificacao'],
   local: boolean,
 ): ItemDeConfirmacao[] {
-  const naoSeAplica = 'não se aplica (classificação importada)';
   return [
     { rotulo: 'Regra de cálculo', valor: classificacao.regraCalculoCodigo },
-    {
-      rotulo: 'Arredondamento',
-      valor: local
-        ? `${classificacao.regraArredondamentoCodigo} — ${classificacao.casasArredondamento} casas`
-        : naoSeAplica,
-    },
+    { rotulo: 'Arredondamento', valor: arredondamento(classificacao, local) },
     { rotulo: 'Ordem de alocação', valor: classificacao.regraOrdemAlocacaoCodigo },
+    { rotulo: 'Escala da nota final', valor: escala(classificacao, local) },
+  ];
+}
+
+function escala(classificacao: WizardDraft['classificacao'], local: boolean): string {
+  return local
+    ? leituraDaEscalaDaNotaFinal(classificacao.escalaNotaFinal)
+    : NAO_SE_APLICA_IMPORTADA;
+}
+
+function arredondamento(classificacao: WizardDraft['classificacao'], local: boolean): string {
+  return local
+    ? `${classificacao.regraArredondamentoCodigo} — ${classificacao.casasArredondamento} casas`
+    : NAO_SE_APLICA_IMPORTADA;
+}
+
+function itensDoEnem(classificacao: WizardDraft['classificacao']): ItemDeConfirmacao[] {
+  return [
+    { rotulo: 'Baseada em ENEM', valor: classificacao.baseadoEmEnem ? 'Sim' : 'Não' },
     {
-      rotulo: 'Escala da nota final',
-      valor: local ? leituraDaEscalaDaNotaFinal(classificacao.escalaNotaFinal) : naoSeAplica,
+      rotulo: 'Resolução de Peso por Área',
+      valor: exigeResolucaoPesoAreaEnem(classificacao)
+        ? classificacao.resolucaoPesoAreaEnem
+        : 'não se aplica',
     },
   ];
+}
+
+function regrasDeEliminacao(classificacao: WizardDraft['classificacao'], local: boolean): string {
+  if (!local) return 'nenhuma (classificação importada)';
+  const quantidade = classificacao.regrasEliminacao.length;
+  return quantidade === 0 ? 'nenhuma' : `${quantidade} regra(s)`;
 }
 
 function edicoesAceitas(draft: WizardDraft): string {

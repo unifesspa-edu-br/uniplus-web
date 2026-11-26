@@ -23,33 +23,23 @@ import {
 import { CatalogoDeTiposDeEtapa } from '../cronograma/catalogos/catalogo-de-tipos-de-etapa.service';
 import { declaraNotaDoEnem } from '../cronograma/regras-da-etapa';
 import { GravacaoDaClassificacao } from '../classificacao/gravacao-da-classificacao.service';
-import { confirmacaoDaClassificacao } from '../classificacao/confirmacao-da-classificacao';
 import { RegraDeEliminacaoComponent } from './regra-de-eliminacao.component';
 import {
   REGRA_ELIMINACAO_VAZIA,
   leituraDaRegra,
   quadroDoCorte,
-  rotuloDaArea,
   type EtapaReferenciavel,
 } from './regras-de-eliminacao';
 import { mensagensDasRegras } from './validacao-da-eliminacao';
-import {
-  conferirDesempateGravado,
-  type PendenciaDoCriterioGravado,
-} from '../desempate/conferencia-do-desempate-gravado';
-import { recusaPorCriterioGravadoSemQuadro } from '../desempate/recusas-do-desempate';
 
-const MENSAGEM_SEM_CADASTRO_DO_PROCESSO =
-  'O cadastro do processo precisa estar concluído antes de configurar a classificação.';
 const MENSAGEM_DIVISOR_INVALIDO =
   'Nenhuma etapa do Cronograma compõe a nota. Volte ao Cronograma e declare ao menos uma etapa classificatória (ou ambas) com peso maior que zero.';
 
 /**
  * Regras de eliminação — a coleção que fecha o corpo de `PUT
  * …/classificacao` (UNI-REQ-0482). Eliminação não é dimensão própria da API:
- * é parte do payload de classificação, e por isso este é o passo que grava
- * o comando inteiro — regra de cálculo e precisão vêm do passo Fórmula, que
- * não persiste nada por conta própria.
+ * é parte do payload de classificação, e por isso este passo grava o comando
+ * inteiro, com a regra de cálculo e a precisão que o passo Fórmula coleta.
  *
  * Sob `CLASSIFICACAO_IMPORTADA`, esta seção não se aplica: a lista
  * de regras é ignorada na gravação (o mapeador força `[]`), e a tela não
@@ -61,7 +51,7 @@ const MENSAGEM_DIVISOR_INVALIDO =
   imports: [FalhaDeLeituraComponent, ValorEmConsultaComponent, RegraDeEliminacaoComponent],
   templateUrl: './eliminacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [GravacaoDaClassificacao, provePassoDoWizard(EliminacaoPassoComponent)],
+  providers: [provePassoDoWizard(EliminacaoPassoComponent)],
 })
 export class EliminacaoPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
@@ -164,23 +154,9 @@ export class EliminacaoPassoComponent {
     return 'Gravar e avançar';
   }
 
-  /**
-   * Sem confirmação quando a gravação já se sabe recusada: `null` leva direto ao `persistir()`, que
-   * mostra a recusa sem chamar a API.
-   */
+  /** Sem confirmação quando o passo não valida: `persistir()` mostra a recusa sem chamar a API. */
   confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
-    if (!this.validar().valid || this.recusasCertasPeloDesempate().length > 0) return null;
-
-    return confirmacaoDaClassificacao({
-      draft: this.store.draft(),
-      avisosDoDesempate: this.avisoDoDesempatePorArea(),
-      // O passo Desempate adia a gravação dos critérios por área até a classificação: é aqui que
-      // eles saem, e quem confirma precisa ver quais são.
-      criteriosAdiados: this.store.classificacao.desempatePendenteDeGravacao()
-        ? this.store.draft().desempate
-        : [],
-      rotuloDaArea: (codigo) => rotuloDaArea(this.quadro(), codigo),
-    });
+    return this.validar().valid ? this.gravacao.confirmacao() : null;
   }
 
   /**
@@ -229,52 +205,7 @@ export class EliminacaoPassoComponent {
     });
   }
 
-  /**
-   * O servidor recusa a classificação que deixa sem nota de área um critério de desempate já
-   * gravado que a cita. Com o rascunho fora do ENEM pela média ponderada, a recusa é certa, e a
-   * gravação nem é tentada. Confere o que está gravado, e por isso fica fora do `validar()`: a
-   * publicação valida todos os passos antes de gravá-los, e o Desempate, gravado antes deste, pode
-   * resolver a pendência.
-   */
-  private recusasCertasPeloDesempate(): string[] {
-    return this.pendenciasDoDesempateGravado()
-      .filter(({ semQuadro }) => semQuadro)
-      .map(({ posicao }) => recusaPorCriterioGravadoSemQuadro(posicao));
-  }
-
-  /**
-   * As áreas que o cadastro lido não tem em todos os grupos da resolução do rascunho. Só avisa: a
-   * gravação copia o quadro do cadastro que o servidor tem, que pode ter mudado depois da leitura,
-   * e quem julga é ele.
-   */
-  readonly avisoDoDesempatePorArea = computed(() => {
-    // Só para consulta não há gravação a avisar.
-    if (!this.store.edicaoPermitida()) return [];
-    const resolucao = this.classificacao().resolucaoPesoAreaEnem;
-    return this.pendenciasDoDesempateGravado()
-      .filter(({ semQuadro }) => !semQuadro)
-      .map(({ posicao, fora, todas }) => {
-        // Retirar todas as áreas deixaria o critério vazio, que o próprio Desempate recusa.
-        const correcao = todas
-          ? 'troque a regra do critério ou remova-o no passo Desempate e grave o passo'
-          : 'retire a área no passo Desempate e grave o passo';
-        return `Pelo cadastro de Peso por Área lido, o critério de desempate ${posicao} gravado cita ${fora.join(', ')}, que a resolução ${resolucao} não tem em todos os grupos, e a gravação deve ser recusada: ${correcao}, ou escolha outra resolução no passo Fórmula. Se o cadastro mudou, atualize a lista.`;
-      });
-  });
-
-  private readonly pendenciasDoDesempateGravado = computed<readonly PendenciaDoCriterioGravado[]>(
-    () => {
-      // Depois de uma gravação do desempate sem resposta conclusiva, só o servidor sabe o que tem.
-      const gravados = this.store.classificacao.criteriosDesempateGravados();
-      if (gravados === null) return [];
-      const conferencia = conferirDesempateGravado(
-        gravados,
-        this.classificacao(),
-        this.cadastroDePesos.leitura(),
-      );
-      return conferencia.resultado === 'com-pendencias' ? conferencia.pendencias : [];
-    },
-  );
+  readonly avisoDoDesempatePorArea = this.gravacao.avisoDoDesempatePorArea;
 
   /** "Atualizar lista" do aviso: relê o cadastro, e o aviso se refaz com ele. */
   atualizarCadastroDePesos(): void {
@@ -282,25 +213,11 @@ export class EliminacaoPassoComponent {
   }
 
   /**
-   * Grava a classificação inteira — regra de cálculo, precisão, ordem de
-   * alocação e o vetor de eliminação — num comando só. É o único `persistir()`
-   * das duas telas: gravar também no Fórmula enviaria `regrasEliminacao`
-   * vazio antes da hora e derrubaria o item de conformidade que esta gravação
-   * levanta.
+   * Grava a classificação inteira, depois de conferir o passo: a navegação é livre, e nada garante
+   * que a Fórmula esteja preenchida.
    */
-  async persistir(): Promise<ValidacaoDoPasso> {
-    const processoId = this.store.processoSeletivoId();
-    if (processoId === null) return { valid: false, messages: [MENSAGEM_SEM_CADASTRO_DO_PROCESSO] };
-
-    const recusa = this.recusaAntesDeGravar();
-    return recusa ?? this.gravacao.gravar(processoId);
-  }
-
-  private recusaAntesDeGravar(): ValidacaoDoPasso | null {
+  persistir(): Promise<ValidacaoDoPasso> {
     const conferencia = this.validar();
-    if (!conferencia.valid) return conferencia;
-
-    const doDesempate = this.recusasCertasPeloDesempate();
-    return doDesempate.length > 0 ? { valid: false, messages: doDesempate } : null;
+    return conferencia.valid ? this.gravacao.gravar() : Promise.resolve(conferencia);
   }
 }

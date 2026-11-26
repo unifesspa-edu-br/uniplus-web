@@ -15,7 +15,10 @@ import {
 import { vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
+import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
+import { GravacaoDaClassificacao } from '../classificacao/gravacao-da-classificacao.service';
 import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 
@@ -100,7 +103,10 @@ export interface OpcoesDaMontagem {
 
 const PROVEDORES_DA_MONTAGEM = [
   ProcessoSeletivoStore,
+  CadastroInicial,
+  GravacaoDoProcesso,
   CatalogosDeClassificacao,
+  GravacaoDaClassificacao,
   LeituraDoCadastroDePesos,
   provideHttpClient(withInterceptors([apiResultInterceptor])),
   provideHttpClientTesting(),

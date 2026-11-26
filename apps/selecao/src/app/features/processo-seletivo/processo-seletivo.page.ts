@@ -48,6 +48,7 @@ import { VocabulariosDaRegra } from './wizard/shared/deliberacao/vocabularios-da
 import { FormularioPassoComponent } from './wizard/passos/formulario/formulario.component';
 import { LeituraDoCadastroDePesos } from './wizard/passos/classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from './wizard/passos/classificacao/catalogos-de-classificacao.service';
+import { GravacaoDaClassificacao } from './wizard/passos/classificacao/gravacao-da-classificacao.service';
 import { FormulaPassoComponent } from './wizard/passos/formula/formula.component';
 import { BonusPassoComponent } from './wizard/passos/bonus/bonus.component';
 import { DesempatePassoComponent } from './wizard/passos/desempate/desempate.component';
@@ -98,6 +99,7 @@ import {
     ...CATALOGOS_DO_CRONOGRAMA,
     GravacaoDosCamposPressupostos,
     CatalogosDeClassificacao,
+    GravacaoDaClassificacao,
     LeituraDoCadastroDePesos,
     ReleituraDoSnapshot,
     NumeracaoDasRespostasRecusadas,
