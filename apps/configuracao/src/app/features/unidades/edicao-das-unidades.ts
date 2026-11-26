@@ -158,9 +158,7 @@ export class EdicaoDasUnidades {
   }
 
   salvar(): void {
-    this.erro.set(null);
-    this.erroDaCidade.set(null);
-    this.recusaDoSalvamento.set('');
+    this.limparErrosDoFormulario();
     descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -168,13 +166,16 @@ export class EdicaoDasUnidades {
     }
     const id = this.emEdicaoId();
     const modo = this.modo();
+    const operacao = this.operacaoDeSalvamento(id);
+    this.gravar('salvando', operacao, (result) => this.concluirSalvamento(result, modo));
+  }
+
+  private operacaoDeSalvamento(id: string | null): Observable<ApiResult<string | void>> {
     const valor = this.form.getRawValue();
     const contexto = withIdempotencyKey(this.chave());
-    const operacao: Observable<ApiResult<string | void>> =
-      id === null
-        ? this.api.criar(comandoDeCriacao(valor, this.cidade()), contexto)
-        : this.api.atualizar(id, comandoDeAtualizacao(id, valor, this.cidade()), contexto);
-    this.gravar('salvando', operacao, (result) => this.concluirSalvamento(result, modo));
+    return id === null
+      ? this.api.criar(comandoDeCriacao(valor, this.cidade()), contexto)
+      : this.api.atualizar(id, comandoDeAtualizacao(id, valor, this.cidade()), contexto);
   }
 
   removerConfirmado(): void {
@@ -193,19 +194,32 @@ export class EdicaoDasUnidades {
     cidade: CidadeRef | null,
   ): void {
     if (this.gravando()) return;
+    this.prepararDadosDoFormulario(modo, id, valores, cidade);
+    this.buscaDeCidade.reiniciar();
+    this.limparErrosDoFormulario();
+    this.renovarChave();
+    this.opcoesDaSuperior.preparar();
+    this.aberto.set(true);
+  }
+
+  private prepararDadosDoFormulario(
+    modo: ModoFormulario,
+    id: string | null,
+    valores: ValoresDaUnidade,
+    cidade: CidadeRef | null,
+  ): void {
     this.detalhe.fechar();
     this.resultado.set('');
     this.modo.set(modo);
     this.emEdicaoId.set(id);
     this.form.reset(valores);
     this.cidade.set(cidade);
-    this.buscaDeCidade.reiniciar();
+  }
+
+  private limparErrosDoFormulario(): void {
     this.erro.set(null);
     this.erroDaCidade.set(null);
     this.recusaDoSalvamento.set('');
-    this.renovarChave();
-    this.opcoesDaSuperior.preparar();
-    this.aberto.set(true);
   }
 
   private gravar<T>(
@@ -266,24 +280,30 @@ export class EdicaoDasUnidades {
       this.aplicarErrosDeValidacao(separarCausas(problem.errors));
       return;
     }
-    const campoDuplicado = CAMPO_DO_CONFLITO[problem.code];
-    if (campoDuplicado !== undefined) {
-      this.renovarChave();
-      marcarRecusaDoServidor(
-        this.form.controls[campoDuplicado],
-        problem.code,
-        this.problemI18n.resolve(problem).title,
-      );
-      return;
-    }
-    if (ehErroDeEndereco(problem.code)) {
-      this.renovarChave();
-      this.erroDaCidade.set(this.problemI18n.resolve(problem).title);
-      return;
-    }
+    if (this.recusarDuplicidade(problem)) return;
+    if (this.recusarCidade(problem)) return;
     if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
     this.erro.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
+  }
+
+  private recusarCidade(problem: ProblemDetails): boolean {
+    if (!ehErroDeEndereco(problem.code)) return false;
+    this.renovarChave();
+    this.erroDaCidade.set(this.problemI18n.resolve(problem).title);
+    return true;
+  }
+
+  private recusarDuplicidade(problem: ProblemDetails): boolean {
+    const campoDuplicado = CAMPO_DO_CONFLITO[problem.code];
+    if (campoDuplicado === undefined) return false;
+    this.renovarChave();
+    marcarRecusaDoServidor(
+      this.form.controls[campoDuplicado],
+      problem.code,
+      this.problemI18n.resolve(problem).title,
+    );
+    return true;
   }
 
   private aplicarErrosDeValidacao(causas: CausasDoProblema): void {
