@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { OrigemFatoCodigo } from '@uniplus/shared-data/configuracao';
+import { FonteValoresFatoCodigo, OrigemFatoCodigo } from '@uniplus/shared-data/configuracao';
 import { RecolhivelComponent, TagComponent } from '@uniplus/shared-ui/components';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { mensagemDeErroDoCampoComFormato } from '../../shared/formulario';
@@ -25,6 +25,12 @@ export class FatoValoresComponent {
   protected readonly fato = this.edicao.leitura.fato;
   protected readonly declarado = computed(
     () => this.fato()?.definicao.resolucao.origem.codigo === OrigemFatoCodigo.DECLARADO,
+  );
+  /** Os municípios da prova presencial: cada processo declara os seus, e esta tela não os cadastra. */
+  protected readonly valoresDeCadaProcesso = computed(
+    () =>
+      this.fato()?.definicao.valores.fonte?.codigo ===
+      FonteValoresFatoCodigo.MUNICIPIOS_PROVA_PRESENCIAL,
   );
   protected readonly temValores = this.edicao.leitura.temValores;
   protected readonly bloqueado = this.edicao.bloqueado;
