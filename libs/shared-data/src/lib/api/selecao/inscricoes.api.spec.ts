@@ -65,7 +65,7 @@ describe('InscricoesApi', () => {
       api.submeter(PROCESSO, REQUEST, ETAG, withIdempotencyKey('envio-1')),
     );
 
-    const req = controller.expectOne(`${ROTA}/submissao`);
+    const req = controller.expectOne(`${ROTA}/envio`);
     expect(req.request.method).toBe('POST');
     expect(req.request.headers.get('If-Match')).toBe(ETAG);
     expect(req.request.headers.get('Idempotency-Key')).toBe('envio-1');

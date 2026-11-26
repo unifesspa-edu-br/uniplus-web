@@ -1,4 +1,6 @@
 import {
+  ExibicaoDoValorDoItemCodigo,
+  FormaDoValorDoItemCodigo,
   SituacaoDoArquivoDoCandidatoCodigo,
   type ArquivoAdministrativoDto,
   type InscricaoAdministrativaDto,
@@ -32,19 +34,23 @@ export const oferta = (ordem: number, nome: string | null): OfertaEscolhidaDto =
   ordem,
 });
 
-const RESPOSTA_PADRAO = { descricao: '', componente: 'padrao', podeRevelar: false };
+export const exibicao = (
+  codigo: ExibicaoDoValorDoItemCodigo,
+): ItemDeRespostaDto['componente'] => ({ codigo, rotulo: codigo });
+
+const RESPOSTA_PADRAO = { descricao: '', componente: exibicao(ExibicaoDoValorDoItemCodigo.PADRAO), podeRevelar: false };
 
 export function item(
   fatoCodigo: string,
   rotulo: string,
-  tipo: string,
+  tipo: FormaDoValorDoItemCodigo,
   valor: unknown,
 ): ItemDeRespostaDto {
   return {
     fatoCodigo,
     rotulo,
     ...RESPOSTA_PADRAO,
-    tipo,
+    tipo: { codigo: tipo, rotulo: tipo },
     valor,
   };
 }
@@ -83,28 +89,28 @@ export const FERNANDA: InscricaoAdministrativaDto = {
       codigo: 'identificacao',
       titulo: 'Dados pessoais',
       itens: [
-        item('NOME', 'Nome completo', 'texto', 'Fernanda Laura Nicole Drumond'),
+        item('NOME', 'Nome completo', FormaDoValorDoItemCodigo.TEXTO, 'Fernanda Laura Nicole Drumond'),
         {
-          ...item('CPF', 'CPF', 'texto', '***.598.363-**'),
-          componente: 'cpf',
+          ...item('CPF', 'CPF', FormaDoValorDoItemCodigo.TEXTO, '***.598.363-**'),
+          componente: exibicao(ExibicaoDoValorDoItemCodigo.CPF),
           descricao: 'Cadastro de pessoa física.',
           podeRevelar: true,
         },
         {
-          ...item('MUNICIPIO', 'Município de residência', 'opcao', {
+          ...item('MUNICIPIO', 'Município de residência', FormaDoValorDoItemCodigo.OPCAO, {
             codigo: '1505502',
             rotulo: 'Marabá',
           }),
           descricao: 'Onde você mora hoje.',
         },
-        { ...item('RENDA', 'Renda familiar', 'numero', '1234.56'), componente: 'moeda' },
-        item('NASCIMENTO', 'Data de nascimento', 'data', '2000-03-09'),
-        item('PCD', 'Pessoa com deficiência', 'booleano', true),
-        item('ATENDIMENTO', 'Atendimentos', 'opcoes', [
+        { ...item('RENDA', 'Renda familiar', FormaDoValorDoItemCodigo.NUMERO, '1234.56'), componente: exibicao(ExibicaoDoValorDoItemCodigo.MOEDA) },
+        item('NASCIMENTO', 'Data de nascimento', FormaDoValorDoItemCodigo.DATA, '2000-03-09'),
+        item('PCD', 'Pessoa com deficiência', FormaDoValorDoItemCodigo.SIM_OU_NAO, true),
+        item('ATENDIMENTO', 'Atendimentos', FormaDoValorDoItemCodigo.OPCOES, [
           { codigo: 'a', rotulo: 'Prova ampliada' },
           { codigo: 'b', rotulo: 'Tempo adicional' },
         ]),
-        item('ENDERECO', 'Endereço', 'endereco', {
+        item('ENDERECO', 'Endereço', FormaDoValorDoItemCodigo.ENDERECO, {
           logradouro: 'Folha 31',
           numero: '12',
           bairro: 'Nova Marabá',
@@ -118,15 +124,15 @@ export const FERNANDA: InscricaoAdministrativaDto = {
           codigo: 'FORMACAO',
           rotulo: 'Formação anterior',
           ocorrencias: [
-            { id: 'o1', itens: [item('CURSO_ANT', 'Curso anterior', 'texto', 'Enfermagem')] },
-            { id: 'o2', itens: [item('CURSO_ANT', 'Curso anterior', 'texto', 'Biologia')] },
+            { id: 'o1', itens: [item('CURSO_ANT', 'Curso anterior', FormaDoValorDoItemCodigo.TEXTO, 'Enfermagem')] },
+            { id: 'o2', itens: [item('CURSO_ANT', 'Curso anterior', FormaDoValorDoItemCodigo.TEXTO, 'Biologia')] },
           ],
         },
       ],
     },
   ],
   derivados: [
-    item('MODALIDADES', 'Modalidades', 'opcoes', [{ codigo: 'AC', rotulo: 'Ampla concorrência' }]),
+    item('MODALIDADES', 'Modalidades', FormaDoValorDoItemCodigo.OPCOES, [{ codigo: 'AC', rotulo: 'Ampla concorrência' }]),
   ],
   arquivos: [
     arquivo(LAUDO_ID, 'Laudo médico'),

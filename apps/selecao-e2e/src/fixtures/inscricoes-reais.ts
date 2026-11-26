@@ -281,7 +281,7 @@ class InscricaoDaPersona {
 
   async submeter(rascunho: RascunhoComSituacao, corpo: CorpoDaInscricao): Promise<void> {
     await json(
-      await fetch(`${this.base}/submissao`, {
+      await fetch(`${this.base}/envio`, {
         method: 'POST',
         headers: this.cabecalho({
           'if-match': rascunho.eTag,

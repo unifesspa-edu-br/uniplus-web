@@ -7,7 +7,11 @@ import {
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { SELECAO_BASE_PATH, type InscricaoAdministrativaDto } from '@uniplus/shared-data/selecao';
+import {
+  FormaDoValorDoItemCodigo,
+  SELECAO_BASE_PATH,
+  type InscricaoAdministrativaDto,
+} from '@uniplus/shared-data/selecao';
 import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
 import { BehaviorSubject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -302,14 +306,14 @@ describe('DetalheDaInscricaoPage', () => {
               codigo: 'DEPENDENTES',
               rotulo: 'Dependentes',
               ocorrencias: [
-                { id: 'd1', itens: [item('NOME_DEP', 'Nome', 'texto', 'Ana')] },
-                { id: 'd2', itens: [item('NOME_DEP', 'Nome', 'texto', 'Bia')] },
+                { id: 'd1', itens: [item('NOME_DEP', 'Nome', FormaDoValorDoItemCodigo.TEXTO, 'Ana')] },
+                { id: 'd2', itens: [item('NOME_DEP', 'Nome', FormaDoValorDoItemCodigo.TEXTO, 'Bia')] },
               ],
             },
             {
               codigo: 'RESPONSAVEIS',
               rotulo: 'Responsáveis',
-              ocorrencias: [{ id: 'r1', itens: [item('NOME_RESP', 'Nome', 'texto', 'Caio')] }],
+              ocorrencias: [{ id: 'r1', itens: [item('NOME_RESP', 'Nome', FormaDoValorDoItemCodigo.TEXTO, 'Caio')] }],
             },
           ],
           itens: [],
