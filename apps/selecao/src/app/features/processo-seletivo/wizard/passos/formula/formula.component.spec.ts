@@ -13,9 +13,12 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { EtapaPontuada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
+import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
+import { GravacaoDaClassificacao } from '../classificacao/gravacao-da-classificacao.service';
 import { FormulaPassoComponent } from './formula.component';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 
@@ -54,6 +57,9 @@ describe('FormulaPassoComponent', () => {
         { provide: PermissoesService, useValue: { tem: () => false } },
         ProcessoSeletivoStore,
         CatalogosDeClassificacao,
+        GravacaoDaClassificacao,
+        CadastroInicial,
+        GravacaoDoProcesso,
         LeituraDoCadastroDePesos,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),

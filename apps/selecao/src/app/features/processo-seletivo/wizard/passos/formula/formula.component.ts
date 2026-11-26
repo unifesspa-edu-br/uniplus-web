@@ -5,12 +5,14 @@ import {
   ValorLegivelDirective,
 } from '@uniplus/shared-ui/components';
 
+import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
+import { GravacaoDaClassificacao } from '../classificacao/gravacao-da-classificacao.service';
 import {
   REGRA_CALCULO_IMPORTADA,
   classificacaoUsaFormulaLocal,
@@ -43,10 +45,9 @@ const REGRA_DE_ARREDONDAMENTO_SEM_ESCOLHA = {
 /**
  * Fórmula, precisão e ordem de alocação da classificação (UNI-REQ-0482).
  *
- * Coleta até `regrasEliminacao`, que é do passo Eliminação, quem grava o corpo inteiro em
- * `PUT …/classificacao`. Este passo não tem `persistir()`: gravar duas vezes enviaria
- * `regrasEliminacao` vazio na primeira e derrubaria o item de conformidade que a Eliminação
- * acabou de levantar.
+ * Os passos Fórmula e Eliminação gravam o mesmo comando, `PUT …/classificacao`, com o que o
+ * rascunho tem nos dois: este passo envia as regras de eliminação que a Eliminação já coletou,
+ * vazias enquanto ela não foi preenchida.
  *
  * A classificação é bimodal: sob `CLASSIFICACAO_IMPORTADA`, precisão e eliminação não se
  * aplicam e a seção some em vez de ficar desabilitada, porque o que o operador vê tem de bater
@@ -87,6 +88,7 @@ export class FormulaPassoComponent {
   );
 
   private readonly cadastroDePesos = inject(LeituraDoCadastroDePesos);
+  private readonly gravacao = inject(GravacaoDaClassificacao);
 
   constructor() {
     this.cadastroDePesos.iniciarLeitura();
@@ -173,8 +175,8 @@ export class FormulaPassoComponent {
   /**
    * Aviso antecipado do que a Eliminação vai recusar ao gravar: sob fórmula
    * local, sem etapa que componha a nota o divisor da média fica zero. Não
-   * bloqueia este passo — só o `persistir()` da Eliminação bloqueia —, mas
-   * avisa aqui porque é onde o operador acabou de escolher a fórmula.
+   * bloqueia este passo — só a Eliminação o confere —, mas avisa aqui porque
+   * é onde o operador acabou de escolher a fórmula.
    */
   readonly avisoDeDivisorInvalido = computed(
     () => this.usaFormulaLocal() && !divisorDaMediaValido(this.store.draft().cronograma.etapas),
@@ -262,10 +264,26 @@ export class FormulaPassoComponent {
     this.store.classificacao.descartarRecusas();
   }
 
+  rotuloDeAvanco(): string {
+    return 'Gravar e avançar';
+  }
+
+  /** Sem confirmação quando o passo não valida: `persistir()` mostra a recusa sem chamar a API. */
+  confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
+    return this.validar().valid ? this.gravacao.confirmacao() : null;
+  }
+
+  /** Grava a classificação inteira, depois de conferir o passo. */
+  persistir(): Promise<ValidacaoDoPasso> {
+    const conferencia = this.validar();
+    return conferencia.valid ? this.gravacao.gravar() : Promise.resolve(conferencia);
+  }
+
   /**
-   * Validação declarativa — acionada pela page ao clicar em "Próximo". Os campos destacados e as
-   * mensagens vêm de `pendenciasDaClassificacaoBase`, a mesma fonte que a Eliminação usa — ela
-   * persiste o comando inteiro e não pode divergir sobre o que conta como válido aqui.
+   * Validação declarativa — acionada pela page ao clicar em "Gravar e avançar". Os campos
+   * destacados e as mensagens vêm de `pendenciasDaClassificacaoBase`, a mesma fonte que a
+   * Eliminação usa — as duas gravam o comando inteiro e não podem divergir sobre o que conta como
+   * válido aqui.
    */
   validar(): ValidacaoDoPasso {
     const semEdicao = this.faltaEscolherEdicao();

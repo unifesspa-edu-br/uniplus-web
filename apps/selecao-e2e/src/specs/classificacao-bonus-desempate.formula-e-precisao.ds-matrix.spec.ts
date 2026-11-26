@@ -84,7 +84,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       await declararFormulaLocal(page);
       await page.getByLabel('Classificação baseada em provas').check();
 
-      await page.getByRole('button', { name: 'Próximo' }).click();
+      await page.getByRole('button', { name: 'Gravar e avançar' }).click();
 
       const seletor = page.getByLabel('Resolução de Peso por Área', { exact: true });
       await expect(seletor).toHaveAttribute('aria-invalid', 'true');
@@ -101,7 +101,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       const escala = page.getByLabel('Escala da nota final', { exact: true });
 
       await escala.fill('cem');
-      await page.getByRole('button', { name: 'Próximo' }).click();
+      await page.getByRole('button', { name: 'Gravar e avançar' }).click();
 
       await expect(escala).toHaveAttribute('aria-invalid', 'true');
       await expect(escala).toHaveAccessibleDescription(/Use apenas números/);
