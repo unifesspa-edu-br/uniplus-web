@@ -12,6 +12,7 @@ import {
   type TipoInstrumentoNormativoComDescricao,
 } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
+import { NomesDeMunicipios, type MunicipioEncontrado } from '@uniplus/shared-ui/components';
 import { expect, vi } from 'vitest';
 import { BaseLegalBonusRegionalPage } from './base-legal-bonus-regional.page';
 import { BaseLegalBonusRegionalStore } from './base-legal-bonus-regional.store';
@@ -97,7 +98,7 @@ const CODIGO_DO_CAMPO: Readonly<Record<string, string>> = {
   municipios: 'municipio_invalido',
 };
 
-/** A recusa 422 como a API a emite: `field` em camelCase e o `code` da raiz igual ao do primeiro erro. */
+/** A recusa 422 como a API a emite: `field` em camelCase e o `code` geral igual ao do primeiro erro. */
 export const recusaDeCampo = (field: string, message: string) => {
   const code = `${PREFIXO_DOS_CODIGOS}.${CODIGO_DO_CAMPO[field.replace(/\[\d+\]$/, '')] ?? 'sem_municipios'}`;
   return problema(422, { code, errors: [{ field, code, message }] });
@@ -163,7 +164,7 @@ export class PaginaDaBaseLegal {
   novo = (): HTMLButtonElement => this.elemento('#cfg-base-legal-novo');
   salvar = (): HTMLButtonElement => this.elemento('button[form="cfg-base-legal-form"]');
   buscaDeMunicipio = (): HTMLInputElement =>
-    this.elemento('input[aria-labelledby="cfg-blbr-municipios-label"]');
+    this.elemento('cfg-campo-de-municipios input[role="combobox"]');
   statusDaPagina = (): string =>
     this.elemento(':scope > span.sr-only[role="status"]').textContent ?? '';
 
@@ -184,8 +185,20 @@ export class PaginaDaBaseLegal {
     this.preencher('tipoInstrumento', TIPO_PORTARIA.codigo);
     this.preencher('identificacao', 'Portaria de teste');
     this.preencher('descricao', 'Descrição de teste válida.');
-    this.municipios.adicionar(MARABA);
+    this.escolherMunicipios(MARABA);
     await this.propagar();
+  }
+
+  preencherCadastroValido(): void {
+    this.preencher('tipoInstrumento', TIPO_PORTARIA.codigo);
+    this.preencher('identificacao', 'Portaria de teste');
+    this.preencher('descricao', 'Descrição de teste válida.');
+    this.escolherMunicipios(MARABA);
+  }
+
+  escolherMunicipios(...municipios: MunicipioEncontrado[]): void {
+    TestBed.inject(NomesDeMunicipios).lembrar(municipios);
+    this.municipios.escolher(municipios.map((municipio) => municipio.codigoIbge));
   }
 
   async abrirEdicao(base: BaseLegalBonusRegionalDto = portaria): Promise<void> {
@@ -256,3 +269,14 @@ export async function montarPagina(
 }
 
 export type Pagina = PaginaDaBaseLegal;
+
+export function verificarErroDeMunicipioObrigatorio(p: Pagina): void {
+  const erro = p.elemento('#cfg-blbr-municipios-erro');
+  expect(erro.textContent?.trim()).toBe('Adicione ao menos um município.');
+  expect(erro.getAttribute('role')).toBe('alert');
+  expect(p.buscaDeMunicipio().getAttribute('aria-invalid')).toBe('true');
+  expect(p.buscaDeMunicipio().getAttribute('aria-describedby')).toContain(
+    'cfg-blbr-municipios-erro',
+  );
+  expect(document.activeElement).toBe(p.buscaDeMunicipio());
+}

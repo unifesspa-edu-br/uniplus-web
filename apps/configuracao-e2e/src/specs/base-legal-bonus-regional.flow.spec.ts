@@ -3,12 +3,12 @@ import {
   BASE_DA_LISTA,
   MARABA,
   TIPOS_INSTRUMENTO,
-  TIPO_PORTARIA,
 } from '../support/api-da-base-legal-bonus-regional';
 import {
-  campoDaDescricao,
-  campoDaIdentificacao,
-  tipoDoInstrumento,
+  abrirConfirmacaoDaRemocao,
+  escolherMaraba,
+  preencherBaseLegal,
+  verificarBaseLegalCriada,
 } from '../support/passos-da-base-legal-bonus-regional';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
@@ -107,26 +107,13 @@ test.describe('Base Legal de Bônus Regional — CRUD (#754)', () => {
     await mockApi(page, capturado, []);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Nova base legal' }).click();
-    const formulario = page.getByRole('dialog', {
-      name: 'Formulário de base legal de bônus regional',
-    });
-    await tipoDoInstrumento(formulario).selectOption({ label: TIPO_PORTARIA.rotulo });
-    await campoDaIdentificacao(formulario).fill(BASE_DA_LISTA.identificacao);
-    await campoDaDescricao(formulario).fill(BASE_DA_LISTA.descricao);
-
-    await page.getByPlaceholder('Digite o nome completo do município…').fill('Marabá');
-    await page.getByRole('button', { name: /Marabá — PA/ }).click();
-    await expect(page.getByRole('button', { name: 'Remover Marabá' })).toBeVisible();
+    await preencherBaseLegal(page, BASE_DA_LISTA.identificacao, BASE_DA_LISTA.descricao);
+    await escolherMaraba(page);
 
     await page.getByRole('button', { name: 'Criar base legal' }).click();
 
     await expect.poll(() => capturado.posts.length).toBe(1);
-    expect(capturado.posts[0]).toMatchObject({
-      tipoInstrumento: TIPO_PORTARIA.codigo,
-      identificacao: BASE_DA_LISTA.identificacao,
-      municipios: [{ codigoIbge: MARABA.codigoIbge, nome: MARABA.nome, uf: MARABA.uf }],
-    });
+    verificarBaseLegalCriada(capturado.posts[0]);
   });
 
   test('CA-03: tentativa de salvar sem município é bloqueada na própria tela', async ({ page }) => {
@@ -134,13 +121,7 @@ test.describe('Base Legal de Bônus Regional — CRUD (#754)', () => {
     await mockApi(page, capturado, []);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Nova base legal' }).click();
-    const formulario = page.getByRole('dialog', {
-      name: 'Formulário de base legal de bônus regional',
-    });
-    await tipoDoInstrumento(formulario).selectOption({ label: TIPO_PORTARIA.rotulo });
-    await campoDaIdentificacao(formulario).fill('Portaria de teste');
-    await campoDaDescricao(formulario).fill('Descrição de teste válida.');
+    await preencherBaseLegal(page, 'Portaria de teste', 'Descrição de teste válida.');
 
     await page.getByRole('button', { name: 'Criar base legal' }).click();
 
@@ -153,14 +134,7 @@ test.describe('Base Legal de Bônus Regional — CRUD (#754)', () => {
     await mockApi(page, capturado, [BASE_DA_LISTA]);
     await abrirPagina(page);
 
-    await page
-      .getByRole('button', {
-        name: `Remover base legal de bônus regional ${BASE_DA_LISTA.identificacao}`,
-        exact: true,
-      })
-      .click();
-    const dialog = page.locator('dialog.uni-dialog');
-    await expect(dialog).toBeVisible();
+    const dialog = await abrirConfirmacaoDaRemocao(page);
     expect(capturado.deletedIds).toHaveLength(0);
 
     await dialog.getByRole('button', { name: 'Remover' }).click();

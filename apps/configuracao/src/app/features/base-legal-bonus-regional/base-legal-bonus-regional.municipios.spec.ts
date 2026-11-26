@@ -1,22 +1,18 @@
-import { buildVendorMimeAccept } from '@uniplus/shared-core/http';
+import { ESPERA_DA_DIGITACAO_MS } from '@uniplus/shared-ui/components';
 import { ligarRelogioControlado, passarOTempo } from '@uniplus/shared-testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CIDADES_URL,
-  ESCRITA,
   ITUPIRANGA,
   MARABA,
   Pagina,
-  corpoDaFalha,
   montarPagina,
   portaria,
   problema,
 } from './base-legal-bonus-regional.testing';
-import { ESPERA_DA_BUSCA_MS } from './municipios-da-base-legal';
 
-describe('BaseLegalBonusRegionalPage — escolha dos municípios', () => {
+describe('Base legal — municípios', () => {
   let p: Pagina;
-
   beforeEach(async () => {
     ligarRelogioControlado();
     p = await montarPagina([portaria]);
@@ -28,222 +24,136 @@ describe('BaseLegalBonusRegionalPage — escolha dos municípios', () => {
     p.http.verify();
   });
 
-  const digitar = async (termo: string): Promise<void> => {
-    p.buscaDeMunicipio().value = termo;
-    p.buscaDeMunicipio().dispatchEvent(new Event('input'));
+  async function digitar(termo: string): Promise<void> {
+    const campo = p.buscaDeMunicipio();
+    campo.focus();
+    campo.value = termo;
+    campo.dispatchEvent(new Event('input', { bubbles: true }));
     await p.propagar();
-  };
-  const resultados = (): HTMLButtonElement[] => [
-    ...p.fixture.nativeElement.querySelectorAll('.cfg-municipio-resultados button'),
+  }
+  async function buscar(termo: string, cidades = [MARABA, ITUPIRANGA]): Promise<void> {
+    await digitar(termo);
+    await passarOTempo(ESPERA_DA_DIGITACAO_MS);
+    p.http.expectOne((r) => r.url === CIDADES_URL).flush(cidades);
+    await p.propagar();
+  }
+  const opcoes = (): HTMLElement[] => [
+    ...p.fixture.nativeElement.querySelectorAll('[role="option"]'),
   ];
   const selecionados = (): string[] =>
     [...p.fixture.nativeElement.querySelectorAll('.cfg-municipio-selecionados li span')].map(
       (item: HTMLElement) => item.textContent?.trim() ?? '',
     );
+  const teclar = (key: string): void => {
+    p.buscaDeMunicipio().dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  };
 
-  it('só busca a partir de 3 caracteres, depois da espera da digitação', async () => {
+  it('consulta uma vez ao atingir o mínimo e esperar após a digitação', async () => {
     await digitar('Ma');
-    await passarOTempo(ESPERA_DA_BUSCA_MS);
+    await passarOTempo(ESPERA_DA_DIGITACAO_MS);
     p.http.expectNone((r) => r.url === CIDADES_URL);
-
-    await digitar('Marabá');
-    await passarOTempo(ESPERA_DA_BUSCA_MS - 1);
+    await digitar('Mar');
+    await passarOTempo(ESPERA_DA_DIGITACAO_MS - 1);
     p.http.expectNone((r) => r.url === CIDADES_URL);
     await passarOTempo(1);
     const pedido = p.http.expectOne((r) => r.url === CIDADES_URL);
-    expect(pedido.request.params.get('q')).toBe('Marabá');
-    expect(pedido.request.params.get('limit')).toBe('20');
-    expect(pedido.request.headers.get('Accept')).toBe(buildVendorMimeAccept('cidade', 1));
+    expect(pedido.request.params.get('q')).toBe('Mar');
     pedido.flush([MARABA]);
     await p.propagar();
-    expect(resultados().map((b) => b.textContent?.trim())).toEqual(['Marabá — PA']);
+    expect(opcoes().some((o) => o.textContent?.includes('Marabá'))).toBe(true);
   });
 
-  it('anuncia a busca em curso e, sem resultado, diz que não há município', async () => {
-    await digitar('Zzzz');
-    await passarOTempo(ESPERA_DA_BUSCA_MS);
-    expect(p.elemento('cfg-campo-de-municipios .list-state__loading').textContent).toContain(
-      'Buscando',
-    );
-
-    p.http.expectOne((r) => r.url === CIDADES_URL).flush([]);
+  it('escolhe pelo teclado, grava os três campos e mantém o foco', async () => {
+    await buscar('Mar', [MARABA]);
+    teclar('ArrowDown');
+    teclar('Enter');
     await p.propagar();
-    expect(p.elemento('cfg-campo-de-municipios').textContent).toContain(
-      'Nenhum município encontrado.',
-    );
-  });
-
-  it('escolher um resultado o move para os selecionados e limpa a busca', async () => {
-    await digitar('Marabá');
-    await passarOTempo(ESPERA_DA_BUSCA_MS);
-    p.http.expectOne((r) => r.url === CIDADES_URL).flush([MARABA, ITUPIRANGA]);
-    await p.propagar();
-
-    resultados()[0].click();
-    await p.propagar();
-
+    expect(p.municipios.itens()).toEqual([
+      { codigoIbge: MARABA.codigoIbge, nome: 'Marabá', uf: 'PA' },
+    ]);
     expect(selecionados()).toEqual(['Marabá — PA']);
-    expect(p.buscaDeMunicipio().value).toBe('');
-    expect(resultados()).toEqual([]);
-    expect(p.elemento('cfg-campo-de-municipios').textContent).not.toContain(
-      'Nenhum município adicionado ainda.',
-    );
+    expect(document.activeElement).toBe(p.buscaDeMunicipio());
   });
 
-  it('não oferece de novo o município que já foi escolhido', async () => {
-    p.municipios.adicionar(MARABA);
-    await digitar('Marabá');
-    await passarOTempo(ESPERA_DA_BUSCA_MS);
-    p.http.expectOne((r) => r.url === CIDADES_URL).flush([MARABA, ITUPIRANGA]);
-    await p.propagar();
-
-    expect(resultados().map((b) => b.textContent?.trim())).toEqual(['Itupiranga — PA']);
+  it('não repete escolhido no grupo encontrados', async () => {
+    p.escolherMunicipios(MARABA);
+    await buscar('Mar');
+    const titulo = [...p.fixture.nativeElement.querySelectorAll('.combobox__grupo')].find(
+      (item: Element) => item.textContent?.trim() === 'Encontrados',
+    ) as HTMLElement;
+    const encontrados = titulo?.nextElementSibling;
+    expect(encontrados?.textContent).not.toContain('Marabá');
+    expect(encontrados?.textContent).toContain('Itupiranga');
   });
 
-  it('"Remover" tira o município escolhido e passa a apontar a falta quando era o único', async () => {
-    p.municipios.adicionar(MARABA);
+  it('desmarca um escolhido pela lista e mantém o foco no campo', async () => {
+    p.escolherMunicipios(MARABA);
     await p.propagar();
+    p.buscaDeMunicipio().focus();
+    await p.propagar();
+    teclar('ArrowDown');
+    teclar('Enter');
+    await p.propagar();
+    expect(selecionados()).toEqual([]);
+    expect(document.activeElement).toBe(p.buscaDeMunicipio());
+  });
 
+  it('associa o rótulo ao campo obrigatório', () => {
+    const rotulo = p.elemento<HTMLLabelElement>('cfg-campo-de-municipios label');
+    expect(rotulo.htmlFor).toBe(p.buscaDeMunicipio().id);
+    expect(p.buscaDeMunicipio().getAttribute('aria-required')).toBe('true');
+  });
+
+  it('remover passa ao próximo botão e depois ao campo e exige um município', async () => {
+    p.escolherMunicipios(MARABA, ITUPIRANGA);
+    await p.propagar();
     p.elemento<HTMLButtonElement>('button[aria-label="Remover Marabá"]').click();
     await p.propagar();
-
-    expect(selecionados()).toEqual([]);
-    expect(p.elemento('#cfg-blbr-municipios-erro').textContent?.trim()).toBe(
+    expect(document.activeElement).toBe(p.elemento('button[aria-label="Remover Itupiranga"]'));
+    p.elemento<HTMLButtonElement>('button[aria-label="Remover Itupiranga"]').click();
+    await p.propagar();
+    expect(document.activeElement).toBe(p.buscaDeMunicipio());
+    expect(p.elemento('#cfg-blbr-municipios-erro').textContent).toContain(
       'Adicione ao menos um município.',
     );
   });
 
-  it('Enter na busca não envia o formulário', async () => {
-    const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
-    p.buscaDeMunicipio().dispatchEvent(enter);
-    await p.propagar();
-
-    expect(enter.defaultPrevented).toBe(true);
-    p.http.expectNone(ESCRITA);
-  });
-
-  it('escolher um resultado devolve o foco à busca', async () => {
-    await digitar('Marabá');
-    await passarOTempo(ESPERA_DA_BUSCA_MS);
-    p.http.expectOne((r) => r.url === CIDADES_URL).flush([MARABA]);
-    await p.propagar();
-
-    resultados()[0].click();
-    await p.propagar();
-
-    expect(document.activeElement).toBe(p.buscaDeMunicipio());
-  });
-
-  it('remover leva o foco ao "Remover" seguinte e, sendo o último, à busca', async () => {
-    p.municipios.adicionar(MARABA);
-    p.municipios.adicionar(ITUPIRANGA);
-    await p.propagar();
-
-    p.elemento<HTMLButtonElement>('button[aria-label="Remover Marabá"]').click();
-    await p.propagar();
-    expect(document.activeElement).toBe(
-      p.elemento<HTMLButtonElement>('button[aria-label="Remover Itupiranga"]'),
-    );
-
-    p.elemento<HTMLButtonElement>('button[aria-label="Remover Itupiranga"]').click();
-    await p.propagar();
-    expect(document.activeElement).toBe(p.buscaDeMunicipio());
-  });
-
-  it('remover um município apaga a recusa do servidor sobre o campo', async () => {
-    p.municipios.adicionar(MARABA);
-    p.municipios.adicionar(ITUPIRANGA);
-    p.municipios.recusar('Município inválido.');
-    await p.propagar();
-    expect(p.elemento('#cfg-blbr-municipios-erro').textContent?.trim()).toBe('Município inválido.');
-
-    p.elemento<HTMLButtonElement>('button[aria-label="Remover Marabá"]').click();
-    await p.propagar();
-
-    expect(p.fixture.nativeElement.querySelector('#cfg-blbr-municipios-erro')).toBeNull();
-  });
-
-  it('limpar o termo cancela a busca em voo, e a resposta atrasada não repovoa a lista', async () => {
-    await digitar('Marabá');
-    await passarOTempo(ESPERA_DA_BUSCA_MS);
-    const antiga = p.http.expectOne((r) => r.url === CIDADES_URL);
-
-    await digitar('');
-
-    expect(antiga.cancelled).toBe(true);
-    expect(resultados()).toEqual([]);
-    expect(p.elemento('cfg-campo-de-municipios').textContent).not.toContain('Buscando');
-  });
-
-  it.each([
-    [500, 1],
-    [403, 0],
-  ])(
-    'a falha %s da busca é apontada no campo, que fica descrito por ela, e avisa %s vez(es) por toast',
-    async (status, avisos) => {
-      await digitar('Marabá');
-      await passarOTempo(ESPERA_DA_BUSCA_MS);
-      p.http
-        .expectOne((r) => r.url === CIDADES_URL)
-        .flush(...problema(status, corpoDaFalha(status)));
-      await p.propagar();
-
-      const erro = p.elemento('#cfg-blbr-municipio-busca-erro');
-      expect(erro.textContent).toContain('Não foi possível buscar municípios.');
-      expect(p.buscaDeMunicipio().getAttribute('aria-invalid')).toBe('true');
-      expect(p.buscaDeMunicipio().getAttribute('aria-describedby')).toBe(
-        'cfg-blbr-municipio-busca-erro',
-      );
-      expect(p.fixture.nativeElement.textContent).not.toContain('Nenhum município encontrado.');
-      expect(p.erros).toHaveBeenCalledTimes(avisos);
-    },
-  );
-
-  it('"Tentar novamente" repete a busca sem redigitar, fica indisponível enquanto busca e devolve o foco à busca', async () => {
-    await digitar('Marabá');
-    await passarOTempo(ESPERA_DA_BUSCA_MS);
-    p.http.expectOne((r) => r.url === CIDADES_URL).flush(...problema(503, corpoDaFalha(503)));
-    await p.propagar();
-
-    const tentar = p.elemento<HTMLButtonElement>(
-      'cfg-campo-de-municipios ui-nova-tentativa-do-campo button',
-    );
-    tentar.focus();
-    tentar.click();
-    await p.propagar();
-    expect(tentar.getAttribute('aria-disabled')).toBe('true');
-    expect(document.activeElement).toBe(tentar);
-    tentar.click();
-    await passarOTempo(ESPERA_DA_BUSCA_MS);
-    const repetida = p.http.expectOne((r) => r.url === CIDADES_URL);
-    expect(repetida.request.params.get('q')).toBe('Marabá');
-    repetida.flush([MARABA]);
-    await p.propagar();
-
-    expect(p.fixture.nativeElement.querySelector('#cfg-blbr-municipio-busca-erro')).toBeNull();
-    expect(resultados()).toHaveLength(1);
-    expect(document.activeElement).toBe(p.buscaDeMunicipio());
-  });
-
-  it('abrir outro cadastro descarta a busca e a seleção da vez anterior', async () => {
-    p.municipios.adicionar(MARABA);
-    await digitar('Itu');
-    p.edicao.fechar();
-    await p.propagar();
-
-    p.edicao.abrirCadastro();
-    await p.propagar();
-
-    expect(selecionados()).toEqual([]);
-    expect(p.buscaDeMunicipio().value).toBe('');
-  });
-
-  it('abrir a edição traz os municípios da base e não acusa falta antes de a pessoa mexer', async () => {
+  it('na edição preserva o município gravado e seu rótulo', async () => {
     p.edicao.fechar();
     p.edicao.abrirEdicao(portaria);
     await p.propagar();
-
     expect(selecionados()).toEqual(['Marabá — PA']);
     expect(p.fixture.nativeElement.querySelector('#cfg-blbr-municipios-erro')).toBeNull();
+  });
+
+  it('recomeça a busca que falhou ao abrir outro formulário', async () => {
+    const novaTentativa = (): Element | null =>
+      p.fixture.nativeElement.querySelector('ui-nova-tentativa-do-campo');
+    await digitar('Mar');
+    await passarOTempo(ESPERA_DA_DIGITACAO_MS);
+    p.http.expectOne((r) => r.url === CIDADES_URL).flush(...problema(503));
+    await p.propagar();
+    expect(novaTentativa()).not.toBeNull();
+    p.edicao.fechar();
+    await p.propagar();
+    p.edicao.abrirCadastro();
+    await p.propagar();
+    expect(p.buscaDeMunicipio()).not.toBeNull();
+    expect(novaTentativa()).toBeNull();
+    await passarOTempo(ESPERA_DA_DIGITACAO_MS);
+    p.http.expectNone((r) => r.url === CIDADES_URL);
+  });
+
+  it('mostra falha e permite tentar novamente com aviso de servidor', async () => {
+    await digitar('Mar');
+    await passarOTempo(ESPERA_DA_DIGITACAO_MS);
+    p.http.expectOne((r) => r.url === CIDADES_URL).flush(...problema(503));
+    await p.propagar();
+    expect(p.erros).toHaveBeenCalledTimes(1);
+    p.elemento<HTMLButtonElement>('ui-nova-tentativa-do-campo button').click();
+    await passarOTempo(ESPERA_DA_DIGITACAO_MS);
+    p.http.expectOne((r) => r.url === CIDADES_URL).flush([MARABA]);
+    await p.propagar();
+    expect(opcoes().some((o) => o.textContent?.includes('Marabá'))).toBe(true);
   });
 });

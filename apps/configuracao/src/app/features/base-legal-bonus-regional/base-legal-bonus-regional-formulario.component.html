@@ -81,13 +81,15 @@
           }
         </label>
 
-        <cfg-campo-de-municipios
-          class="form-grid__full"
-          [campo]="municipios()"
-          (buscar)="buscarMunicipio.emit($event)"
-          (adicionar)="adicionarMunicipio.emit($event)"
-          (remover)="removerMunicipio.emit($event)"
-        />
+        <!-- O drawer fechado não destrói o conteúdo: criar o campo a cada abertura recomeça a busca. -->
+        @if (aberto()) {
+          <cfg-campo-de-municipios
+            class="form-grid__full"
+            [dados]="municipios()"
+            (escolher)="escolherMunicipios.emit($event)"
+            (remover)="removerMunicipio.emit($event)"
+          />
+        }
       </div>
     </fieldset>
   </form>

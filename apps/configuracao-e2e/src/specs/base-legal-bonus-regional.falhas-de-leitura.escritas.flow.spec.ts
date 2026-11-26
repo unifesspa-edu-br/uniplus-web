@@ -8,6 +8,7 @@ import {
   novo,
   tipoDoInstrumento,
   titulo,
+  verificarAvisoDoTipoNoFormulario,
 } from '../support/passos-da-base-legal-bonus-regional';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
@@ -27,7 +28,7 @@ test.describe('Base legal de bônus regional — escritas', () => {
     const tentar = formulario.getByRole('button', { name: 'Tentar novamente' });
     await tentar.click();
     await expect(tentar).toBeFocused();
-    await expect(formulario.getByRole('button', { name: /Marabá — PA/ })).toBeVisible();
+    await expect(formulario.getByRole('option', { name: /Marabá \(PA\)/ })).toBeVisible();
     await expect(busca(formulario)).toBeFocused();
   });
 
@@ -66,12 +67,7 @@ test.describe('Base legal de bônus regional — escritas', () => {
     await page.goto('/base-legal-bonus-regional');
     await novo(page).click();
     const formulario = drawer(page);
-    const aviso = formulario.locator('ui-alerta-nova-tentativa');
-    await expect(aviso).toContainText('sem o vocabulário de tipos');
-    await expect(tipoDoInstrumento(formulario)).toHaveAttribute(
-      'aria-describedby',
-      'cfg-blbr-tipos-falha',
-    );
+    const aviso = await verificarAvisoDoTipoNoFormulario(formulario);
     const tentar = aviso.getByRole('button', { name: 'Tentar novamente' });
     await tentar.click();
     await expect(aviso).toBeHidden();
