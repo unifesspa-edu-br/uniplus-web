@@ -18,27 +18,14 @@ export interface MunicipioOpcao {
   readonly uf: string;
 }
 
-export interface MunicipioBuscaState {
-  readonly opcoes: readonly MunicipioOpcao[];
-  readonly carregando: boolean;
-  readonly erro: boolean;
-}
-
 export interface DiaNaoUtilFormGroup {
   uf: FormControl<string | null>;
   codigoMunicipio: FormControl<string | null>;
   municipioNome: FormControl<string | null>;
   municipioUf: FormControl<string | null>;
-  buscaMunicipio: FormControl<string>;
   abrangencia: FormControl<AbrangenciaCodigo | null>;
   data: FormControl<string>;
   descricao: FormControl<string>;
-}
-
-export interface MunicipioBuscaRequest {
-  readonly grupo: FormGroup<DiaNaoUtilFormGroup>;
-  readonly termo: string;
-  readonly uf: string;
 }
 
 export const DATA_DUPLICADA_DATASET_CODE =
@@ -95,12 +82,6 @@ export const DIAS_SEMANA = [
   { abrev: 'Sáb', nome: 'Sábado' },
 ] as const;
 
-export const MUNICIPIO_BUSCA_VAZIA: MunicipioBuscaState = {
-  opcoes: [],
-  carregando: false,
-  erro: false,
-};
-
 export const PARA_SIGLA = 'PA';
 
 export function textoNormalizado(maxLength: number): ValidatorFn {
@@ -140,8 +121,3 @@ export function snapshotMunicipalCoerente(control: AbstractControl): ValidationE
 function textoAparado(controle: FormControl<string | null>): string {
   return controle.value?.trim() ?? '';
 }
-
-export const MUNICIPIOS_LIMIT = 20;
-/** Quantas letras a busca de município exige antes de consultar a Geo. */
-export const TAMANHO_MINIMO_DA_BUSCA_DE_MUNICIPIO = 2;
-export const ESPERA_DA_BUSCA_DE_MUNICIPIO_MS = 300;

@@ -4,31 +4,39 @@ import {
   computed,
   effect,
   input,
-  output,
+  inject,
   signal,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { switchMap } from 'rxjs';
-import { acompanharLeitura, FalhaDeLeituraDoCampoComponent } from '@uniplus/shared-ui/components';
+import {
+  acompanharLeitura,
+  FalhaDeLeituraDoCampoComponent,
+  ValorDeMunicipioComponent,
+  NomesDeMunicipios,
+  nomeComUf,
+} from '@uniplus/shared-ui/components';
 import { AbrangenciaCodigo, UNIDADES_FEDERATIVAS } from '@uniplus/shared-data/configuracao';
 import { carregarVocabulario } from '../../shared/vocabulario-de-configuracao';
-import type { AlteracaoDoLocal } from './busca-de-municipios';
 import {
-  MUNICIPIO_BUSCA_VAZIA,
-  type MunicipioBuscaState,
-  TAMANHO_MINIMO_DA_BUSCA_DE_MUNICIPIO,
-} from './calendario-dias-uteis.util';
-import { errosDoDia, type GrupoDoDia, municipioSelecionadoDe } from './dia-nao-util-form';
+  aplicarAbrangencia,
+  errosDoDia,
+  gravarMunicipioEscolhido,
+  type GrupoDoDia,
+  municipioSelecionadoDe,
+  reiniciarBuscaDoMunicipio,
+  ufDaBuscaDe,
+} from './dia-nao-util-form';
 
 /**
  * Os campos de um dia não útil: abrangência, região, data e descrição. Quem hospeda decide a grade
- * (o host é o contêiner dos campos) e o que fazer com cada alteração do local.
+ * (o host é o contêiner dos campos).
  */
 @Component({
   selector: 'cfg-dia-nao-util-campos',
   standalone: true,
-  imports: [ReactiveFormsModule, FalhaDeLeituraDoCampoComponent],
+  imports: [ReactiveFormsModule, FalhaDeLeituraDoCampoComponent, ValorDeMunicipioComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dia-nao-util-campos.component.html',
   styleUrl: './dia-nao-util-campos.component.css',
@@ -38,10 +46,8 @@ export class DiaNaoUtilCamposComponent {
   readonly grupo = input.required<GrupoDoDia>();
   /** Distingue os ids dos campos quando a tela tem mais de um dia. */
   readonly sufixoDeId = input.required<string>();
-  readonly busca = input<MunicipioBuscaState>(MUNICIPIO_BUSCA_VAZIA);
   /** Outro dia da tela repete a data, a abrangência e a região deste. */
   readonly dataDuplicada = input(false);
-  readonly alteracao = output<AlteracaoDoLocal>();
 
   protected readonly abrangencias = carregarVocabulario('abrangencias-dia-nao-util');
   private readonly validarAbrangencia = effect((onCleanup) => {
@@ -99,33 +105,28 @@ export class DiaNaoUtilCamposComponent {
     return municipioSelecionadoDe(this.grupo());
   });
 
-  protected readonly buscaSemResultado = computed(() => {
-    this.eventos();
-    const estado = this.busca();
-    return (
-      this.grupo().controls.buscaMunicipio.value.trim().length >=
-        TAMANHO_MINIMO_DA_BUSCA_DE_MUNICIPIO &&
-      !estado.carregando &&
-      !estado.erro &&
-      estado.opcoes.length === 0
-    );
+  private readonly nomes = inject(NomesDeMunicipios);
+  protected readonly aplicarAbrangencia = aplicarAbrangencia;
+  protected readonly reiniciarBuscaDoMunicipio = reiniciarBuscaDoMunicipio;
+  protected readonly ufDaBuscaDe = ufDaBuscaDe;
+
+  protected readonly valores = computed(() => {
+    const municipio = this.municipioSelecionado();
+    return municipio ? [municipio.codigoIbge] : [];
   });
+
+  protected readonly rotulos = computed(() => {
+    const municipio = this.municipioSelecionado();
+    return municipio ? { [municipio.codigoIbge]: nomeComUf(municipio.nome, municipio.uf) } : {};
+  });
+
+  protected escolherMunicipio(codigos: readonly string[]): void {
+    const municipio = this.nomes.municipio(codigos[0] ?? '');
+    if (municipio) gravarMunicipioEscolhido(this.grupo(), municipio);
+    else reiniciarBuscaDoMunicipio(this.grupo());
+  }
 
   protected aoSairDeUmCampo(): void {
     this.saidasDeCampo.update((saidas) => saidas + 1);
-  }
-
-  protected readonly leitura = acompanharLeitura({
-    assunto: 'municípios',
-    falha: computed(() => (this.busca().erro ? 'Não foi possível buscar os municípios.' : null)),
-    pendente: computed(() => this.busca().carregando),
-    recarregar: () => this.alteracao.emit({ tipo: 'novaTentativa' }),
-    destino: () => document.getElementById(`busca-municipio-${this.sufixoDeId()}`),
-  });
-
-  protected aoDigitarABusca(evento: Event): void {
-    if (evento.target instanceof HTMLInputElement) {
-      this.alteracao.emit({ tipo: 'busca', termo: evento.target.value });
-    }
   }
 }

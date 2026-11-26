@@ -2,12 +2,7 @@ import { ChangeDetectionStrategy, Component, input, model, output } from '@angul
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
-import type { AlteracaoDoLocal } from './busca-de-municipios';
-import {
-  type DiaNaoUtilFormGroup,
-  MUNICIPIO_BUSCA_VAZIA,
-  type MunicipioBuscaState,
-} from './calendario-dias-uteis.util';
+import type { DiaNaoUtilFormGroup } from './calendario-dias-uteis.util';
 import { DiaNaoUtilCamposComponent } from './dia-nao-util-campos.component';
 
 /** O diálogo que acrescenta um dia não útil ao calendário aberto. */
@@ -31,10 +26,8 @@ export class DiaNaoUtilDialogoComponent {
   readonly erro = input.required<string | null>();
   readonly anuncio = input.required<string>();
   readonly salvando = input.required<boolean>();
-  readonly busca = input<MunicipioBuscaState>(MUNICIPIO_BUSCA_VAZIA);
   readonly salvar = output<void>();
   readonly cancelar = output<void>();
-  readonly alteracao = output<AlteracaoDoLocal>();
   readonly fechado = output<void>();
 
   private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });

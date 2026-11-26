@@ -14,9 +14,13 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CalendarioDiasUteisApi, CalendarioDiasUteisDto } from '@uniplus/shared-data/configuracao';
 import { aguardarRecarga } from '../../shared/foco';
 import { PARA_SIGLA, DATA_DUPLICADA_MESSAGE } from './calendario-dias-uteis.util';
-import { BuscaDeMunicipios } from './busca-de-municipios';
 import { CalendarioStore } from './calendario.store';
-import { aplicarErroNoDia, comandoDoDiaNaoUtil, criarGrupoDeDiaNaoUtil } from './dia-nao-util-form';
+import {
+  aplicarAbrangencia,
+  aplicarErroNoDia,
+  comandoDoDiaNaoUtil,
+  criarGrupoDeDiaNaoUtil,
+} from './dia-nao-util-form';
 import { aplicarPoliticaDaFalha, TipoDeFalha } from './falha-do-calendario';
 import { SelecaoDoDia } from './selecao-do-dia';
 import { descartarRecusasDoServidor, textoDasCausasGerais } from '../../shared/formulario';
@@ -33,7 +37,6 @@ export class EdicaoDosDiasNaoUteis {
   private readonly api = inject(CalendarioDiasUteisApi);
   private readonly store = inject(CalendarioStore);
   private readonly selecao = inject(SelecaoDoDia);
-  private readonly buscaMunicipios = inject(BuscaDeMunicipios);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -85,12 +88,11 @@ export class EdicaoDosDiasNaoUteis {
       abrangencia: AbrangenciaCodigo.ESTADUAL,
       codigoMunicipio: '',
       uf: PARA_SIGLA,
-      buscaMunicipio: '',
       descricao: '',
       municipioNome: null,
       municipioUf: null,
     });
-    this.buscaMunicipios.aplicar(this.form, { tipo: 'abrangencia' });
+    aplicarAbrangencia(this.form);
   }
 
   salvar(): void {

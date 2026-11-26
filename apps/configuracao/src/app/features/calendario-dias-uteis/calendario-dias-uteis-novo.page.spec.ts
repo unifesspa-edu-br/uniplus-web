@@ -63,10 +63,7 @@ describe('CalendarioDiasUteisNovoPage', () => {
 
     await p.preencherDia(indice, 'MUNICIPAL', '2026-04-05');
 
-    expect(p.fixture.nativeElement.textContent).toContain(
-      'A busca usa o nome; o código IBGE é preenchido automaticamente.',
-    );
-    expect((p.dia(indice, 'codigo-municipio') as HTMLSelectElement).value).toBe('');
+    expect((p.dia(indice, 'codigo-municipio') as HTMLInputElement).value).toBe('');
   });
 
   it('envia o snapshot da opção escolhida na Geo e volta à lista', async () => {
@@ -214,12 +211,9 @@ describe('CalendarioDiasUteisNovoPage', () => {
   it('remover um dia descarta a busca de municípios dele', async () => {
     const indice = await p.adicionarDia();
     await p.preencherDia(indice, 'MUNICIPAL', '2026-04-05');
-    const grupo = p.edicao.form.controls.diasNaoUteis.at(indice);
-    expect(p.busca.buscas().has(grupo)).toBe(true);
 
     p.elemento<HTMLButtonElement>('[aria-label="Remover dia não útil 1"]').click();
     await p.propagar();
-
-    expect(p.busca.buscas().has(grupo)).toBe(false);
+    expect(p.fixture.nativeElement.querySelector('ui-valor-de-municipio')).toBeNull();
   });
 });

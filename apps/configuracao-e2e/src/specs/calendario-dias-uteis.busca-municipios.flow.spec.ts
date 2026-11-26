@@ -70,12 +70,13 @@ test.describe('Calendário de dias úteis — nova tentativa da busca de municí
     const dialogo = page.getByRole('dialog', { name: 'Adicionar novo feriado ao calendário' });
     await dialogo.locator('#abrangencia-novo').selectOption('MUNICIPAL');
     await dialogo.locator('#uf-novo').selectOption('PA');
-    const busca = dialogo.locator('#busca-municipio-novo');
+    const busca = dialogo.getByRole('combobox', { name: 'Município' });
     await busca.fill('Mar');
 
     const tentar = dialogo.getByRole('button', { name: 'Tentar novamente' });
     await expect(tentar).toBeVisible();
-    await tentar.focus();
+    await busca.press('Tab');
+    await expect(tentar).toBeFocused();
     await page.keyboard.press('Enter');
 
     await expect(
@@ -85,8 +86,10 @@ test.describe('Calendário de dias úteis — nova tentativa da busca de municí
     await expect(tentar).toBeFocused();
 
     await expect(tentar).toBeHidden();
-    await expect(dialogo.locator('#codigo-municipio-novo')).toContainText('Marabá');
+    await expect(dialogo.getByRole('option', { name: 'Marabá (PA)' })).toBeVisible();
     await expect(busca).toBeFocused();
+    await expect(busca).toHaveValue('Mar');
+    await expect(busca).toHaveAttribute('aria-expanded', 'true');
   });
 
   test('falha, nova tentativa pelo mouse e sucesso devolvem o foco ao campo de busca', async ({
@@ -99,7 +102,7 @@ test.describe('Calendário de dias úteis — nova tentativa da busca de municí
     const dialogo = page.getByRole('dialog', { name: 'Adicionar novo feriado ao calendário' });
     await dialogo.locator('#abrangencia-novo').selectOption('MUNICIPAL');
     await dialogo.locator('#uf-novo').selectOption('PA');
-    const busca = dialogo.locator('#busca-municipio-novo');
+    const busca = dialogo.getByRole('combobox', { name: 'Município' });
     await busca.fill('Mar');
 
     const tentar = dialogo.getByRole('button', { name: 'Tentar novamente' });
@@ -113,7 +116,7 @@ test.describe('Calendário de dias úteis — nova tentativa da busca de municí
     await expect(tentar).toBeFocused();
 
     await expect(tentar).toBeHidden();
-    await expect(dialogo.locator('#codigo-municipio-novo')).toContainText('Marabá');
+    await expect(dialogo.getByRole('option', { name: 'Marabá (PA)' })).toContainText('Marabá');
     await expect(busca).toBeFocused();
   });
 });
