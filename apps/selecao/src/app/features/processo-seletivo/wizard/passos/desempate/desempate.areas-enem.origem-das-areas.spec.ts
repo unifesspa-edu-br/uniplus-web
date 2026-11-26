@@ -138,7 +138,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: origem das área
       expect(m.componente.validar()).toEqual({
         valid: false,
         messages: [
-          'Critério de desempate 1: a classificação escolhida no passo Fórmula não é baseada no ENEM pela média ponderada, e a gravação dela no passo Eliminação vai recusar o critério por área; troque a regra do critério ou remova-o, ou volte a classificação para o ENEM no passo Fórmula.',
+          'Critério de desempate 1: a classificação escolhida no passo Fórmula não é baseada no ENEM pela média ponderada, e a gravação dela vai recusar o critério por área; troque a regra do critério ou remova-o, ou volte a classificação para o ENEM no passo Fórmula.',
         ],
       });
     });
