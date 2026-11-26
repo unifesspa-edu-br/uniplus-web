@@ -13,6 +13,12 @@ export default [
         'error',
         {
           selector:
+            "CallExpression[callee.object.object.type='ThisExpression'][callee.object.property.name='http'][callee.property.name='get']:matches(:not([arguments.1.type='ObjectExpression']), :has(> ObjectExpression.arguments:nth-child(2):has(> SpreadElement)), :not(:has(> ObjectExpression.arguments:nth-child(2):has(> Property[key.name='context'][computed!=true][value.type='CallExpression'][value.callee.type='Identifier'][value.callee.name='withVendorMime']))))",
+          message:
+            'Todo GET de serviço de API deve pedir o tipo de mídia versionado com withVendorMime.',
+        },
+        {
+          selector:
             ":matches(Program, ExportNamedDeclaration, ExportDefaultDeclaration) > ClassDeclaration:not(:has(Decorator > CallExpression[callee.name='Injectable'] > ObjectExpression > Property[key.name='providedIn'][value.value='root']))",
           message:
             "Toda classe declarada no arquivo deve usar @Injectable({ providedIn: 'root' }).",
