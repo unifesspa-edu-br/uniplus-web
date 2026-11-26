@@ -41,7 +41,7 @@ describe('FormularioPassoComponent: consulta e avisos de idade', () => {
       // Pelo sinal, porque a consulta não aceita edição: com o tipo conhecido, a listagem não sai.
       store.draft.update((draft) => ({
         ...draft,
-        tipoProcesso: { ...draft.tipoProcesso, codigo: 'MEDICINA' },
+        tipoProcesso: { ...draft.tipoProcesso, codigo: 'REGULAR_UNIFICADO' },
       }));
       store.projetarSecao('formulario', { modeloOrigemCodigo: 'INSC' });
       fixture.detectChanges();

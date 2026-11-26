@@ -36,6 +36,7 @@ describe('TiposEtapaPage — recusas do servidor', () => {
 
   describe('ao salvar', () => {
     it.each([
+      ['Codigo', 'input', 'codigo', null],
       ['Nome', 'input', 'nome', null],
       ['Descricao', 'textarea', 'descricao', 'cfg-etapa-descricao-erro'],
       ['AdmitePontuacao', 'input', 'admitePontuacao', 'cfg-etapa-pontuacao-erro'],

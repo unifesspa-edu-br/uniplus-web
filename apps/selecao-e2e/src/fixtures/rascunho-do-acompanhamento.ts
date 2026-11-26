@@ -9,8 +9,11 @@ async function idDoTipoPsr(criador: string): Promise<string> {
     'GET',
     '/api/configuracao/tipos-processo?limit=100',
   );
-  const tipo = Array.isArray(tipos.corpo) ? tipos.corpo.find((t) => t.codigo === 'PSR') : undefined;
-  if (tipo === undefined) throw new Error("Tipo de processo 'PSR' não encontrado no catálogo.");
+  const tipo = Array.isArray(tipos.corpo)
+    ? tipos.corpo.find((t) => t.codigo === 'REGULAR_UNIFICADO')
+    : undefined;
+  if (tipo === undefined)
+    throw new Error("Tipo de processo 'REGULAR_UNIFICADO' não encontrado no catálogo.");
   return tipo.id;
 }
 

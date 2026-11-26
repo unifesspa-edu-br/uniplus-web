@@ -32,7 +32,7 @@ describe('OfertasDoCursoComponent', () => {
   ): void {
     const padrao: Record<string, unknown> = {
       aberto: true,
-      titulo: 'Ofertas de ENG-CIV',
+      titulo: 'Ofertas de ENG_CIV',
       bloqueio: null,
       mensagemDeErro: null,
       carregando: false,

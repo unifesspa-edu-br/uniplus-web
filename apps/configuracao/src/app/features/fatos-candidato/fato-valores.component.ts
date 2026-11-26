@@ -3,6 +3,8 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { OrigemFatoCodigo } from '@uniplus/shared-data/configuracao';
 import { RecolhivelComponent, TagComponent } from '@uniplus/shared-ui/components';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
+import { mensagemDeErroDoCampoComFormato } from '../../shared/formulario';
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { bloquearEnvio } from './bloquear-envio';
 import { EdicaoDoFato } from './edicao-do-fato';
 import { idDaAcaoDoValor, idDoValor } from './ids-do-fato';
@@ -37,6 +39,12 @@ export class FatoValoresComponent {
   }
 
   protected erroDoNovoValor(campo: 'codigo' | CampoDoValor): string | null {
+    if (campo === 'codigo') {
+      return mensagemDeErroDoCampoComFormato(
+        this.novoValor.controls.codigo,
+        textoDoFormatoDoCodigo(50),
+      );
+    }
     return mensagemDeErroDoControle(this.novoValor.controls[campo]);
   }
 

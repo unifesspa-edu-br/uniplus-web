@@ -23,7 +23,7 @@ const CURSO_ID = '01960000-0000-7000-0000-0000000000c1';
 
 const CURSO = {
   id: CURSO_ID,
-  codigo: 'ENG-CIV',
+  codigo: 'ENG_CIV',
   nome: 'Engenharia Civil',
   grau: 'Bacharelado',
   nivelEnsino: 'Graduação',

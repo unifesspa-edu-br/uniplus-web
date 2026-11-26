@@ -37,7 +37,7 @@ export function criarFormularioDeModelo(): FormGroup<CriacaoForm> {
     nome: campoDeTexto(Validators.required, Validators.maxLength(200)),
     descricao: campoDeTexto(Validators.maxLength(1000)),
     finalidade: new FormControl<FinalidadeFormularioCodigo | null>(null, Validators.required),
-    tipoProcessoCodigo: campoDeTexto(),
+    tipoProcessoCodigo: campoDeTexto(...validadoresDoCodigo(80)),
   });
 }
 
@@ -67,9 +67,9 @@ export function campoDaRecusa(campo: string): CampoDaCriacao | null {
 }
 
 /** A mensagem do campo; o formato do código tem texto próprio. */
-export function mensagemDoCampo(controle: FormControl<string | null>): string | null {
+export function mensagemDoCampo(controle: FormControl<string | null>, limite = 60): string | null {
   const mensagem = mensagemDeErroDoControle(controle);
   if (mensagem === null || controle.errors === null) return mensagem;
   if (controle.errors['backend'] || controle.errors['required']) return mensagem;
-  return controle.errors['pattern'] ? textoDoFormatoDoCodigo(60) : mensagem;
+  return controle.errors['pattern'] ? textoDoFormatoDoCodigo(limite) : mensagem;
 }

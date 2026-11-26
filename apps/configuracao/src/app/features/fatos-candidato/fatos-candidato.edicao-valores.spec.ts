@@ -3,6 +3,7 @@ import {
   Pagina,
   montarPagina,
   problema,
+  recusaDeCampo,
   sucesso,
   urlDoFato,
   compilarPaginaUmaVez,
@@ -134,6 +135,12 @@ describe('FatosCandidatoPage — edição do fato: escrita em curso e valores', 
       await p.propagar();
     };
     const urlDosValores = `${urlDoFato(todos)}/valores`;
+    const recusaDeFormato = () =>
+      recusaDeCampo(
+        'Codigo',
+        'Formato recusado.',
+        'uniplus.configuracao.fato_valor_dominio.codigo_formato_invalido',
+      );
 
     it('oferece acrescentar e desativar no fato do administrador', async () => {
       p = await montarPagina([todos]);
@@ -177,6 +184,16 @@ describe('FatosCandidatoPage — edição do fato: escrita em curso e valores', 
           'true',
         );
       }
+    });
+
+    it('mostra a recusa de formato no código do novo valor', async () => {
+      p = await montarPagina([todos]);
+      await p.abrirEdicao(todos);
+      await acrescentarValor('OUTRA', 'Outra');
+      p.http.expectOne(urlDosValores).flush(...recusaDeFormato());
+      await p.propagar();
+      expect(p.elemento(`${NOVO} ${campo('codigo')}`).getAttribute('aria-invalid')).toBe('true');
+      expect(p.texto(NOVO)).toContain('Formato recusado.');
     });
 
     it('o código do valor repetido (409) mostra a mensagem da API e não recarrega', async () => {

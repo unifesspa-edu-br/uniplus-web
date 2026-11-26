@@ -13,6 +13,7 @@ import type {
 import { opcoesDoVocabulario } from '@uniplus/shared-data/configuracao';
 import { componenteEscolhido, controleDaQuantidade } from './codigos-do-fato';
 import { nullIfBlank } from '../../shared/formulario';
+import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 import {
   esvaziarSeForaDas,
   hipotesesDaClassificacao,
@@ -130,7 +131,7 @@ export function criarFormularioDoNovoValor() {
   return new FormGroup({
     codigo: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(LIMITES_DO_FATO.codigoDoValor)],
+      validators: [Validators.required, ...validadoresDoCodigo(LIMITES_DO_FATO.codigoDoValor)],
     }),
     descricao: controleDoTextoDoValor(),
     orientacao: controleDoTextoDoValor(),
@@ -140,7 +141,7 @@ export function criarFormularioDoNovoValor() {
 export function comandoDoNovoValor(form: NovoValorForm, ordem: number): ValorDominioInput {
   const { codigo, descricao, orientacao } = form.getRawValue();
   return {
-    codigo: codigo.trim().toLocaleUpperCase('pt-BR'),
+    codigo,
     descricao: nullIfBlank(descricao),
     ordem,
     orientacao: nullIfBlank(orientacao),

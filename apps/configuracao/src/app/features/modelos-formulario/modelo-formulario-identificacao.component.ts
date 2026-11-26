@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { mensagemDeErroDoControle } from '../../shared/formulario';
+import { mensagemDeErroDoCampoComFormato, mensagemDeErroDoControle } from '../../shared/formulario';
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import type { EdicaoDoConteudoDoModelo } from './edicao-do-conteudo-do-modelo';
 import type { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.store';
 
@@ -22,6 +23,12 @@ export class ModeloFormularioIdentificacaoComponent {
   readonly salvar = output<void>();
 
   protected erro(campo: keyof Formulario['controls']): string | null {
+    if (campo === 'tipoProcessoCodigo') {
+      return mensagemDeErroDoCampoComFormato(
+        this.form().controls[campo],
+        textoDoFormatoDoCodigo(80),
+      );
+    }
     return mensagemDeErroDoControle(this.form().controls[campo]);
   }
 }

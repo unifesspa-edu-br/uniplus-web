@@ -41,8 +41,8 @@ export const DETALHE_PUBLICADO = {
   nome: 'Processo seletivo publicado',
   tipoProcesso: {
     origemId: '01960000-0000-7000-0000-000000000905',
-    codigo: 'GRAD',
-    nome: 'Graduação',
+    codigo: 'REGULAR_UNIFICADO',
+    nome: 'Processo Seletivo Regular Unificado',
   },
   situacao: { codigo: 'PUBLICADO', rotulo: 'Publicado' },
   origemCandidatos: { codigo: 'INSCRICAO_PROPRIA', rotulo: 'Inscrição própria' },

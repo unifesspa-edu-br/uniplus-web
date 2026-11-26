@@ -25,6 +25,15 @@ describe('ObrigatoriedadesLegaisApi', () => {
   });
   afterEach(() => http.verify());
 
+  it('preserva o código e o rótulo recebidos na consulta', async () => {
+    const leitura = firstValueFrom(api.obter('id'));
+    const tipoProcesso = { codigo: 'TODOS_OS_TIPOS', rotulo: 'Rótulo recebido da API' };
+    http.expectOne(`${base}/id`).flush({ ok: true, data: { tipoProcesso } });
+    const resultado = await leitura;
+    if (!resultado.ok) throw new Error('Consulta recusada');
+    expect(resultado.data.tipoProcesso).toEqual(tipoProcesso);
+  });
+
   it('envia os filtros por código e omite a categoria ausente', async () => {
     const result = firstValueFrom(
       api.listar({

@@ -298,7 +298,7 @@ test.describe('Oferta de curso — escritas', () => {
     await expect(confirmar).toHaveAttribute('aria-disabled', 'true');
     await expect(confirmar).toHaveCSS('cursor', 'not-allowed');
     await expect(dialogo.locator('[role="status"]')).toContainText(
-      'Removendo a oferta de curso ENG-CIV — Engenharia Civil.',
+      'Removendo a oferta de curso ENG_CIV — Engenharia Civil.',
     );
     await expect(dialogo.getByRole('button', { name: 'Fechar' })).toBeDisabled();
     await expect(dialogo.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
@@ -328,7 +328,7 @@ test.describe('Oferta de curso — escritas', () => {
     await expect(tituloDaLista(page)).toBeFocused();
     await expect(
       page.locator('.sr-only[role="status"]').filter({ hasText: 'Oferta de curso' }),
-    ).toHaveText('Oferta de curso ENG-CIV — Engenharia Civil removida.');
+    ).toHaveText('Oferta de curso ENG_CIV — Engenharia Civil removida.');
   });
 
   test('remoção recusada por falha interna mantém o diálogo aberto e o foco dentro dele', async ({

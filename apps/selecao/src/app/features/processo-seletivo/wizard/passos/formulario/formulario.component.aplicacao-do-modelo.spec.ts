@@ -66,7 +66,7 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
       servicoDeModelos().carregarModelos();
       const listagem = controller.expectOne((r) => r.url === ROTA_MODELOS);
 
-      expect(listagem.request.params.get('tipoProcesso')).toBe('MEDICINA');
+      expect(listagem.request.params.get('tipoProcesso')).toBe('REGULAR_UNIFICADO');
       expect(listagem.request.params.get('ativo')).toBe('true');
       listagem.flush(MODELOS);
     });
@@ -264,10 +264,12 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
       servicoDeModelos().carregarModelos();
       const doTipoAnterior = controller.expectOne((r) => r.url === ROTA_MODELOS);
 
-      store.patchObjectSection('tipoProcesso', { codigo: 'PSIQ' });
+      store.patchObjectSection('tipoProcesso', { codigo: 'INDIGENA_E_QUILOMBOLA' });
       fixture.detectChanges();
       controller
-        .expectOne((r) => r.url === ROTA_MODELOS && r.params.get('tipoProcesso') === 'PSIQ')
+        .expectOne(
+          (r) => r.url === ROTA_MODELOS && r.params.get('tipoProcesso') === 'INDIGENA_E_QUILOMBOLA',
+        )
         .flush([modelo('psiq', 'Inscrição do PSIQ', 'INSCRICAO')]);
       doTipoAnterior.flush(MODELOS);
 

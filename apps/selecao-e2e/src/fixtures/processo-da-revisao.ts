@@ -119,8 +119,8 @@ const IDENTIFICACAO_DO_PROCESSO = {
   nome: 'Processo Seletivo de teste',
   tipoProcesso: {
     origemId: '01960000-0000-7000-0000-000000000905',
-    codigo: 'GRAD',
-    nome: 'Graduação',
+    codigo: 'REGULAR_UNIFICADO',
+    nome: 'Processo Seletivo Regular Unificado',
   },
   origemCandidatos: { codigo: 'INSCRICAO_PROPRIA', rotulo: 'Inscrição própria' },
   unidadeAdministradora: {

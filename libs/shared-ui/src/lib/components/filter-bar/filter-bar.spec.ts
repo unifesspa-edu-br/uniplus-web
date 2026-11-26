@@ -214,7 +214,7 @@ describe('FilterBarComponent com filtros recolhíveis', () => {
     const fixture = montar([
       { nome: 'Finalidade', valor: 'Inscrição' },
       { nome: 'Situação', valor: 'Ativos' },
-      { nome: 'Tipo de processo', valor: 'PSR' },
+      { nome: 'Tipo de processo', valor: 'REGULAR_UNIFICADO' },
     ]);
     const raiz = fixture.nativeElement as HTMLElement;
     const alternar = raiz.querySelector('.filter-bar__alternar') as HTMLButtonElement;
@@ -226,7 +226,7 @@ describe('FilterBarComponent com filtros recolhíveis', () => {
       [...raiz.querySelectorAll('.filter-bar__ativo')].map((e) => e.textContent?.trim()),
     ).toEqual(['Finalidade: Inscrição', 'Situação: Ativos', '+1']);
     expect(alternar.getAttribute('aria-label')).toBe(
-      'Filtros, 3 ativos: Finalidade Inscrição, Situação Ativos, Tipo de processo PSR',
+      'Filtros, 3 ativos: Finalidade Inscrição, Situação Ativos, Tipo de processo REGULAR_UNIFICADO',
     );
 
     alternar.click();

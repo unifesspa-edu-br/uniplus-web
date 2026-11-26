@@ -19,7 +19,7 @@ const CURSO_ID = '01960000-0000-7000-0000-0000000000c1';
 
 const cursoSeed = {
   id: CURSO_ID,
-  codigo: 'ENG-CIV',
+  codigo: 'ENG_CIV',
   nome: 'Engenharia Civil',
   grau: 'Bacharelado',
   nivelEnsino: 'Graduação',
@@ -155,7 +155,7 @@ test.describe('Curso — CRUD (#389)', () => {
     await mockApi(page, novoCapturado(), [cursoSeed]);
     await abrirPagina(page);
 
-    await expect(page.getByText('ENG-CIV')).toBeVisible();
+    await expect(page.getByText('ENG_CIV')).toBeVisible();
     await expect(page.getByText('Engenharia Civil')).toBeVisible();
   });
 
@@ -248,7 +248,7 @@ test.describe('Curso — CRUD (#389)', () => {
     await abrirPagina(page);
 
     await page.getByRole('button', { name: 'Novo curso' }).first().click();
-    await page.locator('[formControlName="codigo"]').fill('ENG-CIV');
+    await page.locator('[formControlName="codigo"]').fill('ENG_CIV');
     await page.locator('[formControlName="nome"]').fill('Engenharia Civil (dup)');
     await page.locator('[formControlName="grau"]').fill('Bacharelado');
     await page.locator('[formControlName="nivelEnsino"]').fill('Graduação');
@@ -284,7 +284,7 @@ test.describe('Curso — CRUD (#389)', () => {
     // mensagem que a API retornou e lista a oferta que bloqueia a remoção — o
     // operador vê exatamente o que impede a exclusão (#435, CA2).
     const drawer = page.locator('dialog.uni-drawer');
-    await expect(drawer.getByRole('heading', { name: 'Ofertas de ENG-CIV' })).toBeVisible();
+    await expect(drawer.getByRole('heading', { name: 'Ofertas de ENG_CIV' })).toBeVisible();
     await expect(drawer.getByText('Remoção bloqueada')).toBeVisible();
     await expect(
       drawer.getByText(
@@ -305,7 +305,7 @@ test.describe('Curso — CRUD (#389)', () => {
     await page.getByRole('button', { name: `Ofertas de ${cursoSeed.codigo}`, exact: true }).click();
 
     const drawer = page.locator('dialog.uni-drawer');
-    await expect(drawer.getByRole('heading', { name: 'Ofertas de ENG-CIV' })).toBeVisible();
+    await expect(drawer.getByRole('heading', { name: 'Ofertas de ENG_CIV' })).toBeVisible();
     await expect(drawer.getByText('Instituto de Geociências e Engenharias')).toBeVisible();
     await expect.poll(() => capturado.ofertaCursoIds).toContain(CURSO_ID);
   });

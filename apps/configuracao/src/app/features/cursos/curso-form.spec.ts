@@ -10,7 +10,7 @@ import {
 
 const curso = {
   id: 'c1',
-  codigo: 'ENG-CIV',
+  codigo: 'ENG_CIV',
   nome: 'Engenharia Civil',
   grau: 'Bacharelado',
   nivelEnsino: 'Graduação',
@@ -31,6 +31,23 @@ describe('formulário de curso', () => {
     expect(form.controls.nome.hasError('maxlength')).toBe(true);
   });
 
+  it.each(['curso', ' CURSO', 'CURSO_', 'CURSO__A'])(
+    'recusa código fora do formato: %s',
+    (codigo) => {
+      const controle = criarFormularioDeCurso().controls.codigo;
+      controle.setValue(codigo);
+      expect(controle.hasError('pattern')).toBe(true);
+    },
+  );
+
+  it('aceita código de até 60 caracteres e o envia sem alterar', () => {
+    const codigo = 'A'.repeat(60);
+    const form = criarFormularioDeCurso();
+    form.controls.codigo.setValue(codigo);
+    expect(form.controls.codigo.valid).toBe(true);
+    expect(comandoDeCriacao(form.getRawValue()).codigo).toBe(codigo);
+  });
+
   it('o grupo do ENEM é opcional e o valor do curso o traz sem espaços nas pontas', () => {
     expect(criarFormularioDeCurso().controls.grupoAreaEnem.valid).toBe(true);
     expect(valoresDoCurso(curso).grupoAreaEnem).toBe('TECNOLOGICA');
@@ -40,7 +57,7 @@ describe('formulário de curso', () => {
   it('o comando manda nulo no que está em branco e leva o id na atualização', () => {
     const valores = { ...valoresDoCurso(curso), grupoAreaEnem: '  ' };
     expect(comandoDeCriacao(valores).grupoAreaEnem).toBeNull();
-    expect(comandoDeAtualizacao('c1', valores)).toMatchObject({ id: 'c1', codigo: 'ENG-CIV' });
+    expect(comandoDeAtualizacao('c1', valores)).toMatchObject({ id: 'c1', codigo: 'ENG_CIV' });
   });
 
   it('o campo recusado pelo servidor vira o controle do formulário, e o desconhecido, nulo', () => {

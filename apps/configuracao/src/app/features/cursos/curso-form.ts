@@ -5,6 +5,7 @@ import {
   CursoDto,
 } from '@uniplus/shared-data/configuracao';
 import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
+import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 
 export interface CursoForm {
   codigo: FormControl<string>;
@@ -32,14 +33,19 @@ const CONTROLES_DO_SERVIDOR: ReadonlySet<string> = new Set<keyof CursoForm>([
   'grupoAreaEnem',
 ]);
 
+function obrigatorio(maximo: number): FormControl<string> {
+  return new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, Validators.maxLength(maximo)],
+  });
+}
+
 export function criarFormularioDeCurso(): FormGroup<CursoForm> {
-  const obrigatorio = (maximo: number): FormControl<string> =>
-    new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(maximo)],
-    });
   return new FormGroup<CursoForm>({
-    codigo: obrigatorio(60),
+    codigo: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, ...validadoresDoCodigo(60)],
+    }),
     nome: obrigatorio(200),
     grau: obrigatorio(60),
     nivelEnsino: obrigatorio(60),
@@ -64,7 +70,7 @@ export function controleDoCampoDoServidor(field: string): keyof CursoForm | null
 
 export function comandoDeCriacao(valores: ValoresDoCurso): CriarCursoCommand {
   return {
-    codigo: nullIfBlank(valores.codigo),
+    codigo: valores.codigo,
     nome: nullIfBlank(valores.nome),
     grau: nullIfBlank(valores.grau),
     nivelEnsino: nullIfBlank(valores.nivelEnsino),

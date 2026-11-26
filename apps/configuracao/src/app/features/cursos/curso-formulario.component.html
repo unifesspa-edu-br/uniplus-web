@@ -33,12 +33,17 @@
               type="text"
               formControlName="codigo"
               [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
+              [attr.aria-describedby]="erroDoCampo('codigo') ? 'cfg-curso-codigo-erro' : null"
             />
             <span class="field__hint">
-              Chave curricular do curso. Diferente do código e-MEC (que pertence à oferta).
+              Chave curricular do curso. Use letras maiúsculas e algarismos, começando por letra e
+              separando palavras com um sublinhado, até 60 caracteres. O código e-MEC pertence à
+              oferta.
             </span>
             @if (erroDoCampo('codigo')) {
-              <span class="field__error">{{ erroDoCampo('codigo') }}</span>
+              <span id="cfg-curso-codigo-erro" class="field__error">{{
+                erroDoCampo('codigo')
+              }}</span>
             }
           </label>
           <label class="field" [class.is-error]="erroDoCampo('nome')">

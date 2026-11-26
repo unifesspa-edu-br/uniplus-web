@@ -48,7 +48,7 @@ describe('CursosPage', () => {
     expect(store.cursos()).toHaveLength(1);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Engenharia Civil');
-    expect(fixture.nativeElement.textContent).toContain('ENG-CIV');
+    expect(fixture.nativeElement.textContent).toContain('ENG_CIV');
   });
 
   it('CA-02: cria curso com código único, nome, grau e nível válidos', async () => {
@@ -123,7 +123,7 @@ describe('CursosPage', () => {
     edicao.abrirCadastro();
     responderGrupos();
     edicao.form.setValue({
-      codigo: 'ENG-CIV',
+      codigo: 'ENG_CIV',
       nome: 'Engenharia Civil (duplicado)',
       grau: 'Bacharelado',
       nivelEnsino: 'Graduação',

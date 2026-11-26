@@ -1,19 +1,6 @@
-import type {
-  FinalidadeFormularioCodigo,
-  AplicabilidadeCodigo,
-} from '@uniplus/shared-data/selecao';
 import { test, expect } from '@playwright/test';
-import {
-  OPERADOR_DO_ROTEIRO,
-  chamarApi,
-  entrarComoPersona,
-  prepararAcessosDaSimulacao,
-} from '@uniplus/shared-e2e';
-import type {
-  FormaDeComprovacaoCodigo,
-  RegraDeComprovacaoInformada,
-  ItemDocumentoExigidoInput,
-} from '@uniplus/shared-data/selecao';
+import { chamarApi, prepararAcessosDaSimulacao } from '@uniplus/shared-e2e';
+import { exigirTipoPendente, conferirTipoPendente } from '../support/passos-da-protecao-pendente';
 import { rascunhoParaConfiguracao } from '../fixtures/cenario-da-projecao';
 
 /**
@@ -21,22 +8,6 @@ import { rascunhoParaConfiguracao } from '../fixtures/cenario-da-projecao';
  * configuração do processo (cenário "item pendente na configuração do processo"):
  * a API recusa o vínculo e a tela mostra o item indisponível, com o motivo.
  */
-const APP = process.env['BASE_URL'] ?? 'http://localhost:4200';
-const BASES_LEGAIS = [
-  {
-    referencia: 'Edital nº XX/2026-CEPS/Unifesspa, itens 1.6 e 13',
-    abrangencia: 'INTERNA_EDITAL',
-    situacao: 'RESOLVIDO',
-    observacao: null,
-  },
-];
-type RegraNoTransporte = Omit<RegraDeComprovacaoInformada, 'forma' | 'documento'> & {
-  forma: `${FormaDeComprovacaoCodigo}`;
-  documento: Omit<ItemDocumentoExigidoInput, 'requisitos'> & {
-    requisitos: NonNullable<ItemDocumentoExigidoInput['requisitos']>;
-  };
-};
-
 test.describe('Configuração do processo com item de catálogo pendente', () => {
   const sufixo = Date.now();
   const nome = `Comprovante pendente ${sufixo}`;
@@ -69,70 +40,12 @@ test.describe('Configuração do processo com item de catálogo pendente', () =>
   });
 
   test('a API recusa exigir o tipo pendente', async () => {
-    const resposta = await chamarApi<{ code: string }>(
-      OPERADOR_DO_ROTEIRO,
-      'PUT',
-      `/api/selecao/processos-seletivos/${processoId}/documentos-exigidos`,
-      {
-        corpo: [
-          {
-            forma: 'DOCUMENTO',
-            documento: {
-              tipoDocumento: { id: tipoId },
-              momento: {
-                faseId,
-                etapaId: null,
-                finalidade: 'HABILITACAO' as FinalidadeFormularioCodigo.HABILITACAO,
-              },
-              aplicabilidade: { tipo: 'GERAL' as AplicabilidadeCodigo.GERAL, condicoes: [] },
-              indeferimento: {
-                obrigatorio: true,
-                consequencia: 'ELIMINA',
-                basesLegais: BASES_LEGAIS,
-              },
-              requisitos: {
-                prazoDeEmissao: null,
-                validade: null,
-                formatosPermitidos: 'QUALQUER',
-                tamanhoMaximoBytes: null,
-                modelo: null,
-              },
-            },
-            cardinalidade: null,
-            indeferimento: null,
-            itens: null,
-          } satisfies RegraNoTransporte,
-        ],
-      },
-    );
-
-    expect(resposta.status).toBe(422);
-    expect(resposta.corpo.code).toBe(
-      'uniplus.selecao.documento_exigido.tipo_documento_com_protecao_pendente',
-    );
+    await exigirTipoPendente(processoId, tipoId, faseId);
   });
 
   test('a tela oferece o tipo pendente como indisponível, aguardando a proteção de dados', async ({
     browser,
   }) => {
-    const pagina = await entrarComoPersona(
-      browser,
-      APP,
-      OPERADOR_DO_ROTEIRO,
-      `/processo-seletivo/${processoId}`,
-    );
-    await pagina.getByRole('button', { name: /^Cronograma/ }).click();
-    await expect(pagina.getByRole('heading', { name: /Passo 5/ })).toBeVisible();
-    await pagina.getByText('3. Habilitação', { exact: true }).click();
-
-    const seletor = pagina.getByRole('combobox', { name: /Documento a exigir/ });
-    await seletor.scrollIntoViewIfNeeded();
-    await seletor.fill(nome);
-
-    const opcao = pagina.getByRole('option', {
-      name: new RegExp(`${nome}.*aguarda a aprovação da proteção de dados`),
-    });
-    await expect(opcao).toBeVisible();
-    await expect(opcao).toHaveAttribute('aria-disabled', 'true');
+    await conferirTipoPendente(browser, processoId, nome);
   });
 });

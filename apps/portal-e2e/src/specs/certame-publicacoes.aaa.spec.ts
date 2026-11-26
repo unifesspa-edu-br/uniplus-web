@@ -12,6 +12,7 @@ import type {
 } from '@uniplus/shared-data/portal';
 import type { CertameNaVitrineDto, SituacaoDoCertameCodigo } from '@uniplus/shared-data/selecao';
 import { test, expect, type Locator, type Page } from '@playwright/test';
+import { conferirPublicacoesCompletas } from '../support/passos-da-vitrine';
 
 type AaaTheme = 'light' | 'dark' | 'contrast';
 type AaaFontMode = 'default' | 'legible';
@@ -29,7 +30,7 @@ const CERTAME: CertameNaVitrineDto = {
   identificadorLegivel: 'PS-2026-099',
   numero: '020/2026',
   nome: 'Processo Seletivo Simulado — Portão de Acessibilidade',
-  tipoProcesso: { codigo: 'PSE', nome: 'Processo Seletivo Especial' },
+  tipoProcesso: { codigo: 'EDUCACAO_DO_CAMPO', nome: 'Processo Seletivo Especial do Campo' },
   modalidadesOfertadas: ['AC'],
   inscricoesDe: '2026-01-01T12:00:00Z',
   inscricoesAte: '2026-12-05T23:59:00Z',
@@ -128,16 +129,7 @@ test.describe('Painel de publicações do certame — gate AAA aplicável @aaa',
 
     const painel = await abrirPainelDePublicacoes(page, theme, fontMode);
 
-    await expect(
-      painel.getByRole('heading', { level: 4, name: 'Edital de abertura' }),
-    ).toBeVisible();
-    await expect(painel.getByText('Documento principal')).toBeVisible();
-    await expect(painel.getByText('Anexos (1)')).toBeVisible();
-    await expect(painel.getByRole('link', { name: /^edital-020-2026\.pdf/ })).toHaveAttribute(
-      'href',
-      EVENTO_COM_DOCUMENTOS.documentos[0].url,
-    );
-    await expect(painel.getByText('Nenhuma publicação ainda')).toHaveCount(0);
+    await conferirPublicacoesCompletas(painel, EVENTO_COM_DOCUMENTOS.documentos[0].url);
 
     await assertAcessibilidade(page, fontMode);
   });

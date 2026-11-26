@@ -40,6 +40,7 @@ import {
 import { conteudoDoModelo, conteudoParaOModelo } from './conteudo-do-modelo';
 import { focoEstaLivre } from '../../shared/foco';
 import { validarParaEnvio, marcarRecusasDosCampos } from '../../shared/formulario';
+import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 import { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.store';
 
 interface CabecalhoForm {
@@ -77,7 +78,10 @@ export class EdicaoDoConteudoDoModelo {
       validators: [Validators.required, Validators.maxLength(200)],
     }),
     descricao: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(1000)] }),
-    tipoProcessoCodigo: new FormControl('', { nonNullable: true }),
+    tipoProcessoCodigo: new FormControl('', {
+      nonNullable: true,
+      validators: validadoresDoCodigo(80),
+    }),
   });
 
   constructor() {

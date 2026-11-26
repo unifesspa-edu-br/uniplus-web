@@ -220,7 +220,7 @@ export const modelo = (
     rotulo: ROTULOS_DAS_FINALIDADES[finalidade],
   },
   ativo: true,
-  descritivo: { nome, descricao: null, tipoProcessoCodigo: 'MEDICINA' },
+  descritivo: { nome, descricao: null, tipoProcessoCodigo: 'REGULAR_UNIFICADO' },
   conteudo: CONTEUDO_VAZIO_DO_MODELO,
 });
 
