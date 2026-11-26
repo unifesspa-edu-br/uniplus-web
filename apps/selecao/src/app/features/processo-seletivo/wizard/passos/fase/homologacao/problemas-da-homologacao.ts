@@ -1,3 +1,4 @@
+import { NOME_DO_PASSO_DA_FORMULA } from '../../../processo-seletivo.data';
 import type {
   AlternativaDeHomologacao,
   CondicaoDeHomologacao,
@@ -20,7 +21,7 @@ export function edicaoNaoDeclarada(
 /** O que a tela diz da edição que deixou de estar declarada, junto ao campo da edição. */
 export function mensagemDaEdicaoNaoDeclarada(condicao: CondicaoDeHomologacao): string {
   const edicao = rotuloDaEdicao(String(condicao.edicaoDoExame));
-  return `A edição ${edicao} não está entre as que o processo declara. Escolha uma edição declarada ou declare esta no passo Fórmula.`;
+  return `A edição ${edicao} não está entre as que o processo declara. Escolha uma edição declarada ou declare esta no passo ${NOME_DO_PASSO_DA_FORMULA}.`;
 }
 
 function problemasDaAlternativa(

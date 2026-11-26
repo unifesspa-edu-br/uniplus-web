@@ -89,7 +89,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       const seletor = page.getByLabel('Resolução de Peso por Área', { exact: true });
       await expect(seletor).toHaveAttribute('aria-invalid', 'true');
       await expect(page.locator('.step-error')).toContainText(
-        'Selecione a resolução de Peso por Área usada na nota, no passo Fórmula.',
+        'Selecione a resolução de Peso por Área usada na nota, no passo Fórmula e precisão.',
       );
     });
 

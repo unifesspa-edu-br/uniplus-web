@@ -1,3 +1,4 @@
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import type { DefinirClassificacaoRequest } from '@uniplus/shared-data/selecao';
 import {
@@ -35,6 +36,7 @@ import {
   comoComandoDeClassificacao,
   ehCampoDaEscala,
   ehCampoDaResolucao,
+  recusaNoPassoDaFormula,
 } from './classificacao-para-comando';
 import {
   FATO_DA_EDICAO_DO_ENEM,
@@ -241,7 +243,7 @@ export class GravacaoDaClassificacao {
     const { title, detail } = this.problemI18n.resolve(problema);
     const recusa = detail ?? title;
     this.store.classificacao.recusaDasEdicoesDoEnem.set(recusa);
-    return { valid: false, messages: [`Edições do ENEM, no passo Fórmula: ${recusa}`] };
+    return { valid: false, messages: [recusaNoPassoDaFormula('Edições do ENEM', recusa)] };
   }
 
   /**
@@ -320,11 +322,11 @@ function textoDaRecusa(
   return (
     recusaDaEliminacao(erro) ??
     (ehCampoDaEscala(erro.field) && recusaDaEscala !== null
-      ? `Escala da nota final, no passo Fórmula: ${recusaDaEscala}`
+      ? `Escala da nota final, no passo ${NOME_DO_PASSO_DA_FORMULA}: ${recusaDaEscala}`
       : null) ??
     recusaDaClassificacaoPeloDesempate(erro) ??
     (ehCampoDaResolucao(erro.field)
-      ? `Resolução de Peso por Área, no passo Fórmula: ${mensagemDaRecusaDaResolucao(erro)}`
+      ? `Resolução de Peso por Área, no passo ${NOME_DO_PASSO_DA_FORMULA}: ${mensagemDaRecusaDaResolucao(erro)}`
       : null)
   );
 }
@@ -337,5 +339,5 @@ function avisoDoCriterioSemArea(
   const correcao = todas
     ? 'troque a regra do critério ou remova-o no passo Desempate e grave o passo'
     : 'retire a área no passo Desempate e grave o passo';
-  return `Pelo cadastro de Peso por Área lido, o critério de desempate ${posicao} gravado cita ${fora.join(', ')}, que a resolução ${resolucao} não tem em todos os grupos, e a gravação deve ser recusada: ${correcao}, ou escolha outra resolução no passo Fórmula. Se o cadastro mudou, atualize a lista.`;
+  return `Pelo cadastro de Peso por Área lido, o critério de desempate ${posicao} gravado cita ${fora.join(', ')}, que a resolução ${resolucao} não tem em todos os grupos, e a gravação deve ser recusada: ${correcao}, ou escolha outra resolução no passo ${NOME_DO_PASSO_DA_FORMULA}. Se o cadastro mudou, atualize a lista.`;
 }

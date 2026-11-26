@@ -1,3 +1,4 @@
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import type { RegraEliminacaoConfigurada } from '../../processo-seletivo.models';
 import { decimalNaForma } from '../../shared/numero-do-campo';
 import {
@@ -50,7 +51,7 @@ function mensagensDaRegra(
   }
   if (eliminacaoExigeBaseadoEmEnem(regra.regraCodigo) && !entrada.baseadoEmEnem) {
     mensagens.push(
-      `Regra de eliminação ${posicao}: só se aplica quando a classificação está marcada como baseada em ENEM (passo Fórmula).`,
+      `Regra de eliminação ${posicao}: só se aplica quando a classificação está marcada como baseada em ENEM (passo ${NOME_DO_PASSO_DA_FORMULA}).`,
     );
   }
   return mensagens;

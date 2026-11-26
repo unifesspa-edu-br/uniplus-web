@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import { FormulaPassoComponent } from './formula.component';
 import {
   MontagemDe,
@@ -118,7 +119,7 @@ describe('FormulaPassoComponent — resolução de Peso por Área', () => {
 
       expect(resultado.valid).toBe(false);
       expect(resultado.messages).toEqual([
-        'A resolução de Peso por Área escolhida não está no cadastro lido. Se ela foi criada ou corrigida agora, use "Atualizar lista" no passo Fórmula; senão, escolha outra.',
+        `A resolução de Peso por Área escolhida não está no cadastro lido. Se ela foi criada ou corrigida agora, use "Atualizar lista" no passo ${NOME_DO_PASSO_DA_FORMULA}; senão, escolha outra.`,
       ]);
       expect(seletor(m).getAttribute('aria-invalid')).toBe('true');
       expect(texto(m.el.querySelector('#f-resolucao-peso-area-erro'))).toBe(
@@ -163,7 +164,7 @@ describe('FormulaPassoComponent — resolução de Peso por Área', () => {
 
       expect(resultado.valid).toBe(false);
       expect(resultado.messages).toEqual([
-        'Selecione a resolução de Peso por Área usada na nota, no passo Fórmula.',
+        `Selecione a resolução de Peso por Área usada na nota, no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
       ]);
       const select = seletor(m);
       expect(select.getAttribute('aria-invalid')).toBe('true');

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import { ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
 
@@ -25,10 +26,8 @@ describe('recusa por um critério de desempate já gravado', () => {
   const SEM_QUADRO = 'uniplus.selecao.processo_seletivo.desempate_area_enem_sem_quadro';
   const TEXTO_FORA_DO_QUADRO =
     'Um critério de desempate gravado cita área do ENEM que a resolução escolhida não tem em todos os grupos. No passo Desempate, retire a área — ou, se nenhuma área do critério sobrar, troque a regra dele ou remova-o — e grave o passo; ou escolha outra resolução.';
-  const TEXTO_SEM_QUADRO =
-    'Um critério de desempate gravado compara a nota de área do ENEM, que só existe com a classificação baseada no ENEM pela média ponderada. Troque a regra do critério ou remova-o no passo Desempate e grave o passo, ou marque o ENEM e a média ponderada no passo Fórmula.';
-  const TEXTO_SEM_QUADRO_NA_RESOLUCAO =
-    'Um critério de desempate gravado compara a nota de área do ENEM, que exige o quadro da resolução de Peso por Área. Troque a regra do critério no passo Desempate e grave o passo, ou escolha a resolução no passo Fórmula.';
+  const TEXTO_SEM_QUADRO = `Um critério de desempate gravado compara a nota de área do ENEM, que só existe com a classificação baseada no ENEM pela média ponderada. Troque a regra do critério ou remova-o no passo Desempate e grave o passo, ou marque o ENEM e a média ponderada no passo ${NOME_DO_PASSO_DA_FORMULA}.`;
+  const TEXTO_SEM_QUADRO_NA_RESOLUCAO = `Um critério de desempate gravado compara a nota de área do ENEM, que exige o quadro da resolução de Peso por Área. Troque a regra do critério no passo Desempate e grave o passo, ou escolha a resolução no passo ${NOME_DO_PASSO_DA_FORMULA}.`;
 
   async function recusar(
     codigo: string,

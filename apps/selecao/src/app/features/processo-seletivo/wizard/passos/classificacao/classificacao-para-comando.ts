@@ -1,5 +1,6 @@
 import { DefinirClassificacaoRequest, RegraEliminacaoInput } from '@uniplus/shared-data/selecao';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import {
   EtapaPontuada,
   RegraEliminacaoConfigurada,
@@ -176,12 +177,11 @@ export const TEXTO_DA_PENDENCIA_DA_RESOLUCAO: Readonly<
   Record<PendenciaDaResolucao, { readonly resumo: string; readonly campo: string }>
 > = {
   obrigatoria: {
-    resumo: 'Selecione a resolução de Peso por Área usada na nota, no passo Fórmula.',
+    resumo: `Selecione a resolução de Peso por Área usada na nota, no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
     campo: 'Selecione a resolução de Peso por Área usada na nota.',
   },
   'fora-do-cadastro': {
-    resumo:
-      'A resolução de Peso por Área escolhida não está no cadastro lido. Se ela foi criada ou corrigida agora, use "Atualizar lista" no passo Fórmula; senão, escolha outra.',
+    resumo: `A resolução de Peso por Área escolhida não está no cadastro lido. Se ela foi criada ou corrigida agora, use "Atualizar lista" no passo ${NOME_DO_PASSO_DA_FORMULA}; senão, escolha outra.`,
     campo:
       'Esta resolução não está no cadastro lido. Use "Atualizar lista" se ela foi criada agora, ou escolha outra.',
   },
@@ -251,14 +251,14 @@ function pendenciaDaResolucaoParaResumo(
 function pendenciaDaRegraDeCalculo(): PendenciaDaClassificacaoBase {
   return {
     campo: 'regraCalculo',
-    mensagem: 'Selecione a regra de cálculo da nota, no passo Fórmula.',
+    mensagem: `Selecione a regra de cálculo da nota, no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
   };
 }
 
 function pendenciaDaOrdemDeAlocacao(): PendenciaDaClassificacaoBase {
   return {
     campo: 'regraOrdemAlocacao',
-    mensagem: 'Selecione a regra de ordem de alocação, no passo Fórmula.',
+    mensagem: `Selecione a regra de ordem de alocação, no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
   };
 }
 
@@ -281,7 +281,7 @@ function pendenciasDaPrecisao(
 function pendenciaDoArredondamento(): PendenciaDaClassificacaoBase {
   return {
     campo: 'regraArredondamento',
-    mensagem: 'Selecione a regra de arredondamento, no passo Fórmula.',
+    mensagem: `Selecione a regra de arredondamento, no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
   };
 }
 
@@ -290,17 +290,22 @@ function casasDecimaisInvalidas(valor: string): boolean {
   return casas === null || casas <= 0;
 }
 
+/** A recusa de um campo do passo da fórmula, com o nome do passo onde corrigi-la. */
+export function recusaNoPassoDaFormula(campo: string, recusa: string): string {
+  return `${campo}, no passo ${NOME_DO_PASSO_DA_FORMULA}: ${recusa}`;
+}
+
 function pendenciaDaEscala(): PendenciaDaClassificacaoBase {
   return {
     campo: 'escalaNotaFinal',
-    mensagem: `Escala da nota final, no passo Fórmula: ${FORMATO_DA_ESCALA_DA_NOTA_FINAL}`,
+    mensagem: recusaNoPassoDaFormula('Escala da nota final', FORMATO_DA_ESCALA_DA_NOTA_FINAL),
   };
 }
 
 function pendenciaDasCasasDecimais(): PendenciaDaClassificacaoBase {
   return {
     campo: 'casasArredondamento',
-    mensagem: 'Informe as casas decimais de arredondamento, maior que zero, no passo Fórmula.',
+    mensagem: `Informe as casas decimais de arredondamento, maior que zero, no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
   };
 }
 
