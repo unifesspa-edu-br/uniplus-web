@@ -10,7 +10,6 @@ export {
   CODIGO_CADASTRO_FORMATO,
   CODIGO_TAMANHO_MAXIMO,
   textoDoFormatoDoCodigo,
-  sugerirCodigoDeCadastro,
 } from './utils/codigo-cadastro.util';
 export {
   type CodigoDoNome,

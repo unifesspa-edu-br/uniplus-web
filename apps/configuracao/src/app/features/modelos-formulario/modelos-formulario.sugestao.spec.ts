@@ -38,11 +38,10 @@ describe('ModelosFormularioPage — sugestão de código', () => {
     expect(codigo.value).toBe('INSCRICAO');
   });
 
-  it('mantém o limite de 60 caracteres para o código sugerido', () => {
+  it('avisa quando o código sugerido passa do limite de 60 caracteres', () => {
     const { nome, codigo } = pagina.edicao.form.controls;
     nome.setValue('a'.repeat(61));
-    expect(codigo.value).toBe('A'.repeat(61));
-    expect(codigo.hasError('maxlength')).toBe(true);
-    expect(codigo.dirty).toBe(true);
+    expect(codigo.value).toBe('');
+    expect(pagina.edicao.ligacaoDoCodigo.avisoDoNome()).toContain('60 caracteres');
   });
 });

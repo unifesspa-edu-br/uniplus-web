@@ -33,13 +33,18 @@
             aria-required="true"
             [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
             [attr.aria-describedby]="
-              erroCampoCodigo ? 'cfg-tdoc-codigo-dica cfg-tdoc-codigo-erro' : 'cfg-tdoc-codigo-dica'
+              (erroCampoCodigo
+                ? 'cfg-tdoc-codigo-dica cfg-tdoc-codigo-erro'
+                : 'cfg-tdoc-codigo-dica') + (avisoDoNome() ? ' cfg-tdoc-codigo-aviso' : '')
             "
           />
           <span class="field__hint" id="cfg-tdoc-codigo-dica"
             >{{ ajudaDoCodigo }} Único entre os tipos ativos. Sugerido a partir do nome e editável
             antes de salvar.</span
           >
+          <span class="field__hint" id="cfg-tdoc-codigo-aviso" role="status">{{
+            avisoDoNome()
+          }}</span>
           @if (erroCampoCodigo) {
             <span class="field__error" id="cfg-tdoc-codigo-erro">{{ erroCampoCodigo }}</span>
           }

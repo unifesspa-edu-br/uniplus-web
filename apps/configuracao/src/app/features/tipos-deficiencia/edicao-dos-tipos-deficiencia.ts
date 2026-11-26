@@ -1,3 +1,4 @@
+import { LIMITE_DO_CODIGO_DO_TIPO_DE_DEFICIENCIA } from './tipo-deficiencia-form';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
@@ -86,9 +87,10 @@ export class EdicaoDosTiposDeficiencia {
   private readonly tipoParaRemover = signal<TipoDeficienciaDto | null>(null);
   private readonly resultadoDaRemocao = signal('');
   private readonly chave = signal(idempotencyKey.create());
-  private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
+  readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
     this.form.controls,
     () => this.modo() === 'criar',
+    LIMITE_DO_CODIGO_DO_TIPO_DE_DEFICIENCIA,
   );
 
   readonly titulo = computed(() =>

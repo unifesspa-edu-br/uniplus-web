@@ -35,6 +35,7 @@ export class ModeloFormularioCriacaoComponent {
   protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(
     LIMITE_DO_CODIGO_DO_MODELO_DE_FORMULARIO,
   );
+  readonly avisoDoNome = input('');
   readonly form = input.required<FormGroup<CriacaoForm>>();
   readonly aberto = input.required<boolean>();
   readonly salvando = input.required<boolean>();

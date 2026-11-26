@@ -58,6 +58,7 @@ export class FatoCriacaoComponent {
 
   private readonly edicao = inject(EdicaoDosFatos);
 
+  protected readonly avisoDoNome = this.edicao.ligacaoDoCodigo.avisoDoNome;
   protected readonly form = this.edicao.form;
   protected readonly dep = this.edicao.dependencias;
   protected readonly salvando = this.edicao.criando;

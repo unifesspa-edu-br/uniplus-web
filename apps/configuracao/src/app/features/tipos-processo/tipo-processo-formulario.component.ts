@@ -19,6 +19,7 @@ import {
 export class TipoProcessoFormularioComponent {
   protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(LIMITE_DO_CODIGO_DO_TIPO_DE_PROCESSO);
   readonly aberto = model.required<boolean>();
+  readonly avisoDoNome = input('');
   readonly form = input.required<FormGroup<TipoProcessoForm>>();
   readonly modo = input.required<'criar' | 'editar'>();
   readonly titulo = input.required<string>();

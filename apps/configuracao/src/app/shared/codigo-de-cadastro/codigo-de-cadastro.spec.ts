@@ -8,7 +8,7 @@ function montar(emCriacao: () => boolean) {
     nome: new FormControl('', { nonNullable: true }),
     codigo: new FormControl('', { nonNullable: true }),
   };
-  const ligacao = TestBed.runInInjectionContext(() => ligarCodigoDeCadastro(campos, emCriacao));
+  const ligacao = TestBed.runInInjectionContext(() => ligarCodigoDeCadastro(campos, emCriacao, 50));
   return { ...campos, ligacao };
 }
 
@@ -60,5 +60,32 @@ describe('ligarCodigoDeCadastro', () => {
     const { codigo } = montar(() => true);
     codigo.setValue('ledor');
     expect(codigo.value).toBe('ledor');
+  });
+  it('limpa a sugestão longa e o aviso quando o nome volta a caber', () => {
+    const { nome, codigo, ligacao } = montar(() => true);
+    nome.setValue('a'.repeat(50));
+    expect(codigo.value).toBe('A'.repeat(50));
+    nome.setValue('a'.repeat(51));
+    expect(codigo.value).toBe('');
+    expect(ligacao.avisoDoNome()).toBe(
+      'O código formado a partir deste nome passa de 50 caracteres. Use um nome mais curto.',
+    );
+    nome.setValue('1ª etapa');
+    expect(codigo.value).toBe('PRIMEIRA_ETAPA');
+    expect(ligacao.avisoDoNome()).toBe('');
+  });
+
+  it('limpa o aviso ao digitar código ou reiniciar e não avisa para símbolos', () => {
+    const { nome, codigo, ligacao } = montar(() => true);
+    nome.setValue('a'.repeat(51));
+    codigo.setValue('ESCOLHIDO');
+    expect(ligacao.avisoDoNome()).toBe('');
+    codigo.setValue('');
+    nome.setValue('a'.repeat(51));
+    ligacao.reiniciar();
+    expect(ligacao.avisoDoNome()).toBe('');
+    nome.setValue('---');
+    expect(codigo.value).toBe('');
+    expect(ligacao.avisoDoNome()).toBe('');
   });
 });

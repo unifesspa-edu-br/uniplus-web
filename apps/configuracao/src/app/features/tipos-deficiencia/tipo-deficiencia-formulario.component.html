@@ -53,13 +53,17 @@
             formControlName="codigo"
             [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
             [attr.aria-describedby]="
-              erroCampoCodigo ? 'cfg-td-codigo-dica cfg-td-codigo-erro' : 'cfg-td-codigo-dica'
+              (erroCampoCodigo ? 'cfg-td-codigo-dica cfg-td-codigo-erro' : 'cfg-td-codigo-dica') +
+              (avisoDoNome() ? ' cfg-td-codigo-aviso' : '')
             "
           />
           <span class="field__hint" id="cfg-td-codigo-dica"
             >{{ ajudaDoCodigo }} Único entre os tipos de deficiência ativos. Sugerido a partir do
             nome e editável antes de salvar.</span
           >
+          <span class="field__hint" id="cfg-td-codigo-aviso" role="status">{{
+            avisoDoNome()
+          }}</span>
           @if (erroCampoCodigo) {
             <span class="field__error" id="cfg-td-codigo-erro">{{ erroCampoCodigo }}</span>
           }

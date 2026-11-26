@@ -1,3 +1,4 @@
+import { LIMITE_DO_CODIGO_DO_TIPO_DE_PROCESSO } from './tipo-processo-form';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
@@ -106,9 +107,10 @@ export class EdicaoDosTiposProcesso {
   private readonly resultado = signal('');
   private readonly chave = signal(idempotencyKey.create());
   private readonly chaveDaReativacao = signal(idempotencyKey.create());
-  private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
+  readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
     this.form.controls,
     () => this.modo() === 'criar',
+    LIMITE_DO_CODIGO_DO_TIPO_DE_PROCESSO,
   );
 
   readonly tituloDoFormulario = computed(() =>

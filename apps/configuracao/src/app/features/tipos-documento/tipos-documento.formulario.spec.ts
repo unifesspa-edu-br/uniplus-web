@@ -14,6 +14,25 @@ import {
   sucesso,
 } from './tipos-documento.testing';
 
+const antigo = { ...rg, classificacaoProtecao: 'SENSIVEL', hipoteseLegal: 'INTERESSE_LEGITIMO' };
+
+const dadosDaEdicao = { id: rg.id, codigo: 'RG', nome: 'Registro Geral revisado' };
+
+const limitesDosCampos = [
+  ['codigo', 51, 'Informe no máximo 50 caracteres.'],
+  ['nome', 201, 'Informe no máximo 200 caracteres.'],
+  ['descricao', 1001, 'Informe no máximo 1000 caracteres.'],
+  ['tipoEquivalente', 51, 'Informe no máximo 50 caracteres.'],
+  ['finalidadeTratamento', 501, 'Informe no máximo 500 caracteres.'],
+] as const;
+
+function verificarRecusaDoCatalogo(campo: HTMLElement, dica: HTMLElement): void {
+  expect(campo.querySelector('[role="alert"]')?.textContent).toContain(
+    'Não foi possível carregar as categorias.',
+  );
+  expect(dica.textContent).not.toContain('não está mais');
+}
+
 describe('TiposDocumentoPage — formulário', () => {
   let p: Pagina;
   afterEach(() => p.encerrar());
@@ -85,11 +104,11 @@ describe('TiposDocumentoPage — formulário', () => {
       expect(p.campo('codigo').value).toBe('RG');
       expect(p.campo('codigo').readOnly).toBe(false);
     });
-    it('nome que não produz código válido não deixa sugestão no campo', async () => {
+    it('forma o número inicial do nome por extenso', async () => {
       p = await montarPagina([]);
       await p.acionarNovo();
       p.preencher('nome', '21 de abril');
-      expect(p.campo('codigo').value).toBe('');
+      expect(p.campo('codigo').value).toBe('VINTE_E_UM_DE_ABRIL');
     });
     it('fora do formato fechado é recusado no cliente, com a regra à vista e associada ao campo', async () => {
       p = await montarPagina([]);
@@ -160,13 +179,7 @@ describe('TiposDocumentoPage — formulário', () => {
       await p.recarregarCom([rg]);
     });
   });
-  it.each([
-    ['codigo', 51, 'Informe no máximo 50 caracteres.'],
-    ['nome', 201, 'Informe no máximo 200 caracteres.'],
-    ['descricao', 1001, 'Informe no máximo 1000 caracteres.'],
-    ['tipoEquivalente', 51, 'Informe no máximo 50 caracteres.'],
-    ['finalidadeTratamento', 501, 'Informe no máximo 500 caracteres.'],
-  ] as const)(
+  it.each(limitesDosCampos)(
     'o limite de %s (%i caracteres) é recusado no cliente',
     async (campo, tamanho, texto) => {
       p = await montarPagina([]);
@@ -282,10 +295,7 @@ describe('TiposDocumentoPage — formulário', () => {
       p = await montarPagina([], { categorias: 'falha' });
       await p.acionarNovo();
       const campo = p.campo('categoria').closest('.field') as HTMLElement;
-      expect(campo.querySelector('[role="alert"]')?.textContent).toContain(
-        'Não foi possível carregar as categorias.',
-      );
-      expect(p.elemento('#cfg-td-categoria-dica').textContent).not.toContain('não está mais');
+      verificarRecusaDoCatalogo(campo, p.elemento('#cfg-td-categoria-dica'));
       const tentar = campo.querySelector<HTMLButtonElement>('button.link-button') as HTMLElement;
       tentar.focus();
       tentar.click();
@@ -334,11 +344,6 @@ describe('TiposDocumentoPage — formulário', () => {
       expect(p.edicao.form.controls.hipoteseLegal.value).toBe('');
     });
     it('ao abrir a edição mantém a hipótese do servidor; só esvazia a que a pessoa tornou incompatível', async () => {
-      const antigo = {
-        ...rg,
-        classificacaoProtecao: 'SENSIVEL',
-        hipoteseLegal: 'INTERESSE_LEGITIMO',
-      };
       p = await montarPagina([antigo]);
       await p.abrirEdicao(antigo);
       await p.propagar();
@@ -383,14 +388,9 @@ describe('TiposDocumentoPage — formulário', () => {
     await p.abrirEdicao(rg);
     p.preencher('nome', 'Registro Geral revisado');
     const put = await p.enviar(`${ESCRITA}/${rg.id}`);
-
     expect(put.request.method).toBe('PUT');
     expect(put.request.headers.get('Idempotency-Key')).toBeTruthy();
-    expect(put.request.body).toMatchObject({
-      id: rg.id,
-      codigo: 'RG',
-      nome: 'Registro Geral revisado',
-    });
+    expect(put.request.body).toMatchObject(dadosDaEdicao);
     put.flush(...sucesso());
     await p.recarregarCom([rg]);
     expect(p.sucessos).toHaveBeenCalledWith('Tipo de documento atualizado');

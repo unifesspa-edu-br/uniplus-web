@@ -1,52 +1,56 @@
+import { signal, type Signal } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { sugerirCodigoDeCadastro } from '@uniplus/shared-utils';
+import { formarCodigoDoNome } from '@uniplus/shared-utils';
 
-/** Os dois campos do cadastro que o código acompanha. */
 export interface CamposDoCodigoDeCadastro {
   readonly nome: FormControl<string>;
   readonly codigo: FormControl<string>;
 }
 
-/** O que a tela faz com a ligação: zerá-la ao abrir o formulário de novo. */
 export interface CodigoDeCadastroLigado {
-  /** Esquece a última sugestão, para o formulário recém-aberto voltar a sugerir. */
+  readonly avisoDoNome: Signal<string>;
   reiniciar(): void;
 }
 
-/**
- * Sugere o código a partir do nome enquanto o que está no campo é obra da própria sugestão:
- * o operador que troca o código por outro encerra a sugestão.
- */
-function criarSugestorDeCodigo(codigo: FormControl<string>): CodigoDeCadastroLigado & {
-  sugerirPara(nome: string): void;
-} {
-  let ultimaSugestao = '';
-  function sugerirPara(nome: string): void {
-    if (codigo.value !== '' && codigo.value !== ultimaSugestao) return;
-    ultimaSugestao = sugerirCodigoDeCadastro(nome);
-    codigo.setValue(ultimaSugestao, { emitEvent: false });
-    if (codigo.hasError('maxlength')) codigo.markAsDirty();
+class SugestorDeCodigo {
+  private ultimaSugestao = '';
+  readonly avisoDoNome = signal('');
+
+  constructor(
+    private readonly codigo: FormControl<string>,
+    private readonly limite: number,
+  ) {}
+
+  sugerirPara(nome: string): void {
+    if (this.codigo.value !== '' && this.codigo.value !== this.ultimaSugestao) return;
+    const resultado = formarCodigoDoNome(nome, this.limite);
+    this.ultimaSugestao = resultado?.ok ? resultado.codigo : '';
+    this.codigo.setValue(this.ultimaSugestao, { emitEvent: false });
+    this.avisoDoNome.set(
+      resultado && !resultado.ok
+        ? `O código formado a partir deste nome passa de ${this.limite} caracteres. Use um nome mais curto.`
+        : '',
+    );
   }
-  return { sugerirPara, reiniciar: () => void (ultimaSugestao = '') };
+
+  reiniciar(): void {
+    this.ultimaSugestao = '';
+    this.avisoDoNome.set('');
+  }
 }
 
-/**
- * Liga o código de cadastro ao nome, como a convenção do código informado pelo operador pede:
- *
- * - **sugestão:** na criação, o código acompanha o nome enquanto o que está nele é obra da
- *   própria sugestão, e para no instante em que o operador troca o código por outro. Fora da
- *   criação, nunca escreve: o código vigente é do registro;
- * Chamar em contexto de injeção (construtor ou inicialização de campo): as inscrições terminam
- * com a tela.
- */
 export function ligarCodigoDeCadastro(
   campos: CamposDoCodigoDeCadastro,
   emCriacao: () => boolean,
+  limite: number,
 ): CodigoDeCadastroLigado {
-  const sugestor = criarSugestorDeCodigo(campos.codigo);
+  const sugestor = new SugestorDeCodigo(campos.codigo, limite);
   campos.nome.valueChanges.pipe(takeUntilDestroyed()).subscribe((nome) => {
     if (emCriacao()) sugestor.sugerirPara(nome);
   });
+  campos.codigo.valueChanges
+    .pipe(takeUntilDestroyed())
+    .subscribe(() => sugestor.avisoDoNome.set(''));
   return sugestor;
 }

@@ -50,13 +50,17 @@
             formControlName="codigo"
             [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
             [attr.aria-describedby]="
-              erroCampoCodigo ? 'cfg-ra-codigo-dica cfg-ra-codigo-erro' : 'cfg-ra-codigo-dica'
+              (erroCampoCodigo ? 'cfg-ra-codigo-dica cfg-ra-codigo-erro' : 'cfg-ra-codigo-dica') +
+              (avisoDoNome() ? ' cfg-ra-codigo-aviso' : '')
             "
           />
           <span class="field__hint" id="cfg-ra-codigo-dica"
             >{{ ajudaDoCodigo }} Único entre os recursos ativos. Sugerido a partir do nome e
             editável.</span
           >
+          <span class="field__hint" id="cfg-ra-codigo-aviso" role="status">{{
+            avisoDoNome()
+          }}</span>
           @if (erroCampoCodigo) {
             <span class="field__error" id="cfg-ra-codigo-erro">{{ erroCampoCodigo }}</span>
           }

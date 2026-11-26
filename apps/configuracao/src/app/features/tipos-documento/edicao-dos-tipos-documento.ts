@@ -1,3 +1,4 @@
+import { LIMITE_DO_CODIGO_DO_TIPO_DE_DOCUMENTO } from './tipo-documento-form';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Observable, map } from 'rxjs';
@@ -92,9 +93,10 @@ export class EdicaoDosTiposDocumento {
   private readonly resultado = signal('');
   private readonly chave = signal(idempotencyKey.create());
   private readonly chaveDoAceite = signal(idempotencyKey.create());
-  private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
+  readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
     this.form.controls,
     () => this.modo() === 'criar',
+    LIMITE_DO_CODIGO_DO_TIPO_DE_DOCUMENTO,
   );
   /** O valor do formulário como sinal, para os derivados reagirem a cada alteração. */
   private readonly valores = toSignal(

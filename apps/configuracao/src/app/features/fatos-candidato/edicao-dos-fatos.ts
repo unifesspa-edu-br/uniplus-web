@@ -1,3 +1,4 @@
+import { LIMITE_DO_CODIGO_DO_FATO } from './fato-candidato-form';
 import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
@@ -73,9 +74,10 @@ export class EdicaoDosFatos {
     this.form,
     inject(VOCABULARIO_DE_TIPOS_DO_DADO).itens,
   );
-  private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
+  readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
     this.form.controls,
     () => this.modo() === 'criar',
+    LIMITE_DO_CODIGO_DO_FATO,
   );
 
   private readonly escrita = signal<Escrita | null>(null);

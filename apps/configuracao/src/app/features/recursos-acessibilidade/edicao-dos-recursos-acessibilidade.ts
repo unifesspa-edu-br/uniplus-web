@@ -1,3 +1,4 @@
+import { LIMITE_DO_CODIGO_DO_RECURSO_DE_ACESSIBILIDADE } from './recurso-acessibilidade-form';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
@@ -87,9 +88,10 @@ export class EdicaoDosRecursosAcessibilidade {
   private readonly recursoParaRemover = signal<RecursoAcessibilidadeDto | null>(null);
   private readonly resultadoDaRemocao = signal('');
   private readonly chave = signal(idempotencyKey.create());
-  private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
+  readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
     this.form.controls,
     () => this.modo() === 'criar',
+    LIMITE_DO_CODIGO_DO_RECURSO_DE_ACESSIBILIDADE,
   );
 
   readonly titulo = computed(() =>
