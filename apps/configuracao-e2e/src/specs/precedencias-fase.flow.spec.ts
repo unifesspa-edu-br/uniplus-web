@@ -20,7 +20,7 @@ const ARESTA_ID = '01960000-0000-7000-0000-0000000000a1';
 const arestaSeed = {
   id: ARESTA_ID,
   antecessoraCodigo: 'INSCRICAO',
-  sucessoraCodigo: 'HOMOLOGACAO',
+  sucessoraCodigo: 'HOMOLOGACAO_INSCRICOES',
   permiteSobreposicao: false,
   criadoEm: '2026-07-15T12:00:00Z',
 };
@@ -39,7 +39,7 @@ const fasesSeed = [
   },
   {
     id: 'fase-homologacao',
-    codigo: 'HOMOLOGACAO',
+    codigo: 'HOMOLOGACAO_INSCRICOES',
     nome: 'Homologação',
     descricao: null,
     unidadeSugerida: null,
@@ -135,10 +135,10 @@ test.describe('Precedência de fase — CRUD (#497)', () => {
 
     // Escopado à tabela: os códigos também aparecem como <option> nos selects
     // do drawer, presentes no DOM desde a carga (modo inicia em 'criar').
-    const linha = page.locator('tr[data-aresta="INSCRICAO>HOMOLOGACAO"]');
+    const linha = page.locator('tr[data-aresta="INSCRICAO>HOMOLOGACAO_INSCRICOES"]');
     await expect(linha).toBeVisible();
     await expect(linha.getByText('INSCRICAO', { exact: true })).toBeVisible();
-    await expect(linha.getByText('HOMOLOGACAO', { exact: true })).toBeVisible();
+    await expect(linha.getByText('HOMOLOGACAO_INSCRICOES', { exact: true })).toBeVisible();
   });
 
   test('CA-02: cria uma aresta com fases distintas', async ({ page }) => {
@@ -225,7 +225,7 @@ test.describe('Precedência de fase — CRUD (#497)', () => {
 
     await page.getByRole('button', { name: 'Nova aresta' }).first().click();
     await page.locator('#cfg-precedencia-antecessora').selectOption('INSCRICAO');
-    await page.locator('#cfg-precedencia-sucessora').selectOption('HOMOLOGACAO');
+    await page.locator('#cfg-precedencia-sucessora').selectOption('HOMOLOGACAO_INSCRICOES');
     await page.getByRole('button', { name: 'Criar aresta' }).click();
 
     const campoSucessora = page.locator('#cfg-precedencia-sucessora').locator('..');
@@ -279,7 +279,7 @@ test.describe('Precedência de fase — CRUD (#497)', () => {
     await expect(antecessora).toHaveAttribute('readonly', '');
     await expect(antecessora).toHaveValue('INSCRICAO');
     await expect(sucessora).toHaveAttribute('readonly', '');
-    await expect(sucessora).toHaveValue('HOMOLOGACAO');
+    await expect(sucessora).toHaveValue('HOMOLOGACAO_INSCRICOES');
 
     await page.locator('#cfg-precedencia-sobreposicao').selectOption({ label: 'Sim' });
     await page.getByRole('button', { name: 'Salvar aresta' }).click();
@@ -321,7 +321,7 @@ test.describe('Precedência de fase — CRUD (#497)', () => {
 
     await page.getByRole('button', { name: 'Nova aresta' }).first().click();
     await page.locator('#cfg-precedencia-antecessora').selectOption('INSCRICAO');
-    await page.locator('#cfg-precedencia-sucessora').selectOption('HOMOLOGACAO');
+    await page.locator('#cfg-precedencia-sucessora').selectOption('HOMOLOGACAO_INSCRICOES');
     await page.getByRole('button', { name: 'Criar aresta' }).click();
     await expect.poll(() => capturado.posts.length).toBe(1);
 

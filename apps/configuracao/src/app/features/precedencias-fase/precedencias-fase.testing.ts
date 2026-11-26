@@ -32,7 +32,7 @@ export const TITULO_DA_LISTA = '#cfg-precedencias-fase-list-title';
 export const inscricaoHomologacao: PrecedenciaFaseDto = {
   id: '01960000-0000-7000-0000-0000000000a1',
   antecessoraCodigo: 'INSCRICAO',
-  sucessoraCodigo: 'HOMOLOGACAO',
+  sucessoraCodigo: 'HOMOLOGACAO_INSCRICOES',
   permiteSobreposicao: false,
   criadoEm: '2026-07-15T12:00:00Z',
 };
@@ -47,7 +47,7 @@ export const avaliacaoClassificacao: PrecedenciaFaseDto = {
 /** O catálogo da API, na ordem dela: as fases que os testes escolhem nos campos do formulário. */
 export const CATALOGO_PADRAO: readonly FaseCanonicaVocabularioDto[] = [
   { codigo: 'INSCRICAO', nome: 'Inscrição' },
-  { codigo: 'HOMOLOGACAO', nome: 'Homologação' },
+  { codigo: 'HOMOLOGACAO_INSCRICOES', nome: 'Homologação' },
   { codigo: 'AVALIACAO', nome: 'Avaliação' },
   { codigo: 'CLASSIFICACAO', nome: 'Classificação' },
   { codigo: 'RESULTADO_FINAL', nome: 'Resultado final' },
@@ -84,6 +84,11 @@ export function faseCanonica(codigo: string, nome: string): FaseCanonicaDto {
 export const CONFLITO = {
   code: 'uniplus.configuracao.conflito',
   title: 'A aresta mudou desde a leitura.',
+} as const;
+/** O 404 de aresta que outra pessoa removeu depois da leitura. */
+export const NAO_ENCONTRADA = {
+  code: 'uniplus.configuracao.precedencia_fase.nao_encontrada',
+  title: 'Aresta de precedência não encontrada',
 } as const;
 /** O 500 que o middleware global de exceções da API emite. */
 export const ERRO_INTERNO = {

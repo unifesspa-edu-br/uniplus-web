@@ -12,7 +12,7 @@ const CORS_HEADERS = {
 const ARESTA = {
   id: '01960000-0000-7000-0000-0000000000a1',
   antecessoraCodigo: 'INSCRICAO',
-  sucessoraCodigo: 'HOMOLOGACAO',
+  sucessoraCodigo: 'HOMOLOGACAO_INSCRICOES',
   permiteSobreposicao: false,
   criadoEm: '2026-07-15T12:00:00Z',
 };
