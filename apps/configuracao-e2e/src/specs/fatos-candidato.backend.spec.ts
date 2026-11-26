@@ -35,9 +35,9 @@ async function preencherFato(
       .selectOption(fato.componente);
   await form.locator('select[formcontrolname="dominio"]').selectOption('NUMERICO');
   await form.locator('select[formcontrolname="pontoResolucao"]').selectOption('INSCRICAO');
-  await form.locator('select[formcontrolname="classificacaoProtecao"]').selectOption('PESSOAL');
+  await form.locator('select[id$="-classificacaoProtecao"]').selectOption('PESSOAL');
   await form
-    .locator('select[formcontrolname="hipoteseLegal"]')
+    .locator('select[id$="-hipoteses"]')
     .selectOption('CUMPRIMENTO_OBRIGACAO_LEGAL');
   await form
     .getByLabel('Finalidade do tratamento')

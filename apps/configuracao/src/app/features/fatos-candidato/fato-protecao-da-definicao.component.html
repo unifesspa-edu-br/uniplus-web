@@ -1,21 +1,20 @@
-<div [formGroup]="form()" class="form-grid__full">
+<div class="form-grid__full">
   @if (avisaNovaAprovacao()) {
     <cfg-aviso-de-nova-aprovacao />
   }
   <fieldset class="field form-grid__full">
     <legend class="form-section__title">Proteção de dados (LGPD)</legend>
     <div class="form-grid">
-      @let erroClassificacao = erroDoCampo('classificacaoProtecao');
+      @let erroClassificacao = erroDoCampo('classificacao');
       <label class="field" [class.is-error]="erroClassificacao">
         <span class="field__label is-required">Classificação</span>
         <select
           class="select"
-          formControlName="classificacaoProtecao"
+          [formControl]="classificacao()"
+          [id]="idDoCampo('classificacao')"
           aria-required="true"
           [attr.aria-invalid]="erroClassificacao ? 'true' : null"
-          [attr.aria-describedby]="
-            erroClassificacao ? 'cfg-fato-def-classificacaoProtecao-erro' : null
-          "
+          [attr.aria-describedby]="descritor('classificacao')"
         >
           <option value="">Selecione…</option>
           @for (opcao of classificacoes(); track opcao.valor) {
@@ -23,47 +22,56 @@
           }
         </select>
         @if (erroClassificacao) {
-          <span class="field__error" id="cfg-fato-def-classificacaoProtecao-erro">{{
-            erroClassificacao
-          }}</span>
+          <span class="field__error" [id]="idDoErro('classificacao')">{{ erroClassificacao }}</span>
         }
       </label>
-      @let erroHipotese = erroDoCampo('hipoteseLegal');
-      <label class="field" [class.is-error]="erroHipotese">
-        <span class="field__label is-required">Hipótese legal</span>
-        <select
-          class="select"
-          formControlName="hipoteseLegal"
-          aria-required="true"
-          [attr.aria-invalid]="erroHipotese ? 'true' : null"
-          [attr.aria-busy]="carregandoHipoteses() ? 'true' : null"
-          [attr.aria-describedby]="descritorDaHipotese(erroHipotese)"
-        >
-          <option value="">Selecione…</option>
-          @for (opcao of hipoteses(); track opcao.valor) {
-            <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+      @let erroHipotese = erroDoCampo('hipotese');
+      <div>
+        <label class="field" [class.is-error]="erroHipotese">
+          <span class="field__label is-required">Hipótese legal</span>
+          <select
+            class="select"
+            [formControl]="hipotese()"
+            [id]="idDoCampo('hipotese')"
+            aria-required="true"
+            [attr.aria-invalid]="erroHipotese ? 'true' : null"
+            [attr.aria-busy]="leituraDasHipoteses().vocabulario.carregando() ? 'true' : null"
+            [attr.aria-describedby]="descritorDaHipotese(falhaDasHipoteses.id)"
+          >
+            <option value="">Selecione…</option>
+            @for (opcao of hipoteses(); track opcao.valor) {
+              <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+            }
+          </select>
+          @if (leituraDasHipoteses().vocabulario.carregando()) {
+            <span class="field__hint" [uiIndicadorDaLeitura]="leituraDasHipoteses().leitura"
+              >Carregando…</span
+            >
           }
-        </select>
-        @if (erroHipotese) {
-          <span class="field__error" id="cfg-fato-def-hipoteseLegal-erro">{{ erroHipotese }}</span>
-        }
-      </label>
+          @if (erroHipotese) {
+            <span class="field__error" [id]="idDoErro('hipotese')">{{ erroHipotese }}</span>
+          }
+        </label>
+        <ui-falha-de-leitura-do-campo
+          #falhaDasHipoteses
+          [leitura]="leituraDasHipoteses().leitura"
+        />
+      </div>
     </div>
-    @let erroFinalidade = erroDoCampo('finalidadeTratamento');
+    @let erroFinalidade = erroDoCampo('finalidade');
     <label class="field form-grid__full" [class.is-error]="erroFinalidade">
       <span class="field__label is-required">Finalidade do tratamento</span>
       <textarea
         class="textarea"
         rows="2"
-        formControlName="finalidadeTratamento"
+        [formControl]="finalidade()"
+        [id]="idDoCampo('finalidade')"
         aria-required="true"
         [attr.aria-invalid]="erroFinalidade ? 'true' : null"
-        [attr.aria-describedby]="erroFinalidade ? 'cfg-fato-def-finalidadeTratamento-erro' : null"
+        [attr.aria-describedby]="descritor('finalidade')"
       ></textarea>
       @if (erroFinalidade) {
-        <span class="field__error" id="cfg-fato-def-finalidadeTratamento-erro">{{
-          erroFinalidade
-        }}</span>
+        <span class="field__error" [id]="idDoErro('finalidade')">{{ erroFinalidade }}</span>
       }
     </label>
   </fieldset>
