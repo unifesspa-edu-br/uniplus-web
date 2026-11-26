@@ -1,3 +1,8 @@
+import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef, signal, type Signal, type WritableSignal } from '@angular/core';
@@ -64,8 +69,26 @@ export const rg: TipoDocumentoDto = {
   tamanhoMaximoMb: 10,
   tipoEquivalente: 'CIN',
   ...PROTECAO_PREENCHIDA,
+  classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
+  hipoteseLegal: codigoComRotulo(
+    HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+    'Execução de políticas públicas',
+  ),
   protecaoAprovada: true,
   criadoEm: '2026-06-10T12:00:00Z',
+};
+
+/** Tipo gravado com proteção sensível e uma hipótese que só a classificação sensível admite. */
+export const antigoComProtecaoSensivel: TipoDocumentoDto = {
+  ...rg,
+  classificacaoProtecao: codigoComRotulo(
+    ClassificacaoDeProtecaoCodigo.SENSIVEL,
+    'Pessoal sensível',
+  ),
+  hipoteseLegal: codigoComRotulo(
+    HipoteseLegalTratamentoCodigo.INTERESSE_LEGITIMO,
+    'Interesse legítimo',
+  ),
 };
 
 export const laudo: TipoDocumentoDto = {

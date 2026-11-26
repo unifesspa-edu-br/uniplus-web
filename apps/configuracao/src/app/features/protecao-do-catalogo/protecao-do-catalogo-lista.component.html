@@ -17,8 +17,8 @@
     >
       <table>
         <caption class="sr-only">
-          Tipos de documento e fatos do candidato aguardando a decisão da proteção de dados. Use o nome para abrir o
-          detalhe.
+          Tipos de documento e fatos do candidato aguardando a decisão da proteção de dados. Use o
+          nome para abrir o detalhe.
         </caption>
         <thead>
           <tr>
@@ -44,7 +44,7 @@
                 </button>
               </td>
               <td data-label="Sensibilidade" class="u-nowrap-desktop">
-                {{ rotulo(classificacoes, item.classificacaoProtecao) }}
+                {{ item.classificacaoProtecao.rotulo }}
               </td>
               <td data-label="Ciclo" class="u-nowrap-desktop">{{ item.aprovacao.ciclo }}</td>
               <td data-label="Manifestação" class="u-nowrap-desktop">

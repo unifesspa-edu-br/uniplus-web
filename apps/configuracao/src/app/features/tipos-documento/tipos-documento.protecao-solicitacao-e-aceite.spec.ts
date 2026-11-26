@@ -1,3 +1,5 @@
+import { ClassificacaoDeProtecaoCodigo } from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   ESCRITA,
@@ -255,7 +257,15 @@ describe('TiposDocumentoPage — solicitação e aceite da proteção de dados',
       expect(post.request.method).toBe('POST');
       expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
       post.flush(...sucesso());
-      await p.recarregarCom([{ ...laudo, classificacaoProtecao: 'SENSIVEL' }]);
+      await p.recarregarCom([
+        {
+          ...laudo,
+          classificacaoProtecao: codigoComRotulo(
+            ClassificacaoDeProtecaoCodigo.SENSIVEL,
+            'Sensível',
+          ),
+        },
+      ]);
 
       expect(botao('Aceitar recomendação')).toBeUndefined();
       expect(texto()).toContain('Aprovada');

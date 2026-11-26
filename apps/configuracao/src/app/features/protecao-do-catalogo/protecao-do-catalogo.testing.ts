@@ -1,4 +1,9 @@
 import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
+import {
   DecidirProtecaoDoCatalogoRequestDecisao,
   RegistrarManifestacaoDaProtecaoRequestParecer,
 } from '@uniplus/shared-data/configuracao';
@@ -55,9 +60,12 @@ export const laudo: ItemDaProtecaoDoCatalogoDto = {
   id: '01960000-0000-7000-0000-0000000000d2',
   codigo: 'LAUDO_MEDICO_COMPLEMENTAR',
   nome: 'Laudo médico complementar',
-  classificacaoProtecao: 'INTERNO',
+  classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.INTERNO, 'Interno'),
   finalidadeTratamento: 'Conferir o laudo do candidato com deficiência.',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  hipoteseLegal: codigoComRotulo(
+    HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+    'Execução de políticas públicas',
+  ),
   aprovacao: SOLICITADA,
 };
 
@@ -67,7 +75,7 @@ export const rural: ItemDaProtecaoDoCatalogoDto = {
   id: '01960000-0000-7000-0000-0000000000d3',
   codigo: 'RESIDE_EM_AREA_RURAL',
   nome: 'Reside em área rural',
-  classificacaoProtecao: 'PESSOAL',
+  classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
 };
 
 /** O detalhe do tipo de documento, como a API o devolve; sem manifestação vigente. */
@@ -137,8 +145,11 @@ export const decisaoDoFato: DecisaoDaProtecaoDto = {
   ato: DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO,
   instante: '2026-10-31T13:00:00Z',
   atorNome: 'Betina Albuquerque',
-  classificacaoProtecao: 'PESSOAL',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
+  hipoteseLegal: codigoComRotulo(
+    HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+    'Execução de políticas públicas',
+  ),
   finalidadeTratamento: 'Conferir a renda familiar.',
   classificacaoRecomendada: null,
   justificativa: 'A renda familiar é dado sensível.',
@@ -156,8 +167,8 @@ export const decisaoDoTipo: DecisaoDaProtecaoDto = {
   ato: DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO,
   instante: '2026-10-30T15:00:00Z',
   atorNome: 'Caroline Ribeiro',
-  classificacaoProtecao: 'INTERNO',
-  classificacaoRecomendada: 'PESSOAL',
+  classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.INTERNO, 'Interno'),
+  classificacaoRecomendada: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
   justificativa: 'O laudo identifica o candidato.',
 };
 

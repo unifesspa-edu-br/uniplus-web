@@ -1,3 +1,5 @@
+import { codigoComRotulo } from './fatos-candidato.fixtures';
+import { ClassificacaoDeProtecaoCodigo } from '@uniplus/shared-data/configuracao';
 import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import {
   Pagina,
@@ -147,7 +149,10 @@ describe('FatosCandidatoPage — definição do fato', () => {
   describe('os apoios e as dependências entre campos', () => {
     it('o agregado mantém o tipo de dado do servidor e calcula as classificações por ele', async () => {
       const texto = comProtecao(comDefinicao(agregadoDeRenda, { dominio: tipoTexto }), {
-        classificacao: 'IDENTIFICADOR',
+        classificacao: codigoComRotulo(
+          ClassificacaoDeProtecaoCodigo.IDENTIFICADOR,
+          'Identificador',
+        ),
       });
       await abrir(texto);
 

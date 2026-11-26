@@ -1,3 +1,4 @@
+import { comEscopoPeloCodigo } from '@uniplus/shared-data/configuracao';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -118,6 +119,7 @@ const anuncioDoAcrescimo = (finalidade: string): string =>
 export class FormularioPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   protected readonly dados = inject(CatalogosDoFormulario);
+  protected readonly fatosDoFormulario = computed(() => comEscopoPeloCodigo(this.dados.catalogo()));
   protected readonly consequencias = inject(CatalogoDasConsequenciasDeIndeferimento);
   protected readonly leituraDasConsequencias = acompanharLeitura({
     falha: this.consequencias.erro,

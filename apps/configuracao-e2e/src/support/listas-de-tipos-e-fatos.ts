@@ -1,3 +1,4 @@
+import { valorDaApi } from './valor-da-api';
 import { expect, type Locator, type Page, type Route, type TestInfo } from '@playwright/test';
 import { assertReflowContract } from '@uniplus/shared-e2e';
 import {
@@ -122,10 +123,10 @@ const DETALHE_DO_FATO = {
   descricao: 'Soma da renda mensal bruta dos membros da família.',
   tipoDocumento: null,
   fato: {
-    dominio: 'NUMERICO',
-    cardinalidade: 'ESCALAR',
+    dominio: valorDaApi('NUMERICO'),
+    cardinalidade: valorDaApi('VALOR_UNICO'),
     semeadoPeloSistema: false,
-    componenteExibicao: 'MOEDA',
+    componenteExibicao: valorDaApi('MOEDA'),
     valores: [],
   },
 };

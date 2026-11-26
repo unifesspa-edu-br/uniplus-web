@@ -6,12 +6,8 @@ import {
   SituacaoDaAprovacaoComponent,
   justificativaDaSituacao,
   nomeDoCadastro,
-  rotuloDe,
 } from '../../shared/protecao-do-catalogo';
-import {
-  COMPONENTES_DE_EXIBICAO,
-  ROTULO_DO_COMPONENTE_PADRAO,
-} from '../fatos-candidato/fato-candidato.regras';
+import { ROTULO_DO_COMPONENTE_PADRAO } from '../fatos-candidato/fato-candidato.regras';
 
 @Component({
   selector: 'cfg-item-da-protecao-detalhe',
@@ -25,8 +21,6 @@ export class ItemDaProtecaoDetalheComponent {
   readonly detalhe = input.required<DetalheDaProtecaoDoCatalogoDto>();
   readonly categorias = input.required<ReadonlyMap<string, { nome: string }>>();
   protected readonly cadastro = nomeDoCadastro;
-  protected readonly rotulo = rotuloDe;
-  protected readonly componentes = COMPONENTES_DE_EXIBICAO;
   protected readonly rotuloDoPadrao = ROTULO_DO_COMPONENTE_PADRAO;
   protected readonly data = (instante: string): string => formatarDataBr(instante, 'datetime');
   protected readonly justificativa = computed(() =>

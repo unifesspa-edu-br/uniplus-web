@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { fatoComOperadores } from './fato-do-catalogo';
 import type { FatoCandidatoView, FatoDoCatalogoDto } from './fatos-candidato.api';
 import {
+  ClassificacaoDeProtecaoCodigo,
+  EscopoFatoCodigo,
+  HipoteseLegalTratamentoCodigo,
   OperadorCodigo,
   TipoDoDadoCodigo,
   OrigemFatoCodigo,
@@ -23,11 +26,11 @@ const COR_RACA: FatoCandidatoView = {
   valoresDominioDeclarados: null,
   fonteValores: null,
   ativo: true,
-  classificacaoProtecao: 'SENSIVEL',
-  hipoteseLegal: 'EXECUCAO_DE_POLITICA_PUBLICA',
+  classificacaoProtecao: valorDeTeste(ClassificacaoDeProtecaoCodigo.SENSIVEL),
+  hipoteseLegal: valorDeTeste(HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS),
   finalidadeTratamento: 'Aplicar a reserva de vagas.',
   protecaoAprovada: true,
-  escopo: 'CANDIDATO',
+  escopo: valorDeTeste(EscopoFatoCodigo.CANDIDATO),
 };
 
 describe('fatoComOperadores', () => {

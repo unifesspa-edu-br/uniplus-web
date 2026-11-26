@@ -1,3 +1,8 @@
+import { codigoComRotulo } from './fatos-candidato.fixtures';
+import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
 import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import {
   Pagina,
@@ -40,7 +45,13 @@ describe('FatosCandidatoPage — proteção de dados e tipo de dado na definiç�
     it('ao abrir, não apaga a proteção que o servidor tem, ainda que a regra do domínio hoje não a admita', async () => {
       const sistema = comProtecao(
         comDefinicao({ ...corRaca, semeadoPeloSistema: true }, { dominio: tipoTexto }),
-        { classificacao: 'INTERNO', hipoteseLegal: 'INTERESSE_LEGITIMO' },
+        {
+          classificacao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.INTERNO, 'Interno'),
+          hipoteseLegal: codigoComRotulo(
+            HipoteseLegalTratamentoCodigo.INTERESSE_LEGITIMO,
+            'Interesse legítimo',
+          ),
+        },
       );
       await abrir(sistema);
 
@@ -51,7 +62,13 @@ describe('FatosCandidatoPage — proteção de dados e tipo de dado na definiç�
     it('esvazia a hipótese que a pessoa tornou incompatível ao trocar a classificação', async () => {
       const sistema = comProtecao(
         comDefinicao({ ...corRaca, semeadoPeloSistema: true }, { dominio: tipoSimOuNao }),
-        { classificacao: 'PESSOAL', hipoteseLegal: 'INTERESSE_LEGITIMO' },
+        {
+          classificacao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
+          hipoteseLegal: codigoComRotulo(
+            HipoteseLegalTratamentoCodigo.INTERESSE_LEGITIMO,
+            'Interesse legítimo',
+          ),
+        },
       );
       await abrir(sistema);
 

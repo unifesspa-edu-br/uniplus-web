@@ -3,11 +3,7 @@ import { type ItemDaProtecaoDoCatalogoDto } from '@uniplus/shared-data/configura
 import { EmptyStateComponent, SpinnerComponent, TagComponent } from '@uniplus/shared-ui/components';
 import { formatarDataBr } from '@uniplus/shared-utils';
 import { devolverFocoDaLista } from '../../shared/foco';
-import {
-  CLASSIFICACOES_DE_PROTECAO,
-  nomeDoCadastro,
-  rotuloDe,
-} from '../../shared/protecao-do-catalogo';
+import { nomeDoCadastro } from '../../shared/protecao-do-catalogo';
 
 @Component({
   selector: 'cfg-protecao-do-catalogo-lista',
@@ -22,9 +18,7 @@ export class ProtecaoDoCatalogoListaComponent {
   readonly gravando = input.required<boolean>();
   readonly erroDeCarga = input.required<string | null>();
   readonly abrir = output<ItemDaProtecaoDoCatalogoDto>();
-  protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
   protected readonly cadastro = nomeDoCadastro;
-  protected readonly rotulo = rotuloDe;
   protected readonly data = (instante: string): string => formatarDataBr(instante, 'datetime');
 
   /** O item decidido sai da fila: ao fim da gravação e da recarga o foco livre vai ao título. */

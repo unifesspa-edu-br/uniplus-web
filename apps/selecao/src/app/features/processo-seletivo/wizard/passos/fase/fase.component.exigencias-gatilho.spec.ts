@@ -1,4 +1,10 @@
 import {
+  EscopoFatoCodigo,
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
+import {
   DADO_SIM_OU_NAO,
   ORIGEM_DECLARADA,
   VALOR_UNICO,
@@ -60,9 +66,12 @@ describe('FasePassoComponent', () => {
         valoresDominioDeclarados: null,
         fonteValores: null,
         ativo: true,
-        escopo: 'CANDIDATO',
-        classificacaoProtecao: 'PESSOAL',
-        hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+        escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
+        classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
+        hipoteseLegal: codigoComRotulo(
+          HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+          'Execução de políticas públicas',
+        ),
         finalidadeTratamento: 'Conferir o laudo do candidato.',
         protecaoAprovada: true,
         operadoresAdmitidos: [{ codigo: OperadorCodigo.IGUAL, rotulo: 'é' }],

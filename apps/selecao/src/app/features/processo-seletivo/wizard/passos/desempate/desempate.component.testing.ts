@@ -1,4 +1,10 @@
 import {
+  EscopoFatoCodigo,
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
+import {
   DADO_NUMERICO,
   DADO_OPCAO,
   ORIGEM_CALCULADA,
@@ -63,9 +69,12 @@ export const FATOS: readonly FatoDoCatalogoDto[] = [
       valoresDominioDeclarados: null,
       fonteValores: null,
       ativo: true,
-      escopo: 'CANDIDATO',
-      classificacaoProtecao: 'PESSOAL',
-      hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+      escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
+      classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
+      hipoteseLegal: codigoComRotulo(
+        HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+        'Execução de políticas públicas',
+      ),
       finalidadeTratamento: 'Desempatar pela renda.',
       protecaoAprovada: true,
     },
@@ -91,9 +100,12 @@ export const FATOS: readonly FatoDoCatalogoDto[] = [
       valoresDominioDeclarados: null,
       fonteValores: null,
       ativo: true,
-      escopo: 'CANDIDATO',
-      classificacaoProtecao: 'SENSIVEL',
-      hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+      escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
+      classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.SENSIVEL, 'Sensível'),
+      hipoteseLegal: codigoComRotulo(
+        HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+        'Execução de políticas públicas',
+      ),
       finalidadeTratamento: 'Desempatar pela reserva.',
       protecaoAprovada: true,
     },

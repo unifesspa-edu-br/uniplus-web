@@ -12,17 +12,22 @@ import {
   tipoDoDadoEscolhido,
 } from './codigos-do-fato';
 import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
-import { Signal, computed, effect, untracked } from '@angular/core';
+import { Signal, WritableSignal, computed, effect, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, Validators, type ValidatorFn } from '@angular/forms';
 import type { HttpContext } from '@angular/common/http';
 import type { ApiResult } from '@uniplus/shared-core/http';
-import type { FatosCandidatoApi, TipoDoDado } from '@uniplus/shared-data/configuracao';
+import type {
+  FatosCandidatoApi,
+  TipoDoDado,
+  ItemDeVocabulario,
+} from '@uniplus/shared-data/configuracao';
 import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { mensagemDeErroDoCampoComFormato } from '../../shared/formulario';
-import { esvaziarSeForaDas, hipotesesDaClassificacao } from '../../shared/protecao-do-catalogo';
+import { esvaziarSeForaDas } from '../../shared/protecao-do-catalogo';
 import { Observable, map } from 'rxjs';
 import {
+  hipotesesDoFato,
   aceitoNoDerivado,
   tiposDoDadoDoDerivado,
   campoDaRecusa,
@@ -199,7 +204,8 @@ export interface DependenciasDaCriacao {
   readonly temFormatoDeTexto: Signal<boolean>;
   readonly dominios: Signal<readonly TipoDoDado[]>;
   readonly classificacoes: Signal<ReturnType<typeof classificacoesDoDominio>>;
-  readonly hipoteses: Signal<ReturnType<typeof hipotesesDaClassificacao>>;
+  readonly hipoteses: Signal<ReturnType<typeof hipotesesDoFato>>;
+  readonly vocabularioDasHipoteses: WritableSignal<readonly ItemDeVocabulario[] | null>;
 }
 
 /**
@@ -244,10 +250,14 @@ function opcoesDaCriacao(
   declarado: Signal<boolean>,
   tiposDoDado: Signal<readonly TipoDoDado[]>,
 ) {
+  const vocabularioDasHipoteses = signal<readonly ItemDeVocabulario[] | null>(null);
   return {
+    vocabularioDasHipoteses,
     dominios: computed(() => (declarado() ? tiposDoDado() : tiposDoDadoDoDerivado(tiposDoDado()))),
     classificacoes: computed(() => classificacoesDoDominio(valores().dominio)),
-    hipoteses: computed(() => hipotesesDaClassificacao(valores().classificacaoProtecao)),
+    hipoteses: computed(() =>
+      hipotesesDoFato(valores().classificacaoProtecao, vocabularioDasHipoteses() ?? []),
+    ),
   };
 }
 
@@ -262,7 +272,7 @@ function manterEscolhasCompativeis(form: FormGroup<CriacaoForm>, dep: Dependenci
     untracked(() => {
       esvaziarDominioIncompativel(form, declarado, dominio);
       esvaziarSeForaDas(form.controls.classificacaoProtecao, c);
-      esvaziarSeForaDas(form.controls.hipoteseLegal, h);
+      if (dep.vocabularioDasHipoteses() !== null) esvaziarSeForaDas(form.controls.hipoteseLegal, h);
     });
   });
 }

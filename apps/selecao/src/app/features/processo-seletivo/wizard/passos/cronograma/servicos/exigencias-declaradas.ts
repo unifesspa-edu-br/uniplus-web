@@ -1,3 +1,4 @@
+import { comEscopoPeloCodigo } from '@uniplus/shared-data/configuracao';
 import type { ExigenciaDeDocumento, FaseDoCronograma } from '../../../processo-seletivo.models';
 import type { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { descreverFase, finalidadesDaFase } from '../../../shared/descricao-da-fase';
@@ -77,28 +78,42 @@ function contextoDasExigencias(
   catalogos: CatalogosDasExigencias,
 ): ContextoDasExigencias {
   const ofertadas = [...new Set(store.modalidadesDoProcesso())];
-  const fasePorId = catalogos.fasePorId();
-  const nomePorCodigo = nomesDoCatalogo(catalogos.fatos());
+  return {
+    ...nomesEFases(fases, catalogos),
+    ofertadas,
+    fatoPorCodigo: fatosDoGatilhoPorCodigo(store, catalogos, ofertadas),
+    ...nomesDosFatos(catalogos),
+    producao: producaoDasExigencias(fases, store, catalogos),
+  };
+}
 
+function nomesDosFatos(catalogos: CatalogosDasExigencias) {
+  const nomePorCodigo = nomesDoCatalogo(catalogos.fatos());
+  const nomes: NomesDaOrientacao = {
+    fato: (codigo) => nomePorCodigo.get(codigo) ?? codigo,
+    fase: catalogos.nomeDaFase(),
+  };
+  return { nomePorCodigo, nomes };
+}
+
+function nomesEFases(fases: readonly FaseDoCronograma[], catalogos: CatalogosDasExigencias) {
   return {
     nomePorId: new Map(catalogos.tiposDocumento().map((tipo) => [tipo.id, tipo.nome])),
     fasePorCodigo: new Map(fases.map((fase) => [fase.codigo, fase])),
-    fasePorId,
-    ofertadas,
-    fatoPorCodigo: fatosDoGatilhoPorCodigo(store, catalogos, ofertadas),
-    nomePorCodigo,
-    // A fase de cada fato é lida das fases como estão na tela, não das gravadas: reordenar o
-    // cronograma pode deixar um gatilho citando o que só se conhece depois da exigência.
-    producao: producaoDoRascunho(
-      store.draft().formulario,
-      fasesNoCronograma(fases, fasePorId),
-      catalogos.fatos(),
-    ),
-    nomes: {
-      fato: (codigo: string) => nomePorCodigo.get(codigo) ?? codigo,
-      fase: catalogos.nomeDaFase(),
-    },
+    fasePorId: catalogos.fasePorId(),
   };
+}
+
+function producaoDasExigencias(
+  fases: readonly FaseDoCronograma[],
+  store: Pick<ProcessoSeletivoStore, 'draft'>,
+  catalogos: CatalogosDasExigencias,
+): ProducaoDosFatos {
+  return producaoDoRascunho(
+    store.draft().formulario,
+    fasesNoCronograma(fases, catalogos.fasePorId()),
+    comEscopoPeloCodigo(catalogos.fatos()),
+  );
 }
 
 /** Os problemas da fase e do gatilho que a exigência carrega, sem repetir a mesma orientação. */
@@ -108,17 +123,13 @@ function problemasDeFaseDaExigencia(
   contexto: ContextoDasExigencias,
 ): readonly string[] {
   const { producao, nomes } = contexto;
-  return [
-    ...new Set([
-      ...problemaDaRepeticao(repeticao, exigencia, producao, nomes),
-      ...recusasDeFaseDoGatilho(
-        exigencia,
-        producao,
-        nomes,
-        camposDaRepeticao(repeticao?.grupo ?? null, producao),
-      ).map((recusa) => recusa.orientacao),
-    ]),
-  ];
+  const recusas = recusasDeFaseDoGatilho(
+    exigencia,
+    producao,
+    nomes,
+    camposDaRepeticao(repeticao?.grupo ?? null, producao),
+  ).map((recusa) => recusa.orientacao);
+  return [...new Set([...problemaDaRepeticao(repeticao, exigencia, producao, nomes), ...recusas])];
 }
 
 /**
@@ -165,13 +176,22 @@ function exigenciaDeclarada(
   repeticao: RepeticaoDaExigencia | null,
   contexto: ContextoDasExigencias,
 ): ExigenciaDeclarada {
-  const { faseViva, admiteComplementacao, semFormulario } = situacaoNaFase(exigencia, contexto);
-
   return {
     nome: contexto.nomePorId.get(exigencia.tipoDocumentoId) ?? exigencia.tipoDocumentoId,
     decideResultado: exigenciaDecideResultado(exigencia),
     normaResolvida: temNormaResolvida(exigencia.basesLegais),
     faseCodigo: exigencia.faseCodigo,
+    ...caracteristicasDaExigencia(exigencia, contexto),
+    ...problemasDaExigencia(exigencia, repeticao, contexto),
+  };
+}
+
+function caracteristicasDaExigencia(
+  exigencia: ExigenciaDeDocumento,
+  contexto: ContextoDasExigencias,
+) {
+  const { faseViva, admiteComplementacao, semFormulario } = situacaoNaFase(exigencia, contexto);
+  return {
     faseViva,
     alcancaModalidade: contexto.ofertadas.some((codigo) =>
       podeAlcancarModalidade(exigencia, codigo),
@@ -179,6 +199,15 @@ function exigenciaDeclarada(
     reenvioSemComplementacao:
       exigencia.consequenciaIndeferimento === CONSEQUENCIA_REENVIO && !admiteComplementacao,
     semFormulario,
+  };
+}
+
+function problemasDaExigencia(
+  exigencia: ExigenciaDeDocumento,
+  repeticao: RepeticaoDaExigencia | null,
+  contexto: ContextoDasExigencias,
+) {
+  return {
     problemasDeGatilho: problemasDoGatilho(
       exigencia,
       contexto.fatoPorCodigo,

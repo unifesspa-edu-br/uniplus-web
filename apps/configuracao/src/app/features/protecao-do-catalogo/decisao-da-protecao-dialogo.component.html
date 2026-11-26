@@ -11,7 +11,7 @@
     }
     <p id="cfg-decisao-item-descricao">
       {{ cadastro(d.tipo) }}: <strong>{{ d.nome }}</strong
-      >. A classificação proposta é {{ rotulo(classificacoes, d.classificacaoProtecao) }}.
+      >. A classificação proposta é {{ d.classificacaoProtecao.rotulo }}.
     </p>
     @if (manifestacoes().length > 0) {
       <section class="cfg-detalhe-secao" aria-labelledby="cfg-decisao-manifestacoes">

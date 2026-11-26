@@ -29,6 +29,7 @@
     </div>
     <cfg-fato-descritivo
       [form]="edicao.descritivo"
+      [componenteAtual]="edicao.leitura.fato()?.descritivo?.componenteExibicao ?? null"
       [bloqueado]="edicao.bloqueado()"
       (salvar)="edicao.salvarDescritivo()"
     />

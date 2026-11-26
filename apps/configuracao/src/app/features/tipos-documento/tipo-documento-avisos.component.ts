@@ -1,11 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import type { AprovacaoDaProtecaoDto } from '@uniplus/shared-data/configuracao';
 import { AlertComponent } from '@uniplus/shared-ui/components';
-import {
-  AvisoDeNovaAprovacaoComponent,
-  CLASSIFICACOES_DE_PROTECAO,
-  rotuloDe,
-} from '../../shared/protecao-do-catalogo';
+import { AvisoDeNovaAprovacaoComponent } from '../../shared/protecao-do-catalogo';
 
 /** O que a proteção de dados diz do tipo em edição: a decisão que pede ajuste e o aviso de nova aprovação. */
 @Component({
@@ -17,7 +13,7 @@ import {
       <ui-alert variant="info" [heading]="tituloDaDecisao()">
         @if (decidida.situacao === 'AJUSTE_RECOMENDADO') {
           A classificação recomendada é
-          {{ rotulo(classificacoes, decidida.classificacaoRecomendada) }}.
+          {{ decidida.classificacaoRecomendada?.rotulo }}.
         }
         @if (decidida.justificativa) {
           <span class="cfg-justificativa">Justificativa: {{ decidida.justificativa }}</span>
@@ -38,8 +34,6 @@ export class TipoDocumentoAvisosComponent {
   readonly decisao = input.required<AprovacaoDaProtecaoDto | null>();
   readonly avisaNovaAprovacao = input.required<boolean>();
 
-  protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
-  protected readonly rotulo = rotuloDe;
   protected readonly tituloDaDecisao = computed(() =>
     this.decisao()?.situacao === 'DEVOLVIDA'
       ? 'Devolvido pela proteção de dados'

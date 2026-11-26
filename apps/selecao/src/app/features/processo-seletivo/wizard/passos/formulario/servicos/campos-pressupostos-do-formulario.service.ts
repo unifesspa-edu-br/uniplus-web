@@ -1,3 +1,4 @@
+import { comEscopoPeloCodigo } from '@uniplus/shared-data/configuracao';
 import { computed, effect, inject, Injectable, untracked } from '@angular/core';
 import { FINALIDADE_INSCRICAO } from '@uniplus/shared-inscricao/formulario';
 
@@ -82,7 +83,7 @@ export class CamposPressupostosDoFormulario {
     const rascunho = this.store.draft();
     return {
       citados: new Set(this.citantes().keys()),
-      catalogo: this.dados.catalogo(),
+      catalogo: comEscopoPeloCodigo(this.dados.catalogo()),
       postosPelasExigencias: this.store.camposPostosPelasExigencias(),
       fatosDeOutrasFinalidades: fatosColetadosPelasOutras(
         formulariosDoRascunho(rascunho.formulario),

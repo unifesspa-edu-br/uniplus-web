@@ -22,16 +22,18 @@ import type {
   TipoDoDado,
 } from '@uniplus/shared-data/configuracao';
 import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+  EscopoFatoCodigo,
   FonteValoresFatoCodigo,
   OrigemFatoCodigo,
-  QuantidadeDeValoresCodigo,
   TipoDoDadoCodigo,
 } from '@uniplus/shared-data/configuracao';
 import {
   CLASSIFICACOES_DE_PROTECAO,
-  rotuloDe,
   type OpcaoDeVocabulario,
   type ProtecaoDoItem,
+  type ProtecaoExibida,
 } from '../../shared/protecao-do-catalogo/protecao-de-dados';
 
 /**
@@ -39,12 +41,6 @@ import {
  * — recusa o que não cabe e a tela mostra a recusa no campo —; espelhar aqui é o que evita oferecer
  * um campo que só serviria para ser recusado.
  */
-
-export const ORIGENS: readonly OpcaoDeVocabulario[] = [
-  { valor: OrigemFatoCodigo.DECLARADO, rotulo: 'Declarado pelo candidato' },
-  { valor: OrigemFatoCodigo.CALCULADO, rotulo: 'Calculado' },
-  { valor: OrigemFatoCodigo.INTEGRACAO, rotulo: 'Integração' },
-];
 
 export function aceitoNoDerivado(codigo: string): boolean {
   return codigo === TipoDoDadoCodigo.SIM_OU_NAO || codigo === TipoDoDadoCodigo.OPCAO;
@@ -54,38 +50,6 @@ export function tiposDoDadoDoDerivado(itens: readonly TipoDoDado[]): readonly Ti
   return itens.filter((item) => aceitoNoDerivado(item.codigo));
 }
 
-export const CARDINALIDADES: readonly OpcaoDeVocabulario[] = [
-  { valor: QuantidadeDeValoresCodigo.VALOR_UNICO, rotulo: 'Um valor' },
-  { valor: QuantidadeDeValoresCodigo.VARIOS_VALORES, rotulo: 'Vários valores' },
-];
-
-export const FONTES_DE_VALORES: readonly OpcaoDeVocabulario[] = [
-  { valor: FonteValoresFatoCodigo.CATALOGO, rotulo: 'Valores do catálogo' },
-  { valor: FonteValoresFatoCodigo.OPCOES_DO_PROCESSO, rotulo: 'Opções declaradas pelo processo' },
-  { valor: FonteValoresFatoCodigo.MODALIDADE, rotulo: 'Modalidades do processo' },
-  { valor: FonteValoresFatoCodigo.MUNICIPIOS_DO_FADA, rotulo: 'Municípios da área da FADA' },
-  { valor: FonteValoresFatoCodigo.UNIDADES_FEDERATIVAS, rotulo: 'Unidades da federação' },
-  { valor: FonteValoresFatoCodigo.MUNICIPIOS, rotulo: 'Municípios' },
-  {
-    valor: FonteValoresFatoCodigo.TIPOS_DE_DEFICIENCIA,
-    rotulo: 'Tipos de deficiência do cadastro',
-  },
-];
-
-export const FORMATOS_DE_TEXTO: readonly OpcaoDeVocabulario[] = [
-  { valor: 'LIVRE', rotulo: 'Texto livre' },
-  { valor: 'NOME_PESSOA', rotulo: 'Nome de pessoa' },
-  { valor: 'CPF', rotulo: 'CPF' },
-  { valor: 'EMAIL', rotulo: 'E-mail' },
-  { valor: 'TELEFONE', rotulo: 'Telefone' },
-  { valor: 'CEP', rotulo: 'CEP' },
-];
-
-export const ESCOPOS: readonly OpcaoDeVocabulario[] = [
-  { valor: 'CANDIDATO', rotulo: 'Candidato' },
-  { valor: 'MEMBRO_GRUPO', rotulo: 'Membro de grupo (ex.: composição familiar)' },
-];
-
 /** Texto só de espaços é texto em branco: a API o recusa, e a tela já o marca como obrigatório. */
 export function obrigatorioNaoEmBranco(
   controle: AbstractControl<string | null>,
@@ -93,31 +57,47 @@ export function obrigatorioNaoEmBranco(
   return (controle.value ?? '').trim() === '' ? { required: true } : null;
 }
 
-/** Como a consulta da inscrição exibe o valor do fato; sem declaração, exibe pelo tipo do dado. */
-export const COMPONENTES_DE_EXIBICAO: readonly OpcaoDeVocabulario[] = [
-  { valor: 'MOEDA', rotulo: 'Moeda' },
-  { valor: 'SITUACAO', rotulo: 'Situação' },
-];
-
 export const ROTULO_DO_COMPONENTE_PADRAO = 'Padrão (pelo tipo do dado)';
-
-export function rotuloDoComponente(componente: string | null): string {
-  return componente ? rotuloDe(COMPONENTES_DE_EXIBICAO, componente) : ROTULO_DO_COMPONENTE_PADRAO;
-}
 
 /**
  * As classificações que cabem no domínio: texto, data e endereço identificam ou localizam a pessoa
  * e nunca são menos que dado pessoal. Identificador é número de documento, que é sempre texto.
  */
 export function classificacoesDoDominio(dominio: string): readonly OpcaoDeVocabulario[] {
-  if (dominio === TipoDoDadoCodigo.TEXTO) return somente(['PESSOAL', 'IDENTIFICADOR', 'SENSIVEL']);
+  if (dominio === TipoDoDadoCodigo.TEXTO)
+    return somente([
+      ClassificacaoDeProtecaoCodigo.PESSOAL,
+      ClassificacaoDeProtecaoCodigo.IDENTIFICADOR,
+      ClassificacaoDeProtecaoCodigo.SENSIVEL,
+    ]);
   if (dominio === TipoDoDadoCodigo.DATA || dominio === TipoDoDadoCodigo.ENDERECO)
-    return somente(['PESSOAL', 'SENSIVEL']);
-  return CLASSIFICACOES_DE_PROTECAO.filter((c) => c.valor !== 'IDENTIFICADOR');
+    return somente([ClassificacaoDeProtecaoCodigo.PESSOAL, ClassificacaoDeProtecaoCodigo.SENSIVEL]);
+  return CLASSIFICACOES_DE_PROTECAO.filter(
+    (c) => c.valor !== ClassificacaoDeProtecaoCodigo.IDENTIFICADOR,
+  );
 }
 
 function somente(valores: readonly string[]): readonly OpcaoDeVocabulario[] {
   return CLASSIFICACOES_DE_PROTECAO.filter((c) => valores.includes(c.valor));
+}
+
+const HIPOTESES_DO_DADO_COMUM: readonly string[] = [
+  HipoteseLegalTratamentoCodigo.EXECUCAO_CONTRATO,
+  HipoteseLegalTratamentoCodigo.INTERESSE_LEGITIMO,
+  HipoteseLegalTratamentoCodigo.PROTECAO_DO_CREDITO,
+];
+
+export function hipotesesDoFato(
+  classificacao: string,
+  itens: readonly { codigo: string; rotulo: string }[],
+): readonly OpcaoDeVocabulario[] {
+  const excluidas =
+    classificacao === ClassificacaoDeProtecaoCodigo.SENSIVEL
+      ? HIPOTESES_DO_DADO_COMUM
+      : [HipoteseLegalTratamentoCodigo.PREVENCAO_A_FRAUDE];
+  return itens
+    .filter((item) => !excluidas.includes(item.codigo))
+    .map((item) => ({ valor: item.codigo, rotulo: item.rotulo }));
 }
 
 /** O fato declarado categórico escolhe a fonte dos valores; os demais domínios não têm fonte. */
@@ -191,7 +171,10 @@ export function fatosCitaveisPelaRegra<
   T extends Pick<FatoCandidatoView, 'codigo' | 'ativo' | 'escopo'>,
 >(catalogo: readonly T[], codigoDoDerivado: string): readonly T[] {
   return catalogo.filter(
-    (fato) => fato.ativo && fato.escopo === 'CANDIDATO' && fato.codigo !== codigoDoDerivado,
+    (fato) =>
+      fato.ativo &&
+      fato.escopo?.codigo === EscopoFatoCodigo.CANDIDATO &&
+      fato.codigo !== codigoDoDerivado,
   );
 }
 
@@ -205,7 +188,7 @@ export function fatosDeMembroAgregaveis<
   return catalogo.filter(
     (fato) =>
       fato.ativo &&
-      fato.escopo === 'MEMBRO_GRUPO' &&
+      fato.escopo?.codigo === EscopoFatoCodigo.MEMBRO_GRUPO &&
       fato.origem.codigo === OrigemFatoCodigo.DECLARADO &&
       (fato.dominio.codigo === TipoDoDadoCodigo.SIM_OU_NAO ||
         fato.dominio.codigo === TipoDoDadoCodigo.OPCAO),
@@ -299,6 +282,16 @@ export function podeEditarDefinicao(
 
 /** A proteção de dados do fato, com os nomes que o cadastro de proteção usa. */
 export function protecaoDoFato({ definicao }: FatoCandidatoDto): ProtecaoDoItem {
+  const { classificacao, hipoteseLegal, finalidade } = definicao.protecao;
+  return {
+    classificacaoProtecao: classificacao.codigo,
+    hipoteseLegal: hipoteseLegal.codigo,
+    finalidadeTratamento: finalidade,
+  };
+}
+
+/** A proteção de dados do fato como a API a devolve, para a leitura. */
+export function protecaoExibidaDoFato({ definicao }: FatoCandidatoDto): ProtecaoExibida {
   const { classificacao, hipoteseLegal, finalidade } = definicao.protecao;
   return {
     classificacaoProtecao: classificacao,

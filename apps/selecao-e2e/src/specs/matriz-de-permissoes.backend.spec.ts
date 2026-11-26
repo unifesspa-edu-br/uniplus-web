@@ -168,7 +168,7 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
         cabecalhos: Headers;
       } = await chamarApi('isabella.figueiredo', 'GET', proximo);
       pagina.corpo.forEach(({ fato }) =>
-        classeDoFato.set(fato.codigo, fato.definicao.protecao.classificacao),
+        classeDoFato.set(fato.codigo, fato.definicao.protecao.classificacao.codigo),
       );
       const link = /<([^>]+)>;\s*rel="next"/.exec(pagina.cabecalhos.get('link') ?? '');
       proximo = link === null ? null : (link[1] ?? '').replace(/^https?:\/\/[^/]+/, '');

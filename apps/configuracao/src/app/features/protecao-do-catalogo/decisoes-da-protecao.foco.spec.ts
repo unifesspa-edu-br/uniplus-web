@@ -1,3 +1,8 @@
+import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
@@ -37,8 +42,11 @@ const decisao: DecisaoDaProtecaoDto = {
   ato: DecidirProtecaoDoCatalogoRequestDecisao.DEVOLUCAO,
   instante: '2026-10-31T13:00:00Z',
   atorNome: 'Caroline Ribeiro',
-  classificacaoProtecao: 'INTERNO',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.INTERNO, 'Interno'),
+  hipoteseLegal: codigoComRotulo(
+    HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+    'Execução de políticas públicas',
+  ),
   finalidadeTratamento: 'Conferir o laudo.',
   classificacaoRecomendada: null,
   justificativa: 'Falta a base legal.',

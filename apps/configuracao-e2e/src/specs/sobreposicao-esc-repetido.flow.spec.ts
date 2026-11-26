@@ -1,3 +1,4 @@
+import { valorDaApi } from '../support/valor-da-api';
 import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 import { mockManifestacoesDaFila } from '../support/listas-de-tipos-e-fatos';
@@ -14,9 +15,9 @@ const ITEM = {
   id: '01960000-0000-7000-0000-0000000000d2',
   codigo: 'LAUDO_MEDICO_COMPLEMENTAR',
   nome: 'Laudo médico complementar',
-  classificacaoProtecao: 'INTERNO',
+  classificacaoProtecao: valorDaApi('INTERNO'),
   finalidadeTratamento: 'Conferir o laudo do candidato com deficiência.',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  hipoteseLegal: valorDaApi('EXECUCAO_POLITICAS_PUBLICAS'),
   aprovacao: {
     situacao: 'SOLICITADA',
     solicitadaEm: '2026-11-01T12:00:00Z',

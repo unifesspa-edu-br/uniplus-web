@@ -1,3 +1,8 @@
+import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { ItemParaSolicitarRequestCadastro } from '@uniplus/shared-data/configuracao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -17,8 +22,11 @@ const ato = (extra: Partial<AtoDaProtecaoDto>): AtoDaProtecaoDto => ({
   ato: 'SOLICITACAO',
   instante: '2026-10-30T15:00:00Z',
   atorNome: 'Isabella Moura',
-  classificacaoProtecao: 'INTERNO',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.INTERNO, 'Interno'),
+  hipoteseLegal: codigoComRotulo(
+    HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+    'Execução de políticas públicas',
+  ),
   finalidadeTratamento: 'Conferir o laudo do candidato.',
   classificacaoRecomendada: null,
   justificativa: null,
@@ -68,7 +76,7 @@ describe('HistoricoDaProtecaoComponent', () => {
         ato: DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO,
         instante: '2026-10-31T13:00:00Z',
         atorNome: 'Caroline Ribeiro',
-        classificacaoRecomendada: 'PESSOAL',
+        classificacaoRecomendada: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
         justificativa: 'O laudo identifica o candidato.',
       }),
       ato({ ato: 'ACEITE', instante: '2026-11-01T14:00:00Z' }),

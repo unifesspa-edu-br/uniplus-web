@@ -103,11 +103,14 @@ function fatoDoCatalogo(codigo: string): JsonDaApi<FatoDoCatalogoDto> {
       valoresDominioDeclarados: null,
       fonteValores: null,
       ativo: true,
-      classificacaoProtecao: 'INTERNO',
-      hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+      classificacaoProtecao: { codigo: 'INTERNO', rotulo: 'Interno' },
+      hipoteseLegal: {
+        codigo: 'EXECUCAO_POLITICAS_PUBLICAS',
+        rotulo: 'Execução de políticas públicas',
+      },
       finalidadeTratamento: 'Aplicar a regra do certame.',
       protecaoAprovada: true,
-      escopo: 'CANDIDATO',
+      escopo: { codigo: 'CANDIDATO', rotulo: 'Candidato' },
     },
     operadoresAdmitidos: texto
       ? []

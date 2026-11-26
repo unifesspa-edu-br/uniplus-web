@@ -1,3 +1,5 @@
+import { EscopoFatoCodigo } from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { BlocoSistemaCodigo } from '@uniplus/shared-data/selecao';
 import {
   ORIGEM_DECLARADA,
@@ -153,7 +155,7 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
         {
           ...FAIXA_ETARIA,
           origem: ORIGEM_DECLARADA,
-          escopo: 'CANDIDATO',
+          escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
           codigo: 'RENDA_FAMILIAR',
           nome: 'Renda familiar',
           binding: 'CAMPO_FORMULARIO:RENDA_FAMILIAR',
@@ -211,7 +213,7 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
         {
           ...FAIXA_ETARIA,
           origem: ORIGEM_DECLARADA,
-          escopo: 'CANDIDATO',
+          escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
           codigo: 'RENDA_FAMILIAR',
           nome: 'Renda familiar',
           binding: 'CAMPO_INSCRICAO:RENDA_FAMILIAR',

@@ -1,4 +1,10 @@
 import {
+  EscopoFatoCodigo,
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
+import {
   DADO_OPCAO,
   ORIGEM_DECLARADA,
   VALOR_UNICO,
@@ -64,9 +70,12 @@ describe('FasePassoComponent', () => {
         valoresDominioDeclarados: null,
         fonteValores: null,
         ativo: true,
-        escopo: 'MEMBRO_GRUPO',
-        classificacaoProtecao: 'PESSOAL',
-        hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+        escopo: codigoComRotulo(EscopoFatoCodigo.MEMBRO_GRUPO, 'Membro do grupo'),
+        classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
+        hipoteseLegal: codigoComRotulo(
+          HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+          'Execução de políticas públicas',
+        ),
         finalidadeTratamento: 'Compor a renda familiar.',
         protecaoAprovada: true,
         operadoresAdmitidos: [{ codigo: OperadorCodigo.IGUAL, rotulo: 'é' }],

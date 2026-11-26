@@ -1,3 +1,4 @@
+import { comEscopoPeloCodigo } from '@uniplus/shared-data/configuracao';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
@@ -127,7 +128,12 @@ export class GravacaoDosCamposPressupostos {
     const outras = this.store
       .draft()
       .formulario.outrasFinalidades.flatMap((outra) => fatosColetadosPor(outra.conteudo));
-    return new PlanoDosCamposPressupostos(servidor, citados, this.catalogoDeFatos.fatos(), outras);
+    return new PlanoDosCamposPressupostos(
+      servidor,
+      citados,
+      comEscopoPeloCodigo(this.catalogoDeFatos.fatos()),
+      outras,
+    );
   }
 
   private async gravarNoServidor(

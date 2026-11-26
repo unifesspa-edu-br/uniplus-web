@@ -1,3 +1,8 @@
+import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
@@ -22,8 +27,11 @@ describe('TiposDocumentoPage — detalhe e aprovação da proteção de dados', 
     ato: 'SOLICITACAO',
     instante: '2026-10-30T15:00:00Z',
     atorNome: 'Isabella Moura',
-    classificacaoProtecao: 'PESSOAL',
-    hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+    classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
+    hipoteseLegal: codigoComRotulo(
+      HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+      'Execução de políticas públicas',
+    ),
     finalidadeTratamento: 'Conferir o documento do candidato.',
     classificacaoRecomendada: null,
     justificativa: null,
@@ -169,7 +177,10 @@ describe('TiposDocumentoPage — detalhe e aprovação da proteção de dados', 
         ato({
           ato: DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO,
           atorNome: 'Caroline Ribeiro',
-          classificacaoRecomendada: 'SENSIVEL',
+          classificacaoRecomendada: codigoComRotulo(
+            ClassificacaoDeProtecaoCodigo.SENSIVEL,
+            'Sensível',
+          ),
           justificativa: 'Há dado de saúde.',
         }),
         ato({ ato: 'ACEITE' }),

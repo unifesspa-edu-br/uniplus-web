@@ -1,3 +1,9 @@
+import { codigoComRotulo } from '../fatos-candidato/fatos-candidato.fixtures';
+import {
+  ClassificacaoDeProtecaoCodigo,
+  EscopoFatoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
 import {
   OperadorCodigo,
   TipoDoDadoCodigo,
@@ -17,9 +23,12 @@ const FATO_BOOLEANO: Omit<FatoCandidatoView, 'id' | 'codigo' | 'nome' | 'binding
   valoresDominioDeclarados: null,
   fonteValores: null,
   ativo: true,
-  escopo: 'CANDIDATO',
-  classificacaoProtecao: 'INTERNO',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
+  classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.INTERNO, 'Interno'),
+  hipoteseLegal: codigoComRotulo(
+    HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+    'Execução de políticas públicas',
+  ),
   finalidadeTratamento: 'Aplicar a regra do certame.',
   protecaoAprovada: true,
 };

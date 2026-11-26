@@ -41,15 +41,26 @@
       <span class="field__label">Componente de exibição</span>
       <select
         class="select"
+        id="cfg-fato-ed-componente"
+        [attr.aria-busy]="componentes.vocabulario.carregando() ? 'true' : null"
         formControlName="componenteExibicao"
         [attr.aria-invalid]="erroComponente ? 'true' : null"
         [attr.aria-describedby]="erroComponente ? 'cfg-fato-ed-componente-erro' : null"
       >
         <option value="">{{ rotuloDoPadrao }}</option>
-        @for (opcao of componentes; track opcao.valor) {
-          <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+        @for (
+          opcao of comOpcaoAtual(componentes.vocabulario.itens(), componenteAtual());
+          track opcao.codigo
+        ) {
+          <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
         }
       </select>
+      @if (componentes.vocabulario.carregando()) {
+        <span class="field__hint" [uiIndicadorDaLeitura]="componentes.leitura"
+          >Carregando os componentes de exibição…</span
+        >
+      }
+      <ui-falha-de-leitura-do-campo [leitura]="componentes.leitura" />
       @if (erroComponente) {
         <span class="field__error" id="cfg-fato-ed-componente-erro">{{ erroComponente }}</span>
       }

@@ -36,7 +36,8 @@
           formControlName="hipoteseLegal"
           aria-required="true"
           [attr.aria-invalid]="erroHipotese ? 'true' : null"
-          [attr.aria-describedby]="erroHipotese ? 'cfg-fato-def-hipoteseLegal-erro' : null"
+          [attr.aria-busy]="carregandoHipoteses() ? 'true' : null"
+          [attr.aria-describedby]="descritorDaHipotese(erroHipotese)"
         >
           <option value="">Selecione…</option>
           @for (opcao of hipoteses(); track opcao.valor) {

@@ -8,12 +8,7 @@ import {
   TagComponent,
 } from '@uniplus/shared-ui/components';
 import { formatarDataBr } from '@uniplus/shared-utils';
-import {
-  CLASSIFICACOES_DE_PROTECAO,
-  nomeDoCadastro,
-  rotuloDe,
-  rotuloDoAto,
-} from '../../shared/protecao-do-catalogo';
+import { nomeDoCadastro, rotuloDoAto } from '../../shared/protecao-do-catalogo';
 
 @Component({
   selector: 'cfg-decisoes-da-protecao-lista',
@@ -35,9 +30,7 @@ export class DecisoesDaProtecaoListaComponent {
   readonly trocarLimite = output<number | null>();
   readonly anterior = output<void>();
   readonly proximo = output<void>();
-  protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
   protected readonly opcoesDeLimite = DEFAULT_PAGE_SIZE_OPTIONS;
-  protected readonly rotulo = rotuloDe;
   protected readonly rotuloDoAto = rotuloDoAto;
   protected readonly cadastro = nomeDoCadastro;
   protected readonly data = (instante: string): string => formatarDataBr(instante);

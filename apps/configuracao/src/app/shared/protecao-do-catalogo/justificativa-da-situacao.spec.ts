@@ -1,3 +1,8 @@
+import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import type { AprovacaoDaProtecaoDto, AtoDaProtecaoDto } from '@uniplus/shared-data/configuracao';
@@ -20,8 +25,11 @@ const aprovacao = (ciclo: number, justificativa: string | null): AtoDaProtecaoDt
   ato: DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO,
   instante: '2026-11-10T12:00:00Z',
   atorNome: 'Betina Neves',
-  classificacaoProtecao: 'PESSOAL',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
+  hipoteseLegal: codigoComRotulo(
+    HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+    'Execução de políticas públicas',
+  ),
   finalidadeTratamento: 'Conferir o laudo.',
   classificacaoRecomendada: null,
   justificativa,

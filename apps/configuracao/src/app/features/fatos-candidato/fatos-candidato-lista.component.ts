@@ -19,6 +19,8 @@ import {
   EmptyStateComponent,
   FilterBarComponent,
   FilterChipsComponent,
+  FalhaDeLeituraDoCampoComponent,
+  acompanharLeitura,
   IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
@@ -27,19 +29,11 @@ import {
   type UiFiltroAtivo,
 } from '@uniplus/shared-ui/components';
 import { devolverFocoDaLista, focoEstaLivre } from '../../shared/foco';
-import {
-  CLASSIFICACOES_DE_PROTECAO,
-  SituacaoDaAprovacaoComponent,
-  rotuloDe,
-} from '../../shared/protecao-do-catalogo';
+import { SituacaoDaAprovacaoComponent } from '../../shared/protecao-do-catalogo';
 import type { AndamentoDaEscrita } from '../../shared/escrita';
 import { ID_DO_CADASTRO, ID_DO_TITULO_DA_LISTA } from './ids-do-fato';
-import { ORIGENS, acaoDeAtivacao } from './fato-candidato.regras';
-
-const CHIPS_DE_ORIGEM: readonly UiFilterChipOption[] = [
-  { value: '', label: 'Todas' },
-  ...ORIGENS.map((origem) => ({ value: origem.valor, label: origem.rotulo })),
-];
+import { acaoDeAtivacao } from './fato-candidato.regras';
+import { carregarVocabulario } from '../../shared/vocabulario-de-configuracao';
 
 const CHIPS_DE_SITUACAO: readonly UiFilterChipOption[] = [
   { value: 'true', label: 'Ativos' },
@@ -57,6 +51,7 @@ const SITUACAO_PADRAO = 'true';
     EmptyStateComponent,
     FilterBarComponent,
     FilterChipsComponent,
+    FalhaDeLeituraDoCampoComponent,
     IconButtonComponent,
     PagerComponent,
     SituacaoDaAprovacaoComponent,
@@ -92,10 +87,19 @@ export class FatosCandidatoListaComponent {
   protected readonly permissaoDeManter = PERMISSAO.configuracao.fatosCandidatoManter;
   protected readonly idDoTitulo = ID_DO_TITULO_DA_LISTA;
   protected readonly idDoCadastro = ID_DO_CADASTRO;
-  protected readonly chipsDeOrigem = CHIPS_DE_ORIGEM;
+  protected readonly origens = carregarVocabulario('origens-fato');
+  protected readonly leituraDasOrigens = acompanharLeitura({
+    assunto: 'origens dos fatos',
+    falha: computed(() => (this.origens.falhou() ? 'Não foi possível carregar as opções.' : null)),
+    pendente: this.origens.carregando,
+    recarregar: this.origens.recarregar,
+    destino: () => document.getElementById(ID_DO_TITULO_DA_LISTA),
+  });
+  protected readonly chipsDeOrigem = computed<readonly UiFilterChipOption[]>(() => [
+    { value: '', label: 'Todas' },
+    ...this.origens.opcoes().map((origem) => ({ value: origem.codigo, label: origem.rotulo })),
+  ]);
   protected readonly chipsDeSituacao = CHIPS_DE_SITUACAO;
-  protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
-  protected readonly rotulo = rotuloDe;
   protected readonly acaoDeAtivacao = acaoDeAtivacao;
   protected readonly indisponivel = computed(() => this.carregando() || this.gravando());
 
@@ -103,7 +107,7 @@ export class FatosCandidatoListaComponent {
     const ativos: UiFiltroAtivo[] = [];
     const origem = this.filtroOrigem();
     if (origem !== '')
-      ativos.push({ nome: 'Origem', valor: rotuloDoChip(CHIPS_DE_ORIGEM, origem) });
+      ativos.push({ nome: 'Origem', valor: rotuloDoChip(this.chipsDeOrigem(), origem) });
     const situacao = this.filtroSituacao();
     if (situacao !== SITUACAO_PADRAO) {
       ativos.push({ nome: 'Situação', valor: rotuloDoChip(CHIPS_DE_SITUACAO, situacao) });

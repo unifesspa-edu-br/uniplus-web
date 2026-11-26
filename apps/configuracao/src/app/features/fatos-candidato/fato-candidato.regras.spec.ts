@@ -1,3 +1,5 @@
+import { codigoComRotulo } from './fatos-candidato.fixtures';
+import { EscopoFatoCodigo } from '@uniplus/shared-data/configuracao';
 import { TipoDoDadoCodigo } from '@uniplus/shared-data/configuracao';
 import { aceitoNoDerivado, tiposDoDadoDoDerivado } from './fato-candidato.regras';
 import { describe, expect, it } from 'vitest';
@@ -88,10 +90,26 @@ describe('o que a API recusa e a tela não oferece', () => {
 
   it('a regra padrão não cita fato desativado, fato de membro nem o próprio derivado', () => {
     const catalogo = [
-      { codigo: 'COR', ativo: true, escopo: 'CANDIDATO' },
-      { codigo: 'ANTIGO', ativo: false, escopo: 'CANDIDATO' },
-      { codigo: 'PARENTESCO', ativo: true, escopo: 'MEMBRO_GRUPO' },
-      { codigo: 'PERFIL', ativo: true, escopo: 'CANDIDATO' },
+      {
+        codigo: 'COR',
+        ativo: true,
+        escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
+      },
+      {
+        codigo: 'ANTIGO',
+        ativo: false,
+        escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
+      },
+      {
+        codigo: 'PARENTESCO',
+        ativo: true,
+        escopo: codigoComRotulo(EscopoFatoCodigo.MEMBRO_GRUPO, 'Membro do grupo'),
+      },
+      {
+        codigo: 'PERFIL',
+        ativo: true,
+        escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
+      },
     ];
     expect(fatosCitaveisPelaRegra(catalogo, 'PERFIL').map((f) => f.codigo)).toEqual(['COR']);
   });
@@ -107,7 +125,7 @@ describe('agregado de grupo', () => {
   it('resume só fato declarado ativo de membro de grupo, sim ou não ou com opções', () => {
     const membro = {
       ativo: true,
-      escopo: 'MEMBRO_GRUPO',
+      escopo: codigoComRotulo(EscopoFatoCodigo.MEMBRO_GRUPO, 'Membro do grupo'),
       origem: origemDeclarada,
       dominio: tipoSimOuNao,
     };
@@ -116,7 +134,11 @@ describe('agregado de grupo', () => {
       { ...membro, codigo: 'PARENTESCO', dominio: tipoOpcao },
       { ...membro, codigo: 'RENDA', dominio: tipoNumerico },
       { ...membro, codigo: 'ANTIGO', ativo: false },
-      { ...membro, codigo: 'QUILOMBOLA', escopo: 'CANDIDATO' },
+      {
+        ...membro,
+        codigo: 'QUILOMBOLA',
+        escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
+      },
       { ...membro, codigo: 'IDOSO', origem: origemCalculada },
     ];
     expect(fatosDeMembroAgregaveis(catalogo).map((f) => f.codigo)).toEqual([

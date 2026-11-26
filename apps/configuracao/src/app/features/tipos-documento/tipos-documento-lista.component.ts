@@ -12,11 +12,7 @@ import {
   TagComponent,
   type CatalogoAcompanhado,
 } from '@uniplus/shared-ui/components';
-import {
-  CLASSIFICACOES_DE_PROTECAO,
-  SituacaoDaAprovacaoComponent,
-  rotuloDe,
-} from '../../shared/protecao-do-catalogo';
+import { SituacaoDaAprovacaoComponent } from '../../shared/protecao-do-catalogo';
 import type { LinhaDoTipoDocumento } from './tipos-documento.store';
 
 @Component({
@@ -57,8 +53,6 @@ export class TiposDocumentoListaComponent {
 
   protected readonly permissaoDeManter = PERMISSAO.configuracao.tiposDocumentoManter;
   protected readonly indisponivel = computed(() => this.carregando() || this.gravando());
-  protected readonly rotuloDaSensibilidade = (classificacao: string): string =>
-    rotuloDe(CLASSIFICACOES_DE_PROTECAO, classificacao);
 
   protected acionarCadastro(): void {
     if (this.indisponivel()) return;

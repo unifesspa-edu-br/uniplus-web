@@ -108,7 +108,7 @@ test.describe('Cadastro do fato do candidato', () => {
       .click();
 
     await expect
-      .poll(async () => (await fatoNaApi(codigo))?.descritivo.componenteExibicao)
+      .poll(async () => (await fatoNaApi(codigo))?.descritivo.componenteExibicao?.codigo)
       .toBe('MOEDA');
     // Salvo o fato, a tela abre a edição dele com o componente declarado e o resumo da definição.
     const descritivo = pagina.locator('#cfg-fato-descritivo');
@@ -116,14 +116,14 @@ test.describe('Cadastro do fato do candidato', () => {
       'MOEDA',
     );
     await resumoDoFato(pagina, codigo);
-    await expect(pagina.locator('dd', { hasText: 'Moeda' })).toBeVisible();
+    await expect(pagina.locator('dd', { hasText: 'Valor em reais' })).toBeVisible();
 
     await pagina.getByRole('button', { name: 'Fechar', exact: true }).last().click();
     await pagina.getByRole('button', { name: `Editar o fato ${codigo}` }).click();
     await descritivo.locator('select[formcontrolname="componenteExibicao"]').selectOption('');
     await pagina.getByRole('button', { name: 'Salvar nome, descrição e componente' }).click();
     await expect
-      .poll(async () => (await fatoNaApi(codigo))?.descritivo.componenteExibicao)
+      .poll(async () => (await fatoNaApi(codigo))?.descritivo.componenteExibicao ?? null)
       .toBeNull();
   });
 
@@ -142,7 +142,7 @@ test.describe('Cadastro do fato do candidato', () => {
       .click();
 
     await expect
-      .poll(async () => (await fatoNaApi(codigo))?.descritivo.componenteExibicao)
+      .poll(async () => (await fatoNaApi(codigo))?.descritivo.componenteExibicao ?? null)
       .toBeNull();
     await resumoDoFato(pagina, codigo);
     await expect(pagina.locator('dd', { hasText: PADRAO })).toBeVisible();

@@ -1,3 +1,10 @@
+import { codigoComRotulo } from './fatos-candidato.fixtures';
+import {
+  EscopoFatoCodigo,
+  FonteValoresFatoCodigo,
+  QuantidadeDeValoresCodigo,
+  TipoDoDadoCodigo,
+} from '@uniplus/shared-data/configuracao';
 import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import {
   LISTA,
@@ -151,7 +158,7 @@ describe('FatosCandidatoPage — criação do fato', () => {
           codigo: 'MEMBRO_TRABALHA',
           nome: 'Membro trabalha',
           binding: 'CAMPO_FORMULARIO:MEMBRO_TRABALHA',
-          escopo: 'MEMBRO_GRUPO',
+          escopo: codigoComRotulo(EscopoFatoCodigo.MEMBRO_GRUPO, 'Membro do grupo'),
         }),
       ]);
     p.atenderApoios();
@@ -212,9 +219,9 @@ describe('FatosCandidatoPage — criação do fato', () => {
     const pedido = p.http.expectOne(LISTA);
     expect(pedido.request.method).toBe('POST');
     expect(pedido.request.body).toMatchObject({
-      cardinalidade: 'VALOR_UNICO',
-      dominio: 'OPCAO',
-      fonteValores: 'CATALOGO',
+      cardinalidade: QuantidadeDeValoresCodigo.VALOR_UNICO,
+      dominio: TipoDoDadoCodigo.OPCAO,
+      fonteValores: FonteValoresFatoCodigo.CATALOGO,
       formato: null,
     });
     await entregar(pedido);

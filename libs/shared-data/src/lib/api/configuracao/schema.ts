@@ -2312,6 +2312,102 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/vocabularios/origens-fato": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["ListarOrigensFato"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/fontes-valores-fato": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["ListarFontesValoresFato"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/formatos-texto": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["ListarFormatosTexto"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/escopos-fato": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["ListarEscoposFato"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/componentes-de-exibicao": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["ListarComponentesDeExibicao"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/hipoteses-legais-tratamento": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["ListarHipotesesLegaisTratamento"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/vocabularios/tipos-local-oferta": {
         readonly parameters: {
             readonly query?: never;
@@ -2423,7 +2519,7 @@ export interface components {
             readonly solicitadaEm: null | string;
             /** Format: date-time */
             readonly decididaEm: null | string;
-            readonly classificacaoRecomendada: null | string;
+            readonly classificacaoRecomendada: null | components["schemas"]["ClassificacaoDeProtecao"];
             readonly justificativa: null | string;
             /** Format: date-time */
             readonly aceitaEm: null | string;
@@ -2444,10 +2540,10 @@ export interface components {
             readonly atorNome: null | string;
             /** Format: int32 */
             readonly ciclo: number;
-            readonly classificacaoProtecao: string;
-            readonly hipoteseLegal: string;
+            readonly classificacaoProtecao: components["schemas"]["ClassificacaoDeProtecao"];
+            readonly hipoteseLegal: components["schemas"]["HipoteseLegalTratamento"];
             readonly finalidadeTratamento: string;
-            readonly classificacaoRecomendada: null | string;
+            readonly classificacaoRecomendada: null | components["schemas"]["ClassificacaoDeProtecao"];
             readonly justificativa: null | string;
             readonly dianteDeManifestacaoDesfavoravel: boolean;
         };
@@ -2786,6 +2882,10 @@ export interface components {
             readonly nome: null | string;
             readonly uf: null | string;
         };
+        readonly ClassificacaoDeProtecao: {
+            readonly codigo: components["schemas"]["ClassificacaoDeProtecaoCodigo"];
+            readonly rotulo: string;
+        };
         /**
          * @description Classificação da proteção exigida para o tratamento de dados.
          *
@@ -2801,11 +2901,15 @@ export interface components {
             readonly itens: readonly components["schemas"]["CampoApresentado"][];
             readonly grupos: readonly components["schemas"]["GrupoApresentado"][];
         };
+        readonly ComponenteDeExibicao: {
+            readonly codigo: components["schemas"]["ComponenteDeExibicaoCodigo"];
+            readonly rotulo: string;
+        };
         /**
          * @description Como a tela mostra o valor de um dado do candidato quando o modo de exibição não se deduz do tipo, do formato nem da proteção.
          *
          *     - `MOEDA`: Valor em reais — O valor aparece em reais, como R$ 1.234,56.
-         *     - `SITUACAO`: Situação — O valor aparece como a situação de um processo ou de um pedido, numa etiqueta.
+         *     - `SITUACAO`: Situação — A tela mostra o rótulo numa etiqueta, sem mudar a forma do valor.
          * @enum {string}
          */
         readonly ComponenteDeExibicaoCodigo: ComponenteDeExibicaoCodigo;
@@ -3182,18 +3286,18 @@ export interface components {
             readonly atorNome: null | string;
             /** Format: int32 */
             readonly ciclo: number;
-            readonly classificacaoProtecao: string;
-            readonly hipoteseLegal: string;
+            readonly classificacaoProtecao: components["schemas"]["ClassificacaoDeProtecao"];
+            readonly hipoteseLegal: components["schemas"]["HipoteseLegalTratamento"];
             readonly finalidadeTratamento: string;
-            readonly classificacaoRecomendada: null | string;
+            readonly classificacaoRecomendada: null | components["schemas"]["ClassificacaoDeProtecao"];
             readonly justificativa: null | string;
             readonly dianteDeManifestacaoDesfavoravel: boolean;
         };
         readonly DefinicaoDoFatoDto: {
             readonly dominio: components["schemas"]["TipoDoDado"];
             readonly cardinalidade: components["schemas"]["QuantidadeDeValores"];
-            readonly escopo: string;
-            readonly formato: null | string;
+            readonly escopo: components["schemas"]["EscopoFato"];
+            readonly formato: null | components["schemas"]["FormatoTexto"];
             readonly valores: components["schemas"]["ValoresDoFatoDto"];
             readonly resolucao: components["schemas"]["ResolucaoDoFatoDto"];
             readonly protecao: components["schemas"]["ProtecaoDoFatoDto"];
@@ -3231,7 +3335,7 @@ export interface components {
         readonly DescritivoDoFatoDto: {
             readonly nome: string;
             readonly descricao: string;
-            readonly componenteExibicao: null | string;
+            readonly componenteExibicao: null | components["schemas"]["ComponenteDeExibicao"];
         };
         readonly DescritivoDoFatoInput: {
             readonly nome: string;
@@ -3255,8 +3359,8 @@ export interface components {
             readonly codigo: string;
             readonly nome: string;
             readonly descricao: null | string;
-            readonly classificacaoProtecao: string;
-            readonly hipoteseLegal: string;
+            readonly classificacaoProtecao: components["schemas"]["ClassificacaoDeProtecao"];
+            readonly hipoteseLegal: components["schemas"]["HipoteseLegalTratamento"];
             readonly finalidadeTratamento: string;
             readonly aprovacao: components["schemas"]["AprovacaoDaProtecaoDto"];
             readonly fato: null | components["schemas"]["DetalheDoFatoDto"];
@@ -3268,7 +3372,7 @@ export interface components {
             readonly dominio: components["schemas"]["TipoDoDado"];
             readonly cardinalidade: components["schemas"]["QuantidadeDeValores"];
             readonly semeadoPeloSistema: boolean;
-            readonly componenteExibicao: null | string;
+            readonly componenteExibicao: null | components["schemas"]["ComponenteDeExibicao"];
             readonly valores: readonly components["schemas"]["DetalheDoValorDoFatoDto"][];
         };
         readonly DetalheDoTipoDeDocumentoDto: {
@@ -3420,6 +3524,10 @@ export interface components {
          * @enum {string}
          */
         readonly EscolhaDoPrazoDeEmissaoCodigo: EscolhaDoPrazoDeEmissaoCodigo;
+        readonly EscopoFato: {
+            readonly codigo: components["schemas"]["EscopoFatoCodigo"];
+            readonly rotulo: string;
+        };
         /**
          * @description Sobre quem o dado do candidato é respondido: o próprio candidato ou cada membro de uma lista do formulário.
          *
@@ -3512,14 +3620,13 @@ export interface components {
             readonly valoresDominioDeclarados: null | readonly components["schemas"]["FatoValorDominioViewItem"][];
             readonly fonteValores: null | components["schemas"]["FonteValoresFato"];
             readonly ativo: boolean;
-            readonly classificacaoProtecao: string;
-            readonly hipoteseLegal: string;
+            readonly classificacaoProtecao: components["schemas"]["ClassificacaoDeProtecao"];
+            readonly hipoteseLegal: components["schemas"]["HipoteseLegalTratamento"];
             readonly finalidadeTratamento: string;
             readonly protecaoAprovada: boolean;
-            readonly formato?: null | string;
-            /** @default CANDIDATO */
-            readonly escopo: string;
-            readonly componenteExibicao?: null | string;
+            readonly formato?: null | components["schemas"]["FormatoTexto"];
+            readonly componenteExibicao?: null | components["schemas"]["ComponenteDeExibicao"];
+            readonly escopo?: components["schemas"]["EscopoFato"];
         };
         readonly FatoColetadoInput: {
             readonly fatoCodigo: string;
@@ -3628,6 +3735,10 @@ export interface components {
          * @enum {string}
          */
         readonly FormatoPedagogicoCodigo: FormatoPedagogicoCodigo;
+        readonly FormatoTexto: {
+            readonly codigo: components["schemas"]["FormatoTextoCodigo"];
+            readonly rotulo: string;
+        };
         /**
          * @description O formato que o texto de um dado do candidato precisa ter.
          *
@@ -3722,6 +3833,10 @@ export interface components {
             readonly ocorrenciaDoCandidatoValida: boolean;
             readonly ocorrencias: readonly components["schemas"]["OcorrenciaPreVisualizadaDto"][];
         };
+        readonly HipoteseLegalTratamento: {
+            readonly codigo: components["schemas"]["HipoteseLegalTratamentoCodigo"];
+            readonly rotulo: string;
+        };
         /**
          * @description Fundamento legal para o tratamento de dados pessoais.
          *
@@ -3771,9 +3886,9 @@ export interface components {
             readonly id: string;
             readonly codigo: string;
             readonly nome: string;
-            readonly classificacaoProtecao: string;
+            readonly classificacaoProtecao: components["schemas"]["ClassificacaoDeProtecao"];
             readonly finalidadeTratamento: string;
-            readonly hipoteseLegal: string;
+            readonly hipoteseLegal: components["schemas"]["HipoteseLegalTratamento"];
             readonly aprovacao: components["schemas"]["AprovacaoDaProtecaoDto"];
         };
         readonly ItemDoModeloDto: {
@@ -4209,9 +4324,9 @@ export interface components {
          */
         readonly ProgramaDeOfertaCodigo: ProgramaDeOfertaCodigo;
         readonly ProtecaoDoFatoDto: {
-            readonly classificacao: string;
+            readonly classificacao: components["schemas"]["ClassificacaoDeProtecao"];
             readonly finalidade: string;
-            readonly hipoteseLegal: string;
+            readonly hipoteseLegal: components["schemas"]["HipoteseLegalTratamento"];
             readonly aprovacao: components["schemas"]["AprovacaoDaProtecaoDto"];
         };
         readonly QuantidadeDeValores: {
@@ -4601,9 +4716,9 @@ export interface components {
             /** Format: int32 */
             readonly tamanhoMaximoMb: null | number;
             readonly tipoEquivalente: null | string;
-            readonly classificacaoProtecao: string;
+            readonly classificacaoProtecao: components["schemas"]["ClassificacaoDeProtecao"];
             readonly finalidadeTratamento: string;
-            readonly hipoteseLegal: string;
+            readonly hipoteseLegal: components["schemas"]["HipoteseLegalTratamento"];
             /** Format: date-time */
             readonly criadoEm: string;
             readonly protecaoAprovada: boolean;
@@ -16014,6 +16129,180 @@ export interface operations {
                 };
                 content: {
                     readonly "application/vnd.uniplus.quantidade-de-valores.v1+json": readonly components["schemas"]["QuantidadeDeValores"][];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ListarOrigensFato: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.origem-fato.v1+json": readonly components["schemas"]["OrigemFato"][];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ListarFontesValoresFato: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.fonte-valores-fato.v1+json": readonly components["schemas"]["FonteValoresFato"][];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ListarFormatosTexto: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.formato-texto.v1+json": readonly components["schemas"]["FormatoTexto"][];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ListarEscoposFato: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.escopo-fato.v1+json": readonly components["schemas"]["EscopoFato"][];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ListarComponentesDeExibicao: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.componente-de-exibicao.v1+json": readonly components["schemas"]["ComponenteDeExibicao"][];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ListarHipotesesLegaisTratamento: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.hipotese-legal-tratamento.v1+json": readonly components["schemas"]["HipoteseLegalTratamento"][];
                 };
             };
             /** @description Not Acceptable */

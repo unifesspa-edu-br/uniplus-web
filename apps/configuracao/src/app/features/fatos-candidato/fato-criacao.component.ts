@@ -2,7 +2,7 @@ import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { ID_DO_TIPO_DE_DADO_DA_CRIACAO } from './ids-do-fato';
 import { acompanharTiposDoDado } from './leituras-do-fato';
 import { VOCABULARIO_DE_TIPOS_DO_DADO } from '@uniplus/shared-data/configuracao';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
   AlertComponent,
@@ -13,14 +13,10 @@ import {
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { bloquearEnvio } from './bloquear-envio';
+import { lerVocabularioDoFato } from './vocabulario-do-fato';
 import { EdicaoDosFatos } from './edicao-dos-fatos';
 import { LIMITE_DO_CODIGO_DO_FATO, CampoDaCriacao, mensagemDoCampo } from './fato-candidato-form';
 import {
-  CARDINALIDADES,
-  COMPONENTES_DE_EXIBICAO,
-  ESCOPOS,
-  FONTES_DE_VALORES,
-  FORMATOS_DE_TEXTO,
   ROTULO_DO_COMPONENTE_PADRAO,
   fatosDeMembroAgregaveis,
   resumoDoAgregado,
@@ -73,11 +69,41 @@ export class FatoCriacaoComponent {
     destino: () => document.getElementById(ID_DO_FATO_DE_MEMBRO),
   });
 
-  protected readonly cardinalidades = CARDINALIDADES;
-  protected readonly fontes = FONTES_DE_VALORES;
-  protected readonly formatos = FORMATOS_DE_TEXTO;
-  protected readonly escopos = ESCOPOS;
-  protected readonly componentes = COMPONENTES_DE_EXIBICAO;
+  protected readonly hipoteses = lerVocabularioDoFato(
+    'hipoteses-legais-tratamento',
+    'as hipóteses legais',
+    'cfg-fato-hipoteses',
+  );
+  private readonly acompanharHipoteses = effect(() => {
+    const leitura = this.hipoteses.vocabulario;
+    const itens = leitura.carregando() || leitura.erro() !== null ? null : leitura.itens();
+    this.dep.vocabularioDasHipoteses.set(itens);
+  });
+  protected readonly cardinalidades = lerVocabularioDoFato(
+    'quantidades-de-valores',
+    'as quantidades de valores',
+    'cfg-fato-cardinalidades',
+  );
+  protected readonly fontes = lerVocabularioDoFato(
+    'fontes-valores-fato',
+    'as fontes de valores',
+    'cfg-fato-fontes',
+  );
+  protected readonly formatos = lerVocabularioDoFato(
+    'formatos-texto',
+    'os formatos de texto',
+    'cfg-fato-formatos',
+  );
+  protected readonly escopos = lerVocabularioDoFato(
+    'escopos-fato',
+    'os escopos',
+    'cfg-fato-escopos',
+  );
+  protected readonly componentes = lerVocabularioDoFato(
+    'componentes-de-exibicao',
+    'os componentes de exibição',
+    'cfg-fato-componente',
+  );
   protected readonly rotuloDoPadrao = ROTULO_DO_COMPONENTE_PADRAO;
   protected readonly resumo = resumoDoAgregado;
 

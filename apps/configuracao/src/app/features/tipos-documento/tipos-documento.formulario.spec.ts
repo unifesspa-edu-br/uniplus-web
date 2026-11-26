@@ -6,6 +6,7 @@ import {
   ESCRITA,
   Pagina,
   PROTECAO_PREENCHIDA,
+  antigoComProtecaoSensivel as antigo,
   criado,
   diploma,
   montarPagina,
@@ -13,8 +14,6 @@ import {
   rg,
   sucesso,
 } from './tipos-documento.testing';
-
-const antigo = { ...rg, classificacaoProtecao: 'SENSIVEL', hipoteseLegal: 'INTERESSE_LEGITIMO' };
 
 const dadosDaEdicao = { id: rg.id, codigo: 'RG', nome: 'Registro Geral revisado' };
 
@@ -36,7 +35,6 @@ function verificarRecusaDoCatalogo(campo: HTMLElement, dica: HTMLElement): void 
 describe('TiposDocumentoPage — formulário', () => {
   let p: Pagina;
   afterEach(() => p.encerrar());
-
   const mensagem = (nome: string): string | undefined =>
     p.campo(nome).closest('.field')?.querySelector('.field__error')?.textContent?.trim();
   const submeter = async (): Promise<void> => {
@@ -377,12 +375,10 @@ describe('TiposDocumentoPage — formulário', () => {
     expect(post.request.body).toMatchObject({ nome: 'Declaração de renda', categoria: 'RENDA' });
     post.flush(...criado());
     await p.recarregarCom([rg]);
-
     expect(p.edicao.aberto()).toBe(false);
     expect(p.sucessos).toHaveBeenCalledWith('Tipo de documento criado');
     expect(p.statusDaPagina()).toBe('Tipo de documento criado.');
   });
-
   it('a edição envia o código reeditável junto do id e anuncia o desfecho', async () => {
     p = await montarPagina([rg]);
     await p.abrirEdicao(rg);

@@ -1,3 +1,8 @@
+import { codigoComRotulo } from './fatos-candidato.fixtures';
+import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
 import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { OperadorCodigo, type FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, describe, expect, it, beforeAll } from 'vitest';
@@ -32,8 +37,11 @@ import {
 const categorico: FatoCandidatoDto = {
   ...comValoresDeclarados(
     comProtecao(corRaca, {
-      classificacao: 'PESSOAL',
-      hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+      classificacao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
+      hipoteseLegal: codigoComRotulo(
+        HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+        'Execução de políticas públicas',
+      ),
     }),
     [
       {

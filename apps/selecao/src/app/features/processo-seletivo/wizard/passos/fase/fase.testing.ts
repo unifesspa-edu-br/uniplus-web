@@ -1,3 +1,8 @@
+import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { fornecerVocabulariosDaRegra } from '../../shared/deliberacao/vocabularios-da-regra.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -105,7 +110,7 @@ export const BANCAS = [
   },
 ];
 
-/** O cadastro de onde a tela tira os documentos — antes era uma lista escrita nela. */
+/** O cadastro de onde a tela tira os documentos. */
 export const ID_CPF = '01960000-0000-7000-0000-0000000000f1';
 export const ID_ETAPA_DOCUMENTAL = '01960000-0000-7000-0000-0000000000c1';
 export const ID_TIPO_ETAPA = '01960000-0000-7000-0000-0000000000c2';
@@ -119,9 +124,12 @@ export const TIPOS_DOCUMENTO = [
     formatosAceitos: 'pdf,jpg',
     tamanhoMaximoMb: 10,
     tipoEquivalente: null,
-    classificacaoProtecao: 'PESSOAL',
+    classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
     finalidadeTratamento: 'Conferir a identidade do candidato.',
-    hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+    hipoteseLegal: codigoComRotulo(
+      HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+      'Execução de políticas públicas',
+    ),
     protecaoAprovada: true,
     criadoEm: '2026-08-30T12:00:00Z',
   },
@@ -228,7 +236,8 @@ const PROVEDORES_DA_FASE = [
 ];
 
 function opcoesParaUrl(url: string): readonly unknown[] | null {
-  if (url.includes('consequencias-indeferimento')) return [CONSEQUENCIA_ELIMINA, CONSEQUENCIA_REENVIO];
+  if (url.includes('consequencias-indeferimento'))
+    return [CONSEQUENCIA_ELIMINA, CONSEQUENCIA_REENVIO];
   return opcoesDoRecursoDaUrl(url);
 }
 

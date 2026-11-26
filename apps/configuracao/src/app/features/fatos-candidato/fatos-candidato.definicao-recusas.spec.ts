@@ -1,3 +1,8 @@
+import { codigoComRotulo } from './fatos-candidato.fixtures';
+import {
+  ClassificacaoDeProtecaoCodigo,
+  FormatoTextoCodigo,
+} from '@uniplus/shared-data/configuracao';
 import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import {
   Pagina,
@@ -165,10 +170,10 @@ describe('FatosCandidatoPage — recusas e concorrência da definição do fato'
       const texto = comProtecao(
         comDefinicao(corRaca, {
           dominio: tipoTexto,
-          formato: 'EMAIL',
+          formato: codigoComRotulo(FormatoTextoCodigo.EMAIL, 'E-mail'),
           valores: { ...corRaca.definicao.valores, fonte: null },
         }),
-        { classificacao: 'PESSOAL' },
+        { classificacao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal') },
       );
       await abrir(texto);
       await enviar();
@@ -190,10 +195,10 @@ describe('FatosCandidatoPage — recusas e concorrência da definição do fato'
       const texto = comProtecao(
         comDefinicao(corRaca, {
           dominio: tipoTexto,
-          formato: 'EMAIL',
+          formato: codigoComRotulo(FormatoTextoCodigo.EMAIL, 'E-mail'),
           valores: { ...corRaca.definicao.valores, fonte: null },
         }),
-        { classificacao: 'PESSOAL' },
+        { classificacao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal') },
       );
       await abrir(texto);
       await enviar();

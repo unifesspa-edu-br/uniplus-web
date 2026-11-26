@@ -1,3 +1,5 @@
+import { EscopoFatoCodigo } from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { BlocoSistemaCodigo } from '@uniplus/shared-data/selecao';
 import { PCD } from '../../shared/gatilho-de-exigencia.testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -119,7 +121,7 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
     catalogos.fatos.set([
       {
         ...PCD,
-        escopo: 'CANDIDATO',
+        escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
         codigo: 'CONCORRER_PCD',
         nome: 'Concorrer na reserva para pessoa com deficiência',
         binding: 'CAMPO_INSCRICAO:CONCORRER_PCD',

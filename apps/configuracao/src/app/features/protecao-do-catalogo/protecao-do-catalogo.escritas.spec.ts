@@ -1,3 +1,8 @@
+import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -22,9 +27,12 @@ const detalhe: DetalheDaProtecaoDoCatalogoDto = {
   id: '01960000-0000-7000-0000-0000000000d2',
   codigo: 'LAUDO_MEDICO_COMPLEMENTAR',
   nome: 'Laudo médico complementar',
-  classificacaoProtecao: 'INTERNO',
+  classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.INTERNO, 'Interno'),
   finalidadeTratamento: 'Conferir o laudo.',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  hipoteseLegal: codigoComRotulo(
+    HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+    'Execução de políticas públicas',
+  ),
   aprovacao: {
     situacao: 'SOLICITADA',
     ciclo: 1,
