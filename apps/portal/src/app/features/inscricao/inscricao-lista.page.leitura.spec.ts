@@ -71,7 +71,7 @@ describe('InscricaoListaPage', () => {
   it('com duas opções de curso, cada uma sai com a sua ordem', async () => {
     await cenario.carregar([
       {
-        ...inscricao('p1', SituacaoInscricaoCodigo.SUBMETIDA, 'Medicina 2027'),
+        ...inscricao('p1', SituacaoInscricaoCodigo.ENVIADA, 'Medicina 2027'),
         opcoesDeCurso: [
           { ordem: 1, cursoNome: 'Direito', cursoGrau: 'Bacharelado' },
           { ordem: 2, cursoNome: 'Medicina', cursoGrau: 'Bacharelado' },

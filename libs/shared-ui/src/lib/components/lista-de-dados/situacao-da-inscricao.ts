@@ -7,13 +7,13 @@ import type { UiTagVariant } from '../tag/tag';
  */
 const ROTULO = new Map<string, string>([
   ['rascunho', 'Rascunho'],
-  ['submetida', 'Enviada'],
+  ['enviada', 'Enviada'],
   ['cancelada', 'Cancelada'],
 ]);
 
 const VARIANTE = new Map<string, UiTagVariant>([
   ['rascunho', 'warning'],
-  ['submetida', 'success'],
+  ['enviada', 'success'],
   ['cancelada', 'danger'],
 ]);
 

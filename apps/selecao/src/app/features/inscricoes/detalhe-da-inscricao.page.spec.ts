@@ -142,7 +142,7 @@ describe('DetalheDaInscricaoPage', () => {
   });
 
   it('não mostra a data do envio que a API omitiu', async () => {
-    await abrir({ ...FERNANDA, submetidaEm: undefined });
+    await abrir({ ...FERNANDA, enviadaEm: undefined });
     expect(dado('Enviada em')).toBeNull();
   });
 

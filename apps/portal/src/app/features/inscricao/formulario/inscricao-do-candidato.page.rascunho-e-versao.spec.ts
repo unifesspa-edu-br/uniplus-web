@@ -136,7 +136,7 @@ describe('InscricaoDoCandidatoPage', () => {
     cenario.servico.salvar = () =>
       of(problema(422, 'uniplus.selecao.inscricao.rascunho_so_antes_do_envio'));
     cenario.servico.inscricao = inscricao({
-      situacao: { codigo: SituacaoInscricaoCodigo.SUBMETIDA, rotulo: 'Situação de teste' },
+      situacao: { codigo: SituacaoInscricaoCodigo.ENVIADA, rotulo: 'Situação de teste' },
     });
 
     await cenario.clicar(botao(tela, 'Salvar rascunho'));

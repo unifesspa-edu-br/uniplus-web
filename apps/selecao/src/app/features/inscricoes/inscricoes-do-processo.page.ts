@@ -313,7 +313,7 @@ export class InscricoesDoProcessoPage {
       cpf: inscricao.cpf?.valor ?? null,
       ofertas: inscricao.ofertas?.length ? ofertasEmOrdem(inscricao.ofertas) : null,
       situacao: inscricao.situacao ?? null,
-      enviadaEm: inscricao.submetidaEm ?? null,
+      enviadaEm: inscricao.enviadaEm ?? null,
     };
     return {
       ...campos,

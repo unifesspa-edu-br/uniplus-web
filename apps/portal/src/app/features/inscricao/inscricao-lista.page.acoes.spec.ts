@@ -36,8 +36,8 @@ describe('InscricaoListaPage', () => {
   it('as ações vêm das permissões da API: enviada com as inscrições abertas, rascunho e encerrada', async () => {
     await cenario.carregar([
       inscricao('p1', SituacaoInscricaoCodigo.RASCUNHO, 'Auxílio'),
-      inscricao('p2', SituacaoInscricaoCodigo.SUBMETIDA, 'Bolsa'),
-      inscricao('p3', SituacaoInscricaoCodigo.SUBMETIDA, 'Morada', false),
+      inscricao('p2', SituacaoInscricaoCodigo.ENVIADA, 'Bolsa'),
+      inscricao('p3', SituacaoInscricaoCodigo.ENVIADA, 'Morada', false),
       inscricao('p4', SituacaoInscricaoCodigo.RASCUNHO, 'Auxílio transporte', false),
     ]);
 
@@ -84,7 +84,7 @@ describe('InscricaoListaPage', () => {
 
   it('a ação que desfaz a inscrição sai depois das demais, em botão próprio', async () => {
     await cenario.carregar([
-      inscricao('p2', SituacaoInscricaoCodigo.SUBMETIDA, 'Bolsa de iniciação científica'),
+      inscricao('p2', SituacaoInscricaoCodigo.ENVIADA, 'Bolsa de iniciação científica'),
     ]);
 
     const item = cenario.itens()[0];
@@ -100,7 +100,7 @@ describe('InscricaoListaPage', () => {
 
   it('sem edição a seguir, ver o comprovante é a ação principal', async () => {
     await cenario.carregar([
-      inscricao('p2', SituacaoInscricaoCodigo.SUBMETIDA, 'Bolsa de iniciação científica', false),
+      inscricao('p2', SituacaoInscricaoCodigo.ENVIADA, 'Bolsa de iniciação científica', false),
     ]);
 
     const botao = cenario.tela().querySelector('li.inscricao-lista-item ui-button button');

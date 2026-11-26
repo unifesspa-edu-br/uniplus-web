@@ -53,7 +53,7 @@ export function identificacaoExibida(
     numero: inscricao.numeroInscricao || null,
     situacao: inscricao.situacao ?? null,
     ofertas: ofertasEmOrdem(inscricao.ofertas),
-    enviadaEm: inscricao.submetidaEm ?? null,
+    enviadaEm: inscricao.enviadaEm ?? null,
     canceladaEm: inscricao.canceladaEm ?? null,
     motivoDoCancelamento: inscricao.motivoDoCancelamento || null,
   };

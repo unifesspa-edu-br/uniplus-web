@@ -70,7 +70,7 @@ const VIEW_OPTIONS: readonly UiSegmentedOption<VisaoCertames>[] = [
 
 const INSCRICAO_STATUS_VARIANT: Record<SituacaoInscricaoCodigo, UiTagVariant> = {
   [SituacaoInscricaoCodigo.RASCUNHO]: 'warning',
-  [SituacaoInscricaoCodigo.SUBMETIDA]: 'success',
+  [SituacaoInscricaoCodigo.ENVIADA]: 'success',
   [SituacaoInscricaoCodigo.CANCELADA]: 'neutral',
 };
 

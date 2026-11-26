@@ -22,6 +22,6 @@ export const FERNANDA: InscricaoDoProcessoDto = {
   ofertas: [oferta(1, MEDICINA), oferta(2, DIREITO)],
   nome: { valor: 'Fernanda Laura Nicole Drumond' },
   cpf: { valor: '***.598.363-**', podeRevelar: false },
-  submetidaEm: '2026-12-10T15:00:00Z',
+  enviadaEm: '2026-12-10T15:00:00Z',
 };
 

@@ -157,7 +157,7 @@ describe('mesmoConteudoGravado: o que só o candidato grava', () => {
     ['as respostas', { respostas: { NOME: 'Outra' } }],
     [
       'a situação',
-      { situacao: { codigo: SituacaoInscricaoCodigo.SUBMETIDA, rotulo: 'Situação de teste' } },
+      { situacao: { codigo: SituacaoInscricaoCodigo.ENVIADA, rotulo: 'Situação de teste' } },
     ],
     ['a oferta de curso', { ofertaCursoId: 'oferta-1' }],
     ['os aceites', { aceites: [{ codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' }] }],
@@ -175,7 +175,7 @@ describe('confirmacaoDaGravacao: o que o leitor de tela ouve', () => {
 
   it('a inscrição enviada é confirmada com o número', () => {
     const enviada = inscricao({
-      situacao: { codigo: SituacaoInscricaoCodigo.SUBMETIDA, rotulo: 'Situação de teste' },
+      situacao: { codigo: SituacaoInscricaoCodigo.ENVIADA, rotulo: 'Situação de teste' },
       numeroInscricao: '2027-000001',
     });
 
@@ -186,7 +186,7 @@ describe('confirmacaoDaGravacao: o que o leitor de tela ouve', () => {
     expect(
       confirmacaoDaGravacao(
         inscricao({
-          situacao: { codigo: SituacaoInscricaoCodigo.SUBMETIDA, rotulo: 'Situação de teste' },
+          situacao: { codigo: SituacaoInscricaoCodigo.ENVIADA, rotulo: 'Situação de teste' },
         }),
       ),
     ).toBe('Inscrição enviada.');

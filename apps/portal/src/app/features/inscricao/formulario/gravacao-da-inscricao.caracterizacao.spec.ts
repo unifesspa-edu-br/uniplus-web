@@ -289,7 +289,7 @@ describe('GravacaoDaInscricao: o envio', () => {
     expect(c.gravacao.operacao()).toBe('enviando');
     expect(c.leitura.adotar).not.toHaveBeenCalled();
 
-    const relida = gravadaComSucesso(ETAG_GRAVADO, SituacaoInscricaoCodigo.SUBMETIDA);
+    const relida = gravadaComSucesso(ETAG_GRAVADO, SituacaoInscricaoCodigo.ENVIADA);
     releitura.next(okDe(relida));
 
     expect(c.leitura.adotar).toHaveBeenCalledWith(relida);
@@ -319,7 +319,7 @@ describe('GravacaoDaInscricao: o envio', () => {
   });
 
   it('a inscrição enviada fica sem rascunho mesmo sem recibo', () => {
-    c.gravada.set(gravadaComSucesso(ETAG_DA_TELA, SituacaoInscricaoCodigo.SUBMETIDA));
+    c.gravada.set(gravadaComSucesso(ETAG_DA_TELA, SituacaoInscricaoCodigo.ENVIADA));
 
     expect(c.gravacao.enviada()).toBe(true);
   });
@@ -376,7 +376,7 @@ describe.each([
 
   it('ETag mudou numa inscrição enviada: o aviso confirma o envio com o número', () => {
     c.servico.obter.mockReturnValue(
-      of(okDe(gravadaComSucesso(ETAG_GRAVADO, SituacaoInscricaoCodigo.SUBMETIDA))),
+      of(okDe(gravadaComSucesso(ETAG_GRAVADO, SituacaoInscricaoCodigo.ENVIADA))),
     );
 
     c.gravacao.salvar(c.formulario);
