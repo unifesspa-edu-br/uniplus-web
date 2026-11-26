@@ -37,7 +37,7 @@ test.describe('Revisão e publicação — escala da nota final, matriz DS @ds',
       cronogramaFases: [FASE_DE_COLETA],
       classificacao: {
         id: '01960000-0000-7000-0000-0000000009a1',
-        regraCalculo: { codigo: 'FORMULA-MEDIA-PONDERADA', versao: '1.0' },
+        regraCalculo: { codigo: 'FORMULA_MEDIA_PONDERADA', versao: '1.0' },
         regraArredondamento: { codigo: 'ARRED-TRUNCAR', versao: '1.0' },
         casasArredondamento: 2,
         regraOrdemAlocacao: { codigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA', versao: '1.0' },
