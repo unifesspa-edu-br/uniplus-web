@@ -68,6 +68,11 @@ export type { UseApiResourceRef } from './use-api-resource';
 export { buildVendorMimeAccept, VENDOR_MIME_TOKEN, withVendorMime } from './vendor-mime';
 export type { VendorMimeDeclaration } from './vendor-mime';
 
+export {
+  RECUSA_DE_PERMISSAO_TRATADA_NA_CHAMADA,
+  comRecusaDePermissaoTratadaNaChamada,
+} from './recusa-de-permissao';
+
 export { salvarArquivo } from './salvar-arquivo';
 export { ChaveDeSubstituicao, proximaChave } from './chave-de-substituicao';
 export { comChave } from './comando-com-chave';

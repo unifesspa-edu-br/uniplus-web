@@ -1,10 +1,7 @@
 import { HttpContext } from '@angular/common/http';
 import { describe, expect, it } from 'vitest';
-import {
-  buildVendorMimeAccept,
-  VENDOR_MIME_TOKEN,
-  withVendorMime,
-} from './vendor-mime';
+import { IDEMPOTENCY_KEY_TOKEN } from './idempotency-token';
+import { buildVendorMimeAccept, VENDOR_MIME_TOKEN, withVendorMime } from './vendor-mime';
 
 describe('vendor MIME — declaração via HttpContext (ADR-0028)', () => {
   it('buildVendorMimeAccept formata segundo o padrão application/vnd.uniplus.<resource>.v<N>+json', () => {
@@ -20,6 +17,16 @@ describe('vendor MIME — declaração via HttpContext (ADR-0028)', () => {
   it('VENDOR_MIME_TOKEN tem default null para HttpContext sem declaração', () => {
     const empty = new HttpContext();
     expect(empty.get(VENDOR_MIME_TOKEN)).toBeNull();
+  });
+
+  it('withVendorMime com base mantém os tokens dela sem alterar o contexto recebido', () => {
+    const base = new HttpContext().set(IDEMPOTENCY_KEY_TOKEN, 'k');
+
+    const context = withVendorMime('edital', 1, base);
+
+    expect(context.get(IDEMPOTENCY_KEY_TOKEN)).toBe('k');
+    expect(context.get(VENDOR_MIME_TOKEN)).toEqual({ resource: 'edital', version: 1 });
+    expect(base.get(VENDOR_MIME_TOKEN)).toBeNull();
   });
 
   it.each([

@@ -221,3 +221,7 @@ Em response, a ordem real (mais interna → mais externa → consumer) é
 ### Cobertura de testes
 
 `libs/shared-core/src/lib/http/*.spec.ts` cobre 31 cenários Vitest: construtores `apiOk`/`apiFailure`, narrowing por `result.ok`, `withVendorMime` (incluindo rejeição de inputs inválidos), `ProblemI18nService` (default, override estático, override dinâmico via função, `action`, `unregister`) e o interceptor para 200/201/204, 401, 404, 422 com `errors[]`, 422 com `errors: []` (normalizado como ausência), 406 com `available_versions`, 500, body string JSON, status 0 (network), 5xx sem `application/problem+json`, 4xx com shape incompleto e injeção de vendor MIME (presente e ausente). `libs/shared-auth/src/lib/interceptors/auth-error.interceptor.spec.ts` foi atualizado para registrar a chain combinada (`[authError, apiResult]`) e validar 401, 403, status diversos (incluindo 0) e 2xx no novo modelo.
+
+### Emenda (26/11/2026): recusa de permissão tratada pela própria chamada
+
+O 401 leva sempre ao login. O 403 leva a `/acesso-negado`, salvo quando a própria chamada marca, pelo `HttpContext` (`RECUSA_DE_PERMISSAO_TRATADA_NA_CHAMADA`, em `shared-core/http`), que trata a recusa na tela. A marca é da chamada, nunca do cliente da API nem de uma lista de rotas, e só se usa em consulta de apoio cuja falha a tela já avisa.
