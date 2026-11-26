@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 
 import { focarDepois } from '../foco';
+import { aplicarEdicao } from '../edicao';
 import { idDoTermo } from '../ids';
 import { type ContextoDoEditor } from '../modelo/contexto-do-editor';
 import {
@@ -134,8 +135,12 @@ export class TermosExigidosComponent {
   protected acrescentar(): void {
     const termo = this.possiveis().find((t) => t.termoId === this.escolha());
     if (termo === undefined) return;
-    const conteudo = acrescentarTermo(this.contexto().conteudo, termo);
-    this.conteudoChange.emit(conteudo);
+    aplicarEdicao(acrescentarTermo(this.contexto().conteudo, termo), this, (conteudo) =>
+      this.anunciarOTermoNovo(termo, conteudo),
+    );
+  }
+
+  private anunciarOTermoNovo(termo: TermoDisponivel, conteudo: ConteudoDoFormulario): void {
     this.escolhido.set('');
     this.anuncio.emit(`Termo “${termo.nome}” exigido na revisão e aceite.`);
     const novo = termosEmOrdem(conteudo).at(-1);

@@ -19,6 +19,35 @@ import {
 } from './grupos';
 
 describe('acrescentarGrupo', () => {
+  const criar = (rotulo: string, catalogo = [membro('RENDA')]) =>
+    acrescentarGrupo(
+      conteudo({}),
+      { rotulo, paginaCodigo: 'S1', primeiroCampo: membro('RENDA') },
+      catalogo,
+    );
+
+  it('escreve por extenso o número inicial', () => {
+    const resultado = criar('1ª etapa');
+    expect(resultado.ok && resultado.conteudo.grupos?.[0].codigo).toBe('PRIMEIRA_ETAPA');
+  });
+
+  it('aceita código com 60 caracteres sem cortar', () => {
+    const resultado = criar('a'.repeat(60));
+    expect(resultado.ok && resultado.conteudo.grupos?.[0].codigo).toBe('A'.repeat(60));
+  });
+
+  it('recusa código com 61 caracteres sem repetir o rótulo', () => {
+    expect(criar('a'.repeat(61))).toEqual({
+      ok: false,
+      recusa:
+        'O código formado a partir deste rótulo passa de 60 caracteres. Use um rótulo mais curto.',
+    });
+  });
+
+  it('recusa quando o sufixo ultrapassa o limite', () => {
+    expect(criar('a'.repeat(60), [fato('A'.repeat(60))]).ok).toBe(false);
+  });
+
   it('o grupo nasce com o primeiro campo, sem seção própria, e com código do rótulo que não colide com fato', () => {
     const atual = conteudo({ paginas: [secao('S1', 0)], itens: [item('A', 0, 'S1')] });
 
@@ -103,21 +132,7 @@ describe('campos do grupo', () => {
 
 describe('teto de campos', () => {
   it('o teto conta itens, grupos e campos de grupo, como a API', () => {
-    const atual = conteudo({
-      itens: [item('A', 0, 'S1')],
-      grupos: [
-        {
-          codigo: 'G',
-          ordem: 1,
-          rotulo: 'G',
-          paginaCodigo: 'S1',
-          ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
-          regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
-          subitens: [item('M1', 0, 'S1'), item('M2', 1, 'S1')],
-        },
-      ],
-    });
-
+    const atual = conteudoComGrupoNoTeto();
     expect(quantidadeNoTeto(atual)).toBe(4);
   });
 
@@ -138,3 +153,20 @@ describe('teto de campos', () => {
     ).toBe(false);
   });
 });
+
+function conteudoComGrupoNoTeto() {
+  return conteudo({
+    itens: [item('A', 0, 'S1')],
+    grupos: [
+      grupo({
+        codigo: 'G',
+        ordem: 1,
+        rotulo: 'G',
+        paginaCodigo: 'S1',
+        ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
+        regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
+        subitens: [item('M1', 0, 'S1'), item('M2', 1, 'S1')],
+      }),
+    ],
+  });
+}

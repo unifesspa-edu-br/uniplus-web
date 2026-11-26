@@ -1,6 +1,12 @@
-import { codigoLivre } from './codigos';
-import { REGRAS_INICIAIS } from './constantes';
-import { ConteudoDoFormulario, TermoDisponivel, TermoDoFormulario } from './tipos';
+import { formarCodigoUnicoDoNome } from '@uniplus/shared-utils';
+
+import { LIMITES_DO_FORMULARIO, REGRAS_INICIAIS } from './constantes';
+import {
+  ConteudoDoFormulario,
+  ResultadoDaEdicao,
+  TermoDisponivel,
+  TermoDoFormulario,
+} from './tipos';
 
 /** Os termos em ordem. */
 export function termosEmOrdem(conteudo: ConteudoDoFormulario): readonly TermoDoFormulario[] {
@@ -23,16 +29,36 @@ export function termosParaAcrescentar(
 export function acrescentarTermo(
   conteudo: ConteudoDoFormulario,
   termo: TermoDisponivel,
-): ConteudoDoFormulario {
+): ResultadoDaEdicao {
   const termos = termosEmOrdem(conteudo);
-  const novo: TermoDoFormulario = {
-    codigo: codigoLivre(termo.nome, 'TERMO', new Set(termos.map((t) => t.codigo))),
+  const usados = new Set(termos.map((t) => t.codigo));
+  const codigo = formarCodigoUnicoDoNome(termo.nome, 'TERMO', usados, LIMITES_DO_FORMULARIO.codigo);
+  if (!codigo.ok) return recusaDoCodigoDoTermo(codigo.limite);
+  return {
+    ok: true,
+    conteudo: { ...conteudo, termos: [...termos, termoNovo(termo, codigo.codigo, termos)] },
+  };
+}
+
+function recusaDoCodigoDoTermo(limite: number): ResultadoDaEdicao {
+  return {
+    ok: false,
+    recusa: `O código formado a partir do nome deste termo passaria de ${limite} caracteres, e o termo não pode ser exigido. O nome é definido no cadastro de termos de consentimento.`,
+  };
+}
+
+function termoNovo(
+  termo: TermoDisponivel,
+  codigo: string,
+  termos: readonly TermoDoFormulario[],
+): TermoDoFormulario {
+  return {
+    codigo,
     // Depois da maior ordem gravada: a gravada pode ter buraco, e ordem repetida é recusada.
     ordem: Math.max(-1, ...termos.map((t) => t.ordem)) + 1,
     termo: { termoId: termo.termoId, versaoId: termo.versoes[0]?.versaoId ?? '' },
     regras: REGRAS_INICIAIS,
   };
-  return { ...conteudo, termos: [...termos, novo] };
 }
 
 /** Troca o termo pelo editado, sem mexer na ordem. */
