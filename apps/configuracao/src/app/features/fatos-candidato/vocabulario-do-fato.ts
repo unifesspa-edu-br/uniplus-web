@@ -5,7 +5,13 @@ import {
   type VocabulariosDeConfiguracao,
   type Vocabulario,
 } from '@uniplus/shared-data/configuracao';
-import { acompanharLeitura } from '@uniplus/shared-ui/components';
+import { acompanharLeitura, type LeituraAcompanhada } from '@uniplus/shared-ui/components';
+
+/** A leitura de um vocabulário da tela: a lista em si e o acompanhamento da falha e da nova tentativa. */
+export interface LeituraDoVocabulario {
+  readonly vocabulario: { readonly carregando: () => boolean };
+  readonly leitura: LeituraAcompanhada;
+}
 
 export function lerVocabularioDoFato<K extends keyof VocabulariosDeConfiguracao>(
   nome: K,

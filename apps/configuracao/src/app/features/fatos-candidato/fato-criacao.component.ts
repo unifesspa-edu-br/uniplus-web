@@ -13,6 +13,7 @@ import {
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { bloquearEnvio } from './bloquear-envio';
+import { FatoProtecaoDaDefinicaoComponent } from './fato-protecao-da-definicao.component';
 import { lerVocabularioDoFato } from './vocabulario-do-fato';
 import { EdicaoDosFatos } from './edicao-dos-fatos';
 import { LIMITE_DO_CODIGO_DO_FATO, CampoDaCriacao, mensagemDoCampo } from './fato-candidato-form';
@@ -38,6 +39,7 @@ import { lerCatalogoDeFatos, lerFasesCanonicas } from './leituras-do-fato';
     FalhaDeLeituraDoCampoComponent,
     IndicadorDaLeituraDirective,
     SpinnerComponent,
+    FatoProtecaoDaDefinicaoComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './fato-criacao.component.html',
@@ -78,6 +80,12 @@ export class FatoCriacaoComponent {
     const leitura = this.hipoteses.vocabulario;
     const itens = leitura.carregando() || leitura.erro() !== null ? null : leitura.itens();
     this.dep.vocabularioDasHipoteses.set(itens);
+  });
+  /** Enquanto a lista não chega, a hipótese já escolhida continua entre as opções. */
+  protected readonly opcoesDasHipoteses = computed(() => {
+    const codigo = this.dep.valores().hipoteseLegal;
+    if (this.dep.vocabularioDasHipoteses() !== null || !codigo) return this.dep.hipoteses();
+    return [{ valor: codigo, rotulo: codigo }];
   });
   protected readonly cardinalidades = lerVocabularioDoFato(
     'quantidades-de-valores',

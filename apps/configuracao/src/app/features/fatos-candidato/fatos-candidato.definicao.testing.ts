@@ -1,3 +1,4 @@
+import { seletorDoCampo } from './seletor-do-campo.testing';
 import { codigoComRotulo } from './fatos-candidato.fixtures';
 import {
   ClassificacaoDeProtecaoCodigo,
@@ -14,7 +15,7 @@ import {
 } from './fatos-candidato.fixtures';
 
 export const DEFINICAO = '#cfg-fato-definicao';
-export const campo = (nome: string): string => `${DEFINICAO} [formcontrolname="${nome}"]`;
+export const campo = (nome: string): string => seletorDoCampo(nome, DEFINICAO);
 export const derivadoBooleano: FatoCandidatoDto = {
   ...comResolucao(
     comDefinicao(corRaca, {

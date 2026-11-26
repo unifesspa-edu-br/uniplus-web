@@ -30,11 +30,11 @@ async function preencherCriacao(page: Page): Promise<void> {
   await page.locator('textarea[formcontrolname="descricao"]').fill('Perfil que define a reserva.');
   await page.locator('select[formcontrolname="dominio"]').selectOption('SIM_OU_NAO');
   await page.locator('#cfg-fato-pontoResolucao').selectOption('INSCRICAO');
-  await page.locator('select[formcontrolname="classificacaoProtecao"]').selectOption('PESSOAL');
+  await page.locator('select[id$="-classificacaoProtecao"]').selectOption('PESSOAL');
   await page
-    .locator('select[formcontrolname="hipoteseLegal"]')
+    .locator('select[id$="-hipoteses"]')
     .selectOption('EXECUCAO_POLITICAS_PUBLICAS');
-  await page.locator('[formcontrolname="finalidadeTratamento"]').fill('Classificar a reserva.');
+  await page.locator('[id$="-finalidadeTratamento"]').fill('Classificar a reserva.');
 }
 
 test.describe('Fato do candidato — escritas', () => {

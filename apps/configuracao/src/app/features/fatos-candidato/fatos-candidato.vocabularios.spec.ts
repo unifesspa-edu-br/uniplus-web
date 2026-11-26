@@ -72,19 +72,13 @@ describe('vocabulários publicados para fatos', () => {
   it('oferece as hipóteses publicadas que cabem na classificação', async () => {
     pagina = await montarPagina();
     await pagina.abrirCriacao();
-    pagina.digitar(
-      '[formControlName="classificacaoProtecao"]',
-      ClassificacaoDeProtecaoCodigo.PESSOAL,
-    );
+    pagina.digitar('[id$="-classificacaoProtecao"]', ClassificacaoDeProtecaoCodigo.PESSOAL);
     await pagina.propagar();
     const comuns = VOCABULARIOS_DO_FATO['hipoteses-legais-tratamento'].filter(
       (item) => item.codigo !== HipoteseLegalTratamentoCodigo.PREVENCAO_A_FRAUDE,
     );
     conferirOpcoes('#cfg-fato-hipoteses', comuns);
-    pagina.digitar(
-      '[formControlName="classificacaoProtecao"]',
-      ClassificacaoDeProtecaoCodigo.SENSIVEL,
-    );
+    pagina.digitar('[id$="-classificacaoProtecao"]', ClassificacaoDeProtecaoCodigo.SENSIVEL);
     await pagina.propagar();
     const comunsExcluidas = [
       HipoteseLegalTratamentoCodigo.EXECUCAO_CONTRATO,

@@ -1,8 +1,9 @@
+import { seletorDoCampo } from './seletor-do-campo.testing';
 import type { TestRequest } from '@angular/common/http/testing';
 import { LISTA, type Pagina, criado } from './fatos-candidato.testing';
 import { emManutencao, trabalha } from './fatos-candidato.fixtures';
 
-export const campo = (nome: string): string => `[formcontrolname="${nome}"]`;
+export const campo = (nome: string): string => seletorDoCampo(nome);
 export const CRIACAO = '#cfg-fato-criacao';
 
 export const PREENCHIMENTO_DO_DERIVADO: Record<string, string> = {
