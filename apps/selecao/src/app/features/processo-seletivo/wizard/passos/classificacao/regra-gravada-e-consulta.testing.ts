@@ -18,6 +18,7 @@ import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { CatalogoDeTiposDeEtapa } from '../cronograma/catalogos/catalogo-de-tipos-de-etapa.service';
 import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
+import { GravacaoDaClassificacao } from './gravacao-da-classificacao.service';
 import { LeituraDoCadastroDePesos } from './leitura-do-cadastro-de-pesos.service';
 
 export const BASE = 'http://localhost:5000';
@@ -55,6 +56,7 @@ function servicosEHttp(): (Provider | EnvironmentProviders)[] {
     CadastroInicial,
     GravacaoDoProcesso,
     CatalogosDeClassificacao,
+    GravacaoDaClassificacao,
     LeituraDoCadastroDePesos,
     provideHttpClient(withInterceptors([apiResultInterceptor])),
     provideHttpClientTesting(),
