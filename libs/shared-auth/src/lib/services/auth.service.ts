@@ -4,6 +4,7 @@ import { AuthConfig } from '../models/auth-config.model';
 import { UserProfile } from '../models/user.model';
 import { UniPlusTokenClaims } from '../models/token-claims.model';
 import { primeiraDescricao } from '../models/descricao-do-erro';
+import { lerPrazoDaCredencial, type PrazoDaCredencial } from '../models/prazo-da-credencial';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -13,6 +14,7 @@ export class AuthService {
   private readonly _initError = signal<string | null>(null);
   private readonly _renovacoesDoToken = signal(0);
   private readonly _sessaoEncerrada = signal(false);
+  private readonly _prazoDaCredencial = signal<PrazoDaCredencial | null>(null);
 
   /**
    * Promessa de renovação em andamento, compartilhada entre chamadas concorrentes: o realm não
@@ -28,6 +30,11 @@ export class AuthService {
    * pessoa continua identificada em `userProfile` até entrar de novo.
    */
   readonly sessaoEncerrada = this._sessaoEncerrada.asReadonly();
+  /**
+   * Até quando a credencial de renovação vale, lido do que o provedor informou; `null` sem sessão
+   * ou quando a credencial não traz os instantes.
+   */
+  readonly prazoDaCredencial = this._prazoDaCredencial.asReadonly();
   /**
    * Identifica a sessão corrente: muda no login, na troca de usuário e a cada renovação do token,
    * e vira `null` sem sessão. Quem guarda estado derivado da sessão reage a este sinal.
@@ -56,6 +63,7 @@ export class AuthService {
       const authenticated = await keycloak.init(opcoesDoInit());
       this.renovarAoExpirar(keycloak);
       this._authenticated.set(authenticated);
+      this.atualizarPrazoDaCredencial();
       if (authenticated) await this.loadProfile();
       return authenticated;
     } catch (error) {
@@ -163,12 +171,30 @@ export class AuthService {
     if (this._sessaoEncerrada()) return;
     this._authenticated.set(false);
     this._sessaoEncerrada.set(true);
+    this._prazoDaCredencial.set(null);
+  }
+
+  private registrarRenovacao(): void {
+    this._renovacoesDoToken.update((total) => total + 1);
+    this.atualizarPrazoDaCredencial();
+  }
+
+  private atualizarPrazoDaCredencial(): void {
+    const keycloak = this.keycloak;
+    if (!keycloak) return;
+    this._prazoDaCredencial.set(
+      lerPrazoDaCredencial(
+        keycloak.refreshTokenParsed,
+        keycloak.timeSkew ?? 0,
+        this._prazoDaCredencial(),
+      ),
+    );
   }
 
   private async runRefresh(minValidity: number): Promise<boolean> {
     try {
       const refreshed = await this.keycloak?.updateToken(minValidity);
-      if (refreshed) this._renovacoesDoToken.update((total) => total + 1);
+      if (refreshed) this.registrarRenovacao();
       return refreshed ?? false;
     } catch {
       if (!this.keycloak?.refreshToken) this.encerrarSessao();
