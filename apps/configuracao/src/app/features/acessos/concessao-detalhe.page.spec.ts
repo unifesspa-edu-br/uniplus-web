@@ -1,4 +1,8 @@
-import { TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
+import {
+  AtorDoEventoDoHistoricoDaConcessaoCodigo,
+  TipoDeEscopo,
+  TipoDoEventoDoHistoricoDaConcessaoCodigo,
+} from '@uniplus/shared-data/autorizacao';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError, type Observable } from 'rxjs';
@@ -39,11 +43,14 @@ const REVOGADA: ConcessaoDto = {
 
 const TRILHA: EventoDaTrilhaDto[] = [
   {
-    tipo: 'revisao_revogada',
+    tipo: {
+      codigo: TipoDoEventoDoHistoricoDaConcessaoCodigo.REVOGADA_NA_REVISAO,
+      rotulo: 'Acesso revogado na revisão',
+    },
     instante: '2026-11-10T13:00:00Z',
     autor: pessoa('conta-betina', 'Betina Neves'),
     detalhe: MOTIVO,
-    ator: 'humano',
+    ator: { codigo: AtorDoEventoDoHistoricoDaConcessaoCodigo.HUMANO, rotulo: 'Pessoa' },
   },
 ];
 

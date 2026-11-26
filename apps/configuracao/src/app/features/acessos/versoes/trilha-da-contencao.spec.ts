@@ -1,11 +1,20 @@
 import {
-  AtorDoEventoDaContencao,
-  EtapaDaVersao,
-  OrigemDaRetomada,
-  TipoDoEventoDaContencao,
+  AtorDoEventoDaContencaoCodigo,
+  EtapaDaVersaoCodigo,
+  OrigemDaRetomadaCodigo,
+  TipoDoRegistroDoBloqueioCodigo,
 } from '@uniplus/shared-data/autorizacao';
 import type { RegistroDaContencaoDto } from '@uniplus/shared-data/autorizacao';
 import { describe, expect, it } from 'vitest';
+import {
+  ROTULO_DA_ETAPA,
+  ROTULO_DA_ORIGEM,
+  ROTULO_DO_TIPO,
+  atorDoRegistro,
+  etapaDoRegistro,
+  origemDoRegistro,
+  tipoDoRegistro,
+} from './registros-da-contencao.testing';
 import { detalheDoRegistro, registrosComoEventos } from './trilha-da-contencao';
 
 const DIOGO = {
@@ -22,11 +31,11 @@ const BETINA = {
 function registro(parcial: Partial<RegistroDaContencaoDto>): RegistroDaContencaoDto {
   return {
     id: 'r1',
-    tipo: TipoDoEventoDaContencao.SUSPENSAO,
+    tipo: tipoDoRegistro(TipoDoRegistroDoBloqueioCodigo.SUSPENSAO),
     referenciaId: 's1',
     ordem: 1,
     instante: '2026-11-09T15:00:00Z',
-    ator: AtorDoEventoDaContencao.HUMANO,
+    ator: atorDoRegistro(AtorDoEventoDaContencaoCodigo.HUMANO),
     pessoa: DIOGO,
     etapa: null,
     motivo: null,
@@ -37,86 +46,81 @@ function registro(parcial: Partial<RegistroDaContencaoDto>): RegistroDaContencao
   };
 }
 
+const T = TipoDoRegistroDoBloqueioCodigo;
+const SISTEMA = atorDoRegistro(AtorDoEventoDaContencaoCodigo.SISTEMA);
+
 describe('trilha da contenção', () => {
   it('põe os registros na ordem total da trilha, mesmo com o mesmo instante', () => {
     const eventos = registrosComoEventos([
       registro({
         id: 'c',
-        tipo: TipoDoEventoDaContencao.RETOMADA,
+        tipo: tipoDoRegistro(T.RETOMADA),
         ordem: 3,
         pessoa: null,
-        ator: AtorDoEventoDaContencao.SISTEMA,
+        ator: SISTEMA,
       }),
-      registro({ id: 'a', tipo: TipoDoEventoDaContencao.SUSPENSAO, ordem: 1 }),
-      registro({ id: 'b', tipo: 'decisao_da_retomada', ordem: 2, pessoa: BETINA }),
+      registro({ id: 'a', tipo: tipoDoRegistro(T.SUSPENSAO), ordem: 1 }),
+      registro({ id: 'b', tipo: tipoDoRegistro(T.DECISAO_DA_RETOMADA), ordem: 2, pessoa: BETINA }),
     ]);
 
-    expect(eventos.map((e) => e.tipo)).toEqual([
-      TipoDoEventoDaContencao.SUSPENSAO,
-      'decisao_da_retomada',
-      TipoDoEventoDaContencao.RETOMADA,
+    expect(eventos.map((e) => e.tipo.rotulo)).toEqual([
+      ROTULO_DO_TIPO[T.SUSPENSAO],
+      ROTULO_DO_TIPO[T.DECISAO_DA_RETOMADA],
+      ROTULO_DO_TIPO[T.RETOMADA],
     ]);
   });
 
   it('leva a pessoa e o ator de cada registro, e a retomada do sistema sem pessoa', () => {
     const [suspensao, retomada] = registrosComoEventos([
       registro({}),
-      registro({
-        tipo: TipoDoEventoDaContencao.RETOMADA,
-        ordem: 2,
-        pessoa: null,
-        ator: AtorDoEventoDaContencao.SISTEMA,
-      }),
+      registro({ tipo: tipoDoRegistro(T.RETOMADA), ordem: 2, pessoa: null, ator: SISTEMA }),
     ]);
 
     expect(suspensao?.autor).toEqual(DIOGO);
     expect(retomada?.autor).toBeNull();
-    expect(retomada?.ator).toBe(AtorDoEventoDaContencao.SISTEMA);
+    expect(retomada?.ator).toEqual(SISTEMA);
   });
 
   it('descreve a suspensão com quem a determinou e o motivo digitado', () => {
-    expect(
-      detalheDoRegistro(
-        registro({ etapa: EtapaDaVersao.PROTECAO_DE_DADOS, motivo: 'Incidente de segurança.' }),
-      ),
-    ).toBe('Determinada pelo Representante do controlador. Motivo: Incidente de segurança.');
-  });
+    const etapa = etapaDoRegistro(EtapaDaVersaoCodigo.PROTECAO_DE_DADOS);
 
-  it('descreve a decisão da etapa com o que valia no momento dela', () => {
-    expect(
-      detalheDoRegistro(
-        registro({
-          tipo: 'decisao_da_retomada',
-          etapa: EtapaDaVersao.GESTAO_DE_ACESSOS,
-          motivo: 'Resolvido.',
-          perfilProtegido: true,
-          decisorTemConcessao: true,
-        }),
-      ),
-    ).toBe(
-      'Etapa: gestão de acessos. O perfil era protegido na decisão. Quem decidiu tem concessão do perfil. Motivo: Resolvido.',
+    expect(detalheDoRegistro(registro({ etapa, motivo: 'Incidente de segurança.' }))).toBe(
+      'Determinada pelo Representante do controlador. Motivo: Incidente de segurança.',
     );
   });
 
-  it.each([
-    [OrigemDaRetomada.DECISAO_DA_ETAPA, 'Decorreu da decisão da última etapa exigida.'],
-    [
-      OrigemDaRetomada.TROCA_DE_VIGENCIA,
-      'Decorreu da troca da versão em vigor, que mudou as etapas exigidas.',
-    ],
-    [OrigemDaRetomada.RECLASSIFICACAO, 'Decorreu da reclassificação de uma permissão do perfil.'],
-  ])('explica a retomada de origem %s', (origem, frase) => {
-    expect(
-      detalheDoRegistro(registro({ tipo: TipoDoEventoDaContencao.RETOMADA, pessoa: null, origem })),
-    ).toBe(frase);
+  it('descreve a decisão da etapa com o que valia no momento dela', () => {
+    const detalhe = detalheDoRegistro(
+      registro({
+        tipo: tipoDoRegistro(T.DECISAO_DA_RETOMADA),
+        etapa: etapaDoRegistro(EtapaDaVersaoCodigo.GESTAO_DE_ACESSOS),
+        motivo: 'Resolvido.',
+        perfilProtegido: true,
+        decisorTemConcessao: true,
+      }),
+    );
+
+    expect(detalhe).toBe(
+      `Etapa: ${ROTULO_DA_ETAPA[EtapaDaVersaoCodigo.GESTAO_DE_ACESSOS]}. O perfil era protegido na decisão. Quem decidiu tem concessão do perfil. Motivo: Resolvido.`,
+    );
+  });
+
+  it.each(Object.values(OrigemDaRetomadaCodigo))('explica a retomada de origem %s', (codigo) => {
+    const registroDaRetomada = registro({
+      tipo: tipoDoRegistro(T.RETOMADA),
+      pessoa: null,
+      origem: origemDoRegistro(codigo),
+    });
+
+    expect(detalheDoRegistro(registroDaRetomada)).toBe(
+      `Origem da retomada: ${ROTULO_DA_ORIGEM[codigo]}.`,
+    );
   });
 
   it('desativação e reativação trazem só o motivo', () => {
-    expect(
-      detalheDoRegistro(
-        registro({ tipo: TipoDoEventoDaContencao.DESATIVACAO, motivo: 'Sem uso.' }),
-      ),
-    ).toBe('Motivo: Sem uso.');
-    expect(detalheDoRegistro(registro({ tipo: TipoDoEventoDaContencao.REATIVACAO }))).toBeNull();
+    const desativacao = registro({ tipo: tipoDoRegistro(T.DESATIVACAO), motivo: 'Sem uso.' });
+
+    expect(detalheDoRegistro(desativacao)).toBe('Motivo: Sem uso.');
+    expect(detalheDoRegistro(registro({ tipo: tipoDoRegistro(T.REATIVACAO) }))).toBeNull();
   });
 });
