@@ -17,6 +17,7 @@ import type {
 } from '../../processo-seletivo.models';
 import type { ParametrosDoRecurso } from '../../shared/configuracao-do-recurso/parametros-do-recurso';
 import { regraComoInput } from '../../shared/deliberacao/regra-de-deliberacao-contrato';
+import { regraComoInput as regraDeHomologacaoComoInput } from '../../shared/homologacao/regra-de-homologacao-contrato';
 import { FORMA_HUMANA } from '../../shared/forma-de-avaliacao';
 import { fracaoDoPercentual } from '../../shared/itens-de-avaliacao';
 import { instanteDoCampo } from '../../shared/fuso-institucional';
@@ -49,13 +50,29 @@ export function recursoResolvido(recurso: {
 /**
  * A fase como o comando a recebe.
  *
- * Os produtos, o parecer individual, as bancas requeridas e
- * a regra de recurso atravessam inalterados: quem os edita é a superfície da
+ * Os produtos, o parecer individual, as bancas requeridas, a regra de recurso e a regra de
+ * homologação atravessam inalterados: quem os edita é a superfície da
  * fase, e a gravação do cronograma substitui a coleção inteira — deixá-los de
  * fora aqui apagaria, a cada mudança de data, o que a fase declara publicar, as
  * bancas que ela requer e o recurso ancorado no que ela publica.
  */
 export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
+  return { ...comoComandoDaAgendaDaFase(fase), ...comoComandoDoQueAFaseDeclara(fase) };
+}
+
+type AgendaDaFaseInput = Pick<
+  FaseCronogramaInput,
+  | 'ordem'
+  | 'faseCanonicaId'
+  | 'inicio'
+  | 'fim'
+  | 'noMesmoMomentoDaAnterior'
+  | 'unidadeResponsavelId'
+>;
+
+type DeclaracoesDaFaseInput = Omit<FaseCronogramaInput, keyof AgendaDaFaseInput>;
+
+function comoComandoDaAgendaDaFase(fase: FaseDoCronograma): AgendaDaFaseInput {
   return {
     ordem: fase.ordem,
     faseCanonicaId: fase.faseCanonicaId,
@@ -63,11 +80,17 @@ export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
     fim: fase.fim,
     noMesmoMomentoDaAnterior: fase.noMesmoMomentoDaAnterior,
     unidadeResponsavelId: fase.unidadeResponsavelId,
+  };
+}
+
+function comoComandoDoQueAFaseDeclara(fase: FaseDoCronograma): DeclaracoesDaFaseInput {
+  return {
     produtos: fase.produtos.map(comoComandoDoProdutoDaFase),
     emiteParecerIndividual: fase.emiteParecerIndividual,
     bancasRequeridas: fase.bancasRequeridas.map(comoComandoDeBancaRequerida),
     regraRecurso: fase.regraRecurso === null ? null : comoComandoDeRecursoDaFase(fase.regraRecurso),
     tiposDeDecisao: tiposDeDecisaoParaComando(fase.tiposDeDecisao),
+    regraDeHomologacao: regraDeHomologacaoComoInput(fase.regraDeHomologacao),
   };
 }
 

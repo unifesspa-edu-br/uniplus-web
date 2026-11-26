@@ -8,6 +8,7 @@ import { umaBancaRequeridaDaFase } from '../../../shared/bancas/banca-declarada.
 import { CatalogoDeBancas } from '../../cronograma/catalogos/catalogo-de-bancas.service';
 import { montarFase } from '../fase.testing';
 import { faseComRegra, PREFIXO } from './regra-de-recurso-da-fase.testing';
+import { conferirSemPendenciasDosMotivos } from '../motivos/motivos-nos-passos.testing';
 
 const AVISO = 'O recurso deste tipo se encerra na 1ª instância.';
 
@@ -35,7 +36,7 @@ describe('RegraDeRecursoDaFaseComponent: recurso que se encerra na 1ª instânci
     cadastro = elementoDaTela.injector.get(CatalogoDeBancas);
   });
 
-  afterEach(() => controller.verify());
+  afterEach(() => conferirSemPendenciasDosMotivos(controller));
 
   const comBancas = (...bancas: readonly BancaRequeridaDaFase[]) => {
     comCronograma({ ...faseComRegra(), bancasRequeridas: bancas });

@@ -18,7 +18,12 @@ import { GatilhoDasExigenciasStore } from './documentos/gatilho-das-exigencias.s
 import { RecusasDoCampoComponent } from '../../shared/recusas/recusas-do-campo.component';
 import { FaseEmEdicao } from './fase-em-edicao';
 import type { FaseConfigForm } from './fase-form';
+import { OfertasDaHomologacao } from './homologacao/ofertas-da-homologacao';
+import { RegraDeHomologacaoDaFase } from './homologacao/regra-de-homologacao-da-fase';
+import { MotivosDaFaseStore } from './motivos/motivos-da-fase.store';
 import { DecisoesDaFaseComponent } from './secoes/decisoes-da-fase.component';
+import { HomologacaoDaFaseComponent } from './secoes/homologacao-da-fase.component';
+import { MotivosDaFaseComponent } from './secoes/motivos-da-fase.component';
 import { RegraDeRecursoDaFaseComponent } from './secoes/regra-de-recurso-da-fase.component';
 import { BancasDaFaseComponent } from './secoes/bancas-da-fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
@@ -26,6 +31,7 @@ import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.compone
 /**
  * A superfície de configuração de uma fase: o que só existe dentro dela e não
  * cabe na linha do tempo — as publicações que ela faz e o papel de cada uma, a regra de recurso,
+ * os motivos de decisão que ela escolhe, a regra de homologação das inscrições quando ela a declara,
  * as bancas requeridas com o recorte que julgam, e as exigências documentais daquela fase.
  *
  * Quem grava é o passo Cronograma, que a embute em cada fase: fase é uma coleção só e o `PUT`
@@ -38,13 +44,22 @@ import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.compone
     RecusasDoCampoComponent,
     BancasDaFaseComponent,
     DecisoesDaFaseComponent,
+    HomologacaoDaFaseComponent,
+    MotivosDaFaseComponent,
     PublicacoesDaFaseComponent,
     ReactiveFormsModule,
     RegraDeRecursoDaFaseComponent,
   ],
   templateUrl: './fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [FaseEmEdicao, ExigenciasDaFaseStore, GatilhoDasExigenciasStore],
+  providers: [
+    FaseEmEdicao,
+    ExigenciasDaFaseStore,
+    GatilhoDasExigenciasStore,
+    MotivosDaFaseStore,
+    OfertasDaHomologacao,
+    RegraDeHomologacaoDaFase,
+  ],
 })
 export class FasePassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
@@ -58,6 +73,7 @@ export class FasePassoComponent {
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   protected readonly exigencias = inject(ExigenciasDaFaseStore);
   protected readonly gatilho = inject(GatilhoDasExigenciasStore);
+  protected readonly homologacao = inject(RegraDeHomologacaoDaFase);
 
   readonly faseAberta = this.faseEmEdicao.faseAberta;
   readonly formulario = this.faseEmEdicao.espelho.formulario;

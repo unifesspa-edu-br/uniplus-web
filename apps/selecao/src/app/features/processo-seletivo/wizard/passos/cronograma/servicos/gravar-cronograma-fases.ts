@@ -27,6 +27,20 @@ function emOrdemLivre(fases: readonly FaseDoCronograma[]): readonly FaseDoCronog
   return fases.map((fase) => ({ ...fase, ordem: fase.ordem + deslocamento }));
 }
 
+async function gravarEConfirmar(
+  cadastro: CadastroInicial,
+  processoSeletivoId: string,
+  fases: readonly FaseDoCronograma[],
+  aoConfirmar: (gravadas: readonly FaseDoCronograma[]) => void,
+): Promise<ResultadoGravacao> {
+  const resultado = await cadastro.definirCronogramaFases(
+    processoSeletivoId,
+    fases.map(comoComandoDeFase),
+  );
+  if (resultado.ok) aoConfirmar(fases);
+  return resultado;
+}
+
 /**
  * Grava o cronograma de fases, contornando o ciclo de ordem quando ele aparece.
  *
@@ -38,14 +52,19 @@ function emOrdemLivre(fases: readonly FaseDoCronograma[]): readonly FaseDoCronog
  * com o mesmo conjunto de fases na mesma sequência, mudando só a ordem, e só
  * quando a primeira acusa o ciclo: a posição `fases[i]` de uma recusa vale para
  * a mesma fase nas três.
+ *
+ * Cada chamada que o servidor confirma substitui as fases dele; `aoConfirmar` recebe o conjunto
+ * dessa chamada, para quem acompanha o que o servidor tem não perder o que uma chamada intermediária
+ * já gravou quando a seguinte falha.
  */
 export async function gravarCronogramaFases(
   cadastro: CadastroInicial,
   processoSeletivoId: string,
   fases: readonly FaseDoCronograma[],
+  aoConfirmar: (gravadas: readonly FaseDoCronograma[]) => void,
 ): Promise<ResultadoGravacao> {
   const gravar = (daVez: readonly FaseDoCronograma[]) =>
-    cadastro.definirCronogramaFases(processoSeletivoId, daVez.map(comoComandoDeFase));
+    gravarEConfirmar(cadastro, processoSeletivoId, daVez, aoConfirmar);
   const pretendida = await gravar(fases);
   if (pretendida.ok || pretendida.problem.code !== PERMUTACAO_DE_ORDEM) return pretendida;
 

@@ -83,6 +83,7 @@ export class ConferenciaDoCronograma {
       fasePorId: this.catalogoDeFases.fasePorId(),
       precedencias: this.catalogoDeFases.precedencias(),
       atoPorCodigo: this.catalogoDeAtos.atoPorCodigo(),
+      edicoesDoEnem: this.store.draft().classificacao.edicoesEnem,
       nomeDaBanca: (tipoBancaId: string) =>
         this.catalogoDeBancas.bancaPorId().get(tipoBancaId)?.nome ?? tipoBancaId,
       tipoDaEtapa: (tipoEtapaOrigemId: string) =>

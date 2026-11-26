@@ -5,6 +5,7 @@ import type {
   ParametrosDoRecurso,
 } from '../shared/configuracao-do-recurso/parametros-do-recurso';
 import type { BancaDaEtapa, BancaRequeridaDaFase } from './banca.models';
+import type { RegraDeHomologacao } from './homologacao.models';
 export type { BancaRequeridaDaFase } from './banca.models';
 
 /**
@@ -39,6 +40,11 @@ export interface FaseDoCronograma {
    * apaga a declaração, e por isso a tela a devolve como a leu.
    */
   readonly tiposDeDecisao?: readonly string[];
+  /**
+   * Como a fase decide a homologação das inscrições; `null` é a fase sem essa capacidade. Obrigatório
+   * de propósito: a gravação substitui a fase inteira, e quem monta a fase sem declará-la apaga a regra.
+   */
+  readonly regraDeHomologacao: RegraDeHomologacao | null;
   /** `null` numa fase acrescentada agora: quem a descreve é o catálogo. */
   readonly congelados: AtributosCongeladosDaFase | null;
 }

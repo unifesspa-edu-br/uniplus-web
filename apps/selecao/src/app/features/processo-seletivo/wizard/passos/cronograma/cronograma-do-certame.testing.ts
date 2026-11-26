@@ -37,6 +37,7 @@ export function catalogosDeTeste(
     fasePorId: catalogoDeFases,
     precedencias: [],
     atoPorCodigo: SEM_CATALOGO,
+    edicoesDoEnem: [],
     nomeDaBanca,
     tipoDaEtapa: tipoQueAdmiteTudo,
     ...parcial,
@@ -90,7 +91,7 @@ export function aresta(parcial: Partial<PrecedenciaFaseDto>): PrecedenciaFaseDto
   return {
     id: 'aresta-1',
     antecessoraCodigo: 'INSCRICAO',
-    sucessoraCodigo: 'HOMOLOGACAO',
+    sucessoraCodigo: 'HOMOLOGACAO_INSCRICOES',
     permiteSobreposicao: false,
     criadoEm: '2026-08-30T12:00:00Z',
     ...parcial,

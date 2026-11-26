@@ -156,6 +156,7 @@ describe('RevisaoPassoComponent — publicação aceita pelo servidor', () => {
         emiteParecerIndividual: false,
         bancasRequeridas: [],
         regraRecurso: null,
+        regraDeHomologacao: null,
         congelados: null,
       };
       cenario.fasePorId.set(

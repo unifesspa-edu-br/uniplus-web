@@ -7,7 +7,7 @@ describe('precedência entre fases', () => {
   it('acusa a ordem invertida quando as duas fases estão no cronograma', () => {
     const violacoes = violacoesDePrecedencia(
       [
-        fase({ codigo: 'HOMOLOGACAO', ordem: 1 }),
+        fase({ codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 1 }),
         fase({ codigo: 'INSCRICAO', ordem: 2, faseCanonicaId: 'id-2' }),
       ],
       [aresta({})],
@@ -21,7 +21,7 @@ describe('precedência entre fases', () => {
     const inscricao = fase({ codigo: 'INSCRICAO', ordem: 1 });
     const homologacao = (marcada: boolean) =>
       fase({
-        codigo: 'HOMOLOGACAO',
+        codigo: 'HOMOLOGACAO_INSCRICOES',
         ordem: 2,
         faseCanonicaId: 'id-2',
         noMesmoMomentoDaAnterior: marcada,
@@ -31,7 +31,7 @@ describe('precedência entre fases', () => {
       const violacoes = violacoesDePrecedencia([inscricao, homologacao(true)], [aresta({})]);
 
       expect(violacoes).toEqual([
-        { antecessora: 'INSCRICAO', sucessora: 'HOMOLOGACAO', motivo: 'mesmoMomento' },
+        { antecessora: 'INSCRICAO', sucessora: 'HOMOLOGACAO_INSCRICOES', motivo: 'mesmoMomento' },
       ]);
     });
 
@@ -73,7 +73,7 @@ describe('precedência entre fases', () => {
         faseCanonicaId: 'id-2',
         noMesmoMomentoDaAnterior: true,
       });
-      const primeira = fase({ codigo: 'HOMOLOGACAO', ordem: 1 });
+      const primeira = fase({ codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 1 });
 
       const [violacao] = violacoesDePrecedencia([primeira, invertida], [aresta({})]);
 
@@ -99,7 +99,7 @@ describe('precedência entre fases', () => {
       [
         fase({ codigo: 'INSCRICAO', ordem: 1, fim: '2026-03-20T23:59:59-03:00' }),
         fase({
-          codigo: 'HOMOLOGACAO',
+          codigo: 'HOMOLOGACAO_INSCRICOES',
           ordem: 2,
           faseCanonicaId: 'id-2',
           inicio: '2026-03-15T08:00:00-03:00',
@@ -117,7 +117,7 @@ describe('precedência entre fases', () => {
       [
         fase({ codigo: 'INSCRICAO', ordem: 1, fim: '2026-03-20T23:59:59-03:00' }),
         fase({
-          codigo: 'HOMOLOGACAO',
+          codigo: 'HOMOLOGACAO_INSCRICOES',
           ordem: 2,
           faseCanonicaId: 'id-2',
           inicio: '2026-03-15T08:00:00-03:00',
@@ -139,7 +139,7 @@ describe('precedência entre fases', () => {
       [
         fase({ codigo: 'INSCRICAO', ordem: 1, fim: '2026-03-20T23:59:59-03:00' }),
         fase({
-          codigo: 'HOMOLOGACAO',
+          codigo: 'HOMOLOGACAO_INSCRICOES',
           ordem: 2,
           faseCanonicaId: 'id-2',
           inicio: '2026-03-21T02:59:59Z',
@@ -154,7 +154,7 @@ describe('precedência entre fases', () => {
 
 describe('permutação de ordem', () => {
   const a = fase({ faseCanonicaId: 'a', codigo: 'INSCRICAO', ordem: 1 });
-  const b = fase({ faseCanonicaId: 'b', codigo: 'HOMOLOGACAO', ordem: 2 });
+  const b = fase({ faseCanonicaId: 'b', codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 });
 
   it('acusa a troca direta entre duas fases retidas', () => {
     const depois = [

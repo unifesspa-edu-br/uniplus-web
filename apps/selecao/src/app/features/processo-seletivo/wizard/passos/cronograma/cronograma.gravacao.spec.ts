@@ -16,10 +16,12 @@ describe('CronogramaPassoComponent: gravação', () => {
   let elementoDaTela: ContextoDoCronograma['elementoDaTela'];
   let cronograma: ContextoDoCronograma['cronograma'];
   let releituraDosIdentificadores: ContextoDoCronograma['releituraDosIdentificadores'];
+  let fasesNoServidor: ContextoDoCronograma['fasesNoServidor'];
   let store: ContextoDoCronograma['store'];
   let controller: ContextoDoCronograma['controller'];
   let detectar: ContextoDoCronograma['detectar'];
   let proximoPasso: ContextoDoCronograma['proximoPasso'];
+  let gravouEtapas: ContextoDoCronograma['gravouEtapas'];
   let gravouExigencias: ContextoDoCronograma['gravouExigencias'];
   let comFases: ContextoDoCronograma['comFases'];
   let comUmaEtapa: ContextoDoCronograma['comUmaEtapa'];
@@ -30,10 +32,12 @@ describe('CronogramaPassoComponent: gravação', () => {
       elementoDaTela,
       cronograma,
       releituraDosIdentificadores,
+      fasesNoServidor,
       store,
       controller,
       detectar,
       proximoPasso,
+      gravouEtapas,
       gravouExigencias,
       comFases,
       comUmaEtapa,
@@ -73,6 +77,44 @@ describe('CronogramaPassoComponent: gravação', () => {
 
     await expect(gravacao).resolves.toEqual({ valid: true });
     expect(store.draft().cronograma.etapas[0].id).toBe(ID_ETAPA_GRAVADA);
+  });
+
+  it('passa a ter no servidor a fase acrescentada e gravada, sem recarregar o processo', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+    expect(fasesNoServidor.origens().has(ID_AVALIACAO)).toBe(false);
+
+    const gravacao = componente.persistir();
+
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    expect(fasesNoServidor.origens().has(ID_AVALIACAO)).toBe(true);
+    await gravouEtapas();
+    await gravouExigencias();
+    await expect(gravacao).resolves.toEqual({ valid: true });
+  });
+
+  it('não registra a fase como gravada quando o servidor recusa o cronograma', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+
+    const gravacao = componente.persistir();
+
+    controller.expectOne(ROTA_FASES).flush(
+      {
+        type: 'about:blank',
+        title: 'Cronograma recusado',
+        status: 422,
+        code: 'uniplus.selecao.fase_cronograma.recusada',
+        traceId: '00000000000000000000000000000007',
+      },
+      { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+    );
+
+    expect((await gravacao).valid).toBe(false);
+    expect(fasesNoServidor.origens().has(ID_AVALIACAO)).toBe(false);
   });
 
   it('a recusa do servidor à etapa de nota do ENEM chega com texto próprio', async () => {

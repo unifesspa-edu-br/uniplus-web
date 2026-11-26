@@ -8,6 +8,8 @@ import {
 import { problemasDaRegra } from '../../shared/deliberacao/conferencia-da-regra';
 import type { CampoDaBanca } from '../../shared/deliberacao/recusas-da-regra';
 import { repetidos } from '../../shared/repetidos';
+import type { CampoDaHomologacaoDaFase } from './homologacao/campo-da-homologacao';
+import { problemasDaHomologacao } from './homologacao/problemas-da-homologacao';
 import { problemasDoRecurso } from './problemas-do-recurso-da-fase';
 
 /** Um campo da regra de deliberação da banca que ocupa a posição `n` entre as requeridas. */
@@ -27,7 +29,8 @@ export type CampoDaFase =
   | CampoDaBancaRequerida
   | 'recurso.regra'
   | 'recurso.ancora'
-  | 'recurso.admiteInstanciaSuperior';
+  | 'recurso.admiteInstanciaSuperior'
+  | CampoDaHomologacaoDaFase;
 
 export interface ProblemaDaFase {
   readonly campo: CampoDaFase | null;
@@ -56,11 +59,13 @@ export interface AtoDoCatalogo {
 export function problemasDaFase(
   fase: FaseDoCronograma,
   atoPorCodigo: ReadonlyMap<string, AtoDoCatalogo>,
+  edicoesDoEnem: readonly string[],
 ): readonly ProblemaDaFase[] {
   return [
     ...problemasDosProdutos(fase, atoPorCodigo),
     ...problemasDoParecer(fase),
     ...problemasDoRecurso(fase),
+    ...problemasDaHomologacao(fase, edicoesDoEnem),
     ...problemaDeBancaEmBranco(fase),
     ...problemasDasRegrasDasBancas(fase),
   ];

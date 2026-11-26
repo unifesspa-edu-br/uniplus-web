@@ -6,7 +6,7 @@ import {
   type RecusaDoProblema,
 } from '@uniplus/shared-core/http';
 
-import type { ValidacaoDoPasso } from '../../../processo-seletivo.models';
+import type { FaseDoCronograma, ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import { VocabulariosDaRegra } from '../../../shared/deliberacao/vocabularios-da-regra.service';
@@ -22,6 +22,7 @@ import { ConferenciaDoCronograma } from './conferencia-do-cronograma.service';
 import type { ConteudoDaGravacao, ProblemaDaGravacao } from './conteudo-da-gravacao';
 import type { ControleNaTela } from './distribuicao-das-recusas-das-fases';
 import { ExpansaoDoCronograma } from './expansao-do-cronograma.service';
+import { FasesNoServidor } from './fases-no-servidor.service';
 import { ApresentacaoDasRecusasDasExigencias } from './apresentacao-das-recusas-das-exigencias.service';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
 import {
@@ -76,6 +77,7 @@ export class GravacaoDoCronograma {
   private readonly numeracao = inject(NumeracaoDasRespostasRecusadas);
   private readonly injetor = inject(Injector);
   private readonly expansao = inject(ExpansaoDoCronograma);
+  private readonly fasesNoServidor = inject(FasesNoServidor);
 
   /**
    * A convenção foi gravada com sucesso nesta sessão. Só `persistir()`
@@ -193,6 +195,7 @@ export class GravacaoDoCronograma {
       this.cadastro,
       conteudo.processoId,
       conteudo.fases,
+      (gravadas) => this.registrarAsFasesGravadas(conteudo, gravadas),
     );
     if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
     if (!cronograma.ok) return this.tratarAFalhaDasFases(conteudo, cronograma.problem);
@@ -200,6 +203,14 @@ export class GravacaoDoCronograma {
     this.recusasDasFases.limpar();
     this.recusas.limpar();
     return null;
+  }
+
+  /** A gravação que a troca de processo superou não diz nada do processo que a tela mostra agora. */
+  private registrarAsFasesGravadas(
+    conteudo: ConteudoDaGravacao,
+    gravadas: readonly FaseDoCronograma[],
+  ): void {
+    if (!this.superada(conteudo)) this.fasesNoServidor.registrarGravadas(gravadas);
   }
 
   /** Só a resposta que traz causas confere os campos e troca as recusas guardadas; a falha sem elas as mantém. */

@@ -3,6 +3,7 @@ import { ORIGEM_NO_EDITAL, valorDoEnum } from './valor-do-enum';
 import type {
   EtapaProcessoDto,
   FaseCronogramaDto,
+  RegraDeHomologacaoDto,
   TipoMotivoDeDecisaoCodigo,
 } from '@uniplus/shared-data/selecao';
 import type { TipoDeBancaDoCatalogo } from './tipos-de-banca';
@@ -157,6 +158,14 @@ export function comUnidadeNaFase(
   unidade: UnidadeDaFase,
 ): FaseCronogramaDto {
   return { ...fase, cronograma: { ...fase.cronograma, unidadeResponsavel: unidade } };
+}
+
+/** A mesma fase com a regra de homologação das inscrições que ela declara trocada. */
+export function comRegraDeHomologacaoNaFase(
+  fase: FaseCronogramaDto,
+  regraDeHomologacao: RegraDeHomologacaoDto | null,
+): FaseCronogramaDto {
+  return { ...fase, publicacoes: { ...fase.publicacoes, regraDeHomologacao } };
 }
 
 /** Os tipos como o servidor os devolve: o código e o rótulo, que aqui repete o código. */
