@@ -3,7 +3,12 @@ import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { ApiResult, apiResultInterceptor, ProblemDetails } from '@uniplus/shared-core/http';
+import {
+  ApiResult,
+  apiResultInterceptor,
+  comRecusaDePermissaoTratadaNaChamada,
+  ProblemDetails,
+} from '@uniplus/shared-core/http';
 import { authErrorInterceptor } from './auth-error.interceptor';
 import { AuthService } from '../services/auth.service';
 import { MotivoDoAcessoNegadoService } from '../services/motivo-do-acesso-negado.service';
@@ -102,6 +107,42 @@ describe('authErrorInterceptor (consumindo ApiResult)', () => {
     expect(result.status).toBe(403);
     expect(ctx.navigate).toHaveBeenCalledWith(['/acesso-negado']);
     expect(ctx.login).not.toHaveBeenCalled();
+  });
+
+  it('403 de chamada que trata a recusa na tela entrega a falha sem navegar nem guardar o detail', async () => {
+    const ctx = setup();
+    const url = '/api/apoio';
+
+    const promise = firstValueFrom(
+      ctx.http.get<ApiResult<unknown>>(url, { context: comRecusaDePermissaoTratadaNaChamada() }),
+    );
+    ctx.httpMock
+      .expectOne(url)
+      .flush(
+        { ...problemaProibido, detail: 'Sem permissão.' },
+        { status: 403, statusText: 'error', headers: PROBLEM_HEADERS },
+      );
+
+    const result = await promise;
+    expect(result.ok).toBe(false);
+    expect(result.status).toBe(403);
+    esperarSemRedirecionamento(ctx);
+    expect(TestBed.inject(MotivoDoAcessoNegadoService).motivo()).toBeNull();
+  });
+
+  it('401 de chamada que trata a recusa na tela ainda leva ao login', async () => {
+    const ctx = setup();
+    const url = '/api/apoio';
+
+    const promise = firstValueFrom(
+      ctx.http.get<ApiResult<unknown>>(url, { context: comRecusaDePermissaoTratadaNaChamada() }),
+    );
+    ctx.httpMock
+      .expectOne(url)
+      .flush(baseProblem, { status: 401, statusText: 'error', headers: PROBLEM_HEADERS });
+    await promise;
+
+    expect(ctx.login).toHaveBeenCalledTimes(1);
   });
 
   it('403 com detail guarda o detail para a página de acesso negado', async () => {
