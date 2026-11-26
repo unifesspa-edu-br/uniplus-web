@@ -42,6 +42,7 @@ import {
 export class TipoDocumentoFormularioComponent {
   protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(LIMITE_DO_CODIGO_DO_TIPO_DE_DOCUMENTO);
   readonly aberto = model.required<boolean>();
+  readonly avisoDoNome = input('');
   readonly form = input.required<FormGroup<TipoDocumentoForm>>();
   readonly modo = input.required<'criar' | 'editar'>();
   readonly erro = input.required<string | null>();

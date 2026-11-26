@@ -39,6 +39,7 @@
 <cfg-modelo-formulario-criacao
   [modelos]="store.modelosBuscados()"
   [form]="edicao.form"
+  [avisoDoNome]="edicao.ligacaoDoCodigo.avisoDoNome()"
   [aberto]="edicao.drawerAberto()"
   [salvando]="edicao.salvando()"
   [erroDaCriacao]="edicao.erroDaCriacao()"

@@ -33,39 +33,56 @@ function montarRecurso() {
   return { fixture, edicao };
 }
 
-function verificarRecurso(elementoDaTela: HTMLElement, tamanho: number): void {
-  const codigo = elementoDaTela.querySelector<HTMLInputElement>('[formcontrolname="codigo"]');
-  expect(codigo?.value).toBe('A'.repeat(tamanho));
-}
-
 describe('tamanho da sugestão nas telas', () => {
-  it('mostra o código inteiro e o aviso de tamanho no recurso de acessibilidade', () => {
+  it('aceita o limite de 50 e anuncia a recusa do nome longo', () => {
     const { fixture, edicao } = montarRecurso();
     const elementoDaTela = fixture.nativeElement as HTMLElement;
+    const codigo = elementoDaTela.querySelector<HTMLInputElement>('[formcontrolname="codigo"]');
     edicao.form.controls.nome.setValue('a'.repeat(50));
     fixture.detectChanges();
-    verificarRecurso(elementoDaTela, 50);
-    expect(elementoDaTela.querySelector('#cfg-ra-codigo-erro')).toBeNull();
+    expect(codigo?.value).toBe('A'.repeat(50));
     edicao.form.controls.nome.setValue('a'.repeat(51));
     fixture.detectChanges();
-    verificarRecurso(elementoDaTela, 51);
-    expect(elementoDaTela.querySelector('#cfg-ra-codigo-erro')?.textContent).toContain(
-      'máximo 50 caracteres',
+    expect(codigo?.value).toBe('');
+    expect(elementoDaTela.querySelector('#cfg-ra-codigo-aviso')?.textContent).toContain(
+      '50 caracteres',
+    );
+    expect(codigo?.getAttribute('aria-describedby')).toContain('cfg-ra-codigo-aviso');
+    TestBed.inject(HttpTestingController).verify();
+  });
+
+  it('forma o número inicial por extenso no recurso', () => {
+    const { fixture, edicao } = montarRecurso();
+    edicao.form.controls.nome.setValue('1ª etapa');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[formcontrolname="codigo"]').value).toBe(
+      'PRIMEIRA_ETAPA',
     );
     TestBed.inject(HttpTestingController).verify();
   });
 
-  it('mostra o código inteiro e o aviso de tamanho no tipo de processo', async () => {
+  it('aceita o limite de 80 e anuncia a recusa do nome longo', async () => {
     const pagina = await montarPagina([]);
     await pagina.abrirCadastro();
     pagina.preencher('nome', 'a'.repeat(80));
     await pagina.propagar();
     expect(pagina.campo('codigo').value).toBe('A'.repeat(80));
-    expect(pagina.fixture.nativeElement.querySelector('#cfg-tproc-codigo-erro')).toBeNull();
     pagina.preencher('nome', 'a'.repeat(81));
     await pagina.propagar();
-    expect(pagina.campo('codigo').value).toBe('A'.repeat(81));
-    expect(pagina.elemento('#cfg-tproc-codigo-erro').textContent).toContain('máximo 80 caracteres');
+    expect(pagina.campo('codigo').value).toBe('');
+    expect(pagina.elemento('#cfg-tproc-codigo-aviso').textContent).toContain('80 caracteres');
+    expect(pagina.campo('codigo').getAttribute('aria-describedby')).toContain(
+      'cfg-tproc-codigo-aviso',
+    );
+    pagina.http.verify();
+  });
+
+  it('forma o número inicial por extenso no tipo de processo', async () => {
+    const pagina = await montarPagina([]);
+    await pagina.abrirCadastro();
+    pagina.preencher('nome', '21 de abril');
+    await pagina.propagar();
+    expect(pagina.campo('codigo').value).toBe('VINTE_E_UM_DE_ABRIL');
     pagina.http.verify();
   });
 });

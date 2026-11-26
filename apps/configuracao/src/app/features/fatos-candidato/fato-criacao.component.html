@@ -56,13 +56,17 @@
           aria-required="true"
           [attr.aria-invalid]="erroCodigo ? 'true' : null"
           [attr.aria-describedby]="
-            erroCodigo ? 'cfg-fato-codigo-dica cfg-fato-codigo-erro' : 'cfg-fato-codigo-dica'
+            (erroCodigo ? 'cfg-fato-codigo-dica cfg-fato-codigo-erro' : 'cfg-fato-codigo-dica') +
+            (avisoDoNome() ? ' cfg-fato-codigo-aviso' : '')
           "
         />
         <span class="field__hint" id="cfg-fato-codigo-dica"
-          >{{ ajudaDoCodigo }} Único e não pode ser alterado após a criação. Nunca se
-          reutiliza.</span
+          >{{ ajudaDoCodigo }} Sugerido a partir do nome. Único e não pode ser alterado após a
+          criação. Nunca se reutiliza.</span
         >
+        <span class="field__hint" id="cfg-fato-codigo-aviso" role="status">{{
+          avisoDoNome()
+        }}</span>
         @if (erroCodigo) {
           <span class="field__error" id="cfg-fato-codigo-erro">{{ erroCodigo }}</span>
         }

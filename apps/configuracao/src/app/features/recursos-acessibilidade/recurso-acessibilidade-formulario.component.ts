@@ -21,6 +21,7 @@ export class RecursoAcessibilidadeFormularioComponent {
     LIMITE_DO_CODIGO_DO_RECURSO_DE_ACESSIBILIDADE,
   );
   readonly aberto = model.required<boolean>();
+  readonly avisoDoNome = input('');
   readonly form = input.required<FormGroup<RecursoAcessibilidadeForm>>();
   readonly titulo = input.required<string>();
   readonly erro = input.required<string | null>();

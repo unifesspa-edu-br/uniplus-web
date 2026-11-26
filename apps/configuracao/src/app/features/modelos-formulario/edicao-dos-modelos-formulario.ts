@@ -1,3 +1,4 @@
+import { LIMITE_DO_CODIGO_DO_MODELO_DE_FORMULARIO } from './modelo-formulario-form';
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
@@ -53,7 +54,11 @@ export class EdicaoDosModelosFormulario {
   readonly anuncioDaSituacao = signal('');
   private chaveDaCriacao = idempotencyKey.create();
   readonly form = criarFormularioDeModelo();
-  private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(this.form.controls, () => true);
+  readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
+    this.form.controls,
+    () => true,
+    LIMITE_DO_CODIGO_DO_MODELO_DE_FORMULARIO,
+  );
 
   constructor() {
     this.acompanharRecarga();

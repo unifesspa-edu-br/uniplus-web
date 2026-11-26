@@ -34,15 +34,18 @@
               [readonly]="modo() === 'editar'"
               [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
               [attr.aria-describedby]="
-                erroCampoCodigo
+                (erroCampoCodigo
                   ? 'cfg-tproc-codigo-dica cfg-tproc-codigo-erro'
-                  : 'cfg-tproc-codigo-dica'
+                  : 'cfg-tproc-codigo-dica') + (avisoDoNome() ? ' cfg-tproc-codigo-aviso' : '')
               "
             />
             <span class="field__hint" id="cfg-tproc-codigo-dica"
-              >{{ ajudaDoCodigo }} Não pode ser alterado após a criação nem reutilizado. Para
-              corrigir, desative este tipo e cadastre outro.</span
+              >{{ ajudaDoCodigo }} Sugerido a partir do nome. Não pode ser alterado após a criação
+              nem reutilizado. Para corrigir, desative este tipo e cadastre outro.</span
             >
+            <span class="field__hint" id="cfg-tproc-codigo-aviso" role="status">{{
+              avisoDoNome()
+            }}</span>
             @if (erroCampoCodigo) {
               <span class="field__error" id="cfg-tproc-codigo-erro">{{ erroCampoCodigo }}</span>
             }

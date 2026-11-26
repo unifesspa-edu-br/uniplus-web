@@ -51,11 +51,18 @@
             type="text"
             formControlName="codigo"
             [attr.aria-invalid]="erro('codigo') ? 'true' : null"
-            aria-describedby="cfg-modelo-codigo-nota cfg-modelo-codigo-erro"
+            [attr.aria-describedby]="
+              'cfg-modelo-codigo-nota cfg-modelo-codigo-erro' +
+              (avisoDoNome() ? ' cfg-modelo-codigo-aviso' : '')
+            "
           />
           <span class="field__hint" id="cfg-modelo-codigo-nota"
-            >{{ ajudaDoCodigo }} Único e não pode ser alterado após a criação.</span
+            >{{ ajudaDoCodigo }} Sugerido a partir do nome. Único e não pode ser alterado após a
+            criação.</span
           >
+          <span class="field__hint" id="cfg-modelo-codigo-aviso" role="status">{{
+            avisoDoNome()
+          }}</span>
           @if (erro('codigo')) {
             <span class="field__error" id="cfg-modelo-codigo-erro">{{ erro('codigo') }}</span>
           }
