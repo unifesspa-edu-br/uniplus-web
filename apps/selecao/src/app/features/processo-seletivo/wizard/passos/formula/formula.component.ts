@@ -34,6 +34,11 @@ import { EdicoesDoEnemComponent } from './edicoes-do-enem.component';
 import { PesoPorAreaComponent } from './peso-por-area.component';
 
 const ID_DO_CAMPO_ESCALA = 'f-escala-nota-final';
+const MENSAGEM_SEM_EDICAO_DO_ENEM = 'Escolha ao menos uma edição do ENEM aceita.';
+const REGRA_DE_ARREDONDAMENTO_SEM_ESCOLHA = {
+  regraArredondamentoCodigo: '',
+  regraArredondamentoVersao: '',
+};
 
 /**
  * Fórmula, precisão e ordem de alocação da classificação (UNI-REQ-0482).
@@ -177,28 +182,32 @@ export class FormulaPassoComponent {
 
   escolherRegraCalculo(valor: string): void {
     const { codigo, versao } = lerChaveDaRegra(valor);
-    if (codigo === '') {
-      this.store.patchObjectSection('classificacao', {
-        regraCalculoCodigo: '',
-        regraCalculoVersao: '',
-      });
-      this.descartarRecusaQueNaoSeAplica();
-      return;
-    }
+    if (codigo === '') this.limparRegraCalculo();
+    else this.trocarRegraCalculo(codigo, versao);
+    this.descartarRecusaQueNaoSeAplica();
+  }
 
+  private limparRegraCalculo(): void {
+    this.store.patchObjectSection('classificacao', {
+      regraCalculoCodigo: '',
+      regraCalculoVersao: '',
+    });
+  }
+
+  /**
+   * A troca de ramo (local ↔ importada) não some com o que o operador já digitou do outro lado — o
+   * mapeador para o comando é quem decide o que enviar. Só a saída explícita do formulário local
+   * zera o arredondamento aqui, para o `<select>` não continuar mostrando uma escolha que o ramo
+   * atual não usa.
+   */
+  private trocarRegraCalculo(codigo: string, versao: string): void {
     const local = classificacaoUsaFormulaLocal(codigo);
     this.store.patchObjectSection('classificacao', {
       regraCalculoCodigo: codigo,
       regraCalculoVersao: versao,
-      // A troca de ramo (local ↔ importada) não some com o que o operador já
-      // digitou do outro lado — o mapeador para o comando é quem decide o que
-      // enviar. Só a saída explícita do formulário local zera o
-      // arredondamento aqui, para o `<select>` não continuar mostrando uma
-      // escolha que o ramo atual não usa.
-      ...(local ? {} : { regraArredondamentoCodigo: '', regraArredondamentoVersao: '' }),
+      ...(local ? {} : REGRA_DE_ARREDONDAMENTO_SEM_ESCOLHA),
     });
     if (!local) this.store.classificacao.recusaDaEscalaDaNotaFinal.set(null);
-    this.descartarRecusaQueNaoSeAplica();
   }
 
   escolherRegraArredondamento(valor: string): void {
@@ -259,23 +268,28 @@ export class FormulaPassoComponent {
    * persiste o comando inteiro e não pode divergir sobre o que conta como válido aqui.
    */
   validar(): ValidacaoDoPasso {
-    const classificacao = this.store.draft().classificacao;
-    const invalid = new Set<string>(
-      pendenciasDaClassificacaoBase(
-        classificacao,
-        this.cadastroDePesos.resolucaoForaDoCadastro,
-      ).map((pendencia) => pendencia.campo),
-    );
-
-    const semEdicao = this.declaraEdicoes() && classificacao.edicoesEnem.length === 0;
-    if (semEdicao) invalid.add('edicoesEnem');
-
-    this.invalidFields.set(invalid);
+    const semEdicao = this.faltaEscolherEdicao();
+    this.invalidFields.set(this.camposInvalidos(semEdicao));
 
     const messages = [
-      ...mensagensDeClassificacaoBase(classificacao, this.cadastroDePesos.resolucaoForaDoCadastro),
-      ...(semEdicao ? ['Escolha ao menos uma edição do ENEM aceita.'] : []),
+      ...mensagensDeClassificacaoBase(
+        this.store.draft().classificacao,
+        this.cadastroDePesos.resolucaoForaDoCadastro,
+      ),
+      ...(semEdicao ? [MENSAGEM_SEM_EDICAO_DO_ENEM] : []),
     ];
     return messages.length ? { valid: false, messages } : { valid: true };
+  }
+
+  private faltaEscolherEdicao(): boolean {
+    return this.declaraEdicoes() && this.edicoes().length === 0;
+  }
+
+  private camposInvalidos(semEdicao: boolean): ReadonlySet<string> {
+    const campos = pendenciasDaClassificacaoBase(
+      this.store.draft().classificacao,
+      this.cadastroDePesos.resolucaoForaDoCadastro,
+    ).map((pendencia) => pendencia.campo);
+    return new Set(semEdicao ? [...campos, 'edicoesEnem'] : campos);
   }
 }
