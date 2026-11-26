@@ -6,7 +6,7 @@ import { API_URL, PDF_MINIMO, enviarPelaUrlAssinada, tokenDaPersona } from '@uni
 
 /**
  * Inscrições de personas fictícias do portal num processo publicado, pelo caminho do próprio
- * candidato: rascunho, respostas, envio do laudo ao armazenamento por URL assinada e submissão.
+ * candidato: rascunho, respostas, envio do laudo ao armazenamento por URL assinada e envio da inscrição.
  * Os dados pessoais vêm de `fake-people.json` do portal (uniplus-developers); nada é inventado.
  */
 
@@ -54,7 +54,7 @@ interface Rascunho {
 }
 
 /**
- * A verificação do arquivo é assíncrona e a API só aceita a submissão com os obrigatórios
+ * A verificação do arquivo é assíncrona e a API só aceita o envio com os obrigatórios
  * verificados. Espera os `enviados` arquivos da persona aparecerem no rascunho, todos verificados.
  */
 async function aguardarVerificacaoDosArquivos(
@@ -291,7 +291,7 @@ class InscricaoDaPersona {
         body: JSON.stringify(corpo),
       }),
       200,
-      `submissão de ${this.username}`,
+      `envio de ${this.username}`,
     );
   }
 }
