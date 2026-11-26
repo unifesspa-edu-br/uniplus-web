@@ -235,9 +235,7 @@ export class FormularioPassoComponent {
   editar(finalidade: string, conteudo: ConteudoDoFormulario): void {
     if (finalidade === FINALIDADE_INSCRICAO) {
       const presentes = new Set(fatosColetadosPor(conteudo));
-      this.store.camposPostosPelasExigencias.update(
-        (atual) => new Set([...atual].filter((codigo) => presentes.has(codigo))),
-      );
+      this.store.camposPostosPelasExigencias.update((atual) => atual.soOsPresentes(presentes));
     }
     this.atualizarFormulario(finalidade, (formulario) => ({ ...formulario, conteudo }));
   }

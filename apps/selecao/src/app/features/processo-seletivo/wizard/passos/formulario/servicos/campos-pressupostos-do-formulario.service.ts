@@ -71,8 +71,8 @@ export class CamposPressupostosDoFormulario {
     if (reconciliado === formulario.conteudo) return [];
     const acrescentados = fatosAcrescentados(formulario.conteudo, reconciliado);
     if (acrescentados.length > 0) {
-      this.store.camposPostosPelasExigencias.update(
-        (atual) => new Set([...atual, ...acrescentados]),
+      this.store.camposPostosPelasExigencias.update((atual) =>
+        atual.comOsQueEntraram(acrescentados),
       );
     }
     this.store.patchSection('formulario', { ...formulario, conteudo: reconciliado });

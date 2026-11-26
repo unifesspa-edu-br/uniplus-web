@@ -306,7 +306,7 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
         'RENDA_FAMILIAR',
       ]);
       expect(store.draft().formulario.faseCodigo).toBe('INSCRICAO');
-      expect(store.camposPostosPelasExigencias().has('RENDA_FAMILIAR')).toBe(true);
+      expect(store.camposPostosPelasExigencias().contem('RENDA_FAMILIAR')).toBe(true);
     });
   });
 });

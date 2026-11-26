@@ -1,6 +1,7 @@
 import { conteudoInicial, REGRAS_INICIAIS } from '@uniplus/shared-inscricao/formulario';
 import { describe, expect, it } from 'vitest';
 
+import { CamposPostosPelasExigencias } from '../../shared/campos-postos-pelas-exigencias';
 import { SECAO_OUTROS_DADOS } from './fatos-coletados-da-inscricao';
 import { comCamposQueAsExigenciasPressupoem } from './campos-pressupostos-da-inscricao';
 import { CATALOGO, secao, item, inscricaoGravada } from './formulario-de-inscricao.testing';
@@ -12,7 +13,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
     const resultado = comCamposQueAsExigenciasPressupoem(inscricaoGravada(), {
       citados: citados('RENDA_FAMILIAR'),
       catalogo: CATALOGO,
-      postosPelasExigencias: new Set(),
+      postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
       fatosDeOutrasFinalidades: [],
     });
 
@@ -44,7 +45,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
     const resultado = comCamposQueAsExigenciasPressupoem(comSecao, {
       citados: citados('RENDA_FAMILIAR'),
       catalogo: CATALOGO,
-      postosPelasExigencias: new Set(),
+      postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
       fatosDeOutrasFinalidades: [],
     });
 
@@ -58,7 +59,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       comCamposQueAsExigenciasPressupoem(conteudoInicial(), {
         citados: citados('SEXO'),
         catalogo: CATALOGO,
-        postosPelasExigencias: new Set(),
+        postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
         fatosDeOutrasFinalidades: [],
       }).itens,
     ).toEqual([]);
@@ -71,7 +72,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       comCamposQueAsExigenciasPressupoem(inscricao, {
         citados: citados('RENDA_FAMILIAR'),
         catalogo: CATALOGO,
-        postosPelasExigencias: new Set(),
+        postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
         fatosDeOutrasFinalidades: ['RENDA_FAMILIAR'],
       }),
     ).toBe(inscricao);
@@ -95,7 +96,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       comCamposQueAsExigenciasPressupoem(inscricao, {
         citados: citados('RENDA_FAMILIAR'),
         catalogo: CATALOGO,
-        postosPelasExigencias: new Set(),
+        postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
         fatosDeOutrasFinalidades: [],
       }),
     ).toBe(inscricao);
@@ -107,7 +108,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       comCamposQueAsExigenciasPressupoem(inscricao, {
         citados: citados('MODALIDADE'),
         catalogo: CATALOGO,
-        postosPelasExigencias: new Set(),
+        postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
         fatosDeOutrasFinalidades: [],
       }),
     ).toBe(inscricao);
@@ -117,14 +118,16 @@ describe('os campos que o processo pressupõe na inscrição', () => {
     const comCampo = comCamposQueAsExigenciasPressupoem(inscricaoGravada(), {
       citados: citados('RENDA_FAMILIAR'),
       catalogo: CATALOGO,
-      postosPelasExigencias: new Set(),
+      postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
       fatosDeOutrasFinalidades: [],
     });
 
     const semGatilho = comCamposQueAsExigenciasPressupoem(comCampo, {
       citados: citados(),
       catalogo: CATALOGO,
-      postosPelasExigencias: new Set(['RENDA_FAMILIAR']),
+      postosPelasExigencias: CamposPostosPelasExigencias.vazia().comOsQueEntraram([
+        'RENDA_FAMILIAR',
+      ]),
       fatosDeOutrasFinalidades: [],
     });
 
@@ -139,7 +142,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       comCamposQueAsExigenciasPressupoem(inscricao, {
         citados: citados(),
         catalogo: CATALOGO,
-        postosPelasExigencias: new Set(),
+        postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
         fatosDeOutrasFinalidades: [],
       }),
     ).toBe(inscricao);
@@ -164,7 +167,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       comCamposQueAsExigenciasPressupoem(citadoPorCampo, {
         citados: citados(),
         catalogo: CATALOGO,
-        postosPelasExigencias: new Set(['PCD']),
+        postosPelasExigencias: CamposPostosPelasExigencias.vazia().comOsQueEntraram(['PCD']),
         fatosDeOutrasFinalidades: [],
       }),
     ).toBe(citadoPorCampo);

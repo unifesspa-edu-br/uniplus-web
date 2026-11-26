@@ -14,6 +14,7 @@ import {
   formularioDaFinalidade,
   type FormularioParaGravar,
 } from '../passos/formulario/formulario-do-processo';
+import { CamposPostosPelasExigencias } from './campos-postos-pelas-exigencias';
 import type { CamposPressupostos } from './campos-pressupostos.service';
 
 export class PlanoDosCamposPressupostos {
@@ -42,7 +43,7 @@ export class PlanoDosCamposPressupostos {
     return comCamposQueAsExigenciasPressupoem(conteudo, {
       citados: this.citados,
       catalogo: this.catalogo,
-      postosPelasExigencias: new Set(),
+      postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
       fatosDeOutrasFinalidades: this.outrasFinalidades,
     });
   }
