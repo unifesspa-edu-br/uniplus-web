@@ -2,18 +2,18 @@ import {
   assertReflowContract,
   assertTextSpacingResilience,
   runAxeWcagAA,
+  SENHA_DAS_PERSONAS,
 } from '@uniplus/shared-e2e';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
   conferirCardSemCorteHorizontal,
   conferirOrdemNaArvoreDeAcessibilidade,
 } from '../support/conferencias-do-card-da-inscricao';
-import { keycloakLogin } from '../support/keycloak-login';
+import { keycloakLogin, resetPasswords } from '../support/keycloak-login';
 import {
   rascunhoSemContinuar,
   simularMinhasInscricoes,
 } from '../support/minhas-inscricoes-simuladas';
-import { PERSONA } from '../support/persona-da-inscricao';
 import { inscricaoNaLista } from '../support/passos-da-inscricao';
 import {
   conferirPreferenciaAplicada,
@@ -24,6 +24,8 @@ import {
 
 const PROCESSO_ENCERRADO = 'Processo Seletivo de Ingresso 2026.1 — Prazo Encerrado';
 const PROCESSO_NAO_INICIADO = 'Processo Seletivo de Mobilidade Acadêmica 2026.2';
+
+const USUARIO_CANDIDATO = 'candidato';
 
 const MENSAGEM_PRAZO_ENCERRADO =
   'O prazo de inscrições foi encerrado. Como sua inscrição não foi enviada dentro do prazo, ela não foi efetivada e não poderá mais ser concluída.';
@@ -49,11 +51,15 @@ const RASCUNHO_NAO_INICIADO = rascunhoSemContinuar({
   cursos: [],
 });
 
-// O login é o real, com a persona fictícia do portal; só a lista de inscrições é simulada na rede,
+// O login é o real, com o usuário candidato do Keycloak do ambiente de E2E; só a lista de inscrições é simulada na rede,
 // para o card do rascunho que não pode continuar não depender de dados que a API teria de produzir.
 // Cada cenário roda nas dezoito combinações de largura, tema e modo de fonte (um projeto cada).
 test.describe('Minhas inscrições — rascunho que não pode continuar @aaa', () => {
   let preferencia: PreferenciaDaMatriz;
+
+  test.beforeAll(async () => {
+    await resetPasswords([{ username: USUARIO_CANDIDATO, password: SENHA_DAS_PERSONAS }]);
+  });
 
   test.beforeEach(async ({ page }, testInfo) => {
     preferencia = preferenciaDoProjeto(testInfo.project.name);
@@ -96,7 +102,7 @@ test.describe('Minhas inscrições — rascunho que não pode continuar @aaa', (
       PROCESSO_ENCERRADO,
       'Não enviada',
       MENSAGEM_PRAZO_ENCERRADO,
-      /^1ª opção Medicina \(Bacharelado\)\s*2ª opção Direito \(Bacharelado\)$/,
+      /^1ª\s+opção\s+Medicina\s+\(Bacharelado\)\s*2ª\s+opção\s+Direito\s+\(Bacharelado\)$/,
     ]);
   });
 
@@ -119,7 +125,7 @@ async function entrarNaListaDeInscricoes(
   preferencia: PreferenciaDaMatriz,
 ): Promise<void> {
   await page.goto('/inscricao');
-  await keycloakLogin(page, PERSONA.usuario, PERSONA.senha, {
+  await keycloakLogin(page, USUARIO_CANDIDATO, SENHA_DAS_PERSONAS, {
     expectRedirectTo: /^https?:\/\/[^/]+\/inscricao(?:[?#]|$)/,
   });
   await conferirPreferenciaAplicada(page, preferencia);
