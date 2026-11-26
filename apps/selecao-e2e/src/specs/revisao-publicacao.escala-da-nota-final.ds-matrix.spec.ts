@@ -109,7 +109,7 @@ test.describe('Revisão e publicação — escala da nota final, matriz DS @ds',
     await escala.fill('100');
     await expect(escala).not.toHaveAttribute('aria-invalid', 'true');
     await irAoPasso(page, 'Revisão e publicação', testInfo);
-    // A escala só é gravada no passo Eliminação ou na publicação: até lá o item continua no checklist.
+    // A escala só é gravada ao avançar do passo Fórmula e precisão ou Eliminação, ou na publicação: até lá o item continua no checklist.
     await expect(
       page.locator('.revisao-list').getByText('Escala da nota final (fórmula local)'),
     ).toBeVisible();

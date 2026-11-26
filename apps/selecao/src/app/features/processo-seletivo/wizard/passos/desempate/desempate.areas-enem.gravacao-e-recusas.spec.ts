@@ -115,7 +115,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: gravação e rec
       expect(resultado).toEqual({
         valid: false,
         messages: [
-          'Critério de desempate 1: a classificação gravada não tem o quadro de Peso por Área; escolha a resolução no passo Fórmula, se ainda não escolheu, e grave a classificação no passo Eliminação.',
+          'Critério de desempate 1: a classificação gravada não tem o quadro de Peso por Área; escolha a resolução no passo Fórmula, se ainda não escolheu, e grave a classificação.',
           'Título genérico da raiz.',
         ],
       });
