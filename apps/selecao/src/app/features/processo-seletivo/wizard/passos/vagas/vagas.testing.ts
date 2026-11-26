@@ -213,7 +213,7 @@ export const REGRA_CASCATA = {
   versao: 'v1',
   tipo: 'CRITERIO_REMANEJAMENTO',
   declaracaoDaRegra: {
-    fallbackCodigo: 'AC',
+    destinoFinalCodigo: 'AC',
     ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
   },
   invariantes: [],

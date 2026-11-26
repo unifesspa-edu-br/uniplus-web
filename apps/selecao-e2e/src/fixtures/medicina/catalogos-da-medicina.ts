@@ -366,7 +366,7 @@ export const REGRAS_DE_CASCATA_DA_MEDICINA = [
           destinos: ['LB_PPI', 'LB_Q', 'LB_PCD', 'LB_EP', 'LI_PPI', 'LI_Q', 'LI_PCD'],
         },
       ],
-      fallbackCodigo: 'AC',
+      destinoFinalCodigo: 'AC',
     },
     invariantes: [
       'oito origens federais, ordem fixa por origem, terminal sempre AC — matriz não recalculada, só aplicada',

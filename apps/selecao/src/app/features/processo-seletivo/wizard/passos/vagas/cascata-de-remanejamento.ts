@@ -13,7 +13,7 @@ import { ehRamoFederal } from './composicao-de-vagas';
 import { ModalidadeDoCatalogo } from './modalidades-da-distribuicao';
 
 /**
- * Lê o `declaracaoDaRegra` da regra de remanejamento — shape `{"fallbackCodigo":
+ * Lê o `declaracaoDaRegra` da regra de remanejamento — shape `{"destinoFinalCodigo":
  * "AC", "ordens": [{"origem": "...", "destinos": ["...", ...]}]}` — devolvendo
  * `null` quando não bate com o esperado.
  *
@@ -26,13 +26,13 @@ export function matrizDaRegra(declaracaoDaRegra: unknown): MatrizDaOrdemDeRemane
   if (typeof declaracaoDaRegra !== 'object' || declaracaoDaRegra === null) return null;
 
   const bruto = declaracaoDaRegra as Record<string, unknown>;
-  const fallbackCodigo = bruto['fallbackCodigo'];
+  const destinoFinalCodigo = bruto['destinoFinalCodigo'];
   const ordensBrutas = bruto['ordens'];
-  if (typeof fallbackCodigo !== 'string' || !Array.isArray(ordensBrutas)) return null;
+  if (typeof destinoFinalCodigo !== 'string' || !Array.isArray(ordensBrutas)) return null;
 
   const ordens = ordensBrutas.map(ordemDaMatriz);
   if (ordens.some((ordem) => ordem === null)) return null;
-  return { fallbackCodigo, ordens: ordens as OrdemDeOrigem[] };
+  return { fallbackCodigo: destinoFinalCodigo, ordens: ordens as OrdemDeOrigem[] };
 }
 
 function ordemDaMatriz(itemBruto: unknown): OrdemDeOrigem | null {
