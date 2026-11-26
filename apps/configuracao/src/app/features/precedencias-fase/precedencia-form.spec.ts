@@ -16,7 +16,7 @@ import { marcarRecusaDoServidor, recusasDoControle } from '../../shared/formular
 const aresta: PrecedenciaFaseDto = {
   id: 'a1',
   antecessoraCodigo: 'INSCRICAO',
-  sucessoraCodigo: 'HOMOLOGACAO',
+  sucessoraCodigo: 'HOMOLOGACAO_INSCRICOES',
   permiteSobreposicao: true,
   criadoEm: '',
 };
@@ -29,7 +29,7 @@ describe('formulário de precedência de fase', () => {
     expect(form.controls.permiteSobreposicao.value).toBe(false);
     form.patchValue({ antecessoraCodigo: 'INSCRICAO' });
     expect(form.invalid).toBe(true);
-    form.patchValue({ sucessoraCodigo: 'HOMOLOGACAO' });
+    form.patchValue({ sucessoraCodigo: 'HOMOLOGACAO_INSCRICOES' });
     expect(form.valid).toBe(true);
   });
 
@@ -58,12 +58,12 @@ describe('formulário de precedência de fase', () => {
     form.reset(valoresDaPrecedencia(aresta));
     expect(form.getRawValue()).toEqual({
       antecessoraCodigo: 'INSCRICAO',
-      sucessoraCodigo: 'HOMOLOGACAO',
+      sucessoraCodigo: 'HOMOLOGACAO_INSCRICOES',
       permiteSobreposicao: true,
     });
     expect(comandoDeCriacao(form)).toEqual({
       antecessoraCodigo: 'INSCRICAO',
-      sucessoraCodigo: 'HOMOLOGACAO',
+      sucessoraCodigo: 'HOMOLOGACAO_INSCRICOES',
       permiteSobreposicao: true,
     });
     expect(comandoDeAtualizacao('a1', form)).toEqual({ id: 'a1', permiteSobreposicao: true });

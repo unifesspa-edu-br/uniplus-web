@@ -203,7 +203,7 @@ describe('TiposBancaPage', () => {
     const pagina2 = controller.expectOne(
       (r) => r.url === FASES_URL && r.params.get('cursor') === 'pagina-2',
     );
-    pagina2.flush([faseCanonica('HOMOLOGACAO', 'Homologação')]);
+    pagina2.flush([faseCanonica('HOMOLOGACAO_INSCRICOES', 'Homologação')]);
     await propagate();
 
     expect(edicao.sugestoesFaseTipica()).toEqual(['Inscrição', 'Homologação']);

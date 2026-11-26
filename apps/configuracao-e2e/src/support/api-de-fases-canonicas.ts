@@ -32,7 +32,7 @@ export function faseCanonica(
 /** O catálogo de fases da API, na ordem dela: as que os specs de precedência escolhem. */
 const CATALOGO_DE_FASES = [
   { codigo: 'INSCRICAO', nome: 'Inscrição' },
-  { codigo: 'HOMOLOGACAO', nome: 'Homologação' },
+  { codigo: 'HOMOLOGACAO_INSCRICOES', nome: 'Homologação' },
   { codigo: 'AVALIACAO', nome: 'Avaliação' },
   { codigo: 'CLASSIFICACAO', nome: 'Classificação' },
   { codigo: 'RESULTADO_FINAL', nome: 'Resultado final' },

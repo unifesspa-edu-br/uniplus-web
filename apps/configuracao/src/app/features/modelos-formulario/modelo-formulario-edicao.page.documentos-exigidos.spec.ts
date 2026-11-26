@@ -117,7 +117,7 @@ describe('ModeloFormularioEdicaoPage', () => {
   it('não oferece o reenvio em fase que não admite complementação', async () => {
     const tela = await carregar();
 
-    selecionar(tela, 'cfg-modelo-docs-doc-0-fase', 'HOMOLOGACAO');
+    selecionar(tela, 'cfg-modelo-docs-doc-0-fase', 'HOMOLOGACAO_INSCRICOES');
     await propagar();
 
     const valores = Array.from(
@@ -128,13 +128,13 @@ describe('ModeloFormularioEdicaoPage', () => {
 
   it('tira o reenvio da consequência ao trocar para fase que não admite complementação', async () => {
     const tela = await carregar();
-    selecionar(tela, 'cfg-modelo-docs-doc-1-fase', 'HOMOLOGACAO');
+    selecionar(tela, 'cfg-modelo-docs-doc-1-fase', 'HOMOLOGACAO_INSCRICOES');
     await propagar();
     salvar(tela);
 
     const req = controller.expectOne((r) => r.method === 'PUT' && r.url === MODELO);
     const documento = req.request.body.conteudo.conjuntoDeDocumentos.documentosExigidos[1];
-    expect(documento).toMatchObject({ faseCodigo: 'HOMOLOGACAO' });
+    expect(documento).toMatchObject({ faseCodigo: 'HOMOLOGACAO_INSCRICOES' });
     expect(documento.indeferimento.consequencia).not.toBe('ABRE_PRAZO_PARA_REENVIO');
     req.flush(null, { status: 204, statusText: 'No Content' });
     await propagar();

@@ -169,7 +169,7 @@ describe('PrecedenciasFasePage — escritas pela interface', () => {
       expect(p.edicao.salvando()).toBe(false);
       expect(p.fixture.nativeElement.textContent).toContain('Removendo...');
       expect(p.elemento('cfg-confirmacao-de-remocao [role="status"]').textContent).toContain(
-        'Removendo a aresta INSCRICAO → HOMOLOGACAO.',
+        'Removendo a aresta INSCRICAO → HOMOLOGACAO_INSCRICOES.',
       );
       for (const botao of [p.novo(), p.editar(), p.remover(), p.editar(avaliacaoClassificacao)]) {
         expect(botao.matches(':disabled') || botao.getAttribute('aria-disabled') === 'true').toBe(

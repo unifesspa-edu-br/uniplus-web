@@ -235,7 +235,7 @@ export const modelo: ModeloFormularioView = {
 
 export const FASES = [
   { id: '1', codigo: 'INSCRICAO', nome: 'Inscrição', permiteComplementacao: true },
-  { id: '2', codigo: 'HOMOLOGACAO', nome: 'Homologação', permiteComplementacao: false },
+  { id: '2', codigo: 'HOMOLOGACAO_INSCRICOES', nome: 'Homologação', permiteComplementacao: false },
 ];
 
 const FATOS_BASICOS = ['NOME', 'ESCOLA_PUBLICA', 'GESTANTE'];

@@ -38,7 +38,7 @@ describe('PrecedenciasFasePage', () => {
       expect(linhas()).toHaveLength(2);
       const texto = linhas()[0].textContent ?? '';
       expect(texto).toContain('INSCRICAO');
-      expect(texto).toContain('HOMOLOGACAO');
+      expect(texto).toContain('HOMOLOGACAO_INSCRICOES');
       expect(texto).toContain('Não');
       expect(linhas()[1].textContent).toContain('Avaliação');
     });
@@ -61,7 +61,7 @@ describe('PrecedenciasFasePage', () => {
       expect(linhas()).toHaveLength(1);
 
       await buscar('INSCRICAO');
-      expect(linhas()[0].textContent).toContain('HOMOLOGACAO');
+      expect(linhas()[0].textContent).toContain('HOMOLOGACAO_INSCRICOES');
 
       await buscar('nada');
       expect(p.fixture.nativeElement.textContent).toContain('Nenhuma aresta encontrada');
@@ -73,7 +73,7 @@ describe('PrecedenciasFasePage', () => {
 
       expect(opcoesDe('antecessoraCodigo').slice(1)).toEqual([
         'INSCRICAO — Inscrição (não cadastrada)',
-        'HOMOLOGACAO — Homologação (não cadastrada)',
+        'HOMOLOGACAO_INSCRICOES — Homologação (não cadastrada)',
         'AVALIACAO — Avaliação',
         'CLASSIFICACAO — Classificação (não cadastrada)',
         'RESULTADO_FINAL — Resultado final (não cadastrada)',
@@ -116,7 +116,7 @@ describe('PrecedenciasFasePage', () => {
       const antecessora = p.campo('antecessoraCodigo') as HTMLInputElement;
       const sucessora = p.campo('sucessoraCodigo') as HTMLInputElement;
       expect([antecessora.readOnly, antecessora.value]).toEqual([true, 'INSCRICAO']);
-      expect([sucessora.readOnly, sucessora.value]).toEqual([true, 'HOMOLOGACAO']);
+      expect([sucessora.readOnly, sucessora.value]).toEqual([true, 'HOMOLOGACAO_INSCRICOES']);
 
       p.selecionar('permiteSobreposicao', 'Sim');
       const put = await p.enviar(`${ESCRITA}/${inscricaoHomologacao.id}`);
@@ -154,7 +154,7 @@ describe('PrecedenciasFasePage', () => {
       const dialogo = p.elemento('cfg-confirmacao-de-remocao');
       expect(dialogo.textContent).toContain('Remover aresta de precedência');
       expect(dialogo.textContent).toContain(
-        'Deseja remover a aresta de INSCRICAO para HOMOLOGACAO?',
+        'Deseja remover a aresta de INSCRICAO para HOMOLOGACAO_INSCRICOES?',
       );
       expect(p.confirmar().textContent?.trim()).toBe('Remover');
       p.http.expectNone(`${ESCRITA}/${inscricaoHomologacao.id}`);
@@ -170,8 +170,11 @@ describe('PrecedenciasFasePage', () => {
       await p.recarregarCom([avaliacaoClassificacao]);
 
       expect(p.edicao.confirmando()).toBe(false);
-      expect(p.sucessos).toHaveBeenCalledWith('Aresta removida', 'INSCRICAO → HOMOLOGACAO');
-      expect(p.statusDaPagina()).toBe('Aresta INSCRICAO → HOMOLOGACAO removida.');
+      expect(p.sucessos).toHaveBeenCalledWith(
+        'Aresta removida',
+        'INSCRICAO → HOMOLOGACAO_INSCRICOES',
+      );
+      expect(p.statusDaPagina()).toBe('Aresta INSCRICAO → HOMOLOGACAO_INSCRICOES removida.');
     });
 
     it('cada ação mostra seu ícone e sua dica', () => {
@@ -219,13 +222,13 @@ describe('PrecedenciasFasePage', () => {
       });
       p.http
         .expectOne((r) => r.url === FASES && r.params.get('cursor') === 'pagina-2')
-        .flush([faseCanonica('HOMOLOGACAO', 'Homologação')]);
+        .flush([faseCanonica('HOMOLOGACAO_INSCRICOES', 'Homologação')]);
       await p.propagar();
       p.novo().click();
       await p.propagar();
 
       expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO — Inscrição');
-      expect(opcoesDe('antecessoraCodigo')).toContain('HOMOLOGACAO — Homologação');
+      expect(opcoesDe('antecessoraCodigo')).toContain('HOMOLOGACAO_INSCRICOES — Homologação');
       expect(opcoesDe('antecessoraCodigo')).toContain('AVALIACAO — Avaliação (não cadastrada)');
     });
 
