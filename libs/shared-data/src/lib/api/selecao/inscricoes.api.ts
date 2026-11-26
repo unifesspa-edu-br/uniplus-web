@@ -49,8 +49,10 @@ export class InscricoesApi {
   obterFormulario(
     processoSeletivoId: string,
   ): Observable<ApiResult<FormularioApresentadoDoProcessoDto>> {
-    const { url, context } = formularioDaInscricaoRequest(this.basePath, processoSeletivoId);
-    return this.http.get<ApiResult<FormularioApresentadoDoProcessoDto>>(url, { context });
+    const { url } = formularioDaInscricaoRequest(this.basePath, processoSeletivoId);
+    return this.http.get<ApiResult<FormularioApresentadoDoProcessoDto>>(url, {
+      context: withVendorMime('formulario-inscricao', 1),
+    });
   }
 
   /** PUT `…/inscricao` — salva o rascunho. */

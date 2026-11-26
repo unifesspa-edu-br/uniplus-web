@@ -3,7 +3,7 @@ export type { EtapaDaVersao } from './codigos-de-autorizacao';
 import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import type { PerfilDto } from './perfis.api';
 import type { components } from './schema';
 import { AUTORIZACAO_BASE_PATH } from './tokens';
@@ -83,7 +83,10 @@ export class VersoesDoPerfilApi {
   fila(etapa: EtapaDaVersao): Observable<ApiResult<readonly ItemDaFilaDeVersoesDto[]>> {
     return this.http.get<ApiResult<readonly ItemDaFilaDeVersoesDto[]>>(
       `${this.raiz}/versoes-de-perfil`,
-      { params: new HttpParams().set('fila', etapa) },
+      {
+        params: new HttpParams().set('fila', etapa),
+        context: withVendorMime('fila-de-versoes', 1),
+      },
     );
   }
 
@@ -133,6 +136,7 @@ export class VersoesDoPerfilApi {
   ): Observable<ApiResult<LeituraDoDocumentoDaVersaoDto>> {
     return this.http.get<ApiResult<LeituraDoDocumentoDaVersaoDto>>(
       this.documento(perfilId, versaoId),
+      { context: withVendorMime('documento-da-versao', 1) },
     );
   }
 

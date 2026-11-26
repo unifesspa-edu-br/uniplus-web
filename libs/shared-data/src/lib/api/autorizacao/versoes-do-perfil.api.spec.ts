@@ -14,6 +14,15 @@ const RAIZ = `${BASE}/api/autorizacao`;
 const PERFIL = '01960000-0000-7000-0000-0000000000d1';
 const VERSAO = '01960000-0000-7000-0000-0000000000e1';
 const DA_VERSAO = `${RAIZ}/perfis/${PERFIL}/versoes/${VERSAO}`;
+const PROPOSTA = {
+  nome: 'Operador',
+  descricao: 'Opera.',
+  permissoes: ['a:b:c'],
+  protocolo: 'P-1',
+  tamanhoDoDocumento: 10,
+  motivoDaRemocao: null,
+  categoriaDaRemocao: null,
+};
 
 describe('VersoesDoPerfilApi', () => {
   let api: VersoesDoPerfilApi;
@@ -34,21 +43,12 @@ describe('VersoesDoPerfilApi', () => {
   afterEach(() => controller.verify());
 
   it('propõe a versão por POST em versoes, com chave de idempotência', () => {
-    const corpo = {
-      nome: 'Operador',
-      descricao: 'Opera.',
-      permissoes: ['a:b:c'],
-      protocolo: 'P-1',
-      tamanhoDoDocumento: 10,
-      motivoDaRemocao: null,
-      categoriaDaRemocao: null,
-    };
-    void firstValueFrom(api.propor(PERFIL, corpo, withIdempotencyKey('k1')));
+    void firstValueFrom(api.propor(PERFIL, PROPOSTA, withIdempotencyKey('k1')));
     const req = controller.expectOne(`${RAIZ}/perfis/${PERFIL}/versoes`);
 
     expect(req.request.method).toBe('POST');
     expect(req.request.headers.get('Idempotency-Key')).toBe('k1');
-    expect(req.request.body).toEqual(corpo);
+    expect(req.request.body).toEqual(PROPOSTA);
   });
 
   it('cancela com o motivo', () => {
@@ -59,10 +59,16 @@ describe('VersoesDoPerfilApi', () => {
     expect(req.request.body).toEqual({ motivo: 'Engano.' });
   });
 
-  it('aprova e recusa informando a etapa, e a recusa leva o motivo', () => {
+  it('aprova informando a etapa', () => {
     void firstValueFrom(
       api.aprovar(PERFIL, VERSAO, EtapaDaVersao.GESTAO_DE_ACESSOS, withIdempotencyKey('k3')),
     );
+    expect(controller.expectOne(`${DA_VERSAO}/aprovacao`).request.body).toEqual({
+      etapa: EtapaDaVersao.GESTAO_DE_ACESSOS,
+    });
+  });
+
+  it('recusa informando a etapa e o motivo', () => {
     void firstValueFrom(
       api.recusar(
         PERFIL,
@@ -72,9 +78,6 @@ describe('VersoesDoPerfilApi', () => {
       ),
     );
 
-    expect(controller.expectOne(`${DA_VERSAO}/aprovacao`).request.body).toEqual({
-      etapa: EtapaDaVersao.GESTAO_DE_ACESSOS,
-    });
     expect(controller.expectOne(`${DA_VERSAO}/recusa`).request.body).toEqual({
       etapa: EtapaDaVersao.PROTECAO_DE_DADOS,
       motivo: 'Sem base.',
@@ -90,21 +93,32 @@ describe('VersoesDoPerfilApi', () => {
     );
 
     expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(
+      'application/vnd.uniplus.fila-de-versoes.v1+json',
+    );
   });
 
-  it('segue o fluxo de envio do documento: novo documento, reemissão, confirmação e leitura', () => {
+  it('envia novo documento, reemite e confirma o envio', () => {
     void firstValueFrom(api.novoDocumento(PERFIL, VERSAO, 2048, withIdempotencyKey('k5')));
     void firstValueFrom(api.reemitirEnvio(PERFIL, VERSAO, withIdempotencyKey('k6')));
     void firstValueFrom(api.confirmarDocumento(PERFIL, VERSAO, 'etag-1'));
-    void firstValueFrom(api.lerDocumento(PERFIL, VERSAO));
 
     expect(controller.expectOne(`${DA_VERSAO}/documento/envio`).request.method).toBe('POST');
     const confirmacao = controller.expectOne(`${DA_VERSAO}/documento/confirmacao`);
     expect(confirmacao.request.body).toEqual({ etag: 'etag-1' });
-    const requisicoes = controller.match(`${DA_VERSAO}/documento`);
-    expect(requisicoes.map((r) => r.request.method).sort()).toEqual(['GET', 'POST']);
-    expect(requisicoes.find((r) => r.request.method === 'POST')?.request.body).toEqual({
+    const documento = controller.expectOne(`${DA_VERSAO}/documento`);
+    expect(documento.request.method).toBe('POST');
+    expect(documento.request.body).toEqual({
       tamanhoDoDocumento: 2048,
     });
+  });
+
+  it('lê o documento com tipo de mídia versionado', () => {
+    void firstValueFrom(api.lerDocumento(PERFIL, VERSAO));
+    const documento = controller.expectOne(`${DA_VERSAO}/documento`);
+    expect(documento.request.method).toBe('GET');
+    expect(documento.request.headers.get('Accept')).toBe(
+      'application/vnd.uniplus.documento-da-versao.v1+json',
+    );
   });
 });
