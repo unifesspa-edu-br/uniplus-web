@@ -10,7 +10,7 @@ import { FatosDoDesempate } from './fatos-do-desempate.service';
 
 describe('FatosDoDesempate', () => {
   let resposta: Subject<unknown>;
-  
+
   beforeEach(() => {
     resposta = new Subject<unknown>();
     TestBed.configureTestingModule({

@@ -12,14 +12,11 @@ import { AreasDoDesempate } from './areas-do-desempate.service';
 import { EdicaoDosCriterios } from './edicao-dos-criterios.service';
 import { FatosDoDesempate } from './fatos-do-desempate.service';
 import { GravacaoDoDesempate } from './gravacao-do-desempate.service';
+import { PASSO_FORMULARIO } from '../../processo-seletivo.data';
 import { CriterioDeDesempateComponent } from './criterio-de-desempate.component';
 import { textoDoCriterio } from '../classificacao/confirmacao-da-classificacao';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
-import {
-  desempateIdosoSemApuracao,
-  desempateSemDataDeNascimento,
-  PASSO_FORMULARIO,
-} from './desempate-por-idade';
+import { desempateIdosoSemApuracao, desempateSemDataDeNascimento } from './desempate-por-idade';
 import { desempateUsaAreas, desempateTemShapeConhecido } from './desempate-para-comando';
 import { mensagensDoDesempate } from './validacao-do-desempate';
 

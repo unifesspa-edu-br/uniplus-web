@@ -1,7 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { ProblemI18nService, type ProblemDetails } from '@uniplus/shared-core/http';
 
-import type { CriterioDesempateConfigurado, ValidacaoDoPasso } from '../../processo-seletivo.models';
+import type {
+  CriterioDesempateConfigurado,
+  ValidacaoDoPasso,
+} from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import {
