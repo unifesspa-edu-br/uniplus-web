@@ -273,3 +273,44 @@ describe('bancas requeridas e o recorte de competência', () => {
     });
   });
 });
+
+describe('regra de homologação que a fase declara', () => {
+  const comEdicao = (edicaoDoExame: number | null) =>
+    fase({
+      regraDeHomologacao: {
+        resultadoAtoCodigo: null,
+        alternativas: [
+          {
+            condicoes: [
+              {
+                tipo: 'RESULTADO_NO_RETORNO_DO_INEP',
+                edicaoDoExame,
+                motivoDesfavoravelCodigo: null,
+                enquadramento: [],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+  it('aceita a regra cuja edição o processo declara', () => {
+    expect(conferir(comEdicao(2025), ['2024', '2025'])).toEqual([]);
+  });
+
+  it('impede gravar a regra cuja edição o processo deixou de declarar', () => {
+    const problemas = conferir(comEdicao(2023), ['2024', '2025']);
+
+    expect(problemas.map((problema) => problema.campo)).toEqual([
+      'homologacao.alternativas.0.condicoes.0.edicaoDoExame',
+    ]);
+  });
+
+  it('não cobra edição da condição que ainda não escolheu uma', () => {
+    expect(conferir(comEdicao(null), [])).toEqual([]);
+  });
+
+  it('não cobra nada da fase sem regra de homologação', () => {
+    expect(conferir(fase(), [])).toEqual([]);
+  });
+});

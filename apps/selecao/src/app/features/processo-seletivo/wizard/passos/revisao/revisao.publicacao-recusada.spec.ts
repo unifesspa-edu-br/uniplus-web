@@ -170,6 +170,7 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
         emiteParecerIndividual: false,
         bancasRequeridas: [],
         regraRecurso: null,
+        regraDeHomologacao: null,
         congelados: null,
       });
       store.patchObjectSection('cronograma', {

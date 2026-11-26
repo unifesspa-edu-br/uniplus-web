@@ -1,0 +1,130 @@
+<ng-template #recusasDoCampo let-controle>
+  @let recusas = recusasDoControle(controle);
+  @if (recusas.length > 0) {
+    <sel-recusas-do-campo [attr.id]="idDaRecusa(controle)" tabindex="-1" [recusas]="recusas" />
+  }
+  @if (problemaDoControle(controle); as erro) {
+    <p class="field__erro" [attr.id]="idDoProblema(controle)" role="alert">{{ erro }}</p>
+  }
+</ng-template>
+
+@if (posicao() > 0) {
+  <p class="field__hint">e também</p>
+}
+<fieldset class="form-field">
+  <legend class="label">Condição {{ posicao() + 1 }}</legend>
+  <div class="form-grid">
+    <div class="form-field">
+      <label class="label" [attr.for]="idDoControle('tipo')">Tipo da condição</label>
+      <select
+        #tipo
+        class="input"
+        [attr.id]="idDoControle('tipo')"
+        [disabled]="!regra.edicaoLiberada()"
+        [attr.aria-invalid]="invalido('tipo')"
+        [attr.aria-describedby]="descritoPor('tipo', null)"
+        (change)="regra.trocarTipo(lugar(), tipo.value)"
+      >
+        @for (opcao of tipos; track opcao.valor) {
+          <option [value]="opcao.valor" [selected]="opcao.valor === condicao().tipo">
+            {{ opcao.rotulo }}
+          </option>
+        }
+        @if (!tipoConhecido()) {
+          <option [value]="condicao().tipo" selected>{{ rotuloDoTipo() }}</option>
+        }
+      </select>
+      <ng-container *ngTemplateOutlet="recusasDoCampo; context: { $implicit: 'tipo' }" />
+    </div>
+
+    <div class="form-field">
+      <label class="label" [attr.for]="idDoControle('edicaoDoExame')">Edição do exame</label>
+      <select
+        #edicao
+        class="input"
+        [attr.id]="idDoControle('edicaoDoExame')"
+        [disabled]="!regra.edicaoLiberada() || edicoes().length === 0"
+        [attr.aria-invalid]="invalido('edicaoDoExame')"
+        [attr.aria-describedby]="
+          descritoPor('edicaoDoExame', edicoes().length === 0 ? idDoAviso(avisoDasEdicoes) : null)
+        "
+        (change)="regra.trocarEdicao(lugar(), edicao.value)"
+      >
+        <option value="" [selected]="condicao().edicaoDoExame === null">Selecione a edição…</option>
+        @for (opcao of edicoes(); track opcao.valor) {
+          <option [value]="opcao.valor" [selected]="opcao.valor === condicao().edicaoDoExame">
+            {{ opcao.declarada ? opcao.rotulo : opcao.rotulo + ' (não declarada pelo processo)' }}
+          </option>
+        }
+      </select>
+      <ng-container *ngTemplateOutlet="recusasDoCampo; context: { $implicit: 'edicaoDoExame' }" />
+    </div>
+
+    <div class="form-field form-grid__full">
+      <label class="label" [attr.for]="idDoControle('motivoDesfavoravelCodigo')">
+        Motivo desfavorável
+      </label>
+      <select
+        #motivo
+        class="input"
+        [attr.id]="idDoControle('motivoDesfavoravelCodigo')"
+        [disabled]="!regra.edicaoLiberada()"
+        [attr.aria-invalid]="invalido('motivoDesfavoravelCodigo')"
+        [attr.aria-describedby]="
+          descritoPor(
+            'motivoDesfavoravelCodigo',
+            idDoControle('motivoDesfavoravelCodigo') + '-ajuda'
+          )
+        "
+        (change)="regra.trocarMotivo(lugar(), motivo.value)"
+      >
+        <option value="" [selected]="condicao().motivoDesfavoravelCodigo === null">
+          Selecione o motivo…
+        </option>
+        @for (opcao of motivos(); track opcao.codigo) {
+          <option
+            [value]="opcao.codigo"
+            [selected]="opcao.codigo === condicao().motivoDesfavoravelCodigo"
+          >
+            {{
+              opcao.escolhidoPelaFase ? opcao.rotulo : opcao.rotulo + ' (não escolhido pela fase)'
+            }}
+          </option>
+        }
+      </select>
+      <p class="field__hint" [attr.id]="idDoControle('motivoDesfavoravelCodigo') + '-ajuda'">
+        @if (semMotivoEscolhido()) {
+          Escolha os motivos desta fase em Motivos de decisão.
+        } @else {
+          Motivo registrado quando a inscrição não cumpre esta condição.
+        }
+      </p>
+      <ng-container
+        *ngTemplateOutlet="recusasDoCampo; context: { $implicit: 'motivoDesfavoravelCodigo' }"
+      />
+    </div>
+  </div>
+
+  <insc-editor-de-condicoes
+    legenda="Para quem a condição vale (opcional)"
+    textoSemCondicao="Sem restrição: a condição vale para toda inscrição."
+    [condicoes]="condicao().enquadramento"
+    [fatos]="fatos()"
+    [idBase]="idDoControle('enquadramento')"
+    [disabled]="!regra.edicaoLiberada()"
+    (condicoesChange)="regra.trocarEnquadramento(lugar(), $event)"
+  />
+  <ng-container *ngTemplateOutlet="recusasDoCampo; context: { $implicit: 'enquadramento' }" />
+
+  <button
+    class="btn btn--tertiary btn--sm"
+    type="button"
+    [disabled]="!regra.edicaoLiberada()"
+    [attr.aria-label]="
+      'Remover a condição ' + (posicao() + 1) + ' da alternativa ' + (alternativa() + 1)
+    "
+    (click)="regra.removerCondicao(lugar())"
+  >
+    Remover condição
+  </button>
+</fieldset>

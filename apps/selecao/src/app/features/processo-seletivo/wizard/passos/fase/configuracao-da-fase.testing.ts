@@ -30,8 +30,8 @@ export function recurso(parcial: Partial<RecursoDaFase> = {}): RecursoDaFase {
 export const nomeDaBanca = (id: string): string =>
   id === 'banca-hetero' ? 'Heteroidentificação' : id;
 
-export function conferir(alvo: FaseDoCronograma) {
-  return problemasDaFase(alvo, CATALOGO);
+export function conferir(alvo: FaseDoCronograma, edicoesDoEnem: readonly string[] = []) {
+  return problemasDaFase(alvo, CATALOGO, edicoesDoEnem);
 }
 
 export function campos(alvo: FaseDoCronograma) {

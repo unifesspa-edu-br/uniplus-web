@@ -136,7 +136,7 @@ export function faseDoServidor(parcial: FaseDoServidorParcial = {}): FaseCronogr
   return {
     chave: 'fase-1',
     id: parcial.id ?? 'snapshot-fase-1',
-    codigo: parcial.codigo ?? 'HOMOLOGACAO',
+    codigo: parcial.codigo ?? 'HOMOLOGACAO_INSCRICOES',
     faseCanonica: { ...FASE_CANONICA, ...parcial.faseCanonica },
     cronograma: { ...CRONOGRAMA_DA_FASE, ...parcial.cronograma },
     publicacoes: { ...PUBLICACOES_DA_FASE, ...parcial.publicacoes },

@@ -40,6 +40,22 @@ describe('campoDaRecusaDaFase', () => {
     expect(campoDe(field)).toBe(campo);
   });
 
+  it.each([
+    ['fases[0].regraDeHomologacao', 'homologacao'],
+    ['fases[0].regraDeHomologacao.resultadoAtoCodigo', 'homologacao.resultado'],
+    ['fases[1].regraDeHomologacao.alternativas[0]', 'homologacao.alternativas.0'],
+    [
+      'fases[0].regraDeHomologacao.alternativas[2].condicoes[1].edicaoDoExame',
+      'homologacao.alternativas.2.condicoes.1.edicaoDoExame',
+    ],
+    [
+      'fases[0].regraDeHomologacao.alternativas[0].condicoes[0].enquadramento[1][0].valor',
+      'homologacao.alternativas.0.condicoes.0.enquadramento',
+    ],
+  ])('leva %s ao campo %s da regra de homologação', (field, campo) => {
+    expect(campoDe(field)).toBe(campo);
+  });
+
   it('dá campos diferentes a linhas diferentes da lista de publicações', () => {
     expect(campoDe('fases[0].produtos[0].atoCodigo')).not.toBe(
       campoDe('fases[0].produtos[1].atoCodigo'),

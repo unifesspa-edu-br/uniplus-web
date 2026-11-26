@@ -13,6 +13,7 @@ const FASE_DO_CRONOGRAMA_PADRAO: FaseDoCronograma = {
   bancasRequeridas: [],
   regraRecurso: null,
   tiposDeDecisao: [],
+  regraDeHomologacao: null,
   congelados: null,
 };
 

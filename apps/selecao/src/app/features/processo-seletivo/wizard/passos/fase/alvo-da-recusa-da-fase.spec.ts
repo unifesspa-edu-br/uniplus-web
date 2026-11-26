@@ -74,6 +74,26 @@ describe('alvosDaRecusaDaFase', () => {
     ]);
   });
 
+  it.each([
+    [
+      'homologacao.alternativas.1.condicoes.0.edicaoDoExame',
+      [
+        'fase-AVALIACAO-homologacao-alternativas-1-condicoes-0-edicaoDoExame',
+        'fase-AVALIACAO-homologacao-alternativas-1-condicoes-0-edicaoDoExame-recusa',
+      ],
+    ],
+    [
+      'homologacao.resultado',
+      ['fase-AVALIACAO-homologacao-resultado', 'fase-AVALIACAO-homologacao-resultado-recusa'],
+    ],
+    ['homologacao', ['fase-AVALIACAO-homologacao-recusa']],
+  ])(
+    'leva a recusa de %s ao controle da regra de homologação, com o bloco das recusas',
+    (campo, esperado) => {
+      expect(alvosDaRecusaDaFase(campo, FASE, 0)).toEqual(esperado);
+    },
+  );
+
   it('leva a recusa do parecer individual à caixa de marcar', () => {
     expect(alvosDaRecusaDaFase('emiteParecerIndividual', FASE, 0)[0]).toBe(
       'fase-AVALIACAO-parecer',
