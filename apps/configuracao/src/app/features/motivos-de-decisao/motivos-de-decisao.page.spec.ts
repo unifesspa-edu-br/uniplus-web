@@ -36,7 +36,7 @@ describe('MotivosDeDecisaoPage — leitura', () => {
     const linha = p.texto('tbody tr');
     expect(linha).toContain('RENDA_ACIMA_DO_LIMITE');
     expect(linha).toContain(isencao.sentido.rotulo);
-    expect(linha).toContain('BAIXA_RENDA');
+    expect(linha).toContain('CARENCIA_SOCIOECONOMICA');
     expect(linha).toContain('Ativo');
     expect(p.texto('thead')).toContain('Fundamento');
   });

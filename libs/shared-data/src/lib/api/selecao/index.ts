@@ -293,6 +293,14 @@ export {
   TipoDeBancaCodigo,
   TipoMotivoDeDecisaoCodigo,
   TipoDeCampoCodigo,
+  FormatoDeDocumentoCodigo,
+  ReferenciaTipoCodigo,
+  CriterioDeDistincaoDasApresentacoesCodigo,
+  ConsequenciaDoIndeferimentoCodigo,
+  TipoAbrangenciaCodigo,
+  StatusBaseLegalCodigo,
+  FormatoTextoCodigo,
+  TipoRestricaoValorCodigo,
 } from './schema';
 
 export { processoSeletivoRequest } from './processo-seletivo.request';

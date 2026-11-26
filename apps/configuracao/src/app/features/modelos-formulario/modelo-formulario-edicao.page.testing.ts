@@ -1,3 +1,4 @@
+import { TipoRestricaoValorCodigo } from '@uniplus/shared-data/configuracao';
 import {
   FINALIDADE_INSCRICAO,
   DADO_SIM_OU_NAO,
@@ -141,7 +142,7 @@ export const modelo: ModeloFormularioView = {
           obrigatoriedade: SEMPRE_OBRIGATORIO,
           restricoes: [
             {
-              tipo: 'SUBCONJUNTO',
+              tipo: TipoRestricaoValorCodigo.OPCOES_PERMITIDAS,
               minimo: null,
               maximo: null,
               entradas: [{ quando: null, valores: ['true'] }],

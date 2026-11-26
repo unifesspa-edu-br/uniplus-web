@@ -1,4 +1,14 @@
-import { fonteEscolhida, quantidadeEscolhida, tipoDoDadoEscolhido } from './codigos-do-fato';
+import {
+  classificacaoEscolhida,
+  hipoteseEscolhida,
+} from '../../shared/protecao-do-catalogo/protecao-de-dados';
+import {
+  escopoEscolhido,
+  fonteEscolhida,
+  formatoEscolhido,
+  quantidadeEscolhida,
+  tipoDoDadoEscolhido,
+} from './codigos-do-fato';
 import {
   Validators,
   type AbstractControl,
@@ -315,9 +325,9 @@ export function corpoDaDefinicao(tipo: TipoDoFato, v: DefinicaoEmEdicao): Defini
   const eixos = eixosEditaveis(tipo, v.dominio);
   return {
     pontoResolucao: v.pontoResolucao,
-    classificacaoProtecao: v.classificacaoProtecao,
+    classificacaoProtecao: classificacaoEscolhida(v.classificacaoProtecao),
     finalidadeTratamento: v.finalidadeTratamento.trim(),
-    hipoteseLegal: v.hipoteseLegal,
+    hipoteseLegal: hipoteseEscolhida(v.hipoteseLegal),
     ...eixosEnviados(eixos, v),
     ...(tipo === 'DECLARADO' ? fonteEFormatoEnviados(eixos, v) : {}),
   };
@@ -326,7 +336,7 @@ export function corpoDaDefinicao(tipo: TipoDoFato, v: DefinicaoEmEdicao): Defini
 function eixosEnviados(eixos: EixosEditaveis, v: DefinicaoEmEdicao): Partial<DefinicaoDoFatoInput> {
   return {
     ...(eixos.dominio ? { dominio: tipoDoDadoEscolhido(v.dominio) } : {}),
-    ...(eixos.escopo ? { escopo: v.escopo } : {}),
+    ...(eixos.escopo ? { escopo: escopoEscolhido(v.escopo) } : {}),
     ...(eixos.cardinalidade ? { cardinalidade: quantidadeEscolhida(v.cardinalidade) } : {}),
   };
 }
@@ -338,7 +348,7 @@ function fonteEFormatoEnviados(
 ): Partial<DefinicaoDoFatoInput> {
   return {
     fonteValores: eixos.fonteValores ? fonteEscolhida(v.fonteValores) : null,
-    formato: eixos.formato ? v.formato : null,
+    formato: eixos.formato ? formatoEscolhido(v.formato) : null,
   };
 }
 

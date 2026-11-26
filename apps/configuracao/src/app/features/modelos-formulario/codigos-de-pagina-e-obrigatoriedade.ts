@@ -2,10 +2,11 @@ import {
   BlocoSistemaCodigo,
   type OperadorCodigo,
   TipoPaginaFormularioCodigo,
+  TipoRestricaoValorCodigo,
   TipoObrigatoriedadeCodigo,
   type TipoDeCampoCodigo,
 } from '@uniplus/shared-data/configuracao';
-import { codigoDoContrato } from '@uniplus/shared-data/utils';
+import { codigoDoContrato, codigoExigidoDoContrato } from '@uniplus/shared-data/utils';
 import type { ConteudoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 
 type Conteudo = ConteudoDoFormulario<number, OperadorCodigo | null, TipoDeCampoCodigo | null>;
@@ -27,8 +28,27 @@ function regrasParaOModelo<R extends Regras>(regras: R) {
   };
 }
 
+function restricoesParaOModelo(restricoes: Item['regras']['restricoes']) {
+  return restricoes == null
+    ? restricoes
+    : restricoes.map((restricao) => ({
+        ...restricao,
+        tipo: codigoExigidoDoContrato(
+          TipoRestricaoValorCodigo,
+          restricao.tipo,
+          'tipo de restrição',
+        ),
+      }));
+}
+
 function itemParaOModelo(item: Item) {
-  return { ...item, regras: regrasParaOModelo(item.regras) };
+  return {
+    ...item,
+    regras: {
+      ...regrasParaOModelo(item.regras),
+      restricoes: restricoesParaOModelo(item.regras.restricoes),
+    },
+  };
 }
 
 /** Os itens, com a obrigatoriedade no código do contrato. */
@@ -52,12 +72,6 @@ export function termosParaOModelo(termos: Conteudo['termos']) {
   return termos?.map((termo) => ({ ...termo, regras: regrasParaOModelo(termo.regras) })) ?? null;
 }
 
-function membroDoContrato<E extends Record<string, string>>(contrato: E, codigo: string) {
-  const membro = codigoDoContrato(contrato, codigo);
-  if (membro === null) throw new Error(`Código fora do contrato: ${codigo}`);
-  return membro;
-}
-
 /**
  * As páginas, com o tipo e o bloco no membro do enum do contrato.
  *
@@ -70,8 +84,11 @@ export function paginasParaOModelo<
   return (
     paginas?.map((pagina) => ({
       ...pagina,
-      tipo: membroDoContrato(TipoPaginaFormularioCodigo, pagina.tipo),
-      bloco: pagina.bloco === null ? null : membroDoContrato(BlocoSistemaCodigo, pagina.bloco),
+      tipo: codigoExigidoDoContrato(TipoPaginaFormularioCodigo, pagina.tipo, 'tipo de página'),
+      bloco:
+        pagina.bloco === null
+          ? null
+          : codigoExigidoDoContrato(BlocoSistemaCodigo, pagina.bloco, 'bloco da página'),
     })) ?? null
   );
 }

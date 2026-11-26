@@ -5,6 +5,10 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
+import {
+  classificacaoEscolhida,
+  hipoteseEscolhida,
+} from '../../shared/protecao-do-catalogo/protecao-de-dados';
 import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 import {
   TipoDocumentoDto,
@@ -205,8 +209,8 @@ export function comandoDeCriacao(form: FormGroup<TipoDocumentoForm>): CriarTipoD
     formatosAceitos: serializarFormatosAceitos(valor),
     tamanhoMaximoMb: valor.tamanhoMaximoMb,
     tipoEquivalente: nullIfBlank(valor.tipoEquivalente),
-    classificacaoProtecao: valor.classificacaoProtecao,
-    hipoteseLegal: valor.hipoteseLegal,
+    classificacaoProtecao: classificacaoEscolhida(valor.classificacaoProtecao),
+    hipoteseLegal: hipoteseEscolhida(valor.hipoteseLegal),
     finalidadeTratamento: valor.finalidadeTratamento.trim(),
   };
 }

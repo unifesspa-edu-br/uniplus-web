@@ -14,7 +14,7 @@ const ATIVACAO = `${ESCRITA}/${isencao.id}/ativacao`;
 const valido = {
   codigo: 'RENDA_ACIMA_DO_LIMITE',
   sentido: SentidoDoMotivoCodigo.DESFAVORAVEL,
-  subclassificacao: 'BAIXA_RENDA',
+  subclassificacao: 'CARENCIA_SOCIOECONOMICA',
   descricao: 'A renda supera o limite.',
 };
 
@@ -74,7 +74,7 @@ describe('MotivosDeDecisaoPage — recusas', () => {
     await p.propagar();
 
     expect(p.edicao.form.controls.subclassificacao.errors).not.toBeNull();
-    p.edicao.form.controls.subclassificacao.setValue('DOADOR_DE_MEDULA');
+    p.edicao.form.controls.subclassificacao.setValue('DOACAO_MEDULA_OSSEA');
     const segunda = await enviarCriacao();
     expect(segunda.request.headers.get('Idempotency-Key')).not.toBe(chave);
     segunda.flush(...problema(503, { code: 'uniplus.internal.unexpected' }));
@@ -205,7 +205,7 @@ describe('MotivosDeDecisaoPage — recusas', () => {
     await p.propagar();
 
     const fundamento = p.elemento<HTMLSelectElement>('select[formcontrolname="subclassificacao"]');
-    expect(fundamento.selectedOptions[0]?.textContent?.trim()).toBe('BAIXA_RENDA');
+    expect(fundamento.selectedOptions[0]?.textContent?.trim()).toBe('CARENCIA_SOCIOECONOMICA');
     expect(p.existe('#cfg-motivo-fundamentos-falha')).toBe(false);
   });
 

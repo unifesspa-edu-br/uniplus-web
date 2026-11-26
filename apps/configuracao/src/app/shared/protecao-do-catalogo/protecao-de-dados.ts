@@ -1,3 +1,8 @@
+import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
+import { codigoExigidoDoContrato } from '@uniplus/shared-data/utils';
 import type { FormControl } from '@angular/forms';
 
 /**
@@ -95,4 +100,12 @@ const NOME_DO_CADASTRO: Readonly<Record<string, string>> = {
 /** O nome que a tela dá ao cadastro de um item do catálogo. */
 export function nomeDoCadastro(cadastro: string): string {
   return NOME_DO_CADASTRO[cadastro] ?? cadastro;
+}
+
+export function classificacaoEscolhida(valor: string): ClassificacaoDeProtecaoCodigo {
+  return codigoExigidoDoContrato(ClassificacaoDeProtecaoCodigo, valor, 'classificação de proteção');
+}
+
+export function hipoteseEscolhida(valor: string): HipoteseLegalTratamentoCodigo {
+  return codigoExigidoDoContrato(HipoteseLegalTratamentoCodigo, valor, 'hipótese legal');
 }

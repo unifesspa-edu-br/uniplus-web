@@ -9,3 +9,14 @@ export function codigoDoContrato<E extends Record<string, string>>(
 ): E[keyof E] | null {
   return Object.values(contrato).find((membro): membro is E[keyof E] => membro === codigo) ?? null;
 }
+
+/** Exige um código conhecido sem incluir o valor informado na mensagem de erro. */
+export function codigoExigidoDoContrato<E extends Record<string, string>>(
+  contrato: E,
+  valor: string,
+  oQue: string,
+): E[keyof E] {
+  const codigo = codigoDoContrato(contrato, valor);
+  if (codigo === null) throw new Error(`O valor informado para ${oQue} é inválido.`);
+  return codigo;
+}

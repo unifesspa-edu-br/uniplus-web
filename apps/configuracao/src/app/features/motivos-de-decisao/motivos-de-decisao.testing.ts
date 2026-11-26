@@ -33,7 +33,7 @@ export const isencao: MotivoDeDecisaoDto = {
   tipo: { codigo: TipoMotivoDeDecisaoCodigo.ISENCAO_DA_TAXA, rotulo: 'Isenção da taxa' },
   codigo: 'RENDA_ACIMA_DO_LIMITE',
   descricao: 'A renda familiar informada supera o limite do fundamento.',
-  subclassificacao: 'BAIXA_RENDA',
+  subclassificacao: 'CARENCIA_SOCIOECONOMICA',
   sentido: { codigo: SentidoDoMotivoCodigo.DESFAVORAVEL, rotulo: 'Sentido de teste desfavorável' },
   ativo: true,
   _links: {},
@@ -60,8 +60,8 @@ const TIPOS_DA_API = [
 ];
 
 export const FUNDAMENTOS_DA_API = [
-  { codigo: 'BAIXA_RENDA', nome: 'Baixa renda', descricao: 'Renda familiar baixa.' },
-  { codigo: 'DOADOR_DE_MEDULA', nome: 'Doador de medula', descricao: 'Doador cadastrado.' },
+  { codigo: 'CARENCIA_SOCIOECONOMICA', nome: 'Baixa renda', descricao: 'Renda familiar baixa.' },
+  { codigo: 'DOACAO_MEDULA_OSSEA', nome: 'Doador de medula', descricao: 'Doador cadastrado.' },
 ];
 
 export const problema = (status: number, corpo: object) =>

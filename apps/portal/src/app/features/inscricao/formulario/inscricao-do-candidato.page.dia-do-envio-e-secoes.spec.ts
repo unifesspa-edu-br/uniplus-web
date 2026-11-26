@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { type FormularioApresentadoDoProcessoDto } from '@uniplus/shared-data/selecao';
+import {
+  TipoRestricaoValorCodigo,
+  type FormularioApresentadoDoProcessoDto,
+} from '@uniplus/shared-data/selecao';
 import { passarOTempo } from '@uniplus/shared-testing';
 import { FORMULARIO_DE_INSCRICAO_MOCK, comFormulario } from './inscricao-do-candidato.testing';
 import {
@@ -16,7 +19,7 @@ type RestricaoDoItem =
 
 /** De 23h50 à meia-noite no fuso do envio. */
 const ATE_O_ENVIO: RestricaoDoItem = {
-  tipo: 'FAIXA_DE_DATA',
+  tipo: TipoRestricaoValorCodigo.FAIXA_DE_DATA,
   minimo: null,
   maximo: null,
   entradas: null,

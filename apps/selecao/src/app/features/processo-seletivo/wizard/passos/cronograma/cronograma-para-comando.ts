@@ -1,6 +1,7 @@
-import type {
-  EtapaProcessoInput,
-  FaseCronogramaInput,
+import { codigoExigidoDoContrato } from '@uniplus/shared-data/utils';
+import {
+  type EtapaProcessoInput,
+  type FaseCronogramaInput,
   TipoMotivoDeDecisaoCodigo,
 } from '@uniplus/shared-data/selecao';
 
@@ -81,7 +82,7 @@ function tiposDeDecisaoParaComando(
 }
 
 function comoComandoDoProdutoDaFase(produto: ProdutoDaFase): ProdutoDaFaseInput {
-  return { atoCodigo: produto.atoCodigo, papel: produto.papel as ProdutoDaFaseInput["papel"] };
+  return { atoCodigo: produto.atoCodigo, papel: produto.papel as ProdutoDaFaseInput['papel'] };
 }
 
 function comoComandoDeBancaRequerida(banca: BancaRequeridaDaFase): BancaRequeridaInput {
@@ -141,7 +142,11 @@ function comoComandoDoProcedimento(
   procedimento: ProcedimentoDeRecurso,
 ): ProcedimentoDeRecursoInput {
   return {
-    tipoDeDecisao: procedimento.tipoDeDecisao,
+    tipoDeDecisao: codigoExigidoDoContrato(
+      TipoMotivoDeDecisaoCodigo,
+      procedimento.tipoDeDecisao,
+      'tipo de decisão',
+    ),
     alvo: alvoParaComando(procedimento.alvo),
     regraCodigo: procedimento.regraCodigo,
     regraVersao: procedimento.regraVersao,
@@ -245,7 +250,9 @@ function comoComandoDaAvaliacaoDaEtapa(etapa: EtapaPontuada): AvaliacaoDaEtapaIn
   const humana = etapa.formaDeAvaliacao === FORMA_HUMANA;
   return {
     // Regra e passo só existem na avaliação humana, e o servidor recusa os dois fora dela.
-    formaDeAvaliacao: textoOuNulo(etapa.formaDeAvaliacao) as AvaliacaoDaEtapaInput["formaDeAvaliacao"],
+    formaDeAvaliacao: textoOuNulo(
+      etapa.formaDeAvaliacao,
+    ) as AvaliacaoDaEtapaInput['formaDeAvaliacao'],
     regraConsolidacaoCodigo: humana ? textoOuNulo(etapa.regraConsolidacaoCodigo) : null,
     regraConsolidacaoVersao: humana ? textoOuNulo(etapa.regraConsolidacaoVersao) : null,
     passoDoLancamento: humana ? decimalDoCampo(etapa.passoDoLancamento ?? '') : null,

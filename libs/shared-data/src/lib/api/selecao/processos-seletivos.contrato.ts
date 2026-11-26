@@ -1,5 +1,5 @@
 import {
-  DefinirTaxaInscricaoRequestFundamentos,
+  FundamentoIsencaoCodigo,
   FinalidadeDoDocumentoCodigo,
   ImpedimentoDoProdutoCodigo,
   SituacaoDoProdutoPrevistoCodigo,
@@ -52,8 +52,8 @@ export type DefinirTaxaInscricaoRequest = components['schemas']['DefinirTaxaInsc
 export type FundamentoIsencaoDto = components['schemas']['FundamentoIsencaoDto'];
 
 /** Vocabulário fechado dos fundamentos que a configuração pode referenciar. */
-export { DefinirTaxaInscricaoRequestFundamentos as FundamentoIsencao };
-export type FundamentoIsencaoCodigo = DefinirTaxaInscricaoRequestFundamentos;
+export { FundamentoIsencaoCodigo as FundamentoIsencao };
+export type { FundamentoIsencaoCodigo };
 export type ConfiguracaoDistribuicaoVagasInput =
   components['schemas']['ConfiguracaoDistribuicaoVagasInput'];
 export type ConfiguracaoDistribuicaoVagasDto =

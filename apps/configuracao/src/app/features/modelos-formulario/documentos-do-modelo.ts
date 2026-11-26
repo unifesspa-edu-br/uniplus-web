@@ -3,14 +3,18 @@ import type {
   ModeloFormularioView,
 } from '@uniplus/shared-data/configuracao';
 import {
+  ConsequenciaDoIndeferimentoCodigo,
+  TipoAbrangenciaCodigo,
+  StatusBaseLegalCodigo,
   EfeitoNaAnaliseDoDocumentoCodigo,
   EscolhaDaValidadeCodigo,
   EscolhaDoPrazoDeEmissaoCodigo,
   TipoDaDataDeReferenciaCodigo,
   UnidadeDoPrazoDeEmissaoCodigo,
 } from '@uniplus/shared-data/configuracao';
-import { codigoDoContrato } from '@uniplus/shared-data/utils';
+import { codigoDoContrato, codigoExigidoDoContrato } from '@uniplus/shared-data/utils';
 import type {
+  BaseLegalDoDocumento,
   DataDeReferenciaDoDocumento,
   DocumentoExigidoDoFormulario,
   PrazoDeEmissaoDoDocumento,
@@ -167,7 +171,32 @@ export function documentoParaOModelo<O>(
   const { obrigatorio, consequenciaIndeferimento, basesLegais, requisitos, ...demais } = documento;
   return {
     ...demais,
-    indeferimento: { obrigatorio, consequencia: consequenciaIndeferimento, basesLegais },
+    indeferimento: {
+      obrigatorio,
+      ...indeferimentoParaOModelo(consequenciaIndeferimento, basesLegais),
+    },
     requisitos: requisitosParaOModelo(requisitos),
+  };
+}
+
+export function indeferimentoParaOModelo(
+  consequencia: string,
+  basesLegais: readonly BaseLegalDoDocumento[] | null,
+) {
+  return {
+    consequencia: codigoExigidoDoContrato(
+      ConsequenciaDoIndeferimentoCodigo,
+      consequencia,
+      'documento',
+    ),
+    basesLegais: basesLegais?.map(baseLegalParaOModelo) ?? null,
+  };
+}
+
+function baseLegalParaOModelo(base: BaseLegalDoDocumento) {
+  return {
+    ...base,
+    abrangencia: codigoExigidoDoContrato(TipoAbrangenciaCodigo, base.abrangencia, 'abrangência'),
+    situacao: codigoExigidoDoContrato(StatusBaseLegalCodigo, base.situacao, 'situação'),
   };
 }
