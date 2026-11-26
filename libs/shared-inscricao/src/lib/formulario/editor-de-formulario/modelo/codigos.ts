@@ -1,21 +1,17 @@
-const LIMITE_DO_CODIGO = 60;
+import { CODIGO_TAMANHO_MAXIMO, sugerirCodigoDeCadastro } from '@uniplus/shared-utils';
 
-export type CodigoDeReserva = 'TERMO' | 'GRUPO';
+const LIMITE_DO_CODIGO = Math.min(60, CODIGO_TAMANHO_MAXIMO);
 
-function limitarCodigo(codigo: string, limite = LIMITE_DO_CODIGO): string {
+// O editor mantém o corte até a mudança de desenho dele.
+function limitarCodigo(codigo: string, limite: number): string {
   return codigo.slice(0, limite).replace(/_+$/u, '');
 }
 
+export type CodigoDeReserva = 'TERMO' | 'GRUPO';
+
 export function codigoDoNome(nome: string, reserva: CodigoDeReserva): string {
-  const codigo = limitarCodigo(
-    nome
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/gu, '')
-      .toUpperCase()
-      .replace(/[^A-Z0-9]+/gu, '_')
-      .replace(/^[0-9_]+/u, ''),
-  );
-  return codigo === '' ? reserva : codigo;
+  const nomeSemIniciais = nome.normalize('NFD').replace(/^[^a-zA-Z]+/u, '');
+  return limitarCodigo(sugerirCodigoDeCadastro(nomeSemIniciais), LIMITE_DO_CODIGO) || reserva;
 }
 
 export function codigoLivre(
@@ -23,7 +19,7 @@ export function codigoLivre(
   reserva: CodigoDeReserva,
   usados: ReadonlySet<string>,
 ): string {
-  const base = limitarCodigo(codigoDoNome(nome, reserva));
+  const base = codigoDoNome(nome, reserva);
   let codigo = base;
   for (let numero = 2; usados.has(codigo); numero++) {
     const sufixo = `_${numero}`;
