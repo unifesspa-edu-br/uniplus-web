@@ -1,6 +1,7 @@
 import {
   type AcoesDaInscricaoDto,
   type MinhaInscricaoDto,
+  MotivoDasInscricoesFechadasCodigo,
   SituacaoInscricaoCodigo,
 } from '@uniplus/shared-data/selecao';
 import { formatarDataBr } from '@uniplus/shared-utils';
@@ -11,9 +12,9 @@ export interface ItemDaLista {
   readonly id: string;
   readonly processoId: string;
   readonly situacao: MinhaInscricaoDto['situacao'];
-  /** O rótulo que o cartão mostra: o da API, ou "Não enviada" para o rascunho que a API não deixa mais continuar. */
+  /** O rótulo que o cartão mostra: o da API, ou "Não enviada" quando o prazo de inscrições encerrou sem o envio. */
   readonly rotuloDaSituacao: string;
-  /** O rascunho que a API não permite mais continuar; ela não informa o motivo. */
+  /** O rascunho que ficou sem envio porque a API informa que o período de inscrições encerrou. */
   readonly naoEnviada: boolean;
   readonly nome: string;
   /** Só a inscrição enviada ou cancelada tem número. */
@@ -34,15 +35,49 @@ export interface CursoDaInscricao {
   readonly nome: string;
 }
 
-export const ROTULO_NAO_ENVIADA = 'Não enviada';
+const ROTULO_NAO_ENVIADA = 'Não enviada';
 
-export const MENSAGEM_NAO_ENVIADA = 'Este rascunho não pode mais ser continuado.';
+const MENSAGEM_PADRAO_DO_RASCUNHO =
+  'Sua inscrição está em rascunho. Conclua e envie dentro do prazo.';
 
-/** A API não informa por que o rascunho não pode ser continuado; a tela só reflete a permissão negada. */
-function ficouSemEnvio(inscricao: MinhaInscricaoDto): boolean {
+const MENSAGEM_SEM_MOTIVO_CONHECIDO = 'Não é possível continuar esta inscrição agora.';
+
+/** O motivo que a tela não conhece, inclusive o período não confirmado, cai na mensagem neutra. */
+const MENSAGEM_POR_MOTIVO: ReadonlyMap<string, string> = new Map([
+  [
+    MotivoDasInscricoesFechadasCodigo.PERIODO_ENCERRADO,
+    'O prazo de inscrições foi encerrado. Como sua inscrição não foi enviada dentro do prazo, ela não foi efetivada e não poderá mais ser concluída.',
+  ],
+  [
+    MotivoDasInscricoesFechadasCodigo.PERIODO_NAO_INICIADO,
+    'O período de inscrições deste processo seletivo ainda não começou. Você poderá continuar sua inscrição quando ele começar.',
+  ],
+  [
+    MotivoDasInscricoesFechadasCodigo.PROCESSO_SEM_INSCRICAO,
+    'Este processo seletivo não recebe inscrição pelo sistema. Sua inscrição em rascunho não pode ser continuada.',
+  ],
+]);
+
+function rascunhoSemPermissaoDeContinuar(inscricao: MinhaInscricaoDto): boolean {
   return (
     inscricao.situacao.codigo === SituacaoInscricaoCodigo.RASCUNHO && !inscricao.acoes.podeContinuar
   );
+}
+
+/** O motivo que a API informa para as inscrições estarem fechadas; a tela não o deduz de outro campo. */
+function codigoDoMotivo(inscricao: MinhaInscricaoDto): string {
+  return inscricao.motivoDasInscricoesFechadas?.codigo ?? '';
+}
+
+function ficouSemEnvio(inscricao: MinhaInscricaoDto): boolean {
+  return (
+    rascunhoSemPermissaoDeContinuar(inscricao) &&
+    codigoDoMotivo(inscricao) === MotivoDasInscricoesFechadasCodigo.PERIODO_ENCERRADO
+  );
+}
+
+function mensagemDoRascunhoSemContinuar(inscricao: MinhaInscricaoDto): string {
+  return MENSAGEM_POR_MOTIVO.get(codigoDoMotivo(inscricao)) ?? MENSAGEM_SEM_MOTIVO_CONHECIDO;
 }
 
 function mensagemDoCancelamento(inscricao: MinhaInscricaoDto): string | null {
@@ -54,14 +89,14 @@ function mensagemDoCancelamento(inscricao: MinhaInscricaoDto): string | null {
 }
 
 function mensagemDa(inscricao: MinhaInscricaoDto): string | null {
-  if (ficouSemEnvio(inscricao)) return MENSAGEM_NAO_ENVIADA;
+  if (rascunhoSemPermissaoDeContinuar(inscricao)) return mensagemDoRascunhoSemContinuar(inscricao);
   switch (inscricao.situacao.codigo) {
     case SituacaoInscricaoCodigo.ENVIADA:
       return null;
     case SituacaoInscricaoCodigo.CANCELADA:
       return mensagemDoCancelamento(inscricao);
     default:
-      return 'Sua inscrição está em rascunho. Conclua e envie dentro do prazo.';
+      return MENSAGEM_PADRAO_DO_RASCUNHO;
   }
 }
 
