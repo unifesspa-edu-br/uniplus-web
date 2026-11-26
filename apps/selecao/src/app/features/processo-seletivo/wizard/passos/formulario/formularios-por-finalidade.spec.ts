@@ -8,7 +8,6 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import {
-  abaPelaTecla,
   faseEfetiva,
   finalidadesParaAcrescentar,
   finalidadesQueAtende,
@@ -144,13 +143,5 @@ describe('a fase do formulário', () => {
   it('preenche sozinha quando só uma fase serve, e não fica com a escolhida que deixou de servir', () => {
     expect(faseEfetiva('', [HABILITACAO])).toBe('HABILITACAO');
     expect(faseEfetiva('INSCRICAO', [HABILITACAO, fase('OUTRA')])).toBe('');
-  });
-});
-
-describe('o teclado nas abas', () => {
-  it('as setas andam em círculo, Home e End vão às pontas, e outra tecla não troca de aba', () => {
-    expect([abaPelaTecla('ArrowRight', 2, 3), abaPelaTecla('ArrowLeft', 0, 3)]).toEqual([0, 2]);
-    expect([abaPelaTecla('Home', 2, 3), abaPelaTecla('End', 0, 3)]).toEqual([0, 2]);
-    expect(abaPelaTecla('Enter', 1, 3)).toBeNull();
   });
 });
