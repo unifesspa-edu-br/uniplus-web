@@ -233,6 +233,15 @@ export class ComboboxComponent {
     this.aberto.set(true);
   }
 
+  /** Prepara o campo para receber foco com os resultados de uma busca já feita. */
+  abrirComTermo(termo: string): HTMLInputElement | null {
+    if (this.bloqueado()) return null;
+    this.busca.set(termo);
+    this.destacada.set(null);
+    this.aberto.set(true);
+    return this.campo().nativeElement;
+  }
+
   protected digitar(termo: string): void {
     this.buscar(termo);
     this.aberto.set(true);

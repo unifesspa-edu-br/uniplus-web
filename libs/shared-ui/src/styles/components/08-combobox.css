@@ -20,6 +20,11 @@
   box-shadow: var(--shadow-3);
 }
 
+/* O aviso de falha vem depois do campo e precisa permanecer alcançável pelo mouse. */
+.combobox-com-aviso .combobox__lista {
+  position: static;
+}
+
 .combobox__lista ul {
   margin: 0;
   padding: 0;
