@@ -39,6 +39,11 @@ import {
 } from '../desempate/conferencia-do-desempate-gravado';
 import { recusaPorCriterioGravadoSemQuadro } from '../desempate/recusas-do-desempate';
 
+const MENSAGEM_SEM_CADASTRO_DO_PROCESSO =
+  'O cadastro do processo precisa estar concluído antes de configurar a classificação.';
+const MENSAGEM_DIVISOR_INVALIDO =
+  'Nenhuma etapa do Cronograma compõe a nota. Volte ao Cronograma e declare ao menos uma etapa classificatória (ou ambas) com peso maior que zero.';
+
 /**
  * Regras de eliminação — a coleção que fecha o corpo de `PUT
  * …/classificacao` (UNI-REQ-0482). Eliminação não é dimensão própria da API:
@@ -139,10 +144,15 @@ export class EliminacaoPassoComponent {
       regrasEliminacao: this.regras().filter((_, item) => item !== indice),
     });
     this.anuncio.set(`Regra ${indice + 1} removida.`);
+    this.devolverOFocoAposRemover(indice);
+  }
 
-    // O botão clicado sai do DOM junto com a regra, e o foco cairia no corpo da página — quem
-    // navega por teclado perderia o lugar a cada remoção. Removida a última regra, vale
-    // "Acrescentar".
+  /**
+   * O botão clicado sai do DOM junto com a regra, e o foco cairia no corpo da página — quem
+   * navega por teclado perderia o lugar a cada remoção. Removida a última regra, vale
+   * "Acrescentar".
+   */
+  private devolverOFocoAposRemover(indice: number): void {
     focarAposRenderizar(
       this.injector,
       `elim-remover-${Math.max(0, indice - 1)}`,
@@ -182,34 +192,41 @@ export class EliminacaoPassoComponent {
    * aqui.
    */
   validar(): ValidacaoDoPasso {
-    const classificacao = this.store.draft().classificacao;
-    // A resolução que o cadastro lido já não tem seria recusada pela gravação, que relê o
-    // cadastro; a completude dos grupos continua sendo julgada pelo servidor.
-    const messages: string[] = [
-      ...mensagensDeClassificacaoBase(classificacao, this.cadastroDePesos.resolucaoForaDoCadastro),
-    ];
-
-    if (!this.usaFormulaLocal()) {
-      // CLASSIFICACAO_IMPORTADA (ou regra ainda não escolhida) não usa
-      // eliminação local — nada além da base acima a validar aqui.
-      return messages.length ? { valid: false, messages } : { valid: true };
-    }
-
-    if (this.divisorInvalido()) {
-      messages.push(
-        'Nenhuma etapa do Cronograma compõe a nota. Volte ao Cronograma e declare ao menos uma etapa classificatória (ou ambas) com peso maior que zero.',
-      );
-    }
-    messages.push(
-      ...mensagensDasRegras({
-        regras: this.regras(),
-        etapas: this.etapasReferenciaveis(),
-        quadro: this.quadro(),
-        baseadoEmEnem: classificacao.baseadoEmEnem,
-      }),
-    );
-
+    const messages = [...this.mensagensDaClassificacaoBase(), ...this.mensagensDaEliminacaoLocal()];
     return messages.length ? { valid: false, messages } : { valid: true };
+  }
+
+  /**
+   * A resolução que o cadastro lido já não tem seria recusada pela gravação, que relê o cadastro;
+   * a completude dos grupos continua sendo julgada pelo servidor.
+   */
+  private mensagensDaClassificacaoBase(): readonly string[] {
+    return mensagensDeClassificacaoBase(
+      this.classificacao(),
+      this.cadastroDePesos.resolucaoForaDoCadastro,
+    );
+  }
+
+  /**
+   * CLASSIFICACAO_IMPORTADA (ou regra ainda não escolhida) não usa eliminação local: não há nada
+   * além da classificação base a validar.
+   */
+  private mensagensDaEliminacaoLocal(): readonly string[] {
+    if (!this.usaFormulaLocal()) return [];
+    return [...this.mensagemDoDivisorInvalido(), ...this.mensagensDasRegrasDeEliminacao()];
+  }
+
+  private mensagemDoDivisorInvalido(): readonly string[] {
+    return this.divisorInvalido() ? [MENSAGEM_DIVISOR_INVALIDO] : [];
+  }
+
+  private mensagensDasRegrasDeEliminacao(): string[] {
+    return mensagensDasRegras({
+      regras: this.regras(),
+      etapas: this.etapasReferenciaveis(),
+      quadro: this.quadro(),
+      baseadoEmEnem: this.classificacao().baseadoEmEnem,
+    });
   }
 
   /**
@@ -273,21 +290,17 @@ export class EliminacaoPassoComponent {
    */
   async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
-    if (processoId === null) {
-      return {
-        valid: false,
-        messages: [
-          'O cadastro do processo precisa estar concluído antes de configurar a classificação.',
-        ],
-      };
-    }
+    if (processoId === null) return { valid: false, messages: [MENSAGEM_SEM_CADASTRO_DO_PROCESSO] };
 
+    const recusa = this.recusaAntesDeGravar();
+    return recusa ?? this.gravacao.gravar(processoId);
+  }
+
+  private recusaAntesDeGravar(): ValidacaoDoPasso | null {
     const conferencia = this.validar();
     if (!conferencia.valid) return conferencia;
 
     const doDesempate = this.recusasCertasPeloDesempate();
-    if (doDesempate.length > 0) return { valid: false, messages: doDesempate };
-
-    return this.gravacao.gravar(processoId);
+    return doDesempate.length > 0 ? { valid: false, messages: doDesempate } : null;
   }
 }
