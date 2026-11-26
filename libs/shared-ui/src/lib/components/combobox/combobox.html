@@ -9,7 +9,7 @@
     [attr.aria-expanded]="aberto()"
     [attr.aria-controls]="listaId"
     [attr.aria-activedescendant]="
-      aberto() && destacada() !== null ? opcaoId(destacada()!) : null
+      aberto() && destaque.valor() !== null ? opcaoId(destaque.valor()!) : null
     "
     aria-autocomplete="list"
     [attr.aria-describedby]="descricoes()"
@@ -40,12 +40,12 @@
           class="combobox__opcao"
           role="option"
           [id]="opcaoId(opcao.value)"
-          [class.is-destacada]="destacada() === opcao.value"
+          [class.is-destacada]="destaque.valor() === opcao.value"
           [class.is-desabilitada]="indisponivel(opcao)"
           [attr.aria-selected]="marcada(opcao.value)"
           [attr.aria-disabled]="indisponivel(opcao) ? 'true' : null"
           (mousedown)="escolherComOMouse($event, opcao)"
-          (mousemove)="indisponivel(opcao) ? null : destacada.set(opcao.value)"
+          (mousemove)="indisponivel(opcao) ? null : destaque.apontar(opcao.value)"
         >
           {{ opcao.label }}
         </li>

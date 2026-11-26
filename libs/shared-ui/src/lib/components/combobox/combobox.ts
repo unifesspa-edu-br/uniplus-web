@@ -12,6 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { normalizarParaBusca } from '@uniplus/shared-utils';
+import { OpcaoDestacada } from './opcao-destacada';
 import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 
 /** Uma escolha da lista. `value` é o que sai; `label` é o que a pessoa lê. */
@@ -116,29 +117,28 @@ export class ComboboxComponent {
       if (this.aberto() && this.campo().nativeElement.matches(':disabled')) this.fechar();
     });
   }
-  protected readonly destacada = signal<string | null>(null);
 
   /** O que está escrito no campo: a busca em curso, ou o rótulo do que já foi escolhido. */
   private readonly busca = signal<string | null>(null);
 
-  protected readonly texto = computed(() => {
-    const digitado = this.busca();
-    if (digitado !== null) return digitado;
+  /** Os rótulos marcados, na ordem da lista, resumem a escolha com o campo fechado. */
+  private readonly resumoDosMarcados = computed(() => {
+    const marcados = new Set(this.values());
+    return this.todasAsOpcoes()
+      .filter((opcao) => marcados.has(opcao.value))
+      .map((opcao) => opcao.label)
+      .join(', ');
+  });
 
-    if (this.multiplo()) {
-      // Os rótulos do que está marcado, na ordem em que a lista os apresenta: o campo
-      // fechado é o resumo da escolha, e é por ele que se confere sem reabrir.
-      const marcados = new Set(this.values());
-      return this.todasAsOpcoes()
-        .filter((opcao) => marcados.has(opcao.value))
-        .map((opcao) => opcao.label)
-        .join(', ');
-    }
-
+  private readonly rotuloDoEscolhido = computed(() => {
     const escolhido = this.value();
     if (escolhido === '') return '';
     return this.todasAsOpcoes().find((opcao) => opcao.value === escolhido)?.label ?? '';
   });
+
+  protected readonly texto = computed(
+    () => this.busca() ?? (this.multiplo() ? this.resumoDosMarcados() : this.rotuloDoEscolhido()),
+  );
 
   /**
    * Se a opção não pode ser acionada. No modo múltiplo a opção já marcada continua acionável mesmo
@@ -215,6 +215,19 @@ export class ComboboxComponent {
     ),
   );
 
+  protected readonly destaque = new OpcaoDestacada(this.navegaveis);
+
+  private readonly teclas: Readonly<Record<string, ((evento: KeyboardEvent) => void) | undefined>> =
+    {
+      ArrowDown: (evento) => this.navegarComSetas(evento),
+      ArrowUp: (evento) => this.navegarComSetas(evento),
+      Home: (evento) => this.irAoExtremo(evento),
+      End: (evento) => this.irAoExtremo(evento),
+      Enter: (evento) => this.escolherComEnter(evento),
+      Escape: (evento) => this.fecharComEscape(evento),
+      Tab: () => this.fechar(),
+    };
+
   protected opcaoId(value: string): string {
     return `${this.campoId}-op-${value}`;
   }
@@ -237,7 +250,7 @@ export class ComboboxComponent {
   abrirComTermo(termo: string): HTMLInputElement | null {
     if (this.bloqueado()) return null;
     this.busca.set(termo);
-    this.destacada.set(null);
+    this.destaque.limpar();
     this.aberto.set(true);
     return this.campo().nativeElement;
   }
@@ -248,7 +261,7 @@ export class ComboboxComponent {
     // Sem destacar nada: com a lista apenas sugerida, quem aperta a seta para baixo espera
     // chegar à PRIMEIRA opção. Destacar ao digitar faria a primeira seta pular para a
     // segunda, e um Enter distraído escolheria o que ninguém apontou.
-    this.destacada.set(null);
+    this.destaque.limpar();
   }
 
   /**
@@ -263,25 +276,7 @@ export class ComboboxComponent {
 
   protected teclar(evento: KeyboardEvent): void {
     if (evento.isComposing || evento.keyCode === 229) return;
-    switch (evento.key) {
-      case 'ArrowDown':
-      case 'ArrowUp':
-        this.navegarComSetas(evento);
-        break;
-      case 'Home':
-      case 'End':
-        this.irAoExtremo(evento);
-        break;
-      case 'Enter':
-        this.escolherComEnter(evento);
-        break;
-      case 'Escape':
-        this.fecharComEscape(evento);
-        break;
-      case 'Tab':
-        this.fechar();
-        break;
-    }
+    this.teclas[evento.key]?.(evento);
   }
 
   private navegarComSetas(evento: KeyboardEvent): void {
@@ -291,18 +286,18 @@ export class ComboboxComponent {
       this.abrir();
       return;
     }
-    this.andar(evento.key === 'ArrowDown' ? 1 : -1);
+    this.destaque.andar(evento.key === 'ArrowDown' ? 1 : -1);
   }
 
   private irAoExtremo(evento: KeyboardEvent): void {
     if (!this.aberto()) return;
     evento.preventDefault();
-    const lista = this.navegaveis();
-    this.destacada.set((evento.key === 'Home' ? lista[0] : lista[lista.length - 1]) ?? null);
+    if (evento.key === 'Home') this.destaque.irAoInicio();
+    else this.destaque.irAoFim();
   }
 
   private escolherComEnter(evento: KeyboardEvent): void {
-    const alvo = this.destacada();
+    const alvo = this.destaque.valor();
     if (!this.aberto()) return;
     if (alvo === null) {
       // Sem opção ativa, fecha e devolve o texto escolhido antes de enviar o formulário.
@@ -321,21 +316,6 @@ export class ComboboxComponent {
     this.fechar();
   }
 
-  private andar(passo: number): void {
-    const lista = this.navegaveis();
-    if (lista.length === 0) return;
-
-    const atual = lista.indexOf(this.destacada() ?? '');
-    // Sem nada destacado, a seta para baixo começa no primeiro e a de cima no último.
-    const proximo =
-      atual === -1
-        ? passo > 0
-          ? 0
-          : lista.length - 1
-        : (atual + passo + lista.length) % lista.length;
-    this.destacada.set(lista[proximo]);
-  }
-
   /**
    * O campo pode estar bloqueado por quem o envolve (um `fieldset` desabilitado), sem que o
    * `disabled` do componente saiba: `:disabled` do input enxerga os dois casos.
@@ -350,24 +330,24 @@ export class ComboboxComponent {
       return;
     }
     if (this.multiplo()) {
-      const marcados = this.values();
-      this.valuesChange.emit(
-        marcados.includes(value) ? marcados.filter((item) => item !== value) : [...marcados, value],
-      );
-      // A lista fica aberta e o termo volta a VAZIO — não a "sem busca". São estados
-      // diferentes: sem busca, o campo mostra o resumo do que já está marcado, e quem digita
-      // a próxima consulta a acrescenta a "RG, CPF", filtrando por essa frase inteira e não
-      // achando nada. O resumo volta quando a lista fecha, que é quando ele serve para
-      // conferir a escolha sem reabrir. Só o termo exibido volta a vazio: na busca externa, os
-      // resultados da consulta continuam, para marcar outros dela sem repeti-la.
-      this.busca.set('');
+      this.alternarMarcacao(value);
       return;
     }
-
     this.valueChange.emit(value);
-    this.busca.set(null);
-    this.destacada.set(null);
-    this.aberto.set(false);
+    this.fechar();
+  }
+
+  /**
+   * A lista fica aberta e o termo volta a vazio, não a "sem busca": o resumo dos marcados
+   * atrapalharia a próxima consulta. Na busca externa, os resultados continuam disponíveis
+   * para marcar outras opções sem repetir a consulta.
+   */
+  private alternarMarcacao(value: string): void {
+    const marcados = this.values();
+    this.valuesChange.emit(
+      marcados.includes(value) ? marcados.filter((item) => item !== value) : [...marcados, value],
+    );
+    this.busca.set('');
   }
 
   private buscar(termo: string): void {
@@ -377,7 +357,7 @@ export class ComboboxComponent {
 
   private fechar(): void {
     this.busca.set(null);
-    this.destacada.set(null);
+    this.destaque.limpar();
     this.aberto.set(false);
   }
 
