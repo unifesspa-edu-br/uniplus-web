@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ROTULOS_DOS_PASSOS } from '../../processo-seletivo.data';
+import { NOME_DO_PASSO_DA_FORMULA, ROTULOS_DOS_PASSOS } from '../../processo-seletivo.data';
 import {
   componente,
   fixture,
@@ -78,7 +78,7 @@ describe('EliminacaoPassoComponent', () => {
       fixture.detectChanges();
 
       expect(ROTULOS_DOS_PASSOS).toContain('Fórmula e precisão');
-      expect(abertura()).toContain('passo Fórmula e precisão:');
+      expect(abertura()).toContain(`passo ${NOME_DO_PASSO_DA_FORMULA}:`);
     });
   });
 });

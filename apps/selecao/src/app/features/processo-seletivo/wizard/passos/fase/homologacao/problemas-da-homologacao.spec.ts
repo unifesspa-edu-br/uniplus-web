@@ -1,3 +1,4 @@
+import { NOME_DO_PASSO_DA_FORMULA } from '../../../processo-seletivo.data';
 import { describe, expect, it } from 'vitest';
 
 import type { CondicaoDeHomologacao } from '../../../modelos/homologacao.models';
@@ -54,7 +55,7 @@ describe('problemasDaHomologacao', () => {
 
   it('diz de qual edição se trata e onde declará-la', () => {
     expect(mensagemDaEdicaoNaoDeclarada(doInep(2023))).toBe(
-      'A edição ENEM 2023 não está entre as que o processo declara. Escolha uma edição declarada ou declare esta no passo Fórmula.',
+      `A edição ENEM 2023 não está entre as que o processo declara. Escolha uma edição declarada ou declare esta no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
     );
   });
 

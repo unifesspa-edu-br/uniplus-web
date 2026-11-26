@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { describe, expect, it } from 'vitest';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
 
 import {
@@ -59,7 +60,7 @@ describe('recusa da resolução de Peso por Área na gravação da classificaç�
     // O texto é o da tela para o código, e não o `message` que o servidor mandou — e a falha
     // aparece uma vez só, sem o título da raiz, que diria o mesmo.
     expect(resultado.messages).toEqual([
-      `Resolução de Peso por Área, no passo Fórmula: ${TEXTO_DA_RESOLUCAO_INCOMPLETA}`,
+      `Resolução de Peso por Área, no passo ${NOME_DO_PASSO_DA_FORMULA}: ${TEXTO_DA_RESOLUCAO_INCOMPLETA}`,
     ]);
     expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBe(TEXTO_DA_RESOLUCAO_INCOMPLETA);
   });
@@ -117,7 +118,7 @@ describe('recusa da resolução de Peso por Área na gravação da classificaç�
 
     const resultado = await gravacao;
     expect(resultado.messages).toEqual([
-      `Resolução de Peso por Área, no passo Fórmula: ${TEXTO_DA_RESOLUCAO_INCOMPLETA}`,
+      `Resolução de Peso por Área, no passo ${NOME_DO_PASSO_DA_FORMULA}: ${TEXTO_DA_RESOLUCAO_INCOMPLETA}`,
       'A classificação tem campos a corrigir.',
     ]);
   });
@@ -173,7 +174,7 @@ describe('recusa da resolução de Peso por Área na gravação da classificaç�
     expect(pedidos).toHaveLength(0);
     expect(resultado.valid).toBe(false);
     expect(resultado.messages).toContain(
-      'A resolução de Peso por Área escolhida não está no cadastro lido. Se ela foi criada ou corrigida agora, use "Atualizar lista" no passo Fórmula; senão, escolha outra.',
+      `A resolução de Peso por Área escolhida não está no cadastro lido. Se ela foi criada ou corrigida agora, use "Atualizar lista" no passo ${NOME_DO_PASSO_DA_FORMULA}; senão, escolha outra.`,
     );
   });
 

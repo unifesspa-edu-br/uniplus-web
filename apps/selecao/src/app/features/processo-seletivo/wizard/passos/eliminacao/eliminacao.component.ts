@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { FalhaDeLeituraComponent, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import { EtapaPontuada, ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
@@ -64,6 +65,8 @@ export class EliminacaoPassoComponent {
   constructor() {
     this.catalogos.carregar();
   }
+
+  protected readonly nomeDoPassoDaFormula = NOME_DO_PASSO_DA_FORMULA;
 
   readonly usaFormulaLocal = computed(() =>
     classificacaoUsaFormulaLocal(this.store.draft().classificacao.regraCalculoCodigo),

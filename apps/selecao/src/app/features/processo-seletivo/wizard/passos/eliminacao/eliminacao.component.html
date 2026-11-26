@@ -1,7 +1,7 @@
 <p class="step-subtitle">
   Regras de eliminação. Ao gravar este passo, o sistema grava de uma só vez as regras de eliminação
-  e o que foi escolhido no passo Fórmula e precisão: a regra de cálculo da nota, a precisão e a
-  ordem de alocação.
+  e o que foi escolhido no passo {{ nomeDoPassoDaFormula }}: a regra de cálculo da nota, a precisão
+  e a ordem de alocação.
 </p>
 @if (!store.emConsulta()) {
   <ui-falha-de-leitura titulo="Catálogos de regras" [leitura]="catalogos.leitura" />
@@ -26,7 +26,9 @@
 
 @if (store.emConsulta()) {
   @if (!store.draft().classificacao.regraCalculoCodigo) {
-    <p class="field__hint">Nenhuma regra de cálculo declarada no passo Fórmula.</p>
+    <p class="field__hint">
+      Nenhuma regra de cálculo declarada no passo {{ nomeDoPassoDaFormula }}.
+    </p>
   } @else if (!usaFormulaLocal()) {
     <p class="field__hint">
       A classificação é importada: regras de eliminação locais não se aplicam a ela.
@@ -66,12 +68,13 @@
 } @else {
   @if (!store.draft().classificacao.regraCalculoCodigo) {
     <p class="alert alert--info" role="status">
-      Escolha a regra de cálculo no passo Fórmula antes de configurar a eliminação.
+      Escolha a regra de cálculo no passo {{ nomeDoPassoDaFormula }} antes de configurar a
+      eliminação.
     </p>
   } @else if (!usaFormulaLocal()) {
     <p class="alert alert--info" role="status">
-      A classificação escolhida no passo Fórmula é importada — regras de eliminação locais não se
-      aplicam e nada será enviado nesta seção.
+      A classificação escolhida no passo {{ nomeDoPassoDaFormula }} é importada — regras de
+      eliminação locais não se aplicam e nada será enviado nesta seção.
     </p>
   } @else {
     @if (divisorInvalido()) {

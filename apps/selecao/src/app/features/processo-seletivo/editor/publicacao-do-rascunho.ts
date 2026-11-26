@@ -1,11 +1,11 @@
+import { NOME_DO_PASSO_DA_FORMULA } from '../wizard/processo-seletivo.data';
 import type { GravacaoDoPasso } from '../wizard/passo-do-wizard';
 import type { ValidacaoDoPasso } from '../wizard/processo-seletivo.models';
 import type { ConducaoDoWizard } from './conducao-do-wizard.service';
 import { falhaAoConcluir, mensagensDe } from './mensagens-do-passo';
 import { ordemDeGravacao } from './ordem-de-gravacao';
 
-const DESEMPATE_AINDA_PENDENTE =
-  'Os critérios de desempate por área não foram gravados, porque a classificação não ficou gravada com o quadro de Peso por Área de que eles dependem. Grave a classificação, com a resolução escolhida no passo Fórmula, e publique de novo.';
+const DESEMPATE_AINDA_PENDENTE = `Os critérios de desempate por área não foram gravados, porque a classificação não ficou gravada com o quadro de Peso por Área de que eles dependem. Grave a classificação, com a resolução escolhida no passo ${NOME_DO_PASSO_DA_FORMULA}, e publique de novo.`;
 
 const GRAVACAO_SEM_RESUMO: GravacaoDoPasso = { confirmadaPeloOperador: false };
 

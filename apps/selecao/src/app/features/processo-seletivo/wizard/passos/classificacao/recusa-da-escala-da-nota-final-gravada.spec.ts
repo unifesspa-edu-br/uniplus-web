@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import {
   componente,
   montarEliminacao,
@@ -27,7 +28,9 @@ describe('recusa da escala da nota final na gravação da classificação', () =
 
     const resultado = await recusada;
     const esperada = 'A escala deve ser maior que zero.';
-    expect(resultado.messages).toEqual([`Escala da nota final, no passo Fórmula: ${esperada}`]);
+    expect(resultado.messages).toEqual([
+      `Escala da nota final, no passo ${NOME_DO_PASSO_DA_FORMULA}: ${esperada}`,
+    ]);
     expect(store.classificacao.recusaDaEscalaDaNotaFinal()).toBe(esperada);
 
     store.patchObjectSection('classificacao', { escalaNotaFinal: '100' });
