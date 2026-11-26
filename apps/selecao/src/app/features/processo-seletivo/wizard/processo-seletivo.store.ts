@@ -17,7 +17,7 @@ import { concorrenciaDuplaAplicavel, modalidadesDasOfertas } from './modalidades
 import { rascunhoInicial } from './rascunho-inicial';
 import { motivoDeSomenteLeitura } from './somente-leitura';
 import { descricaoDoPasso } from './descricao-do-passo';
-
+import { CamposPostosPelasExigencias } from './shared/campos-postos-pelas-exigencias';
 const INDICE_DO_CRONOGRAMA = ROTULOS_DOS_PASSOS.indexOf('Cronograma');
 
 @Injectable()
@@ -109,7 +109,7 @@ export class ProcessoSeletivoStore {
    * punha ficava sem dono — o campo sobrevivia à remoção do gatilho, e a inscrição seguia
    * coletando dado pessoal sem finalidade declarada.
    */
-  readonly camposPostosPelasExigencias = signal<ReadonlySet<string>>(new Set());
+  readonly camposPostosPelasExigencias = signal(CamposPostosPelasExigencias.vazia());
 
   /**
    * As aplicações de modelo sem desfecho conhecido, por finalidade. O rascunho ainda é o de antes:
@@ -377,7 +377,7 @@ export class ProcessoSeletivoStore {
     this.regrasDasModalidades.set([]);
     this.opcoesDeCursoGravadas.set(null);
     this.documentosParaEscolha.set([]);
-    this.camposPostosPelasExigencias.set(new Set());
+    this.camposPostosPelasExigencias.update((atual) => atual.esvaziada());
     this.aplicacoesDeModeloEmAberto.set(new Map());
     this.avisoDocumentos.set(null);
   }

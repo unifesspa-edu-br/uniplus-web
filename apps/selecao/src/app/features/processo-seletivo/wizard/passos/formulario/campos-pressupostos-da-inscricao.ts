@@ -14,6 +14,7 @@ import {
   type FatoDoFormulario,
   type ItemDoFormulario,
 } from '@uniplus/shared-inscricao/formulario';
+import type { CamposPostosPelasExigencias } from '../../shared/campos-postos-pelas-exigencias';
 import {
   SECAO_OUTROS_DADOS,
   TITULO_SECAO_OUTROS_DADOS,
@@ -59,7 +60,7 @@ export interface PressupostosDoProcesso {
   readonly citados: ReadonlySet<string>;
   readonly catalogo: readonly FatoDoFormulario[];
   /** O que esta sessão acrescentou por exigência. */
-  readonly postosPelasExigencias: ReadonlySet<string>;
+  readonly postosPelasExigencias: CamposPostosPelasExigencias;
   /** Os fatos que os formulários das outras finalidades já coletam. */
   readonly fatosDeOutrasFinalidades: readonly string[];
 }
@@ -75,7 +76,7 @@ function camposOrfaos(
   const citadosNoFormulario = fatosCitadosPeloConteudo(conteudo);
   return (conteudo.itens ?? []).filter(
     (item) =>
-      pressupostos.postosPelasExigencias.has(item.fatoCodigo) &&
+      pressupostos.postosPelasExigencias.contem(item.fatoCodigo) &&
       !pressupostos.citados.has(item.fatoCodigo) &&
       !citadosNoFormulario.has(item.fatoCodigo),
   );

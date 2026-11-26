@@ -246,7 +246,7 @@ export class AplicacaoDeModelo {
     this.store.aplicacoesDeModeloEmAberto.update((atuais) => semChave(atuais, pedida.finalidade));
     if (this.store.aplicacoesDeModeloEmAberto().size === 0) this.esquecerBloqueios();
     if (pedida.finalidade === FINALIDADE_INSCRICAO)
-      this.store.camposPostosPelasExigencias.set(new Set());
+      this.store.camposPostosPelasExigencias.update((atual) => atual.esvaziada());
     this.projetar(pedida.finalidade, desfecho, faseDaAba);
     return this.registrarResumo(pedida.finalidade, pedida.modelo, desfecho, reconciliar());
   }

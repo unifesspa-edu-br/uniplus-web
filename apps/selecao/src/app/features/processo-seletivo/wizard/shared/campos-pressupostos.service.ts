@@ -206,8 +206,8 @@ export class GravacaoDosCamposPressupostos {
     if (depois === 'obsoleto') return;
     const acrescentados = fatosAcrescentados(antes, depois);
     if (acrescentados.length > 0) {
-      this.store.camposPostosPelasExigencias.update(
-        (atual) => new Set([...atual, ...acrescentados]),
+      this.store.camposPostosPelasExigencias.update((atual) =>
+        atual.comOsQueEntraram(acrescentados),
       );
     }
   }
