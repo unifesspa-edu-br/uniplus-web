@@ -25,8 +25,7 @@ export class AuthService {
   readonly userProfile = this._userProfile.asReadonly();
   /**
    * Verdadeiro quando o provedor encerrou a sessão e o acesso não pode mais ser renovado. A
-   * pessoa continua identificada em `userProfile` até entrar de novo, para que o que ela deixou
-   * preenchido seja guardado em nome dela.
+   * pessoa continua identificada em `userProfile` até entrar de novo.
    */
   readonly sessaoEncerrada = this._sessaoEncerrada.asReadonly();
   /**
