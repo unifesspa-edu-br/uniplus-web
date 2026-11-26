@@ -6060,6 +6060,7 @@ export interface components {
             readonly canceladaEm: null | string;
             readonly motivoDoCancelamento: null | string;
             readonly acoes: components["schemas"]["AcoesDaInscricaoDto"];
+            readonly motivoDasInscricoesFechadas: null | components["schemas"]["MotivoDasInscricoesFechadas"];
             /** Format: int32 */
             readonly numeroDoUltimoComprovante: null | number;
         };
@@ -6160,6 +6161,18 @@ export interface components {
             readonly etapaId?: null | string;
             readonly finalidade?: null | components["schemas"]["FinalidadeFormularioCodigo"];
         };
+        readonly MotivoDasInscricoesFechadas: {
+            readonly codigo: components["schemas"]["MotivoDasInscricoesFechadasCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `PERIODO_ENCERRADO`: Período de inscrição encerrado — O período de inscrição do processo seletivo já terminou.
+         *     - `PERIODO_NAO_INICIADO`: Período de inscrição não iniciado — O período de inscrição do processo seletivo ainda não começou.
+         *     - `PROCESSO_SEM_INSCRICAO`: Processo sem inscrição pelo sistema — O processo seletivo não recebe inscrição pelo sistema.
+         *     - `PERIODO_NAO_CONFIRMADO`: Período de inscrição não confirmado — O período de inscrição do processo seletivo não pôde ser lido agora.
+         * @enum {string}
+         */
+        readonly MotivoDasInscricoesFechadasCodigo: MotivoDasInscricoesFechadasCodigo;
         readonly MotivoDeDecisaoDoProcessoDto: {
             /** Format: uuid */
             readonly motivoDeDecisaoId: string;
@@ -16961,6 +16974,12 @@ export enum ImpedimentoDoProdutoCodigo {
 export enum ModoDeDeliberacaoCodigo {
     COLEGIADA_COM_VOTACAO = "COLEGIADA_COM_VOTACAO",
     ATO_INDIVIDUAL = "ATO_INDIVIDUAL"
+}
+export enum MotivoDasInscricoesFechadasCodigo {
+    PERIODO_ENCERRADO = "PERIODO_ENCERRADO",
+    PERIODO_NAO_INICIADO = "PERIODO_NAO_INICIADO",
+    PROCESSO_SEM_INSCRICAO = "PROCESSO_SEM_INSCRICAO",
+    PERIODO_NAO_CONFIRMADO = "PERIODO_NAO_CONFIRMADO"
 }
 export enum NaturezaLegalModalidadeCodigo {
     COTA_RESERVADA = "COTA_RESERVADA",
