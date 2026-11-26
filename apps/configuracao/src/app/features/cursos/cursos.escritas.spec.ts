@@ -140,7 +140,7 @@ describe('CursosPage — escritas pela interface', () => {
 
       p.edicao.abrirEdicao(direito);
       p.edicao.abrirCadastro();
-      expect(p.campo('codigo').value).toBe('ENG-CIV');
+      expect(p.campo('codigo').value).toBe('ENG_CIV');
 
       put.flush(...sucesso());
       await p.recarregarCom([engCiv]);
@@ -155,7 +155,7 @@ describe('CursosPage — escritas pela interface', () => {
       expect(p.edicao.salvando()).toBe(false);
       expect(p.elemento('.panel-head').textContent).toContain('Removendo');
       expect(p.elemento('cfg-confirmacao-de-remocao [role="status"]').textContent).toContain(
-        'Removendo o curso ENG-CIV.',
+        'Removendo o curso ENG_CIV.',
       );
       for (const botao of [p.novo(), p.editar(engCiv), p.remover(engCiv), p.verOfertas(engCiv)]) {
         expect(botao.matches(':disabled') || botao.getAttribute('aria-disabled') === 'true').toBe(
@@ -175,7 +175,7 @@ describe('CursosPage — escritas pela interface', () => {
       expect(p.edicao.gravando()).toBe(true);
       await p.recarregarCom([direito]);
       expect(p.edicao.gravando()).toBe(false);
-      expect(p.statusDaPagina()).toBe('Curso ENG-CIV removido.');
+      expect(p.statusDaPagina()).toBe('Curso ENG_CIV removido.');
       expect(p.novo().getAttribute('aria-disabled')).toBeNull();
     });
 

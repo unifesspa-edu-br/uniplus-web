@@ -45,7 +45,7 @@ export class ModeloFormularioCriacaoComponent {
   private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });
 
   protected erro(campo: CampoDaCriacao): string | null {
-    return mensagemDoCampo(this.form().controls[campo]);
+    return mensagemDoCampo(this.form().controls[campo], campo === 'tipoProcessoCodigo' ? 80 : 60);
   }
 
   protected aoEnviar(): void {

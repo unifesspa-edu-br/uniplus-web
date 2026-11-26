@@ -3,6 +3,7 @@ import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
 import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
+import { conferirUltimaLinhaEPaginacao } from '../support/passos-da-lista-de-processos';
 
 test.beforeEach(async ({ page }) => {
   await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
@@ -23,8 +24,8 @@ const PROCESSOS = [
     nome: 'Processo Seletivo de Ingresso 2026.1 — Ampla Concorrência e Reserva de Vagas',
     tipoProcesso: {
       origemId: '019f41cf-69fd-759a-ac6d-09acabc1b028',
-      codigo: 'VESTIBULAR',
-      nome: 'Vestibular',
+      codigo: 'REGULAR_UNIFICADO',
+      nome: 'Processo Seletivo Regular Unificado',
     },
     situacao: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
     criadoEm: '2026-08-20T13:23:42.707136+00:00',
@@ -34,7 +35,7 @@ const PROCESSOS = [
     nome: 'PSIQ 2026',
     tipoProcesso: {
       origemId: '019f41cf-69fd-759a-ac6d-09acabc1b100',
-      codigo: 'PSIQ',
+      codigo: 'INDIGENA_E_QUILOMBOLA',
       nome: 'Processo Seletivo Indígena e Quilombola',
     },
     situacao: { codigo: 'PUBLICADO', rotulo: 'Publicado' },
@@ -104,16 +105,7 @@ test.describe('Listagem de processos seletivos — matriz DS @ds', () => {
     );
     await page.goto('/processo-seletivo');
     await expect(page.getByRole('table')).toBeVisible();
-
-    await page.getByRole('table').hover();
-    for (let giro = 0; giro < 10; giro++) {
-      await page.mouse.wheel(0, 2000);
-    }
-
-    await expect(page.locator('tbody tr').last()).toBeInViewport();
-    const proxima = page.locator('[data-pager="next"]');
-    await expect(proxima).toBeInViewport();
-    await expect(proxima).toBeEnabled();
+    await conferirUltimaLinhaEPaginacao(page);
   });
 
   test('mantém um único landmark main', async ({ page }) => {

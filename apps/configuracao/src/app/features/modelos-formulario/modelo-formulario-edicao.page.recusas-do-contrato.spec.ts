@@ -203,6 +203,17 @@ describe('ModeloFormularioEdicaoPage: recusas pelos ponteiros do contrato', () =
     expect(blocosQueMostram(tela, 'condição do documento cita fato')).toEqual([DOCUMENTO_1]);
   });
 
+  it('mostra a recusa de formato da fase junto do documento', async () => {
+    const tela = await aoRecusarGravacao(
+      recusa(
+        'documentosExigidos[0].faseCodigo',
+        'Formato da fase recusado.',
+        'uniplus.configuracao.modelo_formulario.codigo_do_conteudo_formato_invalido',
+      ),
+    );
+    expect(blocosQueMostram(tela, 'Formato da fase recusado.')).toEqual([DOCUMENTO_0]);
+  });
+
   it('leva a recusa de sufixo desconhecido ao próprio campo, grupo ou termo apontado', async () => {
     const tela = await aoRecusarGravacao(
       recusa('itens[0].campoDesconhecido', 'Falha no campo.'),

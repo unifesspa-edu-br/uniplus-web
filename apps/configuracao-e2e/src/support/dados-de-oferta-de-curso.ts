@@ -6,7 +6,7 @@ import type { LocalOfertaDto, OfertaCursoDto } from '@uniplus/shared-data/config
 
 export const CURSO = {
   id: '01960000-0000-7000-0000-0000000000c1',
-  codigo: 'ENG-CIV',
+  codigo: 'ENG_CIV',
   nome: 'Engenharia Civil',
   grau: 'Bacharelado',
   nivelEnsino: 'Graduação',

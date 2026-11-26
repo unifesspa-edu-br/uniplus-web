@@ -30,7 +30,7 @@ const OFERTA_ID = OFERTA.id;
 
 const cursoSeed: JsonDaApi<CursoDto> = {
   id: CURSO_ID,
-  codigo: 'ENG-CIV',
+  codigo: 'ENG_CIV',
   nome: 'Engenharia Civil',
   grau: 'Bacharelado',
   nivelEnsino: 'Graduação',

@@ -90,7 +90,7 @@ describe('adaptador do passo Identificação', () => {
     const editado = edicaoDoPasso({ ...SEM_VALORES, nome: '   ' })(documento);
 
     expect(editado.identificacao).not.toHaveProperty('nome');
-    expect(editado.identificacao?.tipoProcessoCodigo).toBe('PSR');
+    expect(editado.identificacao?.tipoProcessoCodigo).toBe('REGULAR_UNIFICADO');
   });
 
   it('trocar a unidade descarta o nome e a sigla da unidade anterior', () => {

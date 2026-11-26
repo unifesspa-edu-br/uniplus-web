@@ -45,7 +45,7 @@ describe('CursosPage — remoção, foco e leituras', () => {
       expect(p.confirmar().getAttribute('aria-disabled')).toBeNull();
       expect(document.activeElement).toBe(p.confirmar());
       expect(p.elemento('cfg-confirmacao-de-remocao [role="status"]').textContent).toContain(
-        'Não foi possível remover o curso ENG-CIV.',
+        'Não foi possível remover o curso ENG_CIV.',
       );
       expect(p.erros).not.toHaveBeenCalled();
       expect(p.sucessos).not.toHaveBeenCalled();
@@ -55,7 +55,7 @@ describe('CursosPage — remoção, foco e leituras', () => {
       p.http.expectOne(`${ESCRITA}/${engCiv.id}`).flush(...sucesso());
       await p.recarregarCom([direito]);
       expect(p.edicao.confirmando()).toBe(false);
-      expect(p.sucessos).toHaveBeenCalledWith('Curso removido', 'ENG-CIV');
+      expect(p.sucessos).toHaveBeenCalledWith('Curso removido', 'ENG_CIV');
     });
 
     it('falha 5xx mantém o diálogo com a mensagem, avisa por toast e aceita nova tentativa', async () => {

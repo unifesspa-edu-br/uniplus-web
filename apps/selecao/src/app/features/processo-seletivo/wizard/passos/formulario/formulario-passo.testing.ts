@@ -129,7 +129,7 @@ export class ContextoDoPasso {
 
   /** O tipo do processo conhecido e a lista de modelos atendida. */
   readonly comModelosCarregados = (): void => {
-    this.store.patchObjectSection('tipoProcesso', { codigo: 'MEDICINA' });
+    this.store.patchObjectSection('tipoProcesso', { codigo: 'REGULAR_UNIFICADO' });
     this.fixture.detectChanges();
     this.controller.expectOne((r) => r.url === ROTA_MODELOS).flush(MODELOS);
     this.fixture.detectChanges();

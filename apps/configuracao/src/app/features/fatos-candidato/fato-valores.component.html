@@ -207,13 +207,17 @@
               <label class="field" [class.is-error]="erroCodigo">
                 <span class="field__label is-required">Código do valor</span>
                 <input
-                  class="input cfg-input-uppercase"
+                  class="input"
                   type="text"
                   formControlName="codigo"
                   aria-required="true"
                   [attr.aria-invalid]="erroCodigo ? 'true' : null"
                   [attr.aria-describedby]="erroCodigo ? 'cfg-fato-valor-codigo-erro' : null"
                 />
+                <span class="field__hint"
+                  >Use letras maiúsculas e algarismos, começando por letra e separando palavras com
+                  um sublinhado, até 50 caracteres.</span
+                >
                 @if (erroCodigo) {
                   <span class="field__error" id="cfg-fato-valor-codigo-erro">{{ erroCodigo }}</span>
                 }

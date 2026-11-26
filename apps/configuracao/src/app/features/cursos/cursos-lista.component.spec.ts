@@ -6,7 +6,7 @@ import { CursosListaComponent } from './cursos-lista.component';
 
 const curso: CursoDto = {
   id: '01960000-0000-7000-0000-0000000000c1',
-  codigo: 'ENG-CIV',
+  codigo: 'ENG_CIV',
   nome: 'Engenharia Civil',
   grau: 'Bacharelado',
   nivelEnsino: 'Graduação',
@@ -58,9 +58,9 @@ describe('CursosListaComponent', () => {
   };
   const novo = (): HTMLButtonElement =>
     raiz().querySelector('#cfg-cursos-novo') as HTMLButtonElement;
-  const editar = (): HTMLButtonElement => porNome('Editar curso ENG-CIV');
-  const remover = (): HTMLButtonElement => porNome('Remover curso ENG-CIV');
-  const ofertas = (): HTMLButtonElement => porNome('Ofertas de ENG-CIV');
+  const editar = (): HTMLButtonElement => porNome('Editar curso ENG_CIV');
+  const remover = (): HTMLButtonElement => porNome('Remover curso ENG_CIV');
+  const ofertas = (): HTMLButtonElement => porNome('Ofertas de ENG_CIV');
 
   it('com a remoção em curso, todo botão fica indisponível, a busca sai e o título anuncia', () => {
     montar([curso], { removendo: true, gravando: true });

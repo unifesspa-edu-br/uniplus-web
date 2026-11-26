@@ -37,12 +37,12 @@ describe('formulário de criação do modelo', () => {
     form.patchValue({
       descricao: 'Texto',
       finalidade: FinalidadeFormularioCodigo.INSCRICAO,
-      tipoProcessoCodigo: 'VESTIBULAR',
+      tipoProcessoCodigo: 'REGULAR_UNIFICADO',
     });
 
     expect(comandoDeCriacao(form).descritivo).toMatchObject({
       descricao: 'Texto',
-      tipoProcessoCodigo: 'VESTIBULAR',
+      tipoProcessoCodigo: 'REGULAR_UNIFICADO',
     });
   });
 

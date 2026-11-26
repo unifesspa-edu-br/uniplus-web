@@ -14,6 +14,16 @@ describe('ModelosFormularioPage — recusas e troca de situação', () => {
   beforeEach(() => pagina.montar());
   afterEach(() => pagina.desmontar());
 
+  function recusarFormato(campo: string): void {
+    const code = `uniplus.configuracao.modelo_formulario.${campo === 'codigo' ? 'codigo' : 'tipo_processo_codigo'}_formato_invalido`;
+    pagina.controller
+      .expectOne(URL)
+      .flush(
+        problema(422, code, 'Inválido', [{ field: campo, code, message: 'Formato recusado.' }]),
+        { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEMA },
+      );
+  }
+
   it('Enter num campo leva o foco ao botão de salvar e, na falha 500, o envio segue disponível', async () => {
     await pagina.carregar();
     await pagina.preencher();
@@ -51,6 +61,17 @@ describe('ModelosFormularioPage — recusas e troca de situação', () => {
     pagina.controller.expectNone(URL);
     expect(pagina.nomeDoCampo().getAttribute('aria-invalid')).toBe('true');
     expect(document.activeElement).toBe(pagina.nomeDoCampo());
+  });
+
+  it.each(['codigo', 'tipoProcessoCodigo'])('mostra a recusa de formato em %s', async (campo) => {
+    await pagina.carregar();
+    await pagina.preencher();
+    pagina.enviar();
+    recusarFormato(campo);
+    await pagina.propagar();
+    const controle = pagina.elemento<HTMLElement>(`[formcontrolname="${campo}"]`);
+    expect(controle.getAttribute('aria-invalid')).toBe('true');
+    expect(controle.closest('label')?.textContent).toContain('Formato recusado.');
   });
 
   it('só o código de duplicidade marca o campo do código e renova a chave', async () => {

@@ -13,7 +13,10 @@ describe('adaptador do passo Tipo do processo', () => {
   it('lê o código e o nome que o processo gravou', () => {
     const valores = valoresDoFormulario(exemploDoContrato('inscricao-pelo-sistema'));
 
-    expect(valores).toEqual({ codigo: 'PSR', nomeGravado: 'Processo Seletivo Regular' });
+    expect(valores).toEqual({
+      codigo: 'REGULAR_UNIFICADO',
+      nomeGravado: 'Processo Seletivo Regular Unificado',
+    });
   });
 
   it('lê tipo ausente como não escolhido, sem inventar código', () => {
@@ -29,9 +32,9 @@ describe('adaptador do passo Tipo do processo', () => {
   it('escolher outro tipo troca o código e descarta o nome do tipo anterior', () => {
     const documento = exemploDoContrato('inscricao-pelo-sistema');
 
-    const editado = edicaoDoPasso({ codigo: 'PSE', nomeGravado: null })(documento);
+    const editado = edicaoDoPasso({ codigo: 'SISU', nomeGravado: null })(documento);
 
-    expect(editado.identificacao?.tipoProcessoCodigo).toBe('PSE');
+    expect(editado.identificacao?.tipoProcessoCodigo).toBe('SISU');
     expect(editado.identificacao?.tipoProcessoNome).toBeUndefined();
     expect(editado.identificacao?.nome).toBe(documento.identificacao?.nome);
   });
@@ -49,7 +52,7 @@ describe('adaptador do passo Tipo do processo', () => {
     const documento = exemploDoContrato('inscricao-pelo-sistema');
     const antes = structuredClone(documento);
 
-    const editado = edicaoDoPasso({ codigo: 'PSE', nomeGravado: null })(documento);
+    const editado = edicaoDoPasso({ codigo: 'SISU', nomeGravado: null })(documento);
 
     expect({ ...editado, identificacao: undefined }).toEqual({
       ...antes,

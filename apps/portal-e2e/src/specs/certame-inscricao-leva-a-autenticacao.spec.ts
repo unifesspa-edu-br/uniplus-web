@@ -1,6 +1,7 @@
 import type { CertamePublicoResponse } from '@uniplus/shared-data/portal';
 import type { CertameNaVitrineDto, SituacaoDoCertameCodigo } from '@uniplus/shared-data/selecao';
 import { test, expect, type Page } from '@playwright/test';
+import { conferirCertameAberto } from '../support/passos-da-vitrine';
 
 /**
  * O caminho do botão de inscrição até a tela de entrar na conta (issue #785), simulado na rede —
@@ -20,7 +21,7 @@ const CERTAME: CertameNaVitrineDto = {
   identificadorLegivel: 'PS-2026-098',
   numero: '021/2026',
   nome: 'Processo Seletivo Simulado — Caminho até o Login',
-  tipoProcesso: { codigo: 'PSE', nome: 'Processo Seletivo Especial' },
+  tipoProcesso: { codigo: 'EDUCACAO_DO_CAMPO', nome: 'Processo Seletivo Especial do Campo' },
   modalidadesOfertadas: ['AC'],
   inscricoesDe: '2026-01-01T12:00:00Z',
   inscricoesAte: '2026-12-05T23:59:00Z',
@@ -47,11 +48,7 @@ test.describe('Caminho até a autenticação a partir da página do certame', ()
     await mockCertameAberto(page);
 
     await page.goto('/processos');
-    await expect(
-      page.getByRole('heading', { name: 'Processos seletivos', level: 1 }),
-    ).toBeVisible();
-    await expect(page.locator('.certames-loading')).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: CERTAME.nome, level: 3 })).toBeVisible();
+    await conferirCertameAberto(page, CERTAME.nome);
 
     await page
       .getByRole('link', { name: /^Inscrever-me/ })

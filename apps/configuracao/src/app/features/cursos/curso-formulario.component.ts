@@ -9,6 +9,8 @@ import {
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { CursoForm } from './curso-form';
+import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
+import { mensagemDeErroDoCampoComFormato } from '../../shared/formulario';
 import type { GruposDoFormulario } from './grupos-do-curso';
 
 /** O drawer com o formulário de cadastro e edição de curso. */
@@ -61,6 +63,12 @@ export class CursoFormularioComponent {
   }
 
   protected erroDoCampo(nome: keyof CursoForm): string | null {
+    if (nome === 'codigo') {
+      return mensagemDeErroDoCampoComFormato(
+        this.form().controls.codigo,
+        textoDoFormatoDoCodigo(60),
+      );
+    }
     return mensagemDeErroDoControle(this.form().controls[nome]);
   }
 

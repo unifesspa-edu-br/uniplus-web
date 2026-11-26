@@ -8,6 +8,7 @@ import {
 import type { CertamePublicoResponse } from '@uniplus/shared-data/portal';
 import type { CertameNaVitrineDto, SituacaoDoCertameCodigo } from '@uniplus/shared-data/selecao';
 import { test, expect, type Page } from '@playwright/test';
+import { conferirAvisoDeAutenticacao, conferirVitrinePopulada } from '../support/passos-da-vitrine';
 
 type AaaTheme = 'light' | 'dark' | 'contrast';
 type AaaFontMode = 'default' | 'legible';
@@ -91,18 +92,10 @@ test.describe('Portal do Candidato — gate AAA aplicável @aaa', () => {
 
     await abrirVitrine(page, { theme, fontMode, cenario: 'sucesso' });
 
-    await expect(page.locator('.portal-hero')).toBeVisible();
-    for (const { nome } of CERTAMES_POPULADOS) {
-      await expect(page.getByRole('heading', { name: nome, level: 3 })).toBeVisible();
-    }
-    // O link do edital só aparece depois que a consulta de publicações responde;
-    // medir antes dele deixaria uma variante de link fora do portão.
-    await expect(page.getByRole('link', { name: /Ver edital/ })).toHaveCount(
-      CERTAMES_POPULADOS.length,
+    await conferirVitrinePopulada(
+      page,
+      CERTAMES_POPULADOS.map(({ nome }) => nome),
     );
-    // Um certame em cada situação: cada chip mostra a contagem vinda dos headers.
-    await expect(page.locator('.filter-chip__count')).toHaveText(['1', '1', '1', '1']);
-    await expect(page.getByText('Nenhum certame publicado no momento')).toHaveCount(0);
 
     await assertAcessibilidade(page, fontMode);
   });
@@ -137,9 +130,6 @@ test.describe('Portal do Candidato — gate AAA aplicável @aaa', () => {
   test('autenticação indisponível passa AAA aplicável', async ({ page }, testInfo) => {
     const { theme, fontMode } = settingsFromProjectName(testInfo.project.name);
     await mockVitrine(page, CERTAMES_POPULADOS, 'indisponivel');
-
-    // Sem resposta do provedor, a inicialização só falha depois do tempo de espera do
-    // `keycloak-js`; só então a app sobe e mostra o aviso.
     test.setTimeout(PRAZO_DA_AUTENTICACAO_INDISPONIVEL * 2);
     await abrirVitrine(page, {
       theme,
@@ -147,11 +137,7 @@ test.describe('Portal do Candidato — gate AAA aplicável @aaa', () => {
       cenario: 'erro',
       prazoDaInicializacao: PRAZO_DA_AUTENTICACAO_INDISPONIVEL,
     });
-
-    const aviso = page.locator('auth-error-banner [role="alert"]');
-    await expect(aviso).toContainText('Serviço de autenticação indisponível');
-    await expect(aviso.locator('.u-caption')).toBeVisible();
-
+    await conferirAvisoDeAutenticacao(page);
     await assertAcessibilidade(page, fontMode);
   });
 });
@@ -219,7 +205,7 @@ function certame({
     identificadorLegivel: `PS-2026-${String(indice).padStart(3, '0')}`,
     numero,
     nome,
-    tipoProcesso: { codigo: 'PSE', nome: 'Processo Seletivo Especial' },
+    tipoProcesso: { codigo: 'EDUCACAO_DO_CAMPO', nome: 'Processo Seletivo Especial do Campo' },
     modalidadesOfertadas: ['AC', 'PCD'],
     inscricoesDe: '2026-01-01T12:00:00Z',
     inscricoesAte,

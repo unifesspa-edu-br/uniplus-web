@@ -1,3 +1,8 @@
+import type {
+  ConsequenciaDoIndeferimentoCodigo,
+  TipoAbrangenciaCodigo,
+  StatusBaseLegalCodigo,
+} from '@uniplus/shared-data/selecao';
 import { expect, test } from '@playwright/test';
 import {
   aprovarCatalogoInicial,
@@ -20,6 +25,7 @@ import type {
   EfeitoNaAnaliseDoDocumentoCodigo,
   EscolhaDaValidadeCodigo,
 } from '@uniplus/shared-data/selecao';
+import { corpoComPrazoInvalido, conferirRecusaDoPrazo } from '../support/passos-do-prazo-invalido';
 import { rascunhoParaConfiguracao } from '../fixtures/cenario-da-projecao';
 
 type ReferenciaNoTransporte = {
@@ -60,8 +66,9 @@ type RegraNoTransporte = Omit<RegraDeComprovacaoInformada, 'forma' | 'documento'
 const BASES_LEGAIS = [
   {
     referencia: 'Edital sintético de teste',
-    abrangencia: 'INTERNA_EDITAL',
-    situacao: 'RESOLVIDO',
+    abrangencia:
+      'INTERNA_EDITAL' satisfies `${TipoAbrangenciaCodigo}` as TipoAbrangenciaCodigo.INTERNA_EDITAL,
+    situacao: 'RESOLVIDO' satisfies `${StatusBaseLegalCodigo}` as StatusBaseLegalCodigo.RESOLVIDO,
     observacao: null,
   },
 ];
@@ -108,7 +115,12 @@ function documento(prazo: PrazoNoTransporte, validade: ValidadeNoTransporte | nu
       finalidade: 'HABILITACAO' as FinalidadeFormularioCodigo.HABILITACAO,
     },
     aplicabilidade: { tipo: 'GERAL' as AplicabilidadeCodigo.GERAL, condicoes: [] },
-    indeferimento: { obrigatorio: true, consequencia: 'ELIMINA', basesLegais: BASES_LEGAIS },
+    indeferimento: {
+      obrigatorio: true,
+      consequencia:
+        'ELIMINA' satisfies `${ConsequenciaDoIndeferimentoCodigo}` as ConsequenciaDoIndeferimentoCodigo.ELIMINA,
+      basesLegais: BASES_LEGAIS,
+    },
     requisitos: requisitos(prazo, validade),
   };
 }
@@ -214,34 +226,12 @@ test('grava a escolha sem prazo', async () => {
 
 test('recusa a escolha em camelCase', async () => {
   const prazo = prazoComReferencia({ tipo: 'INICIO_DA_FASE', data: null, faseId });
-  const corpo = [
-    {
-      forma: 'DOCUMENTO',
-      cardinalidade: null,
-      indeferimento: null,
-      itens: null,
-      documento: {
-        ...documento(prazo, null),
-        requisitos: {
-          ...requisitos(prazo, null),
-          prazoDeEmissao: { ...prazo, escolha: 'comPrazo' },
-        },
-      },
-    },
-  ];
+  const corpo = corpoComPrazoInvalido(documento(prazo, null), requisitos(prazo, null), prazo);
   const resposta = await chamarApi<{ errors: { field: string; code: string }[] }>(
     OPERADOR_DO_ROTEIRO,
     'PUT',
     `/api/selecao/processos-seletivos/${processoId}/documentos-exigidos`,
     { corpo },
   );
-  expect(resposta.status).toBe(422);
-  expect(resposta.corpo.errors).toEqual(
-    expect.arrayContaining([
-      expect.objectContaining({
-        field: 'regrasDeComprovacao[0].documento.requisitos.prazoDeEmissao.escolha',
-        code: 'uniplus.selecao.prazo_de_emissao.escolha_invalida',
-      }),
-    ]),
-  );
+  conferirRecusaDoPrazo(resposta);
 });
