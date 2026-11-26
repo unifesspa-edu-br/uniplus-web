@@ -8,8 +8,8 @@ import {
   okResult,
   passarOTempo,
 } from '@uniplus/shared-testing';
+import { ESPERA_DA_DIGITACAO_MS } from '@uniplus/shared-ui/components';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ATRASO_DA_BUSCA_EM_MS } from './unidades.store';
 import {
   CenarioDaPaginaDeUnidades,
   ESCRITA,
@@ -21,322 +21,225 @@ import {
   sucesso,
 } from './unidades.testing';
 
-describe('UnidadesPage — buscas do formulário', () => {
-  let p: CenarioDaPaginaDeUnidades;
+const cidadeEnviada = { cidadeCodigoIbge: '1504208', cidadeNome: 'Marabá', cidadeUf: 'PA' };
 
+describe('cidade da unidade', () => {
+  let p: CenarioDaPaginaDeUnidades;
+  const campo = () =>
+    p.elemento<HTMLInputElement>('cfg-unidade-cidade-campo input[role="combobox"]');
+  const texto = () => (p.fixture.nativeElement as HTMLElement).textContent ?? '';
+  const opcoes = () =>
+    (p.fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+      'cfg-unidade-cidade-campo [role="option"]',
+    );
+  const tecla = (key: string) =>
+    campo().dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
   beforeEach(async () => {
     ligarRelogioControlado();
     p = await CenarioDaPaginaDeUnidades.abrir();
+    await p.abrirCadastro();
   });
   afterEach(() => {
     vi.useRealTimers();
     p.http.verify();
   });
 
-  const campoDaCidade = (): HTMLInputElement => p.elemento('#cfg-unidade-cidade-busca');
-  const opcoesDeCidade = (): string[] =>
-    [...p.fixture.nativeElement.querySelectorAll('.localidade-opcoes button')].map(
-      (b) => (b as HTMLElement).textContent?.trim() ?? '',
-    );
-  const texto = (): string => p.fixture.nativeElement.textContent;
-
-  describe('cidade', () => {
-    it('só busca a partir de 3 letras, com o termo aparado e a janela de 20', async () => {
-      await p.abrirCadastro();
-
-      await p.digitarEAguardarBusca(campoDaCidade(), 'Ma');
-      expect(p.geo.listarCidades).not.toHaveBeenCalled();
-
-      await p.digitarEAguardarBusca(campoDaCidade(), ' Marabá ');
-      expect(p.geo.listarCidades).toHaveBeenCalledWith({ q: 'Marabá', limit: 20 });
-    });
-
-    it('a cidade escolhida entra no comando com o trio inteiro', async () => {
-      p.geo.listarCidades.mockReturnValue(of(okResult([marabaGeo, belemGeo])));
-      await p.abrirCadastro();
-      await p.digitarEAguardarBusca(campoDaCidade(), 'Mar');
-      expect(opcoesDeCidade()).toEqual(['Marabá — PA', 'Belém — PA']);
-
-      p.elemento<HTMLButtonElement>('.localidade-opcoes button').click();
-      await p.propagar();
-      expect(campoDaCidade().value).toBe('Marabá — PA');
-      expect(campoDaCidade().readOnly).toBe(true);
-
-      const post = await p.enviar();
-      expect(post.request.body).toMatchObject({
-        cidadeCodigoIbge: '1504208',
-        cidadeNome: 'Marabá',
-        cidadeUf: 'PA',
-      });
-      post.flush(...criado());
-      await p.responderAConsultaDasUnidades([reitoria]);
-    });
-
-    it('sem cidade escolhida, o trio vai nulo', async () => {
-      await p.abrirCadastro();
-
-      const post = await p.enviar();
-      expect(post.request.body).toMatchObject({
-        cidadeCodigoIbge: null,
-        cidadeNome: null,
-        cidadeUf: null,
-      });
-      post.flush(...criado());
-      await p.responderAConsultaDasUnidades([reitoria]);
-    });
-
-    it('descarta as opções do termo anterior assim que o campo muda', async () => {
-      p.geo.listarCidades.mockReturnValue(of(okResult([marabaGeo])));
-      await p.abrirCadastro();
-      await p.digitarEAguardarBusca(campoDaCidade(), 'Marab');
-      expect(opcoesDeCidade()).toEqual(['Marabá — PA']);
-
-      await p.digitar(campoDaCidade(), 'Belém');
-
-      expect(opcoesDeCidade()).toEqual([]);
-      expect(texto()).not.toContain('Nenhuma cidade encontrada');
-    });
-
-    it('a busca em voo de um termo abandonado não substitui a do termo atual', async () => {
-      const respostaMaraba = new Subject<ApiResult<readonly CidadeResumoDto[]>>();
-      const respostaBelem = new Subject<ApiResult<readonly CidadeResumoDto[]>>();
-      p.geo.listarCidades.mockImplementation((filtro: { q: string }) =>
-        filtro.q === 'Marabá' ? respostaMaraba : respostaBelem,
-      );
-      await p.abrirCadastro();
-      await p.digitarEAguardarBusca(campoDaCidade(), 'Marabá');
-      await p.digitarEAguardarBusca(campoDaCidade(), 'Belém');
-
-      respostaMaraba.next(okResult([marabaGeo]));
-      respostaBelem.next(okResult([belemGeo]));
-      await p.propagar();
-
-      expect(opcoesDeCidade()).toEqual(['Belém — PA']);
-    });
-
-    it('anuncia "Consultando" durante a busca e só diz "Nenhuma cidade" depois da resposta vazia', async () => {
-      const resposta = new Subject<ApiResult<readonly CidadeResumoDto[]>>();
-      p.geo.listarCidades.mockReturnValue(resposta);
-      await p.abrirCadastro();
-
-      await p.digitar(campoDaCidade(), 'Xyzxyz');
-      await passarOTempo(ATRASO_DA_BUSCA_EM_MS - 1);
-      expect(p.geo.listarCidades).not.toHaveBeenCalled();
-      expect(texto()).not.toContain('Nenhuma cidade encontrada');
-
-      await passarOTempo(1);
-      await p.propagar();
-      expect(p.geo.listarCidades).toHaveBeenCalledTimes(1);
-      expect(texto()).toContain('Consultando a API Geo');
-      expect(campoDaCidade().getAttribute('aria-busy')).toBe('true');
-      expect(texto()).not.toContain('Nenhuma cidade encontrada');
-
-      resposta.next(okResult([]));
-      await p.propagar();
-      expect(texto()).toContain('Nenhuma cidade encontrada');
-      expect(texto()).not.toContain('Consultando a API Geo');
-    });
-
-    it('rebuscar o termo que já devolveu resultado não afirma "Nenhuma cidade"', async () => {
-      p.geo.listarCidades.mockReturnValue(of(okResult([marabaGeo])));
-      await p.abrirCadastro();
-
-      await p.digitarEAguardarBusca(campoDaCidade(), 'Marabá');
-
-      expect(texto()).not.toContain('Nenhuma cidade encontrada');
-      expect(opcoesDeCidade()).toHaveLength(1);
-    });
-
-    it('a falha 5xx da busca aparece no campo, associada, e avisa por toast', async () => {
-      p.geo.listarCidades.mockReturnValue(
-        of(
-          errorResult(
-            mockProblemDetails({ status: 503, type: 'server-error', title: 'Geo indisponível' }),
-          ),
-        ),
-      );
-      await p.abrirCadastro();
-
-      await p.digitarEAguardarBusca(campoDaCidade(), 'Marabá');
-
-      expect(p.elemento('#cfg-unidade-cidade-busca-erro').textContent).toContain(
-        'Geo indisponível',
-      );
-      expect(campoDaCidade().getAttribute('aria-describedby')).toContain(
-        'cfg-unidade-cidade-busca-erro',
-      );
-      expect(p.erros).toHaveBeenCalledTimes(1);
-    });
-
-    it('a falha 4xx da busca aparece no campo sem toast, e a de um termo abandonado some', async () => {
-      p.geo.listarCidades.mockReturnValueOnce(
-        of(
-          errorResult(
-            mockProblemDetails({ status: 400, type: 'validation-error', title: 'Termo inválido' }),
-          ),
-        ),
-      );
-      await p.abrirCadastro();
-      await p.digitarEAguardarBusca(campoDaCidade(), 'Marab');
-      expect(texto()).toContain('Termo inválido');
-      expect(p.erros).not.toHaveBeenCalled();
-
-      await p.digitar(campoDaCidade(), 'Belém');
-      expect(texto()).not.toContain('Termo inválido');
-    });
-
-    it('a falha da busca oferece "Tentar novamente", indisponível durante a espera, e devolve o foco ao campo', async () => {
-      const retorno = new Subject<ApiResult<readonly CidadeResumoDto[]>>();
-      p.geo.listarCidades
-        .mockReturnValueOnce(
-          of(errorResult(mockProblemDetails({ status: 400, type: 'x', title: 'Geo recusou' }))),
-        )
-        .mockReturnValueOnce(retorno);
-      await p.abrirCadastro();
-      await p.digitarEAguardarBusca(campoDaCidade(), 'Marabá');
-
-      const tentar = p.elemento<HTMLButtonElement>('#cfg-unidade-cidade-busca-erro button');
-      tentar.focus();
-      tentar.click();
-      await p.propagar();
-      expect(p.geo.listarCidades).toHaveBeenCalledTimes(2);
-      expect(tentar.getAttribute('aria-disabled')).toBe('true');
-      expect(tentar.getAttribute('aria-busy')).toBe('true');
-      tentar.click();
-      await p.propagar();
-      expect(p.geo.listarCidades).toHaveBeenCalledTimes(2);
-
-      retorno.next(okResult([marabaGeo]));
-      await p.propagar();
-      await p.propagar();
-      expect(opcoesDeCidade()).toEqual(['Marabá — PA']);
-      expect(p.fixture.nativeElement.querySelector('#cfg-unidade-cidade-busca-erro')).toBeNull();
-      expect(document.activeElement).toBe(campoDaCidade());
-    });
-
-    it('"Trocar cidade" reabre a busca limpa; reabrir a edição descarta o resíduo da tentativa anterior', async () => {
-      p.geo.listarCidades.mockReturnValue(of(okResult([belemGeo])));
-      await p.abrirEdicao(reitoria);
-      expect(campoDaCidade().value).toBe('Marabá — PA');
-
-      p.elemento<HTMLButtonElement>('cfg-unidade-cidade-campo .input-group button').click();
-      await p.propagar();
-      expect(campoDaCidade().value).toBe('');
-      await p.digitarEAguardarBusca(campoDaCidade(), 'Belém');
-      expect(opcoesDeCidade()).toEqual(['Belém — PA']);
-
-      p.edicao.fechar();
-      await p.propagar();
-      await p.abrirEdicao(reitoria);
-      expect(campoDaCidade().value).toBe('Marabá — PA');
-      p.elemento<HTMLButtonElement>('cfg-unidade-cidade-campo .input-group button').click();
-      await p.propagar();
-      expect(opcoesDeCidade()).toEqual([]);
-      expect(campoDaCidade().value).toBe('');
-    });
-
-    it('trocar a cidade na edição envia o novo trio', async () => {
-      p.geo.listarCidades.mockReturnValue(of(okResult([belemGeo])));
-      await p.abrirEdicao(reitoria);
-      p.elemento<HTMLButtonElement>('cfg-unidade-cidade-campo .input-group button').click();
-      await p.propagar();
-      await p.digitarEAguardarBusca(campoDaCidade(), 'Belém');
-      p.elemento<HTMLButtonElement>('.localidade-opcoes button').click();
-      await p.propagar();
-
-      const put = await p.enviar(`${ESCRITA}/${reitoria.id}`);
-      expect(put.request.body).toMatchObject({
-        cidadeCodigoIbge: '1501402',
-        cidadeNome: 'Belém',
-        cidadeUf: 'PA',
-      });
-      put.flush(...sucesso());
-      await p.responderAConsultaDasUnidades([reitoria]);
-    });
+  it('espera o mínimo de letras e a pausa antes de consultar uma vez', async () => {
+    await p.digitarEAguardarBusca(campo(), 'Ma');
+    expect(p.geo.listarCidades).not.toHaveBeenCalled();
+    await p.digitar(campo(), 'Mar');
+    await passarOTempo(ESPERA_DA_DIGITACAO_MS - 1);
+    expect(p.geo.listarCidades).not.toHaveBeenCalled();
+    await passarOTempo(1);
+    expect(p.geo.listarCidades).toHaveBeenCalledTimes(1);
+    expect(p.geo.listarCidades.mock.calls[0][0].q).toBe('Mar');
   });
 
-  describe('recusa da referência de cidade', () => {
-    const recusaDaCidade = (corpo: object = {}) =>
-      problema(422, {
+  it('descarta a resposta antiga e apresenta a atual', async () => {
+    const antiga = new Subject<ApiResult<readonly CidadeResumoDto[]>>();
+    const atual = new Subject<ApiResult<readonly CidadeResumoDto[]>>();
+    p.geo.listarCidades.mockReturnValueOnce(antiga).mockReturnValueOnce(atual);
+    await p.digitarEAguardarBusca(campo(), 'Mar');
+    await p.digitarEAguardarBusca(campo(), 'Bel');
+    atual.next(okResult([belemGeo]));
+    antiga.next(okResult([marabaGeo]));
+    await p.propagar();
+    expect(texto()).toContain('Belém (PA)');
+    expect(texto()).not.toContain('Marabá (PA)');
+  });
+
+  it('reabrir o cadastro recomeça a busca que falhou', async () => {
+    p.geo.listarCidades.mockReturnValue(of(errorResult(mockProblemDetails({ status: 500 }))));
+    const novaTentativa = () =>
+      p.fixture.nativeElement.querySelector('ui-falha-de-leitura-do-campo button');
+    await p.digitarEAguardarBusca(campo(), 'Mar');
+    expect(novaTentativa()).not.toBeNull();
+    p.edicao.fechar();
+    await p.propagar();
+    await p.abrirCadastro();
+    expect(campo()).not.toBeNull();
+    expect(novaTentativa()).toBeNull();
+  });
+
+  it('notifica falha do servidor e anuncia uma única falha junto ao campo', async () => {
+    p.geo.listarCidades.mockReturnValue(of(errorResult(mockProblemDetails({ status: 500 }))));
+    await p.digitarEAguardarBusca(campo(), 'Mar');
+    expect(p.erros).toHaveBeenCalledTimes(1);
+    expect(
+      p.fixture.nativeElement.querySelectorAll('ui-falha-de-leitura-do-campo [role="alert"]'),
+    ).toHaveLength(1);
+    expect(texto()).toContain('Não foi possível buscar os municípios');
+  });
+
+  it('tenta novamente o termo atual e devolve o foco', async () => {
+    p.geo.listarCidades
+      .mockReturnValueOnce(of(errorResult(mockProblemDetails({ status: 500 }))))
+      .mockReturnValueOnce(of(okResult([marabaGeo])));
+    await p.digitarEAguardarBusca(campo(), 'Mar');
+    const botao = p.elemento<HTMLButtonElement>('ui-falha-de-leitura-do-campo button');
+    botao.focus();
+    botao.click();
+    await p.propagar();
+    await passarOTempo(ESPERA_DA_DIGITACAO_MS);
+    await p.propagar();
+    expect(p.geo.listarCidades).toHaveBeenCalledTimes(2);
+    expect(p.geo.listarCidades.mock.calls[1][0].q).toBe('Mar');
+    expect(document.activeElement).toBe(campo());
+  });
+
+  it('escolhe pelo teclado e envia código, nome e UF', async () => {
+    p.geo.listarCidades.mockReturnValue(of(okResult([marabaGeo])));
+    await p.digitarEAguardarBusca(campo(), 'Mar');
+    campo().focus();
+    tecla('ArrowDown');
+    tecla('Enter');
+    await p.propagar();
+    expect(p.elemento<HTMLInputElement>('#cfg-unidade-cidade-busca').value).toBe('Marabá — PA');
+    const post = await p.enviar();
+    expect(post.request.body).toMatchObject(cidadeEnviada);
+    post.flush(...criado());
+    await p.responderAConsultaDasUnidades([reitoria]);
+  });
+
+  it('associa a recusa de salvamento ao campo', async () => {
+    (await p.enviar()).flush(
+      ...problema(422, {
         code: 'uniplus.cidade_referencia.codigo_ibge_formato_invalido',
         title: 'Cidade inválida',
-        ...corpo,
-      });
+      }),
+    );
+    await p.propagar();
+    await p.propagar();
+    expect(document.activeElement).toBe(campo());
+    expect(p.elemento('#cfg-unidade-cidade-erro').textContent).toContain('Cidade inválida');
+    expect(campo().getAttribute('aria-invalid')).toBe('true');
+    expect(campo().getAttribute('aria-describedby')).toContain('cfg-unidade-cidade-erro');
+  });
+  const trocarCidade = async () => {
+    p.elemento<HTMLButtonElement>('cfg-unidade-cidade-campo .input-group button').click();
+    await p.propagar();
+  };
+  const selecionarCidade = async () => {
+    await p.digitarEAguardarBusca(campo(), 'Bel');
+    campo().focus();
+    tecla('ArrowDown');
+    tecla('Enter');
+    await p.propagar();
+  };
+  const recusarCidade = async () => {
+    p.geo.listarCidades.mockReturnValue(of(okResult([belemGeo])));
+    await selecionarCidade();
+    (await p.enviar()).flush(
+      ...problema(422, {
+        code: 'uniplus.cidade_referencia.codigo_ibge_formato_invalido',
+        title: 'Cidade inválida',
+      }),
+    );
+    await p.propagar();
+    expect(p.edicao.erroDaCidade()).toBe('Cidade inválida');
+  };
+  const verificarRecusaLimpa = () => {
+    expect(p.edicao.erroDaCidade()).toBeNull();
+    expect(p.fixture.nativeElement.querySelector('#cfg-unidade-cidade-erro')).toBeNull();
+  };
 
-    it('sem errors[], aparece junto ao campo, associada e focada, sem o alerta geral', async () => {
-      await p.abrirCadastro();
-      (await p.enviar()).flush(...recusaDaCidade());
-      await p.propagar();
-      await p.propagar();
+  const abrirEdicaoComBuscaDeBelem = async () => {
+    p.edicao.fechar();
+    await p.propagar();
+    p.geo.listarCidades.mockReturnValue(of(okResult([belemGeo])));
+    await p.abrirEdicao(reitoria);
+  };
 
-      expect(p.elemento('#cfg-unidade-cidade-erro').textContent).toContain('Cidade inválida');
-      expect(campoDaCidade().getAttribute('aria-invalid')).toBe('true');
-      expect(campoDaCidade().getAttribute('aria-describedby')).toContain('cfg-unidade-cidade-erro');
-      expect(document.activeElement).toBe(campoDaCidade());
-      expect(p.fixture.nativeElement.querySelector('ui-drawer ui-alert.alert--danger')).toBeNull();
-      expect(p.edicao.erro()).toBeNull();
+  it('trocar a cidade na edição envia o novo trio no PUT', async () => {
+    await abrirEdicaoComBuscaDeBelem();
+    await trocarCidade();
+    await selecionarCidade();
+    const put = await p.enviar(`${ESCRITA}/${reitoria.id}`);
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.body).toMatchObject({
+      cidadeCodigoIbge: '1501402',
+      cidadeNome: 'Belém',
+      cidadeUf: 'PA',
+    });
+    put.flush(...sucesso());
+    await p.responderAConsultaDasUnidades([reitoria]);
+  });
+
+  it('reabrir a edição descarta o resíduo da busca anterior', async () => {
+    await abrirEdicaoComBuscaDeBelem();
+    expect(p.elemento<HTMLInputElement>('#cfg-unidade-cidade-busca').value).toBe('Marabá — PA');
+    await trocarCidade();
+    expect(campo().value).toBe('');
+    await p.digitarEAguardarBusca(campo(), 'Bel');
+    expect(Array.from(opcoes(), (opcao) => opcao.textContent?.trim())).toEqual(['Belém (PA)']);
+    p.edicao.fechar();
+    await p.propagar();
+    await p.abrirEdicao(reitoria);
+    expect(p.elemento<HTMLInputElement>('#cfg-unidade-cidade-busca').value).toBe('Marabá — PA');
+    await trocarCidade();
+    expect(campo().value).toBe('');
+    expect(opcoes()).toHaveLength(0);
+  });
+
+  const recusaComMensagemEspecifica = () =>
+    problema(422, {
+      code: 'uniplus.cidade_referencia.codigo_ibge_formato_invalido',
+      errors: [
+        {
+          field: 'cidadeCodigoIbge',
+          code: 'uniplus.cidade_referencia.codigo_ibge_formato_invalido',
+          message: 'Código IBGE inexistente.',
+        },
+      ],
     });
 
-    it('com errors[], o campo de cidade recusado leva a mensagem do servidor', async () => {
-      await p.abrirCadastro();
-      (await p.enviar()).flush(
-        ...recusaDaCidade({
-          errors: [
-            {
-              field: 'cidadeCodigoIbge',
-              code: 'uniplus.cidade_referencia.codigo_ibge_formato_invalido',
-              message: 'Código IBGE inexistente.',
-            },
-          ],
-        }),
-      );
-      await p.propagar();
+  it('apresenta a mensagem específica de errors[] junto ao campo', async () => {
+    (await p.enviar()).flush(...recusaComMensagemEspecifica());
+    await p.propagar();
+    expect(p.elemento('#cfg-unidade-cidade-erro').textContent).toContain(
+      'Código IBGE inexistente.',
+    );
+  });
 
-      expect(p.elemento('#cfg-unidade-cidade-erro').textContent).toContain(
-        'Código IBGE inexistente.',
-      );
-    });
+  it('limpa a recusa ao trocar a cidade', async () => {
+    await recusarCidade();
+    await trocarCidade();
+    verificarRecusaLimpa();
+  });
 
-    const recusarCidade = async (): Promise<void> => {
-      p.geo.listarCidades.mockReturnValue(of(okResult([marabaGeo])));
-      await p.abrirCadastro();
-      await p.digitarEAguardarBusca(campoDaCidade(), 'Mar');
-      p.elemento<HTMLButtonElement>('.localidade-opcoes button').click();
-      await p.propagar();
-      (await p.enviar()).flush(...recusaDaCidade());
-      await p.propagar();
-      expect(p.edicao.erroDaCidade()).toBe('Cidade inválida');
-    };
+  it('limpa a recusa ao reenviar mesmo que o servidor recuse por outro motivo', async () => {
+    await recusarCidade();
+    (await p.enviar()).flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
+    await p.propagar();
+    verificarRecusaLimpa();
+  });
 
-    it('"Trocar cidade" retira a recusa', async () => {
-      await recusarCidade();
-
-      p.elemento<HTMLButtonElement>('cfg-unidade-cidade-campo .input-group button').click();
-      await p.propagar();
-      expect(p.edicao.erroDaCidade()).toBeNull();
-      expect(p.fixture.nativeElement.querySelector('#cfg-unidade-cidade-erro')).toBeNull();
-    });
-
-    it('o novo envio, que falha por outro motivo, retira a recusa da cidade', async () => {
-      await recusarCidade();
-
-      (await p.enviar()).flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
-      await p.propagar();
-
-      expect(p.edicao.erroDaCidade()).toBeNull();
-      expect(p.fixture.nativeElement.querySelector('#cfg-unidade-cidade-erro')).toBeNull();
-    });
-
-    it('o novo envio barrado localmente retira a recusa da cidade', async () => {
-      await recusarCidade();
-
-      p.preencher('nome', '');
-      p.edicao.salvar();
-      await p.propagar();
-
-      p.http.expectNone(ESCRITA);
-      expect(p.edicao.erroDaCidade()).toBeNull();
-      expect(p.fixture.nativeElement.querySelector('#cfg-unidade-cidade-erro')).toBeNull();
-    });
+  it('limpa a recusa ao reenviar mesmo quando a validação local impede o envio', async () => {
+    await recusarCidade();
+    p.preencher('nome', '');
+    p.edicao.salvar();
+    await p.propagar();
+    p.http.expectNone(ESCRITA);
+    verificarRecusaLimpa();
   });
 });

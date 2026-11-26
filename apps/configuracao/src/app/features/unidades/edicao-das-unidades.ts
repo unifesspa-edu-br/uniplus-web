@@ -19,7 +19,6 @@ import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import type { CidadeRef } from '@uniplus/shared-ui/components';
 import { ehErroDeEndereco } from '../../shared/endereco';
 import { aguardarRecarga } from '../../shared/foco';
-import { BuscaDeCidade } from './busca-de-cidade';
 import { DetalheDaUnidade } from './detalhe-da-unidade';
 import { OpcoesDaUnidadeSuperior } from './opcoes-da-unidade-superior';
 import {
@@ -60,7 +59,6 @@ export class EdicaoDasUnidades {
   private readonly store = inject(UnidadesStore);
   private readonly detalhe = inject(DetalheDaUnidade);
   private readonly opcoesDaSuperior = inject(OpcoesDaUnidadeSuperior);
-  private readonly buscaDeCidade = inject(BuscaDeCidade);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -138,13 +136,11 @@ export class EdicaoDasUnidades {
   /** Grava o trio inteiro da opção escolhida, nunca campo a campo. */
   selecionarCidade(cidade: CidadeRef): void {
     this.cidade.set(cidade);
-    this.buscaDeCidade.reiniciar();
   }
 
   /** "Trocar cidade": limpa a seleção, o resíduo da busca e a recusa de uma tentativa anterior. */
   trocarCidade(): void {
     this.cidade.set(null);
-    this.buscaDeCidade.reiniciar();
     this.erroDaCidade.set(null);
   }
 
@@ -195,7 +191,6 @@ export class EdicaoDasUnidades {
   ): void {
     if (this.gravando()) return;
     this.prepararDadosDoFormulario(modo, id, valores, cidade);
-    this.buscaDeCidade.reiniciar();
     this.limparErrosDoFormulario();
     this.renovarChave();
     this.opcoesDaSuperior.preparar();

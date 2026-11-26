@@ -18,11 +18,11 @@ import {
 } from '@uniplus/shared-data/organizacao';
 import { okResult, passarOTempo } from '@uniplus/shared-testing';
 import { expect, vi, type Mock } from 'vitest';
-import { BuscaDeCidade } from './busca-de-cidade';
+import { ESPERA_DA_DIGITACAO_MS } from '@uniplus/shared-ui/components';
 import { EdicaoDasUnidades } from './edicao-das-unidades';
 import { OpcoesDaUnidadeSuperior } from './opcoes-da-unidade-superior';
 import { UnidadesPage } from './unidades.page';
-import { ATRASO_DA_BUSCA_EM_MS, UnidadesStore } from './unidades.store';
+import { UnidadesStore } from './unidades.store';
 
 const BASE = 'http://localhost:5000';
 export const LISTA = `${BASE}/api/organizacao/unidades`;
@@ -123,7 +123,6 @@ export class CenarioDaPaginaDeUnidades {
   readonly edicao: EdicaoDasUnidades;
   readonly store: UnidadesStore;
   readonly superior: OpcoesDaUnidadeSuperior;
-  readonly cidade: BuscaDeCidade;
   readonly primeiraConsulta: TestRequest;
 
   static async abrir(
@@ -149,7 +148,6 @@ export class CenarioDaPaginaDeUnidades {
     this.edicao = injetor.get(EdicaoDasUnidades);
     this.store = injetor.get(UnidadesStore);
     this.superior = injetor.get(OpcoesDaUnidadeSuperior);
-    this.cidade = injetor.get(BuscaDeCidade);
     fixture.detectChanges();
     this.primeiraConsulta = this.http.expectOne((r) => r.url === LISTA);
   }
@@ -197,7 +195,7 @@ export class CenarioDaPaginaDeUnidades {
   /** Digita no campo e deixa passar a espera da busca, com o relógio controlado ligado. */
   async digitarEAguardarBusca(campo: HTMLInputElement, texto: string): Promise<void> {
     await this.digitar(campo, texto);
-    await passarOTempo(ATRASO_DA_BUSCA_EM_MS);
+    await passarOTempo(ESPERA_DA_DIGITACAO_MS);
     await this.propagar();
   }
 
