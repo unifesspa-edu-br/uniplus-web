@@ -165,6 +165,7 @@ test.describe('Curso — geometria dos drawers (#816)', () => {
     await aguardarFimDaEntrada(drawer);
     const painel = drawer.locator('.uni-drawer__panel');
     const formulario = drawer.locator('form.form-drawer__form');
+    const corpo = drawer.locator('.uni-drawer__body');
     const rodape = drawer.locator('.form-drawer__footer');
 
     // O alerta fica DENTRO do .form-drawer__form — é o único elemento do drawer com
@@ -186,30 +187,26 @@ test.describe('Curso — geometria dos drawers (#816)', () => {
     expect(Math.abs(geoRodape.x - geoPainel.x)).toBeLessThanOrEqual(TOLERANCIA);
     expect(Math.abs(geoRodape.base - geoPainel.base)).toBeLessThanOrEqual(TOLERANCIA);
 
-    // Quem rola é o formulário, não o body — e o rodapé fica fora da rolagem.
-    const rolagem = await formulario.evaluate((el) => ({
-      conteudo: el.scrollHeight,
-      visivel: el.clientHeight,
-      overflowY: getComputedStyle(el).overflowY,
-    }));
-    expect(rolagem.overflowY).toBe('auto');
+    // Quem rola é o corpo do painel, não o formulário; o rodapé fica preso ao fundo.
+    const overflowY = await corpo.evaluate((el) => getComputedStyle(el).overflowY);
+    expect(overflowY).toBe('auto');
 
     await testInfo.attach(`${testInfo.project.name}-curso-form-drawer`, {
       body: await page.screenshot(),
       contentType: 'image/png',
     });
 
-    // 320 px: com o formulário obrigatoriamente rolando, o último campo e as
+    // 320 px: com o corpo obrigatoriamente rolando, o último campo e as
     // duas ações continuam alcançáveis.
     await page.setViewportSize({ width: 320, height: 640 });
     await expect(formulario).toBeVisible();
-    const precisaRolar = await formulario.evaluate((el) => el.scrollHeight > el.clientHeight);
+    const precisaRolar = await corpo.evaluate((el) => el.scrollHeight > el.clientHeight);
     expect(precisaRolar).toBe(true);
 
-    await formulario.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
-    const geoFormulario = await caixa(formulario);
+    await corpo.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+    const geoRodapeRolado = await caixa(rodape);
     const geoUltimoCampo = await caixa(drawer.getByText('Grupo de área do ENEM'));
-    expect(geoUltimoCampo.base).toBeLessThanOrEqual(geoFormulario.base + TOLERANCIA);
+    expect(geoUltimoCampo.base).toBeLessThanOrEqual(geoRodapeRolado.y + TOLERANCIA);
 
     for (const nome of ['Cancelar', 'Criar curso']) {
       const geoBotao = await caixa(drawer.getByRole('button', { name: nome }));

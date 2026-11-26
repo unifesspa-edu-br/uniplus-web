@@ -3,31 +3,31 @@
 }
 
 /*
- * O body é padding: 0 + overflow: hidden de propósito: quem rola é o .form-drawer__form
- * e o .form-drawer__footer fica como barra full-bleed ancorada no fundo do painel,
- * com o border-top atravessando a largura toda. Dar padding ao body recua essa
- * barra e quebra as 21 páginas do módulo que a usam.
+ * Quem rola é o corpo, e só ele: avisos, campos e rodapé passam juntos e só o título fica fixo.
+ * Assim, em janela baixa ou com zoom de 200%, os avisos não tomam a altura do formulário.
+ * O corpo fica sem recuo de propósito: o rodapé é uma barra de largura inteira, com o
+ * border-top atravessando o painel; o recuo do conteúdo é do .form-drawer__form.
  */
 .form-drawer .uni-drawer__body {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
   padding: 0;
+  /* Ao rolar por teclado, o campo focado não fica escondido sob o rodapé, mesmo quando as ações quebram em várias linhas. */
+  scroll-padding-block-end: calc(4 * var(--touch-min) + 2 * var(--space-4));
 }
 
 /*
- * Único container de rolagem do drawer de formulário, e quem carrega o recuo
- * do conteúdo. Alerta, aviso e seções de campos vão dentro do <form> para
- * receberem esse recuo — fora dele ficam colados na borda do painel.
+ * Carrega o recuo do conteúdo. Alerta, aviso e seções de campos vão dentro do <form> para
+ * receberem esse recuo — fora dele ficam colados na borda do painel. Ocupa a altura que sobra,
+ * para o rodapé ficar no fundo quando o formulário é curto.
  */
 .form-drawer__form {
   display: flex;
-  flex: 1 1 auto;
+  flex: 1 0 auto;
   flex-direction: column;
   gap: var(--space-6);
-  min-height: 0;
-  overflow-y: auto;
   padding: var(--space-5);
 }
 
@@ -77,6 +77,20 @@
   padding: var(--space-4) var(--space-5);
   background: var(--surface-card);
   border-top: 1px solid var(--border-subtle);
+}
+
+/* O rodapé acompanha a rolagem preso ao fundo do painel; o fundo opaco cobre o que passa por baixo. */
+.form-drawer .form-drawer__footer {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 1;
+}
+
+/* Em altura muito baixa, o rodapé preso tomaria o espaço do conteúdo: volta ao fim da rolagem. */
+@media (max-height: 20rem) {
+  .form-drawer .form-drawer__footer {
+    position: static;
+  }
 }
 
 @media (min-width: 1200px) {
