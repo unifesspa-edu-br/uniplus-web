@@ -34,9 +34,13 @@ test.describe('Fase canônica — sinalizadores admitidos', () => {
 
   test('a fase que admite complementação oferece só a complementação', async ({ page }) => {
     await mockApiDeFasesCanonicas(page, [
-      faseCanonica({ codigo: 'HOMOLOGACAO', nome: 'Homologação', admiteComplementacao: true }),
+      faseCanonica({
+        codigo: 'HOMOLOGACAO_INSCRICOES',
+        nome: 'Homologação',
+        admiteComplementacao: true,
+      }),
     ]);
-    await editar(page, 'HOMOLOGACAO');
+    await editar(page, 'HOMOLOGACAO_INSCRICOES');
 
     await expect(grupoDaComplementacao(page)).toBeVisible();
     await expect(grupoDoAgrupamento(page)).toHaveCount(0);
@@ -67,7 +71,7 @@ test.describe('Fase canônica — sinalizadores admitidos', () => {
     await expect(grupoDoAgrupamento(page)).toBeVisible();
     await expect(grupoDaComplementacao(page)).toBeVisible();
     await expect(grupoDoAgrupamento(page)).not.toContainText(/AVALIACAO/);
-    await expect(grupoDaComplementacao(page)).not.toContainText(/HOMOLOGACAO|RECURSOS/);
+    await expect(grupoDaComplementacao(page)).not.toContainText(/HOMOLOGACAO_INSCRICOES|RECURSOS/);
   });
 
   test('o valor lido dos sinalizadores volta no comando de atualização', async ({ page }) => {
