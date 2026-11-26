@@ -21,7 +21,7 @@ const AC = 'mod-ac';
 
 /** Molde reduzido do `declaracaoDaRegra` real de `REMANEJ-CASCATA-LEI-12711` — duas origens, não oito, porque o que o teste prova é o encaixe, não o catálogo inteiro. */
 const ESQUEMA_ARGS_REAL = {
-  fallbackCodigo: 'AC',
+  destinoFinalCodigo: 'AC',
   ordens: [
     { origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] },
     { origem: 'LB_Q', destinos: ['LB_PPI', 'AC'] },
@@ -99,10 +99,11 @@ describe('matrizDaRegra', () => {
     expect(matrizDaRegra(null)).toBeNull();
     expect(matrizDaRegra('texto')).toBeNull();
     expect(matrizDaRegra({})).toBeNull();
-    expect(matrizDaRegra({ fallbackCodigo: 'AC' })).toBeNull();
-    expect(matrizDaRegra({ fallbackCodigo: 'AC', ordens: [{ origem: 'X' }] })).toBeNull();
+    expect(matrizDaRegra({ fallbackCodigo: 'AC', ordens: [] })).toBeNull();
+    expect(matrizDaRegra({ destinoFinalCodigo: 'AC' })).toBeNull();
+    expect(matrizDaRegra({ destinoFinalCodigo: 'AC', ordens: [{ origem: 'X' }] })).toBeNull();
     expect(
-      matrizDaRegra({ fallbackCodigo: 'AC', ordens: [{ origem: 'X', destinos: [1, 2] }] }),
+      matrizDaRegra({ destinoFinalCodigo: 'AC', ordens: [{ origem: 'X', destinos: [1, 2] }] }),
     ).toBeNull();
   });
 });
@@ -248,7 +249,7 @@ describe('problemasDaCascata', () => {
     // não geram problema de encaixe POR OFERTA, não a cobertura de uma
     // matriz de duas origens — essa é `matrizReal()`, usada nos demais.
     const matrizDeUmaOrigem = matrizDaRegra({
-      fallbackCodigo: 'AC',
+      destinoFinalCodigo: 'AC',
       ordens: [{ origem: 'LB_PPI', destinos: ['AC'] }],
     });
     if (matrizDeUmaOrigem === null) throw new Error('Fixture inválida.');
