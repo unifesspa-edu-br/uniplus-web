@@ -1,4 +1,5 @@
 /// <reference types='vitest' />
+import { limiteDeTrabalhadoresDestaMaquina } from '../../tools/vitest/limite-de-trabalhadores';
 import { defineConfig } from 'vite';
 import angular from '@analogjs/vite-plugin-angular';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
@@ -19,6 +20,8 @@ export default defineConfig(() => ({
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     setupFiles: ['src/test-setup.ts'],
+    // Limite pela memória e pelos núcleos da máquina; o porquê está em tools/vitest/limite-de-trabalhadores.ts.
+    maxWorkers: limiteDeTrabalhadoresDestaMaquina(),
     // O pool `vmThreads` (padrão do plugin Angular) acumula memória a cada arquivo. O limite padrão é
     // proporcional à memória da máquina e passa do teto de 4 GB do trabalhador: sem este valor, o
     // trabalhador morre antes de ser reciclado.
