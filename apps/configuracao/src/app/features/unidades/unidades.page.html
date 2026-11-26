@@ -72,19 +72,17 @@
     [leitura]="leituraDaSuperior"
     [erro]="erroDaSuperior()"
   />
+  <!-- O drawer fechado não destrói o conteúdo: criar o campo a cada abertura recomeça a busca. -->
+  @if (edicao.aberto()) {
   <cfg-unidade-cidade-campo
     campoDaCidade
     class="form-grid__full"
     [selecionada]="edicao.cidade()"
-    [(termo)]="cidade.termo"
-    [opcoes]="cidade.opcoes()"
-    [buscando]="cidade.buscando()"
-    [leitura]="leituraDaCidade"
-    [semResultado]="cidade.semResultado()"
     [erroDoSalvamento]="edicao.erroDaCidade()"
     (escolher)="edicao.selecionarCidade($event)"
     (trocar)="edicao.trocarCidade()"
   />
+  }
 </cfg-unidade-formulario>
 
 <cfg-confirmacao-de-remocao

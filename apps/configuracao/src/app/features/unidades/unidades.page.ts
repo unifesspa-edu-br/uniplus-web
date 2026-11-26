@@ -7,7 +7,8 @@ import {
 } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { devolverFocoDaLista } from '../../shared/foco';
-import { BuscaDeCidade } from './busca-de-cidade';
+import { BUSCA_DE_MUNICIPIOS } from '@uniplus/shared-ui/components';
+import { buscaDeMunicipiosDaConfiguracao } from '../../shared/geo/busca-de-municipios-da-configuracao';
 import { DetalheDaUnidade } from './detalhe-da-unidade';
 import { EdicaoDasUnidades } from './edicao-das-unidades';
 import { OpcoesDaUnidadeSuperior } from './opcoes-da-unidade-superior';
@@ -38,7 +39,7 @@ const MENSAGEM_DA_SUPERIOR = 'Não foi possível carregar as unidades para sele�
   providers: [
     UnidadesStore,
     OpcoesDaUnidadeSuperior,
-    BuscaDeCidade,
+    { provide: BUSCA_DE_MUNICIPIOS, useFactory: buscaDeMunicipiosDaConfiguracao },
     DetalheDaUnidade,
     EdicaoDasUnidades,
   ],
@@ -51,7 +52,6 @@ export class UnidadesPage {
   protected readonly edicao = inject(EdicaoDasUnidades);
   protected readonly detalhe = inject(DetalheDaUnidade);
   protected readonly superior = inject(OpcoesDaUnidadeSuperior);
-  protected readonly cidade = inject(BuscaDeCidade);
   private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
 
   protected readonly indisponivel = computed(
@@ -65,14 +65,6 @@ export class UnidadesPage {
     indisponivel: this.edicao.gravando,
     recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById('cfg-unidades-list-title'),
-  });
-
-  protected readonly leituraDaCidade = acompanharLeitura({
-    assunto: 'cidades',
-    falha: this.cidade.erro,
-    pendente: this.cidade.buscando,
-    recarregar: () => this.cidade.tentarNovamente(),
-    destino: () => this.raiz.querySelector<HTMLElement>('#cfg-unidade-cidade-busca'),
   });
 
   protected readonly leituraDaSuperior = acompanharLeitura({

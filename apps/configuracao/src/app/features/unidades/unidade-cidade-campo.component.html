@@ -1,5 +1,9 @@
 <div class="field form-grid__full" [class.is-error]="erroDoSalvamento() !== null">
-  <label class="field__label" for="cfg-unidade-cidade-busca">Cidade</label>
+  <label
+    class="field__label"
+    [for]="selecionada() ? 'cfg-unidade-cidade-busca' : campo()?.campoId()"
+    >Cidade</label
+  >
   @if (selecionada(); as cidade) {
     <div class="input-group">
       <input
@@ -7,48 +11,23 @@
         class="input"
         readonly
         [attr.aria-invalid]="erroDoSalvamento() !== null || null"
-        [attr.aria-describedby]="descricaoDaSelecionada()"
+        [attr.aria-describedby]="descricao()"
         [value]="cidade.nome + ' — ' + cidade.uf"
       />
       <button type="button" class="btn btn--tertiary" (click)="trocar.emit()">Trocar cidade</button>
     </div>
   } @else {
-    <input
-      id="cfg-unidade-cidade-busca"
-      class="input"
-      type="search"
-      autocomplete="off"
-      placeholder="Digite ao menos 3 letras da cidade"
-      [attr.aria-busy]="buscando() || null"
-      [attr.aria-invalid]="erroDoSalvamento() !== null || null"
-      [attr.aria-describedby]="descricao()"
-      [value]="termo()"
-      (input)="aoDigitar($event)"
+    <ui-valor-de-municipio
+      rotulo="Cidade"
+      [values]="[]"
+      [invalido]="erroDoSalvamento() !== null"
+      [descritoPor]="descricao()"
+      (valuesChange)="escolherCodigo($event)"
     />
-    @if (leitura().visivel()) {
-      <div id="cfg-unidade-cidade-busca-erro">
-        <ui-falha-de-leitura-do-campo [leitura]="leitura()" />
-      </div>
-    } @else if (buscando()) {
-      <p class="field__hint" role="status" aria-live="polite">Consultando a API Geo…</p>
-    }
-    @if (opcoes().length > 0) {
-      <ul class="localidade-opcoes" aria-label="Cidades encontradas">
-        @for (opcao of opcoes(); track opcao.codigoIbge) {
-          <li>
-            <button class="btn btn--tertiary" type="button" (click)="escolherOpcao(opcao)">
-              {{ opcao.nome }} — {{ opcao.uf }}
-            </button>
-          </li>
-        }
-      </ul>
-    } @else if (semResultado()) {
-      <p class="field__hint" role="status" aria-live="polite">Nenhuma cidade encontrada.</p>
-    }
   }
-  <span class="field__hint" id="cfg-unidade-cidade-hint">
-    Cidade-sede de referência da unidade. Opcional.
-  </span>
+  <span class="field__hint" id="cfg-unidade-cidade-hint"
+    >Cidade-sede de referência da unidade. Opcional.</span
+  >
   @if (erroDoSalvamento(); as erro) {
     <span class="field__error" id="cfg-unidade-cidade-erro" role="alert">{{ erro }}</span>
   }

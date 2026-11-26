@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  input,
+  model,
+  output,
+} from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
@@ -31,7 +39,15 @@ export class UnidadeFormularioComponent {
   readonly cancelar = output<void>();
 
   protected readonly tipos = OPCOES_DE_TIPO;
-  private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });
+  private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private readonly foco = acompanharFocoDoEnvio({
+    salvando: this.salvando,
+    aberto: this.aberto,
+    focarEndereco: () =>
+      this.raiz
+        .querySelector<HTMLElement>('cfg-unidade-cidade-campo [aria-invalid="true"]')
+        ?.focus(),
+  });
 
   protected erroDoCampo(nome: keyof UnidadeForm): string | null {
     return mensagemDoCampo(this.form().controls[nome]);
