@@ -11,6 +11,7 @@ import { EixoEtapaComponent } from './documentos/eixos/eixo-etapa.component';
 import { EixoFormularioComponent } from './documentos/eixos/eixo-formulario.component';
 import { ExigenciasDaFaseStore } from './documentos/exigencias-da-fase.store';
 import { GatilhoDasExigenciasStore } from './documentos/gatilho-das-exigencias.store';
+import { responderALeituraDosMotivos } from './motivos/motivos-nos-passos.testing';
 import { ID_CPF, montarFase, type FaseMontada } from './fase.testing';
 import { BancasDaFaseComponent } from './secoes/bancas-da-fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
@@ -104,6 +105,7 @@ export function usarFase(aoMontar: (contexto: ContextoDaFase) => void): void {
     atual.controller
       .match((pedido) => pedido.url.includes('/vocabularios/'))
       .forEach((requisicao) => requisicao.flush([]));
+    responderALeituraDosMotivos(atual.controller);
     atual.controller.verify();
   });
 }

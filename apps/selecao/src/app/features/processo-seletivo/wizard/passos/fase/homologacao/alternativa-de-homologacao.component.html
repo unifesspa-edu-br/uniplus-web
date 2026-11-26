@@ -1,0 +1,42 @@
+@if (posicao() > 0) {
+  <p class="field__hint">ou, alternativamente</p>
+}
+@let recusas = regra.recusasDoCampo(campo());
+<fieldset
+  class="form-field"
+  tabindex="-1"
+  [attr.id]="idDaAlternativa()"
+  [attr.aria-describedby]="recusas.length > 0 ? idDaRecusa() : null"
+>
+  <legend class="label">Alternativa {{ posicao() + 1 }}</legend>
+  @if (recusas.length > 0) {
+    <sel-recusas-do-campo [attr.id]="idDaRecusa()" tabindex="-1" [recusas]="recusas" />
+  }
+  @for (condicao of alternativa().condicoes; track $index) {
+    <sel-condicao-de-homologacao
+      [alternativa]="posicao()"
+      [posicao]="$index"
+      [condicao]="condicao"
+    />
+  }
+  <div class="acoes">
+    <button
+      class="btn btn--tertiary btn--sm"
+      type="button"
+      [attr.id]="idDoBotaoDeIncluirCondicao()"
+      [disabled]="!regra.edicaoLiberada()"
+      (click)="regra.incluirCondicao(posicao())"
+    >
+      Incluir condição que também precisa valer
+    </button>
+    <button
+      class="btn btn--tertiary btn--sm"
+      type="button"
+      [disabled]="!regra.edicaoLiberada()"
+      [attr.aria-label]="'Remover a alternativa ' + (posicao() + 1)"
+      (click)="regra.removerAlternativa(posicao())"
+    >
+      Remover alternativa
+    </button>
+  </div>
+</fieldset>

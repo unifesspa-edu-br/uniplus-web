@@ -3,6 +3,8 @@ import { bancaDoCampo } from '../../shared/bancas/campo-da-banca';
 import { alvosDaBanca, type IdsDaBanca } from '../../shared/bancas/alvos-da-banca';
 import { alvosDoControleDosParametros } from '../../shared/configuracao-do-recurso/ids-dos-parametros';
 import { NO_TOPO_DA_FASE, posicaoDaPublicacao } from './campo-da-fase';
+import { PREFIXO_DA_HOMOLOGACAO } from './homologacao/campo-da-homologacao';
+import { alvosDaRecusaDaHomologacao } from './homologacao/ids-da-homologacao';
 import {
   BLOCO_DAS_RECUSAS_DO_RECURSO,
   CONTROLE_DO_RECURSO,
@@ -30,6 +32,7 @@ export function alvosDaRecusaDaFase(
   if (campo.startsWith('bancasRequeridas')) return alvosDasBancas(campo, fase);
   if (campo === 'emiteParecerIndividual') return [id('parecer'), id('parecer-erro')];
   if (campo.startsWith('recurso')) return alvosDoRecurso(campo, fase);
+  if (campo.startsWith(PREFIXO_DA_HOMOLOGACAO)) return alvosDaRecusaDaHomologacao(campo, id);
   return campo === NO_TOPO_DA_FASE ? [id('recusas')] : [];
 }
 

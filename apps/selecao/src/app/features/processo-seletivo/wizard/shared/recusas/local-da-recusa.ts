@@ -17,7 +17,7 @@ export interface LocalDaRecusa {
 
 const DONO = /^(?:\$\.|request\.)?(fases|etapas)\[(\d+)\]/i;
 const RECURSO_DA_ETAPA = /^\.recursos\[(\d+)\]/i;
-const CAMINHO_RECONHECIDO = /^(?:\.\w+(?:\[\d+\])?)*$/;
+const CAMINHO_RECONHECIDO = /^(?:\.\w+(?:\[\d+\])*)*$/;
 
 /** O ponteiro JSON do documento: `/cronograma/fases/0/fim`, com o bloco do documento antes da lista. */
 const PONTEIRO_DO_DOCUMENTO = /^\/(?:[^/]+\/)?((?:fases|etapas)\/\d+(?:\/.*)?)$/i;

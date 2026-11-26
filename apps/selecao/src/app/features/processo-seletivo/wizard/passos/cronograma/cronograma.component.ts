@@ -24,6 +24,7 @@ import { ConferenciaDoCronograma } from './servicos/conferencia-do-cronograma.se
 import { ApresentacaoDasRecusasDasExigencias } from './servicos/apresentacao-das-recusas-das-exigencias.service';
 import { EdicaoDaEtapa } from './servicos/edicao-da-etapa.service';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
+import { FasesNoServidor } from './servicos/fases-no-servidor.service';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
 import { GravacaoDasExigenciasDocumentais } from './servicos/gravacao-das-exigencias-documentais.service';
 import { GravacaoDoCronograma } from './servicos/gravacao-do-cronograma.service';
@@ -63,6 +64,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
     UnidadesResponsaveisDasFases,
     ReleituraDosIdentificadores,
     FormularioDoCronograma,
+    FasesNoServidor,
     RecusasDoServidorNasEtapas,
     RecusaDaGravacaoDasEtapas,
     RecusasDoServidorNasFases,

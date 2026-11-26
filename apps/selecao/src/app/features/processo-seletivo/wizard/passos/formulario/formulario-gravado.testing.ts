@@ -60,6 +60,7 @@ export const FASE_INSCRICAO: FaseDoCronograma = {
   emiteParecerIndividual: false,
   bancasRequeridas: [],
   regraRecurso: null,
+  regraDeHomologacao: null,
   congelados: CONGELADOS_DA_INSCRICAO,
 };
 

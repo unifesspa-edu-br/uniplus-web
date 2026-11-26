@@ -16,11 +16,13 @@ import {
 import { repetidos } from '../../shared/repetidos';
 import type { TipoDeEtapaDoCatalogo } from './regras-da-etapa';
 
-/** Os catálogos que a conferência do cronograma consulta. */
+/** Os catálogos e as edições do exame declaradas pelo processo que a conferência do cronograma consulta. */
 export interface CatalogosDaConferencia {
   readonly fasePorId: ReadonlyMap<string, FaseCanonicaDto>;
   readonly precedencias: readonly PrecedenciaFaseDto[];
   readonly atoPorCodigo: ReadonlyMap<string, AtoDoCatalogo>;
+  /** As edições do ENEM que o processo declara, em texto, como a Fórmula as guarda. */
+  readonly edicoesDoEnem: readonly string[];
   readonly nomeDaBanca: (tipoBancaId: string) => string;
   readonly tipoDaEtapa: (tipoEtapaOrigemId: string) => TipoDeEtapaDoCatalogo | undefined;
 }
@@ -92,7 +94,7 @@ function problemasDeclaradosDaFase(
   catalogos: CatalogosDaConferencia,
   nome: string,
 ): readonly string[] {
-  return problemasDaFase(fase, catalogos.atoPorCodigo).map(
+  return problemasDaFase(fase, catalogos.atoPorCodigo, catalogos.edicoesDoEnem).map(
     (declarado) => `Na fase ${nome}: ${declarado.mensagem} Corrija em Configuração por fase.`,
   );
 }

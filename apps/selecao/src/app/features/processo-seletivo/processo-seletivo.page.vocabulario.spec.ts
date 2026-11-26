@@ -45,6 +45,7 @@ describe('ProcessoSeletivoPage: vocabulário de tipos de decisão', () => {
       noMesmoMomentoDaAnterior: false,
       emiteParecerIndividual: false,
       regraRecurso: null,
+      regraDeHomologacao: null,
       tiposDeDecisao: [],
       congelados: null,
       bancasRequeridas: [

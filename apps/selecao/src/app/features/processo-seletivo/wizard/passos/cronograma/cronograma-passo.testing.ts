@@ -22,6 +22,7 @@ import type {
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { NumeracaoDasRespostasRecusadas } from '../../shared/recusas/numeracao-das-respostas-recusadas';
 import { RecusasDaPublicacao } from '../../shared/recusas/recusas-da-publicacao.service';
+import { umaFaseDoCronograma } from '../../shared/fase-do-cronograma.testing';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { fornecerVocabulariosDaRegra } from '../../shared/deliberacao/vocabularios-da-regra.testing';
 import { opcoesDoRecursoDaUrl } from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
@@ -47,6 +48,11 @@ import { RecusasDaPublicacaoNoCronograma } from './servicos/recusas-da-publicaca
 import { ConferenciaDoCronograma } from './servicos/conferencia-do-cronograma.service';
 import { EdicaoDaEtapa } from './servicos/edicao-da-etapa.service';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
+import {
+  responderALeituraDosMotivos,
+  SEM_PERMISSAO_PARA_OS_MOTIVOS,
+} from '../fase/motivos/motivos-nos-passos.testing';
+import { FasesNoServidor } from './servicos/fases-no-servidor.service';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
 import { GravacaoDasExigenciasDocumentais } from './servicos/gravacao-das-exigencias-documentais.service';
 import { LeituraDaLinhaDoTempo } from './servicos/leitura-da-linha-do-tempo.service';
@@ -69,6 +75,7 @@ const PROVEDORES = [
   CadastroInicial,
   GravacaoDoProcesso,
   GravacaoDosCamposPressupostos,
+  SEM_PERMISSAO_PARA_OS_MOTIVOS,
   ...CATALOGOS_DO_CRONOGRAMA,
   provideHttpClient(withInterceptors([apiResultInterceptor])),
   provideHttpClientTesting(),
@@ -86,19 +93,7 @@ type CamposDaEtapa = Pick<EtapaPontuada, 'nome' | 'ordem' | 'faseCodigo'>;
 
 /** Uma fase do rascunho sem nada declarado além do período e do que o cenário informa. */
 function faseDoRascunho(campos: CamposDaFase): FaseDoCronograma {
-  return {
-    inicio: INICIO_DA_FASE,
-    fim: FIM_DA_FASE,
-    unidadeResponsavelId: null,
-    produtos: [],
-    noMesmoMomentoDaAnterior: false,
-    emiteParecerIndividual: false,
-    bancasRequeridas: [],
-    regraRecurso: null,
-    tiposDeDecisao: [],
-    congelados: null,
-    ...campos,
-  };
+  return umaFaseDoCronograma({ inicio: INICIO_DA_FASE, fim: FIM_DA_FASE, ...campos });
 }
 
 /** Os atributos que o processo congelou da fase; só a agregação de etapas varia nos cenários. */
@@ -187,6 +182,7 @@ export class ContextoDoCronograma {
   readonly conferencia = this.injetor.get(ConferenciaDoCronograma);
   readonly recusas = this.injetor.get(RecusasDoServidorNasEtapas);
   readonly cronograma = this.injetor.get(FormularioDoCronograma);
+  readonly fasesNoServidor = this.injetor.get(FasesNoServidor);
   readonly releituraDosIdentificadores = this.injetor.get(ReleituraDosIdentificadores);
   readonly unidades = this.injetor.get(UnidadesResponsaveisDasFases);
   readonly detectar = (): void => {
@@ -336,5 +332,8 @@ export function usarCronograma(aoMontar: (contexto: ContextoDoCronograma) => voi
     atual = await montarCronograma();
     aoMontar(atual);
   });
-  afterEach(() => atual.controller.verify());
+  afterEach(() => {
+    responderALeituraDosMotivos(atual.controller);
+    atual.controller.verify();
+  });
 }

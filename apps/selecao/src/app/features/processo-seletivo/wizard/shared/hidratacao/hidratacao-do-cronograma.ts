@@ -18,6 +18,7 @@ import {
 import { campoDoInstante } from '../fuso-institucional';
 import { alvoLidoDoServidor } from '../procedimentos-do-recurso/alvo-do-procedimento';
 import { percentualDaFracao } from '../itens-de-avaliacao';
+import { regraDoDto } from '../homologacao/regra-de-homologacao-contrato';
 import { comoInteiro, comoTexto } from './campos-lidos';
 import { bancaDaEtapaDe, bancaRequeridaDe } from './hidratacao-das-bancas';
 
@@ -118,18 +119,19 @@ function agendaDaFaseDe(
   };
 }
 
-/** O que a fase publica, o recurso que admite e os tipos de decisão que declara. */
+/** O que a fase publica, o recurso que admite, os tipos de decisão e a regra de homologação que declara. */
 function publicacoesDaFaseDe(
   publicacoes: FaseDoDto['publicacoes'],
 ): Pick<
   FaseDoCronograma,
-  'produtos' | 'emiteParecerIndividual' | 'regraRecurso' | 'tiposDeDecisao'
+  'produtos' | 'emiteParecerIndividual' | 'regraRecurso' | 'tiposDeDecisao' | 'regraDeHomologacao'
 > {
   return {
     produtos: produtosDe(publicacoes.produtos),
     emiteParecerIndividual: publicacoes.emiteParecerIndividual,
     regraRecurso: recursoDe(publicacoes.regraRecurso, publicacoes.produtos),
     tiposDeDecisao: publicacoes.tiposDeDecisao.map((tipo) => tipo.codigo),
+    regraDeHomologacao: regraDoDto(publicacoes.regraDeHomologacao),
   };
 }
 

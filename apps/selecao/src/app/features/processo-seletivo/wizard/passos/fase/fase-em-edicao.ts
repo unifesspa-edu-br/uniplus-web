@@ -15,6 +15,7 @@ import { problemasDaFase, type AtoDoCatalogo, type ProblemaDaFase } from './conf
 import { produtosPreliminares } from './problemas-do-recurso-da-fase';
 import { bancasEscolhiveis, nomeDaBanca } from './secoes/bancas-da-fase';
 import { EspelhoDaFase } from './espelho-da-fase';
+import { PREFIXO_DA_HOMOLOGACAO } from './homologacao/campo-da-homologacao';
 import { idDaFase } from './ids-da-fase';
 
 /**
@@ -139,7 +140,7 @@ export class FaseEmEdicao {
   readonly problemas = computed<readonly ProblemaDaFase[]>(() => {
     const fase = this.faseDoRascunho();
     if (fase === null) return [];
-    return problemasDaFase(fase, this.atoPorCodigo());
+    return problemasDaFase(fase, this.atoPorCodigo(), this.store.draft().classificacao.edicoesEnem);
   });
 
   /** O que a conferência local diz do campo. */
@@ -188,6 +189,13 @@ export class FaseEmEdicao {
   /** As recusas à regra de recurso, de qualquer controle dela, para o alto da seção. */
   readonly recusasDoRecurso = computed(() =>
     emOrdem(this.recusasDaFase().filter((recusa) => recusa.campo.startsWith('recurso'))),
+  );
+
+  /** As recusas à regra de homologação, de qualquer campo dela, na ordem em que se leem. */
+  readonly recusasDaHomologacao = computed(() =>
+    emOrdem(
+      this.recusasDaFase().filter((recusa) => recusa.campo.startsWith(PREFIXO_DA_HOMOLOGACAO)),
+    ),
   );
 
   /** O campo tem o que mostrar: um problema local ou uma recusa do servidor, ativa ou a conferir. */

@@ -19,8 +19,13 @@ import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { CATALOGOS_DO_CRONOGRAMA } from '../cronograma/catalogos/catalogos-do-cronograma';
 import { CronogramaPassoComponent } from '../cronograma/cronograma.component';
+import { FasesNoServidor } from '../cronograma/servicos/fases-no-servidor.service';
 import { FormularioDoCronograma } from '../cronograma/servicos/formulario-do-cronograma.service';
 import { FasePassoComponent } from './fase.component';
+import {
+  responderALeituraDosMotivos,
+  SEM_PERMISSAO_PARA_OS_MOTIVOS,
+} from './motivos/motivos-nos-passos.testing';
 import { BancasDaFaseComponent } from './secoes/bancas-da-fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
 import { etapaDoServidor } from '../../shared/cronograma-do-servidor.testing';
@@ -183,6 +188,7 @@ const FASE_DO_CERTAME = {
   emiteParecerIndividual: false,
   bancasRequeridas: [],
   regraRecurso: null,
+  regraDeHomologacao: null,
   tiposDeDecisao: [],
   congelados: null,
 };
@@ -225,6 +231,8 @@ const PROVEDORES = [
   RecusasDaPublicacao,
   RecusasDaPublicacaoNoCronograma,
   RecusasDoServidorNasFases,
+  FasesNoServidor,
+  SEM_PERMISSAO_PARA_OS_MOTIVOS,
   CadastroInicial,
   GravacaoDoProcesso,
   GravacaoDosCamposPressupostos,
@@ -337,6 +345,7 @@ export function usarFaseECronograma(aoMontar: (contexto: ContextoDoCertame) => v
     atual.controller
       .match((pedido) => pedido.url.includes('/vocabularios/'))
       .forEach((requisicao) => requisicao.flush([]));
+    responderALeituraDosMotivos(atual.controller);
     atual.controller.verify();
   });
 }

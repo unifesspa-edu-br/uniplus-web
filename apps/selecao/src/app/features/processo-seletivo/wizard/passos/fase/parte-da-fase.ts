@@ -4,17 +4,26 @@ import type { LocalDaRecusa } from '../../shared/recusas/local-da-recusa';
 /**
  * A parte do cadastro a que uma recusa pertence. Alterar a parte passa todas as recusas dela a
  * "a conferir de novo": a fase é tudo o que não é a regra de recurso, inclusive publicações e
- * datas; a regra de recurso é conferida à parte.
+ * datas; a regra de recurso e a regra de homologação são conferidas cada uma à parte.
  */
-export type ParteDaFase = 'fase' | 'regraDeRecurso';
+export type ParteDaFase = 'fase' | 'regraDeRecurso' | 'regraDeHomologacao';
+
+const PARTES_PELO_CAMINHO: ReadonlyMap<string, ParteDaFase> = new Map([
+  ['regrarecurso', 'regraDeRecurso'],
+  ['regradehomologacao', 'regraDeHomologacao'],
+]);
 
 /** A parte em que o caminho da recusa cai; o que não se reconhece pertence à fase. */
 export function parteDaFase(local: LocalDaRecusa): ParteDaFase {
   const primeiro = (local.caminho ?? '').split('.')[0].toLowerCase();
-  return primeiro === 'regrarecurso' ? 'regraDeRecurso' : 'fase';
+  return PARTES_PELO_CAMINHO.get(primeiro) ?? 'fase';
 }
 
-const FORA_DA_PARTE_DA_FASE: ReadonlySet<string> = new Set(['regraRecurso', 'ordem']);
+const FORA_DA_PARTE_DA_FASE: ReadonlySet<string> = new Set([
+  'regraRecurso',
+  'regraDeHomologacao',
+  'ordem',
+]);
 
 /**
  * O que a fase tem naquela parte. A posição não conta: renumerar as fases porque outra saiu não
@@ -22,6 +31,7 @@ const FORA_DA_PARTE_DA_FASE: ReadonlySet<string> = new Set(['regraRecurso', 'ord
  */
 export function conteudoDaParte(fase: FaseDoCronograma, parte: ParteDaFase): unknown {
   if (parte === 'regraDeRecurso') return fase.regraRecurso;
+  if (parte === 'regraDeHomologacao') return fase.regraDeHomologacao;
   return Object.fromEntries(
     Object.entries(fase).filter(([campo]) => !FORA_DA_PARTE_DA_FASE.has(campo)),
   );
