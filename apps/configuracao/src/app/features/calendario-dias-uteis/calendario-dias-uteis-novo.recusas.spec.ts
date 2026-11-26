@@ -204,7 +204,7 @@ describe('CalendarioDiasUteisNovoPage — recusas do servidor', () => {
           title: 'UF incoerente',
           errors: [
             {
-              field: 'diasNaoUteis[1].municipioUf',
+              field: 'diasNaoUteis[1].municipioIbge',
               code: CIDADE_INCOERENTE,
               message: "O prefixo do código IBGE ('15') corresponde à UF 'PA'.",
             },

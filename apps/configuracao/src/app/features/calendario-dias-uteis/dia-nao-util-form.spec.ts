@@ -6,7 +6,7 @@ import {
   comandoDoDiaNaoUtil,
   criarGrupoDeDiaNaoUtil,
   errosDoDia,
-  gravarOpcaoEscolhida,
+  gravarMunicipioEscolhido,
   indiceDoDiaNoServidor,
   municipioSelecionadoDe,
   type GrupoDoDia,
@@ -19,8 +19,7 @@ function diaMunicipalEscolhido(): GrupoDoDia {
   const grupo = criarGrupoDeDiaNaoUtil();
   grupo.controls.abrangencia.setValue(AbrangenciaCodigo.MUNICIPAL);
   aplicarAbrangencia(grupo);
-  grupo.controls.codigoMunicipio.setValue(MARABA.codigoIbge);
-  gravarOpcaoEscolhida(grupo, MARABA);
+  gravarMunicipioEscolhido(grupo, MARABA);
   grupo.controls.data.setValue('2026-04-05');
   grupo.controls.descricao.setValue('Aniversário de Marabá');
   return grupo;
@@ -43,7 +42,6 @@ describe('dia não útil — formulário', () => {
     expect(grupo.controls.codigoMunicipio.value).toBe('');
     expect(grupo.controls.municipioNome.value).toBeNull();
     expect(grupo.controls.municipioUf.value).toBeNull();
-    expect(grupo.controls.buscaMunicipio.value).toBe('');
     expect(grupo.errors?.['snapshotMunicipal']).toBe(true);
   });
 
@@ -58,7 +56,6 @@ describe('dia não útil — formulário', () => {
     expect(grupo.controls.municipioNome.value).toBeNull();
     expect(grupo.controls.municipioUf.value).toBeNull();
     expect(grupo.controls.uf.value).toBe('');
-    expect(grupo.controls.buscaMunicipio.value).toBe('');
     expect(grupo.controls.codigoMunicipio.validator).toBeNull();
     expect(grupo.controls.uf.validator).toBeNull();
     expect(grupo.errors).toBeNull();

@@ -19,7 +19,6 @@ import {
   marcarRecusaDoServidor,
   textoDasCausasGerais,
 } from '../../shared/formulario';
-import { BuscaDeMunicipios } from './busca-de-municipios';
 import {
   CalendarioForm,
   comandoDeCriacaoDoCalendario,
@@ -44,7 +43,6 @@ const CAMPO_DA_VERSAO: ReadonlySet<string> = new Set(['versaoDoCalendario']);
 @Injectable()
 export class EdicaoDoCalendario {
   private readonly api = inject(CalendarioDiasUteisApi);
-  private readonly buscaMunicipios = inject(BuscaDeMunicipios);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
@@ -70,7 +68,6 @@ export class EdicaoDoCalendario {
       return;
     }
     this.form.controls.diasNaoUteis.removeAt(indice);
-    this.buscaMunicipios.descartar(grupo);
   }
 
   salvar(): void {

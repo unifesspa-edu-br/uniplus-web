@@ -28,7 +28,9 @@ export interface FocoDoEnvio {
  */
 export function focarPrimeiroCampoInvalido(raiz: HTMLElement): boolean {
   const campos = raiz.querySelectorAll<HTMLElement>('[aria-invalid="true"]:not(:disabled)');
-  const campo = [...campos].find((item) => item.closest('ui-valor-de-municipio') === null);
+  const campo = [...campos].find(
+    (item) => item.closest('ui-endereco-geo ui-valor-de-municipio') === null,
+  );
   campo?.focus();
   return campo !== undefined;
 }

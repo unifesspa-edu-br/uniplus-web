@@ -97,9 +97,7 @@
               class="cfg-dia-card__grid"
               [grupo]="dia"
               [sufixoDeId]="'' + indice"
-              [busca]="buscaDo(dia)"
               [dataDuplicada]="dataDuplicada(dia)"
-              (alteracao)="alteracao.emit({ grupo: dia, alteracao: $event })"
             />
           </article>
         }

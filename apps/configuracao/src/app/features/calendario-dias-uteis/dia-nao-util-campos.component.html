@@ -14,7 +14,7 @@
       [attr.aria-describedby]="
         leituraDasAbrangencias.visivel() ? 'falha-abrangencia-' + sufixoDeId() : null
       "
-      (change)="alteracao.emit({ tipo: 'abrangencia' })"
+      (change)="aplicarAbrangencia(grupo())"
     >
       @for (abrangencia of abrangencias.opcoes(); track abrangencia.codigo) {
         <option [value]="abrangencia.codigo">{{ abrangencia.rotulo }}</option>
@@ -50,7 +50,7 @@
         aria-required="true"
         [id]="'uf-' + sufixoDeId()"
         [attr.aria-invalid]="erros().uf ? 'true' : null"
-        (change)="alteracao.emit({ tipo: 'uf' })"
+        (change)="reiniciarBuscaDoMunicipio(grupo())"
       >
         @for (unidadeFederativa of unidadesFederativas; track unidadeFederativa.id) {
           <option [value]="unidadeFederativa.sigla">
@@ -69,57 +69,22 @@
       class="field form-grid__full cfg-dia-card__municipio"
       [class.is-error]="erros().codigoMunicipio"
     >
-      <label [for]="'busca-municipio-' + sufixoDeId()" class="field__label is-required">
-        Município
-      </label>
-      <div class="cfg-municipio-busca">
-        <div class="cfg-municipio-busca__input">
-          <i class="pi pi-search" aria-hidden="true"></i>
-          <input
-            type="search"
-            autocomplete="off"
-            class="input"
-            formControlName="buscaMunicipio"
-            placeholder="Digite ao menos 2 letras"
-            [id]="'busca-municipio-' + sufixoDeId()"
-            (input)="aoDigitarABusca($event)"
-          />
-        </div>
-        <select
-          class="select"
-          formControlName="codigoMunicipio"
-          aria-label="Selecionar município"
-          aria-required="true"
-          [id]="'codigo-municipio-' + sufixoDeId()"
-          [attr.aria-invalid]="erros().codigoMunicipio ? 'true' : null"
-          (change)="alteracao.emit({ tipo: 'municipio' })"
-        >
-          <option value="" disabled>
-            {{ busca().carregando ? 'Buscando…' : 'Selecione o município' }}
-          </option>
-          @for (municipio of busca().opcoes; track municipio.codigoIbge) {
-            <option [value]="municipio.codigoIbge">
-              {{ municipio.nome }} — {{ municipio.uf }}
-            </option>
-          }
-        </select>
-      </div>
-      <ui-falha-de-leitura-do-campo [leitura]="leitura" />
-      @if (!leitura.visivel()) {
-        @if (busca().carregando) {
-          <span class="field__hint" role="status">Consultando a API Geo…</span>
-        } @else if (buscaSemResultado()) {
-          <span class="field__hint">Nenhum município encontrado para essa busca.</span>
-        } @else if (municipioSelecionado(); as municipio) {
-          <span class="field__hint">Selecionado: {{ municipio.nome }} — {{ municipio.uf }}</span>
-        } @else {
-          <span class="field__hint">
-            A busca usa o nome; o código IBGE é preenchido automaticamente.
-          </span>
-        }
-      }
+      <label [for]="municipio.campoId()" class="field__label is-required">Município</label>
+      <ui-valor-de-municipio
+        #municipio
+        rotulo="Município"
+        [values]="valores()"
+        [rotulosGravados]="rotulos()"
+        [uf]="ufDaBuscaDe(grupo())"
+        [obrigatorio]="true"
+        [invalido]="!!erros().codigoMunicipio"
+        [descritoPor]="erros().codigoMunicipio ? 'erro-municipio-' + sufixoDeId() : null"
+        (valuesChange)="escolherMunicipio($event)"
+      />
       @if (erros().codigoMunicipio) {
-        <span class="field__error">{{ erros().codigoMunicipio }}</span>
+        <span class="field__error" [id]="'erro-municipio-' + sufixoDeId()">{{
+          erros().codigoMunicipio
+        }}</span>
       }
     </div>
   }

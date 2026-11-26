@@ -4,10 +4,7 @@ import { ABRANGENCIAS } from './abrangencias.testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
-import {
-  CalendarioFormularioComponent,
-  type AlteracaoDoLocalDoDia,
-} from './calendario-formulario.component';
+import { CalendarioFormularioComponent } from './calendario-formulario.component';
 import { criarFormularioDeCalendario } from './calendario-form';
 import { criarGrupoDeDiaNaoUtil } from './dia-nao-util-form';
 
@@ -33,7 +30,6 @@ describe('CalendarioFormularioComponent', () => {
     fixture.componentRef.setInput('erro', null);
     fixture.componentRef.setInput('anuncio', '');
     fixture.componentRef.setInput('salvando', false);
-    fixture.componentRef.setInput('buscas', new Map());
     fixture.detectChanges();
     await fixture.whenStable();
   });
@@ -58,17 +54,6 @@ describe('CalendarioFormularioComponent', () => {
       'Cancelar',
     );
     expect(raiz().textContent).toContain('Criar calendário');
-  });
-
-  it('repassa ao hospedeiro a alteração de local junto com o dia a que ela pertence', () => {
-    const recebidas: AlteracaoDoLocalDoDia[] = [];
-    fixture.componentInstance.alteracao.subscribe((alteracao) => recebidas.push(alteracao));
-
-    raiz().querySelector('#abrangencia-0')?.dispatchEvent(new Event('change'));
-
-    expect(recebidas).toEqual([
-      { grupo: form.controls.diasNaoUteis.at(0), alteracao: { tipo: 'abrangencia' } },
-    ]);
   });
 
   it('mostra o erro do envio no alerta, com o título do formulário', () => {

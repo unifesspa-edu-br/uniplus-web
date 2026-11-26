@@ -17,10 +17,9 @@ import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { passarOTempo } from '@uniplus/shared-testing';
 import { Subject } from 'rxjs';
 import { expect, vi } from 'vitest';
-import { BuscaDeMunicipios } from './busca-de-municipios';
 import { CalendarioDiasUteisDetalhePage } from './calendario-dias-uteis-detalhe.page';
 import { CalendarioDiasUteisNovoPage } from './calendario-dias-uteis-novo.page';
-import { ESPERA_DA_BUSCA_DE_MUNICIPIO_MS } from './calendario-dias-uteis.util';
+import { ESPERA_DA_DIGITACAO_MS } from '@uniplus/shared-ui/components';
 import { CalendarioStore } from './calendario.store';
 import { EdicaoDoCalendario } from './edicao-do-calendario';
 import { EdicaoDosDiasNaoUteis } from './edicao-dos-dias-nao-uteis';
@@ -162,7 +161,7 @@ async function responderBuscaDeCidades(
   http: HttpTestingController,
   municipio: Municipio,
 ): Promise<void> {
-  await passarOTempo(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS);
+  await passarOTempo(ESPERA_DA_DIGITACAO_MS);
   http
     .expectOne((r) => r.url === CIDADES)
     .flush([{ id: `cidade-${municipio.codigoIbge}`, ddd: '94', ...municipio }]);
@@ -177,7 +176,7 @@ function buscadorDeMunicipio(
     escrever(elemento<HTMLInputElement>(ids.busca), municipio.nome);
     await responderBuscaDeCidades(http, municipio);
     await propagar();
-    escolher(elemento<HTMLSelectElement>(ids.opcoes), municipio.codigoIbge);
+    elemento<HTMLElement>(ids.opcoes).dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
     await propagar();
   };
 }
@@ -223,7 +222,11 @@ async function enviarPeloBotao(base: Ferramentas, escrita: string): Promise<Test
 }
 
 function campoDoDia(base: Ferramentas, indice: number, campo: string): HTMLElement {
-  return base.elemento(`#${campo}-${indice}`);
+  return base.elemento(
+    campo === 'codigo-municipio'
+      ? `article.cfg-dia-card:nth-of-type(${indice + 1}) input[role=combobox]`
+      : `#${campo}-${indice}`,
+  );
 }
 
 async function adicionarDia(base: Ferramentas, edicao: EdicaoDoCalendario): Promise<number> {
@@ -251,7 +254,10 @@ async function preencherDia(
 
 function municipioDoDia(base: Ferramentas, indice: number, municipio: Municipio): Promise<void> {
   return base.buscarMunicipio(
-    { busca: `#busca-municipio-${indice}`, opcoes: `#codigo-municipio-${indice}` },
+    {
+      busca: `article.cfg-dia-card:nth-of-type(${indice + 1}) input[role=combobox]`,
+      opcoes: `article.cfg-dia-card:nth-of-type(${indice + 1}) [role=option]`,
+    },
     municipio,
   );
 }
@@ -272,7 +278,6 @@ function servicosDoCalendarioNovo(fixture: ComponentFixture<CalendarioDiasUteisN
   const injetor = fixture.debugElement.injector;
   return {
     edicao: injetor.get(EdicaoDoCalendario),
-    busca: injetor.get(BuscaDeMunicipios),
   };
 }
 
@@ -310,7 +315,6 @@ function servicosDoDetalhe(fixture: ComponentFixture<CalendarioDiasUteisDetalheP
     edicao: injetor.get(EdicaoDosDiasNaoUteis),
     store: injetor.get(CalendarioStore),
     selecao: injetor.get(SelecaoDoDia),
-    busca: injetor.get(BuscaDeMunicipios),
   };
 }
 
@@ -343,9 +347,24 @@ function consultasDoDetalhe(base: Ferramentas) {
   return {
     botaoDoDia: (rotuloInicio: string) => botaoDoDia(base, rotuloInicio),
     dialogo: (): HTMLDialogElement => base.elemento('cfg-dia-nao-util-dialogo dialog'),
-    campo: (nome: string): HTMLElement => base.elemento(`[formcontrolname="${nome}"]`),
+    campo: (nome: string): HTMLElement =>
+      base.elemento(
+        nome === 'codigoMunicipio'
+          ? 'cfg-dia-nao-util-dialogo input[role=combobox]'
+          : `[formcontrolname="${nome}"]`,
+      ),
     ...controlesDoFormulario(base),
   };
+}
+
+function municipioDoDialogo(base: Ferramentas, municipio: Municipio): Promise<void> {
+  return base.buscarMunicipio(
+    {
+      busca: 'cfg-dia-nao-util-dialogo input[role=combobox]',
+      opcoes: 'cfg-dia-nao-util-dialogo [role=option]',
+    },
+    municipio,
+  );
 }
 
 function acoesDoDetalhe(base: Ferramentas) {
@@ -355,11 +374,7 @@ function acoesDoDetalhe(base: Ferramentas) {
     abrirCadastro: (rotuloInicio = '16 de setembro de 2026') =>
       abrirCadastroPeloDia(base, rotuloInicio),
     enviar: () => enviarPeloBotao(base, ESCRITA_DO_DIA),
-    municipioDoDialogo: (municipio: Municipio = MARABA) =>
-      base.buscarMunicipio(
-        { busca: '#busca-municipio-novo', opcoes: '#codigo-municipio-novo' },
-        municipio,
-      ),
+    municipioDoDialogo: (municipio: Municipio = MARABA) => municipioDoDialogo(base, municipio),
   };
 }
 

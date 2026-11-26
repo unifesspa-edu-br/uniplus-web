@@ -59,10 +59,8 @@
   [erro]="edicao.erro()"
   [anuncio]="edicao.anuncio()"
   [salvando]="edicao.salvando()"
-  [busca]="buscaDoDia()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
-  (alteracao)="busca.aplicar(edicao.form, $event)"
   (fechado)="edicao.reiniciar()"
 />
 }

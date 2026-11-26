@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  untracked,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   acompanharLeitura,
@@ -16,8 +9,8 @@ import {
   TagComponent,
 } from '@uniplus/shared-ui/components';
 import { devolverFocoDaGrade } from './foco-da-grade';
-import { BuscaDeMunicipios } from './busca-de-municipios';
-import { MUNICIPIO_BUSCA_VAZIA } from './calendario-dias-uteis.util';
+import { BUSCA_DE_MUNICIPIOS } from '@uniplus/shared-ui/components';
+import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
 import { CalendarioMensalComponent } from './calendario-mensal.component';
 import { CalendarioStore } from './calendario.store';
 import { DiaNaoUtilDialogoComponent } from './dia-nao-util-dialogo.component';
@@ -39,7 +32,12 @@ import { SelecaoDoDia } from './selecao-do-dia';
     OcorrenciasDoDiaComponent,
     DiaNaoUtilDialogoComponent,
   ],
-  providers: [CalendarioStore, SelecaoDoDia, BuscaDeMunicipios, EdicaoDosDiasNaoUteis],
+  providers: [
+    CalendarioStore,
+    SelecaoDoDia,
+    { provide: BUSCA_DE_MUNICIPIOS, useFactory: buscaDeMunicipiosNoGeo },
+    EdicaoDosDiasNaoUteis,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './calendario-dias-uteis-detalhe.page.html',
   styleUrl: './calendario-dias-uteis-detalhe.page.css',
@@ -48,11 +46,7 @@ import { SelecaoDoDia } from './selecao-do-dia';
 export class CalendarioDiasUteisDetalhePage {
   protected readonly store = inject(CalendarioStore);
   protected readonly selecao = inject(SelecaoDoDia);
-  protected readonly busca = inject(BuscaDeMunicipios);
   protected readonly edicao = inject(EdicaoDosDiasNaoUteis);
-  protected readonly buscaDoDia = computed(
-    () => this.busca.buscas().get(this.edicao.form) ?? MUNICIPIO_BUSCA_VAZIA,
-  );
   protected readonly leitura = acompanharLeitura({
     falha: this.store.mensagemDeErro,
     pendente: this.store.carregando,

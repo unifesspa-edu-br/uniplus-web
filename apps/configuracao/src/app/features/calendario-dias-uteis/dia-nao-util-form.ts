@@ -42,7 +42,6 @@ function controlesDoDia(): DiaNaoUtilFormGroup {
     codigoMunicipio: new FormControl(''),
     municipioNome: new FormControl(null),
     municipioUf: new FormControl(null),
-    buscaMunicipio: new FormControl('', { nonNullable: true }),
     ...controlesDaData(),
   };
 }
@@ -105,23 +104,20 @@ function configurarMunicipio(grupo: GrupoDoDia, tipo: AbrangenciaCodigo | null):
       Validators.required,
       Validators.pattern(CODIGO_MUNICIPIO_PATTERN),
     ]);
-  } else {
-    grupo.controls.buscaMunicipio.reset('');
   }
 }
 
 /** Trocar o estado da busca invalida o município escolhido no estado anterior. */
 export function reiniciarBuscaDoMunicipio(grupo: GrupoDoDia): void {
   limparSnapshotMunicipal(grupo);
-  grupo.controls.buscaMunicipio.reset('');
   grupo.controls.codigoMunicipio.updateValueAndValidity();
 }
 
 /** O único ponto que escreve o snapshot: nome e UF nunca vêm do que foi digitado. */
-export function gravarOpcaoEscolhida(grupo: GrupoDoDia, opcao: MunicipioOpcao): void {
+export function gravarMunicipioEscolhido(grupo: GrupoDoDia, opcao: MunicipioOpcao): void {
+  grupo.controls.codigoMunicipio.setValue(opcao.codigoIbge);
   grupo.controls.municipioNome.setValue(opcao.nome);
   grupo.controls.municipioUf.setValue(opcao.uf);
-  grupo.controls.buscaMunicipio.setValue(opcao.nome, { emitEvent: false });
   grupo.updateValueAndValidity();
 }
 

@@ -13,9 +13,9 @@ import { acompanharFocoDoEnvio, focarPrimeiroCampoInvalido } from './foco-do-env
       <fieldset [disabled]="salvando()">
         <input id="a" aria-invalid="false" />
         <input id="b" [attr.aria-invalid]="invalidoB() ? 'true' : null" />
-        <div class="endereco">
+        <ui-endereco-geo>
           <ui-valor-de-municipio><input id="cidade" aria-invalid="true" /></ui-valor-de-municipio>
-        </div>
+        </ui-endereco-geo>
         <input id="c" [attr.aria-invalid]="invalidoC() ? 'true' : null" />
       </fieldset>
       <button type="submit" id="salvar">Salvar</button>
@@ -110,11 +110,20 @@ describe('focarPrimeiroCampoInvalido', () => {
 
   it('ignora o campo de cidade e o campo desabilitado e informa quando não achou', () => {
     const raiz = montar(
-      '<ui-valor-de-municipio><input id="c" aria-invalid="true"></ui-valor-de-municipio>' +
+      '<ui-endereco-geo><ui-valor-de-municipio><input id="c" aria-invalid="true"></ui-valor-de-municipio></ui-endereco-geo>' +
         '<input id="d" aria-invalid="true" disabled>',
     );
     expect(focarPrimeiroCampoInvalido(raiz)).toBe(false);
     expect(document.activeElement).toBe(document.body);
+    raiz.remove();
+  });
+
+  it('foca o município fora do endereço', () => {
+    const raiz = montar(
+      '<ui-valor-de-municipio><input aria-invalid="true"></ui-valor-de-municipio>',
+    );
+    expect(focarPrimeiroCampoInvalido(raiz)).toBe(true);
+    expect(document.activeElement).toBe(raiz.querySelector('input'));
     raiz.remove();
   });
 
