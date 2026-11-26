@@ -22,7 +22,10 @@ function regra(codigo: string, versao: string): RegraCatalogoDto {
   return {
     codigo,
     versao,
-    tipo: { codigo: 'REGRA_PRAZO_RECURSO' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Prazo de recurso' },
+    tipo: {
+      codigo: 'REGRA_PRAZO_RECURSO' as RegraCatalogoDto['tipo']['codigo'],
+      rotulo: 'Prazo de recurso',
+    },
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: 'Base legal de teste',
@@ -32,7 +35,10 @@ function regra(codigo: string, versao: string): RegraCatalogoDto {
   };
 }
 
-const REGRAS = [regra('PRAZO-ANCORADO-EM-ATO', 'v1'), regra('PRAZO-ANCORADO-EM-CIENCIA', 'v2')];
+const REGRAS = [
+  regra('RECURSO_PRAZO_CONTADO_DA_PUBLICACAO_DO_ATO', 'v1'),
+  regra('RECURSO_PRAZO_CONTADO_DA_CIENCIA', 'v2'),
+];
 
 function grupoCom(produtos: { atoCodigo: string; papel: string | null }[] = []) {
   return grupoDaEtapa(etapa({ produtos }));
@@ -63,7 +69,7 @@ describe('recursos da etapa', () => {
     expect(grupo.controls.recursos.value).toEqual([
       expect.objectContaining({
         ancora: 'PUBLICACAO_DO_ATO',
-        regraCodigo: 'PRAZO-ANCORADO-EM-ATO',
+        regraCodigo: 'RECURSO_PRAZO_CONTADO_DA_PUBLICACAO_DO_ATO',
         regraVersao: 'v1',
         atoAncoraCodigo: 'PRE',
         prazoValor: '',
@@ -103,10 +109,18 @@ describe('recursos da etapa', () => {
     const grupo = grupoCom();
     acrescentarRecurso(grupo, REGRAS);
 
-    alterarRecurso(grupo, 0, { campo: 'regraCodigo', valor: 'PRAZO-ANCORADO-EM-CIENCIA' }, REGRAS);
+    alterarRecurso(
+      grupo,
+      0,
+      { campo: 'regraCodigo', valor: 'RECURSO_PRAZO_CONTADO_DA_CIENCIA' },
+      REGRAS,
+    );
 
     expect(grupo.controls.recursos.value[0]).toEqual(
-      expect.objectContaining({ regraCodigo: 'PRAZO-ANCORADO-EM-CIENCIA', regraVersao: 'v2' }),
+      expect.objectContaining({
+        regraCodigo: 'RECURSO_PRAZO_CONTADO_DA_CIENCIA',
+        regraVersao: 'v2',
+      }),
     );
   });
 
@@ -119,7 +133,7 @@ describe('recursos da etapa', () => {
     expect(grupo.controls.recursos.value[0]).toEqual(
       expect.objectContaining({
         ancora: 'CIENCIA_INDIVIDUAL',
-        regraCodigo: 'PRAZO-ANCORADO-EM-CIENCIA',
+        regraCodigo: 'RECURSO_PRAZO_CONTADO_DA_CIENCIA',
         atoAncoraCodigo: '',
       }),
     );

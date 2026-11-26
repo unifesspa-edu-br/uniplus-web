@@ -21,7 +21,7 @@ describe('gravação da classificação', () => {
     function prepararImportadaComEnem(origem: OrigemCandidatosSelecionada): void {
       store.patchObjectSection('identificacao', { origemCandidatos: origem });
       store.patchObjectSection('classificacao', {
-        regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+        regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
         regraCalculoVersao: '1.0',
         regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
         regraOrdemAlocacaoVersao: '1.0',

@@ -135,7 +135,7 @@ export function controlesEditaveis(host: HTMLElement, seletor: string): string[]
 }
 
 export const CLASSIFICACAO_LOCAL = {
-  regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+  regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
   regraCalculoVersao: '1.0',
   regraArredondamentoCodigo: 'ARRED-TRUNCAR',
   regraArredondamentoVersao: '1.0',

@@ -246,7 +246,7 @@ export function texto(el: Element | null): string {
 export function rascunhoComResolucao(resolucao: string) {
   return (store: ProcessoSeletivoStore) =>
     store.patchObjectSection('classificacao', {
-      regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+      regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
       regraCalculoVersao: '1.0',
       baseadoEmEnem: true,
       resolucaoPesoAreaEnem: resolucao,

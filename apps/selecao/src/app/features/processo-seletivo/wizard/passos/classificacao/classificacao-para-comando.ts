@@ -19,14 +19,14 @@ import {
  * discriminador que decide o shape do corpo, o mesmo que o servidor usa em
  * `DefinirClassificacaoCommandHandler`.
  */
-export const REGRA_CALCULO_IMPORTADA = 'CLASSIFICACAO-IMPORTADA';
+export const REGRA_CALCULO_IMPORTADA = 'CLASSIFICACAO_IMPORTADA';
 
 /**
  * Código de `RegraCalculoCodigo.FormulaMediaPonderada` — a regra de cálculo local cuja nota usa
  * os pesos por área do ENEM. É discriminador, como o de cima: decide se a resolução de Peso por
  * Área vai no corpo.
  */
-export const REGRA_CALCULO_MEDIA_PONDERADA = 'FORMULA-MEDIA-PONDERADA';
+export const REGRA_CALCULO_MEDIA_PONDERADA = 'FORMULA_MEDIA_PONDERADA';
 
 /** Códigos de `RegraEliminacaoCodigo`, na mesma função de discriminador. */
 const ELIM_NOTA_MINIMA_ETAPA = 'ELIMINACAO_NOTA_MINIMA_ETAPA';
@@ -123,7 +123,7 @@ export function comoComandoDeRegraEliminacao(
 
 /**
  * Converte o rascunho de classificação no `DefinirClassificacaoRequest`
- * inteiro. Sob `CLASSIFICACAO-IMPORTADA`, os três campos de precisão e o vetor
+ * inteiro. Sob `CLASSIFICACAO_IMPORTADA`, os três campos de precisão e o vetor
  * de eliminação são forçados aos valores que a regra exige — `null` ou
  * vazio — **independentemente** do que esteja digitado no rascunho, porque
  * trocar de regra de cálculo não precisa apagar o que o operador já preencheu

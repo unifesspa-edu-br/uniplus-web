@@ -81,7 +81,7 @@ describe('FormulaPassoComponent', () => {
   });
 
   it('sob classificação importada, não exige arredondamento nem casas', () => {
-    componente.escolherRegraCalculo('CLASSIFICACAO-IMPORTADA|1.0');
+    componente.escolherRegraCalculo('CLASSIFICACAO_IMPORTADA|1.0');
     store.patchObjectSection('classificacao', {
       regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
@@ -91,7 +91,7 @@ describe('FormulaPassoComponent', () => {
   });
 
   it('sob fórmula local, exige regra de arredondamento e casas maior que zero', () => {
-    componente.escolherRegraCalculo('FORMULA-MEDIA-PONDERADA|1.0');
+    componente.escolherRegraCalculo('FORMULA_MEDIA_PONDERADA|1.0');
     store.patchObjectSection('classificacao', {
       regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
@@ -112,28 +112,28 @@ describe('FormulaPassoComponent', () => {
    * atual não usa.
    */
   it('some com a escolha de arredondamento ao trocar para classificação importada', () => {
-    componente.escolherRegraCalculo('FORMULA-MEDIA-PONDERADA|1.0');
+    componente.escolherRegraCalculo('FORMULA_MEDIA_PONDERADA|1.0');
     componente.escolherRegraArredondamento('ARRED-TRUNCAR|1.0');
     expect(store.draft().classificacao.regraArredondamentoCodigo).toBe('ARRED-TRUNCAR');
 
-    componente.escolherRegraCalculo('CLASSIFICACAO-IMPORTADA|1.0');
+    componente.escolherRegraCalculo('CLASSIFICACAO_IMPORTADA|1.0');
 
     expect(store.draft().classificacao.regraArredondamentoCodigo).toBe('');
   });
 
   describe('aviso de divisor da média inválido', () => {
     it('não avisa sob classificação importada', () => {
-      componente.escolherRegraCalculo('CLASSIFICACAO-IMPORTADA|1.0');
+      componente.escolherRegraCalculo('CLASSIFICACAO_IMPORTADA|1.0');
       expect(componente.avisoDeDivisorInvalido()).toBe(false);
     });
 
     it('avisa sob fórmula local sem etapa que componha a nota', () => {
-      componente.escolherRegraCalculo('FORMULA-MEDIA-PONDERADA|1.0');
+      componente.escolherRegraCalculo('FORMULA_MEDIA_PONDERADA|1.0');
       expect(componente.avisoDeDivisorInvalido()).toBe(true);
     });
 
     it('para de avisar quando o Cronograma declara uma etapa que compõe a nota', () => {
-      componente.escolherRegraCalculo('FORMULA-MEDIA-PONDERADA|1.0');
+      componente.escolherRegraCalculo('FORMULA_MEDIA_PONDERADA|1.0');
       store.patchObjectSection('cronograma', { etapas: [etapaQueCompoeNota()] });
 
       expect(componente.avisoDeDivisorInvalido()).toBe(false);
@@ -150,7 +150,7 @@ describe('FormulaPassoComponent', () => {
         ?.textContent?.trim();
 
     function passoValidoComEscala(escala: string): void {
-      componente.escolherRegraCalculo('FORMULA-MEDIA-PONDERADA|1.0');
+      componente.escolherRegraCalculo('FORMULA_MEDIA_PONDERADA|1.0');
       componente.escolherRegraArredondamento('ARRED-TRUNCAR|1.0');
       componente.alterarCasasArredondamento('2');
       store.patchObjectSection('classificacao', {
@@ -176,7 +176,7 @@ describe('FormulaPassoComponent', () => {
       passoValidoComEscala('100');
       store.classificacao.recusaDaEscalaDaNotaFinal.set('Recusa antiga.');
 
-      componente.escolherRegraCalculo('CLASSIFICACAO-IMPORTADA|1.0');
+      componente.escolherRegraCalculo('CLASSIFICACAO_IMPORTADA|1.0');
       fixture.detectChanges();
 
       expect(campo()).toBeNull();

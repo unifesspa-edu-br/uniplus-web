@@ -99,7 +99,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
   ] satisfies readonly JsonDaApi<CriterioDesempateDto>[],
   classificacao: {
     id: '01a0d640-0000-7000-8000-0000000000e3',
-    regraCalculo: referencia('FORMULA-MEDIA-PONDERADA'),
+    regraCalculo: referencia('FORMULA_MEDIA_PONDERADA'),
     regraArredondamento: referencia('ARRED-TRUNCAR'),
     casasArredondamento: 2,
     regraOrdemAlocacao: referencia('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA'),

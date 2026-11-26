@@ -28,7 +28,7 @@ function classificacaoBase(): WizardDraft['classificacao'] {
 describe('mensagensDeClassificacaoBase', () => {
   const classificacaoCompleta = (): WizardDraft['classificacao'] => ({
     ...classificacaoBase(),
-    regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+    regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
     regraCalculoVersao: '1.0',
     regraArredondamentoCodigo: 'ARRED-TRUNCAR',
     regraArredondamentoVersao: '1.0',
@@ -68,7 +68,7 @@ describe('mensagensDeClassificacaoBase', () => {
   it('recusa sem ordem de alocação, mesmo sob classificação importada', () => {
     const mensagens = mensagensDeClassificacaoBase({
       ...classificacaoCompleta(),
-      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
       regraArredondamentoCodigo: '',
       regraArredondamentoVersao: '',
       casasArredondamento: '',
@@ -82,7 +82,7 @@ describe('mensagensDeClassificacaoBase', () => {
   it('sob classificação importada, não exige arredondamento nem casas', () => {
     const mensagens = mensagensDeClassificacaoBase({
       ...classificacaoCompleta(),
-      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
       regraArredondamentoCodigo: '',
       regraArredondamentoVersao: '',
       casasArredondamento: '',
@@ -131,7 +131,7 @@ describe('mensagensDeClassificacaoBase', () => {
   it('não exige a resolução com a nota importada, mesmo marcada como ENEM', () => {
     const mensagens = mensagensDeClassificacaoBase({
       ...classificacaoCompleta(),
-      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
       regraArredondamentoCodigo: '',
       regraArredondamentoVersao: '',
       casasArredondamento: '',

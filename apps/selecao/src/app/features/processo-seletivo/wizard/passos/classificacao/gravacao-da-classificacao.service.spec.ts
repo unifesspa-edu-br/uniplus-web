@@ -58,7 +58,7 @@ describe('gravação da classificação', () => {
       expect(requisicao.request.method).toBe('PUT');
       expect(requisicao.request.headers.get('Idempotency-Key')).toBeTruthy();
       expect(requisicao.request.body).toMatchObject({
-        regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+        regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
         regraArredondamentoCodigo: 'ARRED-TRUNCAR',
         casasArredondamento: 2,
         regrasEliminacao: [
