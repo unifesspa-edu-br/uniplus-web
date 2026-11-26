@@ -90,3 +90,49 @@ describe('padrão dos serviços de API', () => {
     expect(resultado.regras).not.toContain(REGRA);
   });
 });
+
+describe('tipo de mídia dos GETs', () => {
+  const mensagem =
+    'Todo GET de serviço de API deve pedir o tipo de mídia versionado com withVendorMime.';
+
+  it.each([
+    ['sem opções', "this.http.get('/x')"],
+    ['sem contexto', "this.http.get('/x', { params })"],
+    ['contexto diferente', "this.http.get('/x', { context: outro() })"],
+    [
+      'chamada aninhada em params',
+      "this.http.get('/x', { params: outra(withVendorMime('x', 1)) })",
+    ],
+    [
+      'chamada aninhada em context',
+      "this.http.get('/x', { context: outro(withVendorMime('x', 1)) })",
+    ],
+    ['contexto em spread', "this.http.get('/x', { ...{ context: withVendorMime('x', 1) } })"],
+    [
+      'spread sobrescreve contexto',
+      "this.http.get('/x', { context: withVendorMime('x', 1), ...{ context: outro() } })",
+    ],
+    ['com tipo', "this.http.get<string>('/x')"],
+  ])('recusa GET %s', async (_caso, chamada) => {
+    const resultado = await analisar(
+      PROJETO,
+      ARQUIVO,
+      servico(`consultar(): void { ${chamada}; }`),
+    );
+    expect(resultado.analiseSemFalha).toBe(true);
+    expect(resultado.mensagens.some((item) => item.message === mensagem)).toBe(true);
+  });
+
+  it.each([
+    ['GET versionado', "this.http.get('/x', { params, context: withVendorMime('x', 1) })"],
+    ['POST', "this.http.post('/x', {})"],
+  ])('aceita %s', async (_caso, chamada) => {
+    const resultado = await analisar(
+      PROJETO,
+      ARQUIVO,
+      servico(`consultar(): void { ${chamada}; }`),
+    );
+    expect(resultado.analiseSemFalha).toBe(true);
+    expect(resultado.mensagens.some((item) => item.message === mensagem)).toBe(false);
+  });
+});
