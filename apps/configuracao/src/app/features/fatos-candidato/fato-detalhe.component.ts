@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
-import { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
+import { FatoCandidatoDto, FonteValoresFatoCodigo } from '@uniplus/shared-data/configuracao';
 import {
   DrawerComponent,
   FalhaDeLeituraComponent,
@@ -47,6 +47,12 @@ export class FatoDetalheComponent {
   readonly aceitar = output<FatoCandidatoDto>();
 
   protected readonly titulo = computed(() => this.fato()?.descritivo.nome ?? 'Fato do candidato');
+  /** Os municípios da prova presencial: cada processo declara os seus, e esta tela não os cadastra. */
+  protected readonly valoresDeCadaProcesso = computed(
+    () =>
+      this.fato()?.definicao.valores.fonte?.codigo ===
+      FonteValoresFatoCodigo.MUNICIPIOS_PROVA_PRESENCIAL,
+  );
   protected readonly idDasRegras = ID_DAS_REGRAS_DO_DETALHE;
   /**
    * O histórico das manifestações técnicas, só para ler: quem administra o cadastro ou quem
