@@ -56,7 +56,7 @@
           @if (decisao.classificacaoRecomendada; as recomendada) {
             <div>
               <dt>Classificação recomendada</dt>
-              <dd>{{ rotulo(classificacoes, recomendada) }}</dd>
+              <dd>{{ recomendada.rotulo }}</dd>
             </div>
           }
           @if (decisao.justificativa; as justificativa) {

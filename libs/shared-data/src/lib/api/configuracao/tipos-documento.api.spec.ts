@@ -16,7 +16,9 @@ import {
   TipoDocumentoDto,
   TiposDocumentoApi,
 } from './tipos-documento.api';
+import { ClassificacaoDeProtecaoCodigo, HipoteseLegalTratamentoCodigo } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
+import { valorDeTeste } from './vocabularios.testing';
 
 const BASE = 'http://localhost:5000';
 const ID = '01960000-0000-7000-0000-0000000000d1';
@@ -30,9 +32,9 @@ const tipoDocumentoSeed: TipoDocumentoDto = {
   formatosAceitos: 'pdf,jpg,png',
   tamanhoMaximoMb: 10,
   tipoEquivalente: 'CIN',
-  classificacaoProtecao: 'PESSOAL',
+  classificacaoProtecao: valorDeTeste(ClassificacaoDeProtecaoCodigo.PESSOAL),
   finalidadeTratamento: 'Conferir a identidade do candidato.',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  hipoteseLegal: valorDeTeste(HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS),
   protecaoAprovada: true,
   criadoEm: '2026-06-10T12:00:00Z',
 };
@@ -128,9 +130,13 @@ describe('TiposDocumentoApi', () => {
 
   it('atosDaProtecao() lê o histórico do tipo no tipo de mídia do ato', async () => {
     const promise = firstValueFrom(api.atosDaProtecao(ID));
-    const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-documento/${ID}/protecao/atos`);
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/admin/tipos-documento/${ID}/protecao/atos`,
+    );
     expect(req.request.method).toBe('GET');
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('protecao-do-catalogo-ato', 1));
+    expect(req.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('protecao-do-catalogo-ato', 1),
+    );
     req.flush([]);
     await promise;
   });

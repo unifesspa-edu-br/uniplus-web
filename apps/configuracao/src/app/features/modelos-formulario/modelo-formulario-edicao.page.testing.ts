@@ -1,3 +1,9 @@
+import {
+  ClassificacaoDeProtecaoCodigo,
+  EscopoFatoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { TipoRestricaoValorCodigo } from '@uniplus/shared-data/configuracao';
 import {
   FINALIDADE_INSCRICAO,
@@ -46,9 +52,12 @@ const FATO_BASE: Omit<FatoCandidatoView, 'id' | 'codigo' | 'nome' | 'binding'> =
   valoresDominioDeclarados: null,
   fonteValores: null,
   ativo: true,
-  escopo: 'CANDIDATO',
-  classificacaoProtecao: 'INTERNO',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
+  classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.INTERNO, 'Interno'),
+  hipoteseLegal: codigoComRotulo(
+    HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+    'Execução de políticas públicas',
+  ),
   finalidadeTratamento: 'Aplicar a regra do certame.',
   protecaoAprovada: true,
 };
@@ -361,7 +370,6 @@ function responderRecurso(
   if (falha === null) pedido.flush(recurso.dados);
   else pedido.flush(falha.corpo, falha.resposta);
 }
-
 /** Responde as seis leituras que a tela faz ao abrir. */
 export function responderCarga(
   controller: HttpTestingController,
@@ -370,14 +378,12 @@ export function responderCarga(
   const falhando = cenario.falhando ?? [];
   for (const recurso of recursosDaCarga(cenario)) responderRecurso(controller, recurso, falhando);
 }
-
 export function salvar(tela: HTMLElement): void {
   const botao = Array.from(
     tela.querySelectorAll('button[type="submit"]') as NodeListOf<HTMLButtonElement>,
   ).find((b) => b.textContent?.includes('Salvar modelo'));
   (botao as HTMLButtonElement).click();
 }
-
 /** A API recusa a gravação do conteúdo com os erros de campo dados. */
 export function recusarGravacao(
   controller: HttpTestingController,
@@ -391,5 +397,4 @@ export function recusarGravacao(
   });
   controller.expectOne((req) => req.method === 'PUT').flush(corpo, PROBLEMA);
 }
-
 export const tituloDaTela = (): HTMLElement | null => document.getElementById('cfg-modelo-titulo');

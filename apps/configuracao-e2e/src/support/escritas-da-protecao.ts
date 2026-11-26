@@ -1,3 +1,4 @@
+import { valorDaApi } from './valor-da-api';
 import type { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { expect, type Locator, type Page, type Route } from '@playwright/test';
 import { mockManifestacoesDaFila } from './listas-de-tipos-e-fatos';
@@ -15,9 +16,9 @@ export const ITEM = {
   id: '01960000-0000-7000-0000-0000000000d2',
   codigo: 'LAUDO_MEDICO_COMPLEMENTAR',
   nome: 'Laudo médico complementar',
-  classificacaoProtecao: 'INTERNO',
+  classificacaoProtecao: valorDaApi('INTERNO'),
   finalidadeTratamento: 'Conferir o laudo do candidato com deficiência.',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  hipoteseLegal: valorDaApi('EXECUCAO_POLITICAS_PUBLICAS'),
   aprovacao: {
     situacao: 'SOLICITADA',
     solicitadaEm: '2026-11-01T12:00:00Z',
@@ -49,8 +50,8 @@ export const DECISAO = {
   ato: 'DEVOLUCAO' satisfies `${DecidirProtecaoDoCatalogoRequestDecisao}`,
   instante: '2026-10-31T13:00:00Z',
   atorNome: 'Caroline Ribeiro',
-  classificacaoProtecao: 'INTERNO',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  classificacaoProtecao: valorDaApi('INTERNO'),
+  hipoteseLegal: valorDaApi('EXECUCAO_POLITICAS_PUBLICAS'),
   finalidadeTratamento: 'Conferir o laudo.',
   classificacaoRecomendada: null,
   justificativa: 'Falta a base legal.',

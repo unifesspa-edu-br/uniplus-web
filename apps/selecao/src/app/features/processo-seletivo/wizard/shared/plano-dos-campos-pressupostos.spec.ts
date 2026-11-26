@@ -1,3 +1,4 @@
+import { comEscopoPeloCodigo } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import { CATALOGO } from '../passos/formulario/formulario-de-inscricao.testing';
 import {
@@ -19,7 +20,12 @@ function plano(citados: string[], comFormulario = true, comFase = true, outras: 
     formularios: comFormulario ? [formulario] : [],
     cronogramaFases: comFase ? [{ id: 'fase-1', faseCanonica: { coletaInscricao: true } }] : [],
   });
-  return new PlanoDosCamposPressupostos(servidor, new Set(citados), CATALOGO, outras);
+  return new PlanoDosCamposPressupostos(
+    servidor,
+    new Set(citados),
+    comEscopoPeloCodigo(CATALOGO),
+    outras,
+  );
 }
 
 describe('plano dos campos pressupostos', () => {

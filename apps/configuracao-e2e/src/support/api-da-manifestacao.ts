@@ -40,7 +40,10 @@ export function detalheDoLaudo(vigentes: readonly ManifestacaoDaProtecaoDto[]) {
 }
 
 /** As leituras: categorias, fila, detalhe e histórico das manifestações. */
-async function mockLeituras(page: Page, vigentes: readonly ManifestacaoDaProtecaoDto[]): Promise<void> {
+async function mockLeituras(
+  page: Page,
+  vigentes: readonly ManifestacaoDaProtecaoDto[],
+): Promise<void> {
   await page.route(/\/api\/configuracao\/categorias-documento(\?.*)?$/, (r) => json(r, []));
   await page.route(new RegExp(`${RAIZ}\\/tipos-documento\\/[^/?]+\\/manifestacoes$`), (r) =>
     json(r, vigentes),

@@ -1,3 +1,5 @@
+import { ClassificacaoDeProtecaoCodigo } from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
@@ -279,7 +281,15 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
 
     controller
       .expectOne((r) => r.method === 'GET' && r.url === URL)
-      .flush([{ ...laudo, classificacaoProtecao: 'SENSIVEL' }]);
+      .flush([
+        {
+          ...laudo,
+          classificacaoProtecao: codigoComRotulo(
+            ClassificacaoDeProtecaoCodigo.SENSIVEL,
+            'Pessoal sensível',
+          ),
+        },
+      ]);
     await assentar();
     expect(tela.textContent).toContain('A proteção do item mudou desde a leitura');
     expect(tela.textContent).toContain('Pessoal sensível');

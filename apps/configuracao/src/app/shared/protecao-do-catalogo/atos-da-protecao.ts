@@ -7,7 +7,6 @@ import type {
   AtoDeDecisao,
 } from '@uniplus/shared-data/configuracao';
 import { TagComponent, type UiTagVariant } from '@uniplus/shared-ui/components';
-import { CLASSIFICACOES_DE_PROTECAO, rotuloDe } from './protecao-de-dados';
 
 interface RotuloDoAto {
   readonly texto: string;
@@ -74,7 +73,7 @@ export const DECISOES_FILTRAVEIS: readonly {
             }
             @if (ato.classificacaoRecomendada; as recomendada) {
               <p class="table-responsive__meta">
-                Classificação recomendada: {{ classificacao(recomendada) }}
+                Classificação recomendada: {{ recomendada.rotulo }}
               </p>
             }
             @if (ato.justificativa; as texto) {
@@ -93,6 +92,4 @@ export class AtosDaProtecaoComponent {
 
   protected readonly rotulo = rotuloDoAto;
   protected readonly data = (instante: string): string => formatarDataBr(instante, 'datetime');
-  protected readonly classificacao = (token: string): string =>
-    rotuloDe(CLASSIFICACOES_DE_PROTECAO, token);
 }

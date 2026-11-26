@@ -59,21 +59,21 @@
     }
     @if (f.definicao.formato) {
       <dt>Formato</dt>
-      <dd>{{ rotulo(formatos, f.definicao.formato) }}</dd>
+      <dd>{{ f.definicao.formato.rotulo }}</dd>
     }
     <dt>Escopo</dt>
-    <dd>{{ rotulo(escopos, f.definicao.escopo) }}</dd>
+    <dd>{{ f.definicao.escopo.rotulo }}</dd>
     <dt>Componente de exibição</dt>
-    <dd>{{ rotuloDoComponente(f.descritivo.componenteExibicao) }}</dd>
+    <dd>{{ f.descritivo.componenteExibicao?.rotulo ?? rotuloDoPadrao }}</dd>
     <dt>Conhecido a partir da fase</dt>
     <dd>
       <code>{{ f.definicao.resolucao.pontoResolucao }}</code>
     </dd>
     @if (comProtecao) {
       <dt>Proteção de dados</dt>
-      <dd>{{ rotulo(classificacoes, f.definicao.protecao.classificacao) }}</dd>
+      <dd>{{ f.definicao.protecao.classificacao.rotulo }}</dd>
       <dt>Base legal</dt>
-      <dd>{{ rotulo(hipoteses, f.definicao.protecao.hipoteseLegal) }}</dd>
+      <dd>{{ f.definicao.protecao.hipoteseLegal.rotulo }}</dd>
       <dt>Finalidade do tratamento</dt>
       <dd>{{ f.definicao.protecao.finalidade }}</dd>
     }
@@ -168,11 +168,25 @@
                   formControlName="cardinalidade"
                   [attr.aria-invalid]="erroCardinalidade ? 'true' : null"
                   [attr.aria-describedby]="descritor('cardinalidade')"
+                  id="cfg-fato-def-cardinalidades"
+                  [attr.aria-busy]="cardinalidades.vocabulario.carregando() ? 'true' : null"
                 >
-                  @for (opcao of cardinalidades; track opcao.valor) {
-                    <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                  @for (
+                    opcao of comOpcaoAtual(
+                      cardinalidades.vocabulario.itens(),
+                      fato()?.definicao?.cardinalidade
+                    );
+                    track opcao.codigo
+                  ) {
+                    <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
                   }
                 </select>
+                @if (cardinalidades.vocabulario.carregando()) {
+                  <span class="field__hint" [uiIndicadorDaLeitura]="cardinalidades.leitura"
+                    >Carregando…</span
+                  >
+                }
+                <ui-falha-de-leitura-do-campo [leitura]="cardinalidades.leitura" />
                 @if (erroCardinalidade) {
                   <span class="field__error" id="cfg-fato-def-cardinalidade-erro">{{
                     erroCardinalidade
@@ -190,12 +204,26 @@
                   aria-required="true"
                   [attr.aria-invalid]="erroFonte ? 'true' : null"
                   [attr.aria-describedby]="descritor('fonteValores')"
+                  id="cfg-fato-def-fontes"
+                  [attr.aria-busy]="fontes.vocabulario.carregando() ? 'true' : null"
                 >
                   <option value="">Selecione…</option>
-                  @for (opcao of fontes; track opcao.valor) {
-                    <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                  @for (
+                    opcao of comOpcaoAtual(
+                      fontes.vocabulario.itens(),
+                      fato()?.definicao?.valores?.fonte
+                    );
+                    track opcao.codigo
+                  ) {
+                    <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
                   }
                 </select>
+                @if (fontes.vocabulario.carregando()) {
+                  <span class="field__hint" [uiIndicadorDaLeitura]="fontes.leitura"
+                    >Carregando…</span
+                  >
+                }
+                <ui-falha-de-leitura-do-campo [leitura]="fontes.leitura" />
                 @if (erroFonte) {
                   <span class="field__error" id="cfg-fato-def-fonteValores-erro">{{
                     erroFonte
@@ -213,12 +241,26 @@
                   aria-required="true"
                   [attr.aria-invalid]="erroFormato ? 'true' : null"
                   [attr.aria-describedby]="descritor('formato')"
+                  id="cfg-fato-def-formatos"
+                  [attr.aria-busy]="formatos.vocabulario.carregando() ? 'true' : null"
                 >
                   <option value="">Selecione…</option>
-                  @for (opcao of formatos; track opcao.valor) {
-                    <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                  @for (
+                    opcao of comOpcaoAtual(
+                      formatos.vocabulario.itens(),
+                      fato()?.definicao?.formato
+                    );
+                    track opcao.codigo
+                  ) {
+                    <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
                   }
                 </select>
+                @if (formatos.vocabulario.carregando()) {
+                  <span class="field__hint" [uiIndicadorDaLeitura]="formatos.leitura"
+                    >Carregando…</span
+                  >
+                }
+                <ui-falha-de-leitura-do-campo [leitura]="formatos.leitura" />
                 @if (erroFormato) {
                   <span class="field__error" id="cfg-fato-def-formato-erro">{{ erroFormato }}</span>
                 }
@@ -234,11 +276,22 @@
                   formControlName="escopo"
                   [attr.aria-invalid]="erroEscopo ? 'true' : null"
                   [attr.aria-describedby]="descritor('escopo')"
+                  id="cfg-fato-def-escopos"
+                  [attr.aria-busy]="escopos.vocabulario.carregando() ? 'true' : null"
                 >
-                  @for (opcao of escopos; track opcao.valor) {
-                    <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                  @for (
+                    opcao of comOpcaoAtual(escopos.vocabulario.itens(), fato()?.definicao?.escopo);
+                    track opcao.codigo
+                  ) {
+                    <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
                   }
                 </select>
+                @if (escopos.vocabulario.carregando()) {
+                  <span class="field__hint" [uiIndicadorDaLeitura]="escopos.leitura"
+                    >Carregando…</span
+                  >
+                }
+                <ui-falha-de-leitura-do-campo [leitura]="escopos.leitura" />
                 @if (erroEscopo) {
                   <span class="field__error" id="cfg-fato-def-escopo-erro">{{ erroEscopo }}</span>
                 }
@@ -268,10 +321,18 @@
               }
             </label>
           </div>
+          <div id="cfg-fato-def-hipoteses" tabindex="-1">
+            @if (hipoteses.vocabulario.carregando()) {
+              <span [uiIndicadorDaLeitura]="hipoteses.leitura">Carregando hipóteses legais…</span>
+            }
+            <ui-falha-de-leitura-do-campo [leitura]="hipoteses.leitura" />
+          </div>
           <cfg-fato-protecao-da-definicao
             [form]="form"
             [classificacoes]="dep.classificacoes()"
-            [hipoteses]="dep.hipoteses()"
+            [hipoteses]="opcoesDasHipoteses()"
+            [carregandoHipoteses]="hipoteses.vocabulario.carregando()"
+            idDoAvisoDasHipoteses="cfg-fato-def-hipoteses"
             [avisaNovaAprovacao]="dep.avisaNovaAprovacao()"
           />
         </fieldset>
@@ -296,10 +357,18 @@
         novalidate
       >
         <fieldset class="form-drawer__campos" role="none" [disabled]="bloqueado()">
+          <div id="cfg-fato-def-hipoteses" tabindex="-1">
+            @if (hipoteses.vocabulario.carregando()) {
+              <span [uiIndicadorDaLeitura]="hipoteses.leitura">Carregando hipóteses legais…</span>
+            }
+            <ui-falha-de-leitura-do-campo [leitura]="hipoteses.leitura" />
+          </div>
           <cfg-fato-protecao-da-definicao
             [form]="form"
             [classificacoes]="dep.classificacoes()"
-            [hipoteses]="dep.hipoteses()"
+            [hipoteses]="opcoesDasHipoteses()"
+            [carregandoHipoteses]="hipoteses.vocabulario.carregando()"
+            idDoAvisoDasHipoteses="cfg-fato-def-hipoteses"
             [avisaNovaAprovacao]="dep.avisaNovaAprovacao()"
           />
         </fieldset>

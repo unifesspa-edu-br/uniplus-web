@@ -1,3 +1,5 @@
+import { ClassificacaoDeProtecaoCodigo } from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { laudo, pendencia, rg, type Pagina } from './tipos-documento.testing';
 
@@ -37,5 +39,8 @@ export function apoioDaProtecao(pagina: () => Pagina) {
 const ajuste = (tipo = laudo) =>
   pendencia(tipo, {
     situacao: DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO,
-    classificacaoRecomendada: 'SENSIVEL',
+    classificacaoRecomendada: codigoComRotulo(
+      ClassificacaoDeProtecaoCodigo.SENSIVEL,
+      'Pessoal sensível',
+    ),
   });

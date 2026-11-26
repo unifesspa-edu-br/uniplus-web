@@ -18,7 +18,7 @@ const APP = process.env['BASE_URL'] ?? 'http://localhost:4203';
 
 interface TipoGravado {
   readonly codigo: string;
-  readonly classificacaoProtecao: string;
+  readonly classificacaoProtecao: { readonly codigo: string };
   readonly protecaoAprovada: boolean;
 }
 
@@ -26,7 +26,7 @@ interface ItemDaProtecao {
   readonly codigo: string;
   readonly aprovacao: {
     readonly situacao: string;
-    readonly classificacaoRecomendada: string | null;
+    readonly classificacaoRecomendada: { readonly codigo: string } | null;
   };
 }
 
@@ -54,8 +54,8 @@ async function tipoNaApi(codigo: string): Promise<SituacaoDoTipo | undefined> {
   );
   return {
     situacao: item?.aprovacao.situacao ?? (tipo.protecaoAprovada ? 'APROVADA' : 'DESCONHECIDA'),
-    classificacao: tipo.classificacaoProtecao,
-    recomendada: item?.aprovacao.classificacaoRecomendada ?? null,
+    classificacao: tipo.classificacaoProtecao.codigo,
+    recomendada: item?.aprovacao.classificacaoRecomendada?.codigo ?? null,
   };
 }
 

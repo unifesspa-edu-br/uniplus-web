@@ -28,6 +28,7 @@ import {
 } from './fatos-candidato.fixtures';
 import { FatosCandidatoPage } from './fatos-candidato.page';
 import { FatosCandidatoStore } from './fatos-candidato.store';
+import { atenderVocabulariosDoFato } from './vocabularios-do-fato.testing';
 
 const BASE = 'http://localhost:5000';
 export const LISTA = `${BASE}/api/configuracao/admin/fatos-candidato`;
@@ -167,6 +168,7 @@ export class PaginaDosFatos {
   };
   readonly atenderApoios = (catalogo: readonly FatoCandidatoView[] = []): void => {
     this.atenderTiposDoDado();
+    atenderVocabulariosDoFato(this.http);
     for (const req of this.http.match((r) => r.url === CATALOGO && r.method === 'GET')) {
       if (!req.cancelled) req.flush(catalogo.map(noCatalogo));
     }
@@ -199,6 +201,7 @@ export class PaginaDosFatos {
     this.fixture.detectChanges();
     this.pedidoDaLista().flush(itens.map(emManutencao));
     this.atenderPendencias(pendencias);
+    atenderVocabulariosDoFato(this.http);
     await this.propagar();
   }
 

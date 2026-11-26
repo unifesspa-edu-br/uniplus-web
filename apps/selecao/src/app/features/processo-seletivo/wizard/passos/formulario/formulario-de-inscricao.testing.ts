@@ -1,3 +1,5 @@
+import { EscopoFatoCodigo } from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import {
   DADO_NUMERICO,
   DADO_OPCAO,
@@ -55,7 +57,7 @@ const FATO_DECLARADO = {
   cardinalidade: VALOR_UNICO,
   valoresDominio: null,
   pontoResolucao: 'INSCRICAO',
-  escopo: 'CANDIDATO',
+  escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
   fonteValores: null,
   ativo: true,
   valoresDominioDeclarados: null,

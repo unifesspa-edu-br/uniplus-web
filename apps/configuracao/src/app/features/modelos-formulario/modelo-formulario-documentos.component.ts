@@ -1,3 +1,4 @@
+import { comEscopoPeloCodigo } from '@uniplus/shared-data/configuracao';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import {
   EditorDeDocumentosExigidosComponent,
@@ -35,7 +36,7 @@ export class ModeloFormularioDocumentosComponent {
   readonly fatosCitaveis = computed(() => fatosCitaveisPelosTermos(this.conteudo()));
   readonly fatosDosDocumentos = computed(() =>
     fatosOferecidos(
-      this.fatos(),
+      comEscopoPeloCodigo(this.fatos()),
       this.fatosCitaveis(),
       this.documentosExigidos().map((d) => d.quando),
       this.comMunicipios(),

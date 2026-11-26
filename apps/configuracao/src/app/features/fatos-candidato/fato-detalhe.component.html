@@ -60,16 +60,16 @@
           @if (f.definicao.formato) {
             <div>
               <dt>Formato do texto</dt>
-              <dd>{{ rotulo(formatos, f.definicao.formato) }}</dd>
+              <dd>{{ f.definicao.formato.rotulo }}</dd>
             </div>
           }
           <div>
             <dt>Escopo</dt>
-            <dd>{{ rotulo(escopos, f.definicao.escopo) }}</dd>
+            <dd>{{ f.definicao.escopo.rotulo }}</dd>
           </div>
           <div>
             <dt>Componente de exibição</dt>
-            <dd>{{ rotuloDoComponente(f.descritivo.componenteExibicao) }}</dd>
+            <dd>{{ f.descritivo.componenteExibicao?.rotulo ?? rotuloDoPadrao }}</dd>
           </div>
         </dl>
       </section>

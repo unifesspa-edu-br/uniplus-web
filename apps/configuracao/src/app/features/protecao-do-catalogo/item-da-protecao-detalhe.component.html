@@ -44,9 +44,7 @@
       <div>
         <dt>Componente de exibição</dt>
         <dd>
-          {{
-            fato.componenteExibicao ? rotulo(componentes, fato.componenteExibicao) : rotuloDoPadrao
-          }}
+          {{ fato.componenteExibicao?.rotulo ?? rotuloDoPadrao }}
         </dd>
       </div>
     }

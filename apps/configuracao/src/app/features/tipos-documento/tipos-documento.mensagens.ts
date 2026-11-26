@@ -1,5 +1,4 @@
 import type { TipoDocumentoDto } from '@uniplus/shared-data/configuracao';
-import { CLASSIFICACOES_DE_PROTECAO, rotuloDe } from '../../shared/protecao-do-catalogo';
 
 const nomeDoTipo = (tipo: TipoDocumentoDto): string => `o tipo de documento ${tipo.codigo}`;
 
@@ -28,7 +27,7 @@ export function mensagemDoAceite(
   recomendada: string | null | undefined,
 ): string {
   return tipo && recomendada
-    ? `Aceitar a classificação "${rotuloDe(CLASSIFICACOES_DE_PROTECAO, recomendada)}" para "${tipo.nome}" (${tipo.codigo})? ` +
+    ? `Aceitar a classificação "${recomendada}" para "${tipo.nome}" (${tipo.codigo})? ` +
         'O tipo fica aprovado com ela, sem nova solicitação, e a proteção de dados é avisada.'
     : 'Aceitar a classificação recomendada pela proteção de dados?';
 }

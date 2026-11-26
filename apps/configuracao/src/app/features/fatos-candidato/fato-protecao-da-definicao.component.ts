@@ -22,8 +22,17 @@ export class FatoProtecaoDaDefinicaoComponent {
   readonly hipoteses = input.required<readonly OpcaoDeVocabulario[]>();
   /** A proteção mudou e o fato estava aprovado: a mudança volta à aprovação da proteção de dados. */
   readonly avisaNovaAprovacao = input.required<boolean>();
+  /** A lista de hipóteses ainda está sendo lida. */
+  readonly carregandoHipoteses = input(false);
+  /** Onde fica o aviso de falha da leitura das hipóteses, para ligá-lo ao campo. */
+  readonly idDoAvisoDasHipoteses = input<string | null>(null);
 
   protected erroDoCampo(campo: CampoDaProtecao): string | null {
     return mensagemDeErroDoControle(this.form().controls[campo]);
+  }
+
+  protected descritorDaHipotese(erro: string | null): string | null {
+    const ids = [this.idDoAvisoDasHipoteses(), erro ? 'cfg-fato-def-hipoteseLegal-erro' : null];
+    return ids.filter(Boolean).join(' ') || null;
   }
 }

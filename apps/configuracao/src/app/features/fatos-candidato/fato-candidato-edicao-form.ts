@@ -1,4 +1,4 @@
-import { Signal, computed, effect, untracked } from '@angular/core';
+import { Signal, WritableSignal, computed, effect, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { map } from 'rxjs';
@@ -14,13 +14,10 @@ import { opcoesDoVocabulario } from '@uniplus/shared-data/configuracao';
 import { componenteEscolhido, controleDaQuantidade } from './codigos-do-fato';
 import { nullIfBlank } from '../../shared/formulario';
 import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
-import {
-  esvaziarSeForaDas,
-  hipotesesDaClassificacao,
-  protecaoMudou,
-} from '../../shared/protecao-do-catalogo';
+import { esvaziarSeForaDas, protecaoMudou } from '../../shared/protecao-do-catalogo';
 import { LIMITES_DO_FATO } from './fato-candidato-form';
 import {
+  hipotesesDoFato,
   tiposDoDadoDoDerivado,
   classificacoesDoDominio,
   eixosDoTipo,
@@ -55,7 +52,7 @@ export function valoresDoDescritivo(fato: FatoCandidatoDto) {
   return {
     nome: fato.descritivo.nome,
     descricao: fato.descritivo.descricao,
-    componenteExibicao: fato.descritivo.componenteExibicao ?? '',
+    componenteExibicao: fato.descritivo.componenteExibicao?.codigo ?? '',
   };
 }
 
@@ -98,8 +95,8 @@ export function valoresDaDefinicao(fato: FatoCandidatoDto): DefinicaoEmEdicao {
     dominio: definicao.dominio.codigo,
     cardinalidade: definicao.cardinalidade.codigo,
     fonteValores: definicao.valores.fonte?.codigo ?? '',
-    formato: definicao.formato ?? '',
-    escopo: definicao.escopo,
+    formato: definicao.formato?.codigo ?? '',
+    escopo: definicao.escopo.codigo,
     pontoResolucao: definicao.resolucao.pontoResolucao,
   };
 }
@@ -159,7 +156,8 @@ export interface DependenciasDaDefinicao {
   readonly eixos: Signal<ReturnType<typeof eixosEditaveis>>;
   readonly dominios: Signal<readonly ItemDeVocabulario[]>;
   readonly classificacoes: Signal<ReturnType<typeof classificacoesDoDominio>>;
-  readonly hipoteses: Signal<ReturnType<typeof hipotesesDaClassificacao>>;
+  readonly hipoteses: Signal<ReturnType<typeof hipotesesDoFato>>;
+  readonly vocabularioDasHipoteses: WritableSignal<readonly ItemDeVocabulario[] | null>;
   readonly avisaNovaAprovacao: Signal<boolean>;
 }
 
@@ -176,13 +174,37 @@ export function ligarDependenciasDaDefinicao(
   tiposDoDado: Signal<readonly TipoDoDado[]>,
 ): DependenciasDaDefinicao {
   const valores = valoresDoFormulario(form);
-  const eixos = computed(() => eixosEditaveis(tipo(), valores().dominio));
-  const classificacoes = computed(() => classificacoesDoDominio(valores().dominio));
-  const hipoteses = computed(() => hipotesesDaClassificacao(valores().classificacaoProtecao));
-  const dominios = opcoesDeDominio(fato, tipo, tiposDoDado);
-  const avisaNovaAprovacao = computed(() => exigeNovaAprovacao(fato(), valores()));
-  ajustarOsCamposAoQueMudou(form, fato, tipo, { eixos, classificacoes, hipoteses });
-  return { valores, eixos, dominios, classificacoes, hipoteses, avisaNovaAprovacao };
+  const resultado = {
+    valores,
+    ...derivadosDosValores(valores, tipo),
+    ...derivadosDoFato(valores, fato, tipo, tiposDoDado),
+  };
+  ajustarOsCamposAoQueMudou(form, fato, tipo, resultado);
+  return resultado;
+}
+
+function derivadosDosValores(valores: Signal<DefinicaoEmEdicao>, tipo: Signal<TipoDoFato>) {
+  const vocabularioDasHipoteses = signal<readonly ItemDeVocabulario[] | null>(null);
+  return {
+    vocabularioDasHipoteses,
+    eixos: computed(() => eixosEditaveis(tipo(), valores().dominio)),
+    classificacoes: computed(() => classificacoesDoDominio(valores().dominio)),
+    hipoteses: computed(() =>
+      hipotesesDoFato(valores().classificacaoProtecao, vocabularioDasHipoteses() ?? []),
+    ),
+  };
+}
+
+function derivadosDoFato(
+  valores: Signal<DefinicaoEmEdicao>,
+  fato: Signal<FatoCandidatoDto | null>,
+  tipo: Signal<TipoDoFato>,
+  tiposDoDado: Signal<readonly TipoDoDado[]>,
+) {
+  return {
+    dominios: opcoesDeDominio(fato, tipo, tiposDoDado),
+    avisaNovaAprovacao: computed(() => exigeNovaAprovacao(fato(), valores())),
+  };
 }
 
 function opcoesDeDominio(
@@ -211,18 +233,32 @@ function exigeNovaAprovacao(atual: FatoCandidatoDto | null, digitado: DefinicaoE
   );
 }
 
+type Derivados = Pick<
+  DependenciasDaDefinicao,
+  'eixos' | 'classificacoes' | 'hipoteses' | 'vocabularioDasHipoteses'
+>;
+
+/** Lê os derivados dentro do efeito, para que ele acompanhe cada um. */
+function lerDerivados(derivados: Derivados, tipo: Signal<TipoDoFato>) {
+  return {
+    hipoteses: derivados.vocabularioDasHipoteses() ? derivados.hipoteses() : null,
+    classificacoes: derivados.classificacoes(),
+    eixos: derivados.eixos(),
+    doTipo: eixosDoTipo(tipo()),
+  };
+}
+
 function ajustarOsCamposAoQueMudou(
   form: DefinicaoForm,
   fato: Signal<FatoCandidatoDto | null>,
   tipo: Signal<TipoDoFato>,
-  derivados: Pick<DependenciasDaDefinicao, 'eixos' | 'classificacoes' | 'hipoteses'>,
+  derivados: Derivados,
 ): void {
   effect(() => {
-    const { classificacoes, hipoteses, eixos } = derivados;
-    const [c, h, e, doTipo] = [classificacoes(), hipoteses(), eixos(), eixosDoTipo(tipo())];
+    const lido = lerDerivados(derivados, tipo);
     untracked(() => {
-      esvaziarProtecaoIncompativel(form, fato(), c, h);
-      exigirOsEixosDoTipo(form, e, doTipo);
+      esvaziarProtecaoIncompativel(form, fato(), lido.classificacoes, lido.hipoteses);
+      exigirOsEixosDoTipo(form, lido.eixos, lido.doTipo);
     });
   });
 }
@@ -254,13 +290,13 @@ function esvaziarProtecaoIncompativel(
   form: DefinicaoForm,
   servidor: FatoCandidatoDto | null,
   classificacoes: ReturnType<typeof classificacoesDoDominio>,
-  hipoteses: ReturnType<typeof hipotesesDaClassificacao>,
+  hipoteses: ReturnType<typeof hipotesesDoFato> | null,
 ): void {
   const mexido = mexidoDesdeOServidor(form, servidor);
   if (mexido.dominio || mexido.classificacao) {
     esvaziarSeForaDas(form.controls.classificacaoProtecao, classificacoes);
   }
-  if (mexido.classificacao || mexido.hipotese) {
+  if (hipoteses !== null && (mexido.classificacao || mexido.hipotese)) {
     esvaziarSeForaDas(form.controls.hipoteseLegal, hipoteses);
   }
 }

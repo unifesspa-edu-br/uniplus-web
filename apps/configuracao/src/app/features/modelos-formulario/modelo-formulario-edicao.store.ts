@@ -17,6 +17,7 @@ import {
   TermosConsentimentoApi,
   TipoDocumentoDto,
   TipoProcessoDto,
+  comEscopoPeloCodigo,
 } from '@uniplus/shared-data/configuracao';
 import { SELECAO_BASE_PATH, type OpcaoDeComprovacaoDto } from '@uniplus/shared-data/selecao';
 import {
@@ -107,6 +108,8 @@ export class ModeloFormularioEdicaoStore {
     () => this.detalhe.problem()?.status === STATUS_HTTP.NAO_ENCONTRADO,
   );
   readonly fatos = computed(() => this.catalogo.data()?.map(fatoComOperadores) ?? []);
+  /** O catálogo como o editor de formulário o lê: o escopo é o código. */
+  readonly fatosDoEditor = computed(() => comEscopoPeloCodigo(this.fatos()));
   readonly catalogoComErro = computed(
     () => this.catalogo.problem() !== null || this.catalogo.error() !== undefined,
   );

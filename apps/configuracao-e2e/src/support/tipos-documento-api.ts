@@ -1,5 +1,9 @@
 import type { Page, Route } from '@playwright/test';
-import type { TipoDocumentoDto } from '@uniplus/shared-data/configuracao';
+import type {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+  TipoDocumentoDto,
+} from '@uniplus/shared-data/configuracao';
 
 /** API mockada do cadastro de Tipo de Documento, compartilhada pelos specs da tela. */
 const CORS_HEADERS = {
@@ -39,8 +43,15 @@ const RG_ID = '01960000-0000-7000-0000-0000000000d1';
 const LAUDO_ID = '01960000-0000-7000-0000-0000000000d2';
 
 const PROTECAO_SEED = {
-  classificacaoProtecao: 'PESSOAL',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  classificacaoProtecao: {
+    codigo: 'PESSOAL' as ClassificacaoDeProtecaoCodigo.PESSOAL,
+    rotulo: 'Pessoal',
+  },
+  hipoteseLegal: {
+    codigo:
+      'EXECUCAO_POLITICAS_PUBLICAS' as HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+    rotulo: 'Execução de políticas públicas',
+  },
   finalidadeTratamento: 'Comprovar a identificação do candidato na inscrição.',
   protecaoAprovada: true,
 } as const;
@@ -115,24 +126,29 @@ async function mockRemocao(page: Page, capturado: Capturado): Promise<void> {
   });
 }
 
+async function responderACriacao(
+  route: Route,
+  capturado: Capturado,
+  opcoes: OpcoesDaCriacao,
+): Promise<void> {
+  capturado.posts.push(route.request().postDataJSON());
+  const status = opcoes.criarStatus ?? 201;
+  await route.fulfill({
+    status,
+    contentType: status >= 400 ? 'application/problem+json' : 'application/json',
+    headers: CORS_HEADERS,
+    body: JSON.stringify(opcoes.criarBody ?? 'novo-tipo-documento-id'),
+  });
+}
+
 async function mockCriacao(
   page: Page,
   capturado: Capturado,
   opcoes: OpcoesDaCriacao,
 ): Promise<void> {
   await page.route(/\/api\/configuracao\/admin\/tipos-documento(\?.*)?$/, async (route) => {
-    if (route.request().method() !== 'POST') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-    capturado.posts.push(route.request().postDataJSON());
-    const status = opcoes.criarStatus ?? 201;
-    await route.fulfill({
-      status,
-      contentType: status >= 400 ? 'application/problem+json' : 'application/json',
-      headers: CORS_HEADERS,
-      body: JSON.stringify(opcoes.criarBody ?? 'novo-tipo-documento-id'),
-    });
+    if (route.request().method() === 'POST') await responderACriacao(route, capturado, opcoes);
+    else await route.fulfill({ status: 204, headers: CORS_HEADERS });
   });
 }
 

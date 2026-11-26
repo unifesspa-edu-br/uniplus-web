@@ -1,3 +1,8 @@
+import { codigoComRotulo } from './fatos-candidato.fixtures';
+import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
 import { type FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 import { type Pagina, problema, sucesso, urlDoFato } from './fatos-candidato.testing';
 import {
@@ -17,8 +22,11 @@ export const derivadoBooleano: FatoCandidatoDto = {
       valores: { fonte: null, declarados: [] },
       protecao: {
         ...corRaca.definicao.protecao,
-        classificacao: 'PESSOAL',
-        hipoteseLegal: 'CUMPRIMENTO_OBRIGACAO_LEGAL',
+        classificacao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
+        hipoteseLegal: codigoComRotulo(
+          HipoteseLegalTratamentoCodigo.CUMPRIMENTO_OBRIGACAO_LEGAL,
+          'Cumprimento de obrigação legal',
+        ),
       },
     }),
     { origem: origemCalculada, binding: 'REGRA_DERIVACAO:PERFIL' },

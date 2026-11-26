@@ -13,6 +13,13 @@ import { ITENS_DE_VOCABULARIO } from './vocabularios-de-configuracao.testing';
 
 const vocabularios: ReadonlyArray<readonly [keyof VocabulariosDeConfiguracao, string]> = [
   ['tipos-do-dado', 'tipo-do-dado'],
+  ['quantidades-de-valores', 'quantidade-de-valores'],
+  ['origens-fato', 'origem-fato'],
+  ['fontes-valores-fato', 'fonte-valores-fato'],
+  ['formatos-texto', 'formato-texto'],
+  ['escopos-fato', 'escopo-fato'],
+  ['componentes-de-exibicao', 'componente-de-exibicao'],
+  ['hipoteses-legais-tratamento', 'hipotese-legal-tratamento'],
   ['abrangencias-dia-nao-util', 'codigo-abrangencia-dia-nao-util'],
   ['acoes-quando-indeferido', 'codigo-acao-quando-indeferido'],
   ['composicoes-vagas', 'codigo-composicao-vagas'],

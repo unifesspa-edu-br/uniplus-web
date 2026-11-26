@@ -91,7 +91,7 @@
                 {{ linha.tipo.formatosAceitos || '—' }}
               </td>
               <td data-label="Sensibilidade" class="u-nowrap-desktop">
-                {{ rotuloDaSensibilidade(linha.tipo.classificacaoProtecao) }}
+                {{ linha.tipo.classificacaoProtecao.rotulo }}
               </td>
               <td data-label="Situação" class="u-nowrap-desktop">
                 @if (linha.situacao === 'ilegivel') {

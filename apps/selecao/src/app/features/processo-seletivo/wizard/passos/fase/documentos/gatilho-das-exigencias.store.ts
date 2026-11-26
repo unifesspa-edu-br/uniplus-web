@@ -1,3 +1,4 @@
+import { comEscopoPeloCodigo } from '@uniplus/shared-data/configuracao';
 import { Injectable, computed, inject } from '@angular/core';
 import { type UiComboboxGroup } from '@uniplus/shared-ui/components';
 
@@ -89,7 +90,7 @@ export class GatilhoDasExigenciasStore {
     producaoDoRascunho(
       this.store.draft().formulario,
       fasesNoCronograma(this.fasesDoCronograma(), this.catalogoDeFases.fasePorId()),
-      this.catalogoDeFatos.fatos(),
+      comEscopoPeloCodigo(this.catalogoDeFatos.fatos()),
     ),
   );
 
@@ -121,13 +122,16 @@ export class GatilhoDasExigenciasStore {
     );
   });
 
+  private readonly fatosDoFormulario = computed(() =>
+    comEscopoPeloCodigo(this.catalogoDeFatos.fatos()),
+  );
+
   private gatilhoDoDocumento(id: string, producao: ProducaoDosFatos, nomes: NomesDaOrientacao) {
     const exigencia = this.exigencias.exigenciaDoDocumento(id);
     const grupo = this.exigencias.repeticaoDeclarada(id)?.grupo ?? null;
     const doGrupo = camposDaRepeticao(grupo, producao);
-    const recusas = recusasDeFaseDoGatilho(exigencia, producao, nomes, doGrupo);
-    const erros = Object.fromEntries(recusas.map(({ indice, orientacao }) => [indice, orientacao]));
-    const fatos = fatosDoGatilhoNaFase(this.catalogoDeFatos.fatos(), exigencia, {
+    const erros = errosDasRecusas(recusasDeFaseDoGatilho(exigencia, producao, nomes, doGrupo));
+    const fatos = fatosDoGatilhoNaFase(this.fatosDoFormulario(), exigencia, {
       producao,
       dominiosDinamicos: this.dominiosDoGatilho(),
       citados: exigencia.condicoes.map((condicao) => condicao.fato),
@@ -306,4 +310,8 @@ export class GatilhoDasExigenciasStore {
       ),
     );
   }
+}
+
+function errosDasRecusas(recusas: ReturnType<typeof recusasDeFaseDoGatilho>) {
+  return Object.fromEntries(recusas.map(({ indice, orientacao }) => [indice, orientacao]));
 }

@@ -1,3 +1,4 @@
+import { valorDaApi } from './valor-da-api';
 /** O fato como a leitura administrativa o devolve: no envelope. */
 export const emManutencao = (fato: object) => ({ fato, operadoresAdmitidos: [] });
 
@@ -11,20 +12,20 @@ export const FATO = {
     componenteExibicao: null,
   },
   definicao: {
-    dominio: 'SIM_OU_NAO',
-    cardinalidade: 'ESCALAR',
-    escopo: 'CANDIDATO',
+    dominio: valorDaApi('SIM_OU_NAO'),
+    cardinalidade: valorDaApi('VALOR_UNICO'),
+    escopo: valorDaApi('CANDIDATO'),
     formato: null,
     valores: { fonte: null, declarados: [] },
     resolucao: {
-      origem: 'DECLARADO',
+      origem: valorDaApi('DECLARADO'),
       pontoResolucao: 'INSCRICAO',
       binding: 'CAMPO_INSCRICAO:TRABALHA',
     },
     protecao: {
-      classificacao: 'PESSOAL',
+      classificacao: valorDaApi('PESSOAL'),
       finalidade: 'Classificar a reserva de vagas.',
-      hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+      hipoteseLegal: valorDaApi('EXECUCAO_POLITICAS_PUBLICAS'),
       aprovacao: {
         situacao: 'APROVADA',
         ciclo: 0,

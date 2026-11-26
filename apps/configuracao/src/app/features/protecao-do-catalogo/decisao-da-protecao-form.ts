@@ -31,10 +31,10 @@ export function recomendacoesPara(item: DetalheDaProtecaoDoCatalogoDto | null) {
       : new Set(classificacoesDoDominio(item.fato.dominio.codigo).map((opcao) => opcao.valor));
   return CLASSIFICACOES_DE_PROTECAO.filter(
     (opcao) =>
-      opcao.valor !== item.classificacaoProtecao &&
+      opcao.valor !== item.classificacaoProtecao.codigo &&
       (doDominio === null || doDominio.has(opcao.valor)) &&
       hipotesesDaClassificacao(opcao.valor).some(
-        (hipotese) => hipotese.valor === item.hipoteseLegal,
+        (hipotese) => hipotese.valor === item.hipoteseLegal.codigo,
       ),
   );
 }
@@ -47,8 +47,8 @@ export function comandoPara(
     cadastro: item.tipo,
     itemId: item.id,
     decisao: DecidirProtecaoDoCatalogoRequestDecisao.APROVACAO,
-    classificacaoProtecao: classificacaoEscolhida(item.classificacaoProtecao),
-    hipoteseLegal: hipoteseEscolhida(item.hipoteseLegal),
+    classificacaoProtecao: classificacaoEscolhida(item.classificacaoProtecao.codigo),
+    hipoteseLegal: hipoteseEscolhida(item.hipoteseLegal.codigo),
     finalidadeTratamento: item.finalidadeTratamento,
     ciclo: item.aprovacao.ciclo,
     manifestacoesNoCiclo: item.aprovacao.manifestacoesNoCiclo,

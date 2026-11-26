@@ -1,3 +1,8 @@
+import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -18,9 +23,9 @@ const tipo = (id: string, protecaoAprovada: boolean): TipoDocumentoDto => ({
   formatosAceitos: null,
   tamanhoMaximoMb: null,
   tipoEquivalente: null,
-  classificacaoProtecao: 'SENSIVEL',
+  classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.SENSIVEL, 'Sensível'),
   finalidadeTratamento: 'Conferir o laudo do candidato.',
-  hipoteseLegal: 'TUTELA_DA_SAUDE',
+  hipoteseLegal: codigoComRotulo(HipoteseLegalTratamentoCodigo.TUTELA_DA_SAUDE, 'Tutela da saúde'),
   protecaoAprovada,
   criadoEm: '2026-08-30T12:00:00Z',
 });

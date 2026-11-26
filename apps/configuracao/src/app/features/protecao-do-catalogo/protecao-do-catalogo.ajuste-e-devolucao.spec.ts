@@ -1,3 +1,8 @@
+import {
+  ClassificacaoDeProtecaoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
@@ -105,7 +110,10 @@ describe('ProtecaoDoCatalogoPage — recomendar ajuste e devolver', () => {
       const tela = await abrirDialogo(
         rural,
         detalheDoFato({
-          classificacaoProtecao: 'SENSIVEL',
+          classificacaoProtecao: codigoComRotulo(
+            ClassificacaoDeProtecaoCodigo.SENSIVEL,
+            'Sensível',
+          ),
           fato: {
             dominio: dominioTexto,
             cardinalidade: valorUnico,
@@ -127,8 +135,11 @@ describe('ProtecaoDoCatalogoPage — recomendar ajuste e devolver', () => {
     it('não oferece a classificação que a hipótese legal declarada não admite', async () => {
       const tela = await abrirDialogo(laudo, {
         ...detalheDoLaudo,
-        classificacaoProtecao: 'PESSOAL',
-        hipoteseLegal: 'INTERESSE_LEGITIMO',
+        classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
+        hipoteseLegal: codigoComRotulo(
+          HipoteseLegalTratamentoCodigo.INTERESSE_LEGITIMO,
+          'Interesse legítimo',
+        ),
       });
 
       const opcoes = Array.from(

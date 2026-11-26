@@ -1,3 +1,8 @@
+import {
+  ClassificacaoDeProtecaoCodigo,
+  EscopoFatoCodigo,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
 import { ItemParaSolicitarRequestCadastro } from '@uniplus/shared-data/configuracao';
 import {
   OperadorCodigo,
@@ -37,6 +42,11 @@ export const noCatalogo = (fato: FatoCandidatoView): FatoDoCatalogoDto => ({
     { codigo: OperadorCodigo.IGUAL, rotulo: 'é' },
     { codigo: OperadorCodigo.DIFERENTE, rotulo: 'não é' },
   ],
+});
+
+export const codigoComRotulo = <T extends string>(codigo: T, rotulo: string) => ({
+  codigo,
+  rotulo,
 });
 
 type Definicao = FatoCandidatoDto['definicao'];
@@ -95,8 +105,23 @@ export const comAprovacao = (
   justificativa: string | null = null,
 ): FatoCandidatoDto =>
   comProtecao(fato, {
-    aprovacao: { ...APROVADA, situacao, classificacaoRecomendada, justificativa },
+    aprovacao: {
+      ...APROVADA,
+      situacao,
+      classificacaoRecomendada: classificacaoDaRecomendacao(classificacaoRecomendada),
+      justificativa,
+    },
   });
+
+function classificacaoDaRecomendacao(codigo: string | null) {
+  if (!codigo) return null;
+  const valor = ClassificacaoDeProtecaoCodigo[codigo as keyof typeof ClassificacaoDeProtecaoCodigo];
+  const rotulos: Partial<Record<ClassificacaoDeProtecaoCodigo, string>> = {
+    SENSIVEL: 'Pessoal sensível',
+    IDENTIFICADOR: 'Identificador',
+  };
+  return codigoComRotulo(valor, rotulos[valor] ?? codigo);
+}
 
 /** Fato declarado de sim ou não: o mais simples de editar. */
 export const trabalha: FatoCandidatoDto = {
@@ -110,7 +135,7 @@ export const trabalha: FatoCandidatoDto = {
   definicao: {
     dominio: tipoSimOuNao,
     cardinalidade: valorUnico,
-    escopo: 'CANDIDATO',
+    escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
     formato: null,
     valores: { fonte: null, declarados: [] },
     resolucao: {
@@ -119,9 +144,12 @@ export const trabalha: FatoCandidatoDto = {
       binding: 'CAMPO_INSCRICAO:TRABALHA',
     },
     protecao: {
-      classificacao: 'PESSOAL',
+      classificacao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
       finalidade: 'Classificar a reserva de vagas.',
-      hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+      hipoteseLegal: codigoComRotulo(
+        HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+        'Execução de políticas públicas',
+      ),
       aprovacao: APROVADA,
     },
   },
@@ -152,9 +180,12 @@ export const corRaca: FatoCandidatoDto = {
     resolucao: { ...trabalha.definicao.resolucao, binding: 'CAMPO_INSCRICAO:COR_RACA' },
     protecao: {
       ...trabalha.definicao.protecao,
-      classificacao: 'SENSIVEL',
+      classificacao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.SENSIVEL, 'Pessoal sensível'),
       finalidade: 'Reserva de vagas.',
-      hipoteseLegal: 'CUMPRIMENTO_OBRIGACAO_LEGAL',
+      hipoteseLegal: codigoComRotulo(
+        HipoteseLegalTratamentoCodigo.CUMPRIMENTO_OBRIGACAO_LEGAL,
+        'Cumprimento de obrigação legal',
+      ),
     },
   },
 };
@@ -194,9 +225,12 @@ export const quilombola: FatoCandidatoView = {
   valoresDominioDeclarados: null,
   fonteValores: null,
   ativo: true,
-  escopo: 'CANDIDATO',
-  classificacaoProtecao: 'PESSOAL',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
+  classificacaoProtecao: codigoComRotulo(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
+  hipoteseLegal: codigoComRotulo(
+    HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+    'Execução de políticas públicas',
+  ),
   finalidadeTratamento: 'Classificar a reserva de vagas.',
   protecaoAprovada: true,
 };

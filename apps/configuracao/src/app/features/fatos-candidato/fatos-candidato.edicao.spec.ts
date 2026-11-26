@@ -1,3 +1,5 @@
+import { codigoComRotulo } from './fatos-candidato.fixtures';
+import { ComponenteDeExibicaoCodigo } from '@uniplus/shared-data/configuracao';
 import { TestBed } from '@angular/core/testing';
 import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
 import { afterEach, describe, expect, it, vi, beforeAll } from 'vitest';
@@ -27,15 +29,18 @@ describe('FatosCandidatoPage — edição do fato: nome, descrição e component
   it('a edição é integral e o componente vazio vai como nulo', async () => {
     const fato: FatoCandidatoDto = {
       ...corRaca,
-      descritivo: { ...corRaca.descritivo, componenteExibicao: 'MOEDA' },
+      descritivo: {
+        ...corRaca.descritivo,
+        componenteExibicao: codigoComRotulo(ComponenteDeExibicaoCodigo.MOEDA, 'Valor em reais'),
+      },
     };
     p = await montarPagina([fato]);
     await p.abrirEdicao(fato);
     const select = p.elemento<HTMLSelectElement>(campo('componenteExibicao'));
     expect([...select.options].map((o) => o.textContent?.trim())).toEqual([
       'Padrão (pelo tipo do dado)',
-      'Moeda',
-      'Situação',
+      'Valor em reais',
+      'Rótulo SITUACAO',
     ]);
     expect(select.value).toBe('MOEDA');
 
@@ -45,7 +50,7 @@ describe('FatosCandidatoPage — edição do fato: nome, descrição e component
     expect(mantido.request.body).toEqual({
       nome: 'Cor ou raça',
       descricao: 'Cor ou raça autodeclarada.',
-      componenteExibicao: 'MOEDA',
+      componenteExibicao: ComponenteDeExibicaoCodigo.MOEDA,
     });
     mantido.flush(...sucesso());
     await p.recarregarOFato(fato);
@@ -146,7 +151,7 @@ describe('FatosCandidatoPage — edição do fato: nome, descrição e component
     expect(p.drawerDoFato().open).toBe(true);
   });
 
-  it('o envio por Enter com a resposta 500 não duplica a escrita e devolve o foco', async () => {
+  it('envios repetidos com resposta 500 não duplicam a escrita e devolvem o foco', async () => {
     p = await montarPagina([corRaca]);
     await p.abrirEdicao(corRaca);
     const nome = p.elemento<HTMLInputElement>(`${DESCRITIVO} ${campo('nome')}`);
@@ -263,7 +268,10 @@ describe('FatosCandidatoPage — edição do fato: nome, descrição e component
     const sistema: FatoCandidatoDto = {
       ...corRaca,
       semeadoPeloSistema: true,
-      descritivo: { ...corRaca.descritivo, componenteExibicao: 'SITUACAO' },
+      descritivo: {
+        ...corRaca.descritivo,
+        componenteExibicao: codigoComRotulo(ComponenteDeExibicaoCodigo.SITUACAO, 'Situação'),
+      },
     };
 
     it('tem nome, descrição e componente editáveis, e o aviso cita os quatro itens', async () => {

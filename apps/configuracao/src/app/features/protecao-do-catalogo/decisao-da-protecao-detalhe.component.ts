@@ -15,9 +15,7 @@ import { formatarDataBr } from '@uniplus/shared-utils';
 import { DetalheDaProtecaoComponent } from '../../shared/detalhe-do-catalogo';
 import {
   AtosDaProtecaoComponent,
-  CLASSIFICACOES_DE_PROTECAO,
   nomeDoCadastro,
-  rotuloDe,
   rotuloDoAto,
 } from '../../shared/protecao-do-catalogo';
 
@@ -44,8 +42,6 @@ export class DecisaoDaProtecaoDetalheComponent {
   readonly leitura = input.required<LeituraAcompanhada>();
   readonly erroDoHistorico = input.required<string | null>();
   readonly itemInexistente = input.required<boolean>();
-  protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
-  protected readonly rotulo = rotuloDe;
   protected readonly rotuloDoAto = rotuloDoAto;
   protected readonly cadastro = nomeDoCadastro;
   protected readonly dataEHora = (instante: string): string => formatarDataBr(instante, 'datetime');

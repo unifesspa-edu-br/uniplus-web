@@ -31,7 +31,7 @@ import {
   type SolicitacaoDaProtecaoDto,
 } from '@uniplus/shared-data/configuracao';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
-import { CLASSIFICACOES_DE_PROTECAO, nomeDoCadastro, rotuloDe } from './protecao-de-dados';
+import { nomeDoCadastro } from './protecao-de-dados';
 import { textoDasCausasGerais } from '../formulario';
 
 const chaveDe = (item: ItemDaProtecaoDoCatalogoDto): string => `${item.tipo}:${item.id}`;
@@ -248,7 +248,7 @@ export class SolicitacaoDaProtecaoDialogComponent {
   }
 
   protected classificacao(item: ItemDaProtecaoDoCatalogoDto): string {
-    return rotuloDe(CLASSIFICACOES_DE_PROTECAO, item.classificacaoProtecao);
+    return item.classificacaoProtecao.rotulo;
   }
 
   protected enviar(): void {

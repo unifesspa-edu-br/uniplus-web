@@ -13,14 +13,8 @@ import {
   HistoricoDaProtecaoComponent,
   HistoricoDasManifestacoesComponent,
   SituacaoDaAprovacaoComponent,
-  rotuloDe,
 } from '../../shared/protecao-do-catalogo';
-import {
-  ESCOPOS,
-  FORMATOS_DE_TEXTO,
-  rotuloDoComponente,
-  protecaoDoFato,
-} from './fato-candidato.regras';
+import { ROTULO_DO_COMPONENTE_PADRAO, protecaoExibidaDoFato } from './fato-candidato.regras';
 import { ID_DAS_REGRAS_DO_DETALHE } from './ids-do-fato';
 
 /** O detalhe de leitura de um fato do catálogo, com as ações que levam à edição e ao aceite. */
@@ -64,9 +58,6 @@ export class FatoDetalheComponent {
   ];
   protected readonly permissaoDeManter = PERMISSAO.configuracao.fatosCandidatoManter;
   protected readonly permissaoDeConsultar = PERMISSAO.configuracao.fatosCandidatoConsultar;
-  protected readonly formatos = FORMATOS_DE_TEXTO;
-  protected readonly escopos = ESCOPOS;
-  protected readonly rotuloDoComponente = rotuloDoComponente;
-  protected readonly rotulo = rotuloDe;
-  protected readonly protecaoDe = protecaoDoFato;
+  protected readonly rotuloDoPadrao = ROTULO_DO_COMPONENTE_PADRAO;
+  protected readonly protecaoDe = protecaoExibidaDoFato;
 }

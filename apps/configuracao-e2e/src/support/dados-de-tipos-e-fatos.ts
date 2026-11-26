@@ -1,6 +1,13 @@
-import type { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/configuracao';
+import { valorDaApi } from './valor-da-api';
+import type {
+  ClassificacaoDeProtecaoCodigo,
+  ComponenteDeExibicaoCodigo,
+  DecidirProtecaoDoCatalogoRequestDecisao,
+  EscopoFatoCodigo,
+  FatoCandidatoDto,
+  HipoteseLegalTratamentoCodigo,
+} from '@uniplus/shared-data/configuracao';
 import type { JsonDaApi } from '@uniplus/shared-e2e';
-import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 
 /**
  * Os tipos de documento, os fatos do candidato e a proteção de dados deles nos testes visuais, com as
@@ -21,15 +28,25 @@ export const APROVADA = {
 export const AJUSTE = {
   ...APROVADA,
   situacao: 'AJUSTE_RECOMENDADO' satisfies `${DecidirProtecaoDoCatalogoRequestDecisao}`,
-  classificacaoRecomendada: 'SENSIVEL',
+  classificacaoRecomendada: {
+    codigo: 'SENSIVEL' as ClassificacaoDeProtecaoCodigo.SENSIVEL,
+    rotulo: 'Sensível',
+  },
   justificativa: 'O dado revela a identidade de gênero.',
 };
 export const PENDENTE = { ...APROVADA, situacao: 'PENDENTE' };
 export const SOLICITADA = { ...APROVADA, situacao: 'SOLICITADA' };
 
 export const PROTECAO = {
-  classificacaoProtecao: 'PESSOAL',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  classificacaoProtecao: {
+    codigo: 'PESSOAL' as ClassificacaoDeProtecaoCodigo.PESSOAL,
+    rotulo: 'Pessoal',
+  },
+  hipoteseLegal: {
+    codigo:
+      'EXECUCAO_POLITICAS_PUBLICAS' as HipoteseLegalTratamentoCodigo.EXECUCAO_POLITICAS_PUBLICAS,
+    rotulo: 'Execução de políticas públicas',
+  },
   finalidadeTratamento: 'Conferir o documento do candidato.',
 };
 
@@ -70,7 +87,7 @@ export const TIPOS = [
     criadoEm: '2026-06-11T12:00:00Z',
     protecaoAprovada: false,
     ...PROTECAO,
-    classificacaoProtecao: 'INTERNO',
+    classificacaoProtecao: valorDaApi('INTERNO'),
   },
 ];
 
@@ -86,7 +103,7 @@ export const FATOS = [
     definicao: {
       dominio: { codigo: 'OPCAO', rotulo: 'Opção' },
       cardinalidade: { codigo: 'VALOR_UNICO', rotulo: 'Valor único' },
-      escopo: 'CANDIDATO',
+      escopo: { codigo: 'CANDIDATO' as EscopoFatoCodigo.CANDIDATO, rotulo: 'Candidato' },
       formato: null,
       resolucao: {
         origem: { codigo: 'DECLARADO', rotulo: 'Declarado' },
@@ -94,7 +111,10 @@ export const FATOS = [
         binding: 'CAMPO_INSCRICAO:IDENTIDADE_GENERO',
       },
       protecao: {
-        classificacao: 'SENSIVEL',
+        classificacao: {
+          codigo: 'SENSIVEL' as ClassificacaoDeProtecaoCodigo.SENSIVEL,
+          rotulo: 'Sensível',
+        },
         finalidade: PROTECAO.finalidadeTratamento,
         hipoteseLegal: PROTECAO.hipoteseLegal,
         aprovacao: AJUSTE,
@@ -129,12 +149,15 @@ export const FATOS = [
     descritivo: {
       nome: 'Renda familiar bruta',
       descricao: 'Soma da renda mensal bruta dos membros da família.',
-      componenteExibicao: 'MOEDA',
+      componenteExibicao: {
+        codigo: 'MOEDA' as ComponenteDeExibicaoCodigo.MOEDA,
+        rotulo: 'Valor em reais',
+      },
     },
     definicao: {
       dominio: { codigo: 'NUMERICO', rotulo: 'Numérico' },
       cardinalidade: { codigo: 'VALOR_UNICO', rotulo: 'Valor único' },
-      escopo: 'CANDIDATO',
+      escopo: { codigo: 'CANDIDATO' as EscopoFatoCodigo.CANDIDATO, rotulo: 'Candidato' },
       formato: null,
       resolucao: {
         origem: { codigo: 'DECLARADO', rotulo: 'Declarado' },
@@ -162,7 +185,7 @@ export const PENDENCIAS = [
     codigo: TIPOS[1].codigo,
     nome: TIPOS[1].nome,
     ...PROTECAO,
-    classificacaoProtecao: 'INTERNO',
+    classificacaoProtecao: valorDaApi('INTERNO'),
     aprovacao: PENDENTE,
   },
   {
@@ -192,15 +215,15 @@ export const ATOS_DO_TIPO = [
     instante: '2026-10-29T15:00:00Z',
     atorNome: 'Isabella Priscila Figueiredo',
     ...ATO,
-    classificacaoProtecao: 'INTERNO',
+    classificacaoProtecao: valorDaApi('INTERNO'),
   },
   {
     ato: 'AJUSTE_RECOMENDADO' satisfies `${DecidirProtecaoDoCatalogoRequestDecisao}`,
     instante: '2026-10-30T13:30:00Z',
     atorNome: 'Caroline Stefany Jesus',
     ...ATO,
-    classificacaoProtecao: 'INTERNO',
-    classificacaoRecomendada: 'PESSOAL',
+    classificacaoProtecao: valorDaApi('INTERNO'),
+    classificacaoRecomendada: valorDaApi('PESSOAL'),
     justificativa: 'O laudo identifica o candidato e traz dado de saúde.',
   },
   {
@@ -208,7 +231,7 @@ export const ATOS_DO_TIPO = [
     instante: '2026-10-31T10:15:00Z',
     atorNome: 'Isabella Priscila Figueiredo',
     ...ATO,
-    classificacaoProtecao: 'PESSOAL',
+    classificacaoProtecao: valorDaApi('PESSOAL'),
   },
 ];
 
@@ -259,6 +282,6 @@ export const DECISOES = [
     instante: '2026-10-27T11:00:00Z',
     atorNome: 'Caroline Stefany Jesus',
     ...ATO,
-    classificacaoProtecao: 'SENSIVEL',
+    classificacaoProtecao: valorDaApi('SENSIVEL'),
   },
 ];

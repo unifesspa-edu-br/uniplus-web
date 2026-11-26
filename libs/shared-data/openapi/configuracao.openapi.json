@@ -15995,6 +15995,204 @@
         }
       }
     },
+    "/api/configuracao/vocabularios/origens-fato": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "operationId": "ListarOrigensFato",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.origem-fato.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrigemFato"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/configuracao/vocabularios/fontes-valores-fato": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "operationId": "ListarFontesValoresFato",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.fonte-valores-fato.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FonteValoresFato"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/configuracao/vocabularios/formatos-texto": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "operationId": "ListarFormatosTexto",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.formato-texto.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FormatoTexto"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/configuracao/vocabularios/escopos-fato": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "operationId": "ListarEscoposFato",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.escopo-fato.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EscopoFato"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/configuracao/vocabularios/componentes-de-exibicao": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "operationId": "ListarComponentesDeExibicao",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.componente-de-exibicao.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ComponenteDeExibicao"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/configuracao/vocabularios/hipoteses-legais-tratamento": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "operationId": "ListarHipotesesLegaisTratamento",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.hipotese-legal-tratamento.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HipoteseLegalTratamento"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/configuracao/vocabularios/tipos-local-oferta": {
       "get": {
         "tags": [
@@ -16319,9 +16517,13 @@
             "format": "date-time"
           },
           "classificacaoRecomendada": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ClassificacaoDeProtecao"
+              }
             ]
           },
           "justificativa": {
@@ -16401,18 +16603,22 @@
             "format": "int32"
           },
           "classificacaoProtecao": {
-            "type": "string"
+            "$ref": "#/components/schemas/ClassificacaoDeProtecao"
           },
           "hipoteseLegal": {
-            "type": "string"
+            "$ref": "#/components/schemas/HipoteseLegalTratamento"
           },
           "finalidadeTratamento": {
             "type": "string"
           },
           "classificacaoRecomendada": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ClassificacaoDeProtecao"
+              }
             ]
           },
           "justificativa": {
@@ -17961,6 +18167,21 @@
           }
         }
       },
+      "ClassificacaoDeProtecao": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/ClassificacaoDeProtecaoCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
       "ClassificacaoDeProtecaoCodigo": {
         "enum": [
           "PUBLICO",
@@ -17993,13 +18214,28 @@
           }
         }
       },
+      "ComponenteDeExibicao": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/ComponenteDeExibicaoCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
       "ComponenteDeExibicaoCodigo": {
         "enum": [
           "MOEDA",
           "SITUACAO"
         ],
         "type": "string",
-        "description": "Como a tela mostra o valor de um dado do candidato quando o modo de exibi\u00E7\u00E3o n\u00E3o se deduz do tipo, do formato nem da prote\u00E7\u00E3o.\n\n- \u0060MOEDA\u0060: Valor em reais \u2014 O valor aparece em reais, como R$ 1.234,56.\n- \u0060SITUACAO\u0060: Situa\u00E7\u00E3o \u2014 O valor aparece como a situa\u00E7\u00E3o de um processo ou de um pedido, numa etiqueta."
+        "description": "Como a tela mostra o valor de um dado do candidato quando o modo de exibi\u00E7\u00E3o n\u00E3o se deduz do tipo, do formato nem da prote\u00E7\u00E3o.\n\n- \u0060MOEDA\u0060: Valor em reais \u2014 O valor aparece em reais, como R$ 1.234,56.\n- \u0060SITUACAO\u0060: Situa\u00E7\u00E3o \u2014 A tela mostra o r\u00F3tulo numa etiqueta, sem mudar a forma do valor."
       },
       "ComposicaoVagas": {
         "required": [
@@ -19907,18 +20143,22 @@
             "format": "int32"
           },
           "classificacaoProtecao": {
-            "type": "string"
+            "$ref": "#/components/schemas/ClassificacaoDeProtecao"
           },
           "hipoteseLegal": {
-            "type": "string"
+            "$ref": "#/components/schemas/HipoteseLegalTratamento"
           },
           "finalidadeTratamento": {
             "type": "string"
           },
           "classificacaoRecomendada": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ClassificacaoDeProtecao"
+              }
             ]
           },
           "justificativa": {
@@ -19951,12 +20191,16 @@
             "$ref": "#/components/schemas/QuantidadeDeValores"
           },
           "escopo": {
-            "type": "string"
+            "$ref": "#/components/schemas/EscopoFato"
           },
           "formato": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FormatoTexto"
+              }
             ]
           },
           "valores": {
@@ -20176,9 +20420,13 @@
             "type": "string"
           },
           "componenteExibicao": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ComponenteDeExibicao"
+              }
             ]
           }
         }
@@ -20302,10 +20550,10 @@
             ]
           },
           "classificacaoProtecao": {
-            "type": "string"
+            "$ref": "#/components/schemas/ClassificacaoDeProtecao"
           },
           "hipoteseLegal": {
-            "type": "string"
+            "$ref": "#/components/schemas/HipoteseLegalTratamento"
           },
           "finalidadeTratamento": {
             "type": "string"
@@ -20367,9 +20615,13 @@
             "type": "boolean"
           },
           "componenteExibicao": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ComponenteDeExibicao"
+              }
             ]
           },
           "valores": {
@@ -21023,6 +21275,21 @@
         "type": "string",
         "description": "Escolha sobre o prazo de emiss\u00E3o do documento.\n\n- \u0060SEM_PRAZO\u0060: Sem prazo\n- \u0060COM_PRAZO\u0060: Com prazo"
       },
+      "EscopoFato": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/EscopoFatoCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
       "EscopoFatoCodigo": {
         "enum": [
           "CANDIDATO",
@@ -21388,10 +21655,10 @@
             "type": "boolean"
           },
           "classificacaoProtecao": {
-            "type": "string"
+            "$ref": "#/components/schemas/ClassificacaoDeProtecao"
           },
           "hipoteseLegal": {
-            "type": "string"
+            "$ref": "#/components/schemas/HipoteseLegalTratamento"
           },
           "finalidadeTratamento": {
             "type": "string"
@@ -21400,20 +21667,27 @@
             "type": "boolean"
           },
           "formato": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FormatoTexto"
+              }
+            ]
+          },
+          "componenteExibicao": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ComponenteDeExibicao"
+              }
             ]
           },
           "escopo": {
-            "type": "string",
-            "default": "CANDIDATO"
-          },
-          "componenteExibicao": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "$ref": "#/components/schemas/EscopoFato"
           }
         }
       },
@@ -21744,6 +22018,21 @@
         ],
         "type": "string",
         "description": "- \u0060PRESENCIAL\u0060: Presencial\n- \u0060SEMIPRESENCIAL\u0060: Semipresencial\n- \u0060EAD\u0060: A dist\u00E2ncia"
+      },
+      "FormatoTexto": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/FormatoTextoCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
       },
       "FormatoTextoCodigo": {
         "enum": [
@@ -22146,6 +22435,21 @@
           }
         }
       },
+      "HipoteseLegalTratamento": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/HipoteseLegalTratamentoCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
       "HipoteseLegalTratamentoCodigo": {
         "enum": [
           "CONSENTIMENTO",
@@ -22324,13 +22628,13 @@
             "type": "string"
           },
           "classificacaoProtecao": {
-            "type": "string"
+            "$ref": "#/components/schemas/ClassificacaoDeProtecao"
           },
           "finalidadeTratamento": {
             "type": "string"
           },
           "hipoteseLegal": {
-            "type": "string"
+            "$ref": "#/components/schemas/HipoteseLegalTratamento"
           },
           "aprovacao": {
             "$ref": "#/components/schemas/AprovacaoDaProtecaoDto"
@@ -24051,13 +24355,13 @@
         "type": "object",
         "properties": {
           "classificacao": {
-            "type": "string"
+            "$ref": "#/components/schemas/ClassificacaoDeProtecao"
           },
           "finalidade": {
             "type": "string"
           },
           "hipoteseLegal": {
-            "type": "string"
+            "$ref": "#/components/schemas/HipoteseLegalTratamento"
           },
           "aprovacao": {
             "$ref": "#/components/schemas/AprovacaoDaProtecaoDto"
@@ -25446,13 +25750,13 @@
             ]
           },
           "classificacaoProtecao": {
-            "type": "string"
+            "$ref": "#/components/schemas/ClassificacaoDeProtecao"
           },
           "finalidadeTratamento": {
             "type": "string"
           },
           "hipoteseLegal": {
-            "type": "string"
+            "$ref": "#/components/schemas/HipoteseLegalTratamento"
           },
           "criadoEm": {
             "type": "string",

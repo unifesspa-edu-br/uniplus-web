@@ -2,7 +2,6 @@ import { DecidirProtecaoDoCatalogoRequestDecisao } from '@uniplus/shared-data/co
 import type { SituacaoDaAprovacao } from '@uniplus/shared-data/configuracao';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { TagComponent, type UiTagVariant } from '@uniplus/shared-ui/components';
-import { CLASSIFICACOES_DE_PROTECAO, rotuloDe } from './protecao-de-dados';
 
 interface Rotulo {
   readonly texto: string;
@@ -46,16 +45,17 @@ export function rotuloDaSituacao(situacao: string): Rotulo {
 })
 export class SituacaoDaAprovacaoComponent {
   readonly situacao = input.required<string>();
-  readonly classificacaoRecomendada = input<string | null>(null);
+  readonly classificacaoRecomendada = input<{ readonly rotulo: string } | null>(null);
   readonly justificativa = input<string | null>(null);
   /** Na célula da lista a situação ocupa uma linha só: sem a recomendação nem a justificativa, que ficam no detalhe. */
   readonly emLista = input(false);
 
   protected readonly rotulo = computed(() => rotuloDaSituacao(this.situacao()));
   protected readonly recomendada = computed(() => {
-    const token = this.classificacaoRecomendada();
-    return this.situacao() === DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO && token
-      ? rotuloDe(CLASSIFICACOES_DE_PROTECAO, token)
+    const classificacao = this.classificacaoRecomendada();
+    return this.situacao() === DecidirProtecaoDoCatalogoRequestDecisao.AJUSTE_RECOMENDADO &&
+      classificacao
+      ? classificacao.rotulo
       : null;
   });
 }

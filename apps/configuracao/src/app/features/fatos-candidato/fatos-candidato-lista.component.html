@@ -9,10 +9,11 @@
   <ng-container uiFilterBarSecondary>
     <span class="u-eyebrow">Origem</span>
     <ui-filter-chips
-      [options]="chipsDeOrigem"
+      [options]="chipsDeOrigem()"
       [(selected)]="filtroOrigem"
       ariaLabel="Filtrar por origem"
     />
+    <ui-falha-de-leitura-do-campo [leitura]="leituraDasOrigens" />
     <span class="u-eyebrow">Situação</span>
     <ui-filter-chips
       [options]="chipsDeSituacao"
@@ -115,7 +116,7 @@
                 }
               </td>
               <td data-label="Sensibilidade" class="u-nowrap-desktop">
-                {{ rotulo(classificacoes, fato.definicao.protecao.classificacao) }}
+                {{ fato.definicao.protecao.classificacao.rotulo }}
               </td>
               <td data-label="Aprovação" class="u-nowrap-desktop">
                 <cfg-situacao-da-aprovacao

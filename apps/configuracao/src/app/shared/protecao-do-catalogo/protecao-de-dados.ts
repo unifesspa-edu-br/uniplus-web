@@ -17,12 +17,14 @@ export interface OpcaoDeVocabulario {
   readonly rotulo: string;
 }
 
-export const CLASSIFICACOES_DE_PROTECAO: readonly OpcaoDeVocabulario[] = [
-  { valor: 'PUBLICO', rotulo: 'Público' },
-  { valor: 'INTERNO', rotulo: 'Interno' },
-  { valor: 'PESSOAL', rotulo: 'Pessoal' },
-  { valor: 'IDENTIFICADOR', rotulo: 'Identificador' },
-  { valor: 'SENSIVEL', rotulo: 'Pessoal sensível' },
+export const CLASSIFICACOES_DE_PROTECAO: readonly (OpcaoDeVocabulario & {
+  valor: ClassificacaoDeProtecaoCodigo;
+})[] = [
+  { valor: ClassificacaoDeProtecaoCodigo.PUBLICO, rotulo: 'Público' },
+  { valor: ClassificacaoDeProtecaoCodigo.INTERNO, rotulo: 'Interno' },
+  { valor: ClassificacaoDeProtecaoCodigo.PESSOAL, rotulo: 'Pessoal' },
+  { valor: ClassificacaoDeProtecaoCodigo.IDENTIFICADOR, rotulo: 'Identificador' },
+  { valor: ClassificacaoDeProtecaoCodigo.SENSIVEL, rotulo: 'Pessoal sensível' },
 ];
 
 export const HIPOTESES_LEGAIS: readonly OpcaoDeVocabulario[] = [
@@ -59,7 +61,10 @@ const SO_DO_DADO_SENSIVEL = new Set(['PREVENCAO_A_FRAUDE']);
 
 /** As hipóteses legais que cabem na classificação: as do art. 11 no dado sensível, as do art. 7º nos demais. */
 export function hipotesesDaClassificacao(classificacao: string): readonly OpcaoDeVocabulario[] {
-  const excluidas = classificacao === 'SENSIVEL' ? SO_DO_DADO_COMUM : SO_DO_DADO_SENSIVEL;
+  const excluidas =
+    classificacao === ClassificacaoDeProtecaoCodigo.SENSIVEL
+      ? SO_DO_DADO_COMUM
+      : SO_DO_DADO_SENSIVEL;
   return HIPOTESES_LEGAIS.filter((hipotese) => !excluidas.has(hipotese.valor));
 }
 
@@ -67,6 +72,13 @@ export function hipotesesDaClassificacao(classificacao: string): readonly OpcaoD
 export interface ProtecaoDoItem {
   readonly classificacaoProtecao: string;
   readonly hipoteseLegal: string;
+  readonly finalidadeTratamento: string;
+}
+
+/** A proteção de um item como a API a devolve: classificação e hipótese legal com código e rótulo. */
+export interface ProtecaoExibida {
+  readonly classificacaoProtecao: { readonly codigo: string; readonly rotulo: string };
+  readonly hipoteseLegal: { readonly codigo: string; readonly rotulo: string };
   readonly finalidadeTratamento: string;
 }
 

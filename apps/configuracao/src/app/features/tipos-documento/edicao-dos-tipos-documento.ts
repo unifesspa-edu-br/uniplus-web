@@ -132,7 +132,7 @@ export class EdicaoDosTiposDocumento {
   readonly mensagemDoAceite = computed(() => {
     const tipo = this.tipoParaAceitar();
     const situacao = tipo === null ? null : this.store.aprovacao.aprovacaoDe(tipo.id);
-    return mensagemDoAceite(tipo, situacao?.classificacaoRecomendada);
+    return mensagemDoAceite(tipo, situacao?.classificacaoRecomendada?.rotulo);
   });
   readonly anuncioDaRemocao = computed(() =>
     anuncioDaConfirmacao(this.tipoParaRemover(), this.removendo(), this.erroRemocao(), {
@@ -161,8 +161,8 @@ export class EdicaoDosTiposDocumento {
 
   abrirEdicao(tipo: TipoDocumentoDto): void {
     this.abrirFormulario(tipo.id, valoresDoTipoDocumento(tipo), {
-      classificacaoProtecao: tipo.classificacaoProtecao,
-      hipoteseLegal: tipo.hipoteseLegal,
+      classificacaoProtecao: tipo.classificacaoProtecao.codigo,
+      hipoteseLegal: tipo.hipoteseLegal.codigo,
       finalidadeTratamento: tipo.finalidadeTratamento,
     });
   }

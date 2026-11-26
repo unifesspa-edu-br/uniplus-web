@@ -22,7 +22,6 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
 import { aguardarRecarga } from '../../shared/foco';
-import { CLASSIFICACOES_DE_PROTECAO, rotuloDe } from '../../shared/protecao-do-catalogo';
 import { CODIGO_JA_EXISTE, ehConflitoDeConcorrencia } from './conflitos-do-fato';
 import { EdicaoDoFato } from './edicao-do-fato';
 import {
@@ -134,7 +133,7 @@ export class EdicaoDosFatos {
     const fato = this.fatoParaAceitar();
     const recomendada = fato?.definicao.protecao.aprovacao.classificacaoRecomendada;
     return fato && recomendada
-      ? `Aceitar a classificação "${rotuloDe(CLASSIFICACOES_DE_PROTECAO, recomendada)}" para "${fato.descritivo.nome}" (${fato.codigo})? ` +
+      ? `Aceitar a classificação "${recomendada.rotulo}" para "${fato.descritivo.nome}" (${fato.codigo})? ` +
           'O fato fica aprovado com ela, sem nova solicitação, e a proteção de dados é avisada.'
       : 'Aceitar a classificação recomendada pela proteção de dados?';
   });

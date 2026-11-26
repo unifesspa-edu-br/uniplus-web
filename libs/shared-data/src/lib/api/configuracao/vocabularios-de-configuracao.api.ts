@@ -6,9 +6,23 @@ import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 export type TipoDoDado = components['schemas']['TipoDoDado'];
+export type QuantidadeDeValores = components['schemas']['QuantidadeDeValores'];
+export type OrigemFato = components['schemas']['OrigemFato'];
+export type FonteValoresFato = components['schemas']['FonteValoresFato'];
+export type FormatoTexto = components['schemas']['FormatoTexto'];
+export type EscopoFato = components['schemas']['EscopoFato'];
+export type ComponenteDeExibicao = components['schemas']['ComponenteDeExibicao'];
+export type HipoteseLegalTratamento = components['schemas']['HipoteseLegalTratamento'];
 
 export interface VocabulariosDeConfiguracao {
   readonly 'tipos-do-dado': TipoDoDado;
+  readonly 'quantidades-de-valores': QuantidadeDeValores;
+  readonly 'origens-fato': OrigemFato;
+  readonly 'fontes-valores-fato': FonteValoresFato;
+  readonly 'formatos-texto': FormatoTexto;
+  readonly 'escopos-fato': EscopoFato;
+  readonly 'componentes-de-exibicao': ComponenteDeExibicao;
+  readonly 'hipoteses-legais-tratamento': HipoteseLegalTratamento;
   readonly 'abrangencias-dia-nao-util': components['schemas']['Abrangencia'];
   readonly 'acoes-quando-indeferido': components['schemas']['AcaoQuandoIndeferido'];
   readonly 'composicoes-vagas': components['schemas']['ComposicaoVagas'];
@@ -26,6 +40,13 @@ export interface VocabulariosDeConfiguracao {
 
 const MIME: Readonly<Record<keyof VocabulariosDeConfiguracao, string>> = {
   'tipos-do-dado': 'tipo-do-dado',
+  'quantidades-de-valores': 'quantidade-de-valores',
+  'origens-fato': 'origem-fato',
+  'fontes-valores-fato': 'fonte-valores-fato',
+  'formatos-texto': 'formato-texto',
+  'escopos-fato': 'escopo-fato',
+  'componentes-de-exibicao': 'componente-de-exibicao',
+  'hipoteses-legais-tratamento': 'hipotese-legal-tratamento',
   'abrangencias-dia-nao-util': 'codigo-abrangencia-dia-nao-util',
   'acoes-quando-indeferido': 'codigo-acao-quando-indeferido',
   'composicoes-vagas': 'codigo-composicao-vagas',

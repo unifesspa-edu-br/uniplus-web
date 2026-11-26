@@ -1,6 +1,5 @@
 import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
-import { rotuloDe } from '../../shared/protecao-do-catalogo';
-import { ESCOPOS, FORMATOS_DE_TEXTO, eixosDoTipo, type TipoDoFato } from './fato-candidato.regras';
+import { eixosDoTipo, type TipoDoFato } from './fato-candidato.regras';
 
 /** Um eixo da definição que o fato não edita, com o valor que tem e de onde ele vem. */
 export interface EixoSomenteLeitura {
@@ -13,8 +12,8 @@ const EIXOS = [
   { campo: 'dominio', rotulo: 'Tipo de dado' },
   { campo: 'cardinalidade', rotulo: 'Quantos valores' },
   { campo: 'fonteValores', rotulo: 'De onde vêm os valores' },
-  { campo: 'formato', rotulo: 'Formato do texto', vocabulario: FORMATOS_DE_TEXTO },
-  { campo: 'escopo', rotulo: 'De quem é o dado', vocabulario: ESCOPOS },
+  { campo: 'formato', rotulo: 'Formato do texto' },
+  { campo: 'escopo', rotulo: 'De quem é o dado' },
 ] as const;
 
 function valoresDosEixos({
@@ -24,8 +23,8 @@ function valoresDosEixos({
     dominio: definicao.dominio.rotulo,
     cardinalidade: definicao.cardinalidade.rotulo,
     fonteValores: definicao.valores.fonte?.rotulo ?? '',
-    formato: definicao.formato ? rotuloDe(FORMATOS_DE_TEXTO, definicao.formato) : '',
-    escopo: rotuloDe(ESCOPOS, definicao.escopo),
+    formato: definicao.formato?.rotulo ?? '',
+    escopo: definicao.escopo.rotulo,
   };
 }
 

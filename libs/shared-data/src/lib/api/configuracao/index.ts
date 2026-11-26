@@ -206,7 +206,11 @@ export {
 } from './protecao-do-catalogo.api';
 
 export { FatosCandidatoApi } from './fatos-candidato.api';
-export { fatoComOperadores, type FatoCandidatoComOperadores } from './fato-do-catalogo';
+export {
+  comEscopoPeloCodigo,
+  fatoComOperadores,
+  type FatoCandidatoComOperadores,
+} from './fato-do-catalogo';
 export type {
   CriarFatoAgregadoCommand,
   CriarFatoCandidatoCommand,
@@ -309,4 +313,11 @@ export {
   VocabulariosDeConfiguracaoApi,
   type VocabulariosDeConfiguracao,
   type TipoDoDado,
+  type QuantidadeDeValores,
+  type OrigemFato,
+  type FonteValoresFato,
+  type FormatoTexto,
+  type EscopoFato,
+  type ComponenteDeExibicao,
+  type HipoteseLegalTratamento,
 } from './vocabularios-de-configuracao.api';

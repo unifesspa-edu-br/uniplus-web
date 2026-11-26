@@ -1,3 +1,4 @@
+import { valorDaApi } from '../support/valor-da-api';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 import { MODALIDADE_AC, MODALIDADE_V, V_ID } from '../support/dados-de-modalidade';
@@ -36,7 +37,7 @@ const catalogoDeFatos = [
       valoresDominioDeclarados: null,
       fonteValores: null,
       ativo: true,
-      escopo: 'CANDIDATO',
+      escopo: valorDaApi('CANDIDATO'),
     },
     operadoresAdmitidos: [
       { codigo: 'IGUAL', rotulo: 'é' },

@@ -6,7 +6,11 @@ import {
 } from './valores-do-catalogo.testing';
 import { describe, expect, it } from 'vitest';
 
-import type { FatoCandidatoComOperadores } from '@uniplus/shared-data/configuracao';
+import {
+  EscopoFatoCodigo,
+  type FatoCandidatoComOperadores,
+} from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 
 import {
   dominiosDoGatilho,
@@ -15,19 +19,21 @@ import {
   type FatoEscolhivel,
 } from './gatilho-de-exigencia';
 import { MODALIDADE, exigencia, view } from './gatilho-de-exigencia.testing';
-import type { ProducaoDosFatos } from './producao-dos-fatos';
+import type { FatoComFase, ProducaoDosFatos } from './producao-dos-fatos';
 
 describe('os fatos que o gatilho oferece na fase da exigência', () => {
   const doProcesso = (
     parcial: Partial<FatoCandidatoComOperadores> & Pick<FatoCandidatoComOperadores, 'codigo'>,
-  ): FatoCandidatoComOperadores =>
-    view({
-      escopo: 'CANDIDATO',
+  ): Omit<FatoCandidatoComOperadores, 'escopo'> & FatoComFase => {
+    const fato = view({
+      escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
       ativo: true,
       fonteValores: null,
       binding: `CAMPO_FORMULARIO:${parcial.codigo}`,
       ...parcial,
     });
+    return { ...fato, escopo: fato.escopo?.codigo ?? '' };
+  };
 
   const DEFICIENCIA = doProcesso({
     codigo: 'PCD',
@@ -47,11 +53,7 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
     binding: 'CLASSIFICACAO:MODALIDADE_CONVOCACAO',
     pontoResolucao: 'RESULTADO_FINAL',
   });
-  const CONCORRENCIA = doProcesso({
-    ...MODALIDADE,
-    fonteValores: VALORES_MODALIDADE,
-    escopo: 'CANDIDATO',
-  });
+  const CONCORRENCIA = doProcesso({ ...MODALIDADE, fonteValores: VALORES_MODALIDADE });
   const FATOS = [DEFICIENCIA, LAUDO, CONVOCACAO, CONCORRENCIA];
 
   const PRODUCAO: ProducaoDosFatos = {
@@ -69,7 +71,14 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
     grupos: new Map(),
   };
   const MODALIDADES = ['AC', 'LB_PPI'];
-  const DOMINIOS = dominiosDoGatilho(FATOS, [], MODALIDADES);
+  const DOMINIOS = dominiosDoGatilho(
+    FATOS.map((fato) => ({
+      ...fato,
+      escopo: codigoComRotulo(fato.escopo as EscopoFatoCodigo, fato.escopo),
+    })),
+    [],
+    MODALIDADES,
+  );
   const codigos = (fatos: readonly FatoEscolhivel[]): readonly string[] =>
     fatos.map((fato) => fato.codigo);
   const na = (faseCodigo: string, finalidade: string | null = null) => ({ faseCodigo, finalidade });
@@ -135,7 +144,7 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
   });
 
   it('o fato que aguarda a aprovação da proteção de dados segue na lista, sinalizado para o editor tratá-lo como indisponível', () => {
-    const pendente: FatoCandidatoComOperadores = { ...DEFICIENCIA, protecaoAprovada: false };
+    const pendente: FatoComFase = { ...DEFICIENCIA, protecaoAprovada: false };
     const catalogo = FATOS.map((fato) => (fato.codigo === 'PCD' ? pendente : fato));
     const producao: ProducaoDosFatos = {
       ...PRODUCAO,
@@ -162,7 +171,7 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
       nome: 'Parentesco',
       dominio: DADO_OPCAO,
       valoresDominio: ['FILHO', 'CONJUGE'],
-      escopo: 'MEMBRO_GRUPO',
+      escopo: codigoComRotulo(EscopoFatoCodigo.MEMBRO_GRUPO, 'Membro do grupo'),
     });
     const comParentesco: ProducaoDosFatos = {
       ...PRODUCAO,

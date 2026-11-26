@@ -1,3 +1,5 @@
+import { EscopoFatoCodigo } from '@uniplus/shared-data/configuracao';
+import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { BlocoSistemaCodigo } from '@uniplus/shared-data/selecao';
 import { PCD } from '../../shared/gatilho-de-exigencia.testing';
 import { TestBed } from '@angular/core/testing';
@@ -95,7 +97,7 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
       TestBed.inject(CatalogoDeFatos).fatos.set([
         {
           ...PCD,
-          escopo: 'CANDIDATO',
+          escopo: codigoComRotulo(EscopoFatoCodigo.CANDIDATO, 'Candidato'),
           codigo: 'CONCORRER_PCD',
           nome: 'Concorrer na reserva para pessoa com deficiência',
           binding: 'CAMPO_INSCRICAO:CONCORRER_PCD',

@@ -25,21 +25,23 @@ const ligado = () => {
 };
 
 describe('o formulário de criação do fato', () => {
-  it('limita todos os campos de texto ao tamanho da API', () => {
+  it('rejeita textos acima do limite da API', () => {
     const { form } = ligado();
-    const acima = (n: number): string => 'a'.repeat(n + 1);
-    const no = (n: number): string => 'a'.repeat(n);
-
-    form.controls.nome.setValue(acima(LIMITES_DO_FATO.nome));
-    form.controls.descricao.setValue(acima(LIMITES_DO_FATO.descricao));
-    form.controls.finalidadeTratamento.setValue(acima(LIMITES_DO_FATO.finalidadeTratamento));
+    form.controls.nome.setValue('a'.repeat(LIMITES_DO_FATO.nome + 1));
+    form.controls.descricao.setValue('a'.repeat(LIMITES_DO_FATO.descricao + 1));
+    form.controls.finalidadeTratamento.setValue(
+      'a'.repeat(LIMITES_DO_FATO.finalidadeTratamento + 1),
+    );
     expect(form.controls.nome.hasError('maxlength')).toBe(true);
     expect(form.controls.descricao.hasError('maxlength')).toBe(true);
     expect(form.controls.finalidadeTratamento.hasError('maxlength')).toBe(true);
+  });
 
-    form.controls.nome.setValue(no(LIMITES_DO_FATO.nome));
-    form.controls.descricao.setValue(no(LIMITES_DO_FATO.descricao));
-    form.controls.finalidadeTratamento.setValue(no(LIMITES_DO_FATO.finalidadeTratamento));
+  it('aceita textos no limite da API', () => {
+    const { form } = ligado();
+    form.controls.nome.setValue('a'.repeat(LIMITES_DO_FATO.nome));
+    form.controls.descricao.setValue('a'.repeat(LIMITES_DO_FATO.descricao));
+    form.controls.finalidadeTratamento.setValue('a'.repeat(LIMITES_DO_FATO.finalidadeTratamento));
     expect(form.controls.nome.hasError('maxlength')).toBe(false);
     expect(form.controls.descricao.hasError('maxlength')).toBe(false);
     expect(form.controls.finalidadeTratamento.hasError('maxlength')).toBe(false);
@@ -83,7 +85,10 @@ describe('o formulário de criação do fato', () => {
   });
 
   it('a hipótese e a classificação fora das opções se esvaziam ao trocar o que as determina', () => {
-    const { form } = ligado();
+    const { form, dep } = ligado();
+    dep.vocabularioDasHipoteses.set([
+      { codigo: 'INTERESSE_LEGITIMO', rotulo: 'Interesse legítimo' },
+    ]);
     form.patchValue({
       tipo: 'DECLARADO',
       dominio: 'SIM_OU_NAO',
@@ -108,7 +113,10 @@ describe('o formulário de criação do fato', () => {
     form.patchValue({ dominio: 'OPCAO' });
     TestBed.tick();
     expect(form.controls.fonteValores.hasError('required')).toBe(true);
+  });
 
+  it('exige o fato de membro no agregado', () => {
+    const { form } = ligado();
     form.patchValue({ tipo: 'AGREGADO' });
     TestBed.tick();
     expect(form.controls.fatoDeMembro.hasError('required')).toBe(true);

@@ -194,8 +194,8 @@ export function valoresDoTipoDocumento(tipo: TipoDocumentoDto): ValoresDoTipoDoc
     tipoEquivalente: tipo.tipoEquivalente ?? '',
     ...desserializarFormatosAceitos(tipo.formatosAceitos),
     tamanhoMaximoMb: tipo.tamanhoMaximoMb,
-    classificacaoProtecao: tipo.classificacaoProtecao,
-    hipoteseLegal: tipo.hipoteseLegal,
+    classificacaoProtecao: tipo.classificacaoProtecao.codigo,
+    hipoteseLegal: tipo.hipoteseLegal.codigo,
     finalidadeTratamento: tipo.finalidadeTratamento,
   };
 }

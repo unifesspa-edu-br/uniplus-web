@@ -11,3 +11,10 @@ export function fatoComOperadores({
 }: FatoDoCatalogoDto): FatoCandidatoComOperadores {
   return { ...fato, operadoresAdmitidos };
 }
+
+/** O catálogo como os editores de formulário o leem: o escopo do fato é o código. */
+export function comEscopoPeloCodigo<T extends { readonly escopo?: { readonly codigo: string } }>(
+  fatos: readonly T[],
+): readonly (Omit<T, 'escopo'> & { readonly escopo: string })[] {
+  return fatos.map((fato) => ({ ...fato, escopo: fato.escopo?.codigo ?? '' }));
+}

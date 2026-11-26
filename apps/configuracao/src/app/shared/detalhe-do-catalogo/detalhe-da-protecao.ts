@@ -1,10 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import {
-  CLASSIFICACOES_DE_PROTECAO,
-  HIPOTESES_LEGAIS,
-  rotuloDe,
-  type ProtecaoDoItem,
-} from '../protecao-do-catalogo';
+import { type ProtecaoExibida } from '../protecao-do-catalogo';
 
 /**
  * A proteção de dados de um item do catálogo, em leitura: classificação, hipótese legal e
@@ -20,11 +15,11 @@ import {
       <dl class="cfg-detalhe">
         <div>
           <dt>Classificação</dt>
-          <dd>{{ rotulo(classificacoes, protecao().classificacaoProtecao) }}</dd>
+          <dd>{{ protecao().classificacaoProtecao.rotulo }}</dd>
         </div>
         <div>
           <dt>Hipótese legal</dt>
-          <dd>{{ rotulo(hipoteses, protecao().hipoteseLegal) }}</dd>
+          <dd>{{ protecao().hipoteseLegal.rotulo }}</dd>
         </div>
         <div>
           <dt>Finalidade do tratamento</dt>
@@ -36,9 +31,5 @@ import {
 })
 export class DetalheDaProtecaoComponent {
   readonly titulo = input('Proteção de dados');
-  readonly protecao = input.required<ProtecaoDoItem>();
-
-  protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
-  protected readonly hipoteses = HIPOTESES_LEGAIS;
-  protected readonly rotulo = rotuloDe;
+  readonly protecao = input.required<ProtecaoExibida>();
 }
