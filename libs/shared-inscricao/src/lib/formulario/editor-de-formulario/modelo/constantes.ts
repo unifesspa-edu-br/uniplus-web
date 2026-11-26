@@ -62,6 +62,7 @@ export const FINALIDADE_INSCRICAO = 'INSCRICAO';
 
 /** Os tetos da API (`FormaDoItem`, `FormaDaPagina`): os dados básicos contam no total de itens. */
 export const LIMITES_DO_FORMULARIO = {
+  codigo: 60,
   itens: 200,
   rotulo: 300,
   ajuda: 1000,

@@ -1,3 +1,5 @@
+import { formarCodigoUnicoDoNome } from '@uniplus/shared-utils';
+
 import {
   FATO_PARENTESCO,
   PROPRIO_CANDIDATO,
@@ -5,7 +7,7 @@ import {
 import { campoNovo } from './catalogo-de-campos';
 import { recusaDaCitacaoPosterior } from './conferencia-de-ordem';
 import { citaveisAntesDe, fatosCitadosPeloCampo, todosOsCampos } from './citacoes';
-import { codigoLivre, nomeDoFato } from './codigos';
+import { nomeDoFato } from './codigos';
 import { LIMITES_DO_FORMULARIO, REGRAS_INICIAIS } from './constantes';
 import { ordemNoFimDaSecao, renumerar } from './ordem-das-entradas';
 import {
@@ -49,10 +51,18 @@ export function acrescentarGrupo(
 ): ResultadoDaEdicao {
   const recusa = recusaDoNovoGrupo(conteudo, novo.rotulo);
   if (recusa !== null) return { ok: false, recusa };
-  const grupo = grupoNovo(conteudo, novo, codigosEmUso(conteudo, catalogo));
+  const usados = codigosEmUso(conteudo, catalogo);
+  const limite = LIMITES_DO_FORMULARIO.codigo;
+  const codigo = formarCodigoUnicoDoNome(novo.rotulo, 'GRUPO', usados, limite);
+  if (!codigo.ok) return recusaDoCodigoDoGrupo(codigo.limite);
+  const grupos = [...(conteudo.grupos ?? []), grupoNovo(conteudo, novo, codigo.codigo)];
+  return { ok: true, conteudo: renumerar({ ...conteudo, grupos }) };
+}
+
+function recusaDoCodigoDoGrupo(limite: number): ResultadoDaEdicao {
   return {
-    ok: true,
-    conteudo: renumerar({ ...conteudo, grupos: [...(conteudo.grupos ?? []), grupo] }),
+    ok: false,
+    recusa: `O código formado a partir deste rótulo passa de ${limite} caracteres. Use um rótulo mais curto.`,
   };
 }
 
@@ -78,10 +88,10 @@ function codigosEmUso(
 function grupoNovo(
   conteudo: ConteudoDoFormulario,
   novo: NovoGrupo,
-  usados: ReadonlySet<string>,
+  codigo: string,
 ): GrupoDoFormulario {
   return {
-    codigo: codigoLivre(novo.rotulo, 'GRUPO', usados),
+    codigo,
     ordem: ordemNoFimDaSecao(conteudo, novo.paginaCodigo),
     rotulo: novo.rotulo.trim().slice(0, LIMITES_DO_FORMULARIO.rotulo),
     paginaCodigo: novo.paginaCodigo,
