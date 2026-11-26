@@ -13,6 +13,11 @@ export {
   sugerirCodigoDeCadastro,
 } from './utils/codigo-cadastro.util';
 export {
+  type CodigoDoNome,
+  formarCodigoDoNome,
+  formarCodigoUnicoDoNome,
+} from './utils/codigo-do-nome.util';
+export {
   cpfRevelavel,
   type DadoRevelavel,
   formatCpfProgressive,
