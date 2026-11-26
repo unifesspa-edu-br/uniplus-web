@@ -116,4 +116,10 @@ export {
   SituacaoDaConcessaoNaRevisaoCodigo,
   SituacaoDaRevisaoDasConcessoesCodigo,
   FormaDoEncerramentoCodigo,
+  AtorDoEventoDaContencaoCodigo,
+  AtorDoEventoDoHistoricoDaConcessaoCodigo,
+  EtapaDaVersaoCodigo,
+  OrigemDaRetomadaCodigo,
+  TipoDoEventoDoHistoricoDaConcessaoCodigo,
+  TipoDoRegistroDoBloqueioCodigo,
 } from './schema';
