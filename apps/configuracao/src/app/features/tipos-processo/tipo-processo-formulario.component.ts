@@ -3,7 +3,11 @@ import { ChangeDetectionStrategy, Component, computed, input, model, output } fr
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
-import { TipoProcessoForm, mensagemDoCampo } from './tipo-processo-form';
+import {
+  LIMITE_DO_CODIGO_DO_TIPO_DE_PROCESSO,
+  TipoProcessoForm,
+  mensagemDoCampo,
+} from './tipo-processo-form';
 
 @Component({
   selector: 'cfg-tipo-processo-formulario',
@@ -13,7 +17,7 @@ import { TipoProcessoForm, mensagemDoCampo } from './tipo-processo-form';
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class TipoProcessoFormularioComponent {
-  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(80);
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(LIMITE_DO_CODIGO_DO_TIPO_DE_PROCESSO);
   readonly aberto = model.required<boolean>();
   readonly form = input.required<FormGroup<TipoProcessoForm>>();
   readonly modo = input.required<'criar' | 'editar'>();

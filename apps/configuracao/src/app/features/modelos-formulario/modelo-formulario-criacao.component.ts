@@ -10,7 +10,12 @@ import {
   type LeituraAcompanhada,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
-import { CampoDaCriacao, CriacaoForm, mensagemDoCampo } from './modelo-formulario-form';
+import {
+  LIMITE_DO_CODIGO_DO_MODELO_DE_FORMULARIO,
+  CampoDaCriacao,
+  CriacaoForm,
+  mensagemDoCampo,
+} from './modelo-formulario-form';
 import { FINALIDADES_DO_FORMULARIO } from './finalidades-do-formulario';
 
 @Component({
@@ -27,7 +32,9 @@ import { FINALIDADES_DO_FORMULARIO } from './finalidades-do-formulario';
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class ModeloFormularioCriacaoComponent {
-  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(60);
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(
+    LIMITE_DO_CODIGO_DO_MODELO_DE_FORMULARIO,
+  );
   readonly form = input.required<FormGroup<CriacaoForm>>();
   readonly aberto = input.required<boolean>();
   readonly salvando = input.required<boolean>();

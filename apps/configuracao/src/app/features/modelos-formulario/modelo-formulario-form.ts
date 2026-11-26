@@ -9,6 +9,8 @@ import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { conteudoParaOModelo } from './conteudo-do-modelo';
 
+export const LIMITE_DO_CODIGO_DO_MODELO_DE_FORMULARIO = 60;
+
 export interface CriacaoForm {
   codigo: FormControl<string>;
   nome: FormControl<string>;
@@ -33,7 +35,10 @@ function campoDeTexto(...validators: ValidatorFn[]): FormControl<string> {
 
 export function criarFormularioDeModelo(): FormGroup<CriacaoForm> {
   return new FormGroup<CriacaoForm>({
-    codigo: campoDeTexto(Validators.required, ...validadoresDoCodigo(60)),
+    codigo: campoDeTexto(
+      Validators.required,
+      ...validadoresDoCodigo(LIMITE_DO_CODIGO_DO_MODELO_DE_FORMULARIO),
+    ),
     nome: campoDeTexto(Validators.required, Validators.maxLength(200)),
     descricao: campoDeTexto(Validators.maxLength(1000)),
     finalidade: new FormControl<FinalidadeFormularioCodigo | null>(null, Validators.required),
@@ -67,7 +72,10 @@ export function campoDaRecusa(campo: string): CampoDaCriacao | null {
 }
 
 /** A mensagem do campo; o formato do código tem texto próprio. */
-export function mensagemDoCampo(controle: FormControl<string | null>, limite = 60): string | null {
+export function mensagemDoCampo(
+  controle: FormControl<string | null>,
+  limite = LIMITE_DO_CODIGO_DO_MODELO_DE_FORMULARIO,
+): string | null {
   const mensagem = mensagemDeErroDoControle(controle);
   if (mensagem === null || controle.errors === null) return mensagem;
   if (controle.errors['backend'] || controle.errors['required']) return mensagem;

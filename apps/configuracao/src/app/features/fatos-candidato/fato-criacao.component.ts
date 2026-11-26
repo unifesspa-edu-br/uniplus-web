@@ -14,7 +14,7 @@ import {
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { bloquearEnvio } from './bloquear-envio';
 import { EdicaoDosFatos } from './edicao-dos-fatos';
-import { CampoDaCriacao, mensagemDoCampo } from './fato-candidato-form';
+import { LIMITE_DO_CODIGO_DO_FATO, CampoDaCriacao, mensagemDoCampo } from './fato-candidato-form';
 import {
   CARDINALIDADES,
   COMPONENTES_DE_EXIBICAO,
@@ -48,7 +48,7 @@ import { lerCatalogoDeFatos, lerFasesCanonicas } from './leituras-do-fato';
   styleUrl: './fato-drawer.css',
 })
 export class FatoCriacaoComponent {
-  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(50);
+  protected readonly ajudaDoCodigo = textoDoFormatoDoCodigo(LIMITE_DO_CODIGO_DO_FATO);
   protected readonly tiposDoDado = inject(VOCABULARIO_DE_TIPOS_DO_DADO);
   protected readonly leituraDosTipos = acompanharTiposDoDado(ID_DO_TIPO_DE_DADO_DA_CRIACAO);
 
