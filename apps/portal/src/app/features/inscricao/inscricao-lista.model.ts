@@ -11,9 +11,9 @@ export interface ItemDaLista {
   readonly id: string;
   readonly processoId: string;
   readonly situacao: MinhaInscricaoDto['situacao'];
-  /** O rótulo que o card mostra: o da API, ou "Não enviada" para o rascunho que o prazo deixou para trás. */
+  /** O rótulo que o cartão mostra: o da API, ou "Não enviada" para o rascunho que a API não deixa mais continuar. */
   readonly rotuloDaSituacao: string;
-  /** O rascunho que ficou sem envio e já não pode ser concluído porque o prazo de inscrições encerrou. */
+  /** O rascunho que a API não permite mais continuar; ela não informa o motivo. */
   readonly naoEnviada: boolean;
   readonly nome: string;
   /** Só a inscrição enviada ou cancelada tem número. */
@@ -36,13 +36,9 @@ export interface CursoDaInscricao {
 
 export const ROTULO_NAO_ENVIADA = 'Não enviada';
 
-export const MENSAGEM_NAO_ENVIADA =
-  'O prazo de inscrições foi encerrado. Como sua inscrição não foi enviada dentro do prazo, ela não foi efetivada e não poderá mais ser concluída.';
+export const MENSAGEM_NAO_ENVIADA = 'Este rascunho não pode mais ser continuado.';
 
-/**
- * A API só permite continuar o rascunho com as inscrições abertas (`AcoesPermitidas`); sem essa
- * permissão, o rascunho que existe é o que o prazo deixou sem envio.
- */
+/** A API não informa por que o rascunho não pode ser continuado; a tela só reflete a permissão negada. */
 function ficouSemEnvio(inscricao: MinhaInscricaoDto): boolean {
   return (
     inscricao.situacao.codigo === SituacaoInscricaoCodigo.RASCUNHO && !inscricao.acoes.podeContinuar
@@ -73,13 +69,19 @@ function cursoDaInscricao(opcao: MinhaInscricaoDto['opcoesDeCurso'][number]): Cu
   return { ordem: opcao.ordem, nome: `${opcao.cursoNome} (${opcao.cursoGrau})` };
 }
 
+function situacaoDoItem(
+  inscricao: MinhaInscricaoDto,
+): Pick<ItemDaLista, 'situacao' | 'rotuloDaSituacao' | 'naoEnviada'> {
+  const naoEnviada = ficouSemEnvio(inscricao);
+  const rotuloDaSituacao = naoEnviada ? ROTULO_NAO_ENVIADA : inscricao.situacao.rotulo;
+  return { situacao: inscricao.situacao, rotuloDaSituacao, naoEnviada };
+}
+
 export function itemDaLista(inscricao: MinhaInscricaoDto): ItemDaLista {
   return {
     id: inscricao.inscricaoId,
     processoId: inscricao.processoSeletivoId,
-    situacao: inscricao.situacao,
-    rotuloDaSituacao: ficouSemEnvio(inscricao) ? ROTULO_NAO_ENVIADA : inscricao.situacao.rotulo,
-    naoEnviada: ficouSemEnvio(inscricao),
+    ...situacaoDoItem(inscricao),
     nome: inscricao.nomeDoProcesso ?? 'Processo seletivo',
     numero: inscricao.numeroInscricao,
     mensagem: mensagemDa(inscricao),

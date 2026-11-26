@@ -234,7 +234,6 @@ export class InscricaoListaPage {
    * seguir, ver o comprovante é a ação principal.
    */
   protected acoesDe(item: ItemDaLista): readonly AcaoDaInscricao[] {
-    if (item.naoEnviada) return [];
     const { acoes } = item;
     const comprovante =
       acoes.podeContinuar || acoes.podeCorrigir

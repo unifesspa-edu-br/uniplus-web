@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SituacaoInscricaoCodigo } from '@uniplus/shared-data/selecao';
 
-import { MENSAGEM_NAO_ENVIADA, itemDaLista } from './inscricao-lista.model';
+import { MENSAGEM_NAO_ENVIADA } from './inscricao-lista.model';
 import { CenarioDaListaDeInscricoes, inscricao } from './inscricao-lista.page.testing';
 
 const RASCUNHO = SituacaoInscricaoCodigo.RASCUNHO;
 const ENVIADA = SituacaoInscricaoCodigo.ENVIADA;
 const CANCELADA = SituacaoInscricaoCodigo.CANCELADA;
 
-describe('InscricaoListaPage — rascunho após o encerramento do prazo', () => {
+describe('InscricaoListaPage — rascunho que a API não permite continuar', () => {
   let cenario: CenarioDaListaDeInscricoes;
 
   beforeEach(() => {
@@ -17,15 +17,13 @@ describe('InscricaoListaPage — rascunho após o encerramento do prazo', () => 
 
   afterEach(() => cenario.restaurar());
 
-  it('o rascunho com o prazo encerrado é "Não enviada" e traz a mensagem do prazo', async () => {
+  it('o rascunho sem permissão de continuar é "Não enviada" e traz a mensagem de que não pode ser continuado', async () => {
     await cenario.carregar([inscricao('p1', RASCUNHO, 'Auxílio', false)]);
 
-    const [card] = Array.from(cenario.itens());
-    expect(card.querySelector('ui-tag')?.textContent?.trim()).toBe('Não enviada');
-    expect(card.textContent).toContain(MENSAGEM_NAO_ENVIADA);
-    expect(MENSAGEM_NAO_ENVIADA).toBe(
-      'O prazo de inscrições foi encerrado. Como sua inscrição não foi enviada dentro do prazo, ela não foi efetivada e não poderá mais ser concluída.',
-    );
+    const [cartao] = Array.from(cenario.itens());
+    expect(cartao.querySelector('ui-tag')?.textContent?.trim()).toBe('Não enviada');
+    expect(cartao.textContent).toContain(MENSAGEM_NAO_ENVIADA);
+    expect(MENSAGEM_NAO_ENVIADA).toBe('Este rascunho não pode mais ser continuado.');
   });
 
   it('não oferece continuar, concluir nem descartar', async () => {
@@ -34,8 +32,8 @@ describe('InscricaoListaPage — rascunho após o encerramento do prazo', () => 
     expect(cenario.rotulosDe(cenario.itens()[0])).toEqual([]);
   });
 
-  it('não oferece ação nem com a API permitindo, por engano, descartar', async () => {
-    const item = itemDaLista({
+  it('oferece descartar o rascunho sem envio quando a API o permite', async () => {
+    const semEnvio = {
       ...inscricao('p1', RASCUNHO, 'Auxílio', false),
       acoes: {
         podeContinuar: false,
@@ -43,9 +41,10 @@ describe('InscricaoListaPage — rascunho após o encerramento do prazo', () => 
         podeCancelar: false,
         podeDescartar: true,
       },
-    });
+    };
+    await cenario.carregar([semEnvio]);
 
-    expect(item.naoEnviada).toBe(true);
+    expect(cenario.rotulosDe(cenario.itens()[0])).toEqual(['Descartar rascunho']);
   });
 
   it('mantém o nome do processo e os cursos escolhidos', async () => {
@@ -60,23 +59,23 @@ describe('InscricaoListaPage — rascunho após o encerramento do prazo', () => 
     expect(texto).toContain('Medicina (Bacharelado)');
   });
 
-  it('o rascunho dentro do prazo segue como rascunho e pode continuar', async () => {
+  it('o rascunho com permissão de continuar segue como rascunho', async () => {
     await cenario.carregar([inscricao('p1', RASCUNHO, 'Auxílio', true)]);
 
-    const [card] = Array.from(cenario.itens());
-    expect(card.textContent).not.toContain('Não enviada');
-    expect(cenario.rotulosDe(card)).toEqual(['Continuar inscrição', 'Descartar rascunho']);
+    const [cartao] = Array.from(cenario.itens());
+    expect(cartao.textContent).not.toContain('Não enviada');
+    expect(cenario.rotulosDe(cartao)).toEqual(['Continuar inscrição', 'Descartar rascunho']);
   });
 
-  it('a enviada e a cancelada, com o prazo encerrado, não viram "Não enviada"', async () => {
+  it('a enviada e a cancelada, sem permissão de continuar, não viram "Não enviada"', async () => {
     await cenario.carregar([
       inscricao('p1', ENVIADA, 'Bolsa', false),
       inscricao('p2', CANCELADA, 'Morada', false),
     ]);
 
-    for (const card of Array.from(cenario.itens())) {
-      expect(card.textContent).not.toContain('Não enviada');
-      expect(card.textContent).not.toContain(MENSAGEM_NAO_ENVIADA);
+    for (const cartao of Array.from(cenario.itens())) {
+      expect(cartao.textContent).not.toContain('Não enviada');
+      expect(cartao.textContent).not.toContain(MENSAGEM_NAO_ENVIADA);
     }
   });
 });
