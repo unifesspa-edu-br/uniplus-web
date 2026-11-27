@@ -21,15 +21,33 @@ function preparar(segundos = 1800, limite: LimiteDaSessao = 'inatividade') {
   const prazoDaCredencial = signal<PrazoDaCredencial | null>(sessaoQueVenceEm(segundos, limite));
   const refreshToken = vi.fn(async () => true);
   const login = vi.fn(async () => undefined);
+  const encerrarParaEntrarDeNovo = vi.fn(async () => undefined);
+  const sessaoEncerrada = vi.fn(() => false);
   TestBed.configureTestingModule({
     providers: [
-      { provide: AuthService, useValue: { prazoDaCredencial, refreshToken, login } },
+      {
+        provide: AuthService,
+        useValue: {
+          prazoDaCredencial,
+          refreshToken,
+          login,
+          encerrarParaEntrarDeNovo,
+          sessaoEncerrada,
+        },
+      },
       { provide: Router, useValue: { url: '/processo-seletivo/novo' } },
     ],
   });
   const aviso = TestBed.inject(AvisoDeVencimentoDaSessao);
   TestBed.tick();
-  return { aviso, prazoDaCredencial, refreshToken, login };
+  return {
+    aviso,
+    prazoDaCredencial,
+    refreshToken,
+    login,
+    encerrarParaEntrarDeNovo,
+    sessaoEncerrada,
+  };
 }
 
 function passar(segundos: number): void {
@@ -127,12 +145,24 @@ describe('AvisoDeVencimentoDaSessao', () => {
     expect(aviso.situacao()).toBe('podeContinuar');
   });
 
-  it('entrar de novo leva ao login voltando à rota aberta', () => {
-    const { aviso, login } = preparar(100);
+  it('entrar de novo, com a sessão ainda viva, a encerra para começar outra e volta à rota', async () => {
+    const { aviso, login, encerrarParaEntrarDeNovo, refreshToken } = preparar(100);
 
-    aviso.entrarDeNovo();
+    await aviso.entrarDeNovo();
+
+    expect(refreshToken).toHaveBeenCalledWith(-1);
+    expect(encerrarParaEntrarDeNovo).toHaveBeenCalledWith('/processo-seletivo/novo');
+    expect(login).not.toHaveBeenCalled();
+  });
+
+  it('entrar de novo, com a sessão já encerrada por outra aba, só entra, sem encerrar a nova', async () => {
+    const { aviso, login, encerrarParaEntrarDeNovo, sessaoEncerrada } = preparar(100);
+    sessaoEncerrada.mockReturnValue(true);
+
+    await aviso.entrarDeNovo();
 
     expect(login).toHaveBeenCalledWith('/processo-seletivo/novo');
+    expect(encerrarParaEntrarDeNovo).not.toHaveBeenCalled();
   });
 
   it('dispensado, não reabre para o mesmo vencimento', () => {

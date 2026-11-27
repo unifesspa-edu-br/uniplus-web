@@ -74,6 +74,16 @@ describe('AvisoDeSessaoPertoDeVencerComponent', () => {
     expect(botao('Continuar')).toBeUndefined();
   });
 
+  it('diz, antes do clique, que entrar de novo encerra a sessão nas outras páginas do Uni+', () => {
+    mostrar(false);
+
+    const efeito = document.getElementById(
+      botao('Entrar de novo agora').getAttribute('aria-describedby') ?? '',
+    );
+    expect(efeito?.textContent).toContain('encerra a sessão em todas as páginas do Uni+');
+    expect(efeito?.textContent).toContain('você volta a esta página');
+  });
+
   it('leva o foco à ação principal ao abrir', () => {
     mostrar(true);
     TestBed.tick();
