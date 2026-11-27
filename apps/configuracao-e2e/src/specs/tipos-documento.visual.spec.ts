@@ -51,15 +51,20 @@ test.describe('Tipo de documento — lista e formulário', () => {
     await expectSemViolacoes(page);
   });
 
-  test('a gaveta rola pelo formulário e mantém o rodapé fixo', async ({ page }) => {
+  test('a gaveta rola pelo corpo do painel e mantém o rodapé fixo', async ({ page }) => {
     await page.getByRole('button', { name: 'Novo tipo' }).first().click();
 
     const formulario = page.locator('form.form-drawer__form');
     await expect(formulario).toBeVisible();
-    await expect(formulario).toHaveCSS('overflow-y', 'auto');
+    const corpo = page.locator('.uni-drawer__body').filter({ has: formulario });
+    await expect(corpo).toHaveCSS('overflow-y', 'auto');
 
     const rodape = page.locator('.form-drawer__footer');
     await expect(rodape).toBeVisible();
+    const painel = page.locator('.uni-drawer__panel').filter({ has: formulario });
+    await expect
+      .poll(async () => Math.abs((await caixa(rodape)).base - (await caixa(painel)).base))
+      .toBeLessThanOrEqual(TOLERANCIA);
     await expect(formulario.locator('.form-drawer__footer')).toHaveCount(0);
     await expect(rodape.getByRole('button', { name: 'Criar tipo de documento' })).toBeVisible();
   });
