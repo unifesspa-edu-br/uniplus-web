@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { Page, expect, request as playwrightRequest } from '@playwright/test';
 
-const KEYCLOAK_BASE = process.env['KEYCLOAK_URL'] || 'http://localhost:8080';
-const KEYCLOAK_REALM = 'unifesspa';
+export const KEYCLOAK_BASE = process.env['KEYCLOAK_URL'] || 'http://localhost:8080';
+export const KEYCLOAK_REALM = 'unifesspa';
 const KEYCLOAK_ADMIN_USER = process.env['KEYCLOAK_ADMIN'] || 'admin';
 const RESET_LOCK_PATH = path.join(tmpdir(), 'uniplus-keycloak-reset.lock');
 const RESET_LOCK_TIMEOUT_MS = 60_000;
@@ -35,7 +35,7 @@ export async function resetPasswords(
   });
 }
 
-type ContextoDaApi = Awaited<ReturnType<typeof playwrightRequest.newContext>>;
+export type ContextoDaApi = Awaited<ReturnType<typeof playwrightRequest.newContext>>;
 
 /** A sessão de admin aberta uma vez e reaproveitada por todos os usuários. */
 interface SessaoAdmin {
@@ -43,7 +43,7 @@ interface SessaoAdmin {
   readonly authHeader: { Authorization: string };
 }
 
-async function autenticarAdmin(api: ContextoDaApi): Promise<{ Authorization: string }> {
+export async function autenticarAdmin(api: ContextoDaApi): Promise<{ Authorization: string }> {
   const tokenResp = await api.post('/realms/master/protocol/openid-connect/token', {
     form: {
       grant_type: 'password',
