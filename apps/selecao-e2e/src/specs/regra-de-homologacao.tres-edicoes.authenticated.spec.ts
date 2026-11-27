@@ -71,7 +71,7 @@ test.describe('Regra de homologação das inscrições com uma alternativa por e
 
     const opcoes = alternativa(page, 1).getByLabel('Edição do exame').getByRole('option');
     await expect(opcoes).toHaveText(['Selecione a edição…', 'ENEM 2024', 'ENEM 2025', 'ENEM 2026']);
-    const texto = page.getByText('A regra em texto:');
+    const texto = page.locator('p', { has: page.getByText('A regra em texto:') });
     for (const ano of EDICOES_DA_MEDICINA) await expect(texto).toContainText(`ENEM ${ano}`);
   });
 
