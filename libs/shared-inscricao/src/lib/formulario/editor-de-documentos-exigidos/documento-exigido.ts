@@ -24,11 +24,16 @@ import {
 } from './documentos-exigidos';
 import { NormasDoDocumentoComponent } from './normas-do-documento';
 
-export const SEM_RECUSAS: RecusasDoDocumento = { quando: [], demais: [] };
+export const SEM_RECUSAS: RecusasDoDocumento = {
+  quando: [],
+  obrigatorio: [],
+  prazoParaReenvio: [],
+  demais: [],
+};
 
 /**
  * Um documento exigido: a fase e o tipo de documento, se é obrigatório, a consequência de não o
- * apresentar, de quem é cobrado (as condições sobre fatos) e as normas que o sustentam. Devolve o
+ * apresentar, de quem é cobrado (as condições sobre dados do candidato) e as normas que o sustentam. Devolve o
  * documento inteiro a cada mudança.
  */
 @Component({
@@ -59,9 +64,9 @@ export const SEM_RECUSAS: RecusasDoDocumento = { quando: [], demais: [] };
         </div>
       </div>
 
-      @if (recusas().demais.length > 0) {
+      @if (recusasDoCabecalho().length > 0) {
         <ul class="editor-formulario__erros u-list" role="alert">
-          @for (erro of recusas().demais; track $index) {
+          @for (erro of recusasDoCabecalho(); track $index) {
             <li class="field__error">{{ erro }}</li>
           }
         </ul>
@@ -114,7 +119,7 @@ export const SEM_RECUSAS: RecusasDoDocumento = { quando: [], demais: [] };
             (change)="trocarConsequencia($event)"
           >
             <option value="" [selected]="documento().consequenciaDoDescumprimento === null">
-              Nenhuma consequência
+              Sem consequência definida
             </option>
             @for (consequencia of consequencias(); track consequencia.valor) {
               <option
@@ -131,6 +136,11 @@ export const SEM_RECUSAS: RecusasDoDocumento = { quando: [], demais: [] };
           <label class="checkbox">
             <input
               type="checkbox"
+              [id]="idDe('obrigatorio')"
+              [attr.aria-invalid]="recusas().obrigatorio.length > 0 || null"
+              [attr.aria-describedby]="
+                descricaoDaRecusa('obrigatorio-recusa', recusas().obrigatorio)
+              "
               [checked]="documento().obrigatorio"
               [disabled]="disabled()"
               (change)="trocarObrigatorio($event)"
@@ -138,6 +148,13 @@ export const SEM_RECUSAS: RecusasDoDocumento = { quando: [], demais: [] };
             <span class="checkbox__box" aria-hidden="true"></span>
             Documento obrigatório
           </label>
+          @if (recusas().obrigatorio.length > 0) {
+            <div [id]="idDe('obrigatorio-recusa')" role="alert">
+              @for (erro of recusas().obrigatorio; track $index) {
+                <p class="field__error">{{ erro }}</p>
+              }
+            </div>
+          }
         </div>
 
         @if (admiteReenvio()) {
@@ -145,13 +162,30 @@ export const SEM_RECUSAS: RecusasDoDocumento = { quando: [], demais: [] };
             <label class="checkbox">
               <input
                 type="checkbox"
+                [id]="idDe('prazo-reenvio')"
+                [attr.aria-invalid]="recusas().prazoParaReenvio.length > 0 || null"
+                [attr.aria-describedby]="descricaoDoPrazo()"
                 [checked]="documento().abrePrazoParaReenvio"
                 [disabled]="disabled()"
                 (change)="trocarReenvio($event)"
               />
               <span class="checkbox__box" aria-hidden="true"></span>
-              Abrir prazo para reenvio
+              O indeferimento abre prazo para reenvio
             </label>
+            <p class="field__hint" [id]="idDe('prazo-reenvio-estado')">
+              {{
+                documento().abrePrazoParaReenvio
+                  ? 'Abre prazo para reenvio.'
+                  : 'Não abre prazo para reenvio.'
+              }}
+            </p>
+            @if (recusas().prazoParaReenvio.length > 0) {
+              <div [id]="idDe('prazo-reenvio-recusa')" role="alert">
+                @for (erro of recusas().prazoParaReenvio; track $index) {
+                  <p class="field__error">{{ erro }}</p>
+                }
+              </div>
+            }
           </div>
         }
       </div>
@@ -193,7 +227,7 @@ export class DocumentoExigidoComponent {
   readonly fatos = input.required<readonly FatoEscolhivel[]>();
   readonly idBase = input.required<string>();
   readonly disabled = input<boolean>(false);
-  /** Os fatos que o modelo coleta ou conhece antes; a condição que cita outro é marcada antes do envio. Nulo: sem conferência. */
+  /** Os dados do candidato que o modelo coleta ou conhece antes; a condição que cita outro é marcada antes do envio. Nulo: sem conferência. */
   readonly citaveis = input<ReadonlySet<string> | null>(null);
   readonly recusas = input<RecusasDoDocumento>(SEM_RECUSAS);
 
@@ -213,7 +247,7 @@ export class DocumentoExigidoComponent {
       const semConferir =
         problemas[indice] !== undefined || citaveis === null || condicao.fato === '';
       if (!semConferir && !citaveis.has(condicao.fato)) {
-        problemas[indice] = 'o modelo não coleta este fato nem o conhece antes dele';
+        problemas[indice] = 'o modelo não coleta este dado do candidato nem o conhece antes dele';
       }
     });
     return problemas;
@@ -242,10 +276,25 @@ export class DocumentoExigidoComponent {
       : [{ valor: gravada, rotulo: gravada }, ...oferecidas];
   });
 
+  /** O prazo para reenvio recusado sem a caixa à vista (fase que não o admite) vai ao cabeçalho. */
+  protected readonly recusasDoCabecalho = computed(() => {
+    const { demais, prazoParaReenvio } = this.recusas();
+    return this.admiteReenvio() ? demais : [...demais, ...prazoParaReenvio];
+  });
+
   protected readonly nomeDoTipo = computed(() =>
     nomeDe(this.tipos(), this.documento().tipoDocumentoCodigo),
   );
   protected readonly nomeDaFase = computed(() => nomeDe(this.fases(), this.documento().faseCodigo));
+
+  protected descricaoDaRecusa(parte: string, recusas: readonly string[]): string | null {
+    return recusas.length > 0 ? this.idDe(parte) : null;
+  }
+
+  protected descricaoDoPrazo(): string {
+    const recusa = this.descricaoDaRecusa('prazo-reenvio-recusa', this.recusas().prazoParaReenvio);
+    return [this.idDe('prazo-reenvio-estado'), recusa].filter(Boolean).join(' ');
+  }
 
   protected idDe(parte: string): string {
     return `${this.idBase()}-${parte}`;

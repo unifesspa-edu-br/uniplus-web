@@ -87,6 +87,16 @@ function blocosQueMostram(tela: HTMLElement, mensagem: string): string[] {
     .map((lista) => lista.closest('[aria-labelledby]')?.getAttribute('aria-labelledby') ?? '');
 }
 
+function descritoPor(tela: HTMLElement, campo: string): string[] {
+  const ids = tela
+    .querySelector(`#cfg-modelo-docs-doc-0-${campo}`)
+    ?.getAttribute('aria-describedby');
+  return (ids ?? '')
+    .split(' ')
+    .filter(Boolean)
+    .map((id) => tela.querySelector(`#${id}`)?.textContent?.trim() ?? 'ausente');
+}
+
 describe('ModeloFormularioEdicaoPage: recusas pelos ponteiros do contrato', () => {
   let fixture: ComponentFixture<ModeloFormularioEdicaoPage>;
   let controller: HttpTestingController;
@@ -201,6 +211,33 @@ describe('ModeloFormularioEdicaoPage: recusas pelos ponteiros do contrato', () =
 
     expect(blocosQueMostram(tela, 'fase do documento não foi reconhecida')).toEqual([DOCUMENTO_0]);
     expect(blocosQueMostram(tela, 'condição do documento cita fato')).toEqual([DOCUMENTO_1]);
+  });
+
+  it('liga a recusa de obrigatoriedade e a de prazo à caixa de cada uma pelo aria-describedby', async () => {
+    const tela = await aoRecusarGravacao(
+      recusa(
+        'documentosExigidos[0].indeferimento.obrigatorio',
+        'Informe se o documento é obrigatório.',
+      ),
+      recusa('documentosExigidos[0].indeferimento.abrePrazoParaReenvio', 'Informe o prazo.'),
+    );
+
+    expect(descritoPor(tela, 'obrigatorio')).toEqual(['Informe se o documento é obrigatório.']);
+    expect(descritoPor(tela, 'prazo-reenvio')).toEqual([
+      'Não abre prazo para reenvio.',
+      'Informe o prazo.',
+    ]);
+  });
+
+  it('não referencia mensagem inexistente quando a caixa não foi recusada', async () => {
+    const tela = await aoRecusarGravacao(
+      recusa('documentosExigidos[0].faseCodigo', 'Fase recusada.'),
+    );
+
+    expect(
+      tela.querySelector('#cfg-modelo-docs-doc-0-obrigatorio')?.hasAttribute('aria-describedby'),
+    ).toBe(false);
+    expect(descritoPor(tela, 'prazo-reenvio')).toEqual(['Não abre prazo para reenvio.']);
   });
 
   it('mostra a recusa de formato da fase junto do documento', async () => {

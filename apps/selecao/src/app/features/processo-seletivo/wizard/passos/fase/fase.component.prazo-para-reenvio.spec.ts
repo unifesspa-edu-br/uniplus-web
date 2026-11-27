@@ -75,7 +75,7 @@ describe('FasePassoComponent: prazo para reenvio', () => {
     expect(exigencias().exigenciaDoDocumento(ID_CPF).abrePrazoParaReenvio).toBe(false);
   });
 
-  function prazoEnviado(): boolean | undefined {
+  function prazoEnviado(): boolean | null | undefined {
     const regras = regrasDeComprovacaoParaEnvio(store.draft().documentos, {
       faseIdPorCodigo: new Map([['AVALIACAO', ID_AVALIACAO]]),
       modalidadesOfertadas: [],
