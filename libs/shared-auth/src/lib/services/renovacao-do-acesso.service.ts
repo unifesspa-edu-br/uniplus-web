@@ -30,6 +30,7 @@ export class RenovacaoDoAcesso {
   private readonly injector = inject(Injector);
   private readonly documento = inject(DOCUMENT);
   private temporizador: ReturnType<typeof setTimeout> | null = null;
+  private esperandoAPessoa = false;
 
   constructor() {
     effect(() => {
@@ -99,7 +100,38 @@ export class RenovacaoDoAcesso {
       void this.renovar(antecedenciaEmSegundos);
       return;
     }
-    void this.atividade.proxima().then(() => this.avaliar());
+    this.esperarAProximaAcao();
+  }
+
+  /**
+   * Sem atividade, nada renova; a aba parada deixa a sessão vencer. Mas o fim dela não pode
+   * depender de a pessoa voltar: no prazo, uma tentativa recebe a recusa do provedor e a encerra.
+   * Basta uma espera pendente pela próxima ação, por mais que se reavalie.
+   */
+  private esperarAProximaAcao(): void {
+    const fimDaSessao = this.fimDaSessao();
+    if (fimDaSessao !== null) this.lembrarEm(fimDaSessao - this.relogio().getTime());
+    if (this.esperandoAPessoa) return;
+    this.esperandoAPessoa = true;
+    void this.atividade.proxima().then(() => {
+      this.esperandoAPessoa = false;
+      this.avaliar();
+    });
+  }
+
+  /**
+   * O acesso para anexar a um pedido. Renova antes, se está para vencer, só quando a pessoa agiu
+   * desde que ele foi emitido: pedido automático, como o de uma tela que consulta sozinha, não
+   * adia a sessão. Sem a hora de emissão não há como saber, e vale renovar.
+   */
+  async acessoParaOPedido(): Promise<string | undefined> {
+    const acesso = this.auth.prazoDoAcesso();
+    const antecedencia = this.antecedenciaEmSegundos(acesso);
+    const pessoaAgiu = acesso === null || this.atividade.houveDesde(acesso.emitidoEm);
+    if (pessoaAgiu && this.auth.isTokenExpired(antecedencia)) {
+      await this.auth.refreshToken(antecedencia);
+    }
+    return this.auth.getToken();
   }
 
   /**
@@ -116,8 +148,12 @@ export class RenovacaoDoAcesso {
   }
 
   private antecedenciaEmMs(acesso: PrazoDoAcesso): number {
+    return this.antecedenciaEmSegundos(acesso) * MILISSEGUNDOS_POR_SEGUNDO;
+  }
+
+  private antecedenciaEmSegundos(acesso: PrazoDoAcesso | null): number {
     const configurada = this.injector.get(AUTH_CONFIG).antecedenciaDaRenovacaoEmSegundos;
-    return antecedenciaEfetivaEmSegundos(configurada, acesso) * MILISSEGUNDOS_POR_SEGUNDO;
+    return antecedenciaEfetivaEmSegundos(configurada, acesso);
   }
 
   private cancelar(): void {

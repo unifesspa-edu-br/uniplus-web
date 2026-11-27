@@ -37,7 +37,15 @@ describe('authErrorInterceptor (consumindo ApiResult)', () => {
   function setup(
     rotaAtual = '/inicio',
     navegandoPara: string | null = null,
-    sessao: { autenticada: boolean; encerrada: boolean } = { autenticada: false, encerrada: false },
+    sessao: {
+      autenticada: boolean;
+      encerrada: boolean;
+      acessoVencido?: boolean;
+      tokenAtual?: string;
+    } = {
+      autenticada: false,
+      encerrada: false,
+    },
   ) {
     const login = vi.fn();
     const encerrarSessao = vi.fn();
@@ -48,6 +56,8 @@ describe('authErrorInterceptor (consumindo ApiResult)', () => {
       encerrarSessao,
       authenticated: () => sessao.autenticada,
       sessaoEncerrada: () => sessao.encerrada,
+      isTokenExpired: () => sessao.acessoVencido ?? false,
+      getToken: () => sessao.tokenAtual,
     } as unknown as AuthService;
     const routerMock = {
       navigate,
@@ -152,6 +162,55 @@ describe('authErrorInterceptor (consumindo ApiResult)', () => {
 
     expect(ctx.encerrarSessao).toHaveBeenCalledTimes(1);
     expect(ctx.login).not.toHaveBeenCalled();
+  });
+
+  it('401 com o acesso em memória vencido não encerra a sessão: foi pedido automático sem renovação', async () => {
+    const ctx = setup('/inicio', null, {
+      autenticada: true,
+      encerrada: false,
+      acessoVencido: true,
+    });
+
+    await receberProblema(ctx, '/api/protegido', baseProblem);
+
+    expect(ctx.encerrarSessao).not.toHaveBeenCalled();
+    expect(ctx.login).not.toHaveBeenCalled();
+  });
+
+  it('401 de pedido enviado com o acesso antigo, depois de uma renovação, não encerra a sessão', async () => {
+    const ctx = setup('/inicio', null, { autenticada: true, encerrada: false, tokenAtual: 'novo' });
+
+    const promise = firstValueFrom(
+      ctx.http.get('/api/protegido', { headers: { Authorization: 'Bearer antigo' } }),
+    );
+    ctx.httpMock.expectOne('/api/protegido').flush(baseProblem, {
+      status: 401,
+      statusText: 'error',
+      headers: PROBLEM_HEADERS,
+    });
+    await promise;
+
+    expect(ctx.encerrarSessao).not.toHaveBeenCalled();
+  });
+
+  it('401 de pedido enviado com o acesso atual encerra a sessão', async () => {
+    const ctx = setup('/inicio', null, {
+      autenticada: true,
+      encerrada: false,
+      tokenAtual: 'atual',
+    });
+
+    const promise = firstValueFrom(
+      ctx.http.get('/api/protegido', { headers: { Authorization: 'Bearer atual' } }),
+    );
+    ctx.httpMock.expectOne('/api/protegido').flush(baseProblem, {
+      status: 401,
+      statusText: 'error',
+      headers: PROBLEM_HEADERS,
+    });
+    await promise;
+
+    expect(ctx.encerrarSessao).toHaveBeenCalledTimes(1);
   });
 
   it('401 com a sessão já encerrada reabre o aviso, sem repetir o encerramento nem abrir o login', async () => {

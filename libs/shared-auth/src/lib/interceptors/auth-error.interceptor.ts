@@ -1,4 +1,4 @@
-import { HttpInterceptorFn, HttpResponse } from '@angular/common/http';
+import { HttpInterceptorFn, HttpRequest, HttpResponse } from '@angular/common/http';
 import { inject, Injector } from '@angular/core';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs';
@@ -19,8 +19,11 @@ import type { ApiResult } from '@uniplus/shared-core/http';
  * `@uniplus/shared-core` (ADR-0011 + ADR-0012):
  *
  * - **401 Unauthorized** → com a pessoa autenticada, a sessão terminou: encerra-a para abrir o
- *   aviso, que leva ao login a pedido, e o reabre se a pessoa o dispensou e tentou de novo; sem
- *   sessão, dispara `authService.login()`.
+ *   aviso, que leva ao login a pedido, e o reabre se a pessoa o dispensou e agiu de novo; sem
+ *   sessão, dispara `authService.login()`. Se o acesso em memória já venceu, o 401 é de um pedido
+ *   automático que a sessão parada não renovou: não encerra nada, porque o fim da sessão é dado
+ *   pelo provedor, no prazo dela. Se o acesso foi renovado depois de o pedido seguir, o 401 é do acesso
+ *   antigo e também não encerra.
  * - **403 Forbidden** → guarda o `detail` do problema e redireciona para `/acesso-negado`,
  *   que o mostra à pessoa — salvo quando a chamada marca que trata a recusa na própria tela.
  *
@@ -34,19 +37,26 @@ import type { ApiResult } from '@uniplus/shared-core/http';
  * `withInterceptors([...])`, ou seja, registrado **antes** dele.
  */
 export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
-  const authService = inject(AuthService);
-  const router = inject(Router);
-  const motivo = inject(MotivoDoAcessoNegadoService);
-  const injector = inject(Injector);
+  const reacao = reacaoAoPedido(req);
 
   return next(req).pipe(
     tap((event) => {
       if (!(event instanceof HttpResponse)) return;
       const recusaTratada = req.context.get(RECUSA_DE_PERMISSAO_TRATADA_NA_CHAMADA);
-      reagirAoStatus(event, { authService, router, motivo, injector }, recusaTratada);
+      reagirAoStatus(event, reacao, recusaTratada);
     }),
   );
 };
+
+function reacaoAoPedido(req: HttpRequest<unknown>): Reacao {
+  return {
+    authService: inject(AuthService),
+    router: inject(Router),
+    motivo: inject(MotivoDoAcessoNegadoService),
+    injector: inject(Injector),
+    enviadoCom: req.headers.get('Authorization'),
+  };
+}
 
 const ROTA_DE_ACESSO_NEGADO = '/acesso-negado';
 
@@ -55,6 +65,8 @@ interface Reacao {
   readonly router: Router;
   readonly motivo: MotivoDoAcessoNegadoService;
   readonly injector: Injector;
+  /** O cabeçalho `Authorization` com que o pedido seguiu, se levou credencial. */
+  readonly enviadoCom: string | null;
 }
 
 function reagirAoStatus(
@@ -69,13 +81,22 @@ function reagirAoStatus(
   }
 }
 
-function reagirAoNaoAutenticado({ authService, injector }: Reacao): void {
+function reagirAoNaoAutenticado({ authService, injector, enviadoCom }: Reacao): void {
   if (authService.sessaoEncerrada()) {
     injector.get(SessaoEncerrada).reabrir();
     return;
   }
-  if (authService.authenticated()) authService.encerrarSessao();
-  else void authService.login();
+  if (foiRenovadoDepoisDoEnvio(authService, enviadoCom)) return;
+  if (!authService.authenticated()) {
+    void authService.login();
+  } else if (!authService.isTokenExpired(0)) {
+    authService.encerrarSessao();
+  }
+}
+
+/** O acesso mudou com o pedido em trânsito: o 401 é do acesso antigo, não da sessão. */
+function foiRenovadoDepoisDoEnvio(authService: AuthService, enviadoCom: string | null): boolean {
+  return enviadoCom !== null && enviadoCom !== `Bearer ${authService.getToken()}`;
 }
 
 function levarAoAcessoNegado(resposta: HttpResponse<unknown>, { router, motivo }: Reacao): void {
