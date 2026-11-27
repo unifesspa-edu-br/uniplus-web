@@ -34,9 +34,9 @@ describe('GravacaoDaInscricao: recusa só com causa geral', () => {
   const obter = vi.fn();
   const formulario: FormularioParaGravar = {
     simulacao: () => ({ respostas: {}, grupos: {} }),
-    termosAceitos: () => [],
-    conferencia: { concluirTodas: () => 0 },
-  } as unknown as FormularioParaGravar;
+    termosAceitosPorFormulario: () => new Map(),
+    concluirTodas: () => 0,
+  };
 
   beforeEach(() => {
     salvar.mockReset();
@@ -55,7 +55,7 @@ describe('GravacaoDaInscricao: recusa só com causa geral', () => {
                 eTag: 'v1',
                 formulario: { respostas: {}, grupos: {} },
               }) as unknown as InscricaoDto,
-            formulario: () => null,
+            formularios: () => [],
             precisaRecarregar: () => false,
           },
         },

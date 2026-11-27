@@ -16,15 +16,9 @@ import {
   type FormularioApresentadoDoProcessoDto,
   type InscricaoDto,
   SELECAO_BASE_PATH,
-  formularioDaInscricaoRequest,
+  formulariosDaInscricaoRequest,
 } from '@uniplus/shared-data/selecao';
-import {
-  type MunicipiosGravados,
-  type MunicipiosSeparados,
-  type SimulacaoDoFormulario,
-  type ValorJson,
-  separarMunicipiosGravados,
-} from '@uniplus/shared-inscricao/formulario';
+import type { SimulacaoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 import { LEITURA_DE_MUNICIPIO_POR_CODIGO, NomesDeMunicipios } from '@uniplus/shared-ui/components';
 
 import {
@@ -35,21 +29,24 @@ import {
 } from '../oferta-da-inscricao';
 import { AvaliacaoDaInscricaoEstado } from './avaliacao-da-inscricao.estado';
 import { InscricaoDoCandidatoService } from './inscricao-do-candidato.service';
-import { respostasIniciaisDoNomeSocial } from './respostas-da-conta';
+import {
+  type FormularioCarregado,
+  dependenciasDaInscricao,
+  formularioCarregado,
+  inicialDaInscricao,
+} from './formularios-da-inscricao';
 
 /** A inscrição e o formulário como chegaram do servidor ao abrir a página, e o que se tira deles. */
 export interface InscricaoCarregada {
   readonly inscricao: InscricaoDto;
-  readonly formulario: FormularioApresentadoDoProcessoDto;
+  /** Os formulários obrigatórios da fase, na ordem em que a API os entrega. */
+  readonly formularios: readonly FormularioCarregado[];
   /** As ofertas da versão em que está a inscrição, não as do certame ao vivo. */
   readonly ofertas: readonly OfertaDaInscricao[];
   /** Quantas opções de curso a versão da inscrição admite. */
   readonly numeroDeOpcoes: 1 | 2;
-  /** A partida do formulário: as respostas e as ocorrências como chegaram. */
+  /** A partida da avaliação: as respostas e as ocorrências de todos os formulários, como chegaram. */
   readonly inicial: SimulacaoDoFormulario;
-  /** O nome que a inscrição enviada guardou de cada município, para o campo e a revisão o mostrarem. */
-  readonly municipiosGravados: MunicipiosGravados;
-  readonly termosAceitos: readonly string[];
 }
 
 /** Por que a página precisa ser recarregada, quando precisa. */
@@ -90,9 +87,9 @@ export class LeituraDaInscricao {
     inject(DestroyRef).onDestroy(() => this.inicioEmCurso?.unsubscribe());
     effect(() => {
       const iniciada = this.iniciada();
-      const formulario = this.formularioLido.data();
-      if (iniciada && formulario) {
-        untracked(() => this.montarCarga(iniciada, formulario));
+      const formularios = this.formularioLido.data();
+      if (iniciada && formularios && formularios.length > 0) {
+        untracked(() => this.montarCarga(iniciada, formularios));
       }
     });
   }
@@ -100,11 +97,15 @@ export class LeituraDaInscricao {
   readonly processoId = signal<string | null>(null);
   private readonly iniciada = signal<InscricaoIniciada | null>(null);
   private readonly falhaDaLeitura = signal<string | null>(null);
-  /** O formulário só é pedido depois de a inscrição ser iniciada: a versão que vale é a dela. */
-  private readonly formularioLido = useApiResource<FormularioApresentadoDoProcessoDto>(() => {
-    const iniciada = this.iniciada();
-    return iniciada ? formularioDaInscricaoRequest(this.basePath, iniciada.processoId) : undefined;
-  });
+  /** Os formulários só são pedidos depois de a inscrição ser iniciada: a versão que vale é a dela. */
+  private readonly formularioLido = useApiResource<readonly FormularioApresentadoDoProcessoDto[]>(
+    () => {
+      const iniciada = this.iniciada();
+      return iniciada
+        ? formulariosDaInscricaoRequest(this.basePath, iniciada.processoId)
+        : undefined;
+    },
+  );
   /** O que chegou na última leitura; só ela o troca, nunca uma gravação. */
   readonly carregada = signal<InscricaoCarregada | null>(null);
   readonly erroAoCarregar = computed(() => {
@@ -113,7 +114,7 @@ export class LeituraDaInscricao {
     const problema = this.formularioLido.problem();
     if (problema) return this.problemas.resolve(problema).title;
     const formulario = this.formularioLido;
-    if (formulario.error() || (formulario.value()?.ok && !formulario.data())) {
+    if (formulario.error() || (formulario.value()?.ok && !formulario.data()?.length)) {
       return FALHA_AO_MONTAR_A_INSCRICAO;
     }
     return null;
@@ -126,7 +127,7 @@ export class LeituraDaInscricao {
     () => this.carregada()?.inscricao ?? null,
   );
   readonly inscricao = this.atual.asReadonly();
-  readonly formulario = computed(() => this.carregada()?.formulario ?? null);
+  readonly formularios = computed(() => this.carregada()?.formularios ?? []);
   /**
    * Por que a página precisa ser recarregada: `envio` — o envio deu certo, mas a releitura da inscrição
    * falhou; `incerta` — a gravação falhou sem resposta ou com erro do servidor e a releitura também
@@ -174,10 +175,10 @@ export class LeituraDaInscricao {
   /** Uma resposta que a tela não sabe montar vira o erro da leitura, não um carregamento sem fim. */
   private montarCarga(
     iniciada: InscricaoIniciada,
-    formulario: FormularioApresentadoDoProcessoDto,
+    formularios: readonly FormularioApresentadoDoProcessoDto[],
   ): void {
     try {
-      this.adotarCarga(iniciada, formulario);
+      this.adotarCarga(iniciada, formularios);
     } catch {
       this.falhaDaLeitura.set(FALHA_AO_MONTAR_A_INSCRICAO);
       this.erros.handleError(new Error('Não foi possível montar a inscrição.'));
@@ -186,56 +187,42 @@ export class LeituraDaInscricao {
 
   private adotarCarga(
     { processoId, inscricao }: InscricaoIniciada,
-    formulario: FormularioApresentadoDoProcessoDto,
+    formularios: readonly FormularioApresentadoDoProcessoDto[],
   ): void {
-    const municipios = this.respostasIniciais(inscricao, formulario);
-    const carga = inscricaoCarregada(inscricao, formulario, municipios);
-    this.nomes.carregar(municipios.semNome, this.lerMunicipio);
+    const conta = this.usuario.user();
+    const carregados = formularios.map((f) => formularioCarregado(f, inscricao, conta));
+    const carga = inscricaoCarregada(inscricao, carregados);
+    this.nomes.carregar(
+      carregados.flatMap((f) => f.municipiosSemNome),
+      this.lerMunicipio,
+    );
     this.iniciarAAvaliacao(processoId, carga);
     this.carregada.set(carga);
   }
 
   private iniciarAAvaliacao(processoId: string, carga: InscricaoCarregada): void {
-    const { inscricao, formulario, ofertas, numeroDeOpcoes } = carga;
+    const { inscricao, formularios, ofertas, numeroDeOpcoes } = carga;
     const escolha = escolhaInicialDeOfertas(inscricao.escolhasDeCurso, ofertas, numeroDeOpcoes);
     this.avaliacao.iniciar({
       processoId,
       avaliacao: inscricao.avaliacao,
-      dependencias: formulario.dependenciasDaAvaliacao,
+      dependencias: dependenciasDaInscricao(formularios.map((f) => f.formulario)),
       simulacao: carga.inicial,
       oferta: escolha.oferta,
       segundaOferta: escolha.segunda,
-    });
-  }
-
-  private respostasIniciais(
-    inscricao: InscricaoDto,
-    formulario: FormularioApresentadoDoProcessoDto,
-  ): MunicipiosSeparados {
-    // As respostas chegam em JSON: são os valores que o formulário lê.
-    const gravadas = inscricao.formulario.respostas as Readonly<Record<string, ValorJson>>;
-    return separarMunicipiosGravados(formulario.formulario, {
-      respostas: {
-        ...respostasIniciaisDoNomeSocial(this.usuario.user(), gravadas, formulario),
-        ...gravadas,
-      },
-      grupos: inscricao.formulario.grupos as NonNullable<SimulacaoDoFormulario['grupos']>,
     });
   }
 }
 
 function inscricaoCarregada(
   inscricao: InscricaoDto,
-  formulario: FormularioApresentadoDoProcessoDto,
-  municipios: MunicipiosSeparados,
+  formularios: readonly FormularioCarregado[],
 ): InscricaoCarregada {
   return {
     inscricao,
-    formulario,
+    formularios,
     ofertas: ofertasDaInscricao(inscricao.escolhasDeCurso),
     numeroDeOpcoes: numeroDeOpcoesDeCurso(inscricao.escolhasDeCurso.numeroDeOpcoesDeCurso),
-    inicial: { respostas: municipios.respostas, grupos: municipios.grupos },
-    municipiosGravados: municipios.gravados,
-    termosAceitos: inscricao.formulario.aceites.map((a) => a.codigo),
+    inicial: inicialDaInscricao(formularios),
   };
 }

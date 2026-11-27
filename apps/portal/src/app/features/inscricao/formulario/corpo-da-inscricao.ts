@@ -1,5 +1,4 @@
 import {
-  type AceiteDeTermoInput,
   type AvaliacaoDaInscricaoRequest,
   type FormularioApresentadoDoProcessoDto,
   type InscricaoDto,
@@ -67,22 +66,12 @@ export function corpoDaAvaliacao(
   };
 }
 
-function aceitesDosTermos(
-  termosAceitos: readonly string[],
-  formulario: FormularioApresentadoDoProcessoDto | null,
-): InscricaoRequest['aceites'] {
-  if (formulario === null) return [];
-  const termos = new Map(formulario.formulario.termos.map((t) => [t.codigo, t]));
-  return termosAceitos.flatMap((codigo) => {
-    const termo = termos.get(codigo);
-    return termo ? [aceiteDoTermo(formulario.codigo, termo)] : [];
-  });
-}
+type AceiteDoTermo = NonNullable<InscricaoRequest['aceites']>[number];
+type FormularioDosTermos = Pick<FormularioApresentadoDoProcessoDto, 'codigo' | 'formulario'>;
 
-function aceiteDoTermo(
-  formularioCodigo: string,
-  termo: FormularioApresentadoDoProcessoDto['formulario']['termos'][number],
-): AceiteDeTermoInput {
+type TermoDoFormulario = FormularioDosTermos['formulario']['termos'][number];
+
+function aceiteDoTermo(formularioCodigo: string, termo: TermoDoFormulario): AceiteDoTermo {
   return {
     formularioCodigo,
     codigo: termo.codigo,
@@ -91,16 +80,33 @@ function aceiteDoTermo(
   };
 }
 
-/** O corpo do salvar e do envio: o da avaliação e os termos aceitos, com o código do formulário e a versão que ele publica. */
+/** Cada aceite leva o código do formulário que publica o termo. */
+function aceitesDosTermos(
+  termosAceitos: ReadonlyMap<string, readonly string[]>,
+  formularios: readonly FormularioDosTermos[],
+): InscricaoRequest['aceites'] {
+  return formularios.flatMap((formulario) => {
+    const termos = new Map(formulario.formulario.termos.map((t) => [t.codigo, t]));
+    return (termosAceitos.get(formulario.codigo) ?? []).flatMap((codigo) => {
+      const termo = termos.get(codigo);
+      return termo ? [aceiteDoTermo(formulario.codigo, termo)] : [];
+    });
+  });
+}
+
+/**
+ * O corpo do salvar e do envio: o da avaliação e os termos aceitos de todos os formulários, com a versão
+ * que cada um publica. O servidor troca os aceites por inteiro, então todos vão a cada gravação.
+ */
 export function corpoDaGravacao(
   corpo: AvaliacaoDaInscricaoRequest,
-  termosAceitos: readonly string[],
-  formulario: FormularioApresentadoDoProcessoDto | null,
+  termosAceitos: ReadonlyMap<string, readonly string[]>,
+  formularios: readonly FormularioDosTermos[],
 ): InscricaoRequest {
   return {
     ...corpo,
     ofertaCursoId: corpo.ofertaCursoId ?? null,
-    aceites: aceitesDosTermos(termosAceitos, formulario),
+    aceites: aceitesDosTermos(termosAceitos, formularios),
   };
 }
 

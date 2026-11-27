@@ -29,7 +29,7 @@ function prepararAGravacao() {
   const leitura = {
     processoId,
     inscricao: gravada,
-    formulario: signal(FORMULARIO_DE_INSCRICAO_MOCK),
+    formularios: signal([{ formulario: FORMULARIO_DE_INSCRICAO_MOCK }]),
     precisaRecarregar,
     motivoDoRecarregar,
     adotar: vi.fn((adotada: InscricaoDto) => gravada.set(adotada)),
@@ -42,15 +42,12 @@ function prepararAGravacao() {
     escolhidas: vi.fn(() => ({ ofertaCursoId: 'oferta-1', ofertaCursoSegundaOpcaoId: null })),
     limparRecusas: vi.fn(),
   };
-  const simulacao = vi.fn(
-    (): SimulacaoDoFormulario => ({ respostas: { NOME: 'Fernanda' }, grupos: {} }),
+  const simulacao = vi.fn((): SimulacaoDoFormulario => ({ respostas: { NOME: 'Fernanda' } }));
+  const termosAceitosPorFormulario = vi.fn(
+    (): ReadonlyMap<string, readonly string[]> => new Map([['INSCRICAO', ['VERACIDADE']]]),
   );
-  const termosAceitos = vi.fn(() => ['VERACIDADE']);
-  const formulario = {
-    simulacao,
-    termosAceitos,
-    conferencia: { concluirTodas: vi.fn(() => 0) },
-  } as unknown as FormularioParaGravar;
+  const concluirTodas = vi.fn(() => 0);
+  const formulario: FormularioParaGravar = { simulacao, termosAceitosPorFormulario, concluirTodas };
   TestBed.configureTestingModule({
     providers: [
       GravacaoDaInscricao,
@@ -71,7 +68,7 @@ function prepararAGravacao() {
     avaliacao,
     escolha,
     formulario,
-    leiturasDoFormulario: { simulacao, termosAceitos },
+    leiturasDoFormulario: { simulacao, termosAceitosPorFormulario, concluirTodas },
     gravada,
     gravacao: TestBed.inject(GravacaoDaInscricao),
     anuncio: TestBed.inject(AnuncioDaInscricao),
@@ -196,7 +193,7 @@ describe('GravacaoDaInscricao: o salvar do rascunho', () => {
     c.gravacao.salvar(c.formulario);
 
     expect(c.leiturasDoFormulario.simulacao).not.toHaveBeenCalled();
-    expect(c.leiturasDoFormulario.termosAceitos).not.toHaveBeenCalled();
+    expect(c.leiturasDoFormulario.termosAceitosPorFormulario).not.toHaveBeenCalled();
     expect(c.escolha.escolhidas).not.toHaveBeenCalled();
   });
 
@@ -246,11 +243,11 @@ describe('GravacaoDaInscricao: o envio', () => {
   });
 
   it('com seção pendente, não envia nem ocupa a tela', () => {
-    (c.formulario.conferencia.concluirTodas as ReturnType<typeof vi.fn>).mockReturnValue(2);
+    c.leiturasDoFormulario.concluirTodas.mockReturnValue(2);
 
     c.gravacao.enviar(c.formulario);
 
-    expect(c.formulario.conferencia.concluirTodas).toHaveBeenCalledWith();
+    expect(c.leiturasDoFormulario.concluirTodas).toHaveBeenCalledWith();
     expect(c.servico.submeter).not.toHaveBeenCalled();
     expect(c.gravacao.operacao()).toBeNull();
   });
@@ -260,7 +257,7 @@ describe('GravacaoDaInscricao: o envio', () => {
 
     c.gravacao.enviar(c.formulario);
 
-    expect(c.formulario.conferencia.concluirTodas).not.toHaveBeenCalled();
+    expect(c.leiturasDoFormulario.concluirTodas).not.toHaveBeenCalled();
     expect(c.servico.submeter).not.toHaveBeenCalled();
   });
 

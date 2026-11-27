@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import type { PendenciaDaSecao } from '@uniplus/shared-inscricao/formulario';
-
 import type { Operacao } from './gravacao-da-inscricao';
+import type { PendenciaDoFormulario, RecusaDoResumo } from './preenchimento-dos-formularios';
 
 /**
  * O fim da tela de inscrição: o que ainda impede o envio, com a ida a cada pendência, e os botões de
@@ -18,7 +17,11 @@ import type { Operacao } from './gravacao-da-inscricao';
 export class AcoesDaInscricaoComponent {
   /** Por que o envio ainda não segue, ou `null` quando o formulário está válido. */
   readonly motivoDoEnvioBloqueado = input<string | null>(null);
-  readonly pendencias = input<readonly PendenciaDaSecao[]>([]);
+  readonly pendencias = input<readonly PendenciaDoFormulario[]>([]);
+  /** As recusas do envio, de todos os formulários, na ordem da API. */
+  readonly recusas = input<readonly RecusaDoResumo[]>([]);
+  /** Só com mais de um formulário o resumo diz de qual é cada linha. */
+  readonly comVariosFormularios = input(false);
   /** O processo com mais de uma oferta pede o curso antes de seguir. */
   readonly semCurso = input(false);
   readonly enviada = input(false);
@@ -29,7 +32,8 @@ export class AcoesDaInscricaoComponent {
   readonly salvar = output<void>();
   readonly enviar = output<void>();
   readonly irAoCurso = output<void>();
-  readonly irAPendencia = output<string>();
+  readonly irAPendencia = output<PendenciaDoFormulario>();
+  readonly irARecusa = output<RecusaDoResumo>();
 
   protected readonly envioIndisponivel = computed(
     () => this.bloqueada() || this.motivoDoEnvioBloqueado() !== null,

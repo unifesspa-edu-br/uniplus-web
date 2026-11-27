@@ -71,42 +71,47 @@ describe('InscricaoDoCandidatoPage', () => {
   it('o grupo que o candidato removeu vai como lista vazia, para o servidor não manter as ocorrências gravadas', async () => {
     const { coleta, regras } = FORMULARIO_DE_INSCRICAO_MOCK.formulario;
     const ocorrencias = { minimo: 0, maximo: null, incluiCandidato: false };
-    cenario.servico.formulario = comFormulario(FORMULARIO_DE_INSCRICAO_MOCK, {
-      coleta: {
-        ...coleta,
-        grupos: [
-          {
-            codigo: 'FAMILIA',
-            ordem: 0,
-            paginaCodigo: DADOS,
-            rotulo: 'Integrante',
-            ocorrencias,
-            subitens: [campoColetado('RENDA', 'Renda', TipoDeCampoCodigo.NUMERO)],
-          },
-        ],
-      },
-      regras: {
-        ...regras,
-        paginas: regras.paginas.map((pagina, posicao) =>
-          posicao > 0
-            ? pagina
-            : {
-                ...pagina,
-                grupos: [
-                  {
-                    codigo: 'FAMILIA',
-                    ocorrencias,
-                    regras: {
-                      exibicao: null,
-                      obrigatoriedade: { tipo: TipoObrigatoriedadeCodigo.SEMPRE, predicado: null },
+    cenario.servico.formularios = [
+      comFormulario(FORMULARIO_DE_INSCRICAO_MOCK, {
+        coleta: {
+          ...coleta,
+          grupos: [
+            {
+              codigo: 'FAMILIA',
+              ordem: 0,
+              paginaCodigo: DADOS,
+              rotulo: 'Integrante',
+              ocorrencias,
+              subitens: [campoColetado('RENDA', 'Renda', TipoDeCampoCodigo.NUMERO)],
+            },
+          ],
+        },
+        regras: {
+          ...regras,
+          paginas: regras.paginas.map((pagina, posicao) =>
+            posicao > 0
+              ? pagina
+              : {
+                  ...pagina,
+                  grupos: [
+                    {
+                      codigo: 'FAMILIA',
+                      ocorrencias,
+                      regras: {
+                        exibicao: null,
+                        obrigatoriedade: {
+                          tipo: TipoObrigatoriedadeCodigo.SEMPRE,
+                          predicado: null,
+                        },
+                      },
+                      subitens: [item('RENDA')],
                     },
-                    subitens: [item('RENDA')],
-                  },
-                ],
-              },
-        ),
-      },
-    });
+                  ],
+                },
+          ),
+        },
+      }),
+    ];
     cenario.servico.inscricao = inscricao({
       grupos: { FAMILIA: [{ id: 'ocorrencia-1', respostas: { RENDA: 1500 } }] },
     });
@@ -123,7 +128,7 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(tela.querySelector('[data-campo="DESEJA_NOME_SOCIAL"]')).toBeNull();
     cenario.servico.salvar = () =>
       of(problema(412, 'uniplus.selecao.inscricao.precondicao_falhou'));
-    cenario.servico.formulario = COM_NOME_SOCIAL;
+    cenario.servico.formularios = [COM_NOME_SOCIAL];
     cenario.servico.inscricao = inscricao({ respostas: { NOME: 'Fernanda Laura Nicole Drumond' } });
 
     await cenario.clicar(botao(tela, 'Salvar rascunho'));
@@ -183,7 +188,7 @@ describe('InscricaoDoCandidatoPage', () => {
       const leitura = cenario.abrirSemAtender();
       await Promise.resolve();
       cenario.fixture.detectChanges();
-      const antiga = http.expectOne((r) => r.url.endsWith('/inscricao/formulario'));
+      const antiga = http.expectOne((r) => r.url.endsWith('/inscricao/formularios'));
 
       cenario.servico.inscricao = inscricao({ eTag: '"novo"' });
       leitura.recarregar();

@@ -101,7 +101,7 @@ export interface FormularioDoCandidato {
  * O envelope em que o processo entrega o formulário; aqui, só o que o formulário do candidato lê dele.
  */
 export interface FormularioNoProcesso {
-  /** O código que identifica o formulário no processo; os documentos o citam. Nulo fora de um processo, como no simulador. */
+  /** O código do formulário no processo; os documentos da avaliação o citam por ele. Nulo fora de um processo. */
   readonly codigo?: string | null;
   /** A fase do cronograma que o formulário responde; nula fora de um processo, como no simulador. */
   readonly faseId?: string | null;
@@ -146,8 +146,8 @@ export interface PassoPrefixado {
 }
 
 /**
- * Uma recusa do servidor ligada a uma parte do formulário. O campo é o código do fato, do grupo ou do
- * termo; dentro de um grupo, `grupo.ocorrência` ou `grupo.ocorrência.fato`.
+ * Uma recusa do servidor ligada a uma parte do formulário. O campo é o código do fato, do grupo ou o
+ * código do termo nas regras; dentro de um grupo, `grupo.ocorrência` ou `grupo.ocorrência.fato`.
  */
 export interface ErroDoServidor {
   readonly campo: string;
@@ -162,6 +162,23 @@ export function campoEm(campo: string, codigo: string): boolean {
 /** O campo do erro pertence à parte de código dado: é ela, ou está dentro dela. */
 export function erroEm(erro: ErroDoServidor, codigo: string): boolean {
   return campoEm(erro.campo, codigo);
+}
+
+/**
+ * O rótulo com que a tela chama o campo da recusa, ou `null` quando o formulário não o tem: o dado, o
+ * grupo — ele ou algo de dentro dele — ou o termo, que a recusa cita pelo código nas regras.
+ */
+export function localizarCampo(
+  formulario: Pick<FormularioDoCandidato, 'coleta' | 'termos'>,
+  campo: string,
+): string | null {
+  const { itens, grupos } = formulario.coleta;
+  return (
+    itens.find((item) => item.fatoCodigo === campo)?.apresentacao.rotulo ??
+    grupos.find((grupo) => campoEm(campo, grupo.codigo))?.rotulo ??
+    formulario.termos.find((termo) => termo.codigoNasRegras === campo)?.conteudo.nome ??
+    null
+  );
 }
 
 /** As mensagens dos erros cujo campo é exatamente este, numa frase só; nula quando não há. */

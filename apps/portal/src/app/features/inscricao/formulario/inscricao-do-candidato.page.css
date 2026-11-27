@@ -57,3 +57,14 @@
   padding: 0;
   border: 0;
 }
+
+.inscricao-formulario__titulo {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-lg);
+}
+
+.inscricao-formulario__continuar {
+  display: flex;
+  justify-content: flex-end;
+  margin: var(--space-3) 0 0;
+}

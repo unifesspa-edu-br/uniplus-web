@@ -15,7 +15,7 @@ export function iguaisPorJson(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-/** Os documentos da fase e do formulário, como a avaliação da API os traz; nulos antes dela. */
+/** Os documentos da fase e do código do formulário, como a avaliação da API os traz; nulos antes dela. */
 export function documentosDaFase(
   avaliacao: AvaliacaoNaTela | null,
   noProcesso: FormularioNoProcesso | null,
