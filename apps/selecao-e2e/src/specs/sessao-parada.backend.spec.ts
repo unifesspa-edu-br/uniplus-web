@@ -50,11 +50,20 @@ test.describe('Sessão parada, com o provedor de login real', () => {
     });
 
     await expect(page.getByRole('dialog', { name: AVISO })).toBeVisible({ timeout: 15_000 });
+
+    const renovacoesAceitas: string[] = [];
+    page.on('response', (resposta) => {
+      if (resposta.url().includes('/protocol/openid-connect/token') && resposta.ok()) {
+        renovacoesAceitas.push(resposta.url());
+      }
+    });
+
     await page.waitForTimeout(25_000);
     await expect(page.getByRole('dialog', { name: ENCERRADA })).toBeHidden();
 
     await expect(page.getByRole('dialog', { name: ENCERRADA })).toBeVisible({ timeout: 40_000 });
     await expect(page.getByRole('dialog', { name: AVISO })).toBeHidden();
+    expect(renovacoesAceitas).toEqual([]);
     await contexto.close();
   });
 });
