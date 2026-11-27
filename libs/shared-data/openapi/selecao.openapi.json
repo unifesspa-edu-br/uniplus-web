@@ -408,7 +408,7 @@
           {
             "name": "modalidade",
             "in": "query",
-            "description": "C\u00F3digo da modalidade que o certame precisa ofertar. Sem o par\u00E2metro, n\u00E3o recorta.",
+            "description": "C\u00F3digo da modalidade que o certame precisa ofertar. Sem o par\u00E2metro, n\u00E3o filtra.",
             "schema": {
               "type": "string"
             }
@@ -416,7 +416,7 @@
           {
             "name": "q",
             "in": "query",
-            "description": "Texto pesquisado no t\u00EDtulo do certame e no n\u00FAmero do edital. Insens\u00EDvel a caixa e a acentua\u00E7\u00E3o.",
+            "description": "Texto pesquisado no t\u00EDtulo do certame e no n\u00FAmero do edital. Insens\u00EDvel a caixa e a acentua\u00E7\u00E3o. At\u00E9 200 caracteres, sem contar os espa\u00E7os das pontas.",
             "schema": {
               "type": "string"
             }
@@ -485,7 +485,7 @@
                 }
               },
               "X-Certames-Em-Breve": {
-                "description": "Quantos certames divulgados ainda n\u00E3o abriram a janela de inscri\u00E7\u00E3o, no instante da consulta. Presente s\u00F3 quando incluir_contadores=true.",
+                "description": "Quantos certames divulgados ainda n\u00E3o abriram o per\u00EDodo de inscri\u00E7\u00E3o, no instante da consulta. Presente s\u00F3 quando incluir_contadores=true.",
                 "schema": {
                   "type": "integer",
                   "format": "int32"
@@ -513,7 +513,7 @@
                 }
               },
               "X-Certames-Revisao": {
-                "description": "Revis\u00E3o do recorte percorrido: marcador opaco dos certames que a consulta seleciona (situa\u00E7\u00E3o, modalidade e busca) e do que cada um tem de orden\u00E1vel e exib\u00EDvel \u2014 a vers\u00E3o divulgada e a situa\u00E7\u00E3o da janela de inscri\u00E7\u00E3o \u2014, no instante em que a travessia come\u00E7ou. N\u00E3o depende da ordena\u00E7\u00E3o pedida, que o cursor j\u00E1 fixa. \u00C9 o mesmo em todas as p\u00E1ginas da mesma travessia e muda quando uma publica\u00E7\u00E3o, uma retifica\u00E7\u00E3o ou a passagem do tempo altera esse conjunto. Quem comp\u00F5e a vitrine compara o valor entre p\u00E1ginas para saber que precisa recome\u00E7ar.",
+                "description": "Revis\u00E3o da consulta percorrida: marcador opaco dos certames que a consulta seleciona (situa\u00E7\u00E3o, modalidade e busca) e do que cada um tem de orden\u00E1vel e exib\u00EDvel \u2014 a vers\u00E3o divulgada e a situa\u00E7\u00E3o do per\u00EDodo de inscri\u00E7\u00E3o \u2014, no instante em que a leitura das p\u00E1ginas come\u00E7ou. N\u00E3o depende da ordena\u00E7\u00E3o pedida, que o cursor j\u00E1 fixa. \u00C9 o mesmo em todas as p\u00E1ginas da mesma sequ\u00EAncia de p\u00E1ginas e muda quando uma publica\u00E7\u00E3o, uma retifica\u00E7\u00E3o ou a passagem do tempo altera esse conjunto. Quem monta a lista compara o valor entre p\u00E1ginas para saber que precisa recome\u00E7ar.",
                 "schema": {
                   "type": "string"
                 }
@@ -561,7 +561,7 @@
             }
           },
           "422": {
-            "description": "Unprocessable Entity",
+            "description": "Texto pesquisado com mais de 200 caracteres, sem contar os espa\u00E7os das pontas (uniplus.consulta.busca_muito_longa), ou outro par\u00E2metro de consulta inv\u00E1lido.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -1653,7 +1653,7 @@
         "x-uniplus-idempotent": true
       }
     },
-    "/api/selecao/processos-seletivos/{id}/formularios/{finalidade}": {
+    "/api/selecao/processos-seletivos/{id}/formularios/{codigo}": {
       "get": {
         "tags": [
           "Formularios"
@@ -1670,11 +1670,12 @@
             }
           },
           {
-            "name": "finalidade",
+            "name": "codigo",
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/FinalidadeFormularioCodigo"
+              "pattern": "^(?=.{1,60}$)[A-Z][A-Z0-9]*(_[A-Z0-9]\u002B)*$",
+              "type": "string"
             }
           }
         ],
@@ -1722,7 +1723,7 @@
         }
       }
     },
-    "/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}/apresentacao": {
+    "/api/selecao/admin/processos-seletivos/{id}/formularios/{codigo}/apresentacao": {
       "get": {
         "tags": [
           "Formularios"
@@ -1739,11 +1740,12 @@
             }
           },
           {
-            "name": "finalidade",
+            "name": "codigo",
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/FinalidadeFormularioCodigo"
+              "pattern": "^(?=.{1,60}$)[A-Z][A-Z0-9]*(_[A-Z0-9]\u002B)*$",
+              "type": "string"
             }
           }
         ],
@@ -1816,7 +1818,7 @@
         ]
       }
     },
-    "/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}": {
+    "/api/selecao/admin/processos-seletivos/{id}/formularios/{codigo}": {
       "put": {
         "tags": [
           "Formularios"
@@ -1833,11 +1835,11 @@
             }
           },
           {
-            "name": "finalidade",
+            "name": "codigo",
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/FinalidadeFormularioCodigo"
+              "type": "string"
             }
           },
           {
@@ -1981,11 +1983,12 @@
             }
           },
           {
-            "name": "finalidade",
+            "name": "codigo",
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/FinalidadeFormularioCodigo"
+              "pattern": "^(?=.{1,60}$)[A-Z][A-Z0-9]*(_[A-Z0-9]\u002B)*$",
+              "type": "string"
             }
           }
         ],
@@ -2051,7 +2054,7 @@
         ]
       }
     },
-    "/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}/itens": {
+    "/api/selecao/admin/processos-seletivos/{id}/formularios/{codigo}/itens": {
       "put": {
         "tags": [
           "Formularios"
@@ -2068,11 +2071,12 @@
             }
           },
           {
-            "name": "finalidade",
+            "name": "codigo",
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/FinalidadeFormularioCodigo"
+              "pattern": "^(?=.{1,60}$)[A-Z][A-Z0-9]*(_[A-Z0-9]\u002B)*$",
+              "type": "string"
             }
           },
           {
@@ -2201,7 +2205,7 @@
         "x-uniplus-idempotent": true
       }
     },
-    "/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}/termos": {
+    "/api/selecao/admin/processos-seletivos/{id}/formularios/{codigo}/termos": {
       "put": {
         "tags": [
           "Formularios"
@@ -2218,11 +2222,12 @@
             }
           },
           {
-            "name": "finalidade",
+            "name": "codigo",
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/FinalidadeFormularioCodigo"
+              "pattern": "^(?=.{1,60}$)[A-Z][A-Z0-9]*(_[A-Z0-9]\u002B)*$",
+              "type": "string"
             }
           },
           {
@@ -2993,12 +2998,12 @@
         ]
       }
     },
-    "/api/selecao/processos-seletivos/{id}/inscricao/formulario": {
+    "/api/selecao/processos-seletivos/{id}/inscricao/formularios": {
       "get": {
         "tags": [
           "Inscricoes"
         ],
-        "operationId": "ObterFormularioDaInscricao",
+        "operationId": "ObterFormulariosDaInscricao",
         "parameters": [
           {
             "name": "id",
@@ -3014,9 +3019,12 @@
           "200": {
             "description": "OK",
             "content": {
-              "application/vnd.uniplus.formulario-inscricao.v1\u002Bjson": {
+              "application/vnd.uniplus.formularios-inscricao.v1\u002Bjson": {
                 "schema": {
-                  "$ref": "#/components/schemas/FormularioApresentadoDoProcessoDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FormularioApresentadoDoProcessoDto"
+                  }
                 }
               }
             }
@@ -6815,7 +6823,7 @@
           "ProcessoSeletivo"
         ],
         "summary": "Substitui as etapas e as bancas do processo",
-        "description": "Substitui as etapas e as bancas de cada etapa inteiras: o que o corpo n\u00E3o traz deixa de existir no processo. A regra de delibera\u00E7\u00E3o de uma banca \u00E9 opcional neste pedido, e a banca que a omite apaga a regra que j\u00E1 estava gravada. A obrigatoriedade da regra de delibera\u00E7\u00E3o \u00E9 conferida na publica\u00E7\u00E3o. Para preservar as chaves, devolva o id de cada etapa, item e banca que permanece e a chave de cada n\u00EDvel que permanece. As chaves novas v\u00EAm na releitura pelo GET.",
+        "description": "Devolva consequenciaDaAusencia em cada banca para preserv\u00E1-la; se omitida, ela \u00E9 apagada. Substitui as etapas e as bancas de cada etapa inteiras: o que o corpo n\u00E3o traz deixa de existir no processo. A regra de delibera\u00E7\u00E3o de uma banca \u00E9 opcional neste pedido, e a banca que a omite apaga a regra que j\u00E1 estava gravada. A obrigatoriedade da regra de delibera\u00E7\u00E3o \u00E9 conferida na publica\u00E7\u00E3o. Para preservar as chaves, devolva o id de cada etapa, item e banca que permanece e a chave de cada n\u00EDvel que permanece. As chaves novas v\u00EAm na releitura pelo GET.",
         "operationId": "DefinirEtapasDoProcesso",
         "parameters": [
           {
@@ -8441,7 +8449,7 @@
         "x-uniplus-idempotent": true
       }
     },
-    "/api/selecao/processos-seletivos/{id}/bonus-regional": {
+    "/api/selecao/processos-seletivos/{id}/fada": {
       "put": {
         "tags": [
           "ProcessoSeletivo"
@@ -8474,17 +8482,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DefinirBonusRegionalRequest"
+                "$ref": "#/components/schemas/DefinirFadaRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/DefinirBonusRegionalRequest"
+                "$ref": "#/components/schemas/DefinirFadaRequest"
               }
             },
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/DefinirBonusRegionalRequest"
+                "$ref": "#/components/schemas/DefinirFadaRequest"
               }
             }
           },
@@ -8688,6 +8696,290 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
+    "/api/selecao/processos-seletivos/{id}/cadastro-reserva": {
+      "put": {
+        "tags": [
+          "ProcessoSeletivo"
+        ],
+        "operationId": "DefinirCadastroDeReserva",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirCadastroDeReservaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirCadastroDeReservaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirCadastroDeReservaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
+    "/api/selecao/processos-seletivos/{id}/manifestacao-interesse": {
+      "put": {
+        "tags": [
+          "ProcessoSeletivo"
+        ],
+        "operationId": "DefinirManifestacaoDeInteresse",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirManifestacaoDeInteresseRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirManifestacaoDeInteresseRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirManifestacaoDeInteresseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -9440,7 +9732,7 @@
         "tags": [
           "ProcessoSeletivo"
         ],
-        "description": "Para preservar as chaves, devolva o tipo de cada fase e o id de cada banca que permanece. As chaves da fase e da banca novas v\u00EAm na releitura pelo GET.",
+        "description": "Substitui o cronograma de fases do processo por inteiro: cada fase enviada toma o lugar da que existia, e a fase que n\u00E3o for enviada sai, junto com as etapas dela, os motivos de decis\u00E3o escolhidos na fase e nas etapas e os documentos exigidos nela, com as regras de comprova\u00E7\u00E3o que ficarem sem documento. A grava\u00E7\u00E3o \u00E9 recusada (422) quando a fase que sai \u00E9 usada como refer\u00EAncia por outra exig\u00EAncia, tem etapa usada na classifica\u00E7\u00E3o ou tem formul\u00E1rio configurado para ser respondido nela. Em cada fase, a regra de homologa\u00E7\u00E3o das inscri\u00E7\u00F5es ausente ou nula apaga a que a fase tinha, e a fase sem regra n\u00E3o homologa: quem grava devolve a regra lida na consulta. Devolva consequenciaDaAusencia em cada banca para preserv\u00E1-la; se omitida, ela \u00E9 apagada. Para preservar as chaves, devolva o tipo de cada fase e o id de cada banca que permanece. As chaves da fase e da banca novas v\u00EAm na releitura pelo GET.",
         "operationId": "DefinirCronogramaDeFases",
         "parameters": [
           {
@@ -12691,21 +12983,87 @@
         }
       }
     },
-    "/api/selecao/vocabularios/consequencias-indeferimento": {
+    "/api/selecao/vocabularios/consequencias-do-descumprimento": {
       "get": {
         "tags": [
           "Vocabularios"
         ],
-        "operationId": "ListarConsequenciasDoIndeferimento",
+        "operationId": "ListarConsequenciasDoDescumprimento",
         "responses": {
           "200": {
             "description": "OK",
             "content": {
-              "application/vnd.uniplus.consequencia-indeferimento.v1\u002Bjson": {
+              "application/vnd.uniplus.consequencias-do-descumprimento.v1\u002Bjson": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ConsequenciaDoIndeferimento"
+                    "$ref": "#/components/schemas/ConsequenciaDoDescumprimento"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/selecao/vocabularios/participacoes-reserva": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "operationId": "ListarParticipacoesDaReserva",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.participacao-da-reserva.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ParticipacaoDaReservaComDescricao"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/selecao/vocabularios/manifestacoes-interesse": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "operationId": "ListarManifestacoesDeInteresse",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.manifestacao-de-interesse.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ManifestacaoDeInteresseComDescricao"
                   }
                 }
               }
@@ -12729,12 +13087,16 @@
     "schemas": {
       "AceiteDeTermoInput": {
         "required": [
+          "formularioCodigo",
           "codigo",
           "versaoId",
           "hashVersao"
         ],
         "type": "object",
         "properties": {
+          "formularioCodigo": {
+            "type": "string"
+          },
           "codigo": {
             "type": "string"
           },
@@ -13061,7 +13423,7 @@
       },
       "AplicacaoDeModeloDto": {
         "required": [
-          "finalidade",
+          "formularioCodigo",
           "fatosTrazidosParaAInscricao",
           "fatosMantidosNaInscricao",
           "descartados",
@@ -13070,8 +13432,8 @@
         ],
         "type": "object",
         "properties": {
-          "finalidade": {
-            "$ref": "#/components/schemas/FinalidadeFormulario"
+          "formularioCodigo": {
+            "type": "string"
           },
           "fatosTrazidosParaAInscricao": {
             "type": "array",
@@ -13107,13 +13469,17 @@
       },
       "AplicacaoDeModeloInput": {
         "required": [
-          "modeloId"
+          "modeloId",
+          "formularioCodigo"
         ],
         "type": "object",
         "properties": {
           "modeloId": {
             "type": "string",
             "format": "uuid"
+          },
+          "formularioCodigo": {
+            "type": "string"
           }
         }
       },
@@ -13915,6 +14281,16 @@
                 "$ref": "#/components/schemas/RegraDeDeliberacaoDto"
               }
             ]
+          },
+          "consequenciaDaAusencia": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ConsequenciaDoDescumprimento"
+              }
+            ]
           }
         }
       },
@@ -13944,6 +14320,16 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "consequenciaDaAusencia": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ConsequenciaDoDescumprimentoCodigo"
+              }
+            ]
           }
         }
       },
@@ -14015,6 +14401,16 @@
             "items": {
               "$ref": "#/components/schemas/CategoriaJulgadaDto"
             }
+          },
+          "consequenciaDaAusencia": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ConsequenciaDoDescumprimento"
+              }
+            ]
           }
         }
       },
@@ -14052,6 +14448,16 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "consequenciaDaAusencia": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ConsequenciaDoDescumprimentoCodigo"
+              }
+            ]
           }
         }
       },
@@ -14081,12 +14487,12 @@
           "municipios": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ConfiguracaoBonusRegionalMunicipioDto"
+              "$ref": "#/components/schemas/MunicipioDoFadaDto"
             }
           }
         }
       },
-      "BaseLegalDoBonusInput": {
+      "BaseLegalDoFadaInput": {
         "required": [
           "id"
         ],
@@ -14163,6 +14569,68 @@
         ],
         "type": "string",
         "description": "Os blocos que o sistema monta no formul\u00E1rio a partir da configura\u00E7\u00E3o do processo seletivo.\n\n- \u0060COMPROVACAO_DOCUMENTAL\u0060: Comprova\u00E7\u00E3o documental \u2014 Os documentos que o candidato envia, conforme a exig\u00EAncia de cada situa\u00E7\u00E3o dele.\n- \u0060MODALIDADES_CALCULADAS\u0060: Modalidades calculadas \u2014 As modalidades de concorr\u00EAncia em que o candidato se enquadra, calculadas pelas respostas dele.\n- \u0060REVISAO_E_ACEITE\u0060: Revis\u00E3o e aceite \u2014 A confer\u00EAncia das respostas e o aceite dos termos, sempre a \u00FAltima p\u00E1gina do formul\u00E1rio."
+      },
+      "CadastroDeReservaDaChamadaDto": {
+        "required": [
+          "numeroDaChamada",
+          "pessoasDaReservaPorVaga",
+          "participacaoDaReserva"
+        ],
+        "type": "object",
+        "properties": {
+          "numeroDaChamada": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pessoasDaReservaPorVaga": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "participacaoDaReserva": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ParticipacaoDaReserva"
+              }
+            ]
+          }
+        }
+      },
+      "CadastroDeReservaInformado": {
+        "required": [
+          "numeroDaChamada",
+          "pessoasDaReservaPorVaga",
+          "participacaoDaReserva"
+        ],
+        "type": "object",
+        "properties": {
+          "numeroDaChamada": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "pessoasDaReservaPorVaga": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "participacaoDaReserva": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ParticipacaoDaReservaCodigo"
+              }
+            ]
+          }
+        }
       },
       "CampoApresentado": {
         "required": [
@@ -15010,65 +15478,6 @@
           }
         }
       },
-      "ConfiguracaoBonusRegionalDto": {
-        "required": [
-          "id",
-          "regra",
-          "fator",
-          "teto",
-          "fatoElegibilidadeCodigo",
-          "baseLegal"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "regra": {
-            "$ref": "#/components/schemas/ReferenciaRegraDto"
-          },
-          "fator": {
-            "type": "number",
-            "format": "double"
-          },
-          "teto": {
-            "type": [
-              "null",
-              "number"
-            ],
-            "format": "double"
-          },
-          "fatoElegibilidadeCodigo": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "baseLegal": {
-            "$ref": "#/components/schemas/BaseLegalCongeladaDto"
-          }
-        }
-      },
-      "ConfiguracaoBonusRegionalMunicipioDto": {
-        "required": [
-          "codigoIbge",
-          "nome",
-          "uf"
-        ],
-        "type": "object",
-        "properties": {
-          "codigoIbge": {
-            "type": "string"
-          },
-          "nome": {
-            "type": "string"
-          },
-          "uf": {
-            "type": "string"
-          }
-        }
-      },
       "ConfiguracaoCascataRemanejamentoDto": {
         "required": [
           "id",
@@ -15435,6 +15844,46 @@
           }
         }
       },
+      "ConfiguracaoDoFadaDto": {
+        "required": [
+          "id",
+          "regra",
+          "fator",
+          "teto",
+          "fatoElegibilidadeCodigo",
+          "baseLegal"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "regra": {
+            "$ref": "#/components/schemas/ReferenciaRegraDto"
+          },
+          "fator": {
+            "type": "number",
+            "format": "double"
+          },
+          "teto": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "fatoElegibilidadeCodigo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "baseLegal": {
+            "$ref": "#/components/schemas/BaseLegalCongeladaDto"
+          }
+        }
+      },
       "ConfiguracaoTaxaInscricaoDto": {
         "required": [
           "cobra",
@@ -15532,7 +15981,7 @@
           }
         }
       },
-      "ConsequenciaDoIndeferimento": {
+      "ConsequenciaDoDescumprimento": {
         "required": [
           "codigo",
           "rotulo"
@@ -15540,22 +15989,21 @@
         "type": "object",
         "properties": {
           "codigo": {
-            "$ref": "#/components/schemas/ConsequenciaDoIndeferimentoCodigo"
+            "$ref": "#/components/schemas/ConsequenciaDoDescumprimentoCodigo"
           },
           "rotulo": {
             "type": "string"
           }
         }
       },
-      "ConsequenciaDoIndeferimentoCodigo": {
+      "ConsequenciaDoDescumprimentoCodigo": {
         "enum": [
-          "ELIMINA",
-          "RECLASSIFICA_AC",
-          "REMOVE_VANTAGEM",
-          "ABRE_PRAZO_PARA_REENVIO"
+          "ELIMINA_DO_PROCESSO",
+          "RETIRA_A_MODALIDADE",
+          "RETIRA_O_ACRESCIMO"
         ],
         "type": "string",
-        "description": "- \u0060ELIMINA\u0060: Elimina\u00E7\u00E3o \u2014 Retira a pessoa do processo seletivo.\n- \u0060RECLASSIFICA_AC\u0060: Ampla concorr\u00EAncia \u2014 Passa a pessoa para a ampla concorr\u00EAncia.\n- \u0060REMOVE_VANTAGEM\u0060: Perda da vantagem \u2014 Retira a vantagem solicitada.\n- \u0060ABRE_PRAZO_PARA_REENVIO\u0060: Prazo para reenvio \u2014 Abre prazo para reenviar o documento."
+        "description": "- \u0060ELIMINA_DO_PROCESSO\u0060: Elimina\u00E7\u00E3o do processo \u2014 Retira a pessoa do processo, depois dos procedimentos e recursos cab\u00EDveis.\n- \u0060RETIRA_A_MODALIDADE\u0060: Retirada da modalidade \u2014 A pessoa perde a modalidade a que o requisito se refere e continua nas demais em que concorre.\n- \u0060RETIRA_O_ACRESCIMO\u0060: Retirada s\u00F3 do acr\u00E9scimo do Fator de Atenua\u00E7\u00E3o das Desigualdades de Acesso \u2014 A pessoa perde s\u00F3 o acr\u00E9scimo; n\u00E3o \u00E9 eliminada nem perde modalidade."
       },
       "ConteudoDoTermoDto": {
         "required": [
@@ -16144,59 +16592,17 @@
           }
         }
       },
-      "DefinirBonusRegionalRequest": {
+      "DefinirCadastroDeReservaRequest": {
         "required": [
-          "aplica",
-          "regra",
-          "fator",
-          "teto",
-          "fatoElegibilidadeCodigo",
-          "baseLegal"
+          "chamadas"
         ],
         "type": "object",
         "properties": {
-          "aplica": {
-            "type": "boolean"
-          },
-          "regra": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/ReferenciaRegraInput"
-              }
-            ]
-          },
-          "fator": {
-            "type": [
-              "null",
-              "number"
-            ],
-            "format": "double"
-          },
-          "teto": {
-            "type": [
-              "null",
-              "number"
-            ],
-            "format": "double"
-          },
-          "fatoElegibilidadeCodigo": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "baseLegal": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/BaseLegalDoBonusInput"
-              }
-            ]
+          "chamadas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CadastroDeReservaInformado"
+            }
           }
         }
       },
@@ -16336,10 +16742,67 @@
           }
         }
       },
+      "DefinirFadaRequest": {
+        "required": [
+          "aplica",
+          "regra",
+          "fator",
+          "teto",
+          "fatoElegibilidadeCodigo",
+          "baseLegal"
+        ],
+        "type": "object",
+        "properties": {
+          "aplica": {
+            "type": "boolean"
+          },
+          "regra": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ReferenciaRegraInput"
+              }
+            ]
+          },
+          "fator": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "teto": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "fatoElegibilidadeCodigo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "baseLegal": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BaseLegalDoFadaInput"
+              }
+            ]
+          }
+        }
+      },
       "DefinirFormularioRequest": {
         "required": [
           "faseId",
           "titulo",
+          "obrigatorio",
           "paginas"
         ],
         "type": "object",
@@ -16357,11 +16820,24 @@
               "string"
             ]
           },
+          "obrigatorio": {
+            "type": "boolean"
+          },
           "paginas": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PaginaDoFormularioInput"
             }
+          },
+          "consequenciaDaFaltaDeEnvio": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ConsequenciaDoDescumprimentoCodigo"
+              }
+            ]
           }
         }
       },
@@ -16426,6 +16902,24 @@
             "type": [
               "null",
               "string"
+            ]
+          }
+        }
+      },
+      "DefinirManifestacaoDeInteresseRequest": {
+        "required": [
+          "manifestacaoDeInteresse"
+        ],
+        "type": "object",
+        "properties": {
+          "manifestacaoDeInteresse": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ManifestacaoDeInteresseCodigo"
+              }
             ]
           }
         }
@@ -16857,7 +17351,7 @@
           },
           "formularios": {
             "title": "Formul\u00E1rios",
-            "description": "Os formul\u00E1rios do processo, no m\u00E1ximo um por finalidade. Lista vazia ou ausente \u00E9 v\u00E1lida no rascunho.",
+            "description": "Os formul\u00E1rios do processo, cada um identificado pelo c\u00F3digo, \u00FAnico no processo. Lista vazia ou ausente \u00E9 v\u00E1lida no rascunho.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DocumentoDaConfiguracaoFormulario"
@@ -16971,6 +17465,19 @@
             "title": "Prova presencial",
             "description": "Declara\u00E7\u00E3o de que o processo tem ou n\u00E3o prova presencial e, se tem, dos munic\u00EDpios de prova. Ausente no rascunho que ainda n\u00E3o a declarou.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoProvaPresencial"
+          },
+          "cadastroDeReserva": {
+            "title": "Cadastro de reserva por chamada",
+            "description": "O cadastro de reserva de cada chamada do processo, no m\u00E1ximo um por n\u00FAmero de chamada. A chamada que n\u00E3o consta na lista n\u00E3o tem reserva. Lista vazia ou ausente \u00E9 v\u00E1lida: h\u00E1 processos sem cadastro de reserva.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentoDaConfiguracaoCadastroDeReserva"
+            }
+          },
+          "manifestacaoDeInteresse": {
+            "title": "Manifesta\u00E7\u00E3o de interesse",
+            "description": "Como o edital prev\u00EA a manifesta\u00E7\u00E3o de interesse depois da 1\u00AA chamada: UMA_VEZ ou CONFIRMA_A_CADA_CHAMADA. Ausente: a manifesta\u00E7\u00E3o n\u00E3o \u00E9 prevista, e a aus\u00EAncia n\u00E3o impede a publica\u00E7\u00E3o.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoManifestacaoDeInteresse"
           },
           "motivosDeDecisao": {
             "title": "Motivos de decis\u00E3o",
@@ -17116,6 +17623,24 @@
             "minLength": 1,
             "maxLength": 60
           },
+          "tipoBancaNome": {
+            "title": "Nome do tipo de banca",
+            "description": "Nome do tipo de banca, guardado no processo. Campo s\u00F3 de leitura: a exporta\u00E7\u00E3o o traz para quem l\u00EA o arquivo, e ele \u00E9 ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "maxLength": 200,
+            "readOnly": true
+          },
+          "consequenciaDaAusencia": {
+            "title": "Consequ\u00EAncia da aus\u00EAncia",
+            "description": "Consequ\u00EAncia quando a pessoa n\u00E3o comparece \u00E0 banca.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsConsequenciaDoDescumprimento"
+          },
+          "consequenciaDaAusenciaRotulo": {
+            "title": "R\u00F3tulo da consequ\u00EAncia da aus\u00EAncia",
+            "description": "R\u00F3tulo registrado na publica\u00E7\u00E3o, s\u00F3 de leitura e ignorado na importa\u00E7\u00E3o.",
+            "type": "string",
+            "readOnly": true
+          },
           "categoriasDocumentoCodigos": {
             "title": "Candidatos atendidos",
             "description": "C\u00F3digos das categorias de documento que a banca analisa. Lista vazia quando a banca n\u00E3o define candidatos atendidos por categoria.",
@@ -17155,6 +17680,12 @@
               "ATO_INDIVIDUAL"
             ]
           },
+          "modoRotulo": {
+            "title": "R\u00F3tulo do modo de delibera\u00E7\u00E3o",
+            "description": "R\u00F3tulo do modo de delibera\u00E7\u00E3o. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
+          },
           "integrantes": {
             "title": "Integrantes titulares",
             "description": "N\u00FAmero de titulares da banca.",
@@ -17182,6 +17713,12 @@
               "UNANIMIDADE"
             ]
           },
+          "criterioRotulo": {
+            "title": "R\u00F3tulo do crit\u00E9rio de vota\u00E7\u00E3o",
+            "description": "R\u00F3tulo do crit\u00E9rio de vota\u00E7\u00E3o. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
+          },
           "desempate": {
             "title": "Desempate",
             "description": "Como se desempata nos crit\u00E9rios de maioria: voto da presid\u00EAncia ou nova vota\u00E7\u00E3o.",
@@ -17189,6 +17726,12 @@
               "VOTO_DA_PRESIDENCIA",
               "NOVA_VOTACAO"
             ]
+          },
+          "desempateRotulo": {
+            "title": "R\u00F3tulo do desempate",
+            "description": "R\u00F3tulo da forma de desempate. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           },
           "encerramento": {
             "title": "Encerramento da vota\u00E7\u00E3o",
@@ -17198,6 +17741,12 @@
               "PRESIDENCIA_NO_QUORUM"
             ]
           },
+          "encerramentoRotulo": {
+            "title": "R\u00F3tulo do encerramento da vota\u00E7\u00E3o",
+            "description": "R\u00F3tulo do encerramento da vota\u00E7\u00E3o. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
+          },
           "semUnanimidade": {
             "title": "Resultado sem unanimidade",
             "description": "O que vale quando a unanimidade \u00E9 o crit\u00E9rio e ela n\u00E3o ocorre: favor\u00E1vel, desfavor\u00E1vel ou nova vota\u00E7\u00E3o.",
@@ -17206,6 +17755,46 @@
               "DESFAVORAVEL",
               "NOVA_VOTACAO"
             ]
+          },
+          "semUnanimidadeRotulo": {
+            "title": "R\u00F3tulo do resultado sem unanimidade",
+            "description": "R\u00F3tulo do resultado quando n\u00E3o h\u00E1 unanimidade. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
+          }
+        }
+      },
+      "DocumentoDaConfiguracaoCadastroDeReserva": {
+        "title": "Cadastro de reserva de uma chamada",
+        "description": "O cadastro de reserva de uma chamada do processo: quantas pessoas da reserva a chamada convoca por vaga, al\u00E9m de quem ocupa a vaga. A chamada que n\u00E3o consta na lista do processo n\u00E3o tem reserva. O esquema descreve s\u00F3 a forma: o n\u00FAmero da chamada, informado a partir de 1 e declarado uma s\u00F3 vez, a quantidade n\u00E3o negativa e a participa\u00E7\u00E3o da reserva, exigida quando a quantidade \u00E9 maior que zero e recusada quando \u00E9 zero, s\u00E3o regras do dom\u00EDnio.",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "numeroDaChamada": {
+            "title": "N\u00FAmero da chamada",
+            "description": "N\u00FAmero da chamada do processo, a partir de 1 e declarado uma s\u00F3 vez. O esquema n\u00E3o o exige: a chamada sem n\u00FAmero \u00E9 recusada pelo dom\u00EDnio. O limite superior \u00E9 o do inteiro de 32 bits; a confer\u00EAncia da presen\u00E7a, do menor valor e da repeti\u00E7\u00E3o \u00E9 do dom\u00EDnio.",
+            "type": "integer",
+            "maximum": 2147483647
+          },
+          "pessoasDaReservaPorVaga": {
+            "title": "Pessoas da reserva por vaga",
+            "description": "Quantas pessoas da reserva a chamada convoca por vaga, al\u00E9m de quem ocupa a vaga. Zero \u00E9 a chamada sem reserva. O limite superior \u00E9 o do inteiro de 32 bits; a confer\u00EAncia de que a quantidade n\u00E3o \u00E9 negativa \u00E9 do dom\u00EDnio.",
+            "type": "integer",
+            "maximum": 2147483647
+          },
+          "participacaoDaReserva": {
+            "title": "Participa\u00E7\u00E3o da reserva",
+            "description": "O que a reserva faz quando a chamada a convoca. Obrigat\u00F3ria na chamada com pessoas da reserva por vaga, sem valor padr\u00E3o, e ausente na chamada sem reserva; a confer\u00EAncia \u00E9 do dom\u00EDnio. ANTECIPA_A_HABILITACAO: a reserva s\u00F3 antecipa a habilita\u00E7\u00E3o. ASSUME_NA_MESMA_CHAMADA: a reserva assume na mesma chamada.",
+            "enum": [
+              "ANTECIPA_A_HABILITACAO",
+              "ASSUME_NA_MESMA_CHAMADA"
+            ]
+          },
+          "participacaoDaReservaRotulo": {
+            "title": "R\u00F3tulo da participa\u00E7\u00E3o da reserva",
+            "description": "R\u00F3tulo atual da participa\u00E7\u00E3o da reserva. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o.",
+            "type": "string",
+            "readOnly": true
           }
         }
       },
@@ -17274,7 +17863,7 @@
           },
           "quadroPesoAreaEnem": {
             "title": "Quadro de pesos por \u00E1rea do Enem",
-            "description": "Os pesos e cortes por \u00E1rea do Enem que a resolu\u00E7\u00E3o fixa, copiados na exporta\u00E7\u00E3o. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o, porque \u00E9 congelado do cat\u00E1logo pela resolu\u00E7\u00E3o.",
+            "description": "Os pesos e cortes por \u00E1rea do Enem que a resolu\u00E7\u00E3o fixa. Na exporta\u00E7\u00E3o do rascunho v\u00EAm do cadastro no momento da exporta\u00E7\u00E3o; na vers\u00E3o publicada, os congelados. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o, porque quem o define \u00E9 a resolu\u00E7\u00E3o.",
             "type": "array",
             "readOnly": true,
             "items": {
@@ -17304,6 +17893,12 @@
                   "FIM_FASE",
                   "DATA_ESPECIFICA"
                 ]
+              },
+              "tipoRotulo": {
+                "title": "R\u00F3tulo do tipo de refer\u00EAncia",
+                "description": "R\u00F3tulo do tipo de refer\u00EAncia temporal dos dados. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+                "type": "string",
+                "readOnly": true
               },
               "data": {
                 "title": "Data espec\u00EDfica",
@@ -17432,6 +18027,15 @@
           "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
         }
       },
+      "DocumentoDaConfiguracaoComunsConsequenciaDoDescumprimento": {
+        "title": "Consequ\u00EAncia do descumprimento",
+        "description": "Consequ\u00EAncia declarada para o descumprimento de uma exig\u00EAncia.",
+        "enum": [
+          "ELIMINA_DO_PROCESSO",
+          "RETIRA_A_MODALIDADE",
+          "RETIRA_O_ACRESCIMO"
+        ]
+      },
       "DocumentoDaConfiguracaoComunsIdentificadorDaConta": {
         "title": "Identificador da conta",
         "description": "Identificador da conta da pessoa no Uni\u002B, texto opaco e est\u00E1vel que o provedor de identidade atribui (o sub do token). Nunca \u00E9 CPF, e-mail, telefone nem nome, e quem o escreve n\u00E3o o monta a partir deles. O esquema s\u00F3 descreve a forma: n\u00E3o exige nem pro\u00EDbe a forma de UUID e recusa o texto vazio, o que tem espa\u00E7o nas pontas e o que passa de 255 caracteres. Que o valor \u00E9 uma conta existente \u00E9 confer\u00EAncia do dom\u00EDnio contra o cadastro de assinantes, que recusa o c\u00F3digo desconhecido pela posi\u00E7\u00E3o.",
@@ -17457,6 +18061,12 @@
             "title": "Tipo de decis\u00E3o",
             "description": "Tipo da decis\u00E3o recorrida, entre os que a fase ou a etapa declara.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsTipoDeDecisao"
+          },
+          "tipoDeDecisaoRotulo": {
+            "title": "R\u00F3tulo do tipo de decis\u00E3o",
+            "description": "R\u00F3tulo do tipo da decis\u00E3o recorrida. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           },
           "alvo": {
             "title": "Alvo",
@@ -17520,6 +18130,12 @@
               "DIAS_UTEIS"
             ]
           },
+          "prazoUnidadeRotulo": {
+            "title": "R\u00F3tulo da unidade do prazo",
+            "description": "R\u00F3tulo da unidade do prazo de interposi\u00E7\u00E3o. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
+          },
           "publicacaoDeReferenciaAtoCodigo": {
             "title": "Ato \u00E2ncora do prazo",
             "description": "C\u00F3digo do tipo de ato, entre os atos preliminares da pr\u00F3pria fase, a partir de cujo instante o prazo corre.",
@@ -17548,12 +18164,26 @@
               "DIAS_UTEIS"
             ]
           },
+          "prazoSegundaInstanciaUnidadeRotulo": {
+            "title": "R\u00F3tulo da unidade do prazo da 2\u00AA inst\u00E2ncia",
+            "description": "R\u00F3tulo da unidade do prazo da 2\u00AA inst\u00E2ncia; ausente quando o recurso n\u00E3o admite inst\u00E2ncia superior. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
+          },
           "efeitoSuspensivo": {
             "title": "Efeito suspensivo na 1\u00AA inst\u00E2ncia",
-            "description": "Efeito suspensivo do recurso na 1\u00AA inst\u00E2ncia, escolhido pelo edital. A \u00FAnica op\u00E7\u00E3o aceita \u00E9 sem efeito suspensivo (SEM_EFEITO_SUSPENSIVO). A 2\u00AA inst\u00E2ncia sempre tem efeito suspensivo, sem escolha.",
+            "description": "Efeito suspensivo do recurso na 1\u00AA inst\u00E2ncia, escolhido pelo edital entre tr\u00EAs op\u00E7\u00F5es: efeito suspensivo para todos os recursos (PARA_TODOS_OS_RECURSOS), sem efeito suspensivo (SEM_EFEITO_SUSPENSIVO) ou a unidade respons\u00E1vel pela fase de origem do ato recorrido decide em cada recurso (UNIDADE_DECIDE_EM_CADA_RECURSO). A declara\u00E7\u00E3o \u00E9 obrigat\u00F3ria para o cadastro e n\u00E3o tem valor padr\u00E3o. A 2\u00AA inst\u00E2ncia sempre tem efeito suspensivo, sem escolha.",
             "enum": [
-              "SEM_EFEITO_SUSPENSIVO"
+              "PARA_TODOS_OS_RECURSOS",
+              "SEM_EFEITO_SUSPENSIVO",
+              "UNIDADE_DECIDE_EM_CADA_RECURSO"
             ]
+          },
+          "efeitoSuspensivoRotulo": {
+            "title": "R\u00F3tulo do efeito suspensivo",
+            "description": "R\u00F3tulo do efeito suspensivo do recurso na 1\u00AA inst\u00E2ncia. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           },
           "guardaDaVaga": {
             "title": "Guarda da vaga",
@@ -17562,6 +18192,12 @@
               "ATE_O_RESULTADO_DEFINITIVO",
               "NAO_GUARDA"
             ]
+          },
+          "guardaDaVagaRotulo": {
+            "title": "R\u00F3tulo da guarda da vaga",
+            "description": "R\u00F3tulo da guarda da vaga durante o recurso. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           },
           "procedimentosDeRecurso": {
             "title": "Procedimentos de recurso",
@@ -17602,6 +18238,12 @@
               "PRELIMINAR",
               "DEFINITIVO"
             ]
+          },
+          "papelRotulo": {
+            "title": "R\u00F3tulo do papel do ato",
+            "description": "R\u00F3tulo do papel do ato no ciclo de recurso. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           }
         },
         "required": [
@@ -17684,6 +18326,12 @@
               "INTERNA_EDITAL"
             ]
           },
+          "abrangenciaRotulo": {
+            "title": "R\u00F3tulo da abrang\u00EAncia",
+            "description": "R\u00F3tulo da esfera da norma. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
+          },
           "situacao": {
             "title": "Situa\u00E7\u00E3o",
             "description": "Se a refer\u00EAncia foi resolvida ou ainda est\u00E1 pendente.",
@@ -17691,6 +18339,12 @@
               "PENDENTE",
               "RESOLVIDO"
             ]
+          },
+          "situacaoRotulo": {
+            "title": "R\u00F3tulo da situa\u00E7\u00E3o",
+            "description": "R\u00F3tulo da situa\u00E7\u00E3o da refer\u00EAncia da base legal. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           },
           "observacao": {
             "title": "Observa\u00E7\u00E3o",
@@ -17730,6 +18384,12 @@
               "MENOR_IGUAL",
               "NENHUM_DE"
             ]
+          },
+          "operadorRotulo": {
+            "title": "R\u00F3tulo do operador",
+            "description": "R\u00F3tulo do operador de compara\u00E7\u00E3o da condi\u00E7\u00E3o. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           },
           "valor": {
             "title": "Valor",
@@ -17818,6 +18478,12 @@
               "NUNCA",
               "QUANDO"
             ]
+          },
+          "tipoRotulo": {
+            "title": "R\u00F3tulo do tipo da obrigatoriedade",
+            "description": "R\u00F3tulo do tipo da obrigatoriedade. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           },
           "quando": {
             "title": "Condi\u00E7\u00F5es",
@@ -17972,6 +18638,15 @@
             "title": "Tipos de decis\u00E3o da fase",
             "description": "Tipos de decis\u00E3o que a fase toma e para os quais o processo escolhe motivos.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsTiposDeDecisao"
+          },
+          "tiposDeDecisaoRotulos": {
+            "title": "R\u00F3tulos dos tipos de decis\u00E3o da fase",
+            "description": "R\u00F3tulos dos tipos de decis\u00E3o da fase, na mesma ordem dos c\u00F3digos. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia s\u00E3o os c\u00F3digos.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true
           },
           "regraDeHomologacao": {
             "title": "Regra de homologa\u00E7\u00E3o",
@@ -18758,10 +19433,23 @@
               "AMBAS"
             ]
           },
+          "caraterRotulo": {
+            "title": "R\u00F3tulo do car\u00E1ter",
+            "description": "R\u00F3tulo do car\u00E1ter da etapa. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
+          },
           "tipoEtapaCodigo": {
             "title": "Tipo de etapa",
             "description": "C\u00F3digo do tipo de etapa no cat\u00E1logo de tipos de etapa.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro"
+          },
+          "tipoEtapaNome": {
+            "title": "Nome do tipo de etapa",
+            "description": "Nome do tipo de etapa, guardado no processo. Campo s\u00F3 de leitura: a exporta\u00E7\u00E3o o traz para quem l\u00EA o arquivo, e ele \u00E9 ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "maxLength": 200,
+            "readOnly": true
           },
           "peso": {
             "title": "Peso",
@@ -18794,6 +19482,12 @@
               "OBJETIVA",
               "HUMANA"
             ]
+          },
+          "formaDeAvaliacaoRotulo": {
+            "title": "R\u00F3tulo da forma de avalia\u00E7\u00E3o",
+            "description": "R\u00F3tulo da forma de avalia\u00E7\u00E3o da etapa. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           },
           "regraDeApuracaoDaAvaliacao": {
             "title": "Regra de consolida\u00E7\u00E3o",
@@ -18880,6 +19574,15 @@
             "title": "Tipos de decis\u00E3o da etapa",
             "description": "Tipos de decis\u00E3o que a etapa toma e para os quais o processo escolhe motivos.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsTiposDeDecisao"
+          },
+          "tiposDeDecisaoRotulos": {
+            "title": "R\u00F3tulos dos tipos de decis\u00E3o da etapa",
+            "description": "R\u00F3tulos dos tipos de decis\u00E3o da etapa, na mesma ordem dos c\u00F3digos. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia s\u00E3o os c\u00F3digos.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true
           }
         }
       },
@@ -18967,6 +19670,12 @@
               "PUBLICACAO_DO_ATO",
               "CIENCIA_INDIVIDUAL"
             ]
+          },
+          "eventoInicialDoPrazoRotulo": {
+            "title": "R\u00F3tulo do evento que inicia o prazo",
+            "description": "R\u00F3tulo do evento que inicia o prazo do recurso. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           }
         },
         "unevaluatedProperties": false
@@ -19011,6 +19720,12 @@
               "DATA_ESPECIFICA",
               "DATA_DA_APRESENTACAO"
             ]
+          },
+          "tipoRotulo": {
+            "title": "R\u00F3tulo do tipo",
+            "description": "R\u00F3tulo do tipo da data de refer\u00EAncia do documento. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           },
           "data": {
             "title": "Data",
@@ -19117,14 +19832,10 @@
             "description": "Chave local da etapa em que o documento \u00E9 exigido, quando a exig\u00EAncia \u00E9 de uma etapa.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsChave"
           },
-          "finalidade": {
-            "title": "Finalidade do formul\u00E1rio",
-            "description": "Finalidade do formul\u00E1rio a que a exig\u00EAncia pertence, quando houver.",
-            "enum": [
-              "INSCRICAO",
-              "ISENCAO_TAXA",
-              "HABILITACAO"
-            ]
+          "formularioCodigo": {
+            "title": "Formul\u00E1rio da exig\u00EAncia",
+            "description": "C\u00F3digo do formul\u00E1rio do processo em que o candidato apresenta o documento. Toda exig\u00EAncia o informa: o formul\u00E1rio precisa existir no processo e ser o da fase da exig\u00EAncia.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"
           },
           "aplicabilidade": {
             "title": "Aplicabilidade",
@@ -19134,20 +19845,32 @@
               "CONDICIONAL"
             ]
           },
+          "aplicabilidadeRotulo": {
+            "title": "R\u00F3tulo da aplicabilidade",
+            "description": "R\u00F3tulo da aplicabilidade da exig\u00EAncia. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
+          },
           "obrigatorio": {
             "title": "Obrigat\u00F3rio",
             "description": "Se a entrega do documento \u00E9 obrigat\u00F3ria.",
             "type": "boolean"
           },
-          "consequenciaIndeferimento": {
-            "title": "Consequ\u00EAncia do indeferimento",
-            "description": "O que acontece quando o documento \u00E9 indeferido.",
-            "enum": [
-              "ELIMINA",
-              "RECLASSIFICA_AC",
-              "REMOVE_VANTAGEM",
-              "ABRE_PRAZO_PARA_REENVIO"
-            ]
+          "abrePrazoParaReenvio": {
+            "title": "Prazo para reenvio",
+            "description": "Indica se ser\u00E1 aberto prazo para reenvio.",
+            "type": "boolean"
+          },
+          "consequenciaDoDescumprimento": {
+            "title": "Consequ\u00EAncia do descumprimento",
+            "description": "O que acontece quando o documento n\u00E3o \u00E9 cumprido.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsConsequenciaDoDescumprimento"
+          },
+          "consequenciaDoDescumprimentoRotulo": {
+            "title": "R\u00F3tulo da consequ\u00EAncia do descumprimento",
+            "description": "R\u00F3tulo registrado na publica\u00E7\u00E3o, s\u00F3 de leitura e ignorado na importa\u00E7\u00E3o.",
+            "type": "string",
+            "readOnly": true
           },
           "condicoes": {
             "title": "Condi\u00E7\u00E3o de gatilho",
@@ -19197,6 +19920,12 @@
                 "description": "Formato do arquivo do modelo.",
                 "type": "string",
                 "maxLength": 30
+              },
+              "formatoRotulo": {
+                "title": "R\u00F3tulo do formato",
+                "description": "R\u00F3tulo do formato do arquivo do modelo. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+                "type": "string",
+                "readOnly": true
               },
               "hashSha256": {
                 "title": "Resumo do conte\u00FAdo",
@@ -19248,6 +19977,12 @@
                     "PNG"
                   ]
                 },
+                "formatoRotulo": {
+                  "title": "R\u00F3tulo do formato",
+                  "description": "R\u00F3tulo do formato aceito. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+                  "type": "string",
+                  "readOnly": true
+                },
                 "tamanhoMaximoBytesMax": {
                   "title": "Tamanho m\u00E1ximo",
                   "description": "Tamanho m\u00E1ximo do arquivo nesse formato, em bytes.",
@@ -19273,6 +20008,12 @@
               "COM_PRAZO"
             ]
           },
+          "escolhaRotulo": {
+            "title": "R\u00F3tulo da escolha",
+            "description": "R\u00F3tulo da escolha sobre o prazo de emiss\u00E3o. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
+          },
           "valor": {
             "title": "Valor",
             "description": "Quantidade de unidades do prazo.",
@@ -19288,6 +20029,12 @@
               "ANOS"
             ]
           },
+          "unidadeRotulo": {
+            "title": "R\u00F3tulo da unidade",
+            "description": "R\u00F3tulo da unidade do prazo de emiss\u00E3o. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
+          },
           "referencia": {
             "title": "Refer\u00EAncia",
             "description": "Data usada como refer\u00EAncia.",
@@ -19300,6 +20047,12 @@
               "RECUSAR_DOCUMENTO",
               "ACEITAR_COM_AVISO"
             ]
+          },
+          "efeitoForaDoPrazoRotulo": {
+            "title": "R\u00F3tulo do efeito fora do prazo",
+            "description": "R\u00F3tulo do efeito na an\u00E1lise do documento fora do prazo. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           }
         }
       },
@@ -19317,6 +20070,12 @@
               "EXIGE_DOCUMENTO_VALIDO"
             ]
           },
+          "escolhaRotulo": {
+            "title": "R\u00F3tulo da escolha",
+            "description": "R\u00F3tulo da escolha sobre a validade do documento. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
+          },
           "referencia": {
             "title": "Refer\u00EAncia",
             "description": "Data usada como refer\u00EAncia.",
@@ -19329,6 +20088,12 @@
               "RECUSAR_DOCUMENTO",
               "ACEITAR_COM_AVISO"
             ]
+          },
+          "efeitoDoVencimentoRotulo": {
+            "title": "R\u00F3tulo do efeito do vencimento",
+            "description": "R\u00F3tulo do efeito na an\u00E1lise do documento vencido. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           }
         }
       },
@@ -19466,21 +20231,22 @@
       },
       "DocumentoDaConfiguracaoFormulario": {
         "title": "Formul\u00E1rio do processo",
-        "description": "O formul\u00E1rio de uma finalidade: as p\u00E1ginas, os itens e grupos coletados e os termos de consentimento exigidos. Cada finalidade tem no m\u00E1ximo um formul\u00E1rio no processo. Um formul\u00E1rio comporta no m\u00E1ximo 200 itens, contando itens, grupos e subitens.",
+        "description": "O formul\u00E1rio do processo: as p\u00E1ginas, os itens e grupos coletados e os termos de consentimento exigidos. Cada c\u00F3digo tem no m\u00E1ximo um formul\u00E1rio no processo. Um formul\u00E1rio comporta no m\u00E1ximo 200 itens, contando itens, grupos e subitens.",
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "finalidade"
+          "codigo"
         ],
         "properties": {
-          "finalidade": {
-            "title": "Finalidade",
-            "description": "Para que serve o formul\u00E1rio. \u00C9 a chave dele no documento.",
-            "enum": [
-              "INSCRICAO",
-              "ISENCAO_TAXA",
-              "HABILITACAO"
-            ]
+          "codigo": {
+            "title": "C\u00F3digo",
+            "description": "O c\u00F3digo que identifica o formul\u00E1rio no processo, de at\u00E9 60 caracteres. \u00C9 a chave dele no documento: as exig\u00EAncias de documento o citam em formularioCodigo, e o c\u00F3digo n\u00E3o muda depois de criado.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"
+          },
+          "obrigatorio": {
+            "title": "Obrigat\u00F3rio",
+            "description": "Se o formul\u00E1rio \u00E9 obrigat\u00F3rio para o candidato. O formul\u00E1rio obrigat\u00F3rio ligado a uma fase que coleta inscri\u00E7\u00E3o \u00E9 o que a inscri\u00E7\u00E3o responde.",
+            "type": "boolean"
           },
           "faseChave": {
             "title": "Fase do formul\u00E1rio",
@@ -19492,6 +20258,17 @@
             "description": "T\u00EDtulo do formul\u00E1rio, de at\u00E9 300 caracteres.",
             "type": "string",
             "maxLength": 300
+          },
+          "consequenciaDaFaltaDeEnvio": {
+            "title": "Consequ\u00EAncia da falta de envio",
+            "description": "Consequ\u00EAncia para quem n\u00E3o envia o formul\u00E1rio. Ausente: a falta de envio n\u00E3o tem consequ\u00EAncia pr\u00F3pria. S\u00F3 o formul\u00E1rio obrigat\u00F3rio que n\u00E3o coleta a inscri\u00E7\u00E3o a declara.",
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsConsequenciaDoDescumprimento"
+          },
+          "consequenciaDaFaltaDeEnvioRotulo": {
+            "title": "R\u00F3tulo da consequ\u00EAncia da falta de envio",
+            "description": "R\u00F3tulo registrado na publica\u00E7\u00E3o. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o.",
+            "type": "string",
+            "readOnly": true
           },
           "modeloOrigemCodigo": {
             "title": "Modelo de origem",
@@ -19664,6 +20441,12 @@
               "BLOCO"
             ]
           },
+          "tipoRotulo": {
+            "title": "R\u00F3tulo do tipo da p\u00E1gina",
+            "description": "R\u00F3tulo do tipo da p\u00E1gina. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
+          },
           "bloco": {
             "title": "Bloco de sistema",
             "description": "Qual bloco de sistema a p\u00E1gina \u00E9. S\u00F3 faz sentido quando o tipo \u00E9 BLOCO; a coer\u00EAncia \u00E9 regra do dom\u00EDnio.",
@@ -19672,6 +20455,12 @@
               "MODALIDADES_CALCULADAS",
               "REVISAO_E_ACEITE"
             ]
+          },
+          "blocoRotulo": {
+            "title": "R\u00F3tulo do bloco de sistema",
+            "description": "R\u00F3tulo do bloco de sistema da p\u00E1gina. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           },
           "titulo": {
             "title": "T\u00EDtulo",
@@ -19812,6 +20601,12 @@
             "pattern": "^[A-Z]\u002B(_[A-Z]\u002B)*$",
             "maxLength": 60
           },
+          "tipoRotulo": {
+            "title": "R\u00F3tulo do tipo da condi\u00E7\u00E3o",
+            "description": "R\u00F3tulo do tipo da condi\u00E7\u00E3o de homologa\u00E7\u00E3o. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
+          },
           "edicaoDoExame": {
             "title": "Edi\u00E7\u00E3o do exame",
             "description": "Ano da edi\u00E7\u00E3o do exame, de 1998 a 2100.",
@@ -19889,6 +20684,12 @@
               "INSCRICAO_PROPRIA",
               "IMPORTACAO_EXTERNA"
             ]
+          },
+          "origemCandidatosRotulo": {
+            "title": "R\u00F3tulo da origem dos candidatos",
+            "description": "R\u00F3tulo da origem dos candidatos do processo. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           },
           "localidadeCodigoIbge": {
             "title": "Localidade do processo",
@@ -20129,6 +20930,15 @@
           }
         }
       },
+      "DocumentoDaConfiguracaoManifestacaoDeInteresse": {
+        "title": "Manifesta\u00E7\u00E3o de interesse",
+        "description": "Como o edital prev\u00EA a manifesta\u00E7\u00E3o de interesse das pessoas que continuam concorrendo depois da 1\u00AA chamada. A declara\u00E7\u00E3o \u00E9 um s\u00F3 valor: UMA_VEZ, a manifesta\u00E7\u00E3o vale para as chamadas seguintes, e CONFIRMA_A_CADA_CHAMADA, a pessoa tamb\u00E9m confirma o interesse a cada chamada. Qualquer dos dois valores prev\u00EA a manifesta\u00E7\u00E3o e a exige. Sem valor, a manifesta\u00E7\u00E3o n\u00E3o \u00E9 prevista: n\u00E3o existe valor para \u0022n\u00E3o prevista\u0022 e declarar n\u00E3o \u00E9 obrigat\u00F3rio para publicar. O prazo da manifesta\u00E7\u00E3o n\u00E3o \u00E9 declarado aqui: \u00E9 da publica\u00E7\u00E3o de cada chamada. O esquema descreve s\u00F3 a forma; a confer\u00EAncia do c\u00F3digo \u00E9 do dom\u00EDnio.",
+        "type": "string",
+        "enum": [
+          "UMA_VEZ",
+          "CONFIRMA_A_CADA_CHAMADA"
+        ]
+      },
       "DocumentoDaConfiguracaoMotivo": {
         "title": "Motivo de decis\u00E3o do processo",
         "description": "Um motivo do cat\u00E1logo que o processo escolheu para uma fase ou etapa. A identidade \u00E9 o lugar, a fase ou a etapa pela chave, mais o par tipo e c\u00F3digo do cat\u00E1logo; o descritivo \u00E9 c\u00F3pia do cat\u00E1logo e, depois de publicado o edital, n\u00E3o acompanha mais as mudan\u00E7as dele.",
@@ -20165,6 +20975,12 @@
             "title": "Tipo de decis\u00E3o",
             "description": "Tipo de decis\u00E3o a que o motivo pertence.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsTipoDeDecisao"
+          },
+          "tipoDeDecisaoCodigoRotulo": {
+            "title": "R\u00F3tulo do tipo de decis\u00E3o",
+            "description": "R\u00F3tulo do tipo de decis\u00E3o a que o motivo pertence. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           },
           "codigo": {
             "title": "C\u00F3digo do motivo",
@@ -20277,7 +21093,7 @@
       },
       "DocumentoDaConfiguracaoPesosPorArea": {
         "title": "Grupo de pesos por \u00E1rea",
-        "description": "Os pesos e cortes das \u00E1reas do Enem de um grupo, congelados do cat\u00E1logo. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o, porque \u00E9 congelado do cat\u00E1logo pela resolu\u00E7\u00E3o.",
+        "description": "Os pesos e cortes das \u00E1reas do Enem de um grupo, lidos do cadastro na exporta\u00E7\u00E3o do rascunho e congelados na vers\u00E3o publicada. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o, porque quem o define \u00E9 a resolu\u00E7\u00E3o.",
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -20400,7 +21216,7 @@
           },
           "nome": {
             "title": "Nome do munic\u00EDpio",
-            "description": "Nome do munic\u00EDpio no Geo, copiado na \u00FAltima publica\u00E7\u00E3o ou retifica\u00E7\u00E3o; vazio antes da primeira. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o.",
+            "description": "Nome do munic\u00EDpio no Geo. Na exporta\u00E7\u00E3o do rascunho \u00E9 o do momento da exporta\u00E7\u00E3o, omitido se o Geo n\u00E3o responde ou se h\u00E1 mais munic\u00EDpios distintos que o limite; na vers\u00E3o publicada \u00E9 o nome congelado. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o.",
             "type": "string",
             "maxLength": 150,
             "readOnly": true
@@ -20431,6 +21247,12 @@
               "QUANTIDADE_MINIMA_DE_ITENS"
             ]
           },
+          "formaRotulo": {
+            "title": "R\u00F3tulo da forma de comprova\u00E7\u00E3o",
+            "description": "R\u00F3tulo da forma de comprova\u00E7\u00E3o da regra. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
+          },
           "exigenciaChave": {
             "title": "Exig\u00EAncia documental",
             "description": "Chave local da exig\u00EAncia citada pela regra de documento.",
@@ -20442,15 +21264,21 @@
             "type": "integer",
             "minimum": 1
           },
-          "consequencia": {
+          "abrePrazoParaReenvio": {
+            "title": "Prazo para reenvio",
+            "description": "Indica se ser\u00E1 aberto prazo para reenvio.",
+            "type": "boolean"
+          },
+          "consequenciaDoDescumprimento": {
             "title": "Consequ\u00EAncia",
             "description": "Consequ\u00EAncia quando a regra n\u00E3o \u00E9 cumprida.",
-            "enum": [
-              "ELIMINA",
-              "RECLASSIFICA_AC",
-              "REMOVE_VANTAGEM",
-              "ABRE_PRAZO_PARA_REENVIO"
-            ]
+            "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsConsequenciaDoDescumprimento"
+          },
+          "consequenciaDoDescumprimentoRotulo": {
+            "title": "R\u00F3tulo da consequ\u00EAncia do descumprimento",
+            "description": "R\u00F3tulo registrado na publica\u00E7\u00E3o, s\u00F3 de leitura e ignorado na importa\u00E7\u00E3o.",
+            "type": "string",
+            "readOnly": true
           },
           "basesLegais": {
             "title": "Bases legais",
@@ -20468,6 +21296,12 @@
               "EXERCICIO_ANUAL",
               "OCORRENCIA"
             ]
+          },
+          "criterioDeDistincaoRotulo": {
+            "title": "R\u00F3tulo do crit\u00E9rio de distin\u00E7\u00E3o",
+            "description": "R\u00F3tulo do crit\u00E9rio que distingue apresenta\u00E7\u00F5es do mesmo documento. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           },
           "dataReferencia": {
             "title": "Data de refer\u00EAncia",
@@ -20533,6 +21367,12 @@
               "MUNICIPIOS_DA_UF",
               "FAIXA_DE_DATA"
             ]
+          },
+          "tipoRotulo": {
+            "title": "R\u00F3tulo do tipo da restri\u00E7\u00E3o",
+            "description": "R\u00F3tulo do tipo da restri\u00E7\u00E3o. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia \u00E9 o c\u00F3digo.",
+            "type": "string",
+            "readOnly": true
           },
           "minimo": {
             "title": "M\u00EDnimo",
@@ -20693,6 +21533,15 @@
                 "CARENCIA_SOCIOECONOMICA"
               ]
             }
+          },
+          "fundamentosRotulos": {
+            "title": "R\u00F3tulos dos fundamentos de isen\u00E7\u00E3o",
+            "description": "R\u00F3tulos dos fundamentos de isen\u00E7\u00E3o da taxa, na mesma ordem dos c\u00F3digos. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o; a refer\u00EAncia s\u00E3o os c\u00F3digos.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true
           }
         }
       },
@@ -20702,7 +21551,7 @@
           "tipoDocumentoCodigo",
           "nome",
           "obrigatorio",
-          "finalidade",
+          "formularioCodigo",
           "etapaId",
           "formatos",
           "modelo",
@@ -20731,14 +21580,10 @@
           "obrigatorio": {
             "type": "boolean"
           },
-          "finalidade": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/FinalidadeFormulario"
-              }
+          "formularioCodigo": {
+            "type": [
+              "null",
+              "string"
             ]
           },
           "etapaId": {
@@ -20884,7 +21729,7 @@
           "integrante",
           "obrigatorio",
           "situacao",
-          "consequencia",
+          "consequenciaDoDescumprimento",
           "arquivos"
         ],
         "type": "object",
@@ -20904,7 +21749,7 @@
           "situacao": {
             "type": "string"
           },
-          "consequencia": {
+          "consequenciaDoDescumprimento": {
             "type": [
               "null",
               "string"
@@ -21006,7 +21851,7 @@
           "tipoDocumentoNome",
           "obrigatorio",
           "faseId",
-          "finalidade",
+          "formularioCodigo",
           "etapaId",
           "situacao",
           "ocorrenciaId",
@@ -21031,14 +21876,10 @@
             "type": "string",
             "format": "uuid"
           },
-          "finalidade": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/FinalidadeFormulario"
-              }
+          "formularioCodigo": {
+            "type": [
+              "null",
+              "string"
             ]
           },
           "etapaId": {
@@ -21133,10 +21974,12 @@
       },
       "EfeitoSuspensivoCodigo": {
         "enum": [
-          "SEM_EFEITO_SUSPENSIVO"
+          "PARA_TODOS_OS_RECURSOS",
+          "SEM_EFEITO_SUSPENSIVO",
+          "UNIDADE_DECIDE_EM_CADA_RECURSO"
         ],
         "type": "string",
-        "description": "- \u0060SEM_EFEITO_SUSPENSIVO\u0060: Sem efeito suspensivo \u2014 O recurso n\u00E3o suspende o processo: as fases seguintes come\u00E7am nas datas do cronograma, mesmo com recurso em an\u00E1lise."
+        "description": "- \u0060PARA_TODOS_OS_RECURSOS\u0060: Efeito suspensivo para todos os recursos \u2014 Todo recurso da 1\u00AA inst\u00E2ncia tem efeito suspensivo. Enquanto o prazo para recorrer est\u00E1 aberto e, havendo recurso, at\u00E9 que todos tenham decis\u00E3o e o resultado definitivo esteja publicado, ficam suspensos os atos que n\u00E3o podem ser desfeitos e o in\u00EDcio das fases posteriores.\n- \u0060SEM_EFEITO_SUSPENSIVO\u0060: Sem efeito suspensivo \u2014 O recurso da 1\u00AA inst\u00E2ncia n\u00E3o suspende nenhum ato do processo enquanto \u00E9 analisado.\n- \u0060UNIDADE_DECIDE_EM_CADA_RECURSO\u0060: A unidade respons\u00E1vel pela fase de origem do ato recorrido decide em cada recurso \u2014 Em cada recurso da 1\u00AA inst\u00E2ncia, essa unidade decide se concede o efeito suspensivo e registra a fundamenta\u00E7\u00E3o. S\u00F3 o recurso com a concess\u00E3o suspende os atos que n\u00E3o podem ser desfeitos e o in\u00EDcio das fases posteriores."
       },
       "EfeitoSuspensivoComDescricao": {
         "required": [
@@ -22221,30 +23064,6 @@
         "type": "string",
         "description": "- \u0060DOCUMENTO_DO_EDITAL\u0060: Documento do edital \u2014 Documento principal do edital.\n- \u0060ANEXO_DO_EDITAL\u0060: Anexo do edital \u2014 Documento que acompanha o edital.\n- \u0060DOCUMENTO_DE_ATO\u0060: Documento de ato \u2014 Documento de um ato do processo."
       },
-      "FinalidadeFormulario": {
-        "required": [
-          "codigo",
-          "rotulo"
-        ],
-        "type": "object",
-        "properties": {
-          "codigo": {
-            "$ref": "#/components/schemas/FinalidadeFormularioCodigo"
-          },
-          "rotulo": {
-            "type": "string"
-          }
-        }
-      },
-      "FinalidadeFormularioCodigo": {
-        "enum": [
-          "INSCRICAO",
-          "ISENCAO_TAXA",
-          "HABILITACAO"
-        ],
-        "type": "string",
-        "description": "Para que o formul\u00E1rio coleta respostas: cada processo tem no m\u00E1ximo um formul\u00E1rio por finalidade.\n\n- \u0060INSCRICAO\u0060: Inscri\u00E7\u00E3o \u2014 Formul\u00E1rio em que o candidato se inscreve no processo seletivo.\n- \u0060ISENCAO_TAXA\u0060: Isen\u00E7\u00E3o da taxa \u2014 Formul\u00E1rio em que o candidato pede a isen\u00E7\u00E3o da taxa de inscri\u00E7\u00E3o.\n- \u0060HABILITACAO\u0060: Habilita\u00E7\u00E3o \u2014 Formul\u00E1rio em que o candidato comprova os requisitos para ser habilitado."
-      },
       "FormaAceite": {
         "required": [
           "codigo",
@@ -22427,7 +23246,6 @@
       },
       "FormularioApresentado": {
         "required": [
-          "finalidade",
           "titulo",
           "paginas",
           "termos",
@@ -22437,9 +23255,6 @@
         ],
         "type": "object",
         "properties": {
-          "finalidade": {
-            "type": "string"
-          },
           "titulo": {
             "type": [
               "null",
@@ -22472,7 +23287,9 @@
       "FormularioApresentadoDoProcessoDto": {
         "required": [
           "formulario",
+          "codigo",
           "faseId",
+          "obrigatorio",
           "comprovacaoDocumental",
           "dependenciasDaAvaliacao",
           "dependenciasDoFator"
@@ -22482,12 +23299,18 @@
           "formulario": {
             "$ref": "#/components/schemas/FormularioApresentado"
           },
+          "codigo": {
+            "type": "string"
+          },
           "faseId": {
             "type": [
               "null",
               "string"
             ],
             "format": "uuid"
+          },
+          "obrigatorio": {
+            "type": "boolean"
           },
           "comprovacaoDocumental": {
             "type": [
@@ -22561,8 +23384,9 @@
       },
       "FormularioDto": {
         "required": [
-          "finalidade",
+          "codigo",
           "faseId",
+          "obrigatorio",
           "titulo",
           "modeloOrigem",
           "paginas",
@@ -22571,8 +23395,8 @@
         ],
         "type": "object",
         "properties": {
-          "finalidade": {
-            "$ref": "#/components/schemas/FinalidadeFormulario"
+          "codigo": {
+            "type": "string"
           },
           "faseId": {
             "type": [
@@ -22580,6 +23404,9 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "obrigatorio": {
+            "type": "boolean"
           },
           "titulo": {
             "type": [
@@ -22611,6 +23438,16 @@
             "items": {
               "$ref": "#/components/schemas/TermoExigidoDto"
             }
+          },
+          "consequenciaDaFaltaDeEnvio": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ConsequenciaDoDescumprimento"
+              }
+            ]
           }
         }
       },
@@ -22686,7 +23523,7 @@
       },
       "FormularioSimuladoDto": {
         "required": [
-          "finalidade",
+          "codigo",
           "itens",
           "grupos",
           "termos",
@@ -22694,8 +23531,8 @@
         ],
         "type": "object",
         "properties": {
-          "finalidade": {
-            "$ref": "#/components/schemas/FinalidadeFormulario"
+          "codigo": {
+            "type": "string"
           },
           "itens": {
             "type": "array",
@@ -23335,7 +24172,7 @@
       "IndeferimentoDoDocumentoDto": {
         "required": [
           "obrigatorio",
-          "consequencia",
+          "consequenciaDoDescumprimento",
           "basesLegais"
         ],
         "type": "object",
@@ -23343,13 +24180,13 @@
           "obrigatorio": {
             "type": "boolean"
           },
-          "consequencia": {
+          "consequenciaDoDescumprimento": {
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/ConsequenciaDoIndeferimento"
+                "$ref": "#/components/schemas/ConsequenciaDoDescumprimento"
               }
             ]
           },
@@ -23358,13 +24195,17 @@
             "items": {
               "$ref": "#/components/schemas/BaseLegalDto"
             }
+          },
+          "abrePrazoParaReenvio": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
       "IndeferimentoDoDocumentoInput": {
         "required": [
           "obrigatorio",
-          "consequencia",
+          "consequenciaDoDescumprimento",
           "basesLegais"
         ],
         "type": "object",
@@ -23372,13 +24213,13 @@
           "obrigatorio": {
             "type": "boolean"
           },
-          "consequencia": {
+          "consequenciaDoDescumprimento": {
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/ConsequenciaDoIndeferimentoCodigo"
+                "$ref": "#/components/schemas/ConsequenciaDoDescumprimentoCodigo"
               }
             ]
           },
@@ -23390,23 +24231,27 @@
             "items": {
               "$ref": "#/components/schemas/BaseLegalInput"
             }
+          },
+          "abrePrazoParaReenvio": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
       "IndeferimentoDoGrupoDto": {
         "required": [
-          "consequencia",
+          "consequenciaDoDescumprimento",
           "basesLegais"
         ],
         "type": "object",
         "properties": {
-          "consequencia": {
+          "consequenciaDoDescumprimento": {
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/ConsequenciaDoIndeferimento"
+                "$ref": "#/components/schemas/ConsequenciaDoDescumprimento"
               }
             ]
           },
@@ -23415,19 +24260,23 @@
             "items": {
               "$ref": "#/components/schemas/BaseLegalDto"
             }
+          },
+          "abrePrazoParaReenvio": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
       "IndeferimentoDoGrupoInput": {
         "type": "object",
         "properties": {
-          "consequencia": {
+          "consequenciaDoDescumprimento": {
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/ConsequenciaDoIndeferimentoCodigo"
+                "$ref": "#/components/schemas/ConsequenciaDoDescumprimentoCodigo"
               }
             ]
           },
@@ -23439,6 +24288,10 @@
             "items": {
               "$ref": "#/components/schemas/BaseLegalInput"
             }
+          },
+          "abrePrazoParaReenvio": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -24657,6 +25510,48 @@
           }
         }
       },
+      "ManifestacaoDeInteresse": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/ManifestacaoDeInteresseCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "ManifestacaoDeInteresseCodigo": {
+        "enum": [
+          "UMA_VEZ",
+          "CONFIRMA_A_CADA_CHAMADA"
+        ],
+        "type": "string",
+        "description": "- \u0060UMA_VEZ\u0060: Manifesta interesse uma s\u00F3 vez \u2014 A pessoa manifesta interesse uma vez depois da 1\u00AA chamada, e a manifesta\u00E7\u00E3o vale para as chamadas seguintes; quem volta a aguardar n\u00E3o manifesta de novo.\n- \u0060CONFIRMA_A_CADA_CHAMADA\u0060: Confirma o interesse a cada chamada \u2014 A pessoa manifesta interesse depois da 1\u00AA chamada e confirma o interesse a cada chamada seguinte."
+      },
+      "ManifestacaoDeInteresseComDescricao": {
+        "required": [
+          "codigo",
+          "rotulo",
+          "descricao"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/ManifestacaoDeInteresseCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          }
+        }
+      },
       "MinhaInscricaoDto": {
         "required": [
           "inscricaoId",
@@ -25065,7 +25960,7 @@
         "required": [
           "faseId",
           "etapaId",
-          "finalidade"
+          "formularioCodigo"
         ],
         "type": "object",
         "properties": {
@@ -25080,14 +25975,10 @@
             ],
             "format": "uuid"
           },
-          "finalidade": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/FinalidadeFormulario"
-              }
+          "formularioCodigo": {
+            "type": [
+              "null",
+              "string"
             ]
           }
         }
@@ -25109,14 +26000,10 @@
             ],
             "format": "uuid"
           },
-          "finalidade": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/FinalidadeFormularioCodigo"
-              }
+          "formularioCodigo": {
+            "type": [
+              "null",
+              "string"
             ]
           }
         }
@@ -25303,6 +26190,25 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "MunicipioDoFadaDto": {
+        "required": [
+          "codigoIbge",
+          "nome",
+          "uf"
+        ],
+        "type": "object",
+        "properties": {
+          "codigoIbge": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "uf": {
+            "type": "string"
           }
         }
       },
@@ -26142,13 +27048,13 @@
       },
       "PaginaConcluidaInput": {
         "required": [
-          "finalidade",
+          "formularioCodigo",
           "pagina"
         ],
         "type": "object",
         "properties": {
-          "finalidade": {
-            "$ref": "#/components/schemas/FinalidadeFormularioCodigo"
+          "formularioCodigo": {
+            "type": "string"
           },
           "pagina": {
             "type": "string"
@@ -26577,6 +27483,48 @@
             "type": "string"
           },
           "motivo": {
+            "type": "string"
+          }
+        }
+      },
+      "ParticipacaoDaReserva": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/ParticipacaoDaReservaCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "ParticipacaoDaReservaCodigo": {
+        "enum": [
+          "ANTECIPA_A_HABILITACAO",
+          "ASSUME_NA_MESMA_CHAMADA"
+        ],
+        "type": "string",
+        "description": "- \u0060ANTECIPA_A_HABILITACAO\u0060: A reserva s\u00F3 antecipa a habilita\u00E7\u00E3o \u2014 A pessoa da reserva sai da chamada com a documenta\u00E7\u00E3o deferida, sem ser homologada como apta \u00E0 matr\u00EDcula; a vaga que sobrar segue para a chamada seguinte.\n- \u0060ASSUME_NA_MESMA_CHAMADA\u0060: A reserva assume na mesma chamada \u2014 A pessoa da reserva homologada como habilitada ocupa a vaga na pr\u00F3pria chamada."
+      },
+      "ParticipacaoDaReservaComDescricao": {
+        "required": [
+          "codigo",
+          "rotulo",
+          "descricao"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/ParticipacaoDaReservaCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          },
+          "descricao": {
             "type": "string"
           }
         }
@@ -27310,10 +28258,12 @@
           "etapas",
           "atendimentoEspecializado",
           "distribuicaoVagas",
-          "bonusRegional",
-          "aplicaBonusRegional",
+          "fada",
+          "aplicaFada",
           "opcoesDeCurso",
           "provaPresencial",
+          "cadastroDeReserva",
+          "manifestacaoDeInteresse",
           "cascata",
           "criteriosDesempate",
           "classificacao",
@@ -27381,17 +28331,17 @@
               "$ref": "#/components/schemas/ConfiguracaoDistribuicaoVagasDto"
             }
           },
-          "bonusRegional": {
+          "fada": {
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/ConfiguracaoBonusRegionalDto"
+                "$ref": "#/components/schemas/ConfiguracaoDoFadaDto"
               }
             ]
           },
-          "aplicaBonusRegional": {
+          "aplicaFada": {
             "type": [
               "null",
               "boolean"
@@ -27414,6 +28364,22 @@
               },
               {
                 "$ref": "#/components/schemas/ProvaPresencialDto"
+              }
+            ]
+          },
+          "cadastroDeReserva": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CadastroDeReservaDaChamadaDto"
+            }
+          },
+          "manifestacaoDeInteresse": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ManifestacaoDeInteresse"
               }
             ]
           },
@@ -30076,6 +31042,7 @@
       },
       "TermoAceitoDoComprovanteDto": {
         "required": [
+          "formularioCodigo",
           "codigo",
           "nome",
           "versaoId",
@@ -30083,6 +31050,9 @@
         ],
         "type": "object",
         "properties": {
+          "formularioCodigo": {
+            "type": "string"
+          },
           "codigo": {
             "type": "string"
           },

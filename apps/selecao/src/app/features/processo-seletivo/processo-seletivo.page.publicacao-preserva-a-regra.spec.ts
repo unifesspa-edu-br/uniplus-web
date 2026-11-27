@@ -13,7 +13,7 @@ import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { PAGE_PROVIDERS } from './processo-seletivo.page.testing';
 import { CronogramaPassoComponent } from './wizard/passos/cronograma/cronograma.component';
 import { FASES_CANONICAS, ID_RESULTADO } from './wizard/passos/cronograma/cronograma.testing';
-import { GravacaoDasExigenciasDocumentais } from './wizard/passos/cronograma/servicos/gravacao-das-exigencias-documentais.service';
+import { GravacaoDasExigenciasDocumentais } from './wizard/shared/exigencias/gravacao-das-exigencias-documentais.service';
 import { ReleituraDosIdentificadores } from './wizard/passos/cronograma/servicos/releitura-dos-identificadores.service';
 import { umaFaseDoCronograma } from './wizard/shared/fase-do-cronograma.testing';
 import { regraDoDto } from './wizard/shared/homologacao/regra-de-homologacao-contrato';

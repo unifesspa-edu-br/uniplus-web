@@ -50,6 +50,11 @@ import { totalDeVagasInformadas } from './totais-do-quadro';
  * regime e turnos. Nada disso é editável: turno é atributo da oferta, e o
  * cadastro dele é outro (UNI-REQ-0137).
  */
+const SEM_CADASTRO_CONCLUIDO: ValidacaoDoPasso = {
+  valid: false,
+  messages: ['O cadastro do processo precisa estar concluído antes de configurar as vagas.'],
+};
+
 @Component({
   selector: 'sel-step-vagas',
   imports: [
@@ -165,12 +170,7 @@ export class VagasPassoComponent {
 
   async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
-    if (processoId === null) {
-      return {
-        valid: false,
-        messages: ['O cadastro do processo precisa estar concluído antes de configurar as vagas.'],
-      };
-    }
+    if (processoId === null) return SEM_CADASTRO_CONCLUIDO;
 
     // O comando não sai de um passo que a validação recusaria: os campos são texto até a conversão,
     // e o que não é número vira zero no envio — o servidor recusaria com mensagem que não aponta a célula.
@@ -185,7 +185,7 @@ export class VagasPassoComponent {
   }
 
   /**
-   * O que a página confirma antes de gravar o quadro — o mesmo contrato que Identificação, Bônus,
+   * O que a página confirma antes de gravar o quadro — o mesmo contrato que Identificação, Fator de Atenuação,
    * Desempate, Eliminação e Revisão já usam. `null` quando há pendência: ninguém confirma um quadro
    * que o passo não vai gravar.
    */

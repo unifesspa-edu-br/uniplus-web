@@ -13,6 +13,7 @@ export function hidratarProcesso(store: ProcessoSeletivoStore, dto: ProcessoSele
   if (store.processoSeletivoId() !== dto.id) {
     store.geracao.update((valor) => valor + 1);
     store.classificacao.aoTrocarDeProcesso();
+    store.documentosExigidosAguardandoFormulario.set(false);
   }
   // Qualquer releitura que chegue até aqui traz o status atual do servidor e resolve a incerteza
   // de `publicacaoNaoConfirmada`, publicado ou não.

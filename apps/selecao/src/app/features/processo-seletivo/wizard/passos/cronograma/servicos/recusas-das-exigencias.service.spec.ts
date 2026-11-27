@@ -10,7 +10,7 @@ import { rascunhoInicial } from '../../../rascunho-inicial';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import { GravacaoDosCamposPressupostos } from '../../../shared/campos-pressupostos.service';
 import { exigencia, rascunho } from '../../../shared/exigencias/exigencias.testing';
-import { GravacaoDasExigenciasDocumentais } from './gravacao-das-exigencias-documentais.service';
+import { GravacaoDasExigenciasDocumentais } from '../../../shared/exigencias/gravacao-das-exigencias-documentais.service';
 
 const documentos = rascunho(
   exigencia({ faseIdLido: 'fase' }),
@@ -53,7 +53,10 @@ describe('recusas da gravação das exigências', () => {
       ok: false,
       problem: { code: codigo, errors: [{ code: codigo, message: 'Recusa' }] },
     });
-    const resultado = await TestBed.inject(GravacaoDasExigenciasDocumentais).gravar('processo');
+    const resultado = await TestBed.inject(GravacaoDasExigenciasDocumentais).gravar(
+      'processo',
+      'Gravado.',
+    );
     expect(resultado.recusas?.[0].identificadorDaRegra).toBeNull();
     expect(resultado.messages?.[0]).toContain('forma da regra');
   });
@@ -64,7 +67,10 @@ describe('recusas da gravação das exigências', () => {
       field: `regrasDeComprovacao[${indice}].documento.requisitos.formatosPermitidos`,
     }));
     definirDocumentosExigidos.mockResolvedValue({ ok: false, problem: { code: codigo, errors } });
-    const resultado = await TestBed.inject(GravacaoDasExigenciasDocumentais).gravar('processo');
+    const resultado = await TestBed.inject(GravacaoDasExigenciasDocumentais).gravar(
+      'processo',
+      'Gravado.',
+    );
     expect(resultado.recusas?.map((recusa) => recusa.identificadorDaRegra)).toEqual(
       documentos.regrasDeComprovacao.map((regra) => regra.identificadorNoRascunho),
     );

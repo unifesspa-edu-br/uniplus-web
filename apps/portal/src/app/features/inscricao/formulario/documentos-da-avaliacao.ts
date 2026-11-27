@@ -34,7 +34,6 @@ function apresentarDocumento(documento: DocumentoDaApi): DocumentoAvaliado {
   const { variante, exigido, atendido } = APRESENTACAO[documento.situacao.codigo];
   return {
     ...documento,
-    finalidade: documento.finalidade?.codigo ?? null,
     modelo: apresentarModelo(documento.modelo),
     formatos: apresentarFormatos(documento.formatos),
     formatosAceitos: documento.formatosAceitos.map((f) => f.codigo),

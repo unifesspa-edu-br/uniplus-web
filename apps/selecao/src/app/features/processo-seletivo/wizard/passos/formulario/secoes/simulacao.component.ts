@@ -4,9 +4,10 @@ import { RouterLink } from '@angular/router';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { rascunhoDifereDoGravado } from '../formulario-do-processo';
 import {
-  emOrdemDasFinalidades,
-  formulariosDoRascunho,
-} from '../formularios-por-finalidade';
+  emOrdemDoCronograma,
+  formulariosDoServidor,
+  rotuloDoFormulario,
+} from '../formularios-do-rascunho';
 import { LeituraDoProcessoNoFormulario } from '../servicos/leitura-do-processo-no-formulario.service';
 
 /**
@@ -32,18 +33,22 @@ export class SimulacaoDoFormularioComponent {
   private readonly leitura = inject(LeituraDoProcessoNoFormulario);
 
   /** Os formulários que se pode simular: os gravados, porque a API monta a simulação deles. */
-  protected readonly formulariosParaSimular = computed(() =>
-    emOrdemDasFinalidades((this.leitura.processoLido()?.formularios ?? []).map((formulario) => ({
-      finalidade: formulario.finalidade.codigo,
-      nome: formulario.finalidade.rotulo,
-    }))),
-  );
+  protected readonly formulariosParaSimular = computed(() => {
+    const lido = this.leitura.processoLido();
+    if (lido === null) return [];
+    const fasesEmOrdem = [...this.store.draft().cronograma.fases]
+      .sort((uma, outra) => uma.ordem - outra.ordem)
+      .map((fase) => fase.codigo);
+    return emOrdemDoCronograma(formulariosDoServidor(lido).formularios, fasesEmOrdem).map(
+      (formulario) => ({ codigo: formulario.codigo, nome: rotuloDoFormulario(formulario, null) }),
+    );
+  });
 
   /** Há alteração nos formulários ainda não gravada: a simulação não a veria. */
   protected readonly simulacaoDesatualizada = computed(() =>
     rascunhoDifereDoGravado(
       this.leitura.processoLido()?.formularios ?? [],
-      formulariosDoRascunho(this.store.draft().formulario),
+      this.store.draft().formulario.formularios,
     ),
   );
 }

@@ -1,21 +1,17 @@
 import type { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import {
   ESCOPO_MEMBRO,
-  FINALIDADE_INSCRICAO,
   ehColetavel,
-  todosOsCampos,
   type FatoDoFormulario,
 } from '@uniplus/shared-inscricao/formulario';
 
-import type { FaseDoCronograma, FormularioDeInscricao } from '../processo-seletivo.models';
-import { finalidadesDaFase } from './descricao-da-fase';
-import { finalidadeDaExigencia } from './exigencias/formulario-da-exigencia';
-import { fatosCitadosPelaDerivacao } from '../passos/formulario/citantes-no-processo';
-import { fatosColetadosPelaInscricao } from '../passos/formulario/fatos-coletados-da-inscricao';
+import type { FaseDoCronograma } from '../processo-seletivo.models';
+import { descreverFase } from './descricao-da-fase';
 import {
-  FINALIDADE_ISENCAO_TAXA,
-  formulariosDoRascunho,
-} from '../passos/formulario/formularios-por-finalidade';
+  formularioDaExigencia,
+  type FormularioDaExigencia,
+} from './exigencias/formulario-da-exigencia';
+import type { FaseQueRespondeFormulario } from '../passos/formulario/obrigatoriedade-na-fase';
 
 /**
  * Em que fase do cronograma um fato do candidato fica conhecido no processo, e o que isso proíbe
@@ -44,37 +40,45 @@ export interface FatoComFase extends FatoDoFormulario {
 }
 
 /** Uma fase do cronograma do processo, na posição que ela ocupa nele. */
-export interface FaseNoCronograma {
-  readonly codigo: string;
+export interface FaseNoCronograma extends FaseQueRespondeFormulario {
   readonly ordem: number;
-  /** As finalidades cujo formulário se responde nela (`finalidadesQueAtende`). */
-  readonly finalidades: readonly string[];
 }
 
-/** As fases do cronograma na posição de cada uma, com os formulários que nela se respondem. */
+/** As fases do cronograma na posição de cada uma, com as marcas que dizem o que cada uma coleta. */
 export function fasesNoCronograma(
   fases: readonly FaseDoCronograma[],
   fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
 ): readonly FaseNoCronograma[] {
-  return fases.map((fase) => ({
-    codigo: fase.codigo,
-    ordem: fase.ordem,
-    finalidades: finalidadesDaFase(fase, fasePorId),
-  }));
+  return fases.map((fase) => {
+    const { coletaInscricao, coletaSolicitacaoIsencao } = descreverFase(fase, fasePorId);
+    return { codigo: fase.codigo, ordem: fase.ordem, coletaInscricao, coletaSolicitacaoIsencao };
+  });
 }
 
 /** Onde a exigência é cobrada: a fase e o formulário em que o candidato apresenta o documento. */
 export interface LugarDaExigencia {
   readonly faseCodigo: string;
-  /** O formulário declarado; o que vale sai da fase, por `finalidadeDaExigencia`. */
-  readonly finalidade: string | null;
+  /** O formulário declarado; o que vale sai da fase, por `formularioDaExigencia`. */
+  readonly formularioCodigo: string | null;
 }
 
-/** Um formulário do processo: a finalidade, a fase em que é respondido e os fatos que coleta. */
+/** Um formulário do processo: o código, a fase em que é respondido, o que ele é e os fatos que coleta. */
 export interface FormularioQueColeta {
-  readonly finalidade: string;
+  readonly codigo: string;
   readonly faseCodigo: string;
+  readonly daInscricao: boolean;
+  readonly daIsencao: boolean;
   readonly fatos: ReadonlySet<string>;
+}
+
+/** Os códigos dos formulários que o rascunho responde na fase. */
+export function codigosDosFormulariosDaFase(
+  producao: Pick<ProducaoDosFatos, 'formularios'>,
+  faseCodigo: string,
+): readonly string[] {
+  return producao.formularios
+    .filter((formulario) => formulario.faseCodigo === faseCodigo)
+    .map((formulario) => formulario.codigo);
 }
 
 /** Um grupo repetível de um formulário do processo: as ocorrências pelas quais um documento pode se repetir. */
@@ -110,56 +114,6 @@ export type RecusaDeFase =
   /** O fato vem do formulário de isenção, e o documento é de outro formulário. */
   | { readonly tipo: 'SO_DA_ISENCAO'; readonly fato: string; readonly faseCodigo: string };
 
-/** O que o processo do rascunho diz sobre a produção de cada fato. */
-export function producaoDoRascunho(
-  formulario: FormularioDeInscricao,
-  fases: readonly FaseNoCronograma[],
-  catalogo: readonly FatoComFase[],
-): ProducaoDosFatos {
-  return {
-    fases,
-    formularios: formulariosQueColetam(formulario),
-    derivacoes: derivacoesDoRascunho(formulario),
-    catalogo: new Map(catalogo.map((fato) => [fato.codigo, fato])),
-    grupos: gruposDoRascunho(formulario),
-  };
-}
-
-function formulariosQueColetam(formulario: FormularioDeInscricao): readonly FormularioQueColeta[] {
-  return formulariosDoRascunho(formulario).map((daFinalidade) => ({
-    finalidade: daFinalidade.finalidade,
-    faseCodigo: daFinalidade.faseCodigo,
-    fatos:
-      daFinalidade.finalidade === FINALIDADE_INSCRICAO
-        ? fatosColetadosPelaInscricao(daFinalidade.conteudo)
-        : new Set(todosOsCampos(daFinalidade.conteudo).map((campo) => campo.fatoCodigo)),
-  }));
-}
-
-function derivacoesDoRascunho(formulario: FormularioDeInscricao): ProducaoDosFatos['derivacoes'] {
-  return new Map(
-    formulario.derivacao.map((config) => [
-      config.codigoFato,
-      fatosCitadosPelaDerivacao(config.regras).filter((fato) => fato !== config.codigoFato),
-    ]),
-  );
-}
-
-function gruposDoRascunho(formulario: FormularioDeInscricao): ProducaoDosFatos['grupos'] {
-  return new Map(
-    formulariosDoRascunho(formulario).flatMap((daFinalidade) =>
-      (daFinalidade.conteudo.grupos ?? []).map((grupo): [string, GrupoDaProducao] => [
-        grupo.codigo,
-        {
-          codigo: grupo.codigo,
-          rotulo: grupo.rotulo,
-          campos: grupo.subitens.map((campo) => campo.fatoCodigo),
-        },
-      ]),
-    ),
-  );
-}
-
 /**
  * Se o processo resolve o fato para o candidato: o campo de formulário, coletado ou que a
  * inscrição passa a coletar; o derivado por regra que o processo declara; o agregado cujo fato de
@@ -186,13 +140,32 @@ export function recusaDeFaseDoGatilho(
 ): RecusaDeFase | null {
   const daExigencia = producao.fases.find((fase) => fase.codigo === lugar.faseCodigo);
   if (daExigencia === undefined) return null;
-  const formulario = finalidadeDaExigencia(lugar.finalidade, daExigencia.finalidades);
-  if (formulario.situacao !== 'DEFINIDO') return null;
-  const { finalidade } = formulario;
-
+  const formularioCodigo = formularioDoLugarParaConferir(lugar, producao);
+  if (formularioCodigo === undefined) return null;
   return (
-    recusaPelaFase(fato, daExigencia, producao) ?? recusaPelaIsencao(fato, finalidade, producao)
+    recusaPelaFase(fato, daExigencia, producao) ??
+    recusaPelaIsencao(fato, formularioCodigo, producao)
   );
+}
+
+function formularioDoLugarParaConferir(
+  lugar: LugarDaExigencia,
+  producao: ProducaoDosFatos,
+): string | null | undefined {
+  const codigos = codigosDosFormulariosDaFase(producao, lugar.faseCodigo);
+  return formularioParaConferir(formularioDaExigencia(lugar.formularioCodigo, codigos));
+}
+
+/** O formulário contra o qual conferir a isenção: nenhum enquanto a fase aguarda; `undefined` se falta escolher. */
+function formularioParaConferir(formulario: FormularioDaExigencia): string | null | undefined {
+  switch (formulario.situacao) {
+    case 'DEFINIDO':
+      return formulario.codigo;
+    case 'AGUARDA_FORMULARIO':
+      return null;
+    default:
+      return undefined;
+  }
 }
 
 function recusaPelaFase(
@@ -212,16 +185,17 @@ function recusaPelaFase(
 
 function recusaPelaIsencao(
   fato: string,
-  finalidade: string | null,
+  formularioCodigo: string | null,
   producao: ProducaoDosFatos,
 ): RecusaDeFase | null {
-  const isencao = producao.formularios.find(
-    (formulario) => formulario.finalidade === FINALIDADE_ISENCAO_TAXA,
+  const isencoes = producao.formularios.filter((formulario) => formulario.daIsencao);
+  if (isencoes.some((formulario) => formulario.codigo === formularioCodigo)) return null;
+  const isencao = isencoes.find((formulario) =>
+    dependeSoDaIsencao(fato, formulario, producao, new Set()),
   );
-  if (isencao === undefined || finalidade === FINALIDADE_ISENCAO_TAXA) return null;
-  return dependeSoDaIsencao(fato, isencao, producao, new Set())
-    ? { tipo: 'SO_DA_ISENCAO', fato, faseCodigo: isencao.faseCodigo }
-    : null;
+  return isencao === undefined
+    ? null
+    : { tipo: 'SO_DA_ISENCAO', fato, faseCodigo: isencao.faseCodigo };
 }
 
 /** Por que um documento não pode se repetir pelo grupo nomeado onde ele é cobrado. */
@@ -348,8 +322,7 @@ export function formularioQueColeta(
 
   const doCatalogo = producao.catalogo.get(fato);
   return doCatalogo !== undefined && ehColetavel(doCatalogo)
-    ? (producao.formularios.find((formulario) => formulario.finalidade === FINALIDADE_INSCRICAO) ??
-        null)
+    ? (producao.formularios.find((formulario) => formulario.daInscricao) ?? null)
     : null;
 }
 

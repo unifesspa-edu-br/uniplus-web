@@ -7,7 +7,7 @@ import { NEVER, of } from 'rxjs';
 import { apiOk } from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
-  BaseLegalBonusRegionalApi,
+  BaseLegalDoFadaApi,
   TiposInstrumentoNormativoApi,
   PesosEnemApi,
   CondicoesAtendimentoApi,
@@ -135,8 +135,8 @@ export const PAGE_PROVIDERS = [
   { provide: ReservaDemograficaApi, useValue: catalogoVazioStub },
   { provide: OpcoesDoRecursoApi, useValue: opcoesDoRecursoApiDeTeste() },
   { provide: RegrasCatalogoApi, useValue: catalogoVazioStub },
-  // O passo de bônus carrega o catálogo de base legal e o vocabulário de tipos de norma ao montar.
-  { provide: BaseLegalBonusRegionalApi, useValue: catalogoVazioStub },
+  // O passo do Fator de Atenuação carrega o catálogo de base legal e o vocabulário de tipos de norma ao montar.
+  { provide: BaseLegalDoFadaApi, useValue: catalogoVazioStub },
   { provide: TiposInstrumentoNormativoApi, useValue: catalogoVazioStub },
   // O passo da fórmula carrega o cadastro de Peso por Área, de onde sai a resolução do ENEM.
   {

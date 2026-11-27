@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import type { BaseLegalBonusRegionalDto } from '@uniplus/shared-data/configuracao';
+import type { BaseLegalDoFadaDto } from '@uniplus/shared-data/configuracao';
 import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { CORS_DE_LEITURA } from '../support/processo-mockado';
 import {
@@ -41,17 +41,17 @@ const REGRAS_ELIMINACAO = [
   regra('ELIMINACAO_CORTE_EM_AREA', 'REGRA_ELIMINACAO', 'Resolução 805/2024, art. 6º'),
   regra('ELIMINACAO_AUSENCIA_NA_ETAPA', 'REGRA_ELIMINACAO', 'Edital do processo'),
 ];
-const REGRAS_BONUS = [
+const REGRAS_DO_FADA = [
   regra(
     'BONUS-MULTIPLICATIVO',
     'REGRA_FADA',
-    'Bônus multiplicativo aplicado à nota final após os pesos das áreas do ENEM, sem teto por padrão',
+    'Multiplicador de nota aplicado à nota final após os pesos das áreas do ENEM, sem teto por padrão',
   ),
 ];
-export const BASE_LEGAL_BONUS_REGIONAL_ID = 'ba5e0000-0000-7000-8000-000000000001';
-const BASES_LEGAIS_BONUS_REGIONAL: readonly JsonDaApi<BaseLegalBonusRegionalDto>[] = [
+export const BASE_LEGAL_DO_FADA_ID = 'ba5e0000-0000-7000-8000-000000000001';
+const BASES_LEGAIS_DO_FADA: readonly JsonDaApi<BaseLegalDoFadaDto>[] = [
   {
-    id: BASE_LEGAL_BONUS_REGIONAL_ID,
+    id: BASE_LEGAL_DO_FADA_ID,
     codigo: 'PORTARIA_UNIFESSPA_2514_2023',
     tipoInstrumento: { codigo: 'PORTARIA', rotulo: 'Rótulo do tipo portaria' },
     identificacao: 'Portaria Unifesspa nº 2514/2023',
@@ -151,7 +151,7 @@ const REGRAS_POR_TIPO: Record<string, readonly unknown[]> = {
   REGRA_ARREDONDAMENTO: REGRAS_ARREDONDAMENTO,
   REGRA_ORDEM_ALOCACAO: REGRAS_ORDEM_ALOCACAO,
   REGRA_ELIMINACAO: REGRAS_ELIMINACAO,
-  REGRA_FADA: REGRAS_BONUS,
+  REGRA_FADA: REGRAS_DO_FADA,
   CRITERIO_DESEMPATE: CRITERIOS_DESEMPATE,
 };
 
@@ -164,7 +164,7 @@ const CATALOGOS: readonly CatalogoMockado[] = [
   ['configuracao/fatos-candidato', FATOS_CANDIDATO],
   ['configuracao/pesos-area-enem/areas', AREAS_ENEM],
   ['configuracao/pesos-area-enem', PESOS_AREA_ENEM],
-  ['configuracao/base-legal-bonus-regional', BASES_LEGAIS_BONUS_REGIONAL],
+  ['configuracao/bases-legais-fada', BASES_LEGAIS_DO_FADA],
 ];
 
 /** Os catálogos de regra que as quatro telas consultam, todos do mesmo `rol_de_regras`. */

@@ -11,7 +11,7 @@ import {
   FalhaDeLeituraDoCampoComponent,
   RecusaDoCampoComponent,
 } from '@uniplus/shared-ui/components';
-import type { RecusaDaExigencia } from '../../cronograma/servicos/gravacao-das-exigencias-documentais.service';
+import type { RecusaDaExigencia } from '../../../shared/exigencias/gravacao-das-exigencias-documentais.service';
 import type { FormatosAceitos } from '../../../processo-seletivo.models';
 import {
   aceitarQualquerFormato,

@@ -68,26 +68,21 @@
           }
         </label>
 
-        <label class="field" [class.is-error]="erro('finalidade')">
-          <span class="field__label is-required">Finalidade</span>
-          <select
-            aria-required="true"
-            class="select"
-            formControlName="finalidade"
-            [attr.aria-invalid]="erro('finalidade') ? 'true' : null"
-            [attr.aria-describedby]="erro('finalidade') ? 'cfg-modelo-finalidade-erro' : null"
-          >
-            <option value="">Escolha a finalidade</option>
-            @for (finalidade of finalidades(); track finalidade.codigo) {
-              <option [value]="finalidade.codigo">{{ finalidade.rotulo }}</option>
-            }
-          </select>
-          @if (erro('finalidade')) {
-            <span class="field__error" id="cfg-modelo-finalidade-erro">{{
-              erro('finalidade')
-            }}</span>
-          }
-        </label>
+        <div class="field">
+          <label class="checkbox">
+            <input type="checkbox" formControlName="serveAFaseDeInscricao" />
+            <span class="checkbox__box" aria-hidden="true"></span>
+            Serve à fase de inscrição
+          </label>
+        </div>
+
+        <div class="field">
+          <label class="checkbox">
+            <input type="checkbox" formControlName="obrigatorio" />
+            <span class="checkbox__box" aria-hidden="true"></span>
+            Preenchimento obrigatório
+          </label>
+        </div>
 
         <label class="field" [class.is-error]="erro('tipoProcessoCodigo')">
           <span class="field__label">Tipo de processo</span>

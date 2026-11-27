@@ -21,11 +21,12 @@ const BASE = 'http://localhost:5000';
 const ID = '01960000-0000-7000-0000-000000000515';
 
 const FORMULARIO_DA_HABILITACAO: FormularioApresentadoDoProcessoDto = {
+  codigo: 'HABILITACAO',
+  obrigatorio: true,
   faseId: null,
   dependenciasDaAvaliacao: null,
   dependenciasDoFator: null,
   formulario: {
-    finalidade: 'HABILITACAO',
     titulo: null,
     paginas: [
       {
@@ -70,7 +71,7 @@ const FORMULARIO_DA_HABILITACAO: FormularioApresentadoDoProcessoDto = {
 describe('SimulacaoDoProcessoPage', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  it('carrega o formulário da finalidade, com a comprovação documental, e o simula sem gravar nada', () => {
+  it('carrega o formulário pelo código, com a comprovação documental, e o simula sem gravar nada', () => {
     TestBed.configureTestingModule({
       imports: [SimulacaoDoProcessoPage],
       providers: [
@@ -83,7 +84,7 @@ describe('SimulacaoDoProcessoPage', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            snapshot: { paramMap: convertToParamMap({ id: ID, finalidade: 'HABILITACAO' }) },
+            snapshot: { paramMap: convertToParamMap({ id: ID, codigo: 'HABILITACAO' }) },
           },
         },
       ],
@@ -99,7 +100,7 @@ describe('SimulacaoDoProcessoPage', () => {
     fixture.detectChanges();
 
     const tela = fixture.nativeElement as HTMLElement;
-    expect(tela.querySelector('h1')?.textContent).toContain('habilitação');
+    expect(tela.querySelector('h1')?.textContent).toContain('HABILITACAO');
     expect(tela.textContent).toContain('Histórico escolar');
   });
 });

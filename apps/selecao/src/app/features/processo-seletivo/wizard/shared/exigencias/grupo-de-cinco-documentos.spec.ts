@@ -19,7 +19,7 @@ function grupoDeCinco() {
   const inicial = rascunho(...DOCUMENTOS.map((tipoDocumentoId) => exigencia({ tipoDocumentoId })));
   const identificadores = inicial.regrasDeComprovacao.map((regra) => regra.identificadorNoRascunho);
   return editarGrupo(criarGrupo(inicial, identificadores, 'grupo'), 'grupo', {
-    consequencia: 'ELIMINA',
+    consequencia: 'ELIMINA_DO_PROCESSO',
     basesLegais: [
       {
         referencia: 'Edital 1/2027',
@@ -51,16 +51,32 @@ function respostaDaApi(): RegraDeComprovacaoDto {
     },
     cardinalidade: { quantidadeMinima: 1, distincao: null },
     indeferimento: {
-      consequencia: { codigo: 'ELIMINA' as NonNullable<NonNullable<RegraDeComprovacaoDto['indeferimento']>['consequencia']>['codigo'], rotulo: 'Elimina' },
+      consequenciaDoDescumprimento: {
+        codigo: 'ELIMINA_DO_PROCESSO' as NonNullable<
+          NonNullable<RegraDeComprovacaoDto['indeferimento']>['consequenciaDoDescumprimento']
+        >['codigo'],
+        rotulo: 'Elimina',
+      },
       basesLegais: [
         {
           id: 'norma',
           referencia: 'Edital 1/2027',
-          abrangencia: { codigo: 'INTERNA_EDITAL' as NonNullable<RegraDeComprovacaoDto['indeferimento']>['basesLegais'][number]['abrangencia']['codigo'], rotulo: 'Edital' },
-          situacao: { codigo: 'RESOLVIDO' as NonNullable<RegraDeComprovacaoDto['indeferimento']>['basesLegais'][number]['situacao']['codigo'], rotulo: 'Resolvido' },
+          abrangencia: {
+            codigo: 'INTERNA_EDITAL' as NonNullable<
+              RegraDeComprovacaoDto['indeferimento']
+            >['basesLegais'][number]['abrangencia']['codigo'],
+            rotulo: 'Edital',
+          },
+          situacao: {
+            codigo: 'RESOLVIDO' as NonNullable<
+              RegraDeComprovacaoDto['indeferimento']
+            >['basesLegais'][number]['situacao']['codigo'],
+            rotulo: 'Resolvido',
+          },
           observacao: null,
         },
       ],
+      abrePrazoParaReenvio: false,
     },
   };
 }

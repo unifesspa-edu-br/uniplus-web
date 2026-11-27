@@ -12,9 +12,7 @@ import {
 import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
 import {
   EditorDeFormularioComponent,
-  FINALIDADE_INSCRICAO,
   BLOCO_COMPROVACAO_DOCUMENTAL,
-  conteudoInicial,
   conteudoParaEnvio,
   semDadosBasicos,
   type ConteudoDoFormulario,
@@ -28,16 +26,20 @@ import {
   acompanharLeitura,
 } from '@uniplus/shared-ui/components';
 
-import type { FormularioDaFinalidade, ValidacaoDoPasso } from '../../processo-seletivo.models';
+import type { ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
-import { abasDoFormulario, type AbaDoFormulario } from './abas-do-formulario';
+import { abaPelaTecla, abasDoFormulario, type AbaDoFormulario } from './abas-do-formulario';
 import { mensagensDoFormulario } from './validacao-do-formulario';
 import { AplicacaoNoServidor } from './servicos/aplicacao-no-servidor.service';
 import { AplicacaoDeModelo } from './servicos/aplicacao-de-modelo.service';
-import { GravacaoDosFormularios } from './servicos/gravacao-dos-formularios.service';
+import {
+  GravacaoDosFormularios,
+  type FormularioParaEnviar,
+} from './servicos/gravacao-dos-formularios.service';
 import { RemocaoDoFormulario } from './servicos/remocao-do-formulario.service';
 import { CamposPressupostosDoFormulario } from './servicos/campos-pressupostos-do-formulario.service';
+import { EdicaoDosFormularios } from './servicos/edicao-dos-formularios.service';
 import { FasesDosFormularios } from './servicos/fases-dos-formularios.service';
 import { CatalogoDasConsequenciasDeIndeferimento } from '../cronograma/catalogos/catalogo-das-consequencias-de-indeferimento.service';
 import { CatalogosDoFormulario } from './servicos/catalogos-do-formulario.service';
@@ -45,7 +47,13 @@ import { LeituraDoProcessoNoFormulario } from './servicos/leitura-do-processo-no
 import { ModeloDoFormularioComponent } from './secoes/modelo.component';
 import { ApuracaoDaIdadeComponent } from './secoes/apuracao-da-idade.component';
 import { SimulacaoDoFormularioComponent } from './secoes/simulacao.component';
+import {
+  AcrescimoDeFormularioComponent,
+  type FormularioAAcrescentar,
+} from './secoes/acrescimo.component';
+import { CabecalhoDoFormularioComponent } from './secoes/cabecalho.component';
 import { DocumentosDoFormularioComponent } from './documentos-do-formulario.component';
+import { GravacaoDasExigenciasDocumentais } from '../../shared/exigencias/gravacao-das-exigencias-documentais.service';
 import { tituloDoPasso } from '../../shared/titulo-do-passo';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 import { desempateSemDataDeNascimento, PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
@@ -53,31 +61,34 @@ import { camposSemUsoDeclarado } from './citantes-no-processo';
 import { camposSemValoresOfertados } from './problemas-do-formulario';
 import { fatosColetadosPelaInscricao } from './fatos-coletados-da-inscricao';
 import { fatosColetadosPor } from './formulario-do-processo';
-import {
-  abaPelaTecla,
-  comFormulario,
-  formulariosDoRascunho,
-  nomeDaFinalidade,
-  sufixoDaFinalidade,
-} from './formularios-por-finalidade';
+import { conteudoDaInscricao } from './formularios-do-rascunho';
 
 const SEM_CADASTRO_DO_PROCESSO =
   'O cadastro do processo precisa estar concluído antes de declarar os formulários.';
 
-const paraGravar = ({ finalidade, nome, fase, conteudo }: AbaDoFormulario) => ({
-  finalidade,
+const paraGravar = ({
+  codigo,
   nome,
   fase,
-  conteudo,
+  ehInscricao,
+  formulario,
+}: AbaDoFormulario): FormularioParaEnviar => ({
+  codigo,
+  nome,
+  fase,
+  daInscricao: ehInscricao,
+  obrigatorio: formulario.obrigatorio,
+  consequenciaDaFaltaDeEnvio: formulario.consequenciaDaFaltaDeEnvio,
+  conteudo: formulario.conteudo,
 });
 
-const anuncioDoAcrescimo = (finalidade: string): string =>
-  `Formulário de ${nomeDaFinalidade(finalidade)} acrescentado. Ele é criado no processo ao gravar o passo.`;
+const anuncioDoAcrescimo = (codigo: string): string =>
+  `Formulário ${codigo} acrescentado. Ele é criado no processo ao gravar o passo.`;
 
 /**
- * Formulários — um por finalidade do processo (inscrição, isenção da taxa, habilitação), cada um
- * numa aba, com as páginas, os campos e os termos editados pelo editor de formulário compartilhado
- * com os modelos da Configuração.
+ * Formulários do processo — a inscrição, o pedido de isenção, a habilitação e os que o certame
+ * declarar —, cada um numa aba identificada pelo código, com as páginas, os campos e os termos
+ * editados pelo editor de formulário compartilhado com os modelos da Configuração.
  *
  * O passo vem depois do Cronograma porque depende dele em três frentes: cada formulário é
  * respondido numa fase dele, a apuração da idade pode ancorar no início ou no fim de uma fase, e
@@ -94,7 +105,9 @@ const anuncioDoAcrescimo = (finalidade: string): string =>
     FalhaDeLeituraComponent,
     IndicadorDaLeituraDirective,
     ValorEmConsultaComponent,
+    AcrescimoDeFormularioComponent,
     ApuracaoDaIdadeComponent,
+    CabecalhoDoFormularioComponent,
     ModeloDoFormularioComponent,
     SimulacaoDoFormularioComponent,
   ],
@@ -106,8 +119,10 @@ const anuncioDoAcrescimo = (finalidade: string): string =>
     CatalogosDoFormulario,
     CatalogoDasConsequenciasDeIndeferimento,
     GravacaoDosFormularios,
+    GravacaoDasExigenciasDocumentais,
     RemocaoDoFormulario,
     CamposPressupostosDoFormulario,
+    EdicaoDosFormularios,
     FasesDosFormularios,
     LeituraDoProcessoNoFormulario,
     provePassoDoWizard(FormularioPassoComponent),
@@ -133,37 +148,47 @@ export class FormularioPassoComponent {
   protected readonly aplicacao = inject(AplicacaoDeModelo);
   private readonly gravacao = inject(GravacaoDosFormularios);
   protected readonly fases = inject(FasesDosFormularios);
+  protected readonly edicao = inject(EdicaoDosFormularios);
   protected readonly campos = inject(CamposPressupostosDoFormulario);
   private readonly injector = inject(Injector);
   private readonly editores = viewChildren(EditorDeFormularioComponent);
 
-  /** A finalidade da aba escolhida; a inscrição quando a escolhida deixou de existir. */
-  private readonly abaEscolhida = signal(FINALIDADE_INSCRICAO);
-  readonly finalidadeAAcrescentar = signal('');
+  /** O código da aba escolhida; a primeira quando a escolhida deixou de existir. */
+  private readonly abaEscolhida = signal('');
   constructor() {
     this.consequencias.carregar();
     this.dados.carregarCatalogo();
     this.dados.carregarTermos();
   }
 
-  /** Os formulários do rascunho, a inscrição primeiro. */
-  readonly formularios = computed(() => formulariosDoRascunho(this.store.draft().formulario));
+  /** Os formulários do rascunho, na ordem em que o rascunho os guarda. */
+  readonly formularios = computed(() => this.store.draft().formulario.formularios);
 
-  readonly conteudo = computed(() => this.store.draft().formulario.conteudo);
+  protected readonly codigosEmUso = computed(() =>
+    this.formularios().map((formulario) => formulario.codigo),
+  );
+
+  /** Os códigos dos outros formulários: o código de um não repete o de outro. */
+  protected codigosDosOutros(codigo: string): readonly string[] {
+    return this.codigosEmUso().filter((outro) => outro !== codigo);
+  }
+
+  /** O conteúdo do formulário em que o candidato se inscreve. */
+  private readonly conteudoDaInscricao = computed(() =>
+    conteudoDaInscricao(this.store.draft().formulario, this.fases.fasesDaInscricao()),
+  );
 
   readonly abaAtiva = computed(() => {
     const escolhida = this.abaEscolhida();
-    return this.formularios().some((formulario) => formulario.finalidade === escolhida)
-      ? escolhida
-      : FINALIDADE_INSCRICAO;
+    return this.codigosEmUso().includes(escolhida) ? escolhida : (this.abas()[0]?.codigo ?? '');
   });
 
   /** O bloco de comprovação documental, que o formulário em consulta lê como lista de documentos. */
   protected readonly blocoDocumental = BLOCO_COMPROVACAO_DOCUMENTAL;
 
-  /** Os fatos que a inscrição coleta, o conjunto básico ainda não gravado inclusive: as outras finalidades os citam. */
+  /** Os fatos que a inscrição coleta, o conjunto básico ainda não gravado inclusive: os outros formulários os citam. */
   private readonly fatosDaInscricao = computed(() => [
-    ...fatosColetadosPelaInscricao(this.conteudo()),
+    ...fatosColetadosPelaInscricao(this.conteudoDaInscricao()),
   ]);
 
   private readonly textosDasAbas = computed(() => ({
@@ -180,18 +205,17 @@ export class FormularioPassoComponent {
 
   /**
    * Uma aba por formulário, com o que o editor dela recebe. Na inscrição, o combo deixa de fora o
-   * que as outras finalidades coletam, e os fatos que elas citam por negação são obrigatórios. Nas
-   * outras, os fatos da inscrição são citáveis — o candidato já os respondeu — e nunca coletados de
-   * novo.
+   * que os outros formulários coletam, e os fatos que eles citam por negação são obrigatórios. Nos
+   * outros, os fatos da inscrição são citáveis — o candidato já os respondeu — e nunca coletados
+   * de novo.
    */
   readonly abas = computed(() =>
     abasDoFormulario({
       formularios: this.formularios(),
-      fases: this.fases.porFinalidade(),
+      fases: this.fases.porFormulario(),
       fasesDoCronograma: this.fases.fasesDoCronograma(),
       documentos: this.store.draft().documentos,
       vocabulario: this.fases.vocabularioDosDocumentos(),
-      outrasFinalidades: this.store.draft().formulario.outrasFinalidades,
       fatosDaInscricao: this.fatosDaInscricao(),
       textos: this.textosDasAbas(),
     }),
@@ -205,7 +229,7 @@ export class FormularioPassoComponent {
   async revelarCampoInvalido(): Promise<boolean> {
     const aba = this.abasComNumeroInvalido()[0];
     if (aba === undefined) return false;
-    this.selecionarAba(aba.finalidade);
+    this.selecionarAba(aba.codigo);
     await new Promise<void>((resolve) =>
       afterNextRender(() => resolve(), { injector: this.injector }),
     );
@@ -216,8 +240,8 @@ export class FormularioPassoComponent {
     );
   }
 
-  selecionarAba(finalidade: string): void {
-    this.abaEscolhida.set(finalidade);
+  selecionarAba(codigo: string): void {
+    this.abaEscolhida.set(codigo);
   }
 
   /** Setas, Home e End trocam de aba e levam o foco a ela: só a aba ativa entra na ordem do Tab. */
@@ -226,7 +250,7 @@ export class FormularioPassoComponent {
     const destino = abaPelaTecla(evento.key, indice, abas.length);
     if (destino === null) return;
     evento.preventDefault();
-    this.selecionarAba(abas[destino].finalidade);
+    this.selecionarAba(abas[destino].codigo);
     document.getElementById(abas[destino].aba)?.focus();
   }
 
@@ -234,82 +258,59 @@ export class FormularioPassoComponent {
    * A edição feita no editor de uma aba. Na inscrição, o campo que o operador tira deixa de ser
    * "posto pela exigência": se voltar, voltou por decisão dele.
    */
-  editar(finalidade: string, conteudo: ConteudoDoFormulario): void {
-    if (finalidade === FINALIDADE_INSCRICAO) {
+  editar(aba: AbaDoFormulario, conteudo: ConteudoDoFormulario): void {
+    if (aba.ehInscricao) {
       const presentes = new Set(fatosColetadosPor(conteudo));
       this.store.camposPostosPelasExigencias.update((atual) => atual.soOsPresentes(presentes));
     }
-    this.atualizarFormulario(finalidade, (formulario) => ({ ...formulario, conteudo }));
+    this.edicao.conteudo(aba.codigo, conteudo);
   }
 
-  escreverFase(finalidade: string, codigo: string): void {
-    this.atualizarFormulario(finalidade, (formulario) => ({ ...formulario, faseCodigo: codigo }));
+  /** O código muda antes de gravar: a aba escolhida segue o formulário. */
+  escreverCodigo(anterior: string, novo: string): void {
+    if (this.edicao.codigo(anterior, novo) && this.abaEscolhida() === anterior) {
+      this.selecionarAba(novo);
+    }
   }
 
-  private atualizarFormulario(
-    finalidade: string,
-    mudar: (formulario: FormularioDaFinalidade) => FormularioDaFinalidade,
-  ): void {
-    const atual = this.formularios().find((formulario) => formulario.finalidade === finalidade);
-    if (atual === undefined) return;
-    this.trocarFormulario(mudar(atual));
-  }
-
-  private trocarFormulario(formulario: FormularioDaFinalidade): void {
-    this.store.patchSection('formulario', comFormulario(this.store.draft().formulario, formulario));
-  }
-
-  /**
-   * Acrescenta o formulário da finalidade escolhida com a revisão e aceite, que toda finalidade
-   * exige como última página. Ele é criado no servidor quando o passo for gravado. A aba nova recebe
-   * o foco, e o leitor de tela ouve o que aconteceu.
-   */
-  acrescentarFinalidade(): void {
-    const finalidade = this.finalidadeAAcrescentar();
-    if (!this.fases.finalidadesOferecidas().some((opcao) => opcao.valor === finalidade)) return;
-
-    this.trocarFormulario({ finalidade, faseCodigo: '', conteudo: conteudoInicial() });
-    this.finalidadeAAcrescentar.set('');
-    this.selecionarAba(finalidade);
-    this.anuncio.set(anuncioDoAcrescimo(finalidade));
-    this.focarAba(finalidade);
+  /** O foco vai à aba nova, e o leitor de tela ouve o que aconteceu. */
+  acrescentar(pedido: FormularioAAcrescentar): void {
+    this.edicao.acrescentar(pedido);
+    this.selecionarAba(pedido.codigo);
+    this.anuncio.set(anuncioDoAcrescimo(pedido.codigo));
+    this.focarAba(this.formularios().length - 1);
   }
 
   /**
-   * Confirma a remoção: se o formulário saiu, a aba da inscrição recebe o foco e o leitor de tela
-   * ouve o que aconteceu; se o servidor recusou, a aba fica e a recusa vai em texto nela.
+   * Confirma a remoção: se o formulário saiu, a primeira aba recebe o foco e o leitor de tela ouve
+   * o que aconteceu; se o servidor recusou, a aba fica e a recusa vai em texto nela.
    */
   async confirmarRemocao(): Promise<void> {
     const desfecho = await this.remocao.confirmar();
     if (desfecho === null) return;
 
-    const nome = nomeDaFinalidade(desfecho.finalidade);
     if (desfecho.recusa !== null) {
-      this.anuncio.set(`O formulário de ${nome} não foi removido. ${desfecho.recusa}`);
+      this.anuncio.set(`O formulário ${desfecho.codigo} não foi removido. ${desfecho.recusa}`);
       return;
     }
-    this.gravacao.esquecerRecusasDa(desfecho.finalidade);
-    this.selecionarAba(FINALIDADE_INSCRICAO);
-    this.anuncio.set(`Formulário de ${nome} removido.`);
-    this.focarAba(FINALIDADE_INSCRICAO);
+    this.gravacao.esquecerRecusasDa(desfecho.codigo);
+    this.selecionarAba('');
+    this.anuncio.set(`Formulário ${desfecho.codigo} removido.`);
+    this.focarAba(this.abas()[0]?.posicao ?? 0);
   }
 
   /** Aplica o modelo confirmado: a reconciliação devolve ao formulário o que o processo pressupõe. */
   async confirmarAplicacao(): Promise<void> {
-    const texto = await this.aplicacao.confirmar(
-      (finalidade) => this.fases.porFinalidade().get(finalidade)?.escolhida ?? '',
-      () => this.campos.reconciliar(),
-    );
+    const texto = await this.aplicacao.confirmar(() => this.campos.reconciliar());
     if (texto !== null) this.anuncio.set(texto);
   }
 
   /**
    * Sem abas — sobrou um formulário só —, o foco vai ao primeiro título do painel dele, que existe
-   * sempre: o combo de acrescentar some quando não há finalidade a oferecer.
+   * sempre.
    */
-  private focarAba(finalidade: string): void {
-    const sufixo = sufixoDaFinalidade(finalidade);
-    focarAposRenderizar(this.injector, `form-aba-${sufixo}`, `form-${sufixo}-fase-titulo`);
+  private focarAba(posicao: number): void {
+    focarAposRenderizar(this.injector, `form-aba-${posicao}`, `form-${posicao}-fase-titulo`);
   }
 
   /** O desempate por maior idade declarado sem a data de nascimento entre os campos. */
@@ -318,7 +319,7 @@ export class FormularioPassoComponent {
     const draft = this.store.draft();
     return desempateSemDataDeNascimento(
       draft.desempate,
-      fatosColetadosPelaInscricao(draft.formulario.conteudo),
+      fatosColetadosPelaInscricao(this.conteudoDaInscricao()),
     );
   });
 
@@ -332,9 +333,12 @@ export class FormularioPassoComponent {
    * quando o gatilho é apagado hoje — dado pessoal pedido sem finalidade declarada.
    */
   readonly camposSemUso = computed(() => {
-    return camposSemUsoDeclarado(this.store.draft(), this.store.regrasDasModalidades()).map(
-      (campo) =>
-        campo.apresentacao.rotulo.trim() === '' ? campo.fatoCodigo : campo.apresentacao.rotulo,
+    return camposSemUsoDeclarado(
+      this.store.draft(),
+      this.store.regrasDasModalidades(),
+      this.fases.fasesDaInscricao(),
+    ).map((campo) =>
+      campo.apresentacao.rotulo.trim() === '' ? campo.fatoCodigo : campo.apresentacao.rotulo,
     );
   });
 
@@ -354,6 +358,7 @@ export class FormularioPassoComponent {
         ...aba,
         numeroInvalido: conteudoParaEnvio(semDadosBasicos(aba.conteudo)) === null,
       })),
+      fasesDoCronograma: this.fases.fasesDoCronograma(),
       draft: this.store.draft(),
       aplicacoesEmAberto: this.store.aplicacoesDeModeloEmAberto(),
       camposSemValoresOfertados: this.camposSemValoresOfertados(),
@@ -365,7 +370,7 @@ export class FormularioPassoComponent {
     return 'Gravar e avançar';
   }
 
-  /** Grava os formulários de cada finalidade e a política que ancora a apuração da idade. */
+  /** Grava os formulários e a política que ancora a apuração da idade. */
   async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) return { valid: false, messages: [SEM_CADASTRO_DO_PROCESSO] };
@@ -373,8 +378,8 @@ export class FormularioPassoComponent {
     const conferencia = this.validar();
     if (!conferencia.valid) return conferencia;
 
-    return this.gravacao.gravar(processoId, this.abas().map(paraGravar), (finalidade) =>
-      this.selecionarAba(finalidade),
+    return this.gravacao.gravar(processoId, this.abas().map(paraGravar), (codigo) =>
+      this.selecionarAba(codigo),
     );
   }
 }

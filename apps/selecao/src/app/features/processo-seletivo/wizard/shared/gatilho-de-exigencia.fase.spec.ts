@@ -20,6 +20,7 @@ import {
 } from './gatilho-de-exigencia';
 import { MODALIDADE, exigencia, view } from './gatilho-de-exigencia.testing';
 import type { FatoComFase, ProducaoDosFatos } from './producao-dos-fatos';
+import { fase, formulario, na } from './producao-dos-fatos.testing';
 
 describe('os fatos que o gatilho oferece na fase da exigência', () => {
   const doProcesso = (
@@ -58,13 +59,13 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
 
   const PRODUCAO: ProducaoDosFatos = {
     fases: [
-      { codigo: 'INSCRICAO', ordem: 1, finalidades: ['INSCRICAO'] },
-      { codigo: 'RESULTADO_FINAL', ordem: 2, finalidades: [] },
-      { codigo: 'HABILITACAO', ordem: 3, finalidades: ['HABILITACAO'] },
+      fase('INSCRICAO', 1, { coletaInscricao: true }),
+      fase('RESULTADO_FINAL', 2),
+      fase('HABILITACAO', 3),
     ],
     formularios: [
-      { finalidade: 'INSCRICAO', faseCodigo: 'INSCRICAO', fatos: new Set(['PCD']) },
-      { finalidade: 'HABILITACAO', faseCodigo: 'HABILITACAO', fatos: new Set(['LAUDO_RECENTE']) },
+      formulario('INSCRICAO', 'INSCRICAO', 'PCD'),
+      formulario('HABILITACAO', 'HABILITACAO', 'LAUDO_RECENTE'),
     ],
     derivacoes: new Map(),
     catalogo: new Map(FATOS.map((fato) => [fato.codigo, fato])),
@@ -81,7 +82,6 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
   );
   const codigos = (fatos: readonly FatoEscolhivel[]): readonly string[] =>
     fatos.map((fato) => fato.codigo);
-  const na = (faseCodigo: string, finalidade: string | null = null) => ({ faseCodigo, finalidade });
 
   it('na habilitação, os fatos de todos os formulários e a modalidade da convocação, com as modalidades ofertadas', () => {
     const oferecidos = fatosDoGatilhoNaFase(FATOS, na('HABILITACAO'), {
@@ -111,18 +111,15 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
     const dividida: ProducaoDosFatos = {
       ...PRODUCAO,
       fases: [
-        { codigo: 'INSCRICAO', ordem: 1, finalidades: ['INSCRICAO', 'ISENCAO_TAXA'] },
+        fase('INSCRICAO', 1, { coletaInscricao: true, coletaSolicitacaoIsencao: true }),
         ...PRODUCAO.fases.slice(1),
       ],
-      formularios: [
-        ...PRODUCAO.formularios,
-        { finalidade: 'ISENCAO_TAXA', faseCodigo: 'INSCRICAO', fatos: new Set(['BOLSISTA']) },
-      ],
+      formularios: [...PRODUCAO.formularios, formulario('ISENCAO_TAXA', 'INSCRICAO', 'BOLSISTA')],
       catalogo: new Map([...PRODUCAO.catalogo, ['BOLSISTA', BOLSISTA]]),
     };
-    const oferecidos = (finalidade: string) =>
+    const oferecidos = (formularioCodigo: string) =>
       codigos(
-        fatosDoGatilhoNaFase([...FATOS, BOLSISTA], na('INSCRICAO', finalidade), {
+        fatosDoGatilhoNaFase([...FATOS, BOLSISTA], na('INSCRICAO', formularioCodigo), {
           producao: dividida,
           dominiosDinamicos: DOMINIOS,
         }),

@@ -17,7 +17,7 @@ export type RecursoDoProcesso =
   | 'algoritmoContagem'
   | 'classificacao'
   | 'opcoesDeclaradas'
-  | 'bonus'
+  | 'fada'
   | 'desempate'
   | 'atendimento'
   | 'publicacao'
@@ -62,7 +62,10 @@ export class GravacaoDoProcesso {
     const chave = this.chaveDe(recurso);
     const result = await firstValueFrom(enviar(this.contextoDa(chave.contextoPara(intencao))));
 
-    if (geracao !== this.geracao()) return superado();
+    return geracao !== this.geracao() ? superado() : this.resultadoDa(chave, result);
+  }
+
+  private resultadoDa<T>(chave: ChaveDeSubstituicao, result: ApiResult<T>): ResultadoDaGravacao<T> {
     if (isApiOk(result)) {
       chave.renovar();
       return { ok: true, dados: result.data };

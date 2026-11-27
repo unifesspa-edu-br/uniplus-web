@@ -1,4 +1,4 @@
-import { FinalidadeFormularioCodigo, TipoDaReferenciaTemporal } from '@uniplus/shared-data/selecao';
+import { TipoDaReferenciaTemporal } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 import {
   type FormularioDto,
@@ -111,12 +111,9 @@ describe('hidratarDraft — formulário de inscrição', () => {
     });
   }
 
-  const formulario = (
-    finalidade: FormularioDto['finalidade']['codigo'],
-    extra: Partial<FormularioDto> = {},
-  ) =>
+  const formulario = (codigo: string, extra: Partial<FormularioDto> = {}) =>
     formularioDoServidor({
-      finalidade: { codigo: finalidade, rotulo: finalidade },
+      codigo,
       faseId: ID_INSCRICAO,
       titulo: 'Inscrição 2027',
       paginas: [paginaDoServidor('DADOS_BASICOS', 0), paginaDoServidor('S1', 1)],
@@ -133,29 +130,30 @@ describe('hidratarDraft — formulário de inscrição', () => {
   it('lê o formulário de inscrição no conteúdo do editor, com a fase pelo código', () => {
     const draft = hidratarDraft(
       DRAFT,
-      dtoComFormulario({ formularios: [formulario(FinalidadeFormularioCodigo.INSCRICAO)] }),
+      dtoComFormulario({ formularios: [formulario('INSCRICAO')] }),
     );
+    const [inscricao] = draft.formulario.formularios;
 
-    expect(draft.formulario.faseCodigo).toBe('INSCRICAO');
-    expect(draft.formulario.conteudo.titulo).toBe('Inscrição 2027');
+    expect(inscricao.codigo).toBe('INSCRICAO');
+    expect(inscricao.gravado).toBe(true);
+    expect(inscricao.faseCodigo).toBe('INSCRICAO');
+    expect(inscricao.conteudo.titulo).toBe('Inscrição 2027');
     expect(
-      draft.formulario.conteudo.itens?.map((item) => [
-        item.fatoCodigo,
-        item.regras?.obrigatoriedade.tipo,
-      ]),
+      inscricao.conteudo.itens?.map((item) => [item.fatoCodigo, item.regras?.obrigatoriedade.tipo]),
     ).toEqual([
       ['NOME', 'SEMPRE'],
       ['SEXO', 'SEMPRE'],
     ]);
   });
 
-  it('guarda o formulário de cada outra finalidade, fora da inscrição: o passo edita cada um na sua aba', () => {
+  it('guarda cada formulário pelo código dele: o passo edita cada um na sua aba', () => {
     const draft = hidratarDraft(
       DRAFT,
       dtoComFormulario({
         formularios: [
-          formulario(FinalidadeFormularioCodigo.INSCRICAO),
-          formulario(FinalidadeFormularioCodigo.ISENCAO_TAXA, {
+          formulario('INSCRICAO'),
+          formulario('ISENCAO_TAXA', {
+            obrigatorio: false,
             paginas: [paginaDoServidor('S1', 0)],
             coleta: {
               itens: [campoDoServidor('RENDA', 0, 'S1', TipoDeCampoCodigo.ESCOLHA_UNICA)],
@@ -166,13 +164,10 @@ describe('hidratarDraft — formulário de inscrição', () => {
       }),
     );
 
-    expect(
-      draft.formulario.outrasFinalidades.map((outra) => [
-        outra.finalidade,
-        outra.conteudo.itens?.map((item) => item.fatoCodigo),
-      ]),
-    ).toEqual([['ISENCAO_TAXA', ['RENDA']]]);
-    expect(draft.formulario.conteudo.itens?.map((item) => item.fatoCodigo)).not.toContain('RENDA');
+    const [inscricao, isencao] = draft.formulario.formularios;
+    expect([isencao.codigo, isencao.obrigatorio]).toEqual(['ISENCAO_TAXA', false]);
+    expect(isencao.conteudo.itens?.map((item) => item.fatoCodigo)).toEqual(['RENDA']);
+    expect(inscricao.conteudo.itens?.map((item) => item.fatoCodigo)).not.toContain('RENDA');
   });
 
   it('guarda de que modelo cada formulário partiu', () => {
@@ -180,10 +175,11 @@ describe('hidratarDraft — formulário de inscrição', () => {
       DRAFT,
       dtoComFormulario({
         formularios: [
-          formulario(FinalidadeFormularioCodigo.INSCRICAO, {
+          formulario('INSCRICAO', {
             modeloOrigem: { id: 'm1', codigo: 'MEDICINA-INSCRICAO' },
           }),
-          formulario(FinalidadeFormularioCodigo.ISENCAO_TAXA, {
+          formulario('ISENCAO_TAXA', {
+            obrigatorio: false,
             paginas: [paginaDoServidor('S1', 0)],
             modeloOrigem: { id: 'm2', codigo: 'ISENCAO-PADRAO' },
           }),
@@ -191,8 +187,10 @@ describe('hidratarDraft — formulário de inscrição', () => {
       }),
     );
 
-    expect(draft.formulario.modeloOrigemCodigo).toBe('MEDICINA-INSCRICAO');
-    expect(draft.formulario.outrasFinalidades[0].modeloOrigemCodigo).toBe('ISENCAO-PADRAO');
+    expect(draft.formulario.formularios.map((item) => item.modeloOrigemCodigo)).toEqual([
+      'MEDICINA-INSCRICAO',
+      'ISENCAO-PADRAO',
+    ]);
   });
 
   /** A fase volta por CÓDIGO — o id não sobrevive a uma gravação de cronograma. */
@@ -258,11 +256,7 @@ describe('hidratarDraft — formulário de inscrição', () => {
   it('processo sem formulário declarado hidrata vazio, sem quebrar', () => {
     const draft = hidratarDraft(DRAFT, dtoComFormulario({}));
 
-    // Sem formulário de inscrição, o conteúdo nasce só com a revisão e aceite; a seção dos dados
-    // básicos chega com a criação.
-    expect(draft.formulario.faseCodigo).toBe('');
-    expect(draft.formulario.conteudo.paginas?.map((e) => e.codigo)).toEqual(['REVISAO_E_ACEITE']);
-    expect(draft.formulario.conteudo.itens).toEqual([]);
+    expect(draft.formulario.formularios).toEqual([]);
     expect(draft.formulario.derivacao).toEqual([]);
   });
 });

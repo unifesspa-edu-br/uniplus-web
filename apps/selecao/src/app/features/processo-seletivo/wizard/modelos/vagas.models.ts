@@ -55,8 +55,8 @@ export interface CascataSelecionada {
 }
 
 /**
- * Modalidade que a oferta seleciona. A gravação recebe o `id`; o `codigo` é como bônus e
- * documentos exigidos a nomeiam (`AC`, `LB_PPI`).
+ * Modalidade que a oferta seleciona. A gravação recebe o `id`; o `codigo` é como o Fator de Atenuação
+ * e documentos exigidos a nomeiam (`AC`, `LB_PPI`).
  */
 export interface ModalidadeDaOferta {
   readonly id: string;

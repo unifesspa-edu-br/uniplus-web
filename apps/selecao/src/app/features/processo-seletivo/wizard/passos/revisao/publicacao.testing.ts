@@ -6,7 +6,7 @@ export const DOCUMENTO_ID = '01960000-0000-7000-0000-000000000518';
 
 export function draftVazio(): WizardDraft {
   const rascunho = rascunhoInicial();
-  return { ...rascunho, bonus: { ...rascunho.bonus, aplica: false } };
+  return { ...rascunho, fada: { ...rascunho.fada, aplica: false } };
 }
 
 export function fase(parcial: Partial<FaseDoCronograma> & { ordem: number }): FaseDoCronograma {

@@ -1,0 +1,69 @@
+<div class="form-abas__acrescentar">
+  <div class="form-field">
+    <label class="label" for="form-nova-fase">Fase em que o candidato responde</label>
+    <select
+      class="select"
+      id="form-nova-fase"
+      [disabled]="!store.aceitaEdicao()"
+      (change)="escolherFase($any($event.target).value)"
+    >
+      <option value="" [selected]="faseEscolhida() === ''">Escolha a fase</option>
+      @for (fase of fases(); track fase.codigo) {
+        <option [value]="fase.codigo" [selected]="fase.codigo === faseEscolhida()">
+          {{ fase.nome }}
+        </option>
+      }
+    </select>
+  </div>
+
+  <div class="form-field">
+    <label class="label" for="form-novo-modelo">Partir do modelo</label>
+    <select
+      class="select"
+      id="form-novo-modelo"
+      [disabled]="!store.aceitaEdicao()"
+      (change)="escolherModelo($any($event.target).value)"
+    >
+      <option value="" [selected]="modeloEscolhido() === ''">Nenhum, começar vazio</option>
+      @for (modelo of modelosOferecidos(); track modelo.id) {
+        <option [value]="modelo.id" [selected]="modelo.id === modeloEscolhido()">
+          {{ modelo.nome }} ({{ modelo.codigo }})
+        </option>
+      }
+    </select>
+  </div>
+
+  <div class="form-field" [class.is-error]="erroDoCodigo() !== null">
+    <label class="label" for="form-novo-codigo">Código do formulário</label>
+    <input
+      class="input"
+      type="text"
+      id="form-novo-codigo"
+      [value]="codigo()"
+      [maxLength]="limite"
+      [disabled]="!store.aceitaEdicao()"
+      [attr.aria-invalid]="erroDoCodigo() !== null ? 'true' : null"
+      [attr.aria-describedby]="
+        'form-novo-codigo-ajuda' + (erroDoCodigo() !== null ? ' form-novo-codigo-erro' : '')
+      "
+      (input)="digitar($event)"
+    />
+    <span class="field__hint" id="form-novo-codigo-ajuda">
+      Letras maiúsculas, números e _. O modelo escolhido preenche o código, que você pode mudar. O
+      código não muda depois que o formulário é gravado.
+    </span>
+    @if (erroDoCodigo(); as erro) {
+      <p class="field__erro" role="alert" id="form-novo-codigo-erro">{{ erro }}</p>
+    }
+  </div>
+
+  <button
+    type="button"
+    class="btn btn--secondary"
+    id="form-acrescentar"
+    [disabled]="!completo()"
+    (click)="acrescentar()"
+  >
+    Acrescentar formulário
+  </button>
+</div>

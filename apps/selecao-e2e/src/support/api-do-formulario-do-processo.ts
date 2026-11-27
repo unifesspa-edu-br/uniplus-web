@@ -45,17 +45,22 @@ async function gravarOsItens(route: Route, gravacoes: GravacoesDosItens): Promis
   return recusar(route, problema(422, 'uniplus.validacao', 'Validação', [erro]));
 }
 
-/** O processo em rascunho, com a fase em que o formulário de inscrição é respondido e já gravado nela. */
-function processoComAFaseDaInscricao() {
+type Situacao = { readonly codigo: string; readonly rotulo: string };
+
+const RASCUNHO: Situacao = { codigo: 'RASCUNHO', rotulo: 'Rascunho' };
+
+/** O processo na situação dada, com a fase em que o formulário de inscrição é respondido e já gravado nela. */
+export function processoComAFaseDaInscricao(situacao: Situacao = RASCUNHO) {
   const faseDaInscricao = faseDoServidor();
+  const formularios = PROCESSO_PUBLICADO_DA_MEDICINA.formularios.map((formulario) => ({
+    ...formulario,
+    faseId: faseDaInscricao.id,
+  }));
   return {
     ...PROCESSO_PUBLICADO_DA_MEDICINA,
-    situacao: { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
+    situacao,
     cronogramaFases: [faseDaInscricao],
-    formularios: PROCESSO_PUBLICADO_DA_MEDICINA.formularios.map((formulario) => ({
-      ...formulario,
-      faseId: faseDaInscricao.id,
-    })),
+    formularios,
   };
 }
 

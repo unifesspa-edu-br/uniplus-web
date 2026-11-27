@@ -10,6 +10,7 @@ import {
   PROCESSO_PUBLICADO_COMPLETO,
 } from '../fixtures/processo-publicado-completo';
 import { CORS_HEADERS, mockarTiposAto } from './api-da-revisao';
+import { formulariosNaFase } from './formularios-na-fase';
 import { leituraDoProcessoCompleto } from './leituras-do-processo-completo';
 import { PERMISSOES_DO_LEANDRO } from './permissoes';
 import {
@@ -135,11 +136,13 @@ const comProdutoDefinitivo = (fase: FaseCronogramaDto) =>
   comProdutoNaFase(fase, PRODUTO_DEFINITIVO);
 
 function detalheDoProcesso(recebido: PublicacaoRecebida): unknown {
+  const cronogramaFases = PROCESSO_PUBLICADO_COMPLETO.cronogramaFases.map(comProdutoDefinitivo);
   return comFaseDeInscricao({
     ...PROCESSO_PUBLICADO_COMPLETO,
     atendimentoEspecializado: null,
     cascata: null,
-    cronogramaFases: PROCESSO_PUBLICADO_COMPLETO.cronogramaFases.map(comProdutoDefinitivo),
+    cronogramaFases,
+    formularios: formulariosNaFase(cronogramaFases[0].id),
     situacao: recebido.publicou
       ? { codigo: 'PUBLICADO', rotulo: 'Publicado' }
       : { codigo: 'RASCUNHO', rotulo: 'Rascunho' },

@@ -1,4 +1,3 @@
-import { valorDoEnum } from '../valor-do-enum';
 import { campoColetado } from '../campo-coletado';
 import type { FormularioDto } from '@uniplus/shared-data/selecao';
 import type { JsonDaApi } from '@uniplus/shared-e2e';
@@ -122,8 +121,10 @@ export const CAMPOS_DAS_MODALIDADES_DA_MEDICINA = [
 
 /** O formulário de inscrição com as perguntas que as regras das modalidades fazem. */
 export const FORMULARIO_DAS_MODALIDADES_DA_MEDICINA = {
-  finalidade: valorDoEnum('INSCRICAO', 'Inscrição'),
+  codigo: 'INSCRICAO',
   faseId: null,
+  obrigatorio: true,
+  consequenciaDaFaltaDeEnvio: null,
   titulo: null,
   modeloOrigem: null,
   paginas: [

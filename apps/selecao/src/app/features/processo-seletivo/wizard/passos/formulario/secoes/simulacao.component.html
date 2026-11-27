@@ -13,11 +13,11 @@
         }
       </p>
       <ul class="form-simulacao__links">
-        @for (formulario of formulariosParaSimular(); track formulario.finalidade) {
+        @for (formulario of formulariosParaSimular(); track formulario.codigo) {
           <li>
             <a
               class="btn btn--secondary btn--sm"
-              [routerLink]="['/processo-seletivo', processoId, 'simulacao', formulario.finalidade]"
+              [routerLink]="['/processo-seletivo', processoId, 'simulacao', formulario.codigo]"
               target="_blank"
               rel="noopener"
             >

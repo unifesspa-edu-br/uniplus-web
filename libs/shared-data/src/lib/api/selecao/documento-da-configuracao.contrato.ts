@@ -5,7 +5,6 @@ import {
   DocumentoDaConfiguracaoBancasRegraDeDeliberacaoModo as ModoDaDeliberacao,
   DocumentoDaConfiguracaoBancasRegraDeDeliberacaoSemUnanimidade as SemUnanimidadeNaDeliberacao,
   DocumentoDaConfiguracaoColetaReferenciaTemporalDosDadosTipo as TipoDaReferenciaTemporal,
-  DocumentoDaConfiguracaoFormularioFinalidade as FinalidadeDoFormulario,
   DocumentoDaConfiguracaoComunsAlvoDoProcedimentoDeRecursoAreaDoEnem as AreaDoEnemDoProcedimento,
   DocumentoDaConfiguracaoComunsPublicacaoPrevistaPapel as PapelDaPublicacaoPrevista,
   DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoUnidade as UnidadeDoPrazoDoRecurso,
@@ -80,7 +79,6 @@ export type DocumentoDaConfiguracaoProcedimentoDeRecurso =
 export {
   AbrangenciaDaBaseLegal,
   TipoDaReferenciaTemporal,
-  FinalidadeDoFormulario,
   OperadorDaCondicao,
   CriterioDaDeliberacao,
   DesempateDaDeliberacao,

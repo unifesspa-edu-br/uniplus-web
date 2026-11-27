@@ -64,16 +64,16 @@
       }
     </p>
   }
-  @for (grupo of conferenciaPorFormulario(); track grupo.finalidade ?? '') {
-    @let dividida = exigencias.finalidadesDaFaseAberta().length > 1;
+  @for (grupo of conferenciaPorFormulario(); track grupo.codigo ?? '') {
+    @let dividida = exigencias.codigosDaFaseAberta().length > 1;
     @if (dividida) {
-      <h4 class="form-section__title">{{ tituloDoFormulario(grupo.finalidade) }}</h4>
+      <h4 class="form-section__title">{{ tituloDoFormulario(grupo.codigo) }}</h4>
     }
     <div class="table-responsive quadro-empilhavel doc-conferencia">
       <table>
         <caption class="sr-only">
           Documentos exigidos nesta fase{{
-            dividida ? ' — ' + tituloDoFormulario(grupo.finalidade) : ''
+            dividida ? ' — ' + tituloDoFormulario(grupo.codigo) : ''
           }}
         </caption>
         <thead>

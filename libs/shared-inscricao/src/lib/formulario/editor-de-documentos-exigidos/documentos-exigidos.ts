@@ -1,16 +1,19 @@
 import type { ClausulasNoWire } from '../editor-de-condicoes/condicoes/condicoes-no-wire';
-import { type BaseLegal, baseLegalNova, CONSEQUENCIA_PADRAO } from '@uniplus/shared-utils';
+import { type BaseLegal, baseLegalNova } from '@uniplus/shared-utils';
+
+/** A consequência com que um documento exigido novo nasce, até a pessoa escolher outra. */
+export const CONSEQUENCIA_DO_DOCUMENTO_NOVO = 'ELIMINA_DO_PROCESSO';
 
 /** Uma opção de vocabulário: fase canônica ou tipo de documento, pelo código. */
 export interface OpcaoDoDocumento {
   readonly codigo: string;
   readonly nome: string;
-  /** Só da fase: se ela admite complementação, que a consequência de reenvio exige. */
+  /** Só da fase: se ela admite complementação, que o prazo para reenvio exige. */
   readonly permiteComplementacao?: boolean;
 }
 
-/** Uma consequência do indeferimento, como a API a devolve: o código e o rótulo que a tela mostra. */
-export interface ConsequenciaDoIndeferimento {
+/** Uma consequência do descumprimento, como a API a devolve: o código e o rótulo que a tela mostra. */
+export interface ConsequenciaDoDescumprimento {
   readonly codigo: string;
   readonly rotulo: string;
 }
@@ -54,7 +57,10 @@ export interface DocumentoExigidoDoFormulario<O = string> {
   readonly tipoDocumentoCodigo: string;
   readonly obrigatorio: boolean;
   readonly quando: ClausulasNoWire<O> | null;
-  readonly consequenciaIndeferimento: string;
+  /** Nula quando o documento não tem consequência declarada. */
+  readonly consequenciaDoDescumprimento: null | string;
+  /** Só vale em fase que admite complementação: a API recusa nas demais. */
+  readonly abrePrazoParaReenvio: boolean;
   readonly basesLegais: null | readonly BaseLegalDoDocumento[];
   readonly requisitos?: null | RequisitosDoDocumento;
   readonly porOpcao?: null | { readonly fatoCodigo: string; readonly exceto: readonly string[] };
@@ -64,8 +70,9 @@ export interface DocumentoExigidoDoFormulario<O = string> {
 export interface GrupoDeDocumentosDoFormulario<O = string> {
   readonly quantidadeMinima: null | number;
   readonly indeferimento: null | {
-    readonly consequencia: string;
+    readonly consequenciaDoDescumprimento: null | string;
     readonly basesLegais: null | readonly BaseLegalDoDocumento[];
+    readonly abrePrazoParaReenvio: boolean;
   };
   readonly documentos: readonly DocumentoExigidoDoFormulario<O>[];
 }
@@ -80,7 +87,8 @@ export function documentoExigidoNovo(
     tipoDocumentoCodigo,
     obrigatorio: true,
     quando: null,
-    consequenciaIndeferimento: CONSEQUENCIA_PADRAO,
+    consequenciaDoDescumprimento: CONSEQUENCIA_DO_DOCUMENTO_NOVO,
+    abrePrazoParaReenvio: false,
     basesLegais: [baseLegalNova()],
   };
 }

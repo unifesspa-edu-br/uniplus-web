@@ -21,7 +21,6 @@ import type { AvaliacaoNaTela } from './modalidades-avaliadas';
 
 export const FASE = 'fase-da-inscricao';
 export const FORMULARIO: FormularioDoCandidato = {
-  finalidade: 'INSCRICAO',
   paginas: [
     {
       codigo: 'RESERVA',
@@ -56,6 +55,7 @@ export const FORMULARIO: FormularioDoCandidato = {
 };
 
 export const NO_PROCESSO: FormularioNoProcesso = {
+  codigo: 'INSCRICAO',
   faseId: FASE,
   dependenciasDaAvaliacao: { fatos: ['PCD'], grupos: [] },
 };

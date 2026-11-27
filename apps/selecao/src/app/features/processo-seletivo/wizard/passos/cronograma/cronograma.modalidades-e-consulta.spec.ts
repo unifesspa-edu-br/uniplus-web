@@ -14,6 +14,7 @@ import {
   paginaDoServidor,
   formularioDoServidor,
 } from '../../shared/formulario-do-servidor.testing';
+import { faseDoServidor } from '../../shared/cronograma-do-servidor.testing';
 import { CatalogoDeFatos } from './catalogos/catalogo-de-fatos.service';
 import {
   BASE,
@@ -63,7 +64,11 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
   describe('perguntas das modalidades ofertadas', () => {
     const ROTA_DERIVACAO = `${ROTA_PROCESSO}/regras-derivacao`;
     const ROTA_INSCRICAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/INSCRICAO`;
-    const FASE = { id: 'F-INSCRICAO', codigo: 'INSCRICAO', coletaInscricao: true };
+    const FASE = faseDoServidor({
+      id: 'F-INSCRICAO',
+      codigo: 'INSCRICAO',
+      faseCanonica: { coletaInscricao: true },
+    });
     const DISTRIBUICAO = [
       {
         modalidades: [
@@ -106,7 +111,7 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
     });
 
     const gravarExigencias = (): Promise<{ valid: boolean; messages?: string[] }> =>
-      exigencias.gravar(PROCESSO_ID);
+      exigencias.gravar(PROCESSO_ID, 'Gravado.');
 
     it('põe a pergunta das regras congeladas no processo com inscrição própria, sem exigência que restrinja as modalidades', async () => {
       const gravacao = gravarExigencias();

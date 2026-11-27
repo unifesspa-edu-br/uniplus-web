@@ -38,7 +38,7 @@ describe('FormulariosDoProcessoApi', () => {
   });
 
   afterEach(() => controller.verify());
-  it('obterApresentacao() pede o formulário v2 da finalidade, rascunho incluído', async () => {
+  it('obterApresentacao() pede o formulário v2 do código, rascunho incluído', async () => {
     const promise = firstValueFrom(api.obterApresentacao(ID, 'INSCRICAO'));
     const req = controller.expectOne(
       `${BASE}/api/selecao/admin/processos-seletivos/${ID}/formularios/INSCRICAO/apresentacao`,
@@ -70,7 +70,11 @@ describe('FormulariosDoProcessoApi', () => {
     const context = withIdempotencyKey('chave-do-modelo').set(marca, 'condicao-do-chamador');
 
     const promise = firstValueFrom(
-      api.aplicarModeloDeFormulario(ID, { modeloId: MODELO_ID }, context),
+      api.aplicarModeloDeFormulario(
+        ID,
+        { modeloId: MODELO_ID, formularioCodigo: 'INSCRICAO' },
+        context,
+      ),
     );
     const req = controller.expectOne(
       `${BASE}/api/selecao/admin/processos-seletivos/${ID}/formularios/aplicacoes-de-modelo`,

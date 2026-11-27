@@ -1,5 +1,5 @@
 import type {
-  ConfiguracaoBonusRegionalDto,
+  ConfiguracaoDoFadaDto,
   ConfiguracaoClassificacaoDto,
   ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
@@ -12,7 +12,7 @@ import type {
   RegraEliminacaoConfigurada,
   WizardDraft,
 } from '../../processo-seletivo.models';
-import { bonusInicial, classificacaoInicial } from '../../rascunho-inicial';
+import { fadaInicial, classificacaoInicial } from '../../rascunho-inicial';
 import { edicoesDoEnemDe } from '../../passos/classificacao/edicoes-do-enem';
 import { escalaDaNotaFinalComoTexto } from '../escala-da-nota-final';
 import { comoInteiro, comoTexto } from './campos-lidos';
@@ -79,27 +79,27 @@ function regraEliminacaoDe(
 }
 
 /**
- * Projeta o bônus regional gravado. `aplicaBonusRegional` `null` é "ainda por declarar": a ausência
- * da configuração só significa "sem bônus" quando a declaração é falsa.
+ * Projeta o Fator de Atenuação gravado. `aplicaFada` `null` é "ainda por declarar": a ausência
+ * da configuração só significa "sem Fator de Atenuação" quando a declaração é falsa.
  */
-export function bonusDe(dto: ProcessoSeletivoDto): WizardDraft['bonus'] {
-  const aplica = dto.aplicaBonusRegional ?? null;
-  const bonus = dto.bonusRegional;
-  if (bonus === null || bonus === undefined) {
-    return { ...bonusInicial(), aplica };
+export function fadaDe(dto: ProcessoSeletivoDto): WizardDraft['fada'] {
+  const aplica = dto.aplicaFada ?? null;
+  const fada = dto.fada;
+  if (fada === null || fada === undefined) {
+    return { ...fadaInicial(), aplica };
   }
 
-  return { aplica, ...bonusGravadoDe(bonus) };
+  return { aplica, ...fadaGravadoDe(fada) };
 }
 
-function bonusGravadoDe(bonus: ConfiguracaoBonusRegionalDto): Omit<WizardDraft['bonus'], 'aplica'> {
+function fadaGravadoDe(fada: ConfiguracaoDoFadaDto): Omit<WizardDraft['fada'], 'aplica'> {
   return {
-    regraCodigo: bonus.regra.codigo,
-    regraVersao: bonus.regra.versao,
-    fator: comoTexto(bonus.fator),
-    teto: comoTexto(bonus.teto),
-    baseLegalBonusRegionalId: bonus.baseLegal.id,
-    fatoElegibilidadeCodigo: bonus.fatoElegibilidadeCodigo ?? '',
+    regraCodigo: fada.regra.codigo,
+    regraVersao: fada.regra.versao,
+    fator: comoTexto(fada.fator),
+    teto: comoTexto(fada.teto),
+    baseLegalDoFadaId: fada.baseLegal.id,
+    fatoElegibilidadeCodigo: fada.fatoElegibilidadeCodigo ?? '',
   };
 }
 

@@ -10,7 +10,6 @@ import {
 import {
   distribuirRecusas,
   semDadosBasicos,
-  type ConteudoDoFormulario,
   type RecusasDoConteudo,
 } from '@uniplus/shared-inscricao/formulario';
 
@@ -19,38 +18,43 @@ import type { FormularioDeInscricao, ValidacaoDoPasso } from '../../../processo-
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import {
+  GravacaoDasExigenciasDocumentais,
+  type ResultadoDaGravacaoDasExigencias,
+} from '../../../shared/exigencias/gravacao-das-exigencias-documentais.service';
+import {
   gravarNoPasso,
   RESPOSTA_DESCARTADA,
   respostaFoiDescartada,
   type RespostaDescartada,
 } from '../../../shared/gravacao/gravacao-no-passo';
 import { comoComandoDeReferenciaTemporal } from '../apuracao-da-idade';
-import { conteudoDoFormulario, formularioDaFinalidade } from '../formulario-do-processo';
 import {
-  comFormulario,
-  formularioDoServidorNaFinalidade,
-  formulariosDoServidor,
-  nomeDaFinalidade,
-  ordemDeGravacao,
-} from '../formularios-por-finalidade';
+  conteudoDoFormulario,
+  paraGravarDoServidor,
+  type FormularioParaGravar as CabecalhoParaGravar,
+} from '../formulario-do-processo';
+import { comAsGravadasDoServidor, formulariosDoServidor } from '../formularios-do-rascunho';
+import { ordemDeGravacao } from '../ordem-de-gravacao';
 import { LeituraDoProcessoNoFormulario } from './leitura-do-processo-no-formulario.service';
 import { semChave } from './sem-chave';
 
-/** O que a gravação de um formulário precisa: a fase, a finalidade e o conteúdo desejado. */
-export interface FormularioParaGravar {
-  readonly finalidade: string;
+/** O que a gravação de um formulário precisa: o código, a fase, a obrigatoriedade e o conteúdo desejado. */
+export interface FormularioParaEnviar extends Omit<CabecalhoParaGravar, 'faseId'> {
+  readonly codigo: string;
+  /** Como as mensagens nomeiam o formulário, já entre aspas. */
   readonly nome: string;
   /** O código da fase do cronograma em que o formulário é respondido. */
   readonly fase: string;
-  readonly conteudo: ConteudoDoFormulario;
+  /** Se é o formulário que o candidato responde ao se inscrever. */
+  readonly daInscricao: boolean;
 }
 
 /**
- * A gravação dos formulários de cada finalidade e da política que ancora a apuração da idade.
+ * A gravação dos formulários do processo e da política que ancora a apuração da idade.
  *
  * As fases e os formulários gravados vêm de uma releitura fresca: a fase pode ter sido acrescentada
  * nesta sessão, e o plano de gravação compara cada parte com o que o servidor tem — inclusive o que
- * uma tentativa anterior deixou gravado pela metade. As finalidades gravam na ordem em que a API
+ * uma tentativa anterior deixou gravado pela metade. Os formulários gravam na ordem em que a API
  * aceita cada uma, e a primeira recusa interrompe a sequência e vai à aba dela.
  */
 @Injectable()
@@ -58,9 +62,10 @@ export class GravacaoDosFormularios {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly cadastro = inject(CadastroInicial);
   private readonly leitura = inject(LeituraDoProcessoNoFormulario);
+  private readonly documentosExigidos = inject(GravacaoDasExigenciasDocumentais);
   private readonly problemI18n = inject(ProblemI18nService);
 
-  /** As recusas da última gravação, por finalidade, distribuídas contra o conteúdo ENVIADO — sem os dados básicos. */
+  /** As recusas da última gravação, por código, distribuídas contra o conteúdo ENVIADO — sem os dados básicos. */
   readonly recusas = signal<ReadonlyMap<string, RecusasDoConteudo>>(new Map());
 
   constructor() {
@@ -71,18 +76,18 @@ export class GravacaoDosFormularios {
     });
   }
 
-  esquecerRecusasDa(finalidade: string): void {
-    this.recusas.update((atuais) => semChave(atuais, finalidade));
+  esquecerRecusasDa(codigo: string): void {
+    this.recusas.update((atuais) => semChave(atuais, codigo));
   }
 
   /**
-   * Grava os formulários e a política da idade. `irAba` recebe a finalidade cuja gravação o
+   * Grava os formulários e a política da idade. `irAba` recebe o código do formulário cuja gravação o
    * servidor recusou, para a tela levar o operador à aba dela.
    */
   gravar(
     processoId: string,
-    formularios: readonly FormularioParaGravar[],
-    irAba: (finalidade: string) => void,
+    formularios: readonly FormularioParaEnviar[],
+    irAba: (codigo: string) => void,
   ): Promise<ValidacaoDoPasso | RespostaDescartada> {
     return gravarNoPasso(this.store, async () => {
       const geracao = this.store.geracao();
@@ -98,7 +103,7 @@ export class GravacaoDosFormularios {
   private async planoDaReleitura(
     processoId: string,
     geracao: number,
-    formularios: readonly FormularioParaGravar[],
+    formularios: readonly FormularioParaEnviar[],
   ): Promise<PlanoDeEnvio | ValidacaoDoPasso | RespostaDescartada> {
     const detalhe = await this.leitura.ler(processoId);
     if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
@@ -116,30 +121,30 @@ export class GravacaoDosFormularios {
       const gravacao = await this.enviarFormulario(processoId, formulario, plano);
       if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
       if (!gravacao.ok) return { gravadas, recusada: formulario, problem: gravacao.problem };
-      gravadas.push(formulario.finalidade);
+      gravadas.push(formulario.codigo);
     }
     return { gravadas };
   }
 
   private enviarFormulario(processoId: string, formulario: FormularioComFase, plano: PlanoDeEnvio) {
-    const gravado = plano.gravados(formulario.finalidade);
+    const gravado = plano.gravados(formulario.codigo);
     return this.cadastro.gravarFormulario(
       processoId,
-      formulario.finalidade,
-      gravado === null ? null : { faseId: gravado.faseId, conteudo: conteudoDoFormulario(gravado) },
-      { faseId: formulario.faseId, conteudo: formulario.conteudo },
+      formulario.codigo,
+      gravado === null ? null : paraGravarDoServidor(gravado),
+      formulario,
     );
   }
 
   private async interromperNaRecusa(
     processoId: string,
     geracao: number,
-    desfecho: Extract<DesfechoDaGravacaoEmOrdem, { recusada: FormularioComFase }>,
-    aoRecusar: (finalidade: string) => void,
+    desfecho: DesfechoComRecusa,
+    aoRecusar: (codigo: string) => void,
   ): Promise<ValidacaoDoPasso> {
     const mensagens = this.aplicarRecusa(desfecho.recusada, desfecho.problem);
-    aoRecusar(desfecho.recusada.finalidade);
-    await this.reconciliarComOServidor(processoId, geracao, desfecho.gravadas);
+    aoRecusar(desfecho.recusada.codigo);
+    await this.reconciliarComOServidor(processoId, geracao, desfecho);
     return { valid: false, messages: [...mensagens] };
   }
 
@@ -153,7 +158,26 @@ export class GravacaoDosFormularios {
     if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
     if (temporal !== null) return temporal;
     await this.reconciliarComOServidor(processoId, geracao, null);
-    return { valid: true };
+    if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
+    return this.gravarOsDocumentosQueAguardavam(processoId, geracao);
+  }
+
+  /**
+   * Os documentos que o Cronograma deixou sem gravar por falta de formulário seguem agora, com os
+   * formulários já no servidor. Se ainda falta formulário, ou a exigência precisa de ajuste, a
+   * recusa é legítima e leva o operador à fase no Cronograma.
+   */
+  private async gravarOsDocumentosQueAguardavam(
+    processoId: string,
+    geracao: number,
+  ): Promise<ValidacaoDoPasso | RespostaDescartada> {
+    if (!this.store.documentosExigidosAguardandoFormulario()) return { valid: true };
+    const documentos = await this.documentosExigidos.gravar(
+      processoId,
+      OS_FORMULARIOS_FORAM_GRAVADOS,
+    );
+    if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
+    return desfechoDosDocumentos(documentos, this.store.documentosExigidosAguardandoFormulario());
   }
 
   /** Grava a política que ancora a apuração da idade. `null` quando gravou. */
@@ -188,25 +212,27 @@ export class GravacaoDosFormularios {
       problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO ? problem.errors : undefined,
     );
     if (deCampo.length === 0 && gerais.length === 0)
-      return this.recusaSemCausaApontada(formulario.finalidade, problem);
-    return this.mensagensDoPasso(formulario.finalidade, { deCampo, gerais }, formulario.conteudo);
+      return this.recusaSemCausaApontada(formulario, problem);
+    return this.mensagensDoPasso(formulario, { deCampo, gerais });
   }
 
-  private recusaSemCausaApontada(finalidade: string, problem: ProblemDetails): readonly string[] {
+  private recusaSemCausaApontada(
+    formulario: FormularioComFase,
+    problem: ProblemDetails,
+  ): readonly string[] {
     this.recusas.set(new Map());
-    const nome = nomeDaFinalidade(finalidade);
-    return [`O formulário de ${nome} não foi gravado. ${this.problemI18n.resolve(problem).title}`];
+    const titulo = this.problemI18n.resolve(problem).title;
+    return [`O formulário ${formulario.nome} não foi gravado. ${titulo}`];
   }
 
   private mensagensDoPasso(
-    finalidade: string,
+    formulario: FormularioComFase,
     causas: CausasDoProblema,
-    conteudo: ConteudoDoFormulario,
   ): readonly string[] {
-    const recusas = distribuirRecusas(causas.deCampo, semDadosBasicos(conteudo));
-    this.recusas.set(new Map([[finalidade, recusas]]));
+    const recusas = distribuirRecusas(causas.deCampo, semDadosBasicos(formulario.conteudo));
+    this.recusas.set(new Map([[formulario.codigo, recusas]]));
     const mensagens = [...recusas.gerais, ...causas.gerais.map((causa) => causa.message)];
-    const marcadas = `O formulário de ${nomeDaFinalidade(finalidade)} foi recusado: veja os campos marcados na aba dele.`;
+    const marcadas = `O formulário ${formulario.nome} foi recusado: veja os campos marcados na aba dele.`;
     return mensagens.length > 0 ? mensagens : [marcadas];
   }
 
@@ -214,27 +240,58 @@ export class GravacaoDosFormularios {
    * Relê o processo e projeta no rascunho o que o servidor tem dos formulários. Depois de gravar
    * tudo, todos — a API repõe os dados básicos e pode deslocar a ordem. Depois de uma recusa, só os
    * que gravaram antes dela: o conteúdo dos outros, na tela, é o que o operador quer, e a próxima
-   * tentativa se compara com a releitura que fizer.
+   * tentativa se compara com a releitura que fizer. O formulário recusado que já existe no servidor
+   * (o cabeçalho foi aceito) fica com o conteúdo da tela, mas gravado: o código não pode mais mudar.
    */
   private async reconciliarComOServidor(
     processoId: string,
     geracao: number,
-    gravadas: readonly string[] | null,
+    recusa: DesfechoComRecusa | null,
   ): Promise<void> {
     const detalhe = await this.leitura.ler(processoId);
     if (geracao !== this.store.geracao() || !isApiOk(detalhe)) return;
-    const formulario =
-      gravadas === null
-        ? formulariosDoServidor(detalhe.data)
-        : formularioComAsGravadas(this.store.draft().formulario, detalhe.data, gravadas);
-    this.store.projetarSecao('formulario', formulario);
+    this.store.projetarSecao('formulario', this.oQueOServidorTem(detalhe.data, recusa));
+  }
+
+  private oQueOServidorTem(
+    processo: ProcessoSeletivoDto,
+    recusa: DesfechoComRecusa | null,
+  ): Pick<FormularioDeInscricao, 'formularios'> {
+    if (recusa === null) return formulariosDoServidor(processo);
+    return comAsGravadasDoServidor(this.store.draft().formulario, processo, {
+      gravadas: recusa.gravadas,
+      recusada: recusa.recusada.codigo,
+    });
   }
 }
 
-interface FormularioComFase {
-  readonly finalidade: string;
+const OS_FORMULARIOS_FORAM_GRAVADOS = 'Os formulários foram gravados.';
+
+const CORRIJA_NO_CRONOGRAMA =
+  'Corrija a exigência na fase indicada, no passo Cronograma, e grave os formulários de novo.';
+
+function desfechoDosDocumentos(
+  documentos: ResultadoDaGravacaoDasExigencias,
+  aindaAguardam: boolean,
+): ValidacaoDoPasso {
+  if (!documentos.valid) {
+    return { valid: false, messages: [...(documentos.messages ?? []), CORRIJA_NO_CRONOGRAMA] };
+  }
+  return aindaAguardam ? AINDA_FALTA_FORMULARIO : { valid: true };
+}
+
+const AINDA_FALTA_FORMULARIO: ValidacaoDoPasso = {
+  valid: false,
+  messages: [
+    `${OS_FORMULARIOS_FORAM_GRAVADOS} Os documentos exigidos ainda não foram gravados: falta formulário em uma das fases que os exigem. Acrescente o formulário à fase, ou ajuste a exigência no passo Cronograma.`,
+  ],
+};
+
+interface FormularioComFase extends CabecalhoParaGravar {
+  readonly codigo: string;
+  readonly nome: string;
+  readonly daInscricao: boolean;
   readonly faseId: string;
-  readonly conteudo: ConteudoDoFormulario;
 }
 
 /** O que vai ao servidor: cada formulário com a fase resolvida, a ordem e o que já está gravado. */
@@ -242,7 +299,7 @@ interface PlanoDeEnvio {
   readonly paraEnvio: readonly FormularioComFase[];
   readonly ordem: readonly string[];
   readonly faseIdPorCodigo: ReadonlyMap<string, string>;
-  readonly gravados: (finalidade: string) => FormularioDto | null;
+  readonly gravados: (codigo: string) => FormularioDto | null;
 }
 
 type DesfechoDaGravacaoEmOrdem =
@@ -254,6 +311,8 @@ type DesfechoDaGravacaoEmOrdem =
       readonly problem: ProblemDetails;
     };
 
+type DesfechoComRecusa = Extract<DesfechoDaGravacaoEmOrdem, { recusada: FormularioComFase }>;
+
 function falhaNaReleitura(): ValidacaoDoPasso {
   return {
     valid: false,
@@ -264,22 +323,10 @@ function falhaNaReleitura(): ValidacaoDoPasso {
 }
 
 function formulariosNaOrdem(plano: PlanoDeEnvio): FormularioComFase[] {
-  return plano.ordem.flatMap((finalidade) => {
-    const formulario = plano.paraEnvio.find((item) => item.finalidade === finalidade);
+  return plano.ordem.flatMap((codigo) => {
+    const formulario = plano.paraEnvio.find((item) => item.codigo === codigo);
     return formulario === undefined ? [] : [formulario];
   });
-}
-
-function formularioComAsGravadas(
-  formulario: FormularioDeInscricao,
-  processo: ProcessoSeletivoDto,
-  gravadas: readonly string[],
-): FormularioDeInscricao {
-  for (const finalidade of gravadas) {
-    const servidor = formularioDoServidorNaFinalidade(processo, finalidade);
-    if (servidor !== null) formulario = comFormulario(formulario, servidor);
-  }
-  return formulario;
 }
 
 /**
@@ -287,7 +334,7 @@ function formularioComAsGravadas(
  * ordem de gravação. Devolve a recusa quando a fase de algum ainda não está no cronograma gravado.
  */
 function planoDeEnvio(
-  formularios: readonly FormularioParaGravar[],
+  formularios: readonly FormularioParaEnviar[],
   processo: ProcessoSeletivoDto,
 ): PlanoDeEnvio | ValidacaoDoPasso {
   const faseIdPorCodigo = new Map(
@@ -296,7 +343,8 @@ function planoDeEnvio(
   const paraEnvio = comFaseResolvida(formularios, faseIdPorCodigo);
   if ('valid' in paraEnvio) return paraEnvio;
 
-  const gravados = (finalidade: string) => formularioDaFinalidade(processo.formularios, finalidade);
+  const gravados = (codigo: string) =>
+    processo.formularios.find((formulario) => formulario.codigo === codigo) ?? null;
   const ordem = ordemDosFormularios(paraEnvio, gravados);
   return { paraEnvio, ordem, faseIdPorCodigo, gravados };
 }
@@ -309,9 +357,10 @@ function ordemDosFormularios(
 }
 
 function compararFormulario(formulario: FormularioComFase, gravados: PlanoDeEnvio['gravados']) {
-  const gravado = gravados(formulario.finalidade);
+  const gravado = gravados(formulario.codigo);
   return {
-    finalidade: formulario.finalidade,
+    codigo: formulario.codigo,
+    daInscricao: formulario.daInscricao,
     servidor: gravado === null ? null : conteudoDoFormulario(gravado),
     desejado: formulario.conteudo,
   };
@@ -319,7 +368,7 @@ function compararFormulario(formulario: FormularioComFase, gravados: PlanoDeEnvi
 
 /** Cada formulário com o id da fase; a recusa quando a fase de algum ainda não está gravada. */
 function comFaseResolvida(
-  formularios: readonly FormularioParaGravar[],
+  formularios: readonly FormularioParaEnviar[],
   faseIdPorCodigo: ReadonlyMap<string, string>,
 ): PlanoDeEnvio['paraEnvio'] | ValidacaoDoPasso {
   const paraEnvio: FormularioComFase[] = [];
@@ -328,7 +377,7 @@ function comFaseResolvida(
     if (faseId === undefined) {
       return faseForaDoCronograma(formulario.nome);
     }
-    paraEnvio.push({ finalidade: formulario.finalidade, faseId, conteudo: formulario.conteudo });
+    paraEnvio.push({ ...formulario, faseId });
   }
   return paraEnvio;
 }
@@ -337,7 +386,7 @@ function faseForaDoCronograma(nome: string): ValidacaoDoPasso {
   return {
     valid: false,
     messages: [
-      `A fase do formulário de ${nome} ainda não está no cronograma gravado. Grave o passo Cronograma e tente de novo.`,
+      `A fase do formulário ${nome} ainda não está no cronograma gravado. Grave o passo Cronograma e tente de novo.`,
     ],
   };
 }

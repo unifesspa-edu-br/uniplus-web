@@ -13,7 +13,7 @@ const ID_DO_MODELO = '01960000-0000-7000-0000-0000000000a1';
 const MODELO = {
   id: ID_DO_MODELO,
   codigo: 'INSCRICAO',
-  finalidade: { codigo: 'INSCRICAO', rotulo: 'Inscrição' },
+  declaracao: { serveAFaseDeInscricao: true, obrigatorio: true },
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   ativo: true,
   conteudo: {

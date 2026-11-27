@@ -21,7 +21,11 @@
   </button>
 </div>
 <div class="doc-item__eixos">
-  @if (mostraFormulario(identificador)) {
+  @if (aguardaFormulario()) {
+    <p class="alert alert--info doc-item__aviso-formulario" role="status">
+      O documento será gravado quando a fase tiver formulário (passo Formulários).
+    </p>
+  } @else {
     <sel-eixo-formulario class="form-field" [documentoId]="identificador"></sel-eixo-formulario>
   }
 
@@ -160,4 +164,14 @@
       </p>
     }
   </sel-consequencia-e-normas>
+
+  @if (oferecePrazoParaReenvio(identificador)) {
+    <sel-prazo-para-reenvio
+      class="form-field"
+      [idBase]="idDaFase('doc-reenvio-' + identificador)"
+      [marcado]="abrePrazoParaReenvio(identificador)"
+      [desabilitado]="!cronograma.edicaoLiberada()"
+      (marcadoChange)="escolherPrazoParaReenvio(identificador, $event)"
+    />
+  }
 </div>

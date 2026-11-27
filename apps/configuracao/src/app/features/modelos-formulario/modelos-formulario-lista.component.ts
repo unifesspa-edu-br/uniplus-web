@@ -14,7 +14,6 @@ import {
   type UiFilterChipOption,
 } from '@uniplus/shared-ui/components';
 import { devolverFocoDaLista } from '../../shared/foco';
-import { FINALIDADES_DO_FORMULARIO } from './finalidades-do-formulario';
 
 @Component({
   selector: 'cfg-modelos-formulario-lista',
@@ -34,7 +33,7 @@ import { FINALIDADES_DO_FORMULARIO } from './finalidades-do-formulario';
 })
 export class ModelosFormularioListaComponent {
   readonly termoBusca = model('');
-  readonly filtroFinalidade = model('');
+  readonly filtroFaseDeInscricao = model('');
   readonly filtroSituacao = model('');
   readonly filtroTipo = model('');
   readonly tiposDeProcesso = input.required<readonly TipoProcessoDto[]>();
@@ -58,10 +57,11 @@ export class ModelosFormularioListaComponent {
     idDoTitulo: 'cfg-modelos-list-title',
   });
   protected readonly permissaoDeManter = PERMISSAO.configuracao.modelosFormularioManter;
-  protected readonly finalidadeChips = computed<readonly UiFilterChipOption[]>(() => [
-    { value: '', label: 'Todas' },
-    ...FINALIDADES_DO_FORMULARIO.map(({ codigo, rotulo }) => ({ value: codigo, label: rotulo })),
-  ]);
+  protected readonly faseDeInscricaoChips: readonly UiFilterChipOption[] = [
+    { value: 'true', label: 'Serve' },
+    { value: 'false', label: 'Não serve' },
+    { value: '', label: 'Todos' },
+  ];
   protected readonly situacaoChips: readonly UiFilterChipOption[] = [
     { value: 'true', label: 'Ativos' },
     { value: 'false', label: 'Desativados' },
@@ -69,11 +69,13 @@ export class ModelosFormularioListaComponent {
   ];
   protected readonly filtrosAtivos = computed<readonly UiFiltroAtivo[]>(() => {
     const ativos: UiFiltroAtivo[] = [];
-    const finalidade = this.filtroFinalidade();
-    if (finalidade)
+    const faseDeInscricao = this.filtroFaseDeInscricao();
+    if (faseDeInscricao)
       ativos.push({
-        nome: 'Finalidade',
-        valor: this.finalidadeChips().find((c) => c.value === finalidade)?.label ?? finalidade,
+        nome: 'Fase de inscrição',
+        valor:
+          this.faseDeInscricaoChips.find((c) => c.value === faseDeInscricao)?.label ??
+          faseDeInscricao,
       });
     this.adicionarSituacao(ativos);
     const tipo = this.filtroTipo();

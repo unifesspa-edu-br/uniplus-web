@@ -29,9 +29,9 @@ describe('Leitura e regravação das exigências de documentos', () => {
       faseId: ID_ISENCAO,
       indeferimento: {
         obrigatorio: true,
-        consequencia: {
-          codigo: 'ELIMINA' as NonNullable<
-            DocumentoExigidoDto['indeferimento']['consequencia']
+        consequenciaDoDescumprimento: {
+          codigo: 'ELIMINA_DO_PROCESSO' as NonNullable<
+            DocumentoExigidoDto['indeferimento']['consequenciaDoDescumprimento']
           >['codigo'],
           rotulo: 'Elimina',
         },
@@ -39,7 +39,7 @@ describe('Leitura e regravação das exigências de documentos', () => {
     });
     const habilitacao = exigenciaDaApi({
       faseId: ID_HABILITACAO,
-      indeferimento: { obrigatorio: false, consequencia: null },
+      indeferimento: { obrigatorio: false, consequenciaDoDescumprimento: null },
     });
     const lido = exigenciasDe(detalheDaApi([isencao, habilitacao]));
 
@@ -49,7 +49,7 @@ describe('Leitura e regravação das exigências de documentos', () => {
     expect(naIsencao).toHaveLength(1);
     expect(naHabilitacao).toHaveLength(1);
     expect(naIsencao[0].obrigatorio).toBe(true);
-    expect(naIsencao[0].consequenciaIndeferimento).toBe('ELIMINA');
+    expect(naIsencao[0].consequenciaIndeferimento).toBe('ELIMINA_DO_PROCESSO');
     expect(naHabilitacao[0].obrigatorio).toBe(false);
     expect(naHabilitacao[0].consequenciaIndeferimento).toBe('');
   });
@@ -151,10 +151,10 @@ describe('Leitura e regravação das exigências de documentos', () => {
   /** O ida-e-volta completo: ler e regravar não pode mudar nada. */
   it('lê o formulário declarado e o regrava', () => {
     const lido = exigenciasDe(
-      detalheDaApi([exigenciaDaApi({ faseId: ID_ISENCAO, finalidade: 'ISENCAO_TAXA' })]),
+      detalheDaApi([exigenciaDaApi({ faseId: ID_ISENCAO, formularioCodigo: 'ISENCAO_TAXA' })]),
     );
 
-    expect(comando(lido)[0].documento?.momento?.finalidade).toBe('ISENCAO_TAXA');
+    expect(comando(lido)[0].documento?.momento?.formularioCodigo).toBe('ISENCAO_TAXA');
   });
 
   it('lê e regrava sem perder nada', () => {
@@ -164,11 +164,11 @@ describe('Leitura e regravação das exigências de documentos', () => {
           etapaId: ID_ETAPA_RENDA,
           indeferimento: {
             obrigatorio: false,
-            consequencia: {
-              codigo: 'ABRE_PRAZO_PARA_REENVIO' as NonNullable<
-                DocumentoExigidoDto['indeferimento']['consequencia']
+            consequenciaDoDescumprimento: {
+              codigo: 'RETIRA_O_ACRESCIMO' as NonNullable<
+                DocumentoExigidoDto['indeferimento']['consequenciaDoDescumprimento']
               >['codigo'],
-              rotulo: 'Abre prazo para reenvio',
+              rotulo: 'Retira o acréscimo',
             },
             basesLegais: [
               {
@@ -214,7 +214,7 @@ describe('Leitura e regravação das exigências de documentos', () => {
     expect(documento?.tipoDocumento?.id).toBe(ID_RG);
     expect(documento?.indeferimento).toMatchObject({
       obrigatorio: false,
-      consequencia: 'ABRE_PRAZO_PARA_REENVIO',
+      consequenciaDoDescumprimento: 'RETIRA_O_ACRESCIMO',
     });
     expect(documento?.requisitos).toMatchObject({
       formatosPermitidos: [{ formato: 'PDF', tamanhoMaximoBytesMax: null }],

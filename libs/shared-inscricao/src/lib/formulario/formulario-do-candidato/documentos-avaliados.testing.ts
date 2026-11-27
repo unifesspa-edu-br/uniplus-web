@@ -5,7 +5,7 @@ import { textoDoGrupo } from './textos-das-regras-de-documentos';
 
 const DOCUMENTO_PADRAO = {
   obrigatorio: true,
-  finalidade: 'INSCRICAO',
+  formularioCodigo: 'INSCRICAO',
   formatos: { qualquer: true, lista: null },
   modelo: null,
   situacao: { rotulo: 'Exigido pelas suas respostas', variante: 'warning' },

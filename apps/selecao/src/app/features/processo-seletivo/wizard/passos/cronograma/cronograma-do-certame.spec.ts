@@ -38,7 +38,10 @@ describe('o que impede gravar o cronograma', () => {
       id: 'id-inscricao',
       codigo: 'COLETA_INSCRICAO',
       nome: 'Inscrição',
-      origemData: { codigo: 'NA_EXECUCAO' as ReturnType<typeof faseCanonica>['origemData']['codigo'], rotulo: 'Na execução' },
+      origemData: {
+        codigo: 'NA_EXECUCAO' as ReturnType<typeof faseCanonica>['origemData']['codigo'],
+        rotulo: 'Na execução',
+      },
       coletaInscricao: true,
     });
     const semJanela = fase({ faseCanonicaId: inscricao.id, codigo: 'COLETA_INSCRICAO' });

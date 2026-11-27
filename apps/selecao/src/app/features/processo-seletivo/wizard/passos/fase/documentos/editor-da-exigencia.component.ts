@@ -2,20 +2,18 @@ import { FormularioDoCronograma } from '../../cronograma/servicos/formulario-do-
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { EditorDeCondicoesComponent } from '@uniplus/shared-inscricao/formulario';
 import { ComboboxComponent } from '@uniplus/shared-ui/components';
-import { consequenciasDaFase } from '@uniplus/shared-utils';
 
 import type { BaseLegalConfig, ModeloDaExigencia } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { descreverFase } from '../../../shared/descricao-da-fase';
 import { FATO_MODALIDADE } from '../../../shared/exigencias/exigencias-documentais';
 import { CatalogoDasConsequenciasDeIndeferimento } from '../../cronograma/catalogos/catalogo-das-consequencias-de-indeferimento.service';
-import { mostraFormulario } from '../../../shared/exigencias/formulario-da-exigencia';
-import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
+import { aguardaFormulario } from '../../../shared/exigencias/formulario-da-exigencia';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import { ModeloDaExigenciaComponent } from '../modelo-da-exigencia/modelo-da-exigencia.component';
 import { PrazoDeEmissaoComponent } from './prazo-de-emissao.component';
 import { ValidadeDoDocumentoComponent } from './validade-do-documento.component';
 import { ArquivoAceitoComponent } from './arquivo-aceito.component';
+import { PrazoParaReenvioComponent } from './prazo-para-reenvio.component';
 import { RecusasDasExigencias } from './recusas-das-exigencias.service';
 import { ConsequenciaENormasComponent } from './consequencia-e-normas.component';
 import type { ResumoDoDocumento } from '../tipos-da-conferencia';
@@ -32,6 +30,7 @@ import { GatilhoDasExigenciasStore } from './gatilho-das-exigencias.store';
   imports: [
     ArquivoAceitoComponent,
     PrazoDeEmissaoComponent,
+    PrazoParaReenvioComponent,
     ValidadeDoDocumentoComponent,
     ComboboxComponent,
     EditorDeCondicoesComponent,
@@ -52,7 +51,6 @@ export class EditorDaExigenciaComponent {
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly exigencias = inject(ExigenciasDaFaseStore);
   protected readonly gatilho = inject(GatilhoDasExigenciasStore);
-  private readonly catalogoDeFases = inject(CatalogoDeFases);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   private readonly catalogoDeConsequencias = inject(CatalogoDasConsequenciasDeIndeferimento);
   protected readonly recusas = inject(RecusasDasExigencias, { optional: true });
@@ -67,17 +65,20 @@ export class EditorDaExigenciaComponent {
     const opcoes = this.catalogoDeConsequencias
       .consequencias()
       .map(({ codigo, rotulo }) => ({ valor: codigo, rotulo }));
-    return consequenciasDaFase(
-      [{ valor: '', rotulo: 'Não decide sozinha' }, ...opcoes],
-      this.faseAdmiteComplementacao(),
-    );
+    return [{ valor: '', rotulo: 'Não decide sozinha' }, ...opcoes];
   }
 
-  /** Se a fase aberta admite reenvio de documento depois da análise. */
-  faseAdmiteComplementacao(): boolean {
-    const fase = this.faseEmEdicao.faseDoRascunho();
-    if (fase === null) return false;
-    return descreverFase(fase, this.catalogoDeFases.fasePorId()).permiteComplementacao;
+  /** O prazo só se oferece onde a fase admite reenvio; o já gravado segue visível para ser desligado. */
+  oferecePrazoParaReenvio(id: string): boolean {
+    return this.faseEmEdicao.admiteComplementacao() || this.abrePrazoParaReenvio(id);
+  }
+
+  abrePrazoParaReenvio(id: string): boolean {
+    return this.exigencias.exigenciaDoDocumento(id).abrePrazoParaReenvio;
+  }
+
+  escolherPrazoParaReenvio(id: string, abre: boolean): void {
+    this.exigencias.escreverExigencia(id, { abrePrazoParaReenvio: abre });
   }
 
   ehObrigatorio(id: string): boolean {
@@ -138,14 +139,8 @@ export class EditorDaExigenciaComponent {
   /** O fato que tem controle próprio ao lado do gatilho: o editor não o mostra. */
   readonly fatoDoControleExterno = FATO_MODALIDADE;
 
-  /**
-   * Se a escolha do formulário aparece: na fase que responde algum, e em qualquer fase enquanto o
-   * formulário declarado não é respondido nela — escondê-la deixaria a falta sem o campo que a resolve.
-   */
-  mostraFormulario(id: string): boolean {
-    return mostraFormulario(
-      this.exigencias.exigenciaDoDocumento(id).finalidade,
-      this.exigencias.finalidadesDaFaseAberta(),
-    );
+  /** Se a fase ainda não tem formulário: no lugar da escolha, a tela avisa que o documento espera por ele. */
+  aguardaFormulario(): boolean {
+    return aguardaFormulario(this.exigencias.codigosDaFaseAberta());
   }
 }

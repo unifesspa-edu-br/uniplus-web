@@ -6,7 +6,6 @@ import type {
   FormularioDeInscricao,
   WizardDraft,
 } from '../../processo-seletivo.models';
-import { formulariosDoRascunho, nomeDaFinalidade } from './formularios-por-finalidade';
 import { fatosCitadosPelasExigencias } from './fatos-coletados-da-inscricao';
 import { FATO_DA_IDADE } from './apuracao-da-idade';
 
@@ -28,13 +27,13 @@ export function problemasDoFormulario(
 }
 
 function problemasDosRotulos(formulario: FormularioDeInscricao): string[] {
-  return formulariosDoRascunho(formulario)
+  return formulario.formularios
     .filter(({ conteudo }) =>
       todosOsCampos(conteudo).some((campo) => campo.apresentacao.rotulo.trim() === ''),
     )
     .map(
-      ({ finalidade }) =>
-        `Todo campo do formulário de ${nomeDaFinalidade(finalidade)} precisa do rótulo que o candidato vai ler.`,
+      ({ codigo }) =>
+        `Todo campo do formulário ${codigo} precisa do rótulo que o candidato vai ler.`,
     );
 }
 
@@ -74,7 +73,7 @@ const FATOS_COM_DOMINIO_NA_OFERTA = [
 /** Todo formulário do processo conta: o campo na isenção ou na habilitação esbarra na mesma oferta vazia. */
 function fatosDeSelecaoPerguntados(formulario: FormularioDeInscricao): ReadonlySet<string> {
   return new Set(
-    formulariosDoRascunho(formulario)
+    formulario.formularios
       .flatMap((outro) => todosOsCampos(outro.conteudo))
       .filter((campo) =>
         [TipoDeCampoCodigo.ESCOLHA_UNICA, TipoDeCampoCodigo.ESCOLHA_MULTIPLA].some(

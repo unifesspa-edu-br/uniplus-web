@@ -35,7 +35,7 @@ const CRITERIO_SEM_AREA = { ...CRITERIO_POR_AREA, regraCodigo: 'DESEMPATE_MAIOR_
 const indiceDe = (rotulo: (typeof ROTULOS_DOS_PASSOS)[number]) =>
   ROTULOS_DOS_PASSOS.indexOf(rotulo);
 const INDICES_REAIS = [indiceDe('Fórmula e precisão'), indiceDe('Desempate')];
-const INDICE_DO_FADA = indiceDe('FADA');
+const INDICE_DO_FADA = indiceDe('Fator de Atenuação');
 
 describe('ProcessoSeletivoPage — publicação: gravação na ordem das dependências', () => {
   beforeEach(configurarPagina);
@@ -138,7 +138,7 @@ describe('ProcessoSeletivoPage — publicação: gravação na ordem das depend�
     expect(ordem).toEqual(['desempate', 'fórmula', 'fada']);
     expect(store.erroDoPasso()).toEqual([
       `Passo ${formula + 1} — Fórmula e precisão: Falha em fórmula.`,
-      `Passo ${INDICE_DO_FADA + 1} — FADA: Falha em fada.`,
+      `Passo ${INDICE_DO_FADA + 1} — Fator de Atenuação: Falha em fada.`,
     ]);
   });
 

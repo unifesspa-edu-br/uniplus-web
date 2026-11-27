@@ -61,6 +61,14 @@
 }
 
 /*
+ * O aviso de que a fase ainda não tem formulário ocupa a largura inteira, acima dos eixos: numa
+ * coluna só dele, os eixos ao lado ficariam na mesma linha e o aviso, colado a eles.
+ */
+.sel-processo .doc-item__aviso-formulario {
+  grid-column: 1 / -1;
+}
+
+/*
  * O editor de condições atravessa o grid dos eixos: ele não é um quarto campo curto, é um
  * bloco com tantas linhas quantas forem as condições, e espremê-lo numa coluna de dezesseis
  * rem deixava fato, comparação e valor em três linhas cada. A aparência do bloco é do

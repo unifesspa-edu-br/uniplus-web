@@ -6,10 +6,11 @@ import type { ContextoDoCronograma } from './cronograma-passo.testing';
 const DOCUMENTO_GERAL_E_OBRIGATORIO = {
   tipoDocumentoId: '01960000-0000-7000-0000-0000000000d9',
   etapaId: null,
-  finalidade: null,
+  formularioCodigo: null,
   aplicabilidade: 'GERAL',
   obrigatorio: true,
   consequenciaIndeferimento: '',
+  abrePrazoParaReenvio: false,
   prazoDeEmissao: null,
   validade: null,
   formatosPermitidos: { tipo: 'qualquer' } as const,
