@@ -45,3 +45,43 @@ function limiteObservado(concedidoMs: number, anterior: PrazoDaCredencial | null
   const concedeuMenos = concedidoMs < anterior.maiorConcedidoMs;
   return concedeuMenos || anterior.limite === 'periodoMaximo' ? 'periodoMaximo' : 'inatividade';
 }
+
+/** O que interessa do token de acesso decodificado: os instantes, em segundos do servidor. */
+export interface TokenDeAcesso {
+  readonly exp?: number;
+  readonly iat?: number;
+}
+
+/** Quando o acesso atual foi emitido e quando vence, em milissegundos no relógio deste navegador. */
+export interface PrazoDoAcesso {
+  readonly emitidoEm: number;
+  readonly venceEm: number;
+}
+
+/** Lê o prazo do acesso, corrigindo a diferença entre o relógio do servidor e o deste navegador. */
+export function lerPrazoDoAcesso(
+  token: TokenDeAcesso | undefined,
+  diferencaDeRelogioEmSegundos: number,
+): PrazoDoAcesso | null {
+  const { exp, iat } = token ?? {};
+  if (exp === undefined || iat === undefined) return null;
+  return {
+    emitidoEm: (iat + diferencaDeRelogioEmSegundos) * MILISSEGUNDOS_POR_SEGUNDO,
+    venceEm: (exp + diferencaDeRelogioEmSegundos) * MILISSEGUNDOS_POR_SEGUNDO,
+  };
+}
+
+/**
+ * A antecedência configurada, limitada à metade da duração do acesso: uma antecedência maior que
+ * a duração faria cada acesso recém-renovado já nascer na hora de renovar, e a renovação não
+ * pararia. Sem prazo conhecido, vale a configurada.
+ */
+export function antecedenciaEfetivaEmSegundos(
+  configuradaEmSegundos: number,
+  acesso: PrazoDoAcesso | null,
+): number {
+  if (acesso === null) return configuradaEmSegundos;
+  const metadeDaDuracaoEmSegundos =
+    (acesso.venceEm - acesso.emitidoEm) / 2 / MILISSEGUNDOS_POR_SEGUNDO;
+  return Math.min(configuradaEmSegundos, metadeDaDuracaoEmSegundos);
+}
