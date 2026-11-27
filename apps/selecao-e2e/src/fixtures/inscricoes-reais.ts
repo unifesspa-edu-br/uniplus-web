@@ -119,8 +119,12 @@ interface TermoDoFormulario {
   readonly conteudo: { readonly hashVersao: string };
 }
 
-function aceitesDosTermos(termos: TermoDoFormulario[]): CorpoDaInscricao['aceites'] {
+function aceitesDosTermos(
+  formularioCodigo: string,
+  termos: TermoDoFormulario[],
+): CorpoDaInscricao['aceites'] {
   return termos.map(({ codigo, versaoId, conteudo }) => ({
+    formularioCodigo,
     codigo,
     versaoId,
     hashVersao: conteudo.hashVersao,
@@ -149,7 +153,7 @@ type CorpoDaInscricao = {
   ofertaCursoSegundaOpcaoId: null;
   respostas: Record<string, unknown>;
   grupos: Record<string, never>;
-  aceites: { codigo: string; versaoId: string; hashVersao: string }[];
+  aceites: { formularioCodigo: string; codigo: string; versaoId: string; hashVersao: string }[];
 };
 
 type ExigenciaDeLaudo = Rascunho['avaliacao']['documentos']['fases'][number]['documentos'][number];
@@ -203,15 +207,17 @@ class InscricaoDaPersona {
         formulario.coleta.itens.some((item) => item.fatoCodigo === 'CIDADE_DE_PROVA'),
       ),
       grupos: {},
-      aceites: aceitesDosTermos(formulario.termos),
+      aceites: aceitesDosTermos(formulario.codigo, formulario.termos),
     };
   }
 
   private async formulario(): Promise<{
+    codigo: string;
     termos: TermoDoFormulario[];
     coleta: { itens: { fatoCodigo: string }[] };
   }> {
-    const { formulario } = await json<{
+    const { codigo, formulario } = await json<{
+      codigo: string;
       formulario: { termos: TermoDoFormulario[]; coleta: { itens: { fatoCodigo: string }[] } };
     }>(
       await fetch(
@@ -220,7 +226,7 @@ class InscricaoDaPersona {
       200,
       'formulário de inscrição',
     );
-    return formulario;
+    return { codigo, ...formulario };
   }
 
   async salvarRespostas(
