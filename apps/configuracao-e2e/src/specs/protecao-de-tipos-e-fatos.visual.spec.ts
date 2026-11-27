@@ -121,7 +121,7 @@ test.describe('Proteção de dados dos tipos de documento e dos fatos do candida
       'true',
     );
     await page.getByRole('button', { name: 'Fato do candidato', exact: true }).click();
-    await expect(page).toHaveURL(/cadastro=FATO/u);
+    await expect(page).toHaveURL(/cadastro=DADO_DO_CANDIDATO/u);
     await expect(page.getByLabel('Decidido a partir de')).toBeVisible();
     await expect(page.getByLabel('Decidido até')).toBeVisible();
     await expect(page.getByLabel('Só as minhas')).toBeVisible();
