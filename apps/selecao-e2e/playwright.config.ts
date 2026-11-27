@@ -43,6 +43,20 @@ const EXCLUDED_FROM_UI_LOGIN_PROJECTS =
  */
 const RODAR_CONTRA_BACKEND_REAL = process.env['E2E_BACKEND_REAL'] === '1';
 
+const NAVEGADORES_EM_PARALELO_PADRAO = 4;
+
+function navegadoresEmParalelo(): number {
+  const informado = process.env['E2E_WORKERS'];
+  if (informado === undefined) return NAVEGADORES_EM_PARALELO_PADRAO;
+  const quantidade = Number(informado);
+  if (!Number.isInteger(quantidade) || quantidade < 1) {
+    throw new Error(
+      `E2E_WORKERS deve ser um número inteiro maior que zero; recebido "${informado}".`,
+    );
+  }
+  return quantidade;
+}
+
 const DS_MATRIX_VIEWPORTS = [
   { name: '320', viewport: { width: 320, height: 720 }, isMobile: true, hasTouch: true },
   { name: '375', viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true },
@@ -68,19 +82,23 @@ const AAA_VIEWPORTS = DS_MATRIX_VIEWPORTS.filter(
 const DS_MATRIX_THEMES = ['light', 'dark', 'contrast'] as const;
 const DS_MATRIX_FONT_MODES = ['default', 'legible'] as const;
 
+function usoDoViewport(viewport: (typeof DS_MATRIX_VIEWPORTS)[number]) {
+  return {
+    ...devices['Desktop Chrome'],
+    viewport: viewport.viewport,
+    isMobile: viewport.isMobile,
+    hasTouch: viewport.hasTouch,
+    storageState: storageStateAdmin,
+  };
+}
+
 const DS_MATRIX_PROJECTS = DS_MATRIX_VIEWPORTS.flatMap((viewport) =>
   DS_MATRIX_THEMES.map((theme) => ({
     name: `ds-${viewport.name}-${theme}`,
     testMatch: /.*\.ds-matrix\.spec\.ts/,
     dependencies: ['auth-setup'],
     metadata: { theme, viewport: viewport.name },
-    use: {
-      ...devices['Desktop Chrome'],
-      viewport: viewport.viewport,
-      isMobile: viewport.isMobile,
-      hasTouch: viewport.hasTouch,
-      storageState: storageStateAdmin,
-    },
+    use: usoDoViewport(viewport),
   })),
 );
 
@@ -91,24 +109,24 @@ const AAA_PROJECTS = AAA_VIEWPORTS.flatMap((viewport) =>
       testMatch: /.*\.aaa\.spec\.ts/,
       dependencies: ['auth-setup'],
       metadata: { theme, viewport: viewport.name, fontMode },
-      use: {
-        ...devices['Desktop Chrome'],
-        viewport: viewport.viewport,
-        isMobile: viewport.isMobile,
-        hasTouch: viewport.hasTouch,
-        storageState: storageStateAdmin,
-      },
+      use: usoDoViewport(viewport),
     })),
   ),
 );
 
 export default defineConfig({
   ...nxE2EPreset(__filename, { testDir: './src' }),
-  // As specs contra o backend real compartilham o cenário e o catálogo da API: uma por vez.
-  ...(RODAR_CONTRA_BACKEND_REAL ? { workers: 1 } : {}),
+  /**
+   * Quatro navegadores ao mesmo tempo: com o padrão do Playwright (metade dos núcleos, 10 na máquina
+   * de testes) 1,3% dos testes da matriz de telas não viam o título da página em 5 s; com quatro, a
+   * matriz leva 10,9 min e a taxa cai para 0,16%, e com dois leva 19,9 min com a mesma taxa.
+   * As specs contra o backend real compartilham o cenário e o catálogo da API: uma por vez.
+   */
+  workers: RODAR_CONTRA_BACKEND_REAL ? 1 : navegadoresEmParalelo(),
   use: {
     baseURL,
-    trace: 'on-first-retry',
+    // Só as tentativas que falham guardam o trace (1,4 a 5,5 MB cada): o da repetição que passa não mostra a falha.
+    trace: 'retain-on-failure',
   },
   webServer: {
     /**
@@ -147,11 +165,15 @@ export default defineConfig({
       use: { ...devices['Desktop Firefox'] },
     },
 
-    ...(isCI ? [{
-      name: 'webkit',
-      testIgnore: EXCLUDED_FROM_UI_LOGIN_PROJECTS,
-      use: { ...devices['Desktop Safari'] },
-    }] : []),
+    ...(isCI
+      ? [
+          {
+            name: 'webkit',
+            testIgnore: EXCLUDED_FROM_UI_LOGIN_PROJECTS,
+            use: { ...devices['Desktop Safari'] },
+          },
+        ]
+      : []),
 
     {
       name: 'selecao-authenticated',
