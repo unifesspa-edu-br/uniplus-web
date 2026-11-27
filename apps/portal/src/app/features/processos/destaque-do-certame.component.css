@@ -50,11 +50,9 @@
   gap: var(--space-3);
 }
 
-/* --btn-fg padrão do .btn--secondary (--color-primary, 6.73:1) fica abaixo do
-   7:1 AAA sobre o fundo tingido do hero (--surface-banner). --text-on-primary-tint
-   é o token do próprio DS pensado pra texto/realce sobre tint (8:1+). */
+/* Sobre o fundo tingido do hero (--surface-banner) a borda do secundário acompanha a
+   cor do texto, e não --color-primary. */
 .portal-hero__actions .btn--secondary {
-  --btn-fg: var(--text-on-primary-tint);
   --btn-bd: var(--text-on-primary-tint);
 }
 

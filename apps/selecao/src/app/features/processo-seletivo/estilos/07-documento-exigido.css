@@ -11,14 +11,6 @@
 }
 
 /*
- * Sobre o fundo do card, o azul de `--color-primary` do botão terciário rende 4,07:1 no tema
- * escuro; a tinta de texto sobre tint alcança os 4,5:1 que a WCAG 2.1 AA exige.
- */
-.sel-processo .doc-item--exigido .btn--tertiary {
-  --btn-fg: var(--text-on-primary-tint);
-}
-
-/*
  * Os três eixos da exigência lado a lado enquanto a largura permite: em que fases vale, em
  * que ponto desta fase é coletada, e de quem é cobrada. Empilhados, um documento gastava
  * trezentos pixels de altura, e a fase com cinco deles virava rolagem.
