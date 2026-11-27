@@ -103,6 +103,44 @@ describe('SimuladorDeFormularioPage', () => {
     );
   });
 
+  it('a recusa do servidor lista todas as recusas, cada uma com a sua mensagem e o seu campo', async () => {
+    await abrir();
+    await importar(JSON.stringify(CASO));
+
+    botao('Conferir com o servidor').click();
+    http.expectOne(`${BASE}/api/configuracao/admin/avaliacoes-de-formulario`).flush(
+      {
+        title: 'Regras recusadas',
+        status: 422,
+        code: 'uniplus.configuracao.regras_recusadas',
+        errors: [
+          {
+            code: 'uniplus.teste.primeira',
+            message: 'Primeira recusa.',
+            field: 'paginas[0].itens[1]',
+          },
+          {
+            code: 'uniplus.teste.segunda',
+            message: 'Segunda recusa.',
+            field: 'paginas[2].itens[0]',
+          },
+          { code: 'uniplus.teste.conjunto', message: 'Recusa do conjunto.' },
+        ],
+      },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    fixture.detectChanges();
+
+    const itens = tela().querySelectorAll('.simulador-formulario__conferencia ul > li');
+    expect(itens).toHaveLength(3);
+    expect(itens[1].textContent).toContain('Onde: paginas[2].itens[0]');
+    expect(itens[2].textContent).not.toContain('Onde');
+  });
+
   it('conferir com o servidor só faz a avaliação sem cadastro e mostra a divergência', async () => {
     await abrir();
     await importar(JSON.stringify(CASO));

@@ -31,6 +31,11 @@ import type {
   ValorJson,
 } from './interpretador/regras-do-formulario';
 import { PressupostosDaSimulacaoComponent } from './pressupostos-da-simulacao';
+import {
+  RecusasDaConferenciaComponent,
+  recusasDaConferencia,
+  type RecusaDaConferencia,
+} from './recusas-da-conferencia';
 
 /** As regras e a simulação, como a avaliação sem cadastro da API as recebe. */
 export interface SimulacaoParaConferir {
@@ -71,11 +76,17 @@ type Conferencia =
       readonly divergencias: readonly Divergencia[];
       readonly simulacao: SimulacaoDoFormulario;
     }
-  | { readonly estado: 'falha'; readonly mensagem: string };
+  | {
+      readonly estado: 'falha';
+      readonly mensagem: string;
+      /** As recusas que o servidor listou; vazia quando ele devolveu só o texto do problema. */
+      readonly recusas: readonly RecusaDaConferencia[];
+    };
 
 function falhaDaInterpretacao(erro: { mensagem: string; caminho: string }): Conferencia {
   return {
     estado: 'falha',
+    recusas: [],
     mensagem: `A simulação não interpreta as regras que o servidor aceitou: ${erro.mensagem} (em ${erro.caminho}).`,
   };
 }
@@ -88,7 +99,12 @@ function falhaDaInterpretacao(erro: { mensagem: string; caminho: string }): Conf
 @Component({
   selector: 'insc-simulacao-de-formulario',
   standalone: true,
-  imports: [AlertComponent, FormularioDoCandidatoComponent, PressupostosDaSimulacaoComponent],
+  imports: [
+    AlertComponent,
+    FormularioDoCandidatoComponent,
+    PressupostosDaSimulacaoComponent,
+    RecusasDaConferenciaComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <p class="aviso-de-simulacao" role="note">
@@ -124,9 +140,16 @@ function falhaDaInterpretacao(erro: { mensagem: string; caminho: string }): Conf
           <p>Conferindo com o servidor…</p>
         }
         @case ('falha') {
-          <ui-alert variant="danger" heading="O servidor não conferiu a simulação">{{
-            mensagemDaFalha()
-          }}</ui-alert>
+          @if (recusasDaFalha().length > 0) {
+            <insc-recusas-da-conferencia
+              [idBase]="idBase() + '-recusas'"
+              [recusas]="recusasDaFalha()"
+            />
+          } @else {
+            <ui-alert variant="danger" heading="O servidor não conferiu a simulação">{{
+              mensagemDaFalha()
+            }}</ui-alert>
+          }
         }
         @case ('feita') {
           @if (conferenciaDesatualizada()) {
@@ -254,6 +277,10 @@ export class SimulacaoDeFormularioComponent {
     const conferencia = this.conferencia();
     return conferencia?.estado === 'falha' ? conferencia.mensagem : '';
   });
+  protected readonly recusasDaFalha = computed(() => {
+    const conferencia = this.conferencia();
+    return conferencia?.estado === 'falha' ? conferencia.recusas : [];
+  });
 
   constructor() {
     effect(() => {
@@ -280,7 +307,11 @@ export class SimulacaoDeFormularioComponent {
 
   private falhaDaApi(problema: Parameters<ProblemI18nService['resolve']>[0]): Conferencia {
     const mensagem = this.problemas.resolve(problema);
-    return { estado: 'falha', mensagem: mensagem.detail ?? mensagem.title };
+    return {
+      estado: 'falha',
+      mensagem: mensagem.detail ?? mensagem.title,
+      recusas: recusasDaConferencia(problema.errors),
+    };
   }
 
   private desfechoDa(

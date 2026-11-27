@@ -5,7 +5,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
@@ -71,7 +71,7 @@ const FORMULARIO_DA_HABILITACAO: FormularioApresentadoDoProcessoDto = {
 describe('SimulacaoDoProcessoPage', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  it('carrega o formulário pelo código, com a comprovação documental, e o simula sem gravar nada', () => {
+  const montarComFormulario = (): ComponentFixture<SimulacaoDoProcessoPage> => {
     TestBed.configureTestingModule({
       imports: [SimulacaoDoProcessoPage],
       providers: [
@@ -99,8 +99,47 @@ describe('SimulacaoDoProcessoPage', () => {
       .flush(FORMULARIO_DA_HABILITACAO);
     fixture.detectChanges();
 
+    return fixture;
+  };
+
+  it('carrega o formulário pelo código, com a comprovação documental, e o simula sem gravar nada', () => {
+    const fixture = montarComFormulario();
     const tela = fixture.nativeElement as HTMLElement;
     expect(tela.querySelector('h1')?.textContent).toContain('HABILITACAO');
     expect(tela.textContent).toContain('Histórico escolar');
+  });
+
+  it('a recusa do servidor na conferência lista todas as recusas, cada uma com a sua mensagem e o seu campo', () => {
+    const fixture = montarComFormulario();
+    const tela = fixture.nativeElement as HTMLElement;
+    (
+      Array.from(tela.querySelectorAll('button')).find(
+        (b) => b.textContent?.trim() === 'Conferir com o servidor',
+      ) as HTMLButtonElement
+    ).click();
+
+    TestBed.inject(HttpTestingController)
+      .expectOne(`${BASE}/api/configuracao/admin/avaliacoes-de-formulario`)
+      .flush(
+        {
+          title: 'Regras recusadas',
+          status: 422,
+          code: 'uniplus.configuracao.regras_recusadas',
+          errors: [
+            { code: 'uniplus.teste.primeira', message: 'Primeira recusa.', field: 'paginas[0]' },
+            { code: 'uniplus.teste.segunda', message: 'Segunda recusa.', field: 'termos[1]' },
+          ],
+        },
+        {
+          status: 422,
+          statusText: 'Unprocessable Entity',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+    fixture.detectChanges();
+
+    const itens = tela.querySelectorAll('.simulador-formulario__conferencia ul > li');
+    expect(itens).toHaveLength(2);
+    expect(itens[1].textContent).toContain('Onde: termos[1]');
   });
 });
