@@ -84,9 +84,13 @@ describe('FasePassoComponent', () => {
           fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
         );
         store.patchObjectSection('formulario', {
-          outrasFinalidades: [
+          formularios: [
             {
-              finalidade: 'HABILITACAO',
+              codigo: 'HABILITACAO',
+              gravado: false,
+              obrigatorio: true,
+              consequenciaDaFaltaDeEnvio: null,
+              modeloOrigemCodigo: null,
               faseCodigo: 'HOMOLOGACAO_INSCRICOES',
               conteudo: {
                 titulo: null,

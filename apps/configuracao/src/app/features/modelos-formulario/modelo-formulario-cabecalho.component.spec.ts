@@ -5,7 +5,7 @@ import { ModeloFormularioCabecalhoComponent } from './modelo-formulario-cabecalh
 import { modelo } from './modelo-formulario-edicao.page.testing';
 
 describe('ModeloFormularioCabecalhoComponent', () => {
-  it('mostra a finalidade recebida', () => {
+  it('mostra se o modelo serve à fase de inscrição', () => {
     TestBed.configureTestingModule({
       imports: [ModeloFormularioCabecalhoComponent],
       providers: [provideRouter([])],
@@ -13,6 +13,8 @@ describe('ModeloFormularioCabecalhoComponent', () => {
     const fixture = TestBed.createComponent(ModeloFormularioCabecalhoComponent);
     fixture.componentRef.setInput('modelo', modelo);
     fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(modelo.finalidade.rotulo);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Serve à fase de inscrição',
+    );
   });
 });

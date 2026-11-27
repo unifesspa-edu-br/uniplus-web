@@ -2,14 +2,14 @@ import {
   fatosCitadosPeloConteudo,
   SECAO_DADOS_BASICOS,
   todosOsCampos,
+  type ConteudoDoFormulario,
   type ItemDoFormulario,
 } from '@uniplus/shared-inscricao/formulario';
 import type {
   CriterioDesempateConfigurado,
   DerivacaoDeFato,
   ExigenciasDoRascunho,
-  FormularioDaFinalidade,
-  FormularioDeInscricao,
+  FormularioDoProcessoNoRascunho,
   WizardDraft,
 } from '../../processo-seletivo.models';
 import { todasAsExigencias } from '../../shared/exigencias/consulta-das-exigencias';
@@ -19,14 +19,15 @@ import {
   FATO_DATA_NASCIMENTO,
 } from '../desempate/desempate-por-idade';
 import { fatosColetadosPor } from './formulario-do-processo';
-import { nomeDaFinalidade } from './formularios-por-finalidade';
+import { conteudoDaInscricao, formularioDaInscricao } from './formularios-do-rascunho';
 
-/** O que o processo cita, fora do próprio formulário: exigências, derivação, desempate e os formulários das outras finalidades. */
+/** O que o processo cita, fora do próprio formulário: exigências, derivação, desempate e os formulários que não são a inscrição. */
 export interface CitantesNoProcesso {
   readonly documentos: ExigenciasDoRascunho;
   readonly derivacao: readonly DerivacaoDeFato[];
   readonly desempate: readonly CriterioDesempateConfigurado[];
-  readonly outrasFinalidades?: readonly FormularioDaFinalidade[];
+  /** Os formulários que não são a inscrição, cujas regras citam o que a inscrição coleta. */
+  readonly outrosFormularios?: readonly FormularioDoProcessoNoRascunho[];
   /** As regras de aplicabilidade das modalidades ofertadas, como o servidor as congelou. */
   readonly modalidades?: readonly RegraDaModalidadeOfertada[];
 }
@@ -34,12 +35,14 @@ export interface CitantesNoProcesso {
 export function citantesDoRascunho(
   rascunho: Pick<WizardDraft, 'documentos' | 'formulario' | 'desempate'>,
   modalidades: readonly RegraDaModalidadeOfertada[],
+  fasesDaInscricao: ReadonlySet<string>,
 ): CitantesNoProcesso {
+  const inscricao = formularioDaInscricao(rascunho.formulario, fasesDaInscricao);
   return {
     documentos: rascunho.documentos,
     derivacao: rascunho.formulario.derivacao,
     desempate: rascunho.desempate,
-    outrasFinalidades: rascunho.formulario.outrasFinalidades,
+    outrosFormularios: rascunho.formulario.formularios.filter((outro) => outro !== inscricao),
     modalidades,
   };
 }
@@ -56,7 +59,7 @@ const SEM_NOMES: NomesDosCitantes = { documento: (id) => id, fato: (codigo) => c
 /**
  * Quem, no processo, cita cada fato: os documentos cujo gatilho o usa, as regras de derivação que
  * dependem dele, o desempate por maior idade, que ordena pela data de nascimento, e os formulários
- * das outras finalidades, cujas regras citam o que a inscrição coleta. É a fonte única
+ * que não são a inscrição, cujas regras citam o que a inscrição coleta. É a fonte única
  * do que o formulário de inscrição precisa coletar (o campo entra sozinho) e do que não pode sair
  * dele (a remoção é recusada com o motivo). As citações de dentro do formulário ficam com o editor.
  */
@@ -69,7 +72,7 @@ export function quemCitaNoProcesso(
     ...citacoesDaDerivacao(processo, nomes),
     ...citacoesDasModalidades(processo),
     ...citacoesDoDesempate(processo),
-    ...citacoesDasOutrasFinalidades(processo),
+    ...citacoesDosOutrosFormularios(processo),
   ];
 
   return agruparPorFato(citacoes);
@@ -126,12 +129,12 @@ function citacoesDoDesempate(processo: CitantesNoProcesso): Citacao[] {
 }
 
 /** O que o formulário cita dos próprios campos não depende da inscrição. */
-function citacoesDasOutrasFinalidades(processo: CitantesNoProcesso): Citacao[] {
-  return (processo.outrasFinalidades ?? []).flatMap((outra) => {
+function citacoesDosOutrosFormularios(processo: CitantesNoProcesso): Citacao[] {
+  return (processo.outrosFormularios ?? []).flatMap((outra) => {
     const proprios = new Set(fatosColetadosPor(outra.conteudo));
     return [...fatosCitadosPeloConteudo(outra.conteudo)]
       .filter((fato) => !proprios.has(fato))
-      .map((fato) => ({ fato, quem: `o formulário de ${nomeDaFinalidade(outra.finalidade)}` }));
+      .map((fato) => ({ fato, quem: `o formulário ${outra.codigo}` }));
   });
 }
 
@@ -150,7 +153,7 @@ export function remocoesTravadasPor(
 /**
  * Os campos que o formulário coleta e nada no certame usa: nenhuma exigência os cita, nenhuma
  * regra de derivação nem regra de modalidade ofertada depende deles, o desempate não os usa e nenhuma regra do próprio formulário
- * nem dos formulários das outras finalidades os cita. Os dados básicos ficam de fora: a API os
+ * nem dos outros formulários os cita. Os dados básicos ficam de fora: a API os
  * coleta em toda inscrição.
  *
  * Não é erro — um edital pode querer coletar algo por outra razão —, e por isso não bloqueia a
@@ -160,15 +163,16 @@ export function remocoesTravadasPor(
  */
 export function camposSemUsoDeclarado(
   rascunho: Pick<WizardDraft, 'documentos' | 'formulario' | 'desempate'>,
-  modalidades: readonly RegraDaModalidadeOfertada[] = [],
+  modalidades: readonly RegraDaModalidadeOfertada[],
+  fasesDaInscricao: ReadonlySet<string>,
 ): readonly ItemDoFormulario[] {
-  const citantes = quemCitaNoProcesso(citantesDoRascunho(rascunho, modalidades));
-  return camposSemCitacao(rascunho.formulario.conteudo, citantes);
+  const citantes = quemCitaNoProcesso(citantesDoRascunho(rascunho, modalidades, fasesDaInscricao));
+  return camposSemCitacao(conteudoDaInscricao(rascunho.formulario, fasesDaInscricao), citantes);
 }
 
 /** Os dados básicos ficam de fora, pois são coletados em toda inscrição. */
 function camposSemCitacao(
-  conteudo: FormularioDeInscricao['conteudo'],
+  conteudo: ConteudoDoFormulario,
   citantes: ReadonlyMap<string, readonly string[]>,
 ): readonly ItemDoFormulario[] {
   const citados = new Set([...citantes.keys(), ...fatosCitadosPeloConteudo(conteudo)]);

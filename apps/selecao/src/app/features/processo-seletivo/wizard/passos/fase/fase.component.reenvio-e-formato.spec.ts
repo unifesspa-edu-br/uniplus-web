@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AtributosCongeladosDaFase } from '../../processo-seletivo.models';
+import { conteudoInicial } from '@uniplus/shared-inscricao/formulario';
 import { exigenciasDaFase } from '../../shared/exigencias/consulta-das-exigencias';
 import {
   comExigenciaSemGrupo,
@@ -7,7 +7,8 @@ import {
   exigenciasVazias,
 } from '../../shared/exigencias/exigencias-documentais';
 import { regrasDeComprovacaoParaEnvio } from '../../shared/exigencias/gravacao-das-exigencias';
-import { congeladosDaFase, fase, ID_AVALIACAO, ID_CPF, ID_HOMOLOGACAO } from './fase.testing';
+import { fase, ID_AVALIACAO, ID_CPF, ID_HOMOLOGACAO } from './fase.testing';
+import { formularioDoRascunho } from '../formulario/formulario-de-inscricao.testing';
 import { identificadorDaRegra, usarFase, type ContextoDaFase } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
@@ -36,52 +37,6 @@ describe('FasePassoComponent', () => {
   });
 
   /**
-   * A consequência "abre pendência para reenvio" só é aceita em fase que admite
-   * complementação. O sinalizador vem do cadastro da fase canônica e este passo não o edita —
-   * antes disto a opção era oferecida em qualquer fase e o operador só descobria no 422 da
-   * gravação, sobre um campo que a tela não deixava corrigir.
-   */
-  describe('consequência de reenvio e complementação da fase', () => {
-    it('não oferece o reenvio em fase que não admite complementação', () => {
-      comCronograma(fase({}));
-
-      expect(editor().faseAdmiteComplementacao()).toBe(false);
-      expect(
-        editor()
-          .consequenciasDaFase()
-          .map((opcao) => opcao.valor),
-      ).not.toContain('ABRE_PRAZO_PARA_REENVIO');
-    });
-
-    it('oferece o reenvio na fase que admite', () => {
-      comCronograma(fase({ congelados: congeladosDaFase({ permiteComplementacao: true }) }));
-
-      expect(editor().faseAdmiteComplementacao()).toBe(true);
-      expect(
-        editor()
-          .consequenciasDaFase()
-          .map((opcao) => opcao.valor),
-      ).toContain('ABRE_PRAZO_PARA_REENVIO');
-    });
-
-    /**
-     * A recusa de quem JÁ tem o reenvio gravado é conferida na prontidão do Cronograma, não
-     * aqui: esta superfície é embutida com `faseFixada` e o `validar()` dela nunca é chamado
-     * pela página. O teste correspondente vive em `cronograma.component.spec.ts`.
-     */
-    it('deixa escrever o reenvio quando ele já está no rascunho', () => {
-      comCronograma(fase({}));
-      documentos().escolherDocumento(ID_CPF);
-      documentos().acrescentarDocumento();
-      detectar();
-      editor().escolherConsequencia(ID_CPF, 'ABRE_PRAZO_PARA_REENVIO');
-      detectar();
-
-      expect(editor().consequenciaDoDocumento(ID_CPF)).toBe('ABRE_PRAZO_PARA_REENVIO');
-    });
-  });
-
-  /**
    * Formato e tamanho da exigência vêm do cadastro do tipo de documento — é lá que o CEPS os
    * declara, e é de lá que a própria tela tira o texto que mostra ao operador. A tradução
    * "texto livre do cadastro → vocabulário fechado da exigência" é código do browser: nenhum
@@ -98,17 +53,24 @@ describe('FasePassoComponent', () => {
       `fase-AVALIACAO-doc-formulario-${identificadorDaRegra(exigencias(), ID_CPF)}`;
     const seletor = () => nativo.querySelector<HTMLSelectElement>(`#${idFormulario()}`);
 
-    function exigirCpfNa(congelados: Partial<AtributosCongeladosDaFase> | null): void {
-      comCronograma(
-        fase({ congelados: congelados === null ? null : congeladosDaFase(congelados) }),
-      );
+    /** O documento exigido na fase Avaliação, que responde os formulários de códigos dados. */
+    function exigirCpfNa(codigos: readonly string[]): void {
+      comCronograma(fase({}));
+      store.patchObjectSection('formulario', {
+        formularios: codigos.map((codigo, indice) =>
+          formularioDoRascunho(
+            { ...conteudoInicial(), titulo: codigo },
+            { codigo, faseCodigo: 'AVALIACAO', gravado: true, obrigatorio: indice === 0 },
+          ),
+        ),
+      });
       documentos().escolherDocumento(ID_CPF);
       documentos().acrescentarDocumento();
       detectar();
     }
 
     it('na fase dividida obriga a escolher; na de um formulário só vem preenchido; na que não responde nenhum some', () => {
-      exigirCpfNa({ coletaInscricao: true, coletaSolicitacaoIsencao: true });
+      exigirCpfNa(['INSCRICAO', 'ISENCAO_TAXA']);
       expect(seletor()?.value).toBe('');
       expect(seletor()?.getAttribute('aria-invalid')).toBe('true');
       expect(
@@ -117,17 +79,17 @@ describe('FasePassoComponent', () => {
         )?.textContent,
       ).toContain('Escolha em que formulário o candidato apresenta este documento.');
 
-      exigirCpfNa({ coletaInscricao: true });
+      exigirCpfNa(['INSCRICAO']);
       expect(seletor()?.value).toBe('INSCRICAO');
       expect(seletor()?.getAttribute('aria-invalid')).toBeNull();
 
-      exigirCpfNa(null);
+      exigirCpfNa([]);
       expect(seletor()).toBeNull();
     });
 
     it('o formulário declarado que a fase não responde mais não é trocado: o campo aparece com o erro e a gravação o leva como declarado', () => {
-      exigirCpfNa({ coletaInscricao: true });
-      eixoFormulario().escolherFinalidade(
+      exigirCpfNa(['INSCRICAO']);
+      eixoFormulario().escolherFormulario(
         identificadorDaRegra(exigencias(), ID_CPF),
         'ISENCAO_TAXA',
       );
@@ -141,37 +103,46 @@ describe('FasePassoComponent', () => {
             `#fase-AVALIACAO-doc-formulario-erro-${identificadorDaRegra(exigencias(), ID_CPF)}`,
           )
           ?.textContent?.trim(),
-      ).toBe(
-        'O formulário de isenção da taxa de inscrição não é respondido nesta fase; escolha o formulário.',
-      );
+      ).toBe('O formulário ISENCAO_TAXA não é respondido nesta fase; escolha o formulário.');
       const regrasDeComprovacao = regrasDeComprovacaoParaEnvio(store.draft().documentos, {
         faseIdPorCodigo: new Map([['AVALIACAO', ID_AVALIACAO]]),
         modalidadesOfertadas: [],
         etapasVivas: new Set<string>(),
-        finalidadesPorFase: new Map([['AVALIACAO', ['INSCRICAO']]]),
+        formulariosPorFase: new Map([['AVALIACAO', ['INSCRICAO']]]),
       }).regras;
-      expect(regrasDeComprovacao[0].documento?.momento?.finalidade).toBe('ISENCAO_TAXA');
+      expect(regrasDeComprovacao[0].documento?.momento?.formularioCodigo).toBe('ISENCAO_TAXA');
     });
 
-    it('na fase que não responde formulário nenhum, o formulário declarado antes se desfaz pela opção "Nenhum"', () => {
-      exigirCpfNa(null);
-      eixoFormulario().escolherFinalidade(
-        identificadorDaRegra(exigencias(), ID_CPF),
-        'ISENCAO_TAXA',
+    it('na fase sem formulário, avisa que o documento espera o formulário, sem recusar e sem oferecer escolha', () => {
+      exigirCpfNa([]);
+
+      expect(nativo.querySelector('p.alert--info')?.textContent?.trim()).toBe(
+        'O documento será gravado quando a fase tiver formulário (passo Formulários).',
       );
-      detectar();
+      expect(nativo.querySelector('p.alert--info')?.getAttribute('role')).toBe('status');
+      expect(seletor()).toBeNull();
+      expect(nativo.querySelector('.field__erro')).toBeNull();
+    });
+
+    it('na fase com formulário, o aviso de espera não aparece', () => {
+      exigirCpfNa(['INSCRICAO']);
+
+      expect(nativo.textContent).not.toContain('O documento será gravado quando a fase tiver');
+    });
+
+    it('um formulário real de código SEM_FORMULARIO é gravado, com esse código', () => {
+      exigirCpfNa(['INSCRICAO', 'SEM_FORMULARIO']);
       const campo = seletor() as HTMLSelectElement;
 
       campo.value = 'SEM_FORMULARIO';
       campo.dispatchEvent(new Event('change'));
       detectar();
 
-      expect(exigencias().exigenciaDoDocumento(ID_CPF).finalidade).toBeNull();
-      expect(seletor()).toBeNull();
+      expect(exigencias().exigenciaDoDocumento(ID_CPF).formularioCodigo).toBe('SEM_FORMULARIO');
     });
 
     it('na fase dividida, a escolha vai ao rascunho e a conferência passa a listar o documento sob o formulário', () => {
-      exigirCpfNa({ coletaInscricao: true, coletaSolicitacaoIsencao: true });
+      exigirCpfNa(['INSCRICAO', 'ISENCAO_TAXA']);
       const titulos = () =>
         Array.from(nativo.querySelectorAll('h4'), (titulo) => titulo.textContent?.trim());
       expect(titulos()).toEqual(['Formulário a escolher']);
@@ -181,8 +152,8 @@ describe('FasePassoComponent', () => {
       campo.dispatchEvent(new Event('change'));
       detectar();
 
-      expect(exigencias().exigenciaDoDocumento(ID_CPF).finalidade).toBe('ISENCAO_TAXA');
-      expect(titulos()).toEqual(['Formulário de isenção da taxa de inscrição']);
+      expect(exigencias().exigenciaDoDocumento(ID_CPF).formularioCodigo).toBe('ISENCAO_TAXA');
+      expect(titulos()).toEqual(['Formulário ISENCAO_TAXA']);
     });
   });
 
@@ -212,7 +183,7 @@ describe('FasePassoComponent', () => {
         faseIdPorCodigo: new Map([['AVALIACAO', ID_AVALIACAO]]),
         modalidadesOfertadas: [],
         etapasVivas: new Set<string>(),
-        finalidadesPorFase: new Map(),
+        formulariosPorFase: new Map(),
       }).regras;
 
       expect(regrasDeComprovacao[0].documento?.requisitos?.formatosPermitidos).toEqual([
@@ -287,26 +258,20 @@ describe('FasePassoComponent', () => {
     });
 
     it('ligar o alcance de todas as fases preserva o formulário que cada fase declara', () => {
-      const dividida = congeladosDaFase({ coletaInscricao: true, coletaSolicitacaoIsencao: true });
       comCronograma(
-        fase({ congelados: dividida }),
-        fase({
-          faseCanonicaId: ID_HOMOLOGACAO,
-          codigo: 'HOMOLOGACAO_INSCRICOES',
-          ordem: 2,
-          congelados: dividida,
-        }),
+        fase({}),
+        fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
       );
       store.patchSection(
         'documentos',
         comExigenciaSemGrupo(
           comExigenciaSemGrupo(exigenciasVazias(), {
             ...exigenciaNova(ID_CPF, 'AVALIACAO'),
-            finalidade: 'INSCRICAO',
+            formularioCodigo: 'INSCRICAO',
           }),
           {
             ...exigenciaNova(ID_CPF, 'HOMOLOGACAO_INSCRICOES'),
-            finalidade: 'ISENCAO_TAXA',
+            formularioCodigo: 'ISENCAO_TAXA',
           },
         ),
       );
@@ -315,27 +280,24 @@ describe('FasePassoComponent', () => {
       detectar();
 
       expect(
-        exigenciasDaFase(store.draft().documentos, 'HOMOLOGACAO_INSCRICOES')[0].finalidade,
+        exigenciasDaFase(store.draft().documentos, 'HOMOLOGACAO_INSCRICOES')[0].formularioCodigo,
       ).toBe('ISENCAO_TAXA');
     });
 
     it('a fase acrescentada depois do regime não herda o formulário do modelo que ela não responde', () => {
-      const daInscricao = congeladosDaFase({ coletaInscricao: true });
-      comCronograma(fase({ congelados: daInscricao }));
+      comCronograma(fase({}));
+      store.patchObjectSection('formulario', {
+        formularios: [formularioDoRascunho(conteudoInicial(), { faseCodigo: 'AVALIACAO' })],
+      });
       documentos().escolherDocumento(ID_CPF);
       documentos().acrescentarDocumento();
-      eixoFormulario().escolherFinalidade(identificadorDaRegra(exigencias(), ID_CPF), 'INSCRICAO');
+      eixoFormulario().escolherFormulario(identificadorDaRegra(exigencias(), ID_CPF), 'INSCRICAO');
       exigencias().valerEmTodasAsFases(ID_CPF);
       detectar();
 
       comCronograma(
-        fase({ congelados: daInscricao }),
-        fase({
-          faseCanonicaId: ID_HOMOLOGACAO,
-          codigo: 'HOMOLOGACAO_INSCRICOES',
-          ordem: 2,
-          congelados: congeladosDaFase(),
-        }),
+        fase({}),
+        fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
       );
       abrirFase(ID_HOMOLOGACAO);
       detectar();

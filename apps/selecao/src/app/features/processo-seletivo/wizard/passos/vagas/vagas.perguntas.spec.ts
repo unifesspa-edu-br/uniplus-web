@@ -1,6 +1,7 @@
 import { EscopoFatoCodigo } from '@uniplus/shared-data/configuracao';
 import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { BlocoSistemaCodigo } from '@uniplus/shared-data/selecao';
+import { faseDoServidor } from '../../shared/cronograma-do-servidor.testing';
 import { PCD } from '../../shared/gatilho-de-exigencia.testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -148,7 +149,11 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
 
   const proximoPasso = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-  const FASE_DE_INSCRICAO = { id: 'F-INSCRICAO', codigo: 'INSCRICAO', coletaInscricao: true };
+  const FASE_DE_INSCRICAO = faseDoServidor({
+    id: 'F-INSCRICAO',
+    codigo: 'INSCRICAO',
+    faseCanonica: { coletaInscricao: true },
+  });
   const ROTA_INSCRICAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/INSCRICAO`;
 
   /** O formulário de inscrição gravado, com a seção dos dados básicos que a api acrescenta. */

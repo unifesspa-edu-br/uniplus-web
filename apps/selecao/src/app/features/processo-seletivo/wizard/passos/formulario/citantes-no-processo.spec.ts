@@ -14,6 +14,7 @@ import {
   item,
   inscricaoGravada,
   formularioCom,
+  formularioDoRascunho,
   exigenciaCom,
   rascunhoCom,
   NENHUMA_EXIGENCIA,
@@ -73,18 +74,16 @@ describe('quem cita cada fato no processo', () => {
     expect(citantes.get('CONCORRER_PCD')).toEqual(['a regra de quem concorre em AC_PCD']);
   });
 
-  it('trava na inscrição o fato que outra finalidade cita, nomeando a finalidade; o que ela cita dos próprios campos fica de fora', () => {
+  it('trava na inscrição o fato que outro formulário cita, nomeando o formulário; o que ela cita dos próprios campos fica de fora', () => {
     const habilitacao = conteudoInicial();
     const citaPcd = [[{ fato: 'PCD', operador: OperadorCodigo.IGUAL, valor: 'true' }]];
     const citantes = quemCitaNoProcesso({
       documentos: NENHUMA_EXIGENCIA,
       derivacao: [],
       desempate: [],
-      outrasFinalidades: [
-        {
-          finalidade: 'HABILITACAO',
-          faseCodigo: 'HABILITACAO',
-          conteudo: {
+      outrosFormularios: [
+        formularioDoRascunho(
+          {
             ...habilitacao,
             paginas: [secao('H1', 0), ...(habilitacao.paginas ?? [])],
             itens: [
@@ -97,20 +96,25 @@ describe('quem cita cada fato no processo', () => {
               }),
             ],
           },
-        },
+          { codigo: 'HABILITACAO', faseCodigo: 'HABILITACAO' },
+        ),
       ],
     });
 
     expect(remocoesTravadasPor(citantes).get('PCD')).toBe(
-      'Não pode sair: o formulário de habilitação depende deste dado. Desfaça a dependência antes de remover o campo.',
+      'Não pode sair: o formulário HABILITACAO depende deste dado. Desfaça a dependência antes de remover o campo.',
     );
     expect(citantes.has('LAUDO')).toBe(false);
   });
 });
 
+const INSCRICOES = new Set(['INSCRICAO']);
+const camposSemUso = (rascunho: Parameters<typeof camposSemUsoDeclarado>[0]) =>
+  camposSemUsoDeclarado(rascunho, [], INSCRICOES);
+
 describe('campos que nada no certame usa', () => {
   it('aponta o campo do certame que nada usa, e não os dados básicos', () => {
-    const semUso = camposSemUsoDeclarado({
+    const semUso = camposSemUso({
       formulario: formularioCom(inscricaoGravada()),
       documentos: NENHUMA_EXIGENCIA,
       desempate: [],
@@ -123,7 +127,7 @@ describe('campos que nada no certame usa', () => {
     const quando = [[{ fato: 'PCD', operador: OperadorCodigo.IGUAL, valor: true }]];
 
     expect(
-      camposSemUsoDeclarado({
+      camposSemUso({
         formulario: formularioCom(inscricaoGravada()),
         documentos: rascunhoCom(
           exigenciaCom(ID_TITULO, [{ fato: 'PCD', operador: OperadorCodigo.IGUAL, valor: 'true' }]),
@@ -132,7 +136,7 @@ describe('campos que nada no certame usa', () => {
       }),
     ).toEqual([]);
     expect(
-      camposSemUsoDeclarado({
+      camposSemUso({
         formulario: formularioCom(inscricaoGravada(), {
           derivacao: [{ codigoFato: 'MODALIDADE', regras: [{ quando }] }],
         }),
@@ -142,7 +146,7 @@ describe('campos que nada no certame usa', () => {
     ).toEqual([]);
     const citadoPorSecao = inscricaoGravada();
     expect(
-      camposSemUsoDeclarado({
+      camposSemUso({
         formulario: formularioCom({
           ...citadoPorSecao,
           paginas: [...(citadoPorSecao.paginas ?? []), secao('S2', 1.5, { exibicao: quando })],
@@ -158,11 +162,11 @@ describe('citantes do rascunho', () => {
   it('reúne as referências e as modalidades recebidas', () => {
     const formulario = formularioCom(inscricaoGravada());
     const rascunho = { formulario, documentos: NENHUMA_EXIGENCIA, desempate: [MAIOR_IDADE] };
-    expect(citantesDoRascunho(rascunho, [])).toEqual({
+    expect(citantesDoRascunho(rascunho, [], INSCRICOES)).toEqual({
       documentos: rascunho.documentos,
       derivacao: formulario.derivacao,
       desempate: rascunho.desempate,
-      outrasFinalidades: formulario.outrasFinalidades,
+      outrosFormularios: [],
       modalidades: [],
     });
   });

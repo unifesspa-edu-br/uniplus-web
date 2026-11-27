@@ -1,9 +1,6 @@
 import { FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
 import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
-import {
-  CriarModeloFormularioCommand,
-  type FinalidadeFormularioCodigo,
-} from '@uniplus/shared-data/configuracao';
+import type { CriarModeloFormularioCommand } from '@uniplus/shared-data/configuracao';
 import { conteudoInicial } from '@uniplus/shared-inscricao/formulario';
 import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
@@ -15,17 +12,23 @@ export interface CriacaoForm {
   codigo: FormControl<string>;
   nome: FormControl<string>;
   descricao: FormControl<string>;
-  finalidade: FormControl<FinalidadeFormularioCodigo | null>;
+  serveAFaseDeInscricao: FormControl<boolean>;
+  obrigatorio: FormControl<boolean>;
   tipoProcessoCodigo: FormControl<string>;
 }
 
 export type CampoDaCriacao = keyof CriacaoForm;
+export type CampoDeTextoDaCriacao = Exclude<
+  CampoDaCriacao,
+  'serveAFaseDeInscricao' | 'obrigatorio'
+>;
 
 const CAMPOS: readonly CampoDaCriacao[] = [
   'codigo',
   'nome',
   'descricao',
-  'finalidade',
+  'serveAFaseDeInscricao',
+  'obrigatorio',
   'tipoProcessoCodigo',
 ];
 
@@ -41,7 +44,8 @@ export function criarFormularioDeModelo(): FormGroup<CriacaoForm> {
     ),
     nome: campoDeTexto(Validators.required, Validators.maxLength(200)),
     descricao: campoDeTexto(Validators.maxLength(1000)),
-    finalidade: new FormControl<FinalidadeFormularioCodigo | null>(null, Validators.required),
+    serveAFaseDeInscricao: new FormControl(false, { nonNullable: true }),
+    obrigatorio: new FormControl(false, { nonNullable: true }),
     tipoProcessoCodigo: campoDeTexto(...validadoresDoCodigo(80)),
   });
 }
@@ -49,16 +53,25 @@ export function criarFormularioDeModelo(): FormGroup<CriacaoForm> {
 /** O comando de criação: o modelo nasce com o conteúdo inicial e é montado na edição. */
 export function comandoDeCriacao(form: FormGroup<CriacaoForm>): CriarModeloFormularioCommand {
   const valores = form.getRawValue();
-  if (valores.finalidade === null) throw new Error('Finalidade obrigatória.');
   return {
     codigo: valores.codigo,
-    finalidade: valores.finalidade,
-    descritivo: {
-      nome: valores.nome.trim(),
-      descricao: valores.descricao.trim() || null,
-      tipoProcessoCodigo: valores.tipoProcessoCodigo || null,
-    },
+    declaracao: declaracaoDaCriacao(valores),
+    descritivo: descritivoDaCriacao(valores),
     conteudo: conteudoParaOModelo(conteudoInicial()),
+  };
+}
+
+type ValoresDaCriacao = ReturnType<FormGroup<CriacaoForm>['getRawValue']>;
+
+function declaracaoDaCriacao({ serveAFaseDeInscricao, obrigatorio }: ValoresDaCriacao) {
+  return { serveAFaseDeInscricao, obrigatorio };
+}
+
+function descritivoDaCriacao(valores: ValoresDaCriacao) {
+  return {
+    nome: valores.nome.trim(),
+    descricao: valores.descricao.trim() || null,
+    tipoProcessoCodigo: valores.tipoProcessoCodigo || null,
   };
 }
 

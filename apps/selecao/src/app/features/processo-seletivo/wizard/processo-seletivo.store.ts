@@ -38,17 +38,11 @@ export class ProcessoSeletivoStore {
   /** Mutação em curso — usado para impedir disparo duplo e travar a navegação. */
   readonly salvando = signal(false);
   /**
-   * Trava adicional a `salvando()`, para uma orquestração que grava MAIS de
-   * um passo em sequência (hoje só `ProcessoSeletivoPage.publicar()`: grava
-   * os passos anteriores, recarrega o checklist da Revisão, valida de
-   * novo). Cada `persistir()` individual já solta `salvando` no próprio
-   * `finally` assim que a PRÓPRIA chamada termina — mas a orquestração
-   * inteira ainda não acabou, e o intervalo entre um passo terminar e o
-   * próximo começar (ou entre o último passo e a recarga que vem depois)
-   * liberava o stepper e os campos por um instante real, não um microtask:
-   * o operador podia navegar, editar, e voltar antes da recarga concluir, e
-   * a confirmação seguinte comparava contra um checklist que já não
-   * descrevia o rascunho atual. Ver `operacaoEmAndamento`.
+   * Trava adicional a `salvando()` para uma orquestração que grava MAIS de um passo em sequência
+   * (hoje só `ProcessoSeletivoPage.publicar()`). Cada `persistir()` solta `salvando` ao terminar,
+   * e o intervalo até o passo seguinte liberava o stepper e os campos: o operador podia navegar e
+   * editar antes da recarga do checklist, e a confirmação comparava contra um checklist que já não
+   * descrevia o rascunho. Ver `operacaoEmAndamento`.
    */
   readonly travamentoDeOrquestracao = signal(false);
   /**
@@ -57,6 +51,8 @@ export class ProcessoSeletivoStore {
    * rascunho agora só faria a tela divergir do que existe no servidor.
    */
   readonly criacaoIndefinida = signal(false);
+  /** Documentos exigidos só no rascunho: o servidor ainda não tem o formulário de uma fase deles. */
+  readonly documentosExigidosAguardandoFormulario = signal(false);
 
   /**
    * Detalhe canônico como o servidor o devolveu, preservado **inteiro**
@@ -112,7 +108,7 @@ export class ProcessoSeletivoStore {
   readonly camposPostosPelasExigencias = signal(CamposPostosPelasExigencias.vazia());
 
   /**
-   * As aplicações de modelo sem desfecho conhecido, por finalidade. O rascunho ainda é o de antes:
+   * As aplicações de modelo sem desfecho conhecido, por código de formulário. O rascunho ainda é o de antes:
    * gravá-lo passaria por cima da cópia. Fica no store para sobreviver à troca de passo.
    */
   readonly aplicacoesDeModeloEmAberto = signal<ReadonlyMap<string, AplicacaoEmAberto>>(new Map());
@@ -380,6 +376,7 @@ export class ProcessoSeletivoStore {
     this.camposPostosPelasExigencias.update((atual) => atual.esvaziada());
     this.aplicacoesDeModeloEmAberto.set(new Map());
     this.avisoDocumentos.set(null);
+    this.documentosExigidosAguardandoFormulario.set(false);
   }
 
   hidratar(dto: ProcessoSeletivoDto): void {

@@ -4,6 +4,12 @@
     até a fase ser corrigida.
   </p>
 }
+@if (store.documentosExigidosAguardandoFormulario()) {
+  <p class="alert alert--info" role="status">
+    Os documentos exigidos ainda não foram gravados: uma das fases não tem formulário. Eles serão
+    gravados quando você gravar os Formulários. Se recarregar a página antes disso, eles se perdem.
+  </p>
+}
 @if (releituraDosIdentificadores.aviso(); as aviso) {
   <p role="alert">{{ aviso }}</p>
 }

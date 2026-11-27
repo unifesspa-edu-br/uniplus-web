@@ -31,16 +31,17 @@ export interface DestinoDaGravacaoDoFormulario {
 
 interface AlvoDoFormulario {
   readonly processoSeletivoId: string;
-  readonly finalidade: string;
+  readonly codigo: string;
 }
 
 /**
- * Grava o formulário de uma finalidade seguindo o plano: só o que difere do servidor, na ordem em
+ * Grava o formulário seguindo o plano: só o que difere do servidor, na ordem em
  * que a API aceita cada parte. Para no primeiro passo recusado; os anteriores ficaram gravados, e
  * quem chama relê o processo para comparar a próxima tentativa com o que ficou.
  *
- * Cada parte tem a sua chave, e o corpo leva a finalidade: a mesma lista enviada a duas
- * finalidades é outro comando.
+ * Antes do primeiro passo confere que os itens podem ser enviados: o cabeçalho não se grava se eles
+ * não puderem. Cada parte tem a sua chave, e o corpo leva o código: a mesma lista enviada a dois
+ * formulários é outro comando.
  */
 export async function gravarFormulario(
   destino: DestinoDaGravacaoDoFormulario,
@@ -48,7 +49,6 @@ export async function gravarFormulario(
   servidor: FormularioParaGravar | null,
   desejado: FormularioDesejado,
 ): Promise<ResultadoGravacao> {
-  // Antes do primeiro passo: o cabeçalho não pode ser gravado se os itens não puderem.
   if (itensParaEnvio(desejado.conteudo) === null) {
     return { ok: false, problem: LIMITE_QUE_NAO_E_NUMERO };
   }
@@ -59,32 +59,59 @@ export async function gravarFormulario(
   return { ok: true };
 }
 
+type Gravador = (
+  destino: DestinoDaGravacaoDoFormulario,
+  alvo: AlvoDoFormulario,
+  desejado: FormularioDesejado,
+) => Promise<ResultadoGravacao>;
+
+const GRAVADORES: Readonly<Record<PassoDaGravacao, Gravador>> = {
+  cabecalho: gravarCabecalho,
+  itens: (destino, alvo, desejado) => gravarItens(destino, alvo, desejado, false),
+  itensSemSecao: (destino, alvo, desejado) => gravarItens(destino, alvo, desejado, true),
+  termos: gravarTermos,
+};
+
 function gravarPasso(
-  { gravacao, api }: DestinoDaGravacaoDoFormulario,
-  { processoSeletivoId, finalidade }: AlvoDoFormulario,
+  destino: DestinoDaGravacaoDoFormulario,
+  alvo: AlvoDoFormulario,
   passo: PassoDaGravacao,
   desejado: FormularioDesejado,
 ): Promise<ResultadoGravacao> {
-  switch (passo) {
-    case 'cabecalho': {
-      const corpo = cabecalhoParaEnvio(desejado.faseId, desejado.conteudo);
-      return gravacao.gravar('cabecalhoDoFormulario', { finalidade, corpo }, (contexto) =>
-        api.definirCabecalhoDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
-      );
-    }
-    case 'itensSemSecao':
-    case 'itens': {
-      const corpo = itensParaEnvio(desejado.conteudo, passo === 'itensSemSecao');
-      if (corpo === null) return Promise.resolve({ ok: false, problem: LIMITE_QUE_NAO_E_NUMERO });
-      return gravacao.gravar('itensDoFormulario', { finalidade, corpo }, (contexto) =>
-        api.definirItensDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
-      );
-    }
-    case 'termos': {
-      const corpo = termosParaEnvio(desejado.conteudo);
-      return gravacao.gravar('termosDoFormulario', { finalidade, corpo }, (contexto) =>
-        api.definirTermosDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
-      );
-    }
-  }
+  return GRAVADORES[passo](destino, alvo, desejado);
+}
+
+function gravarCabecalho(
+  { gravacao, api }: DestinoDaGravacaoDoFormulario,
+  { processoSeletivoId, codigo }: AlvoDoFormulario,
+  desejado: FormularioDesejado,
+): Promise<ResultadoGravacao> {
+  const corpo = cabecalhoParaEnvio(desejado);
+  return gravacao.gravar('cabecalhoDoFormulario', { codigo, corpo }, (contexto) =>
+    api.definirCabecalhoDoFormulario(processoSeletivoId, codigo, corpo, contexto),
+  );
+}
+
+function gravarItens(
+  { gravacao, api }: DestinoDaGravacaoDoFormulario,
+  { processoSeletivoId, codigo }: AlvoDoFormulario,
+  desejado: FormularioDesejado,
+  semSecao: boolean,
+): Promise<ResultadoGravacao> {
+  const corpo = itensParaEnvio(desejado.conteudo, semSecao);
+  if (corpo === null) return Promise.resolve({ ok: false, problem: LIMITE_QUE_NAO_E_NUMERO });
+  return gravacao.gravar('itensDoFormulario', { codigo, corpo }, (contexto) =>
+    api.definirItensDoFormulario(processoSeletivoId, codigo, corpo, contexto),
+  );
+}
+
+function gravarTermos(
+  { gravacao, api }: DestinoDaGravacaoDoFormulario,
+  { processoSeletivoId, codigo }: AlvoDoFormulario,
+  desejado: FormularioDesejado,
+): Promise<ResultadoGravacao> {
+  const corpo = termosParaEnvio(desejado.conteudo);
+  return gravacao.gravar('termosDoFormulario', { codigo, corpo }, (contexto) =>
+    api.definirTermosDoFormulario(processoSeletivoId, codigo, corpo, contexto),
+  );
 }

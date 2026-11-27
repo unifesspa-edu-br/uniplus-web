@@ -41,7 +41,7 @@ function documentoExibido(documento: DocumentoDoComprovanteDto): DocumentoExibid
     integrante: documento.integrante,
     obrigatoriedade: documento.obrigatorio ? 'Obrigatório' : 'Facultativo',
     situacao: documento.situacao,
-    consequencia: documento.consequencia,
+    consequencia: documento.consequenciaDoDescumprimento,
     arquivos: documento.arquivos.map(arquivoExibido),
   };
 }

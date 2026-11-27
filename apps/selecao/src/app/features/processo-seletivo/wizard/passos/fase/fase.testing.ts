@@ -35,12 +35,12 @@ import { CatalogoDasConsequenciasDeIndeferimento } from '../cronograma/catalogos
 
 export const BASE = 'http://localhost:5000';
 export const CONSEQUENCIA_ELIMINA = {
-  codigo: 'ELIMINA',
+  codigo: 'ELIMINA_DO_PROCESSO',
   rotulo: 'Elimina do processo',
 };
-export const CONSEQUENCIA_REENVIO = {
-  codigo: 'ABRE_PRAZO_PARA_REENVIO',
-  rotulo: 'Abre prazo para reenvio',
+export const CONSEQUENCIA_RETIRA_MODALIDADE = {
+  codigo: 'RETIRA_A_MODALIDADE',
+  rotulo: 'Retira a modalidade',
 };
 export const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
 export const ROTA_FASES = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/cronograma-fases`;
@@ -240,8 +240,8 @@ const PROVEDORES_DA_FASE = [
 ];
 
 function opcoesParaUrl(url: string): readonly unknown[] | null {
-  if (url.includes('consequencias-indeferimento'))
-    return [CONSEQUENCIA_ELIMINA, CONSEQUENCIA_REENVIO];
+  if (url.includes('consequencias-do-descumprimento'))
+    return [CONSEQUENCIA_ELIMINA, CONSEQUENCIA_RETIRA_MODALIDADE];
   return opcoesDoRecursoDaUrl(url);
 }
 
@@ -292,8 +292,10 @@ function comAsFases(
 
 function responderConsequenciasDeIndeferimento(controller: HttpTestingController): void {
   controller
-    .match((requisicao) => requisicao.url.includes('consequencias-indeferimento'))
-    .forEach((requisicao) => requisicao.flush([CONSEQUENCIA_ELIMINA, CONSEQUENCIA_REENVIO]));
+    .match((requisicao) => requisicao.url.includes('consequencias-do-descumprimento'))
+    .forEach((requisicao) =>
+      requisicao.flush([CONSEQUENCIA_ELIMINA, CONSEQUENCIA_RETIRA_MODALIDADE]),
+    );
 }
 
 function atenderOuFalhar(

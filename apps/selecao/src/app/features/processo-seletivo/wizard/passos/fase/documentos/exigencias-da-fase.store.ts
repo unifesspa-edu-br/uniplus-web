@@ -27,7 +27,7 @@ import {
   exigenciaNova,
   exigenciaSemNormaResolvida,
 } from '../../../shared/exigencias/exigencias-documentais';
-import { finalidadeDaExigencia } from '../../../shared/exigencias/formulario-da-exigencia';
+import { formularioDaExigencia } from '../../../shared/exigencias/formulario-da-exigencia';
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import { documentosDeclarados, modeloParaTodasAsFases } from './documentos-declarados';
@@ -141,7 +141,7 @@ export class ExigenciasDaFaseStore {
 
     const modelo = modeloParaTodasAsFases(exigencias, id);
     if (modelo !== undefined)
-      return { ...modelo, faseCodigo: codigo, etapaId: null, finalidade: null };
+      return { ...modelo, faseCodigo: codigo, etapaId: null, formularioCodigo: null };
 
     return exigenciaNova(id, codigo, this.catalogoDeDocumentos.tipoDocumentoPorId().get(id));
   }
@@ -164,15 +164,16 @@ export class ExigenciasDaFaseStore {
     return this.exigenciaDoDocumento(id).etapaId ?? '';
   }
 
-  readonly finalidadesDaFaseAberta = this.faseEmEdicao.finalidadesDaFaseAberta;
+  readonly formulariosDaFaseAberta = this.faseEmEdicao.formulariosDaFaseAberta;
+  readonly codigosDaFaseAberta = this.faseEmEdicao.codigosDaFaseAberta;
 
-  /** O formulário em que o documento é apresentado; `null` enquanto não está definido. */
-  finalidadeDoDocumento(id: string): string | null {
-    const formulario = finalidadeDaExigencia(
-      this.exigenciaDoDocumento(id).finalidade,
-      this.finalidadesDaFaseAberta(),
+  /** O código do formulário em que o documento é apresentado; `null` enquanto não está definido. */
+  formularioDoDocumento(id: string): string | null {
+    const formulario = formularioDaExigencia(
+      this.exigenciaDoDocumento(id).formularioCodigo,
+      this.codigosDaFaseAberta(),
     );
-    return formulario.situacao === 'DEFINIDO' ? formulario.finalidade : null;
+    return formulario.situacao === 'DEFINIDO' ? formulario.codigo : null;
   }
 
   /** Se a publicação recusaria esta exigência por falta de norma: a mesma regra que ela aplica. */

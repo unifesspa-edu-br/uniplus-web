@@ -5,7 +5,6 @@ import {
   type FaseDoCronograma,
   type ProdutoDaFase,
 } from '../processo-seletivo.models';
-import { finalidadesQueAtende } from '../passos/formulario/formularios-por-finalidade';
 import { publicaResultadoDefinitivo } from './publicacoes-da-fase';
 
 /**
@@ -126,18 +125,6 @@ function atributosDoCatalogo(
   };
 }
 
-/**
- * As finalidades cujo formulário se responde na fase, com os atributos que a fase congelou ou, na
- * fase recém-acrescentada, os do catálogo.
- */
-export function finalidadesDaFase(
-  fase: FaseDoCronograma,
-  fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
-): readonly string[] {
-  const { coletaInscricao, coletaSolicitacaoIsencao } = descreverFase(fase, fasePorId);
-  return finalidadesQueAtende({ codigo: fase.codigo, coletaInscricao, coletaSolicitacaoIsencao });
-}
-
 /** A fase resolvida, como tela e validação precisam vê-la. */
 export interface DescricaoDaFase {
   readonly nome: string;
@@ -159,4 +146,19 @@ export interface DescricaoDaFase {
 /** Renumera a lista de 1 a N, na ordem em que ela está. */
 export function renumerar(fases: readonly FaseDoCronograma[]): readonly FaseDoCronograma[] {
   return fases.map((fase, indice) => ({ ...fase, ordem: indice + 1 }));
+}
+
+/**
+ * Os códigos das fases em que o candidato se inscreve, pelas marcas que a fase congelou ou, na
+ * fase recém-acrescentada, pelas do catálogo.
+ */
+export function fasesQueColetamInscricao(
+  fases: readonly FaseDoCronograma[],
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
+): ReadonlySet<string> {
+  return new Set(
+    fases
+      .filter((fase) => descreverFase(fase, fasePorId).coletaInscricao)
+      .map((fase) => fase.codigo),
+  );
 }

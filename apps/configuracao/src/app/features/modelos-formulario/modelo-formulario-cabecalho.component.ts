@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { TagComponent } from '@uniplus/shared-ui/components';
 import type { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.store';
 
-/** O título do modelo aberto: nome, código, finalidade e situação. */
+/** O título do modelo aberto: nome, código, uso na fase de inscrição e situação. */
 @Component({
   selector: 'cfg-modelo-formulario-cabecalho',
   imports: [RouterLink, TagComponent],

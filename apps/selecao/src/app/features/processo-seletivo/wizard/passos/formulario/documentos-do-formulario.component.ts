@@ -4,8 +4,8 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { PASSO_CRONOGRAMA, type DocumentoExigidoLido } from '../../shared/documentos-exigidos';
 
 /**
- * Os documentos que o bloco de comprovação do formulário pede ao candidato: o que a fase e a
- * finalidade do formulário exigem. A lista é lida do passo Cronograma, onde é editada.
+ * Os documentos que o bloco de comprovação do formulário pede ao candidato: o que a fase e o
+ * código do formulário exigem. A lista é lida do passo Cronograma, onde é editada.
  */
 @Component({
   selector: 'sel-documentos-do-formulario',
@@ -67,7 +67,8 @@ import { PASSO_CRONOGRAMA, type DocumentoExigidoLido } from '../../shared/docume
         {{
           semFormulario() === 1
             ? '1 documento desta fase depende da escolha do formulário em que é apresentado'
-            : semFormulario() + ' documentos desta fase dependem da escolha do formulário em que são apresentados'
+            : semFormulario() +
+              ' documentos desta fase dependem da escolha do formulário em que são apresentados'
         }}
         e não aparece{{ semFormulario() === 1 ? '' : 'm' }} aqui. Faça a escolha no passo
         Cronograma.

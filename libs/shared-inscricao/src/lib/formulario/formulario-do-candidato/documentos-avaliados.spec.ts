@@ -13,8 +13,8 @@ import {
 } from './documentos-avaliados.testing';
 
 describe('documentosDoFormulario', () => {
-  /** O processo pode ter mais de uma fase de coleta: a finalidade sozinha não diz a fase. */
-  it('traz os documentos e as pendências da fase do formulário, e da finalidade dele', () => {
+  /** O processo pode ter mais de uma fase de coleta: o código do formulário sozinho não diz a fase. */
+  it('traz os documentos e as pendências da fase do formulário, e do formulário dele', () => {
     const avaliados: DocumentosAvaliados = {
       fases: [
         {
@@ -30,7 +30,7 @@ describe('documentosDoFormulario', () => {
           ordem: 1,
           documentos: [
             documento('Histórico'),
-            documento('Renda para a isenção', { finalidade: 'ISENCAO_TAXA' }),
+            documento('Renda para a isenção', { formularioCodigo: 'ISENCAO_TAXA' }),
           ],
           pendencias: [{ fatoCodigo: 'PCD', rotulo: 'Deficiência', secaoCodigo: null }],
         },

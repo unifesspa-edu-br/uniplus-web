@@ -44,7 +44,9 @@ describe('InscricaoDoCandidatoPage', () => {
   it('a retomada volta com as respostas e os aceites gravados', async () => {
     cenario.servico.inscricao = inscricao({
       respostas: { NOME: 'Fernanda Laura Nicole Drumond' },
-      aceites: [{ codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' }],
+      aceites: [
+        { formularioCodigo: 'INSCRICAO', codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' },
+      ],
     });
     const tela = await cenario.abrir();
 

@@ -21,7 +21,7 @@ export const PERMISSAO = {
     termosPublicar: 'autorizacao:termos:publicar',
   },
   configuracao: {
-    baseLegalBonusRegionalManter: 'configuracao:base-legal-do-fada:manter',
+    baseLegalDoFadaManter: 'configuracao:base-legal-do-fada:manter',
     calendariosDiasUteisManter: 'configuracao:calendarios-dias-uteis:manter',
     campiManter: 'configuracao:campi:manter',
     condicoesAtendimentoManter: 'configuracao:condicoes-atendimento:manter',

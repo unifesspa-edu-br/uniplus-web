@@ -34,8 +34,8 @@ export const DETALHE_PUBLICADO = {
   etapas: [],
   atendimentoEspecializado: null,
   distribuicaoVagas: [],
-  bonusRegional: null,
-  aplicaBonusRegional: false,
+  fada: null,
+  aplicaFada: false,
   cascata: null,
   criteriosDesempate: [],
   classificacao: null,
@@ -57,7 +57,7 @@ export const DETALHE_PUBLICADO = {
         nome: NOME_DOCUMENTO,
       },
       obrigatorio: true,
-      consequencia: 'ELIMINA',
+      consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
     }),
     regraDaExigencia({
       id: '01960000-0000-7000-0000-000000000a12',
@@ -68,7 +68,7 @@ export const DETALHE_PUBLICADO = {
         nome: 'Autodeclaração étnico-racial',
       },
       obrigatorio: false,
-      consequencia: 'RECLASSIFICA_AC',
+      consequenciaDoDescumprimento: 'RETIRA_A_MODALIDADE',
       condicoes: [
         {
           id: '01960000-0000-7000-0000-000000000a13',
@@ -117,7 +117,7 @@ export const DETALHE_DUAS_FASES = {
         nome: NOME_DOCUMENTO,
       },
       obrigatorio: true,
-      consequencia: 'ELIMINA',
+      consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
     }),
   ],
 };

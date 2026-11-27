@@ -7,11 +7,11 @@
     [filtrosAtivos]="filtrosAtivos()"
   >
     <ng-container uiFilterBarSecondary>
-      <span class="u-eyebrow">Finalidade</span>
+      <span class="u-eyebrow">Fase de inscrição</span>
       <ui-filter-chips
-        [options]="finalidadeChips()"
-        [(selected)]="filtroFinalidade"
-        ariaLabel="Filtrar por finalidade"
+        [options]="faseDeInscricaoChips"
+        [(selected)]="filtroFaseDeInscricao"
+        ariaLabel="Filtrar pelos modelos que servem ou não à fase de inscrição"
       />
       <span class="u-eyebrow">Situação</span>
       <ui-filter-chips
@@ -56,13 +56,14 @@
     <div class="table-responsive">
       <table>
         <caption class="sr-only">
-          Modelos de formulário, com finalidade, tipo de processo e situação
+          Modelos de formulário, com fase de inscrição, preenchimento, tipo de processo e situação
         </caption>
         <thead>
           <tr>
             <th scope="col">Código</th>
             <th scope="col">Nome</th>
-            <th scope="col">Finalidade</th>
+            <th scope="col">Serve à fase de inscrição</th>
+            <th scope="col">Preenchimento</th>
             <th scope="col">Tipo de processo</th>
             <th scope="col">Situação</th>
             <th scope="col"><span class="sr-only">Ações</span></th>
@@ -75,7 +76,12 @@
                 <code>{{ modelo.codigo }}</code>
               </td>
               <td data-label="Nome">{{ modelo.descritivo.nome }}</td>
-              <td data-label="Finalidade">{{ modelo.finalidade.rotulo }}</td>
+              <td data-label="Serve à fase de inscrição">
+                {{ modelo.declaracao.serveAFaseDeInscricao ? 'Sim' : 'Não' }}
+              </td>
+              <td data-label="Preenchimento">
+                {{ modelo.declaracao.obrigatorio ? 'Obrigatório' : 'Facultativo' }}
+              </td>
               <td data-label="Tipo de processo">
                 @if (modelo.descritivo.tipoProcessoCodigo; as codigo) {
                   <code [attr.title]="rotuloDoTipo(codigo)">{{ codigo }}</code>

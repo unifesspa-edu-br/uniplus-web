@@ -99,7 +99,7 @@ export const PROCESSO_DTO_MINIMO = {
   etapas: [],
   atendimentoEspecializado: null,
   distribuicaoVagas: [],
-  bonusRegional: null,
+  fada: null,
   cascata: null,
   criteriosDesempate: [],
   classificacao: null,

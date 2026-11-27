@@ -1,0 +1,146 @@
+@let aba_ = aba();
+<section class="step-section" [attr.aria-labelledby]="aba_.idBase + '-fase-titulo'">
+  <h2 [id]="aba_.idBase + '-fase-titulo'" class="step-section__title" tabindex="-1">
+    Identificação e fase
+  </h2>
+
+  @if (store.emConsulta()) {
+    <div class="form-grid">
+      <ui-valor-em-consulta rotulo="Código do formulário" [valor]="aba_.codigo" />
+      <ui-valor-em-consulta
+        rotulo="Fase em que o candidato responde"
+        seVazio="Nenhuma fase declarada"
+        [valor]="aba_.nomeDaFase"
+      />
+      <ui-valor-em-consulta
+        rotulo="Envio"
+        [valor]="aba_.obrigatorio ? 'Obrigatório' : 'Facultativo'"
+      />
+      @if (aba_.consequenciaCabe) {
+        <ui-valor-em-consulta
+          rotulo="Se o candidato não enviar"
+          seVazio="Sem consequência própria"
+          [valor]="rotuloDaConsequencia()"
+        />
+      }
+    </div>
+  } @else {
+    <div class="form-grid">
+      <div class="form-field" [class.is-error]="erroDoCodigo() !== null">
+        <label class="label" [for]="aba_.idBase + '-codigo'">Código do formulário</label>
+        <input
+          class="input"
+          type="text"
+          [id]="aba_.idBase + '-codigo'"
+          [value]="texto()"
+          [maxLength]="limite"
+          [readOnly]="aba_.gravado"
+          [disabled]="!store.aceitaEdicao()"
+          [attr.aria-invalid]="erroDoCodigo() !== null ? 'true' : null"
+          [attr.aria-describedby]="
+            aba_.idBase +
+            '-codigo-ajuda' +
+            (erroDoCodigo() !== null ? ' ' + aba_.idBase + '-codigo-erro' : '')
+          "
+          (input)="digitar($event)"
+          (change)="confirmarCodigo()"
+        />
+        <span class="field__hint" [id]="aba_.idBase + '-codigo-ajuda'">
+          Letras maiúsculas, números e _. O código não muda depois que o formulário é gravado.
+        </span>
+        @if (erroDoCodigo(); as erro) {
+          <p class="field__erro" role="alert" [id]="aba_.idBase + '-codigo-erro'">{{ erro }}</p>
+        }
+      </div>
+
+      @if (aba_.fases.length === 0) {
+        <p class="field__hint" role="status" [id]="aba_.idBase + '-sem-fase'">
+          O cronograma não tem fase com lugar para este formulário. Acrescente a fase no passo
+          Cronograma, ou remova o formulário.
+        </p>
+      } @else {
+        <div class="form-field">
+          <label class="label" [for]="aba_.campoDaFase">Fase em que o candidato responde</label>
+          <select
+            class="select"
+            [id]="aba_.campoDaFase"
+            [attr.aria-describedby]="aba_.idBase + '-fase-ajuda'"
+            [disabled]="!store.aceitaEdicao()"
+            (change)="faseMudou.emit($any($event.target).value)"
+          >
+            @if (aba_.fase === '') {
+              <option value="" selected>Escolha a fase</option>
+            }
+            @for (opcao of aba_.fases; track opcao.codigo) {
+              <option [value]="opcao.codigo" [selected]="opcao.codigo === aba_.fase">
+                {{ opcao.nome }}
+              </option>
+            }
+          </select>
+          <span class="field__hint" [id]="aba_.idBase + '-fase-ajuda'">
+            Só aparecem as fases do cronograma que ainda têm lugar para este formulário: cada fase
+            tem no máximo um obrigatório e um facultativo.
+          </span>
+        </div>
+      }
+    </div>
+
+    @if (aba_.fase !== '') {
+      @if (aba_.obrigatoriedade.fixa) {
+        <p class="field__hint" [id]="aba_.idBase + '-obrigatoriedade'">
+          {{ aba_.obrigatoriedade.explicacao }}
+        </p>
+      } @else {
+        <div class="form-field">
+          <label class="checkbox">
+            <input
+              type="checkbox"
+              [id]="aba_.idBase + '-obrigatorio'"
+              [checked]="aba_.obrigatorio"
+              [disabled]="!store.aceitaEdicao() || !aba_.obrigatoriedade.podeAlternar"
+              [attr.aria-describedby]="aba_.idBase + '-obrigatorio-ajuda'"
+              (change)="obrigatorioMudou.emit($any($event.target).checked)"
+            />
+            <span class="checkbox__box" aria-hidden="true"></span>
+            O candidato é obrigado a enviar este formulário
+          </label>
+          <span class="field__hint" [id]="aba_.idBase + '-obrigatorio-ajuda'">
+            @if (aba_.obrigatoriedade.podeAlternar) {
+              Desmarque quando o envio for facultativo.
+            } @else {
+              A fase já tem outro formulário
+              {{ aba_.obrigatorio ? 'facultativo' : 'obrigatório' }}: cada fase tem no máximo um de
+              cada.
+            }
+          </span>
+        </div>
+      }
+
+      @if (aba_.consequenciaCabe) {
+        <div class="form-field">
+          <label class="label" [for]="aba_.idBase + '-consequencia'">
+            Se o candidato não enviar
+          </label>
+          <select
+            class="select"
+            [id]="aba_.idBase + '-consequencia'"
+            [disabled]="!store.aceitaEdicao()"
+            (change)="consequenciaMudou.emit($any($event.target).value || null)"
+          >
+            <option value="" [selected]="aba_.consequenciaDaFaltaDeEnvio === null">
+              Sem consequência própria
+            </option>
+            @for (opcao of consequencias.consequencias(); track opcao.codigo) {
+              <option
+                [value]="opcao.codigo"
+                [selected]="opcao.codigo === aba_.consequenciaDaFaltaDeEnvio"
+              >
+                {{ opcao.rotulo }}
+              </option>
+            }
+          </select>
+        </div>
+      }
+    }
+  }
+</section>

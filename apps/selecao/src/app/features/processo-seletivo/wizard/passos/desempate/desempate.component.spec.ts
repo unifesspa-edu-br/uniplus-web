@@ -12,13 +12,15 @@ import {
 import { apresentacaoDaPagina, apresentacaoDoCampo } from '@uniplus/shared-inscricao/formulario';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
-import { item, secao } from '../formulario/formulario-de-inscricao.testing';
+import { comInscricao, item, secao } from '../formulario/formulario-de-inscricao.testing';
+import { FASE_INSCRICAO } from '../formulario/formulario-gravado.testing';
 import { DesempatePassoComponent } from './desempate.component';
 import {
   BASE,
@@ -44,6 +46,10 @@ describe('DesempatePassoComponent', () => {
 
   afterEach(() => controller.verify());
 
+  /** A fase em que o candidato se inscreve é a que diz qual formulário é o da inscrição. */
+  const comFaseDeInscricao = () =>
+    store.patchObjectSection('cronograma', { fases: [FASE_INSCRICAO] });
+
   /**
    * O catálogo de fatos governa o que o predicado pode citar. Falhando a busca sem aviso nem
    * nova tentativa, todo critério já configurado por predicado aparecia como fato fora do
@@ -59,6 +65,7 @@ describe('DesempatePassoComponent', () => {
         CadastroInicial,
         GravacaoDoProcesso,
         CatalogosDeClassificacao,
+        CatalogoDeFases,
         LeituraDoCadastroDePesos,
         ReleituraDoSnapshot,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
@@ -113,6 +120,7 @@ describe('DesempatePassoComponent', () => {
         CadastroInicial,
         GravacaoDoProcesso,
         CatalogosDeClassificacao,
+        CatalogoDeFases,
         LeituraDoCadastroDePesos,
         ReleituraDoSnapshot,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
@@ -187,7 +195,11 @@ describe('DesempatePassoComponent', () => {
       pressupostos: [],
       grupos: [],
     });
-    store.patchObjectSection('formulario', { conteudo: conteudo(campo('NOME', 0)) });
+    comFaseDeInscricao();
+    store.patchObjectSection(
+      'formulario',
+      comInscricao(store.draft().formulario, conteudo(campo('NOME', 0))),
+    );
     expect(componente.semDataDeNascimento()).toBe(false);
 
     store.patchSection('desempate', [
@@ -198,9 +210,13 @@ describe('DesempatePassoComponent', () => {
     componente.irParaFormulario();
     expect(store.passoAtual()).toBe(PASSO_FORMULARIO);
 
-    store.patchObjectSection('formulario', {
-      conteudo: conteudo(campo('NOME', 0), campo('DATA_NASCIMENTO', 1)),
-    });
+    store.patchObjectSection(
+      'formulario',
+      comInscricao(
+        store.draft().formulario,
+        conteudo(campo('NOME', 0), campo('DATA_NASCIMENTO', 1)),
+      ),
+    );
     expect(componente.semDataDeNascimento()).toBe(false);
   });
 

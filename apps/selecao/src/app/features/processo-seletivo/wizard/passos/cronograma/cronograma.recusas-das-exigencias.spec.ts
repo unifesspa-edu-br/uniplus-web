@@ -9,6 +9,7 @@ import {
   ID_AVALIACAO,
   PROCESSO_ID,
   ROTA_FASES,
+  FORMULARIO_NA_AVALIACAO,
   ROTA_PROCESSO,
   ROTA_DOCUMENTOS,
   PROCESSO_COM_ETAPA_GRAVADA,
@@ -18,6 +19,7 @@ import {
 const PROCESSO_COM_AVALIACAO = {
   ...PROCESSO_COM_ETAPA_GRAVADA,
   cronogramaFases: [{ id: ID_AVALIACAO, codigo: 'AVALIACAO', faseCanonica: {} }],
+  formularios: [FORMULARIO_NA_AVALIACAO],
 };
 
 const CAMPO = 'documento.requisitos.formatosPermitidos';

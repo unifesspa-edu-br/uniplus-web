@@ -50,7 +50,7 @@ test.describe('Cronograma — documentos exigidos na forma do contrato', () => {
         tipoDocumento: { id: EXIGENCIA_LIDA?.tipoDocumento.id },
         momento: { faseId: FASE_DO_PROCESSO.id },
         aplicabilidade: { tipo: 'GERAL' },
-        indeferimento: { obrigatorio: true, consequencia: 'ELIMINA' },
+        indeferimento: { obrigatorio: true, consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO' },
         requisitos: { formatosPermitidos: [{ formato: 'PDF', tamanhoMaximoBytesMax: null }] },
       },
     });

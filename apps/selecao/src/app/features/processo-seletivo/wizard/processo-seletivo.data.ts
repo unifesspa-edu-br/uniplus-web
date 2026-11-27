@@ -24,11 +24,11 @@ const DEFINICOES = [
     revisao: 'Cronograma e etapas',
   },
   { rotulo: 'Fórmula e precisão', revisao: 'Fórmula de classificação' },
-  { rotulo: 'FADA', titulo: 'FADA regional' },
+  { rotulo: 'Fator de Atenuação', titulo: 'Fator de Atenuação das Desigualdades de Acesso' },
   { rotulo: 'Desempate', revisao: 'Critérios de desempate' },
   { rotulo: 'Eliminação', revisao: 'Regras de eliminação' },
   { rotulo: 'Atend. especial', titulo: 'Atendimento especializado' },
-  // Penúltimo porque é a superfície de COLETA de tudo que veio antes: bônus, desempate,
+  // Penúltimo porque é a superfície de COLETA de tudo que veio antes: Fator de Atenuação, desempate,
   // eliminação e atendimento especializado podem depender de um fato do candidato, e o domínio
   // de campos como a condição de atendimento sai da oferta declarada no passo anterior.
   // Continua, como sempre esteve, depois do Cronograma — a política que ancora a apuração de

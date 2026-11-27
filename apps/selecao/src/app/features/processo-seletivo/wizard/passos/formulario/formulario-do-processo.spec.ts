@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ConsequenciaDoDescumprimentoCodigo,
   TipoRestricaoValorCodigo,
   TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
-  FinalidadeFormularioCodigo,
   type FatoColetadoDto,
   type FormularioDto,
   OperadorCodigo,
@@ -58,8 +58,9 @@ const pagina = (codigo: string, ordem: number): FormularioDto['paginas'][number]
 });
 
 const inscricao: FormularioDto = {
-  finalidade: { codigo: FinalidadeFormularioCodigo.INSCRICAO, rotulo: 'Inscrição' },
+  codigo: 'INSCRICAO',
   faseId: 'F1',
+  obrigatorio: true,
   titulo: 'Inscrição',
   modeloOrigem: null,
   paginas: [pagina('DADOS_BASICOS', 0), pagina('S1', 1), pagina('S2', 2)],
@@ -119,9 +120,14 @@ describe('formulário do processo no editor', () => {
 });
 
 describe('planoDeGravacao', () => {
-  const servidor = { faseId: 'F1', conteudo: conteudoDoFormulario(inscricao) };
-  const com = (mudanca: (c: ConteudoDoFormulario) => ConteudoDoFormulario) => ({
+  const servidor = {
     faseId: 'F1',
+    obrigatorio: true,
+    consequenciaDaFaltaDeEnvio: null,
+    conteudo: conteudoDoFormulario(inscricao),
+  };
+  const com = (mudanca: (c: ConteudoDoFormulario) => ConteudoDoFormulario) => ({
+    ...servidor,
     conteudo: mudanca(servidor.conteudo),
   });
 
@@ -131,6 +137,16 @@ describe('planoDeGravacao', () => {
 
   it('sem mudança, não grava nada', () => {
     expect(planoDeGravacao(servidor, servidor)).toEqual([]);
+  });
+
+  it('a obrigatoriedade e a consequência da falta de envio são do cabeçalho', () => {
+    expect(planoDeGravacao(servidor, { ...servidor, obrigatorio: false })).toEqual(['cabecalho']);
+    expect(
+      planoDeGravacao(servidor, {
+        ...servidor,
+        consequenciaDaFaltaDeEnvio: ConsequenciaDoDescumprimentoCodigo.ELIMINA_DO_PROCESSO,
+      }),
+    ).toEqual(['cabecalho']);
   });
 
   it('só o rótulo de um item mudou: só os itens', () => {
@@ -224,11 +240,9 @@ describe('planoDeGravacao', () => {
         },
       ],
     };
-    const lido = { faseId: 'F1', conteudo: conteudoDoFormulario(comTudo) };
+    const lido = { ...servidor, conteudo: conteudoDoFormulario(comTudo) };
 
-    expect(
-      planoDeGravacao(lido, { faseId: 'F1', conteudo: conteudoDoFormulario(comTudo) }),
-    ).toEqual([]);
+    expect(planoDeGravacao(lido, { ...lido, conteudo: conteudoDoFormulario(comTudo) })).toEqual([]);
     expect(lido.conteudo.termos?.[0]).toMatchObject({
       termo: { termoId: 't', versaoId: 'v' },
       regras: { exibicao: null },
@@ -253,9 +267,7 @@ describe('planoDeGravacao', () => {
   });
 
   it('a fase mudou: o cabeçalho leva a fase nova', () => {
-    expect(planoDeGravacao(servidor, { faseId: 'F2', conteudo: servidor.conteudo })).toEqual([
-      'cabecalho',
-    ]);
+    expect(planoDeGravacao(servidor, { ...servidor, faseId: 'F2' })).toEqual(['cabecalho']);
   });
 
   it('a faixa de data lida do processo volta inteira no envio, com os dois limites', () => {

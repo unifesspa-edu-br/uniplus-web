@@ -13,7 +13,7 @@ import { type FatoEscolhivel } from '../editor-de-condicoes/condicoes/fatos-esco
 import { focarDepois } from '../editor-de-formulario/foco';
 import {
   documentoExigidoNovo,
-  type ConsequenciaDoIndeferimento,
+  type ConsequenciaDoDescumprimento,
   type DocumentoExigidoDoFormulario,
   type OpcaoDoDocumento,
   type RecusasDoDocumento,
@@ -131,7 +131,7 @@ export class EditorDeDocumentosExigidosComponent {
   /** Os tipos de documento do cadastro, pelo código. */
   readonly tipos = input.required<readonly OpcaoDoDocumento[]>();
   /** As consequências do indeferimento que a API oferece. */
-  readonly consequencias = input.required<readonly ConsequenciaDoIndeferimento[]>();
+  readonly consequencias = input.required<readonly ConsequenciaDoDescumprimento[]>();
   /** Os fatos que a condição pode citar: os que o modelo coleta, deriva ou conhece antes. */
   readonly fatos = input.required<readonly FatoEscolhivel[]>();
   readonly citaveis = input<ReadonlySet<string> | null>(null);

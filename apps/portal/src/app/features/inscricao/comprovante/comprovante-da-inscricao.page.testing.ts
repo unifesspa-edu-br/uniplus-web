@@ -15,7 +15,9 @@ import {
 import { MinhasInscricoesService } from '../minhas-inscricoes.service';
 import { ComprovanteDaInscricaoPage } from './comprovante-da-inscricao.page';
 
-const forma = (codigo: FormaDoValorDoItemCodigo): { codigo: FormaDoValorDoItemCodigo; rotulo: string } => ({
+const forma = (
+  codigo: FormaDoValorDoItemCodigo,
+): { codigo: FormaDoValorDoItemCodigo; rotulo: string } => ({
   codigo,
   rotulo: codigo,
 });
@@ -143,7 +145,13 @@ export const COMPROVANTE_BASE: ComprovanteDaInscricaoDto = {
       },
     ],
     termosAceitos: [
-      { codigo: 'VERACIDADE', nome: 'Declaração de veracidade', versaoId: 'v1', hashVersao: 'h1' },
+      {
+        codigo: 'VERACIDADE',
+        nome: 'Declaração de veracidade',
+        versaoId: 'v1',
+        hashVersao: 'h1',
+        formularioCodigo: 'INSCRICAO',
+      },
     ],
     documentos: [],
   },

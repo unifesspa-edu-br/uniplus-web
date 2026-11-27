@@ -1,10 +1,12 @@
-import { type FatoColetadoDto, type FormularioDto } from '@uniplus/shared-data/selecao';
+import {
+  type ConsequenciaDoDescumprimentoCodigo,
+  type FatoColetadoDto,
+  type FormularioDto,
+} from '@uniplus/shared-data/selecao';
 import { cabecalhoParaEnvio, itensParaEnvio, termosParaEnvio } from './codigos-do-formulario';
 export { cabecalhoParaEnvio, itensParaEnvio, termosParaEnvio } from './codigos-do-formulario';
 import {
-  conteudoInicial,
   paginasEmOrdem,
-  FINALIDADE_INSCRICAO,
   semDadosBasicos,
   todosOsCampos,
   type ConteudoDoFormulario,
@@ -19,8 +21,10 @@ import {
   type TermoDoFormulario,
 } from '@uniplus/shared-inscricao/formulario';
 
+import type { FormularioDoProcessoNoRascunho } from '../../processo-seletivo.models';
+
 /**
- * O formulário de uma finalidade do processo entre a forma em que a API o devolve (`FormularioDto`,
+ * Um formulário do processo entre a forma em que a API o devolve (`FormularioDto`,
  * dentro do processo) e a do editor (`ConteudoDoFormulario`, a das entradas da API). A leitura traz
  * a obrigatoriedade como objeto e campos só de exibição; a escrita os quer como token e predicado,
  * sem o que é do catálogo.
@@ -147,7 +151,7 @@ function paginaDoDto(pagina: PaginaDoFormularioDto): PaginaDoFormulario {
   };
 }
 
-/** O formulário do processo na forma do editor. O processo não tem pressuposto: as outras finalidades citam a inscrição. */
+/** O formulário do processo na forma do editor. O processo não tem pressuposto: os outros formulários citam a inscrição. */
 export function conteudoDoFormulario(dto: FormularioDto): ConteudoDoFormulario {
   return {
     titulo: dto.titulo,
@@ -162,10 +166,25 @@ export function conteudoDoFormulario(dto: FormularioDto): ConteudoDoFormulario {
 /** Um passo da gravação de um formulário, na ordem em que a API o aceita. */
 export type PassoDaGravacao = 'cabecalho' | 'itensSemSecao' | 'itens' | 'termos';
 
-/** O formulário de uma finalidade como a gravação o compara: a fase pelo id e o conteúdo do editor. */
+/**
+ * O formulário como a gravação o compara: a fase pelo id, a obrigatoriedade, a consequência da
+ * falta de envio e o conteúdo do editor.
+ */
 export interface FormularioParaGravar {
   readonly faseId: string | null;
+  readonly obrigatorio: boolean;
+  readonly consequenciaDaFaltaDeEnvio: ConsequenciaDoDescumprimentoCodigo | null;
   readonly conteudo: ConteudoDoFormulario;
+}
+
+/** O formulário que o servidor tem, na forma que a gravação o compara. */
+export function paraGravarDoServidor(formulario: FormularioDto): FormularioParaGravar {
+  return {
+    faseId: formulario.faseId,
+    obrigatorio: formulario.obrigatorio,
+    consequenciaDaFaltaDeEnvio: formulario.consequenciaDaFaltaDeEnvio?.codigo ?? null,
+    conteudo: conteudoDoFormulario(formulario),
+  };
 }
 
 const mesmo = (um: unknown, outro: unknown): boolean =>
@@ -196,7 +215,7 @@ function soAcrescentouPaginas(
 }
 
 /**
- * A ordem dos PUTs de uma finalidade. A API confere cada parte contra o que está gravado da outra
+ * A ordem dos PUTs de um formulário. A API confere cada parte contra o que está gravado da outra
  * — o cabeçalho contra os itens gravados, os itens contra as páginas gravadas —, então reordenar ou
  * remover seção com itens não tem ordem simples que funcione. Nesse caso os itens vão antes sem
  * seção (o rascunho aceita), o cabeçalho depois, e os itens de novo com a seção. Só o que mudou em
@@ -227,8 +246,8 @@ type FormularioComFase = FormularioParaGravar & { readonly faseId: string };
 
 function cabecalhoMudou(servidor: FormularioParaGravar, desejado: FormularioComFase): boolean {
   return !mesmo(
-    cabecalhoParaEnvio(desejado.faseId, desejado.conteudo),
-    cabecalhoParaEnvio(servidor.faseId ?? '', servidor.conteudo),
+    cabecalhoParaEnvio(desejado),
+    cabecalhoParaEnvio({ ...servidor, faseId: servidor.faseId ?? '' }),
   );
 }
 
@@ -255,14 +274,6 @@ function passosDeAtualizacao(
   ];
 }
 
-/** O formulário da finalidade, quando o processo o tem. */
-export function formularioDaFinalidade(
-  formularios: readonly FormularioDto[],
-  finalidade: string,
-): FormularioDto | null {
-  return formularios.find((formulario) => formulario.finalidade.codigo === finalidade) ?? null;
-}
-
 /** Os fatos que o formulário coleta: os itens, os campos dos grupos e os próprios códigos dos grupos. */
 export function fatosColetadosPor(conteudo: ConteudoDoFormulario): readonly string[] {
   return [
@@ -280,66 +291,63 @@ export function fatosAcrescentados(
   return fatosColetadosPor(depois).filter((codigo) => !anteriores.has(codigo));
 }
 
-/** Os fatos que os formulários das outras finalidades coletam no servidor. */
-export function fatosDasOutrasFinalidades(
+/** Os fatos que os formulários do servidor coletam, fora o do código dado. */
+export function fatosDosOutrosFormularios(
   formularios: readonly FormularioDto[],
-  finalidade: string,
+  codigo: string,
 ): readonly string[] {
   return [
     ...new Set(
       formularios
-        .filter((formulario) => formulario.finalidade.codigo !== finalidade)
+        .filter((formulario) => formulario.codigo !== codigo)
         .flatMap((formulario) => fatosColetadosPor(conteudoDoFormulario(formulario))),
     ),
   ];
 }
 
-/** A fase do cronograma em que a inscrição é respondida: a que coleta inscrição. */
-export function faseDaInscricao<T extends { readonly coletaInscricao: boolean }>(
-  fases: readonly T[],
-): T | null {
-  return fases.find((fase) => fase.coletaInscricao) ?? null;
-}
-
 /** O processo como a leitura dos formulários o precisa: os formulários e as fases, para resolver a fase pelo código. */
 export interface ProcessoComFormularios {
   readonly formularios: readonly FormularioDto[];
-  readonly cronogramaFases: readonly { readonly id: string; readonly codigo: string }[];
+  readonly cronogramaFases: readonly {
+    readonly id: string;
+    readonly codigo: string;
+    readonly faseCanonica: { readonly coletaInscricao: boolean };
+  }[];
 }
 
 /** O formulário do servidor na forma do rascunho: o conteúdo pelo mesmo mapeamento da gravação e a fase pelo código. */
-export interface FormularioDoServidor {
-  readonly finalidade: string;
-  readonly faseCodigo: string;
-  readonly conteudo: ConteudoDoFormulario;
-  readonly modeloOrigemCodigo: string | null;
-}
-
 export function formularioDoServidor(
   dto: ProcessoComFormularios,
   formulario: FormularioDto,
-): FormularioDoServidor {
+): FormularioDoProcessoNoRascunho {
   const fase = dto.cronogramaFases.find((f) => f.id === formulario.faseId);
   return {
-    finalidade: formulario.finalidade.codigo,
+    codigo: formulario.codigo,
+    gravado: true,
     faseCodigo: fase?.codigo ?? '',
+    obrigatorio: formulario.obrigatorio,
+    consequenciaDaFaltaDeEnvio: formulario.consequenciaDaFaltaDeEnvio?.codigo ?? null,
     conteudo: conteudoDoFormulario(formulario),
     modeloOrigemCodigo: formulario.modeloOrigem?.codigo ?? null,
   };
 }
 
 /**
- * O formulário de inscrição do servidor, na forma do rascunho. Sem formulário de inscrição, o
- * conteúdo é o inicial — a revisão e aceite —, e a seção dos dados básicos chega com a criação.
+ * O formulário de inscrição do servidor: o obrigatório da fase que coleta inscrição. Nulo quando o
+ * processo ainda não o tem.
  */
-export function inscricaoDoServidor(
-  dto: ProcessoComFormularios,
-): Omit<FormularioDoServidor, 'finalidade'> {
-  const inscricao = formularioDaFinalidade(dto.formularios, FINALIDADE_INSCRICAO);
-  if (inscricao === null)
-    return { faseCodigo: '', conteudo: conteudoInicial(), modeloOrigemCodigo: null };
-  const { faseCodigo, conteudo, modeloOrigemCodigo } = formularioDoServidor(dto, inscricao);
-  return { faseCodigo, conteudo, modeloOrigemCodigo };
+export function formularioDaInscricaoDoServidor(dto: ProcessoComFormularios): FormularioDto | null {
+  const fasesDaInscricao = new Set(
+    dto.cronogramaFases.filter((fase) => fase.faseCanonica.coletaInscricao).map((fase) => fase.id),
+  );
+  return (
+    dto.formularios.find(
+      (formulario) =>
+        formulario.obrigatorio &&
+        formulario.faseId !== null &&
+        fasesDaInscricao.has(formulario.faseId),
+    ) ?? null
+  );
 }
 
 /**
@@ -348,16 +356,16 @@ export function inscricaoDoServidor(
  */
 export function rascunhoDifereDoGravado(
   gravados: readonly FormularioDto[],
-  rascunho: readonly { readonly finalidade: string; readonly conteudo: ConteudoDoFormulario }[],
+  rascunho: readonly { readonly codigo: string; readonly conteudo: ConteudoDoFormulario }[],
 ): boolean {
   if (gravados.length !== rascunho.length) return true;
-  return rascunho.some(({ finalidade, conteudo }) => {
-    const gravado = formularioDaFinalidade(gravados, finalidade);
-    return gravado === null || gravacaoMudaria(gravado, conteudo);
+  return rascunho.some(({ codigo, conteudo }) => {
+    const gravado = gravados.find((formulario) => formulario.codigo === codigo);
+    return gravado === undefined || gravacaoMudaria(gravado, conteudo);
   });
 }
 
 function gravacaoMudaria(gravado: FormularioDto, conteudo: ConteudoDoFormulario): boolean {
-  const servidor = { faseId: '', conteudo: conteudoDoFormulario(gravado) };
-  return planoDeGravacao(servidor, { faseId: '', conteudo }).length > 0;
+  const servidor = { ...paraGravarDoServidor(gravado), faseId: '' };
+  return planoDeGravacao(servidor, { ...servidor, conteudo }).length > 0;
 }

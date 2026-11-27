@@ -120,6 +120,24 @@ describe('RevisaoPassoComponent — conferência', () => {
       expect(componente.validar()).toEqual({ valid: true });
     });
 
+    it('bloqueia a publicação enquanto há documentos exigidos ainda não gravados', async () => {
+      prepararCamposLocais(cenario);
+      await criarProcesso(cenario);
+      await flushProntidaoVerde(cenario);
+      store.documentosExigidosAguardandoFormulario.set(true);
+      fixture.detectChanges();
+
+      const resultado = componente.validar();
+      expect(resultado.valid).toBe(false);
+      expect(
+        resultado.messages?.some((m) => m.includes('Documentos exigidos ainda não gravados')),
+      ).toBe(true);
+      expect(textoDaTela(cenario)).toContain('Documentos exigidos ainda não gravados');
+
+      store.documentosExigidosAguardandoFormulario.set(false);
+      expect(componente.validar()).toEqual({ valid: true });
+    });
+
     /**
      * O checklist legal foi avaliado para a data de referência de QUANDO ele
      * carregou — se o operador muda o período depois, sem recarregar,

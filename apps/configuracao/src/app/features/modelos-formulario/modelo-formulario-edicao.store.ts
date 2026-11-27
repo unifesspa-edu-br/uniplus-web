@@ -83,8 +83,8 @@ export class ModeloFormularioEdicaoStore {
   }));
   private readonly consequenciasDoIndeferimento = useApiResource<readonly OpcaoDeComprovacaoDto[]>(
     () => ({
-      url: `${this.selecaoBasePath}/api/selecao/vocabularios/consequencias-indeferimento`,
-      context: withVendorMime('consequencia-indeferimento', 1),
+      url: `${this.selecaoBasePath}/api/selecao/vocabularios/consequencias-do-descumprimento`,
+      context: withVendorMime('consequencias-do-descumprimento', 1),
     }),
   );
   private readonly tipos = useApiResource<readonly TipoProcessoDto[]>(() => ({

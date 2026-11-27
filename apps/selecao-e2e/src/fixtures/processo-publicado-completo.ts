@@ -1,6 +1,6 @@
 import { PAPEL_PRELIMINAR, PUBLICACAO_DO_ATO } from './valor-do-enum';
 import type {
-  ConfiguracaoBonusRegionalDto,
+  ConfiguracaoDoFadaDto,
   CriterioDesempateDto,
   EtapaProcessoDto,
   PapelDaBancaCodigo,
@@ -40,7 +40,7 @@ const TIPO_DA_BANCA = {
 /**
  * O processo da Medicina 2027 publicado, com os 12 passos preenchidos: é o que a varredura da
  * consulta (web#905) percorre. Soma ao que a fixture de consulta já traz — tipo, identificação,
- * taxa, atendimento, formulário, quadro de vagas e cascata — o bônus, o desempate, a
+ * taxa, atendimento, formulário, quadro de vagas e cascata — o Fator de Atenuação, o desempate, a
  * classificação com a regra de eliminação, uma fase de coleta com recurso e banca, uma etapa
  * pontuada e dois documentos exigidos.
  *
@@ -54,7 +54,7 @@ const CODIGO_DA_FASE = 'COLETA_INSCRICAO';
 const TIPO_ETAPA_ID = '01a0d640-0000-7000-8000-0000000000b1';
 const CATEGORIA_ID = '01a0d640-0000-7000-8000-0000000000c2';
 const PRODUTO_ID = '01a0d640-0000-7000-8000-0000000000d1';
-const BASE_LEGAL_BONUS_REGIONAL_ID = 'ba5e0000-0000-7000-8000-000000000001';
+const BASE_LEGAL_DO_FADA_ID = 'ba5e0000-0000-7000-8000-000000000001';
 
 /** A unidade que responde pela fase, como a cópia gravada no processo a devolve. */
 export const UNIDADE_RESPONSAVEL_DA_FASE = {
@@ -73,22 +73,26 @@ const PARAMETROS_DO_RECURSO: RecursoDaEtapa['parametros'] = {
 
 export const PROCESSO_PUBLICADO_COMPLETO = {
   ...PROCESSO_PUBLICADO_DA_MEDICINA,
-  aplicaBonusRegional: true,
+  aplicaFada: true,
   opcoesDeCurso: { numero: 1 },
-  bonusRegional: {
+  fada: {
     id: '01a0d640-0000-7000-8000-0000000000e1',
     regra: referencia('BONUS-MULTIPLICATIVO'),
     fator: 1.2,
     teto: null,
     fatoElegibilidadeCodigo: null,
     baseLegal: {
-      id: BASE_LEGAL_BONUS_REGIONAL_ID,
+      id: BASE_LEGAL_DO_FADA_ID,
       tipoInstrumento: 'PORTARIA',
       identificacao: 'Portaria Unifesspa nº 2514/2023',
       descricao: 'Institui inclusão regional.',
       municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
     },
-  } satisfies JsonDaApi<ConfiguracaoBonusRegionalDto>,
+  } satisfies JsonDaApi<ConfiguracaoDoFadaDto>,
+  formularios: PROCESSO_PUBLICADO_DA_MEDICINA.formularios.map((formulario) => ({
+    ...formulario,
+    faseId: FASE_ID,
+  })),
   criteriosDesempate: [
     {
       id: '01a0d640-0000-7000-8000-0000000000e2',
@@ -210,7 +214,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
         nome: 'Documento de identidade',
       },
       obrigatorio: true,
-      consequencia: 'ELIMINA',
+      consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
     }),
     regraDaExigencia({
       id: '01a0d640-0000-7000-8000-000000000a12',
@@ -221,7 +225,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
         nome: 'Autodeclaração étnico-racial',
       },
       obrigatorio: false,
-      consequencia: 'RECLASSIFICA_AC',
+      consequenciaDoDescumprimento: 'RETIRA_A_MODALIDADE',
       condicoes: [
         {
           id: '01a0d640-0000-7000-8000-000000000a13',

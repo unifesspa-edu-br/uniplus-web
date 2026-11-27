@@ -1,8 +1,8 @@
 <ui-falha-de-leitura titulo="Consequências de indeferimento" [leitura]="leituraDasConsequencias" />
 <p class="step-subtitle">
-  O que o candidato lê e preenche em cada finalidade do processo — a inscrição e, quando houver, a
-  solicitação de isenção da taxa e a habilitação: as páginas, os campos e os termos que aceita. O
-  portal do candidato renderiza cada um deles.
+  O que o candidato lê e preenche em cada formulário do processo — a inscrição e, quando houver, o
+  pedido de isenção da taxa, a habilitação e os outros que o certame declarar: as páginas, os campos
+  e os termos que aceita. O portal do candidato renderiza cada um deles.
 </p>
 
 <!-- O catálogo e os termos só servem para editar: em consulta, carga e falha deles não interessam. -->
@@ -30,16 +30,16 @@
        formulário só, não há entre o que navegar, e a consulta fica sem controle algum. -->
   @if (comAbas()) {
     <div class="form-abas__lista" role="tablist" aria-label="Formulários do processo">
-      @for (aba of abas(); track aba.finalidade; let indice = $index) {
+      @for (aba of abas(); track aba.idBase; let indice = $index) {
         <button
           type="button"
           role="tab"
           class="form-abas__aba"
           [id]="aba.aba"
-          [attr.aria-selected]="aba.finalidade === abaAtiva()"
+          [attr.aria-selected]="aba.codigo === abaAtiva()"
           [attr.aria-controls]="aba.painel"
-          [attr.tabindex]="aba.finalidade === abaAtiva() ? 0 : -1"
-          (click)="selecionarAba(aba.finalidade)"
+          [attr.tabindex]="aba.codigo === abaAtiva() ? 0 : -1"
+          (click)="selecionarAba(aba.codigo)"
           (keydown)="navegarNasAbas($event, indice)"
         >
           {{ aba.rotulo }}
@@ -51,55 +51,27 @@
     </div>
   }
 
-  @if (!store.emConsulta() && fases.finalidadesOferecidas().length > 0) {
-    <div class="form-abas__acrescentar">
-      <div class="form-field">
-        <label class="label" for="form-finalidade-nova">Acrescentar formulário de</label>
-        <select
-          class="select"
-          id="form-finalidade-nova"
-          aria-describedby="form-finalidade-nova-ajuda"
-          [disabled]="!store.aceitaEdicao()"
-          (change)="finalidadeAAcrescentar.set($any($event.target).value)"
-        >
-          <option value="" [selected]="finalidadeAAcrescentar() === ''">
-            Escolha a finalidade
-          </option>
-          @for (opcao of fases.finalidadesOferecidas(); track opcao.valor) {
-            <option [value]="opcao.valor" [selected]="opcao.valor === finalidadeAAcrescentar()">
-              {{ opcao.rotulo }}
-            </option>
-          }
-        </select>
-      </div>
-      <button
-        type="button"
-        class="btn btn--secondary"
-        id="form-acrescentar-finalidade"
-        [disabled]="!store.aceitaEdicao() || finalidadeAAcrescentar() === ''"
-        (click)="acrescentarFinalidade()"
-      >
-        Acrescentar formulário
-      </button>
-      <span class="field__hint form-abas__ajuda" id="form-finalidade-nova-ajuda">
-        Só aparecem as finalidades com fase no cronograma; a isenção, só quando o processo cobra
-        taxa de inscrição.
-      </span>
-    </div>
+  @if (!store.emConsulta() && fases.fasesOferecidas().length > 0) {
+    <sel-acrescimo-de-formulario
+      [fases]="fases.fasesOferecidas()"
+      [modelos]="aplicacao.modelos()"
+      [codigosEmUso]="codigosEmUso()"
+      (acrescentou)="acrescentar($event)"
+    />
   }
 </div>
 
-@for (aba of abas(); track aba.finalidade) {
+@for (aba of abas(); track aba.idBase) {
   <div
     [attr.role]="comAbas() ? 'tabpanel' : null"
     class="form-abas__painel"
     [id]="aba.painel"
     [attr.aria-labelledby]="comAbas() ? aba.aba : null"
-    [hidden]="aba.finalidade !== abaAtiva()"
+    [hidden]="aba.codigo !== abaAtiva()"
   >
     @if (aba.recusaDaRemocao; as recusa) {
       <p class="alert alert--danger" role="alert" [id]="aba.idBase + '-recusa-remocao'">
-        O formulário de {{ aba.nome }} não foi removido. {{ recusa }}
+        O formulário {{ aba.nome }} não foi removido. {{ recusa }}
       </p>
     }
 
@@ -108,58 +80,14 @@
       <sel-modelo-do-formulario [aba]="aba" (anunciou)="anuncio.set($event)" />
     }
 
-    <section class="step-section" [attr.aria-labelledby]="aba.idBase + '-fase-titulo'">
-      <h2 [id]="aba.idBase + '-fase-titulo'" class="step-section__title" tabindex="-1">
-        Quando o candidato responde
-      </h2>
-
-      @if (store.emConsulta()) {
-        <div class="form-grid">
-          <ui-valor-em-consulta
-            [rotulo]="aba.ehInscricao ? 'Fase da inscrição' : 'Fase do formulário'"
-            seVazio="Nenhuma fase declarada"
-            [valor]="aba.nomeDaFase"
-          />
-        </div>
-      } @else if (aba.fases.length === 0) {
-        <p class="field__hint" role="status" [id]="aba.idBase + '-sem-fase'">
-          @if (aba.ehInscricao) {
-            O cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de
-            inscrição no passo Cronograma.
-          } @else {
-            O cronograma não tem fase em que o formulário de {{ aba.nome }} é respondido. Acrescente
-            a fase no passo Cronograma, ou remova o formulário.
-          }
-        </p>
-      } @else {
-        <div class="form-grid">
-          <div class="form-field">
-            <label class="label" [for]="aba.campoDaFase">
-              {{ aba.ehInscricao ? 'Fase da inscrição' : 'Fase do formulário' }}
-            </label>
-            <select
-              class="select"
-              [id]="aba.campoDaFase"
-              [attr.aria-describedby]="aba.idBase + '-fase-ajuda'"
-              [disabled]="!store.aceitaEdicao()"
-              (change)="escreverFase(aba.finalidade, $any($event.target).value)"
-            >
-              @if (aba.fase === '') {
-                <option value="" selected>Escolha a fase</option>
-              }
-              @for (opcao of aba.fases; track opcao.codigo) {
-                <option [value]="opcao.codigo" [selected]="opcao.codigo === aba.fase">
-                  {{ opcao.nome }}
-                </option>
-              }
-            </select>
-            <span class="field__hint" [id]="aba.idBase + '-fase-ajuda'">
-              Só as fases do cronograma em que este formulário pode ser respondido aparecem aqui.
-            </span>
-          </div>
-        </div>
-      }
-    </section>
+    <sel-cabecalho-do-formulario
+      [aba]="aba"
+      [codigosEmUso]="codigosDosOutros(aba.codigo)"
+      (codigoMudou)="escreverCodigo(aba.codigo, $event)"
+      (faseMudou)="edicao.fase(aba.codigo, $event)"
+      (obrigatorioMudou)="edicao.obrigatorio(aba.codigo, $event)"
+      (consequenciaMudou)="edicao.consequencia(aba.codigo, $event)"
+    />
 
     <section class="step-section" [attr.aria-labelledby]="aba.idBase + '-conteudo-titulo'">
       <h2 [id]="aba.idBase + '-conteudo-titulo'" class="step-section__title">
@@ -242,7 +170,7 @@
       } @else {
         <insc-editor-de-formulario
           [idBase]="aba.idBase"
-          [finalidade]="aba.finalidade"
+          [finalidade]="aba.finalidadeDoEditor"
           [conteudo]="aba.conteudo"
           [catalogo]="fatosDoFormulario()"
           [disabled]="!store.aceitaEdicao()"
@@ -252,7 +180,7 @@
           [fatosIndisponiveis]="aba.fatosIndisponiveis"
           [fatosQueExigemRespostaPorFora]="aba.fatosQueExigemRespostaPorFora"
           [remocoesTravadas]="campos.remocoesTravadas()"
-          (conteudoChange)="editar(aba.finalidade, $event)"
+          (conteudoChange)="editar(aba, $event)"
         />
         @if (aba.temBlocoDocumental) {
           <h3 class="form-section__title">Documentos que o formulário pede</h3>
@@ -278,15 +206,15 @@
       }
     </section>
 
-    @if (!aba.ehInscricao && !store.emConsulta()) {
+    @if (!store.emConsulta()) {
       <button
         type="button"
         class="btn btn--tertiary"
         [id]="aba.idBase + '-remover'"
         [disabled]="!store.aceitaEdicao() || store.salvando()"
-        (click)="remocao.pedir(aba.finalidade)"
+        (click)="remocao.pedir(aba.codigo)"
       >
-        Remover o formulário de {{ aba.nome }}
+        Remover o formulário {{ aba.nome }}
       </button>
     }
   </div>

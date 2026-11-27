@@ -14,6 +14,9 @@ import {
 } from '../problemas-da-publicacao';
 import { RecusasDaPublicacao } from '../../../shared/recusas/recusas-da-publicacao.service';
 
+const MENSAGEM_DOS_DOCUMENTOS_EXIGIDOS =
+  'Documentos exigidos ainda não gravados: grave os formulários, no passo Formulários, antes de publicar.';
+
 function recusado(mensagem: string): ValidacaoDoPasso {
   return { valid: false, messages: [mensagem] };
 }
@@ -162,9 +165,12 @@ export class ConferenciaDaPublicacao {
   }
 
   private pendenciasDoChecklist(): string[] {
-    return [this.pendenciaEstrutural(), this.pendenciaLegal(), this.pendenciaDoDocumento()].filter(
-      (mensagem) => mensagem !== null,
-    );
+    return [
+      this.pendenciaEstrutural(),
+      this.pendenciaLegal(),
+      this.pendenciaDoDocumento(),
+      this.pendenciaDosDocumentosExigidos(),
+    ].filter((mensagem) => mensagem !== null);
   }
 
   private pendenciaEstrutural(): string | null {
@@ -188,6 +194,12 @@ export class ConferenciaDaPublicacao {
   private pendenciaDoDocumento(): string | null {
     return this.precisaEscolherDocumento()
       ? 'Há mais de um documento confirmado. Escolha o oficial na Identificação antes de publicar.'
+      : null;
+  }
+
+  private pendenciaDosDocumentosExigidos(): string | null {
+    return this.store.documentosExigidosAguardandoFormulario()
+      ? MENSAGEM_DOS_DOCUMENTOS_EXIGIDOS
       : null;
   }
 }

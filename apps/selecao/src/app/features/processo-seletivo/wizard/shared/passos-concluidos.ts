@@ -12,7 +12,7 @@ type PassoQueGrava = Exclude<RotuloDePasso, 'Revisão e publicação'>;
  * O que o servidor já tem gravado em cada passo, lido do detalhe do processo. Mapa exaustivo: um
  * passo novo não compila até ganhar a regra, em vez de ficar sempre pendente depois de recarregar.
  *
- * O FADA conta quando o processo declarou se aplica ou não o bônus (`aplicaBonusRegional`
+ * O FADA conta quando o processo declarou se aplica ou não o Fator de Atenuação (`aplicaFada`
  * existe, nas duas respostas). O Desempate conta com ao menos um critério, ou quando o resultado
  * é importado: a lista já vem classificada e o desempate não é obrigatório. Fórmula e Eliminação
  * gravam a mesma classificação, e as regras de eliminação são opcionais: o servidor não devolve
@@ -27,7 +27,7 @@ function gravadoPorPasso(dto: ProcessoSeletivoDto): Record<PassoQueGrava, boolea
     Vagas: (dto.distribuicaoVagas ?? []).length > 0 && dto.opcoesDeCurso != null,
     Cronograma: (dto.cronogramaFases ?? []).length > 0,
     'Fórmula e precisão': dto.classificacao != null,
-    FADA: dto.aplicaBonusRegional != null,
+    'Fator de Atenuação': dto.aplicaFada != null,
     Desempate: desempateGravado(dto),
     Eliminação: dto.classificacao != null,
     'Atend. especial': dto.atendimentoEspecializado != null,

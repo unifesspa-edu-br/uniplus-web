@@ -4,14 +4,14 @@ import { Observable } from 'rxjs';
 import { ApiResult } from '@uniplus/shared-core/http';
 import type {
   CriterioDesempateInput,
-  DefinirBonusRegionalRequest,
+  DefinirFadaRequest,
   DefinirClassificacaoRequest,
   DefinirOpcoesDeclaradasRequest,
 } from './processos-seletivos.contrato';
 import { rotasDoProcesso } from './rotas-do-processo';
 import { SELECAO_BASE_PATH } from './tokens';
 
-/** Cliente da classificação, das opções declaradas, do bônus regional e do desempate. */
+/** Cliente da classificação, das opções declaradas, do Fator de Atenuação e do desempate. */
 @Injectable({ providedIn: 'root' })
 export class ClassificacaoDoProcessoApi {
   private readonly http = inject(HttpClient);
@@ -61,20 +61,20 @@ export class ClassificacaoDoProcessoApi {
   }
 
   /**
-   * PUT `/api/selecao/processos-seletivos/{id}/bonus-regional` — declara se o
+   * PUT `/api/selecao/processos-seletivos/{id}/fada` — declara se o
    * processo aplica o Fator de Atenuação das Desigualdades de Acesso (UNI-REQ-0015). `aplica` é obrigatório: `false`
-   * declara "sem bônus" e vai com os cinco campos `null`; `true` exige a
-   * configuração do bônus.
+   * declara "sem Fator de Atenuação" e vai com os cinco campos `null`; `true` exige a
+   * configuração do Fator.
    *
    * Responde 204 sem corpo.
    */
-  definirBonusRegional(
+  definirFada(
     processoSeletivoId: string,
-    request: DefinirBonusRegionalRequest,
+    request: DefinirFadaRequest,
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'bonus-regional'),
+      this.rotas.doProcesso(processoSeletivoId, 'fada'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );

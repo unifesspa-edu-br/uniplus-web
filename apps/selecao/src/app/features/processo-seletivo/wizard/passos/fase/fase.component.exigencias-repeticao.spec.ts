@@ -94,9 +94,13 @@ describe('FasePassoComponent', () => {
       /** A habilitação, respondida na fase Homologação das inscrições, com ou sem a composição familiar. */
       function comHabilitacao(grupos: readonly GrupoDoFormulario[]): void {
         store.patchObjectSection('formulario', {
-          outrasFinalidades: [
+          formularios: [
             {
-              finalidade: 'HABILITACAO',
+              codigo: 'HABILITACAO',
+              gravado: false,
+              obrigatorio: true,
+              consequenciaDaFaltaDeEnvio: null,
+              modeloOrigemCodigo: null,
               faseCodigo: 'HOMOLOGACAO_INSCRICOES',
               conteudo: {
                 titulo: null,

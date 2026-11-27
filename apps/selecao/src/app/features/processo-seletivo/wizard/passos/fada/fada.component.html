@@ -1,0 +1,258 @@
+<p class="step-subtitle">
+  O processo declara se aplica o Fator de Atenuação ou não: a resposta é obrigatória para publicar,
+  e "não aplica" é uma resposta válida.
+</p>
+@if (!store.emConsulta()) {
+  <ui-falha-de-leitura titulo="Catálogos de regras" [leitura]="catalogos.leitura" />
+  <ui-falha-de-leitura
+    titulo="Bases legais do Fator de Atenuação"
+    [leitura]="basesLegais.leituraDasBasesLegais"
+  />
+}
+<div class="step-card">
+  @if (store.emConsulta()) {
+    <ui-valor-em-consulta
+      rotulo="Fator de Atenuação"
+      seVazio="Ainda não declarado"
+      [valor]="leitura().aplicacao"
+    />
+  } @else {
+    <fieldset class="form-field">
+      <legend class="label">
+        Este processo seletivo aplica o Fator de Atenuação das Desigualdades de Acesso?
+      </legend>
+      <div class="checkbox-grid">
+        <label class="check-item"
+          ><input type="radio" name="fada-aplica" [value]="true" [formControl]="aplica" /><span
+            >Aplica o Fator de Atenuação</span
+          ></label
+        >
+        <label class="check-item"
+          ><input type="radio" name="fada-aplica" [value]="false" [formControl]="aplica" /><span
+            >Não aplica o Fator de Atenuação</span
+          ></label
+        >
+      </div>
+    </fieldset>
+  }
+  @if (store.draft().fada.aplica === false && !store.emConsulta()) {
+    <div class="fada-info">
+      O processo não aplica o Fator de Atenuação — a gravação declara isso ao servidor.
+    </div>
+  }
+  @if (store.draft().fada.aplica === true) {
+    <div class="fada-config">
+      @if (store.emConsulta()) {
+        <div class="form-grid">
+          <ui-valor-em-consulta
+            class="form-grid__full"
+            rotulo="Regra do Fator de Atenuação"
+            [valor]="leitura().regra"
+          />
+          <ui-valor-em-consulta rotulo="Multiplicador da nota" [valor]="leitura().fator" />
+          <ui-valor-em-consulta rotulo="Teto" seVazio="Sem teto" [valor]="leitura().teto" />
+          <ui-valor-em-consulta
+            class="form-grid__full"
+            rotulo="Base legal do Fator de Atenuação"
+            [valor]="leitura().baseLegal"
+            [dica]="basesLegais.descricaoDaSelecionada() || null"
+          />
+          @if (citaElegibilidade()) {
+            <ui-valor-em-consulta
+              class="form-grid__full"
+              rotulo="Quem recebe o Fator de Atenuação"
+              seVazio="Ainda não escolhido"
+              [valor]="leitura().fatoElegibilidade"
+            />
+          }
+        </div>
+      } @else {
+        <div class="form-grid form-grid--3">
+          <div class="form-field">
+            <label class="label" for="f-fada-regra">Regra do Fator de Atenuação</label
+            ><select
+              class="input"
+              id="f-fada-regra"
+              [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
+              (change)="escolherRegra($any($event.target).value)"
+            >
+              <option value="|" [selected]="store.draft().fada.regraCodigo === ''">
+                — escolher —
+              </option>
+              @for (regra of regrasFada(); track regra.chave) {
+                <option [value]="regra.chave" [selected]="regra.selecionada">
+                  {{ regra.rotulo }}
+                </option>
+              }
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="label" for="f-fada-fator">Multiplicador da nota</label
+            ><input
+              class="input"
+              id="f-fada-fator"
+              type="number"
+              min="0"
+              max="99.9999"
+              step="0.0001"
+              placeholder="1.20"
+              [value]="store.draft().fada.fator"
+              [disabled]="!store.aceitaEdicao()"
+              (input)="alterarFator($any($event.target).value)"
+            /><span class="field-hint">Ex.: 1.20 multiplica a nota final por 1,20.</span>
+          </div>
+        </div>
+        <div class="form-grid form-grid--3" style="margin-top: var(--space-4)">
+          <div class="form-field">
+            <label class="label" for="f-fada-base-legal">Base legal do Fator de Atenuação</label
+            ><select
+              class="input"
+              id="f-fada-base-legal"
+              [disabled]="basesLegais.carregando() || !store.aceitaEdicao()"
+              (change)="escolherBaseLegal($any($event.target).value)"
+            >
+              <option value="" [selected]="store.draft().fada.baseLegalDoFadaId === ''">
+                — escolher —
+              </option>
+              @for (base of basesLegais.escolhiveis(); track base.id) {
+                <option
+                  [value]="base.id"
+                  [selected]="base.id === store.draft().fada.baseLegalDoFadaId"
+                >
+                  {{ basesLegais.rotuloDaBaseLegal(base) }}
+                </option>
+              }
+            </select>
+            <!-- O que a norma diz, fora do seletor: dentro da opção, o texto se repetiria em
+                 cada linha da lista. É por ele que se distinguem duas portarias parecidas. -->
+            @if (basesLegais.descricaoDaSelecionada(); as descricao) {
+              <span class="field__hint">{{ descricao }}</span>
+            }
+            <ui-falha-de-leitura-do-campo [leitura]="basesLegais.leituraDosTiposDeInstrumento" />
+          </div>
+          <div class="form-field">
+            <label class="label" for="f-fada-teto">Teto (opcional)</label
+            ><input
+              class="input"
+              id="f-fada-teto"
+              type="number"
+              min="0"
+              max="99.9999"
+              step="0.0001"
+              [value]="store.draft().fada.teto"
+              [disabled]="!store.aceitaEdicao()"
+              (input)="alterarTeto($any($event.target).value)"
+            />
+          </div>
+        </div>
+        @if (citaElegibilidade()) {
+          <div class="form-field" style="margin-top: var(--space-4)">
+            <label class="label" for="f-fada-elegibilidade">Quem recebe o Fator de Atenuação</label
+            ><select
+              class="input"
+              id="f-fada-elegibilidade"
+              [attr.aria-describedby]="
+                fatoEscolhidoForaDoFormulario() !== null
+                  ? 'f-fada-elegibilidade-ajuda f-fada-elegibilidade-erro'
+                  : 'f-fada-elegibilidade-ajuda'
+              "
+              [attr.aria-invalid]="fatoEscolhidoForaDoFormulario() !== null ? 'true' : null"
+              [disabled]="!store.aceitaEdicao()"
+              (change)="escolherFatoDeElegibilidade($any($event.target).value)"
+            >
+              <option value="" [selected]="store.draft().fada.fatoElegibilidadeCodigo === ''">
+                — escolher —
+              </option>
+              @for (fato of fatosDeElegibilidade(); track fato.codigo) {
+                <option
+                  [value]="fato.codigo"
+                  [selected]="fato.codigo === store.draft().fada.fatoElegibilidadeCodigo"
+                >
+                  {{ rotuloDoFatoDeElegibilidade(fato) }}
+                </option>
+              }
+              @if (fatoEscolhidoForaDoFormulario(); as codigo) {
+                <option [value]="codigo" selected>{{ codigo }}</option>
+              }
+            </select>
+            <span class="field__hint" id="f-fada-elegibilidade-ajuda">
+              O acréscimo vale para o candidato em quem este fato resulta em "sim": um campo de sim
+              ou não do formulário de inscrição, como o pedido do acréscimo, ou um fato que o
+              processo deriva assim, sem depender do que só o formulário de isenção coleta. A
+              publicação exige a escolha.
+            </span>
+            @if (fatosDeElegibilidade().length === 0 && store.aceitaEdicao()) {
+              <div class="alert alert--info" role="status" id="f-fada-elegibilidade-vazia">
+                @if (formularioMontado()) {
+                  <p>
+                    A lista está vazia porque o formulário de inscrição não tem um campo de sim ou
+                    não que diga quem recebe o acréscimo. Inclua esse campo no passo Formulários; o
+                    que já foi preenchido neste passo continua aqui quando você voltar.
+                  </p>
+                } @else {
+                  <p>
+                    A lista está vazia porque o formulário de inscrição ainda não foi montado.
+                    Monte-o no passo Formulários; o que já foi preenchido neste passo continua aqui
+                    quando você voltar.
+                  </p>
+                }
+                <button
+                  type="button"
+                  class="btn btn--secondary btn--sm"
+                  id="f-fada-ir-formularios"
+                  (click)="irParaFormularios()"
+                >
+                  Ir para o passo Formulários
+                </button>
+              </div>
+            }
+            @if (fatoEscolhidoForaDoFormulario(); as codigo) {
+              <span class="field__hint" id="f-fada-elegibilidade-erro" role="alert">
+                O fato {{ codigo }} não está mais no formulário de inscrição como campo de sim ou
+                não, nem é derivado assim pelo processo. Escolha outro ou volte a incluí-lo.
+              </span>
+            }
+          </div>
+        }
+      }
+      @if (basesLegais.municipiosDaSelecionada().length > 0) {
+        <div class="fada-municipios">
+          <div
+            class="table-responsive fada-municipios__scroll"
+            uiRolagemFocavel="fada-municipios-caption"
+          >
+            <table>
+              <caption id="fada-municipios-caption" class="fada-municipios__caption">
+                {{
+                  basesLegais.municipiosDaSelecionada().length
+                }}
+                município(s) beneficiado(s) por esta base legal
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Nome</th>
+                  <th scope="col">UF</th>
+                  <th scope="col">Código IBGE</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (
+                  municipio of basesLegais.municipiosDaSelecionada();
+                  track municipio.codigoIbge
+                ) {
+                  <tr>
+                    <td data-label="Nome">{{ municipio.nome }}</td>
+                    <td data-label="UF">{{ municipio.uf }}</td>
+                    <td data-label="Código IBGE">
+                      <code>{{ municipio.codigoIbge }}</code>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

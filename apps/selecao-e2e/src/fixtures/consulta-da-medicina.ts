@@ -56,8 +56,10 @@ export const PROCESSO_PUBLICADO_DA_MEDICINA = {
   },
   formularios: [
     {
-      finalidade: { codigo: 'INSCRICAO', rotulo: 'Inscrição' },
+      codigo: 'INSCRICAO',
       faseId: null,
+      obrigatorio: true,
+      consequenciaDaFaltaDeEnvio: null,
       titulo: 'Inscrição — Processo Seletivo de Medicina 2027',
       modeloOrigem: null,
       paginas: [

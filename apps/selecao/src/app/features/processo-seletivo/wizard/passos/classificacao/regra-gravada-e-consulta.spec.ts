@@ -2,7 +2,7 @@ import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { BonusPassoComponent } from '../bonus/bonus.component';
+import { FadaPassoComponent } from '../fada/fada.component';
 import { FormulaPassoComponent } from '../formula/formula.component';
 import {
   CLASSIFICACAO_LOCAL,
@@ -16,7 +16,7 @@ import {
   valorDoSelect,
 } from './regra-gravada-e-consulta.testing';
 
-describe('regra gravada no select, passo lido como texto em consulta — fórmula e bônus', () => {
+describe('regra gravada no select, passo lido como texto em consulta — fórmula e Fator de Atenuação', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
   describe('Fórmula', () => {
@@ -69,25 +69,25 @@ describe('regra gravada no select, passo lido como texto em consulta — fórmul
     });
   });
 
-  describe('FADA', () => {
+  describe('Fator de Atenuação', () => {
     it('mostra a regra gravada quando o catálogo chega depois do rascunho', async () => {
-      const { fixture, host, store, catalogos } = await montar(BonusPassoComponent);
-      store.patchObjectSection('bonus', {
+      const { fixture, host, store, catalogos } = await montar(FadaPassoComponent);
+      store.patchObjectSection('fada', {
         aplica: true,
         regraCodigo: 'BONUS-REGIONAL',
         regraVersao: '1.0',
       });
       detectar(fixture);
 
-      catalogos.regrasBonus.set([regra('BONUS-OUTRO'), regra('BONUS-REGIONAL')]);
+      catalogos.regrasFada.set([regra('BONUS-OUTRO'), regra('BONUS-REGIONAL')]);
       detectar(fixture);
 
-      expect(valorDoSelect(host, 'f-bonus-regra')).toBe('BONUS-REGIONAL|1.0');
+      expect(valorDoSelect(host, 'f-fada-regra')).toBe('BONUS-REGIONAL|1.0');
     });
 
-    it('com o processo publicado, lê o bônus gravado como texto', async () => {
-      const { fixture, host, store, catalogos } = await montar(BonusPassoComponent);
-      store.patchObjectSection('bonus', {
+    it('com o processo publicado, lê o Fator de Atenuação gravado como texto', async () => {
+      const { fixture, host, store, catalogos } = await montar(FadaPassoComponent);
+      store.patchObjectSection('fada', {
         aplica: true,
         regraCodigo: 'BONUS-REGIONAL',
         regraVersao: '1.0',
@@ -95,32 +95,32 @@ describe('regra gravada no select, passo lido como texto em consulta — fórmul
         teto: '',
       });
       publicar(store);
-      catalogos.regrasBonus.set([regra('BONUS-REGIONAL')]);
+      catalogos.regrasFada.set([regra('BONUS-REGIONAL')]);
       detectar(fixture);
 
       expect(semControles(host)).toEqual([]);
       expect(leitura(host)).toEqual([
-        ['FADA', 'Aplicado neste processo'],
-        ['Regra do FADA', 'BONUS-REGIONAL — Base de BONUS-REGIONAL'],
-        ['Fator', '1,2'],
+        ['Fator de Atenuação', 'Aplicado neste processo'],
+        ['Regra do Fator de Atenuação', 'BONUS-REGIONAL — Base de BONUS-REGIONAL'],
+        ['Multiplicador da nota', '1,2'],
         ['Teto', 'Sem teto'],
-        ['Base Legal do FADA', 'Não informado'],
+        ['Base legal do Fator de Atenuação', 'Não informado'],
       ]);
     });
 
-    it('com o processo publicado e sem bônus, diz que ele não se aplica', async () => {
-      const { fixture, host, store } = await montar(BonusPassoComponent);
-      store.patchObjectSection('bonus', { aplica: false });
+    it('com o processo publicado e sem Fator de Atenuação, diz que ele não se aplica', async () => {
+      const { fixture, host, store } = await montar(FadaPassoComponent);
+      store.patchObjectSection('fada', { aplica: false });
       publicar(store);
       detectar(fixture);
 
-      expect(leitura(host)).toEqual([['FADA', 'Não aplicado neste processo']]);
-      expect(host.querySelector('.bonus-info')).toBeNull();
+      expect(leitura(host)).toEqual([['Fator de Atenuação', 'Não aplicado neste processo']]);
+      expect(host.querySelector('.fada-info')).toBeNull();
     });
 
     it('trava os controles enquanto a gravação está em curso', async () => {
-      const { fixture, host, store } = await montar(BonusPassoComponent);
-      store.patchObjectSection('bonus', {
+      const { fixture, host, store } = await montar(FadaPassoComponent);
+      store.patchObjectSection('fada', {
         aplica: true,
         regraCodigo: 'BONUS-REGIONAL',
         regraVersao: '1.0',

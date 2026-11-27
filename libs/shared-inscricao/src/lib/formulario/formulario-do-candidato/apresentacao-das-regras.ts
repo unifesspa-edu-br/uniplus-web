@@ -33,7 +33,6 @@ export function apresentacaoDasRegras(
   simulacao: SimulacaoDoFormulario | null,
 ): FormularioDoCandidato {
   return {
-    finalidade: 'SIMULACAO',
     titulo: null,
     paginas: secoesDasRegras(regras),
     termos: termosDasRegras(regras),

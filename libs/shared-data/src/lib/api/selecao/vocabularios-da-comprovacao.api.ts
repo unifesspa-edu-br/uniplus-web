@@ -42,8 +42,8 @@ export class VocabulariosDaComprovacaoApi {
 
   listarConsequenciasDeIndeferimento(): Observable<ApiResult<OpcoesDoVocabulario>> {
     return this.http.get<ApiResult<OpcoesDoVocabulario>>(
-      this.rotas.doVocabulario('consequencias-indeferimento'),
-      { context: withVendorMime('consequencia-indeferimento', 1) },
+      this.rotas.doVocabulario('consequencias-do-descumprimento'),
+      { context: withVendorMime('consequencias-do-descumprimento', 1) },
     );
   }
 }

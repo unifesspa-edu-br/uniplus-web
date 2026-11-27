@@ -14,6 +14,7 @@ import {
 import {
   COM_HABILITACAO,
   FASE_DIVIDIDA,
+  fase,
   familiaNa,
   FASES,
   formulario,
@@ -25,12 +26,15 @@ import {
 function producaoComDuasFasesDeIsencao(): ProducaoDosFatos {
   return producao({
     fases: [
-      { codigo: 'INSCRICAO', ordem: 1, finalidades: ['INSCRICAO'] },
-      { codigo: 'ISENCAO', ordem: 2, finalidades: ['ISENCAO_TAXA'] },
-      { codigo: 'OUTRA_ISENCAO', ordem: 3, finalidades: ['ISENCAO_TAXA'] },
-      { codigo: 'RESULTADO_FINAL', ordem: 4, finalidades: [] },
+      fase('INSCRICAO', 1, { coletaInscricao: true }),
+      fase('ISENCAO', 2, { coletaSolicitacaoIsencao: true }),
+      fase('OUTRA_ISENCAO', 3, { coletaSolicitacaoIsencao: true }),
+      fase('RESULTADO_FINAL', 4),
     ],
-    formularios: [formulario('ISENCAO_TAXA', 'ISENCAO', 'BAIXA_RENDA')],
+    formularios: [
+      formulario('ISENCAO_TAXA', 'ISENCAO', 'BAIXA_RENDA'),
+      formulario('OUTRA_ISENCAO_TAXA', 'OUTRA_ISENCAO', 'BAIXA_RENDA'),
+    ],
   });
 }
 
@@ -83,7 +87,7 @@ describe('a recusa do servidor sobre onde o documento é cobrado', () => {
     expect(
       recusa('uniplus.validacao', [
         {
-          field: 'regrasDeComprovacao[0].documento.finalidade',
+          field: 'regrasDeComprovacao[0].documento.formularioCodigo',
           code: 'uniplus.estrutura_formulario.finalidade_invalida',
           message: '',
         },
@@ -106,7 +110,7 @@ describe('a orientação da recusa de fase', () => {
   it('propõe levar a exigência para a fase do fato ou levar o campo para a inscrição', () => {
     expect(orientar('LAUDO_RECENTE', na('INSCRICAO'), COM_HABILITACAO)).toBe(
       '“laudo_recente” só é conhecido na fase habilitacao, depois da fase em que o documento é exigido. ' +
-        'Como resolver: exija o documento na fase habilitacao; ou colete “laudo_recente” no formulário de inscrição.',
+        'Como resolver: exija o documento na fase habilitacao; ou colete “laudo_recente” no formulário INSCRICAO.',
     );
   });
 
@@ -127,14 +131,14 @@ describe('a orientação da recusa de fase', () => {
 
     expect(orientar('BAIXA_RENDA', na('HABILITACAO'), comIsencao)).toBe(
       '“baixa_renda” vem do formulário de isenção e só condiciona documento apresentado nele, que se responde na fase solicitacao_isencao. ' +
-        'Como resolver: exija o documento na fase solicitacao_isencao; ou colete “baixa_renda” no formulário de inscrição.',
+        'Como resolver: exija o documento na fase solicitacao_isencao; ou colete “baixa_renda” no formulário INSCRICAO.',
     );
   });
 
   it('na fase dividida, propõe o formulário de isenção da mesma fase, e não a fase inteira', () => {
     expect(orientar('BAIXA_RENDA', na('INSCRICAO', 'INSCRICAO'), FASE_DIVIDIDA)).toBe(
       '“baixa_renda” vem do formulário de isenção e só condiciona documento apresentado nele, que se responde na fase inscricao. ' +
-        'Como resolver: exija o documento no formulário de isenção da taxa de inscrição, na fase inscricao; ou colete “baixa_renda” no formulário de inscrição.',
+        'Como resolver: exija o documento no formulário ISENCAO_TAXA, na fase inscricao; ou colete “baixa_renda” no formulário INSCRICAO.',
     );
   });
 
@@ -149,8 +153,8 @@ describe('a orientação da recusa de fase', () => {
 
     const orientacao = orientar('LAUDO_RECENTE', na('RESULTADO_FINAL'), tresFormularios);
 
-    expect(orientacao).toContain('colete “laudo_recente” no formulário de inscrição');
-    expect(orientacao).not.toContain('formulário de isenção da taxa de inscrição');
+    expect(orientacao).toContain('colete “laudo_recente” no formulário INSCRICAO');
+    expect(orientacao).not.toContain('formulário ISENCAO_TAXA');
   });
 
   it('lista as fases aceitas quando outras fases posteriores recusam o fato', () => {

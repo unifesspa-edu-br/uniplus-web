@@ -18,6 +18,7 @@ import {
   PROCESSO_PUBLICADO_COMPLETO,
   UNIDADE_RESPONSAVEL_DA_FASE,
 } from '../fixtures/processo-publicado-completo';
+import { formulariosNaFase } from './formularios-na-fase';
 import { leituraDoProcessoCompleto } from './leituras-do-processo-completo';
 import { PERMISSOES_DO_LEANDRO } from './permissoes';
 import { responder, responderCatalogos, responderCom } from './responder';
@@ -104,6 +105,7 @@ function detalheDoProcesso(capturado: Capturado) {
       ? { codigo: 'PUBLICADO', rotulo: 'Publicado' }
       : { codigo: 'RASCUNHO', rotulo: 'Rascunho' },
     cronogramaFases: [capturado.fase],
+    formularios: formulariosNaFase(capturado.fase.id),
     atendimentoEspecializado: null,
     regrasDeComprovacao: PROCESSO_PUBLICADO_COMPLETO.regrasDeComprovacao.slice(0, 1),
     classificacao: { ...PROCESSO_PUBLICADO_COMPLETO.classificacao, regrasEliminacao: [] },
