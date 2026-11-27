@@ -14,7 +14,7 @@ function perfil(parcial: Partial<PerfilConcedido> & { nome: string }): PerfilCon
   return {
     concessaoId: `c-${parcial.nome}`,
     perfilId: `p-${parcial.nome}`,
-    escopoTipo: 'unidade',
+    escopoTipo: { codigo: 'UNIDADE', rotulo: 'Unidade' },
     unidadeId: 'u-1',
     unidadeSigla: 'CEPS',
     unidadeNome: 'Centro de Processos Seletivos',
@@ -38,7 +38,7 @@ function resposta(...perfis: PerfilConcedido[]) {
 const GESTOR = perfil({ nome: 'Gestor de processo seletivo' });
 const CONSULTA = perfil({
   nome: 'Consulta institucional',
-  escopoTipo: 'instituicao',
+  escopoTipo: { codigo: 'INSTITUICAO', rotulo: 'Instituição' },
   unidadeId: null,
   unidadeSigla: null,
   unidadeNome: null,

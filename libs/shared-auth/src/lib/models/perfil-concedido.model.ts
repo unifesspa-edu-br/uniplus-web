@@ -4,11 +4,16 @@ import { formatarDataBr } from '@uniplus/shared-utils';
  * Concessão vigente de perfil de acesso, como `GET /api/profile/me` a devolve em `perfis`.
  * Escrito à mão: `shared-auth` não depende de `shared-data`, e o nome da unidade já vem na resposta.
  */
+export interface EscopoDoPerfil {
+  readonly codigo: 'UNIDADE' | 'INSTITUICAO';
+  readonly rotulo: string;
+}
+
 export interface PerfilConcedido {
   readonly concessaoId: string;
   readonly perfilId: string;
   readonly nome: string;
-  readonly escopoTipo: 'unidade' | 'instituicao';
+  readonly escopoTipo: EscopoDoPerfil;
   readonly unidadeId: string | null;
   readonly unidadeSigla: string | null;
   readonly unidadeNome: string | null;
@@ -28,9 +33,9 @@ export interface RespostaDoPerfil {
 
 export const UNIDADE_NAO_IDENTIFICADA = 'Unidade não identificada';
 
-/** Onde o perfil vale: a sigla da unidade (ou o nome, sem sigla), ou a instituição inteira. */
+/** Onde o perfil vale: a sigla da unidade (ou o nome, sem sigla), ou o rótulo da API para a instituição inteira. */
 export function escopoDoPerfil(perfil: PerfilConcedido): string {
-  if (perfil.escopoTipo === 'instituicao') return 'Instituição';
+  if (perfil.escopoTipo.codigo === 'INSTITUICAO') return perfil.escopoTipo.rotulo;
   return perfil.unidadeSigla?.trim() || perfil.unidadeNome?.trim() || UNIDADE_NAO_IDENTIFICADA;
 }
 
