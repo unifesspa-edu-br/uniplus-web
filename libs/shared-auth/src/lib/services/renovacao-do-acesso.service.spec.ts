@@ -29,16 +29,26 @@ function preparar(houveAtividade = true) {
   const prazoDaCredencial = signal<PrazoDaCredencial | null>(sessaoQueVenceEm(1800));
   const refreshToken = vi.fn(async (minima?: number) => minima !== undefined);
   const proxima = vi.fn(() => new Promise<void>(() => undefined));
+  const acessoVencendo = { valor: false };
   TestBed.configureTestingModule({
     providers: [
-      { provide: AuthService, useValue: { prazoDoAcesso, prazoDaCredencial, refreshToken } },
+      {
+        provide: AuthService,
+        useValue: {
+          prazoDoAcesso,
+          prazoDaCredencial,
+          refreshToken,
+          getToken: () => 'acesso',
+          isTokenExpired: () => acessoVencendo.valor,
+        },
+      },
       { provide: AtividadeDaPessoa, useValue: { houveDesde: () => houveAtividade, proxima } },
       { provide: AUTH_CONFIG, useValue: { antecedenciaDaRenovacaoEmSegundos: ANTECEDENCIA } },
     ],
   });
   TestBed.inject(RenovacaoDoAcesso);
   TestBed.tick();
-  return { prazoDoAcesso, prazoDaCredencial, refreshToken, proxima };
+  return { prazoDoAcesso, prazoDaCredencial, refreshToken, proxima, acessoVencendo };
 }
 
 function passar(segundos: number): void {
@@ -106,6 +116,26 @@ describe('RenovacaoDoAcesso', () => {
     expect(refreshToken).toHaveBeenLastCalledWith(-1);
   });
 
+  it('sem atividade, tenta renovar no fim da sessão para o provedor recusar e encerrar', () => {
+    const { refreshToken } = preparar(false);
+
+    passar(1800);
+    expect(refreshToken).not.toHaveBeenCalled();
+
+    passar(1);
+    expect(refreshToken).toHaveBeenCalledWith(-1);
+  });
+
+  it('reavaliar sem atividade não empilha esperas pela próxima ação', () => {
+    const { proxima } = preparar(false);
+    passar(300 - ANTECEDENCIA);
+
+    document.dispatchEvent(new Event('visibilitychange'));
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    expect(proxima).toHaveBeenCalledTimes(1);
+  });
+
   it('ao voltar à aba depois de suspensão, decide pela hora atual e não pelo temporizador', () => {
     const { refreshToken } = preparar();
     vi.setSystemTime(INICIO + 250 * SEGUNDO);
@@ -160,5 +190,45 @@ describe('RenovacaoDoAcesso', () => {
 
     passar(1);
     expect(refreshToken).toHaveBeenCalledTimes(1);
+  });
+
+  describe('acessoParaOPedido', () => {
+    it('renova o acesso que está para vencer quando a pessoa agiu', async () => {
+      const { refreshToken, acessoVencendo } = preparar();
+      acessoVencendo.valor = true;
+
+      const token = await TestBed.inject(RenovacaoDoAcesso).acessoParaOPedido();
+
+      expect(refreshToken).toHaveBeenCalledWith(ANTECEDENCIA);
+      expect(token).toBe('acesso');
+    });
+
+    it('não renova para pedido automático, sem ação da pessoa, e devolve o acesso atual', async () => {
+      const { refreshToken, acessoVencendo } = preparar(false);
+      acessoVencendo.valor = true;
+
+      const token = await TestBed.inject(RenovacaoDoAcesso).acessoParaOPedido();
+
+      expect(refreshToken).not.toHaveBeenCalled();
+      expect(token).toBe('acesso');
+    });
+
+    it('não renova o acesso que ainda tem validade', async () => {
+      const { refreshToken } = preparar();
+
+      await TestBed.inject(RenovacaoDoAcesso).acessoParaOPedido();
+
+      expect(refreshToken).not.toHaveBeenCalled();
+    });
+
+    it('limita a antecedência à metade da vida do acesso, para não renovar a cada pedido', async () => {
+      const { refreshToken, prazoDoAcesso, acessoVencendo } = preparar();
+      prazoDoAcesso.set(acessoQueVenceEm(60));
+      acessoVencendo.valor = true;
+
+      await TestBed.inject(RenovacaoDoAcesso).acessoParaOPedido();
+
+      expect(refreshToken).toHaveBeenCalledWith(30);
+    });
   });
 });

@@ -10,12 +10,8 @@ import {
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { firstValueFrom, of } from 'rxjs';
 import { tokenInterceptor } from './token.interceptor';
-import { AuthService } from '../services/auth.service';
-import { AUTH_ALLOWED_URLS, AUTH_CONFIG } from '../tokens/auth.tokens';
-import type { AuthConfig } from '../models/auth-config.model';
-import type { PrazoDoAcesso } from '../models/prazo-da-credencial';
-
-const CONFIG = { antecedenciaDaRenovacaoEmSegundos: 45 } as AuthConfig;
+import { RenovacaoDoAcesso } from '../services/renovacao-do-acesso.service';
+import { AUTH_ALLOWED_URLS } from '../tokens/auth.tokens';
 
 // Utilitário: drena microtarefas para permitir que a cadeia
 // defer → Promise → switchMap do interceptor chegue ao backend.
@@ -32,34 +28,16 @@ describe('tokenInterceptor — allowlist', () => {
   const issuerUrl = 'http://localhost:8080/realms/unifesspa';
   const externalUrl = 'https://evil.example.com/leak';
 
-  function setup(
-    allowedUrls: readonly string[],
-    tokenValue: { token: string | undefined } = { token: 'fake-token' },
-    opts: {
-      expired?: boolean;
-      refresh?: (minValidity: number) => Promise<boolean>;
-      prazoDoAcesso?: PrazoDoAcesso;
-    } = {},
-  ) {
-    let token = tokenValue.token;
-    const authService = {
-      getToken: () => token,
-      prazoDoAcesso: () => opts.prazoDoAcesso ?? null,
-      isTokenExpired: () => opts.expired ?? false,
-      refreshToken: async (minValidity = 30) => {
-        if (opts.refresh) return opts.refresh(minValidity);
-        token = 'refreshed-token';
-        return true;
-      },
-    } as unknown as AuthService;
-
+  function setup(allowedUrls: readonly string[], token: string | null = 'fake-token') {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([tokenInterceptor])),
         provideHttpClientTesting(),
         { provide: AUTH_ALLOWED_URLS, useValue: allowedUrls },
-        { provide: AUTH_CONFIG, useValue: CONFIG },
-        { provide: AuthService, useValue: authService },
+        {
+          provide: RenovacaoDoAcesso,
+          useValue: { acessoParaOPedido: async () => token ?? undefined },
+        },
       ],
     });
 
@@ -67,11 +45,6 @@ describe('tokenInterceptor — allowlist', () => {
       http: TestBed.inject(HttpClient),
       httpMock: TestBed.inject(HttpTestingController),
     };
-  }
-
-  function setupComRefresh(token: string, expired: boolean) {
-    const refresh = vi.fn<(minValidity: number) => Promise<boolean>>(async () => true);
-    return { ...setup([apiUrl], { token }, { expired, refresh }), refresh };
   }
 
   it('anexa Bearer quando a URL está na allowlist (API)', async () => {
@@ -133,55 +106,8 @@ describe('tokenInterceptor — allowlist', () => {
     await promise;
   });
 
-  it('dispara refreshToken() e anexa o Bearer quando o token está expirado', async () => {
-    const { http, httpMock, refresh } = setupComRefresh('stale-token', true);
-
-    const promise = firstValueFrom(http.get(`${apiUrl}/refresh-before-attach`));
-    await flushMicrotasks();
-    const req = httpMock.expectOne(`${apiUrl}/refresh-before-attach`);
-
-    expect(refresh).toHaveBeenCalledTimes(1);
-    expect(refresh).toHaveBeenCalledWith(45);
-    // getToken() é relido após o refresh; como o mock refresh não rotaciona
-    // o valor local (função custom), o header carrega o token original —
-    // o essencial é validar que refresh foi disparado antes do envio.
-    expect(req.request.headers.get('Authorization')).toBe('Bearer stale-token');
-    req.flush({});
-    await promise;
-  });
-
-  it('limita a antecedência à metade da vida do token, para não renovar a cada pedido', async () => {
-    const refresh = vi.fn<(minValidity: number) => Promise<boolean>>(async () => true);
-    const prazoDoAcesso = { emitidoEm: 0, venceEm: 60_000 };
-    const { http, httpMock } = setup(
-      [apiUrl],
-      { token: 't' },
-      { expired: true, refresh, prazoDoAcesso },
-    );
-
-    const promise = firstValueFrom(http.get(`${apiUrl}/curto`));
-    await flushMicrotasks();
-    httpMock.expectOne(`${apiUrl}/curto`).flush({});
-    await promise;
-
-    expect(refresh).toHaveBeenCalledWith(30);
-  });
-
-  it('NÃO chama refreshToken() quando o token ainda é válido', async () => {
-    const { http, httpMock, refresh } = setupComRefresh('fresh-token', false);
-
-    const promise = firstValueFrom(http.get(`${apiUrl}/no-refresh`));
-    await flushMicrotasks();
-    const req = httpMock.expectOne(`${apiUrl}/no-refresh`);
-
-    expect(refresh).not.toHaveBeenCalled();
-    expect(req.request.headers.get('Authorization')).toBe('Bearer fresh-token');
-    req.flush({});
-    await promise;
-  });
-
   it('NÃO anexa Bearer quando não há token disponível, mesmo em URL permitida', async () => {
-    const { http, httpMock } = setup([apiUrl], { token: undefined });
+    const { http, httpMock } = setup([apiUrl], null);
 
     const promise = firstValueFrom(http.get(`${apiUrl}/ping`));
     await flushMicrotasks();
@@ -194,19 +120,11 @@ describe('tokenInterceptor — allowlist', () => {
 });
 
 describe('tokenInterceptor — chamada direta', () => {
-  const authServiceComTokenValido = {
-    getToken: () => 'tok',
-    prazoDoAcesso: () => null,
-    isTokenExpired: () => false,
-    refreshToken: async () => true,
-  } as unknown as AuthService;
-
   function permitirApenas(urlPermitida: string): void {
     TestBed.configureTestingModule({
       providers: [
         { provide: AUTH_ALLOWED_URLS, useValue: [urlPermitida] },
-        { provide: AUTH_CONFIG, useValue: CONFIG },
-        { provide: AuthService, useValue: authServiceComTokenValido },
+        { provide: RenovacaoDoAcesso, useValue: { acessoParaOPedido: async () => 'tok' } },
       ],
     });
   }
