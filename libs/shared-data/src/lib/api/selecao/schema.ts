@@ -2312,7 +2312,7 @@ export interface components {
         };
         readonly CondicaoGatilhoInput: {
             /** Format: int32 */
-            readonly clausula: number;
+            readonly clausula: null | number;
             readonly fato: string;
             readonly operador: null | components["schemas"]["OperadorCodigo"];
             readonly valor: string;
@@ -4269,14 +4269,14 @@ export interface components {
             readonly aplicabilidadeRotulo?: string;
             /**
              * Obrigatório
-             * @description Se a entrega do documento é obrigatória.
+             * @description Se a entrega do documento é obrigatória. É obrigatório informar: ausente, o documento é recusado, e não vale falso.
              */
-            readonly obrigatorio?: boolean;
+            readonly obrigatorio: boolean;
             /**
              * Prazo para reenvio
-             * @description Indica se será aberto prazo para reenvio.
+             * @description Indica se será aberto prazo para reenvio. É obrigatório informar: ausente, o documento é recusado, e não vale falso.
              */
-            readonly abrePrazoParaReenvio?: boolean;
+            readonly abrePrazoParaReenvio: boolean;
             /**
              * Consequência do descumprimento
              * @description O que acontece quando o documento não é cumprido.
@@ -5242,7 +5242,7 @@ export interface components {
             readonly quantidadeMinima?: number;
             /**
              * Prazo para reenvio
-             * @description Indica se será aberto prazo para reenvio.
+             * @description Indica se o indeferimento abre prazo para reenvio dos documentos. O grupo de itens declara a escolha; a regra de documento a deixa ausente, pois o reenvio é da exigência do documento.
              */
             readonly abrePrazoParaReenvio?: boolean;
             /**
@@ -6111,11 +6111,10 @@ export interface components {
             readonly abrePrazoParaReenvio: boolean;
         };
         readonly IndeferimentoDoDocumentoInput: {
-            readonly obrigatorio: boolean;
+            readonly obrigatorio: null | boolean;
             readonly consequenciaDoDescumprimento: null | components["schemas"]["ConsequenciaDoDescumprimentoCodigo"];
             readonly basesLegais: null | readonly components["schemas"]["BaseLegalInput"][];
-            /** @default false */
-            readonly abrePrazoParaReenvio: boolean;
+            readonly abrePrazoParaReenvio: null | boolean;
         };
         readonly IndeferimentoDoGrupoDto: {
             readonly consequenciaDoDescumprimento: null | components["schemas"]["ConsequenciaDoDescumprimento"];
@@ -6126,8 +6125,7 @@ export interface components {
         readonly IndeferimentoDoGrupoInput: {
             readonly consequenciaDoDescumprimento?: null | components["schemas"]["ConsequenciaDoDescumprimentoCodigo"];
             readonly basesLegais?: null | readonly components["schemas"]["BaseLegalInput"][];
-            /** @default false */
-            readonly abrePrazoParaReenvio: boolean;
+            readonly abrePrazoParaReenvio?: null | boolean;
         };
         readonly IndicadorDoProcessoDto: {
             readonly codigo: components["schemas"]["CodigoIndicadorDoProcessoCodigo"];
@@ -6625,7 +6623,7 @@ export interface components {
         readonly NivelDeAtendimentoInput: {
             readonly rotulo: string;
             /** Format: double */
-            readonly fracao: number;
+            readonly fracao: null | number;
             readonly chave?: null | string;
         };
         readonly NomeClassificadoDto: {
@@ -7264,7 +7262,7 @@ export interface components {
             /** Format: uuid */
             readonly modalidadeId: string;
             /** Format: int32 */
-            readonly quantidade: number;
+            readonly quantidade: null | number;
         };
         readonly RascunhoCriadoResponse: {
             /** Format: uuid */

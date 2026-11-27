@@ -18,6 +18,8 @@ import {
   tituloDaTela,
 } from './modelo-formulario-edicao.page.testing';
 
+const URL_DAS_CONSEQUENCIAS = `${BASE}/api/selecao/vocabularios/consequencias-do-descumprimento`;
+
 describe('ModeloFormularioEdicaoPage', () => {
   let fixture: ComponentFixture<ModeloFormularioEdicaoPage>;
   let controller: HttpTestingController;
@@ -121,11 +123,7 @@ describe('ModeloFormularioEdicaoPage', () => {
     await tentarNovamenteComFoco(tela, 'Fases, tipos de documento ou consequências não carregados');
     controller.expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`).flush(FASES);
     controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-documento`).flush([]);
-    controller
-      .expectOne(
-        (r) => r.url === `${BASE}/api/selecao/vocabularios/consequencias-do-descumprimento`,
-      )
-      .flush([]);
+    controller.expectOne((r) => r.url === URL_DAS_CONSEQUENCIAS).flush([]);
     await concluirANovaTentativa();
 
     expect(tela.textContent).not.toContain(

@@ -3857,11 +3857,10 @@ export interface components {
             readonly abrePrazoParaReenvio: boolean;
         };
         readonly IndeferimentoDoDocumentoDoModeloInput: {
-            readonly obrigatorio: boolean;
+            readonly obrigatorio: null | boolean;
             readonly consequenciaDoDescumprimento: null | components["schemas"]["ConsequenciaDoDescumprimentoCodigo"];
             readonly basesLegais: null | readonly components["schemas"]["BaseLegalDoModeloInput"][];
-            /** @default false */
-            readonly abrePrazoParaReenvio: boolean;
+            readonly abrePrazoParaReenvio: null | boolean;
         };
         readonly IndeferimentoDoGrupoDeDocumentosDoModeloDto: {
             readonly consequenciaDoDescumprimento: null | string;
@@ -3872,8 +3871,7 @@ export interface components {
         readonly IndeferimentoDoGrupoDeDocumentosDoModeloInput: {
             readonly consequenciaDoDescumprimento: null | components["schemas"]["ConsequenciaDoDescumprimentoCodigo"];
             readonly basesLegais: null | readonly components["schemas"]["BaseLegalDoModeloInput"][];
-            /** @default false */
-            readonly abrePrazoParaReenvio: boolean;
+            readonly abrePrazoParaReenvio: null | boolean;
         };
         readonly ItemDaProtecaoDoCatalogoDto: {
             readonly tipo: string;
@@ -4935,7 +4933,7 @@ export interface components {
             readonly codigo: string;
             readonly descricao: null | string;
             /** Format: int32 */
-            readonly ordem: number;
+            readonly ordem: null | number;
             readonly orientacao?: null | string;
         };
         readonly ValoresDoFatoDto: {

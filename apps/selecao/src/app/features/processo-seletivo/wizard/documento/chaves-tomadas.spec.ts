@@ -9,7 +9,15 @@ function comReferencias(): DocumentoDaConfiguracao {
     ...documentoSemNada(),
     etapas: [{ chave: 'prova', faseChave: 'avaliacao' }],
     documentosExigidos: {
-      exigencias: [{ chave: 'rg', faseChave: 'inscricao', etapaChave: 'prova' }],
+      exigencias: [
+        {
+          chave: 'rg',
+          faseChave: 'inscricao',
+          etapaChave: 'prova',
+          obrigatorio: true,
+          abrePrazoParaReenvio: false,
+        },
+      ],
     },
     coleta: { referenciaTemporalDosDados: { faseChave: 'coleta' } },
     importacao: { primeiraFaseDepoisDaImportacaoChave: 'resultado' },
