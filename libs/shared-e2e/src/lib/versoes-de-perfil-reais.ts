@@ -9,6 +9,7 @@ import {
   type RespostaDaApi,
 } from './backend-real';
 import { garantirRepresentantes } from './concessoes-reais';
+import type { ValorDoContrato } from './valor-do-contrato';
 import { PDF_MINIMO, enviarPelaUrlAssinada } from './envio-de-arquivo';
 
 /** Quem propõe as versões da simulação; quem aprova é sempre outra pessoa. */
@@ -29,8 +30,8 @@ export interface EnvioDaVersao {
 
 export interface VersaoPendenteLida {
   readonly versaoId: string;
-  readonly situacaoDoDocumento: SituacaoDoAnexo;
-  readonly etapaAtual: EtapaDaVersao;
+  readonly situacaoDoDocumento: ValorDoContrato<SituacaoDoAnexo>;
+  readonly etapaAtual: ValorDoContrato<EtapaDaVersao>;
   readonly exigeProtecaoDeDados: boolean;
   readonly permissoes: readonly { readonly codigo: string }[];
 }
@@ -128,8 +129,8 @@ export async function aguardarDocumentoVerificado(perfilId: string): Promise<Ver
   const limite = Date.now() + ESPERA_DA_VERIFICACAO_MS;
   for (;;) {
     const { versaoPendente } = await lerPerfil(perfilId);
-    if (versaoPendente?.situacaoDoDocumento === 'VERIFICADO') return versaoPendente;
-    if (versaoPendente?.situacaoDoDocumento === 'RECUSADO' || Date.now() > limite) {
+    if (versaoPendente?.situacaoDoDocumento.codigo === 'VERIFICADO') return versaoPendente;
+    if (versaoPendente?.situacaoDoDocumento.codigo === 'RECUSADO' || Date.now() > limite) {
       throw new Error(`O documento da versão pendente do perfil ${perfilId} não foi verificado.`);
     }
     await new Promise((resolver) => setTimeout(resolver, 1_000));
