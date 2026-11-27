@@ -30,6 +30,7 @@ function preparar(houveAtividade = true) {
   const refreshToken = vi.fn(async (minima?: number) => minima !== undefined);
   const proxima = vi.fn(() => new Promise<void>(() => undefined));
   const acessoVencendo = { valor: false };
+  const acesso = { token: 'acesso' as string | undefined };
   TestBed.configureTestingModule({
     providers: [
       {
@@ -38,7 +39,7 @@ function preparar(houveAtividade = true) {
           prazoDoAcesso,
           prazoDaCredencial,
           refreshToken,
-          getToken: () => 'acesso',
+          getToken: () => acesso.token,
           isTokenExpired: () => acessoVencendo.valor,
         },
       },
@@ -48,7 +49,7 @@ function preparar(houveAtividade = true) {
   });
   TestBed.inject(RenovacaoDoAcesso);
   TestBed.tick();
-  return { prazoDoAcesso, prazoDaCredencial, refreshToken, proxima, acessoVencendo };
+  return { prazoDoAcesso, prazoDaCredencial, refreshToken, proxima, acessoVencendo, acesso };
 }
 
 function passar(segundos: number): void {
@@ -211,6 +212,17 @@ describe('RenovacaoDoAcesso', () => {
 
       expect(refreshToken).not.toHaveBeenCalled();
       expect(token).toBe('acesso');
+    });
+
+    it('sem acesso, para a pessoa anônima, segue sem credencial e não pergunta pela validade', async () => {
+      const { refreshToken, acessoVencendo, acesso } = preparar();
+      acessoVencendo.valor = true;
+      acesso.token = undefined;
+
+      const token = await TestBed.inject(RenovacaoDoAcesso).acessoParaOPedido();
+
+      expect(refreshToken).not.toHaveBeenCalled();
+      expect(token).toBeUndefined();
     });
 
     it('não renova o acesso que ainda tem validade', async () => {

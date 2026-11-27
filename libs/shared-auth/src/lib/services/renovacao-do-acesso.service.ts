@@ -125,6 +125,7 @@ export class RenovacaoDoAcesso {
    * adia a sessão. Sem a hora de emissão não há como saber, e vale renovar.
    */
   async acessoParaOPedido(): Promise<string | undefined> {
+    if (this.auth.getToken() === undefined) return undefined;
     const acesso = this.auth.prazoDoAcesso();
     const antecedencia = this.antecedenciaEmSegundos(acesso);
     const pessoaAgiu = acesso === null || this.atividade.houveDesde(acesso.emitidoEm);
