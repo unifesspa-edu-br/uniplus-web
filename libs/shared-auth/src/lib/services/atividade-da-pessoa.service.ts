@@ -2,6 +2,8 @@ import { DOCUMENT } from '@angular/common';
 import { DestroyRef, inject, Injectable, NgZone } from '@angular/core';
 import { RELOGIO } from '@uniplus/shared-core/relogio';
 
+/** Antes de qualquer ação: carregar a página não conta como atividade. */
+const SEM_ATIVIDADE = 0;
 const EVENTOS_DA_PESSOA = ['keydown', 'pointerdown', 'wheel'] as const;
 
 /**
@@ -12,7 +14,7 @@ const EVENTOS_DA_PESSOA = ['keydown', 'pointerdown', 'wheel'] as const;
 export class AtividadeDaPessoa {
   private readonly relogio = inject(RELOGIO);
   private readonly documento = inject(DOCUMENT);
-  private ultimaAtividadeEm = this.relogio().getTime();
+  private ultimaAtividadeEm = SEM_ATIVIDADE;
   private aguardando: Array<() => void> = [];
 
   constructor() {

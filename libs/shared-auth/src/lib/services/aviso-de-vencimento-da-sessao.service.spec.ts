@@ -55,6 +55,16 @@ describe('AvisoDeVencimentoDaSessao', () => {
     expect(aviso.restanteEmSegundos()).toBe(120);
   });
 
+  it('abre aos 120 s do fim quando a credencial dura 1800 s, em passos de um minuto', () => {
+    const { aviso } = preparar(1800);
+
+    for (let minuto = 0; minuto < 27; minuto += 1) passar(60);
+    expect(aviso.aberto()).toBe(false);
+
+    passar(60);
+    expect(aviso.aberto()).toBe(true);
+  });
+
   it('atualiza o tempo que falta enquanto está aberto', () => {
     const { aviso } = preparar(100);
 
