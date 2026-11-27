@@ -4,8 +4,11 @@ import {
   AuthErrorBannerComponent,
   LoginErrorBannerComponent,
 } from '@uniplus/shared-auth/components';
-import { SessaoEncerrada } from '@uniplus/shared-auth/bootstrap';
-import { AvisoDeSessaoEncerradaComponent } from '@uniplus/shared-ui/components';
+import { AvisoDeVencimentoDaSessao, SessaoEncerrada } from '@uniplus/shared-auth/bootstrap';
+import {
+  AvisoDeSessaoEncerradaComponent,
+  AvisoDeSessaoPertoDeVencerComponent,
+} from '@uniplus/shared-ui/components';
 import { NotificationHostComponent } from '@uniplus/shared-ui/notifications';
 
 @Component({
@@ -13,6 +16,7 @@ import { NotificationHostComponent } from '@uniplus/shared-ui/notifications';
   standalone: true,
   imports: [
     AvisoDeSessaoEncerradaComponent,
+    AvisoDeSessaoPertoDeVencerComponent,
     RouterOutlet,
     AuthErrorBannerComponent,
     LoginErrorBannerComponent,
@@ -28,9 +32,18 @@ import { NotificationHostComponent } from '@uniplus/shared-ui/notifications';
       (entrar)="sessao.entrarNovamente()"
       (dispensar)="sessao.dispensar()"
     />
+    <ui-aviso-de-sessao-perto-de-vencer
+      [aberto]="vencimento.aberto()"
+      [restanteEmSegundos]="vencimento.restanteEmSegundos()"
+      [podeContinuar]="vencimento.situacao() === 'podeContinuar'"
+      (continuar)="vencimento.continuar()"
+      (entrar)="vencimento.entrarDeNovo()"
+      (dispensar)="vencimento.dispensar()"
+    />
     <router-outlet />
   `,
 })
 export class AppComponent {
   protected readonly sessao = inject(SessaoEncerrada);
+  protected readonly vencimento = inject(AvisoDeVencimentoDaSessao);
 }
