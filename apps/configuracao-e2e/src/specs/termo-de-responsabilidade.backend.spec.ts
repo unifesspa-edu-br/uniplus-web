@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import type { PedidoDeConcessaoDto } from '@uniplus/shared-data/autorizacao';
 import {
   GESTOR_DE_ACESSOS,
   SEGUNDO_GESTOR_DE_ACESSOS,
@@ -9,6 +10,7 @@ import {
   identidadeDoToken,
   tokenDaPersona,
   unidadeDoCertame,
+  type JsonDaApi,
 } from '@uniplus/shared-e2e';
 
 /**
@@ -30,11 +32,7 @@ interface VersaoDoTermo {
   readonly numero: number;
 }
 
-interface Pedido {
-  readonly id: string;
-  readonly situacao: string;
-  readonly termo: { readonly versaoId: string } | null;
-}
+type Pedido = JsonDaApi<Pick<PedidoDeConcessaoDto, 'id' | 'situacao' | 'termo'>>;
 
 /** A pessoa beneficiária do pedido feito por outra pessoa: aceita depois, com a versão fixada. */
 const BENEFICIARIO = SEGUNDO_GESTOR_DE_ACESSOS;
@@ -120,7 +118,9 @@ test.describe('Termo de responsabilidade', () => {
     expect(criado.status, JSON.stringify(criado.corpo)).toBe(201);
     const caminho = `${ROTA_DOS_PEDIDOS}/${criado.corpo.id}`;
     const lerPedido = async () => (await chamarApi<Pedido>(SOLICITANTE, 'GET', caminho)).corpo;
-    await expect.poll(async () => (await lerPedido()).situacao).toBe('AGUARDANDO_BENEFICIARIO');
+    await expect
+      .poll(async () => (await lerPedido()).situacao.codigo)
+      .toBe('AGUARDANDO_BENEFICIARIO');
     expect((await lerPedido()).termo?.versaoId).toBe(versao.id);
 
     const divergente = await chamarApi(BENEFICIARIO, 'POST', `${caminho}/aceite`, {

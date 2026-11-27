@@ -103,9 +103,9 @@ const ATIPICOS: readonly [string, IdaEVolta, DocumentoDaConfiguracao][] = [
         regra: {},
         destinoFinalCodigo: ' AC ',
         destinos: [
-          { modalidadeOrigemCodigo: 'B', ordem: 3, modalidadeDestinoCodigo: 'AC' },
-          { modalidadeOrigemCodigo: 'A', ordem: 1, modalidadeDestinoCodigo: 'B' },
-          { modalidadeOrigemCodigo: 'B', ordem: 1, modalidadeDestinoCodigo: 'A' },
+          { modalidadeOrigemCodigo: 'B', modalidadeDestinoCodigo: 'AC' },
+          { modalidadeOrigemCodigo: 'A', modalidadeDestinoCodigo: 'B' },
+          { modalidadeOrigemCodigo: 'B', modalidadeDestinoCodigo: 'A' },
         ],
       },
     }),
@@ -169,14 +169,14 @@ const ATIPICOS: readonly [string, IdaEVolta, DocumentoDaConfiguracao][] = [
     }),
   ],
   [
-    'Cascata com o mesmo destino repetido e a mesma ordem em dois destinos',
+    'Cascata com o mesmo destino repetido na mesma origem',
     VAGAS,
     comSecao({
       ordemDeRemanejamento: {
         destinos: [
-          { modalidadeOrigemCodigo: 'A', ordem: 1, modalidadeDestinoCodigo: 'B' },
-          { modalidadeOrigemCodigo: 'A', ordem: 1, modalidadeDestinoCodigo: 'B' },
-          { modalidadeOrigemCodigo: 'A', ordem: 1, modalidadeDestinoCodigo: 'C' },
+          { modalidadeOrigemCodigo: 'A', modalidadeDestinoCodigo: 'B' },
+          { modalidadeOrigemCodigo: 'A', modalidadeDestinoCodigo: 'B' },
+          { modalidadeOrigemCodigo: 'A', modalidadeDestinoCodigo: 'C' },
         ],
       },
     }),

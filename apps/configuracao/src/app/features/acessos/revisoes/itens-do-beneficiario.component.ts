@@ -1,16 +1,16 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import type { ItemDaRevisaoDto } from '@uniplus/shared-data/autorizacao';
 import { RouterLink } from '@angular/router';
-import { TagComponent } from '@uniplus/shared-ui/components';
+import { TagDoCodigoComponent } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import type { ItensDoBeneficiario } from './regras-da-revisao';
-import { quemDecide, situacaoDoItem } from './rotulos-da-revisao';
+import { VARIANTES_DO_ITEM } from './rotulos-da-revisao';
 
 /** Os itens de um beneficiário: quem decide cada um e, no decidido, a decisão gravada. */
 @Component({
   selector: 'cfg-itens-do-beneficiario',
   standalone: true,
-  imports: [RouterLink, DateBrPipe, TagComponent],
+  imports: [RouterLink, DateBrPipe, TagDoCodigoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './itens-do-beneficiario.component.html',
 })
@@ -25,8 +25,7 @@ export class ItensDoBeneficiarioComponent {
   readonly confirmar = output<ItemDaRevisaoDto>();
   readonly revogar = output<ItemDaRevisaoDto>();
 
-  protected readonly situacao = situacaoDoItem;
-  protected readonly quemDecide = quemDecide;
+  protected readonly variantes = VARIANTES_DO_ITEM;
 
   protected decidido(item: ItemDaRevisaoDto): boolean {
     return item.decididoEm !== null;

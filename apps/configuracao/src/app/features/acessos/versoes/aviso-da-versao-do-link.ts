@@ -1,5 +1,4 @@
 import type { PerfilDto } from '@uniplus/shared-data/autorizacao';
-import { situacaoEncerrada } from './rotulos-da-versao';
 
 export const TITULO_DO_AVISO_DA_VERSAO = 'A versão do link já não está pendente';
 const ATUAL = 'Abaixo está a situação atual do perfil.';
@@ -45,5 +44,5 @@ export function avisoDaVersaoDoLink(
   const encerrada = encerradaCitadaNoAviso(perfil, versaoId);
   return encerrada === null
     ? `Esta versão não está mais pendente. ${ATUAL}`
-    : `Esta versão não está mais pendente. A última versão proposta, a ${encerrada.numero}, foi ${situacaoEncerrada(encerrada.situacao)}. ${ATUAL}`;
+    : `Esta versão não está mais pendente. A última versão proposta, a ${encerrada.numero}, está ${encerrada.situacao.rotulo.toLowerCase()}. ${ATUAL}`;
 }

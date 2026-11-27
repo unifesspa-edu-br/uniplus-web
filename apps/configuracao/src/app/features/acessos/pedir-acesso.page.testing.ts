@@ -1,4 +1,3 @@
-import { TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import {
   HttpResponse,
   provideHttpClient,
@@ -19,7 +18,7 @@ import {
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { AnexoDoPedidoService } from './anexo-do-pedido.service';
 import { PedirAcessoPage } from './pedir-acesso.page';
-import { UNIDADES, ok, versaoDoTermo, type recusa } from './testes';
+import { TIPO_DE_ESCOPO, UNIDADES, ok, versaoDoTermo, type recusa } from './testes';
 
 export { versaoDoTermo } from './testes';
 
@@ -29,7 +28,7 @@ export const PERFIL_COMUM = {
   id: 'perfil-1',
   nome: 'Operador de inscrições',
   descricao: 'Opera as inscrições.',
-  escopo: TipoDeEscopo.UNIDADE,
+  escopo: TIPO_DE_ESCOPO.UNIDADE,
   exigeAprovacaoDeProtecaoDeDados: false,
   governanca: null,
 };
@@ -37,7 +36,7 @@ export const PERFIL_INSTITUCIONAL = {
   ...PERFIL_COMUM,
   id: 'perfil-2',
   nome: 'Consulta institucional',
-  escopo: TipoDeEscopo.INSTITUICAO,
+  escopo: TIPO_DE_ESCOPO.INSTITUICAO,
 };
 
 export const PERFIL_DE_GOVERNANCA = {
@@ -45,7 +44,7 @@ export const PERFIL_DE_GOVERNANCA = {
   id: 'perfil-3',
   nome: 'Representante do controlador',
   exigeAprovacaoDeProtecaoDeDados: true,
-  governanca: 'representante-do-controlador',
+  governanca: { codigo: 'REPRESENTANTE_DO_CONTROLADOR', rotulo: 'Representante do controlador' },
 };
 
 /** Perfil com dado pessoal: exige o termo de responsabilidade. */

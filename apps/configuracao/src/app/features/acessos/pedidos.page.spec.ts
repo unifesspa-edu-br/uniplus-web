@@ -1,4 +1,4 @@
-import { SituacaoDoPedidoCodigo, TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDoPedidoCodigo } from '@uniplus/shared-data/autorizacao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
@@ -11,7 +11,7 @@ import { AUTORIZACAO_BASE_PATH } from '@uniplus/shared-data/autorizacao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { PedidosPage } from './pedidos.page';
 import { PedidosStore } from './pedidos.store';
-import { ok, pedido, UNIDADES } from './testes';
+import { SITUACAO_DO_PEDIDO, TIPO_DE_ESCOPO, UNIDADES, ok, pedido } from './testes';
 
 const URL = 'http://api.test/api/autorizacao/pedidos-de-concessao';
 
@@ -140,13 +140,13 @@ describe('PedidosPage', () => {
     fixture.detectChanges();
     const req = http.expectOne((r) => r.url === URL);
     expect(req.request.params.get('fila')).toBe('meus');
-    req.flush([pedido({ situacao: SituacaoDoPedidoCodigo.AGUARDANDO_GESTOR })]);
+    req.flush([pedido({ situacao: SITUACAO_DO_PEDIDO.AGUARDANDO_GESTOR })]);
     await atualizar();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('h1')?.textContent).toContain('Meus pedidos de acesso');
     expect(host.textContent).toContain('Betina Teste');
     expect(host.textContent).toContain('CEPS');
-    expect(host.textContent).toContain('Aguardando a gestão de acessos');
+    expect(host.textContent).toContain('Aguardando gestor');
     expect(host.querySelector('a[href="/acessos/pedidos/novo"]')).not.toBeNull();
   });
 
@@ -187,7 +187,7 @@ describe('PedidosPage', () => {
     const inicial = http.expectOne((r) => r.url === URL);
     expect(inicial.request.params.get('fila')).toBe('todos');
     expect(inicial.request.params.has('situacao')).toBe(false);
-    inicial.flush([pedido({ situacao: SituacaoDoPedidoCodigo.RECUSADO })]);
+    inicial.flush([pedido({ situacao: SITUACAO_DO_PEDIDO.RECUSADO })]);
     await atualizar();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('h1')?.textContent).toContain('Histórico de pedidos');
@@ -209,9 +209,7 @@ describe('PedidosPage', () => {
     const fixture = TestBed.createComponent(PedidosPage);
     fixture.componentRef.setInput('fila', 'todos');
     fixture.detectChanges();
-    http
-      .expectOne((r) => r.url === URL)
-      .flush([pedido({ situacao: SituacaoDoPedidoCodigo.RECUSADO })]);
+    http.expectOne((r) => r.url === URL).flush([pedido({ situacao: SITUACAO_DO_PEDIDO.RECUSADO })]);
     await atualizar();
     const linha = fixture.nativeElement.querySelector('tbody tr') as HTMLElement;
     expect(linha.getAttribute('tabindex')).toBe('0');
@@ -260,7 +258,7 @@ describe('PedidosPage', () => {
       .expectOne((r) => r.url === URL)
       .flush([
         pedido(),
-        pedido({ id: 'pedido-2', escopo: { tipo: TipoDeEscopo.INSTITUICAO, unidadeId: null } }),
+        pedido({ id: 'pedido-2', escopo: { tipo: TIPO_DE_ESCOPO.INSTITUICAO, unidadeId: null } }),
       ]);
     await atualizar();
 

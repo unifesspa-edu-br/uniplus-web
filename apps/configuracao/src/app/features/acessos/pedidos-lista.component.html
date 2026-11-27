@@ -57,7 +57,7 @@
               <td data-label="Escopo">
                 {{
                   pedido.escopo.unidadeId === null
-                    ? 'Instituição'
+                    ? pedido.escopo.tipo.rotulo
                     : (nomesDosEscopos().get(pedido.escopo.unidadeId) ?? 'Unidade não identificada')
                 }}
               </td>

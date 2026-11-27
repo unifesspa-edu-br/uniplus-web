@@ -9,6 +9,7 @@ import {
   CONDUZIR,
   CONSULTAR,
   REVER,
+  SITUACAO_DA_REVISAO,
   api,
   assentar,
   botao,
@@ -24,7 +25,7 @@ const ABERTA: RevisaoResumoDto = {
   id: 'r1',
   abertaEm: '2026-11-09T12:00:00Z',
   abertaPor: pessoa('conta-betina', 'Betina Neves'),
-  situacao: SituacaoDaRevisaoCodigo.EM_ANDAMENTO,
+  situacao: SITUACAO_DA_REVISAO.EM_ANDAMENTO,
   totalDeItens: 4,
   pendentes: 3,
 };
@@ -32,7 +33,7 @@ const ENCERRADA: RevisaoResumoDto = {
   ...ABERTA,
   id: 'r0',
   abertaEm: '2026-05-04T12:00:00Z',
-  situacao: SituacaoDaRevisaoCodigo.CONCLUIDA,
+  situacao: SITUACAO_DA_REVISAO.CONCLUIDA,
   pendentes: 0,
 };
 
@@ -71,8 +72,8 @@ describe('RevisoesPage', () => {
     const { host } = await abrirLista([CONSULTAR]);
 
     expect(linhas(host)).toEqual(['r1', 'r0']);
-    expect(host.textContent).toContain('Aberta');
-    expect(host.textContent).toContain('Encerrada');
+    expect(host.textContent).toContain('Em andamento');
+    expect(host.textContent).toContain('Concluída');
     expect(host.querySelector('tr[data-revisao-id="r0"] a')?.getAttribute('href')).toBe(
       '/acessos/revisoes/r0',
     );

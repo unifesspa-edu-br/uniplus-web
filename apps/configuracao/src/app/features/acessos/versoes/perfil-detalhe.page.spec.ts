@@ -1,5 +1,6 @@
 import { SituacaoDaRevisaoDasConcessoesCodigo } from '@uniplus/shared-data/autorizacao';
-import { EtapaDaVersao, SituacaoDaVersao } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDaVersaoCodigo, TipoDeGovernancaCodigo } from '@uniplus/shared-data/autorizacao';
+import { ETAPA_GESTAO, ETAPA_PROTECAO, tipoDeGovernanca } from './enums-da-api.testing';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { perfilDoDetalhe, versaoPendente } from './perfis.testing';
@@ -22,9 +23,9 @@ import {
 
 const SUSPENSAO_EM_RETOMADA = {
   desde: '2026-11-09T15:00:00Z',
-  papelDeQuemSuspendeu: EtapaDaVersao.GESTAO_DE_ACESSOS,
-  etapasExigidasAgora: [EtapaDaVersao.GESTAO_DE_ACESSOS, EtapaDaVersao.PROTECAO_DE_DADOS],
-  etapasDecididas: [EtapaDaVersao.GESTAO_DE_ACESSOS],
+  papelDeQuemSuspendeu: ETAPA_GESTAO,
+  etapasExigidasAgora: [ETAPA_GESTAO, ETAPA_PROTECAO],
+  etapasDecididas: [ETAPA_GESTAO],
 };
 
 describe('PerfilDetalhePage', () => {
@@ -36,7 +37,7 @@ describe('PerfilDetalhePage', () => {
     expect(host.querySelector('h1')?.textContent).toContain('Operador de inscrições');
     expect(host.textContent).toContain(ACESSO_EM_VIGOR.rotulo);
     expect(host.textContent).toContain('P-1/2026');
-    expect(host.textContent).toContain('selecao:processos:consultar');
+    expect(host.textContent).toContain('Interno · selecao:processos:consultar');
     expect(botao(host, 'Propor nova versão')).toBeDefined();
     expect(botao(host, 'Remover permissões')).toBeDefined();
     expect(botao(host, 'Desativar')).toBeDefined();
@@ -50,6 +51,7 @@ describe('PerfilDetalhePage', () => {
     expect(host.textContent).toContain('Aguarda gestão de acessos');
     expect(host.textContent).toContain('Acrescentadas (1)');
     expect(host.textContent).toContain('Aprovar processos');
+    expect(host.textContent).toContain('Pessoal · selecao:processos:aprovar');
     expect(botao(host, 'Cancelar versão pendente')).toBeDefined();
     expect(botao(host, 'Propor nova versão')).toBeUndefined();
   });
@@ -234,16 +236,20 @@ describe('PerfilDetalhePage', () => {
   });
 
   it('o perfil de governança não oferece nenhuma ação', async () => {
-    const { host } = await abrir(ok(perfilDoDetalhe({ governanca: 'gestor' })));
+    const { host } = await abrir(
+      ok(
+        perfilDoDetalhe({ governanca: tipoDeGovernanca(TipoDeGovernancaCodigo.GESTOR_DE_ACESSOS) }),
+      ),
+    );
 
     expect(host.querySelector('.page-header__actions button')).toBeNull();
   });
 
   it('avisa que a última versão proposta não entrou em vigor', async () => {
-    const { host } = await abrir(ok(perfilComEncerrada(SituacaoDaVersao.RECUSADA, 3)));
+    const { host } = await abrir(ok(perfilComEncerrada(SituacaoDaVersaoCodigo.RECUSADA, 3)));
 
     expect(host.textContent).toContain('A última versão proposta não entrou em vigor');
-    expect(host.textContent).toContain('A versão 3 foi recusada.');
+    expect(host.textContent).toContain('A versão 3 está recusada.');
   });
 
   it('perfil que não existe mostra a recusa sem oferecer nova tentativa', async () => {

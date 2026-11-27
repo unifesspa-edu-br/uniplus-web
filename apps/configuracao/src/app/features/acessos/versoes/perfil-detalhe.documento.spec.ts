@@ -1,7 +1,8 @@
-import { SituacaoDoAnexo } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDoAnexoCodigo } from '@uniplus/shared-data/autorizacao';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
+import { situacaoDoAnexo } from './enums-da-api.testing';
 import { perfilDoDetalhe, versaoPendente } from './perfis.testing';
 import { ok } from '../testes';
 import {
@@ -19,7 +20,7 @@ import {
 } from './perfil-detalhe.testing';
 
 const PENDENTE_AGUARDANDO = versaoPendente({
-  situacaoDoDocumento: SituacaoDoAnexo.AGUARDANDO_ENVIO,
+  situacaoDoDocumento: situacaoDoAnexo(SituacaoDoAnexoCodigo.AGUARDANDO_ENVIO),
 });
 
 async function abrirAguardandoEnvio() {
@@ -33,7 +34,9 @@ describe('PerfilDetalhePage: documento da versão pendente', () => {
 
   describe('documento da versão pendente', () => {
     it('quem só aprova vê que falta o documento, sem o campo de envio', async () => {
-      const pendente = versaoPendente({ situacaoDoDocumento: SituacaoDoAnexo.RECUSADO });
+      const pendente = versaoPendente({
+        situacaoDoDocumento: situacaoDoAnexo(SituacaoDoAnexoCodigo.RECUSADO),
+      });
       const { fixture, host } = await abrir(ok(perfilDoDetalhe({ versaoPendente: pendente })), {
         concedidas: [PERMISSAO.autorizacao.perfisAprovarFuncional],
       });
@@ -43,7 +46,9 @@ describe('PerfilDetalhePage: documento da versão pendente', () => {
     });
 
     it('mostra a falha do envio junto ao campo e não avisa sucesso', async () => {
-      const pendente = versaoPendente({ situacaoDoDocumento: SituacaoDoAnexo.AGUARDANDO_ENVIO });
+      const pendente = versaoPendente({
+        situacaoDoDocumento: situacaoDoAnexo(SituacaoDoAnexoCodigo.AGUARDANDO_ENVIO),
+      });
       const { fixture } = await abrir(ok(perfilDoDetalhe({ versaoPendente: pendente })));
       documento.reenviar.mockResolvedValue({ ok: false, mensagem: 'Falha ao enviar o arquivo.' });
       await escolherArquivo(fixture, 'cfg-versao-pendente');
@@ -53,9 +58,13 @@ describe('PerfilDetalhePage: documento da versão pendente', () => {
     });
 
     it('depois de falha no envio, relê a versão e oferece a tentativa do estado lido', async () => {
-      const recusado = versaoPendente({ situacaoDoDocumento: SituacaoDoAnexo.RECUSADO });
+      const recusado = versaoPendente({
+        situacaoDoDocumento: situacaoDoAnexo(SituacaoDoAnexoCodigo.RECUSADO),
+      });
       const { fixture, host } = await abrir(ok(perfilDoDetalhe({ versaoPendente: recusado })));
-      const aguardando = versaoPendente({ situacaoDoDocumento: SituacaoDoAnexo.AGUARDANDO_ENVIO });
+      const aguardando = versaoPendente({
+        situacaoDoDocumento: situacaoDoAnexo(SituacaoDoAnexoCodigo.AGUARDANDO_ENVIO),
+      });
       leitura.mockReturnValue(of(ok(perfilDoDetalhe({ versaoPendente: aguardando }))));
       documento.reenviar.mockResolvedValue({ ok: false, mensagem: 'Falha ao enviar o arquivo.' });
       const chamadasAntes = leitura.mock.calls.length;
@@ -67,9 +76,13 @@ describe('PerfilDetalhePage: documento da versão pendente', () => {
     });
 
     it('depois de confirmação sem resposta, relê e deixa de oferecer o envio quando já está em verificação', async () => {
-      const aguardando = versaoPendente({ situacaoDoDocumento: SituacaoDoAnexo.AGUARDANDO_ENVIO });
+      const aguardando = versaoPendente({
+        situacaoDoDocumento: situacaoDoAnexo(SituacaoDoAnexoCodigo.AGUARDANDO_ENVIO),
+      });
       const { fixture, host } = await abrir(ok(perfilDoDetalhe({ versaoPendente: aguardando })));
-      const emVerificacao = versaoPendente({ situacaoDoDocumento: SituacaoDoAnexo.EM_VERIFICACAO });
+      const emVerificacao = versaoPendente({
+        situacaoDoDocumento: situacaoDoAnexo(SituacaoDoAnexoCodigo.EM_VERIFICACAO),
+      });
       leitura.mockReturnValue(of(ok(perfilDoDetalhe({ versaoPendente: emVerificacao }))));
       documento.reenviar.mockResolvedValue({
         ok: false,
@@ -81,7 +94,9 @@ describe('PerfilDetalhePage: documento da versão pendente', () => {
     });
 
     it('abrir o seletor e não escolher arquivo não envia nada', async () => {
-      const pendente = versaoPendente({ situacaoDoDocumento: SituacaoDoAnexo.AGUARDANDO_ENVIO });
+      const pendente = versaoPendente({
+        situacaoDoDocumento: situacaoDoAnexo(SituacaoDoAnexoCodigo.AGUARDANDO_ENVIO),
+      });
       const { fixture } = await abrir(ok(perfilDoDetalhe({ versaoPendente: pendente })));
       await escolherArquivo(fixture, 'cfg-versao-pendente', null);
 
@@ -124,7 +139,9 @@ describe('PerfilDetalhePage: documento da versão pendente', () => {
     });
 
     it('com o documento recusado na verificação, pede outro PDF', async () => {
-      const pendente = versaoPendente({ situacaoDoDocumento: SituacaoDoAnexo.RECUSADO });
+      const pendente = versaoPendente({
+        situacaoDoDocumento: situacaoDoAnexo(SituacaoDoAnexoCodigo.RECUSADO),
+      });
       const { host } = await abrir(ok(perfilDoDetalhe({ versaoPendente: pendente })));
 
       expect(host.textContent).toContain('A verificação recusou o documento enviado.');

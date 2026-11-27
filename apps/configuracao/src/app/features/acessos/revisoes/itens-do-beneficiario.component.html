@@ -32,12 +32,10 @@
               {{ item.validaAte ? (item.validaAte | dateBr: 'datetime') : 'Sem prazo' }}
             </td>
             <td data-label="Situação">
-              <ui-tag [variant]="situacao(item.situacao).variante">{{
-                situacao(item.situacao).texto
-              }}</ui-tag>
+              <ui-tag-do-codigo [valor]="item.situacao" [variantes]="variantes" />
             </td>
             <td data-label="Quem decide">
-              {{ quemDecide(item.decide) }}
+              {{ item.decide.rotulo }}
               @if (decidido(item)) {
                 <span class="cfg-muted">Governança gravada na decisão.</span>
               }

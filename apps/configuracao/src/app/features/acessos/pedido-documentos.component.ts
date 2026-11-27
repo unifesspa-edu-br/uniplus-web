@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { SituacaoDoAnexo, type PedidoDeConcessaoDto } from '@uniplus/shared-data/autorizacao';
 import { FileUploadComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
-import { situacaoDoAnexo } from './rotulos-de-acesso';
 
 @Component({
   selector: 'cfg-pedido-documentos',
@@ -19,5 +18,4 @@ export class PedidoDocumentosComponent {
   readonly abrir = output<string>();
   readonly arquivoSelecionado = output<File | null>();
   protected readonly SituacaoDoAnexo = SituacaoDoAnexo;
-  protected readonly rotuloDoAnexo = situacaoDoAnexo;
 }

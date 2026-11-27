@@ -109,6 +109,16 @@ describe('gravação das exigências documentais', () => {
       expect(aguardando()).toBe(false);
     });
 
+    it('não envia os documentos quando a fase tem mais de um formulário e o documento não escolheu', async () => {
+      obter.mockReturnValue(
+        of(apiOk(processoComFormularioNaFase(['HABILITACAO', 'ISENCAO']), 200, headers)),
+      );
+      const resultado = await gravar();
+      expect(resultado.valid).toBe(true);
+      expect(definirDocumentosExigidos).not.toHaveBeenCalled();
+      expect(aguardando()).toBe(true);
+    });
+
     it('não envia os documentos quando falta o formulário de inscrição que receberia o campo', async () => {
       obter.mockReturnValue(of(apiOk(processoComFormularioNaFase(['HABILITACAO']), 200, headers)));
       garantirCampos.mockResolvedValue({ tipo: 'semFormularioDeInscricao' });

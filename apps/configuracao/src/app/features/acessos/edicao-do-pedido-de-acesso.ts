@@ -137,7 +137,7 @@ export class EdicaoDoPedidoDeAcesso {
   );
   /** O perfil de escopo institucional vale para a instituição, sem unidade. */
   readonly exigeUnidade = computed(
-    () => this.perfilSelecionado()?.escopo !== TipoDeEscopo.INSTITUICAO,
+    () => this.perfilSelecionado()?.escopo.codigo !== TipoDeEscopo.INSTITUICAO,
   );
   /** Perfil com dado pessoal ou sensível, inclusive os de governança, exige o termo de responsabilidade. */
   readonly protegido = computed(() => {

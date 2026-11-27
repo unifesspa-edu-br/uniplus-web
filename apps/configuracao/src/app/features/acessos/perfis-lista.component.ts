@@ -7,7 +7,6 @@ import {
   SpinnerComponent,
   TagComponent,
 } from '@uniplus/shared-ui/components';
-import { sensibilidade } from './rotulos-de-acesso';
 import { etiquetasDoPerfil, resumoDaLista } from './versoes/estado-do-perfil';
 import { SituacaoDoPerfilComponent } from './versoes/situacao-do-perfil.component';
 
@@ -34,7 +33,6 @@ export class PerfisListaComponent {
   readonly temProximo = input.required<boolean>();
   readonly anterior = output<void>();
   readonly proximo = output<void>();
-  protected readonly sensibilidadeDe = sensibilidade;
   protected readonly linhas = computed(() =>
     this.perfis().map((perfil) => {
       const resumo = resumoDaLista(perfil);

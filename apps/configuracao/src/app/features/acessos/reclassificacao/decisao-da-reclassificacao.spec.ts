@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
-import { ok, recusa, recusaPeloInterceptor } from '../testes';
+import { ok, recusa, recusaPeloInterceptor, TIPO_DE_ESCOPO } from '../testes';
 import {
   ID,
   abrirReclassificacao,
@@ -124,12 +124,14 @@ describe('decisão da reclassificação', () => {
           concessaoId: 'c5',
           beneficiarioNome: 'Paulo Teste',
           unidadeId: null,
+          escopoTipo: TIPO_DE_ESCOPO.INSTITUICAO,
           versao: 1,
         }),
         concessao({
           concessaoId: 'c6',
           beneficiarioNome: 'Paulo Teste',
           unidadeId: null,
+          escopoTipo: TIPO_DE_ESCOPO.INSTITUICAO,
           versao: 2,
         }),
       ],

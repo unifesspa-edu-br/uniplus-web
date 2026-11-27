@@ -184,6 +184,6 @@ function momentoDaApi(alteracoes: AlteracoesDoDocumentoDaApi): DocumentoExigidoD
   return {
     faseId: alteracoes.faseId ?? ID_HABILITACAO,
     etapaId: alteracoes.etapaId ?? null,
-    formularioCodigo: alteracoes.formularioCodigo ?? null,
+    formularioCodigo: alteracoes.formularioCodigo ?? 'INSCRICAO',
   };
 }

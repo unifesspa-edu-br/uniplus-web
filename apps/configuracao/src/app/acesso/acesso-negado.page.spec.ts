@@ -5,7 +5,7 @@ import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { PedidosDeConcessaoApi, SituacaoDoPedidoCodigo } from '@uniplus/shared-data/autorizacao';
-import { EU, ok, pedido, recusa } from '../features/acessos/testes';
+import { EU, SITUACAO_DO_PEDIDO, ok, pedido, recusa } from '../features/acessos/testes';
 import { AcessoNegadoPage } from './acesso-negado.page';
 
 describe('AcessoNegadoPage', () => {
@@ -45,14 +45,14 @@ describe('AcessoNegadoPage', () => {
         ok([
           pedido({
             id: 'pedido-aceite',
-            situacao: SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO,
+            situacao: SITUACAO_DO_PEDIDO.AGUARDANDO_BENEFICIARIO,
             beneficiario: {
               email: EU.email,
               identidade: { emissor: 'unifesspa', contaId: EU.id },
               nome: EU.nomeCivil,
             },
           }),
-          pedido({ id: 'pedido-antigo', situacao: SituacaoDoPedidoCodigo.RECUSADO }),
+          pedido({ id: 'pedido-antigo', situacao: SITUACAO_DO_PEDIDO.RECUSADO }),
         ]),
       ),
     );
@@ -64,7 +64,7 @@ describe('AcessoNegadoPage', () => {
       situacao: SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO,
     });
     expect(host.querySelectorAll('a[href="/acessos/pedidos/pedido-aceite"]')).toHaveLength(1);
-    expect(host.textContent).toContain('Aguardando o aceite do beneficiário');
+    expect(host.textContent).toContain('Aguardando beneficiário');
     const aceitar = host.querySelector('a[href="/acessos/pedidos/pedido-aceite"]');
     expect(aceitar?.textContent?.trim()).toBe('Aceitar o pedido');
     expect(aceitar?.classList).toContain('btn--primary');
@@ -81,7 +81,7 @@ describe('AcessoNegadoPage', () => {
         ok([
           pedido({
             id: 'pedido-doc',
-            situacao: SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO,
+            situacao: SITUACAO_DO_PEDIDO.AGUARDANDO_DOCUMENTO,
             etapaAtual: null,
           }),
         ]),
@@ -97,11 +97,11 @@ describe('AcessoNegadoPage', () => {
     const anexar = host.querySelector('a[href="/acessos/pedidos/pedido-doc"]');
     expect(anexar?.textContent?.trim()).toBe('Anexar o documento');
     expect(anexar?.classList).toContain('btn--primary');
-    expect(host.textContent).toContain('Aguardando o documento de designação');
+    expect(host.textContent).toContain('Aguardando documento');
   });
 
   it('sem pedido em aberto mantém o acesso negado com o link para pedir perfil', () => {
-    api.listar.mockReturnValue(of(ok([pedido({ situacao: SituacaoDoPedidoCodigo.APROVADO })])));
+    api.listar.mockReturnValue(of(ok([pedido({ situacao: SITUACAO_DO_PEDIDO.APROVADO })])));
 
     const host = abrir();
 

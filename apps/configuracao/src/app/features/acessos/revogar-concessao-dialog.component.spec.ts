@@ -1,4 +1,3 @@
-import { TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormControl, Validators } from '@angular/forms';
@@ -10,6 +9,7 @@ import {
   type ConfirmacaoDaRevogacao,
 } from './revogar-concessao-dialog.component';
 import { marcarRecusaDoServidor } from '../../shared/formulario';
+import { TIPO_DE_ESCOPO, TIPO_DE_ORIGEM } from './testes';
 
 const concessao: ConcessaoDto = {
   id: 'c1',
@@ -20,8 +20,8 @@ const concessao: ConcessaoDto = {
   },
   perfil: { id: 'p1', nome: 'Operador de inscrições' },
   versao: 1,
-  escopo: { tipo: TipoDeEscopo.UNIDADE, unidadeId: 'unidade-1' },
-  origem: { tipo: 'pedido', id: 'pedido-1' },
+  escopo: { tipo: TIPO_DE_ESCOPO.UNIDADE, unidadeId: 'unidade-1' },
+  origem: { tipo: TIPO_DE_ORIGEM.PEDIDO, id: 'pedido-1' },
   concedidaEm: '2026-10-28T12:00:00Z',
   validaAte: null,
   revogadaEm: null,

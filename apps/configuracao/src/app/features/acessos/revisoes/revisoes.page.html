@@ -75,9 +75,7 @@
           </td>
           <td data-label="Aberta por">{{ revisao.abertaPor.nome ?? 'Pessoa não identificada' }}</td>
           <td data-label="Situação">
-            <ui-tag [variant]="situacao(revisao.situacao).variante"
-              >{{ situacao(revisao.situacao).texto }}</ui-tag
-            >
+            <ui-tag-do-codigo [valor]="revisao.situacao" [variantes]="variantes" />
           </td>
           <td data-label="Itens">{{ itens(revisao.totalDeItens) }}</td>
           <td data-label="Pendentes">{{ itens(revisao.pendentes) }}</td>

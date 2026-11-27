@@ -1,7 +1,7 @@
 <section class="panel" [attr.aria-labelledby]="idDoTitulo">
   <div class="panel-head">
     <h2 [id]="idDoTitulo" class="panel-head__title" tabindex="-1">Versão pendente de aprovação</h2>
-    <ui-tag variant="info">Aguarda {{ etapa(versao().etapaAtual).toLowerCase() }}</ui-tag>
+    <ui-tag variant="info">Aguarda {{ versao().etapaAtual.rotulo.toLowerCase() }}</ui-tag>
     @if (doLink()) {
       <ui-tag variant="primary">Versão do link aberto</ui-tag>
     }
@@ -10,7 +10,8 @@
     [versao]="versao()"
     [nomeVigente]="nomeVigente()"
     [descricaoVigente]="descricaoVigente()"
-    (abrirDocumento)="abrirDocumento.emit()">
+    (abrirDocumento)="abrirDocumento.emit()"
+  >
     @if (versao().propostaPorQuemLe) {
       <p class="cfg-muted panel-body">{{ avisoDeAutoria }}</p>
     }
@@ -21,9 +22,12 @@
             A verificação recusou o documento enviado.
           }
           @if (acoes().enviarDocumento) {
-            Envie {{ recusado() ? 'outro PDF' : 'o PDF do documento instituidor' }} para a versão seguir para aprovação.
+            Envie {{ recusado() ? 'outro PDF' : 'o PDF do documento instituidor' }} para a versão
+            seguir para aprovação.
           } @else {
-            Quem mantém perfis precisa enviar {{ recusado() ? 'outro PDF' : 'o PDF do documento instituidor' }} para a versão seguir para aprovação.
+            Quem mantém perfis precisa enviar
+            {{ recusado() ? 'outro PDF' : 'o PDF do documento instituidor' }} para a versão seguir
+            para aprovação.
           }
         </ui-alert>
         @if (acoes().enviarDocumento) {

@@ -9,15 +9,11 @@ import {
   IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
-  TagComponent,
+  TagDoCodigoComponent,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { autorDoEvento } from '../trilha-de-acesso.component';
-import {
-  FILTROS_DA_FILA,
-  situacaoDaProvidencia,
-  tipoDaProvidencia,
-} from './rotulos-da-providencia';
+import { FILTROS_DA_FILA, VARIANTES_DA_SITUACAO } from './rotulos-da-providencia';
 
 /** A fila das providências: a mais antiga primeiro, sem o fundamento, que só sai no detalhe. */
 @Component({
@@ -29,7 +25,7 @@ import {
     IconButtonComponent,
     PagerComponent,
     SpinnerComponent,
-    TagComponent,
+    TagDoCodigoComponent,
     DateBrPipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,7 +43,6 @@ export class ProvidenciasListaComponent {
   readonly proximo = output<void>();
 
   protected readonly filtros = FILTROS_DA_FILA;
-  protected readonly situacaoDe = situacaoDaProvidencia;
-  protected readonly tipoDe = tipoDaProvidencia;
+  protected readonly variantes = VARIANTES_DA_SITUACAO;
   protected readonly pessoa = autorDoEvento;
 }

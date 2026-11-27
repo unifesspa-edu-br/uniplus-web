@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import { EtapaDaVersaoCodigo, SituacaoDoAnexoCodigo } from '@uniplus/shared-data/autorizacao';
 
 import {
   GESTOR_DE_ACESSOS,
@@ -18,8 +19,6 @@ export const AUTOR_DAS_VERSOES = SEGUNDO_GESTOR_DE_ACESSOS;
 const ESPERA_DA_VERIFICACAO_MS = 60_000;
 const RAIZ = '/api/autorizacao/perfis';
 type CategoriaDaRemocao = 'INCIDENTE' | 'ERRO_DE_COMPOSICAO' | 'MUDANCA_DE_FUNCAO';
-type EtapaDaVersao = 'GESTAO_DE_ACESSOS' | 'PROTECAO_DE_DADOS';
-type SituacaoDoAnexo = 'AGUARDANDO_ENVIO' | 'EM_VERIFICACAO' | 'VERIFICADO' | 'RECUSADO';
 
 export interface EnvioDaVersao {
   readonly perfilId: string;
@@ -30,8 +29,8 @@ export interface EnvioDaVersao {
 
 export interface VersaoPendenteLida {
   readonly versaoId: string;
-  readonly situacaoDoDocumento: ValorDoContrato<SituacaoDoAnexo>;
-  readonly etapaAtual: ValorDoContrato<EtapaDaVersao>;
+  readonly situacaoDoDocumento: ValorDoContrato<SituacaoDoAnexoCodigo>;
+  readonly etapaAtual: ValorDoContrato<EtapaDaVersaoCodigo>;
   readonly exigeProtecaoDeDados: boolean;
   readonly permissoes: readonly { readonly codigo: string }[];
 }
@@ -129,8 +128,12 @@ export async function aguardarDocumentoVerificado(perfilId: string): Promise<Ver
   const limite = Date.now() + ESPERA_DA_VERIFICACAO_MS;
   for (;;) {
     const { versaoPendente } = await lerPerfil(perfilId);
-    if (versaoPendente?.situacaoDoDocumento.codigo === 'VERIFICADO') return versaoPendente;
-    if (versaoPendente?.situacaoDoDocumento.codigo === 'RECUSADO' || Date.now() > limite) {
+    if (versaoPendente?.situacaoDoDocumento.codigo === SituacaoDoAnexoCodigo.VERIFICADO)
+      return versaoPendente;
+    if (
+      versaoPendente?.situacaoDoDocumento.codigo === SituacaoDoAnexoCodigo.RECUSADO ||
+      Date.now() > limite
+    ) {
       throw new Error(`O documento da versão pendente do perfil ${perfilId} não foi verificado.`);
     }
     await new Promise((resolver) => setTimeout(resolver, 1_000));
@@ -144,9 +147,9 @@ export async function aguardarDocumentoVerificado(perfilId: string): Promise<Ver
 export async function decidirVersao(
   quem: string,
   versao: Pick<EnvioDaVersao, 'perfilId' | 'versaoId'>,
-  etapa: EtapaDaVersao,
+  etapa: EtapaDaVersaoCodigo,
 ): Promise<RespostaDaApi> {
-  if (etapa === 'PROTECAO_DE_DADOS') await garantirRepresentantes();
+  if (etapa === EtapaDaVersaoCodigo.PROTECAO_DE_DADOS) await garantirRepresentantes();
   return chamarApi(
     quem,
     'POST',
@@ -161,14 +164,18 @@ export async function aprovarVersaoPendente(
   versao: VersaoPendenteLida,
 ): Promise<void> {
   const identificada = { perfilId, versaoId: versao.versaoId };
-  await aprovarNaEtapa(GESTOR_DE_ACESSOS, identificada, 'GESTAO_DE_ACESSOS');
+  await aprovarNaEtapa(GESTOR_DE_ACESSOS, identificada, EtapaDaVersaoCodigo.GESTAO_DE_ACESSOS);
   if (!versao.exigeProtecaoDeDados) return;
-  await aprovarNaEtapa(REPRESENTANTE_DO_CONTROLADOR, identificada, 'PROTECAO_DE_DADOS');
+  await aprovarNaEtapa(
+    REPRESENTANTE_DO_CONTROLADOR,
+    identificada,
+    EtapaDaVersaoCodigo.PROTECAO_DE_DADOS,
+  );
 }
 
-const NOME_DA_ETAPA: Record<EtapaDaVersao, string> = {
-  GESTAO_DE_ACESSOS: 'gestão de acessos',
-  PROTECAO_DE_DADOS: 'proteção de dados',
+const NOME_DA_ETAPA: Record<EtapaDaVersaoCodigo, string> = {
+  [EtapaDaVersaoCodigo.GESTAO_DE_ACESSOS]: 'gestão de acessos',
+  [EtapaDaVersaoCodigo.PROTECAO_DE_DADOS]: 'proteção de dados',
 };
 
 async function aprovarNaEtapa(

@@ -1,10 +1,10 @@
-import { TipoDeGovernanca } from '@uniplus/shared-data/autorizacao';
-import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import type { PerfilListadoDto } from '@uniplus/shared-data/autorizacao';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PerfisListaComponent } from './perfis-lista.component';
+import { CLASSIFICACAO_DE_PROTECAO, TIPO_DE_GOVERNANCA } from './testes';
+import { ETAPA_GESTAO } from './versoes/enums-da-api.testing';
 import {
   ACESSO_EM_VIGOR,
   ACESSO_SEM_VERSAO_EM_VIGOR,
@@ -17,7 +17,7 @@ const COMUM: PerfilListadoDto = {
   descricao: 'Opera as inscrições.',
   ativo: true,
   governanca: null,
-  sensibilidade: 'INTERNO',
+  sensibilidade: CLASSIFICACAO_DE_PROTECAO.INTERNO,
   situacaoDoAcesso: ACESSO_EM_VIGOR,
   temVersaoPendente: false,
   suspensao: null,
@@ -37,8 +37,8 @@ const SUSPENSO: PerfilListadoDto = {
   situacaoDoAcesso: ACESSO_SUSPENSO,
   suspensao: {
     desde: '2026-11-09T15:00:00Z',
-    papelDeQuemSuspendeu: EtapaDaVersao.GESTAO_DE_ACESSOS,
-    etapasExigidasAgora: [EtapaDaVersao.GESTAO_DE_ACESSOS],
+    papelDeQuemSuspendeu: ETAPA_GESTAO,
+    etapasExigidasAgora: [ETAPA_GESTAO],
     etapasDecididas: [],
   },
 };
@@ -46,7 +46,7 @@ const GOVERNANCA: PerfilListadoDto = {
   ...COMUM,
   id: 'p2',
   nome: 'Gestor de acessos',
-  governanca: TipoDeGovernanca.GESTOR_DE_ACESSOS,
+  governanca: TIPO_DE_GOVERNANCA.GESTOR_DE_ACESSOS,
 };
 
 describe('PerfisListaComponent', () => {
@@ -102,6 +102,17 @@ describe('PerfisListaComponent', () => {
 
     const ligacao = raiz().querySelector<HTMLAnchorElement>('tr[data-perfil-id="p1"] a');
     expect(ligacao?.getAttribute('href')).toBe('/acessos/perfis/p1');
+  });
+
+  it('mostra a sensibilidade pelo rótulo que a API envia', () => {
+    const rotulado = {
+      ...COMUM,
+      sensibilidade: { ...CLASSIFICACAO_DE_PROTECAO.INTERNO, rotulo: 'Uso interno' },
+    };
+    entradas({ perfis: [rotulado] });
+
+    const celula = raiz().querySelector('tr[data-perfil-id="p1"] td[data-label="Sensibilidade"]');
+    expect(celula?.textContent?.trim()).toBe('Uso interno');
   });
 
   it('sem perfis, convida a criar o primeiro; com falha de carga, não afirma que está vazio', () => {
