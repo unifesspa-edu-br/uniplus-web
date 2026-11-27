@@ -9,7 +9,9 @@ import { conferirCertameAberto } from '../support/passos-da-vitrine';
  * aciona o `authGuard` de `/inscricao/:id`, que redireciona ao provedor OIDC.
  */
 const API_URL = 'http://localhost:5000';
-const ISSUER_URL = 'http://localhost:8080/realms/unifesspa';
+// O provedor simulado fica na origem do próprio portal: o chromium bloqueia a página simulada de
+// outra origem local ao redirecionar para o portal, e o webkit recusa responder com status 302.
+const ISSUER_URL = `${new URL(process.env['BASE_URL'] || 'http://localhost:4202').origin}/realms/unifesspa`;
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, OPTIONS',
@@ -100,11 +102,13 @@ async function mockCertameAberto(page: Page): Promise<void> {
     const estado = url.searchParams.get('state') ?? '';
 
     // `check-sso` (iframe oculto, init da app) pede `prompt=none`: sem sessão, o provedor volta
-    // direto ao `redirect_uri` com `login_required`, sem servir tela nenhuma.
+    // ao `redirect_uri` com `login_required`, sem servir tela nenhuma. A volta é feita pela
+    // página, porque o webkit não aceita simular a resposta 302.
     if (url.searchParams.get('prompt') === 'none') {
       return route.fulfill({
-        status: 302,
-        headers: { location: `${retorno}#error=login_required&state=${estado}` },
+        status: 200,
+        contentType: 'text/html',
+        body: `<!DOCTYPE html><script>location.replace(${JSON.stringify(`${retorno}#error=login_required&state=${estado}`)});</script>`,
       });
     }
 
