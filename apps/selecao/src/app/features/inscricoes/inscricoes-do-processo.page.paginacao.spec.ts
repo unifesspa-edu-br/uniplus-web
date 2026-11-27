@@ -10,18 +10,13 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { of, throwError } from 'rxjs';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import {
-  SELECAO_BASE_PATH,
-  type InscricaoDoProcessoDto,
-} from '@uniplus/shared-data/selecao';
+import { SELECAO_BASE_PATH, type InscricaoDoProcessoDto } from '@uniplus/shared-data/selecao';
 import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FERNANDA, PROCESSO, PROCESSO_ID } from './inscricoes-do-processo.testing';
 
-import {
-  InscricoesDoProcessoPage,
-} from './inscricoes-do-processo.page';
+import { InscricoesDoProcessoPage } from './inscricoes-do-processo.page';
 
 const BASE = 'http://localhost:5000';
 const ROTA_LISTA = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/inscricoes`;

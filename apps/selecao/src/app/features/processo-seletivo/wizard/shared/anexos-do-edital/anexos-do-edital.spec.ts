@@ -104,6 +104,8 @@ describe('anexos na publicação', () => {
       anexo({ id: `${i}`, documentoAPublicarId: `${i}` }),
     );
 
-    expect(mensagensDosAnexos(muitos)).toEqual([`O edital aceita no máximo ${LIMITE_DE_ANEXOS} anexos.`]);
+    expect(mensagensDosAnexos(muitos)).toEqual([
+      `O edital aceita no máximo ${LIMITE_DE_ANEXOS} anexos.`,
+    ]);
   });
 });

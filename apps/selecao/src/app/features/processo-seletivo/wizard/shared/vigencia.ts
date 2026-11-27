@@ -9,5 +9,7 @@ export interface Vigencia {
  * 30/06 já não vale no dia 30. É a mesma conferência que o servidor faz ao resolver o código.
  */
 export function vigenteNoDia(vigencia: Vigencia, dia: string): boolean {
-  return vigencia.vigenciaInicio <= dia && (vigencia.vigenciaFim === null || dia < vigencia.vigenciaFim);
+  return (
+    vigencia.vigenciaInicio <= dia && (vigencia.vigenciaFim === null || dia < vigencia.vigenciaFim)
+  );
 }

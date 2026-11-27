@@ -33,7 +33,9 @@ describe('NotasDoEnemDoProcesso: leitura em curso do histórico', () => {
 
   async function edicaoDeEnvioEmFalha(): Promise<void> {
     const escolha = notas.escolherEdicaoDeEnvio('2025');
-    controller.expectOne(ROTA_ENVIOS).flush({ title: 'Indisponível' }, { status: 503, statusText: 'x' });
+    controller
+      .expectOne(ROTA_ENVIOS)
+      .flush({ title: 'Indisponível' }, { status: 503, statusText: 'x' });
     await escolha;
   }
 
@@ -54,7 +56,9 @@ describe('NotasDoEnemDoProcesso: leitura em curso do histórico', () => {
     await edicaoDeEnvioEmFalha();
 
     const recarga = notas.recarregarEnvios();
-    controller.expectOne(ROTA_ENVIOS).flush({ title: 'Indisponível' }, { status: 503, statusText: 'x' });
+    controller
+      .expectOne(ROTA_ENVIOS)
+      .flush({ title: 'Indisponível' }, { status: 503, statusText: 'x' });
     await recarga;
 
     expect(notas.relendoEnvios()).toBe(false);

@@ -190,10 +190,10 @@ describe('AnexosDoEditalComponent', () => {
       'O formato do arquivo não é aceito',
     );
     // O seguinte não espera: a falha de um não trava a fila.
-    controller.expectOne(ROTA_DOCUMENTOS).flush(
-      iniciacao(DOCUMENTO_B, URL_B, 'application/pdf'),
-      { status: 201, statusText: 'Created' },
-    );
+    controller.expectOne(ROTA_DOCUMENTOS).flush(iniciacao(DOCUMENTO_B, URL_B, 'application/pdf'), {
+      status: 201,
+      statusText: 'Created',
+    });
     await tick();
     controller.expectOne(URL_B).flush(null);
     await tick();
@@ -271,12 +271,10 @@ describe('AnexosDoEditalComponent', () => {
     store.reset();
     store.processoSeletivoId.set('01960000-0000-7000-0000-0000000005bb');
     fixture.detectChanges();
-    controller
-      .expectOne(ROTA_DOCUMENTOS)
-      .flush(iniciacao(DOCUMENTO_A, URL_A, 'application/pdf'), {
-        status: 201,
-        statusText: 'Created',
-      });
+    controller.expectOne(ROTA_DOCUMENTOS).flush(iniciacao(DOCUMENTO_A, URL_A, 'application/pdf'), {
+      status: 201,
+      statusText: 'Created',
+    });
     await tick();
 
     controller.expectNone(URL_A);
@@ -329,7 +327,9 @@ describe('AnexosDoEditalComponent', () => {
     }
 
     function campo(): HTMLInputElement {
-      return host.querySelector<HTMLInputElement>(`#anexo-nome-${anexos()[0].id}`) as HTMLInputElement;
+      return host.querySelector<HTMLInputElement>(
+        `#anexo-nome-${anexos()[0].id}`,
+      ) as HTMLInputElement;
     }
 
     function digitar(valor: string): void {

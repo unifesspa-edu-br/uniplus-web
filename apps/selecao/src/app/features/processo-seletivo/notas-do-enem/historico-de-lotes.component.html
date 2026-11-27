@@ -50,7 +50,9 @@
                   <tr>
                     <td data-label="Importado em">
                       <span class="notas__importacao">
-                        <span class="notas__quando">{{ lote.importadoEm | dateBr: 'datetime' }}</span>
+                        <span class="notas__quando">{{
+                          lote.importadoEm | dateBr: 'datetime'
+                        }}</span>
                         <span class="notas__por">
                           @if (lote.importadoPorNome; as nome) {
                             por {{ nome }}
@@ -108,7 +110,8 @@
                         type="button"
                         class="btn btn--tertiary btn--sm"
                         [attr.aria-label]="
-                          'Ver ocorrências do lote importado em ' + (lote.importadoEm | dateBr: 'datetime')
+                          'Ver ocorrências do lote importado em ' +
+                          (lote.importadoEm | dateBr: 'datetime')
                         "
                         [attr.data-lote]="lote.id"
                         (click)="verOcorrencias(lote)"

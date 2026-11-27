@@ -100,7 +100,9 @@ describe('o piso dos campos de data e hora', () => {
 
   it('cede ao valor atual mesmo quando o limite vem de outro campo, não de hoje', () => {
     // Etapa que começou antes da fase num processo já em curso: o campo continua editável.
-    expect(pisoDoCampoDeData('2026-02-01T08:00', HOJE, '2026-03-01T08:00')).toBe('2026-02-01T08:00');
+    expect(pisoDoCampoDeData('2026-02-01T08:00', HOJE, '2026-03-01T08:00')).toBe(
+      '2026-02-01T08:00',
+    );
   });
   /**
    * O prazo que termina às 23:59:59 é declaração comum. Truncá-lo para 23:59 encurtava a
@@ -122,9 +124,7 @@ describe('o piso dos campos de data e hora', () => {
     expect(campo).toBe('2027-03-15T08:30');
     expect(instanteDoCampo(campo)).toBe('2027-03-15T08:30:00-03:00');
   });
-
 });
-
 
 describe('instante para leitura', () => {
   it('mostra o instante em UTC como data e hora do fuso institucional', () => {

@@ -9,14 +9,14 @@
   <div uiPageActions class="pub-page__acoes">
     <a class="btn btn--tertiary" routerLink="/processo-seletivo">Voltar aos processos</a>
     @if (temPermissaoDePublicar()) {
-      <button
-        type="button"
-        class="btn btn--primary"
-        [disabled]="!podePublicar()"
-        (click)="publicarDocumento()"
-      >
-        Publicar documento
-      </button>
+    <button
+      type="button"
+      class="btn btn--primary"
+      [disabled]="!podePublicar()"
+      (click)="publicarDocumento()"
+    >
+      Publicar documento
+    </button>
     }
   </div>
 </ui-page-header>
@@ -27,101 +27,94 @@
   [leitura]="leituraDoProcesso"
 />
 @if (processo.estado === 'falha') {
-  <!-- A falha e a nova tentativa ficam no aviso acima. -->
+<!-- A falha e a nova tentativa ficam no aviso acima. -->
 } @else if (processo.estado === 'lendo') {
-  <p class="pub-page__lendo" [uiIndicadorDaLeitura]="leituraDoProcesso">
-    <ui-spinner spinnerSize="sm" [decorativo]="true" />
-    Carregando o processo seletivo…
-  </p>
+<p class="pub-page__lendo" [uiIndicadorDaLeitura]="leituraDoProcesso">
+  <ui-spinner spinnerSize="sm" [decorativo]="true" />
+  Carregando o processo seletivo…
+</p>
 } @else if (emRascunho()) {
-  <ui-alert variant="info" heading="O processo ainda não foi publicado" [dynamic]="false">
-    Os documentos são publicados depois do edital de abertura, que cria a página pública do
-    processo. Conclua a publicação do processo para começar.
-  </ui-alert>
+<ui-alert variant="info" heading="O processo ainda não foi publicado" [dynamic]="false">
+  Os documentos são publicados depois do edital de abertura, que cria a página pública do processo.
+  Conclua a publicação do processo para começar.
+</ui-alert>
 } @else {
-  <ui-falha-de-leitura
-    titulo="Não foi possível carregar os tipos de documento"
-    variante="warning"
-    [leitura]="leituraDosTipos"
-  />
+<ui-falha-de-leitura
+  titulo="Não foi possível carregar os tipos de documento"
+  variante="warning"
+  [leitura]="leituraDosTipos"
+/>
 
-  @if (erroDeAbertura(); as erro) {
-    <ui-alert variant="danger" heading="Não foi possível abrir o documento">{{ erro }}</ui-alert>
-  }
-
-  <section class="panel" aria-labelledby="pub-page-previstos-titulo">
-    <div class="panel-head">
-      <div class="panel-head__title">
-        <h2 id="pub-page-previstos-titulo" tabindex="-1">Previstos no edital</h2>
-      </div>
-    </div>
-
-    @let previstos = publicacoes.previstos();
-    <ui-falha-de-leitura
-      titulo="Não foi possível carregar os documentos previstos no edital"
-      [leitura]="leituraDosPrevistos"
-    />
-    @switch (previstos.estado) {
-      @case ('lendo') {
-        <p class="pub-page__lendo" [uiIndicadorDaLeitura]="leituraDosPrevistos">
-          <ui-spinner spinnerSize="sm" [decorativo]="true" />
-          Carregando os documentos previstos no edital…
-        </p>
-      }
-      @case ('lido') {
-        <sel-previstos-no-edital
-          [previstos]="previstos.dados"
-          [abrindo]="abrindo()"
-          [podePublicar]="temPermissaoDePublicar()"
-          (publicar)="abrirFormulario($event)"
-          (abrir)="abrir($event)"
-        />
-      }
-    }
-  </section>
-
-  <section class="panel" aria-labelledby="pub-page-atos-titulo">
-    <div class="panel-head">
-      <div class="panel-head__title">
-        <h2 id="pub-page-atos-titulo" tabindex="-1">Documentos publicados</h2>
-        <span class="list-count" aria-label="Documentos publicados">
-          {{ publicacoes.listaDeAtos().length }}
-        </span>
-      </div>
-    </div>
-
-    @let atos = publicacoes.atos();
-    <ui-falha-de-leitura
-      titulo="Não foi possível carregar os documentos"
-      [leitura]="leituraDosAtos"
-    />
-    @switch (atos.estado) {
-      @case ('lendo') {
-        <p class="pub-page__lendo" [uiIndicadorDaLeitura]="leituraDosAtos">
-          <ui-spinner spinnerSize="sm" [decorativo]="true" />
-          Carregando os documentos…
-        </p>
-      }
-      @case ('lido') {
-        <sel-atos-do-processo
-          [atos]="atos.dados"
-          [corrigiveis]="temPermissaoDePublicar() ? publicacoes.atosCorrigiveis() : []"
-          [abrindo]="abrindo()"
-          (corrigir)="corrigir($event)"
-          (abrir)="abrir($event)"
-        />
-      }
-    }
-  </section>
-
-  @if (publicacoes.processoId(); as processoId) {
-    <sel-publicar-documento
-      [processoId]="processoId"
-      [modo]="modo()"
-      [tipos]="publicacoes.tiposDeDocumentoAvulso()"
-      [atosCorrigiveis]="publicacoes.atosCorrigiveis()"
-      [(aberto)]="formularioAberto"
-      (publicado)="aoPublicar()"
-    />
-  }
+@if (erroDeAbertura(); as erro) {
+<ui-alert variant="danger" heading="Não foi possível abrir o documento">{{ erro }}</ui-alert>
 }
+
+<section class="panel" aria-labelledby="pub-page-previstos-titulo">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="pub-page-previstos-titulo" tabindex="-1">Previstos no edital</h2>
+    </div>
+  </div>
+
+  @let previstos = publicacoes.previstos();
+  <ui-falha-de-leitura
+    titulo="Não foi possível carregar os documentos previstos no edital"
+    [leitura]="leituraDosPrevistos"
+  />
+  @switch (previstos.estado) { @case ('lendo') {
+  <p class="pub-page__lendo" [uiIndicadorDaLeitura]="leituraDosPrevistos">
+    <ui-spinner spinnerSize="sm" [decorativo]="true" />
+    Carregando os documentos previstos no edital…
+  </p>
+  } @case ('lido') {
+  <sel-previstos-no-edital
+    [previstos]="previstos.dados"
+    [abrindo]="abrindo()"
+    [podePublicar]="temPermissaoDePublicar()"
+    (publicar)="abrirFormulario($event)"
+    (abrir)="abrir($event)"
+  />
+  } }
+</section>
+
+<section class="panel" aria-labelledby="pub-page-atos-titulo">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="pub-page-atos-titulo" tabindex="-1">Documentos publicados</h2>
+      <span class="list-count" aria-label="Documentos publicados">
+        {{ publicacoes.listaDeAtos().length }}
+      </span>
+    </div>
+  </div>
+
+  @let atos = publicacoes.atos();
+  <ui-falha-de-leitura
+    titulo="Não foi possível carregar os documentos"
+    [leitura]="leituraDosAtos"
+  />
+  @switch (atos.estado) { @case ('lendo') {
+  <p class="pub-page__lendo" [uiIndicadorDaLeitura]="leituraDosAtos">
+    <ui-spinner spinnerSize="sm" [decorativo]="true" />
+    Carregando os documentos…
+  </p>
+  } @case ('lido') {
+  <sel-atos-do-processo
+    [atos]="atos.dados"
+    [corrigiveis]="temPermissaoDePublicar() ? publicacoes.atosCorrigiveis() : []"
+    [abrindo]="abrindo()"
+    (corrigir)="corrigir($event)"
+    (abrir)="abrir($event)"
+  />
+  } }
+</section>
+
+@if (publicacoes.processoId(); as processoId) {
+<sel-publicar-documento
+  [processoId]="processoId"
+  [modo]="modo()"
+  [tipos]="publicacoes.tiposDeDocumentoAvulso()"
+  [atosCorrigiveis]="publicacoes.atosCorrigiveis()"
+  [(aberto)]="formularioAberto"
+  (publicado)="aoPublicar()"
+/>
+} }

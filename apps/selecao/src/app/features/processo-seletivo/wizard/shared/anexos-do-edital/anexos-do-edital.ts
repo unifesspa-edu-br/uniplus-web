@@ -22,7 +22,9 @@ const TIPO_DE_MIDIA_POR_EXTENSAO: ReadonlyMap<string, string> = new Map([
 ]);
 
 /** As extensões que o campo de arquivo aceita, no formato do atributo `accept`. */
-export const EXTENSOES_DO_ANEXO = [...TIPO_DE_MIDIA_POR_EXTENSAO.keys()].map((e) => `.${e}`).join(',');
+export const EXTENSOES_DO_ANEXO = [...TIPO_DE_MIDIA_POR_EXTENSAO.keys()]
+  .map((e) => `.${e}`)
+  .join(',');
 
 /** A extensão do arquivo em minúsculas e sem o ponto; vazia quando não há. */
 export function extensaoDoArquivo(nomeArquivo: string): string {

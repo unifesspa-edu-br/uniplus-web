@@ -33,7 +33,9 @@
       </div>
       <div>
         <dt>Hash SHA-256</dt>
-        <dd><code class="modelo-da-exigencia__hash">{{ vinculado.hashSha256 }}</code></dd>
+        <dd>
+          <code class="modelo-da-exigencia__hash">{{ vinculado.hashSha256 }}</code>
+        </dd>
       </div>
     </dl>
     <div class="modelo-da-exigencia__acoes">
@@ -80,7 +82,8 @@
       (tentarDeNovo)="retomar()"
     />
     <p class="field__hint" [id]="idBase() + '-formatos'">
-      DOCX ou ODT, até {{ tamanhoMaximoMb }} MB. PDF e imagem não servem: o candidato precisa editar o documento.
+      DOCX ou ODT, até {{ tamanhoMaximoMb }} MB. PDF e imagem não servem: o candidato precisa editar
+      o documento.
     </p>
   </div>
 </fieldset>

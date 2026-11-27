@@ -41,7 +41,10 @@ function item(id: string, sobrescritas: Partial<ProdutoPrevistoDto> = {}): Produ
     id,
     tipoCodigo: 'RESULTADO_HOMOLOGACAO',
     tipoNome: 'Resultado da homologação',
-    papel: { codigo: 'PRELIMINAR' as NonNullable<ProdutoPrevistoDto['papel']>['codigo'], rotulo: 'Preliminar' },
+    papel: {
+      codigo: 'PRELIMINAR' as NonNullable<ProdutoPrevistoDto['papel']>['codigo'],
+      rotulo: 'Preliminar',
+    },
     situacao: { codigo: SituacaoDoProdutoPrevistoCodigo.ABERTO, rotulo: 'Aberto' },
     ato: null,
     correcoes: [],
@@ -101,7 +104,9 @@ describe('atoQueACorrecaoCorrige', () => {
     const errata1 = ato('errata-1', { atoCorrigidoId: 'original' });
     const errata2 = ato('errata-2', { atoCorrigidoId: 'errata-1' });
 
-    const corrigido = atoQueACorrecaoCorrige(item('p', { ato: original, correcoes: [errata1, errata2] }));
+    const corrigido = atoQueACorrecaoCorrige(
+      item('p', { ato: original, correcoes: [errata1, errata2] }),
+    );
 
     expect(corrigido?.id).toBe('errata-2');
   });
@@ -113,7 +118,12 @@ describe('atoQueACorrecaoCorrige', () => {
 
 describe('politicaParaConfirmar', () => {
   const campos = [
-    { codigo: 'numero_inscricao', nome: 'Número de inscrição', obrigatorio: true, exigeJustificativa: false },
+    {
+      codigo: 'numero_inscricao',
+      nome: 'Número de inscrição',
+      obrigatorio: true,
+      exigeJustificativa: false,
+    },
     { codigo: 'nome', nome: 'Nome', obrigatorio: false, exigeJustificativa: true },
   ];
 
@@ -123,7 +133,10 @@ describe('politicaParaConfirmar', () => {
       campos,
     );
 
-    expect(politica).toEqual({ campos: ['Número de inscrição', 'Nome'], justificativa: 'Lista nominal.' });
+    expect(politica).toEqual({
+      campos: ['Número de inscrição', 'Nome'],
+      justificativa: 'Lista nominal.',
+    });
   });
 
   it('mostra o código do campo que o vocabulário não conhece e omite a justificativa em branco', () => {

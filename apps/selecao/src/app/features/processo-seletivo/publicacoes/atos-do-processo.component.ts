@@ -31,12 +31,16 @@ export class AtosDoProcessoComponent {
 
   protected readonly rotuloDoAto = rotuloDoAto;
 
-  private readonly idsCorrigiveis = computed(() => new Set(this.corrigiveis().map((ato) => ato.id)));
+  private readonly idsCorrigiveis = computed(
+    () => new Set(this.corrigiveis().map((ato) => ato.id)),
+  );
   private readonly porId = computed(() => new Map(this.atos().map((ato) => [ato.id, ato])));
   private readonly corretorDe = computed(
     () =>
       new Map(
-        this.atos().flatMap((ato) => (ato.atoCorrigidoId === null ? [] : [[ato.atoCorrigidoId, ato] as const])),
+        this.atos().flatMap((ato) =>
+          ato.atoCorrigidoId === null ? [] : [[ato.atoCorrigidoId, ato] as const],
+        ),
       ),
   );
 

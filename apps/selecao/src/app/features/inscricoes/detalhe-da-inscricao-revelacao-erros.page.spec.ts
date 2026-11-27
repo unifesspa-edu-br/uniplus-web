@@ -260,7 +260,12 @@ describe('DetalheDaInscricaoPage', () => {
             grupos: [],
             itens: [
               {
-                ...item('SITUACAO', 'Situação do vínculo', FormaDoValorDoItemCodigo.TEXTO, 'cancelada'),
+                ...item(
+                  'SITUACAO',
+                  'Situação do vínculo',
+                  FormaDoValorDoItemCodigo.TEXTO,
+                  'cancelada',
+                ),
                 componente: exibicao(ExibicaoDoValorDoItemCodigo.SITUACAO),
               },
             ],
@@ -283,7 +288,12 @@ describe('DetalheDaInscricaoPage', () => {
             grupos: [],
             itens: [
               {
-                ...item('SITUACAO', 'Situação do vínculo', FormaDoValorDoItemCodigo.TEXTO, 'deferida'),
+                ...item(
+                  'SITUACAO',
+                  'Situação do vínculo',
+                  FormaDoValorDoItemCodigo.TEXTO,
+                  'deferida',
+                ),
                 componente: exibicao(ExibicaoDoValorDoItemCodigo.SITUACAO),
               },
             ],

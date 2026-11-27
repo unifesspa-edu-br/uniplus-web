@@ -19,8 +19,7 @@
   <ui-spinner spinnerSize="sm" [decorativo]="true" />
   Carregando a inscrição
 </p>
-}
-@switch (situacao.estado) { @case ('nao-encontrada') {
+} @switch (situacao.estado) { @case ('nao-encontrada') {
 <ui-alert variant="danger" heading="Inscrição não encontrada">
   A inscrição não existe neste processo seletivo ou não está disponível para você.
 </ui-alert>

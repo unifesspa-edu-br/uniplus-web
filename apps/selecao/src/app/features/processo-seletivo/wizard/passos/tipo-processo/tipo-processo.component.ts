@@ -73,7 +73,9 @@ export class TipoProcessoPassoComponent {
   });
   /** O tipo gravado, com a descrição do catálogo quando ele a tem. */
   readonly tipoEscolhido = computed(
-    () => this.options().find((opcao) => opcao.value === this.store.draft().tipoProcesso.selected) ?? null,
+    () =>
+      this.options().find((opcao) => opcao.value === this.store.draft().tipoProcesso.selected) ??
+      null,
   );
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);

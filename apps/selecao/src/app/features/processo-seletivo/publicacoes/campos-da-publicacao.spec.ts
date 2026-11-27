@@ -21,8 +21,16 @@ describe('campos da publicação', () => {
 
   it.each([
     ['assinante', { required: true }, 'Campo obrigatório.'],
-    ['motivoDaCorrecao', { maxlength: { requiredLength: 1000, actualLength: 1001 } }, 'O texto passa do tamanho permitido.'],
-    ['politicaDeDivulgacaoConfirmada', { required: true }, 'Confirme que o documento segue a política de divulgação do certame.'],
+    [
+      'motivoDaCorrecao',
+      { maxlength: { requiredLength: 1000, actualLength: 1001 } },
+      'O texto passa do tamanho permitido.',
+    ],
+    [
+      'politicaDeDivulgacaoConfirmada',
+      { required: true },
+      'Confirme que o documento segue a política de divulgação do certame.',
+    ],
   ] as const)('explica o erro de %s', (campo, erros, mensagem) => {
     expect(mensagemDoErroDoCampo(campo, erros)).toBe(mensagem);
   });

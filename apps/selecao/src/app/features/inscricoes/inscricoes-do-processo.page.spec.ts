@@ -10,14 +10,18 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { of, throwError } from 'rxjs';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import {
-  SELECAO_BASE_PATH,
-  type InscricaoDoProcessoDto,
-} from '@uniplus/shared-data/selecao';
+import { SELECAO_BASE_PATH, type InscricaoDoProcessoDto } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { INSCRICAO_CANCELADA, INSCRICAO_ENVIADA } from './situacoes-da-inscricao.testing';
-import { DIREITO, FERNANDA, MEDICINA, PROCESSO, PROCESSO_ID, oferta } from './inscricoes-do-processo.testing';
+import {
+  DIREITO,
+  FERNANDA,
+  MEDICINA,
+  PROCESSO,
+  PROCESSO_ID,
+  oferta,
+} from './inscricoes-do-processo.testing';
 
 import {
   InscricoesDoProcessoPage,
@@ -254,5 +258,4 @@ describe('InscricoesDoProcessoPage', () => {
     daLista().flush([]);
     await propagar();
   });
-
 });

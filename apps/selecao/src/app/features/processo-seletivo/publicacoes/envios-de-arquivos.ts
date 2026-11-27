@@ -5,7 +5,11 @@ import type { ArquivoEmEnvio } from '@uniplus/shared-ui/components';
 
 import type { EnvioDoAnexo } from '../wizard/shared/anexos-do-edital/envio-do-anexo.service';
 import type { AnexoConfirmado } from './pedido-do-ato';
-import { EnvioDeArquivo, soFaltaConfirmar, type EstadoDoEnvio } from '../wizard/shared/envio-de-arquivo';
+import {
+  EnvioDeArquivo,
+  soFaltaConfirmar,
+  type EstadoDoEnvio,
+} from '../wizard/shared/envio-de-arquivo';
 
 /** Um arquivo da lista do formulário: o escolhido, onde o envio parou e o nome do download. */
 export interface ArquivoDoAto extends EstadoDoEnvio {
@@ -183,5 +187,7 @@ export class EnviosDeArquivos {
 }
 
 function estaEmAndamento(arquivo: Pick<ArquivoDoAto, 'fase'>): boolean {
-  return arquivo.fase === 'iniciando' || arquivo.fase === 'enviando' || arquivo.fase === 'confirmando';
+  return (
+    arquivo.fase === 'iniciando' || arquivo.fase === 'enviando' || arquivo.fase === 'confirmando'
+  );
 }

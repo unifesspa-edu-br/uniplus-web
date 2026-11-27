@@ -9,6 +9,8 @@ const VARIANTES: Record<SituacaoDoArquivoDoCandidatoCodigo, UiTagVariant> = {
   [SituacaoDoArquivoDoCandidatoCodigo.REENVIO_NECESSARIO]: 'warning',
 };
 
-export function varianteDaSituacaoDoArquivo(situacao: SituacaoDoArquivoDoCandidatoCodigo): UiTagVariant {
+export function varianteDaSituacaoDoArquivo(
+  situacao: SituacaoDoArquivoDoCandidatoCodigo,
+): UiTagVariant {
   return VARIANTES[situacao] ?? 'neutral';
 }

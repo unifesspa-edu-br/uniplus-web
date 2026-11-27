@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest';
 
 import { codigosQueCongelam, tiposDeDocumentoAvulso } from './tipos-de-ato-avulso';
 
-function tipo(codigo: string, sobrescritas: Partial<TipoAtoPublicadoDto> = {}): TipoAtoPublicadoDto {
+function tipo(
+  codigo: string,
+  sobrescritas: Partial<TipoAtoPublicadoDto> = {},
+): TipoAtoPublicadoDto {
   return {
     id: `id-${codigo}`,
     codigo,
@@ -50,7 +53,10 @@ describe('tiposDeDocumentoAvulso', () => {
   });
 
   it('marca o tipo que corrige outro, para a tela pedir o ato corrigido', () => {
-    const [errata] = tiposDeDocumentoAvulso([tipo('ERRATA', { exigeAtoCorrigido: true })], '2026-10-19');
+    const [errata] = tiposDeDocumentoAvulso(
+      [tipo('ERRATA', { exigeAtoCorrigido: true })],
+      '2026-10-19',
+    );
 
     expect(errata.exigeAtoCorrigido).toBe(true);
   });

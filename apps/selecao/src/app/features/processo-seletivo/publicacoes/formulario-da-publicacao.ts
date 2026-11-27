@@ -14,7 +14,10 @@ export interface ExigenciasDoFormulario {
   readonly confirmacaoDaPolitica: boolean;
 }
 
-function textoDoFormulario(valorInicial: string, ...validators: ValidatorFn[]): FormControl<string> {
+function textoDoFormulario(
+  valorInicial: string,
+  ...validators: ValidatorFn[]
+): FormControl<string> {
   return new FormControl(valorInicial, { nonNullable: true, validators });
 }
 

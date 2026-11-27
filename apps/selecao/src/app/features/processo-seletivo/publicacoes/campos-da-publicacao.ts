@@ -21,7 +21,11 @@ const CAMPOS: ReadonlySet<string> = new Set<CampoDoFormulario>([
 
 /** O controle do formulário que o campo citado pelo servidor (`PascalCase`, às vezes com caminho) nomeia. */
 export function campoDoServidor(campo: string): CampoDoFormulario | null {
-  const ultimo = campo.split('.').at(-1)?.replace(/\[\d+\]$/u, '') ?? campo;
+  const ultimo =
+    campo
+      .split('.')
+      .at(-1)
+      ?.replace(/\[\d+\]$/u, '') ?? campo;
   const camelCase = ultimo.charAt(0).toLocaleLowerCase('pt-BR') + ultimo.slice(1);
   return CAMPOS.has(camelCase) ? (camelCase as CampoDoFormulario) : null;
 }

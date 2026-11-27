@@ -43,7 +43,10 @@ function envioControlado() {
     },
     confirmar: async () => {
       chamadas.confirmar += 1;
-      return { inconclusiva: false, resultado: apiOk({ id: DOCUMENTO_ID }, 200, new HttpHeaders()) };
+      return {
+        inconclusiva: false,
+        resultado: apiOk({ id: DOCUMENTO_ID }, 200, new HttpHeaders()),
+      };
     },
   } as unknown as EnvioDoAnexo;
 

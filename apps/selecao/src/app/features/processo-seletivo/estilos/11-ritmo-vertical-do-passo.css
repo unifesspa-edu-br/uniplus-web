@@ -32,9 +32,9 @@
    `display` próprio mantém o seu. `[hidden]` e diálogo fechado continuam fora da tela, e o
    host que só embrulha um `<dialog>` não vira um bloco vazio com margem no fim do passo. */
 :where(
-    .sel-processo .step-pane > * > :not([hidden], dialog, ui-confirm-dialog),
-    .sel-processo .step-pane > * > form > :not([hidden], dialog, ui-confirm-dialog)
-  ) {
+  .sel-processo .step-pane > * > :not([hidden], dialog, ui-confirm-dialog),
+  .sel-processo .step-pane > * > form > :not([hidden], dialog, ui-confirm-dialog)
+) {
   display: block;
 }
 
