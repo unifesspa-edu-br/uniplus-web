@@ -50,6 +50,11 @@ export function descreverTempoRestante(segundos: number): string {
             Não é possível estender o tempo. Grave o que você preencheu e entre de novo antes de a
             sessão acabar; o que não for gravado se perde.
           </p>
+          <p id="aviso-de-sessao-perto-de-vencer-efeito">
+            Entrar de novo encerra a sessão em todas as páginas do Uni+ abertas neste navegador,
+            como Seleção, Ingresso e Portal, e o que não foi gravado nelas se perde. Depois de
+            entrar, você volta a esta página.
+          </p>
         }
       </div>
       <ng-container uiDialogFooter>
@@ -61,7 +66,13 @@ export function descreverTempoRestante(segundos: number): string {
             Continuar
           </button>
         } @else {
-          <button #acaoPrincipal type="button" class="btn" (click)="entrar.emit()">
+          <button
+            #acaoPrincipal
+            type="button"
+            class="btn"
+            aria-describedby="aviso-de-sessao-perto-de-vencer-efeito"
+            (click)="entrar.emit()"
+          >
             Entrar de novo agora
           </button>
         }
