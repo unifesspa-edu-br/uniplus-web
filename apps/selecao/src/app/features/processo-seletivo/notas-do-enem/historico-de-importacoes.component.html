@@ -1,22 +1,22 @@
-<section class="notas__historico" aria-labelledby="notas-lotes-titulo">
-  <h3 id="notas-lotes-titulo" class="notas__subtitulo notas__subtitulo--secao" tabindex="-1">
-    Lotes importados desta edição
+<section class="notas__historico" aria-labelledby="notas-importacoes-titulo">
+  <h3 id="notas-importacoes-titulo" class="notas__subtitulo notas__subtitulo--secao" tabindex="-1">
+    Importações de notas desta edição
   </h3>
 
   <div class="notas__historico-corpo">
-    @let lotes = notas.lotes();
-    <ui-falha-de-leitura titulo="Não foi possível carregar os lotes" [leitura]="leitura" />
-    @switch (lotes.estado) {
+    @let importacoes = notas.lotes();
+    <ui-falha-de-leitura titulo="Não foi possível carregar as importações" [leitura]="leitura" />
+    @switch (importacoes.estado) {
       @case ('lendo') {
         <p class="notas__lendo" [uiIndicadorDaLeitura]="leitura">
           <ui-spinner spinnerSize="sm" [decorativo]="true" />
-          Carregando os lotes…
+          Carregando as importações…
         </p>
       }
       @case ('lido') {
-        @if (lotes.dados.length === 0) {
+        @if (importacoes.dados.length === 0) {
           <ui-empty-state
-            heading="Nenhum lote importado para esta edição"
+            heading="Nenhuma importação de notas nesta edição"
             description="Os arquivos de retorno importados ficam registrados aqui."
             [level]="3"
             [showIcon]="false"
@@ -25,12 +25,12 @@
           <div
             class="table-responsive notas__rolagem notas__lotes"
             role="region"
-            aria-label="Lotes importados, com rolagem"
+            aria-label="Importações de notas, com rolagem"
             tabindex="0"
           >
             <table>
               <caption class="sr-only">
-                Lotes de notas importados para a edição, com quem importou, as contagens de
+                Importações de notas feitas para a edição, com quem importou, as contagens de
                 inscritos e de linhas e a situação
               </caption>
               <thead>
@@ -46,15 +46,15 @@
                 </tr>
               </thead>
               <tbody>
-                @for (lote of lotes.dados; track lote.id) {
+                @for (importacao of importacoes.dados; track importacao.id) {
                   <tr>
                     <td data-label="Importado em">
                       <span class="notas__importacao">
                         <span class="notas__quando">{{
-                          lote.importadoEm | dateBr: 'datetime'
+                          importacao.importadoEm | dateBr: 'datetime'
                         }}</span>
                         <span class="notas__por">
-                          @if (lote.importadoPorNome; as nome) {
+                          @if (importacao.importadoPorNome; as nome) {
                             por {{ nome }}
                           } @else {
                             Não registrado
@@ -63,44 +63,44 @@
                       </span>
                     </td>
                     <td data-label="Inscritos com nota" class="table-responsive__num">
-                      {{ total(lote.totalDeInscritosComNota) }}
+                      {{ total(importacao.totalDeInscritosComNota) }}
                     </td>
                     <td
                       data-label="Sem nota"
                       class="table-responsive__num"
-                      [class.notas__problema]="temOcorrencia(lote.totalDeInscritosSemLinha)"
+                      [class.notas__problema]="temOcorrencia(importacao.totalDeInscritosSemLinha)"
                     >
-                      {{ total(lote.totalDeInscritosSemLinha) }}
+                      {{ total(importacao.totalDeInscritosSemLinha) }}
                     </td>
                     <td
                       data-label="Ausentes"
                       class="table-responsive__num"
-                      [class.notas__problema]="temOcorrencia(lote.totalDeInscritosAusentes)"
+                      [class.notas__problema]="temOcorrencia(importacao.totalDeInscritosAusentes)"
                     >
-                      {{ total(lote.totalDeInscritosAusentes) }}
+                      {{ total(importacao.totalDeInscritosAusentes) }}
                     </td>
                     <td
                       data-label="Linhas sem inscrito"
                       class="table-responsive__num"
-                      [class.notas__problema]="temOcorrencia(lote.totalDeLinhasSemInscrito)"
+                      [class.notas__problema]="temOcorrencia(importacao.totalDeLinhasSemInscrito)"
                     >
-                      {{ total(lote.totalDeLinhasSemInscrito) }}
+                      {{ total(importacao.totalDeLinhasSemInscrito) }}
                     </td>
                     <td
                       data-label="Conflitos"
                       class="table-responsive__num"
-                      [class.notas__problema]="temOcorrencia(lote.totalDeInscritosEmConflito)"
+                      [class.notas__problema]="temOcorrencia(importacao.totalDeInscritosEmConflito)"
                     >
-                      {{ total(lote.totalDeInscritosEmConflito) }}
+                      {{ total(importacao.totalDeInscritosEmConflito) }}
                     </td>
                     <td data-label="Situação">
                       <span class="notas__situacao-lote">
-                        @if (lote.vigente) {
+                        @if (importacao.vigente) {
                           <ui-tag variant="success" [dot]="true">Vigente</ui-tag>
                         } @else {
                           <ui-tag variant="neutral">Anterior</ui-tag>
                         }
-                        @if (semNotaCasada(lote)) {
+                        @if (semNotaCasada(importacao)) {
                           <ui-tag variant="warning">Nenhuma nota casou com inscritos</ui-tag>
                         }
                       </span>
@@ -110,11 +110,11 @@
                         type="button"
                         class="btn btn--tertiary btn--sm"
                         [attr.aria-label]="
-                          'Ver ocorrências do lote importado em ' +
-                          (lote.importadoEm | dateBr: 'datetime')
+                          'Ver ocorrências da importação feita em ' +
+                          (importacao.importadoEm | dateBr: 'datetime')
                         "
-                        [attr.data-lote]="lote.id"
-                        (click)="verOcorrencias(lote)"
+                        [attr.data-importacao]="importacao.id"
+                        (click)="verOcorrencias(importacao)"
                       >
                         Ver ocorrências
                       </button>
@@ -133,10 +133,10 @@
         <div class="notas__detalhe-cabecalho">
           <div class="notas__titulo-com-origem">
             <h4 id="notas-detalhe-titulo" #tituloDoDetalhe class="notas__subtitulo" tabindex="-1">
-              Ocorrências do lote
+              Ocorrências da importação
             </h4>
             @if (aberto.estado === 'lido') {
-              <sel-origem-do-lote [lote]="aberto.lote" />
+              <sel-origem-do-lote [lote]="aberto.importacao" />
             }
           </div>
           <button type="button" class="btn btn--tertiary btn--sm" (click)="fecharDetalhe()">
@@ -154,7 +154,7 @@
             <sel-alerta-de-recusa [recusa]="aberto.recusa" />
           }
           @case ('lido') {
-            <sel-lote-de-notas [lote]="aberto.lote" />
+            <sel-lote-de-notas [lote]="aberto.importacao" />
           }
         }
       </section>

@@ -52,7 +52,10 @@ export class SimulacaoDoQuadro {
     const processoId = this.store.processoSeletivoId();
     const distribuicoes = this.estado.distribuicoes();
     if (processoId === null || distribuicoes.length === 0) return;
+    this.pedirSimulacao(processoId, distribuicoes);
+  }
 
+  private pedirSimulacao(processoId: string, distribuicoes: readonly DistribuicaoDeVagas[]): void {
     const pedido = { quadro: this.estado.versaoDoQuadro(), geracao: this.store.geracao() };
     this.estado.abandonarSimulacaoEmVoo();
     this.estado.erroDaSimulacao.set(null);

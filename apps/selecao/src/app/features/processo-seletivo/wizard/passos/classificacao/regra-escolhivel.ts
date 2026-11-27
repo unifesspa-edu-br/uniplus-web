@@ -46,23 +46,30 @@ export function regrasEscolhiveis(
   codigoSelecionado: string,
   versaoSelecionada: string,
 ): readonly RegraEscolhivel[] {
-  const escolhivel = (
-    codigo: string,
-    versao: string,
-    baseLegal: string | null,
-  ): RegraEscolhivel => ({
+  const gravada = { codigo: codigoSelecionado, versao: versaoSelecionada };
+  const opcoes = catalogo.map((regra) =>
+    opcaoDaRegra(regra.codigo, regra.versao, regra.baseLegal, gravada),
+  );
+
+  if (codigoSelecionado === '' || opcoes.some((regra) => regra.selecionada)) return opcoes;
+
+  return [...opcoes, opcaoDaRegra(codigoSelecionado, versaoSelecionada, null, gravada)];
+}
+
+function opcaoDaRegra(
+  codigo: string,
+  versao: string,
+  baseLegal: string | null,
+  gravada: { readonly codigo: string; readonly versao: string },
+): RegraEscolhivel {
+  return {
     codigo,
     versao,
     baseLegal,
     rotulo: `${codigo} — ${baseLegal ?? 'base legal indisponível'}`,
     chave: chaveDaRegra(codigo, versao),
-    selecionada: codigo === codigoSelecionado && versao === versaoSelecionada,
-  });
-  const opcoes = catalogo.map((regra) => escolhivel(regra.codigo, regra.versao, regra.baseLegal));
-
-  if (codigoSelecionado === '' || opcoes.some((regra) => regra.selecionada)) return opcoes;
-
-  return [...opcoes, escolhivel(codigoSelecionado, versaoSelecionada, null)];
+    selecionada: codigo === gravada.codigo && versao === gravada.versao,
+  };
 }
 
 /** O texto da regra escolhida entre as opções, ou `null` quando nenhuma foi escolhida. */

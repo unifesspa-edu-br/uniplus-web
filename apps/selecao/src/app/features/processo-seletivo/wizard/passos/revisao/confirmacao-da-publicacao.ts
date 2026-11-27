@@ -17,25 +17,36 @@ function periodoDeInscricao(
   return `${periodoInscricaoInicio} até ${periodoInscricaoFim}`;
 }
 
+const CABECALHO_DA_CONFIRMACAO = {
+  titulo: 'Confirmar a publicação do processo seletivo',
+  aviso:
+    'Depois de publicado, este processo vira somente leitura nesta jornada — não é possível desfazer aqui.',
+  rotuloDeConfirmar: 'Publicar processo',
+} as const;
+
 /** O resumo que o operador confirma antes de publicar, que não se desfaz nesta jornada. */
 export function confirmacaoDaPublicacao(
   draft: WizardDraft,
   tiposDeAto: readonly Pick<TipoAtoPublicadoDto, 'codigo' | 'nome'>[],
   fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
 ): ConfirmacaoDeGravacao {
-  const { numero, ato } = draft.publicacao;
   return {
-    titulo: 'Confirmar a publicação do processo seletivo',
-    aviso:
-      'Depois de publicado, este processo vira somente leitura nesta jornada — não é possível desfazer aqui.',
-    rotuloDeConfirmar: 'Publicar processo',
+    ...CABECALHO_DA_CONFIRMACAO,
     itens: [
-      ...itensDoAto({
-        ...ato,
-        numero: numero.trim() || 'não informado',
-        tipo: rotuloDoTipoDeAto(tiposDeAto, ato.tipoAtoCodigo),
-      }),
+      ...itensDoAtoConfirmado(draft, tiposDeAto),
       { rotulo: 'Período de inscrição', valor: periodoDeInscricao(draft, fasePorId) },
     ],
   };
+}
+
+function itensDoAtoConfirmado(
+  draft: WizardDraft,
+  tiposDeAto: readonly Pick<TipoAtoPublicadoDto, 'codigo' | 'nome'>[],
+): ConfirmacaoDeGravacao['itens'] {
+  const { numero, ato } = draft.publicacao;
+  return itensDoAto({
+    ...ato,
+    numero: numero.trim() || 'não informado',
+    tipo: rotuloDoTipoDeAto(tiposDeAto, ato.tipoAtoCodigo),
+  });
 }

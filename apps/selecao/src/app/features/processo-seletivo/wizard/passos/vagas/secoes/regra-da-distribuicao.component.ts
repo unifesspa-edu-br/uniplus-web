@@ -75,17 +75,22 @@ export class RegraDaDistribuicaoComponent {
     if (codigo === padrao.regraDistribuicaoCodigo && versao === padrao.regraDistribuicaoVersao) {
       return;
     }
-
-    // `padrao.modalidades` cobre a seleção mesmo antes da primeira oferta existir: checar só as
-    // ofertas deixaria passar sem aviso a troca que descarta modalidades já escolhidas.
-    const haDadoAPerder =
-      padrao.modalidades.length > 0 ||
-      this.estado.distribuicoes().some((item) => item.quadro.length > 0);
-    if (haDadoAPerder) {
+    if (this.trocaDescartaEscolhas()) {
       this.estado.trocaDeRegraPendente.set({ codigo, versao });
       return;
     }
     this.aplicar(codigo, versao);
+  }
+
+  /**
+   * `padrao.modalidades` cobre a seleção mesmo antes da primeira oferta existir: checar só as
+   * ofertas deixaria passar sem aviso a troca que descarta modalidades já escolhidas.
+   */
+  private trocaDescartaEscolhas(): boolean {
+    return (
+      this.estado.padrao().modalidades.length > 0 ||
+      this.estado.distribuicoes().some((item) => item.quadro.length > 0)
+    );
   }
 
   confirmarTroca(): void {

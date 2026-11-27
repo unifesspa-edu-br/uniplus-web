@@ -100,18 +100,19 @@ export class LeituraDoCadastroDePesos {
 
     effect(
       () => {
-        if (!exigeResolucao()) return;
-        const marca = this.store.classificacao.versaoLida();
-        if (
-          this.store.edicaoPermitida() ||
-          this.store.classificacao.copiaCongeladaEmVigor() === null
-        ) {
-          untracked(() => this.catalogos.garantirPesosAreaEnem(marca));
-        } else {
-          untracked(() => this.catalogos.garantirAreasEnem());
-        }
+        if (exigeResolucao()) this.lerCadastroConformeEdicao(this.store.classificacao.versaoLida());
       },
       { injector: this.injector },
+    );
+  }
+
+  private lerCadastroConformeEdicao(marca: number): void {
+    const cadastroCompleto =
+      this.store.edicaoPermitida() || this.store.classificacao.copiaCongeladaEmVigor() === null;
+    untracked(() =>
+      cadastroCompleto
+        ? this.catalogos.garantirPesosAreaEnem(marca)
+        : this.catalogos.garantirAreasEnem(),
     );
   }
 

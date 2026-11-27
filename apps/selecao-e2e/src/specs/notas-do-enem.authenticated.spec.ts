@@ -56,7 +56,7 @@ async function escolherEdicaoDeEnvio(page: Page, edicao?: string): Promise<void>
 }
 
 async function escolherEdicaoDeRetorno(page: Page, edicao?: string): Promise<void> {
-  await escolherEdicao(cartaoDeImportacao(page), 'Lotes importados desta edição', edicao);
+  await escolherEdicao(cartaoDeImportacao(page), 'Importações de notas desta edição', edicao);
 }
 
 /** Com um só leiaute ativo a tela já o escolhe e não mostra o campo; com mais, o operador escolhe. */
@@ -98,9 +98,9 @@ test.describe('Notas do ENEM do processo', () => {
     await expect(importar).toBeDisabled();
     await expect(importar).toHaveAccessibleDescription(/Escolha a edição do ENEM para importar\./);
     await expect(page.getByRole('heading', { name: 'Envios gerados desta edição' })).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: 'Lotes importados desta edição' })).toHaveCount(
-      0,
-    );
+    await expect(
+      page.getByRole('heading', { name: 'Importações de notas desta edição' }),
+    ).toHaveCount(0);
 
     expect(registro.envios).toEqual([]);
     expect(registro.importacoes).toEqual([]);
@@ -117,9 +117,9 @@ test.describe('Notas do ENEM do processo', () => {
     await expect(
       cartaoDeImportacao(page).getByRole('button', { name: 'Importar notas' }),
     ).toBeDisabled();
-    await expect(page.getByRole('heading', { name: 'Lotes importados desta edição' })).toHaveCount(
-      0,
-    );
+    await expect(
+      page.getByRole('heading', { name: 'Importações de notas desta edição' }),
+    ).toHaveCount(0);
   });
 
   test('com a edição e sem leiaute ou arquivo, a importação aponta cada falta e nada sai', async ({
@@ -349,7 +349,7 @@ test.describe('Notas do ENEM do processo', () => {
       .getByRole('button', { name: /^Ver ocorrências/ })
       .click();
 
-    await expect(page.getByRole('heading', { name: 'Ocorrências do lote' })).toBeFocused();
+    await expect(page.getByRole('heading', { name: 'Ocorrências da importação' })).toBeFocused();
     await cartaoDeImportacao(page)
       .getByRole('tab', { name: /^Linhas sem inscrito/ })
       .click();

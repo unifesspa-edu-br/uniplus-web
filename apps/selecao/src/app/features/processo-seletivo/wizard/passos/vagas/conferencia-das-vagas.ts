@@ -39,28 +39,34 @@ export function quantidadeInvalida(
  */
 export function pendenciasDoQuadro(
   distribuicoes: readonly DistribuicaoDeVagas[],
-  colunasDeQuantidade: readonly { readonly id: string; readonly codigo: string }[],
+  colunasDeQuantidade: readonly ColunaDeQuantidade[],
 ): readonly string[] {
   const semVo = distribuicoes.filter((item) => voBaseInvalido(item)).length;
-
-  // Agrupado por quantas ofertas: com dez modalidades declaradas e nenhuma preenchida, dizer
-  // "3 ofertas sem a quantidade de X" dez vezes esconde a informação, que é uma só.
-  const porQuantidadeDeOfertas = new Map<number, string[]>();
-  for (const modalidade of colunasDeQuantidade) {
-    const quantas = distribuicoes.filter((item) => quantidadeInvalida(item, modalidade.id)).length;
-    if (quantas === 0) continue;
-
-    porQuantidadeDeOfertas.set(quantas, [
-      ...(porQuantidadeDeOfertas.get(quantas) ?? []),
-      modalidade.codigo,
-    ]);
-  }
-
-  const pendencias = [...porQuantidadeDeOfertas].map(
+  const pendencias = [...codigosPorQuantidadeDeOfertas(distribuicoes, colunasDeQuantidade)].map(
     ([quantas, codigos]) => `${frase(quantas)} sem a quantidade de ${lista(codigos)}`,
   );
-
   return semVo > 0 ? [`${frase(semVo)} sem o total de vagas`, ...pendencias] : pendencias;
+}
+
+interface ColunaDeQuantidade {
+  readonly id: string;
+  readonly codigo: string;
+}
+
+/**
+ * Agrupado por quantas ofertas: com dez modalidades declaradas e nenhuma preenchida, dizer
+ * "3 ofertas sem a quantidade de X" dez vezes esconde a informação, que é uma só.
+ */
+function codigosPorQuantidadeDeOfertas(
+  distribuicoes: readonly DistribuicaoDeVagas[],
+  colunas: readonly ColunaDeQuantidade[],
+): ReadonlyMap<number, readonly string[]> {
+  const grupos = new Map<number, string[]>();
+  for (const modalidade of colunas) {
+    const quantas = distribuicoes.filter((item) => quantidadeInvalida(item, modalidade.id)).length;
+    if (quantas > 0) grupos.set(quantas, [...(grupos.get(quantas) ?? []), modalidade.codigo]);
+  }
+  return grupos;
 }
 
 export interface EntradaDaConferencia {
@@ -80,30 +86,38 @@ export interface EntradaDaConferencia {
  * sobre ter lido a tela: a conferência virou o diálogo que a página abre no instante da gravação.
  */
 export function pendenciasQueImpedemGravar(entrada: EntradaDaConferencia): readonly string[] {
-  const opcoes = erroDasOpcoes(entrada.numeroDeOpcoes, entrada.distribuicoes.length);
-  if (entrada.distribuicoes.length === 0) {
-    return [
-      ...(opcoes === null ? [] : [opcoes]),
-      'Configure a distribuição de vagas de ao menos uma oferta de curso.',
-    ];
-  }
-
+  const opcoes = pendenciasDasOpcoes(entrada);
+  if (entrada.distribuicoes.length === 0) return [...opcoes, SEM_OFERTA_CONFIGURADA];
   return [
-    ...(opcoes === null ? [] : [opcoes]),
-    ...(entrada.ofertasForaDoPadrao === 0
-      ? []
-      : [
-          `${frase(entrada.ofertasForaDoPadrao)} têm regra, percentual ou modalidades diferentes do padrão em tela. Aplique o padrão a todas antes de gravar.`,
-        ]),
+    ...opcoes,
+    ...pendenciasDoPadraoEmTela(entrada),
+    ...entrada.pendenciasDoQuadro.map((pendencia) => `${pendencia}.`),
+    ...entrada.problemasEspecificos,
+    ...pendenciasDeOfertasRepetidas(entrada),
+  ];
+}
+
+const SEM_OFERTA_CONFIGURADA = 'Configure a distribuição de vagas de ao menos uma oferta de curso.';
+
+function pendenciasDasOpcoes(entrada: EntradaDaConferencia): readonly string[] {
+  const erro = erroDasOpcoes(entrada.numeroDeOpcoes, entrada.distribuicoes.length);
+  return erro === null ? [] : [erro];
+}
+
+function pendenciasDoPadraoEmTela(entrada: EntradaDaConferencia): readonly string[] {
+  const foraDoPadrao = `${frase(entrada.ofertasForaDoPadrao)} têm regra, percentual ou modalidades diferentes do padrão em tela. Aplique o padrão a todas antes de gravar.`;
+  return [
+    ...(entrada.ofertasForaDoPadrao === 0 ? [] : [foraDoPadrao]),
     ...(entrada.simulacaoCobreOQuadro
       ? []
       : ['Simule o quadro: é a conferência de quantas vagas cada modalidade recebe.']),
     ...entrada.problemasDoPadrao,
-    ...entrada.pendenciasDoQuadro.map((pendencia) => `${pendencia}.`),
-    ...entrada.problemasEspecificos,
-    ...entrada.ofertasRepetidas.map(
-      (ofertaCursoId) =>
-        `${entrada.rotuloDaOferta(ofertaCursoId)} aparece em mais de uma distribuição.`,
-    ),
   ];
+}
+
+function pendenciasDeOfertasRepetidas(entrada: EntradaDaConferencia): readonly string[] {
+  return entrada.ofertasRepetidas.map(
+    (ofertaCursoId) =>
+      `${entrada.rotuloDaOferta(ofertaCursoId)} aparece em mais de uma distribuição.`,
+  );
 }

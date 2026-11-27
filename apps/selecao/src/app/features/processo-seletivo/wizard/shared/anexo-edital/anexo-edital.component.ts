@@ -4,13 +4,21 @@ import {
   ValorEmConsultaComponent,
   type ArquivoEmEnvio,
 } from '@uniplus/shared-ui/components';
-import { ProblemI18nService, isApiOk, abrirAcessoEmNovaAba } from '@uniplus/shared-core/http';
+import {
+  ProblemI18nService,
+  isApiOk,
+  abrirAcessoEmNovaAba,
+  type DesfechoDaAbertura,
+} from '@uniplus/shared-core/http';
 import { DocumentoAPublicarDto } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { EnvioDoEdital } from '../envio-do-edital.service';
 import { classificarDocumentos, descreverDocumento, uploadItemDe } from '../hidratacao';
 import { EtapasDoEnvioDoEdital } from './etapas-do-envio-do-edital';
+
+const ABERTURA_DO_EDITAL_BLOQUEADA =
+  'O navegador bloqueou a abertura do edital. Permita pop-ups para este endereço e tente de novo.';
 
 /** Limite do documento do edital no domínio: 20 MB. */
 const TAMANHO_MAXIMO_MB = 20;
@@ -74,24 +82,31 @@ export class AnexoEditalComponent {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null || this.abrindoDocumento() !== null) return;
 
-    const geracao = this.store.geracao();
     this.abrindoDocumento.set(documentoAPublicarId);
     this.erroDeAbertura.set(null);
     try {
-      const desfecho = await abrirAcessoEmNovaAba(
-        () => this.envioDoEdital.obterAcessoAoDocumento(processoId, documentoAPublicarId),
-        () => geracao === this.store.geracao(),
-      );
-      if (desfecho.situacao === 'bloqueada') {
-        this.erroDeAbertura.set(
-          'O navegador bloqueou a abertura do edital. Permita pop-ups para este endereço e tente de novo.',
-        );
-      } else if (desfecho.situacao === 'recusada') {
-        this.erroDeAbertura.set(this.problemI18n.resolve(desfecho.problem).title);
-      }
+      this.erroDeAbertura.set(await this.pedirAbertura(processoId, documentoAPublicarId));
     } finally {
       this.abrindoDocumento.set(null);
     }
+  }
+
+  private async pedirAbertura(
+    processoId: string,
+    documentoAPublicarId: string,
+  ): Promise<string | null> {
+    const geracao = this.store.geracao();
+    const desfecho = await abrirAcessoEmNovaAba(
+      () => this.envioDoEdital.obterAcessoAoDocumento(processoId, documentoAPublicarId),
+      () => geracao === this.store.geracao(),
+    );
+    return this.recusaDaAbertura(desfecho);
+  }
+
+  private recusaDaAbertura(desfecho: DesfechoDaAbertura): string | null {
+    if (desfecho.situacao === 'bloqueada') return ABERTURA_DO_EDITAL_BLOQUEADA;
+    if (desfecho.situacao === 'recusada') return this.problemI18n.resolve(desfecho.problem).title;
+    return null;
   }
 
   /** Refaz a leitura que falhou, para o anexo deixar de ser uma aposta. */
@@ -99,22 +114,25 @@ export class AnexoEditalComponent {
     const id = this.store.processoSeletivoId();
     if (id === null || this.reverificando()) return;
 
-    const geracao = this.store.geracao();
     this.reverificando.set(true);
     try {
-      const resultado = await this.envioDoEdital.listarDocumentos(id);
-      // O editor pode ter passado a outro processo enquanto a leitura corria.
-      if (geracao !== this.store.geracao() || !isApiOk(resultado)) return;
-
-      const { vinculo, escolha } = classificarDocumentos(resultado.data);
-      if (vinculo !== null) {
-        this.store.projetarSecao('identificacao', { uploads: [vinculo] });
-      }
-      this.store.documentosParaEscolha.set(escolha);
-      this.store.avisoDocumentos.set(null);
+      await this.relerDocumentos(id);
     } finally {
       this.reverificando.set(false);
     }
+  }
+
+  /** O editor pode ter passado a outro processo enquanto a leitura corria; a resposta dele é descartada. */
+  private async relerDocumentos(processoId: string): Promise<void> {
+    const geracao = this.store.geracao();
+    const resultado = await this.envioDoEdital.listarDocumentos(processoId);
+    if (geracao !== this.store.geracao() || !isApiOk(resultado)) return;
+    const { vinculo, escolha } = classificarDocumentos(resultado.data);
+    if (vinculo !== null) {
+      this.store.projetarSecao('identificacao', { uploads: [vinculo] });
+    }
+    this.store.documentosParaEscolha.set(escolha);
+    this.store.avisoDocumentos.set(null);
   }
 
   /**

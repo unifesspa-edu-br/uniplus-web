@@ -24,6 +24,11 @@ export function leiauteDaChave(
     : { leiauteCodigo: leiaute.codigo, leiauteVersao: leiaute.versao };
 }
 
+function avisoDaFalhaDosLeiautes(catalogo: Leitura<readonly LeiauteDoInepDto[]>): string | null {
+  const falha = mensagemDaFalha(catalogo);
+  return falha === null ? null : `${falha} Sem eles não é possível usar esta etapa.`;
+}
+
 /**
  * A leitura do catálogo de leiautes de um card, com o aviso de falha e a nova tentativa. O foco
  * volta ao campo do leiaute quando a nova tentativa dá certo. Chamar em contexto de injeção.
@@ -35,10 +40,7 @@ export function acompanharLeiautes(opcoes: {
 }): LeituraAcompanhada {
   const { catalogo, idDoCampo, recarregar } = opcoes;
   return acompanharLeitura({
-    falha: computed(() => {
-      const falha = mensagemDaFalha(catalogo());
-      return falha === null ? null : `${falha} Sem eles não é possível usar esta etapa.`;
-    }),
+    falha: computed(() => avisoDaFalhaDosLeiautes(catalogo())),
     pendente: computed(() => estaLendo(catalogo())),
     recarregar,
     destino: () => document.getElementById(idDoCampo),

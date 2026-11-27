@@ -1,5 +1,5 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { type ObservedValueOf, firstValueFrom } from 'rxjs';
 import {
   ProblemI18nService,
   STATUS_HTTP,
@@ -61,6 +61,21 @@ export type RevelacaoDoCampo =
 /** Identifica um campo na inscrição: o fato e, quando está em grupo, a ocorrência. */
 export function chaveDoCampo(fatoCodigo: string, ocorrenciaId: string | null): string {
   return JSON.stringify([fatoCodigo, ocorrenciaId]);
+}
+
+interface IdentificadoresDaInscricao {
+  readonly processo: string;
+  readonly inscricao: string;
+}
+
+type ResultadoDaRevelacao = ObservedValueOf<ReturnType<CamposDaInscricaoDoProcessoApi['revelar']>>;
+
+type ProblemaDaRecusa = Extract<DesfechoDaAbertura, { situacao: 'recusada' }>['problem'];
+
+function desfechoDaFalhaAoAbrir(aindaVale: boolean): DesfechoDoAcessoAoArquivo {
+  return aindaVale
+    ? { situacao: 'recusado', mensagem: FALHA_AO_ABRIR }
+    : { situacao: 'abandonado' };
 }
 
 const SEM_REVELACOES: ReadonlyMap<string, RevelacaoDoCampo> = new Map();
@@ -154,34 +169,40 @@ export class DetalheDaInscricao {
    * tela sair é descartado. O 404 mantém o valor mascarado e diz que o dado não está disponível.
    */
   async revelar(fatoCodigo: string, ocorrenciaId: string | null): Promise<void> {
-    const processo = this.processoId();
-    const inscricao = this.inscricaoId();
+    const identificadores = this.identificadoresDaInscricaoAberta();
     const chave = chaveDoCampo(fatoCodigo, ocorrenciaId);
-    if (processo === null || inscricao === null) return;
-    if (this.revelacoes().get(chave)?.estado === 'pendente') return;
+    if (identificadores === null || this.revelacoes().get(chave)?.estado === 'pendente') return;
     const geracao = this.geracao;
-    const aindaVale = (): boolean => geracao === this.geracao;
     this.registrar(chave, { estado: 'pendente' });
+    const revelacao = await this.pedirRevelacao(identificadores, fatoCodigo, ocorrenciaId);
+    if (geracao === this.geracao) this.registrar(chave, revelacao);
+  }
+
+  private async pedirRevelacao(
+    { processo, inscricao }: IdentificadoresDaInscricao,
+    fatoCodigo: string,
+    ocorrenciaId: string | null,
+  ): Promise<RevelacaoDoCampo> {
     try {
       const resultado = await firstValueFrom(
         this.camposApi.revelar(processo, inscricao, fatoCodigo, ocorrenciaId),
       );
-      if (!aindaVale()) return;
-      if (resultado.ok) {
-        this.registrar(chave, { estado: 'revelado', valor: resultado.data.valor });
-      } else if (resultado.problem.status === STATUS_HTTP.NAO_ENCONTRADO) {
-        this.registrar(chave, { estado: 'indisponivel' });
-      } else {
-        this.registrar(chave, {
-          estado: 'falha',
-          mensagem: this.problemI18n.resolve(resultado.problem).title,
-        });
-      }
+      return this.revelacaoDoResultado(resultado);
     } catch {
-      if (aindaVale()) {
-        this.registrar(chave, { estado: 'falha', mensagem: FALHA_AO_REVELAR });
-      }
+      return { estado: 'falha', mensagem: FALHA_AO_REVELAR };
     }
+  }
+
+  private revelacaoDoResultado(resultado: ResultadoDaRevelacao): RevelacaoDoCampo {
+    if (resultado.ok) return { estado: 'revelado', valor: resultado.data.valor };
+    if (resultado.problem.status === STATUS_HTTP.NAO_ENCONTRADO) return { estado: 'indisponivel' };
+    return { estado: 'falha', mensagem: this.problemI18n.resolve(resultado.problem).title };
+  }
+
+  private identificadoresDaInscricaoAberta(): IdentificadoresDaInscricao | null {
+    const processo = this.processoId();
+    const inscricao = this.inscricaoId();
+    return processo === null || inscricao === null ? null : { processo, inscricao };
   }
 
   /** Repete a leitura; `false` quando nenhuma leitura recomeçou. */
@@ -197,23 +218,23 @@ export class DetalheDaInscricao {
    * descartado: a aba fecha e nada abre.
    */
   async abrirArquivo(arquivoId: string): Promise<DesfechoDoAcessoAoArquivo> {
-    const processo = this.processoId();
-    const inscricao = this.inscricaoId();
-    if (processo === null || inscricao === null) {
-      return { situacao: 'recusado', mensagem: ARQUIVO_NAO_DISPONIVEL };
-    }
+    const inscricaoAberta = this.identificadoresDaInscricaoAberta();
+    if (inscricaoAberta === null) return { situacao: 'recusado', mensagem: ARQUIVO_NAO_DISPONIVEL };
+    return this.abrirArquivoDaInscricao(inscricaoAberta, arquivoId);
+  }
+
+  private async abrirArquivoDaInscricao(
+    { processo, inscricao }: IdentificadoresDaInscricao,
+    arquivoId: string,
+  ): Promise<DesfechoDoAcessoAoArquivo> {
     const geracao = this.geracao;
     const aindaVale = (): boolean => geracao === this.geracao;
     try {
-      const desfecho = await abrirAcessoEmNovaAba(
-        () => firstValueFrom(this.arquivosApi.obterAcesso(processo, inscricao, arquivoId)),
-        aindaVale,
-      );
-      return this.desfechoDoAcesso(desfecho);
+      const acesso = () =>
+        firstValueFrom(this.arquivosApi.obterAcesso(processo, inscricao, arquivoId));
+      return this.desfechoDoAcesso(await abrirAcessoEmNovaAba(acesso, aindaVale));
     } catch {
-      return aindaVale()
-        ? { situacao: 'recusado', mensagem: FALHA_AO_ABRIR }
-        : { situacao: 'abandonado' };
+      return desfechoDaFalhaAoAbrir(aindaVale());
     }
   }
 
@@ -226,13 +247,13 @@ export class DetalheDaInscricao {
       case 'bloqueada':
         return { situacao: 'recusado', mensagem: ABERTURA_BLOQUEADA };
       case 'recusada':
-        return {
-          situacao: 'recusado',
-          mensagem:
-            desfecho.problem.status === STATUS_HTTP.NAO_ENCONTRADO
-              ? ARQUIVO_NAO_DISPONIVEL
-              : this.problemI18n.resolve(desfecho.problem).title,
-        };
+        return { situacao: 'recusado', mensagem: this.mensagemDaRecusa(desfecho.problem) };
     }
+  }
+
+  private mensagemDaRecusa(problema: ProblemaDaRecusa): string {
+    return problema.status === STATUS_HTTP.NAO_ENCONTRADO
+      ? ARQUIVO_NAO_DISPONIVEL
+      : this.problemI18n.resolve(problema).title;
   }
 }

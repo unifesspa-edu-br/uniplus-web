@@ -18,6 +18,18 @@ const URL_DE_ENVIO_EXPIRADA =
   'O endereço de envio não é mais válido. Tente novamente para obter um novo.';
 const FALHA_NO_ENVIO = 'Falha ao enviar o arquivo. Verifique a conexão e tente novamente.';
 
+const CONFIRMACAO_INDEFINIDA =
+  'Não é possível saber se o edital foi registrado; use "Tentar novamente" para repetir a mesma confirmação.';
+
+const ANEXO_CONFIRMADO: Partial<UploadItem> = {
+  fase: 'confirmado',
+  progress: 100,
+  mensagemErro: undefined,
+  confirmacaoIndefinida: false,
+};
+
+type Iniciacao = IniciarEnvioDoDocumentoAPublicarDto;
+
 /** O arquivo já chegou ao storage: da tentativa só resta a confirmação, que não usa os bytes. */
 function soFaltaConfirmar(item: UploadItem): boolean {
   return item.enviado === true && item.documentoAPublicarId !== undefined;
@@ -42,7 +54,7 @@ export class EtapasDoEnvioDoEdital {
 
   /** Impede que uma segunda escolha atropele o envio em andamento. */
   private operacaoEmCurso = false;
-  private iniciacaoAtual: IniciarEnvioDoDocumentoAPublicarDto | null = null;
+  private iniciacaoAtual: Iniciacao | null = null;
   private geracaoDoAnexo: number | null = null;
 
   /** O arquivo escolhido e o processo em que o foi: o arquivo de um processo não vale em outro. */
@@ -102,34 +114,35 @@ export class EtapasDoEnvioDoEdital {
     if (arquivo !== undefined) void this.anexar(arquivo);
   }
 
+  /**
+   * A recusa por envio em andamento vem antes de a geração ser recarimbada: fazê-lo antes desarmaria
+   * a guarda do envio que ainda corre, e as respostas dele passariam a escrever como se fossem do
+   * processo atual.
+   */
   async anexar(arquivo: File): Promise<void> {
-    // A recusa vem antes de a geração ser recarimbada: fazê-lo antes desarmaria a guarda do envio
-    // que ainda corre, e as respostas dele passariam a escrever como se fossem do processo atual.
-    if (this.operacaoEmCurso) {
-      this.uploadError.set(ENVIO_EM_ANDAMENTO);
-      return;
-    }
-    this.geracaoDoAnexo = this.store.geracao();
-
-    const recusa = this.recusaPorAnexoExistente();
-    if (recusa !== null) {
+    const recusa = this.recusaAoAnexar();
+    const processoId = this.store.processoSeletivoId();
+    if (recusa !== null || processoId === null) {
       this.uploadError.set(recusa);
       return;
     }
-
-    const processoId = this.store.processoSeletivoId();
-    if (processoId === null) {
-      this.uploadError.set(SEM_PROCESSO);
-      return;
-    }
-
     this.uploadError.set(null);
-    await this.comOperacaoEmCurso(async () => {
-      this.arquivoEmMemoria.set({ arquivo, geracao: this.store.geracao() });
-      this.iniciacaoAtual = null;
-      this.registrarAnexo(arquivo);
-      await this.executarUpload(processoId, arquivo);
-    });
+    await this.comOperacaoEmCurso(() => this.enviarNovoAnexo(processoId, arquivo));
+  }
+
+  private recusaAoAnexar(): string | null {
+    if (this.operacaoEmCurso) return ENVIO_EM_ANDAMENTO;
+    this.geracaoDoAnexo = this.store.geracao();
+    const existente = this.recusaPorAnexoExistente();
+    if (existente !== null) return existente;
+    return this.store.processoSeletivoId() === null ? SEM_PROCESSO : null;
+  }
+
+  private async enviarNovoAnexo(processoId: string, arquivo: File): Promise<void> {
+    this.arquivoEmMemoria.set({ arquivo, geracao: this.store.geracao() });
+    this.iniciacaoAtual = null;
+    this.registrarAnexo(arquivo);
+    await this.executarUpload(processoId, arquivo);
   }
 
   /** Retoma da fase que falhou, sem repetir o que já concluiu. */
@@ -179,52 +192,44 @@ export class EtapasDoEnvioDoEdital {
     this.store.patchObjectSection('identificacao', { uploads: [item] });
   }
 
+  /** Quando só a confirmação falta, repeti-la com a mesma chave recupera o replay. */
   private async executarUpload(processoId: string, arquivo: File | null): Promise<void> {
     const atual = this.anexo();
     if (atual === undefined) return;
-
-    // Só a confirmação falta, e repeti-la com a mesma chave recupera o replay.
     if (soFaltaConfirmar(atual) && atual.documentoAPublicarId !== undefined) {
-      await this.confirmar(processoId, atual.documentoAPublicarId);
-      return;
+      return this.confirmar(processoId, atual.documentoAPublicarId);
     }
     if (arquivo === null) return;
-
     const iniciacao = await this.iniciar(processoId, arquivo);
-    if (iniciacao === null) return;
-
-    if (!(await this.enviar(iniciacao, arquivo))) return;
+    if (iniciacao === null || !(await this.enviar(iniciacao, arquivo))) return;
     await this.confirmar(processoId, iniciacao.documentoAPublicarId);
   }
 
   /** A iniciação em curso, ou uma nova quando não há ou a anterior expirou; `null` se ela falhou. */
-  private async iniciar(
-    processoId: string,
-    arquivo: File,
-  ): Promise<IniciarEnvioDoDocumentoAPublicarDto | null> {
+  private async iniciar(processoId: string, arquivo: File): Promise<Iniciacao | null> {
     if (this.iniciacaoAtual !== null && !destinoExpirado(this.iniciacaoAtual)) {
       return this.iniciacaoAtual;
     }
-
     this.atualizarAnexo({ fase: 'iniciando', progress: 0, mensagemErro: undefined });
     const inicio = await this.envioDoEdital.iniciarUpload(processoId, arquivo.name);
     if (!inicio.ok) {
       this.falharAnexo(this.problemI18n.resolve(inicio.problem).title);
       return null;
     }
-
-    this.iniciacaoAtual = inicio.iniciacao;
-    this.atualizarAnexo({
-      documentoAPublicarId: inicio.iniciacao.documentoAPublicarId,
-      expiraEm: inicio.iniciacao.expiraEm,
-    });
+    this.registrarIniciacao(inicio.iniciacao);
     return inicio.iniciacao;
   }
 
-  private async enviar(
-    iniciacao: IniciarEnvioDoDocumentoAPublicarDto,
-    arquivo: File,
-  ): Promise<boolean> {
+  private registrarIniciacao(iniciacao: Iniciacao): void {
+    this.iniciacaoAtual = iniciacao;
+    this.atualizarAnexo({
+      documentoAPublicarId: iniciacao.documentoAPublicarId,
+      expiraEm: iniciacao.expiraEm,
+    });
+  }
+
+  /** Depois do envio, a URL cumpriu o papel e some da memória para não ficar credencial viva à toa. */
+  private async enviar(iniciacao: Iniciacao, arquivo: File): Promise<boolean> {
     this.atualizarAnexo({ fase: 'enviando' });
     const envio = await this.envioDoEdital.enviarArquivo(iniciacao, arquivo, (pct) =>
       this.atualizarAnexo({ progress: pct }),
@@ -233,9 +238,7 @@ export class EtapasDoEnvioDoEdital {
       this.falharNoEnvio(envio.expirada);
       return false;
     }
-
     this.atualizarAnexo({ enviado: true, progress: 100 });
-    // A URL cumpriu o papel; some da memória para não ficar credencial viva à toa.
     this.iniciacaoAtual = null;
     return true;
   }
@@ -254,24 +257,17 @@ export class EtapasDoEnvioDoEdital {
   private async confirmar(processoId: string, documentoAPublicarId: string): Promise<void> {
     this.atualizarAnexo({ fase: 'confirmando', progress: 100 });
     const confirmacao = await this.envioDoEdital.confirmarUpload(processoId, documentoAPublicarId);
-    if (!confirmacao.ok) {
-      const indefinida = this.envioDoEdital.temConfirmacaoPendente();
-      const titulo = this.problemI18n.resolve(confirmacao.problem).title;
-      this.atualizarAnexo({ confirmacaoIndefinida: indefinida });
-      this.falharAnexo(
-        indefinida
-          ? `${titulo} Não é possível saber se o edital foi registrado; use "Tentar novamente" para repetir a mesma confirmação.`
-          : titulo,
-      );
+    if (confirmacao.ok) {
+      this.atualizarAnexo(ANEXO_CONFIRMADO);
       return;
     }
+    this.falharNaConfirmacao(this.problemI18n.resolve(confirmacao.problem).title);
+  }
 
-    this.atualizarAnexo({
-      fase: 'confirmado',
-      progress: 100,
-      mensagemErro: undefined,
-      confirmacaoIndefinida: false,
-    });
+  private falharNaConfirmacao(titulo: string): void {
+    const indefinida = this.envioDoEdital.temConfirmacaoPendente();
+    this.atualizarAnexo({ confirmacaoIndefinida: indefinida });
+    this.falharAnexo(indefinida ? `${titulo} ${CONFIRMACAO_INDEFINIDA}` : titulo);
   }
 
   /**

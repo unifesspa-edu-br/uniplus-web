@@ -12,26 +12,8 @@ export function documentosPorCategoria(
   categorias: readonly CategoriaDocumentoDto[],
 ): readonly DocumentoGrupo[] {
   const rotulo = new Map(categorias.map((c) => [c.codigo, c.nome]));
-  const porCategoria = new Map<string, DocumentoDefinicao[]>();
 
-  for (const tipo of tiposDocumento) {
-    const chave = tipo.categoria ?? 'OUTROS';
-    const lista = porCategoria.get(chave) ?? [];
-    const descricao = tipo.descricao?.trim() || null;
-    const formatos = formatosDe(tipo);
-    lista.push({
-      id: tipo.id,
-      nome: tipo.nome,
-      descricao: descricao,
-      formatos: formatos,
-      // Sem descrição, o que orienta quem edita é o formato aceito.
-      orientacao: descricao ?? formatos,
-      situacao: null,
-    });
-    porCategoria.set(chave, lista);
-  }
-
-  return [...porCategoria.entries()]
+  return [...agruparPorCategoria(tiposDocumento).entries()]
     .map(
       ([codigo, docs]): DocumentoGrupo => ({
         label: rotulo.get(codigo) ?? codigo,
@@ -39,6 +21,31 @@ export function documentosPorCategoria(
       }),
     )
     .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+}
+
+function agruparPorCategoria(
+  tiposDocumento: readonly TipoDocumentoDto[],
+): ReadonlyMap<string, readonly DocumentoDefinicao[]> {
+  const porCategoria = new Map<string, DocumentoDefinicao[]>();
+  for (const tipo of tiposDocumento) {
+    const chave = tipo.categoria ?? 'OUTROS';
+    porCategoria.set(chave, [...(porCategoria.get(chave) ?? []), definicaoDoDocumento(tipo)]);
+  }
+  return porCategoria;
+}
+
+function definicaoDoDocumento(tipo: TipoDocumentoDto): DocumentoDefinicao {
+  const descricao = tipo.descricao?.trim() || null;
+  const formatos = formatosDe(tipo);
+  return {
+    id: tipo.id,
+    nome: tipo.nome,
+    descricao,
+    formatos,
+    // Sem descrição, o que orienta quem edita é o formato aceito.
+    orientacao: descricao ?? formatos,
+    situacao: null,
+  };
 }
 
 /** Os formatos e o tamanho que o cadastro declara, só com as partes presentes; `null` sem nenhuma. */

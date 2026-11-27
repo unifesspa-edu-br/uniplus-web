@@ -36,6 +36,12 @@ import {
   FORMATO_VALOR_EM_REAIS,
   formatarValorEmReais,
 } from '../../shared/valor-em-reais';
+import {
+  alternarFundamentoEscolhido,
+  comandoDaTaxa,
+  fundamentoSemSelecao,
+  validarDeclaracaoDaTaxa,
+} from './declaracao-da-taxa';
 
 const MENSAGEM_DOS_FUNDAMENTOS = 'Não foi possível carregar os fundamentos de isenção.';
 
@@ -138,7 +144,12 @@ export class PagamentoPassoComponent {
 
   constructor() {
     this.carregarFundamentos();
+    this.acompanharFormulario();
+    effect(() => this.aplicarPermissaoDeEdicao());
+    effect(() => this.reconciliarComORascunho());
+  }
 
+  private acompanharFormulario(): void {
     this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((valor) => {
       this.cobra.set(valor.cobra ?? null);
       if (valor.cobra !== true) this.fundamentosInvalidos.set(false);
@@ -147,29 +158,26 @@ export class PagamentoPassoComponent {
         coerenteComADeclaracao(valor.cobra ?? null, valor.valor ?? ''),
       );
     });
+  }
 
-    effect(() => {
-      if (this.store.aceitaEdicao()) this.form.enable({ emitEvent: false });
-      else this.form.disable({ emitEvent: false });
-    });
+  private aplicarPermissaoDeEdicao(): void {
+    if (this.store.aceitaEdicao()) this.form.enable({ emitEvent: false });
+    else this.form.disable({ emitEvent: false });
+  }
 
-    effect(() => {
-      const pagamento = this.store.draft().pagamento;
-      this.cobra.set(pagamento.cobra);
-      // A pendência é do que o operador deixou de preencher, não do editor. O
-      // rascunho trocar — outro processo, ou o mesmo reidratado — significa que
-      // ela passou a acusar dados que ninguém validou; hidratar com
-      // `emitEvent: false` não alcança a limpeza do `valueChanges`, então ela
-      // fica aqui. Reconciliar com o rascunho corrente, em vez de apagar sempre,
-      // preserva o vermelho legítimo enquanto o operador não corrige.
-      this.fundamentosInvalidos.update(
-        (invalido) => invalido && pagamento.cobra === true && pagamento.fundamentos.length === 0,
-      );
-      this.form.patchValue(
-        { cobra: pagamento.cobra, valor: pagamento.valor },
-        { emitEvent: false },
-      );
-    });
+  /**
+   * A pendência é do que o operador deixou de preencher, não do editor. O
+   * rascunho trocar — outro processo, ou o mesmo reidratado — significa que
+   * ela passou a acusar dados que ninguém validou; hidratar com
+   * `emitEvent: false` não alcança a limpeza do `valueChanges`, então ela
+   * fica aqui. Reconciliar com o rascunho corrente, em vez de apagar sempre,
+   * preserva o vermelho legítimo enquanto o operador não corrige.
+   */
+  private reconciliarComORascunho(): void {
+    const pagamento = this.store.draft().pagamento;
+    this.cobra.set(pagamento.cobra);
+    this.fundamentosInvalidos.update((invalido) => invalido && fundamentoSemSelecao(pagamento));
+    this.form.patchValue({ cobra: pagamento.cobra, valor: pagamento.valor }, { emitEvent: false });
   }
 
   carregarFundamentos(): void {
@@ -204,21 +212,16 @@ export class PagamentoPassoComponent {
     return this.selecionados().includes(codigo);
   }
 
+  /**
+   * A lista de fundamentos não é controle do formulário, então o `disable` do
+   * formulário não a alcança. A pendência acende na validação e apaga assim que
+   * ela deixa de existir: deixar o vermelho aceso depois de o operador escolher
+   * faria a tela acusar um erro que ele já corrigiu.
+   */
   alternarFundamento(codigo: FundamentoIsencaoCodigo): void {
-    // A lista de fundamentos não é controle do formulário, então o `disable`
-    // acima não a alcança.
     if (!this.store.aceitaEdicao()) return;
-
-    const atuais = this.selecionados();
-    const proximos = atuais.includes(codigo)
-      ? atuais.filter((item) => item !== codigo)
-      : [...atuais, codigo];
-
+    const proximos = alternarFundamentoEscolhido(this.selecionados(), codigo);
     this.store.patchObjectSection('pagamento', { fundamentos: proximos });
-
-    // A pendência acende na validação e apaga assim que ela deixa de existir —
-    // deixar o vermelho aceso depois de o operador escolher faria a tela acusar
-    // um erro que ele já corrigiu.
     if (proximos.length > 0) this.fundamentosInvalidos.set(false);
   }
 
@@ -233,7 +236,9 @@ export class PagamentoPassoComponent {
 
   /**
    * Grava a declaração ao concluir o passo. O processo já existe aqui — ele é
-   * criado na identificação, que é o passo anterior.
+   * criado na identificação, que é o passo anterior. O comando não sai de um
+   * passo que a validação recusaria: sem isso, um texto que não é valor viraria
+   * `null` no envio e o servidor recusaria "cobra sem valor" sem apontar o campo.
    */
   async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
@@ -243,58 +248,28 @@ export class PagamentoPassoComponent {
         messages: ['O cadastro do processo precisa estar concluído antes de declarar a taxa.'],
       };
     }
-
-    // O comando não sai de um passo que a validação recusaria: sem isto, um
-    // texto que não é valor viraria `null` no envio e o servidor recusaria a
-    // combinação "cobra sem valor", com mensagem que não aponta o campo.
     const conferencia = this.validar();
     if (!conferencia.valid) return conferencia;
+    return this.gravarDeclaracao(processoId);
+  }
 
+  private async gravarDeclaracao(processoId: string): Promise<ValidacaoDoPasso> {
     const pagamento = this.store.draft().pagamento;
     this.erroDeGravacao.set(null);
     const resultado = await gravarNoPasso(this.store, () =>
-      this.cadastro.definirTaxaInscricao(processoId, {
-        cobra: pagamento.cobra,
-        valor: analisarValorEmReais(pagamento.valor),
-        fundamentos: pagamento.fundamentos,
-      }),
+      this.cadastro.definirTaxaInscricao(processoId, comandoDaTaxa(pagamento)),
     );
     if (respostaFoiDescartada(resultado)) return resultado;
-
-    if (!resultado.ok) {
-      const mensagem = this.problemI18n.resolve(resultado.problem).title;
-      this.erroDeGravacao.set(mensagem);
-      return { valid: false, messages: [mensagem] };
-    }
-    return { valid: true };
+    if (resultado.ok) return { valid: true };
+    const mensagem = this.problemI18n.resolve(resultado.problem).title;
+    this.erroDeGravacao.set(mensagem);
+    return { valid: false, messages: [mensagem] };
   }
 
   validar(): ValidacaoDoPasso {
     const pagamento = this.store.draft().pagamento;
-    const mensagens: string[] = [];
-
-    if (pagamento.cobra === null) {
-      mensagens.push('Declare se o processo cobra taxa de inscrição.');
-    }
-
-    if (pagamento.cobra === true) {
-      const valor = analisarValorEmReais(pagamento.valor);
-      if (valor === null) {
-        mensagens.push(`Informe o valor da taxa. ${FORMATO_VALOR_EM_REAIS}`);
-      } else if (valor <= 0) {
-        mensagens.push('O valor da taxa precisa ser maior que zero.');
-      }
-    }
-
-    // Quem cobra reconhece ao menos um fundamento — é por eles que o
-    // candidato poderá pedir isenção, e o servidor recusa a gravação sem nenhum.
-    const semFundamento = pagamento.cobra === true && pagamento.fundamentos.length === 0;
-    if (semFundamento) {
-      mensagens.push('Selecione ao menos um fundamento de isenção.');
-    }
-    this.fundamentosInvalidos.set(semFundamento);
-
-    return mensagens.length > 0 ? { valid: false, messages: mensagens } : { valid: true };
+    this.fundamentosInvalidos.set(fundamentoSemSelecao(pagamento));
+    return validarDeclaracaoDaTaxa(pagamento);
   }
 }
 
