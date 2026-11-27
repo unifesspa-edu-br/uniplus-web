@@ -55,16 +55,23 @@ describe('ProblemI18nService', () => {
     expect(message.title).toBe('Versão 1 é a única suportada');
   });
 
-  it('traduz o vínculo com fato que aguarda a proteção de dados em qualquer tela, sem registro', () => {
+  it('mostra o título e o detalhe da API na recusa de vínculo a dado que aguarda a proteção de dados', () => {
     const message = service.resolve(
       mockProblemDetails({
         code: 'uniplus.vinculo_catalogo.fato_com_protecao_pendente',
         status: 422,
+        title:
+          'O dado do candidato aguarda a aprovação do Representante do controlador e não aceita vínculo novo',
+        detail: "O dado do candidato 'Renda familiar per capita' aguarda a aprovação.",
       }),
     );
 
-    expect(message.title).toContain('aguarda a aprovação da proteção de dados');
-    expect(message.detail).toContain('Retire-o do formulário, da regra ou da condição');
+    expect(message.title).toBe(
+      'O dado do candidato aguarda a aprovação do Representante do controlador e não aceita vínculo novo',
+    );
+    expect(message.detail).toBe(
+      "O dado do candidato 'Renda familiar per capita' aguarda a aprovação.",
+    );
   });
 
   it('o override registrado prevalece sobre a tradução padrão', () => {
