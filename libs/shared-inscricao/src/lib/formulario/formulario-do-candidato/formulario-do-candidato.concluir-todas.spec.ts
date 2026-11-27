@@ -77,7 +77,7 @@ describe('FormularioDoCandidatoComponent', () => {
     cenario.fixture.detectChanges();
 
     expect(document.activeElement).toBe(
-      tela.querySelector('[data-campo="VERACIDADE"] input[type="checkbox"]'),
+      tela.querySelector('[data-campo="Inscricao:VERACIDADE"] input[type="checkbox"]'),
     );
   });
 

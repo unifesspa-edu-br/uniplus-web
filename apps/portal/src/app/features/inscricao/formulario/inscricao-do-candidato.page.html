@@ -45,53 +45,76 @@
 <p class="inscricao-curso">
   <span class="inscricao-curso__rotulo">Curso:</span> {{ escolha.ofertas()[0].nome }}
 </p>
-} @if (leitura.carregada(); as carregada) {
-<fieldset class="inscricao-formulario" role="none" [disabled]="gravacao.ocupada()">
-  <insc-formulario-do-candidato
-    #formDoCandidato
-    idBase="inscricao"
-    apresentacaoDosPassos="lateral"
-    [passosPrefixados]="escolha.passosPrefixados()"
-    [formulario]="formularioExibido()!"
-    [noProcesso]="carregada.formulario"
-    [inicial]="carregada.inicial"
-    [municipiosGravados]="carregada.municipiosGravados"
-    [termosAceitosIniciais]="carregada.termosAceitos"
-    [respostasFixas]="respostasFixas()"
-    [pressupostos]="pressupostos()"
-    [semDocumentos]="semDocumentos"
-    [errosDoServidor]="gravacao.errosDoServidor()"
-    [passoDaRecusa]="passoDaRecusa()"
-    [concluirNaUltimaSecao]="false"
-    [exigirSecaoValida]="true"
-    [envio]="dia.envio()"
-    [avaliacao]="avaliacaoNaTela()"
-    [envioDeDocumentos]="gravacao.envioDeDocumentos()"
-    [podeEnviarDocumentos]="!gravacao.ocupada() && !leitura.precisaRecarregar()"
-    [podeRemoverDocumentos]="!gravacao.enviada() && !gravacao.bloqueada()"
-    [ocorrenciasGravadas]="ocorrenciasGravadas()"
-    (simulacaoChange)="responder($event)"
-    (avancoBarrado)="recusarCursoAusente()"
-    (pendenciasChange)="pendenciasDasSecoes.set($event)"
-    (tentarAvaliarDeNovo)="avaliacao.tentarDeNovo()"
+} @if (formularios().length > 1) {
+<ui-steps
+  variante="chips"
+  rotuloDaNavegacao="Formulários da inscrição"
+  [items]="preenchimento.escolha()"
+  (selecionado)="escolherFormulario($event)"
+/>
+} @for (tela of formularios(); track tela.codigo; let primeiro = $first; let ultimo = $last; let
+indice = $index) {
+<div [hidden]="preenchimento.ativo() !== tela.codigo">
+  <h2
+    class="inscricao-formulario__titulo"
+    tabindex="-1"
+    [id]="'inscricao-' + tela.codigo + '-formulario'"
   >
-    @if (formDoCandidato.passoPrefixadoAtual() === PASSO_DO_CURSO) {
-    <ptl-escolha-do-curso
-      [ofertas]="escolha.ofertas()"
-      [ofertasDaSegunda]="escolha.ofertasDaSegunda()"
-      [ofertaEscolhida]="escolha.ofertaEscolhida()"
-      [primeiraEscolhida]="escolha.ofertaEscolhidaValida() !== null"
-      [segundaEscolhida]="escolha.segundaOfertaEscolhida()"
-      [comSegundaOpcao]="escolha.comSegundaOpcao()"
-      [erroDaOferta]="escolha.erroDaOferta()"
-      [erroDaSegundaOferta]="escolha.erroDaSegundaOferta()"
-      [avisoDaSegundaLimpa]="escolha.avisoDaSegundaLimpa()"
-      (escolherOferta)="escolherOferta($event)"
-      (escolherSegundaOferta)="escolherSegundaOferta($event)"
-    />
-    }
-  </insc-formulario-do-candidato>
-</fieldset>
+    {{ tela.titulo }}
+  </h2>
+  <fieldset class="inscricao-formulario" role="none" [disabled]="gravacao.ocupada()">
+    <insc-formulario-do-candidato
+      #formDoCandidato
+      [idBase]="'inscricao-' + tela.codigo"
+      apresentacaoDosPassos="lateral"
+      [passosPrefixados]="primeiro ? escolha.passosPrefixados() : SEM_PASSOS"
+      [formulario]="tela.exibicao"
+      [noProcesso]="tela.carregado.formulario"
+      [inicial]="tela.carregado.inicial"
+      [municipiosGravados]="tela.carregado.municipiosGravados"
+      [termosAceitosIniciais]="tela.carregado.termosAceitos"
+      [respostasFixas]="respostasFixas().get(tela.codigo) ?? {}"
+      [pressupostos]="pressupostos().get(tela.codigo) ?? {}"
+      [semDocumentos]="semDocumentos"
+      [errosDoServidor]="preenchimento.recusasDe(tela.codigo)"
+      [passoDaRecusa]="primeiro ? passoDaRecusa() : null"
+      [concluirNaUltimaSecao]="false"
+      [exigirSecaoValida]="true"
+      [envio]="dia.envio()"
+      [avaliacao]="avaliacaoNaTela()"
+      [envioDeDocumentos]="gravacao.envioDeDocumentos()"
+      [podeEnviarDocumentos]="!gravacao.ocupada() && !leitura.precisaRecarregar()"
+      [podeRemoverDocumentos]="!gravacao.enviada() && !gravacao.bloqueada()"
+      [ocorrenciasGravadas]="ocorrenciasGravadas()"
+      (avancoBarrado)="recusarCursoAusente()"
+      (campoDeOutroFormulario)="irAoCampoDeOutroFormulario($event)"
+      (tentarAvaliarDeNovo)="avaliacao.tentarDeNovo()"
+    >
+      @if (formDoCandidato.passoPrefixadoAtual() === PASSO_DO_CURSO) {
+      <ptl-escolha-do-curso
+        [ofertas]="escolha.ofertas()"
+        [ofertasDaSegunda]="escolha.ofertasDaSegunda()"
+        [ofertaEscolhida]="escolha.ofertaEscolhida()"
+        [primeiraEscolhida]="escolha.ofertaEscolhidaValida() !== null"
+        [segundaEscolhida]="escolha.segundaOfertaEscolhida()"
+        [comSegundaOpcao]="escolha.comSegundaOpcao()"
+        [erroDaOferta]="escolha.erroDaOferta()"
+        [erroDaSegundaOferta]="escolha.erroDaSegundaOferta()"
+        [avisoDaSegundaLimpa]="escolha.avisoDaSegundaLimpa()"
+        (escolherOferta)="escolherOferta($event)"
+        (escolherSegundaOferta)="escolherSegundaOferta($event)"
+      />
+      }
+    </insc-formulario-do-candidato>
+  </fieldset>
+  @if (!ultimo && formDoCandidato.naUltimaSecao()) {
+  <p class="inscricao-formulario__continuar">
+    <button type="button" class="btn btn--primary" (click)="escolherFormulario(indice + 1)">
+      Continuar para o próximo formulário
+    </button>
+  </p>
+  }
+</div>
 } @if (derivados().length > 0) {
 <section class="inscricao-derivados" aria-labelledby="inscricao-derivados-titulo">
   <h2 id="inscricao-derivados-titulo" class="inscricao-derivados__titulo">
@@ -110,7 +133,9 @@
 }
 <ptl-acoes-da-inscricao
   [motivoDoEnvioBloqueado]="motivoDoEnvioBloqueado()"
-  [pendencias]="pendenciasDasSecoes()"
+  [pendencias]="preenchimento.pendencias()"
+  [recusas]="preenchimento.resumoDasRecusas()"
+  [comVariosFormularios]="formularios().length > 1"
   [semCurso]="escolha.semCurso()"
   [enviada]="gravacao.enviada()"
   [bloqueada]="gravacao.bloqueada()"
@@ -119,5 +144,6 @@
   (enviar)="enviar()"
   (irAoCurso)="irAoCurso()"
   (irAPendencia)="irAPendencia($event)"
+  (irARecusa)="irARecusa($event)"
 />
 } }

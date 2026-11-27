@@ -41,7 +41,7 @@ describe('InscricaoDoCandidatoPage', () => {
       cenario.servico.ofertas = [MEDICINA, DIREITO, ENGENHARIA];
       cenario.servico.opcoes = 2;
     };
-    const recusaDaSegunda = (codigo: string) =>
+    const recusaDaSegunda = (codigo: string, mensagem: string) =>
       apiFailure(
         {
           type: 'about:blank',
@@ -49,7 +49,7 @@ describe('InscricaoDoCandidatoPage', () => {
           status: 422,
           code: codigo,
           traceId: '',
-          errors: [{ field: 'ofertaCursoSegundaOpcaoId', code: codigo, message: '' }],
+          errors: [{ field: 'ofertaCursoSegundaOpcaoId', code: codigo, message: mensagem }],
         },
         422,
         new HttpHeaders(),
@@ -139,7 +139,7 @@ describe('InscricaoDoCandidatoPage', () => {
 
     it('a avaliação é pedida de novo com a 2ª opção quando só ela muda', async () => {
       dosDoisCursos();
-      cenario.servico.formulario = COM_MODALIDADES;
+      cenario.servico.formularios = [COM_MODALIDADES];
       cenario.servico.inscricao = inscricao({ ofertaCursoId: DIREITO.id });
       const tela = await cenario.abrir();
 
@@ -155,6 +155,7 @@ describe('InscricaoDoCandidatoPage', () => {
       dosDoisCursos();
       cenario.servico.recusaDoEnvio = recusaDaSegunda(
         'uniplus.selecao.inscricao.segunda_opcao_igual_a_primeira',
+        'A 2ª opção tem de ser um curso diferente da 1ª.',
       );
       cenario.servico.inscricao = inscricao({
         ...RESPONDIDA,
@@ -187,6 +188,7 @@ describe('InscricaoDoCandidatoPage', () => {
       dosDoisCursos();
       cenario.servico.recusaDoEnvio = recusaDaSegunda(
         'uniplus.selecao.inscricao.nenhuma_modalidade',
+        'Com estas respostas, você não concorre a nenhuma modalidade da 2ª opção. Retire a 2ª opção.',
       );
       cenario.servico.inscricao = inscricao({
         ...RESPONDIDA,
@@ -206,6 +208,7 @@ describe('InscricaoDoCandidatoPage', () => {
       dosDoisCursos();
       cenario.servico.recusaDoEnvio = recusaDaSegunda(
         'uniplus.selecao.inscricao.nenhuma_modalidade',
+        'Com estas respostas, você não concorre a nenhuma modalidade da 2ª opção. Retire a 2ª opção.',
       );
       cenario.servico.inscricao = inscricao({
         ...RESPONDIDA,
@@ -217,7 +220,7 @@ describe('InscricaoDoCandidatoPage', () => {
       await cenario.clicar(botao(tela, 'Enviar inscrição'));
 
       expect(tela.querySelector('#inscricao-segunda-oferta-erro')?.textContent).toContain(
-        'retire a 2ª opção',
+        'Retire a 2ª opção',
       );
     });
 

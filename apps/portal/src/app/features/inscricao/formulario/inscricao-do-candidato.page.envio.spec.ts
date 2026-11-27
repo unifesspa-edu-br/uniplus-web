@@ -99,7 +99,7 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(botao(tela, 'Salvar rascunho')).toBeUndefined();
   });
 
-  it('o aceite leva o formulário, a versão e o hash do termo da versão fixada', async () => {
+  it('o aceite leva a versão e o hash do termo da versão fixada', async () => {
     cenario.servico.inscricao = inscricao(RESPONDIDA);
     const tela = await cenario.abrir();
 
@@ -108,7 +108,7 @@ describe('InscricaoDoCandidatoPage', () => {
     const termo = FORMULARIO_DE_INSCRICAO_MOCK.formulario.termos[0];
     expect(cenario.servico.enviados[0].aceites).toEqual([
       {
-        formularioCodigo: FORMULARIO_DE_INSCRICAO_MOCK.codigo,
+        formularioCodigo: 'INSCRICAO',
         codigo: 'VERACIDADE',
         versaoId: termo.versaoId,
         hashVersao: termo.conteudo.hashVersao,
@@ -125,14 +125,16 @@ describe('InscricaoDoCandidatoPage', () => {
     await cenario.clicar(secoes[secoes.length - 1]);
 
     await cenario.clicar(
-      tela.querySelector('[data-campo="VERACIDADE"] input[type="checkbox"]') as HTMLElement,
+      tela.querySelector(
+        '[data-campo="Inscricao:VERACIDADE"] input[type="checkbox"]',
+      ) as HTMLElement,
     );
     await cenario.clicar(botao(tela, 'Enviar inscrição'));
 
     expect(cenario.servico.enviados[0].aceites?.map((a) => a.codigo)).toEqual(['VERACIDADE']);
   });
 
-  it('a recusa por campo do envio aparece no campo, com a mensagem para o candidato', async () => {
+  it('a recusa por campo do envio aparece no campo e no resumo, com a mensagem da API', async () => {
     cenario.servico.recusaDoEnvio = apiFailure(
       {
         type: 'about:blank',
@@ -157,8 +159,11 @@ describe('InscricaoDoCandidatoPage', () => {
     await cenario.clicar(botao(tela, 'Enviar inscrição'));
 
     const nome = tela.querySelector('[data-campo="NOME"]');
-    expect(nome?.querySelector('.field__error')?.textContent).toContain('Responda este campo.');
-    expect(tela.textContent).not.toContain("O item 'NOME'");
+    const mensagem = "O item 'NOME' é obrigatório e está sem resposta.";
+    expect(nome?.querySelector('.field__error')?.textContent).toContain(mensagem);
+    const resumo = tela.querySelector('#inscricao-recusas-titulo')?.closest('section');
+    expect(resumo?.textContent).toContain('Nome completo');
+    expect(resumo?.textContent).toContain(mensagem);
     const topo = tela.querySelector('.formulario-candidato__secao ui-alert');
     expect(topo?.textContent).toContain('O servidor recusou 1 resposta desta seção');
     expect(document.activeElement).toBe(campoDe(tela, 'NOME'));

@@ -70,7 +70,7 @@ export class RevisaoDoFormulario {
     const { erros, aceitos, mostraPendencia } = this.fontes;
     const pendente = mostraPendencia(passo) && termoSemAceite(termo, aceitos());
     return (
-      mensagemDosErros(erros(), termo.termo.codigo) ??
+      mensagemDosErros(erros(), termo.termo.codigoNasRegras) ??
       (pendente ? 'Aceite o termo para concluir.' : null)
     );
   }

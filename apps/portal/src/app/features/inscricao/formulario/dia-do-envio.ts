@@ -22,13 +22,21 @@ export class DiaDoEnvio {
 
   /** O envio que a tela supõe para os limites de data, ou `null` enquanto o formulário não chegou. */
   readonly envio = computed<EnvioDasRespostas | null>(() => {
-    const fuso = this.leitura.formulario()?.formulario.pressupostos.fusoDoEnvio;
+    const fuso = this.fusoDoEnvio();
     return fuso ? { instante: this.instante().toISOString(), fuso } : null;
   });
 
   constructor() {
     this.conferirAoVoltarAAba();
     this.recomecarACadaCarga();
+  }
+
+  /** O fuso é do processo: o primeiro formulário que o publica vale para a inscrição. */
+  private fusoDoEnvio(): string | null {
+    const publicados = this.leitura
+      .formularios()
+      .map((f) => f.formulario.formulario.pressupostos.fusoDoEnvio);
+    return publicados.find((fuso) => fuso) ?? null;
   }
 
   private conferirAoVoltarAAba(): void {
@@ -58,7 +66,7 @@ export class DiaDoEnvio {
    * próxima virada. A aba em segundo plano pode atrasar o timer, então a volta dela também confere.
    */
   private acompanhar(): void {
-    const fuso = this.leitura.formulario()?.formulario.pressupostos.fusoDoEnvio;
+    const fuso = this.fusoDoEnvio();
     if (!fuso) return;
     const agora = this.relogio();
     if (diaNoFuso(agora, fuso) !== diaNoFuso(this.instante(), fuso)) this.instante.set(agora);

@@ -106,16 +106,17 @@ describe('corpoDaAvaliacao: as ocorrências dos grupos', () => {
 });
 
 describe('corpoDaGravacao: o corpo do salvar e do envio', () => {
-  const lido = FORMULARIO_DE_INSCRICAO_MOCK;
-  const termos = lido.formulario.termos;
+  const termos = FORMULARIO_DE_INSCRICAO_MOCK.formulario.termos;
+  const formularios = [FORMULARIO_DE_INSCRICAO_MOCK];
+  const aceitos = (...codigos: string[]) => new Map([['INSCRICAO', codigos]]);
   const corpo = corpoDaAvaliacao(inscricao(), {}, SEM_OFERTAS);
 
-  it('leva o aceite com a versão e o hash que o formulário publica', () => {
-    const request = corpoDaGravacao(corpo, ['VERACIDADE'], lido);
+  it('leva o aceite com o código do formulário, a versão e o hash que ele publica', () => {
+    const request = corpoDaGravacao(corpo, aceitos('VERACIDADE'), formularios);
 
     expect(request.aceites).toEqual([
       {
-        formularioCodigo: lido.codigo,
+        formularioCodigo: 'INSCRICAO',
         codigo: 'VERACIDADE',
         versaoId: termos[0].versaoId,
         hashVersao: termos[0].conteudo.hashVersao,
@@ -124,13 +125,13 @@ describe('corpoDaGravacao: o corpo do salvar e do envio', () => {
   });
 
   it('o termo que o formulário não publica não vira aceite', () => {
-    expect(corpoDaGravacao(corpo, ['DESCONHECIDO'], lido).aceites).toEqual([]);
+    expect(corpoDaGravacao(corpo, aceitos('DESCONHECIDO'), formularios).aceites).toEqual([]);
   });
 
   it('sem curso escolhido, a oferta vai nula e não ausente', () => {
     const semOferta = { ...corpo, ofertaCursoId: undefined };
 
-    expect(corpoDaGravacao(semOferta, [], lido).ofertaCursoId).toBeNull();
+    expect(corpoDaGravacao(semOferta, aceitos(), formularios).ofertaCursoId).toBeNull();
   });
 
   it('mantém as respostas e os grupos do corpo da avaliação', () => {
@@ -143,7 +144,7 @@ describe('corpoDaGravacao: o corpo do salvar e do envio', () => {
       },
     );
 
-    expect(corpoDaGravacao(comRespostas, [], lido)).toMatchObject(comRespostas);
+    expect(corpoDaGravacao(comRespostas, aceitos(), formularios)).toMatchObject(comRespostas);
   });
 });
 
