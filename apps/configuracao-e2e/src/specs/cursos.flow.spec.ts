@@ -277,7 +277,7 @@ test.describe('Curso — CRUD (#389)', () => {
     await page
       .getByRole('button', { name: `Remover curso ${cursoSeed.codigo}`, exact: true })
       .click();
-    const confirm = page.locator('dialog.uni-dialog');
+    const confirm = page.locator('dialog.uni-dialog[open]');
     await confirm.getByRole('button', { name: 'Remover' }).click();
 
     // Em vez de reabrir o confirm, o fluxo abre o drawer de Ofertas com a
@@ -318,7 +318,7 @@ test.describe('Curso — CRUD (#389)', () => {
     await page
       .getByRole('button', { name: `Remover curso ${cursoSeed.codigo}`, exact: true })
       .click();
-    await page.locator('dialog.uni-dialog').getByRole('button', { name: 'Remover' }).click();
+    await page.locator('dialog.uni-dialog[open]').getByRole('button', { name: 'Remover' }).click();
 
     await expect.poll(() => capturado.deletedIds.length).toBe(1);
     expect(capturado.deletedIds[0]).toBe(CURSO_ID);

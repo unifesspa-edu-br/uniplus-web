@@ -285,7 +285,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
 
     await page.getByRole('button', { name: 'Remover modalidade AC', exact: true }).click();
 
-    const dialog = page.locator('dialog.uni-dialog');
+    const dialog = page.locator('dialog.uni-dialog[open]');
     await expect(dialog.getByText('Remoção bloqueada')).toBeVisible();
     // V aparece como dependente na lista de referências.
     await expect(dialog.locator('.cfg-refs-lista').getByText('V', { exact: true })).toBeVisible();
@@ -302,7 +302,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
 
     await page.getByRole('button', { name: 'Remover modalidade V', exact: true }).click();
 
-    const dialog = page.locator('dialog.uni-dialog');
+    const dialog = page.locator('dialog.uni-dialog[open]');
     await dialog.getByRole('button', { name: 'Remover', exact: true }).click();
     await expect.poll(() => capturado.deletedIds.length).toBe(1);
     expect(capturado.deletedIds[0]).toBe(V_ID);
@@ -333,7 +333,7 @@ test.describe('Modalidade — acessibilidade axe-core (#390)', () => {
     await mockApi(page, novoCapturado(), [acSeed, vSeed]);
     await abrirLista(page);
     await page.getByRole('button', { name: 'Remover modalidade AC', exact: true }).click();
-    await expect(page.locator('dialog.uni-dialog')).toBeVisible();
+    await expect(page.locator('dialog.uni-dialog[open]')).toBeVisible();
     await assertSemViolacoesGraves(page);
   });
 });

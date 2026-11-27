@@ -57,7 +57,7 @@ export async function abrirConfirmacaoDaRemocao(page: Page) {
       exact: true,
     })
     .click();
-  const dialogo = page.locator('dialog.uni-dialog');
+  const dialogo = page.locator('dialog.uni-dialog[open]');
   await expect(dialogo).toBeVisible();
   return dialogo;
 }

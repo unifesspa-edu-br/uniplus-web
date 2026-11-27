@@ -299,7 +299,7 @@ test.describe('Precedência de fase — CRUD (#497)', () => {
         exact: true,
       })
       .click();
-    const dialog = page.locator('dialog.uni-dialog');
+    const dialog = page.locator('dialog.uni-dialog[open]');
     await dialog.getByRole('button', { name: 'Remover' }).click();
 
     await expect.poll(() => capturado.deletedIds.length).toBe(1);
@@ -378,7 +378,7 @@ test.describe('Precedência de fase — acessibilidade axe-core (#497)', () => {
         exact: true,
       })
       .click();
-    await expect(page.locator('dialog.uni-dialog')).toBeVisible();
+    await expect(page.locator('dialog.uni-dialog[open]')).toBeVisible();
     await assertSemViolacoesGraves(page);
   });
 });

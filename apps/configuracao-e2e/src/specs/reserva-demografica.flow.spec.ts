@@ -124,7 +124,7 @@ test.describe('Reserva demográfica — CRUD (#394)', () => {
       })
       .click();
     // confirma no dialog (escopo ao <dialog> para não pegar o botão da linha)
-    await page.locator('dialog.uni-dialog').getByRole('button', { name: 'Remover' }).click();
+    await page.locator('dialog.uni-dialog[open]').getByRole('button', { name: 'Remover' }).click();
 
     await expect.poll(() => capturado.deleted).toBe(true);
   });

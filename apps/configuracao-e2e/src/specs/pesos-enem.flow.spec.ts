@@ -245,7 +245,7 @@ test.describe('Peso ENEM — CRUD (#395)', () => {
 
     await page.getByRole('button', { name: `Remover resolução ${RESOLUCAO}`, exact: true }).click();
     await page
-      .locator('dialog.uni-dialog')
+      .locator('dialog.uni-dialog[open]')
       .getByRole('button', { name: 'Confirmar remoção', exact: true })
       .click();
 
