@@ -22,17 +22,28 @@ export function aguardarRecarga(
   comFalha: Signal<boolean>,
 ): EsperaDeRecarga {
   const aguardando = signal(false);
-  let iniciou = false;
+  const recargaTerminou = detectarRecargaTerminada(aguardando, carregando, comFalha);
   effect(() => {
-    if (!aguardando()) {
-      iniciou = false;
-      return;
-    }
-    if (carregando()) {
-      iniciou = true;
-    } else if (iniciou || comFalha()) {
+    if (recargaTerminou()) {
       untracked(() => aguardando.set(false));
     }
   });
   return { aguardando: aguardando.asReadonly(), iniciar: () => aguardando.set(true) };
+}
+
+/** A recarga termina quando a leitura que ela pediu acaba, ou quando a leitura falha sem ter começado. */
+function detectarRecargaTerminada(
+  aguardando: Signal<boolean>,
+  carregando: Signal<boolean>,
+  comFalha: Signal<boolean>,
+): () => boolean {
+  let leituraIniciou = false;
+  return () => {
+    if (!aguardando()) {
+      leituraIniciou = false;
+      return false;
+    }
+    leituraIniciou = leituraIniciou || carregando();
+    return !carregando() && (leituraIniciou || comFalha());
+  };
 }

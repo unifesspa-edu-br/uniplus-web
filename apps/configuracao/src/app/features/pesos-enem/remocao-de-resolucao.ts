@@ -1,9 +1,9 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
-import { ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
+import { ApiFailure, ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { PesosEnemApi } from '@uniplus/shared-data/configuracao';
+import { PesoAreaEnemDto, PesosEnemApi } from '@uniplus/shared-data/configuracao';
 import { EdicaoDosParametros } from './edicao-dos-parametros';
 import { GravacaoDosPesosEnem } from './gravacao-dos-pesos-enem';
 import { PesosEnemStore } from './pesos-enem.store';
@@ -88,6 +88,10 @@ export class RemocaoDeResolucao {
     if (!this.gravacao.tentar('removendo')) {
       return;
     }
+    this.enviarRemocoes(resolucao, linhas);
+  }
+
+  private enviarRemocoes(resolucao: string, linhas: readonly PesoAreaEnemDto[]): void {
     this.erro.set(null);
     // O identificador pode ser reaproveitado após a remoção: sem fechar a edição aqui, um
     // novo cadastro com o mesmo texto reabriria o formulário antigo, ligado a ids que não existem.
@@ -104,27 +108,39 @@ export class RemocaoDeResolucao {
   private concluir(resolucao: string, resultados: readonly ApiResult<void>[]): void {
     const falhas = resultados.filter((resultado) => !resultado.ok);
     if (falhas.length === 0) {
-      this.encerrar();
-      this.notifications.success('Resolução removida', resolucao);
-      this.gravacao.anunciar(`Resolução ${resolucao} removida.`);
+      this.concluirComSucesso(resolucao);
       return;
     }
     const titulos = falhas.map(({ problem }) => this.problemI18n.resolve(problem).title);
+    this.notificarErroDeServidor(falhas, titulos);
+    if (falhas.length === resultados.length) {
+      this.erro.set(titulos[0]);
+      return;
+    }
+    this.concluirParcial(resolucao, resultados.length - falhas.length, resultados.length);
+  }
+
+  private concluirComSucesso(resolucao: string): void {
+    this.encerrar();
+    this.notifications.success('Resolução removida', resolucao);
+    this.gravacao.anunciar(`Resolução ${resolucao} removida.`);
+  }
+
+  private notificarErroDeServidor(falhas: readonly ApiFailure[], titulos: readonly string[]): void {
     const erroDeServidor = falhas.findIndex(({ problem }) => problem.status >= 500);
     if (erroDeServidor >= 0) {
       this.notifications.errorFromProblem(falhas[erroDeServidor].problem, {
         title: titulos[erroDeServidor],
       });
     }
-    if (falhas.length === resultados.length) {
-      this.erro.set(titulos[0]);
-      return;
-    }
+  }
+
+  private concluirParcial(resolucao: string, removidos: number, total: number): void {
     this.encerrar();
     this.alvoParcial.set(resolucao);
     this.notifications.warning(
       'Remoção parcial',
-      `${resultados.length - falhas.length} de ${resultados.length} grupos foram removidos. ` +
+      `${removidos} de ${total} grupos foram removidos. ` +
         'Os demais não puderam ser removidos; confira a lista.',
     );
     this.gravacao.anunciar(`Remoção parcial da resolução ${resolucao}.`);

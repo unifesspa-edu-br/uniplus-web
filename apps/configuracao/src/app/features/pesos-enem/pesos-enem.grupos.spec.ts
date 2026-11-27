@@ -4,16 +4,9 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import { PesoAreaEnemDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  AREAS,
-  GRUPOS,
-  RES_805,
-  digitarNumeroInvalidoESair,
-  linhas750,
-  linhas805,
-  problem,
-  PaginaDeTeste,
-} from './pesos-enem.testing';
+import { AREAS, GRUPOS, RES_805, linhas750, linhas805 } from './pesos-enem-exemplos.testing';
+import { problem } from './pesos-enem-respostas.testing';
+import { digitarNumeroInvalidoESair, PaginaDeTeste } from './pesos-enem.testing';
 
 describe('PesosEnemPage — lista de grupos', () => {
   let t: PaginaDeTeste;
@@ -44,7 +37,7 @@ describe('PesosEnemPage — lista de grupos', () => {
       headers: { 'content-type': 'application/problem+json' },
     });
     t.expectListagem().flush([...linhas805]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
@@ -67,20 +60,20 @@ describe('PesosEnemPage — lista de grupos', () => {
 
     // A edição em linha funciona: ela usa as linhas e as áreas, não a lista de grupos.
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     expect(t.edicao.form()?.controls.map((g) => g.controls.grupoCurso.value.codigo)).toEqual(
       linhas805.map((l) => l.grupoCurso.codigo),
     );
     t.edicao.cancelar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-grupos-tentar')?.click();
-    await t.propagate();
+    await t.atualizarAplicacao();
     // Só a lista que falhou é pedida de novo: as áreas já tinham chegado.
     t.expectGrupos().flush([...GRUPOS]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     expect(t.store.catalogoGrupos.falhou()).toBe(false);
@@ -98,12 +91,12 @@ describe('PesosEnemPage — lista de grupos', () => {
       headers: { 'content-type': 'application/problem+json' },
     });
     t.expectListagem().flush([...linhas805]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     // Edição em linha aberta, com texto inválido num corte e o operador fora do campo.
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     const corte = t.inputDaEdicao('corte', 0, 0);
     digitarNumeroInvalidoESair(corte);
@@ -114,7 +107,7 @@ describe('PesosEnemPage — lista de grupos', () => {
     expect(erroDoCorte()).toBe('Número inválido.');
 
     raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-grupos-tentar')?.click();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     // Antes de a tentativa responder: linhas, edição e erro continuam na tela.
@@ -125,14 +118,14 @@ describe('PesosEnemPage — lista de grupos', () => {
     expect(erroDoCorte()).toBe('Número inválido.');
 
     grupos.flush([...GRUPOS]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     // Depois: o erro continua, e Salvar não envia o corte apagado.
     expect(raiz.querySelector(`[id="${corte.id}"]`)).toBe(corte);
     expect(erroDoCorte()).toBe('Número inválido.');
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.controller.expectNone((r) => r.method === 'PUT');
   });
 
@@ -149,7 +142,7 @@ describe('PesosEnemPage — lista de grupos', () => {
       headers: { 'content-type': 'application/problem+json' },
     });
     t.expectListagem().flush([...ordemDaApi(linhas805), ...ordemDaApi(linhas750)]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
@@ -158,22 +151,22 @@ describe('PesosEnemPage — lista de grupos', () => {
     const naOrdemDaApi = ordemDaApi(linhas805).map((l) => l.grupoCurso.rotulo);
 
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     // Edição (Res. 805) e leitura (Res. 750) na ordem da API.
     expect(rotulos()).toEqual([...naOrdemDaApi, ...naOrdemDaApi]);
 
     // Os grupos chegam no meio da edição: nada se reordena, nem a edição nem a leitura.
     raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-grupos-tentar')?.click();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.expectGrupos().flush([...GRUPOS]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     expect(rotulos()).toEqual([...naOrdemDaApi, ...naOrdemDaApi]);
 
     // Fechada a edição, a ordem dos grupos vale para todas as resoluções.
     t.edicao.cancelar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     const naOrdemDosGrupos = GRUPOS.map((grupo) => grupo.rotulo);
     expect(rotulos()).toEqual([...naOrdemDosGrupos, ...naOrdemDosGrupos]);
@@ -192,7 +185,7 @@ describe('PesosEnemPage — lista de grupos', () => {
       headers: { 'content-type': 'application/problem+json' },
     });
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     expect(erroSpy).toHaveBeenCalledTimes(1);
@@ -214,7 +207,7 @@ describe('PesosEnemPage — lista de grupos', () => {
       headers: { 'content-type': 'application/problem+json' },
     });
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const titulo = TestBed.inject(ProblemI18nService).resolve(semPermissao).title;

@@ -1,7 +1,7 @@
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
-import { escolherArquivoNoCampo } from './interacao.testing';
+import { escolherArquivoNoCampo } from '../../shared/interacao-com-a-tela/interacao-com-a-tela.testing';
 import { ok, pedido, recusa } from './testes';
 import { dublesDoPedirAcesso, montarPedirAcesso, versaoDoTermo } from './pedir-acesso.page.testing';
 

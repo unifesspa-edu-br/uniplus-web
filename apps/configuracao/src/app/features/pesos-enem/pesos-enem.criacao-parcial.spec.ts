@@ -1,13 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  BASE,
-  LIST_URL,
-  PaginaDeTeste,
-  RES_805,
-  areaDo,
-  linhas805,
-  problem,
-} from './pesos-enem.testing';
+import { BASE, LIST_URL, RES_805, linhas805 } from './pesos-enem-exemplos.testing';
+import { problem } from './pesos-enem-respostas.testing';
+import { PaginaDeTeste, areaDo } from './pesos-enem.testing';
 
 describe('PesosEnemPage — cadastro com sucesso parcial', () => {
   let t: PaginaDeTeste;
@@ -29,7 +23,7 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
       baseLegalGlobal: 'Res. 900/2026 Anexo I',
     });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
@@ -50,19 +44,19 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
     );
     requests[2]?.flush('novo-id-2', { status: 201, statusText: 'Created' });
     requests[3]?.flush('novo-id-3', { status: 201, statusText: 'Created' });
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     // Simula o fechamento real: o botão Cancelar (ou X/Esc do próprio
     // ui-drawer) muda `drawerAberto`, e o drawer emite `(closed)` ao
     // terminar de fechar — aoFecharDrawerCriacao() é o handler desse evento.
     t.criacao.aberto.set(false);
     t.criacao.aoFechar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.criacao.aberto()).toBe(false);
     // A recarga da lista é disparada — sem ela, este GET não seria esperado.
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
   });
 
   it('PesosEnemPage_CancelarDrawerSemSucessoParcial_NaoRecarrega', async () => {
@@ -70,7 +64,7 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
     t.criacao.abrir();
     t.criacao.aberto.set(false);
     t.criacao.aoFechar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.criacao.aberto()).toBe(false);
     t.controller.expectNone((r) => r.url === LIST_URL);
@@ -89,7 +83,7 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
       baseLegalGlobal: 'Res. 900/2026 Anexo I',
     });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
@@ -99,7 +93,7 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
     // Usuário fecha o drawer (X/Esc) antes de qualquer POST responder.
     t.criacao.aberto.set(false);
     t.criacao.aoFechar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.controller.expectNone((r) => r.url === LIST_URL);
 
     // Só agora as respostas chegam — 1 falha, 3 sucesso.
@@ -118,10 +112,10 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
     );
     requests[2]?.flush('novo-id-2', { status: 201, statusText: 'Created' });
     requests[3]?.flush('novo-id-3', { status: 201, statusText: 'Created' });
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
   });
 
   it('PesosEnemPage_ReabrirDrawerDuranteSubmit_NaoResetaSessaoEmVoo', async () => {
@@ -137,7 +131,7 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
       baseLegalGlobal: 'Res. 900/2026 Anexo I',
     });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
@@ -151,9 +145,9 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
     for (const req of requests) {
       req.flush(`novo-id`, { status: 201, statusText: 'Created' });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     // Só agora, com o envio concluído, abrir reseta normalmente.
     t.criacao.abrir();
@@ -174,7 +168,7 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
       baseLegalGlobal: 'Res. 900/2026 Anexo I',
     });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const primeiraRodada = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
@@ -195,13 +189,13 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
     );
     primeiraRodada[2]?.flush('novo-id-2', { status: 201, statusText: 'Created' });
     primeiraRodada[3]?.flush('novo-id-3', { status: 201, statusText: 'Created' });
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     // Muda um valor do grupo que falhou (a recusa sem `errors[]` vai ao banner) e
     // reenvia (retry só do pendente).
     areaDo(t.criacao.form.controls.grupos.controls[1], 'REDACAO').controls.peso.setValue(2.0);
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     const retry = t.controller.expectOne(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
     );
@@ -209,14 +203,14 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
     // Fecha o drawer ENQUANTO o retry ainda está em voo — não deve disparar GET.
     t.criacao.aberto.set(false);
     t.criacao.aoFechar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.controller.expectNone((r) => r.url === LIST_URL);
 
     // Só quando o retry resolve com sucesso o reload de fato acontece.
     retry.flush('novo-id-1', { status: 201, statusText: 'Created' });
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
   });
 
   it('PesosEnemPage_ResolucaoDuplicada_MapeiaErroNoCampo', async () => {
@@ -227,7 +221,7 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
       baseLegalGlobal: 'Res. 805/2024 Anexo I',
     });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
@@ -240,7 +234,7 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
         headers: { 'content-type': 'application/problem+json' },
       });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.erroDoCampoLote('resolucao')).toBe(
       'Resolução já cadastrada. Informe um identificador diferente.',
@@ -262,7 +256,7 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
       baseLegalGlobal: 'Res. 900/2026 Anexo I',
     });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
@@ -279,7 +273,7 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
     );
     requests[2]?.flush('novo-id-2', { status: 201, statusText: 'Created' });
     requests[3]?.flush('novo-id-3', { status: 201, statusText: 'Created' });
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.criacao.form.controls.resolucao.disabled).toBe(true);
     expect(t.erroDoCampoLote('resolucao')).toBeNull();
@@ -298,7 +292,7 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
       baseLegalGlobal: 'Res. 900/2026 Anexo I',
     });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
@@ -312,7 +306,7 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
     });
     requests[2]?.flush('novo-id-2', { status: 201, statusText: 'Created' });
     requests[3]?.flush('novo-id-3', { status: 201, statusText: 'Created' });
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.criacao.form.controls.resolucao.disabled).toBe(true);
 
@@ -324,7 +318,7 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
     await t.carregarUmaPagina([]);
     t.criacao.abrir();
     t.criacao.form.controls.baseLegalGlobal.setValue('Res. 900/2026 Anexo I');
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     for (const grupo of t.criacao.form.controls.grupos.controls) {
       expect(grupo.controls.baseLegal.value).toBe('Res. 900/2026 Anexo I');
@@ -343,7 +337,7 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
       baseLegalGlobal: 'Base original',
     });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
@@ -364,10 +358,10 @@ describe('PesosEnemPage — cadastro com sucesso parcial', () => {
     );
     requests[2]?.flush('novo-id-2', { status: 201, statusText: 'Created' });
     requests[3]?.flush('novo-id-3', { status: 201, statusText: 'Created' });
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     t.criacao.form.controls.baseLegalGlobal.setValue('Base corrigida');
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.criacao.form.controls.grupos.controls[0]?.controls.baseLegal.value).toBe(
       'Base original',

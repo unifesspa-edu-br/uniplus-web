@@ -35,12 +35,17 @@ function identificadorDaOferta(
   ].join(' · ');
 }
 
-/** Quando duas linhas coincidem em todas as colunas do nome, um ordinal ("1 de 2") as separa. */
-function comOrdinais(nomes: readonly string[]): readonly string[] {
+function contarRepeticoes(nomes: readonly string[]): ReadonlyMap<string, number> {
   const total = new Map<string, number>();
   for (const nome of nomes) {
     total.set(nome, (total.get(nome) ?? 0) + 1);
   }
+  return total;
+}
+
+/** Quando duas linhas coincidem em todas as colunas do nome, um ordinal ("1 de 2") as separa. */
+function comOrdinais(nomes: readonly string[]): readonly string[] {
+  const total = contarRepeticoes(nomes);
   const vistos = new Map<string, number>();
   return nomes.map((nome) => {
     const repeticoes = total.get(nome) ?? 1;

@@ -17,6 +17,23 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { expect } from 'vitest';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
+import {
+  AREAS,
+  AREAS_URL,
+  BASE,
+  ESCRITA,
+  GRUPOS,
+  GRUPOS_URL,
+  LIST_URL,
+  RES_805,
+  linhas805,
+} from './pesos-enem-exemplos.testing';
+import {
+  ERRO_500,
+  flushProblema,
+  problem,
+  responderCriacoes,
+} from './pesos-enem-respostas.testing';
 import { CriacaoDeResolucao } from './criacao-de-resolucao';
 import { EdicaoDosParametros } from './edicao-dos-parametros';
 import { GravacaoDosPesosEnem } from './gravacao-dos-pesos-enem';
@@ -26,167 +43,6 @@ import type { AreaForm, PesoEdicaoGrupoForm } from './pesos-enem-form';
 import type { CampoDaArea } from './pesos-enem-limites';
 import { PesosEnemPage } from './pesos-enem.page';
 import { PesosEnemStore } from './pesos-enem.store';
-
-export const BASE = 'http://localhost:5000';
-export const LIST_URL = `${BASE}/api/configuracao/pesos-area-enem`;
-export const AREAS_URL = `${BASE}/api/configuracao/pesos-area-enem/areas`;
-export const ESCRITA = `${BASE}/api/configuracao/admin/pesos-area-enem`;
-export const GRUPOS_URL = `${BASE}/api/configuracao/vocabularios/grupos-area-enem`;
-
-/** As cinco áreas como a API as devolve: código, rótulo oficial e ordem canônica. */
-export const AREAS: readonly AreaPesoAreaEnemDto[] = [
-  { codigo: 'REDACAO', rotulo: 'Redação' },
-  { codigo: 'CIENCIAS_DA_NATUREZA', rotulo: 'Ciências da Natureza e suas Tecnologias' },
-  { codigo: 'CIENCIAS_HUMANAS', rotulo: 'Ciências Humanas e suas Tecnologias' },
-  { codigo: 'LINGUAGENS', rotulo: 'Linguagens e suas Tecnologias' },
-  { codigo: 'MATEMATICA', rotulo: 'Matemática e suas Tecnologias' },
-];
-
-/** Os grupos de área do ENEM como a API os devolve: código, rótulo e ordem. */
-export const GRUPOS: readonly GrupoAreaEnemDto[] = [
-  { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
-  { codigo: 'HUMANISTICA_I', rotulo: 'Humanística I' },
-  { codigo: 'HUMANISTICA_II', rotulo: 'Humanística II' },
-  { codigo: 'SAUDE_E_BIOLOGICAS', rotulo: 'Saúde e Biológicas' },
-];
-
-export function grupo(codigo: string): GrupoAreaEnemDto {
-  const encontrado = GRUPOS.find((g) => g.codigo === codigo);
-  if (!encontrado) throw new Error(`grupo ${codigo} ausente dos fixtures`);
-  return encontrado;
-}
-
-/** Pesos padrão por código; a Redação tem corte 400, as demais não têm corte. */
-const PESOS_PADRAO: Readonly<Record<string, number>> = {
-  REDACAO: 1,
-  CIENCIAS_DA_NATUREZA: 1.5,
-  CIENCIAS_HUMANAS: 1,
-  LINGUAGENS: 1,
-  MATEMATICA: 2.5,
-};
-
-export function linha(
-  overrides: Partial<PesoAreaEnemDto> & Pick<PesoAreaEnemDto, 'id' | 'resolucao' | 'grupoCurso'>,
-): PesoAreaEnemDto {
-  return {
-    areas: AREAS.map((area) => ({
-      codigo: area.codigo,
-      rotulo: area.rotulo,
-      peso: PESOS_PADRAO[area.codigo] ?? 1,
-      corte: area.codigo === 'REDACAO' ? 400 : null,
-    })),
-    baseLegal: 'Res. 805/2024 Anexo I',
-    criadoEm: '2026-06-24T12:00:00Z',
-    ...overrides,
-  };
-}
-
-/** Peso de uma área numa linha de `registros`. */
-export function pesoDe(
-  dto: PesoAreaEnemDto | undefined,
-  codigo: string,
-): number | string | undefined {
-  return dto?.areas.find((area) => area.codigo === codigo)?.peso;
-}
-
-export const RES_805 = 'Res. 805/2024';
-export const RES_750 = 'Res. 750/2022';
-
-export const linhas805: readonly PesoAreaEnemDto[] = [
-  linha({
-    id: '01960000-0000-7000-0000-0000000000a1',
-    resolucao: RES_805,
-    grupoCurso: grupo('TECNOLOGICA'),
-  }),
-  linha({
-    id: '01960000-0000-7000-0000-0000000000a2',
-    resolucao: RES_805,
-    grupoCurso: grupo('HUMANISTICA_I'),
-  }),
-  linha({
-    id: '01960000-0000-7000-0000-0000000000a3',
-    resolucao: RES_805,
-    grupoCurso: grupo('HUMANISTICA_II'),
-  }),
-  linha({
-    id: '01960000-0000-7000-0000-0000000000a4',
-    resolucao: RES_805,
-    grupoCurso: grupo('SAUDE_E_BIOLOGICAS'),
-  }),
-];
-
-export const linhas750: readonly PesoAreaEnemDto[] = [
-  linha({
-    id: '01960000-0000-7000-0000-0000000000b1',
-    resolucao: RES_750,
-    grupoCurso: grupo('TECNOLOGICA'),
-    criadoEm: '2025-01-10T12:00:00Z',
-  }),
-  linha({
-    id: '01960000-0000-7000-0000-0000000000b2',
-    resolucao: RES_750,
-    grupoCurso: grupo('HUMANISTICA_I'),
-    criadoEm: '2025-01-10T12:00:00Z',
-  }),
-  linha({
-    id: '01960000-0000-7000-0000-0000000000b3',
-    resolucao: RES_750,
-    grupoCurso: grupo('HUMANISTICA_II'),
-    criadoEm: '2025-01-10T12:00:00Z',
-  }),
-  linha({
-    id: '01960000-0000-7000-0000-0000000000b4',
-    resolucao: RES_750,
-    grupoCurso: grupo('SAUDE_E_BIOLOGICAS'),
-    criadoEm: '2025-01-10T12:00:00Z',
-  }),
-];
-
-export function problem(
-  status: number,
-  code: string,
-  title: string,
-  errors?: readonly { field: string; code: string; message: string }[],
-): string {
-  return JSON.stringify({
-    type: `https://unifesspa-edu-br.github.io/uniplus-developers/erros/${code}`,
-    title,
-    status,
-    code,
-    traceId: 'test-trace',
-    errors,
-  });
-}
-
-export const ERRO_500 = {
-  status: 500,
-  statusText: 'Internal Server Error',
-  headers: { 'content-type': 'application/problem+json' },
-};
-
-export const SEM_CORPO = { status: 204, statusText: 'No Content' } as const;
-export const CRIADO = { status: 201, statusText: 'Created' } as const;
-
-export function recusa(status: number, code: string, errors?: Parameters<typeof problem>[3]) {
-  return [
-    problem(status, code, 'Falha', errors),
-    { status, statusText: 'Erro', headers: { 'content-type': 'application/problem+json' } },
-  ] as const;
-}
-
-export function recusa422(
-  req: TestRequest | undefined,
-  errors: readonly { field: string; code: string; message: string }[],
-): void {
-  req?.flush(
-    problem(422, errors[0]?.code ?? 'uniplus.configuracao.peso_area_enem.regra', 'Recusa', errors),
-    {
-      status: 422,
-      statusText: 'Unprocessable Entity',
-      headers: { 'content-type': 'application/problem+json' },
-    },
-  );
-}
 
 /** Controles de uma área (peso, corte) dentro de um grupo do formulário. */
 export function areaDo(
@@ -223,14 +79,18 @@ export function digitarNumeroInvalidoESair(input: HTMLInputElement): void {
 }
 
 export type FormularioDaEdicao = NonNullable<ReturnType<EdicaoDosParametros['form']>>;
+export interface RequisicoesDaEdicao {
+  readonly primeira: TestRequest;
+  readonly demais: readonly TestRequest[];
+}
 export type GrupoEmEdicao = FormGroup<PesoEdicaoGrupoForm>;
 
-/** A tela montada para o teste: o componente e as classes que a página provê. */
 /** Indisponível pelo atributo `disabled` (ações da linha) ou por `aria-disabled` (botões que ficam focáveis). */
 export function indisponivel(botao: HTMLElement): boolean {
   return botao.matches(':disabled') || botao.getAttribute('aria-disabled') === 'true';
 }
 
+/** A tela montada para o teste: o componente e as classes que a página provê. */
 export class PaginaDeTeste {
   readonly fixture: ComponentFixture<PesosEnemPage>;
   readonly controller: HttpTestingController;
@@ -251,7 +111,7 @@ export class PaginaDeTeste {
     this.appRef = TestBed.inject(ApplicationRef);
   }
 
-  get raiz(): HTMLElement {
+  get elementoDaPagina(): HTMLElement {
     return this.fixture.nativeElement as HTMLElement;
   }
 
@@ -279,7 +139,7 @@ export class PaginaDeTeste {
     this.controller.verify();
   }
 
-  async propagate(): Promise<void> {
+  async atualizarAplicacao(): Promise<void> {
     await Promise.resolve();
     this.appRef.tick();
   }
@@ -317,25 +177,25 @@ export class PaginaDeTeste {
     this.expectAreas().flush([...areas]);
     this.expectGrupos().flush([...grupos]);
     this.expectListagem().flush([...dados]);
-    await this.propagate();
+    await this.atualizarAplicacao();
     this.fixture.detectChanges();
   }
 
   /** Propaga o ciclo de detecção e atualiza a view, como a pessoa veria a tela. */
   async propagar(): Promise<void> {
-    await this.propagate();
+    await this.atualizarAplicacao();
     this.fixture.detectChanges();
   }
 
   elemento<T extends HTMLElement>(seletor: string): T {
-    const encontrado = this.raiz.querySelector<T>(seletor);
+    const encontrado = this.elementoDaPagina.querySelector<T>(seletor);
     expect(encontrado, seletor).not.toBeNull();
     return encontrado as T;
   }
 
   /** O primeiro botão com este texto. */
   botao(texto: string): HTMLButtonElement {
-    const botao = [...this.raiz.querySelectorAll<HTMLButtonElement>('button')].find(
+    const botao = [...this.elementoDaPagina.querySelectorAll<HTMLButtonElement>('button')].find(
       (candidato) => candidato.textContent?.trim() === texto,
     );
     expect(botao, texto).toBeDefined();
@@ -386,8 +246,99 @@ export class PaginaDeTeste {
     return this.controller.match((r) => r.url.startsWith(`${ESCRITA}/`) && r.method === 'PUT');
   }
 
+  formularioDaEdicao(): FormularioDaEdicao {
+    const formulario = this.edicao.form();
+    if (formulario === null) throw new Error('a edição está fechada: não há formulário');
+    return formulario;
+  }
+
+  /** Abre a edição de RES_805 e salva pelo modelo; devolve o primeiro PUT e os demais. */
+  async enviarEdicaoPeloModelo(): Promise<RequisicoesDaEdicao> {
+    this.edicao.pedirEdicao(RES_805);
+    await this.atualizarAplicacao();
+    this.edicao.salvar();
+    await this.atualizarAplicacao();
+    const [primeira, ...demais] = linhas805.map((linha) =>
+      this.controller.expectOne(`${ESCRITA}/${linha.id}`),
+    );
+    if (primeira === undefined) throw new Error('a resolução de exemplo não tem linhas');
+    return { primeira, demais };
+  }
+
+  preencherResolucaoDoCadastro(): void {
+    this.criacao.form.patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+  }
+
+  async abrirCadastroPreenchido(): Promise<void> {
+    this.criacao.abrir();
+    this.preencherResolucaoDoCadastro();
+    await this.atualizarAplicacao();
+  }
+
+  /** Cria com o primeiro POST em erro interno; devolve a chave de idempotência dele. */
+  async criarComFalhaTransitoriaNoPrimeiro(): Promise<string | null> {
+    await this.abrirCadastroPreenchido();
+    const [primeira, ...demais] = await this.enviarCriacaoPeloModelo();
+    expect(demais).toHaveLength(3);
+    const chave = primeira?.request.headers.get('Idempotency-Key') ?? null;
+    flushProblema(primeira, ERRO_500, problem(500, 'uniplus.internal.unexpected', 'Erro interno'));
+    responderCriacoes(demais);
+    await this.atualizarAplicacao();
+    return chave;
+  }
+
+  conferirCamposDoFormularioDesabilitados(): void {
+    const campos = [...this.elementoDaPagina.querySelectorAll<HTMLInputElement>('ui-drawer input')];
+    expect(campos.length).toBeGreaterThan(0);
+    expect(campos.every((campo) => campo.matches(':disabled'))).toBe(true);
+  }
+
+  conferirCamposDaGradeDesabilitados(): void {
+    const inputs = [...this.elementoDaPagina.querySelectorAll<HTMLInputElement>('.pe-grid input')];
+    expect(inputs.length).toBeGreaterThan(0);
+    expect(inputs.every((input) => input.matches(':disabled'))).toBe(true);
+  }
+
+  linhasEmEdicaoDesabilitadas(): boolean[] {
+    return this.formularioDaEdicao().controls.map((grupo) => grupo.disabled);
+  }
+
+  gruposDoCadastroDesabilitados(): boolean[] {
+    return this.criacao.form.controls.grupos.controls.map((grupo) => grupo.disabled);
+  }
+
+  blocosDoDrawerDesabilitados(): boolean[] {
+    const blocos = this.elementoDaPagina.querySelectorAll<HTMLFieldSetElement>(
+      'ui-drawer fieldset.field-group',
+    );
+    return [...blocos].map((bloco) => bloco.disabled);
+  }
+
+  legendasDosGrupos(): (string | undefined)[] {
+    return Array.from(this.elementoDaPagina.querySelectorAll('.field-group legend'), (legenda) =>
+      legenda.textContent?.replace(/\s+/g, ' ').trim(),
+    );
+  }
+
+  /** Cria pelo modelo e devolve os POST. */
+  async enviarCriacaoPeloModelo(): Promise<TestRequest[]> {
+    this.criacao.criar();
+    await this.atualizarAplicacao();
+    return this.controller.match((r) => r.url === ESCRITA);
+  }
+
+  /** Reenvia a criação e devolve o único POST pendente. */
+  async reenviarCriacaoPeloModelo(): Promise<TestRequest> {
+    this.criacao.criar();
+    await this.atualizarAplicacao();
+    return this.controller.expectOne((r) => r.url === ESCRITA);
+  }
+
   inputDaEdicao(campo: 'peso' | 'corte', grupo: number, area: number): HTMLInputElement {
-    const input = this.raiz.querySelector<HTMLInputElement>(
+    const input = this.elementoDaPagina.querySelector<HTMLInputElement>(
       `#pe-res-805-2024-g${grupo}-a${area}-${campo}`,
     );
     if (!input) throw new Error(`input de ${campo} (g${grupo}, a${area}) ausente`);

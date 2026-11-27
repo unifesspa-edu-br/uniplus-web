@@ -4,14 +4,14 @@ import {
   AREAS,
   GRUPOS,
   LIST_URL,
-  PaginaDeTeste,
   RES_750,
   RES_805,
   grupo,
   linha,
   linhas750,
   linhas805,
-} from './pesos-enem.testing';
+} from './pesos-enem-exemplos.testing';
+import { PaginaDeTeste } from './pesos-enem.testing';
 
 describe('PesosEnemPage — leitura', () => {
   let t: PaginaDeTeste;
@@ -52,11 +52,11 @@ describe('PesosEnemPage — leitura', () => {
     pagina1.flush([...linhas805], {
       headers: { Link: `<${LIST_URL}?cursor=abc&direction=next>; rel="next"` },
     });
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const pagina2 = t.expectListagem();
     pagina2.flush([...linhas750]);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.store.resolucoes()).toEqual([RES_805, RES_750]);
     expect(t.store.porResolucao().get(RES_805)).toHaveLength(4);
@@ -139,7 +139,7 @@ describe('PesosEnemPage — leitura', () => {
     expect(cabecalhos).toHaveLength(AREAS.length);
 
     t.criacao.abrir();
-    await t.propagate();
+    await t.atualizarAplicacao();
     for (const grupo of t.criacao.form.controls.grupos.controls) {
       expect(grupo.controls.areas.controls.map((a) => a.controls.codigo.value)).toEqual(
         AREAS.map((a) => a.codigo),
@@ -153,7 +153,7 @@ describe('PesosEnemPage — leitura', () => {
     await t.carregarUmaPagina([...linhas805], areas, grupos);
 
     t.criacao.abrir();
-    await t.propagate();
+    await t.atualizarAplicacao();
     const [primeiro] = t.criacao.form.controls.grupos.controls;
     expect(primeiro?.controls.grupoCurso.value.codigo).toBe(GRUPOS[0]?.codigo);
     expect(primeiro?.controls.areas.controls.map((a) => a.controls.codigo.value)).toEqual(
@@ -280,7 +280,7 @@ describe('PesosEnemPage — leitura', () => {
   it('PesosEnemPage_Textos_AtribuemAResolucaoAoConsepeENaoAoInep', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.criacao.abrir();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const texto = ((t.fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\s+/g, ' ');
@@ -298,13 +298,13 @@ describe('PesosEnemPage — leitura', () => {
     const areas = t.expectAreas();
     t.expectGrupos().flush([...GRUPOS]);
     t.expectListagem().flush([...linhas805]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     const raiz = t.fixture.nativeElement as HTMLElement;
     expect(raiz.querySelectorAll('ui-skeleton').length).toBeGreaterThan(0);
 
     areas.flush([...AREAS]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     expect(raiz.querySelectorAll('ui-skeleton')).toHaveLength(0);
   });

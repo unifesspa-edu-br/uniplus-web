@@ -16,7 +16,7 @@ import {
   GRUPOS_URL,
   LIST_URL,
   linhas805,
-} from './pesos-enem.testing';
+} from './pesos-enem-exemplos.testing';
 
 describe('PesosEnemPage — grupos de área vindos do catálogo compartilhado', () => {
   let controller: HttpTestingController;

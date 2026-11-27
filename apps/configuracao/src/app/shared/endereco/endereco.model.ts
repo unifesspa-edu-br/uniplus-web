@@ -84,17 +84,27 @@ function enderecoDoDto(
 ): EnderecoEstruturado {
   return {
     cep: coagirTexto(endereco.cep),
-    logradouro: coagirTexto(endereco.logradouro),
-    numero: coagirTexto(endereco.numero),
-    complemento: coagirTexto(endereco.complemento),
-    bairro: coagirTexto(endereco.bairro),
-    distrito: coagirTexto(endereco.distrito),
-    cidade: cidade ? { codigoIbge: cidade.codigoIbge, nome: cidade.nome, uf: cidade.uf } : null,
+    ...logradouroEComplementosLidos(endereco),
+    cidade: cidade ? copiaDaCidade(cidade) : null,
     latitude: coordenadaComoTexto(endereco.latitude),
     longitude: coordenadaComoTexto(endereco.longitude),
     nivelResolucao: endereco.nivelResolucao ?? null,
     origem: endereco.origem ?? null,
   };
+}
+
+function logradouroEComplementosLidos(endereco: EnderecoGeoLeitura) {
+  return {
+    logradouro: coagirTexto(endereco.logradouro),
+    numero: coagirTexto(endereco.numero),
+    complemento: coagirTexto(endereco.complemento),
+    bairro: coagirTexto(endereco.bairro),
+    distrito: coagirTexto(endereco.distrito),
+  };
+}
+
+function copiaDaCidade(cidade: CidadeRef): CidadeRef {
+  return { codigoIbge: cidade.codigoIbge, nome: cidade.nome, uf: cidade.uf };
 }
 
 function soComCidade(cidade: CidadeRef): EnderecoEstruturado {
@@ -105,7 +115,7 @@ function soComCidade(cidade: CidadeRef): EnderecoEstruturado {
     complemento: null,
     bairro: null,
     distrito: null,
-    cidade: { codigoIbge: cidade.codigoIbge, nome: cidade.nome, uf: cidade.uf },
+    cidade: copiaDaCidade(cidade),
     latitude: null,
     longitude: null,
     nivelResolucao: null,
@@ -124,11 +134,7 @@ export function enderecoParaCommand(e: EnderecoEstruturado | null): EnderecoComm
   if (e === null || e.cidade === null) {
     return { cidadeCodigoIbge: null, cidadeNome: null, cidadeUf: null, endereco: null };
   }
-  const cidade: CidadeRef = {
-    codigoIbge: e.cidade.codigoIbge,
-    nome: e.cidade.nome,
-    uf: e.cidade.uf,
-  };
+  const cidade = copiaDaCidade(e.cidade);
   return {
     cidadeCodigoIbge: cidade.codigoIbge,
     cidadeNome: cidade.nome,
@@ -144,17 +150,23 @@ function enderecoParaEnvio(e: EnderecoEstruturado, cidade: CidadeRef): EnderecoG
     return null;
   }
   return {
+    ...logradouroEComplementos(e),
     cep: cepDigitos,
-    logradouro: e.logradouro,
-    numero: e.numero,
-    complemento: e.complemento,
-    bairro: e.bairro,
-    distrito: e.distrito,
     cidade,
     latitude: coordenadaComoNumero(e.latitude),
     longitude: coordenadaComoNumero(e.longitude),
     nivelResolucao: e.nivelResolucao ?? 'cidade',
     origem: e.origem ?? ORIGEM_MANUAL,
+  };
+}
+
+function logradouroEComplementos(e: EnderecoEstruturado) {
+  return {
+    logradouro: e.logradouro,
+    numero: e.numero,
+    complemento: e.complemento,
+    bairro: e.bairro,
+    distrito: e.distrito,
   };
 }
 

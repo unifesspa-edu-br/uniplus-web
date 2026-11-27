@@ -37,27 +37,8 @@ export class PaginaPorCursor<T> {
     this.carregando.set(true);
     this.problema.set(null);
     this.assinatura = this.buscar(pagina).subscribe({
-      next: (resultado) => {
-        this.carregando.set(false);
-        if (!resultado.ok) {
-          this.recusar(resultado.problem);
-          return;
-        }
-        const link = resultado.headers.get('Link');
-        this.itens.set(resultado.data);
-        this.anterior.set(extractPrevCursor(link));
-        this.proximo.set(extractNextCursor(link));
-      },
-      error: () => {
-        this.carregando.set(false);
-        this.recusar({
-          type: 'about:blank',
-          title: 'Não foi possível carregar a lista. Tente novamente.',
-          status: 0,
-          code: CLIENT_PROBLEM_CODES.UNEXPECTED_RESPONSE,
-          traceId: '',
-        });
-      },
+      next: (resultado) => this.receber(resultado),
+      error: () => this.falharSemResposta(),
     });
   }
 
@@ -69,6 +50,29 @@ export class PaginaPorCursor<T> {
     this.itens.set([]);
     this.anterior.set(null);
     this.proximo.set(null);
+  }
+
+  private receber(resultado: ApiResult<readonly T[]>): void {
+    this.carregando.set(false);
+    if (!resultado.ok) {
+      this.recusar(resultado.problem);
+      return;
+    }
+    const link = resultado.headers.get('Link');
+    this.itens.set(resultado.data);
+    this.anterior.set(extractPrevCursor(link));
+    this.proximo.set(extractNextCursor(link));
+  }
+
+  private falharSemResposta(): void {
+    this.carregando.set(false);
+    this.recusar({
+      type: 'about:blank',
+      title: 'Não foi possível carregar a lista. Tente novamente.',
+      status: 0,
+      code: CLIENT_PROBLEM_CODES.UNEXPECTED_RESPONSE,
+      traceId: '',
+    });
   }
 
   private recusar(problema: ProblemDetails): void {

@@ -1,14 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  BASE,
-  RES_805,
-  areaDo,
-  erroDaArea,
-  linhas805,
-  pesoDe,
-  problem,
-  PaginaDeTeste,
-} from './pesos-enem.testing';
+import { BASE, RES_805, linhas805, pesoDe } from './pesos-enem-exemplos.testing';
+import { problem } from './pesos-enem-respostas.testing';
+import { areaDo, erroDaArea, PaginaDeTeste } from './pesos-enem.testing';
 
 describe('PesosEnemPage — envio da edição em linha', () => {
   let t: PaginaDeTeste;
@@ -22,12 +15,12 @@ describe('PesosEnemPage — envio da edição em linha', () => {
   it('PesosEnemPage_Salvar_CoordenaQuatroChamadasComIdempotencyKeyDistintas', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const form = t.edicao.form();
     areaDo(form?.controls[0], 'MATEMATICA').controls.peso.setValue(3.0);
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -39,7 +32,7 @@ describe('PesosEnemPage — envio da edição em linha', () => {
       req.flush(null, { status: 204, statusText: 'No Content' });
     }
     expect(chaves.size).toBe(4);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.edicao.emEdicao()).toBeNull();
     expect(
@@ -53,11 +46,11 @@ describe('PesosEnemPage — envio da edição em linha', () => {
   it('PesosEnemPage_Salvar_CorteForaDaRedacaoVaiNoItemDaArea', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     areaDo(t.edicao.form()?.controls[0], 'MATEMATICA').controls.corte.setValue(450);
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -75,7 +68,7 @@ describe('PesosEnemPage — envio da edição em linha', () => {
     for (const req of requests) {
       req.flush(null, { status: 204, statusText: 'No Content' });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
   });
 
   it('PesosEnemPage_CorteVazioNaEdicao_ViajaComoSemCorte', async () => {
@@ -83,7 +76,7 @@ describe('PesosEnemPage — envio da edição em linha', () => {
     // obrigatório — o PUT leva corte null para a área.
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const redacao = areaDo(t.edicao.form()?.controls[0], 'REDACAO');
     redacao.controls.corte.setValue(null);
@@ -92,7 +85,7 @@ describe('PesosEnemPage — envio da edição em linha', () => {
     expect(erroDaArea(redacao, 'corte')).toBeNull();
 
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     const requests = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
     );
@@ -103,7 +96,7 @@ describe('PesosEnemPage — envio da edição em linha', () => {
     for (const req of requests) {
       req.flush(null, { status: 204, statusText: 'No Content' });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
   });
 
   it('PesosEnemPage_IdempotencyKey_PreservadaEmRetryComMesmoCorpo', async () => {
@@ -111,11 +104,11 @@ describe('PesosEnemPage — envio da edição em linha', () => {
     // caso de falha transitória (rede/5xx) e de retry sem correção alguma.
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     areaDo(t.edicao.form()?.controls[0], 'MATEMATICA').controls.peso.setValue(3.0);
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests1 = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -129,19 +122,19 @@ describe('PesosEnemPage — envio da edição em linha', () => {
     for (const req of requests1.slice(1)) {
       req.flush(null, { status: 204, statusText: 'No Content' });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.edicao.erro()).toContain('1 de 4');
 
     // Retry sem alterar nada — mesmo corpo, mesma key.
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     const retry = t.controller.expectOne(
       `${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[0]?.id}`,
     );
     expect(retry.request.headers.get('Idempotency-Key')).toBe(chaveOriginal);
     retry.flush(null, { status: 204, statusText: 'No Content' });
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.edicao.emEdicao()).toBeNull();
   });
@@ -156,10 +149,10 @@ describe('PesosEnemPage — envio da edição em linha', () => {
     // de saber qual caminho ocorreu: corrigir o valor renova a key.
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests1 = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -180,19 +173,19 @@ describe('PesosEnemPage — envio da edição em linha', () => {
     for (const req of requests1.slice(1)) {
       req.flush(null, { status: 204, statusText: 'No Content' });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     // Usuário muda um valor antes de reenviar (a recusa sem `errors[]` vai ao banner,
     // sem apontar campo).
     areaDo(t.edicao.form()?.controls[0], 'REDACAO').controls.peso.setValue(2.0);
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     const retry = t.controller.expectOne(
       `${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[0]?.id}`,
     );
     expect(retry.request.headers.get('Idempotency-Key')).not.toBe(chaveOriginal);
     retry.flush(null, { status: 204, statusText: 'No Content' });
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.edicao.emEdicao()).toBeNull();
   });
@@ -203,9 +196,9 @@ describe('PesosEnemPage — envio da edição em linha', () => {
     // algum campo só para limpá-lo.
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -218,7 +211,7 @@ describe('PesosEnemPage — envio da edição em linha', () => {
     requests[1]?.flush(null, { status: 204, statusText: 'No Content' });
     requests[2]?.flush(null, { status: 204, statusText: 'No Content' });
     requests[3]?.flush(null, { status: 204, statusText: 'No Content' });
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const grupoFalho = t.edicao.form()?.controls[0];
     expect(areaDo(grupoFalho, 'REDACAO').controls.peso.errors).toBeNull();
@@ -226,12 +219,12 @@ describe('PesosEnemPage — envio da edição em linha', () => {
 
     // Retry imediato, sem editar nada — deve disparar o PUT de novo.
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     const retry = t.controller.expectOne(
       `${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[0]?.id}`,
     );
     retry.flush(null, { status: 204, statusText: 'No Content' });
-    await t.propagate();
+    await t.atualizarAplicacao();
     expect(t.edicao.emEdicao()).toBeNull();
   });
 
@@ -241,9 +234,9 @@ describe('PesosEnemPage — envio da edição em linha', () => {
     // gravada em `registros` como se estivesse persistida.
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -263,7 +256,7 @@ describe('PesosEnemPage — envio da edição em linha', () => {
     );
     requests[2]?.flush(null, { status: 204, statusText: 'No Content' });
     requests[3]?.flush(null, { status: 204, statusText: 'No Content' });
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const grupoSalvo = t.edicao.form()?.controls[0];
     expect(grupoSalvo?.disabled).toBe(true);

@@ -1,15 +1,13 @@
 import { ChangeDetectorRef } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AREAS, RES_805, linhas805 } from './pesos-enem-exemplos.testing';
 import {
-  AREAS,
   PaginaDeTeste,
-  RES_805,
   areaDo,
   digitarNumeroInvalido,
   digitarNumeroInvalidoESair,
   erroDaArea,
-  linhas805,
 } from './pesos-enem.testing';
 import { PesosEnemEdicaoComponent } from './pesos-enem-edicao.component';
 
@@ -25,7 +23,7 @@ describe('PesosEnemPage — campos numéricos', () => {
   it('PesosEnemPage_PesoZero_Valido_PesoNegativo_InvalidaForm', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const grupo = t.edicao.form()?.controls[0];
     expect(grupo).toBeDefined();
@@ -39,14 +37,14 @@ describe('PesosEnemPage — campos numéricos', () => {
     expect(erroDaArea(linguagens, 'peso')).toBe('O peso não pode ser negativo.');
 
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.controller.expectNone((r) => r.url.includes('/admin/pesos-area-enem/'));
   });
 
   it('PesosEnemPage_CorteNegativo_InvalidaForm', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const redacao = areaDo(t.edicao.form()?.controls[3], 'REDACAO');
     redacao.controls.corte.setValue(-10);
@@ -66,7 +64,7 @@ describe('PesosEnemPage — campos numéricos', () => {
 
     // Drawer: o nome acessível começa pelo texto visível e acrescenta o grupo.
     t.criacao.abrir();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     expect(
       raiz.querySelector('input[aria-label="Peso de Matemática e suas Tecnologias — Tecnológica"]'),
@@ -86,7 +84,7 @@ describe('PesosEnemPage — campos numéricos', () => {
   it('PesosEnemPage_EdicaoEmLinha_PesoECorteTemRotuloVisivel', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
@@ -112,7 +110,7 @@ describe('PesosEnemPage — campos numéricos', () => {
     // Sem a recusa, o texto não numérico virava null e o PUT apagava o corte sem aviso.
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     digitarNumeroInvalidoESair(t.inputDaEdicao('corte', 0, 0));
@@ -122,14 +120,14 @@ describe('PesosEnemPage — campos numéricos', () => {
     expect(erroDaArea(redacao, 'corte')).toBe('Número inválido.');
 
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.controller.expectNone((r) => r.url.includes('/admin/pesos-area-enem/'));
   });
 
   it('PesosEnemPage_Drawer_NumeroInvalidoNoPesoMostraErroProprio', async () => {
     await t.carregarUmaPagina([]);
     t.criacao.abrir();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
@@ -147,7 +145,7 @@ describe('PesosEnemPage — campos numéricos', () => {
   it('PesosEnemPage_CasasDecimaisAlemDoGravado_SaoRecusadas', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const grupo = t.edicao.form()?.controls[0];
     const matematica = areaDo(grupo, 'MATEMATICA');
@@ -161,7 +159,7 @@ describe('PesosEnemPage — campos numéricos', () => {
     expect(erroDaArea(redacao, 'corte')).toBe('O corte aceita no máximo 3 casas decimais.');
 
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.controller.expectNone((r) => r.url.includes('/admin/pesos-area-enem/'));
 
     // No limite do que a coluna guarda, o valor é aceito.
@@ -174,7 +172,7 @@ describe('PesosEnemPage — campos numéricos', () => {
   it('PesosEnemPage_EdicaoEmLinha_CalculaErroDeCadaCampoUmaVezPorPassada', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const edicao = PesosEnemEdicaoComponent.prototype as unknown as {
@@ -211,7 +209,7 @@ describe('PesosEnemPage — campos numéricos', () => {
     // durante a digitação dispararia o alerta a cada separador digitado.
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const input = t.inputDaEdicao('corte', 0, 0);
@@ -235,7 +233,7 @@ describe('PesosEnemPage — campos numéricos', () => {
   it('PesosEnemPage_Drawer_EnterComTextoInvalido_AcusaAntesDeEnviar', async () => {
     await t.carregarUmaPagina([]);
     t.criacao.abrir();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
@@ -256,7 +254,7 @@ describe('PesosEnemPage — campos numéricos', () => {
     // silenciosa, "Campo obrigatório." apareceria a cada separador digitado.
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const input = t.inputDaEdicao('peso', 0, 4);
@@ -275,7 +273,7 @@ describe('PesosEnemPage — campos numéricos', () => {
   it('PesosEnemPage_Drawer_DigitandoSeparadorNoPeso_NaoAcusaNada', async () => {
     await t.carregarUmaPagina([]);
     t.criacao.abrir();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
@@ -297,7 +295,7 @@ describe('PesosEnemPage — campos numéricos', () => {
     await t.carregarUmaPagina([...linhas805]);
     t.criacao.abrir();
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
@@ -309,7 +307,7 @@ describe('PesosEnemPage — campos numéricos', () => {
   it('PesosEnemPage_Corte_CadaAreaTemCampoENenhumTextoRestringeARedacao', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.criacao.abrir();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;

@@ -2,7 +2,7 @@ import { FormControl } from '@angular/forms';
 import { describe, expect, it } from 'vitest';
 import { mensagemDoCampoNumerico } from './pesos-enem-campo-numerico';
 import { criarGrupoDeCriacao } from './pesos-enem-form';
-import { AREAS, grupo } from './pesos-enem.testing';
+import { AREAS, grupo } from './pesos-enem-exemplos.testing';
 import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 function campo(nome: 'peso' | 'corte') {

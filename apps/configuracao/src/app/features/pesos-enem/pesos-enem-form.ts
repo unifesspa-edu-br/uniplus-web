@@ -45,6 +45,25 @@ export interface PesoEdicaoGrupoForm {
 
 export type FormularioDeEdicao = FormArray<FormGroup<PesoEdicaoGrupoForm>>;
 
+const validadoresDaResolucao = [
+  Validators.required,
+  Validators.minLength(1),
+  Validators.maxLength(RESOLUCAO_TAMANHO_MAXIMO),
+];
+
+const validadoresDoPeso = [
+  Validators.required,
+  Validators.min(0),
+  Validators.max(PESO_MAXIMO),
+  maximoDeCasasDecimais(CASAS_PESO),
+];
+
+const validadoresDoCorte = [
+  Validators.min(0),
+  Validators.max(CORTE_MAXIMO),
+  maximoDeCasasDecimais(CASAS_CORTE),
+];
+
 const validadoresDaBaseLegal = [
   Validators.required,
   Validators.minLength(1),
@@ -53,14 +72,7 @@ const validadoresDaBaseLegal = [
 
 export function criarFormularioDeResolucao(): FormGroup<PesoLoteForm> {
   return new FormGroup<PesoLoteForm>({
-    resolucao: new FormControl('', {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.minLength(1),
-        Validators.maxLength(RESOLUCAO_TAMANHO_MAXIMO),
-      ],
-    }),
+    resolucao: new FormControl('', { nonNullable: true, validators: validadoresDaResolucao }),
     baseLegalGlobal: new FormControl('', { nonNullable: true, validators: validadoresDaBaseLegal }),
     // Os grupos e as áreas de cada um só são montados ao abrir o drawer, quando as listas da
     // API já chegaram.
@@ -71,23 +83,9 @@ export function criarFormularioDeResolucao(): FormGroup<PesoLoteForm> {
 function criarAreaForm(codigo: string, peso: number, corte: number | null): FormGroup<AreaForm> {
   return new FormGroup<AreaForm>({
     codigo: new FormControl(codigo, { nonNullable: true }),
-    peso: new FormControl(peso, {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.min(0),
-        Validators.max(PESO_MAXIMO),
-        maximoDeCasasDecimais(CASAS_PESO),
-      ],
-    }),
+    peso: new FormControl(peso, { nonNullable: true, validators: validadoresDoPeso }),
     // Opcional: em branco (null) é "sem corte", sem `Validators.required`.
-    corte: new FormControl<number | null>(corte, {
-      validators: [
-        Validators.min(0),
-        Validators.max(CORTE_MAXIMO),
-        maximoDeCasasDecimais(CASAS_CORTE),
-      ],
-    }),
+    corte: new FormControl<number | null>(corte, { validators: validadoresDoCorte }),
   });
 }
 
@@ -104,6 +102,11 @@ export function criarGrupoDeCriacao(
   });
 }
 
+function criarAreaDaEdicao(linha: PesoAreaEnemDto, area: AreaPesoAreaEnemDto): FormGroup<AreaForm> {
+  const valor = linha.areas.find((existente) => existente.codigo?.trim() === area.codigo);
+  return criarAreaForm(area.codigo, valor === undefined ? 0 : valor.peso, valor?.corte ?? null);
+}
+
 /** As áreas da edição seguem a ordem da lista da API, não a ordem em que a linha as
  *  devolveu: o índice de cada controle é o índice que o backend usa em `areas[i]`, para o
  *  erro voltar ao campo certo. */
@@ -114,16 +117,7 @@ export function criarGrupoDeEdicao(
   return new FormGroup<PesoEdicaoGrupoForm>({
     id: new FormControl(linha.id, { nonNullable: true }),
     grupoCurso: new FormControl(linha.grupoCurso, { nonNullable: true }),
-    areas: new FormArray(
-      areas.map((area) => {
-        const valor = linha.areas.find((existente) => existente.codigo?.trim() === area.codigo);
-        return criarAreaForm(
-          area.codigo,
-          valor === undefined ? 0 : valor.peso,
-          valor?.corte ?? null,
-        );
-      }),
-    ),
+    areas: new FormArray(areas.map((area) => criarAreaDaEdicao(linha, area))),
     baseLegal: new FormControl(linha.baseLegal, {
       nonNullable: true,
       validators: validadoresDaBaseLegal,

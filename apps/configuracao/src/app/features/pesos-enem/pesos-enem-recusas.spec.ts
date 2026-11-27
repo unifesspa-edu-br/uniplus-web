@@ -2,7 +2,7 @@ import { ProblemDetails } from '@uniplus/shared-core/http';
 import { describe, expect, it } from 'vitest';
 import { criarGrupoDeCriacao } from './pesos-enem-form';
 import { aplicarRecusaDoGrupo, ehRecusaAcionavelPeloOperador } from './pesos-enem-recusas';
-import { AREAS, grupo } from './pesos-enem.testing';
+import { AREAS, grupo } from './pesos-enem-exemplos.testing';
 import { recusasDoControle } from '../../shared/formulario';
 
 const titulo = (problem: ProblemDetails): string => `titulo ${problem.status}`;

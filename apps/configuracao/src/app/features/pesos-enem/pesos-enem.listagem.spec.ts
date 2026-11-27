@@ -1,13 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  AREAS,
-  ERRO_500,
-  GRUPOS,
-  PaginaDeTeste,
-  RES_805,
-  linhas805,
-  problem,
-} from './pesos-enem.testing';
+import { AREAS, GRUPOS, RES_805, linhas805 } from './pesos-enem-exemplos.testing';
+import { ERRO_500, problem } from './pesos-enem-respostas.testing';
+import { PaginaDeTeste } from './pesos-enem.testing';
 
 describe('PesosEnemPage — falhas da listagem', () => {
   let t: PaginaDeTeste;
@@ -27,7 +21,7 @@ describe('PesosEnemPage — falhas da listagem', () => {
       statusText: 'Internal Server Error',
       headers: { 'content-type': 'application/problem+json' },
     });
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.store.mensagemDeErro()).toBeTruthy();
     const botaoRetry = t.fixture.nativeElement.querySelector(
@@ -36,9 +30,9 @@ describe('PesosEnemPage — falhas da listagem', () => {
     expect(botaoRetry).not.toBeNull();
 
     botaoRetry.click();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.expectListagem().flush([...linhas805]);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.store.mensagemDeErro()).toBeNull();
     expect(t.store.resolucoes()).toEqual([RES_805]);
@@ -47,7 +41,7 @@ describe('PesosEnemPage — falhas da listagem', () => {
   it('PesosEnemPage_ListagemFalhaComReferenciasCarregando_MostraSoOAlerta', async () => {
     t.fixture.detectChanges();
     t.expectListagem().flush(problem(500, 'uniplus.internal.unexpected', 'Erro interno'), ERRO_500);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
     try {
@@ -57,7 +51,7 @@ describe('PesosEnemPage — falhas da listagem', () => {
       // Responde as referências mesmo com a asserção falha, para não vazar pedido pendente.
       t.expectAreas().flush([...AREAS]);
       t.expectGrupos().flush([...GRUPOS]);
-      await t.propagate();
+      await t.atualizarAplicacao();
     }
   });
 
@@ -66,7 +60,7 @@ describe('PesosEnemPage — falhas da listagem', () => {
     t.expectAreas().flush([...AREAS]);
     t.expectGrupos().flush([...GRUPOS]);
     t.expectListagem().flush(problem(500, 'uniplus.internal.unexpected', 'Erro interno'), ERRO_500);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
@@ -74,14 +68,14 @@ describe('PesosEnemPage — falhas da listagem', () => {
     if (!botao) throw new Error('botão de tentar de novo ausente');
     botao.focus();
     botao.click();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     expect(document.activeElement?.id).toBe('cfg-pesos-enem-registros-tentar');
 
     t.expectListagem().flush([...linhas805]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
-    await t.propagate();
+    await t.atualizarAplicacao();
     expect(raiz.querySelector('#cfg-pesos-enem-registros-tentar')).toBeNull();
     expect(document.activeElement?.id).toBe('cfg-pesos-enem-titulo');
   });
@@ -91,7 +85,7 @@ describe('PesosEnemPage — falhas da listagem', () => {
     t.expectAreas().flush([...AREAS]);
     t.expectGrupos().flush([...GRUPOS]);
     t.expectListagem().flush(problem(500, 'uniplus.internal.unexpected', 'Erro interno'), ERRO_500);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
@@ -104,12 +98,12 @@ describe('PesosEnemPage — falhas da listagem', () => {
     t.expectAreas().flush([...AREAS]);
     t.expectGrupos().flush([...GRUPOS]);
     t.expectListagem().flush(problem(500, 'uniplus.internal.unexpected', 'Erro interno'), ERRO_500);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
     t.store.recarregar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     try {
       expect(raiz.querySelector('#cfg-pesos-enem-registros-tentar')).toBeNull();
@@ -118,7 +112,7 @@ describe('PesosEnemPage — falhas da listagem', () => {
         problem(500, 'uniplus.internal.unexpected', 'Erro interno'),
         ERRO_500,
       );
-      await t.propagate();
+      await t.atualizarAplicacao();
       t.fixture.detectChanges();
     }
     const alerta = raiz
@@ -133,7 +127,7 @@ describe('PesosEnemPage — falhas da listagem', () => {
     t.expectAreas().flush([...AREAS]);
     t.expectGrupos().flush([...GRUPOS]);
     t.expectListagem().flush(problem(500, 'uniplus.teste.sem_titulo', '   '), ERRO_500);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;

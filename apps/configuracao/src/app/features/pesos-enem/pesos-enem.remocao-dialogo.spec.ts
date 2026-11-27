@@ -1,13 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  BASE,
-  PaginaDeTeste,
-  RES_750,
-  RES_805,
-  linhas750,
-  linhas805,
-  problem,
-} from './pesos-enem.testing';
+import { BASE, RES_750, RES_805, linhas750, linhas805 } from './pesos-enem-exemplos.testing';
+import { problem } from './pesos-enem-respostas.testing';
+import { PaginaDeTeste } from './pesos-enem.testing';
 
 describe('PesosEnemPage — remoção', () => {
   let t: PaginaDeTeste;
@@ -22,7 +16,7 @@ describe('PesosEnemPage — remoção', () => {
     await t.carregarUmaPagina([...linhas805, ...linhas750]);
     t.remocao.pedir(RES_805);
     t.remocao.confirmar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -32,10 +26,10 @@ describe('PesosEnemPage — remoção', () => {
       expect(req.request.headers.has('Idempotency-Key')).toBe(false);
       req.flush(null, { status: 204, statusText: 'No Content' });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     t.expectListagem().flush([...linhas750]);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.store.resolucoes()).toEqual([RES_750]);
   });
@@ -49,12 +43,12 @@ describe('PesosEnemPage — remoção', () => {
     // existem mais.
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     expect(t.edicao.emEdicao()).toBe(RES_805);
 
     t.remocao.pedir(RES_805);
     t.remocao.confirmar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -62,13 +56,13 @@ describe('PesosEnemPage — remoção', () => {
     for (const req of requests) {
       req.flush(null, { status: 204, statusText: 'No Content' });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.edicao.emEdicao()).toBeNull();
     expect(t.edicao.form()).toBeNull();
 
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
   });
 
   it('PesosEnemPage_RemocaoParcial_ExibeAvisoERecarrega', async () => {
@@ -81,7 +75,7 @@ describe('PesosEnemPage — remoção', () => {
     expect(remocaoButtonEl.textContent).toContain('Remover resolução');
     t.remocao.pedir(RES_805);
     t.remocao.confirmar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -104,10 +98,10 @@ describe('PesosEnemPage — remoção', () => {
         headers: { 'content-type': 'application/problem+json' },
       },
     );
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
   });
 
   it('PesosEnemPage_ReuseAposRemocao_NaoBloqueiaNovaResolucao', async () => {
@@ -122,18 +116,18 @@ describe('PesosEnemPage — remoção', () => {
       baseLegalGlobal: 'Res. 805/2024 Anexo I',
     });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
     );
     expect(requests).toHaveLength(4);
     requests.forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.criacao.aberto()).toBe(false);
     t.expectListagem().flush([...linhas805]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     expect(t.store.resolucoes()).toEqual([RES_805]);
   });
 });

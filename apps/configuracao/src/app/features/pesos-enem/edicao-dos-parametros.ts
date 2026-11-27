@@ -38,6 +38,18 @@ interface Envio {
   readonly result: ApiResult<void>;
 }
 
+interface DesfechoDosEnvios {
+  readonly semCampo: string[];
+  readonly ultimoProblema: ProblemDetails | null;
+}
+
+function mensagemDasFalhas(falhas: number, total: number, semCampo: readonly string[]): string {
+  return [
+    `${falhas} de ${total} grupo(s) não foram salvos. Corrija e tente novamente.`,
+    ...semCampo,
+  ].join(' ');
+}
+
 /**
  * A edição em linha dos pesos de uma resolução: uma linha por grupo de curso, salva com uma
  * chamada por linha. Só uma resolução fica em edição por vez. Pede a trava de gravação ao
@@ -100,18 +112,32 @@ export class EdicaoDosParametros {
     if (form === null || resolucao === null) {
       return;
     }
-    this.erro.set(null);
-    descartarRecusasDoServidor(form);
-    form.markAllAsTouched();
-    if (form.invalid) {
+    if (!this.validarParaEnvio(form)) {
       return;
     }
-    const pendentes = form.controls.filter(
-      (grupo) => this.estadoLinhas().get(grupo.controls.id.value) !== 'ok',
-    );
+    const pendentes = this.gruposPendentes(form);
     if (pendentes.length > 0) {
       this.enviar(resolucao, pendentes);
     }
+  }
+
+  private validarParaEnvio(form: FormularioDeEdicao): boolean {
+    this.erro.set(null);
+    descartarRecusasDoServidor(form);
+    form.markAllAsTouched();
+    return !form.invalid;
+  }
+
+  private gruposPendentes(form: FormularioDeEdicao): FormGroup<PesoEdicaoGrupoForm>[] {
+    return form.controls.filter(
+      (grupo) => this.estadoLinhas().get(grupo.controls.id.value) !== 'ok',
+    );
+  }
+
+  private gruposSalvos(form: FormularioDeEdicao): FormGroup<PesoEdicaoGrupoForm>[] {
+    return form.controls.filter(
+      (grupo) => this.estadoLinhas().get(grupo.controls.id.value) === 'ok',
+    );
   }
 
   private podeDeixarAEdicaoAberta(): boolean {
@@ -141,22 +167,26 @@ export class EdicaoDosParametros {
   /** Fecha a sessão levando para a leitura o que ela já gravou e devolve o foco ao botão que a abriu. */
   private encerrar(): void {
     const resolucao = this.emEdicao();
-    const form = this.form();
-    if (form !== null) {
-      this.store.aplicarEdicao(
-        form.controls
-          .filter((grupo) => this.estadoLinhas().get(grupo.controls.id.value) === 'ok')
-          .map((grupo) => grupo.getRawValue()),
-      );
-    }
+    this.levarGravadasParaALeitura();
     this.limpar();
     if (resolucao !== null) {
-      // Depois da renderização: antes dela o botão ainda pode estar indisponível pelo envio que
-      // acabou de terminar, e o foco se perderia.
-      afterNextRender(() => document.getElementById(idDoBotaoDeEdicao(resolucao))?.focus(), {
-        injector: this.injector,
-      });
+      this.devolverFocoAoBotaoDeEdicao(resolucao);
     }
+  }
+
+  private levarGravadasParaALeitura(): void {
+    const form = this.form();
+    if (form !== null) {
+      this.store.aplicarEdicao(this.gruposSalvos(form).map((grupo) => grupo.getRawValue()));
+    }
+  }
+
+  private devolverFocoAoBotaoDeEdicao(resolucao: string): void {
+    // Depois da renderização: antes dela o botão ainda pode estar indisponível pelo envio que
+    // acabou de terminar, e o foco se perderia.
+    afterNextRender(() => document.getElementById(idDoBotaoDeEdicao(resolucao))?.focus(), {
+      injector: this.injector,
+    });
   }
 
   private limpar(): void {
@@ -193,45 +223,46 @@ export class EdicaoDosParametros {
     const { semCampo, ultimoProblema } = this.registrar(envios);
     const falhas = envios.filter((envio) => !envio.result.ok).length;
     if (falhas === 0) {
-      this.notifications.success('Pesos salvos', resolucao);
-      this.gravacao.anunciar(`Pesos da resolução ${resolucao} salvos.`);
-      this.encerrar();
+      this.concluirComSucesso(resolucao);
       return;
     }
-    this.erro.set(
-      [
-        `${falhas} de ${envios.length} grupo(s) não foram salvos. Corrija e tente novamente.`,
-        ...semCampo,
-      ].join(' '),
-    );
+    this.erro.set(mensagemDasFalhas(falhas, envios.length, semCampo));
     this.gravacao.anunciar(`Não foi possível salvar todos os grupos da resolução ${resolucao}.`);
     if (ultimoProblema !== null && ultimoProblema.status >= 500) {
       this.notifications.errorFromProblem(ultimoProblema);
     }
   }
 
-  /** Guarda o desfecho de cada linha, trava as salvas e leva as recusas aos campos. */
-  private registrar(envios: readonly Envio[]): {
-    semCampo: string[];
-    ultimoProblema: ProblemDetails | null;
-  } {
+  private concluirComSucesso(resolucao: string): void {
+    this.notifications.success('Pesos salvos', resolucao);
+    this.gravacao.anunciar(`Pesos da resolução ${resolucao} salvos.`);
+    this.encerrar();
+  }
+
+  /** Guarda o desfecho de cada linha, desabilita as salvas e leva as recusas aos campos. */
+  private registrar(envios: readonly Envio[]): DesfechoDosEnvios {
     const novoEstado = new Map(this.estadoLinhas());
     const semCampo: string[] = [];
     let ultimoProblema: ProblemDetails | null = null;
     for (const envio of envios) {
-      this.chaves.lembrar(envio.id, envio, envio.result);
-      novoEstado.set(envio.id, envio.result.ok ? 'ok' : 'erro');
-      if (envio.result.ok) {
-        // Trava a linha salva: sem isso ela poderia ser editada de novo sem reenviar (não
-        // entra em `pendentes` no próximo Salvar), e a leitura mostraria um valor nunca gravado.
-        envio.grupo.disable();
-      } else {
+      this.registrarEnvio(envio, novoEstado);
+      if (!envio.result.ok) {
         ultimoProblema = envio.result.problem;
         semCampo.push(...this.recusar(envio.grupo, envio.result.problem));
       }
     }
     this.estadoLinhas.set(novoEstado);
     return { semCampo, ultimoProblema };
+  }
+
+  private registrarEnvio(envio: Envio, novoEstado: Map<string, EstadoOperacao>): void {
+    this.chaves.lembrar(envio.id, envio, envio.result);
+    novoEstado.set(envio.id, envio.result.ok ? 'ok' : 'erro');
+    if (envio.result.ok) {
+      // Desabilita a linha salva: sem isso ela poderia ser editada de novo sem reenviar (não
+      // entra em `pendentes` no próximo Salvar), e a leitura mostraria um valor nunca gravado.
+      envio.grupo.disable();
+    }
   }
 
   /** A edição em linha só permite corrigir as áreas: resolução, grupo e base legal não aparecem

@@ -17,7 +17,7 @@ import {
   campoPorRotulo,
   digitar,
   escolherArquivoNoCampo,
-} from './interacao.testing';
+} from '../../shared/interacao-com-a-tela/interacao-com-a-tela.testing';
 import { provideMensagensDeAcesso } from './mensagens-de-acesso';
 import { PerfisPage } from './perfis.page';
 import { CLASSIFICACAO_DE_PROTECAO, TIPO_DE_GOVERNANCA, ok } from './testes';

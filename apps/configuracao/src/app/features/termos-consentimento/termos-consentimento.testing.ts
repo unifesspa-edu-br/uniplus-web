@@ -214,3 +214,28 @@ export async function montarDetalhe(
   }
   return cena;
 }
+
+/** A chave de idempotência com que a requisição pendente da `url` partiu. */
+export function chaveDe(cena: CenaDoDetalhe, url: string): string | null {
+  return cena.controller.expectOne(url).request.headers.get('Idempotency-Key');
+}
+
+export function botaoOuNulo(cena: CenaDoDetalhe, texto: string): HTMLButtonElement | null {
+  const botoes = (cena.fixture.nativeElement as HTMLElement).querySelectorAll('button');
+  return [...botoes].find((item) => item.textContent?.trim() === texto) ?? null;
+}
+
+/** Aciona a revisão, recusa e devolve a chave da primeira tentativa. */
+export async function revisarRecusando(
+  cena: CenaDoDetalhe,
+  status: number,
+  code: string,
+  title: string,
+): Promise<string> {
+  cena.botao('Marcar como revisado').click();
+  const primeira = cena.controller.expectOne(REVISAR);
+  const chave = primeira.request.headers.get('Idempotency-Key') ?? '';
+  recusar(primeira, status, code, title);
+  await cena.propagar();
+  return chave;
+}

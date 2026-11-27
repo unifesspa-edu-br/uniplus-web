@@ -30,9 +30,9 @@ import {
   valoresDoRascunho,
 } from './termo-consentimento-form';
 import {
-  descartarRecusasDoServidor,
   marcarRecusaDoServidor,
   textoDaAreaGeral,
+  validarParaEnvio,
 } from '../../shared/formulario';
 
 type Escrita = AcaoTermo | 'criar';
@@ -131,11 +131,7 @@ export class EdicaoDosTermosConsentimento {
 
   criar(): void {
     this.formError.set(null);
-    descartarRecusasDoServidor(this.criarForm);
-    if (this.criarForm.invalid) {
-      this.criarForm.markAllAsTouched();
-      return;
-    }
+    if (!validarParaEnvio(this.criarForm)) return;
     const comando = comandoDeCriacao(this.criarForm);
     this.gravar('criar', this.api.criar(comando, withIdempotencyKey(this.chave())), (id) =>
       this.concluirCriacao(id, comando.nome ?? ''),
@@ -146,11 +142,7 @@ export class EdicaoDosTermosConsentimento {
     const id = this.id();
     if (id === null || this.termo() === null) return;
     this.acaoErro.set(null);
-    descartarRecusasDoServidor(this.rascunhoForm);
-    if (this.rascunhoForm.invalid) {
-      this.rascunhoForm.markAllAsTouched();
-      return;
-    }
+    if (!validarParaEnvio(this.rascunhoForm)) return;
     const comando = comandoDeRascunho(id, this.rascunhoForm);
     this.gravar(
       'rascunho',

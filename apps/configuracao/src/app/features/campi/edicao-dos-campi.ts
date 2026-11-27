@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { HttpContext } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
@@ -124,21 +125,16 @@ export class EdicaoDosCampi {
   }
 
   salvar(): void {
-    this.erro.set(null);
-    this.erroDoEndereco.set(null);
+    this.limparMensagensDeErro();
     descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.recusarFormularioInvalido();
       return;
     }
     const chave = withIdempotencyKey(this.chaveDeIdempotencia());
-    const valores = this.form.getRawValue();
-    const id = this.campusEmEdicaoId();
-    const operacao: Observable<ApiResult<string | void>> =
-      this.modo() === 'criar'
-        ? this.api.criar(comandoDeCriacao(valores), chave)
-        : this.api.atualizar(id ?? '', comandoDeAtualizacao(id ?? '', valores), chave);
-    this.gravar('salvando', operacao, (result) => this.concluirGravacao(result));
+    this.gravar('salvando', this.operacaoDeGravacao(chave), (result) =>
+      this.concluirGravacao(result),
+    );
   }
 
   pedirRemocao(campus: CampusDto): void {
@@ -191,10 +187,22 @@ export class EdicaoDosCampi {
   }
 
   private abrir(): void {
-    this.erro.set(null);
-    this.erroDoEndereco.set(null);
+    this.limparMensagensDeErro();
     this.renovarChaveDeIdempotencia();
     this.aberto.set(true);
+  }
+
+  private limparMensagensDeErro(): void {
+    this.erro.set(null);
+    this.erroDoEndereco.set(null);
+  }
+
+  private operacaoDeGravacao(chave: HttpContext): Observable<ApiResult<string | void>> {
+    const valores = this.form.getRawValue();
+    const id = this.campusEmEdicaoId();
+    return this.modo() === 'criar'
+      ? this.api.criar(comandoDeCriacao(valores), chave)
+      : this.api.atualizar(id ?? '', comandoDeAtualizacao(id ?? '', valores), chave);
   }
 
   private recusarFormularioInvalido(): void {
@@ -223,6 +231,10 @@ export class EdicaoDosCampi {
       this.aplicarErrosDeValidacao(separarCausas(errosDeCampo));
       return;
     }
+    this.aplicarFalhaSemErroDeCampo(problem);
+  }
+
+  private aplicarFalhaSemErroDeCampo(problem: ProblemDetails): void {
     if (ehErroDeEndereco(problem.code)) {
       this.erroDoEndereco.set(this.problemI18n.resolve(problem).title);
       this.erro.set(null);

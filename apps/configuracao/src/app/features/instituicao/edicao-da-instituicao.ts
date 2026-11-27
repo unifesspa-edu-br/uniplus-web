@@ -1,8 +1,10 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { HttpContext } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
+  type CausaDeCampo,
   type CausasDoProblema,
   ProblemDetails,
   ProblemI18nService,
@@ -22,7 +24,6 @@ import {
   INSTITUICAO_JA_EXISTE_CODE,
   INSTITUICAO_NAO_ENCONTRADA_CODE,
   UNIDADE_RAIZ_INVALIDA_CODES,
-  ValoresDaInstituicao,
   comandoDeAtualizacao,
   comandoDeCriacao,
   controleDoCampoDoServidor,
@@ -111,11 +112,11 @@ export class EdicaoDaInstituicao {
   );
 
   abrirCadastro(): void {
-    this.abrirFormulario('criar', null, valoresEmBrancoDaInstituicao());
+    this.abrirFormulario('criar', null);
   }
 
   abrirEdicao(instituicao: InstituicaoDto): void {
-    this.abrirFormulario('editar', instituicao, valoresDaInstituicao(instituicao));
+    this.abrirFormulario('editar', instituicao);
   }
 
   fechar(): void {
@@ -137,22 +138,17 @@ export class EdicaoDaInstituicao {
   }
 
   salvar(): void {
-    this.erro.set(null);
-    this.erroDoEndereco.set(null);
-    this.recusaDoSalvamento.set('');
+    this.limparRecusasDoFormulario();
     descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-    const existente = this.instituicaoEmEdicao();
     const modo = this.modo();
     const contexto = withIdempotencyKey(this.chave());
-    const operacao: Observable<ApiResult<string | void>> =
-      existente === null
-        ? this.api.criar(comandoDeCriacao(this.form), contexto)
-        : this.api.atualizar(existente.id, comandoDeAtualizacao(existente.id, this.form), contexto);
-    this.gravar('salvando', operacao, (result) => this.concluirSalvamento(result, modo));
+    this.gravar('salvando', this.operacaoDeGravacao(contexto), (result) =>
+      this.concluirSalvamento(result, modo),
+    );
   }
 
   removerConfirmado(): void {
@@ -166,23 +162,32 @@ export class EdicaoDaInstituicao {
     );
   }
 
-  private abrirFormulario(
-    modo: ModoFormulario,
-    instituicao: InstituicaoDto | null,
-    valores: ValoresDaInstituicao,
-  ): void {
+  private abrirFormulario(modo: ModoFormulario, instituicao: InstituicaoDto | null): void {
     if (this.gravando()) {
       return;
     }
     this.resultado.set('');
     this.modo.set(modo);
     this.instituicaoEmEdicao.set(instituicao);
-    this.form.reset(valores);
+    this.form.reset(
+      instituicao === null ? valoresEmBrancoDaInstituicao() : valoresDaInstituicao(instituicao),
+    );
+    this.limparRecusasDoFormulario();
+    this.renovarChave();
+    this.aberto.set(true);
+  }
+
+  private limparRecusasDoFormulario(): void {
     this.erro.set(null);
     this.erroDoEndereco.set(null);
     this.recusaDoSalvamento.set('');
-    this.renovarChave();
-    this.aberto.set(true);
+  }
+
+  private operacaoDeGravacao(contexto: HttpContext): Observable<ApiResult<string | void>> {
+    const existente = this.instituicaoEmEdicao();
+    return existente === null
+      ? this.api.criar(comandoDeCriacao(this.form), contexto)
+      : this.api.atualizar(existente.id, comandoDeAtualizacao(existente.id, this.form), contexto);
   }
 
   private gravar<T>(
@@ -215,23 +220,27 @@ export class EdicaoDaInstituicao {
   }
 
   private concluirRemocao(instituicao: InstituicaoDto, result: ApiResult<void>): void {
-    if (!result.ok && result.problem.status === STATUS_HTTP.NAO_ENCONTRADO) {
-      this.resultado.set(`Instituição ${instituicao.sigla} já havia sido removida.`);
-      this.notifications.info('Instituição já removida', instituicao.sigla);
-      this.encerrarRemocao();
-      return;
-    }
     if (!result.ok) {
-      const titulo = this.problemI18n.resolve(result.problem).title;
-      this.erroDaRemocao.set(titulo);
-      if (result.problem.status >= 500) {
-        this.notifications.errorFromProblem(result.problem, { title: titulo });
-      }
+      this.recusarRemocao(instituicao, result.problem);
       return;
     }
     this.resultado.set(`Instituição ${instituicao.sigla} removida.`);
     this.notifications.success('Instituição removida', instituicao.sigla);
     this.encerrarRemocao();
+  }
+
+  private recusarRemocao(instituicao: InstituicaoDto, problem: ProblemDetails): void {
+    if (problem.status === STATUS_HTTP.NAO_ENCONTRADO) {
+      this.resultado.set(`Instituição ${instituicao.sigla} já havia sido removida.`);
+      this.notifications.info('Instituição já removida', instituicao.sigla);
+      this.encerrarRemocao();
+      return;
+    }
+    const titulo = this.problemI18n.resolve(problem).title;
+    this.erroDaRemocao.set(titulo);
+    if (problem.status >= 500) {
+      this.notifications.errorFromProblem(problem, { title: titulo });
+    }
   }
 
   /** Fecha o diálogo e o formulário e lê de novo, para a tela refletir que não há instituição. */
@@ -259,16 +268,20 @@ export class EdicaoDaInstituicao {
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
       this.aplicarErrosDeValidacao(separarCausas(problem.errors));
     } else if (UNIDADE_RAIZ_INVALIDA_CODES.has(problem.code)) {
-      marcarRecusaDoServidor(
-        this.form.controls['unidadeRaizId'],
-        problem.code,
-        this.problemI18n.resolve(problem).title,
-      );
+      this.marcarUnidadeRaizInvalida(problem);
     } else if (ehErroDeEndereco(problem.code)) {
       this.erroDoEndereco.set(this.problemI18n.resolve(problem).title);
     } else {
       this.recusarNoAlerta(problem);
     }
+  }
+
+  private marcarUnidadeRaizInvalida(problem: ProblemDetails): void {
+    marcarRecusaDoServidor(
+      this.form.controls['unidadeRaizId'],
+      problem.code,
+      this.problemI18n.resolve(problem).title,
+    );
   }
 
   private recusarNoAlerta(problem: ProblemDetails): void {
@@ -294,14 +307,19 @@ export class EdicaoDaInstituicao {
         aplicouAlgum = true;
         continue;
       }
-      const nome = controleDoCampoDoServidor(recusa.field);
-      if (nome !== null) {
-        marcarRecusaDoServidor(this.form.controls[nome], recusa.code, recusa.message);
-        aplicouAlgum = true;
-      }
+      aplicouAlgum = this.marcarControle(recusa) || aplicouAlgum;
     }
     this.erroDoEndereco.set(erroEndereco);
     this.erro.set(textoDaAreaGeral(aplicouAlgum, causas));
+  }
+
+  private marcarControle(recusa: CausaDeCampo): boolean {
+    const nome = controleDoCampoDoServidor(recusa.field);
+    if (nome === null) {
+      return false;
+    }
+    marcarRecusaDoServidor(this.form.controls[nome], recusa.code, recusa.message);
+    return true;
   }
 
   private renovarChave(): void {

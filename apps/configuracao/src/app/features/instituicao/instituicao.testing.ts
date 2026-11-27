@@ -274,11 +274,39 @@ function criarSeletoresConfirmacao({ elemento, confirmacao }: Ferramentas) {
   };
 }
 
+function botaoDoRodapeDoFormulario({ fixture }: Contexto, texto: string): HTMLButtonElement {
+  const botoes = fixture.nativeElement.querySelectorAll('.form-drawer__footer button');
+  return [...botoes].find(
+    (b) => (b as HTMLElement).textContent?.trim() === texto,
+  ) as HTMLButtonElement;
+}
+
+function criarSeletoresDoFormulario(
+  contexto: Contexto,
+  { elemento, formulario, confirmacao }: Ferramentas & ReturnType<typeof criarSeletores>,
+) {
+  return {
+    drawer: (): HTMLDialogElement => elemento('dialog[aria-label="Formulário da instituição"]'),
+    dialogoDeRemocao: (): HTMLDialogElement =>
+      confirmacao().querySelector('dialog') as HTMLDialogElement,
+    submeter: (): void => {
+      formulario().dispatchEvent(new Event('submit', { cancelable: true }));
+    },
+    cancelarDoFormulario: () => botaoDoRodapeDoFormulario(contexto, 'Cancelar'),
+  };
+}
+
+/** O botão que a pessoa não consegue acionar: desabilitado ou marcado como indisponível. */
+export const indisponivel = (botao: HTMLButtonElement): boolean =>
+  botao.matches(':disabled') || botao.getAttribute('aria-disabled') === 'true';
+
 function comporPagina(contexto: Contexto, ferramentas: Ferramentas) {
+  const seletores = criarSeletores(contexto, ferramentas);
   return {
     ...contexto,
     ...ferramentas,
-    ...criarSeletores(contexto, ferramentas),
+    ...seletores,
+    ...criarSeletoresDoFormulario(contexto, { ...ferramentas, ...seletores }),
     ...criarAcoes(contexto, ferramentas),
     ...criarAcaoRemocao(contexto, ferramentas),
     ...criarAcaoCadastro(ferramentas),

@@ -4,7 +4,11 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { ESCRITA, LEITURA, perfilDoDetalhe, versaoPendente } from './perfis.testing';
-import { campoPorRotulo, codigosMarcados, digitar } from '../interacao.testing';
+import {
+  campoPorRotulo,
+  codigosMarcados,
+  digitar,
+} from '../../../shared/interacao-com-a-tela/interacao-com-a-tela.testing';
 import { ok, recusa } from '../testes';
 import {
   abrir,
