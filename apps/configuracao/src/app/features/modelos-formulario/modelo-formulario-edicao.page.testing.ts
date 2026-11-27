@@ -1,5 +1,6 @@
 import {
   ClassificacaoDeProtecaoCodigo,
+  ConsequenciaDoDescumprimentoCodigo,
   EscopoFatoCodigo,
   HipoteseLegalTratamentoCodigo,
 } from '@uniplus/shared-data/configuracao';
@@ -203,7 +204,7 @@ export const modelo: ModeloFormularioView = {
           quando: [[{ fato: 'ESCOLA_PUBLICA', operador: OperadorCodigo.IGUAL, valor: true }]],
           indeferimento: {
             obrigatorio: true,
-            consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
+            consequenciaDoDescumprimento: ConsequenciaDoDescumprimentoCodigo.ELIMINA_DO_PROCESSO,
             abrePrazoParaReenvio: false,
             basesLegais: [
               {

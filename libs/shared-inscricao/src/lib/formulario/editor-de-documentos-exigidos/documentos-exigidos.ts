@@ -1,9 +1,6 @@
 import type { ClausulasNoWire } from '../editor-de-condicoes/condicoes/condicoes-no-wire';
 import { type BaseLegal, baseLegalNova } from '@uniplus/shared-utils';
 
-/** A consequência com que um documento exigido novo nasce, até a pessoa escolher outra. */
-export const CONSEQUENCIA_DO_DOCUMENTO_NOVO = 'ELIMINA_DO_PROCESSO';
-
 /** Uma opção de vocabulário: fase canônica ou tipo de documento, pelo código. */
 export interface OpcaoDoDocumento {
   readonly codigo: string;
@@ -87,15 +84,20 @@ export function documentoExigidoNovo(
     tipoDocumentoCodigo,
     obrigatorio: true,
     quando: null,
-    consequenciaDoDescumprimento: CONSEQUENCIA_DO_DOCUMENTO_NOVO,
+    consequenciaDoDescumprimento: null,
     abrePrazoParaReenvio: false,
     basesLegais: [baseLegalNova()],
   };
 }
 
-/** As recusas da API a um documento: as da condição ficam junto dela, as demais no cabeçalho. */
+/**
+ * As recusas da API a um documento: cada uma fica junto do campo a que se refere (condição,
+ * obrigatoriedade, prazo para reenvio) e as demais no cabeçalho.
+ */
 export interface RecusasDoDocumento {
   readonly quando: readonly string[];
+  readonly obrigatorio: readonly string[];
+  readonly prazoParaReenvio: readonly string[];
   readonly demais: readonly string[];
 }
 
@@ -134,9 +136,16 @@ export function distribuirRecusasDosDocumentos(
   return { porDocumento, gerais };
 }
 
-interface RecusasEmColeta {
-  readonly quando: string[];
-  readonly demais: string[];
+type RecusasEmColeta = { -readonly [campo in keyof RecusasDoDocumento]: string[] };
+
+const CAMPOS_RECUSADOS = [
+  ['quando', /^\.quando\b/iu],
+  ['obrigatorio', /^\.indeferimento\.obrigatorio$/iu],
+  ['prazoParaReenvio', /^\.indeferimento\.abrePrazoParaReenvio$/iu],
+] as const;
+
+function campoDaRecusa(caminho: string): keyof RecusasDoDocumento {
+  return CAMPOS_RECUSADOS.find(([, padrao]) => padrao.test(caminho))?.[0] ?? 'demais';
 }
 
 function guardarRecusa(
@@ -145,8 +154,12 @@ function guardarRecusa(
   caminho: string,
   mensagem: string,
 ): void {
-  const recusas = porDocumento.get(documento) ?? { quando: [], demais: [] };
-  const categoria = /^\.quando\b/iu.test(caminho) ? 'quando' : 'demais';
-  recusas[categoria].push(mensagem);
+  const recusas = porDocumento.get(documento) ?? {
+    quando: [],
+    obrigatorio: [],
+    prazoParaReenvio: [],
+    demais: [],
+  };
+  recusas[campoDaRecusa(caminho)].push(mensagem);
   porDocumento.set(documento, recusas);
 }

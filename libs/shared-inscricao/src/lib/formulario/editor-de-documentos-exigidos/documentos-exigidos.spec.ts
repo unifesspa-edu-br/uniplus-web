@@ -21,8 +21,34 @@ describe('recusas dos documentos exigidos', () => {
     );
 
     expect(porDocumento.get(a)).toBeUndefined();
-    expect(porDocumento.get(b)).toEqual({ quando: ['valor'], demais: ['tipo'] });
+    expect(porDocumento.get(b)).toEqual({
+      quando: ['valor'],
+      obrigatorio: [],
+      prazoParaReenvio: [],
+      demais: ['tipo'],
+    });
     expect(gerais).toEqual(['lista']);
+  });
+
+  it('leva a recusa de obrigatoriedade e de prazo para reenvio ao campo de cada uma', () => {
+    const { porDocumento } = distribuirRecusasDosDocumentos(
+      [
+        { field: 'conteudo.documentosExigidos[0].indeferimento.obrigatorio', message: 'obrig' },
+        {
+          field: 'conteudo.documentosExigidos[0].indeferimento.abrePrazoParaReenvio',
+          message: 'prazo',
+        },
+        { field: 'conteudo.documentosExigidos[0].indeferimento', message: 'bloco' },
+      ],
+      [a, b],
+    );
+
+    expect(porDocumento.get(a)).toEqual({
+      quando: [],
+      obrigatorio: ['obrig'],
+      prazoParaReenvio: ['prazo'],
+      demais: ['bloco'],
+    });
   });
 
   it('reconhece só o caminho dos documentos', () => {

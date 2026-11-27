@@ -1,4 +1,5 @@
 import {
+  ConsequenciaDoDescumprimentoCodigo,
   BlocoSistemaCodigo,
   EfeitoNaAnaliseDoDocumentoCodigo,
   EscolhaDaValidadeCodigo,
@@ -76,7 +77,7 @@ const conteudo: ConteudoDoFormulario<number> = {
       tipoDocumentoCodigo: 'LAUDO_MEDICO',
       obrigatorio: true,
       quando: QUANDO,
-      consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
+      consequenciaDoDescumprimento: ConsequenciaDoDescumprimentoCodigo.ELIMINA_DO_PROCESSO,
       abrePrazoParaReenvio: false,
       basesLegais: null,
     },
@@ -85,9 +86,9 @@ const conteudo: ConteudoDoFormulario<number> = {
     {
       quantidadeMinima: 1,
       indeferimento: {
-        consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
+        consequenciaDoDescumprimento: ConsequenciaDoDescumprimentoCodigo.RETIRA_A_MODALIDADE,
+        abrePrazoParaReenvio: true,
         basesLegais: [],
-        abrePrazoParaReenvio: false,
       },
       documentos: [
         {
@@ -95,7 +96,7 @@ const conteudo: ConteudoDoFormulario<number> = {
           tipoDocumentoCodigo: 'CPF',
           obrigatorio: false,
           quando: QUANDO,
-          consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
+          consequenciaDoDescumprimento: null,
           abrePrazoParaReenvio: false,
           basesLegais: null,
         },
@@ -119,6 +120,35 @@ const comCodigosDesconhecidos: ConteudoDoFormulario<number> = {
 
 const operadorDe = (predicado: readonly (readonly { operador: unknown }[])[] | null | undefined) =>
   predicado?.[0][0].operador;
+
+const { ELIMINA_DO_PROCESSO, RETIRA_A_MODALIDADE } = ConsequenciaDoDescumprimentoCodigo;
+const INDEFERIMENTO_DO_LAUDO = {
+  obrigatorio: true,
+  consequenciaDoDescumprimento: ELIMINA_DO_PROCESSO,
+  abrePrazoParaReenvio: false,
+  basesLegais: null,
+};
+const INDEFERIMENTO_DO_GRUPO = {
+  consequenciaDoDescumprimento: RETIRA_A_MODALIDADE,
+  abrePrazoParaReenvio: true,
+  basesLegais: [],
+};
+const SEM_CONSEQUENCIA = {
+  obrigatorio: false,
+  consequenciaDoDescumprimento: null,
+  abrePrazoParaReenvio: false,
+  basesLegais: null,
+};
+const CAMPOS_DO_LAUDO = {
+  obrigatorio: true,
+  consequenciaDoDescumprimento: ELIMINA_DO_PROCESSO,
+  abrePrazoParaReenvio: false,
+};
+const CAMPOS_DA_CERTIDAO = {
+  obrigatorio: false,
+  consequenciaDoDescumprimento: null,
+  abrePrazoParaReenvio: true,
+};
 
 describe('conteudoParaOModelo', () => {
   const gravado = conteudoParaOModelo(conteudo);
@@ -225,29 +255,26 @@ describe('conteudoParaOModelo', () => {
     ).toThrow('O valor informado para bloco da página é inválido.');
   });
 
-  it('agrupa o indeferimento do documento e leva os grupos dentro do conjunto', () => {
-    const { documentosExigidos, gruposDeDocumentos } = gravado.conjuntoDeDocumentos ?? {};
+  it('agrupa o indeferimento do documento no bloco, sem os campos soltos', () => {
+    const { documentosExigidos } = gravado.conjuntoDeDocumentos ?? {};
 
-    expect(documentosExigidos?.[0]).toMatchObject({
-      indeferimento: {
-        obrigatorio: true,
-        consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
-        basesLegais: null,
-        abrePrazoParaReenvio: false,
-      },
-    });
+    expect(documentosExigidos?.[0]).toMatchObject({ indeferimento: INDEFERIMENTO_DO_LAUDO });
     expect(documentosExigidos?.[0]).not.toHaveProperty('consequenciaDoDescumprimento');
+  });
+
+  it('leva o indeferimento do grupo dentro do conjunto, com a escolha de prazo', () => {
+    const { gruposDeDocumentos } = gravado.conjuntoDeDocumentos ?? {};
+
     expect(gruposDeDocumentos?.[0]).toMatchObject({
       quantidadeMinima: 1,
-      indeferimento: {
-        consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
-        basesLegais: [],
-        abrePrazoParaReenvio: false,
-      },
+      indeferimento: INDEFERIMENTO_DO_GRUPO,
     });
-    expect(gruposDeDocumentos?.[0].documentos?.[0].indeferimento).toMatchObject({
-      obrigatorio: false,
-    });
+  });
+
+  it('grava como nula a consequência que o documento do grupo não definiu', () => {
+    const { gruposDeDocumentos } = gravado.conjuntoDeDocumentos ?? {};
+
+    expect(gruposDeDocumentos?.[0].documentos?.[0].indeferimento).toEqual(SEM_CONSEQUENCIA);
   });
 
   it('grava os requisitos só com os códigos, como o modelo os recebe', () => {
@@ -306,16 +333,10 @@ describe('conteudoDoModelo', () => {
     const [laudo, certidao] = lido.documentosExigidos ?? [];
 
     expect(laudo).toMatchObject({
-      obrigatorio: true,
-      consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
-      abrePrazoParaReenvio: false,
+      ...CAMPOS_DO_LAUDO,
       basesLegais: [{ referencia: 'Lei 13.146/2015' }],
     });
-    expect(certidao).toMatchObject({
-      obrigatorio: false,
-      consequenciaDoDescumprimento: null,
-      abrePrazoParaReenvio: true,
-    });
+    expect(certidao).toMatchObject(CAMPOS_DA_CERTIDAO);
     expect(laudo).not.toHaveProperty('indeferimento');
   });
 

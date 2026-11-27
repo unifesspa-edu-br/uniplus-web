@@ -81,7 +81,7 @@ export class ModeloFormularioEdicaoStore {
     params: new HttpParams().set('limit', '100'),
     context: withVendorMime('tipo-documento', 1),
   }));
-  private readonly consequenciasDoIndeferimento = useApiResource<readonly OpcaoDeComprovacaoDto[]>(
+  private readonly consequenciasDoDescumprimento = useApiResource<readonly OpcaoDeComprovacaoDto[]>(
     () => ({
       url: `${this.selecaoBasePath}/api/selecao/vocabularios/consequencias-do-descumprimento`,
       context: withVendorMime('consequencias-do-descumprimento', 1),
@@ -127,9 +127,9 @@ export class ModeloFormularioEdicaoStore {
   readonly tiposDeDocumento = computed<readonly OpcaoDoDocumento[]>(() =>
     (this.tiposDocumento.data() ?? []).map(({ codigo, nome }) => ({ codigo, nome })),
   );
-  readonly consequencias = computed(() => this.consequenciasDoIndeferimento.data() ?? []);
+  readonly consequencias = computed(() => this.consequenciasDoDescumprimento.data() ?? []);
   readonly vocabularioDosDocumentosComErro = computed(() =>
-    [this.fasesCanonicas, this.tiposDocumento, this.consequenciasDoIndeferimento].some(
+    [this.fasesCanonicas, this.tiposDocumento, this.consequenciasDoDescumprimento].some(
       (recurso) => recurso.problem() !== null || recurso.error() !== undefined,
     ),
   );
@@ -140,7 +140,7 @@ export class ModeloFormularioEdicaoStore {
     () =>
       this.fasesCanonicas.isLoading() ||
       this.tiposDocumento.isLoading() ||
-      this.consequenciasDoIndeferimento.isLoading(),
+      this.consequenciasDoDescumprimento.isLoading(),
   );
 
   readonly leituraDoModelo = leituraNoTitulo({
@@ -194,7 +194,7 @@ export class ModeloFormularioEdicaoStore {
   recarregarVocabularioDosDocumentos(): void {
     this.fasesCanonicas.reload();
     this.tiposDocumento.reload();
-    this.consequenciasDoIndeferimento.reload();
+    this.consequenciasDoDescumprimento.reload();
   }
 
   recarregar(): void {
