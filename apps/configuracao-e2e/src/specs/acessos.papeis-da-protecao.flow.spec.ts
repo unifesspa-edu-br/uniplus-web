@@ -3,6 +3,7 @@ import type { ComoAApiEnvia } from '../support/como-a-api-envia';
 import { expect, test, type Page } from '@playwright/test';
 import { assertReflowContract, mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import { UNIDADE_CEPS, mockRota, mockUnidades } from '../support/api-de-perfis-filas';
+import { tipoDeEscopo } from '../support/enumerados-de-autorizacao';
 import {
   PERMISSOES_DA_BETINA_SO_APROVA,
   PERMISSOES_DO_DIOGO_SO_APROVA,
@@ -19,7 +20,7 @@ const QUEM_DECIDE =
 const ITEM = {
   concessaoId: 'c1',
   beneficiarioNome: 'Fernanda Drumond',
-  escopoTipo: 'UNIDADE',
+  escopoTipo: tipoDeEscopo('UNIDADE'),
   unidadeId: UNIDADE_CEPS,
   validaAte: null,
   versaoAtual: 1,

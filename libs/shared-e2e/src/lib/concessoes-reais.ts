@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { SituacaoDoPedidoCodigo } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDoPedidoCodigo, type TipoDeEscopoCodigo } from '@uniplus/shared-data/autorizacao';
 
 import {
   GESTOR_DE_ACESSOS,
@@ -14,8 +14,6 @@ import {
 } from './backend-real';
 import { PDF_MINIMO, enviarPelaUrlAssinada } from './envio-de-arquivo';
 import type { ValorDoContrato } from './valor-do-contrato';
-
-type TipoDeEscopo = 'UNIDADE' | 'INSTITUICAO';
 
 interface ConcessaoExistente {
   readonly beneficiario: { readonly contaId: string };
@@ -56,7 +54,10 @@ async function pedidoDaConcessao(
   perfilId: string,
   unidadeDaConcessao: string,
 ): Promise<PedidoDeConcessao> {
-  const perfil = await acharNaListagem<{ id: string; escopo: ValorDoContrato<TipoDeEscopo> }>(
+  const perfil = await acharNaListagem<{
+    id: string;
+    escopo: ValorDoContrato<`${TipoDeEscopoCodigo}`>;
+  }>(
     SOLICITANTE_DE_PEDIDOS,
     '/api/autorizacao/perfis-para-pedido?limit=100',
     (p) => p.id === perfilId,

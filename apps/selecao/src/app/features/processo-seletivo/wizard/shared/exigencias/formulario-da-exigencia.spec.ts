@@ -56,7 +56,7 @@ describe('o formulário em que o documento é apresentado', () => {
       regrasDeComprovacao.map(
         (regraPrincipal) => regraPrincipal.documento?.momento?.formularioCodigo,
       ),
-    ).toEqual(['HABILITACAO', 'ISENCAO_TAXA', null]);
+    ).toEqual(['HABILITACAO', 'ISENCAO_TAXA', '']);
   });
 
   it('o formulário declarado que a fase não responde mais não é trocado pelo que ela responde, e a falta é dita', () => {
@@ -93,7 +93,7 @@ describe('o formulário em que o documento é apresentado', () => {
     ).toEqual([
       [ID_ISENCAO, 'INSCRICAO'],
       [ID_HABILITACAO, 'HABILITACAO'],
-      ['01960000-0000-7000-0000-0000000000f3', null],
+      ['01960000-0000-7000-0000-0000000000f3', ''],
     ]);
   });
 

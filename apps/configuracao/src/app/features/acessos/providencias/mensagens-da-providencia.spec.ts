@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { describe, expect, it } from 'vitest';
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
-import { tipoDeEvento } from '../rotulos-de-acesso';
 import { MENSAGENS_DA_PROVIDENCIA } from './mensagens-da-providencia';
 
 const CODIGOS = [
@@ -38,18 +37,5 @@ describe('mensagens da providência', () => {
     });
 
     expect(mensagem.title).toBe(MENSAGENS_DA_PROVIDENCIA[`providencia.${codigo}`].titulo);
-  });
-
-  it('a trilha da concessão nomeia os quatro eventos novos como o contrato', () => {
-    expect(
-      ['providencia_solicitada', 'providencia_respondida', 'providencia_atendida', 'vencida'].map(
-        tipoDeEvento,
-      ),
-    ).toEqual([
-      'Providência solicitada',
-      'Providência respondida',
-      'Providência atendida',
-      'Concessão vencida',
-    ]);
   });
 });

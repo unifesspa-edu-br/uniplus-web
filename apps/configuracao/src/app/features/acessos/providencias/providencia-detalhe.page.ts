@@ -16,7 +16,7 @@ import {
   FalhaDeLeituraComponent,
   IndicadorDaLeituraDirective,
   SpinnerComponent,
-  TagComponent,
+  TagDoCodigoComponent,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { RecusaDaLeituraComponent } from '../../../shared/recusa-da-leitura';
@@ -25,11 +25,7 @@ import { nomesDeEscopo } from '../nomes-de-escopo';
 import { RevogarConcessaoDialogComponent } from '../revogar-concessao-dialog.component';
 import { autorDoEvento } from '../trilha-de-acesso.component';
 import { ProvidenciaDetalheStore } from './providencia-detalhe.store';
-import {
-  encerramentoDaConcessao,
-  situacaoDaProvidencia,
-  tipoDaProvidencia,
-} from './rotulos-da-providencia';
+import { VARIANTES_DA_SITUACAO } from './rotulos-da-providencia';
 import { TramitacaoDaProvidencia, type AtoSobreAProvidencia } from './tramitacao-da-providencia';
 
 const ID_DO_TITULO = 'cfg-providencia-titulo';
@@ -52,7 +48,7 @@ const ID_DO_TITULO = 'cfg-providencia-titulo';
     RecusaDaLeituraComponent,
     RevogarConcessaoDialogComponent,
     SpinnerComponent,
-    TagComponent,
+    TagDoCodigoComponent,
   ],
   providers: [ProvidenciaDetalheStore, TramitacaoDaProvidencia],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,14 +66,12 @@ export class ProvidenciaDetalhePage {
   protected readonly idDoTitulo = ID_DO_TITULO;
   protected readonly escopo = nomesDeEscopo();
   protected readonly pessoa = autorDoEvento;
-  protected readonly situacao = situacaoDaProvidencia;
-  protected readonly tipo = tipoDaProvidencia;
-  protected readonly encerramento = encerramentoDaConcessao;
+  protected readonly variantes = VARIANTES_DA_SITUACAO;
   /** Responde e atende quem administra concessões, a providência aberta, sem impedimento. */
   protected readonly podeTramitar = computed(() => {
     const providencia = this.store.dados();
     return (
-      providencia?.situacao === SituacaoDaProvidenciaCodigo.ABERTA &&
+      providencia?.situacao.codigo === SituacaoDaProvidenciaCodigo.ABERTA &&
       !providencia.impedidoDeResponder &&
       this.permissoes.tem(PERMISSAO.autorizacao.concessoesAdministrar)
     );

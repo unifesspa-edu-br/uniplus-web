@@ -49,20 +49,24 @@ function indeferimentoPendente() {
   };
 }
 
-function documentoPendente(tipoId: string, faseId: string) {
+function documentoPendente(tipoId: string, faseId: string, formularioCodigo: string) {
   return {
     tipoDocumento: { id: tipoId },
-    momento: { faseId, etapaId: null },
+    momento: { faseId, etapaId: null, formularioCodigo },
     aplicabilidade: { tipo: 'GERAL' as AplicabilidadeCodigo.GERAL, condicoes: [] },
     indeferimento: indeferimentoPendente(),
     requisitos: requisitosPendentes(),
   };
 }
 
-function regraPendente(tipoId: string, faseId: string): RegraNoTransporte {
+function regraPendente(
+  tipoId: string,
+  faseId: string,
+  formularioCodigo: string,
+): RegraNoTransporte {
   return {
     forma: 'DOCUMENTO',
-    documento: documentoPendente(tipoId, faseId),
+    documento: documentoPendente(tipoId, faseId, formularioCodigo),
     cardinalidade: null,
     indeferimento: null,
     itens: null,
@@ -73,12 +77,13 @@ export async function exigirTipoPendente(
   processoId: string,
   tipoId: string,
   faseId: string,
+  formularioCodigo: string,
 ): Promise<void> {
   const resposta = await chamarApi<{ code: string }>(
     OPERADOR_DO_ROTEIRO,
     'PUT',
     `/api/selecao/processos-seletivos/${processoId}/documentos-exigidos`,
-    { corpo: [regraPendente(tipoId, faseId)] },
+    { corpo: [regraPendente(tipoId, faseId, formularioCodigo)] },
   );
   verificarRecusa(resposta);
 }

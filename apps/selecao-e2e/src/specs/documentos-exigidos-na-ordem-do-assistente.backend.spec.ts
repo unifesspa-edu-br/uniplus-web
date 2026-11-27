@@ -43,14 +43,14 @@ async function novoProcesso() {
   return novoRascunhoComAFaseDeInscricao(nome);
 }
 
-function regras(faseId: string, formularioCodigo: string | null) {
+function regras(faseId: string, formularioCodigo: string) {
   return tiposIds.map((tipoId) => regraDoDocumento(tipoId, faseId, formularioCodigo));
 }
 
 test('recusa documento sem formulário e não grava nenhum', async () => {
   const { processoId, faseDeInscricaoId } = await novoProcesso();
 
-  const resposta = await enviarDocumentosExigidos(processoId, regras(faseDeInscricaoId, null));
+  const resposta = await enviarDocumentosExigidos(processoId, regras(faseDeInscricaoId, ''));
 
   expect(resposta.status).toBe(422);
   expect(resposta.corpo?.errors.map((erro) => erro.code)).toContain(
@@ -61,7 +61,7 @@ test('recusa documento sem formulário e não grava nenhum', async () => {
 
 test('grava os documentos citando o formulário de inscrição depois de gravado', async () => {
   const { processoId, faseDeInscricaoId } = await novoProcesso();
-  await enviarDocumentosExigidos(processoId, regras(faseDeInscricaoId, null));
+  await enviarDocumentosExigidos(processoId, regras(faseDeInscricaoId, ''));
 
   const formulario = await gravarFormulario(
     processoId,

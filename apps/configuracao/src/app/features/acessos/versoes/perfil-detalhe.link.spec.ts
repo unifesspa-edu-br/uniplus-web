@@ -1,4 +1,4 @@
-import { SituacaoDaVersao } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDaVersaoCodigo } from '@uniplus/shared-data/autorizacao';
 import type { ComponentFixture } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -87,13 +87,13 @@ describe('PerfilDetalhePage: link da versão', () => {
   });
 
   it('com a versão cancelada, mostra o aviso e o perfil, sem versão pendente', async () => {
-    const { host } = await abrir(ok(perfilComEncerrada(SituacaoDaVersao.CANCELADA, 2)), {
+    const { host } = await abrir(ok(perfilComEncerrada(SituacaoDaVersaoCodigo.CANCELADA, 2)), {
       versaoId: 'v2',
       concedidas: [PERMISSAO.autorizacao.perfisAprovarProtecaoDeDados],
     });
 
     expect(host.textContent).toContain('A versão do link já não está pendente');
-    expect(host.textContent).toContain('A última versão proposta, a 2, foi cancelada.');
+    expect(host.textContent).toContain('A última versão proposta, a 2, está cancelada.');
     expect(host.textContent).not.toContain('A última versão proposta não entrou em vigor');
     expect(host.textContent).toContain('Versão em vigor');
     expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
@@ -109,13 +109,13 @@ describe('PerfilDetalhePage: link da versão', () => {
   });
 
   it('com a versão do link em vigor e uma proposta posterior recusada, mostra os dois avisos', async () => {
-    const { host } = await abrir(ok(perfilComEncerrada(SituacaoDaVersao.RECUSADA, 2)), {
+    const { host } = await abrir(ok(perfilComEncerrada(SituacaoDaVersaoCodigo.RECUSADA, 2)), {
       versaoId: 'v1',
     });
 
     expect(host.textContent).toContain('Esta versão foi aprovada e está em vigor.');
     expect(host.textContent).toContain('A última versão proposta não entrou em vigor');
-    expect(host.textContent).toContain('A versão 2 foi recusada.');
+    expect(host.textContent).toContain('A versão 2 está recusada.');
   });
 
   it('ao trocar a versão do link na mesma página, rola até a nova versão', async () => {

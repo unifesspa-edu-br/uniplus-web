@@ -4198,7 +4198,7 @@ export interface components {
             /** Format: uuid */
             readonly perfilId: string;
             readonly nome: string;
-            readonly escopoTipo: string;
+            readonly escopoTipo: components["schemas"]["TipoDeEscopo"];
             /** Format: uuid */
             readonly unidadeId: null | string;
             readonly unidadeSigla: null | string;
@@ -4692,6 +4692,16 @@ export interface components {
          * @enum {string}
          */
         readonly TipoDeCampoCodigo: TipoDeCampoCodigo;
+        readonly TipoDeEscopo: {
+            readonly codigo: components["schemas"]["TipoDeEscopoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `UNIDADE`: Unidade
+         *     - `INSTITUICAO`: Instituição
+         * @enum {string}
+         */
+        readonly TipoDeEscopoCodigo: TipoDeEscopoCodigo;
         readonly TipoDeficienciaDto: {
             /** Format: uuid */
             readonly id: string;
@@ -12558,7 +12568,7 @@ export interface operations {
     readonly ListarTermosDeConsentimento: {
         readonly parameters: {
             readonly query?: {
-                /** @description Termo de busca livre (caixa-insensível) sobre o Nome do termo de consentimento; ausente/vazio = sem filtro. Até 200 caracteres, sem contar os espaços das pontas. Mantenha fixo ao navegar prev/next (o cursor não vincula o filtro). */
+                /** @description Termo de busca livre (caixa-insensível) sobre o Nome do termo de consentimento; ausente/vazio = sem filtro. Até 200 caracteres, sem contar os espaços das pontas. O cursor só continua com a mesma busca: outro termo é recusado com 400. Mantenha fixo ao navegar prev/next. */
                 readonly q?: string;
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
@@ -16720,6 +16730,10 @@ export enum TipoDeCampoCodigo {
     DATA = "DATA",
     ENDERECO = "ENDERECO",
     MUNICIPIO = "MUNICIPIO"
+}
+export enum TipoDeEscopoCodigo {
+    UNIDADE = "UNIDADE",
+    INSTITUICAO = "INSTITUICAO"
 }
 export enum TipoDoDadoCodigo {
     SIM_OU_NAO = "SIM_OU_NAO",

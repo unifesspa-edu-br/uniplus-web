@@ -1,5 +1,8 @@
 import type { Page, Route } from '@playwright/test';
+import type { PerfilParaPedidoDto } from '@uniplus/shared-data/autorizacao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { pedidoSeed, UNIDADE_ID } from './api-de-acesso/modelo';
+import { situacaoDoPedido, tipoDeEscopo } from './enumerados-de-autorizacao';
 import { contaIdDe } from './api-de-acesso/resposta';
 import {
   CORS_HEADERS,
@@ -14,12 +17,12 @@ export const PEDIDO_ID = '01960000-0000-7000-0000-00000000cc21';
 const FERNANDA = { emissor: 'unifesspa', contaId: 'conta-fernanda-0001-ficticia' };
 
 /** O perfil com dado sensível exige o termo; o comum não. */
-const PERFIS_PARA_PEDIDO = [
+const PERFIS_PARA_PEDIDO: readonly JsonDaApi<PerfilParaPedidoDto>[] = [
   {
     id: PERFIL_SENSIVEL_ID,
     nome: 'Analista de documentos',
     descricao: 'Analisa os documentos pessoais do processo.',
-    escopo: 'UNIDADE',
+    escopo: tipoDeEscopo('UNIDADE'),
     exigeAprovacaoDeProtecaoDeDados: true,
     governanca: null,
   },
@@ -72,7 +75,7 @@ export interface ChamadaDoTermo {
 export interface OpcoesDoPedido {
   readonly solicitadoPorMim: boolean;
   readonly anexaraDocumento: boolean;
-  readonly situacao?: string;
+  readonly situacao?: Parameters<typeof situacaoDoPedido>[0];
   readonly termo?: object | null;
 }
 
@@ -89,7 +92,7 @@ export function pedidoComTermo(opcoes: OpcoesDoPedido) {
   return (contaId: string) => ({
     ...pedidoSeed({
       id: PEDIDO_ID,
-      situacao: opcoes.situacao ?? 'AGUARDANDO_BENEFICIARIO',
+      situacao: situacaoDoPedido(opcoes.situacao ?? 'AGUARDANDO_BENEFICIARIO'),
       etapaAtual: null,
       ...partesDoPedido(opcoes, contaId),
     }),

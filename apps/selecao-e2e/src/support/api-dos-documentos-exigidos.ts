@@ -57,11 +57,11 @@ const COMUM_AOS_DOCUMENTOS = {
   requisitos: REQUISITOS,
 } satisfies Partial<DocumentoEnviado>;
 
-/** O documento exigido de um tipo, na fase e (ou não) no formulário citado. */
+/** O documento exigido de um tipo, na fase e no formulário citado (texto vazio = sem formulário). */
 export function regraDoDocumento(
   tipoId: string,
   faseId: string,
-  formularioCodigo: string | null,
+  formularioCodigo: string,
 ): RegraEnviada {
   const momento = { faseId, etapaId: null, formularioCodigo };
   return {

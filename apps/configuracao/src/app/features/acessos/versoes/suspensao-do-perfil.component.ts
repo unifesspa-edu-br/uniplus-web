@@ -4,6 +4,28 @@ import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import type { SuspensaoDoPerfilDto } from '@uniplus/shared-data/autorizacao';
 import { decisaoDaEtapa, porQuemDecide } from './rotulos-da-versao';
 
+type Etapa = SuspensaoDoPerfilDto['papelDeQuemSuspendeu'];
+
+function contem(etapas: readonly Etapa[], etapa: Etapa): boolean {
+  return etapas.some(({ codigo }) => codigo === etapa.codigo);
+}
+
+/** As exigidas agora e, depois, as já decididas que a suspensão deixou de exigir. */
+function situacaoDasEtapas({ etapasExigidasAgora, etapasDecididas }: SuspensaoDoPerfilDto) {
+  const dispensadas = etapasDecididas.filter((etapa) => !contem(etapasExigidasAgora, etapa));
+  return [
+    ...etapasExigidasAgora.map((etapa) => ({
+      etapa,
+      situacao: contem(etapasDecididas, etapa) ? 'decidida' : 'aguarda a decisão',
+    })),
+    ...dispensadas.map((etapa) => ({ etapa, situacao: 'decidida; não é mais exigida' })),
+  ].map(({ etapa, situacao }) => ({
+    codigo: etapa.codigo,
+    porQuem: porQuemDecide(etapa),
+    situacao,
+  }));
+}
+
 /** A suspensão em curso: desde quando, quem a determinou e o que falta decidir para retomar. */
 @Component({
   selector: 'cfg-suspensao-do-perfil',
@@ -16,7 +38,7 @@ import { decisaoDaEtapa, porQuemDecide } from './rotulos-da-versao';
       perfil dá acesso. As concessões não foram revogadas e voltam a valer quando a suspensão for
       retomada.
       <ul class="cfg-lista">
-        @for (item of etapas(); track item.etapa) {
+        @for (item of etapas(); track item.codigo) {
           <li>
             Retomada {{ item.porQuem }}:
             <strong>{{ item.situacao }}</strong>
@@ -31,20 +53,5 @@ export class SuspensaoDoPerfilComponent {
   protected readonly decisao = computed(() =>
     decisaoDaEtapa(this.suspensao().papelDeQuemSuspendeu),
   );
-  /** As exigidas agora e, depois, as já decididas que a suspensão deixou de exigir. */
-  protected readonly etapas = computed(() => {
-    const { etapasExigidasAgora, etapasDecididas } = this.suspensao();
-    const dispensadas = etapasDecididas.filter((codigo) => !etapasExigidasAgora.includes(codigo));
-    return [
-      ...etapasExigidasAgora.map((codigo) => ({
-        codigo,
-        situacao: etapasDecididas.includes(codigo) ? 'decidida' : 'aguarda a decisão',
-      })),
-      ...dispensadas.map((codigo) => ({ codigo, situacao: 'decidida; não é mais exigida' })),
-    ].map(({ codigo, situacao }) => ({
-      etapa: codigo,
-      porQuem: porQuemDecide(codigo),
-      situacao,
-    }));
-  });
+  protected readonly etapas = computed(() => situacaoDasEtapas(this.suspensao()));
 }

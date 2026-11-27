@@ -1,7 +1,12 @@
 import {
-  EtapaDoPedido,
+  ClassificacaoDeProtecaoCodigo,
+  EtapaDoPedidoCodigo,
+  ResultadoDaDecisaoCodigo,
+  SituacaoDoAnexoCodigo,
   SituacaoDoPedidoCodigo,
-  TipoDeEscopo,
+  TipoDeEscopoCodigo,
+  TipoDeGovernancaCodigo,
+  TipoDeOrigemCodigo,
 } from '@uniplus/shared-data/autorizacao';
 import { HttpErrorResponse, HttpHeaders, HttpRequest, HttpResponse } from '@angular/common/http';
 import { throwError } from 'rxjs';
@@ -60,10 +65,77 @@ export function concedidas(...codigos: string[]) {
   return { tem: (codigo: string) => codigos.includes(codigo) };
 }
 
+/** Um valor de enum como a API o devolve: o código e o rótulo em português. */
+function enumerado<C extends string>(codigo: C, rotulo: string) {
+  return { codigo, rotulo } as const;
+}
+
+export const SITUACAO_DO_PEDIDO = {
+  AGUARDANDO_DOCUMENTO: enumerado(
+    SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO,
+    'Aguardando documento',
+  ),
+  AGUARDANDO_BENEFICIARIO: enumerado(
+    SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO,
+    'Aguardando beneficiário',
+  ),
+  AGUARDANDO_GESTOR: enumerado(SituacaoDoPedidoCodigo.AGUARDANDO_GESTOR, 'Aguardando gestor'),
+  AGUARDANDO_PROTECAO_DE_DADOS: enumerado(
+    SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
+    'Aguardando proteção de dados',
+  ),
+  APROVADO: enumerado(SituacaoDoPedidoCodigo.APROVADO, 'Aprovado'),
+  RECUSADO: enumerado(SituacaoDoPedidoCodigo.RECUSADO, 'Recusado'),
+  DEVOLVIDO: enumerado(SituacaoDoPedidoCodigo.DEVOLVIDO, 'Devolvido'),
+  CANCELADO: enumerado(SituacaoDoPedidoCodigo.CANCELADO, 'Cancelado'),
+};
+
+export const ETAPA_DO_PEDIDO = {
+  GESTOR: enumerado(EtapaDoPedidoCodigo.GESTOR, 'Gestor'),
+  PROTECAO_DE_DADOS: enumerado(EtapaDoPedidoCodigo.PROTECAO_DE_DADOS, 'Proteção de dados'),
+};
+
+export const RESULTADO_DA_DECISAO = {
+  APROVADO: enumerado(ResultadoDaDecisaoCodigo.APROVADO, 'Aprovado'),
+  RECUSADO: enumerado(ResultadoDaDecisaoCodigo.RECUSADO, 'Recusado'),
+  PERFIL_ALTERADO: enumerado(ResultadoDaDecisaoCodigo.PERFIL_ALTERADO, 'Perfil alterado'),
+};
+
+export const CLASSIFICACAO_DE_PROTECAO = {
+  PUBLICO: enumerado(ClassificacaoDeProtecaoCodigo.PUBLICO, 'Público'),
+  INTERNO: enumerado(ClassificacaoDeProtecaoCodigo.INTERNO, 'Interno'),
+  PESSOAL: enumerado(ClassificacaoDeProtecaoCodigo.PESSOAL, 'Pessoal'),
+  IDENTIFICADOR: enumerado(ClassificacaoDeProtecaoCodigo.IDENTIFICADOR, 'Identificador'),
+};
+
+export const TIPO_DE_GOVERNANCA = {
+  GESTOR_DE_ACESSOS: enumerado(TipoDeGovernancaCodigo.GESTOR_DE_ACESSOS, 'Gestor de acessos'),
+  REPRESENTANTE_DO_CONTROLADOR: enumerado(
+    TipoDeGovernancaCodigo.REPRESENTANTE_DO_CONTROLADOR,
+    'Representante do controlador',
+  ),
+};
+
+export const SITUACAO_DO_ANEXO = {
+  AGUARDANDO_ENVIO: enumerado(SituacaoDoAnexoCodigo.AGUARDANDO_ENVIO, 'Aguardando envio'),
+  EM_VERIFICACAO: enumerado(SituacaoDoAnexoCodigo.EM_VERIFICACAO, 'Em verificação'),
+  VERIFICADO: enumerado(SituacaoDoAnexoCodigo.VERIFICADO, 'Verificado'),
+};
+
+export const TIPO_DE_ESCOPO = {
+  UNIDADE: enumerado(TipoDeEscopoCodigo.UNIDADE, 'Unidade'),
+  INSTITUICAO: enumerado(TipoDeEscopoCodigo.INSTITUICAO, 'Instituição'),
+};
+
+export const TIPO_DE_ORIGEM = {
+  PEDIDO: enumerado(TipoDeOrigemCodigo.PEDIDO, 'Pedido'),
+  INSTALACAO: enumerado(TipoDeOrigemCodigo.INSTALACAO, 'Instalação'),
+};
+
 const PEDIDO_AGUARDANDO_O_GESTOR = {
   id: 'pedido-1',
-  situacao: SituacaoDoPedidoCodigo.AGUARDANDO_GESTOR,
-  etapaAtual: EtapaDoPedido.GESTOR,
+  situacao: SITUACAO_DO_PEDIDO.AGUARDANDO_GESTOR,
+  etapaAtual: ETAPA_DO_PEDIDO.GESTOR,
   solicitante: { emissor: 'unifesspa', contaId: 'conta-outra-pessoa' },
   beneficiario: {
     email: 'betina.teste@unifesspa.edu.br',
@@ -71,7 +143,7 @@ const PEDIDO_AGUARDANDO_O_GESTOR = {
     nome: 'Betina Teste',
   },
   perfil: { id: 'perfil-1', nome: 'Operador de inscrições' },
-  escopo: { tipo: TipoDeEscopo.UNIDADE, unidadeId: 'unidade-1' },
+  escopo: { tipo: TIPO_DE_ESCOPO.UNIDADE, unidadeId: 'unidade-1' },
   justificativa: 'Atende a comissão do processo seletivo.',
   admitePrazo: true,
   validaAteSugerida: null,

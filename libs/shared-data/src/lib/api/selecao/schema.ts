@@ -3664,14 +3664,9 @@ export interface components {
         readonly DocumentoDaConfiguracaoCronogramaRegraRecurso: components["schemas"]["DocumentoDaConfiguracaoComunsPropriedadesDoRecurso"];
         /**
          * Critério de desempate
-         * @description Um critério de desempate: a regra do catálogo e os parâmetros dela. Os critérios são aplicados na ordem, do primeiro ao último.
+         * @description Um critério de desempate: a regra do catálogo e os parâmetros dela. Os critérios são aplicados na ordem em que aparecem na lista, do primeiro ao último.
          */
         readonly DocumentoDaConfiguracaoDesempate: {
-            /**
-             * Ordem
-             * @description Posição do critério na sequência de desempate, a partir de 1.
-             */
-            readonly ordem?: number;
             /**
              * Regra do critério
              * @description Regra de desempate no catálogo de regras.
@@ -4242,8 +4237,8 @@ export interface components {
              */
             readonly hipoteseLegal?: string;
             /**
-             * Fatos comprovados
-             * @description Códigos dos fatos do candidato que o documento comprova. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
+             * Dados comprovados
+             * @description Códigos dos dados do candidato que o documento comprova, declarados pelo autor da configuração.
              */
             readonly dadosComprovados?: readonly string[];
             /**
@@ -5115,7 +5110,7 @@ export interface components {
             readonly destinoFinalCodigo?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
             /**
              * Destinos
-             * @description Os destinos de cada modalidade de origem, até 56 no total e até 8 origens distintas.
+             * @description Os destinos de cada modalidade de origem, até 56 no total e até 8 origens distintas. A ordem de um destino é a posição dele na lista entre os da mesma modalidade de origem, a partir de 1, e decide quem recebe primeiro.
              */
             readonly destinos?: readonly {
                 /**
@@ -5123,11 +5118,6 @@ export interface components {
                  * @description Código da modalidade que cede as vagas.
                  */
                 readonly modalidadeOrigemCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
-                /**
-                 * Ordem
-                 * @description Posição do destino na ordem da origem, a partir de 1. A ordem é semântica: decide quem recebe primeiro.
-                 */
-                readonly ordem: number;
                 /**
                  * Modalidade de destino
                  * @description Código da modalidade que recebe as vagas.
@@ -6548,14 +6538,14 @@ export interface components {
             readonly faseId: string;
             /** Format: uuid */
             readonly etapaId: null | string;
-            readonly formularioCodigo: null | string;
+            readonly formularioCodigo: string;
         };
         readonly MomentoDaExigenciaInput: {
             /** Format: uuid */
             readonly faseId: string;
             /** Format: uuid */
             readonly etapaId?: null | string;
-            readonly formularioCodigo?: null | string;
+            readonly formularioCodigo: string;
         };
         readonly MotivoDasInscricoesFechadas: {
             readonly codigo: components["schemas"]["MotivoDasInscricoesFechadasCodigo"];
@@ -6962,7 +6952,7 @@ export interface components {
             /** Format: uuid */
             readonly perfilId: string;
             readonly nome: string;
-            readonly escopoTipo: string;
+            readonly escopoTipo: components["schemas"]["TipoDeEscopo"];
             /** Format: uuid */
             readonly unidadeId: null | string;
             readonly unidadeSigla: null | string;
@@ -7887,6 +7877,16 @@ export interface components {
          * @enum {string}
          */
         readonly TipoDeCondicaoDeHomologacaoCodigo: TipoDeCondicaoDeHomologacaoCodigo;
+        readonly TipoDeEscopo: {
+            readonly codigo: components["schemas"]["TipoDeEscopoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `UNIDADE`: Unidade
+         *     - `INSTITUICAO`: Instituição
+         * @enum {string}
+         */
+        readonly TipoDeEscopoCodigo: TipoDeEscopoCodigo;
         readonly TipoDeLeiauteDoInep: {
             readonly codigo: components["schemas"]["TipoDeLeiauteDoInepCodigo"];
             readonly rotulo: string;
@@ -17831,6 +17831,10 @@ export enum TipoDeCampoCodigo {
 }
 export enum TipoDeCondicaoDeHomologacaoCodigo {
     RESULTADO_NO_RETORNO_DO_INEP = "RESULTADO_NO_RETORNO_DO_INEP"
+}
+export enum TipoDeEscopoCodigo {
+    UNIDADE = "UNIDADE",
+    INSTITUICAO = "INSTITUICAO"
 }
 export enum TipoDeLeiauteDoInepCodigo {
     ENVIO = "ENVIO",

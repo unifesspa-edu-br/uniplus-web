@@ -18677,19 +18677,13 @@
       },
       "DocumentoDaConfiguracaoDesempate": {
         "title": "Crit\u00E9rio de desempate",
-        "description": "Um crit\u00E9rio de desempate: a regra do cat\u00E1logo e os par\u00E2metros dela. Os crit\u00E9rios s\u00E3o aplicados na ordem, do primeiro ao \u00FAltimo.",
+        "description": "Um crit\u00E9rio de desempate: a regra do cat\u00E1logo e os par\u00E2metros dela. Os crit\u00E9rios s\u00E3o aplicados na ordem em que aparecem na lista, do primeiro ao \u00FAltimo.",
         "type": "object",
         "additionalProperties": false,
         "required": [
           "regra"
         ],
         "properties": {
-          "ordem": {
-            "title": "Ordem",
-            "description": "Posi\u00E7\u00E3o do crit\u00E9rio na sequ\u00EAncia de desempate, a partir de 1.",
-            "type": "integer",
-            "minimum": 1
-          },
           "regra": {
             "title": "Regra do crit\u00E9rio",
             "description": "Regra de desempate no cat\u00E1logo de regras.",
@@ -19812,15 +19806,15 @@
             "readOnly": true
           },
           "dadosComprovados": {
-            "title": "Fatos comprovados",
-            "description": "C\u00F3digos dos fatos do candidato que o documento comprova. Campo s\u00F3 de leitura: ignorado na importa\u00E7\u00E3o, porque vem do cat\u00E1logo pelo c\u00F3digo.",
+            "title": "Dados comprovados",
+            "description": "C\u00F3digos dos dados do candidato que o documento comprova, declarados pelo autor da configura\u00E7\u00E3o.",
             "type": "array",
+            "uniqueItems": true,
             "items": {
               "type": "string",
               "minLength": 1,
-              "maxLength": 60
-            },
-            "readOnly": true
+              "maxLength": 50
+            }
           },
           "faseChave": {
             "title": "Fase em que \u00E9 exigido",
@@ -21056,7 +21050,7 @@
           },
           "destinos": {
             "title": "Destinos",
-            "description": "Os destinos de cada modalidade de origem, at\u00E9 56 no total e at\u00E9 8 origens distintas.",
+            "description": "Os destinos de cada modalidade de origem, at\u00E9 56 no total e at\u00E9 8 origens distintas. A ordem de um destino \u00E9 a posi\u00E7\u00E3o dele na lista entre os da mesma modalidade de origem, a partir de 1, e decide quem recebe primeiro.",
             "type": "array",
             "maxItems": 56,
             "items": {
@@ -21064,7 +21058,6 @@
               "additionalProperties": false,
               "required": [
                 "modalidadeOrigemCodigo",
-                "ordem",
                 "modalidadeDestinoCodigo"
               ],
               "properties": {
@@ -21073,12 +21066,6 @@
                   "description": "C\u00F3digo da modalidade que cede as vagas.",
                   "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCadastro",
                   "maxLength": 60
-                },
-                "ordem": {
-                  "title": "Ordem",
-                  "description": "Posi\u00E7\u00E3o do destino na ordem da origem, a partir de 1. A ordem \u00E9 sem\u00E2ntica: decide quem recebe primeiro.",
-                  "type": "integer",
-                  "minimum": 1
                 },
                 "modalidadeDestinoCodigo": {
                   "title": "Modalidade de destino",
@@ -25976,16 +25963,14 @@
             "format": "uuid"
           },
           "formularioCodigo": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": "string"
           }
         }
       },
       "MomentoDaExigenciaInput": {
         "required": [
-          "faseId"
+          "faseId",
+          "formularioCodigo"
         ],
         "type": "object",
         "properties": {
@@ -26001,10 +25986,7 @@
             "format": "uuid"
           },
           "formularioCodigo": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": "string"
           }
         }
       },
@@ -27576,7 +27558,7 @@
             "type": "string"
           },
           "escopoTipo": {
-            "type": "string"
+            "$ref": "#/components/schemas/TipoDeEscopo"
           },
           "unidadeId": {
             "type": [
@@ -31340,6 +31322,29 @@
         ],
         "type": "string",
         "description": "- \u0060RESULTADO_NO_RETORNO_DO_INEP\u0060: Resultado no retorno do INEP \u2014 A inscri\u00E7\u00E3o tem resultado no retorno do INEP."
+      },
+      "TipoDeEscopo": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/TipoDeEscopoCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "TipoDeEscopoCodigo": {
+        "enum": [
+          "UNIDADE",
+          "INSTITUICAO"
+        ],
+        "type": "string",
+        "description": "- \u0060UNIDADE\u0060: Unidade\n- \u0060INSTITUICAO\u0060: Institui\u00E7\u00E3o"
       },
       "TipoDeLeiauteDoInep": {
         "required": [

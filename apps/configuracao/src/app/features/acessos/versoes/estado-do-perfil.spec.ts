@@ -1,5 +1,5 @@
 import { SituacaoDaRevisaoDasConcessoesCodigo } from '@uniplus/shared-data/autorizacao';
-import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
+import { ETAPA_GESTAO, ETAPA_PROTECAO } from './enums-da-api.testing';
 import { describe, expect, it } from 'vitest';
 import {
   acoesDoPerfil,
@@ -33,8 +33,8 @@ const SUSPENSO_DESDE = '2026-11-09T12:00:00Z';
 const DESATIVADO_DESDE = '2026-11-08T12:00:00Z';
 const SUSPENSAO = {
   desde: SUSPENSO_DESDE,
-  papelDeQuemSuspendeu: EtapaDaVersao.GESTAO_DE_ACESSOS,
-  etapasExigidasAgora: [EtapaDaVersao.GESTAO_DE_ACESSOS],
+  papelDeQuemSuspendeu: ETAPA_GESTAO,
+  etapasExigidasAgora: [ETAPA_GESTAO],
   etapasDecididas: [],
 };
 const SUSPENSO = { ...EM_VIGOR, situacaoDoAcesso: ACESSO_SUSPENSO, suspensoDesde: SUSPENSO_DESDE };
@@ -170,21 +170,16 @@ describe('acoesDoPerfil', () => {
   describe('retomada da suspensão', () => {
     const SUSPENSO_A_RETOMAR = {
       ...SUSPENSO,
-      etapasDaRetomadaPorDecidir: [
-        EtapaDaVersao.GESTAO_DE_ACESSOS,
-        EtapaDaVersao.PROTECAO_DE_DADOS,
-      ],
+      etapasDaRetomadaPorDecidir: [ETAPA_GESTAO, ETAPA_PROTECAO],
     };
     const AMBAS = { gestaoDeAcessos: true, protecaoDeDados: true };
 
     it('oferece cada etapa por decidir que a pessoa tem permissão para decidir', () => {
       expect(acoesDoPerfil(SUSPENSO_A_RETOMAR, AMBAS).retomar).toEqual([
-        EtapaDaVersao.GESTAO_DE_ACESSOS,
-        EtapaDaVersao.PROTECAO_DE_DADOS,
+        ETAPA_GESTAO,
+        ETAPA_PROTECAO,
       ]);
-      expect(acoesDoPerfil(SUSPENSO_A_RETOMAR, GESTAO).retomar).toEqual([
-        EtapaDaVersao.GESTAO_DE_ACESSOS,
-      ]);
+      expect(acoesDoPerfil(SUSPENSO_A_RETOMAR, GESTAO).retomar).toEqual([ETAPA_GESTAO]);
       expect(
         acoesDoPerfil(SUSPENSO_A_RETOMAR, { gestaoDeAcessos: false, protecaoDeDados: false })
           .retomar,
@@ -194,10 +189,10 @@ describe('acoesDoPerfil', () => {
     it('não oferece a etapa já decidida nem a que o perfil deixou de exigir', () => {
       const soAProtecao = {
         ...SUSPENSO_A_RETOMAR,
-        etapasDaRetomadaPorDecidir: [EtapaDaVersao.PROTECAO_DE_DADOS],
+        etapasDaRetomadaPorDecidir: [ETAPA_PROTECAO],
       };
 
-      expect(acoesDoPerfil(soAProtecao, AMBAS).retomar).toEqual([EtapaDaVersao.PROTECAO_DE_DADOS]);
+      expect(acoesDoPerfil(soAProtecao, AMBAS).retomar).toEqual([ETAPA_PROTECAO]);
       expect(
         acoesDoPerfil({ ...SUSPENSO_A_RETOMAR, etapasDaRetomadaPorDecidir: [] }, AMBAS).retomar,
       ).toEqual([]);
@@ -207,15 +202,13 @@ describe('acoesDoPerfil', () => {
       const perfil = perfilDoDetalhe({
         suspensao: {
           desde: '2026-11-09T12:00:00Z',
-          papelDeQuemSuspendeu: EtapaDaVersao.GESTAO_DE_ACESSOS,
-          etapasExigidasAgora: [EtapaDaVersao.GESTAO_DE_ACESSOS, EtapaDaVersao.PROTECAO_DE_DADOS],
-          etapasDecididas: [EtapaDaVersao.GESTAO_DE_ACESSOS],
+          papelDeQuemSuspendeu: ETAPA_GESTAO,
+          etapasExigidasAgora: [ETAPA_GESTAO, ETAPA_PROTECAO],
+          etapasDecididas: [ETAPA_GESTAO],
         },
       });
 
-      expect(resumoDoDetalhe(perfil).etapasDaRetomadaPorDecidir).toEqual([
-        EtapaDaVersao.PROTECAO_DE_DADOS,
-      ]);
+      expect(resumoDoDetalhe(perfil).etapasDaRetomadaPorDecidir).toEqual([ETAPA_PROTECAO]);
     });
   });
 

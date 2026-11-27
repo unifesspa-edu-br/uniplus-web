@@ -131,9 +131,11 @@ export class PedidoDetalhePage {
   protected readonly prazo = this.edicao.prazo;
   protected readonly confirmacao = computed(() => CONFIRMACOES[this.acaoPendente()]);
 
-  private readonly encerrado = computed(() => ENCERRADOS.includes(this.pedido()?.situacao ?? ''));
+  private readonly encerrado = computed(() =>
+    ENCERRADOS.includes(this.pedido()?.situacao.codigo ?? ''),
+  );
   protected readonly aguardandoDocumento = computed(
-    () => this.pedido()?.situacao === SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO,
+    () => this.pedido()?.situacao.codigo === SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO,
   );
   protected readonly ehSolicitante = computed(
     () => this.pedido()?.solicitante.contaId === this.usuario.user()?.id,
@@ -153,8 +155,8 @@ export class PedidoDetalhePage {
     const eu = this.usuario.user()?.id;
     return (this.pedido()?.decisoes ?? []).some(
       (decisao) =>
-        decisao.etapa === EtapaDoPedido.GESTOR &&
-        decisao.resultado === ResultadoDaDecisao.APROVADO &&
+        decisao.etapa.codigo === EtapaDoPedido.GESTOR &&
+        decisao.resultado.codigo === ResultadoDaDecisao.APROVADO &&
         decisao.decisor.contaId === eu,
     );
   });
@@ -163,13 +165,13 @@ export class PedidoDetalhePage {
   protected readonly informaPrazo = computed(
     () =>
       this.podeDecidir() &&
-      this.pedido()?.etapaAtual === EtapaDoPedido.GESTOR &&
+      this.pedido()?.etapaAtual?.codigo === EtapaDoPedido.GESTOR &&
       this.pedido()?.admitePrazo === true,
   );
 
   protected readonly podeAceitar = computed(
     () =>
-      this.pedido()?.situacao === SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO &&
+      this.pedido()?.situacao.codigo === SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO &&
       this.ehBeneficiario(),
   );
   /**
@@ -194,7 +196,7 @@ export class PedidoDetalhePage {
     return pedido.termo === null || (pedido.anexaraDocumento && this.aguardandoDocumento());
   });
   protected readonly podeDecidir = computed(() => {
-    const etapaAtual = this.pedido()?.etapaAtual;
+    const etapaAtual = this.pedido()?.etapaAtual?.codigo;
     if (this.ehSolicitante() || this.ehBeneficiario()) return false;
     if (etapaAtual === EtapaDoPedido.PROTECAO_DE_DADOS && this.jaAprovouComoGestor()) return false;
     return (

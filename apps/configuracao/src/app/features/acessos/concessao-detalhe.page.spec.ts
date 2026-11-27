@@ -1,6 +1,5 @@
 import {
   AtorDoEventoDoHistoricoDaConcessaoCodigo,
-  TipoDeEscopo,
   TipoDoEventoDoHistoricoDaConcessaoCodigo,
 } from '@uniplus/shared-data/autorizacao';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -11,7 +10,7 @@ import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import type { ConcessaoDto, EventoDaTrilhaDto } from '@uniplus/shared-data/autorizacao';
 import { ConcessaoDetalhePage } from './concessao-detalhe.page';
 import { assentar, botao, botoes, leituras, pessoa, provedores } from './revisoes/revisao.testing';
-import { ok, recusaPeloInterceptor } from './testes';
+import { TIPO_DE_ESCOPO, TIPO_DE_ORIGEM, ok, recusaPeloInterceptor } from './testes';
 
 const CONSULTAR = PERMISSAO.autorizacao.concessoesConsultar;
 const ID = 'c9';
@@ -22,8 +21,8 @@ const ATIVA: ConcessaoDto = {
   beneficiario: pessoa('conta-fernanda', 'Fernanda Drumond'),
   perfil: { id: 'p1', nome: 'Operador de inscrições' },
   versao: 2,
-  escopo: { tipo: TipoDeEscopo.UNIDADE, unidadeId: 'unidade-1' },
-  origem: { tipo: 'pedido', id: 'pd1' },
+  escopo: { tipo: TIPO_DE_ESCOPO.UNIDADE, unidadeId: 'unidade-1' },
+  origem: { tipo: TIPO_DE_ORIGEM.PEDIDO, id: 'pd1' },
   concedidaEm: '2026-03-02T12:00:00Z',
   validaAte: null,
   revogadaEm: null,

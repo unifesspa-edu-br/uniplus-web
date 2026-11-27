@@ -14,10 +14,9 @@ import { RouterLink } from '@angular/router';
 import type { ConcessaoSuspensaDto, ReclassificacaoDto } from '@uniplus/shared-data/autorizacao';
 import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { MotivoDialogComponent } from '../motivo-dialog.component';
-import { etapa as rotuloDaEtapa } from '../rotulos-de-acesso';
 import { EscritaDoPerfil } from '../versoes/escrita-do-perfil';
 import { LeituraDosPerfis } from '../versoes/leitura-dos-perfis';
-import { PESSOA_SEM_NOME, decidiveisDaEtapa } from './concessoes-da-etapa';
+import { PESSOA_SEM_NOME, decidiveisDaEtapa, etapasDaDecisao } from './concessoes-da-etapa';
 import { DecisaoDaReclassificacao } from './decisao-da-reclassificacao';
 import { focarQuandoPedir } from './foco-por-pedido';
 import { FILA_DA_ETAPA } from './rotulos-da-reclassificacao';
@@ -41,7 +40,9 @@ export class DecisaoDaReclassificacaoComponent {
   protected readonly gravando = inject(EscritaDoPerfil).gravando;
   private readonly leitura = inject(LeituraDosPerfis);
   private readonly erroDaAcao = viewChild<ElementRef<HTMLElement>>('erroDaAcao');
-  protected readonly rotulo = rotuloDaEtapa;
+  protected readonly opcoesDeEtapa = computed(() =>
+    etapasDaDecisao(this.reclassificacao().concessoes, this.etapas()),
+  );
   protected readonly substituida = computed(
     () => !this.reclassificacao().vigente || this.decisao.superada(),
   );
@@ -58,7 +59,7 @@ export class DecisaoDaReclassificacaoComponent {
 
   constructor() {
     effect(() => {
-      const primeira = this.etapas()[0];
+      const primeira = this.opcoesDeEtapa()[0]?.codigo ?? this.etapas()[0];
       if (primeira !== undefined && untracked(this.decisao.etapa) === undefined) {
         untracked(() => this.decisao.escolherEtapa(primeira));
       }

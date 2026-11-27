@@ -1,5 +1,4 @@
-import type { SituacaoDaProvidenciaCodigo } from './schema';
-import type { TipoDaProvidencia, CausaDoEncerramento } from './codigos-de-autorizacao';
+import type { TipoDaProvidencia } from './codigos-de-autorizacao';
 export type { TipoDaProvidencia, CausaDoEncerramento } from './codigos-de-autorizacao';
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
@@ -12,33 +11,18 @@ type Esquemas = components['schemas'];
 
 export type ConcessaoDaProvidenciaDto = Esquemas['ConcessaoDaProvidenciaDto'];
 
-export type EncerramentoDaConcessaoDto = Omit<Esquemas['EncerramentoDaConcessaoDto'], 'causa'> & {
-  readonly causa: CausaDoEncerramento;
-};
+export type EncerramentoDaConcessaoDto = Esquemas['EncerramentoDaConcessaoDto'];
 
 /** Quem respondeu ou atendeu, e quando; o motivo só vem no detalhe. */
 export type AtoDoDesfechoDto = Esquemas['AtoDoDesfechoDto'];
 export type DesfechoDaProvidenciaDto = Esquemas['DesfechoDaProvidenciaDto'];
 
-/** Os vocabulários da providência, que o contrato tipa como texto. */
-interface VocabulariosDaProvidencia {
-  readonly tipo: TipoDaProvidencia;
-  readonly situacao: SituacaoDaProvidenciaCodigo;
-  readonly encerramentoDaConcessao: EncerramentoDaConcessaoDto | null;
-}
-
 /**
  * A providência na fila: sem o fundamento e sem o motivo do desfecho. `impedidoDeResponder` diz
  * que quem lê é quem solicitou ou o beneficiário da concessão, e não responde nem atende.
  */
-export type ProvidenciaResumoDto = Omit<
-  Esquemas['ProvidenciaResumoDto'],
-  keyof VocabulariosDaProvidencia
-> &
-  VocabulariosDaProvidencia;
-
-export type ProvidenciaDto = Omit<Esquemas['ProvidenciaDto'], keyof VocabulariosDaProvidencia> &
-  VocabulariosDaProvidencia;
+export type ProvidenciaResumoDto = Esquemas['ProvidenciaResumoDto'];
+export type ProvidenciaDto = Esquemas['ProvidenciaDto'];
 
 /** Os pedidos com os vocabulários estreitados e os campos que a tela sempre manda. */
 export type SolicitarProvidenciaRequest = Omit<

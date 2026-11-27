@@ -1,37 +1,22 @@
-import { EtapaDaVersao, ResultadoDaDecisao } from '@uniplus/shared-data/autorizacao';
+import { ResultadoDaDecisaoCodigo } from '@uniplus/shared-data/autorizacao';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { VersaoPendenteDto } from '@uniplus/shared-data/autorizacao';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { ETAPA_GESTAO, ETAPA_PROTECAO, resultadoDaDecisao } from './enums-da-api.testing';
 import { versaoPendente } from './perfis.testing';
 import { ResumoDaVersaoComponent } from './resumo-da-versao.component';
-import { resultadoDaDecisao } from './rotulos-da-versao';
 
 type Decisao = VersaoPendenteDto['decisoes'][number];
 
-function decisao(resultado: string): Decisao {
+function decisao(resultado: Decisao['resultado']): Decisao {
   return {
-    etapa: EtapaDaVersao.GESTAO_DE_ACESSOS,
+    etapa: ETAPA_GESTAO,
     resultado,
     nome: 'Operador de inscrições',
     temConcessao: false,
     instante: '2026-11-11T13:40:00Z',
   };
 }
-
-describe('resultadoDaDecisao', () => {
-  it.each([
-    [ResultadoDaDecisao.APROVADO, 'Aprovado', 'success'],
-    [ResultadoDaDecisao.RECUSADO, 'Recusado', 'danger'],
-    [ResultadoDaDecisao.PERFIL_ALTERADO, 'Perfil alterado antes da decisão', 'warning'],
-    [ResultadoDaDecisao.PRAZO_VENCIDO, 'Prazo vencido', 'warning'],
-  ] as const)('mostra %s como "%s" na cor %s', (codigo, texto, variante) => {
-    expect(resultadoDaDecisao(codigo)).toEqual({ texto, variante });
-  });
-
-  it('deixa neutro o resultado que a tela não conhece, sem tratá-lo como recusa', () => {
-    expect(resultadoDaDecisao('outro')).toEqual({ texto: 'outro', variante: 'neutral' });
-  });
-});
 
 describe('ResumoDaVersaoComponent', () => {
   let fixture: ComponentFixture<ResumoDaVersaoComponent>;
@@ -40,19 +25,65 @@ describe('ResumoDaVersaoComponent', () => {
     fixture = TestBed.createComponent(ResumoDaVersaoComponent);
   });
 
-  it('mostra a decisão aprovada pela gestão de acessos como sucesso', () => {
-    fixture.componentRef.setInput(
-      'versao',
-      versaoPendente({ decisoes: [decisao(ResultadoDaDecisao.APROVADO)] }),
-    );
+  function abrir(versao: VersaoPendenteDto): HTMLElement {
+    fixture.componentRef.setInput('versao', versao);
     fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
 
-    const decisoes = [...(fixture.nativeElement as HTMLElement).querySelectorAll('h3')].find(
-      (titulo) => titulo.textContent?.trim() === 'Decisões desta rodada',
-    )?.parentElement;
-    const tag = decisoes?.querySelector('ui-tag .tag');
+  function etiquetaDaDecisao(host: HTMLElement): Element | null | undefined {
+    return [...host.querySelectorAll('h3')]
+      .find((titulo) => titulo.textContent?.trim() === 'Decisões sobre esta versão')
+      ?.parentElement?.querySelector('ui-tag-do-codigo .tag');
+  }
 
-    expect(tag?.textContent?.trim()).toBe('Aprovado');
-    expect(tag?.classList).toContain('tag--success');
+  it.each([
+    [ResultadoDaDecisaoCodigo.APROVADO, 'Aprovado', 'success'],
+    [ResultadoDaDecisaoCodigo.RECUSADO, 'Recusado', 'danger'],
+    [ResultadoDaDecisaoCodigo.PERFIL_ALTERADO, 'Perfil alterado', 'warning'],
+    [ResultadoDaDecisaoCodigo.PRAZO_VENCIDO, 'Prazo vencido', 'warning'],
+    [ResultadoDaDecisaoCodigo.TERMO_EXIGIDO, 'Termo exigido', 'warning'],
+  ] as const)('mostra a decisão %s com o rótulo da API "%s" na cor %s', (codigo, rotulo, cor) => {
+    const host = abrir(versaoPendente({ decisoes: [decisao(resultadoDaDecisao(codigo))] }));
+
+    const etiqueta = etiquetaDaDecisao(host);
+
+    expect(etiqueta?.textContent?.trim()).toBe(rotulo);
+    expect(etiqueta?.classList).toContain(`tag--${cor}`);
+  });
+
+  it('deixa neutro o resultado que a tela não conhece, sem tratá-lo como recusa', () => {
+    const desconhecido = {
+      codigo: 'OUTRO',
+      rotulo: 'Outro resultado',
+    } as unknown as Decisao['resultado'];
+
+    const etiqueta = etiquetaDaDecisao(
+      abrir(versaoPendente({ decisoes: [decisao(desconhecido)] })),
+    );
+
+    expect(etiqueta?.textContent?.trim()).toBe('Outro resultado');
+    expect(etiqueta?.classList).toContain('tag--neutral');
+  });
+
+  function valorDe(host: HTMLElement, termo: string): string | undefined {
+    const rotulo = [...host.querySelectorAll('dt')].find((dt) => dt.textContent?.trim() === termo);
+    return rotulo?.nextElementSibling?.textContent?.replace(/\s+/g, ' ').trim();
+  }
+
+  it('mostra a etapa atual e a situação do documento com o rótulo da API', () => {
+    const host = abrir(versaoPendente());
+
+    expect(valorDe(host, 'Etapa atual')).toBe('Gestão de acessos');
+    expect(valorDe(host, 'Documento instituidor')).toContain('Verificado');
+  });
+
+  it.each([
+    [[ETAPA_GESTAO, ETAPA_PROTECAO], 'Gestão de acessos, Proteção de dados'],
+    [[ETAPA_GESTAO], 'Gestão de acessos'],
+  ])('nomeia as etapas exigidas que a API envia: %j', (etapas, texto) => {
+    const host = abrir(versaoPendente({ etapasExigidas: etapas }));
+
+    expect(valorDe(host, 'Aprovações exigidas')).toBe(texto);
   });
 });

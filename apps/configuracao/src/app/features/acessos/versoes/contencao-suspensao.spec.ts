@@ -1,4 +1,4 @@
-import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
+import { ETAPA_GESTAO } from './enums-da-api.testing';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
@@ -19,8 +19,8 @@ import { perfilDoDetalhe } from './perfis.testing';
 const SUSPENSO = perfilDoDetalhe({
   suspensao: {
     desde: '2026-11-09T15:00:00Z',
-    papelDeQuemSuspendeu: EtapaDaVersao.GESTAO_DE_ACESSOS,
-    etapasExigidasAgora: [EtapaDaVersao.GESTAO_DE_ACESSOS],
+    papelDeQuemSuspendeu: ETAPA_GESTAO,
+    etapasExigidasAgora: [ETAPA_GESTAO],
     etapasDecididas: [],
   },
 });

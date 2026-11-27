@@ -1,4 +1,3 @@
-import { TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { HttpHeaders, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -15,7 +14,7 @@ import {
   type ConcessaoDto,
 } from '@uniplus/shared-data/autorizacao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
-import { UNIDADES, ok } from './testes';
+import { TIPO_DE_ESCOPO, TIPO_DE_ORIGEM, UNIDADES, ok } from './testes';
 
 /** Apoio dos specs da página de concessões: recusas de campo, a concessão ativa e a montagem. */
 
@@ -53,8 +52,8 @@ export const ativa: ConcessaoDto = {
   beneficiario: { emissor: 'unifesspa', contaId: '0123456789abcdef' },
   perfil: { id: 'p1', nome: 'Operador de inscrições' },
   versao: 2,
-  escopo: { tipo: TipoDeEscopo.UNIDADE, unidadeId: 'unidade-1' },
-  origem: { tipo: 'pedido', id: 'pedido-1' },
+  escopo: { tipo: TIPO_DE_ESCOPO.UNIDADE, unidadeId: 'unidade-1' },
+  origem: { tipo: TIPO_DE_ORIGEM.PEDIDO, id: 'pedido-1' },
   concedidaEm: '2026-10-28T12:00:00Z',
   validaAte: null,
   revogadaEm: null,

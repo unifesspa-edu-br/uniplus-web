@@ -7,6 +7,8 @@ import { ProvidenciasPage } from './providencias.page';
 import {
   ADMINISTRAR,
   ROTA,
+  SITUACAO_DA_PROVIDENCIA,
+  TIPO_DA_PROVIDENCIA,
   assentar,
   montar,
   problema,
@@ -54,6 +56,20 @@ describe('ProvidenciasPage', () => {
     expect(linhas()[0]?.querySelector('a, [href]')?.getAttribute('href')).toContain(
       '/acessos/providencias/a',
     );
+  });
+
+  it('mostra o tipo e a situação com o rótulo que a API devolve', async () => {
+    leitura().flush([
+      {
+        ...resumo('c', '2026-11-06T12:00:00Z'),
+        tipo: { ...TIPO_DA_PROVIDENCIA.REVISAO, rotulo: 'Pedido de revisão' },
+        situacao: { ...SITUACAO_DA_PROVIDENCIA.PREJUDICADA, rotulo: 'Sem efeito' },
+      },
+    ]);
+    await assentar();
+
+    expect(linhas()[0]?.textContent).toContain('Pedido de revisão');
+    expect(linhas()[0]?.textContent).toContain('Sem efeito');
   });
 
   it.each(['ABERTA', 'RESPONDIDA', 'ATENDIDA', 'PREJUDICADA', 'todas'] as const)(

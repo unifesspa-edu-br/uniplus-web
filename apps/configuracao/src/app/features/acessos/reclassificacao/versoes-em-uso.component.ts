@@ -7,7 +7,6 @@ import {
   viewChild,
 } from '@angular/core';
 import type { VersaoEmUsoDto } from '@uniplus/shared-data/autorizacao';
-import { sensibilidade } from '../rotulos-de-acesso';
 import { focarQuandoPedir } from './foco-por-pedido';
 import { escopoDaPermissao } from './rotulos-da-reclassificacao';
 
@@ -43,7 +42,7 @@ import { escopoDaPermissao } from './rotulos-da-reclassificacao';
             <ul role="list" [attr.aria-label]="'Permissões da versão ' + versao.numero">
               @for (permissao of versao.permissoes; track permissao.codigo) {
                 <li>
-                  {{ permissao.codigo }} · {{ classe(permissao.classificacao) }} ·
+                  {{ permissao.codigo }} · {{ permissao.classificacao.rotulo }} ·
                   {{ escopo(permissao.deUnidade) }}
                 </li>
               }
@@ -60,7 +59,6 @@ export class VersoesEmUsoComponent {
   readonly pedidoDeFoco = input(0);
   readonly abrirDocumento = output<string>();
 
-  protected readonly classe = sensibilidade;
   protected readonly escopo = escopoDaPermissao;
   private readonly titulo = viewChild<ElementRef<HTMLElement>>('titulo');
 

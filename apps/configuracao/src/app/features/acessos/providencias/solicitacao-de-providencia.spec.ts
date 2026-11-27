@@ -1,10 +1,11 @@
-import { TipoDaProvidencia, TipoDeEscopo, TipoDeOrigem } from '@uniplus/shared-data/autorizacao';
+import { TipoDaProvidencia } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import type { ConcessaoDto } from '@uniplus/shared-data/autorizacao';
 import { ConcessaoDetalhePage } from '../concessao-detalhe.page';
+import { TIPO_DE_ESCOPO, TIPO_DE_ORIGEM } from '../testes';
 import {
   ID,
   ROTA,
@@ -30,8 +31,8 @@ const ATIVA: ConcessaoDto = {
   beneficiario: pessoa('conta-leandro', 'Leandro Viana'),
   perfil: { id: 'p1', nome: 'Banca de documentos' },
   versao: 1,
-  escopo: { tipo: TipoDeEscopo.UNIDADE, unidadeId: 'unidade-1' },
-  origem: { tipo: TipoDeOrigem.PEDIDO, id: 'pd1' },
+  escopo: { tipo: TIPO_DE_ESCOPO.UNIDADE, unidadeId: 'unidade-1' },
+  origem: { tipo: TIPO_DE_ORIGEM.PEDIDO, id: 'pd1' },
   concedidaEm: '2026-03-02T12:00:00Z',
   validaAte: null,
   revogadaEm: null,

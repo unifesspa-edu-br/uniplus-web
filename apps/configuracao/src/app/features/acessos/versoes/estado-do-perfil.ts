@@ -1,13 +1,20 @@
-import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import {
+  EtapaDaVersao,
   SituacaoDoAcessoDoPerfilCodigo,
   SituacaoDaRevisaoDasConcessoesCodigo,
   type PerfilDto,
   type PerfilListadoDto,
   type SituacaoDoAcessoDoPerfilDto,
 } from '@uniplus/shared-data/autorizacao';
-import type { UiTagVariant, VariantesDosCodigos } from '@uniplus/shared-ui/components';
+import type {
+  CodigoComRotulo,
+  UiTagVariant,
+  VariantesDosCodigos,
+} from '@uniplus/shared-ui/components';
 import { situacaoDaJanela } from '../janela/rotulos-da-janela';
+
+/** Uma etapa da retomada como a API a devolve: o código decide a ação e o rótulo é o texto da tela. */
+export type EtapaDaRetomada = CodigoComRotulo<EtapaDaVersao>;
 
 /** O que decide as situações de um perfil, igual para o resumo da lista e para o detalhe. */
 export interface ResumoDoPerfil {
@@ -21,7 +28,7 @@ export interface ResumoDoPerfil {
   /** Desde quando o perfil não aceita pedido nem versão nova; `null` enquanto ativo. */
   readonly desativadoDesde: string | null;
   /** As etapas da retomada que a suspensão exige agora e ainda não foram decididas. */
-  readonly etapasDaRetomadaPorDecidir: readonly string[];
+  readonly etapasDaRetomadaPorDecidir: readonly EtapaDaRetomada[];
 }
 
 /** O resumo do detalhe: só ele sabe se há versão em vigor e janela de migração, que a lista não informa. */
@@ -41,7 +48,7 @@ export interface EtiquetaDoPerfil {
 export interface AcoesDoPerfil {
   readonly suspender: boolean;
   /** As etapas da retomada que a pessoa pode decidir agora, pelas permissões dela. */
-  readonly retomar: readonly EtapaDaVersao[];
+  readonly retomar: readonly EtapaDaRetomada[];
   readonly proporVersao: boolean;
   readonly removerPermissoes: boolean;
   readonly cancelarVersaoPendente: boolean;
@@ -96,11 +103,10 @@ export function revisaoEmCurso(codigo: SituacaoDaRevisaoDasConcessoesCodigo | un
   );
 }
 
-function etapasPorDecidir(suspensao: PerfilDto['suspensao']): readonly string[] {
+function etapasPorDecidir(suspensao: PerfilDto['suspensao']): readonly EtapaDaRetomada[] {
   if (suspensao === null) return [];
-  return suspensao.etapasExigidasAgora.filter(
-    (etapa) => !suspensao.etapasDecididas.includes(etapa),
-  );
+  const decididas = new Set(suspensao.etapasDecididas.map(({ codigo }) => codigo));
+  return suspensao.etapasExigidasAgora.filter(({ codigo }) => !decididas.has(codigo));
 }
 
 /** A cor de cada situação do acesso; o rótulo da etiqueta é o que a API devolve. */
@@ -190,10 +196,10 @@ const SEM_ACOES: AcoesDoPerfil = {
 function etapasDaRetomada(
   perfil: ResumoDoPerfil,
   permissoes: PermissoesDaContencao,
-): readonly EtapaDaVersao[] {
+): readonly EtapaDaRetomada[] {
   const decidiveis: readonly EtapaDaVersao[] = [
     ...(permissoes.gestaoDeAcessos ? ([EtapaDaVersao.GESTAO_DE_ACESSOS] as const) : []),
     ...(permissoes.protecaoDeDados ? ([EtapaDaVersao.PROTECAO_DE_DADOS] as const) : []),
   ];
-  return decidiveis.filter((etapa) => perfil.etapasDaRetomadaPorDecidir.includes(etapa));
+  return perfil.etapasDaRetomadaPorDecidir.filter(({ codigo }) => decidiveis.includes(codigo));
 }

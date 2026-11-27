@@ -1,4 +1,4 @@
-import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
+import { ETAPA_GESTAO, ETAPA_PROTECAO } from './enums-da-api.testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -155,8 +155,8 @@ describe('PerfilDetalhePage: ações', () => {
     const SO_FUNCIONAL = [PERMISSAO.autorizacao.perfisAprovarFuncional];
     const SUSPENSO = {
       desde: '2026-11-05T12:00:00Z',
-      papelDeQuemSuspendeu: EtapaDaVersao.GESTAO_DE_ACESSOS,
-      etapasExigidasAgora: [EtapaDaVersao.PROTECAO_DE_DADOS],
+      papelDeQuemSuspendeu: ETAPA_GESTAO,
+      etapasExigidasAgora: [ETAPA_PROTECAO],
       etapasDecididas: [],
     };
 

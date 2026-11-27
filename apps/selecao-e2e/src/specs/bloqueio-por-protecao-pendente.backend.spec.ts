@@ -1,7 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { chamarApi, prepararAcessosDaSimulacao } from '@uniplus/shared-e2e';
+import { formularioDeInscricao, gravarFormulario } from '../support/api-dos-documentos-exigidos';
 import { exigirTipoPendente, conferirTipoPendente } from '../support/passos-da-protecao-pendente';
 import { rascunhoParaConfiguracao } from '../fixtures/cenario-da-projecao';
+
+const FORMULARIO_DA_FASE = 'HABILITACAO';
 
 /**
  * O tipo de documento que aguarda a aprovação da proteção de dados não pode ser exigido na
@@ -19,6 +22,12 @@ test.describe('Configuração do processo com item de catálogo pendente', () =>
     test.setTimeout(900_000);
     await prepararAcessosDaSimulacao();
     ({ processoId, faseHabilitacaoId: faseId } = await rascunhoParaConfiguracao());
+    const formulario = await gravarFormulario(
+      processoId,
+      FORMULARIO_DA_FASE,
+      formularioDeInscricao(faseId),
+    );
+    expect(formulario.status).toBe(204);
     const criado = await chamarApi<string>(
       'isabella.figueiredo',
       'POST',
@@ -40,7 +49,7 @@ test.describe('Configuração do processo com item de catálogo pendente', () =>
   });
 
   test('a API recusa exigir o tipo pendente', async () => {
-    await exigirTipoPendente(processoId, tipoId, faseId);
+    await exigirTipoPendente(processoId, tipoId, faseId, FORMULARIO_DA_FASE);
   });
 
   test('a tela oferece o tipo pendente como indisponível, aguardando a proteção de dados', async ({

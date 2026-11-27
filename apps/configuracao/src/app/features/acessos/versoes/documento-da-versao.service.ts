@@ -114,10 +114,10 @@ export class DocumentoDaVersaoService {
     arquivo: File,
   ): Promise<ApiResult<EnvioDoDocumentoDto> | null> {
     const chave = withIdempotencyKey();
-    if (versao.situacaoDoDocumento === SituacaoDoAnexo.RECUSADO) {
+    if (versao.situacaoDoDocumento.codigo === SituacaoDoAnexo.RECUSADO) {
       return firstValueFrom(this.api.novoDocumento(perfilId, versao.versaoId, arquivo.size, chave));
     }
-    return versao.situacaoDoDocumento === SituacaoDoAnexo.AGUARDANDO_ENVIO
+    return versao.situacaoDoDocumento.codigo === SituacaoDoAnexo.AGUARDANDO_ENVIO
       ? firstValueFrom(this.api.reemitirEnvio(perfilId, versao.versaoId, chave))
       : Promise.resolve(null);
   }
