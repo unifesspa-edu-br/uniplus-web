@@ -66,7 +66,10 @@ function montar(cenario: Cenario = {}) {
       provideHttpClientTesting(),
       CatalogosDeAtendimento,
       { provide: CondicoesAtendimentoApi, useValue: { listar: listarCondicoes } },
-      { provide: RecursoAcessibilidadeApi, useValue: { listar: () => pagina(cenario.recursos ?? []) } },
+      {
+        provide: RecursoAcessibilidadeApi,
+        useValue: { listar: () => pagina(cenario.recursos ?? []) },
+      },
       {
         provide: TipoDeficienciaApi,
         useValue: { listar: () => pagina(cenario.tiposDeficiencia ?? []) },

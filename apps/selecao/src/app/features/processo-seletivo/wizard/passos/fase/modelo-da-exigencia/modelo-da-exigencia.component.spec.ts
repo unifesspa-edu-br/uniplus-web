@@ -13,8 +13,10 @@ const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000005aa';
 const MODELO_ID = '01960000-0000-7000-0000-00000000a0de';
 const ROTA_MODELOS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/modelos-de-documento`;
-const URL_ASSINADA = 'http://localhost:9000/uniplus-selecao/modelos/pendente.docx?X-Amz-Signature=abc';
-const URL_LEITURA = 'http://localhost:9000/uniplus-selecao/modelos/confirmado.docx?X-Amz-Signature=leitura';
+const URL_ASSINADA =
+  'http://localhost:9000/uniplus-selecao/modelos/pendente.docx?X-Amz-Signature=abc';
+const URL_LEITURA =
+  'http://localhost:9000/uniplus-selecao/modelos/confirmado.docx?X-Amz-Signature=leitura';
 const CONTENT_TYPE_DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const HASH = 'ab'.repeat(32);
 
@@ -99,14 +101,18 @@ describe('ModeloDaExigenciaComponent', () => {
   afterEach(() => controller.verify());
 
   function escolher(arquivo: File): void {
-    const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input[type="file"]');
+    const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      'input[type="file"]',
+    );
     if (input === null) throw new Error('campo de arquivo ausente');
     Object.defineProperty(input, 'files', { value: [arquivo], configurable: true });
     input.dispatchEvent(new Event('change'));
   }
 
   function alerta(): string {
-    return (fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent ?? '';
+    return (
+      (fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent ?? ''
+    );
   }
 
   /** Iniciação e PUT bem-sucedidos; a confirmação fica para o teste responder. */
@@ -144,7 +150,12 @@ describe('ModeloDaExigenciaComponent', () => {
 
   it('não deixa retirar o envio que falhou quando a exigência está desabilitada', async () => {
     await enviarAteAConfirmacao();
-    const { body, opts } = problema(422, 'uniplus.selecao.modelo_de_documento.contem_macro', 'Macro', 'Sem macro.');
+    const { body, opts } = problema(
+      422,
+      'uniplus.selecao.modelo_de_documento.contem_macro',
+      'Macro',
+      'Sem macro.',
+    );
     controller.expectOne(`${ROTA_MODELOS}/${MODELO_ID}/confirmacao`).flush(body, opts);
     await tick();
     const host = fixture.nativeElement as HTMLElement;
@@ -163,7 +174,12 @@ describe('ModeloDaExigenciaComponent', () => {
     const falhar = async () => {
       escolher(docx());
       await tick();
-      const { body, opts } = problema(422, 'uniplus.selecao.modelo_de_documento.invalido', 'Inválido', 'Inválido.');
+      const { body, opts } = problema(
+        422,
+        'uniplus.selecao.modelo_de_documento.invalido',
+        'Inválido',
+        'Inválido.',
+      );
       controller.expectOne(ROTA_MODELOS).flush(body, opts);
       await tick();
       fixture.detectChanges();
@@ -209,7 +225,9 @@ describe('ModeloDaExigenciaComponent', () => {
     await tick();
 
     expect(emitidos).toEqual([]);
-    expect(componente.envio()?.erro).toBe('O modelo não pode conter macro: ele é distribuído ao candidato.');
+    expect(componente.envio()?.erro).toBe(
+      'O modelo não pode conter macro: ele é distribuído ao candidato.',
+    );
     expect(componente.envio()?.retomavel).toBe(false);
   });
 

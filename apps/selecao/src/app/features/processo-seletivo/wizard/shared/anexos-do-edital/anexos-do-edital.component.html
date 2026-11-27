@@ -95,7 +95,9 @@
                 [disabled]="!store.aceitaEdicao()"
                 [attr.aria-invalid]="erroDoNome !== null ? 'true' : null"
                 [attr.aria-describedby]="
-                  'anexo-nome-dica-' + anexo.id + (erroDoNome !== null ? ' anexo-nome-erro-' + anexo.id : '')
+                  'anexo-nome-dica-' +
+                  anexo.id +
+                  (erroDoNome !== null ? ' anexo-nome-erro-' + anexo.id : '')
                 "
                 (input)="renomear(anexo.id, $event)"
               />

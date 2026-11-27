@@ -17,8 +17,16 @@ const POLITICA = { campos: ['Número de inscrição'], justificativa: null };
 
 const AVULSO: ModoDaPublicacao = { tipo: 'avulso' };
 const CORRECAO: ModoDaPublicacao = { tipo: 'correcao', ato: ATO };
-const PRIMEIRA_DO_ITEM: ModoDaPublicacao = { tipo: 'previsto', item: ITEM, politica: POLITICA, corrigido: null };
-const CORRECAO_DO_ITEM: ModoDaPublicacao = { ...PRIMEIRA_DO_ITEM, corrigido: ATO } as ModoDaPublicacao;
+const PRIMEIRA_DO_ITEM: ModoDaPublicacao = {
+  tipo: 'previsto',
+  item: ITEM,
+  politica: POLITICA,
+  corrigido: null,
+};
+const CORRECAO_DO_ITEM: ModoDaPublicacao = {
+  ...PRIMEIRA_DO_ITEM,
+  corrigido: ATO,
+} as ModoDaPublicacao;
 
 describe('modo da publicação', () => {
   it('fixa o ato corrigido na correção de um ato e na correção de um item, e em nenhum outro caso', () => {

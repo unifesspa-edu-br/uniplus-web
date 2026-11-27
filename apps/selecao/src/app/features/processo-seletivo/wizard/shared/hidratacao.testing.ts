@@ -34,7 +34,10 @@ export const DISTRIBUICAO = {
       id: 'snapshot-p',
       modalidadeOrigemId: 'modalidade-2',
       codigo: 'AC_PCD',
-      composicaoVagas: { codigo: 'RETIRADA_DE_OUTRA_MODALIDADE', rotulo: 'Retirada de outra modalidade' },
+      composicaoVagas: {
+        codigo: 'RETIRADA_DE_OUTRA_MODALIDADE',
+        rotulo: 'Retirada de outra modalidade',
+      },
       quantidadeDeclarada: 2,
       descricao: null,
       composicaoOrigemCodigo: null,

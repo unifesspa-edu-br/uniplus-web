@@ -34,7 +34,9 @@ describe('atosQueAdmitemCorrecao', () => {
   });
 
   it('oferece o ato publicado que ainda não foi corrigido', () => {
-    expect(atosQueAdmitemCorrecao([ato('aviso')], nenhumCongela).map((a) => a.id)).toEqual(['aviso']);
+    expect(atosQueAdmitemCorrecao([ato('aviso')], nenhumCongela).map((a) => a.id)).toEqual([
+      'aviso',
+    ]);
   });
 
   it('não oferece o ato de um tipo que congela a configuração, que só se corrige por retificação do edital', () => {

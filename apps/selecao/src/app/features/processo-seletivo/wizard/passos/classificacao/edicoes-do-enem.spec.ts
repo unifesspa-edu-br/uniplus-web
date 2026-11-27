@@ -12,9 +12,15 @@ const rascunho = (baseadoEmEnem: boolean, origem: OrigemCandidatosCodigo): Wizar
 
 describe('declaraEdicoesDoEnem', () => {
   it('só com a nota do ENEM e a inscrição feita no processo', () => {
-    expect(declaraEdicoesDoEnem(rascunho(true, OrigemCandidatosCodigo.INSCRICAO_PROPRIA))).toBe(true);
-    expect(declaraEdicoesDoEnem(rascunho(true, OrigemCandidatosCodigo.IMPORTACAO_EXTERNA))).toBe(false);
-    expect(declaraEdicoesDoEnem(rascunho(false, OrigemCandidatosCodigo.INSCRICAO_PROPRIA))).toBe(false);
+    expect(declaraEdicoesDoEnem(rascunho(true, OrigemCandidatosCodigo.INSCRICAO_PROPRIA))).toBe(
+      true,
+    );
+    expect(declaraEdicoesDoEnem(rascunho(true, OrigemCandidatosCodigo.IMPORTACAO_EXTERNA))).toBe(
+      false,
+    );
+    expect(declaraEdicoesDoEnem(rascunho(false, OrigemCandidatosCodigo.INSCRICAO_PROPRIA))).toBe(
+      false,
+    );
   });
 });
 

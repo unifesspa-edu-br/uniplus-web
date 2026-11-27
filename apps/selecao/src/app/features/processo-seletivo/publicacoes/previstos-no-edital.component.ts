@@ -71,7 +71,12 @@ export class PrevistosNoEditalComponent {
   }
 
   protected publicarItem(item: ProdutoPrevistoDto): void {
-    this.publicar.emit({ tipo: 'previsto', item, politica: this.politicaDe(item), corrigido: null });
+    this.publicar.emit({
+      tipo: 'previsto',
+      item,
+      politica: this.politicaDe(item),
+      corrigido: null,
+    });
   }
 
   protected corrigirItem(item: ProdutoPrevistoDto): void {

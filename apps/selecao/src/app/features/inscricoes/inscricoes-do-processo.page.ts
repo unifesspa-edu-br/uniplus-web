@@ -105,10 +105,7 @@ function nomeDoLink(linha: Omit<LinhaDaInscricao, 'nomeDoLink'>, posicao: number
           A página que você abriu não existe mais, porque a lista mudou.
         </ui-alert>
       }
-      <ui-falha-de-leitura
-        titulo="Não foi possível carregar as inscrições"
-        [leitura]="leitura"
-      />
+      <ui-falha-de-leitura titulo="Não foi possível carregar as inscrições" [leitura]="leitura" />
 
       @if (situacao.estado !== 'falha' || inscricoes.inscricoes().length > 0) {
         <section class="panel" aria-labelledby="insc-page-titulo">
@@ -190,7 +187,9 @@ function nomeDoLink(linha: Omit<LinhaDaInscricao, 'nomeDoLink'>, posicao: number
                         @if (col.situacao) {
                           <td [attr.data-label]="linha.situacao !== null ? 'Situação' : null">
                             @if (linha.situacao !== null) {
-                              <ui-tag [variant]="varianteDaSituacaoDaInscricao(linha.situacao.codigo)">
+                              <ui-tag
+                                [variant]="varianteDaSituacaoDaInscricao(linha.situacao.codigo)"
+                              >
                                 {{ linha.situacao.rotulo }}
                               </ui-tag>
                             }

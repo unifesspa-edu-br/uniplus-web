@@ -306,14 +306,25 @@ describe('DetalheDaInscricaoPage', () => {
               codigo: 'DEPENDENTES',
               rotulo: 'Dependentes',
               ocorrencias: [
-                { id: 'd1', itens: [item('NOME_DEP', 'Nome', FormaDoValorDoItemCodigo.TEXTO, 'Ana')] },
-                { id: 'd2', itens: [item('NOME_DEP', 'Nome', FormaDoValorDoItemCodigo.TEXTO, 'Bia')] },
+                {
+                  id: 'd1',
+                  itens: [item('NOME_DEP', 'Nome', FormaDoValorDoItemCodigo.TEXTO, 'Ana')],
+                },
+                {
+                  id: 'd2',
+                  itens: [item('NOME_DEP', 'Nome', FormaDoValorDoItemCodigo.TEXTO, 'Bia')],
+                },
               ],
             },
             {
               codigo: 'RESPONSAVEIS',
               rotulo: 'Responsáveis',
-              ocorrencias: [{ id: 'r1', itens: [item('NOME_RESP', 'Nome', FormaDoValorDoItemCodigo.TEXTO, 'Caio')] }],
+              ocorrencias: [
+                {
+                  id: 'r1',
+                  itens: [item('NOME_RESP', 'Nome', FormaDoValorDoItemCodigo.TEXTO, 'Caio')],
+                },
+              ],
             },
           ],
           itens: [],

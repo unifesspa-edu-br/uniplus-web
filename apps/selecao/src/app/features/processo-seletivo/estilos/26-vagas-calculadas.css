@@ -1,4 +1,3 @@
-
 /* Quadro de vagas: os campos numéricos ficam estreitos para a linha caber sem
    rolagem, e a tabela rola sozinha quando as colunas de modalidade crescem. */
 .input--numero {

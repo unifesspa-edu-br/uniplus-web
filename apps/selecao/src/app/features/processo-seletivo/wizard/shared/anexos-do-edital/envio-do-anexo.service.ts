@@ -15,7 +15,6 @@ import {
   type IniciarEnvioDoDocumentoAPublicarRequest,
 } from '@uniplus/shared-data/selecao';
 
-
 /**
  * Os três passos do envio de UM anexo, escondendo do componente quando a `Idempotency-Key` pode
  * ser reaproveitada.
@@ -77,7 +76,9 @@ export class AnexosDoEdital {
 
   /** O acesso de leitura a um anexo confirmado, emitido no pedido e com validade curta. */
   obterAcesso(processoSeletivoId: string, documentoAPublicarId: string) {
-    return firstValueFrom(this.api.obterAcessoDocumentoAPublicar(processoSeletivoId, documentoAPublicarId));
+    return firstValueFrom(
+      this.api.obterAcessoDocumentoAPublicar(processoSeletivoId, documentoAPublicarId),
+    );
   }
 
   /** Os atos do processo, de onde se lê o que a versão vigente publicou como anexo. */

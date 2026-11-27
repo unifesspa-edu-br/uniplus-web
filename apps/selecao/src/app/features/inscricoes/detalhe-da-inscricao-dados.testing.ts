@@ -34,11 +34,16 @@ export const oferta = (ordem: number, nome: string | null): OfertaEscolhidaDto =
   ordem,
 });
 
-export const exibicao = (
-  codigo: ExibicaoDoValorDoItemCodigo,
-): ItemDeRespostaDto['componente'] => ({ codigo, rotulo: codigo });
+export const exibicao = (codigo: ExibicaoDoValorDoItemCodigo): ItemDeRespostaDto['componente'] => ({
+  codigo,
+  rotulo: codigo,
+});
 
-const RESPOSTA_PADRAO = { descricao: '', componente: exibicao(ExibicaoDoValorDoItemCodigo.PADRAO), podeRevelar: false };
+const RESPOSTA_PADRAO = {
+  descricao: '',
+  componente: exibicao(ExibicaoDoValorDoItemCodigo.PADRAO),
+  podeRevelar: false,
+};
 
 export function item(
   fatoCodigo: string,
@@ -89,7 +94,12 @@ export const FERNANDA: InscricaoAdministrativaDto = {
       codigo: 'identificacao',
       titulo: 'Dados pessoais',
       itens: [
-        item('NOME', 'Nome completo', FormaDoValorDoItemCodigo.TEXTO, 'Fernanda Laura Nicole Drumond'),
+        item(
+          'NOME',
+          'Nome completo',
+          FormaDoValorDoItemCodigo.TEXTO,
+          'Fernanda Laura Nicole Drumond',
+        ),
         {
           ...item('CPF', 'CPF', FormaDoValorDoItemCodigo.TEXTO, '***.598.363-**'),
           componente: exibicao(ExibicaoDoValorDoItemCodigo.CPF),
@@ -103,7 +113,10 @@ export const FERNANDA: InscricaoAdministrativaDto = {
           }),
           descricao: 'Onde você mora hoje.',
         },
-        { ...item('RENDA', 'Renda familiar', FormaDoValorDoItemCodigo.NUMERO, '1234.56'), componente: exibicao(ExibicaoDoValorDoItemCodigo.MOEDA) },
+        {
+          ...item('RENDA', 'Renda familiar', FormaDoValorDoItemCodigo.NUMERO, '1234.56'),
+          componente: exibicao(ExibicaoDoValorDoItemCodigo.MOEDA),
+        },
         item('NASCIMENTO', 'Data de nascimento', FormaDoValorDoItemCodigo.DATA, '2000-03-09'),
         item('PCD', 'Pessoa com deficiência', FormaDoValorDoItemCodigo.SIM_OU_NAO, true),
         item('ATENDIMENTO', 'Atendimentos', FormaDoValorDoItemCodigo.OPCOES, [
@@ -124,15 +137,27 @@ export const FERNANDA: InscricaoAdministrativaDto = {
           codigo: 'FORMACAO',
           rotulo: 'Formação anterior',
           ocorrencias: [
-            { id: 'o1', itens: [item('CURSO_ANT', 'Curso anterior', FormaDoValorDoItemCodigo.TEXTO, 'Enfermagem')] },
-            { id: 'o2', itens: [item('CURSO_ANT', 'Curso anterior', FormaDoValorDoItemCodigo.TEXTO, 'Biologia')] },
+            {
+              id: 'o1',
+              itens: [
+                item('CURSO_ANT', 'Curso anterior', FormaDoValorDoItemCodigo.TEXTO, 'Enfermagem'),
+              ],
+            },
+            {
+              id: 'o2',
+              itens: [
+                item('CURSO_ANT', 'Curso anterior', FormaDoValorDoItemCodigo.TEXTO, 'Biologia'),
+              ],
+            },
           ],
         },
       ],
     },
   ],
   derivados: [
-    item('MODALIDADES', 'Modalidades', FormaDoValorDoItemCodigo.OPCOES, [{ codigo: 'AC', rotulo: 'Ampla concorrência' }]),
+    item('MODALIDADES', 'Modalidades', FormaDoValorDoItemCodigo.OPCOES, [
+      { codigo: 'AC', rotulo: 'Ampla concorrência' },
+    ]),
   ],
   arquivos: [
     arquivo(LAUDO_ID, 'Laudo médico'),

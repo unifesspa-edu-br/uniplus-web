@@ -178,7 +178,9 @@ export class AtoDaPublicacaoComponent {
   }
 
   /** A seção `publicacao` do rascunho que os valores do formulário descrevem; o ausente vira vazio. */
-  private secaoDoFormulario(valores: typeof this.form.value): Omit<WizardDraft['publicacao'], 'anexos'> {
+  private secaoDoFormulario(
+    valores: typeof this.form.value,
+  ): Omit<WizardDraft['publicacao'], 'anexos'> {
     return {
       numero: valores.numero ?? '',
       periodoInscricaoInicio: valores.periodoInscricaoInicio ?? '',

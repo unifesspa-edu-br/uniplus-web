@@ -197,7 +197,10 @@ describe('DetalheDaInscricaoPage', () => {
               componente: exibicao(ExibicaoDoValorDoItemCodigo.CPF),
               podeRevelar: true,
             },
-            { ...item('RG', 'RG', FormaDoValorDoItemCodigo.TEXTO, '*********'), componente: exibicao(ExibicaoDoValorDoItemCodigo.IDENTIFICADOR) },
+            {
+              ...item('RG', 'RG', FormaDoValorDoItemCodigo.TEXTO, '*********'),
+              componente: exibicao(ExibicaoDoValorDoItemCodigo.IDENTIFICADOR),
+            },
           ],
         },
       ],

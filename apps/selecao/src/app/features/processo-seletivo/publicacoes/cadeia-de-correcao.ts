@@ -23,7 +23,5 @@ export function atosQueAdmitemCorrecao<T extends AtoDaCadeia>(
   tiposQueCongelam: ReadonlySet<string>,
 ): readonly T[] {
   const corrigidos = idsJaCorrigidos(atos);
-  return atos.filter(
-    (ato) => !corrigidos.has(ato.id) && !tiposQueCongelam.has(ato.tipoCodigo),
-  );
+  return atos.filter((ato) => !corrigidos.has(ato.id) && !tiposQueCongelam.has(ato.tipoCodigo));
 }

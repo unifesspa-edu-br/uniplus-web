@@ -296,8 +296,12 @@ function modalidadesDoPadraoGravado(
   }));
 }
 
-function modalidadesSelecionadas(padrao: PadraoDoEdital, modalidades: readonly ModalidadeDto[]): ModalidadeDoPadrao[] {
+function modalidadesSelecionadas(
+  padrao: PadraoDoEdital,
+  modalidades: readonly ModalidadeDto[],
+): ModalidadeDoPadrao[] {
   const selecionadas = new Set(padrao.modalidades.map((modalidade) => modalidade.id));
-  return modalidades.filter((modalidade) => selecionadas.has(modalidade.id))
+  return modalidades
+    .filter((modalidade) => selecionadas.has(modalidade.id))
     .map((modalidade) => ({ ...modalidade, composicaoVagas: modalidade.composicaoVagas.codigo }));
 }

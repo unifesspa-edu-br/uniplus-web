@@ -49,7 +49,11 @@ describe('pedidoDoAto', () => {
   });
 
   it('descarta o motivo quando o ato não corrige outro', () => {
-    const pedido = pedidoDoAto({ ...dados, motivoDaCorrecao: 'sobrou do tipo anterior' }, PRINCIPAL, []);
+    const pedido = pedidoDoAto(
+      { ...dados, motivoDaCorrecao: 'sobrou do tipo anterior' },
+      PRINCIPAL,
+      [],
+    );
 
     expect(pedido).not.toHaveProperty('motivoDaCorrecao');
     expect(pedido).not.toHaveProperty('atoCorrigidoId');

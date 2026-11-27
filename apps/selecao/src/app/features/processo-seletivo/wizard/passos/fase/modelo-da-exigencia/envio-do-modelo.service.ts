@@ -15,7 +15,6 @@ import {
   type ModeloDeDocumentoDto,
 } from '@uniplus/shared-data/selecao';
 
-
 /**
  * Os três passos do envio do modelo de documento e a conferência do confirmado, escondendo do
  * componente quando a `Idempotency-Key` pode ser reaproveitada.
@@ -64,6 +63,8 @@ export class EnvioDoModelo {
 
   /** O acesso de leitura ao modelo confirmado, emitido no pedido e com validade curta. */
   obterAcesso(processoSeletivoId: string, modeloDeDocumentoId: string) {
-    return firstValueFrom(this.api.obterAcessoModeloDeDocumento(processoSeletivoId, modeloDeDocumentoId));
+    return firstValueFrom(
+      this.api.obterAcessoModeloDeDocumento(processoSeletivoId, modeloDeDocumentoId),
+    );
   }
 }

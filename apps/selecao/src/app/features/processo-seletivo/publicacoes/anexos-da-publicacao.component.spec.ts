@@ -25,7 +25,14 @@ describe('AnexosDaPublicacaoComponent', () => {
       nomeInicial: (nomeArquivo) => nomeArquivo.replace(/\.[^.]+$/u, ''),
     });
     envios.arquivos.set([
-      { id: 'a1', nomeArquivo: 'planilha.docx', nome: 'planilha', progress: 100, fase: 'confirmado', documentoAPublicarId: DOCUMENTO },
+      {
+        id: 'a1',
+        nomeArquivo: 'planilha.docx',
+        nome: 'planilha',
+        progress: 100,
+        fase: 'confirmado',
+        documentoAPublicarId: DOCUMENTO,
+      },
       { id: 'a2', nomeArquivo: 'lista.pdf', nome: 'lista', progress: 40, fase: 'enviando' },
     ]);
     fixture = TestBed.createComponent(AnexosDaPublicacaoComponent);

@@ -16,10 +16,15 @@
       }
 
       @for (etapa of fase.etapas; track etapa.id) {
-        <h4 class="previstos__etapa" [id]="'previstos-etapa-' + etapa.id">Etapa: {{ etapa.nome }}</h4>
+        <h4 class="previstos__etapa" [id]="'previstos-etapa-' + etapa.id">
+          Etapa: {{ etapa.nome }}
+        </h4>
         <ng-container
           [ngTemplateOutlet]="tabela"
-          [ngTemplateOutletContext]="{ itens: etapa.itens, nome: fase.nome + ', etapa ' + etapa.nome }"
+          [ngTemplateOutletContext]="{
+            itens: etapa.itens,
+            nome: fase.nome + ', etapa ' + etapa.nome,
+          }"
         />
       }
     </section>
@@ -30,7 +35,10 @@
   <div class="table-responsive">
     <table>
       <caption class="sr-only">
-        Documentos previstos no edital — {{ nome }}
+        Documentos previstos no edital —
+        {{
+          nome
+        }}
       </caption>
       <thead>
         <tr>
@@ -54,21 +62,32 @@
 
             <td data-label="Situação">
               @if (item.ato; as ato) {
-                <ui-tag variant="success">Publicado em {{ ato.publicadoEm | dateBr: 'short' }}</ui-tag>
+                <ui-tag variant="success"
+                  >Publicado em {{ ato.publicadoEm | dateBr: 'short' }}</ui-tag
+                >
                 <div class="previstos__detalhe">
                   {{ ato.numero === null ? 'Sem número' : 'Número ' + ato.numero }}
                 </div>
-                <sel-arquivos-do-ato [ato]="ato" [abrindo]="abrindo()" (abrir)="abrir.emit($event)" />
+                <sel-arquivos-do-ato
+                  [ato]="ato"
+                  [abrindo]="abrindo()"
+                  (abrir)="abrir.emit($event)"
+                />
 
                 @for (correcao of item.correcoes; track correcao.id) {
                   <div class="previstos__correcao">
                     <div class="previstos__detalhe">
-                      Correção: {{ rotuloDoAto(correcao) }}, de {{ correcao.dataDoAto | dateBr: 'short' }}.
+                      Correção: {{ rotuloDoAto(correcao) }}, de
+                      {{ correcao.dataDoAto | dateBr: 'short' }}.
                       @if (correcao.motivoDaCorrecao) {
                         Motivo: {{ correcao.motivoDaCorrecao }}
                       }
                     </div>
-                    <sel-arquivos-do-ato [ato]="correcao" [abrindo]="abrindo()" (abrir)="abrir.emit($event)" />
+                    <sel-arquivos-do-ato
+                      [ato]="correcao"
+                      [abrindo]="abrindo()"
+                      (abrir)="abrir.emit($event)"
+                    />
                   </div>
                 }
               } @else {

@@ -85,7 +85,10 @@ export const aviso: AtoDoProcessoDto = {
 const ITEM_PADRAO: Omit<ProdutoPrevistoDto, 'id'> = {
   tipoCodigo: 'RESULTADO_HOMOLOGACAO',
   tipoNome: 'Resultado da homologação',
-  papel: { codigo: 'PRELIMINAR' as NonNullable<ProdutoPrevistoDto['papel']>['codigo'], rotulo: 'Preliminar' },
+  papel: {
+    codigo: 'PRELIMINAR' as NonNullable<ProdutoPrevistoDto['papel']>['codigo'],
+    rotulo: 'Preliminar',
+  },
   situacao: { codigo: SituacaoDoProdutoPrevistoCodigo.ABERTO, rotulo: 'Aberto' },
   ato: null,
   correcoes: [],

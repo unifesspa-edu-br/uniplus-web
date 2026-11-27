@@ -24,4 +24,3 @@ export const FERNANDA: InscricaoDoProcessoDto = {
   cpf: { valor: '***.598.363-**', podeRevelar: false },
   enviadaEm: '2026-12-10T15:00:00Z',
 };
-

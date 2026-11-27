@@ -275,8 +275,12 @@ function detalheDaOferta(oferta: OfertaCursoDto): string {
     oferta.regimeDeTurno.rotulo,
     oferta.turnos.map((turno) => turno.rotulo).join(' e '),
     ...(oferta.programaDeOferta.codigo === ProgramaDeOfertaCodigo.REGULAR
-      ? [] : [oferta.programaDeOferta.rotulo]),
+      ? []
+      : [oferta.programaDeOferta.rotulo]),
     ...(oferta.formatoPedagogico.codigo === FormatoPedagogicoCodigo.PRESENCIAL
-      ? [] : [oferta.formatoPedagogico.rotulo]),
-  ].filter((parte) => parte !== '').join(' · ');
+      ? []
+      : [oferta.formatoPedagogico.rotulo]),
+  ]
+    .filter((parte) => parte !== '')
+    .join(' · ');
 }
