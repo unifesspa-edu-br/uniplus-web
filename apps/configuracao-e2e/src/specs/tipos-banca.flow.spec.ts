@@ -199,7 +199,7 @@ test.describe('Tipo de banca — sem criação pela interface (#713)', () => {
         exact: true,
       })
       .click();
-    const dialog = page.locator('dialog.uni-dialog');
+    const dialog = page.locator('dialog.uni-dialog[open]');
     await dialog.getByRole('button', { name: 'Remover', exact: true }).click();
 
     await expect.poll(() => capturado.deletedIds.length).toBe(1);

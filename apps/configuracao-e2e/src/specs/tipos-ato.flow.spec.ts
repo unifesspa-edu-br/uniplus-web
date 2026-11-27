@@ -279,7 +279,7 @@ test.describe('Tipo de ato — cadastro pela interface', () => {
         exact: true,
       })
       .click();
-    await page.locator('dialog.uni-dialog').getByRole('button', { name: 'Remover' }).click();
+    await page.locator('dialog.uni-dialog[open]').getByRole('button', { name: 'Remover' }).click();
 
     await expect.poll(() => capturado.deletedIds).toEqual([PRELIMINAR_ID]);
   });
