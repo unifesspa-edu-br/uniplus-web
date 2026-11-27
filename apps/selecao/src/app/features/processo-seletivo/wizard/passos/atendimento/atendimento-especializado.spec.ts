@@ -5,6 +5,7 @@ import {
   aposMarcarTodas,
   aposRemover,
   ehPcd,
+  identificadoresDaOferta,
 } from './atendimento-especializado';
 
 const PCD = { id: 'c-pcd', codigo: 'PCD', nome: 'Pessoa com deficiência' };
@@ -37,5 +38,21 @@ describe('regra do PcD no atendimento especializado', () => {
   it('remover a condição PcD removida esvazia os tipos só se nenhuma outra resta', () => {
     expect(aposRemover([PCD, PPI], PCD.id)).toEqual({ condicoes: [PPI], tiposDeficiencia: [] });
     expect(aposRemover([PCD, OUTRA_PCD], PCD.id)).toEqual({ condicoes: [OUTRA_PCD] });
+  });
+});
+
+describe('identificadores da oferta de atendimento', () => {
+  it('reduz cada lista da oferta aos identificadores dos cadastros', () => {
+    const identificadores = identificadoresDaOferta({
+      condicoes: [PCD, PPI],
+      recursos: [{ id: 'r-1' }],
+      tiposDeficiencia: [],
+    });
+
+    expect(identificadores).toEqual({
+      condicaoIds: ['c-pcd', 'c-ppi'],
+      recursoIds: ['r-1'],
+      tipoDeficienciaIds: [],
+    });
   });
 });

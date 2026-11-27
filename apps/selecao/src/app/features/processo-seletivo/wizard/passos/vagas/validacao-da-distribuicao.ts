@@ -106,22 +106,20 @@ function problemasDeVoBase(voBase: string): string[] {
     : [];
 }
 
+const PR_AUSENTE =
+  'Informe o percentual de reserva no padrão desta distribuição — um número entre 0,5 e 1,0.';
+const PR_FORA_DA_FAIXA =
+  'O percentual de reserva fica entre 0,5 e 1,0 (art. 10, II da Lei 12.711).';
+const PR_COM_CASAS_DEMAIS = `O percentual de reserva aceita no máximo ${CASAS_DECIMAIS_PR} casas decimais.`;
+
 function problemasDePr(pr: string): string[] {
   const numero = decimalDoCampo(pr);
-  if (numero === null) {
-    return [
-      'Informe o percentual de reserva no padrão desta distribuição — um número entre 0,5 e 1,0.',
-    ];
-  }
-
-  const problemas: string[] = [];
-  if (numero < PR_MINIMO || numero > PR_MAXIMO) {
-    problemas.push('O percentual de reserva fica entre 0,5 e 1,0 (art. 10, II da Lei 12.711).');
-  }
-  if (casasDecimais(pr) > CASAS_DECIMAIS_PR) {
-    problemas.push(`O percentual de reserva aceita no máximo ${CASAS_DECIMAIS_PR} casas decimais.`);
-  }
-  return problemas;
+  if (numero === null) return [PR_AUSENTE];
+  const foraDaFaixa = numero < PR_MINIMO || numero > PR_MAXIMO;
+  return [
+    ...(foraDaFaixa ? [PR_FORA_DA_FAIXA] : []),
+    ...(casasDecimais(pr) > CASAS_DECIMAIS_PR ? [PR_COM_CASAS_DEMAIS] : []),
+  ];
 }
 
 /** Ofertas repetidas no mesmo processo — UNI-REQ-0134. */

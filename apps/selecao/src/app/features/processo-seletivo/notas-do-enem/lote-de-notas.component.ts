@@ -24,6 +24,16 @@ const ITENS_POR_PAGINA = 20;
 
 let proximaInstancia = 0;
 
+function abaDestinadaPelaTecla(tecla: string, indice: number, total: number): number | undefined {
+  const destinos: Record<string, number | undefined> = {
+    ArrowRight: (indice + 1) % total,
+    ArrowLeft: (indice - 1 + total) % total,
+    Home: 0,
+    End: total - 1,
+  };
+  return destinos[tecla];
+}
+
 /**
  * As ocorrências de um lote de notas em abas, uma por tipo, paginadas: quem é cada inscrito afetado
  * e, na linha sem inscrito, o número da linha com o nome, o sexo e o CPF mascarado que o arquivo
@@ -91,18 +101,10 @@ export class LoteDeNotasComponent {
 
   /** Setas, Home e End movem a seleção entre as abas, que se ativam ao receber o foco. */
   protected aoTeclar(evento: KeyboardEvent, indice: number): void {
-    const grupos = this.grupos();
-    const destino = (
-      {
-        ArrowRight: (indice + 1) % grupos.length,
-        ArrowLeft: (indice - 1 + grupos.length) % grupos.length,
-        Home: 0,
-        End: grupos.length - 1,
-      } as Record<string, number | undefined>
-    )[evento.key];
+    const destino = abaDestinadaPelaTecla(evento.key, indice, this.grupos().length);
     if (destino === undefined) return;
     evento.preventDefault();
-    const tipo = grupos[destino].tipo;
+    const tipo = this.grupos()[destino].tipo;
     this.escolher(tipo);
     this.elemento.nativeElement.querySelector<HTMLElement>(`#${this.idDaAba(tipo)}`)?.focus();
   }
@@ -112,13 +114,17 @@ export class LoteDeNotasComponent {
     if (ativa === null) return;
     const mostrados = this.visiveis().length;
     this.paginas.update((atual) => new Map(atual).set(ativa.tipo, mostrados + ITENS_POR_PAGINA));
-    // O botão some com a última página: o foco vai para a primeira linha que acabou de entrar.
+    this.focarLinhaDoPainel(ativa.tipo, mostrados);
+  }
+
+  /** O botão some com a última página: o foco vai para a primeira linha que acabou de entrar. */
+  private focarLinhaDoPainel(tipo: TipoDeGrupo, posicao: number): void {
     afterNextRender(
       () => {
         const linhas = this.elemento.nativeElement.querySelectorAll<HTMLElement>(
-          `#${this.idDoPainel(ativa.tipo)} tbody th`,
+          `#${this.idDoPainel(tipo)} tbody th`,
         );
-        linhas[mostrados]?.focus();
+        linhas[posicao]?.focus();
       },
       { injector: this.injector },
     );

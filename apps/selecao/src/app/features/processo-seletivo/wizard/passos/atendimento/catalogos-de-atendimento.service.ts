@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin } from 'rxjs';
-import { coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
+import { forkJoin, type Observable } from 'rxjs';
+import { coletarPaginas, isApiOk, type ApiResult } from '@uniplus/shared-core/http';
 import {
   CondicaoAtendimentoDto,
   CondicoesAtendimentoApi,
@@ -22,6 +22,12 @@ import { tituloDoPasso } from '../../shared/titulo-do-passo';
  * local não é escrevível sem citá-lo.
  */
 export const CODIGO_CONDICAO_PCD = 'PCD';
+
+interface ResultadosDosCatalogos {
+  readonly condicoes: ApiResult<readonly CondicaoAtendimentoDto[]>;
+  readonly recursos: ApiResult<readonly RecursoAcessibilidadeDto[]>;
+  readonly tiposDeficiencia: ApiResult<readonly TipoDeficienciaDto[]>;
+}
 
 /**
  * Catálogos que o atendimento especializado referencia, todos de
@@ -72,30 +78,37 @@ export class CatalogosDeAtendimento {
     this.carregando.set(true);
     this.erro.set(null);
 
-    forkJoin({
+    this.lerCatalogos()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (resultados) => this.receber(resultados),
+        error: () => this.anunciarErro(),
+      });
+  }
+
+  private lerCatalogos(): Observable<ResultadosDosCatalogos> {
+    return forkJoin({
       condicoes: coletarPaginas((cursor) => this.condicoesApi.listar({ cursor })),
       recursos: coletarPaginas((cursor) => this.recursosApi.listar({ cursor })),
       tiposDeficiencia: coletarPaginas((cursor) => this.tiposApi.listar({ cursor })),
-    })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (resultados) => {
-          const { condicoes, recursos, tiposDeficiencia } = resultados;
+    });
+  }
 
-          // Um catálogo faltando deixa a tela oferecendo menos do que existe, e
-          // o operador não teria como saber. Ou vêm todos, ou nenhum.
-          if (!isApiOk(condicoes) || !isApiOk(recursos) || !isApiOk(tiposDeficiencia)) {
-            this.anunciarErro();
-            return;
-          }
+  /**
+   * Um catálogo faltando deixa a tela oferecendo menos do que existe, e o operador não teria como
+   * saber. Ou vêm todos, ou nenhum.
+   */
+  private receber(resultados: ResultadosDosCatalogos): void {
+    const { condicoes, recursos, tiposDeficiencia } = resultados;
+    if (!isApiOk(condicoes) || !isApiOk(recursos) || !isApiOk(tiposDeficiencia)) {
+      this.anunciarErro();
+      return;
+    }
 
-          this.condicoes.set(condicoes.data);
-          this.recursos.set(recursos.data);
-          this.tiposDeficiencia.set(tiposDeficiencia.data);
-          this.carregando.set(false);
-        },
-        error: () => this.anunciarErro(),
-      });
+    this.condicoes.set(condicoes.data);
+    this.recursos.set(recursos.data);
+    this.tiposDeficiencia.set(tiposDeficiencia.data);
+    this.carregando.set(false);
   }
 
   private anunciarErro(): void {

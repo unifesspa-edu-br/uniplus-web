@@ -7,6 +7,21 @@ import { rotuloDoPapel } from '../leitura-da-etapa';
 import { componeNota } from '../regras-da-etapa';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
 
+interface LinhaDasFasesQueAgrupam {
+  readonly codigosNaLinha: ReadonlySet<string>;
+  readonly haAgrupadora: boolean;
+}
+
+/** Sem fase declarada, a etapa só é órfã quando nenhuma fase a agruparia. */
+function etapaSemFaseQueAgrupe(faseCodigo: string, linha: LinhaDasFasesQueAgrupam): boolean {
+  return faseCodigo === '' ? !linha.haAgrupadora : !linha.codigosNaLinha.has(faseCodigo);
+}
+
+function rotuloDaEtapaOrfa(indice: number, nome: string): string {
+  const nomeAparado = nome.trim();
+  return nomeAparado === '' ? `Etapa ${indice + 1}, ainda sem nome` : nomeAparado;
+}
+
 /** O que a linha do tempo lê do formulário para mostrar: as etapas de cada fase, o que ela publica e as marcas do cabeçalho. */
 @Injectable()
 export class LeituraDaLinhaDoTempo {
@@ -57,25 +72,27 @@ export class LeituraDaLinhaDoTempo {
    */
   readonly etapasOrfas = computed<readonly { indice: number; rotulo: string }[]>(() => {
     this.versaoDoFormulario();
-    const codigosNaLinha = new Set(
-      this.cronograma.fases.controls.map((grupo) => grupo.controls.codigo.value),
-    );
-    const haAgrupadora = this.cronograma
-      .linhaDoTempo()
-      .some((item) => item.exigencias?.agrupaEtapas === true);
+    const linha = this.linhaDasFasesQueAgrupam();
 
     return this.cronograma.etapas.controls
       .map((grupo, indice) => ({ indice, grupo }))
-      .filter(({ grupo }) => {
-        const codigo = grupo.controls.faseCodigo.value;
-        // Sem fase declarada, a etapa só é órfã quando nenhuma fase a agruparia.
-        return codigo === '' ? !haAgrupadora : !codigosNaLinha.has(codigo);
-      })
-      .map(({ indice, grupo }) => {
-        const nome = grupo.controls.nome.value.trim();
-        return { indice, rotulo: nome === '' ? `Etapa ${indice + 1}, ainda sem nome` : nome };
-      });
+      .filter(({ grupo }) => etapaSemFaseQueAgrupe(grupo.controls.faseCodigo.value, linha))
+      .map(({ indice, grupo }) => ({
+        indice,
+        rotulo: rotuloDaEtapaOrfa(indice, grupo.controls.nome.value),
+      }));
   });
+
+  private linhaDasFasesQueAgrupam(): LinhaDasFasesQueAgrupam {
+    return {
+      codigosNaLinha: new Set(
+        this.cronograma.fases.controls.map((grupo) => grupo.controls.codigo.value),
+      ),
+      haAgrupadora: this.cronograma
+        .linhaDoTempo()
+        .some((item) => item.exigencias?.agrupaEtapas === true),
+    };
+  }
 
   /**
    * O que a fase publica, como a tela o mostra: nome do ato e papel da

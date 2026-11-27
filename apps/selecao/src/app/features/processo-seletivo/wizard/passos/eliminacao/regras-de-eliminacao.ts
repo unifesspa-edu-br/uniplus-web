@@ -74,8 +74,13 @@ export function quadroDoCorte(
   if (!exigeResolucaoPesoAreaEnem(classificacao)) {
     return { areas: canonicas, grupos: [], rotulos: rotulosDasAreas(canonicas, []) };
   }
+  return quadroDosGrupos(canonicas, quadroConhecido(classificacao, cadastro, gravada));
+}
 
-  const grupos = quadroConhecido(classificacao, cadastro, gravada);
+function quadroDosGrupos(
+  canonicas: LeituraDoCadastro['canonicas'],
+  grupos: readonly GrupoDoQuadro[] | null,
+): QuadroDoCorte {
   return {
     areas: grupos === null ? null : areasComunsAoQuadro(grupos, ordemDasAreas(canonicas)),
     grupos: grupos ?? [],
@@ -143,7 +148,15 @@ export function etapasEscolhiveis(
   const oferecidas = etapas.filter(
     (etapa) => !etapa.doEnem && !citadaPorOutraAusencia(regras, etapa.id, indice),
   );
-  const gravada = etapas.find((etapa) => etapa.id === regra.etapaRef);
+  return comAEtapaGravada(oferecidas, etapas, regra.etapaRef);
+}
+
+function comAEtapaGravada(
+  oferecidas: readonly EtapaReferenciavel[],
+  etapas: readonly EtapaReferenciavel[],
+  etapaRef: string,
+): readonly EtapaReferenciavel[] {
+  const gravada = etapas.find((etapa) => etapa.id === etapaRef);
   return gravada === undefined || oferecidas.includes(gravada)
     ? oferecidas
     : [gravada, ...oferecidas];
@@ -155,17 +168,24 @@ export function areasEscolhiveis(
   quadro: QuadroDoCorte,
   indice: number,
 ): readonly ColunaDoQuadro[] {
-  const citadasPorOutras = new Set(
-    regras
-      .filter((regra, item) => item !== indice && eliminacaoUsaAreaEMinimo(regra.regraCodigo))
-      .map((regra) => regra.areaCodigo),
-  );
+  const citadasPorOutras = areasCitadasPorOutrasRegras(regras, indice);
   const oferecidas = (quadro.areas ?? []).filter((area) => !citadasPorOutras.has(area.codigo));
   // A área gravada aparece mesmo fora das oferecidas: o operador vê o que está configurado.
   const gravada = regras[indice]?.areaCodigo ?? '';
   return gravada === '' || oferecidas.some((area) => area.codigo === gravada)
     ? oferecidas
     : [{ codigo: gravada, rotulo: rotuloDaArea(quadro, gravada) }, ...oferecidas];
+}
+
+function areasCitadasPorOutrasRegras(
+  regras: readonly RegraEliminacaoConfigurada[],
+  indice: number,
+): ReadonlySet<string> {
+  return new Set(
+    regras
+      .filter((regra, item) => item !== indice && eliminacaoUsaAreaEMinimo(regra.regraCodigo))
+      .map((regra) => regra.areaCodigo),
+  );
 }
 
 /**
@@ -211,18 +231,35 @@ export function leituraDaRegra(
   etapas: readonly EtapaReferenciavel[],
   quadro: QuadroDoCorte,
 ) {
-  const etapa = etapas.find((item) => item.id === regra.etapaRef);
+  return {
+    ...usosDaRegra(regra, quadro),
+    ...rotulosDaRegra(regra, catalogo, etapas, quadro),
+    notaMinima: leituraDoCampoDecimal(regra.notaMinima),
+    minimo: leituraDoCampoDecimal(regra.minimo),
+  };
+}
+
+function usosDaRegra(regra: RegraEliminacaoConfigurada, quadro: QuadroDoCorte) {
   return {
     usaEtapa: eliminacaoUsaEtapa(regra.regraCodigo),
     usaEtapaENotaMinima: eliminacaoUsaEtapaENotaMinima(regra.regraCodigo),
     usaAreaEMinimo: eliminacaoUsaAreaEMinimo(regra.regraCodigo),
     rotuloDoMinimo: rotuloDoMinimo(regra, quadro),
+  };
+}
+
+function rotulosDaRegra(
+  regra: RegraEliminacaoConfigurada,
+  catalogo: readonly RegraCatalogoDto[],
+  etapas: readonly EtapaReferenciavel[],
+  quadro: QuadroDoCorte,
+) {
+  const etapa = etapas.find((item) => item.id === regra.etapaRef);
+  return {
     regra: rotuloDaRegraEscolhida(
       regrasEscolhiveis(catalogo, regra.regraCodigo, regra.regraVersao),
     ),
     etapa: etapa === undefined ? null : etapa.nome || 'Etapa sem nome',
-    notaMinima: leituraDoCampoDecimal(regra.notaMinima),
     area: regra.areaCodigo === '' ? null : rotuloDaArea(quadro, regra.areaCodigo),
-    minimo: leituraDoCampoDecimal(regra.minimo),
   };
 }

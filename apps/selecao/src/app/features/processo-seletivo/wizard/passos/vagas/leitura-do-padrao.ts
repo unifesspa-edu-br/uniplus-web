@@ -20,23 +20,31 @@ export interface EntradaDaLeituraDoPadrao {
  * seletores. Regra sem código é regra não declarada, e o campo diz isso.
  */
 export function leituraDoPadrao(entrada: EntradaDaLeituraDoPadrao) {
-  const { padrao, motivoDaAusencia: motivo } = entrada;
-  const regra = (codigo: string | null, versao: string | null): string | null =>
-    codigo ? `${codigo} · versão ${versao ?? ''}` : null;
-
+  const { padrao } = entrada;
   return {
-    regraDeDistribuicao: regra(padrao.regraDistribuicaoCodigo, padrao.regraDistribuicaoVersao),
-    percentualDeReserva: padrao.pr,
-    regraDeAjuste: regra(padrao.regraAjusteCodigo, padrao.regraAjusteVersao),
-    referenciaDemografica: referenciaEmTexto(entrada),
-    modalidades: entrada.modalidades.map((modalidade) =>
-      modalidade.descricao !== ''
-        ? `${modalidade.codigo} — ${modalidade.descricao}`
-        : entrada.catalogoLido
-          ? modalidade.codigo
-          : `${modalidade.codigo} — descrição: o catálogo ${motivo}`,
+    regraDeDistribuicao: regraEmTexto(
+      padrao.regraDistribuicaoCodigo,
+      padrao.regraDistribuicaoVersao,
     ),
+    percentualDeReserva: padrao.pr,
+    regraDeAjuste: regraEmTexto(padrao.regraAjusteCodigo, padrao.regraAjusteVersao),
+    referenciaDemografica: referenciaEmTexto(entrada),
+    modalidades: entrada.modalidades.map((modalidade) => modalidadeEmTexto(modalidade, entrada)),
   };
+}
+
+function regraEmTexto(codigo: string | null, versao: string | null): string | null {
+  return codigo ? `${codigo} · versão ${versao ?? ''}` : null;
+}
+
+function modalidadeEmTexto(
+  modalidade: EntradaDaLeituraDoPadrao['modalidades'][number],
+  entrada: EntradaDaLeituraDoPadrao,
+): string {
+  if (modalidade.descricao !== '') return `${modalidade.codigo} — ${modalidade.descricao}`;
+  return entrada.catalogoLido
+    ? modalidade.codigo
+    : `${modalidade.codigo} — descrição: o catálogo ${entrada.motivoDaAusencia}`;
 }
 
 function referenciaEmTexto(entrada: EntradaDaLeituraDoPadrao): string | null {

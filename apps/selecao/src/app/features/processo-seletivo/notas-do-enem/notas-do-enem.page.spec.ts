@@ -95,7 +95,7 @@ describe('NotasDoEnemPage', () => {
     fixture.detectChanges();
 
     expect(texto()).toContain('Nenhum envio gerado para esta edição');
-    expect(texto()).not.toContain('Nenhum lote importado para esta edição');
+    expect(texto()).not.toContain('Nenhuma importação de notas nesta edição');
     expect(seletor('retorno').value).toBe('');
 
     seletor('retorno').value = '2024';
@@ -104,7 +104,7 @@ describe('NotasDoEnemPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto()).toContain('Nenhum lote importado para esta edição');
+    expect(texto()).toContain('Nenhuma importação de notas nesta edição');
     expect(seletor('envio').value).toBe('2025');
   });
 

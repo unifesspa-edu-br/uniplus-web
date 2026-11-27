@@ -1,7 +1,8 @@
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
-import { UnidadesApi } from '@uniplus/shared-data/organizacao';
+import { map } from 'rxjs';
+import { coletarPaginas, isApiOk, type ApiResult } from '@uniplus/shared-core/http';
+import { UnidadesApi, type UnidadeDto } from '@uniplus/shared-data/organizacao';
 import { acompanharCatalogo } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
@@ -10,6 +11,12 @@ import {
   opcoesComAsGravadas,
   type OpcaoDeUnidade,
 } from '../../../shared/unidades-do-cadastro';
+
+function opcoesOuNulo(
+  resultado: ApiResult<readonly UnidadeDto[]>,
+): readonly OpcaoDeUnidade[] | null {
+  return isApiOk(resultado) ? resultado.data.map(comoOpcaoDeUnidade) : null;
+}
 
 /** As unidades administradoras que o operador pode escolher, com a leitura do catálogo e sua falha. */
 @Injectable()
@@ -53,18 +60,16 @@ export class CatalogoDeUnidades {
     this.erro.set(null);
 
     coletarPaginas((cursor) => this.unidadesApi.listar({ cursor }))
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(map(opcoesOuNulo), takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (result) => {
-          if (!isApiOk(result)) {
-            this.exibirErro();
-            return;
-          }
-          this.catalogo.set(result.data.map(comoOpcaoDeUnidade));
-          this.carregando.set(false);
-        },
+        next: (opcoes) => (opcoes === null ? this.exibirErro() : this.receber(opcoes)),
         error: () => this.exibirErro(),
       });
+  }
+
+  private receber(opcoes: readonly OpcaoDeUnidade[]): void {
+    this.catalogo.set(opcoes);
+    this.carregando.set(false);
   }
 
   private exibirErro(): void {

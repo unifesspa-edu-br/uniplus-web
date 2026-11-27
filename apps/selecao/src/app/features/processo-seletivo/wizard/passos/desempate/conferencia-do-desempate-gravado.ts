@@ -3,7 +3,12 @@ import type { CriterioDesempateConfigurado, WizardDraft } from '../../processo-s
 import type { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { LeituraDoCadastro } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { desempateUsaAreas } from './desempate-para-comando';
-import { areasForaDoQuadro, rotulosDasAreas, situacaoDoQuadro } from './situacao-do-quadro';
+import {
+  areasForaDoQuadro,
+  rotulosDasAreas,
+  situacaoDoQuadro,
+  type SituacaoDoQuadro,
+} from './situacao-do-quadro';
 
 /**
  * O que a gravação da classificação do rascunho deixaria sem nota de área num critério de
@@ -37,27 +42,40 @@ export function conferirDesempateGravado(
   classificacao: WizardDraft['classificacao'],
   cadastro: LeituraDoCadastro,
 ): ConferenciaDoDesempateGravado {
-  const porArea = criterios
-    .map((criterio, indice) => ({ criterio, posicao: indice + 1 }))
-    .filter(({ criterio }) => desempateUsaAreas(criterio.regraCodigo));
+  const porArea = criteriosPorArea(criterios);
   if (porArea.length === 0) return { resultado: 'sem-pendencia' };
-
   const situacao = situacaoDoQuadro(classificacao, { estado: 'nunca-gravada' }, cadastro);
-  if (situacao.tipo === 'sem-quadro') {
-    return comPendencias(
-      porArea.map(({ posicao }) => ({ posicao, semQuadro: true, fora: [], todas: true })),
-    );
-  }
+  if (situacao.tipo === 'sem-quadro') return comPendencias(todosSemQuadro(porArea));
   if (situacao.tipo !== 'lido' && situacao.tipo !== 'sem-area-em-todos-os-grupos') {
     return { resultado: 'nao-conferivel' };
   }
+  return comPendencias(pendenciasForaDoQuadro(porArea, situacao, cadastro));
+}
 
+interface CriterioPorArea {
+  readonly criterio: CriterioDesempateConfigurado;
+  readonly posicao: number;
+}
+
+function criteriosPorArea(criterios: readonly CriterioDesempateConfigurado[]): CriterioPorArea[] {
+  return criterios
+    .map((criterio, indice) => ({ criterio, posicao: indice + 1 }))
+    .filter(({ criterio }) => desempateUsaAreas(criterio.regraCodigo));
+}
+
+function todosSemQuadro(porArea: readonly CriterioPorArea[]): PendenciaDoCriterioGravado[] {
+  return porArea.map(({ posicao }) => ({ posicao, semQuadro: true, fora: [], todas: true }));
+}
+
+function pendenciasForaDoQuadro(
+  porArea: readonly CriterioPorArea[],
+  situacao: Extract<SituacaoDoQuadro, { tipo: 'lido' | 'sem-area-em-todos-os-grupos' }>,
+  cadastro: LeituraDoCadastro,
+): PendenciaDoCriterioGravado[] {
   const aceitas = situacao.tipo === 'lido' ? situacao.aceitas : [];
   const rotulos = rotulosDasAreas(cadastro.canonicas, situacao.grupos);
-  return comPendencias(
-    porArea.flatMap(({ criterio, posicao }) =>
-      pendenciaForaDoQuadro(criterio, posicao, aceitas, rotulos),
-    ),
+  return porArea.flatMap(({ criterio, posicao }) =>
+    pendenciaForaDoQuadro(criterio, posicao, aceitas, rotulos),
   );
 }
 
@@ -78,13 +96,9 @@ function pendenciaForaDoQuadro(
 ): PendenciaDoCriterioGravado[] {
   const fora = areasForaDoQuadro(criterio.areas, aceitas);
   if (fora.length === 0) return [];
+  const rotuladas = fora.map((codigo) => rotulos.get(codigo) ?? codigo);
   return [
-    {
-      posicao,
-      semQuadro: false,
-      fora: fora.map((codigo) => rotulos.get(codigo) ?? codigo),
-      todas: fora.length === criterio.areas.length,
-    },
+    { posicao, semQuadro: false, fora: rotuladas, todas: fora.length === criterio.areas.length },
   ];
 }
 
@@ -102,15 +116,22 @@ export function reavaliarRecusaPeloDesempate(
 ): void {
   const gravados = store.classificacao.criteriosDesempateGravados();
   if (store.classificacao.recusaPeloDesempatePorArea() === null || gravados === null) return;
-  const semCriterioPorArea = !gravados.some((criterio) => desempateUsaAreas(criterio.regraCodigo));
-  const criteriosMudaram =
-    JSON.stringify(gravados) !==
-    JSON.stringify(store.classificacao.criteriosNaRecusaPeloDesempate());
-  const cadastroRelido =
-    cadastro.lido &&
-    cadastro.leitura > store.classificacao.leituraDoCadastroNaRecusaPeloDesempate();
-  if (!semCriterioPorArea && !criteriosMudaram && !cadastroRelido) return;
+  if (!recusaPodeTerAcabado(store, gravados, cadastro)) return;
   const conferencia = conferirDesempateGravado(gravados, store.draft().classificacao, cadastro);
   if (conferencia.resultado === 'sem-pendencia')
     store.classificacao.recusaPeloDesempatePorArea.set(null);
+}
+
+function recusaPodeTerAcabado(
+  store: ProcessoSeletivoStore,
+  gravados: readonly CriterioDesempateConfigurado[],
+  cadastro: LeituraDoCadastro,
+): boolean {
+  const classificacao = store.classificacao;
+  const semCriterioPorArea = !gravados.some((criterio) => desempateUsaAreas(criterio.regraCodigo));
+  const criteriosMudaram =
+    JSON.stringify(gravados) !== JSON.stringify(classificacao.criteriosNaRecusaPeloDesempate());
+  const cadastroRelido =
+    cadastro.lido && cadastro.leitura > classificacao.leituraDoCadastroNaRecusaPeloDesempate();
+  return semCriterioPorArea || criteriosMudaram || cadastroRelido;
 }

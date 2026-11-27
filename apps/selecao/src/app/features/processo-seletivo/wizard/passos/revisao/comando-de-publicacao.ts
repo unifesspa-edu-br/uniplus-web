@@ -29,22 +29,21 @@ export function mensagensDePublicacao(
   documentoEditalId: string | null,
   fasePorId: ReadonlyMap<string, FaseCanonicaDto> = SEM_CATALOGO,
 ): string[] {
-  const mensagens: string[] = [];
+  return [
+    ...mensagensDoDocumentoDoEdital(documentoEditalId),
+    ...(temFaseDeColetaInscricao(draft, fasePorId)
+      ? []
+      : mensagensDoPeriodoDeInscricao(draft.publicacao)),
+    ...mensagensDosCamposDoAto(draft.publicacao.ato),
+    ...excessosDeComprimento(draft.publicacao),
+    ...mensagensDosAnexos(draft.publicacao.anexos),
+  ];
+}
 
-  if (documentoEditalId === null) {
-    mensagens.push(
-      'Escolha o documento do edital confirmado que será publicado, na Identificação.',
-    );
-  }
-
-  if (!temFaseDeColetaInscricao(draft, fasePorId)) {
-    mensagens.push(...mensagensDoPeriodoDeInscricao(draft.publicacao));
-  }
-  mensagens.push(...mensagensDosCamposDoAto(draft.publicacao.ato));
-  mensagens.push(...excessosDeComprimento(draft.publicacao));
-  mensagens.push(...mensagensDosAnexos(draft.publicacao.anexos));
-
-  return mensagens;
+function mensagensDoDocumentoDoEdital(documentoEditalId: string | null): string[] {
+  return documentoEditalId === null
+    ? ['Escolha o documento do edital confirmado que será publicado, na Identificação.']
+    : [];
 }
 
 /** O período digitado, que só vale quando o cronograma não tem fase que colete inscrição. */

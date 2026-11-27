@@ -79,3 +79,22 @@ export function comoCondicaoSelecionada(
 ): AtendimentoCondicaoSelecionada {
   return { id: condicao.id, codigo: condicao.codigo, nome: condicao.nome };
 }
+
+export interface OfertaDeAtendimento {
+  readonly condicoes: readonly { readonly id: string }[];
+  readonly recursos: readonly { readonly id: string }[];
+  readonly tiposDeficiencia: readonly { readonly id: string }[];
+}
+
+/** O que a API recebe ao gravar a oferta: só os identificadores dos cadastros de Configuração. */
+export function identificadoresDaOferta(oferta: OfertaDeAtendimento): {
+  readonly condicaoIds: string[];
+  readonly recursoIds: string[];
+  readonly tipoDeficienciaIds: string[];
+} {
+  return {
+    condicaoIds: oferta.condicoes.map((item) => item.id),
+    recursoIds: oferta.recursos.map((item) => item.id),
+    tipoDeficienciaIds: oferta.tiposDeficiencia.map((item) => item.id),
+  };
+}

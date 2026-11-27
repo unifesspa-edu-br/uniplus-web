@@ -359,9 +359,9 @@ describe('ImportacaoDeNotasComponent', () => {
       lote({ id: 'anterior', vigente: false, importadoPorNome: null, ocorrencias: null }),
     ]);
 
-    const linhas = Array.from(secao().querySelectorAll('sel-historico-de-lotes tbody tr')).map(
-      (tr) => (tr.querySelector('td')?.textContent ?? '').replace(/\s+/g, ' '),
-    );
+    const linhas = Array.from(
+      secao().querySelectorAll('sel-historico-de-importacoes tbody tr'),
+    ).map((tr) => (tr.querySelector('td')?.textContent ?? '').replace(/\s+/g, ' '));
     expect(linhas[0]).toContain('por Diogo Bruno Filipe Souza');
     expect(linhas[1]).toContain('Não registrado');
     expect(linhas[1]).not.toContain('por ');

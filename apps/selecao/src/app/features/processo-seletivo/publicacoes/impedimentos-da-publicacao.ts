@@ -23,6 +23,9 @@ export function impedimentosDosArquivos(arquivos: ArquivosParaPublicar): readonl
   ];
 }
 
+const ANEXO_NAO_ENVIADO_POR_COMPLETO =
+  'Há anexo que não foi enviado por completo. Aguarde o envio, tente de novo ou retire o anexo.';
+
 function impedimentosDoPrincipal(principal: EnviosDeArquivos): readonly string[] {
   if (principal.arquivos().length === 0) return ['Envie o documento principal, em PDF.'];
   if (principal.naoConfirmados() === 0) return [];
@@ -32,18 +35,18 @@ function impedimentosDoPrincipal(principal: EnviosDeArquivos): readonly string[]
 }
 
 function impedimentosDosAnexos(anexos: EnviosDeArquivos): readonly string[] {
-  const mensagens: string[] = [];
-  if (anexos.arquivos().length > LIMITE_DE_ANEXOS) {
-    mensagens.push(`O documento aceita no máximo ${LIMITE_DE_ANEXOS} anexos.`);
-  }
-  if (anexos.naoConfirmados() > 0) {
-    mensagens.push(
-      'Há anexo que não foi enviado por completo. Aguarde o envio, tente de novo ou retire o anexo.',
-    );
-  }
-  for (const anexo of anexos.selados()) {
+  return [
+    ...(anexos.arquivos().length > LIMITE_DE_ANEXOS
+      ? [`O documento aceita no máximo ${LIMITE_DE_ANEXOS} anexos.`]
+      : []),
+    ...(anexos.naoConfirmados() > 0 ? [ANEXO_NAO_ENVIADO_POR_COMPLETO] : []),
+    ...recusasDosNomesDosAnexos(anexos),
+  ];
+}
+
+function recusasDosNomesDosAnexos(anexos: EnviosDeArquivos): readonly string[] {
+  return anexos.selados().flatMap((anexo) => {
     const recusa = recusaDoNomeDoAnexo(anexo.nome, anexo.nomeArquivo);
-    if (recusa !== null) mensagens.push(`Anexo ${anexo.nomeArquivo}: ${recusa}`);
-  }
-  return mensagens;
+    return recusa === null ? [] : [`Anexo ${anexo.nomeArquivo}: ${recusa}`];
+  });
 }

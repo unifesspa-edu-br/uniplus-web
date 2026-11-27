@@ -44,29 +44,29 @@ export function fasesDePrevistos(
   nomeDaFase: (codigo: string) => string,
   tituloDasEtapasSemFase: string,
 ): readonly FaseDePrevistos[] {
-  const etapasDe = (etapas: readonly EtapaComProdutosPrevistosDto[]): readonly EtapaDePrevistos[] =>
-    etapas
-      .filter((etapa) => etapa.produtos.length > 0)
-      .map((etapa) => ({ id: etapa.id, nome: etapa.nome, itens: etapa.produtos }));
-
   const fases = consulta.fases
-    .map(
-      (fase): FaseDePrevistos => ({
-        id: fase.id,
-        nome: nomeDaFase(fase.codigo),
-        itens: fase.produtos,
-        etapas: etapasDe(fase.etapas),
-      }),
-    )
+    .map((fase) => faseDePrevistos(fase, nomeDaFase(fase.codigo)))
     .filter((fase) => fase.itens.length > 0 || fase.etapas.length > 0);
+  const etapas = etapasDePrevistos(consulta.etapasSemFase);
+  return etapas.length === 0 ? fases : [...fases, grupoSemFase(tituloDasEtapasSemFase, etapas)];
+}
 
-  const etapasSemFase = etapasDe(consulta.etapasSemFase);
-  return etapasSemFase.length === 0
-    ? fases
-    : [
-        ...fases,
-        { id: 'sem-fase', nome: tituloDasEtapasSemFase, itens: [], etapas: etapasSemFase },
-      ];
+function grupoSemFase(nome: string, etapas: readonly EtapaDePrevistos[]): FaseDePrevistos {
+  return { id: 'sem-fase', nome, itens: [], etapas };
+}
+
+type FaseDaConsulta = ProdutosPrevistosDoProcessoDto['fases'][number];
+
+function faseDePrevistos(fase: FaseDaConsulta, nome: string): FaseDePrevistos {
+  return { id: fase.id, nome, itens: fase.produtos, etapas: etapasDePrevistos(fase.etapas) };
+}
+
+function etapasDePrevistos(
+  etapas: readonly EtapaComProdutosPrevistosDto[],
+): readonly EtapaDePrevistos[] {
+  return etapas
+    .filter((etapa) => etapa.produtos.length > 0)
+    .map((etapa) => ({ id: etapa.id, nome: etapa.nome, itens: etapa.produtos }));
 }
 
 /** O item é resultado quando o edital lhe dá papel: só o ato que não é resultado fica sem papel. */

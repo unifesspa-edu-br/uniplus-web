@@ -1,5 +1,7 @@
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
+type ModalidadeDoQuadro = ProcessoSeletivoDto['distribuicaoVagas'][number]['modalidades'][number];
+
 /** A regra de aplicabilidade que o processo congelou para uma modalidade ofertada. */
 export interface RegraDaModalidadeOfertada {
   readonly codigo: string;
@@ -16,17 +18,20 @@ export interface RegraDaModalidadeOfertada {
 export function regrasDasModalidadesOfertadas(
   processo: ProcessoSeletivoDto | null,
 ): readonly RegraDaModalidadeOfertada[] {
+  const modalidades = (processo?.distribuicaoVagas ?? []).flatMap((d) => d.modalidades);
   const porCodigo = new Map<string, RegraDaModalidadeOfertada>();
-  for (const distribuicao of processo?.distribuicaoVagas ?? []) {
-    for (const modalidade of distribuicao.modalidades) {
-      if (!porCodigo.has(modalidade.codigo)) {
-        porCodigo.set(modalidade.codigo, {
-          codigo: modalidade.codigo,
-          descricao: modalidade.descricao,
-          regra: modalidade.regraDeAplicabilidade,
-        });
-      }
+  for (const modalidade of modalidades) {
+    if (!porCodigo.has(modalidade.codigo)) {
+      porCodigo.set(modalidade.codigo, regraDaModalidade(modalidade));
     }
   }
   return [...porCodigo.values()].sort((a, b) => a.codigo.localeCompare(b.codigo));
+}
+
+function regraDaModalidade(modalidade: ModalidadeDoQuadro): RegraDaModalidadeOfertada {
+  return {
+    codigo: modalidade.codigo,
+    descricao: modalidade.descricao,
+    regra: modalidade.regraDeAplicabilidade,
+  };
 }

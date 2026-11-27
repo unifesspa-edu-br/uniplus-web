@@ -202,18 +202,22 @@ function textoPorStatus(status: number, contexto: ContextoDaRecusa): Texto | nul
   return null;
 }
 
+function detalheDoProblema(texto: Texto, problem: ProblemDetails): string | null {
+  const detalhe = texto.detalhe === true ? (problem.detail?.trim() ?? '') : '';
+  return detalhe === '' ? null : detalhe;
+}
+
 function montar(
   texto: Texto,
   problem: ProblemDetails,
   contexto: ContextoDaRecusa,
 ): RecusaExplicada {
-  const detalhe = texto.detalhe === true ? (problem.detail?.trim() ?? '') : '';
   return {
     titulo: tituloDe(texto, contexto),
     explicacao: texto.explicacao,
     orientacao: texto.orientacao,
     nivel: texto.nivel ?? 'danger',
-    detalhe: detalhe === '' ? null : detalhe,
+    detalhe: detalheDoProblema(texto, problem),
     recarregarCatalogo: texto.recarregarCatalogo === true,
     traceId: null,
   };

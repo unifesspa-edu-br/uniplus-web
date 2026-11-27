@@ -27,7 +27,7 @@ import {
 import { AlertComponent, FileUploadComponent } from '@uniplus/shared-ui/components';
 
 import { AlertaDeRecusaComponent } from './alerta-de-recusa.component';
-import { HistoricoDeLotesComponent } from './historico-de-lotes.component';
+import { HistoricoDeImportacoesComponent } from './historico-de-importacoes.component';
 import { OrientacoesDoEnemComponent } from './orientacoes-do-enem.component';
 import { SeletorDeEdicaoComponent } from './seletor-de-edicao.component';
 import { acompanharLeiautes, leiauteDaChave } from './leiautes';
@@ -61,7 +61,7 @@ interface ResultadoDaImportacao {
     AlertComponent,
     AlertaDeRecusaComponent,
     FileUploadComponent,
-    HistoricoDeLotesComponent,
+    HistoricoDeImportacoesComponent,
     LoteDeNotasComponent,
     OrigemDoLoteComponent,
     OrientacoesDoEnemComponent,

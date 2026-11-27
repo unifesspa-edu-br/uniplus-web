@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { extractNextCursor, isApiOk } from '@uniplus/shared-core/http';
+import { ApiResult, extractNextCursor, isApiOk } from '@uniplus/shared-core/http';
 import { TipoProcessoDto, TiposProcessoApi } from '@uniplus/shared-data/configuracao';
 import {
   acompanharLeitura,
@@ -21,6 +21,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { ValidacaoDoPasso, TipoProcessoOption } from '../../processo-seletivo.models';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { tituloDoPasso } from '../../shared/titulo-do-passo';
+import { incluirTipoRetomado } from './opcoes-do-tipo-de-processo';
 
 @Component({
   selector: 'sel-step-tipo-processo',
@@ -44,33 +45,10 @@ export class TipoProcessoPassoComponent {
   /** Tipos ativos retornados pelo catálogo de Configuração (ADR-0122). */
   private readonly catalogo = signal<readonly TipoProcessoOption[]>([]);
 
-  /**
-   * Catálogo vivo mais, quando faltar, o tipo que o processo retomado declara.
-   *
-   * O catálogo lista só tipos ativos; um processo criado antes de o tipo ser
-   * desativado continua apontando para ele. Sem esta opção o passo abriria sem
-   * seleção alguma, e como o cadastro inicial fica congelado o operador não
-   * teria como identificar nem corrigir o que está lá — o snapshot devolvido
-   * por Seleção é a única fonte desse rótulo (ADR-0122).
-   */
-  readonly options = computed<readonly TipoProcessoOption[]>(() => {
-    const catalogo = this.catalogo();
-    const snapshot = this.store.remoteSnapshot()?.tipoProcesso;
-
-    if (snapshot === undefined) return catalogo;
-    if (catalogo.some((opcao) => opcao.value === snapshot.origemId)) return catalogo;
-
-    return [
-      {
-        value: snapshot.origemId,
-        codigo: snapshot.codigo,
-        name: snapshot.nome,
-        description: 'Tipo não disponível no catálogo atual — preservado deste processo.',
-        tags: [snapshot.codigo],
-      },
-      ...catalogo,
-    ];
-  });
+  /** Catálogo vivo, com o tipo do processo retomado quando o catálogo já não o lista. */
+  readonly options = computed<readonly TipoProcessoOption[]>(() =>
+    incluirTipoRetomado(this.catalogo(), this.store.remoteSnapshot()?.tipoProcesso),
+  );
   /** O tipo gravado, com a descrição do catálogo quando ele a tem. */
   readonly tipoEscolhido = computed(
     () =>
@@ -112,24 +90,28 @@ export class TipoProcessoPassoComponent {
         : this.tiposProcessoApi.listar({ cursor, direction: 'next' });
 
     consulta.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (result) => {
-        if (!isApiOk(result)) {
-          this.exibirErro();
-          return;
-        }
-
-        const tipos = [...acumulados, ...result.data.map((tipo) => this.toOption(tipo))];
-        const proximoCursor = extractNextCursor(result.headers.get('Link'));
-        if (proximoCursor !== null) {
-          this.carregarPagina(proximoCursor, tipos);
-          return;
-        }
-
-        this.catalogo.set(tipos);
-        this.loading.set(false);
-      },
+      next: (result) => this.receberPagina(result, acumulados),
       error: () => this.exibirErro(),
     });
+  }
+
+  private receberPagina(
+    result: ApiResult<readonly TipoProcessoDto[]>,
+    acumulados: readonly TipoProcessoOption[],
+  ): void {
+    if (!isApiOk(result)) {
+      this.exibirErro();
+      return;
+    }
+    const tipos = [...acumulados, ...result.data.map((tipo) => this.toOption(tipo))];
+    const proximoCursor = extractNextCursor(result.headers.get('Link'));
+    if (proximoCursor === null) this.concluirCarga(tipos);
+    else this.carregarPagina(proximoCursor, tipos);
+  }
+
+  private concluirCarga(tipos: readonly TipoProcessoOption[]): void {
+    this.catalogo.set(tipos);
+    this.loading.set(false);
   }
 
   select(value: string): void {

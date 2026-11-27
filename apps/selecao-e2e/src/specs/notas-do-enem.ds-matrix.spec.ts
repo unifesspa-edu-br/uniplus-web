@@ -113,7 +113,9 @@ async function abrirComEdicao(page: Page, cenario: Cenario = {}): Promise<void> 
   await page.getByLabel('Edição do ENEM').first().selectOption('2025');
   await page.getByLabel('Edição do ENEM').last().selectOption('2025');
   await expect(page.getByRole('heading', { name: 'Envios gerados desta edição' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Lotes importados desta edição' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Importações de notas desta edição' }),
+  ).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: 'Carregando' })).toHaveCount(0);
 }
 
