@@ -27,13 +27,13 @@ describe('passosConcluidosDe', () => {
         regrasEliminacao,
       }) as unknown as ProcessoSeletivoDto['classificacao'];
 
-    it('sem regra de eliminação, conta só a Fórmula: a Eliminação ainda não foi gravada', () => {
+    it('sem regra de eliminação, conta a Fórmula e a Eliminação: a lista vazia é uma gravação válida', () => {
       const rotulos = rotulosConcluidos({
         classificacao: classificacaoCom('FORMULA_MEDIA_PONDERADA', []),
       });
 
       expect(rotulos).toContain('Fórmula e precisão');
-      expect(rotulos).not.toContain('Eliminação');
+      expect(rotulos).toContain('Eliminação');
     });
 
     it('com ao menos uma regra de eliminação, conta a Fórmula e a Eliminação', () => {
