@@ -44,6 +44,9 @@ run_case() {
   local container="uniplus-web-base-href-${name}-$$"
   local host_port
   local html
+  local headers
+  local asset
+  local config
 
   CONTAINERS+=("$container")
   docker run -d --rm --name "$container" -P \
@@ -76,22 +79,22 @@ run_case() {
   if [[ "$base_href" != / ]]; then
     # A canonicalização sem a barra final não pode descartar parâmetros de
     # callback/deep link (por exemplo, code e state enviados pelo OIDC).
-    if ! curl --silent --show-error --dump-header - --output /dev/null \
-      "http://127.0.0.1:$host_port${base_href%/}?code=authorization-code&state=opaque-state" \
-      | grep -Fq "Location: ${base_href}?code=authorization-code&state=opaque-state"; then
+    if ! headers="$(curl --silent --show-error --dump-header - --output /dev/null \
+      "http://127.0.0.1:$host_port${base_href%/}?code=authorization-code&state=opaque-state")" \
+      || ! grep -Fq "Location: ${base_href}?code=authorization-code&state=opaque-state" <<<"$headers"; then
       docker logs "$container" >&2 || true
       exit 1
     fi
-    if ! curl --fail --silent --show-error --location "http://127.0.0.1:$host_port${base_href%/}" \
-      | grep -Fq "<base href=\"$base_href\">"; then
+    if ! html="$(curl --fail --silent --show-error --location "http://127.0.0.1:$host_port${base_href%/}")" \
+      || ! grep -Fq "<base href=\"$base_href\">" <<<"$html"; then
       docker logs "$container" >&2 || true
       exit 1
     fi
   fi
-  curl --fail --silent --show-error "http://127.0.0.1:$host_port${base_href}assets/main.js" \
-    | grep -Fq 'asset-ok'
-  curl --fail --silent --show-error "http://127.0.0.1:$host_port${base_href}assets/runtime-config.json" \
-    | grep -Fq 'apiUrl'
+  asset="$(curl --fail --silent --show-error "http://127.0.0.1:$host_port${base_href}assets/main.js")"
+  grep -Fq 'asset-ok' <<<"$asset"
+  config="$(curl --fail --silent --show-error "http://127.0.0.1:$host_port${base_href}assets/runtime-config.json")"
+  grep -Fq 'apiUrl' <<<"$config"
   docker exec "$container" nginx -t >/dev/null
 
   echo "ok   $name ($base_href)"
