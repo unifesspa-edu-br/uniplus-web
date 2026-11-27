@@ -93,6 +93,33 @@ describe('GeoApi', () => {
     expect(result.status).toBe(404);
   });
 
+  it('obterCep() devolve o código, o endereço da página e o identificador do erro que o Geo emite', async () => {
+    const promise = firstValueFrom(api.obterCep('00000000'));
+
+    controller.expectOne(`${BASE}/api/cep/00000000`).flush(
+      {
+        type: 'https://portal.exemplo.test/erros/uniplus.geo.cep.nao_encontrado',
+        title: 'CEP não encontrado',
+        status: 404,
+        code: 'uniplus.geo.cep.nao_encontrado',
+        traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+      },
+      {
+        status: 404,
+        statusText: 'Not Found',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+
+    const result = await promise;
+    if (!isApiFailure(result)) throw new Error('Esperava a falha do Geo.');
+    expect(result.problem).toMatchObject({
+      type: 'https://portal.exemplo.test/erros/uniplus.geo.cep.nao_encontrado',
+      code: 'uniplus.geo.cep.nao_encontrado',
+      traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+    });
+  });
+
   it('listarCidades() faz GET /api/cidades com uf/q/limit e Accept versionado', async () => {
     const promise = firstValueFrom(api.listarCidades({ uf: 'pa', q: 'mar', limit: 20 }));
 
