@@ -43,6 +43,7 @@ import {
   mensagemDosErros,
   type PassoPrefixado,
   type RespostaFixa,
+  type TermoApresentado,
 } from './formulario-do-candidato.model';
 import { GrupoDoCandidatoComponent } from './grupo-do-candidato';
 import { lerEnvio } from './interpretador/interpretador';
@@ -60,7 +61,7 @@ import { DecisoesDaAvaliacao } from './decisoes-da-avaliacao';
 import { IndicadorDosPassos } from './indicador-dos-passos';
 import { NavegacaoDosPassos } from './navegacao-dos-passos';
 import { type CampoNoPasso, type PassoDoFormulario } from './passos-do-formulario';
-import { tituloDasRecusas } from './recusas-do-servidor';
+import { contemOCampo, tituloDasRecusas } from './recusas-do-servidor';
 import { fatoDaUf } from './regras-do-campo';
 import { RespostasDoFormulario } from './respostas-do-formulario';
 import {
@@ -183,6 +184,11 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
   readonly pendenciasChange = output<readonly PendenciaDaSecao[]>();
   /** Os termos aceitos, pelo código, a cada mudança. */
   readonly termosAceitosChange = output<readonly string[]>();
+  /**
+   * O campo que a avaliação pede, e que este formulário não tem: as pendências da avaliação são da fase
+   * inteira, então quem hospeda leva o candidato ao formulário dono do campo.
+   */
+  readonly campoDeOutroFormulario = output<string>();
   /** O candidato pediu para calcular de novo a avaliação depois de uma falha. */
   readonly tentarAvaliarDeNovo = output<void>();
 
@@ -222,6 +228,8 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
     raiz: () => this.elemento.nativeElement,
     titulo: () => this.titulo()?.nativeElement ?? null,
   });
+  /** O candidato está na última seção: quem hospeda oferece o que vem depois dela. */
+  readonly naUltimaSecao = this.navegacao.naUltima;
   readonly conferencia = new ConferenciaDasSecoes({
     navegacao: this.navegacao,
     respostas: this.dados,
@@ -293,6 +301,8 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
     irAoCampo: (campo) => this.navegacao.irAoCampo(campo),
   });
   protected readonly erros = this.recusas.erros;
+  /** As recusas do servidor que ainda valem: a resposta corrigida leva a recusa dela. */
+  readonly errosVigentes = this.erros;
 
   readonly simulacao = computed<SimulacaoDoFormulario>(() => ({
     respostas: this.dados.respostasComAsFixas(),
@@ -342,12 +352,17 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
     };
   }
 
+  protected irAoCampoDaAvaliacao(campo: string): void {
+    if (this.passos().some((passo) => contemOCampo(passo, campo))) this.navegacao.irAoCampo(campo);
+    else this.campoDeOutroFormulario.emit(campo);
+  }
+
   protected comErro(passo: PassoDoFormulario): boolean {
     return this.recusas.daSecao(passo) > 0;
   }
 
-  protected alternarAceite(codigo: string, evento: Event): void {
-    this.dados.alternarAceite(codigo, (evento.target as HTMLInputElement).checked);
+  protected alternarAceite(termo: TermoApresentado, evento: Event): void {
+    this.dados.alternarAceite(termo, (evento.target as HTMLInputElement).checked);
   }
 
   protected respostaDaUf(campo: CampoNoPasso): ValorJson | undefined {

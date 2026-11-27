@@ -51,7 +51,7 @@ export { rotuloDoSentido, SENTIDOS_DE_DECISAO, type SentidoDeDecisao } from './s
 export { nomeDaOferta, type OfertaDeCursoCertameDto } from './nome-da-oferta';
 export { OFERTA_NAO_IDENTIFICADA, ofertasEmOrdem, type OfertaExibida } from './ofertas-escolhidas';
 export { InscricoesApi } from './inscricoes.api';
-export { formularioDaInscricaoRequest } from './formulario-da-inscricao.request';
+export { formulariosDaInscricaoRequest } from './formularios-da-inscricao.request';
 export { ArquivosDaInscricaoDoProcessoApi } from './arquivos-da-inscricao-do-processo.api';
 export { CamposDaInscricaoDoProcessoApi } from './campos-da-inscricao-do-processo.api';
 export { ComprovanteDaInscricaoDoProcessoApi } from './comprovante-da-inscricao-do-processo.api';

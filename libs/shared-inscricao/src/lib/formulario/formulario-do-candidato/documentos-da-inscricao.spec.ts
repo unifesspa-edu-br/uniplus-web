@@ -120,6 +120,31 @@ describe('Bloco de documentos da inscrição', () => {
     });
   });
 
+  it('dois formulários montados com a mesma chave de grupo não repetem id e cada lista aponta ao seu rótulo', () => {
+    const grupo = {
+      grupoId: 'identidade',
+      forma: { codigo: 'QUANTIDADE_MINIMA_DE_ITENS', rotulo: 'Quantidade mínima' },
+      minimo: 1,
+      grupoDoFormularioParaRepeticao: null,
+    };
+    const avaliacao = naTela(
+      nestaFase(documento('RG', { grupos: [grupo] }), documento('CNH', { grupos: [grupo] })),
+    );
+    const telaA = montar(avaliacao);
+    const entradas = { ...entradasDoBloco(avaliacao, null, null), idBase: 'inscricao-B' };
+    const telaB = montarOBloco(entradas).nativeElement as HTMLElement;
+    document.body.append(telaA, telaB);
+
+    const ids = [...document.body.querySelectorAll('[id]')].map((e) => e.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    const lista = telaB.querySelector('ul[aria-labelledby]') as HTMLElement;
+    expect(
+      telaB.contains(document.getElementById(lista.getAttribute('aria-labelledby') ?? '')),
+    ).toBe(true);
+    telaA.remove();
+    telaB.remove();
+  });
+
   it('sem nada pedido nesta fase, mantém o aviso de quem hospeda', () => {
     const tela = montar(naTela(nestaFase()));
 
@@ -150,14 +175,14 @@ describe('Bloco de documentos da inscrição', () => {
     );
 
     const escolha = bloco(tela).querySelector<HTMLElement>(
-      'ul[aria-labelledby="documentos-identidade"]',
+      'ul[aria-labelledby="formulario-candidato-documentos-identidade"]',
     ) as HTMLElement;
-    expect(document.getElementById('documentos-identidade')?.textContent).toContain(
-      'Envie uma das opções abaixo, à sua escolha:',
-    );
+    expect(
+      document.getElementById('formulario-candidato-documentos-identidade')?.textContent,
+    ).toContain('Envie uma das opções abaixo, à sua escolha:');
     expect(escolha.querySelectorAll(':scope > li')).toHaveLength(2);
     const juntos = escolha.querySelector<HTMLElement>(
-      'ul[aria-labelledby="documentos-conjunto"]',
+      'ul[aria-labelledby="formulario-candidato-documentos-conjunto"]',
     ) as HTMLElement;
     expect([...juntos.querySelectorAll('h4')].map((h) => h.textContent?.trim())).toEqual([
       'CNH',

@@ -6,13 +6,15 @@ import { AnuncioDaInscricao } from './anuncio-da-inscricao';
 import type { OfertasEscolhidas } from './corpo-da-inscricao';
 import { LeituraDaInscricao } from './leitura-da-inscricao';
 import {
-  mensagemDaRecusa,
   RECUSAS_DA_SEGUNDA_QUE_VEM_DA_PRIMEIRA,
   type RecusaDaSegundaOpcao,
 } from './recusas-da-inscricao';
 
 /** A chave do passo em que o candidato escolhe o curso, quando o processo oferece mais de um. */
 export const PASSO_DO_CURSO = 'curso';
+
+/** O aviso antes do envio, que a tela dá sem esperar a API, quando falta escolher o curso. */
+const CURSO_OBRIGATORIO = 'Escolha a oferta de curso para enviar a inscrição.';
 
 /** Quais opções recusadas a tela levou ao campo, e o texto das que ficaram sem campo para apontar. */
 export interface RecusasMostradas {
@@ -210,7 +212,7 @@ export class EscolhaDoCurso {
 
   /** O curso é obrigatório: mostra a recusa no passo Curso, com o foco no campo. */
   recusarCursoAusente(): void {
-    this.mostrarRecusas(mensagemDaRecusa('uniplus.selecao.inscricao.oferta_obrigatoria'), null);
+    this.mostrarRecusas(CURSO_OBRIGATORIO, null);
   }
 
   /**
