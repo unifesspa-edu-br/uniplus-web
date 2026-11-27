@@ -1,4 +1,8 @@
-import { lerPrazoDaCredencial, type PrazoDaCredencial } from './prazo-da-credencial';
+import {
+  antecedenciaEfetivaEmSegundos,
+  lerPrazoDaCredencial,
+  type PrazoDaCredencial,
+} from './prazo-da-credencial';
 
 const INATIVIDADE_EM_SEGUNDOS = 600;
 
@@ -55,5 +59,19 @@ describe('lerPrazoDaCredencial', () => {
     const proximo = lerPrazoDaCredencial(credencial(2000, INATIVIDADE_EM_SEGUNDOS), 0, preso);
 
     expect(proximo?.limite).toBe('periodoMaximo');
+  });
+});
+
+describe('antecedenciaEfetivaEmSegundos', () => {
+  it('sem prazo do acesso, vale a configurada', () => {
+    expect(antecedenciaEfetivaEmSegundos(60, null)).toBe(60);
+  });
+
+  it('com acesso longo, vale a configurada', () => {
+    expect(antecedenciaEfetivaEmSegundos(60, { emitidoEm: 0, venceEm: 300_000 })).toBe(60);
+  });
+
+  it('com acesso curto, vale a metade da duração', () => {
+    expect(antecedenciaEfetivaEmSegundos(600, { emitidoEm: 0, venceEm: 300_000 })).toBe(150);
   });
 });

@@ -4,7 +4,12 @@ import { AuthConfig } from '../models/auth-config.model';
 import { UserProfile } from '../models/user.model';
 import { UniPlusTokenClaims } from '../models/token-claims.model';
 import { primeiraDescricao } from '../models/descricao-do-erro';
-import { lerPrazoDaCredencial, type PrazoDaCredencial } from '../models/prazo-da-credencial';
+import {
+  lerPrazoDaCredencial,
+  lerPrazoDoAcesso,
+  type PrazoDaCredencial,
+  type PrazoDoAcesso,
+} from '../models/prazo-da-credencial';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -15,6 +20,7 @@ export class AuthService {
   private readonly _renovacoesDoToken = signal(0);
   private readonly _sessaoEncerrada = signal(false);
   private readonly _prazoDaCredencial = signal<PrazoDaCredencial | null>(null);
+  private readonly _prazoDoAcesso = signal<PrazoDoAcesso | null>(null);
 
   /**
    * Promessa de renovação em andamento, compartilhada entre chamadas concorrentes: o realm não
@@ -35,6 +41,11 @@ export class AuthService {
    * ou quando a credencial não traz os instantes.
    */
   readonly prazoDaCredencial = this._prazoDaCredencial.asReadonly();
+  /**
+   * Quando o acesso atual foi emitido e quando vence, lido do que o provedor informou; `null` sem
+   * sessão. É daqui que a renovação antecipada tira a hora de agir.
+   */
+  readonly prazoDoAcesso = this._prazoDoAcesso.asReadonly();
   /**
    * Identifica a sessão corrente: muda no login, na troca de usuário e a cada renovação do token,
    * e vira `null` sem sessão. Quem guarda estado derivado da sessão reage a este sinal.
@@ -61,9 +72,8 @@ export class AuthService {
     try {
       const keycloak = this.criarCliente(config);
       const authenticated = await keycloak.init(opcoesDoInit());
-      this.renovarAoExpirar(keycloak);
       this._authenticated.set(authenticated);
-      this.atualizarPrazoDaCredencial();
+      this.atualizarPrazos();
       if (authenticated) await this.loadProfile();
       return authenticated;
     } catch (error) {
@@ -76,16 +86,6 @@ export class AuthService {
     const keycloak = this.createKeycloak(config);
     this.keycloak = keycloak;
     return keycloak;
-  }
-
-  // Renovação periódica: o keycloak-js dispara `onTokenExpired`
-  // quando o access token expira. Como `refreshToken()` é serializado,
-  // é seguro chamá-lo aqui sem risco de corrida com
-  // refreshes disparados pelo interceptor.
-  private renovarAoExpirar(keycloak: Keycloak): void {
-    keycloak.onTokenExpired = () => {
-      void this.refreshToken(30);
-    };
   }
 
   private registrarFalhaDoInit(error: unknown): void {
@@ -172,16 +172,18 @@ export class AuthService {
     this._authenticated.set(false);
     this._sessaoEncerrada.set(true);
     this._prazoDaCredencial.set(null);
+    this._prazoDoAcesso.set(null);
   }
 
   private registrarRenovacao(): void {
     this._renovacoesDoToken.update((total) => total + 1);
-    this.atualizarPrazoDaCredencial();
+    this.atualizarPrazos();
   }
 
-  private atualizarPrazoDaCredencial(): void {
+  private atualizarPrazos(): void {
     const keycloak = this.keycloak;
-    if (!keycloak) return;
+    if (!keycloak || this._sessaoEncerrada()) return;
+    this._prazoDoAcesso.set(lerPrazoDoAcesso(keycloak.tokenParsed, keycloak.timeSkew ?? 0));
     this._prazoDaCredencial.set(
       lerPrazoDaCredencial(
         keycloak.refreshTokenParsed,

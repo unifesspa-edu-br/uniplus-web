@@ -32,5 +32,6 @@ export type {
 } from '../../src/lib/services/permissoes.service';
 export { PerfisDeAcessoService } from '../../src/lib/services/perfis-de-acesso.service';
 export type { EstadoDosPerfis } from '../../src/lib/services/perfis-de-acesso.service';
+export { antecedenciaEfetivaEmSegundos } from '../../src/lib/models/prazo-da-credencial';
 export { PERMISSAO } from '../../src/lib/permissoes/catalogo';
 export type { CodigoDePermissao, ModuloDePermissao } from '../../src/lib/permissoes/catalogo';

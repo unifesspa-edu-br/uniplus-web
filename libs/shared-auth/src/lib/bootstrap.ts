@@ -22,5 +22,6 @@ export { PermissoesService } from './services/permissoes.service';
 export type { EstadoDasPermissoes, PermissaoEfetiva } from './services/permissoes.service';
 export { PerfisDeAcessoService } from './services/perfis-de-acesso.service';
 export type { EstadoDosPerfis } from './services/perfis-de-acesso.service';
+export { antecedenciaEfetivaEmSegundos } from './models/prazo-da-credencial';
 export { PERMISSAO } from './permissoes/catalogo';
 export type { CodigoDePermissao, ModuloDePermissao } from './permissoes/catalogo';

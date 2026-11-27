@@ -1,7 +1,12 @@
 import { HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Observable, defer, switchMap } from 'rxjs';
-import { AUTH_ALLOWED_URLS, AUTH_CONFIG, AuthService } from '@uniplus/shared-auth/bootstrap';
+import {
+  AUTH_ALLOWED_URLS,
+  AUTH_CONFIG,
+  AuthService,
+  antecedenciaEfetivaEmSegundos,
+} from '@uniplus/shared-auth/bootstrap';
 
 /**
  * Interceptor que anexa `Authorization: Bearer <token>` às requisições
@@ -31,18 +36,18 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
 
 async function ensureFreshToken(
   authService: AuthService,
-  antecedencia: number,
+  antecedenciaConfigurada: number,
 ): Promise<string | undefined> {
-  const current = authService.getToken();
-  if (!current) {
-    return undefined;
-  }
-
+  if (!authService.getToken()) return undefined;
+  const antecedencia = antecedenciaDoAcesso(authService, antecedenciaConfigurada);
   if (authService.isTokenExpired(antecedencia)) {
     await authService.refreshToken(antecedencia);
   }
-
   return authService.getToken();
+}
+
+function antecedenciaDoAcesso(authService: AuthService, configurada: number): number {
+  return antecedenciaEfetivaEmSegundos(configurada, authService.prazoDoAcesso());
 }
 
 function attach(
