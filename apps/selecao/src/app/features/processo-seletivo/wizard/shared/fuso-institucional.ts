@@ -32,25 +32,33 @@ export function hojeNoFusoInstitucional(agora: Date = new Date()): string {
  * publicado.
  */
 export function instanteDoCampo(valorLocal: string): string | null {
-  // Os segundos são opcionais: o campo os devolve quando o valor hidratado os trazia, e não
-  // os devolve quando o operador editou. Recusá-los faria a janela declarada com segundos
-  // voltar como "não declarada" na gravação seguinte.
-  const partes = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(valorLocal.trim());
+  const campo = lerCampoDeDataEHora(valorLocal);
+  if (campo === null) return null;
+  const deslocamento = deslocamentoDoFusoEmMinutos(instanteDaHoraDeParede(campo.horaDeParede));
+  return `${campo.data}T${campo.relogio}${sufixoDoDeslocamento(deslocamento)}`;
+}
+
+/**
+ * Os segundos são opcionais: o campo os devolve quando o valor hidratado os trazia, e não os
+ * devolve quando o operador editou. Recusá-los faria a janela declarada com segundos voltar como
+ * "não declarada" na gravação seguinte.
+ */
+const FORMATO_DO_CAMPO = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
+
+function lerCampoDeDataEHora(valorLocal: string): {
+  readonly horaDeParede: Parameters<typeof instanteDaHoraDeParede>[0];
+  readonly data: string;
+  readonly relogio: string;
+} | null {
+  const partes = FORMATO_DO_CAMPO.exec(valorLocal.trim());
   if (partes === null) return null;
-
   const [, ano, mes, dia, hora, minuto, segundo] = partes.map(Number);
-  const instante = instanteDaHoraDeParede({
-    ano,
-    mes,
-    dia,
-    hora,
-    minuto,
-    segundo: Number.isNaN(segundo) ? 0 : segundo,
-  });
-  const deslocamento = deslocamentoDoFusoEmMinutos(instante);
-
-  const relogio = `${partes[4]}:${partes[5]}:${Number.isNaN(segundo) ? '00' : partes[6]}`;
-  return `${partes[1]}-${partes[2]}-${partes[3]}T${relogio}${sufixoDoDeslocamento(deslocamento)}`;
+  const semSegundo = Number.isNaN(segundo);
+  return {
+    horaDeParede: { ano, mes, dia, hora, minuto, segundo: semSegundo ? 0 : segundo },
+    data: `${partes[1]}-${partes[2]}-${partes[3]}`,
+    relogio: `${partes[4]}:${partes[5]}:${semSegundo ? '00' : partes[6]}`,
+  };
 }
 
 /**

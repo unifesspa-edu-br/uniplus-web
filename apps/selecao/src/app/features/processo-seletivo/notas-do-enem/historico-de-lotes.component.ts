@@ -12,7 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { isApiOk } from '@uniplus/shared-core/http';
+import { isApiOk, type ApiResult } from '@uniplus/shared-core/http';
 import { NotasDoEnemApi, type LoteDeNotasDoEnemDto } from '@uniplus/shared-data/selecao';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import {
@@ -36,6 +36,12 @@ type DetalheDoLote =
   | { readonly estado: 'lendo'; readonly id: string }
   | { readonly estado: 'falha'; readonly id: string; readonly recusa: RecusaExplicada }
   | { readonly estado: 'lido'; readonly id: string; readonly lote: LoteDeNotasDoEnemDto };
+
+function detalheLido(id: string, resultado: ApiResult<LoteDeNotasDoEnemDto>): DetalheDoLote {
+  return isApiOk(resultado)
+    ? { estado: 'lido', id, lote: resultado.data }
+    : { estado: 'falha', id, recusa: explicarRecusa(resultado.problem, 'lote') };
+}
 
 /** Os lotes de notas importados para a edição; o vigente é o que vale para a classificação. */
 @Component({
@@ -99,11 +105,11 @@ export class HistoricoDeLotesComponent {
     );
     if (this.detalhe()?.id !== lote.id) return;
 
-    this.detalhe.set(
-      isApiOk(resultado)
-        ? { estado: 'lido', id: lote.id, lote: resultado.data }
-        : { estado: 'falha', id: lote.id, recusa: explicarRecusa(resultado.problem, 'lote') },
-    );
+    this.detalhe.set(detalheLido(lote.id, resultado));
+    this.focarTituloDoDetalhe();
+  }
+
+  private focarTituloDoDetalhe(): void {
     afterNextRender(() => this.tituloDoDetalhe()?.nativeElement.focus(), {
       injector: this.injector,
     });

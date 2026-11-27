@@ -27,25 +27,30 @@ export interface DesempateParaConferir {
   readonly rotuloDaArea: (codigo: string) => string;
 }
 
+const MENSAGEM_CRITERIO_OBRIGATORIO =
+  'Informe ao menos um critério de desempate: com inscrição feita no sistema, ele é obrigatório.';
+
 /** As mensagens de recusa do desempate, na ordem da lista. */
 export function mensagensDoDesempate(entrada: DesempateParaConferir): string[] {
-  const mensagens: string[] = [];
-  if (entrada.obrigatorio && entrada.criterios.length === 0) {
-    mensagens.push(
-      'Informe ao menos um critério de desempate: com inscrição feita no sistema, ele é obrigatório.',
-    );
-  }
+  const faltaCriterio = entrada.obrigatorio && entrada.criterios.length === 0;
+  return [
+    ...(faltaCriterio ? [MENSAGEM_CRITERIO_OBRIGATORIO] : []),
+    ...entrada.criterios.flatMap((criterio, indice) =>
+      problemasNaLista(entrada, criterio, indice).map(
+        (problema) => `Critério de desempate ${indice + 1}: ${problema}.`,
+      ),
+    ),
+  ];
+}
 
-  entrada.criterios.forEach((criterio, indice) => {
-    const posicao = indice + 1;
-    const problemas = criterio.regraCodigo
-      ? problemasDoCriterio(entrada, criterio, indice)
-      : ['selecione uma regra'];
-    mensagens.push(
-      ...problemas.map((problema) => `Critério de desempate ${posicao}: ${problema}.`),
-    );
-  });
-  return mensagens;
+function problemasNaLista(
+  entrada: DesempateParaConferir,
+  criterio: CriterioDesempateConfigurado,
+  indice: number,
+): string[] {
+  return criterio.regraCodigo
+    ? problemasDoCriterio(entrada, criterio, indice)
+    : ['selecione uma regra'];
 }
 
 function problemasDoCriterio(
@@ -53,23 +58,31 @@ function problemasDoCriterio(
   criterio: CriterioDesempateConfigurado,
   indice: number,
 ): string[] {
-  if (desempateUsaEtapa(criterio.regraCodigo)) return problemasDaEtapa(entrada, criterio);
-  if (desempateUsaIdadeMinima(criterio.regraCodigo)) {
-    const idade = inteiroNaForma(criterio.idadeMinima);
-    return idade === null || idade <= 0 ? ['informe a idade mínima, maior que zero'] : [];
-  }
-  if (desempateUsaPredicadoFato(criterio.regraCodigo)) {
-    // Espelha o validador do domínio — fato do vocabulário, operador que o domínio admite, valor
-    // dentro do domínio declarado. Conferir só "os três campos estão preenchidos" aprovava texto
-    // que o servidor recusava sem dizer qual das três coisas estava errada.
-    const problema = problemaDaCondicao(criterio, entrada.fatos);
-    return problema === null ? [] : [problema];
-  }
-  if (desempateUsaAreas(criterio.regraCodigo)) {
-    const problema = problemaDasAreas(entrada, criterio, indice);
-    return problema === null ? [] : [problema];
-  }
+  const regra = criterio.regraCodigo;
+  if (desempateUsaEtapa(regra)) return problemasDaEtapa(entrada, criterio);
+  if (desempateUsaIdadeMinima(regra)) return problemasDaIdadeMinima(criterio);
+  if (desempateUsaPredicadoFato(regra)) return problemasDoFato(entrada, criterio);
+  if (desempateUsaAreas(regra)) return comoLista(problemaDasAreas(entrada, criterio, indice));
   return [];
+}
+
+// Espelha o validador do domínio — fato do vocabulário, operador que o domínio admite, valor
+// dentro do domínio declarado. Conferir só "os três campos estão preenchidos" aprovava texto
+// que o servidor recusava sem dizer qual das três coisas estava errada.
+function problemasDoFato(
+  entrada: DesempateParaConferir,
+  criterio: CriterioDesempateConfigurado,
+): string[] {
+  return comoLista(problemaDaCondicao(criterio, entrada.fatos));
+}
+
+function comoLista(problema: string | null): string[] {
+  return problema === null ? [] : [problema];
+}
+
+function problemasDaIdadeMinima(criterio: CriterioDesempateConfigurado): string[] {
+  const idade = inteiroNaForma(criterio.idadeMinima);
+  return idade === null || idade <= 0 ? ['informe a idade mínima, maior que zero'] : [];
 }
 
 function problemasDaEtapa(
@@ -95,17 +108,38 @@ function problemaDasAreas(
   const semAreas = recusaSemAreas(situacao);
   if (semAreas !== null) return semAreas;
   if (criterio.areas.length === 0) return RECUSA_DA_AREA.obrigatorias();
+  return (
+    recusaForaDoQuadro(entrada, criterio) ??
+    recusaRepetida(entrada, criterio) ??
+    recusaCitadaPorAnterior(entrada, criterio, indice)
+  );
+}
 
-  if (situacao.tipo === 'lido') {
-    const [foraDoQuadro] = areasForaDoQuadro(criterio.areas, situacao.aceitas);
-    if (foraDoQuadro !== undefined) {
-      return RECUSA_DA_AREA.foraDoQuadro(entrada.rotuloDaArea(foraDoQuadro));
-    }
-  }
+function recusaForaDoQuadro(
+  entrada: DesempateParaConferir,
+  criterio: CriterioDesempateConfigurado,
+): string | null {
+  const situacao = entrada.situacaoDoQuadro;
+  if (situacao.tipo !== 'lido') return null;
+  const [foraDoQuadro] = areasForaDoQuadro(criterio.areas, situacao.aceitas);
+  return foraDoQuadro === undefined
+    ? null
+    : RECUSA_DA_AREA.foraDoQuadro(entrada.rotuloDaArea(foraDoQuadro));
+}
 
+function recusaRepetida(
+  entrada: DesempateParaConferir,
+  criterio: CriterioDesempateConfigurado,
+): string | null {
   const [repetida] = repetidos(criterio.areas);
-  if (repetida !== undefined) return RECUSA_DA_AREA.repetida(entrada.rotuloDaArea(repetida));
+  return repetida === undefined ? null : RECUSA_DA_AREA.repetida(entrada.rotuloDaArea(repetida));
+}
 
+function recusaCitadaPorAnterior(
+  entrada: DesempateParaConferir,
+  criterio: CriterioDesempateConfigurado,
+  indice: number,
+): string | null {
   const anteriores = new Set(areasCitadasPor(entrada.criterios.slice(0, indice)));
   const citada = criterio.areas.find((codigo) => anteriores.has(codigo));
   return citada === undefined

@@ -8,38 +8,61 @@ export interface ResultadoDaValidacao {
   readonly erroDoIdentificador: string | null | undefined;
 }
 
+type Identificacao = WizardDraft['identificacao'];
+
+interface CampoObrigatorio {
+  readonly campo: string;
+  readonly mensagem: string;
+  readonly ausente: (identificacao: Identificacao) => boolean;
+}
+
+const CAMPOS_OBRIGATORIOS: readonly CampoObrigatorio[] = [
+  {
+    campo: 'nome',
+    mensagem: 'Informe o nome do processo seletivo.',
+    ausente: (identificacao) => !identificacao.nome.trim(),
+  },
+  {
+    campo: 'unidadeAdministradoraId',
+    mensagem: 'Selecione a unidade administradora.',
+    ausente: (identificacao) => !identificacao.unidadeAdministradoraId,
+  },
+  {
+    campo: 'origemCandidatos',
+    mensagem: 'Informe a origem dos candidatos.',
+    ausente: (identificacao) => !identificacao.origemCandidatos,
+  },
+  {
+    campo: 'localidade',
+    mensagem: 'Informe o município cujo calendário rege os prazos do processo.',
+    ausente: (identificacao) => identificacao.localidade === null,
+  },
+];
+
 /**
  * Confere os campos da identificação. O identificador legível só é conferido enquanto ainda se pode
  * corrigi-lo aqui: travado, a pendência de um processo publicado sem identificador é da retificação.
  */
 export function validarIdentificacao(
-  identificacao: WizardDraft['identificacao'],
+  identificacao: Identificacao,
   identificadorDeclaravel: boolean,
 ): ResultadoDaValidacao {
-  const faltas: readonly (readonly [boolean, string, string])[] = [
-    [!identificacao.nome.trim(), 'nome', 'Informe o nome do processo seletivo.'],
-    [
-      !identificacao.unidadeAdministradoraId,
-      'unidadeAdministradoraId',
-      'Selecione a unidade administradora.',
-    ],
-    [!identificacao.origemCandidatos, 'origemCandidatos', 'Informe a origem dos candidatos.'],
-    [
-      identificacao.localidade === null,
-      'localidade',
-      'Informe o município cujo calendário rege os prazos do processo.',
-    ],
-  ];
-  const messages = faltas.filter(([falta]) => falta).map(([, , mensagem]) => mensagem);
-  const invalidos = new Set(faltas.filter(([falta]) => falta).map(([, campo]) => campo));
-
-  const erroDoIdentificador = identificadorDeclaravel
+  const faltas = CAMPOS_OBRIGATORIOS.filter((regra) => regra.ausente(identificacao));
+  const erro = identificadorDeclaravel
     ? problemaDoIdentificadorLegivel(identificacao.identificadorLegivel)
     : undefined;
-  if (erroDoIdentificador) {
-    messages.push(erroDoIdentificador);
-    invalidos.add('identificadorLegivel');
-  }
+  return resultadoDaValidacao(faltas, erro);
+}
 
-  return { messages, camposInvalidos: invalidos, erroDoIdentificador };
+function resultadoDaValidacao(
+  faltas: readonly CampoObrigatorio[],
+  erroDoIdentificador: string | null | undefined,
+): ResultadoDaValidacao {
+  const mensagemDoIdentificador = erroDoIdentificador ? [erroDoIdentificador] : [];
+  const campoDoIdentificador = erroDoIdentificador ? ['identificadorLegivel'] : [];
+  return {
+    messages: [...faltas.map((regra) => regra.mensagem), ...mensagemDoIdentificador],
+    camposInvalidos: new Set([...faltas.map((regra) => regra.campo), ...campoDoIdentificador]),
+    erroDoIdentificador,
+  };
 }

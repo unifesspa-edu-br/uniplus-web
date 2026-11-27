@@ -205,12 +205,7 @@ export class PesoPorAreaComponent {
       : null;
     return pendencia !== null
       ? TEXTO_DA_PENDENCIA_DA_RESOLUCAO[pendencia].campo
-      : [
-          this.store.classificacao.recusaDaResolucaoPesoAreaEnem(),
-          this.store.classificacao.recusaPeloDesempatePorArea(),
-        ]
-          .filter((recusa) => recusa !== null)
-          .join(' ') || null;
+      : this.recusasDoServidor();
   });
 
   protected readonly descricaoDaResolucao = computed(() => {
@@ -221,6 +216,15 @@ export class PesoPorAreaComponent {
 
   constructor() {
     inject(DestroyRef).onDestroy(() => (this.destruida = true));
+  }
+
+  private recusasDoServidor(): string | null {
+    const { recusaDaResolucaoPesoAreaEnem, recusaPeloDesempatePorArea } = this.store.classificacao;
+    return (
+      [recusaDaResolucaoPesoAreaEnem(), recusaPeloDesempatePorArea()]
+        .filter((recusa) => recusa !== null)
+        .join(' ') || null
+    );
   }
 
   protected areaDoGrupo(grupo: GrupoDoQuadro, codigoDaArea: string): AreaDoQuadro | undefined {

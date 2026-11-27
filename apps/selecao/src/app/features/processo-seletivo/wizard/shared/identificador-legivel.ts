@@ -28,27 +28,24 @@ export function normalizarIdentificadorLegivel(valor: string): string {
   return valor.trim();
 }
 
+const MENSAGEM_VAZIO = 'Informe o identificador legível do processo seletivo.';
+const MENSAGEM_TAMANHO = `O identificador legível deve ter entre ${IDENTIFICADOR_LEGIVEL_MINIMO} e ${IDENTIFICADOR_LEGIVEL_MAXIMO} caracteres.`;
+const MENSAGEM_FORMATO =
+  'O identificador legível deve começar por letra minúscula, conter apenas letras minúsculas sem acento, dígitos e hífens, e terminar com letra ou dígito (ex.: medicina-2027).';
+const MENSAGEM_GUID =
+  'O identificador legível não pode ter a forma de um identificador técnico (Guid).';
+
+function foraDoTamanho(valor: string): boolean {
+  return valor.length < IDENTIFICADOR_LEGIVEL_MINIMO || valor.length > IDENTIFICADOR_LEGIVEL_MAXIMO;
+}
+
 /** Por que o valor não serve como identificador, ou `null` quando serve. Vazio é pendência. */
 export function problemaDoIdentificadorLegivel(valor: string): string | null {
   const normalizado = normalizarIdentificadorLegivel(valor);
-
-  if (normalizado === '') return 'Informe o identificador legível do processo seletivo.';
-
-  if (
-    normalizado.length < IDENTIFICADOR_LEGIVEL_MINIMO ||
-    normalizado.length > IDENTIFICADOR_LEGIVEL_MAXIMO
-  ) {
-    return `O identificador legível deve ter entre ${IDENTIFICADOR_LEGIVEL_MINIMO} e ${IDENTIFICADOR_LEGIVEL_MAXIMO} caracteres.`;
-  }
-
-  if (!FORMATO_KEBAB.test(normalizado)) {
-    return 'O identificador legível deve começar por letra minúscula, conter apenas letras minúsculas sem acento, dígitos e hífens, e terminar com letra ou dígito (ex.: medicina-2027).';
-  }
-
-  if (FORMATO_GUID.test(normalizado)) {
-    return 'O identificador legível não pode ter a forma de um identificador técnico (Guid).';
-  }
-
+  if (normalizado === '') return MENSAGEM_VAZIO;
+  if (foraDoTamanho(normalizado)) return MENSAGEM_TAMANHO;
+  if (!FORMATO_KEBAB.test(normalizado)) return MENSAGEM_FORMATO;
+  if (FORMATO_GUID.test(normalizado)) return MENSAGEM_GUID;
   return null;
 }
 

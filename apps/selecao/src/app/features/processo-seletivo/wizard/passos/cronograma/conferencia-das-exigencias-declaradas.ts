@@ -51,29 +51,51 @@ function problemasDeAncoragem(exigencias: readonly ExigenciaDeclarada[]): readon
 /** O que impede gravar a exigência cuja fase ainda está no cronograma. */
 function problemasDasExigenciasNaFase(vivas: readonly ExigenciaDeclarada[]): readonly string[] {
   return [
-    ...(vivas.some((e) => !e.alcancaModalidade)
-      ? ['Todo documento exigido precisa valer para ao menos uma modalidade aceita.']
-      : []),
-    ...vivas
-      .filter((e) => e.problemasDeGatilho.length > 0)
-      .map(
-        (e) =>
-          `A condição de "${e.nome}" ainda não está completa: ${e.problemasDeGatilho.join('; ')}.`,
-      ),
-    ...problemaDosDocumentos(
-      vivas.filter((e) => e.semFormulario),
-      (nomes) =>
-        `Há documento exigido sem o formulário em que o candidato o apresenta: ${nomes}. Na fase dele, escolha o formulário.`,
-    ),
-    ...vivas.flatMap((e) =>
-      e.problemasDeFase.map((problema) => `Na condição de "${e.nome}": ${problema}`),
-    ),
-    ...problemaDosDocumentos(
-      vivas.filter((e) => e.reenvioSemComplementacao),
-      (nomes) =>
-        `A consequência "abre pendência para reenvio" só vale em fase que admite complementação, e ${nomes} está em fase que não admite. Escolha outra consequência, ou declare o documento em outra fase.`,
-    ),
+    ...problemaDeModalidade(vivas),
+    ...problemasDoGatilhoIncompleto(vivas),
+    ...problemaDeFormularioAusente(vivas),
+    ...problemasDeFaseDoGatilho(vivas),
+    ...problemaDeReenvioSemComplementacao(vivas),
   ];
+}
+
+function problemaDeModalidade(vivas: readonly ExigenciaDeclarada[]): readonly string[] {
+  return vivas.some((e) => !e.alcancaModalidade)
+    ? ['Todo documento exigido precisa valer para ao menos uma modalidade aceita.']
+    : [];
+}
+
+function problemasDoGatilhoIncompleto(vivas: readonly ExigenciaDeclarada[]): readonly string[] {
+  return vivas
+    .filter((e) => e.problemasDeGatilho.length > 0)
+    .map(
+      (e) =>
+        `A condição de "${e.nome}" ainda não está completa: ${e.problemasDeGatilho.join('; ')}.`,
+    );
+}
+
+function problemaDeFormularioAusente(vivas: readonly ExigenciaDeclarada[]): readonly string[] {
+  return problemaDosDocumentos(
+    vivas.filter((e) => e.semFormulario),
+    (nomes) =>
+      `Há documento exigido sem o formulário em que o candidato o apresenta: ${nomes}. Na fase dele, escolha o formulário.`,
+  );
+}
+
+function problemasDeFaseDoGatilho(vivas: readonly ExigenciaDeclarada[]): readonly string[] {
+  return vivas.flatMap((e) =>
+    e.problemasDeFase.map((problema) => `Na condição de "${e.nome}": ${problema}`),
+  );
+}
+
+function problemaDeReenvioSemComplementacao(
+  vivas: readonly ExigenciaDeclarada[],
+): readonly string[] {
+  return problemaDosDocumentos(
+    vivas.filter((e) => e.reenvioSemComplementacao),
+    (nomes) =>
+      `A consequência "abre pendência para reenvio" só vale em fase que admite complementação, e ${nomes} está em fase que não admite. Escolha outra consequência, ou declare o documento em outra fase.`,
+  );
 }
 
 /** Um problema só para o conjunto de exigências afetadas, nomeando cada documento uma vez. */
@@ -109,18 +131,20 @@ export function avisosDosGrupos(grupos: readonly GrupoDeclarado[]): readonly str
 export function problemasDasExigencias(
   exigencias: readonly ExigenciaDeclarada[],
 ): readonly string[] {
-  const problemas: string[] = [...problemasDeAncoragem(exigencias)];
+  return [...problemasDeAncoragem(exigencias), ...problemaDeNormaPendente(exigencias)];
+}
 
+function problemaDeNormaPendente(exigencias: readonly ExigenciaDeclarada[]): readonly string[] {
   const semNorma = exigencias.filter((e) => e.decideResultado && !e.normaResolvida);
-  if (semNorma.length === 0) return problemas;
-
+  if (semNorma.length === 0) return [];
+  if (semNorma.length === 1) {
+    return [
+      `A exigência "${semNorma[0].nome}" decide o resultado da análise e precisa da norma que a sustenta.`,
+    ];
+  }
+  const nomes = semNorma.map((e) => e.nome).join(', ');
   return [
-    ...problemas,
-    semNorma.length === 1
-      ? `A exigência "${semNorma[0].nome}" decide o resultado da análise e precisa da norma que a sustenta.`
-      : `${semNorma.length} exigências decidem o resultado da análise e precisam da norma que as sustenta: ${semNorma
-          .map((e) => e.nome)
-          .join(', ')}.`,
+    `${semNorma.length} exigências decidem o resultado da análise e precisam da norma que as sustenta: ${nomes}.`,
   ];
 }
 

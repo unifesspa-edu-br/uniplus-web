@@ -19,50 +19,83 @@ export function ordemSugeridaDasFases(
   precedencias: readonly PrecedenciaFaseDto[],
 ): readonly FaseCanonicaDto[] {
   const porCodigo = new Map(fases.map((fase) => [fase.codigo, fase]));
-  const { sucessores, grauDeEntrada } = grafoDePrecedencias(porCodigo, precedencias);
+  const codigos = ordenarPorPrecedencia(fases, grafoDePrecedencias(porCodigo, precedencias));
+  const ordenado = codigos.flatMap((codigo) => porCodigo.get(codigo) ?? []);
+  return comFasesForaDaOrdem(fases, ordenado);
+}
 
-  // A fila mantém a ordem do catálogo entre os elegíveis, o que torna o
-  // resultado determinístico para o mesmo cadastro.
-  const prontos = fases.filter((fase) => grauDeEntrada.get(fase.codigo) === 0).map((f) => f.codigo);
-  const ordenado: FaseCanonicaDto[] = [];
-
-  for (let codigo = prontos.shift(); codigo !== undefined; codigo = prontos.shift()) {
-    const fase = porCodigo.get(codigo);
-    if (fase !== undefined) ordenado.push(fase);
-
-    // Reinsere respeitando a ordem do catálogo, não a de liberação.
-    prontos.push(...liberarSucessores(sucessores.get(codigo) ?? [], grauDeEntrada));
-    prontos.sort(
-      (a, b) => fases.findIndex((f) => f.codigo === a) - fases.findIndex((f) => f.codigo === b),
-    );
-  }
-
-  // Ciclo no cadastro deixaria fases de fora; devolvê-las na ordem do
-  // catálogo é melhor do que sumir com elas do seletor.
+/**
+ * Ciclo no cadastro deixaria fases de fora; devolvê-las na ordem do catálogo é melhor do que
+ * sumir com elas do seletor.
+ */
+function comFasesForaDaOrdem(
+  fases: readonly FaseCanonicaDto[],
+  ordenado: readonly FaseCanonicaDto[],
+): readonly FaseCanonicaDto[] {
   const incluidos = new Set(ordenado.map((fase) => fase.codigo));
   return [...ordenado, ...fases.filter((fase) => !incluidos.has(fase.codigo))];
+}
+
+interface GrafoDePrecedencias {
+  readonly sucessores: ReadonlyMap<string, readonly string[]>;
+  readonly grauDeEntrada: Map<string, number>;
+}
+
+/**
+ * A fila mantém a ordem do catálogo entre os elegíveis, o que torna o resultado determinístico
+ * para o mesmo cadastro; os sucessores liberados voltam à fila respeitando essa ordem, não a de
+ * liberação.
+ */
+function ordenarPorPrecedencia(
+  fases: readonly FaseCanonicaDto[],
+  { sucessores, grauDeEntrada }: GrafoDePrecedencias,
+): string[] {
+  const naOrdemDoCatalogo = comparadorPelaOrdemDoCatalogo(fases);
+  const prontos = fases.map((f) => f.codigo).filter((codigo) => grauDeEntrada.get(codigo) === 0);
+  const ordenado: string[] = [];
+
+  for (let codigo = prontos.shift(); codigo !== undefined; codigo = prontos.shift()) {
+    ordenado.push(codigo);
+    prontos.push(...liberarSucessores(sucessores.get(codigo) ?? [], grauDeEntrada));
+    prontos.sort(naOrdemDoCatalogo);
+  }
+  return ordenado;
+}
+
+function comparadorPelaOrdemDoCatalogo(
+  fases: readonly FaseCanonicaDto[],
+): (a: string, b: string) => number {
+  const posicao = new Map(fases.map((fase, indice) => [fase.codigo, indice]));
+  return (a, b) => (posicao.get(a) ?? 0) - (posicao.get(b) ?? 0);
 }
 
 /** Os sucessores de cada fase e quantas antecessoras cada uma ainda espera. */
 function grafoDePrecedencias(
   porCodigo: ReadonlyMap<string, FaseCanonicaDto>,
   precedencias: readonly PrecedenciaFaseDto[],
-): { sucessores: Map<string, string[]>; grauDeEntrada: Map<string, number> } {
-  const sucessores = new Map<string, string[]>();
-  const grauDeEntrada = new Map<string, number>([...porCodigo.keys()].map((codigo) => [codigo, 0]));
+): GrafoDePrecedencias {
+  const grafo = {
+    sucessores: new Map<string, string[]>(),
+    grauDeEntrada: new Map<string, number>([...porCodigo.keys()].map((codigo) => [codigo, 0])),
+  };
+  precedencias
+    .filter((a) => porCodigo.has(a.antecessoraCodigo) && porCodigo.has(a.sucessoraCodigo))
+    .forEach((aresta) => registrarAresta(grafo, aresta));
+  return grafo;
+}
 
-  for (const aresta of precedencias) {
-    if (!porCodigo.has(aresta.antecessoraCodigo) || !porCodigo.has(aresta.sucessoraCodigo)) {
-      continue;
-    }
-    sucessores.set(aresta.antecessoraCodigo, [
-      ...(sucessores.get(aresta.antecessoraCodigo) ?? []),
-      aresta.sucessoraCodigo,
-    ]);
-    grauDeEntrada.set(aresta.sucessoraCodigo, (grauDeEntrada.get(aresta.sucessoraCodigo) ?? 0) + 1);
-  }
-
-  return { sucessores, grauDeEntrada };
+function registrarAresta(
+  {
+    sucessores,
+    grauDeEntrada,
+  }: { sucessores: Map<string, string[]>; grauDeEntrada: Map<string, number> },
+  { antecessoraCodigo, sucessoraCodigo }: PrecedenciaFaseDto,
+): void {
+  sucessores.set(antecessoraCodigo, [
+    ...(sucessores.get(antecessoraCodigo) ?? []),
+    sucessoraCodigo,
+  ]);
+  grauDeEntrada.set(sucessoraCodigo, (grauDeEntrada.get(sucessoraCodigo) ?? 0) + 1);
 }
 
 /** Tira uma antecessora de cada sucessor e devolve os que ficaram sem nenhuma a esperar. */

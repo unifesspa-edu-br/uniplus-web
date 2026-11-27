@@ -55,18 +55,7 @@ export class LeituraDaVersaoForaDaListagem {
   readonly regraEscolhida = computed<RegraCatalogoDto | undefined>(() => {
     const selecao = this.cascata();
     if (selecao === null) return undefined;
-
-    const daListagem = this.catalogos
-      .regrasCascata()
-      .find(
-        (regra) => regra.codigo === selecao.regraCodigo && regra.versao === selecao.regraVersao,
-      );
-    if (daListagem !== undefined) return daListagem;
-
-    const busca = this.busca();
-    return busca?.estado === 'encontrada' && this.ehDaSelecao(busca, selecao)
-      ? busca.regra
-      : undefined;
+    return this.regraDaListagem(selecao) ?? this.regraDaBuscaDireta(selecao);
   });
 
   /**
@@ -122,6 +111,21 @@ export class LeituraDaVersaoForaDaListagem {
     const selecao = this.cascata();
     const busca = this.busca();
     return selecao !== null && busca?.estado === estado && this.ehDaSelecao(busca, selecao);
+  }
+
+  private regraDaListagem(selecao: SelecaoDaRegra): RegraCatalogoDto | undefined {
+    return this.catalogos
+      .regrasCascata()
+      .find(
+        (regra) => regra.codigo === selecao.regraCodigo && regra.versao === selecao.regraVersao,
+      );
+  }
+
+  private regraDaBuscaDireta(selecao: SelecaoDaRegra): RegraCatalogoDto | undefined {
+    const busca = this.busca();
+    return busca?.estado === 'encontrada' && this.ehDaSelecao(busca, selecao)
+      ? busca.regra
+      : undefined;
   }
 
   private ehDaSelecao(busca: BuscaDaVersao, selecao: SelecaoDaRegra): boolean {

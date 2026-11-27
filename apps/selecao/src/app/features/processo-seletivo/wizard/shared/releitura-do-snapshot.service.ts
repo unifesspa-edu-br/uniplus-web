@@ -1,6 +1,8 @@
 import { Injectable, inject, type WritableSignal } from '@angular/core';
 import { isApiOk } from '@uniplus/shared-core/http';
 
+import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+
 import { ProcessoSeletivoStore } from '../processo-seletivo.store';
 import { CadastroInicial } from './cadastro-inicial.service';
 
@@ -27,15 +29,22 @@ export class ReleituraDoSnapshot {
 
     const leitura = ++this.ultimaLeitura;
     const geracao = this.store.geracao();
-    const superada = () => leitura !== this.ultimaLeitura || geracao !== this.store.geracao();
+    const superada = (): boolean =>
+      leitura !== this.ultimaLeitura || geracao !== this.store.geracao();
+    const lido = await this.lerDetalhe(processoId);
+    if (superada()) return false;
+    if (lido !== null) this.store.registrarGravadoLido(lido);
+    return true;
+  }
+
+  /** O detalhe gravado, ou `null` quando a leitura recusa ou lança: o que se sabia continua sabido. */
+  private async lerDetalhe(processoId: string): Promise<ProcessoSeletivoDto | null> {
     try {
       const detalhe = await this.cadastro.obterDetalhe(processoId);
-      if (superada()) return false;
-      if (isApiOk(detalhe)) this.store.registrarGravadoLido(detalhe.data);
+      return isApiOk(detalhe) ? detalhe.data : null;
     } catch {
-      if (superada()) return false;
+      return null;
     }
-    return true;
   }
 
   /**

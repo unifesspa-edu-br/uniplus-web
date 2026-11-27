@@ -100,25 +100,24 @@ export function comoPedidoDeAnexos(
   }));
 }
 
+const ANEXO_NAO_ENVIADO_POR_COMPLETO =
+  'Há anexo do edital que não foi enviado por completo. Aguarde o envio, tente de novo ou retire o anexo antes de publicar.';
+
 /**
  * O que impede de publicar por causa dos anexos. Cada recusa é a que o servidor faria, dita antes
  * de o operador confirmar o único clique do wizard que não se desfaz.
  */
 export function mensagensDosAnexos(anexos: readonly AnexoDoEdital[]): string[] {
-  const mensagens: string[] = [];
+  return [
+    ...(anexos.length > LIMITE_DE_ANEXOS
+      ? [`O edital aceita no máximo ${LIMITE_DE_ANEXOS} anexos.`]
+      : []),
+    ...(anexos.some((anexo) => !anexoConfirmado(anexo)) ? [ANEXO_NAO_ENVIADO_POR_COMPLETO] : []),
+    ...anexos.filter(anexoConfirmado).flatMap(recusaDoNomeComoMensagem),
+  ];
+}
 
-  if (anexos.length > LIMITE_DE_ANEXOS) {
-    mensagens.push(`O edital aceita no máximo ${LIMITE_DE_ANEXOS} anexos.`);
-  }
-  if (anexos.some((anexo) => !anexoConfirmado(anexo))) {
-    mensagens.push(
-      'Há anexo do edital que não foi enviado por completo. Aguarde o envio, tente de novo ou retire o anexo antes de publicar.',
-    );
-  }
-  for (const anexo of anexos.filter(anexoConfirmado)) {
-    const recusa = recusaDoNomeDoAnexo(anexo.nome, anexo.nomeArquivo);
-    if (recusa !== null) mensagens.push(`Anexo ${anexo.nomeArquivo}: ${recusa}`);
-  }
-
-  return mensagens;
+function recusaDoNomeComoMensagem(anexo: AnexoDoEdital): string[] {
+  const recusa = recusaDoNomeDoAnexo(anexo.nome, anexo.nomeArquivo);
+  return recusa === null ? [] : [`Anexo ${anexo.nomeArquivo}: ${recusa}`];
 }

@@ -9,6 +9,36 @@ function campoRecusado(campo: HTMLElement): boolean {
   );
 }
 
+function aplicarReservas(barra: HTMLElement, rodape: HTMLElement, area: HTMLElement): void {
+  area.style.setProperty('--wiz-reserva-topo', `${barra.offsetHeight}px`);
+  area.style.setProperty('--wiz-reserva-base', `${rodape.offsetHeight}px`);
+  area.ownerDocument.documentElement.style.setProperty(
+    '--wiz-reserva-base',
+    `${rodape.offsetHeight}px`,
+  );
+}
+
+function limparReservas(area: HTMLElement): void {
+  area.style.removeProperty('--wiz-reserva-topo');
+  area.style.removeProperty('--wiz-reserva-base');
+  area.ownerDocument.documentElement.style.removeProperty('--wiz-reserva-base');
+}
+
+/** Mede a barra e o rodapé a cada mudança de tamanho; devolve a função que para a medição e limpa as reservas. */
+function acompanharReservas(
+  barra: HTMLElement,
+  rodape: HTMLElement,
+  area: HTMLElement,
+): () => void {
+  const observador = new ResizeObserver(() => aplicarReservas(barra, rodape, area));
+  observador.observe(barra);
+  observador.observe(rodape);
+  return () => {
+    observador.disconnect();
+    limparReservas(area);
+  };
+}
+
 /** Para onde vai o foco e a rolagem do editor: o título do passo, o aviso de pendências e o campo recusado. */
 @Injectable()
 export class FocoDoEditor {
@@ -42,24 +72,23 @@ export class FocoDoEditor {
    * Traz o aviso de pendências para a vista e o entrega ao leitor de tela. O resumo do último
    * passo rola em 320 px e com zoom alto: sem isto, quem publica a partir do rodapé com a lista
    * rolada não recebe retorno visível.
+   *
+   * Usa `setTimeout`, não `queueMicrotask`: o aviso só existe no DOM depois que o Angular processa a
+   * mudança do signal, o que ocorre após a fila de microtarefas.
    */
   revelarErro(passoAtual: () => PassoDoWizard | undefined): void {
-    // `setTimeout`, não `queueMicrotask`: o aviso só existe no DOM depois que o Angular processa a
-    // mudança do signal, o que ocorre após a fila de microtarefas.
-    setTimeout(async () => {
-      const alerta = this.raiz.querySelector<HTMLElement>('.step-error');
-      if (alerta === null) return;
+    setTimeout(() => this.levarAvisoAVista(passoAtual));
+  }
 
-      alerta.setAttribute('tabindex', '-1');
-
-      // O passo em tela sabe abrir a aba ou a seção que guarda o campo recusado.
-      if (await passoAtual()?.revelarCampoInvalido?.()) return;
-
-      if (this.focarCampoInvalido()) return;
-
-      this.rolarAteOAviso(alerta);
-      alerta.focus({ preventScroll: true });
-    });
+  /** O passo em tela sabe abrir a aba ou a seção que guarda o campo recusado; sem ele, o foco vai ao campo ou ao aviso. */
+  private async levarAvisoAVista(passoAtual: () => PassoDoWizard | undefined): Promise<void> {
+    const alerta = this.raiz.querySelector<HTMLElement>('.step-error');
+    if (alerta === null) return;
+    alerta.setAttribute('tabindex', '-1');
+    if (await passoAtual()?.revelarCampoInvalido?.()) return;
+    if (this.focarCampoInvalido()) return;
+    this.rolarAteOAviso(alerta);
+    alerta.focus({ preventScroll: true });
   }
 
   /** Com campo inválido no passo em tela, o foco vai a ele e a rolagem o traz para a vista: foco fora da tela não é foco visível. O aviso segue anunciado pela região aria-live. */
@@ -92,7 +121,9 @@ export class FocoDoEditor {
    * O rodapé e a barra de etapas do celular ficam colados às bordas do `.page`, por cima do passo.
    * Ao rolar até o campo que recebe foco, o navegador só os desconta pelo `scroll-padding` do
    * `.page` (em `styles.css`), que recebe daqui a altura medida de cada um: ela muda com a largura,
-   * com o modo de fonte e com os botões do passo. Chamar no construtor da página.
+   * com o modo de fonte e com os botões do passo. O "Voltar ao topo" é irmão do `.page` no shell,
+   * fora do alcance da variável dele, então a reserva da base também vai ao documento. Chamar no
+   * construtor da página.
    */
   observarReservas(
     barra: () => HTMLElement | undefined,
@@ -102,25 +133,10 @@ export class FocoDoEditor {
       const elementoDaBarra = barra();
       const elementoDoRodape = rodape();
       const area = this.raiz.closest<HTMLElement>('.page');
-      const documento = this.raiz.ownerDocument.documentElement;
       if (!elementoDaBarra || !elementoDoRodape || !area || typeof ResizeObserver === 'undefined') {
         return;
       }
-
-      const observador = new ResizeObserver(() => {
-        area.style.setProperty('--wiz-reserva-topo', `${elementoDaBarra.offsetHeight}px`);
-        area.style.setProperty('--wiz-reserva-base', `${elementoDoRodape.offsetHeight}px`);
-        // O "Voltar ao topo" é irmão do `.page` no shell, fora do alcance da variável acima.
-        documento.style.setProperty('--wiz-reserva-base', `${elementoDoRodape.offsetHeight}px`);
-      });
-      observador.observe(elementoDaBarra);
-      observador.observe(elementoDoRodape);
-      onCleanup(() => {
-        observador.disconnect();
-        area.style.removeProperty('--wiz-reserva-topo');
-        area.style.removeProperty('--wiz-reserva-base');
-        documento.style.removeProperty('--wiz-reserva-base');
-      });
+      onCleanup(acompanharReservas(elementoDaBarra, elementoDoRodape, area));
     });
   }
 

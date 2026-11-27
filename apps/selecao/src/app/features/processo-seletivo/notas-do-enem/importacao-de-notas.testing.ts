@@ -2,21 +2,21 @@ import type { LoteDeNotasDoEnemDto, OcorrenciaDoLoteDto } from '@uniplus/shared-
 
 export const ID_DO_LOTE = '01960000-0000-7000-0000-0000000005dd';
 
+const OCORRENCIA_VAZIA = {
+  inscricaoId: null,
+  numeroDeInscricao: null,
+  numerosDasLinhas: null,
+  nomeDoCandidato: null,
+  cpfMascarado: null,
+  sexo: null,
+  ofertas: null,
+};
+
 function ocorrencia(
   tipo: OcorrenciaDoLoteDto['tipo'],
   sobrescritas: Partial<OcorrenciaDoLoteDto> = {},
 ): OcorrenciaDoLoteDto {
-  return {
-    tipo,
-    inscricaoId: null,
-    numeroDeInscricao: null,
-    numerosDasLinhas: null,
-    nomeDoCandidato: null,
-    cpfMascarado: null,
-    sexo: null,
-    ofertas: null,
-    ...sobrescritas,
-  };
+  return { tipo, ...OCORRENCIA_VAZIA, ...sobrescritas };
 }
 
 const ocorrencias = [

@@ -17,6 +17,11 @@ import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { comoComandoDeCriteriosDesempate } from './desempate-para-comando';
 import { recusaAoGravarODesempate } from './recusas-do-desempate';
 
+const RECUSA_SEM_CADASTRO_CONCLUIDO: ValidacaoDoPasso = {
+  valid: false,
+  messages: ['O cadastro do processo precisa estar concluído antes de configurar o desempate.'],
+};
+
 /**
  * A gravação da coleção inteira de critérios, na ordem em que está na tela, e o que ela diz ao
  * responder: os critérios que o servidor passou a ter e a recusa com o texto da tela.
@@ -33,29 +38,25 @@ export class GravacaoDoDesempate {
     rotuloDaArea: (codigo: string) => string,
   ): Promise<ValidacaoDoPasso | RespostaDescartada> {
     const processoId = this.store.processoSeletivoId();
-    if (processoId === null) {
-      return Promise.resolve({
-        valid: false,
-        messages: [
-          'O cadastro do processo precisa estar concluído antes de configurar o desempate.',
-        ],
-      });
-    }
+    if (processoId === null) return Promise.resolve(RECUSA_SEM_CADASTRO_CONCLUIDO);
+    return gravarNoPasso(this.store, () =>
+      this.gravarEResponder(processoId, criterios, rotuloDaArea),
+    );
+  }
 
-    return gravarNoPasso(this.store, async () => {
-      const geracao = this.store.geracao();
-      const resultado = await this.releitura.gravando(() =>
-        this.enviar(processoId, criterios, geracao),
-      );
-
-      if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
-      return resultado.ok
-        ? { valid: true }
-        : {
-            valid: false,
-            messages: this.mensagensDaRecusa(resultado.problem, criterios, rotuloDaArea),
-          };
-    });
+  private async gravarEResponder(
+    processoId: string,
+    criterios: readonly CriterioDesempateConfigurado[],
+    rotuloDaArea: (codigo: string) => string,
+  ): Promise<ValidacaoDoPasso | RespostaDescartada> {
+    const geracao = this.store.geracao();
+    const resultado = await this.releitura.gravando(() =>
+      this.enviar(processoId, criterios, geracao),
+    );
+    if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
+    if (resultado.ok) return { valid: true };
+    const messages = this.mensagensDaRecusa(resultado.problem, criterios, rotuloDaArea);
+    return { valid: false, messages };
   }
 
   /** Envia os critérios e registra no store o que o servidor passou a ter. */
@@ -68,7 +69,14 @@ export class GravacaoDoDesempate {
       processoId,
       comoComandoDeCriteriosDesempate(criterios),
     );
-    if (geracao !== this.store.geracao()) return resposta;
+    if (geracao === this.store.geracao()) this.registrarResposta(criterios, resposta);
+    return resposta;
+  }
+
+  private registrarResposta(
+    criterios: readonly CriterioDesempateConfigurado[],
+    resposta: { readonly ok: boolean; readonly inconclusiva?: boolean },
+  ): void {
     if (resposta.ok) {
       this.store.classificacao.criteriosDesempateGravados.set(criterios);
       this.store.classificacao.desempatePendenteDeGravacao.set(false);
@@ -76,7 +84,6 @@ export class GravacaoDoDesempate {
       // O servidor pode ter gravado: o que ele tem deixa de ser sabido até a releitura.
       this.store.classificacao.criteriosDesempateGravados.set(null);
     }
-    return resposta;
   }
 
   /**

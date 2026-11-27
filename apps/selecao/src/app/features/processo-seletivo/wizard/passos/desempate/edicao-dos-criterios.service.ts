@@ -18,6 +18,11 @@ const CRITERIO_VAZIO: CriterioDesempateConfigurado = {
   areas: [],
 };
 
+function posicaoAposATroca(anterior: number, indice: number, destino: number): number {
+  if (anterior === indice) return destino;
+  return anterior === destino ? indice : anterior;
+}
+
 /**
  * A edição da lista de critérios no rascunho: acrescentar, remover, mover, trocar a regra e
  * alterar os campos de um critério ou as áreas dele, com o anúncio do que mudou e a área escolhida
@@ -111,16 +116,14 @@ export class EdicaoDosCriterios {
 
     [ordem[indice], ordem[destino]] = [ordem[destino], ordem[indice]];
     this.gravarNoRascunho(ordem);
-    this.remapearEscolhas((anterior) =>
-      anterior === indice ? destino : anterior === destino ? indice : anterior,
-    );
-
+    this.remapearEscolhas((anterior) => posicaoAposATroca(anterior, indice, destino));
     this.anunciar(`Critério movido para a posição ${destino + 1} de ${ordem.length}.`);
-    focarAposRenderizar(
-      this.injector,
-      delta < 0 ? `desemp-subir-${destino}` : `desemp-descer-${destino}`,
-      delta < 0 ? `desemp-descer-${destino}` : `desemp-subir-${destino}`,
-    );
+    this.focarSetaDoMovido(delta, `desemp-subir-${destino}`, `desemp-descer-${destino}`);
+  }
+
+  /** O botão que moveu fica no lugar certo do foco; no limite da lista, o foco vai ao par dele. */
+  private focarSetaDoMovido(delta: number, subir: string, descer: string): void {
+    focarAposRenderizar(this.injector, delta < 0 ? subir : descer, delta < 0 ? descer : subir);
   }
 
   /**
@@ -149,16 +152,7 @@ export class EdicaoDosCriterios {
     this.remapearEscolhas((anterior) => (anterior === indice ? null : anterior));
     // Trocar de regra some com o que a variante anterior usava: só os
     // argumentos aplicáveis à regra atual permanecem.
-    this.atualizar(indice, {
-      regraCodigo: codigo,
-      regraVersao: versao,
-      etapaRef: '',
-      idadeMinima: '',
-      fato: '',
-      operador: '',
-      valor: '',
-      areas: [],
-    });
+    this.atualizar(indice, { ...CRITERIO_VAZIO, regraCodigo: codigo, regraVersao: versao });
   }
 
   /**
@@ -197,21 +191,36 @@ export class EdicaoDosCriterios {
     if (criterio === undefined) return;
     const codigo = this.escolhaPendente(indice);
     if (!this.areas.areasOferecidas().some((area) => area.codigo === codigo)) {
-      this.anunciar('Escolha no seletor a área a acrescentar.');
-      focarAposRenderizar(this.injector, `desemp-area-nova-${indice}`);
+      this.pedirEscolhaDeArea(indice);
       return;
     }
+    this.incluirArea(indice, criterio, codigo);
+  }
 
+  private pedirEscolhaDeArea(indice: number): void {
+    this.anunciar('Escolha no seletor a área a acrescentar.');
+    focarAposRenderizar(this.injector, `desemp-area-nova-${indice}`);
+  }
+
+  private incluirArea(
+    indice: number,
+    criterio: CriterioDesempateConfigurado,
+    codigo: string,
+  ): void {
     const areas = comAreaAcrescentada(criterio.areas, codigo);
     this.atualizar(indice, { areas });
     this.anunciar(
       `Área ${this.areas.rotuloDaArea(codigo)} acrescentada ao critério ${indice + 1}, na posição ${areas.length}.`,
     );
-    // Acrescentada a última área oferecida, o botão fica indisponível e perderia o foco.
+    this.focarAposIncluirArea(indice, areas.length - 1);
+  }
+
+  // Acrescentada a última área oferecida, o botão fica indisponível e perderia o foco.
+  private focarAposIncluirArea(indice: number, posicaoDaNova: number): void {
     focarAposRenderizar(
       this.injector,
       `desemp-area-acrescentar-${indice}`,
-      `desemp-area-remover-${indice}-${areas.length - 1}`,
+      `desemp-area-remover-${indice}-${posicaoDaNova}`,
     );
   }
 
@@ -222,9 +231,13 @@ export class EdicaoDosCriterios {
     const codigo = criterio.areas[posicao];
     this.atualizar(indice, { areas: semAreaNaPosicao(criterio.areas, posicao) });
     this.anunciar(`Área ${this.areas.rotuloDaArea(codigo)} retirada do critério ${indice + 1}.`);
-    // O botão clicado sai do DOM com a linha: o foco vai para a área anterior; da primeira, para a
-    // que passou a ocupar a posição dela; sem nenhuma, para o seletor de acrescentar e, quando ele
-    // não está na tela, para a regra do critério.
+    this.focarAposRetirarArea(indice, posicao);
+  }
+
+  // O botão clicado sai do DOM com a linha: o foco vai para a área anterior; da primeira, para a
+  // que passou a ocupar a posição dela; sem nenhuma, para o seletor de acrescentar e, quando ele
+  // não está na tela, para a regra do critério.
+  private focarAposRetirarArea(indice: number, posicao: number): void {
     const vizinha = posicao > 0 ? posicao - 1 : 0;
     focarAposRenderizar(
       this.injector,
@@ -246,15 +259,12 @@ export class EdicaoDosCriterios {
     this.anunciar(
       `Área ${this.areas.rotuloDaArea(areas[destino])} movida para a posição ${destino + 1} de ${areas.length} no critério ${indice + 1}.`,
     );
-    focarAposRenderizar(
-      this.injector,
-      delta < 0
-        ? `desemp-area-subir-${indice}-${destino}`
-        : `desemp-area-descer-${indice}-${destino}`,
-      delta < 0
-        ? `desemp-area-descer-${indice}-${destino}`
-        : `desemp-area-subir-${indice}-${destino}`,
-    );
+    this.focarSetaDaAreaMovida(indice, destino, delta);
+  }
+
+  private focarSetaDaAreaMovida(indice: number, destino: number, delta: number): void {
+    const subir = `desemp-area-subir-${indice}-${destino}`;
+    this.focarSetaDoMovido(delta, subir, `desemp-area-descer-${indice}-${destino}`);
   }
 
   atualizar(indice: number, patch: Partial<CriterioDesempateConfigurado>): void {

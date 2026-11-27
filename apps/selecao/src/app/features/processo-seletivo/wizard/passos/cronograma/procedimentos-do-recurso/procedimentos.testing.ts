@@ -6,14 +6,16 @@ import type { RegraCatalogoDto } from '@uniplus/shared-data/selecao';
 
 import type { ProcedimentoDeRecurso } from '../../../processo-seletivo.models';
 
+const TIPO_DA_REGRA_DE_PROCEDIMENTO: RegraCatalogoDto['tipo'] = {
+  codigo: 'REGRA_PROCEDIMENTO_RECURSO' as RegraCatalogoDto['tipo']['codigo'],
+  rotulo: 'Procedimento de recurso',
+};
+
 export function regraDoCatalogo(codigo: string, baseLegal: string): RegraCatalogoDto {
   return {
     codigo,
     versao: 'v1',
-    tipo: {
-      codigo: 'REGRA_PROCEDIMENTO_RECURSO' as RegraCatalogoDto['tipo']['codigo'],
-      rotulo: 'Procedimento de recurso',
-    },
+    tipo: TIPO_DA_REGRA_DE_PROCEDIMENTO,
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal,

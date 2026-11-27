@@ -8,6 +8,7 @@ import type {
   GravacaoDoPasso,
   PassoDoWizard,
 } from '../wizard/passo-do-wizard';
+import type { ValidacaoDoPasso } from '../wizard/processo-seletivo.models';
 import { ReleituraDoSnapshot } from '../wizard/shared/releitura-do-snapshot.service';
 import { FocoDoEditor } from './foco-do-editor.service';
 import { falhaAoConcluir, mensagensDe } from './mensagens-do-passo';
@@ -78,48 +79,52 @@ export class ConducaoDoWizard {
     this.foco.revelarErro(() => this.passoNo(this.store.passoAtual()));
   }
 
+  /**
+   * Single-flight: o passo 2 grava na API, e um duplo clique criaria dois processos com chaves de
+   * idempotência diferentes. `operacaoEmAndamento()` cobre também o intervalo de `publicar()` entre
+   * um passo terminar e o próximo começar, em que `salvando()` fica `false` por um instante.
+   *
+   * Consultar um processo publicado é livre; escrever nele o servidor recusaria, depois de o
+   * operador ter preenchido a tela inteira.
+   */
   async avancar(): Promise<void> {
-    // Single-flight: o passo 2 grava na API, e um duplo clique criaria dois processos com chaves
-    // de idempotência diferentes. `operacaoEmAndamento()` cobre também a janela de `publicar()`
-    // entre um passo terminar e o próximo começar, em que `salvando()` fica `false` por um instante.
     if (this.store.operacaoEmAndamento()) return;
-
-    // Consultar um processo publicado é livre; escrever nele o servidor recusaria, depois de o
-    // operador ter preenchido a tela inteira.
     if (!this.store.edicaoPermitida()) {
       this.store.next();
       return;
     }
-
     if (this.store.isLast()) {
       if (this.podePublicar()) await publicar(this);
       return;
     }
+    await this.conferirEGravar(this.passoNo(this.store.passoAtual()));
+  }
 
-    const validator = this.passoNo(this.store.passoAtual());
-    if (!this.passoConferido(validator)) return;
-
-    // A confirmação vem antes de qualquer requisição, quando o operador ainda pode desistir:
-    // depois de gravado, o cadastro inicial não volta atrás pelo contrato desta tela.
-    const confirmacao = validator?.confirmacaoDeGravacao?.();
+  /**
+   * A confirmação vem antes de qualquer requisição, quando o operador ainda pode desistir: depois
+   * de gravado, o cadastro inicial não volta atrás pelo contrato desta tela.
+   */
+  private async conferirEGravar(passoEmTela: PassoDoWizard | undefined): Promise<void> {
+    if (!this.passoConferido(passoEmTela)) return;
+    const confirmacao = passoEmTela?.confirmacaoDeGravacao?.();
     if (confirmacao) {
       this.pedirConfirmacao(confirmacao);
       return;
     }
-
-    await this.gravarEAvancar(validator);
+    await this.gravarEAvancar(passoEmTela);
   }
 
-  /** Confere o passo em tela; recusado, mostra as pendências e traz o aviso para a vista. */
-  private passoConferido(validator: PassoDoWizard | undefined): boolean {
-    const result = validator?.validar();
+  /**
+   * Confere o passo em tela; recusado, mostra as pendências e traz o aviso para a vista. Aprovado,
+   * limpa o resumo, que descreveria erros que já não existem; uma recusa da gravação o preenche de novo.
+   */
+  private passoConferido(passoEmTela: PassoDoWizard | undefined): boolean {
+    const result = passoEmTela?.validar();
     if (result && !result.valid) {
       this.store.definirErroDoPasso(mensagensDe(result));
       this.revelarErro();
       return false;
     }
-    // O passo acabou de passar na conferência: o resumo que ainda estiver na tela descreve erros
-    // que já não existem. Uma recusa da gravação volta a preenchê-lo.
     this.store.definirErroDoPasso(null);
     return true;
   }
@@ -135,23 +140,26 @@ export class ConducaoDoWizard {
   async confirmarGravacao(): Promise<void> {
     if (this.confirmacaoPendente() === null || this.store.salvando()) return;
     try {
-      // Avançar troca o passo por baixo do diálogo; devolver o foco ao botão que o abriu levaria a
-      // um rodapé que já não descreve o que está em tela. Falhando, a tela é a mesma e a
-      // restauração continua correta.
-      const sucesso = await this.gravarEAvancar(this.passoNo(this.store.passoAtual()), {
-        confirmadaPeloOperador: true,
-      });
-      this.restaurarFocoAoFechar.set(!sucesso);
-
-      // `store.next()` não avança a partir do último passo, então o efeito de troca de passo não
-      // dispara depois de publicar: sem este destino, fechar o diálogo da publicação deixa o foco
-      // sem lugar nenhum.
-      if (sucesso && this.store.isLast()) {
-        this.foco.focarConfirmacaoDePublicacao();
-      }
+      await this.gravarConfirmada();
     } finally {
       this.confirmacaoPendente.set(null);
     }
+  }
+
+  /**
+   * Avançar troca o passo por baixo do diálogo; devolver o foco ao botão que o abriu levaria a um
+   * rodapé que já não descreve o que está em tela. Falhando, a tela é a mesma e a restauração
+   * continua correta.
+   *
+   * `store.next()` não avança a partir do último passo, então o efeito de troca de passo não
+   * dispara depois de publicar: sem o foco na confirmação da publicação, fechar o diálogo a deixa
+   * sem lugar nenhum.
+   */
+  private async gravarConfirmada(): Promise<void> {
+    const passo = this.passoNo(this.store.passoAtual());
+    const sucesso = await this.gravarEAvancar(passo, { confirmadaPeloOperador: true });
+    this.restaurarFocoAoFechar.set(!sucesso);
+    if (sucesso && this.store.isLast()) this.foco.focarConfirmacaoDePublicacao();
   }
 
   /**
@@ -168,37 +176,47 @@ export class ConducaoDoWizard {
    * nenhuma, seja porque o operador confirmou.
    */
   async gravarEAvancar(
-    validator: PassoDoWizard | undefined,
+    passoEmTela: PassoDoWizard | undefined,
     gravacao: GravacaoDoPasso = { confirmadaPeloOperador: false },
   ): Promise<boolean> {
-    // Passos que persistem expõem `persistir()`; os demais avançam direto.
-    if (validator?.persistir) {
-      const commit = await validator.persistir(gravacao).catch(falhaAoConcluir);
-      if (!commit.valid) {
-        // Lista de mensagens vazia é descarte deliberado: o resultado pertence a um editor que já
-        // não está em tela, e anunciá-lo colocaria erro num rascunho que ninguém tentou gravar.
-        if (commit.messages?.length !== 0) {
-          this.store.definirErroDoPasso(mensagensDe(commit));
-          this.revelarErro();
-        }
-        return false;
-      }
-
-      const recusaDoDesempate = await this.gravarDesempatePendente();
-      if (recusaDoDesempate !== null) {
-        // A classificação ficou gravada; a recusa é dos critérios, e é no passo deles que se corrige.
-        if (recusaDoDesempate.mensagens.length > 0) {
-          this.store.goTo(recusaDoDesempate.indice);
-          this.store.definirErroDoPasso(recusaDoDesempate.mensagens);
-          this.revelarErro();
-        }
-        return false;
-      }
-    }
-
+    if (passoEmTela?.persistir && !(await this.persistirPasso(passoEmTela, gravacao))) return false;
     this.store.definirErroDoPasso(null);
     this.store.next();
     return true;
+  }
+
+  /** Passos que persistem expõem `persistir()`; os demais seguem direto. */
+  private async persistirPasso(
+    passoEmTela: PassoDoWizard | undefined,
+    gravacao: GravacaoDoPasso,
+  ): Promise<boolean> {
+    if (!passoEmTela?.persistir) return true;
+    const resultadoDaGravacao = await passoEmTela.persistir(gravacao).catch(falhaAoConcluir);
+    if (resultadoDaGravacao.valid) return this.desempateGravado();
+    this.mostrarRecusaDoPasso(resultadoDaGravacao);
+    return false;
+  }
+
+  /**
+   * Lista de mensagens vazia é descarte deliberado: o resultado pertence a um editor que já não
+   * está em tela, e anunciá-lo colocaria erro num rascunho que ninguém tentou gravar.
+   */
+  private mostrarRecusaDoPasso(resultadoDaGravacao: ValidacaoDoPasso): void {
+    if (resultadoDaGravacao.messages?.length === 0) return;
+    this.store.definirErroDoPasso(mensagensDe(resultadoDaGravacao));
+    this.revelarErro();
+  }
+
+  /** A classificação ficou gravada; a recusa é dos critérios, e é no passo deles que se corrige. */
+  private async desempateGravado(): Promise<boolean> {
+    const recusa = await this.gravarDesempatePendente();
+    if (recusa === null) return true;
+    if (recusa.mensagens.length > 0) {
+      this.store.goTo(recusa.indice);
+      this.store.definirErroDoPasso(recusa.mensagens);
+      this.revelarErro();
+    }
+    return false;
   }
 
   /**
@@ -207,23 +225,28 @@ export class ConducaoDoWizard {
    * o quadro. A cópia que a gravação presumiu é confirmada antes, porque a varredura da publicação
    * não relê a cada passo e o Desempate só julga as áreas contra uma cópia confirmada. `null`
    * quando não havia o que gravar ou deu certo.
+   *
+   * Classificação ainda sem quadro gravado não grava nada: é o passo dela que vem antes.
    */
   async gravarDesempatePendente(): Promise<RecusaDoDesempate | null> {
-    if (!this.store.classificacao.desempatePendenteDeGravacao()) return null;
     const indice = this.indiceDoPassoPosClassificacao();
     const desempate = this.passos()[indice];
-    if (desempate?.gravarAposAClassificacao === undefined) return null;
-
+    const pendente = this.store.classificacao.desempatePendenteDeGravacao();
+    if (!pendente || desempate?.gravarAposAClassificacao === undefined) return null;
     if (await this.relidaPorOutraTroca()) return { indice, mensagens: [] };
-    // Ainda sem a classificação gravada com quadro: é o passo dela que vem antes.
     if (this.classificacaoSemQuadroGravado()) return null;
     if (this.store.classificacao.copiaCongeladaEmVigor() === null) {
       return { indice, mensagens: [COPIA_NAO_CONFIRMADA] };
     }
 
-    const commit = await desempate.gravarAposAClassificacao().catch(falhaAoConcluir);
-    if (commit.valid) return null;
-    return { indice, mensagens: commit.messages?.length === 0 ? [] : mensagensDe(commit) };
+    const resultado = await desempate.gravarAposAClassificacao().catch(falhaAoConcluir);
+    return resultado.valid ? null : this.recusaDosCriterios(indice, resultado);
+  }
+
+  /** Lista de mensagens vazia é descarte deliberado, como na recusa de qualquer passo. */
+  private recusaDosCriterios(indice: number, resultado: ValidacaoDoPasso): RecusaDoDesempate {
+    const descartada = resultado.messages?.length === 0;
+    return { indice, mensagens: descartada ? [] : mensagensDe(resultado) };
   }
 
   private classificacaoSemQuadroGravado(): boolean {
@@ -249,23 +272,25 @@ export class ConducaoDoWizard {
    * recarregá-lo. Passos fora do intervalo mantêm o progresso que já tinham.
    */
   validarRascunho(ateIndice = this.store.totalDePassos): string[] {
-    const pendencias: string[] = [];
     const concluidos = new Set<number>(this.store.passosConcluidos());
-
+    const pendencias: string[] = [];
     for (let index = 0; index < ateIndice; index += 1) {
-      const resultado = this.passoNo(index)?.validar();
-
-      if (resultado && !resultado.valid) {
-        pendencias.push(this.pendenciaDoPasso(index, mensagensDe(resultado)));
+      const pendencia = this.pendenciaDoPassoNo(index);
+      if (pendencia === null) {
+        concluidos.add(index);
+      } else {
+        pendencias.push(pendencia);
         concluidos.delete(index);
-        continue;
       }
-
-      concluidos.add(index);
     }
-
     this.store.syncCompleted(concluidos);
     return pendencias;
+  }
+
+  private pendenciaDoPassoNo(index: number): string | null {
+    const resultado = this.passoNo(index)?.validar();
+    if (!resultado || resultado.valid) return null;
+    return this.pendenciaDoPasso(index, mensagensDe(resultado));
   }
 
   /** "Passo 3 — Vagas: …", a mensagem de pendência identificada pelo passo de origem. */

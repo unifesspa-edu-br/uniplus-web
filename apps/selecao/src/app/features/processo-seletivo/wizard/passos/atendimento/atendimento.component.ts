@@ -26,7 +26,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { gravarNoPasso, RESPOSTA_DESCARTADA } from '../../shared/gravacao/gravacao-no-passo';
 import { camposSemValoresOfertados } from '../formulario/problemas-do-formulario';
-import { anunciarRemocao } from './anuncio-de-remocao';
+import { anunciarRemocao, type RemocaoAnunciada } from './anuncio-de-remocao';
 import { CatalogosDeAtendimento } from './catalogos-de-atendimento.service';
 import {
   aposMarcarCondicao,
@@ -34,9 +34,21 @@ import {
   aposRemover,
   comoCondicaoSelecionada,
   ehPcd,
+  identificadoresDaOferta,
 } from './atendimento-especializado';
+import {
+  mensagensDaRegraDePcd,
+  mensagensDeFatosSemOferta,
+} from './mensagens-de-validacao-do-atendimento';
 import { ReferenciasRemovidasComponent } from './referencias-removidas.component';
 import { mensagemDeRemovidos, referenciasRemovidas } from './referencias-removidas';
+
+const CADASTRO_DO_PROCESSO_PENDENTE: ValidacaoDoPasso = {
+  valid: false,
+  messages: ['O cadastro do processo precisa estar concluído antes de configurar o atendimento.'],
+};
+
+type RemocaoPedida = Omit<RemocaoAnunciada, 'indice'> & { readonly id: string };
 
 /**
  * O atendimento especializado do processo (UNI-REQ-0012), gravada
@@ -226,20 +238,11 @@ export class AtendimentoPassoComponent {
 
   private readonly injector = inject(Injector);
 
-  private anunciar(
-    removidas: readonly ReferenciaDeAtendimento[],
-    remocao: {
-      readonly id: string;
-      readonly nome: string | undefined;
-      readonly prefixoDoId: string;
-      readonly tituloDaSecao: string;
-    },
-  ): void {
+  private anunciar(removidas: readonly ReferenciaDeAtendimento[], remocao: RemocaoPedida): void {
+    const { id, ...restante } = remocao;
     anunciarRemocao(this.anuncio, this.injector, {
-      nome: remocao.nome,
-      prefixoDoId: remocao.prefixoDoId,
-      indice: removidas.findIndex((item) => item.id === remocao.id),
-      tituloDaSecao: remocao.tituloDaSecao,
+      ...restante,
+      indice: removidas.findIndex((item) => item.id === id),
     });
   }
 
@@ -318,36 +321,22 @@ export class AtendimentoPassoComponent {
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
   validar(): ValidacaoDoPasso {
-    const mensagens: string[] = [];
-
-    // Espelha o gate de publicação: o formulário pergunta ao candidato algo cujo domínio sai
-    // desta oferta, e a oferta não declara valor nenhum. Descobrir isso na revisão obriga a
-    // refazer o caminho, e a mensagem de lá fala de "fato coletável", não do que preencher.
-    for (const pendente of this.fatosQueDependemDaOferta()) {
-      mensagens.push(
-        `O formulário de inscrição pergunta ${pendente} ao candidato, e esta oferta não declara nenhum valor para escolher. Declare ao menos um, ou retire o campo do formulário.`,
-      );
-    }
-
-    if (this.atendimento().tiposDeficiencia.length > 0 && !this.pcdSelecionada()) {
-      mensagens.push(
-        'Tipos de deficiência exigem a condição "Pessoa com deficiência" marcada entre as condições aceitas.',
-      );
-    }
-
-    if (this.atendimento().tiposDeficiencia.length === 0 && this.pcdSelecionada()) {
-      mensagens.push(
-        'A condição "Pessoa com deficiência" exige ao menos um tipo de deficiência marcado. Marque um tipo ou desmarque a condição.',
-      );
-    }
-
-    // A checagem de referência removida só é confiável depois que os três catálogos carregaram:
-    // antes disso eles estão vazios, e "não sei ainda" seria confundido com "não existe mais",
-    // mandando o operador apagar uma oferta válida por causa de uma indisponibilidade temporária.
-    // O erro de carga já está no banner do template.
-    if (this.catalogoConfirmado()) mensagens.push(...this.mensagensDeRemovidos());
-
+    const mensagens = [
+      ...mensagensDeFatosSemOferta(this.fatosQueDependemDaOferta()),
+      ...mensagensDaRegraDePcd(this.atendimento().tiposDeficiencia.length, this.pcdSelecionada()),
+      ...this.mensagensDeRemovidosQuandoConfiavel(),
+    ];
     return mensagens.length > 0 ? { valid: false, messages: mensagens } : { valid: true };
+  }
+
+  /**
+   * A checagem de referência removida só é confiável depois que os três catálogos carregaram:
+   * antes disso eles estão vazios, e "não sei ainda" seria confundido com "não existe mais",
+   * mandando o operador apagar uma oferta válida por causa de uma indisponibilidade temporária.
+   * O erro de carga já está no banner do template.
+   */
+  private mensagensDeRemovidosQuandoConfiavel(): string[] {
+    return this.catalogoConfirmado() ? this.mensagensDeRemovidos() : [];
   }
 
   private mensagensDeRemovidos(): string[] {
@@ -365,35 +354,28 @@ export class AtendimentoPassoComponent {
 
   async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
-    if (processoId === null) {
-      return {
-        valid: false,
-        messages: [
-          'O cadastro do processo precisa estar concluído antes de configurar o atendimento.',
-        ],
-      };
-    }
+    if (processoId === null) return CADASTRO_DO_PROCESSO_PENDENTE;
 
     const conferencia = this.validar();
     if (!conferencia.valid) return conferencia;
 
-    const atendimento = this.atendimento();
     this.erroDeGravacao.set(null);
-    return gravarNoPasso(this.store, async () => {
-      const geracao = this.store.geracao();
-      const resultado = await this.cadastro.definirAtendimentoEspecializado(processoId, {
-        condicaoIds: atendimento.condicoes.map((item) => item.id),
-        recursoIds: atendimento.recursos.map((item) => item.id),
-        tipoDeficienciaIds: atendimento.tiposDeficiencia.map((item) => item.id),
-      });
+    return gravarNoPasso(this.store, () => this.gravar(processoId));
+  }
 
-      // O editor pode ter passado a outro processo enquanto o comando corria.
-      if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
-      if (resultado.ok) return { valid: true };
+  private async gravar(processoId: string): Promise<ValidacaoDoPasso> {
+    const geracao = this.store.geracao();
+    const resultado = await this.cadastro.definirAtendimentoEspecializado(
+      processoId,
+      identificadoresDaOferta(this.atendimento()),
+    );
 
-      const mensagem = this.problemI18n.resolve(resultado.problem).title;
-      this.erroDeGravacao.set(mensagem);
-      return { valid: false, messages: [mensagem] };
-    });
+    // O editor pode ter passado a outro processo enquanto o comando corria.
+    if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
+    if (resultado.ok) return { valid: true };
+
+    const mensagem = this.problemI18n.resolve(resultado.problem).title;
+    this.erroDeGravacao.set(mensagem);
+    return { valid: false, messages: [mensagem] };
   }
 }

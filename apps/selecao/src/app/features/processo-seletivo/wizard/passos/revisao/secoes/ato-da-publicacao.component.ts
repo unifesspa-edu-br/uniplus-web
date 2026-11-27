@@ -185,14 +185,18 @@ export class AtoDaPublicacaoComponent {
       numero: valores.numero ?? '',
       periodoInscricaoInicio: valores.periodoInscricaoInicio ?? '',
       periodoInscricaoFim: valores.periodoInscricaoFim ?? '',
-      ato: {
-        orgao: valores.orgao ?? '',
-        serie: valores.serie ?? '',
-        ano: valores.ano ?? '',
-        dataDoAto: valores.dataDoAto ?? '',
-        assinante: valores.assinante ?? '',
-        tipoAtoCodigo: valores.tipoAtoCodigo ?? '',
-      },
+      ato: this.atoDoFormulario(valores),
+    };
+  }
+
+  private atoDoFormulario(valores: typeof this.form.value): WizardDraft['publicacao']['ato'] {
+    return {
+      orgao: valores.orgao ?? '',
+      serie: valores.serie ?? '',
+      ano: valores.ano ?? '',
+      dataDoAto: valores.dataDoAto ?? '',
+      assinante: valores.assinante ?? '',
+      tipoAtoCodigo: valores.tipoAtoCodigo ?? '',
     };
   }
 }
