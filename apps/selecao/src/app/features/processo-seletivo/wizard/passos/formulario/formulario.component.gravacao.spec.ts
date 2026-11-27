@@ -141,49 +141,136 @@ describe('FormularioPassoComponent: gravação', () => {
     ).toEqual(['Rótulo recusado.']);
   });
 
-  it('marca como gravado o formulário novo que o servidor criou e depois recusou, sem perder o conteúdo', async () => {
-    contexto.comHabilitacao();
-    const { formularios } = store.draft().formulario;
-    const novo = { ...formularios[formularios.length - 1], conteudo: inscricaoGravada() };
-    store.patchObjectSection('formulario', { formularios: [...formularios.slice(0, -1), novo] });
-    const rotaNovo = ROTA_HABILITACAO;
+  describe('formulário novo da fase', () => {
     const cronogramaFases = [
       ...PROCESSO.cronogramaFases,
       { id: 'F-HABILITACAO', codigo: 'HABILITACAO', coletaInscricao: false },
     ];
-
-    const gravacao = fixture.componentInstance.persistir();
-    controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO, cronogramaFases });
-    await proximoPasso();
-    controller.expectOne(rotaNovo).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
-    controller.expectOne(`${rotaNovo}/itens`).flush(
-      {
-        type: 'about:blank',
-        title: 'Recusado.',
-        status: 422,
-        code: 'uniplus.selecao.formulario.item_invalido',
-        traceId: '00000000000000000000000000000004',
-        errors: [{ field: 'itens[0].rotulo', code: 'x', message: 'Rótulo recusado.' }],
-      },
-      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_JSON },
-    );
-    await proximoPasso();
-    controller.expectOne(ROTA_PROCESSO).flush({
+    const processoComOFormulario = {
       ...PROCESSO,
       cronogramaFases,
       formularios: [
         ...PROCESSO.formularios,
         { ...PROCESSO.formularios[0], codigo: 'HABILITACAO', faseId: 'F-HABILITACAO' },
       ],
+    };
+    const SEM_CONTEUDO = { status: 204, statusText: 'No Content' };
+    const ITENS_RECUSADOS = {
+      type: 'about:blank',
+      title: 'Recusado.',
+      status: 422,
+      code: 'uniplus.selecao.formulario.item_invalido',
+      traceId: '00000000000000000000000000000004',
+      errors: [{ field: 'itens[0].rotulo', code: 'x', message: 'Rótulo recusado.' }],
+    };
+    const RECUSA = { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_JSON };
+
+    /** Põe no rascunho o formulário novo da habilitação, com itens, e começa a gravar. */
+    function gravarOFormularioNovo() {
+      contexto.comHabilitacao();
+      const { formularios } = store.draft().formulario;
+      const novo = { ...formularios[formularios.length - 1], conteudo: inscricaoGravada() };
+      store.patchObjectSection('formulario', { formularios: [...formularios.slice(0, -1), novo] });
+      const gravacao = fixture.componentInstance.persistir();
+      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO, cronogramaFases });
+      return { gravacao, novo };
+    }
+
+    it('fica gravado, com o conteúdo e as recusas, quando o servidor criou e recusou os itens', async () => {
+      const { gravacao, novo } = gravarOFormularioNovo();
+      await proximoPasso();
+      controller.expectOne(ROTA_HABILITACAO).flush(null, SEM_CONTEUDO);
+      await proximoPasso();
+      controller.expectOne(`${ROTA_HABILITACAO}/itens`).flush(ITENS_RECUSADOS, RECUSA);
+      await proximoPasso();
+      controller.expectOne(ROTA_PROCESSO).flush(processoComOFormulario);
+
+      expect((await gravacao).valid).toBe(false);
+      const aba = formularioDoCodigo(store.draft().formulario, 'HABILITACAO');
+      expect([aba?.gravado, aba?.conteudo]).toEqual([true, novo.conteudo]);
+      expect(recusasDe('HABILITACAO')).toBe(true);
     });
 
-    expect((await gravacao).valid).toBe(false);
-    const aba = formularioDoCodigo(store.draft().formulario, 'HABILITACAO');
-    expect(aba?.gravado).toBe(true);
-    expect(aba?.conteudo).toEqual(novo.conteudo);
-    expect(
-      fixture.debugElement.injector.get(GravacaoDosFormularios).recusas().has('HABILITACAO'),
-    ).toBe(true);
+    it('fica gravado mesmo quando a releitura do processo falha depois da recusa', async () => {
+      const { gravacao, novo } = gravarOFormularioNovo();
+      await proximoPasso();
+      controller.expectOne(ROTA_HABILITACAO).flush(null, SEM_CONTEUDO);
+      await proximoPasso();
+      controller.expectOne(`${ROTA_HABILITACAO}/itens`).flush(ITENS_RECUSADOS, RECUSA);
+      await proximoPasso();
+      controller
+        .expectOne(ROTA_PROCESSO)
+        .flush(null, { status: 503, statusText: 'Service Unavailable' });
+
+      expect((await gravacao).valid).toBe(false);
+      const aba = formularioDoCodigo(store.draft().formulario, 'HABILITACAO');
+      expect([aba?.gravado, aba?.conteudo]).toEqual([true, novo.conteudo]);
+      expect(recusasDe('HABILITACAO')).toBe(true);
+    });
+
+    it('mantém gravados os formulários que gravaram antes da recusa quando a releitura falha', async () => {
+      const { formularios } = store.draft().formulario;
+      const [inscricao] = formularios;
+      const alterada = {
+        ...inscricao.conteudo,
+        itens: (inscricao.conteudo.itens ?? []).map((i) =>
+          i.fatoCodigo === 'PCD'
+            ? { ...i, apresentacao: { ...i.apresentacao, rotulo: 'Outro' } }
+            : i,
+        ),
+      };
+      store.patchObjectSection('formulario', {
+        formularios: [
+          { ...inscricao, gravado: false, conteudo: alterada },
+          ...formularios.slice(1),
+        ],
+      });
+      const { gravacao } = gravarOFormularioNovo();
+      await proximoPasso();
+      controller.expectOne(`${ROTA_INSCRICAO}/itens`).flush(null, SEM_CONTEUDO);
+      await proximoPasso();
+      controller.expectOne(ROTA_HABILITACAO).flush(null, SEM_CONTEUDO);
+      await proximoPasso();
+      controller.expectOne(`${ROTA_HABILITACAO}/itens`).flush(ITENS_RECUSADOS, RECUSA);
+      await proximoPasso();
+      controller
+        .expectOne(ROTA_PROCESSO)
+        .flush(null, { status: 503, statusText: 'Service Unavailable' });
+
+      expect((await gravacao).valid).toBe(false);
+      const { formularios: depois } = store.draft().formulario;
+      expect(depois.map((f) => [f.codigo, f.gravado])).toEqual([
+        ['INSCRICAO', true],
+        ['HABILITACAO', true],
+      ]);
+      expect(depois[0].conteudo).toEqual(alterada);
+    });
+
+    it('fica gravado quando a resposta ao cabeçalho se perde e a releitura mostra o formulário', async () => {
+      const { gravacao } = gravarOFormularioNovo();
+      await proximoPasso();
+      controller
+        .expectOne(ROTA_HABILITACAO)
+        .flush(null, { status: 503, statusText: 'Service Unavailable' });
+      await proximoPasso();
+      controller.expectOne(ROTA_PROCESSO).flush(processoComOFormulario);
+
+      expect((await gravacao).valid).toBe(false);
+      expect(formularioDoCodigo(store.draft().formulario, 'HABILITACAO')?.gravado).toBe(true);
+    });
+
+    it('continua como rascunho, com o código livre, quando o próprio cabeçalho é recusado', async () => {
+      const { gravacao } = gravarOFormularioNovo();
+      await proximoPasso();
+      controller.expectOne(ROTA_HABILITACAO).flush(ITENS_RECUSADOS, RECUSA);
+      await proximoPasso();
+      controller.expectOne(ROTA_PROCESSO).flush(PROCESSO);
+
+      expect((await gravacao).valid).toBe(false);
+      expect(formularioDoCodigo(store.draft().formulario, 'HABILITACAO')?.gravado).toBe(false);
+    });
+
+    const recusasDe = (codigo: string): boolean =>
+      fixture.debugElement.injector.get(GravacaoDosFormularios).recusas().has(codigo);
   });
 });

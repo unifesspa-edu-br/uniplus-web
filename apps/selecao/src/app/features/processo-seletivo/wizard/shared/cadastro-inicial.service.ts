@@ -33,6 +33,7 @@ import { GravacaoDoProcesso } from './gravacao/gravacao-do-processo';
 import type {
   ResultadoAplicacaoDeModelo,
   ResultadoCriacao,
+  ResultadoDaGravacaoDoFormulario,
   ResultadoGravacao,
   ResultadoGravacaoCascata,
   ResultadoGravacaoComInconclusiva,
@@ -239,7 +240,7 @@ export class CadastroInicial {
     codigo: string,
     servidor: FormularioParaGravar | null,
     desejado: FormularioParaGravar & { readonly faseId: string },
-  ): Promise<ResultadoGravacao> {
+  ): Promise<ResultadoDaGravacaoDoFormulario> {
     return gravarFormulario(
       { gravacao: this.gravacao, api: this.formulariosApi },
       { processoSeletivoId, codigo },
