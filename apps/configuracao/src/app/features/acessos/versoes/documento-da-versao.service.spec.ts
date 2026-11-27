@@ -1,4 +1,4 @@
-import { SituacaoDoAnexo } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDoAnexoCodigo } from '@uniplus/shared-data/autorizacao';
 import { HttpHeaders, HttpResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
@@ -13,6 +13,7 @@ import {
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
 import { ok, recusa } from '../testes';
 import { DocumentoDaVersaoService } from './documento-da-versao.service';
+import { situacaoDoAnexo } from './enums-da-api.testing';
 
 const AMANHA = new Date(Date.now() + 86_400_000).toISOString();
 const ENVIO: EnvioDoDocumentoDto = {
@@ -25,8 +26,8 @@ const ENVIO: EnvioDoDocumentoDto = {
 } as EnvioDoDocumentoDto;
 const PDF = new File(['%PDF'], 'portaria.pdf', { type: 'application/pdf' });
 
-function pendente(situacaoDoDocumento: string): VersaoPendenteDto {
-  return { versaoId: 'v1', situacaoDoDocumento } as VersaoPendenteDto;
+function pendente(situacao: SituacaoDoAnexoCodigo): VersaoPendenteDto {
+  return { versaoId: 'v1', situacaoDoDocumento: situacaoDoAnexo(situacao) } as VersaoPendenteDto;
 }
 
 describe('DocumentoDaVersaoService', () => {
@@ -98,7 +99,7 @@ describe('DocumentoDaVersaoService', () => {
 
     const desfecho = await servico.reenviar(
       'p1',
-      pendente(SituacaoDoAnexo.AGUARDANDO_ENVIO),
+      pendente(SituacaoDoAnexoCodigo.AGUARDANDO_ENVIO),
       PDF,
       aoAndar,
     );
@@ -111,7 +112,7 @@ describe('DocumentoDaVersaoService', () => {
   it('pede outro documento, com o tamanho do arquivo, quando a verificação recusou o anterior', async () => {
     api.novoDocumento.mockReturnValue(of(ok(ENVIO)));
 
-    await servico.reenviar('p1', pendente(SituacaoDoAnexo.RECUSADO), PDF, aoAndar);
+    await servico.reenviar('p1', pendente(SituacaoDoAnexoCodigo.RECUSADO), PDF, aoAndar);
 
     expect(api.novoDocumento).toHaveBeenCalledWith('p1', 'v1', PDF.size, expect.anything());
   });
@@ -119,7 +120,7 @@ describe('DocumentoDaVersaoService', () => {
   it('não envia nada quando o documento da versão não aguarda arquivo', async () => {
     const desfecho = await servico.reenviar(
       'p1',
-      pendente(SituacaoDoAnexo.VERIFICADO),
+      pendente(SituacaoDoAnexoCodigo.VERIFICADO),
       PDF,
       aoAndar,
     );

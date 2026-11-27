@@ -1,4 +1,4 @@
-import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
+import { ClassificacaoDeProtecaoCodigo, EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -11,11 +11,12 @@ import {
 } from '@uniplus/shared-data/autorizacao';
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
 import { ok, recusa, recusaPeloInterceptor } from '../testes';
+import { sensibilidade } from '../versoes/enums-da-api.testing';
 import { FilaDeReclassificacoesPage } from './fila-de-reclassificacoes.page';
 
 const MUDANCA = {
-  classificacaoAnterior: 'interno',
-  classificacaoNova: 'pessoal',
+  classificacaoAnterior: sensibilidade(ClassificacaoDeProtecaoCodigo.INTERNO),
+  classificacaoNova: sensibilidade(ClassificacaoDeProtecaoCodigo.PESSOAL),
   deUnidadeAnterior: false,
   deUnidadeNovo: false,
 };
@@ -33,7 +34,11 @@ const ESCOPO: ItemDaFilaDeReclassificacoesDto = {
   perfilId: 'p2',
   perfilNome: 'Auditoria',
   codigo: 'selecao:processos:configurar',
-  mudanca: { ...MUDANCA, classificacaoNova: 'interno', deUnidadeNovo: true },
+  mudanca: {
+    ...MUDANCA,
+    classificacaoNova: sensibilidade(ClassificacaoDeProtecaoCodigo.INTERNO),
+    deUnidadeNovo: true,
+  },
   instante: '2026-11-10T02:30:00Z',
   concessoesAguardando: 4,
 };
@@ -101,7 +106,7 @@ describe('FilaDeReclassificacoesPage', () => {
 
     const subida = secao(host, 'Acompanhamento');
     expect(subida.textContent).toContain('selecao:processos:aprovar');
-    expect(subida.textContent).toContain('Classificação: de Interna para Dado pessoal');
+    expect(subida.textContent).toContain('Classificação: de Interno para Pessoal');
     expect(subida.textContent).not.toContain('Escopo: de');
     expect(subida.textContent).toContain('09/11/2026, 12:00');
     expect(subida.textContent).toContain('1 concessão');

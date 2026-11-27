@@ -6,7 +6,6 @@ import {
   destinoAcessivel,
 } from '@uniplus/shared-ui/components';
 import { RecusaDaLeituraComponent } from '../../../shared/recusa-da-leitura';
-import { sensibilidade } from '../rotulos-de-acesso';
 import { CatalogoDePermissoesStore } from './catalogo-de-permissoes.store';
 import { mudancaDaPermissao, type DiferencaDaVersao } from './diferenca-da-versao';
 
@@ -29,7 +28,6 @@ export class PermissoesDoPerfilComponent {
   readonly bloqueado = input.required<boolean>();
   readonly erro = input.required<string | null>();
   readonly alternar = output<string>();
-  protected readonly sensibilidadeDe = sensibilidade;
   protected readonly idDasPermissoes = ID_DAS_PERMISSOES;
   protected readonly idDoErro = ID_DO_ERRO_DAS_PERMISSOES;
   protected readonly descritoPor = computed(() => (this.erro() ? ID_DO_ERRO_DAS_PERMISSOES : null));

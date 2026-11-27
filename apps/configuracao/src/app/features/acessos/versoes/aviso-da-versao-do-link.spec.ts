@@ -1,12 +1,13 @@
-import { EtapaDaVersao, SituacaoDaVersao } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDaVersaoCodigo } from '@uniplus/shared-data/autorizacao';
 import { describe, expect, it } from 'vitest';
 import { avisoDaVersaoDoLink, encerradaForaDoAvisoDoLink } from './aviso-da-versao-do-link';
+import { ETAPA_PROTECAO, situacaoDaVersao } from './enums-da-api.testing';
 import { perfilDoDetalhe, versaoPendente } from './perfis.testing';
 
-const encerrada = (situacao: string) => ({
+const encerrada = (situacao: SituacaoDaVersaoCodigo) => ({
   numero: 3,
-  situacao,
-  etapa: EtapaDaVersao.PROTECAO_DE_DADOS,
+  situacao: situacaoDaVersao(situacao),
+  etapa: ETAPA_PROTECAO,
   instante: '2026-11-03T12:00:00Z',
 });
 
@@ -23,9 +24,9 @@ describe('avisoDaVersaoDoLink', () => {
   });
 
   it.each([
-    [SituacaoDaVersao.RECUSADA, 'A última versão proposta, a 3, foi recusada.'],
-    [SituacaoDaVersao.CANCELADA, 'A última versão proposta, a 3, foi cancelada.'],
-    [SituacaoDaVersao.EXPIRADA, 'A última versão proposta, a 3, foi encerrada por expiração.'],
+    [SituacaoDaVersaoCodigo.RECUSADA, 'A última versão proposta, a 3, está recusada.'],
+    [SituacaoDaVersaoCodigo.CANCELADA, 'A última versão proposta, a 3, está cancelada.'],
+    [SituacaoDaVersaoCodigo.EXPIRADA, 'A última versão proposta, a 3, está expirada.'],
   ])('sem pendente, usa a última versão encerrada (%s)', (situacao, texto) => {
     const perfil = perfilDoDetalhe({ ultimaVersaoEncerradaSemVigor: encerrada(situacao) });
 
@@ -41,7 +42,7 @@ describe('avisoDaVersaoDoLink', () => {
   describe('encerradaForaDoAvisoDoLink', () => {
     it('devolve a encerrada quando o aviso do link não a cita', () => {
       const perfil = perfilDoDetalhe({
-        ultimaVersaoEncerradaSemVigor: encerrada(SituacaoDaVersao.RECUSADA),
+        ultimaVersaoEncerradaSemVigor: encerrada(SituacaoDaVersaoCodigo.RECUSADA),
       });
 
       expect(encerradaForaDoAvisoDoLink(perfil, 'v1')?.numero).toBe(3);
@@ -50,7 +51,7 @@ describe('avisoDaVersaoDoLink', () => {
 
     it('não repete a encerrada que o aviso do link já cita', () => {
       const perfil = perfilDoDetalhe({
-        ultimaVersaoEncerradaSemVigor: encerrada(SituacaoDaVersao.CANCELADA),
+        ultimaVersaoEncerradaSemVigor: encerrada(SituacaoDaVersaoCodigo.CANCELADA),
       });
 
       expect(encerradaForaDoAvisoDoLink(perfil, 'v3')).toBeNull();

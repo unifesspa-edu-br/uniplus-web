@@ -1,5 +1,4 @@
 import type { SituacaoDaRevisaoCodigo } from './schema';
-import type { SituacaoDoItemDaRevisao, QuemDecideOItem } from './codigos-de-autorizacao';
 export type { SituacaoDoItemDaRevisao, QuemDecideOItem } from './codigos-de-autorizacao';
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
@@ -17,29 +16,11 @@ export interface ListaDeRevisoesQuery extends PaginaQuery {
   readonly situacao?: SituacaoDaRevisaoCodigo;
 }
 
-/*
- * O contrato gerado traz situação e quem decide como `string`; os tipos abaixo dão a eles os
- * valores que o contrato documenta, para a tela tratar cada caso pelo nome.
- */
-type ComSituacao<T> = Omit<T, 'situacao'> & { readonly situacao: SituacaoDaRevisaoCodigo };
-
-export type RevisaoResumoDto = ComSituacao<components['schemas']['RevisaoResumoDto']>;
+export type RevisaoResumoDto = components['schemas']['RevisaoResumoDto'];
 
 /** O item da revisão; `ehDoLeitor` diz que a concessão é de quem lê, que não pode decidi-la. */
-export type ItemDaRevisaoDto = Omit<
-  components['schemas']['ItemDaRevisaoDto'],
-  'situacao' | 'decide'
-> & {
-  readonly situacao: SituacaoDoItemDaRevisao;
-  readonly decide: QuemDecideOItem;
-};
-
-export type RevisaoDeAcessosDto = Omit<
-  ComSituacao<components['schemas']['RevisaoDeAcessosDto']>,
-  'itens'
-> & {
-  readonly itens: readonly ItemDaRevisaoDto[];
-};
+export type ItemDaRevisaoDto = components['schemas']['ItemDaRevisaoDto'];
+export type RevisaoDeAcessosDto = components['schemas']['RevisaoDeAcessosDto'];
 export type RevogarItemDaRevisaoRequest = components['schemas']['RevogarItemDaRevisaoRequest'];
 
 /** Cliente da revisão periódica dos acessos a dado pessoal ou sensível. */

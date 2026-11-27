@@ -1,5 +1,10 @@
 import type { Page, Route } from '@playwright/test';
-import type { PerfilDto, PerfilListadoDto } from '@uniplus/shared-data/autorizacao';
+import type {
+  EnvioDoDocumentoDto,
+  ModuloDoCatalogoDto,
+  PerfilDto,
+  PerfilListadoDto,
+} from '@uniplus/shared-data/autorizacao';
 import type { JsonDaApi } from '@uniplus/shared-e2e';
 import {
   CORS_HEADERS,
@@ -14,6 +19,7 @@ import {
   type Recarga,
   type Resposta,
 } from './escritas-retidas';
+import { classificacaoDeProtecao, situacaoDoAnexo } from './enumerados-de-autorizacao';
 
 /** O perfil, o catálogo e o envio de documento que o mock das escritas de perfis atende. */
 
@@ -23,7 +29,7 @@ export const PERFIL: JsonDaApi<PerfilListadoDto> = {
   descricao: 'Opera as inscrições.',
   ativo: true,
   governanca: null,
-  sensibilidade: 'interno',
+  sensibilidade: classificacaoDeProtecao('INTERNO'),
   situacaoDoAcesso: { codigo: 'EM_VIGOR', rotulo: 'Em vigor' },
   temVersaoPendente: false,
   suspensao: null,
@@ -37,7 +43,7 @@ export const DETALHE_DO_PERFIL: Omit<JsonDaApi<PerfilDto>, 'ativo' | 'desativado
   nome: PERFIL.nome,
   descricao: PERFIL.descricao,
   governanca: null,
-  sensibilidade: 'interno',
+  sensibilidade: classificacaoDeProtecao('INTERNO'),
   situacaoDoAcesso: PERFIL.situacaoDoAcesso,
   composicaoEmVigor: {
     versaoId: '01960000-0000-7000-0000-0000000000b1',
@@ -53,11 +59,11 @@ export const DETALHE_DO_PERFIL: Omit<JsonDaApi<PerfilDto>, 'ativo' | 'desativado
 };
 
 const URL_DE_ENVIO = 'http://localhost:9000/uniplus-teste/documento-do-perfil.pdf';
-const ENVIO_DO_DOCUMENTO = {
+const ENVIO_DO_DOCUMENTO: JsonDaApi<EnvioDoDocumentoDto> = {
   perfilId: '01960000-0000-7000-0000-0000000000a2',
   versaoId: '01960000-0000-7000-0000-0000000000b2',
   documentoId: '01960000-0000-7000-0000-0000000000c2',
-  situacao: 'AGUARDANDO_ENVIO',
+  situacao: situacaoDoAnexo('AGUARDANDO_ENVIO'),
   urlDeEnvio: URL_DE_ENVIO,
   tipoDeMidia: 'application/pdf',
   expiraEm: '2099-01-01T00:00:00Z',
@@ -68,7 +74,7 @@ export const PDF_DO_TESTE = {
   buffer: Buffer.from('%PDF-1.4\n%%EOF\n'),
 };
 
-const CATALOGO = [
+const CATALOGO: readonly JsonDaApi<ModuloDoCatalogoDto>[] = [
   {
     modulo: 'selecao',
     resources: [
@@ -79,7 +85,7 @@ const CATALOGO = [
             codigo: 'selecao:processos:configurar',
             nome: 'Configurar processos',
             descricao: '',
-            sensibilidade: 'interno',
+            sensibilidade: classificacaoDeProtecao('INTERNO'),
           },
         ],
       },

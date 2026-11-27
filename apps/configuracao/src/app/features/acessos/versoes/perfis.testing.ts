@@ -1,22 +1,37 @@
-import { EtapaDaVersao, SituacaoDoAnexo } from '@uniplus/shared-data/autorizacao';
-import type { PerfilDto, VersaoPendenteDto } from '@uniplus/shared-data/autorizacao';
+import {
+  ClassificacaoDeProtecaoCodigo,
+  EtapaDaVersaoCodigo,
+  SituacaoDoAnexoCodigo,
+} from '@uniplus/shared-data/autorizacao';
+import type {
+  PerfilDto,
+  PermissaoDoPerfilDto,
+  VersaoPendenteDto,
+} from '@uniplus/shared-data/autorizacao';
+import {
+  ETAPA_GESTAO,
+  ETAPA_PROTECAO,
+  etapaDaVersao,
+  sensibilidade,
+  situacaoDoAnexo,
+} from './enums-da-api.testing';
 import { ACESSO_EM_VIGOR } from './situacao-do-acesso.testing';
 
-export const LEITURA = {
+export const LEITURA: PermissaoDoPerfilDto = {
   codigo: 'selecao:processos:consultar',
   nome: 'Consultar processos',
-  sensibilidade: 'INTERNO',
-} as const;
-export const ESCRITA = {
+  sensibilidade: sensibilidade(ClassificacaoDeProtecaoCodigo.INTERNO),
+};
+export const ESCRITA: PermissaoDoPerfilDto = {
   codigo: 'selecao:processos:configurar',
   nome: 'Configurar processos',
-  sensibilidade: 'INTERNO',
-} as const;
-export const APROVACAO = {
+  sensibilidade: sensibilidade(ClassificacaoDeProtecaoCodigo.INTERNO),
+};
+export const APROVACAO: PermissaoDoPerfilDto = {
   codigo: 'selecao:processos:aprovar',
   nome: 'Aprovar processos',
-  sensibilidade: 'PESSOAL',
-} as const;
+  sensibilidade: sensibilidade(ClassificacaoDeProtecaoCodigo.PESSOAL),
+};
 
 const VERSAO_PENDENTE = {
   versaoId: 'v2',
@@ -25,14 +40,15 @@ const VERSAO_PENDENTE = {
   descricao: 'Opera as inscrições.',
   protocolo: 'P-2/2026',
   documentoId: 'd2',
-  situacaoDoDocumento: SituacaoDoAnexo.VERIFICADO,
+  situacaoDoDocumento: situacaoDoAnexo(SituacaoDoAnexoCodigo.VERIFICADO),
   criadaEm: '2026-11-02T12:00:00Z',
   expiraEm: '2026-11-16T12:00:00Z',
-  etapaAtual: EtapaDaVersao.GESTAO_DE_ACESSOS,
+  etapaAtual: etapaDaVersao(EtapaDaVersaoCodigo.GESTAO_DE_ACESSOS),
   exigeProtecaoDeDados: true,
+  etapasExigidas: [ETAPA_GESTAO, ETAPA_PROTECAO],
   criadorTemConcessao: false,
   propostaPorQuemLe: false,
-} as const satisfies Partial<VersaoPendenteDto>;
+} satisfies Partial<VersaoPendenteDto>;
 
 /** Uma versão pendente na gestão de acessos; as listas são novas a cada chamada. */
 export function versaoPendente(parcial: Partial<VersaoPendenteDto> = {}): VersaoPendenteDto {
@@ -52,13 +68,13 @@ const PERFIL_DO_DETALHE = {
   descricao: 'Opera as inscrições.',
   ativo: true,
   governanca: null,
-  sensibilidade: 'INTERNO',
+  sensibilidade: sensibilidade(ClassificacaoDeProtecaoCodigo.INTERNO),
   situacaoDoAcesso: ACESSO_EM_VIGOR,
   versaoPendente: null,
   ultimaVersaoEncerradaSemVigor: null,
   suspensao: null,
   desativadoDesde: null,
-} as const satisfies Partial<PerfilDto>;
+} satisfies Partial<PerfilDto>;
 
 /** Um perfil ativo com a versão 1 em vigor; a composição é nova a cada chamada. */
 export function perfilDoDetalhe(parcial: Partial<PerfilDto> = {}): PerfilDto {

@@ -6,8 +6,8 @@ import {
 } from '@uniplus/shared-data/autorizacao';
 import type { RegistroDaContencaoDto } from '@uniplus/shared-data/autorizacao';
 import { describe, expect, it } from 'vitest';
+import { ROTULO_DA_ETAPA } from './enums-da-api.testing';
 import {
-  ROTULO_DA_ETAPA,
   ROTULO_DA_ORIGEM,
   ROTULO_DO_TIPO,
   atorDoRegistro,

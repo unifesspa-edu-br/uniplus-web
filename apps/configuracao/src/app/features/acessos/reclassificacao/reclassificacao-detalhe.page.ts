@@ -80,7 +80,7 @@ export class ReclassificacaoDetalhePage {
   protected readonly mudancas = mudancasDaPermissao;
   protected readonly avisoDoDocumento = signal<string | null>(null);
   protected readonly nomeDoEscopo = (concessao: ConcessaoSuspensaDto): string =>
-    this.escopos.nome(concessao);
+    this.escopos.nomeDoItem(concessao);
   protected readonly etapasDaPessoa = computed<readonly EtapaDaVersao[]>(() => [
     ...(this.permissoes.tem(autorizacao.perfisAprovarFuncional)
       ? ([EtapaDaVersao.GESTAO_DE_ACESSOS] as const)

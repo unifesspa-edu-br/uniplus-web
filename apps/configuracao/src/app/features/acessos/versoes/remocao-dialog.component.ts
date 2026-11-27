@@ -20,7 +20,6 @@ import { mensagemDeErroDoControle } from '../../../shared/formulario';
 import { focarPrimeiroCampoInvalido } from '../../../shared/foco';
 import { LIMITE_DO_MOTIVO } from '../motivo-dialog.component';
 import { CATEGORIAS_DA_REMOCAO } from '../perfil-form';
-import { sensibilidade } from '../rotulos-de-acesso';
 import { EscritaDoPerfil } from './escrita-do-perfil';
 import { RemocaoDePermissoes } from './remocao-de-permissoes';
 
@@ -50,7 +49,6 @@ export class RemocaoDialogComponent {
   protected readonly cancelaPendente = computed(() => this.perfil().versaoPendente !== null);
   protected readonly categorias = CATEGORIAS_DA_REMOCAO;
   protected readonly limite = LIMITE_DO_MOTIVO;
-  protected readonly sensibilidadeDe = sensibilidade;
   protected readonly idDoCorpo = ID_DO_CORPO;
   protected readonly idDoAviso = ID_DO_AVISO;
 

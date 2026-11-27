@@ -55,7 +55,7 @@
                 }}</ui-tag>
               </td>
               <td class="table-responsive__actions" data-label="Ações">
-                @if (concessao.origem.tipo === 'pedido') {
+                @if (concessao.origem.tipo.codigo === tipoDeOrigem.PEDIDO) {
                   <ui-icon-button
                     icon="pi-eye"
                     [link]="['/acessos/pedidos', concessao.origem.id]"

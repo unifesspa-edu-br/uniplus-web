@@ -1,38 +1,35 @@
-import {
-  CausaDoEncerramento,
-  SituacaoDaProvidenciaCodigo,
-  TipoDaProvidencia,
-} from '@uniplus/shared-data/autorizacao';
-import type { UiTagVariant } from '@uniplus/shared-ui/components';
+import { SituacaoDaProvidenciaCodigo, TipoDaProvidencia } from '@uniplus/shared-data/autorizacao';
+import type { VariantesDosCodigos } from '@uniplus/shared-ui/components';
 
-/** A situação como a tela a mostra: o texto do contrato e a cor da etiqueta. */
-export interface SituacaoNaTela {
-  readonly texto: string;
-  readonly variante: UiTagVariant;
-}
-
-const SITUACOES: Readonly<Record<SituacaoDaProvidenciaCodigo, SituacaoNaTela>> = {
-  [SituacaoDaProvidenciaCodigo.ABERTA]: { texto: 'Aberta', variante: 'warning' },
-  [SituacaoDaProvidenciaCodigo.RESPONDIDA]: { texto: 'Respondida', variante: 'info' },
-  [SituacaoDaProvidenciaCodigo.ATENDIDA]: { texto: 'Atendida', variante: 'success' },
-  [SituacaoDaProvidenciaCodigo.PREJUDICADA]: { texto: 'Prejudicada', variante: 'neutral' },
+/** A cor da etiqueta da situação; o texto vem do rótulo que a API devolve. */
+export const VARIANTES_DA_SITUACAO: VariantesDosCodigos<SituacaoDaProvidenciaCodigo> = {
+  [SituacaoDaProvidenciaCodigo.ABERTA]: 'warning',
+  [SituacaoDaProvidenciaCodigo.RESPONDIDA]: 'info',
+  [SituacaoDaProvidenciaCodigo.ATENDIDA]: 'success',
+  [SituacaoDaProvidenciaCodigo.PREJUDICADA]: 'neutral',
 };
 
-const TIPOS: Readonly<Record<TipoDaProvidencia, string>> = {
+/** As opções de entrada da tela: a resposta da API só traz o rótulo do valor que ela devolve. */
+const OPCOES_DE_SITUACAO: Readonly<Record<SituacaoDaProvidenciaCodigo, string>> = {
+  [SituacaoDaProvidenciaCodigo.ABERTA]: 'Aberta',
+  [SituacaoDaProvidenciaCodigo.RESPONDIDA]: 'Respondida',
+  [SituacaoDaProvidenciaCodigo.ATENDIDA]: 'Atendida',
+  [SituacaoDaProvidenciaCodigo.PREJUDICADA]: 'Prejudicada',
+};
+
+const OPCOES_DE_TIPO: Readonly<Record<TipoDaProvidencia, string>> = {
   [TipoDaProvidencia.RETIRADA]: 'Retirada do acesso',
   [TipoDaProvidencia.REVISAO]: 'Revisão do acesso',
-};
-
-const ENCERRAMENTOS: Readonly<Record<CausaDoEncerramento, string>> = {
-  [CausaDoEncerramento.REVOGADA]: 'Concessão revogada',
-  [CausaDoEncerramento.VENCIDA]: 'Concessão vencida',
 };
 
 /** Os tipos na ordem em que a solicitação os oferece. */
 export const TIPOS_DA_PROVIDENCIA: readonly {
   readonly valor: TipoDaProvidencia;
   readonly rotulo: string;
-}[] = (Object.keys(TIPOS) as TipoDaProvidencia[]).map((valor) => ({ valor, rotulo: TIPOS[valor] }));
+}[] = (Object.keys(OPCOES_DE_TIPO) as TipoDaProvidencia[]).map((valor) => ({
+  valor,
+  rotulo: OPCOES_DE_TIPO[valor],
+}));
 
 export const FILTROS_DA_FILA: readonly {
   readonly valor: SituacaoDaProvidenciaCodigo | 'todas';
@@ -40,19 +37,7 @@ export const FILTROS_DA_FILA: readonly {
 }[] = [
   ...Object.values(SituacaoDaProvidenciaCodigo).map((valor) => ({
     valor,
-    rotulo: SITUACOES[valor].texto,
+    rotulo: OPCOES_DE_SITUACAO[valor],
   })),
   { valor: 'todas', rotulo: 'Todas' },
 ];
-
-export function situacaoDaProvidencia(situacao: SituacaoDaProvidenciaCodigo): SituacaoNaTela {
-  return SITUACOES[situacao] ?? { texto: situacao, variante: 'neutral' };
-}
-
-export function tipoDaProvidencia(tipo: TipoDaProvidencia): string {
-  return TIPOS[tipo] ?? tipo;
-}
-
-export function encerramentoDaConcessao(causa: CausaDoEncerramento): string {
-  return ENCERRAMENTOS[causa] ?? causa;
-}

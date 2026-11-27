@@ -31,7 +31,7 @@ export type DestinoDoDocumento = NonNullable<
   DocumentoDaConfiguracaoOrdemDeRemanejamento['destinos']
 >[number];
 
-/** Os destinos de cada origem, na ordem em que a origem aparece e ordenados por `ordem`. */
+/** Os destinos de cada origem, na ordem em que aparecem: a posição na lista é a ordem do destino. */
 export function ordensDoDocumento(destinos: readonly DestinoDoDocumento[]): OrdemDeOrigem[] {
   const porOrigem = new Map<string, DestinoDoDocumento[]>();
   for (const destino of destinos) {
@@ -40,15 +40,14 @@ export function ordensDoDocumento(destinos: readonly DestinoDoDocumento[]): Orde
   }
   return [...porOrigem].map(([origem, daOrigem]) => ({
     origem,
-    destinos: daOrigem.sort((a, b) => a.ordem - b.ordem).map((d) => d.modalidadeDestinoCodigo),
+    destinos: daOrigem.map((d) => d.modalidadeDestinoCodigo),
   }));
 }
 
 /** A ordem do documento é a posição do destino entre os da mesma origem, a partir de 1. */
 function destinosDaOrigem(origem: string, codigos: readonly string[]): DestinoDoDocumento[] {
-  return codigos.map((codigo, posicao) => ({
+  return codigos.map((codigo) => ({
     modalidadeOrigemCodigo: origem,
-    ordem: posicao + 1,
     modalidadeDestinoCodigo: codigo,
   }));
 }

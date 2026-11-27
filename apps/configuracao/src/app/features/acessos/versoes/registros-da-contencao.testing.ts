@@ -5,6 +5,7 @@ import {
   TipoDoRegistroDoBloqueioCodigo,
 } from '@uniplus/shared-data/autorizacao';
 import type { RegistroDaContencaoDto } from '@uniplus/shared-data/autorizacao';
+import { etapaDaVersao } from './enums-da-api.testing';
 
 type Registro = RegistroDaContencaoDto;
 
@@ -14,11 +15,6 @@ export const ROTULO_DO_TIPO: Readonly<Record<TipoDoRegistroDoBloqueioCodigo, str
   [TipoDoRegistroDoBloqueioCodigo.RETOMADA]: 'Suspensão retomada',
   [TipoDoRegistroDoBloqueioCodigo.DESATIVACAO]: 'Perfil desativado',
   [TipoDoRegistroDoBloqueioCodigo.REATIVACAO]: 'Perfil reativado',
-};
-
-export const ROTULO_DA_ETAPA: Readonly<Record<EtapaDaVersaoCodigo, string>> = {
-  [EtapaDaVersaoCodigo.GESTAO_DE_ACESSOS]: 'Gestão de acessos',
-  [EtapaDaVersaoCodigo.PROTECAO_DE_DADOS]: 'Proteção de dados',
 };
 
 export const ROTULO_DA_ORIGEM: Readonly<Record<OrigemDaRetomadaCodigo, string>> = {
@@ -34,7 +30,7 @@ export function tipoDoRegistro(codigo: TipoDoRegistroDoBloqueioCodigo): Registro
 }
 
 export function etapaDoRegistro(codigo: EtapaDaVersaoCodigo): NonNullable<Registro['etapa']> {
-  return { codigo, rotulo: ROTULO_DA_ETAPA[codigo] };
+  return etapaDaVersao(codigo);
 }
 
 export function origemDoRegistro(codigo: OrigemDaRetomadaCodigo): NonNullable<Registro['origem']> {

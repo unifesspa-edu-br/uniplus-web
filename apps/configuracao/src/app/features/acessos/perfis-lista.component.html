@@ -33,7 +33,7 @@
                   <div class="table-responsive__meta">{{ linha.perfil.descricao }}</div>
                 </div>
               </td>
-              <td data-label="Sensibilidade">{{ sensibilidadeDe(linha.perfil.sensibilidade) }}</td>
+              <td data-label="Sensibilidade">{{ linha.perfil.sensibilidade.rotulo }}</td>
               <td data-label="Situação">
                 <cfg-situacao-do-perfil
                   [situacaoDoAcesso]="linha.resumo.situacaoDoAcesso"

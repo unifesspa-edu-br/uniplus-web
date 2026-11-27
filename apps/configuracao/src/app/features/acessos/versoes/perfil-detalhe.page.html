@@ -46,14 +46,14 @@
     >
       Suspender
     </button>
-    } @for (etapa of a.retomar; track etapa) {
+    } @for (etapa of a.retomar; track etapa.codigo) {
     <button
       type="button"
       class="btn btn--tertiary"
       [disabled]="escrita.gravando()"
-      (click)="contencao.abrir(acaoDeRetomada[etapa])"
+      (click)="contencao.abrir(acaoDeRetomada[etapa.codigo])"
     >
-      Retomar: {{ rotuloDaEtapa(etapa) }}
+      Retomar: {{ etapa.rotulo.toLowerCase() }}
     </button>
     } @if (a.desativar) {
     <button
@@ -92,7 +92,7 @@
 <ui-alert variant="warning" [heading]="tituloDoAvisoDaVersao">{{ aviso }}</ui-alert>
 } @if (avisoDaUltimaEncerrada(); as encerrada) {
 <ui-alert variant="warning" heading="A última versão proposta não entrou em vigor">
-  A versão {{ encerrada.numero }} foi {{ situacaoEncerrada(encerrada.situacao) }}. O perfil segue
+  A versão {{ encerrada.numero }} está {{ encerrada.situacao.rotulo.toLowerCase() }}. O perfil segue
   com a composição anterior.
 </ui-alert>
 } @if (p.revisaoDasConcessoes; as janela) {

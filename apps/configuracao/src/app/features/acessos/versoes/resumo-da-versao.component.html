@@ -6,9 +6,9 @@
   <dt>Prazo para decidir</dt>
   <dd>{{ versao().expiraEm | dateBr: 'datetime' }}</dd>
   <dt>Aprovações exigidas</dt>
-  <dd>{{ etapas(versao().exigeProtecaoDeDados) }}</dd>
+  <dd>{{ aprovacoesExigidas() }}</dd>
   <dt>Etapa atual</dt>
-  <dd>{{ etapa(versao().etapaAtual) }}</dd>
+  <dd>{{ versao().etapaAtual.rotulo }}</dd>
   <dt>Nome proposto</dt>
   <dd>
     {{ versao().nome }}
@@ -27,8 +27,8 @@
   <dd>{{ versao().protocolo }}</dd>
   <dt>Documento instituidor</dt>
   <dd>
-    {{ situacaoDoDocumento(versao().situacaoDoDocumento) }}
-    @if (versao().situacaoDoDocumento === SituacaoDoAnexo.VERIFICADO) {
+    {{ versao().situacaoDoDocumento.rotulo }}
+    @if (versao().situacaoDoDocumento.codigo === SituacaoDoAnexo.VERIFICADO) {
       <button type="button" class="btn btn--tertiary btn--sm" (click)="abrirDocumento.emit()">
         Abrir documento
       </button>
@@ -40,14 +40,13 @@
 </div>
 @if (versao().decisoes.length > 0) {
   <div class="panel-body">
-    <h3 class="form-section__title">Decisões desta rodada</h3>
+    <h3 class="form-section__title">Decisões sobre esta versão</h3>
     <ul class="cfg-lista">
-      @for (decisao of versao().decisoes; track decisao.etapa) {
+      @for (decisao of versao().decisoes; track decisao.etapa.codigo) {
         <li>
-          @let rotulo = resultado(decisao.resultado);
-          <ui-tag [variant]="rotulo.variante">{{ rotulo.texto }}</ui-tag>
+          <ui-tag-do-codigo [valor]="decisao.resultado" [variantes]="variantesDoResultado" />
           <span>
-            {{ etapa(decisao.etapa) }} · {{ decisao.nome ?? 'Pessoa não identificada' }} ·
+            {{ decisao.etapa.rotulo }} · {{ decisao.nome ?? 'Pessoa não identificada' }} ·
             {{ decisao.instante | dateBr: 'datetime' }}
             @if (decisao.temConcessao) {
               · tem concessão deste perfil

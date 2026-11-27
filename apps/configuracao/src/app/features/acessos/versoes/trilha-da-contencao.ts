@@ -7,7 +7,7 @@ import { porQuemDecide } from './rotulos-da-versao';
 function fraseDaEtapa({ tipo, etapa }: RegistroDaContencaoDto): string {
   if (!etapa) return '';
   if (tipo.codigo === TipoDoRegistroDoBloqueioCodigo.SUSPENSAO) {
-    return `Determinada ${porQuemDecide(etapa.codigo)}.`;
+    return `Determinada ${porQuemDecide(etapa)}.`;
   }
   return tipo.codigo === TipoDoRegistroDoBloqueioCodigo.DECISAO_DA_RETOMADA
     ? `Etapa: ${etapa.rotulo}.`

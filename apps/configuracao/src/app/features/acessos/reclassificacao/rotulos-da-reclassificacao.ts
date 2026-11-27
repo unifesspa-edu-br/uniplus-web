@@ -1,6 +1,8 @@
 import { EtapaDaVersao, TipoDeDivergencia, TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
-import type { MudancaDaPermissaoDto } from '@uniplus/shared-data/autorizacao';
-import { sensibilidade } from '../rotulos-de-acesso';
+import type {
+  DivergenciaDaGovernancaDto,
+  MudancaDaPermissaoDto,
+} from '@uniplus/shared-data/autorizacao';
 
 /** A fila da etapa, para onde a pessoa volta da reclassificação. */
 export const FILA_DA_ETAPA: Readonly<Record<EtapaDaVersao, string>> = {
@@ -8,27 +10,28 @@ export const FILA_DA_ETAPA: Readonly<Record<EtapaDaVersao, string>> = {
   [EtapaDaVersao.PROTECAO_DE_DADOS]: '/acessos/reclassificacoes/protecao-de-dados',
 };
 
-const TIPO_DA_DIVERGENCIA: Readonly<Record<TipoDeDivergencia, string>> = {
-  [TipoDeDivergencia.COMPOSICAO_FALTANTE]: 'Permissão que falta na composição',
-  [TipoDeDivergencia.COMPOSICAO_EXCEDENTE]: 'Permissão a mais na composição',
-  [TipoDeDivergencia.CLASSIFICACAO]: 'Classificação diferente do catálogo',
-  [TipoDeDivergencia.ESCOPO]: 'Escopo diferente do catálogo',
+/**
+ * `De` e `Para` da divergência chegam como texto, sem rótulo da API: o código da classificação
+ * ganha aqui o mesmo nome que a API dá a ela nas demais respostas.
+ */
+const CLASSIFICACAO_NA_DIVERGENCIA: Readonly<Record<string, string>> = {
+  PUBLICO: 'Público',
+  INTERNO: 'Interno',
+  PESSOAL: 'Pessoal',
+  IDENTIFICADOR: 'Identificador',
+  SENSIVEL: 'Sensível',
 };
 
 export function escopoDaPermissao(deUnidade: boolean): string {
   return deUnidade ? 'Unidade' : 'Instituição';
 }
 
-export function tipoDaDivergencia(tipo: string): string {
-  return TIPO_DA_DIVERGENCIA[tipo as TipoDeDivergencia] ?? tipo;
-}
-
 /** O que mudou na permissão, em uma frase por eixo; o eixo que não mudou não aparece. */
 export function mudancasDaPermissao(mudanca: MudancaDaPermissaoDto): readonly string[] {
   const dessas: string[] = [];
-  if (mudanca.classificacaoAnterior !== mudanca.classificacaoNova) {
+  if (mudanca.classificacaoAnterior.codigo !== mudanca.classificacaoNova.codigo) {
     dessas.push(
-      `Classificação: de ${sensibilidade(mudanca.classificacaoAnterior)} para ${sensibilidade(mudanca.classificacaoNova)}`,
+      `Classificação: de ${mudanca.classificacaoAnterior.rotulo} para ${mudanca.classificacaoNova.rotulo}`,
     );
   }
   if (mudanca.deUnidadeAnterior !== mudanca.deUnidadeNovo) {
@@ -40,9 +43,16 @@ export function mudancasDaPermissao(mudanca: MudancaDaPermissaoDto): readonly st
 }
 
 /** O valor de um lado da divergência, na linguagem do tipo dela; sem valor, o traço. */
-export function valorDaDivergencia(tipo: string, valor: string | null): string {
+export function valorDaDivergencia(
+  tipo: DivergenciaDaGovernancaDto['tipo'],
+  valor: string | null,
+): string {
   if (valor === null) return '—';
-  if (tipo === TipoDeDivergencia.CLASSIFICACAO) return sensibilidade(valor);
-  if (tipo === TipoDeDivergencia.ESCOPO) return escopoDaPermissao(valor === TipoDeEscopo.UNIDADE);
+  if (tipo.codigo === TipoDeDivergencia.CLASSIFICACAO) {
+    return CLASSIFICACAO_NA_DIVERGENCIA[valor.toUpperCase()] ?? valor;
+  }
+  if (tipo.codigo === TipoDeDivergencia.ESCOPO) {
+    return escopoDaPermissao(valor === TipoDeEscopo.UNIDADE);
+  }
   return valor;
 }

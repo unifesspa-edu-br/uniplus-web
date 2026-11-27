@@ -16,9 +16,9 @@
     <dd>{{ pedido().beneficiario.email }}</dd>
     <dt>Pedido em</dt>
     <dd>{{ pedido().criadoEm | dateBr: 'datetime' }}</dd>
-    @if (pedido().etapaAtual) {
+    @if (pedido().etapaAtual; as etapaAtual) {
       <dt>Etapa atual</dt>
-      <dd>{{ etapaAtual() }}</dd>
+      <dd>{{ etapaAtual.rotulo }}</dd>
     }
     <dt>Justificativa</dt>
     <dd>{{ pedido().justificativa }}</dd>

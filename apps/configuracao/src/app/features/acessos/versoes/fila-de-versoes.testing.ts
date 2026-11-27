@@ -1,4 +1,4 @@
-import { SituacaoDoAnexo } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDoAnexoCodigo } from '@uniplus/shared-data/autorizacao';
 import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import type { EnvironmentProviders, Provider } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -17,6 +17,7 @@ import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
 import { ok } from '../testes';
 import { botaoComTexto, campoPorRotulo, dialogoComTitulo, digitar } from '../interacao.testing';
 import { DocumentoDaVersaoService } from './documento-da-versao.service';
+import { situacaoDoAnexo } from './enums-da-api.testing';
 import { FilaDeVersoesPage } from './fila-de-versoes.page';
 import { versaoPendente } from './perfis.testing';
 
@@ -37,7 +38,7 @@ export const OUTRO: ItemDaFilaDeVersoesDto = {
   versao: versaoPendente({
     versaoId: 'v7',
     numero: 4,
-    situacaoDoDocumento: SituacaoDoAnexo.EM_VERIFICACAO,
+    situacaoDoDocumento: situacaoDoAnexo(SituacaoDoAnexoCodigo.EM_VERIFICACAO),
   }),
   propostaPorQuemLe: false,
 };

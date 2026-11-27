@@ -44,14 +44,23 @@ async function revisaoEmAndamento(): Promise<string> {
   return nova.corpo.id;
 }
 
-/** As ações do item pendente do beneficiário cujo nome contém o texto. */
-function acoesDe(pagina: Page, beneficiario: string) {
+/** Os itens do beneficiário, achados pelo nome no título do grupo. */
+function itensDe(pagina: Page, beneficiario: string) {
   return pagina
     .locator('cfg-itens-do-beneficiario', {
       has: pagina.getByRole('heading', { name: new RegExp(beneficiario) }),
     })
-    .locator('tr[data-item-id]', { hasText: 'Aguarda decisão' })
-    .getByRole('button');
+    .locator('tr[data-item-id]');
+}
+
+/** As ações do item pendente; a situação é o rótulo "Pendente" que a API devolve. */
+function acoesDe(pagina: Page, beneficiario: string) {
+  return itensDe(pagina, beneficiario).filter({ hasText: 'Pendente' }).getByRole('button');
+}
+
+/** Sem a linha na tela, "nenhuma ação" passaria sem provar nada. */
+async function esperarItemPendente(pagina: Page, beneficiario: string): Promise<void> {
+  await expect(itensDe(pagina, beneficiario).filter({ hasText: 'Pendente' }).first()).toBeVisible();
 }
 
 test.describe('Revisão periódica de acessos', () => {
@@ -70,6 +79,8 @@ test.describe('Revisão periódica de acessos', () => {
     const pagina = await entrarComoPersona(browser, APP, REPRESENTANTE_DO_CONTROLADOR, detalhe);
 
     await expect(acoesDe(pagina, ITEM_COMUM).first()).toHaveText('Confirmar');
+    await esperarItemPendente(pagina, ITEM_DE_REPRESENTANTE);
+    await esperarItemPendente(pagina, ITEM_PROPRIO_DA_REPRESENTANTE);
     await expect(acoesDe(pagina, ITEM_DE_REPRESENTANTE)).toHaveCount(0);
     await expect(acoesDe(pagina, ITEM_PROPRIO_DA_REPRESENTANTE)).toHaveCount(0);
   });
@@ -80,6 +91,7 @@ test.describe('Revisão periódica de acessos', () => {
     const pagina = await entrarComoPersona(browser, APP, SEGUNDO_GESTOR_DE_ACESSOS, detalhe);
 
     await expect(acoesDe(pagina, ITEM_DE_REPRESENTANTE)).toHaveText(['Confirmar', 'Revogar']);
+    await esperarItemPendente(pagina, ITEM_COMUM);
     await expect(acoesDe(pagina, ITEM_COMUM)).toHaveCount(0);
   });
 

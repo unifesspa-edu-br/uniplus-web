@@ -1,4 +1,4 @@
-import { TipoDeDivergencia, TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
+import { TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -14,13 +14,14 @@ import {
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
 import { ok, recusa } from '../testes';
 import { DivergenciasDaGovernancaPage } from './divergencias-da-governanca.page';
+import { TIPO_DE_DIVERGENCIA } from './reclassificacao.testing';
 
 const FALTANTE: DivergenciaDaGovernancaDto = {
   id: 'd1',
   perfilId: 'p1',
   perfilNome: 'Gestão de acessos',
   codigo: 'autorizacao:perfis:manter',
-  tipo: TipoDeDivergencia.COMPOSICAO_FALTANTE,
+  tipo: TIPO_DE_DIVERGENCIA.COMPOSICAO_FALTANTE,
   de: null,
   para: 'autorizacao:perfis:manter',
   instante: '2026-11-09T15:00:00Z',
@@ -30,14 +31,14 @@ const CLASSE: DivergenciaDaGovernancaDto = {
   id: 'd2',
   perfilId: 'p2',
   perfilNome: 'Proteção de dados',
-  tipo: TipoDeDivergencia.CLASSIFICACAO,
+  tipo: TIPO_DE_DIVERGENCIA.CLASSIFICACAO,
   de: 'interno',
   para: 'sensivel',
 };
 const ESCOPO: DivergenciaDaGovernancaDto = {
   ...FALTANTE,
   id: 'd3',
-  tipo: TipoDeDivergencia.ESCOPO,
+  tipo: TIPO_DE_DIVERGENCIA.ESCOPO,
   de: TipoDeEscopo.INSTITUICAO,
   para: TipoDeEscopo.UNIDADE,
 };
@@ -96,11 +97,11 @@ describe('DivergenciasDaGovernancaPage', () => {
 
     const linhas = [...host.querySelectorAll('tbody tr')].map((l) => l.textContent ?? '');
     expect(linhas).toHaveLength(3);
-    expect(linhas[0]).toContain('Permissão que falta na composição');
+    expect(linhas[0]).toContain('Composição faltante');
     expect(linhas[0]).toContain('—');
-    expect(linhas[1]).toContain('Classificação diferente do catálogo');
-    expect(linhas[1]).toContain('Interna');
-    expect(linhas[1]).toContain('Dado sensível');
+    expect(linhas[1]).toContain('Classificação');
+    expect(linhas[1]).toContain('Interno');
+    expect(linhas[1]).toContain('Sensível');
     expect(linhas[2]).toContain('Instituição');
     expect(linhas[2]).toContain('Unidade');
     expect(linhas[0]).toContain('09/11/2026, 12:00');

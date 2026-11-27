@@ -1,4 +1,11 @@
 import type { Page, Route } from '@playwright/test';
+import type {
+  ConcessaoDto,
+  ItemDaRevisaoDto,
+  RevisaoDeAcessosDto,
+  RevisaoResumoDto,
+} from '@uniplus/shared-data/autorizacao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { contaIdDe } from './api-de-acesso/resposta';
 import {
   CORS_HEADERS,
@@ -7,6 +14,13 @@ import {
   responder,
   type Resposta,
 } from './api-de-perfis-filas';
+import {
+  quemDecideOItem,
+  situacaoDaRevisao,
+  situacaoDoItemDaRevisao,
+  tipoDeEscopo,
+  tipoDeOrigem,
+} from './enumerados-de-autorizacao';
 
 export const REVISAO_ID = '01960000-0000-7000-0000-0000000000b1';
 const EMISSOR = 'unifesspa';
@@ -25,23 +39,29 @@ const BETINA = { emissor: EMISSOR, contaId: 'conta-betina-0002-ficticia', nome: 
 
 type Identidade = { readonly emissor: string; readonly contaId: string; readonly nome: string };
 
+type ItemDaRevisao = JsonDaApi<ItemDaRevisaoDto>;
+
 const PENDENTE = {
-  escopo: { tipo: 'UNIDADE', unidadeId: UNIDADE_CEPS },
+  escopo: { tipo: tipoDeEscopo('UNIDADE'), unidadeId: UNIDADE_CEPS },
   validaAte: null,
-  decide: 'REPRESENTANTE_DO_CONTROLADOR',
-  situacao: 'PENDENTE',
+  decide: quemDecideOItem('REPRESENTANTE_DO_CONTROLADOR'),
+  situacao: situacaoDoItemDaRevisao('PENDENTE'),
   decididoPor: null,
   decididoEm: null,
   ehDoLeitor: false,
 };
 
-export function itemDaRevisao(id: string, beneficiario: Identidade, parcial: object = {}) {
+export function itemDaRevisao(
+  id: string,
+  beneficiario: Identidade,
+  parcial: Partial<ItemDaRevisao> = {},
+): ItemDaRevisao {
   const perfil = { id: `perfil-${id}`, nome: 'Operador de inscrições' };
   return { ...PENDENTE, id, concessaoId: `concessao-${id}`, beneficiario, perfil, ...parcial };
 }
 
 export const ITEM_DECIDIDO = {
-  situacao: 'CONFIRMADA',
+  situacao: situacaoDoItemDaRevisao('CONFIRMADA'),
   decididoPor: BETINA,
   decididoEm: '2026-11-10T13:00:00Z',
 };
@@ -57,7 +77,7 @@ export function itensDaRevisao(contaDeQuemLe: string) {
       ...ITEM_DECIDIDO,
       perfil: { id: 'p2', nome: 'Avaliador de recursos' },
     }),
-    itemDaRevisao('i3', DIOGO, { decide: 'GESTOR_DE_ACESSOS' }),
+    itemDaRevisao('i3', DIOGO, { decide: quemDecideOItem('GESTOR_DE_ACESSOS') }),
     itemDaRevisao(
       'i4',
       { emissor: EMISSOR, contaId: contaDeQuemLe, nome: 'Pessoa que lê a revisão' },
@@ -66,24 +86,27 @@ export function itensDaRevisao(contaDeQuemLe: string) {
   ];
 }
 
-export const RESUMO_ABERTO = {
+export const RESUMO_ABERTO: JsonDaApi<RevisaoResumoDto> = {
   id: REVISAO_ID,
   abertaEm: '2026-11-09T12:00:00Z',
   abertaPor: BETINA,
-  situacao: 'EM_ANDAMENTO',
+  situacao: situacaoDaRevisao('EM_ANDAMENTO'),
   totalDeItens: 4,
   pendentes: 3,
 };
 
-export function revisaoAberta(contaDeQuemLe: string, parcial: object = {}) {
+export function revisaoAberta(
+  contaDeQuemLe: string,
+  parcial: Partial<JsonDaApi<RevisaoDeAcessosDto>> = {},
+) {
   return { ...RESUMO_ABERTO, itens: itensDaRevisao(contaDeQuemLe), ...parcial };
 }
 
-export const RESUMO_ENCERRADO = {
+export const RESUMO_ENCERRADO: JsonDaApi<RevisaoResumoDto> = {
   id: '01960000-0000-7000-0000-0000000000b0',
   abertaEm: '2026-05-04T12:00:00Z',
   abertaPor: BETINA,
-  situacao: 'CONCLUIDA',
+  situacao: situacaoDaRevisao('CONCLUIDA'),
   totalDeItens: 2,
   pendentes: 0,
 };
@@ -113,7 +136,9 @@ function registrar(route: Route, chamadas: ChamadaDaRevisao[]): void {
 /** A API filtra a lista pela situação antes de paginar. */
 function naSituacao(lista: readonly object[], situacao: string | null): readonly object[] {
   if (situacao === null) return lista;
-  return lista.filter((r) => (r as { situacao?: string }).situacao === situacao);
+  return lista.filter(
+    (r) => (r as { situacao?: { codigo?: string } }).situacao?.codigo === situacao,
+  );
 }
 
 function respostaDe(route: Route, cenario: CenarioDaRevisao, leituras: { vez: number }): Resposta {
@@ -150,15 +175,15 @@ const CONCESSAO_DA_FERNANDA = {
   beneficiario: FERNANDA,
   perfil: { id: 'p2', nome: 'Avaliador de recursos' },
   versao: 1,
-  escopo: { tipo: 'UNIDADE', unidadeId: UNIDADE_CEPS },
-  origem: { tipo: 'PEDIDO', id: 'pedido-1' },
+  escopo: { tipo: tipoDeEscopo('UNIDADE'), unidadeId: UNIDADE_CEPS },
+  origem: { tipo: tipoDeOrigem('PEDIDO'), id: 'pedido-1' },
   concedidaEm: '2026-03-02T12:00:00Z',
   validaAte: null,
   ativa: false,
 };
 
 /** A concessão revogada na revisão, com o motivo, que a tela da concessão mostra. */
-export function concessaoRevogada(id: string, motivo: string) {
+export function concessaoRevogada(id: string, motivo: string): JsonDaApi<ConcessaoDto> {
   return {
     ...CONCESSAO_DA_FERNANDA,
     id,

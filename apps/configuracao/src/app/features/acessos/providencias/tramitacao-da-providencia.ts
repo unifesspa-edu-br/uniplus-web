@@ -131,7 +131,7 @@ export class TramitacaoDaProvidencia {
   private aindaElegivel(providencia: ProvidenciaDto): boolean {
     return (
       providencia.id === this.idDaAbertura &&
-      providencia.situacao === SituacaoDaProvidenciaCodigo.ABERTA &&
+      providencia.situacao.codigo === SituacaoDaProvidenciaCodigo.ABERTA &&
       !providencia.impedidoDeResponder
     );
   }

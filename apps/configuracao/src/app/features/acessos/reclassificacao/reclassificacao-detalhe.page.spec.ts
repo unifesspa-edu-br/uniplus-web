@@ -1,7 +1,8 @@
-import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
+import { ClassificacaoDeProtecaoCodigo } from '@uniplus/shared-data/autorizacao';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { ok, recusa, recusaPeloInterceptor } from '../testes';
+import { ok, recusa, recusaPeloInterceptor, TIPO_DE_ESCOPO } from '../testes';
+import { sensibilidade } from '../versoes/enums-da-api.testing';
 import {
   GESTAO_DE_ACESSOS,
   PROTECAO_DE_DADOS,
@@ -9,6 +10,7 @@ import {
   botao,
   caixaDe,
   concessao,
+  ETAPA,
   documentos,
   presente,
   reclassificacao,
@@ -25,8 +27,8 @@ describe('ReclassificacaoDetalhePage', () => {
       ok(
         reclassificacao({
           mudanca: {
-            classificacaoAnterior: 'interno',
-            classificacaoNova: 'sensivel',
+            classificacaoAnterior: sensibilidade(ClassificacaoDeProtecaoCodigo.INTERNO),
+            classificacaoNova: sensibilidade(ClassificacaoDeProtecaoCodigo.SENSIVEL),
             deUnidadeAnterior: true,
             deUnidadeNovo: true,
           },
@@ -35,7 +37,7 @@ describe('ReclassificacaoDetalhePage', () => {
     );
 
     expect(host.querySelector('h1')?.textContent).toContain('Operador de inscrições');
-    expect(host.textContent).toContain('Classificação: de Interna para Dado sensível');
+    expect(host.textContent).toContain('Classificação: de Interno para Sensível');
     expect(host.textContent).not.toContain('Escopo: de');
     expect(host.textContent).toContain('09/11/2026');
   });
@@ -45,7 +47,7 @@ describe('ReclassificacaoDetalhePage', () => {
     const { fixture, host, assentar } = await abrirReclassificacao();
 
     expect(host.textContent).toContain('Versão 1');
-    expect(host.textContent).toContain('selecao:processos:aprovar · Dado pessoal · Unidade');
+    expect(host.textContent).toContain('selecao:processos:aprovar · Pessoal · Unidade');
     expect(botao(host, 'Abrir o documento da versão 2')).toBeUndefined();
     presente(botao(host, 'Abrir o documento da versão 1')).click();
     await assentar();
@@ -85,10 +87,15 @@ describe('ReclassificacaoDetalhePage', () => {
         reclassificacao({
           concessoes: [
             concessao({
-              etapasExigidas: [EtapaDaVersao.GESTAO_DE_ACESSOS, EtapaDaVersao.PROTECAO_DE_DADOS],
-              etapasDecididas: [EtapaDaVersao.PROTECAO_DE_DADOS],
+              etapasExigidas: [ETAPA.GESTAO_DE_ACESSOS, ETAPA.PROTECAO_DE_DADOS],
+              etapasDecididas: [ETAPA.PROTECAO_DE_DADOS],
             }),
-            concessao({ concessaoId: 'c3', beneficiarioNome: 'Paulo Teste', unidadeId: null }),
+            concessao({
+              concessaoId: 'c3',
+              beneficiarioNome: 'Paulo Teste',
+              unidadeId: null,
+              escopoTipo: TIPO_DE_ESCOPO.INSTITUICAO,
+            }),
           ],
         }),
       ),
@@ -98,8 +105,8 @@ describe('ReclassificacaoDetalhePage', () => {
     expect(linhas).toHaveLength(2);
     expect(linhas[0]?.textContent).toContain('Betina Teste');
     expect(linhas[0]?.textContent).toContain('CEPS');
-    expect(linhas[0]?.textContent).toContain('gestão de acessos: aguarda a decisão');
-    expect(linhas[0]?.textContent).toContain('proteção de dados: decidida');
+    expect(linhas[0]?.textContent).toContain('Gestão de acessos: aguarda a decisão');
+    expect(linhas[0]?.textContent).toContain('Proteção de dados: decidida');
     expect(linhas[1]?.textContent).toContain('Instituição');
   });
 
@@ -115,7 +122,7 @@ describe('ReclassificacaoDetalhePage', () => {
     const { host } = await abrirReclassificacao(
       ok(
         reclassificacao({
-          concessoes: [concessao({ etapasDecididas: [EtapaDaVersao.GESTAO_DE_ACESSOS] })],
+          concessoes: [concessao({ etapasDecididas: [ETAPA.GESTAO_DE_ACESSOS] })],
         }),
       ),
     );

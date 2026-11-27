@@ -1,3 +1,6 @@
+import type { PedidoResumoDto } from '@uniplus/shared-data/autorizacao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
+import { etapaDoPedido, situacaoDoPedido, tipoDeEscopo } from '../enumerados-de-autorizacao';
 import { PERFIS, PERFIL_SENSIVEL_ID, concessaoDoPedido, pedidoSeed, type Pedido } from './modelo';
 import type { EstadoDaApi } from './modelo';
 import { json, semConteudo, contaIdDe, type Requisicao, type Rota } from './resposta';
@@ -20,15 +23,17 @@ interface CorpoDaCriacao {
 
 /** Quem vê cada fila: a do gestor, a da segunda etapa, todos ou só os pedidos da própria pessoa. */
 const FILAS: Readonly<Record<string, (pedido: Pedido, eu: string) => boolean>> = {
-  gestor: (pedido) => pedido.situacao === 'AGUARDANDO_GESTOR',
-  protecao_de_dados: (pedido) => pedido.situacao === 'AGUARDANDO_PROTECAO_DE_DADOS',
+  gestor: (pedido) => pedido.situacao.codigo === 'AGUARDANDO_GESTOR',
+  protecao_de_dados: (pedido) => pedido.situacao.codigo === 'AGUARDANDO_PROTECAO_DE_DADOS',
   todos: () => true,
 };
 const meus = (pedido: Pedido, eu: string) => pedido.solicitante.contaId === eu;
 
-function resumo(p: Pedido) {
-  const { id, situacao, etapaAtual, beneficiario, perfil, escopo, justificativa, criadoEm } = p;
-  return { id, situacao, etapaAtual, beneficiario, perfil, escopo, justificativa, criadoEm };
+function resumo(p: Pedido): JsonDaApi<PedidoResumoDto> {
+  const { id, situacao, etapaAtual, beneficiario, perfil, versao } = p;
+  const { escopo, justificativa, criadoEm } = p;
+  const identificacao = { id, situacao, etapaAtual, beneficiario, perfil, versao };
+  return { ...identificacao, escopo, justificativa, criadoEm, aguardaAceiteDoTermo: false };
 }
 
 const pedidoDe = (estado: EstadoDaApi, caminho: string) =>
@@ -40,7 +45,7 @@ function listar({ route, url, estado }: Requisicao): Promise<void> {
   const eu = contaIdDe(route);
   const filtrados = estado.pedidos
     .filter((p) => daFila(p, eu))
-    .filter((p) => !situacao || p.situacao === situacao);
+    .filter((p) => !situacao || p.situacao.codigo === situacao);
   return json(route, filtrados.map(resumo));
 }
 
@@ -54,7 +59,7 @@ function pedidoCriado(corpo: CorpoDaCriacao, contaId: string): Pedido {
     solicitante: identidade,
     beneficiario: { email: 'fernanda.teste@unifesspa.edu.br', identidade, nome: 'Fernanda Teste' },
     perfil,
-    escopo: { tipo: 'UNIDADE', unidadeId: corpo.unidadeId },
+    escopo: { tipo: tipoDeEscopo('UNIDADE'), unidadeId: corpo.unidadeId },
     justificativa: corpo.justificativa,
     validaAteSugerida: corpo.validaAteSugerida ?? null,
   });
@@ -72,7 +77,7 @@ function obterOuCancelar({ route, metodo, url, estado }: Requisicao): Promise<vo
   const alvo = pedidoDe(estado, url.pathname);
   if (!alvo) return json(route, PEDIDO_NAO_ENCONTRADO, 404);
   if (metodo !== 'DELETE') return json(route, alvo);
-  alvo.situacao = 'CANCELADO';
+  alvo.situacao = situacaoDoPedido('CANCELADO');
   alvo.etapaAtual = null;
   return semConteudo(route);
 }
@@ -83,19 +88,19 @@ function aprovar({ route, url, estado }: Requisicao): Promise<void> {
   if (!alvo) return json(route, {}, 404);
   const corpo = route.request().postDataJSON() as { validaAte?: string } | null;
   estado.aprovacoes.push(corpo);
-  const naEtapaDoGestor = alvo.etapaAtual === 'GESTOR';
+  const naEtapaDoGestor = alvo.etapaAtual?.codigo === 'GESTOR';
   if (naEtapaDoGestor) alvo.validaAte = corpo?.validaAte ?? null;
   if (naEtapaDoGestor && alvo.perfil.id === PERFIL_SENSIVEL_ID) {
     Object.assign(alvo, {
-      situacao: 'AGUARDANDO_PROTECAO_DE_DADOS',
-      etapaAtual: 'PROTECAO_DE_DADOS',
+      situacao: situacaoDoPedido('AGUARDANDO_PROTECAO_DE_DADOS'),
+      etapaAtual: etapaDoPedido('PROTECAO_DE_DADOS'),
     });
   } else conceder(estado, alvo);
   return json(route, alvo);
 }
 
 function conceder(estado: EstadoDaApi, pedido: Pedido): void {
-  pedido.situacao = 'APROVADO';
+  pedido.situacao = situacaoDoPedido('APROVADO');
   pedido.etapaAtual = null;
   pedido.concessaoId = `${pedido.id}-concessao`;
   estado.concessoes.push(concessaoDoPedido(pedido, pedido.concessaoId));
@@ -105,7 +110,7 @@ function recusar({ route, url, estado }: Requisicao): Promise<void> {
   const alvo = pedidoDe(estado, url.pathname);
   if (!alvo) return json(route, {}, 404);
   estado.recusas.push(route.request().postDataJSON());
-  alvo.situacao = 'RECUSADO';
+  alvo.situacao = situacaoDoPedido('RECUSADO');
   alvo.etapaAtual = null;
   return json(route, alvo);
 }

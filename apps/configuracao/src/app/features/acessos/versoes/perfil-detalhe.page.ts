@@ -19,7 +19,6 @@ import {
 } from '@uniplus/shared-ui/components';
 import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { RecusaDaLeituraComponent } from '../../../shared/recusa-da-leitura';
-import { etapa } from '../rotulos-de-acesso';
 import { EdicaoDosPerfis } from '../edicao-dos-perfis';
 import { MotivoDialogComponent } from '../motivo-dialog.component';
 import { PerfilFormularioComponent } from '../perfil-formulario.component';
@@ -47,7 +46,6 @@ import { PROVEDORES_DE_ESCRITA_DE_PERFIS } from './provedores-de-perfis';
 import { ReenvioDoDocumento } from './reenvio-do-documento';
 import { RemocaoDePermissoes } from './remocao-de-permissoes';
 import { RemocaoDialogComponent } from './remocao-dialog.component';
-import { situacaoEncerrada } from './rotulos-da-versao';
 import { SituacaoDoPerfilComponent } from './situacao-do-perfil.component';
 import { SuspensaoDoPerfilComponent } from './suspensao-do-perfil.component';
 import { TrilhaDaContencaoComponent } from './trilha-da-contencao.component';
@@ -145,9 +143,7 @@ export class PerfilDetalhePage {
     const resumo = this.resumo();
     return resumo === null ? null : acoesDoPerfil(resumo, this.permissoesDaContencao());
   });
-  protected readonly situacaoEncerrada = situacaoEncerrada;
   protected readonly acaoDeRetomada = ACAO_DE_RETOMADA;
-  protected readonly rotuloDaEtapa = (codigo: EtapaDaVersao): string => etapa(codigo).toLowerCase();
   protected readonly leitura = acompanharLeitura({
     assunto: 'perfil',
     falha: this.store.falha,

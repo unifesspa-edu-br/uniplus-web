@@ -109,7 +109,7 @@ export class FilaDeVersoesPage {
   }
 
   protected documentoVerificado(item: ItemDaFilaDeVersoesDto): boolean {
-    return item.versao.situacaoDoDocumento === SituacaoDoAnexo.VERIFICADO;
+    return item.versao.situacaoDoDocumento.codigo === SituacaoDoAnexo.VERIFICADO;
   }
 
   /** O que impede a aprovação, dito junto ao botão. */
