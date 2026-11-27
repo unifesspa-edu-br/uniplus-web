@@ -1,0 +1,31 @@
+/* A aba ativa se distingue pelo sublinhado e pelo peso, não só pela cor. */
+.abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.abas__aba {
+  min-height: var(--touch-min);
+  padding: 0 var(--space-4);
+  background: transparent;
+  border: none;
+  border-block-end: 3px solid transparent;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.abas__aba[aria-selected='true'] {
+  border-block-end-color: var(--text-link);
+  color: var(--text-link);
+  font-weight: var(--weight-semibold);
+}
+
+.abas__aba:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}

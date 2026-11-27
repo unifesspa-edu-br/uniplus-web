@@ -65,13 +65,96 @@ describe('AcompanhamentoDoProcessoComponent', () => {
       a.textContent?.includes('Voltar ao painel'),
     );
 
-  it('carregado: nome no cabeçalho, só a seção Acompanhamento e o aviso', () => {
+  const abas = () => Array.from(host().querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+  const aba = (rotulo: string) => abas().find((a) => a.textContent?.trim() === rotulo);
+  const abaSelecionada = () =>
+    host().querySelector('[role="tab"][aria-selected="true"]')?.textContent?.trim();
+  const painelVisivel = () => host().querySelector<HTMLElement>('[role="tabpanel"]:not([hidden])');
+  const abrir = (rotulo: string) => {
+    aba(rotulo)?.click();
+    fixture.detectChanges();
+  };
+
+  it('carregado: nome no cabeçalho, as cinco abas em ordem e Acompanhamento selecionado', () => {
     mostrar(lido(PROCESSO_A));
     expect(host().querySelector('h1')?.textContent).toContain('Processo Seletivo A');
-    expect(host().querySelector('#acompanhamento-secao')?.textContent).toBe('Acompanhamento');
-    expect(host().querySelector('[role="tablist"], [role="tab"]')).toBeNull();
-    expect(texto()).toContain(AVISO);
+    expect(abas().map((a) => a.textContent?.trim())).toEqual([
+      'Acompanhamento',
+      'Inscrições',
+      'Homologação',
+      'Notas',
+      'Relatórios',
+    ]);
+    expect(abaSelecionada()).toBe('Acompanhamento');
+    expect(host().querySelector('h2')).toBeNull();
+    expect(painelVisivel()?.textContent).toContain(AVISO);
   });
+
+  it.each(['Inscrições', 'Homologação', 'Notas', 'Relatórios'])(
+    'na aba %s, mostra só a mensagem provisória dela e mantém a identificação',
+    (rotulo) => {
+      mostrar(lido(PROCESSO_A));
+      abrir(rotulo);
+      expect(abaSelecionada()).toBe(rotulo);
+      expect(painelVisivel()?.textContent?.trim()).toBe(
+        `Não há informações de ${rotulo} disponíveis no momento`,
+      );
+      expect(host().querySelector('h1')?.textContent).toContain('Processo Seletivo A');
+      expect(linkDoPainel()).toBeDefined();
+    },
+  );
+
+  it('cada aba aponta para o seu painel, e o painel é rotulado por ela', () => {
+    mostrar(lido(PROCESSO_A));
+    for (const botaoDaAba of abas()) {
+      const painel = host().querySelector(`#${botaoDaAba.getAttribute('aria-controls')}`);
+      expect(painel?.getAttribute('role')).toBe('tabpanel');
+      expect(painel?.getAttribute('aria-labelledby')).toBe(botaoDaAba.id);
+    }
+  });
+
+  it('o teclado move a seleção e o foco, e só a aba ativa entra na ordem do Tab', () => {
+    mostrar(lido(PROCESSO_A));
+    document.body.appendChild(host());
+    const teclar = (key: string) => {
+      document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+      fixture.detectChanges();
+    };
+    aba('Acompanhamento')?.focus();
+    teclar('ArrowLeft');
+    expect(document.activeElement).toBe(aba('Relatórios'));
+    expect(abaSelecionada()).toBe('Relatórios');
+    teclar('Home');
+    teclar('ArrowRight');
+    expect(document.activeElement).toBe(aba('Inscrições'));
+    expect(abas().filter((a) => a.tabIndex === 0)).toEqual([aba('Inscrições')]);
+    host().remove();
+  });
+
+  it('um novo processo volta a Acompanhamento', () => {
+    mostrar(lido(PROCESSO_A));
+    abrir('Relatórios');
+    mostrar({ estado: 'lendo' });
+    mostrar(lido(PROCESSO_B));
+    expect(abaSelecionada()).toBe('Acompanhamento');
+  });
+
+  it('o mesmo processo relido, como na troca de sessão, volta a Acompanhamento', () => {
+    mostrar(lido(PROCESSO_A));
+    abrir('Notas');
+    mostrar({ estado: 'lendo' });
+    mostrar(lido(PROCESSO_A));
+    expect(abaSelecionada()).toBe('Acompanhamento');
+  });
+
+  it.each(['lendo', 'falha', 'nao-encontrado', 'acesso-negado'] as const)(
+    'em %s, não há abas nem mensagens provisórias',
+    (estado) => {
+      mostrar({ estado });
+      expect(host().querySelector('[role="tablist"], [role="tabpanel"]')).toBeNull();
+      expect(texto()).not.toContain('disponíveis no momento');
+    },
+  );
 
   it('nome longo continua inteiro no cabeçalho', () => {
     mostrar(lido(PROCESSO_DE_NOME_LONGO));
@@ -144,8 +227,21 @@ describe('AcompanhamentoDoProcessoComponent — pontos de integração', () => {
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('.page-header__actions')?.textContent).toContain('Editar processo');
-    expect(host.querySelector('section')?.textContent).toContain('Indicadores');
+    const painel = host.querySelector('#processo-painel-acompanhamento');
+    expect(painel?.textContent).toContain('Indicadores');
     expect(host.textContent).not.toContain(AVISO);
+  });
+
+  it('o conteúdo integrado continua depois de ir a outra aba e voltar', () => {
+    const fixture = TestBed.createComponent(AnfitriaoComConteudo);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const conteudo = host.querySelector('[conteudoDoAcompanhamento]');
+    for (const codigo of ['notas', 'acompanhamento']) {
+      host.querySelector<HTMLButtonElement>(`#processo-aba-${codigo}`)?.click();
+      fixture.detectChanges();
+    }
+    expect(host.querySelector('[role="tabpanel"]:not([hidden])')?.contains(conteudo)).toBe(true);
   });
 
   it('de carregado para carregando, as ações somem do cabeçalho', () => {

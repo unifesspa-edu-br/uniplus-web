@@ -46,6 +46,7 @@ import { ModeloDoFormularioComponent } from './secoes/modelo.component';
 import { ApuracaoDaIdadeComponent } from './secoes/apuracao-da-idade.component';
 import { SimulacaoDoFormularioComponent } from './secoes/simulacao.component';
 import { DocumentosDoFormularioComponent } from './documentos-do-formulario.component';
+import { abaPelaTecla } from '../../../../../aba-pela-tecla';
 import { tituloDoPasso } from '../../shared/titulo-do-passo';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 import { desempateSemDataDeNascimento, PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
@@ -54,7 +55,6 @@ import { camposSemValoresOfertados } from './problemas-do-formulario';
 import { fatosColetadosPelaInscricao } from './fatos-coletados-da-inscricao';
 import { fatosColetadosPor } from './formulario-do-processo';
 import {
-  abaPelaTecla,
   comFormulario,
   formulariosDoRascunho,
   nomeDaFinalidade,

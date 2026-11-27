@@ -43,7 +43,7 @@ test.describe('Acompanhamento do processo seletivo', () => {
     }
   });
 
-  test('acesso direto e recarregamento identificam o processo, só com a seção Acompanhamento', async ({
+  test('acesso direto e recarregamento identificam o processo, com Acompanhamento selecionado', async ({
     browser,
   }) => {
     const pagina = await entrarComoPersona(browser, APP, QUEM_SO_ACOMPANHA, url);
@@ -52,9 +52,18 @@ test.describe('Acompanhamento do processo seletivo', () => {
       await expect(
         pagina.getByRole('heading', { level: 1, name: cenario.nomeDoProcesso }),
       ).toBeVisible();
-      await expect(pagina.getByRole('heading', { level: 2, name: 'Acompanhamento' })).toBeVisible();
+      await expect(pagina.getByRole('tab', { name: 'Acompanhamento' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
       await expect(pagina.getByText(AVISO)).toBeVisible();
-      await expect(pagina.getByRole('tab')).toHaveCount(0);
+      await expect(pagina.getByRole('tab')).toHaveText([
+        'Acompanhamento',
+        'Inscrições',
+        'Homologação',
+        'Notas',
+        'Relatórios',
+      ]);
       const trilha = pagina.getByRole('navigation', { name: 'Breadcrumb' });
       await expect(trilha).toContainText('Painel de processos');
       await expect(trilha).toContainText(cenario.nomeDoProcesso);
@@ -152,6 +161,13 @@ test.describe('Acompanhamento do processo seletivo', () => {
     expect((await runAxeWcagAA(pagina)).violations).toEqual([]);
 
     await pagina.setViewportSize({ width: 320, height: 720 });
+    await assertReflowContract(pagina);
+    await pagina.getByRole('tab', { name: 'Acompanhamento' }).focus();
+    await pagina.keyboard.press('End');
+    await expect(pagina.getByRole('tab', { name: 'Relatórios' })).toBeFocused();
+    await expect(pagina.getByRole('tabpanel')).toHaveText(
+      'Não há informações de Relatórios disponíveis no momento',
+    );
     await assertReflowContract(pagina);
     await pagina.getByRole('link', { name: 'Voltar ao painel' }).focus();
     await expect(pagina.getByRole('link', { name: 'Voltar ao painel' })).toBeFocused();

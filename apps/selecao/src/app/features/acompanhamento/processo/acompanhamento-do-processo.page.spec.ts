@@ -66,11 +66,11 @@ describe('AcompanhamentoDoProcessoPage', () => {
     expect(trilha()).toEqual(['Painel de processos', 'Acompanhamento']);
   });
 
-  it('sucesso: nome, trilha completa, só a seção Acompanhamento e o aviso', async () => {
+  it('sucesso: nome, trilha completa, as cinco abas e o aviso', async () => {
     await responder('Vestibular', 'publicado');
     expect(texto()).toContain('Vestibular');
     expect(texto()).toContain(AVISO);
-    expect(harness.routeNativeElement?.querySelector('[role="tab"]')).toBeNull();
+    expect(harness.routeNativeElement?.querySelectorAll('[role="tab"]')).toHaveLength(5);
     expect(trilha()).toEqual(['Painel de processos', 'Vestibular', 'Acompanhamento']);
   });
 
@@ -90,6 +90,18 @@ describe('AcompanhamentoDoProcessoPage', () => {
     await responder('V', 'rascunho');
     expect(texto()).toContain('Editar processo');
     expect(texto()).not.toContain('Publicações');
+  });
+
+  it('trocar de aba mantém a trilha e os atalhos e não consulta nada', async () => {
+    configurar.set(true);
+    await responder('Vestibular', 'publicado');
+    harness.routeNativeElement
+      ?.querySelector<HTMLButtonElement>('#processo-aba-inscricoes')
+      ?.click();
+    harness.detectChanges();
+    http.expectNone(() => true);
+    expect(texto()).toContain('Publicações');
+    expect(trilha()).toEqual(['Painel de processos', 'Vestibular', 'Acompanhamento']);
   });
 
   it('limpa a trilha ao sair', async () => {

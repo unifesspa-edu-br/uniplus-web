@@ -5,6 +5,7 @@ import {
   computed,
   inject,
   input,
+  linkedSignal,
   output,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -16,6 +17,13 @@ import {
   SpinnerComponent,
   acompanharLeitura,
 } from '@uniplus/shared-ui/components';
+
+import {
+  AbasDoProcessoComponent,
+  idDaAba,
+  idDoPainel,
+  type CodigoDaAba,
+} from './abas-do-processo.component';
 
 const TITULO_GENERICO = 'Acompanhamento';
 
@@ -39,18 +47,25 @@ export type SituacaoApresentada =
   | { readonly estado: 'lido'; readonly processo: ProcessoDoAcompanhamento };
 
 /**
- * Apresentação da página de acompanhamento de um processo seletivo: cabeçalho, retorno ao painel e a
- * seção Acompanhamento, apresentada diretamente, sem seletor de aba única.
+ * Apresentação da página de um processo seletivo: cabeçalho, retorno ao painel e as abas
+ * Acompanhamento, Inscrições, Homologação, Notas e Relatórios. Cada carga do processo começa em
+ * Acompanhamento.
  *
  * Não lê a URL, não consulta HTTP nem decide permissões. Recebe a situação e o destino do painel (o
  * retorno é um link, que abre também em nova aba) e comunica `tentarNovamente`. Pontos de integração,
- * ambos exibidos só com o processo carregado: `[acoesDoProcesso]` (ações do cabeçalho) e
- * `[conteudoDoAcompanhamento]` (corpo da seção, no lugar da mensagem de ausência).
+ * exibidos só com o processo carregado: `[acoesDoProcesso]` (ações do cabeçalho) e um por aba, no
+ * lugar da mensagem provisória: `[conteudoDoAcompanhamento]`, `[conteudoDasInscricoes]`,
+ * `[conteudoDaHomologacao]`, `[conteudoDasNotas]` e `[conteudoDosRelatorios]`. As mensagens são
+ * provisórias: não afirmam que o processo não tem esses dados.
+ *
+ * O conteúdo projetado existe mesmo com a aba escondida: quem integrar uma consulta própria decide
+ * quando fazê-la.
  */
 @Component({
   selector: 'sel-acompanhamento-do-processo',
   standalone: true,
   imports: [
+    AbasDoProcessoComponent,
     EmptyStateComponent,
     FalhaDeLeituraComponent,
     PageHeaderComponent,
@@ -92,14 +107,80 @@ export type SituacaoApresentada =
         />
       }
       @case ('lido') {
-        <section aria-labelledby="acompanhamento-secao">
-          <h2 id="acompanhamento-secao" class="acompanhamento__secao">Acompanhamento</h2>
+        <sel-abas-do-processo [(selecionada)]="abaSelecionada" />
+
+        <div
+          role="tabpanel"
+          class="acompanhamento__painel"
+          tabindex="0"
+          [id]="idDoPainel('acompanhamento')"
+          [attr.aria-labelledby]="idDaAba('acompanhamento')"
+          [hidden]="abaSelecionada() !== 'acompanhamento'"
+        >
           <ng-content select="[conteudoDoAcompanhamento]">
             <p class="acompanhamento__vazio">
               Não há informações de acompanhamento disponíveis no momento.
             </p>
           </ng-content>
-        </section>
+        </div>
+
+        <div
+          role="tabpanel"
+          class="acompanhamento__painel"
+          tabindex="0"
+          [id]="idDoPainel('inscricoes')"
+          [attr.aria-labelledby]="idDaAba('inscricoes')"
+          [hidden]="abaSelecionada() !== 'inscricoes'"
+        >
+          <ng-content select="[conteudoDasInscricoes]">
+            <p class="acompanhamento__vazio">
+              Não há informações de Inscrições disponíveis no momento
+            </p>
+          </ng-content>
+        </div>
+
+        <div
+          role="tabpanel"
+          class="acompanhamento__painel"
+          tabindex="0"
+          [id]="idDoPainel('homologacao')"
+          [attr.aria-labelledby]="idDaAba('homologacao')"
+          [hidden]="abaSelecionada() !== 'homologacao'"
+        >
+          <ng-content select="[conteudoDaHomologacao]">
+            <p class="acompanhamento__vazio">
+              Não há informações de Homologação disponíveis no momento
+            </p>
+          </ng-content>
+        </div>
+
+        <div
+          role="tabpanel"
+          class="acompanhamento__painel"
+          tabindex="0"
+          [id]="idDoPainel('notas')"
+          [attr.aria-labelledby]="idDaAba('notas')"
+          [hidden]="abaSelecionada() !== 'notas'"
+        >
+          <ng-content select="[conteudoDasNotas]">
+            <p class="acompanhamento__vazio">Não há informações de Notas disponíveis no momento</p>
+          </ng-content>
+        </div>
+
+        <div
+          role="tabpanel"
+          class="acompanhamento__painel"
+          tabindex="0"
+          [id]="idDoPainel('relatorios')"
+          [attr.aria-labelledby]="idDaAba('relatorios')"
+          [hidden]="abaSelecionada() !== 'relatorios'"
+        >
+          <ng-content select="[conteudoDosRelatorios]">
+            <p class="acompanhamento__vazio">
+              Não há informações de Relatórios disponíveis no momento
+            </p>
+          </ng-content>
+        </div>
       }
     }
   `,
@@ -112,6 +193,15 @@ export class AcompanhamentoDoProcessoComponent {
   readonly tentarNovamente = output<void>();
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  protected readonly idDaAba = idDaAba;
+  protected readonly idDoPainel = idDoPainel;
+
+  /** Volta a Acompanhamento a cada nova situação: troca de processo ou de sessão passa por aqui. */
+  protected readonly abaSelecionada = linkedSignal<SituacaoApresentada, CodigoDaAba>({
+    source: () => this.situacao(),
+    computation: () => 'acompanhamento',
+  });
 
   /** O nome só aparece depois do sucesso: nunca completa o cabeçalho com o processo anterior. */
   private readonly nome = computed(() => {
