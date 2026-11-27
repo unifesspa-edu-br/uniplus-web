@@ -49,7 +49,7 @@ describe('FormularioDoCandidatoComponent', () => {
 
   it('o CEP que o Geo não encontra não preenche nada e orienta a busca dos Correios em nova aba', () => {
     cenario.resultadoDoCep = () =>
-      of(errorResult(mockProblemDetails({ status: 404, code: 'uniplus.geo.cep_nao_encontrado' })));
+      of(errorResult(mockProblemDetails({ status: 404, code: 'uniplus.geo.cep.nao_encontrado' })));
     const tela = cenario.montar(FORMULARIO_DE_ENDERECO_RESIDENCIAL);
 
     cenario.digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68500000');

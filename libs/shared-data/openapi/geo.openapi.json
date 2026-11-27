@@ -298,7 +298,7 @@
           {
             "name": "limit",
             "in": "query",
-            "description": "Tamanho m\u00E1ximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026).",
+            "description": "Tamanho m\u00E1ximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.cursor.limit_invalido (ADR-0026).",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -464,7 +464,7 @@
           {
             "name": "limit",
             "in": "query",
-            "description": "Tamanho m\u00E1ximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026).",
+            "description": "Tamanho m\u00E1ximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.cursor.limit_invalido (ADR-0026).",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -630,7 +630,7 @@
           {
             "name": "limit",
             "in": "query",
-            "description": "Tamanho m\u00E1ximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026).",
+            "description": "Tamanho m\u00E1ximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.cursor.limit_invalido (ADR-0026).",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -795,7 +795,7 @@
           {
             "name": "limit",
             "in": "query",
-            "description": "Tamanho m\u00E1ximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026).",
+            "description": "Tamanho m\u00E1ximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.cursor.limit_invalido (ADR-0026).",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -1020,7 +1020,7 @@
           {
             "name": "limit",
             "in": "query",
-            "description": "Tamanho m\u00E1ximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026).",
+            "description": "Tamanho m\u00E1ximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.cursor.limit_invalido (ADR-0026).",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -1234,28 +1234,20 @@
           "GeoImportacoes"
         ],
         "requestBody": {
+          "description": "Pacote dos Correios em formato zip, enviado como o corpo da requisi\u00E7\u00E3o.",
           "content": {
-            "application/json": {
+            "application/zip": {
               "schema": {
-                "$ref": "#/components/schemas/DispararImportacaoRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DispararImportacaoRequest"
-              }
-            },
-            "application/*\u002Bjson": {
-              "schema": {
-                "$ref": "#/components/schemas/DispararImportacaoRequest"
+                "type": "string",
+                "format": "binary"
               }
             }
           },
           "required": true
         },
         "responses": {
-          "202": {
-            "description": "Accepted",
+          "200": {
+            "description": "OK",
             "content": {
               "text/plain": {
                 "schema": {
@@ -1274,12 +1266,22 @@
               }
             }
           },
-          "400": {
-            "description": "Bad Request",
+          "202": {
+            "description": "Accepted",
             "content": {
-              "application/problem\u002Bjson": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
+                  "$ref": "#/components/schemas/ImportacaoGeoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportacaoGeoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportacaoGeoDto"
                 }
               }
             }
@@ -1306,6 +1308,26 @@
           },
           "409": {
             "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -1411,6 +1433,16 @@
           },
           "404": {
             "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -2136,17 +2168,6 @@
           }
         }
       },
-      "DispararImportacaoRequest": {
-        "required": [
-          "versao"
-        ],
-        "type": "object",
-        "properties": {
-          "versao": {
-            "type": "string"
-          }
-        }
-      },
       "DistritoDto": {
         "required": [
           "id",
@@ -2279,6 +2300,7 @@
           "concluidoEm",
           "disparadoPor",
           "mensagem",
+          "pacote",
           "relatorio"
         ],
         "type": "object",
@@ -2311,6 +2333,16 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "pacote": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PacoteDaImportacaoDto"
+              }
             ]
           },
           "relatorio": {
@@ -2519,7 +2551,30 @@
           }
         }
       },
+      "PacoteDaImportacaoDto": {
+        "required": [
+          "sha256",
+          "tamanhoEmBytes"
+        ],
+        "type": "object",
+        "properties": {
+          "sha256": {
+            "type": "string"
+          },
+          "tamanhoEmBytes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          }
+        }
+      },
       "ProblemDetails": {
+        "required": [
+          "code"
+        ],
         "type": "object",
         "properties": {
           "type": {
@@ -2554,6 +2609,15 @@
               "null",
               "string"
             ]
+          },
+          "code": {
+            "pattern": "^uniplus(\\.[a-z0-9_]\u002B){1,}$",
+            "type": "string",
+            "description": "Identificador est\u00E1vel do erro. A p\u00E1gina do portal que o explica \u00E9 o campo \u0060type\u0060."
+          },
+          "traceId": {
+            "type": "string",
+            "description": "Identificador da requisi\u00E7\u00E3o, para localizar o erro nos registros do servi\u00E7o."
           }
         }
       },
