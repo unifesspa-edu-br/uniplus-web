@@ -74,7 +74,11 @@ describe('DesempatePassoComponent — validação e gravação', () => {
   describe('DESEMPATE_CONDICAO_SOBRE_DADO — exige fato, operador e valor', () => {
     it('recusa incompleto', () => {
       store.patchSection('desempate', [
-        criterio({ regraCodigo: 'DESEMPATE_CONDICAO_SOBRE_DADO', regraVersao: '1.0', fato: 'RENDA' }),
+        criterio({
+          regraCodigo: 'DESEMPATE_CONDICAO_SOBRE_DADO',
+          regraVersao: '1.0',
+          fato: 'RENDA',
+        }),
       ]);
 
       expect(componente.validar().valid).toBe(false);

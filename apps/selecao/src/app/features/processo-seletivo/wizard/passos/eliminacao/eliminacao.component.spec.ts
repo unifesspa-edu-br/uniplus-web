@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
+import { NOME_DO_PASSO_DA_FORMULA, ROTULOS_DOS_PASSOS } from '../../processo-seletivo.data';
 import {
   componente,
+  fixture,
   montarEliminacao,
   prepararClassificacaoLocal,
   store,
 } from './eliminacao.testing';
+import { REGRA_ELIMINACAO_VAZIA } from './regras-de-eliminacao';
 
 describe('EliminacaoPassoComponent', () => {
   montarEliminacao();
@@ -16,7 +19,7 @@ describe('EliminacaoPassoComponent', () => {
 
   it('sob classificação importada, ainda exige a ordem de alocação', () => {
     store.patchObjectSection('classificacao', {
-      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
       regraCalculoVersao: '1.0',
     });
 
@@ -27,10 +30,11 @@ describe('EliminacaoPassoComponent', () => {
 
   it('sob classificação importada com Fórmula completa, ignora regras de eliminação e valida', () => {
     store.patchObjectSection('classificacao', {
-      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
       regraCalculoVersao: '1.0',
       regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
+      regrasEliminacao: [REGRA_ELIMINACAO_VAZIA],
     });
 
     expect(componente.validar().valid).toBe(true);
@@ -55,5 +59,26 @@ describe('EliminacaoPassoComponent', () => {
     const resultado = componente.validar();
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.join(' ')).toContain('compõe a nota');
+  });
+
+  describe('abertura do passo', () => {
+    const abertura = (): string =>
+      (fixture.nativeElement as HTMLElement).querySelector('.step-subtitle')?.textContent ?? '';
+
+    it('diz em linguagem clara o que é gravado de uma só vez junto com as regras', () => {
+      fixture.detectChanges();
+
+      expect(abertura().replace(/\s+/g, ' ')).toContain(
+        'o sistema grava de uma só vez as regras de eliminação e o que foi escolhido no passo',
+      );
+      expect(abertura()).not.toMatch(/comando|os quatro/i);
+    });
+
+    it('cita o passo da fórmula pelo nome que o menu lateral mostra', () => {
+      fixture.detectChanges();
+
+      expect(ROTULOS_DOS_PASSOS).toContain('Fórmula e precisão');
+      expect(abertura()).toContain(`passo ${NOME_DO_PASSO_DA_FORMULA}:`);
+    });
   });
 });

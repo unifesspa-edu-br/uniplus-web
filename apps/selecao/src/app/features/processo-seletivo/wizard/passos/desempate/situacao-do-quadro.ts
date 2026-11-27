@@ -1,3 +1,4 @@
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import type { CriterioDesempateConfigurado, WizardDraft } from '../../processo-seletivo.models';
 import { motivoDaReleitura, type ClassificacaoGravada } from '../../classificacao-no-servidor';
 import {
@@ -75,15 +76,22 @@ export function situacaoDoQuadro(
   const motivo = motivoDaReleitura(gravada);
   if (motivo !== null) return { tipo: 'por-reler', motivo };
 
-  // `null` quando o rascunho não pede quadro; `''` quando pede e a resolução não foi escolhida.
-  const escolhida = exigeResolucaoPesoAreaEnem(classificacao)
-    ? classificacao.resolucaoPesoAreaEnem
-    : null;
+  const escolhida = resolucaoEscolhida(classificacao);
+  return gravada.estado === 'com-quadro'
+    ? situacaoContraAGravada(gravada.resolucao, gravada.grupos, escolhida, cadastro)
+    : situacaoPeloCadastro(escolhida, cadastro);
+}
 
-  if (gravada.estado === 'com-quadro') {
-    return situacaoContraAGravada(gravada.resolucao, gravada.grupos, escolhida, cadastro);
-  }
+/** `null` quando o rascunho não pede quadro; `''` quando pede e a resolução não foi escolhida. */
+function resolucaoEscolhida(classificacao: WizardDraft['classificacao']): string | null {
+  return exigeResolucaoPesoAreaEnem(classificacao) ? classificacao.resolucaoPesoAreaEnem : null;
+}
 
+/** Sem quadro gravado, vale o quadro da resolução escolhida, lido do cadastro. */
+function situacaoPeloCadastro(
+  escolhida: string | null,
+  cadastro: LeituraDoCadastro,
+): SituacaoDoQuadro {
   if (escolhida === null) return { tipo: 'sem-quadro' };
   if (escolhida === '') return { tipo: 'sem-resolucao' };
   const doCadastro = gruposDoCadastro(cadastro);
@@ -107,25 +115,17 @@ function situacaoContraAGravada(
   cadastro: LeituraDoCadastro,
 ): SituacaoDoQuadro {
   if (escolhida === null) return { tipo: 'rascunho-sem-quadro' };
-  if (escolhida !== '' && cadastro.lido && cadastro.quadroDaResolucaoEscolhida.length === 0) {
-    return { tipo: 'fora-do-cadastro' };
-  }
-  const daGravada = areasComuns(grupos, cadastro);
-
+  if (resolucaoForaDoCadastro(escolhida, cadastro)) return { tipo: 'fora-do-cadastro' };
   const doCadastro = escolhida === '' ? [] : gruposDoCadastro(cadastro);
-  if (typeof doCadastro === 'string' || doCadastro.length === 0) {
-    return situacaoDoQuadroLido(
-      grupos,
-      daGravada,
-      escolhida === gravada ? null : { tipo: 'a-confirmar', gravada },
-    );
-  }
+  const quadro = { gravada, grupos, daGravada: areasComuns(grupos, cadastro) };
+  return typeof doCadastro === 'string' || doCadastro.length === 0
+    ? situacaoSoPelaGravada(quadro, escolhida)
+    : situacaoComAsDuasResolucoes(quadro, { escolhida, doCadastro }, cadastro);
+}
 
-  return situacaoComAsDuasResolucoes(
-    { gravada, grupos, daGravada },
-    { escolhida, doCadastro },
-    cadastro,
-  );
+/** O cadastro foi lido e não tem quadro para a resolução escolhida. */
+function resolucaoForaDoCadastro(escolhida: string, cadastro: LeituraDoCadastro): boolean {
+  return escolhida !== '' && cadastro.lido && cadastro.quadroDaResolucaoEscolhida.length === 0;
 }
 
 interface QuadroGravado {
@@ -139,23 +139,45 @@ interface QuadroEscolhido {
   readonly doCadastro: readonly GrupoDoQuadro[];
 }
 
+/** Sem o quadro cadastrado da resolução escolhida, só a cópia gravada decide as áreas. */
+function situacaoSoPelaGravada(quadro: QuadroGravado, escolhida: string): SituacaoDoQuadro {
+  const { gravada, grupos, daGravada } = quadro;
+  const divergencia: Divergencia | null =
+    escolhida === gravada ? null : { tipo: 'a-confirmar', gravada };
+  return situacaoDoQuadroLido(grupos, daGravada, divergencia);
+}
+
 function situacaoComAsDuasResolucoes(
   { gravada, grupos, daGravada }: QuadroGravado,
   { escolhida, doCadastro }: QuadroEscolhido,
   cadastro: LeituraDoCadastro,
 ): SituacaoDoQuadro {
-  const daEscolhida = new Set(areasComuns(doCadastro, cadastro).map((area) => area.codigo));
-  const aceitas = daGravada.filter((area) => daEscolhida.has(area.codigo));
+  const aceitas = areasAceitasPelasDuas(daGravada, doCadastro, cadastro);
   if (aceitas.length === 0 && daGravada.length > 0) {
-    return { tipo: 'resolucoes-sem-area-em-comum', grupos, gravada, escolhida: escolhida };
+    return { tipo: 'resolucoes-sem-area-em-comum', grupos, gravada, escolhida };
   }
-  const divergencia: Divergencia | null =
-    escolhida !== gravada
-      ? { tipo: 'outra-resolucao', gravada, escolhida: escolhida }
-      : aceitas.length < daGravada.length
-        ? { tipo: 'cadastro-alterado', gravada }
-        : null;
+  const perdeuAreas = aceitas.length < daGravada.length;
+  const divergencia = divergenciaDasResolucoes(gravada, escolhida, perdeuAreas);
   return situacaoDoQuadroLido(grupos, aceitas, divergencia);
+}
+
+function areasAceitasPelasDuas(
+  daGravada: readonly ColunaDoQuadro[],
+  doCadastro: readonly GrupoDoQuadro[],
+  cadastro: LeituraDoCadastro,
+): readonly ColunaDoQuadro[] {
+  const daEscolhida = new Set(areasComuns(doCadastro, cadastro).map((area) => area.codigo));
+  return daGravada.filter((area) => daEscolhida.has(area.codigo));
+}
+
+/** Escolher outra resolução pesa mais que a alteração da mesma no cadastro; sem nenhuma das duas, não há ressalva. */
+function divergenciaDasResolucoes(
+  gravada: string,
+  escolhida: string,
+  perdeuAreas: boolean,
+): Divergencia | null {
+  if (escolhida !== gravada) return { tipo: 'outra-resolucao', gravada, escolhida };
+  return perdeuAreas ? { tipo: 'cadastro-alterado', gravada } : null;
 }
 
 function gruposDoCadastro(
@@ -189,36 +211,29 @@ export const DEPENDEM_DA_RELEITURA = 'as áreas que o desempate pode citar depen
  * O que a tela diz quando não há área a oferecer: a dica sob o critério, e a mesma frase, sem a
  * maiúscula e o ponto, na recusa da validação.
  */
-const TEXTO_SEM_AREAS = {
-  'sem-quadro':
-    'A nota de área do ENEM só desempata quando a classificação é baseada no ENEM pela média ponderada, com a resolução de Peso por Área escolhida no passo Fórmula.',
-  'rascunho-sem-quadro':
-    'A classificação escolhida no passo Fórmula não é baseada no ENEM pela média ponderada, e a gravação dela no passo Eliminação vai recusar o critério por área; troque a regra do critério ou remova-o, ou volte a classificação para o ENEM no passo Fórmula.',
-  'sem-resolucao':
-    'Escolha a resolução de Peso por Área no passo Fórmula: as áreas que o desempate pode citar vêm do quadro dela.',
-  'fora-do-cadastro':
-    'A resolução de Peso por Área escolhida não está no cadastro lido; escolha outra no passo Fórmula, ou atualize a lista lá se ela foi criada agora.',
-  'sem-area-em-todos-os-grupos':
-    'Nenhuma área do ENEM está em todos os grupos do quadro de Peso por Área, e só uma área comum a todos desempata; troque a regra do critério ou escolha outra resolução no passo Fórmula.',
-} as const;
+const TEXTO_SEM_AREAS: Partial<Record<SituacaoDoQuadro['tipo'], string>> = {
+  'sem-quadro': `A nota de área do ENEM só desempata quando a classificação é baseada no ENEM pela média ponderada, com a resolução de Peso por Área escolhida no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
+  'rascunho-sem-quadro': `A classificação escolhida no passo ${NOME_DO_PASSO_DA_FORMULA} não é baseada no ENEM pela média ponderada, e a gravação dela vai recusar o critério por área; troque a regra do critério ou remova-o, ou volte a classificação para o ENEM no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
+  'sem-resolucao': `Escolha a resolução de Peso por Área no passo ${NOME_DO_PASSO_DA_FORMULA}: as áreas que o desempate pode citar vêm do quadro dela.`,
+  'fora-do-cadastro': `A resolução de Peso por Área escolhida não está no cadastro lido; escolha outra no passo ${NOME_DO_PASSO_DA_FORMULA}, ou atualize a lista lá se ela foi criada agora.`,
+  'sem-area-em-todos-os-grupos': `Nenhuma área do ENEM está em todos os grupos do quadro de Peso por Área, e só uma área comum a todos desempata; troque a regra do critério ou escolha outra resolução no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
+};
 
 function textoSemAreas(situacao: SituacaoDoQuadro): string | null {
   switch (situacao.tipo) {
     case 'por-reler':
       return `${MOTIVO_DA_RELEITURA[situacao.motivo]}, e ${DEPENDEM_DA_RELEITURA}; releia o processo pelo aviso no início do passo.`;
     case 'resolucoes-sem-area-em-comum':
-      return situacao.gravada === situacao.escolhida
-        ? `A cópia gravada da resolução ${situacao.gravada} e o cadastro atual dela não têm área em comum a todos os grupos; troque a regra do critério, ou corrija a resolução no cadastro de Peso por Área.`
-        : `A resolução ${situacao.gravada}, gravada, e a ${situacao.escolhida}, escolhida no passo Fórmula, não têm área em comum a todos os grupos; troque a regra do critério ou escolha outra resolução no passo Fórmula.`;
-    case 'sem-quadro':
-    case 'rascunho-sem-quadro':
-    case 'sem-resolucao':
-    case 'fora-do-cadastro':
-    case 'sem-area-em-todos-os-grupos':
-      return TEXTO_SEM_AREAS[situacao.tipo];
+      return textoDasResolucoesSemAreaEmComum(situacao.gravada, situacao.escolhida);
     default:
-      return null;
+      return TEXTO_SEM_AREAS[situacao.tipo] ?? null;
   }
+}
+
+function textoDasResolucoesSemAreaEmComum(gravada: string, escolhida: string): string {
+  return gravada === escolhida
+    ? `A cópia gravada da resolução ${gravada} e o cadastro atual dela não têm área em comum a todos os grupos; troque a regra do critério, ou corrija a resolução no cadastro de Peso por Área.`
+    : `A resolução ${gravada}, gravada, e a ${escolhida}, escolhida no passo ${NOME_DO_PASSO_DA_FORMULA}, não têm área em comum a todos os grupos; troque a regra do critério ou escolha outra resolução no passo ${NOME_DO_PASSO_DA_FORMULA}.`;
 }
 
 /**
@@ -241,11 +256,11 @@ export function dicaDaSituacao(situacao: SituacaoDoQuadro): string | null {
 function dicaDaDivergencia(divergencia: Divergencia): string {
   switch (divergencia.tipo) {
     case 'outra-resolucao':
-      return `Só as áreas que a resolução ${divergencia.gravada}, gravada, e a ${divergencia.escolhida}, escolhida no passo Fórmula, têm em todos os grupos podem desempatar: o critério vale antes e depois de a classificação ser gravada no passo Eliminação.`;
+      return `Só as áreas que a resolução ${divergencia.gravada}, gravada, e a ${divergencia.escolhida}, escolhida no passo ${NOME_DO_PASSO_DA_FORMULA}, têm em todos os grupos podem desempatar: o critério vale antes e depois de a classificação ser gravada.`;
     case 'cadastro-alterado':
-      return `A resolução ${divergencia.gravada} mudou no cadastro desde a gravação da classificação, e a próxima gravação no passo Eliminação copia o quadro de novo: só as áreas que a cópia gravada e o cadastro atual têm em todos os grupos podem desempatar.`;
+      return `A resolução ${divergencia.gravada} mudou no cadastro desde a gravação da classificação, e a próxima gravação copia o quadro de novo: só as áreas que a cópia gravada e o cadastro atual têm em todos os grupos podem desempatar.`;
     case 'a-confirmar':
-      return `As áreas vêm da resolução ${divergencia.gravada}, a da classificação gravada. O que mudou no passo Fórmula só vale para o desempate depois de gravado no passo Eliminação.`;
+      return `As áreas vêm da resolução ${divergencia.gravada}, a da classificação gravada. O que mudou no passo ${NOME_DO_PASSO_DA_FORMULA} só vale para o desempate depois de gravado com a classificação.`;
   }
 }
 

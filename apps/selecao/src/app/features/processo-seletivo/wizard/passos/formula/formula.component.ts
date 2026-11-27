@@ -5,12 +5,14 @@ import {
   ValorLegivelDirective,
 } from '@uniplus/shared-ui/components';
 
+import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
+import { GravacaoDaClassificacao } from '../classificacao/gravacao-da-classificacao.service';
 import {
   REGRA_CALCULO_IMPORTADA,
   classificacaoUsaFormulaLocal,
@@ -34,16 +36,20 @@ import { EdicoesDoEnemComponent } from './edicoes-do-enem.component';
 import { PesoPorAreaComponent } from './peso-por-area.component';
 
 const ID_DO_CAMPO_ESCALA = 'f-escala-nota-final';
+const MENSAGEM_SEM_EDICAO_DO_ENEM = 'Escolha ao menos uma edição do ENEM aceita.';
+const REGRA_DE_ARREDONDAMENTO_SEM_ESCOLHA = {
+  regraArredondamentoCodigo: '',
+  regraArredondamentoVersao: '',
+};
 
 /**
  * Fórmula, precisão e ordem de alocação da classificação (UNI-REQ-0482).
  *
- * Coleta até `regrasEliminacao`, que é do passo Eliminação, quem grava o corpo inteiro em
- * `PUT …/classificacao`. Este passo não tem `persistir()`: gravar duas vezes enviaria
- * `regrasEliminacao` vazio na primeira e derrubaria o item de conformidade que a Eliminação
- * acabou de levantar.
+ * Os passos Fórmula e Eliminação gravam o mesmo comando, `PUT …/classificacao`, com o que o
+ * rascunho tem nos dois: este passo envia as regras de eliminação que a Eliminação já coletou,
+ * vazias enquanto ela não foi preenchida.
  *
- * A classificação é bimodal: sob `CLASSIFICACAO-IMPORTADA`, precisão e eliminação não se
+ * A classificação é bimodal: sob `CLASSIFICACAO_IMPORTADA`, precisão e eliminação não se
  * aplicam e a seção some em vez de ficar desabilitada, porque o que o operador vê tem de bater
  * com o que será enviado (`null` nos dois campos).
  *
@@ -65,6 +71,7 @@ const ID_DO_CAMPO_ESCALA = 'f-escala-nota-final';
   providers: [provePassoDoWizard(FormulaPassoComponent)],
 })
 export class FormulaPassoComponent {
+  readonly gravaAClassificacao = true as const;
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacao);
   readonly invalidFields = signal<ReadonlySet<string>>(new Set());
@@ -82,6 +89,7 @@ export class FormulaPassoComponent {
   );
 
   private readonly cadastroDePesos = inject(LeituraDoCadastroDePesos);
+  private readonly gravacao = inject(GravacaoDaClassificacao);
 
   constructor() {
     this.cadastroDePesos.iniciarLeitura();
@@ -168,8 +176,8 @@ export class FormulaPassoComponent {
   /**
    * Aviso antecipado do que a Eliminação vai recusar ao gravar: sob fórmula
    * local, sem etapa que componha a nota o divisor da média fica zero. Não
-   * bloqueia este passo — só o `persistir()` da Eliminação bloqueia —, mas
-   * avisa aqui porque é onde o operador acabou de escolher a fórmula.
+   * bloqueia este passo — só a Eliminação o confere —, mas avisa aqui porque
+   * é onde o operador acabou de escolher a fórmula.
    */
   readonly avisoDeDivisorInvalido = computed(
     () => this.usaFormulaLocal() && !divisorDaMediaValido(this.store.draft().cronograma.etapas),
@@ -177,28 +185,32 @@ export class FormulaPassoComponent {
 
   escolherRegraCalculo(valor: string): void {
     const { codigo, versao } = lerChaveDaRegra(valor);
-    if (codigo === '') {
-      this.store.patchObjectSection('classificacao', {
-        regraCalculoCodigo: '',
-        regraCalculoVersao: '',
-      });
-      this.descartarRecusaQueNaoSeAplica();
-      return;
-    }
+    if (codigo === '') this.limparRegraCalculo();
+    else this.trocarRegraCalculo(codigo, versao);
+    this.descartarRecusaQueNaoSeAplica();
+  }
 
+  private limparRegraCalculo(): void {
+    this.store.patchObjectSection('classificacao', {
+      regraCalculoCodigo: '',
+      regraCalculoVersao: '',
+    });
+  }
+
+  /**
+   * A troca de ramo (local ↔ importada) não some com o que o operador já digitou do outro lado — o
+   * mapeador para o comando é quem decide o que enviar. Só a saída explícita do formulário local
+   * zera o arredondamento aqui, para o `<select>` não continuar mostrando uma escolha que o ramo
+   * atual não usa.
+   */
+  private trocarRegraCalculo(codigo: string, versao: string): void {
     const local = classificacaoUsaFormulaLocal(codigo);
     this.store.patchObjectSection('classificacao', {
       regraCalculoCodigo: codigo,
       regraCalculoVersao: versao,
-      // A troca de ramo (local ↔ importada) não some com o que o operador já
-      // digitou do outro lado — o mapeador para o comando é quem decide o que
-      // enviar. Só a saída explícita do formulário local zera o
-      // arredondamento aqui, para o `<select>` não continuar mostrando uma
-      // escolha que o ramo atual não usa.
-      ...(local ? {} : { regraArredondamentoCodigo: '', regraArredondamentoVersao: '' }),
+      ...(local ? {} : REGRA_DE_ARREDONDAMENTO_SEM_ESCOLHA),
     });
     if (!local) this.store.classificacao.recusaDaEscalaDaNotaFinal.set(null);
-    this.descartarRecusaQueNaoSeAplica();
   }
 
   escolherRegraArredondamento(valor: string): void {
@@ -253,29 +265,50 @@ export class FormulaPassoComponent {
     this.store.classificacao.descartarRecusas();
   }
 
+  rotuloDeAvanco(): string {
+    return 'Gravar e avançar';
+  }
+
+  /** Sem confirmação quando o passo não valida: `persistir()` mostra a recusa sem chamar a API. */
+  confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
+    return this.validar().valid ? this.gravacao.confirmacao() : null;
+  }
+
+  /** Grava a classificação inteira, depois de conferir o passo. */
+  persistir(): Promise<ValidacaoDoPasso> {
+    const conferencia = this.validar();
+    return conferencia.valid ? this.gravacao.gravar() : Promise.resolve(conferencia);
+  }
+
   /**
-   * Validação declarativa — acionada pela page ao clicar em "Próximo". Os campos destacados e as
-   * mensagens vêm de `pendenciasDaClassificacaoBase`, a mesma fonte que a Eliminação usa — ela
-   * persiste o comando inteiro e não pode divergir sobre o que conta como válido aqui.
+   * Validação declarativa — acionada pela page ao clicar em "Gravar e avançar". Os campos
+   * destacados e as mensagens vêm de `pendenciasDaClassificacaoBase`, a mesma fonte que a
+   * Eliminação usa — as duas gravam o comando inteiro e não podem divergir sobre o que conta como
+   * válido aqui.
    */
   validar(): ValidacaoDoPasso {
-    const classificacao = this.store.draft().classificacao;
-    const invalid = new Set<string>(
-      pendenciasDaClassificacaoBase(
-        classificacao,
-        this.cadastroDePesos.resolucaoForaDoCadastro,
-      ).map((pendencia) => pendencia.campo),
-    );
-
-    const semEdicao = this.declaraEdicoes() && classificacao.edicoesEnem.length === 0;
-    if (semEdicao) invalid.add('edicoesEnem');
-
-    this.invalidFields.set(invalid);
+    const semEdicao = this.faltaEscolherEdicao();
+    this.invalidFields.set(this.camposInvalidos(semEdicao));
 
     const messages = [
-      ...mensagensDeClassificacaoBase(classificacao, this.cadastroDePesos.resolucaoForaDoCadastro),
-      ...(semEdicao ? ['Escolha ao menos uma edição do ENEM aceita.'] : []),
+      ...mensagensDeClassificacaoBase(
+        this.store.draft().classificacao,
+        this.cadastroDePesos.resolucaoForaDoCadastro,
+      ),
+      ...(semEdicao ? [MENSAGEM_SEM_EDICAO_DO_ENEM] : []),
     ];
     return messages.length ? { valid: false, messages } : { valid: true };
+  }
+
+  private faltaEscolherEdicao(): boolean {
+    return this.declaraEdicoes() && this.edicoes().length === 0;
+  }
+
+  private camposInvalidos(semEdicao: boolean): ReadonlySet<string> {
+    const campos = pendenciasDaClassificacaoBase(
+      this.store.draft().classificacao,
+      this.cadastroDePesos.resolucaoForaDoCadastro,
+    ).map((pendencia) => pendencia.campo);
+    return new Set(semEdicao ? [...campos, 'edicoesEnem'] : campos);
   }
 }

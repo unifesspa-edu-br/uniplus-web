@@ -4,6 +4,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import {
   CLASSIFICACAO_COM_QUADRO,
   RESOLUCAO,
@@ -82,7 +83,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: origem das área
 
       expect(seletor(m, 0)).toBeNull();
       expect(textoDaTela(m)).toContain(
-        `A resolução ${RESOLUCAO}, gravada, e a ${OUTRA_RESOLUCAO}, escolhida no passo Fórmula, não têm área em comum a todos os grupos`,
+        `A resolução ${RESOLUCAO}, gravada, e a ${OUTRA_RESOLUCAO}, escolhida no passo ${NOME_DO_PASSO_DA_FORMULA}, não têm área em comum a todos os grupos`,
       );
     });
 
@@ -95,7 +96,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: origem das área
 
       expect(opcoesDoSeletor(m, 0)).toEqual(['Linguagens']);
       expect(textoDaTela(m)).toContain(
-        `Só as áreas que a resolução ${RESOLUCAO}, gravada, e a ${OUTRA_RESOLUCAO}, escolhida no passo Fórmula, têm em todos os grupos podem desempatar`,
+        `Só as áreas que a resolução ${RESOLUCAO}, gravada, e a ${OUTRA_RESOLUCAO}, escolhida no passo ${NOME_DO_PASSO_DA_FORMULA}, têm em todos os grupos podem desempatar`,
       );
 
       // Redação vale na gravada, mas a próxima gravação da classificação a recusaria.
@@ -117,7 +118,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: origem das área
 
       expect(opcoesDoSeletor(m, 0)).toEqual(['Redação', 'Linguagens']);
       expect(textoDaTela(m)).toContain(
-        `As áreas vêm da resolução ${RESOLUCAO}, a da classificação gravada. O que mudou no passo Fórmula`,
+        `As áreas vêm da resolução ${RESOLUCAO}, a da classificação gravada. O que mudou no passo ${NOME_DO_PASSO_DA_FORMULA}`,
       );
     });
 
@@ -138,7 +139,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: origem das área
       expect(m.componente.validar()).toEqual({
         valid: false,
         messages: [
-          'Critério de desempate 1: a classificação escolhida no passo Fórmula não é baseada no ENEM pela média ponderada, e a gravação dela no passo Eliminação vai recusar o critério por área; troque a regra do critério ou remova-o, ou volte a classificação para o ENEM no passo Fórmula.',
+          `Critério de desempate 1: a classificação escolhida no passo ${NOME_DO_PASSO_DA_FORMULA} não é baseada no ENEM pela média ponderada, e a gravação dela vai recusar o critério por área; troque a regra do critério ou remova-o, ou volte a classificação para o ENEM no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
         ],
       });
     });
@@ -159,7 +160,9 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: origem das área
       });
       criterioPorArea(m);
 
-      expect(textoDaTela(m)).toContain('Escolha a resolução de Peso por Área no passo Fórmula');
+      expect(textoDaTela(m)).toContain(
+        `Escolha a resolução de Peso por Área no passo ${NOME_DO_PASSO_DA_FORMULA}`,
+      );
     });
 
     it('só para consulta e sem cópia gravada, lê o cadastro em vez de esperar para sempre', async () => {

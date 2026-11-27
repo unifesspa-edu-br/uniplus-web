@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it, vi } from 'vitest';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
@@ -58,7 +59,7 @@ describe('gravação da classificação', () => {
       expect(requisicao.request.method).toBe('PUT');
       expect(requisicao.request.headers.get('Idempotency-Key')).toBeTruthy();
       expect(requisicao.request.body).toMatchObject({
-        regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+        regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
         regraArredondamentoCodigo: 'ARRED-TRUNCAR',
         casasArredondamento: 2,
         regrasEliminacao: [
@@ -380,7 +381,7 @@ describe('gravação da classificação', () => {
 
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.join(' ')).toContain('resolução de Peso por Área');
-      expect(resultado.messages?.join(' ')).toContain('passo Fórmula');
+      expect(resultado.messages?.join(' ')).toContain(`passo ${NOME_DO_PASSO_DA_FORMULA}`);
       controller.verify();
     });
   });

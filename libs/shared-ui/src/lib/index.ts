@@ -30,6 +30,7 @@ export {
   type UiFilterChipOption,
 } from './components/filter-chips/filter-chips';
 export { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog';
+export { AvisoDeSessaoEncerradaComponent } from './components/aviso-de-sessao-encerrada/aviso-de-sessao-encerrada';
 export { FormFieldComponent } from './components/form-field/form-field';
 export { InstitutionalBarComponent } from './components/institutional-bar/institutional-bar';
 export { IconButtonComponent, type UiTooltipPosition } from './components/icon-button/icon-button';

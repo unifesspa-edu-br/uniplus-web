@@ -38,6 +38,30 @@ describe('confirmação da classificação', () => {
       expect(confirmacao?.itens.map((item) => item.rotulo)).toContain('Regra de cálculo');
     });
 
+    it('sem regra de eliminação, diz "nenhuma", e com regras, diz quantas', () => {
+      prepararClassificacaoLocal();
+      const eliminacao = () =>
+        componente
+          .confirmacaoDeGravacao()
+          ?.itens.find((linha) => linha.rotulo === 'Regras de eliminação')?.valor;
+      expect(eliminacao()).toBe('nenhuma');
+
+      store.patchObjectSection('classificacao', {
+        regrasEliminacao: [
+          {
+            regraCodigo: 'ELIMINACAO_NOTA_MINIMA_ETAPA',
+            regraVersao: '1.0',
+            etapaRef: 'etapa-1',
+            notaMinima: '5',
+            minimo: '',
+            areaCodigo: '',
+          },
+        ],
+      });
+
+      expect(eliminacao()).toBe('1 regra(s)');
+    });
+
     it('mostra a resolução de Peso por Área que será gravada', () => {
       prepararClassificacaoLocal();
       store.patchObjectSection('classificacao', {

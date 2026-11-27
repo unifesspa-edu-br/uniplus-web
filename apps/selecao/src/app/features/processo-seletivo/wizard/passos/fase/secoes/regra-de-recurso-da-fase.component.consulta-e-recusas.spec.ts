@@ -12,6 +12,7 @@ import type { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { RecusasDoServidorNasFases } from '../../cronograma/servicos/recusas-do-servidor-nas-fases.service';
 import { montarFase } from '../fase.testing';
 import { faseComRegra, PREFIXO } from './regra-de-recurso-da-fase.testing';
+import { conferirSemPendenciasDosMotivos } from '../motivos/motivos-nos-passos.testing';
 
 describe('RegraDeRecursoDaFaseComponent: consulta e recusas', () => {
   let controller: HttpTestingController;
@@ -24,7 +25,7 @@ describe('RegraDeRecursoDaFaseComponent: consulta e recusas', () => {
     ({ controller, nativo, comCronograma, store, detectar } = await montarFase());
   });
 
-  afterEach(() => controller.verify());
+  afterEach(() => conferirSemPendenciasDosMotivos(controller));
 
   const textoDe = (id: string) => nativo.querySelector(`#${id}`)?.textContent ?? null;
 

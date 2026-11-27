@@ -28,7 +28,7 @@ export const REGRA_CASCATA = {
   versao: 'v1',
   tipo: { codigo: 'CRITERIO_REMANEJAMENTO', rotulo: 'Remanejamento' },
   declaracaoDaRegra: {
-    fallbackCodigo: 'AC',
+    destinoFinalCodigo: 'AC',
     ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
   },
   invariantes: ['origem sempre resolve pelo fallback'],
@@ -43,7 +43,7 @@ export const REGRA_CASCATA_ANTERIOR = {
   versao: 'v0',
   tipo: { codigo: 'CRITERIO_REMANEJAMENTO', rotulo: 'Remanejamento' },
   declaracaoDaRegra: {
-    fallbackCodigo: 'AC',
+    destinoFinalCodigo: 'AC',
     ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
   },
   invariantes: [],

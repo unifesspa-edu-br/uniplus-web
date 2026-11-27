@@ -168,6 +168,7 @@ describe('RevisaoPassoComponent — ato e período', () => {
         emiteParecerIndividual: false,
         bancasRequeridas: [],
         regraRecurso: null,
+        regraDeHomologacao: null,
         tiposDeDecisao: [],
         congelados: null,
       };

@@ -19,7 +19,7 @@ function documentoBaseadoEmEnem(): DocumentoDaConfiguracao {
   return {
     ...documentoSemNada(),
     classificacao: {
-      regraCalculo: { codigo: 'FORMULA-MEDIA-PONDERADA', versao: 'v1' },
+      regraCalculo: { codigo: 'FORMULA_MEDIA_PONDERADA', versao: 'v1' },
       baseadoEmEnem: true,
       resolucaoPesoAreaEnem: 'RESOLUCAO_DE_EXEMPLO',
       quadroPesoAreaEnem: [
@@ -147,7 +147,7 @@ describe('adaptador do passo Fórmula e precisão', () => {
     const documento = exemploDoContrato('inscricao-pelo-sistema');
     const valores = {
       ...valoresDoFormulario(documento),
-      regraDeCalculo: { codigo: 'CLASSIFICACAO-IMPORTADA', versao: 'v1' },
+      regraDeCalculo: { codigo: 'CLASSIFICACAO_IMPORTADA', versao: 'v1' },
     };
 
     const classificacao = edicaoDoPasso(valores)(documento).classificacao;

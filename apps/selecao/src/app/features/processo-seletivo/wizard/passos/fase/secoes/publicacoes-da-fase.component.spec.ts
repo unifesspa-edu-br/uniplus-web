@@ -12,6 +12,7 @@ import type { FaseDoCronograma } from '../../../processo-seletivo.models';
 import type { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { fase, montarFase } from '../fase.testing';
 import { PublicacoesDaFaseComponent } from './publicacoes-da-fase.component';
+import { conferirSemPendenciasDosMotivos } from '../motivos/motivos-nos-passos.testing';
 
 describe('PublicacoesDaFaseComponent', () => {
   let store: ProcessoSeletivoStore;
@@ -29,7 +30,7 @@ describe('PublicacoesDaFaseComponent', () => {
     ({ store, controller, detectar, nativo, elementoDaTela, comCronograma } = await montarFase());
   });
 
-  afterEach(() => controller.verify());
+  afterEach(() => conferirSemPendenciasDosMotivos(controller));
 
   it('leva ao rascunho a publicação declarada na tela', () => {
     comCronograma(fase({}));

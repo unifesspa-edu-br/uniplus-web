@@ -56,33 +56,30 @@
   border-color: transparent;
 }
 
+/*
+ * O texto do secundário e do terciário usa `--text-on-primary-tint`, o mesmo do hover,
+ * e não `--color-primary`: no tema escuro `--color-primary` é um azul claro de fundo de
+ * botão e, sobre `--surface-subtle`, rende 4,07:1, abaixo dos 4,5:1 da WCAG 2.1 AA
+ * (SC 1.4.3). Como o texto já é o do hover, o hover só troca fundo e borda. A borda
+ * segue em `--color-primary`, que só precisa de 3:1 como componente (SC 1.4.11).
+ */
 .btn--secondary {
   --btn-bg: transparent;
-  --btn-fg: var(--color-primary);
+  --btn-fg: var(--text-on-primary-tint);
   --btn-bd: var(--color-primary);
   --btn-bg-hover: var(--color-primary-50);
   --btn-bg-active: var(--color-primary-100);
 }
 .btn--secondary:hover:not([disabled]):not(:disabled):not([aria-disabled='true']) {
-  color: var(--text-on-primary-tint);
   border-color: var(--color-primary-700);
 }
 
-/*
- * Hover com a mesma tinta e o mesmo texto do secundário: sobre `--surface-subtle`, o
- * azul de `--color-primary` rendia 4,07:1 no tema escuro — abaixo do mínimo de 4,5:1
- * que a WCAG 2.1 AA exige, e o botão terciário é comum o bastante para a falha
- * aparecer em qualquer tela.
- */
 .btn--tertiary {
   --btn-bg: transparent;
-  --btn-fg: var(--color-primary);
+  --btn-fg: var(--text-on-primary-tint);
   --btn-bd: transparent;
   --btn-bg-hover: var(--color-primary-50);
   --btn-bg-active: var(--color-primary-100);
-}
-.btn--tertiary:hover:not([disabled]):not(:disabled):not([aria-disabled='true']) {
-  color: var(--text-on-primary-tint);
 }
 
 /*

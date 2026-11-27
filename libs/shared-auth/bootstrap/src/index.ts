@@ -1,4 +1,7 @@
 export { AuthService } from '../../src/lib/services/auth.service';
+export { SessaoEncerrada } from '../../src/lib/services/sessao-encerrada.service';
+export { AvisoDeVencimentoDaSessao } from '../../src/lib/services/aviso-de-vencimento-da-sessao.service';
+export type { SituacaoDoAviso } from '../../src/lib/services/aviso-de-vencimento-da-sessao.service';
 export { UserContextService } from '../../src/lib/services/user-context.service';
 export { MotivoDoAcessoNegadoService } from '../../src/lib/services/motivo-do-acesso-negado.service';
 export { provideAuth } from '../../src/lib/providers/auth.provider';
@@ -31,5 +34,6 @@ export type {
 } from '../../src/lib/services/permissoes.service';
 export { PerfisDeAcessoService } from '../../src/lib/services/perfis-de-acesso.service';
 export type { EstadoDosPerfis } from '../../src/lib/services/perfis-de-acesso.service';
+export { RenovacaoDoAcesso } from '../../src/lib/services/renovacao-do-acesso.service';
 export { PERMISSAO } from '../../src/lib/permissoes/catalogo';
 export type { CodigoDePermissao, ModuloDePermissao } from '../../src/lib/permissoes/catalogo';

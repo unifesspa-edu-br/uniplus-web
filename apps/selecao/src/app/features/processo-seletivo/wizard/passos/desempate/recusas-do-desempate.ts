@@ -1,8 +1,8 @@
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import type { CriterioDesempateConfigurado } from '../../processo-seletivo.models';
 import { ehCampoDaResolucao } from '../classificacao/classificacao-para-comando';
 
-const CRITERIO_GRAVADO_SEM_QUADRO =
-  'compara a nota de área do ENEM, que só existe com a classificação baseada no ENEM pela média ponderada. Troque a regra do critério ou remova-o no passo Desempate e grave o passo, ou marque o ENEM e a média ponderada no passo Fórmula.';
+const CRITERIO_GRAVADO_SEM_QUADRO = `compara a nota de área do ENEM, que só existe com a classificação baseada no ENEM pela média ponderada. Troque a regra do critério ou remova-o no passo Desempate e grave o passo, ou marque o ENEM e a média ponderada no passo ${NOME_DO_PASSO_DA_FORMULA}.`;
 
 /**
  * A recusa por um critério de desempate gravado que compara a nota de área do ENEM, com a
@@ -57,18 +57,18 @@ export function recusaDaClassificacaoPeloDesempate(erro: {
   }
   if (erro.code !== SEM_QUADRO) return null;
   return ehCampoDaResolucao(erro.field)
-    ? 'Um critério de desempate gravado compara a nota de área do ENEM, que exige o quadro da resolução de Peso por Área. Troque a regra do critério no passo Desempate e grave o passo, ou escolha a resolução no passo Fórmula.'
+    ? `Um critério de desempate gravado compara a nota de área do ENEM, que exige o quadro da resolução de Peso por Área. Troque a regra do critério no passo Desempate e grave o passo, ou escolha a resolução no passo ${NOME_DO_PASSO_DA_FORMULA}.`
     : recusaPorCriterioGravadoSemQuadro(null);
 }
+
+/** A frase da recusa, com o rótulo da área e a posição do outro critério que a cita, quando se sabem. */
+type TextoDaRecusa = (rotulo: string | null, outro: number | null) => string;
 
 /**
  * As recusas do servidor à gravação do desempate que a tela explica, pelo `code`, com o rótulo da
  * área quando o campo da recusa aponta uma. São as mesmas frases da validação da tela.
  */
-const RECUSA_AO_GRAVAR_O_DESEMPATE: ReadonlyMap<
-  string,
-  (rotulo: string | null, outro: number | null) => string
-> = new Map([
+const RECUSA_AO_GRAVAR_O_DESEMPATE: ReadonlyMap<string, TextoDaRecusa> = new Map([
   [FORA_DO_QUADRO, RECUSA_DA_AREA.foraDoQuadro],
   [CITADA_POR_OUTRO_CRITERIO, RECUSA_DA_AREA.citadaPorOutro],
   [`${PREFIXO_DA_RECUSA_DO_CRITERIO}area_repetida`, RECUSA_DA_AREA.repetida],
@@ -78,7 +78,7 @@ const RECUSA_AO_GRAVAR_O_DESEMPATE: ReadonlyMap<
   [
     SEM_QUADRO,
     () =>
-      'a classificação gravada não tem o quadro de Peso por Área; escolha a resolução no passo Fórmula, se ainda não escolheu, e grave a classificação no passo Eliminação',
+      `a classificação gravada não tem o quadro de Peso por Área; escolha a resolução no passo ${NOME_DO_PASSO_DA_FORMULA}, se ainda não escolheu, e grave a classificação`,
   ],
 ]);
 
@@ -97,6 +97,37 @@ export function outroCriterioQueCita(
 /** O campo da recusa: `criterios[i]`, e `.areas[j]` quando aponta uma área. */
 const CAMPO_DO_CRITERIO = /criterios\[(\d+)\](?:\.areas\[(\d+)\])?/;
 
+/** O critério que o campo da recusa aponta e, se aponta uma, a área dele. */
+interface AlvoDaRecusa {
+  readonly indice: number;
+  readonly area: string | undefined;
+}
+
+function alvoDaRecusa(
+  campo: string,
+  criterios: readonly CriterioDesempateConfigurado[],
+): AlvoDaRecusa | null {
+  const partes = CAMPO_DO_CRITERIO.exec(campo);
+  if (partes === null) return null;
+  const indice = Number(partes[1]);
+  const area = partes[2] === undefined ? undefined : criterios[indice]?.areas[Number(partes[2])];
+  return { indice, area };
+}
+
+function textoDaRecusa(
+  texto: TextoDaRecusa,
+  alvo: AlvoDaRecusa | null,
+  criterios: readonly CriterioDesempateConfigurado[],
+  rotuloDaArea: (codigo: string) => string,
+): string {
+  if (alvo?.area === undefined) return texto(null, null);
+  return texto(rotuloDaArea(alvo.area), outroCriterioQueCita(criterios, alvo.area, alvo.indice));
+}
+
+function comoFrase(texto: string): string {
+  return `${texto.charAt(0).toUpperCase()}${texto.slice(1)}.`;
+}
+
 /**
  * A recusa do servidor à gravação do desempate, com o critério e a área que o campo aponta, ou
  * `null` quando a tela não tem texto para o `code`.
@@ -108,18 +139,7 @@ export function recusaAoGravarODesempate(
 ): string | null {
   const texto = RECUSA_AO_GRAVAR_O_DESEMPATE.get(erro.code);
   if (texto === undefined) return null;
-
-  const campo = CAMPO_DO_CRITERIO.exec(erro.field);
-  const indice = campo === null ? null : Number(campo[1]);
-  const area =
-    indice === null || campo?.[2] === undefined
-      ? undefined
-      : criterios[indice]?.areas[Number(campo[2])];
-  const corpo =
-    area === undefined || indice === null
-      ? texto(null, null)
-      : texto(rotuloDaArea(area), outroCriterioQueCita(criterios, area, indice));
-  return indice === null
-    ? `${corpo.charAt(0).toUpperCase()}${corpo.slice(1)}.`
-    : `Critério de desempate ${indice + 1}: ${corpo}.`;
+  const alvo = alvoDaRecusa(erro.field, criterios);
+  const corpo = textoDaRecusa(texto, alvo, criterios, rotuloDaArea);
+  return alvo === null ? comoFrase(corpo) : `Critério de desempate ${alvo.indice + 1}: ${corpo}.`;
 }

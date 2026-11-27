@@ -113,7 +113,7 @@ test.describe('Unidade — escritas', () => {
     await expect(nome).toBeDisabled();
     await expect(formulario.getByRole('button', { name: 'Salvando...' })).toBeFocused();
     liberar();
-    await expect(formulario.locator('.alert__msg')).toBeVisible();
+    await expect(formulario.locator('.alert__msg', { hasText: 'Erro interno' })).toBeVisible();
     await expect(nome).toBeEnabled();
     await expect(formulario.getByRole('button', { name: 'Salvar unidade' })).toBeFocused();
     expect(envios).toEqual(['PUT']);

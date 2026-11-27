@@ -30,6 +30,10 @@
 
 /* A região de status fica sempre no documento, vazia e sem moldura: o leitor de tela só anuncia
    o que entra numa região que já existia. A moldura aparece com o aviso. */
+.cfg-filtro-removido:not(.cfg-filtro-removido--aberto) {
+  position: absolute;
+}
+
 .cfg-filtro-removido--aberto {
   display: flex;
   flex-wrap: wrap;

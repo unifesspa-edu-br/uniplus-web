@@ -41,6 +41,7 @@ import {
   ProcessosSeletivosApi,
   PublicacaoDoProcessoApi,
   MotivosDeDecisaoApi,
+  MotivosDoProcessoApi,
   OpcoesDoRecursoApi,
   RegrasCatalogoApi,
   VagasDoProcessoApi,
@@ -154,6 +155,8 @@ export const PAGE_PROVIDERS = [
   { provide: VocabulariosDoPrazoEDaValidadeApi, useValue: vocabulariosDoPrazoEDaValidadeStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
   { provide: MotivosDeDecisaoApi, useValue: catalogoVazioStub },
+  // A seção de motivos da fase lê o que o processo já escolheu ao abrir a configuração da fase.
+  { provide: MotivosDoProcessoApi, useValue: catalogoVazioStub },
   { provide: OpcoesDoRecursoApi, useValue: opcoesDoRecursoApiStub },
   { provide: AtosApi, useValue: { obter: () => NEVER } },
   // O passo de atendimento carrega os três cadastros de Configuração ao
@@ -167,7 +170,10 @@ export const PAGE_PROVIDERS = [
   // E os termos de consentimento que ele pode exigir.
   { provide: TermosConsentimentoApi, useValue: { listarComVersoes: () => NEVER } },
   // E os modelos de que cada formulário pode partir.
-  { provide: ModelosFormularioApi, useValue: catalogoVazioStub },
+  {
+    provide: ModelosFormularioApi,
+    useValue: { listar: catalogoVazioStub.listar, listarTodos: catalogoVazioStub.listar },
+  },
   { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
   { provide: DocumentosEAtosDoProcessoApi, useValue: {} },
   { provide: PublicacaoDoProcessoApi, useValue: {} },

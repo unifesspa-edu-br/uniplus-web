@@ -141,10 +141,136 @@ describe('PermissoesService', () => {
     expect(service.codigos().size).toBe(0);
   });
 
-  it('esvazia as permissões da mesma pessoa quando a recarga da renovação falha por rede', async () => {
+  function renovar(): Promise<void> {
+    sessao.update((atual) => `${atual?.split(':')[0]}:${Number(atual?.split(':')[1]) + 1}`);
+    return service.garantir();
+  }
+
+  it('mantém as permissões da mesma pessoa quando a recarga da renovação falha por rede', async () => {
     await carregar([MOTIVOS]);
 
-    sessao.set('leandro:1');
+    const pronta = renovar();
+    http.expectOne(URL).error(new ProgressEvent('error'));
+    await pronta;
+
+    expect(service.estado()).toBe('carregada');
+    expect(permissoesVigentes()).toEqual([MOTIVOS.codigo]);
+  });
+
+  it('mantém as permissões da mesma pessoa quando o servidor responde com erro 500', async () => {
+    await carregar([MOTIVOS]);
+
+    const pronta = renovar();
+    http.expectOne(URL).flush(null, { status: 500, statusText: 'Server Error' });
+    await pronta;
+
+    expect(service.estado()).toBe('carregada');
+    expect(permissoesVigentes()).toEqual([MOTIVOS.codigo]);
+  });
+
+  it('esvazia as permissões da mesma pessoa quando a API a recusa na recarga (401)', async () => {
+    await carregar([MOTIVOS]);
+
+    const pronta = renovar();
+    http.expectOne(URL).flush(
+      { type: 'about:blank', title: 'Unauthorized', status: 401 },
+      {
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await pronta;
+
+    expect(service.estado()).toBe('indisponivel');
+    expect(service.codigos().size).toBe(0);
+  });
+
+  it('não esconde as permissões que já valem enquanto a recarga da mesma pessoa não responde', async () => {
+    await carregar([MOTIVOS]);
+
+    const pronta = renovar();
+
+    expect(service.estado()).toBe('carregada');
+    expect(permissoesVigentes()).toEqual([MOTIVOS.codigo]);
+    http.expectOne(URL).flush([MOTIVOS]);
+    await pronta;
+  });
+
+  it('mantém as permissões em falhas seguidas e adota a lista nova na primeira recarga que dá certo', async () => {
+    await carregar([MOTIVOS, CAMPI]);
+
+    for (let falhas = 0; falhas < 2; falhas++) {
+      const pronta = renovar();
+      http.expectOne(URL).error(new ProgressEvent('error'));
+      await pronta;
+      expect(permissoesVigentes()).toEqual([MOTIVOS.codigo, CAMPI.codigo]);
+    }
+    const pronta = renovar();
+    http.expectOne(URL).flush([CAMPI]);
+    await pronta;
+
+    expect(permissoesVigentes()).toEqual([CAMPI.codigo]);
+  });
+
+  it('uma resposta atrasada de uma recarga já substituída não troca o que a mais recente deixou', async () => {
+    await carregar([MOTIVOS]);
+
+    const antiga = renovar();
+    const antigaRequisicao = http.expectOne(URL);
+    const recente = renovar();
+    const recenteRequisicao = http.expectOne(URL);
+    recenteRequisicao.error(new ProgressEvent('error'));
+    await recente;
+    antigaRequisicao.flush([CAMPI]);
+    await antiga;
+
+    expect(service.estado()).toBe('carregada');
+    expect(permissoesVigentes()).toEqual([MOTIVOS.codigo]);
+  });
+
+  it('uma resposta que não é a lista esperada esvazia as permissões, e não vale como queda', async () => {
+    await carregar([MOTIVOS]);
+
+    const pronta = renovar();
+    http.expectOne(URL).flush({ inesperado: true });
+    await pronta;
+
+    expect(service.estado()).toBe('indisponivel');
+    expect(service.codigos().size).toBe(0);
+  });
+
+  it('esvazia as permissões mantidas depois de uma falha quando a sessão termina', async () => {
+    await carregar([MOTIVOS]);
+    const pronta = renovar();
+    http.expectOne(URL).error(new ProgressEvent('error'));
+    await pronta;
+
+    sessao.set(null);
+    await service.garantir();
+
+    expect(service.estado()).toBe('pendente');
+    expect(service.codigos().size).toBe(0);
+  });
+
+  it('descarta na hora as permissões mantidas quando outra pessoa passa a ser a autenticada', async () => {
+    await carregar([MOTIVOS]);
+    const pronta = renovar();
+    http.expectOne(URL).error(new ProgressEvent('error'));
+    await pronta;
+
+    sessao.set('betina:0');
+    const outra = service.garantir();
+
+    expect(service.estado()).toBe('carregando');
+    expect(service.codigos().size).toBe(0);
+    http.expectOne(URL).error(new ProgressEvent('error'));
+    await outra;
+    expect(service.estado()).toBe('indisponivel');
+    expect(service.codigos().size).toBe(0);
+  });
+
+  it('fica sem permissões quando a primeira carga da pessoa falha por rede', async () => {
     const pronta = service.garantir();
     http.expectOne(URL).error(new ProgressEvent('error'));
     await pronta;

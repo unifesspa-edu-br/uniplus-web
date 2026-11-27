@@ -55,6 +55,9 @@
             <div>
               <dt>Fonte dos valores</dt>
               <dd>{{ f.definicao.valores.fonte.rotulo }}</dd>
+              @if (valoresDeCadaProcesso()) {
+                <dd><span role="status">Os valores vêm da declaração de cada processo.</span></dd>
+              }
             </div>
           }
           @if (f.definicao.formato) {

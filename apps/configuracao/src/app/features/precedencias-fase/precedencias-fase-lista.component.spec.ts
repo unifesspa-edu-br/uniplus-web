@@ -7,7 +7,7 @@ import { PrecedenciasFaseListaComponent } from './precedencias-fase-lista.compon
 const aresta: PrecedenciaFaseDto = {
   id: 'a1',
   antecessoraCodigo: 'INSCRICAO',
-  sucessoraCodigo: 'HOMOLOGACAO',
+  sucessoraCodigo: 'HOMOLOGACAO_INSCRICOES',
   permiteSobreposicao: true,
   criadoEm: '',
 };
@@ -55,9 +55,9 @@ describe('PrecedenciasFaseListaComponent', () => {
     return encontrado;
   };
   const editar = (): HTMLButtonElement =>
-    porNome('Editar precedência entre INSCRICAO e HOMOLOGACAO');
+    porNome('Editar precedência entre INSCRICAO e HOMOLOGACAO_INSCRICOES');
   const remover = (): HTMLButtonElement =>
-    porNome('Remover precedência entre INSCRICAO e HOMOLOGACAO');
+    porNome('Remover precedência entre INSCRICAO e HOMOLOGACAO_INSCRICOES');
   const novo = (): HTMLButtonElement | null =>
     raiz().querySelector<HTMLButtonElement>('#cfg-precedencias-fase-nova');
   const atualizar = (nome: string, valor: unknown): void => {
@@ -71,7 +71,7 @@ describe('PrecedenciasFaseListaComponent', () => {
     expect(antecessora?.textContent).toContain('INSCRICAO');
     expect(antecessora?.textContent).toContain('Inscrição');
     expect(raiz().querySelector('td[data-label="Fase sucessora"]')?.textContent?.trim()).toBe(
-      'HOMOLOGACAO',
+      'HOMOLOGACAO_INSCRICOES',
     );
     expect(raiz().querySelector('td[data-label="Permite sobreposição"]')?.textContent).toContain(
       'Sim',

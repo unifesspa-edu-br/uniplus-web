@@ -56,3 +56,19 @@ export const ROTULOS_DOS_PASSOS = PASSOS.map((passo) => passo.rotulo);
 
 /** O painel de revisão lista os passos anteriores, não a si mesmo. */
 export const REVIEW_NAMES = PASSOS.slice(0, -1).map((passo) => passo.revisao);
+
+/** Posição do passo em que o formulário de inscrição é montado, derivada da ordem única dos passos. */
+export const PASSO_FORMULARIO = ROTULOS_DOS_PASSOS.indexOf('Formulários');
+
+/**
+ * O nome que o menu e o cabeçalho mostram para o passo, dado pelo rótulo. O rótulo é tipado
+ * pela própria lista de passos, então um passo inexistente é defeito de programação.
+ */
+function tituloDoPassoPeloRotulo(rotulo: RotuloDePasso): string {
+  const passo = PASSOS.find((candidato) => candidato.rotulo === rotulo);
+  if (passo === undefined) throw new Error(`O passo "${rotulo}" não existe no wizard.`);
+  return passo.titulo;
+}
+
+/** O nome do passo da fórmula nas mensagens que mandam a pessoa até ele. */
+export const NOME_DO_PASSO_DA_FORMULA = tituloDoPassoPeloRotulo('Fórmula e precisão');

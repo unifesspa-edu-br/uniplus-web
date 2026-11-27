@@ -1,0 +1,141 @@
+<h3 class="form-section__title" [attr.id]="id('homologacao-titulo')">Homologação das inscrições</h3>
+@if (regra.emConsulta()) {
+  @if (regra.regra()) {
+    <ui-valor-em-consulta
+      rotulo="Resultado que publica a lista"
+      seVazio="Resultado não apontado"
+      [valor]="resultadoLido()"
+    />
+    <ui-valor-em-consulta rotulo="Regra em texto" [valor]="descricao()" />
+    <ui-valor-em-consulta
+      rotulo="Condições"
+      seVazio="Nenhuma condição: a fase homologa toda inscrição enviada"
+      [valor]="linhasDaConsulta()"
+    />
+  } @else {
+    <ui-valor-em-consulta
+      rotulo="Regra de homologação das inscrições"
+      seVazio="A fase não declara a regra de homologação das inscrições"
+      [valor]="null"
+    />
+  }
+} @else {
+  @if (!regra.tipoDeclarado()) {
+    <div class="alert alert--warning" role="status">
+      <span class="alert__icon" aria-hidden="true">!</span>
+      <div class="alert__body">
+        <p class="alert__msg">
+          Esta fase tem a regra de homologação das inscrições, mas não declara essa decisão. Marque
+          a decisão em "Decisões que esta fase toma".
+        </p>
+        <button class="btn btn--tertiary btn--sm" type="button" (click)="irParaAsDecisoes()">
+          Ir para Decisões que esta fase toma
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (regra.regra(); as atual) {
+    @let recusasDoAlto = regra.recusasDoAlto();
+    @if (recusasDoAlto.length > 0) {
+      <sel-recusas-do-campo
+        [attr.id]="id(sufixos.recusasDoAlto)"
+        tabindex="-1"
+        [recusas]="recusasDoAlto"
+      />
+    }
+
+    <div class="form-grid">
+      <div class="form-field form-grid__full">
+        <label class="label" [attr.for]="id(sufixos.resultado)">
+          Resultado que publica a lista de inscrições homologadas
+        </label>
+        <select
+          #resultado
+          class="input"
+          [attr.id]="id(sufixos.resultado)"
+          [disabled]="!regra.edicaoLiberada() || resultados().length === 0"
+          [attr.aria-invalid]="regra.erroDoCampo('homologacao.resultado') ? 'true' : null"
+          [attr.aria-describedby]="idsDoResultado()"
+          (change)="regra.apontarResultado(resultado.value)"
+        >
+          <option value="" [selected]="atual.resultadoAtoCodigo === null">
+            Selecione o resultado…
+          </option>
+          @for (opcao of resultados(); track opcao.codigo) {
+            <option [value]="opcao.codigo" [selected]="opcao.codigo === atual.resultadoAtoCodigo">
+              {{ opcao.publicado ? opcao.nome : opcao.nome + ' (não publicado por esta fase)' }}
+            </option>
+          }
+        </select>
+        <p class="field__hint" [attr.id]="id('homologacao-resultado-ajuda')">
+          @if (resultados().length === 0) {
+            Esta fase não publica nenhum resultado com papel. Declare a publicação, com papel de
+            resultado preliminar ou definitivo, em "O que esta fase publica".
+          } @else {
+            Só entram aqui as publicações desta fase que têm papel de resultado.
+          }
+        </p>
+        @let doResultado = regra.recusasDoCampo('homologacao.resultado');
+        @if (doResultado.length > 0) {
+          <sel-recusas-do-campo
+            [attr.id]="id('homologacao-resultado-recusa')"
+            tabindex="-1"
+            [recusas]="doResultado"
+          />
+        }
+      </div>
+    </div>
+
+    <p class="field__hint" [attr.id]="id('homologacao-texto')">
+      <strong>A regra em texto:</strong> {{ descricao() }}.
+    </p>
+
+    @if (semEdicoesDeclaradas()) {
+      <div class="field__hint" [attr.id]="id(sufixos.semEdicoes)">
+        <p>O processo não declarou edições do ENEM. Declare-as no passo {{ nomeDoPassoDaFormula }}.</p>
+        <button class="btn btn--tertiary btn--sm" type="button" (click)="irParaAFormula()">
+          Ir para o passo {{ nomeDoPassoDaFormula }}
+        </button>
+      </div>
+    }
+
+    @for (alternativa of atual.alternativas; track $index) {
+      <sel-alternativa-de-homologacao [posicao]="$index" [alternativa]="alternativa" />
+    }
+
+    <div class="acoes">
+      <button
+        class="btn btn--secondary btn--sm"
+        type="button"
+        [attr.id]="id(sufixos.incluirAlternativa)"
+        [disabled]="!regra.edicaoLiberada()"
+        (click)="regra.incluirAlternativa()"
+      >
+        Incluir alternativa
+      </button>
+      <button
+        class="btn btn--tertiary btn--sm"
+        type="button"
+        [disabled]="!regra.edicaoLiberada()"
+        (click)="regra.retirar()"
+      >
+        Remover a regra de homologação das inscrições
+      </button>
+    </div>
+  } @else {
+    <p class="field__hint" [attr.id]="id('homologacao-ajuda')">
+      Declare a regra para dizer como esta fase homologa as inscrições.
+    </p>
+    <button
+      class="btn btn--secondary"
+      type="button"
+      [attr.id]="id(sufixos.declarar)"
+      [disabled]="!regra.edicaoLiberada()"
+      [attr.aria-describedby]="id('homologacao-ajuda')"
+      (click)="regra.declarar()"
+    >
+      Declarar a regra de homologação das inscrições
+    </button>
+  }
+}

@@ -15,7 +15,9 @@ type PassoQueGrava = Exclude<RotuloDePasso, 'Revisão e publicação'>;
  * O FADA conta quando o processo declarou se aplica ou não o bônus (`aplicaBonusRegional`
  * existe, nas duas respostas). O Desempate conta com ao menos um critério, ou quando o resultado
  * é importado: a lista já vem classificada e o desempate não é obrigatório. Fórmula e Eliminação
- * compartilham a classificação, gravada junto no passo Eliminação.
+ * gravam a mesma classificação, e as regras de eliminação são opcionais: o servidor não devolve
+ * sinal de que a Eliminação foi visitada, e lista vazia é uma gravação válida. Por isso os dois
+ * contam com a classificação gravada, e uma pendência do checklist tira a marca.
  */
 function gravadoPorPasso(dto: ProcessoSeletivoDto): Record<PassoQueGrava, boolean> {
   return {

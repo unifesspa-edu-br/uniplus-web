@@ -1,5 +1,6 @@
 import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import { OrigemCandidatosSelecionada } from '../../processo-seletivo.models';
 import {
   PROCESSO_ID,
@@ -21,7 +22,7 @@ describe('gravação da classificação', () => {
     function prepararImportadaComEnem(origem: OrigemCandidatosSelecionada): void {
       store.patchObjectSection('identificacao', { origemCandidatos: origem });
       store.patchObjectSection('classificacao', {
-        regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+        regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
         regraCalculoVersao: '1.0',
         regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
         regraOrdemAlocacaoVersao: '1.0',
@@ -79,7 +80,9 @@ describe('gravação da classificação', () => {
 
       await expect(gravacao).resolves.toEqual({
         valid: false,
-        messages: ['Edições do ENEM, no passo Fórmula: A edição informada não é aceita.'],
+        messages: [
+          `Edições do ENEM, no passo ${NOME_DO_PASSO_DA_FORMULA}: A edição informada não é aceita.`,
+        ],
       });
       expect(store.classificacao.recusaDasEdicoesDoEnem()).toBe('A edição informada não é aceita.');
     });

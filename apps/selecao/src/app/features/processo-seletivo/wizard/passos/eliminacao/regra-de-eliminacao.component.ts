@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import type { RegraEliminacaoConfigurada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
@@ -35,6 +36,7 @@ import {
 })
 export class RegraDeEliminacaoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
+  protected readonly nomeDoPassoDaFormula = NOME_DO_PASSO_DA_FORMULA;
   private readonly catalogos = inject(CatalogosDeClassificacao);
   private readonly gravacao = inject(GravacaoDaClassificacao);
 

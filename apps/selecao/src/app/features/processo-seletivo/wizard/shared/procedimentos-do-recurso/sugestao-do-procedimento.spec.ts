@@ -6,14 +6,17 @@ import { describe, expect, it } from 'vitest';
 
 import { sugerirProcedimentoDeRecurso } from './sugestao-do-procedimento';
 
-const RECORRECAO = 'PROCEDIMENTO-RECURSO-RECORRECAO';
-const RECALCULO = 'PROCEDIMENTO-RECURSO-RECALCULO';
+const RECORRECAO = 'PROCEDIMENTO_RECURSO_RECORRECAO';
+const RECALCULO = 'PROCEDIMENTO_RECURSO_RECALCULO';
 
 function regra(codigo: string, parcial: Partial<RegraCatalogoDto> = {}): RegraCatalogoDto {
   return {
     codigo,
     versao: 'v1',
-    tipo: { codigo: 'REGRA_PROCEDIMENTO_RECURSO' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Procedimento de recurso' },
+    tipo: {
+      codigo: 'REGRA_PROCEDIMENTO_RECURSO' as RegraCatalogoDto['tipo']['codigo'],
+      rotulo: 'Procedimento de recurso',
+    },
     declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: 'Referência institucional',
@@ -54,7 +57,12 @@ describe('sugestão pela forma da etapa', () => {
     ).toBeNull();
     expect(
       sugerirProcedimentoDeRecurso(Forma.OBJETIVA, false, [
-        regra(RECALCULO, { tipo: { codigo: 'REGRA_CALCULO' as RegraCatalogoDto['tipo']['codigo'], rotulo: 'Regra de cálculo' } }),
+        regra(RECALCULO, {
+          tipo: {
+            codigo: 'REGRA_CALCULO' as RegraCatalogoDto['tipo']['codigo'],
+            rotulo: 'Regra de cálculo',
+          },
+        }),
       ]),
     ).toBeNull();
   });

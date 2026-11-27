@@ -52,7 +52,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       await irAoPasso(page, 'Fórmula e precisão', testInfo);
       await page
         .getByLabel('Regra de cálculo', { exact: true })
-        .selectOption('CLASSIFICACAO-IMPORTADA|1.0');
+        .selectOption('CLASSIFICACAO_IMPORTADA|1.0');
 
       await expect(page.getByLabel('Regra de arredondamento', { exact: true })).toBeHidden();
 
@@ -84,12 +84,12 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       await declararFormulaLocal(page);
       await page.getByLabel('Classificação baseada em provas').check();
 
-      await page.getByRole('button', { name: 'Próximo' }).click();
+      await page.getByRole('button', { name: 'Gravar e avançar' }).click();
 
       const seletor = page.getByLabel('Resolução de Peso por Área', { exact: true });
       await expect(seletor).toHaveAttribute('aria-invalid', 'true');
       await expect(page.locator('.step-error')).toContainText(
-        'Selecione a resolução de Peso por Área usada na nota, no passo Fórmula.',
+        'Selecione a resolução de Peso por Área usada na nota, no passo Fórmula e precisão.',
       );
     });
 
@@ -101,7 +101,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       const escala = page.getByLabel('Escala da nota final', { exact: true });
 
       await escala.fill('cem');
-      await page.getByRole('button', { name: 'Próximo' }).click();
+      await page.getByRole('button', { name: 'Gravar e avançar' }).click();
 
       await expect(escala).toHaveAttribute('aria-invalid', 'true');
       await expect(escala).toHaveAccessibleDescription(/Use apenas números/);

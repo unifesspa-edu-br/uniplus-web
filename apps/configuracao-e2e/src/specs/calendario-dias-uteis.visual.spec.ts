@@ -122,14 +122,41 @@ test.describe('Calendário de dias úteis — localidade no detalhe (#524)', () 
     await expect(page.getByRole('button', { name: /^5 de abril de 2026/ })).toBeVisible();
     const pagina = page.locator('.cfg-page');
     const gap = await pagina.evaluate((el) => Number.parseFloat(getComputedStyle(el).rowGap));
-    const mensal = await caixa(pagina.locator('cfg-calendario-mensal'));
     const resumo = await caixa(pagina.locator('dl.cfg-calendario-resumo'));
+    const recorte = await caixa(pagina.locator('cfg-recorte-da-grade'));
+    const mensal = await caixa(pagina.locator('cfg-calendario-mensal'));
     const geoPagina = await caixa(pagina);
-    expect(Math.abs(mensal.y - resumo.base - gap)).toBeLessThanOrEqual(1);
+    expect(Math.abs(recorte.y - resumo.base - gap)).toBeLessThanOrEqual(1);
+    expect(Math.abs(mensal.y - recorte.base - gap)).toBeLessThanOrEqual(1);
     expect(Math.abs(geoPagina.base - mensal.base)).toBeLessThanOrEqual(1);
-    for (const sobreposicao of ['cfg-ocorrencias-do-dia', 'cfg-dia-nao-util-dialogo']) {
+    for (const sobreposicao of [
+      'cfg-ocorrencias-do-dia',
+      'cfg-dia-nao-util-dialogo',
+      '.cfg-filtro-removido',
+    ]) {
       await expect(pagina.locator(sobreposicao)).toHaveCSS('position', 'absolute');
     }
+  });
+
+  test('o aviso do filtro aberto volta ao fluxo, sem cobrir o calendário, e a região de status segue na página', async ({
+    page,
+  }) => {
+    await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
+    await expect(page.getByRole('button', { name: /^5 de abril de 2026/ })).toBeVisible();
+    const aviso = page.locator('.cfg-filtro-removido');
+    await expect(aviso.locator('[role="status"]')).toHaveCount(1);
+    await expect(aviso).toHaveCSS('position', 'absolute');
+
+    await aviso.evaluate((el) => {
+      el.classList.add('cfg-filtro-removido--aberto');
+      el.querySelector('[role="status"]')?.replaceChildren('O filtro saiu.');
+    });
+
+    await expect(aviso).toHaveCSS('position', 'static');
+    await expect(aviso.locator('[role="status"]')).toHaveText('O filtro saiu.');
+    const geoAviso = await caixa(aviso);
+    const geoMensal = await caixa(page.locator('cfg-calendario-mensal'));
+    expect(geoAviso.base).toBeLessThanOrEqual(geoMensal.y);
   });
 
   test('detalhe não tem violações serious/critical', async ({ page }) => {

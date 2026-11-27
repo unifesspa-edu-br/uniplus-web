@@ -60,7 +60,10 @@ describe('UserHeaderInfoComponent', () => {
 
   describe('perfis de acesso no menu', () => {
     const perfisNaOrdemRecebida = [
-      { ...perfil('Consulta institucional', null), escopoTipo: 'instituicao' as const },
+      {
+        ...perfil('Consulta institucional', null),
+        escopoTipo: { codigo: 'INSTITUICAO' as const, rotulo: 'Instituição' },
+      },
       perfil('Gestor de processo seletivo', 'CEPS'),
     ];
 

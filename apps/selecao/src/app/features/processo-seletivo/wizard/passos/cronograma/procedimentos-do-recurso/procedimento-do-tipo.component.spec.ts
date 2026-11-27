@@ -9,7 +9,7 @@ import { tiposNaTela } from './procedimentos-na-tela';
 import { procedimentoDoDocumento, regraDoCatalogo } from './procedimentos.testing';
 import { rotuloDaApi } from '../../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 
-const CODIGO = 'PROCEDIMENTO-RECURSO-RECORRECAO';
+const CODIGO = 'PROCEDIMENTO_RECURSO_RECORRECAO';
 const CHAVE = `${CODIGO}|v1`;
 const DECLARADO = procedimentoDoDocumento({ regra: { codigo: CODIGO, versao: 'v1' } });
 const ITEM = { itemDeAvaliacaoChave: 'argumentacao' };

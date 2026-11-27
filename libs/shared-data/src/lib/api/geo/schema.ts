@@ -171,7 +171,7 @@ export interface paths {
                 readonly query?: {
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
-                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.cursor.limit_invalido (ADR-0026). */
                     readonly limit?: number;
                     /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                     readonly direction?: PathsApiCidadesCodigoIbgeDistritosGetParametersQueryDirection;
@@ -276,7 +276,7 @@ export interface paths {
                     readonly q?: string;
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
-                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.cursor.limit_invalido (ADR-0026). */
                     readonly limit?: number;
                     /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                     readonly direction?: PathsApiCidadesCodigoIbgeBairrosGetParametersQueryDirection;
@@ -381,7 +381,7 @@ export interface paths {
                     readonly q?: string;
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
-                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.cursor.limit_invalido (ADR-0026). */
                     readonly limit?: number;
                     /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                     readonly direction?: PathsApiCidadesCodigoIbgeLogradourosGetParametersQueryDirection;
@@ -487,7 +487,7 @@ export interface paths {
                     readonly q?: string;
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
-                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.cursor.limit_invalido (ADR-0026). */
                     readonly limit?: number;
                     /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                     readonly direction?: PathsApiCidadesGetParametersQueryDirection;
@@ -655,7 +655,7 @@ export interface paths {
                 readonly query?: {
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
-                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.cursor.limit_invalido (ADR-0026). */
                     readonly limit?: number;
                     /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                     readonly direction?: PathsApiEstadosGetParametersQueryDirection;
@@ -827,16 +827,15 @@ export interface paths {
                 readonly path?: never;
                 readonly cookie?: never;
             };
+            /** @description Pacote dos Correios em formato zip, enviado como o corpo da requisição. */
             readonly requestBody: {
                 readonly content: {
-                    readonly "application/json": components["schemas"]["DispararImportacaoRequest"];
-                    readonly "text/json": components["schemas"]["DispararImportacaoRequest"];
-                    readonly "application/*+json": components["schemas"]["DispararImportacaoRequest"];
+                    readonly "application/zip": string;
                 };
             };
             readonly responses: {
-                /** @description Accepted */
-                readonly 202: {
+                /** @description OK */
+                readonly 200: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -846,13 +845,15 @@ export interface paths {
                         readonly "text/json": components["schemas"]["ImportacaoGeoDto"];
                     };
                 };
-                /** @description Bad Request */
-                readonly 400: {
+                /** @description Accepted */
+                readonly 202: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                        readonly "text/plain": components["schemas"]["ImportacaoGeoDto"];
+                        readonly "application/json": components["schemas"]["ImportacaoGeoDto"];
+                        readonly "text/json": components["schemas"]["ImportacaoGeoDto"];
                     };
                 };
                 /** @description Unauthorized */
@@ -875,6 +876,24 @@ export interface paths {
                 };
                 /** @description Conflict */
                 readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Payload Too Large */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unsupported Media Type */
+                readonly 415: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -966,6 +985,15 @@ export interface paths {
                 };
                 /** @description Not Found */
                 readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Internal Server Error */
+                readonly 500: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -1227,9 +1255,6 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
-        readonly DispararImportacaoRequest: {
-            readonly versao: string;
-        };
         readonly DistritoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -1271,6 +1296,7 @@ export interface components {
             readonly concluidoEm: null | string;
             readonly disparadoPor: string;
             readonly mensagem: null | string;
+            readonly pacote: null | components["schemas"]["PacoteDaImportacaoDto"];
             readonly relatorio: null | components["schemas"]["RelatorioImportacaoDto"];
             readonly _links?: null | {
                 readonly [key: string]: string;
@@ -1319,6 +1345,11 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly PacoteDaImportacaoDto: {
+            readonly sha256: string;
+            /** Format: int64 */
+            readonly tamanhoEmBytes: number | string;
+        };
         readonly ProblemDetails: {
             readonly type?: null | string;
             readonly title?: null | string;
@@ -1326,6 +1357,10 @@ export interface components {
             readonly status?: null | number | string;
             readonly detail?: null | string;
             readonly instance?: null | string;
+            /** @description Identificador estável do erro. A página do portal que o explica é o campo `type`. */
+            readonly code: string;
+            /** @description Identificador da requisição, para localizar o erro nos registros do serviço. */
+            readonly traceId?: string;
         };
         readonly RelatorioImportacaoDto: {
             readonly versaoDataset: string;

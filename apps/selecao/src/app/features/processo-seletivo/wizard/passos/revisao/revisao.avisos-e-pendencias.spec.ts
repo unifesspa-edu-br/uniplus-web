@@ -152,7 +152,7 @@ describe('RevisaoPassoComponent', () => {
 
       const item = itemDaMensagem('Resolução de Pesos por Área');
       expect(item.querySelector('.revisao-item__onde')?.textContent?.trim()).toBe(
-        `Escolha a resolução de Peso por Área. A escolha é gravada quando a classificação é gravada, no passo ${nomeDoPasso('Eliminação')}, ou na publicação do processo, e até lá esta pendência continua aqui.`,
+        `Escolha a resolução de Peso por Área. A escolha é gravada quando a classificação é gravada, ao avançar do passo ${nomeDoPasso('Fórmula e precisão')} ou do passo ${nomeDoPasso('Eliminação')}, ou na publicação do processo, e até lá esta pendência continua aqui.`,
       );
 
       const botao = item.querySelector<HTMLButtonElement>('.revisao-item__ir');
@@ -210,7 +210,7 @@ describe('RevisaoPassoComponent', () => {
       const daResolucao = descricao('Resolução de Pesos por Área');
       expect(daResolucao).toContain('Resolução de Pesos por Área com quadro congelado');
       expect(daResolucao).toContain(
-        `A escolha é gravada quando a classificação é gravada, no passo ${nomeDoPasso('Eliminação')}`,
+        `A escolha é gravada quando a classificação é gravada, ao avançar do passo ${nomeDoPasso('Fórmula e precisão')} ou do passo ${nomeDoPasso('Eliminação')}`,
       );
       const daOferta = descricao('Grupo de área do ENEM congelado');
       expect(daOferta).toContain('Grupo de área do ENEM congelado em toda oferta');

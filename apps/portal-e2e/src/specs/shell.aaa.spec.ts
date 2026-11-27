@@ -232,7 +232,11 @@ async function mockVitrine(
       contentType: 'application/json',
       body: JSON.stringify({
         apiUrl: API_URL,
-        oidc: { issuerUrl: ISSUER_URL, clientId: 'portal-web' },
+        oidc: {
+          issuerUrl: ISSUER_URL,
+          clientId: 'portal-web',
+          antecedenciaDaRenovacaoEmSegundos: 60,
+        },
       }),
     }),
   );

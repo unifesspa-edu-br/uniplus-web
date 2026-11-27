@@ -3,7 +3,13 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Observable, firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { VENDOR_MIME_TOKEN, apiResultInterceptor, createCursor } from '@uniplus/shared-core/http';
+import {
+  RECUSA_DE_PERMISSAO_TRATADA_NA_CHAMADA,
+  VENDOR_MIME_TOKEN,
+  apiResultInterceptor,
+  comRecusaDePermissaoTratadaNaChamada,
+  createCursor,
+} from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { ModelosFormularioApi } from './modelos-formulario.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
@@ -75,6 +81,33 @@ describe('ModelosFormularioApi', () => {
 
     const resultado = await promise;
     expect(resultado.ok && resultado.data.map((m) => m.id)).toEqual(['a', 'b']);
+  });
+
+  it('listarTodos() leva a marca da chamada a todas as páginas, com o tipo de resposta do recurso', async () => {
+    const promise = firstValueFrom(api.listarTodos({}, comRecusaDePermissaoTratadaNaChamada()));
+    const primeira = controller.expectOne((r) => r.url === ADMIN && !r.params.has('cursor'));
+    primeira.flush([{ id: 'a' }], {
+      headers: { Link: `<${ADMIN}?cursor=p2&direction=next>; rel="next"` },
+    });
+    const segunda = controller.expectOne((r) => r.url === ADMIN && r.params.has('cursor'));
+    segunda.flush([{ id: 'b' }]);
+    await promise;
+
+    for (const { request } of [primeira, segunda]) {
+      expect(request.context.get(RECUSA_DE_PERMISSAO_TRATADA_NA_CHAMADA)).toBe(true);
+      expect(request.context.get(VENDOR_MIME_TOKEN)).toEqual({
+        resource: 'modelo-formulario',
+        version: 1,
+      });
+    }
+  });
+
+  it('listar() sem marca deixa a recusa de permissão ao tratamento geral', async () => {
+    const promise = firstValueFrom(api.listar());
+    const req = controller.expectOne((r) => r.url === ADMIN);
+    expect(req.request.context.get(RECUSA_DE_PERMISSAO_TRATADA_NA_CHAMADA)).toBe(false);
+    req.flush([]);
+    await promise;
   });
 
   it('listarTodos() entrega a recusa de uma página, sem lista parcial', async () => {

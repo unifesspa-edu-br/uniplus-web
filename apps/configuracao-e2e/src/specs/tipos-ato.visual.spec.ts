@@ -97,17 +97,22 @@ test.describe('Tipo de ato — lista e formulário', () => {
     ).toEqual([]);
   });
 
-  // O contrato da gaveta do módulo: a rolagem é do formulário, e o rodapé fica
-  // fora dele para não rolar junto com os campos.
-  test('a gaveta rola pelo formulário e mantém o rodapé fixo', async ({ page }) => {
+  // O contrato da gaveta do módulo: a rolagem é do corpo do painel, que contém o formulário, e o
+  // rodapé fica fora do formulário.
+  test('a gaveta rola pelo corpo do painel e mantém o rodapé fixo', async ({ page }) => {
     await page.getByRole('button', { name: 'Novo tipo de ato' }).first().click();
 
     const formulario = page.locator('form.form-drawer__form');
     await expect(formulario).toBeVisible();
-    await expect(formulario).toHaveCSS('overflow-y', 'auto');
+    const corpo = page.locator('.uni-drawer__body').filter({ has: formulario });
+    await expect(corpo).toHaveCSS('overflow-y', 'auto');
 
     const rodape = page.locator('.form-drawer__footer');
     await expect(rodape).toBeVisible();
+    const painel = page.locator('.uni-drawer__panel').filter({ has: formulario });
+    await expect
+      .poll(async () => Math.abs((await caixa(rodape)).base - (await caixa(painel)).base))
+      .toBeLessThanOrEqual(TOLERANCIA);
     await expect(formulario.locator('.form-drawer__footer')).toHaveCount(0);
     await expect(rodape.getByRole('button', { name: 'Salvar tipo de ato' })).toBeVisible();
   });

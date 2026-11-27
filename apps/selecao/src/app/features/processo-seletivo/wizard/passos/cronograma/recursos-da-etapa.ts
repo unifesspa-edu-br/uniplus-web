@@ -25,7 +25,7 @@ export function regraDoCatalogo(
   regras: readonly RegraCatalogoDto[],
   ancora: RecursoDaEtapa['ancora'],
 ): RegraCatalogoDto | undefined {
-  const alvo = ancora === 'PUBLICACAO_DO_ATO' ? 'ANCORADO-EM-ATO' : 'ANCORADO-EM-CIENCIA';
+  const alvo = ancora === 'PUBLICACAO_DO_ATO' ? 'PUBLICACAO_DO_ATO' : 'CIENCIA';
   return regras.find((regra) => regra.codigo.includes(alvo)) ?? regras[0];
 }
 

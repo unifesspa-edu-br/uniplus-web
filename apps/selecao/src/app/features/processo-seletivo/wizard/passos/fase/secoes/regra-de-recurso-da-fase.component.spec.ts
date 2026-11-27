@@ -11,6 +11,7 @@ import type { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { umaLeituraDoRecurso } from '../../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
 import { fase, montarFase } from '../fase.testing';
 import { faseComRegra, PREFIXO, REGRA } from './regra-de-recurso-da-fase.testing';
+import { conferirSemPendenciasDosMotivos } from '../motivos/motivos-nos-passos.testing';
 
 describe('RegraDeRecursoDaFaseComponent', () => {
   let controller: HttpTestingController;
@@ -29,7 +30,7 @@ describe('RegraDeRecursoDaFaseComponent', () => {
     );
   });
 
-  afterEach(() => controller.verify());
+  afterEach(() => conferirSemPendenciasDosMotivos(controller));
 
   const campo = <T extends HTMLElement = HTMLElement>(sufixo: string): T =>
     nativo.querySelector<T>(`#${PREFIXO}-${sufixo}`) as T;
@@ -186,7 +187,9 @@ describe('RegraDeRecursoDaFaseComponent', () => {
       opcao('efeito', EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO).click();
       detectar();
 
-      expect(regraNoRascunho()?.efeitoSuspensivo).toBe(EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO);
+      expect(regraNoRascunho()?.efeitoSuspensivo).toBe(
+        EfeitoSuspensivoCodigo.SEM_EFEITO_SUSPENSIVO,
+      );
     });
 
     it('com instância superior, não oferece "não guarda"', () => {

@@ -20,8 +20,9 @@
 
 @if (areas.gravaComAClassificacao()) {
   <p class="alert alert--info" role="status">
-    Os critérios de desempate serão gravados junto com a classificação, no passo Eliminação: o
-    critério por área precisa do quadro de Peso por Área, que é congelado nessa gravação.
+    Os critérios de desempate serão gravados junto com a classificação, ao avançar dos passos
+    Fórmula e precisão ou Eliminação: o critério por área precisa do quadro de Peso por Área, que é
+    congelado nessa gravação.
   </p>
 }
 
@@ -60,9 +61,9 @@
 @if (idosoSemApuracao()) {
   <div class="alert alert--warning" role="status" id="desemp-idoso-sem-apuracao">
     <p>
-      O desempate por idoso compara a faixa etária do candidato, e o formulário de inscrição está
-      em "Não apura idade". Sem declarar em que instante a idade é apurada, o critério não tem
-      como avaliar quem é idoso.
+      O desempate por idoso compara a faixa etária do candidato, e o formulário de inscrição está em
+      "Não apura idade". Sem declarar em que instante a idade é apurada, o critério não tem como
+      avaliar quem é idoso.
     </p>
     <button
       type="button"
@@ -88,9 +89,15 @@
     escolha, sem campo na tela para consertar.
   -->
   <p class="field__hint">
-    O catálogo tem {{ regrasSemSuporte() === 1 ? 'uma regra' : regrasSemSuporte() + ' regras' }}
-    que esta tela ainda não sabe configurar, e que por isso não {{ regrasSemSuporte() === 1 ? 'é
-    oferecida' : 'são oferecidas' }} aqui.
+    O catálogo tem {{ regrasSemSuporte() === 1 ? 'uma regra' : regrasSemSuporte() + ' regras' }} que
+    esta tela ainda não sabe configurar, e que por isso não
+    {{
+      regrasSemSuporte() === 1
+        ? 'é
+    oferecida'
+        : 'são oferecidas'
+    }}
+    aqui.
   </p>
 }
 
@@ -102,12 +109,7 @@
 <p class="sr-only" role="status" aria-live="polite">{{ edicao.anuncio() }}</p>
 
 <div class="desempate-list">
-  @for (
-    criterio of criterios();
-    track $index;
-    let indice = $index;
-    let last = $last
-  ) {
+  @for (criterio of criterios(); track $index; let indice = $index; let last = $last) {
     <!--
       `role="group"`, não `<section>` com nome: `<section>` nomeada vira landmark `region`, e
       dez critérios punham dez landmarks na lista de navegação do leitor de tela, competindo

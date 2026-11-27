@@ -5,6 +5,10 @@ import {
 } from '../../shared/recusas/controle-do-recurso';
 import { campoDaBancaReconhecida } from '../../shared/bancas/campo-da-banca';
 import type { LocalDaRecusa } from '../../shared/recusas/local-da-recusa';
+import {
+  campoDaHomologacao,
+  type CampoDaHomologacaoDaFase,
+} from './homologacao/campo-da-homologacao';
 import type { CampoDaFase } from './configuracao-da-fase';
 
 /** O campo das recusas que a fase recebe mas a tela não mostra num controle: ficam no topo da fase. */
@@ -22,7 +26,7 @@ export type CampoDaPublicacaoDaFase =
  * Onde a recusa do servidor aparece: os campos que a conferência local já nomeia, mais os que só o
  * servidor recusa. `produtos` é a lista de publicações inteira e `produtos.1.papel` o papel da
  * segunda linha dela. `recurso` é a regra de recurso inteira, para a recusa que não aponta um
- * controle dela, e `NO_TOPO_DA_FASE` é a fase inteira ou um campo dela que a tela mostra sem
+ * controle dela, `homologacao.*` o campo da regra de homologação das inscrições, e `NO_TOPO_DA_FASE` é a fase inteira ou um campo dela que a tela mostra sem
  * controle de recusa.
  */
 export type CampoDaRecusaDaFase =
@@ -30,6 +34,7 @@ export type CampoDaRecusaDaFase =
   | CampoDaFase
   | CampoDaPublicacaoDaFase
   | CampoDoRecursoDaFase
+  | CampoDaHomologacaoDaFase
   | 'inicio'
   | 'fim'
   | 'noMesmoMomentoDaAnterior'
@@ -69,6 +74,16 @@ const LINHA_DE_PUBLICACAO = /^produtos\.(\d+)(?:\.|$)/;
 /** O que a regra de recurso tem sem controle de recusa: a recusa fica na regra inteira. */
 const CAMPOS_DA_REGRA_SEM_CONTROLE: ReadonlySet<string> = new Set(['procedimentosderecurso']);
 
+/** O que cada parte da fase que tem seção própria faz com o resto do caminho da recusa. */
+const RAMOS_DA_FASE: ReadonlyMap<string, (resto: string[]) => CampoDaRecusaDaFase | null> = new Map(
+  [
+    ['regrarecurso', ([campo = '']) => campoDoRecurso(campo)],
+    ['produtos', (resto) => campoDaPublicacao(resto)],
+    ['regradehomologacao', (resto) => campoDaHomologacao(resto)],
+    ['bancasrequeridas', (resto) => campoDaBancaReconhecida('bancasRequeridas', resto)],
+  ],
+);
+
 /**
  * O campo da fase sob o qual a recusa do servidor aparece. `NO_TOPO_DA_FASE` é a fase inteira ou
  * um campo dela que a tela mostra sem controle de recusa; `null` é o caminho que a fase não
@@ -78,9 +93,8 @@ export function campoDaRecusaDaFase(local: LocalDaRecusa): CampoDaRecusaDaFase |
   if (local.dono !== 'fase' || local.caminho === null) return null;
   const [primeiro, ...resto] = local.caminho.split('.');
   const chave = primeiro.toLowerCase();
-  if (chave === 'regrarecurso') return campoDoRecurso(resto[0] ?? '');
-  if (chave === 'produtos') return campoDaPublicacao(resto);
-  if (chave === 'bancasrequeridas') return campoDaBancaReconhecida('bancasRequeridas', resto);
+  const ramo = RAMOS_DA_FASE.get(chave);
+  if (ramo !== undefined) return ramo(resto);
   if (chave === '' || CAMPOS_NO_TOPO_DA_FASE.has(chave)) return NO_TOPO_DA_FASE;
   return CAMPOS_DA_FASE.get(chave) ?? null;
 }

@@ -60,6 +60,15 @@ async function instalarTiposDoDado(page: Page): Promise<void> {
   );
 }
 
+async function instalarHipotesesLegais(page: Page): Promise<void> {
+  await page.route(/\/api\/configuracao\/vocabularios\/hipoteses-legais-tratamento$/, (r) =>
+    responder(r, 200, [
+      { codigo: 'EXECUCAO_POLITICAS_PUBLICAS', rotulo: 'Execução de políticas públicas' },
+      { codigo: 'OBRIGACAO_LEGAL', rotulo: 'Cumprimento de obrigação legal' },
+    ]),
+  );
+}
+
 type Recarga = 'com-o-fato' | 'sem-o-fato' | 'com-falha';
 
 interface RespostaDaEscrita {
@@ -99,6 +108,7 @@ class ApiDosFatos {
       responder(r, 200, []),
     );
     await instalarTiposDoDado(page);
+    await instalarHipotesesLegais(page);
     await page.route(ROTA_DA_LISTA, (route) => this.naLista(route));
     await page.route(ROTA_DO_FATO, (route) => this.noFato(route));
   }

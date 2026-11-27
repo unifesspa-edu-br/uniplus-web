@@ -1,11 +1,16 @@
-import { prazoDoPerfil, type PerfilConcedido } from './perfil-concedido.model';
+import {
+  escopoDoPerfil,
+  prazoDoPerfil,
+  UNIDADE_NAO_IDENTIFICADA,
+  type PerfilConcedido,
+} from './perfil-concedido.model';
 
 function comPrazo(validaAte: string | null): PerfilConcedido {
   return {
     concessaoId: 'c-1',
     perfilId: 'p-1',
     nome: 'Gestor de processo seletivo',
-    escopoTipo: 'unidade',
+    escopoTipo: { codigo: 'UNIDADE', rotulo: 'Unidade' },
     unidadeId: 'u-1',
     unidadeSigla: 'CEPS',
     unidadeNome: 'Centro de Processos Seletivos',
@@ -23,5 +28,30 @@ describe('prazoDoPerfil', () => {
   it('não tem prazo quando a concessão não vence ou a data é ilegível', () => {
     expect(prazoDoPerfil(comPrazo(null))).toBeNull();
     expect(prazoDoPerfil(comPrazo('não é data'))).toBeNull();
+  });
+});
+
+describe('escopoDoPerfil', () => {
+  const unidade = comPrazo(null);
+  const instituicao: PerfilConcedido = {
+    ...unidade,
+    escopoTipo: { codigo: 'INSTITUICAO', rotulo: 'Toda a instituição' },
+    unidadeId: null,
+    unidadeSigla: null,
+    unidadeNome: null,
+  };
+
+  it('mostra o rótulo da API para o perfil da instituição inteira', () => {
+    expect(escopoDoPerfil(instituicao)).toBe('Toda a instituição');
+  });
+
+  it('mostra a sigla da unidade, ou o nome sem sigla, para o perfil de unidade', () => {
+    expect(escopoDoPerfil(unidade)).toBe('CEPS');
+    expect(escopoDoPerfil({ ...unidade, unidadeSigla: ' ' })).toBe('Centro de Processos Seletivos');
+  });
+
+  it('não confunde perfil de unidade sem dados da unidade com o da instituição', () => {
+    const semDados = { ...unidade, unidadeSigla: null, unidadeNome: null };
+    expect(escopoDoPerfil(semDados)).toBe(UNIDADE_NAO_IDENTIFICADA);
   });
 });

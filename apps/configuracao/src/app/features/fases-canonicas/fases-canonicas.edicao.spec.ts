@@ -95,7 +95,7 @@ describe('FasesCanonicasPage — edição pelo drawer', () => {
     const faseHomologacao: FaseCanonicaDto = {
       ...faseAvaliacaoSeed,
       id: 'f-homolog',
-      codigo: 'HOMOLOGACAO',
+      codigo: 'HOMOLOGACAO_INSCRICOES',
       agrupaEtapas: false,
       admiteAgruparEtapas: false,
       admiteComplementacao: true,

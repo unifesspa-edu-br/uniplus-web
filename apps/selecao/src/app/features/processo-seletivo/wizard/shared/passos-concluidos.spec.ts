@@ -19,13 +19,47 @@ function rotulosConcluidos(
 }
 
 describe('passosConcluidosDe', () => {
-  it('conta a Fórmula e a Eliminação juntas, porque a classificação é gravada num comando só', () => {
-    const rotulos = rotulosConcluidos({
-      classificacao: {} as ProcessoSeletivoDto['classificacao'],
+  describe('classificação gravada', () => {
+    const regraDeCalculo = (codigo: string) => ({ codigo, versao: '1.0' });
+    const classificacaoCom = (codigo: string, regrasEliminacao: readonly object[]) =>
+      ({
+        regraCalculo: regraDeCalculo(codigo),
+        regrasEliminacao,
+      }) as unknown as ProcessoSeletivoDto['classificacao'];
+
+    it('sem regra de eliminação, conta a Fórmula e a Eliminação: a lista vazia é uma gravação válida', () => {
+      const rotulos = rotulosConcluidos({
+        classificacao: classificacaoCom('FORMULA_MEDIA_PONDERADA', []),
+      });
+
+      expect(rotulos).toContain('Fórmula e precisão');
+      expect(rotulos).toContain('Eliminação');
     });
 
-    expect(rotulos).toContain('Fórmula e precisão');
-    expect(rotulos).toContain('Eliminação');
+    it('com ao menos uma regra de eliminação, conta a Fórmula e a Eliminação', () => {
+      const rotulos = rotulosConcluidos({
+        classificacao: classificacaoCom('FORMULA_MEDIA_PONDERADA', [{}]),
+      });
+
+      expect(rotulos).toContain('Fórmula e precisão');
+      expect(rotulos).toContain('Eliminação');
+    });
+
+    it('importada, que dispensa a lista de regras, conta a Fórmula e a Eliminação', () => {
+      const rotulos = rotulosConcluidos({
+        classificacao: classificacaoCom('CLASSIFICACAO_IMPORTADA', []),
+      });
+
+      expect(rotulos).toContain('Fórmula e precisão');
+      expect(rotulos).toContain('Eliminação');
+    });
+
+    it('sem classificação gravada, não conta nenhum dos dois', () => {
+      const rotulos = rotulosConcluidos({ classificacao: null });
+
+      expect(rotulos).not.toContain('Fórmula e precisão');
+      expect(rotulos).not.toContain('Eliminação');
+    });
   });
 
   it('conta o FADA nas duas respostas e não conta enquanto o servidor não tem a declaração', () => {
@@ -60,7 +94,7 @@ describe('passosConcluidosDe', () => {
 
     const rotulos = rotulosConcluidos(
       {
-        classificacao: {} as ProcessoSeletivoDto['classificacao'],
+        classificacao: { regraCalculo: { codigo: 'X' }, regrasEliminacao: [] } as never,
         criteriosDesempate: [{}] as never,
       },
       checklist,

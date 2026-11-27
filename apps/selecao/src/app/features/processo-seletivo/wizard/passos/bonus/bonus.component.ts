@@ -17,6 +17,7 @@ import {
   ValorLegivelDirective,
 } from '@uniplus/shared-ui/components';
 
+import { PASSO_FORMULARIO } from '../../processo-seletivo.data';
 import { ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
@@ -97,6 +98,16 @@ export class BonusPassoComponent {
     const bonus = this.store.draft().bonus;
     return regrasEscolhiveis(this.catalogos.regrasBonus(), bonus.regraCodigo, bonus.regraVersao);
   });
+
+  /** Leva ao passo em que o formulário de inscrição é montado, de onde saem as opções da escolha. */
+  irParaFormularios(): void {
+    this.store.goTo(PASSO_FORMULARIO);
+  }
+
+  /** Se o formulário de inscrição já tem algum item: a lista vazia, então, não é de formulário por montar. */
+  readonly formularioMontado = computed(
+    () => (this.store.draft().formulario.conteudo.itens ?? []).length > 0,
+  );
 
   /** Se o passo pede o fato que decide quem recebe o acréscimo. */
   readonly citaElegibilidade = computed(() => citaFatoDeElegibilidade(this.store.draft()));

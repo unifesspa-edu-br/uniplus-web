@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import {
   PROCESSO_ID,
@@ -115,7 +116,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: gravação e rec
       expect(resultado).toEqual({
         valid: false,
         messages: [
-          'Critério de desempate 1: a classificação gravada não tem o quadro de Peso por Área; escolha a resolução no passo Fórmula, se ainda não escolheu, e grave a classificação no passo Eliminação.',
+          `Critério de desempate 1: a classificação gravada não tem o quadro de Peso por Área; escolha a resolução no passo ${NOME_DO_PASSO_DA_FORMULA}, se ainda não escolheu, e grave a classificação.`,
           'Título genérico da raiz.',
         ],
       });

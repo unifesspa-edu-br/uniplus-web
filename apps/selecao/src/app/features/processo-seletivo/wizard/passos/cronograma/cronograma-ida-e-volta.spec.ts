@@ -9,6 +9,7 @@ import {
   tipoDeDecisaoDoServidor,
 } from '../../shared/cronograma-do-servidor.testing';
 import { hidratarDraft } from '../../shared/hidratacao';
+import { REGRA_DE_HOMOLOGACAO_DO_SERVIDOR } from '../../shared/homologacao/regra-de-homologacao.testing';
 import { DRAFT, dtoComCronograma } from '../../shared/hidratacao.testing';
 import { faseDaConfiguracao, grupoDaConfiguracaoDaFase } from '../fase/fase-form';
 import { etapaDoFormulario, faseDoFormulario, grupoDaEtapa, grupoDaFase } from './cronograma-form';
@@ -58,6 +59,7 @@ const FASE_PREENCHIDA = faseDoServidor({
   publicacoes: {
     tiposDeDecisao: TIPOS_DE_DECISAO.map(tipoDeDecisaoDoServidor),
     regraRecurso: { ...RECURSO_DA_FASE, procedimentos: PROCEDIMENTOS_DO_SERVIDOR },
+    regraDeHomologacao: REGRA_DE_HOMOLOGACAO_DO_SERVIDOR,
   },
 });
 
@@ -92,6 +94,12 @@ describe('cronograma: o que o servidor devolve volta inteiro no PUT', () => {
     expect(comando.regraRecurso?.procedimentos).toStrictEqual(PROCEDIMENTOS_DO_COMANDO);
   });
 
+  it('a fase devolve a regra de homologação com as condições e o enquadramento que o servidor deu', () => {
+    const comando = comoComandoDeFase(preenchido.fases[0]);
+
+    expect(comando.regraDeHomologacao).toStrictEqual(REGRA_DE_HOMOLOGACAO_DO_SERVIDOR);
+  });
+
   it('a etapa devolve os tipos de decisão e os procedimentos do recurso', () => {
     const comando = comoComandoDeEtapa(preenchido.etapas[0]);
 
@@ -111,6 +119,18 @@ describe('cronograma: o que o servidor devolve volta inteiro no PUT', () => {
     expect(comoComandoDeFase(volta)).toStrictEqual(comoComandoDeFase(preenchido.fases[0]));
   });
 
+  it('a regra de homologação atravessa os dois formulários da fase sem mudança', () => {
+    const pelaTelaDoCronograma = faseDoFormulario(grupoDaFase(preenchido.fases[0]));
+    const pelaTelaDaFase = faseDaConfiguracao(grupoDaConfiguracaoDaFase(preenchido.fases[0]));
+
+    expect(comoComandoDeFase(pelaTelaDoCronograma).regraDeHomologacao).toStrictEqual(
+      REGRA_DE_HOMOLOGACAO_DO_SERVIDOR,
+    );
+    expect(comoComandoDeFase(pelaTelaDaFase).regraDeHomologacao).toStrictEqual(
+      REGRA_DE_HOMOLOGACAO_DO_SERVIDOR,
+    );
+  });
+
   it('a etapa atravessa o formulário do cronograma sem perder o que ele não edita', () => {
     const volta = etapaDoFormulario(grupoDaEtapa(preenchido.etapas[0]));
 
@@ -124,6 +144,7 @@ describe('cronograma: o que o servidor devolve volta inteiro no PUT', () => {
     expect(fase.unidadeResponsavelId).toBeNull();
     expect(fase.tiposDeDecisao).toStrictEqual([]);
     expect(fase.regraRecurso).toBeNull();
+    expect(fase.regraDeHomologacao).toBeNull();
     expect(etapa.tiposDeDecisao).toStrictEqual([]);
     expect(etapa.recursos).toStrictEqual([]);
   });

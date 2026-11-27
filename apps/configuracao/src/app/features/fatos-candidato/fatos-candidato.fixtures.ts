@@ -237,7 +237,7 @@ export const quilombola: FatoCandidatoView = {
 
 export const FASES_DA_API = [
   { id: 'f1', codigo: 'INSCRICAO', nome: 'Inscrição', descricao: null },
-  { id: 'f2', codigo: 'HOMOLOGACAO', nome: 'Homologação', descricao: null },
+  { id: 'f2', codigo: 'HOMOLOGACAO_INSCRICOES', nome: 'Homologação', descricao: null },
 ];
 
 export const pendencia = (fato: FatoCandidatoDto) => ({

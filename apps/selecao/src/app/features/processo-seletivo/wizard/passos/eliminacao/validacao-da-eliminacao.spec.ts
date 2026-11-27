@@ -1,6 +1,7 @@
 import { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import type { RegraEliminacaoConfigurada } from '../../processo-seletivo.models';
 import { mensagensDasRegras } from './validacao-da-eliminacao';
 import type { EtapaReferenciavel } from './regras-de-eliminacao';
@@ -70,7 +71,7 @@ describe('mensagensDasRegras', () => {
     const ZERO = regra({ regraCodigo: 'ELIMINACAO_ZERO_EM_AREA' });
 
     it('recusa sem baseadoEmEnem — a exigência não é exclusiva do corte por área', () => {
-      expect(conferir([ZERO])).toContain('baseada em ENEM');
+      expect(conferir([ZERO])).toContain(`(passo ${NOME_DO_PASSO_DA_FORMULA})`);
     });
 
     it('aceita sem etapaRef, notaMinima nem minimo, desde que baseadoEmEnem', () => {

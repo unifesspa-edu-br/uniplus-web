@@ -5,6 +5,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import { ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 
@@ -93,7 +94,7 @@ describe('Eliminação diante do desempate por área', () => {
       expect(resultado).toEqual({
         valid: false,
         messages: [
-          'Critério de desempate 1 gravado: compara a nota de área do ENEM, que só existe com a classificação baseada no ENEM pela média ponderada. Troque a regra do critério ou remova-o no passo Desempate e grave o passo, ou marque o ENEM e a média ponderada no passo Fórmula.',
+          `Critério de desempate 1 gravado: compara a nota de área do ENEM, que só existe com a classificação baseada no ENEM pela média ponderada. Troque a regra do critério ou remova-o no passo Desempate e grave o passo, ou marque o ENEM e a média ponderada no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
         ],
       });
       controller.expectNone(ROTA_CLASSIFICACAO);
@@ -115,7 +116,7 @@ describe('Eliminação diante do desempate por área', () => {
       classificacaoPeloEnem();
       store.classificacao.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
 
-      const aviso = `Pelo cadastro de Peso por Área lido, o critério de desempate 1 gravado cita Matemática, que a resolução ${RESOLUCAO} não tem em todos os grupos, e a gravação deve ser recusada: retire a área no passo Desempate e grave o passo, ou escolha outra resolução no passo Fórmula. Se o cadastro mudou, atualize a lista.`;
+      const aviso = `Pelo cadastro de Peso por Área lido, o critério de desempate 1 gravado cita Matemática, que a resolução ${RESOLUCAO} não tem em todos os grupos, e a gravação deve ser recusada: retire a área no passo Desempate e grave o passo, ou escolha outra resolução no passo ${NOME_DO_PASSO_DA_FORMULA}. Se o cadastro mudou, atualize a lista.`;
       expect(componente.avisoDoDesempatePorArea()).toEqual([aviso]);
       expect(componente.confirmacaoDeGravacao()?.aviso).toContain(aviso);
       // O cadastro lido pode estar velho: a gravação vai ao servidor.
@@ -195,7 +196,7 @@ describe('Eliminação diante do desempate por área', () => {
       ]);
 
       expect(componente.avisoDoDesempatePorArea()).toEqual([
-        `Pelo cadastro de Peso por Área lido, o critério de desempate 1 gravado cita Matemática, que a resolução ${RESOLUCAO} não tem em todos os grupos, e a gravação deve ser recusada: troque a regra do critério ou remova-o no passo Desempate e grave o passo, ou escolha outra resolução no passo Fórmula. Se o cadastro mudou, atualize a lista.`,
+        `Pelo cadastro de Peso por Área lido, o critério de desempate 1 gravado cita Matemática, que a resolução ${RESOLUCAO} não tem em todos os grupos, e a gravação deve ser recusada: troque a regra do critério ou remova-o no passo Desempate e grave o passo, ou escolha outra resolução no passo ${NOME_DO_PASSO_DA_FORMULA}. Se o cadastro mudou, atualize a lista.`,
       ]);
     });
 

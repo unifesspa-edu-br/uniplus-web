@@ -22,16 +22,28 @@ export const VENDOR_MIME_TOKEN = new HttpContextToken<VendorMimeDeclaration | nu
  * const ctx = withVendorMime('edital', 1).set(SOME_OTHER_TOKEN, value);
  * http.get(url, { context: ctx });
  * ```
+ *
+ * Com `base`, parte de uma cópia dos tokens dela; o contexto recebido não é alterado.
  */
-export function withVendorMime(resource: string, version: number): HttpContext {
+export function withVendorMime(
+  resource: string,
+  version: number,
+  base: HttpContext = new HttpContext(),
+): HttpContext {
   if (!resource || !Number.isInteger(version) || version < 1) {
     throw new Error(
       `withVendorMime: resource não pode ser vazio e version deve ser inteiro >= 1 (recebido resource="${resource}", version=${version}).`,
     );
   }
-  return new HttpContext().set(VENDOR_MIME_TOKEN, { resource, version });
+  return copiar(base).set(VENDOR_MIME_TOKEN, { resource, version });
 }
 
 export function buildVendorMimeAccept(resource: string, version: number): string {
   return `application/vnd.uniplus.${resource}.v${version}+json`;
+}
+
+function copiar(base: HttpContext): HttpContext {
+  const copia = new HttpContext();
+  for (const token of base.keys()) copia.set(token, base.get(token));
+  return copia;
 }

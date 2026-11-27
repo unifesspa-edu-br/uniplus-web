@@ -126,7 +126,7 @@ describe('destino de cada pendência no painel', () => {
 
     const FORMULA = nomeDoPasso('Fórmula e precisão');
     const VAGAS = nomeDoPasso('Vagas');
-    const GRAVADA_COM_A_CLASSIFICACAO = `é gravada quando a classificação é gravada, no passo ${nomeDoPasso('Eliminação')}, ou na publicação do processo, e até lá esta pendência continua aqui.`;
+    const GRAVADA_COM_A_CLASSIFICACAO = `é gravada quando a classificação é gravada, ao avançar do passo ${nomeDoPasso('Fórmula e precisão')} ou do passo ${nomeDoPasso('Eliminação')}, ou na publicação do processo, e até lá esta pendência continua aqui.`;
     const REGRAVAR_VAGAS = `e depois regrave o passo ${VAGAS}: o grupo é copiado para o processo quando a distribuição é gravada, e não se atualiza sozinho.`;
 
     /**

@@ -1,15 +1,14 @@
 import { HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Observable, defer, switchMap } from 'rxjs';
-import { AUTH_ALLOWED_URLS, AuthService } from '@uniplus/shared-auth/bootstrap';
+import { AUTH_ALLOWED_URLS, RenovacaoDoAcesso } from '@uniplus/shared-auth/bootstrap';
 
 /**
  * Interceptor que anexa `Authorization: Bearer <token>` às requisições
  * destinadas a URLs da allowlist (`AUTH_ALLOWED_URLS`).
  *
- * Antes de anexar o token, verifica expiração (`isTokenExpired(30)`) e,
- * se necessário, dispara `refreshToken()` — garantindo que nenhuma
- * requisição viaje com um Bearer prestes a expirar.
+ * Antes de anexar o token, pede à `RenovacaoDoAcesso` o acesso do pedido: ela o renova se está para
+ * vencer e a pessoa agiu desde que foi emitido. Pedido automático não adia a sessão.
  *
  * Requisições para domínios fora da allowlist seguem sem o header,
  * evitando vazamento de credenciais.
@@ -21,25 +20,12 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
-  const authService = inject(AuthService);
+  const renovacao = inject(RenovacaoDoAcesso);
 
-  return defer(() => ensureFreshToken(authService)).pipe(
+  return defer(() => renovacao.acessoParaOPedido()).pipe(
     switchMap((token) => attach(req, next, token)),
   );
 };
-
-async function ensureFreshToken(authService: AuthService): Promise<string | undefined> {
-  const current = authService.getToken();
-  if (!current) {
-    return undefined;
-  }
-
-  if (authService.isTokenExpired(30)) {
-    await authService.refreshToken(30);
-  }
-
-  return authService.getToken();
-}
 
 function attach(
   req: HttpRequest<unknown>,

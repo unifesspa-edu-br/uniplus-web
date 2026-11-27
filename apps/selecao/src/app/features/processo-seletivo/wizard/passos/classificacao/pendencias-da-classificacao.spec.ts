@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import { WizardDraft } from '../../processo-seletivo.models';
 import {
   mensagensDeClassificacaoBase,
@@ -28,7 +29,7 @@ function classificacaoBase(): WizardDraft['classificacao'] {
 describe('mensagensDeClassificacaoBase', () => {
   const classificacaoCompleta = (): WizardDraft['classificacao'] => ({
     ...classificacaoBase(),
-    regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+    regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
     regraCalculoVersao: '1.0',
     regraArredondamentoCodigo: 'ARRED-TRUNCAR',
     regraArredondamentoVersao: '1.0',
@@ -68,7 +69,7 @@ describe('mensagensDeClassificacaoBase', () => {
   it('recusa sem ordem de alocação, mesmo sob classificação importada', () => {
     const mensagens = mensagensDeClassificacaoBase({
       ...classificacaoCompleta(),
-      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
       regraArredondamentoCodigo: '',
       regraArredondamentoVersao: '',
       casasArredondamento: '',
@@ -82,7 +83,7 @@ describe('mensagensDeClassificacaoBase', () => {
   it('sob classificação importada, não exige arredondamento nem casas', () => {
     const mensagens = mensagensDeClassificacaoBase({
       ...classificacaoCompleta(),
-      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
       regraArredondamentoCodigo: '',
       regraArredondamentoVersao: '',
       casasArredondamento: '',
@@ -98,7 +99,7 @@ describe('mensagensDeClassificacaoBase', () => {
     });
 
     expect(mensagens).toEqual([
-      'Selecione a resolução de Peso por Área usada na nota, no passo Fórmula.',
+      `Selecione a resolução de Peso por Área usada na nota, no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
     ]);
   });
 
@@ -122,7 +123,7 @@ describe('mensagensDeClassificacaoBase', () => {
     expect(
       mensagensDeClassificacaoBase(classificacao, (resolucao) => resolucao === RESOLUCAO),
     ).toEqual([
-      'A resolução de Peso por Área escolhida não está no cadastro lido. Se ela foi criada ou corrigida agora, use "Atualizar lista" no passo Fórmula; senão, escolha outra.',
+      `A resolução de Peso por Área escolhida não está no cadastro lido. Se ela foi criada ou corrigida agora, use "Atualizar lista" no passo ${NOME_DO_PASSO_DA_FORMULA}; senão, escolha outra.`,
     ]);
     // Sem o predicado, nada foi lido para afirmar que a resolução saiu do cadastro.
     expect(mensagensDeClassificacaoBase(classificacao)).toEqual([]);
@@ -131,7 +132,7 @@ describe('mensagensDeClassificacaoBase', () => {
   it('não exige a resolução com a nota importada, mesmo marcada como ENEM', () => {
     const mensagens = mensagensDeClassificacaoBase({
       ...classificacaoCompleta(),
-      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraCalculoCodigo: 'CLASSIFICACAO_IMPORTADA',
       regraArredondamentoCodigo: '',
       regraArredondamentoVersao: '',
       casasArredondamento: '',

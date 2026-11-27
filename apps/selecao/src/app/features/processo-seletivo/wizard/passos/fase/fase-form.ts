@@ -20,6 +20,7 @@ import type {
   ProdutoDaFase,
   RecursoDaFase,
 } from '../../processo-seletivo.models';
+import type { RegraDeHomologacao } from '../../modelos/homologacao.models';
 
 /**
  * A regra de recurso como o formulário a guarda. Os números são texto porque é
@@ -74,6 +75,8 @@ export interface FaseConfigForm {
   readonly bancasRequeridas: FormControl<readonly BancaRequeridaDaFase[]>;
   /** Os tipos de decisão que a fase toma, em ordem alfabética do código. */
   readonly tiposDeDecisao: FormControl<readonly string[]>;
+  /** Como a fase decide a homologação; `null` é a fase sem a capacidade. */
+  readonly regraDeHomologacao: FormControl<RegraDeHomologacao | null>;
   readonly admiteRecurso: FormControl<boolean>;
   readonly recurso: FormGroup<RecursoForm>;
   readonly congelados: FormControl<AtributosCongeladosDaFase | null>;
@@ -127,6 +130,7 @@ function controlesDoQueAFaseDeclara(
     emiteParecerIndividual: controle(fase.emiteParecerIndividual),
     bancasRequeridas: controle<readonly BancaRequeridaDaFase[]>(fase.bancasRequeridas),
     tiposDeDecisao: controle<readonly string[]>(fase.tiposDeDecisao ?? []),
+    regraDeHomologacao: controle<RegraDeHomologacao | null>(fase.regraDeHomologacao),
     admiteRecurso: controle(fase.regraRecurso !== null),
     recurso: grupoDoRecurso(fase.regraRecurso ?? RECURSO_EM_BRANCO),
     congelados: controle<AtributosCongeladosDaFase | null>(fase.congelados),

@@ -71,7 +71,7 @@ export function valorEmConsulta(page: Page, rotulo: string) {
 export async function declararFormulaLocal(page: Page): Promise<void> {
   await page
     .getByLabel('Regra de cálculo', { exact: true })
-    .selectOption('FORMULA-MEDIA-PONDERADA|1.0');
+    .selectOption('FORMULA_MEDIA_PONDERADA|1.0');
   await page
     .getByLabel('Regra de arredondamento', { exact: true })
     .selectOption('ARRED-TRUNCAR|1.0');

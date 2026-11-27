@@ -1,5 +1,6 @@
 // Services
 export { AuthService } from './services/auth.service';
+export { SessaoEncerrada } from './services/sessao-encerrada.service';
 export { UserContextService } from './services/user-context.service';
 export { PermissoesService } from './services/permissoes.service';
 export type { EstadoDasPermissoes, PermissaoEfetiva } from './services/permissoes.service';

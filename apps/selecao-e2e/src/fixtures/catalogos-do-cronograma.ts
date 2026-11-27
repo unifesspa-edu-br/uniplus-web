@@ -127,6 +127,7 @@ const CATALOGOS: readonly CatalogoMockado[] = [
   ['configuracao/tipos-etapa', []],
   ['configuracao/fatos-candidato', []],
   ['publicacoes/tipos-ato', []],
+  ['selecao/motivos-de-decisao', []],
   ...OPCOES_DO_RECURSO,
   TIPOS_DE_DECISAO_DA_API,
   ...VOCABULARIOS_DA_COMPROVACAO,

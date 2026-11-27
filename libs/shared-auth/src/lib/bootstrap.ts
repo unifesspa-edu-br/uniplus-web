@@ -1,4 +1,7 @@
 export { AuthService } from './services/auth.service';
+export { AvisoDeVencimentoDaSessao } from './services/aviso-de-vencimento-da-sessao.service';
+export type { SituacaoDoAviso } from './services/aviso-de-vencimento-da-sessao.service';
+export { SessaoEncerrada } from './services/sessao-encerrada.service';
 export { UserContextService } from './services/user-context.service';
 export { MotivoDoAcessoNegadoService } from './services/motivo-do-acesso-negado.service';
 export { provideAuth } from './providers/auth.provider';
@@ -21,5 +24,6 @@ export { PermissoesService } from './services/permissoes.service';
 export type { EstadoDasPermissoes, PermissaoEfetiva } from './services/permissoes.service';
 export { PerfisDeAcessoService } from './services/perfis-de-acesso.service';
 export type { EstadoDosPerfis } from './services/perfis-de-acesso.service';
+export { RenovacaoDoAcesso } from './services/renovacao-do-acesso.service';
 export { PERMISSAO } from './permissoes/catalogo';
 export type { CodigoDePermissao, ModuloDePermissao } from './permissoes/catalogo';

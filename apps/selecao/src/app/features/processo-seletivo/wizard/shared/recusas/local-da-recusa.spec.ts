@@ -18,6 +18,16 @@ describe('localDaRecusa', () => {
     });
   });
 
+  it('escreve como pontos os índices de listas dentro de listas', () => {
+    expect(
+      localDaRecusa(
+        'fases[0].regraDeHomologacao.alternativas[1].condicoes[0].enquadramento[2][0].valor',
+      ),
+    ).toMatchObject({
+      caminho: 'regraDeHomologacao.alternativas.1.condicoes.0.enquadramento.2.0.valor',
+    });
+  });
+
   it('lê o campo da fase, com a posição dela', () => {
     expect(localDaRecusa('fases[2].bancasRequeridas[1].regraDeDeliberacao.quorum')).toEqual({
       dono: 'fase',

@@ -50,6 +50,8 @@ export {
 export { FilterBarComponent, type UiFiltroAtivo } from './filter-bar/filter-bar';
 export { FilterChipsComponent, type UiFilterChipOption } from './filter-chips/filter-chips';
 export { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog';
+export { AvisoDeSessaoEncerradaComponent } from './aviso-de-sessao-encerrada/aviso-de-sessao-encerrada';
+export { AvisoDeSessaoPertoDeVencerComponent } from './aviso-de-sessao-perto-de-vencer/aviso-de-sessao-perto-de-vencer';
 export { FormFieldComponent } from './form-field/form-field';
 export { InstitutionalBarComponent } from './institutional-bar/institutional-bar';
 export { IconButtonComponent, type UiTooltipPosition } from './icon-button/icon-button';

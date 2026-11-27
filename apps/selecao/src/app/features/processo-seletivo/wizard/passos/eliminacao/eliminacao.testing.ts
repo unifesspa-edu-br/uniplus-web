@@ -2,6 +2,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal, type WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, type TipoEtapaDto } from '@uniplus/shared-data/configuracao';
 import { CaraterEtapaCodigo, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
@@ -15,6 +16,7 @@ import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
+import { GravacaoDaClassificacao } from '../classificacao/gravacao-da-classificacao.service';
 import { EliminacaoPassoComponent } from './eliminacao.component';
 
 export const BASE = 'http://localhost:5000';
@@ -114,7 +116,7 @@ export function lerCadastroComPeso(peso: number): void {
 /** Base local completa e válida — cada teste desvia dela para provocar uma recusa. */
 export function prepararClassificacaoLocal(): void {
   store.patchObjectSection('classificacao', {
-    regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+    regraCalculoCodigo: 'FORMULA_MEDIA_PONDERADA',
     regraCalculoVersao: '1.0',
     regraArredondamentoCodigo: 'ARRED-TRUNCAR',
     regraArredondamentoVersao: '1.0',
@@ -154,16 +156,27 @@ async function prepararPassoDeEliminacao(): Promise<void> {
 }
 
 function provedoresDaEliminacao() {
+  return [...servicosDaEliminacao(), ...dublesEEnderecosDaEliminacao()];
+}
+
+function servicosDaEliminacao() {
   return [
     ProcessoSeletivoStore,
     CadastroInicial,
     GravacaoDoProcesso,
     CatalogosDeClassificacao,
-    { provide: CatalogoDeTiposDeEtapa, useValue: { tipoEtapaPorId } },
+    GravacaoDaClassificacao,
     LeituraDoCadastroDePesos,
     ReleituraDoSnapshot,
     provideHttpClient(withInterceptors([apiResultInterceptor])),
     provideHttpClientTesting(),
+  ];
+}
+
+function dublesEEnderecosDaEliminacao() {
+  return [
+    { provide: CatalogoDeTiposDeEtapa, useValue: { tipoEtapaPorId } },
+    { provide: PermissoesService, useValue: { tem: () => false } },
     { provide: SELECAO_BASE_PATH, useValue: BASE },
     { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
   ];

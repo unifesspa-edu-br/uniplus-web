@@ -40,6 +40,7 @@ export {
   type MotivoDeDecisaoDto,
   type MotivosDeDecisaoQuery,
 } from './motivos-de-decisao.api';
+export { MotivosDoProcessoApi, type MotivoDeDecisaoDoProcessoDto } from './motivos-do-processo.api';
 export {
   OpcoesDoRecursoApi,
   type EfeitoSuspensivoDto,
@@ -132,6 +133,12 @@ export type {
   FaseCronogramaInput,
   RegraDeDeliberacaoDto,
   RegraDeDeliberacaoInput,
+  RegraDeHomologacaoDto,
+  RegraDeHomologacaoInput,
+  AlternativaDeCondicoesDto,
+  AlternativaDeCondicoesInput,
+  CondicaoDeHomologacaoDto,
+  CondicaoDeHomologacaoInput,
   BaseLegalDto,
   DocumentoExigidoDto,
   AvisoConformidadeDto,
@@ -264,6 +271,7 @@ export {
   FormatoPermitidoCodigo,
   GuardaDaVagaCodigo,
   ModoDeDeliberacaoCodigo as ModoDeDeliberacao,
+  MotivoDasInscricoesFechadasCodigo,
   OrigemCandidatosCodigo,
   SituacaoDasModalidadesCodigo,
   SituacaoDoDocumentoCodigo,
@@ -292,6 +300,7 @@ export {
   OperadorCodigo,
   PapelDaBancaCodigo,
   TipoDeBancaCodigo,
+  TipoDeCondicaoDeHomologacaoCodigo,
   TipoMotivoDeDecisaoCodigo,
   TipoDeCampoCodigo,
   FormatoDeDocumentoCodigo,

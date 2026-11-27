@@ -1,0 +1,37 @@
+<ui-falha-de-leitura titulo="Motivos de decisão da fase" [leitura]="leitura" />
+
+<sel-motivos-da-fase-ou-etapa
+  [faseOuEtapa]="faseOuEtapa()"
+  [nomeDaFaseOuEtapa]="nomeDaFase()"
+  [escolhidos]="motivos.escolhidos()"
+  [catalogo]="motivos.cadastro()"
+  [catalogoCarregado]="motivos.cadastroCarregado()"
+  [tiposDeclarados]="tiposDeclarados()"
+  [modo]="motivos.modo()"
+  [idBase]="idBase()"
+  [nivelDoTitulo]="3"
+  (escolher)="motivos.escolher($event)"
+  (retirar)="motivos.retirar($event)"
+/>
+
+@if (aguardaOCronograma()) {
+  <p class="field__hint" [attr.id]="idBase() + '-aguarda-o-cronograma'">
+    Grave o cronograma para escolher os motivos desta fase.
+  </p>
+}
+
+@if (motivos.recusa(); as recusa) {
+  <div role="alert" [attr.id]="idBase() + '-recusa'">
+    <ui-recusa-do-campo [recusas]="[recusa]" />
+    @if (motivos.podeTentarDeNovo()) {
+      <button
+        type="button"
+        class="btn btn--secondary btn--sm"
+        [attr.id]="idBase() + '-tentar-de-novo'"
+        (click)="motivos.tentarDeNovo()"
+      >
+        Tentar de novo
+      </button>
+    }
+  </div>
+}

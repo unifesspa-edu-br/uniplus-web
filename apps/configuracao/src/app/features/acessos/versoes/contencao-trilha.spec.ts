@@ -1,8 +1,8 @@
 import {
-  AtorDoEventoDaContencao,
-  EtapaDaVersao,
-  OrigemDaRetomada,
-  TipoDoEventoDaContencao,
+  AtorDoEventoDaContencaoCodigo,
+  EtapaDaVersaoCodigo,
+  OrigemDaRetomadaCodigo,
+  TipoDoRegistroDoBloqueioCodigo,
 } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
@@ -10,6 +10,14 @@ import type { RegistroDaContencaoDto } from '@uniplus/shared-data/autorizacao';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ok, recusa } from '../testes';
+import {
+  ROTULO_DO_ATOR_SISTEMA,
+  ROTULO_DO_TIPO,
+  atorDoRegistro,
+  etapaDoRegistro,
+  origemDoRegistro,
+  tipoDoRegistro,
+} from './registros-da-contencao.testing';
 import {
   GESTAO,
   PROTECAO,
@@ -40,20 +48,20 @@ const TRILHA: readonly RegistroDaContencaoDto[] = [
   {
     ...BASE,
     id: 'r2',
-    tipo: TipoDoEventoDaContencao.RETOMADA,
+    tipo: tipoDoRegistro(TipoDoRegistroDoBloqueioCodigo.RETOMADA),
     ordem: 2,
-    ator: AtorDoEventoDaContencao.SISTEMA,
+    ator: atorDoRegistro(AtorDoEventoDaContencaoCodigo.SISTEMA),
     pessoa: null,
-    origem: OrigemDaRetomada.DECISAO_DA_ETAPA,
+    origem: origemDoRegistro(OrigemDaRetomadaCodigo.DECISAO_DA_ETAPA),
   },
   {
     ...BASE,
     id: 'r1',
-    tipo: TipoDoEventoDaContencao.SUSPENSAO,
+    tipo: tipoDoRegistro(TipoDoRegistroDoBloqueioCodigo.SUSPENSAO),
     ordem: 1,
-    ator: AtorDoEventoDaContencao.HUMANO,
+    ator: atorDoRegistro(AtorDoEventoDaContencaoCodigo.HUMANO),
     pessoa: DIOGO,
-    etapa: EtapaDaVersao.GESTAO_DE_ACESSOS,
+    etapa: etapaDoRegistro(EtapaDaVersaoCodigo.GESTAO_DE_ACESSOS),
     motivo: 'Incidente.',
   },
 ];
@@ -69,15 +77,15 @@ describe('trilha da contenção no detalhe do perfil', () => {
       (tr) => tr.textContent?.replace(/\s+/g, ' ').trim() ?? '',
     );
 
-  it('mostra os registros na ordem, com a pessoa e o sistema como "Sistema"', async () => {
+  it('mostra os registros na ordem, com a pessoa e o ator do sistema', async () => {
     const { host } = await abrirPerfil(undefined, [GESTAO], ok(TRILHA));
 
     const [suspensao, retomada] = linhas(host);
-    expect(suspensao).toContain('Perfil suspenso');
+    expect(suspensao).toContain(ROTULO_DO_TIPO[TipoDoRegistroDoBloqueioCodigo.SUSPENSAO]);
     expect(suspensao).toContain('Diogo Souza');
     expect(suspensao).toContain('Determinada pela gestão de acessos. Motivo: Incidente.');
-    expect(retomada).toContain('Suspensão retomada');
-    expect(retomada).toContain('Sistema');
+    expect(retomada).toContain(ROTULO_DO_TIPO[TipoDoRegistroDoBloqueioCodigo.RETOMADA]);
+    expect(retomada).toContain(ROTULO_DO_ATOR_SISTEMA);
   });
 
   it('relê a trilha depois de uma ação de contenção', async () => {

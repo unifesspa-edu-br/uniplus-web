@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import { FormulaPassoComponent } from './formula.component';
 import {
   MontagemDe,
@@ -24,7 +25,7 @@ function montarPasso(
 
 /** Marca o ENEM como o operador: escolhe a média ponderada local e liga a caixa. */
 function marcarEnemPelaTela(m: MontagemDe<FormulaPassoComponent>): void {
-  m.componente.escolherRegraCalculo('FORMULA-MEDIA-PONDERADA|1.0');
+  m.componente.escolherRegraCalculo('FORMULA_MEDIA_PONDERADA|1.0');
   m.fixture.detectChanges();
   const checkbox = m.el.querySelector<HTMLInputElement>('input[type="checkbox"]');
   if (checkbox === null) throw new Error('checkbox do ENEM ausente');
@@ -39,7 +40,7 @@ describe('FormulaPassoComponent — resolução de Peso por Área', () => {
   describe('quando aparece e quando o cadastro é lido', () => {
     it('não lê o cadastro enquanto a classificação não exige a resolução', async () => {
       const m = await montarPasso();
-      m.componente.escolherRegraCalculo('CLASSIFICACAO-IMPORTADA|1.0');
+      m.componente.escolherRegraCalculo('CLASSIFICACAO_IMPORTADA|1.0');
       m.componente.alternarBaseadoEmEnem(true);
       m.fixture.detectChanges();
 
@@ -50,7 +51,7 @@ describe('FormulaPassoComponent — resolução de Peso por Área', () => {
 
     it('sem ENEM, não mostra a escolha nem lê o cadastro', async () => {
       const m = await montarPasso();
-      m.componente.escolherRegraCalculo('FORMULA-MEDIA-PONDERADA|1.0');
+      m.componente.escolherRegraCalculo('FORMULA_MEDIA_PONDERADA|1.0');
       m.fixture.detectChanges();
 
       expect(pedidosDoCadastro(m)).toHaveLength(0);
@@ -83,9 +84,9 @@ describe('FormulaPassoComponent — resolução de Peso por Área', () => {
       responderPesos(m);
       m.store.classificacao.recusaDaResolucaoPesoAreaEnem.set('Recusa anterior.');
 
-      m.componente.escolherRegraCalculo('CLASSIFICACAO-IMPORTADA|1.0');
+      m.componente.escolherRegraCalculo('CLASSIFICACAO_IMPORTADA|1.0');
       m.fixture.detectChanges();
-      m.componente.escolherRegraCalculo('FORMULA-MEDIA-PONDERADA|1.0');
+      m.componente.escolherRegraCalculo('FORMULA_MEDIA_PONDERADA|1.0');
       m.fixture.detectChanges();
 
       expect(m.store.draft().classificacao.resolucaoPesoAreaEnem).toBe(RESOLUCAO);
@@ -118,7 +119,7 @@ describe('FormulaPassoComponent — resolução de Peso por Área', () => {
 
       expect(resultado.valid).toBe(false);
       expect(resultado.messages).toEqual([
-        'A resolução de Peso por Área escolhida não está no cadastro lido. Se ela foi criada ou corrigida agora, use "Atualizar lista" no passo Fórmula; senão, escolha outra.',
+        `A resolução de Peso por Área escolhida não está no cadastro lido. Se ela foi criada ou corrigida agora, use "Atualizar lista" no passo ${NOME_DO_PASSO_DA_FORMULA}; senão, escolha outra.`,
       ]);
       expect(seletor(m).getAttribute('aria-invalid')).toBe('true');
       expect(texto(m.el.querySelector('#f-resolucao-peso-area-erro'))).toBe(
@@ -163,7 +164,7 @@ describe('FormulaPassoComponent — resolução de Peso por Área', () => {
 
       expect(resultado.valid).toBe(false);
       expect(resultado.messages).toEqual([
-        'Selecione a resolução de Peso por Área usada na nota, no passo Fórmula.',
+        `Selecione a resolução de Peso por Área usada na nota, no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
       ]);
       const select = seletor(m);
       expect(select.getAttribute('aria-invalid')).toBe('true');

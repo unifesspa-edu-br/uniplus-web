@@ -4,13 +4,16 @@ import { AuthConfig } from '../models/auth-config.model';
 import { UserProfile } from '../models/user.model';
 import { UniPlusTokenClaims } from '../models/token-claims.model';
 import { primeiraDescricao } from '../models/descricao-do-erro';
-
-/**
- * Padrão usado por Keycloak quando um refresh token é replayado:
- * `error: "invalid_grant"`, `error_description: "... reuse exceeded ..."`
- * com `revokeRefreshToken=true` + `refreshTokenMaxReuse=0`.
- */
-const REFRESH_REUSE_MARKERS = ['reuse exceeded', 'session not active', 'token is not active'];
+import {
+  lerPrazoDaCredencial,
+  lerPrazoDoAcesso,
+  type PrazoDaCredencial,
+  type PrazoDoAcesso,
+} from '../models/prazo-da-credencial';
+import {
+  urlDeRetornoParaEntrarDeNovo,
+  urlSemOParametroDeEntrarDeNovo,
+} from './retorno-para-entrar-de-novo';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -19,17 +22,34 @@ export class AuthService {
   private readonly _userProfile = signal<UserProfile | null>(null);
   private readonly _initError = signal<string | null>(null);
   private readonly _renovacoesDoToken = signal(0);
+  private readonly _sessaoEncerrada = signal(false);
+  private readonly _prazoDaCredencial = signal<PrazoDaCredencial | null>(null);
+  private readonly _prazoDoAcesso = signal<PrazoDoAcesso | null>(null);
 
   /**
-   * Promise de refresh em voo — compartilhada entre chamadas concorrentes
-   * para evitar que duas requisições disparem dois refreshes paralelos.
-   * Com `refreshTokenMaxReuse=0`, o segundo refresh receberia
-   * `invalid_grant: reuse exceeded` e derrubaria a sessão.
+   * Promessa de renovação em andamento, compartilhada entre chamadas concorrentes: o realm não
+   * troca a credencial de renovação a cada uso, e a promessa única evita idas repetidas ao
+   * provedor e conta cada renovação uma só vez em `sessao`.
    */
   private refreshInFlight: Promise<boolean> | null = null;
 
   readonly authenticated = this._authenticated.asReadonly();
   readonly userProfile = this._userProfile.asReadonly();
+  /**
+   * Verdadeiro quando o provedor encerrou a sessão e o acesso não pode mais ser renovado. A
+   * pessoa continua identificada em `userProfile` até entrar de novo.
+   */
+  readonly sessaoEncerrada = this._sessaoEncerrada.asReadonly();
+  /**
+   * Até quando a credencial de renovação vale, lido do que o provedor informou; `null` sem sessão
+   * ou quando a credencial não traz os instantes.
+   */
+  readonly prazoDaCredencial = this._prazoDaCredencial.asReadonly();
+  /**
+   * Quando o acesso atual foi emitido e quando vence, lido do que o provedor informou; `null` sem
+   * sessão. É daqui que a renovação antecipada tira a hora de agir.
+   */
+  readonly prazoDoAcesso = this._prazoDoAcesso.asReadonly();
   /**
    * Identifica a sessão corrente: muda no login, na troca de usuário e a cada renovação do token,
    * e vira `null` sem sessão. Quem guarda estado derivado da sessão reage a este sinal.
@@ -56,9 +76,10 @@ export class AuthService {
     try {
       const keycloak = this.criarCliente(config);
       const authenticated = await keycloak.init(opcoesDoInit());
-      this.renovarAoExpirar(keycloak);
       this._authenticated.set(authenticated);
+      this.atualizarPrazos();
       if (authenticated) await this.loadProfile();
+      await this.concluirEntrarDeNovo(authenticated);
       return authenticated;
     } catch (error) {
       this.registrarFalhaDoInit(error);
@@ -70,16 +91,6 @@ export class AuthService {
     const keycloak = this.createKeycloak(config);
     this.keycloak = keycloak;
     return keycloak;
-  }
-
-  // Renovação periódica: o keycloak-js dispara `onTokenExpired`
-  // quando o access token expira. Como `refreshToken()` é serializado,
-  // é seguro chamá-lo aqui sem risco de corrida com
-  // refreshes disparados pelo interceptor.
-  private renovarAoExpirar(keycloak: Keycloak): void {
-    keycloak.onTokenExpired = () => {
-      void this.refreshToken(30);
-    };
   }
 
   private registrarFalhaDoInit(error: unknown): void {
@@ -100,6 +111,29 @@ export class AuthService {
         ? { redirectUri: new URL(rotaDeVolta.replace(/^\//, ''), document.baseURI).href }
         : undefined,
     );
+  }
+
+  /**
+   * Encerra a sessão no provedor para a pessoa começar outra, e a devolve à rota com o parâmetro
+   * que a partida da aplicação lê. Pedir nova autenticação com a sessão viva mantém a mesma sessão
+   * e o mesmo fim de período; só o encerramento a recomeça.
+   */
+  async encerrarParaEntrarDeNovo(rotaDeVolta: string): Promise<void> {
+    await this.keycloak?.logout({
+      redirectUri: urlDeRetornoParaEntrarDeNovo(rotaDeVolta, document.baseURI),
+    });
+  }
+
+  /**
+   * Na volta de `encerrarParaEntrarDeNovo`, sem sessão leva ao login, já sem o parâmetro; com
+   * sessão (outra aplicação entrou primeiro) só o retira da URL. Retira-o da entrada atual do
+   * histórico antes, para voltar a ela não repetir o login.
+   */
+  private async concluirEntrarDeNovo(authenticated: boolean): Promise<void> {
+    const semOParametro = urlSemOParametroDeEntrarDeNovo(window.location.href);
+    if (semOParametro === null) return;
+    window.history.replaceState(window.history.state, '', semOParametro);
+    if (!authenticated) await this.keycloak?.login({ redirectUri: semOParametro });
   }
 
   /**
@@ -140,13 +174,13 @@ export class AuthService {
   }
 
   /**
-   * Renova o access token de forma **serializada**: múltiplas chamadas
-   * concorrentes compartilham a mesma Promise de rede, evitando que o
-   * Keycloak rejeite o segundo refresh com `invalid_grant: reuse
-   * exceeded` (`revokeRefreshToken=true`).
+   * Renova o token de acesso de forma serializada: chamadas concorrentes compartilham a mesma
+   * promessa de rede.
    *
-   * Se a renovação falhar com marcador de replay/sessão morta, dispara
-   * `logout()` — a sessão está comprometida e um novo login é exigido.
+   * A sessão só é dada por encerrada quando o cliente de login já descartou a credencial de
+   * renovação, que é o que ele faz quando o provedor recusa a renovação com 400. Qualquer outra
+   * falha (rede, indisponibilidade) é passageira: a pessoa continua autenticada e a próxima
+   * chamada tenta de novo.
    */
   async refreshToken(minValidity = 30): Promise<boolean> {
     if (this.refreshInFlight) {
@@ -160,17 +194,40 @@ export class AuthService {
     return this.refreshInFlight;
   }
 
+  /** Marca a sessão como encerrada e a pessoa como não autenticada, uma única vez. */
+  encerrarSessao(): void {
+    if (this._sessaoEncerrada()) return;
+    this._authenticated.set(false);
+    this._sessaoEncerrada.set(true);
+    this._prazoDaCredencial.set(null);
+    this._prazoDoAcesso.set(null);
+  }
+
+  private registrarRenovacao(): void {
+    this._renovacoesDoToken.update((total) => total + 1);
+    this.atualizarPrazos();
+  }
+
+  private atualizarPrazos(): void {
+    const keycloak = this.keycloak;
+    if (!keycloak || this._sessaoEncerrada()) return;
+    this._prazoDoAcesso.set(lerPrazoDoAcesso(keycloak.tokenParsed, keycloak.timeSkew ?? 0));
+    this._prazoDaCredencial.set(
+      lerPrazoDaCredencial(
+        keycloak.refreshTokenParsed,
+        keycloak.timeSkew ?? 0,
+        this._prazoDaCredencial(),
+      ),
+    );
+  }
+
   private async runRefresh(minValidity: number): Promise<boolean> {
     try {
       const refreshed = await this.keycloak?.updateToken(minValidity);
-      if (refreshed) this._renovacoesDoToken.update((total) => total + 1);
+      if (refreshed) this.registrarRenovacao();
       return refreshed ?? false;
-    } catch (error) {
-      this._authenticated.set(false);
-      if (isRefreshReuseError(error)) {
-        // Replay/reuso detectado — sessão comprometida. Força logout.
-        void this.logout();
-      }
+    } catch {
+      if (!this.keycloak?.refreshToken) this.encerrarSessao();
       return false;
     }
   }
@@ -267,11 +324,6 @@ function describeInitError(error: unknown): string {
   const message = extractErrorDescription(error);
   if (message) return message;
   return 'Não foi possível contatar o provedor de autenticação.';
-}
-
-function isRefreshReuseError(error: unknown): boolean {
-  const description = extractErrorDescription(error).toLowerCase();
-  return REFRESH_REUSE_MARKERS.some((marker) => description.includes(marker));
 }
 
 const CAMPOS_DA_DESCRICAO = ['error_description', 'errorDescription', 'description', 'message'];

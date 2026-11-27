@@ -16,6 +16,12 @@ describe('parteDaFase', () => {
     expect(parteDe('fases[0].regraRecurso.prazoValor')).toBe('regraDeRecurso');
   });
 
+  it('põe a regra de homologação numa parte só dela', () => {
+    expect(parteDe('fases[0].regraDeHomologacao.alternativas[0].condicoes[0].tipo')).toBe(
+      'regraDeHomologacao',
+    );
+  });
+
   it.each(['fases[0].fim', 'fases[0].produtos[0]', 'fases[0]', 'fases[0].bancas[x]'])(
     'põe %s na parte da fase',
     (field) => {
@@ -37,5 +43,21 @@ describe('conteudoDaParte', () => {
 
   it('leva só a regra de recurso à parte dela', () => {
     expect(conteudoDaParte({ ...fase, regraRecurso: null }, 'regraDeRecurso')).toBeNull();
+  });
+});
+
+describe('conteudoDaParte da regra de homologação', () => {
+  const regra = { resultadoAtoCodigo: 'RESULTADO_PRELIMINAR', alternativas: [] };
+
+  it('leva só a regra de homologação à parte dela', () => {
+    expect(
+      conteudoDaParte(umaFaseDoCronograma({ regraDeHomologacao: regra }), 'regraDeHomologacao'),
+    ).toEqual(regra);
+  });
+
+  it('não leva a regra de homologação à parte da fase', () => {
+    const parte = conteudoDaParte(umaFaseDoCronograma({ regraDeHomologacao: regra }), 'fase');
+
+    expect(parte).not.toHaveProperty('regraDeHomologacao');
   });
 });

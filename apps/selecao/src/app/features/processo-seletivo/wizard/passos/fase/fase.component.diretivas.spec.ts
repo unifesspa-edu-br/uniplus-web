@@ -2,6 +2,7 @@ import { By } from '@angular/platform-browser';
 import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { conferirSemPendenciasDosMotivos } from './motivos/motivos-nos-passos.testing';
 import { identificadorDaRegra } from './fase-passo.testing';
 import { recurso } from './configuracao-da-fase.testing';
 import { DocumentosDaFaseComponent } from './documentos/documentos-da-fase.component';
@@ -48,7 +49,7 @@ describe('campos de texto das seções da fase', () => {
     passo.controller
       .match((pedido) => pedido.url.includes('/vocabularios/'))
       .forEach((requisicao) => requisicao.flush([]));
-    passo.controller.verify();
+    conferirSemPendenciasDosMotivos(passo.controller);
   });
 
   it.each([

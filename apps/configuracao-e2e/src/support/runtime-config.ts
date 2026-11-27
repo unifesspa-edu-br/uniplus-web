@@ -8,6 +8,7 @@ const CONFIGURACAO_E2E_RUNTIME_CONFIG = {
   oidc: {
     issuerUrl: `${keycloakUrl()}/realms/unifesspa`,
     clientId: 'configuracao-web',
+    antecedenciaDaRenovacaoEmSegundos: 60,
   },
 } as const;
 

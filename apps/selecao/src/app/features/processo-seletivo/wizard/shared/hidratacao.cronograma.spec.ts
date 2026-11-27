@@ -82,7 +82,7 @@ describe('hidratarDraft — cronograma e etapas', () => {
   it('guarda o código canônico ao lado do identificador da fase', () => {
     const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
 
-    expect(fase.codigo).toBe('HOMOLOGACAO');
+    expect(fase.codigo).toBe('HOMOLOGACAO_INSCRICOES');
   });
 
   /**

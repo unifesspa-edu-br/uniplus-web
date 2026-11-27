@@ -222,6 +222,15 @@ npx nx affected --target=build --configuration=production
 
 Todos os comandos acima devem passar antes de abrir o PR.
 
+Quem muda contrato (copiar um `openapi.<módulo>.json` da API, regerar o cliente ou ajustar a tela a um campo novo da API) roda também, antes de abrir o PR:
+
+```bash
+# Confere se as cópias de libs/shared-data/openapi são as da main do uniplus-api (exige o gh logado)
+npx nx run shared-data:contract-copies-check
+```
+
+Sai com 1 se alguma cópia diverge (o erro diz quais módulos) e com 2 se não conseguiu verificar (sem rede ou sem login do `gh`). Ele não roda no CI: uma mudança de contrato na API deixaria vermelho todo PR da web, por motivo alheio a ele.
+
 O `build` das apps confere os templates (`ngc`), o `typecheck` confere o código e o `typecheck-spec` confere os specs. A [ADR-0033](docs/adrs/0033-conferencia-dos-testes-com-o-contrato-da-api.md) propõe conferir os testes que simulam a API contra o contrato versionado em `libs/shared-data/openapi`, nos projetos migrados.
 
 #### Estratégia de lint em três camadas

@@ -144,7 +144,10 @@ const PROVEDORES_DE_CATALOGO_VAZIO: readonly Provider[] = [
   // E os termos de consentimento que ele pode exigir.
   { provide: TermosConsentimentoApi, useValue: { listarComVersoes: () => NEVER } },
   // E os modelos de que cada formulário pode partir.
-  { provide: ModelosFormularioApi, useValue: catalogoVazioStub },
+  {
+    provide: ModelosFormularioApi,
+    useValue: { listar: catalogoVazioStub.listar, listarTodos: catalogoVazioStub.listar },
+  },
 ];
 
 /** Os clientes que a retomada não usa mas que o grafo de injeção da página exige. */

@@ -3,9 +3,15 @@ import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { ApiResult, apiResultInterceptor, ProblemDetails } from '@uniplus/shared-core/http';
+import {
+  ApiResult,
+  apiResultInterceptor,
+  comRecusaDePermissaoTratadaNaChamada,
+  ProblemDetails,
+} from '@uniplus/shared-core/http';
 import { authErrorInterceptor } from './auth-error.interceptor';
 import { AuthService } from '../services/auth.service';
+import { SessaoEncerrada } from '../services/sessao-encerrada.service';
 import { MotivoDoAcessoNegadoService } from '../services/motivo-do-acesso-negado.service';
 
 const PROBLEM_HEADERS = { 'Content-Type': 'application/problem+json' };
@@ -28,10 +34,31 @@ const problemaProibido: ProblemDetails = {
 describe('authErrorInterceptor (consumindo ApiResult)', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  function setup(rotaAtual = '/inicio', navegandoPara: string | null = null) {
+  function setup(
+    rotaAtual = '/inicio',
+    navegandoPara: string | null = null,
+    sessao: {
+      autenticada: boolean;
+      encerrada: boolean;
+      acessoVencido?: boolean;
+      tokenAtual?: string;
+    } = {
+      autenticada: false,
+      encerrada: false,
+    },
+  ) {
     const login = vi.fn();
+    const encerrarSessao = vi.fn();
     const navigate = vi.fn();
-    const authServiceMock = { login } as unknown as AuthService;
+    const reabrir = vi.fn();
+    const authServiceMock = {
+      login,
+      encerrarSessao,
+      authenticated: () => sessao.autenticada,
+      sessaoEncerrada: () => sessao.encerrada,
+      isTokenExpired: () => sessao.acessoVencido ?? false,
+      getToken: () => sessao.tokenAtual,
+    } as unknown as AuthService;
     const routerMock = {
       navigate,
       url: rotaAtual,
@@ -47,6 +74,7 @@ describe('authErrorInterceptor (consumindo ApiResult)', () => {
         provideHttpClientTesting(),
         { provide: AuthService, useValue: authServiceMock },
         { provide: Router, useValue: routerMock },
+        { provide: SessaoEncerrada, useValue: { reabrir } },
       ],
     });
 
@@ -54,6 +82,8 @@ describe('authErrorInterceptor (consumindo ApiResult)', () => {
       http: TestBed.inject(HttpClient),
       httpMock: TestBed.inject(HttpTestingController),
       login,
+      encerrarSessao,
+      reabrir,
       navigate,
     };
   }
@@ -102,6 +132,110 @@ describe('authErrorInterceptor (consumindo ApiResult)', () => {
     expect(result.status).toBe(403);
     expect(ctx.navigate).toHaveBeenCalledWith(['/acesso-negado']);
     expect(ctx.login).not.toHaveBeenCalled();
+  });
+
+  it('403 de chamada que trata a recusa na tela entrega a falha sem navegar nem guardar o detail', async () => {
+    const ctx = setup();
+    const url = '/api/apoio';
+
+    const promise = firstValueFrom(
+      ctx.http.get<ApiResult<unknown>>(url, { context: comRecusaDePermissaoTratadaNaChamada() }),
+    );
+    ctx.httpMock
+      .expectOne(url)
+      .flush(
+        { ...problemaProibido, detail: 'Sem permissão.' },
+        { status: 403, statusText: 'error', headers: PROBLEM_HEADERS },
+      );
+
+    const result = await promise;
+    expect(result.ok).toBe(false);
+    expect(result.status).toBe(403);
+    esperarSemRedirecionamento(ctx);
+    expect(TestBed.inject(MotivoDoAcessoNegadoService).motivo()).toBeNull();
+  });
+
+  it('401 com a pessoa autenticada encerra a sessão, sem levar ao login na hora', async () => {
+    const ctx = setup('/inicio', null, { autenticada: true, encerrada: false });
+
+    await receberProblema(ctx, '/api/protegido', baseProblem);
+
+    expect(ctx.encerrarSessao).toHaveBeenCalledTimes(1);
+    expect(ctx.login).not.toHaveBeenCalled();
+  });
+
+  it('401 com o acesso em memória vencido não encerra a sessão: foi pedido automático sem renovação', async () => {
+    const ctx = setup('/inicio', null, {
+      autenticada: true,
+      encerrada: false,
+      acessoVencido: true,
+    });
+
+    await receberProblema(ctx, '/api/protegido', baseProblem);
+
+    expect(ctx.encerrarSessao).not.toHaveBeenCalled();
+    expect(ctx.login).not.toHaveBeenCalled();
+  });
+
+  it('401 de pedido enviado com o acesso antigo, depois de uma renovação, não encerra a sessão', async () => {
+    const ctx = setup('/inicio', null, { autenticada: true, encerrada: false, tokenAtual: 'novo' });
+
+    const promise = firstValueFrom(
+      ctx.http.get('/api/protegido', { headers: { Authorization: 'Bearer antigo' } }),
+    );
+    ctx.httpMock.expectOne('/api/protegido').flush(baseProblem, {
+      status: 401,
+      statusText: 'error',
+      headers: PROBLEM_HEADERS,
+    });
+    await promise;
+
+    expect(ctx.encerrarSessao).not.toHaveBeenCalled();
+  });
+
+  it('401 de pedido enviado com o acesso atual encerra a sessão', async () => {
+    const ctx = setup('/inicio', null, {
+      autenticada: true,
+      encerrada: false,
+      tokenAtual: 'atual',
+    });
+
+    const promise = firstValueFrom(
+      ctx.http.get('/api/protegido', { headers: { Authorization: 'Bearer atual' } }),
+    );
+    ctx.httpMock.expectOne('/api/protegido').flush(baseProblem, {
+      status: 401,
+      statusText: 'error',
+      headers: PROBLEM_HEADERS,
+    });
+    await promise;
+
+    expect(ctx.encerrarSessao).toHaveBeenCalledTimes(1);
+  });
+
+  it('401 com a sessão já encerrada reabre o aviso, sem repetir o encerramento nem abrir o login', async () => {
+    const ctx = setup('/inicio', null, { autenticada: false, encerrada: true });
+
+    await receberProblema(ctx, '/api/protegido', baseProblem);
+
+    expect(ctx.reabrir).toHaveBeenCalledTimes(1);
+    expect(ctx.encerrarSessao).not.toHaveBeenCalled();
+    expect(ctx.login).not.toHaveBeenCalled();
+  });
+
+  it('401 de chamada que trata a recusa na tela ainda leva ao login', async () => {
+    const ctx = setup();
+    const url = '/api/apoio';
+
+    const promise = firstValueFrom(
+      ctx.http.get<ApiResult<unknown>>(url, { context: comRecusaDePermissaoTratadaNaChamada() }),
+    );
+    ctx.httpMock
+      .expectOne(url)
+      .flush(baseProblem, { status: 401, statusText: 'error', headers: PROBLEM_HEADERS });
+    await promise;
+
+    expect(ctx.login).toHaveBeenCalledTimes(1);
   });
 
   it('403 com detail guarda o detail para a página de acesso negado', async () => {

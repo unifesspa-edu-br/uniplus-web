@@ -19,6 +19,14 @@
 
     <sel-decisoes-da-fase class="step-card"></sel-decisoes-da-fase>
 
+    <!-- Motivos de decisão -->
+    <sel-motivos-da-fase class="step-card"></sel-motivos-da-fase>
+
+    <!-- Homologação das inscrições: só com a decisão declarada ou a regra existente -->
+    @if (homologacao.tipoDeclarado() || homologacao.regra() !== null) {
+      <sel-homologacao-da-fase class="step-card"></sel-homologacao-da-fase>
+    }
+
     <!-- Regra de recurso -->
     <sel-regra-de-recurso-da-fase class="step-card" [formulario]="form" />
 

@@ -23,8 +23,8 @@ function regra(codigo: string, tipo: string, baseLegal: string) {
 }
 
 const REGRAS_CALCULO = [
-  regra('FORMULA-MEDIA-PONDERADA', 'REGRA_CALCULO', 'Resolução CEPS 12/2026'),
-  regra('CLASSIFICACAO-IMPORTADA', 'REGRA_CALCULO', 'Portaria MEC 468/2023'),
+  regra('FORMULA_MEDIA_PONDERADA', 'REGRA_CALCULO', 'Resolução CEPS 12/2026'),
+  regra('CLASSIFICACAO_IMPORTADA', 'REGRA_CALCULO', 'Portaria MEC 468/2023'),
 ];
 const REGRAS_ARREDONDAMENTO = [
   regra('ARRED-TRUNCAR', 'REGRA_ARREDONDAMENTO', 'Edital padrão PSIQ'),

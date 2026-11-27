@@ -5,13 +5,14 @@ interface KeycloakLike {
   updateToken: (minValidity: number) => Promise<boolean>;
   logout: () => Promise<void>;
   token?: string;
+  refreshToken?: string;
 }
 
+const RECUSA_DA_RENOVACAO = new Error('Server responded with an invalid status.');
 const REUSO_EXCEDIDO = {
   error: 'invalid_grant',
   error_description: 'Maximum allowed refresh token reuse exceeded',
 };
-const SESSAO_INATIVA = { error: 'invalid_grant', error_description: 'Session not active' };
 
 /**
  * Injeta um duplo de Keycloak no AuthService sem passar por `init()`
@@ -40,6 +41,10 @@ function renovacaoDemorada(): Promise<boolean> {
 
 describe('AuthService — serialização de refreshToken', () => {
   let service: AuthService;
+
+  function marcarComoAutenticado(): void {
+    (service as unknown as { _authenticated: { set(v: boolean): void } })._authenticated.set(true);
+  }
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
@@ -72,40 +77,36 @@ describe('AuthService — serialização de refreshToken', () => {
     expect(updateToken).toHaveBeenCalledTimes(2);
   });
 
-  it('dispara logout() quando Keycloak retorna "reuse exceeded"', async () => {
+  it('encerra a sessão, sem logout nem login automáticos, quando a recusa leva a credencial de renovação', async () => {
     const logout = vi.fn(async () => undefined);
-    attachFakeKeycloak(service, { updateToken: renovacaoQueFalha(REUSO_EXCEDIDO), logout });
+    attachFakeKeycloak(service, { updateToken: renovacaoQueFalha(RECUSA_DA_RENOVACAO), logout });
 
     const result = await service.refreshToken(30);
 
     expect(result).toBe(false);
+    expect(service.sessaoEncerrada()).toBe(true);
     expect(service.authenticated()).toBe(false);
-    // logout é disparado via `void this.logout()` — esperar microtask
-    await Promise.resolve();
-    expect(logout).toHaveBeenCalledTimes(1);
+    expect(logout).not.toHaveBeenCalled();
   });
 
-  it('dispara logout() quando Keycloak retorna "session not active"', async () => {
-    const logout = vi.fn(async () => undefined);
-    attachFakeKeycloak(service, { updateToken: renovacaoQueFalha(SESSAO_INATIVA), logout });
+  it('encerra a sessão com a mesma recusa mesmo quando o erro traz o texto de reuso', async () => {
+    attachFakeKeycloak(service, { updateToken: renovacaoQueFalha(REUSO_EXCEDIDO) });
 
     await service.refreshToken(30);
-    await Promise.resolve();
 
-    expect(logout).toHaveBeenCalledTimes(1);
+    expect(service.sessaoEncerrada()).toBe(true);
   });
 
-  it('NÃO dispara logout() para erros de rede genéricos', async () => {
-    const logout = vi.fn(async () => undefined);
+  it('mantém a sessão em falha passageira, enquanto o cliente guarda a credencial de renovação', async () => {
+    marcarComoAutenticado();
     const updateToken = renovacaoQueFalha(new Error('Network request failed'));
-    attachFakeKeycloak(service, { updateToken, logout });
+    attachFakeKeycloak(service, { updateToken, refreshToken: 'credencial-do-teste' });
 
     const result = await service.refreshToken(30);
 
     expect(result).toBe(false);
-    expect(service.authenticated()).toBe(false);
-    await Promise.resolve();
-    expect(logout).not.toHaveBeenCalled();
+    expect(service.sessaoEncerrada()).toBe(false);
+    expect(service.authenticated()).toBe(true);
   });
 
   it('libera a promise em voo mesmo quando o refresh lança', async () => {
@@ -116,12 +117,6 @@ describe('AuthService — serialização de refreshToken', () => {
   });
 
   describe('sessao', () => {
-    function marcarComoAutenticado(): void {
-      (service as unknown as { _authenticated: { set(v: boolean): void } })._authenticated.set(
-        true,
-      );
-    }
-
     it('é nula sem sessão autenticada', () => {
       expect(service.sessao()).toBeNull();
     });

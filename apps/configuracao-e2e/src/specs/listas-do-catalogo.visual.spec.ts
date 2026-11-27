@@ -104,7 +104,7 @@ test.describe('Listas de tipos de documento e de fatos do candidato — linha cl
     await expect(
       drawer.getByText('Marque se a identidade coincide com o sexo de nascimento.'),
     ).toBeVisible();
-    await expect(drawer.getByText('Classificação recomendada: Pessoal sensível')).toBeVisible();
+    await expect(drawer.getByText('Classificação recomendada: Sensível')).toBeVisible();
     await expect(
       drawer.getByText('Justificativa: O dado revela a identidade de gênero.'),
     ).toBeVisible();

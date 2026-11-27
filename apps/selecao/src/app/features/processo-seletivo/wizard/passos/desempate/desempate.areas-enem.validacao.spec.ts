@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import {
   RESOLUCAO,
   TECNOLOGICA,
@@ -61,7 +62,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: validação', ()
       expect(m.componente.validar()).toEqual({
         valid: false,
         messages: [
-          'Critério de desempate 1: nenhuma área do ENEM está em todos os grupos do quadro de Peso por Área, e só uma área comum a todos desempata; troque a regra do critério ou escolha outra resolução no passo Fórmula.',
+          `Critério de desempate 1: nenhuma área do ENEM está em todos os grupos do quadro de Peso por Área, e só uma área comum a todos desempata; troque a regra do critério ou escolha outra resolução no passo ${NOME_DO_PASSO_DA_FORMULA}.`,
         ],
       });
     });

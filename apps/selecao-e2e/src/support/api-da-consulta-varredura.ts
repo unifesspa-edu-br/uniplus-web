@@ -35,6 +35,7 @@ function respostasDoProcesso(status: string): Record<string, unknown> {
     },
     'documentos-a-publicar': [DOCUMENTO_DO_EDITAL],
     atos: [ATO_DO_PROCESSO],
+    'motivos-de-decisao': [],
     'snapshot-vigente': SNAPSHOT_VIGENTE,
     'conformidade-legal': CONFORMIDADE_LEGAL,
     conformidade: { processoSeletivoId: ID_DO_PROCESSO_COMPLETO, itens: [], avisos: [] },

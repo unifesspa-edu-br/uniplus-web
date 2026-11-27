@@ -1,26 +1,28 @@
-import { OrigemDaRetomada, TipoDoEventoDaContencao } from '@uniplus/shared-data/autorizacao';
-import type { EventoDaTrilhaDto, RegistroDaContencaoDto } from '@uniplus/shared-data/autorizacao';
-import { etapa } from '../rotulos-de-acesso';
+import { TipoDoRegistroDoBloqueioCodigo } from '@uniplus/shared-data/autorizacao';
+import type { RegistroDaContencaoDto } from '@uniplus/shared-data/autorizacao';
+import type { EventoDaTabela } from '../trilha-de-acesso.component';
 import { porQuemDecide } from './rotulos-da-versao';
 
-const ORIGEM_DA_RETOMADA: Readonly<Record<OrigemDaRetomada, string>> = {
-  [OrigemDaRetomada.DECISAO_DA_ETAPA]: 'Decorreu da decisão da última etapa exigida.',
-  [OrigemDaRetomada.TROCA_DE_VIGENCIA]:
-    'Decorreu da troca da versão em vigor, que mudou as etapas exigidas.',
-  [OrigemDaRetomada.RECLASSIFICACAO]: 'Decorreu da reclassificação de uma permissão do perfil.',
-};
+/** A frase da etapa que decidiu: quem determinou a suspensão ou qual etapa decidiu a retomada. */
+function fraseDaEtapa({ tipo, etapa }: RegistroDaContencaoDto): string {
+  if (!etapa) return '';
+  if (tipo.codigo === TipoDoRegistroDoBloqueioCodigo.SUSPENSAO) {
+    return `Determinada ${porQuemDecide(etapa.codigo)}.`;
+  }
+  return tipo.codigo === TipoDoRegistroDoBloqueioCodigo.DECISAO_DA_RETOMADA
+    ? `Etapa: ${etapa.rotulo}.`
+    : '';
+}
 
 /** As frases do registro que não são o motivo digitado, na ordem em que a pessoa as lê. */
 function frases(registro: RegistroDaContencaoDto): readonly string[] {
-  const { tipo, etapa: codigo, origem, perfilProtegido, decisorTemConcessao } = registro;
+  const { tipo, origem, perfilProtegido, decisorTemConcessao } = registro;
+  const decisaoDaRetomada = tipo.codigo === TipoDoRegistroDoBloqueioCodigo.DECISAO_DA_RETOMADA;
   return [
-    tipo === TipoDoEventoDaContencao.SUSPENSAO && codigo
-      ? `Determinada ${porQuemDecide(codigo)}.`
-      : '',
-    tipo === 'decisao_da_retomada' && codigo ? `Etapa: ${etapa(codigo).toLowerCase()}.` : '',
-    tipo === 'decisao_da_retomada' && perfilProtegido ? 'O perfil era protegido na decisão.' : '',
+    fraseDaEtapa(registro),
+    decisaoDaRetomada && perfilProtegido ? 'O perfil era protegido na decisão.' : '',
     decisorTemConcessao ? 'Quem decidiu tem concessão do perfil.' : '',
-    origem ? (ORIGEM_DA_RETOMADA[origem as OrigemDaRetomada] ?? '') : '',
+    origem ? `Origem da retomada: ${origem.rotulo}.` : '',
   ].filter((frase) => frase !== '');
 }
 
@@ -36,7 +38,7 @@ export function detalheDoRegistro(registro: RegistroDaContencaoDto): string | nu
  */
 export function registrosComoEventos(
   registros: readonly RegistroDaContencaoDto[],
-): readonly EventoDaTrilhaDto[] {
+): readonly EventoDaTabela[] {
   return [...registros]
     .sort((a, b) => a.ordem - b.ordem)
     .map((registro) => ({

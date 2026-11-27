@@ -15,6 +15,7 @@ import type {
   RecursoDaFase,
   TipoCongeladoDaEtapa,
 } from '../../processo-seletivo.models';
+import type { RegraDeHomologacao } from '../../modelos/homologacao.models';
 import {
   campoDoInstante,
   inicioDeHojeNoFusoInstitucional,
@@ -63,6 +64,8 @@ export interface FaseForm {
   readonly regraRecurso: FormControl<RecursoDaFase | null>;
   /** Também não editado aqui, e carregado pela mesma razão de `produtos`. */
   readonly tiposDeDecisao: FormControl<readonly string[]>;
+  /** Também não editada aqui, e carregada pela mesma razão de `produtos`. */
+  readonly regraDeHomologacao: FormControl<RegraDeHomologacao | null>;
   /**
    * O que a fase congelou do catálogo. Também não é editado — viaja para que a
    * tela continue sabendo o que a fase exige quando o catálogo já não a tem.
@@ -170,6 +173,7 @@ function controlesCarregadosDaFase(fase: FaseDoCronograma): ControlesCarregadosD
     bancasRequeridas: controle<readonly BancaRequeridaDaFase[]>(fase.bancasRequeridas),
     regraRecurso: controle<RecursoDaFase | null>(fase.regraRecurso),
     tiposDeDecisao: controle<readonly string[]>(fase.tiposDeDecisao ?? []),
+    regraDeHomologacao: controle<RegraDeHomologacao | null>(fase.regraDeHomologacao),
     congelados: controle<AtributosCongeladosDaFase | null>(fase.congelados),
   };
 }
@@ -193,6 +197,7 @@ const DECLARACOES_AINDA_NAO_FEITAS_DA_FASE: Omit<FaseDoCronograma, keyof Identif
   bancasRequeridas: [],
   regraRecurso: null,
   tiposDeDecisao: [],
+  regraDeHomologacao: null,
   congelados: null,
 };
 

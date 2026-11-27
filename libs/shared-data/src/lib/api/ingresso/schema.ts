@@ -15,7 +15,7 @@ export interface paths {
          * Retorna o perfil do usuário autenticado
          * @description Retorna a identidade do access token (nome, e-mail, CPF, NomeSocial) e os perfis de acesso que a pessoa tem por concessão vigente, cada um com o escopo (unidade ou instituição) e o prazo. O token identifica a pessoa e não concede acesso. Requer autenticação.
          */
-        readonly get: operations["GetAuthenticatedUserProfile"];
+        readonly get: operations["ConsultarUsuarioAutenticado"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -88,7 +88,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    readonly GetAuthenticatedUserProfile: {
+    readonly ConsultarUsuarioAutenticado: {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;

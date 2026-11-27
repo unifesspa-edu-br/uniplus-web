@@ -86,7 +86,7 @@ export interface WizardDraft {
    * repartida entre dois passos: Fórmula preenche até `regrasEliminacao`, Eliminação preenche o
    * vetor e grava.
    *
-   * Arredondamento só vale sob `FORMULA-MEDIA-PONDERADA`: sob `CLASSIFICACAO-IMPORTADA`
+   * Arredondamento só vale sob `FORMULA_MEDIA_PONDERADA`: sob `CLASSIFICACAO_IMPORTADA`
    * o mapeador envia `null` independentemente do digitado, e `regrasEliminacao` é vazio.
    */
   classificacao: {

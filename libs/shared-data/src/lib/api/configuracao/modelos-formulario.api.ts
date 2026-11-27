@@ -29,6 +29,17 @@ export interface ModelosFormularioQuery {
   readonly cursor?: Cursor;
 }
 
+function paramsDaListagem(query: ModelosFormularioQuery): HttpParams {
+  let params =
+    query.cursor === undefined
+      ? new HttpParams().set('limit', String(query.limit ?? 100))
+      : new HttpParams().set('cursor', cursorToString(query.cursor)).set('direction', 'next');
+  if (query.tipoProcesso !== undefined) params = params.set('tipoProcesso', query.tipoProcesso);
+  if (query.finalidade !== undefined) params = params.set('finalidade', query.finalidade);
+  if (query.ativo !== undefined) params = params.set('ativo', String(query.ativo));
+  return params;
+}
+
 /**
  * Cliente dos modelos de formulário: o formulário composto por tipo de processo e finalidade
  * que o processo copia ao partir de um modelo (ADR-0136, UNI-REQ-0144).
@@ -52,17 +63,11 @@ export class ModelosFormularioApi {
    */
   listar(
     query: ModelosFormularioQuery = {},
+    contexto = new HttpContext(),
   ): Observable<ApiResult<readonly ModeloFormularioView[]>> {
-    let params =
-      query.cursor === undefined
-        ? new HttpParams().set('limit', String(query.limit ?? 100))
-        : new HttpParams().set('cursor', cursorToString(query.cursor)).set('direction', 'next');
-    if (query.tipoProcesso !== undefined) params = params.set('tipoProcesso', query.tipoProcesso);
-    if (query.finalidade !== undefined) params = params.set('finalidade', query.finalidade);
-    if (query.ativo !== undefined) params = params.set('ativo', String(query.ativo));
     return this.http.get<ApiResult<readonly ModeloFormularioView[]>>(this.admin(), {
-      params,
-      context: withVendorMime('modelo-formulario', 1),
+      params: paramsDaListagem(query),
+      context: withVendorMime('modelo-formulario', 1, contexto),
     });
   }
 
@@ -72,8 +77,9 @@ export class ModelosFormularioApi {
    */
   listarTodos(
     query: Omit<ModelosFormularioQuery, 'cursor'> = {},
+    contexto = new HttpContext(),
   ): Observable<ApiResult<readonly ModeloFormularioView[]>> {
-    return coletarPaginas((cursor) => this.listar({ ...query, cursor }));
+    return coletarPaginas((cursor) => this.listar({ ...query, cursor }, contexto));
   }
 
   /** POST `/api/configuracao/admin/modelos-formulario` — cria o modelo, já ativo. */
