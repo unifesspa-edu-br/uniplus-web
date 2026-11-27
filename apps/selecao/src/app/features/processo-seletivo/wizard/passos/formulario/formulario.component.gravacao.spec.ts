@@ -186,4 +186,96 @@ describe('FormularioPassoComponent: gravação', () => {
       fixture.debugElement.injector.get(GravacaoDosFormularios).recusas().has('HABILITACAO'),
     ).toBe(true);
   });
+
+  it('a recusa de vínculo a dados que aguardam a proteção de dados nomeia cada um deles', async () => {
+    const conteudo = conteudoDaInscricao(store.draft().formulario, INSCRICOES);
+    store.patchObjectSection(
+      'formulario',
+      comInscricao(store.draft().formulario, {
+        ...conteudo,
+        itens:
+          conteudo.itens?.map((i) =>
+            i.fatoCodigo === 'PCD'
+              ? { ...i, apresentacao: { ...i.apresentacao, rotulo: 'Outro' } }
+              : i,
+          ) ?? [],
+      }),
+    );
+
+    const gravacao = fixture.componentInstance.persistir();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO);
+    await proximoPasso();
+    controller.expectOne(`${ROTA_INSCRICAO}/itens`).flush(
+      {
+        type: 'about:blank',
+        title:
+          'O dado do candidato aguarda a aprovação do Representante do controlador e não aceita vínculo novo',
+        status: 422,
+        code: 'uniplus.vinculo_catalogo.fato_com_protecao_pendente',
+        traceId: '00000000000000000000000000000004',
+        errors: [
+          {
+            code: 'uniplus.vinculo_catalogo.fato_com_protecao_pendente',
+            message:
+              "O dado do candidato 'Renda familiar per capita' aguarda a aprovação do Representante do controlador.",
+          },
+          {
+            code: 'uniplus.vinculo_catalogo.fato_com_protecao_pendente',
+            message:
+              "O dado do candidato 'Cor ou raça' aguarda a aprovação do Representante do controlador.",
+          },
+        ],
+      },
+      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_JSON },
+    );
+    await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO);
+
+    const resultado = await gravacao;
+    expect(resultado.valid).toBe(false);
+    const mensagens = resultado.valid ? [] : resultado.messages;
+    expect(mensagens).toHaveLength(2);
+    expect(mensagens[0]).toContain('Renda familiar per capita');
+    expect(mensagens[1]).toContain('Cor ou raça');
+    expect(mensagens.join(' ')).not.toMatch(/\bfato\b/i);
+  });
+
+  it('a recusa por dado que aguarda a proteção de dados, sem causa apontada, mostra o título da API', async () => {
+    const conteudo = conteudoDaInscricao(store.draft().formulario, INSCRICOES);
+    store.patchObjectSection(
+      'formulario',
+      comInscricao(store.draft().formulario, {
+        ...conteudo,
+        itens:
+          conteudo.itens?.map((i) =>
+            i.fatoCodigo === 'PCD'
+              ? { ...i, apresentacao: { ...i.apresentacao, rotulo: 'Outro' } }
+              : i,
+          ) ?? [],
+      }),
+    );
+
+    const gravacao = fixture.componentInstance.persistir();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO);
+    await proximoPasso();
+    controller.expectOne(`${ROTA_INSCRICAO}/itens`).flush(
+      {
+        type: 'about:blank',
+        title:
+          'O dado do candidato aguarda a aprovação do Representante do controlador e não aceita vínculo novo',
+        status: 422,
+        code: 'uniplus.vinculo_catalogo.fato_com_protecao_pendente',
+        traceId: '00000000000000000000000000000005',
+      },
+      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_JSON },
+    );
+    await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO);
+
+    const resultado = await gravacao;
+    expect(resultado.valid).toBe(false);
+    expect(resultado.valid ? [] : resultado.messages).toEqual([
+      'O formulário "Inscrição — Medicina 2027" não foi gravado. O dado do candidato aguarda a aprovação do Representante do controlador e não aceita vínculo novo',
+    ]);
+  });
 });
