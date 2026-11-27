@@ -1,8 +1,8 @@
 ---
-status: "superseded by ADR-0012"
-date: "2026-05-03"
+status: superseded by ADR-0012
+date: 2026-05-03
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0011: Consumer adapter `ApiResult<T>` em nova lib `libs/shared-http`
@@ -44,9 +44,7 @@ Sem consolidação, cada slice futura inventa o próprio adapter — débito acu
 ### Forma do `ApiResult<T>`
 
 ```typescript
-export type ApiResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; problem: ProblemDetails };
+export type ApiResult<T> = { ok: true; data: T } | { ok: false; problem: ProblemDetails };
 ```
 
 Discriminator é `result.ok` (boolean). Narrowing é nativo do TypeScript:
@@ -121,7 +119,7 @@ provideHttpClient(
   withInterceptors([
     authErrorInterceptor, // @uniplus/shared-auth (consumer do envelope)
     apiResultInterceptor, // @uniplus/shared-core (envelopa em ApiResult)
-  ])
+  ]),
 );
 ```
 
@@ -208,9 +206,9 @@ Em `apps/{selecao,ingresso,portal}/src/app/app.config.ts` a chain é registrada 
 withInterceptors([
   tokenInterceptor,
   loadingInterceptor,
-  authErrorInterceptor,   // mais externo — lê HttpResponse já envelopado
-  apiResultInterceptor,   // mais interno — converte 4xx/5xx em ApiResult.fail
-])
+  authErrorInterceptor, // mais externo — lê HttpResponse já envelopado
+  apiResultInterceptor, // mais interno — converte 4xx/5xx em ApiResult.fail
+]);
 ```
 
 Em response, a ordem real (mais interna → mais externa → consumer) é

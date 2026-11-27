@@ -1,4 +1,10 @@
-import { booleanAttribute, ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+} from '@angular/core';
 
 /** Fundo sobre o qual a marca é aplicada: define a versão oficial que aparece. */
 export type FundoDaMarca = 'claro' | 'escuro' | 'tema';

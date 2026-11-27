@@ -1,7 +1,8 @@
 import { ElementRef, Signal, WritableSignal, signal } from '@angular/core';
 
-export type UiDisclosureRef<T extends HTMLElement = HTMLElement> =
-  Signal<ElementRef<T> | undefined>;
+export type UiDisclosureRef<T extends HTMLElement = HTMLElement> = Signal<
+  ElementRef<T> | undefined
+>;
 
 export interface UiDisclosureControllerOptions<
   TPanel extends HTMLElement = HTMLElement,
@@ -30,8 +31,7 @@ class PainelRetratil implements UiDisclosureController {
   private readonly initialFocusSelector: string;
 
   constructor(private readonly options: UiDisclosureControllerOptions) {
-    this.initialFocusSelector =
-      options.initialFocusSelector ?? DEFAULT_INITIAL_FOCUS_SELECTOR;
+    this.initialFocusSelector = options.initialFocusSelector ?? DEFAULT_INITIAL_FOCUS_SELECTOR;
   }
 
   toggle(): void {

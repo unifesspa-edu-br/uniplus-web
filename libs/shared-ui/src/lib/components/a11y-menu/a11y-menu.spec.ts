@@ -21,7 +21,8 @@ describe('A11yMenuComponent', () => {
   });
 
   it('renderiza trigger com ícone e contrato de disclosure do DS', () => {
-    const trigger = fixture.debugElement.query(By.css('.a11y-menu__trigger')).nativeElement as HTMLButtonElement;
+    const trigger = fixture.debugElement.query(By.css('.a11y-menu__trigger'))
+      .nativeElement as HTMLButtonElement;
 
     expect(trigger.getAttribute('aria-label')).toBe('Preferências de acessibilidade');
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
@@ -31,22 +32,23 @@ describe('A11yMenuComponent', () => {
 
   it('abre popover, atualiza aria-expanded e envia foco ao primeiro controle', () => {
     vi.useFakeTimers();
-    const trigger = fixture.debugElement.query(By.css('.a11y-menu__trigger')).nativeElement as HTMLButtonElement;
+    const trigger = fixture.debugElement.query(By.css('.a11y-menu__trigger'))
+      .nativeElement as HTMLButtonElement;
 
     trigger.click();
     fixture.detectChanges();
     vi.runOnlyPendingTimers();
 
-    const popover = fixture.debugElement.query(By.css('.a11y-menu__popover')).nativeElement as HTMLElement;
+    const popover = fixture.debugElement.query(By.css('.a11y-menu__popover'))
+      .nativeElement as HTMLElement;
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
     expect(popover.hidden).toBe(false);
     expect(document.activeElement?.textContent?.trim()).toBe('Claro');
   });
 
   it('aplica tema contraste no html e persiste no mesmo storage do DS', () => {
-    const contrast = fixture.debugElement.query(
-      By.css('[data-a11y="contrast"][data-value="on"]'),
-    ).nativeElement as HTMLButtonElement;
+    const contrast = fixture.debugElement.query(By.css('[data-a11y="contrast"][data-value="on"]'))
+      .nativeElement as HTMLButtonElement;
 
     contrast.click();
     fixture.detectChanges();
@@ -62,7 +64,8 @@ describe('A11yMenuComponent', () => {
 
   it('fecha com Escape e restaura foco no trigger', () => {
     vi.useFakeTimers();
-    const trigger = fixture.debugElement.query(By.css('.a11y-menu__trigger')).nativeElement as HTMLButtonElement;
+    const trigger = fixture.debugElement.query(By.css('.a11y-menu__trigger'))
+      .nativeElement as HTMLButtonElement;
     trigger.click();
     fixture.detectChanges();
     vi.runOnlyPendingTimers();
@@ -70,7 +73,8 @@ describe('A11yMenuComponent', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
 
-    const popover = fixture.debugElement.query(By.css('.a11y-menu__popover')).nativeElement as HTMLElement;
+    const popover = fixture.debugElement.query(By.css('.a11y-menu__popover'))
+      .nativeElement as HTMLElement;
     expect(popover.hidden).toBe(true);
     expect(document.activeElement).toBe(trigger);
   });

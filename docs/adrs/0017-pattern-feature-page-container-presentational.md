@@ -1,8 +1,8 @@
 ---
-status: "accepted"
-date: "2026-05-06"
+status: accepted
+date: 2026-05-06
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0017: Páginas de feature no padrão container/presentational — `XxxPage` smart + `ui-*` dumb

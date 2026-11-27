@@ -81,7 +81,9 @@ describe('avisos de falha de leitura acompanhada', () => {
     tela.falhaDosCursos.set('O servidor recusou a busca.');
     fixture.detectChanges();
 
-    expect(raiz.querySelector('#msg-cursos')?.textContent?.trim()).toBe('O servidor recusou a busca.');
+    expect(raiz.querySelector('#msg-cursos')?.textContent?.trim()).toBe(
+      'O servidor recusou a busca.',
+    );
   });
 
   it('com falha, o campo mostra a mensagem em região de alerta e depois dela o botão', () => {

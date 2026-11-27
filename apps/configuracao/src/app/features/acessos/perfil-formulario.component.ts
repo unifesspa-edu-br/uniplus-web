@@ -9,11 +9,7 @@ import {
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { EdicaoDosPerfis } from './edicao-dos-perfis';
-import {
-  CATEGORIAS_DA_REMOCAO,
-  type CampoDoPerfil,
-  mensagemDoCampoDoPerfil,
-} from './perfil-form';
+import { CATEGORIAS_DA_REMOCAO, type CampoDoPerfil, mensagemDoCampoDoPerfil } from './perfil-form';
 import { EscritaDoPerfil } from './versoes/escrita-do-perfil';
 import { CatalogoDePermissoesStore } from './versoes/catalogo-de-permissoes.store';
 import { DiferencaDaVersaoComponent } from './versoes/diferenca-da-versao.component';

@@ -1,12 +1,12 @@
 ---
-status: "accepted"
-date: "2026-05-30"
+status: accepted
+date: 2026-05-30
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 consulted:
-  - "Equipe Uni+"
+  - 'Equipe Uni+'
 informed:
-  - "Apps selecao, ingresso e portal"
+  - 'Apps selecao, ingresso e portal'
 ---
 
 # ADR-0023: Uni+ DS como contrato visual vigente

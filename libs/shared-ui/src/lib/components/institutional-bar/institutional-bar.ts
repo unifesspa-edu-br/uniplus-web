@@ -94,7 +94,8 @@ export class InstitutionalBarComponent {
   protected fecharMenuPeloTeclado(evento: Event): void {
     if (!this.menuAberto()) return;
     this.menuAberto.set(false);
-    if (this.menu().nativeElement.contains(evento.target as Node)) this.gatilho().nativeElement.focus();
+    if (this.menu().nativeElement.contains(evento.target as Node))
+      this.gatilho().nativeElement.focus();
   }
 
   /** Tab para fora do menu fecha a lista, sem mexer no foco. */

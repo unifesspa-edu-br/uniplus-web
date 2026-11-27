@@ -1,12 +1,12 @@
 ---
-status: "accepted"
-date: "2026-05-09"
+status: accepted
+date: 2026-05-09
 decision-makers:
-  - "Tech Lead"
+  - 'Tech Lead'
 consulted:
-  - "DevOps"
+  - 'DevOps'
 informed:
-  - "Equipe `uniplus-web`"
+  - 'Equipe `uniplus-web`'
 ---
 
 # ADR-0021: Runtime config via `AUTH_CONFIG` InjectionToken + testes de inicialização

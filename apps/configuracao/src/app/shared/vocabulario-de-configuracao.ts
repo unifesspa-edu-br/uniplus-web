@@ -44,7 +44,10 @@ function lerOpcoes<T>(
 ): void {
   estado.falhou.set(false);
   leitura
-    .pipe(takeUntilDestroyed(destroyRef), finalize(() => estado.carregando.set(false)))
+    .pipe(
+      takeUntilDestroyed(destroyRef),
+      finalize(() => estado.carregando.set(false)),
+    )
     .subscribe({
       next: (resultado) =>
         resultado.ok ? estado.opcoes.set(resultado.data as readonly T[]) : estado.falhou.set(true),

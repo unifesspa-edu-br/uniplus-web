@@ -5,8 +5,8 @@
     "MD024": { "siblings_only": true },
     "MD033": false,
     "MD041": false,
-    "MD060": false
+    "MD060": false,
   },
   "globs": ["*.md"],
-  "ignores": ["_template.md"]
+  "ignores": ["_template.md"],
 }

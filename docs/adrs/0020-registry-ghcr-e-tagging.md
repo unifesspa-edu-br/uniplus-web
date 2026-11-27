@@ -1,12 +1,12 @@
 ---
-status: "accepted"
-date: "2026-05-08"
+status: accepted
+date: 2026-05-08
 decision-makers:
-  - "Tech Lead"
+  - 'Tech Lead'
 consulted:
-  - "DevOps"
+  - 'DevOps'
 informed:
-  - "Equipe `uniplus-web`"
+  - 'Equipe `uniplus-web`'
 ---
 
 # ADR-0020: GitHub Container Registry e estratégia de tagging das imagens da `uniplus-web`
@@ -59,9 +59,9 @@ SBOM e attestation cosign keyless via OIDC do GitHub ficam deferidos como follow
 
 **Estratégia de release: lockstep.** Uma tag `v<X>.<Y>.<Z>` dispara o build/publish das 3 imagens da matriz (`uniplus-portal`, `uniplus-web-selecao`, `uniplus-web-ingresso`) simultaneamente, independentemente de qual app recebeu mudança no commit alvo. Todas as 3 imagens recebem o mesmo número de versão. A motivação:
 
-- *Auditoria simples*: um único número (`v0.1.2`) descreve o estado completo do produto em um momento. ArgoCD pina uma única tag e promove conjunto coerente entre ambientes.
-- *Sem drift*: per-app (ex.: `uniplus-portal:v0.1.2` + `uniplus-web-selecao:v0.1.5`) acumula tags em ritmos diferentes; o consumer perde a noção de "qual combinação de versões compõe a release X" e a auditoria precisa cruzar 3 streams de tags.
-- *Custo controlado*: o cache GHA `mode=max` com `scope=<module>` torna o rebuild de app não-tocado quase noop (~30–90s para resolver manifest e republicar layers já em cache). Em matriz de 3 apps, ~3min adicionais na pior hipótese — uma vez por release. Com Nx affected o custo do build interno do app não-tocado é ainda menor.
+- _Auditoria simples_: um único número (`v0.1.2`) descreve o estado completo do produto em um momento. ArgoCD pina uma única tag e promove conjunto coerente entre ambientes.
+- _Sem drift_: per-app (ex.: `uniplus-portal:v0.1.2` + `uniplus-web-selecao:v0.1.5`) acumula tags em ritmos diferentes; o consumer perde a noção de "qual combinação de versões compõe a release X" e a auditoria precisa cruzar 3 streams de tags.
+- _Custo controlado_: o cache GHA `mode=max` com `scope=<module>` torna o rebuild de app não-tocado quase noop (~30–90s para resolver manifest e republicar layers já em cache). Em matriz de 3 apps, ~3min adicionais na pior hipótese — uma vez por release. Com Nx affected o custo do build interno do app não-tocado é ainda menor.
 
 Paths-filter (skip de apps não-tocados na matriz) foi rejeitado porque quebra a invariante "para toda tag `v<X>.<Y>.<Z>` publicada, existem 3 imagens com essa tag". Skip introduziria 404 em GHCR para apps não-rebuilt — ArgoCD tentando `pull` em ambiente que pinou `v0.1.2` falharia e quebraria o sync de Helm.
 

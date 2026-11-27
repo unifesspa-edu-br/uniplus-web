@@ -2,21 +2,22 @@
   <div class="page-header__content">
     <h1 class="page-header__title">Perfis de acesso</h1>
     <p class="page-header__desc">
-      Conjuntos nomeados de permissões. Cada mudança é uma versão nova, com documento instituidor e aprovação.
+      Conjuntos nomeados de permissões. Cada mudança é uma versão nova, com documento instituidor e
+      aprovação.
     </p>
   </div>
   @if (podeCriar()) {
-    <div class="page-header__actions">
-      <button
-        type="button"
-        class="btn btn--primary"
-        [id]="idDoCadastro"
-        [disabled]="escrita.gravando()"
-        (click)="criar()"
-      >
-        Novo perfil
-      </button>
-    </div>
+  <div class="page-header__actions">
+    <button
+      type="button"
+      class="btn btn--primary"
+      [id]="idDoCadastro"
+      [disabled]="escrita.gravando()"
+      (click)="criar()"
+    >
+      Novo perfil
+    </button>
+  </div>
   }
 </div>
 

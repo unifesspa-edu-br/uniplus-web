@@ -8,7 +8,11 @@ import {
 } from '../support/keycloak-login';
 
 const USERS = {
-  candidato: { username: 'candidato', password: SENHA_DAS_PERSONAS, displayName: 'Candidato Teste' },
+  candidato: {
+    username: 'candidato',
+    password: SENHA_DAS_PERSONAS,
+    displayName: 'Candidato Teste',
+  },
   admin: { username: 'admin', password: SENHA_DAS_PERSONAS, displayName: 'Admin Teste' },
 };
 

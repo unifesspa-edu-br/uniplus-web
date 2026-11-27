@@ -12,13 +12,13 @@ quantidade fixada**. Separar produziria uma tela que valida pela metade.
 
 ## Rastreio
 
-| Fonte | O que estabelece |
-|---|---|
+| Fonte                             | O que estabelece                                                                                                                                                                                                                             |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **UNI-REQ-0134** (aprovado, must) | `VO_base` positivo, `PR` entre 0,5 e 1,0 (art. 10, II), ao menos uma modalidade, sem repetir modalidade na oferta, oferta resolvida contra o catálogo vivo, ao menos uma distribuição no processo, cada oferta em no máximo uma distribuição |
-| **UNI-REQ-0137** (aprovado) | Oferta declara regime e turnos: `REGULAR` = um turno, `INTEGRAL` = dois distintos. Não existe turno chamado INTEGRAL. O regime é lido do campo próprio, **nunca inferido**. Turnos em ordem canônica estável |
-| **UNI-REQ-0010** | Curso e OfertaCurso como entidades de Configuração |
-| **#481** CA-01 a CA-08 | oferta canônica; distribuição completa; referências válidas; full replace por dimensão com save independente; readback; API árbitra dos cálculos |
-| **#541** | o editor **exibe** regime e turnos e não permite editar |
+| **UNI-REQ-0137** (aprovado)       | Oferta declara regime e turnos: `REGULAR` = um turno, `INTEGRAL` = dois distintos. Não existe turno chamado INTEGRAL. O regime é lido do campo próprio, **nunca inferido**. Turnos em ordem canônica estável                                 |
+| **UNI-REQ-0010**                  | Curso e OfertaCurso como entidades de Configuração                                                                                                                                                                                           |
+| **#481** CA-01 a CA-08            | oferta canônica; distribuição completa; referências válidas; full replace por dimensão com save independente; readback; API árbitra dos cálculos                                                                                             |
+| **#541**                          | o editor **exibe** regime e turnos e não permite editar                                                                                                                                                                                      |
 
 ## Invariantes da API
 
@@ -27,17 +27,17 @@ Levantadas de `SelecaoDomainErrorRegistration.cs` e `ConfiguracaoDistribuicaoVag
 
 ### Sempre
 
-| Erro | Regra |
-|---|---|
-| `VoBaseInvalido` | VO_base > 0 |
-| `PrForaDoLimite` | 0,5 ≤ PR ≤ 1,0 |
-| `ModalidadesVazias` | ao menos uma modalidade por oferta |
-| `ModalidadeDuplicada` | modalidade não se repete na oferta |
-| `QuantidadeVagaNegativa` | quantidade não negativa |
-| `QuadroModalidadeNaoSelecionada` | todo item do quadro é modalidade selecionada |
-| `ProcessoSeletivo.DistribuicaoVagasVazia` | ao menos uma distribuição no processo |
-| validator | `Pr` com no máximo 4 casas decimais |
-| UNI-REQ-0134 | cada oferta em no máximo uma distribuição do processo |
+| Erro                                      | Regra                                                 |
+| ----------------------------------------- | ----------------------------------------------------- |
+| `VoBaseInvalido`                          | VO_base > 0                                           |
+| `PrForaDoLimite`                          | 0,5 ≤ PR ≤ 1,0                                        |
+| `ModalidadesVazias`                       | ao menos uma modalidade por oferta                    |
+| `ModalidadeDuplicada`                     | modalidade não se repete na oferta                    |
+| `QuantidadeVagaNegativa`                  | quantidade não negativa                               |
+| `QuadroModalidadeNaoSelecionada`          | todo item do quadro é modalidade selecionada          |
+| `ProcessoSeletivo.DistribuicaoVagasVazia` | ao menos uma distribuição no processo                 |
+| validator                                 | `Pr` com no máximo 4 casas decimais                   |
+| UNI-REQ-0134                              | cada oferta em no máximo uma distribuição do processo |
 
 ### Fronteira da quantidade — condicional à regra
 
@@ -49,32 +49,32 @@ quantidade, o que quebraria a Lei 12.711 inteira.
 
 **Na Lei 12.711**, depende de `composicaoVagas` da modalidade:
 
-| Composição | Quantidade |
-|---|---|
-| `DENTRO_DO_VR`, `RESIDUAL_DO_VO` | **calculada** — informar é erro (`QuantidadeCalculadaNaoInformavel`) |
-| `RETIRA_DE`, `SUPLEMENTAR_AO_TOTAL` | **obrigatória** (`QuantidadeDeclaradaObrigatoria`) |
+| Composição                          | Quantidade                                                           |
+| ----------------------------------- | -------------------------------------------------------------------- |
+| `DENTRO_DO_VR`, `RESIDUAL_DO_VO`    | **calculada** — informar é erro (`QuantidadeCalculadaNaoInformavel`) |
+| `RETIRA_DE`, `SUPLEMENTAR_AO_TOTAL` | **obrigatória** (`QuantidadeDeclaradaObrigatoria`)                   |
 
 `ModalidadeDto` expõe `composicaoVagas`, então a tela sabe qual caso aplicar sem adivinhar.
 
 ### Condicionais à regra Lei 12.711
 
-| Erro | Regra |
-|---|---|
+| Erro                               | Regra                   |
+| ---------------------------------- | ----------------------- |
 | `ReferenciaDemograficaObrigatoria` | exigida no ramo federal |
-| `ReferenciaDemograficaIndevida` | proibida fora dele |
-| `RegraAjusteObrigatoria` | art. 11, § único |
-| `ModalidadesFederaisIncompletas` | as 8 federais mais AC |
+| `ReferenciaDemograficaIndevida`    | proibida fora dele      |
+| `RegraAjusteObrigatoria`           | art. 11, § único        |
+| `ModalidadesFederaisIncompletas`   | as 8 federais mais AC   |
 
 ### Relacionais entre modalidades
 
 Acrescentadas na segunda revisão. `ModalidadeDto` traz os campos que as tornam verificáveis na tela:
 
-| Erro | Campo da modalidade |
-|---|---|
-| `ComposicaoOrigemNaoSelecionada` | `composicaoOrigem` (quando `RETIRA_DE`) |
-| `RemanejamentoDestinoNaoSelecionado` | `remanejamentoDestino` (quando `DESTINO_UNICO`) |
-| `RemanejamentoParNaoSelecionado` | `remanejamentoPar` (quando `CRUZADO`) |
-| `RemanejamentoFallbackNaoSelecionado` | `remanejamentoFallback` (quando `CRUZADO`) |
+| Erro                                  | Campo da modalidade                             |
+| ------------------------------------- | ----------------------------------------------- |
+| `ComposicaoOrigemNaoSelecionada`      | `composicaoOrigem` (quando `RETIRA_DE`)         |
+| `RemanejamentoDestinoNaoSelecionado`  | `remanejamentoDestino` (quando `DESTINO_UNICO`) |
+| `RemanejamentoParNaoSelecionado`      | `remanejamentoPar` (quando `CRUZADO`)           |
+| `RemanejamentoFallbackNaoSelecionado` | `remanejamentoFallback` (quando `CRUZADO`)      |
 
 ### Do servidor — não replicar
 
@@ -91,12 +91,12 @@ Reimplementar a Lei de Cotas em TypeScript seria a divergência mais provável d
 
 ## Dependências — todas já existem
 
-| Catálogo | Cliente |
-|---|---|
-| Ofertas de curso | `OfertasCursoApi` (Configuração) |
-| Modalidades | `ModalidadesApi` (Configuração) |
-| Referência demográfica | `ReservaDemograficaApi` (Configuração) |
-| Regras versionadas | `RegrasCatalogoApi` — #631, filtrando por tipo |
+| Catálogo               | Cliente                                        |
+| ---------------------- | ---------------------------------------------- |
+| Ofertas de curso       | `OfertasCursoApi` (Configuração)               |
+| Modalidades            | `ModalidadesApi` (Configuração)                |
+| Referência demográfica | `ReservaDemograficaApi` (Configuração)         |
+| Regras versionadas     | `RegrasCatalogoApi` — #631, filtrando por tipo |
 
 ## Modelo do rascunho
 
@@ -207,8 +207,8 @@ padrão; confirmação antes de remover uma oferta do quadro, que leva junto a d
 
 ## Histórico de revisão
 
-| Rodada | Achados incorporados |
-|---|---|
-| 1ª | rascunho não guardava as regras nem a referência demográfica; hidratação por ids de origem; `DistribuicaoVagasVazia`; bijeção quadro↔modalidades; ordem canônica dos turnos |
-| 2ª | fronteira da quantidade é condicional à regra (P1 — a versão anterior quebraria a Lei 12.711); origem da referência demográfica na hidratação (P1); guarda de oferta única; ordem simulação→gravação; invariantes relacionais de modalidades; teste de `REGULAR` e do campo `regimeDeTurno` |
-| implementação | passo de Modalidades eliminado; teto de vagas autorizadas e soma do quadro (duas recusas ausentes no agregado); decode do vocabulário PascalCase do detalhe; marcação em bloco, aviso retrátil e confirmação de remoção |
+| Rodada        | Achados incorporados                                                                                                                                                                                                                                                                        |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1ª            | rascunho não guardava as regras nem a referência demográfica; hidratação por ids de origem; `DistribuicaoVagasVazia`; bijeção quadro↔modalidades; ordem canônica dos turnos                                                                                                                |
+| 2ª            | fronteira da quantidade é condicional à regra (P1 — a versão anterior quebraria a Lei 12.711); origem da referência demográfica na hidratação (P1); guarda de oferta única; ordem simulação→gravação; invariantes relacionais de modalidades; teste de `REGULAR` e do campo `regimeDeTurno` |
+| implementação | passo de Modalidades eliminado; teto de vagas autorizadas e soma do quadro (duas recusas ausentes no agregado); decode do vocabulário PascalCase do detalhe; marcação em bloco, aviso retrátil e confirmação de remoção                                                                     |

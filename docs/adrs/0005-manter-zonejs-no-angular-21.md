@@ -1,8 +1,8 @@
 ---
-status: "accepted"
-date: "2026-05-01"
+status: accepted
+date: 2026-05-01
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0005: Manter Zone.js no Angular 21

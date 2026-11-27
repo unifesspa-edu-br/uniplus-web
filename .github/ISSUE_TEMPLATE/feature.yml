@@ -1,17 +1,17 @@
 name: Feature
 description: Capacidade entregável dentro de um Epic (sub-issue)
-title: "Feature: "
+title: 'Feature: '
 type: Feature
-labels: ["feature"]
-projects: ["unifesspa-edu-br/1"]
-milestone: "Sprint 2 — Reestruturação modular + Classificação"
+labels: ['feature']
+projects: ['unifesspa-edu-br/1']
+milestone: 'Sprint 2 — Reestruturação modular + Classificação'
 body:
   - type: input
     id: epic_pai
     attributes:
       label: Epic pai
-      description: "Número do Epic ao qual esta Feature pertence (use `#` para referenciar; pode ser cross-repo, ex.: `unifesspa-edu-br/uniplus-api#42`)"
-      placeholder: "#42"
+      description: 'Número do Epic ao qual esta Feature pertence (use `#` para referenciar; pode ser cross-repo, ex.: `unifesspa-edu-br/uniplus-api#42`)'
+      placeholder: '#42'
     validations:
       required: true
 

@@ -9,7 +9,7 @@ const SUPERFICIES = ['--surface-page', '--surface-card', '--surface-subtle'] as 
 describe('botão secundário e terciário — contraste nos três temas', () => {
   const componentes = lerFolhaDeEstilo(resolve(__dirname, 'components.css'));
   const tokens = lerFolhaDeEstilo(resolve(__dirname, 'tokens.css'));
-  const temaContraste = declaracoesDaRegra(tokens, '[data-theme="contrast"]');
+  const temaContraste = declaracoesDaRegra(tokens, "[data-theme='contrast']");
 
   function nomeDoToken(valor: string | undefined): string {
     const nome = /^var\((--[\w-]+)\)$/u.exec(valor ?? '')?.[1];

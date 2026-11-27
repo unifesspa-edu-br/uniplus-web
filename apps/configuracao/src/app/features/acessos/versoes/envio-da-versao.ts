@@ -85,6 +85,8 @@ export class EnvioDaVersao {
     aoAndar: AoAndar,
   ): Promise<DesfechoDoEnvio> {
     const desfecho = await this.documento.enviar(envio, arquivo, aoAndar);
-    return desfecho.ok ? { tipo: 'concluido' } : { tipo: 'sem_documento', mensagem: desfecho.mensagem };
+    return desfecho.ok
+      ? { tipo: 'concluido' }
+      : { tipo: 'sem_documento', mensagem: desfecho.mensagem };
   }
 }

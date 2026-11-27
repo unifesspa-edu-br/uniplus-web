@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { comCodigoAparado, comRotuloExibivel, temCodigoUtilizavel, textoExibivel } from './com-rotulo-exibivel';
+import {
+  comCodigoAparado,
+  comRotuloExibivel,
+  temCodigoUtilizavel,
+  textoExibivel,
+} from './com-rotulo-exibivel';
 
 describe('comRotuloExibivel', () => {
   it('mantém o rótulo quando ele existe', () => {
@@ -17,12 +22,21 @@ describe('comRotuloExibivel', () => {
 
 describe('código aparado', () => {
   it('comRotuloExibivel apara o código e usa o aparado como rótulo de reserva', () => {
-    expect(comRotuloExibivel({ codigo: '  A ', rotulo: ' ' })).toEqual({ codigo: 'A', rotulo: 'A' });
+    expect(comRotuloExibivel({ codigo: '  A ', rotulo: ' ' })).toEqual({
+      codigo: 'A',
+      rotulo: 'A',
+    });
   });
 
   it('comCodigoAparado apara o código e preserva o resto do item', () => {
-    expect(comCodigoAparado({ codigo: ' A ', rotulo: 'Área' })).toEqual({ codigo: 'A', rotulo: 'Área' });
-    expect(comCodigoAparado({ codigo: null, rotulo: 'Área' })).toEqual({ codigo: null, rotulo: 'Área' });
+    expect(comCodigoAparado({ codigo: ' A ', rotulo: 'Área' })).toEqual({
+      codigo: 'A',
+      rotulo: 'Área',
+    });
+    expect(comCodigoAparado({ codigo: null, rotulo: 'Área' })).toEqual({
+      codigo: null,
+      rotulo: 'Área',
+    });
   });
 
   it.each([[undefined], [null], [''], ['   ']])('código %j não é utilizável', (codigo) => {

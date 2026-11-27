@@ -100,7 +100,10 @@ function avaliarCondicao(condicao: Condicao, fatos: Fatos): Ternario | typeof NA
   return avaliarComNegacao(condicao.operador, fato.valor, condicao.valor);
 }
 
-const OPERADOR_NEGADO: Partial<Record<Operador, Operador>> = { DIFERENTE: 'IGUAL', NENHUM_DE: 'ALGUM_DE' };
+const OPERADOR_NEGADO: Partial<Record<Operador, Operador>> = {
+  DIFERENTE: 'IGUAL',
+  NENHUM_DE: 'ALGUM_DE',
+};
 
 /** A negação inverte o resultado do operador positivo; o indeterminado continua indeterminado. */
 function avaliarComNegacao(
@@ -159,7 +162,8 @@ function avaliarSobreValorUnico(
   configurado: ValorJson,
 ): Ternario {
   if (operador === 'IGUAL') return compararIgualdade(candidato, configurado);
-  if (operador === 'ALGUM_DE') return pertenceALista(candidato, configurado as readonly ValorJson[]);
+  if (operador === 'ALGUM_DE')
+    return pertenceALista(candidato, configurado as readonly ValorJson[]);
   const satisfaz = COMPARACOES_NUMERICAS[operador];
   if (satisfaz === undefined) return INDETERMINADO;
   return compararNumerico(candidato, configurado, satisfaz);

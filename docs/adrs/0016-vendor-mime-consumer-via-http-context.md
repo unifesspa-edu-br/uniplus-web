@@ -1,8 +1,8 @@
 ---
-status: "accepted"
-date: "2026-05-06"
+status: accepted
+date: 2026-05-06
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0016: Vendor MIME consumer via `HttpContext` — `withVendorMime` declara o recurso e o `apiResultInterceptor` anexa `Accept`
@@ -57,7 +57,7 @@ export function withVendorMime(resource: string, version: number): HttpContext {
   if (!resource || !Number.isInteger(version) || version < 1) {
     throw new Error(
       `withVendorMime: resource não pode ser vazio e version deve ser inteiro >= 1 ` +
-      `(recebido resource="${resource}", version=${version}).`,
+        `(recebido resource="${resource}", version=${version}).`,
     );
   }
   return new HttpContext().set(VENDOR_MIME_TOKEN, { resource, version });

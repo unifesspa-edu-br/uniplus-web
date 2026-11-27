@@ -39,16 +39,21 @@ async function tipoSolicitado(nome: string, codigo: string): Promise<string> {
     'GET',
     '/api/configuracao/categorias-documento',
   );
-  const criado = await chamarApi<string>(GESTOR_DE_PROTECAO_DE_DADOS, 'POST', `${ADMIN}/tipos-documento`, {
-    corpo: {
-      codigo,
-      nome,
-      categoria: categorias.corpo[0]?.codigo,
-      classificacaoProtecao: 'INTERNO',
-      hipoteseLegal: 'CUMPRIMENTO_OBRIGACAO_LEGAL',
-      finalidadeTratamento: 'Conferência de documento complementar do atendimento especializado.',
+  const criado = await chamarApi<string>(
+    GESTOR_DE_PROTECAO_DE_DADOS,
+    'POST',
+    `${ADMIN}/tipos-documento`,
+    {
+      corpo: {
+        codigo,
+        nome,
+        categoria: categorias.corpo[0]?.codigo,
+        classificacaoProtecao: 'INTERNO',
+        hipoteseLegal: 'CUMPRIMENTO_OBRIGACAO_LEGAL',
+        finalidadeTratamento: 'Conferência de documento complementar do atendimento especializado.',
+      },
     },
-  });
+  );
   expect(criado.status, JSON.stringify(criado.corpo)).toBe(201);
   const id = String(criado.corpo).replace(/"/g, '');
   const pedido = await chamarApi(
@@ -159,7 +164,12 @@ test.describe('Manifestação técnica na proteção de dados dos tipos de docum
   test('quem administra os tipos de documento lê o histórico das manifestações, sem nenhuma ação', async ({
     browser,
   }) => {
-    const pagina = await entrarComoPersona(browser, APP, GESTOR_DE_PROTECAO_DE_DADOS, '/tipos-documento');
+    const pagina = await entrarComoPersona(
+      browser,
+      APP,
+      GESTOR_DE_PROTECAO_DE_DADOS,
+      '/tipos-documento',
+    );
     await pagina.getByRole('searchbox', { name: 'Buscar tipo de documento' }).fill(nome);
     await pagina.getByRole('button', { name: `Ver o detalhe de ${nome}` }).click();
     const historico = pagina

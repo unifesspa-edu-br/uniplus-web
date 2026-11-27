@@ -1,12 +1,12 @@
 ---
-status: "accepted"
-date: "2026-11-08"
+status: accepted
+date: 2026-11-08
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 consulted:
-  - "Equipe Uni+"
+  - 'Equipe Uni+'
 informed:
-  - "Apps selecao e portal"
+  - 'Apps selecao e portal'
 ---
 
 # ADR-0030: Lib de apresentação do domínio da inscrição

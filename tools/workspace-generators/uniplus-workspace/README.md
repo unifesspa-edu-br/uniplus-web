@@ -36,11 +36,11 @@ npx nx g @uniplus/workspace:feature-lib portal/data-access-inscricoes --type=dat
 
 #### Tags emitidas
 
-| `--type` | Tags do `project.json` gerado |
-|---|---|
-| `feature` | `["scope:<scope>", "type:feature"]` |
+| `--type`      | Tags do `project.json` gerado           |
+| ------------- | --------------------------------------- |
+| `feature`     | `["scope:<scope>", "type:feature"]`     |
 | `data-access` | `["scope:<scope>", "type:data-access"]` |
 
 #### Builder em V1
 
-Uniformidade com `shared-*` — todos `@nx/angular:ng-packagr-lite`. `@nx/js:tsc` para `--type=data-access` puro fica para V2 / Onda 2 (ADR-0021 *Roadmap V2*).
+Uniformidade com `shared-*` — todos `@nx/angular:ng-packagr-lite`. `@nx/js:tsc` para `--type=data-access` puro fica para V2 / Onda 2 (ADR-0021 _Roadmap V2_).

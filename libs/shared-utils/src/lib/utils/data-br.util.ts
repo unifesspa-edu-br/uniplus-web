@@ -83,7 +83,9 @@ export function formatarDataBr(
   const lida = entrada instanceof Date ? { instante: entrada, fuso } : lerEntrada(entrada, fuso);
   if (!lida || Number.isNaN(lida.instante.getTime())) return '';
   const intl = formatadorDoFormato(formato, lida.fuso);
-  return formato === 'shortMonth' ? diaMesAbreviadoAno(intl, lida.instante) : intl.format(lida.instante);
+  return formato === 'shortMonth'
+    ? diaMesAbreviadoAno(intl, lida.instante)
+    : intl.format(lida.instante);
 }
 
 /** O Intl abrevia o mês com ponto ("jun."); a tela mostra "05 jun 2026". */

@@ -1,8 +1,8 @@
 ---
-status: "superseded by ADR-0023"
-date: "2026-05-01"
+status: superseded by ADR-0023
+date: 2026-05-01
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0007: PrimeNG em modo unstyled como component library

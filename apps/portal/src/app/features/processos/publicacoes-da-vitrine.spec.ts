@@ -50,7 +50,10 @@ describe('PublicacoesDaVitrine', () => {
       providers: [
         PublicacoesDaVitrine,
         { provide: VitrineDeCertames, useValue: { certames } },
-        { provide: PublicacoesRepository, useValue: { buscarPorCertames: vi.fn(buscarPorCertames) } },
+        {
+          provide: PublicacoesRepository,
+          useValue: { buscarPorCertames: vi.fn(buscarPorCertames) },
+        },
       ],
     });
   });

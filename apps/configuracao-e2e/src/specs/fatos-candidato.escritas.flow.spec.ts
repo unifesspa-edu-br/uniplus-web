@@ -31,9 +31,7 @@ async function preencherCriacao(page: Page): Promise<void> {
   await page.locator('select[formcontrolname="dominio"]').selectOption('SIM_OU_NAO');
   await page.locator('#cfg-fato-pontoResolucao').selectOption('INSCRICAO');
   await page.locator('select[id$="-classificacaoProtecao"]').selectOption('PESSOAL');
-  await page
-    .locator('select[id$="-hipoteses"]')
-    .selectOption('EXECUCAO_POLITICAS_PUBLICAS');
+  await page.locator('select[id$="-hipoteses"]').selectOption('EXECUCAO_POLITICAS_PUBLICAS');
   await page.locator('[id$="-finalidadeTratamento"]').fill('Classificar a reserva.');
 }
 

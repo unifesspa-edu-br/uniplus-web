@@ -72,7 +72,12 @@ export function numeroDeInscricao(ordem: number, rodada = 0): string {
   return String(240000000000 + rodada * 1000 + ordem);
 }
 
-export function linha(pessoa: PessoaFicticia, ordem: number, cpf: string = pessoa.cpf, rodada = 0): string {
+export function linha(
+  pessoa: PessoaFicticia,
+  ordem: number,
+  cpf: string = pessoa.cpf,
+  rodada = 0,
+): string {
   return [
     numeroDeInscricao(ordem, rodada),
     cpf,

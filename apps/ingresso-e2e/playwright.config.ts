@@ -76,11 +76,15 @@ export default defineConfig({
       use: { ...devices['Desktop Firefox'] },
     },
 
-    ...(isCI ? [{
-      name: 'webkit',
-      testIgnore: EXCLUDED_FROM_DEFAULT_PROJECTS,
-      use: { ...devices['Desktop Safari'] },
-    }] : []),
+    ...(isCI
+      ? [
+          {
+            name: 'webkit',
+            testIgnore: EXCLUDED_FROM_DEFAULT_PROJECTS,
+            use: { ...devices['Desktop Safari'] },
+          },
+        ]
+      : []),
 
     ...AAA_PROJECTS,
   ],

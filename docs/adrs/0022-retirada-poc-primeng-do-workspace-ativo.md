@@ -1,13 +1,13 @@
 ---
-status: "accepted"
-date: "2026-05-09"
+status: accepted
+date: 2026-05-09
 decision-makers:
-  - "Tech Lead"
+  - 'Tech Lead'
 consulted:
-  - "Equipe Frontend"
+  - 'Equipe Frontend'
 informed:
-  - "DevOps"
-  - "Equipe `uniplus-web`"
+  - 'DevOps'
+  - 'Equipe `uniplus-web`'
 ---
 
 # ADR-0022: Retirada da POC `poc-primeng` do workspace Nx ativo
@@ -43,12 +43,12 @@ A pergunta operacional: a POC já cumpriu seu papel — ela deve continuar como 
 
 A POC foi movida para `docs/referencias/poc-primeng/` e `docs/referencias/poc-primeng-e2e/`. Os arquivos de configuração que tornavam o diretório descobrível pelos plugins do Nx foram removidos:
 
-| Arquivo | Plugin que descobria |
-|---|---|
-| `project.json` | core Nx |
-| `vite.config.mts` | `@nx/vite/plugin` |
-| `playwright.config.ts` | `@nx/playwright/plugin` |
-| `eslint.config.mjs` (POC + e2e) | `@nx/eslint/plugin` |
+| Arquivo                         | Plugin que descobria    |
+| ------------------------------- | ----------------------- |
+| `project.json`                  | core Nx                 |
+| `vite.config.mts`               | `@nx/vite/plugin`       |
+| `playwright.config.ts`          | `@nx/playwright/plugin` |
+| `eslint.config.mjs` (POC + e2e) | `@nx/eslint/plugin`     |
 
 Permanecem (como referência histórica navegável): `src/`, `public/`, `screenshots/`, `tsconfig.json`, `tsconfig.app.json`, `tsconfig.spec.json`, `findings.md`. O código não é mais build-able pelo workspace; consulta serve apenas como exemplo de PrimeNG unstyled puro com `@theme {...}` direto (pré-foundation).
 

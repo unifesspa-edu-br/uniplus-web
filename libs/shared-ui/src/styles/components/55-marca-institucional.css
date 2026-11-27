@@ -32,19 +32,22 @@
 .marca-institucional__imagem--conforme-tema {
   display: none;
 }
-[data-theme="dark"] .marca-institucional__imagem--conforme-tema,
-[data-theme="contrast"] .marca-institucional__imagem--conforme-tema {
+[data-theme='dark'] .marca-institucional__imagem--conforme-tema,
+[data-theme='contrast'] .marca-institucional__imagem--conforme-tema {
   display: block;
 }
-[data-theme="dark"] .marca-institucional__imagem--colorida:has(~ .marca-institucional__imagem--conforme-tema),
-[data-theme="contrast"] .marca-institucional__imagem--colorida:has(~ .marca-institucional__imagem--conforme-tema) {
+[data-theme='dark']
+  .marca-institucional__imagem--colorida:has(~ .marca-institucional__imagem--conforme-tema),
+[data-theme='contrast']
+  .marca-institucional__imagem--colorida:has(~ .marca-institucional__imagem--conforme-tema) {
   display: none;
 }
 @media (prefers-color-scheme: dark) {
-  [data-theme="auto"] .marca-institucional__imagem--conforme-tema {
+  [data-theme='auto'] .marca-institucional__imagem--conforme-tema {
     display: block;
   }
-  [data-theme="auto"] .marca-institucional__imagem--colorida:has(~ .marca-institucional__imagem--conforme-tema) {
+  [data-theme='auto']
+    .marca-institucional__imagem--colorida:has(~ .marca-institucional__imagem--conforme-tema) {
     display: none;
   }
 }

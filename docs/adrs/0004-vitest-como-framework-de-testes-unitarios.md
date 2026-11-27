@@ -1,8 +1,8 @@
 ---
-status: "accepted"
-date: "2026-05-01"
+status: accepted
+date: 2026-05-01
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0004: Vitest como framework de testes unitários
@@ -36,13 +36,13 @@ Durante o scaffolding do workspace, a opção padrão do Nx 22 para projetos Ang
 
 Stack de testes unitários:
 
-| Componente              | Tecnologia                  |
-|-------------------------|-----------------------------|
-| Test runner             | Vitest 4.x                  |
-| Integração Angular      | @analogjs/vitest-angular 2.x|
-| Cobertura               | @vitest/coverage-v8 4.x     |
-| Ambiente DOM            | jsdom                       |
-| Setup                   | `src/test-setup.ts`         |
+| Componente         | Tecnologia                   |
+| ------------------ | ---------------------------- |
+| Test runner        | Vitest 4.x                   |
+| Integração Angular | @analogjs/vitest-angular 2.x |
+| Cobertura          | @vitest/coverage-v8 4.x      |
+| Ambiente DOM       | jsdom                        |
+| Setup              | `src/test-setup.ts`          |
 
 Configuração centralizada em `vite.config.mts` por projeto. Major versions de Vitest e do plugin Angular ficam pinned no `package.json` para evitar surpresas em atualizações.
 

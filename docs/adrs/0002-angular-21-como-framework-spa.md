@@ -1,8 +1,8 @@
 ---
-status: "accepted"
-date: "2026-05-01"
+status: accepted
+date: 2026-05-01
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0002: Angular 21 como framework SPA

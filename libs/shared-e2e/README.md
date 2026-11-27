@@ -26,8 +26,7 @@ import { setupKeycloakAuth } from '@uniplus/shared-e2e';
 import { ADMIN_USER, STORAGE_STATE_PATH_ADMIN } from './fixtures/auth.fixture';
 
 setup('autentica admin via Keycloak e persiste storageState', async ({}, testInfo) => {
-  const baseURL =
-    testInfo.config.projects[0]?.use.baseURL ?? 'http://localhost:4200';
+  const baseURL = testInfo.config.projects[0]?.use.baseURL ?? 'http://localhost:4200';
 
   await setupKeycloakAuth({
     // path.resolve ancora no app e2e — paths relativos cairiam no cwd
@@ -101,12 +100,12 @@ O `storageState` do Playwright persiste **apenas cookies de sessão do Keycloak*
 
 ## Variáveis de ambiente
 
-| Var | Default | Descrição |
-|---|---|---|
-| `KEYCLOAK_URL` | `http://localhost:8080` | Origin do Keycloak (Admin API + UI). |
-| `KEYCLOAK_ADMIN` | `admin` | Usuário admin do realm `master` (Direct Access Grants). |
-| `KEYCLOAK_ADMIN_PASSWORD` | — | **Obrigatório.** Sem isto, qualquer chamada a `resetPasswords` lança Error. |
-| `BASE_URL` | `http://localhost:4200` | URL da app sob teste (passado para o Playwright). |
+| Var                       | Default                 | Descrição                                                                   |
+| ------------------------- | ----------------------- | --------------------------------------------------------------------------- |
+| `KEYCLOAK_URL`            | `http://localhost:8080` | Origin do Keycloak (Admin API + UI).                                        |
+| `KEYCLOAK_ADMIN`          | `admin`                 | Usuário admin do realm `master` (Direct Access Grants).                     |
+| `KEYCLOAK_ADMIN_PASSWORD` | —                       | **Obrigatório.** Sem isto, qualquer chamada a `resetPasswords` lança Error. |
+| `BASE_URL`                | `http://localhost:4200` | URL da app sob teste (passado para o Playwright).                           |
 
 ## Não-escopo
 

@@ -17,7 +17,10 @@ export function diferencaDaVersao(
   };
 }
 
-export function mudancaDaPermissao(codigo: string, diferenca: DiferencaDaVersao): MudancaDaPermissao {
+export function mudancaDaPermissao(
+  codigo: string,
+  diferenca: DiferencaDaVersao,
+): MudancaDaPermissao {
   if (diferenca.acrescimo.includes(codigo)) return 'acrescentada';
   return diferenca.remocao.includes(codigo) ? 'removida' : null;
 }
@@ -28,7 +31,10 @@ export function mudancaDaPermissao(codigo: string, diferenca: DiferencaDaVersao)
  */
 export type DestinoDaProposta = 'versao' | 'remocao' | 'nada';
 
-export function destinoDaProposta(diferenca: DiferencaDaVersao, conteudoMudou: boolean): DestinoDaProposta {
+export function destinoDaProposta(
+  diferenca: DiferencaDaVersao,
+  conteudoMudou: boolean,
+): DestinoDaProposta {
   if (diferenca.acrescimo.length > 0 || conteudoMudou) return 'versao';
   return diferenca.remocao.length > 0 ? 'remocao' : 'nada';
 }

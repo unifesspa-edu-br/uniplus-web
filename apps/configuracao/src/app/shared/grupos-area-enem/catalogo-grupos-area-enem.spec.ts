@@ -55,7 +55,10 @@ describe('CatalogoGruposAreaEnem', () => {
     catalogo.garantirCarregado();
     controller
       .expectOne(URL)
-      .flush({ title: 'Indisponível', status: 503 }, { status: 503, statusText: 'Service Unavailable' });
+      .flush(
+        { title: 'Indisponível', status: 503 },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
 
     expect(catalogo.comErro()).toBe(true);
     expect(catalogo.opcoes().length).toBe(0);
@@ -70,20 +73,27 @@ describe('CatalogoGruposAreaEnem', () => {
     catalogo.garantirCarregado();
     controller.expectOne(URL).flush([{ codigo: '  TECNOLOGICA ', rotulo: 'Tecnológica' }, saude]);
 
-    expect(catalogo.opcoes().map((grupo) => grupo.codigo)).toEqual(['TECNOLOGICA', 'SAUDE_E_BIOLOGICAS']);
+    expect(catalogo.opcoes().map((grupo) => grupo.codigo)).toEqual([
+      'TECNOLOGICA',
+      'SAUDE_E_BIOLOGICAS',
+    ]);
     expect(catalogo.porCodigo().get('TECNOLOGICA')?.rotulo).toBe('Tecnológica');
-    expect(catalogo.exibivel({ codigo: ' TECNOLOGICA', rotulo: 'Antigo' }).rotulo).toBe('Tecnológica');
+    expect(catalogo.exibivel({ codigo: ' TECNOLOGICA', rotulo: 'Antigo' }).rotulo).toBe(
+      'Tecnológica',
+    );
   });
 
   it('descarta grupo com código ausente, vazio ou só espaços', () => {
     catalogo.garantirCarregado();
-    controller.expectOne(URL).flush([
-      { rotulo: 'Sem código' },
-      { codigo: null, rotulo: 'Nulo' },
-      { codigo: '', rotulo: 'Vazio' },
-      { codigo: '   ', rotulo: 'Espaços' },
-      tecnologica,
-    ]);
+    controller
+      .expectOne(URL)
+      .flush([
+        { rotulo: 'Sem código' },
+        { codigo: null, rotulo: 'Nulo' },
+        { codigo: '', rotulo: 'Vazio' },
+        { codigo: '   ', rotulo: 'Espaços' },
+        tecnologica,
+      ]);
 
     expect(catalogo.opcoes().map((grupo) => grupo.codigo)).toEqual(['TECNOLOGICA']);
   });
@@ -137,7 +147,10 @@ describe('CatalogoGruposAreaEnem', () => {
     catalogo.garantirCarregado();
     controller
       .expectOne(URL)
-      .flush({ title: 'Indisponível', status: 503 }, { status: 503, statusText: 'Service Unavailable' });
+      .flush(
+        { title: 'Indisponível', status: 503 },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
     expect(catalogo.falhou()).toBe(true);
 
     catalogo.tentarDeNovo();
@@ -155,7 +168,10 @@ describe('CatalogoGruposAreaEnem', () => {
     catalogo.garantirCarregado();
     controller
       .expectOne(URL)
-      .flush({ title: 'Indisponível', status: 503 }, { status: 503, statusText: 'Service Unavailable' });
+      .flush(
+        { title: 'Indisponível', status: 503 },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
     expect(catalogo.falhou()).toBe(true);
 
     // Outra tela abre e recarrega sozinha: enquanto corre, nenhuma falha é anunciada.
@@ -166,7 +182,10 @@ describe('CatalogoGruposAreaEnem', () => {
     // Esta recarga também falha: agora o alerta é desta visita.
     controller
       .expectOne(URL)
-      .flush({ title: 'Indisponível', status: 503 }, { status: 503, statusText: 'Service Unavailable' });
+      .flush(
+        { title: 'Indisponível', status: 503 },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
     expect(catalogo.falhou()).toBe(true);
   });
 
@@ -174,7 +193,10 @@ describe('CatalogoGruposAreaEnem', () => {
     catalogo.garantirCarregado();
     controller
       .expectOne(URL)
-      .flush({ title: 'Indisponível', status: 503 }, { status: 503, statusText: 'Service Unavailable' });
+      .flush(
+        { title: 'Indisponível', status: 503 },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
     // A tela mostra o alerta da falha, e o operador pede de novo.
     expect(catalogo.falhou()).toBe(true);
     catalogo.tentarDeNovo();
@@ -196,11 +218,17 @@ describe('CatalogoGruposAreaEnem', () => {
     catalogo.recarregar();
     controller
       .expectOne(URL)
-      .flush({ title: 'Indisponível', status: 503 }, { status: 503, statusText: 'Service Unavailable' });
+      .flush(
+        { title: 'Indisponível', status: 503 },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
 
     // A última tentativa falhou (a próxima chamada tenta de novo), mas há lista utilizável.
     expect(catalogo.comErro()).toBe(true);
-    expect(catalogo.opcoes().map((grupo) => grupo.codigo)).toEqual(['TECNOLOGICA', 'SAUDE_E_BIOLOGICAS']);
+    expect(catalogo.opcoes().map((grupo) => grupo.codigo)).toEqual([
+      'TECNOLOGICA',
+      'SAUDE_E_BIOLOGICAS',
+    ]);
     expect(catalogo.falhou()).toBe(false);
   });
 
@@ -211,7 +239,10 @@ describe('CatalogoGruposAreaEnem', () => {
     catalogo.recarregar();
     controller.expectOne(URL).flush([]);
 
-    expect(catalogo.opcoes().map((grupo) => grupo.codigo)).toEqual(['TECNOLOGICA', 'SAUDE_E_BIOLOGICAS']);
+    expect(catalogo.opcoes().map((grupo) => grupo.codigo)).toEqual([
+      'TECNOLOGICA',
+      'SAUDE_E_BIOLOGICAS',
+    ]);
     expect(catalogo.falhou()).toBe(false);
     // A resposta vazia ainda conta como falha da tentativa: a próxima chamada tenta de novo.
     expect(catalogo.comErro()).toBe(true);

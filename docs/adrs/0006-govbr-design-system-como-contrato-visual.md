@@ -1,9 +1,9 @@
 ---
-status: "superseded by ADR-0023"
-date: "2026-05-01"
+status: superseded by ADR-0023
+date: 2026-05-01
 decision-makers:
-  - "Tech Lead (CTIC)"
-  - "Diretora do CTIC"
+  - 'Tech Lead (CTIC)'
+  - 'Diretora do CTIC'
 ---
 
 # ADR-0006: Adoção do Gov.br Design System como contrato visual

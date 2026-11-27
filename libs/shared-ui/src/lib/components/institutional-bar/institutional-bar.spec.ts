@@ -63,7 +63,9 @@ describe('InstitutionalBarComponent', () => {
     const { fixture, raiz } = setup();
     gatilho(raiz).click();
     fixture.detectChanges();
-    const ultimoLink = raiz.querySelector('#menu-institucional li:last-child a') as HTMLAnchorElement;
+    const ultimoLink = raiz.querySelector(
+      '#menu-institucional li:last-child a',
+    ) as HTMLAnchorElement;
     const fora = raiz.querySelector('#entrar') as HTMLButtonElement;
 
     ultimoLink.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: fora }));

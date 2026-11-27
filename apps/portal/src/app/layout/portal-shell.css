@@ -131,13 +131,19 @@
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
 }
-.portal-scroll::-webkit-scrollbar { width: 10px; }
-.portal-scroll::-webkit-scrollbar-track { background: transparent; }
+.portal-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+.portal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
 .portal-scroll::-webkit-scrollbar-thumb {
   background: var(--border-strong);
   border-radius: var(--radius-pill);
 }
-.portal-scroll::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+.portal-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
 
 /* ── Conteúdo principal ──────────────────────────────────────────── */
 

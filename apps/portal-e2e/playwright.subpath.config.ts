@@ -25,7 +25,10 @@ export default defineConfig({
   ...nxE2EPreset(__filename, { testDir: './src/specs-subpath' }),
   outputDir: path.join(workspaceRoot, 'tmp/playwright/portal-e2e-subpath'),
   reporter: [
-    ['html', { outputFolder: path.join(workspaceRoot, 'tmp/playwright/portal-e2e-subpath-report') }],
+    [
+      'html',
+      { outputFolder: path.join(workspaceRoot, 'tmp/playwright/portal-e2e-subpath-report') },
+    ],
     ['line'],
   ],
   use: {

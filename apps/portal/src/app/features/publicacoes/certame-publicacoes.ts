@@ -63,7 +63,9 @@ export class CertamePublicacoesComponent {
    * da nova tentativa que dá certo volta ao botão do próprio accordion.
    */
   protected readonly leitura = acompanharLeitura({
-    falha: computed(() => (this.erro() ? 'As publicações deste edital não foram carregadas.' : null)),
+    falha: computed(() =>
+      this.erro() ? 'As publicações deste edital não foram carregadas.' : null,
+    ),
     pendente: this.carregando,
     recarregar: () => this.recarregar.emit(),
     destino: () => this.botao()?.nativeElement,

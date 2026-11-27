@@ -1,8 +1,8 @@
 ---
-status: "accepted"
-date: "2026-05-06"
+status: accepted
+date: 2026-05-06
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0015: Cursor pagination consumer via parser de `Link` header — decode no caller, não no interceptor
@@ -81,9 +81,9 @@ export function extractNextCursor(linkHeader: string | null | undefined): Cursor
 ### Uso esperado pelo caller (preview da Frente 6)
 
 ```ts
-this.editaisApi.listar(this.cursor()).subscribe(result => {
+this.editaisApi.listar(this.cursor()).subscribe((result) => {
   if (!result.ok) return;
-  this.editais.update(prev => [...prev, ...result.data]);
+  this.editais.update((prev) => [...prev, ...result.data]);
   this.cursor.set(extractNextCursor(result.headers.get('Link')));
 });
 ```

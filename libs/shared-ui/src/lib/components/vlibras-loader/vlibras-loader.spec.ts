@@ -40,7 +40,9 @@ describe('VlibrasLoaderComponent', () => {
     await fixture.whenStable();
 
     const script = document.getElementById('uniplus-vlibras-script') as HTMLScriptElement | null;
-    const stylesheet = document.getElementById('uniplus-vlibras-stylesheet') as HTMLLinkElement | null;
+    const stylesheet = document.getElementById(
+      'uniplus-vlibras-stylesheet',
+    ) as HTMLLinkElement | null;
     expect(script).not.toBeNull();
     expect(stylesheet).not.toBeNull();
     expect(stylesheet?.getAttribute('href')).toBe(
@@ -53,7 +55,9 @@ describe('VlibrasLoaderComponent', () => {
 
     script?.dispatchEvent(new Event('load'));
 
-    expect(widget).toHaveBeenCalledWith(new URL('assets/shared-ui/vlibras', document.baseURI).toString());
+    expect(widget).toHaveBeenCalledWith(
+      new URL('assets/shared-ui/vlibras', document.baseURI).toString(),
+    );
   });
 
   it('executa o onload registrado pelo VLibras quando o script chega após o load da página', async () => {
@@ -72,7 +76,9 @@ describe('VlibrasLoaderComponent', () => {
     document.getElementById('uniplus-vlibras-script')?.dispatchEvent(new Event('load'));
     await new Promise((resolve) => window.setTimeout(resolve, 0));
 
-    expect(widget).toHaveBeenCalledWith(new URL('assets/shared-ui/vlibras', document.baseURI).toString());
+    expect(widget).toHaveBeenCalledWith(
+      new URL('assets/shared-ui/vlibras', document.baseURI).toString(),
+    );
     expect(pendingOnload).toHaveBeenCalledOnce();
   });
 
@@ -118,7 +124,9 @@ describe('VlibrasLoaderComponent', () => {
       await fixture.whenStable();
 
       const script = document.getElementById('uniplus-vlibras-script') as HTMLScriptElement | null;
-      const stylesheet = document.getElementById('uniplus-vlibras-stylesheet') as HTMLLinkElement | null;
+      const stylesheet = document.getElementById(
+        'uniplus-vlibras-stylesheet',
+      ) as HTMLLinkElement | null;
       expect(stylesheet?.getAttribute('href')).toBe(
         'http://localhost:3000/portal/assets/shared-ui/vlibras/vlibras.css',
       );

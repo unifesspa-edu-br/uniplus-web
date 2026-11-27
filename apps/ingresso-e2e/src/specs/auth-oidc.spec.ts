@@ -13,7 +13,11 @@ const ACOMPANHA = ['selecao:processos:acompanhar'];
 const USERS = {
   admin: { username: 'admin', password: SENHA_DAS_PERSONAS, displayName: 'Admin Teste' },
   gestor: { username: 'gestor', password: SENHA_DAS_PERSONAS, displayName: 'Gestor Teste' },
-  candidato: { username: 'candidato', password: SENHA_DAS_PERSONAS, displayName: 'Candidato Teste' },
+  candidato: {
+    username: 'candidato',
+    password: SENHA_DAS_PERSONAS,
+    displayName: 'Candidato Teste',
+  },
 };
 
 test.describe('Autenticação OIDC — Ingresso', () => {

@@ -9,9 +9,11 @@
 <!-- Lista detalhada das mudanças por categoria -->
 
 ### Novos arquivos
+
 <!-- - `path/to/file` — descrição -->
 
 ### Modificados
+
 <!-- - `path/to/file` — o que mudou -->
 
 ## Testes

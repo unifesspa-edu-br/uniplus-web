@@ -11,10 +11,20 @@ export const PDF_MINIMO = Buffer.from(
  * Envia os bytes direto ao armazenamento pela URL assinada, com o content type que entrou na
  * assinatura, e devolve o ETag que a API pede na confirmação.
  */
-export async function enviarPelaUrlAssinada(urlUpload: string, contentType: string, bytes: Buffer<ArrayBuffer>): Promise<string> {
-  const subida = await fetch(urlUpload, { method: 'PUT', headers: { 'content-type': contentType }, body: bytes });
+export async function enviarPelaUrlAssinada(
+  urlUpload: string,
+  contentType: string,
+  bytes: Buffer<ArrayBuffer>,
+): Promise<string> {
+  const subida = await fetch(urlUpload, {
+    method: 'PUT',
+    headers: { 'content-type': contentType },
+    body: bytes,
+  });
   if (!subida.ok) {
-    throw new Error(`Envio ao armazenamento: ${subida.status} ${(await subida.text()).slice(0, 300)}`);
+    throw new Error(
+      `Envio ao armazenamento: ${subida.status} ${(await subida.text()).slice(0, 300)}`,
+    );
   }
   return subida.headers.get('etag') ?? '';
 }

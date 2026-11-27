@@ -1,8 +1,8 @@
 ---
-status: "accepted"
-date: "2026-05-04"
+status: accepted
+date: 2026-05-04
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0012: Placement do `ApiResult<T>` em subpasta de `shared-core`, não em nova lib
@@ -15,8 +15,8 @@ A [ADR-0011](0011-consumer-adapter-api-result.md) decidiu que o adapter `ApiResu
 
 Em revisão pelo Tech Lead pós-merge, o placement foi reconsiderado a partir de uma analogia simétrica com a estrutura do backend `uniplus-api`:
 
-| Camada | `uniplus-api` (backend) | `uniplus-web` (frontend antes da ADR-0011) | `uniplus-web` (com ADR-0011) |
-|---|---|---|---|
+| Camada              | `uniplus-api` (backend)                                                                                  | `uniplus-web` (frontend antes da ADR-0011)                                                       | `uniplus-web` (com ADR-0011)                                               |
+| ------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
 | Cross-cutting infra | `Infrastructure.Core` (1 projeto único — middleware, logging, CorrelationId, Wolverine middleware, etc.) | `shared-core` (1 lib — `error.interceptor.ts`, `NotificationService`, `LoadingOverlayComponent`) | `shared-core` + nova `shared-http` (2 libs com responsabilidade adjacente) |
 
 O backend manteve **um único projeto cross-cutting** com sub-pastas internas. A ADR-0011 propôs fragmentar o frontend antes de ele ter alcançado o threshold de complexidade que justificaria a divisão. Esta ADR superseder o **placement** decidido pela 0011 mantendo o restante do design.
@@ -73,13 +73,13 @@ Toda a substância de design da [ADR-0011](0011-consumer-adapter-api-result.md) 
 
 Apenas o **placement**:
 
-| Aspecto | ADR-0011 (superseded) | ADR-0012 (esta) |
-|---|---|---|
-| Lib | Nova `libs/shared-http` | `libs/shared-core` (existente) |
-| Path alias | `@uniplus/shared-http` (novo) | `@uniplus/shared-core` (existente) |
-| Tags Nx | `scope:shared, type:http` (novas) | tags atuais de `shared-core` |
-| ESLint module boundaries | Regra nova para `type:http` | Regras atuais de `shared-core` |
-| Estrutura interna | `libs/shared-http/src/lib/*.ts` | `libs/shared-core/src/lib/http/*.ts` |
+| Aspecto                  | ADR-0011 (superseded)             | ADR-0012 (esta)                      |
+| ------------------------ | --------------------------------- | ------------------------------------ |
+| Lib                      | Nova `libs/shared-http`           | `libs/shared-core` (existente)       |
+| Path alias               | `@uniplus/shared-http` (novo)     | `@uniplus/shared-core` (existente)   |
+| Tags Nx                  | `scope:shared, type:http` (novas) | tags atuais de `shared-core`         |
+| ESLint module boundaries | Regra nova para `type:http`       | Regras atuais de `shared-core`       |
+| Estrutura interna        | `libs/shared-http/src/lib/*.ts`   | `libs/shared-core/src/lib/http/*.ts` |
 
 ### Caminho de promoção futura para lib própria
 

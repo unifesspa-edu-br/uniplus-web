@@ -17,9 +17,7 @@ test.describe('Ingresso — gate AAA aplicável @aaa', () => {
     await installA11yPreference(page, theme, fontMode);
   });
 
-  test('shell autenticado /dashboard passa AAA aplicável', async ({
-    page,
-  }, testInfo) => {
+  test('shell autenticado /dashboard passa AAA aplicável', async ({ page }, testInfo) => {
     const { theme, fontMode } = settingsFromProjectName(testInfo.project.name);
 
     await page.goto('/dashboard');
@@ -29,9 +27,7 @@ test.describe('Ingresso — gate AAA aplicável @aaa', () => {
 
     await expect(page.getByRole('banner')).toBeVisible();
     await expect(page.getByRole('main')).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: 'Dashboard', level: 1 }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible();
     await expect(page.getByText('Painel em preparação')).toBeVisible();
     await expect(page.locator('.institutional-bar')).toBeVisible();
     await expect(page.locator('.gov-bar')).toHaveCount(0);
@@ -49,16 +45,19 @@ async function installA11yPreference(
   theme: AaaTheme,
   fontMode: AaaFontMode,
 ): Promise<void> {
-  await page.addInitScript(({ theme: dsTheme, fontMode: dsFontMode }) => {
-    window.localStorage.setItem(
-      'uniplus.a11y',
-      JSON.stringify({
-        theme: dsTheme === 'contrast' ? 'auto' : dsTheme,
-        contrast: dsTheme === 'contrast',
-        fontMode: dsFontMode,
-      }),
-    );
-  }, { theme, fontMode });
+  await page.addInitScript(
+    ({ theme: dsTheme, fontMode: dsFontMode }) => {
+      window.localStorage.setItem(
+        'uniplus.a11y',
+        JSON.stringify({
+          theme: dsTheme === 'contrast' ? 'auto' : dsTheme,
+          contrast: dsTheme === 'contrast',
+          fontMode: dsFontMode,
+        }),
+      );
+    },
+    { theme, fontMode },
+  );
 }
 
 async function expectFontMode(page: Page, fontMode: AaaFontMode): Promise<void> {

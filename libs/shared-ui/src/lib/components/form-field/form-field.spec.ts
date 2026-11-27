@@ -59,7 +59,8 @@ describe('FormFieldComponent', () => {
     fixture.detectChanges();
 
     const input = fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement;
-    const erro = fixture.debugElement.query(By.css('p[aria-live="polite"]')).nativeElement as HTMLParagraphElement;
+    const erro = fixture.debugElement.query(By.css('p[aria-live="polite"]'))
+      .nativeElement as HTMLParagraphElement;
 
     expect(erro.textContent?.trim()).toBe('Campo obrigatório.');
     expect(erro.hasAttribute('hidden')).toBe(false);
@@ -161,7 +162,10 @@ describe('FormFieldComponent', () => {
   });
 
   it('FormControl com Validators.required emite evento de mudança ao usuário digitar', () => {
-    const control = new FormControl<string>('', { nonNullable: true, validators: [Validators.required] });
+    const control = new FormControl<string>('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    });
     fixture.componentRef.setInput('fieldControl', control);
     fixture.detectChanges();
 

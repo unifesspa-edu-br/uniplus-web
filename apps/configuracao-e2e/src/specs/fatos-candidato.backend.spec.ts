@@ -36,9 +36,7 @@ async function preencherFato(
   await form.locator('select[formcontrolname="dominio"]').selectOption('NUMERICO');
   await form.locator('select[formcontrolname="pontoResolucao"]').selectOption('INSCRICAO');
   await form.locator('select[id$="-classificacaoProtecao"]').selectOption('PESSOAL');
-  await form
-    .locator('select[id$="-hipoteses"]')
-    .selectOption('CUMPRIMENTO_OBRIGACAO_LEGAL');
+  await form.locator('select[id$="-hipoteses"]').selectOption('CUMPRIMENTO_OBRIGACAO_LEGAL');
   await form
     .getByLabel('Finalidade do tratamento')
     .fill('Conferência da renda para a reserva de vagas do processo seletivo.');

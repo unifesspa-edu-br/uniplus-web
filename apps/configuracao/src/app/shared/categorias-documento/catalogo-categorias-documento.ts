@@ -1,5 +1,9 @@
 import { DestroyRef, Injectable, Signal, computed, inject, signal } from '@angular/core';
-import { lookupCompleto, type LookupCompleto, type ProblemDetails } from '@uniplus/shared-core/http';
+import {
+  lookupCompleto,
+  type LookupCompleto,
+  type ProblemDetails,
+} from '@uniplus/shared-core/http';
 import { tap } from 'rxjs';
 import {
   CategoriasDocumentoApi,

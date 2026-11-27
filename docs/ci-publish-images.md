@@ -20,12 +20,12 @@ um SHA — nunca um canal mutável.
 
 Para cada release `v<X>.<Y>.<Z>`:
 
-| Tag | Significado |
-|---|---|
-| `sha-<7-curto>` | Identidade imutável do commit (sempre publicada) |
-| `v<X>.<Y>.<Z>` | Release exata (imutável) |
-| `v<X>.<Y>` | Pin de minor (rola com patches subsequentes) |
-| `v<X>` | Pin de major (rola com minors+patches subsequentes) |
+| Tag             | Significado                                         |
+| --------------- | --------------------------------------------------- |
+| `sha-<7-curto>` | Identidade imutável do commit (sempre publicada)    |
+| `v<X>.<Y>.<Z>`  | Release exata (imutável)                            |
+| `v<X>.<Y>`      | Pin de minor (rola com patches subsequentes)        |
+| `v<X>`          | Pin de major (rola com minors+patches subsequentes) |
 
 ## Como cortar uma release
 
@@ -90,17 +90,17 @@ todos os ambientes; só o `ConfigMap` injetado em runtime
 
 Fluxo completo entre tag e cluster (exemplo concreto `v0.1.2`):
 
-| Etapa | Onde | Quem | Tempo típico |
-|---|---|---|---|
-| Tag git semver | `uniplus-web` | dev | < 1 min |
-| Workflow `Publish Images` | `uniplus-web` Actions | CI | ~4 min |
-| 4 imagens em GHCR | `ghcr.io/unifesspa-edu-br/uniplus-{portal,web-selecao,web-ingresso,web-configuracao}` | CI | parte do anterior |
-| PR de bump em `values.yaml` | `uniplus-infra/apps/uniplus-web/values.yaml` | dev/agente | ~1 min |
-| Codex AI review + CI | `uniplus-infra` | bot | ~5 min |
-| Merge do PR | `uniplus-infra` | dev | < 1 min |
-| ArgoCD reconcile | cluster | argocd (auto, poll ~3 min) | até 3 min |
-| Rolling restart dos pods | cluster | kubernetes | 1–2 min |
-| **Total tag → servindo em prod** | — | — | **15–20 min** |
+| Etapa                            | Onde                                                                                  | Quem                       | Tempo típico      |
+| -------------------------------- | ------------------------------------------------------------------------------------- | -------------------------- | ----------------- |
+| Tag git semver                   | `uniplus-web`                                                                         | dev                        | < 1 min           |
+| Workflow `Publish Images`        | `uniplus-web` Actions                                                                 | CI                         | ~4 min            |
+| 4 imagens em GHCR                | `ghcr.io/unifesspa-edu-br/uniplus-{portal,web-selecao,web-ingresso,web-configuracao}` | CI                         | parte do anterior |
+| PR de bump em `values.yaml`      | `uniplus-infra/apps/uniplus-web/values.yaml`                                          | dev/agente                 | ~1 min            |
+| Codex AI review + CI             | `uniplus-infra`                                                                       | bot                        | ~5 min            |
+| Merge do PR                      | `uniplus-infra`                                                                       | dev                        | < 1 min           |
+| ArgoCD reconcile                 | cluster                                                                               | argocd (auto, poll ~3 min) | até 3 min         |
+| Rolling restart dos pods         | cluster                                                                               | kubernetes                 | 1–2 min           |
+| **Total tag → servindo em prod** | —                                                                                     | —                          | **15–20 min**     |
 
 Snippet típico do PR de bump (`uniplus-infra`):
 

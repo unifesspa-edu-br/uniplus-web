@@ -267,9 +267,7 @@ export class DataTableComponent {
    * `isLoading()` são da página anterior e podem navegar para um item prestes a
    * sair; gatear no componente evita que cada container precise lembrar disso.
    */
-  protected readonly linhasClicaveis = computed(
-    () => this.rowClickable() && !this.isLoading(),
-  );
+  protected readonly linhasClicaveis = computed(() => this.rowClickable() && !this.isLoading());
 
   protected emitirLoadNext(): void {
     const cursor = this.nextCursor();

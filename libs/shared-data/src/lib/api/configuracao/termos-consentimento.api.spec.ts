@@ -158,9 +158,7 @@ describe('TermosConsentimentoApi', () => {
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/termos-consentimento`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body.nome).toBe('Novo Termo de Consentimento');
-    expect(req.request.body.formaAceiteRascunho).toBe(
-      FormaAceiteCodigo.REGISTRO_COM_ENDERECO_IP,
-    );
+    expect(req.request.body.formaAceiteRascunho).toBe(FormaAceiteCodigo.REGISTRO_COM_ENDERECO_IP);
     expect(req.request.headers.get('Idempotency-Key')).toBe('k');
     expect(req.request.headers.get('Accept')).toBe('application/json');
     req.flush(ID, { status: 201, statusText: 'Created' });
@@ -174,9 +172,7 @@ describe('TermosConsentimentoApi', () => {
       `${BASE}/api/configuracao/admin/termos-consentimento/${ID}/rascunho`,
     );
     expect(req.request.method).toBe('PUT');
-    expect(req.request.body.formaAceiteRascunho).toBe(
-      FormaAceiteCodigo.REGISTRO_SEM_ENDERECO_IP,
-    );
+    expect(req.request.body.formaAceiteRascunho).toBe(FormaAceiteCodigo.REGISTRO_SEM_ENDERECO_IP);
     expect(req.request.headers.get('Idempotency-Key')).toBe('k');
     req.flush(null, { status: 204, statusText: 'No Content' });
     const result = (await promise) as ApiResult<void>;

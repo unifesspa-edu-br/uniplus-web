@@ -1,10 +1,10 @@
 name: Epic
 description: Tema estratégico que agrupa várias Features
-title: "Epic: "
+title: 'Epic: '
 type: Epic
-labels: ["epic"]
-projects: ["unifesspa-edu-br/1"]
-milestone: "Sprint 2 — Reestruturação modular + Classificação"
+labels: ['epic']
+projects: ['unifesspa-edu-br/1']
+milestone: 'Sprint 2 — Reestruturação modular + Classificação'
 body:
   - type: textarea
     id: tema_estrategico

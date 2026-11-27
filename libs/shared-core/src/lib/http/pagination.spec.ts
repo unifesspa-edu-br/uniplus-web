@@ -62,7 +62,8 @@ describe('Cursor branded type (ADR-0015)', () => {
 describe('extractNextCursor — header Link → próximo cursor opaco', () => {
   describe('caminhos felizes', () => {
     it('rel="next" com cursor= no query string retorna Cursor', () => {
-      const linkHeader = '<https://api.uniplus.unifesspa.edu.br/api/selecao/editais?cursor=ABC123>; rel="next"';
+      const linkHeader =
+        '<https://api.uniplus.unifesspa.edu.br/api/selecao/editais?cursor=ABC123>; rel="next"';
       expect(extractRequiredNextCursor(linkHeader)).toBe('ABC123');
     });
 
@@ -112,8 +113,7 @@ describe('extractNextCursor — header Link → próximo cursor opaco', () => {
     });
 
     it('header com outros rels (related, prev) mas sem next', () => {
-      const linkHeader =
-        '<https://api/x?cursor=P>; rel="prev", <https://api/y>; rel="related"';
+      const linkHeader = '<https://api/x?cursor=P>; rel="prev", <https://api/y>; rel="related"';
       expect(extractNextCursor(linkHeader)).toBeNull();
     });
   });
@@ -219,16 +219,22 @@ describe('API_MAX_PAGE_SIZE', () => {
 
 describe('ehCursorDePaginacaoObsoleto — cursor que não continua a consulta', () => {
   it('casa pelo code uniplus.cursor.invalido (400)', () => {
-    expect(ehCursorDePaginacaoObsoleto(problem({ status: 400, code: 'uniplus.cursor.invalido' }))).toBe(true);
+    expect(
+      ehCursorDePaginacaoObsoleto(problem({ status: 400, code: 'uniplus.cursor.invalido' })),
+    ).toBe(true);
   });
 
   it('casa pelo code uniplus.cursor.expirado (410)', () => {
-    expect(ehCursorDePaginacaoObsoleto(problem({ status: 410, code: 'uniplus.cursor.expirado' }))).toBe(true);
+    expect(
+      ehCursorDePaginacaoObsoleto(problem({ status: 410, code: 'uniplus.cursor.expirado' })),
+    ).toBe(true);
   });
 
   it('casa pelo status 400/410 quando o corpo não é problem+json e o code veio sintetizado', () => {
     expect(
-      ehCursorDePaginacaoObsoleto(problem({ status: 410, code: 'uniplus.client.unexpected_response' })),
+      ehCursorDePaginacaoObsoleto(
+        problem({ status: 410, code: 'uniplus.client.unexpected_response' }),
+      ),
     ).toBe(true);
     expect(
       ehCursorDePaginacaoObsoleto(problem({ status: 400, code: 'uniplus.client.network_error' })),
@@ -237,7 +243,9 @@ describe('ehCursorDePaginacaoObsoleto — cursor que não continua a consulta', 
 
   it('não casa 422 (erro de parâmetro: sort/q/limit) nem 5xx', () => {
     expect(
-      ehCursorDePaginacaoObsoleto(problem({ status: 422, code: 'uniplus.consulta.busca_muito_longa' })),
+      ehCursorDePaginacaoObsoleto(
+        problem({ status: 422, code: 'uniplus.consulta.busca_muito_longa' }),
+      ),
     ).toBe(false);
     expect(ehCursorDePaginacaoObsoleto(problem({ status: 500, code: 'uniplus.x.y' }))).toBe(false);
   });
@@ -245,10 +253,14 @@ describe('ehCursorDePaginacaoObsoleto — cursor que não continua a consulta', 
 
 describe('ehCursorDePaginacaoExpirado — só expiração (410)', () => {
   it('true para 410 / uniplus.cursor.expirado', () => {
-    expect(ehCursorDePaginacaoExpirado(problem({ status: 410, code: 'uniplus.cursor.expirado' }))).toBe(true);
+    expect(
+      ehCursorDePaginacaoExpirado(problem({ status: 410, code: 'uniplus.cursor.expirado' })),
+    ).toBe(true);
   });
 
   it('false para 400 / uniplus.cursor.invalido (divergência, não expiração)', () => {
-    expect(ehCursorDePaginacaoExpirado(problem({ status: 400, code: 'uniplus.cursor.invalido' }))).toBe(false);
+    expect(
+      ehCursorDePaginacaoExpirado(problem({ status: 400, code: 'uniplus.cursor.invalido' })),
+    ).toBe(false);
   });
 });

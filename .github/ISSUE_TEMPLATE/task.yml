@@ -1,17 +1,17 @@
 name: Task
 description: Unidade técnica de trabalho — 1 Task = 1 Pull Request (sub-issue de uma Story)
-title: "task(escopo): "
+title: 'task(escopo): '
 type: Task
-labels: ["task"]
-projects: ["unifesspa-edu-br/1"]
-milestone: "Sprint 2 — Reestruturação modular + Classificação"
+labels: ['task']
+projects: ['unifesspa-edu-br/1']
+milestone: 'Sprint 2 — Reestruturação modular + Classificação'
 body:
   - type: input
     id: story_pai
     attributes:
       label: Story pai
-      description: "Número da Story à qual esta Task pertence (ex.: `#56`). Pode ser cross-repo: `unifesspa-edu-br/uniplus-api#56`."
-      placeholder: "#56"
+      description: 'Número da Story à qual esta Task pertence (ex.: `#56`). Pode ser cross-repo: `unifesspa-edu-br/uniplus-api#56`.'
+      placeholder: '#56'
     validations:
       required: true
 

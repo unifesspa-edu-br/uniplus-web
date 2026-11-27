@@ -1,12 +1,12 @@
 ---
-status: "accepted"
-date: "2026-11-05"
+status: accepted
+date: 2026-11-05
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 consulted:
-  - "Equipe Uni+"
+  - 'Equipe Uni+'
 informed:
-  - "Apps selecao, configuracao, ingresso e portal"
+  - 'Apps selecao, configuracao, ingresso e portal'
 ---
 
 # ADR-0029: Reset do Tailwind como base dos apps

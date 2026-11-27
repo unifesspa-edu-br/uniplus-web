@@ -11,10 +11,20 @@ export function focarDepois(injector: Injector, ...ids: readonly string[]): void
     () => {
       const alvo = ids
         .map((id) => document.getElementById(id))
-        .map((elemento) => (elemento?.tagName === 'UI-COMBOBOX' ? elemento.querySelector<HTMLElement>('[role="combobox"]') : elemento))
-        .find((elemento): elemento is HTMLElement => elemento !== null && !(elemento as HTMLButtonElement).disabled);
+        .map(campoQueRecebeFoco)
+        .find(estaHabilitado);
       alvo?.focus();
     },
     { injector },
   );
+}
+
+function campoQueRecebeFoco(elemento: HTMLElement | null): HTMLElement | null {
+  return elemento?.tagName === 'UI-COMBOBOX'
+    ? elemento.querySelector<HTMLElement>('[role="combobox"]')
+    : elemento;
+}
+
+function estaHabilitado(elemento: HTMLElement | null): elemento is HTMLElement {
+  return elemento !== null && !(elemento as HTMLButtonElement).disabled;
 }

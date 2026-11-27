@@ -1,8 +1,8 @@
 ---
-status: "superseded by ADR-0023"
-date: "2026-05-07"
+status: superseded by ADR-0023
+date: 2026-05-07
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0019: Tokens Gov.br compartilhados em `libs/shared-ui/src/styles/govbr-tokens.css` + migração Tailwind 3→4 cross-app
@@ -47,11 +47,11 @@ A questão é dupla: **(a)** como consolidar a fonte única da paleta institucio
 
 ### Estratégia em 3 mini-PRs
 
-| Frente | Branch | Escopo | Issue |
-|---|---|---|---|
-| **D.1 — foundation** (esta PR) | `feature/210-d1-shared-ui-govbr-tokens-css` | `libs/shared-ui/src/styles/govbr-tokens.css` (45 tokens em `:root`) + 3 imports nos `styles.scss` dos apps | vincula `#210` (não fecha) |
-| **D.2 — `selecao` cutover** | `feature/210-d2-selecao-tailwind-4-govbr-tokens` | Migra `apps/selecao` para sintaxe TW4 (`@import "tailwindcss"` + `@theme inline` apontando para foundation), **deleta `apps/selecao/tailwind.config.js`** (decisão A consolidada), renomeia `styles.scss` → `styles.css` (sai do Sass importer; alinha com POC), substitui `unifesspa-primary` por `govbr-primary` em 11 arquivos (5 em `apps/selecao` + 6 em `libs/shared-ui` consumido por selecao). `@source` cobre `app/**`, `libs/shared-ui/lib/**` e `libs/shared-auth/lib/**`. A11y baseline re-rodada na CI. | vincula `#210` (não fecha) |
-| **D.3 — `ingresso` + `portal`** | `feature/210-d3-ingresso-portal-tailwind-4-govbr-tokens` | Replica D.2 para `ingresso` e `portal`. Atualiza `CLAUDE.md` removendo "POC é referência" (agora apps de produção também são referência) | **Closes `#210`** |
+| Frente                          | Branch                                                   | Escopo                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Issue                      |
+| ------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| **D.1 — foundation** (esta PR)  | `feature/210-d1-shared-ui-govbr-tokens-css`              | `libs/shared-ui/src/styles/govbr-tokens.css` (45 tokens em `:root`) + 3 imports nos `styles.scss` dos apps                                                                                                                                                                                                                                                                                                                                                                                                           | vincula `#210` (não fecha) |
+| **D.2 — `selecao` cutover**     | `feature/210-d2-selecao-tailwind-4-govbr-tokens`         | Migra `apps/selecao` para sintaxe TW4 (`@import "tailwindcss"` + `@theme inline` apontando para foundation), **deleta `apps/selecao/tailwind.config.js`** (decisão A consolidada), renomeia `styles.scss` → `styles.css` (sai do Sass importer; alinha com POC), substitui `unifesspa-primary` por `govbr-primary` em 11 arquivos (5 em `apps/selecao` + 6 em `libs/shared-ui` consumido por selecao). `@source` cobre `app/**`, `libs/shared-ui/lib/**` e `libs/shared-auth/lib/**`. A11y baseline re-rodada na CI. | vincula `#210` (não fecha) |
+| **D.3 — `ingresso` + `portal`** | `feature/210-d3-ingresso-portal-tailwind-4-govbr-tokens` | Replica D.2 para `ingresso` e `portal`. Atualiza `CLAUDE.md` removendo "POC é referência" (agora apps de produção também são referência)                                                                                                                                                                                                                                                                                                                                                                             | **Closes `#210`**          |
 
 ### Forma do arquivo foundation (D.1)
 
@@ -111,10 +111,10 @@ Tailwind 4 substitui o config JS por config CSS-first via `@theme`. Os 3 apps j�
 
 Substituições aplicadas pelas migrações D.2/D.3:
 
-| `unifesspa-*` (TW3) | hex legado | `govbr-*` (TW4) | hex Gov.br DS | Ocorrências |
-|---|---|---|---|---|
-| `unifesspa-primary` | `#003366` | `govbr-primary` | `#1351b4` | 14 (selecao + shared-ui em D.2; portal/layout em D.3) |
-| `unifesspa-secondary` | `#006633` | `govbr-success` | `#168821` | 1 (ingresso/layout em D.3) |
+| `unifesspa-*` (TW3)   | hex legado | `govbr-*` (TW4) | hex Gov.br DS | Ocorrências                                           |
+| --------------------- | ---------- | --------------- | ------------- | ----------------------------------------------------- |
+| `unifesspa-primary`   | `#003366`  | `govbr-primary` | `#1351b4`     | 14 (selecao + shared-ui em D.2; portal/layout em D.3) |
+| `unifesspa-secondary` | `#006633`  | `govbr-success` | `#168821`     | 1 (ingresso/layout em D.3)                            |
 
 `unifesspa-accent`, `unifesspa-danger`, `unifesspa-warning`, `unifesspa-success`, `unifesspa-info` não tinham consumidores reais em apps/libs (declaravam-se em `tailwind.config.js` mas nenhum HTML usava). Foram simplesmente eliminados ao deletar o config.
 

@@ -5,9 +5,7 @@
   [class.is-error]="comRecusa()"
   [attr.aria-busy]="catalogo().pendente() ? 'true' : null"
   [attr.aria-describedby]="
-    comRecusa()
-      ? 'cfg-etapa-conceitos-ajuda cfg-etapa-conceitos-erro'
-      : 'cfg-etapa-conceitos-ajuda'
+    comRecusa() ? 'cfg-etapa-conceitos-ajuda cfg-etapa-conceitos-erro' : 'cfg-etapa-conceitos-ajuda'
   "
 >
   <legend class="field__label">Conceitos admitidos</legend>

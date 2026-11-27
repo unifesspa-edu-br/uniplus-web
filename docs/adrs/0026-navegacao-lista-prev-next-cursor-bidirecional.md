@@ -1,15 +1,15 @@
 ---
-status: "accepted"
-date: "2026-06-16"
+status: accepted
+date: 2026-06-16
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0026: Navegação de lista por prev/next sobre cursor bidirecional
 
 ## Contexto e enunciado do problema
 
-O contrato V1 da `uniplus-api` pagina coleções por cursor opaco cifrado, propagado no header `Link` (RFC 5988/8288). A [ADR-0015](0015-cursor-pagination-consumer-link-header.md) registrou o consumo desse cursor no cliente, mas apenas na forma **forward-only** (`extractNextCursor` sobre `rel="next"`), porque o backend só emitia `rel="next"`. A primeira lista filtrada e paginada do `uniplus-web` (Unidades, na Configuração) nasceu com uma montagem reativa **interina**: paginação "Carregar mais" (acumulação forward), adequada a *infinite-scroll* mas não à navegação administrativa típica.
+O contrato V1 da `uniplus-api` pagina coleções por cursor opaco cifrado, propagado no header `Link` (RFC 5988/8288). A [ADR-0015](0015-cursor-pagination-consumer-link-header.md) registrou o consumo desse cursor no cliente, mas apenas na forma **forward-only** (`extractNextCursor` sobre `rel="next"`), porque o backend só emitia `rel="next"`. A primeira lista filtrada e paginada do `uniplus-web` (Unidades, na Configuração) nasceu com uma montagem reativa **interina**: paginação "Carregar mais" (acumulação forward), adequada a _infinite-scroll_ mas não à navegação administrativa típica.
 
 Decisão de produto do Tech Lead: a navegação padrão das listas administrativas do `uniplus-web` é **Anterior / Próximo (prev/next)** — mais clara para o usuário do que "Carregar mais", que pressupõe um cenário de rolagem infinita inexistente no sistema hoje. Isso exige um cursor **bidirecional** no backend, entregue na `uniplus-api` (issue #656): o header `Link` passou a emitir `rel="prev"` e `rel="next"`, com um parâmetro `direction` cifrado dentro do próprio cursor (ADR-0089 do `uniplus-api`).
 

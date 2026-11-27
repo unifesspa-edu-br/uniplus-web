@@ -1,8 +1,8 @@
 ---
-status: "proposed"
-date: "YYYY-MM-DD"
+status: proposed
+date: YYYY-MM-DD
 decision-makers:
-  - "Tech Lead"
+  - 'Tech Lead'
 consulted: []
 informed: []
 ---

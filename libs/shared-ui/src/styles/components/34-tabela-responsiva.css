@@ -223,7 +223,6 @@
   z-index: 1;
 }
 
-
 /* Tabela larga: a coluna de ações fica fixa na borda direita da área rolável, para a ação
    principal da linha ficar à vista sem rolar. Só vale na tabela; no cartão (< 768 px) as ações já ficam na pilha. */
 @media not all and (max-width: 767px) {

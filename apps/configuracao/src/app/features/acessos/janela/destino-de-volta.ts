@@ -6,7 +6,6 @@ export interface DestinoDeVolta {
   readonly rotulo: string;
 }
 
-
 /** Para onde voltar de uma janela sem perfil ou sem acesso: a lista de perfis, se a pessoa a abre. */
 export function destinoDeVolta(permissoes: PermissoesService): DestinoDeVolta {
   return permissoes.temAlguma(...PERMISSOES_DAS_TELAS['acessos/perfis'])

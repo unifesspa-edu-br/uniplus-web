@@ -17,3 +17,16 @@ libs/shared-inscricao/src/lib/formulario/formulario-do-candidato/interpretador/c
 
 # Exemplos do contrato copiados da API sem reformatar: o arquivo é o mesmo que ela publica.
 /libs/shared-data/openapi/exemplos
+
+# Cópias do contrato da API, conferidas byte a byte com a API por verify-contract-copies.sh:
+# formatá-las quebraria a conferência.
+/libs/shared-data/openapi/*.openapi.json
+
+# Código de terceiros (VLibras).
+/libs/shared-ui/src/assets/vlibras
+
+# Exportação gerada do Keycloak.
+/tools/**/realm-export.json
+
+# Referência arquivada, que não se edita.
+/docs/referencias/poc-primeng*

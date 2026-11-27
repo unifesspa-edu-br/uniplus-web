@@ -1,12 +1,12 @@
 ---
-status: "accepted"
-date: "2026-05-31"
+status: accepted
+date: 2026-05-31
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 consulted:
-  - "Equipe Uni+"
+  - 'Equipe Uni+'
 informed:
-  - "Apps selecao, ingresso e portal"
+  - 'Apps selecao, ingresso e portal'
 ---
 
 # ADR-0024: Uso seletivo de PrimeNG em wrappers `ui-*`

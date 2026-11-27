@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 let formFieldIdSeed = 0;
@@ -32,11 +27,7 @@ let formFieldIdSeed = 0;
   imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <label
-      [for]="inputId"
-      class="field__label"
-      [class.is-required]="isRequired()"
-    >
+    <label [for]="inputId" class="field__label" [class.is-required]="isRequired()">
       {{ fieldLabel() }}
     </label>
     <!-- Ramo estatico type="number": necessario para que o NumberValueAccessor
@@ -80,19 +71,10 @@ let formFieldIdSeed = 0;
          para leitores de tela (NVDA/JAWS) na primeira exibição de erro.
          aria-live="polite" no erro anuncia a mensagem ao aparecer (WCAG
          2.1 SC 4.1.3 Status Messages, e-MAG 3.1). -->
-    <p
-      [id]="errorId"
-      [hidden]="!errorMessage()"
-      class="field__error"
-      aria-live="polite"
-    >
+    <p [id]="errorId" [hidden]="!errorMessage()" class="field__error" aria-live="polite">
       {{ errorMessage() }}
     </p>
-    <p
-      [id]="hintId"
-      [hidden]="!!errorMessage() || !hint()"
-      class="field__hint"
-    >
+    <p [id]="hintId" [hidden]="!!errorMessage() || !hint()" class="field__hint">
       {{ hint() }}
     </p>
   `,

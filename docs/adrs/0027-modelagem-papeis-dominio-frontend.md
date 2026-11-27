@@ -1,12 +1,12 @@
 ---
-status: "accepted"
-date: "2026-06-24"
+status: accepted
+date: 2026-06-24
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 consulted:
-  - "Frente de autorização (PBAC+ABAC)"
+  - 'Frente de autorização (PBAC+ABAC)'
 informed:
-  - "Apps selecao, ingresso, portal e configuracao"
+  - 'Apps selecao, ingresso, portal e configuracao'
 ---
 
 # ADR-0027: Modelagem de papéis de domínio no frontend — `UserRole` como contrato de display

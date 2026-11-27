@@ -1,8 +1,8 @@
 ---
-status: "superseded by ADR-0023"
-date: "2026-05-01"
+status: superseded by ADR-0023
+date: 2026-05-01
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0008: Tailwind CSS 4 com tokens Gov.br via `@theme`
@@ -36,8 +36,8 @@ Diretrizes derivadas da decisão:
 1. Importar os tokens em `styles.css` global de cada app, antes do Tailwind:
 
    ```css
-   @import "@govbr-ds/core/dist/core-tokens.min.css";
-   @import "tailwindcss";
+   @import '@govbr-ds/core/dist/core-tokens.min.css';
+   @import 'tailwindcss';
    ```
 
 2. Mapear os tokens como extensões do Tailwind via `@theme` em um único arquivo central por app:

@@ -5,7 +5,11 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <article class="card" [class.card--interactive]="interactive()" [attr.tabindex]="interactive() ? 0 : null">
+    <article
+      class="card"
+      [class.card--interactive]="interactive()"
+      [attr.tabindex]="interactive() ? 0 : null"
+    >
       <ng-content />
     </article>
   `,

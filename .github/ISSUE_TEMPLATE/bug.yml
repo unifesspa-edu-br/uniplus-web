@@ -1,9 +1,9 @@
 name: Bug
 description: Reportar um comportamento incorreto
 type: Bug
-labels: ["bug"]
-projects: ["unifesspa-edu-br/1"]
-milestone: "Sprint 2 — Reestruturação modular + Classificação"
+labels: ['bug']
+projects: ['unifesspa-edu-br/1']
+milestone: 'Sprint 2 — Reestruturação modular + Classificação'
 body:
   - type: textarea
     id: descricao

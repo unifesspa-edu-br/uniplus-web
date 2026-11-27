@@ -12,9 +12,7 @@ import { isValidCpf } from '../utils/cpf.util';
  * new FormControl('', [Validators.required, cpfValidator]);
  * // se inválido: { cpfInvalido: true }
  */
-export const cpfValidator: ValidatorFn = (
-  control: AbstractControl,
-): ValidationErrors | null => {
+export const cpfValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
   const value = control.value as string | null | undefined;
   if (value == null || value === '') return null;
   return isValidCpf(value) ? null : { cpfInvalido: true };

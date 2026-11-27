@@ -1,12 +1,12 @@
 ---
-status: "accepted"
-date: "2026-11-17"
+status: accepted
+date: 2026-11-17
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 consulted:
-  - "Equipe Uni+"
+  - 'Equipe Uni+'
 informed:
-  - "Apps selecao, ingresso, portal e configuracao"
+  - 'Apps selecao, ingresso, portal e configuracao'
 ---
 
 # ADR-0031: Recusa da API junto ao campo, com código e página do erro

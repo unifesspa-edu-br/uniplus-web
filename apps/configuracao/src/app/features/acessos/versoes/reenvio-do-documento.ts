@@ -26,13 +26,18 @@ export class ReenvioDoDocumento {
     );
   }
 
-  private async reenviar(perfilId: string, versao: VersaoPendenteDto, arquivo: File): Promise<void> {
+  private async reenviar(
+    perfilId: string,
+    versao: VersaoPendenteDto,
+    arquivo: File,
+  ): Promise<void> {
     this.erro.set(null);
     try {
       const desfecho = await this.documento.reenviar(perfilId, versao, arquivo, (fase) =>
         this.fase.set(fase),
       );
-      if (desfecho.ok) this.notificacoes.success('Documento enviado', 'Ele segue para verificação.');
+      if (desfecho.ok)
+        this.notificacoes.success('Documento enviado', 'Ele segue para verificação.');
       else this.erro.set(desfecho.mensagem);
     } finally {
       this.fase.set(null);

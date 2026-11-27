@@ -1,8 +1,8 @@
 ---
-status: "accepted"
-date: "2026-05-07"
+status: accepted
+date: 2026-05-07
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0018: Adoção de `httpResource` Angular 21 via wrapper `useApiResource` em `shared-core`
@@ -69,13 +69,13 @@ export function useApiResource<T>(
 
 O `apiResultInterceptor` neutraliza o canal de erro do RxJS — captura `HttpErrorResponse` em 4xx/5xx e re-emite via `of(new HttpResponse({ body: apiFailure(...), status: error.status }))`. Consequência observável no wrapper:
 
-| Resposta backend | `httpResource.status()` | `httpResource.value()` | `data()` | `problem()` | `error()` |
-|---|---|---|---|---|---|
-| 200/201/204 | `'resolved'` | `ApiOk<T>` | `T` | `null` | `undefined` |
-| 4xx/5xx + `application/problem+json` | `'resolved'` | `ApiFailure` | `null` | `ProblemDetails` | `undefined` |
-| Network error (status 0) | `'resolved'` | `ApiFailure` (NETWORK\_ERROR) | `null` | sintetizado | `undefined` |
-| Body fora do contrato | `'resolved'` | `ApiFailure` (UNEXPECTED\_RESPONSE) | `null` | sintetizado | `undefined` |
-| Erro fora do interceptor (ex.: throw síncrono em interceptor de auth/logging) | `'error'` | `undefined` | `null` | `null` | `Error` |
+| Resposta backend                                                              | `httpResource.status()` | `httpResource.value()`             | `data()` | `problem()`      | `error()`   |
+| ----------------------------------------------------------------------------- | ----------------------- | ---------------------------------- | -------- | ---------------- | ----------- |
+| 200/201/204                                                                   | `'resolved'`            | `ApiOk<T>`                         | `T`      | `null`           | `undefined` |
+| 4xx/5xx + `application/problem+json`                                          | `'resolved'`            | `ApiFailure`                       | `null`   | `ProblemDetails` | `undefined` |
+| Network error (status 0)                                                      | `'resolved'`            | `ApiFailure` (NETWORK_ERROR)       | `null`   | sintetizado      | `undefined` |
+| Body fora do contrato                                                         | `'resolved'`            | `ApiFailure` (UNEXPECTED_RESPONSE) | `null`   | sintetizado      | `undefined` |
+| Erro fora do interceptor (ex.: throw síncrono em interceptor de auth/logging) | `'error'`               | `undefined`                        | `null`   | `null`           | `Error`     |
 
 Isso significa que `error()` é praticamente sempre `undefined` no contrato Uni+ — toda discriminação success/failure é via `value().ok`, e o helper expõe `data()` / `problem()` como atalhos signal-based.
 

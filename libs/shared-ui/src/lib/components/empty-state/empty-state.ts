@@ -7,7 +7,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   template: `
     <div class="empty-state" [class.empty-state--error]="variant() === 'error'" role="status">
       @if (showIcon()) {
-        <div class="empty-state__icon" aria-hidden="true">{{ variant() === 'error' ? '!' : 'i' }}</div>
+        <div class="empty-state__icon" aria-hidden="true">
+          {{ variant() === 'error' ? '!' : 'i' }}
+        </div>
       }
       @if (level() === 2) {
         <h2 class="empty-state__title">{{ heading() }}</h2>

@@ -1,8 +1,8 @@
 ---
-status: "accepted"
-date: "2026-05-05"
+status: accepted
+date: 2026-05-05
 decision-makers:
-  - "Tech Lead (CTIC)"
+  - 'Tech Lead (CTIC)'
 ---
 
 # ADR-0014: Idempotency-Key cliente via `HttpContext` + UUID v7, anexado pelo `apiResultInterceptor`
@@ -182,7 +182,9 @@ export class EditaisCreatePage {
   readonly idempotencyKeyAtual = signal<string>(idempotencyKey.create());
 
   enviar(): void {
-    if (this.submitting() || this.form.invalid) { /* ... */ return; }
+    if (this.submitting() || this.form.invalid) {
+      /* ... */ return;
+    }
     this.submitting.set(true);
 
     this.api

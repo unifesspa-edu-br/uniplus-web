@@ -16,8 +16,7 @@ describe('CpfInputComponent (ControlValueAccessor)', () => {
     const onTouchedSpy = vi.fn();
     const onChangeSpy = vi.fn();
 
-    const fixture: ComponentFixture<CpfInputComponent> =
-      TestBed.createComponent(CpfInputComponent);
+    const fixture: ComponentFixture<CpfInputComponent> = TestBed.createComponent(CpfInputComponent);
     fixture.detectChanges();
     const getInputEl = () =>
       fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement;

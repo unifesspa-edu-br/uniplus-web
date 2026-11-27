@@ -96,7 +96,10 @@ describe('DocumentosEAtosDoProcessoApi', () => {
     expect(isApiOk(result)).toBe(true);
     if (result.ok) {
       expect(result.data).toHaveLength(2);
-      expect(result.data.map((documento) => documento.status)).toEqual([arquivoConfirmado, arquivoPendente]);
+      expect(result.data.map((documento) => documento.status)).toEqual([
+        arquivoConfirmado,
+        arquivoPendente,
+      ]);
     }
   });
   /**

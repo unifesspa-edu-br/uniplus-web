@@ -1,5 +1,10 @@
 import { readFile } from 'node:fs/promises';
-import { entrarComoPersona, garantirConcessao, garantirPerfil, unidadeDoCertame } from '@uniplus/shared-e2e';
+import {
+  entrarComoPersona,
+  garantirConcessao,
+  garantirPerfil,
+  unidadeDoCertame,
+} from '@uniplus/shared-e2e';
 import type { Locator } from '@playwright/test';
 import { expect, test } from '../fixtures/auth.fixture';
 import {
@@ -35,7 +40,11 @@ const OPERADOR = 'diogo.souza';
 const PERFIS_DO_OPERADOR = [
   {
     nome: 'E2E notas do ENEM — operação do envio e da importação',
-    permissoes: ['selecao:processos:configurar', 'selecao:envios-inep:gerar', 'selecao:notas-enem:importar'],
+    permissoes: [
+      'selecao:processos:configurar',
+      'selecao:envios-inep:gerar',
+      'selecao:notas-enem:importar',
+    ],
   },
   {
     nome: 'E2E notas do ENEM — consulta dos leiautes do INEP',
@@ -59,8 +68,15 @@ test.describe('Notas do ENEM contra a API real', () => {
     processoId = await processoDasNotasDoEnem();
   });
 
-  test('baixa o envio, importa o retorno e recusa o arquivo fora do leiaute', async ({ browser }) => {
-    const page = await entrarComoPersona(browser, APP, OPERADOR, `/processo-seletivo/${processoId}/notas-do-enem`);
+  test('baixa o envio, importa o retorno e recusa o arquivo fora do leiaute', async ({
+    browser,
+  }) => {
+    const page = await entrarComoPersona(
+      browser,
+      APP,
+      OPERADOR,
+      `/processo-seletivo/${processoId}/notas-do-enem`,
+    );
     await expect(page.getByRole('heading', { level: 1, name: 'Notas do ENEM' })).toBeVisible();
     const envio = page.getByRole('region', { name: 'Enviar CPFs ao INEP' });
     const importacao = page.getByRole('region', { name: 'Importar o retorno do INEP' });

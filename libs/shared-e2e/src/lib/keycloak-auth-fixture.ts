@@ -83,9 +83,7 @@ export function createGlobalSetup(
 ): (config: FullConfig) => Promise<void> {
   return async (config: FullConfig) => {
     const baseURL =
-      options.appBaseUrl ??
-      config.projects[0]?.use.baseURL ??
-      'http://localhost:4200';
+      options.appBaseUrl ?? config.projects[0]?.use.baseURL ?? 'http://localhost:4200';
 
     await setupKeycloakAuth({ ...options, appBaseUrl: baseURL });
   };

@@ -15,9 +15,7 @@ import { ADMIN_USER, STORAGE_STATE_PATH_ADMIN } from './fixtures/auth.fixture';
 setup('autentica admin via OIDC e persiste storageState', async () => {
   const testInfo = setup.info();
   const baseURL =
-    testInfo.config.projects[0]?.use.baseURL ??
-    process.env['BASE_URL'] ??
-    'http://localhost:4200';
+    testInfo.config.projects[0]?.use.baseURL ?? process.env['BASE_URL'] ?? 'http://localhost:4200';
 
   await setupKeycloakAuth({
     storageStatePath: path.resolve(__dirname, '..', STORAGE_STATE_PATH_ADMIN),

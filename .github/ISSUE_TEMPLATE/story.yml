@@ -1,17 +1,17 @@
 name: User Story
 description: Incremento implementável com critérios de aceite testáveis (sub-issue de uma Feature)
-title: "US-FX-NN: "
+title: 'US-FX-NN: '
 type: Story
-labels: ["story"]
-projects: ["unifesspa-edu-br/1"]
-milestone: "Sprint 2 — Reestruturação modular + Classificação"
+labels: ['story']
+projects: ['unifesspa-edu-br/1']
+milestone: 'Sprint 2 — Reestruturação modular + Classificação'
 body:
   - type: input
     id: feature_pai
     attributes:
       label: Feature pai
-      description: "Número da Feature à qual esta Story pertence (use `#` para referenciar, ex.: `#42`). Pode ser cross-repo: `unifesspa-edu-br/uniplus-api#42`."
-      placeholder: "#42"
+      description: 'Número da Feature à qual esta Story pertence (use `#` para referenciar, ex.: `#42`). Pode ser cross-repo: `unifesspa-edu-br/uniplus-api#42`.'
+      placeholder: '#42'
     validations:
       required: true
 
@@ -51,7 +51,7 @@ body:
     attributes:
       label: Estimativa (Story Points)
       description: Pontuação acordada na cerimônia de planning. Deixar em branco se ainda não pontuada.
-      placeholder: "5"
+      placeholder: '5'
     validations:
       required: false
 

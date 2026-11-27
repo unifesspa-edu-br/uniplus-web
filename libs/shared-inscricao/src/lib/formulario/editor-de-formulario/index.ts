@@ -39,11 +39,7 @@ export {
   blocosAdmitidos,
   conteudoInicial,
 } from './modelo/constantes';
-export {
-  conteudoParaEnvio,
-  numeroDigitadoInvalido,
-  semDadosBasicos,
-} from './modelo/envio';
+export { conteudoParaEnvio, numeroDigitadoInvalido, semDadosBasicos } from './modelo/envio';
 export {
   FATO_PARENTESCO,
   MAXIMO_DE_CAMPOS_DO_GRUPO,
@@ -60,11 +56,7 @@ export {
   removerCampoDoGrupo,
   removerGrupo,
 } from './modelo/grupos';
-export {
-  alternativaSemOProprioCampo,
-  comImpedimento,
-  impedimentoCabe,
-} from './modelo/impedimento';
+export { alternativaSemOProprioCampo, comImpedimento, impedimentoCabe } from './modelo/impedimento';
 export {
   acrescentarItem,
   comItem,
@@ -75,20 +67,13 @@ export {
   removerItem,
   ufsAnteriores,
 } from './modelo/itens';
-export {
-  entradasDaSecao,
-  paginasEmOrdem,
-  renumerar,
-} from './modelo/ordem-das-entradas';
+export { entradasDaSecao, paginasEmOrdem, renumerar } from './modelo/ordem-das-entradas';
 export {
   CODIGOS_EM_TEXTO,
   conteudoComCodigos,
   type TrocaDeCodigos,
 } from './modelo/codigos-do-conteudo';
-export {
-  acrescentarPressuposto,
-  removerPressuposto,
-} from './modelo/pressupostos';
+export { acrescentarPressuposto, removerPressuposto } from './modelo/pressupostos';
 export {
   problemaDaRestricao,
   problemaDoGrupoDeOpcoes,

@@ -1,10 +1,5 @@
 import { type Locator, type Page } from '@playwright/test';
-import {
-  GRUPO_DA_ETAPA,
-  GRUPO_DA_FASE,
-  grupoDaEtapa,
-  grupoDaFase,
-} from './passo-das-decisoes';
+import { GRUPO_DA_ETAPA, GRUPO_DA_FASE, grupoDaEtapa, grupoDaFase } from './passo-das-decisoes';
 
 /** Onde as caixas dos tipos de decisão aparecem: o grupo e o botão de onde o Tab parte até ele. */
 export interface EscopoDasDecisoes {

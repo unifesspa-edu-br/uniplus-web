@@ -1,10 +1,10 @@
 ---
-status: "accepted"
-date: "2026-05-01"
+status: accepted
+date: 2026-05-01
 decision-makers:
-  - "Tech Lead (CTIC)"
-  - "P.O. CEPS"
-  - "P.O. CRCA"
+  - 'Tech Lead (CTIC)'
+  - 'P.O. CEPS'
+  - 'P.O. CRCA'
 ---
 
 # ADR-0001: Separação em três aplicações frontend (Seleção, Ingresso, Portal)
@@ -32,11 +32,11 @@ Unificar todas as funcionalidades em um único bundle Angular implicaria entrega
 
 **Escolhida:** três aplicações Angular distintas no monorepo Nx — `selecao`, `ingresso` e `portal` — cada uma com seu próprio `app.config.ts`, layout, rotas e ciclo de deploy.
 
-| Aplicação | Público                          | Setor responsável |
-|-----------|----------------------------------|-------------------|
-| selecao   | Gestores e avaliadores do CEPS   | CEPS              |
-| ingresso  | Gestores do CRCA                 | CRCA              |
-| portal    | Candidatos (acesso público)      | Plataforma        |
+| Aplicação | Público                        | Setor responsável |
+| --------- | ------------------------------ | ----------------- |
+| selecao   | Gestores e avaliadores do CEPS | CEPS              |
+| ingresso  | Gestores do CRCA               | CRCA              |
+| portal    | Candidatos (acesso público)    | Plataforma        |
 
 As três compartilham bibliotecas via path aliases (`@uniplus/shared-ui`, `@uniplus/shared-auth`, `@uniplus/shared-data`) mas são buildadas e deployadas independentemente. A separação física entre `apps/selecao`, `apps/ingresso` e `apps/portal` reflete os bounded contexts e isola as superfícies de exposição.
 

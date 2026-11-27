@@ -15,11 +15,11 @@ A distribuição é decidida pelo **espaço do próprio formulário**, não pela
 
 ## Modificadores
 
-| Classe | Quando usar |
-|---|---|
-| `.form-grid__full` | No campo que pede a linha inteira mesmo tendo vizinho: descrição, ajuda, texto longo, área de texto. |
+| Classe             | Quando usar                                                                                                                      |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `.form-grid__full` | No campo que pede a linha inteira mesmo tendo vizinho: descrição, ajuda, texto longo, área de texto.                             |
 | `.form-grid--pair` | Na grade de um par correlato que deve ficar sempre lado a lado, mesmo em espaço estreito: mínimo e máximo, latitude e longitude. |
-| `.form-grid--1col` | No formulário de poucos campos que deve ter um campo por linha mesmo em espaço largo. |
+| `.form-grid--1col` | No formulário de poucos campos que deve ter um campo por linha mesmo em espaço largo.                                            |
 
 ## Exemplos
 

@@ -98,10 +98,9 @@ describe('NotificationService', () => {
     });
 
     it('overrides.title/detail substituem os do problem (LGPD: PII-safe)', () => {
-      service.errorFromProblem(
-        montarProblem({ detail: 'CPF 163.287.930-14 não encontrado' }),
-        { detail: 'Documento não encontrado.' },
-      );
+      service.errorFromProblem(montarProblem({ detail: 'CPF 163.287.930-14 não encontrado' }), {
+        detail: 'Documento não encontrado.',
+      });
       const [n] = service.notifications();
       expect(n.detail).toBe('Documento não encontrado.');
       expect(n.detail).not.toContain('CPF');

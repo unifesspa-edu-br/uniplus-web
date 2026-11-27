@@ -37,7 +37,12 @@ describe('FatosCandidatoApi', () => {
     ['criarAgregado', () => api.criarAgregado({} as never, chave()), 'POST', `${ADMIN}/agregados`],
     [
       'atualizarDescritivo',
-      () => api.atualizarDescritivo(ID, { nome: 'N', descricao: 'D', componenteExibicao: null }, chave()),
+      () =>
+        api.atualizarDescritivo(
+          ID,
+          { nome: 'N', descricao: 'D', componenteExibicao: null },
+          chave(),
+        ),
       'PUT',
       `${ADMIN}/${ID}`,
     ],
@@ -92,7 +97,9 @@ describe('FatosCandidatoApi', () => {
     const promise = firstValueFrom(api.atosDaProtecao(ID));
     const req = controller.expectOne(`${ADMIN}/${ID}/protecao/atos`);
     expect(req.request.method).toBe('GET');
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('protecao-do-catalogo-ato', 1));
+    expect(req.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('protecao-do-catalogo-ato', 1),
+    );
     req.flush([]);
     await promise;
   });

@@ -86,7 +86,8 @@ export class JanelaDaMigracaoPage {
   protected readonly idDoTitulo = ID_DO_TITULO;
   protected readonly janelaAceitaDecisao = janelaAceitaDecisao;
   protected readonly escopos = nomesDeEscopo();
-  protected readonly nomeDoEscopo = (item: ItemDaJanelaDto): string => this.escopos.nomeDoItem(item);
+  protected readonly nomeDoEscopo = (item: ItemDaJanelaDto): string =>
+    this.escopos.nomeDoItem(item);
   protected readonly podeComoGestao = computed(() =>
     this.permissoes.tem(autorizacao.perfisAprovarFuncional),
   );

@@ -12,13 +12,13 @@ mudou (âncora passou de `Id` para a tupla `(sort key, Id)`), mas o cursor
 
 ## Ordenação por listagem
 
-| Listagem / combo | Endpoint | Ordem do servidor | Sort client-side? |
-|---|---|---|---|
-| Estados | `GET /api/estados` | alfabética por nome (ADR-0094) | **Não** — confiar no servidor |
-| Cidades | `GET /api/cidades?uf=` | alfabética por nome (ADR-0094) | **Não** |
-| Campus | `GET /api/campi` | por `Id` (ainda não-keyset) | Apenas se precisar exibir por nome |
-| Local de Oferta | `GET /api/locais-oferta` | por `Id` (ainda não-keyset) | Apenas se precisar exibir por nome |
-| Unidade | `GET /api/unidades` | por `Id` (ainda não-keyset) | A árvore ordena por nome no cliente (`montarArvore`) |
+| Listagem / combo | Endpoint                 | Ordem do servidor              | Sort client-side?                                    |
+| ---------------- | ------------------------ | ------------------------------ | ---------------------------------------------------- |
+| Estados          | `GET /api/estados`       | alfabética por nome (ADR-0094) | **Não** — confiar no servidor                        |
+| Cidades          | `GET /api/cidades?uf=`   | alfabética por nome (ADR-0094) | **Não**                                              |
+| Campus           | `GET /api/campi`         | por `Id` (ainda não-keyset)    | Apenas se precisar exibir por nome                   |
+| Local de Oferta  | `GET /api/locais-oferta` | por `Id` (ainda não-keyset)    | Apenas se precisar exibir por nome                   |
+| Unidade          | `GET /api/unidades`      | por `Id` (ainda não-keyset)    | A árvore ordena por nome no cliente (`montarArvore`) |
 
 **Regra:** quando o backend passar a ordenar uma dessas listagens por nome (via a
 fundação keyset, ADR-0094), **remova o sort client-side correspondente** — como

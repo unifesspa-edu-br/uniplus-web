@@ -54,7 +54,8 @@ describe('ConfirmDialogComponent', () => {
       const { fixture } = setup();
       fixture.detectChanges();
 
-      const dialog = fixture.debugElement.query(By.css('dialog')).nativeElement as HTMLDialogElement;
+      const dialog = fixture.debugElement.query(By.css('dialog'))
+        .nativeElement as HTMLDialogElement;
       expect(dialog.open).toBe(false);
     });
   });

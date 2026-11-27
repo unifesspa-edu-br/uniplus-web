@@ -1,12 +1,12 @@
 ---
-status: "accepted"
-date: "2026-07-15"
+status: accepted
+date: 2026-07-15
 decision-makers:
-  - "Tech Lead"
+  - 'Tech Lead'
 consulted:
-  - "DevOps"
+  - 'DevOps'
 informed:
-  - "Apps portal, selecao, ingresso e configuracao"
+  - 'Apps portal, selecao, ingresso e configuracao'
 ---
 
 # ADR-0028: `base href` parametrizado em runtime pelo container Nginx

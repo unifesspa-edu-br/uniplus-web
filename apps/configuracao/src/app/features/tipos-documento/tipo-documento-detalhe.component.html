@@ -70,7 +70,11 @@
         <cfg-historico-da-protecao cadastro="TIPO_DOCUMENTO" [itemId]="tipo.id" />
       </ng-container>
       <ng-container *authTemPermissao="permissoesDasManifestacoes">
-        <cfg-historico-das-manifestacoes cadastro="TIPO_DOCUMENTO" [id]="tipo.id" origem="cadastro" />
+        <cfg-historico-das-manifestacoes
+          cadastro="TIPO_DOCUMENTO"
+          [id]="tipo.id"
+          origem="cadastro"
+        />
       </ng-container>
     </div>
     <div class="form-drawer__footer">

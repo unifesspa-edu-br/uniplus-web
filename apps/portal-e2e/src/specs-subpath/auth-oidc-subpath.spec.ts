@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { resetPasswords, keycloakLogin, expectUserInHeader, SENHA_DAS_PERSONAS } from '@uniplus/shared-e2e';
+import {
+  resetPasswords,
+  keycloakLogin,
+  expectUserInHeader,
+  SENHA_DAS_PERSONAS,
+} from '@uniplus/shared-e2e';
 
 /**
  * Fecha o ciclo de validação da Feature #444 (uniplus-web#449): login OIDC

@@ -15,17 +15,21 @@ services:
     image: ghcr.io/unifesspa-edu-br/uniplus-keycloak:26.7.2-0
     command: start-dev --import-realm
     environment:
-      KC_HEALTH_ENABLED: "true"
-      KC_HOSTNAME_STRICT: "false"
+      KC_HEALTH_ENABLED: 'true'
+      KC_HOSTNAME_STRICT: 'false'
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
     ports:
-      - "8080:8080"
-      - "9000:9000"
+      - '8080:8080'
+      - '9000:9000'
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && timeout 1 cat <&3 | grep -q '\"UP\"'"]
+      test:
+        [
+          'CMD-SHELL',
+          "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && timeout 1 cat <&3 | grep -q '\"UP\"'",
+        ]
       interval: 10s
       timeout: 5s
       retries: 12

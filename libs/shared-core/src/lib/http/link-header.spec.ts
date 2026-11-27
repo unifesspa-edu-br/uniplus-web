@@ -27,7 +27,9 @@ describe('parseLink — RFC 5988/8288 (ADR-0015)', () => {
       );
       expect(links.size).toBe(1);
       const next = links.get('next');
-      expect(next?.uri).toBe('https://api.uniplus.unifesspa.edu.br/api/selecao/editais?cursor=ABC123');
+      expect(next?.uri).toBe(
+        'https://api.uniplus.unifesspa.edu.br/api/selecao/editais?cursor=ABC123',
+      );
       expect(next?.params['rel']).toBe('next');
     });
 
@@ -85,9 +87,7 @@ describe('parseLink — RFC 5988/8288 (ADR-0015)', () => {
 
   describe('params com aspas escapadas', () => {
     it('preserva aspas internas escapadas no valor de title', () => {
-      const links = parseLink(
-        '<https://api/x>; rel="next"; title="Página \\"importante\\""',
-      );
+      const links = parseLink('<https://api/x>; rel="next"; title="Página \\"importante\\""');
       expect(links.get('next')?.params['title']).toBe('Página "importante"');
     });
 

@@ -1,10 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  formatIsoDateBr,
-  formatIsoDateLong,
-  parseDate,
-  parseIsoDate,
-} from './date.util';
+import { formatIsoDateBr, formatIsoDateLong, parseDate, parseIsoDate } from './date.util';
 
 describe('Date Util', () => {
   const PLACEHOLDER_DATA_INVALIDA = '—';
@@ -12,7 +7,11 @@ describe('Date Util', () => {
   describe('parseDate()', () => {
     describe('entradas válidas', () => {
       it.each([
-        { input: '14/02/2025', expected: new Date(2025, 1, 14), descricao: 'dia/mês com 2 dígitos' },
+        {
+          input: '14/02/2025',
+          expected: new Date(2025, 1, 14),
+          descricao: 'dia/mês com 2 dígitos',
+        },
         { input: '01/01/2026', expected: new Date(2026, 0, 1), descricao: 'primeiro do ano' },
         { input: '31/12/2026', expected: new Date(2026, 11, 31), descricao: 'último do ano' },
         { input: '29/02/2024', expected: new Date(2024, 1, 29), descricao: 'ano bissexto' },
@@ -61,9 +60,21 @@ describe('Date Util', () => {
     describe('entradas válidas', () => {
       it.each([
         { input: '2025-02-14', expected: new Date(Date.UTC(2025, 1, 14)), descricao: 'data comum' },
-        { input: '2026-01-01', expected: new Date(Date.UTC(2026, 0, 1)), descricao: 'primeiro do ano' },
-        { input: '2026-12-31', expected: new Date(Date.UTC(2026, 11, 31)), descricao: 'último do ano' },
-        { input: '2028-02-29', expected: new Date(Date.UTC(2028, 1, 29)), descricao: 'ano bissexto' },
+        {
+          input: '2026-01-01',
+          expected: new Date(Date.UTC(2026, 0, 1)),
+          descricao: 'primeiro do ano',
+        },
+        {
+          input: '2026-12-31',
+          expected: new Date(Date.UTC(2026, 11, 31)),
+          descricao: 'último do ano',
+        },
+        {
+          input: '2028-02-29',
+          expected: new Date(Date.UTC(2028, 1, 29)),
+          descricao: 'ano bissexto',
+        },
         {
           input: '2000-02-29',
           expected: new Date(Date.UTC(2000, 1, 29)),
@@ -107,7 +118,10 @@ describe('Date Util', () => {
         { input: '2026-02-30', descricao: '30 de fevereiro nunca existe' },
         { input: '2026-04-31', descricao: '31 de abril nunca existe' },
         { input: '2026-02-29', descricao: '29/02 em ano não bissexto' },
-        { input: '1900-02-29', descricao: '29/02 em ano secular não bissexto (não múltiplo de 400)' },
+        {
+          input: '1900-02-29',
+          descricao: '29/02 em ano secular não bissexto (não múltiplo de 400)',
+        },
       ])('retorna null para "$input" — $descricao', ({ input }) => {
         expect(parseIsoDate(input)).toBeNull();
       });

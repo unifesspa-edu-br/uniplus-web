@@ -127,9 +127,8 @@ export class DrawerComponent implements OnDestroy {
 
   private openDrawer(drawer: HTMLDialogElement): void {
     if (drawer.open) return;
-    this.lastFocusedElement = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
+    this.lastFocusedElement =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     if (typeof drawer.showModal === 'function') {
       drawer.showModal();
     } else {
