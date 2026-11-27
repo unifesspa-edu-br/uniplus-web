@@ -18,12 +18,14 @@ import {
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
- * Código da Oferta de curso: a identidade da oferta, obrigatória na criação. O formulário o mantém
- * em caixa alta, recusa o que foge do formato antes de enviar e leva ao campo a recusa que o
+ * Código da Oferta de curso: a identidade da oferta, obrigatória na criação. O formulário não o
+ * converte nem apara, recusa o que foge do formato antes de enviar e leva ao campo a recusa que o
  * servidor emite (obrigatório, formato ou código já em uso). API mockada por `page.route`;
  * autenticação real pelo projeto `fluxo-chromium`.
  */
 
+const FORMATO_DO_CODIGO =
+  'Use letras maiúsculas e algarismos, com as palavras separadas por um sublinhado, começando por letra, até 50 caracteres.';
 const PREFIXO_DO_CODIGO = 'uniplus.configuracao.oferta_curso.';
 const CODIGO_JA_EM_USO = problema(
   409,
@@ -83,15 +85,15 @@ test.describe('Oferta de curso — código', () => {
     await expect(page.locator('td[data-label="Código"]')).toHaveText([CODIGO_DA_OFERTA]);
   });
 
-  test('o código digitado em minúsculas vai ao comando em caixa alta', async ({ page }) => {
+  test('uma letra basta como código e ele vai ao comando como foi digitado', async ({ page }) => {
     const escritas = await mockApi(page);
     await abrirCadastro(page);
-    await preencherCodigoDaOferta(page, 'eng_civil_maraba');
+    await preencherCodigoDaOferta(page, 'E');
     await escolherVinculosETurno(page);
     await criar(page).click();
 
     await expect.poll(() => escritas.posts.length).toBe(1);
-    expect(escritas.posts[0]).toMatchObject({ codigo: 'ENG_CIVIL_MARABA' });
+    expect(escritas.posts[0]).toMatchObject({ codigo: 'E' });
   });
 
   test('sem o código o envio é barrado e o foco vai ao campo', async ({ page }) => {
@@ -105,7 +107,7 @@ test.describe('Oferta de curso — código', () => {
     expect(escritas.posts).toEqual([]);
   });
 
-  for (const invalido of ['1ENGENHARIA', 'ENG CIVIL', 'ENG-CIVIL', 'E']) {
+  for (const invalido of ['1ENGENHARIA', 'ENG CIVIL', 'ENG-CIVIL', 'eng_civil_maraba']) {
     test(`o código "${invalido}" é barrado por formato antes de enviar`, async ({ page }) => {
       const escritas = await mockApi(page);
       await abrirCadastro(page);
@@ -114,7 +116,7 @@ test.describe('Oferta de curso — código', () => {
       await criar(page).click();
 
       await expect(page.locator('#cfg-oferta-codigo-dica + .field__error')).toContainText(
-        'Formato inválido',
+        FORMATO_DO_CODIGO,
       );
       expect(escritas.posts).toEqual([]);
     });
