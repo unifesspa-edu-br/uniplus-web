@@ -35,7 +35,7 @@ export function perfil(nome: string, sigla: string | null, id = nome): PerfilCon
     concessaoId: `c-${id}`,
     perfilId: `p-${id}`,
     nome,
-    escopoTipo: 'unidade',
+    escopoTipo: { codigo: 'UNIDADE', rotulo: 'Unidade' },
     unidadeId: sigla === null ? null : `u-${sigla}`,
     unidadeSigla: sigla,
     unidadeNome: null,
