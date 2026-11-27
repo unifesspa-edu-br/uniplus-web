@@ -90,6 +90,10 @@ export interface components {
             readonly status?: null | number;
             readonly detail?: null | string;
             readonly instance?: null | string;
+            /** @description Identificador estável da causa do erro, no formato `uniplus.<módulo>.<razão>`. É a chave para tratar o erro no cliente e para pedir suporte; o texto de `detail` pode mudar, o código não. */
+            readonly code: string;
+            /** @description Identificador do pedido, com 32 caracteres hexadecimais, o mesmo do rastreamento da requisição. Quem pede suporte informa este valor para que o erro seja achado no registro do servidor. */
+            readonly traceId: string;
             /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */
             readonly retryable?: boolean;
             /** @description Uma entrada por violação, quando a resposta reúne mais de uma ou quando alguma aponta um campo. A primeira é a que descreve a resposta inteira. */

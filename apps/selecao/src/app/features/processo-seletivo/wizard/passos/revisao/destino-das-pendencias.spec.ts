@@ -161,8 +161,6 @@ describe('destino de cada pendência no painel', () => {
     /** Os critérios são da dimensão da classificação, mas quem os grava é o passo Desempate. */
     it('leva os itens de desempate ao passo Desempate, e não ao que grava a classificação', () => {
       for (const codigo of [
-        'criterios_desempate_em_excesso',
-        'desempate_area_enem_areas_mal_formadas',
         'desempate_area_enem_citada_por_dois_criterios',
         DESEMPATE_SEM_QUADRO,
         DESEMPATE_FORA_DO_QUADRO,

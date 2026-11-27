@@ -165,8 +165,6 @@ const DESTINO_POR_ITEM: ReadonlyMap<string, DestinoDoItem> = new Map<string, Des
         'Declare ao menos uma etapa classificatória (ou ambas) com peso maior que zero: a média da nota final divide pela soma desses pesos.',
     },
   ],
-  ['criterios_desempate_em_excesso', { passo: 'Desempate' }],
-  ['desempate_area_enem_areas_mal_formadas', { passo: 'Desempate' }],
   ['desempate_area_enem_citada_por_dois_criterios', { passo: 'Desempate' }],
   [
     'desempate_area_enem_sem_quadro',

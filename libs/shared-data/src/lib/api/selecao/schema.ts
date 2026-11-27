@@ -1112,7 +1112,7 @@ export interface paths {
             readonly cookie?: never;
         };
         readonly get?: never;
-        /** @description Substitui o cronograma de fases do processo por inteiro: cada fase enviada toma o lugar da que existia, e a fase que não for enviada sai, junto com as etapas dela, os motivos de decisão escolhidos na fase e nas etapas e os documentos exigidos nela, com as regras de comprovação que ficarem sem documento. A gravação é recusada (422) quando a fase que sai é usada como referência por outra exigência, tem etapa usada na classificação ou tem formulário configurado para ser respondido nela. Em cada fase, a regra de homologação das inscrições ausente ou nula apaga a que a fase tinha, e a fase sem regra não homologa: quem grava devolve a regra lida na consulta. Devolva consequenciaDaAusencia em cada banca para preservá-la; se omitida, ela é apagada. Para preservar as chaves, devolva o tipo de cada fase e o id de cada banca que permanece. As chaves da fase e da banca novas vêm na releitura pelo GET. */
+        /** @description Substitui o cronograma de fases do processo por inteiro: cada fase enviada toma o lugar da que existia, e a fase que não for enviada sai, junto com as etapas dela, os motivos de decisão escolhidos na fase e nas etapas e os documentos exigidos nela, com as regras de comprovação que ficarem sem documento. A gravação é recusada (422) quando a fase que sai é usada como referência por outra exigência, tem etapa usada na classificação ou tem formulário configurado para ser respondido nela. Devolva consequenciaDaAusencia em cada banca para preservá-la; se omitida, ela é apagada. Para preservar as chaves, devolva o tipo de cada fase e o id de cada banca que permanece. As chaves da fase e da banca novas vêm na releitura pelo GET. */
         readonly put: operations["DefinirCronogramaDeFases"];
         readonly post?: never;
         readonly delete?: never;
@@ -1368,6 +1368,10 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
+        /**
+         * Exporta o documento do rascunho
+         * @description Exporta o documento do rascunho. Traz o id do rascunho na raiz e, ao lado dos códigos, os descritivos só de leitura que o Uni+ já guarda nos cadastros. Em cada distribuição de vagas, traz o quadro de vagas por modalidade e o total de vagas do edital, calculados dos cadastros no momento da exportação; a distribuição que não puder ser calculada permanece no documento sem esses dois campos. O descritivo cujo cadastro não resolve também é omitido. Não traz versao nem publicadoEm, que não existem antes da publicação.
+         */
         readonly get: operations["ObterRascunhoDeProcessoSeletivo"];
         /**
          * Substitui o documento inteiro do rascunho
@@ -5733,22 +5737,42 @@ export interface components {
             readonly bancasRequeridas: readonly components["schemas"]["BancaRequeridaDto"][];
         };
         readonly FaseCronogramaInput: {
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Posição da fase no cronograma, na ordem em que as fases acontecem.
+             */
             readonly ordem: number;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identificador da fase no cadastro de fases da Configuração. O sistema copia os dados vigentes da fase, e o cliente não os declara.
+             */
             readonly faseCanonicaId: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description Início do período da fase.
+             */
             readonly inicio: null | string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description Fim do período da fase.
+             */
             readonly fim: null | string;
+            /** @description Tudo o que a fase publica, com o papel de cada publicação. */
             readonly produtos: readonly components["schemas"]["ProdutoDaFaseInput"][];
+            /** @description Se a fase promete parecer individual por candidato. É só a promessa: o parecer é produzido na execução da fase. */
             readonly emiteParecerIndividual: boolean;
+            /** @description As bancas que a fase exige. */
             readonly bancasRequeridas: readonly components["schemas"]["BancaRequeridaInput"][];
             readonly regraRecurso: null | components["schemas"]["RegraRecursoFaseInput"];
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Identificador da unidade da Unifesspa que responde pela fase. Opcional no rascunho; a publicação e a retificação o exigem.
+             */
             readonly unidadeResponsavelId?: null | string;
+            /** @description Os tipos de decisão que a fase declara produzir. Ausente ou vazio: nenhum. A ordem não importa, e a leitura os devolve em ordem canônica. Tirar um tipo mantém os motivos escolhidos daquele tipo, e o congelamento da versão recusa até que sejam retirados ou o tipo volte a ser declarado. */
             readonly tiposDeDecisao?: null | readonly components["schemas"]["TipoMotivoDeDecisaoCodigo"][];
             readonly regraDeHomologacao?: null | components["schemas"]["RegraDeHomologacaoInput"];
+            /** @description A fase acontece no mesmo momento da fase de ordem imediatamente anterior, e não depois dela. Vale a partir da segunda fase. A gravação substitui a fase inteira: omitida, a marca vale falso, e quem quer conservá-la a devolve. */
             readonly noMesmoMomentoDaAnterior?: boolean;
         };
         readonly FaseDosDocumentosDto: {
@@ -7057,6 +7081,10 @@ export interface components {
             readonly status?: null | number;
             readonly detail?: null | string;
             readonly instance?: null | string;
+            /** @description Identificador estável da causa do erro, no formato `uniplus.<módulo>.<razão>`. É a chave para tratar o erro no cliente e para pedir suporte; o texto de `detail` pode mudar, o código não. */
+            readonly code: string;
+            /** @description Identificador do pedido, com 32 caracteres hexadecimais, o mesmo do rastreamento da requisição. Quem pede suporte informa este valor para que o erro seja achado no registro do servidor. */
+            readonly traceId: string;
             /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */
             readonly retryable?: boolean;
             /** @description Uma entrada por violação, quando a resposta reúne mais de uma ou quando alguma aponta um campo. A primeira é a que descreve a resposta inteira. */
@@ -8403,7 +8431,7 @@ export interface operations {
                 readonly incluir_contadores?: boolean;
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
-                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                /** @description Tamanho máximo da página de resultados. Limites configurados em CursorPaginationOptions; valores fora do intervalo retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                 readonly limit?: number;
                 /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                 readonly direction?: PathsApiSelecaoCertamesGetParametersQueryDirection;
@@ -10684,7 +10712,7 @@ export interface operations {
             readonly query?: {
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
-                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                /** @description Tamanho máximo da página de resultados. Limites configurados em CursorPaginationOptions; valores fora do intervalo retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                 readonly limit?: number;
                 /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                 readonly direction?: PathsApiSelecaoProcessosSeletivosIdInscricoesGetParametersQueryDirection;
@@ -11288,7 +11316,7 @@ export interface operations {
                 readonly apenasAtivos?: boolean;
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
-                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                /** @description Tamanho máximo da página de resultados. Limites configurados em CursorPaginationOptions; valores fora do intervalo retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                 readonly limit?: number;
                 /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                 readonly direction?: PathsApiSelecaoMotivosDeDecisaoGetParametersQueryDirection;
@@ -12216,7 +12244,7 @@ export interface operations {
                 readonly vigentes?: boolean;
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
-                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                /** @description Tamanho máximo da página de resultados. Limites configurados em CursorPaginationOptions; valores fora do intervalo retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                 readonly limit?: number;
                 /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                 readonly direction?: PathsApiSelecaoObrigatoriedadesLegaisGetParametersQueryDirection;
@@ -12547,7 +12575,7 @@ export interface operations {
             readonly query?: {
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
-                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                /** @description Tamanho máximo da página de resultados. Limites configurados em CursorPaginationOptions; valores fora do intervalo retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                 readonly limit?: number;
                 /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                 readonly direction?: PathsApiSelecaoProcessosSeletivosGetParametersQueryDirection;
@@ -16488,7 +16516,7 @@ export interface operations {
                 readonly tipo?: components["schemas"]["TipoRegraCodigo"];
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
-                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                /** @description Tamanho máximo da página de resultados. Limites configurados em CursorPaginationOptions; valores fora do intervalo retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                 readonly limit?: number;
                 /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                 readonly direction?: PathsApiSelecaoRegrasCatalogoGetParametersQueryDirection;

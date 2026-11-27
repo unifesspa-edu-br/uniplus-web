@@ -72,7 +72,11 @@ it('confere cópia da resposta de erro', async () => {
   TestBed.inject(HttpClient)
     .get('/api/organizacao/unidades')
     .subscribe({ error: () => undefined });
-  const resposta: { status: number | string } = { status: 400 };
+  const resposta: { status: number | string; code: string; traceId: string } = {
+    status: 400,
+    code: 'uniplus.teste.requisicao_invalida',
+    traceId: '0123456789abcdef0123456789abcdef',
+  };
   TestBed.inject(HttpTestingController)
     .expectOne('/api/organizacao/unidades')
     .flush(resposta, {

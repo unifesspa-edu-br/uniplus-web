@@ -88,7 +88,7 @@ describe('passosConcluidosDe', () => {
   });
 
   it('tira do conjunto o passo que o item reprovado aponta, mesmo gravado', () => {
-    const checklist = [reprovado('criterios_desempate_em_excesso', 'classificacao')];
+    const checklist = [reprovado('desempate_area_enem_citada_por_dois_criterios', 'classificacao')];
 
     const rotulos = rotulosConcluidos(
       {

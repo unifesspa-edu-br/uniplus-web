@@ -1632,6 +1632,10 @@ export interface components {
             readonly status?: null | number;
             readonly detail?: null | string;
             readonly instance?: null | string;
+            /** @description Identificador estável da causa do erro, no formato `uniplus.<módulo>.<razão>`. É a chave para tratar o erro no cliente e para pedir suporte; o texto de `detail` pode mudar, o código não. */
+            readonly code: string;
+            /** @description Identificador do pedido, com 32 caracteres hexadecimais, o mesmo do rastreamento da requisição. Quem pede suporte informa este valor para que o erro seja achado no registro do servidor. */
+            readonly traceId: string;
             /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */
             readonly retryable?: boolean;
             /** @description Uma entrada por violação, quando a resposta reúne mais de uma ou quando alguma aponta um campo. A primeira é a que descreve a resposta inteira. */
@@ -2951,7 +2955,7 @@ export interface operations {
                 readonly situacao?: components["schemas"]["SituacaoDaConcessaoCodigo"];
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
-                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                /** @description Tamanho máximo da página de resultados. Limites configurados em CursorPaginationOptions; valores fora do intervalo retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                 readonly limit?: number;
                 /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                 readonly direction?: PathsApiAutorizacaoConcessoesGetParametersQueryDirection;
@@ -4170,7 +4174,7 @@ export interface operations {
             readonly query?: {
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
-                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                /** @description Tamanho máximo da página de resultados. Limites configurados em CursorPaginationOptions; valores fora do intervalo retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                 readonly limit?: number;
                 /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                 readonly direction?: PathsApiAutorizacaoInstalacoesTentativasSemPendenciaGetParametersQueryDirection;
@@ -4257,7 +4261,7 @@ export interface operations {
                 readonly situacao?: components["schemas"]["SituacaoDoPedidoCodigo"];
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
-                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                /** @description Tamanho máximo da página de resultados. Limites configurados em CursorPaginationOptions; valores fora do intervalo retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                 readonly limit?: number;
                 /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                 readonly direction?: PathsApiAutorizacaoPedidosDeConcessaoGetParametersQueryDirection;
@@ -4436,7 +4440,7 @@ export interface operations {
             readonly query?: {
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
-                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                /** @description Tamanho máximo da página de resultados. Limites configurados em CursorPaginationOptions; valores fora do intervalo retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                 readonly limit?: number;
                 /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                 readonly direction?: PathsApiAutorizacaoPerfisParaPedidoGetParametersQueryDirection;
@@ -4977,7 +4981,7 @@ export interface operations {
             readonly query?: {
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
-                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                /** @description Tamanho máximo da página de resultados. Limites configurados em CursorPaginationOptions; valores fora do intervalo retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                 readonly limit?: number;
                 /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                 readonly direction?: PathsApiAutorizacaoPerfisGetParametersQueryDirection;
@@ -5310,7 +5314,7 @@ export interface operations {
                 readonly concessao?: string;
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
-                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                /** @description Tamanho máximo da página de resultados. Limites configurados em CursorPaginationOptions; valores fora do intervalo retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                 readonly limit?: number;
                 /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                 readonly direction?: PathsApiAutorizacaoProvidenciasGetParametersQueryDirection;
@@ -6500,7 +6504,7 @@ export interface operations {
                 readonly situacao?: components["schemas"]["SituacaoDaRevisaoCodigo"];
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
-                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                /** @description Tamanho máximo da página de resultados. Limites configurados em CursorPaginationOptions; valores fora do intervalo retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                 readonly limit?: number;
                 /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                 readonly direction?: PathsApiAutorizacaoRevisoesGetParametersQueryDirection;
@@ -6905,7 +6909,7 @@ export interface operations {
             readonly query?: {
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
-                /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                /** @description Tamanho máximo da página de resultados. Limites configurados em CursorPaginationOptions; valores fora do intervalo retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                 readonly limit?: number;
                 /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
                 readonly direction?: PathsApiAutorizacaoTermosDeResponsabilidadeVersoesGetParametersQueryDirection;
