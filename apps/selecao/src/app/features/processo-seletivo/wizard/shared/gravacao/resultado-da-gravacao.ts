@@ -18,6 +18,15 @@ export type ResultadoCriacao =
 export type ResultadoGravacao = { readonly ok: true } | FalhaOperacao;
 
 /**
+ * O resultado da gravação de um formulário, com a informação de o cabeçalho dele estar no servidor:
+ * aceito agora, ou já gravado antes. Numa recusa dos itens ou dos termos, é o que diz que o formulário
+ * já existe, mesmo que o processo não possa ser relido.
+ */
+export type ResultadoDaGravacaoDoFormulario = ResultadoGravacao & {
+  readonly cabecalhoAceito: boolean;
+};
+
+/**
  * `inconclusiva` diz se a recusa deixou em aberto o comando ter sido executado (rede ou 5xx).
  * Quem chama não pode dar o recurso como ausente do servidor só porque a resposta não chegou.
  */
