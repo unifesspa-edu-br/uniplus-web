@@ -8,6 +8,7 @@ const sampleConfig: AppConfig = {
   oidc: {
     issuerUrl: 'http://localhost:8080/realms/unifesspa',
     clientId: 'selecao-web',
+    antecedenciaDaRenovacaoEmSegundos: 60,
   },
 };
 
