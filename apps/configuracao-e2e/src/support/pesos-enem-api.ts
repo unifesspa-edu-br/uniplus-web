@@ -81,88 +81,142 @@ interface Opcoes {
   readonly primeiraConsulta?: 'ok' | 'falha';
 }
 
+interface Portao {
+  readonly aberto: Promise<void>;
+  readonly abrir: () => void;
+}
+
+interface Estado {
+  readonly envios: string[];
+  readonly portoes: Portao[];
+  consultas: number;
+  gravou: boolean;
+  rodadasLiberadas: number;
+}
+
 /** Cada rodada de escrita fica retida até `liberar`, que a espera chegar por inteiro. */
 export async function mockApi(page: Page, opcoes: Opcoes) {
-  const { respostas, recarga, inicial = SEED, primeiraConsulta = 'ok' } = opcoes;
-  const portoes: Array<{ aberto: Promise<void>; abrir: () => void }> = [];
-  const portao = (rodada: number) => {
-    if (!portoes[rodada]) {
-      let abrir: () => void = () => undefined;
-      const aberto = new Promise<void>((resolve) => (abrir = resolve));
-      portoes[rodada] = { aberto, abrir };
-    }
-    return portoes[rodada];
+  const estado: Estado = {
+    envios: [],
+    portoes: [],
+    consultas: 0,
+    gravou: false,
+    rodadasLiberadas: 0,
   };
-  const envios: string[] = [];
-  let rodadasLiberadas = 0;
-  let gravou = false;
-  let consultas = 0;
-  const problema = (route: Route, corpo: unknown, status: number) =>
-    route.fulfill({
-      status,
-      headers: CORS_HEADERS,
-      contentType: 'application/problem+json',
-      body: JSON.stringify(corpo),
-    });
-  await page.route(/\/api\/configuracao\/pesos-area-enem(\?.*)?$/, async (route) => {
-    consultas += 1;
-    if (primeiraConsulta === 'falha' && consultas === 1) {
-      await problema(route, PROBLEMA_500, 500);
-      return;
-    }
-    if (gravou || consultas > 1) {
-      await new Promise((resolve) => setTimeout(resolve, ATRASO_DA_RECARGA_EM_MS));
-    }
-    if (!gravou) {
-      await route.fulfill({ status: 200, headers: CORS_HEADERS, json: inicial });
-      return;
-    }
-    if (recarga === 'com-falha') {
-      await problema(route, PROBLEMA_500, 500);
-      return;
-    }
-    const itens = { igual: inicial, 'sem-o-item': [], 'com-a-nova': [...NOVA, ...inicial] };
-    await route.fulfill({ status: 200, headers: CORS_HEADERS, json: itens[recarga] });
-  });
+  await registrarLeituras(page, opcoes, estado);
+  await registrarEscritas(page, opcoes.respostas, estado);
+  return { liberar: () => liberarProximaRodada(estado), envios: estado.envios };
+}
+
+async function registrarLeituras(page: Page, opcoes: Opcoes, estado: Estado): Promise<void> {
+  await page.route(/\/api\/configuracao\/pesos-area-enem(\?.*)?$/, (route) =>
+    tratarConsulta(route, opcoes, estado),
+  );
   await page.route(/\/api\/configuracao\/pesos-area-enem\/areas$/, (route) =>
-    route.fulfill({ status: 200, headers: CORS_HEADERS, json: AREAS }),
+    servirJson(route, AREAS),
   );
   await page.route(/\/api\/configuracao\/vocabularios\/grupos-area-enem$/, (route) =>
-    route.fulfill({ status: 200, headers: CORS_HEADERS, json: GRUPOS }),
+    servirJson(route, GRUPOS),
   );
-  const escrita = async (route: Route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-    const rodada = Math.floor(envios.length / QUANTIDADE_DE_GRUPOS);
-    envios.push(route.request().method());
-    await portao(rodada).aberto;
-    const atual = respostas[Math.min(rodada, respostas.length - 1)];
-    if (atual.status < 300) gravou = true;
-    if (atual.corpo !== undefined) {
-      await problema(route, atual.corpo, atual.status);
-      return;
-    }
-    await route.fulfill({
-      status: atual.status,
-      headers: CORS_HEADERS,
-      ...(atual.status === 201
-        ? { contentType: 'application/json', body: JSON.stringify('novo-id') }
-        : {}),
-    });
-  };
+}
+
+async function registrarEscritas(
+  page: Page,
+  respostas: readonly Resposta[],
+  estado: Estado,
+): Promise<void> {
+  const escrita = (route: Route) => tratarEscrita(route, respostas, estado);
   await page.route(/\/api\/configuracao\/admin\/pesos-area-enem\/[^/?]+$/, escrita);
   await page.route(/\/api\/configuracao\/admin\/pesos-area-enem$/, escrita);
-  const liberar = async (): Promise<void> => {
-    const rodada = rodadasLiberadas;
-    rodadasLiberadas += 1;
-    await expect
-      .poll(() => envios.length)
-      .toBeGreaterThanOrEqual((rodada + 1) * QUANTIDADE_DE_GRUPOS);
-    portao(rodada).abrir();
-  };
-  return { liberar, envios };
+}
+
+const servirJson = (route: Route, json: unknown) =>
+  route.fulfill({ status: 200, headers: CORS_HEADERS, json });
+
+const problema = (route: Route, corpo: unknown, status: number) =>
+  route.fulfill({
+    status,
+    headers: CORS_HEADERS,
+    contentType: 'application/problem+json',
+    body: JSON.stringify(corpo),
+  });
+
+function portaoDaRodada(portoes: Portao[], rodada: number): Portao {
+  if (!portoes[rodada]) {
+    let abrir: () => void = () => undefined;
+    const aberto = new Promise<void>((resolve) => (abrir = resolve));
+    portoes[rodada] = { aberto, abrir };
+  }
+  return portoes[rodada];
+}
+
+async function tratarConsulta(route: Route, opcoes: Opcoes, estado: Estado): Promise<void> {
+  estado.consultas += 1;
+  if (opcoes.primeiraConsulta === 'falha' && estado.consultas === 1) {
+    await problema(route, PROBLEMA_500, 500);
+    return;
+  }
+  if (estado.gravou || estado.consultas > 1) {
+    await new Promise((resolve) => setTimeout(resolve, ATRASO_DA_RECARGA_EM_MS));
+  }
+  await responderLista(route, opcoes, estado.gravou);
+}
+
+async function responderLista(route: Route, opcoes: Opcoes, gravou: boolean): Promise<void> {
+  const { recarga, inicial = SEED } = opcoes;
+  if (!gravou) {
+    await servirJson(route, inicial);
+  } else if (recarga === 'com-falha') {
+    await problema(route, PROBLEMA_500, 500);
+  } else {
+    const itens = { igual: inicial, 'sem-o-item': [], 'com-a-nova': [...NOVA, ...inicial] };
+    await servirJson(route, itens[recarga]);
+  }
+}
+
+async function tratarEscrita(
+  route: Route,
+  respostas: readonly Resposta[],
+  estado: Estado,
+): Promise<void> {
+  if (route.request().method() === 'OPTIONS') {
+    await route.fulfill({ status: 204, headers: CORS_HEADERS });
+    return;
+  }
+  const rodada = registrarEnvio(route, estado.envios);
+  await portaoDaRodada(estado.portoes, rodada).aberto;
+  const atual = respostas[Math.min(rodada, respostas.length - 1)];
+  if (atual.status < 300) estado.gravou = true;
+  await responderEscrita(route, atual);
+}
+
+function registrarEnvio(route: Route, envios: string[]): number {
+  const rodada = Math.floor(envios.length / QUANTIDADE_DE_GRUPOS);
+  envios.push(route.request().method());
+  return rodada;
+}
+
+async function responderEscrita(route: Route, atual: Resposta): Promise<void> {
+  if (atual.corpo !== undefined) {
+    await problema(route, atual.corpo, atual.status);
+    return;
+  }
+  await route.fulfill({
+    status: atual.status,
+    headers: CORS_HEADERS,
+    ...(atual.status === 201
+      ? { contentType: 'application/json', body: JSON.stringify('novo-id') }
+      : {}),
+  });
+}
+
+async function liberarProximaRodada(estado: Estado): Promise<void> {
+  const rodada = estado.rodadasLiberadas;
+  estado.rodadasLiberadas += 1;
+  await expect
+    .poll(() => estado.envios.length)
+    .toBeGreaterThanOrEqual((rodada + 1) * QUANTIDADE_DE_GRUPOS);
+  portaoDaRodada(estado.portoes, rodada).abrir();
 }
 
 export const titulo = (page: Page): Locator =>
