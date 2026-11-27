@@ -151,7 +151,7 @@ A branch protection da `main` exige aprovação dos seguintes status checks (ord
 3. `nx run-many --target=lint --all`
 4. `PR author is org member`
 
-O check `main` é o agregador dos gates: o job `contract-copies-check` e os jobs `gate (lint)`, `gate (typecheck)`, `gate (typecheck-spec)`, `gate (build)` e `test (<projeto>)` rodam em paralelo, cada um no seu runner, e `main` falha se qualquer um falhar ou for cancelado. Não são checks exigidos por si, para a lista de testes poder mudar com os projetos do workspace.
+O check `main` é o agregador dos gates: os jobs `contract-copies-check` e `formatacao` (confere o Prettier em todo o workspace, inclusive `md` e `json`, com `npx nx format:check --all`) e os jobs `gate (lint)`, `gate (typecheck)`, `gate (typecheck-spec)`, `gate (build)` e `test (<projeto>)` rodam em paralelo, cada um no seu runner, e `main` falha se qualquer um falhar ou for cancelado. Não são checks exigidos por si, para a lista de testes poder mudar com os projetos do workspace.
 
 Renomeação dos jobs em `.github/workflows/*.yml` exige atualização correspondente da branch protection via `gh api PUT /repos/.../branches/main/protection` — os nomes nesta lista são contratuais.
 
@@ -237,15 +237,23 @@ O `build` das apps confere os templates (`ngc`), o `typecheck` confere o código
 
 O lint é checado em três pontos distintos, do mais rápido ao mais abrangente, para evitar acúmulo silencioso de débito em projetos não afetados:
 
-| Camada                            | Quando roda                     | O que executa                                             | Bloqueante?                                                                                                                    |
-| --------------------------------- | ------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **Pre-commit local**              | Automático em cada `git commit` | `lint-staged` → `eslint --fix` apenas nos arquivos staged | Sim (impede commit)                                                                                                            |
-| **Lint afetado local**            | Manual antes do push da PR      | `npx nx affected --target=lint`                           | Recomendado (o CI roda `gate (lint)` sobre os projetos afetados, quando o PR toca o frontend, e o `lint-full.yml` sobre todos) |
-| **CI completo (`lint-full.yml`)** | Em cada PR e push para `main`   | `npx nx run-many --target=lint --all`                     | Sim (verificação obrigatória para o merge)                                                                                     |
+| Camada                            | Quando roda                     | O que executa                                                                                                                | Bloqueante?                                                                                                                    |
+| --------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Pre-commit local**              | Automático em cada `git commit` | `lint-staged` → `eslint --fix` e `prettier --write` nos `ts`/`js` staged; `prettier --write` em `html`, `css`, `md` e `json` | Sim (impede commit)                                                                                                            |
+| **Lint afetado local**            | Manual antes do push da PR      | `npx nx affected --target=lint`                                                                                              | Recomendado (o CI roda `gate (lint)` sobre os projetos afetados, quando o PR toca o frontend, e o `lint-full.yml` sobre todos) |
+| **CI completo (`lint-full.yml`)** | Em cada PR e push para `main`   | `npx nx run-many --target=lint --all`                                                                                        | Sim (verificação obrigatória para o merge)                                                                                     |
 
 O hook de pre-commit é configurado via `husky` (`.husky/pre-commit`) e roda automaticamente após `npm install`. Em casos excepcionais, pode-se contornar com `git commit --no-verify` — mas a CI rejeitará o PR se o lint completo falhar.
 
 A regra de aceite: **`npx nx run-many --target=lint --all` deve sair com código 0**. Warnings são tolerados; errors bloqueiam o merge.
+
+#### Formatação e histórico de linhas
+
+Para formatar o que você alterou, rode `npx nx format:write` (ou deixe o `lint-staged` fazer isso no commit). Os commits que só reformataram arquivos ficam listados em `.git-blame-ignore-revs`, para o histórico de cada linha continuar apontando para quem a escreveu. Configure uma vez no seu clone:
+
+```bash
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
 
 ### 4. Commit
 

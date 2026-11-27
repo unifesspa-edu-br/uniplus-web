@@ -1,0 +1,5 @@
+# Commits que só reformataram arquivos (issue #652). Uso: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# style: aplica a formatação padrão em toda a web
+ba081c2770ca6c2c1d51ad3100f9b905d6bee1d4
+# formatação do app selecao (já na branch de integração)
+c10db2e2831992d0fe74bb8be3d12482f839f6a1
