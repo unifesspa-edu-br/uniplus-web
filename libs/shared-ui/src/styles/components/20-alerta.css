@@ -94,11 +94,8 @@
   color: var(--color-info-700);
 }
 
-/* O --btn-fg padrão do secundário (--color-primary) mede 6,57:1 sobre o tint do
-   alerta no tema claro e 6,34:1 no escuro — abaixo do 7:1 AAA. Mesmo tratamento
-   do secundário sobre o tint do hero: --text-on-primary-tint é o token do DS
-   para texto sobre fundo tingido, e mede 8:1 ou mais nos quatro variantes. */
+/* Sobre o tint do alerta a borda do secundário acompanha a cor do texto, e não
+   --color-primary. */
 .alert .btn--secondary {
-  --btn-fg: var(--text-on-primary-tint);
   --btn-bd: var(--text-on-primary-tint);
 }
