@@ -33,51 +33,11 @@ export interface paths {
         };
         /**
          * Retorna o perfil do usuário autenticado
-         * @description Retorna atributos de identidade e institucionais (CPF, NomeSocial) extraídos do access token. Requer autenticação.
+         * @description Retorna identificador, nome, e-mail e papéis do usuário, extraídos do access token. Requer autenticação.
          */
         readonly get: operations["GetAuthenticatedUserProfile"];
         readonly put?: never;
         readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
-    readonly "/api/_smoke/cache/{key}": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        /**
-         * Smoke E2E — Cache probe
-         * @description Faz SET/GET de uma chave temporária no Redis com TTL 5min para validar conectividade. Restrito a usuários com role admin.
-         */
-        readonly get: operations["smokeCacheProbe"];
-        readonly put?: never;
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
-    readonly "/api/_smoke/messaging/publish": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get?: never;
-        readonly put?: never;
-        /**
-         * Smoke E2E — Messaging publish
-         * @description Publica um SmokePingMessage via Wolverine outbox para validar persistência + transport (PG queue durável). O handler em Infrastructure.Core registra log do round-trip. Restrito a usuários com role admin.
-         */
-        readonly post: operations["smokeMessagingPublish"];
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -1398,9 +1358,6 @@ export interface components {
             readonly userId: null | string;
             readonly name: null | string;
             readonly email: null | string;
-            /** @description CPF (apenas dígitos, sem formatação). PII — sempre mascarar em logs ('***.999.999-**', ADR-0011). */
-            readonly cpf: null | string;
-            readonly nomeSocial: null | string;
             readonly roles: readonly string[];
             /** Format: date-time */
             readonly timestamp: string;
@@ -1463,80 +1420,6 @@ export interface operations {
             };
             /** @description Unauthorized */
             readonly 401: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    readonly smokeCacheProbe: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path: {
-                readonly key: string;
-            };
-            readonly cookie?: never;
-        };
-        readonly requestBody?: never;
-        readonly responses: {
-            /** @description OK */
-            readonly 200: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            readonly 401: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            readonly 403: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    readonly smokeMessagingPublish: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly requestBody?: never;
-        readonly responses: {
-            /** @description OK */
-            readonly 200: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            readonly 401: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            readonly 403: {
                 headers: {
                     readonly [name: string]: unknown;
                 };
