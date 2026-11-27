@@ -33,8 +33,8 @@ export const LB_PPI = modalidade({
   ],
 });
 /** Modalidade institucional: fora do catálogo legal fixo, a regra se edita. */
-export const BONUS = modalidade({
-  id: 'id-bonus',
+export const MODALIDADE_REGIONAL = modalidade({
+  id: 'id-regional',
   codigo: 'AA_REGIONAL',
   legalFixa: false,
   descricao: 'Ação afirmativa regional',

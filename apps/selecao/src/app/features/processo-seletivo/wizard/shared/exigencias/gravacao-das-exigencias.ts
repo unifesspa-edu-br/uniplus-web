@@ -1,11 +1,10 @@
 import {
   CriterioDeDistincaoDasApresentacoesCodigo,
-  ConsequenciaDoIndeferimentoCodigo,
+  ConsequenciaDoDescumprimentoCodigo,
   TipoAbrangenciaCodigo,
   StatusBaseLegalCodigo,
   OperadorCodigo,
   AplicabilidadeCodigo,
-  FinalidadeFormularioCodigo,
   FormaDeComprovacaoCodigo,
   type ItemDocumentoExigidoInput,
   type RegraDeComprovacaoInformada,
@@ -26,7 +25,7 @@ import { formatosParaEnvio } from './formatos-aceitos';
 import { comAlcanceDeTodasAsFases } from './alcance-das-exigencias';
 import { documentosDe } from './consulta-das-exigencias';
 import { APLICABILIDADE_GERAL } from './exigencias-documentais';
-import { finalidadeEnviada } from './formulario-da-exigencia';
+import { codigoEnviado } from './formulario-da-exigencia';
 import { comRestricaoDeModalidades, modalidadesParaGravacao } from './modalidades-da-exigencia';
 
 /** Os dados do processo usados para preparar as exigências para envio. */
@@ -34,7 +33,8 @@ export interface ProcessoVivoDasExigencias {
   readonly faseIdPorCodigo: ReadonlyMap<string, string>;
   readonly modalidadesOfertadas: readonly string[];
   readonly etapasVivas: ReadonlySet<string>;
-  readonly finalidadesPorFase: ReadonlyMap<string, readonly string[]>;
+  /** Os códigos dos formulários que cada fase responde, pelo código da fase. */
+  readonly formulariosPorFase: ReadonlyMap<string, readonly string[]>;
 }
 
 export interface OrigemDaRegraEnviada {
@@ -54,7 +54,7 @@ export function regrasDeComprovacaoParaEnvio(
 ): ExigenciasParaEnvio {
   const completas = comAlcanceDeTodasAsFases(exigencias, [...processo.faseIdPorCodigo.keys()]);
   const preparadas = completas.regrasDeComprovacao.flatMap((regra) =>
-    prepararExigenciasParaEnvio([regra], processo, finalidadeDaRegra(regra, processo)),
+    prepararExigenciasParaEnvio([regra], processo, formularioDaRegra(regra, processo)),
   );
   return {
     regras: preparadas.map((item) => item.regra),
@@ -98,7 +98,7 @@ interface RegraPreparada {
  * O formulário da regra principal, declarado na primeira exigência de uma fase ativa e herdado por
  * todas as outras: o servidor recusa grupo com documentos de formulários diferentes.
  */
-function finalidadeDaRegra(
+function formularioDaRegra(
   regraPrincipal: RegraDeComprovacao,
   processo: ProcessoVivoDasExigencias,
 ): string | null {
@@ -107,21 +107,21 @@ function finalidadeDaRegra(
   );
   return declarante === undefined
     ? null
-    : finalidadeEnviada(
-        declarante.finalidade,
-        processo.finalidadesPorFase.get(declarante.faseCodigo) ?? [],
+    : codigoEnviado(
+        declarante.formularioCodigo,
+        processo.formulariosPorFase.get(declarante.faseCodigo) ?? [],
       );
 }
 
 function prepararExigenciasParaEnvio(
   regras: readonly RegraDeComprovacao[],
   processo: ProcessoVivoDasExigencias,
-  finalidade: string | null,
+  formularioCodigo: string | null,
 ): RegraPreparada[] {
   return regras.flatMap((regra) => {
     if (regra.forma === 'DOCUMENTO')
-      return documentoDaExigenciaParaEnvio(regra, processo, finalidade);
-    const itens = prepararExigenciasParaEnvio(regra.itens ?? [], processo, finalidade);
+      return documentoDaExigenciaParaEnvio(regra, processo, formularioCodigo);
+    const itens = prepararExigenciasParaEnvio(regra.itens ?? [], processo, formularioCodigo);
     if ((regra.itens?.length ?? 0) > 0 && itens.length === 0) return [];
     return [grupoPreparado(regra, itens)];
   });
@@ -143,12 +143,14 @@ function grupoPreparado(
 function documentoDaExigenciaParaEnvio(
   regra: RegraDeComprovacao,
   processo: ProcessoVivoDasExigencias,
-  finalidade: string | null,
+  formularioCodigo: string | null,
 ): RegraPreparada[] {
   const documento = regra.documento;
   if (documento === null) return [];
   if (!documento.faseIdLido && !processo.faseIdPorCodigo.has(documento.faseCodigo)) return [];
-  return [documentoPreparado(regra, prepararDocumentoParaEnvio(documento, processo, finalidade))];
+  return [
+    documentoPreparado(regra, prepararDocumentoParaEnvio(documento, processo, formularioCodigo)),
+  ];
 }
 
 function documentoPreparado(
@@ -197,22 +199,28 @@ function distincaoParaEnvio(regra: RegraDeComprovacao) {
 function indeferimentoDoGrupoParaEnvio(
   regra: RegraDeComprovacao,
 ): RegraDeComprovacaoInformada['indeferimento'] {
-  if (regra.consequencia === null && regra.basesLegais === null) return null;
+  if (regra.consequencia === null && regra.basesLegais === null && !regra.abrePrazoParaReenvio) {
+    return null;
+  }
   return {
-    consequencia: codigoOpcional(ConsequenciaDoIndeferimentoCodigo, regra.consequencia),
+    consequenciaDoDescumprimento: codigoOpcional(
+      ConsequenciaDoDescumprimentoCodigo,
+      regra.consequencia,
+    ),
     basesLegais: regra.basesLegais === null ? null : regra.basesLegais.map(baseParaEnvio),
+    abrePrazoParaReenvio: regra.abrePrazoParaReenvio,
   };
 }
 
 function prepararDocumentoParaEnvio(
   documento: ExigenciaDeDocumento,
   processo: ProcessoVivoDasExigencias,
-  finalidade: string | null,
+  formularioCodigo: string | null,
 ): ItemDocumentoExigidoInput {
   return {
     tipoDocumento: { id: documento.tipoDocumentoId },
     fatosComprovados: documento.fatosComprovados ?? [],
-    momento: momentoParaEnvio(documento, processo, finalidade),
+    momento: momentoParaEnvio(documento, processo, formularioCodigo),
     aplicabilidade: aplicabilidadeParaEnvio(documento, processo.modalidadesOfertadas),
     indeferimento: indeferimentoDoDocumentoParaEnvio(documento),
     requisitos: requisitosParaEnvio(documento, processo.faseIdPorCodigo),
@@ -232,22 +240,22 @@ function aplicabilidadeParaEnvio(
 function momentoParaEnvio(
   documento: ExigenciaDeDocumento,
   processo: ProcessoVivoDasExigencias,
-  finalidade: string | null,
+  formularioCodigo: string | null,
 ): ItemDocumentoExigidoInput['momento'] {
   return {
     faseId: processo.faseIdPorCodigo.get(documento.faseCodigo) ?? documento.faseIdLido ?? '',
     etapaId: documento.faseIdLido
       ? documento.etapaId
       : etapaDeColetaValida(documento, processo.etapasVivas),
-    finalidade: finalidadeParaEnvio(documento, finalidade),
+    formularioCodigo: formularioParaEnvio(documento, formularioCodigo),
   };
 }
 
-function finalidadeParaEnvio(documento: ExigenciaDeDocumento, finalidade: string | null) {
-  return codigoDoContrato(
-    FinalidadeFormularioCodigo,
-    (documento.faseIdLido ? documento.finalidade : finalidade) ?? '',
-  );
+function formularioParaEnvio(
+  documento: ExigenciaDeDocumento,
+  formularioCodigo: string | null,
+): string | null {
+  return documento.faseIdLido ? documento.formularioCodigo : formularioCodigo;
 }
 
 function indeferimentoDoDocumentoParaEnvio(
@@ -255,11 +263,12 @@ function indeferimentoDoDocumentoParaEnvio(
 ): ItemDocumentoExigidoInput['indeferimento'] {
   return {
     obrigatorio: documento.obrigatorio,
-    consequencia: codigoOpcional(
-      ConsequenciaDoIndeferimentoCodigo,
+    consequenciaDoDescumprimento: codigoOpcional(
+      ConsequenciaDoDescumprimentoCodigo,
       documento.consequenciaIndeferimento || null,
     ),
     basesLegais: basesLegaisParaEnvio(documento.basesLegais).map(baseParaEnvio),
+    abrePrazoParaReenvio: documento.abrePrazoParaReenvio,
   };
 }
 

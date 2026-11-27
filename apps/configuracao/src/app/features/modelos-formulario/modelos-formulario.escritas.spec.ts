@@ -79,7 +79,7 @@ describe('ModelosFormularioPage — escritas pela interface', () => {
   it('identifica os campos obrigatórios para tecnologias assistivas', async () => {
     await pagina.carregar();
     await pagina.preencher();
-    for (const campo of ['nome', 'codigo', 'finalidade']) {
+    for (const campo of ['nome', 'codigo']) {
       expect(
         pagina.elemento<HTMLElement>(`[formcontrolname="${campo}"]`).getAttribute('aria-required'),
       ).toBe('true');

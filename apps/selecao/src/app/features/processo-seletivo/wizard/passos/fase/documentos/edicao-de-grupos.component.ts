@@ -6,26 +6,29 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { consequenciasDaFase } from '@uniplus/shared-utils';
 
 import type { BaseLegalConfig, RegraDeComprovacao } from '../../../processo-seletivo.models';
-import { descreverFase } from '../../../shared/descricao-da-fase';
 import { documentosDe } from '../../../shared/exigencias/consulta-das-exigencias';
 import { CatalogoDasConsequenciasDeIndeferimento } from '../../cronograma/catalogos/catalogo-das-consequencias-de-indeferimento.service';
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
-import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
 import { CatalogoDasFormasDeComprovacao } from '../../cronograma/catalogos/catalogo-das-formas-de-comprovacao.service';
 import { FormularioDoCronograma } from '../../cronograma/servicos/formulario-do-cronograma.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import { CriterioDeDistincaoComponent } from './criterio-de-distincao.component';
 import { ConsequenciaENormasComponent } from './consequencia-e-normas.component';
 import { GrupoDeDocumentosComponent, type DocumentoDoGrupo } from './grupo-de-documentos.component';
+import { PrazoParaReenvioComponent } from './prazo-para-reenvio.component';
 import { RecusasDasExigencias } from './recusas-das-exigencias.service';
 import { GruposDeDocumentosStore } from './grupos-de-documentos.store';
 
 @Component({
   selector: 'sel-edicao-de-grupos',
-  imports: [GrupoDeDocumentosComponent, ConsequenciaENormasComponent, CriterioDeDistincaoComponent],
+  imports: [
+    GrupoDeDocumentosComponent,
+    ConsequenciaENormasComponent,
+    CriterioDeDistincaoComponent,
+    PrazoParaReenvioComponent,
+  ],
   providers: [GruposDeDocumentosStore, CatalogoDasFormasDeComprovacao],
   templateUrl: './edicao-de-grupos.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,21 +38,17 @@ export class EdicaoDeGruposComponent {
   protected readonly recusas = inject(RecusasDasExigencias, { optional: true });
   protected readonly catalogo = inject(CatalogoDasFormasDeComprovacao);
   protected readonly cronograma = inject(FormularioDoCronograma);
-  private readonly documentos = inject(CatalogoDeDocumentos);
-  private readonly fases = inject(CatalogoDeFases);
   private readonly fase = inject(FaseEmEdicao);
+  private readonly documentos = inject(CatalogoDeDocumentos);
   private readonly consequencias = inject(CatalogoDasConsequenciasDeIndeferimento);
   protected readonly aberto = signal(false);
   protected readonly escolhidos = signal<ReadonlySet<string>>(new Set());
   protected readonly aviso = signal('');
   protected readonly opcoes = computed(() => {
-    const fase = this.fase.faseDoRascunho();
-    const permite =
-      fase !== null && descreverFase(fase, this.fases.fasePorId()).permiteComplementacao;
     const opcoes = this.consequencias
       .consequencias()
       .map(({ codigo, rotulo }) => ({ valor: codigo, rotulo }));
-    return consequenciasDaFase([{ valor: '', rotulo: 'Não decide sozinha' }, ...opcoes], permite);
+    return [{ valor: '', rotulo: 'Não decide sozinha' }, ...opcoes];
   });
 
   constructor() {
@@ -108,7 +107,7 @@ export class EdicaoDeGruposComponent {
         documento !== null &&
         primeiro !== undefined &&
         documento.etapaId === primeiro.etapaId &&
-        documento.finalidade === primeiro.finalidade
+        documento.formularioCodigo === primeiro.formularioCodigo
       );
     });
     return this.nomes(regras);
@@ -140,10 +139,7 @@ export class EdicaoDeGruposComponent {
   }
 
   protected atualizarConsequencia(grupo: RegraDeComprovacao, consequencia: string): void {
-    this.grupos.editar(grupo.identificadorNoRascunho, {
-      consequencia: consequencia || null,
-      basesLegais: grupo.basesLegais,
-    });
+    this.grupos.editar(grupo.identificadorNoRascunho, { consequencia: consequencia || null });
     this.recusas?.limparCampo(grupo.identificadorNoRascunho, 'indeferimento.consequencia');
     this.aviso.set('Consequência do grupo atualizada.');
   }
@@ -152,11 +148,18 @@ export class EdicaoDeGruposComponent {
     grupo: RegraDeComprovacao,
     basesLegais: readonly BaseLegalConfig[],
   ): void {
-    this.grupos.editar(grupo.identificadorNoRascunho, {
-      consequencia: grupo.consequencia,
-      basesLegais,
-    });
+    this.grupos.editar(grupo.identificadorNoRascunho, { basesLegais });
     this.recusas?.limparCampo(grupo.identificadorNoRascunho, 'indeferimento.basesLegais');
     this.aviso.set('Normas do grupo atualizadas.');
+  }
+
+  /** O prazo só se oferece onde a fase admite reenvio; o já gravado segue visível para ser desligado. */
+  protected oferecePrazoParaReenvio(grupo: RegraDeComprovacao): boolean {
+    return this.fase.admiteComplementacao() || grupo.abrePrazoParaReenvio;
+  }
+
+  protected escolherPrazoParaReenvio(grupo: RegraDeComprovacao, abre: boolean): void {
+    this.grupos.editar(grupo.identificadorNoRascunho, { abrePrazoParaReenvio: abre });
+    this.aviso.set('Prazo para reenvio do grupo atualizado.');
   }
 }

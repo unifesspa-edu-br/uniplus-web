@@ -1,6 +1,5 @@
 import { comEscopoPeloCodigo } from '@uniplus/shared-data/configuracao';
 import { computed, effect, inject, Injectable, untracked } from '@angular/core';
-import { FINALIDADE_INSCRICAO } from '@uniplus/shared-inscricao/formulario';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
@@ -15,8 +14,13 @@ import {
   type NomesDosCitantes,
 } from '../citantes-no-processo';
 import { fatosAcrescentados } from '../formulario-do-processo';
-import { fatosColetadosPelasOutras, formulariosDoRascunho } from '../formularios-por-finalidade';
+import {
+  comFormulario,
+  fatosColetadosPelasOutras,
+  formularioDaInscricao,
+} from '../formularios-do-rascunho';
 import { CatalogosDoFormulario } from './catalogos-do-formulario.service';
+import { FasesDosFormularios } from './fases-dos-formularios.service';
 
 /**
  * Os campos que o processo pressupõe no formulário de inscrição: quem, no processo, cita cada fato,
@@ -27,6 +31,7 @@ export class CamposPressupostosDoFormulario {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly catalogoDeDocumentos = inject(CatalogoDeDocumentos);
   private readonly dados = inject(CatalogosDoFormulario);
+  private readonly fases = inject(FasesDosFormularios);
 
   constructor() {
     // Reconcilia a cada mudança do que cita fatos no processo, e não só quando o catálogo
@@ -43,7 +48,11 @@ export class CamposPressupostosDoFormulario {
   /** Quem, no processo, cita cada fato — a fonte única do que entra sozinho e do que não sai. */
   readonly citantes = computed(() =>
     quemCitaNoProcesso(
-      citantesDoRascunho(this.store.draft(), this.store.regrasDasModalidades()),
+      citantesDoRascunho(
+        this.store.draft(),
+        this.store.regrasDasModalidades(),
+        this.fases.fasesDaInscricao(),
+      ),
       this.nomesDosCitantes(),
     ),
   );
@@ -67,27 +76,32 @@ export class CamposPressupostosDoFormulario {
    */
   reconciliar(): readonly string[] {
     const formulario = this.store.draft().formulario;
-    const pressupostos = this.pressupostosDoRascunho();
-    const reconciliado = comCamposQueAsExigenciasPressupoem(formulario.conteudo, pressupostos);
-    if (reconciliado === formulario.conteudo) return [];
-    const acrescentados = fatosAcrescentados(formulario.conteudo, reconciliado);
-    if (acrescentados.length > 0) {
-      this.store.camposPostosPelasExigencias.update((atual) =>
-        atual.comOsQueEntraram(acrescentados),
-      );
-    }
-    this.store.patchSection('formulario', { ...formulario, conteudo: reconciliado });
+    const inscricao = formularioDaInscricao(formulario, this.fases.fasesDaInscricao());
+    if (inscricao === null) return [];
+    const pressupostos = this.pressupostosDoRascunho(inscricao.codigo);
+    const reconciliado = comCamposQueAsExigenciasPressupoem(inscricao.conteudo, pressupostos);
+    if (reconciliado === inscricao.conteudo) return [];
+    const acrescentados = fatosAcrescentados(inscricao.conteudo, reconciliado);
+    this.registrarAcrescentados(acrescentados);
+    const atualizado = { ...inscricao, conteudo: reconciliado };
+    this.store.patchSection('formulario', comFormulario(formulario, atualizado));
     return acrescentados;
   }
-  private pressupostosDoRascunho(): PressupostosDoProcesso {
+
+  private registrarAcrescentados(acrescentados: readonly string[]): void {
+    if (acrescentados.length === 0) return;
+    this.store.camposPostosPelasExigencias.update((atual) => atual.comOsQueEntraram(acrescentados));
+  }
+
+  private pressupostosDoRascunho(codigoDaInscricao: string): PressupostosDoProcesso {
     const rascunho = this.store.draft();
     return {
       citados: new Set(this.citantes().keys()),
       catalogo: comEscopoPeloCodigo(this.dados.catalogo()),
       postosPelasExigencias: this.store.camposPostosPelasExigencias(),
-      fatosDeOutrasFinalidades: fatosColetadosPelasOutras(
-        formulariosDoRascunho(rascunho.formulario),
-        FINALIDADE_INSCRICAO,
+      fatosDeOutrosFormularios: fatosColetadosPelasOutras(
+        rascunho.formulario.formularios,
+        codigoDaInscricao,
       ),
     };
   }

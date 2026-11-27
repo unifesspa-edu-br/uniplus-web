@@ -10,7 +10,7 @@ import { comCampo, comCodigo } from './secao-do-documento';
 type Fada = DocumentoDaConfiguracaoFada;
 
 /**
- * O que a API recusa quando o processo não aplica o FADA, e o que descreve a base legal escolhida
+ * O que a API recusa quando o processo não aplica o Fator de Atenuação, e o que descreve a base legal escolhida
  * (só de leitura): nada disso fica numa declaração de "não aplica".
  */
 const SEM_APLICACAO = [

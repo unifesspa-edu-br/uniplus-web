@@ -146,7 +146,6 @@ const formularioDaInscricao = (
   itens: CampoApresentado[],
   fatosDaPagina: string[],
 ): FormularioDoCandidato => ({
-  finalidade: 'INSCRICAO',
   paginas: PAGINAS_DO_FATOR,
   termos: [],
   coleta: { itens, grupos: [] },

@@ -67,7 +67,9 @@ export class GruposDeDocumentosStore {
 
   editar(
     identificador: string,
-    alteracao: Pick<RegraDeComprovacao, 'consequencia' | 'basesLegais'>,
+    alteracao: Partial<
+      Pick<RegraDeComprovacao, 'consequencia' | 'basesLegais' | 'abrePrazoParaReenvio'>
+    >,
   ): void {
     this.atualizar((exigencias) => editarGrupo(exigencias, identificador, alteracao));
   }

@@ -10,18 +10,18 @@ export interface DocumentoDaRegra {
   readonly faseId: string;
   readonly tipoDocumento: Pick<DocumentoDaExigencia['tipoDocumento'], 'id' | 'codigo' | 'nome'>;
   readonly obrigatorio: boolean;
-  readonly consequencia: NonNullable<
-    DocumentoDaExigencia['indeferimento']['consequencia']
+  readonly consequenciaDoDescumprimento: NonNullable<
+    DocumentoDaExigencia['indeferimento']['consequenciaDoDescumprimento']
   >['codigo'];
   readonly condicoes?: DocumentoDaExigencia['aplicabilidade']['condicoes'];
 }
 
-const ROTULOS_DAS_CONSEQUENCIAS: Record<DocumentoDaRegra['consequencia'], string> = {
-  ELIMINA: 'Elimina',
-  RECLASSIFICA_AC: 'Reclassificação para ampla concorrência',
-  REMOVE_VANTAGEM: 'Remove vantagem',
-  ABRE_PRAZO_PARA_REENVIO: 'Abre prazo para reenvio',
-};
+const ROTULOS_DAS_CONSEQUENCIAS: Record<DocumentoDaRegra['consequenciaDoDescumprimento'], string> =
+  {
+    ELIMINA_DO_PROCESSO: 'Elimina do processo',
+    RETIRA_A_MODALIDADE: 'Retira a modalidade',
+    RETIRA_O_ACRESCIMO: 'Retira o acréscimo',
+  };
 
 const BASE_LEGAL_DO_EDITAL = {
   referencia: 'Edital nº 1/2027, Anexo III',
@@ -47,8 +47,12 @@ const REQUISITOS_DO_ARQUIVO = {
 function indeferimentoDoDocumento(regra: DocumentoDaRegra): DocumentoDaExigencia['indeferimento'] {
   return {
     obrigatorio: regra.obrigatorio,
-    consequencia: valorDoEnum(regra.consequencia, ROTULOS_DAS_CONSEQUENCIAS[regra.consequencia]),
+    consequenciaDoDescumprimento: valorDoEnum(
+      regra.consequenciaDoDescumprimento,
+      ROTULOS_DAS_CONSEQUENCIAS[regra.consequenciaDoDescumprimento],
+    ),
     basesLegais: [{ id: `${regra.id}-norma`, ...BASE_LEGAL_DO_EDITAL }],
+    abrePrazoParaReenvio: false,
   };
 }
 
@@ -72,7 +76,7 @@ function documentoDaRegra(regra: DocumentoDaRegra): DocumentoDaExigencia {
     id: `${regra.id}-doc`,
     chave: `${regra.id}-doc`,
     tipoDocumento: tipoDoDocumento(regra),
-    momento: { faseId: regra.faseId, etapaId: null, finalidade: null },
+    momento: { faseId: regra.faseId, etapaId: null, formularioCodigo: null },
     aplicabilidade: aplicabilidadeDoDocumento(regra),
     indeferimento: indeferimentoDoDocumento(regra),
     requisitos: REQUISITOS_DO_ARQUIVO,
@@ -87,7 +91,11 @@ export function regraDaExigencia(regra: DocumentoDaRegra): RegraDaExigencia {
     forma: { codigo: 'DOCUMENTO', rotulo: 'Documento' },
     documento: documentoDaRegra(regra),
     cardinalidade: { quantidadeMinima: null, distincao: null },
-    indeferimento: { consequencia: null, basesLegais: [] },
+    indeferimento: {
+      consequenciaDoDescumprimento: null,
+      basesLegais: [],
+      abrePrazoParaReenvio: false,
+    },
     itens: [],
     grupoDoFormularioParaRepeticao: null,
   };

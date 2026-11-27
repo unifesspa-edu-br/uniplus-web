@@ -13,7 +13,12 @@
     </h1>
     @if (modelo(); as m) {
       <p class="page-header__desc">
-        <code>{{ m.codigo }}</code> · {{ m.finalidade.rotulo }}
+        <code>{{ m.codigo }}</code> ·
+        {{
+          m.declaracao.serveAFaseDeInscricao
+            ? 'Serve à fase de inscrição'
+            : 'Não serve à fase de inscrição'
+        }}
         <ui-tag [variant]="m.ativo ? 'success' : 'neutral'">{{
           m.ativo ? 'Ativo' : 'Desativado'
         }}</ui-tag>

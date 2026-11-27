@@ -1,37 +1,47 @@
 import type { FormularioDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import {
   conteudoInicial,
-  FINALIDADE_INSCRICAO,
   type ConteudoDoFormulario,
   type FatoDoFormulario,
 } from '@uniplus/shared-inscricao/formulario';
 import { comCamposQueAsExigenciasPressupoem } from '../passos/formulario/campos-pressupostos-da-inscricao';
 import {
   conteudoDoFormulario,
-  faseDaInscricao,
   fatosColetadosPor,
-  fatosDasOutrasFinalidades,
-  formularioDaFinalidade,
+  fatosDosOutrosFormularios,
+  formularioDaInscricaoDoServidor,
+  paraGravarDoServidor,
   type FormularioParaGravar,
 } from '../passos/formulario/formulario-do-processo';
 import { CamposPostosPelasExigencias } from './campos-postos-pelas-exigencias';
 import type { CamposPressupostos } from './campos-pressupostos.service';
+
+/** O que o plano sabe do passo Formulário, fora do que o servidor tem. */
+export interface EntradasDoPlano {
+  readonly citados: ReadonlySet<string>;
+  readonly catalogo: readonly FatoDoFormulario[];
+  /** Os fatos que os outros formulários do rascunho coletam. */
+  readonly fatosDosOutrosFormularios: readonly string[];
+  /** O código do formulário de inscrição declarado no rascunho e ainda não gravado; nulo sem ele. */
+  readonly codigoParaCriar: string | null;
+}
 
 export class PlanoDosCamposPressupostos {
   readonly gravado: FormularioDto | null;
   readonly conteudoGravado: ConteudoDoFormulario;
   readonly desejado: ConteudoDoFormulario;
   readonly faseDaInscricao: string | null;
-  private readonly outrasFinalidades: readonly string[];
+  readonly codigoParaCriar: string | null;
+  private readonly fatosDosOutros: readonly string[];
+  private readonly citados: ReadonlySet<string>;
+  private readonly catalogo: readonly FatoDoFormulario[];
 
-  constructor(
-    servidor: ProcessoSeletivoDto,
-    private readonly citados: ReadonlySet<string>,
-    private readonly catalogo: readonly FatoDoFormulario[],
-    outrasFinalidades: readonly string[],
-  ) {
-    this.outrasFinalidades = outrasFinalidadesDoProcesso(servidor, outrasFinalidades);
-    this.gravado = formularioDaFinalidade(servidor.formularios ?? [], FINALIDADE_INSCRICAO);
+  constructor(servidor: ProcessoSeletivoDto, entradas: EntradasDoPlano) {
+    this.citados = entradas.citados;
+    this.catalogo = entradas.catalogo;
+    this.codigoParaCriar = entradas.codigoParaCriar;
+    this.gravado = formularioDaInscricaoDoServidor(servidor);
+    this.fatosDosOutros = fatosDosOutrosDoProcesso(servidor, this.gravado, entradas);
     this.conteudoGravado =
       this.gravado === null ? conteudoInicial() : conteudoDoFormulario(this.gravado);
     this.desejado = this.comOsCamposQueFaltam(this.conteudoGravado);
@@ -44,7 +54,7 @@ export class PlanoDosCamposPressupostos {
       citados: this.citados,
       catalogo: this.catalogo,
       postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
-      fatosDeOutrasFinalidades: this.outrasFinalidades,
+      fatosDeOutrosFormularios: this.fatosDosOutros,
     });
   }
 
@@ -53,10 +63,7 @@ export class PlanoDosCamposPressupostos {
   }
 
   fatosNaoColetados(): readonly string[] {
-    const coletados = new Set([
-      ...fatosColetadosPor(this.conteudoGravado),
-      ...this.outrasFinalidades,
-    ]);
+    const coletados = new Set([...fatosColetadosPor(this.conteudoGravado), ...this.fatosDosOutros]);
     return [...this.citados].filter((codigo) => !coletados.has(codigo));
   }
 
@@ -68,6 +75,9 @@ export class PlanoDosCamposPressupostos {
   desfechoSemGravar(): CamposPressupostos | null {
     if (this.coletaTudo()) return { tipo: 'garantidos' };
     if (this.faseDaInscricao === null) return { tipo: 'semFaseDeInscricao' };
+    if (this.gravado === null && this.codigoParaCriar === null) {
+      return { tipo: 'semFormularioDeInscricao' };
+    }
     return null;
   }
 
@@ -75,6 +85,8 @@ export class PlanoDosCamposPressupostos {
     if (this.faseDaInscricao === null) throw new Error('Fase de inscrição ausente');
     return {
       faseId: this.faseDaInscricao,
+      obrigatorio: true,
+      consequenciaDaFaltaDeEnvio: null,
       conteudo: { ...this.desejado, itens: [], grupos: [], termos: [] },
     };
   }
@@ -84,26 +96,31 @@ export class PlanoDosCamposPressupostos {
     desejado: FormularioParaGravar & { readonly faseId: string };
   } {
     if (this.faseDaInscricao === null) throw new Error('Fase de inscrição ausente');
-    const conteudo = conteudoDoFormulario(formulario);
+    const servidor = paraGravarDoServidor(formulario);
     return {
-      servidor: { faseId: formulario.faseId, conteudo },
-      desejado: { faseId: this.faseDaInscricao, conteudo: this.comOsCamposQueFaltam(conteudo) },
+      servidor,
+      desejado: {
+        ...servidor,
+        faseId: this.faseDaInscricao,
+        conteudo: this.comOsCamposQueFaltam(servidor.conteudo),
+      },
     };
   }
 }
 
 function idDaFaseDeInscricao(fases: ProcessoSeletivoDto['cronogramaFases']): string | null {
-  return faseDaInscricao(fases.map((fase) => ({ id: fase.id, ...fase.faseCanonica })))?.id ?? null;
+  return fases.find((fase) => fase.faseCanonica.coletaInscricao)?.id ?? null;
 }
 
-function outrasFinalidadesDoProcesso(
+function fatosDosOutrosDoProcesso(
   servidor: ProcessoSeletivoDto,
-  rascunho: readonly string[],
+  inscricao: FormularioDto | null,
+  entradas: EntradasDoPlano,
 ): readonly string[] {
   return [
     ...new Set([
-      ...fatosDasOutrasFinalidades(servidor.formularios ?? [], FINALIDADE_INSCRICAO),
-      ...rascunho,
+      ...fatosDosOutrosFormularios(servidor.formularios ?? [], inscricao?.codigo ?? ''),
+      ...entradas.fatosDosOutrosFormularios,
     ]),
   ];
 }

@@ -1,4 +1,4 @@
-import { FINALIDADE_INSCRICAO } from './vocabulario-do-modelo.testing';
+import { DECLARACAO_DE_INSCRICAO } from './vocabulario-do-modelo.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
@@ -16,7 +16,7 @@ export const URL = `${BASE}/api/configuracao/admin/modelos-formulario`;
 export const modelo: ModeloFormularioView = {
   id: 'modelo-1',
   codigo: 'INSCRICAO',
-  finalidade: FINALIDADE_INSCRICAO,
+  declaracao: DECLARACAO_DE_INSCRICAO,
   ativo: true,
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   conteudo: {
@@ -127,9 +127,6 @@ export class PaginaDosModelos {
     const nome = this.elemento<HTMLInputElement>('input[formcontrolname="nome"]');
     nome.value = 'Inscrição';
     nome.dispatchEvent(new Event('input'));
-    const finalidade = this.elemento<HTMLSelectElement>('select[formcontrolname="finalidade"]');
-    finalidade.value = 'INSCRICAO';
-    finalidade.dispatchEvent(new Event('change'));
   }
 
   salvar(): HTMLButtonElement {

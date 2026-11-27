@@ -63,7 +63,6 @@ export const apresentacaoDaPagina = (titulo: string): ApresentacaoDaPagina => ({
 });
 
 export const FORMULARIO_DE_ENDERECO_COM_ALDEIA: FormularioDoCandidato = {
-  finalidade: 'INSCRICAO',
   paginas: [
     {
       codigo: 'DADOS',
@@ -157,7 +156,6 @@ export const FORMULARIO_COM_TERMO_DE_VERACIDADE: FormularioDoCandidato = {
 };
 
 export const FORMULARIO_DE_DUAS_SECOES: FormularioDoCandidato = {
-  finalidade: 'INSCRICAO',
   paginas: [
     {
       codigo: 'CONTATO',

@@ -31,6 +31,7 @@ import {
 } from './cronograma.testing';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
 import { AjudantesDeExigencias } from './cronograma-exigencias.testing';
+import { formularioDoRascunho } from '../formulario/formulario-de-inscricao.testing';
 
 describe('CronogramaPassoComponent: conferência da norma', () => {
   let exigencias: ContextoDoCronograma['exigencias'];
@@ -131,7 +132,7 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
         },
       ]);
 
-      const gravacao = exigencias.gravar(PROCESSO_ID);
+      const gravacao = exigencias.gravar(PROCESSO_ID, 'Gravado.');
       controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
       await proximoPasso();
       controller.expectOne(ROTA_DOCUMENTOS).flush(
@@ -150,7 +151,7 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
       );
     });
 
-    it('não põe na inscrição o fato que outra finalidade do rascunho, ainda não gravada, já coleta', async () => {
+    it('não põe na inscrição o fato que outro formulário do rascunho, ainda não gravada, já coleta', async () => {
       TestBed.inject(CatalogoDeFatos).fatos.set([
         {
           ...FAIXA_ETARIA,
@@ -182,8 +183,8 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
         itens: [{ fatoCodigo: 'RENDA_FAMILIAR', ordem: 0, paginaCodigo: null } as never],
       };
       store.patchObjectSection('formulario', {
-        outrasFinalidades: [
-          { finalidade: 'HABILITACAO', faseCodigo: 'HABILITACAO', conteudo: habilitacao },
+        formularios: [
+          formularioDoRascunho(habilitacao, { codigo: 'HABILITACAO', faseCodigo: 'HABILITACAO' }),
         ],
       });
 
@@ -251,6 +252,15 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
         ],
         coleta: { itens: [campoDoServidor('NOME', 0, 'DADOS_BASICOS')], grupos: [] },
       });
+      store.patchObjectSection('formulario', {
+        formularios: [
+          formularioDoRascunho(conteudoInicial(), {
+            codigo: 'INSCRICAO',
+            faseCodigo: 'INSCRICAO',
+            gravado: false,
+          }),
+        ],
+      });
       const ROTA_INSCRICAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/INSCRICAO`;
 
       const garantir = TestBed.inject(GravacaoDosCamposPressupostos).garantirCampos(
@@ -303,11 +313,12 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
         .flush({ formularios: [comCampo], cronogramaFases: [FASE] });
       await garantir;
 
-      expect(store.draft().formulario.conteudo.itens?.map((c) => c.fatoCodigo)).toEqual([
+      const inscricao = store.draft().formulario.formularios.find((f) => f.codigo === 'INSCRICAO');
+      expect(inscricao?.conteudo.itens?.map((c) => c.fatoCodigo)).toEqual([
         'NOME',
         'RENDA_FAMILIAR',
       ]);
-      expect(store.draft().formulario.faseCodigo).toBe('INSCRICAO');
+      expect(inscricao?.faseCodigo).toBe('INSCRICAO');
       expect(store.camposPostosPelasExigencias().contem('RENDA_FAMILIAR')).toBe(true);
     });
   });

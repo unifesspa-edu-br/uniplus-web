@@ -1,13 +1,10 @@
-import type {
-  ConfiguracaoBonusRegionalDto,
-  CriterioDesempateDto,
-} from '@uniplus/shared-data/selecao';
+import type { ConfiguracaoDoFadaDto, CriterioDesempateDto } from '@uniplus/shared-data/selecao';
 import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { etapaDoServidor } from './cronograma-do-servidor';
 import { PARAMETROS_DO_DESEMPATE_SEM_VALOR, referencia } from './regras-congeladas-do-servidor';
 import {
   AREAS_ENEM,
-  BASE_LEGAL_BONUS_REGIONAL_ID,
+  BASE_LEGAL_DO_FADA_ID,
   PESOS_AREA_ENEM,
   RESOLUCAO_PESO_AREA,
 } from './catalogos-da-classificacao';
@@ -63,22 +60,22 @@ export const DETALHE_PUBLICADO = {
   ],
   atendimentoEspecializado: null,
   distribuicaoVagas: [],
-  aplicaBonusRegional: true,
+  aplicaFada: true,
   opcoesDeCurso: { numero: 1 },
-  bonusRegional: {
+  fada: {
     id: '01960000-0000-7000-0000-0000000008b1',
     regra: referencia('BONUS-MULTIPLICATIVO'),
     fator: 1.2,
     teto: null,
     fatoElegibilidadeCodigo: 'PEDE_O_ACRESCIMO',
     baseLegal: {
-      id: BASE_LEGAL_BONUS_REGIONAL_ID,
+      id: BASE_LEGAL_DO_FADA_ID,
       tipoInstrumento: 'PORTARIA',
       identificacao: 'Portaria Unifesspa nº 2514/2023',
       descricao: 'Institui inclusão regional.',
       municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
     },
-  } satisfies JsonDaApi<ConfiguracaoBonusRegionalDto>,
+  } satisfies JsonDaApi<ConfiguracaoDoFadaDto>,
   cascata: null,
   criteriosDesempate: [
     {
@@ -140,12 +137,12 @@ export const LEITURAS: Record<string, Record<string, string>> = {
     'Ordem de alocação': 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
     'Escala da nota final': '0 a 100',
   },
-  FADA: {
-    FADA: 'Aplicado neste processo',
-    'Regra do FADA': 'BONUS-MULTIPLICATIVO',
-    Fator: '1,2',
-    'Base Legal do FADA': 'Portaria Unifesspa nº 2514/2023',
-    'Quem recebe o acréscimo': 'PEDE_O_ACRESCIMO',
+  'Fator de Atenuação': {
+    'Fator de Atenuação': 'Aplicado neste processo',
+    'Regra do Fator de Atenuação': 'BONUS-MULTIPLICATIVO',
+    'Multiplicador da nota': '1,2',
+    'Base legal do Fator de Atenuação': 'Portaria Unifesspa nº 2514/2023',
+    'Quem recebe o Fator de Atenuação': 'PEDE_O_ACRESCIMO',
   },
   Desempate: { 'Regra do critério': 'DESEMPATE_MAIOR_IDADE — Costume administrativo' },
   Eliminação: {

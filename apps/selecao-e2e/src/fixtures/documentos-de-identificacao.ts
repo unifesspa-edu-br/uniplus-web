@@ -13,7 +13,7 @@ export const REGRAS_DE_IDENTIFICACAO = NOMES_DOS_DOCUMENTOS.map((nome, indice) =
       nome,
     },
     obrigatorio: true,
-    consequencia: 'ELIMINA',
+    consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
   }),
 );
 

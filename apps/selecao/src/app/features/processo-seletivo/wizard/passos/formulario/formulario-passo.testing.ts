@@ -18,10 +18,12 @@ import { afterEach, beforeEach } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
+import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CATALOGOS_DO_CRONOGRAMA } from '../cronograma/catalogos/catalogos-do-cronograma';
 import { FormularioPassoComponent } from './formulario.component';
 import { conteudoDoFormulario } from './formulario-do-processo';
+import { CODIGO_DA_INSCRICAO, formularioDoRascunho } from './formulario-de-inscricao.testing';
 import { AplicacaoDeModelo } from './servicos/aplicacao-de-modelo.service';
 import {
   BASE,
@@ -117,15 +119,13 @@ export class ContextoDoPasso {
 
   /** O processo com a habilitação como segunda aba do formulário, depois da inscrição. */
   readonly comHabilitacao = (): void => {
-    const { cronograma } = this.store.draft();
-    this.store.patchSection('cronograma', {
-      ...cronograma,
-      fases: [FASE_INSCRICAO, FASE_HABILITACAO],
+    this.store.patchObjectSection('cronograma', { fases: [FASE_INSCRICAO, FASE_HABILITACAO] });
+    const habilitacao = formularioDoRascunho(conteudoDoFormulario(HABILITACAO_GRAVADA), {
+      codigo: 'HABILITACAO',
+      faseCodigo: 'HABILITACAO',
     });
-    const conteudo = conteudoDoFormulario(HABILITACAO_GRAVADA);
-    this.store.patchObjectSection('formulario', {
-      outrasFinalidades: [{ finalidade: 'HABILITACAO', faseCodigo: '', conteudo }],
-    });
+    const { formularios } = this.store.draft().formulario;
+    this.store.patchObjectSection('formulario', { formularios: [...formularios, habilitacao] });
     this.fixture.detectChanges();
   };
 
@@ -137,9 +137,13 @@ export class ContextoDoPasso {
     this.fixture.detectChanges();
   };
 
-  readonly escolherEAplicar = (finalidade: string, modeloId: string): Promise<void> => {
-    this.servicoDeModelos().escolher(finalidade, modeloId);
-    this.servicoDeModelos().pedir(finalidade);
+  readonly escolherEAplicar = (codigo: string, modeloId: string): Promise<void> => {
+    const formulario = this.store
+      .draft()
+      .formulario.formularios.find((item) => item.codigo === codigo);
+    if (formulario === undefined) throw new Error(`O rascunho não tem o formulário ${codigo}.`);
+    this.servicoDeModelos().escolher(codigo, modeloId);
+    this.servicoDeModelos().pedir(formulario, codigo === CODIGO_DA_INSCRICAO);
     return this.fixture.componentInstance.confirmarAplicacao();
   };
 }
@@ -149,6 +153,7 @@ const PROVEDORES_DO_PASSO = [
   ProcessoSeletivoStore,
   CadastroInicial,
   GravacaoDoProcesso,
+  GravacaoDosCamposPressupostos,
   ...CATALOGOS_DO_CRONOGRAMA,
   provideHttpClient(withInterceptors([authErrorInterceptor, apiResultInterceptor])),
   { provide: AuthService, useValue: { login: () => Promise.resolve() } },
@@ -171,7 +176,7 @@ function prepararProcesso(store: ProcessoSeletivoStore): void {
   store.processoSeletivoId.set(PROCESSO_ID);
   store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE_INSCRICAO] });
   store.patchObjectSection('formulario', {
-    conteudo: conteudoDoFormulario(GRAVADO),
+    formularios: [formularioDoRascunho(conteudoDoFormulario(GRAVADO), { gravado: true })],
     referenciaTemporal: { tipo: 'DATA_ESPECIFICA', data: '2027-01-15', faseCodigo: '' },
   });
 }

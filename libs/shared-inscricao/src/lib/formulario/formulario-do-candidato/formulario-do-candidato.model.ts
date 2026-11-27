@@ -89,7 +89,6 @@ export interface PressupostosDoFormulario {
 }
 
 export interface FormularioDoCandidato {
-  readonly finalidade: string;
   readonly titulo?: string | null;
   readonly paginas: readonly PaginaApresentada[];
   readonly termos: readonly TermoApresentado[];
@@ -102,6 +101,8 @@ export interface FormularioDoCandidato {
  * O envelope em que o processo entrega o formulário; aqui, só o que o formulário do candidato lê dele.
  */
 export interface FormularioNoProcesso {
+  /** O código que identifica o formulário no processo; os documentos o citam. Nulo fora de um processo, como no simulador. */
+  readonly codigo?: string | null;
   /** A fase do cronograma que o formulário responde; nula fora de um processo, como no simulador. */
   readonly faseId?: string | null;
   /**
@@ -111,7 +112,7 @@ export interface FormularioNoProcesso {
   readonly dependenciasDaAvaliacao?: DependenciasDaAvaliacao | null;
   /**
    * As respostas do Fator de Atenuação, só pelos códigos, com a mesma forma das dependências da
-   * avaliação: o fato do pedido e os campos que o completam. Nulo fora da finalidade que o tem; vazio
+   * avaliação: o fato do pedido e os campos que o completam. Nulo no formulário que não o tem; vazio
    * quando o processo não tem Fator.
    */
   readonly dependenciasDoFator?: DependenciasDaAvaliacao | null;

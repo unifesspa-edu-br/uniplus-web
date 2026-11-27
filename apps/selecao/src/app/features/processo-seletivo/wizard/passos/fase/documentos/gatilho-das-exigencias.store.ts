@@ -16,9 +16,9 @@ import { type NomesDaOrientacao } from '../../../shared/orientacao-da-recusa-do-
 import {
   camposDaRepeticao,
   fasesNoCronograma,
-  producaoDoRascunho,
   type ProducaoDosFatos,
 } from '../../../shared/producao-dos-fatos';
+import { producaoDoRascunho } from '../../../shared/producao-do-rascunho';
 import {
   comExigidoDeTodos,
   comModalidadesEscolhidas,

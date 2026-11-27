@@ -1,5 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
-import { FalhaDeLeituraComponent, IndicadorDaLeituraDirective } from '@uniplus/shared-ui/components';
+import {
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
+} from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import type { AbaDoFormulario } from '../abas-do-formulario';
@@ -26,7 +29,8 @@ export class ModeloDoFormularioComponent {
   readonly anunciou = output<string>();
 
   protected pedir(): void {
-    const recusa = this.aplicacao.pedir(this.aba().finalidade);
+    const aba = this.aba();
+    const recusa = this.aplicacao.pedir(aba.formulario, aba.ehInscricao);
     if (recusa !== null) this.anunciou.emit(recusa);
   }
 }

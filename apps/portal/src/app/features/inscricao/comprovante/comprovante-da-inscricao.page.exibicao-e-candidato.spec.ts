@@ -115,7 +115,7 @@ describe('ComprovanteDaInscricaoPage', () => {
               integrante: 'Integrante 1',
               obrigatorio: true,
               situacao: 'Atendido',
-              consequencia: 'Indeferimento da inscrição',
+              consequenciaDoDescumprimento: 'Indeferimento da inscrição',
               arquivos: [{ formato: 'PDF', tamanhoBytes: 2048, hashSha256: HASH }],
             },
             {
@@ -123,7 +123,7 @@ describe('ComprovanteDaInscricaoPage', () => {
               integrante: null,
               obrigatorio: false,
               situacao: 'Dispensado',
-              consequencia: null,
+              consequenciaDoDescumprimento: null,
               arquivos: [],
             },
           ],

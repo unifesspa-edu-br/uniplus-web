@@ -63,9 +63,9 @@ describe('passosConcluidosDe', () => {
   });
 
   it('conta o FADA nas duas respostas e não conta enquanto o servidor não tem a declaração', () => {
-    expect(rotulosConcluidos({ aplicaBonusRegional: true })).toContain('FADA');
-    expect(rotulosConcluidos({ aplicaBonusRegional: false })).toContain('FADA');
-    expect(rotulosConcluidos({ aplicaBonusRegional: null })).not.toContain('FADA');
+    expect(rotulosConcluidos({ aplicaFada: true })).toContain('Fator de Atenuação');
+    expect(rotulosConcluidos({ aplicaFada: false })).toContain('Fator de Atenuação');
+    expect(rotulosConcluidos({ aplicaFada: null })).not.toContain('Fator de Atenuação');
   });
 
   it('exige critério de desempate com inscrição própria e dispensa com resultado importado', () => {
@@ -107,8 +107,8 @@ describe('passosConcluidosDe', () => {
   it('aponta o FADA e o Desempate pelas dimensões novas do checklist', () => {
     const checklist: ItemConformidadeDto[] = [
       {
-        codigo: 'bonus_regional_nao_declarado',
-        dimensao: 'bonus_regional',
+        codigo: 'fada_nao_declarado',
+        dimensao: 'fada',
         mensagem: '',
         ok: false,
       },
@@ -116,11 +116,11 @@ describe('passosConcluidosDe', () => {
     ];
 
     const rotulos = rotulosConcluidos(
-      { aplicaBonusRegional: true, criteriosDesempate: [{}] as never },
+      { aplicaFada: true, criteriosDesempate: [{}] as never },
       checklist,
     );
 
-    expect(rotulos).not.toContain('FADA');
+    expect(rotulos).not.toContain('Fator de Atenuação');
     expect(rotulos).not.toContain('Desempate');
   });
 

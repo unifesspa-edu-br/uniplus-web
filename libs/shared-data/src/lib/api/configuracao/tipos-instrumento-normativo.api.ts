@@ -13,7 +13,7 @@ export { TipoInstrumentoNormativoCodigo };
 /**
  * Cliente Angular standalone do vocabulário fechado de Tipo de Instrumento
  * Normativo (módulo Configuração) — os tipos de documento formal que uma Base
- * Legal de Bônus Regional pode referenciar, cada um com código, rótulo e
+ * Legal do Fator de Atenuação das Desigualdades de Acesso pode referenciar, cada um com código, rótulo e
  * descrição. Vocabulário derivado de enum no backend, não cadastro: o front
  * não duplica a lista nem escreve rótulo.
  *

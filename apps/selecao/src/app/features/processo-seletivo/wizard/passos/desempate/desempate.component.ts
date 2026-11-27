@@ -4,6 +4,9 @@ import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
 
 import { CriterioDesempateConfigurado, ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { fatosColetadosPelaInscricao } from '../formulario/fatos-coletados-da-inscricao';
+import { conteudoDaInscricao } from '../formulario/formularios-do-rascunho';
+import { fasesQueColetamInscricao } from '../../shared/descricao-da-fase';
+import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
@@ -43,6 +46,7 @@ import { mensagensDoDesempate } from './validacao-do-desempate';
 export class DesempatePassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacao);
+  private readonly catalogoDeFases = inject(CatalogoDeFases);
   protected readonly areas = inject(AreasDoDesempate);
   protected readonly fatos = inject(FatosDoDesempate);
   private readonly gravacao = inject(GravacaoDoDesempate);
@@ -98,6 +102,16 @@ export class DesempatePassoComponent {
       OrigemCandidatosCodigo.IMPORTACAO_EXTERNA,
   );
 
+  /** O conteúdo do formulário em que o candidato se inscreve. */
+  private readonly conteudoDaInscricao = computed(() => {
+    const draft = this.store.draft();
+    const fases = fasesQueColetamInscricao(
+      draft.cronograma.fases,
+      this.catalogoDeFases.fasePorId(),
+    );
+    return conteudoDaInscricao(draft.formulario, fases);
+  });
+
   /**
    * O desempate por maior idade sem a data de nascimento no formulário. Em consulta não há o que
    * corrigir, e o aviso só ofereceria uma ação a um processo que não aceita edição.
@@ -107,7 +121,7 @@ export class DesempatePassoComponent {
       !this.store.emConsulta() &&
       desempateSemDataDeNascimento(
         this.criterios(),
-        fatosColetadosPelaInscricao(this.store.draft().formulario.conteudo),
+        fatosColetadosPelaInscricao(this.conteudoDaInscricao()),
       ),
   );
 

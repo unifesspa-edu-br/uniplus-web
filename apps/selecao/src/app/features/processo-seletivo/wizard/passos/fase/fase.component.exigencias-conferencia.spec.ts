@@ -109,7 +109,7 @@ describe('FasePassoComponent', () => {
 
       it('mostra no resumo o que decide a exigência, com os campos fechados', () => {
         exigencias().alternarExigencia(ID_CPF, true);
-        editor().escolherConsequencia(ID_CPF, 'ELIMINA');
+        editor().escolherConsequencia(ID_CPF, 'ELIMINA_DO_PROCESSO');
         editor().definirBasesLegais(ID_CPF, [umaNorma({ referencia: 'Lei 12.711/2012, art. 3º' })]);
         detectar();
 

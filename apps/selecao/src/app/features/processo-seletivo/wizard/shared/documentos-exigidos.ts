@@ -20,7 +20,7 @@ import {
   exigenciaSemNormaResolvida,
 } from './exigencias/exigencias-documentais';
 import {
-  finalidadeDaExigencia,
+  formularioDaExigencia,
   type FormularioDaExigencia,
 } from './exigencias/formulario-da-exigencia';
 import { dominiosDoGatilho, fatosParaGatilho, type FatoEscolhivel } from './gatilho-de-exigencia';
@@ -104,17 +104,17 @@ export interface DocumentosDoFormulario {
   readonly semFormulario: number;
 }
 
-/** O formulário cujos documentos se lêem: a finalidade, a fase que o responde e o que a fase atende. */
+/** O formulário cujos documentos se lêem: o código, a fase que o responde e os que a fase responde. */
 export interface FormularioNaFase {
   readonly faseCodigo: string;
-  readonly finalidade: string;
-  readonly finalidadesDaFase: readonly string[];
+  readonly codigo: string;
+  readonly codigosDaFase: readonly string[];
   /** As fases que o cronograma tem agora, onde o documento de todas as fases se materializa. */
   readonly fasesVivas: readonly string[];
 }
 
 /**
- * Os documentos que o formulário da finalidade pede na fase dele: os da fase cujo formulário
+ * Os documentos que o formulário pede na fase dele: os da fase cujo formulário
  * efetivo é este. A fase que inscrição e isenção dividem leva cada documento ao formulário que o
  * operador declarou; o que ainda não tem formulário definido é contado à parte, para a tela não
  * dizer que a fase não exige nada.
@@ -125,7 +125,7 @@ export function documentosDoFormulario(
   vocabulario: VocabularioDosDocumentos,
 ): DocumentosDoFormulario {
   const daFase = exigenciasComFormulario(exigencias, formulario);
-  const doFormulario = daFase.filter((e) => ehDoFormulario(e.formulario, formulario.finalidade));
+  const doFormulario = daFase.filter((e) => ehDoFormulario(e.formulario, formulario.codigo));
   return {
     documentos: doFormulario.map(({ exigencia }, indice) =>
       lerExigencia(exigencia, indice, vocabulario),
@@ -135,8 +135,8 @@ export function documentosDoFormulario(
   };
 }
 
-function ehDoFormulario(efetivo: FormularioDaExigencia, finalidade: string): boolean {
-  return efetivo.situacao === 'DEFINIDO' && efetivo.finalidade === finalidade;
+function ehDoFormulario(efetivo: FormularioDaExigencia, codigo: string): boolean {
+  return efetivo.situacao === 'DEFINIDO' && efetivo.codigo === codigo;
 }
 
 /**
@@ -145,12 +145,12 @@ function ehDoFormulario(efetivo: FormularioDaExigencia, finalidade: string): boo
  */
 function exigenciasComFormulario(
   exigencias: ExigenciasDoRascunho,
-  { faseCodigo, finalidadesDaFase, fasesVivas }: FormularioNaFase,
+  { faseCodigo, codigosDaFase, fasesVivas }: FormularioNaFase,
 ): readonly { exigencia: ExigenciaLocalizada; formulario: FormularioDaExigencia }[] {
   const materializadas = comAlcanceDeTodasAsFases(exigencias, fasesVivas);
   return exigenciasLocalizadasDaFase(materializadas, faseCodigo).map((exigencia) => ({
     exigencia,
-    formulario: finalidadeDaExigencia(exigencia.documento.finalidade, finalidadesDaFase),
+    formulario: formularioDaExigencia(exigencia.documento.formularioCodigo, codigosDaFase),
   }));
 }
 

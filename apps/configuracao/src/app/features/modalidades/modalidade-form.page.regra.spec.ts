@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CATALOGO } from './catalogo-de-fatos.fixture';
-import { BONUS, LB_PPI, PaginaDaModalidade } from './modalidade-form.page.testing';
+import { MODALIDADE_REGIONAL, LB_PPI, PaginaDaModalidade } from './modalidade-form.page.testing';
 import { URL, URL_ADMIN, URL_CATALOGO, modalidade } from './modalidades-de-teste.testing';
 
 describe('ModalidadeFormPage', () => {
@@ -17,7 +17,7 @@ describe('ModalidadeFormPage', () => {
 
   describe('regra de aplicabilidade', () => {
     it('lê a regra salva em prosa, pelos nomes do catálogo, sem códigos', async () => {
-      await pagina.editar(BONUS);
+      await pagina.editar(MODALIDADE_REGIONAL);
 
       const texto = pagina.textoDaRegra();
       expect(texto).toContain('Quem atende a pelo menos uma destas alternativas:');
@@ -27,9 +27,9 @@ describe('ModalidadeFormPage', () => {
     });
 
     it('sem o catálogo, a nova tentativa que dá certo leva o foco à seção da regra', async () => {
-      pagina.usarRota(BONUS.id);
+      pagina.usarRota(MODALIDADE_REGIONAL.id);
       await pagina.montar();
-      pagina.controller.expectOne(`${URL}/${BONUS.id}`).flush(BONUS);
+      pagina.controller.expectOne(`${URL}/${MODALIDADE_REGIONAL.id}`).flush(MODALIDADE_REGIONAL);
       TestBed.tick();
       pagina.controller
         .expectOne(URL_CATALOGO)
@@ -59,7 +59,7 @@ describe('ModalidadeFormPage', () => {
     });
 
     it('lê a regra sem condição como todos os candidatos', async () => {
-      await pagina.editar(modalidade({ ...BONUS, regraDeAplicabilidade: [] }));
+      await pagina.editar(modalidade({ ...MODALIDADE_REGIONAL, regraDeAplicabilidade: [] }));
 
       expect(pagina.textoDaRegra()).toContain('Todos os candidatos.');
     });
@@ -79,7 +79,7 @@ describe('ModalidadeFormPage', () => {
     });
 
     it('edita a regra da modalidade institucional e envia o que o editor escreveu', async () => {
-      await pagina.editar(BONUS);
+      await pagina.editar(MODALIDADE_REGIONAL);
       expect(pagina.fixture.nativeElement.querySelector('insc-editor-de-condicoes')).not.toBeNull();
 
       pagina.edicao.aplicabilidade.trocar([
@@ -87,7 +87,7 @@ describe('ModalidadeFormPage', () => {
       ]);
       pagina.edicao.salvar();
 
-      const put = pagina.controller.expectOne(`${URL_ADMIN}/${BONUS.id}`);
+      const put = pagina.controller.expectOne(`${URL_ADMIN}/${MODALIDADE_REGIONAL.id}`);
       expect(put.request.body.regraDeAplicabilidade).toEqual([
         [{ fato: 'COR_RACA', operador: 'NENHUM_DE', valor: ['PRETA'] }],
       ]);
@@ -95,18 +95,18 @@ describe('ModalidadeFormPage', () => {
     });
 
     it('envia a regra sem condição como lista vazia, nunca ausente', async () => {
-      await pagina.editar(BONUS);
+      await pagina.editar(MODALIDADE_REGIONAL);
 
       pagina.edicao.aplicabilidade.trocar([]);
       pagina.edicao.salvar();
 
-      const put = pagina.controller.expectOne(`${URL_ADMIN}/${BONUS.id}`);
+      const put = pagina.controller.expectOne(`${URL_ADMIN}/${MODALIDADE_REGIONAL.id}`);
       expect(put.request.body.regraDeAplicabilidade).toEqual([]);
       put.flush(null, { status: 204, statusText: 'No Content' });
     });
 
     it('não oferece ao editor o fato da própria modalidade', async () => {
-      await pagina.editar(BONUS);
+      await pagina.editar(MODALIDADE_REGIONAL);
 
       expect(pagina.edicao.aplicabilidade.fatos().map((fato) => fato.codigo)).toEqual([
         'ESCOLA_PUBLICA',
@@ -115,24 +115,24 @@ describe('ModalidadeFormPage', () => {
     });
 
     it('recusa enviar a condição sem valor e aponta a condição', async () => {
-      await pagina.editar(BONUS);
+      await pagina.editar(MODALIDADE_REGIONAL);
 
       pagina.edicao.aplicabilidade.trocar([
         { clausula: 1, fato: 'COR_RACA', operador: 'IGUAL', valor: '' },
       ]);
       pagina.edicao.salvar();
 
-      pagina.controller.expectNone(`${URL_ADMIN}/${BONUS.id}`);
+      pagina.controller.expectNone(`${URL_ADMIN}/${MODALIDADE_REGIONAL.id}`);
       expect(pagina.edicao.aplicabilidade.errosDasCondicoes()).toEqual({
         0: '"Cor/raça" está sem valor',
       });
     });
 
     it('mostra no campo da regra a recusa da API à regra', async () => {
-      await pagina.editar(BONUS);
+      await pagina.editar(MODALIDADE_REGIONAL);
 
       pagina.edicao.salvar();
-      pagina.controller.expectOne(`${URL_ADMIN}/${BONUS.id}`).flush(
+      pagina.controller.expectOne(`${URL_ADMIN}/${MODALIDADE_REGIONAL.id}`).flush(
         {
           type: 'https://uniplus.unifesspa.edu.br/errors/validacao',
           title: 'Erro de validação',

@@ -68,7 +68,8 @@ describe('ModeloFormularioEdicaoPage', () => {
       quando: modelo.conteudo.conjuntoDeDocumentos.documentosExigidos[0].quando,
       indeferimento: {
         obrigatorio: true,
-        consequencia: 'ELIMINA',
+        consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
+        abrePrazoParaReenvio: false,
         basesLegais:
           modelo.conteudo.conjuntoDeDocumentos.documentosExigidos[0].indeferimento.basesLegais,
       },
@@ -114,19 +115,20 @@ describe('ModeloFormularioEdicaoPage', () => {
     expect(tela.querySelector('#cfg-modelo-docs-doc-0-base-0-ref')).toBe(antes);
   });
 
-  it('não oferece o reenvio em fase que não admite complementação', async () => {
+  const documentoDaTela = (tela: HTMLElement, posicao: number): HTMLElement =>
+    tela.querySelector(`[aria-labelledby="cfg-modelo-docs-doc-${posicao}-titulo"]`) as HTMLElement;
+
+  it('oferece o prazo para reenvio só em fase que admite complementação', async () => {
     const tela = await carregar();
+    expect(documentoDaTela(tela, 0).textContent).toContain('Abrir prazo para reenvio');
 
     selecionar(tela, 'cfg-modelo-docs-doc-0-fase', 'HOMOLOGACAO_INSCRICOES');
     await propagar();
 
-    const valores = Array.from(
-      (tela.querySelector('#cfg-modelo-docs-doc-0-consequencia') as HTMLSelectElement).options,
-    ).map((opcao) => opcao.value);
-    expect(valores).not.toContain('ABRE_PRAZO_PARA_REENVIO');
+    expect(documentoDaTela(tela, 0).textContent).not.toContain('Abrir prazo para reenvio');
   });
 
-  it('tira o reenvio da consequência ao trocar para fase que não admite complementação', async () => {
+  it('desfaz o prazo para reenvio ao trocar para fase que não admite complementação', async () => {
     const tela = await carregar();
     selecionar(tela, 'cfg-modelo-docs-doc-1-fase', 'HOMOLOGACAO_INSCRICOES');
     await propagar();
@@ -135,7 +137,7 @@ describe('ModeloFormularioEdicaoPage', () => {
     const req = controller.expectOne((r) => r.method === 'PUT' && r.url === MODELO);
     const documento = req.request.body.conteudo.conjuntoDeDocumentos.documentosExigidos[1];
     expect(documento).toMatchObject({ faseCodigo: 'HOMOLOGACAO_INSCRICOES' });
-    expect(documento.indeferimento.consequencia).not.toBe('ABRE_PRAZO_PARA_REENVIO');
+    expect(documento.indeferimento.abrePrazoParaReenvio).toBe(false);
     req.flush(null, { status: 204, statusText: 'No Content' });
     await propagar();
     controller.expectOne(MODELO).flush(modelo);
@@ -175,12 +177,9 @@ describe('ModeloFormularioEdicaoPage', () => {
     expect(documento.textContent).not.toContain('fora do catálogo');
   });
 
-  it('não oferece o reenvio enquanto a fase do documento não está resolvida', async () => {
+  it('não oferece o prazo para reenvio enquanto a fase do documento não está resolvida', async () => {
     const tela = await carregar(modelo, [], []);
 
-    const valores = Array.from(
-      (tela.querySelector('#cfg-modelo-docs-doc-0-consequencia') as HTMLSelectElement).options,
-    ).map((opcao) => opcao.value);
-    expect(valores).not.toContain('ABRE_PRAZO_PARA_REENVIO');
+    expect(documentoDaTela(tela, 0).textContent).not.toContain('Abrir prazo para reenvio');
   });
 });

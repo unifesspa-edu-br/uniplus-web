@@ -7,12 +7,12 @@ import type {
   RegrasDaClassificacao,
   WizardDraft,
 } from '../processo-seletivo.models';
-import { formulariosDoServidor } from '../passos/formulario/formularios-por-finalidade';
+import { formulariosDoServidor } from '../passos/formulario/formularios-do-rascunho';
 import { exigenciasDe } from './exigencias/leitura-das-exigencias';
 import { comoTexto } from './hidratacao/campos-lidos';
 import {
   atendimentoDe,
-  bonusDe,
+  fadaDe,
   classificacaoDe,
   desempateDe,
 } from './hidratacao/hidratacao-da-classificacao';
@@ -54,7 +54,7 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
 function regrasDaClassificacaoDe(dto: ProcessoSeletivoDto): RegrasDaClassificacao {
   return {
     classificacao: classificacaoDe(dto),
-    bonus: bonusDe(dto),
+    fada: fadaDe(dto),
     desempate: desempateDe(dto),
   };
 }
@@ -82,8 +82,8 @@ function identificacaoDe(
 }
 
 /**
- * Os formulários de cada finalidade (conteúdo pelo mesmo mapeamento da gravação e fase em que cada
- * um é respondido), a política que ancora a apuração de idade e as regras de derivação. As fases
+ * Os formulários do processo, cada um pelo seu código (conteúdo pelo mesmo mapeamento da gravação,
+ * fase em que é respondido, obrigatoriedade e consequência da falta de envio), a política que ancora a apuração de idade e as regras de derivação. As fases
  * voltam como CÓDIGO: o id não sobrevive a uma gravação de cronograma que remova e reacrescente
  * a fase.
  */

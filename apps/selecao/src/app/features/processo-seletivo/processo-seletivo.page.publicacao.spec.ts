@@ -1,7 +1,11 @@
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { REGRAS_INICIAIS, type ConteudoDoFormulario } from '@uniplus/shared-inscricao/formulario';
-import { item, secao } from './wizard/passos/formulario/formulario-de-inscricao.testing';
+import {
+  formularioDoRascunho,
+  item,
+  secao,
+} from './wizard/passos/formulario/formulario-de-inscricao.testing';
 import { ROTULOS_DOS_PASSOS } from './wizard/processo-seletivo.data';
 import { configurarPagina, montarPagina } from './processo-seletivo.page.testing';
 
@@ -112,17 +116,12 @@ describe('ProcessoSeletivoPage — publicação: pendências do rascunho', () =>
       const invalido = conteudoComLimiteInvalido();
       const valido = { ...conteudoComLimiteInvalido(), itens: [] };
       store.patchObjectSection('formulario', {
-        conteudo: outraAba ? valido : invalido,
-        outrasFinalidades: outraAba
-          ? [
-              {
-                finalidade: 'HABILITACAO',
-                faseCodigo: '',
-                conteudo: invalido,
-                modeloOrigemCodigo: null,
-              },
-            ]
-          : [],
+        formularios: [
+          formularioDoRascunho(outraAba ? valido : invalido),
+          ...(outraAba
+            ? [formularioDoRascunho(invalido, { codigo: 'HABILITACAO', faseCodigo: '' })]
+            : []),
+        ],
       });
       store.goTo(ROTULOS_DOS_PASSOS.indexOf('Formulários'));
       fixture.detectChanges();

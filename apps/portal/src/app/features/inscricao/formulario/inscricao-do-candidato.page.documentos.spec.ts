@@ -1,8 +1,4 @@
-import {
-  BlocoSistemaCodigo,
-  TipoPaginaFormularioCodigo,
-  FinalidadeFormularioCodigo,
-} from '@uniplus/shared-data/selecao';
+import { BlocoSistemaCodigo, TipoPaginaFormularioCodigo } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { of } from 'rxjs';
 import {
@@ -38,16 +34,16 @@ describe('InscricaoDoCandidatoPage', () => {
     cenario.encerrar();
   });
 
-  /** Uma exigência da fase da inscrição na avaliação, na finalidade dada. */
+  /** Uma exigência da fase da inscrição na avaliação, no formulário dado. */
   const documento = (
     nome: string,
-    finalidade: FinalidadeFormularioCodigo,
+    formularioCodigo: string,
   ): AvaliacaoDaInscricaoDto['documentos']['fases'][number]['documentos'][number] => ({
     exigenciaId: `exigencia-${nome}`,
     tipoDocumentoCodigo: 'DOCUMENTO',
     nome,
     obrigatorio: true,
-    finalidade: { codigo: finalidade, rotulo: 'Finalidade de teste' },
+    formularioCodigo,
     etapaId: null,
     formatos: { qualquer: true, lista: null },
     modelo: null,
@@ -107,7 +103,7 @@ describe('InscricaoDoCandidatoPage', () => {
 
   /**
    * O documento da isenção é pedido no formulário da isenção, e o de outra fase no formulário dela,
-   * mesmo que tenha a mesma finalidade.
+   * mesmo que cite o mesmo código de formulário.
    */
   it('a seção de documentos lista o que a avaliação pede no formulário da inscrição', async () => {
     cenario.servico.formulario = COM_DOCUMENTOS;
@@ -122,11 +118,8 @@ describe('InscricaoDoCandidatoPage', () => {
               codigo: 'INSCRICAO',
               ordem: 1,
               documentos: [
-                documento('Histórico escolar', FinalidadeFormularioCodigo.INSCRICAO),
-                documento(
-                  'Comprovante de renda para a isenção',
-                  FinalidadeFormularioCodigo.ISENCAO_TAXA,
-                ),
+                documento('Histórico escolar', 'INSCRICAO'),
+                documento('Comprovante de renda para a isenção', 'ISENCAO_TAXA'),
               ],
               pendencias: [],
             },
@@ -134,7 +127,7 @@ describe('InscricaoDoCandidatoPage', () => {
               faseId: 'outra-fase',
               codigo: 'HABILITACAO',
               ordem: 2,
-              documentos: [documento('Diploma', FinalidadeFormularioCodigo.INSCRICAO)],
+              documentos: [documento('Diploma', 'INSCRICAO')],
               pendencias: [],
             },
           ],
@@ -169,7 +162,7 @@ describe('InscricaoDoCandidatoPage', () => {
           ordem: 1,
           documentos: [
             {
-              ...documento('Histórico escolar', FinalidadeFormularioCodigo.INSCRICAO),
+              ...documento('Histórico escolar', 'INSCRICAO'),
               arquivos: [
                 {
                   arquivoId: 'arquivo-1',

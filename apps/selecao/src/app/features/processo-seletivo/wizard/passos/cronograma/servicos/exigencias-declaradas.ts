@@ -1,14 +1,13 @@
 import { comEscopoPeloCodigo } from '@uniplus/shared-data/configuracao';
 import type { ExigenciaDeDocumento, FaseDoCronograma } from '../../../processo-seletivo.models';
 import type { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { descreverFase, finalidadesDaFase } from '../../../shared/descricao-da-fase';
+import { descreverFase } from '../../../shared/descricao-da-fase';
 import { comAlcanceDeTodasAsFases } from '../../../shared/exigencias/alcance-das-exigencias';
 import {
   exigenciasLocalizadas,
   type RepeticaoDaExigencia,
 } from '../../../shared/exigencias/consulta-das-exigencias';
 import {
-  CONSEQUENCIA_REENVIO,
   exigenciaDecideResultado,
   temNormaResolvida,
 } from '../../../shared/exigencias/exigencias-documentais';
@@ -28,12 +27,13 @@ import {
 } from '../../../shared/orientacao-da-recusa-do-fato';
 import {
   camposDaRepeticao,
+  codigosDosFormulariosDaFase,
   fasesNoCronograma,
-  producaoDoRascunho,
   recusaDaRepeticao,
   type LugarDaExigencia,
   type ProducaoDosFatos,
 } from '../../../shared/producao-dos-fatos';
+import { producaoDoRascunho } from '../../../shared/producao-do-rascunho';
 import type { CatalogoDeDocumentos } from '../catalogos/catalogo-de-documentos.service';
 import type { CatalogoDeFases } from '../catalogos/catalogo-de-fases.service';
 import type { CatalogoDeFatos } from '../catalogos/catalogo-de-fatos.service';
@@ -167,7 +167,10 @@ function situacaoNaFase(exigencia: ExigenciaDeDocumento, contexto: ContextoDasEx
     faseViva: true,
     admiteComplementacao: descreverFase(fase, contexto.fasePorId).permiteComplementacao,
     semFormulario:
-      faltaOFormulario(exigencia.finalidade, finalidadesDaFase(fase, contexto.fasePorId)) !== null,
+      faltaOFormulario(
+        exigencia.formularioCodigo,
+        codigosDosFormulariosDaFase(contexto.producao, fase.codigo),
+      ) !== null,
   };
 }
 
@@ -196,8 +199,7 @@ function caracteristicasDaExigencia(
     alcancaModalidade: contexto.ofertadas.some((codigo) =>
       podeAlcancarModalidade(exigencia, codigo),
     ),
-    reenvioSemComplementacao:
-      exigencia.consequenciaIndeferimento === CONSEQUENCIA_REENVIO && !admiteComplementacao,
+    reenvioSemComplementacao: exigencia.abrePrazoParaReenvio && !admiteComplementacao,
     semFormulario,
   };
 }

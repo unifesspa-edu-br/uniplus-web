@@ -12,7 +12,7 @@ function mesmoMomento(regras: readonly RegraDeComprovacao[]): boolean {
       (documento) =>
         documento.faseCodigo === primeiro.faseCodigo &&
         documento.etapaId === primeiro.etapaId &&
-        documento.finalidade === primeiro.finalidade,
+        documento.formularioCodigo === primeiro.formularioCodigo,
     )
   );
 }
@@ -33,6 +33,7 @@ const DADOS_INICIAIS_DO_GRUPO = {
   documento: null,
   quantidadeMinima: 1,
   consequencia: null,
+  abrePrazoParaReenvio: false,
   basesLegais: null,
   criterioDeDistincao: null,
   dataReferencia: null,
@@ -98,7 +99,9 @@ function agruparDocumentos(
 export function editarGrupo(
   exigencias: ExigenciasDoRascunho,
   identificador: string,
-  alteracao: Pick<RegraDeComprovacao, 'consequencia' | 'basesLegais'>,
+  alteracao: Partial<
+    Pick<RegraDeComprovacao, 'consequencia' | 'basesLegais' | 'abrePrazoParaReenvio'>
+  >,
 ): ExigenciasDoRascunho {
   return {
     ...exigencias,

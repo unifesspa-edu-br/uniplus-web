@@ -50,7 +50,7 @@ import { LeituraDoCadastroDePesos } from './wizard/passos/classificacao/leitura-
 import { CatalogosDeClassificacao } from './wizard/passos/classificacao/catalogos-de-classificacao.service';
 import { GravacaoDaClassificacao } from './wizard/passos/classificacao/gravacao-da-classificacao.service';
 import { FormulaPassoComponent } from './wizard/passos/formula/formula.component';
-import { BonusPassoComponent } from './wizard/passos/bonus/bonus.component';
+import { FadaPassoComponent } from './wizard/passos/fada/fada.component';
 import { DesempatePassoComponent } from './wizard/passos/desempate/desempate.component';
 import { reavaliarRecusaPeloDesempate } from './wizard/passos/desempate/conferencia-do-desempate-gravado';
 import { EliminacaoPassoComponent } from './wizard/passos/eliminacao/eliminacao.component';
@@ -81,7 +81,7 @@ import {
     CronogramaPassoComponent,
     FormularioPassoComponent,
     FormulaPassoComponent,
-    BonusPassoComponent,
+    FadaPassoComponent,
     DesempatePassoComponent,
     EliminacaoPassoComponent,
     AtendimentoPassoComponent,

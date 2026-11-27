@@ -99,7 +99,7 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(botao(tela, 'Salvar rascunho')).toBeUndefined();
   });
 
-  it('o aceite leva a versão e o hash do termo da versão fixada', async () => {
+  it('o aceite leva o formulário, a versão e o hash do termo da versão fixada', async () => {
     cenario.servico.inscricao = inscricao(RESPONDIDA);
     const tela = await cenario.abrir();
 
@@ -107,7 +107,12 @@ describe('InscricaoDoCandidatoPage', () => {
 
     const termo = FORMULARIO_DE_INSCRICAO_MOCK.formulario.termos[0];
     expect(cenario.servico.enviados[0].aceites).toEqual([
-      { codigo: 'VERACIDADE', versaoId: termo.versaoId, hashVersao: termo.conteudo.hashVersao },
+      {
+        formularioCodigo: FORMULARIO_DE_INSCRICAO_MOCK.codigo,
+        codigo: 'VERACIDADE',
+        versaoId: termo.versaoId,
+        hashVersao: termo.conteudo.hashVersao,
+      },
     ]);
   });
 

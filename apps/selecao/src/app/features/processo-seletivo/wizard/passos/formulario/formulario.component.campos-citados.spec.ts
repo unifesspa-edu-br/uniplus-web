@@ -8,6 +8,7 @@ import {
 } from '../../shared/exigencias/exigencias-documentais';
 import { usarPasso, type ContextoDoPasso } from './formulario-passo.testing';
 import { CamposPressupostosDoFormulario } from './servicos/campos-pressupostos-do-formulario.service';
+import { conteudoDaInscricao } from './formularios-do-rascunho';
 
 describe('FormularioPassoComponent: campos citados por outras partes do processo', () => {
   let fixture: ContextoDoPasso['fixture'];
@@ -21,7 +22,9 @@ describe('FormularioPassoComponent: campos citados por outras partes do processo
   const botaoDeRemoverPcd = () =>
     host.querySelector<HTMLButtonElement>('button[aria-label="Remover o campo PCD"]');
   const pcdNoFormulario = () =>
-    store.draft().formulario.conteudo.itens?.some((item) => item.fatoCodigo === 'PCD') ?? false;
+    conteudoDaInscricao(store.draft().formulario, new Set(['INSCRICAO'])).itens?.some(
+      (item) => item.fatoCodigo === 'PCD',
+    ) ?? false;
   const motivoDaTrava = () =>
     fixture.debugElement.injector.get(CamposPressupostosDoFormulario).remocoesTravadas().get('PCD');
 

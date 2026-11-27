@@ -222,8 +222,8 @@ describe('destino de cada pendência no painel', () => {
     });
 
     it('leva o fato que decide quem recebe o acréscimo ao passo FADA', () => {
-      expect(rotuloDoItem('bonus_regional_fato_de_elegibilidade', 'bonus_regional')).toBe('FADA');
-      expect(orientacaoDoItem('bonus_regional_fato_de_elegibilidade', 'bonus_regional')).toBe(
+      expect(rotuloDoItem('fada_fato_de_elegibilidade', 'fada')).toBe('Fator de Atenuação');
+      expect(orientacaoDoItem('fada_fato_de_elegibilidade', 'fada')).toBe(
         'Escolha quem recebe o acréscimo: um campo de sim ou não do formulário de inscrição, fora de grupo, ou um fato que o processo deriva como sim ou não, conhecido até a inscrição e sem depender do que só o formulário de isenção coleta.',
       );
     });

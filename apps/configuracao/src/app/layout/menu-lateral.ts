@@ -112,9 +112,9 @@ export const MENU_LATERAL: readonly GrupoDoMenu[] = [
       },
       { label: 'Calendários', icon: 'pi-calendar', routerLink: '/calendario-dias-uteis' },
       {
-        label: 'Base Legal do Bônus',
+        label: 'Base legal do Fator de Atenuação',
         icon: 'pi-file-check',
-        routerLink: '/base-legal-bonus-regional',
+        routerLink: '/bases-legais-fada',
         exact: true,
       },
     ],

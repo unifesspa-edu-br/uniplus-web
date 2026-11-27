@@ -128,7 +128,7 @@ describe('GravacaoDoProcesso', () => {
       'distribuicao',
       'etapas',
       'cronograma',
-      'bonus',
+      'fada',
       'atendimento',
       'recurso-criado-no-teste',
     ] as unknown as readonly RecursoDoProcesso[];

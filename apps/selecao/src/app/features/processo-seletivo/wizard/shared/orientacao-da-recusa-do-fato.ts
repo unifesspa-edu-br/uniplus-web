@@ -3,8 +3,8 @@ import { RECUSAS_DA_COMPROVACAO } from './recusas-da-comprovacao';
 import type { ProblemDetails } from '@uniplus/shared-core/http';
 import { ehColetavel } from '@uniplus/shared-inscricao/formulario';
 
-import { nomeDaFinalidade } from '../passos/formulario/formularios-por-finalidade';
 import {
+  codigosDosFormulariosDaFase,
   formularioQueColeta,
   recusaDeFaseDoGatilho,
   type FaseNoCronograma,
@@ -124,10 +124,8 @@ export function orientacaoDaRecusaDeFase(
   return `${causa} Como resolver: ${completarSaidasDaRecusa(recusa, nomes, saidas)}.`;
 }
 
-function orientacoesDeColeta(fato: string, finalidades: readonly string[]): string[] {
-  return finalidades.map(
-    (finalidade) => `colete ${fato} no formulário de ${nomeDaFinalidade(finalidade)}`,
-  );
+function orientacoesDeColeta(fato: string, codigos: readonly string[]): string[] {
+  return codigos.map((codigo) => `colete ${fato} no formulário ${codigo}`);
 }
 
 function completarSaidasDaRecusa(
@@ -204,7 +202,7 @@ function fasesQueAceitam(
 ): readonly FaseQueAceita[] {
   return fasesEmOrdem
     .map((fase) => {
-      const lugares = lugaresDaFase(fase);
+      const lugares = lugaresDaFase(fase, producao);
       const aceitos = lugares.filter(
         (lugar) => recusaDeFaseDoGatilho(fato, lugar, producao) === null,
       );
@@ -220,17 +218,21 @@ function saidaPorFormulario(aceitas: readonly FaseQueAceita[], nomes: NomesDaOri
       ? [`na fase ${nomes.fase(fase.codigo)}`]
       : aceitos.map(
           (lugar) =>
-            `no formulário de ${nomeDaFinalidade(lugar.finalidade ?? '')}, na fase ${nomes.fase(fase.codigo)}`,
+            `no formulário ${lugar.formularioCodigo ?? ''}, na fase ${nomes.fase(fase.codigo)}`,
         ),
   );
   return `exija o documento ${destinos.join(' ou ')}`;
 }
 
 /** Os lugares de uma fase: um por formulário que ela responde, ou a fase só, quando não responde nenhum. */
-function lugaresDaFase(fase: FaseNoCronograma): readonly LugarDaExigencia[] {
-  return fase.finalidades.length === 0
-    ? [{ faseCodigo: fase.codigo, finalidade: null }]
-    : fase.finalidades.map((finalidade) => ({ faseCodigo: fase.codigo, finalidade }));
+function lugaresDaFase(
+  fase: FaseNoCronograma,
+  producao: ProducaoDosFatos,
+): readonly LugarDaExigencia[] {
+  const codigos = codigosDosFormulariosDaFase(producao, fase.codigo);
+  return codigos.length === 0
+    ? [{ faseCodigo: fase.codigo, formularioCodigo: null }]
+    : codigos.map((formularioCodigo) => ({ faseCodigo: fase.codigo, formularioCodigo }));
 }
 
 /** Os formulários para onde levar a coleta do fato faz o gatilho valer onde a exigência é cobrada. */
@@ -243,37 +245,33 @@ function saidasPorOutroFormulario(
   if (doCatalogo === undefined || !ehColetavel(doCatalogo)) return [];
 
   return outrosFormularios(fato, producao)
-    .filter((destino) => aceitaColetaNoFormulario(fato, lugar, producao, destino.finalidade))
-    .map((destino) => destino.finalidade);
+    .filter((destino) => aceitaColetaNoFormulario(fato, lugar, producao, destino.codigo))
+    .map((destino) => destino.codigo);
 }
 
 function aceitaColetaNoFormulario(
   fato: string,
   lugar: LugarDaExigencia,
   producao: ProducaoDosFatos,
-  finalidade: string,
+  codigo: string,
 ): boolean {
-  return recusaDeFaseDoGatilho(fato, lugar, comColetaEm(producao, fato, finalidade)) === null;
+  return recusaDeFaseDoGatilho(fato, lugar, comColetaEm(producao, fato, codigo)) === null;
 }
 
 function outrosFormularios(fato: string, producao: ProducaoDosFatos) {
   const atual = formularioQueColeta(fato, producao);
   return producao.formularios.filter(
-    (formulario) => formulario.finalidade !== atual?.finalidade && formulario.faseCodigo !== '',
+    (formulario) => formulario.codigo !== atual?.codigo && formulario.faseCodigo !== '',
   );
 }
 
-/** A produção com o fato coletado só pelo formulário da finalidade dada. */
-function comColetaEm(
-  producao: ProducaoDosFatos,
-  fato: string,
-  finalidade: string,
-): ProducaoDosFatos {
+/** A produção com o fato coletado só pelo formulário do código dado. */
+function comColetaEm(producao: ProducaoDosFatos, fato: string, codigo: string): ProducaoDosFatos {
   return {
     ...producao,
     formularios: producao.formularios.map((formulario) => {
       const fatos = new Set([...formulario.fatos].filter((codigo) => codigo !== fato));
-      if (formulario.finalidade === finalidade) fatos.add(fato);
+      if (formulario.codigo === codigo) fatos.add(fato);
       return { ...formulario, fatos };
     }),
   };

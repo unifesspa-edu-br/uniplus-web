@@ -10,6 +10,7 @@ import {
   exigenciaCom,
   rascunhoCom,
   NENHUMA_EXIGENCIA,
+  formularioDoRascunho,
 } from './formulario-de-inscricao.testing';
 
 describe('o que impede gravar o formulário', () => {
@@ -104,12 +105,9 @@ describe('campos cujo domínio sai do atendimento especializado', () => {
         }),
       ],
     });
-    const formulario = {
-      ...comCampos(),
-      outrasFinalidades: [
-        { finalidade: 'HABILITACAO', faseCodigo: 'HABILITACAO', conteudo: habilitacao },
-      ],
-    };
+    const formulario = formularioCom(inscricaoGravada(), {}, [
+      formularioDoRascunho(habilitacao, { codigo: 'HABILITACAO', faseCodigo: 'HABILITACAO' }),
+    ]);
 
     expect(camposSemValoresOfertados(formulario, semOferta)).toEqual(['a condição de atendimento']);
   });

@@ -25,18 +25,29 @@ function entradasDaCriacao() {
   };
 }
 
-describe('finalidades da criação do modelo', () => {
-  it('oferece todas as finalidades com lista vazia e filtrada', () => {
+describe('declaração do modelo na criação', () => {
+  const caixa = (fixture: ReturnType<typeof montarCriacao>, campo: string): HTMLInputElement =>
+    fixture.nativeElement.querySelector(`input[type="checkbox"][formControlName="${campo}"]`);
+
+  it('oferece as duas escolhas, rotuladas e desmarcadas', () => {
     const fixture = montarCriacao();
-    const opcoes = () =>
-      fixture.nativeElement.querySelector('select[formControlName="finalidade"]')
-        .textContent as string;
-    expect(opcoes()).toContain('Habilitação');
-    fixture.componentRef.setInput('modelos', [
-      { finalidade: { codigo: 'INSCRICAO', rotulo: 'Inscrição' } },
-    ]);
-    fixture.detectChanges();
-    expect(opcoes()).toContain('Isenção da taxa de inscrição');
-    expect(opcoes()).toContain('Habilitação');
+
+    expect(caixa(fixture, 'serveAFaseDeInscricao').closest('label')?.textContent).toContain(
+      'Serve à fase de inscrição',
+    );
+    expect(caixa(fixture, 'obrigatorio').closest('label')?.textContent).toContain(
+      'Preenchimento obrigatório',
+    );
+    expect(caixa(fixture, 'serveAFaseDeInscricao').checked).toBe(false);
+    expect(caixa(fixture, 'obrigatorio').checked).toBe(false);
+  });
+
+  it('leva a escolha marcada ao formulário', () => {
+    const fixture = montarCriacao();
+
+    caixa(fixture, 'serveAFaseDeInscricao').click();
+
+    expect(fixture.componentInstance.form().controls.serveAFaseDeInscricao.value).toBe(true);
+    expect(fixture.componentInstance.form().controls.obrigatorio.value).toBe(false);
   });
 });

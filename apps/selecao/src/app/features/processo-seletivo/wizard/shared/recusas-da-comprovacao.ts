@@ -85,7 +85,7 @@ export const RECUSAS_DA_COMPROVACAO: ReadonlyMap<string, string> = new Map([
   ],
   [
     'uniplus.selecao.regra_de_comprovacao.remove_vantagem_sem_vantagem_configurada',
-    'O grupo remove uma vantagem que não foi configurada. Configure o bônus regional ou escolha outra consequência.',
+    'O grupo remove uma vantagem que não foi configurada. Configure o Fator de Atenuação ou escolha outra consequência.',
   ],
   [
     'uniplus.selecao.regra_de_comprovacao.consequencia_incoerente_com_acao_da_vaga',

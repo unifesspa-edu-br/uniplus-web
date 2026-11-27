@@ -1,3 +1,4 @@
+import { conteudoInicial } from '@uniplus/shared-inscricao/formulario';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -11,6 +12,7 @@ import {
   usarPasso,
   type ContextoDoPasso,
 } from './formulario-passo.testing';
+import { formularioDoRascunho } from './formulario-de-inscricao.testing';
 
 describe('FormularioPassoComponent: modelo em respostas incertas', () => {
   let fixture: ContextoDoPasso['fixture'];
@@ -24,6 +26,12 @@ describe('FormularioPassoComponent: modelo em respostas incertas', () => {
     ({ fixture, host, controller, servicoDeModelos, comModelosCarregados, escolherEAplicar } =
       contexto);
   });
+
+  const pedirModelo = (codigo: string) =>
+    servicoDeModelos().pedir(
+      formularioDoRascunho(conteudoInicial(), { codigo, gravado: true }),
+      codigo === 'INSCRICAO',
+    );
 
   describe('partindo de um modelo', () => {
     beforeEach(() => comModelosCarregados());
@@ -46,10 +54,10 @@ describe('FormularioPassoComponent: modelo em respostas incertas', () => {
       const validacao = fixture.componentInstance.validar();
       expect(validacao.valid).toBe(false);
       expect(validacao.messages?.join(' ')).toContain(
-        'Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado ao formulário de inscrição',
+        'Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado ao formulário INSCRICAO',
       );
       fixture.detectChanges();
-      const naAba = host.querySelector('#form-inscricao-recusa-modelo')?.textContent ?? '';
+      const naAba = host.querySelector('#form-0-recusa-modelo')?.textContent ?? '';
       expect(naAba, 'a aba não desmente a trava').toContain(
         'Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado',
       );
@@ -57,18 +65,11 @@ describe('FormularioPassoComponent: modelo em respostas incertas', () => {
     });
 
     it('sem saber se a cópia aconteceu, só o mesmo modelo pode ser aplicado de novo', async () => {
-      servicoDeModelos().modelos.set(
-        new Map([
-          [
-            'INSCRICAO',
-            [
-              { id: 'insc', nome: 'Inscrição de Medicina' },
-              { id: 'outro', nome: 'Outra inscrição' },
-            ],
-          ],
-          ['HABILITACAO', [{ id: 'hab', nome: 'Habilitação padrão' }]],
-        ]) as never,
-      );
+      servicoDeModelos().modelos.set([
+        { id: 'insc', nome: 'Inscrição de Medicina' },
+        { id: 'outro', nome: 'Outra inscrição' },
+        { id: 'hab', nome: 'Habilitação padrão' },
+      ] as never);
       const aplicacao = escolherEAplicar('INSCRICAO', 'insc');
       controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
       await proximoPasso();
@@ -84,20 +85,20 @@ describe('FormularioPassoComponent: modelo em respostas incertas', () => {
       await aplicacao;
 
       servicoDeModelos().escolher('INSCRICAO', 'outro');
-      servicoDeModelos().pedir('INSCRICAO');
+      pedirModelo('INSCRICAO');
       expect(
         servicoDeModelos().pendente(),
         'outro modelo trocaria a chave, e a primeira cópia ainda pode chegar',
       ).toBeNull();
       servicoDeModelos().escolher('HABILITACAO', 'hab');
-      servicoDeModelos().pedir('HABILITACAO');
+      pedirModelo('HABILITACAO');
       expect(
         servicoDeModelos().pendente(),
         'nem em outra aba: as cópias mexem no que é do processo inteiro',
       ).toBeNull();
 
       servicoDeModelos().escolher('INSCRICAO', 'insc');
-      servicoDeModelos().pedir('INSCRICAO');
+      pedirModelo('INSCRICAO');
       expect(servicoDeModelos().pendente()?.modelo.id).toBe('insc');
 
       // A nova tentativa recusada de vez não desfaz a cópia que a primeira pode ter feito.
@@ -116,7 +117,7 @@ describe('FormularioPassoComponent: modelo em respostas incertas', () => {
       );
       await nova;
       fixture.detectChanges();
-      const naAba = host.querySelector('#form-inscricao-recusa-modelo')?.textContent ?? '';
+      const naAba = host.querySelector('#form-0-recusa-modelo')?.textContent ?? '';
       expect(naAba, 'o operador sabe o que corrigir').toContain(
         'A nova tentativa foi recusada: O modelo não serve a este processo.',
       );
@@ -125,7 +126,7 @@ describe('FormularioPassoComponent: modelo em respostas incertas', () => {
       );
       // A cópia em aberto se resolve: a outra aba deixa de ser recusada por causa dela.
       servicoDeModelos().escolher('INSCRICAO', 'insc');
-      servicoDeModelos().pedir('INSCRICAO');
+      pedirModelo('INSCRICAO');
       const resolvida = fixture.componentInstance.confirmarAplicacao();
       controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
       await proximoPasso();
@@ -159,9 +160,9 @@ describe('FormularioPassoComponent: modelo em respostas incertas', () => {
       await aplicacao;
       fixture.detectChanges();
 
-      const naAba = host.querySelector('#form-inscricao-recusa-modelo')?.textContent ?? '';
+      const naAba = host.querySelector('#form-0-recusa-modelo')?.textContent ?? '';
       expect(naAba).toContain(
-        'foi aplicado ao formulário de inscrição, mas não foi possível reler o processo. Recarregue o processo',
+        'foi aplicado ao formulário INSCRICAO, mas não foi possível reler o processo. Recarregue o processo',
       );
       expect(naAba).not.toContain('Não foi possível confirmar');
       expect(fixture.componentInstance.validar().valid).toBe(false);

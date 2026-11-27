@@ -129,6 +129,22 @@ obter_token; setup_publicacoes; setup_organizacao; setup_configuracao
 criar_processo; definir_cronograma_fases
 echo "PROCESSO_ID=$PROCESSO_ID"`;
 
+/**
+ * O cadastro até o cronograma, sem os formulários nem os documentos exigidos: com vagas, opções de
+ * curso, edições do ENEM e motivos da homologação, o assistente deixa gravar o Cronograma pela tela.
+ */
+const SNIPPET_DO_RASCUNHO_PARA_A_TELA = `set -euo pipefail
+export ADMIN_PASS="$4" IDENTIFICADOR_PROCESSO="$1" NOME_PROCESSO="$2"
+source "$3"
+obter_token; setup_publicacoes; setup_organizacao; setup_configuracao
+criar_processo; conferir_periodo_da_inscricao
+definir_algoritmo_contagem_prazo; definir_atendimento_especializado
+definir_distribuicao_vagas; definir_opcoes_de_curso; definir_cascata_remanejamento
+definir_fada; definir_criterios_desempate; definir_classificacao
+definir_edicoes_enem; definir_taxa_inscricao
+definir_cronograma_fases; escolher_motivo_da_homologacao
+echo "PROCESSO_ID=$PROCESSO_ID"`;
+
 /** O processo em rascunho onde a configuração das exigências é testada, reaproveitado se já existe. */
 export async function rascunhoParaConfiguracao(): Promise<{
   readonly processoId: string;
@@ -147,20 +163,51 @@ async function garantirRascunho(): Promise<string> {
   return existente?.id ?? criarRascunho();
 }
 
-function criarRascunho(): Promise<string> {
+function criarRascunho(
+  nome: string = NOME_DO_RASCUNHO,
+  snippet: string = SNIPPET_DO_RASCUNHO,
+): Promise<string> {
   const argumentos = [
     '-c',
-    SNIPPET_DO_RASCUNHO,
+    snippet,
     'bash',
     `psm-2027-projecao-rascunho-${Date.now()}`,
-    NOME_DO_RASCUNHO,
+    nome,
     caminhoDoRoteiro('E2E_ROTEIRO_DO_PROCESSO'),
     SENHA_DAS_PERSONAS,
   ];
   return rodarRoteiroDeProcesso('bash', argumentos, process.env, 600_000);
 }
 
-async function buscarFaseDeHabilitacao(id: string): Promise<string> {
+/**
+ * Um processo em rascunho que nasce agora, só com o cronograma de fases e nenhum formulário nem
+ * documento exigido. Serve às specs que gravam esses dois conjuntos e não podem herdar o estado
+ * de outra execução.
+ */
+export async function novoRascunhoComAFaseDeInscricao(nome: string): Promise<{
+  readonly processoId: string;
+  readonly faseDeInscricaoId: string;
+}> {
+  caminhoDoRoteiro('E2E_ROTEIRO_DO_PROCESSO');
+  const processoId = await criarRascunho(nome);
+  return { processoId, faseDeInscricaoId: await buscarFase(processoId, 'INSCRICAO') };
+}
+
+/** Como `novoRascunhoComAFaseDeInscricao`, mas com o cadastro que deixa o Cronograma gravar pela tela. */
+export async function novoRascunhoParaATela(nome: string): Promise<{
+  readonly processoId: string;
+  readonly faseDeInscricaoId: string;
+}> {
+  caminhoDoRoteiro('E2E_ROTEIRO_DO_PROCESSO');
+  const processoId = await criarRascunho(nome, SNIPPET_DO_RASCUNHO_PARA_A_TELA);
+  return { processoId, faseDeInscricaoId: await buscarFase(processoId, 'INSCRICAO') };
+}
+
+function buscarFaseDeHabilitacao(id: string): Promise<string> {
+  return buscarFase(id, 'HABILITACAO');
+}
+
+async function buscarFase(id: string, codigoDaFase: string): Promise<string> {
   const processo = await chamarApi<{ cronogramaFases?: { id: string; codigo: string }[] }>(
     OPERADOR_DO_ROTEIRO,
     'GET',
@@ -169,9 +216,9 @@ async function buscarFaseDeHabilitacao(id: string): Promise<string> {
   if (processo.status !== 200 || processo.corpo.cronogramaFases === undefined) {
     throw erroAoLerCronograma(id, processo.status, processo.corpo);
   }
-  const fase = processo.corpo.cronogramaFases.find((f) => f.codigo === 'HABILITACAO');
+  const fase = processo.corpo.cronogramaFases.find((f) => f.codigo === codigoDaFase);
   if (fase === undefined) {
-    throw new Error('O rascunho não tem a fase de habilitação.');
+    throw new Error(`O rascunho não tem a fase ${codigoDaFase}.`);
   }
   return fase.id;
 }

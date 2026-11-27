@@ -20,16 +20,16 @@ function plano(citados: string[], comFormulario = true, comFase = true, outras: 
     formularios: comFormulario ? [formulario] : [],
     cronogramaFases: comFase ? [{ id: 'fase-1', faseCanonica: { coletaInscricao: true } }] : [],
   });
-  return new PlanoDosCamposPressupostos(
-    servidor,
-    new Set(citados),
-    comEscopoPeloCodigo(CATALOGO),
-    outras,
-  );
+  return new PlanoDosCamposPressupostos(servidor, {
+    citados: new Set(citados),
+    catalogo: comEscopoPeloCodigo(CATALOGO),
+    fatosDosOutrosFormularios: outras,
+    codigoParaCriar: 'INSCRICAO',
+  });
 }
 
 describe('plano dos campos pressupostos', () => {
-  it('considera os fatos gravados e os coletados pelas outras finalidades', () => {
+  it('considera os fatos gravados e os coletados pelos outros formulários', () => {
     const resultado = plano(['PCD', 'RENDA_FAMILIAR'], true, true, ['RENDA_FAMILIAR']);
     expect(resultado.coletaTudo()).toBe(true);
     expect(resultado.fatosNaoColetados()).toEqual([]);

@@ -13,6 +13,7 @@ import { PASSO_CRONOGRAMA } from '../../shared/documentos-exigidos';
 import { CatalogoDasConsequenciasDeIndeferimento } from '../cronograma/catalogos/catalogo-das-consequencias-de-indeferimento.service';
 import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
 import { conteudoDoFormulario } from './formulario-do-processo';
+import { comInscricao, formularioDoRascunho } from './formulario-de-inscricao.testing';
 import {
   campo,
   CONGELADOS_DA_INSCRICAO,
@@ -50,9 +51,10 @@ describe('FormularioPassoComponent: documentos da fase', () => {
     /** O processo publicado: os passos mostram o que está gravado como texto. */
     function emConsulta(): void {
       TestBed.inject(CatalogoDeFatos).fatos.set([fatoComOperadores(PCD_NO_CATALOGO)]);
-      store.patchObjectSection('formulario', {
-        conteudo: conteudoDoFormulario(COM_PAGINA_DE_DOCUMENTOS),
-      });
+      store.patchObjectSection(
+        'formulario',
+        comInscricao(store.draft().formulario, conteudoDoFormulario(COM_PAGINA_DE_DOCUMENTOS)),
+      );
       store.remoteSnapshot.set({
         ...PROCESSO,
         id: PROCESSO_ID,
@@ -112,6 +114,15 @@ describe('FormularioPassoComponent: documentos da fase', () => {
         congelados: { ...CONGELADOS_DA_INSCRICAO, coletaSolicitacaoIsencao: true },
       };
       store.patchSection('cronograma', { ...store.draft().cronograma, fases: [dividida] });
+      store.patchObjectSection('formulario', {
+        formularios: [
+          ...store.draft().formulario.formularios,
+          formularioDoRascunho(conteudoDoFormulario(COM_PAGINA_DE_DOCUMENTOS), {
+            codigo: 'ISENCAO_TAXA',
+            obrigatorio: false,
+          }),
+        ],
+      });
       store.patchSection(
         'documentos',
         comExigenciaSemGrupo(
@@ -153,9 +164,10 @@ describe('FormularioPassoComponent: documentos da fase', () => {
     });
 
     it('sem documento na fase, diz que nenhum é exigido e leva ao Cronograma', () => {
-      store.patchObjectSection('formulario', {
-        conteudo: conteudoDoFormulario(COM_PAGINA_DE_DOCUMENTOS),
-      });
+      store.patchObjectSection(
+        'formulario',
+        comInscricao(store.draft().formulario, conteudoDoFormulario(COM_PAGINA_DE_DOCUMENTOS)),
+      );
       fixture.detectChanges();
 
       expect(host.textContent).toContain('Nenhum documento exigido nesta fase');

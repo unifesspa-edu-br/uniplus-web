@@ -17,7 +17,6 @@ import {
   type FormularioApresentadoDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
 import {
-  FINALIDADES,
   SimulacaoDeFormularioComponent,
   type ConferenciaComOServidor,
   type DocumentoExigido,
@@ -33,7 +32,7 @@ import {
 } from '@uniplus/shared-ui/components';
 
 /**
- * A simulação de um formulário do processo: o formulário da finalidade como o candidato o veria,
+ * A simulação de um formulário do processo: o formulário do código como o candidato o veria,
  * montado pela API com a configuração gravada — a do rascunho inclusive —, para responder como o
  * candidato sem inscrição nenhuma. Nada é gravado; o que ainda não foi gravado no processo não entra.
  */
@@ -56,9 +55,7 @@ import {
   template: `
     <div class="page-header">
       <div class="page-header__content">
-        <h1 class="page-header__title" tabindex="-1">
-          Simulação do formulário de {{ nomeDaFinalidade() }}
-        </h1>
+        <h1 class="page-header__title" tabindex="-1">Simulação do formulário {{ codigo }}</h1>
         <p class="page-header__desc">
           Responda como o candidato responderia. Simula o processo gravado: o que foi alterado e
           ainda não foi gravado não entra.
@@ -76,7 +73,7 @@ import {
     } @else if (formulario(); as apresentacao) {
       <insc-simulacao-de-formulario
         idBase="simulacao-processo"
-        [nomeDoArquivo]="'formulario-' + finalidade.toLocaleLowerCase('pt-BR')"
+        [nomeDoArquivo]="'formulario-' + codigo.toLocaleLowerCase('pt-BR')"
         [formulario]="apresentacao"
         [noProcesso]="lido()"
         [documentos]="documentos()"
@@ -94,12 +91,7 @@ export class SimulacaoDoProcessoPage {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly id = this.rota.get('id') ?? '';
-  protected readonly finalidade = this.rota.get('finalidade') ?? '';
-  protected readonly nomeDaFinalidade = computed(
-    () =>
-      FINALIDADES.find((f) => f.valor === this.finalidade)?.rotulo.toLocaleLowerCase('pt-BR') ??
-      this.finalidade,
-  );
+  protected readonly codigo = this.rota.get('codigo') ?? '';
   protected readonly carregando = signal(true);
   protected readonly erroAoCarregar = signal<string | null>(null);
   protected readonly leitura = acompanharLeitura({
@@ -142,7 +134,7 @@ export class SimulacaoDoProcessoPage {
     this.carregando.set(true);
     this.erroAoCarregar.set(null);
     this.formularios
-      .obterApresentacao(this.id, this.finalidade)
+      .obterApresentacao(this.id, this.codigo)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
         this.carregando.set(false);

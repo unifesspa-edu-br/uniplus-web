@@ -72,6 +72,7 @@ describe('ProcessoSeletivoPage — o passo Fórmula e precisão grava ao avança
         codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
         rotulo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO,
       },
+      formularios: [],
     } as never);
     fixture.detectChanges();
 

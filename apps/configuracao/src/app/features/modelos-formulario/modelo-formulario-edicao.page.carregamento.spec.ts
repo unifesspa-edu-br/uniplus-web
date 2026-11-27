@@ -122,7 +122,9 @@ describe('ModeloFormularioEdicaoPage', () => {
     controller.expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`).flush(FASES);
     controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-documento`).flush([]);
     controller
-      .expectOne((r) => r.url === `${BASE}/api/selecao/vocabularios/consequencias-indeferimento`)
+      .expectOne(
+        (r) => r.url === `${BASE}/api/selecao/vocabularios/consequencias-do-descumprimento`,
+      )
       .flush([]);
     await concluirANovaTentativa();
 

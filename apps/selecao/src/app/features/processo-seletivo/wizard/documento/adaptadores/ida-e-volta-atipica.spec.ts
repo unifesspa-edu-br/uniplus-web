@@ -26,7 +26,7 @@ const VAGAS: IdaEVolta = (d) =>
   vagas.edicaoDoPasso(
     vagas.valoresDoFormulario(d, { ofertas: SEM_CATALOGO, modalidades: SEM_CATALOGO }),
   )(d);
-const BONUS: IdaEVolta = (d) => fada.edicaoDoPasso(fada.valoresDoFormulario(d))(d);
+const FADA: IdaEVolta = (d) => fada.edicaoDoPasso(fada.valoresDoFormulario(d))(d);
 const ATENDIMENTO: IdaEVolta = (d) =>
   atendimento.edicaoDoPasso(
     atendimento.valoresDoFormulario(d, {
@@ -112,7 +112,7 @@ const ATIPICOS: readonly [string, IdaEVolta, DocumentoDaConfiguracao][] = [
   ],
   [
     'FADA com referência vazia, textos com espaço e chave antes de outra seção',
-    BONUS,
+    FADA,
     comSecao({
       fada: {
         aplica: true,
@@ -127,7 +127,7 @@ const ATIPICOS: readonly [string, IdaEVolta, DocumentoDaConfiguracao][] = [
   ],
   [
     'FADA que não aplica, antes de outra seção',
-    BONUS,
+    FADA,
     comSecao({ fada: { aplica: false }, identificacao: { nome: 'Depois do FADA' } }),
   ],
   [

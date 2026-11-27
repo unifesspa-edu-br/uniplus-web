@@ -26,7 +26,7 @@ import { EdicaoDaEtapa } from './servicos/edicao-da-etapa.service';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
 import { FasesNoServidor } from './servicos/fases-no-servidor.service';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
-import { GravacaoDasExigenciasDocumentais } from './servicos/gravacao-das-exigencias-documentais.service';
+import { GravacaoDasExigenciasDocumentais } from '../../shared/exigencias/gravacao-das-exigencias-documentais.service';
 import { GravacaoDoCronograma } from './servicos/gravacao-do-cronograma.service';
 import { IdaAoCampoDaPublicacao } from './servicos/ida-ao-campo-da-publicacao.service';
 import { RecusasDaPublicacaoNoCronograma } from './servicos/recusas-da-publicacao-no-cronograma.service';

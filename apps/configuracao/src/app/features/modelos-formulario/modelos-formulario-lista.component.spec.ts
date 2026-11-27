@@ -1,4 +1,7 @@
-import { FINALIDADE_INSCRICAO, FINALIDADE_ISENCAO } from './vocabulario-do-modelo.testing';
+import {
+  DECLARACAO_DE_INSCRICAO,
+  DECLARACAO_FORA_DA_INSCRICAO,
+} from './vocabulario-do-modelo.testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
@@ -18,7 +21,7 @@ const conteudo = {
 const ativo: ModeloFormularioView = {
   id: 'm1',
   codigo: 'INSCRICAO',
-  finalidade: FINALIDADE_INSCRICAO,
+  declaracao: DECLARACAO_DE_INSCRICAO,
   ativo: true,
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   conteudo,
@@ -179,23 +182,29 @@ describe('ModelosFormularioListaComponent', () => {
     ).toBe('VESTIBULAR');
   });
 
-  it('mostra os rótulos das finalidades recebidas', () => {
-    montar([ativo, { ...ativo, id: 'm3', codigo: 'OUTRO', finalidade: FINALIDADE_ISENCAO }]);
+  it('mostra se cada modelo serve à fase de inscrição e se o preenchimento é obrigatório', () => {
+    montar([
+      ativo,
+      { ...ativo, id: 'm3', codigo: 'OUTRO', declaracao: DECLARACAO_FORA_DA_INSCRICAO },
+    ]);
 
-    const celulas = raiz().querySelectorAll('td[data-label="Finalidade"]');
-    expect(celulas[0].textContent?.trim()).toBe(FINALIDADE_INSCRICAO.rotulo);
-    expect(celulas[1].textContent?.trim()).toBe(FINALIDADE_ISENCAO.rotulo);
+    const textos = (rotulo: string): (string | undefined)[] =>
+      Array.from(raiz().querySelectorAll(`td[data-label="${rotulo}"]`)).map((c) =>
+        c.textContent?.trim(),
+      );
+    expect(textos('Serve à fase de inscrição')).toEqual(['Sim', 'Não']);
+    expect(textos('Preenchimento')).toEqual(['Obrigatório', 'Facultativo']);
   });
 
-  it('mantém todas as finalidades ao trocar o filtro e o resultado', () => {
+  it('mantém as opções do filtro de fase de inscrição ao trocar o filtro e o resultado', () => {
     montar([]);
     const chips = (): string => raiz().querySelector('ui-filter-chips')?.textContent ?? '';
-    expect(chips()).toContain('Habilitação');
-    fixture.componentRef.setInput('filtroFinalidade', 'INSCRICAO');
+    expect(chips()).toContain('Não serve');
+    fixture.componentRef.setInput('filtroFaseDeInscricao', 'true');
     fixture.componentRef.setInput('modelosBuscados', [ativo]);
     fixture.detectChanges();
-    expect(chips()).toContain('Isenção da taxa de inscrição');
-    expect(chips()).toContain('Habilitação');
+    expect(chips()).toContain('Serve');
+    expect(chips()).toContain('Não serve');
   });
 
   it('o estado vazio só aparece sem carga nem erro', () => {
@@ -244,7 +253,7 @@ describe('ModelosFormularioListaComponent', () => {
 
   it('resume os filtros ativos com os rótulos, e com o valor quando não há rótulo', () => {
     montar([ativo]);
-    fixture.componentInstance.filtroFinalidade.set('INSCRICAO');
+    fixture.componentInstance.filtroFaseDeInscricao.set('true');
     fixture.componentInstance.filtroSituacao.set('false');
     fixture.componentInstance.filtroTipo.set('VESTIBULAR');
     fixture.detectChanges();
@@ -253,7 +262,7 @@ describe('ModelosFormularioListaComponent', () => {
     expect(resumo).toContain('Desativados');
     expect(resumo).toContain('Vestibular');
 
-    fixture.componentInstance.filtroFinalidade.set('OUTRA');
+    fixture.componentInstance.filtroFaseDeInscricao.set('OUTRA');
     fixture.componentInstance.filtroSituacao.set('talvez');
     fixture.detectChanges();
 
@@ -261,7 +270,7 @@ describe('ModelosFormularioListaComponent', () => {
     expect(sem).toContain('OUTRA');
     expect(sem).toContain('talvez');
 
-    fixture.componentInstance.filtroFinalidade.set('');
+    fixture.componentInstance.filtroFaseDeInscricao.set('');
     fixture.componentInstance.filtroSituacao.set('');
     fixture.componentInstance.filtroTipo.set('SEM_CADASTRO');
     fixture.detectChanges();

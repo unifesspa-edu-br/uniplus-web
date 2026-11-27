@@ -36,12 +36,13 @@ export function campoColetado(
 
 /** Um formulário de inscrição no contrato atual, para os testes da tela. */
 export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioApresentadoDoProcessoDto = {
+  codigo: 'INSCRICAO',
+  obrigatorio: true,
   comprovacaoDocumental: null,
   dependenciasDaAvaliacao: null,
   dependenciasDoFator: null,
   faseId: 'fase-da-inscricao',
   formulario: {
-    finalidade: 'INSCRICAO',
     titulo: 'Inscrição',
     paginas: [
       secao('DADOS_PESSOAIS', 0, 'Dados pessoais'),

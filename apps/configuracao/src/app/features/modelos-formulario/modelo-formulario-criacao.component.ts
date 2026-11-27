@@ -12,11 +12,10 @@ import {
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import {
   LIMITE_DO_CODIGO_DO_MODELO_DE_FORMULARIO,
-  CampoDaCriacao,
+  CampoDeTextoDaCriacao,
   CriacaoForm,
   mensagemDoCampo,
 } from './modelo-formulario-form';
-import { FINALIDADES_DO_FORMULARIO } from './finalidades-do-formulario';
 
 @Component({
   selector: 'cfg-modelo-formulario-criacao',
@@ -47,12 +46,9 @@ export class ModeloFormularioCriacaoComponent {
   readonly abertoChange = output<boolean>();
   readonly criar = output<void>();
   readonly modelos = input.required<readonly ModeloFormularioView[]>();
-  protected finalidades() {
-    return FINALIDADES_DO_FORMULARIO;
-  }
   private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });
 
-  protected erro(campo: CampoDaCriacao): string | null {
+  protected erro(campo: CampoDeTextoDaCriacao): string | null {
     return mensagemDoCampo(this.form().controls[campo], campo === 'tipoProcessoCodigo' ? 80 : 60);
   }
 

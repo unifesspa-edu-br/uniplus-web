@@ -9,6 +9,7 @@ import {
   type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
 
+import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
@@ -37,6 +38,7 @@ const PROVEDORES = [
   CadastroInicial,
   GravacaoDoProcesso,
   CatalogosDeClassificacao,
+  CatalogoDeFases,
   LeituraDoCadastroDePesos,
   ReleituraDoSnapshot,
   provideHttpClient(withInterceptors([apiResultInterceptor])),

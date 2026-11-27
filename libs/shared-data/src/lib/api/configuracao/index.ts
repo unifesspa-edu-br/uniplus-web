@@ -165,14 +165,14 @@ export {
   type TiposEtapaQuery,
 } from './tipos-etapa.api';
 export {
-  BaseLegalBonusRegionalApi,
-  type AtualizarBaseLegalBonusRegionalCommand,
-  type BaseLegalBonusRegionalDto,
-  type BaseLegalBonusRegionalMunicipioDto,
-  type BaseLegalBonusRegionalQuery,
-  type CriarBaseLegalBonusRegionalCommand,
-  type CriarBaseLegalBonusRegionalMunicipioCommand,
-} from './base-legal-bonus-regional.api';
+  BaseLegalDoFadaApi,
+  type AtualizarBaseLegalDoFadaCommand,
+  type BaseLegalDoFadaDto,
+  type MunicipioDaBaseLegalDoFadaDto,
+  type BaseLegalDoFadaQuery,
+  type CriarBaseLegalDoFadaCommand,
+  type CriarBaseLegalDoFadaMunicipioCommand,
+} from './base-legal-do-fada.api';
 export {
   TipoInstrumentoNormativoCodigo,
   TiposInstrumentoNormativoApi,
@@ -254,7 +254,7 @@ export {
   EscopoFatoCodigo,
   FormatoTextoCodigo,
   TipoRestricaoValorCodigo,
-  ConsequenciaDoIndeferimentoCodigo,
+  ConsequenciaDoDescumprimentoCodigo,
   TipoAbrangenciaCodigo,
   StatusBaseLegalCodigo,
   TipoLocalOfertaCodigo,
@@ -273,7 +273,6 @@ export {
   ProgramaDeOfertaCodigo,
   NaturezaLegalCodigo,
   FormaDoConceitoCodigo,
-  FinalidadeFormularioCodigo,
   FonteValoresFatoCodigo,
   OrigemFatoCodigo,
   QuantidadeDeValoresCodigo,

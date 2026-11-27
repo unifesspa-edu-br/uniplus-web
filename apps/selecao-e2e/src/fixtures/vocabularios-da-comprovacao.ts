@@ -60,10 +60,11 @@ export const VOCABULARIOS_DA_COMPROVACAO: readonly CatalogoMockado[] = [
     [{ codigo: 'COMPETENCIA_MENSAL', rotulo: 'Competência mensal' }],
   ],
   [
-    'selecao/vocabularios/consequencias-indeferimento',
+    'selecao/vocabularios/consequencias-do-descumprimento',
     [
-      { codigo: 'ELIMINA', rotulo: 'Eliminação' },
-      { codigo: 'RECLASSIFICA_AC', rotulo: 'Reclassificação para ampla concorrência' },
+      { codigo: 'ELIMINA_DO_PROCESSO', rotulo: 'Eliminação do processo' },
+      { codigo: 'RETIRA_A_MODALIDADE', rotulo: 'Retirada da modalidade' },
+      { codigo: 'RETIRA_O_ACRESCIMO', rotulo: 'Retirada só do acréscimo' },
     ],
   ],
 ];

@@ -3,7 +3,7 @@ import type {
   ModeloFormularioView,
 } from '@uniplus/shared-data/configuracao';
 import {
-  ConsequenciaDoIndeferimentoCodigo,
+  ConsequenciaDoDescumprimentoCodigo,
   TipoAbrangenciaCodigo,
   StatusBaseLegalCodigo,
   EfeitoNaAnaliseDoDocumentoCodigo,
@@ -141,7 +141,11 @@ interface ComIndeferimento {
 type DesdobradoParaOEditor<D extends ComIndeferimento> = Omit<D, keyof ComIndeferimento> &
   Pick<
     DocumentoExigidoDoFormulario,
-    'obrigatorio' | 'consequenciaIndeferimento' | 'basesLegais' | 'requisitos'
+    | 'obrigatorio'
+    | 'consequenciaDoDescumprimento'
+    | 'abrePrazoParaReenvio'
+    | 'basesLegais'
+    | 'requisitos'
   >;
 
 /** O documento como o editor o edita: o bloco do indeferimento desdobrado em campos. */
@@ -152,7 +156,8 @@ export function documentoDoModelo<D extends ComIndeferimento>(
   return {
     ...demais,
     obrigatorio: indeferimento.obrigatorio,
-    consequenciaIndeferimento: indeferimento.consequencia,
+    consequenciaDoDescumprimento: indeferimento.consequenciaDoDescumprimento,
+    abrePrazoParaReenvio: indeferimento.abrePrazoParaReenvio,
     basesLegais: indeferimento.basesLegais,
     requisitos: requisitosDoModelo(requisitos),
   };
@@ -160,7 +165,11 @@ export function documentoDoModelo<D extends ComIndeferimento>(
 
 type AgrupadoParaOModelo<O> = Omit<
   DocumentoExigidoDoFormulario<O>,
-  'obrigatorio' | 'consequenciaIndeferimento' | 'basesLegais' | 'requisitos'
+  | 'obrigatorio'
+  | 'consequenciaDoDescumprimento'
+  | 'abrePrazoParaReenvio'
+  | 'basesLegais'
+  | 'requisitos'
 > &
   Pick<DocumentoParaOConteudo, 'indeferimento' | 'requisitos'>;
 
@@ -168,28 +177,35 @@ type AgrupadoParaOModelo<O> = Omit<
 export function documentoParaOModelo<O>(
   documento: DocumentoExigidoDoFormulario<O>,
 ): AgrupadoParaOModelo<O> {
-  const { obrigatorio, consequenciaIndeferimento, basesLegais, requisitos, ...demais } = documento;
+  const { obrigatorio, requisitos, ...demais } = documento;
+  const { consequenciaDoDescumprimento, abrePrazoParaReenvio, basesLegais, ...restante } = demais;
+  const indeferimento = { consequenciaDoDescumprimento, abrePrazoParaReenvio, basesLegais };
   return {
-    ...demais,
-    indeferimento: {
-      obrigatorio,
-      ...indeferimentoParaOModelo(consequenciaIndeferimento, basesLegais),
-    },
+    ...restante,
+    indeferimento: { obrigatorio, ...indeferimentoParaOModelo(indeferimento) },
     requisitos: requisitosParaOModelo(requisitos),
   };
 }
 
-export function indeferimentoParaOModelo(
-  consequencia: string,
-  basesLegais: readonly BaseLegalDoDocumento[] | null,
-) {
+function consequenciaParaOModelo(consequencia: string | null) {
+  return consequencia === null
+    ? null
+    : codigoExigidoDoContrato(ConsequenciaDoDescumprimentoCodigo, consequencia, 'documento');
+}
+
+export function indeferimentoParaOModelo({
+  consequenciaDoDescumprimento,
+  basesLegais,
+  abrePrazoParaReenvio,
+}: {
+  readonly consequenciaDoDescumprimento: string | null;
+  readonly basesLegais: readonly BaseLegalDoDocumento[] | null;
+  readonly abrePrazoParaReenvio: boolean;
+}) {
   return {
-    consequencia: codigoExigidoDoContrato(
-      ConsequenciaDoIndeferimentoCodigo,
-      consequencia,
-      'documento',
-    ),
+    consequenciaDoDescumprimento: consequenciaParaOModelo(consequenciaDoDescumprimento),
     basesLegais: basesLegais?.map(baseLegalParaOModelo) ?? null,
+    abrePrazoParaReenvio,
   };
 }
 

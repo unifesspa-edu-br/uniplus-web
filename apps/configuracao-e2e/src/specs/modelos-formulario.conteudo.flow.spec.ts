@@ -25,7 +25,7 @@ const REGRAS_DO_CAMPO = {
 const MODELO: JsonDaApi<ModeloFormularioView> = {
   id: ID_DO_MODELO,
   codigo: 'INSCRICAO',
-  finalidade: { codigo: 'INSCRICAO', rotulo: 'Inscrição' },
+  declaracao: { serveAFaseDeInscricao: true, obrigatorio: true },
   ativo: true,
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   conteudo: {

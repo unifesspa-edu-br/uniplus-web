@@ -1,0 +1,156 @@
+import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
+import { assertReflowContract, runAxeWcagAA } from '@uniplus/shared-e2e';
+import {
+  BASE_DA_LEI,
+  BASE_DA_LISTA,
+  TIPOS_INSTRUMENTO,
+} from '../support/api-da-base-legal-do-fada';
+import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
+
+type VisualTheme = 'light' | 'dark' | 'contrast';
+
+const CORS_HEADERS = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
+  'access-control-expose-headers': 'link',
+};
+
+// Com `rel="next"` a página monta o `ui-pager`; sem isso o componente não entra
+// no DOM e escapa da varredura.
+const LINK_HEADER =
+  '</api/configuracao/bases-legais-fada?cursor=PROXIMA&direction=next>; rel="next"';
+
+const BASES = [BASE_DA_LISTA, BASE_DA_LEI];
+
+test.describe('Base legal do Fator de Atenuação — lista e formulário', () => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    const theme = metadataTheme(testInfo);
+    await mockConfiguracaoRuntimeConfig(page);
+    await page.addInitScript((dsTheme: VisualTheme) => {
+      window.localStorage.setItem(
+        'uniplus.a11y',
+        JSON.stringify({
+          theme: dsTheme === 'contrast' ? 'auto' : dsTheme,
+          contrast: dsTheme === 'contrast',
+          fontMode: 'default',
+        }),
+      );
+    }, theme);
+    await mockBasesLegaisApi(page);
+
+    await page.goto('/bases-legais-fada');
+    // Varredura sobre conjunto vazio aprova: as ações de linha e o pager só
+    // existem no DOM com a tabela renderizada.
+    await expect(page.locator('table tbody tr')).toHaveCount(BASES.length);
+    await expect(page.getByRole('navigation', { name: /Paginação/ })).toBeVisible();
+  });
+
+  test('aplica o tema selecionado e lista o catálogo', async ({ page }, testInfo) => {
+    await expect(page.locator('html')).toHaveAttribute('data-theme', metadataTheme(testInfo));
+    await expect(
+      page.getByRole('heading', {
+        name: 'Base legal do Fator de Atenuação das Desigualdades de Acesso',
+        level: 1,
+      }),
+    ).toBeVisible();
+  });
+
+  test('a lista não viola WCAG 2.1 A/AA', async ({ page }) => {
+    const { violations } = await runAxeWcagAA(page);
+
+    expect(
+      violations.map((violacao) => violacao.id),
+      JSON.stringify(violations, null, 2),
+    ).toEqual([]);
+  });
+
+  test('o formulário não viola WCAG 2.1 A/AA', async ({ page }) => {
+    await page.getByRole('button', { name: 'Nova base legal' }).first().click();
+    await expect(page.getByLabel('Identificação', { exact: true })).toBeVisible();
+
+    const { violations } = await runAxeWcagAA(page);
+
+    expect(
+      violations.map((violacao) => violacao.id),
+      JSON.stringify(violations, null, 2),
+    ).toEqual([]);
+  });
+
+  // O contrato da gaveta do módulo: a rolagem é do corpo do painel, que contém o formulário, e o
+  // rodapé fica fora do formulário.
+  test('a gaveta rola pelo corpo do painel e mantém o rodapé fixo', async ({ page }) => {
+    await page.getByRole('button', { name: 'Nova base legal' }).first().click();
+
+    const formulario = page.locator('form.form-drawer__form');
+    await expect(formulario).toBeVisible();
+    const corpo = page.locator('.uni-drawer__body').filter({ has: formulario });
+    await expect(corpo).toHaveCSS('overflow-y', 'auto');
+
+    const rodape = page.locator('.form-drawer__footer');
+    await expect(rodape).toBeVisible();
+    const painel = page.locator('.uni-drawer__panel').filter({ has: formulario });
+    await expect
+      .poll(async () => Math.abs((await caixa(rodape)).base - (await caixa(painel)).base))
+      .toBeLessThanOrEqual(TOLERANCIA);
+    await expect(formulario.locator('.form-drawer__footer')).toHaveCount(0);
+    await expect(rodape.getByRole('button', { name: 'Criar base legal' })).toBeVisible();
+  });
+
+  // Os hospedeiros do drawer e do diálogo são itens do flex da página: fechados, não podem consumir
+  // espaçamento entre os blocos.
+  test('drawer e diálogo fechados não ocupam espaço entre os blocos', async ({ page }) => {
+    const pagina = page.locator('.cfg-page');
+    const gap = await pagina.evaluate((el) => Number.parseFloat(getComputedStyle(el).rowGap));
+    const geoAviso = await caixa(page.locator('.page-header'));
+    const geoPainel = await caixa(page.locator('.panel'));
+    const geoPagina = await caixa(pagina);
+    expect(Math.abs(geoPainel.y - geoAviso.base - gap)).toBeLessThanOrEqual(TOLERANCIA);
+    expect(Math.abs(geoPagina.base - geoPainel.base)).toBeLessThanOrEqual(TOLERANCIA);
+  });
+
+  test('a página cumpre o contrato de reflow do viewport', async ({ page }) => {
+    await assertReflowContract(page);
+  });
+});
+
+const TOLERANCIA = 1;
+
+async function caixa(locator: Locator) {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error('Elemento sem geometria visível.');
+  return { y: box.y, base: box.y + box.height };
+}
+
+async function mockBasesLegaisApi(page: Page): Promise<void> {
+  await page.route(
+    /\/api\/configuracao\/vocabularios\/tipos-instrumento-normativo(\?.*)?$/,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
+        body: JSON.stringify(TIPOS_INSTRUMENTO),
+      });
+    },
+  );
+  await page.route(/\/api\/configuracao\/bases-legais-fada(\?.*)?$/, async (route, request) => {
+    if (request.method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: CORS_HEADERS });
+      return;
+    }
+    if (request.method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      headers: { ...CORS_HEADERS, 'content-type': 'application/json', link: LINK_HEADER },
+      body: JSON.stringify(BASES),
+    });
+  });
+}
+
+function metadataTheme(testInfo: TestInfo): VisualTheme {
+  const theme = testInfo.project.metadata['theme'];
+  return theme === 'dark' || theme === 'contrast' ? theme : 'light';
+}

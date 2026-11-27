@@ -24,7 +24,7 @@ const casos = [
   ['quantidade_minima_diferente_das_ocorrencias', 'Ajuste a quantidade ou a lista'],
   ['criterio_de_distincao_invalido', 'Escolha um critério válido'],
   ['quantidade_minima_excede_calendario', 'Reduza a quantidade'],
-  ['remove_vantagem_sem_vantagem_configurada', 'Configure o bônus regional'],
+  ['remove_vantagem_sem_vantagem_configurada', 'Configure o Fator de Atenuação'],
   ['consequencia_incoerente_com_acao_da_vaga', 'Alinhe a consequência'],
   ['documento_proibido_em_grupo', 'item separado'],
   ['itens_proibidos_em_regra_de_documento', 'Retire os itens'],

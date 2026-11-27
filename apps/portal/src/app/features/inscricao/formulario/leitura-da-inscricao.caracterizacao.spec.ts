@@ -109,7 +109,9 @@ describe('LeituraDaInscricao: a carga que a tela adota', () => {
     const iniciada = inscricao({
       ofertas: [oferta('oferta-2', 'Medicina'), oferta('oferta-1', 'Direito')],
       numeroDeOpcoesDeCurso: 2,
-      aceites: [{ codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' }],
+      aceites: [
+        { formularioCodigo: 'INSCRICAO', codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' },
+      ],
     });
 
     await carregarCom(iniciada);

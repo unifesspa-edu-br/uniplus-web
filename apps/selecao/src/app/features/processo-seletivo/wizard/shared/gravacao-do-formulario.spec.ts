@@ -54,9 +54,9 @@ describe('gravarFormulario', () => {
 
     const resultado = await gravarFormulario(
       { gravacao, api },
-      { processoSeletivoId: 'p1', finalidade: 'INSCRICAO' },
+      { processoSeletivoId: 'p1', codigo: 'INSCRICAO' },
       null,
-      { faseId: 'F1', conteudo },
+      { faseId: 'F1', obrigatorio: true, consequenciaDaFaltaDeEnvio: null, conteudo },
     );
 
     expect(resultado.ok).toBe(false);

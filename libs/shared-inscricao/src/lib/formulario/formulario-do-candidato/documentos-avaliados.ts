@@ -40,8 +40,8 @@ export interface DocumentoAvaliado {
   readonly exigenciaId: string;
   readonly nome: string;
   readonly obrigatorio: boolean;
-  /** O formulário em que o documento é apresentado, como `INSCRICAO` ou `ISENCAO_TAXA`. */
-  readonly finalidade: string | null;
+  /** O código do formulário do processo em que o documento é apresentado. */
+  readonly formularioCodigo: string | null;
   readonly formatos: DocumentoExigido['formatos'];
   readonly modelo: DocumentoExigido['modelo'];
   /** Os formatos que o envio aceita para a exigência (PDF, JPEG, PNG). */
@@ -81,25 +81,25 @@ export interface DocumentosAvaliados {
   readonly fases: readonly FaseDosDocumentosAvaliados[];
 }
 
-/** O que o formulário mostra da avaliação dos documentos: os da fase e finalidade dele. */
+/** O que o formulário mostra da avaliação dos documentos: os da fase e do formulário dele. */
 export interface DocumentosDoFormulario {
   readonly documentos: readonly DocumentoAvaliado[];
   readonly pendencias: readonly PendenciaDaAvaliacao[];
 }
 
 /**
- * Os documentos que se apresentam no próprio formulário: os da fase dele e, nela, os da finalidade
- * dele — a isenção na mesma fase tem formulário próprio. As pendências são as da fase. Sem a fase do
- * formulário, nada se mostra.
+ * Os documentos que se apresentam no próprio formulário: os da fase dele e, nela, os que citam o
+ * código dele — a fase pode ter mais de um formulário. As pendências são as da fase. Sem a fase ou
+ * sem o código do formulário, nada se mostra.
  */
 export function documentosDoFormulario(
   documentos: DocumentosAvaliados,
   faseId: string | null | undefined,
-  finalidade: string,
+  formularioCodigo: string | null | undefined,
 ): DocumentosDoFormulario {
   const fase = faseId ? documentos.fases.find((f) => f.faseId === faseId) : undefined;
   return {
-    documentos: fase?.documentos.filter((d) => d.finalidade === finalidade) ?? [],
+    documentos: fase?.documentos.filter((d) => d.formularioCodigo === formularioCodigo) ?? [],
     pendencias: fase?.pendencias ?? [],
   };
 }

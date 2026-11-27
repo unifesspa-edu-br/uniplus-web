@@ -70,9 +70,6 @@ describe('ModelosFormularioPage — causa geral na recusa da criação', () => {
     const nome = elemento<HTMLInputElement>('input[formcontrolname="nome"]');
     nome.value = 'Inscrição';
     nome.dispatchEvent(new Event('input'));
-    const finalidade = elemento<HTMLSelectElement>('select[formcontrolname="finalidade"]');
-    finalidade.value = 'INSCRICAO';
-    finalidade.dispatchEvent(new Event('change'));
     elemento<HTMLFormElement>('#cfg-modelo-criacao').dispatchEvent(
       new Event('submit', { cancelable: true }),
     );
