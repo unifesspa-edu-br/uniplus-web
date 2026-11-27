@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { SituacaoDoPedidoCodigo, TipoDeEscopoCodigo } from '@uniplus/shared-data/autorizacao';
+import { SituacaoDoPedidoCodigo, type TipoDeEscopoCodigo } from '@uniplus/shared-data/autorizacao';
 
 import {
   GESTOR_DE_ACESSOS,
@@ -54,13 +54,15 @@ async function pedidoDaConcessao(
   perfilId: string,
   unidadeDaConcessao: string,
 ): Promise<PedidoDeConcessao> {
-  const perfil = await acharNaListagem<{ id: string; escopo: ValorDoContrato<TipoDeEscopoCodigo> }>(
+  const perfil = await acharNaListagem<{
+    id: string;
+    escopo: ValorDoContrato<`${TipoDeEscopoCodigo}`>;
+  }>(
     SOLICITANTE_DE_PEDIDOS,
     '/api/autorizacao/perfis-para-pedido?limit=100',
     (p) => p.id === perfilId,
   );
-  const unidadeId =
-    perfil?.escopo.codigo === TipoDeEscopoCodigo.UNIDADE ? unidadeDaConcessao : null;
+  const unidadeId = perfil?.escopo.codigo === 'UNIDADE' ? unidadeDaConcessao : null;
   const { sub: contaId, email } = identidadeDoToken(await tokenDaPersona(beneficiario));
   return { beneficiario, email, contaId, perfilId, unidadeId };
 }
