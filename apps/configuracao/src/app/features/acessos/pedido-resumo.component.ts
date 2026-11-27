@@ -13,7 +13,7 @@ import { TagComponent } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import type { Acao } from './confirmacoes-do-pedido';
 import { PRAZO_NO_PASSADO, hojeNoFuso } from './prazo-de-vigencia';
-import { etapa, situacaoDoPedido } from './rotulos-de-acesso';
+import { situacaoDoPedido } from './rotulos-de-acesso';
 
 @Component({
   selector: 'cfg-pedido-resumo',
@@ -40,7 +40,6 @@ export class PedidoResumoComponent {
   protected readonly hoje = hojeNoFuso;
   protected readonly mensagemDoPrazo = PRAZO_NO_PASSADO;
   protected readonly rotuloDaSituacao = computed(() => situacaoDoPedido(this.pedido().situacao));
-  protected readonly etapaAtual = computed(() => etapa(this.pedido().etapaAtual));
 
   protected prazoInvalido(): boolean {
     const prazo = this.prazo();

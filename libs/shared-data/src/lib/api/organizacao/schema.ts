@@ -301,7 +301,7 @@ export interface components {
             /** Format: uuid */
             readonly perfilId: string;
             readonly nome: string;
-            readonly escopoTipo: string;
+            readonly escopoTipo: components["schemas"]["TipoDeEscopo"];
             /** Format: uuid */
             readonly unidadeId: null | string;
             readonly unidadeSigla: null | string;
@@ -335,6 +335,16 @@ export interface components {
                 }[];
             }[];
         };
+        readonly TipoDeEscopo: {
+            readonly codigo: components["schemas"]["TipoDeEscopoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `UNIDADE`: Unidade
+         *     - `INSTITUICAO`: Instituição
+         * @enum {string}
+         */
+        readonly TipoDeEscopoCodigo: TipoDeEscopoCodigo;
         /**
          * @description O tipo de uma unidade da universidade, que a classifica na estrutura organizacional: da reitoria aos núcleos.
          *
@@ -1035,6 +1045,10 @@ export interface operations {
 export enum PathsApiOrganizacaoUnidadesGetParametersQueryDirection {
     next = "next",
     prev = "prev"
+}
+export enum TipoDeEscopoCodigo {
+    UNIDADE = "UNIDADE",
+    INSTITUICAO = "INSTITUICAO"
 }
 export enum TipoUnidadeCodigo {
     REITORIA = "REITORIA",

@@ -12,8 +12,8 @@ import {
 
 const REGRA = { codigo: 'REMANEJ-X', versao: 'v1' };
 
-function destino(origem: string, ordem: number, destinoCodigo: string): DestinoDoDocumento {
-  return { modalidadeOrigemCodigo: origem, ordem, modalidadeDestinoCodigo: destinoCodigo };
+function destino(origem: string, destinoCodigo: string): DestinoDoDocumento {
+  return { modalidadeOrigemCodigo: origem, modalidadeDestinoCodigo: destinoCodigo };
 }
 
 function documentoComDestinos(destinos: readonly DestinoDoDocumento[]): DocumentoDaConfiguracao {
@@ -35,10 +35,10 @@ function destinosDe(documento: DocumentoDaConfiguracao): readonly DestinoDoDocum
 }
 
 const INTERCALADOS = [
-  destino('LB_Q', 2, 'AC'),
-  destino('LB_PPI', 2, 'AC'),
-  destino('LB_Q', 1, 'LB_PPI'),
-  destino('LB_PPI', 1, 'LB_Q'),
+  destino('LB_Q', 'AC'),
+  destino('LB_PPI', 'AC'),
+  destino('LB_Q', 'LB_PPI'),
+  destino('LB_PPI', 'LB_Q'),
 ];
 
 describe('edição da ordem de remanejamento', () => {
@@ -51,30 +51,21 @@ describe('edição da ordem de remanejamento', () => {
     destinosDe(editado).forEach((item, posicao) => expect(item).toBe(INTERCALADOS[posicao]));
   });
 
-  it('não renumera a ordem que o documento traz com salto', () => {
-    const comSalto = [destino('LB_PPI', 1, 'LB_Q'), destino('LB_PPI', 3, 'AC')];
-    const documento = documentoComDestinos(comSalto);
-
-    expect(
-      destinosDe(definirOrdemDeRemanejamento(documento, REGRA, matrizDe(documento))),
-    ).toStrictEqual(comSalto);
-  });
-
-  it('editar uma origem reescreve e renumera só ela, no lugar da primeira entrada que tinha', () => {
+  it('editar uma origem reescreve só ela, no lugar da primeira entrada que tinha', () => {
     const documento = documentoComDestinos(INTERCALADOS);
     const matriz: MatrizDaOrdemDeRemanejamento = {
       fallbackCodigo: 'AC',
       ordens: [
-        { origem: 'LB_Q', destinos: ['AC', 'LB_PPI'] },
-        { origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] },
+        { origem: 'LB_Q', destinos: ['LB_PPI', 'AC'] },
+        { origem: 'LB_PPI', destinos: ['AC', 'LB_Q'] },
       ],
     };
 
     const editado = definirOrdemDeRemanejamento(documento, REGRA, matriz);
 
     expect(destinosDe(editado)).toStrictEqual([
-      destino('LB_Q', 1, 'AC'),
-      destino('LB_Q', 2, 'LB_PPI'),
+      destino('LB_Q', 'LB_PPI'),
+      destino('LB_Q', 'AC'),
       INTERCALADOS[1],
       INTERCALADOS[3],
     ]);
@@ -86,7 +77,7 @@ describe('edição da ordem de remanejamento', () => {
     const matriz: MatrizDaOrdemDeRemanejamento = {
       fallbackCodigo: 'AC',
       ordens: [
-        { origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] },
+        { origem: 'LB_PPI', destinos: ['AC', 'LB_Q'] },
         { origem: 'LB_V', destinos: ['AC'] },
       ],
     };
@@ -94,7 +85,7 @@ describe('edição da ordem de remanejamento', () => {
     expect(destinosDe(definirOrdemDeRemanejamento(documento, REGRA, matriz))).toStrictEqual([
       INTERCALADOS[1],
       INTERCALADOS[3],
-      destino('LB_V', 1, 'AC'),
+      destino('LB_V', 'AC'),
     ]);
   });
 
@@ -129,7 +120,7 @@ describe('edição da ordem de remanejamento', () => {
     ).toStrictEqual([]);
   });
 
-  it('declara a ordem de remanejamento renumerando a ordem dos destinos a partir de 1 em cada origem', () => {
+  it('declara a ordem de remanejamento com os destinos de cada origem na ordem da matriz', () => {
     const matriz: MatrizDaOrdemDeRemanejamento = {
       fallbackCodigo: 'AC',
       ordens: [
@@ -141,13 +132,13 @@ describe('edição da ordem de remanejamento', () => {
     const editado = definirOrdemDeRemanejamento(documentoSemNada(), REGRA, matriz);
 
     expect(destinosDe(editado)).toEqual([
-      destino('LB_PPI', 1, 'LB_Q'),
-      destino('LB_PPI', 2, 'AC'),
-      destino('LB_Q', 1, 'AC'),
+      destino('LB_PPI', 'LB_Q'),
+      destino('LB_PPI', 'AC'),
+      destino('LB_Q', 'AC'),
     ]);
   });
 
-  it('reordenar os destinos de uma origem renumera a ordem dela no documento', () => {
+  it('reordenar os destinos de uma origem reordena os dela no documento', () => {
     const documento = exemploDoContrato('inscricao-pelo-sistema');
     const matriz: MatrizDaOrdemDeRemanejamento = {
       fallbackCodigo: 'AC',
@@ -156,9 +147,6 @@ describe('edição da ordem de remanejamento', () => {
 
     const editado = definirOrdemDeRemanejamento(documento, REGRA, matriz);
 
-    expect(destinosDe(editado).map((d) => [d.modalidadeDestinoCodigo, d.ordem])).toEqual([
-      ['LB_Q', 1],
-      ['AC', 2],
-    ]);
+    expect(destinosDe(editado).map((d) => d.modalidadeDestinoCodigo)).toEqual(['LB_Q', 'AC']);
   });
 });

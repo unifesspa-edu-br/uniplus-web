@@ -11,7 +11,7 @@ import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { PERMISSOES_DAS_TELAS } from '../../../acesso/permissoes-das-telas';
 import { RecusaDaLeituraComponent } from '../../../shared/recusa-da-leitura';
 import { DivergenciasDaGovernancaStore } from './divergencias-da-governanca.store';
-import { tipoDaDivergencia, valorDaDivergencia } from './rotulos-da-reclassificacao';
+import { valorDaDivergencia } from './rotulos-da-reclassificacao';
 
 const ID_DO_TITULO = 'cfg-divergencias-titulo';
 
@@ -35,7 +35,6 @@ const ID_DO_TITULO = 'cfg-divergencias-titulo';
 export class DivergenciasDaGovernancaPage {
   protected readonly store = inject(DivergenciasDaGovernancaStore);
   protected readonly idDoTitulo = ID_DO_TITULO;
-  protected readonly tipo = tipoDaDivergencia;
   protected readonly valor = valorDaDivergencia;
   private readonly permissoes = inject(PermissoesService);
   protected readonly podeAbrirOPerfil = computed(() =>

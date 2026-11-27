@@ -1,8 +1,7 @@
-import { EtapaDoPedido, SituacaoDoPedidoCodigo } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ok, pedido, recusa } from './testes';
+import { ETAPA_DO_PEDIDO, SITUACAO_DO_PEDIDO, ok, pedido, recusa } from './testes';
 import {
   presente,
   MENSAGEM_DA_FALHA,
@@ -28,8 +27,8 @@ describe('PedidoDetalhePage — foco e falha da recarga', () => {
   describe('foco depois de uma decisão aceita', () => {
     const seguinte = () =>
       pedido({
-        situacao: SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
-        etapaAtual: EtapaDoPedido.PROTECAO_DE_DADOS,
+        situacao: SITUACAO_DO_PEDIDO.AGUARDANDO_PROTECAO_DE_DADOS,
+        etapaAtual: ETAPA_DO_PEDIDO.PROTECAO_DE_DADOS,
       });
 
     async function decidirComRecargaPendente(acao: 'aprovar' | 'recusar') {

@@ -37,14 +37,12 @@
           @for (providencia of providencias(); track providencia.id) {
             <tr [attr.data-providencia-id]="providencia.id">
               <td data-label="Aberta em">{{ providencia.abertaEm | dateBr: 'datetime' }}</td>
-              <td data-label="Tipo">{{ tipoDe(providencia.tipo) }}</td>
+              <td data-label="Tipo">{{ providencia.tipo.rotulo }}</td>
               <td data-label="Beneficiário">{{ pessoa(providencia.concessao.beneficiario) }}</td>
               <td data-label="Perfil">{{ providencia.concessao.perfil.nome }}</td>
               <td data-label="Solicitada por">{{ pessoa(providencia.solicitadaPor) }}</td>
               <td data-label="Situação">
-                <ui-tag [variant]="situacaoDe(providencia.situacao).variante">{{
-                  situacaoDe(providencia.situacao).texto
-                }}</ui-tag>
+                <ui-tag-do-codigo [valor]="providencia.situacao" [variantes]="variantes" />
               </td>
               <td class="table-responsive__actions" data-label="Ações">
                 <ui-icon-button

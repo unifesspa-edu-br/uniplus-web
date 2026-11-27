@@ -1,6 +1,12 @@
 import type { Page } from '@playwright/test';
-import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
+import type {
+  ConcessaoSuspensaDto,
+  ItemDaFilaDeReclassificacoesDto,
+  ReclassificacaoDto,
+} from '@uniplus/shared-data/autorizacao';
+import { mockPermissoesEfetivas, type JsonDaApi } from '@uniplus/shared-e2e';
 import { UNIDADE_CEPS, mockRota, mockUnidades, type Resposta } from './api-de-perfis-filas';
+import { classificacaoDeProtecao, etapaDaVersao, tipoDeEscopo } from './enumerados-de-autorizacao';
 import { mockConfiguracaoRuntimeConfig } from './runtime-config';
 
 export const ID = '01960000-0000-7000-0000-0000000000e1';
@@ -14,43 +20,52 @@ export const DOCUMENTO = new RegExp(
 );
 export const URL_DO_DOCUMENTO = 'http://localhost:9000/uniplus-teste/portaria.pdf';
 
+export const ETAPA_DA_GESTAO = etapaDaVersao('GESTAO_DE_ACESSOS');
+export const ETAPA_DA_PROTECAO = etapaDaVersao('PROTECAO_DE_DADOS');
+const INTERNO = classificacaoDeProtecao('INTERNO');
+const PESSOAL = classificacaoDeProtecao('PESSOAL');
+
 export const ITEM_DA_FILA = {
   id: ID,
   perfilId: PERFIL_ID,
   perfilNome: 'Operador de inscrições',
   codigo: 'selecao:processos:aprovar',
   mudanca: {
-    classificacaoAnterior: 'interno',
-    classificacaoNova: 'pessoal',
+    classificacaoAnterior: INTERNO,
+    classificacaoNova: PESSOAL,
     deUnidadeAnterior: false,
     deUnidadeNovo: true,
   },
   instante: '2026-11-09T15:00:00Z',
   concessoesAguardando: 3,
-};
+} satisfies JsonDaApi<ItemDaFilaDeReclassificacoesDto>;
 
-export const concessao = (id: string, nome: string, extra: Record<string, unknown> = {}) => ({
+export const concessao = (
+  id: string,
+  nome: string,
+  extra: Partial<JsonDaApi<ConcessaoSuspensaDto>> = {},
+): JsonDaApi<ConcessaoSuspensaDto> => ({
   concessaoId: id,
   beneficiarioNome: nome,
-  escopoTipo: 'UNIDADE',
+  escopoTipo: tipoDeEscopo('UNIDADE'),
   unidadeId: UNIDADE_CEPS,
   versao: 2,
-  etapasExigidas: ['GESTAO_DE_ACESSOS'],
+  etapasExigidas: [ETAPA_DA_GESTAO],
   etapasDecididas: [],
   ehDoLeitor: false,
   ...extra,
 });
 
-export const RECLASSIFICACAO = {
+export const RECLASSIFICACAO: JsonDaApi<ReclassificacaoDto> = {
   ...ITEM_DA_FILA,
   vigente: true,
   versoes: [
     {
       id: VERSAO_2,
       numero: 2,
-      situacao: 'VIGENTE',
+      situacao: { codigo: 'VIGENTE', rotulo: 'Vigente' },
       permissoes: [
-        { codigo: 'selecao:processos:aprovar', classificacao: 'pessoal', deUnidade: true },
+        { codigo: 'selecao:processos:aprovar', classificacao: PESSOAL, deUnidade: true },
       ],
       linkDoDocumento: 'documento',
     },
@@ -58,7 +73,10 @@ export const RECLASSIFICACAO = {
   concessoes: [
     concessao('c1', 'Betina Teste'),
     concessao('c2', 'Diogo Teste', { ehDoLeitor: true }),
-    concessao('c3', 'Paulo Teste', { unidadeId: null }),
+    concessao('c3', 'Paulo Teste', {
+      escopoTipo: tipoDeEscopo('INSTITUICAO'),
+      unidadeId: null,
+    }),
   ],
 };
 

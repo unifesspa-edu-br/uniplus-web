@@ -76,7 +76,7 @@ function documentoDaRegra(regra: DocumentoDaRegra): DocumentoDaExigencia {
     id: `${regra.id}-doc`,
     chave: `${regra.id}-doc`,
     tipoDocumento: tipoDoDocumento(regra),
-    momento: { faseId: regra.faseId, etapaId: null, formularioCodigo: null },
+    momento: { faseId: regra.faseId, etapaId: null, formularioCodigo: 'INSCRICAO' },
     aplicabilidade: aplicabilidadeDoDocumento(regra),
     indeferimento: indeferimentoDoDocumento(regra),
     requisitos: REQUISITOS_DO_ARQUIVO,

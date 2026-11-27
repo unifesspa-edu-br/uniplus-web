@@ -1,4 +1,5 @@
 import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
+import { ETAPA_GESTAO, ETAPA_PROTECAO } from './enums-da-api.testing';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,8 +19,8 @@ import { perfilDoDetalhe } from './perfis.testing';
 const SUSPENSO = perfilDoDetalhe({
   suspensao: {
     desde: '2026-11-09T15:00:00Z',
-    papelDeQuemSuspendeu: EtapaDaVersao.GESTAO_DE_ACESSOS,
-    etapasExigidasAgora: [EtapaDaVersao.GESTAO_DE_ACESSOS, EtapaDaVersao.PROTECAO_DE_DADOS],
+    papelDeQuemSuspendeu: ETAPA_GESTAO,
+    etapasExigidasAgora: [ETAPA_GESTAO, ETAPA_PROTECAO],
     etapasDecididas: [],
   },
 });
@@ -60,9 +61,7 @@ describe('retomar o perfil suspenso', () => {
   });
 
   it('decide a etapa com o motivo e avisa o que ainda falta', async () => {
-    api.retomar.mockReturnValue(
-      of(ok({ concluida: false, etapasPendentes: [EtapaDaVersao.PROTECAO_DE_DADOS] })),
-    );
+    api.retomar.mockReturnValue(of(ok({ concluida: false, etapasPendentes: [ETAPA_PROTECAO] })));
     const { fixture, host } = await abrirPerfil(SUSPENSO, [GESTAO]);
 
     await decidir(fixture, host, 'Retomar: gestão de acessos');

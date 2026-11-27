@@ -1,4 +1,10 @@
 import type { Page } from '@playwright/test';
+import type {
+  ConcessaoDaProvidenciaDto,
+  ConcessaoDto,
+  ProvidenciaDto,
+} from '@uniplus/shared-data/autorizacao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import {
   mockRota,
   mockUnidades,
@@ -7,6 +13,12 @@ import {
   type Chamada,
   type Resposta,
 } from './api-de-perfis-filas';
+import {
+  situacaoDaProvidencia,
+  tipoDaProvidencia,
+  tipoDeEscopo,
+  tipoDeOrigem,
+} from './enumerados-de-autorizacao';
 
 /** A API simulada das providências sobre concessões e da concessão de onde a solicitação parte. */
 
@@ -17,30 +29,33 @@ export const PROVIDENCIA_ID = '01960000-0000-7000-0000-0000000000e1';
 export const CONCESSAO_ID = '01960000-0000-7000-0000-0000000000c1';
 const RAIZ = '\\/api\\/autorizacao';
 
-const CONCESSAO = {
+const CONCESSAO: JsonDaApi<ConcessaoDaProvidenciaDto> = {
   id: CONCESSAO_ID,
   beneficiario: pessoa('conta-leandro', 'Leandro Caleb Viana'),
   perfil: { id: 'p1', nome: 'Banca de documentos' },
-  escopo: { tipo: 'UNIDADE', unidadeId: UNIDADE_CEPS },
+  escopo: { tipo: tipoDeEscopo('UNIDADE'), unidadeId: UNIDADE_CEPS },
   validaAte: null,
   ativa: true,
 };
 
+const PROVIDENCIA_ABERTA: JsonDaApi<ProvidenciaDto> = {
+  id: PROVIDENCIA_ID,
+  tipo: tipoDaProvidencia('RETIRADA'),
+  fundamento: 'Deixou a banca e mantém acesso a documentos sensíveis.',
+  situacao: situacaoDaProvidencia('ABERTA'),
+  abertaEm: '2026-11-10T12:00:00Z',
+  solicitadaPor: pessoa('conta-kevin', 'Kevin Anderson Carvalho'),
+  concessao: CONCESSAO,
+  encerramentoDaConcessao: null,
+  desfecho: null,
+  impedidoDeResponder: false,
+};
+
 /** A providência aberta do Kevin sobre a concessão do Leandro. */
-export function providencia(parcial: object = {}) {
-  return {
-    id: PROVIDENCIA_ID,
-    tipo: 'RETIRADA',
-    fundamento: 'Deixou a banca e mantém acesso a documentos sensíveis.',
-    situacao: 'ABERTA',
-    abertaEm: '2026-11-10T12:00:00Z',
-    solicitadaPor: pessoa('conta-kevin', 'Kevin Anderson Carvalho'),
-    concessao: CONCESSAO,
-    encerramentoDaConcessao: null,
-    desfecho: null,
-    impedidoDeResponder: false,
-    ...parcial,
-  };
+export function providencia(
+  parcial: Partial<JsonDaApi<ProvidenciaDto>> = {},
+): JsonDaApi<ProvidenciaDto> {
+  return { ...PROVIDENCIA_ABERTA, ...parcial };
 }
 
 export const CONFLITO_RETENTAVEL = {
@@ -49,10 +64,10 @@ export const CONFLITO_RETENTAVEL = {
 };
 
 /** A concessão completa, como a leitura do detalhe dela a devolve. */
-const CONCESSAO_LIDA = {
+const CONCESSAO_LIDA: JsonDaApi<ConcessaoDto> = {
   ...CONCESSAO,
   versao: 1,
-  origem: { tipo: 'PEDIDO', id: 'pd1' },
+  origem: { tipo: tipoDeOrigem('PEDIDO'), id: 'pd1' },
   concedidaEm: '2026-03-02T12:00:00Z',
   revogadaEm: null,
   revogadaPor: null,

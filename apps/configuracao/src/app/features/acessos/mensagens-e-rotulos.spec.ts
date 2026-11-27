@@ -1,22 +1,15 @@
-import {
-  EtapaDoPedido,
-  SituacaoDoAnexo,
-  SituacaoDoPedidoCodigo,
-} from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { describe, expect, it } from 'vitest';
 import { provideMensagensDeAcesso, textoDaRecusa } from './mensagens-de-acesso';
 import {
+  OPCOES_DE_SITUACAO_DO_PEDIDO,
   abreviado,
   detalheDaTrilha,
-  etapa,
   motivoDaDispensa,
-  sensibilidade,
-  situacaoDoAnexo,
   situacaoDoPedido,
-  tipoDeEvento,
 } from './rotulos-de-acesso';
+import { SITUACAO_DO_PEDIDO } from './testes';
 import { autorDoEvento } from './trilha-de-acesso.component';
 
 describe('mensagens de acesso', () => {
@@ -92,20 +85,31 @@ describe('mensagens de acesso', () => {
 });
 
 describe('rótulos de acesso', () => {
-  it('traduz o vocabulário da API e devolve o código desconhecido como veio', () => {
-    expect(situacaoDoPedido(SituacaoDoPedidoCodigo.AGUARDANDO_GESTOR).texto).toBe(
-      'Aguardando a gestão de acessos',
-    );
-    expect(situacaoDoPedido('novo').texto).toBe('novo');
-    expect(situacaoDoAnexo(SituacaoDoAnexo.EM_VERIFICACAO)).toBe('Em verificação');
-    expect(situacaoDoAnexo('x')).toBe('x');
-    expect(tipoDeEvento('pedido_criado')).toBe('Pedido criado');
-    expect(tipoDeEvento('APROVADO')).toBe('Aprovação');
-    expect(tipoDeEvento('RECUSADO')).toBe('Recusa');
-    expect(tipoDeEvento('prazo_vencido_entre_etapas')).toBe('Prazo vencido entre as etapas');
-    expect(sensibilidade('Sensivel')).toBe('Dado sensível');
-    expect(etapa(EtapaDoPedido.PROTECAO_DE_DADOS)).toBe('Proteção de dados');
-    expect(etapa(null)).toBe('—');
+  it('mostra o rótulo que a API devolve e escolhe a cor da etiqueta pelo código', () => {
+    expect(situacaoDoPedido(SITUACAO_DO_PEDIDO.AGUARDANDO_GESTOR)).toEqual({
+      texto: 'Aguardando gestor',
+      variante: 'info',
+    });
+    expect(situacaoDoPedido(SITUACAO_DO_PEDIDO.APROVADO).variante).toBe('success');
+    expect(situacaoDoPedido(SITUACAO_DO_PEDIDO.RECUSADO).variante).toBe('danger');
+  });
+
+  it('dá cor neutra à situação que a tela não conhece e mantém o rótulo da API', () => {
+    const nova = { codigo: 'EM_ANALISE', rotulo: 'Em análise' };
+
+    expect(situacaoDoPedido(nova)).toEqual({ texto: 'Em análise', variante: 'neutral' });
+  });
+
+  it('oferece no filtro todas as situações do pedido com o rótulo da API', () => {
+    const rotulos = Object.values(SITUACAO_DO_PEDIDO).map(({ codigo, rotulo }) => ({
+      value: codigo,
+      label: rotulo,
+    }));
+
+    expect(OPCOES_DE_SITUACAO_DO_PEDIDO).toEqual(rotulos);
+  });
+
+  it('nomeia o motivo da dispensa e devolve o desconhecido como veio', () => {
     expect(motivoDaDispensa('designacao_de_protecao_de_dados')).toBe(
       'designação do Representante do controlador',
     );
@@ -147,19 +151,6 @@ describe('detalhe da trilha', () => {
 
     expect(detalheDaTrilha(`Etapa: GESTAO_DE_ACESSOS. Revisão: ${revisao}.`)).toBe(
       'Etapa: Gestão de acessos.',
-    );
-    expect(tipoDeEvento('migracao_recusar')).toBe('Concessão recusada na revisão');
-    expect(tipoDeEvento('migracao_migrar')).toBe('Concessão aprovada na versão nova');
-    expect(tipoDeEvento('migracao_nao_migrada')).toBe('Concessão não aprovada no prazo da revisão');
-  });
-
-  it('nomeia em pt-BR os eventos do termo de responsabilidade nas trilhas do pedido e da concessão', () => {
-    expect(tipoDeEvento('termo_aceito')).toBe('Termo de responsabilidade aceito');
-    expect(tipoDeEvento('termo_exigido')).toBe(
-      'Pedido devolvido: o perfil passou a exigir o termo de responsabilidade',
-    );
-    expect(tipoDeEvento('termo_excecao_da_instalacao')).toBe(
-      'Instalação sem o aceite do termo de responsabilidade',
     );
   });
 });

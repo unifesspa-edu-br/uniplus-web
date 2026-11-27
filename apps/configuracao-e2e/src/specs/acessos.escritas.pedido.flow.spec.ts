@@ -23,9 +23,7 @@ test.describe('Acessos — escritas', () => {
       await page.getByRole('button', { name: 'Aprovar' }).click();
       await page.getByRole('dialog').getByRole('button', { name: 'Aprovar' }).click();
 
-      await expect(
-        page.getByText('Aguardando o Representante do controlador').first(),
-      ).toBeVisible();
+      await expect(page.getByText('Aguardando proteção de dados').first()).toBeVisible();
       await expect(page.getByRole('button', { name: 'Aprovar' })).toHaveCount(0);
       await expect(tituloDoPedido(page)).toBeFocused();
     });

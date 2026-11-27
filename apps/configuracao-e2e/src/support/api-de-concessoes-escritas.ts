@@ -1,4 +1,6 @@
 import type { Page, Route } from '@playwright/test';
+import type { ConcessaoDto } from '@uniplus/shared-data/autorizacao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import {
   CORS_HEADERS,
   ERRO_INTERNO,
@@ -13,18 +15,20 @@ import {
   type Resposta,
 } from './escritas-retidas';
 import { PERFIL } from './api-de-perfis-escritas';
+import { tipoDeEscopo, tipoDeOrigem } from './enumerados-de-autorizacao';
 
-export const CONCESSAO = {
+export const CONCESSAO: JsonDaApi<ConcessaoDto> = {
   id: '01960000-0000-7000-0000-0000000000c1',
   beneficiario: { emissor: 'unifesspa', contaId: 'conta-betina-0002-ficticia' },
   perfil: { id: PERFIL.id, nome: PERFIL.nome },
   versao: 1,
-  escopo: { tipo: 'UNIDADE', unidadeId: '01960000-0000-7000-0000-00000000aa01' },
-  origem: { tipo: 'PEDIDO', id: '01960000-0000-7000-0000-00000000cc01' },
+  escopo: { tipo: tipoDeEscopo('UNIDADE'), unidadeId: '01960000-0000-7000-0000-00000000aa01' },
+  origem: { tipo: tipoDeOrigem('PEDIDO'), id: '01960000-0000-7000-0000-00000000cc01' },
   concedidaEm: '2026-10-28T12:00:00Z',
   validaAte: null,
   revogadaEm: null,
   revogadaPor: null,
+  revogadaPelaRevisaoId: null,
   motivoRevogacao: null,
   ativa: true,
 };

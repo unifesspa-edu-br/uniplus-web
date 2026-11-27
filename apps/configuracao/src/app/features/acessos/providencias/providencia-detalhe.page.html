@@ -19,8 +19,8 @@
 } @if (store.dados(); as p) {
 <section class="panel" aria-labelledby="cfg-providencia-resumo">
   <div class="panel-head">
-    <h2 id="cfg-providencia-resumo" class="panel-head__title">{{ tipo(p.tipo) }}</h2>
-    <ui-tag [variant]="situacao(p.situacao).variante">{{ situacao(p.situacao).texto }}</ui-tag>
+    <h2 id="cfg-providencia-resumo" class="panel-head__title">{{ p.tipo.rotulo }}</h2>
+    <ui-tag-do-codigo [valor]="p.situacao" [variantes]="variantes" />
   </div>
   <dl class="cfg-detail-list panel-body">
     <div>
@@ -45,7 +45,7 @@
       Atender e revogar a concessão
     </button>
   </div>
-  } @else if (p.situacao === situacoes.ABERTA && p.impedidoDeResponder) {
+  } @else if (p.situacao.codigo === situacoes.ABERTA && p.impedidoDeResponder) {
   <p class="panel-body">
     Quem solicitou a providência e o beneficiário da concessão não a respondem: outro gestor de
     acessos ou Representante do controlador responde.
@@ -83,7 +83,7 @@
     @if (p.encerramentoDaConcessao; as fim) {
     <div>
       <dt>Encerramento</dt>
-      <dd>{{ encerramento(fim.causa) }} em {{ fim.em | dateBr: 'datetime' }}</dd>
+      <dd>{{ fim.causa.rotulo }} em {{ fim.em | dateBr: 'datetime' }}</dd>
     </div>
     }
   </dl>

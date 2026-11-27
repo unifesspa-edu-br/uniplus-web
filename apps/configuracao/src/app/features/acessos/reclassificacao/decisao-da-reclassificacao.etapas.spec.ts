@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ok } from '../testes';
 import {
   GESTAO_DE_ACESSOS,
+  ETAPA,
   PROTECAO_DE_DADOS,
   abrirReclassificacao,
   api,
@@ -51,7 +52,7 @@ describe('decisão da reclassificação', () => {
 
   it('pela proteção de dados, não fala de escopo, que só restringe a gestão de acessos', async () => {
     const rec = reclassificacao({
-      concessoes: [concessao({ etapasExigidas: [EtapaDaVersao.PROTECAO_DE_DADOS] })],
+      concessoes: [concessao({ etapasExigidas: [ETAPA.PROTECAO_DE_DADOS] })],
     });
     const pagina = await abrirReclassificacao(ok(rec), [PROTECAO_DE_DADOS]);
 
@@ -101,11 +102,11 @@ describe('decisão da reclassificação', () => {
     api.decidir.mockReturnValue(of(ok(DECISAO)));
     const rec = reclassificacao({
       concessoes: [
-        concessao({ etapasExigidas: [EtapaDaVersao.GESTAO_DE_ACESSOS] }),
+        concessao({ etapasExigidas: [ETAPA.GESTAO_DE_ACESSOS] }),
         concessao({
           concessaoId: 'c4',
           beneficiarioNome: 'Rebeca Teste',
-          etapasExigidas: [EtapaDaVersao.PROTECAO_DE_DADOS],
+          etapasExigidas: [ETAPA.PROTECAO_DE_DADOS],
         }),
       ],
     });
@@ -126,6 +127,43 @@ describe('decisão da reclassificação', () => {
     expect(api.decidir.mock.calls[0]?.[1]).toMatchObject({
       etapa: EtapaDaVersao.PROTECAO_DE_DADOS,
       concessoes: ['c4'],
+    });
+  });
+
+  it('oferece cada etapa com o rótulo que a API dá a ela', async () => {
+    const rec = reclassificacao({
+      concessoes: [
+        concessao({
+          etapasExigidas: [
+            { ...ETAPA.GESTAO_DE_ACESSOS, rotulo: 'Etapa de gestão' },
+            { ...ETAPA.PROTECAO_DE_DADOS, rotulo: 'Etapa de proteção' },
+          ],
+        }),
+      ],
+    });
+    const pagina = await abrirReclassificacao(ok(rec), [GESTAO_DE_ACESSOS, PROTECAO_DE_DADOS]);
+
+    const opcoes = [...pagina.host.querySelectorAll('label.radio')].map((o) =>
+      o.textContent?.trim(),
+    );
+    expect(opcoes).toContain('Etapa de gestão');
+    expect(opcoes).toContain('Etapa de proteção');
+  });
+
+  it('com as duas permissões, não oferece a etapa que nenhuma concessão traz', async () => {
+    api.decidir.mockReturnValue(of(ok(DECISAO)));
+    const pagina = await abrirReclassificacao(ok(reclassificacao()), [
+      GESTAO_DE_ACESSOS,
+      PROTECAO_DE_DADOS,
+    ]);
+    await marcarBetina(pagina);
+
+    expect(pagina.host.querySelectorAll('input[name="cfg-decisao-etapa"]')).toHaveLength(0);
+    presente(botao(pagina.host, 'Liberar as concessões')).click();
+    await pagina.assentar();
+
+    expect(api.decidir.mock.calls[0]?.[1]).toMatchObject({
+      etapa: EtapaDaVersao.GESTAO_DE_ACESSOS,
     });
   });
 });

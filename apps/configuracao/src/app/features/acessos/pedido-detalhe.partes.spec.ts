@@ -1,13 +1,17 @@
-import {
-  EtapaDoPedido,
-  ResultadoDaDecisao,
-  SituacaoDoAnexo,
-  SituacaoDoPedidoCodigo,
-} from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { EU, ok, pedido, recusa } from './testes';
+import {
+  CLASSIFICACAO_DE_PROTECAO,
+  ETAPA_DO_PEDIDO,
+  EU,
+  RESULTADO_DA_DECISAO,
+  SITUACAO_DO_ANEXO,
+  SITUACAO_DO_PEDIDO,
+  ok,
+  pedido,
+  recusa,
+} from './testes';
 import {
   presente,
   GESTOR,
@@ -34,7 +38,7 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
 
   it('o beneficiário nomeado aceita o pedido que espera por ele', async () => {
     const aguardando = pedido({
-      situacao: SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO,
+      situacao: SITUACAO_DO_PEDIDO.AGUARDANDO_BENEFICIARIO,
       etapaAtual: null,
       beneficiario: { email: EU.email, identidade: null, nome: null },
     });
@@ -60,22 +64,23 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
 
   it('não oferece cancelar depois da decisão nem no pedido encerrado', async () => {
     const decisao = {
-      etapa: EtapaDoPedido.GESTOR,
+      etapa: ETAPA_DO_PEDIDO.GESTOR,
       decisor: { emissor: 'unifesspa', contaId: 'conta-gestor-0000' },
-      resultado: ResultadoDaDecisao.APROVADO,
+      resultado: RESULTADO_DA_DECISAO.APROVADO,
       motivo: null,
       instante: '2026-10-28T13:00:00Z',
       permissoesAvaliadas: [],
-      sensibilidadeAvaliada: 'PESSOAL',
+      sensibilidadeAvaliada: CLASSIFICACAO_DE_PROTECAO.PESSOAL,
       dispensa: null,
     };
     const decidido = await abrir([], { ...solicitadoPorMim(), decisoes: [decisao] });
     expect(botao(noResumo(decidido.host), 'Cancelar o pedido')).toBeUndefined();
-    expect(decidido.host.textContent).toContain('Dado pessoal');
+    expect(decidido.host.textContent).toContain('Gestor Aprovado em');
+    expect(decidido.host.textContent).toContain('Pessoal');
 
     const encerrado = await abrir([], {
       ...solicitadoPorMim(),
-      situacao: SituacaoDoPedidoCodigo.APROVADO,
+      situacao: SITUACAO_DO_PEDIDO.APROVADO,
     });
     expect(botao(noResumo(encerrado.host), 'Cancelar o pedido')).toBeUndefined();
   });
@@ -110,13 +115,13 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
       [],
       pedido({
         ...solicitadoPorMim(),
-        situacao: SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO,
+        situacao: SITUACAO_DO_PEDIDO.AGUARDANDO_DOCUMENTO,
         etapaAtual: null,
       }),
     );
 
     expect(host.textContent).toContain('Falta o documento de designação');
-    expect(host.textContent).toContain('Aguardando o documento de designação');
+    expect(host.textContent).toContain('Aguardando documento');
     const botoes = Array.from(host.querySelectorAll('button')).map((b) => b.textContent?.trim());
     expect(botoes).toContain('Anexar o documento');
   });
@@ -139,7 +144,7 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
           ...solicitadoPorMim(),
           termo: TERMO,
           anexaraDocumento: true,
-          situacao: SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO,
+          situacao: SITUACAO_DO_PEDIDO.AGUARDANDO_DOCUMENTO,
           etapaAtual: null,
         }),
       );
@@ -230,13 +235,13 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
       anexos: [
         {
           id: 'a1',
-          situacao: SituacaoDoAnexo.VERIFICADO,
+          situacao: SITUACAO_DO_ANEXO.VERIFICADO,
           tamanhoDeclarado: 10,
           enviadoEm: '2026-10-28T12:30:00Z',
         },
         {
           id: 'a2',
-          situacao: SituacaoDoAnexo.EM_VERIFICACAO,
+          situacao: SITUACAO_DO_ANEXO.EM_VERIFICACAO,
           tamanhoDeclarado: 10,
           enviadoEm: null,
         },

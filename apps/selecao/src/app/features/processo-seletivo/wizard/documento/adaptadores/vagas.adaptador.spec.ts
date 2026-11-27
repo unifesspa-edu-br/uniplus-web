@@ -272,11 +272,11 @@ describe('adaptador do passo Vagas', () => {
     expect(oferta?.totalDeVagasDoEdital).toBe(40);
   });
 
-  it('lê os destinos fora de ordem na ordem de preferência', () => {
+  it('lê os destinos de cada origem na ordem em que a lista os traz', () => {
     const documento = exemploDoContrato('inscricao-pelo-sistema');
     const destinos = [
-      { modalidadeOrigemCodigo: 'LB_PPI', ordem: 2, modalidadeDestinoCodigo: 'AC' },
-      { modalidadeOrigemCodigo: 'LB_PPI', ordem: 1, modalidadeDestinoCodigo: 'LB_Q' },
+      { modalidadeOrigemCodigo: 'LB_PPI', modalidadeDestinoCodigo: 'LB_Q' },
+      { modalidadeOrigemCodigo: 'LB_PPI', modalidadeDestinoCodigo: 'AC' },
     ];
     const desordenado = {
       ...documento,

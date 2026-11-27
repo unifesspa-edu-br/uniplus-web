@@ -1,8 +1,3 @@
-import {
-  QuemDecideOItem,
-  SituacaoDaRevisaoCodigo,
-  SituacaoDoItemDaRevisao,
-} from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -12,7 +7,10 @@ import {
   CONDUZIR,
   CONSULTAR,
   ID,
+  QUEM_DECIDE,
   REVER,
+  SITUACAO_DA_REVISAO,
+  SITUACAO_DO_ITEM,
   abrirRevisao,
   api,
   assentar,
@@ -61,22 +59,42 @@ describe('RevisaoDetalhePage', () => {
       );
       expect(titulos).toEqual(['Betina Neves', 'Diogo Souza', 'Fernanda Drumond']);
       expect(host.textContent).toContain('4 itens, 3 pendentes');
-      expect(host.textContent).toContain('Aberta');
+      expect(host.textContent).toContain('Em andamento');
     });
 
     it('mostra quem decide o item pendente pelo campo decide', async () => {
       const { host } = await abrirRevisao();
 
       expect(linha(host, 'i1').textContent).toContain('Representante do controlador');
-      expect(linha(host, 'i3').textContent).toContain('Gestão de acessos');
+      expect(linha(host, 'i3').textContent).toContain('Gestor de acessos');
       expect(linha(host, 'i1').textContent).toContain('Ainda não decidido');
+    });
+
+    it('mostra situação, e quem decide, com o rótulo que a API devolve', async () => {
+      const { host } = await abrirRevisao([
+        ok(
+          revisao({
+            situacao: { ...SITUACAO_DA_REVISAO.EM_ANDAMENTO, rotulo: 'Rodando' },
+            itens: [
+              item({
+                situacao: { ...SITUACAO_DO_ITEM.PENDENTE, rotulo: 'Falta decidir' },
+                decide: { ...QUEM_DECIDE.GESTOR_DE_ACESSOS, rotulo: 'Quem gere os acessos' },
+              }),
+            ],
+          }),
+        ),
+      ]);
+
+      expect(host.textContent).toContain('Rodando');
+      expect(linha(host, 'i1').textContent).toContain('Falta decidir');
+      expect(linha(host, 'i1').textContent).toContain('Quem gere os acessos');
     });
 
     it('no item decidido mostra a decisão, quem decidiu, quando e a governança gravada', async () => {
       const { host } = await abrirRevisao();
 
       const decidido = linha(host, 'i2').textContent ?? '';
-      expect(decidido).toContain('Acesso mantido');
+      expect(decidido).toContain('Confirmada');
       expect(decidido).toContain('Betina Neves');
       expect(decidido).toContain('10/11/2026');
       expect(decidido).toContain('Representante do controlador');
@@ -111,13 +129,13 @@ describe('RevisaoDetalhePage', () => {
 
       const linhas = [...host.querySelectorAll<HTMLElement>('tr[data-item-id]')];
       expect(linhas).toHaveLength(4);
-      expect(host.textContent).toContain('Acesso mantido');
+      expect(host.textContent).toContain('Confirmada');
       expect(linhas.flatMap((l) => botoes(l))).toEqual([]);
     });
 
     it('revisão encerrada é somente leitura e diz isso', async () => {
       const encerrada = revisao({
-        situacao: SituacaoDaRevisaoCodigo.CONCLUIDA,
+        situacao: SITUACAO_DA_REVISAO.CONCLUIDA,
         pendentes: 0,
         itens: [itemDecidido()],
       });
@@ -147,7 +165,7 @@ describe('RevisaoDetalhePage', () => {
       ['quem administra concessões', [CONDUZIR, ADMINISTRAR_CONCESSOES]],
     ] as const)('o item decidido leva %s à concessão', async (_, concedidas) => {
       const revogado = itemDecidido({
-        situacao: SituacaoDoItemDaRevisao.REVOGADA,
+        situacao: SITUACAO_DO_ITEM.REVOGADA,
         concessaoId: 'c9',
       });
       const { host } = await abrirRevisao([ok(revisao({ itens: [revogado] }))], concedidas);
@@ -189,7 +207,7 @@ describe('RevisaoDetalhePage', () => {
       api.confirmar.mockReturnValue(
         of(recusaPeloInterceptor(DECISOR_MUDOU, 422, 'O item cabe à outra governança')),
       );
-      const relida = revisao({ itens: [item({ decide: QuemDecideOItem.GESTOR_DE_ACESSOS })] });
+      const relida = revisao({ itens: [item({ decide: QUEM_DECIDE.GESTOR_DE_ACESSOS })] });
       const { host } = await abrirRevisao([ok(revisao()), ok(relida)]);
 
       botao(linha(host, 'i1'), 'Confirmar').click();
@@ -197,7 +215,7 @@ describe('RevisaoDetalhePage', () => {
 
       expect(host.textContent).toContain('Quem decide o item mudou');
       expect(host.textContent).toContain('O item cabe à outra governança');
-      expect(linha(host, 'i1').textContent).toContain('Gestão de acessos');
+      expect(linha(host, 'i1').textContent).toContain('Gestor de acessos');
       expect(botoes(linha(host, 'i1'))).toEqual([]);
     });
 
@@ -206,7 +224,7 @@ describe('RevisaoDetalhePage', () => {
         of(recusaPeloInterceptor('uniplus.autorizacao.revisao.item_ja_decidido', 409, 'x')),
       );
       const relida = revisao({
-        itens: [itemDecidido({ id: 'i1', situacao: SituacaoDoItemDaRevisao.REVOGADA })],
+        itens: [itemDecidido({ id: 'i1', situacao: SITUACAO_DO_ITEM.REVOGADA })],
       });
       const { host } = await abrirRevisao([ok(revisao()), ok(relida)]);
 
@@ -215,7 +233,7 @@ describe('RevisaoDetalhePage', () => {
 
       expect(host.textContent).toContain('Decisão concorrente');
       expect(host.textContent).toContain('O item da revisão já foi decidido.');
-      expect(linha(host, 'i1').textContent).toContain('Acesso revogado');
+      expect(linha(host, 'i1').textContent).toContain('Revogada');
     });
 
     it('a recusa que não muda a revisão fica no aviso, sem reler', async () => {
@@ -266,14 +284,14 @@ describe('RevisaoDetalhePage', () => {
       api.revogar.mockReturnValue(
         of(recusaPeloInterceptor(DECISOR_MUDOU, 422, 'O item cabe à outra governança')),
       );
-      const relida = revisao({ itens: [item({ decide: QuemDecideOItem.GESTOR_DE_ACESSOS })] });
+      const relida = revisao({ itens: [item({ decide: QUEM_DECIDE.GESTOR_DE_ACESSOS })] });
       const { host } = await abrirRevisao([ok(revisao()), ok(relida)]);
 
       await revogarComMotivo(host, 'i1');
 
       expect(dialogoAberto()).toBe(false);
       expect(host.textContent).toContain('Quem decide o item mudou');
-      expect(linha(host, 'i1').textContent).toContain('Gestão de acessos');
+      expect(linha(host, 'i1').textContent).toContain('Gestor de acessos');
       expect(botoes(linha(host, 'i1'))).toEqual([]);
     });
 
@@ -288,7 +306,7 @@ describe('RevisaoDetalhePage', () => {
 
       expect(dialogoAberto()).toBe(false);
       expect(host.textContent).toContain('Decisão concorrente');
-      expect(linha(host, 'i1').textContent).toContain('Acesso mantido');
+      expect(linha(host, 'i1').textContent).toContain('Confirmada');
     });
 
     it('a recusa que não muda a revisão fica no diálogo, que segue aberto, sem reler', async () => {

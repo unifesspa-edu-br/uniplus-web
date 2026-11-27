@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import type { ConcessaoSuspensaDto, EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { TagComponent } from '@uniplus/shared-ui/components';
-import { etapa as rotuloDaEtapa } from '../rotulos-de-acesso';
-import { PESSOA_SEM_NOME } from './concessoes-da-etapa';
+import { PESSOA_SEM_NOME, aguardaAEtapa, etapaDecidida } from './concessoes-da-etapa';
 
 /** As concessões que a reclassificação suspendeu, com a situação de cada etapa; a pessoa marca as que decide. */
 @Component({
@@ -56,14 +55,10 @@ import { PESSOA_SEM_NOME } from './concessoes-da-etapa';
               <td data-label="Versão">{{ concessao.versao ?? '—' }}</td>
               <td data-label="Etapas">
                 <ul role="list" style="list-style: none; margin: 0; padding: 0">
-                  @for (exigida of concessao.etapasExigidas; track exigida) {
+                  @for (exigida of concessao.etapasExigidas; track exigida.codigo) {
                     <li>
-                      {{ rotulo(exigida) }}:
-                      {{
-                        concessao.etapasDecididas.includes(exigida)
-                          ? 'decidida'
-                          : 'aguarda a decisão'
-                      }}
+                      {{ exigida.rotulo }}:
+                      {{ decidida(concessao, exigida.codigo) ? 'decidida' : 'aguarda a decisão' }}
                     </li>
                   }
                 </ul>
@@ -85,7 +80,7 @@ export class ConcessoesSuspensasComponent {
   readonly alternar = output<string>();
 
   protected readonly podeMarcar = computed(() => this.etapa() !== undefined);
-  protected readonly rotulo = (codigo: string): string => rotuloDaEtapa(codigo).toLowerCase();
+  protected readonly decidida = etapaDecidida;
 
   protected nome(concessao: ConcessaoSuspensaDto): string {
     return concessao.beneficiarioNome ?? PESSOA_SEM_NOME;
@@ -93,11 +88,6 @@ export class ConcessoesSuspensasComponent {
 
   protected marcavel(concessao: ConcessaoSuspensaDto): boolean {
     const etapa = this.etapa();
-    return (
-      etapa !== undefined &&
-      !concessao.ehDoLeitor &&
-      concessao.etapasExigidas.includes(etapa) &&
-      !concessao.etapasDecididas.includes(etapa)
-    );
+    return etapa !== undefined && !concessao.ehDoLeitor && aguardaAEtapa(concessao, etapa);
   }
 }

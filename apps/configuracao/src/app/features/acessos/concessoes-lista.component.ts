@@ -1,6 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { type ConcessaoDto, SituacaoDaConcessaoCodigo } from '@uniplus/shared-data/autorizacao';
+import {
+  type ConcessaoDto,
+  SituacaoDaConcessaoCodigo,
+  TipoDeOrigem,
+} from '@uniplus/shared-data/autorizacao';
 import {
   EmptyStateComponent,
   IconButtonComponent,
@@ -57,4 +61,5 @@ export class ConcessoesListaComponent {
     return autorDoEvento(concessao.beneficiario);
   }
   protected readonly situacaoDe = situacaoDaConcessao;
+  protected readonly tipoDeOrigem = TipoDeOrigem;
 }

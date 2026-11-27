@@ -12,6 +12,7 @@ import {
   type JsonDaApi,
 } from '@uniplus/shared-e2e';
 import { DETALHE_DO_PERFIL, PERFIL } from '../support/api-de-perfis-escritas';
+import { etapaDaVersao } from '../support/enumerados-de-autorizacao';
 import { servirLeitura } from '../support/escritas-retidas';
 import { PERMISSOES_DO_DIOGO } from '../support/permissoes';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
@@ -29,8 +30,8 @@ const SUSPENSO: JsonDaApi<SituacaoDoAcessoDoPerfilDto> = {
 };
 const SUSPENSAO: JsonDaApi<SuspensaoDoPerfilDto> = {
   desde: '2026-11-10T11:00:00Z',
-  papelDeQuemSuspendeu: 'gestao_de_acessos',
-  etapasExigidasAgora: ['GESTAO_DE_ACESSOS'],
+  papelDeQuemSuspendeu: etapaDaVersao('GESTAO_DE_ACESSOS'),
+  etapasExigidasAgora: [etapaDaVersao('GESTAO_DE_ACESSOS')],
   etapasDecididas: [],
 };
 const DESATIVADO_DESDE = '2026-11-08T15:00:00Z';

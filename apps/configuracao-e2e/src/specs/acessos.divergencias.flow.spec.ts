@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
+import type { DivergenciaDaGovernancaDto } from '@uniplus/shared-data/autorizacao';
+import { mockPermissoesEfetivas, type JsonDaApi } from '@uniplus/shared-e2e';
 import { ERRO_INTERNO, mockRota } from '../support/api-de-perfis-filas';
+import { tipoDeDivergencia } from '../support/enumerados-de-autorizacao';
 import {
   PERMISSOES_DA_BETINA_SO_APROVA,
   PERMISSOES_DO_DIOGO_SO_APROVA,
@@ -11,13 +13,13 @@ const PERFIL_ID = '01960000-0000-7000-0000-0000000000a1';
 const OUTRO_PERFIL_ID = '01960000-0000-7000-0000-0000000000a2';
 const ROTA = /\/api\/autorizacao\/governanca\/divergencias(\?.*)?$/;
 
-const DIVERGENCIAS = [
+const DIVERGENCIAS: readonly JsonDaApi<DivergenciaDaGovernancaDto>[] = [
   {
     id: 'd1',
     perfilId: PERFIL_ID,
     perfilNome: 'Gestão de acessos',
     codigo: 'autorizacao:perfis:manter',
-    tipo: 'CLASSIFICACAO',
+    tipo: tipoDeDivergencia('CLASSIFICACAO'),
     de: 'interno',
     para: 'pessoal',
     instante: '2026-11-09T15:00:00Z',
@@ -27,7 +29,7 @@ const DIVERGENCIAS = [
     perfilId: OUTRO_PERFIL_ID,
     perfilNome: 'Operador de inscrições',
     codigo: 'autorizacao:concessoes:administrar',
-    tipo: 'COMPOSICAO_FALTANTE',
+    tipo: tipoDeDivergencia('COMPOSICAO_FALTANTE'),
     de: null,
     para: 'autorizacao:concessoes:administrar',
     instante: '2026-11-09T16:00:00Z',
@@ -45,12 +47,8 @@ test.describe('Acessos — divergências da governança', () => {
       page.getByRole('heading', { name: 'Divergências da governança', level: 1 }),
     ).toBeVisible();
     const linhas = page.getByRole('row');
-    await expect(linhas.filter({ hasText: 'Classificação diferente do catálogo' })).toContainText(
-      'InternaDado pessoal',
-    );
-    await expect(linhas.filter({ hasText: 'Permissão que falta na composição' })).toContainText(
-      '—',
-    );
+    await expect(linhas.filter({ hasText: 'Classificação' })).toContainText('InternoPessoal');
+    await expect(linhas.filter({ hasText: 'Composição faltante' })).toContainText('—');
     await expect(
       page.getByRole('table').getByRole('link', { name: 'Gestão de acessos' }),
     ).toHaveAttribute('href', `/acessos/perfis/${PERFIL_ID}`);

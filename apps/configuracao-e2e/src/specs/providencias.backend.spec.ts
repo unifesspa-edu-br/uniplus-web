@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import type { ConcessaoDto, ProvidenciaDto } from '@uniplus/shared-data/autorizacao';
 import {
   GESTOR_DE_ACESSOS,
   REPRESENTANTE_DO_CONTROLADOR,
@@ -7,6 +8,7 @@ import {
   entrarComoPersona,
   identidadeDoToken,
   tokenDaPersona,
+  type JsonDaApi,
 } from '@uniplus/shared-e2e';
 
 /**
@@ -22,16 +24,8 @@ const BENEFICIARIA = 'helena.rezende';
 const ROTA = '/api/autorizacao/providencias';
 const FUNDAMENTO = 'Deixou a banca do certame e mantém o acesso aos dados das inscrições.';
 
-interface Concessao {
-  readonly id: string;
-  readonly ativa: boolean;
-  readonly beneficiario: { readonly contaId: string };
-}
-
-interface Providencia {
-  readonly id: string;
-  readonly situacao: string;
-}
+type Concessao = JsonDaApi<Pick<ConcessaoDto, 'id' | 'ativa' | 'beneficiario'>>;
+type Providencia = JsonDaApi<Pick<ProvidenciaDto, 'id' | 'situacao'>>;
 
 async function concessaoAtivaDa(persona: string): Promise<Concessao> {
   const { sub: contaId } = identidadeDoToken(await tokenDaPersona(persona));
@@ -78,7 +72,7 @@ test.describe('Providências sobre concessões', () => {
     const criada = await solicitar(concessao.id);
     expect(criada.status, JSON.stringify(criada.corpo)).toBe(201);
     primeira = criada.corpo;
-    expect(primeira.situacao).toBe('ABERTA');
+    expect(primeira.situacao.codigo).toBe('ABERTA');
 
     const repetida = await solicitar(concessao.id);
     expect(repetida.status).toBe(409);
@@ -120,7 +114,7 @@ test.describe('Providências sobre concessões', () => {
       },
     );
     expect(resposta.status, JSON.stringify(resposta.corpo)).toBe(200);
-    expect(resposta.corpo.situacao).toBe('RESPONDIDA');
+    expect(resposta.corpo.situacao.codigo).toBe('RESPONDIDA');
     expect((await concessaoAtivaDa(BENEFICIARIA)).id).toBe(concessao.id);
   });
 

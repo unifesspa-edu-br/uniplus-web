@@ -12,12 +12,13 @@ import {
 } from '@uniplus/shared-data/autorizacao';
 import { EdicaoDosPerfis } from './edicao-dos-perfis';
 import { provideMensagensDeAcesso } from './mensagens-de-acesso';
-import { ok, recusa } from './testes';
+import { CLASSIFICACAO_DE_PROTECAO, ok, recusa } from './testes';
 import { CatalogoDePermissoesStore } from './versoes/catalogo-de-permissoes.store';
 import { DocumentoDaVersaoService } from './versoes/documento-da-versao.service';
 import { EnvioDaVersao } from './versoes/envio-da-versao';
 import { EscritaDoPerfil } from './versoes/escrita-do-perfil';
 import { LeituraDosPerfis } from './versoes/leitura-dos-perfis';
+import { ACESSO_EM_VIGOR } from './versoes/situacao-do-acesso.testing';
 
 const LEITE = 'selecao:processos:consultar';
 const ESCREVER = 'selecao:processos:configurar';
@@ -36,10 +37,15 @@ function perfil(permissoes: readonly string[]): PerfilDto {
     descricao: 'Opera as inscrições.',
     ativo: true,
     governanca: null,
-    sensibilidade: 'INTERNO',
+    sensibilidade: CLASSIFICACAO_DE_PROTECAO.INTERNO,
+    situacaoDoAcesso: ACESSO_EM_VIGOR,
     composicaoEmVigor: {
       numero: 1,
-      permissoes: permissoes.map((codigo) => ({ codigo, nome: codigo, sensibilidade: 'INTERNO' })),
+      permissoes: permissoes.map((codigo) => ({
+        codigo,
+        nome: codigo,
+        sensibilidade: CLASSIFICACAO_DE_PROTECAO.INTERNO,
+      })),
     },
     versaoPendente: null,
     ultimaVersaoEncerradaSemVigor: null,

@@ -64,7 +64,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
         anexaraDocumento: false,
       },
     ]);
-    await expect(page.getByText('Aguardando a gestão de acessos').first()).toBeVisible();
+    await expect(page.getByText('Aguardando gestor').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Aprovar' })).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Cancelar o pedido' }).click();
@@ -87,7 +87,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
     await expect(page).toHaveURL(new RegExp(`/acessos/pedidos/${PEDIDO_ID}(\\?.*)?$`));
     await page.getByRole('button', { name: 'Aprovar' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Aprovar' }).click();
-    await expect(page.getByText('Aguardando o Representante do controlador').first()).toBeVisible();
+    await expect(page.getByText('Aguardando proteção de dados').first()).toBeVisible();
 
     await mockPermissoesEfetivas(page, PERMISSOES_DA_BETINA_REPRESENTANTE);
     await page.goto('/acessos/fila-da-protecao-de-dados');

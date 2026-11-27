@@ -1,3 +1,6 @@
+import type { PerfilParaPedidoDto } from '@uniplus/shared-data/autorizacao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
+import { tipoDeEscopo } from '../enumerados-de-autorizacao';
 import { PERFIS } from './modelo';
 import { json, type Rota } from './resposta';
 
@@ -9,14 +12,16 @@ const SOLICITANTE_NAO_INSTITUCIONAL = {
   traceId: 'e2e',
 };
 
-const PERFIS_PARA_PEDIDO = PERFIS.map(({ id, nome, descricao }) => ({
-  id,
-  nome,
-  descricao,
-  escopo: 'UNIDADE',
-  exigeAprovacaoDeProtecaoDeDados: false,
-  governanca: null,
-}));
+const PERFIS_PARA_PEDIDO = PERFIS.map(
+  ({ id, nome, descricao }): JsonDaApi<PerfilParaPedidoDto> => ({
+    id,
+    nome,
+    descricao,
+    escopo: tipoDeEscopo('UNIDADE'),
+    exigeAprovacaoDeProtecaoDeDados: false,
+    governanca: null,
+  }),
+);
 
 /** Os perfis da gestão e os que a pessoa pode pedir; sem e-mail institucional, ela não pede. */
 export function rotasDePerfis(solicitanteInstitucional: boolean): Rota[] {
