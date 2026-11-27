@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import { SituacaoDoPedidoCodigo } from '@uniplus/shared-data/autorizacao';
 
 import {
   GESTOR_DE_ACESSOS,
@@ -12,17 +13,9 @@ import {
   type RespostaDaApi,
 } from './backend-real';
 import { PDF_MINIMO, enviarPelaUrlAssinada } from './envio-de-arquivo';
+import type { ValorDoContrato } from './valor-do-contrato';
 
 type TipoDeEscopo = 'UNIDADE' | 'INSTITUICAO';
-type SituacaoDoPedido =
-  | 'AGUARDANDO_BENEFICIARIO'
-  | 'AGUARDANDO_GESTOR'
-  | 'AGUARDANDO_PROTECAO_DE_DADOS'
-  | 'APROVADO'
-  | 'RECUSADO'
-  | 'CANCELADO'
-  | 'AGUARDANDO_DOCUMENTO'
-  | 'DEVOLVIDO';
 
 interface ConcessaoExistente {
   readonly beneficiario: { readonly contaId: string };
@@ -32,7 +25,7 @@ interface ConcessaoExistente {
 
 interface PedidoCriado {
   readonly id: string;
-  readonly situacao: SituacaoDoPedido;
+  readonly situacao: ValorDoContrato<SituacaoDoPedidoCodigo>;
 }
 
 /**
@@ -63,12 +56,12 @@ async function pedidoDaConcessao(
   perfilId: string,
   unidadeDaConcessao: string,
 ): Promise<PedidoDeConcessao> {
-  const perfil = await acharNaListagem<{ id: string; escopo: TipoDeEscopo }>(
+  const perfil = await acharNaListagem<{ id: string; escopo: ValorDoContrato<TipoDeEscopo> }>(
     SOLICITANTE_DE_PEDIDOS,
     '/api/autorizacao/perfis-para-pedido?limit=100',
     (p) => p.id === perfilId,
   );
-  const unidadeId = perfil?.escopo === 'UNIDADE' ? unidadeDaConcessao : null;
+  const unidadeId = perfil?.escopo.codigo === 'UNIDADE' ? unidadeDaConcessao : null;
   const { sub: contaId, email } = identidadeDoToken(await tokenDaPersona(beneficiario));
   return { beneficiario, email, contaId, perfilId, unidadeId };
 }
@@ -157,7 +150,7 @@ interface PedidoDeConcessao {
 
 interface PedidoListado {
   readonly id: string;
-  readonly situacao: SituacaoDoPedido;
+  readonly situacao: ValorDoContrato<SituacaoDoPedidoCodigo>;
   readonly beneficiario: { readonly email: string };
   readonly perfil: { readonly id: string };
   readonly escopo: { readonly unidadeId: string | null };
@@ -169,7 +162,7 @@ interface EtapaDoPedido {
 }
 
 interface PedidoLido {
-  readonly situacao: SituacaoDoPedido;
+  readonly situacao: ValorDoContrato<SituacaoDoPedidoCodigo>;
   readonly solicitante: { readonly contaId: string };
   readonly termo: { readonly versaoId: string } | null;
 }
@@ -195,7 +188,7 @@ const postar = (quem: string, caminho: string, corpo?: unknown): Promise<Respost
  * documento de designação (perfil de governança) é anexado por quem solicitou, em PDF, pela URL
  * assinada; o pedido só segue depois que a API verifica o arquivo.
  */
-const ETAPAS_POR_SITUACAO: Readonly<Partial<Record<SituacaoDoPedido, EtapaDoPedido>>> = {
+const ETAPAS_POR_SITUACAO: Readonly<Partial<Record<SituacaoDoPedidoCodigo, EtapaDoPedido>>> = {
   AGUARDANDO_DOCUMENTO: { nome: 'anexo do documento de designação', executar: anexarDocumento },
   AGUARDANDO_BENEFICIARIO: {
     nome: 'aceite da pessoa beneficiária',
@@ -218,7 +211,7 @@ const JUSTIFICATIVA = 'Acesso para a simulação ponta a ponta da projeção por
 async function pedirEAprovarConcessao(pedido: PedidoDeConcessao): Promise<void> {
   const emAndamento = await pedidoEmAndamento(pedido);
   const alvo = emAndamento ?? (await solicitarConcessao(pedido));
-  await conduzirPedido(pedido, alvo.id, alvo.situacao);
+  await conduzirPedido(pedido, alvo.id, alvo.situacao.codigo);
 }
 
 /** O pedido ativo igual (mesma pessoa, perfil e escopo) que uma execução interrompida deixou. */
@@ -227,7 +220,7 @@ async function pedidoEmAndamento(pedido: PedidoDeConcessao): Promise<PedidoLista
     POR_QUEM_APROVA_COMO_GESTOR(pedido),
     `${ROTA_DOS_PEDIDOS}?fila=todos&limit=100`,
     (p) =>
-      p.situacao in ETAPAS_POR_SITUACAO &&
+      p.situacao.codigo in ETAPAS_POR_SITUACAO &&
       p.beneficiario.email.toLowerCase() === pedido.email.toLowerCase() &&
       p.perfil.id === pedido.perfilId &&
       (p.escopo.unidadeId ?? null) === pedido.unidadeId,
@@ -238,7 +231,7 @@ async function pedidoEmAndamento(pedido: PedidoDeConcessao): Promise<PedidoLista
 async function conduzirPedido(
   pedido: PedidoDeConcessao,
   pedidoId: string,
-  situacaoInicial: SituacaoDoPedido,
+  situacaoInicial: SituacaoDoPedidoCodigo,
 ): Promise<void> {
   const base = `${ROTA_DOS_PEDIDOS}/${pedidoId}`;
   let situacao = situacaoInicial;
@@ -252,10 +245,10 @@ async function conduzirPedido(
 /** Executa a etapa e espera o pedido sair da situação que ela resolve; devolve a seguinte. */
 async function avancar(
   etapa: EtapaDoPedido,
-  situacao: SituacaoDoPedido,
+  situacao: SituacaoDoPedidoCodigo,
   pedido: PedidoDeConcessao,
   base: string,
-): Promise<SituacaoDoPedido> {
+): Promise<SituacaoDoPedidoCodigo> {
   const resposta = await etapa.executar(pedido, base);
   const contexto = `${etapa.nome} do pedido ${base} de ${pedido.beneficiario}`;
   expect(resposta.status, `${contexto}: ${JSON.stringify(resposta.corpo)}`).toBe(200);
@@ -278,13 +271,13 @@ async function lerPedido(pedido: PedidoDeConcessao, base: string): Promise<Pedid
  * do anexo, que é assíncrona.
  */
 async function aguardarSairDe(
-  situacao: SituacaoDoPedido,
+  situacao: SituacaoDoPedidoCodigo,
   pedido: PedidoDeConcessao,
   base: string,
-): Promise<SituacaoDoPedido | null> {
+): Promise<SituacaoDoPedidoCodigo | null> {
   const limite = Date.now() + ESPERA_DA_VERIFICACAO_MS;
   for (;;) {
-    const atual = (await lerPedido(pedido, base)).situacao;
+    const atual = (await lerPedido(pedido, base)).situacao.codigo;
     if (atual !== situacao) return atual;
     if (Date.now() > limite) return null;
     await new Promise((resolver) => setTimeout(resolver, 1_000));
