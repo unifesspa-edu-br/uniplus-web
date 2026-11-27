@@ -5,9 +5,14 @@
  */
 export const PARAMETRO_ENTRAR_DE_NOVO = 'entrarDeNovo';
 
-/** A URL para onde o provedor devolve a pessoa depois de encerrar a sessão. */
+/**
+ * A URL para onde o provedor devolve a pessoa depois de encerrar a sessão. O provedor só aceita
+ * o retorno dentro do prefixo da aplicação (`/portal/*`): a raiz leva a barra final (`/portal/`).
+ */
 export function urlDeRetornoParaEntrarDeNovo(rota: string, base: string): string {
-  const url = new URL(rota.replace(/^\//, ''), base);
+  const baseDaAplicacao = new URL(base);
+  const url = new URL(rota.replace(/^\//, ''), baseDaAplicacao);
+  if (url.pathname === baseDaAplicacao.pathname.replace(/\/$/, '')) url.pathname += '/';
   url.searchParams.set(PARAMETRO_ENTRAR_DE_NOVO, '1');
   return url.href;
 }
