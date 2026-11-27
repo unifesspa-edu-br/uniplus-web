@@ -28,6 +28,7 @@ import {
   ancestraisQueCortamOComprovante,
   comJanelaDeAltura,
   comprovante,
+  conferirRecusaDoCampo,
   enviarPeloTeclado,
   gravarNomeSocialNaConta,
   inscricaoNaLista,
@@ -363,7 +364,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     await test.step('o envio é recusado no campo "Nome social", com o caminho para resolver', async () => {
       await enviarPeloTeclado(page);
       await irParaSecao(page, 'Dados do candidato');
-      await expect(page.getByText(recusa)).toBeVisible();
+      await conferirRecusaDoCampo(page, campo(page, 'Nome social'), 'Nome social', recusa);
       // Só o rascunho se salva: a inscrição já enviada muda apenas por um novo envio.
       await salvarRascunhoSeHouver(page);
     });

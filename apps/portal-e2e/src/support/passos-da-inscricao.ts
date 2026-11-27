@@ -163,3 +163,29 @@ export async function abrirInscricaoComo(page: Page, usuario: string): Promise<v
   });
   await expect(page.getByRole('heading', { level: 1, name: 'Inscrição' })).toBeVisible();
 }
+
+/**
+ * Depois de um envio recusado, a recusa está nos dois lugares: no resumo de recusas, que leva ao
+ * campo, e no campo, ligada a ele pela descrição acessível; e o leitor de tela é avisado uma vez.
+ */
+export async function conferirRecusaDoCampo(
+  page: Page,
+  campo: Locator,
+  rotulo: string,
+  mensagem: string,
+): Promise<void> {
+  const texto = new RegExp(mensagem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const resumo = page.getByRole('region', { name: 'O servidor recusou 1 resposta' });
+  await expect(resumo.getByRole('button', { name: new RegExp(`${rotulo}\\s*:`) })).toContainText(
+    texto,
+  );
+  await expect(campo).toHaveAccessibleDescription(texto);
+  await esperarOAvisoDeRecusa(page);
+}
+
+async function esperarOAvisoDeRecusa(page: Page): Promise<void> {
+  const avisos = page.locator('[aria-live="polite"]', {
+    hasText: 'Uma resposta foi recusada. Corrija e tente de novo.',
+  });
+  await expect(avisos).toHaveCount(1);
+}

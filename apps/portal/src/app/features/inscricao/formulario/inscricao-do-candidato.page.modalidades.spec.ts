@@ -35,7 +35,7 @@ describe('InscricaoDoCandidatoPage', () => {
     );
 
   it('mostra as modalidades que vieram com a inscrição, sem consultar a API ao abrir', async () => {
-    cenario.servico.formulario = COM_MODALIDADES;
+    cenario.servico.formularios = [COM_MODALIDADES];
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
       avaliacao: concorrendoEm('Ampla concorrência'),
@@ -50,7 +50,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('responder o que decide as modalidades consulta a avaliação com as respostas da tela', async () => {
-    cenario.servico.formulario = COM_MODALIDADES;
+    cenario.servico.formularios = [COM_MODALIDADES];
     const tela = await cenario.abrir();
 
     const nome = campoDe(tela, 'NOME');
@@ -63,7 +63,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('a consulta de avaliação espera o intervalo inteiro depois da última resposta, nem um milissegundo menos', async () => {
-    cenario.servico.formulario = COM_MODALIDADES;
+    cenario.servico.formularios = [COM_MODALIDADES];
     const tela = await cenario.abrir();
 
     const nome = campoDe(tela, 'NOME');
@@ -78,7 +78,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('a consulta de avaliação leva a oferta escolhida na tela, ou null quando não há escolha', async () => {
-    cenario.servico.formulario = COM_MODALIDADES;
+    cenario.servico.formularios = [COM_MODALIDADES];
     cenario.servico.ofertas = [MEDICINA, DIREITO];
     cenario.servico.inscricao = inscricao({ ofertaCursoId: DIREITO.id });
     const tela = await cenario.abrir();
@@ -100,7 +100,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('trocar a oferta no seletor consulta a avaliação de novo com a oferta nova e as respostas gravadas', async () => {
-    cenario.servico.formulario = COM_MODALIDADES;
+    cenario.servico.formularios = [COM_MODALIDADES];
     cenario.servico.ofertas = [MEDICINA, DIREITO];
     cenario.servico.inscricao = inscricao({
       ofertaCursoId: MEDICINA.id,
@@ -117,7 +117,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('a avaliação que volta do rascunho salvo passa a ser a mostrada', async () => {
-    cenario.servico.formulario = COM_MODALIDADES;
+    cenario.servico.formularios = [COM_MODALIDADES];
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
       avaliacao: concorrendoEm('Ampla concorrência'),
@@ -134,7 +134,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('a releitura sem gravação, depois da falha sem resposta, mantém a avaliação das respostas da tela', async () => {
-    cenario.servico.formulario = COM_MODALIDADES;
+    cenario.servico.formularios = [COM_MODALIDADES];
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
       avaliacao: concorrendoEm('Ampla concorrência'),

@@ -50,7 +50,7 @@ export function contemOCampo(passo: PassoDoFormulario, campo: string): boolean {
   return (
     passo.campos.some((c) => campo === c.campo.fatoCodigo) ||
     passo.grupos.some((g) => campoEm(campo, g.grupo.codigo)) ||
-    passo.termos.some((t) => campo === t.termo.codigo) ||
+    passo.termos.some((t) => campo === t.termo.codigoNasRegras) ||
     (passo.bloco === BLOCO_COMPROVACAO_DOCUMENTAL && ehCampoDeDocumento(campo))
   );
 }

@@ -15,13 +15,16 @@
           </button>
         </li>
       }
-      @for (secao of pendencias(); track secao.chave) {
+      @for (secao of pendencias(); track secao.formularioCodigo + secao.chave) {
         <li>
           <button
             type="button"
             class="btn btn--tertiary btn--sm"
-            (click)="irAPendencia.emit(secao.chave)"
+            (click)="irAPendencia.emit(secao)"
           >
+            @if (comVariosFormularios()) {
+              {{ secao.formularioTitulo }}<span class="sr-only">:</span> —
+            }
             {{ secao.titulo }}<span class="sr-only">:</span> ({{ secao.quantidade }}
             {{ secao.quantidade === 1 ? 'item' : 'itens' }})
           </button>
@@ -29,6 +32,30 @@
       }
     </ul>
   </div>
+}
+@if (recusas().length > 0) {
+  <section class="inscricao-motivo" aria-labelledby="inscricao-recusas-titulo">
+    <h2 id="inscricao-recusas-titulo" class="inscricao-motivo__texto">
+      {{
+        recusas().length === 1
+          ? 'O servidor recusou 1 resposta'
+          : 'O servidor recusou ' + recusas().length + ' respostas'
+      }}
+    </h2>
+    <ul class="inscricao-motivo__lista inscricao-motivo__lista--coluna">
+      @for (recusa of recusas(); track $index) {
+        <li>
+          <button type="button" class="btn btn--tertiary btn--sm" (click)="irARecusa.emit(recusa)">
+            @if (comVariosFormularios()) {
+              {{ recusa.formularioTitulo }}<span class="sr-only">:</span> —
+            }
+            {{ recusa.rotulo ?? 'Resposta recusada' }}<span class="sr-only">:</span>
+            {{ recusa.mensagem }}
+          </button>
+        </li>
+      }
+    </ul>
+  </section>
 }
 <div class="inscricao-acoes">
   @if (!enviada()) {

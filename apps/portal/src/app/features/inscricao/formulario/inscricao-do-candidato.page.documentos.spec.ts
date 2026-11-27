@@ -34,7 +34,7 @@ describe('InscricaoDoCandidatoPage', () => {
     cenario.encerrar();
   });
 
-  /** Uma exigência da fase da inscrição na avaliação, no formulário dado. */
+  /** Uma exigência da fase da inscrição na avaliação, no formulário de código dado. */
   const documento = (
     nome: string,
     formularioCodigo: string,
@@ -92,7 +92,7 @@ describe('InscricaoDoCandidatoPage', () => {
   };
 
   it('a seção de documentos sem exigência nesta fase diz que nada se envia nesta etapa', async () => {
-    cenario.servico.formulario = COM_DOCUMENTOS;
+    cenario.servico.formularios = [COM_DOCUMENTOS];
     cenario.servico.inscricao = inscricao(RESPONDIDA);
     const tela = await cenario.abrir();
 
@@ -103,10 +103,10 @@ describe('InscricaoDoCandidatoPage', () => {
 
   /**
    * O documento da isenção é pedido no formulário da isenção, e o de outra fase no formulário dela,
-   * mesmo que cite o mesmo código de formulário.
+   * mesmo que tenha o mesmo código de formulário.
    */
   it('a seção de documentos lista o que a avaliação pede no formulário da inscrição', async () => {
-    cenario.servico.formulario = COM_DOCUMENTOS;
+    cenario.servico.formularios = [COM_DOCUMENTOS];
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
       avaliacao: {
@@ -193,7 +193,7 @@ describe('InscricaoDoCandidatoPage', () => {
     'Aguarde a verificação completa dos documentos obrigatórios para enviar a inscrição.';
 
   it('documento obrigatório em verificação mantém o envio da inscrição inativo, com o aviso de aguardar', async () => {
-    cenario.servico.formulario = COM_DOCUMENTOS;
+    cenario.servico.formularios = [COM_DOCUMENTOS];
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
       avaliacao: comArquivoEm(SituacaoDoArquivoDoCandidatoCodigo.EM_VERIFICACAO),
@@ -213,7 +213,7 @@ describe('InscricaoDoCandidatoPage', () => {
       cenario.servico.avaliacoes.push(request);
       return ok(respostas[cenario.servico.avaliacoes.length - 1]);
     };
-    cenario.servico.formulario = COM_DOCUMENTOS;
+    cenario.servico.formularios = [COM_DOCUMENTOS];
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
       avaliacao: comArquivoEm(SituacaoDoArquivoDoCandidatoCodigo.EM_VERIFICACAO),
@@ -240,7 +240,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('enviar ou remover um arquivo de documento consulta a avaliação, mesmo sem mudar nenhuma resposta', async () => {
-    cenario.servico.formulario = COM_MODALIDADES;
+    cenario.servico.formularios = [COM_MODALIDADES];
     await cenario.abrir();
     expect(cenario.servico.avaliacoes).toHaveLength(0);
 
@@ -254,7 +254,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('o arquivo de documento avança a revisão da inscrição: o próximo salvar leva o ETag novo', async () => {
-    cenario.servico.formulario = COM_MODALIDADES;
+    cenario.servico.formularios = [COM_MODALIDADES];
     const tela = await cenario.abrir();
     const eTags: string[] = [];
     cenario.servico.salvar = (_: string, request: InscricaoRequest, eTag?: string) => {
@@ -273,7 +273,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('outra aba gravou enquanto o ETag era relido: o próximo salvar leva o ETag velho e cai no conflito', async () => {
-    cenario.servico.formulario = COM_MODALIDADES;
+    cenario.servico.formularios = [COM_MODALIDADES];
     const tela = await cenario.abrir();
     const eTagInicial = cenario.servico.inscricao.eTag;
     const eTags: string[] = [];
@@ -296,7 +296,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('releitura do ETag que falha depois de um arquivo de documento pede recarregar, sem gravar com o velho', async () => {
-    cenario.servico.formulario = COM_MODALIDADES;
+    cenario.servico.formularios = [COM_MODALIDADES];
     const tela = await cenario.abrir();
 
     cenario.servico.obter = () => of(problema(503, 'uniplus.teste'));
@@ -309,7 +309,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('com envio de documento em andamento, não deixa gravar com a revisão velha', async () => {
-    cenario.servico.formulario = COM_MODALIDADES;
+    cenario.servico.formularios = [COM_MODALIDADES];
     const tela = await cenario.abrir();
 
     cenario.ocupadoDoEnvio.set(true);

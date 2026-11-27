@@ -132,11 +132,11 @@ function acrescentarDocumento(trechos: Trecho[], documento: DocumentoNaTela): vo
 
     <ng-template #grupoDeDocumentos let-grupo>
       <div class="documentos-da-inscricao__grupo">
-        <p [id]="'documentos-' + grupo.chave">{{ texto(grupo) }}</p>
+        <p [id]="idBase() + '-documentos-' + grupo.chave">{{ texto(grupo) }}</p>
         <ul
           class="documentos-da-inscricao__itens"
           role="list"
-          [attr.aria-labelledby]="'documentos-' + grupo.chave"
+          [attr.aria-labelledby]="idBase() + '-documentos-' + grupo.chave"
         >
           @for (item of grupo.itens; track $index) {
             <li>
@@ -244,6 +244,9 @@ export class DocumentosDaInscricaoComponent {
 
   /** As recusas do servidor; a de uma exigência aparece junto do envio dela. */
   readonly errosDoServidor = input<readonly ErroDoServidor[]>([]);
+
+  /** O prefixo dos ids: dois formulários montados na mesma página não repetem id. */
+  readonly idBase = input<string>('inscricao');
 
   /** O candidato escolheu a pergunta pendente: leva a ela. */
   readonly irAoCampo = output<string>();

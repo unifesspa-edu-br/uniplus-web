@@ -126,13 +126,25 @@ describe('FormularioDoCandidatoComponent', () => {
   it('a recusa do servidor a um termo aparece no termo', () => {
     const tela = cenario.montar(FORMULARIO_COM_TERMO_DE_VERACIDADE);
     cenario.fixture.componentRef.setInput('errosDoServidor', [
-      { campo: 'VERACIDADE', mensagem: 'Aceite a versão vigente do termo.' },
+      { campo: 'Inscricao:VERACIDADE', mensagem: 'Aceite a versão vigente do termo.' },
     ]);
     cenario.fixture.detectChanges();
 
     expect(tela.querySelector('.formulario-candidato__termo .field__error')?.textContent).toContain(
       'Aceite a versão vigente do termo.',
     );
+  });
+
+  it('aceitar o termo recusado desfaz a recusa dele, citada pelo código nas regras', () => {
+    const tela = cenario.montar(FORMULARIO_COM_TERMO_DE_VERACIDADE);
+    cenario.fixture.componentRef.setInput('errosDoServidor', [
+      { campo: 'Inscricao:VERACIDADE', mensagem: 'Aceite a versão vigente do termo.' },
+    ]);
+    cenario.fixture.detectChanges();
+
+    cenario.clicar(tela.querySelector('[data-campo="Inscricao:VERACIDADE"] input') as HTMLElement);
+
+    expect(tela.querySelector('.formulario-candidato__termo .field__error')).toBeNull();
   });
 
   it('a recusa do servidor avisa no topo da seção que tem o campo recusado', () => {

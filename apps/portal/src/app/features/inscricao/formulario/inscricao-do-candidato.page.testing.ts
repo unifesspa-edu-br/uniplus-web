@@ -198,7 +198,7 @@ export const RESPONDIDA: AjustesDaInscricao = {
 
 export class ServicoDublê extends InscricaoDoCandidatoService {
   inscricao = inscricao();
-  formulario: FormularioApresentadoDoProcessoDto = FORMULARIO_DE_INSCRICAO_MOCK;
+  formularios: readonly FormularioApresentadoDoProcessoDto[] = [FORMULARIO_DE_INSCRICAO_MOCK];
   ofertas: readonly OfertaDaInscricao[] = [MEDICINA];
   /** Quantas opções de curso a versão fixada admite. */
   opcoes = 1;
@@ -306,8 +306,8 @@ export class CenarioDaInscricao {
     this.fixture.detectChanges();
     await Promise.resolve();
     this.fixture.detectChanges();
-    for (const pedido of http.match((r) => r.url.endsWith('/inscricao/formulario'))) {
-      pedido.flush(this.servico.formulario);
+    for (const pedido of http.match((r) => r.url.endsWith('/inscricao/formularios'))) {
+      pedido.flush(this.servico.formularios);
     }
     await passarOTempo(0);
     this.fixture.detectChanges();

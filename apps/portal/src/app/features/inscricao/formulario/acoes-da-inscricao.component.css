@@ -32,3 +32,7 @@
   padding: 0;
   list-style: none;
 }
+
+.inscricao-motivo__lista--coluna {
+  display: grid;
+}

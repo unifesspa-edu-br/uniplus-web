@@ -40,7 +40,7 @@ export interface DocumentoAvaliado {
   readonly exigenciaId: string;
   readonly nome: string;
   readonly obrigatorio: boolean;
-  /** O código do formulário do processo em que o documento é apresentado. */
+  /** O código do formulário em que o documento é apresentado. */
   readonly formularioCodigo: string | null;
   readonly formatos: DocumentoExigido['formatos'];
   readonly modelo: DocumentoExigido['modelo'];
@@ -81,16 +81,16 @@ export interface DocumentosAvaliados {
   readonly fases: readonly FaseDosDocumentosAvaliados[];
 }
 
-/** O que o formulário mostra da avaliação dos documentos: os da fase e do formulário dele. */
+/** O que o formulário mostra da avaliação dos documentos: os da fase e do código dele. */
 export interface DocumentosDoFormulario {
   readonly documentos: readonly DocumentoAvaliado[];
   readonly pendencias: readonly PendenciaDaAvaliacao[];
 }
 
 /**
- * Os documentos que se apresentam no próprio formulário: os da fase dele e, nela, os que citam o
- * código dele — a fase pode ter mais de um formulário. As pendências são as da fase. Sem a fase ou
- * sem o código do formulário, nada se mostra.
+ * Os documentos que se apresentam no próprio formulário: os da fase dele e, nela, os do código
+ * dele — cada formulário da mesma fase apresenta os seus. As pendências são as da fase. Sem a fase do
+ * formulário, nada se mostra.
  */
 export function documentosDoFormulario(
   documentos: DocumentosAvaliados,
@@ -99,7 +99,9 @@ export function documentosDoFormulario(
 ): DocumentosDoFormulario {
   const fase = faseId ? documentos.fases.find((f) => f.faseId === faseId) : undefined;
   return {
-    documentos: fase?.documentos.filter((d) => d.formularioCodigo === formularioCodigo) ?? [],
+    documentos: formularioCodigo
+      ? (fase?.documentos.filter((d) => d.formularioCodigo === formularioCodigo) ?? [])
+      : [],
     pendencias: fase?.pendencias ?? [],
   };
 }

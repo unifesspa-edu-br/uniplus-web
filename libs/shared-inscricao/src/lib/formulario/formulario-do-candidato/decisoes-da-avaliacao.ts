@@ -51,7 +51,7 @@ export class DecisoesDaAvaliacao {
       atuais === null ? null : conhecidas(atuais) ? atuais : (anterior?.value ?? null),
   });
 
-  /** Os documentos da fase e do formulário, como a avaliação da API os traz. */
+  /** Os documentos da fase e do código do formulário, como a avaliação da API os traz. */
   private readonly documentosDaFase = computed(() => {
     // O formulário só é lido com avaliação: quem hospeda consulta antes de ele ter entradas.
     const avaliacao = this.fontes.avaliacao();

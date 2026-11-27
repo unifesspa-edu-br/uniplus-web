@@ -1,7 +1,4 @@
-export {
-  FormularioDoCandidatoComponent,
-  type PendenciaDaSecao,
-} from './formulario-do-candidato';
+export { FormularioDoCandidatoComponent, type PendenciaDaSecao } from './formulario-do-candidato';
 export type {
   CampoApresentado,
   DependenciasDaAvaliacao,
@@ -16,6 +13,7 @@ export type {
   TermoApresentado,
   ValorSelecionavel,
 } from './formulario-do-candidato.model';
+export { localizarCampo } from './formulario-do-candidato.model';
 export {
   CONCORRE,
   FALTA_RESPONDER,
@@ -24,14 +22,8 @@ export {
   type AvaliacaoNaTela,
   type ModalidadesAvaliadas,
 } from './modalidades-avaliadas';
-export {
-  AGUARDE_A_VERIFICACAO,
-  type DocumentosAvaliados,
-} from './documentos-avaliados';
-export {
-  derivadosDoSistema,
-  type DerivadoDoSistema,
-} from './derivados-do-sistema';
+export { AGUARDE_A_VERIFICACAO, type DocumentosAvaliados } from './documentos-avaliados';
+export { derivadosDoSistema, type DerivadoDoSistema } from './derivados-do-sistema';
 export {
   casoDaSimulacao,
   lerArquivoDoFormulario,
@@ -49,10 +41,7 @@ export {
   type MunicipiosSeparados,
 } from './valor-de-municipio-gravado';
 export { baixarJson } from './baixar-json';
-export {
-  divergenciasEntre,
-  type Divergencia,
-} from './divergencias';
+export { divergenciasEntre, type Divergencia } from './divergencias';
 export {
   interpretarFormulario,
   type InterpretacaoDoFormulario,
@@ -67,6 +56,8 @@ export type {
   ValorJson,
 } from './interpretador/regras-do-formulario';
 export {
+  chaveDoCampoDeDocumento,
+  ehCampoDeDocumento,
   detalheDoArquivoEnviado,
   regrasDoArquivo,
   rotuloDoFormato,

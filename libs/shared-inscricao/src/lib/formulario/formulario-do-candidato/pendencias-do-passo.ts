@@ -50,7 +50,7 @@ export function pendenciasDo(
     ...passo.grupos.map((g) => pendenciaDoGrupo(g, confirmacoes)).filter((p) => p !== null),
     ...passo.termos
       .filter((t) => termoSemAceite(t, aceitos))
-      .map((t) => daResposta(t.termo.codigo)),
+      .map((t) => daResposta(t.termo.codigoNasRegras)),
   ];
 }
 
