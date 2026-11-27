@@ -1,4 +1,4 @@
-import type { Page, Route } from '@playwright/test';
+import type { Page, Request, Route } from '@playwright/test';
 
 export const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -135,48 +135,86 @@ const esperar = (ms: number): Promise<void> => new Promise((resolve) => setTimeo
  * `ATRASO_DA_RECARGA_EM_MS`; depois de uma remoção bem-sucedida, a lista não traz mais o termo.
  */
 export async function mockTermosConsentimento(page: Page, opcoes: OpcoesDoMock = {}) {
-  const respostas = opcoes.respostas ?? [{ status: 204 }];
-  const envios: string[] = [];
+  const estado: Estado = { envios: [], leituras: 0, removido: false };
   let liberar: () => void = () => undefined;
   const retida = new Promise<void>((resolve) => (liberar = resolve));
-  let leituras = 0;
-  let removido = false;
-
-  await page.route(/\/api\/configuracao\/termos-consentimento(\?.*)?$/, async (route) => {
-    if (removido) await esperar(ATRASO_DA_RECARGA_EM_MS);
-    await responder(route, 200, removido ? [] : [RESUMO]);
-  });
-  await page.route(/\/api\/configuracao\/termos-consentimento\/[^/?]+$/, async (route) => {
-    leituras += 1;
-    if (opcoes.primeiraLeitura === 'falha' && leituras === 1) {
-      await responder(route, 500, ERRO_INTERNO);
-      return;
-    }
-    if (leituras > 1) await esperar(ATRASO_DA_RECARGA_EM_MS);
-    if (leituras > 1 && opcoes.releitura === 'com-falha') {
-      await responder(route, 500, ERRO_INTERNO);
-      return;
-    }
-    const termo =
-      leituras > 1 ? (opcoes.termoApos ?? opcoes.termo ?? TERMO) : (opcoes.termo ?? TERMO);
-    await responder(route, 200, termo);
-  });
-  await page.route(/\/api\/configuracao\/admin\/termos-consentimento(\/.*)?$/, async (route) => {
-    const requisicao = route.request();
-    if (requisicao.method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-    const resposta = respostas[Math.min(envios.length, respostas.length - 1)];
-    const caminho = new URL(requisicao.url()).pathname.split('/').slice(5).join('/');
-    envios.push(`${requisicao.method()} ${caminho.replace(ID, ':id')}`.trim());
-    await retida;
-    if (requisicao.method() === 'DELETE' && resposta.status < 400) removido = true;
-    await responder(
-      route,
-      resposta.status,
-      resposta.corpo ?? (resposta.status === 201 ? ID : undefined),
-    );
-  });
-  return { liberar, envios, leituras: () => leituras };
+  await registrarRotas(page, opcoes, estado, retida);
+  return { liberar, envios: estado.envios, leituras: () => estado.leituras };
 }
+
+async function registrarRotas(
+  page: Page,
+  opcoes: OpcoesDoMock,
+  estado: Estado,
+  retida: Promise<void>,
+): Promise<void> {
+  await registrarLeituras(page, opcoes, estado);
+  const respostas = opcoes.respostas ?? [{ status: 204 }];
+  await page.route(/\/api\/configuracao\/admin\/termos-consentimento(\/.*)?$/, (route) =>
+    tratarEscrita({ route, respostas, estado, retida }),
+  );
+}
+
+async function registrarLeituras(page: Page, opcoes: OpcoesDoMock, estado: Estado): Promise<void> {
+  await page.route(/\/api\/configuracao\/termos-consentimento(\?.*)?$/, (route) =>
+    tratarLista(route, estado),
+  );
+  await page.route(/\/api\/configuracao\/termos-consentimento\/[^/?]+$/, (route) =>
+    tratarLeitura(route, opcoes, estado),
+  );
+}
+
+interface Estado {
+  readonly envios: string[];
+  leituras: number;
+  removido: boolean;
+}
+
+async function tratarLista(route: Route, estado: Estado): Promise<void> {
+  if (estado.removido) await esperar(ATRASO_DA_RECARGA_EM_MS);
+  await responder(route, 200, estado.removido ? [] : [RESUMO]);
+}
+
+async function tratarLeitura(route: Route, opcoes: OpcoesDoMock, estado: Estado): Promise<void> {
+  estado.leituras += 1;
+  const releitura = estado.leituras > 1;
+  if (opcoes.primeiraLeitura === 'falha' && estado.leituras === 1) {
+    await responder(route, 500, ERRO_INTERNO);
+    return;
+  }
+  if (releitura) await esperar(ATRASO_DA_RECARGA_EM_MS);
+  if (releitura && opcoes.releitura === 'com-falha') {
+    await responder(route, 500, ERRO_INTERNO);
+    return;
+  }
+  const termo = releitura ? (opcoes.termoApos ?? opcoes.termo ?? TERMO) : (opcoes.termo ?? TERMO);
+  await responder(route, 200, termo);
+}
+
+interface Escrita {
+  readonly route: Route;
+  readonly respostas: readonly Resposta[];
+  readonly estado: Estado;
+  readonly retida: Promise<void>;
+}
+
+function descreverEnvio(requisicao: Request): string {
+  const caminho = new URL(requisicao.url()).pathname.split('/').slice(5).join('/');
+  return `${requisicao.method()} ${caminho.replace(ID, ':id')}`.trim();
+}
+
+async function tratarEscrita({ route, respostas, estado, retida }: Escrita): Promise<void> {
+  const requisicao = route.request();
+  if (requisicao.method() === 'OPTIONS') {
+    await route.fulfill({ status: 204, headers: CORS_HEADERS });
+    return;
+  }
+  const resposta = respostas[Math.min(estado.envios.length, respostas.length - 1)];
+  estado.envios.push(descreverEnvio(requisicao));
+  await retida;
+  if (requisicao.method() === 'DELETE' && resposta.status < 400) estado.removido = true;
+  await responderEscrita(route, resposta);
+}
+
+const responderEscrita = (route: Route, resposta: Resposta) =>
+  responder(route, resposta.status, resposta.corpo ?? (resposta.status === 201 ? ID : undefined));
