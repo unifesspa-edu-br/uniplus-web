@@ -4,6 +4,8 @@ export {
   keycloakLogout,
   expectUserInHeader,
 } from './lib/keycloak-login';
+export { criarClienteDeSessaoCurta } from './lib/cliente-de-sessao-curta';
+export type { ClienteDeSessaoCurta, PrazosDaSessaoCurta } from './lib/cliente-de-sessao-curta';
 export { createGlobalSetup, setupKeycloakAuth } from './lib/keycloak-auth-fixture';
 export type { KeycloakAuthSetupOptions } from './lib/keycloak-auth-fixture';
 export {
