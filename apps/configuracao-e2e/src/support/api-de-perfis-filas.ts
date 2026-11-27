@@ -60,24 +60,34 @@ export async function mockRota(
   resposta: (chamada: Chamada, numero: number) => Resposta,
 ): Promise<Chamada[]> {
   const chamadas: Chamada[] = [];
-  await page.route(padrao, async (route) => {
-    const requisicao = route.request();
-    if (requisicao.method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-    const url = new URL(requisicao.url());
-    const chamada: Chamada = {
-      metodo: requisicao.method(),
-      caminho: url.pathname,
-      consulta: url.search,
-      corpo: requisicao.postData() === null ? null : requisicao.postDataJSON(),
-      chave: requisicao.headers()['idempotency-key'],
-    };
-    chamadas.push(chamada);
-    await responder(route, resposta(chamada, chamadas.length));
-  });
+  await page.route(padrao, (route) => atender(route, chamadas, resposta));
   return chamadas;
+}
+
+async function atender(
+  route: Route,
+  chamadas: Chamada[],
+  resposta: (chamada: Chamada, numero: number) => Resposta,
+): Promise<void> {
+  if (route.request().method() === 'OPTIONS') {
+    await route.fulfill({ status: 204, headers: CORS_HEADERS });
+    return;
+  }
+  const chamada = lerChamada(route);
+  chamadas.push(chamada);
+  await responder(route, resposta(chamada, chamadas.length));
+}
+
+function lerChamada(route: Route): Chamada {
+  const requisicao = route.request();
+  const url = new URL(requisicao.url());
+  return {
+    metodo: requisicao.method(),
+    caminho: url.pathname,
+    consulta: url.search,
+    corpo: requisicao.postData() === null ? null : requisicao.postDataJSON(),
+    chave: requisicao.headers()['idempotency-key'],
+  };
 }
 
 /** O cadastro de unidades que nomeia o escopo das concessões. */
