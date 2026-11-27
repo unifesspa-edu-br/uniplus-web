@@ -10,7 +10,10 @@ import {
   type PassoDaGravacao,
 } from '../passos/formulario/formulario-do-processo';
 import { GravacaoDoProcesso } from './gravacao/gravacao-do-processo';
-import type { ResultadoGravacao } from './gravacao/resultado-da-gravacao';
+import type {
+  ResultadoDaGravacaoDoFormulario,
+  ResultadoGravacao,
+} from './gravacao/resultado-da-gravacao';
 
 /** Limite digitado no formulário que não é número: a gravação nem sai, porque a API recusa número em texto. */
 const LIMITE_QUE_NAO_E_NUMERO: ProblemDetails = {
@@ -48,15 +51,26 @@ export async function gravarFormulario(
   alvo: AlvoDoFormulario,
   servidor: FormularioParaGravar | null,
   desejado: FormularioDesejado,
-): Promise<ResultadoGravacao> {
+): Promise<ResultadoDaGravacaoDoFormulario> {
   if (itensParaEnvio(desejado.conteudo) === null) {
-    return { ok: false, problem: LIMITE_QUE_NAO_E_NUMERO };
+    return { ok: false, problem: LIMITE_QUE_NAO_E_NUMERO, cabecalhoAceito: servidor !== null };
   }
+  return gravarOsPassos(destino, alvo, servidor, desejado);
+}
+
+async function gravarOsPassos(
+  destino: DestinoDaGravacaoDoFormulario,
+  alvo: AlvoDoFormulario,
+  servidor: FormularioParaGravar | null,
+  desejado: FormularioDesejado,
+): Promise<ResultadoDaGravacaoDoFormulario> {
+  let cabecalhoAceito = servidor !== null;
   for (const passo of planoDeGravacao(servidor, desejado)) {
     const resultado = await gravarPasso(destino, alvo, passo, desejado);
-    if (!resultado.ok) return resultado;
+    if (passo === 'cabecalho' && resultado.ok) cabecalhoAceito = true;
+    if (!resultado.ok) return { ...resultado, cabecalhoAceito };
   }
-  return { ok: true };
+  return { ok: true, cabecalhoAceito };
 }
 
 type Gravador = (

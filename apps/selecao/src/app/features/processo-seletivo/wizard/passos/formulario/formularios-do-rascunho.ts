@@ -170,31 +170,45 @@ export function formularioDoServidorNoCodigo(
 }
 
 /**
- * O rascunho com o que o servidor tem dos formulários que gravaram, no lugar do que a tela tinha. O
- * formulário recusado que já existe no servidor mantém o conteúdo da tela e passa a gravado.
+ * O que o rascunho passa a ter depois de reler o processo. Sem recusa, todos os formulários do
+ * servidor. Com recusa, só os que gravaram antes dela; o recusado, se o servidor já o tem (a resposta
+ * ao cabeçalho pode ter se perdido), fica gravado, com o conteúdo da tela.
  */
-export function comAsGravadasDoServidor(
+export function comOQueOServidorTem(
   formulario: FormularioDeInscricao,
   processo: ProcessoComFormularios,
-  { gravadas, recusada }: { readonly gravadas: readonly string[]; readonly recusada: string },
+  recusa: {
+    readonly gravadas: readonly string[];
+    readonly recusada: { readonly codigo: string };
+  } | null,
+): Pick<FormularioDeInscricao, 'formularios'> {
+  if (recusa === null) return formulariosDoServidor(processo);
+  const comAsGravadas = comOsGravadosDoServidor(formulario, processo, recusa.gravadas);
+  return formularioDoServidorNoCodigo(processo, recusa.recusada.codigo) === null
+    ? comAsGravadas
+    : comOsFormulariosGravados(comAsGravadas, [recusa.recusada.codigo]);
+}
+
+function comOsGravadosDoServidor(
+  formulario: FormularioDeInscricao,
+  processo: ProcessoComFormularios,
+  codigos: readonly string[],
 ): FormularioDeInscricao {
-  const comAsGravadas = gravadas.reduce((rascunho, codigo) => {
+  return codigos.reduce((rascunho, codigo) => {
     const servidor = formularioDoServidorNoCodigo(processo, codigo);
     return servidor === null ? rascunho : comFormulario(rascunho, servidor);
   }, formulario);
-  return comARecusadaGravada(comAsGravadas, processo, recusada);
 }
 
-function comARecusadaGravada(
+/** O rascunho com os formulários dos códigos gravados, mantendo o conteúdo da tela: o código não muda mais. */
+export function comOsFormulariosGravados(
   formulario: FormularioDeInscricao,
-  processo: ProcessoComFormularios,
-  codigo: string,
+  codigos: readonly string[],
 ): FormularioDeInscricao {
-  const naTela = formularioDoCodigo(formulario, codigo);
-  const criado = formularioDoServidorNoCodigo(processo, codigo) !== null;
-  return naTela !== null && criado
-    ? comFormulario(formulario, { ...naTela, gravado: true })
-    : formulario;
+  return codigos.reduce((rascunho, codigo) => {
+    const naTela = formularioDoCodigo(rascunho, codigo);
+    return naTela === null ? rascunho : comFormulario(rascunho, { ...naTela, gravado: true });
+  }, formulario);
 }
 
 /** Os fatos que os OUTROS formulários do rascunho coletam — o que este não pode coletar. */

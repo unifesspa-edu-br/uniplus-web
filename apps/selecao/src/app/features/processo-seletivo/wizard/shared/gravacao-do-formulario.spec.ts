@@ -62,4 +62,44 @@ describe('gravarFormulario', () => {
     expect(resultado.ok).toBe(false);
     http.expectNone(() => true);
   });
+
+  it('diz que o cabeçalho existe quando o servidor já o tem e a atualização dele é recusada', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        GravacaoDoProcesso,
+        { provide: SELECAO_BASE_PATH, useValue: '/api/selecao' },
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+      ],
+    });
+    const destino = {
+      gravacao: TestBed.inject(GravacaoDoProcesso),
+      api: TestBed.inject(FormulariosDoProcessoApi),
+    };
+    const conteudo: ConteudoDoFormulario = {
+      titulo: 'Inscrição',
+      paginas: [],
+      itens: [],
+      termos: [],
+      pressupostos: [],
+      grupos: [],
+    };
+    const gravado = { faseId: 'F1', obrigatorio: true, consequenciaDaFaltaDeEnvio: null, conteudo };
+
+    const resultado = gravarFormulario(
+      destino,
+      { processoSeletivoId: 'p1', codigo: 'INSCRICAO' },
+      gravado,
+      { ...gravado, obrigatorio: false },
+    );
+    await new Promise((resolver) => setTimeout(resolver));
+    TestBed.inject(HttpTestingController)
+      .expectOne((r) => r.method === 'PUT')
+      .flush(
+        { type: 'about:blank', title: 'Recusado.', status: 422, traceId: '' },
+        { status: 422, statusText: 'Unprocessable Entity' },
+      );
+
+    expect(await resultado).toMatchObject({ ok: false, cabecalhoAceito: true });
+  });
 });

@@ -14,7 +14,7 @@ import {
 } from '@uniplus/shared-inscricao/formulario';
 
 import type { FormularioDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
-import type { FormularioDeInscricao, ValidacaoDoPasso } from '../../../processo-seletivo.models';
+import type { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import {
@@ -33,7 +33,7 @@ import {
   paraGravarDoServidor,
   type FormularioParaGravar as CabecalhoParaGravar,
 } from '../formulario-do-processo';
-import { comAsGravadasDoServidor, formulariosDoServidor } from '../formularios-do-rascunho';
+import { comOQueOServidorTem, comOsFormulariosGravados } from '../formularios-do-rascunho';
 import { ordemDeGravacao } from '../ordem-de-gravacao';
 import { LeituraDoProcessoNoFormulario } from './leitura-do-processo-no-formulario.service';
 import { semChave } from './sem-chave';
@@ -120,7 +120,7 @@ export class GravacaoDosFormularios {
     for (const formulario of formulariosNaOrdem(plano)) {
       const gravacao = await this.enviarFormulario(processoId, formulario, plano);
       if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
-      if (!gravacao.ok) return { gravadas, recusada: formulario, problem: gravacao.problem };
+      if (!gravacao.ok) return { gravadas, recusada: formulario, ...gravacao };
       gravadas.push(formulario.codigo);
     }
     return { gravadas };
@@ -143,6 +143,7 @@ export class GravacaoDosFormularios {
     aoRecusar: (codigo: string) => void,
   ): Promise<ValidacaoDoPasso> {
     const mensagens = this.aplicarRecusa(desfecho.recusada, desfecho.problem);
+    this.marcarComoGravados(desfecho);
     aoRecusar(desfecho.recusada.codigo);
     await this.reconciliarComOServidor(processoId, geracao, desfecho);
     return { valid: false, messages: [...mensagens] };
@@ -237,11 +238,23 @@ export class GravacaoDosFormularios {
   }
 
   /**
+   * Os que já gravaram antes da recusa e o recusado cujo cabeçalho o servidor aceitou existem lá: ficam
+   * gravados, com o conteúdo da tela, mesmo sem reler o processo.
+   */
+  private marcarComoGravados(desfecho: DesfechoComRecusa): void {
+    const { recusada, cabecalhoAceito, gravadas } = desfecho;
+    const codigos = cabecalhoAceito ? [...gravadas, recusada.codigo] : gravadas;
+    this.store.projetarSecao(
+      'formulario',
+      comOsFormulariosGravados(this.store.draft().formulario, codigos),
+    );
+  }
+
+  /**
    * Relê o processo e projeta no rascunho o que o servidor tem dos formulários. Depois de gravar
    * tudo, todos — a API repõe os dados básicos e pode deslocar a ordem. Depois de uma recusa, só os
    * que gravaram antes dela: o conteúdo dos outros, na tela, é o que o operador quer, e a próxima
-   * tentativa se compara com a releitura que fizer. O formulário recusado que já existe no servidor
-   * (o cabeçalho foi aceito) fica com o conteúdo da tela, mas gravado: o código não pode mais mudar.
+   * tentativa se compara com a releitura que fizer.
    */
   private async reconciliarComOServidor(
     processoId: string,
@@ -250,18 +263,8 @@ export class GravacaoDosFormularios {
   ): Promise<void> {
     const detalhe = await this.leitura.ler(processoId);
     if (geracao !== this.store.geracao() || !isApiOk(detalhe)) return;
-    this.store.projetarSecao('formulario', this.oQueOServidorTem(detalhe.data, recusa));
-  }
-
-  private oQueOServidorTem(
-    processo: ProcessoSeletivoDto,
-    recusa: DesfechoComRecusa | null,
-  ): Pick<FormularioDeInscricao, 'formularios'> {
-    if (recusa === null) return formulariosDoServidor(processo);
-    return comAsGravadasDoServidor(this.store.draft().formulario, processo, {
-      gravadas: recusa.gravadas,
-      recusada: recusa.recusada.codigo,
-    });
+    const { formulario } = this.store.draft();
+    this.store.projetarSecao('formulario', comOQueOServidorTem(formulario, detalhe.data, recusa));
   }
 }
 
@@ -309,6 +312,7 @@ type DesfechoDaGravacaoEmOrdem =
       readonly gravadas: readonly string[];
       readonly recusada: FormularioComFase;
       readonly problem: ProblemDetails;
+      readonly cabecalhoAceito: boolean;
     };
 
 type DesfechoComRecusa = Extract<DesfechoDaGravacaoEmOrdem, { recusada: FormularioComFase }>;
