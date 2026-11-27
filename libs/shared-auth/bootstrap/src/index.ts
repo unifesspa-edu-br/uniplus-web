@@ -1,5 +1,7 @@
 export { AuthService } from '../../src/lib/services/auth.service';
 export { SessaoEncerrada } from '../../src/lib/services/sessao-encerrada.service';
+export { AvisoDeVencimentoDaSessao } from '../../src/lib/services/aviso-de-vencimento-da-sessao.service';
+export type { SituacaoDoAviso } from '../../src/lib/services/aviso-de-vencimento-da-sessao.service';
 export { UserContextService } from '../../src/lib/services/user-context.service';
 export { MotivoDoAcessoNegadoService } from '../../src/lib/services/motivo-do-acesso-negado.service';
 export { provideAuth } from '../../src/lib/providers/auth.provider';

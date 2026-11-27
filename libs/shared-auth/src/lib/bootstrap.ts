@@ -1,4 +1,6 @@
 export { AuthService } from './services/auth.service';
+export { AvisoDeVencimentoDaSessao } from './services/aviso-de-vencimento-da-sessao.service';
+export type { SituacaoDoAviso } from './services/aviso-de-vencimento-da-sessao.service';
 export { SessaoEncerrada } from './services/sessao-encerrada.service';
 export { UserContextService } from './services/user-context.service';
 export { MotivoDoAcessoNegadoService } from './services/motivo-do-acesso-negado.service';
