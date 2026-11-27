@@ -189,7 +189,7 @@ export const PENDENCIAS = [
     aprovacao: PENDENTE,
   },
   {
-    tipo: 'FATO',
+    tipo: 'DADO_DO_CANDIDATO',
     id: FATOS[1].id,
     codigo: FATOS[1].codigo,
     nome: FATOS[1].descritivo.nome,
@@ -260,7 +260,7 @@ export const ATOS_DO_FATO = [
 
 export const DECISOES = [
   {
-    cadastro: 'FATO',
+    cadastro: 'DADO_DO_CANDIDATO',
     itemId: FATOS[1].id,
     itemCodigo: FATOS[1].codigo,
     itemNome: FATOS[1].descritivo.nome,
@@ -274,7 +274,7 @@ export const DECISOES = [
     ...ATOS_DO_TIPO[1],
   },
   {
-    cadastro: 'FATO',
+    cadastro: 'DADO_DO_CANDIDATO',
     itemId: FATOS[0].id,
     itemCodigo: FATOS[0].codigo,
     itemNome: FATOS[0].descritivo.nome,
