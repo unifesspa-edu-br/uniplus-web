@@ -10,6 +10,10 @@ import {
   type PrazoDaCredencial,
   type PrazoDoAcesso,
 } from '../models/prazo-da-credencial';
+import {
+  urlDeRetornoParaEntrarDeNovo,
+  urlSemOParametroDeEntrarDeNovo,
+} from './retorno-para-entrar-de-novo';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -75,6 +79,7 @@ export class AuthService {
       this._authenticated.set(authenticated);
       this.atualizarPrazos();
       if (authenticated) await this.loadProfile();
+      await this.concluirEntrarDeNovo(authenticated);
       return authenticated;
     } catch (error) {
       this.registrarFalhaDoInit(error);
@@ -106,6 +111,29 @@ export class AuthService {
         ? { redirectUri: new URL(rotaDeVolta.replace(/^\//, ''), document.baseURI).href }
         : undefined,
     );
+  }
+
+  /**
+   * Encerra a sessão no provedor para a pessoa começar outra, e a devolve à rota com o parâmetro
+   * que a partida da aplicação lê. Pedir nova autenticação com a sessão viva mantém a mesma sessão
+   * e o mesmo fim de período; só o encerramento a recomeça.
+   */
+  async encerrarParaEntrarDeNovo(rotaDeVolta: string): Promise<void> {
+    await this.keycloak?.logout({
+      redirectUri: urlDeRetornoParaEntrarDeNovo(rotaDeVolta, document.baseURI),
+    });
+  }
+
+  /**
+   * Na volta de `encerrarParaEntrarDeNovo`, sem sessão leva ao login, já sem o parâmetro; com
+   * sessão (outra aplicação entrou primeiro) só o retira da URL. Retira-o da entrada atual do
+   * histórico antes, para voltar a ela não repetir o login.
+   */
+  private async concluirEntrarDeNovo(authenticated: boolean): Promise<void> {
+    const semOParametro = urlSemOParametroDeEntrarDeNovo(window.location.href);
+    if (semOParametro === null) return;
+    window.history.replaceState(window.history.state, '', semOParametro);
+    if (!authenticated) await this.keycloak?.login({ redirectUri: semOParametro });
   }
 
   /**

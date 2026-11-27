@@ -5,6 +5,8 @@ import { autenticarAdmin, KEYCLOAK_BASE, KEYCLOAK_REALM } from './keycloak-login
 export interface PrazosDaSessaoCurta {
   readonly acessoEmSegundos: number;
   readonly ociosidadeEmSegundos: number;
+  /** Duração máxima da sessão do cliente, que renovar não estende; sem ela vale a do realm. */
+  readonly periodoMaximoEmSegundos?: number;
 }
 
 export interface ClienteDeSessaoCurta {
@@ -41,11 +43,17 @@ function corpoDoCliente(clientId: string, appBaseUrl: string, prazos: PrazosDaSe
     standardFlowEnabled: true,
     redirectUris: [`${appBaseUrl}/*`],
     webOrigins: [appBaseUrl],
-    attributes: {
-      'pkce.code.challenge.method': 'S256',
-      'access.token.lifespan': String(prazos.acessoEmSegundos),
-      'client.session.idle.timeout': String(prazos.ociosidadeEmSegundos),
-    },
+    attributes: atributosDosPrazos(prazos),
+  };
+}
+
+function atributosDosPrazos(prazos: PrazosDaSessaoCurta): Record<string, string> {
+  const maximo = prazos.periodoMaximoEmSegundos;
+  return {
+    'pkce.code.challenge.method': 'S256',
+    'access.token.lifespan': String(prazos.acessoEmSegundos),
+    'client.session.idle.timeout': String(prazos.ociosidadeEmSegundos),
+    ...(maximo === undefined ? {} : { 'client.session.max.lifespan': String(maximo) }),
   };
 }
 

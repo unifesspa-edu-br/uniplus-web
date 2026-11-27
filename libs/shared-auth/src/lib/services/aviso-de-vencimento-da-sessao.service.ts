@@ -68,8 +68,16 @@ export class AvisoDeVencimentoDaSessao {
     if (renovou && depois <= antes) this._semMaisTempo.set(true);
   }
 
-  entrarDeNovo(): void {
-    void this.auth.login(this.router.url);
+  /**
+   * Começa uma sessão nova. Se a renovação mostra que esta aplicação ainda está na sessão antiga,
+   * encerra-a no provedor; se a sessão já acabou (outra aba entrou de novo antes), só entra, e o
+   * cookie do provedor devolve a pessoa na sessão nova, sem encerrá-la.
+   */
+  async entrarDeNovo(): Promise<void> {
+    const rota = this.router.url;
+    await this.auth.refreshToken(RENOVAR_SEMPRE);
+    if (this.auth.sessaoEncerrada()) await this.auth.login(rota);
+    else await this.auth.encerrarParaEntrarDeNovo(rota);
   }
 
   /** Fecha o aviso e não o reabre para este mesmo vencimento. */
