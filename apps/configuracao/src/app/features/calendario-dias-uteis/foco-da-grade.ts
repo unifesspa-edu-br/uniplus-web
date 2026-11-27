@@ -7,7 +7,7 @@ import {
   inject,
   untracked,
 } from '@angular/core';
-import { focoEstaLivre } from '../../shared/foco';
+import { detectarFimDaOperacao, focoEstaLivre } from '../../shared/foco';
 
 export interface OpcoesDoFocoDaGrade {
   /** Há escrita em curso ou recarga do calendário a caminho. */
@@ -31,28 +31,20 @@ export interface OpcoesDoFocoDaGrade {
 export function devolverFocoDaGrade(opcoes: OpcoesDoFocoDaGrade): void {
   const raiz = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   const injector = inject(Injector);
-  let gravou = false;
-
-  const devolver = (): void => {
-    if (!focoEstaLivre()) {
-      return;
-    }
-    const data = opcoes.dataDoDia();
-    const botao = data ? raiz.querySelector<HTMLElement>(`button[data-dia="${data}"]`) : null;
-    (botao ?? raiz.querySelector<HTMLElement>(`#${opcoes.idDoTitulo}`))?.focus();
-  };
+  const gravacaoTerminou = detectarFimDaOperacao(opcoes.gravando);
 
   effect(() => {
-    if (opcoes.gravando()) {
-      gravou = true;
-      return;
-    }
-    if (!gravou) {
-      return;
-    }
-    gravou = false;
-    if (!untracked(opcoes.aberto)) {
-      afterNextRender(devolver, { injector });
+    if (gravacaoTerminou() && !untracked(opcoes.aberto)) {
+      afterNextRender(() => devolverFocoAoDia(raiz, opcoes), { injector });
     }
   });
+}
+
+function devolverFocoAoDia(raiz: HTMLElement, opcoes: OpcoesDoFocoDaGrade): void {
+  if (!focoEstaLivre()) {
+    return;
+  }
+  const data = opcoes.dataDoDia();
+  const botao = data ? raiz.querySelector<HTMLElement>(`button[data-dia="${data}"]`) : null;
+  (botao ?? raiz.querySelector<HTMLElement>(`#${opcoes.idDoTitulo}`))?.focus();
 }

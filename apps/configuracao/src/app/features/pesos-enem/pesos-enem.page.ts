@@ -82,15 +82,7 @@ export class PesosEnemPage {
     }
     untracked(() => {
       this.remocao.consumirParcial();
-      afterNextRender(
-        () => {
-          if (focoEstaLivre()) {
-            const botao = this.raiz.querySelector<HTMLElement>(`#${idDoBotaoDeRemocao(resolucao)}`);
-            (botao ?? this.titulo())?.focus();
-          }
-        },
-        { injector: this.injector },
-      );
+      this.devolverFocoAoBotaoDaResolucao(resolucao);
     });
   });
 
@@ -162,9 +154,16 @@ export class PesosEnemPage {
     }
     const resolucao = this.remocao.resolucaoAlvo();
     this.remocao.descartar();
+    if (resolucao !== null) {
+      this.devolverFocoAoBotaoDaResolucao(resolucao);
+    }
+  }
+
+  /** Depois da renderização, o foco volta ao botão da resolução, ou ao título se o painel sumiu. */
+  private devolverFocoAoBotaoDaResolucao(resolucao: string): void {
     afterNextRender(
       () => {
-        if (resolucao !== null && focoEstaLivre()) {
+        if (focoEstaLivre()) {
           const botao = this.raiz.querySelector<HTMLElement>(`#${idDoBotaoDeRemocao(resolucao)}`);
           (botao ?? this.titulo())?.focus();
         }

@@ -14,14 +14,16 @@ import {
   criarFormularioDeResolucao,
   criarGrupoDeCriacao,
 } from './pesos-enem-form';
-import { aplicarRecusaDoGrupo } from './pesos-enem-recusas';
-import { rotuloDoGrupo } from './pesos-enem-rotulos';
+import {
+  type DesfechoDasRecusasDosGrupos,
+  type FalhaDoGrupo,
+  PAR_JA_EXISTE_CODE,
+  recusarGrupos,
+} from './pesos-enem-recusas';
 import { PesosEnemStore } from './pesos-enem.store';
 import type { EstadoOperacao } from './edicao-dos-parametros';
 import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../shared/formulario';
 
-/** Vendor code do DomainError de par resolução + grupo já cadastrado (409 Conflict). */
-const PAR_JA_EXISTE_CODE = 'uniplus.configuracao.peso_area_enem.par_ja_existe';
 const MENSAGEM_DE_DUPLICIDADE = 'Resolução já cadastrada. Informe um identificador diferente.';
 const MENSAGEM_DE_DUPLICIDADE_PARCIAL =
   'Um dos grupos pendentes já existe com esse identificador. Os grupos já criados foram salvos — confira os dados existentes antes de tentar novamente.';
@@ -32,6 +34,11 @@ interface Envio {
   readonly chave: string;
   readonly corpoSerializado: string;
   readonly result: ApiResult<string>;
+}
+
+interface GrupoPendente {
+  readonly grupo: FormGroup<PesoGrupoForm>;
+  readonly indice: number;
 }
 
 /**
@@ -48,6 +55,8 @@ export class CriacaoDeResolucao {
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly chaves = new ChavesDeIdempotencia<number>();
+  private readonly tituloDaRecusa = (problem: ProblemDetails) =>
+    this.problemI18n.resolve(problem).title;
 
   readonly form = criarFormularioDeResolucao();
   readonly aberto = signal(false);
@@ -69,6 +78,14 @@ export class CriacaoDeResolucao {
     if (this.gravacao.gravando() || !this.store.podeCadastrar()) {
       return;
     }
+    this.prepararFormulario();
+    this.limparMensagens();
+    this.estadoGrupos.set(new Map());
+    this.chaves.reiniciar(this.store.grupos().map((_, indice) => indice));
+    this.aberto.set(true);
+  }
+
+  private prepararFormulario(): void {
     this.form.controls.resolucao.enable();
     this.form.setControl(
       'grupos',
@@ -77,11 +94,11 @@ export class CriacaoDeResolucao {
       ),
     );
     this.form.reset({ resolucao: '', baseLegalGlobal: '' });
+  }
+
+  private limparMensagens(): void {
     this.erro.set(null);
     this.recusa.set('');
-    this.estadoGrupos.set(new Map());
-    this.chaves.reiniciar(this.store.grupos().map((_, indice) => indice));
-    this.aberto.set(true);
   }
 
   fechar(): void {
@@ -101,20 +118,22 @@ export class CriacaoDeResolucao {
   }
 
   criar(): void {
-    this.erro.set(null);
-    this.recusa.set('');
+    this.limparMensagens();
     descartarRecusasDoServidor(this.form);
     this.form.markAllAsTouched();
     if (this.form.invalid) {
       return;
     }
-    const grupos = this.form.controls.grupos.controls;
-    const pendentes = grupos
-      .map((grupo, indice) => ({ grupo, indice }))
-      .filter(({ indice }) => this.estadoGrupos().get(indice) !== 'ok');
+    const pendentes = this.gruposPendentes();
     if (pendentes.length > 0) {
       this.enviar(this.form.controls.resolucao.value.trim(), pendentes);
     }
+  }
+
+  private gruposPendentes(): GrupoPendente[] {
+    return this.form.controls.grupos.controls
+      .map((grupo, indice) => ({ grupo, indice }))
+      .filter(({ indice }) => this.estadoGrupos().get(indice) !== 'ok');
   }
 
   private algumGrupoCriado(): boolean {
@@ -131,15 +150,11 @@ export class CriacaoDeResolucao {
     });
   }
 
-  private enviar(
-    resolucao: string,
-    pendentes: readonly { grupo: FormGroup<PesoGrupoForm>; indice: number }[],
-  ): void {
+  private enviar(resolucao: string, pendentes: readonly GrupoPendente[]): void {
     if (!this.gravacao.tentar('criando')) {
       return;
     }
-    this.erro.set(null);
-    this.recusa.set('');
+    this.limparMensagens();
     forkJoin(pendentes.map(({ grupo, indice }) => this.chamar(grupo, indice, resolucao)))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((envios) => {
@@ -160,18 +175,21 @@ export class CriacaoDeResolucao {
     // Algum grupo já criado, neste envio ou num anterior: a resolução fica travada, e travar
     // limpa o erro do campo; por isso, nesse caso, o erro de resolução vai para o banner.
     const algumSucesso = this.algumGrupoCriado() || envios.some((envio) => envio.result.ok);
+    this.registrarEnvios(envios);
+    if (envios.every((envio) => envio.result.ok)) {
+      this.concluirComSucesso(resolucao);
+      return;
+    }
+    this.concluirComFalhas(envios, algumSucesso);
+  }
+
+  private registrarEnvios(envios: readonly Envio[]): void {
     const novoEstado = new Map(this.estadoGrupos());
-    const falhas = envios.filter((envio) => !envio.result.ok);
     for (const envio of envios) {
       this.chaves.lembrar(envio.indice, envio, envio.result);
       novoEstado.set(envio.indice, envio.result.ok ? 'ok' : 'erro');
     }
     this.estadoGrupos.set(novoEstado);
-    if (falhas.length === 0) {
-      this.concluirComSucesso(resolucao);
-      return;
-    }
-    this.concluirComFalhas(envios, algumSucesso);
   }
 
   private concluirComSucesso(resolucao: string): void {
@@ -185,61 +203,38 @@ export class CriacaoDeResolucao {
   }
 
   private concluirComFalhas(envios: readonly Envio[], algumSucesso: boolean): void {
-    const falhas = envios.filter((envio) => !envio.result.ok);
-    const { duplicidade, semCampo, ultimoProblema } = this.recusarGrupos(falhas, algumSucesso);
-    // Trava a resolução assim que QUALQUER grupo for criado: os já criados ficam presos a esse
-    // identificador no backend, e mudá-lo recriaria os pendentes sob outra resolução.
-    if (algumSucesso) {
-      this.form.controls.resolucao.disable();
-    } else if (duplicidade) {
-      this.marcarResolucaoDuplicada();
-    }
+    const falhas = falhasDosEnvios(envios);
+    const desfecho = this.recusarFalhas(falhas, algumSucesso);
     // Se o drawer foi fechado com os envios em voo, `aoFechar` rodou antes de qualquer
     // resultado e não viu sucesso: recarregar agora é a única forma de mostrar o que foi criado.
     if (!this.aberto() && algumSucesso) {
       this.gravacao.recarregar();
     }
-    this.erro.set(
-      mensagemDoBanner({
-        falhas: falhas.length,
-        total: envios.length,
-        duplicidade,
-        duplicidadeParcial: duplicidade && algumSucesso,
-        semCampo,
-      }),
-    );
+    this.erro.set(mensagemDoBanner(falhas.length, envios.length, desfecho, algumSucesso));
+    this.avisarRecusa(desfecho.ultimoProblema);
+  }
+
+  private recusarFalhas(
+    falhas: readonly FalhaDoGrupo[],
+    algumSucesso: boolean,
+  ): DesfechoDasRecusasDosGrupos {
+    const resolucao = algumSucesso ? undefined : this.form.controls.resolucao;
+    const desfecho = recusarGrupos(falhas, resolucao, this.tituloDaRecusa);
+    // Trava a resolução assim que QUALQUER grupo for criado: os já criados ficam presos a esse
+    // identificador no backend, e mudá-lo recriaria os pendentes sob outra resolução.
+    if (algumSucesso) {
+      this.form.controls.resolucao.disable();
+    } else if (desfecho.duplicidade) {
+      this.marcarResolucaoDuplicada();
+    }
+    return desfecho;
+  }
+
+  private avisarRecusa(ultimoProblema: ProblemDetails | null): void {
     this.recusa.set(this.erro() ? '' : 'Revise os campos indicados.');
     if (ultimoProblema !== null && ultimoProblema.status >= 500) {
       this.notifications.errorFromProblem(ultimoProblema);
     }
-  }
-
-  private recusarGrupos(falhas: readonly Envio[], algumSucesso: boolean) {
-    let duplicidade = false;
-    let ultimoProblema: ProblemDetails | null = null;
-    const semCampo: string[] = [];
-    for (const { grupo, result } of falhas) {
-      if (result.ok) {
-        continue;
-      }
-      ultimoProblema = result.problem;
-      if (result.problem.code === PAR_JA_EXISTE_CODE) {
-        duplicidade = true;
-        continue;
-      }
-      const destinos = {
-        resolucao: algumSucesso ? undefined : this.form.controls.resolucao,
-        baseLegal: grupo.controls.baseLegal,
-      };
-      const nome = rotuloDoGrupo(grupo.controls.grupoCurso.value);
-      const titulo = (problem: ProblemDetails) => this.problemI18n.resolve(problem).title;
-      semCampo.push(
-        ...aplicarRecusaDoGrupo(grupo.controls.areas, result.problem, destinos, titulo).map(
-          (mensagem) => `${nome}: ${mensagem}`,
-        ),
-      );
-    }
-    return { duplicidade, semCampo, ultimoProblema };
   }
 
   /** "Informe um identificador diferente" só é uma instrução que o operador consegue seguir
@@ -251,25 +246,26 @@ export class CriacaoDeResolucao {
   }
 }
 
-interface DadosDoBanner {
-  readonly falhas: number;
-  readonly total: number;
-  readonly duplicidade: boolean;
-  readonly duplicidadeParcial: boolean;
-  readonly semCampo: readonly string[];
+function falhasDosEnvios(envios: readonly Envio[]): FalhaDoGrupo[] {
+  return envios.flatMap(({ grupo, result }) =>
+    result.ok ? [] : [{ grupo, problem: result.problem }],
+  );
 }
 
 /** Com resolução duplicada e nada criado, o aviso fica no campo da resolução e o banner leva só
  *  as mensagens dos outros grupos, que não têm campo. */
-function mensagemDoBanner(dados: DadosDoBanner): string | null {
+function mensagemDoBanner(
+  falhas: number,
+  total: number,
+  { duplicidade, semCampo }: DesfechoDasRecusasDosGrupos,
+  algumSucesso: boolean,
+): string | null {
   const partes: string[] = [];
-  if (dados.duplicidadeParcial) {
+  if (duplicidade && algumSucesso) {
     partes.push(MENSAGEM_DE_DUPLICIDADE_PARCIAL);
-  } else if (!dados.duplicidade) {
-    partes.push(
-      `${dados.falhas} de ${dados.total} grupo(s) não foram criados. Corrija e tente novamente.`,
-    );
+  } else if (!duplicidade) {
+    partes.push(`${falhas} de ${total} grupo(s) não foram criados. Corrija e tente novamente.`);
   }
-  partes.push(...dados.semCampo);
+  partes.push(...semCampo);
   return partes.length > 0 ? partes.join(' ') : null;
 }

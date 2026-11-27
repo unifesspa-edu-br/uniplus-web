@@ -132,7 +132,7 @@ export class UnidadesStore {
     }
   }
 
-  private montarParams(): HttpParams {
+  private parametrosDosFiltros(): HttpParams {
     let params = new HttpParams();
     const busca = this.buscaAplicada();
     if (busca.length > 0) {
@@ -142,6 +142,11 @@ export class UnidadesStore {
     if (tipo.length > 0) {
       params = params.append('tipo', tipo);
     }
+    return params;
+  }
+
+  private montarParams(): HttpParams {
+    const params = this.parametrosDosFiltros();
     const pagina = this.pagina();
     if (pagina === undefined) {
       return params.set('limit', String(TAMANHO_DA_PAGINA));

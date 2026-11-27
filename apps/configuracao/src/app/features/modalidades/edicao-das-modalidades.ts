@@ -1,6 +1,11 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ProblemDetails, ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
+import {
+  ApiResult,
+  ProblemDetails,
+  ProblemI18nService,
+  STATUS_HTTP,
+} from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { ModalidadeDto, ModalidadesApi } from '@uniplus/shared-data/configuracao';
 import { ModalidadesStore } from './modalidades.store';
@@ -55,22 +60,28 @@ export class EdicaoDasModalidades {
     this.api
       .remover(alvo.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((resultado) => {
-        if (resultado.ok) {
-          this.notifications.success('Modalidade removida', alvo.codigo);
-          this.anuncio.set(`Modalidade ${alvo.codigo} removida.`);
-          this.dialogAberto.set(false);
-          this.recarregar();
-        } else if (resultado.problem.status === STATUS_HTTP.CONFLITO) {
-          this.codigoDoBloqueio.set(resultado.problem.code);
-          this.bloqueioServidor.set(true);
-          this.mensagemBloqueioServidor.set(this.problemI18n.resolve(resultado.problem).title);
-          this.anuncio.set(this.mensagemBloqueioServidor() ?? 'A remoção foi recusada.');
-          this.recarregar();
-        } else {
-          this.recusarRemocao(resultado.problem);
-        }
-      });
+      .subscribe((resultado) => this.concluirRemocao(alvo, resultado));
+  }
+
+  private concluirRemocao(alvo: ModalidadeDto, resultado: ApiResult<void>): void {
+    if (resultado.ok) {
+      this.notifications.success('Modalidade removida', alvo.codigo);
+      this.anuncio.set(`Modalidade ${alvo.codigo} removida.`);
+      this.dialogAberto.set(false);
+      this.recarregar();
+    } else if (resultado.problem.status === STATUS_HTTP.CONFLITO) {
+      this.bloquearRemocao(resultado.problem);
+    } else {
+      this.recusarRemocao(resultado.problem);
+    }
+  }
+
+  private bloquearRemocao(problem: ProblemDetails): void {
+    this.codigoDoBloqueio.set(problem.code);
+    this.bloqueioServidor.set(true);
+    this.mensagemBloqueioServidor.set(this.problemI18n.resolve(problem).title);
+    this.anuncio.set(this.mensagemBloqueioServidor() ?? 'A remoção foi recusada.');
+    this.recarregar();
   }
 
   private recusarRemocao(problem: ProblemDetails): void {

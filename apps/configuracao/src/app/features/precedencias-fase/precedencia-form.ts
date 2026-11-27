@@ -11,6 +11,8 @@ import {
   type CriarPrecedenciaFaseCommand,
 } from '@uniplus/shared-data/configuracao';
 import {
+  controleDeMarca,
+  controleDeTexto,
   controlNameFromBackendField,
   descartarRecusasDoServidorPorCodigo,
   mensagemDeErroDoControle,
@@ -72,15 +74,9 @@ function autorreferencia(grupo: AbstractControl): ValidationErrors | null {
 export function criarFormularioDePrecedencia(): FormGroup<PrecedenciaForm> {
   return new FormGroup<PrecedenciaForm>(
     {
-      antecessoraCodigo: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required],
-      }),
-      sucessoraCodigo: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required],
-      }),
-      permiteSobreposicao: new FormControl(false, { nonNullable: true }),
+      antecessoraCodigo: controleDeTexto(Validators.required),
+      sucessoraCodigo: controleDeTexto(Validators.required),
+      permiteSobreposicao: controleDeMarca(false),
     },
     { validators: autorreferencia },
   );

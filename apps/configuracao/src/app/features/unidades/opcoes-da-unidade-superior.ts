@@ -50,13 +50,19 @@ export class OpcoesDaUnidadeSuperior {
   );
 
   constructor() {
-    effect(() => {
-      const problem = this.lista.problem();
-      if (problem && problem.status >= 500) {
-        const titulo = this.problemI18n.resolve(problem).title;
-        untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
-      }
-    });
+    effect(() => this.notificarFalhaDaCarga());
+    this.aplicarTermoDigitado();
+  }
+
+  private notificarFalhaDaCarga(): void {
+    const problem = this.lista.problem();
+    if (problem && problem.status >= 500) {
+      const titulo = this.problemI18n.resolve(problem).title;
+      untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
+    }
+  }
+
+  private aplicarTermoDigitado(): void {
     toObservable(this.termo)
       .pipe(
         map((termo) => termo.trim()),

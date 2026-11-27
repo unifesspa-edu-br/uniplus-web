@@ -1,17 +1,9 @@
 import { TestRequest } from '@angular/common/http/testing';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  ESCRITA,
-  PaginaDeTeste,
-  RES_750,
-  RES_805,
-  SEM_CORPO,
-  linhas750,
-  linhas805,
-  recusa,
-  indisponivel,
-} from './pesos-enem.testing';
+import { ESCRITA, RES_750, RES_805, linhas750, linhas805 } from './pesos-enem-exemplos.testing';
+import { SEM_CORPO, recusa } from './pesos-enem-respostas.testing';
+import { PaginaDeTeste, indisponivel } from './pesos-enem.testing';
 
 const TODAS = [...linhas805, ...linhas750];
 

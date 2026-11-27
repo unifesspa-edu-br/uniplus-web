@@ -15,7 +15,12 @@ import {
 } from '@uniplus/shared-data/autorizacao';
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
 import { ok } from '../testes';
-import { botaoComTexto, campoPorRotulo, dialogoComTitulo, digitar } from '../interacao.testing';
+import {
+  botaoComTexto,
+  campoPorRotulo,
+  dialogoComTitulo,
+  digitar,
+} from '../../../shared/interacao-com-a-tela/interacao-com-a-tela.testing';
 import { DocumentoDaVersaoService } from './documento-da-versao.service';
 import { situacaoDoAnexo } from './enums-da-api.testing';
 import { FilaDeVersoesPage } from './fila-de-versoes.page';

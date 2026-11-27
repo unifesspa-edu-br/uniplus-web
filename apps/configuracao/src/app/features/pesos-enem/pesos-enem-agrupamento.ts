@@ -1,11 +1,6 @@
 import { PesoAreaEnemDto } from '@uniplus/shared-data/configuracao';
 
-/** Agrupa as linhas por resolução e ordena cada grupo pela ordem dos grupos da API. Um código
- *  que a lista não traga vai para o fim, em vez de sumir da tela. */
-export function agruparPorResolucao(
-  pesos: readonly PesoAreaEnemDto[],
-  ordemDosGrupos: ReadonlyMap<string, number>,
-): Map<string, PesoAreaEnemDto[]> {
+function separarPorResolucao(pesos: readonly PesoAreaEnemDto[]): Map<string, PesoAreaEnemDto[]> {
   const mapa = new Map<string, PesoAreaEnemDto[]>();
   for (const peso of pesos) {
     const grupo = mapa.get(peso.resolucao);
@@ -15,6 +10,16 @@ export function agruparPorResolucao(
       mapa.set(peso.resolucao, [peso]);
     }
   }
+  return mapa;
+}
+
+/** Agrupa as linhas por resolução e ordena cada grupo pela ordem dos grupos da API. Um código
+ *  que a lista não traga vai para o fim, em vez de sumir da tela. */
+export function agruparPorResolucao(
+  pesos: readonly PesoAreaEnemDto[],
+  ordemDosGrupos: ReadonlyMap<string, number>,
+): Map<string, PesoAreaEnemDto[]> {
+  const mapa = separarPorResolucao(pesos);
   const posicao = (linha: PesoAreaEnemDto): number =>
     ordemDosGrupos.get(linha.grupoCurso.codigo) ?? Number.MAX_SAFE_INTEGER;
   for (const linhas of mapa.values()) {

@@ -1,14 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  CRIADO,
-  ESCRITA,
-  PaginaDeTeste,
-  RES_805,
-  SEM_CORPO,
-  linhas805,
-  recusa,
-  indisponivel,
-} from './pesos-enem.testing';
+import { ESCRITA, RES_805, linhas805 } from './pesos-enem-exemplos.testing';
+import { CRIADO, SEM_CORPO, recusa } from './pesos-enem-respostas.testing';
+import { PaginaDeTeste, indisponivel } from './pesos-enem.testing';
 
 const DRAWER = 'dialog[aria-label="Formulário de nova resolução de pesos do ENEM"]';
 

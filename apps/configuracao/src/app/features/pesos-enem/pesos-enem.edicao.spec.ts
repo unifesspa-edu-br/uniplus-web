@@ -2,15 +2,14 @@ import { PesoAreaEnemDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   BASE,
-  PaginaDeTeste,
   RES_750,
   RES_805,
-  areaDo,
   linhas750,
   linhas805,
   pesoDe,
-  problem,
-} from './pesos-enem.testing';
+} from './pesos-enem-exemplos.testing';
+import { problem } from './pesos-enem-respostas.testing';
+import { PaginaDeTeste, areaDo } from './pesos-enem.testing';
 
 describe('PesosEnemPage — edição em linha', () => {
   let t: PaginaDeTeste;
@@ -24,7 +23,7 @@ describe('PesosEnemPage — edição em linha', () => {
   it('PesosEnemPage_EnterEdit_HabilitaInputsERevelaBarra', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.edicao.emEdicao()).toBe(RES_805);
     const form = t.edicao.form();
@@ -48,7 +47,7 @@ describe('PesosEnemPage — edição em linha', () => {
     );
     await t.carregarUmaPagina(foraDeOrdem);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const ordemObtida = t.edicao.form()?.controls.map((g) => g.controls.grupoCurso.value.codigo);
     expect(ordemObtida).toEqual([
@@ -62,11 +61,11 @@ describe('PesosEnemPage — edição em linha', () => {
   it('PesosEnemPage_Cancelar_ReverteSemChamarApiEDevolveFoco', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     areaDo(t.edicao.form()?.controls[0], 'LINGUAGENS').controls.peso.setValue(3);
     t.edicao.cancelar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.edicao.emEdicao()).toBeNull();
     expect(t.edicao.form()).toBeNull();
@@ -83,7 +82,7 @@ describe('PesosEnemPage — edição em linha', () => {
   it('PesosEnemPage_Esc_FechaModoEdicaoERestauraValores', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const grid = t.fixture.nativeElement.querySelector('.pe-grid') as HTMLElement;
     grid.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -100,10 +99,10 @@ describe('PesosEnemPage — edição em linha', () => {
     // não tinha mais onde aplicar os valores salvos.
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const grid = t.fixture.nativeElement.querySelector('.pe-grid') as HTMLElement;
     grid.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -119,7 +118,7 @@ describe('PesosEnemPage — edição em linha', () => {
     for (const req of requests) {
       req.flush(null, { status: 204, statusText: 'No Content' });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     // Só depois do envio resolver a sessão fecha de fato.
     expect(t.edicao.emEdicao()).toBeNull();
@@ -133,14 +132,14 @@ describe('PesosEnemPage — edição em linha', () => {
     // já tinha aberto.
     await t.carregarUmaPagina([...linhas805, ...linhas750]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     // Tenta trocar para outra resolução enquanto o envio está em voo.
     t.edicao.pedirEdicao(RES_750);
-    await t.propagate();
+    await t.atualizarAplicacao();
     expect(t.edicao.emEdicao()).toBe(RES_805);
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -149,11 +148,11 @@ describe('PesosEnemPage — edição em linha', () => {
     for (const req of requests) {
       req.flush(null, { status: 204, statusText: 'No Content' });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     // Só agora, com o envio concluído, a troca de sessão é permitida.
     t.edicao.pedirEdicao(RES_750);
-    await t.propagate();
+    await t.atualizarAplicacao();
     expect(t.edicao.emEdicao()).toBe(RES_750);
   });
 
@@ -164,11 +163,11 @@ describe('PesosEnemPage — edição em linha', () => {
     // isso ficaria desatualizado até um reload manual da página.
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     areaDo(t.edicao.form()?.controls[0], 'MATEMATICA').controls.peso.setValue(3.0);
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -188,10 +187,10 @@ describe('PesosEnemPage — edição em linha', () => {
     );
     requests[2]?.flush(null, { status: 204, statusText: 'No Content' });
     requests[3]?.flush(null, { status: 204, statusText: 'No Content' });
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     t.edicao.cancelar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.edicao.emEdicao()).toBeNull();
     expect(
@@ -210,11 +209,11 @@ describe('PesosEnemPage — edição em linha', () => {
     // sessão.
     await t.carregarUmaPagina([...linhas805, ...linhas750]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     areaDo(t.edicao.form()?.controls[0], 'MATEMATICA').controls.peso.setValue(3.0);
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -234,11 +233,11 @@ describe('PesosEnemPage — edição em linha', () => {
     );
     requests[2]?.flush(null, { status: 204, statusText: 'No Content' });
     requests[3]?.flush(null, { status: 204, statusText: 'No Content' });
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
     t.edicao.pedirEdicao(RES_750);
-    await t.propagate();
+    await t.atualizarAplicacao();
     confirmSpy.mockRestore();
 
     expect(t.edicao.emEdicao()).toBe(RES_750);
@@ -253,20 +252,20 @@ describe('PesosEnemPage — edição em linha', () => {
   it('PesosEnemPage_TrocarResolucaoEmEdicaoSuja_PedeConfirmacao', async () => {
     await t.carregarUmaPagina([...linhas805, ...linhas750]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     areaDo(t.edicao.form()?.controls[0], 'LINGUAGENS').controls.peso.setValue(9);
     areaDo(t.edicao.form()?.controls[0], 'LINGUAGENS').controls.peso.markAsDirty();
 
     const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
     t.edicao.pedirEdicao(RES_750);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(confirmSpy).toHaveBeenCalled();
     expect(t.edicao.emEdicao()).toBe(RES_805);
 
     confirmSpy.mockReturnValue(true);
     t.edicao.pedirEdicao(RES_750);
-    await t.propagate();
+    await t.atualizarAplicacao();
     expect(t.edicao.emEdicao()).toBe(RES_750);
 
     confirmSpy.mockRestore();
@@ -275,9 +274,9 @@ describe('PesosEnemPage — edição em linha', () => {
   it('PesosEnemPage_AbrirEdicao_FocaOPrimeiroCampoEditavel', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const focado = document.activeElement as HTMLInputElement | null;
     expect(focado?.id).toBe('pe-res-805-2024-g0-a0-peso');
@@ -287,10 +286,10 @@ describe('PesosEnemPage — edição em linha', () => {
   it('PesosEnemPage_SalvarComSucesso_DevolveOFocoAoBotaoDeEditar', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -299,9 +298,9 @@ describe('PesosEnemPage — edição em linha', () => {
     for (const req of requests) {
       req.flush(null, { status: 204, statusText: 'No Content' });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.edicao.emEdicao()).toBeNull();
     expect(document.activeElement?.id).toBe('pe-editar-res-805-2024');

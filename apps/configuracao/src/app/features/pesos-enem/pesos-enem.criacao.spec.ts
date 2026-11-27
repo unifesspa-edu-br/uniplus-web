@@ -1,14 +1,28 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { AREAS, GRUPOS, grupo, linhas805 } from './pesos-enem-exemplos.testing';
 import {
-  AREAS,
-  BASE,
-  GRUPOS,
-  PaginaDeTeste,
-  areaDo,
-  grupo,
-  linhas805,
+  NAO_PROCESSAVEL,
+  PROBLEMA_PESO_EXCEDE_MAXIMO,
+  flushProblema,
   problem,
-} from './pesos-enem.testing';
+  responderCriacoes,
+} from './pesos-enem-respostas.testing';
+import { PaginaDeTeste, areaDo } from './pesos-enem.testing';
+
+const CODIGO_DA_RECUSA = 'uniplus.configuracao.peso_area_enem.regra_qualquer';
+
+const CORPO_DO_PRIMEIRO_GRUPO = {
+  resolucao: 'Res. 900/2026',
+  grupoCurso: 'TECNOLOGICA',
+  areas: [
+    { codigo: 'REDACAO', peso: 0, corte: null },
+    { codigo: 'CIENCIAS_DA_NATUREZA', peso: 0, corte: null },
+    { codigo: 'CIENCIAS_HUMANAS', peso: 0, corte: null },
+    { codigo: 'LINGUAGENS', peso: 0, corte: null },
+    { codigo: 'MATEMATICA', peso: 2.5, corte: 450 },
+  ],
+  baseLegal: 'Res. 900/2026 Anexo I',
+};
 
 describe('PesosEnemPage — cadastro de resolução', () => {
   let t: PaginaDeTeste;
@@ -22,366 +36,164 @@ describe('PesosEnemPage — cadastro de resolução', () => {
   it('PesosEnemPage_Drawer_Cria4GruposFixosComGrupoCursoReadonly', async () => {
     await t.carregarUmaPagina([]);
     t.criacao.abrir();
-    await t.propagate();
-
+    await t.atualizarAplicacao();
     const grupos = t.criacao.form.controls.grupos.controls;
     expect(grupos).toHaveLength(4);
     expect(grupos.map((g) => g.controls.grupoCurso.value)).toEqual(GRUPOS);
-
-    const legendas = t.fixture.nativeElement.querySelectorAll('.field-group legend');
-    expect(legendas).toHaveLength(4);
-
+    expect(t.fixture.nativeElement.querySelectorAll('.field-group legend')).toHaveLength(4);
     // As áreas de cada grupo são as da API, na ordem dela, e funcionam com o cadastro vazio.
-    for (const grupo of grupos) {
-      expect(grupo.controls.areas.controls.map((a) => a.controls.codigo.value)).toEqual(
-        AREAS.map((a) => a.codigo),
-      );
-    }
+    const codigos = grupos.map((g) =>
+      g.controls.areas.controls.map((a) => a.controls.codigo.value),
+    );
+    expect(codigos).toEqual(grupos.map(() => AREAS.map((a) => a.codigo)));
   });
 
   it('PesosEnemPage_ResolucaoVazia_InvalidaFormDeCriacao', async () => {
     await t.carregarUmaPagina([]);
     t.criacao.abrir();
     t.criacao.criar();
-    await t.propagate();
-
+    await t.atualizarAplicacao();
     t.controller.expectNone((r) => r.url.includes('/admin/pesos-area-enem'));
     expect(t.erroDoCampoLote('resolucao')).toBe('Campo obrigatório.');
   });
 
   it('PesosEnemPage_Criar_CoordenaQuatroChamadasComIdempotencyKeyPropria', async () => {
     await t.carregarUmaPagina([]);
-    t.criacao.abrir();
-    t.criacao.form.patchValue({
-      resolucao: 'Res. 900/2026',
-      baseLegalGlobal: 'Res. 900/2026 Anexo I',
-    });
-    t.criacao.criar();
-    await t.propagate();
-
-    const requests = t.controller.match(
-      (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
-    );
+    await t.abrirCadastroPreenchido();
+    const requests = await t.enviarCriacaoPeloModelo();
     expect(requests).toHaveLength(4);
-    const chaves = new Set<string | null>();
-    requests.forEach((req, i) => {
-      expect(req.request.method).toBe('POST');
-      chaves.add(req.request.headers.get('Idempotency-Key'));
-      req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' });
-    });
+    expect(requests.map((req) => req.request.method)).toEqual(['POST', 'POST', 'POST', 'POST']);
+    const chaves = new Set(requests.map((req) => req.request.headers.get('Idempotency-Key')));
+    responderCriacoes(requests);
     expect(chaves.size).toBe(4);
-    await t.propagate();
-
+    await t.atualizarAplicacao();
     expect(t.criacao.aberto()).toBe(false);
     t.expectListagem().flush(linhas805.map((l) => ({ ...l, resolucao: 'Res. 900/2026' })));
-    await t.propagate();
+    await t.atualizarAplicacao();
   });
 
+  // `Validators.required` aceita espaços em branco: sem normalizar, o payload levaria '' e o
+  // backend responderia sobre formato, não sobre ausência.
   it('PesosEnemPage_Criar_CamposDeTextoEmBrancoViajamComoNull', async () => {
-    // `Validators.required` aceita espaços em branco: sem normalizar, o payload
-    // levaria '' e o backend responderia sobre formato, não sobre ausência.
     await t.carregarUmaPagina([]);
     t.criacao.abrir();
     t.criacao.form.patchValue({ resolucao: '   ', baseLegalGlobal: '  ' });
-    t.criacao.criar();
-    await t.propagate();
-
-    const requests = t.controller.match(
-      (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
-    );
+    const requests = await t.enviarCriacaoPeloModelo();
     expect(requests).toHaveLength(4);
-    requests.forEach((req, i) => {
+    requests.forEach((req) => {
       expect(req.request.body).toMatchObject({ resolucao: null, baseLegal: null });
-      req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' });
     });
-    await t.propagate();
-    t.expectListagem().flush([]);
-    await t.propagate();
+    responderCriacoes(requests);
+    await t.recarregarCom([]);
   });
 
   it('PesosEnemPage_Criar_CodigosComEspacosViajamAparadosNoPayload', async () => {
     const areas = AREAS.map((a, i) => (i === 0 ? { ...a, codigo: ` ${a.codigo} ` } : a));
     const grupos = GRUPOS.map((g, i) => (i === 0 ? { ...g, codigo: ` ${g.codigo} ` } : g));
     await t.carregarUmaPagina([], areas, grupos);
-    t.criacao.abrir();
-    t.criacao.form.patchValue({
-      resolucao: 'Res. 900/2026',
-      baseLegalGlobal: 'Res. 900/2026 Anexo I',
-    });
-    t.criacao.criar();
-    await t.propagate();
-
-    const requests = t.controller.match(
-      (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
-    );
+    await t.abrirCadastroPreenchido();
+    const requests = await t.enviarCriacaoPeloModelo();
     expect(requests).toHaveLength(GRUPOS.length);
     expect(requests.map((req) => req.request.body.grupoCurso)).toEqual(GRUPOS.map((g) => g.codigo));
-    requests.forEach((req, i) => {
-      expect(req.request.body.areas.map((a: { codigo: string }) => a.codigo)).toEqual(
-        AREAS.map((a) => a.codigo),
-      );
-      req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' });
-    });
-    await t.propagate();
-    t.expectListagem().flush([]);
-    await t.propagate();
+    const codigosDasAreas = requests.map((req) =>
+      req.request.body.areas.map((a: { codigo: string }) => a.codigo),
+    );
+    expect(codigosDasAreas).toEqual(requests.map(() => AREAS.map((a) => a.codigo)));
+    responderCriacoes(requests);
+    await t.recarregarCom([]);
   });
 
+  // Regressão: renovar a key numa falha transitória (rede/5xx) trocaria um retry idempotente
+  // seguro por uma criação duplicada — o POST original pode ter sido processado no servidor
+  // mesmo com a resposta perdida.
   it('PesosEnemPage_FalhaTransitoriaNaCriacao_PreservaIdempotencyKey', async () => {
-    // Regressão: renovar a key numa falha transitória
-    // (rede/5xx) trocaria um retry idempotente seguro por uma criação
-    // duplicada — o POST original pode ter sido processado no servidor
-    // mesmo com a resposta perdida.
     await t.carregarUmaPagina([]);
-    t.criacao.abrir();
-    t.criacao.form.patchValue({
-      resolucao: 'Res. 900/2026',
-      baseLegalGlobal: 'Res. 900/2026 Anexo I',
-    });
-    t.criacao.criar();
-    await t.propagate();
-
-    const requests1 = t.controller.match(
-      (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
-    );
-    expect(requests1).toHaveLength(4);
-    const chaveOriginal = requests1[0]?.request.headers.get('Idempotency-Key');
-    requests1[0]?.flush(problem(500, 'uniplus.internal.unexpected', 'Erro interno'), {
-      status: 500,
-      statusText: 'Internal Server Error',
-      headers: { 'content-type': 'application/problem+json' },
-    });
-    requests1
-      .slice(1)
-      .forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
-    await t.propagate();
-
+    const chaveOriginal = await t.criarComFalhaTransitoriaNoPrimeiro();
     expect(
       areaDo(t.criacao.form.controls.grupos.controls[0], 'REDACAO').controls.peso.errors,
     ).toBeNull();
-
-    t.criacao.criar();
-    await t.propagate();
-    const retry = t.controller.expectOne(
-      (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
-    );
+    const retry = await t.reenviarCriacaoPeloModelo();
     expect(retry.request.headers.get('Idempotency-Key')).toBe(chaveOriginal);
-    retry.flush('novo-id-3', { status: 201, statusText: 'Created' });
-    await t.propagate();
+    responderCriacoes([retry]);
+    await t.atualizarAplicacao();
     expect(t.criacao.aberto()).toBe(false);
-    t.expectListagem().flush([]);
-    await t.propagate();
+    await t.recarregarCom([]);
   });
 
+  // Durante o envio os grupos pendentes ficam travados: uma edição feita depois de o corpo partir
+  // faria o card "Criado" exibir um valor diferente do que o servidor recebeu. O estado dos
+  // controles não muda; o fieldset os trava.
   it('PesosEnemPage_Criar_TravaGruposPendentesDuranteEnvio', async () => {
-    // Regressão: sem travar os grupos pendentes durante o envio, o usuário
-    // podia editar um valor depois do snapshot já ter sido enviado ao POST,
-    // mas antes da resposta chegar — o sucesso posterior desabilitaria o
-    // MESMO FormGroup marcando "Criado" com um valor diferente do que o
-    // backend recebeu.
     await t.carregarUmaPagina([]);
-    t.criacao.abrir();
-    t.criacao.form.patchValue({
-      resolucao: 'Res. 900/2026',
-      baseLegalGlobal: 'Res. 900/2026 Anexo I',
-    });
-    t.criacao.criar();
-    await t.propagate();
-
-    // Somente leitura pelo fieldset do formulário: o estado dos controles não muda.
-    const campos = t.raiz.querySelectorAll<HTMLInputElement>('ui-drawer input');
-    expect(campos.length).toBeGreaterThan(0);
-    for (const campo of campos) {
-      expect(campo.matches(':disabled')).toBe(true);
-    }
-    for (const grupo of t.criacao.form.controls.grupos.controls) {
-      expect(grupo.disabled).toBe(false);
-    }
-
-    const requests = t.controller.match(
-      (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
-    );
+    await t.abrirCadastroPreenchido();
+    const requests = await t.enviarCriacaoPeloModelo();
+    t.conferirCamposDoFormularioTravados();
+    expect(t.travasDosGruposDoCadastro()).toEqual([false, false, false, false]);
     expect(requests).toHaveLength(4);
-    requests[0]?.flush(
-      problem(
-        422,
-        'uniplus.configuracao.peso_area_enem.peso_excede_maximo',
-        'Peso excede o máximo',
-      ),
-      {
-        status: 422,
-        statusText: 'Unprocessable Entity',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-    requests[1]?.flush('novo-id-1', { status: 201, statusText: 'Created' });
-    requests[2]?.flush('novo-id-2', { status: 201, statusText: 'Created' });
-    requests[3]?.flush('novo-id-3', { status: 201, statusText: 'Created' });
-    await t.propagate();
-
-    expect(t.criacao.form.controls.grupos.controls[0]?.disabled).toBe(false);
-    expect(t.criacao.form.controls.grupos.controls[1]?.disabled).toBe(false);
+    flushProblema(requests[0], NAO_PROCESSAVEL, PROBLEMA_PESO_EXCEDE_MAXIMO);
+    responderCriacoes(requests.slice(1));
+    await t.atualizarAplicacao();
     // Os grupos criados continuam somente leitura (o fieldset do grupo); o que falhou, não.
-    const blocos = t.raiz.querySelectorAll<HTMLFieldSetElement>('ui-drawer fieldset.field-group');
-    expect(blocos[0]?.disabled).toBe(false);
-    expect(blocos[1]?.disabled).toBe(true);
+    expect(t.travasDosBlocosDoDrawer().slice(0, 2)).toEqual([false, true]);
+    expect(t.travasDosGruposDoCadastro().slice(0, 2)).toEqual([false, false]);
   });
 
+  // Regressão: preservar a key de uma falha transitória só é seguro enquanto o corpo reenviado
+  // for idêntico ao original. Se o usuário altera o grupo que falhou antes de reenviar, o corpo
+  // muda — reusar a mesma key arriscaria um conflito de idempotência (corpo divergente) no
+  // backend.
   it('PesosEnemPage_RetryComCorpoAlterado_RenovaIdempotencyKey', async () => {
-    // Regressão: preservar a key de uma falha transitória só é seguro
-    // enquanto o corpo reenviado for idêntico ao original. Se o usuário
-    // altera o grupo que falhou antes de reenviar, o corpo muda — reusar a
-    // mesma key arriscaria um conflito de idempotência (corpo divergente)
-    // no backend.
     await t.carregarUmaPagina([]);
-    t.criacao.abrir();
-    t.criacao.form.patchValue({
-      resolucao: 'Res. 900/2026',
-      baseLegalGlobal: 'Res. 900/2026 Anexo I',
-    });
-    t.criacao.criar();
-    await t.propagate();
-
-    const requests1 = t.controller.match(
-      (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
-    );
-    expect(requests1).toHaveLength(4);
-    const chaveOriginal = requests1[0]?.request.headers.get('Idempotency-Key');
-    requests1[0]?.flush(problem(500, 'uniplus.internal.unexpected', 'Erro interno'), {
-      status: 500,
-      statusText: 'Internal Server Error',
-      headers: { 'content-type': 'application/problem+json' },
-    });
-    requests1
-      .slice(1)
-      .forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
-    await t.propagate();
-
-    // Usuário altera o grupo que falhou antes de reenviar.
+    const chaveOriginal = await t.criarComFalhaTransitoriaNoPrimeiro();
     areaDo(t.criacao.form.controls.grupos.controls[0], 'LINGUAGENS').controls.peso.setValue(3.5);
-    t.criacao.criar();
-    await t.propagate();
-    const retry = t.controller.expectOne(
-      (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
-    );
+    const retry = await t.reenviarCriacaoPeloModelo();
     expect(retry.request.headers.get('Idempotency-Key')).not.toBe(chaveOriginal);
-    retry.flush('novo-id-3', { status: 201, statusText: 'Created' });
-    await t.propagate();
+    responderCriacoes([retry]);
+    await t.atualizarAplicacao();
     expect(t.criacao.aberto()).toBe(false);
-    t.expectListagem().flush([]);
-    await t.propagate();
+    await t.recarregarCom([]);
   });
 
   it('PesosEnemPage_Criar_EnviaAreasComCodigoPesoECorteSemRotulo', async () => {
     await t.carregarUmaPagina([]);
-    t.criacao.abrir();
-    t.criacao.form.patchValue({
-      resolucao: 'Res. 900/2026',
-      baseLegalGlobal: 'Res. 900/2026 Anexo I',
-    });
+    await t.abrirCadastroPreenchido();
     const grupo0 = t.criacao.form.controls.grupos.controls[0];
     // O corte não é exclusivo da Redação: vai no item da própria área.
     areaDo(grupo0, 'MATEMATICA').controls.corte.setValue(450);
     areaDo(grupo0, 'MATEMATICA').controls.peso.setValue(2.5);
-    t.criacao.criar();
-    await t.propagate();
-
-    const requests = t.controller.match(
-      (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
-    );
+    const requests = await t.enviarCriacaoPeloModelo();
     expect(requests).toHaveLength(4);
-    expect(requests[0]?.request.body).toEqual({
-      resolucao: 'Res. 900/2026',
-      grupoCurso: 'TECNOLOGICA',
-      areas: [
-        { codigo: 'REDACAO', peso: 0, corte: null },
-        { codigo: 'CIENCIAS_DA_NATUREZA', peso: 0, corte: null },
-        { codigo: 'CIENCIAS_HUMANAS', peso: 0, corte: null },
-        { codigo: 'LINGUAGENS', peso: 0, corte: null },
-        { codigo: 'MATEMATICA', peso: 2.5, corte: 450 },
-      ],
-      baseLegal: 'Res. 900/2026 Anexo I',
-    });
-    requests.forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
-    await t.propagate();
-    t.expectListagem().flush([]);
-    await t.propagate();
+    expect(requests[0]?.request.body).toEqual(CORPO_DO_PRIMEIRO_GRUPO);
+    responderCriacoes(requests);
+    await t.recarregarCom([]);
   });
 
+  // Outra lista e outra ordem: o cadastro acompanha a API, não uma lista do cliente.
   it('PesosEnemPage_Drawer_GruposVemDaApiNaOrdemDelaEGravamPeloCodigo', async () => {
-    // Outra lista e outra ordem: o cadastro acompanha a API, não uma lista do cliente.
     await t.carregarUmaPagina([], AREAS, [grupo('SAUDE_E_BIOLOGICAS'), grupo('TECNOLOGICA')]);
     t.criacao.abrir();
-    await t.propagate();
-    t.fixture.detectChanges();
-
-    const legendas = Array.from(
-      (t.fixture.nativeElement as HTMLElement).querySelectorAll('.field-group legend'),
-      (legenda) => legenda.textContent?.replace(/\s+/g, ' ').trim(),
-    );
-    expect(legendas).toEqual(['Saúde e Biológicas', 'Tecnológica']);
-    expect(
-      (t.fixture.nativeElement as HTMLElement).querySelector(
-        'input[aria-label="Peso de Redação — Saúde e Biológicas"]',
-      ),
-    ).not.toBeNull();
-
-    t.criacao.form.patchValue({
-      resolucao: 'Res. 900/2026',
-      baseLegalGlobal: 'Res. 900/2026 Anexo I',
-    });
-    t.criacao.criar();
-    await t.propagate();
-
-    const requests = t.controller.match(
-      (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
-    );
-    expect(requests.map((req) => req.request.body.grupoCurso)).toEqual([
-      'SAUDE_E_BIOLOGICAS',
-      'TECNOLOGICA',
-    ]);
-    requests.forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
-    await t.propagate();
-    t.expectListagem().flush([]);
-    await t.propagate();
+    t.preencherResolucaoDoCadastro();
+    await t.propagar();
+    expect(t.legendasDosGrupos()).toEqual(['Saúde e Biológicas', 'Tecnológica']);
+    t.elemento('input[aria-label="Peso de Redação — Saúde e Biológicas"]');
+    const requests = await t.enviarCriacaoPeloModelo();
+    const codigos = requests.map((req) => req.request.body.grupoCurso);
+    expect(codigos).toEqual(['SAUDE_E_BIOLOGICAS', 'TECNOLOGICA']);
+    responderCriacoes(requests);
+    await t.recarregarCom([]);
   });
 
   it('PesosEnemPage_Criacao_RecusaDefinitivaSemErrors_ReenvioIgualSaiComChaveNova', async () => {
     await t.carregarUmaPagina([]);
-    t.criacao.abrir();
-    t.criacao.form.patchValue({
-      resolucao: 'Res. 900/2026',
-      baseLegalGlobal: 'Res. 900/2026 Anexo I',
-    });
-    t.criacao.criar();
-    await t.propagate();
-
-    const requests = t.controller.match(
-      (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
-    );
-    const chaveOriginal = requests[0]?.request.headers.get('Idempotency-Key');
-    requests[0]?.flush(
-      problem(422, 'uniplus.configuracao.peso_area_enem.regra_qualquer', 'Recusa'),
-      {
-        status: 422,
-        statusText: 'Unprocessable Entity',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-    requests
-      .slice(1)
-      .forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
-    await t.propagate();
-
-    t.criacao.criar();
-    await t.propagate();
-    const retry = t.controller.expectOne(
-      (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
-    );
+    await t.abrirCadastroPreenchido();
+    const [primeira, ...demais] = await t.enviarCriacaoPeloModelo();
+    const chaveOriginal = primeira?.request.headers.get('Idempotency-Key');
+    flushProblema(primeira, NAO_PROCESSAVEL, problem(422, CODIGO_DA_RECUSA, 'Recusa'));
+    responderCriacoes(demais);
+    await t.atualizarAplicacao();
+    const retry = await t.reenviarCriacaoPeloModelo();
     expect(retry.request.headers.get('Idempotency-Key')).not.toBe(chaveOriginal);
-    retry.flush('novo-id-0', { status: 201, statusText: 'Created' });
-    await t.propagate();
-    t.expectListagem().flush([]);
-    await t.propagate();
+    responderCriacoes([retry]);
+    await t.recarregarCom([]);
   });
 });

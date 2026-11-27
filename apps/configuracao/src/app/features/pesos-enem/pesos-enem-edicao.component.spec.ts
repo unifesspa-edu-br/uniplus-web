@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { PesosEnemEdicaoComponent } from './pesos-enem-edicao.component';
 import { criarGrupoDeEdicao } from './pesos-enem-form';
-import { AREAS, linhas805 } from './pesos-enem.testing';
+import { AREAS, linhas805 } from './pesos-enem-exemplos.testing';
 import { FormArray } from '@angular/forms';
 
 describe('PesosEnemEdicaoComponent', () => {

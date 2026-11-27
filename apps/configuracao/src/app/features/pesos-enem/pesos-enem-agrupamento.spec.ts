@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { agruparPorResolucao, resolucoesDaMaisRecente, slug } from './pesos-enem-agrupamento';
-import { RES_750, RES_805, grupo, linha } from './pesos-enem.testing';
+import { RES_750, RES_805, grupo, linha } from './pesos-enem-exemplos.testing';
 
 describe('agrupamento das resoluções', () => {
   it('ordena as linhas pela ordem dos grupos da API e manda o grupo desconhecido ao fim', () => {

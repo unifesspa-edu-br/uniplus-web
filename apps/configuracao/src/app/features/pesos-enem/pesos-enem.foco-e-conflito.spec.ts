@@ -1,14 +1,8 @@
 import { TestRequest } from '@angular/common/http/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  CRIADO,
-  GRUPOS,
-  PaginaDeTeste,
-  SEM_CORPO,
-  linha,
-  linhas805,
-  recusa,
-} from './pesos-enem.testing';
+import { GRUPOS, linha, linhas805 } from './pesos-enem-exemplos.testing';
+import { CRIADO, SEM_CORPO, recusa } from './pesos-enem-respostas.testing';
+import { PaginaDeTeste } from './pesos-enem.testing';
 
 const RES_900 = 'Res. 900/2026';
 const PROCESSANDO = 'uniplus.idempotency.processing_conflict';

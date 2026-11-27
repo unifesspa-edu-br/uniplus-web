@@ -177,20 +177,25 @@ export class PesosEnemStore {
     this.linhas.update((atual) =>
       atual.map((linha) => {
         const nova = porId.get(linha.id);
-        return nova === undefined
-          ? linha
-          : {
-              ...linha,
-              areas: nova.areas.map((area) => ({
-                codigo: area.codigo,
-                rotulo: this.rotuloDaArea(area.codigo),
-                peso: area.peso,
-                corte: area.corte,
-              })),
-              baseLegal: nova.baseLegal,
-            };
+        return nova === undefined ? linha : this.comValoresGravados(linha, nova);
       }),
     );
+  }
+
+  private comValoresGravados(
+    linha: PesoAreaEnemDto,
+    nova: ValoresDoGrupoDeEdicao,
+  ): PesoAreaEnemDto {
+    return {
+      ...linha,
+      areas: nova.areas.map((area) => ({
+        codigo: area.codigo,
+        rotulo: this.rotuloDaArea(area.codigo),
+        peso: area.peso,
+        corte: area.corte,
+      })),
+      baseLegal: nova.baseLegal,
+    };
   }
 
   /** Exaustão de cursor (ADR-0015/0026). */
@@ -200,17 +205,11 @@ export class PesosEnemStore {
     }
     this.lendo.set(true);
     this.falha.set(null);
-    const coleta = { acumulado: [] as PesoAreaEnemDto[], falhou: null as ProblemDetails | null };
+    const coleta: ColetaDasPaginas = { acumulado: [], falhou: null };
     this.listarTodasAsPaginas()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (result) => {
-          if (result.ok) {
-            coleta.acumulado = [...coleta.acumulado, ...result.data];
-          } else {
-            coleta.falhou ??= result.problem;
-          }
-        },
+        next: (result) => acumularPagina(coleta, result),
         complete: () => this.concluir(coleta.falhou, coleta.acumulado),
       });
   }
@@ -242,5 +241,21 @@ export class PesosEnemStore {
     if (falhou.status >= 500) {
       this.notifications.errorFromProblem(falhou);
     }
+  }
+}
+
+interface ColetaDasPaginas {
+  acumulado: readonly PesoAreaEnemDto[];
+  falhou: ProblemDetails | null;
+}
+
+function acumularPagina(
+  coleta: ColetaDasPaginas,
+  result: ApiResult<readonly PesoAreaEnemDto[]>,
+): void {
+  if (result.ok) {
+    coleta.acumulado = [...coleta.acumulado, ...result.data];
+  } else {
+    coleta.falhou ??= result.problem;
   }
 }

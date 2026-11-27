@@ -6,7 +6,8 @@ import {
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { controlNameFromBackendField, marcarRecusaDoServidor } from '../../shared/formulario';
-import type { AreaForm } from './pesos-enem-form';
+import type { AreaForm, PesoGrupoForm } from './pesos-enem-form';
+import { rotuloDoGrupo } from './pesos-enem-rotulos';
 
 /** Campos de primeiro nível do pedido que o operador corrige no contexto atual. O que falta
  *  aqui não tem campo visível, e o grupo nunca tem, porque não se edita: o erro dele vai
@@ -40,15 +41,29 @@ function controleDoCampoDoServidor(
 ): AbstractControl | null {
   const daArea = /(?:^|\.)areas\[(\d+)\](?:\.(\w+))?$/iu.exec(field);
   if (daArea !== null) {
-    const area = areas.at(Number(daArea[1]));
-    if (area === undefined) {
-      return null;
-    }
-    return daArea[2]?.toLowerCase() === 'corte' ? area.controls.corte : area.controls.peso;
+    return controleDeUmaArea(areas, daArea);
   }
   if (/(?:^|\.)areas$/iu.test(field)) {
     return areas.at(0)?.controls.peso ?? null;
   }
+  return controleDoPrimeiroNivel(destinos, field);
+}
+
+function controleDeUmaArea(
+  areas: FormArray<FormGroup<AreaForm>>,
+  daArea: RegExpExecArray,
+): AbstractControl | null {
+  const area = areas.at(Number(daArea[1]));
+  if (area === undefined) {
+    return null;
+  }
+  return daArea[2]?.toLowerCase() === 'corte' ? area.controls.corte : area.controls.peso;
+}
+
+function controleDoPrimeiroNivel(
+  destinos: DestinosDePrimeiroNivel,
+  field: string,
+): AbstractControl | null {
   const nome = controlNameFromBackendField<keyof DestinosDePrimeiroNivel>(
     field,
     CAMPOS_DE_PRIMEIRO_NIVEL,
@@ -61,6 +76,40 @@ interface MensagensDoControle {
   mensagens: string[];
 }
 
+type RecusaDeCampo = CausasDoProblema['deCampo'][number];
+
+class MensagensDosCampos {
+  private readonly porControle = new Map<AbstractControl, MensagensDoControle>();
+  private readonly mensagensSemCampo: string[];
+
+  constructor(mensagensGerais: readonly string[]) {
+    this.mensagensSemCampo = [...mensagensGerais];
+  }
+
+  acumular(recusa: RecusaDeCampo, controle: AbstractControl | null): void {
+    const alvo =
+      controle === null
+        ? this.mensagensSemCampo
+        : (this.porControle.get(controle)?.mensagens ?? []);
+    if (!alvo.includes(recusa.message)) {
+      alvo.push(recusa.message);
+    }
+    if (controle !== null && !this.porControle.has(controle)) {
+      this.porControle.set(controle, { code: recusa.code, mensagens: alvo });
+    }
+  }
+
+  marcar(): void {
+    for (const [controle, { code, mensagens }] of this.porControle) {
+      marcarRecusaDoServidor(controle, code, mensagens.join(' '));
+    }
+  }
+
+  semCampo(): string[] {
+    return this.mensagensSemCampo;
+  }
+}
+
 /** Marca cada controle recusado. Vários erros podem cair no mesmo campo (ex.: `areas[i].codigo`
  *  e `areas[i].peso` vão ambos ao peso da área): acumula as mensagens, para o operador ver
  *  todas. Devolve as que não têm campo corrigível aqui. */
@@ -69,22 +118,12 @@ function marcarCamposRecusados(
   destinos: DestinosDePrimeiroNivel,
   causas: CausasDoProblema,
 ): string[] {
-  const semCampo: string[] = causas.gerais.map((causa) => causa.message);
-  const porControle = new Map<AbstractControl, MensagensDoControle>();
+  const mensagens = new MensagensDosCampos(causas.gerais.map((causa) => causa.message));
   for (const erro of causas.deCampo) {
-    const control = controleDoCampoDoServidor(areas, destinos, erro.field);
-    const alvo = control === null ? semCampo : (porControle.get(control)?.mensagens ?? []);
-    if (!alvo.includes(erro.message)) {
-      alvo.push(erro.message);
-    }
-    if (control !== null && !porControle.has(control)) {
-      porControle.set(control, { code: erro.code, mensagens: alvo });
-    }
+    mensagens.acumular(erro, controleDoCampoDoServidor(areas, destinos, erro.field));
   }
-  for (const [control, { code, mensagens }] of porControle) {
-    marcarRecusaDoServidor(control, code, mensagens.join(' '));
-  }
-  return semCampo;
+  mensagens.marcar();
+  return mensagens.semCampo();
 }
 
 /**
@@ -101,10 +140,58 @@ export function aplicarRecusaDoGrupo(
   areas: FormArray<FormGroup<AreaForm>>,
   problem: ProblemDetails,
   destinos: DestinosDePrimeiroNivel,
-  tituloDaRecusa: (problem: ProblemDetails) => string,
+  tituloDaRecusa: TituloDaRecusa,
 ): string[] {
   if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
     return marcarCamposRecusados(areas, destinos, separarCausas(problem.errors));
   }
   return ehRecusaAcionavelPeloOperador(problem) ? [tituloDaRecusa(problem)] : [];
+}
+
+/** Vendor code do DomainError de par resolução + grupo já cadastrado (409 Conflict). */
+export const PAR_JA_EXISTE_CODE = 'uniplus.configuracao.peso_area_enem.par_ja_existe';
+
+export type TituloDaRecusa = (problem: ProblemDetails) => string;
+
+export interface FalhaDoGrupo {
+  readonly grupo: FormGroup<PesoGrupoForm>;
+  readonly problem: ProblemDetails;
+}
+
+export interface DesfechoDasRecusasDosGrupos {
+  readonly duplicidade: boolean;
+  readonly semCampo: string[];
+  readonly ultimoProblema: ProblemDetails | null;
+}
+
+function ehDuplicidade({ problem }: FalhaDoGrupo): boolean {
+  return problem.code === PAR_JA_EXISTE_CODE;
+}
+
+function recusarGrupo(
+  { grupo, problem }: FalhaDoGrupo,
+  resolucao: AbstractControl | undefined,
+  titulo: TituloDaRecusa,
+): string[] {
+  const destinos = { resolucao, baseLegal: grupo.controls.baseLegal };
+  const nome = rotuloDoGrupo(grupo.controls.grupoCurso.value);
+  return aplicarRecusaDoGrupo(grupo.controls.areas, problem, destinos, titulo).map(
+    (mensagem) => `${nome}: ${mensagem}`,
+  );
+}
+
+/** Leva a recusa de cada grupo que falhou ao campo dele. A duplicidade do par resolução + grupo
+ *  não vira mensagem de grupo: quem chama a trata no campo da resolução ou no banner. */
+export function recusarGrupos(
+  falhas: readonly FalhaDoGrupo[],
+  resolucao: AbstractControl | undefined,
+  titulo: TituloDaRecusa,
+): DesfechoDasRecusasDosGrupos {
+  return {
+    duplicidade: falhas.some(ehDuplicidade),
+    semCampo: falhas
+      .filter((falha) => !ehDuplicidade(falha))
+      .flatMap((falha) => recusarGrupo(falha, resolucao, titulo)),
+    ultimoProblema: falhas.at(-1)?.problem ?? null,
+  };
 }

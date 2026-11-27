@@ -6,7 +6,7 @@ import {
   criarGrupoDeCriacao,
   criarGrupoDeEdicao,
 } from './pesos-enem-form';
-import { AREAS, grupo, linha } from './pesos-enem.testing';
+import { AREAS, grupo, linha } from './pesos-enem-exemplos.testing';
 
 describe('formulário de pesos do ENEM', () => {
   it('cria um grupo com uma área por item da lista, na ordem dela, com peso zero e sem corte', () => {

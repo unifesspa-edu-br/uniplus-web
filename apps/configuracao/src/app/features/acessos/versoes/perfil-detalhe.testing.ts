@@ -23,7 +23,7 @@ import {
   escolherArquivoNoCampo,
   escolherNaLista,
   listaPorRotulo,
-} from '../interacao.testing';
+} from '../../../shared/interacao-com-a-tela/interacao-com-a-tela.testing';
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
 import { ok, recusa } from '../testes';
 import { DocumentoDaVersaoService } from './documento-da-versao.service';

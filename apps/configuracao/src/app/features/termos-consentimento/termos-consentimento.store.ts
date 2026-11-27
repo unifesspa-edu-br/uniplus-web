@@ -68,6 +68,11 @@ export class TermosConsentimentoStore {
         : null;
   });
   constructor() {
+    this.notificarFalhaDoServidor();
+    this.aplicarBuscaDigitada();
+  }
+
+  private notificarFalhaDoServidor(): void {
     effect(() => {
       const problem = this.lista.problem();
       if (problem && problem.status >= 500) {
@@ -75,6 +80,9 @@ export class TermosConsentimentoStore {
         untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
       }
     });
+  }
+
+  private aplicarBuscaDigitada(): void {
     this.buscaAlterada
       .pipe(
         map((valor) => valor.trim()),

@@ -2,7 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AREAS, ERRO_500, GRUPOS, PaginaDeTeste, problem } from './pesos-enem.testing';
+import { AREAS, GRUPOS } from './pesos-enem-exemplos.testing';
+import { ERRO_500, problem } from './pesos-enem-respostas.testing';
+import { PaginaDeTeste } from './pesos-enem.testing';
 
 describe('PesosEnemPage — lista de áreas', () => {
   let t: PaginaDeTeste;
@@ -18,7 +20,7 @@ describe('PesosEnemPage — lista de áreas', () => {
     t.expectAreas().flush(problem(500, 'uniplus.teste.sem_titulo', '   '), ERRO_500);
     t.expectGrupos().flush([...GRUPOS]);
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     expect(
@@ -37,7 +39,7 @@ describe('PesosEnemPage — lista de áreas', () => {
     });
     t.expectGrupos().flush([...GRUPOS]);
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     expect(t.store.listaAreas.falhou()).toBe(true);
@@ -49,9 +51,9 @@ describe('PesosEnemPage — lista de áreas', () => {
     ) as HTMLButtonElement | null;
     expect(retry).not.toBeNull();
     retry?.click();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.expectAreas().flush([...AREAS]);
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.store.listaAreas.falhou()).toBe(false);
     t.criacao.abrir();
@@ -80,7 +82,7 @@ describe('PesosEnemPage — lista de áreas', () => {
     });
     t.expectGrupos().flush([...GRUPOS]);
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     // O aviso de erro de servidor leva o problema (com o traceId) para o suporte.
@@ -104,7 +106,7 @@ describe('PesosEnemPage — lista de áreas', () => {
     });
     t.expectGrupos().flush([...GRUPOS]);
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const titulo = TestBed.inject(ProblemI18nService).resolve(semPermissao).title;
@@ -123,7 +125,7 @@ describe('PesosEnemPage — lista de áreas', () => {
     // Os grupos ainda não responderam.
     const grupos = t.expectGrupos();
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
@@ -131,11 +133,11 @@ describe('PesosEnemPage — lista de áreas', () => {
     // Nada está recarregando as áreas: o botão continua acionável.
     expect(botao?.getAttribute('aria-disabled')).toBeNull();
     botao?.click();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     t.expectAreas().flush([...AREAS]);
     grupos.flush([...GRUPOS]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     expect(t.store.listaAreas.falhou()).toBe(false);
   });
 
@@ -149,7 +151,7 @@ describe('PesosEnemPage — lista de áreas', () => {
     // Os grupos ainda não responderam, e vão demorar.
     const grupos = t.expectGrupos();
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
@@ -157,18 +159,18 @@ describe('PesosEnemPage — lista de áreas', () => {
     if (!botao) throw new Error('botão de tentar de novo ausente');
     botao.focus();
     botao.click();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     // As áreas chegam: o alerta sai, e o foco vai ao título sem esperar os grupos.
     t.expectAreas().flush([...AREAS]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
-    await t.propagate();
+    await t.atualizarAplicacao();
     expect(raiz.querySelector('#cfg-pesos-enem-areas-tentar')).toBeNull();
     expect(document.activeElement?.id).toBe('cfg-pesos-enem-titulo');
 
     grupos.flush([...GRUPOS]);
-    await t.propagate();
+    await t.atualizarAplicacao();
   });
 });

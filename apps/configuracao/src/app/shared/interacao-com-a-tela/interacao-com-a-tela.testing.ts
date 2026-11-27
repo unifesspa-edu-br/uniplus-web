@@ -1,3 +1,7 @@
+import { ApplicationRef } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { expect } from 'vitest';
+
 /** Interações de teste que agem como a pessoa: pelos elementos da tela, nunca pelos serviços. */
 
 type Campo = HTMLInputElement | HTMLTextAreaElement;
@@ -69,4 +73,48 @@ export function escolherArquivoNoCampo(raiz: ParentNode, arquivo: File | null): 
     configurable: true,
   });
   campo.dispatchEvent(new Event('change'));
+}
+
+type TelaMontada = Pick<ComponentFixture<unknown>, 'detectChanges' | 'nativeElement'>;
+
+/** As interações com a tela de um componente montado: achar elementos, preencher, responder e acionar. */
+export class InteracaoComATela {
+  readonly #aplicacao = TestBed.inject(ApplicationRef);
+  readonly #tela: TelaMontada;
+
+  constructor(tela: TelaMontada) {
+    this.#tela = tela;
+  }
+
+  readonly propagar = async (): Promise<void> => {
+    await Promise.resolve();
+    this.#aplicacao.tick();
+    this.#tela.detectChanges();
+  };
+
+  readonly elemento = <E extends HTMLElement>(seletor: string): E => {
+    const encontrado = (this.#tela.nativeElement as HTMLElement).querySelector<E>(seletor);
+    expect(encontrado, seletor).not.toBeNull();
+    return encontrado as E;
+  };
+
+  readonly pelaEtiqueta = (nome: string): HTMLButtonElement =>
+    this.elemento(`button[aria-label="${nome}"]`);
+
+  readonly preencher = (nome: string, valor: string): void =>
+    digitar(this.elemento<HTMLInputElement>(`[formcontrolname="${nome}"]`), valor);
+
+  /** Marca "Sim" ou "Não" do atributo, clicando na opção como a pessoa faz. */
+  readonly responder = (nome: string, sim: boolean): void => {
+    const opcoes = (this.#tela.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>(
+      `input[type="radio"][name="${nome}"]`,
+    );
+    opcoes[sim ? 0 : 1].click();
+  };
+
+  readonly acionar = async (botao: HTMLButtonElement): Promise<void> => {
+    botao.focus();
+    botao.click();
+    await this.propagar();
+  };
 }

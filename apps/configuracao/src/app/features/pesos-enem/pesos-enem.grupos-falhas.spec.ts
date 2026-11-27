@@ -3,7 +3,9 @@ import { TestBed } from '@angular/core/testing';
 import { PesoAreaEnemDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
-import { AREAS, GRUPOS, RES_805, linhas805, problem, PaginaDeTeste } from './pesos-enem.testing';
+import { AREAS, GRUPOS, RES_805, linhas805 } from './pesos-enem-exemplos.testing';
+import { problem } from './pesos-enem-respostas.testing';
+import { PaginaDeTeste } from './pesos-enem.testing';
 
 describe('PesosEnemPage — falhas e recargas das listas', () => {
   let t: PaginaDeTeste;
@@ -23,26 +25,26 @@ describe('PesosEnemPage — falhas e recargas das listas', () => {
       headers: { 'content-type': 'application/problem+json' },
     });
     t.expectListagem().flush([...linhas805]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     const raiz = t.fixture.nativeElement as HTMLElement;
 
     // O operador tenta de novo os grupos, e as áreas chegam com a tentativa ainda em curso.
     raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-grupos-tentar')?.click();
-    await t.propagate();
+    await t.atualizarAplicacao();
     const grupos = t.expectGrupos();
     areas.flush([...AREAS]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     expect(raiz.querySelectorAll('.cell-label--group-label')).toHaveLength(linhas805.length);
 
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     expect(raiz.querySelector('#grid-pe-bar')).not.toBeNull();
 
     grupos.flush([...GRUPOS]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     expect(raiz.querySelector('#grid-pe-bar')).not.toBeNull();
   });
@@ -56,24 +58,24 @@ describe('PesosEnemPage — falhas e recargas das listas', () => {
       headers: { 'content-type': 'application/problem+json' },
     });
     t.expectListagem().flush([...linhas805]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     const raiz = t.fixture.nativeElement as HTMLElement;
     expect(raiz.querySelector('#grid-pe-bar')).not.toBeNull();
 
     // Uma recarga automática dos grupos (não o "Tentar novamente") começa com a edição aberta.
     TestBed.inject(CatalogoGruposAreaEnem).recarregar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     const recarga = t.expectGrupos();
     expect(raiz.querySelector('#grid-pe-bar')).not.toBeNull();
     expect(raiz.querySelectorAll('.cell-label--group-label')).toHaveLength(linhas805.length);
 
     recarga.flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     expect(raiz.querySelector('#grid-pe-bar')).not.toBeNull();
   });
@@ -84,7 +86,7 @@ describe('PesosEnemPage — falhas e recargas das listas', () => {
 
     TestBed.inject(CatalogoGruposAreaEnem).recarregar();
     t.expectGrupos().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
@@ -124,7 +126,7 @@ describe('PesosEnemPage — falhas e recargas das listas', () => {
       statusText: 'Service Unavailable',
       headers: { 'content-type': 'application/problem+json' },
     });
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
@@ -137,18 +139,18 @@ describe('PesosEnemPage — falhas e recargas das listas', () => {
 
     // Cada botão fica desabilitado só enquanto a própria lista carrega.
     botaoAreas?.click();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     expect(botaoAreas?.getAttribute('aria-disabled')).toBe('true');
     expect(botaoGrupos?.getAttribute('aria-disabled')).toBeNull();
 
     botaoGrupos?.click();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     expect(botaoGrupos?.getAttribute('aria-disabled')).toBe('true');
 
     t.expectAreas().flush([...AREAS]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     // As áreas chegaram: o alerta delas sai; o dos grupos segue, ainda carregando.
     expect(raiz.querySelector('#cfg-pesos-enem-areas-tentar')).toBeNull();
@@ -157,7 +159,7 @@ describe('PesosEnemPage — falhas e recargas das listas', () => {
     );
 
     t.expectGrupos().flush([...GRUPOS]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     expect(raiz.querySelector('#cfg-pesos-enem-grupos-tentar')).toBeNull();
   });
@@ -177,14 +179,14 @@ describe('PesosEnemPage — falhas e recargas das listas', () => {
       statusText: 'Service Unavailable',
       headers: { 'content-type': 'application/problem+json' },
     });
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     const raiz = t.fixture.nativeElement as HTMLElement;
 
     // O operador tenta de novo as duas listas.
     raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-areas-tentar')?.click();
     raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-grupos-tentar')?.click();
-    await t.propagate();
+    await t.atualizarAplicacao();
     const areasDeNovo = t.expectAreas();
     // Os grupos falham de novo logo; as áreas continuam carregando.
     t.expectGrupos().flush(problem(503, 'uniplus.internal.unexpected', 'Serviço indisponível'), {
@@ -192,17 +194,17 @@ describe('PesosEnemPage — falhas e recargas das listas', () => {
       statusText: 'Service Unavailable',
       headers: { 'content-type': 'application/problem+json' },
     });
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     // O botão dos grupos está acionável, e o clique dele gera a requisição.
     const botaoGrupos = raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-grupos-tentar');
     expect(botaoGrupos?.getAttribute('aria-disabled')).toBeNull();
     botaoGrupos?.click();
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.expectGrupos().flush([...GRUPOS]);
     areasDeNovo.flush([...AREAS]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     expect(t.store.catalogoGrupos.falhou()).toBe(false);
     expect(t.store.listaAreas.falhou()).toBe(false);
   });
@@ -216,16 +218,16 @@ describe('PesosEnemPage — falhas e recargas das listas', () => {
       headers: { 'content-type': 'application/problem+json' },
     });
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
     (document.activeElement as HTMLElement | null)?.blur();
 
     // Outra tela pede o vocabulário de novo, e ele chega: o operador não acionou nada aqui.
     TestBed.inject(CatalogoGruposAreaEnem).garantirCarregado();
     t.expectGrupos().flush([...GRUPOS]);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.store.catalogoGrupos.falhou()).toBe(false);
     expect(document.activeElement).toBe(document.body);
