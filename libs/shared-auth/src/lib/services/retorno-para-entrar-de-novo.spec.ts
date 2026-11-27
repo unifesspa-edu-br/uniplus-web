@@ -16,6 +16,18 @@ describe('retorno para entrar de novo', () => {
     );
   });
 
+  it('a raiz da aplicação leva a barra final, para o provedor aceitar o retorno em /portal/*', () => {
+    const url = urlDeRetornoParaEntrarDeNovo('/', 'https://uni.test/portal/');
+
+    expect(url).toBe(`https://uni.test/portal/?${PARAMETRO_ENTRAR_DE_NOVO}=1`);
+  });
+
+  it('mesmo com a base sem barra final, o retorno fica dentro do prefixo', () => {
+    const url = urlDeRetornoParaEntrarDeNovo('', 'https://uni.test/portal');
+
+    expect(new URL(url).pathname).toBe('/portal/');
+  });
+
   it('mantém os parâmetros que a rota já tinha', () => {
     const url = urlDeRetornoParaEntrarDeNovo('/processos?busca=a', 'https://uni.test/');
 
