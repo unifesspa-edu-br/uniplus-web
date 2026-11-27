@@ -13,6 +13,7 @@ import { tokenInterceptor } from './token.interceptor';
 import { AuthService } from '../services/auth.service';
 import { AUTH_ALLOWED_URLS, AUTH_CONFIG } from '../tokens/auth.tokens';
 import type { AuthConfig } from '../models/auth-config.model';
+import type { PrazoDoAcesso } from '../models/prazo-da-credencial';
 
 const CONFIG = { antecedenciaDaRenovacaoEmSegundos: 45 } as AuthConfig;
 
@@ -34,11 +35,16 @@ describe('tokenInterceptor — allowlist', () => {
   function setup(
     allowedUrls: readonly string[],
     tokenValue: { token: string | undefined } = { token: 'fake-token' },
-    opts: { expired?: boolean; refresh?: (minValidity: number) => Promise<boolean> } = {},
+    opts: {
+      expired?: boolean;
+      refresh?: (minValidity: number) => Promise<boolean>;
+      prazoDoAcesso?: PrazoDoAcesso;
+    } = {},
   ) {
     let token = tokenValue.token;
     const authService = {
       getToken: () => token,
+      prazoDoAcesso: () => opts.prazoDoAcesso ?? null,
       isTokenExpired: () => opts.expired ?? false,
       refreshToken: async (minValidity = 30) => {
         if (opts.refresh) return opts.refresh(minValidity);
@@ -144,6 +150,23 @@ describe('tokenInterceptor — allowlist', () => {
     await promise;
   });
 
+  it('limita a antecedência à metade da vida do token, para não renovar a cada pedido', async () => {
+    const refresh = vi.fn<(minValidity: number) => Promise<boolean>>(async () => true);
+    const prazoDoAcesso = { emitidoEm: 0, venceEm: 60_000 };
+    const { http, httpMock } = setup(
+      [apiUrl],
+      { token: 't' },
+      { expired: true, refresh, prazoDoAcesso },
+    );
+
+    const promise = firstValueFrom(http.get(`${apiUrl}/curto`));
+    await flushMicrotasks();
+    httpMock.expectOne(`${apiUrl}/curto`).flush({});
+    await promise;
+
+    expect(refresh).toHaveBeenCalledWith(30);
+  });
+
   it('NÃO chama refreshToken() quando o token ainda é válido', async () => {
     const { http, httpMock, refresh } = setupComRefresh('fresh-token', false);
 
@@ -173,6 +196,7 @@ describe('tokenInterceptor — allowlist', () => {
 describe('tokenInterceptor — chamada direta', () => {
   const authServiceComTokenValido = {
     getToken: () => 'tok',
+    prazoDoAcesso: () => null,
     isTokenExpired: () => false,
     refreshToken: async () => true,
   } as unknown as AuthService;

@@ -46,19 +46,6 @@ describe('AuthService.init — resiliência a provedor OIDC indisponível', () =
     return service.init(config);
   }
 
-  function stubQueGuardaOnTokenExpired() {
-    let callback: (() => void) | undefined;
-    const kc = stubKeycloak({ init: async () => true });
-    Object.defineProperty(kc, 'onTokenExpired', {
-      configurable: true,
-      get: () => callback,
-      set: (fn: () => void) => {
-        callback = fn;
-      },
-    });
-    return { kc, callbackCapturado: () => callback };
-  }
-
   it('captura erro do adapter OIDC e NÃO propaga; expõe initError()', async () => {
     const result = await iniciarComKeycloak({
       init: () => Promise.reject(new Error('OIDC offline')),
@@ -134,18 +121,5 @@ describe('AuthService.init — resiliência a provedor OIDC indisponível', () =
         }),
       );
     });
-  });
-
-  it('registra callback onTokenExpired que dispara refreshToken()', async () => {
-    const { kc, callbackCapturado } = stubQueGuardaOnTokenExpired();
-    espiarCriacaoDoKeycloak(service).mockReturnValue(kc);
-    const refreshSpy = vi.spyOn(service, 'refreshToken').mockResolvedValue(true);
-
-    await service.init(config);
-
-    expect(callbackCapturado()).toBeInstanceOf(Function);
-    callbackCapturado()?.();
-    // `refreshToken` é chamado de forma fire-and-forget via `void`
-    expect(refreshSpy).toHaveBeenCalledWith(30);
   });
 });

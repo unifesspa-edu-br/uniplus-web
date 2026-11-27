@@ -1,5 +1,11 @@
-import { EnvironmentProviders, makeEnvironmentProviders } from '@angular/core';
+import {
+  EnvironmentProviders,
+  inject,
+  makeEnvironmentProviders,
+  provideEnvironmentInitializer,
+} from '@angular/core';
 import { AuthConfig } from '../models/auth-config.model';
+import { RenovacaoDoAcesso } from '../services/renovacao-do-acesso.service';
 import { AUTH_ALLOWED_URLS, AUTH_CONFIG } from '../tokens/auth.tokens';
 
 /**
@@ -8,6 +14,9 @@ import { AUTH_ALLOWED_URLS, AUTH_CONFIG } from '../tokens/auth.tokens';
  * - `AUTH_ALLOWED_URLS` — derivado lazy de `AUTH_CONFIG`. Consumido
  *   pelo `tokenInterceptor` no primeiro HTTP request, post-bootstrap,
  *   quando o store já foi populado pelo `provideRuntimeConfig`.
+ *
+ * - Liga a renovação antecipada do acesso (`RenovacaoDoAcesso`), que lê `AUTH_CONFIG` só quando
+ *   precisa da antecedência.
  *
  * O `APP_INITIALIZER` que faz `AuthService.init()` vive em
  * `provideRuntimeConfig()` (em `@uniplus/shared-data`) — Angular
@@ -23,5 +32,8 @@ export function provideAuth(): EnvironmentProviders {
       useFactory: (config: AuthConfig) => Object.freeze([...config.allowedUrls]),
       deps: [AUTH_CONFIG],
     },
+    provideEnvironmentInitializer(() => {
+      inject(RenovacaoDoAcesso);
+    }),
   ]);
 }
