@@ -9,9 +9,15 @@ import {
 } from '../models/perfil-concedido.model';
 import { PROFILE_BASE_PATH } from '../tokens/auth.tokens';
 import { AuthService } from './auth.service';
+import { ehFalhaPassageira } from './falha-passageira';
 import { pessoaDaSessao } from './pessoa-da-sessao';
 
 export type EstadoDosPerfis = 'pendente' | 'carregando' | 'carregada' | 'indisponivel';
+
+/** A consulta não chegou à API ou o servidor caiu: vale tentar de novo. */
+const QUEDA = Symbol('queda');
+
+type ResultadoDaConsulta = RespostaDoPerfil | typeof QUEDA | null;
 
 /** Maior atraso que `setTimeout` aceita; acima disso ele dispara na hora. */
 const ATRASO_MAXIMO_MS = 2_147_483_647;
@@ -21,8 +27,10 @@ const ATRASO_MAXIMO_MS = 2_147_483_647;
  * Meu perfil. É texto de interface: a API decide o acesso a cada requisição.
  *
  * Carrega por sessão e recarrega quando ela muda (login, troca de pessoa, renovação do token).
- * Na troca de pessoa, sem sessão ou numa carga que falha, a lista fica vazia: nunca sobra perfil
- * antigo nem de outra pessoa. A ordem é a que a API devolve.
+ * Na troca de pessoa e sem sessão, a lista fica vazia: nunca sobra perfil de outra pessoa. Na
+ * recarga da mesma pessoa, uma queda da conexão ou do servidor mantém a lista que ela já tinha até
+ * a próxima carga que der certo; a recusa da API e a falha da primeira carga deixam a lista vazia.
+ * A ordem é a que a API devolve.
  *
  * Da resposta de `/api/profile/me` o serviço guarda só os perfis: `recarregar` devolve a resposta
  * inteira a quem pediu (Meu perfil), que decide o que fazer com nome, e-mail e CPF.
@@ -90,23 +98,29 @@ export class PerfisDeAcessoService {
     // A resposta só chega a quem pediu se ainda for da mesma pessoa; nunca os dados de quem saiu.
     const atual = untracked(() => this.auth.sessao());
     if (geracao !== this.geracao || sessao !== atual) {
-      return pessoaDaSessao(sessao) === pessoaDaSessao(atual) ? resposta : null;
+      return pessoaDaSessao(sessao) === pessoaDaSessao(atual) && resposta !== QUEDA
+        ? resposta
+        : null;
     }
     return this.aplicar(resposta);
   }
 
-  private consultar(): Promise<RespostaDoPerfil | null> {
+  private consultar(): Promise<ResultadoDaConsulta> {
     return firstValueFrom(
       this.http.get<ApiResult<RespostaDoPerfil>>(`${this.basePath}/api/profile/me`).pipe(
-        map((resultado) => (resultado.ok ? resultado.data : null)),
+        map((resultado): ResultadoDaConsulta => {
+          if (resultado.ok) return resultado.data;
+          return ehFalhaPassageira(resultado) ? QUEDA : null;
+        }),
         catchError(() => of(null)),
       ),
       { defaultValue: null },
     );
   }
 
-  private aplicar(resposta: RespostaDoPerfil | null): RespostaDoPerfil | null {
-    if (resposta === null) {
+  private aplicar(resposta: ResultadoDaConsulta): RespostaDoPerfil | null {
+    if (resposta === QUEDA && this._estado() === 'carregada') return null;
+    if (resposta === null || resposta === QUEDA) {
       this.limpar('indisponivel');
       return null;
     }

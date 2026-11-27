@@ -68,8 +68,9 @@ export class LayoutComponent {
 
   /**
    * Menu único do acompanhamento; Notas, Homologação e Classificação não têm entrada.
-   * Mostra entradas protegidas apenas após carregar as permissões efetivas. Durante a recarga ou
-   * em caso de falha, só o painel permanece visível. Grupos vazios não aparecem.
+   * Mostra entradas protegidas apenas após carregar as permissões efetivas. Na primeira carga ou
+   * quando a API recusa a consulta, só o painel permanece visível; a recarga de quem já tinha as
+   * permissões carregadas não esconde o menu. Grupos vazios não aparecem.
    */
   protected readonly navGroups = computed<readonly UiShellNavGroup[]>(() =>
     MENU_LATERAL.map((grupo) => ({
