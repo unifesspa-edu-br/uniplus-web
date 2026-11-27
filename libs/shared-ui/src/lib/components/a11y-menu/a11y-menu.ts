@@ -201,19 +201,26 @@ export class A11yMenuComponent {
 
   constructor() {
     effect(() => {
-      const root = this.document.documentElement;
-      root.dataset['theme'] = this.effectiveTheme();
-      if (this.legibleFont()) {
-        root.dataset['fontMode'] = 'legible';
-      } else {
-        delete root.dataset['fontMode'];
-      }
-      writeState({
-        theme: this.theme(),
-        contrast: this.contrast(),
-        fontMode: this.legibleFont() ? 'legible' : 'default',
-      });
+      this.applyToDocument(this.document.documentElement);
+      writeState(this.currentState());
     });
+  }
+
+  private applyToDocument(root: HTMLElement): void {
+    root.dataset['theme'] = this.effectiveTheme();
+    if (this.legibleFont()) {
+      root.dataset['fontMode'] = 'legible';
+    } else {
+      delete root.dataset['fontMode'];
+    }
+  }
+
+  private currentState(): UiA11yState {
+    return {
+      theme: this.theme(),
+      contrast: this.contrast(),
+      fontMode: this.legibleFont() ? 'legible' : 'default',
+    };
   }
 
   protected toggle(): void {
@@ -243,18 +250,21 @@ export class A11yMenuComponent {
 function readState(): UiA11yState {
   try {
     if (typeof localStorage === 'undefined') return defaultState();
-    const parsed = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') as Partial<UiA11yState>;
-    return {
-      theme:
-        parsed.theme === 'light' || parsed.theme === 'dark' || parsed.theme === 'auto'
-          ? parsed.theme
-          : 'auto',
-      contrast: parsed.contrast === true,
-      fontMode: parsed.fontMode === 'legible' ? 'legible' : 'default',
-    };
+    return normalizeState(JSON.parse(localStorage.getItem(STORE_KEY) || '{}'));
   } catch {
     return defaultState();
   }
+}
+
+function normalizeState(parsed: Partial<UiA11yState>): UiA11yState {
+  return {
+    theme:
+      parsed.theme === 'light' || parsed.theme === 'dark' || parsed.theme === 'auto'
+        ? parsed.theme
+        : 'auto',
+    contrast: parsed.contrast === true,
+    fontMode: parsed.fontMode === 'legible' ? 'legible' : 'default',
+  };
 }
 
 function defaultState(): UiA11yState {

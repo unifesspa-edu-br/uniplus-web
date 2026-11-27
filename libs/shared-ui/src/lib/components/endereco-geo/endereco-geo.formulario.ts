@@ -83,15 +83,24 @@ export function montarEndereco(
 ): EnderecoEstruturado | null {
   const cidade = resolucao.cidade();
   const cep = resolucao.cepCorrespondeAoResolvido() ? vazioParaNulo(texto.cep) : null;
-  const algumPreenchido =
-    cidade !== null ||
-    cep !== null ||
-    [texto.logradouro, texto.numero, texto.complemento, texto.bairro, texto.distrito].some(
-      (v) => v.trim().length > 0,
-    );
-  if (!algumPreenchido) {
+  if (cidade === null && cep === null && !algumTextoPreenchido(texto)) {
     return null;
   }
+  return { ...camposEmTexto(texto, cep), cidade, ...resolucao.paraOValor() };
+}
+
+function algumTextoPreenchido(texto: TextosDoEndereco): boolean {
+  return [texto.logradouro, texto.numero, texto.complemento, texto.bairro, texto.distrito].some(
+    (v) => v.trim().length > 0,
+  );
+}
+
+type EnderecoEmTexto = Pick<
+  EnderecoEstruturado,
+  'cep' | 'logradouro' | 'numero' | 'complemento' | 'bairro' | 'distrito' | 'latitude' | 'longitude'
+>;
+
+function camposEmTexto(texto: TextosDoEndereco, cep: string | null): EnderecoEmTexto {
   return {
     cep,
     logradouro: vazioParaNulo(texto.logradouro),
@@ -99,10 +108,8 @@ export function montarEndereco(
     complemento: vazioParaNulo(texto.complemento),
     bairro: vazioParaNulo(texto.bairro),
     distrito: vazioParaNulo(texto.distrito),
-    cidade,
     latitude: vazioParaNulo(texto.latitude),
     longitude: vazioParaNulo(texto.longitude),
-    ...resolucao.paraOValor(),
   };
 }
 

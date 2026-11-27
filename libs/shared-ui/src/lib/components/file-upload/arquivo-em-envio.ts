@@ -27,21 +27,17 @@ export interface ArquivoEmEnvio {
 
 const PASSO_ANUNCIADO = 25;
 
+const TEXTO_DA_FASE: Record<FaseDoArquivo, (arquivo: ArquivoEmEnvio) => string> = {
+  iniciando: () => 'Preparando o envio',
+  enviando: (arquivo) => `Enviando: ${arquivo.progresso}%`,
+  confirmando: () => 'Validando o arquivo',
+  verificando: (arquivo) => arquivo.mensagem || 'Arquivo em verificação',
+  confirmado: () => 'Envio concluído',
+  erro: () => 'O envio não foi concluído',
+};
+
 export function textoDaFase(arquivo: ArquivoEmEnvio): string {
-  switch (arquivo.fase) {
-    case 'iniciando':
-      return 'Preparando o envio';
-    case 'enviando':
-      return `Enviando: ${arquivo.progresso}%`;
-    case 'confirmando':
-      return 'Validando o arquivo';
-    case 'verificando':
-      return arquivo.mensagem || 'Arquivo em verificação';
-    case 'confirmado':
-      return 'Envio concluído';
-    case 'erro':
-      return 'O envio não foi concluído';
-  }
+  return TEXTO_DA_FASE[arquivo.fase](arquivo);
 }
 
 /**

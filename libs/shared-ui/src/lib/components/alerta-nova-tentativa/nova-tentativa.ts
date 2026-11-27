@@ -161,26 +161,25 @@ class ControleDaNovaTentativa {
  * Chamar em contexto de injeção (inicializador de campo ou construtor).
  */
 export function acompanharNovaTentativa(opcoes: OpcoesDaNovaTentativa): NovaTentativa {
-  const { pendente, falhou, destino, assunto, recusada } = opcoes;
   const injector = inject(Injector);
-  const anuncio = inject(AnuncioDaConclusao);
-  const foco = new FocoDaNovaTentativa(
-    destino,
-    (focoLevado) => {
-      if (!focoLevado && !(recusada && untracked(recusada))) {
-        anuncio.anunciar(textoDaConclusao(assunto));
-      }
-    },
-    injector,
-  );
-  const controle = new ControleDaNovaTentativa(pendente, falhou, foco, injector);
+  const foco = new FocoDaNovaTentativa(opcoes.destino, avisoDeConclusao(opcoes), injector);
+  const controle = new ControleDaNovaTentativa(opcoes.pendente, opcoes.falhou, foco, injector);
 
   return {
     fase: controle.fase,
     executar: (disparar) => {
-      if (controle.emAndamento) return;
-      controle.acompanhar(disparar);
+      if (!controle.emAndamento) controle.acompanhar(disparar);
     },
+  };
+}
+
+/** Anuncia a conclusão quando o foco não foi levado ao resultado e a leitura não foi recusada. */
+function avisoDeConclusao(opcoes: OpcoesDaNovaTentativa): (focoLevado: boolean) => void {
+  const anuncio = inject(AnuncioDaConclusao);
+  const { assunto, recusada } = opcoes;
+  return (focoLevado) => {
+    if (focoLevado || (recusada && untracked(recusada))) return;
+    anuncio.anunciar(textoDaConclusao(assunto));
   };
 }
 

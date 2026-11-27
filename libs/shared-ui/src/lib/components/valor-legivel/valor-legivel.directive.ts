@@ -38,24 +38,31 @@ export class ValorLegivelDirective implements DoCheck {
 
   constructor() {
     const destroyRef = inject(DestroyRef);
+    this.atualizarQuandoOControleMuda(destroyRef);
+    afterNextRender(() => {
+      this.pronto = true;
+      this.atualizar();
+      this.atualizarQuandoALarguraMuda(destroyRef);
+    });
+  }
 
-    // O `ngModel` escreve no campo num microtask, depois do `ngDoCheck`; numa view OnPush
-    // nada volta a checá-la. O `valueChanges` sai depois dessa escrita.
+  /**
+   * O `ngModel` escreve no campo num microtask, depois do `ngDoCheck`; numa view OnPush
+   * nada volta a checá-la. O `valueChanges` sai depois dessa escrita.
+   */
+  private atualizarQuandoOControleMuda(destroyRef: DestroyRef): void {
     inject(NgControl, { self: true, optional: true })
       ?.valueChanges?.pipe(takeUntilDestroyed(destroyRef))
       .subscribe(() => {
         if (this.pronto) this.atualizar();
       });
+  }
 
-    afterNextRender(() => {
-      this.pronto = true;
-      this.atualizar();
-
-      if (typeof ResizeObserver === 'undefined') return;
-      const observador = new ResizeObserver(() => this.atualizar());
-      observador.observe(this.campo);
-      destroyRef.onDestroy(() => observador.disconnect());
-    });
+  private atualizarQuandoALarguraMuda(destroyRef: DestroyRef): void {
+    if (typeof ResizeObserver === 'undefined') return;
+    const observador = new ResizeObserver(() => this.atualizar());
+    observador.observe(this.campo);
+    destroyRef.onDestroy(() => observador.disconnect());
   }
 
   /** O valor muda por `patchValue` e por catálogo que chega, sem evento algum do campo. */

@@ -8,6 +8,9 @@ import {
   input,
 } from '@angular/core';
 
+const SCRIPT_ID = 'uniplus-vlibras-script';
+const STYLESHEET_ID = 'uniplus-vlibras-stylesheet';
+
 declare global {
   interface Window {
     VLibras?: { Widget: new (rootPath?: string) => unknown };
@@ -40,7 +43,9 @@ function resolveAssetPath(relativePath: string): string {
 })
 export class VlibrasLoaderComponent {
   readonly stylesheetHref = input<string>(resolveAssetPath('assets/shared-ui/vlibras/vlibras.css'));
-  readonly scriptSrc = input<string>(resolveAssetPath('assets/shared-ui/vlibras/vlibras-plugin.js'));
+  readonly scriptSrc = input<string>(
+    resolveAssetPath('assets/shared-ui/vlibras/vlibras-plugin.js'),
+  );
   readonly rootPath = input<string | undefined>(resolveAssetPath('assets/shared-ui/vlibras'));
   readonly assetMirrorSrc = input<string>(resolveAssetPath('assets/shared-ui/vlibras/assets/'));
   private readonly document = inject(DOCUMENT);
@@ -56,17 +61,18 @@ export class VlibrasLoaderComponent {
 
   private load(): void {
     this.ensureStylesheet();
-
-    const scriptId = 'uniplus-vlibras-script';
-    const existing = this.document.getElementById(scriptId) as HTMLScriptElement | null;
+    const existing = this.document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
     if (existing) {
       existing.addEventListener('load', () => this.initWidget(), { once: true });
       this.initWidget();
-      return;
+    } else {
+      this.appendScript();
     }
+  }
 
+  private appendScript(): void {
     const script = this.document.createElement('script');
-    script.id = scriptId;
+    script.id = SCRIPT_ID;
     script.src = this.scriptSrc();
     script.async = true;
     script.onload = () => this.initWidget();
@@ -74,13 +80,12 @@ export class VlibrasLoaderComponent {
   }
 
   private ensureStylesheet(): void {
-    const stylesheetId = 'uniplus-vlibras-stylesheet';
-    if (this.document.getElementById(stylesheetId)) {
+    if (this.document.getElementById(STYLESHEET_ID)) {
       return;
     }
 
     const link = this.document.createElement('link');
-    link.id = stylesheetId;
+    link.id = STYLESHEET_ID;
     link.rel = 'stylesheet';
     link.href = this.stylesheetHref();
     this.document.head.appendChild(link);
@@ -93,15 +98,24 @@ export class VlibrasLoaderComponent {
 
     this.initialized = true;
     const previousOnload = window.onload;
+    this.createWidget(window.VLibras.Widget);
+    this.replayOnload(previousOnload);
+  }
+
+  private createWidget(Widget: NonNullable<Window['VLibras']>['Widget']): void {
     const rootPath = this.rootPath();
     if (rootPath) {
-      new window.VLibras.Widget(rootPath);
+      new Widget(rootPath);
     } else {
-      new window.VLibras.Widget();
+      new Widget();
     }
+  }
 
+  /** O plugin registra um `onload` novo; com a página já carregada, ele precisa ser chamado à mão. */
+  private replayOnload(previousOnload: Window['onload']): void {
     const pendingOnload = window.onload;
-    if (this.document.readyState === 'complete' && typeof pendingOnload === 'function' && pendingOnload !== previousOnload) {
+    const isNew = typeof pendingOnload === 'function' && pendingOnload !== previousOnload;
+    if (this.document.readyState === 'complete' && isNew) {
       window.setTimeout(() => pendingOnload.call(window, new Event('load')), 0);
     }
   }

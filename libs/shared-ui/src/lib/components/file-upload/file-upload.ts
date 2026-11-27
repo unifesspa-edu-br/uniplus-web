@@ -267,33 +267,44 @@ export class FileUploadComponent {
 
   private handleFiles(files: readonly File[]): void {
     if (files.length === 0) return;
+    if (this.modoMultiplo()) this.handleVarios(files);
+    else this.handleUnico(files);
+  }
 
-    if (!this.modoMultiplo()) {
-      if (files.length > 1) {
-        this.errors.set(['Envie um arquivo por vez.']);
-        return;
-      }
-      this.handleSingle(files[0]);
+  private handleUnico(files: readonly File[]): void {
+    if (files.length > 1) {
+      this.errors.set(['Envie um arquivo por vez.']);
       return;
     }
+    this.handleSingle(files[0]);
+  }
 
-    const recusas: string[] = [];
-    const aprovados: File[] = [];
-    const limite = this.maxFiles();
-    let vagas = this.vagasRestantes();
-    for (const file of files) {
-      const result = validarArquivo(file, this.regras());
-      if (!result.ok) {
-        recusas.push(`${file.name}: ${result.reason}`);
-      } else if (vagas <= 0) {
-        recusas.push(`${file.name}: ${this.mensagemDoLimite(limite)}`);
-      } else {
-        aprovados.push(file);
-        vagas--;
-      }
-    }
+  private handleVarios(files: readonly File[]): void {
+    const { aprovados, recusas } = this.separarEscolhidos(files);
     this.errors.set(recusas);
     if (aprovados.length > 0) this.arquivosEscolhidos.emit(aprovados);
+  }
+
+  private separarEscolhidos(files: readonly File[]): { aprovados: File[]; recusas: string[] } {
+    const aprovados: File[] = [];
+    const recusas: string[] = [];
+    let vagas = this.vagasRestantes();
+    for (const file of files) {
+      const motivo = this.motivoDaRecusa(file, vagas);
+      if (motivo === null) {
+        aprovados.push(file);
+        vagas--;
+      } else {
+        recusas.push(`${file.name}: ${motivo}`);
+      }
+    }
+    return { aprovados, recusas };
+  }
+
+  private motivoDaRecusa(file: File, vagas: number): string | null {
+    const result = validarArquivo(file, this.regras());
+    if (!result.ok) return result.reason;
+    return vagas <= 0 ? this.mensagemDoLimite(this.maxFiles()) : null;
   }
 
   private vagasRestantes(): number {
@@ -306,23 +317,30 @@ export class FileUploadComponent {
   }
 
   private handleSingle(file: File): void {
-    if (this.itens() !== null && this.vagasRestantes() <= 0) {
-      this.errors.set([`${file.name}: ${this.mensagemDoLimite(this.maxFiles())}`]);
-      return;
-    }
-    const result = validarArquivo(file, this.regras());
-    if (!result.ok) {
-      this.errors.set([result.reason]);
+    const erro = this.erroDoArquivoUnico(file);
+    if (erro !== null) {
+      this.errors.set([erro]);
       return;
     }
     this.errors.set([]);
     if (this.itens() === null) this.selectedFile.set(file);
     this.arquivosEscolhidos.emit([file]);
-    // A zona que tinha o foco sai de cena com o arquivo escolhido: o foco vai para o Remover.
-    if (this.zonaOculta()) {
-      afterNextRender(() => this.removerArquivo()?.nativeElement.focus(), {
-        injector: this.injector,
-      });
+    this.focarRemoverSeAZonaSumiu();
+  }
+
+  private erroDoArquivoUnico(file: File): string | null {
+    if (this.itens() !== null && this.vagasRestantes() <= 0) {
+      return `${file.name}: ${this.mensagemDoLimite(this.maxFiles())}`;
     }
+    const result = validarArquivo(file, this.regras());
+    return result.ok ? null : result.reason;
+  }
+
+  /** A zona que tinha o foco sai de cena com o arquivo escolhido: o foco vai para o Remover. */
+  private focarRemoverSeAZonaSumiu(): void {
+    if (!this.zonaOculta()) return;
+    afterNextRender(() => this.removerArquivo()?.nativeElement.focus(), {
+      injector: this.injector,
+    });
   }
 }

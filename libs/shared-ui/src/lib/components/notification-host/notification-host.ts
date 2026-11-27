@@ -107,7 +107,8 @@ export class NotificationHostComponent {
 
   /**
    * Copia o `traceId` para o clipboard. Quando `navigator.clipboard` não está
-   * disponível, o usuário ainda pode selecionar o `<code>` e copiar manualmente.
+   * disponível, ou a cópia falha, o usuário ainda pode selecionar o `<code>`
+   * (atributo `select-all`) e copiar manualmente com Ctrl+C.
    */
   protected copiarTrace(id: number, traceId: string): void {
     const clipboard = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
@@ -115,18 +116,13 @@ export class NotificationHostComponent {
       return;
     }
     void clipboard.writeText(traceId).then(
-      () => {
-        this._idsCopiados.update((current) => {
-          const next = new Set(current);
-          next.add(id);
-          return next;
-        });
-      },
-      () => {
-        // Falha silenciosa: o `<code>` continua selecionável manualmente
-        // (atributo `select-all`) e o usuário pode copiar via Ctrl+C.
-      },
+      () => this.marcarComoCopiado(id),
+      () => undefined,
     );
+  }
+
+  private marcarComoCopiado(id: number): void {
+    this._idsCopiados.update((current) => new Set(current).add(id));
   }
 
   protected papelAria(type: NotificationType): 'alert' | 'status' {

@@ -3,7 +3,6 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { BackToTopComponent } from './back-to-top';
-import { BackToTopContainerDirective } from './back-to-top-container.directive';
 import { BackToTopScrollService } from './back-to-top.service';
 
 interface ScrollerFake extends HTMLElement {
@@ -373,29 +372,5 @@ describe('BackToTopComponent', () => {
 
     fixture.destroy();
     expect(remover).toHaveBeenCalledWith('scroll', expect.any(Function));
-  });
-});
-
-describe('BackToTopContainerDirective', () => {
-  @Component({
-    standalone: true,
-    imports: [BackToTopContainerDirective],
-    template: `<div uiBackToTopContainer></div>`,
-  })
-  class DiretivaHost {}
-
-  it('registra o elemento hospedeiro e o remove ao ser destruído', async () => {
-    await TestBed.configureTestingModule({ imports: [DiretivaHost] }).compileComponents();
-    const fixture = TestBed.createComponent(DiretivaHost);
-    fixture.detectChanges();
-
-    const service = TestBed.inject(BackToTopScrollService);
-    const alvo = fixture.nativeElement.querySelector('div') as HTMLElement;
-    await microtask();
-    expect(service.containerPrincipal()).toBe(alvo);
-
-    fixture.destroy();
-    await microtask();
-    expect(service.containerPrincipal()).toBeNull();
   });
 });

@@ -1,6 +1,10 @@
 import { Signal, computed, effect, signal, untracked } from '@angular/core';
 
-import { acompanharNovaTentativa, type FaseDaNovaTentativa } from './nova-tentativa';
+import {
+  acompanharNovaTentativa,
+  type FaseDaNovaTentativa,
+  type NovaTentativa,
+} from './nova-tentativa';
 
 /** Do que o acompanhamento precisa para uma leitura que a pessoa pode pedir de novo. */
 export interface OpcoesDaLeitura {
@@ -51,31 +55,43 @@ export interface LeituraAcompanhada {
  * Chamar em contexto de injeção (inicializador de campo ou construtor).
  */
 export function acompanharLeitura(opcoes: OpcoesDaLeitura): LeituraAcompanhada {
-  const { falha, pendente, recarregar, destino, assunto, recusada } = opcoes;
   const indisponivel = opcoes.indisponivel ?? signal(false);
   const tentativa = acompanharNovaTentativa({
-    pendente: computed(() => pendente() || indisponivel()),
-    falhou: computed(() => falha() !== null),
-    destino,
-    assunto,
-    recusada,
+    pendente: computed(() => opcoes.pendente() || indisponivel()),
+    falhou: computed(() => opcoes.falha() !== null),
+    destino: opcoes.destino,
+    assunto: opcoes.assunto,
+    recusada: opcoes.recusada,
   });
+  return montarLeitura(opcoes, indisponivel, tentativa);
+}
+
+/**
+ * Um efeito, e não um sinal derivado preguiçoso: a mensagem tem de ser guardada ainda que o aviso
+ * não esteja montado quando a falha aparece (um campo de drawer, por exemplo).
+ */
+function mensagemPreservada(falha: Signal<string | null>): Signal<string> {
   const ultimaMensagem = signal('');
-  // Um efeito, e não um sinal derivado preguiçoso: a mensagem tem de ser guardada ainda que o aviso
-  // não esteja montado quando a falha aparece (um campo de drawer, por exemplo).
   effect(() => {
     const atual = falha();
     if (atual !== null) untracked(() => ultimaMensagem.set(atual));
   });
+  return computed(() => falha() ?? ultimaMensagem());
+}
 
+function montarLeitura(
+  opcoes: OpcoesDaLeitura,
+  indisponivel: Signal<boolean>,
+  tentativa: NovaTentativa,
+): LeituraAcompanhada {
   return {
-    visivel: computed(() => falha() !== null || tentativa.fase() === 'tentando'),
-    mensagem: computed(() => falha() ?? ultimaMensagem()),
+    visivel: computed(() => opcoes.falha() !== null || tentativa.fase() === 'tentando'),
+    mensagem: mensagemPreservada(opcoes.falha),
     fase: tentativa.fase,
-    pendente,
+    pendente: opcoes.pendente,
     indisponivel,
-    assunto,
-    tentar: () => tentativa.executar(recarregar),
+    assunto: opcoes.assunto,
+    tentar: () => tentativa.executar(opcoes.recarregar),
   };
 }
 

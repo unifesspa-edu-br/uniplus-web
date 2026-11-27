@@ -9,8 +9,11 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, Router, type Event as EventoDeRota } from '@angular/router';
+import type { Subscription } from 'rxjs';
 import { BackToTopScrollService } from './back-to-top.service';
+import { alvoDoFocoAoTopo, prefereMovimentoReduzido } from './foco-ao-topo';
+import { ObservacaoDoConteiner } from './observacao-do-conteiner';
 
 /** Fração do intervalo rolável a partir da qual o botão aparece. */
 const LIMITE_VISIBILIDADE = 0.3;
@@ -78,63 +81,68 @@ export class BackToTopComponent {
     () => this.scrollService.containerPrincipal() ?? this.defaultContainer(),
   );
 
-  private observado: HTMLElement | null = null;
-  /**
-   * Alvo real do listener de 'scroll' — geralmente o próprio `observado`, mas
-   * quando este é `document.documentElement` (rolagem natural da página,
-   * como no shell público), o evento nativo não dispara no elemento `<html>`;
-   * dispara em `window`/`document`. Guardado à parte porque `desligar()`
-   * precisa remover do mesmo alvo em que foi registrado.
-   */
-  private listenerTarget: EventTarget | null = null;
-  private resizeObserver: ResizeObserver | null = null;
   private navTimer: ReturnType<typeof setTimeout> | null = null;
   private destruido = false;
-  private readonly aoRolar = (): void => this.recalcular();
+  private readonly observacao = new ObservacaoDoConteiner(() => this.recalcular());
 
   constructor() {
-    // Religa listener + observer e recalcula a visibilidade sempre que o
-    // contêiner ativo muda de referência — troca de rota que monta/desmonta um
-    // `uiBackToTopContainer`, ou o `main.page` do shell ficando disponível
-    // depois do primeiro render.
+    this.reconciliarQuandoOConteinerMuda();
+    const inscricao = this.router.events.subscribe((evento) => this.aoNavegar(evento));
+    this.destroyRef.onDestroy(() => this.aoDestruir(inscricao));
+  }
+
+  /**
+   * Religa listener e observer e recalcula a visibilidade sempre que o contêiner
+   * ativo muda de referência: troca de rota que monta ou desmonta um
+   * `uiBackToTopContainer`, ou o `main.page` do shell ficando disponível depois
+   * do primeiro render. Fica fora do ciclo de detecção em curso porque
+   * `reconciliar()` grava `visivel`, o que no meio da verificação de mudanças do
+   * Angular dispararia NG0100.
+   */
+  private reconciliarQuandoOConteinerMuda(): void {
     effect(() => {
       this.containerAtivo();
-      // Fora do ciclo de detecção em curso: `reconciliar()` grava `visivel`, o
-      // que no meio da verificação de mudanças do Angular dispararia NG0100.
       untracked(() => queueMicrotask(() => this.reconciliar()));
     });
+  }
 
-    const inscricao = this.router.events.subscribe((evento) => {
-      // `main.page` é o mesmo elemento entre rotas do app (o `ui-app-shell` não
-      // é recriado), então o efeito acima não dispara na navegação. Ainda assim
-      // os filhos que o ResizeObserver acompanha foram trocados pelo conteúdo da
-      // rota nova — religa para reapontar o observer, além de recalcular.
-      //
-      // `setTimeout`, não `queueMicrotask`: o conteúdo da rota nova só entra no
-      // DOM na detecção de mudanças que segue o `NavigationEnd`; medir/observar
-      // antes disso pegaria os filhos e as dimensões da rota anterior. Redirects
-      // encadeados coalescem num único religamento.
-      if (evento instanceof NavigationEnd) {
-        if (this.navTimer !== null) clearTimeout(this.navTimer);
-        this.navTimer = setTimeout(() => {
-          this.navTimer = null;
-          this.reconciliar();
-        });
-      }
+  /**
+   * `main.page` é o mesmo elemento entre rotas do app (o `ui-app-shell` não é
+   * recriado), então o efeito acima não dispara na navegação. Os filhos que o
+   * ResizeObserver acompanha, porém, foram trocados pelo conteúdo da rota nova:
+   * religa para reapontar o observer, além de recalcular.
+   *
+   * `setTimeout`, não `queueMicrotask`: o conteúdo da rota nova só entra no DOM
+   * na detecção de mudanças que segue o `NavigationEnd`; medir antes pegaria os
+   * filhos e as dimensões da rota anterior. Redirects encadeados coalescem num
+   * único religamento.
+   */
+  private aoNavegar(evento: EventoDeRota): void {
+    if (!(evento instanceof NavigationEnd)) return;
+    this.cancelarReligamentoPendente();
+    this.navTimer = setTimeout(() => {
+      this.navTimer = null;
+      this.reconciliar();
     });
+  }
 
-    this.destroyRef.onDestroy(() => {
-      this.destruido = true;
-      if (this.navTimer !== null) clearTimeout(this.navTimer);
-      inscricao.unsubscribe();
-      this.desligar();
-    });
+  private cancelarReligamentoPendente(): void {
+    if (this.navTimer !== null) clearTimeout(this.navTimer);
+  }
+
+  private aoDestruir(inscricao: Subscription): void {
+    this.destruido = true;
+    this.cancelarReligamentoPendente();
+    inscricao.unsubscribe();
+    this.observacao.parar();
   }
 
   /** Religa listener + observer ao contêiner ativo e recalcula a visibilidade. */
   private reconciliar(): void {
     if (this.destruido) return;
-    this.religar(this.containerAtivo());
+    // `visivel` é reconciliado pelo `recalcular()` que segue toda religação,
+    // inclusive para contêiner `null`.
+    this.observacao.observar(this.containerAtivo());
     this.recalcular();
   }
 
@@ -152,54 +160,10 @@ export class BackToTopComponent {
   protected voltarAoTopo(): void {
     const alvo = this.containerAtivo();
     if (alvo === null) return;
-    alvo.scrollTo({ top: 0, behavior: this.movimentoReduzido() ? 'auto' : 'smooth' });
-    // Leva o foco ao topo do contêiner para dar ao leitor de tela um ponto de
-    // chegada. O contêiner precisa de `tabindex` (`main.page` já tem `-1`;
-    // contratos internos via `uiBackToTopContainer` declaram o seu — ver
-    // `.wiz-content`). `focoAoTopo` substitui o contêiner só quando ele é o
-    // padrão do shell, que pode não ser focável (o `<html>`); o contêiner
-    // registrado por uma rota é sempre o próprio alvo do foco.
-    // O substituto segue a mesma invariante do contêiner: sem `tabindex`, o
-    // foco não se move e o botão, ao se esconder, ficaria com ele.
-    const candidato = alvo === this.defaultContainer() ? this.focoAoTopo() : null;
-    const focoSubstituto = candidato?.hasAttribute('tabindex') ? candidato : null;
-    const foco = focoSubstituto ?? (alvo.hasAttribute('tabindex') ? alvo : null);
-    foco?.focus({ preventScroll: true });
-  }
-
-  private religar(alvo: HTMLElement | null): void {
-    this.desligar();
-    this.observado = alvo;
-    // `visivel` é reconciliado pelo `recalcular()` adiado que segue toda
-    // religação — inclusive para `alvo === null`.
-    if (alvo === null) return;
-
-    const alvoEhDocumento = typeof document !== 'undefined' && alvo === document.documentElement;
-    this.listenerTarget = alvoEhDocumento ? window : alvo;
-    this.listenerTarget.addEventListener('scroll', this.aoRolar, { passive: true });
-
-    if (typeof ResizeObserver !== 'undefined') {
-      this.resizeObserver = new ResizeObserver(() => this.recalcular());
-      this.resizeObserver.observe(alvo);
-      // O contêiner não muda de caixa quando o conteúdo interno cresce; observar
-      // os filhos cobre a mudança relevante de dimensões.
-      for (const filho of Array.from(alvo.children)) this.resizeObserver.observe(filho);
-    }
-  }
-
-  private desligar(): void {
-    this.listenerTarget?.removeEventListener('scroll', this.aoRolar);
-    this.listenerTarget = null;
-    this.observado = null;
-    this.resizeObserver?.disconnect();
-    this.resizeObserver = null;
-  }
-
-  private movimentoReduzido(): boolean {
-    return (
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    );
+    const behavior = prefereMovimentoReduzido() ? 'auto' : 'smooth';
+    alvo.scrollTo({ top: 0, behavior });
+    alvoDoFocoAoTopo(alvo, this.defaultContainer(), this.focoAoTopo())?.focus({
+      preventScroll: true,
+    });
   }
 }
