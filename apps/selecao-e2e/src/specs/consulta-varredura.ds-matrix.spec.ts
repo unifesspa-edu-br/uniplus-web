@@ -30,7 +30,7 @@ const PASSOS: readonly Passo[] = [
     esperado: 'Documentos exigidos nesta fase',
   },
   { numero: 6, rotulo: 'Fórmula e precisão', esperado: 'Regra de cálculo' },
-  { numero: 7, rotulo: 'FADA', esperado: 'FADA' },
+  { numero: 7, rotulo: 'Fator de Atenuação', esperado: 'Fator de Atenuação' },
   { numero: 8, rotulo: 'Desempate', esperado: 'Regra do critério' },
   { numero: 9, rotulo: 'Eliminação', esperado: 'Regra de eliminação 1' },
   { numero: 10, rotulo: 'Atend. especial', esperado: 'Prova ampliada' },

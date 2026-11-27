@@ -117,10 +117,9 @@ export type DefinirOpcoesDeCursoRequest = components['schemas']['DefinirOpcoesDe
 export type DefinirClassificacaoRequest = components['schemas']['DefinirClassificacaoRequest'];
 export type RegraEliminacaoDto = components['schemas']['RegraEliminacaoDto'];
 export type RegraEliminacaoInput = components['schemas']['RegraEliminacaoInput'];
-export type ConfiguracaoBonusRegionalDto = components['schemas']['ConfiguracaoBonusRegionalDto'];
-export type ConfiguracaoBonusRegionalMunicipioDto =
-  components['schemas']['ConfiguracaoBonusRegionalMunicipioDto'];
-export type DefinirBonusRegionalRequest = components['schemas']['DefinirBonusRegionalRequest'];
+export type ConfiguracaoDoFadaDto = components['schemas']['ConfiguracaoDoFadaDto'];
+export type MunicipioDoFadaDto = components['schemas']['MunicipioDoFadaDto'];
+export type DefinirFadaRequest = components['schemas']['DefinirFadaRequest'];
 export type DefinirOpcoesDeclaradasRequest =
   components['schemas']['DefinirOpcoesDeclaradasRequest'];
 export type CriterioDesempateDto = components['schemas']['CriterioDesempateDto'];

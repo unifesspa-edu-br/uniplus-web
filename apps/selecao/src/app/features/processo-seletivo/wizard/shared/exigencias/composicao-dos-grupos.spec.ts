@@ -100,6 +100,21 @@ describe('composição dos grupos', () => {
     ).toMatchObject({ consequencia: 'INDEFERIMENTO', basesLegais: [] });
   });
 
+  it('a alteração parcial mantém os outros campos do grupo', () => {
+    const base = editarGrupo(grupoDeTres(), 'grupo', {
+      consequencia: 'INDEFERIMENTO',
+      abrePrazoParaReenvio: true,
+    });
+    const normas = editarGrupo(base, 'grupo', { basesLegais: [] });
+    expect(normas.regrasDeComprovacao[0]).toMatchObject({
+      consequencia: 'INDEFERIMENTO',
+      abrePrazoParaReenvio: true,
+      basesLegais: [],
+    });
+    const consequencia = editarGrupo(normas, 'grupo', { consequencia: null });
+    expect(consequencia.regrasDeComprovacao[0].abrePrazoParaReenvio).toBe(true);
+  });
+
   it('inclui um grupo em outro e impede uma inclusão circular', () => {
     const quarto = rascunho(exigencia({ tipoDocumentoId: 'passaporte' }));
     const antes = documentos();

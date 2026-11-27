@@ -1,8 +1,4 @@
-import {
-  AplicabilidadeCodigo,
-  FinalidadeFormularioCodigo,
-  FormaDeComprovacaoCodigo,
-} from '@uniplus/shared-data/selecao';
+import { AplicabilidadeCodigo, FormaDeComprovacaoCodigo } from '@uniplus/shared-data/selecao';
 import type {
   DocumentoExigidoDto,
   RegraDeComprovacaoDto,
@@ -33,8 +29,8 @@ export const FASES = new Map([
   ['HABILITACAO', ID_HABILITACAO],
 ]);
 
-/** A fase da isenção divide o formulário com a inscrição; a de habilitação responde só o dela. */
-export const FINALIDADES_POR_FASE: ReadonlyMap<string, readonly string[]> = new Map([
+/** A fase da isenção responde dois formulários, o da inscrição e o do pedido; a de habilitação, só o dela. */
+export const FORMULARIOS_POR_FASE: ReadonlyMap<string, readonly string[]> = new Map([
   ['ISENCAO', ['INSCRICAO', 'ISENCAO_TAXA']],
   ['HABILITACAO', ['HABILITACAO']],
 ]);
@@ -61,7 +57,7 @@ export function comando(
     faseIdPorCodigo: FASES,
     modalidadesOfertadas: modalidades,
     etapasVivas: ETAPAS_VIVAS,
-    finalidadesPorFase: FINALIDADES_POR_FASE,
+    formulariosPorFase: FORMULARIOS_POR_FASE,
   }).regras;
 }
 
@@ -69,6 +65,7 @@ const REGRA_SEM_DADOS: Omit<RegraDeComprovacao, 'forma' | 'identificadorNoRascun
   documento: null,
   quantidadeMinima: null,
   consequencia: null,
+  abrePrazoParaReenvio: false,
   basesLegais: null,
   itens: null,
   criterioDeDistincao: null,
@@ -104,7 +101,7 @@ export interface AlteracoesDoDocumentoDaApi {
   readonly fatosComprovados?: readonly string[];
   readonly faseId?: string;
   readonly etapaId?: string | null;
-  readonly finalidade?: string | null;
+  readonly formularioCodigo?: string | null;
   readonly aplicabilidade?: DocumentoExigidoDto['aplicabilidade'];
   readonly indeferimento?: Partial<DocumentoExigidoDto['indeferimento']>;
   readonly requisitos?: Partial<DocumentoExigidoDto['requisitos']>;
@@ -115,7 +112,11 @@ export function exigenciaDaApi(alteracoes: AlteracoesDoDocumentoDaApi = {}): Reg
     id: 'no-1',
     forma: { codigo: FormaDeComprovacaoCodigo.DOCUMENTO, rotulo: 'Documento' },
     cardinalidade: { quantidadeMinima: null, distincao: null },
-    indeferimento: { consequencia: null, basesLegais: [] },
+    indeferimento: {
+      consequenciaDoDescumprimento: null,
+      basesLegais: [],
+      abrePrazoParaReenvio: false,
+    },
     itens: [],
     grupoDoFormularioParaRepeticao: null,
     documento: documentoDaApi(alteracoes),
@@ -145,8 +146,9 @@ const TIPO_RG: DocumentoExigidoDto['tipoDocumento'] = {
 
 const INDEFERIMENTO_PADRAO: DocumentoExigidoDto['indeferimento'] = {
   obrigatorio: true,
-  consequencia: null,
+  consequenciaDoDescumprimento: null,
   basesLegais: [],
+  abrePrazoParaReenvio: false,
 };
 
 const REQUISITOS_PADRAO = {
@@ -182,11 +184,6 @@ function momentoDaApi(alteracoes: AlteracoesDoDocumentoDaApi): DocumentoExigidoD
   return {
     faseId: alteracoes.faseId ?? ID_HABILITACAO,
     etapaId: alteracoes.etapaId ?? null,
-    finalidade: alteracoes.finalidade
-      ? {
-          codigo: alteracoes.finalidade as FinalidadeFormularioCodigo,
-          rotulo: alteracoes.finalidade,
-        }
-      : null,
+    formularioCodigo: alteracoes.formularioCodigo ?? null,
   };
 }

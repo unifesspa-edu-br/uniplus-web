@@ -14,7 +14,7 @@ const ID_DO_NOVO_MODELO = '01960000-0000-7000-0000-0000000000a2';
 const MODELO = {
   id: ID_DO_MODELO,
   codigo: 'INSCRICAO',
-  finalidade: { codigo: 'INSCRICAO', rotulo: 'Inscrição' },
+  declaracao: { serveAFaseDeInscricao: true, obrigatorio: true },
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   ativo: true,
   conteudo: {
@@ -179,9 +179,12 @@ async function abrirCriacao(page: Page): Promise<{ acionador: Locator; formulari
   return { acionador, formulario: drawer(page) };
 }
 
+// O input do checkbox do design system é visualmente oculto; quem recebe o clique é o rótulo.
 async function preencher(formulario: Locator): Promise<void> {
   await formulario.locator('input[formcontrolname="nome"]').fill('Inscrição de Medicina');
-  await formulario.locator('select[formcontrolname="finalidade"]').selectOption('INSCRICAO');
+  for (const rotulo of ['Serve à fase de inscrição', 'Preenchimento obrigatório']) {
+    await formulario.locator('label.checkbox', { hasText: rotulo }).click();
+  }
 }
 
 test.describe('Modelo de formulário — escritas', () => {

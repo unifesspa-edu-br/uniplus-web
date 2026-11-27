@@ -1,5 +1,5 @@
 import type {
-  ConsequenciaDoIndeferimentoCodigo,
+  ConsequenciaDoDescumprimentoCodigo,
   TipoAbrangenciaCodigo,
   StatusBaseLegalCodigo,
 } from '@uniplus/shared-data/selecao';
@@ -12,7 +12,6 @@ import {
 } from '@uniplus/shared-e2e';
 import type {
   AplicabilidadeCodigo,
-  FinalidadeFormularioCodigo,
   FormaDeComprovacaoCodigo,
   ItemDocumentoExigidoInput,
   RegraDeComprovacaoInformada,
@@ -25,6 +24,7 @@ import type {
   EfeitoNaAnaliseDoDocumentoCodigo,
   EscolhaDaValidadeCodigo,
 } from '@uniplus/shared-data/selecao';
+import { gravarFormulario, formularioDeInscricao } from '../support/api-dos-documentos-exigidos';
 import { corpoComPrazoInvalido, conferirRecusaDoPrazo } from '../support/passos-do-prazo-invalido';
 import { rascunhoParaConfiguracao } from '../fixtures/cenario-da-projecao';
 
@@ -62,6 +62,9 @@ type RegraNoTransporte = Omit<RegraDeComprovacaoInformada, 'forma' | 'documento'
     };
   };
 };
+
+/** O servidor exige que todo documento exigido cite um formulário já gravado na mesma fase. */
+const FORMULARIO_DA_FASE = 'HABILITACAO';
 
 const BASES_LEGAIS = [
   {
@@ -109,17 +112,14 @@ function requisitos(
 function documento(prazo: PrazoNoTransporte, validade: ValidadeNoTransporte | null) {
   return {
     tipoDocumento: { id: tipoId },
-    momento: {
-      faseId,
-      etapaId: null,
-      finalidade: 'HABILITACAO' as FinalidadeFormularioCodigo.HABILITACAO,
-    },
+    momento: { faseId, etapaId: null, formularioCodigo: FORMULARIO_DA_FASE },
     aplicabilidade: { tipo: 'GERAL' as AplicabilidadeCodigo.GERAL, condicoes: [] },
     indeferimento: {
       obrigatorio: true,
-      consequencia:
-        'ELIMINA' satisfies `${ConsequenciaDoIndeferimentoCodigo}` as ConsequenciaDoIndeferimentoCodigo.ELIMINA,
+      consequenciaDoDescumprimento:
+        'ELIMINA_DO_PROCESSO' satisfies `${ConsequenciaDoDescumprimentoCodigo}` as ConsequenciaDoDescumprimentoCodigo.ELIMINA_DO_PROCESSO,
       basesLegais: BASES_LEGAIS,
+      abrePrazoParaReenvio: false,
     },
     requisitos: requisitos(prazo, validade),
   };
@@ -160,6 +160,12 @@ async function preparar(): Promise<void> {
   await prepararAcessosDaSimulacao();
   await aprovarCatalogoInicial();
   ({ processoId, faseHabilitacaoId: faseId } = await rascunhoParaConfiguracao());
+  const formulario = await gravarFormulario(
+    processoId,
+    FORMULARIO_DA_FASE,
+    formularioDeInscricao(faseId),
+  );
+  expect(formulario.status).toBe(204);
   const catalogo = await chamarApi<{ id: string; codigo: string }[]>(
     OPERADOR_DO_ROTEIRO,
     'GET',

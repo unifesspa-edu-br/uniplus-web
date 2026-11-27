@@ -51,9 +51,17 @@ function materializarNaFase(
     (item) => item.tipoDocumentoId === documento.tipoDocumentoId && item.faseCodigo === faseCodigo,
   );
   if (existe) return exigencias;
-  const copia = regraDeDocumento({ ...documento, faseCodigo, etapaId: null, finalidade: null });
-  const regra = { ...copia, grupoDoFormularioParaRepeticao: modelo.grupoDoFormularioParaRepeticao };
+  const regra = copiaNaFase(modelo, documento, faseCodigo);
   return { ...exigencias, regrasDeComprovacao: [...exigencias.regrasDeComprovacao, regra] };
+}
+
+/** A cópia do modelo na fase: sem etapa nem formulário, que cada fase declara por si. */
+function copiaNaFase(modelo: Regra, documento: ExigenciaDeDocumento, faseCodigo: string): Regra {
+  const copia = { ...documento, faseCodigo, etapaId: null, formularioCodigo: null };
+  return {
+    ...regraDeDocumento(copia),
+    grupoDoFormularioParaRepeticao: modelo.grupoDoFormularioParaRepeticao,
+  };
 }
 
 /** O que o alcance entre fases precisa saber do documento e do edital para se materializar. */
@@ -137,7 +145,7 @@ function modeloNaFase(
     ...modelo,
     faseCodigo: atual.faseCodigo,
     etapaId: atual.etapaId,
-    finalidade: atual.finalidade,
+    formularioCodigo: atual.formularioCodigo,
   };
 }
 

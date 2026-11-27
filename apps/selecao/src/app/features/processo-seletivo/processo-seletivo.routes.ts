@@ -20,7 +20,7 @@ const EDITOR_PROCESSO_SELETIVO = 'editor-processo-seletivo';
 
 /**
  * A rota base é a listagem administrativa; `novo` inicia um cadastro vazio,
- * `:id` retoma um processo existente, `:id/simulacao/:finalidade` simula um
+ * `:id` retoma um processo existente, `:id/simulacao/:codigo` simula um
  * formulário dele, `:id/publicacoes` mostra o que o processo já publicou e `:id/notas-do-enem`
  * trata do envio ao INEP e da importação das notas do ENEM.
  *
@@ -48,7 +48,7 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
   {
     // A simulação abre fora do editor, em nova aba: não reaproveita a tela do editor nem tem
     // ato digitado a perder.
-    path: ':id/simulacao/:finalidade',
+    path: ':id/simulacao/:codigo',
     canActivate: CONFIGURAR_PROCESSO,
     loadComponent: () =>
       import('./simulacao/simulacao-do-processo.page').then((m) => m.SimulacaoDoProcessoPage),

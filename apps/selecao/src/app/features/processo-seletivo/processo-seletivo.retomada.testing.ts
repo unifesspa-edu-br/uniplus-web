@@ -7,7 +7,7 @@ import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiOk } from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
-  BaseLegalBonusRegionalApi,
+  BaseLegalDoFadaApi,
   CondicoesAtendimentoApi,
   TiposInstrumentoNormativoApi,
   PesosEnemApi,
@@ -111,9 +111,9 @@ const PROVEDORES_DE_CATALOGO_VAZIO: readonly Provider[] = [
   { provide: OfertasCursoApi, useValue: catalogoVazioStub },
   { provide: ReservaDemograficaApi, useValue: catalogoVazioStub },
   { provide: RegrasCatalogoApi, useValue: catalogoVazioStub },
-  // O passo de bônus carrega o catálogo de base legal ao montar, e o vocabulário que traduz o
+  // O passo do Fator de Atenuação carrega o catálogo de base legal ao montar, e o vocabulário que traduz o
   // tipo de instrumento da norma.
-  { provide: BaseLegalBonusRegionalApi, useValue: catalogoVazioStub },
+  { provide: BaseLegalDoFadaApi, useValue: catalogoVazioStub },
   { provide: TiposInstrumentoNormativoApi, useValue: catalogoVazioStub },
   // O passo da fórmula carrega o cadastro de Peso por Área, de onde sai a resolução do ENEM.
   {
@@ -202,15 +202,18 @@ function dimensoesVaziasDoDetalhe() {
     etapas: [],
     atendimentoEspecializado: null,
     distribuicaoVagas: [],
-    bonusRegional: null,
+    fada: null,
     cascata: null,
     criteriosDesempate: [],
     classificacao: null,
     cronogramaFases: [],
     documentosExigidos: [],
     regrasDeComprovacao: [],
-    referenciaTemporalFatos: null,
   };
+}
+
+function dimensoesDeFormularioEReferenciaVazias() {
+  return { formularios: [], referenciaTemporalFatos: null };
 }
 
 /**
@@ -222,6 +225,7 @@ export function detalhe(overrides: Partial<ProcessoSeletivoDto> = {}): ProcessoS
   return {
     ...identificacaoDoDetalhe(),
     ...dimensoesVaziasDoDetalhe(),
+    ...dimensoesDeFormularioEReferenciaVazias(),
     configuracaoTaxaInscricao: TAXA_DE_INSCRICAO,
     ...overrides,
   } as ProcessoSeletivoDto;

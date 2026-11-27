@@ -106,7 +106,11 @@ describe('Alcance da exigência de documento entre fases', () => {
             rotulo: 'Quantidade mínima',
           },
           cardinalidade: { quantidadeMinima: 1, distincao: null },
-          indeferimento: { consequencia: null, basesLegais: [] },
+          indeferimento: {
+            consequenciaDoDescumprimento: null,
+            basesLegais: [],
+            abrePrazoParaReenvio: false,
+          },
           grupoDoFormularioParaRepeticao: null,
           documento: null,
           itens: [exigenciaDaApi({ faseId: ID_HABILITACAO })],

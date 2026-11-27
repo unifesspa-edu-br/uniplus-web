@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { comInscricao } from './formulario-de-inscricao.testing';
+import { conteudoDaInscricao, formularioDoCodigo } from './formularios-do-rascunho';
 import { GravacaoDosFormularios } from './servicos/gravacao-dos-formularios.service';
 import {
   PROBLEM_JSON,
@@ -11,6 +13,8 @@ import {
   type ContextoDoPasso,
 } from './formulario-passo.testing';
 
+const INSCRICOES = new Set(['INSCRICAO']);
+
 describe('FormularioPassoComponent: gravação', () => {
   let fixture: ContextoDoPasso['fixture'];
   let store: ContextoDoPasso['store'];
@@ -21,16 +25,17 @@ describe('FormularioPassoComponent: gravação', () => {
   });
 
   it('grava só o que mudou, seguindo o plano, e envia os itens sem os dados básicos', async () => {
-    const conteudo = store.draft().formulario.conteudo;
-    store.patchObjectSection('formulario', {
-      conteudo: {
+    const conteudo = conteudoDaInscricao(store.draft().formulario, INSCRICOES);
+    store.patchObjectSection(
+      'formulario',
+      comInscricao(store.draft().formulario, {
         ...conteudo,
         itens:
           conteudo.itens?.map((i) =>
             i.fatoCodigo === 'PCD' ? { ...i, rotulo: 'Você tem deficiência?' } : i,
           ) ?? [],
-      },
-    });
+      }),
+    );
 
     const gravacao = fixture.componentInstance.persistir();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO);
@@ -57,13 +62,14 @@ describe('FormularioPassoComponent: gravação', () => {
 
     expect(await gravacao).toEqual({ valid: true });
     // A releitura projeta o que o servidor tem, inclusive a fase pelo código.
-    expect(store.draft().formulario.faseCodigo).toBe('INSCRICAO');
+    expect(formularioDoCodigo(store.draft().formulario, 'INSCRICAO')?.faseCodigo).toBe('INSCRICAO');
   });
 
   it('recusa o limite que não é número e diz em que formulário está', () => {
-    const conteudo = store.draft().formulario.conteudo;
-    store.patchObjectSection('formulario', {
-      conteudo: {
+    const conteudo = conteudoDaInscricao(store.draft().formulario, INSCRICOES);
+    store.patchObjectSection(
+      'formulario',
+      comInscricao(store.draft().formulario, {
         ...conteudo,
         itens:
           conteudo.itens?.map((i) =>
@@ -77,21 +83,22 @@ describe('FormularioPassoComponent: gravação', () => {
                 }
               : i,
           ) ?? [],
-      },
-    });
+      }),
+    );
 
     expect(fixture.componentInstance.validar()).toEqual({
       valid: false,
       messages: [
-        'O formulário de inscrição tem campos que não são números: veja os campos marcados na aba dele.',
+        'O formulário "Inscrição — Medicina 2027" tem campos que não são números: veja os campos marcados na aba dele.',
       ],
     });
   });
 
   it('a recusa de um item vai para ele, pelo índice da lista enviada sem os dados básicos', async () => {
-    const conteudo = store.draft().formulario.conteudo;
-    store.patchObjectSection('formulario', {
-      conteudo: {
+    const conteudo = conteudoDaInscricao(store.draft().formulario, INSCRICOES);
+    store.patchObjectSection(
+      'formulario',
+      comInscricao(store.draft().formulario, {
         ...conteudo,
         itens:
           conteudo.itens?.map((i) =>
@@ -99,8 +106,8 @@ describe('FormularioPassoComponent: gravação', () => {
               ? { ...i, apresentacao: { ...i.apresentacao, rotulo: 'Outro' } }
               : i,
           ) ?? [],
-      },
-    });
+      }),
+    );
 
     const gravacao = fixture.componentInstance.persistir();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO);

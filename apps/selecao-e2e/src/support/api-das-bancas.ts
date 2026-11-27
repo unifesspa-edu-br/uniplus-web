@@ -26,6 +26,7 @@ import {
   recusar,
   SEM_CONTEUDO,
 } from './api-da-unidade-da-fase';
+import { formulariosNaFase } from './formularios-na-fase';
 import { leituraDoProcessoCompleto } from './leituras-do-processo-completo';
 import { responder, responderCatalogos, responderCom } from './responder';
 
@@ -267,6 +268,7 @@ async function publicar(route: Route, servidor: ServidorDasBancas): Promise<void
 function detalheDoProcesso(servidor: ServidorDasBancas) {
   return {
     ...PROCESSO_PUBLICADO_COMPLETO,
+    formularios: formulariosNaFase(servidor.fase.id),
     situacao: situacaoDoProcesso(servidor.situacao),
     cronogramaFases: [servidor.fase],
     etapas: [servidor.etapa],

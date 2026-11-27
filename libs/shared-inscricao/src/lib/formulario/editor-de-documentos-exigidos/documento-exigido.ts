@@ -7,11 +7,6 @@ import {
   output,
 } from '@angular/core';
 
-import {
-  CONSEQUENCIA_PADRAO,
-  CONSEQUENCIA_REENVIO,
-  consequenciasDaFase,
-} from '@uniplus/shared-utils';
 import { type CondicaoEmClausula } from '../editor-de-condicoes/condicoes/condicoes-em-clausulas';
 import { type FatoEscolhivel } from '../editor-de-condicoes/condicoes/fatos-escolhiveis';
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
@@ -23,7 +18,7 @@ import {
 } from '../editor-de-formulario/predicado-em-edicao';
 import {
   type DocumentoExigidoDoFormulario,
-  type ConsequenciaDoIndeferimento,
+  type ConsequenciaDoDescumprimento,
   type OpcaoDoDocumento,
   type RecusasDoDocumento,
 } from './documentos-exigidos';
@@ -116,12 +111,15 @@ export const SEM_RECUSAS: RecusasDoDocumento = { quando: [], demais: [] };
             class="select"
             [id]="idDe('consequencia')"
             [disabled]="disabled()"
-            (change)="trocar({ consequenciaIndeferimento: valorDe($event) })"
+            (change)="trocarConsequencia($event)"
           >
+            <option value="" [selected]="documento().consequenciaDoDescumprimento === null">
+              Nenhuma consequência
+            </option>
             @for (consequencia of consequencias(); track consequencia.valor) {
               <option
                 [value]="consequencia.valor"
-                [selected]="consequencia.valor === documento().consequenciaIndeferimento"
+                [selected]="consequencia.valor === documento().consequenciaDoDescumprimento"
               >
                 {{ consequencia.rotulo }}
               </option>
@@ -141,6 +139,21 @@ export const SEM_RECUSAS: RecusasDoDocumento = { quando: [], demais: [] };
             Documento obrigatório
           </label>
         </div>
+
+        @if (admiteReenvio()) {
+          <div class="field">
+            <label class="checkbox">
+              <input
+                type="checkbox"
+                [checked]="documento().abrePrazoParaReenvio"
+                [disabled]="disabled()"
+                (change)="trocarReenvio($event)"
+              />
+              <span class="checkbox__box" aria-hidden="true"></span>
+              Abrir prazo para reenvio
+            </label>
+          </div>
+        }
       </div>
 
       <insc-editor-de-condicoes
@@ -175,8 +188,8 @@ export class DocumentoExigidoComponent {
   readonly posicao = input.required<number>();
   readonly fases = input.required<readonly OpcaoDoDocumento[]>();
   readonly tipos = input.required<readonly OpcaoDoDocumento[]>();
-  /** As consequências do indeferimento que a API oferece, com o rótulo dela. */
-  readonly consequenciasOferecidas = input.required<readonly ConsequenciaDoIndeferimento[]>();
+  /** As consequências do descumprimento que a API oferece, com o rótulo dela. */
+  readonly consequenciasOferecidas = input.required<readonly ConsequenciaDoDescumprimento[]>();
   readonly fatos = input.required<readonly FatoEscolhivel[]>();
   readonly idBase = input.required<string>();
   readonly disabled = input<boolean>(false);
@@ -213,15 +226,18 @@ export class DocumentoExigidoComponent {
   protected readonly tiposComOGravado = computed(() =>
     comOGravado(this.tipos(), this.documento().tipoDocumentoCodigo),
   );
-  /** O reenvio só vale em fase resolvida que admite complementação: o servidor o recusa nas demais. */
-  protected readonly consequencias = computed(() => {
-    const gravada = this.documento().consequenciaIndeferimento;
+  /** O prazo para reenvio só vale em fase que admite complementação; o gravado aparece para poder ser desfeito. */
+  protected readonly admiteReenvio = computed(() => {
     const fase = this.fases().find((opcao) => opcao.codigo === this.documento().faseCodigo);
-    const oferecidas = consequenciasDaFase(
-      this.consequenciasOferecidas().map(({ codigo, rotulo }) => ({ valor: codigo, rotulo })),
-      fase?.permiteComplementacao,
-    );
-    return oferecidas.some((consequencia) => consequencia.valor === gravada)
+    return fase?.permiteComplementacao === true || this.documento().abrePrazoParaReenvio;
+  });
+  protected readonly consequencias = computed(() => {
+    const gravada = this.documento().consequenciaDoDescumprimento;
+    const oferecidas = this.consequenciasOferecidas().map(({ codigo, rotulo }) => ({
+      valor: codigo,
+      rotulo,
+    }));
+    return gravada === null || oferecidas.some((consequencia) => consequencia.valor === gravada)
       ? oferecidas
       : [{ valor: gravada, rotulo: gravada }, ...oferecidas];
   });
@@ -243,17 +259,23 @@ export class DocumentoExigidoComponent {
     this.documentoChange.emit({ ...this.documento(), ...mudanca });
   }
 
-  /** Em fase que não admite complementação o reenvio sai: a consequência volta à primeira oferecida. */
+  /** Em fase que não admite complementação o prazo para reenvio sai. */
   protected trocarFase(faseCodigo: string): void {
     const fase = this.fases().find((opcao) => opcao.codigo === faseCodigo);
-    const perdeOReenvio =
-      fase?.permiteComplementacao !== true &&
-      this.documento().consequenciaIndeferimento === CONSEQUENCIA_REENVIO;
     this.trocar(
-      perdeOReenvio
-        ? { faseCodigo, consequenciaIndeferimento: CONSEQUENCIA_PADRAO }
-        : { faseCodigo },
+      fase?.permiteComplementacao === true
+        ? { faseCodigo }
+        : { faseCodigo, abrePrazoParaReenvio: false },
     );
+  }
+
+  protected trocarConsequencia(evento: Event): void {
+    const codigo = this.valorDe(evento);
+    this.trocar({ consequenciaDoDescumprimento: codigo === '' ? null : codigo });
+  }
+
+  protected trocarReenvio(evento: Event): void {
+    this.trocar({ abrePrazoParaReenvio: (evento.target as HTMLInputElement).checked });
   }
 
   protected trocarObrigatorio(evento: Event): void {

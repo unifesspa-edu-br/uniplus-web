@@ -1,4 +1,5 @@
 import {
+  type ConsequenciaDoDescumprimentoCodigo,
   OperadorCodigo,
   TipoDeCampoCodigo,
   TipoRestricaoValorCodigo,
@@ -83,18 +84,36 @@ function semSecaoSeNecessario<T extends { readonly paginaCodigo?: string | null 
 
 const CODIGOS_DA_SELECAO = codigosDoContrato(OperadorCodigo, TipoDeCampoCodigo);
 
-/** O cabeçalho para o PUT: fase, título e páginas, sem a seção dos dados básicos, que a API repõe. */
-export function cabecalhoParaEnvio(
-  faseId: string,
-  conteudo: ConteudoDoFormulario,
-): DefinirFormularioRequest {
+/** O formulário com a fase resolvida para o id, como o cabeçalho o envia. */
+export interface CabecalhoDoFormulario {
+  readonly faseId: string;
+  readonly obrigatorio: boolean;
+  readonly consequenciaDaFaltaDeEnvio: ConsequenciaDoDescumprimentoCodigo | null;
+  readonly conteudo: ConteudoDoFormulario;
+}
+
+/**
+ * O cabeçalho para o PUT: fase, título, obrigatoriedade, consequência da falta de envio e páginas,
+ * sem a seção dos dados básicos, que a API repõe.
+ */
+export function cabecalhoParaEnvio({
+  faseId,
+  obrigatorio,
+  consequenciaDaFaltaDeEnvio,
+  conteudo,
+}: CabecalhoDoFormulario): DefinirFormularioRequest {
   return {
     faseId,
     titulo: conteudo.titulo,
-    paginas: (conteudoComCodigos(semDadosBasicos(conteudo), CODIGOS_DA_SELECAO).paginas ?? []).map(
-      paginaParaEnvio,
-    ),
+    obrigatorio,
+    consequenciaDaFaltaDeEnvio,
+    paginas: paginasParaEnvio(conteudo),
   };
+}
+
+function paginasParaEnvio(conteudo: ConteudoDoFormulario) {
+  const comCodigos = conteudoComCodigos(semDadosBasicos(conteudo), CODIGOS_DA_SELECAO);
+  return (comCodigos.paginas ?? []).map(paginaParaEnvio);
 }
 
 /**

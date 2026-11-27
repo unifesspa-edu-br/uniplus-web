@@ -162,6 +162,18 @@ export const REGRAS_CONSOLIDACAO = [
   },
 ];
 
+/** O formulário que o servidor tem na fase de avaliação: o documento exigido só é gravado com ele. */
+export const FORMULARIO_NA_AVALIACAO = {
+  codigo: 'AVALIACAO',
+  faseId: ID_AVALIACAO,
+  obrigatorio: true,
+  titulo: null,
+  modeloOrigem: null,
+  paginas: [],
+  coleta: { itens: [], grupos: [] },
+  termos: [],
+};
+
 /**
  * O processo como o servidor o devolve depois de gravar: a etapa que subiu sem
  * `id` volta com o que ele atribuiu.
@@ -201,11 +213,12 @@ export const PROCESSO_COM_ETAPA_GRAVADA = {
   ],
   atendimentoEspecializado: null,
   distribuicaoVagas: [],
-  bonusRegional: null,
+  fada: null,
   cascata: null,
   criteriosDesempate: [],
   classificacao: null,
   cronogramaFases: [],
+  formularios: [],
   documentosExigidos: [],
   regrasDeComprovacao: [],
   referenciaTemporalFatos: null,

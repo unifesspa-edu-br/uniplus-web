@@ -7,11 +7,11 @@ import {
 } from './rascunho-inicial';
 
 describe('regras iniciais da classificação', () => {
-  it('reúne classificação, bônus e desempate independentes', () => {
+  it('reúne classificação, Fator de Atenuação e desempate independentes', () => {
     const regras = regrasDaClassificacaoIniciais();
     expect(regras).toEqual({
       classificacao: classificacaoInicial(),
-      bonus: rascunhoInicial().bonus,
+      fada: rascunhoInicial().fada,
       desempate: [],
     });
     expect(regrasDaClassificacaoIniciais().classificacao).not.toBe(regras.classificacao);

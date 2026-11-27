@@ -1,23 +1,20 @@
 import type { ModeloFormularioView } from '@uniplus/shared-data/configuracao';
-import type { AplicacaoDeModeloDto, FormularioDto } from '@uniplus/shared-data/selecao';
+import type { AplicacaoDeModeloDto } from '@uniplus/shared-data/selecao';
 
 import type {
   DerivacaoDeFato,
-  FormularioDaFinalidade,
   FormularioDeInscricao,
+  FormularioDoProcessoNoRascunho,
 } from '../../processo-seletivo.models';
 import { fatosColetadosPor, type ProcessoComFormularios } from './formulario-do-processo';
-import {
-  comFormulario,
-  formularioDoServidorNaFinalidade,
-  formulariosDoRascunho,
-} from './formularios-por-finalidade';
+import { comFormulario, formularioDoServidorNoCodigo } from './formularios-do-rascunho';
+import type { FaseQueRespondeFormulario } from './obrigatoriedade-na-fase';
 
 /**
  * Partir de um modelo (UNI-REQ-0144): o processo copia um modelo de formulário da Configuração
- * para a finalidade dele. A cópia é feita pelo servidor, que substitui o formulário inteiro e
- * relata o que fez; aqui ficam a oferta dos modelos, a fase que o formulário nascido da cópia
- * precisa, a projeção do resultado no rascunho e o resumo que o operador lê.
+ * para o formulário do código dado. A cópia é feita pelo servidor, que exige o formulário já
+ * gravado, substitui o conteúdo inteiro e relata o que fez; aqui ficam a oferta dos modelos, a
+ * projeção do resultado no rascunho e o resumo que o operador lê.
  */
 
 /** Um modelo como a aba o oferece. */
@@ -25,49 +22,45 @@ export interface ModeloOferecido {
   readonly id: string;
   readonly codigo: string;
   readonly nome: string;
+  /** Se o modelo serve ao formulário da fase em que o candidato se inscreve. */
+  readonly serveAFaseDeInscricao: boolean;
+  readonly obrigatorio: boolean;
 }
 
 /**
- * Os modelos de cada finalidade, por nome. A listagem chega filtrada pelo tipo do processo e pelos
- * ativos — quem decide o que serve ao processo é o servidor —, e cada aba oferece só os da
- * finalidade dela.
+ * Os modelos ofertados, por nome. A listagem chega filtrada pelo tipo do processo e pelos ativos —
+ * quem decide o que serve ao processo é o servidor.
  */
-export function modelosPorFinalidade(
+export function modelosOferecidos(
   modelos: readonly ModeloFormularioView[],
-): ReadonlyMap<string, readonly ModeloOferecido[]> {
-  const porFinalidade = new Map<string, ModeloOferecido[]>();
-  for (const modelo of modelos) {
-    const daFinalidade = porFinalidade.get(modelo.finalidade.codigo) ?? [];
-    daFinalidade.push({ id: modelo.id, codigo: modelo.codigo, nome: modelo.descritivo.nome });
-    porFinalidade.set(modelo.finalidade.codigo, daFinalidade);
-  }
-  for (const daFinalidade of porFinalidade.values()) {
-    daFinalidade.sort((um, outro) => um.nome.localeCompare(outro.nome, 'pt-BR'));
-  }
-  return porFinalidade;
+): readonly ModeloOferecido[] {
+  return modelos
+    .map((modelo) => ({
+      id: modelo.id,
+      codigo: modelo.codigo,
+      nome: modelo.descritivo.nome,
+      serveAFaseDeInscricao: modelo.declaracao.serveAFaseDeInscricao,
+      obrigatorio: modelo.declaracao.obrigatorio,
+    }))
+    .sort((um, outro) => um.nome.localeCompare(outro.nome, 'pt-BR'));
 }
 
 /**
- * A fase que a aplicação precisa declarar depois da cópia. A cópia preserva a fase do formulário
- * que já existe com uma; o que nasce dela — ou o que existia sem fase — fica sem, e a publicação
- * recusa formulário sem fase. Então a fase da aba vai no cabeçalho logo em seguida, e precisa
- * existir no cronograma GRAVADO: sem ela, a aplicação não começa.
+ * Os modelos que servem à fase: os da fase de inscrição, nela; os outros, nas demais. Na fase que
+ * coleta inscrição e isenção, o obrigatório serve à inscrição e o facultativo à isenção; sem saber
+ * a obrigatoriedade, os dois tipos. Sem fase escolhida, todos — a escolha do modelo não deve
+ * esperar por ela.
  */
-export type FaseDaAplicacao =
-  | { readonly declarar: false }
-  | { readonly declarar: true; readonly faseId: string }
-  | { readonly declarar: true; readonly faseId: null };
-
-export function faseQueAAplicacaoDeclara(
-  gravado: FormularioDto | null,
-  faseCodigo: string,
-  fasesGravadas: readonly { readonly id: string; readonly codigo: string }[],
-): FaseDaAplicacao {
-  if (gravado?.faseId != null) return { declarar: false };
-  return {
-    declarar: true,
-    faseId: fasesGravadas.find((fase) => fase.codigo === faseCodigo)?.id ?? null,
-  };
+export function modelosQueServem(
+  modelos: readonly ModeloOferecido[],
+  fase: FaseQueRespondeFormulario | undefined,
+  obrigatorio?: boolean,
+): readonly ModeloOferecido[] {
+  if (fase === undefined) return modelos;
+  const dividida = fase.coletaInscricao && fase.coletaSolicitacaoIsencao;
+  if (dividida && obrigatorio === undefined) return modelos;
+  const daInscricao = dividida ? obrigatorio === true : fase.coletaInscricao;
+  return modelos.filter((modelo) => modelo.serveAFaseDeInscricao === daInscricao);
 }
 
 /** O processo relido como a projeção da aplicação o precisa: os formulários, as fases e as derivações. */
@@ -77,9 +70,9 @@ export interface ProcessoAposAplicacao extends ProcessoComFormularios {
 
 /**
  * O rascunho depois da aplicação, com o que o servidor mudou e só isso:
- * - o formulário da finalidade aplicada, como o servidor o tem — sem fase gravada, com a da aba,
+ * - o formulário aplicado, como o servidor o tem — sem fase gravada, com a da aba,
  *   que é a que o cabeçalho declara em seguida;
- * - na inscrição, os outros formulários de onde a cópia trouxe fatos, como o servidor os deixou;
+ * - os outros formulários de onde a cópia trouxe fatos para a inscrição, como o servidor os deixou;
  * - as derivações que a cópia trouxe do catálogo, somadas às do rascunho.
  *
  * O resto do rascunho — as outras abas e as derivações que o operador editou — fica como está.
@@ -90,7 +83,7 @@ export function comAplicacaoDoServidor(
   relato: AplicacaoDeModeloDto,
   faseDaAba: string,
 ): FormularioDeInscricao {
-  const aplicado = formularioDoServidorNaFinalidade(servidor, relato.finalidade.codigo);
+  const aplicado = formularioDoServidorNoCodigo(servidor, relato.formularioCodigo);
   if (aplicado === null) return rascunho;
   const comAplicado = comFormulario(rascunho, comFaseDaAba(aplicado, faseDaAba));
   const comOutros = comFormulariosQueCederamFatos(comAplicado, rascunho, servidor, relato);
@@ -98,9 +91,9 @@ export function comAplicacaoDoServidor(
 }
 
 function comFaseDaAba(
-  formulario: FormularioDaFinalidade,
+  formulario: FormularioDoProcessoNoRascunho,
   faseDaAba: string,
-): FormularioDaFinalidade {
+): FormularioDoProcessoNoRascunho {
   const { faseCodigo } = formulario;
   return { ...formulario, faseCodigo: faseCodigo === '' ? faseDaAba : faseCodigo };
 }
@@ -108,11 +101,11 @@ function comFaseDaAba(
 function formulariosQueCederamFatos(
   rascunho: FormularioDeInscricao,
   relato: AplicacaoDeModeloDto,
-): readonly FormularioDaFinalidade[] {
+): readonly FormularioDoProcessoNoRascunho[] {
   const trazidos = new Set(relato.fatosTrazidosParaAInscricao);
-  return formulariosDoRascunho(rascunho).filter(
+  return rascunho.formularios.filter(
     (outro) =>
-      outro.finalidade !== relato.finalidade.codigo &&
+      outro.codigo !== relato.formularioCodigo &&
       fatosColetadosPor(outro.conteudo).some((fato) => trazidos.has(fato)),
   );
 }
@@ -124,7 +117,7 @@ function comFormulariosQueCederamFatos(
   relato: AplicacaoDeModeloDto,
 ): FormularioDeInscricao {
   return formulariosQueCederamFatos(rascunho, relato).reduce((resultado, outro) => {
-    const doServidor = formularioDoServidorNaFinalidade(servidor, outro.finalidade);
+    const doServidor = formularioDoServidorNoCodigo(servidor, outro.codigo);
     return doServidor === null ? resultado : comFormulario(resultado, doServidor);
   }, formulario);
 }
@@ -239,11 +232,8 @@ export interface AplicacaoEmAberto {
 }
 
 /** O que a aba e a trava do passo dizem da aplicação em aberto, com o que resolve cada caso. */
-export function textoDaAplicacaoEmAberto(
-  nomeDaFinalidade: string,
-  emAberto: AplicacaoEmAberto,
-): string {
+export function textoDaAplicacaoEmAberto(nome: string, emAberto: AplicacaoEmAberto): string {
   return emAberto.copiaConfirmada
-    ? `O modelo “${emAberto.modeloNome}” foi aplicado ao formulário de ${nomeDaFinalidade}, mas não foi possível reler o processo. Recarregue o processo antes de continuar, para não gravar por cima da cópia.`
-    : `Não foi possível confirmar se o modelo “${emAberto.modeloNome}” foi aplicado ao formulário de ${nomeDaFinalidade}. Aplique o mesmo modelo de novo ou recarregue o processo antes de continuar, para não gravar por cima da cópia.`;
+    ? `O modelo “${emAberto.modeloNome}” foi aplicado ao ${nome}, mas não foi possível reler o processo. Recarregue o processo antes de continuar, para não gravar por cima da cópia.`
+    : `Não foi possível confirmar se o modelo “${emAberto.modeloNome}” foi aplicado ao ${nome}. Aplique o mesmo modelo de novo ou recarregue o processo antes de continuar, para não gravar por cima da cópia.`;
 }

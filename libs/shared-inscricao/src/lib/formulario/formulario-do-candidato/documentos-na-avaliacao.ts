@@ -15,15 +15,14 @@ export function iguaisPorJson(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-/** Os documentos da fase e da finalidade do formulário, como a avaliação da API os traz; nulos antes dela. */
+/** Os documentos da fase e do formulário, como a avaliação da API os traz; nulos antes dela. */
 export function documentosDaFase(
   avaliacao: AvaliacaoNaTela | null,
   noProcesso: FormularioNoProcesso | null,
-  finalidade: string,
 ): DocumentosDoFormulario | null {
   const avaliados = avaliacao?.documentos ?? null;
   if (avaliados === null) return null;
-  return documentosDoFormulario(avaliados, noProcesso?.faseId, finalidade);
+  return documentosDoFormulario(avaliados, noProcesso?.faseId, noProcesso?.codigo);
 }
 
 /** A estrutura de regras da escolha dos documentos e o que falta responder; nulas antes da primeira avaliação. */

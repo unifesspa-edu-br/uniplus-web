@@ -191,7 +191,9 @@ export const RESPONDIDA: AjustesDaInscricao = {
       origem: 'logradouro',
     },
   },
-  aceites: [{ codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' }],
+  aceites: [
+    { formularioCodigo: 'INSCRICAO', codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' },
+  ],
 };
 
 export class ServicoDublê extends InscricaoDoCandidatoService {

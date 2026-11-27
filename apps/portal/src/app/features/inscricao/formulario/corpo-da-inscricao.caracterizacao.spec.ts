@@ -106,14 +106,16 @@ describe('corpoDaAvaliacao: as ocorrências dos grupos', () => {
 });
 
 describe('corpoDaGravacao: o corpo do salvar e do envio', () => {
-  const termos = FORMULARIO_DE_INSCRICAO_MOCK.formulario.termos;
+  const lido = FORMULARIO_DE_INSCRICAO_MOCK;
+  const termos = lido.formulario.termos;
   const corpo = corpoDaAvaliacao(inscricao(), {}, SEM_OFERTAS);
 
   it('leva o aceite com a versão e o hash que o formulário publica', () => {
-    const request = corpoDaGravacao(corpo, ['VERACIDADE'], termos);
+    const request = corpoDaGravacao(corpo, ['VERACIDADE'], lido);
 
     expect(request.aceites).toEqual([
       {
+        formularioCodigo: lido.codigo,
         codigo: 'VERACIDADE',
         versaoId: termos[0].versaoId,
         hashVersao: termos[0].conteudo.hashVersao,
@@ -122,13 +124,13 @@ describe('corpoDaGravacao: o corpo do salvar e do envio', () => {
   });
 
   it('o termo que o formulário não publica não vira aceite', () => {
-    expect(corpoDaGravacao(corpo, ['DESCONHECIDO'], termos).aceites).toEqual([]);
+    expect(corpoDaGravacao(corpo, ['DESCONHECIDO'], lido).aceites).toEqual([]);
   });
 
   it('sem curso escolhido, a oferta vai nula e não ausente', () => {
     const semOferta = { ...corpo, ofertaCursoId: undefined };
 
-    expect(corpoDaGravacao(semOferta, [], termos).ofertaCursoId).toBeNull();
+    expect(corpoDaGravacao(semOferta, [], lido).ofertaCursoId).toBeNull();
   });
 
   it('mantém as respostas e os grupos do corpo da avaliação', () => {
@@ -141,7 +143,7 @@ describe('corpoDaGravacao: o corpo do salvar e do envio', () => {
       },
     );
 
-    expect(corpoDaGravacao(comRespostas, [], termos)).toMatchObject(comRespostas);
+    expect(corpoDaGravacao(comRespostas, [], lido)).toMatchObject(comRespostas);
   });
 });
 
@@ -160,7 +162,14 @@ describe('mesmoConteudoGravado: o que só o candidato grava', () => {
       { situacao: { codigo: SituacaoInscricaoCodigo.ENVIADA, rotulo: 'Situação de teste' } },
     ],
     ['a oferta de curso', { ofertaCursoId: 'oferta-1' }],
-    ['os aceites', { aceites: [{ codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' }] }],
+    [
+      'os aceites',
+      {
+        aceites: [
+          { formularioCodigo: 'INSCRICAO', codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' },
+        ],
+      },
+    ],
   ])('muda quando muda %s', (_, mudanca) => {
     const a = inscricao({ respostas: { NOME: 'Fernanda' } });
 

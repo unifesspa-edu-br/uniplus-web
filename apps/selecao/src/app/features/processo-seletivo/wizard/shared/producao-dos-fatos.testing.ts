@@ -6,6 +6,7 @@ import {
   VALOR_UNICO,
 } from './valores-do-catalogo.testing';
 import type {
+  FaseNoCronograma,
   FatoComFase,
   FormularioQueColeta,
   GrupoDaProducao,
@@ -46,26 +47,45 @@ export const FAIXA_ETARIA = fato('FAIXA_ETARIA', {
   binding: 'ATRIBUTO_CANDIDATO:FAIXA_ETARIA',
 });
 
+/** A fase do cronograma, com as marcas que dizem o que ela é. */
+export const fase = (
+  codigo: string,
+  ordem: number,
+  marcas: Partial<Pick<FaseNoCronograma, 'coletaInscricao' | 'coletaSolicitacaoIsencao'>> = {},
+): FaseNoCronograma => ({
+  codigo,
+  ordem,
+  coletaInscricao: false,
+  coletaSolicitacaoIsencao: false,
+  ...marcas,
+});
+
 export const FASES = [
-  { codigo: 'INSCRICAO', ordem: 1, finalidades: ['INSCRICAO'] },
-  { codigo: 'SOLICITACAO_ISENCAO', ordem: 2, finalidades: ['ISENCAO_TAXA'] },
-  { codigo: 'RESULTADO_FINAL', ordem: 3, finalidades: [] },
-  { codigo: 'HABILITACAO', ordem: 4, finalidades: ['HABILITACAO'] },
+  fase('INSCRICAO', 1, { coletaInscricao: true }),
+  fase('SOLICITACAO_ISENCAO', 2, { coletaSolicitacaoIsencao: true }),
+  fase('RESULTADO_FINAL', 3),
+  fase('HABILITACAO', 4),
 ];
 
 /** A exigência cobrada na fase, no formulário declarado; sem declaração, no único que a fase responde. */
-export const na = (faseCodigo: string, finalidade: string | null = null): LugarDaExigencia => ({
+export const na = (
+  faseCodigo: string,
+  formularioCodigo: string | null = null,
+): LugarDaExigencia => ({
   faseCodigo,
-  finalidade,
+  formularioCodigo,
 });
 
+/** O formulário de código INSCRICAO é o da inscrição, e o de código ISENCAO_TAXA, o pedido de isenção. */
 export const formulario = (
-  finalidade: string,
+  codigo: string,
   faseCodigo: string,
   ...fatos: string[]
 ): FormularioQueColeta => ({
-  finalidade,
+  codigo,
   faseCodigo,
+  daInscricao: codigo === 'INSCRICAO',
+  daIsencao: codigo.endsWith('ISENCAO_TAXA'),
   fatos: new Set(fatos),
 });
 
@@ -102,8 +122,8 @@ export const NOMES = {
 /** Inscrição e isenção na mesma fase, com o fato que só o formulário de isenção coleta. */
 export const FASE_DIVIDIDA = producao({
   fases: [
-    { codigo: 'INSCRICAO', ordem: 1, finalidades: ['INSCRICAO', 'ISENCAO_TAXA'] },
-    { codigo: 'RESULTADO_FINAL', ordem: 2, finalidades: [] },
+    fase('INSCRICAO', 1, { coletaInscricao: true, coletaSolicitacaoIsencao: true }),
+    fase('RESULTADO_FINAL', 2),
   ],
   formularios: [
     formulario('INSCRICAO', 'INSCRICAO', 'PCD'),
@@ -124,7 +144,7 @@ export const FAMILIA: GrupoDaProducao = {
   campos: ['SEM_RENDA'],
 };
 export const familiaNa = (
-  finalidade: string,
+  formularioCodigo: string,
   faseCodigo: string,
   base: Partial<ProducaoDosFatos> = {},
 ): ProducaoDosFatos =>
@@ -132,7 +152,7 @@ export const familiaNa = (
     ...base,
     formularios: [
       ...(base.formularios ?? [formulario('INSCRICAO', 'INSCRICAO', 'PCD')]),
-      formulario(finalidade, faseCodigo, 'SEM_RENDA'),
+      formulario(formularioCodigo, faseCodigo, 'SEM_RENDA'),
     ],
     grupos: new Map([['FAMILIA', FAMILIA]]),
   });

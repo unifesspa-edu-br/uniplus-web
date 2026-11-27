@@ -15,14 +15,12 @@ import { ComboboxComponent, type UiComboboxGroup } from '@uniplus/shared-ui/comp
 import type { DocumentoDefinicao } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { descreverArquivo } from '../../../shared/documentos-exigidos';
-import { agrupadosPorFormulario } from '../../../shared/exigencias/formulario-da-exigencia';
 import {
-  mostraFormulario,
+  agrupadosPorFormulario,
   formulariosEscolhiveis,
 } from '../../../shared/exigencias/formulario-da-exigencia';
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
 import { CatalogoDasConsequenciasDeIndeferimento } from '../../cronograma/catalogos/catalogo-das-consequencias-de-indeferimento.service';
-import { nomeDaFinalidade } from '../../formulario/formularios-por-finalidade';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import {
   alcancaOPublico,
@@ -205,7 +203,7 @@ export class DocumentosDaFaseComponent {
       bases: exigencia.basesLegais,
       normas: exigencia.basesLegais.map(descreverNorma),
       faltaNorma: this.exigencias.faltaNormaResolvida(id),
-      finalidade: this.exigencias.finalidadeDoDocumento(id),
+      formularioCodigo: this.exigencias.formularioDoDocumento(id),
       orientacao: doc.orientacao,
       avisoDeFormatos: this.exigencias.avisoDeFormatos(doc.id),
       detalhe: this.store.emConsulta() ? this.detalheLidoDoDocumento(doc, id) : null,
@@ -243,15 +241,12 @@ export class DocumentosDaFaseComponent {
   }
 
   private formularioDoDocumento(id: string): string | null {
-    const finalidade = this.exigencias.finalidadeDoDocumento(id);
-    return mostraFormulario(
-      this.exigencias.exigenciaDoDocumento(id).finalidade,
-      this.exigencias.finalidadesDaFaseAberta(),
-    )
-      ? (formulariosEscolhiveis(this.exigencias.finalidadesDaFaseAberta()).find(
-          (opcao) => opcao.valor === finalidade,
-        )?.rotulo ?? null)
-      : null;
+    const codigo = this.exigencias.formularioDoDocumento(id);
+    return (
+      formulariosEscolhiveis(this.exigencias.formulariosDaFaseAberta()).find(
+        (opcao) => opcao.valor === codigo,
+      )?.rotulo ?? null
+    );
   }
 
   /**
@@ -262,16 +257,17 @@ export class DocumentosDaFaseComponent {
   readonly conferenciaPorFormulario = computed(() =>
     agrupadosPorFormulario(
       this.resumosVisiveis(),
-      (resumo) => resumo.finalidade,
-      this.exigencias.finalidadesDaFaseAberta(),
+      (resumo) => resumo.formularioCodigo,
+      this.exigencias.codigosDaFaseAberta(),
     ),
   );
 
   /** Como a conferência nomeia o grupo de um formulário; o grupo sem formulário pede a escolha. */
-  tituloDoFormulario(finalidade: string | null): string {
-    return finalidade === null
-      ? 'Formulário a escolher'
-      : `Formulário de ${nomeDaFinalidade(finalidade)}`;
+  tituloDoFormulario(codigo: string | null): string {
+    const formulario = this.exigencias
+      .formulariosDaFaseAberta()
+      .find((item) => item.codigo === codigo);
+    return formulario === undefined ? 'Formulário a escolher' : `Formulário ${formulario.rotulo}`;
   }
 
   /**

@@ -180,15 +180,19 @@ describe('regrasDeComprovacaoParaEnvio — do rascunho para o comando', () => {
 
   it('a obrigatoriedade e a consequência acompanham a exigência', () => {
     const regrasDeComprovacao = comando(
-      rascunho(exigencia({ obrigatorio: false, consequenciaIndeferimento: 'ELIMINA' })),
+      rascunho(exigencia({ obrigatorio: false, consequenciaIndeferimento: 'ELIMINA_DO_PROCESSO' })),
     );
     expect(regrasDeComprovacao[0].documento?.indeferimento?.obrigatorio).toBe(false);
-    expect(regrasDeComprovacao[0].documento?.indeferimento?.consequencia).toBe('ELIMINA');
+    expect(regrasDeComprovacao[0].documento?.indeferimento?.consequenciaDoDescumprimento).toBe(
+      'ELIMINA_DO_PROCESSO',
+    );
   });
 
   it('consequência vazia vira ausência, não texto vazio', () => {
     const regrasDeComprovacao = comando(rascunho(exigencia({ consequenciaIndeferimento: '' })));
-    expect(regrasDeComprovacao[0].documento?.indeferimento?.consequencia).toBeNull();
+    expect(
+      regrasDeComprovacao[0].documento?.indeferimento?.consequenciaDoDescumprimento,
+    ).toBeNull();
   });
 
   /**
@@ -246,7 +250,7 @@ describe('regrasDeComprovacaoParaEnvio — do rascunho para o comando', () => {
         regraDoRascunho({
           forma: 'QUANTIDADE_MINIMA_DE_ITENS',
           quantidadeMinima: 1,
-          consequencia: 'ELIMINA',
+          consequencia: 'ELIMINA_DO_PROCESSO',
           basesLegais: [
             {
               referencia: 'Lei 12.711/2012',
@@ -263,7 +267,9 @@ describe('regrasDeComprovacaoParaEnvio — do rascunho para o comando', () => {
     const regrasDeComprovacao = comando(grupo);
     expect(regrasDeComprovacao).toHaveLength(1);
     expect(regrasDeComprovacao[0].forma).toBe('QUANTIDADE_MINIMA_DE_ITENS');
-    expect(regrasDeComprovacao[0].indeferimento?.consequencia).toBe('ELIMINA');
+    expect(regrasDeComprovacao[0].indeferimento?.consequenciaDoDescumprimento).toBe(
+      'ELIMINA_DO_PROCESSO',
+    );
     expect(regrasDeComprovacao[0].cardinalidade?.quantidadeMinima).toBe(1);
     expect(regrasDeComprovacao[0].indeferimento?.basesLegais).toHaveLength(1);
     expect(regrasDeComprovacao[0].itens).toHaveLength(1);

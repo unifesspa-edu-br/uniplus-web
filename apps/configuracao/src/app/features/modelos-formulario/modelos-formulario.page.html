@@ -2,8 +2,9 @@
   <div class="page-header__content">
     <h1 class="page-header__title">Modelo de Formulário</h1>
     <p class="page-header__desc">
-      Formulários prontos por tipo de processo e finalidade. O processo parte de um modelo e recebe
-      uma cópia, que edita à vontade; mudar o modelo depois não muda o processo. UNI-REQ-0144.
+      Formulários prontos por tipo de processo e uso na fase de inscrição. O processo parte de um
+      modelo e recebe uma cópia, que edita à vontade; mudar o modelo depois não muda o processo.
+      UNI-REQ-0144.
     </p>
   </div>
 </div>
@@ -19,7 +20,7 @@
 
 <cfg-modelos-formulario-lista
   [(termoBusca)]="store.termoBusca"
-  [(filtroFinalidade)]="store.filtroFinalidade"
+  [(filtroFaseDeInscricao)]="store.filtroFaseDeInscricao"
   [(filtroSituacao)]="store.filtroSituacao"
   [(filtroTipo)]="store.filtroTipo"
   [tiposDeProcesso]="store.tiposDeProcesso()"

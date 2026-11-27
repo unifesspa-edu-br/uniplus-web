@@ -50,8 +50,8 @@ describe('VocabulariosDaComprovacaoApi', () => {
       () => api.listarCriteriosDeDistincaoDeApresentacoes(),
     ],
     [
-      'consequencias-indeferimento',
-      'consequencia-indeferimento',
+      'consequencias-do-descumprimento',
+      'consequencias-do-descumprimento',
       () => api.listarConsequenciasDeIndeferimento(),
     ],
   ])('pede o vocabulário %s e devolve os rótulos da API', async (caminho, tipo, buscar) => {

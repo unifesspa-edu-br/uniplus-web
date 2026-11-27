@@ -9,7 +9,6 @@ const regrasDoCampo = (obrigatoriedade: object, exibicao: unknown = null): objec
 
 /** O formulário apresentado mínimo de um modelo: uma página com um campo. */
 export const APRESENTACAO = {
-  finalidade: 'INSCRICAO',
   titulo: null,
   paginas: [
     {

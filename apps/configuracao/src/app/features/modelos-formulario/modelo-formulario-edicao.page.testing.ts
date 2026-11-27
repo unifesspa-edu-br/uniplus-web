@@ -6,7 +6,8 @@ import {
 import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
 import { TipoRestricaoValorCodigo } from '@uniplus/shared-data/configuracao';
 import {
-  FINALIDADE_INSCRICAO,
+  CONSEQUENCIAS_DO_DESCUMPRIMENTO,
+  DECLARACAO_DE_INSCRICAO,
   DADO_SIM_OU_NAO,
   ORIGEM_DECLARADA,
   VALOR_UNICO,
@@ -93,7 +94,7 @@ export const SEM_REGRAS_DO_CAMPO = {
 export const modelo: ModeloFormularioView = {
   id: ID,
   codigo: 'INSCRICAO_MEDICINA',
-  finalidade: FINALIDADE_INSCRICAO,
+  declaracao: DECLARACAO_DE_INSCRICAO,
   ativo: true,
   descritivo: { nome: 'Inscrição Medicina', descricao: null, tipoProcessoCodigo: null },
   conteudo: {
@@ -202,7 +203,8 @@ export const modelo: ModeloFormularioView = {
           quando: [[{ fato: 'ESCOLA_PUBLICA', operador: OperadorCodigo.IGUAL, valor: true }]],
           indeferimento: {
             obrigatorio: true,
-            consequencia: 'ELIMINA',
+            consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
+            abrePrazoParaReenvio: false,
             basesLegais: [
               {
                 referencia: 'Lei 13.146/2015',
@@ -221,7 +223,8 @@ export const modelo: ModeloFormularioView = {
           quando: null,
           indeferimento: {
             obrigatorio: false,
-            consequencia: 'ABRE_PRAZO_PARA_REENVIO',
+            consequenciaDoDescumprimento: null,
+            abrePrazoParaReenvio: true,
             basesLegais: [],
           },
           requisitos: { prazoDeEmissao: null, validade: null },
@@ -259,15 +262,10 @@ const TIPOS_DE_DOCUMENTO = [
   { id: '3', codigo: 'ATESTADO', nome: 'Atestado' },
 ];
 
-const CONSEQUENCIAS_DO_INDEFERIMENTO = [
-  { codigo: 'ELIMINA', rotulo: 'Elimina do processo' },
-  { codigo: 'ABRE_PRAZO_PARA_REENVIO', rotulo: 'Abre prazo para reenvio' },
-];
-
 const RECURSO_DAS_CONSEQUENCIAS: RecursoDaCarga = {
   recurso: 'consequencias',
-  url: `${BASE}/api/selecao/vocabularios/consequencias-indeferimento`,
-  dados: CONSEQUENCIAS_DO_INDEFERIMENTO,
+  url: `${BASE}/api/selecao/vocabularios/consequencias-do-descumprimento`,
+  dados: CONSEQUENCIAS_DO_DESCUMPRIMENTO,
 };
 
 export interface TelaDeEdicao {

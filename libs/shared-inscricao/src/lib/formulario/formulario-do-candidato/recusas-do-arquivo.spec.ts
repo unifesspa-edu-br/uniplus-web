@@ -4,7 +4,6 @@ import { recusaDaApresentacao, recusaDaSimulacao } from './recusas-do-arquivo';
 describe('recusas do arquivo', () => {
   it('recusa máximo de grupo escrito como texto', () => {
     const formulario = {
-      finalidade: '',
       paginas: [],
       termos: [],
       regras: {},

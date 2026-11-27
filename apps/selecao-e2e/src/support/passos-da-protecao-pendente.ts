@@ -1,12 +1,9 @@
 import type {
-  ConsequenciaDoIndeferimentoCodigo,
+  ConsequenciaDoDescumprimentoCodigo,
   TipoAbrangenciaCodigo,
   StatusBaseLegalCodigo,
 } from '@uniplus/shared-data/selecao';
-import type {
-  FinalidadeFormularioCodigo,
-  AplicabilidadeCodigo,
-} from '@uniplus/shared-data/selecao';
+import type { AplicabilidadeCodigo } from '@uniplus/shared-data/selecao';
 import type {
   FormaDeComprovacaoCodigo,
   RegraDeComprovacaoInformada,
@@ -45,20 +42,17 @@ function requisitosPendentes() {
 function indeferimentoPendente() {
   return {
     obrigatorio: true,
-    consequencia:
-      'ELIMINA' satisfies `${ConsequenciaDoIndeferimentoCodigo}` as ConsequenciaDoIndeferimentoCodigo.ELIMINA,
+    consequenciaDoDescumprimento:
+      'ELIMINA_DO_PROCESSO' satisfies `${ConsequenciaDoDescumprimentoCodigo}` as ConsequenciaDoDescumprimentoCodigo.ELIMINA_DO_PROCESSO,
     basesLegais: BASES_LEGAIS,
+    abrePrazoParaReenvio: false,
   };
 }
 
 function documentoPendente(tipoId: string, faseId: string) {
   return {
     tipoDocumento: { id: tipoId },
-    momento: {
-      faseId,
-      etapaId: null,
-      finalidade: 'HABILITACAO' as FinalidadeFormularioCodigo.HABILITACAO,
-    },
+    momento: { faseId, etapaId: null },
     aplicabilidade: { tipo: 'GERAL' as AplicabilidadeCodigo.GERAL, condicoes: [] },
     indeferimento: indeferimentoPendente(),
     requisitos: requisitosPendentes(),

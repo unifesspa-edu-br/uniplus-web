@@ -22,6 +22,7 @@ import type {
   ExigenciaDeDocumento,
   ExigenciasDoRascunho,
   FormularioDeInscricao,
+  FormularioDoProcessoNoRascunho,
 } from '../../processo-seletivo.models';
 import {
   comExigenciaSemGrupo,
@@ -153,18 +154,52 @@ const paginasDaInscricao = (): PaginaDoFormulario[] => [
   bloco('REVISAO_E_ACEITE', 3),
 ];
 
+export const CODIGO_DA_INSCRICAO = 'INSCRICAO';
+
+/** O formulário do rascunho: por padrão o da inscrição, obrigatório, na fase de inscrição. */
+export function formularioDoRascunho(
+  conteudo: ConteudoDoFormulario,
+  extra: Partial<FormularioDoProcessoNoRascunho> = {},
+): FormularioDoProcessoNoRascunho {
+  return {
+    codigo: CODIGO_DA_INSCRICAO,
+    gravado: false,
+    faseCodigo: 'INSCRICAO',
+    obrigatorio: true,
+    consequenciaDaFaltaDeEnvio: null,
+    conteudo,
+    modeloOrigemCodigo: null,
+    ...extra,
+  };
+}
+
+/** O rascunho dos formulários com o da inscrição e os outros dados, em `outros`. */
 export function formularioCom(
   conteudo: ConteudoDoFormulario,
   extra: Partial<FormularioDeInscricao> = {},
+  outros: readonly FormularioDoProcessoNoRascunho[] = [],
 ): FormularioDeInscricao {
   return {
-    faseCodigo: 'INSCRICAO',
-    conteudo,
+    formularios: [formularioDoRascunho(conteudo), ...outros],
     referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
     derivacao: [],
-    outrasFinalidades: [],
     ...extra,
   };
+}
+
+/**
+ * O que a seção do formulário passa a ter quando a inscrição ganha o conteúdo dado: troca a
+ * inscrição que já existe ou a acrescenta. Os demais formulários ficam como estão.
+ */
+export function comInscricao(
+  atual: FormularioDeInscricao,
+  conteudo: ConteudoDoFormulario,
+  extra: Partial<FormularioDoProcessoNoRascunho> = {},
+): Pick<FormularioDeInscricao, 'formularios'> {
+  const existente = atual.formularios.find((item) => item.codigo === CODIGO_DA_INSCRICAO);
+  const nova = { ...(existente ?? formularioDoRascunho(conteudo)), ...extra, conteudo };
+  const outros = atual.formularios.filter((item) => item.codigo !== CODIGO_DA_INSCRICAO);
+  return { formularios: [nova, ...outros] };
 }
 
 /** Uma exigência com o gatilho dado, na fase da habilitação. */

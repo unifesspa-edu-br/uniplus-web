@@ -15,11 +15,17 @@ describe('etapa que compõe a nota', () => {
    * recusada, e a mensagem do domínio fala de nota final, não de etapa.
    */
   it('exige caráter que pontua e peso declarado', () => {
-    expect(componeNota(etapa({ carater: CaraterEtapaCodigo.CLASSIFICATORIA, peso: '2' }))).toBe(true);
+    expect(componeNota(etapa({ carater: CaraterEtapaCodigo.CLASSIFICATORIA, peso: '2' }))).toBe(
+      true,
+    );
     expect(componeNota(etapa({ carater: CaraterEtapaCodigo.AMBAS, peso: '1' }))).toBe(true);
     expect(componeNota(etapa({ carater: CaraterEtapaCodigo.ELIMINATORIA, peso: '2' }))).toBe(false);
-    expect(componeNota(etapa({ carater: CaraterEtapaCodigo.CLASSIFICATORIA, peso: '' }))).toBe(false);
-    expect(componeNota(etapa({ carater: CaraterEtapaCodigo.CLASSIFICATORIA, peso: '   ' }))).toBe(false);
+    expect(componeNota(etapa({ carater: CaraterEtapaCodigo.CLASSIFICATORIA, peso: '' }))).toBe(
+      false,
+    );
+    expect(componeNota(etapa({ carater: CaraterEtapaCodigo.CLASSIFICATORIA, peso: '   ' }))).toBe(
+      false,
+    );
   });
 
   /**
@@ -28,7 +34,9 @@ describe('etapa que compõe a nota', () => {
    * conferência da tela e ser recusado no servidor por outro motivo.
    */
   it('não considera peso zero como composição de nota', () => {
-    expect(componeNota(etapa({ carater: CaraterEtapaCodigo.CLASSIFICATORIA, peso: '0' }))).toBe(false);
+    expect(componeNota(etapa({ carater: CaraterEtapaCodigo.CLASSIFICATORIA, peso: '0' }))).toBe(
+      false,
+    );
     expect(componeNota(etapa({ carater: CaraterEtapaCodigo.AMBAS, peso: '0,0' }))).toBe(false);
   });
 });

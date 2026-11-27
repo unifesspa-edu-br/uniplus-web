@@ -1,7 +1,9 @@
+import { conteudoInicial } from '@uniplus/shared-inscricao/formulario';
 import { describe, expect, it } from 'vitest';
 import { ID_INSCRICAO, ID_AVALIACAO, FASES_CANONICAS } from './cronograma.testing';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
 import { AjudantesDeExigencias } from './cronograma-exigencias.testing';
+import { formularioDoRascunho } from '../formulario/formulario-de-inscricao.testing';
 import { RAMO_LEI_DE_COTAS } from '../vagas/composicao-de-vagas';
 
 describe('CronogramaPassoComponent: alcance da norma', () => {
@@ -163,7 +165,7 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
             observacao: '',
           },
         ],
-        { consequenciaIndeferimento: 'ABRE_PRAZO_PARA_REENVIO' },
+        { abrePrazoParaReenvio: true },
       );
 
       const resultado = conferencia.validar();
@@ -185,9 +187,12 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
             observacao: '',
           },
         ],
-        { faseCodigo: 'COLETA_INSCRICAO', finalidade: 'ISENCAO_TAXA' },
+        { faseCodigo: 'COLETA_INSCRICAO', formularioCodigo: 'ISENCAO_TAXA' },
       );
       comFases(ID_INSCRICAO);
+      store.patchObjectSection('formulario', {
+        formularios: [formularioDoRascunho(conteudoInicial(), { faseCodigo: 'COLETA_INSCRICAO' })],
+      });
 
       const resultado = conferencia.validar();
       expect(resultado.valid).toBe(false);
@@ -211,7 +216,7 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
             observacao: '',
           },
         ],
-        { faseCodigo: 'COLETA_INSCRICAO', finalidade: 'INSCRICAO' },
+        { faseCodigo: 'COLETA_INSCRICAO', formularioCodigo: 'INSCRICAO' },
       );
       store.patchSection('documentos', {
         ...store.draft().documentos,
@@ -236,6 +241,11 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
             },
           },
         ],
+      });
+      store.patchObjectSection('formulario', {
+        formularios: ['INSCRICAO', 'ISENCAO_TAXA'].map((codigo) =>
+          formularioDoRascunho(conteudoInicial(), { codigo, faseCodigo: 'DIVIDIDA' }),
+        ),
       });
       detectar();
 

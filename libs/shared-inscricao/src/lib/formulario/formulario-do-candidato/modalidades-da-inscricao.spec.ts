@@ -18,7 +18,6 @@ import type { AvaliacaoNaTela, ModalidadesAvaliadas } from './modalidades-avalia
  * responder ou que nenhuma se aplica, e leva às perguntas e às seções que decidem.
  */
 const FORMULARIO: FormularioDoCandidato = {
-  finalidade: 'INSCRICAO',
   paginas: [
     {
       codigo: 'CONTATO',

@@ -203,11 +203,7 @@ export class GravacaoDaInscricao {
     formulario: FormularioParaGravar,
   ): InscricaoRequest {
     const corpo = corpoDaAvaliacao(inscricao, formulario.simulacao(), this.escolha.escolhidas());
-    return corpoDaGravacao(
-      corpo,
-      formulario.termosAceitos(),
-      this.leitura.formulario()?.formulario.termos ?? [],
-    );
+    return corpoDaGravacao(corpo, formulario.termosAceitos(), this.leitura.formulario());
   }
 
   /** Quem conclui o sucesso libera o formulário: o envio espera a releitura do ETag. */

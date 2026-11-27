@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 import { PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
 import { usarPasso, type ContextoDoPasso } from './formulario-passo.testing';
+import { conteudoInicial } from '@uniplus/shared-inscricao/formulario';
+import { formularioDoRascunho } from './formulario-de-inscricao.testing';
 
 describe('FormularioPassoComponent: consulta e avisos de idade', () => {
   let fixture: ContextoDoPasso['fixture'];
@@ -33,6 +35,8 @@ describe('FormularioPassoComponent: consulta e avisos de idade', () => {
     beforeEach(() => {
       store.remoteSnapshot.set({
         situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO, rotulo: 'Publicado' },
+        formularios: [],
+        cronogramaFases: [],
       } as never);
       fixture.detectChanges();
     });
@@ -43,10 +47,14 @@ describe('FormularioPassoComponent: consulta e avisos de idade', () => {
         ...draft,
         tipoProcesso: { ...draft.tipoProcesso, codigo: 'REGULAR_UNIFICADO' },
       }));
-      store.projetarSecao('formulario', { modeloOrigemCodigo: 'INSC' });
+      store.projetarSecao('formulario', {
+        formularios: [
+          formularioDoRascunho(conteudoInicial(), { modeloOrigemCodigo: 'INSC', gravado: true }),
+        ],
+      });
       fixture.detectChanges();
 
-      expect(host.querySelector('#form-inscricao-modelo-titulo')).toBeNull();
+      expect(host.querySelector('#form-0-modelo-titulo')).toBeNull();
       expect(valor('Modelo de origem')).toEqual(['INSC']);
     });
 
@@ -56,7 +64,8 @@ describe('FormularioPassoComponent: consulta e avisos de idade', () => {
         host.querySelector('input, select, textarea, button, insc-editor-de-formulario'),
       ).toBeNull();
       expect(valor('Título do formulário')).toEqual(['Inscrição — Medicina 2027']);
-      expect(valor('Fase da inscrição')).toEqual(['INSCRICAO']);
+      expect(valor('Fase em que o candidato responde')).toEqual(['INSCRICAO']);
+      expect(valor('Código do formulário')).toEqual(['INSCRICAO']);
       expect(host.textContent).toContain('Condições especiais');
       expect(host.querySelector('.doc-list ui-valor-em-consulta')).toBeNull();
       const linhas = Array.from(host.querySelectorAll('.doc-item__head')).map((l) =>
@@ -77,6 +86,8 @@ describe('FormularioPassoComponent: consulta e avisos de idade', () => {
     it('não mostra os avisos de idade: o processo publicado não admite a correção', () => {
       store.remoteSnapshot.set({
         situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.RASCUNHO, rotulo: 'Rascunho' },
+        formularios: [],
+        cronogramaFases: [],
       } as never);
       declararDesempate('DESEMPATE_IDOSO');
       store.patchObjectSection('formulario', {
@@ -87,6 +98,8 @@ describe('FormularioPassoComponent: consulta e avisos de idade', () => {
 
       store.remoteSnapshot.set({
         situacao: { codigo: SituacaoDoProcessoSeletivoCodigo.PUBLICADO, rotulo: 'Publicado' },
+        formularios: [],
+        cronogramaFases: [],
       } as never);
       fixture.detectChanges();
 

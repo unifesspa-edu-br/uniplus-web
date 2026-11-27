@@ -3,7 +3,7 @@ import { regrasDeComprovacaoParaEnvio } from './gravacao-das-exigencias';
 import {
   ETAPAS_VIVAS,
   FASES,
-  FINALIDADES_POR_FASE,
+  FORMULARIOS_POR_FASE,
   exigencia,
   rascunho,
   regraDoRascunho,
@@ -23,7 +23,7 @@ describe('origens das exigências enviadas', () => {
         faseIdPorCodigo: FASES,
         modalidadesOfertadas: [],
         etapasVivas: ETAPAS_VIVAS,
-        finalidadesPorFase: FINALIDADES_POR_FASE,
+        formulariosPorFase: FORMULARIOS_POR_FASE,
       },
     );
     expect(envio.origens).toEqual([

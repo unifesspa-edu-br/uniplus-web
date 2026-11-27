@@ -16,7 +16,7 @@ export function declaracaoHerdada(
     return [];
   const modelo = modeloParaTodasAsFases(exigencias, tipo);
   if (modelo === undefined) return [];
-  const documento = { ...modelo, faseCodigo, etapaId: null, finalidade: null };
+  const documento = { ...modelo, faseCodigo, etapaId: null, formularioCodigo: null };
   return [{ identificadorNoRascunho: tipo, documento, grupo: null, repeticao: null }];
 }
 

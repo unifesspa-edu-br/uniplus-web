@@ -10,7 +10,6 @@ import {
   VALOR_UNICO,
 } from '../../shared/valores-do-catalogo.testing';
 import {
-  FinalidadeFormularioCodigo as FinalidadeDoModelo,
   OperadorCodigo as OperadorDoCatalogo,
   type FatoDoCatalogoDto,
   type ModeloFormularioView,
@@ -20,7 +19,6 @@ import {
   BlocoSistemaCodigo,
   TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
-  FinalidadeFormularioCodigo,
   OperadorCodigo,
   TipoDeCampoCodigo,
 } from '@uniplus/shared-data/selecao';
@@ -117,7 +115,8 @@ export const pagina = (
 
 /** A inscrição como o servidor a devolve: com a seção dos dados básicos que a API acrescenta. */
 export const GRAVADO: FormularioDto = {
-  finalidade: { codigo: FinalidadeFormularioCodigo.INSCRICAO, rotulo: 'Inscrição' },
+  codigo: 'INSCRICAO',
+  obrigatorio: true,
   faseId: 'F-INSCRICAO',
   titulo: 'Inscrição — Medicina 2027',
   modeloOrigem: null,
@@ -196,7 +195,7 @@ export const PCD_NO_CATALOGO: FatoDoCatalogoDto = {
 
 export const HABILITACAO_GRAVADA = {
   ...GRAVADO,
-  finalidade: { codigo: FinalidadeFormularioCodigo.HABILITACAO, rotulo: 'Habilitação' },
+  codigo: 'HABILITACAO',
   faseId: 'F-HABILITACAO',
   paginas: [pagina('REVISAO_E_ACEITE', 0, BlocoSistemaCodigo.REVISAO_E_ACEITE)],
   coleta: { itens: [], grupos: [] },
@@ -212,23 +211,15 @@ const CONTEUDO_VAZIO_DO_MODELO: ModeloFormularioView['conteudo'] = {
   conjuntoDeDocumentos: { documentosExigidos: [], gruposDeDocumentos: [] },
 };
 
-const ROTULOS_DAS_FINALIDADES: Record<FinalidadeDoModelo, string> = {
-  INSCRICAO: 'Inscrição',
-  ISENCAO_TAXA: 'Isenção de taxa',
-  HABILITACAO: 'Habilitação',
-};
-
+/** O modelo serve à fase de inscrição, ou às outras fases. */
 export const modelo = (
   id: string,
   nome: string,
-  finalidade: keyof typeof FinalidadeDoModelo,
+  serveA: 'INSCRICAO' | 'HABILITACAO',
 ): ModeloFormularioView => ({
   id,
   codigo: id.toUpperCase(),
-  finalidade: {
-    codigo: FinalidadeDoModelo[finalidade],
-    rotulo: ROTULOS_DAS_FINALIDADES[finalidade],
-  },
+  declaracao: { serveAFaseDeInscricao: serveA === 'INSCRICAO', obrigatorio: true },
   ativo: true,
   descritivo: { nome, descricao: null, tipoProcessoCodigo: 'REGULAR_UNIFICADO' },
   conteudo: CONTEUDO_VAZIO_DO_MODELO,
@@ -239,8 +230,8 @@ export const MODELOS = [
   modelo('hab', 'Habilitação padrão', 'HABILITACAO'),
 ];
 
-export const relato = (finalidade: string) => ({
-  finalidade: { codigo: finalidade, rotulo: finalidade },
+export const relato = (formularioCodigo: string) => ({
+  formularioCodigo,
   fatosTrazidosParaAInscricao: [],
   fatosMantidosNaInscricao: [],
   descartados: [],

@@ -19,12 +19,13 @@ const CORPO_ESPERADO = [
     documento: {
       tipoDocumento: { id: ID_RG },
       fatosComprovados: [],
-      momento: { faseId: ID_HABILITACAO, etapaId: null, finalidade: 'HABILITACAO' },
+      momento: { faseId: ID_HABILITACAO, etapaId: null, formularioCodigo: 'HABILITACAO' },
       aplicabilidade: { tipo: 'GERAL', condicoes: [] },
       indeferimento: {
         obrigatorio: true,
-        consequencia: null,
+        consequenciaDoDescumprimento: null,
         basesLegais: [],
+        abrePrazoParaReenvio: false,
       },
       requisitos: {
         formatosPermitidos: ['PDF', 'JPEG', 'PNG'].map((formato) => ({

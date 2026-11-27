@@ -28,7 +28,7 @@ import {
  * As duas direções importam. Faltar o campo é configuração que não resolve; sobrar é coletar dado
  * do candidato sem finalidade — e `SEXO`, `COR_RACA` e afins são dado sensível.
  *
- * "Presente" é o fato coletado por qualquer formulário do processo — `fatosDeOutrasFinalidades`
+ * "Presente" é o fato coletado por qualquer formulário do processo — `fatosDeOutrosFormularios`
  * conta, porque um fato tem um só formulário que o coleta — e o conjunto básico, que a API põe na
  * seção reservada. O campo novo entra na seção "Outros dados exigidos pelo certame", sem exibição
  * condicional (o campo oculto para parte dos candidatos nunca dispararia o gatilho para eles) e
@@ -62,7 +62,7 @@ export interface PressupostosDoProcesso {
   /** O que esta sessão acrescentou por exigência. */
   readonly postosPelasExigencias: CamposPostosPelasExigencias;
   /** Os fatos que os formulários das outras finalidades já coletam. */
-  readonly fatosDeOutrasFinalidades: readonly string[];
+  readonly fatosDeOutrosFormularios: readonly string[];
 }
 
 /**
@@ -105,7 +105,7 @@ function fatosParaAcrescentar(
 ): readonly FatoDoFormulario[] {
   const presentes = new Set([
     ...fatosColetadosPelaInscricao(conteudo),
-    ...pressupostos.fatosDeOutrasFinalidades,
+    ...pressupostos.fatosDeOutrosFormularios,
   ]);
   const porCodigo = new Map(pressupostos.catalogo.map((fato) => [fato.codigo, fato]));
   return [...pressupostos.citados]

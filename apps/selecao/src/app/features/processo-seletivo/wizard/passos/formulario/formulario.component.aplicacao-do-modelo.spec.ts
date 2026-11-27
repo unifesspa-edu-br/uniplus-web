@@ -7,6 +7,8 @@ import {
   comExigenciaSemGrupo,
   exigenciaNova,
 } from '../../shared/exigencias/exigencias-documentais';
+import { formularioDoRascunho } from './formulario-de-inscricao.testing';
+import { conteudoDaInscricao, formularioDoCodigo } from './formularios-do-rascunho';
 import {
   CONGELADOS_DA_INSCRICAO,
   pagina,
@@ -28,6 +30,8 @@ import {
   usarPasso,
   type ContextoDoPasso,
 } from './formulario-passo.testing';
+
+const INSCRICOES = new Set(['INSCRICAO']);
 
 describe('FormularioPassoComponent: aplicação do modelo', () => {
   let fixture: ContextoDoPasso['fixture'];
@@ -52,12 +56,18 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
     } = contexto);
   });
 
+  const pedirModelo = (codigo: string) =>
+    servicoDeModelos().pedir(
+      formularioDoRascunho(conteudoInicial(), { codigo, gravado: true }),
+      codigo === 'INSCRICAO',
+    );
+
   describe('partindo de um modelo', () => {
     beforeEach(() => comModelosCarregados());
 
-    const opcoesDoModelo = (finalidade: string): string[] =>
+    const opcoesDoModelo = (posicao: number): string[] =>
       Array.from(
-        host.querySelectorAll<HTMLOptionElement>(`#form-${finalidade}-modelo option`),
+        host.querySelectorAll<HTMLOptionElement>(`#form-${posicao}-modelo option`),
         (opcao) => opcao.value,
       );
 
@@ -71,16 +81,16 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
       listagem.flush(MODELOS);
     });
 
-    it('cada aba oferece só os modelos da finalidade dela', () => {
+    it('cada aba oferece só os modelos que servem à fase dela', () => {
       comHabilitacao();
 
-      expect(opcoesDoModelo('inscricao')).toEqual(['', 'insc']);
-      expect(opcoesDoModelo('habilitacao')).toEqual(['', 'hab']);
+      expect(opcoesDoModelo(0)).toEqual(['', 'insc']);
+      expect(opcoesDoModelo(1)).toEqual(['', 'hab']);
     });
 
     it('liga a lista de modelos à ajuda que explica a substituição', () => {
-      expect(host.querySelector('#form-inscricao-modelo')?.getAttribute('aria-describedby')).toBe(
-        'form-inscricao-modelo-ajuda',
+      expect(host.querySelector('#form-0-modelo')?.getAttribute('aria-describedby')).toBe(
+        'form-0-modelo-ajuda',
       );
     });
 
@@ -89,10 +99,10 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
       store.processoSeletivoId.set(null);
       fixture.detectChanges();
 
-      expect(
-        (host.querySelector('#form-inscricao-aplicar-modelo') as HTMLButtonElement).disabled,
-      ).toBe(true);
-      expect(host.querySelector('#form-inscricao-modelo-ajuda')?.textContent).toContain(
+      expect((host.querySelector('#form-0-aplicar-modelo') as HTMLButtonElement).disabled).toBe(
+        true,
+      );
+      expect(host.querySelector('#form-0-modelo-ajuda')?.textContent).toContain(
         'depois que o processo for criado',
       );
     });
@@ -100,7 +110,7 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
     it('pede confirmação antes de substituir, dizendo que as edições não gravadas saem', () => {
       servicoDeModelos().escolher('INSCRICAO', 'insc');
       fixture.detectChanges();
-      (host.querySelector('#form-inscricao-aplicar-modelo') as HTMLButtonElement).click();
+      (host.querySelector('#form-0-aplicar-modelo') as HTMLButtonElement).click();
       fixture.detectChanges();
 
       // Nenhuma requisição saiu: o afterEach confere.
@@ -131,7 +141,7 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
       controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
       await proximoPasso();
       const post = controller.expectOne((r) => r.method === 'POST' && r.url === ROTA_APLICACAO);
-      expect(post.request.body).toEqual({ modeloId: 'insc' });
+      expect(post.request.body).toEqual({ modeloId: 'insc', formularioCodigo: 'INSCRICAO' });
       expect(post.request.headers.get('Accept')).toBe(
         'application/vnd.uniplus.aplicacao-de-modelo-formulario.v1+json',
       );
@@ -145,20 +155,19 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
       fixture.detectChanges();
 
       expect(store.operacaoEmAndamento()).toBe(false);
-      expect(store.draft().formulario.conteudo.itens?.map((i) => i.fatoCodigo)).toEqual([
-        'NOME',
-        'PCD',
-      ]);
-      expect(host.querySelector('#form-inscricao-resumo-modelo')?.textContent).toContain(
+      expect(
+        conteudoDaInscricao(store.draft().formulario, INSCRICOES).itens?.map((i) => i.fatoCodigo),
+      ).toEqual(['NOME', 'PCD']);
+      expect(host.querySelector('#form-0-resumo-modelo')?.textContent).toContain(
         'Acrescentados porque o processo os pressupõe',
       );
-      expect(host.querySelector('#form-inscricao-resumo-modelo')?.textContent).toContain(
+      expect(host.querySelector('#form-0-resumo-modelo')?.textContent).toContain(
         'Pessoa com deficiência',
       );
-      expect(host.querySelector('#form-inscricao-origem')?.textContent).toContain('INSC');
+      expect(host.querySelector('#form-0-origem')?.textContent).toContain('INSC');
     });
 
-    it('a finalidade que nasce da cópia recebe em seguida o cabeçalho com a fase da aba', async () => {
+    it('o formulário que nasce da cópia recebe em seguida o cabeçalho com a fase da aba', async () => {
       const FASE_HABILITACAO: FaseDoCronograma = {
         ...FASE_INSCRICAO,
         faseCanonicaId: 'fc-habilitacao',
@@ -171,8 +180,13 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
         fases: [FASE_INSCRICAO, FASE_HABILITACAO],
       });
       store.patchObjectSection('formulario', {
-        outrasFinalidades: [
-          { finalidade: 'HABILITACAO', faseCodigo: '', conteudo: conteudoInicial() },
+        formularios: [
+          ...store.draft().formulario.formularios,
+          formularioDoRascunho(conteudoInicial(), {
+            codigo: 'HABILITACAO',
+            faseCodigo: 'HABILITACAO',
+            gravado: true,
+          }),
         ],
       });
       const fases = [
@@ -187,10 +201,18 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
         coleta: { itens: [], grupos: [] },
       };
 
+      const semContent = { status: 204, statusText: 'No Content' };
+      const cabecalhoDaHabilitacao = () =>
+        controller.expectOne((r) => r.method === 'PUT' && r.url === ROTA_HABILITACAO);
+
       const aplicacao = escolherEAplicar('HABILITACAO', 'hab');
       controller
         .expectOne(ROTA_PROCESSO)
         .flush({ ...PROCESSO_COM_DERIVACOES, cronogramaFases: fases });
+      await proximoPasso();
+      const antes = cabecalhoDaHabilitacao();
+      expect(antes.request.body.faseId, 'o cabeçalho vai antes da cópia').toBe('F-HABILITACAO');
+      antes.flush(null, semContent);
       await proximoPasso();
       controller.expectOne(ROTA_APLICACAO).flush(relato('HABILITACAO'));
       await proximoPasso();
@@ -200,22 +222,29 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
         formularios: [GRAVADO, copiada],
       });
       await proximoPasso();
-      const cabecalho = controller.expectOne(
-        (r) => r.method === 'PUT' && r.url === ROTA_HABILITACAO,
+      const depois = cabecalhoDaHabilitacao();
+      expect(depois.request.body.faseId, 'a cópia desfez a fase, e ela é declarada de novo').toBe(
+        'F-HABILITACAO',
       );
-      expect(cabecalho.request.body.faseId).toBe('F-HABILITACAO');
-      cabecalho.flush(null, { status: 204, statusText: 'No Content' });
+      depois.flush(null, semContent);
+      await proximoPasso();
+      controller.expectOne(ROTA_PROCESSO).flush({
+        ...PROCESSO_COM_DERIVACOES,
+        cronogramaFases: fases,
+        formularios: [GRAVADO, { ...copiada, faseId: 'F-HABILITACAO', obrigatorio: false }],
+      });
       await aplicacao;
 
-      const habilitacao = store
-        .draft()
-        .formulario.outrasFinalidades.find((outra) => outra.finalidade === 'HABILITACAO');
+      const habilitacao = formularioDoCodigo(store.draft().formulario, 'HABILITACAO');
       expect(habilitacao?.faseCodigo).toBe('HABILITACAO');
+      expect(habilitacao?.obrigatorio, 'o rascunho recebe o cabeçalho depois de regravado').toBe(
+        false,
+      );
       expect(habilitacao?.modeloOrigemCodigo).toBe('HAB');
     });
 
     it('a recusa da aplicação aparece em texto na aba, que continua como estava', async () => {
-      const antes = store.draft().formulario.conteudo;
+      const antes = store.draft().formulario;
 
       const aplicacao = escolherEAplicar('INSCRICAO', 'insc');
       controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
@@ -240,19 +269,44 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
       await aplicacao;
       fixture.detectChanges();
 
-      expect(host.querySelector('#form-inscricao-recusa-modelo')?.textContent).toContain(
+      expect(host.querySelector('#form-0-recusa-modelo')?.textContent).toContain(
         "O modelo cita 'RENDA', que a inscrição do processo não coleta.",
       );
-      expect(store.draft().formulario.conteudo).toBe(antes);
+      expect(store.draft().formulario).toBe(antes);
       expect(
         store.aplicacoesDeModeloEmAberto().size,
         'a recusa é definitiva: nada foi copiado',
       ).toBe(0);
     });
 
+    it('a recusa da cópia depois de o cabeçalho gravar um formulário novo o deixa como gravado', async () => {
+      store.patchObjectSection('formulario', {
+        formularios: [
+          ...store.draft().formulario.formularios,
+          formularioDoRascunho(conteudoInicial(), { codigo: 'NOVO', gravado: false }),
+        ],
+      });
+      const aplicacao = escolherEAplicar('NOVO', 'insc');
+      controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
+      await proximoPasso();
+      controller
+        .expectOne((r) => r.method === 'PUT' && r.url.endsWith('/formularios/NOVO'))
+        .flush(null, { status: 204, statusText: 'No Content' });
+      await proximoPasso();
+      controller
+        .expectOne(ROTA_APLICACAO)
+        .flush(
+          { type: 'about:blank', title: 'O modelo não serve a este processo.', status: 422 },
+          { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_JSON },
+        );
+      await aplicacao;
+
+      expect(formularioDoCodigo(store.draft().formulario, 'NOVO')?.gravado).toBe(true);
+    });
+
     it('a troca de processo descarta a aplicação que aguardava confirmação', () => {
       servicoDeModelos().escolher('INSCRICAO', 'insc');
-      servicoDeModelos().pedir('INSCRICAO');
+      pedirModelo('INSCRICAO');
 
       store.reset();
       fixture.detectChanges();
@@ -276,8 +330,7 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
       expect(
         servicoDeModelos()
           .modelos()
-          .get('INSCRICAO')
-          ?.map((m) => m.id),
+          .map((m) => m.id),
       ).toEqual(['psiq']);
     });
 
@@ -292,8 +345,7 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
       expect(
         servicoDeModelos()
           .modelos()
-          .get('INSCRICAO')
-          ?.map((m) => m.id),
+          .map((m) => m.id),
       ).toEqual(['novo']);
       expect(servicoDeModelos().modelosCarregando()).toBe(false);
     });

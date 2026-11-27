@@ -1,4 +1,4 @@
-@let formularioDoDoc = exigencias.finalidadeDoDocumento(documentoId());
+@let formularioDoDoc = exigencias.formularioDoDocumento(documentoId());
 @let faltaFormularioDoDoc = faltaFormulario(documentoId());
 <label class="label" [attr.for]="idDaFase('doc-formulario-' + documentoId())">Formulário</label>
 <select
@@ -9,7 +9,7 @@
   [attr.aria-describedby]="
     faltaFormularioDoDoc ? idDaFase('doc-formulario-erro-' + documentoId()) : null
   "
-  (change)="escolherFinalidade(documentoId(), $any($event.target).value)"
+  (change)="escolherFormulario(documentoId(), $any($event.target).value)"
 >
   @if (formularioDoDoc === null) {
     <option value="" selected>Escolha o formulário</option>

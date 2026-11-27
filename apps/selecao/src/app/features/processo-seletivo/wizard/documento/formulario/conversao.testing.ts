@@ -1,5 +1,4 @@
 import {
-  FinalidadeDoFormulario,
   TipoDaPaginaDoFormulario,
   type DocumentoDaConfiguracaoFormulario,
 } from '@uniplus/shared-data/selecao';
@@ -27,7 +26,7 @@ export const CATALOGOS: CatalogosDaConversaoDoFormulario = {
 
 export function formulario(): DocumentoDaConfiguracaoFormulario {
   return {
-    finalidade: FinalidadeDoFormulario.INSCRICAO,
+    codigo: 'INSCRICAO',
     faseChave: 'inscricao',
     modeloOrigemCodigo: 'MODELO',
     paginas: [{ codigo: 'dados', tipo: TipoDaPaginaDoFormulario.SECAO }],

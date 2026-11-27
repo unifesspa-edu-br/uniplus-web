@@ -6,7 +6,6 @@ import type {
   DocumentoDaConfiguracao,
   DocumentoDaConfiguracaoColeta,
   DocumentoDaConfiguracaoFormulario,
-  FinalidadeDoFormulario,
 } from '@uniplus/shared-data/selecao';
 
 import {
@@ -16,13 +15,13 @@ import {
 import {
   definirFaseDoFormulario,
   definirTitulo,
-  formularioDaFinalidade,
+  formularioDoCodigo,
   noFormulario,
 } from '../edicoes/formulario.edicao';
 import { emSequencia, type EdicaoDoDocumento } from '../edicoes/secao-do-documento';
 
 /**
- * O que o passo mostra do cabeçalho do formulário de uma finalidade. O conteúdo (páginas, itens,
+ * O que o passo mostra do cabeçalho de um formulário. O conteúdo (páginas, itens,
  * grupos e termos) não passa por aqui: voltam como estão, e têm as edições próprias.
  */
 export interface ValoresDoFormulario {
@@ -56,13 +55,12 @@ function cabecalhoDe(formulario: DocumentoDaConfiguracaoFormulario): ValoresDoFo
   };
 }
 
-/** Os valores do formulário da finalidade, ou `undefined` quando o documento não tem esse formulário. */
+/** Os valores do formulário do código, ou `undefined` quando o documento não tem esse formulário. */
 export function valoresDoFormulario(
   documento: DocumentoDaConfiguracao,
-  finalidade: FinalidadeDoFormulario,
-  ocorrencia = 0,
+  codigo: string,
 ): ValoresDoPasso | undefined {
-  const formulario = formularioDaFinalidade(documento, finalidade, ocorrencia);
+  const formulario = formularioDoCodigo(documento, codigo);
   if (formulario === undefined) return undefined;
   return {
     formulario: cabecalhoDe(formulario),
@@ -70,15 +68,10 @@ export function valoresDoFormulario(
   };
 }
 
-export function edicaoDoPasso(
-  finalidade: FinalidadeDoFormulario,
-  valores: ValoresDoPasso,
-  ocorrencia = 0,
-): EdicaoDoDocumento {
+export function edicaoDoPasso(codigo: string, valores: ValoresDoPasso): EdicaoDoDocumento {
   return emSequencia(
-    (documento) => definirTitulo(documento, finalidade, valores.formulario.titulo, ocorrencia),
-    (documento) =>
-      definirFaseDoFormulario(documento, finalidade, valores.formulario.faseChave, ocorrencia),
+    (documento) => definirTitulo(documento, codigo, valores.formulario.titulo),
+    (documento) => definirFaseDoFormulario(documento, codigo, valores.formulario.faseChave),
     (documento) => definirReferenciaTemporal(documento, valores.referenciaTemporal),
   );
 }
@@ -91,18 +84,12 @@ export type {
 
 /** A recusa local não altera nenhuma parte do documento; diagnósticos da API seguem intactos. */
 export function edicaoDoConteudo(
-  finalidade: FinalidadeDoFormulario,
+  codigo: string,
   conversao: ResultadoDaConversaoDoFormulario,
-  ocorrencia = 0,
 ): EdicaoDoDocumento {
   return (documento) =>
     conversao.ok
-      ? noFormulario(
-          documento,
-          finalidade,
-          (formulario) => aplicarConteudo(formulario, conversao),
-          ocorrencia,
-        )
+      ? noFormulario(documento, codigo, (formulario) => aplicarConteudo(formulario, conversao))
       : documento;
 }
 
@@ -123,13 +110,12 @@ function aplicarConteudo(
   return edicao.preservar(formulario, conversao.formulario, CAMPOS_DO_CONTEUDO, []);
 }
 
-/** Projeta o conteúdo da ocorrência indicada sem confundir o cabeçalho com os itens do editor. */
+/** Projeta o conteúdo do formulário do código sem confundir o cabeçalho com os itens do editor. */
 export function conteudoDoFormulario(
   documento: DocumentoDaConfiguracao,
-  finalidade: FinalidadeDoFormulario,
+  codigo: string,
   catalogos: CatalogosDaConversaoDoFormulario,
-  ocorrencia = 0,
 ): ResultadoDaConversaoDoFormulario | undefined {
-  const formulario = formularioDaFinalidade(documento, finalidade, ocorrencia);
+  const formulario = formularioDoCodigo(documento, codigo);
   return formulario === undefined ? undefined : conteudoDoDocumento(formulario, catalogos);
 }

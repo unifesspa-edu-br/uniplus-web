@@ -1,0 +1,60 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Base legal do Fator de Atenuação das Desigualdades de Acesso</h1>
+    <p class="page-header__desc">
+      Documento formal e os municípios que ele beneficia com o Fator de Atenuação. O Passo 8 do
+      Processo Seletivo referencia este cadastro e congela uma cópia no momento da configuração.
+    </p>
+  </div>
+</div>
+
+<ui-falha-de-leitura titulo="Não foi possível carregar as bases legais" [leitura]="leitura" />
+<ui-falha-de-leitura
+  variante="warning"
+  titulo="Tipos de instrumento não carregados"
+  idBotao="cfg-blbr-tipos-tentar-pagina"
+  [leitura]="tipos.leitura"
+/>
+
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
+<cfg-base-legal-do-fada-lista
+  [bases]="store.basesFiltradas()"
+  [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
+  [removendo]="edicao.removendo()"
+  [erro]="store.mensagemDeErro()"
+  [temFiltro]="store.temFiltro()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  [(termoBusca)]="store.termoBusca"
+  (cadastrar)="edicao.abrirCadastro()"
+  (editar)="edicao.abrirEdicao($event)"
+  (remover)="edicao.pedirRemocao($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+<cfg-base-legal-do-fada-formulario
+  [(aberto)]="edicao.aberto"
+  [form]="edicao.form"
+  [modo]="edicao.modo()"
+  [titulo]="edicao.tituloDoFormulario()"
+  [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncioDoSalvamento()"
+  [salvando]="edicao.salvando()"
+  [tipos]="tipos.formulario()"
+  [municipios]="municipios.campo()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+  (escolherMunicipios)="municipios.escolher($event)"
+  (removerMunicipio)="municipios.remover($event)"
+/>
+<cfg-confirmacao-de-remocao
+  titulo="Remover base legal"
+  rotulo="Remover"
+  [(aberto)]="edicao.confirmando"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
+/>

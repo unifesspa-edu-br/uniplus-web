@@ -200,7 +200,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/processos-seletivos/{id}/formularios/{finalidade}": {
+    readonly "/api/selecao/processos-seletivos/{id}/formularios/{codigo}": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -216,7 +216,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}/apresentacao": {
+    readonly "/api/selecao/admin/processos-seletivos/{id}/formularios/{codigo}/apresentacao": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -232,7 +232,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}": {
+    readonly "/api/selecao/admin/processos-seletivos/{id}/formularios/{codigo}": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -248,7 +248,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}/itens": {
+    readonly "/api/selecao/admin/processos-seletivos/{id}/formularios/{codigo}/itens": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -264,7 +264,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}/termos": {
+    readonly "/api/selecao/admin/processos-seletivos/{id}/formularios/{codigo}/termos": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -332,14 +332,14 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/processos-seletivos/{id}/inscricao/formulario": {
+    readonly "/api/selecao/processos-seletivos/{id}/inscricao/formularios": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get: operations["ObterFormularioDaInscricao"];
+        readonly get: operations["ObterFormulariosDaInscricao"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -806,7 +806,7 @@ export interface paths {
         readonly get?: never;
         /**
          * Substitui as etapas e as bancas do processo
-         * @description Substitui as etapas e as bancas de cada etapa inteiras: o que o corpo não traz deixa de existir no processo. A regra de deliberação de uma banca é opcional neste pedido, e a banca que a omite apaga a regra que já estava gravada. A obrigatoriedade da regra de deliberação é conferida na publicação. Para preservar as chaves, devolva o id de cada etapa, item e banca que permanece e a chave de cada nível que permanece. As chaves novas vêm na releitura pelo GET.
+         * @description Devolva consequenciaDaAusencia em cada banca para preservá-la; se omitida, ela é apagada. Substitui as etapas e as bancas de cada etapa inteiras: o que o corpo não traz deixa de existir no processo. A regra de deliberação de uma banca é opcional neste pedido, e a banca que a omite apaga a regra que já estava gravada. A obrigatoriedade da regra de deliberação é conferida na publicação. Para preservar as chaves, devolva o id de cada etapa, item e banca que permanece e a chave de cada nível que permanece. As chaves novas vêm na releitura pelo GET.
          */
         readonly put: operations["DefinirEtapasDoProcesso"];
         readonly post?: never;
@@ -960,7 +960,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/processos-seletivos/{id}/bonus-regional": {
+    readonly "/api/selecao/processos-seletivos/{id}/fada": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -985,6 +985,38 @@ export interface paths {
         };
         readonly get?: never;
         readonly put: operations["DefinirProvaPresencial"];
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/processos-seletivos/{id}/cadastro-reserva": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: operations["DefinirCadastroDeReserva"];
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/processos-seletivos/{id}/manifestacao-interesse": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: operations["DefinirManifestacaoDeInteresse"];
         readonly post?: never;
         readonly delete?: never;
         readonly options?: never;
@@ -1080,7 +1112,7 @@ export interface paths {
             readonly cookie?: never;
         };
         readonly get?: never;
-        /** @description Para preservar as chaves, devolva o tipo de cada fase e o id de cada banca que permanece. As chaves da fase e da banca novas vêm na releitura pelo GET. */
+        /** @description Substitui o cronograma de fases do processo por inteiro: cada fase enviada toma o lugar da que existia, e a fase que não for enviada sai, junto com as etapas dela, os motivos de decisão escolhidos na fase e nas etapas e os documentos exigidos nela, com as regras de comprovação que ficarem sem documento. A gravação é recusada (422) quando a fase que sai é usada como referência por outra exigência, tem etapa usada na classificação ou tem formulário configurado para ser respondido nela. Em cada fase, a regra de homologação das inscrições ausente ou nula apaga a que a fase tinha, e a fase sem regra não homologa: quem grava devolve a regra lida na consulta. Devolva consequenciaDaAusencia em cada banca para preservá-la; se omitida, ela é apagada. Para preservar as chaves, devolva o tipo de cada fase e o id de cada banca que permanece. As chaves da fase e da banca novas vêm na releitura pelo GET. */
         readonly put: operations["DefinirCronogramaDeFases"];
         readonly post?: never;
         readonly delete?: never;
@@ -1669,14 +1701,46 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/vocabularios/consequencias-indeferimento": {
+    readonly "/api/selecao/vocabularios/consequencias-do-descumprimento": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get: operations["ListarConsequenciasDoIndeferimento"];
+        readonly get: operations["ListarConsequenciasDoDescumprimento"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/vocabularios/participacoes-reserva": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["ListarParticipacoesDaReserva"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/vocabularios/manifestacoes-interesse": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["ListarManifestacoesDeInteresse"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -1690,6 +1754,7 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         readonly AceiteDeTermoInput: {
+            readonly formularioCodigo: string;
             readonly codigo: string;
             /** Format: uuid */
             readonly versaoId: string;
@@ -1781,7 +1846,7 @@ export interface components {
             readonly condicoes: null | readonly components["schemas"]["CondicaoGatilhoInput"][];
         };
         readonly AplicacaoDeModeloDto: {
-            readonly finalidade: components["schemas"]["FinalidadeFormulario"];
+            readonly formularioCodigo: string;
             readonly fatosTrazidosParaAInscricao: readonly string[];
             readonly fatosMantidosNaInscricao: readonly string[];
             readonly descartados: readonly components["schemas"]["ParteDescartadaDto"][];
@@ -1791,6 +1856,7 @@ export interface components {
         readonly AplicacaoDeModeloInput: {
             /** Format: uuid */
             readonly modeloId: string;
+            readonly formularioCodigo: string;
         };
         readonly ApresentacaoDaPaginaDto: {
             readonly titulo: string;
@@ -1970,6 +2036,7 @@ export interface components {
             readonly encerraRecursoNaPrimeiraInstancia: boolean;
             readonly tiposDeDecisaoJulgados: readonly components["schemas"]["TipoMotivoDeDecisao"][];
             readonly regraDeDeliberacao: null | components["schemas"]["RegraDeDeliberacaoDto"];
+            readonly consequenciaDaAusencia?: null | components["schemas"]["ConsequenciaDoDescumprimento"];
         };
         readonly BancaDaEtapaInput: {
             /** Format: uuid */
@@ -1977,6 +2044,7 @@ export interface components {
             readonly regraDeDeliberacao?: null | components["schemas"]["RegraDeDeliberacaoInput"];
             /** Format: uuid */
             readonly id?: null | string;
+            readonly consequenciaDaAusencia?: null | components["schemas"]["ConsequenciaDoDescumprimentoCodigo"];
         };
         readonly BancaRequeridaDto: {
             /** Format: uuid */
@@ -1994,6 +2062,7 @@ export interface components {
             readonly tiposDeDecisaoJulgados: readonly components["schemas"]["TipoMotivoDeDecisao"][];
             readonly regraDeDeliberacao: null | components["schemas"]["RegraDeDeliberacaoDto"];
             readonly candidatosAtendidos: readonly components["schemas"]["CategoriaJulgadaDto"][];
+            readonly consequenciaDaAusencia?: null | components["schemas"]["ConsequenciaDoDescumprimento"];
         };
         readonly BancaRequeridaInput: {
             /** Format: uuid */
@@ -2002,6 +2071,7 @@ export interface components {
             readonly regraDeDeliberacao?: null | components["schemas"]["RegraDeDeliberacaoInput"];
             /** Format: uuid */
             readonly id?: null | string;
+            readonly consequenciaDaAusencia?: null | components["schemas"]["ConsequenciaDoDescumprimentoCodigo"];
         };
         readonly BaseLegalCongeladaDto: {
             /** Format: uuid */
@@ -2009,9 +2079,9 @@ export interface components {
             readonly tipoInstrumento: string;
             readonly identificacao: string;
             readonly descricao: string;
-            readonly municipios: readonly components["schemas"]["ConfiguracaoBonusRegionalMunicipioDto"][];
+            readonly municipios: readonly components["schemas"]["MunicipioDoFadaDto"][];
         };
-        readonly BaseLegalDoBonusInput: {
+        readonly BaseLegalDoFadaInput: {
             /** Format: uuid */
             readonly id: string;
         };
@@ -2038,6 +2108,20 @@ export interface components {
          * @enum {string}
          */
         readonly BlocoSistemaCodigo: BlocoSistemaCodigo;
+        readonly CadastroDeReservaDaChamadaDto: {
+            /** Format: int32 */
+            readonly numeroDaChamada: number;
+            /** Format: int32 */
+            readonly pessoasDaReservaPorVaga: number;
+            readonly participacaoDaReserva: null | components["schemas"]["ParticipacaoDaReserva"];
+        };
+        readonly CadastroDeReservaInformado: {
+            /** Format: int32 */
+            readonly numeroDaChamada: null | number;
+            /** Format: int32 */
+            readonly pessoasDaReservaPorVaga: null | number;
+            readonly participacaoDaReserva: null | components["schemas"]["ParticipacaoDaReservaCodigo"];
+        };
         readonly CampoApresentado: {
             readonly fatoCodigo: string;
             /** Format: int32 */
@@ -2261,22 +2345,6 @@ export interface components {
             /** Format: int32 */
             readonly vagasCortadasPorEscassez: number;
         };
-        readonly ConfiguracaoBonusRegionalDto: {
-            /** Format: uuid */
-            readonly id: string;
-            readonly regra: components["schemas"]["ReferenciaRegraDto"];
-            /** Format: double */
-            readonly fator: number;
-            /** Format: double */
-            readonly teto: null | number;
-            readonly fatoElegibilidadeCodigo: null | string;
-            readonly baseLegal: components["schemas"]["BaseLegalCongeladaDto"];
-        };
-        readonly ConfiguracaoBonusRegionalMunicipioDto: {
-            readonly codigoIbge: string;
-            readonly nome: string;
-            readonly uf: string;
-        };
         readonly ConfiguracaoCascataRemanejamentoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -2351,6 +2419,17 @@ export interface components {
             readonly camposPublicos: readonly string[];
             readonly justificativa: null | string;
         };
+        readonly ConfiguracaoDoFadaDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly regra: components["schemas"]["ReferenciaRegraDto"];
+            /** Format: double */
+            readonly fator: number;
+            /** Format: double */
+            readonly teto: null | number;
+            readonly fatoElegibilidadeCodigo: null | string;
+            readonly baseLegal: components["schemas"]["BaseLegalCongeladaDto"];
+        };
         readonly ConfiguracaoTaxaInscricaoDto: {
             readonly cobra: boolean;
             /** Format: double */
@@ -2374,18 +2453,17 @@ export interface components {
             readonly itens: readonly components["schemas"]["ItemConformidadeDto"][];
             readonly avisos: readonly components["schemas"]["AvisoConformidadeDto"][];
         };
-        readonly ConsequenciaDoIndeferimento: {
-            readonly codigo: components["schemas"]["ConsequenciaDoIndeferimentoCodigo"];
+        readonly ConsequenciaDoDescumprimento: {
+            readonly codigo: components["schemas"]["ConsequenciaDoDescumprimentoCodigo"];
             readonly rotulo: string;
         };
         /**
-         * @description - `ELIMINA`: Eliminação — Retira a pessoa do processo seletivo.
-         *     - `RECLASSIFICA_AC`: Ampla concorrência — Passa a pessoa para a ampla concorrência.
-         *     - `REMOVE_VANTAGEM`: Perda da vantagem — Retira a vantagem solicitada.
-         *     - `ABRE_PRAZO_PARA_REENVIO`: Prazo para reenvio — Abre prazo para reenviar o documento.
+         * @description - `ELIMINA_DO_PROCESSO`: Eliminação do processo — Retira a pessoa do processo, depois dos procedimentos e recursos cabíveis.
+         *     - `RETIRA_A_MODALIDADE`: Retirada da modalidade — A pessoa perde a modalidade a que o requisito se refere e continua nas demais em que concorre.
+         *     - `RETIRA_O_ACRESCIMO`: Retirada só do acréscimo do Fator de Atenuação das Desigualdades de Acesso — A pessoa perde só o acréscimo; não é eliminada nem perde modalidade.
          * @enum {string}
          */
-        readonly ConsequenciaDoIndeferimentoCodigo: ConsequenciaDoIndeferimentoCodigo;
+        readonly ConsequenciaDoDescumprimentoCodigo: ConsequenciaDoDescumprimentoCodigo;
         readonly ConteudoDoTermoDto: {
             readonly nome: string;
             readonly texto: string;
@@ -2523,15 +2601,8 @@ export interface components {
             readonly recursoIds: readonly string[];
             readonly tipoDeficienciaIds: readonly string[];
         };
-        readonly DefinirBonusRegionalRequest: {
-            readonly aplica: boolean;
-            readonly regra: null | components["schemas"]["ReferenciaRegraInput"];
-            /** Format: double */
-            readonly fator: null | number;
-            /** Format: double */
-            readonly teto: null | number;
-            readonly fatoElegibilidadeCodigo: null | string;
-            readonly baseLegal: null | components["schemas"]["BaseLegalDoBonusInput"];
+        readonly DefinirCadastroDeReservaRequest: {
+            readonly chamadas: readonly components["schemas"]["CadastroDeReservaInformado"][];
         };
         readonly DefinirCascataRemanejamentoRequest: {
             readonly regraCodigo: null | string;
@@ -2558,11 +2629,23 @@ export interface components {
             readonly camposPublicos: null | readonly DefinirConfiguracaoDivulgacaoRequestCamposPublicos[];
             readonly justificativa: null | string;
         };
+        readonly DefinirFadaRequest: {
+            readonly aplica: boolean;
+            readonly regra: null | components["schemas"]["ReferenciaRegraInput"];
+            /** Format: double */
+            readonly fator: null | number;
+            /** Format: double */
+            readonly teto: null | number;
+            readonly fatoElegibilidadeCodigo: null | string;
+            readonly baseLegal: null | components["schemas"]["BaseLegalDoFadaInput"];
+        };
         readonly DefinirFormularioRequest: {
             /** Format: uuid */
             readonly faseId: null | string;
             readonly titulo: null | string;
+            readonly obrigatorio: boolean;
             readonly paginas: readonly components["schemas"]["PaginaDoFormularioInput"][];
+            readonly consequenciaDaFaltaDeEnvio?: null | components["schemas"]["ConsequenciaDoDescumprimentoCodigo"];
         };
         readonly DefinirIdentificadorLegivelRequest: {
             readonly identificadorLegivel: null | string;
@@ -2575,6 +2658,9 @@ export interface components {
             readonly codigoIbge: null | string;
             readonly nome: null | string;
             readonly uf: null | string;
+        };
+        readonly DefinirManifestacaoDeInteresseRequest: {
+            readonly manifestacaoDeInteresse: null | components["schemas"]["ManifestacaoDeInteresseCodigo"];
         };
         readonly DefinirOpcoesDeclaradasRequest: {
             readonly opcoes: readonly components["schemas"]["OpcaoDeclaradaRequest"][];
@@ -2704,7 +2790,7 @@ export interface components {
             readonly coleta?: components["schemas"]["DocumentoDaConfiguracaoColeta"];
             /**
              * Formulários
-             * @description Os formulários do processo, no máximo um por finalidade. Lista vazia ou ausente é válida no rascunho.
+             * @description Os formulários do processo, cada um identificado pelo código, único no processo. Lista vazia ou ausente é válida no rascunho.
              */
             readonly formularios?: readonly components["schemas"]["DocumentoDaConfiguracaoFormulario"][];
             /**
@@ -2793,6 +2879,16 @@ export interface components {
              * @description Declaração de que o processo tem ou não prova presencial e, se tem, dos municípios de prova. Ausente no rascunho que ainda não a declarou.
              */
             readonly provaPresencial?: components["schemas"]["DocumentoDaConfiguracaoProvaPresencial"];
+            /**
+             * Cadastro de reserva por chamada
+             * @description O cadastro de reserva de cada chamada do processo, no máximo um por número de chamada. A chamada que não consta na lista não tem reserva. Lista vazia ou ausente é válida: há processos sem cadastro de reserva.
+             */
+            readonly cadastroDeReserva?: readonly components["schemas"]["DocumentoDaConfiguracaoCadastroDeReserva"][];
+            /**
+             * Manifestação de interesse
+             * @description Como o edital prevê a manifestação de interesse depois da 1ª chamada: UMA_VEZ ou CONFIRMA_A_CADA_CHAMADA. Ausente: a manifestação não é prevista, e a ausência não impede a publicação.
+             */
+            readonly manifestacaoDeInteresse?: components["schemas"]["DocumentoDaConfiguracaoManifestacaoDeInteresse"];
             /**
              * Motivos de decisão
              * @description Motivos do catálogo que o processo escolheu para as decisões das fases e das etapas. Cada motivo se identifica pelo lugar, a fase ou a etapa pela chave, e pelo tipo e pelo código.
@@ -2890,6 +2986,21 @@ export interface components {
              */
             readonly tipoBancaCodigo: string;
             /**
+             * Nome do tipo de banca
+             * @description Nome do tipo de banca, guardado no processo. Campo só de leitura: a exportação o traz para quem lê o arquivo, e ele é ignorado na importação; a referência é o código.
+             */
+            readonly tipoBancaNome?: string;
+            /**
+             * Consequência da ausência
+             * @description Consequência quando a pessoa não comparece à banca.
+             */
+            readonly consequenciaDaAusencia?: components["schemas"]["DocumentoDaConfiguracaoComunsConsequenciaDoDescumprimento"];
+            /**
+             * Rótulo da consequência da ausência
+             * @description Rótulo registrado na publicação, só de leitura e ignorado na importação.
+             */
+            readonly consequenciaDaAusenciaRotulo?: string;
+            /**
              * Candidatos atendidos
              * @description Códigos das categorias de documento que a banca analisa. Lista vazia quando a banca não define candidatos atendidos por categoria.
              */
@@ -2913,6 +3024,11 @@ export interface components {
              */
             readonly modo?: DocumentoDaConfiguracaoBancasRegraDeDeliberacaoModo;
             /**
+             * Rótulo do modo de deliberação
+             * @description Rótulo do modo de deliberação. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly modoRotulo?: string;
+            /**
              * Integrantes titulares
              * @description Número de titulares da banca.
              */
@@ -2934,11 +3050,21 @@ export interface components {
              */
             readonly criterio?: DocumentoDaConfiguracaoBancasRegraDeDeliberacaoCriterio;
             /**
+             * Rótulo do critério de votação
+             * @description Rótulo do critério de votação. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly criterioRotulo?: string;
+            /**
              * Desempate
              * @description Como se desempata nos critérios de maioria: voto da presidência ou nova votação.
              * @enum {unknown}
              */
             readonly desempate?: DocumentoDaConfiguracaoBancasRegraDeDeliberacaoDesempate;
+            /**
+             * Rótulo do desempate
+             * @description Rótulo da forma de desempate. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly desempateRotulo?: string;
             /**
              * Encerramento da votação
              * @description Quando a votação termina: com o voto de todos os titulares ou quando a presidência vê o quórum atingido.
@@ -2946,11 +3072,48 @@ export interface components {
              */
             readonly encerramento?: DocumentoDaConfiguracaoBancasRegraDeDeliberacaoEncerramento;
             /**
+             * Rótulo do encerramento da votação
+             * @description Rótulo do encerramento da votação. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly encerramentoRotulo?: string;
+            /**
              * Resultado sem unanimidade
              * @description O que vale quando a unanimidade é o critério e ela não ocorre: favorável, desfavorável ou nova votação.
              * @enum {unknown}
              */
             readonly semUnanimidade?: DocumentoDaConfiguracaoBancasRegraDeDeliberacaoSemUnanimidade;
+            /**
+             * Rótulo do resultado sem unanimidade
+             * @description Rótulo do resultado quando não há unanimidade. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly semUnanimidadeRotulo?: string;
+        };
+        /**
+         * Cadastro de reserva de uma chamada
+         * @description O cadastro de reserva de uma chamada do processo: quantas pessoas da reserva a chamada convoca por vaga, além de quem ocupa a vaga. A chamada que não consta na lista do processo não tem reserva. O esquema descreve só a forma: o número da chamada, informado a partir de 1 e declarado uma só vez, a quantidade não negativa e a participação da reserva, exigida quando a quantidade é maior que zero e recusada quando é zero, são regras do domínio.
+         */
+        readonly DocumentoDaConfiguracaoCadastroDeReserva: {
+            /**
+             * Número da chamada
+             * @description Número da chamada do processo, a partir de 1 e declarado uma só vez. O esquema não o exige: a chamada sem número é recusada pelo domínio. O limite superior é o do inteiro de 32 bits; a conferência da presença, do menor valor e da repetição é do domínio.
+             */
+            readonly numeroDaChamada?: number;
+            /**
+             * Pessoas da reserva por vaga
+             * @description Quantas pessoas da reserva a chamada convoca por vaga, além de quem ocupa a vaga. Zero é a chamada sem reserva. O limite superior é o do inteiro de 32 bits; a conferência de que a quantidade não é negativa é do domínio.
+             */
+            readonly pessoasDaReservaPorVaga?: number;
+            /**
+             * Participação da reserva
+             * @description O que a reserva faz quando a chamada a convoca. Obrigatória na chamada com pessoas da reserva por vaga, sem valor padrão, e ausente na chamada sem reserva; a conferência é do domínio. ANTECIPA_A_HABILITACAO: a reserva só antecipa a habilitação. ASSUME_NA_MESMA_CHAMADA: a reserva assume na mesma chamada.
+             * @enum {unknown}
+             */
+            readonly participacaoDaReserva?: DocumentoDaConfiguracaoCadastroDeReservaParticipacaoDaReserva;
+            /**
+             * Rótulo da participação da reserva
+             * @description Rótulo atual da participação da reserva. Campo só de leitura: ignorado na importação.
+             */
+            readonly participacaoDaReservaRotulo?: string;
         };
         /**
          * Classificação
@@ -3004,7 +3167,7 @@ export interface components {
             readonly resolucaoPesoAreaEnem?: string;
             /**
              * Quadro de pesos por área do Enem
-             * @description Os pesos e cortes por área do Enem que a resolução fixa, copiados na exportação. Campo só de leitura: ignorado na importação, porque é congelado do catálogo pela resolução.
+             * @description Os pesos e cortes por área do Enem que a resolução fixa. Na exportação do rascunho vêm do cadastro no momento da exportação; na versão publicada, os congelados. Campo só de leitura: ignorado na importação, porque quem o define é a resolução.
              */
             readonly quadroPesoAreaEnem?: readonly components["schemas"]["DocumentoDaConfiguracaoPesosPorArea"][];
         };
@@ -3024,6 +3187,11 @@ export interface components {
                  * @enum {unknown}
                  */
                 readonly tipo?: DocumentoDaConfiguracaoColetaReferenciaTemporalDosDadosTipo;
+                /**
+                 * Rótulo do tipo de referência
+                 * @description Rótulo do tipo de referência temporal dos dados. Campo só de leitura: ignorado na importação; a referência é o código.
+                 */
+                readonly tipoRotulo?: string;
                 /**
                  * Data específica
                  * Format: date
@@ -3102,6 +3270,12 @@ export interface components {
          */
         readonly DocumentoDaConfiguracaoComunsCodigoDeCatalogo: string;
         /**
+         * Consequência do descumprimento
+         * @description Consequência declarada para o descumprimento de uma exigência.
+         * @enum {unknown}
+         */
+        readonly DocumentoDaConfiguracaoComunsConsequenciaDoDescumprimento: DocumentoDaConfiguracaoComunsConsequenciaDoDescumprimento;
+        /**
          * Identificador da conta
          * @description Identificador da conta da pessoa no Uni+, texto opaco e estável que o provedor de identidade atribui (o sub do token). Nunca é CPF, e-mail, telefone nem nome, e quem o escreve não o monta a partir deles. O esquema só descreve a forma: não exige nem proíbe a forma de UUID e recusa o texto vazio, o que tem espaço nas pontas e o que passa de 255 caracteres. Que o valor é uma conta existente é conferência do domínio contra o cadastro de assinantes, que recusa o código desconhecido pela posição.
          */
@@ -3122,6 +3296,11 @@ export interface components {
              * @description Tipo da decisão recorrida, entre os que a fase ou a etapa declara.
              */
             readonly tipoDeDecisao: components["schemas"]["DocumentoDaConfiguracaoComunsTipoDeDecisao"];
+            /**
+             * Rótulo do tipo de decisão
+             * @description Rótulo do tipo da decisão recorrida. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly tipoDeDecisaoRotulo?: string;
             /**
              * Alvo
              * @description A parte da matéria que o procedimento cobre: um item de avaliação da etapa, pela chave, ou uma área do ENEM, pelo código. Ausente, o procedimento cobre o tipo de decisão inteiro.
@@ -3160,6 +3339,11 @@ export interface components {
              */
             readonly prazoUnidade?: DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoUnidade;
             /**
+             * Rótulo da unidade do prazo
+             * @description Rótulo da unidade do prazo de interposição. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly prazoUnidadeRotulo?: string;
+            /**
              * Ato âncora do prazo
              * @description Código do tipo de ato, entre os atos preliminares da própria fase, a partir de cujo instante o prazo corre.
              */
@@ -3181,17 +3365,32 @@ export interface components {
              */
             readonly prazoSegundaInstanciaUnidade?: DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoSegundaInstanciaUnidade;
             /**
+             * Rótulo da unidade do prazo da 2ª instância
+             * @description Rótulo da unidade do prazo da 2ª instância; ausente quando o recurso não admite instância superior. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly prazoSegundaInstanciaUnidadeRotulo?: string;
+            /**
              * Efeito suspensivo na 1ª instância
-             * @description Efeito suspensivo do recurso na 1ª instância, escolhido pelo edital. A única opção aceita é sem efeito suspensivo (SEM_EFEITO_SUSPENSIVO). A 2ª instância sempre tem efeito suspensivo, sem escolha.
+             * @description Efeito suspensivo do recurso na 1ª instância, escolhido pelo edital entre três opções: efeito suspensivo para todos os recursos (PARA_TODOS_OS_RECURSOS), sem efeito suspensivo (SEM_EFEITO_SUSPENSIVO) ou a unidade responsável pela fase de origem do ato recorrido decide em cada recurso (UNIDADE_DECIDE_EM_CADA_RECURSO). A declaração é obrigatória para o cadastro e não tem valor padrão. A 2ª instância sempre tem efeito suspensivo, sem escolha.
              * @enum {unknown}
              */
             readonly efeitoSuspensivo?: DocumentoDaConfiguracaoComunsPropriedadesDoRecursoEfeitoSuspensivo;
+            /**
+             * Rótulo do efeito suspensivo
+             * @description Rótulo do efeito suspensivo do recurso na 1ª instância. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly efeitoSuspensivoRotulo?: string;
             /**
              * Guarda da vaga
              * @description Se a vaga em disputa fica guardada enquanto o recurso corre: até o resultado definitivo (ATE_O_RESULTADO_DEFINITIVO) ou não guarda (NAO_GUARDA). Quando ausente, vale guardar até o resultado definitivo. Com instância superior, a vaga fica guardada até o resultado definitivo.
              * @enum {unknown}
              */
             readonly guardaDaVaga?: DocumentoDaConfiguracaoComunsPropriedadesDoRecursoGuardaDaVaga;
+            /**
+             * Rótulo da guarda da vaga
+             * @description Rótulo da guarda da vaga durante o recurso. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly guardaDaVagaRotulo?: string;
             /**
              * Procedimentos de recurso
              * @description O procedimento que revisa o recurso de cada matéria que a fase ou a etapa decide. Cada matéria tem um único procedimento, e um tipo de decisão não mistura procedimento para o tipo inteiro com procedimento por alvo.
@@ -3219,6 +3418,11 @@ export interface components {
              * @enum {unknown}
              */
             readonly papel?: DocumentoDaConfiguracaoComunsPublicacaoPrevistaPapel;
+            /**
+             * Rótulo do papel do ato
+             * @description Rótulo do papel do ato no ciclo de recurso. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly papelRotulo?: string;
         };
         /**
          * Referência a uma regra do catálogo
@@ -3269,11 +3473,21 @@ export interface components {
              */
             readonly abrangencia?: DocumentoDaConfiguracaoCondicoesBaseLegalAbrangencia;
             /**
+             * Rótulo da abrangência
+             * @description Rótulo da esfera da norma. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly abrangenciaRotulo?: string;
+            /**
              * Situação
              * @description Se a referência foi resolvida ou ainda está pendente.
              * @enum {unknown}
              */
             readonly situacao?: DocumentoDaConfiguracaoCondicoesBaseLegalSituacao;
+            /**
+             * Rótulo da situação
+             * @description Rótulo da situação da referência da base legal. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly situacaoRotulo?: string;
             /**
              * Observação
              * @description Nota livre sobre a base legal.
@@ -3297,6 +3511,11 @@ export interface components {
              */
             readonly operador: DocumentoDaConfiguracaoCondicoesCondicaoOperador;
             /**
+             * Rótulo do operador
+             * @description Rótulo do operador de comparação da condição. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly operadorRotulo?: string;
+            /**
              * Valor
              * @description Valor de comparação: uma lista para ALGUM_DE e NENHUM_DE, um texto, número ou booleano para os demais. Texto em branco, sozinho ou como item da lista, é recusado.
              */
@@ -3318,6 +3537,11 @@ export interface components {
              * @enum {unknown}
              */
             readonly tipo: DocumentoDaConfiguracaoCondicoesObrigatoriedadeTipo;
+            /**
+             * Rótulo do tipo da obrigatoriedade
+             * @description Rótulo do tipo da obrigatoriedade. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly tipoRotulo?: string;
             /**
              * Condições
              * @description Condição em que a obrigatoriedade QUANDO vale; nas outras o campo é nulo ou ausente.
@@ -3417,6 +3641,11 @@ export interface components {
              * @description Tipos de decisão que a fase toma e para os quais o processo escolhe motivos.
              */
             readonly tiposDeDecisao?: components["schemas"]["DocumentoDaConfiguracaoComunsTiposDeDecisao"];
+            /**
+             * Rótulos dos tipos de decisão da fase
+             * @description Rótulos dos tipos de decisão da fase, na mesma ordem dos códigos. Campo só de leitura: ignorado na importação; a referência são os códigos.
+             */
+            readonly tiposDeDecisaoRotulos?: readonly string[];
             /**
              * Regra de homologação
              * @description Como a fase homologa as inscrições. Exige o tipo HOMOLOGACAO_DAS_INSCRICOES entre os tipos de decisão da fase.
@@ -3739,10 +3968,20 @@ export interface components {
              */
             readonly carater?: DocumentoDaConfiguracaoEtapasCarater;
             /**
+             * Rótulo do caráter
+             * @description Rótulo do caráter da etapa. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly caraterRotulo?: string;
+            /**
              * Tipo de etapa
              * @description Código do tipo de etapa no catálogo de tipos de etapa.
              */
             readonly tipoEtapaCodigo?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCadastro"];
+            /**
+             * Nome do tipo de etapa
+             * @description Nome do tipo de etapa, guardado no processo. Campo só de leitura: a exportação o traz para quem lê o arquivo, e ele é ignorado na importação; a referência é o código.
+             */
+            readonly tipoEtapaNome?: string;
             /**
              * Peso
              * @description Peso da etapa na nota final, com até quatro casas decimais.
@@ -3769,6 +4008,11 @@ export interface components {
              * @enum {unknown}
              */
             readonly formaDeAvaliacao?: DocumentoDaConfiguracaoEtapasFormaDeAvaliacao;
+            /**
+             * Rótulo da forma de avaliação
+             * @description Rótulo da forma de avaliação da etapa. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly formaDeAvaliacaoRotulo?: string;
             /**
              * Regra de consolidação
              * @description Regra do catálogo que consolida as correções na avaliação humana.
@@ -3835,6 +4079,11 @@ export interface components {
              * @description Tipos de decisão que a etapa toma e para os quais o processo escolhe motivos.
              */
             readonly tiposDeDecisao?: components["schemas"]["DocumentoDaConfiguracaoComunsTiposDeDecisao"];
+            /**
+             * Rótulos dos tipos de decisão da etapa
+             * @description Rótulos dos tipos de decisão da etapa, na mesma ordem dos códigos. Campo só de leitura: ignorado na importação; a referência são os códigos.
+             */
+            readonly tiposDeDecisaoRotulos?: readonly string[];
         };
         /**
          * Item de avaliação
@@ -3895,6 +4144,11 @@ export interface components {
              * @enum {unknown}
              */
             readonly eventoInicialDoPrazo?: DocumentoDaConfiguracaoEtapasRecursoDaEtapaEventoInicialDoPrazo;
+            /**
+             * Rótulo do evento que inicia o prazo
+             * @description Rótulo do evento que inicia o prazo do recurso. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly eventoInicialDoPrazoRotulo?: string;
         } & components["schemas"]["DocumentoDaConfiguracaoComunsPropriedadesDoRecurso"];
         /**
          * Documentos exigidos
@@ -3923,6 +4177,11 @@ export interface components {
              * @enum {unknown}
              */
             readonly tipo?: DocumentoDaConfiguracaoExigenciasDataDeReferenciaDoDocumentoTipo;
+            /**
+             * Rótulo do tipo
+             * @description Rótulo do tipo da data de referência do documento. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly tipoRotulo?: string;
             /**
              * Data
              * Format: date
@@ -3998,11 +4257,10 @@ export interface components {
              */
             readonly etapaChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
             /**
-             * Finalidade do formulário
-             * @description Finalidade do formulário a que a exigência pertence, quando houver.
-             * @enum {unknown}
+             * Formulário da exigência
+             * @description Código do formulário do processo em que o candidato apresenta o documento. Toda exigência o informa: o formulário precisa existir no processo e ser o da fase da exigência.
              */
-            readonly finalidade?: DocumentoDaConfiguracaoExigenciasExigenciaFinalidade;
+            readonly formularioCodigo?: components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
             /**
              * Aplicabilidade
              * @description GERAL vale para todos os candidatos; CONDICIONAL vale só quando a condição de gatilho é verdadeira.
@@ -4010,16 +4268,30 @@ export interface components {
              */
             readonly aplicabilidade?: DocumentoDaConfiguracaoExigenciasExigenciaAplicabilidade;
             /**
+             * Rótulo da aplicabilidade
+             * @description Rótulo da aplicabilidade da exigência. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly aplicabilidadeRotulo?: string;
+            /**
              * Obrigatório
              * @description Se a entrega do documento é obrigatória.
              */
             readonly obrigatorio?: boolean;
             /**
-             * Consequência do indeferimento
-             * @description O que acontece quando o documento é indeferido.
-             * @enum {unknown}
+             * Prazo para reenvio
+             * @description Indica se será aberto prazo para reenvio.
              */
-            readonly consequenciaIndeferimento?: DocumentoDaConfiguracaoExigenciasExigenciaConsequenciaIndeferimento;
+            readonly abrePrazoParaReenvio?: boolean;
+            /**
+             * Consequência do descumprimento
+             * @description O que acontece quando o documento não é cumprido.
+             */
+            readonly consequenciaDoDescumprimento?: components["schemas"]["DocumentoDaConfiguracaoComunsConsequenciaDoDescumprimento"];
+            /**
+             * Rótulo da consequência do descumprimento
+             * @description Rótulo registrado na publicação, só de leitura e ignorado na importação.
+             */
+            readonly consequenciaDoDescumprimentoRotulo?: string;
             /**
              * Condição de gatilho
              * @description Predicado que torna a exigência aplicável, quando ela é condicional.
@@ -4062,6 +4334,11 @@ export interface components {
                  */
                 readonly formato?: string;
                 /**
+                 * Rótulo do formato
+                 * @description Rótulo do formato do arquivo do modelo. Campo só de leitura: ignorado na importação; a referência é o código.
+                 */
+                readonly formatoRotulo?: string;
+                /**
                  * Resumo do conteúdo
                  * @description Resumo SHA-256 do conteúdo do modelo, em hexadecimal.
                  */
@@ -4100,6 +4377,11 @@ export interface components {
                  */
                 readonly formato?: DocumentoDaConfiguracaoExigenciasFormatosPermitidosListaFormato;
                 /**
+                 * Rótulo do formato
+                 * @description Rótulo do formato aceito. Campo só de leitura: ignorado na importação; a referência é o código.
+                 */
+                readonly formatoRotulo?: string;
+                /**
                  * Tamanho máximo
                  * @description Tamanho máximo do arquivo nesse formato, em bytes.
                  */
@@ -4118,6 +4400,11 @@ export interface components {
              */
             readonly escolha?: DocumentoDaConfiguracaoExigenciasPrazoDeEmissaoEscolha;
             /**
+             * Rótulo da escolha
+             * @description Rótulo da escolha sobre o prazo de emissão. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly escolhaRotulo?: string;
+            /**
              * Valor
              * @description Quantidade de unidades do prazo.
              */
@@ -4129,6 +4416,11 @@ export interface components {
              */
             readonly unidade?: DocumentoDaConfiguracaoExigenciasPrazoDeEmissaoUnidade;
             /**
+             * Rótulo da unidade
+             * @description Rótulo da unidade do prazo de emissão. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly unidadeRotulo?: string;
+            /**
              * Referência
              * @description Data usada como referência.
              */
@@ -4139,6 +4431,11 @@ export interface components {
              * @enum {unknown}
              */
             readonly efeitoForaDoPrazo?: DocumentoDaConfiguracaoExigenciasPrazoDeEmissaoEfeitoForaDoPrazo;
+            /**
+             * Rótulo do efeito fora do prazo
+             * @description Rótulo do efeito na análise do documento fora do prazo. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly efeitoForaDoPrazoRotulo?: string;
         };
         /**
          * Validade do documento
@@ -4152,6 +4449,11 @@ export interface components {
              */
             readonly escolha?: DocumentoDaConfiguracaoExigenciasValidadeEscolha;
             /**
+             * Rótulo da escolha
+             * @description Rótulo da escolha sobre a validade do documento. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly escolhaRotulo?: string;
+            /**
              * Referência
              * @description Data usada como referência.
              */
@@ -4162,6 +4464,11 @@ export interface components {
              * @enum {unknown}
              */
             readonly efeitoDoVencimento?: DocumentoDaConfiguracaoExigenciasValidadeEfeitoDoVencimento;
+            /**
+             * Rótulo do efeito do vencimento
+             * @description Rótulo do efeito na análise do documento vencido. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly efeitoDoVencimentoRotulo?: string;
         };
         /**
          * Fator de Atenuação das Desigualdades de Acesso (FADA)
@@ -4242,15 +4549,19 @@ export interface components {
         };
         /**
          * Formulário do processo
-         * @description O formulário de uma finalidade: as páginas, os itens e grupos coletados e os termos de consentimento exigidos. Cada finalidade tem no máximo um formulário no processo. Um formulário comporta no máximo 200 itens, contando itens, grupos e subitens.
+         * @description O formulário do processo: as páginas, os itens e grupos coletados e os termos de consentimento exigidos. Cada código tem no máximo um formulário no processo. Um formulário comporta no máximo 200 itens, contando itens, grupos e subitens.
          */
         readonly DocumentoDaConfiguracaoFormulario: {
             /**
-             * Finalidade
-             * @description Para que serve o formulário. É a chave dele no documento.
-             * @enum {unknown}
+             * Código
+             * @description O código que identifica o formulário no processo, de até 60 caracteres. É a chave dele no documento: as exigências de documento o citam em formularioCodigo, e o código não muda depois de criado.
              */
-            readonly finalidade: DocumentoDaConfiguracaoFormularioFinalidade;
+            readonly codigo: components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
+            /**
+             * Obrigatório
+             * @description Se o formulário é obrigatório para o candidato. O formulário obrigatório ligado a uma fase que coleta inscrição é o que a inscrição responde.
+             */
+            readonly obrigatorio?: boolean;
             /**
              * Fase do formulário
              * @description Chave local da fase do cronograma a que o formulário pertence.
@@ -4261,6 +4572,16 @@ export interface components {
              * @description Título do formulário, de até 300 caracteres.
              */
             readonly titulo?: string;
+            /**
+             * Consequência da falta de envio
+             * @description Consequência para quem não envia o formulário. Ausente: a falta de envio não tem consequência própria. Só o formulário obrigatório que não coleta a inscrição a declara.
+             */
+            readonly consequenciaDaFaltaDeEnvio?: components["schemas"]["DocumentoDaConfiguracaoComunsConsequenciaDoDescumprimento"];
+            /**
+             * Rótulo da consequência da falta de envio
+             * @description Rótulo registrado na publicação. Campo só de leitura: ignorado na importação.
+             */
+            readonly consequenciaDaFaltaDeEnvioRotulo?: string;
             /**
              * Modelo de origem
              * @description Código do modelo de formulário aplicado ao processo, de até 60 caracteres. Registra só a proveniência. Campo só de leitura: ignorado na importação.
@@ -4370,11 +4691,21 @@ export interface components {
              */
             readonly tipo: DocumentoDaConfiguracaoFormularioPaginaTipo;
             /**
+             * Rótulo do tipo da página
+             * @description Rótulo do tipo da página. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly tipoRotulo?: string;
+            /**
              * Bloco de sistema
              * @description Qual bloco de sistema a página é. Só faz sentido quando o tipo é BLOCO; a coerência é regra do domínio.
              * @enum {unknown}
              */
             readonly bloco?: DocumentoDaConfiguracaoFormularioPaginaBloco;
+            /**
+             * Rótulo do bloco de sistema
+             * @description Rótulo do bloco de sistema da página. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly blocoRotulo?: string;
             /**
              * Título
              * @description Título da página, de até 300 caracteres.
@@ -4470,6 +4801,11 @@ export interface components {
              */
             readonly tipo?: string;
             /**
+             * Rótulo do tipo da condição
+             * @description Rótulo do tipo da condição de homologação. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly tipoRotulo?: string;
+            /**
              * Edição do exame
              * @description Ano da edição do exame, de 1998 a 2100.
              */
@@ -4526,6 +4862,11 @@ export interface components {
              * @enum {unknown}
              */
             readonly origemCandidatos?: DocumentoDaConfiguracaoIdentificacaoOrigemCandidatos;
+            /**
+             * Rótulo da origem dos candidatos
+             * @description Rótulo da origem dos candidatos do processo. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly origemCandidatosRotulo?: string;
             /**
              * Localidade do processo
              * @description Código IBGE do município (7 dígitos) que rege a contagem de prazos. O nome e a UF vêm do cadastro de localidades.
@@ -4688,6 +5029,12 @@ export interface components {
             readonly rotulo?: string;
         };
         /**
+         * Manifestação de interesse
+         * @description Como o edital prevê a manifestação de interesse das pessoas que continuam concorrendo depois da 1ª chamada. A declaração é um só valor: UMA_VEZ, a manifestação vale para as chamadas seguintes, e CONFIRMA_A_CADA_CHAMADA, a pessoa também confirma o interesse a cada chamada. Qualquer dos dois valores prevê a manifestação e a exige. Sem valor, a manifestação não é prevista: não existe valor para "não prevista" e declarar não é obrigatório para publicar. O prazo da manifestação não é declarado aqui: é da publicação de cada chamada. O esquema descreve só a forma; a conferência do código é do domínio.
+         * @enum {string}
+         */
+        readonly DocumentoDaConfiguracaoManifestacaoDeInteresse: DocumentoDaConfiguracaoManifestacaoDeInteresse;
+        /**
          * Motivo de decisão do processo
          * @description Um motivo do catálogo que o processo escolheu para uma fase ou etapa. A identidade é o lugar, a fase ou a etapa pela chave, mais o par tipo e código do catálogo; o descritivo é cópia do catálogo e, depois de publicado o edital, não acompanha mais as mudanças dele.
          */
@@ -4707,6 +5054,11 @@ export interface components {
              * @description Tipo de decisão a que o motivo pertence.
              */
             readonly tipoDeDecisaoCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsTipoDeDecisao"];
+            /**
+             * Rótulo do tipo de decisão
+             * @description Rótulo do tipo de decisão a que o motivo pertence. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly tipoDeDecisaoCodigoRotulo?: string;
             /** Código do motivo */
             readonly codigo: components["schemas"]["DocumentoDaConfiguracaoMotivoCodigoDoMotivo"];
             /**
@@ -4785,7 +5137,7 @@ export interface components {
         };
         /**
          * Grupo de pesos por área
-         * @description Os pesos e cortes das áreas do Enem de um grupo, congelados do catálogo. Campo só de leitura: ignorado na importação, porque é congelado do catálogo pela resolução.
+         * @description Os pesos e cortes das áreas do Enem de um grupo, lidos do cadastro na exportação do rascunho e congelados na versão publicada. Campo só de leitura: ignorado na importação, porque quem o define é a resolução.
          */
         readonly DocumentoDaConfiguracaoPesosPorArea: {
             /**
@@ -4863,7 +5215,7 @@ export interface components {
             readonly codigoIbge: string;
             /**
              * Nome do município
-             * @description Nome do município no Geo, copiado na última publicação ou retificação; vazio antes da primeira. Campo só de leitura: ignorado na importação.
+             * @description Nome do município no Geo. Na exportação do rascunho é o do momento da exportação, omitido se o Geo não responde ou se há mais municípios distintos que o limite; na versão publicada é o nome congelado. Campo só de leitura: ignorado na importação.
              */
             readonly nome?: string;
             /**
@@ -4884,6 +5236,11 @@ export interface components {
              */
             readonly forma: DocumentoDaConfiguracaoRegrasDeComprovacaoForma;
             /**
+             * Rótulo da forma de comprovação
+             * @description Rótulo da forma de comprovação da regra. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly formaRotulo?: string;
+            /**
              * Exigência documental
              * @description Chave local da exigência citada pela regra de documento.
              */
@@ -4894,11 +5251,20 @@ export interface components {
              */
             readonly quantidadeMinima?: number;
             /**
+             * Prazo para reenvio
+             * @description Indica se será aberto prazo para reenvio.
+             */
+            readonly abrePrazoParaReenvio?: boolean;
+            /**
              * Consequência
              * @description Consequência quando a regra não é cumprida.
-             * @enum {unknown}
              */
-            readonly consequencia?: DocumentoDaConfiguracaoRegrasDeComprovacaoConsequencia;
+            readonly consequenciaDoDescumprimento?: components["schemas"]["DocumentoDaConfiguracaoComunsConsequenciaDoDescumprimento"];
+            /**
+             * Rótulo da consequência do descumprimento
+             * @description Rótulo registrado na publicação, só de leitura e ignorado na importação.
+             */
+            readonly consequenciaDoDescumprimentoRotulo?: string;
             /**
              * Bases legais
              * @description Base legal da regra de comprovação.
@@ -4910,6 +5276,11 @@ export interface components {
              * @enum {unknown}
              */
             readonly criterioDeDistincao?: DocumentoDaConfiguracaoRegrasDeComprovacaoCriterioDeDistincao;
+            /**
+             * Rótulo do critério de distinção
+             * @description Rótulo do critério que distingue apresentações do mesmo documento. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly criterioDeDistincaoRotulo?: string;
             /**
              * Data de referência
              * Format: date
@@ -4943,6 +5314,11 @@ export interface components {
              * @enum {unknown}
              */
             readonly tipo: DocumentoDaConfiguracaoRestricaoDeValorTipo;
+            /**
+             * Rótulo do tipo da restrição
+             * @description Rótulo do tipo da restrição. Campo só de leitura: ignorado na importação; a referência é o código.
+             */
+            readonly tipoRotulo?: string;
             /**
              * Mínimo
              * @description Limite inferior da faixa numérica (até quatro casas decimais) ou do tamanho do texto (inteiro). Usado nos tipos FAIXA_NUMERICA e TAMANHO_TEXTO.
@@ -5033,6 +5409,11 @@ export interface components {
              * @description Fundamentos de isenção da taxa que o processo reconhece. Não se repetem.
              */
             readonly fundamentos?: readonly DocumentoDaConfiguracaoTaxaDeInscricaoFundamentos[];
+            /**
+             * Rótulos dos fundamentos de isenção
+             * @description Rótulos dos fundamentos de isenção da taxa, na mesma ordem dos códigos. Campo só de leitura: ignorado na importação; a referência são os códigos.
+             */
+            readonly fundamentosRotulos?: readonly string[];
         };
         readonly DocumentoDaInscricaoDto: {
             /** Format: uuid */
@@ -5040,7 +5421,7 @@ export interface components {
             readonly tipoDocumentoCodigo: string;
             readonly nome: string;
             readonly obrigatorio: boolean;
-            readonly finalidade: null | components["schemas"]["FinalidadeFormulario"];
+            readonly formularioCodigo: null | string;
             /** Format: uuid */
             readonly etapaId: null | string;
             readonly formatos: components["schemas"]["FormatosAceitosCertameDto"];
@@ -5083,7 +5464,7 @@ export interface components {
             readonly integrante: null | string;
             readonly obrigatorio: boolean;
             readonly situacao: string;
-            readonly consequencia: null | string;
+            readonly consequenciaDoDescumprimento: null | string;
             readonly arquivos: readonly components["schemas"]["ArquivoDoComprovanteDto"][];
         };
         readonly DocumentoEditalCertameDto: {
@@ -5115,7 +5496,7 @@ export interface components {
             readonly obrigatorio: boolean;
             /** Format: uuid */
             readonly faseId: string;
-            readonly finalidade: null | components["schemas"]["FinalidadeFormulario"];
+            readonly formularioCodigo: null | string;
             /** Format: uuid */
             readonly etapaId: null | string;
             readonly situacao: string;
@@ -5147,7 +5528,9 @@ export interface components {
             readonly rotulo: string;
         };
         /**
-         * @description - `SEM_EFEITO_SUSPENSIVO`: Sem efeito suspensivo — O recurso não suspende o processo: as fases seguintes começam nas datas do cronograma, mesmo com recurso em análise.
+         * @description - `PARA_TODOS_OS_RECURSOS`: Efeito suspensivo para todos os recursos — Todo recurso da 1ª instância tem efeito suspensivo. Enquanto o prazo para recorrer está aberto e, havendo recurso, até que todos tenham decisão e o resultado definitivo esteja publicado, ficam suspensos os atos que não podem ser desfeitos e o início das fases posteriores.
+         *     - `SEM_EFEITO_SUSPENSIVO`: Sem efeito suspensivo — O recurso da 1ª instância não suspende nenhum ato do processo enquanto é analisado.
+         *     - `UNIDADE_DECIDE_EM_CADA_RECURSO`: A unidade responsável pela fase de origem do ato recorrido decide em cada recurso — Em cada recurso da 1ª instância, essa unidade decide se concede o efeito suspensivo e registra a fundamentação. Só o recurso com a concessão suspende os atos que não podem ser desfeitos e o início das fases posteriores.
          * @enum {string}
          */
         readonly EfeitoSuspensivoCodigo: EfeitoSuspensivoCodigo;
@@ -5424,19 +5807,6 @@ export interface components {
          * @enum {string}
          */
         readonly FinalidadeDoDocumentoCodigo: FinalidadeDoDocumentoCodigo;
-        readonly FinalidadeFormulario: {
-            readonly codigo: components["schemas"]["FinalidadeFormularioCodigo"];
-            readonly rotulo: string;
-        };
-        /**
-         * @description Para que o formulário coleta respostas: cada processo tem no máximo um formulário por finalidade.
-         *
-         *     - `INSCRICAO`: Inscrição — Formulário em que o candidato se inscreve no processo seletivo.
-         *     - `ISENCAO_TAXA`: Isenção da taxa — Formulário em que o candidato pede a isenção da taxa de inscrição.
-         *     - `HABILITACAO`: Habilitação — Formulário em que o candidato comprova os requisitos para ser habilitado.
-         * @enum {string}
-         */
-        readonly FinalidadeFormularioCodigo: FinalidadeFormularioCodigo;
         readonly FormaAceite: {
             readonly codigo: components["schemas"]["FormaAceiteCodigo"];
             readonly rotulo: string;
@@ -5525,7 +5895,6 @@ export interface components {
          */
         readonly FormatoTextoCodigo: FormatoTextoCodigo;
         readonly FormularioApresentado: {
-            readonly finalidade: string;
             readonly titulo: null | string;
             readonly paginas: readonly components["schemas"]["PaginaApresentada"][];
             readonly termos: readonly components["schemas"]["TermoApresentado"][];
@@ -5535,8 +5904,10 @@ export interface components {
         };
         readonly FormularioApresentadoDoProcessoDto: {
             readonly formulario: components["schemas"]["FormularioApresentado"];
+            readonly codigo: string;
             /** Format: uuid */
             readonly faseId: null | string;
+            readonly obrigatorio: boolean;
             readonly comprovacaoDocumental: null | readonly components["schemas"]["ExigenciaDocumentalCertameDto"][];
             readonly dependenciasDaAvaliacao: null | components["schemas"]["DependenciasDaAvaliacaoDto"];
             readonly dependenciasDoFator: null | components["schemas"]["DependenciasDaAvaliacaoDto"];
@@ -5554,14 +5925,16 @@ export interface components {
             readonly aceites: readonly components["schemas"]["AceiteDeTermoInput"][];
         };
         readonly FormularioDto: {
-            readonly finalidade: components["schemas"]["FinalidadeFormulario"];
+            readonly codigo: string;
             /** Format: uuid */
             readonly faseId: null | string;
+            readonly obrigatorio: boolean;
             readonly titulo: null | string;
             readonly modeloOrigem: null | components["schemas"]["ModeloDeOrigemDto"];
             readonly paginas: readonly components["schemas"]["PaginaDoFormularioDto"][];
             readonly coleta: components["schemas"]["ColetaDoFormularioDto"];
             readonly termos: readonly components["schemas"]["TermoExigidoDto"][];
+            readonly consequenciaDaFaltaDeEnvio?: null | components["schemas"]["ConsequenciaDoDescumprimento"];
         };
         readonly FormularioNoComprovanteDto: {
             readonly secoes: readonly components["schemas"]["SecaoDoComprovanteDto"][];
@@ -5576,7 +5949,7 @@ export interface components {
             readonly agregados: readonly components["schemas"]["AgregadoPortavel"][];
         };
         readonly FormularioSimuladoDto: {
-            readonly finalidade: components["schemas"]["FinalidadeFormulario"];
+            readonly codigo: string;
             readonly itens: readonly components["schemas"]["ItemSimuladoDto"][];
             readonly grupos: readonly components["schemas"]["GrupoSimuladoDto"][];
             readonly termos: readonly components["schemas"]["TermoSimuladoDto"][];
@@ -5742,21 +6115,29 @@ export interface components {
         };
         readonly IndeferimentoDoDocumentoDto: {
             readonly obrigatorio: boolean;
-            readonly consequencia: null | components["schemas"]["ConsequenciaDoIndeferimento"];
+            readonly consequenciaDoDescumprimento: null | components["schemas"]["ConsequenciaDoDescumprimento"];
             readonly basesLegais: readonly components["schemas"]["BaseLegalDto"][];
+            /** @default false */
+            readonly abrePrazoParaReenvio: boolean;
         };
         readonly IndeferimentoDoDocumentoInput: {
             readonly obrigatorio: boolean;
-            readonly consequencia: null | components["schemas"]["ConsequenciaDoIndeferimentoCodigo"];
+            readonly consequenciaDoDescumprimento: null | components["schemas"]["ConsequenciaDoDescumprimentoCodigo"];
             readonly basesLegais: null | readonly components["schemas"]["BaseLegalInput"][];
+            /** @default false */
+            readonly abrePrazoParaReenvio: boolean;
         };
         readonly IndeferimentoDoGrupoDto: {
-            readonly consequencia: null | components["schemas"]["ConsequenciaDoIndeferimento"];
+            readonly consequenciaDoDescumprimento: null | components["schemas"]["ConsequenciaDoDescumprimento"];
             readonly basesLegais: readonly components["schemas"]["BaseLegalDto"][];
+            /** @default false */
+            readonly abrePrazoParaReenvio: boolean;
         };
         readonly IndeferimentoDoGrupoInput: {
-            readonly consequencia?: null | components["schemas"]["ConsequenciaDoIndeferimentoCodigo"];
+            readonly consequenciaDoDescumprimento?: null | components["schemas"]["ConsequenciaDoDescumprimentoCodigo"];
             readonly basesLegais?: null | readonly components["schemas"]["BaseLegalInput"][];
+            /** @default false */
+            readonly abrePrazoParaReenvio: boolean;
         };
         readonly IndicadorDoProcessoDto: {
             readonly codigo: components["schemas"]["CodigoIndicadorDoProcessoCodigo"];
@@ -6047,6 +6428,21 @@ export interface components {
             /** Format: uuid */
             readonly etapaId: null | string;
         };
+        readonly ManifestacaoDeInteresse: {
+            readonly codigo: components["schemas"]["ManifestacaoDeInteresseCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `UMA_VEZ`: Manifesta interesse uma só vez — A pessoa manifesta interesse uma vez depois da 1ª chamada, e a manifestação vale para as chamadas seguintes; quem volta a aguardar não manifesta de novo.
+         *     - `CONFIRMA_A_CADA_CHAMADA`: Confirma o interesse a cada chamada — A pessoa manifesta interesse depois da 1ª chamada e confirma o interesse a cada chamada seguinte.
+         * @enum {string}
+         */
+        readonly ManifestacaoDeInteresseCodigo: ManifestacaoDeInteresseCodigo;
+        readonly ManifestacaoDeInteresseComDescricao: {
+            readonly codigo: components["schemas"]["ManifestacaoDeInteresseCodigo"];
+            readonly rotulo: string;
+            readonly descricao: string;
+        };
         readonly MinhaInscricaoDto: {
             /** Format: uuid */
             readonly inscricaoId: string;
@@ -6152,14 +6548,14 @@ export interface components {
             readonly faseId: string;
             /** Format: uuid */
             readonly etapaId: null | string;
-            readonly finalidade: null | components["schemas"]["FinalidadeFormulario"];
+            readonly formularioCodigo: null | string;
         };
         readonly MomentoDaExigenciaInput: {
             /** Format: uuid */
             readonly faseId: string;
             /** Format: uuid */
             readonly etapaId?: null | string;
-            readonly finalidade?: null | components["schemas"]["FinalidadeFormularioCodigo"];
+            readonly formularioCodigo?: null | string;
         };
         readonly MotivoDasInscricoesFechadas: {
             readonly codigo: components["schemas"]["MotivoDasInscricoesFechadasCodigo"];
@@ -6211,6 +6607,11 @@ export interface components {
         readonly MunicipioDeProvaInformado: {
             readonly codigoIbge: null | string;
             readonly uf: null | string;
+        };
+        readonly MunicipioDoFadaDto: {
+            readonly codigoIbge: string;
+            readonly nome: string;
+            readonly uf: string;
         };
         readonly NaturezaLegalModalidade: {
             readonly codigo: components["schemas"]["NaturezaLegalModalidadeCodigo"];
@@ -6436,7 +6837,7 @@ export interface components {
             readonly apresentacao: components["schemas"]["ApresentacaoDaPaginaDto"];
         };
         readonly PaginaConcluidaInput: {
-            readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
+            readonly formularioCodigo: string;
             readonly pagina: string;
         };
         readonly PaginaDoFormularioDto: {
@@ -6534,6 +6935,21 @@ export interface components {
             readonly parte: string;
             readonly codigo: string;
             readonly motivo: string;
+        };
+        readonly ParticipacaoDaReserva: {
+            readonly codigo: components["schemas"]["ParticipacaoDaReservaCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `ANTECIPA_A_HABILITACAO`: A reserva só antecipa a habilitação — A pessoa da reserva sai da chamada com a documentação deferida, sem ser homologada como apta à matrícula; a vaga que sobrar segue para a chamada seguinte.
+         *     - `ASSUME_NA_MESMA_CHAMADA`: A reserva assume na mesma chamada — A pessoa da reserva homologada como habilitada ocupa a vaga na própria chamada.
+         * @enum {string}
+         */
+        readonly ParticipacaoDaReservaCodigo: ParticipacaoDaReservaCodigo;
+        readonly ParticipacaoDaReservaComDescricao: {
+            readonly codigo: components["schemas"]["ParticipacaoDaReservaCodigo"];
+            readonly rotulo: string;
+            readonly descricao: string;
         };
         readonly PendenciaDaAvaliacaoDto: {
             readonly fatoCodigo: string;
@@ -6709,10 +7125,12 @@ export interface components {
             readonly etapas: readonly components["schemas"]["EtapaProcessoDto"][];
             readonly atendimentoEspecializado: null | components["schemas"]["AtendimentoEspecializadoDto"];
             readonly distribuicaoVagas: readonly components["schemas"]["ConfiguracaoDistribuicaoVagasDto"][];
-            readonly bonusRegional: null | components["schemas"]["ConfiguracaoBonusRegionalDto"];
-            readonly aplicaBonusRegional: null | boolean;
+            readonly fada: null | components["schemas"]["ConfiguracaoDoFadaDto"];
+            readonly aplicaFada: null | boolean;
             readonly opcoesDeCurso: null | components["schemas"]["OpcoesDeCursoDto"];
             readonly provaPresencial: null | components["schemas"]["ProvaPresencialDto"];
+            readonly cadastroDeReserva: readonly components["schemas"]["CadastroDeReservaDaChamadaDto"][];
+            readonly manifestacaoDeInteresse: null | components["schemas"]["ManifestacaoDeInteresse"];
             readonly cascata: null | components["schemas"]["ConfiguracaoCascataRemanejamentoDto"];
             readonly criteriosDesempate: readonly components["schemas"]["CriterioDesempateDto"][];
             readonly classificacao: null | components["schemas"]["ConfiguracaoClassificacaoDto"];
@@ -7344,6 +7762,7 @@ export interface components {
             readonly fundamentos: readonly components["schemas"]["FundamentoIsencao"][];
         };
         readonly TermoAceitoDoComprovanteDto: {
+            readonly formularioCodigo: string;
             readonly codigo: string;
             readonly nome: string;
             /** Format: uuid */
@@ -7977,9 +8396,9 @@ export interface operations {
         readonly parameters: {
             readonly query?: {
                 readonly situacao?: components["schemas"]["SituacaoDoCertameCodigo"];
-                /** @description Código da modalidade que o certame precisa ofertar. Sem o parâmetro, não recorta. */
+                /** @description Código da modalidade que o certame precisa ofertar. Sem o parâmetro, não filtra. */
                 readonly modalidade?: string;
-                /** @description Texto pesquisado no título do certame e no número do edital. Insensível a caixa e a acentuação. */
+                /** @description Texto pesquisado no título do certame e no número do edital. Insensível a caixa e a acentuação. Até 200 caracteres, sem contar os espaços das pontas. */
                 readonly q?: string;
                 /** @description Campos de ordenação separados por vírgula, na ordem de prioridade; '-' prefixa o campo decrescente. Exemplo: sort=inscricoesAte,-nome. Campos aceitos: inscricoesAte, inscricoesDe, nome, divulgadoEm. Sem o parâmetro, vale a ordem por urgência: quem ainda não encerrou primeiro, do prazo mais próximo ao mais distante, e os encerrados depois. */
                 readonly sort?: string;
@@ -8004,7 +8423,7 @@ export interface operations {
                     readonly Link?: string;
                     /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
                     readonly "X-Page-Size"?: number;
-                    /** @description Quantos certames divulgados ainda não abriram a janela de inscrição, no instante da consulta. Presente só quando incluir_contadores=true. */
+                    /** @description Quantos certames divulgados ainda não abriram o período de inscrição, no instante da consulta. Presente só quando incluir_contadores=true. */
                     readonly "X-Certames-Em-Breve"?: number;
                     /** @description Quantos certames divulgados ainda recebem inscrição sem estar no limiar final, no instante da consulta. Presente só quando incluir_contadores=true. */
                     readonly "X-Certames-Inscricoes-Abertas"?: number;
@@ -8012,7 +8431,7 @@ export interface operations {
                     readonly "X-Certames-Ultimos-Dias"?: number;
                     /** @description Quantos certames divulgados já encerraram, no instante da consulta. Presente só quando incluir_contadores=true. */
                     readonly "X-Certames-Encerrados"?: number;
-                    /** @description Revisão do recorte percorrido: marcador opaco dos certames que a consulta seleciona (situação, modalidade e busca) e do que cada um tem de ordenável e exibível — a versão divulgada e a situação da janela de inscrição —, no instante em que a travessia começou. Não depende da ordenação pedida, que o cursor já fixa. É o mesmo em todas as páginas da mesma travessia e muda quando uma publicação, uma retificação ou a passagem do tempo altera esse conjunto. Quem compõe a vitrine compara o valor entre páginas para saber que precisa recomeçar. */
+                    /** @description Revisão da consulta percorrida: marcador opaco dos certames que a consulta seleciona (situação, modalidade e busca) e do que cada um tem de ordenável e exibível — a versão divulgada e a situação do período de inscrição —, no instante em que a leitura das páginas começou. Não depende da ordenação pedida, que o cursor já fixa. É o mesmo em todas as páginas da mesma sequência de páginas e muda quando uma publicação, uma retificação ou a passagem do tempo altera esse conjunto. Quem monta a lista compara o valor entre páginas para saber que precisa recomeçar. */
                     readonly "X-Certames-Revisao"?: string;
                     readonly [name: string]: unknown;
                 };
@@ -8047,7 +8466,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Texto pesquisado com mais de 200 caracteres, sem contar os espaços das pontas (uniplus.consulta.busca_muito_longa), ou outro parâmetro de consulta inválido. */
             readonly 422: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -8797,7 +9216,7 @@ export interface operations {
             readonly header?: never;
             readonly path: {
                 readonly id: string;
-                readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
+                readonly codigo: string;
             };
             readonly cookie?: never;
         };
@@ -8847,7 +9266,7 @@ export interface operations {
             readonly header?: never;
             readonly path: {
                 readonly id: string;
-                readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
+                readonly codigo: string;
             };
             readonly cookie?: never;
         };
@@ -8918,7 +9337,7 @@ export interface operations {
             };
             readonly path: {
                 readonly id: string;
-                readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
+                readonly codigo: string;
             };
             readonly cookie?: never;
         };
@@ -9017,7 +9436,7 @@ export interface operations {
             readonly header?: never;
             readonly path: {
                 readonly id: string;
-                readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
+                readonly codigo: string;
             };
             readonly cookie?: never;
         };
@@ -9086,7 +9505,7 @@ export interface operations {
             };
             readonly path: {
                 readonly id: string;
-                readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
+                readonly codigo: string;
             };
             readonly cookie?: never;
         };
@@ -9188,7 +9607,7 @@ export interface operations {
             };
             readonly path: {
                 readonly id: string;
-                readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
+                readonly codigo: string;
             };
             readonly cookie?: never;
         };
@@ -9763,7 +10182,7 @@ export interface operations {
             };
         };
     };
-    readonly ObterFormularioDaInscricao: {
+    readonly ObterFormulariosDaInscricao: {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -9780,7 +10199,7 @@ export interface operations {
                     readonly [name: string]: unknown;
                 };
                 content: {
-                    readonly "application/vnd.uniplus.formulario-inscricao.v1+json": components["schemas"]["FormularioApresentadoDoProcessoDto"];
+                    readonly "application/vnd.uniplus.formularios-inscricao.v1+json": readonly components["schemas"]["FormularioApresentadoDoProcessoDto"][];
                 };
             };
             /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
@@ -13454,9 +13873,9 @@ export interface operations {
         };
         readonly requestBody: {
             readonly content: {
-                readonly "application/json": components["schemas"]["DefinirBonusRegionalRequest"];
-                readonly "text/json": components["schemas"]["DefinirBonusRegionalRequest"];
-                readonly "application/*+json": components["schemas"]["DefinirBonusRegionalRequest"];
+                readonly "application/json": components["schemas"]["DefinirFadaRequest"];
+                readonly "text/json": components["schemas"]["DefinirFadaRequest"];
+                readonly "application/*+json": components["schemas"]["DefinirFadaRequest"];
             };
         };
         readonly responses: {
@@ -13632,6 +14051,208 @@ export interface operations {
                 };
             };
             /** @description Service Unavailable */
+            readonly 503: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly DefinirCadastroDeReserva: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                readonly "Idempotency-Key": string;
+            };
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["DefinirCadastroDeReservaRequest"];
+                readonly "text/json": components["schemas"]["DefinirCadastroDeReservaRequest"];
+                readonly "application/*+json": components["schemas"]["DefinirCadastroDeReservaRequest"];
+            };
+        };
+        readonly responses: {
+            /** @description No Content */
+            readonly 204: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            readonly 413: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Outra operação retém o processo além do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave. */
+            readonly 503: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly DefinirManifestacaoDeInteresse: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                readonly "Idempotency-Key": string;
+            };
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["DefinirManifestacaoDeInteresseRequest"];
+                readonly "text/json": components["schemas"]["DefinirManifestacaoDeInteresseRequest"];
+                readonly "application/*+json": components["schemas"]["DefinirManifestacaoDeInteresseRequest"];
+            };
+        };
+        readonly responses: {
+            /** @description No Content */
+            readonly 204: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            readonly 413: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Outra operação retém o processo além do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave. */
             readonly 503: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -16530,7 +17151,7 @@ export interface operations {
             };
         };
     };
-    readonly ListarConsequenciasDoIndeferimento: {
+    readonly ListarConsequenciasDoDescumprimento: {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -16545,7 +17166,65 @@ export interface operations {
                     readonly [name: string]: unknown;
                 };
                 content: {
-                    readonly "application/vnd.uniplus.consequencia-indeferimento.v1+json": readonly components["schemas"]["ConsequenciaDoIndeferimento"][];
+                    readonly "application/vnd.uniplus.consequencias-do-descumprimento.v1+json": readonly components["schemas"]["ConsequenciaDoDescumprimento"][];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ListarParticipacoesDaReserva: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.participacao-da-reserva.v1+json": readonly components["schemas"]["ParticipacaoDaReservaComDescricao"][];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ListarManifestacoesDeInteresse: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.manifestacao-de-interesse.v1+json": readonly components["schemas"]["ManifestacaoDeInteresseComDescricao"][];
                 };
             };
             /** @description Not Acceptable */
@@ -16625,11 +17304,10 @@ export enum ComposicaoVagasModalidadeCodigo {
     RETIRADA_DE_OUTRA_MODALIDADE = "RETIRADA_DE_OUTRA_MODALIDADE",
     SUPLEMENTAR_AO_TOTAL = "SUPLEMENTAR_AO_TOTAL"
 }
-export enum ConsequenciaDoIndeferimentoCodigo {
-    ELIMINA = "ELIMINA",
-    RECLASSIFICA_AC = "RECLASSIFICA_AC",
-    REMOVE_VANTAGEM = "REMOVE_VANTAGEM",
-    ABRE_PRAZO_PARA_REENVIO = "ABRE_PRAZO_PARA_REENVIO"
+export enum ConsequenciaDoDescumprimentoCodigo {
+    ELIMINA_DO_PROCESSO = "ELIMINA_DO_PROCESSO",
+    RETIRA_A_MODALIDADE = "RETIRA_A_MODALIDADE",
+    RETIRA_O_ACRESCIMO = "RETIRA_O_ACRESCIMO"
 }
 export enum CriterioDeDistincaoDasApresentacoesCodigo {
     COMPETENCIA_MENSAL = "COMPETENCIA_MENSAL",
@@ -16676,6 +17354,10 @@ export enum DocumentoDaConfiguracaoBancasRegraDeDeliberacaoSemUnanimidade {
     DESFAVORAVEL = "DESFAVORAVEL",
     NOVA_VOTACAO = "NOVA_VOTACAO"
 }
+export enum DocumentoDaConfiguracaoCadastroDeReservaParticipacaoDaReserva {
+    ANTECIPA_A_HABILITACAO = "ANTECIPA_A_HABILITACAO",
+    ASSUME_NA_MESMA_CHAMADA = "ASSUME_NA_MESMA_CHAMADA"
+}
 export enum DocumentoDaConfiguracaoColetaReferenciaTemporalDosDadosTipo {
     FIM_INSCRICAO = "FIM_INSCRICAO",
     INICIO_FASE = "INICIO_FASE",
@@ -16689,6 +17371,11 @@ export enum DocumentoDaConfiguracaoComunsAlvoDoProcedimentoDeRecursoAreaDoEnem {
     LINGUAGENS = "LINGUAGENS",
     MATEMATICA = "MATEMATICA"
 }
+export enum DocumentoDaConfiguracaoComunsConsequenciaDoDescumprimento {
+    ELIMINA_DO_PROCESSO = "ELIMINA_DO_PROCESSO",
+    RETIRA_A_MODALIDADE = "RETIRA_A_MODALIDADE",
+    RETIRA_O_ACRESCIMO = "RETIRA_O_ACRESCIMO"
+}
 export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoUnidade {
     HORAS = "HORAS",
     DIAS = "DIAS",
@@ -16700,7 +17387,9 @@ export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoSegundaInstan
     DIAS_UTEIS = "DIAS_UTEIS"
 }
 export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoEfeitoSuspensivo {
-    SEM_EFEITO_SUSPENSIVO = "SEM_EFEITO_SUSPENSIVO"
+    PARA_TODOS_OS_RECURSOS = "PARA_TODOS_OS_RECURSOS",
+    SEM_EFEITO_SUSPENSIVO = "SEM_EFEITO_SUSPENSIVO",
+    UNIDADE_DECIDE_EM_CADA_RECURSO = "UNIDADE_DECIDE_EM_CADA_RECURSO"
 }
 export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoGuardaDaVaga {
     ATE_O_RESULTADO_DEFINITIVO = "ATE_O_RESULTADO_DEFINITIVO",
@@ -16780,20 +17469,9 @@ export enum DocumentoDaConfiguracaoExigenciasExigenciaClassificacaoProtecao {
     IDENTIFICADOR = "IDENTIFICADOR",
     SENSIVEL = "SENSIVEL"
 }
-export enum DocumentoDaConfiguracaoExigenciasExigenciaFinalidade {
-    INSCRICAO = "INSCRICAO",
-    ISENCAO_TAXA = "ISENCAO_TAXA",
-    HABILITACAO = "HABILITACAO"
-}
 export enum DocumentoDaConfiguracaoExigenciasExigenciaAplicabilidade {
     GERAL = "GERAL",
     CONDICIONAL = "CONDICIONAL"
-}
-export enum DocumentoDaConfiguracaoExigenciasExigenciaConsequenciaIndeferimento {
-    ELIMINA = "ELIMINA",
-    RECLASSIFICA_AC = "RECLASSIFICA_AC",
-    REMOVE_VANTAGEM = "REMOVE_VANTAGEM",
-    ABRE_PRAZO_PARA_REENVIO = "ABRE_PRAZO_PARA_REENVIO"
 }
 export enum DocumentoDaConfiguracaoExigenciasFormatosPermitidosListaFormato {
     PDF = "PDF",
@@ -16821,11 +17499,6 @@ export enum DocumentoDaConfiguracaoExigenciasValidadeEfeitoDoVencimento {
     RECUSAR_DOCUMENTO = "RECUSAR_DOCUMENTO",
     ACEITAR_COM_AVISO = "ACEITAR_COM_AVISO"
 }
-export enum DocumentoDaConfiguracaoFormularioFinalidade {
-    INSCRICAO = "INSCRICAO",
-    ISENCAO_TAXA = "ISENCAO_TAXA",
-    HABILITACAO = "HABILITACAO"
-}
 export enum DocumentoDaConfiguracaoFormularioPaginaTipo {
     SECAO = "SECAO",
     BLOCO = "BLOCO"
@@ -16839,6 +17512,10 @@ export enum DocumentoDaConfiguracaoIdentificacaoOrigemCandidatos {
     INSCRICAO_PROPRIA = "INSCRICAO_PROPRIA",
     IMPORTACAO_EXTERNA = "IMPORTACAO_EXTERNA"
 }
+export enum DocumentoDaConfiguracaoManifestacaoDeInteresse {
+    UMA_VEZ = "UMA_VEZ",
+    CONFIRMA_A_CADA_CHAMADA = "CONFIRMA_A_CADA_CHAMADA"
+}
 export enum DocumentoDaConfiguracaoMotivoSentido {
     FAVORAVEL = "FAVORAVEL",
     DESFAVORAVEL = "DESFAVORAVEL"
@@ -16847,12 +17524,6 @@ export enum DocumentoDaConfiguracaoRegrasDeComprovacaoForma {
     DOCUMENTO = "DOCUMENTO",
     TODOS_OS_ITENS = "TODOS_OS_ITENS",
     QUANTIDADE_MINIMA_DE_ITENS = "QUANTIDADE_MINIMA_DE_ITENS"
-}
-export enum DocumentoDaConfiguracaoRegrasDeComprovacaoConsequencia {
-    ELIMINA = "ELIMINA",
-    RECLASSIFICA_AC = "RECLASSIFICA_AC",
-    REMOVE_VANTAGEM = "REMOVE_VANTAGEM",
-    ABRE_PRAZO_PARA_REENVIO = "ABRE_PRAZO_PARA_REENVIO"
 }
 export enum DocumentoDaConfiguracaoRegrasDeComprovacaoCriterioDeDistincao {
     COMPETENCIA_MENSAL = "COMPETENCIA_MENSAL",
@@ -16881,7 +17552,9 @@ export enum EfeitoNaAnaliseDoDocumentoCodigo {
     ACEITAR_COM_AVISO = "ACEITAR_COM_AVISO"
 }
 export enum EfeitoSuspensivoCodigo {
-    SEM_EFEITO_SUSPENSIVO = "SEM_EFEITO_SUSPENSIVO"
+    PARA_TODOS_OS_RECURSOS = "PARA_TODOS_OS_RECURSOS",
+    SEM_EFEITO_SUSPENSIVO = "SEM_EFEITO_SUSPENSIVO",
+    UNIDADE_DECIDE_EM_CADA_RECURSO = "UNIDADE_DECIDE_EM_CADA_RECURSO"
 }
 export enum EncerramentoDaVotacaoCodigo {
     TODOS_OS_TITULARES = "TODOS_OS_TITULARES",
@@ -16910,11 +17583,6 @@ export enum FinalidadeDoDocumentoCodigo {
     DOCUMENTO_DO_EDITAL = "DOCUMENTO_DO_EDITAL",
     ANEXO_DO_EDITAL = "ANEXO_DO_EDITAL",
     DOCUMENTO_DE_ATO = "DOCUMENTO_DE_ATO"
-}
-export enum FinalidadeFormularioCodigo {
-    INSCRICAO = "INSCRICAO",
-    ISENCAO_TAXA = "ISENCAO_TAXA",
-    HABILITACAO = "HABILITACAO"
 }
 export enum FormaAceiteCodigo {
     A_DEFINIR = "A_DEFINIR",
@@ -16971,6 +17639,10 @@ export enum ImpedimentoDoProdutoCodigo {
     PRELIMINAR_NAO_PUBLICADO = "PRELIMINAR_NAO_PUBLICADO",
     TIPO_DE_ATO_NAO_VIGENTE = "TIPO_DE_ATO_NAO_VIGENTE"
 }
+export enum ManifestacaoDeInteresseCodigo {
+    UMA_VEZ = "UMA_VEZ",
+    CONFIRMA_A_CADA_CHAMADA = "CONFIRMA_A_CADA_CHAMADA"
+}
 export enum ModoDeDeliberacaoCodigo {
     COLEGIADA_COM_VOTACAO = "COLEGIADA_COM_VOTACAO",
     ATO_INDIVIDUAL = "ATO_INDIVIDUAL"
@@ -17022,6 +17694,10 @@ export enum ParametrosRegraAjusteDistribuicaoParametrosReduzirDe$tipo {
 }
 export enum ParametrosRegraAjusteDistribuicaoParametrosReduzirProporcionalEm$tipo {
     reduzirProporcionalEm = "reduzirProporcionalEm"
+}
+export enum ParticipacaoDaReservaCodigo {
+    ANTECIPA_A_HABILITACAO = "ANTECIPA_A_HABILITACAO",
+    ASSUME_NA_MESMA_CHAMADA = "ASSUME_NA_MESMA_CHAMADA"
 }
 export enum PredicadoObrigatoriedadeAtendimentoDisponivel$tipo {
     atendimentoDisponivel = "atendimentoDisponivel"

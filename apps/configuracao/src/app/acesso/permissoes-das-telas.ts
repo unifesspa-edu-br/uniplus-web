@@ -81,7 +81,7 @@ export const PERMISSOES_DAS_TELAS = {
     configuracao.protecaoDoCatalogoConsultar,
     configuracao.protecaoDoCatalogoManifestar,
   ],
-  'base-legal-bonus-regional': [configuracao.baseLegalBonusRegionalManter],
+  'bases-legais-fada': [configuracao.baseLegalDoFadaManter],
   'condicoes-atendimento': [configuracao.condicoesAtendimentoManter],
   'recursos-acessibilidade': [configuracao.recursosAcessibilidadeManter],
   'tipos-deficiencia': [configuracao.tiposDeficienciaManter],

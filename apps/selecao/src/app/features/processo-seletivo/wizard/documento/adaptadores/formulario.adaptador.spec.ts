@@ -1,5 +1,4 @@
 import {
-  FinalidadeDoFormulario,
   TipoDaReferenciaTemporal,
   type DocumentoDaConfiguracao,
 } from '@uniplus/shared-data/selecao';
@@ -8,12 +7,12 @@ import { describe, expect, it } from 'vitest';
 import { documentoSemNada, exemploDoContrato, NOMES_DOS_EXEMPLOS } from '../exemplos.testing';
 import { edicaoDoPasso, valoresDoFormulario } from './formulario.adaptador';
 
-const INSCRICAO = FinalidadeDoFormulario.INSCRICAO;
+const INSCRICAO = 'INSCRICAO';
 
 function idaEVolta(documento: DocumentoDaConfiguracao): DocumentoDaConfiguracao {
-  return Object.values(FinalidadeDoFormulario).reduce((atual, finalidade) => {
-    const valores = valoresDoFormulario(atual, finalidade);
-    return valores === undefined ? atual : edicaoDoPasso(finalidade, valores)(atual);
+  return (documento.formularios ?? []).reduce((atual, { codigo }) => {
+    const valores = valoresDoFormulario(atual, codigo);
+    return valores === undefined ? atual : edicaoDoPasso(codigo, valores)(atual);
   }, documento);
 }
 
@@ -25,7 +24,7 @@ describe('adaptador do passo Formulários', () => {
     expect(idaEVolta(documento)).toBe(documento);
   });
 
-  it('lê o cabeçalho e a referência temporal da finalidade', () => {
+  it('lê o cabeçalho e a referência temporal do formulário', () => {
     const documento = {
       ...exemploDoContrato('inscricao-pelo-sistema'),
       coleta: { referenciaTemporalDosDados: { tipo: TipoDaReferenciaTemporal.FIM_INSCRICAO } },

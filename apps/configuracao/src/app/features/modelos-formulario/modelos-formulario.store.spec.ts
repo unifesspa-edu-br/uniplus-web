@@ -1,4 +1,4 @@
-import { FINALIDADE_INSCRICAO } from './vocabulario-do-modelo.testing';
+import { DECLARACAO_DE_INSCRICAO } from './vocabulario-do-modelo.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
@@ -16,7 +16,7 @@ const URL_DOS_TIPOS = `${BASE}/api/configuracao/tipos-processo`;
 const modelo = (codigo: string, nome: string): ModeloFormularioView => ({
   id: codigo,
   codigo,
-  finalidade: FINALIDADE_INSCRICAO,
+  declaracao: DECLARACAO_DE_INSCRICAO,
   ativo: true,
   descritivo: { nome, descricao: null, tipoProcessoCodigo: null },
   conteudo: {
@@ -100,13 +100,13 @@ describe('ModelosFormularioStore', () => {
   it('cada filtro vai à consulta e volta à primeira página', async () => {
     await iniciar();
 
-    store.filtroFinalidade.set('INSCRICAO');
+    store.filtroFaseDeInscricao.set('true');
     store.filtroSituacao.set('false');
     store.filtroTipo.set('V');
     await propagar();
 
     const consulta = lista();
-    expect(consulta.request.params.get('finalidade')).toBe('INSCRICAO');
+    expect(consulta.request.params.get('serveAFaseDeInscricao')).toBe('true');
     expect(consulta.request.params.get('ativo')).toBe('false');
     expect(consulta.request.params.get('tipoProcesso')).toBe('V');
     consulta.flush([]);

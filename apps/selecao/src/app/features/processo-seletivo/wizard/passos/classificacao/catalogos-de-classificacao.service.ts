@@ -17,7 +17,7 @@ const TIPO_REGRA_CALCULO = TipoRegraCodigo.REGRA_CALCULO;
 const TIPO_REGRA_ARREDONDAMENTO = TipoRegraCodigo.REGRA_ARREDONDAMENTO;
 const TIPO_REGRA_ORDEM_ALOCACAO = TipoRegraCodigo.REGRA_ORDEM_ALOCACAO;
 const TIPO_REGRA_ELIMINACAO = TipoRegraCodigo.REGRA_ELIMINACAO;
-const TIPO_REGRA_BONUS = TipoRegraCodigo.REGRA_FADA;
+const TIPO_REGRA_FADA = TipoRegraCodigo.REGRA_FADA;
 const TIPO_CRITERIO_DESEMPATE = TipoRegraCodigo.CRITERIO_DESEMPATE;
 
 const COMPARADOR_DE_RESOLUCAO = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
@@ -30,7 +30,7 @@ function lerCatalogos(
     arredondamento: lerRegras(TIPO_REGRA_ARREDONDAMENTO),
     ordemAlocacao: lerRegras(TIPO_REGRA_ORDEM_ALOCACAO),
     eliminacao: lerRegras(TIPO_REGRA_ELIMINACAO),
-    bonus: lerRegras(TIPO_REGRA_BONUS),
+    fada: lerRegras(TIPO_REGRA_FADA),
     desempate: lerRegras(TIPO_CRITERIO_DESEMPATE),
   });
 }
@@ -52,7 +52,7 @@ function catalogosValidos(catalogos: CatalogosLidos): catalogos is CatalogosVali
     isApiOk(catalogos.arredondamento) &&
     isApiOk(catalogos.ordemAlocacao) &&
     isApiOk(catalogos.eliminacao) &&
-    isApiOk(catalogos.bonus) &&
+    isApiOk(catalogos.fada) &&
     isApiOk(catalogos.desempate)
   );
 }
@@ -85,7 +85,7 @@ export class CatalogosDeClassificacao {
   readonly regrasArredondamento = signal<readonly RegraCatalogoDto[]>([]);
   readonly regrasOrdemAlocacao = signal<readonly RegraCatalogoDto[]>([]);
   readonly regrasEliminacao = signal<readonly RegraCatalogoDto[]>([]);
-  readonly regrasBonus = signal<readonly RegraCatalogoDto[]>([]);
+  readonly regrasFada = signal<readonly RegraCatalogoDto[]>([]);
   readonly criteriosDesempate = signal<readonly RegraCatalogoDto[]>([]);
 
   readonly carregando = signal(true);
@@ -164,12 +164,12 @@ export class CatalogosDeClassificacao {
       this.anunciarErro();
       return;
     }
-    const { calculo, arredondamento, ordemAlocacao, eliminacao, bonus, desempate } = resultados;
+    const { calculo, arredondamento, ordemAlocacao, eliminacao, fada, desempate } = resultados;
     this.regrasCalculo.set(calculo.data);
     this.regrasArredondamento.set(arredondamento.data);
     this.regrasOrdemAlocacao.set(ordemAlocacao.data);
     this.regrasEliminacao.set(eliminacao.data);
-    this.regrasBonus.set(bonus.data);
+    this.regrasFada.set(fada.data);
     this.criteriosDesempate.set(desempate.data);
     this.carregando.set(false);
   }
@@ -319,7 +319,7 @@ export class CatalogosDeClassificacao {
     // tela precisa de um caminho de volta que não seja recarregar a página.
     this.buscaIniciada = false;
     this.erro.set(
-      'Não foi possível carregar os catálogos de regras de classificação, bônus e desempate.',
+      'Não foi possível carregar os catálogos de regras de classificação, Fator de Atenuação e desempate.',
     );
     this.carregando.set(false);
   }

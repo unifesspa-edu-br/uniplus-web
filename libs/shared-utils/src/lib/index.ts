@@ -43,9 +43,6 @@ export {
 export {
   ABRANGENCIAS_ESCOLHIVEIS,
   ABRANGENCIA_PADRAO,
-  CONSEQUENCIA_REENVIO,
-  CONSEQUENCIA_PADRAO,
-  consequenciasDaFase,
   SITUACAO_BASE_LEGAL_ESCOLHIVEIS,
   SITUACAO_BASE_LEGAL_RESOLVIDO,
 } from './utils/documento-exigido.vocabulario';

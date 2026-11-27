@@ -39,7 +39,6 @@ import { limitesDoArquivo, type RestricaoDeArquivo } from './arquivo-da-exigenci
 export const APLICABILIDADE_GERAL = 'GERAL';
 export const APLICABILIDADE_CONDICIONAL = 'CONDICIONAL';
 export const FATO_MODALIDADE = 'MODALIDADE';
-export const CONSEQUENCIA_REENVIO = 'ABRE_PRAZO_PARA_REENVIO';
 
 /**
  * Uma exigência recém-declarada, antes de o operador dizer qualquer coisa sobre ela. Nasce
@@ -58,7 +57,7 @@ export function exigenciaNova(
     tipoDocumentoId,
     faseCodigo,
     etapaId: null,
-    finalidade: null,
+    formularioCodigo: null,
     ...regraInicialDaExigencia(),
     ...criteriosIniciaisDoComprovante(restricao),
   };
@@ -69,6 +68,7 @@ function regraInicialDaExigencia(): RegraDaExigenciaDeDocumento {
     aplicabilidade: APLICABILIDADE_GERAL,
     obrigatorio: true,
     consequenciaIndeferimento: '',
+    abrePrazoParaReenvio: false,
     condicoes: [],
     basesLegais: [baseLegalNova()],
   };
@@ -103,16 +103,21 @@ export function regraDeDocumento(documento: ExigenciaDeDocumento): RegraDeCompro
     identificadorNoRascunho: criarIdentificadorDaRegra(),
     forma: 'DOCUMENTO',
     documento,
-    quantidadeMinima: null,
-    consequencia: null,
-    basesLegais: null,
-    itens: null,
-    criterioDeDistincao: null,
-    dataReferencia: null,
-    ocorrenciasEsperadas: null,
-    grupoDoFormularioParaRepeticao: null,
+    ...REGRA_SEM_PARAMETROS,
   };
 }
+
+const REGRA_SEM_PARAMETROS = {
+  quantidadeMinima: null,
+  consequencia: null,
+  abrePrazoParaReenvio: false,
+  basesLegais: null,
+  itens: null,
+  criterioDeDistincao: null,
+  dataReferencia: null,
+  ocorrenciasEsperadas: null,
+  grupoDoFormularioParaRepeticao: null,
+} as const;
 
 /** O rascunho sem exigência nenhuma. */
 export function exigenciasVazias(): ExigenciasDoRascunho {

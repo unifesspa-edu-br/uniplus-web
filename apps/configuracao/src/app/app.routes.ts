@@ -191,12 +191,12 @@ export const appRoutes: Routes = [
           ),
       },
       {
-        path: 'base-legal-bonus-regional',
-        canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['base-legal-bonus-regional'])],
-        data: { breadcrumb: 'Base Legal de Bônus Regional' },
+        path: 'bases-legais-fada',
+        canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['bases-legais-fada'])],
+        data: { breadcrumb: 'Base legal do Fator de Atenuação das Desigualdades de Acesso' },
         loadChildren: () =>
-          import('./features/base-legal-bonus-regional/base-legal-bonus-regional.routes').then(
-            (m) => m.BASE_LEGAL_BONUS_REGIONAL_ROUTES,
+          import('./features/bases-legais-fada/base-legal-do-fada.routes').then(
+            (m) => m.BASE_LEGAL_DO_FADA_ROUTES,
           ),
       },
       {

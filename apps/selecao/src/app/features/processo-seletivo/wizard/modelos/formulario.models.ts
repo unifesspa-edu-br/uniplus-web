@@ -1,3 +1,4 @@
+import type { ConsequenciaDoDescumprimentoCodigo } from '@uniplus/shared-data/selecao';
 import type { ConteudoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 
 /**
@@ -22,37 +23,35 @@ export interface DerivacaoDeFato {
 }
 
 /**
- * O formulário de inscrição do certame e o que, do processo, ele sustenta. O conteúdo é o do
- * editor de formulário, com a seção dos dados básicos que a API acrescenta: ela fica no rascunho
- * para o editor mostrá-la e as citações a enxergarem, e sai do envio. A fase entra por CÓDIGO,
- * pela mesma razão da referência temporal.
+ * Um formulário do processo no rascunho, identificado pelo código. A fase entra por CÓDIGO, pela
+ * mesma razão da referência temporal, e vira o id dela no envio. `gravado` diz se o servidor já
+ * tem o formulário: o código só se edita enquanto ele não existe lá.
  *
- * A política temporal e as regras de derivação são do processo e viajam por rotas próprias; ficam
- * aqui porque este passo as edita e as usa.
+ * O conteúdo é o do editor de formulário, com a seção dos dados básicos que a API acrescenta: ela
+ * fica no rascunho para o editor mostrá-la e as citações a enxergarem, e sai do envio.
  */
-export interface FormularioDeInscricao {
+export interface FormularioDoProcessoNoRascunho {
+  readonly codigo: string;
+  readonly gravado: boolean;
   readonly faseCodigo: string;
+  readonly obrigatorio: boolean;
+  /** A consequência de o candidato não enviar o formulário; `null` é "sem consequência própria". */
+  readonly consequenciaDaFaltaDeEnvio: ConsequenciaDoDescumprimentoCodigo | null;
   readonly conteudo: ConteudoDoFormulario;
-  readonly referenciaTemporal: ReferenciaTemporalConfig;
-  readonly derivacao: readonly DerivacaoDeFato[];
   /**
-   * Os formulários das OUTRAS finalidades (isenção da taxa, habilitação), na ordem das finalidades.
-   * A inscrição fica nos campos de cima porque todo processo a tem; as outras existem só quando o
-   * operador as acrescenta. Um fato tem um único formulário que o coleta.
+   * O código do modelo de que o formulário partiu; nulo quando foi composto no processo. Só o
+   * servidor o define, ao aplicar um modelo, e editar a cópia depois não o apaga.
    */
-  readonly outrasFinalidades: readonly FormularioDaFinalidade[];
-  /** O código do modelo de que a inscrição partiu; ausente ou nulo quando foi composta no processo. */
-  readonly modeloOrigemCodigo?: string | null;
+  readonly modeloOrigemCodigo: string | null;
 }
 
-/** O formulário de uma finalidade no rascunho: a fase por CÓDIGO, como a da inscrição, e o conteúdo do editor. */
-export interface FormularioDaFinalidade {
-  readonly finalidade: string;
-  readonly faseCodigo: string;
-  readonly conteudo: ConteudoDoFormulario;
-  /**
-   * O código do modelo de que o formulário partiu; ausente ou nulo quando foi composto no processo.
-   * Só o servidor o define, ao aplicar um modelo, e editar a cópia depois não o apaga.
-   */
-  readonly modeloOrigemCodigo?: string | null;
+/**
+ * Os formulários do processo e o que, do processo, eles sustentam. A política temporal e as regras
+ * de derivação são do processo e viajam por rotas próprias; ficam aqui porque este passo as edita
+ * e as usa.
+ */
+export interface FormularioDeInscricao {
+  readonly formularios: readonly FormularioDoProcessoNoRascunho[];
+  readonly referenciaTemporal: ReferenciaTemporalConfig;
+  readonly derivacao: readonly DerivacaoDeFato[];
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FinalidadeDoFormulario, type DocumentoDaConfiguracao } from '@uniplus/shared-data/selecao';
+import type { DocumentoDaConfiguracao } from '@uniplus/shared-data/selecao';
 import { conteudoDoDocumento } from './conversao-do-formulario';
 import { aceita, editar, formulario, CATALOGOS } from './conversao.testing';
 import { edicaoDoConteudo } from '../adaptadores/formulario.adaptador';
@@ -53,7 +53,7 @@ describe('recusas da conversão do formulário', () => {
       versaoFormato: 1,
       formularios: [original],
     };
-    expect(edicaoDoConteudo(FinalidadeDoFormulario.INSCRICAO, recusada)(documento)).toBe(documento);
+    expect(edicaoDoConteudo('INSCRICAO', recusada)(documento)).toBe(documento);
     expect(documento.formularios?.[0]).not.toHaveProperty('titulo');
   });
 

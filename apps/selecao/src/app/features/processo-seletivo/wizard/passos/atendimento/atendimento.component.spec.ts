@@ -5,7 +5,7 @@ import { apresentacaoDoCampo } from '@uniplus/shared-inscricao/formulario';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { item } from '../formulario/formulario-de-inscricao.testing';
+import { comInscricao, item } from '../formulario/formulario-de-inscricao.testing';
 import { AtendimentoPassoComponent } from './atendimento.component';
 import {
   CONDICOES,
@@ -64,9 +64,9 @@ describe('AtendimentoPassoComponent', () => {
 
   it('sem a condição PcD no cadastro, o formulário que pergunta o tipo de deficiência não trava o passo', () => {
     componente.catalogos.condicoes.set([CONDICOES[1]]);
-    store.patchObjectSection('formulario', {
-      ...store.draft().formulario,
-      conteudo: {
+    store.patchObjectSection(
+      'formulario',
+      comInscricao(store.draft().formulario, {
         titulo: null,
         paginas: [],
         itens: [
@@ -77,8 +77,8 @@ describe('AtendimentoPassoComponent', () => {
         termos: [],
         pressupostos: [],
         grupos: [],
-      },
-    });
+      }),
+    );
     detectar();
 
     const resultado = componente.validar();

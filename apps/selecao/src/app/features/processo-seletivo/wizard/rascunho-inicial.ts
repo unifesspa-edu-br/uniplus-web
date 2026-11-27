@@ -1,5 +1,3 @@
-import { conteudoInicial } from '@uniplus/shared-inscricao/formulario';
-
 import type {
   CalculoDaClassificacao,
   RegrasDaClassificacao,
@@ -32,7 +30,7 @@ export function rascunhoInicial(): WizardDraft {
 }
 
 export function regrasDaClassificacaoIniciais(): RegrasDaClassificacao {
-  return { classificacao: classificacaoInicial(), bonus: bonusInicial(), desempate: [] };
+  return { classificacao: classificacaoInicial(), fada: fadaInicial(), desempate: [] };
 }
 
 function identificacaoInicial(): WizardDraft['identificacao'] {
@@ -69,29 +67,24 @@ export function calculoInicial(): CalculoDaClassificacao {
   };
 }
 
-export function bonusInicial(): WizardDraft['bonus'] {
+export function fadaInicial(): WizardDraft['fada'] {
   return {
     aplica: null,
     regraCodigo: '',
     regraVersao: '',
     fator: '',
     teto: '',
-    baseLegalBonusRegionalId: '',
+    baseLegalDoFadaId: '',
     fatoElegibilidadeCodigo: '',
   };
 }
 
-/**
- * O formulário nasce só com a revisão e aceite; a seção dos dados básicos vem da API quando ele é
- * criado.
- */
+/** Os formulários nascem quando o operador os acrescenta, cada um com o código que escolhe. */
 function formularioInicial(): WizardDraft['formulario'] {
   return {
-    faseCodigo: '',
-    conteudo: conteudoInicial(),
+    formularios: [],
     referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
     derivacao: [],
-    outrasFinalidades: [],
   };
 }
 

@@ -115,7 +115,7 @@ describe('CatalogosDeClassificacao', () => {
       'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
     ]);
     expect(servico.regrasEliminacao().map((r) => r.codigo)).toEqual(['ELIMINACAO_ZERO_EM_AREA']);
-    expect(servico.regrasBonus().map((r) => r.codigo)).toEqual(['BONUS-MULTIPLICATIVO']);
+    expect(servico.regrasFada().map((r) => r.codigo)).toEqual(['BONUS-MULTIPLICATIVO']);
     expect(servico.criteriosDesempate().map((r) => r.codigo)).toEqual(['DESEMPATE_MAIOR_IDADE']);
     expect(servico.carregando()).toBe(false);
 

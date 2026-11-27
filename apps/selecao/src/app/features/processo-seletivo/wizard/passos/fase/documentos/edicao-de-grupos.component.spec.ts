@@ -39,12 +39,13 @@ function catalogoDasFormas() {
   };
 }
 
-function provedoresDaFase() {
+function provedoresDaFase(admiteComplementacao: boolean) {
   return [
     {
       provide: FaseEmEdicao,
       useValue: {
         faseDoRascunho: signal({ codigo: 'HABILITACAO', produtos: [], congelados: null }),
+        admiteComplementacao: signal(admiteComplementacao),
       },
     },
     { provide: FormularioDoCronograma, useValue: { edicaoLiberada: signal(true) } },
@@ -60,10 +61,13 @@ function provedoresDaFase() {
   ];
 }
 
-function montar() {
+function montar(admiteComplementacao = false) {
   const processo = processoComDocumentos();
   TestBed.configureTestingModule({
-    providers: [{ provide: ProcessoSeletivoStore, useValue: processo }, ...provedoresDaFase()],
+    providers: [
+      { provide: ProcessoSeletivoStore, useValue: processo },
+      ...provedoresDaFase(admiteComplementacao),
+    ],
   });
   const providers = [
     GruposDeDocumentosStore,
@@ -133,5 +137,55 @@ describe('Edição de grupos de documentos', () => {
     campo.value = '';
     campo.dispatchEvent(new Event('change'));
     expect(draft().documentos.regrasDeComprovacao[0].criterioDeDistincao).toBeNull();
+  });
+
+  describe('prazo para reenvio do grupo', () => {
+    const caixa = (tela: HTMLElement) =>
+      tela.querySelector<HTMLInputElement>('sel-prazo-para-reenvio input');
+    const grupo = (draft: ReturnType<typeof montar>['draft']) =>
+      draft().documentos.regrasDeComprovacao[0];
+
+    it('não oferece a caixa em fase que não admite complementação', () => {
+      const { fixture } = montar(false);
+      expect(caixa(combinarCinco(fixture))).toBeNull();
+    });
+
+    it('marcar e desmarcar chega ao rascunho, com rótulo e aviso', () => {
+      const { fixture, draft } = montar(true);
+      const tela = combinarCinco(fixture);
+      const campo = caixa(tela) as HTMLInputElement;
+      expect(tela.querySelector(`label[for="${campo.id}"]`)?.textContent).toContain(
+        'reenviar os documentos',
+      );
+      campo.click();
+      fixture.detectChanges();
+      expect(grupo(draft).abrePrazoParaReenvio).toBe(true);
+      expect(tela.querySelector('[role=status]')?.textContent).toContain(
+        'Prazo para reenvio do grupo atualizado.',
+      );
+      caixa(tela)?.click();
+      expect(grupo(draft).abrePrazoParaReenvio).toBe(false);
+    });
+
+    it('mantém visível o prazo já gravado e não o apaga ao trocar consequência ou norma', () => {
+      const { fixture, draft } = montar(false);
+      const tela = combinarCinco(fixture);
+      const identificador = grupo(draft).identificadorNoRascunho;
+      const componente = fixture.componentInstance as unknown as {
+        atualizarConsequencia(regra: unknown, valor: string): void;
+        atualizarNormas(regra: unknown, bases: unknown[]): void;
+        grupos: GruposDeDocumentosStore;
+      };
+      componente.grupos.editar(identificador, { abrePrazoParaReenvio: true });
+      fixture.detectChanges();
+      expect(caixa(tela)?.checked).toBe(true);
+      componente.atualizarConsequencia(grupo(draft), 'ELIMINA_DO_PROCESSO');
+      componente.atualizarNormas(grupo(draft), []);
+      expect(grupo(draft)).toMatchObject({
+        abrePrazoParaReenvio: true,
+        consequencia: 'ELIMINA_DO_PROCESSO',
+        basesLegais: [],
+      });
+    });
   });
 });

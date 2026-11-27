@@ -42,6 +42,13 @@
   </div>
 }
 
+@if (store.documentosExigidosAguardandoFormulario()) {
+  <p class="alert alert--warning" role="status">
+    Documentos exigidos ainda não gravados: uma das fases não tem formulário. Grave os formulários,
+    no passo Formulários, para a publicação ficar liberada.
+  </p>
+}
+
 <!-- As orientações de preenchimento só valem para quem ainda pode anexar e escolher. -->
 @if (!store.emConsulta()) {
   @if (conferencia.precisaEscolherDocumento()) {

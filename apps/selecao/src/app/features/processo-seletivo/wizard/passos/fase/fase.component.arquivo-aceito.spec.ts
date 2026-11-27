@@ -86,7 +86,7 @@ describe('Formatos aceitos na fase', () => {
       faseIdPorCodigo: new Map([['AVALIACAO', ID_AVALIACAO]]),
       modalidadesOfertadas: [],
       etapasVivas: new Set<string>(),
-      finalidadesPorFase: new Map(),
+      formulariosPorFase: new Map(),
     }).regras;
   }
 

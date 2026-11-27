@@ -4,7 +4,9 @@ import type { BancaDeclarada } from '../../modelos/banca.models';
 import type { FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { recusasDasBancas, type RecusasDasBancas } from '../../shared/bancas/recusas-das-bancas';
-import { descreverFase, finalidadesDaFase } from '../../shared/descricao-da-fase';
+import { descreverFase } from '../../shared/descricao-da-fase';
+import type { FormularioDaFase } from '../../shared/exigencias/formulario-da-exigencia';
+import { emOrdemDoCronograma, rotuloDoFormulario } from '../formulario/formularios-do-rascunho';
 import { emOrdem, type RecusaOrdenada } from '../../shared/recusas/ordem-das-recusas';
 import { CatalogoDeAtos } from '../cronograma/catalogos/catalogo-de-atos.service';
 import { CatalogoDeBancas } from '../cronograma/catalogos/catalogo-de-bancas.service';
@@ -81,14 +83,34 @@ export class FaseEmEdicao {
     return this.fasesDoCronograma().find((fase) => fase.faseCanonicaId === aberta) ?? null;
   });
 
+  /** Se a fase aberta admite reenvio de documento depois da análise. */
+  readonly admiteComplementacao = computed<boolean>(() => {
+    const fase = this.faseDoRascunho();
+    if (fase === null) return false;
+    return descreverFase(fase, this.catalogoDeFases.fasePorId()).permiteComplementacao;
+  });
+
   /**
    * Os formulários que se respondem na fase aberta — onde o documento pode ser apresentado. Vazio
    * na fase que não responde formulário nenhum, e aí não há o que escolher.
    */
-  readonly finalidadesDaFaseAberta = computed<readonly string[]>(() => {
+  readonly formulariosDaFaseAberta = computed<readonly FormularioDaFase[]>(() => {
     const fase = this.faseDoRascunho();
-    return fase === null ? [] : finalidadesDaFase(fase, this.catalogoDeFases.fasePorId());
+    if (fase === null) return [];
+    const nome = descreverFase(fase, this.catalogoDeFases.fasePorId()).nome;
+    const daFase = this.store
+      .draft()
+      .formulario.formularios.filter((formulario) => formulario.faseCodigo === fase.codigo);
+    return emOrdemDoCronograma(daFase, [fase.codigo]).map((formulario) => ({
+      codigo: formulario.codigo,
+      rotulo: rotuloDoFormulario(formulario, nome),
+    }));
   });
+
+  /** Só os códigos dos formulários da fase aberta, que é o que a regra da exigência confere. */
+  readonly codigosDaFaseAberta = computed<readonly string[]>(() =>
+    this.formulariosDaFaseAberta().map((formulario) => formulario.codigo),
+  );
 
   /** Nome da fase aberta, para o cabeçalho e para as mensagens. */
   readonly nomeDaFaseAberta = computed(() => {

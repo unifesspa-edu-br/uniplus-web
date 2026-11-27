@@ -33,12 +33,12 @@ export class ModelosFormularioStore {
   private readonly notifications = inject(NotificationService);
 
   readonly termoBusca = signal('');
-  readonly filtroFinalidade = signal('');
+  readonly filtroFaseDeInscricao = signal('');
   readonly filtroSituacao = signal('');
   readonly filtroTipo = signal('');
   private readonly pagina = linkedSignal<string, CursorPagina | undefined>({
     source: () =>
-      JSON.stringify([this.filtroFinalidade(), this.filtroSituacao(), this.filtroTipo()]),
+      JSON.stringify([this.filtroFaseDeInscricao(), this.filtroSituacao(), this.filtroTipo()]),
     computation: () => undefined,
   });
   private readonly lista = useApiResource<readonly ModeloFormularioView[]>(() => ({
@@ -115,7 +115,8 @@ export class ModelosFormularioStore {
 
   private montarParams(): HttpParams {
     let params = new HttpParams();
-    if (this.filtroFinalidade() !== '') params = params.set('finalidade', this.filtroFinalidade());
+    if (this.filtroFaseDeInscricao() !== '')
+      params = params.set('serveAFaseDeInscricao', this.filtroFaseDeInscricao());
     if (this.filtroSituacao() !== '') params = params.set('ativo', this.filtroSituacao());
     if (this.filtroTipo() !== '') params = params.set('tipoProcesso', this.filtroTipo());
     const pagina = this.pagina();

@@ -10,7 +10,10 @@ import {
 const COMBINACAO_ESPERADA = {
   forma: 'QUANTIDADE_MINIMA_DE_ITENS',
   cardinalidade: { quantidadeMinima: 1 },
-  indeferimento: { consequencia: 'ELIMINA', basesLegais: [{ referencia: 'Edital nº 1/2027' }] },
+  indeferimento: {
+    consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
+    basesLegais: [{ referencia: 'Edital nº 1/2027' }],
+  },
 };
 
 export function recusarFormatoDaSegundaExigencia(gravadas: ExigenciasGravadas): void {

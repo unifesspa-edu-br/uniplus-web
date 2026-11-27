@@ -691,6 +691,7 @@ export interface operations {
     readonly ListarUnidadesInstitucionais: {
         readonly parameters: {
             readonly query?: {
+                /** @description Até 200 caracteres, sem contar os espaços das pontas. */
                 readonly q?: string;
                 readonly tipo?: readonly number[];
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
@@ -746,7 +747,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description O texto pesquisado excede 200 caracteres (uniplus.consulta.busca_muito_longa). */
+            /** @description Texto pesquisado com mais de 200 caracteres, sem contar os espaços das pontas (uniplus.consulta.busca_muito_longa), ou outro parâmetro de consulta inválido. */
             readonly 422: {
                 headers: {
                     readonly [name: string]: unknown;

@@ -9,7 +9,7 @@ import {
 import { focarAposRenderizar } from '../../../shared/foco-apos-renderizar';
 import { idDaFase } from '../../fase/ids-da-fase';
 import { RecusasDasExigencias } from '../../fase/documentos/recusas-das-exigencias.service';
-import type { RecusaDaExigencia } from './gravacao-das-exigencias-documentais.service';
+import type { RecusaDaExigencia } from '../../../shared/exigencias/gravacao-das-exigencias-documentais.service';
 import { ExpansaoDoCronograma } from './expansao-do-cronograma.service';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
 

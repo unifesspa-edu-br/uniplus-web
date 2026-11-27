@@ -39,9 +39,7 @@ function grupoDeDocumentosParaOModelo(
 ) {
   return {
     ...grupo,
-    indeferimento:
-      grupo.indeferimento &&
-      indeferimentoParaOModelo(grupo.indeferimento.consequencia, grupo.indeferimento.basesLegais),
+    indeferimento: grupo.indeferimento && indeferimentoParaOModelo(grupo.indeferimento),
     documentos: grupo.documentos.map(documentoParaOModelo),
   };
 }

@@ -113,17 +113,17 @@ export interface WizardDraft {
     edicoesEnem: readonly string[];
   };
   /**
-   * FADA regional (`PUT …/bonus-regional`), declaração obrigatória como a da taxa: `aplica` é
+   * Fator de Atenuação das Desigualdades de Acesso (`PUT …/fada`), declaração obrigatória como a da taxa: `aplica` é
    * `null` até o operador responder. `false` grava com os cinco campos `null`; `true` exige a
    * configuração. A base legal referencia um cadastro tipado por id.
    */
-  bonus: {
+  fada: {
     aplica: boolean | null;
     regraCodigo: string;
     regraVersao: string;
     fator: string;
     teto: string;
-    baseLegalBonusRegionalId: string;
+    baseLegalDoFadaId: string;
     /** O fato de sim ou não que decide quem recebe o acréscimo (ADR-0142): campo do formulário de inscrição ou derivado do processo. Vazio enquanto não escolhido. */
     fatoElegibilidadeCodigo: string;
   };
@@ -182,7 +182,7 @@ export const SECOES_DO_RASCUNHO = [
   'vagas',
   'cronograma',
   'classificacao',
-  'bonus',
+  'fada',
   'desempate',
   'documentos',
   'formulario',
@@ -196,7 +196,7 @@ type SecaoNaoListada = Exclude<keyof WizardDraft, (typeof SECOES_DO_RASCUNHO)[nu
 const TODAS_AS_SECOES_LISTADAS: [SecaoNaoListada] extends [never] ? true : never = true;
 void TODAS_AS_SECOES_LISTADAS;
 
-export type RegrasDaClassificacao = Pick<WizardDraft, 'classificacao' | 'bonus' | 'desempate'>;
+export type RegrasDaClassificacao = Pick<WizardDraft, 'classificacao' | 'fada' | 'desempate'>;
 
 export type CalculoDaClassificacao = Pick<
   WizardDraft['classificacao'],
