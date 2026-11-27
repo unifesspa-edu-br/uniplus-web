@@ -1,13 +1,18 @@
 import { test, expect } from '@playwright/test';
-import { chamarApi, entrarComoPersona } from '@uniplus/shared-e2e';
+import {
+  OPERADOR_DO_ROTEIRO,
+  chamarApi,
+  entrarComoPersona,
+  garantirOperadorDoRoteiro,
+} from '@uniplus/shared-e2e';
 
 /**
  * O alcance de cada perfil na conta da pessoa (menu do cabeçalho e Meu perfil) contra a API real.
- * A persona é a que executou o roteiro de processo de teste da API, que lhe concede um perfil da
- * instituição inteira (cadastros) e outro na unidade do certame.
+ * A persona é o operador do roteiro de processo de teste, que recebe um perfil da instituição
+ * inteira (cadastros) e outro na unidade do certame; a spec garante os dois antes de conferir.
  */
 const APP = process.env['BASE_URL'] ?? 'http://localhost:4203';
-const PERSONA = process.env['E2E_PERSONA_DO_ALCANCE'] ?? 'admin';
+const PERSONA = OPERADOR_DO_ROTEIRO;
 
 interface PerfilDaApi {
   readonly nome: string;
@@ -33,6 +38,11 @@ function alcanceEsperado(perfil: PerfilDaApi): string {
 }
 
 test.describe('Alcance do perfil na conta da pessoa', () => {
+  test.beforeAll(async () => {
+    test.setTimeout(600_000);
+    await garantirOperadorDoRoteiro();
+  });
+
   test('o perfil da instituição e o da unidade mostram cada um o seu alcance no menu e em Meu perfil', async ({
     browser,
   }) => {
