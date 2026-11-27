@@ -6,6 +6,7 @@ import type { ApiResult } from '@uniplus/shared-core/http';
 import type { CodigoDePermissao, ModuloDePermissao } from '../permissoes/catalogo';
 import { AUTORIZACAO_BASE_PATH } from '../tokens/auth.tokens';
 import { AuthService } from './auth.service';
+import { ehFalhaPassageira } from './falha-passageira';
 import { pessoaDaSessao } from './pessoa-da-sessao';
 
 /** Permissão que a API informa para a pessoa logada (`PermissaoEfetivaResponse`). */
@@ -18,14 +19,22 @@ export type EstadoDasPermissoes = 'pendente' | 'carregando' | 'carregada' | 'ind
 
 const SEM_PERMISSOES: ReadonlySet<string> = new Set();
 
+/** A consulta não chegou à API ou o servidor caiu: vale tentar de novo. */
+const QUEDA = Symbol('queda');
+
+type ResultadoDaConsulta = ReadonlySet<string> | typeof QUEDA | null;
+
 /**
  * Ponto único de consulta do que a pessoa logada pode fazer: menu, rotas e ações perguntam aqui
  * em vez de olhar o papel do token. A lista vem de `GET /api/autorizacao/permissoes/efetivas` e
  * serve só para montar a interface; a API decide o acesso a cada requisição.
  *
  * Carrega uma vez por sessão e recarrega quando a sessão muda (login, troca de usuário,
- * renovação do token). Sem sessão, na troca de pessoa ou em qualquer carga que falha, o conjunto
- * fica vazio: nunca sobra permissão antiga nem de outra pessoa.
+ * renovação do token). Sem sessão e na troca de pessoa, o conjunto fica vazio: nunca sobra
+ * permissão de outra pessoa. Na recarga da mesma pessoa, uma queda da conexão ou do servidor
+ * mantém o conjunto que ela já tinha até a próxima carga que der certo, e a recarga não esconde o
+ * que já está na tela; a recusa da API (401, 403) e a falha da primeira carga deixam o conjunto
+ * vazio.
  */
 @Injectable({ providedIn: 'root' })
 export class PermissoesService {
@@ -98,8 +107,8 @@ export class PermissoesService {
     geracao: number,
     pessoaAnterior: string | null,
   ): Promise<void> {
-    if (pessoaDaSessao(sessao) === pessoaAnterior) this._estado.set('carregando');
-    else this.limpar('carregando');
+    if (pessoaDaSessao(sessao) !== pessoaAnterior) this.limpar('carregando');
+    else if (this._estado() !== 'carregada') this._estado.set('carregando');
     return this.carregar(sessao, geracao);
   }
 
@@ -112,24 +121,23 @@ export class PermissoesService {
     this.aplicar(codigos);
   }
 
-  private consultar(): Promise<ReadonlySet<string> | null> {
+  private consultar(): Promise<ResultadoDaConsulta> {
     const url = `${this.basePath}/api/autorizacao/permissoes/efetivas`;
     const consulta = this.http.get<ApiResult<readonly PermissaoEfetiva[]>>(url, {
       context: withVendorMime('permissao-efetiva', 1),
     });
     return firstValueFrom(
       consulta.pipe(
-        map((resultado) =>
-          resultado.ok ? new Set(resultado.data.map((permissao) => permissao.codigo)) : null,
-        ),
+        map(resultadoDaConsulta),
         catchError(() => of(null)),
       ),
       { defaultValue: null },
     );
   }
 
-  private aplicar(codigos: ReadonlySet<string> | null): void {
-    if (codigos === null) {
+  private aplicar(codigos: ResultadoDaConsulta): void {
+    if (codigos === QUEDA && this._estado() === 'carregada') return;
+    if (codigos === null || codigos === QUEDA) {
       this.limpar('indisponivel');
       return;
     }
@@ -145,4 +153,11 @@ export class PermissoesService {
     this._codigos.set(SEM_PERMISSOES);
     this._estado.set(estado);
   }
+}
+
+function resultadoDaConsulta(
+  resultado: ApiResult<readonly PermissaoEfetiva[]>,
+): ResultadoDaConsulta {
+  if (resultado.ok) return new Set(resultado.data.map((permissao) => permissao.codigo));
+  return ehFalhaPassageira(resultado) ? QUEDA : null;
 }

@@ -106,27 +106,69 @@ describe('PerfisDeAcessoService', () => {
     ]);
   });
 
-  it('distingue a falha da consulta de pessoa sem perfil', async () => {
+  it('distingue a recusa da API de pessoa sem perfil', async () => {
     await responder(resposta());
     expect(service.estado()).toBe('carregada');
     expect(service.perfis()).toEqual([]);
 
     const recarga = service.recarregar();
-    http.expectOne(URL).flush(null, { status: 500, statusText: 'Server Error' });
+    http.expectOne(URL).flush(null, { status: 403, statusText: 'Forbidden' });
     await recarga;
 
     expect(service.estado()).toBe('indisponivel');
     expect(service.perfis()).toEqual([]);
   });
 
-  it('não mantém perfil antigo quando a recarga falha', async () => {
+  it.each([
+    ['o servidor indisponível', 503],
+    ['um erro do servidor', 500],
+  ])('mantém os perfis da mesma pessoa quando a recarga falha por %s', async (_caso, status) => {
     await responder(resposta(GESTOR));
-    expect(service.perfis()).toHaveLength(1);
 
     const recarga = service.recarregar();
-    http.expectOne(URL).flush(null, { status: 503, statusText: 'Unavailable' });
-    await recarga;
+    http.expectOne(URL).flush(null, { status, statusText: 'Falha' });
 
+    expect(await recarga).toBeNull();
+    expect(service.estado()).toBe('carregada');
+    expect(service.perfis()).toEqual([GESTOR]);
+  });
+
+  it('mantém os perfis quando a recarga da renovação do token falha por rede', async () => {
+    await responder(resposta(GESTOR));
+
+    sessao.set('leandro:1');
+    TestBed.tick();
+    http.expectOne(URL).error(new ProgressEvent('error'));
+    await assentar();
+
+    expect(service.estado()).toBe('carregada');
+    expect(service.perfis()).toEqual([GESTOR]);
+  });
+
+  it('uma resposta atrasada de uma recarga já substituída não troca o que a mais recente deixou', async () => {
+    await responder(resposta(GESTOR));
+
+    const antiga = service.recarregar();
+    const antigaRequisicao = http.expectOne(URL);
+    const recente = service.recarregar();
+    http.expectOne(URL).flush(null, { status: 503, statusText: 'Unavailable' });
+    await recente;
+    antigaRequisicao.flush(resposta(CONSULTA));
+    await antiga;
+
+    expect(service.estado()).toBe('carregada');
+    expect(service.perfis()).toEqual([GESTOR]);
+  });
+
+  it('não leva os perfis de uma pessoa para outra quando a recarga falha por rede', async () => {
+    await responder(resposta(GESTOR));
+
+    sessao.set('betina:0');
+    TestBed.tick();
+    http.expectOne(URL).error(new ProgressEvent('error'));
+    await assentar();
+
+    expect(service.estado()).toBe('indisponivel');
     expect(service.perfis()).toEqual([]);
   });
 
@@ -223,14 +265,15 @@ describe('PerfisDeAcessoService', () => {
     expect(service.rotulos()).toEqual(['Consulta institucional — Instituição']);
   });
 
-  it('devolve null quando a consulta falha', async () => {
+  it('devolve null e deixa a lista vazia quando a API recusa a consulta', async () => {
     await responder(resposta(GESTOR));
 
     const recarga = service.recarregar();
-    http.expectOne(URL).flush(null, { status: 500, statusText: 'Server Error' });
+    http.expectOne(URL).flush(null, { status: 401, statusText: 'Unauthorized' });
 
     expect(await recarga).toBeNull();
     expect(service.estado()).toBe('indisponivel');
+    expect(service.perfis()).toEqual([]);
   });
 
   it('trata a resposta sem a lista de perfis como pessoa sem perfil', async () => {
