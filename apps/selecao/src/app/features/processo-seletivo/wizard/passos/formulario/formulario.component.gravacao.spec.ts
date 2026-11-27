@@ -320,7 +320,7 @@ describe('FormularioPassoComponent: gravação', () => {
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
-    const mensagens = resultado.valid ? [] : resultado.messages;
+    const mensagens = resultado.valid ? [] : (resultado.messages ?? []);
     expect(mensagens).toHaveLength(2);
     expect(mensagens[0]).toContain('Renda familiar per capita');
     expect(mensagens[1]).toContain('Cor ou raça');
