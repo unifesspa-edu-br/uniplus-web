@@ -3,6 +3,7 @@
   "configuracaoWebUrl": "http://localhost:4203",
   "oidc": {
     "issuerUrl": "http://localhost:8080/realms/unifesspa",
-    "clientId": "selecao-web"
+    "clientId": "selecao-web",
+    "antecedenciaDaRenovacaoEmSegundos": 60
   }
 }

@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveConfiguracaoWebUrl, type AppConfig } from './app-config.model';
+import { resolveConfiguracaoWebUrl, resolveOidcConfig, type AppConfig } from './app-config.model';
 
 const BASE: AppConfig = {
   apiUrl: 'http://localhost:5000',
-  oidc: { issuerUrl: 'http://localhost:8080/realms/unifesspa', clientId: 'selecao-web' },
+  oidc: {
+    issuerUrl: 'http://localhost:8080/realms/unifesspa',
+    clientId: 'selecao-web',
+    antecedenciaDaRenovacaoEmSegundos: 60,
+  },
 };
 
 describe('resolveConfiguracaoWebUrl', () => {
@@ -33,4 +37,21 @@ describe('resolveConfiguracaoWebUrl', () => {
   it('cai no prefixo compartilhado antes de a configuração carregar', () => {
     expect(resolveConfiguracaoWebUrl(null)).toBe('/configuracao');
   });
+});
+
+describe('resolveOidcConfig', () => {
+  it('devolve o bloco do provedor com a antecedência da renovação', () => {
+    expect(resolveOidcConfig(BASE).antecedenciaDaRenovacaoEmSegundos).toBe(60);
+  });
+
+  it.each([undefined, 0, -5, Number.NaN, '60'])(
+    'recusa a antecedência da renovação %s',
+    (valor) => {
+      const config = { ...BASE, oidc: { ...BASE.oidc, antecedenciaDaRenovacaoEmSegundos: valor } };
+
+      expect(() => resolveOidcConfig(config as unknown as AppConfig)).toThrow(
+        'oidc.antecedenciaDaRenovacaoEmSegundos',
+      );
+    },
+  );
 });

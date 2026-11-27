@@ -9,6 +9,8 @@
 export interface OidcRuntimeConfig {
   readonly issuerUrl: string;
   readonly clientId: string;
+  /** Quantos segundos antes de vencer o acesso é renovado; obrigatório e maior que zero. */
+  readonly antecedenciaDaRenovacaoEmSegundos: number;
 }
 
 export interface AppConfig {
@@ -49,6 +51,12 @@ export function resolveConfiguracaoWebUrl(cfg: AppConfig | null): string {
 export function resolveOidcConfig(cfg: AppConfig): OidcRuntimeConfig {
   if (!cfg.oidc) {
     throw new Error('runtime-config.json deve conter o bloco "oidc" com issuerUrl e clientId.');
+  }
+  const antecedencia = cfg.oidc.antecedenciaDaRenovacaoEmSegundos;
+  if (typeof antecedencia !== 'number' || !Number.isFinite(antecedencia) || antecedencia <= 0) {
+    throw new Error(
+      'runtime-config.json deve informar "oidc.antecedenciaDaRenovacaoEmSegundos" com um número maior que zero.',
+    );
   }
   return cfg.oidc;
 }

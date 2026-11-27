@@ -2,6 +2,7 @@
   "apiUrl": "http://localhost:5000",
   "oidc": {
     "issuerUrl": "http://localhost:8080/realms/unifesspa",
-    "clientId": "portal-web"
+    "clientId": "portal-web",
+    "antecedenciaDaRenovacaoEmSegundos": 60
   }
 }

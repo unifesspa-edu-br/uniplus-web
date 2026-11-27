@@ -206,7 +206,7 @@ if [[ "$TARGET" == "portal-e2e" || "$TARGET" == "all" ]]; then
   # depurando a validação local da Story #449: app trava no bootstrap
   # com JSON vazio, sem erro óbvio no console).
   docker exec -i "$PORTAL_SUBPATH_CID" sh -c 'cat > /usr/share/nginx/html/assets/runtime-config.json' <<'EOF'
-{"apiUrl":"http://localhost:5000","oidc":{"issuerUrl":"http://localhost:8080/realms/unifesspa","clientId":"portal-web"}}
+{"apiUrl":"http://localhost:5000","oidc":{"issuerUrl":"http://localhost:8080/realms/unifesspa","clientId":"portal-web","antecedenciaDaRenovacaoEmSegundos":60}}
 EOF
 fi
 

@@ -144,6 +144,7 @@ export function toAuthConfig(cfg: AppConfig): AuthConfig {
   return {
     issuerUrl: oidc.issuerUrl,
     clientId: oidc.clientId,
+    antecedenciaDaRenovacaoEmSegundos: oidc.antecedenciaDaRenovacaoEmSegundos,
     allowedUrls: Object.freeze(urlsComBearer(cfg, oidc.issuerUrl)),
   };
 }

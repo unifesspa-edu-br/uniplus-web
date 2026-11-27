@@ -11,4 +11,9 @@ export interface AuthConfig {
    * se comporta de forma conservadora (nenhum Bearer é anexado).
    */
   allowedUrls: readonly string[];
+  /**
+   * Quantos segundos antes de vencer o acesso é renovado. Vale para a renovação antecipada e para
+   * a conferência que o `tokenInterceptor` faz antes de cada pedido.
+   */
+  antecedenciaDaRenovacaoEmSegundos: number;
 }

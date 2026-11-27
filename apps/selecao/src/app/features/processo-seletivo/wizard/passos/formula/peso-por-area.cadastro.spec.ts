@@ -55,7 +55,11 @@ describe('PesoPorAreaComponent — cadastro de Peso por Área', () => {
         config: {
           apiUrl: BASE,
           configuracaoWebUrl: 'http://localhost:4203',
-          oidc: { issuerUrl: 'http://localhost:8080/realms/unifesspa', clientId: 'selecao-web' },
+          oidc: {
+            issuerUrl: 'http://localhost:8080/realms/unifesspa',
+            clientId: 'selecao-web',
+            antecedenciaDaRenovacaoEmSegundos: 60,
+          },
         },
       });
       marcarEnemComMediaPonderada(m);
