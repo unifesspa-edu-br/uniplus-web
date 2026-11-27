@@ -122,10 +122,12 @@ test.describe('Calendário de dias úteis — localidade no detalhe (#524)', () 
     await expect(page.getByRole('button', { name: /^5 de abril de 2026/ })).toBeVisible();
     const pagina = page.locator('.cfg-page');
     const gap = await pagina.evaluate((el) => Number.parseFloat(getComputedStyle(el).rowGap));
-    const mensal = await caixa(pagina.locator('cfg-calendario-mensal'));
     const resumo = await caixa(pagina.locator('dl.cfg-calendario-resumo'));
+    const recorte = await caixa(pagina.locator('cfg-recorte-da-grade'));
+    const mensal = await caixa(pagina.locator('cfg-calendario-mensal'));
     const geoPagina = await caixa(pagina);
-    expect(Math.abs(mensal.y - resumo.base - gap)).toBeLessThanOrEqual(1);
+    expect(Math.abs(recorte.y - resumo.base - gap)).toBeLessThanOrEqual(1);
+    expect(Math.abs(mensal.y - recorte.base - gap)).toBeLessThanOrEqual(1);
     expect(Math.abs(geoPagina.base - mensal.base)).toBeLessThanOrEqual(1);
     for (const sobreposicao of ['cfg-ocorrencias-do-dia', 'cfg-dia-nao-util-dialogo']) {
       await expect(pagina.locator(sobreposicao)).toHaveCSS('position', 'absolute');
