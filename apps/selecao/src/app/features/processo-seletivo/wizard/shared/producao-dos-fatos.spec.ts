@@ -6,13 +6,12 @@ import {
 } from '@uniplus/shared-inscricao/formulario';
 import { describe, expect, it } from 'vitest';
 
-import type { FormularioDeInscricao } from '../processo-seletivo.models';
 import {
-  oProcessoResolve,
-  producaoDoRascunho,
-  recusaDaRepeticao,
-  recusaDeFaseDoGatilho,
-} from './producao-dos-fatos';
+  formularioCom,
+  formularioDoRascunho,
+} from '../passos/formulario/formulario-de-inscricao.testing';
+import { oProcessoResolve, recusaDaRepeticao, recusaDeFaseDoGatilho } from './producao-dos-fatos';
+import { producaoDoRascunho } from './producao-do-rascunho';
 import {
   ALGUM_SEM_RENDA,
   COM_HABILITACAO,
@@ -162,24 +161,23 @@ describe('a produção dos fatos no rascunho', () => {
   });
 
   it('lê a fase de cada formulário e os fatos que a regra de derivação cita', () => {
-    const rascunho: FormularioDeInscricao = {
-      faseCodigo: 'INSCRICAO',
-      conteudo: conteudoInicial(),
-      referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
-      derivacao: [
-        {
-          codigoFato: 'PERFIL',
-          regras: [{ quando: [[{ fato: 'LAUDO_RECENTE', operador: 'IGUAL', valor: true }]] }],
-        },
+    const rascunho = formularioCom(
+      conteudoInicial(),
+      {
+        derivacao: [
+          {
+            codigoFato: 'PERFIL',
+            regras: [{ quando: [[{ fato: 'LAUDO_RECENTE', operador: 'IGUAL', valor: true }]] }],
+          },
+        ],
+      },
+      [
+        formularioDoRascunho(
+          { ...conteudoInicial(), itens: [item('LAUDO_RECENTE')] },
+          { codigo: 'HABILITACAO', faseCodigo: 'HABILITACAO' },
+        ),
       ],
-      outrasFinalidades: [
-        {
-          finalidade: 'HABILITACAO',
-          faseCodigo: 'HABILITACAO',
-          conteudo: { ...conteudoInicial(), itens: [item('LAUDO_RECENTE')] },
-        },
-      ],
-    };
+    );
 
     const lida = producaoDoRascunho(rascunho, FASES, [PCD, LAUDO_RECENTE, PERFIL]);
 
@@ -197,19 +195,12 @@ describe('a produção dos fatos no rascunho', () => {
       regras: REGRAS_INICIAIS,
       subitens: [item('SEM_RENDA')],
     };
-    const rascunho: FormularioDeInscricao = {
-      faseCodigo: 'INSCRICAO',
-      conteudo: conteudoInicial(),
-      referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
-      derivacao: [],
-      outrasFinalidades: [
-        {
-          finalidade: 'HABILITACAO',
-          faseCodigo: 'HABILITACAO',
-          conteudo: { ...conteudoInicial(), grupos: [familia] },
-        },
-      ],
-    };
+    const rascunho = formularioCom(conteudoInicial(), {}, [
+      formularioDoRascunho(
+        { ...conteudoInicial(), grupos: [familia] },
+        { codigo: 'HABILITACAO', faseCodigo: 'HABILITACAO' },
+      ),
+    ]);
 
     const lida = producaoDoRascunho(rascunho, FASES, [PCD, SEM_RENDA]);
 

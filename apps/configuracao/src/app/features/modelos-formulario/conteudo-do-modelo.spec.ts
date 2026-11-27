@@ -76,21 +76,27 @@ const conteudo: ConteudoDoFormulario<number> = {
       tipoDocumentoCodigo: 'LAUDO_MEDICO',
       obrigatorio: true,
       quando: QUANDO,
-      consequenciaIndeferimento: 'ELIMINA',
+      consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
+      abrePrazoParaReenvio: false,
       basesLegais: null,
     },
   ],
   gruposDeDocumentos: [
     {
       quantidadeMinima: 1,
-      indeferimento: { consequencia: 'ELIMINA', basesLegais: [] },
+      indeferimento: {
+        consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
+        basesLegais: [],
+        abrePrazoParaReenvio: false,
+      },
       documentos: [
         {
           faseCodigo: 'INSCRICAO',
           tipoDocumentoCodigo: 'CPF',
           obrigatorio: false,
           quando: QUANDO,
-          consequenciaIndeferimento: 'ELIMINA',
+          consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
+          abrePrazoParaReenvio: false,
           basesLegais: null,
         },
       ],
@@ -223,12 +229,21 @@ describe('conteudoParaOModelo', () => {
     const { documentosExigidos, gruposDeDocumentos } = gravado.conjuntoDeDocumentos ?? {};
 
     expect(documentosExigidos?.[0]).toMatchObject({
-      indeferimento: { obrigatorio: true, consequencia: 'ELIMINA', basesLegais: null },
+      indeferimento: {
+        obrigatorio: true,
+        consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
+        basesLegais: null,
+        abrePrazoParaReenvio: false,
+      },
     });
-    expect(documentosExigidos?.[0]).not.toHaveProperty('consequenciaIndeferimento');
+    expect(documentosExigidos?.[0]).not.toHaveProperty('consequenciaDoDescumprimento');
     expect(gruposDeDocumentos?.[0]).toMatchObject({
       quantidadeMinima: 1,
-      indeferimento: { consequencia: 'ELIMINA', basesLegais: [] },
+      indeferimento: {
+        consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
+        basesLegais: [],
+        abrePrazoParaReenvio: false,
+      },
     });
     expect(gruposDeDocumentos?.[0].documentos?.[0].indeferimento).toMatchObject({
       obrigatorio: false,
@@ -292,12 +307,14 @@ describe('conteudoDoModelo', () => {
 
     expect(laudo).toMatchObject({
       obrigatorio: true,
-      consequenciaIndeferimento: 'ELIMINA',
+      consequenciaDoDescumprimento: 'ELIMINA_DO_PROCESSO',
+      abrePrazoParaReenvio: false,
       basesLegais: [{ referencia: 'Lei 13.146/2015' }],
     });
     expect(certidao).toMatchObject({
       obrigatorio: false,
-      consequenciaIndeferimento: 'ABRE_PRAZO_PARA_REENVIO',
+      consequenciaDoDescumprimento: null,
+      abrePrazoParaReenvio: true,
     });
     expect(laudo).not.toHaveProperty('indeferimento');
   });

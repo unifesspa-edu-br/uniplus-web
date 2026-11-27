@@ -2,7 +2,6 @@ import {
   BlocoSistemaCodigo,
   TipoPaginaFormularioCodigo,
   TipoObrigatoriedadeCodigo,
-  FinalidadeFormularioCodigo,
   type FatoColetadoDto,
   type FormularioDto,
   TipoDeCampoCodigo,
@@ -61,11 +60,12 @@ export function campoDoServidor(
   };
 }
 
-/** O formulário de inscrição de uma fase, sem modelo de origem, termos nem grupos. */
+/** O formulário obrigatório de código INSCRICAO, sem modelo de origem, termos nem grupos. */
 export function formularioDoServidor(extra: Partial<FormularioDto> = {}): FormularioDto {
   return {
-    finalidade: { codigo: FinalidadeFormularioCodigo.INSCRICAO, rotulo: 'Inscrição' },
+    codigo: 'INSCRICAO',
     faseId: null,
+    obrigatorio: true,
     titulo: null,
     modeloOrigem: null,
     paginas: [],

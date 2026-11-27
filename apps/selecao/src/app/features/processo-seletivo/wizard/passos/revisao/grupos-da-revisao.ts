@@ -55,7 +55,7 @@ const ROTULO_POR_DIMENSAO: ReadonlyMap<string, string> = new Map<string, string>
   ['classificacao', 'Classificação'],
   ['atendimento_especializado', 'Atendimento especializado'],
   ['coleta_de_fatos', 'Coleta de fatos'],
-  ['bonus_regional', 'FADA regional'],
+  ['fada', 'Fator de Atenuação das Desigualdades de Acesso'],
   ['desempate', 'Critérios de desempate'],
   ['etapas', 'Etapas'],
 ]);

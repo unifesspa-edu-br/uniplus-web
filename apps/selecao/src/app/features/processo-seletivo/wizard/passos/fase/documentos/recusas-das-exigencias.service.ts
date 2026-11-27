@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 
-import type { RecusaDaExigencia } from '../../cronograma/servicos/gravacao-das-exigencias-documentais.service';
+import type { RecusaDaExigencia } from '../../../shared/exigencias/gravacao-das-exigencias-documentais.service';
 
 const CAMPOS_EXIBIDOS = [
   'documento.requisitos.formatosPermitidos',

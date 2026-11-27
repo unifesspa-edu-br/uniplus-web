@@ -1,23 +1,21 @@
 import { effect, computed, inject, Injectable, signal, untracked } from '@angular/core';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
-import { FINALIDADE_INSCRICAO } from '@uniplus/shared-inscricao/formulario';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
-import { formularioDaFinalidade } from '../formulario-do-processo';
-import { nomeDaFinalidade } from '../formularios-por-finalidade';
+import { semFormulario } from '../formularios-do-rascunho';
 import { LeituraDoProcessoNoFormulario } from './leitura-do-processo-no-formulario.service';
 import { semChave } from './sem-chave';
 import { textoDaRecusa } from './texto-da-recusa';
 
-/** O que a remoção confirmada deixou: a finalidade tratada, e a recusa quando o formulário ficou. */
+/** O que a remoção confirmada deixou: o código tratado, e a recusa quando o formulário ficou. */
 export interface DesfechoDaRemocao {
-  readonly finalidade: string;
+  readonly codigo: string;
   readonly recusa: string | null;
 }
 
 /**
- * A remoção de um formulário que não é a inscrição: a confirmação pendente, a remoção no servidor
+ * A remoção de um formulário: a confirmação pendente, a remoção no servidor
  * — que não espera a gravação do passo — e a recusa, que fica em texto na aba que não saiu.
  */
 @Injectable()
@@ -27,9 +25,9 @@ export class RemocaoDoFormulario {
   private readonly leitura = inject(LeituraDoProcessoNoFormulario);
   private readonly problemI18n = inject(ProblemI18nService);
 
-  /** A finalidade cuja remoção aguarda confirmação. */
+  /** O código do formulário cuja remoção aguarda confirmação. */
   readonly pendente = signal<string | null>(null);
-  /** A recusa da remoção, por finalidade: fica na aba do formulário que não saiu. */
+  /** A recusa da remoção, por código: fica na aba do formulário que não saiu. */
   readonly recusas = signal<ReadonlyMap<string, string>>(new Map());
 
   constructor() {
@@ -44,15 +42,14 @@ export class RemocaoDoFormulario {
   }
 
   readonly aviso = computed(() => {
-    const finalidade = this.pendente();
-    return finalidade === null
+    const codigo = this.pendente();
+    return codigo === null
       ? ''
-      : `O formulário de ${nomeDaFinalidade(finalidade)} sai do processo com as páginas, os campos e os termos dele. Não há como desfazer.`;
+      : `O formulário ${codigo} sai do processo com as páginas, os campos e os termos dele. Não há como desfazer.`;
   });
 
-  pedir(finalidade: string): void {
-    if (finalidade === FINALIDADE_INSCRICAO) return;
-    this.pendente.set(finalidade);
+  pedir(codigo: string): void {
+    this.pendente.set(codigo);
   }
 
   cancelar(): void {
@@ -64,80 +61,74 @@ export class RemocaoDoFormulario {
    * existe no rascunho sai dele. `null` quando não há o que decidir, ou o processo mudou no meio.
    */
   async confirmar(): Promise<DesfechoDaRemocao | null> {
-    const finalidade = this.pendente();
+    const codigo = this.pendente();
     this.pendente.set(null);
-    if (finalidade === null || finalidade === FINALIDADE_INSCRICAO) return null;
-    this.recusas.update((atuais) => semChave(atuais, finalidade));
+    if (codigo === null) return null;
+    this.recusas.update((atuais) => semChave(atuais, codigo));
 
     const processoId = this.store.processoSeletivoId();
     if (processoId !== null) {
-      const resultado = await this.confirmarRemocaoNoServidor(processoId, finalidade);
+      const resultado = await this.confirmarRemocaoNoServidor(processoId, codigo);
       if (resultado !== undefined) return resultado;
     }
-    this.removerDoRascunho(finalidade);
-    return { finalidade, recusa: null };
+    this.removerDoRascunho(codigo);
+    return { codigo, recusa: null };
   }
 
   private async confirmarRemocaoNoServidor(
     processoId: string,
-    finalidade: string,
+    codigo: string,
   ): Promise<DesfechoDaRemocao | null | undefined> {
     const geracao = this.store.geracao();
-    const recusa = await this.removerComEdicaoBloqueada(processoId, finalidade, geracao);
+    const recusa = await this.removerComEdicaoBloqueada(processoId, codigo, geracao);
     if (geracao !== this.store.geracao()) return null;
     if (recusa === null) return undefined;
-    this.recusas.update((atuais) => new Map([...atuais, [finalidade, recusa]]));
-    return { finalidade, recusa };
+    this.recusas.update((atuais) => new Map([...atuais, [codigo, recusa]]));
+    return { codigo, recusa };
   }
 
   private async removerComEdicaoBloqueada(
     processoId: string,
-    finalidade: string,
+    codigo: string,
     geracao: number,
   ): Promise<string | null> {
     this.store.salvando.set(true);
     try {
-      return await this.removerDoServidor(processoId, finalidade);
+      return await this.removerDoServidor(processoId, codigo);
     } finally {
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
     }
   }
 
-  private removerDoRascunho(finalidade: string): void {
-    const formulario = this.store.draft().formulario;
-    this.store.patchSection('formulario', {
-      ...formulario,
-      outrasFinalidades: formulario.outrasFinalidades.filter(
-        (outro) => outro.finalidade !== finalidade,
-      ),
-    });
+  private removerDoRascunho(codigo: string): void {
+    this.store.patchSection('formulario', semFormulario(this.store.draft().formulario, codigo));
   }
 
   /**
    * Tira o formulário do servidor, quando ele está lá. Devolve a recusa a mostrar, ou nulo quando
    * o formulário não está mais no processo — inclusive o que nunca foi gravado.
    */
-  private async removerDoServidor(processoId: string, finalidade: string): Promise<string | null> {
+  private async removerDoServidor(processoId: string, codigo: string): Promise<string | null> {
     const detalhe = await this.leitura.ler(processoId);
     if (!isApiOk(detalhe))
       return 'Não foi possível reler o processo para remover o formulário. Tente de novo.';
-    if (formularioDaFinalidade(detalhe.data.formularios, finalidade) === null) return null;
+    if (!detalhe.data.formularios.some((formulario) => formulario.codigo === codigo)) return null;
 
-    const remocao = await this.cadastro.removerFormulario(processoId, finalidade);
+    const remocao = await this.cadastro.removerFormulario(processoId, codigo);
     if (remocao.ok) {
-      this.retirarFormularioDaLeitura(finalidade);
+      this.retirarFormularioDaLeitura(codigo);
       return null;
     }
     return textoDaRecusa(remocao.problem, this.problemI18n);
   }
 
-  private retirarFormularioDaLeitura(finalidade: string): void {
+  private retirarFormularioDaLeitura(codigo: string): void {
     this.leitura.processoLido.update((lido) =>
       lido === null
         ? lido
         : {
             ...lido,
-            formularios: lido.formularios.filter((f) => f.finalidade.codigo !== finalidade),
+            formularios: lido.formularios.filter((f) => f.codigo !== codigo),
           },
     );
   }

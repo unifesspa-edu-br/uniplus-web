@@ -6,7 +6,7 @@ import {
   CriarProcessoSeletivoCommand,
   CriterioDesempateInput,
   DefinirAlgoritmoContagemPrazoRequest,
-  DefinirBonusRegionalRequest,
+  DefinirFadaRequest,
   DefinirCascataRemanejamentoRequest,
   DefinirClassificacaoRequest,
   DefinirOpcoesDeclaradasRequest,
@@ -226,50 +226,49 @@ export class CadastroInicial {
 
   gravarFormulario(
     processoSeletivoId: string,
-    finalidade: string,
+    codigo: string,
     servidor: FormularioParaGravar | null,
     desejado: FormularioParaGravar & { readonly faseId: string },
   ): Promise<ResultadoGravacao> {
     return gravarFormulario(
       { gravacao: this.gravacao, api: this.formulariosApi },
-      { processoSeletivoId, finalidade },
+      { processoSeletivoId, codigo },
       servidor,
       desejado,
     );
   }
 
   /**
-   * Remove o formulário de uma finalidade, com os itens e os termos dele. A API só remove em
-   * rascunho, e quem chama confere o desfecho relendo o processo.
+   * Remove o formulário do código, com os itens e os termos dele. A API só remove em rascunho, e
+   * quem chama confere o desfecho relendo o processo.
    */
-  removerFormulario(processoSeletivoId: string, finalidade: string): Promise<ResultadoGravacao> {
+  removerFormulario(processoSeletivoId: string, codigo: string): Promise<ResultadoGravacao> {
     return this.gravacao.remover((contexto) =>
-      this.formulariosApi.removerFormulario(processoSeletivoId, finalidade, contexto),
+      this.formulariosApi.removerFormulario(processoSeletivoId, codigo, contexto),
     );
   }
 
   /**
-   * O formulário da finalidade do modelo é criado ou substituído por inteiro. Devolve o relato da
-   * cópia (o que trouxe, manteve, descartou e derivou), que só o servidor sabe.
+   * O conteúdo do formulário, que já deve estar gravado, é substituído por inteiro pela cópia do
+   * modelo. Devolve o relato da cópia (o que trouxe, manteve, descartou e derivou), que só o
+   * servidor sabe.
    */
   async aplicarModeloDeFormulario(
     processoSeletivoId: string,
     modeloId: string,
+    formularioCodigo: string,
   ): Promise<ResultadoAplicacaoDeModelo> {
-    const corpo = { modeloId };
+    const corpo = { modeloId, formularioCodigo };
     const resultado = await this.gravacao.gravar('aplicacaoDeModelo', corpo, (contexto) =>
       this.formulariosApi.aplicarModeloDeFormulario(processoSeletivoId, corpo, contexto),
     );
     return resultado.ok ? { ok: true, relato: resultado.dados } : resultado;
   }
 
-  /** `aplica: false` grava a declaração com os cinco campos do bônus nulos; `true` exige a configuração. */
-  definirBonusRegional(
-    processoSeletivoId: string,
-    request: DefinirBonusRegionalRequest,
-  ): Promise<ResultadoGravacao> {
-    return this.gravacao.gravar('bonus', request, (contexto) =>
-      this.classificacaoApi.definirBonusRegional(processoSeletivoId, request, contexto),
+  /** `aplica: false` grava a declaração com os cinco campos do Fator de Atenuação nulos; `true` exige a configuração. */
+  definirFada(processoSeletivoId: string, request: DefinirFadaRequest): Promise<ResultadoGravacao> {
+    return this.gravacao.gravar('fada', request, (contexto) =>
+      this.classificacaoApi.definirFada(processoSeletivoId, request, contexto),
     );
   }
 

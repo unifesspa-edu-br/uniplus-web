@@ -1,4 +1,5 @@
 import {
+  type AceiteDeTermoInput,
   type AvaliacaoDaInscricaoRequest,
   type FormularioApresentadoDoProcessoDto,
   type InscricaoDto,
@@ -66,30 +67,40 @@ export function corpoDaAvaliacao(
   };
 }
 
-type TermosDoFormulario = FormularioApresentadoDoProcessoDto['formulario']['termos'];
-
 function aceitesDosTermos(
   termosAceitos: readonly string[],
-  termosDoFormulario: TermosDoFormulario,
+  formulario: FormularioApresentadoDoProcessoDto | null,
 ): InscricaoRequest['aceites'] {
-  const termos = new Map(termosDoFormulario.map((t) => [t.codigo, t]));
+  if (formulario === null) return [];
+  const termos = new Map(formulario.formulario.termos.map((t) => [t.codigo, t]));
   return termosAceitos.flatMap((codigo) => {
     const termo = termos.get(codigo);
-    if (!termo) return [];
-    return [{ codigo, versaoId: termo.versaoId, hashVersao: termo.conteudo.hashVersao }];
+    return termo ? [aceiteDoTermo(formulario.codigo, termo)] : [];
   });
 }
 
-/** O corpo do salvar e do envio: o da avaliação e os termos aceitos, com a versão que o formulário publica. */
+function aceiteDoTermo(
+  formularioCodigo: string,
+  termo: FormularioApresentadoDoProcessoDto['formulario']['termos'][number],
+): AceiteDeTermoInput {
+  return {
+    formularioCodigo,
+    codigo: termo.codigo,
+    versaoId: termo.versaoId,
+    hashVersao: termo.conteudo.hashVersao,
+  };
+}
+
+/** O corpo do salvar e do envio: o da avaliação e os termos aceitos, com o código do formulário e a versão que ele publica. */
 export function corpoDaGravacao(
   corpo: AvaliacaoDaInscricaoRequest,
   termosAceitos: readonly string[],
-  termosDoFormulario: TermosDoFormulario,
+  formulario: FormularioApresentadoDoProcessoDto | null,
 ): InscricaoRequest {
   return {
     ...corpo,
     ofertaCursoId: corpo.ofertaCursoId ?? null,
-    aceites: aceitesDosTermos(termosAceitos, termosDoFormulario),
+    aceites: aceitesDosTermos(termosAceitos, formulario),
   };
 }
 

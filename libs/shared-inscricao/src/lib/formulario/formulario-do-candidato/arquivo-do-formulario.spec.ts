@@ -9,7 +9,6 @@ const casos = import.meta.glob<Record<string, unknown>>('./interpretador/casos/*
 });
 
 const BASE = {
-  finalidade: 'INSCRICAO',
   regras: {},
   paginas: [],
   termos: [],
@@ -28,7 +27,7 @@ describe('arquivo importado no simulador', () => {
   it('o arquivo fora da forma é recusado com o caminho do problema, antes de qualquer interpretação', () => {
     expect(
       lerArquivoDoFormulario(
-        '{"regras": {}, "finalidade": "INSCRICAO", "coleta": {"itens": [], "grupos": []}, "paginas": "x"}',
+        '{"regras": {}, "coleta": {"itens": [], "grupos": []}, "paginas": "x"}',
       ),
     ).toEqual({
       valido: false,
@@ -71,7 +70,7 @@ describe('arquivo importado no simulador', () => {
     });
   });
 
-  it('a finalidade, o indicador de inclusão do candidato e a base legal do termo são conferidos', () => {
+  it('o indicador de inclusão do candidato e a base legal do termo são conferidos', () => {
     const grupo = { codigo: 'G', ordem: 0, rotulo: 'G', ocorrencias: { minimo: 0 }, subitens: [] };
     const termo = {
       codigo: 'T',
@@ -80,9 +79,6 @@ describe('arquivo importado no simulador', () => {
       conteudo: { nome: 'T', texto: 'x' },
     };
 
-    expect(
-      lerArquivoDoFormulario(JSON.stringify({ ...BASE, finalidade: undefined })),
-    ).toMatchObject({ valido: false, caminho: 'finalidade' });
     const coleta = { itens: [], grupos: [grupo] };
     expect(lerArquivoDoFormulario(JSON.stringify({ ...BASE, coleta }))).toMatchObject({
       valido: false,
@@ -226,7 +222,6 @@ describe('arquivo importado no simulador', () => {
 
   it('o formulário exportado, importado de volta, produz a mesma simulação', () => {
     const formulario: FormularioDoCandidato = {
-      finalidade: 'INSCRICAO',
       paginas: [
         {
           codigo: 'DADOS',

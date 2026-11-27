@@ -13,6 +13,7 @@ import {
   ID_AVALIACAO,
   PROCESSO_ID,
   ROTA_FASES,
+  FORMULARIO_NA_AVALIACAO,
   ROTA_PROCESSO,
   ROTA_DOCUMENTOS,
   PROCESSO_COM_ETAPA_GRAVADA,
@@ -95,6 +96,7 @@ async function avancarGravacao(tela: ContextoDoCronograma): Promise<void> {
   tela.controller.expectOne(ROTA_PROCESSO).flush({
     ...PROCESSO_COM_ETAPA_GRAVADA,
     cronogramaFases: [{ id: ID_AVALIACAO, codigo: 'AVALIACAO', faseCanonica: {} }],
+    formularios: [FORMULARIO_NA_AVALIACAO],
   });
   await tela.proximoPasso();
 }

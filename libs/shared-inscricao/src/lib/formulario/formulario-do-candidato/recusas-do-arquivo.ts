@@ -151,7 +151,6 @@ const COLETA = objeto<ColetaDoFormulario>({
 });
 const PRESSUPOSTOS = objeto<PressupostosDoFormulario>({ fatos: lista(PRESSUPOSTO) });
 const FORMULARIO = objeto<FormularioDoCandidato>({
-  finalidade: texto,
   paginas: lista(SECAO),
   termos: lista(TERMO),
   coleta: COLETA,

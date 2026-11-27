@@ -1,5 +1,4 @@
 import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
-import { FinalidadeFormularioCodigo } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import {
   campoDaRecusa,
@@ -13,7 +12,8 @@ const modeloComOpcionaisEmBranco = {
   codigo: ' INSCRICAO ',
   nome: ' Inscrição ',
   descricao: '   ',
-  finalidade: FinalidadeFormularioCodigo.INSCRICAO,
+  serveAFaseDeInscricao: true,
+  obrigatorio: false,
   tipoProcessoCodigo: '',
 };
 
@@ -26,7 +26,7 @@ describe('formulário de criação do modelo', () => {
 
     expect(comando).toMatchObject({
       codigo: ' INSCRICAO ',
-      finalidade: FinalidadeFormularioCodigo.INSCRICAO,
+      declaracao: { serveAFaseDeInscricao: true, obrigatorio: false },
       descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
     });
     expect(comando.conteudo).not.toBeNull();
@@ -36,7 +36,7 @@ describe('formulário de criação do modelo', () => {
     const form = criarFormularioDeModelo();
     form.patchValue({
       descricao: 'Texto',
-      finalidade: FinalidadeFormularioCodigo.INSCRICAO,
+      serveAFaseDeInscricao: true,
       tipoProcessoCodigo: 'REGULAR_UNIFICADO',
     });
 

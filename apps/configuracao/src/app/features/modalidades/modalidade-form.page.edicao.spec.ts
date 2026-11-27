@@ -1,7 +1,7 @@
 import { TestRequest } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { BONUS, PaginaDaModalidade } from './modalidade-form.page.testing';
+import { MODALIDADE_REGIONAL, PaginaDaModalidade } from './modalidade-form.page.testing';
 import { URL, URL_ADMIN, modalidade } from './modalidades-de-teste.testing';
 
 describe('ModalidadeFormPage', () => {
@@ -17,7 +17,7 @@ describe('ModalidadeFormPage', () => {
 
   describe('edição', () => {
     it('mantém o que foi digitado ao trocar a natureza ou a composição', async () => {
-      await pagina.editar(modalidade({ ...BONUS, remanejamento: null }));
+      await pagina.editar(modalidade({ ...MODALIDADE_REGIONAL, remanejamento: null }));
       pagina.edicao.form.controls.descricao.setValue('Descrição digitada');
 
       pagina.setControl('composicaoVagas', 'RETIRADA_DE_OUTRA_MODALIDADE');
@@ -37,10 +37,10 @@ describe('ModalidadeFormPage', () => {
     });
 
     it('mantém a chave e mostra o título quando a gravação original ainda está em processamento (409)', async () => {
-      await pagina.editar(BONUS);
+      await pagina.editar(MODALIDADE_REGIONAL);
       const enviar = (): TestRequest => {
         pagina.edicao.salvar();
-        return pagina.controller.expectOne(`${URL_ADMIN}/${BONUS.id}`);
+        return pagina.controller.expectOne(`${URL_ADMIN}/${MODALIDADE_REGIONAL.id}`);
       };
       const primeira = enviar();
       const chave = primeira.request.headers.get('Idempotency-Key');
@@ -68,7 +68,7 @@ describe('ModalidadeFormPage', () => {
 
   describe('código na edição', () => {
     it('não normaliza nem altera o código, que é somente leitura', async () => {
-      await pagina.editar(BONUS);
+      await pagina.editar(MODALIDADE_REGIONAL);
       const campo = pagina.fixture.nativeElement.querySelector(
         'input[formcontrolname="codigo"]',
       ) as HTMLInputElement;
@@ -92,10 +92,10 @@ describe('ModalidadeFormPage', () => {
       pagina.fixture.nativeElement.querySelector('ui-falha-de-leitura button');
 
     it('a falha da leitura esconde o formulário em branco, e a nova tentativa o preenche e leva o foco ao título', async () => {
-      pagina.usarRota(BONUS.id);
+      pagina.usarRota(MODALIDADE_REGIONAL.id);
       await pagina.montar();
       pagina.controller
-        .expectOne(`${URL}/${BONUS.id}`)
+        .expectOne(`${URL}/${MODALIDADE_REGIONAL.id}`)
         .flush(...problema(503, 'Serviço indisponível'));
       await pagina.atualizar();
 
@@ -107,20 +107,20 @@ describe('ModalidadeFormPage', () => {
       tentar()?.click();
       pagina.fixture.detectChanges();
       TestBed.tick();
-      pagina.controller.expectOne(`${URL}/${BONUS.id}`).flush(BONUS);
+      pagina.controller.expectOne(`${URL}/${MODALIDADE_REGIONAL.id}`).flush(MODALIDADE_REGIONAL);
       await pagina.atualizar();
       await pagina.atualizar();
 
       expect(formulario()).not.toBeNull();
-      expect(pagina.edicao.form.controls.codigo.value).toBe(BONUS.codigo);
+      expect(pagina.edicao.form.controls.codigo.value).toBe(MODALIDADE_REGIONAL.codigo);
       expect(document.activeElement).toBe(titulo());
     });
 
     it('a modalidade inexistente não oferece nova tentativa nem formulário e manda voltar à lista', async () => {
-      pagina.usarRota(BONUS.id);
+      pagina.usarRota(MODALIDADE_REGIONAL.id);
       await pagina.montar();
       pagina.controller
-        .expectOne(`${URL}/${BONUS.id}`)
+        .expectOne(`${URL}/${MODALIDADE_REGIONAL.id}`)
         .flush(...problema(404, 'Modalidade não encontrada'));
       await pagina.atualizar();
 

@@ -11,6 +11,7 @@ import {
 } from '../fixtures/processo-publicado-completo';
 import { situacaoDoProcesso } from '../fixtures/valor-do-enum';
 import { CORS, mockarCatalogos, PRODUTO_DEFINITIVO, SEM_CONTEUDO } from './api-da-unidade-da-fase';
+import { formulariosNaFase } from './formularios-na-fase';
 import { leituraDoProcessoCompleto } from './leituras-do-processo-completo';
 import { responder, responderCom } from './responder';
 
@@ -106,6 +107,7 @@ function detalheDoProcesso(servidor: ServidorDaRegraDeHomologacao) {
     ...PROCESSO_PUBLICADO_COMPLETO,
     situacao: situacaoDoProcesso(servidor.publicado ? 'publicado' : 'rascunho'),
     cronogramaFases: [servidor.fase],
+    formularios: formulariosNaFase(servidor.fase.id),
     opcoesDeclaradas: opcoesDasEdicoes(servidor),
     atendimentoEspecializado: null,
     regrasDeComprovacao: PROCESSO_PUBLICADO_COMPLETO.regrasDeComprovacao.slice(0, 1),

@@ -30,7 +30,7 @@ import {
   ORIENTACAO_DE_PERMUTACAO,
   PERMUTACAO_DE_ORDEM,
 } from './gravar-cronograma-fases';
-import { GravacaoDasExigenciasDocumentais } from './gravacao-das-exigencias-documentais.service';
+import { GravacaoDasExigenciasDocumentais } from '../../../shared/exigencias/gravacao-das-exigencias-documentais.service';
 import { RecusaDaGravacaoDasEtapas } from './recusa-da-gravacao-das-etapas.service';
 import {
   ReleituraDosIdentificadores,
@@ -48,6 +48,8 @@ const UNIDADE_RESPONSAVEL_NAO_ENCONTRADA =
 function semCausas(problema: ProblemaDaGravacao): boolean {
   return (problema.errors ?? []).length === 0;
 }
+
+const AS_ETAPAS_E_O_CRONOGRAMA_FORAM_GRAVADOS = 'As etapas e o cronograma foram gravados.';
 
 /** A gravação foi superada por troca de processo ou de rascunho: nada a relatar ao operador. */
 const GRAVACAO_SUPERADA: ValidacaoDoPasso = { valid: false, messages: [] };
@@ -330,7 +332,10 @@ export class GravacaoDoCronograma {
 
   private async gravarExigencias(conteudo: ConteudoDaGravacao): Promise<ValidacaoDoPasso | null> {
     this.recusasDasExigencias.limpar();
-    const exigencias = await this.exigencias.gravar(conteudo.processoId);
+    const exigencias = await this.exigencias.gravar(
+      conteudo.processoId,
+      AS_ETAPAS_E_O_CRONOGRAMA_FORAM_GRAVADOS,
+    );
     if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
     this.recusasDasExigencias.registrar(exigencias.recusas ?? []);
     if (!exigencias.valid) this.apresentacaoDasRecusas.apresentar();

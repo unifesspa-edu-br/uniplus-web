@@ -10,7 +10,7 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import { AUTORIZACAO_BASE_PATH } from '@uniplus/shared-data/autorizacao';
 import { CampiApi, CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { ORGANIZACAO_BASE_PATH, UnidadesApi } from '@uniplus/shared-data/organizacao';
-import { BaseLegalBonusRegionalStore } from '../../features/base-legal-bonus-regional/base-legal-bonus-regional.store';
+import { BaseLegalDoFadaStore } from '../../features/bases-legais-fada/base-legal-do-fada.store';
 import { CalendariosStore } from '../../features/calendario-dias-uteis/calendarios.store';
 import { CampiStore } from '../../features/campi/campi.store';
 import { CondicoesAtendimentoStore } from '../../features/condicoes-atendimento/condicoes-atendimento.store';
@@ -44,6 +44,14 @@ interface Loja {
   mensagemDeErro?(): string | null;
   errorMessage?(): string | null;
 }
+
+const avancar = (loja: Loja): void => (loja.proximaPagina ?? loja.proxima)?.call(loja);
+const repetir = (loja: Loja): unknown =>
+  (loja.tentarNovamente ?? loja.recarregar ?? loja.carregar)?.call(loja);
+const estaCarregando = (loja: Loja): boolean | undefined =>
+  (loja.carregando ?? loja.loading)?.call(loja);
+const mensagemDe = (loja: Loja): string | null | undefined =>
+  (loja.mensagemDeErro ?? loja.errorMessage)?.call(loja);
 
 interface Lista {
   readonly nome: string;
@@ -98,9 +106,9 @@ const LISTAS: readonly Lista[] = [
     apoio: [AprovacaoDoCatalogo],
   },
   {
-    nome: 'bases legais do bônus regional',
-    loja: BaseLegalBonusRegionalStore,
-    url: '/api/configuracao/base-legal-bonus-regional',
+    nome: 'bases legais do Fator de Atenuação',
+    loja: BaseLegalDoFadaStore,
+    url: '/api/configuracao/bases-legais-fada',
   },
   {
     nome: 'termos de consentimento',
@@ -182,26 +190,24 @@ describe('listas paginadas por cursor: cursor expirado', () => {
       await atualizar();
       http.expectOne(daLista(lista, false)).flush([], PROXIMA);
       await atualizar();
-      (loja.proximaPagina ?? loja.proxima)?.call(loja);
+      avancar(loja);
       await atualizar();
       const [erro, opcoesDoErro] = problema(500, 'uniplus.erro');
       http.expectOne(daLista(lista, true)).flush(erro, opcoesDoErro);
       await atualizar();
-      (loja.tentarNovamente ?? loja.recarregar ?? loja.carregar)?.call(loja);
+      repetir(loja);
       await atualizar();
 
       const [expirado, opcoes] = problema(410, 'uniplus.cursor.expirado');
       http.expectOne(daLista(lista, true)).flush(expirado, opcoes);
       await Promise.resolve();
-      const carregando = loja.carregando ?? loja.loading;
-      const mensagem = loja.mensagemDeErro ?? loja.errorMessage;
-      expect(carregando?.call(loja)).toBe(true);
-      expect(mensagem?.call(loja)).toBeNull();
+      expect(estaCarregando(loja)).toBe(true);
+      expect(mensagemDe(loja)).toBeNull();
 
       await atualizar();
       http.expectOne(daLista(lista, false)).flush([]);
       await atualizar();
-      expect(carregando?.call(loja)).toBe(false);
+      expect(estaCarregando(loja)).toBe(false);
       expect(info).toHaveBeenCalledTimes(1);
       // As leituras de apoio da loja (categorias, fatos, fases) não fazem parte do roteiro.
       for (const apoio of http.match(() => true)) apoio.flush([]);

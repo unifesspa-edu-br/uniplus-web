@@ -80,6 +80,15 @@
         (consequenciaChange)="atualizarConsequencia(grupo, $event)"
         (basesChange)="atualizarNormas(grupo, $event)"
       />
+      @if (oferecePrazoParaReenvio(grupo)) {
+        <sel-prazo-para-reenvio
+          objeto="os documentos"
+          [idBase]="'reenvio-' + grupo.identificadorNoRascunho"
+          [marcado]="grupo.abrePrazoParaReenvio"
+          [desabilitado]="!cronograma.edicaoLiberada()"
+          (marcadoChange)="escolherPrazoParaReenvio(grupo, $event)"
+        />
+      }
     </sel-grupo-de-documentos>
   }
 }

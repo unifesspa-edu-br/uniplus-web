@@ -47,7 +47,7 @@ const modalidadeSeed: ModalidadeDto = {
       },
     ],
   ],
-  acaoQuandoIndeferido: valorDeTeste(AcaoQuandoIndeferidoCodigo.RECLASSIFICA_AC),
+  acaoQuandoIndeferido: valorDeTeste(AcaoQuandoIndeferidoCodigo.RETIRA_A_MODALIDADE),
   baseLegal: 'Lei 12.711/2012, art. 1º',
   criadoEm: '2026-07-03T12:00:00Z',
 };
@@ -65,7 +65,7 @@ const criarCommand: CriarModalidadeCommand = {
     fallback: null,
   },
   regraDeAplicabilidade: [[{ fato: 'PCD', operador: OperadorCodigo.IGUAL, valor: true }]],
-  acaoQuandoIndeferido: AcaoQuandoIndeferidoCodigo.RECLASSIFICA_AC,
+  acaoQuandoIndeferido: AcaoQuandoIndeferidoCodigo.RETIRA_A_MODALIDADE,
   baseLegal: 'Lei 14.723/2023',
 };
 
@@ -145,7 +145,7 @@ describe('ModalidadesApi', () => {
               },
             ],
           ],
-          acaoQuandoIndeferido: AcaoQuandoIndeferidoCodigo.RECLASSIFICA_AC,
+          acaoQuandoIndeferido: AcaoQuandoIndeferidoCodigo.RETIRA_A_MODALIDADE,
           baseLegal: 'Lei 12.711/2012',
         },
         withIdempotencyKey('k'),

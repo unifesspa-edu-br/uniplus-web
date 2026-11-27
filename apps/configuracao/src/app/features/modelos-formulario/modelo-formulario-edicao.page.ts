@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, viewChild } from '@angular/core';
 import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
-import { EditorDeFormularioComponent } from '@uniplus/shared-inscricao/formulario';
+import {
+  EditorDeFormularioComponent,
+  FINALIDADE_INSCRICAO,
+} from '@uniplus/shared-inscricao/formulario';
 import {
   AlertComponent,
   BUSCA_DE_MUNICIPIOS,
@@ -15,6 +18,8 @@ import { ModeloFormularioCabecalhoComponent } from './modelo-formulario-cabecalh
 import { ModeloFormularioDocumentosComponent } from './modelo-formulario-documentos.component';
 import { ModeloFormularioIdentificacaoComponent } from './modelo-formulario-identificacao.component';
 import { ModeloFormularioRodapeComponent } from './modelo-formulario-rodape.component';
+
+const FORA_DA_INSCRICAO = 'FORA_DA_INSCRICAO';
 
 @Component({
   selector: 'cfg-modelo-formulario-edicao-page',
@@ -49,6 +54,11 @@ export class ModeloFormularioEdicaoPage {
       salvando: this.edicao.somenteLeitura,
       aberto: computed(() => this.store.modelo() !== null),
     });
+  }
+
+  /** O editor decide os blocos e os fatos admitidos pela fase de inscrição que o modelo declara servir. */
+  protected finalidadeDoEditor(modelo: { declaracao: { serveAFaseDeInscricao: boolean } }): string {
+    return modelo.declaracao.serveAFaseDeInscricao ? FINALIDADE_INSCRICAO : FORA_DA_INSCRICAO;
   }
 
   protected salvar(): void {

@@ -36,8 +36,8 @@ const CLASSIFICACAO = {
 
 const BASE_LEGAL_ID_SNAPSHOT = 'ba5e0000-0000-7000-8000-000000000001';
 
-const BONUS = {
-  id: 'snapshot-bonus-1',
+const FADA = {
+  id: 'snapshot-fada-1',
   regra: { codigo: 'BONUS-MULTIPLICATIVO', versao: '1.0' },
   fator: 1.2,
   teto: null,
@@ -93,7 +93,7 @@ const CRITERIOS_DESEMPATE = [
   },
 ];
 
-describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)', () => {
+describe('hidratarDraft — classificação, Fator de Atenuação e desempate (UNI-REQ-0482)', () => {
   it('projeta o número de opções de curso, e o deixa vazio quando o processo não o declarou', () => {
     const declarado = dtoComCronograma({ opcoesDeCurso: { numero: 2 } });
     const semDeclarar = dtoComCronograma({ opcoesDeCurso: null });
@@ -204,49 +204,40 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
     expect(classificacao.regrasEliminacao).toEqual([]);
   });
 
-  it('projeta o bônus regional gravado, com a declaração de que aplica', () => {
-    const { bonus } = hidratarDraft(
-      DRAFT,
-      dtoComCronograma({ bonusRegional: BONUS, aplicaBonusRegional: true }),
-    );
+  it('projeta o Fator de Atenuação gravado, com a declaração de que aplica', () => {
+    const { fada } = hidratarDraft(DRAFT, dtoComCronograma({ fada: FADA, aplicaFada: true }));
 
-    expect(bonus).toEqual({
+    expect(fada).toEqual({
       aplica: true,
       regraCodigo: 'BONUS-MULTIPLICATIVO',
       regraVersao: '1.0',
       fator: '1.2',
       teto: '',
-      baseLegalBonusRegionalId: BASE_LEGAL_ID_SNAPSHOT,
+      baseLegalDoFadaId: BASE_LEGAL_ID_SNAPSHOT,
       fatoElegibilidadeCodigo: 'SOLICITA_ACRESCIMO',
     });
   });
 
   /** A declaração vem do servidor; sem configuração, os campos voltam vazios. */
-  it('projeta a declaração de que não aplica o bônus, sem resíduo de configuração', () => {
-    const { bonus } = hidratarDraft(
-      DRAFT,
-      dtoComCronograma({ bonusRegional: null, aplicaBonusRegional: false }),
-    );
+  it('projeta a declaração de que não aplica o Fator de Atenuação, sem resíduo de configuração', () => {
+    const { fada } = hidratarDraft(DRAFT, dtoComCronograma({ fada: null, aplicaFada: false }));
 
-    expect(bonus).toEqual({
+    expect(fada).toEqual({
       aplica: false,
       regraCodigo: '',
       regraVersao: '',
       fator: '',
       teto: '',
-      baseLegalBonusRegionalId: '',
+      baseLegalDoFadaId: '',
       fatoElegibilidadeCodigo: '',
     });
   });
 
-  /** Ausência da configuração não é mais "sem bônus": sem declaração, o passo pergunta. */
-  it('mantém o bônus por declarar quando o servidor ainda não tem a declaração', () => {
-    const { bonus } = hidratarDraft(
-      DRAFT,
-      dtoComCronograma({ bonusRegional: null, aplicaBonusRegional: null }),
-    );
+  /** Ausência da configuração não é mais "sem Fator de Atenuação": sem declaração, o passo pergunta. */
+  it('mantém o Fator de Atenuação por declarar quando o servidor ainda não tem a declaração', () => {
+    const { fada } = hidratarDraft(DRAFT, dtoComCronograma({ fada: null, aplicaFada: null }));
 
-    expect(bonus.aplica).toBeNull();
+    expect(fada.aplica).toBeNull();
   });
 
   it('projeta os critérios de desempate na ordem em que o servidor os avalia', () => {

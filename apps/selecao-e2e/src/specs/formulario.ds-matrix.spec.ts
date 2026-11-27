@@ -7,6 +7,7 @@ import {
   PROCESSO_PUBLICADO_DA_MEDICINA,
   TIPOS_DE_PROCESSO,
 } from '../fixtures/consulta-da-medicina';
+import { processoComAFaseDaInscricao } from '../support/api-do-formulario-do-processo';
 import { blocosColados } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
 import { irAoPasso } from '../support/navega-passo';
@@ -144,7 +145,7 @@ async function mockarApi(page: Page, status: Status): Promise<void> {
     if (caminho.endsWith(PROCESSO_PUBLICADO_DA_MEDICINA.id)) {
       await responderCom(
         route,
-        { ...PROCESSO_PUBLICADO_DA_MEDICINA, situacao: situacaoDoProcesso(status) },
+        processoComAFaseDaInscricao(situacaoDoProcesso(status)),
         CORS_HEADERS,
       );
       return;

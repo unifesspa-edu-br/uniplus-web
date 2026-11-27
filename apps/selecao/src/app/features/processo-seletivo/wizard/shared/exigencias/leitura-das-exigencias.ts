@@ -119,6 +119,7 @@ function conteudoDoDocumentoParaComparacao(exigencia: ExigenciaDeDocumento): str
     aplicabilidade: exigencia.aplicabilidade,
     obrigatorio: exigencia.obrigatorio,
     consequenciaIndeferimento: exigencia.consequenciaIndeferimento,
+    abrePrazoParaReenvio: exigencia.abrePrazoParaReenvio,
     condicoes: exigencia.condicoes,
     basesLegais: exigencia.basesLegais,
     criterios: criteriosParaComparacao(exigencia),
@@ -179,19 +180,22 @@ function camposDaRegra(regra: RegraDeComprovacaoDto) {
   return {
     identificadorNoRascunho: criarIdentificadorDaRegra(),
     quantidadeMinima: cardinalidade.quantidadeMinima ?? null,
-    consequencia: indeferimento.consequencia?.codigo ?? null,
+    consequencia: indeferimento.consequenciaDoDescumprimento?.codigo ?? null,
+    abrePrazoParaReenvio: indeferimento.abrePrazoParaReenvio,
     basesLegais: indeferimento.basesLegais.length
       ? indeferimento.basesLegais.map(baseLegalDe)
       : null,
-    criterioDeDistincao: codigoDaDistincao(regra),
-    dataReferencia: cardinalidade.distincao?.dataReferencia ?? null,
-    ocorrenciasEsperadas: cardinalidade.distincao?.ocorrenciasEsperadas ?? null,
+    ...distincaoDaRegra(regra),
     grupoDoFormularioParaRepeticao: regra.grupoDoFormularioParaRepeticao,
   };
 }
 
-function codigoDaDistincao(regra: RegraDeComprovacaoDto): string | null {
-  return regra.cardinalidade.distincao?.criterioDeDistincao?.codigo ?? null;
+function distincaoDaRegra({ cardinalidade }: RegraDeComprovacaoDto) {
+  return {
+    criterioDeDistincao: cardinalidade.distincao?.criterioDeDistincao?.codigo ?? null,
+    dataReferencia: cardinalidade.distincao?.dataReferencia ?? null,
+    ocorrenciasEsperadas: cardinalidade.distincao?.ocorrenciasEsperadas ?? null,
+  };
 }
 
 function documentoDe(
@@ -211,7 +215,7 @@ function documentoNaFase(
     tipoDocumentoNome: dto.tipoDocumento.nome,
     ...faseDoDocumento(dto.momento.faseId, codigoPorFaseId),
     etapaId: dto.momento.etapaId,
-    finalidade: dto.momento.finalidade?.codigo ?? null,
+    formularioCodigo: dto.momento.formularioCodigo,
     ...regraDaExigenciaLida(dto),
     ...criteriosDoComprovanteLidos(dto.requisitos, codigoPorFaseId),
   };
@@ -230,7 +234,8 @@ function regraDaExigenciaLida(
     fatosComprovados: dto.fatosComprovados,
     aplicabilidade: aplicabilidade.tipo.codigo,
     obrigatorio: indeferimento.obrigatorio,
-    consequenciaIndeferimento: indeferimento.consequencia?.codigo ?? '',
+    consequenciaIndeferimento: indeferimento.consequenciaDoDescumprimento?.codigo ?? '',
+    abrePrazoParaReenvio: indeferimento.abrePrazoParaReenvio,
     condicoes: aplicabilidade.condicoes.map(condicaoDaExigencia),
     basesLegais: indeferimento.basesLegais.map(baseLegalDe),
   };

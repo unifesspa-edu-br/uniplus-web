@@ -3,12 +3,20 @@ import { describe, expect, it } from 'vitest';
 import type { ExigenciaDeDocumento, RegraDeComprovacao } from '../../processo-seletivo.models';
 import { todasAsExigencias } from './consulta-das-exigencias';
 import { regraDeDocumento } from './exigencias-documentais';
-import { agrupadosPorFormulario, comFinalidade, faltaOFormulario } from './formulario-da-exigencia';
+import {
+  agrupadosPorFormulario,
+  aguardaFormulario,
+  codigoEnviado,
+  comFormularioDaExigencia,
+  faltaOFormulario,
+  formularioDaExigencia,
+  formulariosEscolhiveis,
+} from './formulario-da-exigencia';
 import { regrasDeComprovacaoParaEnvio } from './gravacao-das-exigencias';
 import {
   ETAPAS_VIVAS,
   FASES,
-  FINALIDADES_POR_FASE,
+  FORMULARIOS_POR_FASE,
   ID_CONTRACHEQUE,
   ID_DIPLOMA,
   ID_HABILITACAO,
@@ -38,32 +46,34 @@ describe('o formulário em que o documento é apresentado', () => {
         exigencia({
           tipoDocumentoId: ID_DIPLOMA,
           faseCodigo: 'ISENCAO',
-          finalidade: 'ISENCAO_TAXA',
+          formularioCodigo: 'ISENCAO_TAXA',
         }),
         exigencia({ tipoDocumentoId: ID_CONTRACHEQUE, faseCodigo: 'ISENCAO' }),
       ),
     );
 
     expect(
-      regrasDeComprovacao.map((regraPrincipal) => regraPrincipal.documento?.momento?.finalidade),
+      regrasDeComprovacao.map(
+        (regraPrincipal) => regraPrincipal.documento?.momento?.formularioCodigo,
+      ),
     ).toEqual(['HABILITACAO', 'ISENCAO_TAXA', null]);
   });
 
   it('o formulário declarado que a fase não responde mais não é trocado pelo que ela responde, e a falta é dita', () => {
     const regrasDeComprovacao = comando(
-      rascunho(exigencia({ faseCodigo: 'HABILITACAO', finalidade: 'ISENCAO_TAXA' })),
+      rascunho(exigencia({ faseCodigo: 'HABILITACAO', formularioCodigo: 'ISENCAO_TAXA' })),
     );
 
-    expect(regrasDeComprovacao[0].documento?.momento?.finalidade).toBe('ISENCAO_TAXA');
+    expect(regrasDeComprovacao[0].documento?.momento?.formularioCodigo).toBe('ISENCAO_TAXA');
     expect(faltaOFormulario('ISENCAO_TAXA', ['HABILITACAO'])).toBe(
-      'O formulário de isenção da taxa de inscrição não é respondido nesta fase; escolha o formulário.',
+      'O formulário ISENCAO_TAXA não é respondido nesta fase; escolha o formulário.',
     );
   });
 
   it('no regime de todas as fases, a cópia não herda o formulário do modelo: cada fase resolve o seu', () => {
     const fases = new Map([...FASES, ['RESULTADO', '01960000-0000-7000-0000-0000000000f3']]);
-    const finalidades = new Map([...FINALIDADES_POR_FASE, ['RESULTADO', []]]);
-    const modelo = exigencia({ faseCodigo: 'ISENCAO', finalidade: 'INSCRICAO' });
+    const formularios = new Map([...FORMULARIOS_POR_FASE, ['RESULTADO', []]]);
+    const modelo = exigencia({ faseCodigo: 'ISENCAO', formularioCodigo: 'INSCRICAO' });
 
     const regrasDeComprovacao = regrasDeComprovacaoParaEnvio(
       { regrasDeComprovacao: [regraDeDocumento(modelo)], emTodasAsFases: [ID_RG] },
@@ -71,14 +81,14 @@ describe('o formulário em que o documento é apresentado', () => {
         faseIdPorCodigo: fases,
         modalidadesOfertadas: ['AC'],
         etapasVivas: ETAPAS_VIVAS,
-        finalidadesPorFase: finalidades,
+        formulariosPorFase: formularios,
       },
     ).regras;
 
     expect(
       regrasDeComprovacao.map((regraPrincipal) => [
         regraPrincipal.documento?.momento?.faseId,
-        regraPrincipal.documento?.momento?.finalidade,
+        regraPrincipal.documento?.momento?.formularioCodigo,
       ]),
     ).toEqual([
       [ID_ISENCAO, 'INSCRICAO'],
@@ -89,18 +99,18 @@ describe('o formulário em que o documento é apresentado', () => {
 
   it('os documentos de um grupo viajam com o formulário declarado na regra principal', () => {
     const grupo = grupoDeAlternativas(
-      exigencia({ faseCodigo: 'ISENCAO', finalidade: 'ISENCAO_TAXA' }),
+      exigencia({ faseCodigo: 'ISENCAO', formularioCodigo: 'ISENCAO_TAXA' }),
       exigencia({
         tipoDocumentoId: ID_CONTRACHEQUE,
         faseCodigo: 'ISENCAO',
-        finalidade: 'INSCRICAO',
+        formularioCodigo: 'INSCRICAO',
       }),
     );
 
     const [regraPrincipal] = comando({ regrasDeComprovacao: [grupo], emTodasAsFases: [] });
 
     expect(
-      regraPrincipal.itens?.map((itemDoGrupo) => itemDoGrupo.documento?.momento?.finalidade),
+      regraPrincipal.itens?.map((itemDoGrupo) => itemDoGrupo.documento?.momento?.formularioCodigo),
     ).toEqual(['ISENCAO_TAXA', 'ISENCAO_TAXA']);
   });
 
@@ -113,13 +123,13 @@ describe('o formulário em que o documento é apresentado', () => {
       exigencia({ tipoDocumentoId: ID_DIPLOMA, faseCodigo: 'ISENCAO' }),
     );
 
-    const declarado = comFinalidade(
+    const declarado = comFormularioDaExigencia(
       { regrasDeComprovacao: [grupo, solta], emTodasAsFases: [] },
       grupo.itens?.[1].identificadorNoRascunho ?? '',
       'ISENCAO_TAXA',
     );
 
-    expect(todasAsExigencias(declarado).map((documento) => documento.finalidade)).toEqual([
+    expect(todasAsExigencias(declarado).map((documento) => documento.formularioCodigo)).toEqual([
       'ISENCAO_TAXA',
       'ISENCAO_TAXA',
       null,
@@ -128,13 +138,13 @@ describe('o formulário em que o documento é apresentado', () => {
 
   it('na fase dividida, agrupa por formulário com o que falta escolher por último; a de um formulário só não se divide', () => {
     const itens = [
-      { nome: 'sem', finalidade: null },
-      { nome: 'isenção', finalidade: 'ISENCAO_TAXA' },
-      { nome: 'inscrição', finalidade: 'INSCRICAO' },
+      { nome: 'sem', codigo: null },
+      { nome: 'isenção', codigo: 'ISENCAO_TAXA' },
+      { nome: 'inscrição', codigo: 'INSCRICAO' },
     ];
     const agrupar = (atendidas: readonly string[]) =>
-      agrupadosPorFormulario(itens, (item) => item.finalidade, atendidas).map((grupo) => [
-        grupo.finalidade,
+      agrupadosPorFormulario(itens, (item) => item.codigo, atendidas).map((grupo) => [
+        grupo.codigo,
         grupo.itens.map((item) => item.nome),
       ]);
 
@@ -144,5 +154,31 @@ describe('o formulário em que o documento é apresentado', () => {
       [null, ['sem']],
     ]);
     expect(agrupar(['HABILITACAO'])).toEqual([['HABILITACAO', ['sem', 'isenção', 'inscrição']]]);
+  });
+});
+
+describe('a exigência numa fase sem formulário', () => {
+  it('aguarda o formulário, tenha ou não declarado um', () => {
+    expect(formularioDaExigencia(null, [])).toEqual({ situacao: 'AGUARDA_FORMULARIO' });
+    expect(formularioDaExigencia('INSCRICAO', [])).toEqual({ situacao: 'AGUARDA_FORMULARIO' });
+    expect(aguardaFormulario([])).toBe(true);
+    expect(aguardaFormulario(['INSCRICAO'])).toBe(false);
+  });
+
+  it('não é falta a recusar: a tela só avisa', () => {
+    expect(faltaOFormulario(null, [])).toBeNull();
+  });
+
+  it('não leva código de formulário ao servidor', () => {
+    expect(codigoEnviado(null, [])).toBeNull();
+    expect(codigoEnviado('INSCRICAO', ['INSCRICAO'])).toBe('INSCRICAO');
+    expect(codigoEnviado(null, ['INSCRICAO'])).toBe('INSCRICAO');
+  });
+
+  it('não oferece a opção "Nenhum"; a escolha lista só os formulários da fase', () => {
+    expect(formulariosEscolhiveis([])).toEqual([]);
+    expect(formulariosEscolhiveis([{ codigo: 'INSCRICAO', rotulo: 'de inscrição' }])).toEqual([
+      { valor: 'INSCRICAO', rotulo: 'Formulário de inscrição' },
+    ]);
   });
 });

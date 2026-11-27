@@ -17,7 +17,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       citados: citados('RENDA_FAMILIAR'),
       catalogo,
       postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
-      fatosDeOutrasFinalidades: [],
+      fatosDeOutrosFormularios: [],
     });
 
     const paginas = [...(resultado.paginas ?? [])].sort((a, b) => a.ordem - b.ordem);
@@ -49,7 +49,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       citados: citados('RENDA_FAMILIAR'),
       catalogo,
       postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
-      fatosDeOutrasFinalidades: [],
+      fatosDeOutrosFormularios: [],
     });
 
     expect(resultado.paginas?.filter((e) => e.codigo === SECAO_OUTROS_DADOS)).toHaveLength(1);
@@ -63,7 +63,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
         citados: citados('SEXO'),
         catalogo,
         postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
-        fatosDeOutrasFinalidades: [],
+        fatosDeOutrosFormularios: [],
       }).itens,
     ).toEqual([]);
   });
@@ -76,7 +76,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
         citados: citados('RENDA_FAMILIAR'),
         catalogo,
         postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
-        fatosDeOutrasFinalidades: ['RENDA_FAMILIAR'],
+        fatosDeOutrosFormularios: ['RENDA_FAMILIAR'],
       }),
     ).toBe(inscricao);
   });
@@ -100,7 +100,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
         citados: citados('RENDA_FAMILIAR'),
         catalogo,
         postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
-        fatosDeOutrasFinalidades: [],
+        fatosDeOutrosFormularios: [],
       }),
     ).toBe(inscricao);
   });
@@ -112,7 +112,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
         citados: citados('MODALIDADE'),
         catalogo,
         postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
-        fatosDeOutrasFinalidades: [],
+        fatosDeOutrosFormularios: [],
       }),
     ).toBe(inscricao);
   });
@@ -122,7 +122,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       citados: citados('RENDA_FAMILIAR'),
       catalogo,
       postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
-      fatosDeOutrasFinalidades: [],
+      fatosDeOutrosFormularios: [],
     });
 
     const semGatilho = comCamposQueAsExigenciasPressupoem(comCampo, {
@@ -131,7 +131,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       postosPelasExigencias: CamposPostosPelasExigencias.vazia().comOsQueEntraram([
         'RENDA_FAMILIAR',
       ]),
-      fatosDeOutrasFinalidades: [],
+      fatosDeOutrosFormularios: [],
     });
 
     expect(semGatilho.itens?.map((i) => i.fatoCodigo)).not.toContain('RENDA_FAMILIAR');
@@ -146,7 +146,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
         citados: citados(),
         catalogo,
         postosPelasExigencias: CamposPostosPelasExigencias.vazia(),
-        fatosDeOutrasFinalidades: [],
+        fatosDeOutrosFormularios: [],
       }),
     ).toBe(inscricao);
   });
@@ -171,7 +171,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
         citados: citados(),
         catalogo,
         postosPelasExigencias: CamposPostosPelasExigencias.vazia().comOsQueEntraram(['PCD']),
-        fatosDeOutrasFinalidades: [],
+        fatosDeOutrosFormularios: [],
       }),
     ).toBe(citadoPorCampo);
   });

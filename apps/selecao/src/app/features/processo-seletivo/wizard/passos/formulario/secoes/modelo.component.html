@@ -11,25 +11,25 @@
   <ui-falha-de-leitura titulo="Modelos de formulário" variante="warning" [leitura]="leitura" />
 
   @if (aplicacao.modelosCarregando()) {
-    <p class="field__hint" [uiIndicadorDaLeitura]="leitura">
-      Carregando os modelos de formulário…
-    </p>
+    <p class="field__hint" [uiIndicadorDaLeitura]="leitura">Carregando os modelos de formulário…</p>
   } @else if (aplicacao.modelosErro() !== null) {
     <!-- A falha é do aviso acima. -->
   } @else if (aba().modelos.length === 0) {
     <p class="field__hint" [id]="aba().idBase + '-sem-modelo'">
-      Não há modelo ativo de {{ aba().nome }} para o tipo deste processo.
+      Não há modelo ativo que sirva a este formulário no tipo deste processo.
     </p>
   } @else {
     <div class="form-modelo__escolha">
       <div class="form-field">
-        <label class="label" [for]="aba().idBase + '-modelo'">Modelo de {{ aba().nome }}</label>
+        <label class="label" [for]="aba().idBase + '-modelo'"
+          >Modelo do formulário {{ aba().nome }}</label
+        >
         <select
           class="select"
           [id]="aba().idBase + '-modelo'"
           [attr.aria-describedby]="aba().idBase + '-modelo-ajuda'"
           [disabled]="!store.aceitaEdicao()"
-          (change)="aplicacao.escolher(aba().finalidade, $any($event.target).value)"
+          (change)="aplicacao.escolher(aba().codigo, $any($event.target).value)"
         >
           <option value="" [selected]="aba().modeloEscolhido === ''">Escolha o modelo</option>
           @for (modelo of aba().modelos; track modelo.id) {
@@ -57,8 +57,8 @@
       </button>
     </div>
     <span class="field__hint" [id]="aba().idBase + '-modelo-ajuda'">
-      Só aparecem os modelos ativos de {{ aba().nome }} que servem ao tipo deste processo. Aplicar
-      um modelo substitui este formulário inteiro pela cópia dele.
+      Só aparecem os modelos ativos que servem à fase do formulário e ao tipo deste processo.
+      Aplicar um modelo substitui este formulário inteiro pela cópia dele.
       @if (store.processoSeletivoId() === null) {
         O modelo só pode ser aplicado depois que o processo for criado, ao gravar o primeiro passo.
       }

@@ -1,5 +1,4 @@
 import {
-  FinalidadeDoFormulario,
   TipoDaReferenciaTemporal,
   type DocumentoDaConfiguracao,
   type DocumentoDaConfiguracaoFormulario,
@@ -15,7 +14,7 @@ import {
   definirFaseDoFormulario,
   definirTitulo,
   PAGINAS,
-  formularioDaFinalidade,
+  formularioDoCodigo,
   ITENS,
   moverParte,
   removerFormulario,
@@ -23,8 +22,8 @@ import {
   TERMOS,
 } from './formulario.edicao';
 
-const INSCRICAO = FinalidadeDoFormulario.INSCRICAO;
-const ISENCAO = FinalidadeDoFormulario.ISENCAO_TAXA;
+const INSCRICAO = 'INSCRICAO';
+const ISENCAO = 'ISENCAO_TAXA';
 
 function umDocumento(): DocumentoDaConfiguracao {
   return {
@@ -36,13 +35,13 @@ function umDocumento(): DocumentoDaConfiguracao {
 }
 
 function formulario(documento: DocumentoDaConfiguracao): DocumentoDaConfiguracaoFormulario {
-  const encontrado = formularioDaFinalidade(documento, INSCRICAO);
+  const encontrado = formularioDoCodigo(documento, INSCRICAO);
   if (encontrado === undefined) throw new Error('O exemplo tem o formulário de inscrição.');
   return encontrado;
 }
 
 describe('cabeçalho do formulário', () => {
-  it('troca o título e a fase só no formulário da finalidade', () => {
+  it('troca o título e a fase só no formulário do código', () => {
     const documento = umDocumento();
 
     const editado = definirFaseDoFormulario(
@@ -55,7 +54,7 @@ describe('cabeçalho do formulário', () => {
     expect(formulario(editado).itens).toBe(formulario(documento).itens);
   });
 
-  it('finalidade sem formulário não ganha um ao editar o título', () => {
+  it('código sem formulário não ganha um ao editar o título', () => {
     const documento = umDocumento();
 
     expect(definirTitulo(documento, ISENCAO, 'Título')).toBe(documento);
@@ -67,16 +66,16 @@ describe('cabeçalho do formulário', () => {
 });
 
 describe('criar, remover e aplicar modelo', () => {
-  it('criar nasce só com a finalidade, e a finalidade que já tem formulário não ganha outro', () => {
+  it('criar nasce só com o código, e o código que já tem formulário não ganha outro', () => {
     const documento = umDocumento();
 
     const criado = criarFormulario(documento, ISENCAO);
 
-    expect(criado.formularios?.at(-1)).toEqual({ finalidade: ISENCAO });
+    expect(criado.formularios?.at(-1)).toEqual({ codigo: ISENCAO });
     expect(criarFormulario(criado, ISENCAO)).toBe(criado);
   });
 
-  it('remover tira só o formulário da finalidade e não persegue o que o cita', () => {
+  it('remover tira só o formulário do código e não persegue o que o cita', () => {
     const documento = umDocumento();
 
     const editado = removerFormulario(documento, INSCRICAO);
@@ -86,10 +85,10 @@ describe('criar, remover e aplicar modelo', () => {
     expect(removerFormulario(documento, ISENCAO)).toEqual(documento);
   });
 
-  it('o modelo aplicado substitui o formulário da finalidade e traz o modelo de origem', () => {
+  it('o modelo aplicado substitui o formulário do código e traz o modelo de origem', () => {
     const documento = umDocumento();
     const copia: DocumentoDaConfiguracaoFormulario = {
-      finalidade: ISENCAO,
+      codigo: ISENCAO,
       titulo: 'Do modelo',
       modeloOrigemCodigo: 'MODELO_PADRAO',
       itens: [{ codigoDoDado: 'RENDA' }],
@@ -97,13 +96,13 @@ describe('criar, remover e aplicar modelo', () => {
 
     const editado = aplicarModelo(documento, INSCRICAO, copia);
 
-    expect(editado.formularios).toEqual([{ ...copia, finalidade: INSCRICAO }]);
+    expect(editado.formularios).toEqual([{ ...copia, codigo: INSCRICAO }]);
   });
 
-  it('o modelo aplicado a uma finalidade sem formulário entra ao fim', () => {
+  it('o modelo aplicado a um código sem formulário entra ao fim', () => {
     const documento = umDocumento();
 
-    const editado = aplicarModelo(documento, ISENCAO, { finalidade: ISENCAO, titulo: 'Do modelo' });
+    const editado = aplicarModelo(documento, ISENCAO, { codigo: ISENCAO, titulo: 'Do modelo' });
 
     expect(editado.formularios).toHaveLength(2);
     expect(editado.formularios?.[0]).toBe(documento.formularios?.[0]);
@@ -193,11 +192,11 @@ describe('coleta', () => {
   });
 });
 
-describe('ocorrências e movimentos atípicos', () => {
+describe('movimentos atípicos', () => {
   it('preserva ordens quando o movimento é nulo ou a origem não existe', () => {
     const documento: DocumentoDaConfiguracao = {
       ...umDocumento(),
-      formularios: [{ finalidade: INSCRICAO, itens: [{ codigoDoDado: 'A', ordem: 7 }] }],
+      formularios: [{ codigo: INSCRICAO, itens: [{ codigoDoDado: 'A', ordem: 7 }] }],
     };
     expect(moverParte(documento, INSCRICAO, ITENS, { de: 0, para: 0 })).toBe(documento);
     expect(moverParte(documento, INSCRICAO, ITENS, { de: 8, para: 0 })).toBe(documento);

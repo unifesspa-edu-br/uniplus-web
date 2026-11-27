@@ -1,29 +1,35 @@
 import {
   BLOCO_COMPROVACAO_DOCUMENTAL,
   FINALIDADE_INSCRICAO,
-  FINALIDADES,
   paginasEmOrdem,
   type RecusasDoConteudo,
 } from '@uniplus/shared-inscricao/formulario';
 
-import type { FormularioDaFinalidade, WizardDraft } from '../../processo-seletivo.models';
+import type { FormularioDoProcessoNoRascunho, WizardDraft } from '../../processo-seletivo.models';
 import {
   documentosDoFormulario,
   type VocabularioDosDocumentos,
 } from '../../shared/documentos-exigidos';
 import { fatosForaDaColetaDaInscricao } from './fatos-coletados-da-inscricao';
 import {
+  emOrdemDoCronograma,
   fatosColetadosPelasOutras,
-  type FaseQueRespondeFormulario,
-  fatosDaInscricaoQueOutrasExigem,
-  finalidadesQueAtende,
-  nomeDaFinalidade,
-  sufixoDaFinalidade,
-} from './formularios-por-finalidade';
+  fatosDaInscricaoQueOutrosExigem,
+  rotuloDoFormulario,
+} from './formularios-do-rascunho';
 import { leituraDe } from './leitura-do-formulario';
-import type { ModeloOferecido } from './modelo-de-formulario';
+import { modelosQueServem, type ModeloOferecido } from './modelo-de-formulario';
+import {
+  consequenciaCabe,
+  ehDaInscricao,
+  obrigatoriedadeNaFase,
+  type FaseQueRespondeFormulario,
+} from './obrigatoriedade-na-fase';
 
-/** Uma fase do cronograma, com o nome que o seletor mostra e o que decide a finalidade que ela atende. */
+/** O que o editor compartilhado recebe como finalidade de um formulário que não é a inscrição. */
+const OUTRO_FORMULARIO = 'OUTRO_FORMULARIO';
+
+/** Uma fase do cronograma, com o nome que o seletor mostra e as marcas que dizem o que ela é. */
 export type FaseDoCronograma = FaseQueRespondeFormulario & { readonly nome: string };
 
 /** O que cada aba mostra além do próprio formulário: as recusas, os modelos e o resumo da aplicação. */
@@ -32,134 +38,224 @@ export interface TextosDasAbas {
   readonly recusasDaRemocao: ReadonlyMap<string, string>;
   readonly recusasDaAplicacao: ReadonlyMap<string, string>;
   readonly resumosDaAplicacao: ReadonlyMap<string, readonly string[]>;
-  readonly modelos: ReadonlyMap<string, readonly ModeloOferecido[]>;
+  readonly modelos: readonly ModeloOferecido[];
   readonly modeloEscolhido: ReadonlyMap<string, string>;
+}
+
+/** As fases em que um formulário pode ser respondido e a escolhida. */
+export interface FasesDoFormulario {
+  readonly opcoes: readonly FaseDoCronograma[];
+  readonly escolhida: string;
 }
 
 /** O que o modelo de exibição das abas precisa saber do passo. */
 export interface EntradaDasAbas {
-  readonly formularios: readonly FormularioDaFinalidade[];
-  readonly outrasFinalidades: readonly FormularioDaFinalidade[];
-  /** A fase de cada formulário: as que servem à finalidade dele e a escolhida. */
-  readonly fases: ReadonlyMap<
-    string,
-    { readonly opcoes: readonly FaseDoCronograma[]; readonly escolhida: string }
-  >;
+  /** Os formulários do rascunho, na ordem em que o rascunho os guarda. */
+  readonly formularios: readonly FormularioDoProcessoNoRascunho[];
+  /** A fase de cada formulário, pelo código dele. */
+  readonly fases: ReadonlyMap<string, FasesDoFormulario>;
   readonly fasesDoCronograma: readonly FaseDoCronograma[];
   readonly documentos: WizardDraft['documentos'];
   readonly vocabulario: VocabularioDosDocumentos;
-  /** Os fatos que a inscrição coleta: as outras finalidades os citam. */
+  /** Os fatos que a inscrição coleta: os outros formulários os citam. */
   readonly fatosDaInscricao: readonly string[];
   readonly textos: TextosDasAbas;
 }
 
+/** O formulário com o lugar que ele ocupa no rascunho, que dá o trecho estável dos ids da aba. */
+type FormularioNoRascunho = FormularioDoProcessoNoRascunho & { readonly posicao: number };
+
 /**
- * Uma aba por formulário, com o que o editor dela recebe. Na inscrição, o combo deixa de fora o
- * que as outras finalidades coletam, e os fatos que elas citam por negação são obrigatórios. Nas
- * outras, os fatos da inscrição são citáveis — o candidato já os respondeu — e nunca coletados de
- * novo.
+ * Uma aba por formulário, na ordem do cronograma e, na fase, o obrigatório primeiro. Na inscrição,
+ * o combo deixa de fora o que os outros formulários coletam, e os fatos que eles citam por negação
+ * são obrigatórios. Nos outros, os fatos da inscrição são citáveis — o candidato já os respondeu —
+ * e nunca coletados de novo.
  */
 export function abasDoFormulario(entrada: EntradaDasAbas) {
-  const finalidadesDaFase = new Map(
-    entrada.fasesDoCronograma.map((fase) => [fase.codigo, finalidadesQueAtende(fase)]),
+  const fasesEmOrdem = entrada.fasesDoCronograma.map((fase) => fase.codigo);
+  const noRascunho = entrada.formularios.map((formulario, posicao) => ({ ...formulario, posicao }));
+  return emOrdemDoCronograma(noRascunho, fasesEmOrdem).map((formulario) =>
+    abaDo(formulario, entrada),
   );
-  return entrada.formularios.map((formulario) => ({
-    ...identificacaoDaAba(formulario),
-    ...faseDaAba(entrada, formulario),
-    ...textosDaAba(entrada.textos, formulario),
-    ...fatosDaAba(entrada, formulario),
-    ...conteudoDaAba(entrada, formulario, finalidadesDaFase),
-  }));
 }
 
-/** Os ids e os nomes da aba, pela finalidade. */
-function identificacaoDaAba(formulario: FormularioDaFinalidade) {
-  const sufixo = sufixoDaFinalidade(formulario.finalidade);
-  const rotulo = FINALIDADES.find((opcao) => opcao.valor === formulario.finalidade)?.rotulo;
+function abaDo(formulario: FormularioNoRascunho, entrada: EntradaDasAbas) {
+  const faseDaAba = faseDaAbaDo(entrada, formulario);
+  const decisao = obrigatoriedadeDaAba(entrada, formulario);
+  const declarado = comoDeclarado(formulario, faseDaAba.fase, decisao);
+  const ehInscricao = ehDaInscricao(declarado, faseDaAba.faseEscolhida);
   return {
-    finalidade: formulario.finalidade,
-    rotulo: rotulo ?? formulario.finalidade,
-    nome: nomeDaFinalidade(formulario.finalidade),
-    ehInscricao: formulario.finalidade === FINALIDADE_INSCRICAO,
-    aba: `form-aba-${sufixo}`,
-    painel: `form-painel-${sufixo}`,
-    idBase: `form-${sufixo}`,
-    campoDaFase: `form-fase-${sufixo}`,
-    modeloOrigemCodigo: formulario.modeloOrigemCodigo ?? null,
+    ...identificacaoDaAba(declarado, faseDaAba.nomeDaFase, ehInscricao),
+    ...faseDaAba,
+    ...decisao,
+    ...textosDaAba(entrada.textos, formulario, faseDaAba.faseEscolhida, decisao.obrigatorio),
+    formulario: declarado,
+    ...fatosDaAba(entrada, formulario, ehInscricao),
+    ...conteudoDaAba(entrada, formulario),
   };
 }
 
-/** A fase em que o formulário é respondido: as que servem a ele e a escolhida. */
-function faseDaAba(entrada: EntradaDasAbas, formulario: FormularioDaFinalidade) {
-  const fase = entrada.fases.get(formulario.finalidade) ?? { opcoes: [], escolhida: '' };
+/** Os ids da aba: o lugar do formulário no rascunho dá o trecho estável, que não muda com o código. */
+function idsDaAba(posicao: number) {
+  return {
+    aba: `form-aba-${posicao}`,
+    painel: `form-painel-${posicao}`,
+    idBase: `form-${posicao}`,
+    campoDaFase: `form-fase-${posicao}`,
+  };
+}
+
+/** Os nomes da aba: o título, ou a fase e a obrigatoriedade, e o código entre aspas nas mensagens. */
+function nomesDaAba(formulario: FormularioNoRascunho, nomeDaFase: string | null) {
+  const rotulo = rotuloDoFormulario(formulario, nomeDaFase);
+  return { rotulo, nome: `"${rotulo}"` };
+}
+
+/** O que a aba diz do formulário sem mudar. */
+function dadosDoFormulario({ codigo, gravado, posicao, modeloOrigemCodigo }: FormularioNoRascunho) {
+  return { codigo, gravado, posicao, modeloOrigemCodigo };
+}
+
+/** O que identifica a aba: o código identifica o formulário, e o lugar dele dá os ids. */
+function identificacaoDaAba(
+  formulario: FormularioNoRascunho,
+  nomeDaFase: string | null,
+  ehInscricao: boolean,
+) {
+  return {
+    ...idsDaAba(formulario.posicao),
+    ...nomesDaAba(formulario, nomeDaFase),
+    ...dadosDoFormulario(formulario),
+    finalidadeDoEditor: ehInscricao ? FINALIDADE_INSCRICAO : OUTRO_FORMULARIO,
+    ehInscricao,
+  };
+}
+
+/** A fase em que o formulário é respondido: as que cabem a ele e a escolhida. */
+function faseDaAbaDo(entrada: EntradaDasAbas, formulario: FormularioDoProcessoNoRascunho) {
+  const fase = entrada.fases.get(formulario.codigo) ?? { opcoes: [], escolhida: '' };
+  const escolhida = entrada.fasesDoCronograma.find((opcao) => opcao.codigo === fase.escolhida);
   return {
     fases: fase.opcoes,
     fase: fase.escolhida,
-    nomeDaFase: fase.opcoes.find((opcao) => opcao.codigo === fase.escolhida)?.nome ?? null,
+    faseEscolhida: escolhida,
+    nomeDaFase: escolhida?.nome ?? null,
     semFaseParaDocumentos: fase.escolhida === '',
   };
 }
 
-/** As recusas, os modelos e o resumo da aplicação que a aba mostra. */
-function textosDaAba(textos: TextosDasAbas, formulario: FormularioDaFinalidade) {
-  const { finalidade } = formulario;
-  const recusaDaRemocao = textos.recusasDaRemocao.get(finalidade) ?? null;
-  const recusaDaAplicacao = textos.recusasDaAplicacao.get(finalidade) ?? null;
+/** O que a fase decide da obrigatoriedade e se a consequência da falta de envio cabe. */
+function obrigatoriedadeDaAba(entrada: EntradaDasAbas, formulario: FormularioDoProcessoNoRascunho) {
+  const escolhida = entrada.fases.get(formulario.codigo)?.escolhida;
+  const fase = entrada.fasesDoCronograma.find((opcao) => opcao.codigo === escolhida);
+  const ocupantes = entrada.formularios.filter(
+    (outro) => outro.codigo !== formulario.codigo && outro.faseCodigo === escolhida,
+  );
+  const obrigatoriedade = obrigatoriedadeNaFase(fase, { atual: formulario.obrigatorio, ocupantes });
+  return {
+    obrigatorio: obrigatoriedade.obrigatorio,
+    obrigatoriedade,
+    consequenciaCabe: consequenciaCabe(fase, obrigatoriedade.obrigatorio),
+    consequenciaDaFaltaDeEnvio: formulario.consequenciaDaFaltaDeEnvio,
+  };
+}
+
+type DecisaoDaAba = ReturnType<typeof obrigatoriedadeDaAba>;
+
+/** O formulário como a aba o declara: a fase efetiva e a obrigatoriedade que a fase permite. */
+function comoDeclarado<T extends FormularioDoProcessoNoRascunho>(
+  formulario: T,
+  faseCodigo: string,
+  decisao: DecisaoDaAba,
+): T {
+  const { obrigatorio, consequenciaCabe: cabe, consequenciaDaFaltaDeEnvio } = decisao;
+  const consequencia = cabe ? consequenciaDaFaltaDeEnvio : null;
+  return { ...formulario, faseCodigo, obrigatorio, consequenciaDaFaltaDeEnvio: consequencia };
+}
+
+/** As recusas, o modelo escolhido e o resumo da aplicação que a aba mostra. */
+function textosDaAba(
+  textos: TextosDasAbas,
+  formulario: FormularioDoProcessoNoRascunho,
+  fase: FaseDoCronograma | undefined,
+  obrigatorio: boolean,
+) {
+  const { codigo } = formulario;
+  return {
+    recusas: textos.recusasDaGravacao.get(codigo) ?? null,
+    ...recusasDaAba(textos, codigo),
+    ...modelosDaAba(textos, codigo, fase, obrigatorio),
+    resumoDaAplicacao: textos.resumosDaAplicacao.get(codigo) ?? null,
+  };
+}
+
+function recusasDaAba(textos: TextosDasAbas, codigo: string) {
+  const recusaDaRemocao = textos.recusasDaRemocao.get(codigo) ?? null;
+  const recusaDaAplicacao = textos.recusasDaAplicacao.get(codigo) ?? null;
   const recusada = [recusaDaRemocao, recusaDaAplicacao].some((recusa) => recusa !== null);
   return {
-    recusas: textos.recusasDaGravacao.get(finalidade) ?? null,
     recusaDaRemocao,
     recusaDaAplicacao,
-    recusada: textos.recusasDaGravacao.has(finalidade) || recusada,
-    modelos: textos.modelos.get(finalidade) ?? [],
-    modeloEscolhido: textos.modeloEscolhido.get(finalidade) ?? '',
-    resumoDaAplicacao: textos.resumosDaAplicacao.get(finalidade) ?? null,
+    recusada: textos.recusasDaGravacao.has(codigo) || recusada,
+  };
+}
+
+/** Os modelos que servem à fase da aba e o escolhido, se ainda servir. */
+function modelosDaAba(
+  textos: TextosDasAbas,
+  codigo: string,
+  fase: FaseDoCronograma | undefined,
+  obrigatorio: boolean,
+) {
+  const modelos = modelosQueServem(textos.modelos, fase, obrigatorio);
+  const escolhido = textos.modeloEscolhido.get(codigo) ?? '';
+  return {
+    modelos,
+    modeloEscolhido: modelos.some((modelo) => modelo.id === escolhido) ? escolhido : '',
   };
 }
 
 /** Os fatos que o editor da aba pode citar, os que não pode coletar e os que a inscrição deve manter. */
-function fatosDaAba(entrada: EntradaDasAbas, formulario: FormularioDaFinalidade) {
-  const ehInscricao = formulario.finalidade === FINALIDADE_INSCRICAO;
+function fatosDaAba(
+  entrada: EntradaDasAbas,
+  formulario: FormularioDoProcessoNoRascunho,
+  ehInscricao: boolean,
+) {
+  const indisponiveis = fatosColetadosPelasOutras(entrada.formularios, formulario.codigo);
   return {
     fatosDaInscricao: ehInscricao ? null : entrada.fatosDaInscricao,
     fatosIndisponiveis: ehInscricao
-      ? fatosForaDaColetaDaInscricao(
-          formulario.conteudo,
-          fatosColetadosPelasOutras(entrada.formularios, FINALIDADE_INSCRICAO),
-        )
-      : fatosColetadosPelasOutras(entrada.formularios, formulario.finalidade),
-    fatosQueExigemRespostaPorFora: ehInscricao
-      ? fatosDaInscricaoQueOutrasExigem(formulario.conteudo, entrada.outrasFinalidades)
-      : [],
+      ? fatosForaDaColetaDaInscricao(formulario.conteudo, indisponiveis)
+      : indisponiveis,
+    fatosQueExigemRespostaPorFora: ehInscricao ? fatosQueOutrosExigem(entrada, formulario) : [],
   };
 }
 
+function fatosQueOutrosExigem(entrada: EntradaDasAbas, formulario: FormularioDoProcessoNoRascunho) {
+  const outros = entrada.formularios.filter((outro) => outro.codigo !== formulario.codigo);
+  return fatosDaInscricaoQueOutrosExigem(formulario.conteudo, outros);
+}
+
 /** O conteúdo do formulário, como o editor o recebe e como a consulta o lê, e os documentos dele. */
-function conteudoDaAba(
-  entrada: EntradaDasAbas,
-  formulario: FormularioDaFinalidade,
-  finalidadesDaFase: ReadonlyMap<string, readonly string[]>,
-) {
+function conteudoDaAba(entrada: EntradaDasAbas, formulario: FormularioDoProcessoNoRascunho) {
   return {
     conteudo: formulario.conteudo,
     leitura: leituraDe(formulario.conteudo),
     temBlocoDocumental: paginasEmOrdem(formulario.conteudo).some(
       (pagina) => pagina.bloco === BLOCO_COMPROVACAO_DOCUMENTAL,
     ),
-    documentos: documentosDaAba(entrada, formulario, finalidadesDaFase),
+    documentos: documentosDaAba(entrada, formulario),
   };
 }
 
-function documentosDaAba(
-  entrada: EntradaDasAbas,
-  formulario: FormularioDaFinalidade,
-  finalidadesDaFase: ReadonlyMap<string, readonly string[]>,
-) {
-  const faseCodigo = entrada.fases.get(formulario.finalidade)?.escolhida ?? '';
+function documentosDaAba(entrada: EntradaDasAbas, formulario: FormularioDoProcessoNoRascunho) {
+  const faseCodigo = entrada.fases.get(formulario.codigo)?.escolhida ?? '';
   const formularioNaFase = {
     faseCodigo,
-    finalidade: formulario.finalidade,
-    finalidadesDaFase: finalidadesDaFase.get(faseCodigo) ?? [],
+    codigo: formulario.codigo,
+    codigosDaFase: entrada.formularios
+      .filter((outro) => outro.faseCodigo === faseCodigo)
+      .map((outro) => outro.codigo),
     fasesVivas: entrada.fasesDoCronograma.map((fase) => fase.codigo),
   };
   return documentosDoFormulario(entrada.documentos, formularioNaFase, entrada.vocabulario);
@@ -167,3 +263,19 @@ function documentosDaAba(
 
 /** Uma aba do passo, como o modelo de exibição a monta. */
 export type AbaDoFormulario = ReturnType<typeof abasDoFormulario>[number];
+
+/** A aba que a tecla escolhe: setas andam em círculo, Home e End vão às pontas; outra tecla, nenhuma. */
+export function abaPelaTecla(tecla: string, atual: number, total: number): number | null {
+  switch (tecla) {
+    case 'ArrowRight':
+      return (atual + 1) % total;
+    case 'ArrowLeft':
+      return (atual - 1 + total) % total;
+    case 'Home':
+      return 0;
+    case 'End':
+      return total - 1;
+    default:
+      return null;
+  }
+}

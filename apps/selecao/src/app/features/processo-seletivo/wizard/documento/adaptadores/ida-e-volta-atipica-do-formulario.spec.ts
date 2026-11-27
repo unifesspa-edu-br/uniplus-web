@@ -1,4 +1,4 @@
-import { FinalidadeDoFormulario, type DocumentoDaConfiguracao } from '@uniplus/shared-data/selecao';
+import type { DocumentoDaConfiguracao } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { documentoSemNada } from '../exemplos.testing';
@@ -6,9 +6,9 @@ import { acrescentarParte, ITENS, removerFormulario } from '../edicoes/formulari
 import { edicaoDoPasso, valoresDoFormulario } from './formulario.adaptador';
 
 function idaEVolta(documento: DocumentoDaConfiguracao): DocumentoDaConfiguracao {
-  return Object.values(FinalidadeDoFormulario).reduce((atual, finalidade) => {
-    const valores = valoresDoFormulario(atual, finalidade);
-    return valores === undefined ? atual : edicaoDoPasso(finalidade, valores)(atual);
+  return (documento.formularios ?? []).reduce((atual, { codigo }) => {
+    const valores = valoresDoFormulario(atual, codigo);
+    return valores === undefined ? atual : edicaoDoPasso(codigo, valores)(atual);
   }, documento);
 }
 
@@ -19,18 +19,19 @@ function comFormularios(
   return { ...documentoSemNada(), formularios, ...(coleta && { coleta }) };
 }
 
-const INSCRICAO = FinalidadeDoFormulario.INSCRICAO;
-const ISENCAO = FinalidadeDoFormulario.ISENCAO_TAXA;
+const INSCRICAO = 'INSCRICAO';
+const ISENCAO = 'ISENCAO_TAXA';
+const OUTRO = 'HABILITACAO';
 
 /** Valores que o esquema admite e que a leitura do formulário poderia normalizar sem querer. */
 const ATIPICOS: readonly [string, DocumentoDaConfiguracao][] = [
   ['Lista de formulários vazia', comFormularios([])],
-  ['Formulário só com a finalidade', comFormularios([{ finalidade: INSCRICAO }])],
+  ['Formulário só com o código', comFormularios([{ codigo: INSCRICAO }])],
   [
     'Título e fase com espaços, listas vazias e modelo de origem',
     comFormularios([
       {
-        finalidade: INSCRICAO,
+        codigo: INSCRICAO,
         titulo: '  Inscrição  ',
         faseChave: ' inscricao ',
         modeloOrigemCodigo: 'MODELO',
@@ -42,22 +43,22 @@ const ATIPICOS: readonly [string, DocumentoDaConfiguracao][] = [
     ]),
   ],
   [
-    'Dois formulários da mesma finalidade',
+    'Dois formulários de códigos diferentes',
     comFormularios([
-      { finalidade: ISENCAO, titulo: 'A' },
-      { finalidade: ISENCAO, titulo: 'B' },
+      { codigo: ISENCAO, titulo: 'A' },
+      { codigo: OUTRO, titulo: 'B' },
     ]),
   ],
   [
     'Coleta com referência vazia e data com espaços',
-    comFormularios([{ finalidade: INSCRICAO }], {
+    comFormularios([{ codigo: INSCRICAO }], {
       referenciaTemporalDosDados: {},
       calculosDosDados: [],
     }),
   ],
   [
     'Referência temporal com data e fase com espaços',
-    comFormularios([{ finalidade: INSCRICAO }], {
+    comFormularios([{ codigo: INSCRICAO }], {
       referenciaTemporalDosDados: { data: ' 2027-01-10 ', faseChave: ' fase ' },
     }),
   ],
@@ -69,35 +70,32 @@ describe('ida e volta dos formulários com valores atípicos que o esquema admit
   });
 });
 
-it('edita a segunda ocorrência da finalidade sem alterar a primeira', () => {
+it('edita o segundo formulário sem alterar o primeiro', () => {
   const documento = comFormularios([
-    { finalidade: ISENCAO, titulo: 'A' },
-    { finalidade: ISENCAO, titulo: 'B' },
+    { codigo: ISENCAO, titulo: 'A' },
+    { codigo: OUTRO, titulo: 'B' },
   ]);
-  const valores = valoresDoFormulario(documento, ISENCAO, 1);
+  const valores = valoresDoFormulario(documento, OUTRO);
   if (valores === undefined) throw new Error('Formulário não encontrado');
-  expect(edicaoDoPasso(ISENCAO, valores, 1)(documento)).toEqual(documento);
-  const editado = edicaoDoPasso(
-    ISENCAO,
-    { ...valores, formulario: { ...valores.formulario, titulo: 'C' } },
-    1,
-  )(documento);
+  expect(edicaoDoPasso(OUTRO, valores)(documento)).toEqual(documento);
+  const editado = edicaoDoPasso(OUTRO, {
+    ...valores,
+    formulario: { ...valores.formulario, titulo: 'C' },
+  })(documento);
   expect(editado.formularios).toEqual([
-    { finalidade: ISENCAO, titulo: 'A' },
-    { finalidade: ISENCAO, titulo: 'C' },
+    { codigo: ISENCAO, titulo: 'A' },
+    { codigo: OUTRO, titulo: 'C' },
   ]);
 });
 
-it('remove ou altera a lista da ocorrência indicada sem mexer na outra', () => {
-  const documento = comFormularios([{ finalidade: ISENCAO }, { finalidade: ISENCAO, titulo: 'B' }]);
+it('remove ou altera a lista do formulário indicado sem mexer no outro', () => {
+  const documento = comFormularios([{ codigo: ISENCAO }, { codigo: OUTRO, titulo: 'B' }]);
   expect(removerFormulario(documento, ISENCAO).formularios).toEqual([
-    { finalidade: ISENCAO, titulo: 'B' },
+    { codigo: OUTRO, titulo: 'B' },
   ]);
-  const editado = acrescentarParte(documento, { finalidade: ISENCAO, ocorrencia: 1 }, ITENS, {
-    codigoDoDado: 'A',
-  });
+  const editado = acrescentarParte(documento, OUTRO, ITENS, { codigoDoDado: 'A' });
   expect(editado.formularios).toEqual([
-    { finalidade: ISENCAO },
-    { finalidade: ISENCAO, titulo: 'B', itens: [{ codigoDoDado: 'A', ordem: 0 }] },
+    { codigo: ISENCAO },
+    { codigo: OUTRO, titulo: 'B', itens: [{ codigoDoDado: 'A', ordem: 0 }] },
   ]);
 });

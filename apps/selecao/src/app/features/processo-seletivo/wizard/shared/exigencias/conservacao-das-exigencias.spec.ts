@@ -23,6 +23,22 @@ describe('Conservação das exigências', () => {
     expect(regras[0].itens).toEqual([]);
   });
 
+  it('conserva o prazo para reenvio do grupo na leitura e na gravação', () => {
+    const grupo = grupoDaApi([exigenciaDaApi()]);
+    const lido = exigenciasDe(
+      detalheDaApi([
+        {
+          ...grupo,
+          indeferimento: { ...grupo.indeferimento, abrePrazoParaReenvio: true },
+        } as typeof grupo,
+      ]),
+    );
+    expect(lido.regrasDeComprovacao.find((regra) => regra.itens !== null)).toMatchObject({
+      abrePrazoParaReenvio: true,
+    });
+    expect(comando(lido)[0].indeferimento?.abrePrazoParaReenvio).toBe(true);
+  });
+
   it('descreve os nomes dos formatos', () => {
     const formatos = {
       tipo: 'lista',

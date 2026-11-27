@@ -23,7 +23,7 @@ test.describe('Cronograma: regras de comprovação — matriz DS @ds', () => {
   }, testInfo) => {
     const gravadas = await prepararCenario(page, testInfo);
     await combinarDocumentos(page);
-    await page.getByLabel('Se não for entregue').first().selectOption('ELIMINA');
+    await page.getByLabel('Se não for entregue').first().selectOption('ELIMINA_DO_PROCESSO');
     await page.getByRole('button', { name: 'Acrescentar outra norma', exact: true }).click();
     await page
       .getByRole('textbox', { name: 'Norma que exige o grupo', exact: true })

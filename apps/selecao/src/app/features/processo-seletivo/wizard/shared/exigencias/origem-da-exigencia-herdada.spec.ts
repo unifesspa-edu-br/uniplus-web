@@ -11,7 +11,7 @@ const PROCESSO = {
   ]),
   modalidadesOfertadas: [],
   etapasVivas: new Set<string>(),
-  finalidadesPorFase: new Map<string, string[]>(),
+  formulariosPorFase: new Map<string, string[]>(),
 };
 const CAMPO = 'documento.requisitos.tamanhoMaximoBytes';
 

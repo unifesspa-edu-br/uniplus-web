@@ -7,10 +7,7 @@ import {
   type FormularioDto,
   type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
-import {
-  FINALIDADE_INSCRICAO,
-  type ConteudoDoFormulario,
-} from '@uniplus/shared-inscricao/formulario';
+import { conteudoInicial, type ConteudoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 
 import { ProcessoSeletivoStore } from '../processo-seletivo.store';
 import { CatalogoDeFatos } from '../passos/cronograma/catalogos/catalogo-de-fatos.service';
@@ -19,18 +16,33 @@ import {
   fatosCitadosPeloPredicado,
 } from '../passos/formulario/citantes-no-processo';
 import {
-  fatosColetadosPor,
   fatosAcrescentados,
-  formularioDaFinalidade,
-  inscricaoDoServidor,
+  formularioDaInscricaoDoServidor,
+  formularioDoServidor,
 } from '../passos/formulario/formulario-do-processo';
+import {
+  comFormulario,
+  conteudoDaInscricao,
+  fatosColetadosPelasOutras,
+  formularioDaInscricao,
+} from '../passos/formulario/formularios-do-rascunho';
 import { CadastroInicial } from './cadastro-inicial.service';
 import { PlanoDosCamposPressupostos } from './plano-dos-campos-pressupostos';
 import { regrasDasModalidadesOfertadas } from './regras-das-modalidades';
 
+/** Os códigos das fases do servidor em que o candidato se inscreve. */
+function fasesDaInscricaoDe(servidor: ProcessoSeletivoDto): ReadonlySet<string> {
+  return new Set(
+    servidor.cronogramaFases
+      .filter((fase) => fase.faseCanonica.coletaInscricao)
+      .map((fase) => fase.codigo),
+  );
+}
+
 export type CamposPressupostos =
   | { readonly tipo: 'garantidos' }
   | { readonly tipo: 'semFaseDeInscricao' }
+  | { readonly tipo: 'semFormularioDeInscricao' }
   | { readonly tipo: 'recusados'; readonly motivo: string };
 
 /**
@@ -117,7 +129,7 @@ export class GravacaoDosCamposPressupostos {
     if (desfecho !== null) return desfecho;
     const gravacao = await this.gravarNoServidor(processoId, plano);
     if (geracao !== this.store.geracao() || gravacao.tipo !== 'garantidos') return gravacao;
-    await this.acompanharNoRascunho(processoId, plano);
+    await this.acompanharNoRascunho(processoId, servidor, plano);
     return gravacao;
   }
 
@@ -125,15 +137,15 @@ export class GravacaoDosCamposPressupostos {
     servidor: ProcessoSeletivoDto,
     citados: ReadonlySet<string>,
   ): PlanoDosCamposPressupostos {
-    const outras = this.store
-      .draft()
-      .formulario.outrasFinalidades.flatMap((outra) => fatosColetadosPor(outra.conteudo));
-    return new PlanoDosCamposPressupostos(
-      servidor,
+    const rascunho = this.store.draft().formulario;
+    const inscricao = formularioDaInscricao(rascunho, fasesDaInscricaoDe(servidor));
+    const codigo = inscricao?.codigo ?? '';
+    return new PlanoDosCamposPressupostos(servidor, {
       citados,
-      comEscopoPeloCodigo(this.catalogoDeFatos.fatos()),
-      outras,
-    );
+      catalogo: comEscopoPeloCodigo(this.catalogoDeFatos.fatos()),
+      fatosDosOutrosFormularios: fatosColetadosPelasOutras(rascunho.formularios, codigo),
+      codigoParaCriar: inscricao?.gravado === false ? codigo : null,
+    });
   }
 
   private async gravarNoServidor(
@@ -144,8 +156,8 @@ export class GravacaoDosCamposPressupostos {
     const formulario = plano.gravado ?? (await this.criarFormulario(processo, plano));
     if ('tipo' in formulario) return formulario;
     const { servidor, desejado } = plano.gravacaoSobre(formulario);
-    const finalidade = FINALIDADE_INSCRICAO;
-    const retorno = await this.cadastro.gravarFormulario(processo, finalidade, servidor, desejado);
+    const { codigo } = formulario;
+    const retorno = await this.cadastro.gravarFormulario(processo, codigo, servidor, desejado);
     return this.desfechoDaGravacao(geracao, retorno) ?? { tipo: 'garantidos' };
   }
 
@@ -156,7 +168,7 @@ export class GravacaoDosCamposPressupostos {
     const geracao = this.store.geracao();
     const resultado = await this.cadastro.gravarFormulario(
       processoId,
-      FINALIDADE_INSCRICAO,
+      plano.codigoParaCriar ?? '',
       null,
       plano.cabecalhoParaCriar(),
     );
@@ -172,9 +184,7 @@ export class GravacaoDosCamposPressupostos {
     const relido = await this.releituraDoProcesso(processoId, geracao);
     if (relido === 'obsoleto') return { tipo: 'garantidos' };
     return (
-      (relido === null
-        ? null
-        : formularioDaFinalidade(relido.formularios, FINALIDADE_INSCRICAO)) ?? {
+      (relido === null ? null : formularioDaInscricaoDoServidor(relido)) ?? {
         tipo: 'recusados',
         motivo: FORMULARIO_NAO_RELIDO,
       }
@@ -205,10 +215,11 @@ export class GravacaoDosCamposPressupostos {
 
   private async acompanharNoRascunho(
     processoId: string,
+    servidor: ProcessoSeletivoDto,
     plano: PlanoDosCamposPressupostos,
   ): Promise<void> {
-    const antes = this.store.draft().formulario.conteudo;
-    const depois = await this.levarAoRascunho(processoId, plano);
+    const antes = this.conteudoDaInscricaoNoRascunho(servidor);
+    const depois = await this.levarAoRascunho(processoId, servidor, plano);
     if (depois === 'obsoleto') return;
     const acrescentados = fatosAcrescentados(antes, depois);
     if (acrescentados.length > 0) {
@@ -220,14 +231,22 @@ export class GravacaoDosCamposPressupostos {
 
   private async levarAoRascunho(
     processoId: string,
+    servidor: ProcessoSeletivoDto,
     plano: PlanoDosCamposPressupostos,
   ): Promise<ConteudoDoFormulario | 'obsoleto'> {
     const geracao = this.store.geracao();
-    const conteudo = this.store.draft().formulario.conteudo;
+    const conteudo = this.conteudoDaInscricaoNoRascunho(servidor);
     const semEdicao = JSON.stringify(conteudo) === JSON.stringify(plano.conteudoGravado);
     const doServidor = semEdicao ? await this.projetarDoServidor(processoId, geracao) : null;
     if (doServidor === 'obsoleto') return 'obsoleto';
-    return doServidor ?? this.acrescentarNoRascunho((atual) => plano.comOsCamposQueFaltam(atual));
+    return (
+      doServidor ??
+      this.acrescentarNoRascunho(servidor, (atual) => plano.comOsCamposQueFaltam(atual))
+    );
+  }
+
+  private conteudoDaInscricaoNoRascunho(servidor: ProcessoSeletivoDto): ConteudoDoFormulario {
+    return conteudoDaInscricao(this.store.draft().formulario, fasesDaInscricaoDe(servidor));
   }
 
   /** Relê o processo e o projeta no rascunho. `null` se a leitura falhou; `'obsoleto'` se o processo mudou. */
@@ -238,9 +257,13 @@ export class GravacaoDosCamposPressupostos {
     const relido = await this.releituraDoProcesso(processoId, geracao);
     if (relido === 'obsoleto' || relido === null) return relido;
 
-    const servidor = inscricaoDoServidor(relido);
-    this.store.projetarSecao('formulario', servidor);
-    return servidor.conteudo;
+    const inscricao = formularioDaInscricaoDoServidor(relido);
+    if (inscricao === null) return null;
+    const doServidor = formularioDoServidor(relido, inscricao);
+    this.store.projetarSecao('formulario', {
+      formularios: comFormulario(this.store.draft().formulario, doServidor).formularios,
+    });
+    return doServidor.conteudo;
   }
 
   private async releituraDoProcesso(
@@ -254,12 +277,18 @@ export class GravacaoDosCamposPressupostos {
 
   /** Com edição pendente ela fica, e só os campos acrescentados entram nela. */
   private acrescentarNoRascunho(
+    servidor: ProcessoSeletivoDto,
     pressuposto: (conteudo: ConteudoDoFormulario) => ConteudoDoFormulario,
   ): ConteudoDoFormulario {
-    const formulario = this.store.draft().formulario;
-    const depois = pressuposto(formulario.conteudo);
-    if (depois !== formulario.conteudo)
-      this.store.patchSection('formulario', { ...formulario, conteudo: depois });
+    const rascunho = this.store.draft().formulario;
+    const inscricao = formularioDaInscricao(rascunho, fasesDaInscricaoDe(servidor));
+    if (inscricao === null) return pressuposto(conteudoInicial());
+    const depois = pressuposto(inscricao.conteudo);
+    if (depois === inscricao.conteudo) return depois;
+    this.store.patchSection(
+      'formulario',
+      comFormulario(rascunho, { ...inscricao, conteudo: depois }),
+    );
     return depois;
   }
 }

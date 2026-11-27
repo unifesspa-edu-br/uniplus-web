@@ -60,6 +60,8 @@ export interface RegraDaExigenciaDeDocumento {
   readonly aplicabilidade: string;
   readonly obrigatorio: boolean;
   readonly consequenciaIndeferimento: string;
+  /** Se o indeferimento abre prazo para o candidato reenviar o documento. */
+  readonly abrePrazoParaReenvio: boolean;
   readonly condicoes: readonly CondicaoGatilhoConfig[];
   readonly basesLegais: readonly BaseLegalConfig[];
 }
@@ -105,12 +107,12 @@ export interface ExigenciaDeDocumento extends RegraDaExigenciaDeDocumento, Crite
   /** A etapa daquela fase que coleta o documento; `null` quando é da fase inteira. */
   readonly etapaId: string | null;
   /**
-   * O formulário em cujo bloco de comprovação o candidato apresenta o documento (`INSCRICAO`,
-   * `ISENCAO_TAXA` ou `HABILITACAO`), como o operador o declarou; `null` enquanto não declarou.
-   * A fase não basta, porque inscrição e isenção podem dividir a mesma fase. O que vale diante da
-   * fase sai de `finalidadeDaExigencia`, que nunca troca o declarado por outro.
+   * O código do formulário em cujo bloco de comprovação o candidato apresenta o documento, como o
+   * operador o declarou; `null` enquanto não declarou. A fase não basta, porque dois formulários
+   * podem dividir a mesma fase. O que vale diante da fase sai de `formularioDaExigencia`, que
+   * nunca troca o declarado por outro.
    */
-  readonly finalidade: string | null;
+  readonly formularioCodigo: string | null;
 }
 
 /**
@@ -132,6 +134,7 @@ export interface RegraDeComprovacao {
   readonly documento: ExigenciaDeDocumento | null;
   readonly quantidadeMinima: number | null;
   readonly consequencia: string | null;
+  readonly abrePrazoParaReenvio: boolean;
   readonly basesLegais: readonly BaseLegalConfig[] | null;
   readonly itens: readonly RegraDeComprovacao[] | null;
   readonly criterioDeDistincao: string | null;

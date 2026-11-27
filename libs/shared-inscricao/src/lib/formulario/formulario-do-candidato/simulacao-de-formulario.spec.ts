@@ -16,7 +16,6 @@ const SECAO = 'Inscricao:DADOS';
 
 /** O nascimento de até 120 anos antes do envio até o envio: a faixa que o editor declara. */
 const COM_FAIXA_DE_DATA: FormularioDoCandidato = {
-  finalidade: 'INSCRICAO',
   paginas: [
     {
       codigo: 'DADOS',
@@ -58,7 +57,6 @@ const COM_FAIXA_DE_DATA: FormularioDoCandidato = {
 
 /** Um formulário cujo campo depende de um fato que ele não pergunta: o pressuposto TRABALHA. */
 const FORMULARIO: FormularioDoCandidato = {
-  finalidade: 'INSCRICAO',
   paginas: [
     {
       codigo: 'DADOS',

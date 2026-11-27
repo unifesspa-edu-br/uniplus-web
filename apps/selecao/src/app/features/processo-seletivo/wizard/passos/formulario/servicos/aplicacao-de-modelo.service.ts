@@ -8,39 +8,42 @@ import {
   type ApiResult,
 } from '@uniplus/shared-core/http';
 import { ModelosFormularioApi, type ModeloFormularioView } from '@uniplus/shared-data/configuracao';
-import { FINALIDADE_INSCRICAO } from '@uniplus/shared-inscricao/formulario';
 import { acompanharLeitura } from '@uniplus/shared-ui/components';
 
+import type { FormularioDoProcessoNoRascunho } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { LeiturasEmOrdem } from '../../../../leitura';
 import { tituloDoPasso } from '../../../shared/titulo-do-passo';
+import { comFormulario, formularioDoCodigo } from '../formularios-do-rascunho';
 import {
   comAplicacaoDoServidor,
-  modelosPorFinalidade,
+  modelosOferecidos,
   resumoDaAplicacao,
   textoDaAplicacaoEmAberto,
   type ModeloOferecido,
   type AplicacaoEmAberto,
 } from '../modelo-de-formulario';
-import { nomeDaFinalidade } from '../formularios-por-finalidade';
 import { CatalogosDoFormulario } from './catalogos-do-formulario.service';
 import { GravacaoDosFormularios } from './gravacao-dos-formularios.service';
 import { AplicacaoNoServidor, type DesfechoDaAplicacao } from './aplicacao-no-servidor.service';
 import { semChave } from './sem-chave';
 
 interface AplicacaoPedida {
-  readonly finalidade: string;
+  readonly formulario: FormularioDoProcessoNoRascunho;
+  /** Se o formulário é o que o candidato responde ao se inscrever. */
+  readonly daInscricao: boolean;
   readonly modelo: ModeloOferecido;
 }
 
+const nomeDoFormulario = (codigo: string): string => `formulário ${codigo}`;
+
 function textoDaRecusa(
-  finalidade: string,
+  codigo: string,
   desfecho: Extract<DesfechoDaAplicacao, { ok: false }>,
   emAberto: AplicacaoEmAberto | undefined,
 ): string {
-  const nome = nomeDaFinalidade(finalidade);
-  if (emAberto === undefined)
-    return `O modelo não foi aplicado ao formulário de ${nome}. ${desfecho.recusa}`;
+  const nome = nomeDoFormulario(codigo);
+  if (emAberto === undefined) return `O modelo não foi aplicado ao ${nome}. ${desfecho.recusa}`;
   const texto = textoDaAplicacaoEmAberto(nome, emAberto);
   return desfecho.copiaConfirmada === null
     ? `A nova tentativa foi recusada: ${desfecho.recusa} ${texto}`
@@ -62,8 +65,8 @@ export class AplicacaoDeModelo {
   private readonly dados = inject(CatalogosDoFormulario);
   private readonly gravacao = inject(GravacaoDosFormularios);
 
-  /** Os modelos ativos que servem ao tipo do processo, por finalidade. */
-  readonly modelos = signal<ReadonlyMap<string, readonly ModeloOferecido[]>>(new Map());
+  /** Os modelos ativos que servem ao tipo do processo. */
+  readonly modelos = signal<readonly ModeloOferecido[]>([]);
   readonly modelosCarregando = signal(false);
   readonly modelosErro = signal<string | null>(null);
   private readonly ordemDosModelos = new LeiturasEmOrdem();
@@ -75,11 +78,11 @@ export class AplicacaoDeModelo {
   });
   /** O modelo escolhido em cada aba, pelo id. */
   readonly escolhidos = signal<ReadonlyMap<string, string>>(new Map());
-  /** A aplicação que aguarda confirmação: a finalidade e o modelo. */
+  /** A aplicação que aguarda confirmação: o formulário e o modelo. */
   readonly pendente = signal<AplicacaoPedida | null>(null);
-  /** O resumo da última aplicação, por finalidade: fica na aba do formulário que a recebeu. */
+  /** O resumo da última aplicação, por código: fica na aba do formulário que a recebeu. */
   readonly resumos = signal<ReadonlyMap<string, readonly string[]>>(new Map());
-  /** A recusa da aplicação, por finalidade, já com o desfecho dito: fica na aba do formulário. */
+  /** A recusa da aplicação, por código, já com o desfecho dito: fica na aba do formulário. */
   readonly recusas = signal<ReadonlyMap<string, string>>(new Map());
   /** As abas cuja recusa só diz que outra cópia está sem desfecho: saem quando ela se resolve. */
   private readonly bloqueadasPorCopiaEmAberto = signal<ReadonlySet<string>>(new Set());
@@ -151,54 +154,59 @@ export class AplicacaoDeModelo {
       );
       return;
     }
-    this.modelos.set(modelosPorFinalidade(resultado.data));
+    this.modelos.set(modelosOferecidos(resultado.data));
   }
 
-  escolher(finalidade: string, modeloId: string): void {
-    this.escolhidos.update((atuais) => new Map([...atuais, [finalidade, modeloId]]));
+  escolher(codigo: string, modeloId: string): void {
+    this.escolhidos.update((atuais) => new Map([...atuais, [codigo, modeloId]]));
+  }
+
+  /** O código do formulário ainda não gravado mudou: a escolha do modelo segue com ele. */
+  trocarCodigo(anterior: string, novo: string): void {
+    const modeloId = this.escolhidos().get(anterior);
+    if (modeloId === undefined || anterior === novo) return;
+    this.escolhidos.update((atuais) => new Map([...semChave(atuais, anterior), [novo, modeloId]]));
   }
 
   /** Pede a aplicação do modelo escolhido na aba. Devolve a recusa a anunciar, quando houver. */
-  pedir(finalidade: string): string | null {
-    const modelo = this.modeloEscolhidoNa(finalidade);
+  pedir(formulario: FormularioDoProcessoNoRascunho, daInscricao: boolean): string | null {
+    const modelo = this.modeloEscolhidoNa(formulario.codigo);
     if (modelo === undefined) return null;
-    const bloqueio = this.aplicacaoQueBloqueia(finalidade, modelo.id);
-    if (bloqueio !== undefined) return this.recusarPorCopiaEmAberto(finalidade, ...bloqueio);
-    this.pendente.set({ finalidade, modelo });
+    const bloqueio = this.aplicacaoQueBloqueia(formulario.codigo, modelo.id);
+    if (bloqueio !== undefined) return this.recusarPorCopiaEmAberto(formulario.codigo, ...bloqueio);
+    this.pendente.set({ formulario, daInscricao, modelo });
     return null;
   }
 
-  private modeloEscolhidoNa(finalidade: string): ModeloOferecido | undefined {
-    const escolhido = this.escolhidos().get(finalidade);
-    return this.modelos()
-      .get(finalidade)
-      ?.find((modelo) => modelo.id === escolhido);
+  private modeloEscolhidoNa(codigo: string): ModeloOferecido | undefined {
+    const escolhido = this.escolhidos().get(codigo);
+    return this.modelos().find((modelo) => modelo.id === escolhido);
   }
 
   /** As cópias compartilham fatos, derivações e chave em todo o processo. */
   private aplicacaoQueBloqueia(
-    finalidade: string,
+    codigo: string,
     modeloId: string,
   ): [string, AplicacaoEmAberto] | undefined {
     return [...this.store.aplicacoesDeModeloEmAberto()].find(
       ([outra, emAberto]) =>
-        emAberto.copiaConfirmada || outra !== finalidade || emAberto.modeloId !== modeloId,
+        emAberto.copiaConfirmada || outra !== codigo || emAberto.modeloId !== modeloId,
     );
   }
 
   private recusarPorCopiaEmAberto(
-    finalidade: string,
+    codigo: string,
     outra: string,
     emAberto: AplicacaoEmAberto,
   ): string {
-    const texto = textoDaAplicacaoEmAberto(nomeDaFinalidade(outra), emAberto);
-    this.mostrarRecusa(finalidade, texto);
-    this.bloqueadasPorCopiaEmAberto.update((atuais) => new Set([...atuais, finalidade]));
+    const texto = textoDaAplicacaoEmAberto(nomeDoFormulario(outra), emAberto);
+    this.mostrarRecusa(codigo, texto);
+    this.bloqueadasPorCopiaEmAberto.update((atuais) => new Set([...atuais, codigo]));
     return texto;
   }
 
-  private mostrarRecusa(finalidade: string, texto: string): void {
-    this.recusas.update((atuais) => new Map([...atuais, [finalidade, texto]]));
+  private mostrarRecusa(codigo: string, texto: string): void {
+    this.recusas.update((atuais) => new Map([...atuais, [codigo, texto]]));
   }
 
   cancelar(): void {
@@ -209,12 +217,11 @@ export class AplicacaoDeModelo {
   readonly aviso = computed(() => {
     const pendente = this.pendente();
     if (pendente === null) return '';
-    const inscricao =
-      pendente.finalidade === FINALIDADE_INSCRICAO
-        ? ' Os campos do modelo que outro formulário coleta passam para a inscrição, e esse formulário volta ao que está gravado no processo.'
-        : '';
+    const inscricao = pendente.daInscricao
+      ? ' Os campos do modelo que outro formulário coleta passam para a inscrição, e esse formulário volta ao que está gravado no processo.'
+      : '';
     return (
-      `O formulário de ${nomeDaFinalidade(pendente.finalidade)} passa a ser a cópia do modelo "${pendente.modelo.nome}": ` +
+      `O ${nomeDoFormulario(pendente.formulario.codigo)} passa a ser a cópia do modelo "${pendente.modelo.nome}": ` +
       `as páginas, os campos e os termos que ele tem agora saem, inclusive as edições desta aba ainda não gravadas.${inscricao} Não há como desfazer.`
     );
   });
@@ -226,55 +233,49 @@ export class AplicacaoDeModelo {
    * devolve ao formulário o que o processo pressupõe e o modelo não trazia — a cópia não confere as
    * exigências. O resumo e a recusa ficam em texto na aba, e o texto também volta para ser anunciado.
    */
-  async confirmar(
-    faseDaAbaPor: (finalidade: string) => string,
-    reconciliar: () => readonly string[],
-  ): Promise<string | null> {
+  async confirmar(reconciliar: () => readonly string[]): Promise<string | null> {
     const pendente = this.pendente();
     this.pendente.set(null);
     const processoId = this.store.processoSeletivoId();
     if (pendente === null || processoId === null) return null;
-    const faseDaAba = faseDaAbaPor(pendente.finalidade);
-    this.esquecerAplicacaoAnterior(pendente.finalidade);
-    const desfecho = await this.aplicarTravandoOPasso(processoId, pendente, faseDaAba);
+    this.esquecerAplicacaoAnterior(pendente.formulario.codigo);
+    const desfecho = await this.aplicarTravandoOPasso(processoId, pendente);
     if (desfecho === null) return null;
     if (!desfecho.ok) return this.registrarRecusa(pendente, desfecho);
-    return this.registrarAplicacao(pendente, desfecho, faseDaAba, reconciliar);
+    return this.registrarAplicacao(pendente, desfecho, reconciliar);
   }
 
   private registrarAplicacao(
     pedida: AplicacaoPedida,
     desfecho: Extract<DesfechoDaAplicacao, { ok: true }>,
-    faseDaAba: string,
     reconciliar: () => readonly string[],
   ): string {
-    this.store.aplicacoesDeModeloEmAberto.update((atuais) => semChave(atuais, pedida.finalidade));
+    const codigo = pedida.formulario.codigo;
+    this.store.aplicacoesDeModeloEmAberto.update((atuais) => semChave(atuais, codigo));
     if (this.store.aplicacoesDeModeloEmAberto().size === 0) this.esquecerBloqueios();
-    if (pedida.finalidade === FINALIDADE_INSCRICAO)
+    if (pedida.daInscricao)
       this.store.camposPostosPelasExigencias.update((atual) => atual.esvaziada());
-    this.projetar(pedida.finalidade, desfecho, faseDaAba);
-    return this.registrarResumo(pedida.finalidade, pedida.modelo, desfecho, reconciliar());
+    this.projetar(desfecho, pedida.formulario.faseCodigo);
+    return this.registrarResumo(codigo, pedida.modelo, desfecho, reconciliar());
   }
 
-  private esquecerAplicacaoAnterior(finalidade: string): void {
-    this.recusas.update((atuais) => semChave(atuais, finalidade));
+  private esquecerAplicacaoAnterior(codigo: string): void {
+    this.recusas.update((atuais) => semChave(atuais, codigo));
     this.bloqueadasPorCopiaEmAberto.update(
-      (atuais) => new Set([...atuais].filter((aba) => aba !== finalidade)),
+      (atuais) => new Set([...atuais].filter((aba) => aba !== codigo)),
     );
-    this.resumos.update((atuais) => semChave(atuais, finalidade));
+    this.resumos.update((atuais) => semChave(atuais, codigo));
   }
 
   /** Aplica no servidor com o passo travado; `null` quando o processo mudou no meio. */
   private async aplicarTravandoOPasso(
     processoId: string,
     pedida: AplicacaoPedida,
-    faseDaAba: string,
   ): Promise<DesfechoDaAplicacao | null> {
     const geracao = this.store.geracao();
-    const { finalidade, modelo } = pedida;
     this.store.salvando.set(true);
     try {
-      const desfecho = await this.servidor.aplicar(processoId, finalidade, modelo.id, faseDaAba);
+      const desfecho = await this.servidor.aplicar(processoId, pedida.formulario, pedida.modelo.id);
       return geracao === this.store.geracao() ? desfecho : null;
     } finally {
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
@@ -292,10 +293,20 @@ export class AplicacaoDeModelo {
   ): string {
     if (desfecho.copiaConfirmada !== null)
       this.guardarCopiaSemDesfecho(pedida, desfecho.copiaConfirmada);
-    const emAberto = this.store.aplicacoesDeModeloEmAberto().get(pedida.finalidade);
-    const texto = textoDaRecusa(pedida.finalidade, desfecho, emAberto);
-    this.mostrarRecusa(pedida.finalidade, texto);
+    const codigo = pedida.formulario.codigo;
+    if (desfecho.formularioNoServidor) this.marcarComoGravado(codigo);
+    const emAberto = this.store.aplicacoesDeModeloEmAberto().get(codigo);
+    const texto = textoDaRecusa(codigo, desfecho, emAberto);
+    this.mostrarRecusa(codigo, texto);
     return texto;
+  }
+
+  /** O cabeçalho gravado criou o formulário no servidor: o rascunho passa a tratá-lo como gravado. */
+  private marcarComoGravado(codigo: string): void {
+    const rascunho = this.store.draft().formulario;
+    const atual = formularioDoCodigo(rascunho, codigo);
+    if (atual === null || atual.gravado) return;
+    this.store.projetarSecao('formulario', comFormulario(rascunho, { ...atual, gravado: true }));
   }
 
   private guardarCopiaSemDesfecho(pedida: AplicacaoPedida, copiaConfirmada: boolean): void {
@@ -305,7 +316,7 @@ export class AplicacaoDeModelo {
       copiaConfirmada,
     };
     this.store.aplicacoesDeModeloEmAberto.update(
-      (atuais) => new Map([...atuais, [pedida.finalidade, emAberto]]),
+      (atuais) => new Map([...atuais, [pedida.formulario.codigo, emAberto]]),
     );
   }
 
@@ -313,11 +324,7 @@ export class AplicacaoDeModelo {
    * O rascunho recebe o que o servidor ficou tendo. O que ele marcava como posto pelas exigências
    * era do formulário que saiu: a cópia é decisão do modelo.
    */
-  private projetar(
-    finalidade: string,
-    desfecho: Extract<DesfechoDaAplicacao, { ok: true }>,
-    faseDaAba: string,
-  ): void {
+  private projetar(desfecho: Extract<DesfechoDaAplicacao, { ok: true }>, faseDaAba: string): void {
     this.store.projetarSecao(
       'formulario',
       comAplicacaoDoServidor(
@@ -331,14 +338,14 @@ export class AplicacaoDeModelo {
 
   /** O resumo da aplicação, guardado na aba. Só o que a reconciliação acrescentar volta a ser dela. */
   private registrarResumo(
-    finalidade: string,
+    codigo: string,
     modelo: ModeloOferecido,
     desfecho: Extract<DesfechoDaAplicacao, { ok: true }>,
     acrescentados: readonly string[],
   ): string {
-    this.gravacao.esquecerRecusasDa(finalidade);
+    this.gravacao.esquecerRecusasDa(codigo);
     const resumo = this.linhasDoResumo(modelo, desfecho, acrescentados);
-    this.resumos.update((atuais) => new Map([...atuais, [finalidade, resumo]]));
+    this.resumos.update((atuais) => new Map([...atuais, [codigo, resumo]]));
     return resumo.join(' ');
   }
   private linhasDoResumo(

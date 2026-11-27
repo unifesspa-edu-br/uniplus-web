@@ -25,7 +25,7 @@ describe('passoDoPonteiro', () => {
     ['/classificacao', { passo: 'Fórmula e precisão' }],
     ['/classificacao/regrasEliminacao/0/parametros/etapaChave', { passo: 'Eliminação' }],
     ['/classificacao/criteriosDeDesempate/1/parametros/areas/0', { passo: 'Desempate' }],
-    ['/fada/fator', { passo: 'FADA' }],
+    ['/fada/fator', { passo: 'Fator de Atenuação' }],
     ['/atendimento/condicoes/0/condicaoCodigo', { passo: 'Atend. especial' }],
     ['/formularios/0/itens/2/rotulo', { passo: 'Formulários' }],
     ['/coleta/calculosDosDados/0', { passo: 'Formulários' }],

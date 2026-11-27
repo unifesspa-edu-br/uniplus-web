@@ -54,7 +54,7 @@ import {
 } from '../fase/motivos/motivos-nos-passos.testing';
 import { FasesNoServidor } from './servicos/fases-no-servidor.service';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
-import { GravacaoDasExigenciasDocumentais } from './servicos/gravacao-das-exigencias-documentais.service';
+import { GravacaoDasExigenciasDocumentais } from '../../shared/exigencias/gravacao-das-exigencias-documentais.service';
 import { LeituraDaLinhaDoTempo } from './servicos/leitura-da-linha-do-tempo.service';
 import { RecusasDoServidorNasEtapas } from './servicos/recusas-do-servidor-nas-etapas.service';
 import { ReleituraDosIdentificadores } from './servicos/releitura-dos-identificadores.service';

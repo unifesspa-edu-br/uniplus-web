@@ -24,14 +24,14 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/configuracao/base-legal-bonus-regional": {
+    readonly "/api/configuracao/bases-legais-fada": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get: operations["ListarBasesLegaisDaFada"];
+        readonly get: operations["ListarBasesLegaisDoFada"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -40,14 +40,14 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/configuracao/base-legal-bonus-regional/{id}": {
+    readonly "/api/configuracao/bases-legais-fada/{id}": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get: operations["ObterBaseLegalDaFada"];
+        readonly get: operations["ObterBaseLegalDoFada"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -56,7 +56,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/configuracao/admin/base-legal-bonus-regional": {
+    readonly "/api/configuracao/admin/bases-legais-fada": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -65,14 +65,14 @@ export interface paths {
         };
         readonly get?: never;
         readonly put?: never;
-        readonly post: operations["CadastrarBaseLegalDaFada"];
+        readonly post: operations["CadastrarBaseLegalDoFada"];
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/configuracao/admin/base-legal-bonus-regional/{id}": {
+    readonly "/api/configuracao/admin/bases-legais-fada/{id}": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -80,9 +80,9 @@ export interface paths {
             readonly cookie?: never;
         };
         readonly get?: never;
-        readonly put: operations["AlterarBaseLegalDaFada"];
+        readonly put: operations["AlterarBaseLegalDoFada"];
         readonly post?: never;
-        readonly delete: operations["ExcluirBaseLegalDaFada"];
+        readonly delete: operations["ExcluirBaseLegalDoFada"];
         readonly options?: never;
         readonly head?: never;
         readonly patch?: never;
@@ -2477,8 +2477,7 @@ export interface components {
             readonly rotulo: string;
         };
         /**
-         * @description - `RECLASSIFICA_AC`: Ampla concorrência — Passa a pessoa para a ampla concorrência.
-         *     - `RECLASSIFICA_CONFORME_EDITAL`: Conforme o edital — Reclassifica a pessoa conforme as regras do edital.
+         * @description - `RETIRA_A_MODALIDADE`: Retirada da modalidade — A pessoa perde a modalidade e continua nas demais em que concorre.
          * @enum {string}
          */
         readonly AcaoQuandoIndeferidoCodigo: AcaoQuandoIndeferidoCodigo;
@@ -2547,13 +2546,13 @@ export interface components {
             readonly justificativa: null | string;
             readonly dianteDeManifestacaoDesfavoravel: boolean;
         };
-        readonly AtualizarBaseLegalBonusRegionalCommand: {
+        readonly AtualizarBaseLegalDoFadaCommand: {
             /** Format: uuid */
             readonly id: string;
             readonly tipoInstrumento: null | components["schemas"]["TipoInstrumentoNormativoCodigo"];
             readonly identificacao: null | string;
             readonly descricao: null | string;
-            readonly municipios: null | readonly components["schemas"]["CriarBaseLegalBonusRegionalMunicipioCommand"][];
+            readonly municipios: null | readonly components["schemas"]["CriarMunicipioDaBaseLegalDoFadaCommand"][];
         };
         readonly AtualizarCampusCommand: {
             /** Format: uuid */
@@ -2762,24 +2761,19 @@ export interface components {
             readonly pressupostos: null | Record<string, never>;
             readonly envio?: null | components["schemas"]["EnvioSimuladoInput"];
         };
-        readonly BaseLegalBonusRegionalDto: {
+        readonly BaseLegalDoFadaDto: {
             /** Format: uuid */
             readonly id: string;
             readonly codigo: string;
             readonly tipoInstrumento: components["schemas"]["TipoInstrumentoNormativo"];
             readonly identificacao: string;
             readonly descricao: string;
-            readonly municipios: readonly components["schemas"]["BaseLegalBonusRegionalMunicipioDto"][];
+            readonly municipios: readonly components["schemas"]["MunicipioDaBaseLegalDoFadaDto"][];
             /** Format: date-time */
             readonly criadoEm: string;
             readonly _links?: null | {
                 readonly [key: string]: string;
             };
-        };
-        readonly BaseLegalBonusRegionalMunicipioDto: {
-            readonly codigoIbge: string;
-            readonly nome: string;
-            readonly uf: string;
         };
         readonly BaseLegalDoModeloDto: {
             readonly referencia: string;
@@ -2971,13 +2965,12 @@ export interface components {
             readonly gruposDeDocumentos: null | readonly components["schemas"]["GrupoDeDocumentosDoModeloInput"][];
         };
         /**
-         * @description - `ELIMINA`: Eliminação — Retira a pessoa do processo seletivo.
-         *     - `RECLASSIFICA_AC`: Ampla concorrência — Passa a pessoa para a ampla concorrência.
-         *     - `REMOVE_VANTAGEM`: Perda da vantagem — Retira a vantagem solicitada.
-         *     - `ABRE_PRAZO_PARA_REENVIO`: Prazo para reenvio — Abre prazo para reenviar o documento.
+         * @description - `ELIMINA_DO_PROCESSO`: Eliminação do processo — Retira a pessoa do processo, depois dos procedimentos e recursos cabíveis.
+         *     - `RETIRA_A_MODALIDADE`: Retirada da modalidade — A pessoa perde a modalidade a que o requisito se refere e continua nas demais em que concorre.
+         *     - `RETIRA_O_ACRESCIMO`: Retirada só do acréscimo do Fator de Atenuação das Desigualdades de Acesso — A pessoa perde só o acréscimo; não é eliminada nem perde modalidade.
          * @enum {string}
          */
-        readonly ConsequenciaDoIndeferimentoCodigo: ConsequenciaDoIndeferimentoCodigo;
+        readonly ConsequenciaDoDescumprimentoCodigo: ConsequenciaDoDescumprimentoCodigo;
         readonly ConteudoDoModeloDto: {
             readonly titulo: null | string;
             readonly paginas: readonly components["schemas"]["PaginaDoFormularioDto"][];
@@ -3007,16 +3000,11 @@ export interface components {
             readonly descricao: null | string;
             readonly orientacao: null | string;
         };
-        readonly CriarBaseLegalBonusRegionalCommand: {
+        readonly CriarBaseLegalDoFadaCommand: {
             readonly tipoInstrumento: null | components["schemas"]["TipoInstrumentoNormativoCodigo"];
             readonly identificacao: null | string;
             readonly descricao: null | string;
-            readonly municipios: null | readonly components["schemas"]["CriarBaseLegalBonusRegionalMunicipioCommand"][];
-        };
-        readonly CriarBaseLegalBonusRegionalMunicipioCommand: {
-            readonly codigoIbge: null | string;
-            readonly nome: null | string;
-            readonly uf: null | string;
+            readonly municipios: null | readonly components["schemas"]["CriarMunicipioDaBaseLegalDoFadaCommand"][];
         };
         readonly CriarCalendarioDiasUteisCommand: {
             readonly versaoDoCalendario: null | string;
@@ -3128,9 +3116,14 @@ export interface components {
         };
         readonly CriarModeloFormularioCommand: {
             readonly codigo: string;
-            readonly finalidade: components["schemas"]["FinalidadeFormularioCodigo"];
+            readonly declaracao: null | components["schemas"]["DeclaracaoDoModeloInput"];
             readonly descritivo: null | components["schemas"]["DescritivoDoModeloInput"];
             readonly conteudo: null | components["schemas"]["ConteudoDoModeloInput"];
+        };
+        readonly CriarMunicipioDaBaseLegalDoFadaCommand: {
+            readonly codigoIbge: null | string;
+            readonly nome: null | string;
+            readonly uf: null | string;
         };
         readonly CriarOfertaCursoCommand: {
             /** Format: uuid */
@@ -3292,6 +3285,14 @@ export interface components {
             readonly classificacaoRecomendada: null | components["schemas"]["ClassificacaoDeProtecao"];
             readonly justificativa: null | string;
             readonly dianteDeManifestacaoDesfavoravel: boolean;
+        };
+        readonly DeclaracaoDoModeloDto: {
+            readonly serveAFaseDeInscricao: boolean;
+            readonly obrigatorio: boolean;
+        };
+        readonly DeclaracaoDoModeloInput: {
+            readonly serveAFaseDeInscricao: null | boolean;
+            readonly obrigatorio: null | boolean;
         };
         readonly DefinicaoDoFatoDto: {
             readonly dominio: components["schemas"]["TipoDoDado"];
@@ -3668,19 +3669,6 @@ export interface components {
             readonly ativo: boolean;
             readonly orientacao?: null | string;
         };
-        readonly FinalidadeFormulario: {
-            readonly codigo: components["schemas"]["FinalidadeFormularioCodigo"];
-            readonly rotulo: string;
-        };
-        /**
-         * @description Para que o formulário coleta respostas: cada processo tem no máximo um formulário por finalidade.
-         *
-         *     - `INSCRICAO`: Inscrição — Formulário em que o candidato se inscreve no processo seletivo.
-         *     - `ISENCAO_TAXA`: Isenção da taxa — Formulário em que o candidato pede a isenção da taxa de inscrição.
-         *     - `HABILITACAO`: Habilitação — Formulário em que o candidato comprova os requisitos para ser habilitado.
-         * @enum {string}
-         */
-        readonly FinalidadeFormularioCodigo: FinalidadeFormularioCodigo;
         readonly FonteValoresFato: {
             readonly codigo: components["schemas"]["FonteValoresFatoCodigo"];
             readonly rotulo: string;
@@ -3752,7 +3740,6 @@ export interface components {
          */
         readonly FormatoTextoCodigo: FormatoTextoCodigo;
         readonly FormularioApresentado: {
-            readonly finalidade: string;
             readonly titulo: null | string;
             readonly paginas: readonly components["schemas"]["PaginaApresentada"][];
             readonly termos: readonly components["schemas"]["TermoApresentado"][];
@@ -3864,21 +3851,29 @@ export interface components {
         };
         readonly IndeferimentoDoDocumentoDoModeloDto: {
             readonly obrigatorio: boolean;
-            readonly consequencia: string;
+            readonly consequenciaDoDescumprimento: null | string;
             readonly basesLegais: readonly components["schemas"]["BaseLegalDoModeloDto"][];
+            /** @default false */
+            readonly abrePrazoParaReenvio: boolean;
         };
         readonly IndeferimentoDoDocumentoDoModeloInput: {
             readonly obrigatorio: boolean;
-            readonly consequencia: components["schemas"]["ConsequenciaDoIndeferimentoCodigo"];
+            readonly consequenciaDoDescumprimento: null | components["schemas"]["ConsequenciaDoDescumprimentoCodigo"];
             readonly basesLegais: null | readonly components["schemas"]["BaseLegalDoModeloInput"][];
+            /** @default false */
+            readonly abrePrazoParaReenvio: boolean;
         };
         readonly IndeferimentoDoGrupoDeDocumentosDoModeloDto: {
-            readonly consequencia: string;
+            readonly consequenciaDoDescumprimento: null | string;
             readonly basesLegais: readonly components["schemas"]["BaseLegalDoModeloDto"][];
+            /** @default false */
+            readonly abrePrazoParaReenvio: boolean;
         };
         readonly IndeferimentoDoGrupoDeDocumentosDoModeloInput: {
-            readonly consequencia: components["schemas"]["ConsequenciaDoIndeferimentoCodigo"];
+            readonly consequenciaDoDescumprimento: null | components["schemas"]["ConsequenciaDoDescumprimentoCodigo"];
             readonly basesLegais: null | readonly components["schemas"]["BaseLegalDoModeloInput"][];
+            /** @default false */
+            readonly abrePrazoParaReenvio: boolean;
         };
         readonly ItemDaProtecaoDoCatalogoDto: {
             readonly tipo: string;
@@ -3992,10 +3987,15 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly codigo: string;
-            readonly finalidade: components["schemas"]["FinalidadeFormulario"];
+            readonly declaracao: components["schemas"]["DeclaracaoDoModeloDto"];
             readonly ativo: boolean;
             readonly descritivo: components["schemas"]["DescritivoDoModeloDto"];
             readonly conteudo: components["schemas"]["ConteudoDoModeloDto"];
+        };
+        readonly MunicipioDaBaseLegalDoFadaDto: {
+            readonly codigoIbge: string;
+            readonly nome: string;
+            readonly uf: string;
         };
         readonly NaturezaLegal: {
             readonly codigo: components["schemas"]["NaturezaLegalCodigo"];
@@ -4761,7 +4761,7 @@ export interface components {
             readonly rotulo: string;
         };
         /**
-         * @description Tipo do ato normativo que institui ou modifica o bônus regional de um processo seletivo.
+         * @description Tipo do ato normativo que institui ou modifica o Fator de Atenuação das Desigualdades de Acesso (FADA) de um processo seletivo.
          *
          *     - `LEI`: Lei — Ato normativo de maior hierarquia no ordenamento infraconstitucional, emanado do Poder Legislativo.
          *     - `DECRETO`: Decreto — Ato normativo do Poder Executivo que regulamenta leis ou dispõe sobre matéria de sua competência.
@@ -4769,7 +4769,7 @@ export interface components {
          *     - `RESOLUCAO`: Resolução — Ato normativo de órgão colegiado (conselho, câmara, comitê) com efeitos internos ou externos conforme a norma instituidora.
          *     - `INSTRUCAO_NORMATIVA`: Instrução Normativa — Ato administrativo de caráter técnico-operacional que detalha a execução de normas superiores.
          *     - `PARECER`: Parecer — Manifestação técnica ou jurídica de órgão competente que orienta a aplicação de normas — vinculante quando aprovado pela autoridade competente.
-         *     - `EDITAL`: Edital — Ato de convocação do processo seletivo que fixa as regras do certame, inclusive o bônus que ele institui.
+         *     - `EDITAL`: Edital — Ato de convocação do processo seletivo que fixa as regras do certame, inclusive o Fator de Atenuação das Desigualdades de Acesso (FADA) que ele institui.
          * @enum {string}
          */
         readonly TipoInstrumentoNormativoCodigo: TipoInstrumentoNormativoCodigo;
@@ -4989,7 +4989,7 @@ export interface operations {
             };
         };
     };
-    readonly ListarBasesLegaisDaFada: {
+    readonly ListarBasesLegaisDoFada: {
         readonly parameters: {
             readonly query?: {
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
@@ -4997,7 +4997,7 @@ export interface operations {
                 /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                 readonly limit?: number;
                 /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
-                readonly direction?: PathsApiConfiguracaoBaseLegalBonusRegionalGetParametersQueryDirection;
+                readonly direction?: PathsApiConfiguracaoBasesLegaisFadaGetParametersQueryDirection;
             };
             readonly header?: never;
             readonly path?: never;
@@ -5015,7 +5015,7 @@ export interface operations {
                     readonly [name: string]: unknown;
                 };
                 content: {
-                    readonly "application/vnd.uniplus.base-legal-bonus-regional.v1+json": readonly components["schemas"]["BaseLegalBonusRegionalDto"][];
+                    readonly "application/vnd.uniplus.base-legal-do-fada.v1+json": readonly components["schemas"]["BaseLegalDoFadaDto"][];
                 };
             };
             /** @description Bad Request */
@@ -5056,7 +5056,7 @@ export interface operations {
             };
         };
     };
-    readonly ObterBaseLegalDaFada: {
+    readonly ObterBaseLegalDoFada: {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -5073,7 +5073,7 @@ export interface operations {
                     readonly [name: string]: unknown;
                 };
                 content: {
-                    readonly "application/vnd.uniplus.base-legal-bonus-regional.v1+json": components["schemas"]["BaseLegalBonusRegionalDto"];
+                    readonly "application/vnd.uniplus.base-legal-do-fada.v1+json": components["schemas"]["BaseLegalDoFadaDto"];
                 };
             };
             /** @description Not Found */
@@ -5096,7 +5096,7 @@ export interface operations {
             };
         };
     };
-    readonly CadastrarBaseLegalDaFada: {
+    readonly CadastrarBaseLegalDoFada: {
         readonly parameters: {
             readonly query?: never;
             readonly header: {
@@ -5108,9 +5108,9 @@ export interface operations {
         };
         readonly requestBody: {
             readonly content: {
-                readonly "application/json": components["schemas"]["CriarBaseLegalBonusRegionalCommand"];
-                readonly "text/json": components["schemas"]["CriarBaseLegalBonusRegionalCommand"];
-                readonly "application/*+json": components["schemas"]["CriarBaseLegalBonusRegionalCommand"];
+                readonly "application/json": components["schemas"]["CriarBaseLegalDoFadaCommand"];
+                readonly "text/json": components["schemas"]["CriarBaseLegalDoFadaCommand"];
+                readonly "application/*+json": components["schemas"]["CriarBaseLegalDoFadaCommand"];
             };
         };
         readonly responses: {
@@ -5181,7 +5181,7 @@ export interface operations {
             };
         };
     };
-    readonly AlterarBaseLegalDaFada: {
+    readonly AlterarBaseLegalDoFada: {
         readonly parameters: {
             readonly query?: never;
             readonly header: {
@@ -5195,9 +5195,9 @@ export interface operations {
         };
         readonly requestBody: {
             readonly content: {
-                readonly "application/json": components["schemas"]["AtualizarBaseLegalBonusRegionalCommand"];
-                readonly "text/json": components["schemas"]["AtualizarBaseLegalBonusRegionalCommand"];
-                readonly "application/*+json": components["schemas"]["AtualizarBaseLegalBonusRegionalCommand"];
+                readonly "application/json": components["schemas"]["AtualizarBaseLegalDoFadaCommand"];
+                readonly "text/json": components["schemas"]["AtualizarBaseLegalDoFadaCommand"];
+                readonly "application/*+json": components["schemas"]["AtualizarBaseLegalDoFadaCommand"];
             };
         };
         readonly responses: {
@@ -5273,7 +5273,7 @@ export interface operations {
             };
         };
     };
-    readonly ExcluirBaseLegalDaFada: {
+    readonly ExcluirBaseLegalDoFada: {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -6722,7 +6722,7 @@ export interface operations {
     readonly ListarCursos: {
         readonly parameters: {
             readonly query?: {
-                /** @description Texto pesquisado. Insensível a caixa e a acentuação. Até 200 caracteres. */
+                /** @description Texto pesquisado. Insensível a caixa e a acentuação. Até 200 caracteres, sem contar os espaços das pontas. */
                 readonly q?: string;
                 /** @description Campos de ordenação separados por vírgula, na ordem de prioridade; '-' prefixa o campo decrescente. Exemplo: sort=nome,-grau. Campos aceitos: nome, codigo, grau, nivelEnsino, criadoEm. Sem o parâmetro, vale a ordem alfabética padrão. */
                 readonly sort?: string;
@@ -6779,7 +6779,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Texto pesquisado com mais de 200 caracteres, sem contar os espaços das pontas (uniplus.consulta.busca_muito_longa), ou outro parâmetro de consulta inválido. */
             readonly 422: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -9618,7 +9618,7 @@ export interface operations {
         readonly parameters: {
             readonly query?: {
                 readonly tipoProcesso?: string;
-                readonly finalidade?: components["schemas"]["FinalidadeFormularioCodigo"];
+                readonly serveAFaseDeInscricao?: boolean;
                 readonly ativo?: boolean;
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
@@ -9684,15 +9684,6 @@ export interface operations {
             };
             /** @description Gone */
             readonly 410: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            readonly 422: {
                 headers: {
                     readonly [name: string]: unknown;
                 };
@@ -10301,7 +10292,7 @@ export interface operations {
         readonly parameters: {
             readonly query?: {
                 readonly cursoId?: string;
-                /** @description Texto pesquisado. Insensível a caixa e a acentuação. Até 200 caracteres. */
+                /** @description Texto pesquisado. Insensível a caixa e a acentuação. Até 200 caracteres, sem contar os espaços das pontas. */
                 readonly q?: string;
                 /** @description Campos de ordenação separados por vírgula, na ordem de prioridade; '-' prefixa o campo decrescente. Exemplo: sort=cursoNome,-programaDeOferta. Campos aceitos: cursoNome, cursoCodigo, unidadeOfertanteSigla, programaDeOferta, formatoPedagogico, regimeDeFuncionamento, regimeDeTurno, criadoEm. Sem o parâmetro, vale a ordem alfabética padrão. */
                 readonly sort?: string;
@@ -10362,7 +10353,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Texto pesquisado com mais de 200 caracteres, sem contar os espaços das pontas (uniplus.consulta.busca_muito_longa), ou outro parâmetro de consulta inválido. */
             readonly 422: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -11496,7 +11487,7 @@ export interface operations {
                 readonly de?: string;
                 /** @description Data final da decisão, inclusive (AAAA-MM-DD), no fuso de Belém. */
                 readonly ate?: string;
-                /** @description Trecho do nome ou do código do item. Insensível a caixa e a acentuação. Até 200 caracteres. */
+                /** @description Trecho do nome ou do código do item. Insensível a caixa e a acentuação. Até 200 caracteres, sem contar os espaços das pontas. */
                 readonly busca?: string;
                 /** @description Quando verdadeiro, só as decisões de quem consulta. */
                 readonly minhas?: boolean;
@@ -11571,7 +11562,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Texto pesquisado com mais de 200 caracteres, sem contar os espaços das pontas (uniplus.consulta.busca_muito_longa), ou outro parâmetro de consulta inválido. */
             readonly 422: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -12567,7 +12558,7 @@ export interface operations {
     readonly ListarTermosDeConsentimento: {
         readonly parameters: {
             readonly query?: {
-                /** @description Termo de busca livre (caixa-insensível) sobre o Nome do termo de consentimento; ausente/vazio = sem filtro. Mantenha fixo ao navegar prev/next (o cursor não vincula o filtro). */
+                /** @description Termo de busca livre (caixa-insensível) sobre o Nome do termo de consentimento; ausente/vazio = sem filtro. Até 200 caracteres, sem contar os espaços das pontas. Mantenha fixo ao navegar prev/next (o cursor não vincula o filtro). */
                 readonly q?: string;
                 /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                 readonly cursor?: string;
@@ -12622,7 +12613,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Unprocessable Entity */
+            /** @description Texto pesquisado com mais de 200 caracteres, sem contar os espaços das pontas (uniplus.consulta.busca_muito_longa), ou outro parâmetro de consulta inválido. */
             readonly 422: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -16404,7 +16395,7 @@ export interface operations {
         };
     };
 }
-export enum PathsApiConfiguracaoBaseLegalBonusRegionalGetParametersQueryDirection {
+export enum PathsApiConfiguracaoBasesLegaisFadaGetParametersQueryDirection {
     next = "next",
     prev = "prev"
 }
@@ -16507,8 +16498,7 @@ export enum AbrangenciaCodigo {
     INSTITUCIONAL = "INSTITUCIONAL"
 }
 export enum AcaoQuandoIndeferidoCodigo {
-    RECLASSIFICA_AC = "RECLASSIFICA_AC",
-    RECLASSIFICA_CONFORME_EDITAL = "RECLASSIFICA_CONFORME_EDITAL"
+    RETIRA_A_MODALIDADE = "RETIRA_A_MODALIDADE"
 }
 export enum BlocoSistemaCodigo {
     COMPROVACAO_DOCUMENTAL = "COMPROVACAO_DOCUMENTAL",
@@ -16532,11 +16522,10 @@ export enum ComposicaoVagasCodigo {
     RETIRADA_DE_OUTRA_MODALIDADE = "RETIRADA_DE_OUTRA_MODALIDADE",
     SUPLEMENTAR_AO_TOTAL = "SUPLEMENTAR_AO_TOTAL"
 }
-export enum ConsequenciaDoIndeferimentoCodigo {
-    ELIMINA = "ELIMINA",
-    RECLASSIFICA_AC = "RECLASSIFICA_AC",
-    REMOVE_VANTAGEM = "REMOVE_VANTAGEM",
-    ABRE_PRAZO_PARA_REENVIO = "ABRE_PRAZO_PARA_REENVIO"
+export enum ConsequenciaDoDescumprimentoCodigo {
+    ELIMINA_DO_PROCESSO = "ELIMINA_DO_PROCESSO",
+    RETIRA_A_MODALIDADE = "RETIRA_A_MODALIDADE",
+    RETIRA_O_ACRESCIMO = "RETIRA_O_ACRESCIMO"
 }
 export enum DecidirProtecaoDoCatalogoRequestCadastro {
     TIPO_DOCUMENTO = "TIPO_DOCUMENTO",
@@ -16568,11 +16557,6 @@ export enum EstadoFatoCodigo {
     NAO_APLICAVEL = "NAO_APLICAVEL",
     RESOLVIDO = "RESOLVIDO",
     NAO_INFORMADO = "NAO_INFORMADO"
-}
-export enum FinalidadeFormularioCodigo {
-    INSCRICAO = "INSCRICAO",
-    ISENCAO_TAXA = "ISENCAO_TAXA",
-    HABILITACAO = "HABILITACAO"
 }
 export enum FonteValoresFatoCodigo {
     CATALOGO = "CATALOGO",

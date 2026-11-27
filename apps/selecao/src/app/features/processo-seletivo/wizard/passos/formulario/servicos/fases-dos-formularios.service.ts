@@ -1,5 +1,4 @@
-import { computed, inject, Injectable } from '@angular/core';
-import { FINALIDADE_INSCRICAO } from '@uniplus/shared-inscricao/formulario';
+import { computed, effect, inject, Injectable, untracked } from '@angular/core';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { descreverFase } from '../../../shared/descricao-da-fase';
@@ -9,17 +8,14 @@ import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-doc
 import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
 import { CatalogoDeFatos } from '../../cronograma/catalogos/catalogo-de-fatos.service';
 import type { FaseDoCronograma } from '../abas-do-formulario';
-import {
-  faseEfetiva,
-  faseServeAFinalidade,
-  finalidadesParaAcrescentar,
-  formulariosDoRascunho,
-} from '../formularios-por-finalidade';
+import { comAFaseEfetiva, faseEfetiva } from '../formularios-do-rascunho';
+import { faseTemLugar, naFase } from '../obrigatoriedade-na-fase';
 
 /**
  * Em que fase do cronograma cada formulário é respondido, e o que o cronograma permite acrescentar:
- * a fase escolhida enquanto servir à finalidade, ou a única que serve. A API recusa fase de outra
- * finalidade, e enviar a fase nula apagaria a gravada — a publicação recusa formulário sem fase.
+ * a fase escolhida enquanto tiver lugar para ele, ou a única que tem. A fase tem lugar para um
+ * formulário obrigatório e um facultativo, e a API recusa um terceiro; enviar a fase nula apagaria
+ * a gravada — a publicação recusa formulário sem fase.
  */
 @Injectable()
 export class FasesDosFormularios {
@@ -29,11 +25,19 @@ export class FasesDosFormularios {
   private readonly catalogoDeFases = inject(CatalogoDeFases);
   private readonly catalogoDeFatos = inject(CatalogoDeFatos);
 
-  private readonly formularios = computed(() =>
-    formulariosDoRascunho(this.store.draft().formulario),
-  );
+  private readonly formularios = computed(() => this.store.draft().formulario.formularios);
+  private readonly cobraTaxa = computed(() => this.store.draft().pagamento.cobra === true);
 
-  /** As fases do cronograma, com o que decide a finalidade que cada uma atende. */
+  constructor() {
+    // A tela, a identificação do formulário de inscrição e o envio leem a fase do rascunho: ela
+    // passa a ser a que a aba mostra, quando a guardada deixou de existir e só resta uma opção.
+    effect(() => {
+      const alinhado = this.rascunhoNaFaseEfetiva();
+      if (alinhado !== null) untracked(() => this.store.patchSection('formulario', alinhado));
+    });
+  }
+
+  /** As fases do cronograma, com as marcas que dizem o que cada uma é. */
   readonly fasesDoCronograma = computed<readonly FaseDoCronograma[]>(() => {
     const fasePorId = this.catalogoDeFases.fasePorId();
     return this.store.draft().cronograma.fases.map((fase) => {
@@ -47,34 +51,62 @@ export class FasesDosFormularios {
     });
   });
 
-  /** A fase de cada formulário, por finalidade: as que servem a ela e a escolhida. */
-  readonly porFinalidade = computed(
+  /** Os códigos das fases em que o candidato se inscreve. */
+  readonly fasesDaInscricao = computed<ReadonlySet<string>>(
+    () =>
+      new Set(
+        this.fasesDoCronograma()
+          .filter((fase) => fase.coletaInscricao)
+          .map((fase) => fase.codigo),
+      ),
+  );
+
+  /** As fases que ainda têm lugar para o formulário, e a escolhida, por código. */
+  readonly porFormulario = computed(
     () =>
       new Map(
         this.formularios().map((formulario) => {
-          const opcoes = this.fasesDoCronograma().filter((fase) =>
-            faseServeAFinalidade(formulario.finalidade, fase),
+          const opcoes = this.fasesDoCronograma().filter(
+            (fase) =>
+              fase.codigo === formulario.faseCodigo ||
+              this.temLugar(fase, this.ocupantesSem(fase, formulario.codigo)),
           );
           return [
-            formulario.finalidade,
+            formulario.codigo,
             { opcoes, escolhida: faseEfetiva(formulario.faseCodigo, opcoes) },
           ] as const;
         }),
       ),
   );
 
-  readonly faseDaInscricao = computed(
-    () => this.porFinalidade().get(FINALIDADE_INSCRICAO)?.escolhida ?? '',
-  );
-
-  /** As finalidades que o operador pode acrescentar agora. */
-  readonly finalidadesOferecidas = computed(() =>
-    finalidadesParaAcrescentar(
-      this.formularios().map((formulario) => formulario.finalidade),
-      this.store.draft().pagamento.cobra === true,
-      this.fasesDoCronograma(),
+  /** O rascunho com a fase efetiva em cada formulário; nulo quando todos já a guardam. */
+  private readonly rascunhoNaFaseEfetiva = computed(() =>
+    comAFaseEfetiva(this.store.draft().formulario, this.porFormulario(), (formulario, outros) =>
+      naFase(
+        formulario,
+        this.fasesDoCronograma().find((fase) => fase.codigo === formulario.faseCodigo),
+        outros.filter((outro) => outro.faseCodigo === formulario.faseCodigo),
+      ),
     ),
   );
+
+  /** As fases em que o operador ainda pode acrescentar um formulário. */
+  readonly fasesOferecidas = computed(() =>
+    this.fasesDoCronograma().filter((fase) => this.temLugar(fase, this.ocupantesSem(fase, null))),
+  );
+
+  private ocupantesSem(fase: FaseDoCronograma, codigo: string | null) {
+    return this.formularios().filter(
+      (formulario) => formulario.faseCodigo === fase.codigo && formulario.codigo !== codigo,
+    );
+  }
+
+  private temLugar(
+    fase: FaseDoCronograma,
+    ocupantes: readonly { readonly obrigatorio: boolean }[],
+  ): boolean {
+    return faseTemLugar(fase, ocupantes, this.cobraTaxa());
+  }
 
   /** Como a lista de documentos do formulário nomeia o tipo de documento e lê o público de cada um. */
   readonly vocabularioDosDocumentos = computed(() => {

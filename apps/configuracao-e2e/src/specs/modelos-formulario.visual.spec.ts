@@ -11,8 +11,8 @@ const CORS_HEADERS = {
 const MODELO = {
   id: '01960000-0000-7000-0000-0000000000a1',
   codigo: 'INSCRICAO',
+  declaracao: { serveAFaseDeInscricao: true, obrigatorio: true },
   descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
-  finalidade: { codigo: 'INSCRICAO', rotulo: 'Inscrição' },
   ativo: true,
   conteudo: {
     titulo: 'Inscrição',
