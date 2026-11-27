@@ -2,6 +2,7 @@ import type { GravacaoDoPasso } from '../wizard/passo-do-wizard';
 import type { ValidacaoDoPasso } from '../wizard/processo-seletivo.models';
 import type { ConducaoDoWizard } from './conducao-do-wizard.service';
 import { falhaAoConcluir, mensagensDe } from './mensagens-do-passo';
+import { ordemDeGravacao } from './ordem-de-gravacao';
 
 const DESEMPATE_AINDA_PENDENTE =
   'Os critérios de desempate por área não foram gravados, porque a classificação não ficou gravada com o quadro de Peso por Área de que eles dependem. Grave a classificação, com a resolução escolhida no passo Fórmula, e publique de novo.';
@@ -144,20 +145,36 @@ async function rascunhoInteiroValido(
  * carregamento. Gravar de novo custa uma chamada a mais por passo, mas é correto por construção:
  * o `persistir()` de cada passo já é reenvio idempotente.
  *
+ * A gravação segue a ordem das dependências (`ordemDeGravacao()`), não a da tela, e as pendências
+ * voltam na ordem da tela, para quem lê "Passo 1" achar o primeiro passo realmente incompleto.
+ *
  * O operador pode ter navegado para outro processo com a varredura ainda correndo: continuar
  * chamaria `persistir()` dos passos seguintes contra o rascunho do processo NOVO. Sai calada, e
  * `publicar()` confere a geração de novo ao voltar.
  */
 async function gravarPassosAnteriores(conducao: ConducaoDoWizard): Promise<string[]> {
-  const { store } = conducao;
-  const pendencias: string[] = [];
-  const geracao = store.geracao();
+  const pendencias = await gravarNaOrdem(conducao);
+  if (pendencias === null) return [];
+  return pendencias.sort((a, b) => a.indice - b.indice).map((pendencia) => pendencia.texto);
+}
 
-  for (let index = 0; index < store.totalDePassos - 1; index += 1) {
-    pendencias.push(...(await gravarPasso(conducao, index)));
-    if (geracao !== store.geracao()) return [];
+/**
+ * A classificação é conferida contra os critérios que o servidor tem: com os critérios recusados,
+ * gravá-la só repetiria a recusa como se fosse falha dela. `null` quando o operador trocou de
+ * processo no meio da varredura.
+ */
+async function gravarNaOrdem(conducao: ConducaoDoWizard): Promise<PendenciaDoPasso[] | null> {
+  const geracao = conducao.store.geracao();
+  const dosCriterios = conducao.indiceDoPassoPosClassificacao();
+  const pendencias: PendenciaDoPasso[] = [];
+  let criteriosRecusados = false;
+  for (const index of ordemDeGravacao(conducao)) {
+    if (criteriosRecusados && conducao.passoNo(index)?.gravaAClassificacao) continue;
+    const novas = await gravarPasso(conducao, index);
+    if (geracao !== conducao.store.geracao()) return null;
+    pendencias.push(...novas);
+    criteriosRecusados ||= index === dosCriterios && novas.length > 0;
   }
-
   return pendencias;
 }
 
@@ -166,12 +183,12 @@ async function gravarPassosAnteriores(conducao: ConducaoDoWizard): Promise<strin
  * operador ainda não terminou de preencher, e para manter a ordem e o texto de
  * `validarRascunho()`: quem lê "Passo 1" quer o primeiro passo REALMENTE incompleto.
  */
-async function gravarPasso(conducao: ConducaoDoWizard, index: number): Promise<string[]> {
+async function gravarPasso(conducao: ConducaoDoWizard, index: number): Promise<PendenciaDoPasso[]> {
   const validator = conducao.passoNo(index);
   if (validator === undefined) return [];
 
   const conferencia = validator.validar();
-  if (!conferencia.valid) return [conducao.pendenciaDoPasso(index, mensagensDe(conferencia))];
+  if (!conferencia.valid) return [pendenciaDoPasso(conducao, index, mensagensDe(conferencia))];
 
   if (!validator.persistir) return [];
 
@@ -185,15 +202,29 @@ async function pendenciasDaGravacao(
   conducao: ConducaoDoWizard,
   index: number,
   commit: ValidacaoDoPasso,
-): Promise<string[]> {
+): Promise<PendenciaDoPasso[]> {
   if (commit.valid) return gravarDesempatePendente(conducao);
   return commit.messages?.length === 0
     ? []
-    : [conducao.pendenciaDoPasso(index, mensagensDe(commit))];
+    : [pendenciaDoPasso(conducao, index, mensagensDe(commit))];
 }
 
-async function gravarDesempatePendente(conducao: ConducaoDoWizard): Promise<string[]> {
+async function gravarDesempatePendente(conducao: ConducaoDoWizard): Promise<PendenciaDoPasso[]> {
   const recusa = await conducao.gravarDesempatePendente();
   if (recusa === null || recusa.mensagens.length === 0) return [];
-  return [conducao.pendenciaDoPasso(recusa.indice, recusa.mensagens)];
+  return [pendenciaDoPasso(conducao, recusa.indice, recusa.mensagens)];
+}
+
+/** O índice acompanha o texto para a varredura, que grava fora da ordem da tela, listar na ordem dela. */
+interface PendenciaDoPasso {
+  readonly indice: number;
+  readonly texto: string;
+}
+
+function pendenciaDoPasso(
+  conducao: ConducaoDoWizard,
+  indice: number,
+  mensagens: readonly string[],
+): PendenciaDoPasso {
+  return { indice, texto: conducao.pendenciaDoPasso(indice, mensagens) };
 }

@@ -54,6 +54,7 @@ const MENSAGEM_DIVISOR_INVALIDO =
   providers: [provePassoDoWizard(EliminacaoPassoComponent)],
 })
 export class EliminacaoPassoComponent {
+  readonly gravaAClassificacao = true as const;
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacao);
   private readonly cadastroDePesos = inject(LeituraDoCadastroDePesos);
