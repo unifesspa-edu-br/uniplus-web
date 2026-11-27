@@ -47,7 +47,7 @@ test.describe('Acessos — divergências da governança', () => {
       page.getByRole('heading', { name: 'Divergências da governança', level: 1 }),
     ).toBeVisible();
     const linhas = page.getByRole('row');
-    await expect(linhas.filter({ hasText: 'Classificação' })).toContainText('InternaDado pessoal');
+    await expect(linhas.filter({ hasText: 'Classificação' })).toContainText('InternoPessoal');
     await expect(linhas.filter({ hasText: 'Composição faltante' })).toContainText('—');
     await expect(
       page.getByRole('table').getByRole('link', { name: 'Gestão de acessos' }),

@@ -71,7 +71,7 @@ test.describe('Acessos — revisão periódica', () => {
 
     await page.locator(`tr[data-revisao-id="${RESUMO_ENCERRADO.id}"] a`).click();
     await expect(page.getByText('Revisão encerrada')).toBeVisible();
-    await expect(linha(page, 'i9')).toContainText('Acesso mantido');
+    await expect(linha(page, 'i9')).toContainText('Confirmada');
     await expect(page.getByRole('button', { name: /^(Confirmar|Revogar)/ })).toHaveCount(0);
   });
 
@@ -186,7 +186,7 @@ test.describe('Acessos — revisão periódica', () => {
     await page.getByRole('dialog').getByRole('button', { name: 'Revogar acesso' }).click();
 
     await expect(page.getByText('Decisão concorrente')).toBeVisible();
-    await expect(linha(page, 'i1')).toContainText('Acesso revogado');
+    await expect(linha(page, 'i1')).toContainText('Revogada');
   });
 
   test('quem conduz abre uma revisão e segue para o detalhe dela', async ({ page }) => {

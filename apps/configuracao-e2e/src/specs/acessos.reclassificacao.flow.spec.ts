@@ -25,6 +25,7 @@ import {
   concessao,
   RECLASSIFICACAO,
   DECISAO_OK,
+  ETAPA_DA_GESTAO,
   ETAPA_DA_PROTECAO,
   preparar,
 } from '../support/reclassificacao-cenario';
@@ -227,7 +228,11 @@ test.describe('Acessos — detalhe e decisão da reclassificação', () => {
         status: 200,
         corpo: {
           ...RECLASSIFICACAO,
-          concessoes: [concessao('c4', 'Rebeca Teste', { etapasExigidas: [ETAPA_DA_PROTECAO] })],
+          concessoes: [
+            concessao('c4', 'Rebeca Teste', {
+              etapasExigidas: [ETAPA_DA_GESTAO, ETAPA_DA_PROTECAO],
+            }),
+          ],
         },
       },
     });
