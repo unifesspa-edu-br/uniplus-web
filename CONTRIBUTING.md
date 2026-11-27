@@ -151,7 +151,7 @@ A branch protection da `main` exige aprovação dos seguintes status checks (ord
 3. `nx run-many --target=lint --all`
 4. `PR author is org member`
 
-O check `main` é o agregador dos gates: os jobs `gate (lint)`, `gate (typecheck)`, `gate (typecheck-spec)`, `gate (build)` e `test (<projeto>)` rodam em paralelo, cada um no seu runner, e `main` falha se qualquer um falhar ou for cancelado. Não são checks exigidos por si, para a lista de testes poder mudar com os projetos do workspace.
+O check `main` é o agregador dos gates: o job `contract-copies-check` e os jobs `gate (lint)`, `gate (typecheck)`, `gate (typecheck-spec)`, `gate (build)` e `test (<projeto>)` rodam em paralelo, cada um no seu runner, e `main` falha se qualquer um falhar ou for cancelado. Não são checks exigidos por si, para a lista de testes poder mudar com os projetos do workspace.
 
 Renomeação dos jobs em `.github/workflows/*.yml` exige atualização correspondente da branch protection via `gh api PUT /repos/.../branches/main/protection` — os nomes nesta lista são contratuais.
 
@@ -229,7 +229,7 @@ Quem muda contrato (copiar um `openapi.<módulo>.json` da API, regerar o cliente
 npx nx run shared-data:contract-copies-check
 ```
 
-Sai com 1 se alguma cópia diverge (o erro diz quais módulos) e com 2 se não conseguiu verificar (sem rede ou sem login do `gh`). Ele não roda no CI: uma mudança de contrato na API deixaria vermelho todo PR da web, por motivo alheio a ele.
+Sai com 1 se alguma cópia diverge (o erro diz quais módulos) e com 2 se não conseguiu verificar (sem rede ou sem login do `gh`). O CI roda a mesma verificação no job `contract-copies-check`, que o check `main` exige: se a cópia de algum módulo estiver atrasada em relação à `main` da API, o job falha e a mensagem nomeia o módulo. Quando a API publica um contrato novo, as cópias da web precisam ser atualizadas antes de integrar qualquer outra mudança.
 
 O `build` das apps confere os templates (`ngc`), o `typecheck` confere o código e o `typecheck-spec` confere os specs. A [ADR-0033](docs/adrs/0033-conferencia-dos-testes-com-o-contrato-da-api.md) propõe conferir os testes que simulam a API contra o contrato versionado em `libs/shared-data/openapi`, nos projetos migrados.
 

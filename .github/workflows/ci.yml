@@ -75,6 +75,26 @@ jobs:
       - name: Verificar drift do codegen OpenAPI (shared-data)
         run: npx nx run shared-data:codegen-api-check
 
+  # Confere se cada cópia do contrato em libs/shared-data/openapi é igual à da `main` do
+  # repositório que a publica. O codegen-drift-check só compara o cliente gerado com a cópia
+  # da web; este job pega a cópia que ficou para trás do contrato publicado. Quando falha, a
+  # mensagem nomeia o módulo cuja cópia diverge. Só consulta o GitHub (repositórios públicos),
+  # então não instala dependências.
+  contract-copies-check:
+    name: contract-copies-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Conferir as cópias do contrato com a main das APIs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash libs/shared-data/scripts/verify-contract-copies.sh
+
   # Os gates rodam em jobs separados, cada um no seu runner, para que as tarefas não disputem
   # CPU e memória no mesmo runner e estourem o tempo. O job `main` agrega esses jobs e mantém o
   # nome do check exigido pela proteção da `main`.
@@ -220,7 +240,7 @@ jobs:
   # Check exigido pela proteção da `main` (nome contratual, ver CONTRIBUTING.md § Required CI checks).
   # Falha se qualquer gate falhou ou foi cancelado; gates pulados (PR sem mudança de frontend) passam.
   main:
-    needs: [escopo, verificar, testes]
+    needs: [escopo, verificar, testes, contract-copies-check]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
