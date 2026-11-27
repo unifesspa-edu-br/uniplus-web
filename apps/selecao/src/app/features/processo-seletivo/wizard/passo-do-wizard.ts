@@ -60,6 +60,12 @@ export interface PassoDoWizard {
   gravarAposAClassificacao?(): Promise<ValidacaoDoPasso>;
 
   /**
+   * O passo grava a classificação do processo. O servidor a confere contra o que o passo de
+   * `gravarAposAClassificacao` já gravou, então a varredura da publicação grava aquele antes.
+   */
+  readonly gravaAClassificacao?: true;
+
+  /**
    * Refaz, a partir do servidor, o que este passo cacheia para `validar()`
    * decidir. A maioria dos passos não tem cache — só a Revisão, cujo
    * checklist é lido uma vez e reaproveitado enquanto o operador estiver
