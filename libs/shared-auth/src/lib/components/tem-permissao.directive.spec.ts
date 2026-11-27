@@ -10,9 +10,7 @@ const concedidas = signal<ReadonlySet<string>>(new Set());
   standalone: true,
   imports: [TemPermissaoDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <button *authTemPermissao="exigida()">Novo processo</button>
-  `,
+  template: ` <button *authTemPermissao="exigida()">Novo processo</button> `,
 })
 class HospedeiroComponent {
   readonly exigida = signal<CodigoDePermissao | readonly CodigoDePermissao[]>(
