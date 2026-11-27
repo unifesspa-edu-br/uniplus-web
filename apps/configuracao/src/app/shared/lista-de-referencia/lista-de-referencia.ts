@@ -75,31 +75,39 @@ function estadoDaLista<T>(): EstadoDaLista<T> {
   };
 }
 
-/** Itens das páginas da tentativa em curso, até a última chegar. */
-interface Coleta<T> {
-  itens: readonly T[];
-}
+/** Lê as páginas de uma tentativa, junta os itens utilizáveis e registra o desfecho dela. */
+class ColetaDaLista<T> {
+  /** Itens das páginas da tentativa em curso, até a última chegar. */
+  private itens: readonly T[] = [];
 
-function registrarPagina<T>(
-  resultado: ApiResult<readonly T[]>,
-  fonte: FonteDaLista<T>,
-  estado: EstadoDaLista<T>,
-  coleta: Coleta<T>,
-): void {
-  if (!resultado.ok) {
-    estado.ultimoProblema.set(resultado.problem);
-    return;
+  constructor(
+    private readonly fonte: FonteDaLista<T>,
+    private readonly estado: EstadoDaLista<T>,
+  ) {}
+
+  paginaDe(cursor?: Cursor): Observable<ApiResult<readonly T[]>> {
+    if (cursor === undefined) {
+      this.itens = [];
+    }
+    const aoFalhar = (): void => this.estado.ultimoProblema.set(null);
+    return this.fonte
+      .listar(cursor)
+      .pipe(tap({ next: (resultado) => this.registrarPagina(resultado), error: aoFalhar }));
   }
-  estado.ultimoProblema.set(null);
-  coleta.itens = [
-    ...coleta.itens,
-    ...resultado.data.map(fonte.normalizar).filter(fonte.utilizavel),
-  ];
-  if (extractNextCursor(resultado.headers.get('Link')) !== null) {
-    return;
-  }
-  if (coleta.itens.length > 0) {
-    estado.ultimaUtil.set(coleta.itens);
+
+  private registrarPagina(resultado: ApiResult<readonly T[]>): void {
+    if (!resultado.ok) {
+      this.estado.ultimoProblema.set(resultado.problem);
+      return;
+    }
+    this.estado.ultimoProblema.set(null);
+    this.itens = [
+      ...this.itens,
+      ...resultado.data.map(this.fonte.normalizar).filter(this.fonte.utilizavel),
+    ];
+    if (extractNextCursor(resultado.headers.get('Link')) === null && this.itens.length > 0) {
+      this.estado.ultimaUtil.set(this.itens);
+    }
   }
 }
 
@@ -109,71 +117,114 @@ function lookupColetor<T>(
   estado: EstadoDaLista<T>,
   destroyRef: DestroyRef,
 ): LookupCompleto<T> {
-  const coleta: Coleta<T> = { itens: [] };
-  const aoFalhar = (): void => estado.ultimoProblema.set(null);
-  return lookupCompleto<T>((cursor) => {
-    if (cursor === undefined) {
-      coleta.itens = [];
-    }
-    const aoReceber = (resultado: ApiResult<readonly T[]>): void =>
-      registrarPagina(resultado, fonte, estado, coleta);
-    return fonte.listar(cursor).pipe(tap({ next: aoReceber, error: aoFalhar }));
-  }, destroyRef);
+  const coleta = new ColetaDaLista(fonte, estado);
+  return lookupCompleto<T>((cursor) => coleta.paginaDe(cursor), destroyRef);
 }
+
+type SinaisDaLista<T> = Pick<
+  ListaDeReferencia<T>,
+  'opcoes' | 'comErro' | 'falhou' | 'pendente' | 'ultimoProblema'
+>;
 
 /** Os itens e o estado de falha que a tela enxerga, derivados da consulta e do estado. */
 function sinaisDaLista<T>(
   lookup: LookupCompleto<T>,
   estado: EstadoDaLista<T>,
   fonte: FonteDaLista<T>,
-): Pick<ListaDeReferencia<T>, 'opcoes' | 'comErro' | 'falhou'> {
+): SinaisDaLista<T> {
+  const itens = itensDaLista(lookup, estado, fonte);
+  return {
+    ...itens,
+    falhou: falhaParaMostrar(lookup, estado, itens),
+    pendente: lookup.pendente,
+    ultimoProblema: estado.ultimoProblema.asReadonly(),
+  };
+}
+
+function itensDaLista<T>(
+  lookup: LookupCompleto<T>,
+  estado: EstadoDaLista<T>,
+  fonte: FonteDaLista<T>,
+): Pick<ListaDeReferencia<T>, 'opcoes' | 'comErro'> {
   const atuais = computed(() => lookup.opcoes().map(fonte.normalizar).filter(fonte.utilizavel));
   /** Os itens da última lista utilizável: a recusa mantém os anteriores (`lookupCompleto`
    *  não os limpa), e a resposta vazia também. */
   const opcoes = computed(() => (atuais().length > 0 ? atuais() : estado.ultimaUtil()));
   /** `true` quando a última tentativa não trouxe itens: recusada, com erro ou vazia. */
   const comErro = computed(() => lookup.comErro() || (!lookup.pendente() && atuais().length === 0));
-  const falhou = computed(() => {
+  return { opcoes, comErro };
+}
+
+function falhaParaMostrar<T>(
+  lookup: LookupCompleto<T>,
+  estado: EstadoDaLista<T>,
+  itens: Pick<ListaDeReferencia<T>, 'opcoes' | 'comErro'>,
+): Signal<boolean> {
+  return computed(() => {
     if (lookup.pendente()) {
       return estado.doOperador() && estado.falhaAntesDaTentativa();
     }
-    return comErro() && opcoes().length === 0;
+    return itens.comErro() && itens.opcoes().length === 0;
   });
-  return { opcoes, comErro, falhou };
 }
 
-type Acionamentos = Pick<
-  ListaDeReferencia<unknown>,
+/** As ações da tela sobre a lista e o que já foi pedido. */
+class AcionamentosDaLista<T> {
+  #iniciado = false;
+  readonly #lookup: LookupCompleto<T>;
+  readonly #estado: EstadoDaLista<T>;
+  readonly #sinais: Pick<ListaDeReferencia<T>, 'comErro' | 'falhou'>;
+
+  constructor(
+    lookup: LookupCompleto<T>,
+    estado: EstadoDaLista<T>,
+    sinais: Pick<ListaDeReferencia<T>, 'comErro' | 'falhou'>,
+  ) {
+    this.#lookup = lookup;
+    this.#estado = estado;
+    this.#sinais = sinais;
+  }
+
+  readonly garantirCarregado = (): void => {
+    if (this.#iniciado && untracked(this.#lookup.pendente)) {
+      // Uma tela nova pede a lista enquanto corre o "Tentar novamente" de outra: para
+      // ela, a tentativa é automática, e a falha da visita anterior não aparece.
+      this.#estado.doOperador.set(false);
+      return;
+    }
+    if (this.#iniciado && !untracked(this.#sinais.comErro)) {
+      return;
+    }
+    this.#buscar(false);
+  };
+
+  readonly recarregar = (): void => this.#buscar(false);
+
+  readonly tentarDeNovo = (): void => this.#buscar(true);
+
+  #buscar(pedidaPeloOperador: boolean): void {
+    this.#iniciado = true;
+    this.#estado.falhaAntesDaTentativa.set(pedidaPeloOperador && untracked(this.#sinais.falhou));
+    this.#estado.doOperador.set(pedidaPeloOperador);
+    this.#lookup.recarregar();
+  }
+}
+
+type AcoesDaLista<T> = Pick<
+  ListaDeReferencia<T>,
   'garantirCarregado' | 'recarregar' | 'tentarDeNovo'
 >;
 
-function acionamentosDaLista<T>(
+function acoesDaLista<T>(
   lookup: LookupCompleto<T>,
   estado: EstadoDaLista<T>,
-  sinais: Pick<ListaDeReferencia<T>, 'comErro' | 'falhou'>,
-): Acionamentos {
-  let iniciado = false;
-  const buscar = (pedidaPeloOperador: boolean): void => {
-    iniciado = true;
-    estado.falhaAntesDaTentativa.set(pedidaPeloOperador && untracked(sinais.falhou));
-    estado.doOperador.set(pedidaPeloOperador);
-    lookup.recarregar();
-  };
+  sinais: SinaisDaLista<T>,
+): AcoesDaLista<T> {
+  const acoes = new AcionamentosDaLista(lookup, estado, sinais);
   return {
-    garantirCarregado: () => {
-      if (iniciado && untracked(lookup.pendente)) {
-        // Uma tela nova pede a lista enquanto corre o "Tentar novamente" de outra: para
-        // ela, a tentativa é automática, e a falha da visita anterior não aparece.
-        estado.doOperador.set(false);
-        return;
-      }
-      if (iniciado && !untracked(sinais.comErro)) {
-        return;
-      }
-      buscar(false);
-    },
-    recarregar: () => buscar(false),
-    tentarDeNovo: () => buscar(true),
+    garantirCarregado: acoes.garantirCarregado,
+    recarregar: acoes.recarregar,
+    tentarDeNovo: acoes.tentarDeNovo,
   };
 }
 
@@ -194,13 +245,10 @@ export function listaDeReferencia<T>(
   const estado = estadoDaLista<T>();
   const lookup = lookupColetor(fonte, estado, destroyRef);
   const sinais = sinaisDaLista(lookup, estado, fonte);
-  return {
-    ...sinais,
-    ...acionamentosDaLista(lookup, estado, sinais),
-    pendente: lookup.pendente,
-    ultimoProblema: estado.ultimoProblema.asReadonly(),
-  };
+  return { ...sinais, ...acoesDaLista(lookup, estado, sinais) };
 }
+
+type ComUltimoProblema = Pick<ListaDeReferencia<unknown>, 'ultimoProblema'>;
 
 /**
  * O motivo da falha de uma lista para o alerta — o título da recusa da API (ex.: falta
@@ -215,10 +263,18 @@ export function listaDeReferencia<T>(
  * Chamar em contexto de injeção (inicializador de campo ou construtor).
  */
 export function motivoDaFalha(
-  lista: Pick<ListaDeReferencia<unknown>, 'ultimoProblema'>,
+  lista: ComUltimoProblema,
   avisar: () => boolean = () => true,
 ): Signal<string | null> {
   const problemI18n = inject(ProblemI18nService);
+  avisarFalhaDeServidor(lista, avisar);
+  return computed(() => {
+    const problema = lista.ultimoProblema();
+    return problema === null ? null : problemI18n.resolve(problema).title;
+  });
+}
+
+function avisarFalhaDeServidor(lista: ComUltimoProblema, avisar: () => boolean): void {
   const notifications = inject(NotificationService);
   let jaAvisado = untracked(lista.ultimoProblema);
   effect(() => {
@@ -227,9 +283,5 @@ export function motivoDaFalha(
       jaAvisado = problema;
       untracked(() => notifications.errorFromProblem(problema));
     }
-  });
-  return computed(() => {
-    const problema = lista.ultimoProblema();
-    return problema === null ? null : problemI18n.resolve(problema).title;
   });
 }

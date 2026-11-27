@@ -10,7 +10,7 @@ import {
   enderecoEstruturadoDe,
   enderecoParaCommand,
 } from '../../shared/endereco';
-import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
+import { controleDeTexto, controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
 
 /** Código de wire do 409 de sigla duplicada. */
 export const CAMPUS_SIGLA_JA_EXISTE_CODE = 'uniplus.configuracao.campus.sigla_ja_existe';
@@ -39,18 +39,9 @@ const CONTROLES_DO_SERVIDOR: ReadonlySet<string> = new Set<keyof CampusForm>([
 
 export function criarFormularioDeCampus(): FormGroup<CampusForm> {
   return new FormGroup<CampusForm>({
-    sigla: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(20)],
-    }),
-    nome: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(200)],
-    }),
-    codigoEmec: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(20)],
-    }),
+    sigla: controleDeTexto(Validators.required, Validators.maxLength(20)),
+    nome: controleDeTexto(Validators.required, Validators.maxLength(200)),
+    codigoEmec: controleDeTexto(Validators.maxLength(20)),
     endereco: new FormControl<EnderecoEstruturado | null>(null, {
       validators: [cidadeObrigatoriaValidator],
     }),
@@ -75,17 +66,11 @@ export function comandoDeCriacao(valores: ValoresDoCampus): CriarCampusCommand {
   // A cidade é obrigatória (validator cidadeObrigatoria) e o submit está bloqueado sem ela. Os
   // três campos seguem como vêm de enderecoParaCommand: o contrato os aceita nulos, então a
   // ausência chega à validação de domínio em vez de ser mascarada por uma string vazia.
-  const { cidadeCodigoIbge, cidadeNome, cidadeUf, endereco } = enderecoParaCommand(
-    valores.endereco,
-  );
   return {
     sigla: nullIfBlank(valores.sigla),
     nome: nullIfBlank(valores.nome),
     codigoEmec: nullIfBlank(valores.codigoEmec),
-    cidadeCodigoIbge,
-    cidadeNome,
-    cidadeUf,
-    endereco,
+    ...enderecoParaCommand(valores.endereco),
   };
 }
 

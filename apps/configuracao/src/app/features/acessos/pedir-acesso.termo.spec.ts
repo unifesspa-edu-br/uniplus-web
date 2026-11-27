@@ -1,7 +1,7 @@
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ok, pedido, recusa } from './testes';
-import { escolherArquivoNoCampo } from './interacao.testing';
+import { escolherArquivoNoCampo } from '../../shared/interacao-com-a-tela/interacao-com-a-tela.testing';
 import {
   caixaDoAceite as aceite,
   chavesDasCriacoes,

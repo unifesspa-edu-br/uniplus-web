@@ -10,10 +10,7 @@ export interface NoDaArvore {
  * conjunto aparece como raiz: não há endpoint de hierarquia dedicado.
  */
 export function montarArvore(unidades: readonly UnidadeDto[]): readonly NoDaArvore[] {
-  const nos = new Map<string, { unidade: UnidadeDto; children: NoDaArvore[] }>();
-  for (const unidade of unidades) {
-    nos.set(unidade.id, { unidade, children: [] });
-  }
+  const nos = nosPorId(unidades);
   const raizes: NoDaArvore[] = [];
   for (const no of nos.values()) {
     const idDoPai = no.unidade.unidadeSuperiorId;
@@ -25,6 +22,16 @@ export function montarArvore(unidades: readonly UnidadeDto[]): readonly NoDaArvo
     }
   }
   return ordenar(raizes);
+}
+
+type NoEmMontagem = { unidade: UnidadeDto; children: NoDaArvore[] };
+
+function nosPorId(unidades: readonly UnidadeDto[]): ReadonlyMap<string, NoEmMontagem> {
+  const nos = new Map<string, NoEmMontagem>();
+  for (const unidade of unidades) {
+    nos.set(unidade.id, { unidade, children: [] });
+  }
+  return nos;
 }
 
 function ordenar(nos: readonly NoDaArvore[]): readonly NoDaArvore[] {

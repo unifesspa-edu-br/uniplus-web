@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { HttpContext } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
@@ -121,12 +122,7 @@ export class EdicaoDasReservasDemograficas {
   verificarCensoDuplicado(): void {
     const controle = this.form.controls.censoReferencia;
     const censo = controle.value.trim();
-    const duplicado =
-      censo.length > 0 &&
-      this.store
-        .referencias()
-        .some((ref) => ref.censoReferencia === censo && ref.id !== this.idEmEdicao());
-    if (duplicado) {
+    if (this.censoJaCadastrado(censo)) {
       controle.setErrors({ duplicado: true });
       controle.markAsTouched();
     } else if (controle.hasError('duplicado')) {
@@ -151,13 +147,10 @@ export class EdicaoDasReservasDemograficas {
       return;
     }
     const id = this.idEmEdicao();
-    const valores = this.form.getRawValue();
     const chave = withIdempotencyKey(this.chave());
-    const operacao: Observable<ApiResult<string | void>> =
-      id === null
-        ? this.api.criar(comandoDeCriacao(valores), chave)
-        : this.api.atualizar(id, comandoDeAtualizacao(id, valores), chave);
-    this.gravar('salvando', id, operacao, (result) => this.concluirSalvamento(result));
+    this.gravar('salvando', id, this.operacaoDeGravacao(id, chave), (result) =>
+      this.concluirSalvamento(result),
+    );
   }
 
   removerConfirmado(): void {
@@ -166,6 +159,15 @@ export class EdicaoDasReservasDemograficas {
     this.erroDaRemocao.set(null);
     this.gravar('removendo', referencia.id, this.api.remover(referencia.id), (result) =>
       this.concluirRemocao(referencia, result),
+    );
+  }
+
+  private censoJaCadastrado(censo: string): boolean {
+    return (
+      censo.length > 0 &&
+      this.store
+        .referencias()
+        .some((ref) => ref.censoReferencia === censo && ref.id !== this.idEmEdicao())
     );
   }
 
@@ -178,6 +180,16 @@ export class EdicaoDasReservasDemograficas {
     this.erro.set(null);
     this.renovarChave();
     this.aberto.set(true);
+  }
+
+  private operacaoDeGravacao(
+    id: string | null,
+    chave: HttpContext,
+  ): Observable<ApiResult<string | void>> {
+    const valores = this.form.getRawValue();
+    return id === null
+      ? this.api.criar(comandoDeCriacao(valores), chave)
+      : this.api.atualizar(id, comandoDeAtualizacao(id, valores), chave);
   }
 
   private gravar<T>(
@@ -213,12 +225,7 @@ export class EdicaoDasReservasDemograficas {
     result: ApiResult<void>,
   ): void {
     if (!result.ok) {
-      this.erroDaRemocao.set(this.problemI18n.resolve(result.problem).title);
-      if (result.problem.status >= 500) {
-        this.notifications.errorFromProblem(result.problem, {
-          title: 'Não foi possível remover a referência',
-        });
-      }
+      this.recusarRemocao(result.problem);
       return;
     }
     this.resultadoDaRemocao.set(`Referência do Censo ${referencia.censoReferencia} removida.`);
@@ -226,6 +233,15 @@ export class EdicaoDasReservasDemograficas {
     this.confirmando.set(false);
     this.referenciaParaRemover.set(null);
     this.recarregar();
+  }
+
+  private recusarRemocao(problem: ProblemDetails): void {
+    this.erroDaRemocao.set(this.problemI18n.resolve(problem).title);
+    if (problem.status >= 500) {
+      this.notifications.errorFromProblem(problem, {
+        title: 'Não foi possível remover a referência',
+      });
+    }
   }
 
   private recarregar(): void {
@@ -239,14 +255,17 @@ export class EdicaoDasReservasDemograficas {
       this.aplicarErrosDeValidacao(separarCausas(problem.errors));
       return;
     }
-    const titulo = this.problemI18n.resolve(problem).title;
     if (problem.code === CODIGO_CENSO_JA_EXISTE) {
       this.renovarChave();
-      this.marcarCampo('censoReferencia', problem.code, titulo);
+      this.marcarCampo('censoReferencia', problem.code, this.problemI18n.resolve(problem).title);
       return;
     }
+    this.aplicarFalhaGeral(problem);
+  }
+
+  private aplicarFalhaGeral(problem: ProblemDetails): void {
     if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
-    this.erro.set(titulo);
+    this.erro.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
 

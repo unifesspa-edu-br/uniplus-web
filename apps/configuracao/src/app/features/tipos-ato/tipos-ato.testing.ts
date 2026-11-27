@@ -1,12 +1,12 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { PUBLICACOES_BASE_PATH, TipoAtoPublicadoDto } from '@uniplus/shared-data/publicacoes';
-import { expect, vi } from 'vitest';
+import { vi } from 'vitest';
+import { InteracaoComATela } from '../../shared/interacao-com-a-tela/interacao-com-a-tela.testing';
 import { EdicaoDosTiposAto } from './edicao-dos-tipos-ato';
 import { TiposAtoPage } from './tipos-ato.page';
 import { TiposAtoStore } from './tipos-ato.store';
@@ -68,8 +68,7 @@ export const identificacaoDe = (ato: TipoAtoPublicadoDto): string => {
   return `${ato.codigo}, vigência iniciada em ${dia}/${mes}/${ano}`;
 };
 
-/** A página montada com a lista já carregada, e as ferramentas para conduzi-la como a pessoa faz. */
-export async function montarPagina(itens: readonly TipoAtoPublicadoDto[] = [preliminar, aviso]) {
+function prepararModulo(): void {
   TestBed.configureTestingModule({
     imports: [TiposAtoPage],
     providers: [
@@ -79,112 +78,132 @@ export async function montarPagina(itens: readonly TipoAtoPublicadoDto[] = [prel
       { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
     ],
   });
-  const fixture: ComponentFixture<TiposAtoPage> = TestBed.createComponent(TiposAtoPage);
-  const http = TestBed.inject(HttpTestingController);
-  const app = TestBed.inject(ApplicationRef);
+}
+
+function servicosDaPagina(fixture: ComponentFixture<TiposAtoPage>) {
   const injetor = fixture.debugElement.injector;
-  const edicao = injetor.get(EdicaoDosTiposAto);
-  const store = injetor.get(TiposAtoStore);
   const notificacoes = TestBed.inject(NotificationService);
-  const sucessos = vi.spyOn(notificacoes, 'success');
-  const erros = vi.spyOn(notificacoes, 'errorFromProblem');
-  const informacoes = vi.spyOn(notificacoes, 'info');
-
-  const propagar = async (): Promise<void> => {
-    await Promise.resolve();
-    app.tick();
-    fixture.detectChanges();
-  };
-  const elemento = <T extends HTMLElement>(seletor: string): T => {
-    const encontrado = (fixture.nativeElement as HTMLElement).querySelector<T>(seletor);
-    expect(encontrado, seletor).not.toBeNull();
-    return encontrado as T;
-  };
-  const pelaEtiqueta = (nome: string): HTMLButtonElement =>
-    elemento(`button[aria-label="${nome}"]`);
-  const recarregarCom = async (lista: readonly TipoAtoPublicadoDto[]): Promise<void> => {
-    await propagar();
-    http.expectOne((r) => r.url === LISTA).flush(lista);
-    await propagar();
-  };
-  const preencher = (nome: string, valor: string): void => {
-    const campo = elemento<HTMLInputElement>(`[formcontrolname="${nome}"]`);
-    campo.value = valor;
-    campo.dispatchEvent(new Event('input'));
-  };
-  /** Marca "Sim" ou "Não" do atributo, clicando na opção como a pessoa faz. */
-  const responder = (nome: string, sim: boolean): void => {
-    const opcoes = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>(
-      `input[type="radio"][name="${nome}"]`,
-    );
-    opcoes[sim ? 0 : 1].click();
-  };
-  const acionar = async (botao: HTMLButtonElement): Promise<void> => {
-    botao.focus();
-    botao.click();
-    await propagar();
-  };
-  const dialogoDaRemocao = (): HTMLElement => elemento('cfg-confirmacao-de-remocao');
-
-  fixture.detectChanges();
-  http.expectOne((r) => r.url === LISTA).flush(itens);
-  await propagar();
-
   return {
-    fixture,
-    http,
-    edicao,
-    store,
-    sucessos,
-    erros,
-    informacoes,
-    propagar,
-    elemento,
-    recarregarCom,
-    preencher,
-    responder,
-    formulario: (): HTMLFormElement => elemento('#cfg-tipo-ato-form'),
+    edicao: injetor.get(EdicaoDosTiposAto),
+    store: injetor.get(TiposAtoStore),
+    sucessos: vi.spyOn(notificacoes, 'success'),
+    erros: vi.spyOn(notificacoes, 'errorFromProblem'),
+    informacoes: vi.spyOn(notificacoes, 'info'),
+  };
+}
+
+function botoesDaPagina({ elemento, pelaEtiqueta }: InteracaoComATela) {
+  const dialogoDaRemocao = (): HTMLElement => elemento('cfg-confirmacao-de-remocao');
+  const doDialogo = (id: string): HTMLButtonElement =>
+    dialogoDaRemocao().querySelector(`[data-testid="${id}"]`) as HTMLButtonElement;
+  return {
     novo: (): HTMLButtonElement => elemento('#cfg-tipos-ato-novo'),
     editar: (a: TipoAtoPublicadoDto = preliminar) =>
       pelaEtiqueta(`Editar tipo de ato ${identificacaoDe(a)}`),
     remover: (a: TipoAtoPublicadoDto = preliminar) =>
       pelaEtiqueta(`Remover vigência do tipo de ato ${identificacaoDe(a)}`),
     salvar: (): HTMLButtonElement => elemento('button[form="cfg-tipo-ato-form"]'),
-    confirmar: (): HTMLButtonElement =>
-      dialogoDaRemocao().querySelector(
-        '[data-testid="confirm-dialog-confirm"]',
-      ) as HTMLButtonElement,
-    cancelarDaConfirmacao: (): HTMLButtonElement =>
-      dialogoDaRemocao().querySelector(
-        '[data-testid="confirm-dialog-cancel"]',
-      ) as HTMLButtonElement,
+    confirmar: (): HTMLButtonElement => doDialogo('confirm-dialog-confirm'),
+    cancelarDaConfirmacao: (): HTMLButtonElement => doDialogo('confirm-dialog-cancel'),
+  };
+}
+
+function camposDaPagina({ elemento }: InteracaoComATela) {
+  return {
+    formulario: (): HTMLFormElement => elemento('#cfg-tipo-ato-form'),
     campo: (nome: string): HTMLInputElement => elemento(`[formcontrolname="${nome}"]`),
     statusDaPagina: (): string =>
       elemento(':scope > span.sr-only[role="status"]').textContent ?? '',
+  };
+}
+
+async function preencherOMinimoDoCadastro(tela: InteracaoComATela): Promise<void> {
+  tela.preencher('codigo', 'resultado_preliminar_inscricao');
+  tela.preencher('nome', 'Resultado preliminar da inscrição');
+  tela.preencher('vigenciaInicio', '2026-01-01');
+  tela.responder('publicavelComoAvulso', false);
+  tela.responder('exigeAtoCorrigido', false);
+  await tela.propagar();
+}
+
+function roteirosDeAbertura(tela: InteracaoComATela) {
+  return {
     /** Clica de verdade em "Novo tipo de ato" e preenche o mínimo para enviar. */
     async abrirCadastro(): Promise<void> {
-      await acionar(elemento('#cfg-tipos-ato-novo'));
-      preencher('codigo', 'resultado_preliminar_inscricao');
-      preencher('nome', 'Resultado preliminar da inscrição');
-      preencher('vigenciaInicio', '2026-01-01');
-      responder('publicavelComoAvulso', false);
-      responder('exigeAtoCorrigido', false);
-      await propagar();
+      await tela.acionar(tela.elemento('#cfg-tipos-ato-novo'));
+      await preencherOMinimoDoCadastro(tela);
     },
     async abrirEdicao(ato: TipoAtoPublicadoDto = preliminar): Promise<void> {
-      await acionar(pelaEtiqueta(`Editar tipo de ato ${identificacaoDe(ato)}`));
+      await tela.acionar(tela.pelaEtiqueta(`Editar tipo de ato ${identificacaoDe(ato)}`));
     },
+  };
+}
+
+function roteirosDeEnvio(tela: InteracaoComATela, http: HttpTestingController) {
+  return {
     /** Envia o formulário aberto, com o foco no botão de salvar, e devolve a requisição de escrita. */
     async enviar(url = ESCRITA) {
-      await acionar(elemento('button[form="cfg-tipo-ato-form"]'));
+      await tela.acionar(tela.elemento('button[form="cfg-tipo-ato-form"]'));
       return http.expectOne((r) => r.url === url && r.method !== 'GET');
     },
+  };
+}
+
+function roteirosDeRemocao(tela: InteracaoComATela, http: HttpTestingController) {
+  return {
     async confirmarRemocao(ato: TipoAtoPublicadoDto = preliminar) {
-      await acionar(pelaEtiqueta(`Remover vigência do tipo de ato ${identificacaoDe(ato)}`));
-      elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]').click();
-      await propagar();
+      const remover = tela.pelaEtiqueta(`Remover vigência do tipo de ato ${identificacaoDe(ato)}`);
+      await tela.acionar(remover);
+      tela.elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]').click();
+      await tela.propagar();
       return http.expectOne(`${ESCRITA}/${ato.id}`);
     },
+  };
+}
+
+async function carregarLista(
+  { propagar }: InteracaoComATela,
+  http: HttpTestingController,
+  itens: readonly TipoAtoPublicadoDto[],
+): Promise<void> {
+  http.expectOne((r) => r.url === LISTA).flush(itens);
+  await propagar();
+}
+
+async function recarregar(
+  tela: InteracaoComATela,
+  http: HttpTestingController,
+  lista: readonly TipoAtoPublicadoDto[],
+): Promise<void> {
+  await tela.propagar();
+  await carregarLista(tela, http, lista);
+}
+
+async function carregarPagina(itens: readonly TipoAtoPublicadoDto[]) {
+  prepararModulo();
+  const fixture = TestBed.createComponent(TiposAtoPage);
+  const http = TestBed.inject(HttpTestingController);
+  const tela = new InteracaoComATela(fixture);
+  const servicos = servicosDaPagina(fixture);
+  fixture.detectChanges();
+  await carregarLista(tela, http, itens);
+  return { fixture, http, tela, servicos };
+}
+
+/** A página montada com a lista já carregada, e as ferramentas para conduzi-la como a pessoa faz. */
+export async function montarPagina(itens: readonly TipoAtoPublicadoDto[] = [preliminar, aviso]) {
+  const { fixture, http, tela, servicos } = await carregarPagina(itens);
+  return {
+    fixture,
+    http,
+    ...servicos,
+    ...tela,
+    recarregarCom: (lista: readonly TipoAtoPublicadoDto[]) => recarregar(tela, http, lista),
+    ...botoesDaPagina(tela),
+    ...camposDaPagina(tela),
+    ...roteirosDeAbertura(tela),
+    ...roteirosDeEnvio(tela, http),
+    ...roteirosDeRemocao(tela, http),
   };
 }
 

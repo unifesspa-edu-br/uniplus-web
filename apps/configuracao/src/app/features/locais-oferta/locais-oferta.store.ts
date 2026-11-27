@@ -44,16 +44,16 @@ export class LocaisOfertaStore {
             : [
                 [
                   local.campusResponsavelId,
-                  resolverVinculo(
-                    this.campi,
-                    this.campiPorId().get(local.campusResponsavelId),
-                    rotularCampus,
-                  ),
+                  this.resolverCampus(local.campusResponsavelId),
                 ] as const,
               ],
         ),
       ),
   );
+
+  private resolverCampus(campusId: string) {
+    return resolverVinculo(this.campi, this.campiPorId().get(campusId), rotularCampus);
+  }
 
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);

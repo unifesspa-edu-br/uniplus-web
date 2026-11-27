@@ -6,7 +6,7 @@ import {
 } from '@uniplus/shared-data/organizacao';
 import type { EnderecoEstruturado } from '@uniplus/shared-ui/components';
 import { enderecoEstruturadoDe, enderecoParaCommand } from '../../shared/endereco';
-import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
+import { controleDeTexto, controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
 
 /** Vendor code do 409 de segunda criação: a plataforma atende uma única instituição. */
 export const INSTITUICAO_JA_EXISTE_CODE = 'uniplus.organizacao.instituicao.ja_existe';
@@ -71,75 +71,103 @@ const CAMPOS_DO_SERVIDOR: ReadonlySet<string> = new Set<keyof InstituicaoForm>([
 ]);
 
 const obrigatorio = (maximo: number): FormControl<string> =>
-  new FormControl('', {
-    nonNullable: true,
-    validators: [Validators.required, Validators.maxLength(maximo)],
-  });
+  controleDeTexto(Validators.required, Validators.maxLength(maximo));
 
 const opcional = (maximo: number): FormControl<string> =>
-  new FormControl('', { nonNullable: true, validators: [Validators.maxLength(maximo)] });
+  controleDeTexto(Validators.maxLength(maximo));
+
+const vazioSeNulo = (valor: string | null | undefined): string => valor ?? '';
+
+const controlesDeIdentificacao = () => ({
+  nome: obrigatorio(LIMITE.nome),
+  sigla: obrigatorio(LIMITE.sigla),
+  codigoEmec: obrigatorio(LIMITE.codigoEmec),
+  cnpj: opcional(LIMITE.curto),
+});
+
+const controlesDeClassificacao = () => ({
+  organizacaoAcademica: obrigatorio(LIMITE.classificacao),
+  categoriaAdministrativa: obrigatorio(LIMITE.classificacao),
+});
+
+const controlesDeMantenedora = () => ({
+  mantenedora: opcional(LIMITE.nome),
+  codigoMantenedoraEmec: opcional(LIMITE.codigoEmec),
+});
+
+const controlesDeSituacaoRegulatoria = () => ({
+  situacao: opcional(LIMITE.curto),
+  atoCredenciamento: opcional(LIMITE.longo),
+  atoRecredenciamento: opcional(LIMITE.longo),
+});
+
+const controlesDeIndicadores = () => ({
+  conceitoInstitucional: opcional(LIMITE.curto),
+  igc: opcional(LIMITE.curto),
+});
+
+const controlesDeContato = () => ({
+  website: opcional(LIMITE.medio),
+  endereco: new FormControl<EnderecoEstruturado | null>(null),
+});
 
 export function criarFormularioDeInstituicao(): FormGroup<InstituicaoForm> {
   return new FormGroup<InstituicaoForm>({
-    nome: obrigatorio(LIMITE.nome),
-    sigla: obrigatorio(LIMITE.sigla),
-    codigoEmec: obrigatorio(LIMITE.codigoEmec),
-    cnpj: opcional(LIMITE.curto),
-    organizacaoAcademica: obrigatorio(LIMITE.classificacao),
-    categoriaAdministrativa: obrigatorio(LIMITE.classificacao),
-    mantenedora: opcional(LIMITE.nome),
-    codigoMantenedoraEmec: opcional(LIMITE.codigoEmec),
-    situacao: opcional(LIMITE.curto),
-    atoCredenciamento: opcional(LIMITE.longo),
-    atoRecredenciamento: opcional(LIMITE.longo),
-    conceitoInstitucional: opcional(LIMITE.curto),
-    igc: opcional(LIMITE.curto),
-    website: opcional(LIMITE.medio),
-    endereco: new FormControl<EnderecoEstruturado | null>(null),
-    unidadeRaizId: new FormControl('', { nonNullable: true }),
+    ...controlesDeIdentificacao(),
+    ...controlesDeClassificacao(),
+    ...controlesDeMantenedora(),
+    ...controlesDeSituacaoRegulatoria(),
+    ...controlesDeIndicadores(),
+    ...controlesDeContato(),
+    unidadeRaizId: controleDeTexto(),
   });
 }
 
 export function valoresEmBrancoDaInstituicao(): ValoresDaInstituicao {
-  return {
-    nome: '',
-    sigla: '',
-    codigoEmec: '',
-    cnpj: '',
-    organizacaoAcademica: '',
-    categoriaAdministrativa: '',
-    mantenedora: '',
-    codigoMantenedoraEmec: '',
-    situacao: '',
-    atoCredenciamento: '',
-    atoRecredenciamento: '',
-    conceitoInstitucional: '',
-    igc: '',
-    website: '',
-    endereco: null,
-    unidadeRaizId: '',
-  };
+  return criarFormularioDeInstituicao().getRawValue();
 }
 
-const vazioSeNulo = (valor: string | null | undefined): string => valor ?? '';
+const valoresDeIdentificacao = (instituicao: InstituicaoDto) => ({
+  nome: instituicao.nome,
+  sigla: instituicao.sigla,
+  codigoEmec: instituicao.codigoEmec,
+  cnpj: vazioSeNulo(instituicao.cnpj),
+});
+
+const valoresDeClassificacao = (instituicao: InstituicaoDto) => ({
+  organizacaoAcademica: instituicao.organizacaoAcademica,
+  categoriaAdministrativa: instituicao.categoriaAdministrativa,
+});
+
+const valoresDeMantenedora = (instituicao: InstituicaoDto) => ({
+  mantenedora: vazioSeNulo(instituicao.mantenedora),
+  codigoMantenedoraEmec: vazioSeNulo(instituicao.codigoMantenedoraEmec),
+});
+
+const valoresDeSituacaoRegulatoria = (instituicao: InstituicaoDto) => ({
+  situacao: vazioSeNulo(instituicao.situacao),
+  atoCredenciamento: vazioSeNulo(instituicao.atoCredenciamento),
+  atoRecredenciamento: vazioSeNulo(instituicao.atoRecredenciamento),
+});
+
+const valoresDeIndicadores = (instituicao: InstituicaoDto) => ({
+  conceitoInstitucional: vazioSeNulo(instituicao.conceitoInstitucional),
+  igc: vazioSeNulo(instituicao.igc),
+});
+
+const valoresDeContato = (instituicao: InstituicaoDto) => ({
+  website: vazioSeNulo(instituicao.website),
+  endereco: enderecoEstruturadoDe(instituicao.cidade, instituicao.endereco),
+});
 
 export function valoresDaInstituicao(instituicao: InstituicaoDto): ValoresDaInstituicao {
   return {
-    nome: instituicao.nome,
-    sigla: instituicao.sigla,
-    codigoEmec: instituicao.codigoEmec,
-    cnpj: vazioSeNulo(instituicao.cnpj),
-    organizacaoAcademica: instituicao.organizacaoAcademica,
-    categoriaAdministrativa: instituicao.categoriaAdministrativa,
-    mantenedora: vazioSeNulo(instituicao.mantenedora),
-    codigoMantenedoraEmec: vazioSeNulo(instituicao.codigoMantenedoraEmec),
-    situacao: vazioSeNulo(instituicao.situacao),
-    atoCredenciamento: vazioSeNulo(instituicao.atoCredenciamento),
-    atoRecredenciamento: vazioSeNulo(instituicao.atoRecredenciamento),
-    conceitoInstitucional: vazioSeNulo(instituicao.conceitoInstitucional),
-    igc: vazioSeNulo(instituicao.igc),
-    website: vazioSeNulo(instituicao.website),
-    endereco: enderecoEstruturadoDe(instituicao.cidade, instituicao.endereco),
+    ...valoresDeIdentificacao(instituicao),
+    ...valoresDeClassificacao(instituicao),
+    ...valoresDeMantenedora(instituicao),
+    ...valoresDeSituacaoRegulatoria(instituicao),
+    ...valoresDeIndicadores(instituicao),
+    ...valoresDeContato(instituicao),
     unidadeRaizId: vazioSeNulo(instituicao.unidadeRaizId),
   };
 }
@@ -149,24 +177,48 @@ export function controleDoCampoDoServidor(field: string): keyof InstituicaoForm 
   return controlNameFromBackendField<keyof InstituicaoForm>(field, CAMPOS_DO_SERVIDOR);
 }
 
+const comandoDeIdentificacao = (valor: ValoresDaInstituicao) => ({
+  codigoEmec: valor.codigoEmec.trim(),
+  nome: valor.nome.trim(),
+  sigla: valor.sigla.trim(),
+  cnpj: nullIfBlank(valor.cnpj),
+});
+
+const comandoDeClassificacao = (valor: ValoresDaInstituicao) => ({
+  organizacaoAcademica: valor.organizacaoAcademica.trim(),
+  categoriaAdministrativa: valor.categoriaAdministrativa.trim(),
+});
+
+const comandoDeMantenedora = (valor: ValoresDaInstituicao) => ({
+  mantenedora: nullIfBlank(valor.mantenedora),
+  codigoMantenedoraEmec: nullIfBlank(valor.codigoMantenedoraEmec),
+});
+
+const comandoDeSituacaoRegulatoria = (valor: ValoresDaInstituicao) => ({
+  situacao: nullIfBlank(valor.situacao),
+  atoCredenciamento: nullIfBlank(valor.atoCredenciamento),
+  atoRecredenciamento: nullIfBlank(valor.atoRecredenciamento),
+});
+
+const comandoDeIndicadores = (valor: ValoresDaInstituicao) => ({
+  conceitoInstitucional: nullIfBlank(valor.conceitoInstitucional),
+  igc: nullIfBlank(valor.igc),
+});
+
+const comandoDeContato = (valor: ValoresDaInstituicao) => ({
+  website: nullIfBlank(valor.website),
+  ...enderecoParaCommand(valor.endereco),
+});
+
 export function comandoDeCriacao(form: FormGroup<InstituicaoForm>): CriarInstituicaoCommand {
   const valor = form.getRawValue();
   return {
-    codigoEmec: valor.codigoEmec.trim(),
-    nome: valor.nome.trim(),
-    sigla: valor.sigla.trim(),
-    organizacaoAcademica: valor.organizacaoAcademica.trim(),
-    categoriaAdministrativa: valor.categoriaAdministrativa.trim(),
-    cnpj: nullIfBlank(valor.cnpj),
-    mantenedora: nullIfBlank(valor.mantenedora),
-    codigoMantenedoraEmec: nullIfBlank(valor.codigoMantenedoraEmec),
-    situacao: nullIfBlank(valor.situacao),
-    atoCredenciamento: nullIfBlank(valor.atoCredenciamento),
-    atoRecredenciamento: nullIfBlank(valor.atoRecredenciamento),
-    conceitoInstitucional: nullIfBlank(valor.conceitoInstitucional),
-    igc: nullIfBlank(valor.igc),
-    website: nullIfBlank(valor.website),
-    ...enderecoParaCommand(valor.endereco),
+    ...comandoDeIdentificacao(valor),
+    ...comandoDeClassificacao(valor),
+    ...comandoDeMantenedora(valor),
+    ...comandoDeSituacaoRegulatoria(valor),
+    ...comandoDeIndicadores(valor),
+    ...comandoDeContato(valor),
     unidadeRaizId: nullIfBlank(valor.unidadeRaizId),
   };
 }

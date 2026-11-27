@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { HttpContext } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
@@ -148,22 +149,17 @@ export class EdicaoDosCursos {
   }
 
   salvar(): void {
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
+    this.limparRecusasDoSalvamento();
     descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     const chave = withIdempotencyKey(this.chaveDeIdempotencia());
-    const valores = this.form.getRawValue();
-    const id = this.cursoEmEdicaoId();
     const modo = this.modo();
-    const operacao: Observable<ApiResult<string | void>> =
-      modo === 'criar'
-        ? this.api.criar(comandoDeCriacao(valores), chave)
-        : this.api.atualizar(id ?? '', comandoDeAtualizacao(id ?? '', valores), chave);
-    this.gravar('salvando', operacao, (result) => this.concluirGravacao(result, modo));
+    this.gravar('salvando', this.operacaoDeGravacao(chave, modo), (result) =>
+      this.concluirGravacao(result, modo),
+    );
   }
 
   pedirRemocao(curso: CursoDto): void {
@@ -206,12 +202,27 @@ export class EdicaoDosCursos {
     });
   }
 
+  private operacaoDeGravacao(
+    chave: HttpContext,
+    modo: ModoFormulario,
+  ): Observable<ApiResult<string | void>> {
+    const valores = this.form.getRawValue();
+    const id = this.cursoEmEdicaoId();
+    return modo === 'criar'
+      ? this.api.criar(comandoDeCriacao(valores), chave)
+      : this.api.atualizar(id ?? '', comandoDeAtualizacao(id ?? '', valores), chave);
+  }
+
   private concluirRemocao(curso: CursoDto): void {
     this.resultadoDaRemocao.set(`Curso ${curso.codigo} removido.`);
     this.notifications.success('Curso removido', curso.codigo);
+    this.fecharConfirmacaoDaRemocao();
+    this.recarregar();
+  }
+
+  private fecharConfirmacaoDaRemocao(): void {
     this.confirmando.set(false);
     this.cursoParaRemover.set(null);
-    this.recarregar();
   }
 
   private recusarRemocao(curso: CursoDto, problem: ProblemDetails): void {
@@ -220,8 +231,7 @@ export class EdicaoDosCursos {
     // ofertas com as que a impedem. Qualquer outra recusa mantém a confirmação aberta.
     if (problem.code === REMOCAO_BLOQUEADA_POR_OFERTA_CODE) {
       this.resultadoDaRemocao.set(`Não foi possível remover o curso ${curso.codigo}.`);
-      this.confirmando.set(false);
-      this.cursoParaRemover.set(null);
+      this.fecharConfirmacaoDaRemocao();
       this.ofertas.abrirPorBloqueio(curso, titulo);
       return;
     }
@@ -233,8 +243,7 @@ export class EdicaoDosCursos {
 
   private abrir(): void {
     this.limparResultados();
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
+    this.limparRecusasDoSalvamento();
     this.renovarChaveDeIdempotencia();
     this.aberto.set(true);
   }
@@ -258,6 +267,11 @@ export class EdicaoDosCursos {
     this.store.recarregar();
   }
 
+  private limparRecusasDoSalvamento(): void {
+    this.erro.set(null);
+    this.recusaDoSalvamento.set('');
+  }
+
   private limparResultados(): void {
     this.resultadoDaRemocao.set('');
     this.resultadoDoSalvamento.set('');
@@ -270,13 +284,15 @@ export class EdicaoDosCursos {
       this.aplicarErrosDeValidacao(separarCausas(errosDeCampo));
       return;
     }
-    // Curso.CodigoJaExiste é um DomainError único (409, sem `errors[]` — esse array só existe no
-    // pipeline FluentValidation/422); mapeado ao campo manualmente para exibir o erro inline.
     if (problem.code === CURSO_CODIGO_JA_EXISTE_CODE) {
       this.renovarChaveDeIdempotencia();
       this.marcarCodigoJaExistente(problem);
       return;
     }
+    this.aplicarFalhaGeral(problem);
+  }
+
+  private aplicarFalhaGeral(problem: ProblemDetails): void {
     // O outro 409 do envio é `processing_conflict`: pede repetir o mesmo comando com a mesma chave.
     if (deveRotacionarIdempotencyKey(problem)) {
       this.renovarChaveDeIdempotencia();
@@ -287,6 +303,10 @@ export class EdicaoDosCursos {
     }
   }
 
+  /**
+   * Curso.CodigoJaExiste é um DomainError único (409, sem `errors[]` — esse array só existe no
+   * pipeline FluentValidation/422); mapeado ao campo manualmente para exibir o erro inline.
+   */
   private marcarCodigoJaExistente(problem: ProblemDetails): void {
     marcarRecusaDoServidor(
       this.form.controls.codigo,

@@ -46,6 +46,12 @@ export class TermoConsentimentoStore {
   readonly leituraParaFormulario = signal<TermoConsentimentoDto | null>(null);
 
   constructor() {
+    this.notificarFalhaDoServidor();
+    this.encerrarAtualizacaoAoFimDaLeitura();
+    this.entregarLeituraAoFormulario();
+  }
+
+  private notificarFalhaDoServidor(): void {
     effect(() => {
       const problem = this.consulta.problem();
       if (problem && problem.status >= 500) {
@@ -53,6 +59,9 @@ export class TermoConsentimentoStore {
         untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
       }
     });
+  }
+
+  private encerrarAtualizacaoAoFimDaLeitura(): void {
     effect(() => {
       if (!this.atualizando()) return;
       if (this.consulta.isLoading()) {
@@ -63,6 +72,9 @@ export class TermoConsentimentoStore {
         if (this.consulta.error() || this.consulta.problem()) this.silencioso.set(false);
       }
     });
+  }
+
+  private entregarLeituraAoFormulario(): void {
     effect(() => {
       const dados = this.consulta.data();
       if (!dados) return;

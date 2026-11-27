@@ -10,5 +10,6 @@ export {
   type FocoDoEnvio,
   type OpcoesDoFocoDoEnvio,
 } from './foco-do-envio';
+export { detectarFimDaOperacao } from './fim-da-operacao';
 export { focoEstaLivre } from './foco-livre';
 export { aguardarRecarga, type EsperaDeRecarga } from './aguardar-recarga';

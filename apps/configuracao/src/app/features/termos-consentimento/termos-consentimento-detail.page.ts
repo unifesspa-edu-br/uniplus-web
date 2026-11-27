@@ -19,7 +19,7 @@ import {
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
-import { focoEstaLivre } from '../../shared/foco';
+import { detectarFimDaOperacao, focoEstaLivre } from '../../shared/foco';
 import { devolverFocoDaAcao } from './devolver-foco-da-acao';
 import { EdicaoDosTermosConsentimento } from './edicao-dos-termos-consentimento';
 import { TermoConsentimentoDetalheComponent } from './termo-consentimento-detalhe.component';
@@ -115,14 +115,9 @@ export class TermosConsentimentoDetailPage {
    * dela, volta ao título, se ninguém o levou a outro lugar.
    */
   private levarFocoAoTituloAoFimDaCarga(): void {
-    let carregou = false;
+    const cargaTerminou = detectarFimDaOperacao(this.store.carregando);
     effect(() => {
-      if (this.store.carregando()) {
-        carregou = true;
-        return;
-      }
-      if (!carregou) return;
-      carregou = false;
+      if (!cargaTerminou()) return;
       afterNextRender(
         () => {
           if (focoEstaLivre()) this.tituloPagina()?.nativeElement.focus();

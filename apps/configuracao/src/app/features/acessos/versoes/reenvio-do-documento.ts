@@ -1,7 +1,11 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import type { VersaoPendenteDto } from '@uniplus/shared-data/autorizacao';
-import { DocumentoDaVersaoService, type FaseDoEnvio } from './documento-da-versao.service';
+import {
+  DocumentoDaVersaoService,
+  type DesfechoDoDocumento,
+  type FaseDoEnvio,
+} from './documento-da-versao.service';
 import { EscritaDoPerfil } from './escrita-do-perfil';
 
 /**
@@ -16,6 +20,7 @@ export class ReenvioDoDocumento {
   private readonly notificacoes = inject(NotificationService);
   readonly erro = signal<string | null>(null);
   readonly fase = signal<FaseDoEnvio | null>(null);
+  private readonly registrarFase = (fase: FaseDoEnvio): void => this.fase.set(fase);
 
   enviar(perfilId: string, versao: VersaoPendenteDto, arquivo: File | null): Promise<void> {
     if (arquivo === null) return Promise.resolve();
@@ -33,15 +38,16 @@ export class ReenvioDoDocumento {
   ): Promise<void> {
     this.erro.set(null);
     try {
-      const desfecho = await this.documento.reenviar(perfilId, versao, arquivo, (fase) =>
-        this.fase.set(fase),
-      );
-      if (desfecho.ok)
-        this.notificacoes.success('Documento enviado', 'Ele segue para verificação.');
-      else this.erro.set(desfecho.mensagem);
+      const desfecho = await this.documento.reenviar(perfilId, versao, arquivo, this.registrarFase);
+      this.informarDesfechoDoEnvio(desfecho);
     } finally {
       this.fase.set(null);
       this.escrita.recarregar();
     }
+  }
+
+  private informarDesfechoDoEnvio(desfecho: DesfechoDoDocumento): void {
+    if (desfecho.ok) this.notificacoes.success('Documento enviado', 'Ele segue para verificação.');
+    else this.erro.set(desfecho.mensagem);
   }
 }

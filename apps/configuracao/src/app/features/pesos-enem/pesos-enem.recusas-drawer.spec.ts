@@ -1,7 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { BASE, areaDo, erroDaArea, problem, recusa422, PaginaDeTeste } from './pesos-enem.testing';
+import { BASE } from './pesos-enem-exemplos.testing';
+import { problem, recusa422 } from './pesos-enem-respostas.testing';
+import { areaDo, erroDaArea, PaginaDeTeste } from './pesos-enem.testing';
 
 describe('PesosEnemPage — recusas do servidor no cadastro', () => {
   let t: PaginaDeTeste;
@@ -19,7 +21,7 @@ describe('PesosEnemPage — recusas do servidor no cadastro', () => {
       baseLegalGlobal: 'Res. 900/2026 Anexo I',
     });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
@@ -31,7 +33,7 @@ describe('PesosEnemPage — recusas do servidor no cadastro', () => {
     requests
       .slice(1)
       .forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     const raiz = t.fixture.nativeElement as HTMLElement;
@@ -68,7 +70,7 @@ describe('PesosEnemPage — recusas do servidor no cadastro', () => {
       baseLegalGlobal: 'Res. 900/2026 Anexo I',
     });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
@@ -83,7 +85,7 @@ describe('PesosEnemPage — recusas do servidor no cadastro', () => {
         },
       ]);
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.erroDoCampoLote('resolucao')).toBe('Resolução deve ter entre 5 e 40 caracteres.');
     const redacao = areaDo(t.criacao.form.controls.grupos.controls[0], 'REDACAO');
@@ -92,15 +94,15 @@ describe('PesosEnemPage — recusas do servidor no cadastro', () => {
     // Corrigir a resolução limpa o erro, e o reenvio volta a sair.
     t.criacao.form.controls.resolucao.setValue('Res. 900/2026');
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
     const reenvio = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
     );
     expect(reenvio).toHaveLength(4);
     reenvio.forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.expectListagem().flush([]);
-    await t.propagate();
+    await t.atualizarAplicacao();
   });
 
   it('PesosEnemPage_Drawer_ErroDeGrupoQueNaoSeEditaVaiAoBanner', async () => {
@@ -111,7 +113,7 @@ describe('PesosEnemPage — recusas do servidor no cadastro', () => {
       baseLegalGlobal: 'Res. 900/2026 Anexo I',
     });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
@@ -119,7 +121,7 @@ describe('PesosEnemPage — recusas do servidor no cadastro', () => {
     for (const req of requests) {
       recusa422(req, [{ field: 'grupoCurso', code: 'c1', message: 'Grupo fora do domínio.' }]);
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.criacao.erro()).toContain('Tecnológica: Grupo fora do domínio.');
     const redacao = areaDo(t.criacao.form.controls.grupos.controls[0], 'REDACAO');
@@ -134,7 +136,7 @@ describe('PesosEnemPage — recusas do servidor no cadastro', () => {
       baseLegalGlobal: 'Res. 900/2026 Anexo I',
     });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
@@ -151,7 +153,7 @@ describe('PesosEnemPage — recusas do servidor no cadastro', () => {
     for (const req of requests.slice(1)) {
       recusa422(req, [{ field: 'grupoCurso', code: 'c1', message: 'Grupo fora do domínio.' }]);
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.erroDoCampoLote('resolucao')).toBe(
       'Resolução já cadastrada. Informe um identificador diferente.',
@@ -165,7 +167,7 @@ describe('PesosEnemPage — recusas do servidor no cadastro', () => {
     t.criacao.abrir();
     t.criacao.form.patchValue({ resolucao: 'Res', baseLegalGlobal: 'Base' });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
@@ -179,7 +181,7 @@ describe('PesosEnemPage — recusas do servidor no cadastro', () => {
         { field: 'Request.Resolucao', code: 'c1', message: 'Resolução curta demais.' },
       ]);
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     expect(t.erroDoCampoLote('resolucao')).toBe('Resolução curta demais.');
     expect(t.erroDoCampoGrupo(0, 'baseLegal')).toBe('Base legal curta demais.');
@@ -194,7 +196,7 @@ describe('PesosEnemPage — recusas do servidor no cadastro', () => {
       baseLegalGlobal: 'Res. 900/2026 Anexo I',
     });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
@@ -210,7 +212,7 @@ describe('PesosEnemPage — recusas do servidor no cadastro', () => {
     requests
       .slice(1)
       .forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const titulo = TestBed.inject(ProblemI18nService).resolve(conflito).title;
     expect(t.criacao.erro()).toContain(titulo);

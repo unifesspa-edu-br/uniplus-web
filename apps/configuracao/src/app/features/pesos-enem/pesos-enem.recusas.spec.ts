@@ -1,14 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  BASE,
-  RES_805,
-  areaDo,
-  erroDaArea,
-  linhas805,
-  problem,
-  recusa422,
-  PaginaDeTeste,
-} from './pesos-enem.testing';
+import { BASE, RES_805, linhas805 } from './pesos-enem-exemplos.testing';
+import { problem, recusa422 } from './pesos-enem-respostas.testing';
+import { areaDo, erroDaArea, PaginaDeTeste } from './pesos-enem.testing';
 
 describe('PesosEnemPage — recusas do servidor', () => {
   let t: PaginaDeTeste;
@@ -22,9 +15,9 @@ describe('PesosEnemPage — recusas do servidor', () => {
   it('PesosEnemPage_ErroDoBackendPorArea_VaiAoCampoDaArea', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -56,7 +49,7 @@ describe('PesosEnemPage — recusas do servidor', () => {
     for (const req of requests.slice(1)) {
       req.flush(null, { status: 204, statusText: 'No Content' });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const grupo = t.edicao.form()?.controls[0];
     expect(erroDaArea(areaDo(grupo, 'LINGUAGENS'), 'corte')).toBe(
@@ -76,7 +69,7 @@ describe('PesosEnemPage — recusas do servidor', () => {
       baseLegalGlobal: 'Res. 900/2026 Anexo I',
     });
     t.criacao.criar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = t.controller.match(
       (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
@@ -98,7 +91,7 @@ describe('PesosEnemPage — recusas do servidor', () => {
     requests
       .slice(1)
       .forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const grupo0 = t.criacao.form.controls.grupos.controls[0];
     expect(erroDaArea(areaDo(grupo0, 'REDACAO'), 'peso')).toBe(
@@ -109,9 +102,9 @@ describe('PesosEnemPage — recusas do servidor', () => {
   it('PesosEnemPage_ErroDoBackendComPrefixoOuMaiuscula_VaiAoCampoCerto', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -131,7 +124,7 @@ describe('PesosEnemPage — recusas do servidor', () => {
     for (const req of requests.slice(1)) {
       req.flush(null, { status: 204, statusText: 'No Content' });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const grupo = t.edicao.form()?.controls[0];
     expect(erroDaArea(areaDo(grupo, 'LINGUAGENS'), 'corte')).toBe('Erro no corte de Linguagens.');
@@ -144,9 +137,9 @@ describe('PesosEnemPage — recusas do servidor', () => {
   it('PesosEnemPage_VariosErrosNoMesmoCampo_MostraTodos', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -166,7 +159,7 @@ describe('PesosEnemPage — recusas do servidor', () => {
     for (const req of requests.slice(1)) {
       req.flush(null, { status: 204, statusText: 'No Content' });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const erro = erroDaArea(areaDo(t.edicao.form()?.controls[0], 'REDACAO'), 'peso');
     expect(erro).toContain('Área fora do Peso por Área.');
@@ -177,9 +170,9 @@ describe('PesosEnemPage — recusas do servidor', () => {
   it('PesosEnemPage_SairDoCampoComTab_NaoApagaOErroDoBackend', async () => {
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -194,7 +187,7 @@ describe('PesosEnemPage — recusas do servidor', () => {
     for (const req of requests.slice(1)) {
       req.flush(null, { status: 204, statusText: 'No Content' });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.fixture.detectChanges();
 
     t.inputDaEdicao('corte', 0, 3).dispatchEvent(new FocusEvent('blur'));
@@ -211,9 +204,9 @@ describe('PesosEnemPage — recusas do servidor', () => {
     // o dele (o operador mexeria no lugar errado e reenviaria o mesmo pedido).
     await t.carregarUmaPagina([...linhas805]);
     t.edicao.pedirEdicao(RES_805);
-    await t.propagate();
+    await t.atualizarAplicacao();
     t.edicao.salvar();
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const requests = [0, 1, 2, 3].map((i) =>
       t.controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -228,7 +221,7 @@ describe('PesosEnemPage — recusas do servidor', () => {
     for (const req of requests.slice(1)) {
       req.flush(null, { status: 204, statusText: 'No Content' });
     }
-    await t.propagate();
+    await t.atualizarAplicacao();
 
     const grupo = t.edicao.form()?.controls[0];
     if (!grupo) throw new Error('form de edição não inicializado');

@@ -170,23 +170,21 @@ export class EdicaoDosPerfis {
 
   private planoDe(destino: DestinoDaProposta, arquivo: File | null): PlanoDeEnvio | null {
     const base = this.base();
-    if (destino === 'remocao' && base !== null) {
-      return {
-        tipo: 'remocao',
-        perfilId: base.id,
-        corpo: { permissoes: [...this.diferenca().remocao], ...this.motivoDaRemocao() },
-      };
-    }
+    if (destino === 'remocao' && base !== null) return this.planoDeRemocao(base);
     if (arquivo === null) return null;
     const dados = this.dadosDaVersao(arquivo);
-    return base === null
-      ? { tipo: 'criacao', corpo: dados, arquivo }
-      : {
-          tipo: 'proposta',
-          perfilId: base.id,
-          corpo: { ...dados, ...this.remocaoDaProposta() },
-          arquivo,
-        };
+    if (base === null) return { tipo: 'criacao', corpo: dados, arquivo };
+    const corpo = { ...dados, ...this.remocaoDaProposta() };
+    return { tipo: 'proposta', perfilId: base.id, corpo, arquivo };
+  }
+
+  private planoDeRemocao(base: PerfilDto): PlanoDeEnvio {
+    const permissoes = [...this.diferenca().remocao];
+    return {
+      tipo: 'remocao',
+      perfilId: base.id,
+      corpo: { permissoes, ...this.motivoDaRemocao() },
+    };
   }
 
   private dadosDaVersao(arquivo: File) {

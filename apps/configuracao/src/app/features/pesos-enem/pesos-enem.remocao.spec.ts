@@ -1,17 +1,9 @@
 import { TestRequest } from '@angular/common/http/testing';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  ESCRITA,
-  PaginaDeTeste,
-  RES_750,
-  RES_805,
-  SEM_CORPO,
-  linhas750,
-  linhas805,
-  recusa,
-  indisponivel,
-} from './pesos-enem.testing';
+import { ESCRITA, RES_750, RES_805, linhas750, linhas805 } from './pesos-enem-exemplos.testing';
+import { SEM_CORPO, recusa } from './pesos-enem-respostas.testing';
+import { PaginaDeTeste, indisponivel } from './pesos-enem.testing';
 
 const TODAS = [...linhas805, ...linhas750];
 
@@ -97,12 +89,12 @@ describe('PesosEnemPage — remoção pela interface', () => {
     expect(t.remocao.confirmando()).toBe(false);
     expect(t.gravacao.gravando()).toBe(true);
     expect(indisponivel(t.botao('Editar parâmetros'))).toBe(true);
-    expect(t.raiz.textContent).toContain(`Pesos — ${RES_805}`);
+    expect(t.elementoDaPagina.textContent).toContain(`Pesos — ${RES_805}`);
 
     await t.recarregarCom(linhas750);
     await t.propagar();
 
-    expect(t.raiz.textContent).not.toContain(`Pesos — ${RES_805}`);
+    expect(t.elementoDaPagina.textContent).not.toContain(`Pesos — ${RES_805}`);
     expect(t.gravacao.gravando()).toBe(false);
     expect(document.activeElement).toBe(titulo());
     expect(t.elemento('span.sr-only[role="status"]').textContent).toContain(

@@ -1,14 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  CRIADO,
-  ESCRITA,
-  PaginaDeTeste,
-  RES_805,
-  SEM_CORPO,
-  linhas805,
-  recusa,
-  indisponivel,
-} from './pesos-enem.testing';
+import { ESCRITA, RES_805, linhas805 } from './pesos-enem-exemplos.testing';
+import { CRIADO, SEM_CORPO, recusa } from './pesos-enem-respostas.testing';
+import { PaginaDeTeste, indisponivel } from './pesos-enem.testing';
 
 const DRAWER = 'dialog[aria-label="Formulário de nova resolução de pesos do ENEM"]';
 
@@ -24,7 +17,7 @@ describe('PesosEnemPage — escritas pela interface', () => {
     t.elemento('#cfg-pesos-enem-form').dispatchEvent(new Event('submit', { cancelable: true }));
   };
   const cancelarDoDrawer = (): HTMLButtonElement =>
-    [...t.raiz.querySelectorAll<HTMLButtonElement>('.form-drawer__footer button')].find(
+    [...t.elementoDaPagina.querySelectorAll<HTMLButtonElement>('.form-drawer__footer button')].find(
       (botao) => botao.textContent?.trim() === 'Cancelar',
     ) as HTMLButtonElement;
   const responderCadastro = async (
@@ -172,13 +165,13 @@ describe('PesosEnemPage — escritas pela interface', () => {
         envio.flush(...recusa(500, 'uniplus.internal.unexpected'));
       }
       await t.propagar();
-      expect(t.raiz.querySelector(`${DRAWER} ui-alert`)).not.toBeNull();
+      expect(t.elementoDaPagina.querySelector(`${DRAWER} ui-alert`)).not.toBeNull();
 
       t.preencher('[formcontrolname="resolucao"]', '');
       submeter();
       await t.propagar();
 
-      expect(t.raiz.querySelector(`${DRAWER} ui-alert`)).toBeNull();
+      expect(t.elementoDaPagina.querySelector(`${DRAWER} ui-alert`)).toBeNull();
       t.controller.expectNone((r) => r.method === 'POST');
     });
   });

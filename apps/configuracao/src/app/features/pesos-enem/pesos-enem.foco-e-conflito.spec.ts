@@ -1,14 +1,8 @@
 import { TestRequest } from '@angular/common/http/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  CRIADO,
-  GRUPOS,
-  PaginaDeTeste,
-  SEM_CORPO,
-  linha,
-  linhas805,
-  recusa,
-} from './pesos-enem.testing';
+import { GRUPOS, linha, linhas805 } from './pesos-enem-exemplos.testing';
+import { CRIADO, SEM_CORPO, recusa } from './pesos-enem-respostas.testing';
+import { PaginaDeTeste } from './pesos-enem.testing';
 
 const RES_900 = 'Res. 900/2026';
 const PROCESSANDO = 'uniplus.idempotency.processing_conflict';
@@ -52,7 +46,7 @@ describe('PesosEnemPage — foco após o cadastro e conflito de processamento', 
       await cadastrarComSucesso();
       await t.recarregarCom([...linhas900, ...linhas805]);
 
-      expect(t.raiz.textContent).toContain(`Pesos — ${RES_900}`);
+      expect(t.elementoDaPagina.textContent).toContain(`Pesos — ${RES_900}`);
       expect(document.activeElement).toBe(titulo());
     });
 
@@ -61,7 +55,7 @@ describe('PesosEnemPage — foco após o cadastro e conflito de processamento', 
       await cadastrarComSucesso();
       await t.recarregarCom([...linhas900]);
 
-      expect(t.raiz.textContent).toContain(`Pesos — ${RES_900}`);
+      expect(t.elementoDaPagina.textContent).toContain(`Pesos — ${RES_900}`);
       expect(document.activeElement).toBe(titulo());
     });
 
@@ -89,7 +83,7 @@ describe('PesosEnemPage — foco após o cadastro e conflito de processamento', 
       await t.propagar();
 
       expect(t.criacao.erro()).toBe(MENSAGEM_NO_CADASTRO);
-      expect(t.raiz.querySelectorAll('[aria-invalid="true"]')).toHaveLength(0);
+      expect(t.elementoDaPagina.querySelectorAll('[aria-invalid="true"]')).toHaveLength(0);
 
       const reenvio = await t.enviarCadastro();
       expect(chaves(reenvio)).toEqual(primeirasChaves);
@@ -107,7 +101,7 @@ describe('PesosEnemPage — foco após o cadastro e conflito de processamento', 
       await t.propagar();
 
       expect(t.edicao.erro()).toBe(MENSAGEM_NA_EDICAO);
-      expect(t.raiz.querySelectorAll('[aria-invalid="true"]')).toHaveLength(0);
+      expect(t.elementoDaPagina.querySelectorAll('[aria-invalid="true"]')).toHaveLength(0);
 
       const reenvio = await t.enviarEdicao();
       expect(reenvio).toHaveLength(4);

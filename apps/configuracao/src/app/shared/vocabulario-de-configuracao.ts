@@ -1,6 +1,6 @@
 import { DestroyRef, inject, signal, type WritableSignal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs';
+import { finalize, type Observer, type ObservedValueOf } from 'rxjs';
 import {
   VocabulariosDeConfiguracaoApi,
   type VocabulariosDeConfiguracao,
@@ -37,8 +37,10 @@ interface EstadoDoVocabulario<T> {
   carregando: WritableSignal<boolean>;
 }
 
+type LeituraDoVocabulario = ReturnType<VocabulariosDeConfiguracaoApi['listar']>;
+
 function lerOpcoes<T>(
-  leitura: ReturnType<VocabulariosDeConfiguracaoApi['listar']>,
+  leitura: LeituraDoVocabulario,
   destroyRef: DestroyRef,
   estado: EstadoDoVocabulario<T>,
 ): void {
@@ -48,9 +50,15 @@ function lerOpcoes<T>(
       takeUntilDestroyed(destroyRef),
       finalize(() => estado.carregando.set(false)),
     )
-    .subscribe({
-      next: (resultado) =>
-        resultado.ok ? estado.opcoes.set(resultado.data as readonly T[]) : estado.falhou.set(true),
-      error: () => estado.falhou.set(true),
-    });
+    .subscribe(observadorDaLeitura(estado));
+}
+
+function observadorDaLeitura<T>(
+  estado: EstadoDoVocabulario<T>,
+): Partial<Observer<ObservedValueOf<LeituraDoVocabulario>>> {
+  return {
+    next: (resultado) =>
+      resultado.ok ? estado.opcoes.set(resultado.data as readonly T[]) : estado.falhou.set(true),
+    error: () => estado.falhou.set(true),
+  };
 }

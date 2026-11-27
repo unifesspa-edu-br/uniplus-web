@@ -25,26 +25,48 @@ function focoPerdido(): boolean {
  * Chamar em contexto de injeção, no componente da página que contém os botões e o título.
  */
 export function devolverFocoDaAcao(opcoes: OpcoesDaDevolucaoDeFocoDaAcao): void {
-  const raiz = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  const elementoDoComponente = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   const injector = inject(Injector);
-  let daEscrita: AcaoTermo | null | undefined;
-
-  const devolver = (acao: AcaoTermo | null): void => {
-    if (!focoPerdido()) return;
-    const acionador = acao && raiz.querySelector<HTMLElement>(`[data-acao="${acao}"]`);
-    const destino = acionador && !acionador.matches(':disabled') ? acionador : null;
-    (destino ?? raiz.querySelector<HTMLElement>(`#${opcoes.idDoTitulo}`))?.focus();
-  };
+  const acaoQueTerminou = acompanharAcaoDaEscrita(opcoes);
 
   effect(() => {
+    const acionada = acaoQueTerminou();
+    if (acionada === undefined) return;
+    afterNextRender(
+      () => devolverFocoAoAcionador(elementoDoComponente, opcoes.idDoTitulo, acionada),
+      { injector },
+    );
+  });
+}
+
+/**
+ * Devolve, a cada consulta, a ação cuja escrita terminou desde a consulta anterior (`null` se não
+ * houve ação nomeada) ou `undefined` enquanto a escrita está em curso ou nenhuma terminou.
+ */
+function acompanharAcaoDaEscrita(
+  opcoes: OpcoesDaDevolucaoDeFocoDaAcao,
+): () => AcaoTermo | null | undefined {
+  let daEscrita: AcaoTermo | null | undefined;
+  return () => {
     const acao = opcoes.acao();
     if (opcoes.processando()) {
       daEscrita = acao ?? daEscrita ?? null;
-      return;
+      return undefined;
     }
-    if (daEscrita === undefined) return;
-    const acionada = daEscrita;
+    const terminada = daEscrita;
     daEscrita = undefined;
-    afterNextRender(() => devolver(acionada), { injector });
-  });
+    return terminada;
+  };
+}
+
+function devolverFocoAoAcionador(
+  elementoDoComponente: HTMLElement,
+  idDoTitulo: string,
+  acao: AcaoTermo | null,
+) {
+  if (!focoPerdido()) return;
+  const acionador =
+    acao && elementoDoComponente.querySelector<HTMLElement>(`[data-acao="${acao}"]`);
+  const destino = acionador && !acionador.matches(':disabled') ? acionador : null;
+  (destino ?? elementoDoComponente.querySelector<HTMLElement>(`#${idDoTitulo}`))?.focus();
 }
