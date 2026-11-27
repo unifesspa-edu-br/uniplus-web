@@ -14,6 +14,10 @@ describe('AtividadeDaPessoa', () => {
     atividade = TestBed.inject(AtividadeDaPessoa);
   });
 
+  it('carregar a página não conta como atividade', () => {
+    expect(atividade.houveDesde(1_000)).toBe(false);
+  });
+
   it('não há atividade depois de um instante posterior ao início', () => {
     expect(atividade.houveDesde(2_000)).toBe(false);
   });
