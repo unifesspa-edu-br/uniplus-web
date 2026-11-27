@@ -44,14 +44,6 @@ const TRADUCOES_PADRAO: ReadonlyMap<string, ProblemOverride> = new Map([
       detail: 'Esta operação não foi gravada.',
     },
   ],
-  [
-    'uniplus.vinculo_catalogo.fato_com_protecao_pendente',
-    {
-      title: 'O dado aguarda a aprovação da proteção de dados e não aceita vínculo novo',
-      detail:
-        'Retire-o do formulário, da regra ou da condição que o cita, ou espere a proteção de dados aprová-lo ou o administrador do catálogo aceitar a recomendação dela.',
-    },
-  ],
 ]);
 
 /**
