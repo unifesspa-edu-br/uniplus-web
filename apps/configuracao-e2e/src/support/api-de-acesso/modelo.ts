@@ -1,5 +1,16 @@
-import type { PerfilListadoDto } from '@uniplus/shared-data/autorizacao';
+import type {
+  ConcessaoDto,
+  PedidoDeConcessaoDto,
+  PerfilListadoDto,
+} from '@uniplus/shared-data/autorizacao';
 import type { JsonDaApi } from '@uniplus/shared-e2e';
+import {
+  classificacaoDeProtecao,
+  etapaDoPedido,
+  situacaoDoPedido,
+  tipoDeEscopo,
+  tipoDeOrigem,
+} from '../enumerados-de-autorizacao';
 
 /** O estado da API de autorização simulada: perfis oferecidos, pedidos, concessões e escritas. */
 
@@ -11,61 +22,34 @@ export const UNIDADE_ID = '01960000-0000-7000-0000-00000000aa01';
 export const PERFIL_COMUM_ID = '01960000-0000-7000-0000-00000000bb01';
 export const PERFIL_SENSIVEL_ID = '01960000-0000-7000-0000-00000000bb02';
 
-function perfil(id: string, nome: string, sensibilidade: string): JsonDaApi<PerfilListadoDto> {
-  return {
-    id,
-    nome,
-    descricao: `${nome}.`,
-    ativo: true,
-    governanca: null,
-    sensibilidade,
-    situacaoDoAcesso: { codigo: 'EM_VIGOR', rotulo: 'Em vigor' },
-    temVersaoPendente: false,
-    suspensao: null,
-    desativadoDesde: null,
-  };
+const INTERNO = classificacaoDeProtecao('INTERNO');
+const SENSIVEL = classificacaoDeProtecao('SENSIVEL');
+
+type PerfilDaLista = JsonDaApi<PerfilListadoDto>;
+
+const PERFIL_EM_VIGOR = {
+  ativo: true,
+  governanca: null,
+  situacaoDoAcesso: { codigo: 'EM_VIGOR', rotulo: 'Em vigor' },
+  temVersaoPendente: false,
+  suspensao: null,
+  desativadoDesde: null,
+} as const satisfies Partial<PerfilDaLista>;
+
+function perfil(id: string, nome: string, sensibilidade: PerfilDaLista['sensibilidade']) {
+  return { ...PERFIL_EM_VIGOR, id, nome, descricao: `${nome}.`, sensibilidade };
 }
 
 export const PERFIS = [
-  perfil(PERFIL_COMUM_ID, 'Operador de inscrições', 'interno'),
-  perfil(PERFIL_SENSIVEL_ID, 'Analista de documentos', 'sensivel'),
+  perfil(PERFIL_COMUM_ID, 'Operador de inscrições', INTERNO),
+  perfil(PERFIL_SENSIVEL_ID, 'Analista de documentos', SENSIVEL),
 ];
 
-type Identidade = { emissor: string; contaId: string };
+type Modificavel<T> = { -readonly [Campo in keyof T]: T[Campo] };
 
-export interface Pedido {
-  id: string;
-  situacao: string;
-  etapaAtual: string | null;
-  solicitante: Identidade;
-  beneficiario: { email: string; identidade: Identidade | null; nome: string | null };
-  perfil: { id: string; nome: string };
-  escopo: { tipo: string; unidadeId: string | null };
-  justificativa: string;
-  criadoEm: string;
-  encerradoEm: string | null;
-  concessaoId: string | null;
-  anexos: unknown[];
-  decisoes: unknown[];
-  admitePrazo: boolean;
-  validaAteSugerida: string | null;
-  validaAte: string | null;
-}
-
-export interface Concessao {
-  id: string;
-  beneficiario: Identidade;
-  perfil: { id: string; nome: string };
-  versao: number | null;
-  escopo: { tipo: string; unidadeId: string | null };
-  origem: { tipo: string; id: string };
-  concedidaEm: string;
-  validaAte: string | null;
-  revogadaEm: string | null;
-  revogadaPor: null;
-  motivoRevogacao: string | null;
-  ativa: boolean;
-}
+/** O pedido e a concessão como a API os devolve; os testes mudam a situação deles no lugar. */
+export type Pedido = Modificavel<JsonDaApi<PedidoDeConcessaoDto>>;
+export type Concessao = Modificavel<JsonDaApi<ConcessaoDto>>;
 
 /** O que a tela enviou à API, para os testes conferirem. */
 export interface EstadoDaApi {
@@ -79,8 +63,8 @@ export interface EstadoDaApi {
 
 const PEDIDO_NA_FILA_DO_GESTOR = {
   id: '01960000-0000-7000-0000-00000000cc01',
-  situacao: 'AGUARDANDO_GESTOR',
-  etapaAtual: 'GESTOR',
+  situacao: situacaoDoPedido('AGUARDANDO_GESTOR'),
+  etapaAtual: etapaDoPedido('GESTOR'),
   solicitante: FERNANDA,
   beneficiario: {
     email: BETINA_EMAIL,
@@ -88,7 +72,7 @@ const PEDIDO_NA_FILA_DO_GESTOR = {
     nome: 'Betina Teste',
   },
   perfil: { id: PERFIL_SENSIVEL_ID, nome: 'Analista de documentos' },
-  escopo: { tipo: 'UNIDADE', unidadeId: UNIDADE_ID },
+  escopo: { tipo: tipoDeEscopo('UNIDADE'), unidadeId: UNIDADE_ID },
   justificativa: 'Analisa os documentos do processo seletivo da unidade.',
   criadoEm: '2026-10-28T12:00:00Z',
   encerradoEm: null,
@@ -96,11 +80,20 @@ const PEDIDO_NA_FILA_DO_GESTOR = {
   admitePrazo: true,
   validaAteSugerida: null,
   validaAte: null,
+  versao: null,
+  anexaraDocumento: false,
+  termo: null,
 } as const satisfies Partial<Pedido>;
 
 /** Um pedido de perfil sensível na fila do gestor; as listas são novas a cada chamada. */
 export function pedidoSeed(parcial: Partial<Pedido> = {}): Pedido {
-  return { ...PEDIDO_NA_FILA_DO_GESTOR, anexos: [], decisoes: [], ...parcial };
+  return {
+    ...PEDIDO_NA_FILA_DO_GESTOR,
+    anexos: [],
+    decisoes: [],
+    trocasDeVersao: [],
+    ...parcial,
+  };
 }
 
 const CONCESSAO_RECEM_CRIADA = {
@@ -108,6 +101,7 @@ const CONCESSAO_RECEM_CRIADA = {
   concedidaEm: '2026-10-29T10:00:00Z',
   revogadaEm: null,
   revogadaPor: null,
+  revogadaPelaRevisaoId: null,
   motivoRevogacao: null,
   ativa: true,
 } as const;
@@ -120,7 +114,7 @@ export function concessaoDoPedido(pedido: Pedido, id: string): Concessao {
     beneficiario: pedido.beneficiario.identidade ?? pedido.solicitante,
     perfil: pedido.perfil,
     escopo: pedido.escopo,
-    origem: { tipo: 'PEDIDO', id: pedido.id },
+    origem: { tipo: tipoDeOrigem('PEDIDO'), id: pedido.id },
     validaAte: pedido.validaAte,
   };
 }

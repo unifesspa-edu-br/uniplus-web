@@ -256,7 +256,7 @@ export interface components {
             /** Format: uuid */
             readonly perfilId: string;
             readonly nome: string;
-            readonly escopoTipo: string;
+            readonly escopoTipo: components["schemas"]["TipoDeEscopo"];
             /** Format: uuid */
             readonly unidadeId: null | string;
             readonly unidadeSigla: null | string;
@@ -341,6 +341,16 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly TipoDeEscopo: {
+            readonly codigo: components["schemas"]["TipoDeEscopoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `UNIDADE`: Unidade
+         *     - `INSTITUICAO`: Instituição
+         * @enum {string}
+         */
+        readonly TipoDeEscopoCodigo: TipoDeEscopoCodigo;
         readonly UserProfileResponse: {
             readonly userId: null | string;
             readonly name: null | string;
@@ -1040,4 +1050,8 @@ export enum PathsApiPublicacoesEntidadesEntidadeTipoEntidadeIdAtosGetParametersQ
 export enum PathsApiPublicacoesTiposAtoGetParametersQueryDirection {
     next = "next",
     prev = "prev"
+}
+export enum TipoDeEscopoCodigo {
+    UNIDADE = "UNIDADE",
+    INSTITUICAO = "INSTITUICAO"
 }

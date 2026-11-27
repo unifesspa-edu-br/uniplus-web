@@ -1013,7 +1013,7 @@ export interface components {
         readonly AnexoDoPedidoDto: {
             /** Format: uuid */
             readonly id: string;
-            readonly situacao: string;
+            readonly situacao: components["schemas"]["SituacaoDoAnexo"];
             /** Format: int64 */
             readonly tamanhoDeclarado: number;
             /** Format: date-time */
@@ -1022,7 +1022,7 @@ export interface components {
         readonly AnexoParaEnvioDto: {
             /** Format: uuid */
             readonly id: string;
-            readonly situacao: string;
+            readonly situacao: components["schemas"]["SituacaoDoAnexo"];
             /** Format: uri */
             readonly urlDeEnvio: string;
             readonly tipoDeMidia: string;
@@ -1073,6 +1073,31 @@ export interface components {
         readonly CancelarVersaoDoPerfilRequest: {
             readonly motivo: null | string;
         };
+        readonly CausaDoEncerramento: {
+            readonly codigo: components["schemas"]["CausaDoEncerramentoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `REVOGADA`: Revogada
+         *     - `VENCIDA`: Vencida
+         * @enum {string}
+         */
+        readonly CausaDoEncerramentoCodigo: CausaDoEncerramentoCodigo;
+        readonly ClassificacaoDeProtecao: {
+            readonly codigo: components["schemas"]["ClassificacaoDeProtecaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description Classificação da proteção exigida para o tratamento de dados.
+         *
+         *     - `PUBLICO`: Público — Dado que pode ser divulgado sem restrição.
+         *     - `INTERNO`: Interno — Dado de acesso restrito à instituição.
+         *     - `PESSOAL`: Pessoal — Dado pessoal relacionado a uma pessoa identificada ou identificável.
+         *     - `IDENTIFICADOR`: Identificador — Dado pessoal que identifica diretamente uma pessoa.
+         *     - `SENSIVEL`: Sensível — Dado pessoal sensível, como informação sobre saúde.
+         * @enum {string}
+         */
+        readonly ClassificacaoDeProtecaoCodigo: ClassificacaoDeProtecaoCodigo;
         readonly ComposicaoEmVigorDto: {
             /** Format: uuid */
             readonly versaoId: null | string;
@@ -1099,7 +1124,7 @@ export interface components {
             /** Format: uuid */
             readonly concessaoId: string;
             readonly beneficiarioNome: null | string;
-            readonly escopoTipo: string;
+            readonly escopoTipo: components["schemas"]["TipoDeEscopo"];
             /** Format: uuid */
             readonly unidadeId: null | string;
             /** Format: date-time */
@@ -1136,13 +1161,13 @@ export interface components {
             /** Format: uuid */
             readonly concessaoId: string;
             readonly beneficiarioNome: null | string;
-            readonly escopoTipo: string;
+            readonly escopoTipo: components["schemas"]["TipoDeEscopo"];
             /** Format: uuid */
             readonly unidadeId: null | string;
             /** Format: int32 */
             readonly versao: null | number;
-            readonly etapasExigidas: readonly string[];
-            readonly etapasDecididas: readonly string[];
+            readonly etapasExigidas: readonly components["schemas"]["EtapaDaVersao"][];
+            readonly etapasDecididas: readonly components["schemas"]["EtapaDaVersao"][];
             readonly ehDoLeitor: boolean;
         };
         readonly ConfirmarAnexoDoPedidoRequest: {
@@ -1208,22 +1233,22 @@ export interface components {
             readonly puladasPorEscopo: readonly string[];
         };
         readonly DecisaoDaVersaoDto: {
-            readonly etapa: string;
-            readonly resultado: string;
+            readonly etapa: components["schemas"]["EtapaDaVersao"];
+            readonly resultado: components["schemas"]["ResultadoDaDecisao"];
             readonly nome: null | string;
             readonly temConcessao: boolean;
             /** Format: date-time */
             readonly instante: string;
         };
         readonly DecisaoDoPedidoDto: {
-            readonly etapa: string;
+            readonly etapa: components["schemas"]["EtapaDoPedido"];
             readonly decisor: components["schemas"]["IdentidadeDto"];
-            readonly resultado: string;
+            readonly resultado: components["schemas"]["ResultadoDaDecisao"];
             readonly motivo: null | string;
             /** Format: date-time */
             readonly instante: string;
             readonly permissoesAvaliadas: readonly string[];
-            readonly sensibilidadeAvaliada: string;
+            readonly sensibilidadeAvaliada: components["schemas"]["ClassificacaoDeProtecao"];
             readonly dispensa: null | string;
         };
         readonly DesfechoDaProvidenciaDto: {
@@ -1232,6 +1257,18 @@ export interface components {
             readonly por: components["schemas"]["IdentidadeDto"];
             readonly motivo: string;
         };
+        readonly DesfechoDaTrocaDeVersao: {
+            readonly codigo: components["schemas"]["DesfechoDaTrocaDeVersaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `INALTERADO`: Inalterado
+         *     - `VERSAO_ATUALIZADA`: Versão atualizada
+         *     - `VOLTOU_AO_GESTOR`: Voltou ao gestor
+         *     - `DEVOLVIDO`: Devolvido
+         * @enum {string}
+         */
+        readonly DesfechoDaTrocaDeVersaoCodigo: DesfechoDaTrocaDeVersaoCodigo;
         readonly DivergenciaDaGovernancaDto: {
             /** Format: uuid */
             readonly id: string;
@@ -1239,7 +1276,7 @@ export interface components {
             readonly perfilId: string;
             readonly perfilNome: string;
             readonly codigo: string;
-            readonly tipo: string;
+            readonly tipo: components["schemas"]["TipoDeDivergencia"];
             readonly de: null | string;
             readonly para: null | string;
             /** Format: date-time */
@@ -1250,14 +1287,14 @@ export interface components {
             readonly id: string;
             /** Format: uuid */
             readonly versaoId: string;
-            readonly situacao: string;
+            readonly situacao: components["schemas"]["SituacaoDoAnexo"];
             /** Format: int64 */
             readonly tamanhoDeclarado: number;
             /** Format: date-time */
             readonly enviadoEm: null | string;
         };
         readonly EncerramentoDaConcessaoDto: {
-            readonly causa: string;
+            readonly causa: components["schemas"]["CausaDoEncerramento"];
             /** Format: date-time */
             readonly em: string;
         };
@@ -1284,7 +1321,7 @@ export interface components {
             readonly versaoId: string;
             /** Format: uuid */
             readonly documentoId: string;
-            readonly situacao: string;
+            readonly situacao: components["schemas"]["SituacaoDoAnexo"];
             /** Format: uri */
             readonly urlDeEnvio: string;
             readonly tipoDeMidia: string;
@@ -1292,7 +1329,7 @@ export interface components {
             readonly expiraEm: string;
         };
         readonly EscopoDto: {
-            readonly tipo: string;
+            readonly tipo: components["schemas"]["TipoDeEscopo"];
             /** Format: uuid */
             readonly unidadeId: null | string;
         };
@@ -1306,6 +1343,16 @@ export interface components {
          * @enum {string}
          */
         readonly EtapaDaVersaoCodigo: EtapaDaVersaoCodigo;
+        readonly EtapaDoPedido: {
+            readonly codigo: components["schemas"]["EtapaDoPedidoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `GESTOR`: Gestor
+         *     - `PROTECAO_DE_DADOS`: Proteção de dados
+         * @enum {string}
+         */
+        readonly EtapaDoPedidoCodigo: EtapaDoPedidoCodigo;
         readonly EventoDaTrilhaDto: {
             readonly tipo: components["schemas"]["TipoDoEventoDoHistoricoDaConcessao"];
             /** Format: date-time */
@@ -1345,7 +1392,7 @@ export interface components {
         readonly InstalacaoDto: {
             /** Format: uuid */
             readonly id: string;
-            readonly situacao: string;
+            readonly situacao: components["schemas"]["SituacaoDaInstalacao"];
             readonly numeroDoDocumento: string;
             readonly gestores: readonly components["schemas"]["IdentidadeDto"][];
             /** Format: date-time */
@@ -1358,7 +1405,7 @@ export interface components {
         readonly InstalacaoIniciadaDto: {
             /** Format: uuid */
             readonly id: string;
-            readonly situacao: string;
+            readonly situacao: components["schemas"]["SituacaoDaInstalacao"];
             /** Format: uri */
             readonly urlDeEnvio: string;
             readonly tipoDeMidia: string;
@@ -1407,8 +1454,8 @@ export interface components {
             readonly escopo: components["schemas"]["EscopoDto"];
             /** Format: date-time */
             readonly validaAte: null | string;
-            readonly decide: string;
-            readonly situacao: string;
+            readonly decide: components["schemas"]["TipoDeGovernanca"];
+            readonly situacao: components["schemas"]["SituacaoDoItemDaRevisao"];
             readonly decididoPor: null | components["schemas"]["IdentidadeDto"];
             /** Format: date-time */
             readonly decididoEm: null | string;
@@ -1434,8 +1481,8 @@ export interface components {
             readonly motivo: null | string;
         };
         readonly MudancaDaPermissaoDto: {
-            readonly classificacaoAnterior: string;
-            readonly classificacaoNova: string;
+            readonly classificacaoAnterior: components["schemas"]["ClassificacaoDeProtecao"];
+            readonly classificacaoNova: components["schemas"]["ClassificacaoDeProtecao"];
             readonly deUnidadeAnterior: boolean;
             readonly deUnidadeNovo: boolean;
         };
@@ -1451,15 +1498,15 @@ export interface components {
          */
         readonly OrigemDaRetomadaCodigo: OrigemDaRetomadaCodigo;
         readonly OrigemDto: {
-            readonly tipo: string;
+            readonly tipo: components["schemas"]["TipoDeOrigem"];
             /** Format: uuid */
             readonly id: string;
         };
         readonly PedidoDeConcessaoDto: {
             /** Format: uuid */
             readonly id: string;
-            readonly situacao: string;
-            readonly etapaAtual: null | string;
+            readonly situacao: components["schemas"]["SituacaoDoPedido"];
+            readonly etapaAtual: null | components["schemas"]["EtapaDoPedido"];
             readonly solicitante: components["schemas"]["IdentidadeDto"];
             readonly beneficiario: components["schemas"]["BeneficiarioDoPedidoDto"];
             readonly perfil: components["schemas"]["PerfilResumoDto"];
@@ -1487,8 +1534,8 @@ export interface components {
         readonly PedidoResumoDto: {
             /** Format: uuid */
             readonly id: string;
-            readonly situacao: string;
-            readonly etapaAtual: null | string;
+            readonly situacao: components["schemas"]["SituacaoDoPedido"];
+            readonly etapaAtual: null | components["schemas"]["EtapaDoPedido"];
             readonly beneficiario: components["schemas"]["BeneficiarioDoPedidoDto"];
             readonly perfil: components["schemas"]["PerfilResumoDto"];
             /** Format: int32 */
@@ -1505,7 +1552,7 @@ export interface components {
             /** Format: uuid */
             readonly perfilId: string;
             readonly nome: string;
-            readonly escopoTipo: string;
+            readonly escopoTipo: components["schemas"]["TipoDeEscopo"];
             /** Format: uuid */
             readonly unidadeId: null | string;
             readonly unidadeSigla: null | string;
@@ -1519,8 +1566,8 @@ export interface components {
             readonly nome: string;
             readonly descricao: string;
             readonly ativo: boolean;
-            readonly governanca: null | string;
-            readonly sensibilidade: string;
+            readonly governanca: null | components["schemas"]["TipoDeGovernanca"];
+            readonly sensibilidade: components["schemas"]["ClassificacaoDeProtecao"];
             readonly situacaoDoAcesso: components["schemas"]["SituacaoDoAcessoDoPerfil"];
             readonly composicaoEmVigor: null | components["schemas"]["ComposicaoEmVigorDto"];
             readonly versaoPendente: null | components["schemas"]["VersaoPendenteDto"];
@@ -1536,8 +1583,8 @@ export interface components {
             readonly nome: string;
             readonly descricao: string;
             readonly ativo: boolean;
-            readonly governanca: null | string;
-            readonly sensibilidade: string;
+            readonly governanca: null | components["schemas"]["TipoDeGovernanca"];
+            readonly sensibilidade: components["schemas"]["ClassificacaoDeProtecao"];
             readonly situacaoDoAcesso: components["schemas"]["SituacaoDoAcessoDoPerfil"];
             readonly temVersaoPendente: boolean;
             readonly suspensao: null | components["schemas"]["SuspensaoDoPerfilDto"];
@@ -1549,9 +1596,9 @@ export interface components {
             readonly id: string;
             readonly nome: string;
             readonly descricao: string;
-            readonly escopo: string;
+            readonly escopo: components["schemas"]["TipoDeEscopo"];
             readonly exigeAprovacaoDeProtecaoDeDados: boolean;
-            readonly governanca: null | string;
+            readonly governanca: null | components["schemas"]["TipoDeGovernanca"];
         };
         readonly PerfilResumoDto: {
             /** Format: uuid */
@@ -1560,19 +1607,19 @@ export interface components {
         };
         readonly PermissaoDaVersaoEmUsoDto: {
             readonly codigo: string;
-            readonly classificacao: string;
+            readonly classificacao: components["schemas"]["ClassificacaoDeProtecao"];
             readonly deUnidade: boolean;
         };
         readonly PermissaoDoCatalogoResponse: {
             readonly codigo: string;
             readonly nome: string;
             readonly descricao: string;
-            readonly sensibilidade: string;
+            readonly sensibilidade: components["schemas"]["ClassificacaoDeProtecao"];
         };
         readonly PermissaoDoPerfilDto: {
             readonly codigo: string;
             readonly nome: string;
-            readonly sensibilidade: string;
+            readonly sensibilidade: components["schemas"]["ClassificacaoDeProtecao"];
         };
         readonly PermissaoEfetivaResponse: {
             readonly codigo: string;
@@ -1617,9 +1664,9 @@ export interface components {
         readonly ProvidenciaDto: {
             /** Format: uuid */
             readonly id: string;
-            readonly tipo: string;
+            readonly tipo: components["schemas"]["TipoDaProvidencia"];
             readonly fundamento: string;
-            readonly situacao: string;
+            readonly situacao: components["schemas"]["SituacaoDaProvidencia"];
             /** Format: date-time */
             readonly abertaEm: string;
             readonly solicitadaPor: components["schemas"]["IdentidadeDto"];
@@ -1631,8 +1678,8 @@ export interface components {
         readonly ProvidenciaResumoDto: {
             /** Format: uuid */
             readonly id: string;
-            readonly tipo: string;
-            readonly situacao: string;
+            readonly tipo: components["schemas"]["TipoDaProvidencia"];
+            readonly situacao: components["schemas"]["SituacaoDaProvidencia"];
             /** Format: date-time */
             readonly abertaEm: string;
             readonly solicitadaPor: components["schemas"]["IdentidadeDto"];
@@ -1698,9 +1745,36 @@ export interface components {
         readonly ResponderProvidenciaRequest: {
             readonly motivo: null | string;
         };
+        readonly ResultadoDaDecisao: {
+            readonly codigo: components["schemas"]["ResultadoDaDecisaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `APROVADO`: Aprovado
+         *     - `RECUSADO`: Recusado
+         *     - `PERFIL_ALTERADO`: Perfil alterado
+         *     - `PRAZO_VENCIDO`: Prazo vencido
+         *     - `TERMO_EXIGIDO`: Termo exigido
+         * @enum {string}
+         */
+        readonly ResultadoDaDecisaoCodigo: ResultadoDaDecisaoCodigo;
+        readonly ResultadoDaTentativaDeInstalacao: {
+            readonly codigo: components["schemas"]["ResultadoDaTentativaDeInstalacaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `ACEITA`: Aceita
+         *     - `CODIGO_ERRADO`: Código errado
+         *     - `EXPIRADA`: Expirada
+         *     - `SEM_PENDENCIA`: Sem pendência
+         *     - `JA_HAVIA_GESTOR`: Já havia gestor
+         *     - `CODIGO_REENVIADO`: Código reenviado
+         * @enum {string}
+         */
+        readonly ResultadoDaTentativaDeInstalacaoCodigo: ResultadoDaTentativaDeInstalacaoCodigo;
         readonly RetomadaDaSuspensaoDto: {
             readonly concluida: boolean;
-            readonly etapasPendentes: readonly string[];
+            readonly etapasPendentes: readonly components["schemas"]["EtapaDaVersao"][];
         };
         readonly RetomadaDaSuspensaoRequest: {
             readonly etapa: null | string;
@@ -1732,7 +1806,7 @@ export interface components {
             /** Format: date-time */
             readonly abertaEm: string;
             readonly abertaPor: components["schemas"]["IdentidadeDto"];
-            readonly situacao: string;
+            readonly situacao: components["schemas"]["SituacaoDaRevisao"];
             /** Format: int32 */
             readonly totalDeItens: number;
             /** Format: int32 */
@@ -1752,7 +1826,7 @@ export interface components {
             /** Format: date-time */
             readonly abertaEm: string;
             readonly abertaPor: components["schemas"]["IdentidadeDto"];
-            readonly situacao: string;
+            readonly situacao: components["schemas"]["SituacaoDaRevisao"];
             /** Format: int32 */
             readonly totalDeItens: number;
             /** Format: int32 */
@@ -1787,6 +1861,26 @@ export interface components {
          * @enum {string}
          */
         readonly SituacaoDaConcessaoNaRevisaoCodigo: SituacaoDaConcessaoNaRevisaoCodigo;
+        readonly SituacaoDaInstalacao: {
+            readonly codigo: components["schemas"]["SituacaoDaInstalacaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `AGUARDANDO_DOCUMENTO`: Aguardando documento
+         *     - `DOCUMENTO_EM_VERIFICACAO`: Documento em verificação
+         *     - `DOCUMENTO_VERIFICADO`: Documento verificado
+         *     - `DOCUMENTO_RECUSADO`: Documento recusado
+         *     - `AGUARDANDO_CODIGO`: Aguardando código
+         *     - `CONFIRMADA`: Confirmada
+         *     - `CANCELADA`: Cancelada
+         *     - `EXPIRADA`: Expirada
+         * @enum {string}
+         */
+        readonly SituacaoDaInstalacaoCodigo: SituacaoDaInstalacaoCodigo;
+        readonly SituacaoDaProvidencia: {
+            readonly codigo: components["schemas"]["SituacaoDaProvidenciaCodigo"];
+            readonly rotulo: string;
+        };
         /**
          * @description - `ABERTA`: Aberta
          *     - `RESPONDIDA`: Respondida
@@ -1795,8 +1889,12 @@ export interface components {
          * @enum {string}
          */
         readonly SituacaoDaProvidenciaCodigo: SituacaoDaProvidenciaCodigo;
+        readonly SituacaoDaRevisao: {
+            readonly codigo: components["schemas"]["SituacaoDaRevisaoCodigo"];
+            readonly rotulo: string;
+        };
         /**
-         * @description - `EM_ANDAMENTO`: Em Andamento
+         * @description - `EM_ANDAMENTO`: Em andamento
          *     - `CONCLUIDA`: Concluída
          * @enum {string}
          */
@@ -1812,6 +1910,20 @@ export interface components {
          * @enum {string}
          */
         readonly SituacaoDaRevisaoDasConcessoesCodigo: SituacaoDaRevisaoDasConcessoesCodigo;
+        readonly SituacaoDaVersao: {
+            readonly codigo: components["schemas"]["SituacaoDaVersaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `PENDENTE`: Pendente
+         *     - `VIGENTE`: Vigente
+         *     - `ENCERRADA`: Encerrada
+         *     - `CANCELADA`: Cancelada
+         *     - `RECUSADA`: Recusada
+         *     - `EXPIRADA`: Expirada
+         * @enum {string}
+         */
+        readonly SituacaoDaVersaoCodigo: SituacaoDaVersaoCodigo;
         readonly SituacaoDoAcessoDoPerfil: {
             readonly codigo: components["schemas"]["SituacaoDoAcessoDoPerfilCodigo"];
             readonly rotulo: string;
@@ -1825,6 +1937,34 @@ export interface components {
          * @enum {string}
          */
         readonly SituacaoDoAcessoDoPerfilCodigo: SituacaoDoAcessoDoPerfilCodigo;
+        readonly SituacaoDoAnexo: {
+            readonly codigo: components["schemas"]["SituacaoDoAnexoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `AGUARDANDO_ENVIO`: Aguardando envio
+         *     - `EM_VERIFICACAO`: Em verificação
+         *     - `VERIFICADO`: Verificado
+         *     - `RECUSADO`: Recusado
+         * @enum {string}
+         */
+        readonly SituacaoDoAnexoCodigo: SituacaoDoAnexoCodigo;
+        readonly SituacaoDoItemDaRevisao: {
+            readonly codigo: components["schemas"]["SituacaoDoItemDaRevisaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `PENDENTE`: Pendente
+         *     - `CONFIRMADA`: Confirmada
+         *     - `REVOGADA`: Revogada
+         *     - `CONCESSAO_ENCERRADA`: Concessão encerrada
+         * @enum {string}
+         */
+        readonly SituacaoDoItemDaRevisaoCodigo: SituacaoDoItemDaRevisaoCodigo;
+        readonly SituacaoDoPedido: {
+            readonly codigo: components["schemas"]["SituacaoDoPedidoCodigo"];
+            readonly rotulo: string;
+        };
         /**
          * @description - `AGUARDANDO_BENEFICIARIO`: Aguardando beneficiário
          *     - `AGUARDANDO_GESTOR`: Aguardando gestor
@@ -1846,9 +1986,9 @@ export interface components {
         readonly SuspensaoDoPerfilDto: {
             /** Format: date-time */
             readonly desde: string;
-            readonly papelDeQuemSuspendeu: string;
-            readonly etapasExigidasAgora: readonly string[];
-            readonly etapasDecididas: readonly string[];
+            readonly papelDeQuemSuspendeu: components["schemas"]["EtapaDaVersao"];
+            readonly etapasExigidasAgora: readonly components["schemas"]["EtapaDaVersao"][];
+            readonly etapasDecididas: readonly components["schemas"]["EtapaDaVersao"][];
         };
         readonly TentativaDeInstalacaoDto: {
             /** Format: uuid */
@@ -1858,7 +1998,7 @@ export interface components {
             readonly autor: components["schemas"]["IdentidadeDto"];
             /** Format: date-time */
             readonly instante: string;
-            readonly resultado: string;
+            readonly resultado: components["schemas"]["ResultadoDaTentativaDeInstalacao"];
         };
         readonly TermoDoPedidoDto: {
             /** Format: uuid */
@@ -1868,6 +2008,59 @@ export interface components {
             readonly resumo: string;
             readonly aceite: null | components["schemas"]["AceiteDoTermoDto"];
         };
+        readonly TipoDaProvidencia: {
+            readonly codigo: components["schemas"]["TipoDaProvidenciaCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `RETIRADA`: Retirada do acesso
+         *     - `REVISAO`: Revisão do acesso
+         * @enum {string}
+         */
+        readonly TipoDaProvidenciaCodigo: TipoDaProvidenciaCodigo;
+        readonly TipoDeDivergencia: {
+            readonly codigo: components["schemas"]["TipoDeDivergenciaCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `COMPOSICAO_FALTANTE`: Composição faltante
+         *     - `COMPOSICAO_EXCEDENTE`: Composição excedente
+         *     - `CLASSIFICACAO`: Classificação
+         *     - `ESCOPO`: Escopo
+         * @enum {string}
+         */
+        readonly TipoDeDivergenciaCodigo: TipoDeDivergenciaCodigo;
+        readonly TipoDeEscopo: {
+            readonly codigo: components["schemas"]["TipoDeEscopoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `UNIDADE`: Unidade
+         *     - `INSTITUICAO`: Instituição
+         * @enum {string}
+         */
+        readonly TipoDeEscopoCodigo: TipoDeEscopoCodigo;
+        readonly TipoDeGovernanca: {
+            readonly codigo: components["schemas"]["TipoDeGovernancaCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `GESTOR_DE_ACESSOS`: Gestor de acessos
+         *     - `REPRESENTANTE_DO_CONTROLADOR`: Representante do controlador
+         *     - `GESTOR_DE_PROTECAO_DE_DADOS`: Gestor de proteção de dados
+         * @enum {string}
+         */
+        readonly TipoDeGovernancaCodigo: TipoDeGovernancaCodigo;
+        readonly TipoDeOrigem: {
+            readonly codigo: components["schemas"]["TipoDeOrigemCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `PEDIDO`: Pedido
+         *     - `INSTALACAO`: Instalação
+         * @enum {string}
+         */
+        readonly TipoDeOrigemCodigo: TipoDeOrigemCodigo;
         readonly TipoDoEventoDoHistoricoDaConcessao: {
             readonly codigo: components["schemas"]["TipoDoEventoDoHistoricoDaConcessaoCodigo"];
             readonly rotulo: string;
@@ -1932,15 +2125,15 @@ export interface components {
             readonly versaoAnterior: number;
             /** Format: int32 */
             readonly versaoNova: number;
-            readonly desfecho: string;
+            readonly desfecho: components["schemas"]["DesfechoDaTrocaDeVersao"];
             /** Format: date-time */
             readonly instante: string;
         };
         readonly UltimaVersaoEncerradaSemVigorDto: {
             /** Format: int32 */
             readonly numero: number;
-            readonly situacao: string;
-            readonly etapa: string;
+            readonly situacao: components["schemas"]["SituacaoDaVersao"];
+            readonly etapa: components["schemas"]["EtapaDaVersao"];
             /** Format: date-time */
             readonly instante: string;
         };
@@ -1983,7 +2176,7 @@ export interface components {
             readonly id: string;
             /** Format: int32 */
             readonly numero: number;
-            readonly situacao: string;
+            readonly situacao: components["schemas"]["SituacaoDaVersao"];
             readonly permissoes: readonly components["schemas"]["PermissaoDaVersaoEmUsoDto"][];
             readonly linkDoDocumento: null | string;
         };
@@ -1998,12 +2191,13 @@ export interface components {
             readonly protocolo: string;
             /** Format: uuid */
             readonly documentoId: string;
-            readonly situacaoDoDocumento: string;
+            readonly situacaoDoDocumento: components["schemas"]["SituacaoDoAnexo"];
             /** Format: date-time */
             readonly criadaEm: string;
             /** Format: date-time */
             readonly expiraEm: string;
-            readonly etapaAtual: string;
+            readonly etapaAtual: components["schemas"]["EtapaDaVersao"];
+            readonly etapasExigidas: readonly components["schemas"]["EtapaDaVersao"][];
             readonly exigeProtecaoDeDados: boolean;
             readonly acrescimo: readonly components["schemas"]["PermissaoDoPerfilDto"][];
             readonly remocao: readonly components["schemas"]["PermissaoDoPerfilDto"][];
@@ -7455,8 +7649,29 @@ export enum AtorDoEventoDoHistoricoDaConcessaoCodigo {
     HUMANO = "HUMANO",
     SISTEMA = "SISTEMA"
 }
+export enum CausaDoEncerramentoCodigo {
+    REVOGADA = "REVOGADA",
+    VENCIDA = "VENCIDA"
+}
+export enum ClassificacaoDeProtecaoCodigo {
+    PUBLICO = "PUBLICO",
+    INTERNO = "INTERNO",
+    PESSOAL = "PESSOAL",
+    IDENTIFICADOR = "IDENTIFICADOR",
+    SENSIVEL = "SENSIVEL"
+}
+export enum DesfechoDaTrocaDeVersaoCodigo {
+    INALTERADO = "INALTERADO",
+    VERSAO_ATUALIZADA = "VERSAO_ATUALIZADA",
+    VOLTOU_AO_GESTOR = "VOLTOU_AO_GESTOR",
+    DEVOLVIDO = "DEVOLVIDO"
+}
 export enum EtapaDaVersaoCodigo {
     GESTAO_DE_ACESSOS = "GESTAO_DE_ACESSOS",
+    PROTECAO_DE_DADOS = "PROTECAO_DE_DADOS"
+}
+export enum EtapaDoPedidoCodigo {
+    GESTOR = "GESTOR",
     PROTECAO_DE_DADOS = "PROTECAO_DE_DADOS"
 }
 export enum FormaDoEncerramentoCodigo {
@@ -7468,6 +7683,21 @@ export enum OrigemDaRetomadaCodigo {
     DECISAO_DA_ETAPA = "DECISAO_DA_ETAPA",
     TROCA_DE_VIGENCIA = "TROCA_DE_VIGENCIA",
     RECLASSIFICACAO = "RECLASSIFICACAO"
+}
+export enum ResultadoDaDecisaoCodigo {
+    APROVADO = "APROVADO",
+    RECUSADO = "RECUSADO",
+    PERFIL_ALTERADO = "PERFIL_ALTERADO",
+    PRAZO_VENCIDO = "PRAZO_VENCIDO",
+    TERMO_EXIGIDO = "TERMO_EXIGIDO"
+}
+export enum ResultadoDaTentativaDeInstalacaoCodigo {
+    ACEITA = "ACEITA",
+    CODIGO_ERRADO = "CODIGO_ERRADO",
+    EXPIRADA = "EXPIRADA",
+    SEM_PENDENCIA = "SEM_PENDENCIA",
+    JA_HAVIA_GESTOR = "JA_HAVIA_GESTOR",
+    CODIGO_REENVIADO = "CODIGO_REENVIADO"
 }
 export enum SituacaoDaConcessaoCodigo {
     ATIVA = "ATIVA",
@@ -7482,6 +7712,16 @@ export enum SituacaoDaConcessaoNaRevisaoCodigo {
     RECUSADA = "RECUSADA",
     NAO_MIGRADA = "NAO_MIGRADA",
     FORA_DA_LISTA = "FORA_DA_LISTA"
+}
+export enum SituacaoDaInstalacaoCodigo {
+    AGUARDANDO_DOCUMENTO = "AGUARDANDO_DOCUMENTO",
+    DOCUMENTO_EM_VERIFICACAO = "DOCUMENTO_EM_VERIFICACAO",
+    DOCUMENTO_VERIFICADO = "DOCUMENTO_VERIFICADO",
+    DOCUMENTO_RECUSADO = "DOCUMENTO_RECUSADO",
+    AGUARDANDO_CODIGO = "AGUARDANDO_CODIGO",
+    CONFIRMADA = "CONFIRMADA",
+    CANCELADA = "CANCELADA",
+    EXPIRADA = "EXPIRADA"
 }
 export enum SituacaoDaProvidenciaCodigo {
     ABERTA = "ABERTA",
@@ -7498,10 +7738,30 @@ export enum SituacaoDaRevisaoDasConcessoesCodigo {
     ENCERRANDO = "ENCERRANDO",
     ENCERRADA = "ENCERRADA"
 }
+export enum SituacaoDaVersaoCodigo {
+    PENDENTE = "PENDENTE",
+    VIGENTE = "VIGENTE",
+    ENCERRADA = "ENCERRADA",
+    CANCELADA = "CANCELADA",
+    RECUSADA = "RECUSADA",
+    EXPIRADA = "EXPIRADA"
+}
 export enum SituacaoDoAcessoDoPerfilCodigo {
     SUSPENSO = "SUSPENSO",
     EM_VIGOR = "EM_VIGOR",
     SEM_VERSAO_EM_VIGOR = "SEM_VERSAO_EM_VIGOR"
+}
+export enum SituacaoDoAnexoCodigo {
+    AGUARDANDO_ENVIO = "AGUARDANDO_ENVIO",
+    EM_VERIFICACAO = "EM_VERIFICACAO",
+    VERIFICADO = "VERIFICADO",
+    RECUSADO = "RECUSADO"
+}
+export enum SituacaoDoItemDaRevisaoCodigo {
+    PENDENTE = "PENDENTE",
+    CONFIRMADA = "CONFIRMADA",
+    REVOGADA = "REVOGADA",
+    CONCESSAO_ENCERRADA = "CONCESSAO_ENCERRADA"
 }
 export enum SituacaoDoPedidoCodigo {
     AGUARDANDO_BENEFICIARIO = "AGUARDANDO_BENEFICIARIO",
@@ -7512,6 +7772,29 @@ export enum SituacaoDoPedidoCodigo {
     CANCELADO = "CANCELADO",
     AGUARDANDO_DOCUMENTO = "AGUARDANDO_DOCUMENTO",
     DEVOLVIDO = "DEVOLVIDO"
+}
+export enum TipoDaProvidenciaCodigo {
+    RETIRADA = "RETIRADA",
+    REVISAO = "REVISAO"
+}
+export enum TipoDeDivergenciaCodigo {
+    COMPOSICAO_FALTANTE = "COMPOSICAO_FALTANTE",
+    COMPOSICAO_EXCEDENTE = "COMPOSICAO_EXCEDENTE",
+    CLASSIFICACAO = "CLASSIFICACAO",
+    ESCOPO = "ESCOPO"
+}
+export enum TipoDeEscopoCodigo {
+    UNIDADE = "UNIDADE",
+    INSTITUICAO = "INSTITUICAO"
+}
+export enum TipoDeGovernancaCodigo {
+    GESTOR_DE_ACESSOS = "GESTOR_DE_ACESSOS",
+    REPRESENTANTE_DO_CONTROLADOR = "REPRESENTANTE_DO_CONTROLADOR",
+    GESTOR_DE_PROTECAO_DE_DADOS = "GESTOR_DE_PROTECAO_DE_DADOS"
+}
+export enum TipoDeOrigemCodigo {
+    PEDIDO = "PEDIDO",
+    INSTALACAO = "INSTALACAO"
 }
 export enum TipoDoEventoDoHistoricoDaConcessaoCodigo {
     CONCEDIDA = "CONCEDIDA",

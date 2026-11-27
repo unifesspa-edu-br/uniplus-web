@@ -1,4 +1,3 @@
-import { SituacaoDoAnexo } from '@uniplus/shared-data/autorizacao';
 import { HttpHeaders, HttpResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
@@ -7,11 +6,11 @@ import { SignedUploadClient } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { PedidosDeConcessaoApi } from '@uniplus/shared-data/autorizacao';
 import { AnexoDoPedidoService } from './anexo-do-pedido.service';
-import { ok, recusa } from './testes';
+import { SITUACAO_DO_ANEXO, ok, recusa } from './testes';
 
 const PARA_ENVIO = {
   id: 'anexo-1',
-  situacao: SituacaoDoAnexo.AGUARDANDO_ENVIO,
+  situacao: SITUACAO_DO_ANEXO.AGUARDANDO_ENVIO,
   urlDeEnvio: 'https://armazenamento.exemplo.test/put',
   tipoDeMidia: 'application/pdf',
   expiraEm: '2999-01-01T00:00:00Z',

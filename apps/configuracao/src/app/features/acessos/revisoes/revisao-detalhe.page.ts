@@ -17,7 +17,7 @@ import {
   FalhaDeLeituraComponent,
   IndicadorDaLeituraDirective,
   SpinnerComponent,
-  TagComponent,
+  TagDoCodigoComponent,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { PERMISSOES_DA_CONCESSAO } from '../../../acesso/permissoes-das-telas';
@@ -31,7 +31,7 @@ import { DecisaoDoItem } from './decisao-do-item';
 import { ItensDoBeneficiarioComponent } from './itens-do-beneficiario.component';
 import { decideOItem, porBeneficiario, type QuemLe } from './regras-da-revisao';
 import { RevisaoDetalheStore } from './revisao-detalhe.store';
-import { itens, pendentes, situacaoDaRevisao } from './rotulos-da-revisao';
+import { VARIANTES_DA_REVISAO, itens, pendentes } from './rotulos-da-revisao';
 
 const ID_DO_TITULO = 'cfg-revisao-titulo';
 
@@ -49,7 +49,7 @@ const ID_DO_TITULO = 'cfg-revisao-titulo';
     MotivoDialogComponent,
     RecusaDaLeituraComponent,
     SpinnerComponent,
-    TagComponent,
+    TagDoCodigoComponent,
   ],
   providers: [
     RevisaoDetalheStore,
@@ -71,12 +71,12 @@ export class RevisaoDetalhePage {
   private readonly permissoes = inject(PermissoesService);
   private readonly escopos = nomesDeEscopo();
   protected readonly idDoTitulo = ID_DO_TITULO;
-  protected readonly situacao = situacaoDaRevisao;
+  protected readonly variantes = VARIANTES_DA_REVISAO;
   protected readonly itens = itens;
   protected readonly pendentes = pendentes;
   protected readonly grupos = computed(() => porBeneficiario(this.store.revisao()?.itens ?? []));
   protected readonly encerrada = computed(
-    () => this.store.revisao()?.situacao === SituacaoDaRevisaoCodigo.CONCLUIDA,
+    () => this.store.revisao()?.situacao.codigo === SituacaoDaRevisaoCodigo.CONCLUIDA,
   );
   private readonly quemLe: QuemLe = { tem: (codigo) => this.permissoes.tem(codigo) };
   protected readonly decide = computed(() => {

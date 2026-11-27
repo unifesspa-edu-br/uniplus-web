@@ -9,6 +9,7 @@ import {
   CONDUZIR,
   CONSULTAR,
   ID,
+  SITUACAO_DA_REVISAO,
   assentar,
   botao,
   botoes,
@@ -42,7 +43,7 @@ const RESUMO: RevisaoResumoDto = {
   id: 'r1',
   abertaEm: '2026-11-09T12:00:00Z',
   abertaPor: pessoa('conta-betina', 'Betina Neves'),
-  situacao: SituacaoDaRevisaoCodigo.EM_ANDAMENTO,
+  situacao: SITUACAO_DA_REVISAO.EM_ANDAMENTO,
   totalDeItens: 4,
   pendentes: 3,
 };

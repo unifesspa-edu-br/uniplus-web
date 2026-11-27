@@ -9,13 +9,13 @@ import {
   FalhaDeLeituraComponent,
   PagerComponent,
   SpinnerComponent,
-  TagComponent,
+  TagDoCodigoComponent,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { RecusaDaLeituraComponent } from '../../../shared/recusa-da-leitura';
 import { AberturaDaRevisao } from './abertura-da-revisao';
 import { RevisoesStore } from './revisoes.store';
-import { OPCOES_DO_FILTRO, itens, situacaoDaRevisao } from './rotulos-da-revisao';
+import { OPCOES_DO_FILTRO, VARIANTES_DA_REVISAO, itens } from './rotulos-da-revisao';
 
 const ID_DO_TITULO = 'cfg-revisoes-titulo';
 
@@ -33,7 +33,7 @@ const ID_DO_TITULO = 'cfg-revisoes-titulo';
     PagerComponent,
     RecusaDaLeituraComponent,
     SpinnerComponent,
-    TagComponent,
+    TagDoCodigoComponent,
   ],
   providers: [RevisoesStore, AberturaDaRevisao],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,7 +46,7 @@ export class RevisoesPage {
   private readonly permissoes = inject(PermissoesService);
   protected readonly idDoTitulo = ID_DO_TITULO;
   protected readonly opcoes = OPCOES_DO_FILTRO;
-  protected readonly situacao = situacaoDaRevisao;
+  protected readonly variantes = VARIANTES_DA_REVISAO;
   protected readonly itens = itens;
   /** Abrir revisão é de quem a conduz; quem só revê ou consulta lê a lista sem essa ação. */
   protected readonly podeAbrir = computed(() =>

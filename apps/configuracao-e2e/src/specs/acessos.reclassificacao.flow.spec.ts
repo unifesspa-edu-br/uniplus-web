@@ -25,6 +25,8 @@ import {
   concessao,
   RECLASSIFICACAO,
   DECISAO_OK,
+  ETAPA_DA_GESTAO,
+  ETAPA_DA_PROTECAO,
   preparar,
 } from '../support/reclassificacao-cenario';
 
@@ -46,7 +48,7 @@ test.describe('Acessos — fila da reclassificação', () => {
     await expect(
       page.getByRole('heading', { name: 'Reclassificações na gestão de acessos', level: 1 }),
     ).toBeVisible();
-    await expect(page.getByText('Classificação: de Interna para Dado pessoal')).toBeVisible();
+    await expect(page.getByText('Classificação: de Interno para Pessoal')).toBeVisible();
     await expect(page.getByText('Escopo: de Instituição para Unidade')).toBeVisible();
     await expect(page.getByText('3 concessões')).toBeVisible();
     expect(fila[0]).toMatchObject({
@@ -226,7 +228,11 @@ test.describe('Acessos — detalhe e decisão da reclassificação', () => {
         status: 200,
         corpo: {
           ...RECLASSIFICACAO,
-          concessoes: [concessao('c4', 'Rebeca Teste', { etapasExigidas: ['PROTECAO_DE_DADOS'] })],
+          concessoes: [
+            concessao('c4', 'Rebeca Teste', {
+              etapasExigidas: [ETAPA_DA_GESTAO, ETAPA_DA_PROTECAO],
+            }),
+          ],
         },
       },
     });

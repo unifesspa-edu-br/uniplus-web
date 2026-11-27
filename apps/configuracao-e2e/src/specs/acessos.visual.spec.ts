@@ -1,7 +1,9 @@
 import { expect, test, type Locator, type Route, type TestInfo } from '@playwright/test';
-import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
+import type { ConcessaoDto } from '@uniplus/shared-data/autorizacao';
+import { mockPermissoesEfetivas, type JsonDaApi } from '@uniplus/shared-e2e';
 import { mockApiDeAcesso, pedidoSeed } from '../support/api-de-acesso';
 import { PERFIL } from '../support/api-de-perfis-escritas';
+import { tipoDeEscopo, tipoDeOrigem } from '../support/enumerados-de-autorizacao';
 import { PERMISSOES_DO_DIOGO } from '../support/permissoes';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
@@ -12,17 +14,18 @@ const CORS_HEADERS = {
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
 };
-const CONCESSAO = {
+const CONCESSAO: JsonDaApi<ConcessaoDto> = {
   id: '01960000-0000-7000-0000-0000000000c1',
   beneficiario: { emissor: 'unifesspa', contaId: 'conta-betina-0002-ficticia' },
   perfil: { id: PERFIL.id, nome: PERFIL.nome },
   versao: 1,
-  escopo: { tipo: 'INSTITUICAO', unidadeId: null },
-  origem: { tipo: 'PEDIDO', id: '01960000-0000-7000-0000-00000000cc01' },
+  escopo: { tipo: tipoDeEscopo('INSTITUICAO'), unidadeId: null },
+  origem: { tipo: tipoDeOrigem('PEDIDO'), id: '01960000-0000-7000-0000-00000000cc01' },
   concedidaEm: '2026-10-28T12:00:00Z',
   validaAte: null,
   revogadaEm: null,
   revogadaPor: null,
+  revogadaPelaRevisaoId: null,
   motivoRevogacao: null,
   ativa: true,
 };

@@ -4,8 +4,14 @@ import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { AUTORIZACAO_BASE_PATH } from '@uniplus/shared-data/autorizacao';
+import {
+  AUTORIZACAO_BASE_PATH,
+  ClassificacaoDeProtecaoCodigo,
+} from '@uniplus/shared-data/autorizacao';
 import { CatalogoDePermissoesStore } from './catalogo-de-permissoes.store';
+import { sensibilidade } from './enums-da-api.testing';
+
+const INTERNO = sensibilidade(ClassificacaoDeProtecaoCodigo.INTERNO);
 
 const URL = 'http://api.test/api/autorizacao/permissoes';
 const CATALOGO = [
@@ -19,7 +25,7 @@ const CATALOGO = [
             codigo: 'selecao:processos:consultar',
             nome: 'Consultar processos',
             descricao: '',
-            sensibilidade: 'INTERNO',
+            sensibilidade: INTERNO,
           },
         ],
       },
@@ -63,7 +69,7 @@ describe('CatalogoDePermissoesStore', () => {
     expect(store.porCodigo().get('selecao:processos:consultar')).toEqual({
       codigo: 'selecao:processos:consultar',
       nome: 'Consultar processos',
-      sensibilidade: 'INTERNO',
+      sensibilidade: INTERNO,
     });
   });
 

@@ -1,4 +1,9 @@
-import { EtapaDaVersao, SituacaoDaVersao, TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
+import {
+  ClassificacaoDeProtecaoCodigo,
+  EtapaDaVersaoCodigo,
+  SituacaoDaVersaoCodigo,
+  TipoDeDivergenciaCodigo,
+} from '@uniplus/shared-data/autorizacao';
 import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ApplicationRef } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
@@ -15,7 +20,9 @@ import {
 } from '@uniplus/shared-data/autorizacao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
-import { ok } from '../testes';
+import type { CodigoComRotulo } from '@uniplus/shared-ui/components';
+import { TIPO_DE_ESCOPO, ok } from '../testes';
+import { etapaDaVersao, sensibilidade, situacaoDaVersao } from '../versoes/enums-da-api.testing';
 import { DocumentoDaVersaoService } from '../versoes/documento-da-versao.service';
 import { ReclassificacaoDetalhePage } from './reclassificacao-detalhe.page';
 
@@ -23,6 +30,25 @@ export const GESTAO_DE_ACESSOS = PERMISSAO.autorizacao.perfisAprovarFuncional;
 export const PROTECAO_DE_DADOS = PERMISSAO.autorizacao.perfisAprovarProtecaoDeDados;
 export const ID = '01960000-0000-7000-0000-0000000000e1';
 export const PERFIL = '01960000-0000-7000-0000-0000000000d1';
+
+export const ETAPA = {
+  GESTAO_DE_ACESSOS: etapaDaVersao(EtapaDaVersaoCodigo.GESTAO_DE_ACESSOS),
+  PROTECAO_DE_DADOS: etapaDaVersao(EtapaDaVersaoCodigo.PROTECAO_DE_DADOS),
+};
+
+const divergencia = <C extends TipoDeDivergenciaCodigo>(
+  codigo: C,
+  rotulo: string,
+): CodigoComRotulo<C> => ({ codigo, rotulo });
+
+export const TIPO_DE_DIVERGENCIA = {
+  COMPOSICAO_FALTANTE: divergencia(
+    TipoDeDivergenciaCodigo.COMPOSICAO_FALTANTE,
+    'Composição faltante',
+  ),
+  CLASSIFICACAO: divergencia(TipoDeDivergenciaCodigo.CLASSIFICACAO, 'Classificação'),
+  ESCOPO: divergencia(TipoDeDivergenciaCodigo.ESCOPO, 'Escopo'),
+};
 
 export const api = { decidir: vi.fn() };
 export const documentos = { abrir: vi.fn() };
@@ -33,10 +59,10 @@ export function concessao(parcial: Partial<ConcessaoSuspensaDto> = {}): Concessa
   return {
     concessaoId: 'c1',
     beneficiarioNome: 'Betina Teste',
-    escopoTipo: TipoDeEscopo.UNIDADE,
+    escopoTipo: TIPO_DE_ESCOPO.UNIDADE,
     unidadeId: 'unidade-1',
     versao: 1,
-    etapasExigidas: [EtapaDaVersao.GESTAO_DE_ACESSOS],
+    etapasExigidas: [ETAPA.GESTAO_DE_ACESSOS],
     etapasDecididas: [],
     ehDoLeitor: false,
     ...parcial,
@@ -49,8 +75,8 @@ const RECLASSIFICACAO: ReclassificacaoDto = {
   perfilNome: 'Operador de inscrições',
   codigo: 'selecao:processos:aprovar',
   mudanca: {
-    classificacaoAnterior: 'interno',
-    classificacaoNova: 'pessoal',
+    classificacaoAnterior: sensibilidade(ClassificacaoDeProtecaoCodigo.INTERNO),
+    classificacaoNova: sensibilidade(ClassificacaoDeProtecaoCodigo.PESSOAL),
     deUnidadeAnterior: false,
     deUnidadeNovo: true,
   },
@@ -60,18 +86,26 @@ const RECLASSIFICACAO: ReclassificacaoDto = {
     {
       id: 'v1',
       numero: 1,
-      situacao: SituacaoDaVersao.VIGENTE,
+      situacao: situacaoDaVersao(SituacaoDaVersaoCodigo.VIGENTE),
       permissoes: [
-        { codigo: 'selecao:processos:aprovar', classificacao: 'interno', deUnidade: false },
+        {
+          codigo: 'selecao:processos:aprovar',
+          classificacao: sensibilidade(ClassificacaoDeProtecaoCodigo.INTERNO),
+          deUnidade: false,
+        },
       ],
       linkDoDocumento: 'https://api.test/documento/v1',
     },
     {
       id: 'v2',
       numero: 2,
-      situacao: SituacaoDaVersao.VIGENTE,
+      situacao: situacaoDaVersao(SituacaoDaVersaoCodigo.VIGENTE),
       permissoes: [
-        { codigo: 'selecao:processos:aprovar', classificacao: 'pessoal', deUnidade: true },
+        {
+          codigo: 'selecao:processos:aprovar',
+          classificacao: sensibilidade(ClassificacaoDeProtecaoCodigo.PESSOAL),
+          deUnidade: true,
+        },
       ],
       linkDoDocumento: null,
     },
@@ -83,7 +117,7 @@ const RECLASSIFICACAO: ReclassificacaoDto = {
       concessaoId: 'c3',
       beneficiarioNome: 'Paulo Teste',
       unidadeId: null,
-      escopoTipo: TipoDeEscopo.INSTITUICAO,
+      escopoTipo: TIPO_DE_ESCOPO.INSTITUICAO,
     }),
   ],
 };

@@ -1,4 +1,3 @@
-import { TipoDeGovernanca } from '@uniplus/shared-data/autorizacao';
 import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -21,7 +20,7 @@ import {
 } from './interacao.testing';
 import { provideMensagensDeAcesso } from './mensagens-de-acesso';
 import { PerfisPage } from './perfis.page';
-import { ok } from './testes';
+import { CLASSIFICACAO_DE_PROTECAO, TIPO_DE_GOVERNANCA, ok } from './testes';
 import { DocumentoDaVersaoService } from './versoes/documento-da-versao.service';
 import { ACESSO_EM_VIGOR } from './versoes/situacao-do-acesso.testing';
 
@@ -36,7 +35,7 @@ export const COMUM: PerfilListadoDto = {
   descricao: 'Opera as inscrições.',
   ativo: true,
   governanca: null,
-  sensibilidade: 'INTERNO',
+  sensibilidade: CLASSIFICACAO_DE_PROTECAO.INTERNO,
   situacaoDoAcesso: ACESSO_EM_VIGOR,
   temVersaoPendente: false,
   suspensao: null,
@@ -46,7 +45,7 @@ export const GOVERNANCA: PerfilListadoDto = {
   ...COMUM,
   id: 'p2',
   nome: 'Gestor de acessos',
-  governanca: TipoDeGovernanca.GESTOR_DE_ACESSOS,
+  governanca: TIPO_DE_GOVERNANCA.GESTOR_DE_ACESSOS,
 };
 export const ENVIO = {
   perfilId: 'p9',
@@ -65,7 +64,7 @@ export const CATALOGO = [
             codigo: 'selecao:processos:configurar',
             nome: 'Configurar processos',
             descricao: '',
-            sensibilidade: 'INTERNO',
+            sensibilidade: CLASSIFICACAO_DE_PROTECAO.INTERNO,
           },
         ],
       },
@@ -76,7 +75,7 @@ export const CATALOGO = [
             codigo: 'selecao:documentos-identificadores:consultar',
             nome: 'Consultar documentos de identificação',
             descricao: '',
-            sensibilidade: 'IDENTIFICADOR',
+            sensibilidade: CLASSIFICACAO_DE_PROTECAO.IDENTIFICADOR,
           },
         ],
       },
@@ -87,7 +86,7 @@ export const CATALOGO = [
             codigo: 'selecao:documentos-internos:consultar',
             nome: 'Consultar documentos internos',
             descricao: '',
-            sensibilidade: 'INTERNO',
+            sensibilidade: CLASSIFICACAO_DE_PROTECAO.INTERNO,
           },
         ],
       },
@@ -98,7 +97,7 @@ export const CATALOGO = [
             codigo: 'selecao:documentos-publicos:consultar',
             nome: 'Consultar documentos públicos',
             descricao: '',
-            sensibilidade: 'PUBLICO',
+            sensibilidade: CLASSIFICACAO_DE_PROTECAO.PUBLICO,
           },
         ],
       },
@@ -109,7 +108,7 @@ export const CATALOGO = [
             codigo: 'selecao:dados-pessoais:consultar',
             nome: 'Consultar dados pessoais',
             descricao: '',
-            sensibilidade: 'PESSOAL',
+            sensibilidade: CLASSIFICACAO_DE_PROTECAO.PESSOAL,
           },
         ],
       },
@@ -120,13 +119,13 @@ export const CATALOGO = [
             codigo: 'selecao:dados-identificadores:consultar',
             nome: 'Consultar dados de identificação mascarados',
             descricao: '',
-            sensibilidade: 'IDENTIFICADOR',
+            sensibilidade: CLASSIFICACAO_DE_PROTECAO.IDENTIFICADOR,
           },
           {
             codigo: 'selecao:dados-identificadores:revelar',
             nome: 'Revelar dados de identificação',
             descricao: '',
-            sensibilidade: 'IDENTIFICADOR',
+            sensibilidade: CLASSIFICACAO_DE_PROTECAO.IDENTIFICADOR,
           },
         ],
       },
@@ -137,7 +136,7 @@ export const CATALOGO = [
             codigo: 'selecao:inscricoes:consultar',
             nome: 'Consultar inscrições',
             descricao: '',
-            sensibilidade: 'PESSOAL',
+            sensibilidade: CLASSIFICACAO_DE_PROTECAO.PESSOAL,
           },
         ],
       },

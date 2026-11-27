@@ -1,4 +1,5 @@
-import { CategoriaDaRemocao, EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
+import { CategoriaDaRemocao, type SituacaoDaVersaoCodigo } from '@uniplus/shared-data/autorizacao';
+import { ETAPA_PROTECAO, situacaoDaVersao } from './enums-da-api.testing';
 import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { EnvironmentProviders, Provider } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -243,12 +244,12 @@ export async function prepararARemocao(fixture: Pagina, host: HTMLElement) {
 }
 
 /** Perfil em vigor cuja última versão proposta terminou sem entrar em vigor. */
-export function perfilComEncerrada(situacao: string, numero: number): PerfilDto {
+export function perfilComEncerrada(situacao: SituacaoDaVersaoCodigo, numero: number): PerfilDto {
   return perfilDoDetalhe({
     ultimaVersaoEncerradaSemVigor: {
       numero,
-      situacao,
-      etapa: EtapaDaVersao.PROTECAO_DE_DADOS,
+      situacao: situacaoDaVersao(situacao),
+      etapa: ETAPA_PROTECAO,
       instante: '2026-11-03T12:00:00Z',
     },
   });

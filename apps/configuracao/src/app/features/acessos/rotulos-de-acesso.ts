@@ -1,9 +1,7 @@
 import {
   EtapaDaMigracao,
-  EtapaDoPedido,
   EtapaDaVersao,
-  ResultadoDaDecisao,
-  SituacaoDoAnexo,
+  EtapaDoPedido,
   SituacaoDoPedidoCodigo,
 } from '@uniplus/shared-data/autorizacao';
 import type { UiTagVariant } from '@uniplus/shared-ui/components';
@@ -13,93 +11,31 @@ interface Rotulo {
   readonly variante: UiTagVariant;
 }
 
-const SITUACAO_DO_PEDIDO: Readonly<Record<SituacaoDoPedidoCodigo, Rotulo>> = {
-  [SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO]: {
-    texto: 'Aguardando o documento de designação',
-    variante: 'warning',
-  },
-  [SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO]: {
-    texto: 'Aguardando o aceite do beneficiário',
-    variante: 'warning',
-  },
-  [SituacaoDoPedidoCodigo.AGUARDANDO_GESTOR]: {
-    texto: 'Aguardando a gestão de acessos',
-    variante: 'info',
-  },
-  [SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS]: {
-    texto: 'Aguardando o Representante do controlador',
-    variante: 'info',
-  },
-  [SituacaoDoPedidoCodigo.APROVADO]: { texto: 'Aprovado', variante: 'success' },
-  [SituacaoDoPedidoCodigo.RECUSADO]: { texto: 'Recusado', variante: 'danger' },
-  [SituacaoDoPedidoCodigo.DEVOLVIDO]: { texto: 'Devolvido', variante: 'warning' },
-  [SituacaoDoPedidoCodigo.CANCELADO]: { texto: 'Cancelado', variante: 'neutral' },
+const VARIANTE_DA_SITUACAO_DO_PEDIDO: Readonly<Record<string, UiTagVariant>> = {
+  [SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO]: 'warning',
+  [SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO]: 'warning',
+  [SituacaoDoPedidoCodigo.AGUARDANDO_GESTOR]: 'info',
+  [SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS]: 'info',
+  [SituacaoDoPedidoCodigo.APROVADO]: 'success',
+  [SituacaoDoPedidoCodigo.RECUSADO]: 'danger',
+  [SituacaoDoPedidoCodigo.DEVOLVIDO]: 'warning',
+  [SituacaoDoPedidoCodigo.CANCELADO]: 'neutral',
 };
 
-const SITUACAO_DO_ANEXO: Readonly<Record<SituacaoDoAnexo, string>> = {
-  [SituacaoDoAnexo.AGUARDANDO_ENVIO]: 'Aguardando o envio',
-  [SituacaoDoAnexo.EM_VERIFICACAO]: 'Em verificação',
-  [SituacaoDoAnexo.VERIFICADO]: 'Verificado',
-  [SituacaoDoAnexo.RECUSADO]: 'Recusado na verificação',
+/** Os códigos que a API deixa dentro da frase do detalhe de um evento, que ela não devolve como rótulo. */
+const ETAPA_NO_DETALHE: Readonly<Record<string, string>> = {
+  [EtapaDaVersao.GESTAO_DE_ACESSOS]: 'Gestão de acessos',
+  [EtapaDaMigracao.SISTEMA]: 'Sistema',
+  [EtapaDoPedido.GESTOR]: 'Gestão de acessos',
+  [EtapaDaVersao.PROTECAO_DE_DADOS]: 'Proteção de dados',
 };
 
-const TIPO_DE_EVENTO: Readonly<Record<string, string>> = {
-  pedido_criado: 'Pedido criado',
-  beneficiario_aceitou: 'Beneficiário aceitou o pedido',
-  anexo_enviado: 'Documento enviado',
-  anexo_verificado: 'Documento verificado',
-  anexo_recusado: 'Documento recusado na verificação',
-  anexo_lido: 'Documento consultado',
-  [ResultadoDaDecisao.APROVADO]: 'Aprovação',
-  [ResultadoDaDecisao.RECUSADO]: 'Recusa',
-  [ResultadoDaDecisao.PERFIL_ALTERADO]: 'Perfil alterado entre as etapas',
-  [ResultadoDaDecisao.PRAZO_VENCIDO]: 'Prazo vencido entre as etapas',
-  [ResultadoDaDecisao.TERMO_EXIGIDO]:
-    'Pedido devolvido: o perfil passou a exigir o termo de responsabilidade',
-  perfil_alterado_entre_etapas: 'Perfil alterado entre as etapas',
-  prazo_vencido_entre_etapas: 'Prazo vencido entre as etapas',
-  segunda_aprovacao_dispensada: 'Segunda aprovação dispensada',
-  cancelado: 'Pedido cancelado',
-  concedida: 'Acesso concedido',
-  revogada: 'Acesso revogado',
-  revogada_pela_migracao: 'Acesso revogado na revisão das concessões',
-  providencia_solicitada: 'Providência solicitada',
-  providencia_respondida: 'Providência respondida',
-  providencia_atendida: 'Providência atendida',
-  vencida: 'Concessão vencida',
-  migracao_migrar: 'Concessão aprovada na versão nova',
-  migracao_recusar: 'Concessão recusada na revisão',
-  migracao_reter: 'Concessão retida na revisão das concessões',
-  migracao_nao_migrada: 'Concessão não aprovada no prazo da revisão',
-  migracao_fora_da_lista: 'Concessão fora da lista da revisão',
-  instalacao_iniciada: 'Instalação iniciada',
-  documento_verificado: 'Documento verificado',
-  documento_recusado: 'Documento recusado na verificação',
-  codigo_enviado: 'Código de confirmação enviado',
-  tentativas: 'Tentativas de confirmação',
-  instalacao_confirmada: 'Instalação confirmada',
-  instalacao_cancelada: 'Instalação cancelada',
-  instalacao_expirada: 'Instalação expirada',
-  termo_aceito: 'Termo de responsabilidade aceito',
-  termo_exigido: 'Pedido devolvido: o perfil passou a exigir o termo de responsabilidade',
-  termo_excecao_da_instalacao: 'Instalação sem o aceite do termo de responsabilidade',
-};
-
-type ClassificacaoDeProtecao = 'PUBLICO' | 'INTERNO' | 'IDENTIFICADOR' | 'PESSOAL' | 'SENSIVEL';
-
-const SENSIBILIDADE: Readonly<Record<ClassificacaoDeProtecao, string>> = {
+const SENSIBILIDADE_NO_DETALHE: Readonly<Record<string, string>> = {
   PUBLICO: 'Pública',
   INTERNO: 'Interna',
   IDENTIFICADOR: 'Dado identificador',
   PESSOAL: 'Dado pessoal',
   SENSIVEL: 'Dado sensível',
-};
-
-const ETAPA: Readonly<Record<string, string>> = {
-  [EtapaDaVersao.GESTAO_DE_ACESSOS]: 'Gestão de acessos',
-  [EtapaDaMigracao.SISTEMA]: 'Sistema',
-  [EtapaDoPedido.GESTOR]: 'Gestão de acessos',
-  [EtapaDaVersao.PROTECAO_DE_DADOS]: 'Proteção de dados',
 };
 
 const MOTIVO_DA_DISPENSA: Readonly<Record<string, string>> = {
@@ -110,31 +46,31 @@ export function motivoDaDispensa(codigo: string): string {
   return MOTIVO_DA_DISPENSA[codigo] ?? codigo;
 }
 
-export function situacaoDoPedido(codigo: string): Rotulo {
-  return (
-    SITUACAO_DO_PEDIDO[codigo as SituacaoDoPedidoCodigo] ?? { texto: codigo, variante: 'neutral' }
-  );
+/** O texto da situação vem da API; a cor da etiqueta é da tela, escolhida pelo código. */
+export function situacaoDoPedido(situacao: {
+  readonly codigo: string;
+  readonly rotulo: string;
+}): Rotulo {
+  return {
+    texto: situacao.rotulo,
+    variante: VARIANTE_DA_SITUACAO_DO_PEDIDO[situacao.codigo] ?? 'neutral',
+  };
 }
 
-export function situacaoDoAnexo(codigo: string): string {
-  return SITUACAO_DO_ANEXO[codigo as SituacaoDoAnexo] ?? codigo;
-}
-
-export function tipoDeEvento(codigo: string): string {
-  return TIPO_DE_EVENTO[codigo] ?? codigo;
-}
-
-export function sensibilidade(codigo: string): string {
-  return SENSIBILIDADE[codigo.toUpperCase() as ClassificacaoDeProtecao] ?? codigo;
-}
-
-export function etapa(codigo: string | null): string {
-  return codigo === null ? '—' : (ETAPA[codigo] ?? codigo);
-}
-
-export const OPCOES_DE_SITUACAO_DO_PEDIDO = Object.entries(SITUACAO_DO_PEDIDO).map(
-  ([value, { texto }]) => ({ value, label: texto }),
-);
+/** As situações do filtro de pedidos, na ordem da tela; a API não serve a lista, só o rótulo de cada pedido. */
+export const OPCOES_DE_SITUACAO_DO_PEDIDO: readonly { value: string; label: string }[] = [
+  { value: SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO, label: 'Aguardando documento' },
+  { value: SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO, label: 'Aguardando beneficiário' },
+  { value: SituacaoDoPedidoCodigo.AGUARDANDO_GESTOR, label: 'Aguardando gestor' },
+  {
+    value: SituacaoDoPedidoCodigo.AGUARDANDO_PROTECAO_DE_DADOS,
+    label: 'Aguardando proteção de dados',
+  },
+  { value: SituacaoDoPedidoCodigo.APROVADO, label: 'Aprovado' },
+  { value: SituacaoDoPedidoCodigo.RECUSADO, label: 'Recusado' },
+  { value: SituacaoDoPedidoCodigo.DEVOLVIDO, label: 'Devolvido' },
+  { value: SituacaoDoPedidoCodigo.CANCELADO, label: 'Cancelado' },
+];
 
 const IDENTIFICADOR = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 const SHA256 = /\b[0-9a-f]{64}\b/gi;
@@ -162,14 +98,22 @@ function semIdentificadores(detalhe: string): string {
     .replace(/ ?(?:Janela|Revisão): [0-9a-f-]{36}\./i, '');
 }
 
+function nomeDaEtapa(codigo: string): string {
+  return ETAPA_NO_DETALHE[codigo] ?? codigo;
+}
+
+function nomeDaSensibilidade(codigo: string): string {
+  return SENSIBILIDADE_NO_DETALHE[codigo.toUpperCase()] ?? codigo;
+}
+
 /** Troca os códigos de dispensa, etapa, sensibilidade e motivo pelos rótulos da tela. */
 function comRotulos(detalhe: string): string {
   return detalhe
     .replace(/Dispensa: (\w+)\./, (_, codigo: string) => `Dispensa: ${motivoDaDispensa(codigo)}.`)
-    .replace(/Etapa: (\w+)\./, (_, codigo: string) => `Etapa: ${etapa(codigo)}.`)
+    .replace(/Etapa: (\w+)\./, (_, codigo: string) => `Etapa: ${nomeDaEtapa(codigo)}.`)
     .replace(
       /Sensibilidade avaliada: (\w+)\./,
-      (_, codigo: string) => `Sensibilidade avaliada: ${sensibilidade(codigo)}.`,
+      (_, codigo: string) => `Sensibilidade avaliada: ${nomeDaSensibilidade(codigo)}.`,
     )
     .replace(/Motivo: (\w+)\./, (trecho, codigo: string) =>
       codigo in MOTIVO_DA_DISPENSA ? `Motivo: ${motivoDaDispensa(codigo)}.` : trecho,

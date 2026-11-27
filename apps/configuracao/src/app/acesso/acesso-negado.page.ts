@@ -53,9 +53,9 @@ function acaoDo(
   pedido: PedidoResumoDto,
   eu: { readonly id: string; readonly email: string } | null,
 ): PedidoEmAberto['acao'] {
-  if (pedido.situacao === SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO) return 'anexar';
+  if (pedido.situacao.codigo === SituacaoDoPedidoCodigo.AGUARDANDO_DOCUMENTO) return 'anexar';
   const aceitavel =
-    pedido.situacao === SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO &&
+    pedido.situacao.codigo === SituacaoDoPedidoCodigo.AGUARDANDO_BENEFICIARIO &&
     eu !== null &&
     ehOBeneficiario(pedido.beneficiario, eu);
   return aceitavel ? 'aceitar' : 'ver';
@@ -151,7 +151,7 @@ export class AcessoNegadoPage implements OnInit {
     for (const resultado of resultados) {
       if (!resultado.ok) continue;
       for (const pedido of resultado.data) {
-        if (EM_ABERTO.includes(pedido.situacao)) porId.set(pedido.id, pedido);
+        if (EM_ABERTO.includes(pedido.situacao.codigo)) porId.set(pedido.id, pedido);
       }
     }
     this.emAberto.set([...porId.values()].map((pedido) => ({ pedido, acao: acaoDo(pedido, eu) })));

@@ -22,9 +22,9 @@ describe('PerfisPage: formulário do perfil novo', () => {
   });
 
   it.each([
-    ['selecao:documentos-identificadores:consultar', 'Dado identificador'],
-    ['selecao:documentos-internos:consultar', 'Interna'],
-    ['selecao:documentos-publicos:consultar', 'Pública'],
+    ['selecao:documentos-identificadores:consultar', 'Identificador'],
+    ['selecao:documentos-internos:consultar', 'Interno'],
+    ['selecao:documentos-publicos:consultar', 'Público'],
   ])('mostra a sensibilidade de %s', async (codigo, sensibilidade) => {
     const aberta = await abrir();
     const { host } = aberta;

@@ -31,7 +31,7 @@
     <div>
       <dt>Situação</dt>
       <dd>
-        <ui-tag [variant]="situacao(r.situacao).variante">{{ situacao(r.situacao).texto }}</ui-tag>
+        <ui-tag-do-codigo [valor]="r.situacao" [variantes]="variantes" />
       </dd>
     </div>
     <div>

@@ -254,8 +254,8 @@ function momentoParaEnvio(
 function formularioParaEnvio(
   documento: ExigenciaDeDocumento,
   formularioCodigo: string | null,
-): string | null {
-  return documento.faseIdLido ? documento.formularioCodigo : formularioCodigo;
+): string {
+  return (documento.faseIdLido ? documento.formularioCodigo : formularioCodigo) ?? '';
 }
 
 function indeferimentoDoDocumentoParaEnvio(

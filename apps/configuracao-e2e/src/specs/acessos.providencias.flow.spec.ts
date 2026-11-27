@@ -8,6 +8,7 @@ import {
   providencia,
   type CenarioDasProvidencias,
 } from '../support/api-de-providencias';
+import { causaDoEncerramento, situacaoDaProvidencia } from '../support/enumerados-de-autorizacao';
 import {
   PERMISSOES_DO_DIOGO_ADMINISTRA_CONCESSOES,
   PERMISSOES_DO_KEVIN_SOLICITA_PROVIDENCIA,
@@ -86,7 +87,7 @@ test.describe('Acessos — providências sobre concessões', () => {
     page,
   }) => {
     const escritas = await abrir(page, PERMISSOES_DO_DIOGO_ADMINISTRA_CONCESSOES, DETALHE, {
-      detalhe: [providencia(), providencia({ situacao: 'RESPONDIDA' })],
+      detalhe: [providencia(), providencia({ situacao: situacaoDaProvidencia('RESPONDIDA') })],
       escritas: [
         { status: 409, corpo: CONFLITO_RETENTAVEL },
         { status: 200, corpo: providencia() },
@@ -106,7 +107,7 @@ test.describe('Acessos — providências sobre concessões', () => {
 
   test('o atendimento pede o e-mail do beneficiário e revoga a concessão', async ({ page }) => {
     const escritas = await abrir(page, PERMISSOES_DO_DIOGO_ADMINISTRA_CONCESSOES, DETALHE, {
-      detalhe: [providencia(), providencia({ situacao: 'ATENDIDA' })],
+      detalhe: [providencia(), providencia({ situacao: situacaoDaProvidencia('ATENDIDA') })],
     });
     await page.getByRole('button', { name: 'Atender e revogar a concessão' }).click();
     const dialogo = page.getByRole('dialog', { name: 'Revogar a concessão' });
@@ -128,13 +129,16 @@ test.describe('Acessos — providências sobre concessões', () => {
     await abrir(page, PERMISSOES_DO_DIOGO_ADMINISTRA_CONCESSOES, DETALHE, {
       detalhe: [
         providencia({
-          situacao: 'PREJUDICADA',
-          encerramentoDaConcessao: { causa: 'REVOGADA', em: '2026-11-11T14:00:00Z' },
+          situacao: situacaoDaProvidencia('PREJUDICADA'),
+          encerramentoDaConcessao: {
+            causa: causaDoEncerramento('REVOGADA'),
+            em: '2026-11-11T14:00:00Z',
+          },
         }),
       ],
     });
 
-    await expect(page.getByText('Concessão revogada em')).toBeVisible();
+    await expect(page.getByText(/^Revogada em /u)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Responder' })).toHaveCount(0);
   });
 

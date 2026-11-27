@@ -29,19 +29,19 @@
       </div>
     }
     <div class="panel-body">
-      @if (etapas().length > 1) {
+      @if (opcoesDeEtapa().length > 1) {
         <fieldset class="field" [disabled]="gravando()">
           <legend>Etapa que você decide</legend>
-          @for (etapa of etapas(); track etapa) {
+          @for (opcao of opcoesDeEtapa(); track opcao.codigo) {
             <label class="radio">
               <input
                 type="radio"
                 name="cfg-decisao-etapa"
-                [checked]="decisao.etapa() === etapa"
-                (change)="decisao.escolherEtapa(etapa)"
+                [checked]="decisao.etapa() === opcao.codigo"
+                (change)="decisao.escolherEtapa(opcao.codigo)"
               />
               <span class="radio__dot" aria-hidden="true"></span>
-              {{ rotulo(etapa) }}
+              {{ opcao.rotulo }}
             </label>
           }
         </fieldset>

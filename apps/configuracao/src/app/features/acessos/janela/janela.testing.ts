@@ -2,8 +2,8 @@ import {
   SituacaoDaConcessaoNaRevisaoCodigo,
   SituacaoDaRevisaoDasConcessoesCodigo,
 } from '@uniplus/shared-data/autorizacao';
-import { TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import type { ItemDaJanelaDto, JanelaDeMigracaoDto } from '@uniplus/shared-data/autorizacao';
+import { TIPO_DE_ESCOPO } from '../testes';
 
 export const PERFIL = '01960000-0000-7000-0000-0000000000d1';
 export const ABERTA_EM = '2026-11-09T12:00:00Z';
@@ -14,7 +14,7 @@ const ACRESCIMO = 'selecao:processos:aprovar';
 const ITEM_AGUARDANDO_DECISAO = {
   concessaoId: 'c1',
   beneficiarioNome: 'Betina Teste',
-  escopoTipo: TipoDeEscopo.UNIDADE,
+  escopoTipo: TIPO_DE_ESCOPO.UNIDADE,
   unidadeId: 'unidade-1',
   validaAte: null,
   versaoAtual: 1,

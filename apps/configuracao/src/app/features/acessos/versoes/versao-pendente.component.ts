@@ -11,7 +11,6 @@ import { AVISO_DE_AUTORIA } from './autoria-da-versao';
 import { ID_DO_TITULO_DA_VERSAO_PENDENTE } from './destaque-da-versao';
 import type { AcoesDoPerfil } from './estado-do-perfil';
 import { ResumoDaVersaoComponent } from './resumo-da-versao.component';
-import { etapaDaVersao } from './rotulos-da-versao';
 
 const DOCUMENTO_ENVIAVEL: readonly string[] = [
   SituacaoDoAnexo.AGUARDANDO_ENVIO,
@@ -46,12 +45,11 @@ export class VersaoPendenteComponent {
   readonly abrirDocumento = output<void>();
   readonly documentoEscolhido = output<File | null>();
   protected readonly idDoTitulo = ID_DO_TITULO_DA_VERSAO_PENDENTE;
-  protected readonly etapa = etapaDaVersao;
   protected readonly avisoDeAutoria = AVISO_DE_AUTORIA;
   protected readonly recusado = computed(
-    () => this.versao().situacaoDoDocumento === SituacaoDoAnexo.RECUSADO,
+    () => this.versao().situacaoDoDocumento.codigo === SituacaoDoAnexo.RECUSADO,
   );
   protected readonly faltaDocumento = computed(() =>
-    DOCUMENTO_ENVIAVEL.includes(this.versao().situacaoDoDocumento),
+    DOCUMENTO_ENVIAVEL.includes(this.versao().situacaoDoDocumento.codigo),
   );
 }

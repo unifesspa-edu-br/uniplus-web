@@ -1,8 +1,7 @@
 import {
-  QuemDecideOItem,
   SituacaoDaRevisaoCodigo,
-  SituacaoDoItemDaRevisao,
-  TipoDeEscopo,
+  SituacaoDoItemDaRevisaoCodigo,
+  TipoDeGovernancaCodigo,
 } from '@uniplus/shared-data/autorizacao';
 import {
   HttpHeaders,
@@ -24,8 +23,10 @@ import {
   type RevisaoDeAcessosDto,
 } from '@uniplus/shared-data/autorizacao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
+import type { CodigoComRotulo } from '@uniplus/shared-ui/components';
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
-import { ok } from '../testes';
+import { TIPO_DE_ESCOPO, ok } from '../testes';
+import { tipoDeGovernanca } from '../versoes/enums-da-api.testing';
 import { RevisaoDetalhePage } from './revisao-detalhe.page';
 
 const { autorizacao } = PERMISSAO;
@@ -35,6 +36,32 @@ export const CONSULTAR = autorizacao.revisoesConsultar;
 export const ID = '01960000-0000-7000-0000-0000000000a1';
 export const CONTA_DE_QUEM_LE = 'conta-betina';
 const EMISSOR = 'https://sso.unifesspa.edu.br/realms/unifesspa';
+
+const par = <C extends string>(codigo: C, rotulo: string): CodigoComRotulo<C> => ({
+  codigo,
+  rotulo,
+});
+
+/** Os valores de enum da revisão como a API os devolve, com o rótulo em português. */
+export const SITUACAO_DA_REVISAO = {
+  EM_ANDAMENTO: par(SituacaoDaRevisaoCodigo.EM_ANDAMENTO, 'Em andamento'),
+  CONCLUIDA: par(SituacaoDaRevisaoCodigo.CONCLUIDA, 'Concluída'),
+};
+export const SITUACAO_DO_ITEM = {
+  PENDENTE: par(SituacaoDoItemDaRevisaoCodigo.PENDENTE, 'Pendente'),
+  CONFIRMADA: par(SituacaoDoItemDaRevisaoCodigo.CONFIRMADA, 'Confirmada'),
+  REVOGADA: par(SituacaoDoItemDaRevisaoCodigo.REVOGADA, 'Revogada'),
+  CONCESSAO_ENCERRADA: par(
+    SituacaoDoItemDaRevisaoCodigo.CONCESSAO_ENCERRADA,
+    'Concessão encerrada',
+  ),
+};
+export const QUEM_DECIDE = {
+  GESTOR_DE_ACESSOS: tipoDeGovernanca(TipoDeGovernancaCodigo.GESTOR_DE_ACESSOS),
+  REPRESENTANTE_DO_CONTROLADOR: tipoDeGovernanca(
+    TipoDeGovernancaCodigo.REPRESENTANTE_DO_CONTROLADOR,
+  ),
+};
 
 export const api = { confirmar: vi.fn(), revogar: vi.fn(), abrir: vi.fn() };
 export const notificacoes = { success: vi.fn(), errorFromProblem: vi.fn() };
@@ -48,10 +75,10 @@ const ITEM_PENDENTE = {
   id: 'i1',
   concessaoId: 'c1',
   perfil: { id: 'p1', nome: 'Operador de inscrições' },
-  escopo: { tipo: TipoDeEscopo.UNIDADE, unidadeId: 'unidade-1' },
+  escopo: { tipo: TIPO_DE_ESCOPO.UNIDADE, unidadeId: 'unidade-1' },
   validaAte: null,
-  decide: QuemDecideOItem.REPRESENTANTE_DO_CONTROLADOR,
-  situacao: SituacaoDoItemDaRevisao.PENDENTE,
+  decide: QUEM_DECIDE.REPRESENTANTE_DO_CONTROLADOR,
+  situacao: SITUACAO_DO_ITEM.PENDENTE,
   decididoPor: null,
   decididoEm: null,
   ehDoLeitor: false,
@@ -73,7 +100,7 @@ export function item(parcial: Partial<ItemDaRevisaoDto> = {}): ItemDaRevisaoDto 
 /** O item já decidido: confirmado por quem lê, com a governança gravada. */
 export function itemDecidido(parcial: Partial<ItemDaRevisaoDto> = {}): ItemDaRevisaoDto {
   return item({
-    situacao: SituacaoDoItemDaRevisao.CONFIRMADA,
+    situacao: SITUACAO_DO_ITEM.CONFIRMADA,
     decididoPor: pessoa(CONTA_DE_QUEM_LE, 'Betina Neves'),
     decididoEm: '2026-11-10T13:00:00Z',
     ...parcial,
@@ -83,7 +110,7 @@ export function itemDecidido(parcial: Partial<ItemDaRevisaoDto> = {}): ItemDaRev
 const REVISAO_ABERTA = {
   id: ID,
   abertaEm: '2026-11-09T12:00:00Z',
-  situacao: SituacaoDaRevisaoCodigo.EM_ANDAMENTO,
+  situacao: SITUACAO_DA_REVISAO.EM_ANDAMENTO,
   totalDeItens: 4,
   pendentes: 3,
 } as const satisfies Partial<RevisaoDeAcessosDto>;
@@ -100,7 +127,7 @@ export function itensDaRevisao(): ItemDaRevisaoDto[] {
     item({
       id: 'i3',
       beneficiario: pessoa('conta-diogo', 'Diogo Souza'),
-      decide: QuemDecideOItem.GESTOR_DE_ACESSOS,
+      decide: QUEM_DECIDE.GESTOR_DE_ACESSOS,
     }),
     item({ id: 'i4', beneficiario: pessoa(CONTA_DE_QUEM_LE, 'Betina Neves'), ehDoLeitor: true }),
   ];

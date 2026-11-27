@@ -14,6 +14,7 @@ import {
   FERNANDA,
   type CenarioDaRevisao,
 } from '../support/api-de-revisoes';
+import { quemDecideOItem, situacaoDoItemDaRevisao } from '../support/enumerados-de-autorizacao';
 import {
   PERMISSOES_DA_BETINA_CONDUZ_REVISOES,
   PERMISSOES_DA_ISABELLA_CONSULTA_REVISOES,
@@ -70,7 +71,7 @@ test.describe('Acessos — revisão periódica', () => {
 
     await page.locator(`tr[data-revisao-id="${RESUMO_ENCERRADO.id}"] a`).click();
     await expect(page.getByText('Revisão encerrada')).toBeVisible();
-    await expect(linha(page, 'i9')).toContainText('Acesso mantido');
+    await expect(linha(page, 'i9')).toContainText('Confirmada');
     await expect(page.getByRole('button', { name: /^(Confirmar|Revogar)/ })).toHaveCount(0);
   });
 
@@ -80,7 +81,7 @@ test.describe('Acessos — revisão periódica', () => {
     await abrir(page, PERMISSOES_DA_BETINA_CONDUZ_REVISOES, DETALHE, { detalhe: [revisaoAberta] });
 
     await expect(acoes(page, 'i1')).toHaveText(['Confirmar', 'Revogar']);
-    await expect(linha(page, 'i3')).toContainText('Gestão de acessos');
+    await expect(linha(page, 'i3')).toContainText('Gestor de acessos');
     await expect(acoes(page, 'i3')).toHaveCount(0);
     await expect(acoes(page, 'i4')).toHaveCount(0);
     await expect(linha(page, 'i2')).toContainText('Governança gravada na decisão.');
@@ -110,7 +111,7 @@ test.describe('Acessos — revisão periódica', () => {
     const motivo = 'Deixou de avaliar recursos neste processo.';
     const revogado = itemDaRevisao('i9', FERNANDA, {
       ...ITEM_DECIDIDO,
-      situacao: 'REVOGADA',
+      situacao: situacaoDoItemDaRevisao('REVOGADA'),
       concessaoId: 'concessao-i9',
     });
     await mockConcessao(page, concessaoRevogada('concessao-i9', motivo));
@@ -137,7 +138,7 @@ test.describe('Acessos — revisão periódica', () => {
         revisaoAberta,
         (contaId) => ({
           ...revisaoAberta(contaId),
-          itens: [itemDaRevisao('i1', FERNANDA, { decide: 'GESTOR_DE_ACESSOS' })],
+          itens: [itemDaRevisao('i1', FERNANDA, { decide: quemDecideOItem('GESTOR_DE_ACESSOS') })],
         }),
       ],
       decisao: {
@@ -153,7 +154,7 @@ test.describe('Acessos — revisão periódica', () => {
     await acoes(page, 'i1').filter({ hasText: 'Confirmar' }).click();
 
     await expect(page.getByText('O item cabe à outra governança')).toBeVisible();
-    await expect(linha(page, 'i1')).toContainText('Gestão de acessos');
+    await expect(linha(page, 'i1')).toContainText('Gestor de acessos');
     await expect(acoes(page, 'i1')).toHaveCount(0);
     expect(chamadas.filter((c) => c.metodo === 'POST').map((c) => c.caminho)).toEqual([
       `/api/autorizacao/revisoes/${REVISAO_ID}/itens/i1/confirmacao`,
@@ -166,7 +167,12 @@ test.describe('Acessos — revisão periódica', () => {
         revisaoAberta,
         (contaId) => ({
           ...revisaoAberta(contaId),
-          itens: [itemDaRevisao('i1', FERNANDA, { ...ITEM_DECIDIDO, situacao: 'REVOGADA' })],
+          itens: [
+            itemDaRevisao('i1', FERNANDA, {
+              ...ITEM_DECIDIDO,
+              situacao: situacaoDoItemDaRevisao('REVOGADA'),
+            }),
+          ],
         }),
       ],
       decisao: {
@@ -180,7 +186,7 @@ test.describe('Acessos — revisão periódica', () => {
     await page.getByRole('dialog').getByRole('button', { name: 'Revogar acesso' }).click();
 
     await expect(page.getByText('Decisão concorrente')).toBeVisible();
-    await expect(linha(page, 'i1')).toContainText('Acesso revogado');
+    await expect(linha(page, 'i1')).toContainText('Revogada');
   });
 
   test('quem conduz abre uma revisão e segue para o detalhe dela', async ({ page }) => {
@@ -280,7 +286,7 @@ test('quem decide é nomeado pela função, sem atribuir decisão ao Encarregado
     detalhe: [revisaoAberta],
   });
 
-  await expect(linha(page, 'i3')).toContainText('Gestão de acessos');
+  await expect(linha(page, 'i3')).toContainText('Gestor de acessos');
   await expect(linha(page, 'i1')).toContainText('Representante do controlador');
   await expect(page.locator('main')).not.toContainText('Encarregado');
 });

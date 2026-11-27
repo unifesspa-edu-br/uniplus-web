@@ -47,7 +47,7 @@
                 }
               </td>
               <td data-label="Permissão">{{ item.codigo }}</td>
-              <td data-label="Divergência">{{ tipo(item.tipo) }}</td>
+              <td data-label="Divergência">{{ item.tipo.rotulo }}</td>
               <td data-label="De">{{ valor(item.tipo, item.de) }}</td>
               <td data-label="Para">{{ valor(item.tipo, item.para) }}</td>
               <td data-label="Encontrada em">{{ item.instante | dateBr: 'datetime' }}</td>

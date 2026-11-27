@@ -1,7 +1,7 @@
 import {
+  CausaDoEncerramentoCodigo,
   SituacaoDaProvidenciaCodigo,
-  TipoDaProvidencia,
-  TipoDeEscopo,
+  TipoDaProvidenciaCodigo,
 } from '@uniplus/shared-data/autorizacao';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -15,14 +15,36 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { AUTORIZACAO_BASE_PATH, type ProvidenciaDto } from '@uniplus/shared-data/autorizacao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
+import type { CodigoComRotulo } from '@uniplus/shared-ui/components';
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
-import { ok } from '../testes';
+import { TIPO_DE_ESCOPO, ok } from '../testes';
 
 export const ADMINISTRAR = PERMISSAO.autorizacao.concessoesAdministrar;
 export const SOLICITAR = PERMISSAO.autorizacao.providenciasSolicitar;
 export const ROTA = 'http://api.test/api/autorizacao/providencias';
 export const ID = '01960000-0000-7000-0000-0000000000e1';
 const EMISSOR = 'https://sso.unifesspa.edu.br/realms/unifesspa';
+
+const par = <C extends string>(codigo: C, rotulo: string): CodigoComRotulo<C> => ({
+  codigo,
+  rotulo,
+});
+
+/** Os valores de enum da providência como a API os devolve, com o rótulo em português. */
+export const SITUACAO_DA_PROVIDENCIA = {
+  ABERTA: par(SituacaoDaProvidenciaCodigo.ABERTA, 'Aberta'),
+  RESPONDIDA: par(SituacaoDaProvidenciaCodigo.RESPONDIDA, 'Respondida'),
+  ATENDIDA: par(SituacaoDaProvidenciaCodigo.ATENDIDA, 'Atendida'),
+  PREJUDICADA: par(SituacaoDaProvidenciaCodigo.PREJUDICADA, 'Prejudicada'),
+};
+export const TIPO_DA_PROVIDENCIA = {
+  RETIRADA: par(TipoDaProvidenciaCodigo.RETIRADA, 'Retirada do acesso'),
+  REVISAO: par(TipoDaProvidenciaCodigo.REVISAO, 'Revisão do acesso'),
+};
+export const CAUSA_DO_ENCERRAMENTO = {
+  REVOGADA: par(CausaDoEncerramentoCodigo.REVOGADA, 'Revogada'),
+  VENCIDA: par(CausaDoEncerramentoCodigo.VENCIDA, 'Vencida'),
+};
 
 export const notificacoes = { success: vi.fn(), errorFromProblem: vi.fn(), info: vi.fn() };
 
@@ -35,16 +57,16 @@ const CONCESSAO_DO_LEANDRO: ProvidenciaDto['concessao'] = {
   id: 'c1',
   beneficiario: pessoa('conta-leandro', 'Leandro Viana'),
   perfil: { id: 'p1', nome: 'Banca de documentos' },
-  escopo: { tipo: TipoDeEscopo.UNIDADE, unidadeId: 'unidade-1' },
+  escopo: { tipo: TIPO_DE_ESCOPO.UNIDADE, unidadeId: 'unidade-1' },
   validaAte: null,
   ativa: true,
 };
 
 const ABERTA: Omit<ProvidenciaDto, 'solicitadaPor' | 'concessao'> = {
   id: ID,
-  tipo: TipoDaProvidencia.RETIRADA,
+  tipo: TIPO_DA_PROVIDENCIA.RETIRADA,
   fundamento: 'Deixou a banca e mantém acesso a documentos sensíveis.',
-  situacao: SituacaoDaProvidenciaCodigo.ABERTA,
+  situacao: SITUACAO_DA_PROVIDENCIA.ABERTA,
   abertaEm: '2026-11-10T12:00:00Z',
   encerramentoDaConcessao: null,
   desfecho: null,

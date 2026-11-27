@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import type { EtapaDaVersaoCodigo, SituacaoDoAnexoCodigo } from '@uniplus/shared-data/autorizacao';
 
 import {
   GESTOR_DE_ACESSOS,
@@ -18,8 +19,6 @@ export const AUTOR_DAS_VERSOES = SEGUNDO_GESTOR_DE_ACESSOS;
 const ESPERA_DA_VERIFICACAO_MS = 60_000;
 const RAIZ = '/api/autorizacao/perfis';
 type CategoriaDaRemocao = 'INCIDENTE' | 'ERRO_DE_COMPOSICAO' | 'MUDANCA_DE_FUNCAO';
-type EtapaDaVersao = 'GESTAO_DE_ACESSOS' | 'PROTECAO_DE_DADOS';
-type SituacaoDoAnexo = 'AGUARDANDO_ENVIO' | 'EM_VERIFICACAO' | 'VERIFICADO' | 'RECUSADO';
 
 export interface EnvioDaVersao {
   readonly perfilId: string;
@@ -30,8 +29,8 @@ export interface EnvioDaVersao {
 
 export interface VersaoPendenteLida {
   readonly versaoId: string;
-  readonly situacaoDoDocumento: ValorDoContrato<SituacaoDoAnexo>;
-  readonly etapaAtual: ValorDoContrato<EtapaDaVersao>;
+  readonly situacaoDoDocumento: ValorDoContrato<`${SituacaoDoAnexoCodigo}`>;
+  readonly etapaAtual: ValorDoContrato<`${EtapaDaVersaoCodigo}`>;
   readonly exigeProtecaoDeDados: boolean;
   readonly permissoes: readonly { readonly codigo: string }[];
 }
@@ -144,7 +143,7 @@ export async function aguardarDocumentoVerificado(perfilId: string): Promise<Ver
 export async function decidirVersao(
   quem: string,
   versao: Pick<EnvioDaVersao, 'perfilId' | 'versaoId'>,
-  etapa: EtapaDaVersao,
+  etapa: `${EtapaDaVersaoCodigo}`,
 ): Promise<RespostaDaApi> {
   if (etapa === 'PROTECAO_DE_DADOS') await garantirRepresentantes();
   return chamarApi(
@@ -166,7 +165,7 @@ export async function aprovarVersaoPendente(
   await aprovarNaEtapa(REPRESENTANTE_DO_CONTROLADOR, identificada, 'PROTECAO_DE_DADOS');
 }
 
-const NOME_DA_ETAPA: Record<EtapaDaVersao, string> = {
+const NOME_DA_ETAPA: Record<`${EtapaDaVersaoCodigo}`, string> = {
   GESTAO_DE_ACESSOS: 'gestão de acessos',
   PROTECAO_DE_DADOS: 'proteção de dados',
 };
