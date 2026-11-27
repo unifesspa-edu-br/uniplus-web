@@ -71,6 +71,7 @@ const REGRA_DE_ARREDONDAMENTO_SEM_ESCOLHA = {
   providers: [provePassoDoWizard(FormulaPassoComponent)],
 })
 export class FormulaPassoComponent {
+  readonly gravaAClassificacao = true as const;
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacao);
   readonly invalidFields = signal<ReadonlySet<string>>(new Set());
