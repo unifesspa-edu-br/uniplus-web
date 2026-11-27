@@ -33,6 +33,9 @@ async function credenciaisNoArmazenamento(page: Page): Promise<string[]> {
 
 test.describe('Sessão perto de vencer', () => {
   test.beforeEach(async ({ page }) => {
+    // Com a API real no ar, as demais chamadas da tela seriam recusadas e levariam a "Acesso negado".
+    // A rota registrada por último vale primeiro: a das permissões vem depois, para prevalecer.
+    await page.route('**/api/**', (rota) => rota.abort());
     await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
     await page.clock.install();
     const acessoRecebido = page.waitForResponse('**/protocol/openid-connect/token');
