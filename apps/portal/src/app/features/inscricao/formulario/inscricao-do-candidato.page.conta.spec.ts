@@ -73,7 +73,7 @@ describe('InscricaoDoCandidatoPage', () => {
   );
 
   it('reabre a inscrição enviada com o nome gravado do município e reenvia só o código', async () => {
-    cenario.servico.formulario = COM_MUNICIPIO;
+    cenario.servico.formularios = [COM_MUNICIPIO];
     cenario.servico.inscricao = inscricao({
       ...RESPONDIDA,
       situacao: { codigo: SituacaoInscricaoCodigo.ENVIADA, rotulo: 'Situação de teste' },
@@ -93,7 +93,7 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('dá nome ao município do rascunho lendo o código uma só vez', async () => {
     cenario.leituraDeMunicipio.mockReturnValue(ok(SALVADOR));
-    cenario.servico.formulario = COM_MUNICIPIO;
+    cenario.servico.formularios = [COM_MUNICIPIO];
     cenario.servico.inscricao = inscricao({ respostas: { NATURALIDADE_MUNICIPIO: '2927408' } });
     const tela = await cenario.abrir();
 
@@ -104,7 +104,7 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('com o Geo fora do ar, o rascunho diz que o nome não foi carregado e mantém o código', async () => {
     cenario.leituraDeMunicipio.mockReturnValue(of(NAO_ENCONTRADO));
-    cenario.servico.formulario = COM_MUNICIPIO;
+    cenario.servico.formularios = [COM_MUNICIPIO];
     cenario.servico.inscricao = inscricao({ respostas: { NATURALIDADE_MUNICIPIO: '2927408' } });
     const tela = await cenario.abrir();
 
@@ -120,7 +120,7 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('o nome social da conta entra na resposta e não se edita', async () => {
     cenario.conta.update((c) => ({ ...c, nomeSocial: 'Ariel Drumond' }));
-    cenario.servico.formulario = COM_NOME_SOCIAL;
+    cenario.servico.formularios = [COM_NOME_SOCIAL];
     cenario.servico.inscricao = inscricao({ respostas: { DESEJA_NOME_SOCIAL: true } });
     const tela = await cenario.abrir();
 
@@ -132,7 +132,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('a conta sem nome social deixa o campo vazio e travado, sem enviar valor', async () => {
-    cenario.servico.formulario = COM_NOME_SOCIAL;
+    cenario.servico.formularios = [COM_NOME_SOCIAL];
     cenario.servico.inscricao = inscricao({ respostas: { DESEJA_NOME_SOCIAL: true } });
     const tela = await cenario.abrir();
 
@@ -145,7 +145,7 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('na inscrição retomada, o nome social da conta substitui o gravado no rascunho', async () => {
     cenario.conta.update((c) => ({ ...c, nomeSocial: 'Ariel Drumond' }));
-    cenario.servico.formulario = COM_NOME_SOCIAL;
+    cenario.servico.formularios = [COM_NOME_SOCIAL];
     cenario.servico.inscricao = inscricao({
       respostas: { DESEJA_NOME_SOCIAL: true, NOME_SOCIAL: 'Outro Nome Gravado' },
     });
@@ -158,7 +158,7 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('a conta com nome social abre "deseja usar nome social" como sim quando nada foi gravado', async () => {
     cenario.conta.update((c) => ({ ...c, nomeSocial: 'Ariel Drumond' }));
-    cenario.servico.formulario = COM_NOME_SOCIAL;
+    cenario.servico.formularios = [COM_NOME_SOCIAL];
     const tela = await cenario.abrir();
 
     await cenario.clicar(botao(tela, 'Salvar rascunho'));
@@ -167,7 +167,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('a conta sem nome social não marca "deseja usar nome social"', async () => {
-    cenario.servico.formulario = COM_NOME_SOCIAL;
+    cenario.servico.formularios = [COM_NOME_SOCIAL];
     const tela = await cenario.abrir();
 
     await cenario.clicar(botao(tela, 'Salvar rascunho'));
@@ -176,7 +176,7 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('a desistência do nome social gravada prevalece sobre o da conta, e o nome da conta não vai', async () => {
     cenario.conta.update((c) => ({ ...c, nomeSocial: 'Ariel Drumond' }));
-    cenario.servico.formulario = COM_NOME_SOCIAL;
+    cenario.servico.formularios = [COM_NOME_SOCIAL];
     cenario.servico.inscricao = inscricao({
       respostas: { DESEJA_NOME_SOCIAL: false },
     });
@@ -191,19 +191,24 @@ describe('InscricaoDoCandidatoPage', () => {
     const mensagem =
       'Você marcou que deseja usar nome social, mas sua conta não tem nome social cadastrado. Cadastre o nome social em Meu perfil ou desmarque a opção.';
     const { coleta } = COM_NOME_SOCIAL.formulario;
-    cenario.servico.formulario = comFormulario(COM_NOME_SOCIAL, {
-      coleta: {
-        ...coleta,
-        itens: coleta.itens.map((c) =>
-          c.fatoCodigo === 'NOME_SOCIAL'
-            ? {
-                ...c,
-                apresentacao: { ...c.apresentacao, ajuda: 'Cadastre o nome social em Meu perfil.' },
-              }
-            : c,
-        ),
-      },
-    });
+    cenario.servico.formularios = [
+      comFormulario(COM_NOME_SOCIAL, {
+        coleta: {
+          ...coleta,
+          itens: coleta.itens.map((c) =>
+            c.fatoCodigo === 'NOME_SOCIAL'
+              ? {
+                  ...c,
+                  apresentacao: {
+                    ...c.apresentacao,
+                    ajuda: 'Cadastre o nome social em Meu perfil.',
+                  },
+                }
+              : c,
+          ),
+        },
+      }),
+    ];
     cenario.servico.recusaDoEnvio = apiFailure(
       {
         type: 'about:blank',

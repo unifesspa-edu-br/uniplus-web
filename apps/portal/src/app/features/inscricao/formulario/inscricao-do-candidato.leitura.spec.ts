@@ -120,7 +120,7 @@ describe('InscricaoDoCandidatoPage: nova tentativa da leitura', () => {
   }
 
   const http = (): HttpTestingController => TestBed.inject(HttpTestingController);
-  const formulario = () => http().expectOne((r) => r.url.endsWith('/inscricao/formulario'));
+  const formulario = () => http().expectOne((r) => r.url.endsWith('/inscricao/formularios'));
   const recusaDoFormulario = (): void =>
     formulario().flush(
       JSON.stringify({ title: 'Erro', status: 500, code: 'uniplus.infra.erro_interno' }),
@@ -136,7 +136,7 @@ describe('InscricaoDoCandidatoPage: nova tentativa da leitura', () => {
     fixture = TestBed.createComponent(InscricaoDoCandidatoPage);
     fixture.componentRef.setInput('processoId', PROCESSO);
     await atualizar();
-    formulario().flush(FORMULARIO_DE_INSCRICAO_MOCK);
+    formulario().flush([FORMULARIO_DE_INSCRICAO_MOCK]);
     await atualizar();
   }
 
@@ -187,8 +187,8 @@ describe('InscricaoDoCandidatoPage: nova tentativa da leitura', () => {
     tentar().click();
     await atualizar();
     TestBed.inject(HttpTestingController)
-      .expectOne((r) => r.url.endsWith('/inscricao/formulario'))
-      .flush(FORMULARIO_DE_INSCRICAO_MOCK);
+      .expectOne((r) => r.url.endsWith('/inscricao/formularios'))
+      .flush([FORMULARIO_DE_INSCRICAO_MOCK]);
     await atualizar();
     await macrotarefa();
     await atualizar();
@@ -214,7 +214,7 @@ describe('InscricaoDoCandidatoPage: nova tentativa da leitura', () => {
     await atualizar();
     expect(iniciar).toHaveBeenCalledTimes(2);
     expect(situacao()).toBe('Tentando novamente…');
-    formulario().flush(FORMULARIO_DE_INSCRICAO_MOCK);
+    formulario().flush([FORMULARIO_DE_INSCRICAO_MOCK]);
     await atualizar();
     await macrotarefa();
     await atualizar();

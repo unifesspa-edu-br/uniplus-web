@@ -13,10 +13,7 @@ import {
   type InscricaoRequest,
   SituacaoInscricaoCodigo,
 } from '@uniplus/shared-data/selecao';
-import type {
-  ErroDoServidor,
-  FormularioDoCandidatoComponent,
-} from '@uniplus/shared-inscricao/formulario';
+import type { ErroDoServidor, SimulacaoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 
 import { AnuncioDaInscricao } from './anuncio-da-inscricao';
 import { AvaliacaoDaInscricaoEstado } from './avaliacao-da-inscricao.estado';
@@ -32,11 +29,15 @@ import { InscricaoDoCandidatoService } from './inscricao-do-candidato.service';
 import { LeituraDaInscricao } from './leitura-da-inscricao';
 import { CONFLITOS, type RecusaDaSegundaOpcao, separarRecusas } from './recusas-da-inscricao';
 
-/** O que a gravação lê do formulário no clique: a emissão das mudanças só chega no ciclo seguinte. */
-export type FormularioParaGravar = Pick<
-  FormularioDoCandidatoComponent,
-  'simulacao' | 'termosAceitos' | 'conferencia'
->;
+/**
+ * O que a gravação lê dos formulários no clique: a emissão das mudanças só chega no ciclo seguinte. A
+ * simulação junta as respostas de todos eles; `concluirTodas` devolve quantas pendências há.
+ */
+export interface FormularioParaGravar {
+  simulacao(): SimulacaoDoFormulario;
+  termosAceitosPorFormulario(): ReadonlyMap<string, readonly string[]>;
+  concluirTodas(): number;
+}
 
 export type Operacao = 'salvando' | 'enviando';
 
@@ -125,7 +126,7 @@ export class GravacaoDaInscricao {
   enviar(formulario: FormularioParaGravar): void {
     if (this.bloqueada()) return;
     // Só o envio de um formulário válido conclui as seções.
-    if (formulario.conferencia.concluirTodas() > 0) return;
+    if (formulario.concluirTodas() > 0) return;
     this.gravar(
       formulario,
       'enviando',
@@ -203,7 +204,8 @@ export class GravacaoDaInscricao {
     formulario: FormularioParaGravar,
   ): InscricaoRequest {
     const corpo = corpoDaAvaliacao(inscricao, formulario.simulacao(), this.escolha.escolhidas());
-    return corpoDaGravacao(corpo, formulario.termosAceitos(), this.leitura.formulario());
+    const formularios = this.leitura.formularios().map((f) => f.formulario);
+    return corpoDaGravacao(corpo, formulario.termosAceitosPorFormulario(), formularios);
   }
 
   /** Quem conclui o sucesso libera o formulário: o envio espera a releitura do ETag. */

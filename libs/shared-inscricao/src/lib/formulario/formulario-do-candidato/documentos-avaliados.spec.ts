@@ -14,7 +14,7 @@ import {
 
 describe('documentosDoFormulario', () => {
   /** O processo pode ter mais de uma fase de coleta: o código do formulário sozinho não diz a fase. */
-  it('traz os documentos e as pendências da fase do formulário, e do formulário dele', () => {
+  it('traz os documentos e as pendências da fase do formulário, e do código dele', () => {
     const avaliados: DocumentosAvaliados = {
       fases: [
         {

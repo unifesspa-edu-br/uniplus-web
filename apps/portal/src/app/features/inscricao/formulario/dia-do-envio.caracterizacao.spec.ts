@@ -15,9 +15,9 @@ const ANTES_DA_MEIA_NOITE = new Date('2026-12-12T02:50:00Z'); // 23h50 de 11/12 
 const DEPOIS_DA_MEIA_NOITE = new Date('2026-12-12T03:00:01Z'); // 00h00 de 12/12 em Belém
 
 describe('DiaDoEnvio: o dia contra o qual a tela confere os limites de data', () => {
-  const formulario = signal<FormularioApresentadoDoProcessoDto | null>(
-    FORMULARIO_DE_INSCRICAO_MOCK,
-  );
+  const formularios = signal<readonly { formulario: FormularioApresentadoDoProcessoDto }[]>([
+    { formulario: FORMULARIO_DE_INSCRICAO_MOCK },
+  ]);
   const carregada = signal<object | null>(null);
   let agora: Date;
   let dia: DiaDoEnvio;
@@ -27,7 +27,7 @@ describe('DiaDoEnvio: o dia contra o qual a tela confere os limites de data', ()
       providers: [
         DiaDoEnvio,
         { provide: RELOGIO, useValue: () => agora },
-        { provide: LeituraDaInscricao, useValue: { formulario, carregada } },
+        { provide: LeituraDaInscricao, useValue: { formularios, carregada } },
       ],
     });
     const criado = TestBed.inject(DiaDoEnvio);
@@ -38,7 +38,7 @@ describe('DiaDoEnvio: o dia contra o qual a tela confere os limites de data', ()
   beforeEach(() => {
     ligarRelogioControlado();
     agora = ANTES_DA_MEIA_NOITE;
-    formulario.set(FORMULARIO_DE_INSCRICAO_MOCK);
+    formularios.set([{ formulario: FORMULARIO_DE_INSCRICAO_MOCK }]);
     carregada.set(null);
     dia = criar();
   });
@@ -55,7 +55,7 @@ describe('DiaDoEnvio: o dia contra o qual a tela confere os limites de data', ()
   });
 
   it('sem formulário carregado, não há envio', () => {
-    formulario.set(null);
+    formularios.set([]);
 
     expect(dia.envio()).toBeNull();
   });
@@ -109,7 +109,7 @@ describe('DiaDoEnvio: o dia contra o qual a tela confere os limites de data', ()
   });
 
   it('sem fuso publicado, a volta à aba não agenda outra virada do dia', () => {
-    formulario.set(null);
+    formularios.set([]);
     const agendadas = vi.getTimerCount();
 
     document.dispatchEvent(new Event('visibilitychange'));

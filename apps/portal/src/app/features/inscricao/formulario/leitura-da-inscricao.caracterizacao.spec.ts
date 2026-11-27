@@ -80,14 +80,14 @@ describe('LeituraDaInscricao: a carga que a tela adota', () => {
 
   async function carregarCom(
     iniciada: InscricaoDto,
-    formulario: FormularioApresentadoDoProcessoDto | null = COM_NATURALIDADE,
+    formularios: readonly FormularioApresentadoDoProcessoDto[] | null = [COM_NATURALIDADE],
   ): Promise<void> {
     iniciar.mockReturnValue(of(apiOk(iniciada, 200, new HttpHeaders())));
     leitura.carregar(PROCESSO);
     TestBed.tick();
     TestBed.inject(HttpTestingController)
-      .expectOne((r) => r.url.endsWith('/inscricao/formulario'))
-      .flush(formulario);
+      .expectOne((r) => r.url.endsWith('/inscricao/formularios'))
+      .flush(formularios);
     await Promise.resolve();
     TestBed.tick();
   }
@@ -99,7 +99,7 @@ describe('LeituraDaInscricao: a carga que a tela adota', () => {
 
     const carga = leitura.carregada();
     expect(carga?.inscricao).toEqual(iniciada);
-    expect(carga?.formulario).toEqual(COM_NATURALIDADE);
+    expect(carga?.formularios.map((f) => f.formulario)).toEqual([COM_NATURALIDADE]);
     expect(carga?.inicial.respostas).toEqual({ NOME: 'Fernanda' });
     expect(leitura.inscricao()).toEqual(iniciada);
     expect(leitura.estado()).toBe('pronto');
@@ -119,7 +119,7 @@ describe('LeituraDaInscricao: a carga que a tela adota', () => {
     const carga = leitura.carregada();
     expect(carga?.ofertas.map((o) => o.id)).toEqual(['oferta-1', 'oferta-2']);
     expect(carga?.numeroDeOpcoes).toBe(2);
-    expect(carga?.termosAceitos).toEqual(['VERACIDADE']);
+    expect(carga?.formularios[0].termosAceitos).toEqual(['VERACIDADE']);
   });
 
   it('o número de opções de curso nunca passa de duas nem cai abaixo de uma', async () => {
@@ -132,7 +132,7 @@ describe('LeituraDaInscricao: a carga que a tela adota', () => {
     const comNome = { codigo: '1504208', rotulo: 'Marabá' };
     await carregarCom(inscricao({ respostas: { NATURALIDADE: comNome } }));
 
-    expect(leitura.carregada()?.municipiosGravados).toEqual({
+    expect(leitura.carregada()?.formularios[0].municipiosGravados).toEqual({
       NATURALIDADE: { codigo: '1504208', rotulo: 'Marabá' },
     });
     expect(carregarNomes).toHaveBeenCalledWith([], lerMunicipio);
@@ -141,7 +141,7 @@ describe('LeituraDaInscricao: a carga que a tela adota', () => {
   it('o código de município sem nome gravado é pedido a quem dá nome aos municípios', async () => {
     await carregarCom(inscricao({ respostas: { NATURALIDADE: '1504208' } }));
 
-    expect(leitura.carregada()?.municipiosGravados).toEqual({});
+    expect(leitura.carregada()?.formularios[0].municipiosGravados).toEqual({});
     expect(carregarNomes).toHaveBeenCalledWith(['1504208'], lerMunicipio);
   });
 
@@ -213,6 +213,13 @@ describe('LeituraDaInscricao: a carga que a tela adota', () => {
 
     it('sai do carregamento quando o formulário chega sem corpo', async () => {
       await carregarCom(inscricao(), null);
+
+      expect(leitura.estado()).toBe('erro');
+      expect(leitura.erroAoCarregar()).toContain('Não foi possível abrir a inscrição');
+    });
+
+    it('uma lista sem formulário vira o erro da leitura, não um carregamento sem fim', async () => {
+      await carregarCom(inscricao(), []);
 
       expect(leitura.estado()).toBe('erro');
       expect(leitura.erroAoCarregar()).toContain('Não foi possível abrir a inscrição');

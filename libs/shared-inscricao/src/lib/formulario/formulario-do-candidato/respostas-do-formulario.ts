@@ -1,7 +1,11 @@
 import { computed, linkedSignal, type Signal } from '@angular/core';
 
 import { aCadaPartida } from './a-cada-partida';
-import type { ErroDoServidor, RespostaFixa } from './formulario-do-candidato.model';
+import type {
+  ErroDoServidor,
+  RespostaFixa,
+  TermoApresentado,
+} from './formulario-do-candidato.model';
 import { estaVazia } from './interpretador/logica';
 import type {
   OcorrenciaSimulada,
@@ -115,12 +119,13 @@ export class RespostasDoFormulario {
     });
   }
 
-  alternarAceite(codigo: string, aceito: boolean): void {
-    this.descartarErros(codigo);
+  /** O aceite é pelo código do termo; a recusa dele, que o servidor cita pelo código nas regras, se desfaz. */
+  alternarAceite(termo: TermoApresentado, aceito: boolean): void {
+    this.descartarErros(termo.codigoNasRegras);
     this.aceitos.update((atual) => {
       const novos = new Set(atual);
-      if (aceito) novos.add(codigo);
-      else novos.delete(codigo);
+      if (aceito) novos.add(termo.codigo);
+      else novos.delete(termo.codigo);
       return novos;
     });
   }

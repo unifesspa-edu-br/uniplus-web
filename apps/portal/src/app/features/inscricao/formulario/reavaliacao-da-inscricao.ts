@@ -9,10 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import type {
-  FormularioDoCandidatoComponent,
-  SimulacaoDoFormulario,
-} from '@uniplus/shared-inscricao/formulario';
+import type { SimulacaoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 
 import { AcompanhamentoDaVerificacao } from './acompanhamento-da-verificacao';
 import { AvaliacaoDaInscricaoEstado } from './avaliacao-da-inscricao.estado';
@@ -21,11 +18,11 @@ import { EscolhaDoCurso } from './escolha-do-curso';
 import { GravacaoDaInscricao } from './gravacao-da-inscricao';
 import { LeituraDaInscricao } from './leitura-da-inscricao';
 
-/** O que a reavaliação lê do formulário: as respostas da tela e se algum arquivo espera a verificação. */
-export type FormularioParaReavaliar = Pick<
-  FormularioDoCandidatoComponent,
-  'simulacao' | 'haArquivoEmVerificacao'
->;
+/** O que a reavaliação lê dos formulários: as respostas da tela, juntas, e se algum arquivo espera a verificação. */
+export interface FormularioParaReavaliar {
+  simulacao(): SimulacaoDoFormulario;
+  haArquivoEmVerificacao(): boolean;
+}
 
 /**
  * Quando a avaliação da tela precisa ser pedida de novo sem gravar: as respostas ou o curso mudaram, um

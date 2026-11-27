@@ -61,7 +61,7 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('o limite contado do envio anda um dia quando a meia-noite do fuso do envio passa', async () => {
     cenario.agora = new Date('2026-12-12T02:50:00Z'); // 23h50 de 11/12 em Belém
-    cenario.servico.formulario = comNascimentoAteOEnvio();
+    cenario.servico.formularios = [comNascimentoAteOEnvio()];
     const tela = await cenario.abrir();
     expect(campoDe(tela, 'DATA_NASCIMENTO').getAttribute('max')).toBe('2026-12-11');
 
@@ -74,7 +74,7 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('a aba que volta ao primeiro plano confere o dia, mesmo com o timer atrasado', async () => {
     cenario.agora = new Date('2026-12-12T02:50:00Z');
-    cenario.servico.formulario = comNascimentoAteOEnvio();
+    cenario.servico.formularios = [comNascimentoAteOEnvio()];
     const tela = await cenario.abrir();
 
     cenario.agora = new Date('2026-12-12T09:00:00Z');

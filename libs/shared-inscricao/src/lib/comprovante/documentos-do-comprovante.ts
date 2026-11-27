@@ -16,7 +16,7 @@ export interface DocumentoExibido {
   readonly integrante: string | null;
   readonly obrigatoriedade: 'Obrigatório' | 'Facultativo';
   readonly situacao: string;
-  readonly consequencia: string | null;
+  readonly consequenciaDoDescumprimento: string | null;
   readonly arquivos: readonly ArquivoExibido[];
 }
 
@@ -41,7 +41,7 @@ function documentoExibido(documento: DocumentoDoComprovanteDto): DocumentoExibid
     integrante: documento.integrante,
     obrigatoriedade: documento.obrigatorio ? 'Obrigatório' : 'Facultativo',
     situacao: documento.situacao,
-    consequencia: documento.consequenciaDoDescumprimento,
+    consequenciaDoDescumprimento: documento.consequenciaDoDescumprimento,
     arquivos: documento.arquivos.map(arquivoExibido),
   };
 }

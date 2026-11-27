@@ -57,7 +57,7 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(tela.querySelector('#inscricao-oferta')?.getAttribute('aria-required')).toBe('true');
   });
 
-  const recusaDaOferta = (codigo: string) =>
+  const recusaDaOferta = (codigo: string, mensagem: string) =>
     apiFailure(
       {
         type: 'about:blank',
@@ -65,7 +65,7 @@ describe('InscricaoDoCandidatoPage', () => {
         status: 422,
         code: codigo,
         traceId: '',
-        errors: [{ field: 'ofertaCursoId', code: codigo, message: '' }],
+        errors: [{ field: 'ofertaCursoId', code: codigo, message: mensagem }],
       },
       422,
       new HttpHeaders(),
@@ -75,6 +75,7 @@ describe('InscricaoDoCandidatoPage', () => {
     cenario.servico.ofertas = [MEDICINA, DIREITO];
     cenario.servico.recusaDoEnvio = recusaDaOferta(
       'uniplus.selecao.inscricao.oferta_fora_do_processo',
+      'Este curso não é oferecido neste processo.',
     );
     cenario.servico.inscricao = inscricao(RESPONDIDA);
     const tela = await cenario.abrir();
@@ -118,11 +119,15 @@ describe('InscricaoDoCandidatoPage', () => {
         code: 'uniplus.selecao.inscricao.oferta_fora_do_processo',
         traceId: '',
         errors: [
-          { field: 'NOME', code: 'uniplus.selecao.inscricao.resposta_invalida', message: '' },
+          {
+            field: 'NOME',
+            code: 'uniplus.selecao.inscricao.resposta_invalida',
+            message: 'A resposta não atende a uma regra do campo.',
+          },
           {
             field: 'ofertaCursoId',
             code: 'uniplus.selecao.inscricao.oferta_fora_do_processo',
-            message: '',
+            message: 'Este curso não é oferecido neste processo.',
           },
         ],
       },

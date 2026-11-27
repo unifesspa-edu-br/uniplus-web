@@ -48,6 +48,7 @@ export class NavegacaoDosPassos {
     [...this.fontes.passosPrefixados(), ...this.fontes.passos()].map((p) => p.chave),
   );
   readonly total = computed(() => this.chaves().length);
+  readonly naUltima = computed(() => this.indice() >= this.total() - 1);
   /** O índice entre todos os passos — os prefixados primeiro, depois as seções. */
   readonly indice = computed(() => {
     const { chave, indice } = this.escolhida();
