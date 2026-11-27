@@ -68,7 +68,7 @@
           "Profile"
         ],
         "summary": "Retorna o perfil do usu\u00E1rio autenticado",
-        "description": "Retorna atributos de identidade e institucionais (CPF, NomeSocial) extra\u00EDdos do access token. Requer autentica\u00E7\u00E3o.",
+        "description": "Retorna identificador, nome, e-mail e pap\u00E9is do usu\u00E1rio, extra\u00EDdos do access token. Requer autentica\u00E7\u00E3o.",
         "operationId": "GetAuthenticatedUserProfile",
         "responses": {
           "200": {
@@ -77,96 +77,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserProfileResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "Bearer": []
-          }
-        ]
-      }
-    },
-    "/api/_smoke/cache/{key}": {
-      "get": {
-        "tags": [
-          "_smoke"
-        ],
-        "summary": "Smoke E2E \u2014 Cache probe",
-        "description": "Faz SET/GET de uma chave tempor\u00E1ria no Redis com TTL 5min para validar conectividade. Restrito a usu\u00E1rios com role admin.",
-        "operationId": "smokeCacheProbe",
-        "parameters": [
-          {
-            "name": "key",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "Bearer": []
-          }
-        ]
-      }
-    },
-    "/api/_smoke/messaging/publish": {
-      "post": {
-        "tags": [
-          "_smoke"
-        ],
-        "summary": "Smoke E2E \u2014 Messaging publish",
-        "description": "Publica um SmokePingMessage via Wolverine outbox para validar persist\u00EAncia \u002B transport (PG queue dur\u00E1vel). O handler em Infrastructure.Core registra log do round-trip. Restrito a usu\u00E1rios com role admin.",
-        "operationId": "smokeMessagingPublish",
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -2770,8 +2680,6 @@
           "userId",
           "name",
           "email",
-          "cpf",
-          "nomeSocial",
           "roles",
           "timestamp"
         ],
@@ -2790,20 +2698,6 @@
             ]
           },
           "email": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "cpf": {
-            "pattern": "^\\d{11}$",
-            "type": [
-              "null",
-              "string"
-            ],
-            "description": "CPF (apenas d\u00EDgitos, sem formata\u00E7\u00E3o). PII \u2014 sempre mascarar em logs (\u0027***.999.999-**\u0027, ADR-0011)."
-          },
-          "nomeSocial": {
             "type": [
               "null",
               "string"
@@ -2837,9 +2731,6 @@
     },
     {
       "name": "Profile"
-    },
-    {
-      "name": "_smoke"
     },
     {
       "name": "Cep"
