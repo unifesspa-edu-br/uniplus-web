@@ -1,5 +1,9 @@
 import { describe, expect, it, afterEach } from 'vitest';
-import { resolveRuntimeConfigPath, resolveGeoBasePath, toAuthConfig } from './runtime-config.provider';
+import {
+  resolveRuntimeConfigPath,
+  resolveGeoBasePath,
+  toAuthConfig,
+} from './runtime-config.provider';
 import type { AppConfigService } from './app-config.service';
 import type { AppConfig } from './app-config.model';
 
@@ -23,7 +27,9 @@ describe('resolveRuntimeConfigPath (Story #446/#452)', () => {
     document.head.appendChild(base);
 
     expect(document.baseURI).toBe('http://localhost:3000/portal/');
-    expect(resolveRuntimeConfigPath()).toBe('http://localhost:3000/portal/assets/runtime-config.json');
+    expect(resolveRuntimeConfigPath()).toBe(
+      'http://localhost:3000/portal/assets/runtime-config.json',
+    );
   });
 });
 
@@ -52,7 +58,11 @@ describe('toAuthConfig — allowlist do geoApiUrl', () => {
   function cfgCom(overrides: Partial<AppConfig>): AppConfig {
     return {
       apiUrl: 'https://uniplus-api-hml.unifesspa.edu.br',
-      oidc: { issuerUrl: 'https://oidc.example/auth/realms/unifesspa', clientId: 'uniplus-portal' },
+      oidc: {
+        issuerUrl: 'https://oidc.example/auth/realms/unifesspa',
+        clientId: 'uniplus-portal',
+        antecedenciaDaRenovacaoEmSegundos: 60,
+      },
       ...overrides,
     };
   }

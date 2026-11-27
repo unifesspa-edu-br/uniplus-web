@@ -11,7 +11,10 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { firstValueFrom, of } from 'rxjs';
 import { tokenInterceptor } from './token.interceptor';
 import { AuthService } from '../services/auth.service';
-import { AUTH_ALLOWED_URLS } from '../tokens/auth.tokens';
+import { AUTH_ALLOWED_URLS, AUTH_CONFIG } from '../tokens/auth.tokens';
+import type { AuthConfig } from '../models/auth-config.model';
+
+const CONFIG = { antecedenciaDaRenovacaoEmSegundos: 45 } as AuthConfig;
 
 // Utilitário: drena microtarefas para permitir que a cadeia
 // defer → Promise → switchMap do interceptor chegue ao backend.
@@ -31,15 +34,14 @@ describe('tokenInterceptor — allowlist', () => {
   function setup(
     allowedUrls: readonly string[],
     tokenValue: { token: string | undefined } = { token: 'fake-token' },
-    opts: { expired?: boolean; refresh?: () => Promise<boolean> } = {},
+    opts: { expired?: boolean; refresh?: (minValidity: number) => Promise<boolean> } = {},
   ) {
     let token = tokenValue.token;
     const authService = {
       getToken: () => token,
       isTokenExpired: () => opts.expired ?? false,
       refreshToken: async (minValidity = 30) => {
-        void minValidity;
-        if (opts.refresh) return opts.refresh();
+        if (opts.refresh) return opts.refresh(minValidity);
         token = 'refreshed-token';
         return true;
       },
@@ -50,6 +52,7 @@ describe('tokenInterceptor — allowlist', () => {
         provideHttpClient(withInterceptors([tokenInterceptor])),
         provideHttpClientTesting(),
         { provide: AUTH_ALLOWED_URLS, useValue: allowedUrls },
+        { provide: AUTH_CONFIG, useValue: CONFIG },
         { provide: AuthService, useValue: authService },
       ],
     });
@@ -61,7 +64,7 @@ describe('tokenInterceptor — allowlist', () => {
   }
 
   function setupComRefresh(token: string, expired: boolean) {
-    const refresh = vi.fn(async () => true);
+    const refresh = vi.fn<(minValidity: number) => Promise<boolean>>(async () => true);
     return { ...setup([apiUrl], { token }, { expired, refresh }), refresh };
   }
 
@@ -132,6 +135,7 @@ describe('tokenInterceptor — allowlist', () => {
     const req = httpMock.expectOne(`${apiUrl}/refresh-before-attach`);
 
     expect(refresh).toHaveBeenCalledTimes(1);
+    expect(refresh).toHaveBeenCalledWith(45);
     // getToken() é relido após o refresh; como o mock refresh não rotaciona
     // o valor local (função custom), o header carrega o token original —
     // o essencial é validar que refresh foi disparado antes do envio.
@@ -177,6 +181,7 @@ describe('tokenInterceptor — chamada direta', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: AUTH_ALLOWED_URLS, useValue: [urlPermitida] },
+        { provide: AUTH_CONFIG, useValue: CONFIG },
         { provide: AuthService, useValue: authServiceComTokenValido },
       ],
     });

@@ -22,11 +22,16 @@ interface DependenciasDaInicializacao {
 const configuracaoRecebida = {
   apiUrl: 'https://api.exemplo.br',
   geoApiUrl: 'https://geo.exemplo.br',
-  oidc: { issuerUrl: 'https://login.exemplo.br', clientId: 'aplicativo' },
+  oidc: {
+    issuerUrl: 'https://login.exemplo.br',
+    clientId: 'aplicativo',
+    antecedenciaDaRenovacaoEmSegundos: 60,
+  },
 };
 const autenticacaoEsperada = {
   issuerUrl: 'https://login.exemplo.br',
   clientId: 'aplicativo',
+  antecedenciaDaRenovacaoEmSegundos: 60,
   allowedUrls: ['https://api.exemplo.br', 'https://login.exemplo.br', 'https://geo.exemplo.br'],
 };
 
