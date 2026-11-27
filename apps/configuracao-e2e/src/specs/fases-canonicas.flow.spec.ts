@@ -326,7 +326,7 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     await page
       .getByRole('button', { name: `Remover fase canônica ${faseSeed.codigo}`, exact: true })
       .click();
-    const dialog = page.locator('dialog.uni-dialog');
+    const dialog = page.locator('dialog.uni-dialog[open]');
     await dialog.getByRole('button', { name: 'Remover' }).click();
 
     await expect.poll(() => capturado.deletedIds.length).toBe(1);
