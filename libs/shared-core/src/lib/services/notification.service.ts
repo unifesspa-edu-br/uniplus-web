@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { incluirNaFila } from './agrupamento-de-avisos';
 import {
   referenciaDaRecusa,
   type ProblemDetails,
@@ -24,6 +25,17 @@ export interface Notification {
   readonly detail?: string;
   readonly referencia?: ReferenciaAoSuporte;
   readonly persistent: boolean;
+  /** Quantas vezes o mesmo aviso (tipo, título e código do erro) foi disparado; começa em 1. */
+  readonly ocorrencias: number;
+  /** Identificadores do pedido das ocorrências anteriores, distintos e nunca vazios. */
+  readonly identificadoresAnteriores: readonly string[];
+}
+
+/** O que o host anuncia ao leitor de tela; `sequencia` cresce a cada aviso incluído, mesmo repetido. */
+export interface AnuncioDeAviso {
+  readonly texto: string;
+  readonly assertivo: boolean;
+  readonly sequencia: number;
 }
 
 export interface NotificationOptions {
@@ -48,7 +60,9 @@ export interface NotificationFromProblemOptions extends NotificationOptions {
 }
 
 const DEFAULT_TIMEOUT_MS = 5000;
+const TAMANHO_DA_JANELA_DE_ANUNCIOS = 20;
 const SERVER_ERROR_THRESHOLD = 500;
+const AVISO_NOVO = { ocorrencias: 1, identificadoresAnteriores: [] } as const;
 
 /**
  * Hub de notificações da `uniplus-web` (ADR-0011/0012).
@@ -67,6 +81,10 @@ export class NotificationService {
   private readonly _notifications = signal<readonly Notification[]>([]);
   readonly notifications = this._notifications.asReadonly();
   private readonly timers = new Map<number, ReturnType<typeof setTimeout>>();
+  private sequenciaDoAnuncio = 0;
+  private readonly _anuncios = signal<readonly AnuncioDeAviso[]>([]);
+  /** Janela dos últimos anúncios, em ordem: dois avisos antes da próxima renderização não se perdem. */
+  readonly anuncios = this._anuncios.asReadonly();
 
   success(title: string, detail?: string, options?: NotificationOptions): number {
     return this.add('success', title, detail, options);
@@ -124,20 +142,34 @@ export class NotificationService {
     options: NotificationOptions | undefined,
   ): number {
     const { timeoutMs, persistent = false }: NotificationOptions = options ?? {};
-    return this.publish({ id: ++this.counter, type, title, detail, persistent }, timeoutMs);
+    const aviso = { id: ++this.counter, type, title, detail, persistent, ...AVISO_NOVO };
+    return this.publish(aviso, timeoutMs);
   }
 
   private publish(notification: Notification, timeoutMs: number | undefined): number {
-    this._notifications.update((items) => [...items, notification]);
-    if (!notification.persistent) {
-      const timeout = timeoutMs ?? DEFAULT_TIMEOUT_MS;
-      this.timers.set(
-        notification.id,
-        setTimeout(() => this.dismiss(notification.id), timeout),
-      );
-    }
-    return notification.id;
+    const { fila, repetido } = incluirNaFila(this._notifications(), notification);
+    const publicado = fila[fila.length - 1];
+    this._notifications.set(fila);
+    const anuncio = anunciar(publicado, repetido, ++this.sequenciaDoAnuncio);
+    this._anuncios.update((janela) => [...janela, anuncio].slice(-TAMANHO_DA_JANELA_DE_ANUNCIOS));
+    this.armarPrazo(publicado, timeoutMs);
+    return publicado.id;
   }
+
+  private armarPrazo(aviso: Notification, timeoutMs: number | undefined): void {
+    clearTimeout(this.timers.get(aviso.id));
+    this.timers.delete(aviso.id);
+    if (aviso.persistent) return;
+    const prazo = setTimeout(() => this.dismiss(aviso.id), timeoutMs ?? DEFAULT_TIMEOUT_MS);
+    this.timers.set(aviso.id, prazo);
+  }
+}
+
+function anunciar(aviso: Notification, repetido: boolean, sequencia: number): AnuncioDeAviso {
+  const texto = repetido
+    ? `Repetido ${aviso.ocorrencias} vezes: ${aviso.title}`
+    : [aviso.title, aviso.detail].filter(Boolean).join(' ');
+  return { texto, assertivo: aviso.type === 'error' || aviso.type === 'warning', sequencia };
 }
 
 function ficaAteFechar(
@@ -149,6 +181,13 @@ function ficaAteFechar(
   return overrides?.persistent ?? problem.status >= SERVER_ERROR_THRESHOLD;
 }
 
+function textosDoProblema(
+  problem: ProblemDetails,
+  overrides: NotificationFromProblemOptions | undefined,
+): Pick<Notification, 'title' | 'detail'> {
+  return { title: overrides?.title ?? problem.title, detail: overrides?.detail ?? problem.detail };
+}
+
 function notificacaoDoProblema(
   id: number,
   problem: ProblemDetails,
@@ -156,10 +195,10 @@ function notificacaoDoProblema(
 ): Notification {
   const referencia = referenciaDaRecusa(problem) ?? undefined;
   return {
+    ...AVISO_NOVO,
     id,
     type: 'error',
-    title: overrides?.title ?? problem.title,
-    detail: overrides?.detail ?? problem.detail,
+    ...textosDoProblema(problem, overrides),
     referencia,
     persistent: ficaAteFechar(problem, referencia, overrides),
   };

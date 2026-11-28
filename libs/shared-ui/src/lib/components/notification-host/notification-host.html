@@ -1,0 +1,57 @@
+<div
+  class="sr-only"
+  role="status"
+  aria-live="polite"
+  aria-atomic="false"
+  aria-relevant="additions"
+  data-testid="notification-host-anuncio-polido"
+>
+  @for (anuncio of anunciosPolidos(); track anuncio.sequencia) {
+  <p data-anuncio>{{ anuncio.texto }}</p>
+  }
+</div>
+<div
+  class="sr-only"
+  aria-live="assertive"
+  aria-atomic="false"
+  aria-relevant="additions"
+  data-testid="notification-host-anuncio-assertivo"
+>
+  @for (anuncio of anunciosAssertivos(); track anuncio.sequencia) {
+  <p data-anuncio>{{ anuncio.texto }}</p>
+  }
+</div>
+<section
+  class="toast-stack"
+  role="region"
+  aria-label="Notificações do sistema"
+  (focusin)="lembrarFoco($event)"
+>
+  @if (divisao().recolhidos.length > 0) {
+  <button
+    type="button"
+    class="btn btn--secondary btn--sm toast-mais"
+    data-testid="notification-host-mais"
+    [attr.aria-expanded]="listaAberta()"
+    [attr.aria-controls]="idDaLista"
+    (click)="alternarLista()"
+  >
+    {{ rotuloDeMais() }}
+  </button>
+  }
+  <div
+    class="toast-recolhidos"
+    data-testid="notification-host-recolhidos"
+    [id]="idDaLista"
+    [hidden]="!listaAberta()"
+  >
+    @if (listaAberta()) { @for (aviso of divisao().recolhidos; track aviso.id) {
+    <ui-aviso [attr.data-aviso-id]="aviso.id" [aviso]="aviso" (fechar)="dispensar(aviso.id)" />
+    } }
+  </div>
+  <div class="toast-region">
+    @for (aviso of divisao().visiveis; track aviso.id) {
+    <ui-aviso [attr.data-aviso-id]="aviso.id" [aviso]="aviso" (fechar)="dispensar(aviso.id)" />
+    }
+  </div>
+</section>

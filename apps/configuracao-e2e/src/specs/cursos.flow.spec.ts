@@ -373,7 +373,9 @@ test.describe('Curso — CRUD (#389)', () => {
     await page.locator('[data-pager="next"]').click();
 
     // Em vez de tela vazia: recarrega sem cursor e avisa que a consulta expirou.
-    await expect(page.getByText('a consulta expirou', { exact: false })).toBeVisible();
+    await expect(
+      page.getByTestId('notification-host-title').filter({ hasText: 'a consulta expirou' }),
+    ).toBeVisible();
     await expect(page.locator('table tbody tr')).toHaveCount(2);
     expect(listaUrls.some((u) => !new URL(u).searchParams.has('cursor'))).toBe(true);
   });

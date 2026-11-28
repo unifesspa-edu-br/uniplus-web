@@ -1,6 +1,31 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { NotificationService, NotificationType } from '@uniplus/shared-core/notifications';
-import { ReferenciaAoSuporteComponent } from '../referencia-ao-suporte/referencia-ao-suporte';
+import { DOCUMENT } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  Injector,
+  afterEveryRender,
+  afterNextRender,
+  computed,
+  inject,
+  linkedSignal,
+} from '@angular/core';
+import { mediaQuerySignal } from '@uniplus/shared-core/dom';
+import { NotificationService, type AnuncioDeAviso } from '@uniplus/shared-core/notifications';
+import { AvisoComponent } from '../aviso/aviso';
+import {
+  CONSULTA_COMPACTA,
+  LIMITE_COMPACTO,
+  LIMITE_NORMAL,
+  destinoDoFoco,
+  dividirAvisos,
+  type DestinoDoFoco,
+} from './avisos-visiveis';
+import { FRACAO_DA_TELA, ajustarLimite, medirRegiao, registrarAlturas } from './altura-dos-avisos';
+import { destinoDoControle, devolverFoco, focarDestino, listaTemOFoco } from './foco-dos-avisos';
+
+let proximoId = 0;
 
 /**
  * Apresentacional (ADR-0017): renderiza a fila de avisos mantida pelo
@@ -13,95 +38,103 @@ import { ReferenciaAoSuporteComponent } from '../referencia-ao-suporte/referenci
  *
  * **Acessibilidade (WCAG 2.1 AA + e-MAG 3.1):**
  * - Container com `role="region"` + `aria-label` descritivo.
- * - O texto de cada aviso fica num elemento com `role="status"` (info/success)
- *   ou `role="alert"` (error/warning); o leitor de tela o anuncia uma vez.
- * - A referência ao suporte (código do erro e identificador do pedido) fica
- *   no mesmo aviso, fora do elemento que anuncia, e usa a região de status
- *   do próprio bloco para dizer o resultado da cópia.
- * - "Fechar" é `<button type="button">` focável por Tab.
+ * - O host tem duas regiões de anúncio, escondidas da vista e presentes desde o início (uma
+ *   educada, outra assertiva); os cartões não têm papel de anúncio, então mover, agrupar ou
+ *   recolher um aviso não o anuncia de novo.
+ * - Ficam à vista os avisos mais novos (1 em tela compacta, 3 nas demais); o resto fica no botão
+ *   "Mais N avisos", que abre a lista inteira (a única parte que rola).
+ * - Ao fechar um aviso o foco vai ao "Fechar" do próximo aviso à vista, senão ao "Mais N", senão
+ *   ao conteúdo principal.
  */
 @Component({
   selector: 'ui-notification-host',
   standalone: true,
-  imports: [ReferenciaAoSuporteComponent],
+  imports: [AvisoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <section class="toast-stack" role="region" aria-label="Notificações do sistema">
-      <div class="toast-region">
-        @for (notification of notifications(); track notification.id) {
-          <article
-            class="toast"
-            [class.toast--success]="notification.type === 'success'"
-            [class.toast--danger]="notification.type === 'error'"
-            [class.toast--warning]="notification.type === 'warning'"
-            [class.toast--info]="notification.type === 'info'"
-            [attr.data-testid]="'notification-host-toast-' + notification.type"
-          >
-            <div
-              class="toast__anuncio"
-              data-testid="notification-host-anuncio"
-              [attr.role]="papelAria(notification.type)"
-              [attr.aria-live]="ariaLive(notification.type)"
-              [attr.aria-atomic]="true"
-            >
-              <span class="toast__icon" aria-hidden="true">{{ iconFor(notification.type) }}</span>
-              <div class="toast__body">
-                <p class="toast__title" data-testid="notification-host-title">
-                  {{ notification.title }}
-                </p>
-                @if (notification.detail) {
-                  <p class="toast__msg" data-testid="notification-host-detail">
-                    {{ notification.detail }}
-                  </p>
-                }
-              </div>
-            </div>
-            @if (notification.referencia; as referencia) {
-              <ui-referencia-ao-suporte
-                class="toast__referencia"
-                data-testid="notification-host-referencia"
-                [referencia]="referencia"
-              />
-            }
-            <button
-              type="button"
-              class="toast__close"
-              data-testid="notification-host-dismiss"
-              [attr.aria-label]="dismissLabel"
-              (click)="dispensar(notification.id)"
-            >
-              ×
-            </button>
-          </article>
-        }
-      </div>
-    </section>
-  `,
+  templateUrl: './notification-host.html',
+  host: { '(window:resize)': 'reavaliarAltura()', '(document:pointerdown)': 'esquecerFoco()' },
 })
 export class NotificationHostComponent {
   private readonly service = inject(NotificationService);
-  protected readonly notifications = this.service.notifications;
-  protected readonly dismissLabel = 'Fechar notificação';
+  private readonly injector = inject(Injector);
+  private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private readonly doc = inject(DOCUMENT);
+  private readonly compacta = mediaQuerySignal(CONSULTA_COMPACTA);
+
+  protected readonly idDaLista = `ui-notification-host-recolhidos-${proximoId++}`;
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly alturas = new Map<number, number>();
+  private focoNaPilha: DestinoDoFoco | null = null;
+  private readonly limiteDaTela = computed(() =>
+    this.compacta() ? LIMITE_COMPACTO : LIMITE_NORMAL,
+  );
+  /** Quantos avisos ficam à vista: o limite da tela, reduzido enquanto a altura não couber. */
+  protected readonly limite = linkedSignal<number>(() => this.limiteDaTela());
+  protected readonly divisao = computed(() =>
+    dividirAvisos(this.service.notifications(), this.limite()),
+  );
+  protected readonly listaAberta = linkedSignal<number, boolean>({
+    source: () => this.divisao().recolhidos.length,
+    computation: (quantidade, anterior) => quantidade > 0 && (anterior?.value ?? false),
+  });
+  protected readonly rotuloDeMais = computed(() => {
+    const quantidade = this.divisao().recolhidos.length;
+    return quantidade === 1 ? 'Mais 1 aviso' : `Mais ${quantidade} avisos`;
+  });
+  protected readonly anunciosPolidos = computed(() => this.anunciosDo(false));
+  protected readonly anunciosAssertivos = computed(() => this.anunciosDo(true));
+
+  constructor() {
+    afterNextRender(() => this.observarAltura());
+    afterEveryRender(() => devolverFoco(this.raiz, this.doc, this.focoNaPilha));
+  }
+
+  protected lembrarFoco(evento: FocusEvent): void {
+    this.focoNaPilha = destinoDoControle(this.raiz, evento.target as Element | null);
+  }
+
+  protected esquecerFoco(): void {
+    this.focoNaPilha = null;
+  }
+
+  /** Reduz ou devolve avisos à vista conforme a altura medida; sem `ResizeObserver` (servidor) não mede. */
+  protected reavaliarAltura(): void {
+    const regiao = this.raiz.querySelector<HTMLElement>('.toast-region');
+    const janela = this.doc.defaultView;
+    if (regiao === null || janela === null) return;
+    registrarAlturas(regiao, this.alturas, this.service.notifications());
+    const proximo = this.divisao().recolhidos.at(-1)?.id;
+    const medida = medirRegiao(regiao, this.alturas, proximo, janela.innerHeight * FRACAO_DA_TELA);
+    this.limite.update((atual) => ajustarLimite(atual, this.limiteDaTela(), medida));
+  }
 
   protected dispensar(id: number): void {
+    const fila = this.service.notifications();
+    const destino = destinoDoFoco(fila, id, this.limite(), this.listaAberta());
     this.service.dismiss(id);
+    this.focarAposRenderizar(destino);
   }
 
-  protected papelAria(type: NotificationType): 'alert' | 'status' {
-    return type === 'error' ? 'alert' : 'status';
+  protected alternarLista(): void {
+    if (this.listaAberta() && listaTemOFoco(this.raiz, this.doc)) {
+      focarDestino(this.raiz, this.doc, { tipo: 'mais-avisos' });
+    }
+    this.listaAberta.update((aberta) => !aberta);
   }
 
-  protected ariaLive(type: NotificationType): 'assertive' | 'polite' {
-    return type === 'error' || type === 'warning' ? 'assertive' : 'polite';
+  private anunciosDo(assertivo: boolean): readonly AnuncioDeAviso[] {
+    return this.service.anuncios().filter((anuncio) => anuncio.assertivo === assertivo);
   }
 
-  protected iconFor(type: NotificationType): string {
-    const icons: Record<NotificationType, string> = {
-      success: '✓',
-      warning: '!',
-      error: '!',
-      info: 'i',
-    };
-    return icons[type];
+  private observarAltura(): void {
+    const regiao = this.raiz.querySelector('.toast-region');
+    if (regiao === null || typeof ResizeObserver === 'undefined') return;
+    const observador = new ResizeObserver(() => this.reavaliarAltura());
+    observador.observe(regiao);
+    this.destroyRef.onDestroy(() => observador.disconnect());
+  }
+
+  private focarAposRenderizar(destino: DestinoDoFoco): void {
+    afterNextRender(() => focarDestino(this.raiz, this.doc, destino), { injector: this.injector });
   }
 }

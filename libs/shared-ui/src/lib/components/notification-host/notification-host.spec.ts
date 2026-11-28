@@ -61,27 +61,28 @@ describe('NotificationHostComponent', () => {
       expect(allByTestId(fixture, 'notification-host-toast-info')).toHaveLength(0);
     });
 
-    it('anuncia o erro com role=alert + aria-live=assertive', () => {
+    it('não põe papel nem aria-live em nenhum cartão', () => {
       service.error('Falha', 'detalhe');
-      fixture.detectChanges();
-      const anuncio = byTestId(fixture, 'notification-host-anuncio');
-      expect(anuncio?.getAttribute('role')).toBe('alert');
-      expect(anuncio?.getAttribute('aria-live')).toBe('assertive');
-    });
-
-    it('anuncia o sucesso com role=status + aria-live=polite', () => {
       service.success('Pronto');
       fixture.detectChanges();
-      const anuncio = byTestId(fixture, 'notification-host-anuncio');
-      expect(anuncio?.getAttribute('role')).toBe('status');
-      expect(anuncio?.getAttribute('aria-live')).toBe('polite');
+      const cartao = fixture.nativeElement.querySelector('ui-aviso') as HTMLElement;
+      expect(cartao.querySelector('[role], [aria-live]')).toBeNull();
     });
 
-    it('anuncia a atenção com aria-live=assertive', () => {
-      service.warning('Atenção');
+    it('anuncia o erro na região assertiva e o sucesso na educada', () => {
+      service.error('Falha', 'detalhe');
       fixture.detectChanges();
-      const anuncio = byTestId(fixture, 'notification-host-anuncio');
-      expect(anuncio?.getAttribute('aria-live')).toBe('assertive');
+      expect(byTestId(fixture, 'notification-host-anuncio-assertivo')?.textContent).toContain(
+        'Falha',
+      );
+      service.success('Pronto');
+      fixture.detectChanges();
+      expect(byTestId(fixture, 'notification-host-anuncio-polido')?.textContent).toContain(
+        'Pronto',
+      );
+      expect(byTestId(fixture, 'notification-host-anuncio-assertivo')?.textContent).not.toContain(
+        'Pronto',
+      );
     });
 
     it('exibe title e detail quando ambos providos', () => {
@@ -145,12 +146,10 @@ describe('NotificationHostComponent', () => {
       expect(byTestId(fixture, 'notification-host-referencia')).toBeNull();
     });
 
-    it('deixa o bloco fora do elemento que anuncia o erro, dentro do mesmo aviso', () => {
+    it('mostra o bloco dentro do mesmo aviso', () => {
       service.errorFromProblem(montarProblem());
       fixture.detectChanges();
-      const anuncio = byTestId(fixture, 'notification-host-anuncio');
       const bloco = byTestId(fixture, 'notification-host-referencia');
-      expect(anuncio?.contains(bloco)).toBe(false);
       expect(byTestId(fixture, 'notification-host-toast-error')?.contains(bloco)).toBe(true);
     });
 

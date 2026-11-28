@@ -327,7 +327,7 @@ test.describe('Oferta de curso — escritas', () => {
     await expect(dialogo).toBeHidden();
     await expect(tituloDaLista(page)).toBeFocused();
     await expect(
-      page.locator('.sr-only[role="status"]').filter({ hasText: 'Oferta de curso' }),
+      page.locator('span.sr-only[role="status"]').filter({ hasText: 'Oferta de curso' }),
     ).toHaveText('Oferta de curso ENG_CIV — Engenharia Civil removida.');
   });
 

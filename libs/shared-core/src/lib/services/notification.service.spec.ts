@@ -40,6 +40,8 @@ describe('NotificationService', () => {
       expect(n.detail).toBe('Edital criado com sucesso.');
       expect(n.persistent).toBe(false);
       expect(n.referencia).toBeUndefined();
+      expect(n.ocorrencias).toBe(1);
+      expect(n.identificadoresAnteriores).toEqual([]);
 
       vi.advanceTimersByTime(5000);
       expect(service.notifications()).toHaveLength(0);
@@ -137,7 +139,7 @@ describe('NotificationService', () => {
 
     it('retorna id sequencial para chamadas paralelas', () => {
       const id1 = service.errorFromProblem(montarProblem());
-      const id2 = service.errorFromProblem(montarProblem());
+      const id2 = service.errorFromProblem(montarProblem({ code: 'uniplus.selecao.edital.outro' }));
       expect(id2).toBeGreaterThan(id1);
       expect(service.notifications()).toHaveLength(2);
     });
@@ -162,6 +164,20 @@ describe('NotificationService', () => {
       expect(service.notifications()).toHaveLength(0);
       vi.advanceTimersByTime(60_000);
       expect(service.notifications()).toHaveLength(0);
+    });
+  });
+
+  describe('janela de anúncios', () => {
+    const textos = (): string[] => service.anuncios().map((anuncio) => anuncio.texto);
+
+    it('guarda 20 avisos do mesmo ciclo e o 21º descarta só o mais antigo', () => {
+      for (let i = 1; i <= 20; i++) service.error(`Falha ${i}`, undefined, { persistent: true });
+      expect(textos()).toHaveLength(20);
+      expect(textos()[0]).toContain('Falha 1');
+      service.error('Falha 21', undefined, { persistent: true });
+      expect(textos()).toHaveLength(20);
+      expect(textos()[0]).toContain('Falha 2');
+      expect(textos().at(-1)).toContain('Falha 21');
     });
   });
 
