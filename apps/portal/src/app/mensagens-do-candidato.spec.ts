@@ -34,6 +34,15 @@ describe('provideMensagensDoCandidato', () => {
     }
   });
 
+  it('inclui o campo com seção própria dentro de um grupo entre as falhas da publicação', () => {
+    const codigo = 'uniplus.grupo_formulario.campo_com_secao_propria';
+    const recusa = { ...problema(codigo), title: 'O campo tem seção própria', detail: 'Campo X.' };
+
+    expect(FALHAS_DA_PUBLICACAO).toContain(codigo);
+    expect(problemas.resolve(recusa).detail).toBe(MENSAGEM_DA_FALHA_DA_PUBLICACAO);
+    expect(problemas.resolve(recusa).title).toBe(MENSAGEM_DA_FALHA_DA_PUBLICACAO);
+  });
+
   it('mantém o texto da API nas demais recusas', () => {
     const recusa = problema('uniplus.selecao.inscricao.periodo_encerrado');
     expect(problemas.resolve(recusa)).toEqual({ title: recusa.title, detail: recusa.detail });
