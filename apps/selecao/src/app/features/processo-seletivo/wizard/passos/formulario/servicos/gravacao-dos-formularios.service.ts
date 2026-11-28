@@ -17,6 +17,7 @@ import type { FormularioDto, ProcessoSeletivoDto } from '@uniplus/shared-data/se
 import type { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
+import { recusaDoServidor } from '../../../shared/gravacao/recusa-do-servidor';
 import {
   GravacaoDasExigenciasDocumentais,
   type ResultadoDaGravacaoDasExigencias,
@@ -146,7 +147,7 @@ export class GravacaoDosFormularios {
     this.marcarComoGravados(desfecho);
     aoRecusar(desfecho.recusada.codigo);
     await this.reconciliarComOServidor(processoId, geracao, desfecho);
-    return { valid: false, messages: [...mensagens] };
+    return recusaDoServidor(desfecho.problem, mensagens);
   }
 
   private async concluirComTodasGravadas(
@@ -176,6 +177,7 @@ export class GravacaoDosFormularios {
     const documentos = await this.documentosExigidos.gravar(
       processoId,
       OS_FORMULARIOS_FORAM_GRAVADOS,
+      'Formulários',
     );
     if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
     return desfechoDosDocumentos(documentos, this.store.documentosExigidosAguardandoFormulario());
@@ -198,10 +200,9 @@ export class GravacaoDosFormularios {
   }
 
   private recusaDaPoliticaDaIdade(problem: ProblemDetails): ValidacaoDoPasso {
-    return {
-      valid: false,
-      messages: [`Os formulários foram gravados. ${this.problemI18n.resolve(problem).title}`],
-    };
+    return recusaDoServidor(problem, [
+      `Os formulários foram gravados. ${this.problemI18n.resolve(problem).title}`,
+    ]);
   }
 
   /**
@@ -278,7 +279,7 @@ function desfechoDosDocumentos(
   aindaAguardam: boolean,
 ): ValidacaoDoPasso {
   if (!documentos.valid) {
-    return { valid: false, messages: [...(documentos.messages ?? []), CORRIJA_NO_CRONOGRAMA] };
+    return { ...documentos, messages: [...(documentos.messages ?? []), CORRIJA_NO_CRONOGRAMA] };
   }
   return aindaAguardam ? AINDA_FALTA_FORMULARIO : { valid: true };
 }

@@ -47,6 +47,9 @@ export type {
   ProblemValidationError,
 } from './problem-details';
 
+export { identificadorDoPedido, referenciaDaRecusa } from './referencia-ao-suporte';
+export type { ReferenciaAoSuporte } from './referencia-ao-suporte';
+
 export { separarCausas } from './causas-do-problema';
 export type { CausaDeCampo, CausaGeral, CausasDoProblema } from './causas-do-problema';
 

@@ -1,8 +1,10 @@
+import type { ReferenciaAoSuporte } from '@uniplus/shared-core/http';
+
 import { NOME_DO_PASSO_DA_FORMULA } from '../wizard/processo-seletivo.data';
 import type { GravacaoDoPasso } from '../wizard/passo-do-wizard';
-import type { ValidacaoDoPasso } from '../wizard/processo-seletivo.models';
+import type { ErroDoPasso, ValidacaoDoPasso } from '../wizard/processo-seletivo.models';
 import type { ConducaoDoWizard } from './conducao-do-wizard.service';
-import { falhaAoConcluir, mensagensDe } from './mensagens-do-passo';
+import { erroSemReferencia, falhaAoConcluir, mensagensDe } from './mensagens-do-passo';
 import { ordemDeGravacao } from './ordem-de-gravacao';
 
 const DESEMPATE_AINDA_PENDENTE = `Os critérios de desempate por área não foram gravados, porque a classificação não ficou gravada com o quadro de Peso por Área de que eles dependem. Grave a classificação, com a resolução escolhida no passo ${NOME_DO_PASSO_DA_FORMULA}, e publique de novo.`;
@@ -65,8 +67,8 @@ async function gravarOuPedirConfirmacao(conducao: ConducaoDoWizard): Promise<voi
 }
 
 /** Mostra as pendências e barra a publicação; `false` quando não há pendência. */
-function barradaPelasPendencias(conducao: ConducaoDoWizard, pendencias: string[]): boolean {
-  if (pendencias.length === 0) return false;
+function barradaPelasPendencias(conducao: ConducaoDoWizard, pendencias: ErroDoPasso): boolean {
+  if (pendencias.mensagens.length === 0) return false;
   conducao.store.definirErroDoPasso(pendencias);
   conducao.revelarErro();
   return true;
@@ -90,7 +92,7 @@ async function passosAnterioresCompletos(
     if (geracao !== store.geracao()) return false;
     pendentes = conducao.validarRascunho(store.totalDePassos - 1);
   }
-  return !barradaPelasPendencias(conducao, pendentes);
+  return !barradaPelasPendencias(conducao, erroSemReferencia(pendentes));
 }
 
 /** Grava os passos anteriores e põe o processo em dia; `false` barra a publicação. */
@@ -107,14 +109,17 @@ async function passosAnterioresGravados(
   if (store.classificacao.gravadoPorReler()) await conducao.reler();
   if (geracao !== store.geracao()) return false;
   if (falhas.length === 0) acrescentarDesempateAindaPendente(conducao, falhas);
-  return !barradaPelasPendencias(conducao, falhas);
+  return !barradaPelasPendencias(conducao, erroDasPendencias(conducao, falhas));
 }
 
 /** Critérios que ainda esperam a classificação não podem ficar para trás: publicar seguiria com os que o servidor tinha antes. */
-function acrescentarDesempateAindaPendente(conducao: ConducaoDoWizard, falhas: string[]): void {
+function acrescentarDesempateAindaPendente(
+  conducao: ConducaoDoWizard,
+  falhas: PendenciaDoPasso[],
+): void {
   const indiceDoDesempate = conducao.indiceDoPassoPosClassificacao();
   if (conducao.store.classificacao.desempatePendenteDeGravacao() && indiceDoDesempate >= 0) {
-    falhas.push(conducao.pendenciaDoPasso(indiceDoDesempate, [DESEMPATE_AINDA_PENDENTE]));
+    falhas.push(pendenciaDoPasso(conducao, indiceDoDesempate, [DESEMPATE_AINDA_PENDENTE]));
   }
 }
 
@@ -128,7 +133,7 @@ async function rascunhoInteiroValido(
   // checklist que ela cacheia pode ter ficado desatualizado exatamente pelos passos gravados.
   await conducao.passoNo(store.totalDePassos - 1)?.recarregarChecklist?.();
   if (geracao !== store.geracao()) return false;
-  return !barradaPelasPendencias(conducao, conducao.validarRascunho());
+  return !barradaPelasPendencias(conducao, erroSemReferencia(conducao.validarRascunho()));
 }
 
 /**
@@ -152,10 +157,10 @@ async function rascunhoInteiroValido(
  * chamaria `persistir()` dos passos seguintes contra o rascunho do processo NOVO. Sai calada, e
  * `publicar()` confere a geração de novo ao voltar.
  */
-async function gravarPassosAnteriores(conducao: ConducaoDoWizard): Promise<string[]> {
+async function gravarPassosAnteriores(conducao: ConducaoDoWizard): Promise<PendenciaDoPasso[]> {
   const pendencias = await gravarNaOrdem(conducao);
   if (pendencias === null) return [];
-  return pendencias.sort((a, b) => a.indice - b.indice).map((pendencia) => pendencia.texto);
+  return pendencias.sort((a, b) => a.indice - b.indice);
 }
 
 /**
@@ -206,25 +211,39 @@ async function pendenciasDaGravacao(
   if (commit.valid) return gravarDesempatePendente(conducao);
   return commit.messages?.length === 0
     ? []
-    : [pendenciaDoPasso(conducao, index, mensagensDe(commit))];
+    : [pendenciaDoPasso(conducao, index, mensagensDe(commit), commit.referenciaAoSuporte)];
 }
 
 async function gravarDesempatePendente(conducao: ConducaoDoWizard): Promise<PendenciaDoPasso[]> {
   const recusa = await conducao.gravarDesempatePendente();
   if (recusa === null || recusa.mensagens.length === 0) return [];
-  return [pendenciaDoPasso(conducao, recusa.indice, recusa.mensagens)];
+  return [pendenciaDoPasso(conducao, recusa.indice, recusa.mensagens, recusa.referencia)];
 }
 
 /** O índice acompanha o texto para a varredura, que grava fora da ordem da tela, listar na ordem dela. */
 interface PendenciaDoPasso {
   readonly indice: number;
   readonly texto: string;
+  readonly referencia?: ReferenciaAoSuporte;
 }
 
 function pendenciaDoPasso(
   conducao: ConducaoDoWizard,
   indice: number,
   mensagens: readonly string[],
+  referencia?: ReferenciaAoSuporte,
 ): PendenciaDoPasso {
-  return { indice, texto: conducao.pendenciaDoPasso(indice, mensagens) };
+  return { indice, texto: conducao.pendenciaDoPasso(indice, mensagens), referencia };
+}
+
+function erroDasPendencias(
+  conducao: ConducaoDoWizard,
+  pendencias: readonly PendenciaDoPasso[],
+): ErroDoPasso {
+  return {
+    mensagens: pendencias.map((pendencia) => pendencia.texto),
+    referencias: pendencias.flatMap((pendencia) =>
+      conducao.referenciasDoPasso(pendencia.indice, pendencia.referencia),
+    ),
+  };
 }

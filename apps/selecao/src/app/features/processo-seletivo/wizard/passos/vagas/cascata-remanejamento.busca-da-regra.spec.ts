@@ -85,6 +85,9 @@ describe('CascataRemanejamentoComponent — busca da versão da regra', () => {
     expect(componente.esquemaNaoReconhecido()).toBe(false);
     expect(componente.matriz()).toBeNull();
     expect(elemento.textContent).toContain('não foi encontrada no catálogo');
+    expect(elemento.querySelector('ui-referencia-ao-suporte')?.textContent).toContain(
+      'Informe ao suporte: passo 4 — Vagas, código REMANEJ-CASCATA-REMOVIDA versão v9.',
+    );
   });
 
   /**

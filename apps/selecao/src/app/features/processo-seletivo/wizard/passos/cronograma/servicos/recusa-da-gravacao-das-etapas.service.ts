@@ -6,6 +6,7 @@ import {
 } from '@uniplus/shared-core/http';
 
 import type { ValidacaoDoPasso } from '../../../processo-seletivo.models';
+import { recusaDoServidor } from '../../../shared/gravacao/recusa-do-servidor';
 import { focarAposRenderizar } from '../../../shared/foco-apos-renderizar';
 import { NumeracaoDasRespostasRecusadas } from '../../../shared/recusas/numeracao-das-respostas-recusadas';
 import { resumoDaGravacaoRecusada } from '../../../shared/recusas/texto-da-recusa-no-resumo';
@@ -53,7 +54,7 @@ export class RecusaDaGravacaoDasEtapas {
     );
     this.abrirAsEtapas(porEtapa);
     this.focarAPrimeiraRecusa();
-    return { valid: false, messages: this.resumo(problema, semLugar) };
+    return recusaDoServidor(problema, this.resumo(problema, semLugar));
   }
 
   /** O que o resumo do passo diz: o texto do código da resposta e o que não achou campo. */

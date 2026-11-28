@@ -1,5 +1,6 @@
 import { Injectable, Signal, computed, inject, signal } from '@angular/core';
 
+import type { ReferenciaAoSuporte } from '@uniplus/shared-core/http';
 import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 
 import { ProcessoSeletivoStore } from '../wizard/processo-seletivo.store';
@@ -8,10 +9,15 @@ import type {
   GravacaoDoPasso,
   PassoDoWizard,
 } from '../wizard/passo-do-wizard';
-import type { ValidacaoDoPasso } from '../wizard/processo-seletivo.models';
+import type {
+  ErroDoPasso,
+  ReferenciaDoPasso,
+  ValidacaoDoPasso,
+} from '../wizard/processo-seletivo.models';
 import { ReleituraDoSnapshot } from '../wizard/shared/releitura-do-snapshot.service';
+import { rotuloDoPassoNaTela } from '../wizard/shared/referencia-da-tela';
 import { FocoDoEditor } from './foco-do-editor.service';
-import { falhaAoConcluir, mensagensDe } from './mensagens-do-passo';
+import { erroSemReferencia, falhaAoConcluir, mensagensDe } from './mensagens-do-passo';
 import { publicar } from './publicacao-do-rascunho';
 
 const COPIA_NAO_CONFIRMADA =
@@ -21,6 +27,7 @@ const COPIA_NAO_CONFIRMADA =
 export interface RecusaDoDesempate {
   readonly indice: number;
   readonly mensagens: string[];
+  readonly referencia?: ReferenciaAoSuporte;
 }
 
 /**
@@ -121,7 +128,7 @@ export class ConducaoDoWizard {
   private passoConferido(passoEmTela: PassoDoWizard | undefined): boolean {
     const result = passoEmTela?.validar();
     if (result && !result.valid) {
-      this.store.definirErroDoPasso(mensagensDe(result));
+      this.store.definirErroDoPasso(erroSemReferencia(mensagensDe(result)));
       this.revelarErro();
       return false;
     }
@@ -203,7 +210,11 @@ export class ConducaoDoWizard {
    */
   private mostrarRecusaDoPasso(resultadoDaGravacao: ValidacaoDoPasso): void {
     if (resultadoDaGravacao.messages?.length === 0) return;
-    this.store.definirErroDoPasso(mensagensDe(resultadoDaGravacao));
+    const indice = this.store.passoAtual();
+    const { referenciaAoSuporte } = resultadoDaGravacao;
+    this.store.definirErroDoPasso(
+      this.erroDoPassoNo(indice, mensagensDe(resultadoDaGravacao), referenciaAoSuporte),
+    );
     this.revelarErro();
   }
 
@@ -213,7 +224,9 @@ export class ConducaoDoWizard {
     if (recusa === null) return true;
     if (recusa.mensagens.length > 0) {
       this.store.goTo(recusa.indice);
-      this.store.definirErroDoPasso(recusa.mensagens);
+      this.store.definirErroDoPasso(
+        this.erroDoPassoNo(recusa.indice, recusa.mensagens, recusa.referencia),
+      );
       this.revelarErro();
     }
     return false;
@@ -246,7 +259,8 @@ export class ConducaoDoWizard {
   /** Lista de mensagens vazia é descarte deliberado, como na recusa de qualquer passo. */
   private recusaDosCriterios(indice: number, resultado: ValidacaoDoPasso): RecusaDoDesempate {
     const descartada = resultado.messages?.length === 0;
-    return { indice, mensagens: descartada ? [] : mensagensDe(resultado) };
+    if (descartada) return { indice, mensagens: [] };
+    return { indice, mensagens: mensagensDe(resultado), referencia: resultado.referenciaAoSuporte };
   }
 
   private classificacaoSemQuadroGravado(): boolean {
@@ -293,8 +307,26 @@ export class ConducaoDoWizard {
     return this.pendenciaDoPasso(index, mensagensDe(resultado));
   }
 
+  /** "Passo 3 — Vagas", como a tela nomeia o passo a quem cadastra e ao suporte. */
+  rotuloDoPasso(index: number): string {
+    return rotuloDoPassoNaTela(this.store.labels[index]);
+  }
+
   /** "Passo 3 — Vagas: …", a mensagem de pendência identificada pelo passo de origem. */
   pendenciaDoPasso(index: number, mensagens: readonly string[]): string {
-    return `Passo ${index + 1} — ${this.store.labels[index]}: ${mensagens.join(' ')}`;
+    return `${this.rotuloDoPasso(index)}: ${mensagens.join(' ')}`;
+  }
+
+  /** A referência do passo, quando a recusa veio do servidor; lista vazia quando não há. */
+  referenciasDoPasso(index: number, referencia?: ReferenciaAoSuporte): ReferenciaDoPasso[] {
+    return referencia === undefined ? [] : [{ passo: this.rotuloDoPasso(index), referencia }];
+  }
+
+  private erroDoPassoNo(
+    index: number,
+    mensagens: readonly string[],
+    referencia?: ReferenciaAoSuporte,
+  ): ErroDoPasso {
+    return { mensagens, referencias: this.referenciasDoPasso(index, referencia) };
   }
 }

@@ -8,6 +8,10 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { comInscricao, item } from '../formulario/formulario-de-inscricao.testing';
 import { FASE_INSCRICAO } from '../formulario/formulario-gravado.testing';
 import { BasesLegaisDoFada } from './bases-legais-do-fada.service';
+import {
+  recusaComReferencia,
+  REFERENCIA_DA_RECUSA_DE_TESTE,
+} from '../../shared/gravacao/recusa-do-servidor.testing';
 import { FadaPassoComponent } from './fada.component';
 import {
   BASE_LEGAL_ID,
@@ -207,6 +211,19 @@ describe('FadaPassoComponent', () => {
       expect(store.draft().fada.aplica).toBe(true);
       expect(store.salvando()).toBe(false);
     });
+  });
+
+  it('leva ao suporte a referência da recusa da API ao gravar', async () => {
+    componente.escolherAplicacao(true);
+    componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
+    componente.alterarFator('1.2');
+    componente.escolherBaseLegal(BASE_LEGAL_ID);
+    const gravacao = componente.persistir();
+
+    const recusa = recusaComReferencia(422, 'O multiplicador da nota deve ser maior que zero.');
+    controller.expectOne(ROTA_FADA).flush(recusa.corpo, recusa.opcoes);
+
+    expect((await gravacao).referenciaAoSuporte).toEqual(REFERENCIA_DA_RECUSA_DE_TESTE);
   });
 
   describe('confirmacaoDeGravacao()', () => {

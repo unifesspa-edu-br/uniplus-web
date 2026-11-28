@@ -12,6 +12,10 @@ import { GravacaoDaIdentificacao } from './servicos/gravacao-da-identificacao.se
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
+import {
+  recusaComReferencia,
+  REFERENCIA_DA_RECUSA_DE_TESTE,
+} from '../../shared/gravacao/recusa-do-servidor.testing';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000005aa';
@@ -181,6 +185,20 @@ describe('IdentificacaoPassoComponent', () => {
     expect(chave2).not.toBe(chave1);
     req2.flush(PROCESSO_ID, { status: 201, statusText: 'Created' });
     expect((await segunda).valid).toBe(true);
+  });
+
+  it('leva ao suporte a referência da recusa da API na criação, e não a da validação da tela', async () => {
+    const incompleta = await componente.persistir();
+    expect(incompleta.referenciaAoSuporte).toBeUndefined();
+
+    preencherCamposDoComando();
+    const criada = componente.persistir();
+    const recusa = recusaComReferencia(422, 'Nome já utilizado');
+    controller
+      .expectOne(`${BASE}/api/selecao/processos-seletivos`)
+      .flush(recusa.corpo, recusa.opcoes);
+
+    expect((await criada).referenciaAoSuporte).toEqual(REFERENCIA_DA_RECUSA_DE_TESTE);
   });
 
   /**

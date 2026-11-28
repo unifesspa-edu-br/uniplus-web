@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RegraCatalogoDto } from '@uniplus/shared-data/selecao';
+import type { ReferenciaAoSuporte } from '@uniplus/shared-core/http';
 import {
   FalhaDeLeituraComponent,
+  ReferenciaAoSuporteComponent,
   RolagemFocavelDirective,
   ValorLegivelDirective,
   ValorEmConsultaComponent,
@@ -25,6 +27,7 @@ import {
   RegraExplicada,
 } from '../../shared/regra-explicada/regra-em-linguagem-clara';
 import { regraPorChave } from '../../shared/regra-por-chave';
+import { fraseParaOSuporte, rotuloDoPassoNaTela } from '../../shared/referencia-da-tela';
 import { RegraExplicadaComponent } from '../../shared/regra-explicada/regra-explicada.component';
 import { LeituraDaVersaoForaDaListagem } from './leitura-da-versao-fora-da-listagem.service';
 import { SeletorDaRegraDaCascata } from './seletor-da-regra-da-cascata.service';
@@ -57,6 +60,7 @@ import { SeletorDaRegraDaCascata } from './seletor-da-regra-da-cascata.service';
     MatrizDaCascataComponent,
     RegraExplicadaComponent,
     FalhaDeLeituraComponent,
+    ReferenciaAoSuporteComponent,
   ],
   templateUrl: './cascata-remanejamento.component.html',
   providers: [LeituraDaVersaoForaDaListagem, SeletorDaRegraDaCascata],
@@ -122,6 +126,19 @@ export class CascataRemanejamentoComponent {
     const selecao = this.cascata();
     return selecao === null ? null : `${selecao.regraCodigo} · versão ${selecao.regraVersao}`;
   });
+
+  /** O que a pessoa informa ao suporte quando a regra escolhida não serve: a regra e a versão. */
+  readonly codigoDaRegra = computed(() => {
+    const selecao = this.cascata();
+    return selecao === null ? null : `${selecao.regraCodigo} versão ${selecao.regraVersao}`;
+  });
+
+  readonly referenciaDaRegra = computed<ReferenciaAoSuporte | null>(() => {
+    const codigo = this.codigoDaRegra();
+    return codigo === null ? null : { origem: 'tela', codigo };
+  });
+
+  readonly passoDoSuporte = rotuloDoPassoNaTela('Vagas');
 
   readonly regraNaoEncontrada = this.versaoDaRegra.regraNaoEncontrada;
   readonly falhaAoConsultarRegra = this.versaoDaRegra.falhaAoConsultarRegra;
@@ -190,13 +207,19 @@ export class CascataRemanejamentoComponent {
    * malformado, regra confirmadamente ausente, consulta que falhou sem confirmar nada).
    */
   mensagemDeMatrizIndisponivel(): string {
+    const paraOSuporte = this.fraseParaOSuporte();
     if (this.regraNaoEncontrada()) {
-      return 'A regra escolhida não foi encontrada no catálogo. Escolha outra regra ou avise o suporte.';
+      return `A regra escolhida não foi encontrada no catálogo. Escolha outra regra. ${paraOSuporte}`;
     }
     if (this.falhaAoConsultarRegra()) {
       return 'Não foi possível confirmar a regra escolhida — a consulta falhou. Tente novamente antes de gravar.';
     }
-    return 'A regra escolhida não declara uma matriz de remanejamento no formato esperado. Escolha outra regra ou versão.';
+    return `A regra de remanejamento escolhida não pode ser usada: o sistema não consegue ler como ela remaneja as vagas entre as modalidades. Escolha outra regra de remanejamento. Se o problema continuar, o suporte precisa saber onde ocorreu. ${paraOSuporte}`;
+  }
+
+  private fraseParaOSuporte(): string {
+    const codigo = this.codigoDaRegra();
+    return codigo === null ? '' : fraseParaOSuporte('Vagas', [codigo]);
   }
 
   /**

@@ -30,6 +30,7 @@ import { PASSO_DO_WIZARD } from './wizard/passo-do-wizard';
 import { ConducaoDoWizard } from './editor/conducao-do-wizard.service';
 import { FocoDoEditor } from './editor/foco-do-editor.service';
 import { LeituraDoProcesso } from './editor/leitura-do-processo.service';
+import { ResumoDoErroDoPassoComponent } from './editor/resumo-do-erro-do-passo.component';
 import { CadastroInicial } from './wizard/shared/cadastro-inicial.service';
 import { tituloDoPasso } from './wizard/shared/titulo-do-passo';
 import { EnvioDoEdital } from './wizard/shared/envio-do-edital.service';
@@ -77,6 +78,7 @@ import {
     DialogComponent,
     FalhaDeLeituraComponent,
     IndicadorDaLeituraDirective,
+    ResumoDoErroDoPassoComponent,
     SpinnerComponent,
     TipoProcessoPassoComponent,
     IdentificacaoPassoComponent,

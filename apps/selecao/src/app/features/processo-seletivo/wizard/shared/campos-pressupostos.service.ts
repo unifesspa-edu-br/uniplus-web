@@ -1,7 +1,13 @@
 import { comEscopoPeloCodigo } from '@uniplus/shared-data/configuracao';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
+import {
+  isApiOk,
+  ProblemI18nService,
+  referenciaDaRecusa,
+  type ProblemDetails,
+  type ReferenciaAoSuporte,
+} from '@uniplus/shared-core/http';
 import {
   ProcessosSeletivosApi,
   type FormularioDto,
@@ -9,6 +15,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 import { conteudoInicial, type ConteudoDoFormulario } from '@uniplus/shared-inscricao/formulario';
 
+import type { RotuloDePasso } from '../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../processo-seletivo.store';
 import { CatalogoDeFatos } from '../passos/cronograma/catalogos/catalogo-de-fatos.service';
 import {
@@ -28,6 +35,7 @@ import {
 } from '../passos/formulario/formularios-do-rascunho';
 import { CadastroInicial } from './cadastro-inicial.service';
 import { PlanoDosCamposPressupostos } from './plano-dos-campos-pressupostos';
+import { fraseParaOSuporte } from './referencia-da-tela';
 import { regrasDasModalidadesOfertadas } from './regras-das-modalidades';
 
 /** Os códigos das fases do servidor em que o candidato se inscreve. */
@@ -43,7 +51,23 @@ export type CamposPressupostos =
   | { readonly tipo: 'garantidos' }
   | { readonly tipo: 'semFaseDeInscricao' }
   | { readonly tipo: 'semFormularioDeInscricao' }
-  | { readonly tipo: 'recusados'; readonly motivo: string };
+  | {
+      readonly tipo: 'recusados';
+      readonly motivo: string;
+      readonly referenciaAoSuporte?: ReferenciaAoSuporte;
+    };
+
+/** A releitura que o servidor recusou, com o problema que ele devolveu. */
+interface FalhaDaReleitura {
+  readonly falha: ProblemDetails;
+}
+
+/** A recusa do servidor leva a referência que a pessoa informa ao suporte; a da própria tela não. */
+function recusadoPeloServidor(motivo: string, problema: ProblemDetails): CamposPressupostos {
+  const referencia = referenciaDaRecusa(problema);
+  const recusa = { tipo: 'recusados', motivo } as const;
+  return referencia === null ? recusa : { ...recusa, referenciaAoSuporte: referencia };
+}
 
 /**
  * Os fatos que as regras de aplicabilidade das modalidades ofertadas citam, com os que citam as
@@ -84,8 +108,11 @@ const FORMULARIO_NAO_RELIDO =
 const CATALOGO_INDISPONIVEL =
   'O catálogo de fatos do candidato ainda não carregou, e sem ele não é possível pôr no formulário de inscrição as perguntas de que o processo depende. Grave de novo em instantes.';
 
-function mensagemDosDesconhecidos(desconhecidos: readonly string[]): string {
-  return `O catálogo de fatos do candidato não tem ${desconhecidos.join(', ')}, de que o processo depende, e não há como perguntar isso no formulário de inscrição. Avise o suporte.`;
+export function mensagemDosDesconhecidos(
+  rotuloDoPasso: RotuloDePasso,
+  desconhecidos: readonly string[],
+) {
+  return `O catálogo de dados do candidato não tem dados de que o processo depende, e não há como perguntar isso no formulário de inscrição. ${fraseParaOSuporte(rotuloDoPasso, desconhecidos)}`;
 }
 
 /**
@@ -117,15 +144,19 @@ export class GravacaoDosCamposPressupostos {
    * Sem formulário de inscrição no servidor, ele é criado pelo cabeçalho — a seção dos outros
    * dados, a revisão e aceite e a fase que coleta inscrição — e relido: a API o cria com a seção
    * dos dados básicos, e os itens se conferem contra ela.
+   *
+   * `passoGravador` é o passo cujo trabalho está sendo gravado, e não o aberto na tela: na varredura
+   * da publicação a Revisão está aberta e quem grava é o Cronograma, as Vagas ou os Formulários.
    */
   async garantirCampos(
     processoId: string,
     servidor: ProcessoSeletivoDto,
     citados: ReadonlySet<string>,
+    passoGravador: RotuloDePasso,
   ): Promise<CamposPressupostos> {
     const geracao = this.store.geracao();
     const plano = this.planejar(servidor, citados);
-    const desfecho = this.recusaDoCatalogo(plano) ?? plano.desfechoSemGravar();
+    const desfecho = this.recusaDoCatalogo(plano, passoGravador) ?? plano.desfechoSemGravar();
     if (desfecho !== null) return desfecho;
     const gravacao = await this.gravarNoServidor(processoId, plano);
     if (geracao !== this.store.geracao() || gravacao.tipo !== 'garantidos') return gravacao;
@@ -183,8 +214,9 @@ export class GravacaoDosCamposPressupostos {
   ): Promise<FormularioDto | CamposPressupostos> {
     const relido = await this.releituraDoProcesso(processoId, geracao);
     if (relido === 'obsoleto') return { tipo: 'garantidos' };
+    if ('falha' in relido) return recusadoPeloServidor(FORMULARIO_NAO_RELIDO, relido.falha);
     return (
-      (relido === null ? null : formularioDaInscricaoDoServidor(relido)) ?? {
+      formularioDaInscricaoDoServidor(relido) ?? {
         tipo: 'recusados',
         motivo: FORMULARIO_NAO_RELIDO,
       }
@@ -198,10 +230,13 @@ export class GravacaoDosCamposPressupostos {
     if (geracao !== this.store.geracao()) return { tipo: 'garantidos' };
     return resultado.ok
       ? null
-      : { tipo: 'recusados', motivo: this.problemI18n.resolve(resultado.problem).title };
+      : recusadoPeloServidor(this.problemI18n.resolve(resultado.problem).title, resultado.problem);
   }
 
-  private recusaDoCatalogo(plano: PlanoDosCamposPressupostos): CamposPressupostos | null {
+  private recusaDoCatalogo(
+    plano: PlanoDosCamposPressupostos,
+    passoGravador: RotuloDePasso,
+  ): CamposPressupostos | null {
     if (plano.fatosNaoColetados().length === 0) return null;
     if (this.catalogoDeFatos.carregando() || this.catalogoDeFatos.erro() !== null) {
       this.catalogoDeFatos.carregar();
@@ -210,7 +245,7 @@ export class GravacaoDosCamposPressupostos {
     const desconhecidos = plano.desconhecidosDoCatalogo();
     return desconhecidos.length === 0
       ? null
-      : { tipo: 'recusados', motivo: mensagemDosDesconhecidos(desconhecidos) };
+      : { tipo: 'recusados', motivo: mensagemDosDesconhecidos(passoGravador, desconhecidos) };
   }
 
   private async acompanharNoRascunho(
@@ -255,8 +290,11 @@ export class GravacaoDosCamposPressupostos {
     geracao: number,
   ): Promise<ConteudoDoFormulario | 'obsoleto' | null> {
     const relido = await this.releituraDoProcesso(processoId, geracao);
-    if (relido === 'obsoleto' || relido === null) return relido;
+    if (relido === 'obsoleto') return relido;
+    return 'falha' in relido ? null : this.projetar(relido);
+  }
 
+  private projetar(relido: ProcessoSeletivoDto): ConteudoDoFormulario | null {
     const inscricao = formularioDaInscricaoDoServidor(relido);
     if (inscricao === null) return null;
     const doServidor = formularioDoServidor(relido, inscricao);
@@ -269,10 +307,10 @@ export class GravacaoDosCamposPressupostos {
   private async releituraDoProcesso(
     processoId: string,
     geracao: number,
-  ): Promise<ProcessoSeletivoDto | 'obsoleto' | null> {
+  ): Promise<ProcessoSeletivoDto | FalhaDaReleitura | 'obsoleto'> {
     const relido = await firstValueFrom(this.api.obter(processoId));
     if (geracao !== this.store.geracao()) return 'obsoleto';
-    return isApiOk(relido) ? relido.data : null;
+    return isApiOk(relido) ? relido.data : { falha: relido.problem };
   }
 
   /** Com edição pendente ela fica, e só os campos acrescentados entram nela. */

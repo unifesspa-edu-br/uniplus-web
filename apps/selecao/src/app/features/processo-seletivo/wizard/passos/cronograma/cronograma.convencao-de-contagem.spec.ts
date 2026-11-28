@@ -291,5 +291,10 @@ describe('CronogramaPassoComponent: convenção de contagem', () => {
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.[0]).toContain('etapas e o cronograma de fases foram gravados');
     expect(resultado.messages?.[0]).toContain('Convenção de contagem recusada');
+    expect(resultado.referenciaAoSuporte).toEqual({
+      origem: 'servidor',
+      codigoDoErro: 'uniplus.selecao.algoritmo_contagem_prazo.invalido',
+      identificadorDoPedido: '00000000000000000000000000000005',
+    });
   });
 });

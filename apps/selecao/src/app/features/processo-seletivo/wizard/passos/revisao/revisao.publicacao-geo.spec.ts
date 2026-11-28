@@ -66,7 +66,7 @@ describe('RevisaoPassoComponent — indisponibilidade do Geo na publicação', (
     await prepararRevisao();
     const { resultado } = await falharPorGeoIndisponivel();
 
-    expect(resultado).toEqual({ valid: false, messages: [MENSAGEM_GEO_INDISPONIVEL] });
+    expect(resultado).toMatchObject({ valid: false, messages: [MENSAGEM_GEO_INDISPONIVEL] });
     expect(cenario.store.publicacaoNaoConfirmada()).toBe(false);
     expect(cenario.store.edicaoPermitida()).toBe(true);
     expect(TestBed.inject(RecusasDaPublicacao).recusas()).toEqual([]);

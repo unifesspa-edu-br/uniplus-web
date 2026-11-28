@@ -11,6 +11,10 @@ import { detalhe } from '../../../processo-seletivo.retomada.testing';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { rascunhoInicial } from '../../rascunho-inicial';
 import { CadastroInicial } from '../cadastro-inicial.service';
+import {
+  recusaComReferencia,
+  REFERENCIA_DA_RECUSA_DE_TESTE,
+} from '../gravacao/recusa-do-servidor.testing';
 import { GravacaoDosCamposPressupostos } from '../campos-pressupostos.service';
 import { exigencia, rascunho } from './exigencias.testing';
 import { GravacaoDasExigenciasDocumentais } from './gravacao-das-exigencias-documentais.service';
@@ -65,6 +69,7 @@ describe('gravação das exigências documentais', () => {
     const resultado = await TestBed.inject(GravacaoDasExigenciasDocumentais).gravar(
       'processo',
       'Gravado.',
+      'Cronograma',
     );
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.[0]).toContain('Não foi possível reler as fases');
@@ -77,15 +82,17 @@ describe('gravação das exigências documentais', () => {
     const resultado = await TestBed.inject(GravacaoDasExigenciasDocumentais).gravar(
       'processo',
       'Gravado.',
+      'Cronograma',
     );
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.[0]).toContain('Acrescente a fase de inscrição');
+    expect(resultado.referenciaAoSuporte).toBeUndefined();
     expect(definirDocumentosExigidos).not.toHaveBeenCalled();
   });
 
   describe('formulário que o documento exige', () => {
     const gravar = () =>
-      TestBed.inject(GravacaoDasExigenciasDocumentais).gravar('processo', 'Gravado.');
+      TestBed.inject(GravacaoDasExigenciasDocumentais).gravar('processo', 'Gravado.', 'Cronograma');
 
     beforeEach(() => {
       garantirCampos.mockResolvedValue({ tipo: 'ok' });
@@ -135,6 +142,42 @@ describe('gravação das exigências documentais', () => {
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.[0]).toMatch(/^Gravado\. /);
       expect(aguardando()).toBe(false);
+    });
+
+    it('preserva a referência da recusa do servidor ao dizer o que já foi gravado', async () => {
+      obter.mockReturnValue(of(apiOk(processoComFormularioNaFase(['HABILITACAO']), 200, headers)));
+      const recusa = recusaComReferencia(422, 'Recusa').corpo;
+      definirDocumentosExigidos.mockResolvedValue({ ok: false, problem: recusa });
+      const resultado = await gravar();
+      expect(resultado.messages?.[0]).toMatch(/^Gravado\. /);
+      expect(resultado.referenciaAoSuporte).toEqual(REFERENCIA_DA_RECUSA_DE_TESTE);
+    });
+
+    it('leva a referência da recusa do servidor ao gravar os campos, e pede ao suporte o passo que grava', async () => {
+      obter.mockReturnValue(of(apiOk(processoComFormularioNaFase(['HABILITACAO']), 200, headers)));
+      garantirCampos.mockResolvedValue({
+        tipo: 'recusados',
+        motivo: 'Recusa',
+        referenciaAoSuporte: REFERENCIA_DA_RECUSA_DE_TESTE,
+      });
+      const resultado = await gravar();
+      expect(resultado.messages).toEqual(['Gravado. Recusa']);
+      expect(resultado.referenciaAoSuporte).toEqual(REFERENCIA_DA_RECUSA_DE_TESTE);
+      expect(garantirCampos.mock.calls[0][3]).toBe('Cronograma');
+    });
+
+    it('a recusa dos campos decidida pela própria tela segue sem referência', async () => {
+      obter.mockReturnValue(of(apiOk(processoComFormularioNaFase(['HABILITACAO']), 200, headers)));
+      garantirCampos.mockResolvedValue({ tipo: 'recusados', motivo: 'Recusa' });
+      const resultado = await gravar();
+      expect(resultado.referenciaAoSuporte).toBeUndefined();
+    });
+
+    it('leva a referência da falha do servidor ao reler as fases', async () => {
+      const recusa = recusaComReferencia(503, 'Indisponível').corpo;
+      obter.mockReturnValue(of(apiFailure(recusa, 503, headers)));
+      const resultado = await gravar();
+      expect(resultado.referenciaAoSuporte).toEqual(REFERENCIA_DA_RECUSA_DE_TESTE);
     });
   });
 });

@@ -1,5 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
+import { ReferenciaAoSuporteComponent } from '@uniplus/shared-ui/components';
+
+import { rotuloDoPassoNaTela } from '../../../shared/referencia-da-tela';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { rotuloDaDimensao } from '../grupos-da-revisao';
 import { ProntidaoDaPublicacao } from '../prontidao-da-publicacao.service';
@@ -8,6 +11,7 @@ import { ConferenciaDaPublicacao } from '../servicos/conferencia-da-publicacao.s
 /** O checklist estrutural da publicação, agrupado por dimensão, com o atalho para o passo que resolve cada pendência. */
 @Component({
   selector: 'sel-conformidade-estrutural',
+  imports: [ReferenciaAoSuporteComponent],
   templateUrl: './conformidade-estrutural.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -22,6 +26,7 @@ export class ConformidadeEstruturalComponent {
   protected readonly conferencia = inject(ConferenciaDaPublicacao);
 
   protected readonly rotuloDaDimensao = rotuloDaDimensao;
+  protected readonly passoDaRevisao = rotuloDoPassoNaTela('Revisão e publicação');
 
   /** Dois cliques seguidos pedem a mesma leitura: o segundo espera a primeira. */
   protected atualizar(): void {

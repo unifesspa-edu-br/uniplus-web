@@ -6,6 +6,7 @@ import {
   configurarPagina,
   montarPagina,
 } from './processo-seletivo.page.testing';
+import type { ReferenciaAoSuporte } from '@uniplus/shared-core/http';
 import type { PassoDoWizard } from './wizard/passo-do-wizard';
 import { ROTULOS_DOS_PASSOS } from './wizard/processo-seletivo.data';
 import { CadastroInicial } from './wizard/shared/cadastro-inicial.service';
@@ -136,7 +137,7 @@ describe('ProcessoSeletivoPage — publicação: gravação na ordem das depend�
     const [formula] = INDICES_REAIS;
 
     expect(ordem).toEqual(['desempate', 'fórmula', 'fada']);
-    expect(store.erroDoPasso()).toEqual([
+    expect(store.erroDoPasso()?.mensagens).toEqual([
       `Passo ${formula + 1} — Fórmula e precisão: Falha em fórmula.`,
       `Passo ${INDICE_DO_FADA + 1} — Fator de Atenuação: Falha em fada.`,
     ]);
@@ -148,8 +149,38 @@ describe('ProcessoSeletivoPage — publicação: gravação na ordem das depend�
     const [, desempate] = INDICES_REAIS;
 
     expect(ordem).toEqual(['desempate', 'fada']);
-    expect(store.erroDoPasso()).toEqual([
+    expect(store.erroDoPasso()?.mensagens).toEqual([
       `Passo ${desempate + 1} — Desempate: Falha em desempate.`,
+    ]);
+  });
+
+  it('lista as referências ao suporte na ordem dos passos, só dos recusados pelo servidor', async () => {
+    const passos = passosQueFalham([], []);
+    const referencia = (codigo: string): ReferenciaAoSuporte => ({
+      origem: 'servidor',
+      codigoDoErro: `uniplus.selecao.${codigo}`,
+      identificadorDoPedido: null,
+    });
+    const [formula] = INDICES_REAIS;
+    for (const [indice, codigo] of [
+      [INDICE_DO_FADA, 'fada'],
+      [formula, 'formula'],
+    ] as const) {
+      passos[indice] = {
+        ...passos[indice],
+        persistir: async () => ({
+          valid: false,
+          messages: ['Recusada.'],
+          referenciaAoSuporte: referencia(codigo),
+        }),
+      };
+    }
+
+    const store = await publicarComPassos(passos);
+
+    expect(store.erroDoPasso()?.referencias).toEqual([
+      { passo: `Passo ${formula + 1} — Fórmula e precisão`, referencia: referencia('formula') },
+      { passo: `Passo ${INDICE_DO_FADA + 1} — Fator de Atenuação`, referencia: referencia('fada') },
     ]);
   });
 });

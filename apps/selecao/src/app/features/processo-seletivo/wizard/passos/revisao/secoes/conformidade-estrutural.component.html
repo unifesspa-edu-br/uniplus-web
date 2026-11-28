@@ -56,6 +56,9 @@
               @if (item.orientacao; as orientacao) {
                 <span class="revisao-item__onde" [id]="orientacao.id">{{ orientacao.texto }}</span>
               }
+              @if (item.referencia; as referencia) {
+                <ui-referencia-ao-suporte [referencia]="referencia" [passo]="passoDaRevisao" />
+              }
             </div>
             @if (item.passo; as passo) {
               @if (!store.emConsulta()) {

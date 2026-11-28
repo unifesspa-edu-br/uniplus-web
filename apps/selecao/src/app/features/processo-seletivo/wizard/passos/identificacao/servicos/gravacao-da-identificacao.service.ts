@@ -10,6 +10,7 @@ import {
   RESPOSTA_DESCARTADA,
   respostaFoiDescartada,
 } from '../../../shared/gravacao/gravacao-no-passo';
+import { recusaDoServidor } from '../../../shared/gravacao/recusa-do-servidor';
 import {
   ehRecusaDoIdentificadorLegivel,
   normalizarIdentificadorLegivel,
@@ -27,6 +28,9 @@ export class GravacaoDaIdentificacao {
 
   /** Recusa da criação, exibida no passo: o anexo tem o erro dele próprio. */
   readonly erroDeCriacao = signal<string | null>(null);
+
+  /** A resposta do servidor que recusou a criação; some quando a criação é tentada de novo. */
+  private problemaDaCriacao: ProblemDetails | null = null;
 
   /** Recusa do identificador, local ou do servidor, exibida junto ao campo. */
   readonly erroDoIdentificador = signal<string | null>(null);
@@ -109,15 +113,17 @@ export class GravacaoDaIdentificacao {
     if (existente !== null) return this.gravarIdentificador(existente);
 
     const processoId = await this.garantirProcessoCriado();
-    if (processoId === null) {
-      return {
-        valid: false,
-        messages: [
-          this.erroDeCriacao() ?? 'Não foi possível criar o cadastro inicial. Tente novamente.',
-        ],
-      };
-    }
+    if (processoId === null) return this.recusaDaCriacao();
     return { valid: true };
+  }
+
+  private recusaDaCriacao(): ValidacaoDoPasso {
+    const mensagens = [
+      this.erroDeCriacao() ?? 'Não foi possível criar o cadastro inicial. Tente novamente.',
+    ];
+    return this.problemaDaCriacao === null
+      ? { valid: false, messages: mensagens }
+      : recusaDoServidor(this.problemaDaCriacao, mensagens);
   }
 
   /**
@@ -129,6 +135,7 @@ export class GravacaoDaIdentificacao {
     if (existente !== null) return existente;
     if (this.store.salvando()) return null;
 
+    this.problemaDaCriacao = null;
     const faltando = this.camposFaltantesDoComando();
     if (faltando.length > 0) {
       this.erroDeCriacao.set(`Para avançar, preencha: ${faltando.join(', ')}.`);
@@ -178,6 +185,7 @@ export class GravacaoDaIdentificacao {
 
   private registrarRecusaDaCriacao(problem: ProblemDetails): void {
     this.store.criacaoIndefinida.set(this.cadastro.temCriacaoPendente());
+    this.problemaDaCriacao = problem;
     this.apontarRecusaDoIdentificador(problem);
     const titulo = this.problemI18n.resolve(problem).title;
     this.erroDeCriacao.set(
@@ -202,13 +210,19 @@ export class GravacaoDaIdentificacao {
       identificadorLegivel: identificador,
     });
     if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
-    if (!resultado.ok) {
-      if (resultado.inconclusiva) this.identificadorGravado.set(undefined);
-      this.apontarRecusaDoIdentificador(resultado.problem);
-      return { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
-    }
+    if (!resultado.ok) return this.recusaDoIdentificador(resultado);
     this.identificadorGravado.set(identificador);
     return { valid: true };
+  }
+
+  private recusaDoIdentificador(resultado: {
+    readonly problem: ProblemDetails;
+    readonly inconclusiva: boolean;
+  }): ValidacaoDoPasso {
+    if (resultado.inconclusiva) this.identificadorGravado.set(undefined);
+    this.apontarRecusaDoIdentificador(resultado.problem);
+    const titulo = this.problemI18n.resolve(resultado.problem).title;
+    return recusaDoServidor(resultado.problem, [titulo]);
   }
 
   /** Recusa do servidor sobre o identificador vai para junto do campo, além do aviso do passo. */

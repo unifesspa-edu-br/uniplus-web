@@ -106,7 +106,7 @@ describe('ProcessoSeletivoPage — publicação: varredura dos passos', () => {
     fixture.detectChanges();
     await page.nextOrPublish();
 
-    const erros = store.erroDoPasso() ?? [];
+    const erros = store.erroDoPasso()?.mensagens ?? [];
     expect(
       erros.some((erro) => erro.includes('Passo 3') && erro.includes('Falha ao gravar de novo.')),
     ).toBe(true);

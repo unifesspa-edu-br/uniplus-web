@@ -3,6 +3,10 @@ import { FundamentoIsencao } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import {
+  recusaComReferencia,
+  REFERENCIA_DA_RECUSA_DE_TESTE,
+} from '../../shared/gravacao/recusa-do-servidor.testing';
 import { PagamentoPassoComponent } from './pagamento.component';
 
 import { ROTA_TAXA, montarPagamento, problema, tick } from './pagamento.testing';
@@ -115,6 +119,23 @@ describe('PagamentoPassoComponent', () => {
     expect(req.request.body.valor).toBeNull();
     req.flush(null, { status: 204, statusText: 'No Content' });
     await promessa;
+  });
+
+  it('leva ao suporte a referência da recusa da API, e não a da validação da tela', async () => {
+    store.patchObjectSection('pagamento', { cobra: true, valor: '', fundamentos: [] });
+    expect((await componente.persistir()).referenciaAoSuporte).toBeUndefined();
+
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: '150,00',
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
+    });
+    const promessa = componente.persistir();
+    await tick();
+    const recusa = recusaComReferencia(422, 'Valor é obrigatório quando o processo cobra');
+    controller.expectOne(ROTA_TAXA).flush(recusa.corpo, recusa.opcoes);
+
+    expect((await promessa).referenciaAoSuporte).toEqual(REFERENCIA_DA_RECUSA_DE_TESTE);
   });
 
   /**

@@ -6,6 +6,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { comInscricao, item } from '../formulario/formulario-de-inscricao.testing';
+import {
+  recusaComReferencia,
+  REFERENCIA_DA_RECUSA_DE_TESTE,
+} from '../../shared/gravacao/recusa-do-servidor.testing';
 import { AtendimentoPassoComponent } from './atendimento.component';
 import {
   CONDICOES,
@@ -219,6 +223,18 @@ describe('AtendimentoPassoComponent', () => {
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
     expect(store.draft().atendimento.condicoes).toHaveLength(1);
+  });
+
+  it('leva ao suporte a referência da recusa da API ao gravar', async () => {
+    componente.toggleCondicao(CONDICOES[0], true);
+    componente.toggleTipoDeficiencia(TIPOS_DEFICIENCIA[0], true);
+    detectar();
+    const gravacao = componente.persistir();
+
+    const recusa = recusaComReferencia(422, 'Recusado.');
+    controller.expectOne(ROTA_ATENDIMENTO).flush(recusa.corpo, recusa.opcoes);
+
+    expect((await gravacao).referenciaAoSuporte).toEqual(REFERENCIA_DA_RECUSA_DE_TESTE);
   });
 
   it('limpa o erro de gravação anterior ao trocar de processo', async () => {

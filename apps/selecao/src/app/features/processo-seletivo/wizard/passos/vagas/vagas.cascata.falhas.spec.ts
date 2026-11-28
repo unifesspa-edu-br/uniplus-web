@@ -7,6 +7,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import {
+  recusaComReferencia,
+  REFERENCIA_DA_RECUSA_DE_TESTE,
+} from '../../shared/gravacao/recusa-do-servidor.testing';
+import {
   ROTA_CASCATA_TESTE,
   ROTA_DISTRIBUICAO_TESTE,
   ROTA_PROCESSO_LIDO_TESTE,
@@ -98,6 +102,26 @@ describe('VagasPassoComponent — falhas na gravação da cascata de remanejamen
     const resultado = await comReleitura(controller, gravacao);
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.[0]).toContain('distribuição de vagas foi gravada');
+  });
+
+  it('leva ao suporte a referência da recusa da cascata', async () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicaoComCascata()] });
+    detectar();
+    simularEConferirDistribuicao();
+    escolherRegraCascataNaTela('REMANEJ-CASCATA-LEI-12711|v1');
+    detectar();
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_DISTRIBUICAO_TESTE).flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+    await tick();
+    const recusa = recusaComReferencia(422, 'A matriz diverge da regra.');
+    controller.expectOne(ROTA_CASCATA_TESTE).flush(recusa.corpo, recusa.opcoes);
+
+    const resultado = await comReleitura(controller, gravacao);
+    expect(resultado.referenciaAoSuporte).toEqual(REFERENCIA_DA_RECUSA_DE_TESTE);
   });
 
   /**
