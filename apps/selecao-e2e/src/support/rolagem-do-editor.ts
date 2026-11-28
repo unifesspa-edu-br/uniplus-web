@@ -138,15 +138,23 @@ async function conferirUltimoPassoAlcancavel(page: Page, seletor: string): Promi
  */
 export async function conferirRolagemPorTeclado(page: Page): Promise<void> {
   for (const tecla of ['PageDown', 'Space', 'ArrowDown']) {
-    await voltarAoTopo(page);
-    await page.keyboard.press(tecla);
-    await expect
-      .poll(async () => (await medirAreaDeTrabalho(page)).topo, {
-        message: `${tecla} deveria rolar a área de trabalho`,
-      })
-      .toBeGreaterThan(0);
+    await conferirDescidaPelaTecla(page, tecla);
   }
+  await conferirChegadaAoFimPelaTeclaEnd(page);
+  await conferirVoltaAoTopoPelaTeclaHome(page);
+}
 
+async function conferirDescidaPelaTecla(page: Page, tecla: string): Promise<void> {
+  await voltarAoTopo(page);
+  await page.keyboard.press(tecla);
+  await expect
+    .poll(async () => (await medirAreaDeTrabalho(page)).topo, {
+      message: `${tecla} deveria rolar a área de trabalho`,
+    })
+    .toBeGreaterThan(0);
+}
+
+async function conferirChegadaAoFimPelaTeclaEnd(page: Page): Promise<void> {
   await voltarAoTopo(page);
   await page.keyboard.press('End');
   await expect
@@ -158,7 +166,9 @@ export async function conferirRolagemPorTeclado(page: Page): Promise<void> {
       { message: 'End deveria levar ao fim da área de trabalho' },
     )
     .toBeLessThanOrEqual(1);
+}
 
+async function conferirVoltaAoTopoPelaTeclaHome(page: Page): Promise<void> {
   // Chegar a um pixel do fim não encerra a animação do End; o Home dado no meio dela é desfeito.
   await esperarRolagemParar(page);
   await page.keyboard.press('Home');
@@ -171,89 +181,113 @@ export async function conferirRolagemPorTeclado(page: Page): Promise<void> {
 
 type Faixa = 'topo' | 'base';
 
+type CampoDoPasso = ElementHandle<HTMLElement | SVGElement>;
+
 /**
- * Rola a área de trabalho até o campo ficar sob a faixa fixa: com o topo dele no topo da
- * área (sob a barra de etapas) ou com a base dele na base da área (sob o rodapé).
+ * Quanto a área de trabalho precisa rolar para o campo ficar sob a faixa fixa: com o topo dele
+ * no topo da área (sob a barra de etapas) ou com a base dele na base da área (sob o rodapé).
  */
-async function colocarCampoSobAFaixa(
-  page: Page,
-  campo: ElementHandle,
-  faixa: Faixa,
-): Promise<void> {
-  await campo.evaluate((elemento, lado) => {
-    if (!(elemento instanceof Element)) {
-      throw new Error('O campo não é um elemento.');
-    }
+async function deslocamentoAteAFaixa(campo: CampoDoPasso, faixa: Faixa): Promise<number> {
+  return campo.evaluate((elemento, lado) => {
     const area = elemento.closest('main.page');
     if (!area) {
       throw new Error('Campo fora da área de trabalho.');
     }
     const caixa = elemento.getBoundingClientRect();
     const vista = area.getBoundingClientRect();
-    const deslocamento = lado === 'topo' ? caixa.top - vista.top : caixa.bottom - vista.bottom;
-    area.scrollTo({ top: area.scrollTop + deslocamento, behavior: 'instant' });
+    return lado === 'topo' ? caixa.top - vista.top : caixa.bottom - vista.bottom;
   }, faixa);
+}
+
+async function colocarCampoSobAFaixa(page: Page, campo: CampoDoPasso, faixa: Faixa): Promise<void> {
+  const deslocamento = await deslocamentoAteAFaixa(campo, faixa);
+  await page
+    .locator('main.page')
+    .evaluate(
+      (area, quanto) => area.scrollTo({ top: area.scrollTop + quanto, behavior: 'instant' }),
+      deslocamento,
+    );
   await esperarRolagemParar(page);
 }
 
-/**
- * Leva o foco por teclado a um campo que está sob a faixa fixa e confere que ele fica
- * inteiro fora dela. O campo é alcançado a partir do vizinho na ordem de tabulação: Tab
- * vindo de cima quando a faixa é o rodapé, Shift+Tab vindo de baixo quando é a barra.
- */
-async function conferirFocoEmCampoSobAFaixa(page: Page, faixa: Faixa): Promise<void> {
-  const [ida, volta] = faixa === 'topo' ? ['Tab', 'Shift+Tab'] : ['Shift+Tab', 'Tab'];
-  const campo = await page.evaluateHandle((lado) => {
-    const area = document.querySelector('main.page');
-    if (!area) {
-      throw new Error('Área de trabalho ausente.');
-    }
-    const vista = area.getBoundingClientRect();
-    const maximo = area.scrollHeight - area.clientHeight;
-    const candidatos = Array.from(
-      document.querySelectorAll<HTMLElement>('.wiz-content :is(input, select, textarea)'),
-    ).filter((elemento) => elemento.getClientRects().length > 0 && !elemento.matches(':disabled'));
-    // O campo tem de caber na posição pedida sem passar dos limites da rolagem.
-    const escolhido = candidatos.find((elemento) => {
-      const caixa = elemento.getBoundingClientRect();
-      const alvo =
-        area.scrollTop + (lado === 'topo' ? caixa.top - vista.top : caixa.bottom - vista.bottom);
-      return alvo > 0 && alvo < maximo;
-    });
-    if (!escolhido) {
-      throw new Error('Nenhum campo do passo alcança a faixa fixa.');
-    }
-    return escolhido;
-  }, faixa);
+async function temCaixaNaTela(campo: CampoDoPasso): Promise<boolean> {
+  return campo.evaluate((elemento) => elemento.getClientRects().length > 0);
+}
 
+/**
+ * O primeiro campo habilitado do passo que cabe na posição pedida sem passar dos limites da
+ * rolagem: só assim a faixa fixa chega a ficar sobre ele.
+ */
+async function escolherCampoQueAlcancaAFaixa(page: Page, faixa: Faixa): Promise<CampoDoPasso> {
+  const { topo, maximo } = await medirAreaDeTrabalho(page);
+  const campos = await page.$$('.wiz-content :is(input, select, textarea):not(:disabled)');
+  for (const campo of campos) {
+    if (!(await temCaixaNaTela(campo))) continue;
+    const alvo = topo + (await deslocamentoAteAFaixa(campo, faixa));
+    if (alvo > 0 && alvo < maximo) return campo;
+  }
+  throw new Error('Nenhum campo do passo alcança a faixa fixa.');
+}
+
+/**
+ * Quanto o campo invade o rodapé: positivo quando a base dele passa do topo do rodapé.
+ */
+async function invasaoDoRodape(campo: CampoDoPasso): Promise<number> {
+  return campo.evaluate((elemento) => {
+    const rodape = document.querySelector('.wiz-footer');
+    if (!rodape) {
+      throw new Error('Rodapé ausente.');
+    }
+    return elemento.getBoundingClientRect().bottom - rodape.getBoundingClientRect().top;
+  });
+}
+
+/**
+ * Quanto o campo invade a barra de etapas. A barra visível fica presa ao topo da área rolada:
+ * fora dele, ela deixou de ser fixa.
+ */
+async function invasaoDaBarraDeEtapas(campo: CampoDoPasso): Promise<number> {
+  return campo.evaluate((elemento) => {
+    const area = document.querySelector('main.page');
+    const barra = document.querySelector('.step-bar');
+    if (!area || !barra) {
+      throw new Error('Área de trabalho ou barra de etapas ausente.');
+    }
+    const topoDaArea = area.getBoundingClientRect().top;
+    const caixaDaBarra = barra.getBoundingClientRect();
+    if (caixaDaBarra.height > 0 && Math.abs(caixaDaBarra.top - topoDaArea) > 1) {
+      throw new Error('A barra de etapas saiu do topo da área de trabalho.');
+    }
+    return Math.max(topoDaArea, caixaDaBarra.bottom) - elemento.getBoundingClientRect().top;
+  });
+}
+
+/**
+ * Leva o foco por teclado ao campo que está sob a faixa fixa. O campo é alcançado a partir do
+ * vizinho na ordem de tabulação: Tab vindo de cima quando a faixa é o rodapé, Shift+Tab vindo
+ * de baixo quando é a barra.
+ */
+async function focarCampoSobAFaixa(page: Page, campo: CampoDoPasso, faixa: Faixa): Promise<void> {
+  const [ida, volta] = faixa === 'topo' ? ['Tab', 'Shift+Tab'] : ['Shift+Tab', 'Tab'];
   await campo.evaluate((elemento) => elemento.focus({ preventScroll: true }));
   await page.keyboard.press(ida);
   await colocarCampoSobAFaixa(page, campo, faixa);
   await page.keyboard.press(volta);
   await esperarRolagemParar(page);
+}
+
+async function invasaoDaFaixa(campo: CampoDoPasso, faixa: Faixa): Promise<number> {
+  return faixa === 'topo' ? invasaoDaBarraDeEtapas(campo) : invasaoDoRodape(campo);
+}
+
+/** Confere que o campo focado por teclado fica inteiro fora da faixa fixa. */
+async function conferirFocoEmCampoSobAFaixa(page: Page, faixa: Faixa): Promise<void> {
+  const campo = await escolherCampoQueAlcancaAFaixa(page, faixa);
+  await focarCampoSobAFaixa(page, campo, faixa);
 
   expect(await campo.evaluate((elemento) => elemento === document.activeElement)).toBe(true);
-  const invasao = await campo.evaluate((elemento, lado) => {
-    const area = document.querySelector('main.page');
-    const barra = document.querySelector('.step-bar');
-    const rodape = document.querySelector('.wiz-footer');
-    if (!area || !barra || !rodape) {
-      throw new Error('Área de trabalho, barra de etapas ou rodapé ausente.');
-    }
-    const caixa = elemento.getBoundingClientRect();
-    if (lado === 'topo') {
-      const topoDaArea = area.getBoundingClientRect().top;
-      const caixaDaBarra = barra.getBoundingClientRect();
-      // A barra visível fica presa ao topo da área rolada: fora dele, ela deixou de ser fixa.
-      if (caixaDaBarra.height > 0 && Math.abs(caixaDaBarra.top - topoDaArea) > 1) {
-        throw new Error('A barra de etapas saiu do topo da área de trabalho.');
-      }
-      return Math.max(topoDaArea, caixaDaBarra.bottom) - caixa.top;
-    }
-    return caixa.bottom - rodape.getBoundingClientRect().top;
-  }, faixa);
   expect(
-    invasao,
+    await invasaoDaFaixa(campo, faixa),
     faixa === 'topo' ? 'campo focado sob a barra de etapas' : 'campo focado sob o rodapé',
   ).toBeLessThanOrEqual(0.5);
 }
@@ -281,6 +315,23 @@ async function conferirBarraDeEtapasNoLugarDoStepper(page: Page): Promise<void> 
 }
 
 /**
+ * Maior diferença, em px, entre a coluna do stepper lateral e a altura visível da área de
+ * trabalho, no topo ou na altura; infinita quando um dos dois não está na tela.
+ */
+async function diferencaDoStepperParaAArea(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const area = document.querySelector('main.page');
+    const stepper = document.querySelector('nav[aria-label="Etapas do cadastro"]');
+    if (!(area instanceof HTMLElement) || !(stepper instanceof HTMLElement)) {
+      return Number.POSITIVE_INFINITY;
+    }
+    const topoDaArea = area.getBoundingClientRect().top + area.clientTop;
+    const caixa = stepper.getBoundingClientRect();
+    return Math.max(Math.abs(caixa.height - area.clientHeight), Math.abs(caixa.top - topoDaArea));
+  });
+}
+
+/**
  * Com o stepper lateral à vista (a partir de 768 px), a coluna dele, com fundo e borda
  * próprios, cobre a altura visível da área de trabalho: num passo curto ou numa tela
  * alta, terminar no meio deixaria a borda cortada no ar.
@@ -292,23 +343,9 @@ export async function conferirStepperNaAlturaDaArea(page: Page): Promise<void> {
     return;
   }
   await expect
-    .poll(
-      () =>
-        page.evaluate(() => {
-          const area = document.querySelector('main.page');
-          const stepper = document.querySelector('nav[aria-label="Etapas do cadastro"]');
-          if (!(area instanceof HTMLElement) || !(stepper instanceof HTMLElement)) {
-            return Number.POSITIVE_INFINITY;
-          }
-          const topoDaArea = area.getBoundingClientRect().top + area.clientTop;
-          const caixa = stepper.getBoundingClientRect();
-          return Math.max(
-            Math.abs(caixa.height - area.clientHeight),
-            Math.abs(caixa.top - topoDaArea),
-          );
-        }),
-      { message: 'o stepper lateral deveria cobrir a altura visível da área de trabalho' },
-    )
+    .poll(() => diferencaDoStepperParaAArea(page), {
+      message: 'o stepper lateral deveria cobrir a altura visível da área de trabalho',
+    })
     .toBeLessThanOrEqual(1);
 }
 

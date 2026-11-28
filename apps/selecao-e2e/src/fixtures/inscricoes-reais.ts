@@ -148,6 +148,12 @@ export async function inscreverPersona(
   return { username, inscricaoId: rascunho.id, cpf: p.cpf, rg: p.rg, nome: p.nome };
 }
 
+interface FormularioDeInscricao {
+  codigo: string;
+  termos: TermoDoFormulario[];
+  coleta: { itens: { fatoCodigo: string }[] };
+}
+
 type CorpoDaInscricao = {
   ofertaCursoId: string;
   ofertaCursoSegundaOpcaoId: null;
@@ -211,14 +217,10 @@ class InscricaoDaPersona {
     };
   }
 
-  private async formulario(): Promise<{
-    codigo: string;
-    termos: TermoDoFormulario[];
-    coleta: { itens: { fatoCodigo: string }[] };
-  }> {
+  private async formulario(): Promise<FormularioDeInscricao> {
     const { codigo, formulario } = await json<{
       codigo: string;
-      formulario: { termos: TermoDoFormulario[]; coleta: { itens: { fatoCodigo: string }[] } };
+      formulario: Omit<FormularioDeInscricao, 'codigo'>;
     }>(
       await fetch(
         `${API_URL}/api/selecao/processos-seletivos/${this.processoId}/formularios/INSCRICAO`,
