@@ -31,9 +31,22 @@ describe('regrasEscolhiveis', () => {
         versao: '1.0',
         baseLegal: 'Lei X',
         rotulo: 'A — Lei X',
+        nome: 'A',
         chave: 'A|1.0',
         selecionada: false,
       },
+    ]);
+  });
+
+  it('usa o nome da regra no catálogo e, sem nome, o código', () => {
+    const catalogo = [
+      regra({ codigo: 'A', versao: '1.0', rotulo: 'Nome da regra A' }),
+      regra({ codigo: 'B', versao: '1.0', rotulo: ' ' }),
+    ];
+
+    expect(regrasEscolhiveis(catalogo, '', '').map((opcao) => opcao.nome)).toEqual([
+      'Nome da regra A',
+      'B',
     ]);
   });
 
@@ -65,6 +78,7 @@ describe('regrasEscolhiveis', () => {
         versao: '1.0',
         baseLegal: 'Base legal',
         rotulo: 'A — Base legal',
+        nome: 'A',
         chave: 'A|1.0',
         selecionada: false,
       },
@@ -73,6 +87,7 @@ describe('regrasEscolhiveis', () => {
         versao: '2.0',
         baseLegal: null,
         rotulo: 'B — base legal indisponível',
+        nome: 'B',
         chave: 'B|2.0',
         selecionada: true,
       },
@@ -86,6 +101,7 @@ describe('regrasEscolhiveis', () => {
         versao: '2.0',
         baseLegal: null,
         rotulo: 'B — base legal indisponível',
+        nome: 'B',
         chave: 'B|2.0',
         selecionada: true,
       },
