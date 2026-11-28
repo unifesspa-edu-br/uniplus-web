@@ -1,6 +1,7 @@
-import { computed, effect, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, Injector, signal } from '@angular/core';
 import { type ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
 import { OrigemCandidatosCodigo } from '@uniplus/shared-data/selecao';
+import type { RecusaDoCampo } from '@uniplus/shared-ui/components';
 
 import { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
@@ -11,10 +12,29 @@ import {
   respostaFoiDescartada,
 } from '../../../shared/gravacao/gravacao-no-passo';
 import { recusaDoServidor } from '../../../shared/gravacao/recusa-do-servidor';
+import { focarAposRenderizar } from '../../../shared/foco-apos-renderizar';
+import { normalizarIdentificadorLegivel } from '../../../shared/identificador-legivel';
 import {
-  ehRecusaDoIdentificadorLegivel,
-  normalizarIdentificadorLegivel,
-} from '../../../shared/identificador-legivel';
+  CAMPOS_NA_ORDEM_DA_TELA,
+  type CampoDaIdentificacao,
+  ID_DO_CAMPO,
+  idDaRecusaDoCampo,
+  recusasDosCampos,
+  resumoDasRecusas,
+} from '../recusas-da-criacao';
+import type { ResultadoDaValidacao } from '../validacao-da-identificacao';
+
+const AVISO_DE_CRIACAO_INDEFINIDA =
+  'Não é possível saber se o cadastro chegou a ser criado; use "Tentar novamente" para repetir o mesmo envio.';
+
+/**
+ * A recusa de um campo do passo: as que o servidor fez, com código e página, ou o texto da
+ * conferência local, que não tem código nem página.
+ */
+export interface ErroDoCampo {
+  readonly recusas: readonly RecusaDoCampo[];
+  readonly local: string | null;
+}
 
 /**
  * A gravação da identificação: cria o processo ao concluir o passo e, com o processo criado,
@@ -25,18 +45,38 @@ export class GravacaoDaIdentificacao {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly cadastro = inject(CadastroInicial);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly injector = inject(Injector);
 
-  /** Recusa da criação, exibida no passo: o anexo tem o erro dele próprio. */
-  readonly erroDeCriacao = signal<string | null>(null);
+  /** Resumo da recusa da criação, exibido no passo: uma mensagem por recusa, na ordem recebida. */
+  readonly errosDaCriacao = signal<readonly string[]>([]);
 
   /** A resposta do servidor que recusou a criação; some quando a criação é tentada de novo. */
   private problemaDaCriacao: ProblemDetails | null = null;
 
-  /** Recusa do identificador, local ou do servidor, exibida junto ao campo. */
-  readonly erroDoIdentificador = signal<string | null>(null);
+  /** A recusa que o servidor fez a cada campo na última resposta; vale até o campo ser corrigido. */
+  private readonly recusasDoServidor = signal<
+    ReadonlyMap<CampoDaIdentificacao, readonly RecusaDoCampo[]>
+  >(new Map());
 
-  /** Campos inválidos detectados na última validação (chave → `.is-invalid`). */
-  readonly camposInvalidos = signal<ReadonlySet<string>>(new Set());
+  /** O que a conferência local achou na última validação. */
+  private readonly camposInvalidosLocais = signal<ReadonlySet<string>>(new Set());
+  private readonly erroLocalDoIdentificador = signal<string | null>(null);
+
+  /** A recusa de cada campo do passo, local ou do servidor, exibida junto ao campo. */
+  readonly errosDosCampos = computed<ReadonlyMap<CampoDaIdentificacao, ErroDoCampo>>(() => {
+    const local = this.erroLocalDoIdentificador();
+    const doServidor = new Map<CampoDaIdentificacao, ErroDoCampo>(
+      [...this.recusasDoServidor()].map(([campo, recusas]) => [campo, { recusas, local: null }]),
+    );
+    return local === null
+      ? doServidor
+      : doServidor.set('identificadorLegivel', { recusas: [], local });
+  });
+
+  /** Campos marcados como inválidos: os que a conferência local achou e os que o servidor recusou. */
+  readonly camposInvalidos = computed<ReadonlySet<string>>(
+    () => new Set([...this.camposInvalidosLocais(), ...this.recusasDoServidor().keys()]),
+  );
 
   /**
    * O valor que o servidor tem, contra o qual se decide se há o que gravar ao avançar. Vem do
@@ -73,6 +113,32 @@ export class GravacaoDaIdentificacao {
       const detalhe = this.store.remoteSnapshot();
       this.identificadorGravado.set(detalhe?.identificadorLegivel ?? null);
     });
+  }
+
+  erroDoCampo(campo: CampoDaIdentificacao): ErroDoCampo | null {
+    return this.errosDosCampos().get(campo) ?? null;
+  }
+
+  /** Os ids que descrevem o campo: a recusa dele, quando há, e a dica que ele já tinha. */
+  descritoPor(campo: CampoDaIdentificacao, dica?: string): string | null {
+    const recusa = this.erroDoCampo(campo) === null ? [] : [idDaRecusaDoCampo(campo)];
+    return [...recusa, ...(dica ? [dica] : [])].join(' ') || null;
+  }
+
+  /**
+   * A conferência local atualiza só o que ela mesma achou: a recusa do servidor a um campo que a
+   * pessoa não corrigiu continua à vista, porque só uma nova resposta do servidor a desfaz.
+   */
+  registrarValidacaoLocal(resultado: ResultadoDaValidacao): void {
+    this.camposInvalidosLocais.set(resultado.camposInvalidos);
+    this.erroLocalDoIdentificador.set(resultado.erroDoIdentificador ?? null);
+  }
+
+  /** Corrigir um campo retira a recusa dele; as dos outros campos permanecem. */
+  retirarRecusa(campo: CampoDaIdentificacao): void {
+    this.recusasDoServidor.update((erros) => new Map([...erros].filter(([c]) => c !== campo)));
+    this.camposInvalidosLocais.update((campos) => new Set([...campos].filter((c) => c !== campo)));
+    if (campo === 'identificadorLegivel') this.erroLocalDoIdentificador.set(null);
   }
 
   /** Campos que compõem o comando de criação e ainda estão vazios. */
@@ -118,12 +184,17 @@ export class GravacaoDaIdentificacao {
   }
 
   private recusaDaCriacao(): ValidacaoDoPasso {
-    const mensagens = [
-      this.erroDeCriacao() ?? 'Não foi possível criar o cadastro inicial. Tente novamente.',
-    ];
+    const mensagens = [...this.resumoDaFalhaDaCriacao()];
     return this.problemaDaCriacao === null
       ? { valid: false, messages: mensagens }
       : recusaDoServidor(this.problemaDaCriacao, mensagens);
+  }
+
+  private resumoDaFalhaDaCriacao(): readonly string[] {
+    const erros = this.errosDaCriacao();
+    return erros.length > 0
+      ? erros
+      : ['Não foi possível criar o cadastro inicial. Tente novamente.'];
   }
 
   /**
@@ -138,7 +209,7 @@ export class GravacaoDaIdentificacao {
     this.problemaDaCriacao = null;
     const faltando = this.camposFaltantesDoComando();
     if (faltando.length > 0) {
-      this.erroDeCriacao.set(`Para avançar, preencha: ${faltando.join(', ')}.`);
+      this.errosDaCriacao.set([`Para avançar, preencha: ${faltando.join(', ')}.`]);
       return null;
     }
 
@@ -163,6 +234,7 @@ export class GravacaoDaIdentificacao {
   }
 
   private registrarCriacao(processoId: string, identificador: string): string {
+    this.recusasDoServidor.set(new Map());
     this.store.criacaoIndefinida.set(false);
     this.identificadorGravado.set(identificador);
     this.store.processoSeletivoId.set(processoId);
@@ -186,13 +258,16 @@ export class GravacaoDaIdentificacao {
   private registrarRecusaDaCriacao(problem: ProblemDetails): void {
     this.store.criacaoIndefinida.set(this.cadastro.temCriacaoPendente());
     this.problemaDaCriacao = problem;
-    this.apontarRecusaDoIdentificador(problem);
-    const titulo = this.problemI18n.resolve(problem).title;
-    this.erroDeCriacao.set(
-      this.store.criacaoIndefinida()
-        ? `${titulo} Não é possível saber se o cadastro chegou a ser criado; use "Tentar novamente" para repetir o mesmo envio.`
-        : titulo,
+    this.apontarRecusasDosCampos(problem);
+    const resumo = this.resumoDaRecusa(problem);
+    this.errosDaCriacao.set(
+      this.store.criacaoIndefinida() ? [...resumo, AVISO_DE_CRIACAO_INDEFINIDA] : resumo,
     );
+  }
+
+  /** Cada recusa, uma vez, na ordem recebida — inclusive a que não aponta campo deste passo. */
+  private resumoDaRecusa(problem: ProblemDetails): string[] {
+    return resumoDasRecusas(problem, this.problemI18n.resolve(problem).title);
   }
 
   /** Grava o identificador de um processo já criado, quando ele mudou. */
@@ -211,6 +286,7 @@ export class GravacaoDaIdentificacao {
     });
     if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
     if (!resultado.ok) return this.recusaDoIdentificador(resultado);
+    this.recusasDoServidor.set(new Map());
     this.identificadorGravado.set(identificador);
     return { valid: true };
   }
@@ -220,15 +296,16 @@ export class GravacaoDaIdentificacao {
     readonly inconclusiva: boolean;
   }): ValidacaoDoPasso {
     if (resultado.inconclusiva) this.identificadorGravado.set(undefined);
-    this.apontarRecusaDoIdentificador(resultado.problem);
-    const titulo = this.problemI18n.resolve(resultado.problem).title;
-    return recusaDoServidor(resultado.problem, [titulo]);
+    this.apontarRecusasDosCampos(resultado.problem);
+    return recusaDoServidor(resultado.problem, this.resumoDaRecusa(resultado.problem));
   }
 
-  /** Recusa do servidor sobre o identificador vai para junto do campo, além do aviso do passo. */
-  private apontarRecusaDoIdentificador(problem: ProblemDetails): void {
-    if (!ehRecusaDoIdentificadorLegivel(problem.code)) return;
-    this.erroDoIdentificador.set(this.problemI18n.resolve(problem).title);
-    this.camposInvalidos.update((campos) => new Set([...campos, 'identificadorLegivel']));
+  /** Cada recusa que aponta um campo do passo vai para junto dele, e o foco vai ao primeiro. */
+  private apontarRecusasDosCampos(problem: ProblemDetails): void {
+    const erros = recusasDosCampos(problem, this.problemI18n.resolve(problem).title);
+    if (erros.size === 0 && (problem.errors ?? []).length === 0) return;
+    this.recusasDoServidor.set(erros);
+    const primeiro = CAMPOS_NA_ORDEM_DA_TELA.find((campo) => erros.has(campo));
+    if (primeiro !== undefined) focarAposRenderizar(this.injector, ID_DO_CAMPO[primeiro]);
   }
 }

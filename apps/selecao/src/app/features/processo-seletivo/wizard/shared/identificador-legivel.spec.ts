@@ -50,14 +50,38 @@ describe('problemaDoIdentificadorLegivel', () => {
   );
 });
 
+const EM_USO = 'uniplus.selecao.processo_seletivo.identificador_legivel_em_uso';
+
+function problema(code: string, errors?: { field?: string; code: string; message: string }[]) {
+  return { code, errors };
+}
+
 describe('ehRecusaDoIdentificadorLegivel', () => {
-  it('reconhece as recusas do campo pelo prefixo do código', () => {
+  it('reconhece a recusa de uma só causa pelo código, sem lista', () => {
+    expect(ehRecusaDoIdentificadorLegivel(problema(EM_USO))).toBe(true);
     expect(
-      ehRecusaDoIdentificadorLegivel(
-        'uniplus.selecao.processo_seletivo.identificador_legivel_em_uso',
-      ),
-    ).toBe(true);
-    expect(ehRecusaDoIdentificadorLegivel('uniplus.idempotency.processing_conflict')).toBe(false);
-    expect(ehRecusaDoIdentificadorLegivel(undefined)).toBe(false);
+      ehRecusaDoIdentificadorLegivel(problema('uniplus.idempotency.processing_conflict')),
+    ).toBe(false);
+  });
+
+  it('reconhece o identificador em segundo lugar da lista, pelo campo apontado', () => {
+    const lista = [
+      { field: 'nome', code: 'obrigatorio', message: 'O nome do processo seletivo é obrigatório.' },
+      { field: 'identificadorLegivel', code: 'tamanho', message: 'Identificador curto demais.' },
+    ];
+    expect(ehRecusaDoIdentificadorLegivel(problema('obrigatorio', lista))).toBe(true);
+  });
+
+  it('reconhece o identificador em uso na lista pelo código da causa', () => {
+    const lista = [
+      { field: 'nome', code: 'obrigatorio', message: 'O nome é obrigatório.' },
+      { code: EM_USO, message: 'O identificador legível já é usado por outro processo seletivo.' },
+    ];
+    expect(ehRecusaDoIdentificadorLegivel(problema('obrigatorio', lista))).toBe(true);
+  });
+
+  it('não reconhece lista sem causa do identificador, ainda que o código principal seja outro', () => {
+    const lista = [{ field: 'nome', code: 'obrigatorio', message: 'O nome é obrigatório.' }];
+    expect(ehRecusaDoIdentificadorLegivel(problema('obrigatorio', lista))).toBe(false);
   });
 });

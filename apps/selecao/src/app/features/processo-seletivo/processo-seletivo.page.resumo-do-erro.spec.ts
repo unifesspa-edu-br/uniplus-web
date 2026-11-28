@@ -27,7 +27,9 @@ describe('ProcessoSeletivoPage — resumo do erro do passo', () => {
   it('a região que anuncia o erro cobre só o resumo e a lista, não os passos', () => {
     const tela = paginaComErro();
 
-    const alertas = tela.querySelectorAll('[role="alert"]');
+    const alertas = [...tela.querySelectorAll('[role="alert"]')].filter((aviso) =>
+      Boolean(aviso.textContent?.trim()),
+    );
     expect(alertas).toHaveLength(1);
     expect(alertas[0].textContent).toContain('Há 1 erro no formulário');
     expect(alertas[0].textContent).toContain('Recusada.');

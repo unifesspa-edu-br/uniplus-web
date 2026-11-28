@@ -7,7 +7,11 @@ import { ligarRelogioControlado, passarOTempo } from '@uniplus/shared-testing';
 import { BUSCA_DE_MUNICIPIOS, ESPERA_DA_DIGITACAO_MS } from '@uniplus/shared-ui/components';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
+import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
+import { GravacaoDaIdentificacao } from './servicos/gravacao-da-identificacao.service';
 import { MunicipioDoProcessoComponent } from './municipio-do-processo.component';
 
 const MARABA = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' };
@@ -25,6 +29,10 @@ describe('Município que rege os prazos', () => {
       imports: [MunicipioDoProcessoComponent],
       providers: [
         ProcessoSeletivoStore,
+        CadastroInicial,
+        GravacaoDoProcesso,
+        GravacaoDaIdentificacao,
+        { provide: SELECAO_BASE_PATH, useValue: 'http://localhost:5000' },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: GEO_BASE_PATH, useValue: 'http://localhost:5000' },
@@ -119,7 +127,10 @@ describe('Município que rege os prazos', () => {
     await esperar();
     requisicao().flush({}, { status: 500, statusText: 'Erro' });
     detectar();
-    expect(host.querySelectorAll('[role="alert"]')).toHaveLength(1);
+    const anunciados = [...host.querySelectorAll('[role="alert"]')].filter((aviso) =>
+      Boolean(aviso.textContent?.trim()),
+    );
+    expect(anunciados).toHaveLength(1);
     const botao = host.querySelector('ui-falha-de-leitura-do-campo button') as HTMLButtonElement;
     expect(botao.textContent).toContain('Tentar novamente');
     botao.click();

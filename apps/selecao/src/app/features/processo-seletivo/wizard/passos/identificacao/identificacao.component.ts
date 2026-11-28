@@ -26,9 +26,11 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { OrigemCandidatosSelecionada, ValidacaoDoPasso } from '../../processo-seletivo.models';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { IdentificadorLegivelComponent } from './identificador-legivel.component';
+import { ErroDoCampoComponent } from './erro-do-campo.component';
 import { MunicipioDoProcessoComponent } from './municipio-do-processo.component';
 import { CatalogoDeUnidades } from './servicos/catalogo-de-unidades.service';
 import { GravacaoDaIdentificacao } from './servicos/gravacao-da-identificacao.service';
+import type { CampoDaIdentificacao } from './recusas-da-criacao';
 import { validarIdentificacao } from './validacao-da-identificacao';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 
@@ -55,6 +57,7 @@ export const ORIGENS_CANDIDATOS: readonly {
     ValorEmConsultaComponent,
     MunicipioDoProcessoComponent,
     IdentificadorLegivelComponent,
+    ErroDoCampoComponent,
   ],
   templateUrl: './identificacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -195,10 +198,7 @@ export class IdentificacaoPassoComponent {
       this.store.draft().identificacao,
       this.gravacao.identificadorDeclaravel(),
     );
-    if (resultado.erroDoIdentificador !== undefined) {
-      this.gravacao.erroDoIdentificador.set(resultado.erroDoIdentificador);
-    }
-    this.gravacao.camposInvalidos.set(resultado.camposInvalidos);
+    this.gravacao.registrarValidacaoLocal(resultado);
     return resultado.messages.length
       ? { valid: false, messages: [...resultado.messages] }
       : { valid: true };
@@ -213,7 +213,7 @@ export class IdentificacaoPassoComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((valor) => {
         this.store.patchObjectSection('identificacao', { identificadorLegivel: valor });
-        this.gravacao.erroDoIdentificador.set(null);
+        this.gravacao.retirarRecusa('identificadorLegivel');
       });
 
     effect(() => this.sincronizarIdentificadorLegivel());
@@ -228,6 +228,7 @@ export class IdentificacaoPassoComponent {
   }
 
   private ligarFormulario(): void {
+    this.retirarRecusasAoCorrigir();
     this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((valor) => {
       this.store.patchObjectSection('identificacao', {
         nome: valor.nome ?? '',
@@ -239,6 +240,22 @@ export class IdentificacaoPassoComponent {
     // A hidratação escreve no store; o formulário reflete sem devolver o eco, que reabriria o
     // ciclo e marcaria o campo como sujo sem o operador tocar.
     effect(() => this.sincronizarFormulario());
+  }
+
+  private retirarRecusasAoCorrigir(): void {
+    const { nome, origemCandidatos, unidadeAdministradoraId } = this.form.controls;
+    this.retirarRecusaAoCorrigir(nome, 'nome');
+    this.retirarRecusaAoCorrigir(origemCandidatos, 'origemCandidatos');
+    this.retirarRecusaAoCorrigir(unidadeAdministradoraId, 'unidadeAdministradoraId');
+  }
+
+  private retirarRecusaAoCorrigir(
+    controle: FormControl<string>,
+    campo: CampoDaIdentificacao,
+  ): void {
+    controle.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.gravacao.retirarRecusa(campo));
   }
 
   private sincronizarFormulario(): void {

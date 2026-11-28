@@ -45,9 +45,11 @@
           id="f-nome"
           placeholder="Processo Seletivo Seriado"
           formControlName="nome"
+          [attr.aria-describedby]="gravacao.descritoPor('nome')"
           [attr.aria-invalid]="gravacao.camposInvalidos().has('nome') || null"
           [class.is-invalid]="gravacao.camposInvalidos().has('nome')"
         />
+        <sel-erro-do-campo campo="nome" />
       </div>
       <sel-identificador-legivel
         class="form-field form-grid__full"
@@ -60,7 +62,9 @@
         <select
           class="input"
           id="f-unidade"
-          aria-describedby="f-unidade-hint"
+          [attr.aria-describedby]="
+            gravacao.descritoPor('unidadeAdministradoraId', 'f-unidade-hint')
+          "
           formControlName="unidadeAdministradoraId"
           [attr.aria-busy]="unidades.carregando() || null"
           [attr.aria-invalid]="gravacao.camposInvalidos().has('unidadeAdministradoraId') || null"
@@ -71,6 +75,7 @@
             <option [value]="unidade.id">{{ unidade.rotulo }}</option>
           }
         </select>
+        <sel-erro-do-campo campo="unidadeAdministradoraId" />
         <p class="field__hint" id="f-unidade-hint">
           Unidade responsável pela administração do certame. O município que rege os prazos é
           declarado abaixo, e não decorre dela.
@@ -85,7 +90,7 @@
         <select
           class="input"
           id="f-origem"
-          aria-describedby="f-origem-hint"
+          [attr.aria-describedby]="gravacao.descritoPor('origemCandidatos', 'f-origem-hint')"
           formControlName="origemCandidatos"
           [attr.aria-invalid]="gravacao.camposInvalidos().has('origemCandidatos') || null"
           [class.is-invalid]="gravacao.camposInvalidos().has('origemCandidatos')"
@@ -95,6 +100,7 @@
             <option [value]="origem.value">{{ origem.label }}</option>
           }
         </select>
+        <sel-erro-do-campo campo="origemCandidatos" />
         <p class="field__hint" id="f-origem-hint">
           <strong>Inscrição neste sistema:</strong> o candidato se inscreve no Uni+, e o cronograma
           precisa de ao menos uma fase de inscrição. <strong>Importação externa:</strong> os

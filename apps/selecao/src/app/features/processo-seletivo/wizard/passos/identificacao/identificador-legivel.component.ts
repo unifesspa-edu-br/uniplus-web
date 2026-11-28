@@ -2,12 +2,13 @@ import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
+import { ErroDoCampoComponent } from './erro-do-campo.component';
 import { GravacaoDaIdentificacao } from './servicos/gravacao-da-identificacao.service';
 
 /** O endereço público do certame no portal, editável enquanto o processo for rascunho. */
 @Component({
   selector: 'sel-identificador-legivel',
-  imports: [ValorLegivelDirective, ReactiveFormsModule],
+  imports: [ValorLegivelDirective, ReactiveFormsModule, ErroDoCampoComponent],
   templateUrl: './identificador-legivel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: ':host { display: block; }',
