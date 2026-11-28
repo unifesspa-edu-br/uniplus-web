@@ -4,6 +4,7 @@ import {
   FaseCanonicaDto,
   OrigemDataFaseCodigo,
 } from '@uniplus/shared-data/configuracao';
+import { respostaExigida } from '@uniplus/shared-data/utils';
 import {
   controlNameFromBackendField,
   controleDeMarca,
@@ -118,20 +119,16 @@ function textosAparados(valor: ValoresDaFase) {
   };
 }
 
-/** A fase só é enviada depois de dizer se é organizada em chamadas; a lacuna não vira "não". */
-function escolhaDeChamadas(valor: ValoresDaFase): boolean {
-  if (valor.organizadaEmChamadas === null) {
-    throw new Error('A fase só é enviada depois de dizer se é organizada em chamadas.');
-  }
-  return valor.organizadaEmChamadas;
-}
-
 function marcasDaFase(valor: ValoresDaFase) {
   return {
     agrupaEtapas: valor.agrupaEtapas,
     permiteComplementacao: valor.permiteComplementacao,
     coletaInscricao: valor.coletaInscricao,
     coletaSolicitacaoIsencao: valor.coletaSolicitacaoIsencao,
+    organizadaEmChamadas: respostaExigida(
+      valor.organizadaEmChamadas,
+      'se a fase é organizada em chamadas',
+    ),
   };
 }
 
@@ -145,6 +142,5 @@ export function comandoDeAtualizacao(
     ...textosAparados(valor),
     ...marcasDaFase(valor),
     origemData: valor.origemData,
-    organizadaEmChamadas: escolhaDeChamadas(valor),
   };
 }

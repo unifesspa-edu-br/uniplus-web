@@ -83,8 +83,8 @@ function problemasDaFaseDoCronograma(
   catalogos: CatalogosDaConferencia,
 ): readonly string[] {
   const { nome, exigencias } = descreverFase(fase, catalogos.fasePorId);
-  if (exigencias === null) return [];
   const declarados = problemasDeclaradosDaFase(fase, catalogos, nome);
+  if (exigencias === null) return declarados;
   return [...problemasDaJanelaDaFase(fase, nome, exigencias), ...declarados];
 }
 

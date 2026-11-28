@@ -1,4 +1,5 @@
-import { FundamentoIsencaoCodigo } from '@uniplus/shared-data/selecao';
+import { respostaExigida } from '@uniplus/shared-data/utils';
+import { DefinirTaxaInscricaoRequest, FundamentoIsencaoCodigo } from '@uniplus/shared-data/selecao';
 
 import { ValidacaoDoPasso, WizardDraft } from '../../processo-seletivo.models';
 import { analisarValorEmReais, FORMATO_VALOR_EM_REAIS } from '../../shared/valor-em-reais';
@@ -38,9 +39,9 @@ export function alternarFundamentoEscolhido(
     : [...escolhidos, codigo];
 }
 
-export function comandoDaTaxa(pagamento: DeclaracaoDaTaxa) {
+export function comandoDaTaxa(pagamento: DeclaracaoDaTaxa): DefinirTaxaInscricaoRequest {
   return {
-    cobra: pagamento.cobra,
+    cobra: respostaExigida(pagamento.cobra, 'se o processo cobra taxa de inscrição'),
     valor: analisarValorEmReais(pagamento.valor),
     fundamentos: pagamento.fundamentos,
   };

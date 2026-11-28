@@ -12,7 +12,7 @@ import {
 import { parametrosParaComando } from './cronograma-para-comando';
 
 const comParametros = (parcial: Partial<ParametrosDoRecurso>) =>
-  parametrosParaComando({ ...PARAMETROS_EM_BRANCO, ...parcial });
+  parametrosParaComando({ ...PARAMETROS_EM_BRANCO, admiteInstanciaSuperior: false, ...parcial });
 
 interface CasoDePrazo {
   readonly nome: string;

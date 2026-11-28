@@ -1,4 +1,4 @@
-import { codigoExigidoDoContrato } from '@uniplus/shared-data/utils';
+import { codigoExigidoDoContrato, respostaExigida } from '@uniplus/shared-data/utils';
 import {
   type EtapaProcessoInput,
   type FaseCronogramaInput,
@@ -141,14 +141,17 @@ type ParametrosDoRecursoInput = Pick<
 /**
  * Os parâmetros do recurso como o comando os recebe, iguais na fase e na etapa. O que a pessoa não
  * preencheu viaja como nulo e o valor lido viaja como veio: quem confere prazo, efeito e guarda é
- * o servidor. A pergunta da instância superior em aberto não chega aqui, a conferência do passo
- * barra a gravação antes.
+ * o servidor. A pergunta da instância superior em aberto interrompe a montagem: a conferência do
+ * passo a recusa antes, e aqui ela nunca vira "não".
  */
 export function parametrosParaComando(parametros: ParametrosDoRecurso): ParametrosDoRecursoInput {
   return {
     prazoValor: decimalDoCampo(parametros.prazoValor),
     prazoUnidade: codigoOuNulo(parametros.prazoUnidade),
-    admiteInstanciaSuperior: parametros.admiteInstanciaSuperior === true,
+    admiteInstanciaSuperior: respostaExigida(
+      parametros.admiteInstanciaSuperior,
+      'se o recurso admite instância superior',
+    ),
     prazoSegundaInstanciaValor: decimalDoCampo(parametros.prazoSegundaInstanciaValor),
     prazoSegundaInstanciaUnidade: codigoOuNulo(parametros.prazoSegundaInstanciaUnidade),
     efeitoSuspensivo: codigoOuNulo(parametros.efeitoSuspensivo),

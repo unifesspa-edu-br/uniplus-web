@@ -78,14 +78,18 @@ function origemDoPrazoLida(recurso: RecursoDaEtapa, nomeDoAto: (codigo: string) 
     : 'prazo corre da ciência do candidato';
 }
 
+function instanciaSuperiorLida(admite: boolean | null): string {
+  if (admite === null) return 'instância superior: ainda não respondida';
+  return admite ? 'admite instância superior' : 'não admite instância superior';
+}
+
 function parametrosLidos(recurso: RecursoDaEtapa): readonly string[] {
   const lidos = parametrosEmTexto(recurso, recurso.leitura);
-  const admite = lidos.admiteInstanciaSuperior === true;
   return [
     lidos.prazo === null ? 'prazo não informado' : `prazo de interposição: ${lidos.prazo}`,
     ...(lidos.efeitoSuspensivo === null ? [] : [`efeito suspensivo: ${lidos.efeitoSuspensivo}`]),
     ...(lidos.guardaDaVaga === null ? [] : [`guarda da vaga: ${lidos.guardaDaVaga}`]),
-    admite ? 'admite instância superior' : 'não admite instância superior',
+    instanciaSuperiorLida(lidos.admiteInstanciaSuperior),
     ...(lidos.prazoDaSegundaInstancia === null
       ? []
       : [`prazo da 2ª instância: ${lidos.prazoDaSegundaInstancia}`]),

@@ -235,6 +235,47 @@ describe('recurso da etapa no ida-e-volta', () => {
   });
 });
 
+const PARAMETROS_DA_FASE: RecursoDaFase = {
+  regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
+  regraVersao: 'v1',
+  atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
+  ...PARAMETROS_COM_INSTANCIA_SUPERIOR,
+  leitura: umaLeituraDoRecurso(),
+  procedimentos: [],
+};
+
+describe('instância superior em aberto no comando', () => {
+  it('não monta o comando da etapa com a pergunta em aberto', () => {
+    const etapa = etapasDe(detalheComRecursoDaEtapa({ admiteInstanciaSuperior: false }))[0];
+    const emAberto = {
+      ...etapa,
+      recursos: etapa.recursos.map((recurso) => ({ ...recurso, admiteInstanciaSuperior: null })),
+    };
+
+    expect(() => comoComandoDeEtapa(emAberto)).toThrow(
+      'O comando só é montado depois de responder se o recurso admite instância superior.',
+    );
+  });
+
+  it.each([true, false])('envia o "%s" escolhido no recurso da fase', (escolha) => {
+    const fase = umaFaseDoCronograma({
+      regraRecurso: { ...PARAMETROS_DA_FASE, admiteInstanciaSuperior: escolha },
+    });
+
+    expect(comoComandoDeFase(fase).regraRecurso?.admiteInstanciaSuperior).toBe(escolha);
+  });
+
+  it('não monta o comando da fase com a pergunta em aberto', () => {
+    const fase = umaFaseDoCronograma({
+      regraRecurso: { ...PARAMETROS_DA_FASE, admiteInstanciaSuperior: null },
+    });
+
+    expect(() => comoComandoDeFase(fase)).toThrow(
+      'O comando só é montado depois de responder se o recurso admite instância superior.',
+    );
+  });
+});
+
 describe('fase no comando', () => {
   const regraRecurso: RecursoDaFase = {
     regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',

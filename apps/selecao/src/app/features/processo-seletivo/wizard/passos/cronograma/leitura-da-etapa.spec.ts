@@ -225,6 +225,15 @@ describe('etapa lida na consulta', () => {
     expect(texto).not.toContain('guarda da vaga');
   });
 
+  it('lê a instância superior em aberto como ainda não respondida, nunca como não admite', () => {
+    const [texto] = lida({
+      recursos: [{ ...recurso, admiteInstanciaSuperior: null }],
+    }).recursos;
+
+    expect(texto).toContain('instância superior: ainda não respondida');
+    expect(texto).not.toContain('não admite');
+  });
+
   it('lê o recurso sem prazo que corre da ciência do candidato', () => {
     const [texto] = lida({
       recursos: [
