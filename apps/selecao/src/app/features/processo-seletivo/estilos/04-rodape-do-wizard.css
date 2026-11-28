@@ -14,7 +14,29 @@
   flex-shrink: 0;
 }
 
+/* Região viva do andamento da publicação: sempre montada; sem texto, não ocupa linha própria. */
+.wiz-footer__andamento {
+  flex: 1;
+  margin: 0;
+  text-align: right;
+  color: var(--text-secondary);
+}
+
 @media (max-width: 767px) {
+  .wiz-footer {
+    flex-wrap: wrap;
+  }
+
+  .wiz-footer__andamento {
+    flex: 0 0 auto;
+  }
+
+  .wiz-footer__andamento--ativo {
+    flex-basis: 100%;
+    order: -1;
+    text-align: left;
+  }
+
   .wiz-footer {
     padding: var(--space-3) var(--space-4);
   }

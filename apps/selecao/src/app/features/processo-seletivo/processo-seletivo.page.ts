@@ -23,6 +23,7 @@ import {
   StepsResponsivoComponent,
   type StepItem,
 } from '@uniplus/shared-ui/components';
+import { andamentoDaPublicacao } from './andamento-da-publicacao';
 import { ProcessoSeletivoStore } from './wizard/processo-seletivo.store';
 import { PASSOS } from './wizard/processo-seletivo.data';
 import { PASSO_DO_WIZARD } from './wizard/passo-do-wizard';
@@ -192,6 +193,11 @@ export class ProcessoSeletivoPage {
     const passo = this.conducao.passoNo(this.store.passoAtual());
     return passo?.rotuloDeAvanco?.() ?? 'Próximo';
   });
+
+  /** Só `publicar()` liga `travamentoDeOrquestracao`: distingue a conferência da gravação de um passo. */
+  protected readonly andamentoDaPublicacao = computed(() =>
+    andamentoDaPublicacao(this.store.travamentoDeOrquestracao()),
+  );
 
   /** No último passo o avanço só publica, e publicar exige rascunho e a permissão de publicar. */
   readonly ofereceAvanco = computed(
