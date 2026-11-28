@@ -38,7 +38,7 @@ export class ConferenciaDoQuadro {
       numeroDeOpcoes: this.estado.numeroDeOpcoes(),
       distribuicoes: this.estado.distribuicoes(),
       ofertasForaDoPadrao: this.estado.ofertasForaDoPadrao().length,
-      simulacaoCobreOQuadro: this.estado.simulacaoCobreOQuadro(),
+      faltaSimular: this.estado.faltaSimular(),
       problemasDoPadrao: this.problemasDoPadrao(),
       pendenciasDoQuadro: this.pendenciasDoQuadro(),
       problemasEspecificos: this.problemasEspecificos(),
