@@ -168,11 +168,11 @@
                   [value]="fato.codigo"
                   [selected]="fato.codigo === store.draft().fada.fatoElegibilidadeCodigo"
                 >
-                  {{ rotuloDoFatoDeElegibilidade(fato) }}
+                  {{ fato.rotulo }}
                 </option>
               }
               @if (fatoEscolhidoForaDoFormulario(); as codigo) {
-                <option [value]="codigo" selected>{{ codigo }}</option>
+                <option [value]="codigo" selected>{{ rotuloDoFatoForaDoFormulario() }}</option>
               }
             </select>
             <span class="field__hint" id="f-fada-elegibilidade-ajuda">
@@ -208,8 +208,9 @@
             }
             @if (fatoEscolhidoForaDoFormulario(); as codigo) {
               <span class="field__hint" id="f-fada-elegibilidade-erro" role="alert">
-                O fato {{ codigo }} não está mais no formulário de inscrição como campo de sim ou
-                não, nem é derivado assim pelo processo. Escolha outro ou volte a incluí-lo.
+                O fato {{ rotuloDoFatoForaDoFormulario() }} não está mais no formulário de inscrição
+                como campo de sim ou não, nem é derivado assim pelo processo. Escolha outro ou volte
+                a incluí-lo.
               </span>
             }
           </div>

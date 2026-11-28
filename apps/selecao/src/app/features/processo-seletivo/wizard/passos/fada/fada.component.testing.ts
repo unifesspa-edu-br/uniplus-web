@@ -9,6 +9,7 @@ import {
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 
 import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
+import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
@@ -33,6 +34,7 @@ const PROVEDORES = [
   GravacaoDoProcesso,
   CatalogosDeClassificacao,
   CatalogoDeFases,
+  CatalogoDeFatos,
   provideHttpClient(withInterceptors([apiResultInterceptor])),
   provideHttpClientTesting(),
   { provide: SELECAO_BASE_PATH, useValue: BASE },

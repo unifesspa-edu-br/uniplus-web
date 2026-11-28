@@ -101,7 +101,7 @@ describe('regra gravada no select, passo lido como texto em consulta — fórmul
       expect(semControles(host)).toEqual([]);
       expect(leitura(host)).toEqual([
         ['Fator de Atenuação', 'Aplicado neste processo'],
-        ['Regra do Fator de Atenuação', 'BONUS-REGIONAL — Base de BONUS-REGIONAL'],
+        ['Regra do Fator de Atenuação', 'BONUS-REGIONAL'],
         ['Multiplicador da nota', '1,2'],
         ['Teto', 'Sem teto'],
         ['Base legal do Fator de Atenuação', 'Não informado'],

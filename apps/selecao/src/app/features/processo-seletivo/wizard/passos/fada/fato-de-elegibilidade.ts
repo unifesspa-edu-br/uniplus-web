@@ -4,11 +4,18 @@ import type { ConteudoDoFormulario } from '@uniplus/shared-inscricao/formulario'
 
 import type { FormularioDeInscricao, WizardDraft } from '../../processo-seletivo.models';
 
-/** Um fato que pode decidir quem recebe o acréscimo, como o seletor o mostra. */
+/** Um fato que pode decidir quem recebe o acréscimo, com o texto que o seletor mostra. */
 export interface FatoDeElegibilidade {
   readonly codigo: string;
   readonly rotulo: string;
-  readonly origem: 'campo' | 'derivado';
+}
+
+/** O nome que o cadastro de dados do candidato dá ao código, ou `undefined` quando não tem. */
+export type NomeDoFato = (codigo: string) => string | undefined;
+
+/** "Nome (CÓDIGO)"; o código sozinho só quando não há nome para ele. */
+export function rotuloDoFato(codigo: string, nome: string | undefined): string {
+  return nome === undefined || nome.trim() === '' ? codigo : `${nome} (${codigo})`;
 }
 
 /**
@@ -29,29 +36,36 @@ export function citaFatoDeElegibilidade(draft: WizardDraft): boolean {
 export function fatosDeElegibilidade(
   inscricao: ConteudoDoFormulario,
   derivacao: FormularioDeInscricao['derivacao'],
+  nomeDoFato: NomeDoFato,
 ): readonly FatoDeElegibilidade[] {
-  return [...camposBooleanos(inscricao), ...derivadosBooleanos(derivacao)];
+  return [...camposBooleanos(inscricao, nomeDoFato), ...derivadosBooleanos(derivacao, nomeDoFato)];
 }
 
-function camposBooleanos(inscricao: ConteudoDoFormulario): readonly FatoDeElegibilidade[] {
+/** O campo do formulário leva o texto da pergunta; sem ele, vale o nome do cadastro. */
+function camposBooleanos(
+  inscricao: ConteudoDoFormulario,
+  nomeDoFato: NomeDoFato,
+): readonly FatoDeElegibilidade[] {
   return (inscricao.itens ?? [])
     .filter((item) => item.apresentacao.tipoDeCampo === TipoDeCampoCodigo.SIM_OU_NAO)
     .map((item) => ({
       codigo: item.fatoCodigo,
-      rotulo: item.apresentacao.rotulo,
-      origem: 'campo',
+      rotulo: rotuloDoFato(
+        item.fatoCodigo,
+        item.apresentacao.rotulo.trim() || nomeDoFato(item.fatoCodigo),
+      ),
     }));
 }
 
 function derivadosBooleanos(
   derivacao: FormularioDeInscricao['derivacao'],
+  nomeDoFato: NomeDoFato,
 ): readonly FatoDeElegibilidade[] {
   return derivacao
     .filter((derivacao) => derivacaoBooleana(derivacao.regras))
     .map((derivacao) => ({
       codigo: derivacao.codigoFato,
-      rotulo: derivacao.codigoFato,
-      origem: 'derivado',
+      rotulo: rotuloDoFato(derivacao.codigoFato, nomeDoFato(derivacao.codigoFato)),
     }));
 }
 
