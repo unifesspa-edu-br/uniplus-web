@@ -139,10 +139,8 @@ describe('ComprovanteDaInscricaoComponent', () => {
       expect(dado(tela, 'Situação')).toBe('Inscrição cancelada');
     });
 
-    it('sem cancelamento, o último envio é o que vale', () => {
-      expect(dado(montar({ vale: true, cancelamento: null }).tela, 'Situação')).toBe(
-        'É o que vale',
-      );
+    it('sem cancelamento, o último envio é o válido', () => {
+      expect(dado(montar({ vale: true, cancelamento: null }).tela, 'Situação')).toBe('Válido');
     });
 
     it('sem cancelamento, o envio anterior foi substituído', () => {
