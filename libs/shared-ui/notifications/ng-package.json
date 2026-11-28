@@ -1,5 +1,5 @@
 {
   "lib": {
-    "entryFile": "../src/lib/components/notification-host/notification-host.ts"
+    "entryFile": "../src/lib/components/notifications.ts"
   }
 }

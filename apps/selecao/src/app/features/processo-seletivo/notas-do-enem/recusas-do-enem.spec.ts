@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { explicarRecusa } from './recusas-do-enem';
 
 const NS = 'uniplus.selecao.notas_do_enem.';
+const ID = '0af7651916cd43dd8448eb211c80319c';
 
 function problema(
   status: number,
@@ -15,7 +16,7 @@ function problema(
     title: 'Título do servidor',
     status,
     code,
-    traceId: 'trace-1',
+    traceId: ID,
     ...extras,
   };
 }
@@ -79,7 +80,11 @@ describe('explicarRecusa na importação', () => {
 
     expect(recusa.titulo).toContain('nenhuma nota foi gravada');
     expect(recusa.explicacao).toBe('Título do servidor');
-    expect(recusa.traceId).toBeNull();
+    expect(recusa.referencia).toEqual({
+      origem: 'servidor',
+      codigoDoErro: 'uniplus.selecao.outro_codigo',
+      identificadorDoPedido: ID,
+    });
   });
 
   it('4xx sintetizado pelo cliente não repete o título genérico dele', () => {
@@ -100,7 +105,6 @@ describe('explicarRecusa na importação', () => {
 
       expect(recusa.titulo).not.toContain('nenhuma nota foi gravada');
       expect(recusa.orientacao).toContain('Confira o histórico de lotes');
-      expect(recusa.traceId).toBe('trace-1');
     }
   });
 
@@ -135,5 +139,57 @@ describe('explicarRecusa no envio', () => {
 
     expect(recusa.titulo).toBe('Não foi possível gerar o arquivo de envio.');
     expect(recusa.explicacao).toBe('A requisição foi recusada.');
+  });
+});
+
+describe('referência ao suporte da recusa', () => {
+  it('falha de servidor traz o código e o identificador que a resposta enviou', () => {
+    const recusa = explicarRecusa(problema(500, 'uniplus.erro.interno'), 'importacao');
+
+    expect(recusa.referencia).toEqual({
+      origem: 'servidor',
+      codigoDoErro: 'uniplus.erro.interno',
+      identificadorDoPedido: ID,
+    });
+  });
+
+  it('sem resposta da API não há o que levar ao suporte', () => {
+    const recusa = explicarRecusa(
+      problema(0, CLIENT_PROBLEM_CODES.NETWORK_ERROR, { traceId: '' }),
+      'importacao',
+    );
+
+    expect(recusa.referencia).toBeNull();
+  });
+
+  it('identificador fora do formato da API não vai ao suporte', () => {
+    const recusa = explicarRecusa(
+      problema(422, `${NS}arquivo_vazio`, { traceId: 'trace-1' }),
+      'importacao',
+    );
+
+    expect(recusa.referencia).toEqual({
+      origem: 'servidor',
+      codigoDoErro: `${NS}arquivo_vazio`,
+      identificadorDoPedido: null,
+    });
+  });
+
+  it('sem código nem identificador no formato, a referência não existe', () => {
+    const recusa = explicarRecusa(problema(422, 'Código Inválido', { traceId: '' }), 'envio');
+
+    expect(recusa.referencia).toBeNull();
+  });
+
+  it('cada recusa traz o código e o identificador nos três usos', () => {
+    for (const contexto of ['envio', 'importacao', 'lote'] as const) {
+      const recusa = explicarRecusa(problema(422, `${NS}lote_nao_encontrado`), contexto);
+
+      expect(recusa.referencia).toEqual({
+        origem: 'servidor',
+        codigoDoErro: `${NS}lote_nao_encontrado`,
+        identificadorDoPedido: ID,
+      });
+    }
   });
 });

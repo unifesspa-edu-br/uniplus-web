@@ -15,6 +15,8 @@ import {
 } from './notas-do-enem.testing';
 
 const ROTA_LOTES = `${ROTA_EDICAO}/lotes-de-notas`;
+const ID_DO_PEDIDO = '0af7651916cd43dd8448eb211c80319c';
+
 describe('ImportacaoDeNotasComponent', () => {
   let controller: HttpTestingController;
   let tela: TelaAberta;
@@ -81,7 +83,7 @@ describe('ImportacaoDeNotasComponent', () => {
         status,
         code,
         detail,
-        traceId: 't-1',
+        traceId: ID_DO_PEDIDO,
       }),
       {
         status,
@@ -124,6 +126,8 @@ describe('ImportacaoDeNotasComponent', () => {
     expect(secao().textContent).toContain('Escolha o leiaute do arquivo de retorno.');
     expect(secao().textContent).toContain('Escolha o arquivo de retorno do INEP.');
     expect(document.activeElement).toBe(leiaute());
+    expect(secao().querySelector('ui-referencia-ao-suporte')).toBeNull();
+    expect(secao().textContent).not.toContain('Código do erro');
   });
 
   it('importa o formulário multipart, mostra o resultado em abas por tipo de ocorrência, a linha sem inscrito só com o número, e limpa o arquivo', async () => {
@@ -220,6 +224,22 @@ describe('ImportacaoDeNotasComponent', () => {
     expect(alerta?.textContent).toContain('Linha 3, coluna 21.');
     expect(document.activeElement).toBe(alerta);
     expect(secao().querySelector('.uni-uploader__item')).not.toBeNull();
+  });
+
+  it('a recusa da API mostra o bloco do suporte fora do alerta, e o foco continua no alerta', async () => {
+    await prepararPedido();
+
+    botao().click();
+    const [corpo, opcoes] = problema(413, 'uniplus.selecao.notas_do_enem.arquivo_grande_demais');
+    controller.expectOne(ROTA_LOTES).flush(corpo, opcoes);
+    await tela.fixture.whenStable();
+    tela.fixture.detectChanges();
+    await tick();
+
+    const bloco = secao().querySelector('ui-referencia-ao-suporte');
+    expect(bloco?.textContent).toContain(ID_DO_PEDIDO);
+    expect(bloco?.textContent).toContain('uniplus.selecao.notas_do_enem.arquivo_grande_demais');
+    expect(secao().querySelector('[role="alert"] ui-referencia-ao-suporte')).toBeNull();
   });
 
   it('falha de servidor não afirma que nada foi gravado e relê o histórico que manda conferir', async () => {

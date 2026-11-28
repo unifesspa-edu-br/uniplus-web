@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { NotificationService, NotificationType } from '@uniplus/shared-core/notifications';
+import { ReferenciaAoSuporteComponent } from '../referencia-ao-suporte/referencia-ao-suporte';
 
 /**
- * Apresentacional (ADR-0017): renderiza a fila de toasts mantida pelo
+ * Apresentacional (ADR-0017): renderiza a fila de avisos mantida pelo
  * `NotificationService` (`shared-core`).
  *
  * Coloque uma única instância no shell de cada app:
@@ -12,23 +13,17 @@ import { NotificationService, NotificationType } from '@uniplus/shared-core/noti
  *
  * **Acessibilidade (WCAG 2.1 AA + e-MAG 3.1):**
  * - Container com `role="region"` + `aria-label` descritivo.
- * - Cada toast renderizado com `role="status"` (info/success/warning) ou
- *   `role="alert"` (error). Em info/success usa `aria-live="polite"`,
- *   em error/warning usa `aria-live="assertive"` para garantir anúncio
- *   imediato pelo leitor de tela.
- * - Botões "Copiar traceId" e "Fechar" são `<button type="button">`
- *   focáveis via Tab; navegação por teclado nativa.
- *
- * **`Copiar traceId`:** botão renderizado apenas quando
- * `notification.traceId` é não-vazio. Usa `navigator.clipboard.writeText`
- * com fallback silencioso em navegadores sem suporte (operador opt-in via
- * `aria-pressed` para feedback). `traceId` selecionável via `select-all`
- * dispensa clipboard quando esta API não existir.
+ * - O texto de cada aviso fica num elemento com `role="status"` (info/success)
+ *   ou `role="alert"` (error/warning); o leitor de tela o anuncia uma vez.
+ * - A referência ao suporte (código do erro e identificador do pedido) fica
+ *   no mesmo aviso, fora do elemento que anuncia, e usa a região de status
+ *   do próprio bloco para dizer o resultado da cópia.
+ * - "Fechar" é `<button type="button">` focável por Tab.
  */
 @Component({
   selector: 'ui-notification-host',
   standalone: true,
-  imports: [],
+  imports: [ReferenciaAoSuporteComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="toast-stack" role="region" aria-label="Notificações do sistema">
@@ -41,37 +36,33 @@ import { NotificationService, NotificationType } from '@uniplus/shared-core/noti
             [class.toast--warning]="notification.type === 'warning'"
             [class.toast--info]="notification.type === 'info'"
             [attr.data-testid]="'notification-host-toast-' + notification.type"
-            [attr.role]="papelAria(notification.type)"
-            [attr.aria-live]="ariaLive(notification.type)"
-            [attr.aria-atomic]="true"
           >
-            <span class="toast__icon" aria-hidden="true">{{ iconFor(notification.type) }}</span>
-            <div class="toast__body">
-              <p class="toast__title" data-testid="notification-host-title">
-                {{ notification.title }}
-              </p>
-              @if (notification.detail) {
-                <p class="toast__msg" data-testid="notification-host-detail">
-                  {{ notification.detail }}
+            <div
+              class="toast__anuncio"
+              data-testid="notification-host-anuncio"
+              [attr.role]="papelAria(notification.type)"
+              [attr.aria-live]="ariaLive(notification.type)"
+              [attr.aria-atomic]="true"
+            >
+              <span class="toast__icon" aria-hidden="true">{{ iconFor(notification.type) }}</span>
+              <div class="toast__body">
+                <p class="toast__title" data-testid="notification-host-title">
+                  {{ notification.title }}
                 </p>
-              }
-              @if (notification.traceId) {
-                <div class="ui-toast-trace" data-testid="notification-host-trace-block">
-                  <span>{{ traceIdLabel }}</span>
-                  <code data-testid="notification-host-trace-id">{{ notification.traceId }}</code>
-                  <button
-                    type="button"
-                    class="btn btn--tertiary btn--sm"
-                    data-testid="notification-host-copy-trace"
-                    [attr.aria-label]="copyTraceLabelFor(notification.traceId)"
-                    [attr.aria-pressed]="idsCopiados().has(notification.id)"
-                    (click)="copiarTrace(notification.id, notification.traceId)"
-                  >
-                    {{ idsCopiados().has(notification.id) ? copiedLabel : copyLabel }}
-                  </button>
-                </div>
-              }
+                @if (notification.detail) {
+                  <p class="toast__msg" data-testid="notification-host-detail">
+                    {{ notification.detail }}
+                  </p>
+                }
+              </div>
             </div>
+            @if (notification.referencia; as referencia) {
+              <ui-referencia-ao-suporte
+                class="toast__referencia"
+                data-testid="notification-host-referencia"
+                [referencia]="referencia"
+              />
+            }
             <button
               type="button"
               class="toast__close"
@@ -90,39 +81,10 @@ import { NotificationService, NotificationType } from '@uniplus/shared-core/noti
 export class NotificationHostComponent {
   private readonly service = inject(NotificationService);
   protected readonly notifications = this.service.notifications;
-  /** IDs de notifications cujo traceId já foi copiado (para feedback de "Copiado!"). */
-  private readonly _idsCopiados = signal<ReadonlySet<number>>(new Set());
-  protected readonly idsCopiados = this._idsCopiados.asReadonly();
-
   protected readonly dismissLabel = 'Fechar notificação';
-  protected readonly traceIdLabel = 'ID de rastreamento:';
-  protected readonly copyLabel = 'Copiar';
-  protected readonly copiedLabel = 'Copiado!';
-
-  protected readonly hasNotifications = computed(() => this.notifications().length > 0);
 
   protected dispensar(id: number): void {
     this.service.dismiss(id);
-  }
-
-  /**
-   * Copia o `traceId` para o clipboard. Quando `navigator.clipboard` não está
-   * disponível, ou a cópia falha, o usuário ainda pode selecionar o `<code>`
-   * (atributo `select-all`) e copiar manualmente com Ctrl+C.
-   */
-  protected copiarTrace(id: number, traceId: string): void {
-    const clipboard = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
-    if (!clipboard?.writeText) {
-      return;
-    }
-    void clipboard.writeText(traceId).then(
-      () => this.marcarComoCopiado(id),
-      () => undefined,
-    );
-  }
-
-  private marcarComoCopiado(id: number): void {
-    this._idsCopiados.update((current) => new Set(current).add(id));
   }
 
   protected papelAria(type: NotificationType): 'alert' | 'status' {
@@ -141,9 +103,5 @@ export class NotificationHostComponent {
       info: 'i',
     };
     return icons[type];
-  }
-
-  protected copyTraceLabelFor(traceId: string): string {
-    return `Copiar ID de rastreamento ${traceId}`;
   }
 }

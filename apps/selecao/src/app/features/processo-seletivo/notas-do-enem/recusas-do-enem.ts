@@ -1,4 +1,9 @@
-import { CLIENT_PROBLEM_CODES, type ProblemDetails } from '@uniplus/shared-core/http';
+import {
+  CLIENT_PROBLEM_CODES,
+  referenciaDaRecusa,
+  type ProblemDetails,
+  type ReferenciaAoSuporte,
+} from '@uniplus/shared-core/http';
 
 /** De onde a recusa veio: a geração do envio, a importação do retorno ou a abertura de um lote. */
 export type ContextoDaRecusa = 'envio' | 'importacao' | 'lote';
@@ -14,8 +19,8 @@ export interface RecusaExplicada {
   readonly detalhe: string | null;
   /** O catálogo de leiautes mudou: a tela precisa relê-lo e limpar a escolha. */
   readonly recarregarCatalogo: boolean;
-  /** Código para a equipe técnica, só quando a falha não é uma recusa da API. */
-  readonly traceId: string | null;
+  /** O código do erro e o identificador do pedido que a resposta traz; nulo sem resposta ou fora do formato da API. */
+  readonly referencia: ReferenciaAoSuporte | null;
 }
 
 const PREFIXO = 'uniplus.selecao.notas_do_enem.';
@@ -166,6 +171,11 @@ function textoDoCodigo(problem: ProblemDetails, opcoes: OpcoesDaRecusa): Texto |
     : POR_CODIGO[problem.code];
 }
 
+/** Sem resposta da API não há pedido registrado no servidor: nada a levar ao suporte. */
+function referenciaDoPedido(problem: ProblemDetails): ReferenciaAoSuporte | null {
+  return problem.status === 0 ? null : referenciaDaRecusa(problem);
+}
+
 function recusaDeFalhaIncerta(
   problem: ProblemDetails,
   contexto: ContextoDaRecusa,
@@ -177,7 +187,7 @@ function recusaDeFalhaIncerta(
     nivel: 'danger',
     detalhe: null,
     recarregarCatalogo: false,
-    traceId: problem.traceId === '' ? null : problem.traceId,
+    referencia: referenciaDoPedido(problem),
   };
 }
 
@@ -219,7 +229,7 @@ function montar(
     nivel: texto.nivel ?? 'danger',
     detalhe: detalheDoProblema(texto, problem),
     recarregarCatalogo: texto.recarregarCatalogo === true,
-    traceId: null,
+    referencia: referenciaDoPedido(problem),
   };
 }
 

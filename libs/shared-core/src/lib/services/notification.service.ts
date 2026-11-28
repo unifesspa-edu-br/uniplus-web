@@ -1,25 +1,28 @@
 import { Injectable, signal } from '@angular/core';
-import { identificadorDoPedido, type ProblemDetails } from '@uniplus/shared-core/http';
+import {
+  referenciaDaRecusa,
+  type ProblemDetails,
+  type ReferenciaAoSuporte,
+} from '@uniplus/shared-core/http';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
 /**
  * Toast renderizado pelo `NotificationHostComponent` (`shared-ui`).
  *
- * Campos `traceId` e `code` só aparecem em notificações disparadas por
- * `errorFromProblem(problem)` — em `success/info/warning/error` simples
- * ficam `undefined`. O host usa `traceId` para habilitar botão
- * "Copiar traceId" e `code` para i18n/analytics.
+ * `referencia` só existe em avisos disparados por `errorFromProblem(problem)`
+ * cuja resposta traz código do erro ou identificador do pedido no formato da
+ * API; o host a mostra pelo bloco `ui-referencia-ao-suporte`.
  *
- * `persistent: true` instrui o host a não auto-dismiss; default em 5xx.
+ * `persistent: true` instrui o host a não auto-dismiss; vale em 5xx e em todo
+ * aviso que traz `referencia` (a pessoa precisa de tempo para copiar).
  */
 export interface Notification {
   readonly id: number;
   readonly type: NotificationType;
   readonly title: string;
   readonly detail?: string;
-  readonly traceId?: string;
-  readonly code?: string;
+  readonly referencia?: ReferenciaAoSuporte;
   readonly persistent: boolean;
 }
 
@@ -54,10 +57,9 @@ const SERVER_ERROR_THRESHOLD = 500;
  * containers despacharem mensagens. O renderer fica em `shared-ui`
  * (`NotificationHostComponent`) — o serviço é puro de UI.
  *
- * **Toasts disparados via `errorFromProblem(problem)`** carregam `traceId`,
- * `code` e ficam persistentes em 5xx por default — o suporte de incidentes
- * precisa do trace ID copiável para vincular ao log/Tempo. Status 4xx
- * permanece com timeout normal.
+ * **Avisos disparados via `errorFromProblem(problem)`** carregam a referência
+ * ao suporte (quando a resposta a traz) e ficam persistentes com ela e em 5xx;
+ * sem referência, 4xx segue com o prazo normal.
  */
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
@@ -87,10 +89,10 @@ export class NotificationService {
    *
    * - `title`/`detail` vêm de `overrides` quando providos; senão de
    *   `problem.title`/`problem.detail`.
-   * - `traceId` é exposto para o host renderizar botão "Copiar traceId"
-   *   quando o backend emitiu trace context não-vazio.
-   * - `persistent` é `true` por default em status `>= 500`; pode ser
-   *   sobrescrito via `overrides.persistent`.
+   * - `referencia` só existe quando a resposta traz código do erro ou
+   *   identificador do pedido no formato da API.
+   * - `persistent` é sempre `true` com `referencia`; sem ela, é `true` por
+   *   default em status `>= 500` e pode ser sobrescrito via `overrides.persistent`.
    */
   errorFromProblem(problem: ProblemDetails, overrides?: NotificationFromProblemOptions): number {
     const notification = notificacaoDoProblema(++this.counter, problem, overrides);
@@ -138,18 +140,27 @@ export class NotificationService {
   }
 }
 
+function ficaAteFechar(
+  problem: ProblemDetails,
+  referencia: ReferenciaAoSuporte | undefined,
+  overrides: NotificationFromProblemOptions | undefined,
+): boolean {
+  if (referencia !== undefined) return true;
+  return overrides?.persistent ?? problem.status >= SERVER_ERROR_THRESHOLD;
+}
+
 function notificacaoDoProblema(
   id: number,
   problem: ProblemDetails,
   overrides: NotificationFromProblemOptions | undefined,
 ): Notification {
+  const referencia = referenciaDaRecusa(problem) ?? undefined;
   return {
     id,
     type: 'error',
     title: overrides?.title ?? problem.title,
     detail: overrides?.detail ?? problem.detail,
-    traceId: identificadorDoPedido(problem) ?? undefined,
-    code: problem.code,
-    persistent: overrides?.persistent ?? problem.status >= SERVER_ERROR_THRESHOLD,
+    referencia,
+    persistent: ficaAteFechar(problem, referencia, overrides),
   };
 }
