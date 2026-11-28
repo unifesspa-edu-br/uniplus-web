@@ -73,6 +73,22 @@ describe('valorExibido', () => {
     expect(valorExibido('OPCOES', [])).toEqual({ valor: [] });
   });
 
+  it('formata o CEP que veio só com dígitos', () => {
+    expect(valorExibido('ENDERECO', { cep: '68900000', municipio: 'Marabá' })).toEqual({
+      linhas: ['Marabá', 'CEP 68900-000'],
+    });
+  });
+
+  it('mostra o CEP fora da forma como veio, sem máscara parcial', () => {
+    expect(valorExibido('ENDERECO', { cep: '6890', municipio: 'Marabá' })).toEqual({
+      linhas: ['Marabá', 'CEP 6890'],
+    });
+  });
+
+  it('não formata como telefone o texto que tem a aparência de telefone', () => {
+    expect(valorExibido('TEXTO', '61999990000')).toEqual({ valor: '61999990000' });
+  });
+
   it('mostra o endereço em linhas e omite a parte que não veio', () => {
     expect(
       valorExibido('ENDERECO', {

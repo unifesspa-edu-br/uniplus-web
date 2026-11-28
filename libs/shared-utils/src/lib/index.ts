@@ -6,6 +6,7 @@ export {
   temNormaResolvida,
 } from './utils/base-legal';
 export { normalizarParaBusca } from './utils/busca.util';
+export { formatarCep } from './utils/cep.util';
 export {
   CODIGO_CADASTRO_FORMATO,
   CODIGO_TAMANHO_MAXIMO,
