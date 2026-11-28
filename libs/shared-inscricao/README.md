@@ -15,3 +15,7 @@ npx nx run shared-inscricao:build
 ```
 
 O ponto `@uniplus/shared-inscricao/formulario` reúne a edição, a simulação e o preenchimento do formulário.
+
+O ponto `@uniplus/shared-inscricao/situacao-da-inscricao` reúne a apresentação da situação da inscrição.
+
+O ponto `@uniplus/shared-inscricao/resposta-da-inscricao` reúne a apresentação das respostas da inscrição.

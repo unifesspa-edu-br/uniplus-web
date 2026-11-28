@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-import { TagComponent } from '../tag/tag';
 import {
   rotuloDaSituacaoDaInscricao,
   varianteDaSituacaoDaInscricao,
-} from './situacao-da-inscricao';
-import { ValorApresentadoComponent } from './valor-apresentado';
+} from '@uniplus/shared-inscricao/situacao-da-inscricao';
+import { TagComponent, ValorApresentadoComponent } from '@uniplus/shared-ui/components';
 import type { ValorExibido } from './valor-da-resposta';
 
 /**
@@ -13,7 +12,7 @@ import type { ValorExibido } from './valor-da-resposta';
  * a situação em etiqueta e o resto pelo `ui-valor-apresentado`.
  */
 @Component({
-  selector: 'ui-resposta-exibida',
+  selector: 'insc-resposta-exibida',
   standalone: true,
   imports: [TagComponent, ValorApresentadoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
