@@ -6579,7 +6579,7 @@
             }
           },
           "409": {
-            "description": "O identificador leg\u00EDvel informado j\u00E1 \u00E9 usado por outro processo seletivo (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Tamb\u00E9m responde 409 quando outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
+            "description": "O identificador leg\u00EDvel informado j\u00E1 \u00E9 usado por outro processo seletivo (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Essa resposta s\u00F3 sai quando \u00E9 a \u00FAnica recusa do pedido; junto de outras recusas, o identificador em uso vem por \u00FAltimo na lista errors da resposta 422. Tamb\u00E9m responde 409 quando outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -7681,6 +7681,148 @@
             "bearerAuth": []
           }
         ]
+      }
+    },
+    "/api/selecao/processos-seletivos/{id}/importacao-resultado": {
+      "put": {
+        "tags": [
+          "ProcessoSeletivo"
+        ],
+        "operationId": "DefinirImportacaoDoResultado",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirImportacaoDoResultadoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirImportacaoDoResultadoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirImportacaoDoResultadoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "O corpo da requisi\u00E7\u00E3o passa do limite de tamanho aceito pela opera\u00E7\u00E3o (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conte\u00FAdo. Sem tamanho declarado, com o conte\u00FAdo enviado em partes, a leitura \u00E9 interrompida ao passar do limite, e a verifica\u00E7\u00E3o de acesso pode recusar antes disso.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
       }
     },
     "/api/selecao/processos-seletivos/{id}/motivos-de-decisao": {
@@ -13285,6 +13427,7 @@
         "properties": {
           "documentoId": {
             "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "uuid"
           },
           "nome": {
@@ -13304,6 +13447,7 @@
         "properties": {
           "documentoId": {
             "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "uuid"
           },
           "nome": {
@@ -13441,7 +13585,8 @@
             "format": "uuid"
           },
           "formularioCodigo": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           }
         }
       },
@@ -15572,13 +15717,15 @@
         "type": "object",
         "properties": {
           "codigoFato": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "regras": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/RegraDerivacaoInput"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           }
         }
       },
@@ -15739,10 +15886,12 @@
             "format": "double"
           },
           "regraDistribuicaoCodigo": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "regraDistribuicaoVersao": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "regraAjusteCodigo": {
             "type": [
@@ -15768,13 +15917,15 @@
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "quadro": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/QuantidadeVagaInput"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver quantidade a fixar."
           },
           "ajusteDoQuadro": {
             "oneOf": [
@@ -16194,7 +16345,8 @@
         "type": "object",
         "properties": {
           "nome": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "tipoProcessoOrigemId": {
             "type": "string",
@@ -16402,24 +16554,30 @@
         "type": "object",
         "properties": {
           "orgao": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "serie": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "ano": {
             "type": "integer",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "int32"
           },
           "dataDoAto": {
             "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "date"
           },
           "assinante": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "tipoAtoCodigo": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           }
         }
       },
@@ -16539,21 +16697,24 @@
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhuma."
           },
           "recursoIds": {
             "type": "array",
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhum."
           },
           "tipoDeficienciaIds": {
             "type": "array",
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhum."
           }
         }
       },
@@ -16567,7 +16728,8 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CadastroDeReservaInformado"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhum."
           }
         }
       },
@@ -16624,10 +16786,12 @@
         "type": "object",
         "properties": {
           "regraCalculoCodigo": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "regraCalculoVersao": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "regraArredondamentoCodigo": {
             "type": [
@@ -16649,19 +16813,23 @@
             "format": "int32"
           },
           "regraOrdemAlocacaoCodigo": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "regraOrdemAlocacaoVersao": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "regrasEliminacao": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/RegraEliminacaoInput"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhuma."
           },
           "baseadoEmEnem": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "resolucaoPesoAreaEnem": {
             "type": [
@@ -16719,7 +16887,8 @@
         "type": "object",
         "properties": {
           "aplica": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "regra": {
             "oneOf": [
@@ -16786,13 +16955,15 @@
             ]
           },
           "obrigatorio": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "paginas": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PaginaDoFormularioInput"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422). Envie [] quando n\u00E3o houver nenhuma."
           },
           "consequenciaDaFaltaDeEnvio": {
             "oneOf": [
@@ -16820,6 +16991,29 @@
           }
         }
       },
+      "DefinirImportacaoDoResultadoRequest": {
+        "required": [
+          "relatorios",
+          "primeiraFaseDepoisDaImportacaoId"
+        ],
+        "type": "object",
+        "properties": {
+          "relatorios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatorioInformado"
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhum."
+          },
+          "primeiraFaseDepoisDaImportacaoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
       "DefinirItensDoFormularioRequest": {
         "required": [
           "itens"
@@ -16830,7 +17024,8 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/FatoColetadoInput"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422). Envie [] quando n\u00E3o houver nenhum."
           },
           "grupos": {
             "type": [
@@ -16899,7 +17094,8 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OpcaoDeclaradaRequest"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           }
         }
       },
@@ -16911,6 +17107,7 @@
         "properties": {
           "numero": {
             "type": "integer",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422). Aceita 1 ou 2.",
             "format": "int32"
           }
         }
@@ -16923,13 +17120,15 @@
         "type": "object",
         "properties": {
           "temProvaPresencial": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "municipios": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/MunicipioDeProvaInformado"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhum."
           }
         }
       },
@@ -16976,10 +17175,8 @@
         "type": "object",
         "properties": {
           "cobra": {
-            "type": [
-              "null",
-              "boolean"
-            ]
+            "type": "boolean",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422). Nulo n\u00E3o remove mais a declara\u00E7\u00E3o."
           },
           "valor": {
             "type": [
@@ -17009,7 +17206,8 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TermoExigidoInput"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422). Envie [] quando n\u00E3o houver nenhum."
           }
         }
       },
@@ -20696,13 +20894,13 @@
       },
       "DocumentoDaConfiguracaoImportacao": {
         "title": "Importa\u00E7\u00E3o do resultado",
-        "description": "O que o processo de resultado importado declara da importa\u00E7\u00E3o: os relat\u00F3rios que importa, cada um pelo formato e pela vers\u00E3o, e a primeira fase depois da importa\u00E7\u00E3o, em que o formul\u00E1rio coleta o que o arquivo n\u00E3o traz.",
+        "description": "O que o processo de resultado importado declara da importa\u00E7\u00E3o: os relat\u00F3rios que importa, cada um pelo leiaute e pela vers\u00E3o, e a primeira fase depois da importa\u00E7\u00E3o, em que o formul\u00E1rio coleta o que o arquivo n\u00E3o traz.",
         "type": "object",
         "additionalProperties": false,
         "properties": {
           "relatorios": {
             "title": "Relat\u00F3rios",
-            "description": "Relat\u00F3rios que o processo importa. Nenhum formato se repete.",
+            "description": "Relat\u00F3rios que o processo importa. Nenhum leiaute se repete.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DocumentoDaConfiguracaoImportacaoRelatorio"
@@ -20717,26 +20915,26 @@
       },
       "DocumentoDaConfiguracaoImportacaoRelatorio": {
         "title": "Relat\u00F3rio importado",
-        "description": "Um relat\u00F3rio que o processo importa, pelo formato que ele segue.",
+        "description": "Um relat\u00F3rio que o processo importa, pelo leiaute que ele segue.",
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "formatoCodigo": {
-            "title": "Formato",
-            "description": "C\u00F3digo do formato do arquivo no cat\u00E1logo de formatos.",
+          "leiauteCodigo": {
+            "title": "Leiaute",
+            "description": "C\u00F3digo do leiaute do arquivo: letras, n\u00FAmeros, ponto, h\u00EDfen ou sublinhado, at\u00E9 50 caracteres.",
             "$ref": "#/components/schemas/DocumentoDaConfiguracaoComunsCodigoDeCatalogo"
           },
-          "formatoVersao": {
-            "title": "Vers\u00E3o do formato",
-            "description": "Vers\u00E3o do formato do arquivo.",
+          "leiauteVersao": {
+            "title": "Vers\u00E3o do leiaute",
+            "description": "Vers\u00E3o do leiaute do arquivo.",
             "type": "string",
             "minLength": 1,
             "maxLength": 16
           }
         },
         "required": [
-          "formatoCodigo",
-          "formatoVersao"
+          "leiauteCodigo",
+          "leiauteVersao"
         ]
       },
       "DocumentoDaConfiguracaoItemDoFormulario": {
@@ -22265,7 +22463,8 @@
         "type": "object",
         "properties": {
           "nome": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "carater": {
             "oneOf": [
@@ -22319,7 +22518,8 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ProdutoDaEtapaInput"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "inicio": {
             "type": [
@@ -22343,13 +22543,15 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/BancaDaEtapaInput"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "recursos": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/RecursoDaEtapaInput"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "notaMaxima": {
             "type": [
@@ -22778,7 +22980,7 @@
           },
           "emiteParecerIndividual": {
             "type": "boolean",
-            "description": "Se a fase promete parecer individual por candidato. \u00C9 s\u00F3 a promessa: o parecer \u00E9 produzido na execu\u00E7\u00E3o da fase."
+            "description": "Se a fase promete parecer individual por candidato. \u00C9 s\u00F3 a promessa: o parecer \u00E9 produzido na execu\u00E7\u00E3o da fase. Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "bancasRequeridas": {
             "type": "array",
@@ -22930,6 +23132,7 @@
           },
           "ordem": {
             "type": "integer",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "int32"
           },
           "apresentacao": {
@@ -23476,25 +23679,29 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PaginaPortavel"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhuma."
           },
           "termos": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TermoPortavel"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhum."
           },
           "derivacoes": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DerivacaoPortavel"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhuma."
           },
           "agregados": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AgregadoPortavel"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhum."
           }
         }
       },
@@ -23772,6 +23979,7 @@
           },
           "ordem": {
             "type": "integer",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "int32"
           },
           "rotulo": {
@@ -23801,7 +24009,8 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/FatoColetadoInput"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "paginaCodigo": {
             "type": [
@@ -24143,6 +24352,28 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "ImportacaoDoResultadoDto": {
+        "required": [
+          "relatorios",
+          "primeiraFaseDepoisDaImportacaoId"
+        ],
+        "type": "object",
+        "properties": {
+          "relatorios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatorioDaImportacaoDto"
+            }
+          },
+          "primeiraFaseDepoisDaImportacaoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -26735,10 +26966,12 @@
         "type": "object",
         "properties": {
           "codigo": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "rotulo": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           }
         }
       },
@@ -27111,6 +27344,7 @@
           },
           "ordem": {
             "type": "integer",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "int32"
           },
           "tipo": {
@@ -28263,6 +28497,7 @@
           "aplicaFada",
           "opcoesDeCurso",
           "provaPresencial",
+          "importacaoDoResultado",
           "cadastroDeReserva",
           "manifestacaoDeInteresse",
           "cascata",
@@ -28365,6 +28600,16 @@
               },
               {
                 "$ref": "#/components/schemas/ProvaPresencialDto"
+              }
+            ]
+          },
+          "importacaoDoResultado": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ImportacaoDoResultadoDto"
               }
             ]
           },
@@ -28878,7 +29123,8 @@
         "type": "object",
         "properties": {
           "tipoAtoCodigo": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "numero": {
             "type": [
@@ -28888,13 +29134,16 @@
           },
           "dataDoAto": {
             "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "date"
           },
           "assinante": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "documentoPrincipalId": {
             "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "uuid"
           },
           "anexos": {
@@ -28937,10 +29186,19 @@
           },
           "documentoEditalId": {
             "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "uuid"
           },
           "ato": {
-            "$ref": "#/components/schemas/DadosDoAtoRequest"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
+                "$ref": "#/components/schemas/DadosDoAtoRequest"
+              }
+            ]
           },
           "anexos": {
             "type": [
@@ -28984,13 +29242,16 @@
           },
           "dataDoAto": {
             "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "date"
           },
           "assinante": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "documentoPrincipalId": {
             "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "uuid"
           },
           "anexos": {
@@ -29057,10 +29318,8 @@
             "format": "uuid"
           },
           "quantidade": {
-            "type": [
-              "null",
-              "integer"
-            ],
+            "type": "integer",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "int32"
           }
         }
@@ -29233,7 +29492,8 @@
             ]
           },
           "admiteInstanciaSuperior": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "prazoSegundaInstanciaValor": {
             "type": [
@@ -29812,10 +30072,12 @@
           },
           "integrantes": {
             "type": "integer",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "int32"
           },
           "suplentes": {
             "type": "integer",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "int32"
           },
           "quorum": {
@@ -29950,6 +30212,7 @@
         "properties": {
           "ordem": {
             "type": "integer",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "int32"
           },
           "contribui": {
@@ -30163,7 +30426,8 @@
             "type": "string"
           },
           "admiteInstanciaSuperior": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "prazoSegundaInstanciaValor": {
             "type": [
@@ -30325,6 +30589,42 @@
               {
                 "$ref": "#/components/schemas/ImpedimentoInput"
               }
+            ]
+          }
+        }
+      },
+      "RelatorioDaImportacaoDto": {
+        "required": [
+          "leiauteCodigo",
+          "leiauteVersao"
+        ],
+        "type": "object",
+        "properties": {
+          "leiauteCodigo": {
+            "type": "string"
+          },
+          "leiauteVersao": {
+            "type": "string"
+          }
+        }
+      },
+      "RelatorioInformado": {
+        "required": [
+          "leiauteCodigo",
+          "leiauteVersao"
+        ],
+        "type": "object",
+        "properties": {
+          "leiauteCodigo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "leiauteVersao": {
+            "type": [
+              "null",
+              "string"
             ]
           }
         }
@@ -30623,7 +30923,8 @@
         "type": "object",
         "properties": {
           "motivo": {
-            "type": "string"
+            "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "numero": {
             "type": [
@@ -30633,10 +30934,19 @@
           },
           "documentoEditalId": {
             "type": "string",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "uuid"
           },
           "ato": {
-            "$ref": "#/components/schemas/DadosDoAtoRequest"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
+                "$ref": "#/components/schemas/DadosDoAtoRequest"
+              }
+            ]
           },
           "anexos": {
             "type": [
@@ -31144,6 +31454,7 @@
           },
           "ordem": {
             "type": "integer",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "int32"
           },
           "termo": {

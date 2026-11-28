@@ -896,6 +896,22 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/selecao/processos-seletivos/{id}/importacao-resultado": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: operations["DefinirImportacaoDoResultado"];
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/selecao/processos-seletivos/{id}/motivos-de-decisao": {
         readonly parameters: {
             readonly query?: never;
@@ -1822,12 +1838,18 @@ export interface components {
             readonly areaDoEnem: null | string;
         };
         readonly AnexoDoAtoRequest: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly documentoId: string;
             readonly nome: null | string;
         };
         readonly AnexoDoEditalRequest: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly documentoId: string;
             readonly nome: null | string;
         };
@@ -1860,6 +1882,7 @@ export interface components {
         readonly AplicacaoDeModeloInput: {
             /** Format: uuid */
             readonly modeloId: string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly formularioCodigo: string;
         };
         readonly ApresentacaoDaPaginaDto: {
@@ -2377,7 +2400,9 @@ export interface components {
             readonly regras: readonly components["schemas"]["RegraDerivacaoDto"][];
         };
         readonly ConfiguracaoDerivacaoInput: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly codigoFato: string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly regras: readonly components["schemas"]["RegraDerivacaoInput"][];
         };
         readonly ConfiguracaoDistribuicaoVagasDto: {
@@ -2409,13 +2434,17 @@ export interface components {
             readonly vagasOfertadasBase: number;
             /** Format: double */
             readonly percentualDaReservaLegal: null | number;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly regraDistribuicaoCodigo: string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly regraDistribuicaoVersao: string;
             readonly regraAjusteCodigo: null | string;
             readonly regraAjusteVersao: null | string;
             /** Format: uuid */
             readonly referenciaReservaDemograficaId: null | string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly modalidadeIds: readonly string[];
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver quantidade a fixar. */
             readonly quadro: readonly components["schemas"]["QuantidadeVagaInput"][];
             readonly ajusteDoQuadro?: null | components["schemas"]["ParametrosRegraAjusteDistribuicao"];
         };
@@ -2508,6 +2537,7 @@ export interface components {
             readonly portariaInternaCodigo: null | string;
         };
         readonly CriarProcessoSeletivoCommand: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly nome: string;
             /** Format: uuid */
             readonly tipoProcessoOrigemId: string;
@@ -2566,13 +2596,23 @@ export interface components {
             readonly unidadeResponsavel: null | components["schemas"]["UnidadeResponsavelDto"];
         };
         readonly DadosDoAtoRequest: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly orgao: string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly serie: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly ano: number;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly dataDoAto: string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly assinante: string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly tipoAtoCodigo: string;
         };
         readonly DataDeReferenciaDoDocumentoDto: {
@@ -2601,11 +2641,15 @@ export interface components {
             readonly versao: null | string;
         };
         readonly DefinirAtendimentoEspecializadoRequest: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhuma. */
             readonly condicaoIds: readonly string[];
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhum. */
             readonly recursoIds: readonly string[];
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhum. */
             readonly tipoDeficienciaIds: readonly string[];
         };
         readonly DefinirCadastroDeReservaRequest: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhum. */
             readonly chamadas: readonly components["schemas"]["CadastroDeReservaInformado"][];
         };
         readonly DefinirCascataRemanejamentoRequest: {
@@ -2615,15 +2659,21 @@ export interface components {
             readonly destinos: null | readonly components["schemas"]["DestinoRemanejamentoInput"][];
         };
         readonly DefinirClassificacaoRequest: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly regraCalculoCodigo: string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly regraCalculoVersao: string;
             readonly regraArredondamentoCodigo: null | string;
             readonly regraArredondamentoVersao: null | string;
             /** Format: int32 */
             readonly casasArredondamento: null | number;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly regraOrdemAlocacaoCodigo: string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly regraOrdemAlocacaoVersao: string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhuma. */
             readonly regrasEliminacao: readonly components["schemas"]["RegraEliminacaoInput"][];
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly baseadoEmEnem: boolean;
             readonly resolucaoPesoAreaEnem?: null | string;
             /** Format: double */
@@ -2634,6 +2684,7 @@ export interface components {
             readonly justificativa: null | string;
         };
         readonly DefinirFadaRequest: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly aplica: boolean;
             readonly regra: null | components["schemas"]["ReferenciaRegraInput"];
             /** Format: double */
@@ -2647,14 +2698,23 @@ export interface components {
             /** Format: uuid */
             readonly faseId: null | string;
             readonly titulo: null | string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly obrigatorio: boolean;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). Envie [] quando não houver nenhuma. */
             readonly paginas: readonly components["schemas"]["PaginaDoFormularioInput"][];
             readonly consequenciaDaFaltaDeEnvio?: null | components["schemas"]["ConsequenciaDoDescumprimentoCodigo"];
         };
         readonly DefinirIdentificadorLegivelRequest: {
             readonly identificadorLegivel: null | string;
         };
+        readonly DefinirImportacaoDoResultadoRequest: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhum. */
+            readonly relatorios: readonly components["schemas"]["RelatorioInformado"][];
+            /** Format: uuid */
+            readonly primeiraFaseDepoisDaImportacaoId: null | string;
+        };
         readonly DefinirItensDoFormularioRequest: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422). Envie [] quando não houver nenhum. */
             readonly itens: readonly components["schemas"]["FatoColetadoInput"][];
             readonly grupos?: null | readonly components["schemas"]["GrupoColetadoInput"][];
         };
@@ -2667,14 +2727,20 @@ export interface components {
             readonly manifestacaoDeInteresse: null | components["schemas"]["ManifestacaoDeInteresseCodigo"];
         };
         readonly DefinirOpcoesDeclaradasRequest: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly opcoes: readonly components["schemas"]["OpcaoDeclaradaRequest"][];
         };
         readonly DefinirOpcoesDeCursoRequest: {
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Obrigatório; ausente ou nulo é recusado (422). Aceita 1 ou 2.
+             */
             readonly numero: number;
         };
         readonly DefinirProvaPresencialRequest: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly temProvaPresencial: boolean;
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhum. */
             readonly municipios: readonly components["schemas"]["MunicipioDeProvaInformado"][];
         };
         readonly DefinirReferenciaTemporalFatosRequest: {
@@ -2685,12 +2751,14 @@ export interface components {
             readonly faseId: null | string;
         };
         readonly DefinirTaxaInscricaoRequest: {
-            readonly cobra: null | boolean;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). Nulo não remove mais a declaração. */
+            readonly cobra: boolean;
             /** Format: double */
             readonly valor: null | number;
             readonly fundamentos: null | readonly components["schemas"]["FundamentoIsencaoCodigo"][];
         };
         readonly DefinirTermosDoFormularioRequest: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422). Envie [] quando não houver nenhum. */
             readonly termos: readonly components["schemas"]["TermoExigidoInput"][];
         };
         readonly DependenciasDaAvaliacaoDto: {
@@ -4899,12 +4967,12 @@ export interface components {
         };
         /**
          * Importação do resultado
-         * @description O que o processo de resultado importado declara da importação: os relatórios que importa, cada um pelo formato e pela versão, e a primeira fase depois da importação, em que o formulário coleta o que o arquivo não traz.
+         * @description O que o processo de resultado importado declara da importação: os relatórios que importa, cada um pelo leiaute e pela versão, e a primeira fase depois da importação, em que o formulário coleta o que o arquivo não traz.
          */
         readonly DocumentoDaConfiguracaoImportacao: {
             /**
              * Relatórios
-             * @description Relatórios que o processo importa. Nenhum formato se repete.
+             * @description Relatórios que o processo importa. Nenhum leiaute se repete.
              */
             readonly relatorios?: readonly components["schemas"]["DocumentoDaConfiguracaoImportacaoRelatorio"][];
             /**
@@ -4915,19 +4983,19 @@ export interface components {
         };
         /**
          * Relatório importado
-         * @description Um relatório que o processo importa, pelo formato que ele segue.
+         * @description Um relatório que o processo importa, pelo leiaute que ele segue.
          */
         readonly DocumentoDaConfiguracaoImportacaoRelatorio: {
             /**
-             * Formato
-             * @description Código do formato do arquivo no catálogo de formatos.
+             * Leiaute
+             * @description Código do leiaute do arquivo: letras, números, ponto, hífen ou sublinhado, até 50 caracteres.
              */
-            readonly formatoCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
+            readonly leiauteCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
             /**
-             * Versão do formato
-             * @description Versão do formato do arquivo.
+             * Versão do leiaute
+             * @description Versão do leiaute do arquivo.
              */
-            readonly formatoVersao: string;
+            readonly leiauteVersao: string;
         };
         /**
          * Item do formulário
@@ -5628,6 +5696,7 @@ export interface components {
             readonly chave: string;
         };
         readonly EtapaProcessoInput: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly nome: string;
             readonly carater: null | components["schemas"]["CaraterEtapaCodigo"];
             /** Format: uuid */
@@ -5641,6 +5710,7 @@ export interface components {
             /** Format: uuid */
             readonly id?: null | string;
             readonly faseCodigo?: null | string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly produtos: readonly components["schemas"]["ProdutoDaEtapaInput"][];
             /** Format: date-time */
             readonly inicio?: null | string;
@@ -5648,7 +5718,9 @@ export interface components {
             readonly fim?: null | string;
             /** @default false */
             readonly emiteParecerIndividual: boolean;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly bancas: readonly components["schemas"]["BancaDaEtapaInput"][];
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly recursos: readonly components["schemas"]["RecursoDaEtapaInput"][];
             /** Format: double */
             readonly notaMaxima?: null | number;
@@ -5765,7 +5837,7 @@ export interface components {
             readonly fim: null | string;
             /** @description Tudo o que a fase publica, com o papel de cada publicação. */
             readonly produtos: readonly components["schemas"]["ProdutoDaFaseInput"][];
-            /** @description Se a fase promete parecer individual por candidato. É só a promessa: o parecer é produzido na execução da fase. */
+            /** @description Se a fase promete parecer individual por candidato. É só a promessa: o parecer é produzido na execução da fase. Obrigatório; ausente ou nulo é recusado (422). */
             readonly emiteParecerIndividual: boolean;
             /** @description As bancas que a fase exige. */
             readonly bancasRequeridas: readonly components["schemas"]["BancaRequeridaInput"][];
@@ -5802,7 +5874,10 @@ export interface components {
         };
         readonly FatoColetadoInput: {
             readonly fatoCodigo: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly ordem: number;
             readonly apresentacao: null | components["schemas"]["ApresentacaoDoCampoInput"];
             readonly regras: null | components["schemas"]["RegrasDoCampoInput"];
@@ -5963,9 +6038,13 @@ export interface components {
             readonly documentos: readonly components["schemas"]["DocumentoDoComprovanteDto"][];
         };
         readonly FormularioPortavel: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhuma. */
             readonly paginas: readonly components["schemas"]["PaginaPortavel"][];
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhum. */
             readonly termos: readonly components["schemas"]["TermoPortavel"][];
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhuma. */
             readonly derivacoes: readonly components["schemas"]["DerivacaoPortavel"][];
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhum. */
             readonly agregados: readonly components["schemas"]["AgregadoPortavel"][];
         };
         readonly FormularioSimuladoDto: {
@@ -6037,11 +6116,15 @@ export interface components {
         };
         readonly GrupoColetadoInput: {
             readonly codigo: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly ordem: number;
             readonly rotulo: string;
             readonly ocorrencias: null | components["schemas"]["OcorrenciasDoGrupoInput"];
             readonly regras: null | components["schemas"]["ExibicaoEObrigatoriedadeInput"];
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly subitens: readonly components["schemas"]["FatoColetadoInput"][];
             readonly paginaCodigo?: null | string;
         };
@@ -6132,6 +6215,11 @@ export interface components {
         readonly ImpedimentoInput: {
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
             readonly mensagem: null | string;
+        };
+        readonly ImportacaoDoResultadoDto: {
+            readonly relatorios: readonly components["schemas"]["RelatorioDaImportacaoDto"][];
+            /** Format: uuid */
+            readonly primeiraFaseDepoisDaImportacaoId: null | string;
         };
         readonly IndeferimentoDoDocumentoDto: {
             readonly obrigatorio: boolean;
@@ -6761,7 +6849,9 @@ export interface components {
             readonly ordem: number;
         };
         readonly OpcaoDeclaradaRequest: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly codigo: string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly rotulo: string;
         };
         readonly OpcaoDeCursoDaInscricaoDto: {
@@ -6870,7 +6960,10 @@ export interface components {
         };
         readonly PaginaDoFormularioInput: {
             readonly codigo: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly ordem: number;
             readonly tipo: components["schemas"]["TipoPaginaFormularioCodigo"];
             readonly bloco: null | components["schemas"]["BlocoSistemaCodigo"];
@@ -7152,6 +7245,7 @@ export interface components {
             readonly aplicaFada: null | boolean;
             readonly opcoesDeCurso: null | components["schemas"]["OpcoesDeCursoDto"];
             readonly provaPresencial: null | components["schemas"]["ProvaPresencialDto"];
+            readonly importacaoDoResultado: null | components["schemas"]["ImportacaoDoResultadoDto"];
             readonly cadastroDeReserva: readonly components["schemas"]["CadastroDeReservaDaChamadaDto"][];
             readonly manifestacaoDeInteresse: null | components["schemas"]["ManifestacaoDeInteresse"];
             readonly cascata: null | components["schemas"]["ConfiguracaoCascataRemanejamentoDto"];
@@ -7249,12 +7343,20 @@ export interface components {
             readonly regraDeHomologacao: null | components["schemas"]["RegraDeHomologacaoDto"];
         };
         readonly PublicarAtoAvulsoDoProcessoRequest: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly tipoAtoCodigo: string;
             readonly numero: null | string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly dataDoAto: string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly assinante: string;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly documentoPrincipalId: string;
             readonly anexos?: null | readonly components["schemas"]["AnexoDoAtoRequest"][];
             /** Format: uuid */
@@ -7263,9 +7365,12 @@ export interface components {
         };
         readonly PublicarProcessoSeletivoRequest: {
             readonly numero: null | string;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly documentoEditalId: string;
-            readonly ato: components["schemas"]["DadosDoAtoRequest"];
+            readonly ato: null | components["schemas"]["DadosDoAtoRequest"];
             readonly anexos?: null | readonly components["schemas"]["AnexoDoEditalRequest"][];
             /** Format: date-time */
             readonly periodoInscricaoInicio?: null | string;
@@ -7274,10 +7379,17 @@ export interface components {
         };
         readonly PublicarProdutoDoEditalRequest: {
             readonly numero: null | string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly dataDoAto: string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly assinante: string;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly documentoPrincipalId: string;
             readonly anexos?: null | readonly components["schemas"]["AnexoDoAtoRequest"][];
             /** @default false */
@@ -7296,8 +7408,11 @@ export interface components {
         readonly QuantidadeVagaInput: {
             /** Format: uuid */
             readonly modalidadeId: string;
-            /** Format: int32 */
-            readonly quantidade: null | number;
+            /**
+             * Format: int32
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
+            readonly quantidade: number;
         };
         readonly RascunhoCriadoResponse: {
             /** Format: uuid */
@@ -7339,6 +7454,7 @@ export interface components {
             readonly prazoValor: null | number;
             readonly prazoUnidade: null | components["schemas"]["UnidadePrazoCodigo"];
             readonly atoAncoraCodigo: null | string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly admiteInstanciaSuperior: boolean;
             /** Format: double */
             readonly prazoSegundaInstanciaValor: null | number;
@@ -7469,9 +7585,15 @@ export interface components {
         };
         readonly RegraDeDeliberacaoInput: {
             readonly modo: null | components["schemas"]["ModoDeDeliberacaoCodigo"];
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly integrantes: number;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly suplentes: number;
             /** Format: int32 */
             readonly quorum?: null | number;
@@ -7495,7 +7617,10 @@ export interface components {
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoDerivacaoDto"][])[];
         };
         readonly RegraDerivacaoInput: {
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly ordem: number;
             readonly contribui: null | string;
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
@@ -7543,6 +7668,7 @@ export interface components {
             readonly prazoValor: null | number;
             readonly prazoUnidade: null | components["schemas"]["UnidadePrazoCodigo"];
             readonly atoAncoraCodigo: string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly admiteInstanciaSuperior: boolean;
             /** Format: double */
             readonly prazoSegundaInstanciaValor: null | number;
@@ -7573,6 +7699,14 @@ export interface components {
             readonly obrigatoriedade: null | components["schemas"]["ObrigatoriedadeInput"];
             readonly restricoes?: null | readonly components["schemas"]["RestricaoValorInput"][];
             readonly impedimento?: null | components["schemas"]["ImpedimentoInput"];
+        };
+        readonly RelatorioDaImportacaoDto: {
+            readonly leiauteCodigo: string;
+            readonly leiauteVersao: string;
+        };
+        readonly RelatorioInformado: {
+            readonly leiauteCodigo: null | string;
+            readonly leiauteVersao: null | string;
         };
         readonly RequisitosDoDocumentoDto: {
             readonly formatosPermitidos: components["schemas"]["JsonElement"];
@@ -7629,11 +7763,15 @@ export interface components {
             readonly motivo: string;
         };
         readonly RetificarProcessoSeletivoRequest: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly motivo: string;
             readonly numero: null | string;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly documentoEditalId: string;
-            readonly ato: components["schemas"]["DadosDoAtoRequest"];
+            readonly ato: null | components["schemas"]["DadosDoAtoRequest"];
             readonly anexos?: null | readonly components["schemas"]["AnexoDoEditalRequest"][];
             /** Format: date-time */
             readonly periodoInscricaoInicio?: null | string;
@@ -7812,7 +7950,10 @@ export interface components {
         };
         readonly TermoExigidoInput: {
             readonly codigo: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly ordem: number;
             readonly termo: null | components["schemas"]["VersaoDoTermoInput"];
             readonly regras: null | components["schemas"]["ExibicaoEObrigatoriedadeInput"];
@@ -12682,7 +12823,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description O identificador legível informado já é usado por outro processo seletivo (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+            /** @description O identificador legível informado já é usado por outro processo seletivo (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Essa resposta só sai quando é a única recusa do pedido; junto de outras recusas, o identificador em uso vem por último na lista errors da resposta 422. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
             readonly 409: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -13342,6 +13483,107 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly DefinirImportacaoDoResultado: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                readonly "Idempotency-Key": string;
+            };
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["DefinirImportacaoDoResultadoRequest"];
+                readonly "text/json": components["schemas"]["DefinirImportacaoDoResultadoRequest"];
+                readonly "application/*+json": components["schemas"]["DefinirImportacaoDoResultadoRequest"];
+            };
+        };
+        readonly responses: {
+            /** @description No Content */
+            readonly 204: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
+            readonly 413: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Outra operação retém o processo além do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave. */
+            readonly 503: {
                 headers: {
                     readonly [name: string]: unknown;
                 };

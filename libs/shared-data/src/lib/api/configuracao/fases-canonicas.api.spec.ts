@@ -104,6 +104,7 @@ describe('FasesCanonicasApi', () => {
         {
           id: ID,
           nome: 'Avaliação (revisada)',
+          origemData: null,
           descricao: null,
           unidadeSugeridaId: null,
           agrupaEtapas: true,
