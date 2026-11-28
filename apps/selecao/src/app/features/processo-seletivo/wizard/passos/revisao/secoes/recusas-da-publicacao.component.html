@@ -20,7 +20,7 @@
       <p class="field__hint">
         Apontada na última resposta que recusou a publicação.
         @if (item.recusa.campo !== semCampo && !item.comCampo) {
-          Sem campo nesta tela.
+          {{ item.ondeCorrigir ?? 'Sem campo nesta tela.' }}
         }
       </p>
       @if (item.comCampo) {
