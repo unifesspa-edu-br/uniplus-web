@@ -29,7 +29,7 @@ test.describe('Tipo de fase — sinalizadores admitidos', () => {
     await editar(page, 'AVALIACAO');
 
     await expect(grupoDoAgrupamento(page)).toBeVisible();
-    await expect(grupoDaComplementacao(page)).toHaveCount(0);
+    await expect(grupoDaComplementacao(page)).toBeHidden();
   });
 
   test('a fase que admite complementação oferece só a complementação', async ({ page }) => {
@@ -43,7 +43,7 @@ test.describe('Tipo de fase — sinalizadores admitidos', () => {
     await editar(page, 'HOMOLOGACAO_INSCRICOES');
 
     await expect(grupoDaComplementacao(page)).toBeVisible();
-    await expect(grupoDoAgrupamento(page)).toHaveCount(0);
+    await expect(grupoDoAgrupamento(page)).toBeHidden();
   });
 
   test('o código AVALIACAO não oferece o agrupamento quando a fase não o admite', async ({
@@ -52,8 +52,8 @@ test.describe('Tipo de fase — sinalizadores admitidos', () => {
     await mockApiDeFasesCanonicas(page, [faseCanonica({ codigo: 'AVALIACAO' })]);
     await editar(page, 'AVALIACAO');
 
-    await expect(grupoDoAgrupamento(page)).toHaveCount(0);
-    await expect(grupoDaComplementacao(page)).toHaveCount(0);
+    await expect(grupoDoAgrupamento(page)).toBeHidden();
+    await expect(grupoDaComplementacao(page)).toBeHidden();
   });
 
   test('um código que nenhuma regra fixa oferece os dois quando a fase admite ambos', async ({
