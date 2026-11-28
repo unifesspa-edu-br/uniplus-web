@@ -73,9 +73,10 @@ export interface ProcessoAposAplicacao extends ProcessoComFormularios {
  * - o formulário aplicado, como o servidor o tem — sem fase gravada, com a da aba,
  *   que é a que o cabeçalho declara em seguida;
  * - os outros formulários de onde a cópia trouxe fatos para a inscrição, como o servidor os deixou;
- * - as derivações que a cópia trouxe do catálogo, somadas às do rascunho.
+ * - as regras de derivação, como o servidor as tem depois da cópia: o rascunho as espelha, porque
+ *   nenhum passo do assistente as edita.
  *
- * O resto do rascunho — as outras abas e as derivações que o operador editou — fica como está.
+ * O resto do rascunho — as outras abas — fica como está.
  */
 export function comAplicacaoDoServidor(
   rascunho: FormularioDeInscricao,
@@ -87,7 +88,7 @@ export function comAplicacaoDoServidor(
   if (aplicado === null) return rascunho;
   const comAplicado = comFormulario(rascunho, comFaseDaAba(aplicado, faseDaAba));
   const comOutros = comFormulariosQueCederamFatos(comAplicado, rascunho, servidor, relato);
-  return comDerivacoesCopiadas(comOutros, servidor, relato);
+  return { ...comOutros, derivacao: servidor.regrasDerivacao };
 }
 
 function comFaseDaAba(
@@ -120,22 +121,6 @@ function comFormulariosQueCederamFatos(
     const doServidor = formularioDoServidorNoCodigo(servidor, outro.codigo);
     return doServidor === null ? resultado : comFormulario(resultado, doServidor);
   }, formulario);
-}
-
-function comDerivacoesCopiadas(
-  formulario: FormularioDeInscricao,
-  servidor: ProcessoAposAplicacao,
-  relato: AplicacaoDeModeloDto,
-): FormularioDeInscricao {
-  const copiadas = new Set(relato.derivacoesCopiadas);
-  if (copiadas.size === 0) return formulario;
-  return {
-    ...formulario,
-    derivacao: [
-      ...formulario.derivacao.filter((derivacao) => !copiadas.has(derivacao.codigoFato)),
-      ...servidor.regrasDerivacao.filter((derivacao) => copiadas.has(derivacao.codigoFato)),
-    ],
-  };
 }
 
 const MOTIVOS_DO_DESCARTE: Readonly<Record<string, string>> = {
