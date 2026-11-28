@@ -151,7 +151,10 @@
       <fieldset class="form-section">
         <legend class="form-section__title">Inscrição</legend>
         <div class="form-grid form-grid--1col">
-          @if (!ehFaseDeIsencao() || erroDoCampo('coletaInscricao')) {
+          <div
+            id="cfg-fase-grupo-coleta-inscricao"
+            [hidden]="ehFaseDeIsencao() && !erroDoCampo('coletaInscricao')"
+          >
             <label class="field" [class.is-error]="erroDoCampo('coletaInscricao')">
               <span class="field__label">Coleta inscrição</span>
               <select
@@ -174,7 +177,7 @@
                 }
               </span>
             </label>
-          }
+          </div>
           <label class="field" [class.is-error]="erroDoCampo('coletaSolicitacaoIsencao')">
             <span class="field__label">Coleta solicitação de isenção</span>
             <input
@@ -233,62 +236,66 @@
         </div>
       </fieldset>
 
-      @if (showGrupoAgrupa() || erroDoCampo('agrupaEtapas')) {
-        <fieldset id="cfg-fase-grupo-agrupa" class="form-section">
-          <legend class="form-section__title">Agrupamento de etapas</legend>
-          <label class="field" [class.is-error]="erroDoCampo('agrupaEtapas')">
-            <span class="field__label">Agrupa etapas</span>
-            <select
-              class="select"
-              formControlName="agrupaEtapas"
-              [attr.aria-invalid]="erroDoCampo('agrupaEtapas') ? 'true' : null"
-              [attr.aria-describedby]="
-                erroDoCampo('agrupaEtapas') ? 'cfg-fase-erro-agrupaEtapas' : null
-              "
-            >
-              <option [ngValue]="true">Sim</option>
-              <option [ngValue]="false">Não</option>
-            </select>
-            <span class="field__hint">Aplicável apenas às fases que admitem agrupar etapas.</span>
-            <span class="field__live" aria-live="polite">
-              @if (erroDoCampo('agrupaEtapas')) {
-                <span class="field__error" id="cfg-fase-erro-agrupaEtapas">{{
-                  erroDoCampo('agrupaEtapas')
-                }}</span>
-              }
-            </span>
-          </label>
-        </fieldset>
-      }
-      @if (showGrupoCompl() || erroDoCampo('permiteComplementacao')) {
-        <fieldset id="cfg-fase-grupo-compl" class="form-section">
-          <legend class="form-section__title">Complementação de documentos</legend>
-          <label class="field" [class.is-error]="erroDoCampo('permiteComplementacao')">
-            <span class="field__label">Permite complementação</span>
-            <select
-              class="select"
-              formControlName="permiteComplementacao"
-              [attr.aria-invalid]="erroDoCampo('permiteComplementacao') ? 'true' : null"
-              [attr.aria-describedby]="
-                erroDoCampo('permiteComplementacao') ? 'cfg-fase-erro-permiteComplementacao' : null
-              "
-            >
-              <option [ngValue]="true">Sim</option>
-              <option [ngValue]="false">Não</option>
-            </select>
-            <span class="field__hint"
-              >Aplicável apenas às fases que admitem complementação de documentos.</span
-            >
-            <span class="field__live" aria-live="polite">
-              @if (erroDoCampo('permiteComplementacao')) {
-                <span class="field__error" id="cfg-fase-erro-permiteComplementacao">{{
-                  erroDoCampo('permiteComplementacao')
-                }}</span>
-              }
-            </span>
-          </label>
-        </fieldset>
-      }
+      <fieldset
+        id="cfg-fase-grupo-agrupa"
+        [hidden]="!showGrupoAgrupa() && !erroDoCampo('agrupaEtapas')"
+        class="form-section"
+      >
+        <legend class="form-section__title">Agrupamento de etapas</legend>
+        <label class="field" [class.is-error]="erroDoCampo('agrupaEtapas')">
+          <span class="field__label">Agrupa etapas</span>
+          <select
+            class="select"
+            formControlName="agrupaEtapas"
+            [attr.aria-invalid]="erroDoCampo('agrupaEtapas') ? 'true' : null"
+            [attr.aria-describedby]="
+              erroDoCampo('agrupaEtapas') ? 'cfg-fase-erro-agrupaEtapas' : null
+            "
+          >
+            <option [ngValue]="true">Sim</option>
+            <option [ngValue]="false">Não</option>
+          </select>
+          <span class="field__hint">Aplicável apenas às fases que admitem agrupar etapas.</span>
+          <span class="field__live" aria-live="polite">
+            @if (erroDoCampo('agrupaEtapas')) {
+              <span class="field__error" id="cfg-fase-erro-agrupaEtapas">{{
+                erroDoCampo('agrupaEtapas')
+              }}</span>
+            }
+          </span>
+        </label>
+      </fieldset>
+      <fieldset
+        id="cfg-fase-grupo-compl"
+        [hidden]="!showGrupoCompl() && !erroDoCampo('permiteComplementacao')"
+        class="form-section"
+      >
+        <legend class="form-section__title">Complementação de documentos</legend>
+        <label class="field" [class.is-error]="erroDoCampo('permiteComplementacao')">
+          <span class="field__label">Permite complementação</span>
+          <select
+            class="select"
+            formControlName="permiteComplementacao"
+            [attr.aria-invalid]="erroDoCampo('permiteComplementacao') ? 'true' : null"
+            [attr.aria-describedby]="
+              erroDoCampo('permiteComplementacao') ? 'cfg-fase-erro-permiteComplementacao' : null
+            "
+          >
+            <option [ngValue]="true">Sim</option>
+            <option [ngValue]="false">Não</option>
+          </select>
+          <span class="field__hint"
+            >Aplicável apenas às fases que admitem complementação de documentos.</span
+          >
+          <span class="field__live" aria-live="polite">
+            @if (erroDoCampo('permiteComplementacao')) {
+              <span class="field__error" id="cfg-fase-erro-permiteComplementacao">{{
+                erroDoCampo('permiteComplementacao')
+              }}</span>
+            }
+          </span>
+        </label>
+      </fieldset>
     </fieldset>
   </form>
 
