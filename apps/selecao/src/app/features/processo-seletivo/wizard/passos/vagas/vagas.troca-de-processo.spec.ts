@@ -44,12 +44,14 @@ describe('VagasPassoComponent — padrão e troca de processo', () => {
    * e são as mesmas quando os dois usam o catálogo de cursos da instituição.
    */
   it('descarta a simulação ao trocar de processo', () => {
+    operador.alterarVoBase(OFERTA, '34');
     simular([OFERTA, OUTRA_OFERTA]);
-    expect(servicos.estado.simulacaoCobreOQuadro()).toBe(true);
+    expect(servicos.estado.faltaSimular()).toBe(false);
 
     trocarDeProcesso();
 
-    expect(servicos.estado.simulacaoCobreOQuadro()).toBe(false);
+    expect(servicos.estado.quadroAlterado()).toBe(false);
+    expect(servicos.estado.simulacao().size).toBe(0);
   });
 
   /** O padrão guardado pertence ao processo em que foi guardado. */

@@ -39,6 +39,11 @@ export class SimulacaoDoQuadro {
       .reduce((soma, item) => soma + (this.calculado(item)?.totalDeVagasDoEdital ?? 0), 0),
   );
 
+  /** `null` enquanto o quadro não foi simulado: sem o cálculo do servidor, o total seria zero por falta de dado. */
+  totalGeralPublicadoSeSimulado(): number | null {
+    return this.estado.simulacaoCobreOQuadro() ? this.totalGeralPublicado() : null;
+  }
+
   /** O que o servidor informou do quadro além das quantidades, só das ofertas que o trazem. */
   readonly conferencia = computed(() =>
     conferenciaDaSimulacao(

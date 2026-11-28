@@ -73,7 +73,7 @@ export interface EntradaDaConferencia {
   readonly numeroDeOpcoes: string;
   readonly distribuicoes: readonly DistribuicaoDeVagas[];
   readonly ofertasForaDoPadrao: number;
-  readonly simulacaoCobreOQuadro: boolean;
+  readonly faltaSimular: boolean;
   readonly problemasDoPadrao: readonly string[];
   readonly pendenciasDoQuadro: readonly string[];
   readonly problemasEspecificos: readonly string[];
@@ -108,9 +108,9 @@ function pendenciasDoPadraoEmTela(entrada: EntradaDaConferencia): readonly strin
   const foraDoPadrao = `${frase(entrada.ofertasForaDoPadrao)} têm regra, percentual ou modalidades diferentes do padrão em tela. Aplique o padrão a todas antes de gravar.`;
   return [
     ...(entrada.ofertasForaDoPadrao === 0 ? [] : [foraDoPadrao]),
-    ...(entrada.simulacaoCobreOQuadro
-      ? []
-      : ['Simule o quadro: é a conferência de quantas vagas cada modalidade recebe.']),
+    ...(entrada.faltaSimular
+      ? ['Simule o quadro: é a conferência de quantas vagas cada modalidade recebe.']
+      : []),
     ...entrada.problemasDoPadrao,
   ];
 }

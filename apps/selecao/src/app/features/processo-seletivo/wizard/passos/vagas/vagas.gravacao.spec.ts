@@ -95,23 +95,26 @@ describe('VagasPassoComponent — gravação da distribuição', () => {
    * O que a regra calcula é a maior parte do que será publicado, e só existe
    * depois da simulação: gravar sem ela é declarar um quadro que ninguém viu.
    */
-  it('recusa gravar antes de simular o quadro', async () => {
+  it('recusa gravar o quadro alterado antes de simular', async () => {
+    operador.alterarVoBase(OFERTA, '35');
+
     const resultado = await comReleitura(controller, componente.persistir());
 
     expect(resultado.valid).toBe(false);
-    expect(resultado.messages?.some((m) => m.includes('Simule o quadro'))).toBe(true);
+    expect(resultado.messages?.some((mensagem) => mensagem.includes('Simule o quadro'))).toBe(true);
     controller.expectNone(ROTA_DISTRIBUICAO);
   });
 
   /** Uma edição descarta o resultado: a conferência é sobre o que está em tela. */
   it('volta a exigir simulação depois de editar o quadro', () => {
+    operador.alterarVoBase(OFERTA, '34');
     simular([OFERTA, OUTRA_OFERTA]);
-    expect(servicos.estado.simulacaoCobreOQuadro()).toBe(true);
+    expect(servicos.estado.faltaSimular()).toBe(false);
 
     operador.alterarVoBase(OFERTA, '35');
 
     expect(store.draft().vagas.ofertas[0].voBase).toBe('35');
-    expect(servicos.estado.simulacaoCobreOQuadro()).toBe(false);
+    expect(servicos.estado.faltaSimular()).toBe(true);
   });
 
   /**
@@ -120,11 +123,53 @@ describe('VagasPassoComponent — gravação da distribuição', () => {
    * antes de chamar aqui: enquanto era estado do componente, um recarregamento a derrubava e a
    * gravação falhava num passo que o operador não tinha aberto.
    */
-  it('recusa gravar sem simular o quadro', async () => {
+  it('recusa gravar o quadro alterado sem simular', async () => {
+    operador.alterarVoBase(OFERTA, '35');
+
     const resultado = await comReleitura(controller, componente.persistir());
 
     expect(resultado.valid).toBe(false);
-    expect(resultado.messages?.some((m) => m.includes('Simule o quadro'))).toBe(true);
+    expect(resultado.messages?.some((mensagem) => mensagem.includes('Simule o quadro'))).toBe(true);
+    controller.expectNone(ROTA_DISTRIBUICAO);
+  });
+
+  /** O quadro gravado e aberto de novo não foi alterado: a simulação perdida na recarga não é pedida. */
+  it('não pede simulação para o quadro gravado e sem alteração', () => {
+    expect(servicos.estado.quadroAlterado()).toBe(false);
+    expect(servicos.estado.faltaSimular()).toBe(false);
+    expect(componente.validar().valid).toBe(true);
+  });
+
+  /** Sem simulação, a confirmação não inventa zero para o que a regra calcularia. */
+  it('confirma o quadro gravado sem mostrar totais calculados que não conhece', () => {
+    const rotulos = componente.confirmacaoDeGravacao()?.itens.map((item) => item.rotulo) ?? [];
+
+    expect(rotulos).toContain('Ofertas de curso no quadro');
+    expect(rotulos.some((rotulo) => rotulo.includes('calculadas pela regra'))).toBe(false);
+    expect(rotulos.some((rotulo) => rotulo.startsWith('Total publicado'))).toBe(false);
+  });
+
+  /** Publicar regrava o passo: o quadro gravado e intacto segue para a API sem nova simulação. */
+  it('grava o quadro sem alteração sem pedir simulação', async () => {
+    const gravacao = componente.persistir();
+
+    controller.expectOne(ROTA_DISTRIBUICAO).flush(null, { status: 204, statusText: 'No Content' });
+    await expect(comReleitura(controller, gravacao)).resolves.toEqual({ valid: true });
+  });
+
+  /** O problema do quadro gravado é apontado pelo motivo próprio, sem pedir simulação. */
+  it('recusa o quadro gravado com problema próprio sem mencionar simulação', async () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [{ ...distribuicao(OFERTA), voBase: '' }, distribuicao(OUTRA_OFERTA)],
+    });
+
+    const resultado = await comReleitura(controller, componente.persistir());
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.some((mensagem) => mensagem.includes('total de vagas'))).toBe(true);
+    expect(resultado.messages?.some((mensagem) => mensagem.includes('Simule o quadro'))).toBe(
+      false,
+    );
     controller.expectNone(ROTA_DISTRIBUICAO);
   });
 
@@ -137,6 +182,7 @@ describe('VagasPassoComponent — gravação da distribuição', () => {
 
   /** Ninguém confirma um quadro que o passo não vai gravar. */
   it('não oferece confirmação enquanto há pendência', () => {
+    operador.alterarVoBase(OFERTA, '35');
     expect(componente.confirmacaoDeGravacao()).toBeNull();
   });
 

@@ -197,7 +197,7 @@ export class VagasPassoComponent {
       numeroDeOpcoes: rotuloDasOpcoes(this.estado.numeroDeOpcoes()) ?? '',
       ofertas: this.estado.distribuicoes().length,
       vagasInformadas: totalDeVagasInformadas(this.estado.distribuicoes()),
-      totalPublicado: this.simulacao.totalGeralPublicado(),
+      totalPublicado: this.simulacao.totalGeralPublicadoSeSimulado(),
       totaisPorModalidade: this.totaisPorModalidade(),
       regraDeDistribuicao: `${padrao.regraDistribuicaoCodigo} (versão ${padrao.regraDistribuicaoVersao})`,
       regraDeRemanejamento: this.resumoDaCascata(),
@@ -284,12 +284,18 @@ export class VagasPassoComponent {
       rotulo: `${modalidade.codigo} — vagas declaradas`,
       valor: String(this.simulacao.totalDeclaradoDe(modalidade.id)),
     }));
-    const calculadas = this.estado.modalidadesCalculadas().map((modalidade) => ({
+
+    return [...declaradas, ...this.totaisCalculadosPorModalidade()];
+  }
+
+  /** Sem simulação o cálculo da regra não é conhecido: a linha não aparece, em vez de mostrar zero. */
+  private totaisCalculadosPorModalidade(): readonly ItemDeConfirmacao[] {
+    if (!this.estado.simulacaoCobreOQuadro()) return [];
+
+    return this.estado.modalidadesCalculadas().map((modalidade) => ({
       rotulo: `${modalidade.codigo} — vagas calculadas pela regra`,
       valor: String(this.simulacao.totalCalculadoDe(modalidade.id)),
     }));
-
-    return [...declaradas, ...calculadas];
   }
 
   /**

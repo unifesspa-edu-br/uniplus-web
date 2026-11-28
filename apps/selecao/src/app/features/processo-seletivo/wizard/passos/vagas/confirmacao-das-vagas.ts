@@ -4,7 +4,8 @@ export interface EntradaDaConfirmacao {
   readonly numeroDeOpcoes: string;
   readonly ofertas: number;
   readonly vagasInformadas: number;
-  readonly totalPublicado: number;
+  /** `null` quando o quadro gravado ainda não foi simulado: o cálculo da regra não é conhecido. */
+  readonly totalPublicado: number | null;
   readonly totaisPorModalidade: readonly ItemDeConfirmacao[];
   readonly regraDeDistribuicao: string;
   readonly regraDeRemanejamento: string | null;
@@ -43,7 +44,9 @@ function itensDaConfirmacao(entrada: EntradaDaConfirmacao): readonly ItemDeConfi
  * mesmo número em duas linhas faria o operador procurar uma diferença que não existe.
  */
 function itemDoTotalPublicado(entrada: EntradaDaConfirmacao): readonly ItemDeConfirmacao[] {
-  if (entrada.totalPublicado === entrada.vagasInformadas) return [];
+  if (entrada.totalPublicado === null || entrada.totalPublicado === entrada.vagasInformadas) {
+    return [];
+  }
   return [
     {
       rotulo: 'Total publicado (com a suplementar da regra)',
