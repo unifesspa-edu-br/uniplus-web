@@ -27,6 +27,10 @@ import {
 } from '../../shared/formulario-do-servidor.testing';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
+import {
+  recusaComReferencia,
+  REFERENCIA_DA_RECUSA_DE_TESTE,
+} from '../../shared/gravacao/recusa-do-servidor.testing';
 import { VagasPassoComponent } from './vagas.component';
 import {
   ACEITA_AS_OPCOES,
@@ -203,9 +207,13 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
   }
 
   /** Grava o quadro e responde o processo relido; o resto da gravação fica com o teste. */
-  async function gravarQuadro(
-    processo: Record<string, unknown> = processoGravado(),
-  ): Promise<{ readonly gravacao: Promise<{ valid: boolean; messages?: readonly string[] }> }> {
+  async function gravarQuadro(processo: Record<string, unknown> = processoGravado()): Promise<{
+    readonly gravacao: Promise<{
+      valid: boolean;
+      messages?: readonly string[];
+      referenciaAoSuporte?: unknown;
+    }>;
+  }> {
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_DISTRIBUICAO).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
@@ -279,6 +287,41 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
     expect(resultado.messages?.[0]).toContain('Grave de novo em instantes');
     expect(carregar).toHaveBeenCalled();
     controller.expectNone((r) => r.method === 'PUT');
+  });
+
+  it('com a Revisão aberta, pede ao suporte o passo Vagas, que é o que grava', async () => {
+    TestBed.inject(CatalogoDeFatos).fatos.set([]);
+    store.passoAtual.set(store.labels.indexOf('Revisão e publicação'));
+
+    const { gravacao } = await gravarQuadro(
+      processoGravado({
+        formularios: [formularioDeInscricao(['NOME'])],
+        cronogramaFases: [FASE_DE_INSCRICAO],
+      }),
+    );
+
+    const resultado = await gravacao;
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.[0]).toContain('passo 4 — Vagas, código CONCORRER_PCD');
+    controller.expectNone((r) => r.method === 'PUT');
+  });
+
+  it('leva ao suporte a referência da recusa do servidor ao pôr as perguntas no formulário', async () => {
+    const { gravacao } = await gravarQuadro(
+      processoGravado({
+        formularios: [formularioDeInscricao(['NOME'])],
+        cronogramaFases: [FASE_DE_INSCRICAO],
+      }),
+    );
+    const recusa = recusaComReferencia(422, 'Formulário recusado.');
+    controller
+      .expectOne((r) => r.method === 'PUT' && r.url === ROTA_INSCRICAO)
+      .flush(recusa.corpo, recusa.opcoes);
+
+    const resultado = await gravacao;
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.[0]).toContain('A distribuição de vagas foi gravada.');
+    expect(resultado).toMatchObject({ referenciaAoSuporte: REFERENCIA_DA_RECUSA_DE_TESTE });
   });
 
   it('no processo que importa o resultado, relê só para mostrar as regras, sem pôr perguntas', async () => {

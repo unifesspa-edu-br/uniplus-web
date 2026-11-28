@@ -1,3 +1,4 @@
+import type { ReferenciaAoSuporte } from '@uniplus/shared-core/http';
 import type { AvisoConformidadeDto, ItemConformidadeDto } from '@uniplus/shared-data/selecao';
 
 import { destinoDoItem, passoPeloRotulo } from './destino-das-pendencias';
@@ -19,6 +20,8 @@ export interface ItemDaRevisao {
   readonly orientacao: { readonly id: string; readonly texto: string } | null;
   /** `null` quando o item está conforme, ou quando nenhum passo o resolve. */
   readonly passo: { readonly indice: number; readonly nome: string } | null;
+  /** O código que a pessoa informa ao suporte; `null` quando o item não depende só dele. */
+  readonly referencia: ReferenciaAoSuporte | null;
 }
 
 export interface GrupoDaRevisao {
@@ -118,14 +121,16 @@ function comoItemDaRevisao(item: ItemConformidadeDto): ItemDaRevisao {
   const { codigo, mensagem, ok } = item;
   const idDaMensagem = idDoItem(codigo, 'mensagem');
   if (ok) {
-    return { codigo, mensagem, ok, idDaMensagem, orientacao: null, passo: null };
+    return { codigo, mensagem, ok, idDaMensagem, orientacao: null, passo: null, referencia: null };
   }
 
   const destino = destinoDoItem(codigo, item.dimensao);
   const texto = destino?.orientacao;
   const orientacao = texto === undefined ? null : { id: idDoItem(codigo, 'orientacao'), texto };
   const passo = destino?.passo == null ? null : passoPeloRotulo(destino.passo);
-  return { codigo, mensagem, ok, idDaMensagem, orientacao, passo };
+  const referencia: ReferenciaAoSuporte | null =
+    destino !== null && 'paraOSuporte' in destino ? { origem: 'tela', codigo } : null;
+  return { codigo, mensagem, ok, idDaMensagem, orientacao, passo, referencia };
 }
 
 /** Os grupos do checklist com o que o painel mostra de cada item, calculado uma vez. */

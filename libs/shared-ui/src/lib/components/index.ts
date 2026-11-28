@@ -122,3 +122,4 @@ export {
   type StepsVariant,
 } from './steps/steps.component';
 export { StepsResponsivoComponent } from './steps-responsivo/steps-responsivo.component';
+export { ReferenciaAoSuporteComponent } from './referencia-ao-suporte/referencia-ao-suporte';

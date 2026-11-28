@@ -12,6 +12,7 @@ import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import { VocabulariosDaRegra } from '../../../shared/deliberacao/vocabularios-da-regra.service';
 import { focarAposRenderizar } from '../../../shared/foco-apos-renderizar';
 import { NumeracaoDasRespostasRecusadas } from '../../../shared/recusas/numeracao-das-respostas-recusadas';
+import { recusaDoServidor } from '../../../shared/gravacao/recusa-do-servidor';
 import { resumoDaGravacaoRecusada } from '../../../shared/recusas/texto-da-recusa-no-resumo';
 import { CatalogoDeUnidadesDoCadastro } from '../catalogos/catalogo-de-unidades-do-cadastro.service';
 import { alvosDaRecusaDaFase } from '../../fase/alvo-da-recusa-da-fase';
@@ -221,7 +222,7 @@ export class GravacaoDoCronograma {
     problema: ProblemaDaGravacao,
   ): ValidacaoDoPasso {
     if (!semCausas(problema)) return this.recusarFases(conteudo, problema);
-    return { valid: false, messages: this.resumoDaRecusaDasFases(problema, []) };
+    return recusaDoServidor(problema, this.resumoDaRecusaDasFases(problema, []));
   }
 
   private recusarFases(
@@ -237,7 +238,7 @@ export class GravacaoDoCronograma {
       this.controleNaTela(),
     );
     this.mostrarAsRecusasDasFases(conteudo, deCampo, [...porFase.keys()]);
-    return { valid: false, messages: this.resumoDaRecusaDasFases(problema, semLugar) };
+    return recusaDoServidor(problema, this.resumoDaRecusaDasFases(problema, semLugar));
   }
 
   /** O que a linha do tempo mostra de cada fase agora, para a recusa não apontar controle que não existe. */
@@ -335,6 +336,7 @@ export class GravacaoDoCronograma {
     const exigencias = await this.exigencias.gravar(
       conteudo.processoId,
       AS_ETAPAS_E_O_CRONOGRAMA_FORAM_GRAVADOS,
+      'Cronograma',
     );
     if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
     this.recusasDasExigencias.registrar(exigencias.recusas ?? []);
@@ -365,10 +367,9 @@ export class GravacaoDoCronograma {
 
   private recusarAConvencao(problema: ProblemaDaGravacao): ValidacaoDoPasso {
     const titulo = this.problemI18n.resolve(problema).title;
-    return {
-      valid: false,
-      messages: [`As etapas e o cronograma de fases foram gravados. ${titulo}`],
-    };
+    return recusaDoServidor(problema, [
+      `As etapas e o cronograma de fases foram gravados. ${titulo}`,
+    ]);
   }
 
   constructor() {

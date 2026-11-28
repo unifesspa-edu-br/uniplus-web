@@ -12,6 +12,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 import { firstValueFrom } from 'rxjs';
 
+import type { RotuloDePasso } from '../../processo-seletivo.data';
 import type { ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { quemCitaNoProcesso } from '../../passos/formulario/citantes-no-processo';
@@ -20,6 +21,7 @@ import {
   GravacaoDosCamposPressupostos,
   fatosCitadosPelasModalidadesOfertadas,
 } from '../campos-pressupostos.service';
+import { recusaDoServidor } from '../gravacao/recusa-do-servidor';
 import { recusaDaExigenciaDoServidor } from '../orientacao-da-recusa-do-fato';
 import { identificarRecusaDaExigencia } from './caminho-da-recusa-das-exigencias';
 import { todasAsExigencias } from './consulta-das-exigencias';
@@ -57,13 +59,10 @@ function traduzirRecusa(
   };
 }
 
-function recusaDaReleitura(): ValidacaoDoPasso {
-  return {
-    valid: false,
-    messages: [
-      'Não foi possível reler as fases para gravar os documentos exigidos. Tente gravar de novo.',
-    ],
-  };
+function recusaDaReleitura(problema: ProblemDetails): ValidacaoDoPasso {
+  return recusaDoServidor(problema, [
+    'Não foi possível reler as fases para gravar os documentos exigidos. Tente gravar de novo.',
+  ]);
 }
 
 function recusaSemFaseDeInscricao(): ValidacaoDoPasso {
@@ -83,11 +82,21 @@ interface DesfechoDosCampos {
 
 type CamposGarantidos = Awaited<ReturnType<GravacaoDosCamposPressupostos['garantirCampos']>>;
 
-function recusaPorCampos(motivo: string): DesfechoDosCampos {
-  return { recusa: { valid: false, messages: [motivo] }, aguardaFormulario: false };
+function recusaPorCampos(
+  campos: Extract<CamposGarantidos, { tipo: 'recusados' }>,
+): DesfechoDosCampos {
+  const recusa: ValidacaoDoPasso = { valid: false, messages: [campos.motivo] };
+  return {
+    recusa:
+      campos.referenciaAoSuporte === undefined
+        ? recusa
+        : { ...recusa, referenciaAoSuporte: campos.referenciaAoSuporte },
+    aguardaFormulario: false,
+  };
 }
 
 const SEGUE: DesfechoDosCampos = { recusa: null, aguardaFormulario: false };
+const PROCESSO_MUDOU: DesfechoDosCampos = { recusa: { valid: true }, aguardaFormulario: false };
 
 /** Os códigos dos formulários que o servidor tem em cada fase do cronograma gravado. */
 function formulariosPorFase(processo: ProcessoSeletivoDto): ReadonlyMap<string, string[]> {
@@ -121,15 +130,20 @@ export class GravacaoDasExigenciasDocumentais {
 
   /**
    * Grava os documentos que cada fase exige. `jaGravado` diz ao operador, numa recusa, o que o
-   * passo de quem chama já deixou gravado.
+   * passo de quem chama já deixou gravado; `passo` é esse passo, para a referência ao
+   * suporte nomear o passo certo mesmo quando a Revisão é a tela aberta.
    *
    * O servidor exige em todo documento um formulário que ele já tenha, da fase do documento, e
    * troca o conjunto inteiro de uma vez: enviar só parte apagaria o resto. Por isso, com algum
    * documento numa fase sem formulário no servidor, nada é enviado — o conjunto gravado fica como
    * está — e o store guarda que os documentos aguardam, até a gravação dos formulários.
    */
-  async gravar(processoId: string, jaGravado: string): Promise<ResultadoDaGravacaoDasExigencias> {
-    const resultado = await this.gravarOuAguardar(processoId);
+  async gravar(
+    processoId: string,
+    jaGravado: string,
+    passo: RotuloDePasso,
+  ): Promise<ResultadoDaGravacaoDasExigencias> {
+    const resultado = await this.gravarOuAguardar(processoId, passo);
     return dizendoOQueFoiGravado(resultado, jaGravado);
   }
 
@@ -139,22 +153,26 @@ export class GravacaoDasExigenciasDocumentais {
    * traduz um no outro; sem ela, a exigência sairia apontando para uma fase que só existe no
    * rascunho.
    */
-  private async gravarOuAguardar(processoId: string): Promise<ResultadoDaGravacaoDasExigencias> {
+  private async gravarOuAguardar(
+    processoId: string,
+    passo: RotuloDePasso,
+  ): Promise<ResultadoDaGravacaoDasExigencias> {
     const geracao = this.store.geracao();
     const detalhe = await firstValueFrom(this.api.obter(processoId));
     if (geracao !== this.store.geracao()) return { valid: true };
-    if (!isApiOk(detalhe)) return recusaDaReleitura();
+    if (!isApiOk(detalhe)) return recusaDaReleitura(detalhe.problem);
 
-    return this.gravarComOsCampos(processoId, detalhe.data, geracao);
+    return this.gravarComOsCampos(processoId, detalhe.data, geracao, passo);
   }
 
   private async gravarComOsCampos(
     processoId: string,
     processo: ProcessoSeletivoDto,
     geracao: number,
+    passo: RotuloDePasso,
   ): Promise<ResultadoDaGravacaoDasExigencias> {
     const gravado = this.processoGravado(processo);
-    const campos = await this.garantirOsCampos(processoId, processo, geracao);
+    const campos = await this.garantirOsCampos(processoId, processo, geracao, passo);
     if (campos.recusa !== null) return campos.recusa;
     if (campos.aguardaFormulario || this.documentoAguardaFormulario(gravado)) {
       return this.aguardarOsFormularios();
@@ -191,8 +209,10 @@ export class GravacaoDasExigenciasDocumentais {
     const motivo =
       recusaDaExigenciaDoServidor(problema) ?? this.problemI18n.resolve(problema).title;
     return {
-      valid: false,
-      messages: [motivo, ...(problema.errors ?? []).map((erro) => erro.message)],
+      ...recusaDoServidor(problema, [
+        motivo,
+        ...(problema.errors ?? []).map((erro) => erro.message),
+      ]),
       recusas: (problema.errors ?? []).map((erro) => traduzirRecusa(erro, origens)),
     };
   }
@@ -213,13 +233,13 @@ export class GravacaoDasExigenciasDocumentais {
     processoId: string,
     processo: ProcessoSeletivoDto,
     geracao: number,
+    passo: RotuloDePasso,
   ): Promise<DesfechoDosCampos> {
     const recorta = this.recortaPorModalidade();
     const citadosPelasExigencias = this.citadosPelasExigencias(processo);
     const fatos = this.fatosParaColeta(processo, recorta, citadosPelasExigencias);
-    const campos = await this.camposPressupostos.garantirCampos(processoId, processo, fatos);
-    if (geracao !== this.store.geracao())
-      return { recusa: { valid: true }, aguardaFormulario: false };
+    const campos = await this.camposPressupostos.garantirCampos(processoId, processo, fatos, passo);
+    if (geracao !== this.store.geracao()) return PROCESSO_MUDOU;
     return this.desfechoDosCampos(campos, processo, recorta, citadosPelasExigencias);
   }
 
@@ -278,7 +298,7 @@ export class GravacaoDasExigenciasDocumentais {
     recorta: boolean,
     citadosPelasExigencias: ReadonlySet<string>,
   ): DesfechoDosCampos {
-    if (campos.tipo === 'recusados') return recusaPorCampos(campos.motivo);
+    if (campos.tipo === 'recusados') return recusaPorCampos(campos);
     if (!this.faltaFormularioParaOsCampos(campos, processo, recorta, citadosPelasExigencias)) {
       return SEGUE;
     }

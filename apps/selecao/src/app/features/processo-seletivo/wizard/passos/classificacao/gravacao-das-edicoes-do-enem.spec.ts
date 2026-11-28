@@ -88,6 +88,11 @@ describe('gravação da classificação', () => {
         messages: [
           `Edições do ENEM, no passo ${NOME_DO_PASSO_DA_FORMULA}: A edição informada não é aceita.`,
         ],
+        referenciaAoSuporte: {
+          origem: 'servidor',
+          codigoDoErro: 'uniplus.selecao.opcao_declarada_fato.edicao_enem_fora_de_processo_enem',
+          identificadorDoPedido: null,
+        },
       });
       expect(store.classificacao.recusaDasEdicoesDoEnem()).toBe('A edição informada não é aceita.');
     });

@@ -5,7 +5,7 @@ import type { StepStatus } from '@uniplus/shared-ui/components';
 import { ROTULOS_DOS_PASSOS } from './processo-seletivo.data';
 import type { RegraDaModalidadeOfertada } from './shared/regras-das-modalidades';
 import type { AplicacaoEmAberto } from './passos/formulario/modelo-de-formulario';
-import { FalhaDeLeitura, WizardDraft } from './processo-seletivo.models';
+import { ErroDoPasso, FalhaDeLeitura, WizardDraft } from './processo-seletivo.models';
 import { ClassificacaoNoServidor } from './classificacao-no-servidor';
 import {
   hidratarProcesso,
@@ -28,8 +28,8 @@ export class ProcessoSeletivoStore {
   readonly passosVisitados = signal<ReadonlySet<number>>(new Set([0]));
   readonly passosConcluidos = signal<ReadonlySet<number>>(new Set());
   readonly draft = signal<WizardDraft>(rascunhoInicial());
-  /** Mensagens de validação do step ativo. `null` indica sem erro. */
-  readonly erroDoPasso = signal<string[] | null>(null);
+  /** Mensagens do erro do step ativo e as referências ao suporte, juntas. `null` indica sem erro. */
+  readonly erroDoPasso = signal<ErroDoPasso | null>(null);
   /**
    * Id do Processo Seletivo já criado na API. `null` enquanto o cadastro
    * inicial não foi persistido.
@@ -258,9 +258,9 @@ export class ProcessoSeletivoStore {
     return true;
   }
 
-  /** Define as mensagens de erro do step ativo (null limpa). */
-  definirErroDoPasso(messages: string[] | null): void {
-    this.erroDoPasso.set(messages);
+  /** Define o erro do step ativo, mensagens e referências juntas (null limpa as duas). */
+  definirErroDoPasso(erro: ErroDoPasso | null): void {
+    this.erroDoPasso.set(erro);
   }
 
   /**

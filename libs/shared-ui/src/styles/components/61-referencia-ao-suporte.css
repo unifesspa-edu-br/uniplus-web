@@ -1,0 +1,46 @@
+/* ============================================================================
+ * REFERÊNCIA AO SUPORTE (passo, código do erro e identificador do pedido)
+ * ========================================================================== */
+ui-referencia-ao-suporte {
+  display: block;
+  min-width: 0;
+}
+.referencia-ao-suporte__titulo,
+.referencia-ao-suporte__texto {
+  margin: 0;
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.referencia-ao-suporte__titulo {
+  font-weight: var(--weight-bold);
+}
+.referencia-ao-suporte__linhas {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+.referencia-ao-suporte__linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+}
+.referencia-ao-suporte__linha dt {
+  font-weight: var(--weight-bold);
+}
+.referencia-ao-suporte__linha dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.referencia-ao-suporte__linha code {
+  font-family: var(--font-mono);
+}
+.referencia-ao-suporte__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-block-start: var(--space-2);
+}
+.referencia-ao-suporte__aviso {
+  font-size: var(--text-sm);
+}

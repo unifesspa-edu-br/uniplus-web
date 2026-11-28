@@ -104,12 +104,12 @@ describe('NotificationHostComponent', () => {
     });
 
     it('renderiza com traceId quando errorFromProblem(problem) provê', () => {
-      service.errorFromProblem(montarProblem({ traceId: 'abc123' }));
+      service.errorFromProblem(montarProblem({ traceId: '0af7651916cd43dd8448eb211c80319c' }));
       fixture.detectChanges();
       const code = byTestId(fixture, 'notification-host-trace-id');
-      expect(code?.textContent?.trim()).toBe('abc123');
+      expect(code?.textContent?.trim()).toBe('0af7651916cd43dd8448eb211c80319c');
       const copyBtn = byTestId<HTMLButtonElement>(fixture, 'notification-host-copy-trace');
-      expect(copyBtn?.getAttribute('aria-label')).toContain('abc123');
+      expect(copyBtn?.getAttribute('aria-label')).toContain('0af7651916cd43dd8448eb211c80319c');
     });
 
     it('clipboard.writeText é chamado com o traceId no clique', () => {
@@ -119,11 +119,11 @@ describe('NotificationHostComponent', () => {
         configurable: true,
       });
 
-      service.errorFromProblem(montarProblem({ traceId: 'xyz789' }));
+      service.errorFromProblem(montarProblem({ traceId: '3b9c2e41d7a84f0aa6d5c1e2f8b70914' }));
       fixture.detectChanges();
       byTestId<HTMLButtonElement>(fixture, 'notification-host-copy-trace')?.click();
 
-      expect(writeText).toHaveBeenCalledWith('xyz789');
+      expect(writeText).toHaveBeenCalledWith('3b9c2e41d7a84f0aa6d5c1e2f8b70914');
     });
 
     it('falha silenciosa quando clipboard API ausente', () => {

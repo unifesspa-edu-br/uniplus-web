@@ -93,7 +93,7 @@ export class FocoDoEditor {
     alerta.focus({ preventScroll: true });
   }
 
-  /** Com campo inválido no passo em tela, o foco vai a ele e a rolagem o traz para a vista: foco fora da tela não é foco visível. O aviso segue anunciado pela região aria-live. */
+  /** Com campo inválido no passo em tela, o foco vai a ele e a rolagem o traz para a vista: foco fora da tela não é foco visível. O aviso segue anunciado pelo `role="alert"` do resumo. */
   private focarCampoInvalido(): boolean {
     const campo = this.campoInvalidoParaFoco();
     if (campo === null) return false;

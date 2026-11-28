@@ -131,7 +131,7 @@ describe('ProcessoSeletivoPage — publicação: critérios de desempate por ár
 
       expect(ordem).toEqual(['critérios adiados', 'classificação', 'releitura', 'critérios']);
       expect(store.passoAtual()).toBe(INDICE_DO_DESEMPATE);
-      expect(store.erroDoPasso()).toEqual(['Critério de desempate 1: recusado.']);
+      expect(store.erroDoPasso()?.mensagens).toEqual(['Critério de desempate 1: recusado.']);
     });
 
     it('na varredura da publicação, a mesma ordem: classificação, depois critérios', async () => {
@@ -297,7 +297,7 @@ describe('ProcessoSeletivoPage — publicação: critérios de desempate por ár
       store.goTo(store.totalDePassos - 1);
       await page.nextOrPublish();
 
-      expect(store.erroDoPasso()).toContain(
+      expect(store.erroDoPasso()?.mensagens).toContain(
         `Passo ${INDICE_DO_DESEMPATE + 1} — Desempate: recusado.`,
       );
     });

@@ -118,6 +118,12 @@ describe('NotificationService', () => {
       expect(n.traceId).toBeUndefined();
     });
 
+    it('traceId fora do formato de 32 hexadecimais vira undefined', () => {
+      service.errorFromProblem(montarProblem({ traceId: 'curto' }));
+      const [n] = service.notifications();
+      expect(n.traceId).toBeUndefined();
+    });
+
     it('retorna id sequencial para chamadas paralelas', () => {
       const id1 = service.errorFromProblem(montarProblem());
       const id2 = service.errorFromProblem(montarProblem());

@@ -155,6 +155,21 @@ describe('CronogramaPassoComponent: recusas da gravação das fases', () => {
     expect(resultado.messages).toEqual([RECUSADA_NOS_CAMPOS]);
   });
 
+  it('leva ao suporte o código e o identificador do pedido que a API recusou', async () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+
+    const resultado = await recusarFases([
+      { code: GERAL, message: 'O cronograma está incompleto.' },
+    ]);
+
+    expect(resultado.referenciaAoSuporte).toEqual({
+      origem: 'servidor',
+      codigoDoErro: 'uniplus.validacao',
+      identificadorDoPedido: '00000000000000000000000000000009',
+    });
+  });
+
   it('resume a causa geral com mensagem, código e página', async () => {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);

@@ -55,6 +55,18 @@ describe('CronogramaPassoComponent: recusas das etapas no campo', () => {
     expect(bloco('cr-etapa-nota-maxima-erro-0')).toContain('uniplus.selecao.etapa_processo');
   });
 
+  it('leva ao suporte o código e o identificador do pedido que a API recusou', async () => {
+    etapaFechadaComRecurso();
+
+    const resultado = await recusarEtapas([recusaDaEtapa('etapas[0].notaMaxima')]);
+
+    expect(resultado.referenciaAoSuporte).toEqual({
+      origem: 'servidor',
+      codigoDoErro: 'uniplus.validacao',
+      identificadorDoPedido: '00000000000000000000000000000009',
+    });
+  });
+
   it('descreve só pelo campo o que o campo recusou, e não pelas recusas dos outros', async () => {
     etapaFechadaComRecurso();
 

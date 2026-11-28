@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import type { ProblemDetails } from '@uniplus/shared-core/http';
+import { identificadorDoPedido, type ProblemDetails } from '@uniplus/shared-core/http';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
@@ -148,7 +148,7 @@ function notificacaoDoProblema(
     type: 'error',
     title: overrides?.title ?? problem.title,
     detail: overrides?.detail ?? problem.detail,
-    traceId: problem.traceId.length > 0 ? problem.traceId : undefined,
+    traceId: identificadorDoPedido(problem) ?? undefined,
     code: problem.code,
     persistent: overrides?.persistent ?? problem.status >= SERVER_ERROR_THRESHOLD,
   };

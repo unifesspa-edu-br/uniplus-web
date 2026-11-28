@@ -15,6 +15,7 @@ import {
   RESPOSTA_DESCARTADA,
   RespostaDescartada,
 } from '../../../shared/gravacao/gravacao-no-passo';
+import { recusaDoServidor } from '../../../shared/gravacao/recusa-do-servidor';
 import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
 import { comoComandoDePublicacao } from '../comando-de-publicacao';
 import { ConferenciaDaPublicacao } from './conferencia-da-publicacao.service';
@@ -193,16 +194,21 @@ export class PublicacaoDoProcesso {
     readonly problem: ProblemDetails;
     readonly inconclusiva: boolean;
   }): ValidacaoDoPasso {
-    if (ehGeoIndisponivel(resultado.problem)) return recusado(MENSAGEM_GEO_INDISPONIVEL);
+    const { problem } = resultado;
+    if (ehGeoIndisponivel(problem)) return recusaDoServidor(problem, [MENSAGEM_GEO_INDISPONIVEL]);
+    if (resultado.inconclusiva) this.travarAteReler();
+    const titulo = this.problemI18n.resolve(problem).title;
+    if (!resultado.inconclusiva) this.registrarRecusaConclusiva(problem, titulo);
+    return recusaDoServidor(problem, [titulo]);
+  }
 
-    // Sem resposta conclusiva o comando pode já ter sido executado. Editar um campo antes de tentar
-    // de novo giraria a chave de idempotência e deixaria o retry correr contra a primeira tentativa,
-    // por isso a tela segue travada até uma releitura dizer o que o servidor tem.
-    if (resultado.inconclusiva) this.store.publicacaoNaoConfirmada.set(true);
-
-    const titulo = this.problemI18n.resolve(resultado.problem).title;
-    if (!resultado.inconclusiva) this.registrarRecusaConclusiva(resultado.problem, titulo);
-    return recusado(titulo);
+  /**
+   * Sem resposta conclusiva o comando pode já ter sido executado. Editar um campo antes de tentar
+   * de novo giraria a chave de idempotência e deixaria o retry correr contra a primeira tentativa,
+   * por isso a tela segue travada até uma releitura dizer o que o servidor tem.
+   */
+  private travarAteReler(): void {
+    this.store.publicacaoNaoConfirmada.set(true);
   }
 
   /**

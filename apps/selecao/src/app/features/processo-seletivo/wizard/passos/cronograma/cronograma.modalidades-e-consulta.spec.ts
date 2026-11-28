@@ -111,7 +111,7 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
     });
 
     const gravarExigencias = (): Promise<{ valid: boolean; messages?: string[] }> =>
-      exigencias.gravar(PROCESSO_ID, 'Gravado.');
+      exigencias.gravar(PROCESSO_ID, 'Gravado.', 'Cronograma');
 
     it('põe a pergunta das regras congeladas no processo com inscrição própria, sem exigência que restrinja as modalidades', async () => {
       const gravacao = gravarExigencias();

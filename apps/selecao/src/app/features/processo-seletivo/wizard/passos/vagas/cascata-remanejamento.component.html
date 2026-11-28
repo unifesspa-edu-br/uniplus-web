@@ -84,27 +84,37 @@
     @if (esquemaNaoReconhecido()) {
       <div class="field__erro" [attr.role]="store.emConsulta() ? null : 'alert'">
         @if (store.emConsulta()) {
-          <p>A regra gravada não declara uma matriz de remanejamento no formato esperado.</p>
+          <p>
+            A regra de remanejamento gravada não pode ser usada: o sistema não consegue ler como ela
+            remaneja as vagas entre as modalidades.
+          </p>
         } @else {
           <p>
-            A regra escolhida não declara uma matriz de remanejamento no formato esperado. Escolha
-            outra versão ou avise o suporte.
+            A regra de remanejamento escolhida não pode ser usada: o sistema não consegue ler como
+            ela remaneja as vagas entre as modalidades. Escolha outra regra de remanejamento. Se o
+            problema continuar, informe ao suporte o passo e o código abaixo.
           </p>
         }
       </div>
+      @if (!store.emConsulta() && referenciaDaRegra(); as referencia) {
+        <ui-referencia-ao-suporte [referencia]="referencia" [passo]="passoDoSuporte" />
+      }
     }
 
     @if (regraNaoEncontrada()) {
       <div class="field__erro" [attr.role]="store.emConsulta() ? null : 'alert'">
         @if (store.emConsulta()) {
-          <p>A regra gravada não foi encontrada no catálogo, e a matriz dela não pode ser lida.</p>
-        } @else {
           <p>
-            A regra escolhida não foi encontrada no catálogo. Escolha outra regra ou avise o
-            suporte.
+            A regra gravada não foi encontrada no catálogo, e o sistema não consegue mostrar como
+            ela remaneja as vagas.
           </p>
+        } @else {
+          <p>A regra escolhida não foi encontrada no catálogo. Escolha outra regra.</p>
         }
       </div>
+      @if (!store.emConsulta() && referenciaDaRegra(); as referencia) {
+        <ui-referencia-ao-suporte [referencia]="referencia" [passo]="passoDoSuporte" />
+      }
     }
 
     <ui-falha-de-leitura titulo="Regra de remanejamento" [leitura]="leituraDaRegra" />

@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
+import { IDENTIFICADOR_DO_PEDIDO_DE_TESTE } from '../../shared/gravacao/recusa-do-servidor.testing';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import {
   PROCESSO_ID,
@@ -42,7 +43,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: gravação e rec
             title: 'Título genérico da raiz.',
             status: 422,
             code: codigo,
-            traceId: 't',
+            traceId: IDENTIFICADOR_DO_PEDIDO_DE_TESTE,
             errors,
           },
           {
@@ -96,7 +97,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: gravação e rec
         { field: 'criterios[0].areas[0]', code: CITADA_POR_OUTRO, message: 'x' },
       ]);
 
-      expect(resultado).toEqual({
+      expect(resultado).toMatchObject({
         valid: false,
         messages: [
           'Critério de desempate 2: a área Matemática não é comum a todos os grupos da resolução de Peso por Área.',
@@ -114,12 +115,27 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: gravação e rec
         { field: 'criterios[0].regraVersao', code: 'outro', message: 'x' },
       ]);
 
-      expect(resultado).toEqual({
+      expect(resultado).toMatchObject({
         valid: false,
         messages: [
           `Critério de desempate 1: a classificação gravada não tem o quadro de Peso por Área; escolha a resolução no passo ${NOME_DO_PASSO_DA_FORMULA}, se ainda não escolheu, e grave a classificação.`,
           'Título genérico da raiz.',
         ],
+      });
+    });
+
+    it('leva ao suporte o código e o identificador do pedido que o servidor recusou', async () => {
+      const m = await montar();
+      m.store.patchSection('desempate', [criterio(['REDACAO'])]);
+
+      const resultado = await gravarComRecusa(m, SEM_QUADRO, []);
+
+      expect(resultado).toMatchObject({
+        referenciaAoSuporte: {
+          origem: 'servidor',
+          codigoDoErro: SEM_QUADRO,
+          identificadorDoPedido: IDENTIFICADOR_DO_PEDIDO_DE_TESTE,
+        },
       });
     });
 
@@ -209,7 +225,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: gravação e rec
           },
         );
 
-      await expect(gravacao).resolves.toEqual({
+      await expect(gravacao).resolves.toMatchObject({
         valid: false,
         messages: [
           'Critério de desempate 1: a área Redação aparece mais de uma vez na ordem de desempate.',

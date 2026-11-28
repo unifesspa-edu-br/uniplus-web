@@ -1,4 +1,4 @@
-import type { ValidacaoDoPasso } from '../wizard/processo-seletivo.models';
+import type { ErroDoPasso, ValidacaoDoPasso } from '../wizard/processo-seletivo.models';
 
 /** Normaliza `message` (forma simples) e `messages` (lista) para `string[]`. */
 export function mensagensDe(resultado: ValidacaoDoPasso): string[] {
@@ -12,4 +12,9 @@ export function falhaAoConcluir(): ValidacaoDoPasso {
     valid: false,
     messages: ['Não foi possível concluir a operação. Tente novamente.'],
   };
+}
+
+/** O erro que a própria tela detecta ao conferir: nunca leva referência do servidor. */
+export function erroSemReferencia(mensagens: readonly string[]): ErroDoPasso {
+  return { mensagens, referencias: [] };
 }

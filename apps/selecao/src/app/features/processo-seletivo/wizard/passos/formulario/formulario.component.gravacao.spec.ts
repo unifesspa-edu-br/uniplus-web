@@ -132,6 +132,11 @@ describe('FormularioPassoComponent: gravação', () => {
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
+    expect(resultado.referenciaAoSuporte).toEqual({
+      origem: 'servidor',
+      codigoDoErro: 'uniplus.selecao.formulario.item_invalido',
+      identificadorDoPedido: '00000000000000000000000000000003',
+    });
     expect(
       fixture.debugElement.injector
         .get(GravacaoDosFormularios)

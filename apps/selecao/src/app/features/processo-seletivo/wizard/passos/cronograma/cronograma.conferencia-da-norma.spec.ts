@@ -132,7 +132,7 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
         },
       ]);
 
-      const gravacao = exigencias.gravar(PROCESSO_ID, 'Gravado.');
+      const gravacao = exigencias.gravar(PROCESSO_ID, 'Gravado.', 'Cronograma');
       controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
       await proximoPasso();
       controller.expectOne(ROTA_DOCUMENTOS).flush(
@@ -196,6 +196,7 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
           regrasDerivacao: [],
         } as unknown as ProcessoSeletivoDto,
         new Set(['RENDA_FAMILIAR']),
+        'Cronograma',
       );
 
       expect(resultado, 'nada a acrescentar: nenhuma gravação').toEqual({ tipo: 'garantidos' });
@@ -271,6 +272,7 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
           regrasDerivacao: [],
         } as unknown as ProcessoSeletivoDto,
         new Set(['RENDA_FAMILIAR']),
+        'Cronograma',
       );
 
       const cabecalho = controller.expectOne((r) => r.method === 'PUT' && r.url === ROTA_INSCRICAO);

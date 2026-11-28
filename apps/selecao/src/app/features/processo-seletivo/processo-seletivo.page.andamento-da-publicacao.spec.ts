@@ -89,7 +89,7 @@ describe('ProcessoSeletivoPage — andamento da publicação', () => {
 
     expect(cenario.regiao?.isConnected).toBe(true);
     expect(cenario.regiao?.textContent?.trim()).toBe('');
-    expect(cenario.store.erroDoPasso()?.join(' ')).toContain('Falta preencher o passo.');
+    expect(cenario.store.erroDoPasso()?.mensagens.join(' ')).toContain('Falta preencher o passo.');
     expect(cenario.page.confirmacaoPendente()).toBeNull();
     expect(cenario.botao?.disabled).toBe(false);
   });
@@ -106,7 +106,9 @@ describe('ProcessoSeletivoPage — andamento da publicação', () => {
     cenario.fixture.detectChanges();
 
     expect(cenario.regiao?.textContent?.trim()).toBe('');
-    expect(cenario.store.erroDoPasso()?.join(' ')).toContain('Falta preencher a Revisão.');
+    expect(cenario.store.erroDoPasso()?.mensagens.join(' ')).toContain(
+      'Falta preencher a Revisão.',
+    );
     expect(cenario.page.confirmacaoPendente()).toBeNull();
     expect(cenario.botao?.disabled).toBe(false);
   });
@@ -118,7 +120,7 @@ describe('ProcessoSeletivoPage — andamento da publicação', () => {
 
     expect(cenario.regiao?.isConnected).toBe(true);
     expect(cenario.regiao?.textContent?.trim()).toBe('');
-    expect(cenario.store.erroDoPasso()?.length).toBeGreaterThan(0);
+    expect(cenario.store.erroDoPasso()?.mensagens.length).toBeGreaterThan(0);
     expect(cenario.page.confirmacaoPendente()).toBeNull();
     expect(cenario.botao?.disabled).toBe(false);
   });

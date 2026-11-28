@@ -10,6 +10,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
+import {
+  recusaComReferencia,
+  REFERENCIA_DA_RECUSA_DE_TESTE,
+} from '../../shared/gravacao/recusa-do-servidor.testing';
 import { dtoComCronograma } from '../../shared/hidratacao.testing';
 import { NumeracaoDasRespostasRecusadas } from '../../shared/recusas/numeracao-das-respostas-recusadas';
 import type { DeclaracaoDaProvaPresencial } from './declaracao-da-prova-presencial';
@@ -153,6 +157,19 @@ describe('GravacaoDaProvaPresencialService', () => {
     });
     expect(servico.recusasDaGravacao().lista).toEqual([]);
     expect(servico.recusasDaGravacao().porMunicipio.size).toBe(0);
+  });
+
+  it('leva ao suporte a referência da recusa do servidor, e não a da validação local', async () => {
+    const recusa = recusaComReferencia(422, 'Recusa').corpo;
+    cadastro.definirProvaPresencial.mockResolvedValue({ ok: false, problem: recusa });
+    const doServidor = await servico.gravar('processo', declaracao);
+    const local = await servico.gravar('processo', { temProvaPresencial: null, municipios: [] });
+
+    expect(doServidor).toMatchObject({ referenciaAoSuporte: REFERENCIA_DA_RECUSA_DE_TESTE });
+    expect(local).toEqual({
+      valid: false,
+      messages: ['Escolha se o processo tem prova presencial.'],
+    });
   });
 
   it('relê a seção e limpa recusas depois do sucesso', async () => {
