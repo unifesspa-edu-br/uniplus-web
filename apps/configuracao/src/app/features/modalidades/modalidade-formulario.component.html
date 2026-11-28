@@ -12,7 +12,7 @@
   <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
     <ng-content />
 
-    <aside class="cond-diagram" aria-label="Resumo das escolhas" aria-live="polite">
+    <aside class="cond-diagram" aria-label="Resumo das escolhas">
       <h2 class="cond-diagram__title">Como estas vagas se comportam</h2>
       <ul class="cond-diagram__list u-list">
         @for (clausula of resumo(); track clausula) {

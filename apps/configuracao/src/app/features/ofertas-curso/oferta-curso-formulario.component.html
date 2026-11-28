@@ -289,12 +289,7 @@
       </section>
 
       @if (regras().exigeBaseLegal) {
-        <fieldset
-          class="form-section"
-          aria-live="polite"
-          aria-atomic="true"
-          aria-labelledby="cfg-oferta-base-legal"
-        >
+        <fieldset class="form-section" aria-labelledby="cfg-oferta-base-legal">
           <legend id="cfg-oferta-base-legal" class="form-section__title">
             Base legal
             <span class="tag tag--warning">Base legal obrigatória</span>
@@ -312,11 +307,13 @@
                 [attr.aria-describedby]="descritoPor('baseLegal')"
               />
               <span class="field__hint">Norma do programa-mãe: tipo + número + ano.</span>
-              @if (erroDoCampo('baseLegal')) {
-                <span class="field__error" [id]="idDoErro('baseLegal')">{{
-                  erroDoCampo('baseLegal')
-                }}</span>
-              }
+              <span class="field__live" aria-live="polite">
+                @if (erroDoCampo('baseLegal')) {
+                  <span class="field__error" [id]="idDoErro('baseLegal')">{{
+                    erroDoCampo('baseLegal')
+                  }}</span>
+                }
+              </span>
             </label>
           </div>
         </fieldset>

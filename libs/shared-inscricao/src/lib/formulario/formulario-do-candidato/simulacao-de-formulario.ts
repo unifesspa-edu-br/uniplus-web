@@ -83,6 +83,34 @@ type Conferencia =
       readonly recusas: readonly RecusaDaConferencia[];
     };
 
+/** O que cada desfecho da conferência diz, na tela e no anúncio de status. */
+const TEXTOS_DA_CONFERENCIA = {
+  conferindo: 'Conferindo com o servidor…',
+  falha: 'O servidor não conferiu a simulação',
+  desatualizada: 'As respostas mudaram desde a última conferência.',
+  semDivergencia: 'Sem divergência',
+  divergente: 'O servidor decidiu diferente',
+} as const;
+
+function resultadoAnunciado(divergencias: number, desatualizada: boolean): string {
+  const resultado =
+    divergencias === 0 ? TEXTOS_DA_CONFERENCIA.semDivergencia : TEXTOS_DA_CONFERENCIA.divergente;
+  return desatualizada ? `${resultado}. ${TEXTOS_DA_CONFERENCIA.desatualizada}` : resultado;
+}
+
+function anuncioDaConferencia(conferencia: Conferencia | null, desatualizada: boolean): string {
+  switch (conferencia?.estado) {
+    case 'conferindo':
+      return TEXTOS_DA_CONFERENCIA.conferindo;
+    case 'falha':
+      return TEXTOS_DA_CONFERENCIA.falha;
+    case 'feita':
+      return resultadoAnunciado(conferencia.divergencias.length, desatualizada);
+    default:
+      return '';
+  }
+}
+
 function falhaDaInterpretacao(erro: { mensagem: string; caminho: string }): Conferencia {
   return {
     estado: 'falha',
@@ -134,10 +162,12 @@ function falhaDaInterpretacao(erro: { mensagem: string; caminho: string }): Conf
       </button>
     </div>
 
-    <div class="simulador-formulario__conferencia" aria-live="polite">
+    <p class="sr-only" role="status" data-testid="anuncio-da-conferencia">{{ anuncio() }}</p>
+
+    <div class="simulador-formulario__conferencia">
       @switch (conferencia()?.estado) {
         @case ('conferindo') {
-          <p>Conferindo com o servidor…</p>
+          <p>{{ textos.conferindo }}</p>
         }
         @case ('falha') {
           @if (recusasDaFalha().length > 0) {
@@ -146,23 +176,21 @@ function falhaDaInterpretacao(erro: { mensagem: string; caminho: string }): Conf
               [recusas]="recusasDaFalha()"
             />
           } @else {
-            <ui-alert variant="danger" heading="O servidor não conferiu a simulação">{{
+            <ui-alert variant="danger" [heading]="textos.falha" [dynamic]="false">{{
               mensagemDaFalha()
             }}</ui-alert>
           }
         }
         @case ('feita') {
           @if (conferenciaDesatualizada()) {
-            <ui-alert variant="warning" [dynamic]="false"
-              >As respostas mudaram desde a última conferência.</ui-alert
-            >
+            <ui-alert variant="warning" [dynamic]="false">{{ textos.desatualizada }}</ui-alert>
           }
           @if (divergencias().length === 0) {
-            <ui-alert variant="success" heading="Sem divergência"
+            <ui-alert variant="success" [heading]="textos.semDivergencia" [dynamic]="false"
               >O servidor decidiu o mesmo que a simulação.</ui-alert
             >
           } @else {
-            <ui-alert variant="warning" heading="O servidor decidiu diferente">
+            <ui-alert variant="warning" [heading]="textos.divergente" [dynamic]="false">
               O servidor é a autoridade: cada divergência é uma regra que a simulação lê de outro
               jeito.
             </ui-alert>
@@ -273,6 +301,11 @@ export class SimulacaoDeFormularioComponent {
     const conferencia = this.conferencia();
     return conferencia?.estado === 'feita' && conferencia.simulacao !== this.simulacao();
   });
+  protected readonly textos = TEXTOS_DA_CONFERENCIA;
+  /** A mensagem curta da conferência, na região de status que fica sempre montada. */
+  protected readonly anuncio = computed(() =>
+    anuncioDaConferencia(this.conferencia(), this.conferenciaDesatualizada()),
+  );
   protected readonly mensagemDaFalha = computed(() => {
     const conferencia = this.conferencia();
     return conferencia?.estado === 'falha' ? conferencia.mensagem : '';

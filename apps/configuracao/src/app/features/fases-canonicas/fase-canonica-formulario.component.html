@@ -152,11 +152,7 @@
         <legend class="form-section__title">Inscrição</legend>
         <div class="form-grid form-grid--1col">
           @if (!ehFaseDeIsencao() || erroDoCampo('coletaInscricao')) {
-            <label
-              class="field"
-              [class.is-error]="erroDoCampo('coletaInscricao')"
-              aria-live="polite"
-            >
+            <label class="field" [class.is-error]="erroDoCampo('coletaInscricao')">
               <span class="field__label">Coleta inscrição</span>
               <select
                 class="select"
@@ -170,18 +166,16 @@
                 <option [ngValue]="false">Não</option>
               </select>
               <span class="field__hint">A fase recebe inscrições de candidatos.</span>
-              @if (erroDoCampo('coletaInscricao')) {
-                <span class="field__error" id="cfg-fase-erro-coletaInscricao">{{
-                  erroDoCampo('coletaInscricao')
-                }}</span>
-              }
+              <span class="field__live" aria-live="polite">
+                @if (erroDoCampo('coletaInscricao')) {
+                  <span class="field__error" id="cfg-fase-erro-coletaInscricao">{{
+                    erroDoCampo('coletaInscricao')
+                  }}</span>
+                }
+              </span>
             </label>
           }
-          <label
-            class="field"
-            [class.is-error]="erroDoCampo('coletaSolicitacaoIsencao')"
-            aria-live="polite"
-          >
+          <label class="field" [class.is-error]="erroDoCampo('coletaSolicitacaoIsencao')">
             <span class="field__label">Coleta solicitação de isenção</span>
             <input
               class="input"
@@ -196,11 +190,13 @@
               [value]="ehFaseDeIsencao() ? 'Sim' : 'Não'"
               readonly
             />
-            @if (erroDoCampo('coletaSolicitacaoIsencao')) {
-              <span class="field__error" id="cfg-fase-erro-coletaSolicitacaoIsencao">{{
-                erroDoCampo('coletaSolicitacaoIsencao')
-              }}</span>
-            }
+            <span class="field__live" aria-live="polite">
+              @if (erroDoCampo('coletaSolicitacaoIsencao')) {
+                <span class="field__error" id="cfg-fase-erro-coletaSolicitacaoIsencao">{{
+                  erroDoCampo('coletaSolicitacaoIsencao')
+                }}</span>
+              }
+            </span>
             <span class="field__hint">
               Derivado do código: só a fase {{ codigoSolicitacaoIsencao }} recebe pedidos de isenção
               da taxa, e ela não coleta inscrição — são janelas com prazos distintos.
@@ -238,12 +234,7 @@
       </fieldset>
 
       @if (showGrupoAgrupa() || erroDoCampo('agrupaEtapas')) {
-        <fieldset
-          id="cfg-fase-grupo-agrupa"
-          class="form-section"
-          aria-live="polite"
-          aria-atomic="true"
-        >
+        <fieldset id="cfg-fase-grupo-agrupa" class="form-section">
           <legend class="form-section__title">Agrupamento de etapas</legend>
           <label class="field" [class.is-error]="erroDoCampo('agrupaEtapas')">
             <span class="field__label">Agrupa etapas</span>
@@ -259,21 +250,18 @@
               <option [ngValue]="false">Não</option>
             </select>
             <span class="field__hint">Aplicável apenas às fases que admitem agrupar etapas.</span>
-            @if (erroDoCampo('agrupaEtapas')) {
-              <span class="field__error" id="cfg-fase-erro-agrupaEtapas">{{
-                erroDoCampo('agrupaEtapas')
-              }}</span>
-            }
+            <span class="field__live" aria-live="polite">
+              @if (erroDoCampo('agrupaEtapas')) {
+                <span class="field__error" id="cfg-fase-erro-agrupaEtapas">{{
+                  erroDoCampo('agrupaEtapas')
+                }}</span>
+              }
+            </span>
           </label>
         </fieldset>
       }
       @if (showGrupoCompl() || erroDoCampo('permiteComplementacao')) {
-        <fieldset
-          id="cfg-fase-grupo-compl"
-          class="form-section"
-          aria-live="polite"
-          aria-atomic="true"
-        >
+        <fieldset id="cfg-fase-grupo-compl" class="form-section">
           <legend class="form-section__title">Complementação de documentos</legend>
           <label class="field" [class.is-error]="erroDoCampo('permiteComplementacao')">
             <span class="field__label">Permite complementação</span>
@@ -291,11 +279,13 @@
             <span class="field__hint"
               >Aplicável apenas às fases que admitem complementação de documentos.</span
             >
-            @if (erroDoCampo('permiteComplementacao')) {
-              <span class="field__error" id="cfg-fase-erro-permiteComplementacao">{{
-                erroDoCampo('permiteComplementacao')
-              }}</span>
-            }
+            <span class="field__live" aria-live="polite">
+              @if (erroDoCampo('permiteComplementacao')) {
+                <span class="field__error" id="cfg-fase-erro-permiteComplementacao">{{
+                  erroDoCampo('permiteComplementacao')
+                }}</span>
+              }
+            </span>
           </label>
         </fieldset>
       }
