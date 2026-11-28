@@ -3,6 +3,39 @@
 }
 
 /*
+ * Aviso que fica fora do <form>, entre o título e os campos, é filho direto do corpo, que não tem
+ * recuo. Aqui ele ganha o mesmo recuo do formulário (--space-5): nas laterais, acima do primeiro
+ * aviso e entre um aviso e o seguinte. O espaço até os campos vem do padding do próprio <form>.
+ * Vale para <ui-alert> e para o .alert escrito à mão; o aviso de dentro do <form> não passa por
+ * aqui, porque lá o gap já o separa.
+ */
+.form-drawer .uni-drawer__body > :is(ui-alert, .alert) {
+  margin-block-start: var(--space-5);
+  margin-inline: var(--space-5);
+  /* Painel baixo ou texto ampliado: o aviso mantém a altura do texto e quem cede espaço é o
+     <form>, que rola. Sem isto o aviso encolhe e o overflow do corpo corta o texto. */
+  flex-shrink: 0;
+}
+
+/*
+ * Componente que reúne avisos do painel (host com a classe form-drawer__avisos): os avisos dele
+ * não são filhos diretos do corpo, então o conjunto recebe o recuo e o espaço entre eles. Sem
+ * aviso nenhum, não ocupa espaço.
+ */
+.form-drawer .uni-drawer__body > .form-drawer__avisos {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: var(--space-5);
+  margin-block-start: var(--space-5);
+  margin-inline: var(--space-5);
+}
+
+.form-drawer .uni-drawer__body > .form-drawer__avisos:empty {
+  display: none;
+}
+
+/*
  * Quem rola é o corpo, e só ele: avisos, campos e rodapé passam juntos e só o título fica fixo.
  * Assim, em janela baixa ou com zoom de 200%, os avisos não tomam a altura do formulário.
  * O corpo fica sem recuo de propósito: o rodapé é uma barra de largura inteira, com o
@@ -19,8 +52,8 @@
 }
 
 /*
- * Carrega o recuo do conteúdo. Alerta, aviso e seções de campos vão dentro do <form> para
- * receberem esse recuo — fora dele ficam colados na borda do painel. Ocupa a altura que sobra,
+ * Carrega o recuo do conteúdo. Seções de campos e avisos que rolam com eles vão dentro do <form>
+ * para receberem esse recuo; o aviso fora dele é tratado na regra acima. Ocupa a altura que sobra,
  * para o rodapé ficar no fundo quando o formulário é curto.
  */
 .form-drawer__form {
