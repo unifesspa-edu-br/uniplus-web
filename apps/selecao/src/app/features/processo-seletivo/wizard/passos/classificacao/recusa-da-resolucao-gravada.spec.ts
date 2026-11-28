@@ -6,7 +6,7 @@ import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
 
 import {
-  PROCESSO_ID,
+  detalheSemClassificacao,
   ROTA_CLASSIFICACAO,
   ROTA_DETALHE,
   aguardarReleitura,
@@ -148,7 +148,7 @@ describe('recusa da resolução de Peso por Área na gravação da classificaç�
     const gravacao = componente.persistir();
     falharPorRede(ROTA_CLASSIFICACAO);
     await aguardarReleitura();
-    controller.expectOne(ROTA_DETALHE).flush({ id: PROCESSO_ID, classificacao: null });
+    controller.expectOne(ROTA_DETALHE).flush(detalheSemClassificacao());
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);

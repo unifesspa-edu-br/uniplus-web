@@ -79,3 +79,14 @@ describe('ClassificacaoNoServidor — quadro de Peso por Área congelado', () =>
     );
   });
 });
+
+describe('ClassificacaoNoServidor — edições do ENEM gravadas', () => {
+  it('reiniciar, na troca de processo, esquece as edições que o servidor tinha', () => {
+    const classificacao = new ClassificacaoNoServidor();
+    classificacao.edicoesGravadas.set(['2025', '2026']);
+
+    classificacao.reiniciar();
+
+    expect(classificacao.edicoesGravadas()).toEqual([]);
+  });
+});

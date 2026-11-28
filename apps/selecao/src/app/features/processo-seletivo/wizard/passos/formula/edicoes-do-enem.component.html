@@ -23,6 +23,14 @@
   } @else {
     <p class="field__hint">Nenhuma edição escolhida ainda.</p>
   }
+  <div role="status">
+    @if (edicoesPorGravar()) {
+      <p class="alert alert--warning">
+        As edições do ENEM desta lista ainda não foram gravadas no processo. Elas são gravadas junto
+        com a classificação, ao usar "Gravar e avançar", depois de corrigido o que foi recusado.
+      </p>
+    }
+  </div>
   <div class="form-field">
     <label class="label" [for]="idDoCampo">Ano da edição</label
     ><input

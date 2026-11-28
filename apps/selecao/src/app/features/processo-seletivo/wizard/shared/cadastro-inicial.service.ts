@@ -201,7 +201,7 @@ export class CadastroInicial {
     processoSeletivoId: string,
     fatoCodigo: string,
     request: DefinirOpcoesDeclaradasRequest,
-  ): Promise<ResultadoGravacao> {
+  ): Promise<ResultadoGravacaoComInconclusiva> {
     return this.gravacao.gravar('opcoesDeclaradas', { fatoCodigo, request }, (contexto) =>
       this.classificacaoApi.definirOpcoesDeclaradas(
         processoSeletivoId,
