@@ -333,7 +333,7 @@ describe('FatosCandidatoPage — leitura', () => {
     };
 
     it.each([
-      ['uniplus.cursor.invalido', 'A paginação foi reiniciada porque a consulta mudou.'],
+      ['uniplus.paginacao.cursor_invalido', 'A paginação foi reiniciada porque a consulta mudou.'],
       ['uniplus.cursor.expirado', 'A listagem ficou aberta tempo demais e a consulta expirou.'],
     ])('o cursor %s reinicia do começo, avisa e não mostra erro', async (code, aviso) => {
       await naSegundaPagina();

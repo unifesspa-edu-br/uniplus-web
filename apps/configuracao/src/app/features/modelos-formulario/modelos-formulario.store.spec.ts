@@ -199,7 +199,7 @@ describe('ModelosFormularioStore', () => {
     await responder([modelo('A', 'A')], `<${URL_DA_LISTA}?cursor=abc&direction=next>; rel="next"`);
     store.proximaPagina();
     await propagar();
-    const [corpo, opcoes] = falha(400, 'uniplus.cursor.invalido');
+    const [corpo, opcoes] = falha(400, 'uniplus.paginacao.cursor_invalido');
     lista().flush(corpo, opcoes);
     await propagar();
 
