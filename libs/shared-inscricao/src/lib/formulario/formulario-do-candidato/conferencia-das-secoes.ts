@@ -12,6 +12,7 @@ import type { PassoDoFormulario } from './passos-do-formulario';
 import {
   type PendenciaDoPasso,
   pendenciasDo,
+  type PreenchimentoDoPasso,
   type ProblemaDaConfirmacao,
 } from './pendencias-do-passo';
 import { contemOCampo } from './recusas-do-servidor';
@@ -57,12 +58,9 @@ export class ConferenciaDasSecoes {
   private readonly pendenciasCompletas = computed(() => {
     const passos = this.passosComTodasConcluidas();
     const problemas = avaliarConfirmacoes(passos, this.entradaDasConfirmacoes());
-    const { aceitos, fixasSemResposta } = this.fontes.respostas;
+    const preenchimento = this.preenchimentoCom(problemas);
     return passos
-      .map((passo) => ({
-        passo,
-        pendencias: pendenciasDo(passo, aceitos(), problemas, fixasSemResposta()),
-      }))
+      .map((passo) => ({ passo, pendencias: pendenciasDo(passo, preenchimento) }))
       .filter((secao) => secao.pendencias.length > 0);
   });
 
@@ -81,6 +79,16 @@ export class ConferenciaDasSecoes {
   /** As chaves das seções que têm pendência. */
   readonly chavesComPendencia = computed(
     () => new Set(this.pendenciasCompletas().map((s) => s.passo.chave)),
+  );
+
+  /** As chaves das seções com ao menos uma pergunta sem resposta, e não só resposta a corrigir. */
+  readonly chavesComPerguntaSemResposta = computed(
+    () =>
+      new Set(
+        this.pendenciasCompletas()
+          .filter((s) => s.pendencias.some((p) => p.semResposta))
+          .map((s) => s.passo.chave),
+      ),
   );
 
   constructor(private readonly fontes: FontesDaConferencia) {}
@@ -113,13 +121,27 @@ export class ConferenciaDasSecoes {
   }
 
   private pendenciasDoPasso(passo: PassoDoFormulario): PendenciaDoPasso[] {
-    const { respostas, problemasDaConfirmacao } = this.fontes;
-    return pendenciasDo(
-      passo,
-      respostas.aceitos(),
-      problemasDaConfirmacao(),
-      respostas.fixasSemResposta(),
-    );
+    return pendenciasDo(passo, this.preenchimentoCom(this.fontes.problemasDaConfirmacao()));
+  }
+
+  private preenchimentoCom(
+    confirmacoes: ReadonlyMap<string, ProblemaDaConfirmacao>,
+  ): PreenchimentoDoPasso {
+    const { respostas } = this.fontes;
+    return {
+      aceitos: respostas.aceitos(),
+      confirmacoes,
+      semCobranca: respostas.fixasSemResposta(),
+      respostas: respostas.respostasComAsFixas(),
+      grupos: respostas.grupos(),
+    };
+  }
+
+  /** O texto de cada pergunta, aceite ou confirmação sem resposta na seção, na ordem da tela. */
+  perguntasQueFaltamNo(passo: PassoDoFormulario): string[] {
+    return this.pendenciasDoPasso(passo)
+      .filter((pendencia) => pendencia.semResposta)
+      .map((pendencia) => pendencia.rotulo);
   }
 
   /**
@@ -274,6 +296,12 @@ export class ConferenciaDasSecoes {
     if (passo) navegacao.concluir([passo]);
     if (navegacao.indice() < navegacao.total() - 1) navegacao.irPara(navegacao.indice() + 1);
   }
+}
+
+export function tituloDasPerguntasQueFaltam(quantidade: number): string {
+  return quantidade === 1
+    ? 'Falta responder 1 pergunta desta seção'
+    : `Faltam responder ${quantidade} perguntas desta seção`;
 }
 
 function textoDasPendenciasDaSecao(quantidade: number, titulo: string): string {

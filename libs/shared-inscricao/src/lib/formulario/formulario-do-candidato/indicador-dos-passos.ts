@@ -12,6 +12,8 @@ export interface FontesDoIndicador {
   readonly passosPrefixados: () => readonly PassoPrefixado[];
   /** As chaves das seções com pendência: a seção concluída que ainda tem uma não passa por pronta. */
   readonly comPendencia: () => ReadonlySet<string>;
+  /** As chaves das seções com pergunta sem resposta, entre as que têm pendência. */
+  readonly comPerguntaSemResposta: () => ReadonlySet<string>;
   /** Se o servidor recusou alguma resposta da seção. */
   readonly comRecusa: (passo: PassoDoFormulario) => boolean;
 }
@@ -70,11 +72,13 @@ function estadoDaSecao(
   comPendencia: ReadonlySet<string>,
 ): PassoNoIndicador {
   const pendente = fontes.navegacao.mostraPendencia(passo) && comPendencia.has(passo.chave);
+  const recusada = fontes.comRecusa(passo);
   return {
     chave: passo.chave,
     rotulo: passo.titulo,
     concluido: fontes.navegacao.concluido(passo) && !comPendencia.has(passo.chave),
-    comErro: fontes.comRecusa(passo) || pendente,
+    comErro: recusada || pendente,
+    semResposta: pendente && !recusada && fontes.comPerguntaSemResposta().has(passo.chave),
   };
 }
 

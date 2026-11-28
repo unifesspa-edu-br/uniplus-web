@@ -29,6 +29,7 @@ import {
   ConferenciaDasSecoes,
   type PendenciaDaSecao,
   type AvisosDaTela,
+  tituloDasPerguntasQueFaltam,
 } from './conferencia-das-secoes';
 import { DocumentosDaInscricaoComponent } from './documentos-da-inscricao';
 import { type EnvioDeDocumentos } from './envio-de-documentos';
@@ -197,6 +198,7 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
   protected readonly BLOCO_REVISAO_E_ACEITE = BLOCO_REVISAO_E_ACEITE;
   protected readonly mensagemDosErros = mensagemDosErros;
   protected readonly tituloDasRecusas = tituloDasRecusas;
+  protected readonly tituloDasPerguntasQueFaltam = tituloDasPerguntasQueFaltam;
 
   protected readonly partida = computed(() => ({
     formulario: this.formulario(),
@@ -243,12 +245,21 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
     avisos: this,
   });
 
+  /** O que falta responder na seção atual, depois de o candidato tentar avançar; some com a resposta. */
+  protected readonly perguntasQueFaltam = computed(() => {
+    const passo = this.navegacao.passoAtual();
+    return passo && this.navegacao.mostraPendencia(passo)
+      ? this.conferencia.perguntasQueFaltamNo(passo)
+      : [];
+  });
+
   protected readonly lateral = computed(() => this.apresentacaoDosPassos() === 'lateral');
   protected readonly indicador = new IndicadorDosPassos({
     navegacao: this.navegacao,
     passos: () => this.passos(),
     passosPrefixados: this.passosPrefixados,
     comPendencia: () => this.conferencia.chavesComPendencia(),
+    comPerguntaSemResposta: () => this.conferencia.chavesComPerguntaSemResposta(),
     comRecusa: (passo) => this.comErro(passo),
   });
 
