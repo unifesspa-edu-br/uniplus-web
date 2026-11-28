@@ -27,6 +27,10 @@
   font-size: var(--text-xs);
   color: var(--color-danger-700);
 }
+/* Região viva do erro: fica na árvore de acessibilidade e, vazia, cancela o espaço entre itens do campo. */
+.field__live:empty {
+  margin-block-start: calc(-1 * var(--space-2));
+}
 ui-recusa-do-campo .field__error {
   flex-wrap: wrap;
   column-gap: var(--space-3);
