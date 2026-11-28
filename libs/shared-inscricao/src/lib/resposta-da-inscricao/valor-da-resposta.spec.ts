@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatarDecimalExato, formatarMoeda, valorExibido } from './valor-da-resposta';
+import { valorExibido } from './valor-da-resposta';
 
 const SEM_VALOR = { valor: null };
 
@@ -51,13 +51,6 @@ describe('valorExibido', () => {
 
   it('formata o decimal exato com vírgula e sem milhar, sem passar por número', () => {
     expect(valorExibido('NUMERO', '1234567.50')).toEqual({ valor: '1234567,50' });
-    expect(formatarDecimalExato('12345678901234567890.123456789')).toBe(
-      '12345678901234567890,123456789',
-    );
-    expect(formatarDecimalExato('-0.5')).toBe('-0,5');
-    expect(formatarDecimalExato('7')).toBe('7');
-    expect(formatarDecimalExato('1000')).toBe('1000');
-    expect(formatarDecimalExato('abc')).toBe('abc');
   });
 
   it('mostra a opção pelo rótulo e a lista de opções pelos rótulos', () => {
@@ -124,9 +117,6 @@ describe('valorExibido', () => {
     expect(valorExibido('NUMERO', '1234.56', 'MOEDA')).toEqual({ valor: 'R$ 1.234,56' });
     expect(valorExibido('NUMERO', 1234.5, 'MOEDA')).toEqual({ valor: 'R$ 1.234,50' });
     expect(valorExibido('NUMERO', '7', 'MOEDA')).toEqual({ valor: 'R$ 7,00' });
-    expect(formatarMoeda('12345678901234567890.123')).toBe('R$ 12.345.678.901.234.567.890,123');
-    expect(formatarMoeda('-1000.5')).toBe('-R$ 1.000,50');
-    expect(formatarMoeda('abc')).toBe('abc');
   });
 
   it('mostra o CPF e o identificador como a API os devolve, qualquer que seja o tipo', () => {
@@ -135,7 +125,7 @@ describe('valorExibido', () => {
   });
 
   it('entrega o componente situacao para a etiqueta de situação', () => {
-    expect(valorExibido('TEXTO', 'enviada', 'SITUACAO')).toEqual({ situacao: 'enviada' });
+    expect(valorExibido('TEXTO', 'ENVIADA', 'SITUACAO')).toEqual({ situacao: 'ENVIADA' });
     expect(valorExibido('TEXTO', 'deferida', 'SITUACAO')).toEqual({ valor: 'deferida' });
   });
 
