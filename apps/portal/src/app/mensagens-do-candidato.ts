@@ -15,6 +15,7 @@ export const FALHAS_DA_PUBLICACAO: readonly string[] = [
   'uniplus.selecao.envelope_codec.blocos_derivados_incoerentes',
   'uniplus.selecao.envelope_codec.regra_desconhecida',
   'uniplus.selecao.envelope_codec.round_trip_divergente',
+  'uniplus.grupo_formulario.campo_com_secao_propria',
 ];
 
 export const MENSAGEM_DA_FALHA_DA_PUBLICACAO =
