@@ -21,6 +21,7 @@ function leituraPendente() {
 function detalheCom(resolucao: string): ProcessoSeletivoDto {
   return {
     id: 'processo-1',
+    opcoesDeclaradas: [],
     classificacao: {
       resolucaoPesoAreaEnem: resolucao,
       quadroPesoAreaEnem: [

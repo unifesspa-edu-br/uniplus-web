@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  PROCESSO_ID,
+  detalheSemClassificacao,
   ROTA_CLASSIFICACAO,
   ROTA_DETALHE,
   aguardarReleitura,
@@ -28,7 +28,7 @@ describe('falha na gravação da classificação', () => {
 
     // O servidor pode ter gravado a classificação sem quadro, ou não ter gravado nada.
     expect(store.classificacao.gravada()).toEqual({ estado: 'desconhecida' });
-    controller.expectOne(ROTA_DETALHE).flush({ id: PROCESSO_ID, classificacao: null });
+    controller.expectOne(ROTA_DETALHE).flush(detalheSemClassificacao());
     await gravacao;
     expect(store.classificacao.gravada()).toEqual({ estado: 'nunca-gravada' });
   });

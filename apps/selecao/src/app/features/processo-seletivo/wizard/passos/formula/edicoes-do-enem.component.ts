@@ -10,11 +10,16 @@ import {
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
-import { anoDaEdicao, comEdicao, rotuloDaEdicao } from '../classificacao/edicoes-do-enem';
+import {
+  anoDaEdicao,
+  comEdicao,
+  edicoesPorGravar,
+  rotuloDaEdicao,
+} from '../classificacao/edicoes-do-enem';
 
 /**
  * As edições do ENEM que o processo aceita: o candidato escolhe uma delas na inscrição, e a nota
- * dela é a que conta. A lista é do rascunho da classificação; quem a grava é a Eliminação.
+ * dela é a que conta. A lista é do rascunho da classificação; quem a grava é a gravação da classificação, nos passos Fórmula e Eliminação.
  */
 @Component({
   selector: 'sel-edicoes-do-enem',
@@ -32,6 +37,12 @@ export class EdicoesDoEnemComponent {
   protected readonly idDoCampo = 'f-edicao-enem';
   protected readonly rotuloDaEdicao = rotuloDaEdicao;
   protected readonly edicoes = computed(() => this.store.draft().classificacao.edicoesEnem);
+  /** A lista difere da que o servidor tem; só para consulta não há gravação a avisar. */
+  protected readonly edicoesPorGravar = computed(
+    () =>
+      this.store.edicaoPermitida() &&
+      edicoesPorGravar(this.store.draft(), this.store.classificacao.edicoesGravadas()),
+  );
   protected readonly anoDaNovaEdicao = signal('');
   protected readonly recusaDoAno = signal<string | null>(null);
 

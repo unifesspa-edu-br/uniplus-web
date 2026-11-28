@@ -205,6 +205,7 @@ function dimensoesVaziasDoDetalhe() {
     fada: null,
     cascata: null,
     criteriosDesempate: [],
+    opcoesDeclaradas: [],
     classificacao: null,
     cronogramaFases: [],
     documentosExigidos: [],

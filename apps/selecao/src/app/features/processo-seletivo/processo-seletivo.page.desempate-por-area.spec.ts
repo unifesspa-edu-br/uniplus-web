@@ -40,6 +40,7 @@ describe('ProcessoSeletivoPage — publicação: critérios de desempate por ár
         ],
       },
       criteriosDesempate: [],
+      opcoesDeclaradas: [],
     } as unknown as ProcessoSeletivoDto;
     const COPIA_PRESUMIDA = quadroCongelado(
       DETALHE_COM_QUADRO.classificacao?.quadroPesoAreaEnem ?? [],
@@ -277,6 +278,7 @@ describe('ProcessoSeletivoPage — publicação: critérios de desempate por ár
           id: 'processo-1',
           classificacao: null,
           criteriosDesempate: [],
+          opcoesDeclaradas: [],
         } as unknown as ProcessoSeletivoDto,
       );
 

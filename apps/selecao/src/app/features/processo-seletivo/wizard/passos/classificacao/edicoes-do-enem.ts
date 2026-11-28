@@ -54,6 +54,18 @@ export function anoDaEdicao(
   return { ano };
 }
 
+/** O processo declara edições que o servidor ainda não tem: a lista do rascunho difere da gravada, inclusive só na ordem, que o servidor guarda. */
+export function edicoesPorGravar(draft: WizardDraft, gravadas: readonly string[] | null): boolean {
+  return (
+    declaraEdicoesDoEnem(draft) &&
+    (gravadas === null || !mesmaLista(draft.classificacao.edicoesEnem, gravadas))
+  );
+}
+
+function mesmaLista(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((ano, indice) => ano === b[indice]);
+}
+
 /** As edições em ordem crescente, que é a ordem em que o candidato as vê. */
 export function comEdicao(declaradas: readonly string[], ano: string): readonly string[] {
   return [...declaradas, ano].sort();

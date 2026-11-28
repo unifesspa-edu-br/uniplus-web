@@ -60,6 +60,7 @@ describe('ProcessoSeletivoPage — publicação: releitura da classificação', 
         ],
       },
       criteriosDesempate: [],
+      opcoesDeclaradas: [],
     } as unknown as ProcessoSeletivoDto;
     const obterDetalhe = vi
       .spyOn(fixture.debugElement.injector.get(CadastroInicial), 'obterDetalhe')

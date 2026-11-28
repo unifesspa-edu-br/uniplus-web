@@ -1,6 +1,7 @@
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
 import type { ProcessoSeletivoStore } from './processo-seletivo.store';
+import { edicoesDoEnemDe } from './passos/classificacao/edicoes-do-enem';
 import { desempateDe, hidratarDraft } from './shared/hidratacao';
 import { regrasDasModalidadesOfertadas } from './shared/regras-das-modalidades';
 
@@ -31,6 +32,7 @@ export function hidratarProcesso(store: ProcessoSeletivoStore, dto: ProcessoSele
  */
 export function registrarGravadoLido(store: ProcessoSeletivoStore, dto: ProcessoSeletivoDto): void {
   store.classificacao.registrarLida(dto.classificacao);
+  store.classificacao.edicoesGravadas.set(edicoesDoEnemDe(dto));
   store.classificacao.criteriosDesempateGravados.set(desempateDe(dto));
   registrarRegrasDasModalidades(store, dto);
   registrarVagasGravadas(store, dto);

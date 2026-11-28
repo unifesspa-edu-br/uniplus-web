@@ -25,10 +25,15 @@ export const ROTA_CLASSIFICACAO = `${BASE}/api/selecao/processos-seletivos/${PRO
 export const RESOLUCAO = 'Resolução nº 805/2024/Consepe';
 export const ROTA_DETALHE = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}`;
 
+/** O detalhe relido de um processo sem classificação nem opções declaradas. */
+export function detalheSemClassificacao() {
+  return { id: PROCESSO_ID, classificacao: null, opcoesDeclaradas: [] };
+}
+
 /** O detalhe relido depois de gravar, com o quadro que o servidor acabou de congelar. */
 export function detalheCom(resolucao: string, peso: number) {
   return {
-    id: PROCESSO_ID,
+    ...detalheSemClassificacao(),
     classificacao: {
       resolucaoPesoAreaEnem: resolucao,
       quadroPesoAreaEnem: [
