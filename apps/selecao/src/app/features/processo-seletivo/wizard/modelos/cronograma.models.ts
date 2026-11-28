@@ -154,6 +154,8 @@ export interface NivelDeAtendimentoDaEtapa {
 export interface EtapaPontuada {
   /** Devolvido pela API; `null` enquanto a etapa é nova. */
   readonly id: string | null;
+  /** Chave local da etapa, devolvida pela API; `null` enquanto a etapa é nova. */
+  readonly chave: string | null;
   readonly nome: string;
   readonly carater: CaraterEtapaCodigo | '';
   readonly tipoEtapaOrigemId: string;

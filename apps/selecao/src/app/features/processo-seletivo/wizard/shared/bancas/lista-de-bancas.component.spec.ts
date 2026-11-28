@@ -38,6 +38,19 @@ describe('ListaDeBancasComponent', () => {
     document.body.appendChild(raiz());
   });
 
+  it('forma a chave da banca nova pelo código do tipo', () => {
+    fixture.componentRef.setInput('tipos', [
+      { id: 'entrevista', rotulo: 'Entrevista', codigo: { codigo: 'BANCA_HETEROIDENTIFICACAO' } },
+    ]);
+    fixture.detectChanges();
+    acrescentar();
+    acrescentar();
+    expect(bancas.map((banca) => banca.identificadorLocal)).toEqual([
+      'banca_heteroidentificacao',
+      'banca_heteroidentificacao_2',
+    ]);
+  });
+
   it('guarda as marcas do tipo ao acrescentar uma banca', () => {
     fixture.componentRef.setInput('tipos', [
       {
@@ -104,21 +117,21 @@ describe('ListaDeBancasComponent', () => {
     expect(raiz().querySelector('[role=status]')?.textContent).toContain(
       'Banca de entrevista 1 acrescentada.',
     );
-    expect(document.activeElement?.id).toBe('bancas-banca-1');
+    expect(document.activeElement?.id).toBe('bancas-banca');
     expect(raiz().querySelector('[aria-label^="Mover"]')).toBeNull();
     acrescentar();
     botao('Mover para antes: Banca de entrevista 2, antes da Banca de entrevista 1')?.click();
     vi.runAllTimers();
     fixture.detectChanges();
-    expect(bancas[0].identificadorLocal).toBe('banca-2');
-    expect(document.activeElement?.id).toBe('bancas-banca-2');
+    expect(bancas[0].identificadorLocal).toBe('banca_2');
+    expect(document.activeElement?.id).toBe('bancas-banca_2');
     expect(raiz().querySelector('[role=status]')?.textContent).toContain(
       'A banca movida passou a ser a Banca de entrevista 1.',
     );
     botao('Retirar a Banca de entrevista 1')?.click();
     vi.runAllTimers();
     fixture.detectChanges();
-    expect(document.activeElement?.id).toBe('bancas-banca-1');
+    expect(document.activeElement?.id).toBe('bancas-banca');
     expect(raiz().querySelector('[role=status]')?.textContent).toContain(
       'Banca de entrevista 1 retirada; as seguintes deste tipo mudaram de número.',
     );

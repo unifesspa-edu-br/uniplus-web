@@ -26,11 +26,8 @@ import { recusaDaExigenciaDoServidor } from '../orientacao-da-recusa-do-fato';
 import { identificarRecusaDaExigencia } from './caminho-da-recusa-das-exigencias';
 import { todasAsExigencias } from './consulta-das-exigencias';
 import { algumDocumentoAguardaFormulario } from './documentos-aguardando-formulario';
-import {
-  regrasDeComprovacaoParaEnvio,
-  type OrigemDaRegraEnviada,
-  type ProcessoVivoDasExigencias,
-} from './gravacao-das-exigencias';
+import { regrasDeComprovacaoParaEnvio, type OrigemDaRegraEnviada } from './gravacao-das-exigencias';
+import type { ProcessoVivoDasExigencias } from './preparo-da-gravacao';
 import { modalidadesDaExigencia } from './modalidades-da-exigencia';
 
 export interface RecusaDaExigencia {
@@ -275,7 +272,7 @@ export class GravacaoDasExigenciasDocumentais {
     return {
       faseIdPorCodigo: new Map(processo.cronogramaFases.map((f) => [f.codigo, f.id])),
       modalidadesOfertadas: this.store.modalidadesDoProcesso(),
-      etapasVivas: new Set(processo.etapas.map((etapa) => etapa.id)),
+      etapaIdPorChave: new Map(processo.etapas.map((etapa) => [etapa.chave, etapa.id])),
       formulariosPorFase: formulariosPorFase(processo),
     };
   }

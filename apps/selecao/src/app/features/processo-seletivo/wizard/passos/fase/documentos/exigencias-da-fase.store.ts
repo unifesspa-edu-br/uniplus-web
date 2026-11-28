@@ -10,6 +10,7 @@ import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { rotulosDasModalidades } from '../../../modalidades-do-processo';
 import {
   comAlcanceDeTodasAsFases,
+  exigenciaCopiadaParaFase,
   restritoAsFases,
   valendoEmTodasAsFases,
   type ContextoDoAlcance,
@@ -144,8 +145,7 @@ export class ExigenciasDaFaseStore {
     if (achada !== undefined) return achada;
 
     const modelo = modeloParaTodasAsFases(exigencias, id);
-    if (modelo !== undefined)
-      return { ...modelo, faseCodigo: codigo, etapaId: null, formularioCodigo: null };
+    if (modelo !== undefined) return exigenciaCopiadaParaFase(modelo, codigo);
 
     return exigenciaNova(id, codigo, this.catalogoDeDocumentos.tipoDocumentoPorId().get(id));
   }
@@ -165,7 +165,7 @@ export class ExigenciasDaFaseStore {
 
   /** A etapa que coleta o documento nesta fase; vazio quando ele é da fase inteira. */
   etapaDoDocumento(id: string): string {
-    return this.exigenciaDoDocumento(id).etapaId ?? '';
+    return this.exigenciaDoDocumento(id).etapaChave ?? '';
   }
 
   readonly formulariosDaFaseAberta = this.faseEmEdicao.formulariosDaFaseAberta;

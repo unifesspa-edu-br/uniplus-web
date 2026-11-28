@@ -116,9 +116,10 @@ export function escolhivel(fato: FatoCandidatoComOperadores): FatoEscolhivel {
 }
 
 const EXIGENCIA_PADRAO: ExigenciaDeDocumento = {
+  chave: null,
   tipoDocumentoId: 'titulo-de-eleitor',
   faseCodigo: 'INSCRICAO',
-  etapaId: null,
+  etapaChave: null,
   formularioCodigo: null,
   aplicabilidade: 'CONDICIONAL',
   obrigatorio: true,

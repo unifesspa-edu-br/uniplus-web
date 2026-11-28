@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import { CaraterEtapaCodigo } from '@uniplus/shared-data/selecao';
+import type { EtapaPontuada } from '../../processo-seletivo.models';
 import {
   exigenciasDaFase,
   todasAsExigencias,
@@ -9,12 +10,32 @@ import { CatalogoDeDocumentos } from '../cronograma/catalogos/catalogo-de-docume
 import {
   fase,
   ID_CPF,
+  CHAVE_ETAPA_DOCUMENTAL,
   ID_ETAPA_DOCUMENTAL,
   ID_HOMOLOGACAO,
   ID_TIPO_ETAPA,
   TIPOS_DOCUMENTO,
 } from './fase.testing';
 import { identificadorDaRegra, usarFase, type ContextoDaFase } from './fase-passo.testing';
+
+const ETAPA_DOCUMENTAL_DA_FASE: EtapaPontuada = {
+  id: ID_ETAPA_DOCUMENTAL,
+  chave: CHAVE_ETAPA_DOCUMENTAL,
+  nome: 'Análise documental',
+  carater: CaraterEtapaCodigo.ELIMINATORIA,
+  tipoEtapaOrigemId: ID_TIPO_ETAPA,
+  peso: '',
+  notaMinima: '',
+  ordem: 1,
+  faseCodigo: 'AVALIACAO',
+  produtos: [],
+  inicio: '',
+  fim: '',
+  emiteParecerIndividual: false,
+  bancas: [],
+  recursos: [],
+  tiposDeDecisao: [],
+};
 
 describe('FasePassoComponent', () => {
   let store: ContextoDaFase['store'];
@@ -167,25 +188,7 @@ describe('FasePassoComponent', () => {
     it('declara em qual etapa da fase o documento é coletado', () => {
       comCronograma(fase({}));
       store.patchObjectSection('cronograma', {
-        etapas: [
-          {
-            id: ID_ETAPA_DOCUMENTAL,
-            nome: 'Análise documental',
-            carater: CaraterEtapaCodigo.ELIMINATORIA,
-            tipoEtapaOrigemId: ID_TIPO_ETAPA,
-            peso: '',
-            notaMinima: '',
-            ordem: 1,
-            faseCodigo: 'AVALIACAO',
-            produtos: [],
-            inicio: '',
-            fim: '',
-            emiteParecerIndividual: false,
-            bancas: [],
-            recursos: [],
-            tiposDeDecisao: [],
-          },
-        ],
+        etapas: [ETAPA_DOCUMENTAL_DA_FASE],
       });
       documentos().escolherDocumento(ID_CPF);
       documentos().acrescentarDocumento();
@@ -197,14 +200,28 @@ describe('FasePassoComponent', () => {
           .map((etapa) => etapa.nome),
       ).toEqual(['Análise documental']);
 
-      eixoEtapa().escolherEtapaDoDocumento(ID_CPF, ID_ETAPA_DOCUMENTAL);
+      eixoEtapa().escolherEtapaDoDocumento(ID_CPF, CHAVE_ETAPA_DOCUMENTAL);
       detectar();
 
-      expect(exigencias().etapaDoDocumento(ID_CPF)).toBe(ID_ETAPA_DOCUMENTAL);
+      expect(exigencias().etapaDoDocumento(ID_CPF)).toBe(CHAVE_ETAPA_DOCUMENTAL);
       // A etapa é campo da exigência daquela fase, que é onde ela vive no contrato.
-      expect(exigenciasDaFase(store.draft().documentos, 'AVALIACAO')[0].etapaId).toBe(
-        ID_ETAPA_DOCUMENTAL,
+      expect(exigenciasDaFase(store.draft().documentos, 'AVALIACAO')[0].etapaChave).toBe(
+        CHAVE_ETAPA_DOCUMENTAL,
       );
+    });
+
+    it('não mostra a chave da etapa que coleta o documento', () => {
+      comCronograma(fase({}));
+      store.patchObjectSection('cronograma', {
+        etapas: [ETAPA_DOCUMENTAL_DA_FASE],
+      });
+      documentos().escolherDocumento(ID_CPF);
+      documentos().acrescentarDocumento();
+      eixoEtapa().escolherEtapaDoDocumento(ID_CPF, CHAVE_ETAPA_DOCUMENTAL);
+      detectar();
+
+      expect(nativo.textContent).toContain('Análise documental');
+      expect(nativo.textContent).not.toContain(CHAVE_ETAPA_DOCUMENTAL);
     });
 
     /**
@@ -215,13 +232,13 @@ describe('FasePassoComponent', () => {
       comCronograma(fase({}));
       documentos().escolherDocumento(ID_CPF);
       documentos().acrescentarDocumento();
-      eixoEtapa().escolherEtapaDoDocumento(ID_CPF, ID_ETAPA_DOCUMENTAL);
+      eixoEtapa().escolherEtapaDoDocumento(ID_CPF, CHAVE_ETAPA_DOCUMENTAL);
       detectar();
 
       eixoEtapa().escolherEtapaDoDocumento(ID_CPF, '');
       detectar();
 
-      expect(exigenciasDaFase(store.draft().documentos, 'AVALIACAO')[0].etapaId).toBeNull();
+      expect(exigenciasDaFase(store.draft().documentos, 'AVALIACAO')[0].etapaChave).toBeNull();
     });
 
     it('a fase sem etapa não oferece onde coletar', () => {

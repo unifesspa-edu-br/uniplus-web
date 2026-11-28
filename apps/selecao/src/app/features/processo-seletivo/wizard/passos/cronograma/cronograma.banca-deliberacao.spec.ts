@@ -61,7 +61,7 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
   }
 
   const campo = <T extends HTMLElement>(sufixo: string) =>
-    nativo.querySelector<T>(`#etapa-0-banca-banca-1-${sufixo}`);
+    nativo.querySelector<T>(`#etapa-0-banca-banca-${sufixo}`);
   const escolher = (sufixo: string, valor: string) => {
     const select = campo<HTMLSelectElement>(sufixo);
     if (select === null) throw new Error(`Seletor ${sufixo} não está na tela.`);
@@ -89,7 +89,7 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
     expect(campo<HTMLSelectElement>('modo')?.value).toBe('');
     expect(campo('integrantes')).toBeNull();
 
-    retirarBancaDaEtapa(edicao, etapa, 'banca-1');
+    retirarBancaDaEtapa(edicao, etapa, 'banca');
     detectar();
 
     expect(campo('modo')).toBeNull();
@@ -126,7 +126,7 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
     detectar();
     acrescentar.click();
     detectar();
-    const modo = nativo.querySelector<HTMLSelectElement>('#etapa-0-banca-banca-2-modo');
+    const modo = nativo.querySelector<HTMLSelectElement>('#etapa-0-banca-banca_2-modo');
     if (!modo) throw new Error('Modo da segunda banca ausente.');
     modo.value = ModoDeDeliberacao.ATO_INDIVIDUAL;
     modo.dispatchEvent(new Event('change'));
@@ -139,7 +139,7 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
   it('cobra sob o campo o que a regra declarada ainda não tem', () => {
     const etapa = etapaAberta();
     acrescentarBancaNaEtapa(edicao, etapa, ID_BANCA_HETERO);
-    declararRegraNaBanca(edicao, etapa, 'banca-1', comRegra({ criterio: '' }));
+    declararRegraNaBanca(edicao, etapa, 'banca', comRegra({ criterio: '' }));
     detectar();
 
     expect(campo('criterio-erro')?.textContent).toContain('Escolha o critério');
@@ -150,7 +150,7 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
   it('mostra a regra inválida já declarada mesmo com o cadastro de bancas vazio', () => {
     const etapa = etapaAberta();
     acrescentarBancaNaEtapa(edicao, etapa, ID_BANCA_HETERO);
-    declararRegraNaBanca(edicao, etapa, 'banca-1', comRegra({ criterio: '' }));
+    declararRegraNaBanca(edicao, etapa, 'banca', comRegra({ criterio: '' }));
     elementoDaTela.injector.get(CatalogoDeBancas).bancas.set([]);
     detectar();
 
@@ -162,7 +162,7 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
   it('explica a falha de carga do cadastro de bancas em vez de esconder a regra declarada', () => {
     const etapa = etapaAberta();
     acrescentarBancaNaEtapa(edicao, etapa, ID_BANCA_HETERO);
-    declararRegraNaBanca(edicao, etapa, 'banca-1', comRegra({ criterio: '' }));
+    declararRegraNaBanca(edicao, etapa, 'banca', comRegra({ criterio: '' }));
     elementoDaTela.injector.get(CatalogoDeBancas).erro.set('Não foi possível carregar as bancas.');
     detectar();
 
@@ -175,15 +175,15 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
   it('mantém a regra da banca quando outra é marcada ou desmarcada', () => {
     const etapa = etapaAberta();
     acrescentarBancaNaEtapa(edicao, etapa, ID_BANCA_HETERO);
-    declararRegraNaBanca(edicao, etapa, 'banca-1', COLEGIADA);
+    declararRegraNaBanca(edicao, etapa, 'banca', COLEGIADA);
 
     acrescentarBancaNaEtapa(edicao, etapa, 'outra-banca');
-    retirarBancaDaEtapa(edicao, etapa, 'banca-2');
+    retirarBancaDaEtapa(edicao, etapa, 'banca_2');
 
     expect(edicao.bancasDaEtapa(etapa)).toEqual([
       {
         id: null,
-        identificadorLocal: 'banca-1',
+        identificadorLocal: 'banca',
         copiaDoTipo: null,
         tipoBancaId: ID_BANCA_HETERO,
         regraDeDeliberacao: COLEGIADA,
@@ -196,7 +196,7 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
     acrescentarBancaNaEtapa(edicao, etapa, ID_BANCA_HETERO);
     acrescentarBancaNaEtapa(edicao, etapa, ID_BANCA_HETERO);
 
-    declararRegraNaBanca(edicao, etapa, 'banca-2', COLEGIADA);
+    declararRegraNaBanca(edicao, etapa, 'banca_2', COLEGIADA);
 
     expect(regraDa(etapa, 0)).toBeNull();
     expect(regraDa(etapa, 1)).toEqual(COLEGIADA);
@@ -205,7 +205,7 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
   it('não aceita edição da regra com a edição suspensa', () => {
     const etapa = etapaAberta();
     acrescentarBancaNaEtapa(edicao, etapa, ID_BANCA_HETERO);
-    declararRegraNaBanca(edicao, etapa, 'banca-1', COLEGIADA);
+    declararRegraNaBanca(edicao, etapa, 'banca', COLEGIADA);
     store.salvando.set(true);
     detectar();
 

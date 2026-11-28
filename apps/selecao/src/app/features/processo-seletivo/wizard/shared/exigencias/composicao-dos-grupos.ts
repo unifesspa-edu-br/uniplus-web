@@ -11,7 +11,7 @@ function mesmoMomento(regras: readonly RegraDeComprovacao[]): boolean {
     documentos.every(
       (documento) =>
         documento.faseCodigo === primeiro.faseCodigo &&
-        documento.etapaId === primeiro.etapaId &&
+        documento.etapaChave === primeiro.etapaChave &&
         documento.formularioCodigo === primeiro.formularioCodigo,
     )
   );

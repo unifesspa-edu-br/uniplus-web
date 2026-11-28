@@ -14,6 +14,7 @@ import { CatalogoDasConsequenciasDeIndeferimento } from '../../cronograma/catalo
 import { FormularioDoCronograma } from '../../cronograma/servicos/formulario-do-cronograma.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import { EdicaoDeGruposComponent } from './edicao-de-grupos.component';
+import { RecusasDasExigencias } from './recusas-das-exigencias.service';
 import { GruposDeDocumentosStore } from './grupos-de-documentos.store';
 
 const NOMES = ['RG', 'CIN', 'CNH', 'Carteira de trabalho', 'Passaporte'];
@@ -39,7 +40,7 @@ function catalogoDasFormas() {
   };
 }
 
-function provedoresDaFase(admiteComplementacao: boolean) {
+function provedoresDaFase(admiteComplementacao: boolean, liberada: boolean) {
   return [
     {
       provide: FaseEmEdicao,
@@ -48,7 +49,7 @@ function provedoresDaFase(admiteComplementacao: boolean) {
         admiteComplementacao: signal(admiteComplementacao),
       },
     },
-    { provide: FormularioDoCronograma, useValue: { edicaoLiberada: signal(true) } },
+    { provide: FormularioDoCronograma, useValue: { edicaoLiberada: signal(liberada) } },
     { provide: CatalogoDeFases, useValue: { fasePorId: signal(new Map()) } },
     {
       provide: CatalogoDasConsequenciasDeIndeferimento,
@@ -61,12 +62,13 @@ function provedoresDaFase(admiteComplementacao: boolean) {
   ];
 }
 
-function montar(admiteComplementacao = false) {
+function montar(admiteComplementacao = false, liberada = true) {
   const processo = processoComDocumentos();
   TestBed.configureTestingModule({
     providers: [
       { provide: ProcessoSeletivoStore, useValue: processo },
-      ...provedoresDaFase(admiteComplementacao),
+      RecusasDasExigencias,
+      ...provedoresDaFase(admiteComplementacao, liberada),
     ],
   });
   const providers = [
@@ -92,7 +94,7 @@ function montar(admiteComplementacao = false) {
   TestBed.overrideComponent(EdicaoDeGruposComponent, { set: { providers } });
   const fixture = TestBed.createComponent(EdicaoDeGruposComponent);
   fixture.detectChanges();
-  return { fixture, draft: processo.draft };
+  return { fixture, draft: processo.draft, recusas: TestBed.inject(RecusasDasExigencias) };
 }
 
 function combinarCinco(fixture: ComponentFixture<EdicaoDeGruposComponent>): HTMLElement {
@@ -186,6 +188,161 @@ describe('Edição de grupos de documentos', () => {
         consequencia: 'ELIMINA_DO_PROCESSO',
         basesLegais: [],
       });
+    });
+  });
+
+  describe('combinação e edição do grupo', () => {
+    const botao = (tela: HTMLElement, texto: string) =>
+      [...tela.querySelectorAll('button')].find((b) => b.textContent?.includes(texto));
+    const grupo = (draft: ReturnType<typeof montar>['draft']) =>
+      draft().documentos.regrasDeComprovacao[0];
+    const escolher = (tela: HTMLElement, selecao: HTMLSelectElement, valor: string) => {
+      selecao.value = valor;
+      selecao.dispatchEvent(new Event('change'));
+      return tela;
+    };
+
+    it('só libera "Criar grupo" com dois ou mais documentos escolhidos', () => {
+      const { fixture } = montar();
+      const tela = fixture.nativeElement as HTMLElement;
+      (botao(tela, 'Combinar') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      const campos = tela.querySelectorAll<HTMLInputElement>('input[type=checkbox]');
+      expect(botao(tela, 'Criar grupo')?.disabled).toBe(true);
+      campos[0].click();
+      campos[1].click();
+      fixture.detectChanges();
+      expect(botao(tela, 'Criar grupo')?.disabled).toBe(false);
+      campos[1].click();
+      fixture.detectChanges();
+      expect(botao(tela, 'Criar grupo')?.disabled).toBe(true);
+    });
+
+    it('abre e fecha a lista de documentos pelo botão "Combinar documentos"', () => {
+      const { fixture } = montar();
+      const tela = fixture.nativeElement as HTMLElement;
+      const combinar = botao(tela, 'Combinar') as HTMLButtonElement;
+      expect(combinar.getAttribute('aria-expanded')).toBe('false');
+      expect(tela.querySelector('fieldset')).toBeNull();
+      combinar.click();
+      fixture.detectChanges();
+      expect(combinar.getAttribute('aria-expanded')).toBe('true');
+      expect(tela.querySelector('legend')?.textContent).toContain('dois ou mais documentos');
+      combinar.click();
+      fixture.detectChanges();
+      expect(tela.querySelector('fieldset')).toBeNull();
+    });
+
+    it('avisa quando os documentos escolhidos não são do mesmo formulário', () => {
+      const { fixture, draft } = montar();
+      (draft as unknown as { set(v: unknown): void }).set({
+        documentos: rascunho(
+          exigencia({ tipoDocumentoId: 'RG' }),
+          exigencia({ tipoDocumentoId: 'CIN', formularioCodigo: 'ISENCAO_TAXA' }),
+        ),
+      });
+      const tela = combinarCinco(fixture);
+      expect(tela.querySelector('[role=status]')?.textContent).toContain(
+        'Escolha documentos do mesmo momento de coleta e formulário.',
+      );
+      expect(draft().documentos.regrasDeComprovacao.every((r) => r.forma === 'DOCUMENTO')).toBe(
+        true,
+      );
+    });
+
+    it('com a edição bloqueada, não deixa combinar nem alterar', () => {
+      const { fixture } = montar(false, false);
+      const tela = fixture.nativeElement as HTMLElement;
+      expect((botao(tela, 'Combinar') as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('com a edição bloqueada e o grupo já criado, os campos do grupo ficam desabilitados', () => {
+      const { fixture, draft } = montar();
+      const tela = combinarCinco(fixture);
+      const liberada = TestBed.inject(FormularioDoCronograma).edicaoLiberada as unknown as {
+        set(v: boolean): void;
+      };
+      liberada.set(false);
+      fixture.detectChanges();
+      expect(grupo(draft)).toBeDefined();
+      expect(botao(tela, 'Incluir documento')?.disabled).toBe(true);
+      expect(botao(tela, 'Retirar do grupo')?.disabled).toBe(true);
+    });
+
+    it('troca a quantidade mínima e avisa', () => {
+      const { fixture, draft } = montar();
+      const tela = combinarCinco(fixture);
+      tela.querySelector<HTMLInputElement>('input[value=QUANTIDADE_MINIMA_DE_ITENS]')?.click();
+      fixture.detectChanges();
+      const campo = tela.querySelector<HTMLInputElement>('input[type=number]') as HTMLInputElement;
+      campo.value = '3';
+      campo.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(grupo(draft).quantidadeMinima).toBe(3);
+      expect(tela.querySelector('[role=status]')?.textContent).toContain(
+        'Quantidade mínima atualizada.',
+      );
+    });
+
+    it('retira um documento do grupo e o inclui de novo, devolvendo o foco ao botão', () => {
+      const { fixture, draft } = montar();
+      const tela = combinarCinco(fixture);
+      botao(tela, 'Retirar do grupo')?.click();
+      fixture.detectChanges();
+      expect(grupo(draft).itens).toHaveLength(4);
+      expect(tela.querySelector('[role=status]')?.textContent).toContain(
+        'Documento retirado do grupo.',
+      );
+      expect(document.activeElement).toBe(tela.querySelector('button'));
+      const selecao = tela.querySelector('select[id^=incluir-]') as HTMLSelectElement;
+      expect(selecao.options).toHaveLength(2);
+      escolher(tela, selecao, selecao.options[1].value);
+      fixture.detectChanges();
+      botao(tela, 'Incluir documento')?.click();
+      fixture.detectChanges();
+      expect(grupo(draft).itens).toHaveLength(5);
+      expect(tela.querySelector('[role=status]')?.textContent).toContain(
+        'Documento incluído no grupo.',
+      );
+    });
+
+    it('grava a consequência escolhida e volta a "não decide sozinha" ao esvaziar', () => {
+      const { fixture, draft } = montar();
+      const tela = combinarCinco(fixture);
+      const selecao = tela.querySelector('select[id^=consequencia-]') as HTMLSelectElement;
+      expect(selecao.options[0].textContent).toContain('Nada além de faltar');
+      selecao.options[0].value = 'ELIMINA_DO_PROCESSO';
+      escolher(tela, selecao, 'ELIMINA_DO_PROCESSO');
+      fixture.detectChanges();
+      expect(grupo(draft).consequencia).toBe('ELIMINA_DO_PROCESSO');
+      expect(tela.querySelector('[role=status]')?.textContent).toContain(
+        'Consequência do grupo atualizada.',
+      );
+      escolher(tela, selecao, '');
+      expect(grupo(draft).consequencia).toBeNull();
+    });
+
+    it('reabre a lista e mostra a recusa do servidor; trocar a consequência a limpa', () => {
+      const { fixture, draft, recusas } = montar();
+      const tela = combinarCinco(fixture);
+      (botao(tela, 'Combinar') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(tela.querySelector('sel-grupo-de-documentos')).toBeNull();
+      recusas.registrar([
+        {
+          identificadorDaRegra: grupo(draft).identificadorNoRascunho,
+          campo: 'indeferimento.consequencia',
+          codigo: 'CONSEQUENCIA_INVALIDA',
+          mensagem: 'Escolha uma consequência válida para o grupo.',
+        },
+      ]);
+      fixture.detectChanges();
+      expect(tela.textContent).toContain('Escolha uma consequência válida para o grupo.');
+      const selecao = tela.querySelector('select[id^=consequencia-]') as HTMLSelectElement;
+      expect(selecao.getAttribute('aria-invalid')).toBe('true');
+      escolher(tela, selecao, '');
+      fixture.detectChanges();
+      expect(tela.textContent).not.toContain('Escolha uma consequência válida para o grupo.');
     });
   });
 });

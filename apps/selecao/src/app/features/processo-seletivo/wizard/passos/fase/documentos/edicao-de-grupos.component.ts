@@ -106,7 +106,7 @@ export class EdicaoDeGruposComponent {
       return (
         documento !== null &&
         primeiro !== undefined &&
-        documento.etapaId === primeiro.etapaId &&
+        documento.etapaChave === primeiro.etapaChave &&
         documento.formularioCodigo === primeiro.formularioCodigo
       );
     });

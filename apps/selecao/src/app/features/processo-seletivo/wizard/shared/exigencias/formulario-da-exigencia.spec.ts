@@ -14,7 +14,7 @@ import {
 } from './formulario-da-exigencia';
 import { regrasDeComprovacaoParaEnvio } from './gravacao-das-exigencias';
 import {
-  ETAPAS_VIVAS,
+  ETAPAS_POR_CHAVE,
   FASES,
   FORMULARIOS_POR_FASE,
   ID_CONTRACHEQUE,
@@ -80,7 +80,7 @@ describe('o formulário em que o documento é apresentado', () => {
       {
         faseIdPorCodigo: fases,
         modalidadesOfertadas: ['AC'],
-        etapasVivas: ETAPAS_VIVAS,
+        etapaIdPorChave: ETAPAS_POR_CHAVE,
         formulariosPorFase: formularios,
       },
     ).regras;

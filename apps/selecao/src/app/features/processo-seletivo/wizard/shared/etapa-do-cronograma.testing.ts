@@ -19,6 +19,7 @@ const RECURSO_DA_ETAPA_PADRAO: RecursoDaEtapa = {
 
 const ETAPA_DO_CRONOGRAMA_PADRAO: EtapaPontuada = {
   id: null,
+  chave: null,
   nome: 'Prova',
   carater: CaraterEtapaCodigo.AMBAS,
   tipoEtapaOrigemId: '',

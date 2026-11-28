@@ -293,10 +293,10 @@ export class DocumentosDaFaseComponent {
    * da própria tabela, e repeti-la em cada linha só alongaria a coluna.
    */
   coletaDoDocumento(id: string): string {
-    const etapaId = this.exigencias.etapaDoDocumento(id);
+    const etapaChave = this.exigencias.etapaDoDocumento(id);
     const etapa = this.exigencias
       .etapasDaFaseAberta()
-      .find((candidata) => candidata.id === etapaId);
+      .find((candidata) => candidata.chave === etapaChave);
     const momento = etapa === undefined ? 'na fase inteira' : `na etapa ${etapa.nome}`;
     return this.exigencias.valeEmTodasAsFases(id)
       ? `Todas as fases; nesta, ${momento}`

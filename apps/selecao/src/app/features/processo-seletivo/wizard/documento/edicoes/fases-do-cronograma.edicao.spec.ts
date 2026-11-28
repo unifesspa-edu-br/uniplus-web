@@ -24,4 +24,17 @@ describe('na fase', () => {
 
     expect(naFase(documento, 'inexistente', (fase) => fase)).toBe(documento);
   });
+
+  it('renomear e trocar o tipo da fase não muda a chave', () => {
+    const documento = umCronogramaCompleto();
+
+    const editado = naFase(documento, 'resultado', (fase) => ({
+      ...fase,
+      tipoFaseCodigo: 'AVALIACAO',
+    }));
+
+    expect(editado.cronograma?.fases?.map((fase) => fase.chave)).toEqual(
+      documento.cronograma?.fases?.map((fase) => fase.chave),
+    );
+  });
 });

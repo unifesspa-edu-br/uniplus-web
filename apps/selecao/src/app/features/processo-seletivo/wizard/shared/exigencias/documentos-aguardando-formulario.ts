@@ -3,7 +3,7 @@ import type { ExigenciasDoRascunho } from '../../processo-seletivo.models';
 import { comAlcanceDeTodasAsFases } from './alcance-das-exigencias';
 import { todasAsExigencias } from './consulta-das-exigencias';
 import { codigoEnviado } from './formulario-da-exigencia';
-import type { ProcessoVivoDasExigencias } from './gravacao-das-exigencias';
+import type { ProcessoVivoDasExigencias } from './preparo-da-gravacao';
 
 /**
  * Se algum documento exigido de uma fase do cronograma gravado ainda não tem o formulário que o

@@ -54,9 +54,10 @@ export function exigenciaNova(
   restricao?: RestricaoDeArquivo,
 ): ExigenciaDeDocumento {
   return {
+    chave: null,
     tipoDocumentoId,
     faseCodigo,
-    etapaId: null,
+    etapaChave: null,
     formularioCodigo: null,
     ...regraInicialDaExigencia(),
     ...criteriosIniciaisDoComprovante(restricao),

@@ -40,6 +40,7 @@ export interface FaseDoServidorParcial {
 /** A etapa como o servidor a devolve; cada seção aninhada aceita só os campos que o teste troca. */
 export interface EtapaDoServidorParcial {
   readonly id?: string;
+  readonly chave?: string;
   readonly identificacao?: Partial<EtapaProcessoDto['identificacao']>;
   readonly nota?: Partial<EtapaProcessoDto['nota']>;
   readonly avaliacao?: Partial<EtapaProcessoDto['avaliacao']>;
@@ -183,7 +184,7 @@ const PUBLICACOES_DA_ETAPA: EtapaProcessoDto['publicacoes'] = {
 /** Etapa classificatória de prova, sem janela, banca nem recurso. */
 export function etapaDoServidor(parcial: EtapaDoServidorParcial = {}): EtapaProcessoDto {
   return {
-    chave: 'etapa-1',
+    chave: parcial.chave ?? 'etapa_1',
     id: parcial.id ?? 'etapa-persistida-1',
     identificacao: { ...IDENTIFICACAO_DA_ETAPA, ...parcial.identificacao },
     nota: { ...NOTA_DA_ETAPA, ...parcial.nota },

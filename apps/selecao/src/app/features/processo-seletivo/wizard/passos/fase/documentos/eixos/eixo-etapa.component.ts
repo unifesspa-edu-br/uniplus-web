@@ -26,7 +26,7 @@ export class EixoEtapaComponent {
    * inteira — a etapa sai do registro em vez de ficar guardada como texto vazio, que o
    * contrato leria como declaração.
    */
-  escolherEtapaDoDocumento(id: string, etapaId: string): void {
-    this.exigencias.escreverExigencia(id, { etapaId: etapaId === '' ? null : etapaId });
+  escolherEtapaDoDocumento(id: string, etapaChave: string): void {
+    this.exigencias.escreverExigencia(id, { etapaChave: etapaChave === '' ? null : etapaChave });
   }
 }

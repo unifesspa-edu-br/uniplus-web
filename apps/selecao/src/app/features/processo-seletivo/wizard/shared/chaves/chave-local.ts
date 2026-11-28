@@ -1,12 +1,14 @@
 const TAMANHO_MAXIMO_DA_CHAVE = 64;
-const TAMANHO_MAXIMO_DO_PREFIXO = 32;
-const FORMATO_DA_CHAVE = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+const FORMATO_DA_CHAVE = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
 
 /** A parte nova de um documento da configuração que recebe chave. */
 export interface PedidoDeChave {
-  /** O tipo da parte (por exemplo `etapa`, `fase`, `banca`), já no formato da chave. */
+  /** O prefixo da parte: `fase`, `etapa`, `item`, `nivel`, `banca` ou `exigencia`. */
   readonly tipo: string;
-  /** O nome informado na criação; pode estar vazio. */
+  /**
+   * O texto da chave: o código do catálogo (tipo de fase, de etapa, de banca ou de documento) ou,
+   * para o item de avaliação e o nível de atendimento, o rótulo. Pode estar vazio.
+   */
   readonly nome: string;
   /**
    * Toda chave que a nova não pode repetir: as das partes existentes do mesmo tipo e escopo e
@@ -15,52 +17,50 @@ export interface PedidoDeChave {
   readonly tomadas: ReadonlySet<string>;
 }
 
-/** Confere o formato que a API aceita: minúsculas, dígitos e hífens, de 1 a 64 caracteres. */
+/** Confere o formato que a API aceita: minúsculas, dígitos e sublinhados entre palavras, de 1 a 64 caracteres. */
 export function formatoDaChaveValido(chave: string): boolean {
   return chave.length <= TAMANHO_MAXIMO_DA_CHAVE && FORMATO_DA_CHAVE.test(chave);
 }
 
 /**
- * Forma a chave local de uma parte nova: o nome sem acento e separado por hífens, ou
- * `<tipo>-<N>` quando não há nome aproveitável. Em colisão com uma chave tomada, acrescenta o
- * menor sufixo livre (`-2`, `-3`...). O tipo entra no máximo com 32 caracteres e o sufixo
- * sempre cabe: a chave devolvida tem formato válido e até 64 caracteres.
+ * Forma a chave local de uma parte nova: o prefixo, um sublinhado e o texto sem acento, em
+ * minúsculas, com o que não é letra ou dígito virando um só sublinhado. O prefixo não se repete
+ * quando o texto é igual a ele ou já começa por ele e um sublinhado. Em colisão com uma chave
+ * tomada, acrescenta o menor sufixo livre (`_2`, `_3`...). A chave devolvida tem formato válido e
+ * até 64 caracteres, cortada na última palavra inteira que cabe junto do sufixo.
  *
- * Só se chama na criação da parte: a chave não muda ao renomear nem ao reordenar.
+ * Só se chama na criação da parte: a chave não muda ao renomear, reordenar nem trocar o tipo.
  */
 export function novaChave({ tipo, nome, tomadas }: PedidoDeChave): string {
-  const slug = slugDoNome(nome);
-  const prefixo = cortar(tipo, TAMANHO_MAXIMO_DO_PREFIXO);
-  if (slug === '') return menorLivre((numero) => comSufixo(prefixo, numero), tomadas);
-
-  const base = /^[a-z]/.test(slug) ? slug : `${prefixo}-${slug}`;
-  return menorLivre((numero) => comSufixoDeColisao(base, numero), tomadas);
+  const base = baseDaChave(tipo, textoNormalizado(nome));
+  let numero = 1;
+  while (tomadas.has(candidata(base, numero))) numero++;
+  return candidata(base, numero);
 }
 
-function slugDoNome(nome: string): string {
-  return nome
+function textoNormalizado(texto: string): string {
+  return texto
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/gu, '-')
-    .replace(/^-+|-+$/gu, '');
+    .replace(/[^a-z0-9]+/gu, '_')
+    .replace(/^_+|_+$/gu, '');
 }
 
-function comSufixoDeColisao(base: string, numero: number): string {
-  return numero === 1 ? cortar(base, TAMANHO_MAXIMO_DA_CHAVE) : comSufixo(base, numero);
+function baseDaChave(prefixo: string, texto: string): string {
+  if (texto === '') return prefixo;
+  const jaTemPrefixo = texto === prefixo || texto.startsWith(`${prefixo}_`);
+  return jaTemPrefixo ? texto : `${prefixo}_${texto}`;
 }
 
-function comSufixo(base: string, numero: number): string {
-  const sufixo = `-${numero}`;
-  return cortar(base, TAMANHO_MAXIMO_DA_CHAVE - sufixo.length) + sufixo;
+function candidata(base: string, numero: number): string {
+  if (numero === 1) return cortarEmPalavras(base, TAMANHO_MAXIMO_DA_CHAVE);
+  const sufixo = `_${numero}`;
+  return cortarEmPalavras(base, TAMANHO_MAXIMO_DA_CHAVE - sufixo.length) + sufixo;
 }
 
-function cortar(chave: string, tamanho: number): string {
-  return chave.slice(0, tamanho).replace(/-+$/u, '');
-}
-
-function menorLivre(candidata: (numero: number) => string, tomadas: ReadonlySet<string>): string {
-  let numero = 1;
-  while (tomadas.has(candidata(numero))) numero++;
-  return candidata(numero);
+function cortarEmPalavras(chave: string, tamanho: number): string {
+  if (chave.length <= tamanho) return chave;
+  const limite = chave[tamanho] === '_' ? tamanho : chave.lastIndexOf('_', tamanho);
+  return chave.slice(0, limite > 0 ? limite : tamanho);
 }

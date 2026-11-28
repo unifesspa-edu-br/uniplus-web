@@ -129,23 +129,23 @@ describe('CronogramaPassoComponent: etapas', () => {
     expect(edicao.bancasDaEtapa(etapa)).toEqual([
       {
         id: null,
-        identificadorLocal: 'banca-1',
+        identificadorLocal: 'banca',
         copiaDoTipo: null,
         tipoBancaId: ID_BANCA_HETERO,
         regraDeDeliberacao: null,
       },
       {
         id: null,
-        identificadorLocal: 'banca-2',
+        identificadorLocal: 'banca_2',
         copiaDoTipo: null,
         tipoBancaId: ID_BANCA_HETERO,
         regraDeDeliberacao: null,
       },
     ]);
 
-    retirarBancaDaEtapa(edicao, etapa, 'banca-1');
+    retirarBancaDaEtapa(edicao, etapa, 'banca');
     expect(edicao.bancasDaEtapa(etapa)).toEqual([
-      expect.objectContaining({ identificadorLocal: 'banca-2' }),
+      expect.objectContaining({ identificadorLocal: 'banca_2' }),
     ]);
   });
 

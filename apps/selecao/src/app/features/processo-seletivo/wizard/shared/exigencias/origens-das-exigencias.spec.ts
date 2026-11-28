@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { regrasDeComprovacaoParaEnvio } from './gravacao-das-exigencias';
 import {
-  ETAPAS_VIVAS,
+  ETAPAS_POR_CHAVE,
   FASES,
   FORMULARIOS_POR_FASE,
   exigencia,
@@ -22,7 +22,7 @@ describe('origens das exigências enviadas', () => {
       {
         faseIdPorCodigo: FASES,
         modalidadesOfertadas: [],
-        etapasVivas: ETAPAS_VIVAS,
+        etapaIdPorChave: ETAPAS_POR_CHAVE,
         formulariosPorFase: FORMULARIOS_POR_FASE,
       },
     );

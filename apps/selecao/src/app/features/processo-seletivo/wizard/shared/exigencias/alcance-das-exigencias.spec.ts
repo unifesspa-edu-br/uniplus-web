@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ExigenciasDoRascunho } from '../../processo-seletivo.models';
+import { exigenciaCopiadaParaFase } from './alcance-das-exigencias';
 import {
   ID_HABILITACAO,
   ID_ISENCAO,
@@ -63,5 +64,26 @@ describe('alcance de todas as fases', () => {
     // O grupo continua inteiro, e nenhuma regra de documento solta foi criada na outra fase.
     expect(regrasDeComprovacao).toHaveLength(1);
     expect(regrasDeComprovacao[0].forma).toBe('QUANTIDADE_MINIMA_DE_ITENS');
+  });
+});
+
+describe('exigenciaCopiadaParaFase', () => {
+  it('copia a exigência lida para outra fase sem a chave, a etapa e o formulário', () => {
+    const lida = exigencia({
+      chave: 'exigencia_rg',
+      faseCodigo: 'HABILITACAO',
+      etapaChave: 'etapa_renda',
+      formularioCodigo: 'FORMULARIO',
+    });
+
+    const copia = exigenciaCopiadaParaFase(lida, 'INSCRICAO');
+
+    expect(copia).toMatchObject({
+      chave: null,
+      faseCodigo: 'INSCRICAO',
+      etapaChave: null,
+      formularioCodigo: null,
+    });
+    expect(lida.chave).toBe('exigencia_rg');
   });
 });

@@ -14,9 +14,16 @@ import type {
   RegraDeComprovacao,
 } from '../../processo-seletivo.models';
 
+import { documentosExigidosEmTodasAsFases } from './em-todas-as-fases';
 import { lerPrazoEValidade } from './prazo-e-validade';
 import { lerFormatosAceitos } from './formatos-aceitos';
 import { criarIdentificadorDaRegra } from './identificador-da-regra';
+
+/** O que a leitura de cada exigência consulta do processo: o código da fase e a chave da etapa, por identificador. */
+interface ContextoDaLeitura {
+  readonly codigoPorFaseId: ReadonlyMap<string, string>;
+  readonly chavePorEtapaId: ReadonlyMap<string, string>;
+}
 
 /**
  * A estrutura de regras de exigências como o rascunho a guarda, lida de `regrasDeComprovacao`.
@@ -27,7 +34,11 @@ import { criarIdentificadorDaRegra } from './identificador-da-regra';
  */
 export function exigenciasDe(dto: ProcessoSeletivoDto): ExigenciasDoRascunho {
   const codigoPorFaseId = new Map((dto.cronogramaFases ?? []).map((f) => [f.id, f.codigo]));
-  const regrasDeComprovacao = lerExigencias(dto.regrasDeComprovacao ?? [], codigoPorFaseId);
+  const chavePorEtapaId = new Map((dto.etapas ?? []).map((e) => [e.id, e.chave]));
+  const regrasDeComprovacao = lerExigencias(dto.regrasDeComprovacao ?? [], {
+    codigoPorFaseId,
+    chavePorEtapaId,
+  });
   return {
     regrasDeComprovacao,
     emTodasAsFases: documentosExigidosEmTodasAsFases(regrasDeComprovacao, [
@@ -36,137 +47,35 @@ export function exigenciasDe(dto: ProcessoSeletivoDto): ExigenciasDoRascunho {
   };
 }
 
-/**
- * Relê, do que voltou do servidor, quais documentos o operador declarou valer em todas as fases.
- *
- * A intenção não trafega: o contrato recebe as regras de documento já materializadas, uma por fase. Sem
- * reconstruí-la, reabrir o processo a rebaixava a uma escolha fase a fase — e a fase criada
- * depois disso ficava sem o documento, sem nada na tela denunciando a ausência.
- *
- * O sinal é estar em todas as fases DA MESMA MANEIRA. Estar em todas não basta: o certame pode
- * exigir o mesmo documento em cada fase por razões próprias, com condições, consequência ou
- * norma diferentes em cada uma. Lê-las como um alcance global faria a fase criada depois
- * receber uma cópia arbitrária de uma dessas declarações — configuração que ninguém pediu, e
- * pior do que a intenção perdida. Declarações idênticas não têm esse risco: a cópia reproduz o
- * que já está lá.
- *
- * Exige ainda ao menos duas fases: com uma só, "vale em todas" e "vale nesta" são a mesma
- * configuração, e inferir a primeira daria à segunda um alcance que ninguém declarou.
- */
-function documentosExigidosEmTodasAsFases(
-  regrasDeComprovacao: readonly RegraDeComprovacao[],
-  fases: readonly string[],
-): readonly string[] {
-  if (fases.length < 2) return [];
-  const porTipo = exigenciasIndependentesPorTipo(regrasDeComprovacao);
-  return [...porTipo]
-    .filter(([, declaracoes]) => temMesmaDeclaracaoEmCadaFase(declaracoes, fases))
-    .map(([tipo]) => tipo);
-}
-
-type DeclaracaoDaExigencia = Pick<RegraDeComprovacao, 'grupoDoFormularioParaRepeticao'> & {
-  readonly documento: ExigenciaDeDocumento;
-};
-
-/** Uma alternativa dentro de um grupo não é uma exigência independente. */
-function exigenciasIndependentesPorTipo(regrasDeComprovacao: readonly RegraDeComprovacao[]) {
-  const porTipo = new Map<string, DeclaracaoDaExigencia[]>();
-  for (const { forma, documento, grupoDoFormularioParaRepeticao } of regrasDeComprovacao) {
-    if (forma !== 'DOCUMENTO' || documento === null) continue;
-    const declaracao = { documento, grupoDoFormularioParaRepeticao };
-    const anteriores = porTipo.get(documento.tipoDocumentoId);
-    if (anteriores === undefined) porTipo.set(documento.tipoDocumentoId, [declaracao]);
-    else anteriores.push(declaracao);
-  }
-  return porTipo;
-}
-
-/** A declaração precisa aparecer uma única vez em cada fase e ter o mesmo conteúdo. */
-function temMesmaDeclaracaoEmCadaFase(
-  exigencias: readonly DeclaracaoDaExigencia[],
-  fases: readonly string[],
-): boolean {
-  const porFase = fases.map((fase) =>
-    exigencias.filter(({ documento }) => documento.faseCodigo === fase),
-  );
-  if (!porFase.every((declaracoes) => declaracoes.length === 1)) return false;
-  const referencia = conteudoDaExigenciaParaComparacao(porFase[0][0]);
-  return porFase.every(
-    ([declaracao]) => conteudoDaExigenciaParaComparacao(declaracao) === referencia,
-  );
-}
-
-function conteudoDaExigenciaParaComparacao({
-  documento,
-  grupoDoFormularioParaRepeticao,
-}: DeclaracaoDaExigencia): string {
-  return JSON.stringify([
-    conteudoDoDocumentoParaComparacao(documento),
-    documento.fatosComprovados,
-    grupoDoFormularioParaRepeticao,
-  ]);
-}
-
-/**
- * O que precisa coincidir entre fases para as declarações serem a MESMA coisa dita em cada uma.
- *
- * Fica de fora o que é por definição próprio de cada fase — a fase e a etapa que coleta. O
- * resto é o conteúdo da exigência: se algum deles diverge, são declarações independentes.
- */
-function conteudoDoDocumentoParaComparacao(exigencia: ExigenciaDeDocumento): string {
-  return JSON.stringify({
-    tipoDocumentoId: exigencia.tipoDocumentoId,
-    aplicabilidade: exigencia.aplicabilidade,
-    obrigatorio: exigencia.obrigatorio,
-    consequenciaIndeferimento: exigencia.consequenciaIndeferimento,
-    abrePrazoParaReenvio: exigencia.abrePrazoParaReenvio,
-    condicoes: exigencia.condicoes,
-    basesLegais: exigencia.basesLegais,
-    criterios: criteriosParaComparacao(exigencia),
-  });
-}
-
-function criteriosParaComparacao(exigencia: ExigenciaDeDocumento) {
-  return {
-    prazoDeEmissao: exigencia.prazoDeEmissao,
-    validade: exigencia.validade,
-    formatosPermitidos: exigencia.formatosPermitidos,
-    tamanhoMaximoBytes: exigencia.tamanhoMaximoBytes,
-    modeloId: exigencia.modelo?.modeloId ?? null,
-  };
-}
-
 function lerExigencias(
   regras: readonly RegraDeComprovacaoDto[],
-  codigoPorFaseId: ReadonlyMap<string, string>,
+  contexto: ContextoDaLeitura,
 ): RegraDeComprovacao[] {
-  return regras
-    .map((regra) => lerExigencia(regra, codigoPorFaseId))
-    .filter((regra) => regra !== null);
+  return regras.map((regra) => lerExigencia(regra, contexto)).filter((regra) => regra !== null);
 }
 
 function lerExigencia(
   regra: RegraDeComprovacaoDto,
-  codigoPorFaseId: ReadonlyMap<string, string>,
+  contexto: ContextoDaLeitura,
 ): RegraDeComprovacao | null {
-  if (regra.forma.codigo === 'DOCUMENTO') return lerDocumentoExigido(regra, codigoPorFaseId);
-  return lerGrupoDeExigencias(regra, codigoPorFaseId);
+  if (regra.forma.codigo === 'DOCUMENTO') return lerDocumentoExigido(regra, contexto);
+  return lerGrupoDeExigencias(regra, contexto);
 }
 
 function lerDocumentoExigido(
   regra: RegraDeComprovacaoDto,
-  codigoPorFaseId: ReadonlyMap<string, string>,
+  contexto: ContextoDaLeitura,
 ): RegraDeComprovacao | null {
-  const documento = documentoDe(regra.documento, codigoPorFaseId);
+  const documento = documentoDe(regra.documento, contexto);
   if (documento === null) return null;
   return { ...camposDaRegra(regra), forma: 'DOCUMENTO', documento, itens: null };
 }
 
 function lerGrupoDeExigencias(
   regra: RegraDeComprovacaoDto,
-  codigoPorFaseId: ReadonlyMap<string, string>,
+  contexto: ContextoDaLeitura,
 ): RegraDeComprovacao | null {
-  const itensDoGrupo = lerExigencias(regra.itens ?? [], codigoPorFaseId);
+  const itensDoGrupo = lerExigencias(regra.itens ?? [], contexto);
   const forma = regra.forma.codigo;
   return { ...camposDaRegra(regra), forma, documento: null, itens: itensDoGrupo };
 }
@@ -200,25 +109,49 @@ function distincaoDaRegra({ cardinalidade }: RegraDeComprovacaoDto) {
 
 function documentoDe(
   dto: DocumentoExigidoDto | null | undefined,
-  codigoPorFaseId: ReadonlyMap<string, string>,
+  contexto: ContextoDaLeitura,
 ): ExigenciaDeDocumento | null {
   if (dto === null || dto === undefined) return null;
-  return documentoNaFase(dto, codigoPorFaseId);
+  return documentoNaFase(dto, contexto);
 }
 
 function documentoNaFase(
   dto: DocumentoExigidoDto,
-  codigoPorFaseId: ReadonlyMap<string, string>,
+  contexto: ContextoDaLeitura,
 ): ExigenciaDeDocumento {
   return {
-    tipoDocumentoId: dto.tipoDocumento.id,
-    tipoDocumentoNome: dto.tipoDocumento.nome,
-    ...faseDoDocumento(dto.momento.faseId, codigoPorFaseId),
-    etapaId: dto.momento.etapaId,
-    formularioCodigo: dto.momento.formularioCodigo,
+    ...identidadeDoDocumentoLida(dto),
+    ...momentoDoDocumentoLido(dto.momento, contexto),
     ...regraDaExigenciaLida(dto),
-    ...criteriosDoComprovanteLidos(dto.requisitos, codigoPorFaseId),
+    ...criteriosDoComprovanteLidos(dto.requisitos, contexto.codigoPorFaseId),
   };
+}
+
+function identidadeDoDocumentoLida({ chave, tipoDocumento }: DocumentoExigidoDto) {
+  return {
+    chave,
+    tipoDocumentoId: tipoDocumento.id,
+    tipoDocumentoCodigo: tipoDocumento.codigo,
+    tipoDocumentoNome: tipoDocumento.nome,
+  };
+}
+
+function momentoDoDocumentoLido(
+  momento: DocumentoExigidoDto['momento'],
+  { codigoPorFaseId, chavePorEtapaId }: ContextoDaLeitura,
+) {
+  return {
+    ...faseDoDocumento(momento.faseId, codigoPorFaseId),
+    etapaChave: chaveDaEtapa(momento.etapaId, chavePorEtapaId),
+    formularioCodigo: momento.formularioCodigo,
+  };
+}
+
+function chaveDaEtapa(
+  etapaId: string | null,
+  chavePorEtapaId: ReadonlyMap<string, string>,
+): string | null {
+  return etapaId === null ? null : (chavePorEtapaId.get(etapaId) ?? null);
 }
 
 function faseDoDocumento(faseId: string, codigoPorFaseId: ReadonlyMap<string, string>) {

@@ -55,11 +55,18 @@ function materializarNaFase(
   return { ...exigencias, regrasDeComprovacao: [...exigencias.regrasDeComprovacao, regra] };
 }
 
-/** A cópia do modelo na fase: sem etapa nem formulário, que cada fase declara por si. */
+/** A exigência do modelo numa fase: parte nova, sem chave, etapa nem formulário, que cada fase declara por si. */
+export function exigenciaCopiadaParaFase(
+  modelo: ExigenciaDeDocumento,
+  faseCodigo: string,
+): ExigenciaDeDocumento {
+  return { ...modelo, chave: null, faseCodigo, etapaChave: null, formularioCodigo: null };
+}
+
+/** A regra da cópia do modelo na fase. */
 function copiaNaFase(modelo: Regra, documento: ExigenciaDeDocumento, faseCodigo: string): Regra {
-  const copia = { ...documento, faseCodigo, etapaId: null, formularioCodigo: null };
   return {
-    ...regraDeDocumento(copia),
+    ...regraDeDocumento(exigenciaCopiadaParaFase(documento, faseCodigo)),
     grupoDoFormularioParaRepeticao: modelo.grupoDoFormularioParaRepeticao,
   };
 }
@@ -143,8 +150,9 @@ function modeloNaFase(
 ): ExigenciaDeDocumento {
   return {
     ...modelo,
+    chave: atual.chave,
     faseCodigo: atual.faseCodigo,
-    etapaId: atual.etapaId,
+    etapaChave: atual.etapaChave,
     formularioCodigo: atual.formularioCodigo,
   };
 }
