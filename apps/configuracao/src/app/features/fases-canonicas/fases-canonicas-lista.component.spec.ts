@@ -18,6 +18,7 @@ const fase: FaseCanonicaDto = {
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
+  organizadaEmChamadas: false,
   origemData: ORIGENS_DE_DATA.NO_EDITAL,
   criadoEm: '',
 };
@@ -52,6 +53,15 @@ describe('FasesCanonicasListaComponent', () => {
   const botoes = (): HTMLButtonElement[] => [...raiz().querySelectorAll('button')];
   const acionaveis = (): HTMLButtonElement[] =>
     botoes().filter((b) => !b.disabled && b.getAttribute('aria-disabled') !== 'true');
+
+  it('mostra Sim ou Não na coluna "Em chamadas" de cada fase, com rótulo no cartão do celular', () => {
+    const emChamadas = { ...fase, id: 'f2', codigo: 'HABILITACAO', organizadaEmChamadas: true };
+    montar([emChamadas, fase], {});
+
+    const celulas = [...raiz().querySelectorAll('td[data-label="Em chamadas"]')];
+    expect(celulas.map((celula) => celula.textContent?.trim())).toEqual(['Sim', 'Não']);
+    expect(raiz().querySelector('th')?.parentElement?.textContent).toContain('Em chamadas');
+  });
 
   it('com remoção, deixa indisponíveis as ações das linhas e a paginação', () => {
     montar([fase], { removendo: true, gravando: true });
@@ -111,8 +121,8 @@ describe('FasesCanonicasListaComponent', () => {
       if (!encontrado) throw new Error(`Botão ausente: ${nome}.`);
       return encontrado;
     };
-    const editar = (): HTMLButtonElement => botao('Editar fase canônica AVALIACAO');
-    const remover = (): HTMLButtonElement => botao('Remover fase canônica AVALIACAO');
+    const editar = (): HTMLButtonElement => botao('Editar tipo de fase AVALIACAO');
+    const remover = (): HTMLButtonElement => botao('Remover tipo de fase AVALIACAO');
     const acionar = (acionador: HTMLButtonElement): void => {
       acionador.focus();
       acionador.click();
@@ -152,7 +162,7 @@ describe('FasesCanonicasListaComponent', () => {
       fixture.componentRef.setInput('gravando', false);
       fixture.detectChanges();
       await fixture.whenStable();
-      expect(document.activeElement).toBe(botao('Editar fase canônica OUTRO_CODIGO'));
+      expect(document.activeElement).toBe(botao('Editar tipo de fase OUTRO_CODIGO'));
     });
 
     it('leva o foco ao título da lista quando a linha do acionador não existe mais', async () => {

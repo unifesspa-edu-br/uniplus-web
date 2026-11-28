@@ -22,7 +22,7 @@ describe('FasesCanonicasPage — lista', () => {
 
   afterEach(() => verificarRequisicoesDaPagina(cena));
 
-  it('CA-12: renderiza a lista de fases canônicas', async () => {
+  it('CA-12: renderiza a lista de tipos de fase', async () => {
     await responderLista(cena, [faseAvaliacaoSeed]);
     expect(cena.store.fases()).toHaveLength(1);
     cena.fixture.detectChanges();
@@ -30,12 +30,12 @@ describe('FasesCanonicasPage — lista', () => {
     expect(cena.fixture.nativeElement.textContent).toContain('AVALIACAO');
   });
 
-  it('CA-01/CA-03: o cabeçalho não oferece a ação "Nova fase canônica"', async () => {
+  it('CA-01/CA-03: o cabeçalho não oferece a ação "Novo tipo de fase"', async () => {
     await responderLista(cena, [faseAvaliacaoSeed]);
     cena.fixture.detectChanges();
     const nomes = nomesDeBotoes(cena);
-    expect(nomes).not.toContain('Nova fase canônica');
-    expect(nomes).not.toContain('Criar fase canônica');
+    expect(nomes).not.toContain('Novo tipo de fase');
+    expect(nomes).not.toContain('Criar tipo de fase');
   });
 
   it('CA-02/CA-16: o estado vazio informa sem sugerir cadastro da primeira fase', async () => {
@@ -44,7 +44,7 @@ describe('FasesCanonicasPage — lista', () => {
     const texto: string = cena.fixture.nativeElement.textContent;
     expect(texto).toContain('catálogo de fases é definido institucionalmente');
     expect(texto).not.toMatch(/cadastr\w+ a primeira/iu);
-    expect(nomesDeBotoes(cena)).not.toContain('Nova fase canônica');
+    expect(nomesDeBotoes(cena)).not.toContain('Novo tipo de fase');
   });
 
   it('CA-10/CA-11: o aviso remete ao catálogo institucional e não orienta a criar uma nova entrada', async () => {
@@ -109,7 +109,7 @@ describe('FasesCanonicasPage — lista', () => {
     expect(caption).not.toBeNull();
     expect(caption?.classList.contains('sr-only')).toBe(true);
     expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      'Fases canônicas, com unidade sugerida, agrupamento de etapas e permissão de complementação documental',
+      'Tipos de fase, com unidade sugerida, agrupamento de etapas, permissão de complementação documental e organização em chamadas',
     );
   });
 });

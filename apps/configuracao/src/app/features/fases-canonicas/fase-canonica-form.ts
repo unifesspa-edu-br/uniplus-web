@@ -43,6 +43,7 @@ export interface FaseForm {
   origemData: FormControl<OrigemDataFaseCodigo | null>;
   coletaInscricao: FormControl<boolean>;
   coletaSolicitacaoIsencao: FormControl<boolean>;
+  organizadaEmChamadas: FormControl<boolean | null>;
 }
 
 const CAMPOS: ReadonlySet<string> = new Set<keyof FaseForm>([
@@ -56,6 +57,7 @@ const CAMPOS: ReadonlySet<string> = new Set<keyof FaseForm>([
   'origemData',
   'coletaInscricao',
   'coletaSolicitacaoIsencao',
+  'organizadaEmChamadas',
 ]);
 
 export function criarFormularioDeFase(): FormGroup<FaseForm> {
@@ -70,6 +72,7 @@ export function criarFormularioDeFase(): FormGroup<FaseForm> {
     origemData: new FormControl<OrigemDataFaseCodigo | null>(null, Validators.required),
     coletaInscricao: controleDeMarca(false),
     coletaSolicitacaoIsencao: controleDeMarca(false),
+    organizadaEmChamadas: new FormControl<boolean | null>(null, Validators.required),
   });
 }
 
@@ -85,6 +88,7 @@ export function valoresDaFase(fase: FaseCanonicaDto) {
     origemData: fase.origemData.codigo,
     coletaInscricao: fase.coletaInscricao,
     coletaSolicitacaoIsencao: fase.coletaSolicitacaoIsencao,
+    organizadaEmChamadas: fase.organizadaEmChamadas,
   };
 }
 
@@ -114,6 +118,23 @@ function textosAparados(valor: ValoresDaFase) {
   };
 }
 
+/** A fase só é enviada depois de dizer se é organizada em chamadas; a lacuna não vira "não". */
+function escolhaDeChamadas(valor: ValoresDaFase): boolean {
+  if (valor.organizadaEmChamadas === null) {
+    throw new Error('A fase só é enviada depois de dizer se é organizada em chamadas.');
+  }
+  return valor.organizadaEmChamadas;
+}
+
+function marcasDaFase(valor: ValoresDaFase) {
+  return {
+    agrupaEtapas: valor.agrupaEtapas,
+    permiteComplementacao: valor.permiteComplementacao,
+    coletaInscricao: valor.coletaInscricao,
+    coletaSolicitacaoIsencao: valor.coletaSolicitacaoIsencao,
+  };
+}
+
 export function comandoDeAtualizacao(
   id: string,
   form: FormGroup<FaseForm>,
@@ -122,10 +143,8 @@ export function comandoDeAtualizacao(
   return {
     id,
     ...textosAparados(valor),
-    agrupaEtapas: valor.agrupaEtapas,
-    permiteComplementacao: valor.permiteComplementacao,
+    ...marcasDaFase(valor),
     origemData: valor.origemData,
-    coletaInscricao: valor.coletaInscricao,
-    coletaSolicitacaoIsencao: valor.coletaSolicitacaoIsencao,
+    organizadaEmChamadas: escolhaDeChamadas(valor),
   };
 }

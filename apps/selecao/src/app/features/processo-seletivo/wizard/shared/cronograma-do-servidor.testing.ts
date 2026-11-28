@@ -84,6 +84,7 @@ const FASE_CANONICA: FaseCronogramaDto['faseCanonica'] = {
   permiteComplementacao: true,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
+  organizadaEmChamadas: false,
 };
 
 const CRONOGRAMA_DA_FASE: FaseCronogramaDto['cronograma'] = {

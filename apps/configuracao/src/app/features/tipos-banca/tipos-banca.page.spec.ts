@@ -37,6 +37,7 @@ function faseCanonica(codigo: string, nome: string): FaseCanonicaDto {
     admiteComplementacao: false,
     coletaInscricao: false,
     coletaSolicitacaoIsencao: false,
+    organizadaEmChamadas: false,
     origemData: ORIGENS_DE_DATA.NO_EDITAL,
     baseLegal: null,
     criadoEm: '2026-06-10T12:00:00Z',

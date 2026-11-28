@@ -56,6 +56,6 @@ export class FasesCanonicasListaComponent {
   }
 
   protected nomeDaAcao(acao: Acao, codigo: string): string {
-    return `${acao === 'editar' ? 'Editar' : 'Remover'} fase canônica ${codigo}`;
+    return `${acao === 'editar' ? 'Editar' : 'Remover'} tipo de fase ${codigo}`;
   }
 }

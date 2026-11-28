@@ -31,7 +31,7 @@ describe('FasesCanonicasPage — remoção pela interface', () => {
     expect(cena.edicao.gravando()).toBe(true);
     expect(cena.edicao.salvando()).toBe(false);
     expect(elemento<HTMLFieldSetElement>(cena, '.form-drawer__campos').disabled).toBe(false);
-    expect(botaoSalvar(cena).textContent).toContain('Salvar fase canônica');
+    expect(botaoSalvar(cena).textContent).toContain('Salvar tipo de fase');
     expect(elemento(cena, 'td[data-label="Código"]').textContent).toContain('Removendo...');
     const dialogo = elemento<HTMLDialogElement>(cena, 'cfg-confirmacao-de-remocao dialog');
     expect(dialogo.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled).toBe(
@@ -45,7 +45,7 @@ describe('FasesCanonicasPage — remoção pela interface', () => {
     );
     const editar = elemento<HTMLButtonElement>(
       cena,
-      'button[aria-label="Editar fase canônica AVALIACAO"]',
+      'button[aria-label="Editar tipo de fase AVALIACAO"]',
     );
     expect(editar.disabled).toBe(true);
     editar.click();
@@ -105,7 +105,7 @@ describe('FasesCanonicasPage — remoção pela interface', () => {
   it('fecha o diálogo de remoção quando o navegador o fecha', async () => {
     elemento<HTMLButtonElement>(
       cena,
-      'button[aria-label="Remover fase canônica AVALIACAO"]',
+      'button[aria-label="Remover tipo de fase AVALIACAO"]',
     ).click();
     await propagarRenderizando(cena);
     const dialogo = elemento<HTMLDialogElement>(cena, 'cfg-confirmacao-de-remocao dialog');
@@ -125,7 +125,7 @@ describe('FasesCanonicasPage — remoção pela interface', () => {
     cena.controller.expectNone(ESCRITA);
     expect(cena.edicao.andamento()).toEqual({ id: 'f1', rotulo: 'Salvando...' });
     expect(cena.edicao.anuncioDaRemocao()).toBe('');
-    expect(cena.edicao.anuncioDoSalvamento()).toBe('Salvando fase canônica.');
+    expect(cena.edicao.anuncioDoSalvamento()).toBe('Salvando tipo de fase.');
     salvamento.flush(null, { status: 204, statusText: 'No Content' });
     await concluirRecarga(cena);
   });

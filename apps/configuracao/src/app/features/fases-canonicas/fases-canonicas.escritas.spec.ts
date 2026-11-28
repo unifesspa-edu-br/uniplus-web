@@ -53,7 +53,7 @@ describe('FasesCanonicasPage — escritas pela interface', () => {
     expect(elemento<HTMLButtonElement>(cena, '.form-drawer__footer button').disabled).toBe(true);
     const dialogo = elemento<HTMLDialogElement>(
       cena,
-      'dialog[aria-label="Formulário de fase canônica"]',
+      'dialog[aria-label="Formulário de tipo de fase"]',
     );
     expect(dialogo.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled).toBe(
       true,

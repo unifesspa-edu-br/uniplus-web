@@ -23,7 +23,7 @@ describe('FasesCanonicasPage — remoção', () => {
 
   afterEach(() => verificarRequisicoesDaPagina(cena));
 
-  it('CA-08/CA-09/CA-10: remove uma fase canônica após confirmação e recarrega a lista', async () => {
+  it('CA-08/CA-09/CA-10: remove um tipo de fase após confirmação e recarrega a lista', async () => {
     const sucessoSpy = vi.spyOn(TestBed.inject(NotificationService), 'success');
     await responderLista(cena, [faseAvaliacaoSeed]);
     cena.edicao.pedirRemocao(faseAvaliacaoSeed);
@@ -36,16 +36,16 @@ describe('FasesCanonicasPage — remoção', () => {
     req.flush(null, { status: 204, statusText: 'No Content' });
     await propagar(cena);
     await responderLista(cena, []);
-    expect(sucessoSpy).toHaveBeenCalledWith('Fase canônica removida', 'AVALIACAO');
+    expect(sucessoSpy).toHaveBeenCalledWith('Tipo de fase removido', 'AVALIACAO');
   });
 
   it('CA-01/CA-03/CA-04/CA-05/CA-06/CA-07: lixeira e confirmação falam em remover e identificam a fase', async () => {
     await responderLista(cena, [faseAvaliacaoSeed]);
     cena.fixture.detectChanges();
     const lixeira = cena.fixture.nativeElement.querySelector(
-      'button[aria-label="Remover fase canônica AVALIACAO"]',
+      'button[aria-label="Remover tipo de fase AVALIACAO"]',
     ) as HTMLButtonElement;
-    expect(lixeira.getAttribute('data-tooltip')).toBe('Remover fase canônica');
+    expect(lixeira.getAttribute('data-tooltip')).toBe('Remover tipo de fase');
     expect(lixeira.querySelector('.pi-trash')).not.toBeNull();
     expect(cena.fixture.nativeElement.querySelector('button[aria-label^="Inativar"]')).toBeNull();
 
@@ -54,7 +54,7 @@ describe('FasesCanonicasPage — remoção', () => {
     const dialogo = cena.fixture.nativeElement.querySelector(
       'cfg-confirmacao-de-remocao',
     ) as HTMLElement;
-    expect(dialogo.querySelector('h3')?.textContent?.trim()).toBe('Remover fase canônica');
+    expect(dialogo.querySelector('h3')?.textContent?.trim()).toBe('Remover tipo de fase');
     expect(dialogo.querySelector('.uni-dialog__body')?.textContent).toContain(
       'Deseja remover a fase AVALIACAO?',
     );
@@ -73,7 +73,7 @@ describe('FasesCanonicasPage — remoção', () => {
     cena.controller.expectOne(urlRemocao(faseAvaliacaoSeed)).flush(
       {
         type: 'about:blank',
-        title: 'Fase canônica não encontrada',
+        title: 'Tipo de fase não encontrado',
         status: 404,
         code: 'uniplus.configuracao.fase_canonica.nao_encontrada',
       },
@@ -139,6 +139,6 @@ describe('FasesCanonicasPage — remoção', () => {
       .flush(null, { status: 204, statusText: 'No Content' });
     await propagar(cena);
     await responderLista(cena, []);
-    expect(cena.edicao.mensagemDaConfirmacao()).toBe('Deseja remover esta fase canônica?');
+    expect(cena.edicao.mensagemDaConfirmacao()).toBe('Deseja remover este tipo de fase?');
   });
 });

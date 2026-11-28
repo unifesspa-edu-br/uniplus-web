@@ -5704,6 +5704,7 @@ export interface components {
             readonly permiteComplementacao: boolean;
             readonly coletaInscricao: boolean;
             readonly coletaSolicitacaoIsencao: boolean;
+            readonly organizadaEmChamadas: boolean;
         };
         readonly FaseComProdutosPrevistosDto: {
             /** Format: uuid */
@@ -8330,7 +8331,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -8711,7 +8712,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -8795,15 +8796,6 @@ export interface operations {
             };
             /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
             readonly 409: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-            readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
                 };
@@ -8966,7 +8958,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -9063,7 +9055,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -9209,15 +9201,6 @@ export interface operations {
             };
             /** @description Conflict */
             readonly 409: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-            readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
                 };
@@ -9427,7 +9410,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -9595,7 +9578,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -9697,7 +9680,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -9809,7 +9792,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -10029,6 +10012,15 @@ export interface operations {
             };
             /** @description Precondition Failed */
             readonly 412: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
+            readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
                 };
@@ -10348,6 +10340,15 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
+            readonly 413: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
             /** @description Unprocessable Entity */
             readonly 422: {
                 headers: {
@@ -10441,7 +10442,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -10563,7 +10564,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -11129,7 +11130,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -11213,15 +11214,6 @@ export interface operations {
             };
             /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
             readonly 409: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-            readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
                 };
@@ -11483,7 +11475,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -11575,7 +11567,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -11659,15 +11651,6 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-            readonly 413: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
             /** @description Unprocessable Entity */
             readonly 422: {
                 headers: {
@@ -11736,15 +11719,6 @@ export interface operations {
             };
             /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
             readonly 409: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-            readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
                 };
@@ -11954,6 +11928,15 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
+            readonly 413: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
             /** @description Unprocessable Entity */
             readonly 422: {
                 headers: {
@@ -12128,7 +12111,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Payload Too Large */
+            /** @description A requisição passa de 10 MiB mais 64 KiB de folga para os campos do formulário (uniplus.requisicao.corpo_acima_do_limite), ou o arquivo passa de 10 MiB (uniplus.selecao.notas_do_enem.arquivo_grande_demais). */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -12411,7 +12394,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -12503,7 +12486,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -12702,7 +12685,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -12843,7 +12826,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -12945,7 +12928,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -13046,7 +13029,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -13151,7 +13134,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -13251,6 +13234,15 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
+            readonly 413: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
             /** @description Unprocessable Entity */
             readonly 422: {
                 headers: {
@@ -13326,6 +13318,15 @@ export interface operations {
             };
             /** @description Not Acceptable */
             readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
+            readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
                 };
@@ -13470,15 +13471,6 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-            readonly 413: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
             /** @description Unprocessable Entity */
             readonly 422: {
                 headers: {
@@ -13558,15 +13550,6 @@ export interface operations {
             };
             /** @description Conflict */
             readonly 409: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-            readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
                 };
@@ -13660,15 +13643,6 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-            readonly 413: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
             /** @description Unprocessable Entity */
             readonly 422: {
                 headers: {
@@ -13748,15 +13722,6 @@ export interface operations {
             };
             /** @description Conflict */
             readonly 409: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-            readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
                 };
@@ -13856,7 +13821,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -13957,7 +13922,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -14058,7 +14023,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -14159,7 +14124,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -14260,7 +14225,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -14361,7 +14326,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -14462,7 +14427,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -14563,7 +14528,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -14664,7 +14629,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -14765,7 +14730,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -14866,7 +14831,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -14967,7 +14932,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -15068,7 +15033,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -15169,7 +15134,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -15270,7 +15235,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -15371,7 +15336,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -15472,7 +15437,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -15573,7 +15538,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -15674,7 +15639,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -16116,7 +16081,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+            /** @description O corpo da requisição passa do limite de tamanho aceito pela operação (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conteúdo. Sem tamanho declarado, com o conteúdo enviado em partes, a leitura é interrompida ao passar do limite, e a verificação de acesso pode recusar antes disso. */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -16212,7 +16177,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description O corpo passa de 2 MiB (uniplus.idempotency.body_muito_grande), ou o documento passa do limite de profundidade ou de nós do formato (uniplus.selecao.documento_da_configuracao.acima_do_limite). */
+            /** @description O corpo passa de 2 MiB (uniplus.requisicao.corpo_acima_do_limite), ou o documento passa do limite de profundidade ou de nós do formato (uniplus.selecao.documento_da_configuracao.acima_do_limite). */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;
@@ -16377,7 +16342,7 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description O documento passa de um limite do formato: 2 MiB, profundidade ou quantidade de nós (uniplus.selecao.documento_da_configuracao.acima_do_limite). */
+            /** @description O corpo passa de 2 MiB (uniplus.requisicao.corpo_acima_do_limite), ou o documento passa do limite de profundidade ou de nós do formato (uniplus.selecao.documento_da_configuracao.acima_do_limite). */
             readonly 413: {
                 headers: {
                     readonly [name: string]: unknown;

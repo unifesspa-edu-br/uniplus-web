@@ -4,7 +4,7 @@ import { faseCanonica, mockApiDeFasesCanonicas } from '../support/api-de-fases-c
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
- * Sinalizadores da Fase canônica: "agrupa etapas" e "permite complementação" só são oferecidos
+ * Sinalizadores do Tipo de fase: "agrupa etapas" e "permite complementação" só são oferecidos
  * quando a fase declara que os admite. A decisão é do cadastro da fase, nunca do código dela:
  * a mesma fase AVALIACAO aparece com e sem o agrupamento conforme o que o servidor informa. API
  * mockada por `page.route`; autenticação real pelo projeto `fluxo-chromium`.
@@ -15,11 +15,11 @@ const grupoDaComplementacao = (page: Page) => page.locator('#cfg-fase-grupo-comp
 
 async function editar(page: Page, codigo: string): Promise<void> {
   await page.goto('/fases-canonicas');
-  await page.getByRole('button', { name: `Editar fase canônica ${codigo}`, exact: true }).click();
-  await expect(page.getByText('Editar fase canônica')).toBeVisible();
+  await page.getByRole('button', { name: `Editar tipo de fase ${codigo}`, exact: true }).click();
+  await expect(page.getByText('Editar tipo de fase')).toBeVisible();
 }
 
-test.describe('Fase canônica — sinalizadores admitidos', () => {
+test.describe('Tipo de fase — sinalizadores admitidos', () => {
   test.beforeEach(async ({ page }) => {
     await mockConfiguracaoRuntimeConfig(page);
   });
@@ -83,7 +83,7 @@ test.describe('Fase canônica — sinalizadores admitidos', () => {
     });
     const atualizacoes = await mockApiDeFasesCanonicas(page, [fase]);
     await editar(page, fase.codigo);
-    await page.getByRole('button', { name: 'Salvar fase canônica' }).click();
+    await page.getByRole('button', { name: 'Salvar tipo de fase' }).click();
 
     await expect.poll(() => atualizacoes.length).toBe(1);
     expect(atualizacoes[0]).toMatchObject({ agrupaEtapas: true, permiteComplementacao: true });
