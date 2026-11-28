@@ -14,7 +14,7 @@
 }
 
 <ul class="u-list">
-  @for (item of itens(); track item.recusa.ordem) {
+  @for (item of itens(); track item.recusa.ordem; let posicao = $index) {
     <li>
       <ui-recusa-do-campo [recusas]="[item.recusa]" />
       <p class="field__hint">
@@ -27,7 +27,7 @@
         <button
           class="btn btn--tertiary"
           type="button"
-          [attr.aria-label]="'Ir ao campo da causa ' + item.recusa.codigo"
+          [attr.aria-label]="nomeDoBotao(posicao + 1, item.recusa.mensagem)"
           (click)="irAoCampo(item.recusa)"
         >
           Ir ao campo

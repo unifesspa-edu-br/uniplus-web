@@ -78,6 +78,27 @@ function homologacaoGravada(regra: RegraLida | null): BancaDaFaseLida {
   return bancaDaFaseDoServidor(HOMOLOGACAO, { id: ID_DA_BANCA, regraDeDeliberacao: regra });
 }
 
+type ServidorDasBancas = ReturnType<typeof novoServidorDasBancas>;
+
+/** A publicação recusa a banca de recursos enquanto a votação não tem todos os seus itens. */
+function recusaDaVotacaoIncompleta(servidor: ServidorDasBancas) {
+  const banca = servidor.fase.bancasRequeridas.find(
+    (item) => item.tipoBancaOrigemId === ID_DO_TIPO_ANALISE_DE_RECURSOS,
+  );
+  const regra = banca?.regraDeDeliberacao;
+  const completa = [
+    regra?.integrantes,
+    regra?.quorum,
+    regra?.criterio,
+    regra?.desempate,
+    regra?.encerramento,
+  ].every(Boolean);
+  const colegiada = regra?.modo.codigo === 'COLEGIADA_COM_VOTACAO';
+  return colegiada && completa
+    ? []
+    : [{ code: 'votacao_incompleta', message: 'Declare a votação completa da banca de recursos.' }];
+}
+
 test.describe('Votação do recurso na banca de ato individual — matriz DS @ds', () => {
   test('grava o ato individual e a votação do recurso e os devolve iguais ao reabrir', async ({
     page,
@@ -219,7 +240,7 @@ test.describe('Votação do recurso na banca de ato individual — matriz DS @ds
 
     await page
       .getByRole('button', {
-        name: 'Ir ao campo da causa uniplus.selecao.banca.regra_de_deliberacao_obrigatoria',
+        name: `Ir ao campo da causa 1: ${mensagem}`,
       })
       .click();
 
@@ -242,25 +263,7 @@ test.describe('Votação do recurso na banca de ato individual — matriz DS @ds
     const servidor = novoServidorDasBancas({
       bancasDaFase: [dedicada, homologacaoGravada(SO_O_ATO_INDIVIDUAL)],
     });
-    servidor.recusaDaPublicacao = () => {
-      const banca = servidor.fase.bancasRequeridas.find(
-        (item) => item.tipoBancaOrigemId === ID_DO_TIPO_ANALISE_DE_RECURSOS,
-      );
-      const regra = banca?.regraDeDeliberacao;
-      return regra?.modo.codigo === 'COLEGIADA_COM_VOTACAO' &&
-        regra.integrantes &&
-        regra.quorum &&
-        regra.criterio &&
-        regra.desempate &&
-        regra.encerramento
-        ? []
-        : [
-            {
-              code: 'votacao_incompleta',
-              message: 'Declare a votação completa da banca de recursos.',
-            },
-          ];
-    };
+    servidor.recusaDaPublicacao = () => recusaDaVotacaoIncompleta(servidor);
     await abrirOCronogramaDasBancas(page, testInfo, servidor);
     await simularOQuadroDeVagas(page, testInfo);
 

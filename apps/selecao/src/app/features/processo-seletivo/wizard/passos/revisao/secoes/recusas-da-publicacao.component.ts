@@ -1,3 +1,4 @@
+import { nomeDoIrAoCampo } from '../../../shared/recusas/nome-do-ir-ao-campo';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RecusaDoCampoComponent } from '@uniplus/shared-ui/components';
 
@@ -37,6 +38,7 @@ export class RecusasDaPublicacaoComponent {
   protected readonly recusasDoServidor = inject(RecusasDaPublicacao);
 
   protected readonly semCampo = SEM_CAMPO;
+  protected readonly nomeDoBotao = nomeDoIrAoCampo;
 
   /** Cada causa, com a indicação de que há campo para onde levar a pessoa. */
   protected readonly itens = computed(() => {

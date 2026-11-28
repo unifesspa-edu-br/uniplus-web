@@ -52,6 +52,21 @@ describe('RecusasDaConfiguracaoDoRecursoComponent', () => {
     ).toBe(true);
   });
 
+  it('dá a cada botão um nome que começa por "Ir ao campo", é diferente dos outros e não traz o código', () => {
+    const { raiz } = montar([
+      recusa('prazoValor', 'O prazo não serve.', 1),
+      recusa('prazoValor', 'O prazo não serve.', 2),
+    ]);
+
+    const nomes = Array.from(raiz.querySelectorAll('li button')).map((botao) =>
+      botao.getAttribute('aria-label'),
+    );
+    expect(nomes).toEqual([
+      'Ir ao campo da causa 1: O prazo não serve.',
+      'Ir ao campo da causa 2: O prazo não serve.',
+    ]);
+  });
+
   describe('"Ir ao campo"', () => {
     afterEach(() => document.getElementById('destino-do-foco')?.remove());
 
