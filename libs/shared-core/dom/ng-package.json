@@ -1,5 +1,5 @@
 {
   "lib": {
-    "entryFile": "../src/lib/dom/disclosure.ts"
+    "entryFile": "../src/lib/dom/index.ts"
   }
 }

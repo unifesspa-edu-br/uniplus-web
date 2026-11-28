@@ -53,7 +53,7 @@ async function caixa(alvo: Locator): Promise<CaixaNaTela> {
   return { left: box.x, right: box.x + box.width, top: box.y, bottom: box.y + box.height };
 }
 
-async function prepararTema(page: Page, testInfo: TestInfo): Promise<void> {
+export async function prepararTema(page: Page, testInfo: TestInfo): Promise<void> {
   await page.addInitScript((tema: VisualTheme) => {
     window.localStorage.setItem(
       'uniplus.a11y',

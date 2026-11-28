@@ -1,5 +1,6 @@
 export {
   NotificationService,
+  type AnuncioDeAviso,
   type Notification,
   type NotificationOptions,
   type NotificationFromProblemOptions,

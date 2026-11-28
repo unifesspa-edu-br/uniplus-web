@@ -16,6 +16,15 @@
   bottom: 0;
   left: 0;
   right: 0;
+  /* O aviso mais novo, inteiro, vale mais que a fração: só a lista recolhida aberta rola. */
+  max-block-size: 50dvh;
+}
+.toast-stack > * {
+  flex-shrink: 0;
+}
+/* Só a lista recolhida aberta encolhe e rola; mais específica que a regra acima de propósito. */
+.toast-stack > .toast-recolhidos {
+  flex-shrink: 1;
 }
 @media (min-width: 768px) {
   .toast-stack {
@@ -25,6 +34,22 @@
     right: 0;
     max-width: 420px;
   }
+}
+.toast-mais {
+  pointer-events: auto;
+  align-self: flex-start;
+}
+.toast-recolhidos {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.toast-recolhidos[hidden] {
+  display: none;
 }
 .toast-region {
   pointer-events: none;
@@ -102,14 +127,25 @@
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
   margin: 0 0 2px;
+  overflow-wrap: anywhere;
 }
 .toast__msg {
   font-size: var(--text-sm);
   color: var(--text-secondary);
   margin: 0;
   line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
 }
-.toast__anuncio {
+.toast__contagem {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+ui-aviso {
+  display: block;
+  min-width: 0;
+}
+.toast__conteudo {
   grid-column: 1;
   grid-row: 1;
   display: flex;
@@ -124,6 +160,30 @@
   border-top: 1px solid var(--border-subtle);
   font-size: var(--text-xs);
   color: var(--text-secondary);
+}
+.toast__anteriores {
+  grid-column: 1 / -1;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  min-width: 0;
+}
+.toast__anteriores summary {
+  cursor: pointer;
+  font-weight: var(--weight-semibold);
+}
+.toast__anteriores-lista {
+  max-block-size: 30dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.toast__anteriores-lista:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.toast__anterior {
+  margin-block-start: var(--space-2);
 }
 .toast__close {
   grid-column: 2;
@@ -143,4 +203,9 @@
 .toast__close:hover {
   background: var(--surface-subtle);
   color: var(--text-primary);
+}
+.toast__close:focus-visible,
+.toast__anteriores summary:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
