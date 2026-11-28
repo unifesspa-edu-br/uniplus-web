@@ -83,6 +83,15 @@ export class ClassificacaoNoServidor {
 
   readonly porReler = computed(() => this.motivoDaReleitura() !== null);
 
+  /** O que estava gravado quando a última releitura pedida falhou: a falha vale só para essa pendência. */
+  private readonly gravadaNaReleituraQueFalhou = signal<ClassificacaoGravada | null>(null);
+
+  readonly releituraFalhou = computed(() => this.gravadaNaReleituraQueFalhou() === this.gravada());
+
+  registrarReleituraQueFalhou(): void {
+    this.gravadaNaReleituraQueFalhou.set(this.gravada());
+  }
+
   /** O quadro que o processo congelou, quando se sabe que ele tem um e quais são os valores. */
   readonly copiaCongeladaEmVigor = computed<CopiaCongelada | null>(() => {
     const gravada = this.gravada();
