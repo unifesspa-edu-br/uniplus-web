@@ -138,6 +138,8 @@ export interface ModeloDaExigencia {
 /** Preserva as regras que a tela não edita, pois o envio substitui todas as regras. */
 export interface RegraDeComprovacao {
   readonly identificadorNoRascunho: string;
+  /** A posição que a regra ocupava na lista do documento lido; ausente na regra criada na tela. */
+  readonly origem?: number;
   readonly forma: 'DOCUMENTO' | 'TODOS_OS_ITENS' | 'QUANTIDADE_MINIMA_DE_ITENS';
   readonly documento: ExigenciaDeDocumento | null;
   readonly quantidadeMinima: number | null;

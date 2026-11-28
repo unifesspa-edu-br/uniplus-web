@@ -1,0 +1,42 @@
+@let processoAberto = processo();
+<ui-page-header
+  heading="Retificar processo seletivo"
+  [description]="
+    processoAberto !== null
+      ? processoAberto.nome + ' — versão ' + versao() + '.'
+      : 'Corrija a configuração do processo seletivo publicado.'
+  "
+>
+  <div uiPageActions class="ret-page__acoes">
+    <a class="btn btn--tertiary" [routerLink]="enderecoDaConsulta()">Voltar à consulta</a>
+    @if (processoAberto !== null) {
+    <button
+      type="button"
+      class="btn btn--secondary"
+      [attr.aria-disabled]="!edicao.alterada()"
+      (click)="edicao.alterada() && edicao.descartar()"
+    >
+      Descartar alterações
+    </button>
+    }
+  </div>
+</ui-page-header>
+
+<ui-falha-de-leitura
+  titulo="Não foi possível carregar a versão vigente do processo"
+  [leitura]="acompanhamento"
+/>
+@if (recusa(); as recusa) {
+<ui-alert variant="danger" [heading]="recusa.titulo">{{ recusa.mensagem }}</ui-alert>
+} @else if (leitura.estado().estado === 'lendo') {
+<p class="ret-page__lendo" [uiIndicadorDaLeitura]="acompanhamento">
+  <ui-spinner spinnerSize="sm" [decorativo]="true" />
+  Carregando a versão vigente…
+</p>
+}
+
+<div role="status">
+  @if (edicao.alterada()) {
+  <ui-alert variant="warning" [dynamic]="false">Há alterações não enviadas</ui-alert>
+  }
+</div>

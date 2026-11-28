@@ -41,3 +41,16 @@ function chavesDoOriginal(valor: unknown): string[] {
     nome === 'chave' && typeof filho === 'string' ? [filho] : chavesDoOriginal(filho),
   );
 }
+
+/**
+ * As reservas somadas às chaves que o documento passou a ter: a chave de uma parte criada na edição
+ * continua tomada mesmo depois de a parte sair, para que outra não a reaproveite.
+ */
+export function reservasComAsChavesDe(
+  reservas: ReservasDeChaves,
+  documento: DocumentoDaConfiguracao,
+): ReservasDeChaves {
+  const conhecidas = new Set([...chavesDoOriginal(reservas.original), ...reservas.criadas]);
+  const novas = new Set(chavesDoOriginal(documento).filter((chave) => !conhecidas.has(chave)));
+  return novas.size === 0 ? reservas : { ...reservas, criadas: [...reservas.criadas, ...novas] };
+}
