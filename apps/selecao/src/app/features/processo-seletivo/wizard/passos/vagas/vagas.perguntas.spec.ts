@@ -103,8 +103,8 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
         {
           ...distribuicao(OFERTA),
           modalidades: [
-            { id: MODALIDADE, codigo: 'AC' },
-            { id: SEGUNDA_MODALIDADE, codigo: 'AC_PCD' },
+            { id: MODALIDADE, codigo: 'AC', nome: '' },
+            { id: SEGUNDA_MODALIDADE, codigo: 'AC_PCD', nome: '' },
           ],
           quadro: [
             { modalidadeId: MODALIDADE, quantidade: '2' },
@@ -188,10 +188,16 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
       distribuicaoVagas: [
         {
           modalidades: [
-            { codigo: 'AC', descricao: 'Ampla concorrência', regraDeAplicabilidade: [] },
+            {
+              codigo: 'AC',
+              nome: 'Ampla concorrência',
+              descricao: null,
+              regraDeAplicabilidade: [],
+            },
             {
               codigo: 'AC_PCD',
-              descricao: 'Pessoa com deficiência',
+              nome: 'Pessoa com deficiência',
+              descricao: null,
               regraDeAplicabilidade: QUEM_CONCORRE_PCD,
             },
           ],
@@ -309,11 +315,13 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
     const secao = fixture.nativeElement.querySelector('sel-regras-das-modalidades') as HTMLElement;
     expect(secao.textContent).toContain('Quem concorre em cada modalidade');
     const linhas = [...secao.querySelectorAll('dl > div')].map((linha) =>
-      (linha.textContent ?? '').replace(/\s+/g, ' ').trim(),
+      [...linha.querySelectorAll('dt, dd')]
+        .map((parte) => (parte.textContent ?? '').replace(/\s+/g, ' ').trim())
+        .join(' | '),
     );
     expect(linhas).toEqual([
-      'AC — Ampla concorrência Todos os candidatos',
-      'AC_PCD — Pessoa com deficiência Concorrer na reserva para pessoa com deficiência é sim',
+      'AC — Ampla concorrência | Todos os candidatos',
+      'AC_PCD — Pessoa com deficiência | Concorrer na reserva para pessoa com deficiência é sim',
     ]);
   });
 });

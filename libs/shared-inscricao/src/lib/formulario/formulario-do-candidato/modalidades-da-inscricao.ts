@@ -33,6 +33,7 @@ import { blocosDasOpcoes } from './modalidades-por-opcao-de-curso';
       margin: 0;
     }
     .modalidades-da-inscricao__lista {
+      overflow-wrap: anywhere;
       display: grid;
       gap: var(--space-1);
       padding-inline-start: var(--space-5);
@@ -80,8 +81,8 @@ import { blocosDasOpcoes } from './modalidades-por-opcao-de-curso';
                     : 'Modalidades em que você concorre'
                 "
               >
-                @for (nome of bloco.nomes; track nome) {
-                  <li>{{ nome }}</li>
+                @for (modalidade of bloco.rotulos; track modalidade.codigo) {
+                  <li>{{ modalidade.rotulo }}</li>
                 }
               </ul>
             }

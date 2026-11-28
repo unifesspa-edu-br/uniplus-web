@@ -9,6 +9,7 @@ export { normalizarParaBusca } from './utils/busca.util';
 export {
   CODIGO_CADASTRO_FORMATO,
   CODIGO_TAMANHO_MAXIMO,
+  codigoComNome,
   textoDoFormatoDoCodigo,
 } from './utils/codigo-cadastro.util';
 export {

@@ -27,37 +27,36 @@ describe('ModalidadesListPage', () => {
     const falhar = (req: ReturnType<HttpTestingController['expectOne']>, status: number): void =>
       req.flush(problema(status), { status, statusText: 'Falha' });
 
-    it('navega entre páginas por cursor e volta à primeira ao recarregar', async () => {
+    it('lê todas as páginas e volta à primeira ao recarregar', async () => {
       const store = pagina.fixture.debugElement.injector.get(ModalidadesStore);
-      pagina.controller
-        .expectOne((r) => r.url === URL)
-        .flush([AC], { headers: { Link: `<${URL}?cursor=p2&direction=next>; rel="next"` } });
-      pagina.controller.match(URL_CATALOGO).forEach((r) => r.flush(CATALOGO));
-      await pagina.propagate();
-      expect(store.proximo()).not.toBeNull();
-
-      store.proximaPagina();
-      await pagina.propagate();
-      const segunda = pagina.controller.expectOne((r) => r.params.get('cursor') === 'p2');
-      expect(segunda.request.params.get('direction')).toBe('next');
-      segunda.flush([V], { headers: { Link: `<${URL}?cursor=p1&direction=prev>; rel="prev"` } });
-      await pagina.propagate();
-      expect(store.modalidades().map((m) => m.codigo)).toEqual(['V']);
-
-      store.paginaAnterior();
-      await pagina.propagate();
-      const volta = pagina.controller.expectOne((r) => r.params.get('cursor') === 'p1');
-      expect(volta.request.params.get('direction')).toBe('prev');
-      volta.flush([AC]);
-      await pagina.propagate();
+      await pagina.flushEmDuasPaginas([AC], [V]);
+      expect(store.modalidades().map((m) => m.codigo)).toEqual(['AC', 'V']);
 
       store.recarregar();
       await pagina.propagate();
-      expect(
-        pagina.controller
-          .expectOne((r) => r.params.get('cursor') === null)
-          .request.params.get('limit'),
-      ).toBe('100');
+      const primeira = pagina.controller.expectOne(
+        (r) => r.url === URL && r.params.get('cursor') === null,
+      );
+      expect(primeira.request.params.get('limit')).toBe('100');
+      primeira.flush([AC]);
+      await pagina.propagate();
+      expect(store.modalidades().map((m) => m.codigo)).toEqual(['AC']);
+    });
+
+    it('a falha da segunda página explica o erro e não deixa a lista pela metade', async () => {
+      const store = pagina.fixture.debugElement.injector.get(ModalidadesStore);
+      pagina.controller
+        .expectOne((r) => r.url === URL && r.params.get('cursor') === null)
+        .flush([AC], { headers: { Link: `<${URL}?cursor=p2&direction=next>; rel="next"` } });
+      await pagina.propagate();
+      falhar(
+        pagina.controller.expectOne((r) => r.url === URL && r.params.get('cursor') === 'p2'),
+        503,
+      );
+      pagina.controller.match(URL_CATALOGO).forEach((r) => r.flush(CATALOGO));
+      await pagina.propagate();
+      expect(store.mensagemDeErro()).toBeTruthy();
+      expect(store.modalidades()).toEqual([]);
     });
 
     it('explica a falha da listagem e só tenta de novo quando não está carregando', async () => {
@@ -115,6 +114,21 @@ describe('ModalidadesListPage', () => {
       await pagina.propagate();
       expect(edicao.removendo()).toBe(false);
       expect(edicao.anuncio()).toBe('Não foi possível recarregar as modalidades.');
+      expect(pagina.fixture.debugElement.injector.get(ModalidadesStore).modalidades()).toEqual([]);
+    });
+
+    it('a falha da recarga depois de uma leitura boa esvazia a lista e mostra o erro', async () => {
+      const store = pagina.fixture.debugElement.injector.get(ModalidadesStore);
+      await pagina.flushLista([AC, V]);
+      store.recarregar();
+      await pagina.propagate();
+      falhar(
+        pagina.controller.expectOne((r) => r.url === URL),
+        503,
+      );
+      await pagina.propagate();
+      expect(store.modalidades()).toEqual([]);
+      expect(store.mensagemDeErro()).not.toBeNull();
     });
   });
 });

@@ -139,8 +139,8 @@ describe('VagasPassoComponent — falhas na gravação da cascata de remanejamen
         {
           ...distribuicaoComCascata(),
           modalidades: [
-            { id: LB_Q, codigo: 'LB_Q' },
-            { id: AC_CASCATA, codigo: 'AC' },
+            { id: LB_Q, codigo: 'LB_Q', nome: '' },
+            { id: AC_CASCATA, codigo: 'AC', nome: '' },
           ],
           quadro: [
             { modalidadeId: LB_Q, quantidade: '20' },
@@ -205,8 +205,8 @@ describe('VagasPassoComponent — falhas na gravação da cascata de remanejamen
         {
           ...distribuicaoComCascata(),
           modalidades: [
-            { id: LB_Q, codigo: 'LB_Q' },
-            { id: AC_CASCATA, codigo: 'AC' },
+            { id: LB_Q, codigo: 'LB_Q', nome: '' },
+            { id: AC_CASCATA, codigo: 'AC', nome: '' },
           ],
           quadro: [
             { modalidadeId: LB_Q, quantidade: '20' },

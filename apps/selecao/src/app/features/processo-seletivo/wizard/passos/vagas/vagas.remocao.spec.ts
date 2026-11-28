@@ -139,7 +139,7 @@ describe('VagasPassoComponent — remoção de oferta do quadro', () => {
     expect(servicos.estado.padrao()).toMatchObject({
       regraDistribuicaoCodigo: 'DISTRIB-VAGAS-INSTITUCIONAL',
       pr: '0,5',
-      modalidades: [{ id: MODALIDADE, codigo: 'AC_I' }],
+      modalidades: [{ id: MODALIDADE, codigo: 'AC_I', nome: '' }],
     });
   });
 

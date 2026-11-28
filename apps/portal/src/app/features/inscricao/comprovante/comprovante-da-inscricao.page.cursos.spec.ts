@@ -32,15 +32,14 @@ describe('ComprovanteDaInscricaoPage', () => {
       expect(secao(tela, 'Inscrição')).toBeNull();
     });
 
-    it('mostra o curso pelo nome da API e as modalidades na ordem dela, sem o código', async () => {
+    it('mostra o curso pelo nome da API e as modalidades na ordem dela, com código e nome', async () => {
       const tela = await cenario.abrir();
 
       expect(dado(tela, 'Curso')).toBe('Direito (Bacharelado) — Campus Marabá');
       expect(modalidadesNaTela(tela)).toEqual([
-        'Ampla concorrência',
-        'Escola pública, independente de renda',
+        'AC — Ampla concorrência',
+        'LI_EP — Escola pública, independente de renda',
       ]);
-      expect(tela.textContent).not.toContain('LI_EP');
     });
 
     it('com 2 opções, mostra a 1ª e a 2ª e as modalidades de cada uma', async () => {
@@ -67,8 +66,8 @@ describe('ComprovanteDaInscricaoPage', () => {
         secao(tela, 'Modalidades de concorrência')?.querySelectorAll('ul') ?? [],
       ).map((ul) => Array.from(ul.querySelectorAll('li')).map((li) => li.textContent?.trim()));
       expect(listas).toEqual([
-        ['Ampla concorrência', 'Escola pública, independente de renda'],
-        ['Ampla concorrência'],
+        ['AC — Ampla concorrência', 'LI_EP — Escola pública, independente de renda'],
+        ['AC — Ampla concorrência'],
       ]);
     });
 

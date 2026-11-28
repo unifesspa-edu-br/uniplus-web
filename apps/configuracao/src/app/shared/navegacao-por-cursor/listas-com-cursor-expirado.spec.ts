@@ -18,7 +18,6 @@ import { OfertasDoCursoStore } from '../../features/cursos/ofertas-do-curso.stor
 import { engCiv } from '../../features/cursos/cursos.testing';
 import { FasesCanonicasStore } from '../../features/fases-canonicas/fases-canonicas.store';
 import { LocaisOfertaStore } from '../../features/locais-oferta/locais-oferta.store';
-import { ModalidadesStore } from '../../features/modalidades/modalidades.store';
 import { FasesDoGrafoStore } from '../../features/precedencias-fase/fases-do-grafo.store';
 import { PrecedenciasFaseStore } from '../../features/precedencias-fase/precedencias-fase.store';
 import { DecisoesDaProtecaoStore } from '../../features/protecao-do-catalogo/decisoes-da-protecao.store';
@@ -129,7 +128,6 @@ const LISTAS: readonly Lista[] = [
   },
   { nome: 'fases canônicas', loja: FasesCanonicasStore, url: '/api/configuracao/fases-canonicas' },
   { nome: 'locais de oferta', loja: LocaisOfertaStore, url: '/api/configuracao/locais-oferta' },
-  { nome: 'modalidades', loja: ModalidadesStore, url: '/api/configuracao/modalidades' },
 ];
 
 const PROXIMA = { headers: { Link: '<x?cursor=proximo>; rel="next"' } };

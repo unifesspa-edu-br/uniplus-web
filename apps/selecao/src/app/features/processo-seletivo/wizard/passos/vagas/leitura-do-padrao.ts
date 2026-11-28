@@ -1,8 +1,10 @@
+import { codigoComNome } from '@uniplus/shared-utils';
+
 import { PadraoDoEdital } from './padrao-do-edital';
 
 export interface EntradaDaLeituraDoPadrao {
   readonly padrao: PadraoDoEdital;
-  readonly modalidades: readonly { readonly codigo: string; readonly descricao: string | null }[];
+  readonly modalidades: readonly { readonly codigo: string; readonly nome: string }[];
   readonly referencias: readonly {
     readonly id: string;
     readonly censoReferencia: string | number;
@@ -41,10 +43,10 @@ function modalidadeEmTexto(
   modalidade: EntradaDaLeituraDoPadrao['modalidades'][number],
   entrada: EntradaDaLeituraDoPadrao,
 ): string {
-  if (modalidade.descricao !== '') return `${modalidade.codigo} — ${modalidade.descricao}`;
-  return entrada.catalogoLido
-    ? modalidade.codigo
-    : `${modalidade.codigo} — descrição: o catálogo ${entrada.motivoDaAusencia}`;
+  if (modalidade.nome !== '' || entrada.catalogoLido) {
+    return codigoComNome(modalidade.codigo, modalidade.nome);
+  }
+  return `${modalidade.codigo} — nome: o catálogo ${entrada.motivoDaAusencia}`;
 }
 
 function referenciaEmTexto(entrada: EntradaDaLeituraDoPadrao): string | null {

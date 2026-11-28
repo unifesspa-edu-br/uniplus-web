@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import type { MatrizDaOrdemDeRemanejamento } from '../../documento/edicoes/ordem-de-remanejamento.edicao';
+import { rotuloDaModalidade, type RotulosPorCodigo } from './modalidades-da-distribuicao';
 
 @Component({
   selector: 'table[selMatrizDaCascata]',
@@ -9,6 +10,12 @@ import type { MatrizDaOrdemDeRemanejamento } from '../../documento/edicoes/ordem
 })
 export class MatrizDaCascataComponent {
   readonly matriz = input.required<MatrizDaOrdemDeRemanejamento>();
+  /** O texto "código — nome" de cada modalidade; o que o catálogo não conhece aparece pelo código. */
+  readonly rotulos = input<RotulosPorCodigo>(new Map());
+
+  protected rotulo(codigo: string): string {
+    return rotuloDaModalidade(this.rotulos(), codigo);
+  }
 
   /**
    * Os rótulos ordinais das colunas — "1ª", "2ª", … —, um por posição de preferência. Saem do
@@ -29,6 +36,6 @@ export class MatrizDaCascataComponent {
    * o índice de um `readonly string[]` é tipado como `string`, então `??` seria código morto.
    */
   destinoNaPosicao(destinos: readonly string[], posicao: number): string {
-    return posicao < destinos.length ? destinos[posicao] : '—';
+    return posicao < destinos.length ? this.rotulo(destinos[posicao]) : '—';
   }
 }

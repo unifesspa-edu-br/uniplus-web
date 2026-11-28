@@ -4,7 +4,11 @@ import { comPadraoAplicado } from './edicao-do-quadro';
 import { ModalidadeDoCatalogo, modalidadesDoRol } from './modalidades-da-distribuicao';
 import { PadraoDoEdital } from './padrao-do-edital';
 
-export type ModalidadeSelecionada = { readonly id: string; readonly codigo: string };
+export type ModalidadeSelecionada = {
+  readonly id: string;
+  readonly codigo: string;
+  readonly nome: string;
+};
 
 /** O que a conta de perda no quadro precisa saber do catálogo e das ofertas em tela. */
 export interface ContextoDoRol {
@@ -19,7 +23,7 @@ export function modalidadesDoRolAtual(
 ): ModalidadeSelecionada[] {
   if (rol === null) return [];
 
-  return modalidadesDoRol(catalogo, rol).map((m) => ({ id: m.id, codigo: m.codigo }));
+  return modalidadesDoRol(catalogo, rol).map((m) => ({ id: m.id, codigo: m.codigo, nome: m.nome }));
 }
 
 /**

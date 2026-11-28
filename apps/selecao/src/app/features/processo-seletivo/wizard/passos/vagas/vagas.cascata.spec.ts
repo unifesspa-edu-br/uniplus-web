@@ -83,8 +83,8 @@ describe('VagasPassoComponent — gravação da cascata de remanejamento', () =>
         {
           ...distribuicaoComCascata(),
           modalidades: [
-            { id: LB_Q, codigo: 'LB_Q' },
-            { id: AC_CASCATA, codigo: 'AC' },
+            { id: LB_Q, codigo: 'LB_Q', nome: '' },
+            { id: AC_CASCATA, codigo: 'AC', nome: '' },
           ],
           quadro: [
             { modalidadeId: LB_Q, quantidade: '20' },

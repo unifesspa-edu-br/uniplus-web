@@ -115,7 +115,7 @@ describe('adaptador do passo Vagas', () => {
     expect(oferta.modalidades[0]).toEqual({
       codigo: 'AC',
       origem: 0,
-      rotulo: 'Ampla concorrência',
+      rotulo: 'AC',
       quantidade: '',
     });
     expect(oferta.quadroCalculado).toHaveLength(2);

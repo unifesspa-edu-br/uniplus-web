@@ -1,8 +1,33 @@
 import { RegraRemanejamentoModalidadeCodigo } from '@uniplus/shared-data/selecao';
+import { codigoComNome } from '@uniplus/shared-utils';
 
 import { DistribuicaoDeVagas } from '../../processo-seletivo.models';
 
 import { semGrafia } from './composicao-de-vagas';
+
+/** O texto "código — nome" de cada modalidade, pelo código; sem nome, só o código. */
+export type RotulosPorCodigo = ReadonlyMap<string, string>;
+
+export function rotulosPorCodigo(
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+): RotulosPorCodigo {
+  return new Map(
+    [...catalogo.values()].map((modalidade) => [
+      modalidade.codigo,
+      codigoComNome(modalidade.codigo, modalidade.nome),
+    ]),
+  );
+}
+
+/** O nome que o processo gravou vale primeiro; sem ele, o do catálogo vigente. */
+export function nomeDaModalidade(gravado: string | undefined, vigente: string | undefined): string {
+  return gravado?.trim() ? gravado : (vigente ?? '');
+}
+
+/** Código que o catálogo não conhece continua identificado pelo próprio código. */
+export function rotuloDaModalidade(rotulos: RotulosPorCodigo, codigo: string): string {
+  return rotulos.get(codigo) ?? codigo;
+}
 
 /**
  * O que a tela precisa saber de uma modalidade para validar a distribuição:
@@ -12,6 +37,7 @@ import { semGrafia } from './composicao-de-vagas';
 export interface ModalidadeDoCatalogo {
   readonly id: string;
   readonly codigo: string;
+  readonly nome: string;
   readonly composicaoVagas: string;
   readonly composicaoOrigemCodigo: string | null;
   readonly regraRemanejamento: string | null;
@@ -60,6 +86,7 @@ function modalidadeGravada(modalidade: ModalidadeGravada, vigente?: ModalidadeDo
   return {
     id: modalidade.id,
     codigo: modalidade.codigo,
+    nome: nomeDaModalidade(modalidade.nome, vigente?.nome),
     composicaoVagas: gravada.composicaoVagas ?? vigente?.composicaoVagas ?? '',
     composicaoOrigemCodigo: gravada.composicaoOrigemCodigo,
     regraRemanejamento: canonicaDaRegraDeRemanejamento(gravada.regraRemanejamento),

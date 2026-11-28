@@ -2625,6 +2625,7 @@ export interface components {
         readonly AtualizarModalidadeCommand: {
             /** Format: uuid */
             readonly id: string;
+            readonly nome: null | string;
             readonly descricao?: null | string;
             readonly naturezaLegal?: null | components["schemas"]["NaturezaLegalCodigo"];
             readonly composicaoVagas?: null | components["schemas"]["ComposicaoVagasCodigo"];
@@ -3109,6 +3110,7 @@ export interface components {
         };
         readonly CriarModalidadeCommand: {
             readonly codigo: null | string;
+            readonly nome: null | string;
             readonly descricao?: null | string;
             readonly naturezaLegal?: null | components["schemas"]["NaturezaLegalCodigo"];
             readonly composicaoVagas?: null | components["schemas"]["ComposicaoVagasCodigo"];
@@ -3971,6 +3973,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly codigo: string;
+            readonly nome: string;
             readonly legalFixa: boolean;
             readonly descricao: null | string;
             readonly naturezaLegal: components["schemas"]["NaturezaLegal"];

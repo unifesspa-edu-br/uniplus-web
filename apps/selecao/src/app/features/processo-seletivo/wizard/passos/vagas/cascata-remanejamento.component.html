@@ -124,14 +124,14 @@
           class="cascata-matriz"
           aria-describedby="c-matriz-leitura"
           [matriz]="matrizDaRegra"
+          [rotulos]="rotulosDasModalidades()"
         ></table>
       </div>
 
       <p class="cascata-matriz__terminal">
-        Esgotadas todas as origens acima, a vaga é revertida à ampla concorrência (<strong>{{
-          matrizDaRegra.fallbackCodigo
-        }}</strong
-        >).
+        Esgotadas todas as origens acima, a vaga é revertida a
+        <strong>{{ rotuloDoDestinoFinal() }}</strong
+        >.
       </p>
 
       @if (problemas().length > 0 && !store.emConsulta()) {

@@ -73,6 +73,22 @@ describe('VagasPassoComponent — conferência do quadro simulado', () => {
     expect(texto()).toContain('1 vaga cortada por escassez');
   });
 
+  it('cita a modalidade que o ajuste retirou com o nome do catálogo, e só o código sem ele', () => {
+    simularComResposta(
+      simulada(OFERTA, {
+        ajusteDoQuadroFixado: ajusteFixado({
+          totalDeVagasRetiradas: 3,
+          vagasRetiradas: [
+            { modalidadeCodigo: 'AC_I', quantidade: 2 },
+            { modalidadeCodigo: 'ZZ_TESTE', quantidade: 1 },
+          ],
+        }),
+      }),
+    );
+
+    expect(texto()).toContain('(AC_I — Indígena: 2; ZZ_TESTE: 1)');
+  });
+
   it('avisa o que o ajuste retirou do quadro fixado, total e por modalidade', () => {
     simularComResposta(
       simulada(OFERTA, {

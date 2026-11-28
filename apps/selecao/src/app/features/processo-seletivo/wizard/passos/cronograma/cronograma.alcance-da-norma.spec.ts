@@ -103,7 +103,7 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
               regraAjusteVersao: 'v1',
               referenciaReservaDemograficaId: 'ref-1',
               ajusteDoQuadro: null,
-              modalidades: codigos.map((codigo) => ({ id: `id-${codigo}`, codigo })),
+              modalidades: codigos.map((codigo) => ({ id: `id-${codigo}`, codigo, nome: '' })),
               quadro: [],
             },
           ],

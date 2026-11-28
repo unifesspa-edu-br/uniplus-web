@@ -3836,6 +3836,11 @@ export interface components {
              */
             readonly quantidadeDeclarada?: number | null;
             /**
+             * Nome da modalidade
+             * @description Nome da modalidade no cadastro. Campo só de leitura: ignorado na importação.
+             */
+            readonly nome?: string;
+            /**
              * Descrição da modalidade
              * @description Descrição da modalidade no cadastro. Campo só de leitura: ignorado na importação.
              */
@@ -6491,6 +6496,7 @@ export interface components {
             /** Format: uuid */
             readonly modalidadeOrigemId: string;
             readonly codigo: string;
+            readonly nome: string;
             readonly descricao: null | string;
             readonly naturezaLegal: components["schemas"]["NaturezaLegalModalidade"];
             readonly composicaoVagas: components["schemas"]["ComposicaoVagasModalidade"];

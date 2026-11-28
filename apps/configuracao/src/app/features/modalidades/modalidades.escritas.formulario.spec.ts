@@ -73,6 +73,7 @@ describe('Modalidades — envio do formulário', () => {
     controller.match(URL_CATALOGO).forEach((r) => r.flush(CATALOGO));
     await propagar();
     const form = fixture.debugElement.injector.get(EdicaoDaModalidade).form;
+    form.controls.nome.setValue('Modalidade de teste Nova');
     form.controls.naturezaLegal.setValue(NATUREZAS.ampla.codigo);
     form.controls.composicaoVagas.setValue(COMPOSICOES.restante.codigo);
     campo().value = 'NOVA';
@@ -132,7 +133,7 @@ describe('Modalidades — envio do formulário', () => {
     recusar();
     await propagar();
     expect(campo().getAttribute('aria-invalid')).toBe('true');
-    expect(campo().closest('label')?.textContent).toContain('Código recusado.');
+    expect(campo().closest('.field')?.textContent).toContain('Código recusado.');
     expect(document.activeElement).toBe(campo());
   });
   it('leva o foco ao primeiro campo inválido quando o envio é barrado localmente', async () => {
@@ -250,7 +251,7 @@ describe('Modalidades — envio do formulário', () => {
     );
     await propagar();
     expect(campo().getAttribute('aria-invalid')).toBe('true');
-    expect(campo().closest('label')?.textContent).toContain(
+    expect(campo().closest('.field')?.textContent).toContain(
       'Código já utilizado por outra modalidade viva.',
     );
     expect(fixture.nativeElement.textContent).not.toContain('Não foi possível salvar');

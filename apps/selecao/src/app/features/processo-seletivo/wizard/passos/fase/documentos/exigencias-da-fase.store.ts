@@ -7,6 +7,7 @@ import {
   type ExigenciasDoRascunho,
 } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
+import { rotulosDasModalidades } from '../../../modalidades-do-processo';
 import {
   comAlcanceDeTodasAsFases,
   restritoAsFases,
@@ -49,6 +50,9 @@ export class ExigenciasDaFaseStore {
 
   /** Só as modalidades que as ofertas de vagas selecionam podem exigir documento. */
   readonly modalidades = computed(() => this.store.modalidadesDoProcesso());
+
+  /** Como cada uma dessas modalidades aparece na tela: "código — nome", pelo código. */
+  readonly rotulosDasModalidades = computed(() => rotulosDasModalidades(this.store.draft()));
 
   readonly declaracoesDaFase = computed(() => {
     this.versaoDoFormulario();

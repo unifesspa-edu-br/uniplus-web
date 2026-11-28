@@ -6,7 +6,7 @@ import {
   type UiFilterChipOption,
 } from '@uniplus/shared-ui/components';
 
-/** A busca por código ou descrição e o filtro por natureza legal. */
+/** A busca por código, nome ou descrição e o filtro por natureza legal. */
 @Component({
   selector: 'cfg-modalidades-filtros',
   standalone: true,

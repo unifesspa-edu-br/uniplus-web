@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { codigoComNome } from '@uniplus/shared-utils';
 import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
@@ -25,6 +26,7 @@ export class TabelaDoQuadroComponent {
   protected readonly estado = inject(EstadoDoPassoDeVagas);
   protected readonly conferencia = inject(ConferenciaDoQuadro);
   protected readonly simulacao = inject(SimulacaoDoQuadro);
+  protected readonly codigoComNome = codigoComNome;
   protected readonly quantidade = quantidadeDoQuadro;
   protected readonly quantidadeInvalida = quantidadeInvalida;
 

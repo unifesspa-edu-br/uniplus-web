@@ -1,5 +1,7 @@
 import { ComposicaoVagasCodigo, RegraRemanejamentoCodigo } from '@uniplus/shared-data/configuracao';
 
+import { codigoComNome } from '@uniplus/shared-utils';
+
 import { DistribuicaoDeVagas } from '../../processo-seletivo.models';
 
 import { repetidos } from '../../shared/repetidos';
@@ -321,5 +323,8 @@ function recusasForaDaLei12711(distribuicao: DistribuicaoDeVagas): string[] {
 }
 
 function rotulo(modalidadeId: string, catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>): string {
-  return catalogo.get(modalidadeId)?.codigo ?? 'a modalidade';
+  const modalidade = catalogo.get(modalidadeId);
+  return modalidade === undefined
+    ? 'a modalidade'
+    : codigoComNome(modalidade.codigo, modalidade.nome);
 }

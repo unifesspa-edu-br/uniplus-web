@@ -5,6 +5,7 @@ type ModalidadeDoQuadro = ProcessoSeletivoDto['distribuicaoVagas'][number]['moda
 /** A regra de aplicabilidade que o processo congelou para uma modalidade ofertada. */
 export interface RegraDaModalidadeOfertada {
   readonly codigo: string;
+  readonly nome: string;
   readonly descricao: string | null;
   /** O predicado na forma do contrato: cláusulas ligadas por "ou", cada uma com as suas condições. */
   readonly regra: ProcessoSeletivoDto['distribuicaoVagas'][number]['modalidades'][number]['regraDeAplicabilidade'];
@@ -31,6 +32,7 @@ export function regrasDasModalidadesOfertadas(
 function regraDaModalidade(modalidade: ModalidadeDoQuadro): RegraDaModalidadeOfertada {
   return {
     codigo: modalidade.codigo,
+    nome: modalidade.nome,
     descricao: modalidade.descricao,
     regra: modalidade.regraDeAplicabilidade,
   };

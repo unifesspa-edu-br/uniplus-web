@@ -41,10 +41,16 @@ describe('hidratarDraft — distribuição de vagas', () => {
         referenciaReservaDemograficaId: 'ref-1',
         ajusteDoQuadro: null,
         modalidades: [
-          { id: 'modalidade-1', codigo: 'AC', gravada: gravada('RESTANTE_DAS_VAGAS_OFERTADAS') },
+          {
+            id: 'modalidade-1',
+            codigo: 'AC',
+            nome: 'Ampla concorrência',
+            gravada: gravada('RESTANTE_DAS_VAGAS_OFERTADAS'),
+          },
           {
             id: 'modalidade-2',
             codigo: 'AC_PCD',
+            nome: 'Modalidade de teste Alfa',
             gravada: gravada('RETIRADA_DE_OUTRA_MODALIDADE'),
           },
         ],

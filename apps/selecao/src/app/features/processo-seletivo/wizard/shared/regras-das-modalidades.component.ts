@@ -4,6 +4,7 @@ import {
   fatosParaLeitura,
   resumoDaRegra,
 } from '@uniplus/shared-inscricao/formulario';
+import { codigoComNome } from '@uniplus/shared-utils';
 
 import { CatalogoDeFatos } from '../passos/cronograma/catalogos/catalogo-de-fatos.service';
 import type { RegraDaModalidadeOfertada } from './regras-das-modalidades';
@@ -27,6 +28,9 @@ let proximoId = 0;
     .regras-das-modalidades__lista dd {
       margin: 0;
     }
+    .regras-das-modalidades__lista dt {
+      overflow-wrap: break-word;
+    }
   `,
   template: `
     <section class="regras-das-modalidades" [attr.aria-labelledby]="tituloId">
@@ -39,7 +43,7 @@ let proximoId = 0;
         @for (linha of linhas(); track linha.codigo) {
           <div>
             <dt>
-              <strong>{{ linha.codigo }}</strong>
+              <strong>{{ linha.rotulo }}</strong>
               @if (linha.descricao) {
                 — {{ linha.descricao }}
               }
@@ -68,6 +72,7 @@ export class RegrasDasModalidadesComponent {
     const fatos = semCatalogo ? null : fatosParaLeitura(this.catalogoDeFatos.fatos());
     return this.modalidades().map((modalidade) => ({
       codigo: modalidade.codigo,
+      rotulo: codigoComNome(modalidade.codigo, modalidade.nome),
       descricao: modalidade.descricao,
       quemConcorre: resumoDaRegra(deClausulasDoWire(modalidade.regra), fatos),
     }));

@@ -85,7 +85,11 @@ describe('Modalidades — remoção pela interface', () => {
 
   it('o diálogo de remoção põe os botões direto no rodapé, sem contêiner entre eles', async () => {
     const raiz = fixture.nativeElement as HTMLElement;
-    raiz.querySelector<HTMLButtonElement>('button[aria-label="Remover modalidade V"]')?.click();
+    raiz
+      .querySelector<HTMLButtonElement>(
+        'button[aria-label="Remover modalidade V — Modalidade de teste V"]',
+      )
+      ?.click();
     await propagar();
     const botoes = [
       ...raiz.querySelectorAll<HTMLButtonElement>('dialog .uni-dialog__footer > button'),
@@ -95,7 +99,11 @@ describe('Modalidades — remoção pela interface', () => {
 
   it('anuncia a remoção e mantém a trava até terminar a recarga', async () => {
     const raiz = fixture.nativeElement as HTMLElement;
-    raiz.querySelector<HTMLButtonElement>('button[aria-label="Remover modalidade V"]')?.click();
+    raiz
+      .querySelector<HTMLButtonElement>(
+        'button[aria-label="Remover modalidade V — Modalidade de teste V"]',
+      )
+      ?.click();
     await propagar();
     const confirmar = [...raiz.querySelectorAll<HTMLButtonElement>('dialog button')].find(
       (b) => b.textContent?.trim() === 'Remover',
@@ -113,11 +121,13 @@ describe('Modalidades — remoção pela interface', () => {
     await propagar();
     expect(dialogo.open).toBe(true);
     expect(raiz.querySelector('dialog [role="status"]')?.textContent).toContain(
-      'Removendo a modalidade V.',
+      'Removendo a modalidade V — Modalidade de teste V.',
     );
     expect(raiz.querySelector('[data-scope]')?.hasAttribute('inert')).toBe(true);
     expect(
-      raiz.querySelector<HTMLButtonElement>('button[aria-label="Remover modalidade V"]')?.disabled,
+      raiz.querySelector<HTMLButtonElement>(
+        'button[aria-label="Remover modalidade V — Modalidade de teste V"]',
+      )?.disabled,
     ).toBe(true);
     edicao.remover(modalidade);
     controller.expectNone(`${URL_ADMIN}/${modalidade.id}`);
@@ -130,7 +140,7 @@ describe('Modalidades — remoção pela interface', () => {
     await propagar();
     expect(edicao.removendo()).toBe(false);
     expect(raiz.querySelector('.sr-only[role="status"]')?.textContent).toContain(
-      'Modalidade V removida.',
+      'Modalidade V — Modalidade de teste V removida.',
     );
   });
 

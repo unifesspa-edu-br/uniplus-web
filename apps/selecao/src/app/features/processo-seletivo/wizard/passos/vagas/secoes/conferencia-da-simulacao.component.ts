@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { CatalogosDeDistribuicao } from '../catalogos-de-distribuicao.service';
 import { frase } from '../conferencia-das-vagas';
+import { rotuloDaModalidade } from '../modalidades-da-distribuicao';
 import { SimulacaoDoQuadro } from '../servicos/simulacao-do-quadro.service';
 
 /**
@@ -41,7 +42,10 @@ export class ConferenciaDaSimulacaoComponent {
   protected retiradasPorModalidade(
     retiradas: readonly { readonly modalidadeCodigo: string; readonly quantidade: number }[],
   ): string {
-    return retiradas.map((item) => `${item.modalidadeCodigo}: ${item.quantidade}`).join('; ');
+    const rotulos = this.catalogos.rotuloDaModalidadePorCodigo();
+    return retiradas
+      .map((item) => `${rotuloDaModalidade(rotulos, item.modalidadeCodigo)}: ${item.quantidade}`)
+      .join('; ');
   }
 }
 

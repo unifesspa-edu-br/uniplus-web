@@ -18,7 +18,7 @@
 <tbody>
   @for (ordem of matriz().ordens; track ordem.origem) {
     <tr>
-      <th scope="row">{{ ordem.origem }}</th>
+      <th scope="row">{{ rotulo(ordem.origem) }}</th>
       @for (ordinal of ordinais(); track ordinal; let posicao = $index) {
         <!--
             `data-label` não é decoração: até 767 px o design system

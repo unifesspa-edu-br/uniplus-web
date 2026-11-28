@@ -10,7 +10,11 @@ import { CatalogosDeDistribuicao } from '../catalogos-de-distribuicao.service';
 import { ehRamoFederal, quantidadeEhDeclarada } from '../composicao-de-vagas';
 import { comPadraoAplicado } from '../edicao-do-quadro';
 import { leituraDoPadrao } from '../leitura-do-padrao';
-import { modalidadesDoRol, modalidadesGravadasPorId } from '../modalidades-da-distribuicao';
+import {
+  modalidadesDoRol,
+  modalidadesGravadasPorId,
+  nomeDaModalidade,
+} from '../modalidades-da-distribuicao';
 import { erroDasOpcoes, rotuloDasOpcoes, TEXTO_OPCOES_ACIMA_DAS_OFERTAS } from '../opcoes-de-curso';
 import { PadraoDoEdital, padraoDaOferta, seguemOMesmoPadrao } from '../padrao-do-edital';
 
@@ -26,7 +30,7 @@ const PADRAO_VAZIO: PadraoDoEdital = {
 };
 
 /** A modalidade do padrão como a tela a lê; sem `composicaoVagas`, nem o processo nem o catálogo a dizem. */
-export type ModalidadeDoPadrao = Pick<ModalidadeDto, 'id' | 'codigo' | 'descricao'> & {
+export type ModalidadeDoPadrao = Pick<ModalidadeDto, 'id' | 'codigo' | 'nome'> & {
   readonly composicaoVagas?: string;
 };
 
@@ -291,7 +295,7 @@ function modalidadesDoPadraoGravado(
   return padrao.modalidades.map((modalidade) => ({
     id: modalidade.id,
     codigo: modalidade.codigo,
-    descricao: modalidade.gravada?.descricao ?? vigentes.get(modalidade.id)?.descricao ?? '',
+    nome: nomeDaModalidade(modalidade.nome, vigentes.get(modalidade.id)?.nome),
     composicaoVagas: gravadas.get(modalidade.id)?.composicaoVagas || undefined,
   }));
 }

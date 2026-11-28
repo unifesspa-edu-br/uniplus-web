@@ -144,10 +144,12 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
 
     await expect(page.locator('tbody tr')).toHaveCount(2);
     const linhaAc = page.locator('tr[data-codigo="AC"]');
-    await expect(linhaAc.locator('td').first().locator('code')).toHaveText('AC');
+    await expect(linhaAc.locator('td').first().locator('code')).toHaveText(
+      'AC — Ampla concorrência',
+    );
     await expect(linhaAc.locator('.tag--info')).toContainText('Ampla concorrência');
     // A linha de AC mostra V como quem a referencia (mapa reverso).
-    await expect(linhaAc.locator('.cfg-ref-chip')).toHaveText('V');
+    await expect(linhaAc.locator('.cfg-ref-chip')).toHaveText('V — Modalidade de teste Alfa');
   });
 
   test('CA-01: chips de natureza filtram a lista', async ({ page }) => {
@@ -248,6 +250,9 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await page.goto('/modalidades/novo');
 
     await page.locator('[formControlName="codigo"]').fill('LI_PPI');
+    await page
+      .locator('[formControlName="nome"]')
+      .fill('Escola pública, qualquer renda, pretos, pardos e indígenas');
     await page.locator('[formControlName="descricao"]').fill('Cota PPI independente de renda');
     await page
       .locator('[formControlName="composicaoVagas"]')
@@ -261,6 +266,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await expect.poll(() => capturado.posts.length).toBe(1);
     expect(capturado.posts[0]).toMatchObject({
       codigo: 'LI_PPI',
+      nome: 'Escola pública, qualquer renda, pretos, pardos e indígenas',
       naturezaLegal: 'ACAO_AFIRMATIVA',
       composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
       composicaoOrigem: 'AC',
@@ -283,12 +289,16 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await mockApi(page, capturado, [acSeed, vSeed]);
     await abrirLista(page);
 
-    await page.getByRole('button', { name: 'Remover modalidade AC', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Remover modalidade AC — Ampla concorrência', exact: true })
+      .click();
 
     const dialog = page.locator('dialog.uni-dialog[open]');
     await expect(dialog.getByText('Remoção bloqueada')).toBeVisible();
     // V aparece como dependente na lista de referências.
-    await expect(dialog.locator('.cfg-refs-lista').getByText('V', { exact: true })).toBeVisible();
+    await expect(
+      dialog.locator('.cfg-refs-lista').getByText('V — Modalidade de teste Alfa', { exact: true }),
+    ).toBeVisible();
     // Não deve haver botão de confirmação de remoção.
     await expect(dialog.getByRole('button', { name: 'Remover', exact: true })).toHaveCount(0);
     await dialog.getByRole('button', { name: 'Entendi', exact: true }).click();
@@ -300,7 +310,9 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await mockApi(page, capturado, [acSeed, vSeed]);
     await abrirLista(page);
 
-    await page.getByRole('button', { name: 'Remover modalidade V', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Remover modalidade V — Modalidade de teste Alfa', exact: true })
+      .click();
 
     const dialog = page.locator('dialog.uni-dialog[open]');
     await dialog.getByRole('button', { name: 'Remover', exact: true }).click();
@@ -332,7 +344,9 @@ test.describe('Modalidade — acessibilidade axe-core (#390)', () => {
   test('modal de bloqueio aberto não tem violações serious/critical', async ({ page }) => {
     await mockApi(page, novoCapturado(), [acSeed, vSeed]);
     await abrirLista(page);
-    await page.getByRole('button', { name: 'Remover modalidade AC', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Remover modalidade AC — Ampla concorrência', exact: true })
+      .click();
     await expect(page.locator('dialog.uni-dialog[open]')).toBeVisible();
     await assertSemViolacoesGraves(page);
   });

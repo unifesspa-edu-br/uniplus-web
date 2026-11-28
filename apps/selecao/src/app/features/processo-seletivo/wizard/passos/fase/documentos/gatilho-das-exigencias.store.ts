@@ -10,6 +10,7 @@ import {
   fatosDoGatilhoNaFase,
   fatosParaGatilho,
   recusasDeFaseDoGatilho,
+  rotulosDoGatilho,
   type FatoEscolhivel,
 } from '../../../shared/gatilho-de-exigencia';
 import { type NomesDaOrientacao } from '../../../shared/orientacao-da-recusa-do-fato';
@@ -70,6 +71,11 @@ export class GatilhoDasExigenciasStore {
     ),
   );
 
+  /** Como a tela nomeia os valores desses fatos: as modalidades como "código — nome". */
+  readonly rotulosDoGatilho = computed(() =>
+    rotulosDoGatilho(this.catalogoDeFatos.fatos(), this.exigencias.rotulosDasModalidades()),
+  );
+
   /**
    * Todos os fatos do catálogo que um gatilho sabe avaliar, sem a restrição de fase. É o
    * vocabulário com que a tela lê o público de uma exigência já declarada.
@@ -78,7 +84,11 @@ export class GatilhoDasExigenciasStore {
    * que exista código sabendo resolver — e o catálogo é semeado por migration.
    */
   readonly fatosDoGatilho = computed<readonly FatoEscolhivel[]>(() =>
-    fatosParaGatilho(this.catalogoDeFatos.fatos(), this.dominiosDoGatilho()),
+    fatosParaGatilho(
+      this.catalogoDeFatos.fatos(),
+      this.dominiosDoGatilho(),
+      this.rotulosDoGatilho(),
+    ),
   );
 
   readonly fatoPorCodigo = computed(
@@ -134,6 +144,7 @@ export class GatilhoDasExigenciasStore {
     const fatos = fatosDoGatilhoNaFase(this.fatosDoFormulario(), exigencia, {
       producao,
       dominiosDinamicos: this.dominiosDoGatilho(),
+      rotulosDinamicos: this.rotulosDoGatilho(),
       citados: exigencia.condicoes.map((condicao) => condicao.fato),
       camposDaRepeticao: doGrupo,
     });
@@ -285,10 +296,11 @@ export class GatilhoDasExigenciasStore {
   readonly modalidadesEscolhiveis = computed<readonly UiComboboxGroup[]>(() => {
     const codigos = this.exigencias.modalidades();
     if (codigos.length === 0) return [];
+    const rotulos = this.exigencias.rotulosDasModalidades();
     return [
       {
         label: 'Modalidades do quadro de vagas',
-        options: codigos.map((codigo) => ({ value: codigo, label: codigo })),
+        options: codigos.map((codigo) => ({ value: codigo, label: rotulos.get(codigo) ?? codigo })),
       },
     ];
   });

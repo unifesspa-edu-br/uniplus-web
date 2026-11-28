@@ -27,7 +27,7 @@ describe('opcoesDeCursoExibidas', () => {
       rotulo: 'Curso',
       curso: 'Direito',
       exibicao: 'Direito',
-      modalidades: ['Ampla concorrência'],
+      modalidades: [{ codigo: 'AC', rotulo: 'AC — Ampla concorrência' }],
     });
   });
 
@@ -58,6 +58,24 @@ describe('opcoesDeCursoExibidas', () => {
     const opcoes = opcoesDeCursoExibidas(DUAS_OPCOES_FORA_DE_ORDEM);
 
     expect(opcoes.map((o) => o.rotulo)).toEqual(['1ª opção', '2ª opção']);
-    expect(opcoes[0].modalidades).toEqual(['Ampla concorrência', 'Escola pública']);
+    expect(opcoes[0].modalidades).toEqual([
+      { codigo: 'AC', rotulo: 'AC — Ampla concorrência' },
+      { codigo: 'LI_EP', rotulo: 'LI_EP — Escola pública' },
+    ]);
+  });
+
+  it('a modalidade sem nome aparece só pelo código', () => {
+    const [opcao] = opcoesDeCursoExibidas({
+      numeroDeOpcoesDeCurso: 1,
+      opcoesDeCurso: [
+        {
+          ordem: 1,
+          nome: 'Direito',
+          modalidades: [{ codigo: 'ZZ_TESTE', nome: '', ordem: 0 }],
+        },
+      ],
+    });
+
+    expect(opcao.modalidades).toEqual([{ codigo: 'ZZ_TESTE', rotulo: 'ZZ_TESTE' }]);
   });
 });
