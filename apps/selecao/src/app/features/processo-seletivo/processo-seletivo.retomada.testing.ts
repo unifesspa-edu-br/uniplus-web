@@ -58,6 +58,7 @@ import { BehaviorSubject, NEVER, of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { provideApiDosTiposDeDecisao } from './wizard/shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
+import { provideApiDosVocabulariosDeConfiguracao } from './wizard/passos/formulario/vocabularios-de-configuracao-da-api.testing';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { opcoesDoRecursoApiStub } from './processo-seletivo.page.testing';
 import { PASSOS } from './wizard/processo-seletivo.data';
@@ -82,9 +83,8 @@ const respostaVazia = <T>() => of(apiOk<readonly T[]>([], 200, new HttpHeaders()
 const falhaDeCatalogo = { listar: () => of(errorResult(mockProblemDetails({ status: 503 }))) };
 
 /**
- * O passo de vagas consome os catálogos de oferta, reserva demográfica e
- * regras. Aqui eles vêm vazios: estas suítes cobrem a retomada do processo, e o
- * conteúdo dos catálogos é exercitado no teste do próprio passo.
+ * O passo de vagas consome os catálogos de oferta, reserva demográfica e regras. Aqui vêm vazios:
+ * estas suítes cobrem a retomada do processo; o conteúdo é exercitado no teste do próprio passo.
  */
 const catalogoVazioStub = { listar: () => respostaVazia<never>() };
 
@@ -106,6 +106,7 @@ const vocabulariosDaComprovacaoStub = {
 /** Os catálogos que cada passo do assistente carrega ao montar; vazios, o grafo de injeção fecha sem HTTP. */
 const PROVEDORES_DE_CATALOGO_VAZIO: readonly Provider[] = [
   provideApiDosTiposDeDecisao(),
+  provideApiDosVocabulariosDeConfiguracao(),
   { provide: ModalidadesApi, useValue: { listar: () => respostaVazia<ModalidadeDto>() } },
   { provide: CursosApi, useValue: catalogoVazioStub },
   { provide: OfertasCursoApi, useValue: catalogoVazioStub },

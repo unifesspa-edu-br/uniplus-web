@@ -316,6 +316,7 @@ export {
 export {
   VocabulariosDeConfiguracaoApi,
   type VocabulariosDeConfiguracao,
+  type TipoDeCampo,
   type TipoDoDado,
   type QuantidadeDeValores,
   type OrigemFato,

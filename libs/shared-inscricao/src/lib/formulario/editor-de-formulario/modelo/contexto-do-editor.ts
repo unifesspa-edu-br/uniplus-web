@@ -27,6 +27,7 @@ import {
   type ItemDoFormulario,
   type PredicadoNoWire,
   type TermoDisponivel,
+  type TipoDeCampoDoVocabulario,
 } from './tipos';
 
 /** O que o editor recebe do hospedeiro e de que depende tudo o que ele mostra. */
@@ -42,6 +43,7 @@ export interface EntradasDoEditor {
   readonly fatosIndisponiveis: readonly string[];
   readonly fatosQueExigemRespostaPorFora: readonly string[];
   readonly remocoesTravadas: ReadonlyMap<string, string>;
+  readonly tiposDeCampo: readonly TipoDeCampoDoVocabulario[];
   /** As condições citam município só quando o hospedeiro provê a busca de onde sai o valor. */
   readonly comMunicipios: boolean;
 }

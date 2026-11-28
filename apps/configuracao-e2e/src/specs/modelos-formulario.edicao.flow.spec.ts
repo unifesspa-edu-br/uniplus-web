@@ -1,6 +1,7 @@
 import type { JsonDaApi } from '@uniplus/shared-e2e';
 import type { ModeloFormularioView } from '@uniplus/shared-data/configuracao';
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { mockarVocabularioDeTiposDeCampo } from '../support/api-do-vocabulario-de-tipos-de-campo';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 const CORS_HEADERS = {
@@ -52,6 +53,7 @@ async function mockApi(page: Page, releituraFalha = false) {
   let liberar: () => void = () => undefined;
   const retida = new Promise<void>((resolve) => (liberar = resolve));
   let gravado = false;
+  await mockarVocabularioDeTiposDeCampo(page);
   await page.route(
     /\/api\/configuracao\/(tipos-processo|fatos-candidato|fases-canonicas|tipos-documento|termos-consentimento)(\?.*)?$/,
     (route) => responder(route, 200, []),

@@ -27,6 +27,7 @@ import {
   type PaginaDoFormulario,
   type FatoDoFormulario,
   type TermoDisponivel,
+  type TipoDeCampoDoVocabulario,
 } from './modelo/tipos';
 
 /**
@@ -141,6 +142,9 @@ export class EditorDeFormularioComponent {
   /** Os campos que não podem sair, com o motivo — uma exigência ou outra regra do processo os cita. */
   readonly remocoesTravadas = input<ReadonlyMap<string, string>>(new Map());
 
+  /** Os tipos de campo do vocabulário da API: o cartão do item mostra o texto do código. */
+  readonly tiposDeCampo = input<readonly TipoDeCampoDoVocabulario[]>([]);
+
   readonly conteudoChange = output<ConteudoDoFormulario>();
   readonly edicao = output<EdicaoDoFormulario>();
   protected camposEditados: CamposEditadosDoFormulario = [];
@@ -151,15 +155,19 @@ export class EditorDeFormularioComponent {
   private readonly paginasRecolhidas = signal<ReadonlySet<string>>(new Set());
 
   protected readonly paginas = computed(() => paginasEmOrdem(this.conteudo()));
+  private readonly entradasDoFormulario = computed(() => ({
+    conteudo: this.conteudo(),
+    catalogo: this.catalogo(),
+    finalidade: this.finalidade(),
+    idBase: this.idBase(),
+    disabled: this.disabled(),
+    recusas: this.recusas(),
+    termosDisponiveis: this.termosDisponiveis(),
+    tiposDeCampo: this.tiposDeCampo(),
+  }));
   protected readonly contexto = computed(() =>
     contextoDoEditor({
-      conteudo: this.conteudo(),
-      catalogo: this.catalogo(),
-      finalidade: this.finalidade(),
-      idBase: this.idBase(),
-      disabled: this.disabled(),
-      recusas: this.recusas(),
-      termosDisponiveis: this.termosDisponiveis(),
+      ...this.entradasDoFormulario(),
       fatosDaInscricao: this.fatosDaInscricao(),
       fatosIndisponiveis: this.fatosIndisponiveis(),
       fatosQueExigemRespostaPorFora: this.fatosQueExigemRespostaPorFora(),

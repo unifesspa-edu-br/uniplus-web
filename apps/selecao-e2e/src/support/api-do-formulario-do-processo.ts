@@ -73,7 +73,19 @@ async function lerOProcesso(route: Route): Promise<void> {
   return route.fulfill({ status: 404, headers: CORS });
 }
 
+const TIPOS_DE_CAMPO = [
+  'NUMERO',
+  'SIM_OU_NAO',
+  'ESCOLHA_UNICA',
+  'ESCOLHA_MULTIPLA',
+  'TEXTO',
+  'DATA',
+  'ENDERECO',
+  'MUNICIPIO',
+].map((codigo) => ({ codigo, rotulo: `Rótulo simulado: ${codigo}` }));
+
 async function mockarOsCatalogos(page: Page): Promise<void> {
+  await responder(page, /\/api\/configuracao\/vocabularios\/tipos-campo$/, TIPOS_DE_CAMPO, CORS);
   await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
   await responder(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, TIPOS_DE_PROCESSO, CORS);
   await responder(

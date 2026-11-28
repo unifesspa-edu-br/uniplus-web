@@ -5,10 +5,13 @@ import {
   HipoteseLegalTratamentoCodigo,
 } from '@uniplus/shared-data/configuracao';
 import { codigoComRotulo } from '@uniplus/shared-testing/contrato';
+import { TIPOS_DE_CAMPO_SIMULADOS } from '@uniplus/shared-testing';
 import { TipoRestricaoValorCodigo } from '@uniplus/shared-data/configuracao';
 import {
   CONSEQUENCIAS_DO_DESCUMPRIMENTO,
   DECLARACAO_DE_INSCRICAO,
+  FASES,
+  TIPOS_DE_DOCUMENTO,
   DADO_SIM_OU_NAO,
   ORIGEM_DECLARADA,
   VALOR_UNICO,
@@ -35,6 +38,7 @@ import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { REQUISITOS_DO_LAUDO } from './requisitos-do-modelo.testing';
 import { ModeloFormularioEdicaoPage } from './modelo-formulario-edicao.page';
 
+export { FASES };
 export const BASE = 'http://localhost:5000';
 export const ID = '01960000-0000-7000-0000-0000000000a1';
 export const MODELO = `${BASE}/api/configuracao/admin/modelos-formulario/${ID}`;
@@ -237,11 +241,6 @@ export const modelo: ModeloFormularioView = {
   },
 };
 
-export const FASES = [
-  { id: '1', codigo: 'INSCRICAO', nome: 'Inscrição', permiteComplementacao: true },
-  { id: '2', codigo: 'HOMOLOGACAO_INSCRICOES', nome: 'Homologação', permiteComplementacao: false },
-];
-
 const FATOS_BASICOS = ['NOME', 'ESCOLA_PUBLICA', 'GESTANTE'];
 const API = `${BASE}/api/configuracao`;
 
@@ -257,16 +256,16 @@ const FALHA_404 = JSON.stringify({
   code: 'uniplus.configuracao.modelo_formulario.nao_encontrado',
 });
 
-const TIPOS_DE_DOCUMENTO = [
-  { id: '1', codigo: 'LAUDO_MEDICO', nome: 'Laudo médico' },
-  { id: '2', codigo: 'CERTIDAO_NASCIMENTO', nome: 'Certidão de nascimento' },
-  { id: '3', codigo: 'ATESTADO', nome: 'Atestado' },
-];
-
 const RECURSO_DAS_CONSEQUENCIAS: RecursoDaCarga = {
   recurso: 'consequencias',
   url: `${BASE}/api/selecao/vocabularios/consequencias-do-descumprimento`,
   dados: CONSEQUENCIAS_DO_DESCUMPRIMENTO,
+};
+
+const RECURSO_DOS_TIPOS_DE_CAMPO: RecursoDaCarga = {
+  recurso: 'tipos-campo',
+  url: `${API}/vocabularios/tipos-campo`,
+  dados: TIPOS_DE_CAMPO_SIMULADOS,
 };
 
 export interface TelaDeEdicao {
@@ -340,6 +339,7 @@ function recursosDaCarga(cenario: CenarioDaCarga): readonly RecursoDaCarga[] {
     { recurso: 'fases', url: `${API}/fases-canonicas`, dados: cenario.fases ?? FASES },
     { recurso: 'tipos-documento', url: `${API}/tipos-documento`, dados: TIPOS_DE_DOCUMENTO },
     RECURSO_DAS_CONSEQUENCIAS,
+    RECURSO_DOS_TIPOS_DE_CAMPO,
   ];
 }
 
@@ -369,7 +369,7 @@ function responderRecurso(
   if (falha === null) pedido.flush(recurso.dados);
   else pedido.flush(falha.corpo, falha.resposta);
 }
-/** Responde as seis leituras que a tela faz ao abrir. */
+/** Responde as sete leituras que a tela faz ao abrir. */
 export function responderCarga(
   controller: HttpTestingController,
   cenario: CenarioDaCarga = {},

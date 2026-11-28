@@ -39,6 +39,7 @@ import {
   type FatoDoFormulario,
   type GrupoDoFormulario,
   type PredicadoNoWire,
+  type TipoDeCampoDoVocabulario,
 } from './modelo/tipos';
 import {
   paraPredicado,
@@ -205,6 +206,7 @@ const ANUNCIO_DO_CANDIDATO_INCLUIDO =
         [errosPorCampo]="errosPorCampo()"
         [recusasDasRestricoes]="recusasDasRestricoes()"
         [remocoesTravadas]="remocoesTravadas()"
+        [tiposDeCampo]="tiposDeCampo()"
         [fatosIndisponiveis]="fatosIndisponiveis()"
         (grupoChange)="emitir($event)"
         (camposEditados)="camposEditados.emit($event)"
@@ -241,6 +243,7 @@ export class GrupoDoFormularioComponent {
   readonly remocoesTravadas = input<ReadonlyMap<string, string>>(new Map());
   /** Os fatos de outra finalidade, que não podem entrar neste formulário. */
   readonly fatosIndisponiveis = input<readonly string[]>([]);
+  readonly tiposDeCampo = input<readonly TipoDeCampoDoVocabulario[]>([]);
 
   readonly camposEditados = output<CamposEditadosDoFormulario>();
   readonly grupoChange = output<GrupoDoFormulario>();

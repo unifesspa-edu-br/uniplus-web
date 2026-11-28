@@ -38,6 +38,7 @@ import {
   type GrupoDoFormulario,
   type ItemDoFormulario,
   type ResultadoDoGrupo,
+  type TipoDeCampoDoVocabulario,
 } from '../modelo/tipos';
 
 /**
@@ -74,6 +75,7 @@ import {
             [recusasDasRestricoes]="recusasDasRestricoes().get(campo.fatoCodigo) ?? []"
             [travadoPor]="travaDo(campo)"
             [remocaoTravadaPor]="remocoesTravadas().get(campo.fatoCodigo) ?? null"
+            [tiposDeCampo]="tiposDeCampo()"
             (camposEditados)="registrarCampo(campo.fatoCodigo, $event)"
             (itemChange)="grupoChange.emit(comCampoDoGrupo(grupo(), $event))"
             (mover)="moverOCampo(campo, $event)"
@@ -132,6 +134,7 @@ export class CamposDoGrupoComponent {
   readonly remocoesTravadas = input<ReadonlyMap<string, string>>(new Map());
   /** Os fatos de outra finalidade, que não podem entrar neste formulário. */
   readonly fatosIndisponiveis = input<readonly string[]>([]);
+  readonly tiposDeCampo = input<readonly TipoDeCampoDoVocabulario[]>([]);
 
   readonly grupoChange = output<GrupoDoFormulario>();
   /** O que anunciar na região de status do editor: o acréscimo, o movimento ou a recusa. */

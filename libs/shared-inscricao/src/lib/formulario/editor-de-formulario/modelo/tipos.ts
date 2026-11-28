@@ -158,6 +158,12 @@ export interface FatoDoFormulario extends FatoDoCatalogo {
 }
 
 /** Um termo de consentimento que o formulário pode exigir, com as versões promovidas — a mais nova primeiro. */
+/** Um tipo de campo do vocabulário da API: o código que o item guarda e o texto que a tela mostra. */
+export interface TipoDeCampoDoVocabulario {
+  readonly codigo: string;
+  readonly rotulo: string;
+}
+
 export interface TermoDisponivel {
   readonly termoId: string;
   readonly nome: string;

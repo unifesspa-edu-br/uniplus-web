@@ -14,6 +14,7 @@ import {
   SituacaoDoProcessoSeletivoCodigo,
   type FormularioDto,
 } from '@uniplus/shared-data/selecao';
+import { TIPOS_DE_CAMPO_SIMULADOS } from '@uniplus/shared-testing';
 import { afterEach, beforeEach } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -181,9 +182,14 @@ function prepararProcesso(store: ProcessoSeletivoStore): void {
   });
 }
 
+function dadosDa(url: string): readonly unknown[] {
+  if (url.includes('fatos-candidato')) return [PCD_NO_CATALOGO];
+  return url.includes('vocabularios/tipos-campo') ? TIPOS_DE_CAMPO_SIMULADOS : [];
+}
+
 function atenderCatalogos(controller: HttpTestingController): void {
   for (const requisicao of controller.match(() => true)) {
-    requisicao.flush(requisicao.request.url.includes('fatos-candidato') ? [PCD_NO_CATALOGO] : []);
+    requisicao.flush(dadosDa(requisicao.request.url));
   }
 }
 

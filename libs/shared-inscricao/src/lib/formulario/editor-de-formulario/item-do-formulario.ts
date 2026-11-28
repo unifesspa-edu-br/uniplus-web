@@ -22,10 +22,15 @@ import {
   OBRIGATORIEDADES,
   OBRIGATORIEDADE_QUANDO,
   OBRIGATORIEDADE_SEMPRE,
-  TIPOS_DE_CAMPO,
 } from './modelo/constantes';
 import { type RecusaDaRestricao } from './modelo/recusas';
-import { type ItemDoFormulario, type PredicadoNoWire, type RegrasDoCampo } from './modelo/tipos';
+import { rotuloDoTipoDeCampo } from './modelo/tipos-de-campo';
+import {
+  type ItemDoFormulario,
+  type PredicadoNoWire,
+  type RegrasDoCampo,
+  type TipoDeCampoDoVocabulario,
+} from './modelo/tipos';
 import { ImpedimentoDoCampoComponent } from './impedimento-do-campo';
 import {
   paraPredicado,
@@ -279,6 +284,7 @@ export class ItemDoFormularioComponent {
   readonly recusasDasRestricoes = input<readonly RecusaDaRestricao[]>([]);
   /** Os campos de UF anteriores, para o município escolher de onde vêm os municípios. */
   readonly ufs = input<readonly { readonly codigo: string; readonly nome: string }[]>([]);
+  readonly tiposDeCampo = input<readonly TipoDeCampoDoVocabulario[]>([]);
   /** Se o impedimento cabe neste campo (finalidade, tipo e próprio fato citável). */
   readonly impedimentoPermitido = input<boolean>(false);
   /** O nível do título: 4 no item da seção, 5 no campo do grupo, que fica sob o título do grupo. */
@@ -305,10 +311,9 @@ export class ItemDoFormularioComponent {
   protected readonly nome = computed(
     () => this.item().apresentacao.rotulo.trim() || this.item().fatoCodigo,
   );
-  protected readonly tipoDeCampo = computed(() => {
-    const { tipoDeCampo } = this.item().apresentacao;
-    return TIPOS_DE_CAMPO[tipoDeCampo] ?? tipoDeCampo;
-  });
+  protected readonly tipoDeCampo = computed(() =>
+    rotuloDoTipoDeCampo(this.tiposDeCampo(), this.item().apresentacao.tipoDeCampo),
+  );
   protected readonly rotuloVazio = computed(() => this.item().apresentacao.rotulo.trim() === '');
   protected readonly obrigatoriedade = computed(
     () => this.item().regras.obrigatoriedade.tipo ?? OBRIGATORIEDADE_SEMPRE,

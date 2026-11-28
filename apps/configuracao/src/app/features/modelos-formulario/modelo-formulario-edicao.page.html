@@ -63,6 +63,7 @@
   [disabled]="edicao.somenteLeitura()"
   [recusas]="edicao.recusas()"
   [termosDisponiveis]="store.termosDisponiveis()"
+  [tiposDeCampo]="store.tiposDeCampo.itens()"
   (conteudoChange)="edicao.conteudo.set($event)"
 />
 

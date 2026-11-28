@@ -161,6 +161,7 @@ export class FormularioPassoComponent {
     this.consequencias.carregar();
     this.dados.carregarCatalogo();
     this.dados.carregarTermos();
+    this.dados.tiposDeCampo.carregar();
   }
 
   /** Os formulários do rascunho, na ordem em que o rascunho os guarda. */
