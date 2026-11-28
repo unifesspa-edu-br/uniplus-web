@@ -144,6 +144,13 @@
        em qualquer ponto; o rótulo, se não couber, quebra entre palavras. */
     overflow-wrap: normal;
   }
+  /* Rótulo que pode ser uma palavra sem espaços (um código seguido do nome): quebra em qualquer
+     ponto para não passar da largura a 320 px ou com zoom de 200%. É opt-in, porque o rótulo
+     que cabe não deve ser partido quando o valor ao lado é largo. */
+  .table-responsive--rotulo-quebravel td::before,
+  .table-responsive--rotulo-quebravel tbody th[scope='row'][data-label]::before {
+    overflow-wrap: anywhere;
+  }
   /* th[scope="row"] SEM data-label encabeça o cartão. */
   .table-responsive tbody th[scope='row']:not([data-label]),
   .table-responsive tfoot th[scope='row'] {

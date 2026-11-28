@@ -19,7 +19,7 @@ import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/seleca
 import { acompanharLeitura } from '@uniplus/shared-ui/components';
 
 import { tituloDoPasso } from '../../shared/titulo-do-passo';
-import { ModalidadeDoCatalogo } from './modalidades-da-distribuicao';
+import { ModalidadeDoCatalogo, rotulosPorCodigo } from './modalidades-da-distribuicao';
 
 /** Tipos do `rol_de_regras` que esta tela referencia. */
 const TIPO_REGRA_DISTRIBUICAO = TipoRegraCodigo.REGRA_DISTRIBUICAO_VAGAS;
@@ -107,6 +107,9 @@ export class CatalogosDeDistribuicao {
         this.modalidades().map((modalidade) => [modalidade.id, modalidadeDoCatalogo(modalidade)]),
       ),
   );
+
+  /** "Código — nome" de cada modalidade do catálogo vivo, pelo código. */
+  readonly rotuloDaModalidadePorCodigo = computed(() => rotulosPorCodigo(this.modalidadePorId()));
 
   readonly ofertaPorId = computed<ReadonlyMap<string, OfertaCursoDto>>(
     () => new Map(this.ofertas().map((oferta) => [oferta.id, oferta])),
@@ -245,6 +248,7 @@ function modalidadeDoCatalogo(modalidade: ModalidadeDto): ModalidadeDoCatalogo {
   return {
     id: modalidade.id,
     codigo: modalidade.codigo,
+    nome: modalidade.nome,
     composicaoVagas: modalidade.composicaoVagas.codigo,
     composicaoOrigemCodigo: modalidade.composicaoOrigem,
     regraRemanejamento: modalidade.remanejamento?.regra.codigo ?? null,

@@ -34,7 +34,7 @@ describe('CascataRemanejamentoComponent — busca da versão da regra', () => {
    */
   it('busca a versão específica quando a seleção hidratada não está na listagem, e resolve a matriz normalmente', () => {
     store.patchObjectSection('vagas', {
-      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
+      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }])],
       cascata: { regraCodigo: 'REMANEJ-CASCATA-LEI-12711', regraVersao: 'v0' },
     });
     detectar();
@@ -67,7 +67,7 @@ describe('CascataRemanejamentoComponent — busca da versão da regra', () => {
 
   it('marca a regra como não encontrada quando a busca direta da versão também falha, sem confundir com declaracaoDaRegra malformado', () => {
     store.patchObjectSection('vagas', {
-      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
+      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }])],
       cascata: { regraCodigo: 'REMANEJ-CASCATA-REMOVIDA', regraVersao: 'v9' },
     });
     detectar();
@@ -100,7 +100,7 @@ describe('CascataRemanejamentoComponent — busca da versão da regra', () => {
    */
   it('marca falha ao consultar (não "não encontrada") quando a busca direta responde 5xx, e permite tentar de novo', () => {
     store.patchObjectSection('vagas', {
-      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
+      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }])],
       cascata: { regraCodigo: 'REMANEJ-CASCATA-LEI-12711', regraVersao: 'v0' },
     });
     detectar();
@@ -148,7 +148,7 @@ describe('CascataRemanejamentoComponent — busca da versão da regra', () => {
 
     function abandonarBuscaDeA(): void {
       store.patchObjectSection('vagas', {
-        ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
+        ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }])],
         cascata: SELECAO_A,
       });
       detectar();

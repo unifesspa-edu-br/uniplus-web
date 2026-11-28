@@ -39,6 +39,7 @@ export const REGRAS = {
 export const MODALIDADE: ModalidadeDto = {
   id: 'id-v',
   codigo: 'V',
+  nome: 'Modalidade de teste V',
   legalFixa: false,
   descricao: 'Modalidade V',
   naturezaLegal: NATUREZAS.ampla,

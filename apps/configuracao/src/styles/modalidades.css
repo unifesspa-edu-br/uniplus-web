@@ -8,6 +8,7 @@
   display: inline-flex;
   flex-wrap: wrap;
   gap: var(--space-1);
+  min-width: 0;
 }
 
 .cfg-ref-chip {
@@ -16,6 +17,8 @@
   border-radius: var(--radius-sm);
   background: var(--surface-subtle);
   border: 1px solid var(--border-subtle);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .cfg-refs-lista {

@@ -104,6 +104,37 @@ describe('VagasPassoComponent — regra determina o rol de modalidades', () => {
     expect(servicos.estado.modalidadesOferecidas().map((m) => m.codigo)).toEqual(['AC_I', 'AC_Q']);
   });
 
+  function rotulosDasModalidadesOferecidas(): (string | undefined)[] {
+    const grade = elementoRaiz.querySelector('.checkbox-grid');
+    return Array.from(grade?.querySelectorAll('.check-item span') ?? [], (rotulo) =>
+      rotulo.textContent?.trim(),
+    );
+  }
+
+  it('rotula cada modalidade oferecida com o código e o nome', () => {
+    expect(rotulosDasModalidadesOferecidas()).toEqual(['AC_I — Indígena', 'AC_Q — Quilombola']);
+  });
+
+  it('rotula só com o código a modalidade oferecida que não tem nome', () => {
+    servicos.catalogos.modalidades.set(
+      servicos.catalogos.modalidades().map((m) => ({ ...m, nome: '' })),
+    );
+    detectar();
+
+    expect(rotulosDasModalidadesOferecidas()).toEqual(['AC_I', 'AC_Q']);
+  });
+
+  it('rotula a coluna do quadro com o código e o nome da modalidade', () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA)] });
+    detectar();
+
+    const colunas = Array.from(elementoRaiz.querySelectorAll('.vagas-table thead th'), (coluna) =>
+      coluna.textContent?.trim(),
+    );
+
+    expect(colunas).toContain('AC_I — Indígena');
+  });
+
   it('trocar para regra sem dado a perder aplica direto, sem confirmação', () => {
     store.patchObjectSection('vagas', { ofertas: [] });
     detectar();
@@ -160,7 +191,9 @@ describe('VagasPassoComponent — regra determina o rol de modalidades', () => {
 
     expect(servicos.estado.trocaDeRegraPendente()).toBeNull();
     expect(servicos.estado.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-INSTITUCIONAL');
-    expect(servicos.estado.padrao().modalidades).toEqual([{ id: MODALIDADE, codigo: 'AC_I' }]);
+    expect(servicos.estado.padrao().modalidades).toEqual([
+      { id: MODALIDADE, codigo: 'AC_I', nome: '' },
+    ]);
   });
 
   it('rol fechado não aceita alternar modalidade manualmente', () => {
@@ -188,9 +221,9 @@ describe('VagasPassoComponent — regra determina o rol de modalidades', () => {
           regraDistribuicaoCodigo: 'DISTRIB-VAGAS-PSIQ',
           regraDistribuicaoVersao: 'v1',
           modalidades: [
-            { id: MODALIDADE, codigo: 'AC_I' },
-            { id: SEGUNDA_MODALIDADE, codigo: 'AC_Q' },
-            { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'AC_PCD' },
+            { id: MODALIDADE, codigo: 'AC_I', nome: '' },
+            { id: SEGUNDA_MODALIDADE, codigo: 'AC_Q', nome: '' },
+            { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'AC_PCD', nome: '' },
           ],
         },
       ],
@@ -213,7 +246,7 @@ describe('VagasPassoComponent — regra determina o rol de modalidades', () => {
           ...distribuicao(OFERTA),
           regraDistribuicaoCodigo: 'DISTRIB-VAGAS-PSIQ',
           regraDistribuicaoVersao: 'v1',
-          modalidades: [{ id: MODALIDADE, codigo: 'AC_I' }],
+          modalidades: [{ id: MODALIDADE, codigo: 'AC_I', nome: '' }],
         },
       ],
     });
@@ -246,9 +279,9 @@ describe('VagasPassoComponent — regra determina o rol de modalidades', () => {
           regraDistribuicaoCodigo: 'DISTRIB-VAGAS-PSIQ',
           regraDistribuicaoVersao: 'v1',
           modalidades: [
-            { id: MODALIDADE, codigo: 'AC_I' },
-            { id: SEGUNDA_MODALIDADE, codigo: 'AC_Q' },
-            { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'AC_PCD' },
+            { id: MODALIDADE, codigo: 'AC_I', nome: '' },
+            { id: SEGUNDA_MODALIDADE, codigo: 'AC_Q', nome: '' },
+            { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'AC_PCD', nome: '' },
           ],
           quadro: [{ modalidadeId: '01960000-0000-7000-0000-0000000000a9', quantidade: '3' }],
         },
@@ -285,8 +318,8 @@ describe('VagasPassoComponent — regra determina o rol de modalidades', () => {
           regraDistribuicaoCodigo: 'DISTRIB-VAGAS-PSIQ',
           regraDistribuicaoVersao: 'v1',
           modalidades: [
-            { id: MODALIDADE, codigo: 'AC_I' },
-            { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'AC_PCD' },
+            { id: MODALIDADE, codigo: 'AC_I', nome: '' },
+            { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'AC_PCD', nome: '' },
           ],
           quadro: [{ modalidadeId: '01960000-0000-7000-0000-0000000000a9', quantidade: '3' }],
         },

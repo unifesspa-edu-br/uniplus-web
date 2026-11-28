@@ -35,6 +35,7 @@ export function modalidade(
   base: Partial<ModalidadeDoCatalogo> & { id: string; codigo: string },
 ): ModalidadeDoCatalogo {
   return {
+    nome: '',
     composicaoVagas: 'DENTRO_DA_RESERVA_LEGAL',
     composicaoOrigemCodigo: null,
     regraRemanejamento: null,
@@ -46,8 +47,12 @@ export function modalidade(
 }
 
 /** A oferta guarda o par id+código; o código é como as demais dimensões a nomeiam. */
-export function par(modalidade: ModalidadeDoCatalogo): { id: string; codigo: string } {
-  return { id: modalidade.id, codigo: modalidade.codigo };
+export function par(modalidade: ModalidadeDoCatalogo): {
+  id: string;
+  codigo: string;
+  nome: string;
+} {
+  return { id: modalidade.id, codigo: modalidade.codigo, nome: modalidade.nome };
 }
 
 /** O texto de cada recusa, sem o escopo que diz onde ela deve ser dita. */

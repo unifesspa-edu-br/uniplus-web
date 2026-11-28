@@ -18,7 +18,8 @@ export {
   CONCORRE,
   FALTA_RESPONDER,
   NAO_CONCORRE,
-  nomesPelaOrdem,
+  rotuladasPelaOrdem,
+  type ModalidadeRotulada,
   type AvaliacaoNaTela,
   type ModalidadesAvaliadas,
 } from './modalidades-avaliadas';

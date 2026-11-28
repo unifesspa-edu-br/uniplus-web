@@ -24,7 +24,7 @@ describe('ModalidadesListPage', () => {
     expect(texto).toContain(AC.naturezaLegal.rotulo);
   });
 
-  it('mostra a composição seguida do código da modalidade de origem', async () => {
+  it('mostra a composição seguida do código e do nome da modalidade de origem', async () => {
     await pagina.flushLista([AC, V]);
     pagina.fixture.detectChanges();
 
@@ -36,7 +36,7 @@ describe('ModalidadesListPage', () => {
       ).textContent
         ?.replace(/\s+/g, ' ')
         .trim();
-    expect(composicao('V')).toBe(`${V.composicaoVagas.rotulo} AC`);
+    expect(composicao('V')).toBe(`${V.composicaoVagas.rotulo} AC — Modalidade de teste Alfa`);
     expect(composicao('AC')).toBe(AC.composicaoVagas.rotulo);
   });
 
@@ -122,6 +122,20 @@ describe('ModalidadesListPage', () => {
     expect(pagina.component['modalidadesFiltradas']().map((m) => m.codigo)).toEqual(['V']);
   });
 
+  it('busca casa o nome, sem diferenciar maiúsculas de minúsculas', async () => {
+    await pagina.flushLista([AC, V]);
+    pagina.component['busca'].set('TESTE ALFA');
+    expect(pagina.component['modalidadesFiltradas']().map((m) => m.codigo)).toEqual(['AC']);
+  });
+
+  it('a dica da busca fala em código, nome ou descrição', async () => {
+    await pagina.flushLista([AC, V]);
+    const busca = pagina.fixture.nativeElement.querySelector(
+      'input[type="search"], ui-filter-bar input',
+    );
+    expect(busca?.getAttribute('placeholder')).toBe('Buscar por código, nome ou descrição...');
+  });
+
   it('CA-01: mapa reverso lista quem referencia a modalidade (AC referenciada por V)', async () => {
     await pagina.flushLista([AC, V]);
     expect(pagina.component['referenciadaPor']('AC').map((m) => m.codigo)).toEqual(['V']);
@@ -147,7 +161,7 @@ describe('ModalidadesListPage', () => {
       pagina.fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
     ).map((th) => th.textContent?.trim());
     expect(cabecalhos).toEqual([
-      'Código',
+      'Modalidade',
       'Quem concorre',
       'Natureza',
       'Composição de vagas',

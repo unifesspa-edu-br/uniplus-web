@@ -25,6 +25,11 @@ const RECUO_MAXIMO_NA_TELA_ESTREITA = 115;
  * O CI do frontend sobe Keycloak, mas não a API: o processo e os catálogos são servidos
  * por rota, e toda outra consulta de catálogo responde vazia.
  */
+/** Na tabela (768 px ou mais) os destinos dividem a linha; em cartão cada um tem a sua. */
+function limiteDeLinhas(largura: number, destinos: number): number {
+  return largura >= 768 ? destinos : Number.POSITIVE_INFINITY;
+}
+
 test.describe('Vagas — matriz DS @ds', () => {
   for (const status of ['rascunho', 'publicado'] as const) {
     test.describe(`processo em ${status}`, () => {
@@ -73,15 +78,21 @@ test.describe('Vagas — matriz DS @ds', () => {
 
     /**
      * O código de modalidade é indivisível: "LB_/PCD" partido em duas linhas lê como dois
-     * códigos. Um destino por linha também não serve, porque cada origem ocupava a tela.
+     * códigos; o nome que vem depois dele pode quebrar. Um destino por linha também não serve,
+     * porque cada origem ocupava a tela.
      */
-    test('mostra cada destino da cascata inteiro, vários por linha', async ({ page }) => {
+    test('mostra cada destino da cascata inteiro, vários por linha', async ({ page }, testInfo) => {
       const cartoes = await page.locator('.cascata-matriz tbody tr').evaluateAll((linhas) =>
         linhas.map((linha) => {
           const destinos = Array.from(linha.querySelectorAll('td'));
           const partidos = destinos.filter((destino) => {
+            const texto = destino.firstChild;
+            if (texto === null || texto.nodeType !== Node.TEXT_NODE) return false;
             const intervalo = document.createRange();
-            intervalo.selectNodeContents(destino);
+            const conteudo = texto.textContent ?? '';
+            const inicio = conteudo.length - conteudo.trimStart().length;
+            intervalo.setStart(texto, inicio);
+            intervalo.setEnd(texto, inicio + conteudo.trimStart().split(' — ')[0].length);
             const linhasDoTexto = new Set(
               Array.from(intervalo.getClientRects()).map((caixa) => Math.round(caixa.top)),
             );
@@ -90,7 +101,19 @@ test.describe('Vagas — matriz DS @ds', () => {
           const linhasDeDestinos = new Set(
             destinos.map((destino) => Math.round(destino.getBoundingClientRect().top)),
           );
+          const caixas = destinos.map((destino) => destino.getBoundingClientRect());
+          const sobrepostos = caixas.filter((caixa, i) =>
+            caixas.some(
+              (outra, j) =>
+                j > i &&
+                Math.min(caixa.right, outra.right) - Math.max(caixa.left, outra.left) > 1 &&
+                Math.min(caixa.bottom, outra.bottom) - Math.max(caixa.top, outra.top) > 1,
+            ),
+          );
           return {
+            cortados: destinos.filter((destino) => destino.scrollWidth > destino.clientWidth + 1)
+              .length,
+            sobrepostos: sobrepostos.length,
             origem: (linha.querySelector('th')?.textContent ?? '').trim(),
             partidos: partidos.map((destino) => (destino.textContent ?? '').trim()),
             destinos: destinos.length,
@@ -100,10 +123,15 @@ test.describe('Vagas — matriz DS @ds', () => {
       );
 
       expect(cartoes).toHaveLength(8);
+      const largura = larguraDoProjeto(testInfo);
       for (const cartao of cartoes) {
         expect(cartao.partidos, `destinos partidos em ${cartao.origem}`).toEqual([]);
-        expect(cartao.linhas, `destinos de ${cartao.origem} um por linha`).toBeLessThan(
-          cartao.destinos,
+        // Em cartão (320 e 375 px) o nome ao lado do código faz cada destino ocupar a sua linha:
+        // o que se exige é cada destino inteiro, sem corte nem sobreposição.
+        expect(cartao.cortados, `destinos cortados em ${cartao.origem}`).toBe(0);
+        expect(cartao.sobrepostos, `destinos sobrepostos em ${cartao.origem}`).toBe(0);
+        expect(cartao.linhas, `destinos de ${cartao.origem} na mesma linha`).toBeLessThan(
+          limiteDeLinhas(largura, cartao.destinos),
         );
       }
     });

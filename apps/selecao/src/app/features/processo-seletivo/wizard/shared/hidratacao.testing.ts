@@ -21,6 +21,7 @@ export const DISTRIBUICAO = {
       id: 'snapshot-m',
       modalidadeOrigemId: 'modalidade-1',
       codigo: 'AC',
+      nome: 'Ampla concorrência',
       composicaoVagas: { codigo: 'RESTANTE_DAS_VAGAS_OFERTADAS', rotulo: 'Restante das vagas' },
       quantidadeDeclarada: null,
       descricao: null,
@@ -34,6 +35,7 @@ export const DISTRIBUICAO = {
       id: 'snapshot-p',
       modalidadeOrigemId: 'modalidade-2',
       codigo: 'AC_PCD',
+      nome: 'Modalidade de teste Alfa',
       composicaoVagas: {
         codigo: 'RETIRADA_DE_OUTRA_MODALIDADE',
         rotulo: 'Retirada de outra modalidade',

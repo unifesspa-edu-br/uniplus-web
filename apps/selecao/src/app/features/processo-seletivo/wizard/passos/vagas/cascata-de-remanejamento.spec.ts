@@ -39,10 +39,12 @@ function modalidade(
   id: string,
   codigo: string,
   regraRemanejamento: string | null = null,
+  nome = '',
 ): ModalidadeDoCatalogo {
   return {
     id,
     codigo,
+    nome,
     composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
     composicaoOrigemCodigo: null,
     regraRemanejamento,
@@ -66,7 +68,7 @@ const CATALOGO = new Map<string, ModalidadeDoCatalogo>([
 ]);
 
 function ofertaFederal(
-  modalidades: readonly { id: string; codigo: string }[],
+  modalidades: readonly { id: string; codigo: string; nome: string }[],
 ): DistribuicaoDeVagas {
   return {
     ofertaCursoId: 'oferta-1',
@@ -110,12 +112,12 @@ describe('matrizDaRegra', () => {
 
 describe('ofertaExigeCascata / ofertaForaDoRegimeFederal', () => {
   it('exige cascata quando alguma modalidade selecionada segue a cascata única', () => {
-    const oferta = ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI' }]);
+    const oferta = ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }]);
     expect(ofertaExigeCascata(oferta, CATALOGO)).toBe(true);
   });
 
   it('não exige cascata sem modalidade ordem de remanejamento selecionada', () => {
-    const oferta = ofertaFederal([{ id: AC, codigo: 'AC' }]);
+    const oferta = ofertaFederal([{ id: AC, codigo: 'AC', nome: '' }]);
     expect(ofertaExigeCascata(oferta, CATALOGO)).toBe(false);
   });
 
@@ -132,20 +134,20 @@ describe('ofertaExigeCascata / ofertaForaDoRegimeFederal', () => {
 
 describe('precisaExibirSecaoDaCascata', () => {
   it('só quando há oferta federal exigindo cascata', () => {
-    const federal = ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI' }]);
+    const federal = ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }]);
     expect(precisaExibirSecaoDaCascata([federal], CATALOGO)).toBe(true);
   });
 
   it('não quando a única oferta que exige é institucional', () => {
     const institucional = {
-      ...ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI' }]),
+      ...ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }]),
       ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
     };
     expect(precisaExibirSecaoDaCascata([institucional], CATALOGO)).toBe(false);
   });
 
   it('não sem nenhuma modalidade ordem de remanejamento', () => {
-    const federal = ofertaFederal([{ id: AC, codigo: 'AC' }]);
+    const federal = ofertaFederal([{ id: AC, codigo: 'AC', nome: '' }]);
     expect(precisaExibirSecaoDaCascata([federal], CATALOGO)).toBe(false);
   });
 });
@@ -153,14 +155,14 @@ describe('precisaExibirSecaoDaCascata', () => {
 describe('ofertasComCascataForaDoRegimeFederal', () => {
   it('aponta a oferta que precisaria de cascata mas está fora do ramo federal', () => {
     const foraDoRegime = {
-      ...ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI' }]),
+      ...ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }]),
       ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
     };
     expect(ofertasComCascataForaDoRegimeFederal([foraDoRegime], CATALOGO)).toEqual([foraDoRegime]);
   });
 
   it('vazio quando todas as ofertas exigentes são federais', () => {
-    const federal = ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI' }]);
+    const federal = ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }]);
     expect(ofertasComCascataForaDoRegimeFederal([federal], CATALOGO)).toEqual([]);
   });
 });
@@ -170,9 +172,9 @@ describe('problemasDaCascata', () => {
 
   it('sem problema quando o fallback e ao menos um destino de cada origem estão na oferta', () => {
     const oferta = ofertaFederal([
-      { id: LB_PPI, codigo: 'LB_PPI' },
-      { id: LB_Q, codigo: 'LB_Q' },
-      { id: AC, codigo: 'AC' },
+      { id: LB_PPI, codigo: 'LB_PPI', nome: '' },
+      { id: LB_Q, codigo: 'LB_Q', nome: '' },
+      { id: AC, codigo: 'AC', nome: '' },
     ]);
     expect(problemasDaCascata([oferta], CATALOGO, matriz)).toEqual([]);
   });
@@ -192,8 +194,8 @@ describe('problemasDaCascata', () => {
     // Só LB_PPI está no quadro. A matriz real também declara LB_Q como
     // origem (com destino LB_PPI/AC) — e LB_Q some do quadro por completo.
     const oferta = ofertaFederal([
-      { id: LB_PPI, codigo: 'LB_PPI' },
-      { id: AC, codigo: 'AC' },
+      { id: LB_PPI, codigo: 'LB_PPI', nome: '' },
+      { id: AC, codigo: 'AC', nome: '' },
     ]);
 
     const problemas = problemasDaCascata([oferta], CATALOGO, matriz);
@@ -216,8 +218,8 @@ describe('problemasDaCascata', () => {
 
   it('aponta a oferta sem o fallback selecionado', () => {
     const oferta = ofertaFederal([
-      { id: LB_PPI, codigo: 'LB_PPI' },
-      { id: LB_Q, codigo: 'LB_Q' },
+      { id: LB_PPI, codigo: 'LB_PPI', nome: '' },
+      { id: LB_Q, codigo: 'LB_Q', nome: '' },
     ]);
     const problemas = problemasDaCascata([oferta], CATALOGO, matriz);
 
@@ -237,7 +239,7 @@ describe('problemasDaCascata', () => {
   it('aponta a origem sem nenhum destino resolvível na oferta', () => {
     // Só a própria origem está no quadro: nem o fallback (AC) nem o outro
     // destino declarado para LB_PPI (LB_Q) estão selecionados nesta oferta.
-    const oferta = ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI' }]);
+    const oferta = ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }]);
     const problemas = problemasDaCascata([oferta], CATALOGO, matriz);
 
     expect(problemas.some((p) => p.mensagem.includes('destino final'))).toBe(true);
@@ -255,12 +257,12 @@ describe('problemasDaCascata', () => {
     if (matrizDeUmaOrigem === null) throw new Error('Fixture inválida.');
 
     const foraDoRegime = {
-      ...ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI' }]),
+      ...ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }]),
       ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
     };
     // Federal e sem ordem de remanejamento — ofereceria o fallback à União, se
     // precisasse: aqui cobre AC para a matriz fechar sem pendência.
-    const semCascata = ofertaFederal([{ id: AC, codigo: 'AC' }]);
+    const semCascata = ofertaFederal([{ id: AC, codigo: 'AC', nome: '' }]);
 
     expect(problemasDaCascata([foraDoRegime, semCascata], CATALOGO, matrizDeUmaOrigem)).toEqual([]);
   });
@@ -276,8 +278,8 @@ describe('problemasDaCascata', () => {
     );
     // O fallback (AC) está selecionado — só a origem desconhecida sobra como problema.
     const oferta = ofertaFederal([
-      { id: 'mod-outra', codigo: 'LI_EP' },
-      { id: AC, codigo: 'AC' },
+      { id: 'mod-outra', codigo: 'LI_EP', nome: '' },
+      { id: AC, codigo: 'AC', nome: '' },
     ]);
     const problemas = problemasDaCascata([oferta], catalogoComOrigemDesconhecida, matriz);
     expect(
@@ -316,5 +318,34 @@ describe('comandoDaCascata / comandoDeRemocaoDaCascata', () => {
       fallbackCodigo: null,
       destinos: null,
     });
+  });
+});
+
+describe('problemasDaCascata — nome da modalidade nas mensagens', () => {
+  const matriz = matrizReal();
+  const catalogo = new Map<string, ModalidadeDoCatalogo>([
+    [
+      LB_PPI,
+      modalidade(
+        LB_PPI,
+        'LB_PPI',
+        RegraRemanejamentoModalidadeCodigo.SEGUE_ORDEM_DE_REMANEJAMENTO,
+        'Modalidade de teste Alfa',
+      ),
+    ],
+    [AC, modalidade(AC, 'AC', null, 'Modalidade de teste Beta')],
+  ]);
+
+  it('cita o código com o nome, e só o código quando a modalidade não tem nome', () => {
+    const oferta = ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }]);
+
+    const mensagens = problemasDaCascata([oferta], catalogo, matriz).map((p) => p.mensagem);
+
+    expect(mensagens).toContain(
+      'O destino final da cascata (AC — Modalidade de teste Beta) não está selecionado no quadro de vagas desta oferta.',
+    );
+    expect(mensagens).toContain(
+      'Nenhum destino de LB_PPI — Modalidade de teste Alfa (LB_Q, AC — Modalidade de teste Beta) está selecionado no quadro de vagas desta oferta.',
+    );
   });
 });

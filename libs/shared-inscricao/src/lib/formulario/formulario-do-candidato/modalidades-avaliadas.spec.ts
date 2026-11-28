@@ -18,10 +18,24 @@ const concorre = (...itens: (typeof AMPLA)[]): ModalidadesAvaliadas => ({
 describe('anunciarMudancaDasModalidades', () => {
   it('diz o que entrou e o que saiu entre dois conjuntos', () => {
     expect(anunciarMudancaDasModalidades(concorre(AMPLA, PCD), concorre(AMPLA))).toBe(
-      'Você deixou de concorrer em: Pessoa com deficiência.',
+      'Você deixou de concorrer em: AC_PCD — Pessoa com deficiência.',
     );
     expect(anunciarMudancaDasModalidades(concorre(PCD), concorre(AMPLA))).toBe(
-      'Você passou a concorrer em: Ampla concorrência; deixou de concorrer em: Pessoa com deficiência.',
+      'Você passou a concorrer em: AC — Ampla concorrência; deixou de concorrer em: AC_PCD — Pessoa com deficiência.',
+    );
+  });
+
+  it('compara pelo código: mudar só o nome não é mudança', () => {
+    const renomeada = { ...AMPLA, nome: 'Concorrência geral' };
+
+    expect(anunciarMudancaDasModalidades(concorre(AMPLA), concorre(renomeada))).toBe('');
+  });
+
+  it('modalidade sem nome é anunciada só pelo código', () => {
+    const semNome = { codigo: 'ZZ_TESTE', nome: '', ordem: 1 };
+
+    expect(anunciarMudancaDasModalidades(concorre(AMPLA), concorre(AMPLA, semNome))).toBe(
+      'Você passou a concorrer em: ZZ_TESTE.',
     );
   });
 
@@ -36,7 +50,7 @@ describe('anunciarMudancaDasModalidades', () => {
     const nenhuma: ModalidadesAvaliadas = { ...concorre(), situacao: 'NAO_CONCORRE' };
 
     expect(anunciarMudancaDasModalidades(concorre(AMPLA), nenhuma)).toBe(
-      'Você deixou de concorrer em: Ampla concorrência.',
+      'Você deixou de concorrer em: AC — Ampla concorrência.',
     );
   });
 });

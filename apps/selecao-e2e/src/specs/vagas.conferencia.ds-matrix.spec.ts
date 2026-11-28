@@ -109,7 +109,9 @@ test.describe('Vagas — conferência da simulação @ds', () => {
     await abrirOsAvisos(page);
 
     await expect(conferencia(page)).toContainText('1 oferta ficou com vagas retiradas pelo ajuste');
-    await expect(conferencia(page)).toContainText('3 vagas retiradas (AC: 2; LB_PPI: 1)');
+    await expect(conferencia(page)).toContainText(
+      '3 vagas retiradas (AC — Ampla concorrência: 2; LB_PPI — Escola pública, renda de até 1 salário mínimo por pessoa, pretos, pardos e indígenas: 1)',
+    );
   });
 
   test('a região de aviso é de status para o leitor de tela', async ({ page }, testInfo) => {

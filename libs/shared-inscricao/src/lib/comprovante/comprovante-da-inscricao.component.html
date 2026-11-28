@@ -71,7 +71,7 @@
 <ui-secao-de-documento titulo="Modalidades de concorrência" largura="inteira">
   @if (modalidadesDefinidas()) {
     @for (opcao of opcoes(); track opcao.rotulo) {
-      @if (opcao.modalidades; as nomes) {
+      @if (opcao.modalidades; as modalidades) {
         @if (comDuasOpcoes()) {
           <p>
             <strong
@@ -83,8 +83,8 @@
           </p>
         }
         <ul class="u-list">
-          @for (nome of nomes; track nome) {
-            <li>{{ nome }}</li>
+          @for (modalidade of modalidades; track modalidade.codigo) {
+            <li class="comprovante__modalidade">{{ modalidade.rotulo }}</li>
           }
         </ul>
       }

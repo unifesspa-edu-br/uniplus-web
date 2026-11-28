@@ -1,5 +1,5 @@
 import type { ComprovanteDaInscricaoDto } from '@uniplus/shared-data/selecao';
-import { nomesPelaOrdem } from '@uniplus/shared-inscricao/formulario';
+import { type ModalidadeRotulada, rotuladasPelaOrdem } from '@uniplus/shared-inscricao/formulario';
 
 /** Uma opção de curso do envio, como o comprovante a mostra. */
 export interface OpcaoDeCursoExibida {
@@ -10,7 +10,7 @@ export interface OpcaoDeCursoExibida {
   /** O que a tela mostra da opção: o curso, ou que ela não foi declarada ou não tem nome. */
   readonly exibicao: string;
   /** Nulo quando a opção não foi declarada ou o processo não define pela inscrição as modalidades. */
-  readonly modalidades: readonly string[] | null;
+  readonly modalidades: readonly ModalidadeRotulada[] | null;
 }
 
 type OpcoesDoComprovante = ComprovanteDaInscricaoDto['escolhasDeCurso'];
@@ -43,7 +43,7 @@ function opcaoDeclarada(opcao: OpcaoDeclarada, rotulo: string): OpcaoDeCursoExib
     rotulo,
     curso: opcao.nome,
     exibicao: opcao.nome ?? 'Curso não identificado',
-    modalidades: opcao.modalidades ? nomesPelaOrdem(opcao.modalidades) : null,
+    modalidades: opcao.modalidades ? rotuladasPelaOrdem(opcao.modalidades) : null,
   };
 }
 

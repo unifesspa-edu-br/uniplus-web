@@ -56,11 +56,13 @@ export interface CascataSelecionada {
 
 /**
  * Modalidade que a oferta seleciona. A gravação recebe o `id`; o `codigo` é como o Fator de Atenuação
- * e documentos exigidos a nomeiam (`AC`, `LB_PPI`).
+ * e documentos exigidos a nomeiam (`AC`, `LB_PPI`). O `nome` só serve para exibir "código — nome":
+ * vem do catálogo ao escolher e do que o processo gravou ao abrir; pode vir vazio e nunca vai ao comando.
  */
 export interface ModalidadeDaOferta {
   readonly id: string;
   readonly codigo: string;
+  readonly nome: string;
   /**
    * A modalidade como o processo a gravou, quando veio do detalhe. É o que a consulta lê: o
    * catálogo vigente pode ter mudado depois da publicação, ou nem ter carregado.

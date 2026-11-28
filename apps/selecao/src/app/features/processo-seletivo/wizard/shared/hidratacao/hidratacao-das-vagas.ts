@@ -1,6 +1,10 @@
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
-import type { CascataSelecionada, DistribuicaoDeVagas } from '../../processo-seletivo.models';
+import type {
+  CascataSelecionada,
+  DistribuicaoDeVagas,
+  ModalidadeDaOferta,
+} from '../../processo-seletivo.models';
 import { decodificarComposicaoVagas } from '../../passos/vagas/composicao-de-vagas';
 
 type DistribuicaoGravada = ProcessoSeletivoDto['distribuicaoVagas'][number];
@@ -41,19 +45,24 @@ function regrasDaDistribuicaoDe(distribuicao: DistribuicaoGravada) {
   };
 }
 
-function modalidadeDe(modalidade: ModalidadeGravada): DistribuicaoDeVagas['modalidades'][number] {
+function modalidadeDe(modalidade: ModalidadeGravada): ModalidadeDaOferta {
   return {
     id: modalidade.modalidadeOrigemId,
     codigo: modalidade.codigo,
-    gravada: {
-      descricao: modalidade.descricao,
-      composicaoVagas: decodificarComposicaoVagas(modalidade.composicaoVagas.codigo),
-      composicaoOrigemCodigo: modalidade.composicaoOrigemCodigo,
-      regraRemanejamento: modalidade.regraRemanejamento?.codigo ?? null,
-      remanejamentoDestino: modalidade.remanejamentoDestino,
-      remanejamentoPar: modalidade.remanejamentoPar,
-      remanejamentoFallback: modalidade.remanejamentoFallback,
-    },
+    nome: modalidade.nome,
+    gravada: gravadaDe(modalidade),
+  };
+}
+
+function gravadaDe(modalidade: ModalidadeGravada): NonNullable<ModalidadeDaOferta['gravada']> {
+  return {
+    descricao: modalidade.descricao,
+    composicaoVagas: decodificarComposicaoVagas(modalidade.composicaoVagas.codigo),
+    composicaoOrigemCodigo: modalidade.composicaoOrigemCodigo,
+    regraRemanejamento: modalidade.regraRemanejamento?.codigo ?? null,
+    remanejamentoDestino: modalidade.remanejamentoDestino,
+    remanejamentoPar: modalidade.remanejamentoPar,
+    remanejamentoFallback: modalidade.remanejamentoFallback,
   };
 }
 

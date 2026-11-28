@@ -17,7 +17,7 @@ describe('ModalidadesListPage', () => {
     await pagina.flushLista([AC, V]);
     pagina.fixture.detectChanges();
     const botao = pagina.fixture.nativeElement.querySelector(
-      'button[aria-label="Remover modalidade V"]',
+      'button[aria-label="Remover modalidade V — Modalidade de teste V"]',
     ) as HTMLButtonElement | null;
     expect(botao?.getAttribute('data-tooltip')).toBe('Remover modalidade');
 
@@ -28,6 +28,7 @@ describe('ModalidadesListPage', () => {
     ).find((d) => d.textContent?.includes('soft-delete')) as HTMLElement;
     expect(dialogo.textContent).toContain('Remover modalidade');
     expect(dialogo.textContent).toContain('é removida (soft-delete)');
+    expect(dialogo.textContent).toContain('V — Modalidade de teste V');
     expect(dialogo.textContent).not.toMatch(/inativ/i);
   });
 

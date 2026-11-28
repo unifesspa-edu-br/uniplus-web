@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, viewChild } from '@angular/core';
 import { ModalidadeDto } from '@uniplus/shared-data/configuracao';
 import { FormsModule } from '@angular/forms';
+import { codigoComNome } from '@uniplus/shared-utils';
 import {
   ConfirmDialogComponent,
   FalhaDeLeituraComponent,
@@ -124,6 +125,7 @@ export class VagasPassoComponent {
     () => this.store.emConsulta() && this.catalogos.situacao() === 'falhou',
   );
 
+  protected readonly codigoComNome = codigoComNome;
   protected readonly avisoDaTrocaDeRegra = AVISO_DA_TROCA_DE_REGRA;
   protected readonly avisoDoReaplicarRol =
     'Recompor pelo rol da regra atual pode remover do quadro quantidades já preenchidas — de modalidade que sai da seleção, ou de modalidade que fica mas cuja quantidade a regra atual não aceita mais como declarada. O processo só muda quando o passo for gravado.';
@@ -220,7 +222,7 @@ export class VagasPassoComponent {
     this.estado.alterarPadrao({
       modalidades: this.estado.modalidadeSelecionada(modalidade.id)
         ? atuais.filter((item) => item.id !== modalidade.id)
-        : [...atuais, { id: modalidade.id, codigo: modalidade.codigo }],
+        : [...atuais, { id: modalidade.id, codigo: modalidade.codigo, nome: modalidade.nome }],
     });
   }
 
@@ -228,7 +230,9 @@ export class VagasPassoComponent {
   protected marcarTodasAsModalidades(marcar: boolean): void {
     this.estado.alterarPadrao({
       modalidades: marcar
-        ? this.estado.modalidadesOferecidas().map((m) => ({ id: m.id, codigo: m.codigo }))
+        ? this.estado
+            .modalidadesOferecidas()
+            .map((m) => ({ id: m.id, codigo: m.codigo, nome: m.nome }))
         : [],
     });
   }
@@ -275,13 +279,13 @@ export class VagasPassoComponent {
   /**
    * Uma linha por modalidade, declarada ou calculada.
    *
-   * O rótulo leva o CÓDIGO da modalidade na frente, e não só a descrição: o diálogo distingue as
-   * linhas por rótulo, e duas modalidades de descrição parecida colidiriam. O código é o
-   * identificador de domínio e não se repete dentro de um quadro.
+   * O rótulo leva o CÓDIGO da modalidade na frente do nome: o diálogo distingue as linhas por
+   * rótulo, e duas modalidades de nome parecido colidiriam. O código é o identificador de domínio
+   * e não se repete dentro de um quadro.
    */
   private totaisPorModalidade(): readonly ItemDeConfirmacao[] {
     const declaradas = this.estado.colunasDeQuantidade().map((modalidade) => ({
-      rotulo: `${modalidade.codigo} — vagas declaradas`,
+      rotulo: `${codigoComNome(modalidade.codigo, modalidade.nome)} — vagas declaradas`,
       valor: String(this.simulacao.totalDeclaradoDe(modalidade.id)),
     }));
 
@@ -293,7 +297,7 @@ export class VagasPassoComponent {
     if (!this.estado.simulacaoCobreOQuadro()) return [];
 
     return this.estado.modalidadesCalculadas().map((modalidade) => ({
-      rotulo: `${modalidade.codigo} — vagas calculadas pela regra`,
+      rotulo: `${codigoComNome(modalidade.codigo, modalidade.nome)} — vagas calculadas pela regra`,
       valor: String(this.simulacao.totalCalculadoDe(modalidade.id)),
     }));
   }

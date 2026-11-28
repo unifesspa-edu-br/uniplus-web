@@ -10,6 +10,7 @@ export { formatarCep } from './utils/cep.util';
 export {
   CODIGO_CADASTRO_FORMATO,
   CODIGO_TAMANHO_MAXIMO,
+  codigoComNome,
   textoDoFormatoDoCodigo,
 } from './utils/codigo-cadastro.util';
 export {

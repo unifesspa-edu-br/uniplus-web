@@ -21,13 +21,14 @@
     <h2 class="form-section__title">Padrão desta distribuição</h2>
     @if (catalogoCarregandoEmConsulta()) {
       <p class="field__hint" role="status">
-        Carregando ofertas, modalidades e regras. O que o processo gravou aparece abaixo; os nomes e
-        as descrições entram quando chegarem.
+        Carregando ofertas, modalidades e regras. O que o processo gravou aparece abaixo; os nomes
+        que faltam entram quando chegarem.
       </p>
     } @else if (catalogoFalhouEmConsulta()) {
       <p class="field__hint">
         Os catálogos de ofertas, modalidades e regras não foram lidos. O que o processo gravou
-        aparece abaixo; nomes de ofertas e descrições de modalidades ficam como não lidos.
+        aparece abaixo; nomes de ofertas e de modalidades que o processo não gravou ficam como não
+        lidos.
       </p>
     }
     <div class="form-grid">
@@ -138,7 +139,7 @@
               [disabled]="!store.aceitaEdicao() || estado.rolDaRegraEscolhida() !== null"
               (change)="alternarModalidade(modalidade)"
             />
-            <span>{{ modalidade.codigo }} — {{ modalidade.descricao }}</span>
+            <span>{{ codigoComNome(modalidade.codigo, modalidade.nome) }}</span>
           </label>
         }
       </div>
@@ -195,7 +196,9 @@
         }
       </p>
     } @else {
-      <sel-tabela-do-quadro class="table-responsive"></sel-tabela-do-quadro>
+      <sel-tabela-do-quadro
+        class="table-responsive table-responsive--rotulo-quebravel"
+      ></sel-tabela-do-quadro>
 
       @if (!store.emConsulta()) {
         <div class="vagas-simulacao">

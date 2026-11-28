@@ -78,6 +78,7 @@ export async function criarModalidadePelaTela(
   escolhas: EscolhasDaModalidade,
 ): Promise<void> {
   await pagina.getByRole('textbox', { name: /^Código/ }).fill(codigo);
+  await pagina.locator('[formcontrolname="nome"]').fill(`Modalidade de teste ${codigo}`);
   await escolherOsEnums(pagina, escolhas);
   await acrescentarCondicaoDaCota(pagina);
   await pagina.getByRole('button', { name: 'Criar modalidade' }).click();

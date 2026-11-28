@@ -31,6 +31,7 @@ export const MODALIDADES = [
   {
     id: MODALIDADE,
     codigo: 'AC_I',
+    nome: 'Indígena',
     descricao: 'Indígena',
     naturezaLegal: 'ACAO_AFIRMATIVA',
     composicaoVagas: { codigo: 'SUPLEMENTAR_AO_TOTAL', rotulo: 'Suplementar' },
@@ -43,6 +44,7 @@ export const MODALIDADES = [
   {
     id: SEGUNDA_MODALIDADE,
     codigo: 'AC_Q',
+    nome: 'Quilombola',
     descricao: 'Quilombola',
     naturezaLegal: 'ACAO_AFIRMATIVA',
     composicaoVagas: { codigo: 'SUPLEMENTAR_AO_TOTAL', rotulo: 'Suplementar' },
@@ -89,7 +91,7 @@ export function distribuicao(ofertaCursoId: string): DistribuicaoDeVagas {
   return distribuicaoInstitucional({
     ofertaCursoId,
     regraDistribuicaoVersao: 'v1',
-    modalidades: [{ id: MODALIDADE, codigo: 'AC_I' }],
+    modalidades: [{ id: MODALIDADE, codigo: 'AC_I', nome: '' }],
     quadro: [{ modalidadeId: MODALIDADE, quantidade: '2' }],
   });
 }
@@ -145,6 +147,7 @@ export const MODALIDADES_CASCATA = [
   {
     id: LB_PPI,
     codigo: 'LB_PPI',
+    nome: 'Baixa renda PPI',
     descricao: null,
     naturezaLegal: 'COTA_RESERVADA',
     composicaoVagas: {
@@ -165,6 +168,7 @@ export const MODALIDADES_CASCATA = [
   {
     id: LB_Q,
     codigo: 'LB_Q',
+    nome: 'Baixa renda quilombola',
     descricao: null,
     naturezaLegal: 'COTA_RESERVADA',
     composicaoVagas: {
@@ -180,6 +184,7 @@ export const MODALIDADES_CASCATA = [
   {
     id: AC_CASCATA,
     codigo: 'AC',
+    nome: 'Ampla concorrência',
     descricao: null,
     naturezaLegal: 'GERAL',
     composicaoVagas: {
@@ -250,9 +255,9 @@ export function gravadaDe(descricao: string, composicaoVagas: string): Modalidad
 }
 
 const MODALIDADES_DA_CASCATA = [
-  { id: LB_PPI, codigo: 'LB_PPI' },
-  { id: LB_Q, codigo: 'LB_Q' },
-  { id: AC_CASCATA, codigo: 'AC' },
+  { id: LB_PPI, codigo: 'LB_PPI', nome: '' },
+  { id: LB_Q, codigo: 'LB_Q', nome: '' },
+  { id: AC_CASCATA, codigo: 'AC', nome: '' },
 ];
 
 const QUADRO_DA_CASCATA = [

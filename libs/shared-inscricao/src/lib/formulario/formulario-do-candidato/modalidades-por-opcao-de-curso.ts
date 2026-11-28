@@ -1,15 +1,16 @@
 import {
   type AvaliacaoNaTela,
   type ModalidadesAvaliadas,
-  nomesNaOrdem,
+  type ModalidadeRotulada,
   type PendenciaDaAvaliacao,
+  rotuladasNaOrdem,
 } from './modalidades-avaliadas';
 
 export interface BlocoDeOpcao {
   readonly chave: 'unica' | 'primeira' | 'segunda';
   readonly titulo: string | null;
   readonly situacao: string | null;
-  readonly nomes: readonly string[];
+  readonly rotulos: readonly ModalidadeRotulada[];
   readonly pendencias: readonly PendenciaDaAvaliacao[];
 }
 
@@ -26,7 +27,7 @@ function blocoDe(
     chave,
     titulo,
     situacao: modalidades?.situacao ?? null,
-    nomes: nomesNaOrdem(modalidades),
+    rotulos: rotuladasNaOrdem(modalidades),
     pendencias: modalidades?.pendencias ?? [],
   };
 }

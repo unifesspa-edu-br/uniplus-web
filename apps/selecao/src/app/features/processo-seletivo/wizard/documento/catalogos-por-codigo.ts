@@ -1,3 +1,5 @@
+import { codigoComNome } from '@uniplus/shared-utils';
+
 /** O que o catálogo oferece para reconhecer um item: o código estável e o rótulo legível. */
 export interface ItemDoCatalogo {
   readonly codigo: string;
@@ -22,4 +24,16 @@ export function rotuloDoCodigo(
   rotuloGravado: string | undefined,
 ): string {
   return rotuloGravado ?? catalogo.get(codigo) ?? codigo;
+}
+
+/**
+ * O texto "código — nome" de um item cujo nome o catálogo guarda: o nome gravado vale primeiro,
+ * depois o do catálogo vivo; sem nenhum dos dois, só o código.
+ */
+export function codigoComNomeDoCatalogo(
+  catalogo: CatalogoPorCodigo,
+  codigo: string,
+  nomeGravado: string | undefined,
+): string {
+  return codigoComNome(codigo, nomeGravado || catalogo.get(codigo));
 }

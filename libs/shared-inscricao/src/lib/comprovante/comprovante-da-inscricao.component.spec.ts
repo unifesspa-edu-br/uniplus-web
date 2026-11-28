@@ -50,6 +50,33 @@ describe('ComprovanteDaInscricaoComponent', () => {
     expect(texto).toContain('horário de Belém (PA)');
   });
 
+  it('lista as modalidades como "código — nome" e, sem nome, só o código', () => {
+    const { fixture, tela } = montar();
+    const base = comprovanteBase();
+    fixture.componentInstance.comprovante.set({
+      ...base,
+      escolhasDeCurso: {
+        numeroDeOpcoesDeCurso: 1,
+        opcoesDeCurso: [
+          {
+            ordem: 1,
+            nome: 'Direito',
+            modalidades: [
+              { codigo: 'ZZ_TESTE', nome: 'Modalidade de teste Alfa', ordem: 0 },
+              { codigo: 'ZZ_SEM_NOME', nome: '', ordem: 1 },
+            ],
+          },
+        ],
+      },
+    });
+    fixture.detectChanges();
+
+    const itens = [...tela.querySelectorAll('ul.u-list li')].map((li) => li.textContent?.trim());
+    expect(itens).toEqual(['ZZ_TESTE — Modalidade de teste Alfa', 'ZZ_SEM_NOME']);
+    const todos = [...tela.querySelectorAll('ul.u-list li')];
+    expect(todos.every((li) => li.classList.contains('comprovante__modalidade'))).toBe(true);
+  });
+
   it('o host contribui as seções ao corpo do documento', () => {
     const { tela } = montar();
 

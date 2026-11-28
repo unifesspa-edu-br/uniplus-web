@@ -147,7 +147,7 @@ describe('resumo da exigência documental', () => {
 
     it('descreve cada operador de modalidade', () => {
       const frase = (operador: string, valor: string) =>
-        descreverCondicaoDeModalidade({ fato: 'MODALIDADE', operador, valor });
+        descreverCondicaoDeModalidade({ fato: 'MODALIDADE', operador, valor }, new Map());
 
       expect(frase('IGUAL', '"LB_PPI"')).toBe('Modalidade LB_PPI');
       expect(frase('DIFERENTE', '"LB_PPI"')).toBe('Modalidades exceto LB_PPI');

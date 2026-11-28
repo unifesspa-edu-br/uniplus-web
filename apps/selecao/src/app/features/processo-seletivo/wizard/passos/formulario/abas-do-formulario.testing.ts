@@ -22,6 +22,13 @@ export const textosVazios = (): EntradaDasAbas['textos'] => ({
   modeloEscolhido: new Map(),
 });
 
+const VOCABULARIO_VAZIO: EntradaDasAbas['vocabulario'] = {
+  fatoPorCodigo: new Map(),
+  rotulosDasModalidades: new Map(),
+  consequencias: [],
+  nomeDoTipo: (id) => id,
+};
+
 /** A entrada das abas: os formularios dados, cada um na fase em que está. */
 export const entradaDasAbas = (
   formularios: EntradaDasAbas['formularios'],
@@ -33,7 +40,7 @@ export const entradaDasAbas = (
   ),
   fasesDoCronograma: FASES,
   documentos: exigenciasVazias(),
-  vocabulario: { fatoPorCodigo: new Map(), consequencias: [], nomeDoTipo: (id) => id },
+  vocabulario: VOCABULARIO_VAZIO,
   fatosDaInscricao: ['PCD'],
   textos: textosVazios(),
   ...extra,

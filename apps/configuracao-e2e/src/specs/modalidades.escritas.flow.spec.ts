@@ -73,6 +73,7 @@ test.describe('Modalidade — escrita', () => {
     });
     await page.goto('/modalidades/novo');
     await page.locator('[formcontrolname="codigo"]').fill('NOVA');
+    await page.locator('[formcontrolname="nome"]').fill('Modalidade de teste Alfa');
     const descricao = page.locator('[formcontrolname="descricao"]');
     await descricao.fill('Modalidade nova');
     await page.getByRole('button', { name: 'Criar modalidade' }).click();
@@ -89,10 +90,46 @@ test.describe('Modalidade — escrita', () => {
     await expect(page.getByText('Descrição fora do padrão.')).toBeVisible();
   });
 
+  test('criação sem Nome não é enviada e a falta aparece ligada ao campo', async ({ page }) => {
+    const { envios } = await mockApi(page, 'POST', 201, 'novo-id');
+    await page.goto('/modalidades/novo');
+    await page.locator('[formcontrolname="codigo"]').fill('NOVA');
+    const nome = page.getByRole('textbox', { name: /^Nome/ });
+    await nome.focus();
+    await nome.blur();
+    await expect(nome).toHaveAttribute('aria-required', 'true');
+    await expect(nome).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator('#cfg-mod-nome-erro')).toHaveText('Campo obrigatório.');
+    await page.getByRole('button', { name: 'Criar modalidade' }).click();
+    expect(envios).toHaveLength(0);
+  });
+
+  test('criação com Nome já usado leva a recusa e o foco ao campo Nome', async ({ page }) => {
+    const { liberar } = await mockApi(page, 'POST', 409, {
+      type: 'about:blank',
+      title: 'Nome já utilizado',
+      status: 409,
+      code: 'uniplus.configuracao.modalidade.nome_ja_existe',
+      traceId: 'e2e',
+    });
+    await page.goto('/modalidades/novo');
+    await page.locator('[formcontrolname="codigo"]').fill('NOVA');
+    const nome = page.getByRole('textbox', { name: /^Nome/ });
+    await nome.fill('Modalidade de teste Alfa');
+    await page.getByRole('button', { name: 'Criar modalidade' }).click();
+    liberar();
+    await expect(nome).toHaveAttribute('aria-invalid', 'true');
+    const recusa = page.locator('#cfg-mod-nome-erro');
+    await expect(recusa).toContainText('Já existe uma modalidade ativa com este nome');
+    await expect(recusa).toContainText('uniplus.configuracao.modalidade.nome_ja_existe');
+    await expect(nome).toBeFocused();
+  });
+
   test('criação impede reenvio por clique, Enter e Espaço', async ({ page }) => {
     const { liberar, envios } = await mockApi(page, 'POST', 201, 'novo-id');
     await page.goto('/modalidades/novo');
     await page.locator('[formcontrolname="codigo"]').fill('NOVA');
+    await page.locator('[formcontrolname="nome"]').fill('Modalidade de teste Alfa');
     await page.getByRole('button', { name: 'Criar modalidade' }).click();
     const salvando = page.getByRole('button', { name: 'Salvando...' });
     await expect(salvando).toBeFocused();
@@ -112,6 +149,7 @@ test.describe('Modalidade — escrita', () => {
     const { liberar, envios } = await mockApi(page, 'POST', 201, 'novo-id');
     await page.goto('/modalidades/novo');
     await page.locator('[formcontrolname="codigo"]').fill('NOVA');
+    await page.locator('[formcontrolname="nome"]').fill('Modalidade de teste Alfa');
     await page.getByRole('button', { name: 'Criar modalidade' }).click();
     await expect(page.getByRole('button', { name: 'Salvando...' })).toBeFocused();
     for (const nome of ['Cancelar', 'Voltar à lista']) {
@@ -154,7 +192,9 @@ test.describe('Modalidade — escrita', () => {
     const dialog = page.getByRole('dialog', { name: 'Remover modalidade' });
     await dialog.getByRole('button', { name: 'Remover', exact: true }).click();
     await expect(
-      dialog.getByRole('status').filter({ hasText: 'Removendo a modalidade AC.' }),
+      dialog
+        .getByRole('status')
+        .filter({ hasText: 'Removendo a modalidade AC — Ampla concorrência.' }),
     ).toHaveCount(1);
     await expect(dialog.getByRole('button', { name: 'Fechar' })).toBeDisabled();
     await expect(dialog.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
@@ -164,7 +204,7 @@ test.describe('Modalidade — escrita', () => {
     liberar();
     await expect(dialog).toBeHidden();
     await expect(
-      page.getByRole('status').filter({ hasText: 'Modalidade AC removida.' }),
+      page.getByRole('status').filter({ hasText: 'Modalidade AC — Ampla concorrência removida.' }),
     ).toHaveCount(1);
   });
 

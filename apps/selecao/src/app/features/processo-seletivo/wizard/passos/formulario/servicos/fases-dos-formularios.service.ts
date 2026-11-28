@@ -1,5 +1,6 @@
 import { computed, effect, inject, Injectable, untracked } from '@angular/core';
 
+import { rotulosDasModalidades } from '../../../modalidades-do-processo';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { descreverFase } from '../../../shared/descricao-da-fase';
 import { fatosParaLerOGatilho } from '../../../shared/documentos-exigidos';
@@ -108,16 +109,23 @@ export class FasesDosFormularios {
     return faseTemLugar(fase, ocupantes, this.cobraTaxa());
   }
 
+  private fatosParaLer(rotulos: ReadonlyMap<string, string>) {
+    return fatosParaLerOGatilho(
+      this.catalogoDeFatos.fatos(),
+      this.store.draft().atendimento.condicoes.map((condicao) => condicao.codigo),
+      this.store.modalidadesDoProcesso(),
+      rotulos,
+    );
+  }
+
   /** Como a lista de documentos do formulário nomeia o tipo de documento e lê o público de cada um. */
   readonly vocabularioDosDocumentos = computed(() => {
     const tipoPorId = this.catalogoDeDocumentos.tipoDocumentoPorId();
+    const rotulos = rotulosDasModalidades(this.store.draft());
     return {
+      rotulosDasModalidades: rotulos,
       consequencias: this.consequencias.consequencias(),
-      fatoPorCodigo: fatosParaLerOGatilho(
-        this.catalogoDeFatos.fatos(),
-        this.store.draft().atendimento.condicoes.map((condicao) => condicao.codigo),
-        this.store.modalidadesDoProcesso(),
-      ),
+      fatoPorCodigo: this.fatosParaLer(rotulos),
       nomeDoTipo: (id: string, nomeGuardado: string | undefined) =>
         tipoPorId.get(id)?.nome ?? nomeGuardado ?? id,
     };

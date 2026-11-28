@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
+import { codigoComNome } from '@uniplus/shared-utils';
 import { ModalidadeDto, VocabulariosDeConfiguracaoApi } from '@uniplus/shared-data/configuracao';
 import {
   deClausulasDoWire,
@@ -81,26 +82,29 @@ export class ModalidadesListPage {
   protected readonly modalidadeParaRemover = this.edicao.modalidadeParaRemover;
   /** Bloqueio autoritativo do servidor (409) além do pré-cheque client-side. */
   protected readonly bloqueioServidor = this.edicao.bloqueioServidor;
-  /** Mensagem do `ProblemDetails` do 409 — usada quando a referência viva não está na página carregada. */
+  /** Mensagem do `ProblemDetails` do 409 — usada quando a referência viva não está na lista carregada. */
   protected readonly mensagemBloqueioServidor = this.edicao.mensagemBloqueioServidor;
   protected readonly tituloDoBloqueio = this.edicao.tituloDoBloqueio;
   /** Fallback quando o servidor bloqueia sem título e o mapa reverso local está vazio. */
   protected readonly mensagemBloqueioPadrao =
-    'Esta modalidade não pode ser removida porque outra modalidade viva a referencia ' +
-    '(possivelmente fora desta página). Ajuste ou remova essas referências antes de removê-la.';
+    'Esta modalidade não pode ser removida porque outra modalidade viva a referencia. ' +
+    'Ajuste ou remova essas referências antes de removê-la.';
 
   protected readonly loading = this.store.carregando;
-  protected readonly prevCursor = this.store.anterior;
-  protected readonly nextCursor = this.store.proximo;
   protected readonly modalidades = this.store.modalidades;
 
   /**
    * Mapa reverso código → modalidades vivas que o referenciam (origem/destino/par/
-   * fallback). Calculado sobre a página carregada — é uma DICA de UX (coluna
-   * "Referenciada por" e pré-bloqueio de remoção); o backend é a fonte autoritativa
-   * do bloqueio (409). Domínio pequeno e fechado: uma página cobre as vivas na prática.
+   * fallback). Calculado sobre a lista inteira de modalidades — é uma DICA de UX
+   * (coluna "Referenciada por" e pré-bloqueio de remoção); o backend é a fonte autoritativa
+   * do bloqueio (409). O rótulo "código — nome" usa a mesma lista.
    */
   protected readonly referenciasReversas = computed(() => referenciasReversas(this.modalidades()));
+
+  protected readonly codigoComNome = codigoComNome;
+  protected readonly rotulos = computed<ReadonlyMap<string, string>>(
+    () => new Map(this.modalidades().map((m) => [m.codigo, codigoComNome(m.codigo, m.nome)])),
+  );
 
   protected readonly chipsNatureza = computed<readonly UiFilterChipOption[]>(() => {
     const todas = this.modalidades();
@@ -118,6 +122,7 @@ export class ModalidadesListPage {
       const casaBusca =
         termo.length === 0 ||
         m.codigo.toLocaleLowerCase('pt-BR').includes(termo) ||
+        m.nome.toLocaleLowerCase('pt-BR').includes(termo) ||
         (m.descricao ?? '').toLocaleLowerCase('pt-BR').includes(termo);
       const casaNatureza = natureza === null || m.naturezaLegal.codigo === natureza;
       return casaBusca && casaNatureza;
@@ -184,12 +189,6 @@ export class ModalidadesListPage {
     return this.referenciasReversas().get(codigo) ?? [];
   }
 
-  protected proximaPagina(): void {
-    this.store.proximaPagina();
-  }
-  protected paginaAnterior(): void {
-    this.store.paginaAnterior();
-  }
   protected limparFiltros(): void {
     this.busca.set('');
     this.naturezaSelecionada.set(null);

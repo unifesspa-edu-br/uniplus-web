@@ -19,7 +19,7 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   border-bottom: 1px solid var(--border-default);
-  white-space: nowrap;
+  overflow-wrap: break-word;
 }
 
 .vagas-table thead th:last-child {
@@ -30,6 +30,7 @@
 .vagas-table tbody td {
   color: var(--text-primary);
   vertical-align: middle;
+  overflow-wrap: break-word;
 }
 
 /* Recuo e divisória de célula de tabela. Empilhada, a célula é linha do cartão, e o recuo

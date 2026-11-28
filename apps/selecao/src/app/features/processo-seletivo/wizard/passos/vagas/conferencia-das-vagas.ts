@@ -1,3 +1,5 @@
+import { codigoComNome } from '@uniplus/shared-utils';
+
 import { DistribuicaoDeVagas } from '../../processo-seletivo.models';
 import { inteiroNaForma } from '../../shared/numero-do-campo';
 import { erroDasOpcoes } from './opcoes-de-curso';
@@ -42,8 +44,8 @@ export function pendenciasDoQuadro(
   colunasDeQuantidade: readonly ColunaDeQuantidade[],
 ): readonly string[] {
   const semVo = distribuicoes.filter((item) => voBaseInvalido(item)).length;
-  const pendencias = [...codigosPorQuantidadeDeOfertas(distribuicoes, colunasDeQuantidade)].map(
-    ([quantas, codigos]) => `${frase(quantas)} sem a quantidade de ${lista(codigos)}`,
+  const pendencias = [...rotulosPorQuantidadeDeOfertas(distribuicoes, colunasDeQuantidade)].map(
+    ([quantas, rotulos]) => `${frase(quantas)} sem a quantidade de ${lista(rotulos)}`,
   );
   return semVo > 0 ? [`${frase(semVo)} sem o total de vagas`, ...pendencias] : pendencias;
 }
@@ -51,20 +53,25 @@ export function pendenciasDoQuadro(
 interface ColunaDeQuantidade {
   readonly id: string;
   readonly codigo: string;
+  readonly nome: string;
 }
 
 /**
  * Agrupado por quantas ofertas: com dez modalidades declaradas e nenhuma preenchida, dizer
  * "3 ofertas sem a quantidade de X" dez vezes esconde a informação, que é uma só.
  */
-function codigosPorQuantidadeDeOfertas(
+function rotulosPorQuantidadeDeOfertas(
   distribuicoes: readonly DistribuicaoDeVagas[],
   colunas: readonly ColunaDeQuantidade[],
 ): ReadonlyMap<number, readonly string[]> {
   const grupos = new Map<number, string[]>();
   for (const modalidade of colunas) {
     const quantas = distribuicoes.filter((item) => quantidadeInvalida(item, modalidade.id)).length;
-    if (quantas > 0) grupos.set(quantas, [...(grupos.get(quantas) ?? []), modalidade.codigo]);
+    if (quantas > 0)
+      grupos.set(quantas, [
+        ...(grupos.get(quantas) ?? []),
+        codigoComNome(modalidade.codigo, modalidade.nome),
+      ]);
   }
   return grupos;
 }

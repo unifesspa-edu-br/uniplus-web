@@ -293,7 +293,7 @@ async function conferirModalidades(page: Page): Promise<void> {
     modalidades
       .getByRole('list', { name: 'Modalidades em que você concorre' })
       .getByRole('listitem'),
-  ).toHaveText([/Ampla concorrência/i]);
+  ).toHaveText([/^AC — Ampla concorrência$/i]);
   await expect(modalidades).toHaveAttribute('aria-busy', 'false', { timeout: 10_000 });
 }
 
@@ -313,7 +313,7 @@ async function revisarEAceitarTermos(page: Page): Promise<void> {
       .locator('insc-modalidades-da-inscricao')
       .getByRole('list', { name: 'Modalidades em que você concorre' })
       .getByRole('listitem'),
-  ).toHaveText([/Ampla concorrência/i]);
+  ).toHaveText([/^AC — Ampla concorrência$/i]);
   await aceitarTermos(page);
 }
 

@@ -7,12 +7,12 @@
       <th scope="col">Oferta</th>
       <th scope="col">Total</th>
       @for (modalidade of estado.colunasDoQuadro(); track modalidade.id) {
-        <th scope="col" [title]="modalidade.descricao || null">{{ modalidade.codigo }}</th>
+        <th scope="col">{{ codigoComNome(modalidade.codigo, modalidade.nome) }}</th>
       }
       @if (estado.simulacao().size > 0) {
         @for (modalidade of estado.modalidadesCalculadas(); track modalidade.id) {
-          <th scope="col" class="vagas-table__calculado" [title]="modalidade.descricao">
-            {{ modalidade.codigo }}
+          <th scope="col" class="vagas-table__calculado">
+            {{ codigoComNome(modalidade.codigo, modalidade.nome) }}
           </th>
         }
         <th scope="col" class="vagas-table__calculado">Publicado</th>
@@ -50,7 +50,7 @@
           }
         </td>
         @for (modalidade of estado.colunasDoQuadro(); track modalidade.id) {
-          <td [attr.data-label]="modalidade.codigo">
+          <td [attr.data-label]="codigoComNome(modalidade.codigo, modalidade.nome)">
             @if (store.emConsulta()) {
               {{ quantidade(distribuicao, modalidade.id) || '—' }}
             } @else {
@@ -58,7 +58,7 @@
                 class="input input--numero"
                 inputmode="numeric"
                 [attr.aria-label]="
-                  modalidade.codigo +
+                  codigoComNome(modalidade.codigo, modalidade.nome) +
                   ' de ' +
                   catalogos.rotuloDaOfertaOuSemNome(distribuicao.ofertaCursoId)
                 "
@@ -75,7 +75,10 @@
         }
         @if (estado.simulacao().size > 0) {
           @for (modalidade of estado.modalidadesCalculadas(); track modalidade.id) {
-            <td class="vagas-table__calculado" [attr.data-label]="modalidade.codigo">
+            <td
+              class="vagas-table__calculado"
+              [attr.data-label]="codigoComNome(modalidade.codigo, modalidade.nome)"
+            >
               {{ simulacao.quantidadeCalculada(distribuicao, modalidade.id) }}
             </td>
           }
@@ -117,13 +120,16 @@
       </th>
       <td data-label="Total">{{ simulacao.totalGeralDeVagas() }}</td>
       @for (modalidade of estado.colunasDoQuadro(); track modalidade.id) {
-        <td [attr.data-label]="modalidade.codigo">
+        <td [attr.data-label]="codigoComNome(modalidade.codigo, modalidade.nome)">
           {{ simulacao.totalDeclaradoDe(modalidade.id) }}
         </td>
       }
       @if (estado.simulacao().size > 0) {
         @for (modalidade of estado.modalidadesCalculadas(); track modalidade.id) {
-          <td class="vagas-table__calculado" [attr.data-label]="modalidade.codigo">
+          <td
+            class="vagas-table__calculado"
+            [attr.data-label]="codigoComNome(modalidade.codigo, modalidade.nome)"
+          >
             {{ simulacao.totalCalculadoDe(modalidade.id) }}
           </td>
         }

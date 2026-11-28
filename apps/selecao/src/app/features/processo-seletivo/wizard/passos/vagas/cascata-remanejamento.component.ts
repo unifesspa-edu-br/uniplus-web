@@ -20,7 +20,11 @@ import {
   problemasDaCascata,
 } from './cascata-de-remanejamento';
 import { CatalogosDeDistribuicao } from './catalogos-de-distribuicao.service';
-import { modalidadesGravadasPorId } from './modalidades-da-distribuicao';
+import {
+  modalidadesGravadasPorId,
+  rotuloDaModalidade,
+  rotulosPorCodigo,
+} from './modalidades-da-distribuicao';
 import { MatrizDaCascataComponent } from './matriz-da-cascata.component';
 import {
   explicarRegra,
@@ -80,6 +84,16 @@ export class CascataRemanejamentoComponent {
     this.store.emConsulta()
       ? modalidadesGravadasPorId(this.ofertas(), this.catalogos.modalidadePorId())
       : this.catalogos.modalidadePorId(),
+  );
+
+  /** "Código — nome" de cada modalidade, pelo nome gravado em consulta e pelo catálogo fora dela. */
+  protected readonly rotulosDasModalidades = computed(() =>
+    rotulosPorCodigo(this.modalidadePorId()),
+  );
+
+  /** O destino final, com o nome da modalidade quando o catálogo ou o processo o traz. */
+  protected readonly rotuloDoDestinoFinal = computed(() =>
+    rotuloDaModalidade(this.rotulosDasModalidades(), this.matriz()?.fallbackCodigo ?? ''),
   );
 
   /**

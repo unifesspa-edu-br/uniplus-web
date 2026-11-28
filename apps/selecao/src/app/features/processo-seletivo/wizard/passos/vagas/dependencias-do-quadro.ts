@@ -1,5 +1,7 @@
 import { ComposicaoVagasCodigo, RegraRemanejamentoCodigo } from '@uniplus/shared-data/configuracao';
 
+import { codigoComNome } from '@uniplus/shared-utils';
+
 import { DistribuicaoDeVagas } from '../../processo-seletivo.models';
 
 import { repetidos } from '../../shared/repetidos';
@@ -31,7 +33,7 @@ export function problemasDeModalidadeForaDoCatalogo(
     .filter((modalidade) => !catalogo.has(modalidade.id))
     .map(
       (modalidade) =>
-        `${modalidade.codigo} não está mais no cadastro de modalidades: remova esta oferta do quadro e configure-a novamente.`,
+        `${codigoComNome(modalidade.codigo, modalidade.nome)} não está mais no cadastro de modalidades: remova esta oferta do quadro e configure-a novamente.`,
     );
 }
 
@@ -65,6 +67,12 @@ export function problemasDeModalidadeForaDoRol(
   ];
 }
 
+/** A oferta guarda o nome; o código sozinho só aparece quando não há nome. */
+function rotuloNaOferta(distribuicao: DistribuicaoDeVagas, codigo: string): string {
+  const nome = distribuicao.modalidades.find((modalidade) => modalidade.codigo === codigo)?.nome;
+  return codigoComNome(codigo, nome);
+}
+
 function modalidadesExcedentes(
   distribuicao: DistribuicaoDeVagas,
   codigosSelecionados: readonly string[],
@@ -74,7 +82,7 @@ function modalidadesExcedentes(
     .filter((codigo) => !rol.includes(codigo))
     .map(
       (codigo) =>
-        `${codigo} não pertence ao rol que ${distribuicao.regraDistribuicaoCodigo} admite — a seleção desta oferta precisa corresponder exatamente ao rol da regra atual.`,
+        `${rotuloNaOferta(distribuicao, codigo)} não pertence ao rol que ${distribuicao.regraDistribuicaoCodigo} admite — a seleção desta oferta precisa corresponder exatamente ao rol da regra atual.`,
     );
 }
 
@@ -128,14 +136,32 @@ function problemasDeDependencia(
   return selecionadas
     .flatMap((modalidade) => (modalidade ? exigenciasDaModalidade(modalidade, federal) : []))
     .filter(({ codigo }) => codigo !== null && !codigosSelecionados.has(codigo))
-    .map(({ de, papel, codigo }) => `${de} exige ${papel} (${codigo}) selecionado nesta oferta.`);
+    .map((exigencia) => mensagemDeDependencia(exigencia, catalogo));
+}
+
+function mensagemDeDependencia(
+  { de, papel, codigo }: ExigenciaDeCompanheira & { readonly de: string },
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+): string {
+  return `${de} exige ${papel} (${rotuloNoCatalogo(catalogo, codigo)}) selecionado nesta oferta.`;
+}
+
+function rotuloNoCatalogo(
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+  codigo: string | null,
+): string {
+  const doCatalogo = [...catalogo.values()].find((modalidade) => modalidade.codigo === codigo);
+  return codigoComNome(codigo ?? '', doCatalogo?.nome);
 }
 
 function exigenciasDaModalidade(modalidade: ModalidadeDoCatalogo, federal: boolean) {
   return [
     ...exigenciaDaRetirada(modalidade, federal),
     ...exigenciasDoRemanejamento(modalidade),
-  ].map((exigencia) => ({ ...exigencia, de: modalidade.codigo }));
+  ].map((exigencia) => ({
+    ...exigencia,
+    de: codigoComNome(modalidade.codigo, modalidade.nome),
+  }));
 }
 
 function exigenciaDaRetirada(
@@ -321,5 +347,8 @@ function recusasForaDaLei12711(distribuicao: DistribuicaoDeVagas): string[] {
 }
 
 function rotulo(modalidadeId: string, catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>): string {
-  return catalogo.get(modalidadeId)?.codigo ?? 'a modalidade';
+  const modalidade = catalogo.get(modalidadeId);
+  return modalidade === undefined
+    ? 'a modalidade'
+    : codigoComNome(modalidade.codigo, modalidade.nome);
 }

@@ -81,7 +81,6 @@
 
   /* O cabeçalho quebra em vez de impor a largura do seu texto à coluna. */
   .vagas-table thead th {
-    white-space: normal;
     vertical-align: bottom;
   }
 }

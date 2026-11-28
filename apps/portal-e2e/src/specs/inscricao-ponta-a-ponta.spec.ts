@@ -140,7 +140,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(comprovante(page)).not.toContainText(/[A-Z]+_[A-Z_]+/);
       // As modalidades que o envio gravou, pelo nome congelado: escola privada concorre só na ampla.
       await expect(modalidadesDoComprovante(page).getByRole('listitem')).toHaveText([
-        /Ampla concorrência/i,
+        /^AC — Ampla concorrência$/i,
       ]);
     });
     await test.step('o comprovante sai inteiro na impressão, com o cabeçalho institucional e sem o do portal', () =>
@@ -161,7 +161,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
         await expect(comprovante(page)).toBeVisible();
         // A seção das modalidades não se parte entre folhas: o título não fica sozinho no pé da página.
         await expect(modalidadesDoComprovante(page).getByRole('listitem')).toHaveText([
-          /Ampla concorrência/i,
+          /^AC — Ampla concorrência$/i,
         ]);
         await expect(modalidadesDoComprovante(page)).toHaveCSS('break-inside', 'avoid');
         await expect(
