@@ -253,9 +253,12 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
   it('desistir da confirmação não traz o erro corrigido de volta', async () => {
     const { page, store, fixture } = cenario();
 
-    store.definirErroDoPasso([
-      'O identificador legível não pode ter a forma de um identificador técnico (Guid).',
-    ]);
+    store.definirErroDoPasso({
+      mensagens: [
+        'O identificador legível não pode ter a forma de um identificador técnico (Guid).',
+      ],
+      referencias: [],
+    });
     fixture.detectChanges();
     await page.nextOrPublish();
     fixture.detectChanges();
@@ -289,7 +292,9 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
     await page.confirmarGravacao();
     fixture.detectChanges();
 
-    expect(store.erroDoPasso()?.join(' ')).toContain('já é usado por outro processo seletivo');
+    expect(store.erroDoPasso()?.mensagens.join(' ')).toContain(
+      'já é usado por outro processo seletivo',
+    );
   });
 
   /** O comando já saiu: fechar aqui só tiraria da tela o aviso da gravação. */

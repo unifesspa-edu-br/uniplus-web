@@ -8,6 +8,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import {
+  recusaComReferencia,
+  REFERENCIA_DA_RECUSA_DE_TESTE,
+} from '../../shared/gravacao/recusa-do-servidor.testing';
+import {
   ROTA_OPCOES,
   ROTA_PROCESSO_RELIDO,
   SEM_CORPO,
@@ -65,11 +69,25 @@ describe('VagasPassoComponent — recusas e consulta do número de opções de c
     const resultado = await gravacao;
     fixture.detectChanges();
 
-    expect(resultado).toEqual({
+    expect(resultado).toMatchObject({
       valid: false,
       messages: [`A distribuição de vagas foi gravada. ${TEXTO}`],
     });
     expect(tela.querySelector('#f-opcoes-curso-erro')?.textContent).toContain(TEXTO);
+  });
+
+  it('leva ao suporte a referência da recusa da API ao gravar o número', async () => {
+    gravado(1);
+    ofertas(OFERTA, OUTRA_OFERTA);
+    escolherNumero('2');
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_DISTRIBUICAO).flush(null, SEM_CORPO);
+    await proximoTick();
+    const recusa = recusaComReferencia(422, 'Número de opções recusado.');
+    controller.expectOne(ROTA_OPCOES).flush(recusa.corpo, recusa.opcoes);
+
+    expect((await gravacao).referenciaAoSuporte).toEqual(REFERENCIA_DA_RECUSA_DE_TESTE);
   });
 
   it('mostra no mesmo campo a recusa da API sem campo, vinda da gravação da distribuição', async () => {

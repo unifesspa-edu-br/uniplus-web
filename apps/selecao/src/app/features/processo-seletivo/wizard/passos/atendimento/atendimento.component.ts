@@ -25,6 +25,7 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { gravarNoPasso, RESPOSTA_DESCARTADA } from '../../shared/gravacao/gravacao-no-passo';
+import { recusaDoServidor } from '../../shared/gravacao/recusa-do-servidor';
 import { camposSemValoresOfertados } from '../formulario/problemas-do-formulario';
 import { anunciarRemocao, type RemocaoAnunciada } from './anuncio-de-remocao';
 import { CatalogosDeAtendimento } from './catalogos-de-atendimento.service';
@@ -376,6 +377,6 @@ export class AtendimentoPassoComponent {
 
     const mensagem = this.problemI18n.resolve(resultado.problem).title;
     this.erroDeGravacao.set(mensagem);
-    return { valid: false, messages: [mensagem] };
+    return recusaDoServidor(resultado.problem, [mensagem]);
   }
 }

@@ -1,16 +1,23 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
+import type { ReferenciaAoSuporte } from '@uniplus/shared-core/http';
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PassoDoWizard } from '../wizard/passo-do-wizard';
+import type { ValidacaoDoPasso } from '../wizard/processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../wizard/processo-seletivo.store';
 import { ReleituraDoSnapshot } from '../wizard/shared/releitura-do-snapshot.service';
 import { ConducaoDoWizard } from './conducao-do-wizard.service';
 import { FocoDoEditor } from './foco-do-editor.service';
 
 const RESOLUCAO = 'Resolução nº 805/2024/Consepe';
+const REFERENCIA: ReferenciaAoSuporte = {
+  origem: 'servidor',
+  codigoDoErro: 'uniplus.selecao.exemplo',
+  identificadorDoPedido: '0af7651916cd43dd8448eb211c80319c',
+};
 
 describe('ConducaoDoWizard', () => {
   let conducao: ConducaoDoWizard;
@@ -27,7 +34,7 @@ describe('ConducaoDoWizard', () => {
         ProcessoSeletivoStore,
         ConducaoDoWizard,
         { provide: ReleituraDoSnapshot, useValue: { reler: vi.fn(async () => true) } },
-        { provide: FocoDoEditor, useValue: {} },
+        { provide: FocoDoEditor, useValue: { revelarErro: vi.fn() } },
         { provide: PermissoesService, useValue: { tem: () => true } },
       ],
     });
@@ -63,5 +70,65 @@ describe('ConducaoDoWizard', () => {
 
     expect(recusa).toBeNull();
     expect(gravarAposAClassificacao).toHaveBeenCalledOnce();
+  });
+
+  describe('referência ao suporte da recusa do passo', () => {
+    const passoQueGrava = (resultado: ValidacaoDoPasso): PassoDoWizard => ({
+      validar: () => ({ valid: true }),
+      persistir: async () => resultado,
+    });
+
+    beforeEach(() => store.goTo(3));
+
+    it('a recusa do servidor mostra a referência com o passo onde ela aconteceu', async () => {
+      const recusa = { valid: false, messages: ['Recusada.'], referenciaAoSuporte: REFERENCIA };
+
+      await conducao.gravarEAvancar(passoQueGrava(recusa));
+
+      expect(store.erroDoPasso()).toEqual({
+        mensagens: ['Recusada.'],
+        referencias: [{ passo: 'Passo 4 — Vagas', referencia: REFERENCIA }],
+      });
+    });
+
+    it('a recusa sem referência não mostra referência nenhuma', async () => {
+      await conducao.gravarEAvancar(passoQueGrava({ valid: false, messages: ['Recusada.'] }));
+
+      expect(store.erroDoPasso()).toEqual({ mensagens: ['Recusada.'], referencias: [] });
+    });
+
+    it('a falha ao concluir no próprio navegador não inventa referência', async () => {
+      const passo = { ...passoComum, persistir: () => Promise.reject(new Error('falhou')) };
+
+      await conducao.gravarEAvancar(passo);
+
+      expect(store.erroDoPasso()?.referencias).toEqual([]);
+    });
+
+    it('a resposta descartada, sem mensagens, não mostra erro nem referência', async () => {
+      const descartada = { valid: false, messages: [], referenciaAoSuporte: REFERENCIA };
+
+      await conducao.gravarEAvancar(passoQueGrava(descartada));
+
+      expect(store.erroDoPasso()).toBeNull();
+    });
+
+    it('a validação local do passo não mostra referência', async () => {
+      const invalido = { validar: () => ({ valid: false, messages: ['Falta preencher.'] }) };
+      conducao.conectar(signal([passoComum, passoComum, passoComum, invalido]));
+
+      await conducao.avancar();
+
+      expect(store.erroDoPasso()).toEqual({ mensagens: ['Falta preencher.'], referencias: [] });
+    });
+
+    it('a gravação que dá certo limpa a mensagem e a referência juntas', async () => {
+      const recusa = { valid: false, messages: ['Recusada.'], referenciaAoSuporte: REFERENCIA };
+      await conducao.gravarEAvancar(passoQueGrava(recusa));
+
+      await conducao.gravarEAvancar(passoQueGrava({ valid: true }));
+
+      expect(store.erroDoPasso()).toBeNull();
+    });
   });
 });

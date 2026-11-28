@@ -56,6 +56,7 @@ describe('recusas da gravação das exigências', () => {
     const resultado = await TestBed.inject(GravacaoDasExigenciasDocumentais).gravar(
       'processo',
       'Gravado.',
+      'Cronograma',
     );
     expect(resultado.recusas?.[0].identificadorDaRegra).toBeNull();
     expect(resultado.messages?.[0]).toContain('forma da regra');
@@ -70,6 +71,7 @@ describe('recusas da gravação das exigências', () => {
     const resultado = await TestBed.inject(GravacaoDasExigenciasDocumentais).gravar(
       'processo',
       'Gravado.',
+      'Cronograma',
     );
     expect(resultado.recusas?.map((recusa) => recusa.identificadorDaRegra)).toEqual(
       documentos.regrasDeComprovacao.map((regra) => regra.identificadorNoRascunho),

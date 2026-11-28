@@ -1,5 +1,11 @@
 import { inject, Injectable } from '@angular/core';
-import { isApiOk, ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
+import {
+  isApiOk,
+  ProblemDetails,
+  ProblemI18nService,
+  referenciaDaRecusa,
+  type ReferenciaAoSuporte,
+} from '@uniplus/shared-core/http';
 import { OrigemCandidatosCodigo, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { firstValueFrom } from 'rxjs';
 
@@ -15,6 +21,7 @@ import {
   RESPOSTA_DESCARTADA,
   RespostaDescartada,
 } from '../../../shared/gravacao/gravacao-no-passo';
+import { recusaDoServidor } from '../../../shared/gravacao/recusa-do-servidor';
 import { comandoDaCascata, comandoDeRemocaoDaCascata } from '../cascata-de-remanejamento';
 import type { CascataRemanejamentoComponent } from '../cascata-remanejamento.component';
 import { comoComando } from '../distribuicao-para-comando';
@@ -79,7 +86,7 @@ export class GravacaoDasVagas {
   private cascataNaoGravada(resultado: ValidacaoDoPasso): ValidacaoDoPasso {
     this.store.vagasGravadasDefasadas.set(true);
     return {
-      valid: false,
+      ...resultado,
       messages: [
         `A distribuição de vagas foi gravada. A cascata de remanejamento não: ${(resultado.messages ?? []).join(' ')}`,
       ],
@@ -123,10 +130,9 @@ export class GravacaoDasVagas {
     const detalhe = await firstValueFrom(this.api.obter(processoId));
     if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
     if (!isApiOk(detalhe)) {
-      return {
-        valid: false,
-        messages: ['Não foi possível reler o processo antes de gravar as vagas. Tente novamente.'],
-      };
+      return recusaDoServidor(detalhe.problem, [
+        'Não foi possível reler o processo antes de gravar as vagas. Tente novamente.',
+      ]);
     }
     this.store.registrarVagasGravadas(detalhe.data);
     return null;
@@ -188,7 +194,7 @@ export class GravacaoDasVagas {
       jaGravada === null ? mensagem : `${jaGravada} ${mensagem}`;
 
     const mensagem = this.mensagemDaRecusa(falha.problem);
-    return { valid: false, messages: [dizendoOQueGravou(mensagem)] };
+    return recusaDoServidor(falha.problem, [dizendoOQueGravou(mensagem)]);
   }
 
   private mensagemDaRecusa(problem: ProblemDetails): string {
@@ -213,7 +219,7 @@ export class GravacaoDasVagas {
     const detalhe = await firstValueFrom(this.api.obter(processoId));
     if (geracao !== this.store.geracao()) return { valid: true };
 
-    if (!isApiOk(detalhe)) return this.falhaAoRelerModalidades();
+    if (!isApiOk(detalhe)) return this.falhaAoRelerModalidades(detalhe.problem);
     this.store.registrarRegrasDasModalidades(detalhe.data);
     this.store.registrarVagasGravadas(detalhe.data);
     if (!this.derivaAModalidade()) return { valid: true };
@@ -221,11 +227,12 @@ export class GravacaoDasVagas {
     return this.garantirCamposDasModalidades(processoId, detalhe.data, geracao);
   }
 
-  private falhaAoRelerModalidades(): ValidacaoDoPasso {
+  private falhaAoRelerModalidades(problema: ProblemDetails): ValidacaoDoPasso {
     this.store.vagasGravadasDefasadas.set(true);
     return this.derivaAModalidade()
       ? this.gravadaMas(
           'Não foi possível reler o processo para pôr no formulário de inscrição as perguntas que as modalidades fazem. Grave as vagas de novo.',
+          referenciaDaRecusa(problema),
         )
       : { valid: true };
   }
@@ -239,13 +246,16 @@ export class GravacaoDasVagas {
       processoId,
       detalhe,
       fatosCitadosPelasModalidadesOfertadas(detalhe),
+      'Vagas',
     );
     if (geracao !== this.store.geracao()) return { valid: true };
-    return campos.tipo === 'recusados' ? this.gravadaMas(campos.motivo) : { valid: true };
+    if (campos.tipo !== 'recusados') return { valid: true };
+    return this.gravadaMas(campos.motivo, campos.referenciaAoSuporte);
   }
 
-  private gravadaMas(motivo: string): ValidacaoDoPasso {
-    return { valid: false, messages: [`A distribuição de vagas foi gravada. ${motivo}`] };
+  private gravadaMas(motivo: string, referencia?: ReferenciaAoSuporte | null): ValidacaoDoPasso {
+    const recusa = { valid: false, messages: [`A distribuição de vagas foi gravada. ${motivo}`] };
+    return referencia ? { ...recusa, referenciaAoSuporte: referencia } : recusa;
   }
 
   /** O candidato se inscreve no processo: é da inscrição que a modalidade dele se deriva. */
@@ -321,6 +331,6 @@ export class GravacaoDasVagas {
   ): ValidacaoDoPasso {
     return resultado.ok
       ? { valid: true }
-      : { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
+      : recusaDoServidor(resultado.problem, [this.problemI18n.resolve(resultado.problem).title]);
   }
 }

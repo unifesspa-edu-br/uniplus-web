@@ -12,6 +12,7 @@ import {
   RESPOSTA_DESCARTADA,
   type RespostaDescartada,
 } from '../../shared/gravacao/gravacao-no-passo';
+import { recusaDoServidor } from '../../shared/gravacao/recusa-do-servidor';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { comoComandoDeCriteriosDesempate } from './desempate-para-comando';
@@ -56,7 +57,7 @@ export class GravacaoDoDesempate {
     if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
     if (resultado.ok) return { valid: true };
     const messages = this.mensagensDaRecusa(resultado.problem, criterios, rotuloDaArea);
-    return { valid: false, messages };
+    return recusaDoServidor(resultado.problem, messages);
   }
 
   /** Envia os critérios e registra no store o que o servidor passou a ter. */

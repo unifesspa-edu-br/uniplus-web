@@ -16,6 +16,8 @@ import {
   prepararClassificacaoLocalComResolucao,
 } from './recusa-da-gravacao.testing';
 
+const PROBLEM_JSON = { 'content-type': 'application/problem+json' };
+
 describe('falha na gravação da classificação', () => {
   montarEliminacao();
 
@@ -64,5 +66,41 @@ describe('falha na gravação da classificação', () => {
     expect(resultado.valid).toBe(false);
     expect(store.draft().classificacao.regraCalculoCodigo).toBe('FORMULA_MEDIA_PONDERADA');
     expect(store.salvando()).toBe(false);
+  });
+
+  it('leva ao suporte o código do erro e o identificador do pedido que a API recusou', async () => {
+    prepararClassificacaoLocal();
+    const gravacao = componente.persistir();
+
+    controller.expectOne(ROTA_CLASSIFICACAO).flush(
+      {
+        type: 'about:blank',
+        title: 'Regra não encontrada.',
+        status: 422,
+        code: 'uniplus.selecao.classificacao.regra_nao_encontrada',
+        traceId: '0af7651916cd43dd8448eb211c80319c',
+      },
+      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_JSON },
+    );
+
+    expect((await gravacao).referenciaAoSuporte).toEqual({
+      origem: 'servidor',
+      codigoDoErro: 'uniplus.selecao.classificacao.regra_nao_encontrada',
+      identificadorDoPedido: '0af7651916cd43dd8448eb211c80319c',
+    });
+  });
+
+  it('não leva referência quando a resposta não traz código nem identificador no formato da API', async () => {
+    prepararClassificacaoLocal();
+    const gravacao = componente.persistir();
+
+    controller
+      .expectOne(ROTA_CLASSIFICACAO)
+      .flush(
+        { type: 'about:blank', title: 'Falha.', status: 422, code: '', traceId: '' },
+        { status: 422, statusText: 'Unprocessable Entity' },
+      );
+
+    expect((await gravacao).referenciaAoSuporte).toBeUndefined();
   });
 });

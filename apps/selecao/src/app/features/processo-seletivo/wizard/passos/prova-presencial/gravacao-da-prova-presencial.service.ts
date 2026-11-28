@@ -14,6 +14,7 @@ import {
   RESPOSTA_DESCARTADA,
   type RespostaDescartada,
 } from '../../shared/gravacao/gravacao-no-passo';
+import { recusaDoServidor } from '../../shared/gravacao/recusa-do-servidor';
 import { provaPresencialDe } from '../../shared/hidratacao/hidratacao-da-prova-presencial';
 import { NumeracaoDasRespostasRecusadas } from '../../shared/recusas/numeracao-das-respostas-recusadas';
 import type { RecusaOrdenada } from '../../shared/recusas/ordem-das-recusas';
@@ -116,7 +117,7 @@ export class GravacaoDaProvaPresencialService {
     if (!this.mesmoProcesso(processoId, geracao)) return RESPOSTA_DESCARTADA;
     const mensagem =
       problema.status === 503 ? ERRO_LOCALIDADES : this.problemI18n.resolve(problema).title;
-    return { valid: false, messages: [mensagem] };
+    return recusaDoServidor(problema, [mensagem]);
   }
 
   private registrarRecusas(

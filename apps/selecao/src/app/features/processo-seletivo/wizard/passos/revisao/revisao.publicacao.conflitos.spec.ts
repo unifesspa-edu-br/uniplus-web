@@ -3,6 +3,7 @@ import { ComponentFixture } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { IDENTIFICADOR_DO_PEDIDO_DE_TESTE } from '../../shared/gravacao/recusa-do-servidor.testing';
 import { RevisaoPassoComponent } from './revisao.component';
 import {
   ROTA_PUBLICACAO,
@@ -35,7 +36,13 @@ describe('RevisaoPassoComponent — publicação recusada com 409', () => {
     const antes = store.draft().publicacao;
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_PUBLICACAO).flush(
-      { type: 'about:blank', title: titulo, status: 409, code, traceId: 't4' },
+      {
+        type: 'about:blank',
+        title: titulo,
+        status: 409,
+        code,
+        traceId: IDENTIFICADOR_DO_PEDIDO_DE_TESTE,
+      },
       {
         status: 409,
         statusText: 'Conflict',
@@ -63,7 +70,7 @@ describe('RevisaoPassoComponent — publicação recusada com 409', () => {
     async (code, titulo) => {
       const { resultado, antes } = await publicarERecusarComConflito(code, titulo);
 
-      expect(resultado).toEqual({ valid: false, messages: [titulo] });
+      expect(resultado).toMatchObject({ valid: false, messages: [titulo] });
       expect(textoDoBlocoDoAto()).toContain(titulo);
       expect(store.draft().publicacao).toEqual(antes);
     },
@@ -76,7 +83,20 @@ describe('RevisaoPassoComponent — publicação recusada com 409', () => {
       titulo,
     );
 
-    expect(resultado).toEqual({ valid: false, messages: [titulo] });
+    expect(resultado).toMatchObject({ valid: false, messages: [titulo] });
     expect(store.draft().publicacao).toEqual(antes);
+  });
+
+  it('leva ao suporte o código e o identificador do pedido que a API recusou', async () => {
+    const codigo = 'uniplus.selecao.processo_seletivo.identificador_legivel_em_uso';
+    const { resultado } = await publicarERecusarComConflito(codigo, 'Identificador em uso');
+
+    expect(resultado).toMatchObject({
+      referenciaAoSuporte: {
+        origem: 'servidor',
+        codigoDoErro: codigo,
+        identificadorDoPedido: IDENTIFICADOR_DO_PEDIDO_DE_TESTE,
+      },
+    });
   });
 });

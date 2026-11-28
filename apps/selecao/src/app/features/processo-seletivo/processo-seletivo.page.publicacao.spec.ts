@@ -22,8 +22,8 @@ describe('ProcessoSeletivoPage — publicação: pendências do rascunho', () =>
 
     const erros = store.erroDoPasso();
     expect(erros).not.toBeNull();
-    expect(erros?.length).toBeGreaterThan(0);
-    expect(erros?.[0]).toContain('Passo 1');
+    expect(erros?.mensagens.length).toBeGreaterThan(0);
+    expect(erros?.mensagens[0]).toContain('Passo 1');
   });
 
   it('traz o aviso de pendências para a vista e para o foco', async () => {
@@ -160,7 +160,7 @@ describe('ProcessoSeletivoPage — publicação: pendências do rascunho', () =>
     fixture.detectChanges();
     await page.nextOrPublish();
 
-    const erros = store.erroDoPasso() ?? [];
+    const erros = store.erroDoPasso()?.mensagens ?? [];
     expect(erros.some((erro) => erro.startsWith('Passo 2 — Identificação'))).toBe(true);
   });
 

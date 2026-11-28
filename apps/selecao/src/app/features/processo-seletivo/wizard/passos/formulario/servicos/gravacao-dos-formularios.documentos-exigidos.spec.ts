@@ -55,7 +55,11 @@ describe('gravação dos formulários e dos documentos que aguardavam', () => {
     const resultado = await gravarOsFormularios();
 
     expect(resultado).toEqual({ valid: true });
-    expect(gravarDocumentos).toHaveBeenCalledWith('processo', 'Os formulários foram gravados.');
+    expect(gravarDocumentos).toHaveBeenCalledWith(
+      'processo',
+      'Os formulários foram gravados.',
+      'Formulários',
+    );
     expect(store.documentosExigidosAguardandoFormulario()).toBe(false);
   });
 

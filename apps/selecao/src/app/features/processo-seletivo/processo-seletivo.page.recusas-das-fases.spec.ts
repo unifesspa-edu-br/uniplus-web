@@ -139,6 +139,6 @@ describe('ProcessoSeletivoPage: recusas da gravação das fases ao sair do passo
     await fixture.componentInstance.nextOrPublish();
 
     expect(publicacao).not.toHaveBeenCalled();
-    expect(pendenciaDaGravacaoRecusada(store.erroDoPasso() ?? [])).toBe(true);
+    expect(pendenciaDaGravacaoRecusada(store.erroDoPasso()?.mensagens ?? [])).toBe(true);
   });
 });

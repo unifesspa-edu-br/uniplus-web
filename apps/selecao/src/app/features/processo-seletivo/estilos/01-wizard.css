@@ -95,6 +95,16 @@
   min-width: 0;
 }
 
+sel-resumo-do-erro-do-passo {
+  display: block;
+}
+
+.step-error__alerta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
 .step-error__summary {
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);

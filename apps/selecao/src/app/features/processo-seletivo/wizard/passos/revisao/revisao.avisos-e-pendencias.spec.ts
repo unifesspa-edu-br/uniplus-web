@@ -89,6 +89,35 @@ describe('RevisaoPassoComponent', () => {
     });
   });
 
+  describe('pendência que só o suporte resolve', () => {
+    it('diz o passo e o código do item para a pessoa informar ao suporte', async () => {
+      prepararCamposLocais(cenario);
+      await criarProcesso(cenario);
+      controller.expectOne(ROTA_CONFORMIDADE).flush({
+        processoSeletivoId: PROCESSO_ID,
+        avisos: [],
+        itens: [
+          {
+            codigo: 'fuso_institucional_nao_reconhecido',
+            dimensao: 'contagem_de_prazos',
+            mensagem: 'Fuso institucional reconhecido',
+            ok: false,
+          },
+        ],
+      });
+      controller
+        .expectOne((req) => req.url === ROTA_CONFORMIDADE_LEGAL)
+        .flush(CONFORMIDADE_LEGAL_VERDE);
+      await flushMicrotasks();
+      fixture.detectChanges();
+
+      const item = (fixture.nativeElement as HTMLElement).querySelector('.revisao-item');
+      expect(item?.querySelector('ui-referencia-ao-suporte')?.textContent).toContain(
+        'Informe ao suporte: passo 13 — Revisão e publicação, código fuso_institucional_nao_reconhecido.',
+      );
+    });
+  });
+
   describe('pendências do processo ENEM', () => {
     const OFERTA_A = '01960000-0000-7000-0000-00000000aaa1';
     const OFERTA_B = '01960000-0000-7000-0000-00000000aaa2';

@@ -7,7 +7,12 @@ import { CODIGO_ESCALA_DA_NOTA_FINAL_NAO_DECLARADA } from '../../shared/escala-d
  */
 export type DestinoDoItem =
   | { readonly passo: RotuloDePasso; readonly orientacao?: string }
-  | { readonly passo: null; readonly orientacao: string };
+  | {
+      readonly passo: null;
+      readonly orientacao: string;
+      /** Só o suporte resolve: o painel mostra o código do item para a pessoa informar a ele. */
+      readonly paraOSuporte?: true;
+    };
 
 /**
  * O passo do wizard dono de cada dimensão estrutural, nomeado pelo RÓTULO do passo e não pelo
@@ -102,8 +107,8 @@ const DESTINO_POR_ITEM: ReadonlyMap<string, DestinoDoItem> = new Map<string, Des
     'fuso_institucional_nao_reconhecido',
     {
       passo: null,
-      orientacao:
-        'O fuso institucional não foi reconhecido pelo servidor. Acione o suporte técnico.',
+      orientacao: 'O fuso institucional não foi reconhecido pelo servidor.',
+      paraOSuporte: true,
     },
   ],
   [

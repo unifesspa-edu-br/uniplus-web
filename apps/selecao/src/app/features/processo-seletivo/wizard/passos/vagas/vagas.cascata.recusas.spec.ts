@@ -49,8 +49,19 @@ describe('VagasPassoComponent — recusas da cascata de remanejamento', () => {
     const resultado = await comReleitura(controller, componente.persistir());
 
     expect(resultado.valid).toBe(false);
-    expect(resultado.messages?.some((m) => m.includes('não declara uma matriz'))).toBe(true);
-    expect(resultado.messages?.some((m) => /escolha outra regra ou versão/i.test(m))).toBe(true);
+    expect(
+      resultado.messages?.some((m) => m.includes('não consegue ler como ela remaneja as vagas')),
+    ).toBe(true);
+    expect(resultado.messages?.some((m) => /escolha outra regra de remanejamento/i.test(m))).toBe(
+      true,
+    );
+    expect(
+      resultado.messages?.some((m) =>
+        m.includes(
+          'Informe ao suporte: passo 4 — Vagas, código REMANEJ-CASCATA-SEM-MATRIZ versão v1.',
+        ),
+      ),
+    ).toBe(true);
     expect(resultado.messages?.some((m) => m.includes('Confirme que conferiu'))).toBe(false);
     controller.expectNone(ROTA_DISTRIBUICAO_TESTE);
     controller.expectNone(ROTA_CASCATA_TESTE);
@@ -84,6 +95,13 @@ describe('VagasPassoComponent — recusas da cascata de remanejamento', () => {
     expect(resultado.messages?.some((m) => m.includes('não foi encontrada no catálogo'))).toBe(
       true,
     );
+    expect(
+      resultado.messages?.some((m) =>
+        m.includes(
+          'Informe ao suporte: passo 4 — Vagas, código REMANEJ-CASCATA-REMOVIDA versão v9.',
+        ),
+      ),
+    ).toBe(true);
     expect(resultado.messages?.some((m) => m.includes('Confirme que conferiu'))).toBe(false);
     controller.expectNone(ROTA_DISTRIBUICAO_TESTE);
     controller.expectNone(ROTA_CASCATA_TESTE);

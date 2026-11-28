@@ -19,6 +19,7 @@ import {
 } from '../../shared/gravacao/gravacao-no-passo';
 import type { ResultadoGravacaoComInconclusiva } from '../../shared/gravacao/resultado-da-gravacao';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
+import { recusaDoServidor } from '../../shared/gravacao/recusa-do-servidor';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import {
   conferirDesempateGravado,
@@ -188,8 +189,12 @@ export class GravacaoDaClassificacao {
     );
 
     if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
-    if (!resultado.ok) return { valid: false, messages: this.mensagensDaRecusa(resultado.problem) };
+    if (!resultado.ok) return this.recusaDaClassificacao(resultado.problem);
     return this.gravarEdicoesDoEnem(processoId, geracao);
+  }
+
+  private recusaDaClassificacao(problema: ProblemDetails): ValidacaoDoPasso {
+    return recusaDoServidor(problema, this.mensagensDaRecusa(problema));
   }
 
   /**
@@ -259,7 +264,7 @@ export class GravacaoDaClassificacao {
     const { title, detail } = this.problemI18n.resolve(problema);
     const recusa = detail ?? title;
     this.store.classificacao.recusaDasEdicoesDoEnem.set(recusa);
-    return { valid: false, messages: [recusaNoPassoDaFormula('Edições do ENEM', recusa)] };
+    return recusaDoServidor(problema, [recusaNoPassoDaFormula('Edições do ENEM', recusa)]);
   }
 
   /**

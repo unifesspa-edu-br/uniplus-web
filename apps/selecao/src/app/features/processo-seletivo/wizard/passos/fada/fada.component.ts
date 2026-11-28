@@ -24,6 +24,7 @@ import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { gravarNoPasso, RESPOSTA_DESCARTADA } from '../../shared/gravacao/gravacao-no-passo';
+import { recusaDoServidor } from '../../shared/gravacao/recusa-do-servidor';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
 import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
@@ -252,7 +253,7 @@ export class FadaPassoComponent {
     if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
     return resultado.ok
       ? { valid: true }
-      : { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
+      : recusaDoServidor(resultado.problem, [this.problemI18n.resolve(resultado.problem).title]);
   }
 }
 

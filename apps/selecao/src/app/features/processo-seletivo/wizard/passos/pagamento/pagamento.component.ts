@@ -31,6 +31,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { gravarNoPasso, respostaFoiDescartada } from '../../shared/gravacao/gravacao-no-passo';
+import { recusaDoServidor } from '../../shared/gravacao/recusa-do-servidor';
 import {
   analisarValorEmReais,
   FORMATO_VALOR_EM_REAIS,
@@ -263,7 +264,7 @@ export class PagamentoPassoComponent {
     if (resultado.ok) return { valid: true };
     const mensagem = this.problemI18n.resolve(resultado.problem).title;
     this.erroDeGravacao.set(mensagem);
-    return { valid: false, messages: [mensagem] };
+    return recusaDoServidor(resultado.problem, [mensagem]);
   }
 
   validar(): ValidacaoDoPasso {
