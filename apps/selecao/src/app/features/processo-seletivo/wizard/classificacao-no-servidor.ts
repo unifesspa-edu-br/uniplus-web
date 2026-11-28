@@ -47,8 +47,15 @@ export class ClassificacaoNoServidor {
   /** Recusa ao campo `escalaNotaFinal` (a escala que não é maior que zero). Some quando a escala muda e quando a gravação seguinte dá certo. */
   readonly recusaDaEscalaDaNotaFinal = signal<string | null>(null);
 
-  /** Recusa às edições do ENEM, gravadas pela Eliminação logo depois da classificação. Some quando a gravação seguinte dá certo. */
+  /** Recusa às edições do ENEM, gravadas logo depois da classificação, pelos passos Fórmula e Eliminação. Some quando a gravação seguinte dá certo. */
   readonly recusaDasEdicoesDoEnem = signal<string | null>(null);
+
+  /**
+   * As edições do ENEM que o servidor tem, na ordem em que as guarda: pela leitura do processo e
+   * pelas gravações aceitas. `null` depois de uma gravação sem resposta conclusiva, em que o
+   * servidor pode ter outra lista: só uma releitura a diz.
+   */
+  readonly edicoesGravadas = signal<readonly string[] | null>([]);
 
   /**
    * Recusa da gravação da classificação por um critério de desempate já gravado que compara a nota
@@ -177,6 +184,7 @@ export class ClassificacaoNoServidor {
     this.recusaDaEscalaDaNotaFinal.set(null);
     this.pendenciasDaConferencia.set([]);
     this.recusaDasEdicoesDoEnem.set(null);
+    this.edicoesGravadas.set([]);
     this.recusaPeloDesempatePorArea.set(null);
     this.gravada.set({ estado: 'nunca-gravada' });
     this.criteriosDesempateGravados.set([]);

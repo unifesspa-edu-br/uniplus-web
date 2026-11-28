@@ -68,6 +68,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: releitura do pro
             quadroPesoAreaEnem: QUADRO_CONGELADO,
           },
           criteriosDesempate: [],
+          opcoesDeclaradas: [],
         });
       await releitura;
       responderPendentes(m.controller);

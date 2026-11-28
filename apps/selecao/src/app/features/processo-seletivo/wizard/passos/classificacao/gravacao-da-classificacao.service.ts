@@ -189,8 +189,7 @@ export class GravacaoDaClassificacao {
 
     if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
     if (!resultado.ok) return { valid: false, messages: this.mensagensDaRecusa(resultado.problem) };
-    const edicoes = await this.gravarEdicoesDoEnem(processoId);
-    return geracao !== this.store.geracao() ? RESPOSTA_DESCARTADA : edicoes;
+    return this.gravarEdicoesDoEnem(processoId, geracao);
   }
 
   /**
@@ -214,6 +213,12 @@ export class GravacaoDaClassificacao {
     this.store.classificacao.descartarRecusas();
     this.store.classificacao.recusaDaEscalaDaNotaFinal.set(null);
     this.registrarQuadroCongelado(resolucaoGravada);
+    this.retirarEdicoesSeSemEnem();
+  }
+
+  /** A classificação gravada sem a nota do ENEM faz o servidor retirar as edições que tinha. */
+  private retirarEdicoesSeSemEnem(): void {
+    if (!this.classificacao().baseadoEmEnem) this.store.classificacao.edicoesGravadas.set([]);
   }
 
   /**
@@ -221,25 +226,36 @@ export class GravacaoDaClassificacao {
    * aceita de processo cuja classificação gravada é baseada em ENEM. Sem edição escolhida não há o
    * que gravar, e a pendência de publicação diz que falta declará-las.
    */
-  private async gravarEdicoesDoEnem(processoId: string): Promise<ValidacaoDoPasso> {
+  private async gravarEdicoesDoEnem(
+    processoId: string,
+    geracao: number,
+  ): Promise<ValidacaoDoPasso | RespostaDescartada> {
     const draft = this.store.draft();
     const edicoes = draft.classificacao.edicoesEnem;
     if (!declaraEdicoesDoEnem(draft) || edicoes.length === 0) return { valid: true };
 
-    const resposta = await this.cadastro.definirOpcoesDeclaradas(
-      processoId,
-      FATO_DA_EDICAO_DO_ENEM,
-      { opcoes: comoOpcoesDasEdicoes(edicoes) },
-    );
-    return resposta.ok ? this.edicoesAceitas() : this.edicoesRecusadas(resposta.problem);
+    const resposta = await this.enviarEdicoes(processoId, edicoes);
+    if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
+    return resposta.ok
+      ? this.edicoesAceitas(edicoes)
+      : this.edicoesRecusadas(resposta.problem, resposta.inconclusiva);
   }
 
-  private edicoesAceitas(): ValidacaoDoPasso {
+  private enviarEdicoes(processoId: string, edicoes: readonly string[]) {
+    return this.cadastro.definirOpcoesDeclaradas(processoId, FATO_DA_EDICAO_DO_ENEM, {
+      opcoes: comoOpcoesDasEdicoes(edicoes),
+    });
+  }
+
+  private edicoesAceitas(enviadas: readonly string[]): ValidacaoDoPasso {
+    this.store.classificacao.edicoesGravadas.set(enviadas);
     this.store.classificacao.recusaDasEdicoesDoEnem.set(null);
     return { valid: true };
   }
 
-  private edicoesRecusadas(problema: ProblemDetails): ValidacaoDoPasso {
+  /** Sem resposta conclusiva o servidor pode ter aceitado a lista: o que ele tem fica desconhecido. */
+  private edicoesRecusadas(problema: ProblemDetails, inconclusiva: boolean): ValidacaoDoPasso {
+    if (inconclusiva) this.store.classificacao.edicoesGravadas.set(null);
     const { title, detail } = this.problemI18n.resolve(problema);
     const recusa = detail ?? title;
     this.store.classificacao.recusaDasEdicoesDoEnem.set(recusa);

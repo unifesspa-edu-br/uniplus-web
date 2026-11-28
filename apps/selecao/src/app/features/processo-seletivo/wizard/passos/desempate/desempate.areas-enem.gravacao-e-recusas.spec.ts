@@ -72,6 +72,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: gravação e rec
         .flush({
           id: PROCESSO_ID,
           classificacao: null,
+          opcoesDeclaradas: [],
           criteriosDesempate: [
             {
               ordem: 1,
@@ -137,7 +138,12 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: gravação e rec
         .expectOne((r) => r.url.endsWith(ROTA_DESEMPATE))
         .flush(null, { status: 204, statusText: 'No Content' });
       await gravacao;
-      leituraAntiga.flush({ id: PROCESSO_ID, classificacao: null, criteriosDesempate: [] });
+      leituraAntiga.flush({
+        id: PROCESSO_ID,
+        classificacao: null,
+        criteriosDesempate: [],
+        opcoesDeclaradas: [],
+      });
       await antiga;
 
       expect(m.store.classificacao.criteriosDesempateGravados()?.[0].areas).toEqual(['REDACAO']);
@@ -162,7 +168,12 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: gravação e rec
 
       m.controller
         .expectOne((r) => r.url.endsWith(`/api/selecao/processos-seletivos/${PROCESSO_ID}`))
-        .flush({ id: PROCESSO_ID, classificacao: null, criteriosDesempate: [] });
+        .flush({
+          id: PROCESSO_ID,
+          classificacao: null,
+          criteriosDesempate: [],
+          opcoesDeclaradas: [],
+        });
       await expect(gravacao).resolves.toEqual({ valid: true });
       expect(m.store.classificacao.motivoDaReleitura()).not.toBe('desconhecida');
     });

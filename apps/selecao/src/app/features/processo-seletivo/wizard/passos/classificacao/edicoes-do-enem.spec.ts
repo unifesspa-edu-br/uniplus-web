@@ -2,7 +2,12 @@ import { OrigemCandidatosCodigo, type ProcessoSeletivoDto } from '@uniplus/share
 import { describe, expect, it } from 'vitest';
 
 import type { WizardDraft } from '../../processo-seletivo.models';
-import { anoDaEdicao, declaraEdicoesDoEnem, edicoesDoEnemDe } from './edicoes-do-enem';
+import {
+  anoDaEdicao,
+  declaraEdicoesDoEnem,
+  edicoesDoEnemDe,
+  edicoesPorGravar,
+} from './edicoes-do-enem';
 
 const rascunho = (baseadoEmEnem: boolean, origem: OrigemCandidatosCodigo): WizardDraft =>
   ({
@@ -21,6 +26,32 @@ describe('declaraEdicoesDoEnem', () => {
     expect(declaraEdicoesDoEnem(rascunho(false, OrigemCandidatosCodigo.INSCRICAO_PROPRIA))).toBe(
       false,
     );
+  });
+});
+
+describe('edicoesPorGravar', () => {
+  const comEdicoes = (edicoes: string[], origem = OrigemCandidatosCodigo.INSCRICAO_PROPRIA) => {
+    const draft = rascunho(true, origem);
+    draft.classificacao.edicoesEnem = edicoes;
+    return draft;
+  };
+
+  it('não há o que gravar com a mesma sequência', () => {
+    expect(edicoesPorGravar(comEdicoes(['2025', '2026']), ['2025', '2026'])).toBe(false);
+  });
+
+  it('há o que gravar com a mesma lista em outra ordem, que o servidor guarda', () => {
+    expect(edicoesPorGravar(comEdicoes(['2024', '2026']), ['2026', '2024'])).toBe(true);
+  });
+
+  it('há o que gravar com lista diferente da gravada', () => {
+    expect(edicoesPorGravar(comEdicoes(['2025', '2026']), ['2025'])).toBe(true);
+    expect(edicoesPorGravar(comEdicoes(['2025']), ['2025', '2026'])).toBe(true);
+  });
+
+  it('não há o que gravar no processo que não declara edições', () => {
+    const importado = comEdicoes(['2025'], OrigemCandidatosCodigo.IMPORTACAO_EXTERNA);
+    expect(edicoesPorGravar(importado, [])).toBe(false);
   });
 });
 
