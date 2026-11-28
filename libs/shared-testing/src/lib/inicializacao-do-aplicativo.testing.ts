@@ -26,12 +26,14 @@ const configuracaoRecebida = {
     issuerUrl: 'https://login.exemplo.br',
     clientId: 'aplicativo',
     antecedenciaDaRenovacaoEmSegundos: 60,
+    periodoMaximoDaSessaoEmSegundos: 36000,
   },
 };
 const autenticacaoEsperada = {
   issuerUrl: 'https://login.exemplo.br',
   clientId: 'aplicativo',
   antecedenciaDaRenovacaoEmSegundos: 60,
+  periodoMaximoDaSessaoEmSegundos: 36000,
   allowedUrls: ['https://api.exemplo.br', 'https://login.exemplo.br', 'https://geo.exemplo.br'],
 };
 

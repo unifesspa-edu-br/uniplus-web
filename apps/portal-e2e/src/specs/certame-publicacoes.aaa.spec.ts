@@ -211,6 +211,7 @@ async function mockCertame(page: Page, publicacoes: CertamePublicoResponse): Pro
           issuerUrl: ISSUER_URL,
           clientId: 'portal-web',
           antecedenciaDaRenovacaoEmSegundos: 60,
+          periodoMaximoDaSessaoEmSegundos: 36000,
         },
       }),
     }),

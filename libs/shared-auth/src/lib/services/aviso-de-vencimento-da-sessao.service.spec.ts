@@ -11,8 +11,6 @@ const SEGUNDO = 1000;
 function sessaoQueVenceEm(segundos: number, limite: LimiteDaSessao = 'inatividade') {
   return {
     venceEm: INICIO + segundos * SEGUNDO,
-    concedidoMs: 1800 * SEGUNDO,
-    maiorConcedidoMs: 1800 * SEGUNDO,
     limite,
   } satisfies PrazoDaCredencial;
 }
@@ -111,6 +109,27 @@ describe('AvisoDeVencimentoDaSessao', () => {
     const { aviso } = preparar(100, 'periodoMaximo');
 
     expect(aviso.situacao()).toBe('soEntrandoDeNovo');
+  });
+
+  it('com o período máximo a menos de dois minutos, ao carregar a página, abre sem pedir renovação', () => {
+    const { aviso, refreshToken } = preparar(90, 'periodoMaximo');
+
+    expect(aviso.aberto()).toBe(true);
+    expect(aviso.situacao()).toBe('soEntrandoDeNovo');
+    expect(refreshToken).not.toHaveBeenCalled();
+  });
+
+  it('com o período máximo longe do fim, ao carregar a página, o aviso fica fechado', () => {
+    const { aviso } = preparar(1800, 'periodoMaximo');
+
+    expect(aviso.aberto()).toBe(false);
+  });
+
+  it('com a inatividade a menos de dois minutos, ao carregar a página, oferece continuar', () => {
+    const { aviso } = preparar(90, 'inatividade');
+
+    expect(aviso.aberto()).toBe(true);
+    expect(aviso.situacao()).toBe('podeContinuar');
   });
 
   it('continuar com prazo novo fecha o aviso', async () => {

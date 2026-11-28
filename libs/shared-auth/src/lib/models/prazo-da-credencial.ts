@@ -1,7 +1,6 @@
-/** O que interessa da credencial de renovação decodificada: os instantes, em segundos do servidor. */
+/** O que interessa da credencial de renovação decodificada: o vencimento, em segundos do servidor. */
 export interface CredencialDeRenovacao {
   readonly exp?: number;
-  readonly iat?: number;
 }
 
 export type LimiteDaSessao = 'inatividade' | 'periodoMaximo';
@@ -10,40 +9,48 @@ export type LimiteDaSessao = 'inatividade' | 'periodoMaximo';
 export interface PrazoDaCredencial {
   /** O vencimento, em milissegundos no relógio deste navegador. */
   readonly venceEm: number;
-  /** Quanto o provedor concedeu nesta emissão, em milissegundos. */
-  readonly concedidoMs: number;
-  /** O maior prazo concedido visto nesta aba: a base do que o provedor admite sem uso. */
-  readonly maiorConcedidoMs: number;
   readonly limite: LimiteDaSessao;
 }
 
 const MILISSEGUNDOS_POR_SEGUNDO = 1000;
 
 /**
- * Lê o prazo da credencial de renovação. Sem `exp` e `iat` não há prazo a avisar. O período
- * máximo da sessão não está em token algum: ele se revela quando o provedor concede menos do que
- * já concedeu, e dali em diante o limite continua sendo o período máximo.
+ * Quanto antes do fim do período máximo o vencimento da credencial ainda conta como o próprio
+ * período máximo: o provedor pode arredondar o instante da autenticação ou do vencimento.
+ */
+export const MARGEM_DO_PERIODO_MAXIMO_EM_SEGUNDOS = 120;
+
+/**
+ * Lê o prazo da credencial de renovação. Sem `exp` não há prazo a avisar. O limite é o período
+ * máximo quando o vencimento chega ao instante da autenticação mais esse período; qualquer outra
+ * situação, inclusive instante da autenticação ausente, é tratada como inatividade, o limite que o
+ * pedido de mais tempo pode estender. Só os segundos do servidor entram na classificação: a
+ * diferença de relógio corrige apenas o vencimento no relógio deste navegador.
  */
 export function lerPrazoDaCredencial(
   credencial: CredencialDeRenovacao | undefined,
+  autenticadoEmSegundos: number | undefined,
   diferencaDeRelogioEmSegundos: number,
-  anterior: PrazoDaCredencial | null,
+  periodoMaximoEmSegundos: number,
 ): PrazoDaCredencial | null {
-  const { exp, iat } = credencial ?? {};
-  if (exp === undefined || iat === undefined) return null;
-  const concedidoMs = (exp - iat) * MILISSEGUNDOS_POR_SEGUNDO;
+  const exp = credencial?.exp;
+  if (exp === undefined) return null;
   return {
     venceEm: (exp + diferencaDeRelogioEmSegundos) * MILISSEGUNDOS_POR_SEGUNDO,
-    concedidoMs,
-    maiorConcedidoMs: Math.max(anterior?.maiorConcedidoMs ?? 0, concedidoMs),
-    limite: limiteObservado(concedidoMs, anterior),
+    limite: limiteDaSessao(exp, autenticadoEmSegundos, periodoMaximoEmSegundos),
   };
 }
 
-function limiteObservado(concedidoMs: number, anterior: PrazoDaCredencial | null): LimiteDaSessao {
-  if (anterior === null) return 'inatividade';
-  const concedeuMenos = concedidoMs < anterior.maiorConcedidoMs;
-  return concedeuMenos || anterior.limite === 'periodoMaximo' ? 'periodoMaximo' : 'inatividade';
+function limiteDaSessao(
+  exp: number,
+  autenticadoEmSegundos: number | undefined,
+  periodoMaximoEmSegundos: number,
+): LimiteDaSessao {
+  if (autenticadoEmSegundos === undefined) return 'inatividade';
+  const fimDoPeriodo = autenticadoEmSegundos + periodoMaximoEmSegundos;
+  return exp >= fimDoPeriodo - MARGEM_DO_PERIODO_MAXIMO_EM_SEGUNDOS
+    ? 'periodoMaximo'
+    : 'inatividade';
 }
 
 /** O que interessa do token de acesso decodificado: os instantes, em segundos do servidor. */

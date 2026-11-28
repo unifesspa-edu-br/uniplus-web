@@ -1,9 +1,24 @@
 import { TestBed } from '@angular/core/testing';
+import type Keycloak from 'keycloak-js';
 import { AuthService } from './auth.service';
+import type { AuthConfig } from '../models/auth-config.model';
+import { espiarCriacaoDoKeycloak } from './auth.service.testing';
+
+const PERIODO_MAXIMO_EM_SEGUNDOS = 36000;
+const AUTENTICADO_EM = 1000;
+
+const configDeTeste: AuthConfig = {
+  issuerUrl: 'http://localhost:8080/realms/unifesspa',
+  clientId: 'selecao-web',
+  antecedenciaDaRenovacaoEmSegundos: 60,
+  periodoMaximoDaSessaoEmSegundos: PERIODO_MAXIMO_EM_SEGUNDOS,
+  allowedUrls: [],
+};
 
 interface KeycloakDeTeste {
   updateToken: () => Promise<boolean>;
   refreshTokenParsed?: { iat: number; exp: number };
+  idTokenParsed?: { auth_time?: number };
   tokenParsed?: { iat: number; exp: number };
   timeSkew?: number;
 }
@@ -34,6 +49,19 @@ describe('AuthService — prazo da credencial de renovação', () => {
 
     expect(service.prazoDaCredencial()?.venceEm).toBe(1602 * 1000);
     expect(service.prazoDaCredencial()?.limite).toBe('inatividade');
+  });
+
+  it('reconhece o período máximo já na primeira leitura, pelo instante da autenticação', async () => {
+    espiarCriacaoDoKeycloak(service).mockReturnValue({
+      init: async () => true,
+      authenticated: true,
+      idTokenParsed: { auth_time: AUTENTICADO_EM },
+      refreshTokenParsed: { iat: AUTENTICADO_EM, exp: AUTENTICADO_EM + PERIODO_MAXIMO_EM_SEGUNDOS },
+    } as unknown as Keycloak);
+
+    await service.init(configDeTeste);
+
+    expect(service.prazoDaCredencial()?.limite).toBe('periodoMaximo');
   });
 
   it('lê quando o acesso foi emitido e quando vence, corrigindo a diferença de relógio', async () => {

@@ -18,8 +18,6 @@ function sessaoQueVenceEm(segundos: number): PrazoDaCredencial {
   const venceEm = INICIO + segundos * SEGUNDO;
   return {
     venceEm,
-    concedidoMs: 1800 * SEGUNDO,
-    maiorConcedidoMs: 1800 * SEGUNDO,
     limite: 'inatividade',
   };
 }

@@ -116,6 +116,14 @@ O `apiUrl` e o realm de cada app vêm do `runtime-config.json`
 (`apps/<app>/public/assets/`). Todos apontam para o gateway
 `apiUrl=http://localhost:5000` e o issuer `http://localhost:8080/realms/unifesspa`.
 
+O bloco `oidc` de cada `runtime-config.json` exige também `antecedenciaDaRenovacaoEmSegundos` e
+`periodoMaximoDaSessaoEmSegundos`, ambos números maiores que zero; sem eles o aplicativo não sobe. O
+período máximo (36000 s no realm `unifesspa`) precisa ter o mesmo valor do realm, porque a aplicação
+não o consulta: o limite é o período máximo quando o vencimento da renovação chega a 120 s do
+instante da autenticação mais esse período. Valor menor que o do realm pode esconder o "Continuar"
+do aviso de fim de sessão enquanto ele ainda estenderia; valor maior cai em inatividade, e sem o
+instante da autenticação o limite é sempre inatividade.
+
 Os api clients chamam os paths com prefixo de módulo do contrato (ADR-0064) —
 `/api/selecao/editais`, `/api/configuracao/campi`, `/api/organizacao/unidades` — e
 os de geo sem prefixo (`/api/cidades`, `/api/cep`). O gateway roteia ambos; **não

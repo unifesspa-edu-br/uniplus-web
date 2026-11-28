@@ -73,6 +73,7 @@ Onde:
 - `ApiResult<T>` envolve a response (sucesso ou falha) — produzido pelo `apiResultInterceptor` (ADR-0011).
 - `withVendorMime('foo', 1)` injeta `Accept: application/vnd.uniplus.foo.v1+json` (ADR-0028 do `uniplus-api`).
 - `SELECAO_BASE_PATH` / `INGRESSO_BASE_PATH` / `ORGANIZACAO_BASE_PATH` são `InjectionToken<string>` providos uma vez por aplicação via `provideRuntimeConfig()` a partir de `runtime-config.json`.
+- O bloco `oidc` de `runtime-config.json` exige `issuerUrl`, `clientId`, `antecedenciaDaRenovacaoEmSegundos` e `periodoMaximoDaSessaoEmSegundos` (segundos, maiores que zero, sem valor padrão no código); sem eles a partida falha. O período máximo repete o valor do realm.
 - Bearer é injetado pelo `tokenInterceptor` (ADR-0009) — **nunca** lido manualmente.
 
 **`ProblemDetails`:** o `schema.ts` gerado também declara `components['schemas']['ProblemDetails']` (RFC 7807 default da .NET). **Não use esse tipo.** O wire format real RFC 9457 + extensions Uni+ vive em `@uniplus/shared-core` (ADR-0011 + ADR-0023 do `uniplus-api`).

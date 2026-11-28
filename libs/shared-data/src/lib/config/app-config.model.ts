@@ -11,6 +11,8 @@ export interface OidcRuntimeConfig {
   readonly clientId: string;
   /** Quantos segundos antes de vencer o acesso é renovado; obrigatório e maior que zero. */
   readonly antecedenciaDaRenovacaoEmSegundos: number;
+  /** Período máximo da sessão no provedor, o mesmo valor do realm; obrigatório e maior que zero. */
+  readonly periodoMaximoDaSessaoEmSegundos: number;
 }
 
 export interface AppConfig {
@@ -52,11 +54,19 @@ export function resolveOidcConfig(cfg: AppConfig): OidcRuntimeConfig {
   if (!cfg.oidc) {
     throw new Error('runtime-config.json deve conter o bloco "oidc" com issuerUrl e clientId.');
   }
-  const antecedencia = cfg.oidc.antecedenciaDaRenovacaoEmSegundos;
-  if (typeof antecedencia !== 'number' || !Number.isFinite(antecedencia) || antecedencia <= 0) {
+  exigirNumeroPositivo(cfg.oidc, 'antecedenciaDaRenovacaoEmSegundos');
+  exigirNumeroPositivo(cfg.oidc, 'periodoMaximoDaSessaoEmSegundos');
+  return cfg.oidc;
+}
+
+function exigirNumeroPositivo(
+  oidc: OidcRuntimeConfig,
+  campo: 'antecedenciaDaRenovacaoEmSegundos' | 'periodoMaximoDaSessaoEmSegundos',
+): void {
+  const valor = oidc[campo];
+  if (typeof valor !== 'number' || !Number.isFinite(valor) || valor <= 0) {
     throw new Error(
-      'runtime-config.json deve informar "oidc.antecedenciaDaRenovacaoEmSegundos" com um número maior que zero.',
+      `runtime-config.json deve informar "oidc.${campo}" com um número maior que zero.`,
     );
   }
-  return cfg.oidc;
 }
