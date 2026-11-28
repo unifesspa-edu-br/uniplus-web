@@ -147,6 +147,8 @@ export const criado = () => ['novo-id', { status: 201, statusText: 'Created' }] 
 export interface CatalogosDaPagina {
   readonly cursos?: readonly CursoDto[] | 'falha';
   readonly locais?: readonly LocalOfertaDto[] | 'falha';
+  /** `'pendentes'` deixa os vocabulários sem resposta, como numa leitura que ainda corre. */
+  readonly vocabularios?: 'respondidos' | 'pendentes';
 }
 
 function responder(pedido: TestRequest, resposta: readonly unknown[] | 'falha'): void {
@@ -202,14 +204,14 @@ export class PaginaDeOfertas {
 
   async carregar(itens: readonly OfertaCursoDto[], catalogos: CatalogosDaPagina): Promise<void> {
     this.fixture.detectChanges();
-    this.responderVocabularios();
+    if (catalogos.vocabularios !== 'pendentes') this.responderVocabularios();
     this.http.expectOne((r) => r.url === LISTA).flush(itens);
     responder(this.doCatalogo(CURSOS), catalogos.cursos ?? [engCiv]);
     responder(this.doCatalogo(LOCAIS), catalogos.locais ?? [maraba]);
     await this.propagar();
   }
 
-  private responderVocabularios(): void {
+  responderVocabularios(): void {
     for (const [nome, itens] of Object.entries(vocabulariosDaOferta)) {
       this.http
         .match(`${BASE}/api/configuracao/vocabularios/${nome}`)

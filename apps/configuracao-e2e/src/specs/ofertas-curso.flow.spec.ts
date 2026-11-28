@@ -9,6 +9,7 @@ import {
   UNIDADE,
   preencherCodigoDaOferta,
 } from '../support/dados-de-oferta-de-curso';
+import { reter } from '../support/escritas-retidas';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
@@ -119,6 +120,26 @@ async function mockApi(
   );
 }
 
+const CAMPOS_COM_OPCOES_DA_API = [
+  'programaDeOferta',
+  'formatoPedagogico',
+  'regimeDeFuncionamento',
+  'regimeDeTurno',
+];
+
+/** O envio só sai com todas as opções lidas da API: o teste espera por elas, não só pelas que usa. */
+async function esperarAsOpcoesDaApi(page: Page): Promise<void> {
+  for (const campo of CAMPOS_COM_OPCOES_DA_API) {
+    await expect(page.locator(`[formControlName="${campo}"] option`).first()).toBeAttached();
+  }
+  await expect(page.locator('label.checkbox').first()).toBeAttached();
+}
+
+async function abrirNovaOferta(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Nova oferta de curso' }).first().click();
+  await esperarAsOpcoesDaApi(page);
+}
+
 async function abrirPagina(page: Page): Promise<void> {
   await page.goto('/ofertas-curso');
   await expect(page.getByRole('heading', { name: 'Oferta de curso', level: 1 })).toBeVisible();
@@ -175,7 +196,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await mockApi(page, capturado, []);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Nova oferta de curso' }).first().click();
+    await abrirNovaOferta(page);
     await preencherCodigoDaOferta(page, CODIGO_DA_OFERTA);
     await page.locator('#cfg-oferta-curso-id').selectOption(CURSO_ID);
     await page.locator('#cfg-oferta-local-id').selectOption(LOCAL_ID);
@@ -201,7 +222,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await mockApi(page, capturado, []);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Nova oferta de curso' }).first().click();
+    await abrirNovaOferta(page);
     await preencherCodigoDaOferta(page, CODIGO_DA_OFERTA);
     await page.locator('#cfg-oferta-curso-id').selectOption(CURSO_ID);
     await page.locator('#cfg-oferta-local-id').selectOption(LOCAL_ID);
@@ -227,7 +248,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await mockApi(page, capturado, []);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Nova oferta de curso' }).first().click();
+    await abrirNovaOferta(page);
     await preencherCodigoDaOferta(page, CODIGO_DA_OFERTA);
     await page.locator('#cfg-oferta-curso-id').selectOption(CURSO_ID);
     await page.locator('#cfg-oferta-local-id').selectOption(LOCAL_ID);
@@ -265,7 +286,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await page.setViewportSize({ width: 320, height: 900 });
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Nova oferta de curso' }).first().click();
+    await abrirNovaOferta(page);
 
     await expect(page.getByRole('group', { name: /turnos/i })).toBeVisible();
 
@@ -297,6 +318,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
         exact: true,
       })
       .click();
+    await esperarAsOpcoesDaApi(page);
 
     await expect(page.locator('#cfg-oferta-curso-id')).toHaveCount(0);
     await expect(page.getByText('Bacharelado · Graduação')).toBeVisible();
@@ -312,5 +334,43 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     expect(put['regimeDeFuncionamento']).toBe('EXTENSIVO');
     expect(put['codigo']).toBe(CODIGO_DA_OFERTA);
     expect(put['codigoEmec']).toBe('999999');
+  });
+
+  test('o envio com as opções ainda carregando avisa que espera, e grava depois que elas chegam', async ({
+    page,
+  }) => {
+    const capturado = novoCapturado();
+    await mockApi(page, capturado, []);
+    const opcoes = reter();
+    await page.route(
+      /\/api\/configuracao\/vocabularios\/programas-oferta(\?.*)?$/,
+      async (route) => {
+        await opcoes.retida;
+        await route.fallback();
+      },
+    );
+    await abrirPagina(page);
+
+    await page.getByRole('button', { name: 'Nova oferta de curso' }).first().click();
+    await page.locator('form ~ [role="status"]').waitFor({ state: 'attached' });
+    await page.getByRole('button', { name: 'Criar oferta' }).click();
+
+    await expect(page.locator('form ~ [role="status"]')).toHaveText(
+      'Aguarde as opções carregarem para enviar.',
+    );
+    expect(capturado.posts.length).toBe(0);
+
+    opcoes.liberar();
+    await expect(page.locator('form ~ [role="status"]')).toHaveText('');
+    await esperarAsOpcoesDaApi(page);
+    await preencherCodigoDaOferta(page, CODIGO_DA_OFERTA);
+    await page.locator('#cfg-oferta-curso-id').selectOption(CURSO_ID);
+    await page.locator('#cfg-oferta-local-id').selectOption(LOCAL_ID);
+    await page.locator('#cfg-oferta-unidade-id').selectOption(UNIDADE_ID);
+    await page.locator('[formControlName="regimeDeFuncionamento"]').selectOption('EXTENSIVO');
+    await marcarTurno(page, 'Matutino');
+    await page.getByRole('button', { name: 'Criar oferta' }).click();
+
+    await expect.poll(() => capturado.posts.length).toBe(1);
   });
 });

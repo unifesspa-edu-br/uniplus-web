@@ -8,6 +8,7 @@ import {
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { formatarDataBr } from '@uniplus/shared-utils';
+import { adiarEnvioEnquantoPendente } from '../../shared/envio-adiado/envio-adiado';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { carregarVocabulario } from '../../shared/vocabulario-de-configuracao';
@@ -46,6 +47,10 @@ export class TermoConsentimentoDetalheComponent {
     recarregar: () => this.formasAceite.recarregar(),
     destino: () => document.getElementById('termo-rascunho-formaAceite'),
   });
+  protected readonly envioAdiado = adiarEnvioEnquantoPendente(
+    this.leituraDasFormas.pendente,
+    'Aguarde as opções carregarem para enviar.',
+  );
   protected readonly textoMax = TEXTO_MAX;
   protected readonly statusLabel = computed(() => {
     const termo = this.termo();
@@ -83,7 +88,7 @@ export class TermoConsentimentoDetalheComponent {
   });
 
   protected aoEnviar(): void {
-    if (this.processando() || this.leituraDasFormas.pendente()) return;
+    if (this.processando() || this.envioAdiado.adiarSePendente()) return;
     this.salvar.emit();
     if (this.form().invalid) this.foco.focarPrimeiroInvalido();
   }

@@ -6,6 +6,7 @@ import {
   FalhaDeLeituraDoCampoComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
+import { adiarEnvioEnquantoPendente } from '../../shared/envio-adiado/envio-adiado';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { CriarForm, TEXTO_MAX } from './termo-consentimento-form';
@@ -31,6 +32,10 @@ export class TermoConsentimentoFormularioComponent {
     recarregar: () => this.formasAceite.recarregar(),
     destino: () => document.getElementById('termo-novo-formaAceite'),
   });
+  protected readonly envioAdiado = adiarEnvioEnquantoPendente(
+    this.leituraDasFormas.pendente,
+    'Aguarde as opções carregarem para enviar.',
+  );
   protected readonly textoMax = TEXTO_MAX;
   private readonly foco = acompanharFocoDoEnvio({
     salvando: this.criando,
@@ -42,7 +47,7 @@ export class TermoConsentimentoFormularioComponent {
   }
 
   protected aoEnviar(): void {
-    if (this.criando() || this.leituraDasFormas.pendente()) return;
+    if (this.criando() || this.envioAdiado.adiarSePendente()) return;
     this.salvar.emit();
     if (this.form().invalid) this.foco.focarPrimeiroInvalido();
   }

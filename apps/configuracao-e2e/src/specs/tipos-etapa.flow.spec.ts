@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockApiDeTiposEtapa, novoCapturado, tipoDeEtapa } from '../support/api-de-tipos-etapa';
+import { reter } from '../support/escritas-retidas';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
@@ -21,6 +22,14 @@ const analiseDocumental = tipoDeEtapa(
 /** A caixa de escolha do formulário, e não o texto explicativo que repete o mesmo rótulo. */
 function caixaDeAdmissao(page: Page, rotulo: string) {
   return page.locator('label.checkbox').filter({ hasText: rotulo });
+}
+
+/** O formulário só grava depois de ler os tipos de conceito; o teste espera o fim dessa leitura. */
+async function esperarOsTiposDeConceito(page: Page): Promise<void> {
+  await expect(page.getByRole('group', { name: 'Conceitos admitidos' })).not.toHaveAttribute(
+    'aria-busy',
+    'true',
+  );
 }
 
 async function abrirPagina(page: Page): Promise<void> {
@@ -53,6 +62,7 @@ test.describe('Tipo de etapa — CRUD', () => {
     // O clique é no rótulo: o controle real fica invisível sob a caixa do design system. E
     // escopado à caixa, porque o texto explicativo do topo da página diz a mesma coisa.
     await caixaDeAdmissao(page, 'Compor a nota final').click();
+    await esperarOsTiposDeConceito(page);
     await page.getByRole('button', { name: 'Criar tipo de etapa' }).click();
 
     await expect.poll(() => capturado.posts.length).toBe(1);
@@ -81,6 +91,7 @@ test.describe('Tipo de etapa — CRUD', () => {
     await expect(codigoInput).toHaveValue('ANALISE_DOCUMENTAL');
 
     await caixaDeAdmissao(page, 'Compor a nota final').click();
+    await esperarOsTiposDeConceito(page);
     await page.getByRole('button', { name: 'Salvar tipo de etapa' }).click();
 
     await expect.poll(() => capturado.puts.length).toBe(1);
@@ -88,6 +99,37 @@ test.describe('Tipo de etapa — CRUD', () => {
     expect(capturado.puts[0]).toMatchObject({
       avaliacao: { admitePontuacao: true, admiteEliminacao: true },
     });
+  });
+
+  test('a gravação com os tipos de conceito ainda carregando é recusada com o aviso, e sai depois', async ({
+    page,
+  }) => {
+    const capturado = novoCapturado();
+    await mockApiDeTiposEtapa(page, capturado, [analiseDocumental]);
+    const leitura = reter();
+    await page.route(/\/api\/configuracao\/tipos-conceito(\?.*)?$/, async (route) => {
+      await leitura.retida;
+      await route.fallback();
+    });
+    await abrirPagina(page);
+
+    await page
+      .getByRole('button', {
+        name: `Editar tipo de etapa ${analiseDocumental.codigo}`,
+        exact: true,
+      })
+      .click();
+    await page.getByRole('button', { name: 'Salvar tipo de etapa' }).click();
+
+    await expect(
+      page.locator('ui-drawer').getByText('Aguarde os tipos de conceito carregarem.'),
+    ).toBeAttached();
+    expect(capturado.puts.length).toBe(0);
+
+    leitura.liberar();
+    await esperarOsTiposDeConceito(page);
+    await page.getByRole('button', { name: 'Salvar tipo de etapa' }).click();
+    await expect.poll(() => capturado.puts.length).toBe(1);
   });
 
   test('remove um tipo após confirmação', async ({ page }) => {
