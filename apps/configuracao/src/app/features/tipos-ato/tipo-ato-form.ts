@@ -1,4 +1,5 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { respostaExigida } from '@uniplus/shared-data/utils';
 import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
 import {
   TipoAtoPublicadoDto,
@@ -112,8 +113,11 @@ function atributosDePublicacao(valor: ValoresDoAto) {
     unicoPorObjeto: valor.unicoPorObjeto,
     efeitoIrreversivel: valor.efeitoIrreversivel,
     ehResultado: valor.ehResultado,
-    publicavelComoAvulso: valor.publicavelComoAvulso as boolean,
-    exigeAtoCorrigido: valor.exigeAtoCorrigido as boolean,
+    publicavelComoAvulso: respostaExigida(
+      valor.publicavelComoAvulso,
+      'se o ato é publicável como avulso',
+    ),
+    exigeAtoCorrigido: respostaExigida(valor.exigeAtoCorrigido, 'se o ato exige ato corrigido'),
   };
 }
 

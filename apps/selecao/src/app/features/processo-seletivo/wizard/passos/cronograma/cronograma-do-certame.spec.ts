@@ -129,6 +129,20 @@ describe('o que impede gravar o cronograma', () => {
     expect(problemasDe([faseDeAvaliacao], [etapaValida], catalogoDeFases, [])).toEqual([]);
   });
 
+  it('cobra a pergunta da instância superior em aberto de fase fora do catálogo', () => {
+    const foraDoCatalogo = fase({
+      faseCanonicaId: 'id-fora-do-catalogo',
+      codigo: 'FASE_DO_FUTURO',
+      regraRecurso: recurso({ admiteInstanciaSuperior: null }),
+    });
+
+    const problemas = problemasDe([foraDoCatalogo], [etapaValida], catalogoDeFases, []);
+
+    expect(problemas).toContain(
+      'Na fase FASE_DO_FUTURO: Responda se o recurso admite instância superior. Corrija em Configuração por fase.',
+    );
+  });
+
   /**
    * A âncora não é editada neste passo, mas atravessa o formulário até a
    * gravação. Sem cobrá-la aqui, mexer numa data enviaria o cronograma inteiro

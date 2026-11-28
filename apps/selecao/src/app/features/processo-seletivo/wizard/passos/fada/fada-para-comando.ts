@@ -1,4 +1,5 @@
 import { DefinirFadaRequest } from '@uniplus/shared-data/selecao';
+import { respostaExigida } from '@uniplus/shared-data/utils';
 
 import { WizardDraft } from '../../processo-seletivo.models';
 import { decimalNaForma } from '../../shared/numero-do-campo';
@@ -21,10 +22,11 @@ function baseLegalDe(id: string): DefinirFadaRequest['baseLegal'] {
  * Nenhum default é inventado quando aplica.
  */
 export function comoComandoDoFada(fada: WizardDraft['fada']): DefinirFadaRequest {
-  if (fada.aplica === null) {
-    throw new Error('A declaração do Fator de Atenuação precisa ser respondida antes de gravar.');
-  }
-  return fada.aplica ? fadaAplicado(fada) : FADA_NAO_APLICADO;
+  const aplica = respostaExigida(
+    fada.aplica,
+    'se o processo aplica o Fator de Atenuação das Desigualdades de Acesso',
+  );
+  return aplica ? fadaAplicado(fada) : FADA_NAO_APLICADO;
 }
 
 const FADA_NAO_APLICADO: DefinirFadaRequest = {
