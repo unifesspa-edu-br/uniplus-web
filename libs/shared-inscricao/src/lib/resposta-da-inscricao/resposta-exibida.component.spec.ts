@@ -21,12 +21,23 @@ describe('RespostaExibidaComponent', () => {
     );
   });
 
-  it('a situação conhecida sai em etiqueta, pelo rótulo e não pelo código', async () => {
-    const tela = await montar({ situacao: 'ENVIADA' });
+  it('o texto da situação sai como veio, em etiqueta', async () => {
+    const tela = await montar({ situacao: 'Enviada' });
 
     expect(tela.querySelector('ui-tag')?.textContent?.trim()).toBe('Enviada');
+  });
+
+  it('a situação com código do contrato usa a cor da tabela', async () => {
+    const tela = await montar({ situacao: 'ENVIADA' });
+
     expect(tela.querySelector('ui-tag .tag--success')).not.toBeNull();
-    expect(tela.textContent).not.toContain('ENVIADA');
+  });
+
+  it('o texto que não é código conhecido sai em etiqueta neutra', async () => {
+    const tela = await montar({ situacao: 'Deferida' });
+
+    expect(tela.querySelector('ui-tag')?.textContent?.trim()).toBe('Deferida');
+    expect(tela.querySelector('ui-tag .tag--neutral')).not.toBeNull();
   });
 
   it('o valor comum passa pela apresentação do valor: booleano em Sim/Não e vazio como não informado', async () => {

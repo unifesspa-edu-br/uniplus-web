@@ -32,7 +32,7 @@ import { FormsModule } from '@angular/forms';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { mediaQuerySignal } from '@uniplus/shared-core/dom';
 import { type ApiFailure, type ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
-import { SituacaoInscricaoCodigo } from '@uniplus/shared-data/selecao';
+import { varianteDaSituacaoDaInscricao } from '@uniplus/shared-inscricao/situacao-da-inscricao';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { map, type Observable } from 'rxjs';
@@ -67,12 +67,6 @@ const VIEW_OPTIONS: readonly UiSegmentedOption<VisaoCertames>[] = [
   { value: 'lista', label: 'Lista', icon: 'pi-list' },
   { value: 'cards', label: 'Cards', icon: 'pi-th-large' },
 ];
-
-const INSCRICAO_STATUS_VARIANT: Record<SituacaoInscricaoCodigo, UiTagVariant> = {
-  [SituacaoInscricaoCodigo.RASCUNHO]: 'warning',
-  [SituacaoInscricaoCodigo.ENVIADA]: 'success',
-  [SituacaoInscricaoCodigo.CANCELADA]: 'neutral',
-};
 
 type TipoDeAcaoQueNavega = 'continuar' | 'corrigir' | 'comprovante';
 type TipoDeAcaoDestrutiva = 'cancelar' | 'descartar';
@@ -335,7 +329,7 @@ export class InscricaoListaPage {
   }
 
   protected exibeInscricaoStatusVariantLabel(item: ItemDaLista): UiTagVariant {
-    return item.naoEnviada ? 'danger' : INSCRICAO_STATUS_VARIANT[item.situacao.codigo];
+    return item.naoEnviada ? 'danger' : varianteDaSituacaoDaInscricao(item.situacao.codigo);
   }
 
   private normalizaTexto(texto: string): string {

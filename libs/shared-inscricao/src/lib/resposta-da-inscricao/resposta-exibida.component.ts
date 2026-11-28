@@ -1,9 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-import {
-  rotuloDaSituacaoDaInscricao,
-  varianteDaSituacaoDaInscricao,
-} from '@uniplus/shared-inscricao/situacao-da-inscricao';
+import { varianteDaSituacaoDaInscricao } from '@uniplus/shared-inscricao/situacao-da-inscricao';
 import { TagComponent, ValorApresentadoComponent } from '@uniplus/shared-ui/components';
 import type { ValorExibido } from './valor-da-resposta';
 
@@ -24,7 +21,7 @@ import type { ValorExibido } from './valor-da-resposta';
       }
     } @else if ('situacao' in valor) {
       <ui-tag [variant]="varianteDaSituacaoDaInscricao(valor.situacao)">{{
-        rotuloDaSituacaoDaInscricao(valor.situacao)
+        valor.situacao
       }}</ui-tag>
     } @else {
       <ui-valor-apresentado [valor]="valor.valor" />
@@ -40,6 +37,5 @@ import type { ValorExibido } from './valor-da-resposta';
 export class RespostaExibidaComponent {
   readonly exibido = input.required<ValorExibido>();
 
-  protected readonly rotuloDaSituacaoDaInscricao = rotuloDaSituacaoDaInscricao;
   protected readonly varianteDaSituacaoDaInscricao = varianteDaSituacaoDaInscricao;
 }

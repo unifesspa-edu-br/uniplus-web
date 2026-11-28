@@ -251,7 +251,7 @@ describe('DetalheDaInscricaoPage', () => {
       expect(dado('CPF')).toBe('***.598.363-** Revelar');
     });
 
-    it('mostra o componente situacao como a etiqueta de situação das demais telas', async () => {
+    it('mostra o componente situacao em etiqueta, com o texto como veio', async () => {
       await abrir({
         ...FERNANDA,
         secoes: [
@@ -275,11 +275,11 @@ describe('DetalheDaInscricaoPage', () => {
       });
 
       expect(dd('Situação do vínculo')?.querySelector('.tag')?.textContent?.trim()).toBe(
-        'Cancelada',
+        'CANCELADA',
       );
     });
 
-    it('exibe pelo tipo a situação que a tela não conhece, sem virar etiqueta com o código cru', async () => {
+    it('exibe em etiqueta neutra o texto de situação que não é código do contrato', async () => {
       await abrir({
         ...FERNANDA,
         secoes: [
@@ -302,8 +302,9 @@ describe('DetalheDaInscricaoPage', () => {
         derivados: [],
       });
 
-      expect(dd('Situação do vínculo')?.querySelector('.tag')).toBeNull();
-      expect(dado('Situação do vínculo')).toBe('deferida');
+      expect(dd('Situação do vínculo')?.querySelector('.tag--neutral')?.textContent?.trim()).toBe(
+        'deferida',
+      );
     });
   });
 });
