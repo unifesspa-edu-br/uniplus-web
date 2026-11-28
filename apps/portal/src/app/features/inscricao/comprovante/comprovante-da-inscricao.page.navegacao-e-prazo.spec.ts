@@ -42,7 +42,7 @@ describe('ComprovanteDaInscricaoPage', () => {
     it('o envio que vale leva a etiqueta e não avisa que foi substituído', async () => {
       const tela = await cenario.abrir();
 
-      expect(dado(tela, 'Situação')).toBe('É o que vale');
+      expect(dado(tela, 'Situação')).toBe('Válido');
       expect(tela.textContent).not.toContain('foi substituído');
     });
 

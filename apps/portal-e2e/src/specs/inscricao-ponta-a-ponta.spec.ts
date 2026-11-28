@@ -116,7 +116,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     });
     await test.step('o comprovante mostra o nome social, o CPF mascarado, o município e a edição', async () => {
       await abrirComprovanteNaLista(page, processo);
-      await expect(comprovante(page)).toContainText('É o que vale');
+      await expect(comprovante(page)).toContainText('Válido');
       await expect(comprovante(page)).toContainText('Envio 1 de 1');
       await expect(comprovante(page)).toContainText('horário de Belém (PA)');
       await expect(comprovante(page)).toContainText('Uso do nome social');
@@ -179,7 +179,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
           document.documentElement.dataset['theme'] = 'contrast';
           return anterior;
         });
-        await expect(page.locator('.tag', { hasText: 'É o que vale' })).toHaveCSS(
+        await expect(page.locator('.tag', { hasText: 'Válido' })).toHaveCSS(
           'color',
           'rgb(10, 90, 22)',
         );

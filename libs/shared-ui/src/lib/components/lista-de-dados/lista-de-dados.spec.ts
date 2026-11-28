@@ -12,7 +12,7 @@ import { ListaDeDadosComponent } from './lista-de-dados';
     <ui-lista-de-dados>
       <ng-template uiDado rotulo="Bolsista" [valor]="true"></ng-template>
       <ng-template uiDado rotulo="Observação" [valor]="null"></ng-template>
-      <ng-template uiDado rotulo="Situação"><strong>É o que vale</strong></ng-template>
+      <ng-template uiDado rotulo="Situação"><strong>Válido</strong></ng-template>
     </ui-lista-de-dados>
   `,
 })
@@ -37,6 +37,6 @@ describe('ListaDeDadosComponent e DadoDirective', () => {
   it('com valor, apresenta-o; sem valor, mostra o conteúdo projetado', () => {
     const valores = [...montar().querySelectorAll('dd')].map((dd) => dd.textContent?.trim());
 
-    expect(valores).toEqual(['Sim', 'Não informado', 'É o que vale']);
+    expect(valores).toEqual(['Sim', 'Não informado', 'Válido']);
   });
 });
