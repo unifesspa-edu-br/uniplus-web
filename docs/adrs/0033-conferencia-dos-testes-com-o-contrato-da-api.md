@@ -9,6 +9,8 @@ informed: []
 
 # ADR-0033: Conferência dos testes com o contrato da API
 
+> **Emenda (2026-11-28).** Nas bibliotecas compartilhadas, os valores de enumeração gerados a partir do contrato valem como o tipo derivado do código gerado (`${Enum}`, o conjunto dos textos que a enumeração gerada aceita), sem importar o valor de `@uniplus/shared-data`. A ADR-0030 fixa, na biblioteca da inscrição, que só tipos desse pacote são importados, e a emenda estende o mesmo cuidado às demais bibliotecas compartilhadas; as duas passam a valer juntas. A lista de códigos continua vindo do contrato gerado, sem segunda cópia à mão, e a compilação acusa o código retirado da API; para acusar também o código novo, o dado de teste que precisa cobrir todos os códigos é escrito de forma que a falta de um deles não compile. Os aplicativos e os testes fora das bibliotecas seguem a regra desta ADR, com os valores das constantes geradas. A decisão principal, a conferência dos testes com o contrato, não muda.
+
 ## Contexto e enunciado do problema
 
 Respostas simuladas e dados de teste repetiam códigos escritos à mão. Testes passaram mesmo
