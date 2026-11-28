@@ -133,6 +133,45 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM: releitura do pro
       });
     });
 
+    it('o aviso diz que não impede a publicação, o que fica impedido e o que fazer', async () => {
+      const m = await montarPorConfirmar();
+
+      expect(areasDoDesempate(m).avisoDaReleitura()).toBe(
+        'O quadro de Peso por Área que a última gravação da classificação congelou no processo ainda não foi confirmado por uma releitura. Não é preciso reler antes de publicar: o sistema relê o processo ao publicar. Se essa leitura falhar e houver critério de desempate por área, a publicação para. Enquanto o processo não for relido, não é possível confirmar, no passo Desempate, um critério de desempate por área. Use "Reler o processo" para conferir agora; este aviso some quando a releitura confirmar o que foi gravado.',
+      );
+    });
+
+    it('releitura que falha: o aviso continua à vista e diz que não foi possível reler', async () => {
+      const m = await montarPorConfirmar();
+
+      const releitura = m.componente.relerProcesso();
+      m.controller
+        .expectOne((r) => r.url.endsWith(ROTA_DETALHE))
+        .flush(ERRO_500.corpo, ERRO_500.opcoes);
+      await releitura;
+      m.fixture.detectChanges();
+
+      expect(m.el.querySelector('#desemp-reler-processo')).not.toBeNull();
+      expect(areasDoDesempate(m).avisoDaReleitura()).toBe(
+        'Não foi possível reler o processo agora. Use "Reler o processo" para tentar de novo. O quadro de Peso por Área que a última gravação da classificação congelou no processo ainda não foi confirmado por uma releitura. Não é preciso reler antes de publicar: o sistema relê o processo ao publicar. Se essa leitura falhar e houver critério de desempate por área, a publicação para. Enquanto o processo não for relido, não é possível confirmar, no passo Desempate, um critério de desempate por área. Use "Reler o processo" para conferir agora; este aviso some quando a releitura confirmar o que foi gravado.',
+      );
+    });
+
+    it('a falha de uma releitura não passa para a pendência seguinte', async () => {
+      const m = await montarPorConfirmar();
+      const releitura = m.componente.relerProcesso();
+      m.controller
+        .expectOne((r) => r.url.endsWith(ROTA_DETALHE))
+        .flush(ERRO_500.corpo, ERRO_500.opcoes);
+      await releitura;
+
+      m.store.classificacao.marcarDesconhecida();
+      m.fixture.detectChanges();
+
+      expect(areasDoDesempate(m).avisoDaReleitura()).toContain('Não se sabe o que a classificação');
+      expect(areasDoDesempate(m).avisoDaReleitura()).not.toContain('Não foi possível reler');
+    });
+
     it('se a releitura falha, a cópia continua por confirmar e a falha é anunciada', async () => {
       const m = await montarPorConfirmar();
 

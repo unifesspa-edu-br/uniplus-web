@@ -2,7 +2,7 @@ import { computed, effect, inject, Injectable, signal, untracked } from '@angula
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { CriterioDesempateConfigurado } from '../../processo-seletivo.models';
-import { MOTIVO_DA_RELEITURA } from '../../shared/motivo-da-releitura';
+import { avisoDaReleitura } from '../../shared/motivo-da-releitura';
 import {
   ReleituraDoSnapshot,
   relerProcessoAPedido,
@@ -12,7 +12,6 @@ import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classifi
 import { desempateUsaAreas } from './desempate-para-comando';
 import {
   areasCitadasPor,
-  DEPENDEM_DA_RELEITURA,
   dicaDaSituacao,
   rotulosDasAreas,
   situacaoDoQuadro,
@@ -119,7 +118,7 @@ export class AreasDoDesempate {
   readonly avisoDaReleitura = computed(() => {
     const situacao = this.situacaoDoQuadro();
     return situacao.tipo === 'por-reler' && this.temCriterioPorArea()
-      ? `${MOTIVO_DA_RELEITURA[situacao.motivo]}, e ${DEPENDEM_DA_RELEITURA}. Releia o processo para saber o que ele tem.`
+      ? avisoDaReleitura(situacao.motivo, this.store.classificacao.releituraFalhou())
       : null;
   });
 
@@ -143,6 +142,8 @@ export class AreasDoDesempate {
    */
   async relerProcesso(): Promise<ResultadoDaReleitura> {
     if (!(await relerProcessoAPedido(this.releitura, this.relendoProcesso))) return 'superada';
-    return this.situacaoDoQuadro().tipo === 'por-reler' ? 'ainda-por-reler' : 'lida';
+    if (this.situacaoDoQuadro().tipo !== 'por-reler') return 'lida';
+    this.store.classificacao.registrarReleituraQueFalhou();
+    return 'ainda-por-reler';
   }
 }
