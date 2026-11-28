@@ -95,6 +95,16 @@ describe('StepsComponent', () => {
     expect(texto).not.toContain('(concluída)');
   });
 
+  it('o passo com pergunta sem resposta se anuncia assim, e não como recusado', () => {
+    const { itensDaLista } = montar([
+      { rotulo: 'Dados', status: 'active', comErro: true, semResposta: true },
+    ]);
+
+    const texto = itensDaLista[0].querySelector('button')?.textContent;
+    expect(texto).toContain('(com pergunta sem resposta)');
+    expect(texto).not.toContain('com resposta recusada');
+  });
+
   it('usa botão nativo como alvo e não sobrescreve o papel do item de lista', () => {
     const { itensDaLista } = montar();
 

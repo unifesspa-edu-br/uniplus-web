@@ -15,6 +15,8 @@ export interface StepItem {
    * de erro (borda e cor) aparece nas três.
    */
   readonly comErro?: boolean;
+  /** Com `comErro`: o passo tem pergunta sem resposta, não resposta recusada; o nome acessível diz isso. */
+  readonly semResposta?: boolean;
 }
 
 /**

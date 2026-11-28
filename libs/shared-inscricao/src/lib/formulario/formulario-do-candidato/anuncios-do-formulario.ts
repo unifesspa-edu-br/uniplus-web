@@ -1,36 +1,80 @@
+import { VERDADEIRO } from './interpretador/logica';
 import { anunciarMudancaDosDocumentos } from './anuncio-dos-documentos';
 import type { ItemDeComprovacao } from './regras-de-documentos';
-import type { PassoDoFormulario } from './passos-do-formulario';
+import { rotuloDoSubitem } from './pendencias-do-passo';
+import type { GrupoNoPasso, PassoDoFormulario } from './passos-do-formulario';
 import { anunciarMudancaDasModalidades, type ModalidadesAvaliadas } from './modalidades-avaliadas';
 
-/** Os campos de um passo pelo código, com o rótulo. */
+/** Os campos de um passo pelo código, com o rótulo e os que são de resposta obrigatória. */
 export interface CamposDoPasso {
   readonly chave: string | null;
   readonly campos: ReadonlyMap<string, string>;
+  readonly obrigatorios: ReadonlySet<string>;
 }
 
-/** Os campos que aparecem no passo, para anunciar o que aparece e o que some. */
+interface PerguntaNoPasso {
+  readonly codigo: string;
+  readonly rotulo: string;
+  readonly obrigatoria: boolean;
+}
+
+function subitensDoGrupo({ grupo, avaliado }: GrupoNoPasso): PerguntaNoPasso[] {
+  return avaliado.ocorrencias.lista.flatMap((ocorrencia) =>
+    ocorrencia.campos
+      .filter((subitem) => subitem.regras.visivel === VERDADEIRO)
+      .map((subitem) => ({
+        codigo: `${grupo.codigo}.${ocorrencia.id}.${subitem.fatoCodigo}`,
+        rotulo: rotuloDoSubitem(grupo, subitem),
+        obrigatoria: subitem.regras.obrigatorio === VERDADEIRO,
+      })),
+  );
+}
+
+function perguntasDoPasso(passo: PassoDoFormulario): PerguntaNoPasso[] {
+  const campos = passo.campos.map((c) => ({
+    codigo: c.campo.fatoCodigo,
+    rotulo: c.campo.apresentacao.rotulo,
+    obrigatoria: c.avaliado.regras.obrigatorio === VERDADEIRO,
+  }));
+  return [...campos, ...passo.grupos.flatMap(subitensDoGrupo)];
+}
+
+/** As perguntas que aparecem no passo, campos e subitens de grupo, para anunciar o que aparece e o que some. */
 export function camposDoPasso(passo: PassoDoFormulario | null): CamposDoPasso {
+  const perguntas = passo ? perguntasDoPasso(passo) : [];
   return {
     chave: passo?.chave ?? null,
-    campos: new Map(
-      (passo?.campos ?? []).map((c) => [c.campo.fatoCodigo, c.campo.apresentacao.rotulo]),
-    ),
+    campos: new Map(perguntas.map((p) => [p.codigo, p.rotulo])),
+    obrigatorios: new Set(perguntas.filter((p) => p.obrigatoria).map((p) => p.codigo)),
   };
 }
 
-/** "Apareceu: X. Saiu: Y." quando os campos do mesmo passo mudam com uma resposta; nada ao trocar de passo. */
+function camposAusentesEm(
+  antes: ReadonlyMap<string, string>,
+  depois: ReadonlyMap<string, string>,
+): [string, string][] {
+  return [...depois].filter(([codigo]) => !antes.has(codigo));
+}
+
+const PERGUNTA_NOVA_OBRIGATORIA = 'Pergunta nova de resposta obrigatória.';
+
+/** O mesmo texto em várias ocorrências do grupo é dito uma vez. */
+function textos(entradas: readonly [string, string][]): string {
+  return [...new Set(entradas.map(([, rotulo]) => rotulo))].join(', ');
+}
+
+/**
+ * "Apareceu: X. Saiu: Y." quando as perguntas do mesmo passo mudam com uma resposta; nada ao trocar de
+ * passo. Se o que apareceu é de resposta obrigatória, avisa também que há pergunta nova a responder.
+ */
 export function anunciarCampos(anteriores: CamposDoPasso, atuais: CamposDoPasso): string {
   if (anteriores.chave !== atuais.chave) return '';
-  const apareceram = [...atuais.campos.entries()]
-    .filter(([codigo]) => !anteriores.campos.has(codigo))
-    .map(([, rotulo]) => rotulo);
-  const sairam = [...anteriores.campos.entries()]
-    .filter(([codigo]) => !atuais.campos.has(codigo))
-    .map(([, rotulo]) => rotulo);
+  const apareceram = camposAusentesEm(anteriores.campos, atuais.campos);
+  const sairam = camposAusentesEm(atuais.campos, anteriores.campos);
   return [
-    apareceram.length > 0 ? `Apareceu: ${apareceram.join(', ')}.` : '',
-    sairam.length > 0 ? `Saiu: ${sairam.join(', ')}.` : '',
+    apareceram.length > 0 ? `Apareceu: ${textos(apareceram)}.` : '',
+    apareceram.some(([codigo]) => atuais.obrigatorios.has(codigo)) ? PERGUNTA_NOVA_OBRIGATORIA : '',
+    sairam.length > 0 ? `Saiu: ${textos(sairam)}.` : '',
   ]
     .filter((parte) => parte !== '')
     .join(' ');
