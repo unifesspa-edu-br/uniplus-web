@@ -8,6 +8,7 @@ import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
 import {
   detalheSemClassificacao,
   ROTA_CLASSIFICACAO,
+  RESOLUCAO,
   ROTA_DETALHE,
   aguardarReleitura,
   componente,
@@ -32,8 +33,10 @@ const RECUSA_DAS_CASAS = {
   code: CODIGO_CASAS_OBRIGATORIAS,
   message: 'As casas decimais de arredondamento são obrigatórias.',
 };
-const TEXTO_DA_RESOLUCAO_INCOMPLETA =
-  'A resolução escolhida não tem pesos cadastrados para todos os grupos de área. Complete-a no cadastro de Peso por Área ou escolha outra.';
+const MENSAGEM_DA_API = 'Falta o grupo Saúde e Biológicas na resolução escolhida';
+const ROTULO_DO_PASSO = `Resolução de Peso por Área, no passo ${NOME_DO_PASSO_DA_FORMULA}`;
+const TEXTO_GENERICO =
+  'O servidor recusou a resolução de Peso por Área escolhida. Confira o cadastro de Peso por Área ou escolha outra.';
 
 describe('recusa da resolução de Peso por Área na gravação da classificação', () => {
   montarEliminacao();
@@ -44,25 +47,80 @@ describe('recusa da resolução de Peso por Área na gravação da classificaç�
     const gravacao = componente.persistir();
     recusarGravacao({
       // A raiz traz como título o do primeiro erro de campo — o mesmo da resolução.
-      title: 'A resolução de Pesos por Área não tem pesos para todos os grupos de área',
+      title: MENSAGEM_DA_API,
       code: CODIGO_INCOMPLETA,
       errors: [
-        {
-          field: 'resolucaoPesoAreaEnem',
-          code: CODIGO_INCOMPLETA,
-          message: 'A resolução não tem o grupo Saúde e Biológicas.',
-        },
+        { field: 'resolucaoPesoAreaEnem', code: CODIGO_INCOMPLETA, message: MENSAGEM_DA_API },
       ],
     });
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
-    // O texto é o da tela para o código, e não o `message` que o servidor mandou — e a falha
-    // aparece uma vez só, sem o título da raiz, que diria o mesmo.
-    expect(resultado.messages).toEqual([
-      `Resolução de Peso por Área, no passo ${NOME_DO_PASSO_DA_FORMULA}: ${TEXTO_DA_RESOLUCAO_INCOMPLETA}`,
+    // O texto é o `message` do servidor, como veio — e a falha aparece uma vez só, sem o título da
+    // raiz, que diria o mesmo.
+    expect(resultado.messages).toEqual([`${ROTULO_DO_PASSO}: ${MENSAGEM_DA_API}`]);
+    expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBe(MENSAGEM_DA_API);
+  });
+
+  it.each([
+    'a redação nova, sem letra maiúscula nem ponto final',
+    'Outra redação, com ponto final.',
+  ])(
+    'mostra a redação da API sem alterar a letra inicial nem a pontuação: %s',
+    async (mensagem) => {
+      prepararClassificacaoLocalComResolucao();
+
+      const gravacao = componente.persistir();
+      recusarGravacao({
+        title: 'Recusada.',
+        code: CODIGO_INCOMPLETA,
+        errors: [{ field: 'resolucaoPesoAreaEnem', code: CODIGO_INCOMPLETA, message: mensagem }],
+      });
+
+      expect((await gravacao).messages).toEqual([`${ROTULO_DO_PASSO}: ${mensagem}`]);
+      expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBe(mensagem);
+    },
+  );
+
+  it('uma recusa da resolução e outra da eliminação na mesma gravação mostram cada mensagem', async () => {
+    prepararClassificacaoLocalComResolucao();
+
+    const gravacao = componente.persistir();
+    recusarGravacao({
+      title: 'Recusada.',
+      code: 'uniplus.selecao.validacao',
+      errors: [
+        {
+          field: 'resolucaoPesoAreaEnem',
+          code: CODIGO_INCOMPLETA,
+          message: 'Mensagem inventada da resolução',
+        },
+        {
+          field: 'regrasEliminacao[0].areaCodigo',
+          code: 'uniplus.selecao.configuracao_classificacao.corte_em_area_repetido',
+          message: 'Mensagem inventada do corte',
+        },
+      ],
+    });
+
+    expect((await gravacao).messages).toEqual([
+      `${ROTULO_DO_PASSO}: Mensagem inventada da resolução`,
+      'Regra de eliminação 1: Mensagem inventada do corte',
     ]);
-    expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBe(TEXTO_DA_RESOLUCAO_INCOMPLETA);
+  });
+
+  it('a recusa da resolução sem mensagem da API usa o texto genérico, sem valor digitado', async () => {
+    prepararClassificacaoLocalComResolucao();
+
+    const gravacao = componente.persistir();
+    recusarGravacao({
+      title: 'Recusada.',
+      code: 'uniplus.selecao.validacao',
+      errors: [{ field: 'resolucaoPesoAreaEnem', code: CODIGO_INCOMPLETA, message: '  ' }],
+    });
+
+    expect((await gravacao).messages).toEqual([`${ROTULO_DO_PASSO}: ${TEXTO_GENERICO}`]);
+    expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).not.toContain(RESOLUCAO);
   });
 
   it('recusas iguais da resolução aparecem uma vez só no resumo', async () => {
@@ -111,19 +169,19 @@ describe('recusa da resolução de Peso por Área na gravação da classificaç�
       title: 'Campos inválidos.',
       code: 'uniplus.selecao.validacao',
       errors: [
-        { field: 'resolucaoPesoAreaEnem', code: CODIGO_INCOMPLETA, message: 'x' },
+        { field: 'resolucaoPesoAreaEnem', code: CODIGO_INCOMPLETA, message: MENSAGEM_DA_API },
         RECUSA_DAS_CASAS,
       ],
     });
 
     const resultado = await gravacao;
     expect(resultado.messages).toEqual([
-      `Resolução de Peso por Área, no passo ${NOME_DO_PASSO_DA_FORMULA}: ${TEXTO_DA_RESOLUCAO_INCOMPLETA}`,
+      `${ROTULO_DO_PASSO}: ${MENSAGEM_DA_API}`,
       'A classificação tem campos a corrigir.',
     ]);
   });
 
-  it('usa um texto genérico para a recusa de código que a tela não conhece', async () => {
+  it('mostra a mensagem da API também para um código que a tela não conhece', async () => {
     prepararClassificacaoLocalComResolucao();
 
     const gravacao = componente.persistir();
@@ -131,14 +189,29 @@ describe('recusa da resolução de Peso por Área na gravação da classificaç�
       title: 'A requisição tem campos inválidos.',
       code: 'uniplus.selecao.validacao',
       errors: [
-        { field: 'resolucaoPesoAreaEnem', code: 'uniplus.selecao.codigo_novo', message: 'x' },
+        {
+          field: 'resolucaoPesoAreaEnem',
+          code: 'uniplus.selecao.codigo_novo',
+          message: MENSAGEM_DA_API,
+        },
       ],
     });
 
     await gravacao;
-    expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBe(
-      'O servidor recusou a resolução de Peso por Área escolhida. Confira o cadastro de Peso por Área ou escolha outra.',
+    expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBe(MENSAGEM_DA_API);
+  });
+
+  it('a orientação antes de enviar não chama a API', async () => {
+    prepararClassificacaoLocalComResolucao();
+    store.patchObjectSection('classificacao', { resolucaoPesoAreaEnem: '' });
+
+    const resultado = componente.validar();
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.join(' ')).toContain(
+      'Selecione a resolução de Peso por Área usada na nota',
     );
+    controller.expectNone(ROTA_CLASSIFICACAO);
   });
 
   it('mantém a recusa guardada quando a falha seguinte não julgou a resolução', async () => {

@@ -6,7 +6,9 @@ import { resumoDaRecusa } from './resumo-da-recusa';
 const TITULO = 'Título da raiz.';
 
 function problema(
-  errors: { readonly field: string; readonly code: string }[] | undefined,
+  errors:
+    | { readonly field?: string; readonly code: string; readonly message?: string }[]
+    | undefined,
   code = 'raiz',
 ): ProblemDetails {
   return {
@@ -15,7 +17,7 @@ function problema(
     status: 422,
     code,
     traceId: 't',
-    errors: errors?.map((erro) => ({ ...erro, message: 'x' })),
+    errors: errors?.map((erro) => ({ message: 'x', ...erro })),
   } as ProblemDetails;
 }
 
@@ -105,5 +107,18 @@ describe('resumoDaRecusa', () => {
       'Texto da tela.',
       'Texto da tela.',
     ]);
+  });
+
+  it('causa geral sem mensagem não vira texto vazio: cai no título da raiz', () => {
+    const resumo = resumoDaRecusa(
+      problema([
+        { code: 'conhecido', message: '   ' },
+        { code: 'outro', message: 'Mensagem inventada.' },
+      ]),
+      explicarConhecido,
+      () => TITULO,
+    );
+
+    expect(resumo).toEqual(['Mensagem inventada.', TITULO]);
   });
 });

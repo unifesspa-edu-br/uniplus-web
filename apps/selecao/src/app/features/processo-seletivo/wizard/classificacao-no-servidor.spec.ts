@@ -90,3 +90,14 @@ describe('ClassificacaoNoServidor — edições do ENEM gravadas', () => {
     expect(classificacao.edicoesGravadas()).toEqual([]);
   });
 });
+
+describe('ClassificacaoNoServidor — recusas dos campos da eliminação', () => {
+  it('reiniciar, na troca de processo, esquece as recusas do corte', () => {
+    const classificacao = new ClassificacaoNoServidor();
+    classificacao.recusasPorCampoDaEliminacao.set(new Map([['0.area', 'Mensagem inventada.']]));
+
+    classificacao.reiniciar();
+
+    expect(classificacao.recusasPorCampoDaEliminacao().size).toBe(0);
+  });
+});

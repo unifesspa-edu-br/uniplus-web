@@ -135,7 +135,7 @@ describe('ausência na etapa, pelo passo', () => {
             {
               field: 'regrasEliminacao[0]',
               code: 'uniplus.selecao.configuracao_classificacao.ausencia_na_etapa_repetida',
-              message: 'repetida',
+              message: 'Esta etapa aparece em duas regras de eliminação',
             },
           ],
         },
@@ -152,7 +152,9 @@ describe('ausência na etapa, pelo passo', () => {
       const etapa = raiz.querySelector('#elim-etapa-0');
       expect(etapa?.getAttribute('aria-invalid')).toBe('true');
       expect(etapa?.getAttribute('aria-describedby')).toContain('elim-etapa-erro-0');
-      expect(raiz.querySelector('#elim-etapa-erro-0')?.textContent).toContain('já foi declarada');
+      expect(raiz.querySelector('#elim-etapa-erro-0')?.textContent?.trim()).toBe(
+        'Esta etapa aparece em duas regras de eliminação',
+      );
     });
   });
 });

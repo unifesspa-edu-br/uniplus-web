@@ -189,10 +189,51 @@ describe('recusas do catálogo guardadas pela gravação da classificação', ()
     expect(servico().recusasDoControle('regraEliminacao.0')).toEqual([]);
   });
 
+  it('a troca de processo esquece a recusa do corte junto do campo', async () => {
+    prepararClassificacaoLocal();
+    await recusar([
+      {
+        field: 'regrasEliminacao[0].areaCodigo',
+        code: 'uniplus.selecao.configuracao_classificacao.corte_em_area_repetido',
+        message: 'Mensagem inventada do corte.',
+      },
+    ]);
+    expect(servico().recusaDoCampo(0, 'area')).toBe('Mensagem inventada do corte.');
+
+    store.reset();
+
+    expect(servico().recusaDoCampo(0, 'area')).toBeNull();
+  });
+
+  it('cada recusa do corte mostra a mensagem da API; sem mensagem, o texto genérico', async () => {
+    prepararClassificacaoLocal();
+    const prefixo = 'uniplus.selecao.configuracao_classificacao.';
+
+    await recusar([
+      {
+        field: 'regrasEliminacao[0].areaCodigo',
+        code: `${prefixo}corte_em_area_repetido`,
+        message: 'a redação nova, sem ponto',
+      },
+      {
+        field: 'regrasEliminacao[1]',
+        code: `${prefixo}ausencia_na_etapa_repetida`,
+        message: '',
+      },
+    ]);
+
+    expect(servico().recusaDoCampo(0, 'area')).toBe('a redação nova, sem ponto');
+    expect(servico().recusaDoCampo(1, 'etapa')).toBe(
+      'O servidor recusou a regra de eliminação. Confira os campos da regra.',
+    );
+  });
+
   it('o campo do corte com o sufixo em maiúsculas chega ao controle da área', () => {
     const corte = 'uniplus.selecao.configuracao_classificacao.corte_em_area_fora_do_quadro';
 
-    const recusas = recusasDoCorte([{ field: '$.RegrasEliminacao[2].AreaCodigo', code: corte }]);
+    const recusas = recusasDoCorte([
+      { field: '$.RegrasEliminacao[2].AreaCodigo', code: corte, message: 'Mensagem inventada.' },
+    ]);
 
     expect([...recusas.keys()]).toEqual(['2.area']);
   });

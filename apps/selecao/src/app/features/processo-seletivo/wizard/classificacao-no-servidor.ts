@@ -57,6 +57,12 @@ export class ClassificacaoNoServidor {
     new Map(),
   );
 
+  /**
+   * As recusas da API a um campo de uma regra de eliminação, por `índice.campo`, na última gravação
+   * recusada. Ficam junto do campo até a regra mudar ou a gravação seguinte responder.
+   */
+  readonly recusasPorCampoDaEliminacao = signal<ReadonlyMap<string, string>>(new Map());
+
   /** Recusa às edições do ENEM, gravadas logo depois da classificação, pelos passos Fórmula e Eliminação. Some quando a gravação seguinte dá certo. */
   readonly recusaDasEdicoesDoEnem = signal<string | null>(null);
 
@@ -193,6 +199,7 @@ export class ClassificacaoNoServidor {
     this.recusaDaResolucaoPesoAreaEnem.set(null);
     this.recusaDaEscalaDaNotaFinal.set(null);
     this.recusasDoCatalogo.set(new Map());
+    this.recusasPorCampoDaEliminacao.set(new Map());
     this.pendenciasDaConferencia.set([]);
     this.recusaDasEdicoesDoEnem.set(null);
     this.edicoesGravadas.set([]);

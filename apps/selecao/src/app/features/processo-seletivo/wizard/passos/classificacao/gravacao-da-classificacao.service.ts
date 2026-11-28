@@ -1,5 +1,5 @@
 import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable } from '@angular/core';
 import type { DefinirClassificacaoRequest } from '@uniplus/shared-data/selecao';
 import {
   type CausaDeCampo,
@@ -81,11 +81,8 @@ export class GravacaoDaClassificacao {
   /** Só a classificação: uma tecla em outro passo não refaz a conferência do desempate. */
   private readonly classificacao = computed(() => this.store.draft().classificacao);
 
-  /**
-   * As recusas do servidor a um campo de uma regra, por `índice.campo`. Ficam junto do campo até
-   * a regra mudar ou a gravação seguinte responder.
-   */
-  private readonly recusasPorCampo = signal<ReadonlyMap<string, string>>(new Map());
+  /** As recusas a um campo de uma regra de eliminação ficam no estado da classificação, como as do catálogo. */
+  private readonly recusasPorCampo = this.store.classificacao.recusasPorCampoDaEliminacao;
 
   recusaDoCampo(indice: number, campo: CampoDaRegra): string | null {
     return this.recusasPorCampo().get(`${indice}.${campo}`) ?? null;
