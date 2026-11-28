@@ -50,7 +50,21 @@
         <ui-alert variant="danger" [dynamic]="false" [heading]="tituloDasRecusas(recusadas)">
           Corrija o que está marcado nesta seção e tente de novo.
         </ui-alert>
-        } @switch (passo.bloco) { @case (BLOCO_MODALIDADES_CALCULADAS) { @if (avaliacao(); as
+        } @if (perguntasQueFaltam(); as faltam) { @if (faltam.length > 0) {
+        <section class="alert alert--danger" [attr.aria-labelledby]="idBase() + '-faltam-titulo'">
+          <span class="alert__icon" aria-hidden="true">!</span>
+          <div class="alert__body">
+            <p class="alert__title" [id]="idBase() + '-faltam-titulo'">
+              {{ tituloDasPerguntasQueFaltam(faltam.length) }}
+            </p>
+            <ul class="alert__msg">
+              @for (pergunta of faltam; track $index) {
+              <li>{{ pergunta }}</li>
+              }
+            </ul>
+          </div>
+        </section>
+        } } @switch (passo.bloco) { @case (BLOCO_MODALIDADES_CALCULADAS) { @if (avaliacao(); as
         avaliacao) {
         <insc-modalidades-da-inscricao
           [avaliacao]="avaliacao"
