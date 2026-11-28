@@ -101,12 +101,6 @@ export {
   type UiValorEmConsulta,
 } from './valor-em-consulta/valor-em-consulta';
 export { ValorApresentadoComponent } from './lista-de-dados/valor-apresentado';
-export {
-  rotuloDaSituacaoDaInscricao,
-  varianteDaSituacaoDaInscricao,
-} from './lista-de-dados/situacao-da-inscricao';
-export { valorExibido, type ValorExibido } from './lista-de-dados/valor-da-resposta';
-export { RespostaExibidaComponent } from './lista-de-dados/resposta-exibida.component';
 export { DadoDirective } from './lista-de-dados/dado';
 export {
   ListaDeDadosComponent,

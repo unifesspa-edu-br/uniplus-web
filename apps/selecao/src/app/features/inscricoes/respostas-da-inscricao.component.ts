@@ -12,14 +12,16 @@ import {
 } from '@angular/core';
 import type { ItemDeRespostaDto } from '@uniplus/shared-data/selecao';
 import {
+  RespostaExibidaComponent,
+  valorExibido,
+  type ValorExibido,
+} from '@uniplus/shared-inscricao/resposta-da-inscricao';
+import {
   AlertComponent,
   DadoDirective,
   ListaDeDadosComponent,
-  RespostaExibidaComponent,
   ValorApresentadoComponent,
   type UiValorEmConsulta,
-  valorExibido,
-  type ValorExibido,
 } from '@uniplus/shared-ui/components';
 
 import {
@@ -111,7 +113,7 @@ function respostaExibida(
             [attr.tabindex]="resposta.podeRevelar ? -1 : null"
           >
             <span [class.u-no-print]="resposta.revelacao?.estado === 'revelado'">
-              <ui-resposta-exibida [exibido]="resposta.exibido" />
+              <insc-resposta-exibida [exibido]="resposta.exibido" />
             </span>
             @if (resposta.revelacao?.estado === 'revelado') {
               <span class="u-print-only" aria-hidden="true">

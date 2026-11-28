@@ -7,6 +7,7 @@ import {
   type InscricaoDoProcessoDto,
   type OfertaExibida,
 } from '@uniplus/shared-data/selecao';
+import { varianteDaSituacaoDaInscricao } from '@uniplus/shared-inscricao/situacao-da-inscricao';
 import {
   acompanharLeitura,
   AlertComponent,
@@ -19,8 +20,6 @@ import {
   PageHeaderComponent,
   SpinnerComponent,
   TagComponent,
-  rotuloDaSituacaoDaInscricao,
-  varianteDaSituacaoDaInscricao,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
@@ -267,7 +266,6 @@ export class InscricoesDoProcessoPage {
     recusada: computed(() => this.inscricoes.situacao().estado === 'nao-encontrado'),
   });
 
-  protected readonly rotuloDaSituacaoDaInscricao = rotuloDaSituacaoDaInscricao;
   protected readonly varianteDaSituacaoDaInscricao = varianteDaSituacaoDaInscricao;
 
   protected readonly linhas = computed<readonly LinhaDaInscricao[]>(() =>

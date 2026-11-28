@@ -91,6 +91,8 @@ uniplus-ds CSS-only
 - `@uniplus/shared-data` → `libs/shared-data/src/index.ts`
 - `@uniplus/shared-inscricao/formulario` → `libs/shared-inscricao/formulario/src/index.ts`
 - `@uniplus/shared-inscricao/comprovante` → `libs/shared-inscricao/comprovante/src/index.ts`
+- `@uniplus/shared-inscricao/situacao-da-inscricao` → `libs/shared-inscricao/situacao-da-inscricao/src/index.ts`
+- `@uniplus/shared-inscricao/resposta-da-inscricao` → `libs/shared-inscricao/resposta-da-inscricao/src/index.ts`
 - `@uniplus/shared-utils` → `libs/shared-utils/src/index.ts`
 - `@uniplus/shared-e2e` → `libs/shared-e2e/src/index.ts`
 - `@uniplus/shared-testing` → `libs/shared-testing/src/index.testing.ts`

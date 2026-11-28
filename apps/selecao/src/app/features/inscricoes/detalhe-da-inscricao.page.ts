@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { varianteDaSituacaoDaInscricao } from '@uniplus/shared-inscricao/situacao-da-inscricao';
 import {
   acompanharLeitura,
   AlertComponent,
@@ -11,8 +12,6 @@ import {
   PageHeaderComponent,
   SpinnerComponent,
   TagComponent,
-  rotuloDaSituacaoDaInscricao,
-  varianteDaSituacaoDaInscricao,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
@@ -64,7 +63,6 @@ export class DetalheDaInscricaoPage {
   protected readonly detalhe = inject(DetalheDaInscricao);
   protected readonly arquivoAberto = inject(AberturaDeArquivo);
 
-  protected readonly rotuloDaSituacaoDaInscricao = rotuloDaSituacaoDaInscricao;
   protected readonly varianteDaSituacaoDaInscricao = varianteDaSituacaoDaInscricao;
 
   protected readonly inscricao = this.detalhe.inscricao;
