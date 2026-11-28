@@ -13,6 +13,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 
 import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
+import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
@@ -58,6 +59,7 @@ function servicosEHttp(): (Provider | EnvironmentProviders)[] {
     GravacaoDoProcesso,
     CatalogosDeClassificacao,
     CatalogoDeFases,
+    CatalogoDeFatos,
     GravacaoDaClassificacao,
     LeituraDoCadastroDePesos,
     provideHttpClient(withInterceptors([apiResultInterceptor])),

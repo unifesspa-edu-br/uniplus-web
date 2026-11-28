@@ -11,6 +11,8 @@ export interface RegraEscolhivel {
   readonly baseLegal: string | null;
   /** O texto da regra, o mesmo na opção do seletor e na leitura em consulta. */
   readonly rotulo: string;
+  /** O nome da regra no catálogo; sem nome, o código. */
+  readonly nome: string;
   /** O `value` da opção: `codigo|versao`, a forma que `lerChaveDaRegra` desfaz. */
   readonly chave: string;
   /**
@@ -32,6 +34,13 @@ export function lerChaveDaRegra(chave: string): { codigo: string; versao: string
   return { codigo, versao };
 }
 
+interface OrigemDaOpcao {
+  readonly codigo: string;
+  readonly versao: string;
+  readonly baseLegal: string | null;
+  readonly rotulo?: string | null;
+}
+
 /**
  * As opções que o seletor de uma regra oferece: o catálogo carregado, mais a
  * entrada já gravada quando ela não está mais lá — regra reeditada ou
@@ -47,19 +56,15 @@ export function regrasEscolhiveis(
   versaoSelecionada: string,
 ): readonly RegraEscolhivel[] {
   const gravada = { codigo: codigoSelecionado, versao: versaoSelecionada };
-  const opcoes = catalogo.map((regra) =>
-    opcaoDaRegra(regra.codigo, regra.versao, regra.baseLegal, gravada),
-  );
+  const opcoes = catalogo.map((regra) => opcaoDaRegra(regra, gravada));
 
   if (codigoSelecionado === '' || opcoes.some((regra) => regra.selecionada)) return opcoes;
 
-  return [...opcoes, opcaoDaRegra(codigoSelecionado, versaoSelecionada, null, gravada)];
+  return [...opcoes, opcaoDaRegra({ ...gravada, baseLegal: null }, gravada)];
 }
 
 function opcaoDaRegra(
-  codigo: string,
-  versao: string,
-  baseLegal: string | null,
+  { codigo, versao, baseLegal, rotulo }: OrigemDaOpcao,
   gravada: { readonly codigo: string; readonly versao: string },
 ): RegraEscolhivel {
   return {
@@ -67,6 +72,7 @@ function opcaoDaRegra(
     versao,
     baseLegal,
     rotulo: `${codigo} — ${baseLegal ?? 'base legal indisponível'}`,
+    nome: rotulo?.trim() || codigo,
     chave: chaveDaRegra(codigo, versao),
     selecionada: codigo === gravada.codigo && versao === gravada.versao,
   };
@@ -75,4 +81,9 @@ function opcaoDaRegra(
 /** O texto da regra escolhida entre as opções, ou `null` quando nenhuma foi escolhida. */
 export function rotuloDaRegraEscolhida(opcoes: readonly RegraEscolhivel[]): string | null {
   return opcoes.find((opcao) => opcao.selecionada)?.rotulo ?? null;
+}
+
+/** O nome da regra escolhida, ou `null` quando nenhuma foi escolhida. */
+export function nomeDaRegraEscolhida(opcoes: readonly RegraEscolhivel[]): string | null {
+  return opcoes.find((opcao) => opcao.selecionada)?.nome ?? null;
 }

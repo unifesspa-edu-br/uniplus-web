@@ -3,6 +3,7 @@ import type { WizardDraft } from '../../processo-seletivo.models';
 
 export interface EntradaDaConfirmacaoDoFada {
   readonly fada: WizardDraft['fada'];
+  readonly nomeDaRegra: string | null;
   readonly identificacaoDaBaseLegal: string | undefined;
   readonly citaElegibilidade: boolean;
   readonly fatoDeElegibilidade: string | null;
@@ -28,7 +29,7 @@ function confirmacaoComFada(entrada: EntradaDaConfirmacaoDoFada): ConfirmacaoDeG
     aviso: 'Estes dados serão gravados como o Fator de Atenuação deste processo.',
     rotuloDeConfirmar: 'Gravar o Fator de Atenuação',
     itens: [
-      { rotulo: 'Regra', valor: fada.regraCodigo },
+      { rotulo: 'Regra', valor: entrada.nomeDaRegra ?? fada.regraCodigo },
       { rotulo: 'Multiplicador da nota', valor: fada.fator },
       { rotulo: 'Teto', valor: fada.teto === '' ? 'sem teto' : fada.teto },
       { rotulo: 'Base legal', valor: entrada.identificacaoDaBaseLegal ?? 'não selecionada' },

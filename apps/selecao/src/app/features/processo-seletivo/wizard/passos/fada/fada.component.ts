@@ -26,22 +26,24 @@ import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { gravarNoPasso, RESPOSTA_DESCARTADA } from '../../shared/gravacao/gravacao-no-passo';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
+import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
 import { conteudoDaInscricao } from '../formulario/formularios-do-rascunho';
 import { fasesQueColetamInscricao } from '../../shared/descricao-da-fase';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import {
   lerChaveDaRegra,
+  nomeDaRegraEscolhida,
   regrasEscolhiveis,
-  rotuloDaRegraEscolhida,
 } from '../classificacao/regra-escolhivel';
 import { BasesLegaisDoFada } from './bases-legais-do-fada.service';
 import { confirmacaoDoFada } from './confirmacao-do-fada';
 import { comoComandoDoFada } from './fada-para-comando';
 import { validarFada } from './validacao-do-fada';
 import {
-  type FatoDeElegibilidade,
+  type NomeDoFato,
   citaFatoDeElegibilidade,
   fatosDeElegibilidade,
+  rotuloDoFato,
 } from './fato-de-elegibilidade';
 
 const MENSAGEM_SEM_CADASTRO =
@@ -72,6 +74,7 @@ export class FadaPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacao);
   private readonly catalogoDeFases = inject(CatalogoDeFases);
+  private readonly catalogoDeFatos = inject(CatalogoDeFatos);
   protected readonly basesLegais = inject(BasesLegaisDoFada);
   private readonly destroyRef = inject(DestroyRef);
   private readonly cadastro = inject(CadastroInicial);
@@ -96,6 +99,7 @@ export class FadaPassoComponent {
     });
 
     this.catalogos.carregar();
+    this.catalogoDeFatos.carregar();
   }
 
   readonly regrasFada = computed(() => {
@@ -127,8 +131,24 @@ export class FadaPassoComponent {
 
   /** Os fatos que podem decidir quem recebe o acréscimo, lidos do formulário de inscrição. */
   readonly fatosDeElegibilidade = computed(() =>
-    fatosDeElegibilidade(this.formularioDaInscricao(), this.store.draft().formulario.derivacao),
+    fatosDeElegibilidade(
+      this.formularioDaInscricao(),
+      this.store.draft().formulario.derivacao,
+      this.nomeDoFato(),
+    ),
   );
+
+  /** O nome de cada dado do candidato; sem leitura do cadastro, o código aparece sozinho. */
+  private readonly nomeDoFato = computed<NomeDoFato>(() => {
+    const nomes = new Map(this.catalogoDeFatos.fatos().map((fato) => [fato.codigo, fato.nome]));
+    return (codigo) => nomes.get(codigo);
+  });
+
+  /** O dado fora do formulário, escrito como "Nome (CÓDIGO)" na opção mantida e no erro. */
+  readonly rotuloDoFatoForaDoFormulario = computed(() => {
+    const codigo = this.fatoEscolhidoForaDoFormulario();
+    return codigo === null ? null : rotuloDoFato(codigo, this.nomeDoFato()(codigo));
+  });
 
   /**
    * O fato escolhido que deixou de estar no formulário de inscrição como campo de sim ou não,
@@ -141,19 +161,13 @@ export class FadaPassoComponent {
     return this.fatosDeElegibilidade().some((fato) => fato.codigo === codigo) ? null : codigo;
   });
 
-  rotuloDoFatoDeElegibilidade(fato: FatoDeElegibilidade): string {
-    return fato.origem === 'campo'
-      ? `${fato.rotulo} (${fato.codigo})`
-      : `${fato.codigo} (derivado pelo processo)`;
-  }
-
   /** O FADA como se lê em consulta, com o rótulo de cada escolha. */
   readonly leitura = computed(() => {
     const fada = this.store.draft().fada;
     const base = this.basesLegais.escolhiveis().find((item) => item.id === fada.baseLegalDoFadaId);
     return {
       aplicacao: aplicacaoEmConsulta(fada.aplica),
-      regra: rotuloDaRegraEscolhida(this.regrasFada()),
+      regra: nomeDaRegraEscolhida(this.regrasFada()),
       fator: leituraDoCampoDecimal(fada.fator),
       teto: leituraDoCampoDecimal(fada.teto),
       baseLegal: base === undefined ? null : this.basesLegais.rotuloDaBaseLegal(base),
@@ -169,7 +183,7 @@ export class FadaPassoComponent {
   private leituraDoFatoDeElegibilidade(codigo: string): string | null {
     if (codigo === '') return null;
     const fato = this.fatosDeElegibilidade().find((item) => item.codigo === codigo);
-    return fato === undefined ? codigo : this.rotuloDoFatoDeElegibilidade(fato);
+    return fato?.rotulo ?? rotuloDoFato(codigo, this.nomeDoFato()(codigo));
   }
 
   escolherFatoDeElegibilidade(codigo: string): void {
@@ -202,6 +216,7 @@ export class FadaPassoComponent {
     const fada = this.store.draft().fada;
     return confirmacaoDoFada({
       fada,
+      nomeDaRegra: nomeDaRegraEscolhida(this.regrasFada()),
       identificacaoDaBaseLegal: this.basesLegais
         .escolhiveis()
         .find((base) => base.id === fada.baseLegalDoFadaId)?.identificacao,
