@@ -202,9 +202,13 @@ describe('IdentificacaoPassoComponent', () => {
       expect((await criado).valid).toBe(false);
       detectar();
 
-      expect(gravacao.erroDoIdentificador()).toBe(
-        'O identificador legível já é usado por outro processo seletivo',
-      );
+      expect(gravacao.erroDoCampo('identificadorLegivel')?.recusas).toEqual([
+        {
+          codigo: EM_USO,
+          mensagem: 'O identificador legível já é usado por outro processo seletivo',
+          pagina: null,
+        },
+      ]);
       expect(host.querySelector('#f-identificador')?.getAttribute('aria-invalid')).toBe('true');
       expect(host.querySelector('#f-identificador-erro')?.textContent).toContain('já é usado');
     });
@@ -252,7 +256,9 @@ describe('IdentificacaoPassoComponent', () => {
       await tick();
 
       expect((await gravado).valid).toBe(false);
-      expect(gravacao.erroDoIdentificador()).toContain('já é usado');
+      expect(gravacao.erroDoCampo('identificadorLegivel')?.recusas[0].mensagem).toContain(
+        'já é usado',
+      );
     });
 
     /**

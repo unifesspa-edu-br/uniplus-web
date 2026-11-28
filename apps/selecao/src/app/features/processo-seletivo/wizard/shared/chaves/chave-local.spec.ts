@@ -2,168 +2,152 @@ import { describe, expect, it } from 'vitest';
 
 import { formatoDaChaveValido, novaChave } from './chave-local';
 
-function chaveDe(nome: string, tomadas: readonly string[] = [], tipo = 'etapa'): string {
+function chaveDe(tipo: string, nome: string, tomadas: readonly string[] = []): string {
   return novaChave({ tipo, nome, tomadas: new Set(tomadas) });
 }
 
-describe('novaChave a partir do nome', () => {
-  it('tira acento e cedilha', () => {
-    expect(chaveDe('Avaliação Pós-Graduação')).toBe('avaliacao-pos-graduacao');
+const RotuloLongo = 'Domínio da modalidade escrita formal da língua portuguesa e adequação ao tema';
+
+describe('novaChave: tabela de exemplos da regra', () => {
+  it.each<[string, string, string, readonly string[], string]>([
+    ['fase', 'fase', 'INSCRICAO', [], 'fase_inscricao'],
+    ['etapa', 'etapa', 'PROVA_OBJETIVA', [], 'etapa_prova_objetiva'],
+    [
+      'segunda etapa do tipo',
+      'etapa',
+      'PROVA_OBJETIVA',
+      ['etapa_prova_objetiva'],
+      'etapa_prova_objetiva_2',
+    ],
+    [
+      'banca cujo código começa por banca_',
+      'banca',
+      'BANCA_HETEROIDENTIFICACAO',
+      [],
+      'banca_heteroidentificacao',
+    ],
+    ['banca cujo código é o prefixo', 'banca', 'BANCA', [], 'banca'],
+    ['banca que só começa pelas mesmas letras', 'banca', 'BANCARIA', [], 'banca_bancaria'],
+    ['exigência', 'exigencia', 'CERTIDAO_NASCIMENTO', [], 'exigencia_certidao_nascimento'],
+    [
+      'segunda exigência de código com dígito',
+      'exigencia',
+      'FOTO_3X4',
+      ['exigencia_foto_3x4'],
+      'exigencia_foto_3x4_2',
+    ],
+    [
+      'código cuja chave formada já existe',
+      'exigencia',
+      'FOTO_3X4_2',
+      ['exigencia_foto_3x4', 'exigencia_foto_3x4_2'],
+      'exigencia_foto_3x4_2_2',
+    ],
+    ['item com acento', 'item', 'Redação', [], 'item_redacao'],
+    ['item repetido na etapa', 'item', 'Redação', ['item_redacao'], 'item_redacao_2'],
+    [
+      'nível com pontuação',
+      'nivel',
+      'Atende parcialmente (50%)',
+      [],
+      'nivel_atende_parcialmente_50',
+    ],
+    ['rótulo só de pontuação', 'item', '—', [], 'item'],
+    ['nível vazio repetido', 'nivel', '(*)', ['nivel'], 'nivel_2'],
+  ])('%s', (...linha) => {
+    const [, prefixo, texto, tomadas, esperada] = linha;
+    expect(chaveDe(prefixo, texto, tomadas)).toBe(esperada);
   });
 
-  it('troca espaços e pontuação por um único hífen, sem hífen nas pontas', () => {
-    expect(chaveDe('  Prova -- escrita (1ª fase)!  ')).toBe('prova-escrita-1-fase');
+  it('corta o rótulo longo na última palavra inteira que cabe em 64 caracteres', () => {
+    const chave = chaveDe('item', RotuloLongo);
+
+    expect(chave).toBe('item_dominio_da_modalidade_escrita_formal_da_lingua_portuguesa_e');
+    expect(chave).toHaveLength(64);
   });
 
-  it('usa o tipo como prefixo quando o nome começa por número', () => {
-    expect(chaveDe('2ª chamada', [], 'fase')).toBe('fase-2-chamada');
-  });
+  it('conta o sufixo no corte do rótulo longo', () => {
+    const primeira = chaveDe('item', RotuloLongo);
+    const segunda = chaveDe('item', RotuloLongo, [primeira]);
 
-  it('mantém 64 caracteres exatos', () => {
-    expect(chaveDe('a'.repeat(64))).toBe('a'.repeat(64));
-  });
-
-  it('trunca em 64 sem terminar em hífen', () => {
-    expect(chaveDe(`${'a'.repeat(63)} b`)).toBe('a'.repeat(63));
-  });
-
-  it('gera sempre uma chave de formato válido', () => {
-    expect(formatoDaChaveValido(chaveDe('Ünïcôdé — Ação / 3'))).toBe(true);
+    expect(segunda).toBe('item_dominio_da_modalidade_escrita_formal_da_lingua_portuguesa_2');
+    expect(segunda).toHaveLength(64);
   });
 });
 
-describe('novaChave sem nome aproveitável', () => {
-  it.each(['', '   ', '!!! ???', '— / ©'])('usa tipo-1 para %j', (nome) => {
-    expect(chaveDe(nome, [], 'banca')).toBe('banca-1');
+describe('novaChave: o conjunto de chaves tomadas', () => {
+  it('não reaproveita a chave de parte excluída que uma referência ainda cita', () => {
+    expect(chaveDe('etapa', 'PROVA_OBJETIVA', ['etapa_prova_objetiva'])).toBe(
+      'etapa_prova_objetiva_2',
+    );
   });
 
-  it('usa o menor número livre quando tipo-1 está tomado', () => {
-    expect(chaveDe('', ['etapa-1'])).toBe('etapa-2');
-    expect(chaveDe('', ['etapa-1', 'etapa-3'])).toBe('etapa-2');
-    expect(chaveDe('', ['etapa-1', 'etapa-2'])).toBe('etapa-3');
-  });
-});
+  it('usa o menor sufixo livre', () => {
+    const tomadas = ['item_prova', 'item_prova_2', 'item_prova_4'];
 
-describe('novaChave em colisão', () => {
-  it('acrescenta -2 quando outra parte do mesmo tipo já usa a chave', () => {
-    expect(chaveDe('Prova escrita', ['prova-escrita'])).toBe('prova-escrita-2');
-  });
-
-  it('acrescenta o menor sufixo livre', () => {
-    expect(chaveDe('Prova', ['prova', 'prova-2', 'prova-4'])).toBe('prova-3');
-  });
-
-  it('não reaproveita a chave de parte excluída que ainda é citada', () => {
-    const citadas = ['analise-documental'];
-    expect(chaveDe('Análise documental', citadas)).toBe('analise-documental-2');
+    expect(chaveDe('item', 'Prova', tomadas)).toBe('item_prova_3');
   });
 
   it('mantém a chave sem sufixo quando só uma chave parecida está tomada', () => {
-    expect(chaveDe('Prova', ['prova-escrita'])).toBe('prova');
+    expect(chaveDe('item', 'Prova', ['item_prova_escrita'])).toBe('item_prova');
   });
 
-  it('preserva espaço para o sufixo perto do limite de 64', () => {
-    const base = 'a'.repeat(64);
-    const chave = chaveDe(base, [base]);
-
-    expect(chave).toBe(`${'a'.repeat(62)}-2`);
-    expect(chave).toHaveLength(64);
-    expect(formatoDaChaveValido(chave)).toBe(true);
-  });
-
-  it('cabe em 64 com sufixo de dois dígitos', () => {
-    const base = 'a'.repeat(64);
-    const tomadas = [base, ...Array.from({ length: 8 }, (_, i) => `${'a'.repeat(62)}-${i + 2}`)];
-    const chave = chaveDe(base, tomadas);
-
-    expect(chave).toBe(`${'a'.repeat(61)}-10`);
-    expect(chave).toHaveLength(64);
-  });
-
-  it('não deixa hífen antes do sufixo quando o corte cai num hífen', () => {
-    const nome = `${'a'.repeat(61)} b`;
-    expect(chaveDe(nome, [`${'a'.repeat(61)}-b`])).toBe(`${'a'.repeat(61)}-2`);
+  it('numera o texto vazio repetido a partir de 2, sem repetir', () => {
+    expect(chaveDe('nivel', '', ['nivel', 'nivel_2'])).toBe('nivel_3');
   });
 });
 
-describe('novaChave com tipo longo', () => {
-  const tipoLongo = 'a'.repeat(64);
+describe('novaChave: limite de 64 caracteres', () => {
+  it('mantém 64 caracteres exatos', () => {
+    const texto = 'a'.repeat(59);
 
-  it('mantém até 64 caracteres sem nome, truncando o tipo para caber o número', () => {
-    const chave = chaveDe('', [], tipoLongo);
-
-    expect(chave).toBe(`${'a'.repeat(32)}-1`);
-    expect(formatoDaChaveValido(chave)).toBe(true);
+    expect(chaveDe('item', texto)).toBe(`item_${texto}`);
   });
 
-  it('gera chaves válidas e distintas de tipo-1 a tipo-10', () => {
+  it('cabe em 64 caracteres também com sufixo de dois dígitos', () => {
     const tomadas: string[] = [];
-    for (let numero = 1; numero <= 10; numero++) {
-      const chave = chaveDe('', tomadas, tipoLongo);
+    for (let numero = 1; numero <= 10; numero++)
+      tomadas.push(chaveDe('item', RotuloLongo, tomadas));
+    const decima = tomadas[9];
 
-      expect(chave.endsWith(`-${numero}`)).toBe(true);
-      expect(formatoDaChaveValido(chave)).toBe(true);
-      expect(tomadas).not.toContain(chave);
-      tomadas.push(chave);
-    }
+    expect(decima.endsWith('_10')).toBe(true);
+    expect(decima.length).toBeLessThanOrEqual(64);
+    expect(formatoDaChaveValido(decima)).toBe(true);
   });
 
-  it('não termina o prefixo em hífen ao truncar o tipo', () => {
-    const tipo = `${'a'.repeat(31)}-${'b'.repeat(32)}`;
-
-    expect(chaveDe('', [], tipo)).toBe(`${'a'.repeat(31)}-1`);
+  it('fica só no prefixo quando o texto é uma palavra única maior que o limite', () => {
+    expect(chaveDe('item', 'x'.repeat(80))).toBe('item');
   });
 
-  it('junta o prefixo truncado ao nome que começa por dígito, até 64 caracteres', () => {
-    const chave = chaveDe(`2${'x'.repeat(80)}`, [], tipoLongo);
+  it('gera chave válida e livre para vários textos, também em colisão repetida', () => {
+    const textos = ['', '!!!', '2ª chamada', 'x'.repeat(70), 'Prova escrita', RotuloLongo];
+    for (const texto of textos) {
+      const tomadas = new Set<string>();
+      for (let rodada = 0; rodada < 12; rodada++) {
+        const chave = novaChave({ tipo: 'item', nome: texto, tomadas });
 
-    expect(chave).toBe(`${'a'.repeat(32)}-2${'x'.repeat(30)}`);
-    expect(chave).toHaveLength(64);
-    expect(formatoDaChaveValido(chave)).toBe(true);
-  });
-
-  it('acrescenta o sufixo de colisão ao prefixo mais o nome sem passar de 64', () => {
-    const nome = `2${'x'.repeat(80)}`;
-    const primeira = chaveDe(nome, [], tipoLongo);
-    const segunda = chaveDe(nome, [primeira], tipoLongo);
-
-    expect(segunda).toHaveLength(64);
-    expect(segunda.endsWith('-2')).toBe(true);
-    expect(formatoDaChaveValido(segunda)).toBe(true);
-  });
-});
-
-describe('novaChave: todo resultado tem formato válido', () => {
-  const tipos = [1, 10, 31, 32, 33, 63, 64].map((tamanho) => 'a'.repeat(tamanho));
-  const nomes = ['', '!!!', '2ª chamada', 'x'.repeat(70), `1${'y'.repeat(70)}`, 'Prova escrita'];
-
-  it('vale para tipos e nomes de vários tamanhos, também em colisão repetida', () => {
-    for (const tipo of tipos) {
-      for (const nome of nomes) {
-        const tomadas = new Set<string>();
-        for (let rodada = 0; rodada < 12; rodada++) {
-          const chave = novaChave({ tipo, nome, tomadas });
-
-          expect(formatoDaChaveValido(chave), chave).toBe(true);
-          expect(tomadas.has(chave)).toBe(false);
-          tomadas.add(chave);
-        }
+        expect(formatoDaChaveValido(chave), chave).toBe(true);
+        expect(tomadas.has(chave)).toBe(false);
+        tomadas.add(chave);
       }
     }
   });
 });
 
 describe('formatoDaChaveValido', () => {
-  it.each(['a', 'etapa-1', 'prova-escrita-2', 'a1-b2', 'a'.repeat(64)])('aceita %s', (chave) => {
-    expect(formatoDaChaveValido(chave)).toBe(true);
-  });
+  it.each(['a', 'etapa_1', 'etapa_prova_objetiva_2', 'a1_b2', 'a'.repeat(64)])(
+    'aceita %s',
+    (chave) => {
+      expect(formatoDaChaveValido(chave)).toBe(true);
+    },
+  );
 
   it.each([
     ['maiúscula', 'Etapa'],
-    ['sublinhado', 'etapa_1'],
-    ['hífen duplo', 'etapa--1'],
-    ['hífen no fim', 'etapa-'],
-    ['hífen no início', '-etapa'],
+    ['hífen', 'prova-objetiva'],
+    ['sublinhado duplo', 'etapa__1'],
+    ['sublinhado no fim', 'etapa_'],
+    ['sublinhado no início', '_etapa'],
     ['começa por dígito', '1etapa'],
     ['vazia', ''],
     ['acento', 'avaliação'],

@@ -27,6 +27,7 @@ const BASE = 'http://localhost:5000';
 function etapaQueCompoeNota(): EtapaPontuada {
   return {
     id: 'etapa-1',
+    chave: 'etapa_1',
     nome: 'Prova objetiva',
     carater: CaraterEtapaCodigo.CLASSIFICATORIA,
     tipoEtapaOrigemId: 'tipo-1',

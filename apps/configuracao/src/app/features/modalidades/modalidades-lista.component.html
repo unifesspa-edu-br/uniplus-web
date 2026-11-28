@@ -1,4 +1,8 @@
-<section class="panel" aria-labelledby="cfg-modalidades-title">
+<section
+  class="panel"
+  aria-labelledby="cfg-modalidades-title"
+  [attr.aria-busy]="loading() ? 'true' : null"
+>
   <div class="panel-head">
     <div class="panel-head__title">
       <h2 id="cfg-modalidades-title" #titulo tabindex="-1">Modalidades</h2>
@@ -14,6 +18,8 @@
       Nova modalidade
     </a>
   </div>
+
+  <span class="sr-only" role="status">{{ disponiveis() }}</span>
 
   <ng-content />
 
@@ -40,17 +46,5 @@
         <a class="btn btn--primary" routerLink="novo">Nova modalidade</a>
       </ui-empty-state>
     }
-  }
-
-  @if (temAnterior() || temProximo()) {
-    <ui-pager
-      statusText="Navegação por páginas"
-      navigationLabel="Paginação de modalidades"
-      [hasPrevious]="temAnterior()"
-      [hasNext]="temProximo()"
-      [isDisabled]="loading() || removendo()"
-      (previous)="anterior.emit()"
-      (next)="proximo.emit()"
-    />
   }
 </section>

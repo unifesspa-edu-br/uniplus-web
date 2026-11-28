@@ -22,8 +22,6 @@ describe('ModalidadesListaComponent', () => {
       loading: false,
       errorMessage: null,
       temFiltroAtivo: temFiltro,
-      temAnterior: true,
-      temProximo: true,
       removendo,
       emRemocao: removendo,
     };
@@ -37,26 +35,31 @@ describe('ModalidadesListaComponent', () => {
       b.textContent?.includes(texto),
     );
 
-  it('com remoção em curso, a paginação fica indisponível', () => {
-    montar(3, false, true);
-    const paginacao = [...raiz.querySelectorAll('ui-pager button')];
-    expect(paginacao).toHaveLength(2);
-    expect(paginacao.every((b) => b.getAttribute('aria-disabled') === 'true')).toBe(true);
-  });
-
   it('com remoção em curso, "Limpar filtros" do estado vazio fica desabilitado', () => {
     montar(0, true, true);
     expect(botao('Limpar filtros')?.disabled).toBe(true);
   });
 
-  it('sem remoção, os acionadores de limpar e de paginação respondem', () => {
+  it('ao terminar a leitura, anuncia em região viva quantas modalidades há', () => {
+    montar(2, false, false);
+    expect(raiz.querySelector('[role="status"]')?.textContent).toBe('2 modalidades disponíveis.');
+    expect(raiz.querySelector('section')?.hasAttribute('aria-busy')).toBe(false);
+  });
+
+  it('enquanto carrega, marca ocupado e não anuncia a contagem', () => {
+    montar(2, false, false);
+    fixture.componentRef.setInput('loading', true);
+    fixture.detectChanges();
+    expect(raiz.querySelector('section')?.getAttribute('aria-busy')).toBe('true');
+    expect(raiz.querySelector('[role="status"]')?.textContent).toBe('');
+  });
+
+  it('sem remoção, o acionador de limpar responde', () => {
     montar(0, true, false);
     const pedidos: string[] = [];
     fixture.componentInstance.limpar.subscribe(() => pedidos.push('limpar'));
-    fixture.componentInstance.proximo.subscribe(() => pedidos.push('proximo'));
     botao('Limpar filtros')?.click();
-    botao('Próximo')?.click();
-    expect(pedidos).toEqual(['limpar', 'proximo']);
+    expect(pedidos).toEqual(['limpar']);
   });
 
   describe('foco depois da remoção no diálogo', () => {

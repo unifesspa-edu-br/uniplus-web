@@ -102,10 +102,10 @@ describe('CursosPage — paginação e busca', () => {
     expect(p2.request.params.get('cursor')).toBe('p2');
     p2.flush(
       JSON.stringify({
-        type: 'https://uniplus.dev/erros/uniplus.cursor.invalido',
+        type: 'https://uniplus.dev/erros/uniplus.paginacao.cursor_invalido',
         title: 'Cursor de paginação inválido',
         status: 400,
-        code: 'uniplus.cursor.invalido',
+        code: 'uniplus.paginacao.cursor_invalido',
         traceId: 'test-trace',
       }),
       {

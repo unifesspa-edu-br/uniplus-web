@@ -291,3 +291,25 @@ describe('conteudoDoLugar e chaveDaParteDoLugar', () => {
     expect(chaveDaParteDoLugar({ tipo: 'recursoRegravado', etapaId: ETAPA })).toBeNull();
   });
 });
+
+describe('lugarDaRecusaDaPublicacao: fase em chamadas sem formulário obrigatório', () => {
+  const doPonteiro = (
+    posicao: number,
+    identificadores: { lista: string; identificador: string }[],
+  ) =>
+    lugarDaRecusaDaPublicacao(
+      { campo: `/cronograma/fases/${posicao}`, identificadores },
+      CRONOGRAMA,
+    );
+
+  it('leva ao campo da fase que a API identificou, e não da fase que a posição aponta', () => {
+    expect(doPonteiro(0, [daFase('CLASSIFICACAO')])).toMatchObject({
+      tipo: 'fase',
+      codigo: 'CLASSIFICACAO',
+    });
+  });
+
+  it('sem identificador da fase, a recusa fica sem lugar e aparece no resumo', () => {
+    expect(doPonteiro(1, [])).toBeNull();
+  });
+});

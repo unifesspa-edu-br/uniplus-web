@@ -79,7 +79,7 @@ test.describe('Etapa da nota do ENEM com bancas — matriz DS @ds', () => {
     await simularOQuadroDeVagas(page, testInfo);
     await publicarPelaRevisao(page, testInfo);
 
-    await page.getByRole('button', { name: `Ir ao campo da causa ${codigo}` }).click();
+    await page.getByRole('button', { name: `Ir ao campo da causa 1: ${mensagem}` }).click();
 
     const lista = listaDaEtapa(page);
     await expect(lista.getByText(mensagem)).toBeVisible();

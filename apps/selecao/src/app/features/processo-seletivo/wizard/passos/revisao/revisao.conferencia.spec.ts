@@ -243,6 +243,13 @@ describe('RevisaoPassoComponent — conferência', () => {
         status: 422,
         code: 'uniplus.selecao.processo_seletivo.documento_nao_confirmado',
         traceId: 't1',
+        errors: [
+          {
+            field: 'documentoEditalId',
+            code: 'uniplus.selecao.processo_seletivo.documento_nao_confirmado',
+            message: 'Somente um documento confirmado pode ser referenciado na publicação.',
+          },
+        ],
       },
       {
         status: 422,

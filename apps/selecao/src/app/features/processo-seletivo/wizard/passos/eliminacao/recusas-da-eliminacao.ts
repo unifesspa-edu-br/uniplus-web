@@ -1,54 +1,32 @@
-import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
-import { PREFIXO_DA_RECUSA } from '../classificacao/recusas-da-classificacao';
+import { itemDeEliminacaoDoCampo } from '../classificacao/recusas-do-catalogo';
+import { mensagemDaApiOu, PREFIXO_DA_RECUSA } from '../classificacao/recusas-da-classificacao';
 
 /**
- * O que a tela diz para cada recusa das regras de eliminação. O servidor aponta a regra pelo campo
- * `regrasEliminacao[i]`, e a tela a nomeia pela posição, como na própria validação.
+ * As recusas das regras de eliminação que a tela mostra junto da regra, pelo código. O servidor
+ * aponta a regra pelo campo `regrasEliminacao[i]`, e a tela a nomeia pela posição, como na própria
+ * validação. O texto é sempre o que o servidor deu.
  */
-const RECUSA_DA_ELIMINACAO: ReadonlyMap<string, string> = new Map([
-  [
-    `${PREFIXO_DA_RECUSA}corte_em_area_repetido`,
-    'a área já tem um corte em outra regra; deixe um corte por área',
-  ],
-  [
-    `${PREFIXO_DA_RECUSA}corte_em_area_fora_do_quadro`,
-    `a área não está em todos os grupos da resolução de Peso por Área; escolha outra área ou outra resolução no passo ${NOME_DO_PASSO_DA_FORMULA}`,
-  ],
-  [
-    `${PREFIXO_DA_RECUSA}falta_em_dia_de_prova_enem_repetida`,
-    'a falta em dia de prova do ENEM já foi declarada em outra regra; deixe uma só',
-  ],
-  [
-    `${PREFIXO_DA_RECUSA}ausencia_na_etapa_repetida`,
-    'a ausência nesta etapa já foi declarada em outra regra; deixe uma só',
-  ],
-  [
-    'uniplus.selecao.regra_eliminacao.etapa_ref_obrigatorio',
-    'a eliminação por ausência exige a etapa',
-  ],
-  [
-    'uniplus.selecao.processo_seletivo.ausencia_na_etapa_do_enem',
-    'a ausência não se aplica à etapa de nota do ENEM; escolha outra etapa',
-  ],
-  [
-    'uniplus.selecao.regra_eliminacao.area_invalida',
-    'a área do corte não é uma área do ENEM válida; escolha a área na lista',
-  ],
-  [
-    'uniplus.selecao.regra_eliminacao.area_e_minimo_obrigatorios',
-    'o corte por área exige a área do ENEM e a nota mínima',
-  ],
-  [
-    'uniplus.selecao.processo_seletivo.eliminacao_enem_fora_de_processo_enem',
-    `as regras de eliminação do ENEM só se aplicam à classificação baseada em ENEM; marque o ENEM no passo ${NOME_DO_PASSO_DA_FORMULA} ou retire essas regras`,
-  ],
+const CODIGOS_DA_RECUSA_DA_ELIMINACAO: ReadonlySet<string> = new Set([
+  `${PREFIXO_DA_RECUSA}corte_em_area_repetido`,
+  `${PREFIXO_DA_RECUSA}corte_em_area_fora_do_quadro`,
+  `${PREFIXO_DA_RECUSA}falta_em_dia_de_prova_enem_repetida`,
+  `${PREFIXO_DA_RECUSA}ausencia_na_etapa_repetida`,
+  'uniplus.selecao.processo_seletivo.ausencia_na_etapa_do_enem',
+  'uniplus.selecao.regra_eliminacao.area_invalida',
+  'uniplus.selecao.processo_seletivo.eliminacao_enem_fora_de_processo_enem',
 ]);
+
+const TEXTO_GENERICO_DA_RECUSA =
+  'O servidor recusou a regra de eliminação. Confira os campos da regra.';
+
+const REGRA = 'Regra de eliminação';
 
 export type CampoDaRegra = 'etapa' | 'area' | 'minimo';
 
+/** Pelo nome em minúsculas, como `itemDeEliminacaoDoCampo` o devolve. */
 const CAMPO_DA_REGRA: Readonly<Record<string, CampoDaRegra>> = {
-  etapaRef: 'etapa',
-  areaCodigo: 'area',
+  etaparef: 'etapa',
+  areacodigo: 'area',
   minimo: 'minimo',
 };
 
@@ -63,27 +41,32 @@ const CAMPO_DA_RECUSA_SEM_SUFIXO: Readonly<Record<string, CampoDaRegra>> = {
 
 /** As recusas que o servidor aponta num campo de uma regra, por `índice.campo`. */
 export function recusasDoCorte(
-  erros: readonly { readonly field: string; readonly code: string }[],
+  erros: readonly { readonly field: string; readonly code: string; readonly message: string }[],
 ): ReadonlyMap<string, string> {
   const recusas = new Map<string, string>();
   for (const erro of erros) {
-    const [, indice, nome] = /^regrasEliminacao\[(\d+)\](?:\.(\w+))?$/.exec(erro.field) ?? [];
-    const campo = nome === undefined ? CAMPO_DA_RECUSA_SEM_SUFIXO[erro.code] : CAMPO_DA_REGRA[nome];
-    const texto = RECUSA_DA_ELIMINACAO.get(erro.code);
-    if (indice === undefined || campo === undefined || texto === undefined) continue;
-    recusas.set(`${indice}.${campo}`, `${texto.charAt(0).toUpperCase()}${texto.slice(1)}.`);
+    const item = itemDeEliminacaoDoCampo(erro.field);
+    const indice = item?.posicao;
+    const campo =
+      item?.nome === undefined ? CAMPO_DA_RECUSA_SEM_SUFIXO[erro.code] : CAMPO_DA_REGRA[item.nome];
+    if (indice === undefined || campo === undefined) continue;
+    if (!CODIGOS_DA_RECUSA_DA_ELIMINACAO.has(erro.code)) continue;
+    recusas.set(`${indice}.${campo}`, mensagemDaApiOu(erro, TEXTO_GENERICO_DA_RECUSA));
   }
   return recusas;
 }
 
+/**
+ * O texto da recusa de uma regra de eliminação no resumo: a mensagem que a API deu, com a posição
+ * da regra quando o campo a aponta. Fora de uma regra e de um código de eliminação, `null`.
+ */
 export function recusaDaEliminacao(erro: {
   readonly field: string;
   readonly code: string;
+  readonly message: string;
 }): string | null {
-  const texto = RECUSA_DA_ELIMINACAO.get(erro.code);
-  if (texto === undefined) return null;
-  const indice = /^regrasEliminacao\[(\d+)\]/.exec(erro.field)?.[1];
-  return indice === undefined
-    ? `${texto.charAt(0).toUpperCase()}${texto.slice(1)}.`
-    : `Regra de eliminação ${Number(indice) + 1}: ${texto}.`;
+  const indice = itemDeEliminacaoDoCampo(erro.field)?.posicao;
+  if (indice === undefined && !CODIGOS_DA_RECUSA_DA_ELIMINACAO.has(erro.code)) return null;
+  const mensagem = mensagemDaApiOu(erro, TEXTO_GENERICO_DA_RECUSA);
+  return indice === undefined ? mensagem : `${REGRA} ${indice + 1}: ${mensagem}`;
 }

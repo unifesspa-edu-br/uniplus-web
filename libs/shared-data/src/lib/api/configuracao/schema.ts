@@ -2588,25 +2588,26 @@ export interface components {
             readonly nome: null | string;
             readonly grau: null | string;
             readonly nivelEnsino: null | string;
-            readonly grupoAreaEnem?: null | string;
+            /** @enum {null|string} */
+            readonly grupoAreaEnem?: AtualizarCursoCommandGrupoAreaEnem;
         };
         readonly AtualizarFaseCanonicaCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly nome?: null | string;
-            readonly descricao?: null | string;
-            /** @default false */
+            readonly nome: null | string;
+            readonly origemData: null | components["schemas"]["OrigemDataFaseCodigo"];
+            /** @description Se o tipo de fase agrupa as etapas pontuadas. Obrigatório: ausente ou nulo é recusado (422). */
             readonly agrupaEtapas: boolean;
-            /** @default false */
+            /** @description Se o tipo de fase admite complementação documental. Obrigatório: ausente ou nulo é recusado (422). */
             readonly permiteComplementacao: boolean;
-            readonly baseLegal?: null | string;
-            /** @default false */
+            /** @description Se o tipo de fase coleta inscrições. Obrigatório: ausente ou nulo é recusado (422). */
             readonly coletaInscricao: boolean;
-            /** @default false */
+            /** @description Se o tipo de fase coleta a solicitação de isenção da taxa. Obrigatório: ausente ou nulo é recusado (422). */
             readonly coletaSolicitacaoIsencao: boolean;
-            /** @default false */
+            /** @description Se o tipo de fase é organizada em chamadas. Obrigatório: ausente ou nulo é recusado (422). */
             readonly organizadaEmChamadas: boolean;
-            readonly origemData?: null | components["schemas"]["OrigemDataFaseCodigo"];
+            readonly descricao?: null | string;
+            readonly baseLegal?: null | string;
             /** Format: uuid */
             readonly unidadeSugeridaId?: null | string;
         };
@@ -2625,6 +2626,7 @@ export interface components {
         readonly AtualizarModalidadeCommand: {
             /** Format: uuid */
             readonly id: string;
+            readonly nome: null | string;
             readonly descricao?: null | string;
             readonly naturezaLegal?: null | components["schemas"]["NaturezaLegalCodigo"];
             readonly composicaoVagas?: null | components["schemas"]["ComposicaoVagasCodigo"];
@@ -2659,6 +2661,7 @@ export interface components {
         readonly AtualizarPrecedenciaFaseCommand: {
             /** Format: uuid */
             readonly id: string;
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly permiteSobreposicao: boolean;
         };
         readonly AtualizarRecursoAcessibilidadeCommand: {
@@ -2672,11 +2675,20 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly censoReferencia: null | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Obrigatório; ausente ou nulo é recusado (422). Zero é um valor válido.
+             */
             readonly ppiPercentual: number;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Obrigatório; ausente ou nulo é recusado (422). Zero é um valor válido.
+             */
             readonly quilombolaPercentual: number;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Obrigatório; ausente ou nulo é recusado (422). Zero é um valor válido.
+             */
             readonly pcdPercentual: number;
             readonly baseLegal: null | string;
         };
@@ -2946,6 +2958,7 @@ export interface components {
         readonly CondicaoDoPredicadoInput: {
             readonly fato: string;
             readonly operador: null | components["schemas"]["OperadorCodigo"];
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly valor: components["schemas"]["JsonElement"];
         };
         readonly CondicaoPrecondicaoDto: {
@@ -3038,24 +3051,25 @@ export interface components {
             readonly nome: null | string;
             readonly grau: null | string;
             readonly nivelEnsino: null | string;
-            readonly grupoAreaEnem?: null | string;
+            /** @enum {null|string} */
+            readonly grupoAreaEnem?: CriarCursoCommandGrupoAreaEnem;
         };
         readonly CriarFaseCanonicaCommand: {
             readonly codigo: null | string;
-            readonly nome?: null | string;
-            readonly descricao?: null | string;
-            /** @default false */
+            readonly nome: null | string;
+            readonly origemData: null | components["schemas"]["OrigemDataFaseCodigo"];
+            /** @description Se o tipo de fase agrupa as etapas pontuadas. Obrigatório: ausente ou nulo é recusado (422). */
             readonly agrupaEtapas: boolean;
-            /** @default false */
+            /** @description Se o tipo de fase admite complementação documental. Obrigatório: ausente ou nulo é recusado (422). */
             readonly permiteComplementacao: boolean;
-            readonly baseLegal?: null | string;
-            /** @default false */
+            /** @description Se o tipo de fase coleta inscrições. Obrigatório: ausente ou nulo é recusado (422). */
             readonly coletaInscricao: boolean;
-            /** @default false */
+            /** @description Se o tipo de fase coleta a solicitação de isenção da taxa. Obrigatório: ausente ou nulo é recusado (422). */
             readonly coletaSolicitacaoIsencao: boolean;
-            /** @default false */
+            /** @description Se o tipo de fase é organizada em chamadas. Obrigatório: ausente ou nulo é recusado (422). */
             readonly organizadaEmChamadas: boolean;
-            readonly origemData?: null | components["schemas"]["OrigemDataFaseCodigo"];
+            readonly descricao?: null | string;
+            readonly baseLegal?: null | string;
             /** Format: uuid */
             readonly unidadeSugeridaId?: null | string;
         };
@@ -3109,6 +3123,7 @@ export interface components {
         };
         readonly CriarModalidadeCommand: {
             readonly codigo: null | string;
+            readonly nome: null | string;
             readonly descricao?: null | string;
             readonly naturezaLegal?: null | components["schemas"]["NaturezaLegalCodigo"];
             readonly composicaoVagas?: null | components["schemas"]["ComposicaoVagasCodigo"];
@@ -3151,7 +3166,8 @@ export interface components {
         };
         readonly CriarPesoAreaEnemCommand: {
             readonly resolucao: null | string;
-            readonly grupoCurso: null | string;
+            /** @enum {null|string} */
+            readonly grupoCurso: CriarPesoAreaEnemCommandGrupoCurso;
             readonly areas: null | readonly components["schemas"]["PesoAreaEnemAreaCommand"][];
             readonly baseLegal: null | string;
         };
@@ -3168,11 +3184,20 @@ export interface components {
         };
         readonly CriarReferenciaReservaDemograficaCommand: {
             readonly censoReferencia: null | string;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Obrigatório; ausente ou nulo é recusado (422). Zero é um valor válido.
+             */
             readonly ppiPercentual: number;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Obrigatório; ausente ou nulo é recusado (422). Zero é um valor válido.
+             */
             readonly quilombolaPercentual: number;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description Obrigatório; ausente ou nulo é recusado (422). Zero é um valor válido.
+             */
             readonly pcdPercentual: number;
             readonly baseLegal: null | string;
         };
@@ -3485,8 +3510,11 @@ export interface components {
             readonly origem: null | string;
         };
         readonly EnvioSimuladoInput: {
-            /** Format: date-time */
-            readonly instante: string;
+            /**
+             * Format: date-time
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
+            readonly instante: null | string;
             readonly fuso: string;
         };
         readonly EscalaNumericaCommand: {
@@ -3636,7 +3664,10 @@ export interface components {
         };
         readonly FatoColetadoInput: {
             readonly fatoCodigo: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly ordem: number;
             readonly apresentacao: null | components["schemas"]["ApresentacaoDoCampoInput"];
             readonly regras: null | components["schemas"]["RegrasDoCampoInput"];
@@ -3753,9 +3784,13 @@ export interface components {
             readonly pressupostos: components["schemas"]["PressupostosDoFormulario"];
         };
         readonly FormularioPortavel: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhuma. */
             readonly paginas: readonly components["schemas"]["PaginaPortavel"][];
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhum. */
             readonly termos: readonly components["schemas"]["TermoPortavel"][];
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhuma. */
             readonly derivacoes: readonly components["schemas"]["DerivacaoPortavel"][];
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhum. */
             readonly agregados: readonly components["schemas"]["AgregadoPortavel"][];
         };
         readonly GrupoApresentado: {
@@ -3780,11 +3815,15 @@ export interface components {
         };
         readonly GrupoColetadoInput: {
             readonly codigo: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly ordem: number;
             readonly rotulo: string;
             readonly ocorrencias: null | components["schemas"]["OcorrenciasDoGrupoInput"];
             readonly regras: null | components["schemas"]["ExibicaoEObrigatoriedadeInput"];
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly subitens: readonly components["schemas"]["FatoColetadoInput"][];
             readonly paginaCodigo?: null | string;
         };
@@ -3971,6 +4010,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly codigo: string;
+            readonly nome: string;
             readonly legalFixa: boolean;
             readonly descricao: null | string;
             readonly naturezaLegal: components["schemas"]["NaturezaLegal"];
@@ -4118,6 +4158,7 @@ export interface components {
          */
         readonly OperadorCodigo: OperadorCodigo;
         readonly OrdemDosValoresInput: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422); envie [] quando não houver nenhum. */
             readonly codigos: readonly string[];
         };
         readonly OrigemDataFase: {
@@ -4167,7 +4208,10 @@ export interface components {
         };
         readonly PaginaDoFormularioInput: {
             readonly codigo: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly ordem: number;
             readonly tipo: components["schemas"]["TipoPaginaFormularioCodigo"];
             readonly bloco: null | components["schemas"]["BlocoSistemaCodigo"];
@@ -4451,6 +4495,7 @@ export interface components {
             readonly impedimento?: null | components["schemas"]["ImpedimentoInput"];
         };
         readonly RegrasPadraoInput: {
+            /** @description Obrigatório; ausente ou nulo é recusado (422). A lista vazia remove as regras. */
             readonly regras: readonly components["schemas"]["RegraPadraoInput"][];
         };
         readonly RemanejamentoDasVagasDto: {
@@ -4587,7 +4632,10 @@ export interface components {
         };
         readonly TermoExigidoInput: {
             readonly codigo: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly ordem: number;
             readonly termo: null | components["schemas"]["VersaoDoTermoInput"];
             readonly regras: null | components["schemas"]["ExibicaoEObrigatoriedadeInput"];
@@ -16454,6 +16502,12 @@ export enum AbrangenciaCodigo {
 export enum AcaoQuandoIndeferidoCodigo {
     RETIRA_A_MODALIDADE = "RETIRA_A_MODALIDADE"
 }
+export enum AtualizarCursoCommandGrupoAreaEnem {
+    TECNOLOGICA = "TECNOLOGICA",
+    HUMANISTICA_I = "HUMANISTICA_I",
+    HUMANISTICA_II = "HUMANISTICA_II",
+    SAUDE_E_BIOLOGICAS = "SAUDE_E_BIOLOGICAS"
+}
 export enum BlocoSistemaCodigo {
     COMPROVACAO_DOCUMENTAL = "COMPROVACAO_DOCUMENTAL",
     MODALIDADES_CALCULADAS = "MODALIDADES_CALCULADAS",
@@ -16480,6 +16534,18 @@ export enum ConsequenciaDoDescumprimentoCodigo {
     ELIMINA_DO_PROCESSO = "ELIMINA_DO_PROCESSO",
     RETIRA_A_MODALIDADE = "RETIRA_A_MODALIDADE",
     RETIRA_O_ACRESCIMO = "RETIRA_O_ACRESCIMO"
+}
+export enum CriarCursoCommandGrupoAreaEnem {
+    TECNOLOGICA = "TECNOLOGICA",
+    HUMANISTICA_I = "HUMANISTICA_I",
+    HUMANISTICA_II = "HUMANISTICA_II",
+    SAUDE_E_BIOLOGICAS = "SAUDE_E_BIOLOGICAS"
+}
+export enum CriarPesoAreaEnemCommandGrupoCurso {
+    TECNOLOGICA = "TECNOLOGICA",
+    HUMANISTICA_I = "HUMANISTICA_I",
+    HUMANISTICA_II = "HUMANISTICA_II",
+    SAUDE_E_BIOLOGICAS = "SAUDE_E_BIOLOGICAS"
 }
 export enum DecidirProtecaoDoCatalogoRequestCadastro {
     TIPO_DOCUMENTO = "TIPO_DOCUMENTO",

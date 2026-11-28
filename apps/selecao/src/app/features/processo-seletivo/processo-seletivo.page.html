@@ -43,6 +43,11 @@ leituraDoProcesso.visivel()) {
   />
   <div class="wiz-body">
     <div class="wiz-content">
+      <sel-entrada-da-retificacao
+        [processoId]="store.remoteSnapshot()?.id ?? null"
+        [situacao]="store.remoteSnapshot()?.situacao?.codigo ?? null"
+        [publicacaoNaoConfirmada]="store.publicacaoNaoConfirmada()"
+      />
       @if (store.erroDoPasso(); as erro) {
       <sel-resumo-do-erro-do-passo [erro]="erro" />
       } @if (passoCorrente(); as passo) {

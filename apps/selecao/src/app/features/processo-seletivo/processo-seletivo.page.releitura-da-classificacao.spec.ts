@@ -1,4 +1,5 @@
 import { HttpHeaders } from '@angular/common/http';
+import { soPeloDesempate } from './wizard/passos/classificacao/recusas-da-formula.testing';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { apiOk } from '@uniplus/shared-core/http';
@@ -159,7 +160,7 @@ describe('ProcessoSeletivoPage — publicação: releitura da classificação', 
   it('cada leitura do cadastro que dá certo reavalia a recusa pelo desempate', () => {
     const { fixture, store } = montarPagina();
     store.classificacao.criteriosDesempateGravados.set([]);
-    store.classificacao.recusarPeloDesempate('Recusa pelo desempate.', 0);
+    store.classificacao.registrarRecusasDaFormula(soPeloDesempate('Recusa pelo desempate.'), 0);
 
     fixture.debugElement.injector
       .get(CatalogosDeClassificacao)
@@ -172,7 +173,7 @@ describe('ProcessoSeletivoPage — publicação: releitura da classificação', 
   it('critérios de desempate gravados que mudam reavaliam a recusa pelo desempate', () => {
     const { store } = montarPagina();
     store.classificacao.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
-    store.classificacao.recusarPeloDesempate('Recusa pelo desempate.', 0);
+    store.classificacao.registrarRecusasDaFormula(soPeloDesempate('Recusa pelo desempate.'), 0);
     TestBed.tick();
     expect(store.classificacao.recusaPeloDesempatePorArea()).toBe('Recusa pelo desempate.');
 

@@ -5,6 +5,11 @@ import { type ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
+/** Ponto único a trocar por `components['schemas']['TipoDeCampo']` quando o cliente gerado trouxer o vocabulário (api#3166). */
+export interface TipoDeCampo {
+  readonly codigo: components['schemas']['TipoDeCampoCodigo'];
+  readonly rotulo: string;
+}
 export type TipoDoDado = components['schemas']['TipoDoDado'];
 export type QuantidadeDeValores = components['schemas']['QuantidadeDeValores'];
 export type OrigemFato = components['schemas']['OrigemFato'];
@@ -16,6 +21,7 @@ export type HipoteseLegalTratamento = components['schemas']['HipoteseLegalTratam
 
 export interface VocabulariosDeConfiguracao {
   readonly 'tipos-do-dado': TipoDoDado;
+  readonly 'tipos-campo': TipoDeCampo;
   readonly 'quantidades-de-valores': QuantidadeDeValores;
   readonly 'origens-fato': OrigemFato;
   readonly 'fontes-valores-fato': FonteValoresFato;
@@ -40,6 +46,7 @@ export interface VocabulariosDeConfiguracao {
 
 const MIME: Readonly<Record<keyof VocabulariosDeConfiguracao, string>> = {
   'tipos-do-dado': 'tipo-do-dado',
+  'tipos-campo': 'tipo-campo',
   'quantidades-de-valores': 'quantidade-de-valores',
   'origens-fato': 'origem-fato',
   'fontes-valores-fato': 'fonte-valores-fato',

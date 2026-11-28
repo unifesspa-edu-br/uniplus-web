@@ -9,6 +9,7 @@ import { exigenciasDaFase, todasAsExigencias } from './consulta-das-exigencias';
 import { exigenciasDe } from './leitura-das-exigencias';
 import { modalidadesDaExigencia } from './modalidades-da-exigencia';
 import {
+  CHAVE_ETAPA_RENDA,
   ID_ETAPA_RENDA,
   ID_HABILITACAO,
   ID_ISENCAO,
@@ -116,7 +117,15 @@ describe('Leitura e regravação das exigências de documentos', () => {
 
   it('traz a etapa que coleta, quando declarada', () => {
     const lido = exigenciasDe(detalheDaApi([exigenciaDaApi({ etapaId: ID_ETAPA_RENDA })]));
-    expect(todasAsExigencias(lido)[0].etapaId).toBe(ID_ETAPA_RENDA);
+    expect(todasAsExigencias(lido)[0].etapaChave).toBe(CHAVE_ETAPA_RENDA);
+  });
+
+  it('preserva a chave da exigência e o código do tipo de documento', () => {
+    const lido = exigenciasDe(detalheDaApi([exigenciaDaApi({ chave: 'exigencia_rg_2' })]));
+    expect(todasAsExigencias(lido)[0]).toMatchObject({
+      chave: 'exigencia_rg_2',
+      tipoDocumentoCodigo: 'RG',
+    });
   });
 
   it('reconstrói a seleção de modalidades a partir do gatilho', () => {

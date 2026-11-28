@@ -133,9 +133,9 @@ describe('IdentificacaoPassoComponent', () => {
   it('nomeia os campos que faltam antes de criar o cadastro', async () => {
     await componente.persistir();
 
-    expect(gravacao.erroDeCriacao()).toContain('tipo do processo (passo 1)');
-    expect(gravacao.erroDeCriacao()).toContain('unidade administradora');
-    expect(gravacao.erroDeCriacao()).toContain('origem dos candidatos');
+    expect(gravacao.errosDaCriacao().join(' ')).toContain('tipo do processo (passo 1)');
+    expect(gravacao.errosDaCriacao().join(' ')).toContain('unidade administradora');
+    expect(gravacao.errosDaCriacao().join(' ')).toContain('origem dos candidatos');
     expect(store.processoSeletivoId()).toBeNull();
   });
 
@@ -145,7 +145,7 @@ describe('IdentificacaoPassoComponent', () => {
 
     await componente.persistir();
 
-    expect(gravacao.erroDeCriacao()).toContain('identificador legível');
+    expect(gravacao.errosDaCriacao().join(' ')).toContain('identificador legível');
     expect(store.processoSeletivoId()).toBeNull();
     controller.expectNone(`${BASE}/api/selecao/processos-seletivos`);
   });

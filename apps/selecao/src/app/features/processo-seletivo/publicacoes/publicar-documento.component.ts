@@ -41,6 +41,7 @@ import {
   ConfirmDialogComponent,
   DrawerComponent,
   FileUploadComponent,
+  levarOPrimeiroAvisoAVista,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
@@ -243,11 +244,11 @@ export class PublicarDocumentoComponent {
 
   private podeConfirmar(): boolean {
     if (this.impedimentos().length > 0) {
-      this.focarResumo();
+      this.focarDepoisDeRenderizar(() => this.resumo()?.nativeElement);
       return false;
     }
     if (this.form.invalid) {
-      this.focarPrimeiroCampoInvalido();
+      this.focarDepoisDeRenderizar(() => this.primeiroCampoInvalido());
       return false;
     }
     return true;
@@ -379,17 +380,20 @@ export class PublicarDocumentoComponent {
     this.recusa.set(
       inconclusiva ? [...recusa.mensagens, MENSAGEM_DA_PUBLICACAO_INCONCLUSIVA] : recusa.mensagens,
     );
-    this.focarResumo();
+    this.focarDepoisDeRenderizar(() => this.resumo()?.nativeElement);
   }
 
-  private focarPrimeiroCampoInvalido(): void {
+  private primeiroCampoInvalido(): HTMLElement | null {
+    return this.host.nativeElement.querySelector<HTMLElement>('[aria-invalid="true"]');
+  }
+
+  private focarDepoisDeRenderizar(alvo: () => HTMLElement | null | undefined): void {
     afterNextRender(
-      () => this.host.nativeElement.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
+      () => {
+        alvo()?.focus();
+        levarOPrimeiroAvisoAVista(this.host.nativeElement);
+      },
       { injector: this.injector },
     );
-  }
-
-  private focarResumo(): void {
-    afterNextRender(() => this.resumo()?.nativeElement.focus(), { injector: this.injector });
   }
 }

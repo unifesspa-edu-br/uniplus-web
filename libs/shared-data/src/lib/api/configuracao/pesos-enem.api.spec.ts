@@ -17,6 +17,7 @@ import {
   PesoAreaEnemDto,
   PesosEnemApi,
 } from './pesos-enem.api';
+import { CriarPesoAreaEnemCommandGrupoCurso } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -36,7 +37,7 @@ const seed: PesoAreaEnemDto = {
 
 const criarCommand: CriarPesoAreaEnemCommand = {
   resolucao: 'Res. 805/2024',
-  grupoCurso: 'TECNOLOGICA',
+  grupoCurso: CriarPesoAreaEnemCommandGrupoCurso.TECNOLOGICA,
   areas: [
     { codigo: 'REDACAO', peso: 2, corte: 400 },
     { codigo: 'MATEMATICA', peso: 3, corte: null },

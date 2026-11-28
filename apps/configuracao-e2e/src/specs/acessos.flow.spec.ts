@@ -255,7 +255,9 @@ test.describe('Configuração — administração de acesso @flow', () => {
 
     await tentar.click();
 
-    await expect(page.getByText('a consulta expirou', { exact: false })).toBeVisible();
+    await expect(
+      page.getByTestId('notification-host-title').filter({ hasText: 'a consulta expirou' }),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Tentar novamente' })).toHaveCount(0);
     await expect(page.getByText('Analista de documentos').first()).toBeVisible();
     expect(consultasComCursor).toEqual(['pagina-2', 'pagina-2']);

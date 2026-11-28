@@ -1,3 +1,4 @@
+import { rotuloSimuladoDoTipoDeCampo } from '@uniplus/shared-testing';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture } from '@angular/core/testing';
 import {
@@ -165,5 +166,12 @@ describe('ModeloFormularioEdicaoPage', () => {
       lerCatalogo.flush([fato('NOME')]);
       await propagar();
     });
+  });
+
+  it('entrega ao editor os tipos de campo da API: o cartão mostra o rótulo do vocabulário', async () => {
+    const tela = await carregar();
+    const tags = Array.from(tela.querySelectorAll('ui-tag')).map((t) => t.textContent?.trim());
+
+    expect(tags).toContain(rotuloSimuladoDoTipoDeCampo('SIM_OU_NAO'));
   });
 });

@@ -17,6 +17,7 @@ const vocabularios: ReadonlyArray<readonly [keyof VocabulariosDeConfiguracao, st
   ['origens-fato', 'origem-fato'],
   ['fontes-valores-fato', 'fonte-valores-fato'],
   ['formatos-texto', 'formato-texto'],
+  ['tipos-campo', 'tipo-campo'],
   ['escopos-fato', 'escopo-fato'],
   ['componentes-de-exibicao', 'componente-de-exibicao'],
   ['hipoteses-legais-tratamento', 'hipotese-legal-tratamento'],

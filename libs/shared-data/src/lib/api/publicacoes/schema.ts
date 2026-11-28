@@ -218,13 +218,22 @@ export interface components {
             readonly id: string;
             readonly codigo: null | string;
             readonly nome: null | string;
+            /** @description Se o ato deste tipo produz nova versão congelada da configuração. Obrigatório; ausente ou nulo é recusado (422). */
             readonly congelaConfiguracao: boolean;
+            /** @description Se o objeto do ato admite um único ato vivo deste tipo. Obrigatório; ausente ou nulo é recusado (422). */
             readonly unicoPorObjeto: boolean;
+            /** @description Se a publicação de um ato deste tipo não pode ser desfeita. Obrigatório; ausente ou nulo é recusado (422). */
             readonly efeitoIrreversivel: boolean;
+            /** @description Se um ato deste tipo determina a situação do candidato. Obrigatório; ausente ou nulo é recusado (422). */
             readonly ehResultado: boolean;
+            /** @description Se um ato deste tipo pode ser publicado como documento avulso de um processo seletivo. Obrigatório; ausente ou nulo é recusado (422). */
             readonly publicavelComoAvulso: boolean;
+            /** @description Se um ato deste tipo corrige sempre outro ato publicado. Obrigatório; ausente ou nulo é recusado (422). */
             readonly exigeAtoCorrigido: boolean;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Primeiro dia em que esta versão do tipo vale, inclusivo. Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly vigenciaInicio: string;
             /** Format: date */
             readonly vigenciaFim?: null | string;
@@ -238,13 +247,22 @@ export interface components {
         readonly CriarTipoAtoPublicadoCommand: {
             readonly codigo: null | string;
             readonly nome: null | string;
+            /** @description Se o ato deste tipo produz nova versão congelada da configuração. Obrigatório; ausente ou nulo é recusado (422). */
             readonly congelaConfiguracao: boolean;
+            /** @description Se o objeto do ato admite um único ato vivo deste tipo. Obrigatório; ausente ou nulo é recusado (422). */
             readonly unicoPorObjeto: boolean;
+            /** @description Se a publicação de um ato deste tipo não pode ser desfeita. Obrigatório; ausente ou nulo é recusado (422). */
             readonly efeitoIrreversivel: boolean;
+            /** @description Se um ato deste tipo determina a situação do candidato. Obrigatório; ausente ou nulo é recusado (422). */
             readonly ehResultado: boolean;
+            /** @description Se um ato deste tipo pode ser publicado como documento avulso de um processo seletivo. Obrigatório; ausente ou nulo é recusado (422). */
             readonly publicavelComoAvulso: boolean;
+            /** @description Se um ato deste tipo corrige sempre outro ato publicado. Obrigatório; ausente ou nulo é recusado (422). */
             readonly exigeAtoCorrigido: boolean;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Primeiro dia em que esta versão do tipo vale, inclusivo. Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly vigenciaInicio: string;
             /** Format: date */
             readonly vigenciaFim?: null | string;
@@ -301,7 +319,10 @@ export interface components {
             readonly ano: number;
             readonly numero: null | string;
             readonly tipoCodigo: null | string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Obrigatório; ausente ou nulo é recusado (422). É a data que o documento declara.
+             */
             readonly dataDoAto: string;
             readonly documentoHash: null | string;
             readonly assinante: null | string;

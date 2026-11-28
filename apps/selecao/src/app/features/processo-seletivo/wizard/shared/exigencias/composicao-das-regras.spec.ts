@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { todasAsExigencias } from './consulta-das-exigencias';
 import { semAEtapa, semAFase } from './composicao-das-regras';
-import { ID_ETAPA_RENDA, exigencia, rascunho } from './exigencias.testing';
+import { CHAVE_ETAPA_RENDA, exigencia, rascunho } from './exigencias.testing';
 
 describe('composição das regras de comprovação', () => {
   it('semAFase tira a exigência daquela fase e deixa a das outras', () => {
@@ -29,7 +29,10 @@ describe('composição das regras de comprovação', () => {
   });
 
   it('semAEtapa devolve o documento à fase inteira', () => {
-    const depois = semAEtapa(rascunho(exigencia({ etapaId: ID_ETAPA_RENDA })), ID_ETAPA_RENDA);
-    expect(todasAsExigencias(depois)[0].etapaId).toBeNull();
+    const depois = semAEtapa(
+      rascunho(exigencia({ etapaChave: CHAVE_ETAPA_RENDA })),
+      CHAVE_ETAPA_RENDA,
+    );
+    expect(todasAsExigencias(depois)[0].etapaChave).toBeNull();
   });
 });

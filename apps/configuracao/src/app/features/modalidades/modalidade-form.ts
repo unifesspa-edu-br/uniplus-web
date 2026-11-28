@@ -1,6 +1,7 @@
 import { textoDoFormatoDoCodigo } from '@uniplus/shared-utils';
 import { validadoresDoCodigo } from '../../shared/codigo-de-cadastro';
-import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
+import { obrigatorioNaoEmBranco } from '../fatos-candidato/fato-candidato.regras';
+import { AbstractControl, FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
 import {
   AcaoQuandoIndeferidoCodigo,
   AtualizarModalidadeCommand,
@@ -17,6 +18,8 @@ import {
 } from '../../shared/formulario';
 
 const CODIGO_TAMANHO_MAX = 60;
+/** O contrato não publica o limite do nome; é o da coluna no servidor. */
+export const NOME_TAMANHO_MAXIMO = 200;
 const DESCRICAO_MAX = 300;
 const BASE_LEGAL_MAX = 500;
 const CODIGO_REFERENCIA_MAX = 60;
@@ -27,6 +30,7 @@ export type AcaoSelecao = AcaoQuandoIndeferidoCodigo | '';
 
 export interface ModalidadeForm {
   codigo: FormControl<string>;
+  nome: FormControl<string>;
   descricao: FormControl<string>;
   naturezaLegal: FormControl<NaturezaLegalCodigo | ''>;
   composicaoVagas: FormControl<ComposicaoVagasCodigo | ''>;
@@ -52,6 +56,7 @@ export const DESCRICAO_TAMANHO_MAXIMO = DESCRICAO_MAX;
 
 const CONTROLES_DO_SERVIDOR: ReadonlySet<string> = new Set<keyof ModalidadeForm>([
   'codigo',
+  'nome',
   'descricao',
   'naturezaLegal',
   'composicaoVagas',
@@ -70,15 +75,20 @@ const CAMPO_DA_REGRA = 'regraDeAplicabilidade';
 function controlesDeIdentificacao() {
   return {
     codigo: new FormControl('', { nonNullable: true, validators: VALIDADORES_DO_CODIGO }),
-    descricao: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(DESCRICAO_MAX)],
-    }),
-    baseLegal: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(BASE_LEGAL_MAX)],
-    }),
+    nome: textoComLimite(NOME_TAMANHO_MAXIMO, obrigatorioNaoEmBranco),
+    descricao: textoComLimite(DESCRICAO_MAX),
+    baseLegal: textoComLimite(BASE_LEGAL_MAX),
   };
+}
+
+function textoComLimite(
+  maximo: number,
+  ...exigencias: readonly ValidatorFn[]
+): FormControl<string> {
+  return new FormControl('', {
+    nonNullable: true,
+    validators: [...exigencias, Validators.maxLength(maximo)],
+  });
 }
 
 function controlesDeVagas() {
@@ -127,6 +137,7 @@ function valoresDoRemanejamento(
 export function valoresDaModalidade(dto: ModalidadeDto): ValoresDaModalidade {
   return {
     codigo: dto.codigo,
+    nome: dto.nome,
     descricao: dto.descricao ?? '',
     naturezaLegal: dto.naturezaLegal.codigo,
     composicaoVagas: dto.composicaoVagas.codigo,
@@ -146,7 +157,7 @@ export function condicionaisDe(valores: ValoresDaModalidade): Condicionais {
 }
 
 /**
- * Campos comuns aos comandos de criação e atualização (tudo exceto código e id), derivados
+ * Campos comuns aos comandos de criação e atualização (tudo exceto código e id; o nome vai sem espaços nas pontas), derivados
  * inteiramente dos valores do formulário. Os inaplicáveis são anulados aqui, espelhando as
  * invariantes do agregado, para não haver divergência entre o que está oculto e o que se envia.
  */
@@ -155,13 +166,20 @@ function camposComuns(
   regraDeAplicabilidade: CriarModalidadeCommand['regraDeAplicabilidade'],
 ): Omit<CriarModalidadeCommand, 'codigo'> {
   return {
-    descricao: nullIfBlank(valores.descricao),
+    ...camposDeTexto(valores),
     naturezaLegal: valores.naturezaLegal || null,
     composicaoVagas: valores.composicaoVagas || null,
     composicaoOrigem: origemDaComposicao(valores),
     remanejamento: camposDoRemanejamento(valores),
     regraDeAplicabilidade,
     acaoQuandoIndeferido: valores.acaoQuandoIndeferido || null,
+  };
+}
+
+function camposDeTexto(valores: ValoresDaModalidade) {
+  return {
+    nome: valores.nome.trim(),
+    descricao: nullIfBlank(valores.descricao),
     baseLegal: nullIfBlank(valores.baseLegal),
   };
 }

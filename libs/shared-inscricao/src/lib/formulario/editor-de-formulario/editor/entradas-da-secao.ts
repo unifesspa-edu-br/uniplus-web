@@ -58,6 +58,7 @@ const SEM_RECUSAS = new Map<string, never[]>();
                 [remocaoTravadaPor]="
                   contexto().remocoesTravadas.get(entrada.item.fatoCodigo) ?? null
                 "
+                [tiposDeCampo]="contexto().tiposDeCampo"
                 [valoresConhecidos]="regras(entrada.item)?.valoresConhecidos ?? []"
                 [ufs]="regras(entrada.item)?.ufs ?? []"
                 [fontesDeOpcoes]="regras(entrada.item)?.fontesDeOpcoes ?? []"
@@ -77,6 +78,7 @@ const SEM_RECUSAS = new Map<string, never[]>();
                 [conteudo]="contexto().conteudoParaCitacoes"
                 [catalogo]="contexto().catalogo"
                 [remocoesTravadas]="contexto().remocoesTravadas"
+                [tiposDeCampo]="contexto().tiposDeCampo"
                 [fatosIndisponiveis]="contexto().naoColetaveisAqui"
                 [posicao]="posicao + 1"
                 [idBase]="idDoGrupo(idBase(), entrada.grupo.codigo)"

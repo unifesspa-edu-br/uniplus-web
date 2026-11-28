@@ -29,6 +29,7 @@ const TEXTO_DA_BANCA_DE_RECURSOS =
 export interface TipoDeBancaEscolhivel {
   readonly id: string;
   readonly rotulo: string;
+  readonly codigo?: { readonly codigo: string };
   readonly exigeDuasOuMaisBancas?: boolean;
   readonly encerraRecursoNaPrimeiraInstancia?: boolean;
   readonly papel?: { readonly codigo: string };
@@ -100,19 +101,32 @@ export class ListaDeBancasComponent {
   }
 
   private novaBanca(tipoBancaId: string): BancaDeclarada {
+    const tomadas = this.chavesTomadas();
+    return {
+      id: null,
+      identificadorLocal: novaChave({
+        tipo: 'banca',
+        nome: this.codigoDoTipo(tipoBancaId),
+        tomadas,
+      }),
+      tipoBancaId,
+      copiaDoTipo: this.copiaDoTipo(tipoBancaId),
+      regraDeDeliberacao: null,
+    };
+  }
+
+  private chavesTomadas(): ReadonlySet<string> {
     const tomadas = new Set(this.bancas().map((banca) => banca.identificadorLocal));
     for (const recusa of this.recusas()) {
       const banca =
         bancaDoCampo(recusa.campo, 'bancas') ?? bancaDoCampo(recusa.campo, 'bancasRequeridas');
       if (banca) tomadas.add(banca.identificador);
     }
-    return {
-      id: null,
-      identificadorLocal: novaChave({ tipo: 'banca', nome: '', tomadas }),
-      tipoBancaId,
-      copiaDoTipo: this.copiaDoTipo(tipoBancaId),
-      regraDeDeliberacao: null,
-    };
+    return tomadas;
+  }
+
+  private codigoDoTipo(id: string): string {
+    return this.tipos().find((tipo) => tipo.id === id)?.codigo?.codigo ?? '';
   }
 
   private copiaDoTipo(id: string): BancaDeclarada['copiaDoTipo'] {

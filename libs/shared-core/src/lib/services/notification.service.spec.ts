@@ -39,8 +39,9 @@ describe('NotificationService', () => {
       expect(n.title).toBe('Salvo');
       expect(n.detail).toBe('Edital criado com sucesso.');
       expect(n.persistent).toBe(false);
-      expect(n.traceId).toBeUndefined();
-      expect(n.code).toBeUndefined();
+      expect(n.referencia).toBeUndefined();
+      expect(n.ocorrencias).toBe(1);
+      expect(n.identificadoresAnteriores).toEqual([]);
 
       vi.advanceTimersByTime(5000);
       expect(service.notifications()).toHaveLength(0);
@@ -70,27 +71,37 @@ describe('NotificationService', () => {
   });
 
   describe('errorFromProblem', () => {
-    it('extrai title/detail/code/traceId do ProblemDetails', () => {
+    it('extrai title/detail e a referência ao suporte do ProblemDetails', () => {
       const problem = montarProblem();
       service.errorFromProblem(problem);
       const [n] = service.notifications();
       expect(n.type).toBe('error');
       expect(n.title).toBe(problem.title);
       expect(n.detail).toBe(problem.detail);
-      expect(n.code).toBe(problem.code);
-      expect(n.traceId).toBe(problem.traceId);
+      expect(n.referencia).toEqual({
+        origem: 'servidor',
+        codigoDoErro: problem.code,
+        identificadorDoPedido: problem.traceId,
+      });
     });
 
     it('aplica persistent automaticamente em status >= 500', () => {
-      service.errorFromProblem(montarProblem({ status: 503 }));
+      service.errorFromProblem(montarProblem({ status: 503, code: 'x', traceId: '' }));
       const [n] = service.notifications();
       expect(n.persistent).toBe(true);
       vi.advanceTimersByTime(60_000);
       expect(service.notifications()).toHaveLength(1);
     });
 
-    it('mantém timeout normal em 4xx (não persistent)', () => {
+    it('4xx com referência ao suporte não some sozinho', () => {
       service.errorFromProblem(montarProblem({ status: 404 }));
+      vi.advanceTimersByTime(60_000);
+      const [n] = service.notifications();
+      expect(n.persistent).toBe(true);
+    });
+
+    it('4xx sem referência mantém o prazo normal', () => {
+      service.errorFromProblem(montarProblem({ status: 404, code: 'x', traceId: '' }));
       const [n] = service.notifications();
       expect(n.persistent).toBe(false);
       vi.advanceTimersByTime(5000);
@@ -106,27 +117,29 @@ describe('NotificationService', () => {
       expect(n.detail).not.toContain('CPF');
     });
 
-    it('overrides.persistent prevalece sobre o default por status', () => {
-      service.errorFromProblem(montarProblem({ status: 503 }), { persistent: false });
+    it('overrides.persistent prevalece sobre o default por status sem referência', () => {
+      service.errorFromProblem(montarProblem({ status: 503, code: 'x', traceId: '' }), {
+        persistent: false,
+      });
       const [n] = service.notifications();
       expect(n.persistent).toBe(false);
     });
 
-    it('traceId vazio do backend vira undefined (não habilita botão "copiar")', () => {
+    it('identificador vazio ou fora do formato não aparece; o código ausente também não', () => {
+      service.errorFromProblem(montarProblem({ traceId: 'curto', code: 'x' }));
       service.errorFromProblem(montarProblem({ traceId: '' }));
-      const [n] = service.notifications();
-      expect(n.traceId).toBeUndefined();
-    });
-
-    it('traceId fora do formato de 32 hexadecimais vira undefined', () => {
-      service.errorFromProblem(montarProblem({ traceId: 'curto' }));
-      const [n] = service.notifications();
-      expect(n.traceId).toBeUndefined();
+      const [semNada, soCodigo] = service.notifications();
+      expect(semNada.referencia).toBeUndefined();
+      expect(soCodigo.referencia).toEqual({
+        origem: 'servidor',
+        codigoDoErro: 'uniplus.selecao.edital.nao_encontrado',
+        identificadorDoPedido: null,
+      });
     });
 
     it('retorna id sequencial para chamadas paralelas', () => {
       const id1 = service.errorFromProblem(montarProblem());
-      const id2 = service.errorFromProblem(montarProblem());
+      const id2 = service.errorFromProblem(montarProblem({ code: 'uniplus.selecao.edital.outro' }));
       expect(id2).toBeGreaterThan(id1);
       expect(service.notifications()).toHaveLength(2);
     });
@@ -151,6 +164,20 @@ describe('NotificationService', () => {
       expect(service.notifications()).toHaveLength(0);
       vi.advanceTimersByTime(60_000);
       expect(service.notifications()).toHaveLength(0);
+    });
+  });
+
+  describe('janela de anúncios', () => {
+    const textos = (): string[] => service.anuncios().map((anuncio) => anuncio.texto);
+
+    it('guarda 20 avisos do mesmo ciclo e o 21º descarta só o mais antigo', () => {
+      for (let i = 1; i <= 20; i++) service.error(`Falha ${i}`, undefined, { persistent: true });
+      expect(textos()).toHaveLength(20);
+      expect(textos()[0]).toContain('Falha 1');
+      service.error('Falha 21', undefined, { persistent: true });
+      expect(textos()).toHaveLength(20);
+      expect(textos()[0]).toContain('Falha 2');
+      expect(textos().at(-1)).toContain('Falha 21');
     });
   });
 

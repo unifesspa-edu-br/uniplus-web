@@ -3,7 +3,11 @@ import type {
   DocumentoDaConfiguracaoDistribuicaoDeVagas,
 } from '@uniplus/shared-data/selecao';
 
-import { rotuloDoCodigo, type CatalogoPorCodigo } from '../catalogos-por-codigo';
+import {
+  codigoComNomeDoCatalogo,
+  rotuloDoCodigo,
+  type CatalogoPorCodigo,
+} from '../catalogos-por-codigo';
 import {
   definirOrdemDeRemanejamento,
   ordensDoDocumento,
@@ -83,7 +87,7 @@ function modalidadesDe(oferta: Distribuicao, catalogo: CatalogoPorCodigo): Modal
   return (oferta.modalidades ?? []).map((modalidade, origem) => ({
     origem,
     codigo: modalidade.codigo,
-    rotulo: rotuloDoCodigo(catalogo, modalidade.codigo, modalidade.descricao ?? undefined),
+    rotulo: codigoComNomeDoCatalogo(catalogo, modalidade.codigo, modalidade.nome),
     quantidade: textoDoNumero(modalidade.quantidadeDeclarada),
   }));
 }

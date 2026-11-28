@@ -98,7 +98,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     expect(bancas().bancas).toEqual([
       {
         id: null,
-        identificadorLocal: 'banca-1',
+        identificadorLocal: 'banca_heteroidentificacao',
         copiaDoTipo: {
           rotulo: 'Heteroidentificação',
           papel: null,

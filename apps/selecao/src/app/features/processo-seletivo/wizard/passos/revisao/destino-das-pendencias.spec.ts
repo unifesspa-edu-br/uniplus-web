@@ -64,6 +64,15 @@ describe('destino de cada pendência no painel', () => {
     );
   });
 
+  it('leva ao passo Formulários a fase em chamadas sem formulário obrigatório, com a orientação', () => {
+    const codigo = 'formulario_chamadas_sem_obrigatorio';
+
+    expect(rotuloDoItem(codigo, 'coleta_de_fatos')).toBe('Formulários');
+    expect(orientacaoDoItem(codigo, 'coleta_de_fatos')).toContain(
+      'formulário obrigatório ligado a cada fase organizada em chamadas',
+    );
+  });
+
   /**
    * Os fatos coletados, as regras de derivação e a âncora da apuração de idade são declarados
    * no formulário de inscrição — antes de ele existir como passo, esta dimensão inteira ficava

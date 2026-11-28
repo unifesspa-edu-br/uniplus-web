@@ -210,6 +210,7 @@ const faseDoCertame = (
 
 const ETAPA_GRAVADA = {
   id: ID_ETAPA_GRAVADA,
+  chave: 'etapa_prova_objetiva',
   nome: 'Prova objetiva',
   carater: CaraterEtapaCodigo.CLASSIFICATORIA,
   tipoEtapaOrigemId: ID_TIPO_ETAPA,

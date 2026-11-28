@@ -149,6 +149,7 @@ export {
   type ResultadoDaEdicao,
   type ResultadoDoGrupo,
   type TermoDisponivel,
+  type TipoDeCampoDoVocabulario,
   type TermoDoFormulario,
   type VersaoDoTermo,
 } from './modelo/tipos';

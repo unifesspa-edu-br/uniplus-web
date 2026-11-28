@@ -10,6 +10,7 @@ export const V_ID = '01960000-0000-7000-0000-0000000000b1';
 export const MODALIDADE_AC: JsonDaApi<ModalidadeDto> = {
   id: AC_ID,
   codigo: 'AC',
+  nome: 'Ampla concorrência',
   legalFixa: true,
   descricao: 'Ampla concorrência',
   naturezaLegal: { codigo: 'AMPLA', rotulo: 'Ampla concorrência' },
@@ -30,6 +31,7 @@ export const MODALIDADE_V: JsonDaApi<ModalidadeDto> = {
   ...MODALIDADE_AC,
   id: V_ID,
   codigo: 'V',
+  nome: 'Modalidade de teste Alfa',
   legalFixa: false,
   descricao: 'PcD ampla concorrência',
   naturezaLegal: { codigo: 'ACAO_AFIRMATIVA', rotulo: 'Ação afirmativa' },

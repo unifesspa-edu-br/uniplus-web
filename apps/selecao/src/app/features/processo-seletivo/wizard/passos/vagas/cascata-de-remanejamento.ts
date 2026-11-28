@@ -10,7 +10,18 @@ import type {
 } from '../../documento/edicoes/ordem-de-remanejamento.edicao';
 import { CascataSelecionada, DistribuicaoDeVagas } from '../../processo-seletivo.models';
 import { ehRamoFederal } from './composicao-de-vagas';
-import { ModalidadeDoCatalogo } from './modalidades-da-distribuicao';
+import {
+  ModalidadeDoCatalogo,
+  rotuloDaModalidade,
+  rotulosPorCodigo,
+} from './modalidades-da-distribuicao';
+
+type Rotulo = (codigo: string) => string;
+
+function rotuladorDe(catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>): Rotulo {
+  const rotulos = rotulosPorCodigo(catalogo);
+  return (codigo) => rotuloDaModalidade(rotulos, codigo);
+}
 
 /**
  * Lê o `declaracaoDaRegra` da regra de remanejamento — shape `{"destinoFinalCodigo":
@@ -158,24 +169,37 @@ function problemasDaOferta(
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
   matriz: MatrizDaOrdemDeRemanejamento,
 ): readonly ProblemaDaCascata[] {
+  const rotulo = rotuladorDe(catalogo);
+  const codigos = new Set(oferta.modalidades.map((modalidade) => modalidade.codigo));
+  return [
+    ...(codigos.has(matriz.fallbackCodigo) ? [] : [fallbackAusente(oferta, matriz, rotulo)]),
+    ...problemasDasOrigens(oferta, catalogo, matriz, rotulo),
+  ];
+}
+
+function problemasDasOrigens(
+  oferta: DistribuicaoDeVagas,
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+  matriz: MatrizDaOrdemDeRemanejamento,
+  rotulo: Rotulo,
+): readonly ProblemaDaCascata[] {
   const codigos = new Set(oferta.modalidades.map((modalidade) => modalidade.codigo));
   const destinos = new Map(matriz.ordens.map((ordem) => [ordem.origem, ordem.destinos]));
-  const problemas: ProblemaDaCascata[] = [];
-  if (!codigos.has(matriz.fallbackCodigo)) problemas.push(fallbackAusente(oferta, matriz));
-  for (const modalidade of oferta.modalidades.filter((item) => segueCascata(item.id, catalogo))) {
-    const mensagem = recusaDaOrigem(modalidade.codigo, destinos.get(modalidade.codigo), codigos);
-    if (mensagem !== null) problemas.push({ ofertaCursoId: oferta.ofertaCursoId, mensagem });
-  }
-  return problemas;
+  return oferta.modalidades
+    .filter((item) => segueCascata(item.id, catalogo))
+    .map((item) => recusaDaOrigem(item.codigo, destinos.get(item.codigo), codigos, rotulo))
+    .filter((mensagem) => mensagem !== null)
+    .map((mensagem) => ({ ofertaCursoId: oferta.ofertaCursoId, mensagem }));
 }
 
 function fallbackAusente(
   oferta: DistribuicaoDeVagas,
   matriz: MatrizDaOrdemDeRemanejamento,
+  rotulo: Rotulo,
 ): ProblemaDaCascata {
   return {
     ofertaCursoId: oferta.ofertaCursoId,
-    mensagem: `O destino final da cascata (${matriz.fallbackCodigo}) não está selecionado no quadro de vagas desta oferta.`,
+    mensagem: `O destino final da cascata (${rotulo(matriz.fallbackCodigo)}) não está selecionado no quadro de vagas desta oferta.`,
   };
 }
 
@@ -183,12 +207,13 @@ function recusaDaOrigem(
   origem: string,
   destinos: readonly string[] | undefined,
   codigosDaOferta: ReadonlySet<string>,
+  rotulo: Rotulo,
 ): string | null {
   if (destinos === undefined) {
-    return `A modalidade ${origem} segue a cascata, mas a regra escolhida não declara essa origem.`;
+    return `A modalidade ${rotulo(origem)} segue a cascata, mas a regra escolhida não declara essa origem.`;
   }
   if (destinos.some((destino) => codigosDaOferta.has(destino))) return null;
-  return `Nenhum destino de ${origem} (${destinos.join(', ')}) está selecionado no quadro de vagas desta oferta.`;
+  return `Nenhum destino de ${rotulo(origem)} (${destinos.map(rotulo).join(', ')}) está selecionado no quadro de vagas desta oferta.`;
 }
 
 /**
@@ -207,22 +232,24 @@ function problemasDeCoberturaDaMatriz(
   const codigosOfertados = new Set(
     ofertas.flatMap((oferta) => oferta.modalidades.map((modalidade) => modalidade.codigo)),
   );
+  const rotulo = rotuladorDe(catalogo);
   return [
     ...origensSemMarcaDeCascata(ofertas, catalogo, matriz),
-    ...destinosNaoOfertados(codigosOfertados, matriz),
-    ...destinoFinalNaoOfertado(codigosOfertados, matriz.fallbackCodigo),
+    ...destinosNaoOfertados(codigosOfertados, matriz, rotulo),
+    ...destinoFinalNaoOfertado(codigosOfertados, matriz.fallbackCodigo, rotulo),
   ];
 }
 
 function destinoFinalNaoOfertado(
   codigos: ReadonlySet<string>,
   destino: string,
+  rotulo: Rotulo,
 ): ProblemaDaCascata[] {
   return codigos.has(destino)
     ? []
     : [
         semOferta(
-          `A regra declara ${destino} como destino final, mas nenhuma oferta do processo o oferece no quadro de vagas.`,
+          `A regra declara ${rotulo(destino)} como destino final, mas nenhuma oferta do processo o oferece no quadro de vagas.`,
         ),
       ];
 }
@@ -237,11 +264,12 @@ function origensSemMarcaDeCascata(
   matriz: MatrizDaOrdemDeRemanejamento,
 ): readonly ProblemaDaCascata[] {
   const origensSegueCascata = codigosQueSeguemCascata(ofertas, catalogo);
+  const rotulo = rotuladorDe(catalogo);
   return matriz.ordens
     .filter((ordem) => !origensSegueCascata.has(ordem.origem))
     .map((ordem) =>
       semOferta(
-        `A regra declara a origem ${ordem.origem}, mas nenhuma oferta do processo a marca como seguidora da ordem de remanejamento no quadro de vagas.`,
+        `A regra declara a origem ${rotulo(ordem.origem)}, mas nenhuma oferta do processo a marca como seguidora da ordem de remanejamento no quadro de vagas.`,
       ),
     );
 }
@@ -266,13 +294,14 @@ function codigosQueSeguemCascata(
 function destinosNaoOfertados(
   codigosOfertados: ReadonlySet<string>,
   matriz: MatrizDaOrdemDeRemanejamento,
+  rotulo: Rotulo,
 ): readonly ProblemaDaCascata[] {
   const destinosDaMatriz = new Set(matriz.ordens.flatMap((ordem) => ordem.destinos));
   const faltantes = [...destinosDaMatriz].filter((destino) => !codigosOfertados.has(destino));
   if (faltantes.length === 0) return [];
   return [
     semOferta(
-      `A regra declara os destinos ${faltantes.join(', ')}, mas nenhuma oferta do processo os oferece no quadro de vagas.`,
+      `A regra declara os destinos ${faltantes.map(rotulo).join(', ')}, mas nenhuma oferta do processo os oferece no quadro de vagas.`,
     ),
   ];
 }

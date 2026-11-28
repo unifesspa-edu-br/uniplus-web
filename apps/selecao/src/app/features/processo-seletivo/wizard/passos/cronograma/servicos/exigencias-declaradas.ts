@@ -1,4 +1,5 @@
 import { comEscopoPeloCodigo } from '@uniplus/shared-data/configuracao';
+import { rotulosDasModalidades } from '../../../modalidades-do-processo';
 import type { ExigenciaDeDocumento, FaseDoCronograma } from '../../../processo-seletivo.models';
 import type { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { descreverFase } from '../../../shared/descricao-da-fase';
@@ -20,6 +21,7 @@ import {
   podeAlcancarModalidade,
   problemasDoGatilho,
   recusasDeFaseDoGatilho,
+  rotulosDoGatilho,
 } from '../../../shared/gatilho-de-exigencia';
 import {
   orientacaoDaRecusaDaRepeticao,
@@ -68,7 +70,9 @@ function fatosDoGatilhoPorCodigo(
 ): ReadonlyMap<string, FatoEscolhivel> {
   const fatos = catalogos.fatos();
   const condicoes = store.draft().atendimento.condicoes.map((condicao) => condicao.codigo);
-  const fatosDoGatilho = fatosParaGatilho(fatos, dominiosDoGatilho(fatos, condicoes, ofertadas));
+  const dominios = dominiosDoGatilho(fatos, condicoes, ofertadas);
+  const rotulos = rotulosDoGatilho(fatos, rotulosDasModalidades(store.draft()));
+  const fatosDoGatilho = fatosParaGatilho(fatos, dominios, rotulos);
   return new Map(fatosDoGatilho.map((fato) => [fato.codigo, fato]));
 }
 

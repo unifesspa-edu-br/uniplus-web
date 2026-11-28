@@ -95,7 +95,7 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
   it('diz o que o catálogo não deu, sem concluir que a oferta ou a modalidade não existem', () => {
     expect(leitura()).toContain('Os catálogos de ofertas, modalidades e regras não foram lidos');
     expect(leitura()).toContain('Oferta sem nome: catálogo não foi lido');
-    expect(leitura()).toContain('LB_PPI — descrição: o catálogo não foi lido');
+    expect(leitura()).toContain('LB_PPI — nome: o catálogo não foi lido');
     expect(leitura()).toContain('Referência gravada, mas o catálogo não foi lido');
     expect(leitura()).not.toContain('Oferta fora do catálogo');
     expect(leitura()).not.toContain('Nenhuma modalidade oferecida');
@@ -161,11 +161,13 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
             {
               id: LB_PPI,
               codigo: 'LB_PPI',
+              nome: 'Baixa renda PPI',
               gravada: gravadaDe('Baixa renda PPI', 'DENTRO_DA_RESERVA_LEGAL'),
             },
             {
               id: AC_CASCATA,
               codigo: 'AC',
+              nome: 'Ampla concorrência',
               gravada: gravadaDe('Ampla concorrência', 'RETIRADA_DE_OUTRA_MODALIDADE'),
             },
           ],
@@ -183,12 +185,12 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
 
     expect(leitura()).toContain('LB_PPI — Baixa renda PPI');
     expect(leitura()).toContain('AC — Ampla concorrência');
-    expect(leitura()).not.toContain('descrição: o catálogo');
+    expect(leitura()).not.toContain('nome: o catálogo');
     const colunas = Array.from(tela.querySelectorAll('.vagas-table thead th')).map((th) =>
       th.textContent?.trim(),
     );
-    expect(colunas).toContain('AC');
-    expect(colunas).not.toContain('LB_PPI');
+    expect(colunas).toContain('AC — Ampla concorrência');
+    expect(colunas).not.toContain('LB_PPI — Baixa renda PPI');
   });
 
   /** O catálogo mudou depois da publicação: vale o gravado, e a modalidade que saiu continua. */
@@ -208,11 +210,13 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
             {
               id: LB_PPI,
               codigo: 'LB_PPI',
+              nome: 'Descrição publicada',
               gravada: gravadaDe('Descrição publicada', 'RETIRADA_DE_OUTRA_MODALIDADE'),
             },
             {
               id: LB_Q,
               codigo: 'LB_Q',
+              nome: 'Quilombola publicada',
               gravada: gravadaDe('Quilombola publicada', 'RETIRADA_DE_OUTRA_MODALIDADE'),
             },
           ],
@@ -228,7 +232,7 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
       {
         id: LB_PPI,
         codigo: 'LB_PPI',
-        descricao: 'Descrição de hoje',
+        nome: 'Nome de hoje',
         composicaoVagas: MODALIDADES[0].composicaoVagas,
       } as never,
     ]);
@@ -241,12 +245,14 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
     fixture.detectChanges();
 
     expect(leitura()).toContain('LB_PPI — Descrição publicada');
-    expect(leitura()).not.toContain('Descrição de hoje');
+    expect(leitura()).not.toContain('Nome de hoje');
     expect(leitura()).toContain('LB_Q — Quilombola publicada');
     const celulas = Array.from(tela.querySelectorAll('.vagas-table td[data-label]')).map(
       (td) => `${td.getAttribute('data-label')}=${td.textContent?.trim()}`,
     );
-    expect(celulas).toEqual(expect.arrayContaining(['LB_PPI=10', 'LB_Q=7']));
+    expect(celulas).toEqual(
+      expect.arrayContaining(['LB_PPI — Descrição publicada=10', 'LB_Q — Quilombola publicada=7']),
+    );
   });
 
   it('padrão sem modalidades diz que nenhuma é oferecida, e não que não leu', () => {
@@ -268,7 +274,7 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
     fixture.detectChanges();
 
     expect(leitura()).toContain('Nenhuma modalidade oferecida');
-    expect(leitura()).not.toContain('descrição: o catálogo');
+    expect(leitura()).not.toContain('nome: o catálogo');
   });
 
   it('enquanto os catálogos carregam, avisa que carrega e não diz que não leu', () => {
@@ -278,14 +284,14 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
     fixture.detectChanges();
 
     expect(tela.querySelector('[role="status"]')?.textContent).toContain('Carregando');
-    expect(leitura()).toContain('LB_PPI — descrição: o catálogo ainda carrega');
+    expect(leitura()).toContain('LB_PPI — nome: o catálogo ainda carrega');
     expect(leitura()).not.toContain('não foi lido');
     expect(tela.querySelector('[role="alert"]')).toBeNull();
   });
 
   it('nova tentativa que falha depois de uma carga boa mantém o que já foi lido', () => {
     const catalogos = fixture.componentInstance.catalogos;
-    catalogos.modalidades.set([{ ...MODALIDADES_CASCATA[0], descricao: 'Ampla PPI' } as never]);
+    catalogos.modalidades.set([{ ...MODALIDADES_CASCATA[0], nome: 'Ampla PPI' } as never]);
     fixture.detectChanges();
 
     expect(catalogos.erro()).not.toBeNull();

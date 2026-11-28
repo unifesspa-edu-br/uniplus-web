@@ -23,19 +23,13 @@ import type {
 import { prazoEValidadeParaEnvio } from './prazo-e-validade';
 import { formatosParaEnvio } from './formatos-aceitos';
 import { comAlcanceDeTodasAsFases } from './alcance-das-exigencias';
-import { documentosDe } from './consulta-das-exigencias';
-import { APLICABILIDADE_GERAL } from './exigencias-documentais';
-import { codigoEnviado } from './formulario-da-exigencia';
-import { comRestricaoDeModalidades, modalidadesParaGravacao } from './modalidades-da-exigencia';
-
-/** Os dados do processo usados para preparar as exigências para envio. */
-export interface ProcessoVivoDasExigencias {
-  readonly faseIdPorCodigo: ReadonlyMap<string, string>;
-  readonly modalidadesOfertadas: readonly string[];
-  readonly etapasVivas: ReadonlySet<string>;
-  /** Os códigos dos formulários que cada fase responde, pelo código da fase. */
-  readonly formulariosPorFase: ReadonlyMap<string, readonly string[]>;
-}
+import {
+  condicoesDaExigencia,
+  etapaDeColetaValida,
+  formularioDoDocumento,
+  formularioHerdadoDaRegra,
+  type ProcessoVivoDasExigencias,
+} from './preparo-da-gravacao';
 
 export interface OrigemDaRegraEnviada {
   readonly identificadorDaRegra: string;
@@ -54,7 +48,7 @@ export function regrasDeComprovacaoParaEnvio(
 ): ExigenciasParaEnvio {
   const completas = comAlcanceDeTodasAsFases(exigencias, [...processo.faseIdPorCodigo.keys()]);
   const preparadas = completas.regrasDeComprovacao.flatMap((regra) =>
-    prepararExigenciasParaEnvio([regra], processo, formularioDaRegra(regra, processo)),
+    prepararExigenciasParaEnvio([regra], processo, formularioHerdadoDaRegra(regra, processo)),
   );
   return {
     regras: preparadas.map((item) => item.regra),
@@ -92,25 +86,6 @@ function origemDaRegra(
 interface RegraPreparada {
   readonly regra: RegraDeComprovacaoInformada;
   readonly origem: OrigemDaRegraEnviada;
-}
-
-/**
- * O formulário da regra principal, declarado na primeira exigência de uma fase ativa e herdado por
- * todas as outras: o servidor recusa grupo com documentos de formulários diferentes.
- */
-function formularioDaRegra(
-  regraPrincipal: RegraDeComprovacao,
-  processo: ProcessoVivoDasExigencias,
-): string | null {
-  const declarante = documentosDe([regraPrincipal]).find((documento) =>
-    processo.faseIdPorCodigo.has(documento.faseCodigo),
-  );
-  return declarante === undefined
-    ? null
-    : codigoEnviado(
-        declarante.formularioCodigo,
-        processo.formulariosPorFase.get(declarante.faseCodigo) ?? [],
-      );
 }
 
 function prepararExigenciasParaEnvio(
@@ -218,6 +193,7 @@ function prepararDocumentoParaEnvio(
   formularioCodigo: string | null,
 ): ItemDocumentoExigidoInput {
   return {
+    ...(documento.chave === null ? {} : { chave: documento.chave }),
     tipoDocumento: { id: documento.tipoDocumentoId },
     fatosComprovados: documento.fatosComprovados ?? [],
     momento: momentoParaEnvio(documento, processo, formularioCodigo),
@@ -244,18 +220,9 @@ function momentoParaEnvio(
 ): ItemDocumentoExigidoInput['momento'] {
   return {
     faseId: processo.faseIdPorCodigo.get(documento.faseCodigo) ?? documento.faseIdLido ?? '',
-    etapaId: documento.faseIdLido
-      ? documento.etapaId
-      : etapaDeColetaValida(documento, processo.etapasVivas),
-    formularioCodigo: formularioParaEnvio(documento, formularioCodigo),
+    etapaId: etapaDeColetaValida(documento, processo.etapaIdPorChave),
+    formularioCodigo: formularioDoDocumento(documento, formularioCodigo),
   };
-}
-
-function formularioParaEnvio(
-  documento: ExigenciaDeDocumento,
-  formularioCodigo: string | null,
-): string {
-  return (documento.faseIdLido ? documento.formularioCodigo : formularioCodigo) ?? '';
 }
 
 function indeferimentoDoDocumentoParaEnvio(
@@ -272,16 +239,11 @@ function indeferimentoDoDocumentoParaEnvio(
   };
 }
 
-/** Uma exigência geral segue sem condições (ADR-0071). */
 function condicoesParaEnvio(
   documento: ExigenciaDeDocumento,
   modalidadesOfertadas: readonly string[],
 ): CondicoesDaAplicabilidade {
-  if (documento.aplicabilidade === APLICABILIDADE_GERAL) return [];
-  const modalidadesRestritas = modalidadesParaGravacao(documento, modalidadesOfertadas);
-  return comRestricaoDeModalidades(documento.condicoes, modalidadesRestritas).map(
-    condicaoParaEnvio,
-  );
+  return condicoesDaExigencia(documento, modalidadesOfertadas).map(condicaoParaEnvio);
 }
 
 type CondicoesDaAplicabilidade = NonNullable<
@@ -302,18 +264,6 @@ function requisitosParaEnvio(
     tamanhoMaximoBytes: documento.tamanhoMaximoBytes,
     modelo: documento.modelo === null ? null : { modeloId: documento.modelo.modeloId },
   };
-}
-
-/**
- * A etapa que coletava saiu do cronograma: o documento volta a ser da fase inteira em vez de
- * referenciar um identificador que o processo não tem mais.
- */
-function etapaDeColetaValida(
-  documento: ExigenciaDeDocumento,
-  etapasVivas: ReadonlySet<string>,
-): string | null {
-  const etapaId = documento.etapaId;
-  return etapaId !== null && etapaId !== '' && etapasVivas.has(etapaId) ? etapaId : null;
 }
 
 function codigoOpcional<E extends Record<string, string>>(contrato: E, valor: string | null) {

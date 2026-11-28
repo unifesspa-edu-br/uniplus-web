@@ -161,7 +161,7 @@ test.describe('Eliminação por ausência na etapa em edição — matriz DS @ds
               {
                 field: 'regrasEliminacao[0].etapaRef',
                 code: 'uniplus.selecao.configuracao_classificacao.ausencia_na_etapa_repetida',
-                message: 'repetida',
+                message: 'A eliminação por ausência só pode ser declarada uma vez para cada etapa.',
               },
             ],
           }),
@@ -177,6 +177,6 @@ test.describe('Eliminação por ausência na etapa em edição — matriz DS @ds
     const etapa = page.locator('#elim-etapa-0');
     await expect(etapa).toHaveAttribute('aria-invalid', 'true');
     await expect(etapa).toHaveAttribute('aria-describedby', /elim-etapa-erro-0/);
-    await expect(page.locator('#elim-etapa-erro-0')).toContainText('já foi declarada');
+    await expect(page.locator('#elim-etapa-erro-0')).toContainText('só pode ser declarada uma vez');
   });
 });

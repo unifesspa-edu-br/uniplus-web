@@ -20,6 +20,7 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   border-bottom: 1px solid var(--border-default);
+  overflow-wrap: break-word;
 }
 
 .cascata-matriz tbody th[scope='row'] {
@@ -44,31 +45,24 @@
   border-bottom: none;
 }
 
-/* Uma coluna por posição de preferência, estreita e centrada — a leitura é de
-   comparação entre linhas, não de texto corrido.
-
-   O `nowrap` fica de fora daqui de propósito: abaixo de 768 px a célula vira
-   item de um cartão, ao lado do ordinal "1ª", e o código de
-   modalidade admite até 60 caracteres. Impedi-lo de quebrar ali faria o texto
-   transbordar do cartão. */
+/* Uma coluna por posição de preferência, centrada: a leitura é de comparação entre
+   linhas, não de texto corrido. Nenhuma célula impede a quebra de linha: o código
+   admite até 60 caracteres e o nome da modalidade pode ser longo. */
 .cascata-matriz thead th.cascata-matriz__ordem,
 .cascata-matriz td.cascata-matriz__destino {
   text-align: center;
   padding-inline: var(--space-3);
 }
 
-/* Código de modalidade é um token só, sem espaço: retirar o `nowrap` não cria
-   oportunidade de quebra, porque `overflow-wrap: normal` não quebra dentro da
-   palavra. Como cartão, ao lado do ordinal "1ª", um código de até 60
-   caracteres transbordaria mesmo assim. `anywhere` — e não `break-word` —
-   porque só ele também reduz o tamanho mínimo intrínseco, que é o que impede o
-   transbordo dentro do flex do cartão.
+/* Código de modalidade é um token só, sem espaço, e o nome pode ser longo: sem
+   `nowrap`, a quebra entre palavras vale e `anywhere` cobre o código sem espaço.
+   `anywhere` — e não `break-word` — porque só ele também reduz o tamanho mínimo
+   intrínseco, que é o que impede o transbordo dentro do flex do cartão e em tela
+   estreita (320 px ou zoom de 200%).
 
-   Vale para os TRÊS lugares em que um código do catálogo é exibido: a origem
-   da linha, cada destino, e o destino final no parágrafo abaixo da matriz.
-   Proteger só um deles deixa os outros dois transbordando o mesmo texto.
-   Acima de 768 px o `nowrap` da media query prevalece na tabela; o parágrafo
-   não é tabela e mantém a quebra em qualquer largura. */
+   Vale para os TRÊS lugares em que uma modalidade é exibida: a origem da linha,
+   cada destino, e o destino final no parágrafo abaixo da matriz. Proteger só um
+   deles deixa os outros dois transbordando o mesmo texto. */
 .cascata-matriz tbody th[scope='row'],
 .cascata-matriz td.cascata-matriz__destino,
 .cascata-matriz__terminal {
@@ -77,6 +71,12 @@
 
 .cascata-matriz td.cascata-matriz__destino {
   font-variant-numeric: tabular-nums;
+}
+
+/* O código não se parte: "LB_/PPI" em duas linhas lê como dois códigos. O nome que vem depois
+   dele quebra entre as palavras. */
+.cascata-matriz__codigo {
+  white-space: nowrap;
 }
 
 /* Como cartão, a origem encabeça e os destinos seguem em fila, cada um com o seu ordinal, na
@@ -114,21 +114,14 @@
    as regras têm a mesma especificidade e esta vem depois, sem a media query ela
    venceria e prenderia a origem dentro do cartão, sem deixá-la quebrar. */
 @media (min-width: 768px) {
-  /* Como tabela, a coluna é estreita e a quebra do código atrapalharia a
-     comparação vertical entre linhas. */
-  .cascata-matriz thead th.cascata-matriz__ordem,
-  .cascata-matriz td.cascata-matriz__destino {
-    white-space: nowrap;
-  }
-
   .cascata-matriz thead th:first-child,
   .cascata-matriz tbody th[scope='row'] {
     position: sticky;
     left: 0;
     z-index: 1;
     background: var(--surface-card);
-    width: 1%;
-    white-space: nowrap;
+    min-width: 10rem;
+    max-width: 18rem;
   }
 
   .cascata-matriz thead th:first-child {

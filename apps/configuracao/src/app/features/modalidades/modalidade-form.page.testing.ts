@@ -18,6 +18,7 @@ import { AC, BASE, URL, URL_CATALOGO, modalidade } from './modalidades-de-teste.
 export const LB_PPI = modalidade({
   id: 'id-lb',
   codigo: 'LB_PPI',
+  nome: 'Cota de teste Beta',
   descricao: 'Cota PPI baixa renda',
   naturezaLegal: NATUREZAS.cota,
   composicaoVagas: COMPOSICOES.reserva,
@@ -36,6 +37,7 @@ export const LB_PPI = modalidade({
 export const MODALIDADE_REGIONAL = modalidade({
   id: 'id-regional',
   codigo: 'AA_REGIONAL',
+  nome: 'Ação de teste Gama',
   legalFixa: false,
   descricao: 'Ação afirmativa regional',
   naturezaLegal: NATUREZAS.acao,

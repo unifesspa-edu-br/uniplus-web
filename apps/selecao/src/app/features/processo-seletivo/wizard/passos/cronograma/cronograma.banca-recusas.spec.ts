@@ -43,21 +43,24 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da etapa', ()
     tela.expansao.alternarFase(0);
     tela.expansao.alternarEtapa(0);
     const etapa = tela.cronograma.etapas.at(0);
-    for (const chave of ['banca-1', 'banca-2']) {
+    for (const chave of ['banca', 'banca_2']) {
       acrescentarBancaNaEtapa(tela.edicao, etapa, ID_BANCA_HETERO);
       declararRegraNaBanca(tela.edicao, etapa, chave, COLEGIADA);
     }
     tela.detectar();
     return etapa;
   }
+  const chaveDaBanca = (numero: number) => (numero === 1 ? 'banca' : `banca_${numero}`);
   const recusar = (field: string, code = QUORUM) =>
     ajudantes.recusarEtapas([{ field, code, message: `Detalhe de ${field}.` }]);
-  const daBanca = (numero: number) => ajudantes.bloco(`cr-etapa-bancas-0-banca-${numero}-recusas`);
-  const grupo = (numero: number) => tela.nativo.querySelector(`#cr-etapa-bancas-0-banca-${numero}`);
+  const daBanca = (numero: number) =>
+    ajudantes.bloco(`cr-etapa-bancas-0-${chaveDaBanca(numero)}-recusas`);
+  const grupo = (numero: number) =>
+    tela.nativo.querySelector(`#cr-etapa-bancas-0-${chaveDaBanca(numero)}`);
   const controle = (numero: number, sufixo: string) =>
-    tela.nativo.querySelector(`#etapa-0-banca-banca-${numero}-${sufixo}`);
+    tela.nativo.querySelector(`#etapa-0-banca-${chaveDaBanca(numero)}-${sufixo}`);
   const doControle = (numero: number, sufixo: string) =>
-    ajudantes.bloco(`etapa-0-banca-banca-${numero}-${sufixo}-recusas`);
+    ajudantes.bloco(`etapa-0-banca-${chaveDaBanca(numero)}-${sufixo}-recusas`);
   const vezes = (texto: string) => (tela.nativo.textContent ?? '').split(texto).length - 1;
 
   it('mostra junto do controle recusado, com mensagem e código, uma só vez', async () => {
@@ -104,7 +107,7 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da etapa', ()
     await recusar('etapas[0].bancas[1].regraDeDeliberacao.quorum');
 
     expect(controle(2, 'quorum')?.getAttribute('aria-describedby')).toBe(
-      'etapa-0-banca-banca-2-quorum-recusas',
+      'etapa-0-banca-banca_2-quorum-recusas',
     );
     expect(controle(2, 'quorum')?.getAttribute('aria-invalid')).toBe('true');
     expect(controle(1, 'quorum')?.getAttribute('aria-invalid')).toBeNull();
@@ -119,7 +122,7 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da etapa', ()
 
     expect(daBanca(2)).toContain('Detalhe de etapas[0].bancas[1].');
     expect(vezes('Detalhe de etapas[0].bancas[1].')).toBe(1);
-    expect(grupo(2)?.getAttribute('aria-describedby')).toBe('cr-etapa-bancas-0-banca-2-recusas');
+    expect(grupo(2)?.getAttribute('aria-describedby')).toBe('cr-etapa-bancas-0-banca_2-recusas');
     expect(grupo(2)?.getAttribute('aria-invalid')).toBeNull();
     expect(grupo(1)?.getAttribute('aria-describedby')).toBeNull();
   });
@@ -129,7 +132,7 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da etapa', ()
     declararRegraNaBanca(
       tela.edicao,
       etapa,
-      'banca-2',
+      'banca_2',
       comRegra({
         criterio: CRITERIOS.unanimidade.codigo,
         desempate: '',
@@ -171,7 +174,7 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da etapa', ()
     declararRegraNaBanca(
       tela.edicao,
       etapa,
-      'banca-2',
+      'banca_2',
       comRegra({ modo: valor as ModoDeDeliberacao }),
     );
     tela.detectar();
@@ -199,7 +202,7 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da etapa', ()
     declararRegraNaBanca(
       tela.edicao,
       etapa,
-      'banca-2',
+      'banca_2',
       comRegra({
         criterio: CRITERIOS.unanimidade.codigo,
         desempate: '',
@@ -238,7 +241,7 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da etapa', ()
     const etapa = comDuasBancasDoMesmoTipo();
     await recusar('etapas[0].bancas[1].regraDeDeliberacao.quorum');
 
-    retirarBancaDaEtapa(tela.edicao, etapa, 'banca-2');
+    retirarBancaDaEtapa(tela.edicao, etapa, 'banca_2');
     tela.detectar();
 
     expect(ajudantes.bloco(SECAO)).toContain('Detalhe de etapas[0].bancas[1]');
@@ -266,7 +269,7 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da etapa', ()
     expect(doControle(2, 'quorum')).toContain('conferida de novo');
     expect(controle(2, 'quorum')?.getAttribute('aria-invalid')).toBeNull();
     expect(controle(2, 'quorum')?.getAttribute('aria-describedby')).toBe(
-      'etapa-0-banca-banca-2-quorum-recusas',
+      'etapa-0-banca-banca_2-quorum-recusas',
     );
   });
   it('calcula as recusas das bancas uma vez por mudança, e não a cada leitura da tela', async () => {

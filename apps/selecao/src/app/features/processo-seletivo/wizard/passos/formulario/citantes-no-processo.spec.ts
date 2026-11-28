@@ -65,13 +65,16 @@ describe('quem cita cada fato no processo', () => {
       modalidades: [
         {
           codigo: 'AC_PCD',
+          nome: 'Modalidade de teste Alfa',
           descricao: null,
           regra: [[{ fato: 'CONCORRER_PCD', operador: OperadorCodigo.IGUAL, valor: true }]],
         },
       ],
     });
 
-    expect(citantes.get('CONCORRER_PCD')).toEqual(['a regra de quem concorre em AC_PCD']);
+    expect(citantes.get('CONCORRER_PCD')).toEqual([
+      'a regra de quem concorre em AC_PCD — Modalidade de teste Alfa',
+    ]);
   });
 
   it('trava na inscrição o fato que outro formulário cita, nomeando o formulário; o que ela cita dos próprios campos fica de fora', () => {

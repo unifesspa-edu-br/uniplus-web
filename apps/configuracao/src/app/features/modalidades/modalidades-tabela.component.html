@@ -6,7 +6,7 @@
     </caption>
     <thead>
       <tr>
-        <th scope="col">Código</th>
+        <th scope="col">Modalidade</th>
         <th scope="col">Quem concorre</th>
         <th scope="col">Natureza</th>
         <th scope="col">Composição de vagas</th>
@@ -18,8 +18,8 @@
     <tbody>
       @for (m of modalidades(); track m.id) {
         <tr [attr.data-codigo]="m.codigo">
-          <td data-label="Código">
-            <code>{{ m.codigo }}</code>
+          <td data-label="Modalidade">
+            <code>{{ codigoComNome(m.codigo, m.nome) }}</code>
             @if (removendoId() === m.id) {
               <span aria-hidden="true">Removendo...</span>
             }
@@ -36,7 +36,7 @@
           <td data-label="Composição de vagas">
             {{ m.composicaoVagas.rotulo }}
             @if (m.composicaoOrigem) {
-              {{ ' ' }}<code>{{ m.composicaoOrigem }}</code>
+              {{ ' ' }}<code>{{ rotuloDe(m.composicaoOrigem) }}</code>
             }
           </td>
           <td data-label="Remanejamento">{{ remanejamentoResumo(m) }}</td>
@@ -45,7 +45,7 @@
               @if (refs.length > 0) {
                 <span class="cfg-refs">
                   @for (r of refs; track r.id) {
-                    <code class="cfg-ref-chip">{{ r.codigo }}</code>
+                    <code class="cfg-ref-chip">{{ codigoComNome(r.codigo, r.nome) }}</code>
                   }
                 </span>
               } @else {
@@ -56,14 +56,14 @@
           <td class="table-responsive__actions" data-label="Ações">
             <ui-icon-button
               icon="pi-pencil"
-              [accessibleName]="'Editar modalidade ' + m.codigo"
+              [accessibleName]="'Editar modalidade ' + codigoComNome(m.codigo, m.nome)"
               tooltip="Editar modalidade"
               [link]="[m.id]"
               [isDisabled]="indisponivel()"
             />
             <ui-icon-button
               icon="pi-trash"
-              [accessibleName]="'Remover modalidade ' + m.codigo"
+              [accessibleName]="'Remover modalidade ' + codigoComNome(m.codigo, m.nome)"
               tooltip="Remover modalidade"
               [isDisabled]="indisponivel()"
               (triggered)="remover.emit(m)"

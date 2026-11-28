@@ -8,6 +8,8 @@ import {
   untracked,
 } from '@angular/core';
 
+import { levarOPrimeiroAvisoAVista } from '@uniplus/shared-ui/components';
+
 export interface OpcoesDoFocoDoEnvio {
   /** O formulário está sendo enviado. */
   readonly salvando: Signal<boolean>;
@@ -32,6 +34,7 @@ export function focarPrimeiroCampoInvalido(raiz: HTMLElement): boolean {
     (item) => item.closest('ui-endereco-geo ui-valor-de-municipio') === null,
   );
   campo?.focus();
+  levarOPrimeiroAvisoAVista(raiz);
   return campo !== undefined;
 }
 
@@ -44,7 +47,7 @@ class FocoDoEnvioDaGaveta implements FocoDoEnvio {
     private readonly opcoes: OpcoesDoFocoDoEnvio,
   ) {}
 
-  /** Depois da renderização, leva o foco ao primeiro campo inválido. */
+  /** Depois da renderização, leva o foco ao primeiro campo inválido e a visão ao primeiro aviso. */
   focarPrimeiroInvalido(): void {
     afterNextRender(() => this.focarInvalidoOuEndereco(), { injector: this.injector });
   }

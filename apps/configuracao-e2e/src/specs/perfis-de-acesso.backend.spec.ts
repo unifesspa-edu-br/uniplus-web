@@ -97,7 +97,7 @@ test.describe('Administração de perfis de acesso', () => {
     await pagina.getByRole('button', { name: 'Salvar perfil' }).click();
 
     // A lista é paginada e o perfil novo pode cair noutra página; a confirmação da tela e a API bastam.
-    await expect(pagina.getByText('Perfil criado', { exact: true })).toBeVisible();
+    await expect(pagina.getByTestId('notification-host-title').filter({ hasText: 'Perfil criado' })).toBeVisible();
     const gravado = await acharNaListagem<PerfilGravado>(
       'diogo.souza',
       '/api/autorizacao/perfis?limit=100',

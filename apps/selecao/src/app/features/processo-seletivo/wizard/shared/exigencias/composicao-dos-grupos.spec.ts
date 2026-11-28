@@ -39,7 +39,7 @@ describe('composição dos grupos', () => {
   });
 
   it('recusa documentos de momentos diferentes', () => {
-    const antes = rascunho(exigencia(), exigencia({ etapaId: 'etapa' }));
+    const antes = rascunho(exigencia(), exigencia({ etapaChave: 'etapa' }));
     const identificadores = antes.regrasDeComprovacao.map((regra) => regra.identificadorNoRascunho);
     expect(criarGrupo(antes, identificadores, 'grupo')).toBe(antes);
   });

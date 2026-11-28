@@ -234,6 +234,7 @@ export function etapasDe(dto: ProcessoSeletivoDto): EtapaPontuada[] {
 function etapaDe(etapa: EtapaDoDto): EtapaPontuada {
   return {
     id: etapa.id,
+    chave: etapa.chave,
     ...identificacaoDaEtapaDe(etapa.identificacao),
     ...avaliacaoDaEtapaDe(etapa),
     ...agendaDaEtapaDe(etapa),

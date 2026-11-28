@@ -38,6 +38,7 @@ describe('VagasPassoComponent — reaplicar o rol sob composição calculada', (
     {
       id: MODALIDADE,
       codigo: 'AC_I',
+      nome: 'Indígena',
       descricao: 'Indígena',
       naturezaLegal: 'ACAO_AFIRMATIVA',
       composicaoVagas: 'SUPLEMENTAR_AO_TOTAL',
@@ -50,6 +51,7 @@ describe('VagasPassoComponent — reaplicar o rol sob composição calculada', (
     {
       id: MODALIDADE_CALCULADA,
       codigo: 'X_CALC',
+      nome: 'Calculada pela regra',
       descricao: 'Calculada pela regra',
       naturezaLegal: 'COTA_RESERVADA',
       composicaoVagas: 'DENTRO_DA_RESERVA_LEGAL',
@@ -136,8 +138,8 @@ describe('VagasPassoComponent — reaplicar o rol sob composição calculada', (
           referenciaReservaDemograficaId: null,
           ajusteDoQuadro: null,
           modalidades: [
-            { id: MODALIDADE, codigo: 'AC_I' },
-            { id: MODALIDADE_CALCULADA, codigo: 'X_CALC' },
+            { id: MODALIDADE, codigo: 'AC_I', nome: '' },
+            { id: MODALIDADE_CALCULADA, codigo: 'X_CALC', nome: '' },
           ],
           quadro: [{ modalidadeId: MODALIDADE_CALCULADA, quantidade: '5' }],
         },
@@ -171,8 +173,8 @@ describe('VagasPassoComponent — reaplicar o rol sob composição calculada', (
           referenciaReservaDemograficaId: null,
           ajusteDoQuadro: null,
           modalidades: [
-            { id: MODALIDADE, codigo: 'AC_I' },
-            { id: MODALIDADE_CALCULADA, codigo: 'X_CALC' },
+            { id: MODALIDADE, codigo: 'AC_I', nome: '' },
+            { id: MODALIDADE_CALCULADA, codigo: 'X_CALC', nome: '' },
           ],
           quadro: [{ modalidadeId: MODALIDADE_CALCULADA, quantidade: '5' }],
         },

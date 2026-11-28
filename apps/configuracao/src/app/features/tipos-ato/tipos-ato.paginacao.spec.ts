@@ -88,7 +88,11 @@ describe('TiposAtoPage', () => {
       await verificarRetornoAoInicio();
     });
     it.each([
-      [400, 'uniplus.cursor.invalido', 'A paginação foi reiniciada porque a consulta mudou.'],
+      [
+        400,
+        'uniplus.paginacao.cursor_invalido',
+        'A paginação foi reiniciada porque a consulta mudou.',
+      ],
       [
         410,
         'uniplus.cursor.expirado',

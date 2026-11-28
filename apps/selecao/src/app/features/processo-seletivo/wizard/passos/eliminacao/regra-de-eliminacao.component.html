@@ -5,6 +5,9 @@
       class="input"
       [id]="'elim-regra-' + indice()"
       [disabled]="!store.aceitaEdicao()"
+      [class.is-invalid]="recusasDaRegra().length > 0"
+      [attr.aria-invalid]="recusasDaRegra().length > 0 ? 'true' : null"
+      [attr.aria-describedby]="idDaRecusaDaRegra()"
       (change)="escolherRegra($any($event.target).value)"
     >
       <option value="|" [selected]="regra().regraCodigo === ''">— escolher —</option>
@@ -14,6 +17,11 @@
         </option>
       }
     </select>
+    <div [id]="'elim-regra-erro-' + indice()" aria-live="polite" aria-atomic="true">
+      @if (recusasDaRegra().length > 0) {
+        <ui-recusa-do-campo [recusas]="recusasDaRegra()" />
+      }
+    </div>
   </div>
 
   @if (usaEtapa()) {

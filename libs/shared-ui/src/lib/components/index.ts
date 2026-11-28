@@ -35,6 +35,7 @@ export { DadoRevelavelComponent } from './dado-revelavel/dado-revelavel';
 export { DataTableComponent, type UiDataTableColumn } from './data-table/data-table';
 export { DialogComponent } from './dialog/dialog';
 export { DrawerComponent } from './drawer/drawer';
+export { levarOPrimeiroAvisoAVista } from './drawer/levar-o-aviso-a-vista';
 export { EmptyStateComponent } from './empty-state/empty-state';
 export {
   EscolhaComExplicacaoComponent,

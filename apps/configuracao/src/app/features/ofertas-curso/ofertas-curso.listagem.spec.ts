@@ -246,7 +246,7 @@ describe('OfertasCursoPage — listagem', () => {
       await p.propagar();
       p.http
         .expectOne((r) => r.url === LISTA)
-        .flush(...problema(400, { code: 'uniplus.cursor.invalido' }));
+        .flush(...problema(400, { code: 'uniplus.paginacao.cursor_invalido' }));
       await p.propagar();
 
       const recarga = p.http.expectOne((r) => r.url === LISTA);

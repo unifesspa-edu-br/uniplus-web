@@ -3,16 +3,12 @@ import type {
   ConteudoDoFormulario,
   CamposEditadosDoFormulario,
 } from '@uniplus/shared-inscricao/formulario';
+import type { ImpedimentoDaConversao } from '../impedimento-da-conversao';
 import type { ReferenciasDosTermosDoFormulario } from './referencias-dos-termos';
 
 export interface CatalogosDaConversaoDoFormulario {
   readonly fatos: readonly { readonly codigo: string; readonly tipoDeCampo: string }[] | null;
   readonly termos: ReferenciasDosTermosDoFormulario | null;
-}
-
-export interface ImpedimentoDaConversaoDoFormulario {
-  readonly caminho: string;
-  readonly mensagem: string;
 }
 
 export type ResultadoDaConversaoDoFormulario =
@@ -22,4 +18,4 @@ export type ResultadoDaConversaoDoFormulario =
       readonly conteudo: ConteudoDoFormulario;
       readonly camposEditados: CamposEditadosDoFormulario;
     }
-  | { readonly ok: false; readonly impedimentos: readonly ImpedimentoDaConversaoDoFormulario[] };
+  | { readonly ok: false; readonly impedimentos: readonly ImpedimentoDaConversao[] };

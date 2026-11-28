@@ -336,6 +336,11 @@ export function ehCampoDaEscala(campo: string): boolean {
   return (campo.split('.').at(-1) ?? campo).toLowerCase() === 'escalanotafinal';
 }
 
+/** O campo da recusa do servidor é o das casas de arredondamento, nomeado como em `ehCampoDaResolucao`. */
+export function ehCampoDasCasas(campo: string): boolean {
+  return (campo.split('.').at(-1) ?? campo).toLowerCase() === 'casasarredondamento';
+}
+
 /**
  * O campo da recusa do servidor é o da resolução de Peso por Área. Compara o nome sem prefixo de
  * caminho (`$.`, `request.`) e sem caixa — a recusa do domínio e a do model binding nomeiam o mesmo

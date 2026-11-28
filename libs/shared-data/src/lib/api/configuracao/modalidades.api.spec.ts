@@ -28,6 +28,7 @@ const modalidadeSeed: ModalidadeDto = {
   id: ID,
   codigo: 'LB_PPI',
   legalFixa: true,
+  nome: 'Escola pública, renda de até 1 salário mínimo por pessoa, pretos, pardos e indígenas',
   descricao: 'Cota PPI baixa renda',
   naturezaLegal: valorDeTeste(NaturezaLegalCodigo.COTA_RESERVADA),
   composicaoVagas: valorDeTeste(ComposicaoVagasCodigo.DENTRO_DA_RESERVA_LEGAL),
@@ -54,6 +55,7 @@ const modalidadeSeed: ModalidadeDto = {
 
 const criarCommand: CriarModalidadeCommand = {
   codigo: 'V',
+  nome: 'Ampla concorrência, ação afirmativa para pessoas com deficiência',
   descricao: 'PcD ampla concorrência',
   naturezaLegal: NaturezaLegalCodigo.ACAO_AFIRMATIVA,
   composicaoVagas: ComposicaoVagasCodigo.RETIRADA_DE_OUTRA_MODALIDADE,
@@ -126,6 +128,7 @@ describe('ModalidadesApi', () => {
         ID,
         {
           id: ID,
+          nome: 'Escola pública, renda de até 1 salário mínimo por pessoa, pretos, pardos e indígenas',
           descricao: 'Cota PPI baixa renda',
           naturezaLegal: NaturezaLegalCodigo.COTA_RESERVADA,
           composicaoVagas: ComposicaoVagasCodigo.DENTRO_DA_RESERVA_LEGAL,

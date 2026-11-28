@@ -71,18 +71,6 @@ export const LIMITES_DO_FORMULARIO = {
   tituloDoFormulario: 300,
 } as const;
 
-/** Como o candidato responde, pelo tipo de campo. */
-export const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
-  SIM_OU_NAO: 'Sim ou não',
-  NUMERO: 'Número',
-  TEXTO: 'Texto',
-  DATA: 'Data',
-  ENDERECO: 'Endereço',
-  MUNICIPIO: 'Município',
-  ESCOLHA_UNICA: 'Escolha de um valor',
-  ESCOLHA_MULTIPLA: 'Escolha de vários valores',
-};
-
 export const FINALIDADES: readonly OpcaoDoFormulario[] = [
   { valor: FINALIDADE_INSCRICAO, rotulo: 'Inscrição' },
   { valor: 'ISENCAO_TAXA', rotulo: 'Isenção da taxa de inscrição' },

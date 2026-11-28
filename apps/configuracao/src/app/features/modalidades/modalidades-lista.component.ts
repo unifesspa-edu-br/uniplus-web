@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   ElementRef,
   Injector,
   afterNextRender,
@@ -11,21 +12,17 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import {
-  EmptyStateComponent,
-  PagerComponent,
-  SpinnerComponent,
-} from '@uniplus/shared-ui/components';
+import { EmptyStateComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { focoEstaLivre } from '../../shared/foco';
 
 /**
- * O painel da lista de modalidades: título, contagem, estado vazio e paginação. A tabela entra
+ * O painel da lista de modalidades: título, contagem e estado vazio. A tabela entra
  * por projeção, para a lista não repassar os dados que só ela usa.
  */
 @Component({
   selector: 'cfg-modalidades-lista',
   standalone: true,
-  imports: [RouterLink, EmptyStateComponent, PagerComponent, SpinnerComponent],
+  imports: [RouterLink, EmptyStateComponent, SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './modalidades-lista.component.html',
 })
@@ -35,14 +32,16 @@ export class ModalidadesListaComponent {
   readonly loading = input.required<boolean>();
   readonly errorMessage = input.required<string | null>();
   readonly temFiltroAtivo = input.required<boolean>();
-  readonly temAnterior = input.required<boolean>();
-  readonly temProximo = input.required<boolean>();
   readonly removendo = input.required<boolean>();
   /** O diálogo de remoção está aberto para uma modalidade. */
   readonly emRemocao = input.required<boolean>();
   readonly limpar = output<void>();
-  readonly anterior = output<void>();
-  readonly proximo = output<void>();
+  /** Ao fim da leitura, avisa quantas modalidades há; enquanto carrega, nada. */
+  protected readonly disponiveis = computed(() => {
+    if (this.loading() || this.errorMessage()) return '';
+    const total = this.total();
+    return total === 1 ? '1 modalidade disponível.' : `${total} modalidades disponíveis.`;
+  });
 
   private readonly injector = inject(Injector);
   private readonly titulo = viewChild<ElementRef<HTMLElement>>('titulo');

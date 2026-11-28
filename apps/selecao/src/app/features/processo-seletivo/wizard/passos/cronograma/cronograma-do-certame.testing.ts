@@ -105,6 +105,7 @@ export function aresta(parcial: Partial<PrecedenciaFaseDto>): PrecedenciaFaseDto
  */
 const ETAPA_PADRAO: EtapaPontuada = {
   id: null,
+  chave: null,
   nome: 'Prova Objetiva',
   carater: CaraterEtapaCodigo.CLASSIFICATORIA,
   tipoEtapaOrigemId: 'tipo-1',

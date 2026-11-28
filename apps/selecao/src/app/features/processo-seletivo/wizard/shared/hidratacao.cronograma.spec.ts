@@ -275,6 +275,17 @@ describe('hidratarDraft — cronograma e etapas', () => {
     });
   });
 
+  it('guarda a chave que o servidor deu à etapa', () => {
+    const dto = dtoComCronograma({
+      cronogramaFases: [],
+      etapas: [etapaDoServidor({ chave: 'etapa_prova_objetiva' })],
+    });
+
+    const [etapa] = hidratarDraft(DRAFT, dto).cronograma.etapas;
+
+    expect(etapa.chave).toBe('etapa_prova_objetiva');
+  });
+
   it('projeta os parâmetros do recurso da etapa do mesmo jeito que os da fase', () => {
     const dto = dtoComCronograma({
       cronogramaFases: [],

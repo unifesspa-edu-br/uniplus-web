@@ -4,8 +4,9 @@ import { FASES_CANONICAS, ID_AVALIACAO } from './cronograma.testing';
 import type { ContextoDoCronograma } from './cronograma-passo.testing';
 
 const DOCUMENTO_GERAL_E_OBRIGATORIO = {
+  chave: null,
   tipoDocumentoId: '01960000-0000-7000-0000-0000000000d9',
-  etapaId: null,
+  etapaChave: null,
   formularioCodigo: null,
   aplicabilidade: 'GERAL',
   obrigatorio: true,

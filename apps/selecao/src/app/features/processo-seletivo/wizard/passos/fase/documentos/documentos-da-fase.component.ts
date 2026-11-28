@@ -12,7 +12,7 @@ import {
 import { MOTIVO_DA_PROTECAO_PENDENTE } from '@uniplus/shared-inscricao/formulario';
 import { ComboboxComponent, type UiComboboxGroup } from '@uniplus/shared-ui/components';
 
-import type { DocumentoDefinicao } from '../../../processo-seletivo.models';
+import type { DocumentoDefinicao, ExigenciaDeDocumento } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { descreverArquivo } from '../../../shared/documentos-exigidos';
 import {
@@ -30,6 +30,7 @@ import {
   filtroDoValor,
   normaComum,
   opcaoDoFiltro,
+  rotulosDasCondicoesDe,
   publicoDaExigencia,
   repeticaoResumida,
   rotuloDaConsequencia,
@@ -181,18 +182,22 @@ export class DocumentosDaFaseComponent {
 
   private resumoDoDocumento(doc: DocumentoDefinicao, id: string): ResumoDoDocumento {
     const exigencia = this.exigencias.exigenciaDoDocumento(id);
-    const publico = publicoDaExigencia(exigencia, this.gatilho.fatoPorCodigo());
     return {
       id,
       nome: doc.nome,
       documento: doc,
-      publico,
-      aplicaA: descreverPublico(publico),
+      ...this.publicoDoResumo(exigencia),
       entrega: exigencia.obrigatorio ? 'Obrigatória' : 'Facultativa',
       composicao: composicaoResumida(this.exigencias.grupoDoDocumento(id)),
       repeticao: this.repeticaoResumidaDoDocumento(id),
       ...this.detalhesDoResumo(doc, id),
     };
+  }
+
+  private publicoDoResumo(exigencia: ExigenciaDeDocumento) {
+    const rotulos = this.exigencias.rotulosDasModalidades();
+    const publico = publicoDaExigencia(exigencia, this.gatilho.fatoPorCodigo(), rotulos);
+    return { publico, aplicaA: descreverPublico(publico, rotulos) };
   }
 
   private detalhesDoResumo(doc: DocumentoDefinicao, id: string) {
@@ -288,10 +293,10 @@ export class DocumentosDaFaseComponent {
    * da própria tabela, e repeti-la em cada linha só alongaria a coluna.
    */
   coletaDoDocumento(id: string): string {
-    const etapaId = this.exigencias.etapaDoDocumento(id);
+    const etapaChave = this.exigencias.etapaDoDocumento(id);
     const etapa = this.exigencias
       .etapasDaFaseAberta()
-      .find((candidata) => candidata.id === etapaId);
+      .find((candidata) => candidata.chave === etapaChave);
     const momento = etapa === undefined ? 'na fase inteira' : `na etapa ${etapa.nome}`;
     return this.exigencias.valeEmTodasAsFases(id)
       ? `Todas as fases; nesta, ${momento}`
@@ -334,25 +339,38 @@ export class DocumentosDaFaseComponent {
    * condição que algum documento da fase declara.
    */
   readonly opcoesDoFiltro = computed<readonly OpcaoDoFiltro[]>(() => {
-    const condicoes = [
-      ...new Set(this.resumos().flatMap((resumo) => resumo.publico.alternativas.flat())),
-    ];
+    const rotulosDasCondicoes = rotulosDasCondicoesDe(this.resumos().map((r) => r.publico));
     const opcoes: OpcaoDoFiltro[] = [
       { valor: '', rotulo: 'Todos os documentos da fase' },
       { valor: 'todo-candidato', rotulo: 'Exigidos de todo candidato' },
-      ...this.exigencias.modalidades().map((codigo) => opcaoDoFiltro(`modalidade:${codigo}`)),
-      ...condicoes.map((condicao) => opcaoDoFiltro(`condicao:${condicao}`)),
+      ...this.opcoesDasModalidades(),
+      ...[...rotulosDasCondicoes.keys()].map((condicao) =>
+        opcaoDoFiltro(`condicao:${condicao}`, undefined, rotulosDasCondicoes),
+      ),
     ];
 
-    return this.manterFiltroEscolhido(opcoes);
+    return this.manterFiltroEscolhido(opcoes, rotulosDasCondicoes);
   });
 
+  private opcoesDasModalidades(): OpcaoDoFiltro[] {
+    const rotulos = this.exigencias.rotulosDasModalidades();
+    return this.exigencias
+      .modalidades()
+      .map((codigo) => opcaoDoFiltro(`modalidade:${codigo}`, rotulos));
+  }
+
   /** Mantém o filtro escolhido mesmo quando nenhum documento mais o declara. */
-  private manterFiltroEscolhido(opcoes: OpcaoDoFiltro[]): OpcaoDoFiltro[] {
+  private manterFiltroEscolhido(
+    opcoes: OpcaoDoFiltro[],
+    rotulosDasCondicoes: ReadonlyMap<string, string>,
+  ): OpcaoDoFiltro[] {
     const escolhido = this.filtroDoPublico();
     return opcoes.some((opcao) => opcao.valor === escolhido)
       ? opcoes
-      : [...opcoes, opcaoDoFiltro(escolhido)];
+      : [
+          ...opcoes,
+          opcaoDoFiltro(escolhido, this.exigencias.rotulosDasModalidades(), rotulosDasCondicoes),
+        ];
   }
 
   /**

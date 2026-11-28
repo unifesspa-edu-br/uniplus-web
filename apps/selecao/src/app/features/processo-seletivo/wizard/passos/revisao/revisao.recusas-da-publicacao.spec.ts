@@ -341,6 +341,34 @@ describe('RevisaoPassoComponent: recusas da publicação', () => {
       expect(textoDoBloco()).not.toContain('Sem campo nesta tela.');
     });
 
+    it('dá a cada botão um nome que começa por "Ir ao campo", diz a causa e leva à sua fase', async () => {
+      await prepararRevisao();
+      store.patchObjectSection('cronograma', {
+        fases: [
+          umaFaseDoCronograma({ codigo: 'CLASSIFICACAO' }),
+          umaFaseDoCronograma({ codigo: 'HABILITACAO' }),
+        ],
+      });
+      const daHabilitacao: Erro = {
+        ...FIM_IDENTIFICADO,
+        field: 'fases[1].fim',
+        identificadores: [{ lista: 'fases', identificador: 'HABILITACAO' }],
+      };
+
+      await publicarERecusar([FIM_IDENTIFICADO, daHabilitacao]);
+
+      const botoes = Array.from(bloco()?.querySelectorAll('button') ?? []);
+      expect(botoes.map((item) => item.getAttribute('aria-label'))).toEqual([
+        `Ir ao campo da causa 1: ${FIM_IDENTIFICADO.message}`,
+        `Ir ao campo da causa 2: ${FIM_IDENTIFICADO.message}`,
+      ]);
+      expect(
+        botoes.some((item) => item.getAttribute('aria-label')?.includes(FIM_IDENTIFICADO.code)),
+      ).toBe(false);
+      botoes[1].click();
+      expect(recusasDoServidor.destino()?.identificadores).toEqual(daHabilitacao.identificadores);
+    });
+
     it('leva ao passo Cronograma e deixa o destino para o passo abrir o campo', async () => {
       await prepararRevisao();
       store.patchObjectSection('cronograma', {

@@ -60,6 +60,7 @@ import { ProvaPresencialPassoComponent } from './wizard/passos/prova-presencial/
 import { RecusasDaPublicacaoNaProvaPresencial } from './wizard/passos/prova-presencial/recusas-da-publicacao-na-prova-presencial.service';
 import { GravacaoDaProvaPresencialService } from './wizard/passos/prova-presencial/gravacao-da-prova-presencial.service';
 import { RevisaoPassoComponent } from './wizard/passos/revisao/revisao.component';
+import { EntradaDaRetificacaoComponent } from './retificacao/entrada-da-retificacao.component';
 import { avisarAoFecharAJanelaEnquanto } from './wizard/shared/aviso-ao-fechar-a-janela';
 
 @Component({
@@ -69,6 +70,7 @@ import { avisarAoFecharAJanelaEnquanto } from './wizard/shared/aviso-ao-fechar-a
   imports: [
     RouterLink,
     AlertComponent,
+    EntradaDaRetificacaoComponent,
     DialogComponent,
     FalhaDeLeituraComponent,
     IndicadorDaLeituraDirective,

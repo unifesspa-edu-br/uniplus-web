@@ -7,7 +7,9 @@
       class="input"
       id="f-localidade"
       disabled
-      aria-describedby="f-localidade-hint"
+      [attr.aria-describedby]="gravacao.descritoPor('localidade', 'f-localidade-hint')"
+      [attr.aria-invalid]="invalido() || null"
+      [class.is-invalid]="invalido()"
       [value]="localidade.nome + ' — ' + localidade.uf"
     />
   } @else {
@@ -16,7 +18,11 @@
         class="input"
         id="f-localidade"
         readonly
-        aria-describedby="f-localidade-hint"
+        [attr.aria-describedby]="gravacao.descritoPor('localidade', 'f-localidade-hint')"
+        [attr.aria-invalid]="invalido() || null"
+        [class.is-invalid]="invalido()"
+        [attr.aria-invalid]="invalido() || null"
+        [class.is-invalid]="invalido()"
         [value]="localidade.nome + ' — ' + localidade.uf"
       />
       <button class="btn btn--tertiary" type="button" (click)="trocar()">Trocar município</button>
@@ -25,7 +31,7 @@
 } @else {
   <ui-valor-de-municipio
     rotulo="Municípios encontrados"
-    descritoPor="f-localidade-hint"
+    [descritoPor]="gravacao.descritoPor('localidade', 'f-localidade-hint')"
     [values]="[]"
     [invalido]="invalido()"
     [disabled]="bloqueado()"
@@ -33,6 +39,7 @@
     (valuesChange)="escolher($event)"
   />
 }
+<sel-erro-do-campo campo="localidade" />
 <p class="field__hint" id="f-localidade-hint">
   Determina quais feriados municipais e estaduais entram na contagem dos prazos de recurso. Costuma
   ser a cidade da unidade administradora, mas não decorre dela: um certame pode correr sob o

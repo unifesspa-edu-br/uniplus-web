@@ -8,6 +8,7 @@ import { exigenciaNova } from './exigencias-documentais';
 import { comModalidades } from './modalidades-da-exigencia';
 import {
   ID_CONTRACHEQUE,
+  CHAVE_ETAPA_RENDA,
   ID_ETAPA_RENDA,
   ID_HABILITACAO,
   ID_ISENCAO,
@@ -38,9 +39,19 @@ describe('regrasDeComprovacaoParaEnvio — do rascunho para o comando', () => {
     expect(regrasDeComprovacao[0].documento?.momento?.faseId).toBe(ID_ISENCAO);
   });
 
-  it('leva a etapa que coleta o documento naquela fase', () => {
-    const regrasDeComprovacao = comando(rascunho(exigencia({ etapaId: ID_ETAPA_RENDA })));
+  it('acha o identificador da etapa que coleta o documento pela chave dela', () => {
+    const regrasDeComprovacao = comando(rascunho(exigencia({ etapaChave: CHAVE_ETAPA_RENDA })));
     expect(regrasDeComprovacao[0].documento?.momento?.etapaId).toBe(ID_ETAPA_RENDA);
+  });
+
+  it('envia a chave da exigência que já existe, sem mudá-la', () => {
+    const regrasDeComprovacao = comando(rascunho(exigencia({ chave: 'exigencia_rg_2' })));
+    expect(regrasDeComprovacao[0].documento?.chave).toBe('exigencia_rg_2');
+  });
+
+  it('envia a exigência nova sem chave', () => {
+    const regrasDeComprovacao = comando(rascunho(exigencia()));
+    expect(regrasDeComprovacao[0].documento).not.toHaveProperty('chave');
   });
 
   it('descarta a exigência cuja fase saiu do cronograma', () => {
@@ -50,7 +61,7 @@ describe('regrasDeComprovacaoParaEnvio — do rascunho para o comando', () => {
 
   it('devolve o documento à fase inteira quando a etapa que o coletava saiu', () => {
     const regrasDeComprovacao = comando(
-      rascunho(exigencia({ etapaId: 'etapa-que-nao-existe-mais' })),
+      rascunho(exigencia({ etapaChave: 'etapa_que_nao_existe_mais' })),
     );
     expect(regrasDeComprovacao[0].documento?.momento?.etapaId).toBeNull();
   });

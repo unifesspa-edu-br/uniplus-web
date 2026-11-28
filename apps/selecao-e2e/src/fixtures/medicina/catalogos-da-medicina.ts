@@ -49,6 +49,7 @@ export const MODALIDADES_DA_MEDICINA = [
   {
     id: '70da1000-0000-7000-8000-000000000001',
     codigo: 'AC',
+    nome: 'Ampla concorrência',
     descricao: 'Ampla concorrência',
     naturezaLegal: { codigo: 'AMPLA', rotulo: 'Ampla concorrência' },
     composicaoVagas: {
@@ -65,6 +66,7 @@ export const MODALIDADES_DA_MEDICINA = [
   {
     id: '70da1000-0000-7000-8000-000000000002',
     codigo: 'LB_PPI',
+    nome: 'Escola pública, renda de até 1 salário mínimo por pessoa, pretos, pardos e indígenas',
     descricao: 'Cota — baixa renda, preto/pardo/indígena',
     naturezaLegal: { codigo: 'COTA_RESERVADA', rotulo: 'Cota reservada' },
     composicaoVagas: { codigo: 'DENTRO_DA_RESERVA_LEGAL', rotulo: 'Dentro da reserva legal' },
@@ -83,6 +85,7 @@ export const MODALIDADES_DA_MEDICINA = [
   {
     id: '70da1000-0000-7000-8000-000000000003',
     codigo: 'LB_Q',
+    nome: 'Escola pública, renda de até 1 salário mínimo por pessoa, quilombolas',
     descricao: 'Cota — baixa renda, quilombola',
     naturezaLegal: { codigo: 'COTA_RESERVADA', rotulo: 'Cota reservada' },
     composicaoVagas: { codigo: 'DENTRO_DA_RESERVA_LEGAL', rotulo: 'Dentro da reserva legal' },
@@ -101,6 +104,7 @@ export const MODALIDADES_DA_MEDICINA = [
   {
     id: '70da1000-0000-7000-8000-000000000004',
     codigo: 'LB_PCD',
+    nome: 'Escola pública, renda de até 1 salário mínimo por pessoa, pessoas com deficiência',
     descricao: 'Cota — baixa renda, pessoa com deficiência',
     naturezaLegal: { codigo: 'COTA_RESERVADA', rotulo: 'Cota reservada' },
     composicaoVagas: { codigo: 'DENTRO_DA_RESERVA_LEGAL', rotulo: 'Dentro da reserva legal' },
@@ -119,6 +123,7 @@ export const MODALIDADES_DA_MEDICINA = [
   {
     id: '70da1000-0000-7000-8000-000000000005',
     codigo: 'LB_EP',
+    nome: 'Escola pública, renda de até 1 salário mínimo por pessoa',
     descricao: 'Cota — baixa renda, egresso de escola pública',
     naturezaLegal: { codigo: 'COTA_RESERVADA', rotulo: 'Cota reservada' },
     composicaoVagas: { codigo: 'DENTRO_DA_RESERVA_LEGAL', rotulo: 'Dentro da reserva legal' },
@@ -137,6 +142,7 @@ export const MODALIDADES_DA_MEDICINA = [
   {
     id: '70da1000-0000-7000-8000-000000000006',
     codigo: 'LI_PPI',
+    nome: 'Escola pública, qualquer renda, pretos, pardos e indígenas',
     descricao: 'Cota — independente de renda, preto/pardo/indígena',
     naturezaLegal: { codigo: 'COTA_RESERVADA', rotulo: 'Cota reservada' },
     composicaoVagas: { codigo: 'DENTRO_DA_RESERVA_LEGAL', rotulo: 'Dentro da reserva legal' },
@@ -155,6 +161,7 @@ export const MODALIDADES_DA_MEDICINA = [
   {
     id: '70da1000-0000-7000-8000-000000000007',
     codigo: 'LI_Q',
+    nome: 'Escola pública, qualquer renda, quilombolas',
     descricao: 'Cota — independente de renda, quilombola',
     naturezaLegal: { codigo: 'COTA_RESERVADA', rotulo: 'Cota reservada' },
     composicaoVagas: { codigo: 'DENTRO_DA_RESERVA_LEGAL', rotulo: 'Dentro da reserva legal' },
@@ -173,6 +180,7 @@ export const MODALIDADES_DA_MEDICINA = [
   {
     id: '70da1000-0000-7000-8000-000000000008',
     codigo: 'LI_PCD',
+    nome: 'Escola pública, qualquer renda, pessoas com deficiência',
     descricao: 'Cota — independente de renda, pessoa com deficiência',
     naturezaLegal: { codigo: 'COTA_RESERVADA', rotulo: 'Cota reservada' },
     composicaoVagas: { codigo: 'DENTRO_DA_RESERVA_LEGAL', rotulo: 'Dentro da reserva legal' },
@@ -191,6 +199,7 @@ export const MODALIDADES_DA_MEDICINA = [
   {
     id: '70da1000-0000-7000-8000-000000000009',
     codigo: 'LI_EP',
+    nome: 'Escola pública, qualquer renda',
     descricao: 'Cota — independente de renda, egresso de escola pública',
     naturezaLegal: { codigo: 'COTA_RESERVADA', rotulo: 'Cota reservada' },
     composicaoVagas: { codigo: 'DENTRO_DA_RESERVA_LEGAL', rotulo: 'Dentro da reserva legal' },
@@ -209,6 +218,7 @@ export const MODALIDADES_DA_MEDICINA = [
   {
     id: '70da1000-0000-7000-8000-000000000010',
     codigo: 'AC_PCD',
+    nome: 'Ampla concorrência, ação afirmativa da Unifesspa para pessoas com deficiência',
     descricao: 'Ampla Concorrência – Pessoa com Deficiência (V)',
     naturezaLegal: { codigo: 'ACAO_AFIRMATIVA', rotulo: 'Ação afirmativa' },
     composicaoVagas: {

@@ -175,6 +175,7 @@ export interface components {
             /** Format: uuid */
             readonly unidadeSuperiorId: null | string;
             readonly tipo: null | components["schemas"]["TipoUnidadeCodigo"];
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly unidadeAcademica: boolean;
             /** Format: date */
             readonly vigenciaFim: null | string;
@@ -227,8 +228,12 @@ export interface components {
             /** Format: uuid */
             readonly unidadeSuperiorId: null | string;
             readonly tipo: null | components["schemas"]["TipoUnidadeCodigo"];
+            /** @description Obrigatório; ausente ou nulo é recusado (422). */
             readonly unidadeAcademica: boolean;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Obrigatório; ausente ou nulo é recusado (422).
+             */
             readonly vigenciaInicio: string;
             /** Format: date */
             readonly vigenciaFim: null | string;

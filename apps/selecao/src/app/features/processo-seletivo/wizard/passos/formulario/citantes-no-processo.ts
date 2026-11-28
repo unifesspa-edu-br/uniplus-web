@@ -5,6 +5,7 @@ import {
   type ConteudoDoFormulario,
   type ItemDoFormulario,
 } from '@uniplus/shared-inscricao/formulario';
+import { codigoComNome } from '@uniplus/shared-utils';
 import type {
   CriterioDesempateConfigurado,
   DerivacaoDeFato,
@@ -117,7 +118,7 @@ function citacoesDasModalidades(processo: CitantesNoProcesso): Citacao[] {
   return (processo.modalidades ?? []).flatMap((modalidade) =>
     fatosCitadosPeloPredicado(modalidade.regra).map((fato) => ({
       fato,
-      quem: `a regra de quem concorre em ${modalidade.codigo}`,
+      quem: `a regra de quem concorre em ${codigoComNome(modalidade.codigo, modalidade.nome)}`,
     })),
   );
 }

@@ -23,11 +23,18 @@ import {
   formularioDaExigencia,
   type FormularioDaExigencia,
 } from './exigencias/formulario-da-exigencia';
-import { dominiosDoGatilho, fatosParaGatilho, type FatoEscolhivel } from './gatilho-de-exigencia';
+import {
+  dominiosDoGatilho,
+  fatosParaGatilho,
+  rotulosDoGatilho,
+  type FatoEscolhivel,
+} from './gatilho-de-exigencia';
 
 /** Como a leitura nomeia o que o rascunho guarda por código. */
 export interface VocabularioDosDocumentos {
   readonly fatoPorCodigo: ReadonlyMap<string, FatoEscolhivel>;
+  /** Como cada modalidade do processo aparece na frase do público: "código — nome". */
+  readonly rotulosDasModalidades: ReadonlyMap<string, string>;
   readonly consequencias: readonly { readonly codigo: string; readonly rotulo: string }[];
   readonly nomeDoTipo: (tipoDocumentoId: string, nomeGuardado: string | undefined) => string;
 }
@@ -69,6 +76,14 @@ function descreverFormato(item: { formato: string; tamanhoMaximoBytes: number | 
 
 type DocumentoDaExigencia = ExigenciaLocalizada['documento'];
 
+function publicoEmProsa(
+  documento: DocumentoDaExigencia,
+  { fatoPorCodigo, rotulosDasModalidades }: VocabularioDosDocumentos,
+): string {
+  const publico = publicoDaExigencia(documento, fatoPorCodigo, rotulosDasModalidades);
+  return descreverPublico(publico, rotulosDasModalidades);
+}
+
 function resumoDoDocumento(
   documento: DocumentoDaExigencia,
   vocabulario: VocabularioDosDocumentos,
@@ -78,7 +93,7 @@ function resumoDoDocumento(
   return {
     nome: vocabulario.nomeDoTipo(documento.tipoDocumentoId, documento.tipoDocumentoNome),
     obrigatoriedade: documento.obrigatorio ? 'Obrigatório' : 'Facultativo',
-    aplicaA: descreverPublico(publicoDaExigencia(documento, vocabulario.fatoPorCodigo)),
+    aplicaA: publicoEmProsa(documento, vocabulario),
     consequencia: rotuloDaConsequencia(consequenciaIndeferimento, obrigatorio, consequencias),
     arquivo: descreverArquivo(documento.formatosPermitidos, documento.tamanhoMaximoBytes),
   };
@@ -218,12 +233,11 @@ export function fatosParaLerOGatilho(
   fatos: readonly FatoCandidatoComOperadores[],
   condicoesDeAtendimento: readonly string[],
   modalidades: readonly string[],
+  rotulosDasModalidades: ReadonlyMap<string, string>,
 ): ReadonlyMap<string, FatoEscolhivel> {
-  return new Map(
-    fatosParaGatilho(fatos, dominiosDoGatilho(fatos, condicoesDeAtendimento, modalidades)).map(
-      (fato) => [fato.codigo, fato],
-    ),
-  );
+  const dominios = dominiosDoGatilho(fatos, condicoesDeAtendimento, modalidades);
+  const rotulos = rotulosDoGatilho(fatos, rotulosDasModalidades);
+  return new Map(fatosParaGatilho(fatos, dominios, rotulos).map((fato) => [fato.codigo, fato]));
 }
 
 /** Posição do passo onde a lista de documentos é editada, derivada da ordem única dos passos. */

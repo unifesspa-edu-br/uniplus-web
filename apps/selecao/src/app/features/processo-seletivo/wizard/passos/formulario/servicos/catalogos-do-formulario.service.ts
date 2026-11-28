@@ -6,6 +6,8 @@ import {
   type FatoCandidatoComOperadores,
   type FatoDoCatalogoDto,
   FatosCandidatoApi,
+  VocabulariosDeConfiguracaoApi,
+  criarVocabulario,
   TermosConsentimentoApi,
   type TermoConsentimentoDto,
 } from '@uniplus/shared-data/configuracao';
@@ -23,17 +25,24 @@ const CONSEQUENCIA_DO_CATALOGO =
 const MENSAGEM_DOS_TERMOS =
   'Não foi possível carregar os termos de consentimento. Sem eles não é possível exigir um termo novo nem trocar a versão.';
 
-/** O vocabulário de fatos do candidato e os termos de consentimento que o formulário pode exigir. */
+/** O vocabulário de fatos do candidato, os tipos de campo e os termos de consentimento que o formulário pode exigir. */
 @Injectable()
 export class CatalogosDoFormulario {
   private readonly fatosApi = inject(FatosCandidatoApi);
   private readonly termosApi = inject(TermosConsentimentoApi);
+  private readonly vocabulariosApi = inject(VocabulariosDeConfiguracaoApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly catalogo = signal<readonly FatoCandidatoComOperadores[]>([]);
   readonly catalogoCarregando = signal(true);
   readonly catalogoErro = signal<string | null>(null);
+
+  /** Os tipos de campo da API: o cartão de cada item mostra o texto do código. */
+  readonly tiposDeCampo = criarVocabulario(
+    () => this.vocabulariosApi.listar('tipos-campo'),
+    'Não foi possível carregar os tipos de campo.',
+  );
 
   readonly termosDisponiveis = signal<readonly TermoDisponivel[]>([]);
   readonly referenciasDosTermos = signal<ReferenciasDosTermosDoFormulario | null>(null);

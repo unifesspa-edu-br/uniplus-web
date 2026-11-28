@@ -3,6 +3,7 @@ import {
   exigenciasLocalizadasDaFase,
   type ExigenciaLocalizada,
 } from '../../../shared/exigencias/consulta-das-exigencias';
+import { exigenciaCopiadaParaFase } from '../../../shared/exigencias/alcance-das-exigencias';
 import { semAExigencia } from '../../../shared/exigencias/exigencias-documentais';
 import { modeloParaTodasAsFases } from './documentos-declarados';
 
@@ -16,7 +17,7 @@ export function declaracaoHerdada(
     return [];
   const modelo = modeloParaTodasAsFases(exigencias, tipo);
   if (modelo === undefined) return [];
-  const documento = { ...modelo, faseCodigo, etapaId: null, formularioCodigo: null };
+  const documento = exigenciaCopiadaParaFase(modelo, faseCodigo);
   return [{ identificadorNoRascunho: tipo, documento, grupo: null, repeticao: null }];
 }
 

@@ -17,7 +17,9 @@ import {
   TermosConsentimentoApi,
   TipoDocumentoDto,
   TipoProcessoDto,
+  VocabulariosDeConfiguracaoApi,
   comEscopoPeloCodigo,
+  criarVocabulario,
 } from '@uniplus/shared-data/configuracao';
 import { SELECAO_BASE_PATH, type OpcaoDeComprovacaoDto } from '@uniplus/shared-data/selecao';
 import {
@@ -60,6 +62,7 @@ export class ModeloFormularioEdicaoStore {
   private readonly selecaoBasePath = inject(SELECAO_BASE_PATH);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly termosApi = inject(TermosConsentimentoApi);
+  private readonly vocabulariosApi = inject(VocabulariosDeConfiguracaoApi);
   private readonly destroyRef = inject(DestroyRef);
   readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
 
@@ -92,6 +95,12 @@ export class ModeloFormularioEdicaoStore {
     params: new HttpParams().set('limit', '100'),
     context: withVendorMime('tipo-processo', 1),
   }));
+
+  /** Os tipos de campo da API: o cartão de cada item mostra o texto do código. */
+  readonly tiposDeCampo = criarVocabulario(
+    () => this.vocabulariosApi.listar('tipos-campo'),
+    'Não foi possível carregar os tipos de campo.',
+  );
 
   readonly modelo = this.detalhe.data;
   readonly carregando = this.detalhe.isLoading;
@@ -177,6 +186,7 @@ export class ModeloFormularioEdicaoStore {
 
   constructor() {
     this.carregarTermos();
+    this.tiposDeCampo.carregar();
   }
 
   carregarTermos(): void {

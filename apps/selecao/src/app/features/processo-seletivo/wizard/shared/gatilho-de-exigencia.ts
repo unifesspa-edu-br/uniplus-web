@@ -90,8 +90,23 @@ export type ClausulaDeGatilho = ClausulaDeCondicoes<CondicaoGatilhoConfig>;
 export function fatosParaGatilho(
   fatos: readonly FatoCandidatoComOperadores[],
   dominiosDinamicos: ReadonlyMap<string, readonly string[]> = new Map(),
+  rotulos: ReadonlyMap<string, ReadonlyMap<string, string>> = new Map(),
 ): readonly FatoEscolhivel[] {
-  return fatosEscolhiveis(fatos, dominiosDinamicos, [FATO_MODALIDADE]);
+  return comRotulosDosValores(
+    fatosEscolhiveis(fatos, dominiosDinamicos, [FATO_MODALIDADE]),
+    rotulos,
+  );
+}
+
+/** Os rótulos que a tela mostra no lugar do código do valor, por fato; sem rótulo, vale o do catálogo. */
+export function comRotulosDosValores(
+  fatos: readonly FatoEscolhivel[],
+  rotulos: ReadonlyMap<string, ReadonlyMap<string, string>>,
+): readonly FatoEscolhivel[] {
+  return fatos.map((fato) => {
+    const dosValores = rotulos.get(fato.codigo);
+    return dosValores === undefined ? fato : { ...fato, rotulos: dosValores };
+  });
 }
 
 /** A fonte dos valores do fato cujo domínio são as modalidades que o processo oferta. */
@@ -113,10 +128,28 @@ export function dominiosDoGatilho(
 ): ReadonlyMap<string, readonly string[]> {
   return new Map([
     [FATO_CONDICAO_ATENDIMENTO, condicoesDeAtendimento],
-    ...fatos
-      .filter((fato) => fato.fonteValores?.codigo === FONTE_MODALIDADE)
-      .map((fato): [string, readonly string[]] => [fato.codigo, modalidades]),
+    ...fatosDeModalidade(fatos).map((fato): [string, readonly string[]] => [
+      fato.codigo,
+      modalidades,
+    ]),
   ]);
+}
+
+function fatosDeModalidade(
+  fatos: readonly FatoCandidatoComOperadores[],
+): readonly FatoCandidatoComOperadores[] {
+  return fatos.filter((fato) => fato.fonteValores?.codigo === FONTE_MODALIDADE);
+}
+
+/**
+ * O rótulo de cada valor dos fatos cujos valores são modalidades ("código — nome"), para a
+ * tela mostrá-lo no lugar do código; o valor gravado continua sendo o código.
+ */
+export function rotulosDoGatilho(
+  fatos: readonly FatoCandidatoComOperadores[],
+  rotulosDasModalidades: ReadonlyMap<string, string>,
+): ReadonlyMap<string, ReadonlyMap<string, string>> {
+  return new Map(fatosDeModalidade(fatos).map((fato) => [fato.codigo, rotulosDasModalidades]));
 }
 
 /** Como a opção nomeia o fato que a condição já cita e que esta exigência não pode citar. */
@@ -126,6 +159,8 @@ const MARCA_DO_FATO_NAO_CITAVEL = ' (não citável nesta exigência)';
 export interface OfertaDoGatilho {
   readonly producao: ProducaoDosFatos;
   readonly dominiosDinamicos: ReadonlyMap<string, readonly string[]>;
+  /** Como a tela nomeia os valores de cada fato (modalidades como "código — nome"). */
+  readonly rotulosDinamicos?: ReadonlyMap<string, ReadonlyMap<string, string>>;
   /** Os fatos que a exigência já cita. */
   readonly citados?: readonly string[];
   /** Os campos de membro de grupo repetível que o documento pode citar. */
@@ -148,9 +183,10 @@ export function fatosDoGatilhoNaFase(
 ): readonly FatoEscolhivel[] {
   const citaveis = fatos.filter((fato) => ehCitavelNaFase(fato, lugar, oferta));
   const naoCitaveis = marcadosComoNaoCitaveis(fatos, citaveis, oferta.citados ?? []);
-  return fatosEscolhiveis([...citaveis, ...naoCitaveis], oferta.dominiosDinamicos, [
-    FATO_MODALIDADE,
-  ]);
+  return comRotulosDosValores(
+    fatosEscolhiveis([...citaveis, ...naoCitaveis], oferta.dominiosDinamicos, [FATO_MODALIDADE]),
+    oferta.rotulosDinamicos ?? new Map(),
+  );
 }
 
 function ehCitavelNaFase(

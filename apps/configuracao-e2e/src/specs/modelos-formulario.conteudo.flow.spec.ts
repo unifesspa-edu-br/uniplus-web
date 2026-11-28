@@ -1,6 +1,7 @@
 import { expect, test, type Page, type Request, type Route } from '@playwright/test';
 import type { FatoDoCatalogoDto, ModeloFormularioView } from '@uniplus/shared-data/configuracao';
 import type { JsonDaApi } from '@uniplus/shared-e2e';
+import { mockarVocabularioDeTiposDeCampo } from '../support/api-do-vocabulario-de-tipos-de-campo';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 const CORS_HEADERS = {
@@ -165,6 +166,7 @@ async function atenderModelo(route: Route, gravacoes: Gravacoes, recusa: object 
 /** Os catálogos que o editor lê ao abrir, o modelo e o que o PUT recebeu; `recusa` faz o PUT falhar. */
 async function mockarApi(page: Page, recusa: object | null = null): Promise<Gravacoes> {
   const gravacoes: Gravacoes = { corpos: [] };
+  await mockarVocabularioDeTiposDeCampo(page);
   await page.route(
     /\/api\/configuracao\/(tipos-processo|fases-canonicas|tipos-documento|termos-consentimento)(\?.*)?$/,
     (route) => responderJson(route, 200, []),

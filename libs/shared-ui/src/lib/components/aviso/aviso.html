@@ -1,0 +1,57 @@
+<article
+  class="toast"
+  [class.toast--success]="aviso().type === 'success'"
+  [class.toast--danger]="aviso().type === 'error'"
+  [class.toast--warning]="aviso().type === 'warning'"
+  [class.toast--info]="aviso().type === 'info'"
+  [attr.data-testid]="'notification-host-toast-' + aviso().type"
+>
+  <div class="toast__conteudo">
+    <span class="toast__icon" aria-hidden="true">{{ icone() }}</span>
+    <div class="toast__body">
+      <p class="toast__title" data-testid="notification-host-title">{{ aviso().title }}</p>
+      @if (aviso().detail) {
+      <p class="toast__msg" data-testid="notification-host-detail">{{ aviso().detail }}</p>
+      } @if (aviso().ocorrencias > 1) {
+      <p class="toast__contagem" data-testid="notification-host-contagem">
+        Ocorreu {{ aviso().ocorrencias }} vezes
+      </p>
+      }
+    </div>
+  </div>
+  @if (aviso().referencia; as referencia) {
+  <ui-referencia-ao-suporte
+    class="toast__referencia"
+    data-testid="notification-host-referencia"
+    [referencia]="referencia"
+  />
+  } @if (anteriores().length > 0) {
+  <details class="toast__anteriores" data-testid="notification-host-anteriores">
+    <summary>Identificadores anteriores ({{ anteriores().length }})</summary>
+    <div
+      class="toast__anteriores-lista"
+      data-testid="notification-host-anteriores-lista"
+      role="region"
+      tabindex="0"
+      aria-label="Identificadores anteriores"
+    >
+      @for (anterior of anteriores(); track anterior.identificadorDoPedido) {
+      <ui-referencia-ao-suporte
+        class="toast__anterior"
+        data-testid="notification-host-anterior"
+        [referencia]="anterior"
+      />
+      }
+    </div>
+  </details>
+  }
+  <button
+    type="button"
+    class="toast__close"
+    data-testid="notification-host-dismiss"
+    [attr.aria-label]="rotuloDeFechar"
+    (click)="fechar.emit()"
+  >
+    ×
+  </button>
+</article>

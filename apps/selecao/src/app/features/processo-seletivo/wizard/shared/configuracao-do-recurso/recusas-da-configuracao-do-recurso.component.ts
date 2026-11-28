@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 
 import { focarAposRenderizar } from '../foco-apos-renderizar';
+import { nomeDoIrAoCampo } from '../recusas/nome-do-ir-ao-campo';
 import { emOrdem, type RecusaOrdenada } from '../recusas/ordem-das-recusas';
 import { RecusasDoCampoComponent } from '../recusas/recusas-do-campo.component';
 
@@ -25,10 +26,15 @@ import { RecusasDoCampoComponent } from '../recusas/recusas-do-campo.component';
   template: `
     @if (ordenadas().length > 0) {
       <ul class="u-list" role="list">
-        @for (recusa of ordenadas(); track recusa.campo + recusa.codigo) {
+        @for (recusa of ordenadas(); track recusa.campo + recusa.codigo; let posicao = $index) {
           <li>
             <sel-recusas-do-campo [recusas]="[recusa]" />
-            <button class="btn btn--tertiary" type="button" (click)="irAoCampo(recusa)">
+            <button
+              class="btn btn--tertiary"
+              type="button"
+              [attr.aria-label]="nomeDoBotao(posicao + 1, recusa.mensagem)"
+              (click)="irAoCampo(recusa)"
+            >
               Ir ao campo
             </button>
           </li>
@@ -41,6 +47,8 @@ import { RecusasDoCampoComponent } from '../recusas/recusas-do-campo.component';
 })
 export class RecusasDaConfiguracaoDoRecursoComponent {
   private readonly injetor = inject(Injector);
+
+  protected readonly nomeDoBotao = nomeDoIrAoCampo;
 
   readonly recusas = input.required<readonly RecusaOrdenada[]>();
   /** Os destinos de foco do campo recusado, do preferido ao de reserva. */

@@ -8,6 +8,7 @@ import type { EtapaReferenciavel } from './regras-de-eliminacao';
 
 const ETAPA: EtapaReferenciavel = {
   id: 'etapa-1',
+  chave: 'etapa_1',
   nome: 'Prova objetiva',
   carater: CaraterEtapaCodigo.CLASSIFICATORIA,
   tipoEtapaOrigemId: 'tipo-1',

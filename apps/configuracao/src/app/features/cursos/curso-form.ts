@@ -1,7 +1,9 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import {
   AtualizarCursoCommand,
+  AtualizarCursoCommandGrupoAreaEnem,
   CriarCursoCommand,
+  CriarCursoCommandGrupoAreaEnem,
   CursoDto,
 } from '@uniplus/shared-data/configuracao';
 import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
@@ -68,16 +70,31 @@ export function controleDoCampoDoServidor(field: string): keyof CursoForm | null
   return controlNameFromBackendField<keyof CursoForm>(field, CONTROLES_DO_SERVIDOR);
 }
 
+/**
+ * O grupo de área do ENEM vem do vocabulário que a própria API publica; o contrato o declara como
+ * enumeração fechada. O grupo em branco continua indo como nulo, que a API aceita: o gerador
+ * só deixou de listar o nulo no tipo.
+ */
+function grupoAreaEnemDoComando<T extends string>(valor: string): T | undefined {
+  return nullIfBlank(valor) as T | undefined;
+}
+
 export function comandoDeCriacao(valores: ValoresDoCurso): CriarCursoCommand {
   return {
     codigo: valores.codigo,
     nome: nullIfBlank(valores.nome),
     grau: nullIfBlank(valores.grau),
     nivelEnsino: nullIfBlank(valores.nivelEnsino),
-    grupoAreaEnem: nullIfBlank(valores.grupoAreaEnem),
+    grupoAreaEnem: grupoAreaEnemDoComando<CriarCursoCommandGrupoAreaEnem>(valores.grupoAreaEnem),
   };
 }
 
 export function comandoDeAtualizacao(id: string, valores: ValoresDoCurso): AtualizarCursoCommand {
-  return { id, ...comandoDeCriacao(valores) };
+  return {
+    ...comandoDeCriacao(valores),
+    id,
+    grupoAreaEnem: grupoAreaEnemDoComando<AtualizarCursoCommandGrupoAreaEnem>(
+      valores.grupoAreaEnem,
+    ),
+  };
 }

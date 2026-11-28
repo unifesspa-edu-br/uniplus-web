@@ -19,12 +19,12 @@ function comEtapaAvaliada(): DocumentoDaConfiguracao {
       {
         chave: 'redacao',
         itensDeAvaliacao: [
-          { chave: 'coesao', rotulo: 'Coesão', pontuacaoMaxima: 40 },
-          { chave: 'argumentacao', rotulo: 'Argumentação', pontuacaoMaxima: 60 },
+          { chave: 'item_coesao', rotulo: 'Coesão', pontuacaoMaxima: 40 },
+          { chave: 'item_argumentacao', rotulo: 'Argumentação', pontuacaoMaxima: 60 },
         ],
         escalaDeAtendimento: [
-          { chave: 'plena', rotulo: 'Plena', fracao: 1 },
-          { chave: 'parcial', rotulo: 'Parcial', fracao: 0.3 },
+          { chave: 'nivel_plena', rotulo: 'Plena', fracao: 1 },
+          { chave: 'nivel_parcial', rotulo: 'Parcial', fracao: 0.3 },
         ],
       },
     ],
@@ -44,7 +44,7 @@ describe('acrescentar item e nível', () => {
     });
 
     expect(editado.etapas?.[0].itensDeAvaliacao?.at(-1)).toEqual({
-      chave: 'norma-culta',
+      chave: 'item_norma_culta',
       rotulo: 'Norma culta',
     });
   });
@@ -63,7 +63,7 @@ describe('acrescentar item e nível', () => {
               procedimentosDeRecurso: [
                 {
                   tipoDeDecisao: TipoDeDecisaoDoDocumento.CLASSIFICACAO,
-                  alvo: { itemDeAvaliacaoChave: 'coesao' },
+                  alvo: { itemDeAvaliacaoChave: 'item_coesao' },
                   regra: {},
                 },
               ],
@@ -78,7 +78,7 @@ describe('acrescentar item e nível', () => {
       criadas: [],
     });
 
-    expect(itensDaEtapa(editado)).toEqual(['coesao-2']);
+    expect(itensDaEtapa(editado)).toEqual(['item_coesao_2']);
   });
 
   it('o nível novo vai ao fim da escala', () => {
@@ -88,7 +88,7 @@ describe('acrescentar item e nível', () => {
     });
 
     expect(editado.etapas?.[0].escalaDeAtendimento?.at(-1)).toEqual({
-      chave: 'nao-atende',
+      chave: 'nivel_nao_atende',
       rotulo: 'Não atende',
     });
   });
@@ -100,9 +100,9 @@ describe('acrescentar item e nível', () => {
       itensDeAvaliacao: [],
       escalaDeAtendimento: [],
     }));
-    const reservas = { original, criadas: ['coesao-2', 'plena-2'] };
+    const reservas = { original, criadas: ['item_coesao_2', 'nivel_plena_2'] };
     const comItem = acrescentarItemDeAvaliacao(removido, 'redacao', 'Coesão', reservas);
-    expect(comItem.etapas?.[0].itensDeAvaliacao?.[0].chave).toBe('coesao-3');
+    expect(comItem.etapas?.[0].itensDeAvaliacao?.[0].chave).toBe('item_coesao_3');
   });
 
   it('reserva a chave do nível removido e as criadas na edição', () => {
@@ -113,9 +113,9 @@ describe('acrescentar item e nível', () => {
     }));
     const editado = acrescentarNivelDeAtendimento(removido, 'redacao', 'Plena', {
       original,
-      criadas: ['plena-2'],
+      criadas: ['nivel_plena_2'],
     });
-    expect(editado.etapas?.[0].escalaDeAtendimento?.[0].chave).toBe('plena-3');
+    expect(editado.etapas?.[0].escalaDeAtendimento?.[0].chave).toBe('nivel_plena_3');
   });
 
   it('etapa que o documento não tem não recebe nada', () => {
@@ -132,12 +132,12 @@ describe('acrescentar item e nível', () => {
 
 describe('avaliação da etapa', () => {
   const itens = [
-    { origem: 0, chave: 'coesao', rotulo: 'Coesão', pontuacaoMaxima: '40' },
-    { origem: 1, chave: 'argumentacao', rotulo: 'Argumentação', pontuacaoMaxima: '60' },
+    { origem: 0, chave: 'item_coesao', rotulo: 'Coesão', pontuacaoMaxima: '40' },
+    { origem: 1, chave: 'item_argumentacao', rotulo: 'Argumentação', pontuacaoMaxima: '60' },
   ];
   const niveis = [
-    { origem: 0, chave: 'plena', rotulo: 'Plena', percentual: '100' },
-    { origem: 1, chave: 'parcial', rotulo: 'Parcial', percentual: '30' },
+    { origem: 0, chave: 'nivel_plena', rotulo: 'Plena', percentual: '100' },
+    { origem: 1, chave: 'nivel_parcial', rotulo: 'Parcial', percentual: '30' },
   ];
 
   function avaliar(
@@ -151,7 +151,53 @@ describe('avaliação da etapa', () => {
   it('reordenar os itens os move no documento, sem tocar na chave', () => {
     const editado = avaliar(comEtapaAvaliada(), [itens[1], itens[0]]);
 
-    expect(itensDaEtapa(editado)).toEqual(['argumentacao', 'coesao']);
+    expect(itensDaEtapa(editado)).toEqual(['item_argumentacao', 'item_coesao']);
+  });
+
+  it('reordenar e renomear os níveis mantém as chaves', () => {
+    const editado = avaliar(comEtapaAvaliada(), itens, [
+      { ...niveis[1], rotulo: 'Parcial renomeado' },
+      niveis[0],
+    ]);
+
+    expect(editado.etapas?.[0].escalaDeAtendimento?.map((nivel) => nivel.chave)).toEqual([
+      'nivel_parcial',
+      'nivel_plena',
+    ]);
+  });
+
+  it('a referência ao item continua citando a mesma chave depois de reordenar', () => {
+    const documento: DocumentoDaConfiguracao = {
+      ...comEtapaAvaliada(),
+      cronograma: {
+        fases: [
+          {
+            chave: 'f',
+            tipoFaseCodigo: 'INSCRICOES',
+            noMesmoMomentoDaAnterior: false,
+            regraRecurso: {
+              procedimentosDeRecurso: [
+                {
+                  tipoDeDecisao: TipoDeDecisaoDoDocumento.CLASSIFICACAO,
+                  alvo: { itemDeAvaliacaoChave: 'item_argumentacao' },
+                  regra: {},
+                },
+              ],
+            },
+          },
+        ],
+      },
+    };
+    const editado = avaliar(documento, [itens[1], itens[0]]);
+
+    expect(editado.cronograma).toEqual(documento.cronograma);
+    expect(itensDaEtapa(editado)).toContain('item_argumentacao');
+  });
+
+  it('ler e devolver sem alterar conserva as chaves da etapa', () => {
+    const documento = comEtapaAvaliada();
+
+    expect(avaliar(documento)).toEqual(documento);
   });
 
   it('renomear o item mantém a chave e a pontuação', () => {
@@ -161,7 +207,7 @@ describe('avaliação da etapa', () => {
     ]);
 
     expect(editado.etapas?.[0].itensDeAvaliacao?.[0]).toEqual({
-      chave: 'coesao',
+      chave: 'item_coesao',
       rotulo: 'Coesão textual',
       pontuacaoMaxima: 40,
     });

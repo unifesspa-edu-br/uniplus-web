@@ -28,6 +28,7 @@ describe('ModalidadesTabelaComponent', () => {
     const entradas: Record<string, unknown> = {
       modalidades: itens,
       quemConcorre: new Map(itens.map((m) => [m.id, 'Todos os candidatos'])),
+      rotulos: new Map(itens.map((m) => [m.codigo, m.nome ? `${m.codigo} — ${m.nome}` : m.codigo])),
       referencias: new Map(),
       indisponivel,
       removendoId: indisponivel ? (itens[0]?.id ?? null) : null,
@@ -53,7 +54,11 @@ describe('ModalidadesTabelaComponent', () => {
     montar([modalidade], false);
     const removidas: ModalidadeDto[] = [];
     fixture.componentInstance.remover.subscribe((m) => removidas.push(m));
-    raiz.querySelector<HTMLButtonElement>('button[aria-label="Remover modalidade V"]')?.click();
+    raiz
+      .querySelector<HTMLButtonElement>(
+        'button[aria-label="Remover modalidade V — Modalidade de teste V"]',
+      )
+      ?.click();
     expect(removidas).toEqual([modalidade]);
   });
 
@@ -68,6 +73,8 @@ describe('ModalidadesTabelaComponent', () => {
       ...modalidade,
       id: `id-${codigo}`,
       codigo,
+      nome: `Nome ${codigo}`,
+      descricao: null,
       ...parte,
     });
 
@@ -93,9 +100,48 @@ describe('ModalidadesTabelaComponent', () => {
       expect(linha('B', 'Natureza')).toBe(NATUREZAS.cota.rotulo);
       expect(linha('B', 'Remanejamento')).toBe(REGRAS.cascata.rotulo);
       expect(linha('C', 'Natureza')).toBe(NATUREZAS.acao.rotulo);
+      expect(linha('C', 'Remanejamento')).toBe(`${REGRAS.destino.rotulo} → A — Nome A`);
+      expect(linha('C', 'Composição de vagas')).toBe(`${COMPOSICOES.retirada.rotulo} A — Nome A`);
+      expect(linha('D', 'Remanejamento')).toBe(`${REGRAS.cruzado.rotulo} (B — Nome B / —)`);
+    });
+
+    it('mostra código e nome na coluna Modalidade, com ações de nome acessível igual', () => {
+      montar([com('A', {})], false);
+      expect(linha('A', 'Modalidade')).toBe('A — Nome A');
+      expect(raiz.querySelector('th')?.textContent?.trim()).toBe('Modalidade');
+      expect(raiz.querySelector('[aria-label="Editar modalidade A — Nome A"]')).not.toBeNull();
+    });
+
+    it('sem nome, mostra só o código na coluna, nas ações e no remanejamento', () => {
+      const origem = com('A', { nome: '' });
+      const itens = [
+        origem,
+        com('C', {
+          remanejamento: { regra: REGRAS.destino, destino: 'A', par: null, fallback: null },
+        }),
+      ];
+      montar(itens, false);
+      expect(linha('A', 'Modalidade')).toBe('A');
+      expect(raiz.querySelector('[aria-label="Remover modalidade A"]')).not.toBeNull();
       expect(linha('C', 'Remanejamento')).toBe(`${REGRAS.destino.rotulo} → A`);
-      expect(linha('C', 'Composição de vagas')).toBe(`${COMPOSICOES.retirada.rotulo} A`);
-      expect(linha('D', 'Remanejamento')).toBe(`${REGRAS.cruzado.rotulo} (B / —)`);
+    });
+
+    it('quebra em qualquer ponto o código com nome e o nome sem espaços, sem estourar o cartão', () => {
+      const longo = com('A', { nome: 'NomeSemEspacosMuitoLongoParaCaberEmTelaDe320Pixels' });
+      montar([longo, com('C', { composicaoOrigem: 'A' })], false);
+      fixture.componentRef.setInput('referencias', new Map([['C', [longo]]]));
+      fixture.detectChanges();
+      const quebram = (seletor: string): boolean[] =>
+        [...raiz.querySelectorAll(seletor)].map(
+          (e) => getComputedStyle(e).overflowWrap === 'anywhere',
+        );
+      expect(quebram('td[data-label="Modalidade"], td[data-label="Modalidade"] code')).toEqual([
+        true,
+        true,
+        true,
+        true,
+      ]);
+      expect(quebram('.cfg-refs code')).toEqual([true]);
     });
 
     it('lista as modalidades que referenciam a da linha, ou "Nenhuma"', () => {
@@ -103,7 +149,7 @@ describe('ModalidadesTabelaComponent', () => {
       montar(itens, false);
       fixture.componentRef.setInput('referencias', new Map([['A', [itens[1]]]]));
       fixture.detectChanges();
-      expect(linha('A', 'Referenciada por')).toBe('C');
+      expect(linha('A', 'Referenciada por')).toBe('C — Nome C');
       expect(linha('C', 'Referenciada por')).toBe('Nenhuma');
     });
   });

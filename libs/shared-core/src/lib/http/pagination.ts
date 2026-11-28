@@ -33,11 +33,14 @@ export const API_MAX_PAGE_SIZE = 100;
  * Códigos que o binder de cursor pagination da `uniplus-api` emite quando a
  * continuação não serve mais (`PaginationDomainErrorRegistration.cs`):
  *
- * - `uniplus.cursor.invalido` (**400**) — o cursor não continua ESTA consulta:
- *   busca, ordenação ou filtro divergem do que o assinou.
+ * - `uniplus.cursor.invalido` (**400**) — o cursor não decifra, é de outra
+ *   coleção ou de outro escopo de rota, teve a direção trocada, é de outra
+ *   conta, ou é uma continuação sem chave.
+ * - `uniplus.paginacao.cursor_invalido` (**400**) — o cursor é da coleção
+ *   certa, mas de OUTRA consulta: ordenação, filtro, busca ou recorte trocados.
  * - `uniplus.cursor.expirado` (**410**) — o cursor passou da validade (15 min).
  *
- * Nos dois casos a listagem deve recomeçar do início, sem cursor (a #693 chama
+ * Nos três casos a listagem deve recomeçar do início, sem cursor (a #693 chama
  * isso de CA-14c). `uniplus.cursor.limit_invalido`/`direcao_invalida` são 422 e
  * NÃO entram aqui — são erro do parâmetro, não do cursor.
  */

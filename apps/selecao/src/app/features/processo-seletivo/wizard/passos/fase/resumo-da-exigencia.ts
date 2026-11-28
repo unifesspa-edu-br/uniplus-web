@@ -38,6 +38,11 @@ export interface PublicoDaExigencia {
   /** Cada alternativa do gatilho como as condições dela, já em prosa. */
   readonly alternativas: readonly (readonly string[])[];
   /**
+   * As mesmas alternativas, condição a condição, com "código — nome" nas de modalidade. É só
+   * apresentação: a identidade da condição, e o valor do filtro, vêm de `alternativas`.
+   */
+  readonly alternativasRotuladas: readonly (readonly string[])[];
+  /**
    * Se alguma alternativa não depende de fato além da modalidade: por ela, o documento é
    * cobrado de quem concorre na modalidade, qualquer que seja a outra resposta.
    */
@@ -46,35 +51,83 @@ export interface PublicoDaExigencia {
   readonly alcancaModalidade: (codigo: string) => boolean;
 }
 
+/** Como a tela nomeia cada modalidade pelo código: "código — nome", ou só o código. */
+type Rotulos = ReadonlyMap<string, string>;
+
+const SEM_ROTULOS: Rotulos = new Map();
+
 export function publicoDaExigencia(
   exigencia: ExigenciaDeDocumento,
   fatoPorCodigo: ReadonlyMap<string, FatoEscolhivel>,
+  rotulos: Rotulos = new Map(),
 ): PublicoDaExigencia {
-  if (exigidoDeTodos(exigencia)) {
-    return {
-      deTodos: true,
-      modalidades: null,
-      alternativas: [],
-      independeDeOutroFato: true,
-      alcancaModalidade: (codigo) => podeAlcancarModalidade(exigencia, codigo),
-    };
-  }
-  return publicoCondicional(exigencia, fatoPorCodigo);
+  return exigidoDeTodos(exigencia)
+    ? publicoDeTodos(exigencia)
+    : publicoCondicional(exigencia, fatoPorCodigo, rotulos);
+}
+
+function publicoDeTodos(exigencia: ExigenciaDeDocumento): PublicoDaExigencia {
+  return {
+    deTodos: true,
+    modalidades: null,
+    alternativas: [],
+    alternativasRotuladas: [],
+    independeDeOutroFato: true,
+    alcancaModalidade: (codigo) => podeAlcancarModalidade(exigencia, codigo),
+  };
 }
 
 function publicoCondicional(
   exigencia: ExigenciaDeDocumento,
   fatoPorCodigo: ReadonlyMap<string, FatoEscolhivel>,
+  rotulos: Rotulos,
 ): PublicoDaExigencia {
-  const modalidades = modalidadesUniformes(exigencia);
-  const porAlternativa = condicoesPorAlternativa(exigencia);
   return {
     deTodos: false,
+    modalidades: modalidadesUniformes(exigencia),
     alcancaModalidade: (codigo) => podeAlcancarModalidade(exigencia, codigo),
-    modalidades,
-    alternativas: descreverAlternativas(porAlternativa, modalidades, fatoPorCodigo),
+    ...condicoesDoPublico(exigencia, fatoPorCodigo, rotulos),
+  };
+}
+
+type CondicoesDoPublico = Pick<
+  PublicoDaExigencia,
+  'alternativas' | 'alternativasRotuladas' | 'independeDeOutroFato'
+>;
+
+function condicoesDoPublico(
+  exigencia: ExigenciaDeDocumento,
+  fatoPorCodigo: ReadonlyMap<string, FatoEscolhivel>,
+  rotulos: Rotulos,
+): CondicoesDoPublico {
+  const porAlternativa = condicoesPorAlternativa(exigencia);
+  const modalidades = modalidadesUniformes(exigencia);
+  const descrever = (fatos: ReadonlyMap<string, FatoEscolhivel>, nomes: Rotulos) =>
+    descreverAlternativas(porAlternativa, modalidades, fatos, nomes);
+  return {
+    alternativas: descrever(semRotulosDasModalidades(fatoPorCodigo, rotulos), SEM_ROTULOS),
+    alternativasRotuladas: descrever(fatoPorCodigo, rotulos),
     independeDeOutroFato: porAlternativa.some((itens) => itens.every(ehCondicaoDeModalidade)),
   };
+}
+
+/**
+ * Os fatos como a identidade da condição os lê: sem o "código — nome" que a tela põe nos valores
+ * que são modalidades, para que renomear a modalidade não mude a chave do filtro.
+ */
+function semRotulosDasModalidades(
+  fatoPorCodigo: ReadonlyMap<string, FatoEscolhivel>,
+  rotulos: Rotulos,
+): ReadonlyMap<string, FatoEscolhivel> {
+  return new Map(
+    [...fatoPorCodigo].map(([codigo, fato]) => [codigo, semRotulosIguaisA(fato, rotulos)]),
+  );
+}
+
+function semRotulosIguaisA(fato: FatoEscolhivel, rotulos: Rotulos): FatoEscolhivel {
+  if (fato.rotulos === undefined) return fato;
+  const proprios = [...fato.rotulos].filter(([valor, rotulo]) => rotulos.get(valor) !== rotulo);
+  return { ...fato, rotulos: new Map(proprios) };
 }
 
 function ehCondicaoDeModalidade(condicao: CondicaoDeFato): boolean {
@@ -86,9 +139,10 @@ function descreverAlternativas(
   porAlternativa: readonly CondicaoDeFato[][],
   modalidades: readonly string[] | null,
   fatoPorCodigo: ReadonlyMap<string, FatoEscolhivel>,
+  rotulos: Rotulos,
 ): readonly (readonly string[])[] {
   const descritas = porAlternativa.map((condicoes) =>
-    descreverAlternativa(condicoes, modalidades, fatoPorCodigo),
+    descreverAlternativa(condicoes, modalidades, fatoPorCodigo, rotulos),
   );
   return descritas.some((alternativa) => alternativa.length === 0) ? [] : descritas;
 }
@@ -107,12 +161,13 @@ function descreverAlternativa(
   condicoes: readonly CondicaoDeFato[],
   modalidades: readonly string[] | null,
   fatoPorCodigo: ReadonlyMap<string, FatoEscolhivel>,
+  rotulos: Rotulos,
 ): string[] {
   return condicoes
     .filter((condicao) => !ehRestricaoDeModalidades(condicao, modalidades))
     .map((condicao) =>
       ehCondicaoDeModalidade(condicao)
-        ? descreverCondicaoDeModalidade(condicao)
+        ? descreverCondicaoDeModalidade(condicao, rotulos)
         : descreverCondicao(condicao, fatoPorCodigo.get(condicao.fato)),
     );
 }
@@ -129,13 +184,10 @@ function ehRestricaoDeModalidades(
   );
 }
 
-/** A condição sobre a modalidade como frase, nos códigos do quadro de vagas. */
-export function descreverCondicaoDeModalidade(condicao: CondicaoDeFato): string {
-  const codigos =
-    condicao.operador === OperadorCodigo.ALGUM_DE || condicao.operador === OperadorCodigo.NENHUM_DE
-      ? valoresDeListaDe(condicao)
-      : [valorEscalarDe(condicao)].filter((codigo) => codigo !== '');
-  const lista = codigos.length > 0 ? codigos.join(', ') : '(valor não escolhido)';
+/** A condição sobre a modalidade como frase, com "código — nome" de cada modalidade. */
+export function descreverCondicaoDeModalidade(condicao: CondicaoDeFato, rotulos: Rotulos): string {
+  const codigos = codigosDaCondicao(condicao);
+  const lista = codigos.length > 0 ? listaDeRotulos(codigos, rotulos) : '(valor não escolhido)';
   const nega =
     condicao.operador === OperadorCodigo.DIFERENTE ||
     condicao.operador === OperadorCodigo.NENHUM_DE;
@@ -144,18 +196,34 @@ export function descreverCondicaoDeModalidade(condicao: CondicaoDeFato): string 
   return codigos.length > 1 ? `Modalidades ${lista}` : `Modalidade ${lista}`;
 }
 
+function codigosDaCondicao(condicao: CondicaoDeFato): readonly string[] {
+  return condicao.operador === OperadorCodigo.ALGUM_DE ||
+    condicao.operador === OperadorCodigo.NENHUM_DE
+    ? valoresDeListaDe(condicao)
+    : [valorEscalarDe(condicao)].filter((codigo) => codigo !== '');
+}
+
+function rotuloDe(codigo: string, rotulos: Rotulos): string {
+  return rotulos.get(codigo) ?? codigo;
+}
+
+function listaDeRotulos(codigos: readonly string[], rotulos: Rotulos): string {
+  return codigos.map((codigo) => rotuloDe(codigo, rotulos)).join(', ');
+}
+
 /**
  * A quem a exigência se aplica, numa frase. A exigência "de quem satisfaz" sem restrição nem
  * condição não é cobrada de ninguém, e a conferência precisa dizê-lo em vez de calar.
  */
-export function descreverPublico(publico: PublicoDaExigencia): string {
+export function descreverPublico(
+  publico: PublicoDaExigencia,
+  rotulos: Rotulos = new Map(),
+): string {
   if (publico.deTodos) return 'Todo candidato';
 
-  const condicoes = publico.alternativas
-    .map((alternativa) => alternativa.join(' e '))
-    .join(', ou ');
-  const modalidades =
-    publico.modalidades === null ? '' : `Modalidades ${publico.modalidades.join(', ')}`;
+  const condicoes = publico.alternativasRotuladas.map((item) => item.join(' e ')).join(', ou ');
+  const restritas = publico.modalidades;
+  const modalidades = restritas === null ? '' : `Modalidades ${listaDeRotulos(restritas, rotulos)}`;
 
   if (modalidades !== '' && condicoes !== '') return `${modalidades}, de quem: ${condicoes}`;
   if (modalidades !== '') return modalidades;
@@ -277,18 +345,40 @@ export interface OpcaoDoFiltro {
 }
 
 /** A opção do seletor de público, rotulada pelo público que o valor codifica. */
-export function opcaoDoFiltro(valor: string): OpcaoDoFiltro {
-  const filtro = filtroDoValor(valor);
+export function opcaoDoFiltro(
+  valor: string,
+  rotulos: Rotulos = SEM_ROTULOS,
+  rotulosDasCondicoes: Rotulos = SEM_ROTULOS,
+): OpcaoDoFiltro {
+  return { valor, rotulo: rotuloDoFiltro(filtroDoValor(valor), rotulos, rotulosDasCondicoes) };
+}
+
+function rotuloDoFiltro(filtro: FiltroDePublico, rotulos: Rotulos, condicoes: Rotulos): string {
   switch (filtro.tipo) {
     case 'modalidade':
-      return { valor, rotulo: `Candidato de ${filtro.codigo}` };
+      return `Candidato de ${rotuloDe(filtro.codigo, rotulos)}`;
     case 'condicao':
-      return { valor, rotulo: `Candidato com: ${filtro.condicao}` };
+      return `Candidato com: ${rotuloDe(filtro.condicao, condicoes)}`;
     case 'todo-candidato':
-      return { valor, rotulo: 'Exigidos de todo candidato' };
+      return 'Exigidos de todo candidato';
     case 'tudo':
-      return { valor, rotulo: 'Todos os documentos da fase' };
+      return 'Todos os documentos da fase';
   }
+}
+
+/** Cada condição declarada nos públicos: a identidade que o filtro guarda e o rótulo exibido. */
+export function rotulosDasCondicoesDe(
+  publicos: readonly PublicoDaExigencia[],
+): Map<string, string> {
+  const rotulos = new Map<string, string>();
+  for (const publico of publicos) {
+    publico.alternativas.forEach((alternativa, i) =>
+      alternativa.forEach((condicao, j) =>
+        rotulos.set(condicao, publico.alternativasRotuladas[i][j]),
+      ),
+    );
+  }
+  return rotulos;
 }
 
 /** O valor do seletor de público de volta ao filtro que ele codifica. */

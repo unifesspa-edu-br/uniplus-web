@@ -144,7 +144,7 @@ export class FormularioDoCronograma {
   }
 
   removerEtapa(indice: number): void {
-    const removida = this.etapas.at(indice).controls.id.value;
+    const removida = this.etapas.at(indice).controls.chave.value;
     this.etapas.removeAt(indice, { emitEvent: false });
     this.renumerarEtapas();
     this.desvincularDocumentosDaEtapa(removida);
@@ -152,14 +152,14 @@ export class FormularioDoCronograma {
 
   /**
    * Tira a etapa removida do registro de quem a apontava como ponto de coleta. Sem isto o
-   * rascunho reenviaria o identificador de uma etapa que não existe mais, e a gravação
+   * rascunho reenviaria a chave de uma etapa que não existe mais, e a gravação
    * seguinte seria recusada — sem que a tela mostrasse onde está o problema, porque o
-   * seletor "Coletado em" não tem opção para um id que sumiu e exibe "A fase inteira".
+   * seletor "Coletado em" não tem opção para uma chave que sumiu e exibe "A fase inteira".
    */
-  private desvincularDocumentosDaEtapa(etapaId: string | null): void {
-    if (etapaId === null || etapaId === '') return;
+  private desvincularDocumentosDaEtapa(etapaChave: string | null): void {
+    if (etapaChave === null || etapaChave === '') return;
 
-    this.store.patchSection('documentos', semAEtapa(this.store.draft().documentos, etapaId));
+    this.store.patchSection('documentos', semAEtapa(this.store.draft().documentos, etapaChave));
   }
 
   /**

@@ -149,6 +149,14 @@ const DESTINO_POR_ITEM: ReadonlyMap<string, DestinoDoItem> = new Map<string, Des
     },
   ],
   [
+    'formulario_chamadas_sem_obrigatorio',
+    {
+      passo: 'Formulários',
+      orientacao:
+        'Grave um formulário obrigatório ligado a cada fase organizada em chamadas. Em processo já publicado, o formulário se cria numa retificação.',
+    },
+  ],
+  [
     'classificacao_grupo_area_enem_da_oferta_fora_do_quadro',
     {
       passo: 'Vagas',

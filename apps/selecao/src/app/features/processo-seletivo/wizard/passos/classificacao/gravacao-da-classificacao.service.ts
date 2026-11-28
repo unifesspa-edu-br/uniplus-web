@@ -1,12 +1,14 @@
 import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable } from '@angular/core';
 import type { DefinirClassificacaoRequest } from '@uniplus/shared-data/selecao';
 import {
   type CausaDeCampo,
   type ProblemDetails,
   ProblemI18nService,
+  STATUS_HTTP,
   separarCausas,
 } from '@uniplus/shared-core/http';
+import type { RecusaDoCampo } from '@uniplus/shared-ui/components';
 
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { ValidacaoDoPasso } from '../../processo-seletivo.models';
@@ -44,7 +46,15 @@ import {
   comoOpcoesDasEdicoes,
   declaraEdicoesDoEnem,
 } from './edicoes-do-enem';
-import { mensagemDaRecusaDaEscala, mensagemDaRecusaDaResolucao } from './recusas-da-classificacao';
+import {
+  type ControleDoCatalogo,
+  recusaDaRegraDaFormula,
+  recusasDoCatalogo,
+  semARegraDeEliminacao,
+  semOsControles,
+} from './recusas-do-catalogo';
+import { mensagemDaRecusaDaResolucao, recusaDasCasas } from './recusas-da-classificacao';
+import { recusasDaFormula, type RecusasDaFormula } from './recusas-da-formula';
 import {
   recusaDaClassificacaoPeloDesempate,
   recusaPorCriterioGravadoSemQuadro,
@@ -72,19 +82,32 @@ export class GravacaoDaClassificacao {
   /** Só a classificação: uma tecla em outro passo não refaz a conferência do desempate. */
   private readonly classificacao = computed(() => this.store.draft().classificacao);
 
-  /**
-   * As recusas do servidor a um campo de uma regra, por `índice.campo`. Ficam junto do campo até
-   * a regra mudar ou a gravação seguinte responder.
-   */
-  private readonly recusasPorCampo = signal<ReadonlyMap<string, string>>(new Map());
+  /** As recusas a um campo de uma regra de eliminação ficam no estado da classificação, como as do catálogo. */
+  private readonly recusasPorCampo = this.store.classificacao.recusasPorCampoDaEliminacao;
 
   recusaDoCampo(indice: number, campo: CampoDaRegra): string | null {
     return this.recusasPorCampo().get(`${indice}.${campo}`) ?? null;
   }
 
-  /** As posições seguintes mudam: as recusas guardadas por índice deixam de apontar a regra certa. */
-  esquecerRecusas(): void {
+  /** As recusas do catálogo ficam no estado da classificação, que a troca de processo reinicia. */
+  private readonly recusasDoCatalogo = this.store.classificacao.recusasDoCatalogo;
+
+  recusasDoControle(controle: ControleDoCatalogo): readonly RecusaDoCampo[] {
+    return this.recusasDoCatalogo().get(controle) ?? [];
+  }
+
+  esquecerRecusasDoControle(controle: ControleDoCatalogo): void {
+    if (this.recusasDoCatalogo().has(controle))
+      this.recusasDoCatalogo.update((mapa) => semOsControles(mapa, (chave) => chave === controle));
+  }
+
+  /**
+   * Remover a regra da posição muda as seguintes: a recusa dela sai, as das posteriores descem uma
+   * posição e as anteriores ficam. As do corte, guardadas por índice, são todas esquecidas.
+   */
+  removerRecusasDaRegraDeEliminacao(indice: number): void {
     this.recusasPorCampo.set(new Map());
+    this.recusasDoCatalogo.update((mapa) => semARegraDeEliminacao(mapa, indice));
   }
 
   esquecerRecusasDa(indice: number): void {
@@ -214,7 +237,8 @@ export class GravacaoDaClassificacao {
   }
 
   private registrarGravacaoConcluida(resolucaoGravada: string | null): void {
-    this.esquecerRecusas();
+    this.recusasPorCampo.set(new Map());
+    this.recusasDoCatalogo.set(new Map());
     this.store.classificacao.descartarRecusas();
     this.store.classificacao.recusaDaEscalaDaNotaFinal.set(null);
     this.registrarQuadroCongelado(resolucaoGravada);
@@ -268,51 +292,30 @@ export class GravacaoDaClassificacao {
   }
 
   /**
-   * O resumo da recusa: a recusa da resolução, com o texto da tela e o passo onde corrigir; a
-   * recusa por um critério de desempate já gravado, com o texto da tela, qualquer que seja o campo
-   * que o servidor apontou; e o título da raiz, pelo `ProblemI18nService`, para o que a tela não
-   * explica.
-   *
-   * As recusas sob o campo da resolução ficam guardadas para aparecer no passo da fórmula. Uma
-   * resposta que julgou o campo substitui as duas — a da resolução e a de um critério de desempate
-   * gravado — pelo que ela traz. Uma resposta sem ele não as apaga: o servidor recusa outros campos
-   * antes de chegar a julgar a resolução, e só a gravação que dá certo prova que ela passou.
+   * O resumo da recusa: cada causa que a tela explica, com a mensagem do servidor e o passo onde
+   * corrigir, e o título da raiz, pelo `ProblemI18nService`, para o que ela não explica. As recusas
+   * que o passo Fórmula e precisão mostra são guardadas por `recusasDaFormula`, e cada uma só muda
+   * com a resposta que a julgou.
    */
   private mensagensDaRecusa(problema: ProblemDetails): string[] {
-    const erros = separarCausas(problema.errors).deCampo;
-    this.recusasPorCampo.set(recusasDoCorte(erros));
-    this.guardarRecusasDaResolucao(erros);
-    const recusaDaEscala = this.guardarRecusaDaEscala(erros);
-
+    const recusas = this.guardarRecusas(problema);
     return resumoDaRecusa(
       problema,
-      (erro) => textoDaRecusa(erro, recusaDaEscala),
+      (erro) => textoDaRecusa(erro, recusas.daEscala),
       () => this.problemI18n.resolve(problema).title,
     );
   }
 
-  /** As recusas sob o campo da resolução: a da resolução e a de um critério de desempate gravado. */
-  private guardarRecusasDaResolucao(erros: readonly CausaDeCampo[]): void {
-    const sobOCampo = erros.filter((erro) => ehCampoDaResolucao(erro.field));
-    if (sobOCampo.length === 0) return;
-
-    const peloDesempate = sobOCampo.map(recusaDaClassificacaoPeloDesempate);
-    const [daResolucao] = sobOCampo.filter((_, indice) => peloDesempate[indice] === null);
-    this.store.classificacao.recusarPeloDesempate(
-      peloDesempate.find((recusa) => recusa !== null) ?? null,
-      this.cadastroDePesos.leitura().pedida,
-    );
-    this.store.classificacao.recusaDaResolucaoPesoAreaEnem.set(
-      daResolucao === undefined ? null : mensagemDaRecusaDaResolucao(daResolucao),
-    );
-  }
-
-  /** A recusa da escala da nota final, guardada para o passo da fórmula; `null` sem recusa dela. */
-  private guardarRecusaDaEscala(erros: readonly CausaDeCampo[]): string | null {
-    const daEscala = erros.find((erro) => ehCampoDaEscala(erro.field));
-    const recusa = daEscala === undefined ? null : mensagemDaRecusaDaEscala(daEscala);
-    if (recusa !== null) this.store.classificacao.recusaDaEscalaDaNotaFinal.set(recusa);
-    return recusa;
+  private guardarRecusas(problema: ProblemDetails): RecusasDaFormula {
+    const erros = separarCausas(problema.errors).deCampo;
+    this.recusasPorCampo.set(recusasDoCorte(erros));
+    // Só a recusa de validação com causas reavaliou o catálogo; as demais respostas nada apagam.
+    if (problema.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && erros.length)
+      this.recusasDoCatalogo.set(recusasDoCatalogo(problema));
+    const recusas = recusasDaFormula(erros);
+    const { classificacao } = this.store;
+    classificacao.registrarRecusasDaFormula(recusas, this.cadastroDePesos.leitura().pedida);
+    return recusas;
   }
 
   /**
@@ -337,19 +340,25 @@ function recusada(messages: string[]): Promise<ValidacaoDoPasso> {
 
 /** O texto da tela para a recusa de um campo, ou `null` quando a tela não a explica. */
 function textoDaRecusa(
-  erro: Pick<CausaDeCampo, 'field' | 'code'>,
+  erro: Pick<CausaDeCampo, 'field' | 'code' | 'message'>,
   recusaDaEscala: string | null,
 ): string | null {
   return (
-    recusaDaEliminacao(erro) ??
-    (ehCampoDaEscala(erro.field) && recusaDaEscala !== null
-      ? `Escala da nota final, no passo ${NOME_DO_PASSO_DA_FORMULA}: ${recusaDaEscala}`
-      : null) ??
     recusaDaClassificacaoPeloDesempate(erro) ??
+    recusaDaEliminacao(erro) ??
+    recusaDaRegraDaFormula(erro) ??
+    textoDaEscala(erro.field, recusaDaEscala) ??
+    recusaDasCasas(erro) ??
     (ehCampoDaResolucao(erro.field)
       ? `Resolução de Peso por Área, no passo ${NOME_DO_PASSO_DA_FORMULA}: ${mensagemDaRecusaDaResolucao(erro)}`
       : null)
   );
+}
+
+function textoDaEscala(campo: string, recusaDaEscala: string | null): string | null {
+  return ehCampoDaEscala(campo) && recusaDaEscala !== null
+    ? recusaNoPassoDaFormula('Escala da nota final', recusaDaEscala)
+    : null;
 }
 
 function avisoDoCriterioSemArea(

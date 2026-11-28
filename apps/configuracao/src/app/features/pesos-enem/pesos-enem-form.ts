@@ -3,6 +3,7 @@ import {
   AreaPesoAreaEnemDto,
   AtualizarPesoAreaEnemCommand,
   CriarPesoAreaEnemCommand,
+  CriarPesoAreaEnemCommandGrupoCurso,
   PesoAreaEnemAreaCommand,
   PesoAreaEnemDto,
   type GrupoAreaEnemDto,
@@ -140,7 +141,7 @@ export function comandoDeCriacao(
 ): CriarPesoAreaEnemCommand {
   return {
     resolucao: nullIfBlank(resolucao),
-    grupoCurso: valores.grupoCurso.codigo,
+    grupoCurso: valores.grupoCurso.codigo as CriarPesoAreaEnemCommandGrupoCurso,
     areas: areasDoPayload(valores.areas),
     baseLegal: nullIfBlank(valores.baseLegal),
   };

@@ -1,3 +1,5 @@
+import { codigoComNome } from '@uniplus/shared-utils';
+
 import type { WizardDraft } from './processo-seletivo.models';
 
 /**
@@ -9,6 +11,23 @@ export function modalidadesDasOfertas(draft: WizardDraft): readonly string[] {
     oferta.modalidades.map((modalidade) => modalidade.codigo),
   );
   return [...new Set(codigos)];
+}
+
+/**
+ * Como cada modalidade que o processo aceita aparece na tela: "código — nome", ou só o código
+ * quando não há nome. A chave continua sendo o código; a primeira oferta que cita a modalidade
+ * define o rótulo.
+ */
+export function rotulosDasModalidades(draft: WizardDraft): ReadonlyMap<string, string> {
+  const rotulos = new Map<string, string>();
+  for (const oferta of draft.vagas.ofertas) {
+    for (const modalidade of oferta.modalidades) {
+      if (!rotulos.has(modalidade.codigo)) {
+        rotulos.set(modalidade.codigo, codigoComNome(modalidade.codigo, modalidade.nome));
+      }
+    }
+  }
+  return rotulos;
 }
 
 /**

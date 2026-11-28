@@ -1,6 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { ProblemI18nService } from '@uniplus/shared-core/http';
-import { FatosCandidatoApi, TermosConsentimentoApi } from '@uniplus/shared-data/configuracao';
+import { HttpHeaders } from '@angular/common/http';
+import { ProblemI18nService, apiOk } from '@uniplus/shared-core/http';
+import {
+  FatosCandidatoApi,
+  TermosConsentimentoApi,
+  VocabulariosDeConfiguracaoApi,
+} from '@uniplus/shared-data/configuracao';
+import { TIPOS_DE_CAMPO_SIMULADOS, rotuloSimuladoDoTipoDeCampo } from '@uniplus/shared-testing';
 import { Subject } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -8,16 +14,19 @@ import { CatalogosDoFormulario } from './catalogos-do-formulario.service';
 
 describe('CatalogosDoFormulario', () => {
   let termos: Subject<unknown>;
+  let tiposDeCampo: Subject<unknown>;
   let servico: CatalogosDoFormulario;
 
   beforeEach(() => {
     termos = new Subject<unknown>();
+    tiposDeCampo = new Subject<unknown>();
     TestBed.configureTestingModule({
       providers: [
         CatalogosDoFormulario,
         { provide: ProblemI18nService, useValue: { resolve: () => ({ title: 'Erro' }) } },
         { provide: FatosCandidatoApi, useValue: { listar: () => new Subject() } },
         { provide: TermosConsentimentoApi, useValue: { listarComVersoes: () => termos } },
+        { provide: VocabulariosDeConfiguracaoApi, useValue: { listar: () => tiposDeCampo } },
       ],
     });
     servico = TestBed.inject(CatalogosDoFormulario);
@@ -63,5 +72,24 @@ describe('CatalogosDoFormulario', () => {
     expect(servico.termosDisponiveis()[0].versoes[0].versaoId).toBe('v1');
     servico.carregarTermos();
     expect(servico.referenciasDosTermos()).toBeNull();
+  });
+
+  it('lê os tipos de campo da API e dá a cada código o rótulo recebido', () => {
+    servico.tiposDeCampo.carregar();
+
+    tiposDeCampo.next(apiOk(TIPOS_DE_CAMPO_SIMULADOS, 200, new HttpHeaders()));
+
+    expect(servico.tiposDeCampo.itens()).toEqual(TIPOS_DE_CAMPO_SIMULADOS);
+    expect(servico.tiposDeCampo.rotulo()('DATA')).toBe(rotuloSimuladoDoTipoDeCampo('DATA'));
+    expect(servico.tiposDeCampo.erro()).toBeNull();
+  });
+
+  it('deixa a lista vazia e avisa sem expor a resposta quando a leitura dos tipos de campo falha', () => {
+    servico.tiposDeCampo.carregar();
+
+    tiposDeCampo.next({ ok: false, problem: { detail: 'corpo da resposta' } });
+
+    expect(servico.tiposDeCampo.itens()).toEqual([]);
+    expect(servico.tiposDeCampo.erro()).toBe('Não foi possível carregar os tipos de campo.');
   });
 });

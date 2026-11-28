@@ -60,7 +60,7 @@ describe('FasePassoComponent: edição da fase no rascunho', () => {
       expect(store.draft().cronograma.fases[0].bancasRequeridas).toEqual([
         {
           id: null,
-          identificadorLocal: 'banca-1',
+          identificadorLocal: 'banca_heteroidentificacao',
           copiaDoTipo: {
             rotulo: 'Heteroidentificação',
             papel: null,
@@ -116,6 +116,7 @@ describe('FasePassoComponent: edição da fase no rascunho', () => {
       etapas: [
         {
           id: '01960000-0000-7000-0000-0000000000ee',
+          chave: 'etapa_prova_objetiva',
           nome: 'Prova objetiva',
           carater: CaraterEtapaCodigo.CLASSIFICATORIA,
           tipoEtapaOrigemId: '01960000-0000-7000-0000-0000000000e1',

@@ -61,28 +61,28 @@ describe('NotificationHostComponent', () => {
       expect(allByTestId(fixture, 'notification-host-toast-info')).toHaveLength(0);
     });
 
-    it('renderiza article role=alert + aria-live=assertive para error', () => {
+    it('não põe papel nem aria-live em nenhum cartão', () => {
       service.error('Falha', 'detalhe');
-      fixture.detectChanges();
-      const article = byTestId(fixture, 'notification-host-toast-error');
-      expect(article).not.toBeNull();
-      expect(article?.getAttribute('role')).toBe('alert');
-      expect(article?.getAttribute('aria-live')).toBe('assertive');
-    });
-
-    it('renderiza article role=status + aria-live=polite para success', () => {
       service.success('Pronto');
       fixture.detectChanges();
-      const article = byTestId(fixture, 'notification-host-toast-success');
-      expect(article?.getAttribute('role')).toBe('status');
-      expect(article?.getAttribute('aria-live')).toBe('polite');
+      const cartao = fixture.nativeElement.querySelector('ui-aviso') as HTMLElement;
+      expect(cartao.querySelector('[role], [aria-live]')).toBeNull();
     });
 
-    it('renderiza article aria-live=assertive para warning', () => {
-      service.warning('Atenção');
+    it('anuncia o erro na região assertiva e o sucesso na educada', () => {
+      service.error('Falha', 'detalhe');
       fixture.detectChanges();
-      const article = byTestId(fixture, 'notification-host-toast-warning');
-      expect(article?.getAttribute('aria-live')).toBe('assertive');
+      expect(byTestId(fixture, 'notification-host-anuncio-assertivo')?.textContent).toContain(
+        'Falha',
+      );
+      service.success('Pronto');
+      fixture.detectChanges();
+      expect(byTestId(fixture, 'notification-host-anuncio-polido')?.textContent).toContain(
+        'Pronto',
+      );
+      expect(byTestId(fixture, 'notification-host-anuncio-assertivo')?.textContent).not.toContain(
+        'Pronto',
+      );
     });
 
     it('exibe title e detail quando ambos providos', () => {
@@ -95,47 +95,87 @@ describe('NotificationHostComponent', () => {
     });
   });
 
-  describe('botão "Copiar traceId"', () => {
-    it('não renderiza quando notification não tem traceId', () => {
+  describe('referência ao suporte', () => {
+    const IDENTIFICADOR = '0af7651916cd43dd8448eb211c80319c';
+
+    function textoDoBloco(): string {
+      return byTestId(fixture, 'notification-host-referencia')?.textContent ?? '';
+    }
+
+    function definirAreaDeTransferencia(writeText: Clipboard['writeText'] | undefined): void {
+      Object.defineProperty(globalThis.navigator, 'clipboard', {
+        value: writeText ? { writeText } : undefined,
+        configurable: true,
+      });
+    }
+
+    it('mostra código do erro e identificador do pedido sem o rótulo antigo', () => {
+      service.errorFromProblem(montarProblem({ traceId: IDENTIFICADOR }));
+      fixture.detectChanges();
+      expect(textoDoBloco()).toContain('Código do erro');
+      expect(textoDoBloco()).toContain('uniplus.selecao.edital.nao_encontrado');
+      expect(textoDoBloco()).toContain('Identificador do pedido');
+      expect(textoDoBloco()).toContain(IDENTIFICADOR);
+      expect(fixture.nativeElement.textContent).not.toContain('ID de rastreamento');
+    });
+
+    it('mostra só o código quando o identificador está fora do formato', () => {
+      service.errorFromProblem(montarProblem({ traceId: 'curto' }));
+      fixture.detectChanges();
+      expect(textoDoBloco()).toContain('Código do erro');
+      expect(textoDoBloco()).not.toContain('Identificador do pedido');
+    });
+
+    it('mostra só o identificador quando o código está fora do formato', () => {
+      service.errorFromProblem(montarProblem({ code: 'ERRO 1', traceId: IDENTIFICADOR }));
+      fixture.detectChanges();
+      expect(textoDoBloco()).toContain('Identificador do pedido');
+      expect(textoDoBloco()).not.toContain('Código do erro');
+    });
+
+    it('não mostra o bloco quando nenhum dos dois serve, nem em erro sem resposta', () => {
+      service.errorFromProblem(montarProblem({ code: 'ERRO 1', traceId: '' }));
       service.error('Falha local');
       fixture.detectChanges();
-      expect(byTestId(fixture, 'notification-host-copy-trace')).toBeNull();
-      expect(byTestId(fixture, 'notification-host-trace-block')).toBeNull();
+      expect(allByTestId(fixture, 'notification-host-referencia')).toHaveLength(0);
     });
 
-    it('renderiza com traceId quando errorFromProblem(problem) provê', () => {
-      service.errorFromProblem(montarProblem({ traceId: '0af7651916cd43dd8448eb211c80319c' }));
+    it.each(['success', 'info', 'warning'] as const)('aviso de %s não mostra o bloco', (tipo) => {
+      service[tipo]('Aviso');
       fixture.detectChanges();
-      const code = byTestId(fixture, 'notification-host-trace-id');
-      expect(code?.textContent?.trim()).toBe('0af7651916cd43dd8448eb211c80319c');
-      const copyBtn = byTestId<HTMLButtonElement>(fixture, 'notification-host-copy-trace');
-      expect(copyBtn?.getAttribute('aria-label')).toContain('0af7651916cd43dd8448eb211c80319c');
+      expect(byTestId(fixture, 'notification-host-referencia')).toBeNull();
     });
 
-    it('clipboard.writeText é chamado com o traceId no clique', () => {
-      const writeText = vi.fn().mockResolvedValue(undefined);
-      Object.defineProperty(globalThis.navigator, 'clipboard', {
-        value: { writeText },
-        configurable: true,
-      });
-
-      service.errorFromProblem(montarProblem({ traceId: '3b9c2e41d7a84f0aa6d5c1e2f8b70914' }));
+    it('mostra o bloco dentro do mesmo aviso', () => {
+      service.errorFromProblem(montarProblem());
       fixture.detectChanges();
-      byTestId<HTMLButtonElement>(fixture, 'notification-host-copy-trace')?.click();
-
-      expect(writeText).toHaveBeenCalledWith('3b9c2e41d7a84f0aa6d5c1e2f8b70914');
+      const bloco = byTestId(fixture, 'notification-host-referencia');
+      expect(byTestId(fixture, 'notification-host-toast-error')?.contains(bloco)).toBe(true);
     });
 
-    it('falha silenciosa quando clipboard API ausente', () => {
-      Object.defineProperty(globalThis.navigator, 'clipboard', {
-        value: undefined,
-        configurable: true,
-      });
-
-      service.errorFromProblem(montarProblem({ traceId: 'no-api' }));
+    it('copia sem aria-pressed e anuncia "Copiado." na região de status do bloco', async () => {
+      definirAreaDeTransferencia(vi.fn().mockResolvedValue(undefined));
+      service.errorFromProblem(montarProblem({ traceId: IDENTIFICADOR }));
       fixture.detectChanges();
-      const copyBtn = byTestId<HTMLButtonElement>(fixture, 'notification-host-copy-trace');
-      expect(() => copyBtn?.click()).not.toThrow();
+      const copiar = fixture.nativeElement.querySelector('.referencia-ao-suporte button');
+      copiar.click();
+      await vi.advanceTimersByTimeAsync(0);
+      fixture.detectChanges();
+      expect(copiar.hasAttribute('aria-pressed')).toBe(false);
+      const status = byTestId(fixture, 'notification-host-referencia')?.querySelector(
+        '[role=status]',
+      );
+      expect(status?.textContent?.trim()).toBe('Copiado.');
+    });
+
+    it('orienta a copiar à mão quando a cópia é recusada', async () => {
+      definirAreaDeTransferencia(vi.fn().mockRejectedValue(new Error('negado')));
+      service.errorFromProblem(montarProblem());
+      fixture.detectChanges();
+      fixture.nativeElement.querySelector('.referencia-ao-suporte button').click();
+      await vi.advanceTimersByTimeAsync(0);
+      fixture.detectChanges();
+      expect(textoDoBloco()).toContain('Selecione o texto e copie.');
     });
   });
 
@@ -151,18 +191,36 @@ describe('NotificationHostComponent', () => {
     });
   });
 
-  describe('persistência em 5xx', () => {
-    it('toast errorFromProblem 503 não some após timeout default', () => {
+  describe('permanência', () => {
+    it('erro de servidor não some após o prazo padrão', () => {
       service.errorFromProblem(montarProblem({ status: 503 }));
-      fixture.detectChanges();
       vi.advanceTimersByTime(60_000);
       fixture.detectChanges();
       expect(byTestId(fixture, 'notification-host-toast-error')).not.toBeNull();
     });
 
-    it('toast 4xx some após 5 s default', () => {
+    it('erro 4xx com o bloco continua na tela depois de 5 s e fecha ao clicar em fechar', () => {
       service.errorFromProblem(montarProblem({ status: 404 }));
+      vi.advanceTimersByTime(5000);
       fixture.detectChanges();
+      expect(byTestId(fixture, 'notification-host-toast-error')).not.toBeNull();
+      byTestId<HTMLButtonElement>(fixture, 'notification-host-dismiss')?.click();
+      fixture.detectChanges();
+      expect(byTestId(fixture, 'notification-host-toast-error')).toBeNull();
+    });
+
+    it.each(['success', 'info', 'warning', 'error'] as const)(
+      'aviso de %s sem bloco some após 5 s',
+      (tipo) => {
+        service[tipo]('Aviso');
+        vi.advanceTimersByTime(5000);
+        fixture.detectChanges();
+        expect(byTestId(fixture, `notification-host-toast-${tipo}`)).toBeNull();
+      },
+    );
+
+    it('erro 4xx sem bloco some após 5 s', () => {
+      service.errorFromProblem(montarProblem({ status: 404, code: 'ERRO 1', traceId: '' }));
       vi.advanceTimersByTime(5000);
       fixture.detectChanges();
       expect(byTestId(fixture, 'notification-host-toast-error')).toBeNull();

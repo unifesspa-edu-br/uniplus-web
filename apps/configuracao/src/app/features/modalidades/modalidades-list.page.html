@@ -47,18 +47,15 @@
     [loading]="loading()"
     [errorMessage]="errorMessage()"
     [temFiltroAtivo]="temFiltroAtivo()"
-    [temAnterior]="prevCursor() !== null"
-    [temProximo]="nextCursor() !== null"
     [removendo]="removendo()"
     [emRemocao]="modalidadeParaRemover() !== null"
     (limpar)="limparFiltros()"
-    (anterior)="paginaAnterior()"
-    (proximo)="proximaPagina()"
   >
     @if (modalidadesFiltradas().length > 0) {
     <cfg-modalidades-tabela
       [modalidades]="modalidadesFiltradas()"
       [quemConcorre]="quemConcorre()"
+      [rotulos]="rotulos()"
       [referencias]="referenciasReversas()"
       [indisponivel]="loading() || removendo()"
       [removendoId]="removendoId()"
@@ -90,12 +87,12 @@
     @if (mensagemBloqueioServidor()) {
     <p>{{ mensagemBloqueioServidor() }}</p>
     } @if (referenciadaPor(alvo.codigo).length > 0) { A modalidade
-    <code>{{ alvo.codigo }}</code> não pode ser removida porque é usada como origem, destino, par ou
-    fallback das seguintes modalidades vivas:
+    <code>{{ codigoComNome(alvo.codigo, alvo.nome) }}</code> não pode ser removida porque é usada
+    como origem, destino, par ou fallback das seguintes modalidades vivas:
     <ul class="cfg-refs-lista u-list">
       @for (r of referenciadaPor(alvo.codigo); track r.id) {
       <li>
-        <code>{{ r.codigo }}</code>
+        <code>{{ codigoComNome(r.codigo, r.nome) }}</code>
         @if (r.descricao) { — {{ r.descricao }} }
       </li>
       }
@@ -105,8 +102,9 @@
   </ui-alert>
   } @else {
   <p id="cfg-modalidade-remocao-descricao">
-    A modalidade <code>{{ alvo.codigo }}</code> é removida (soft-delete) e mantida na trilha de
-    auditoria. Cópias congeladas por snapshot em processos publicados não são afetadas. Confirma?
+    A modalidade <code>{{ codigoComNome(alvo.codigo, alvo.nome) }}</code> é removida (soft-delete) e
+    mantida na trilha de auditoria. Cópias congeladas por snapshot em processos publicados não são
+    afetadas. Confirma?
   </p>
   } }
 

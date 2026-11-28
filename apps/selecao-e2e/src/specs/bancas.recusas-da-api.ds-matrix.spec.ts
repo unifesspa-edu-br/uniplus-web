@@ -46,7 +46,7 @@ const HETEROIDENTIFICACAO = tipoDoCatalogo(ID_DO_TIPO_HETEROIDENTIFICACAO);
 const NOTA_DA_BANCA_AUSENTE = 'Sobre uma banca que não está mais nesta tela.';
 const ID_DA_BANCA_QUE_SAIU = idDaBancaGravada(99);
 
-const IR_AO_CAMPO = (codigo: string) => `Ir ao campo da causa ${codigo}`;
+const IR_AO_CAMPO = (mensagem: string) => `Ir ao campo da causa 1: ${mensagem}`;
 
 function entrevistasDaEtapa() {
   return [1, 2].map((ordem) =>
@@ -192,7 +192,7 @@ test.describe('Recusas da API às bancas — matriz DS @ds', () => {
     await simularOQuadroDeVagas(page, testInfo);
     await publicarPelaRevisao(page, testInfo);
 
-    await page.getByRole('button', { name: IR_AO_CAMPO(codigo) }).click();
+    await page.getByRole('button', { name: IR_AO_CAMPO(mensagem) }).click();
 
     const lista = listaDaFase(page);
     const banca = bancaDaLista(lista, 'Banca de heteroidentificação 1');
@@ -221,7 +221,7 @@ test.describe('Recusas da API às bancas — matriz DS @ds', () => {
     await simularOQuadroDeVagas(page, testInfo);
     await publicarPelaRevisao(page, testInfo);
 
-    await page.getByRole('button', { name: IR_AO_CAMPO(codigo) }).click();
+    await page.getByRole('button', { name: IR_AO_CAMPO(mensagem) }).click();
 
     const lista = listaDaFase(page);
     await expect(lista.getByText(mensagem)).toBeVisible();
@@ -248,7 +248,7 @@ test.describe('Recusas da API às bancas — matriz DS @ds', () => {
     await simularOQuadroDeVagas(page, testInfo);
     await publicarPelaRevisao(page, testInfo);
 
-    await page.getByRole('button', { name: IR_AO_CAMPO(codigo) }).click();
+    await page.getByRole('button', { name: IR_AO_CAMPO(mensagem) }).click();
 
     const lista = listaDaEtapa(page);
     await expect(lista.locator('sel-recusas-do-campo').first()).toBeFocused();
@@ -276,7 +276,7 @@ test.describe('Recusas da API às bancas — matriz DS @ds', () => {
     await simularOQuadroDeVagas(page, testInfo);
     await publicarPelaRevisao(page, testInfo);
 
-    await page.getByRole('button', { name: IR_AO_CAMPO(codigo) }).click();
+    await page.getByRole('button', { name: IR_AO_CAMPO(mensagem) }).click();
 
     const lista = listaDaEtapa(page);
     await expect(bancaDaLista(lista, 'Banca de entrevista 2').getByText(mensagem)).toBeVisible();

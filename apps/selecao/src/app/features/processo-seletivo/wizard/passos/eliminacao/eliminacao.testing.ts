@@ -54,6 +54,7 @@ export function aguardarReleitura(): Promise<void> {
 
 export const ETAPA_PERSISTIDA: EtapaPontuada = {
   id: 'etapa-1',
+  chave: 'etapa_1',
   nome: 'Prova objetiva',
   carater: CaraterEtapaCodigo.CLASSIFICATORIA,
   tipoEtapaOrigemId: 'tipo-1',

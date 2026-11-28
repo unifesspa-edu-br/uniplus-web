@@ -76,6 +76,7 @@ export interface FaseForm {
 /** Uma etapa pontuada como o formulário a guarda. */
 export interface EtapaForm {
   readonly id: FormControl<string | null>;
+  readonly chave: FormControl<string | null>;
   readonly nome: FormControl<string>;
   readonly carater: FormControl<CaraterEscolhido>;
   readonly tipoEtapaOrigemId: FormControl<string>;
@@ -210,6 +211,7 @@ export function etapaRecemAcrescentada(posicao: PosicaoDaEtapa): EtapaPontuada {
 
 const ETAPA_AINDA_NAO_DECLARADA: Omit<EtapaPontuada, keyof PosicaoDaEtapa> = {
   id: null,
+  chave: null,
   nome: '',
   carater: '',
   tipoEtapaOrigemId: '',
@@ -234,11 +236,15 @@ export function grupoDaEtapa(etapa: EtapaPontuada): FormGroup<EtapaForm> {
   });
 }
 
-function controlesDaIdentidadeDaEtapa(
-  etapa: EtapaPontuada,
-): Pick<EtapaForm, 'id' | 'nome' | 'tipoEtapaOrigemId' | 'tipoCongelado' | 'ordem' | 'faseCodigo'> {
+type ControlesDaIdentidade = Pick<
+  EtapaForm,
+  'id' | 'chave' | 'nome' | 'tipoEtapaOrigemId' | 'tipoCongelado' | 'ordem' | 'faseCodigo'
+>;
+
+function controlesDaIdentidadeDaEtapa(etapa: EtapaPontuada): ControlesDaIdentidade {
   return {
     id: controle<string | null>(etapa.id),
+    chave: controle<string | null>(etapa.chave),
     nome: controle(etapa.nome),
     tipoEtapaOrigemId: controle(etapa.tipoEtapaOrigemId),
     tipoCongelado: controle<TipoCongeladoDaEtapa | null>(etapa.tipoCongelado ?? null),

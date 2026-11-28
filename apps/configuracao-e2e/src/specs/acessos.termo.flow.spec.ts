@@ -77,7 +77,11 @@ test.describe('Acessos — publicação do termo de responsabilidade', () => {
     await page.getByLabel('Ato que aprova a versão').fill('Portaria 3/2026');
     await page.getByRole('button', { name: 'Publicar versão' }).click();
 
-    await expect(page.getByText('Versão 3 do termo publicada')).toBeVisible();
+    await expect(
+      page
+        .getByTestId('notification-host-title')
+        .filter({ hasText: 'Versão 3 do termo publicada' }),
+    ).toBeVisible();
     const publicacao = chamadas.find((c) => c.metodo === 'POST');
     expect(publicacao?.corpo).toMatchObject({
       ato: 'Portaria 3/2026',

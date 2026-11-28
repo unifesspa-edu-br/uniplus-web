@@ -7,8 +7,10 @@ import {
   type ExigenciasDoRascunho,
 } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
+import { rotulosDasModalidades } from '../../../modalidades-do-processo';
 import {
   comAlcanceDeTodasAsFases,
+  exigenciaCopiadaParaFase,
   restritoAsFases,
   valendoEmTodasAsFases,
   type ContextoDoAlcance,
@@ -49,6 +51,9 @@ export class ExigenciasDaFaseStore {
 
   /** Só as modalidades que as ofertas de vagas selecionam podem exigir documento. */
   readonly modalidades = computed(() => this.store.modalidadesDoProcesso());
+
+  /** Como cada uma dessas modalidades aparece na tela: "código — nome", pelo código. */
+  readonly rotulosDasModalidades = computed(() => rotulosDasModalidades(this.store.draft()));
 
   readonly declaracoesDaFase = computed(() => {
     this.versaoDoFormulario();
@@ -140,8 +145,7 @@ export class ExigenciasDaFaseStore {
     if (achada !== undefined) return achada;
 
     const modelo = modeloParaTodasAsFases(exigencias, id);
-    if (modelo !== undefined)
-      return { ...modelo, faseCodigo: codigo, etapaId: null, formularioCodigo: null };
+    if (modelo !== undefined) return exigenciaCopiadaParaFase(modelo, codigo);
 
     return exigenciaNova(id, codigo, this.catalogoDeDocumentos.tipoDocumentoPorId().get(id));
   }
@@ -161,7 +165,7 @@ export class ExigenciasDaFaseStore {
 
   /** A etapa que coleta o documento nesta fase; vazio quando ele é da fase inteira. */
   etapaDoDocumento(id: string): string {
-    return this.exigenciaDoDocumento(id).etapaId ?? '';
+    return this.exigenciaDoDocumento(id).etapaChave ?? '';
   }
 
   readonly formulariosDaFaseAberta = this.faseEmEdicao.formulariosDaFaseAberta;

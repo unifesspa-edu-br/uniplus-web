@@ -66,9 +66,7 @@
             <option [value]="op.value">{{ op.label }}</option>
           }
         </select>
-        <span class="field__hint"
-          >De qual modalidade viva estas vagas são retiradas (por código).</span
-        >
+        <span class="field__hint">De qual modalidade viva estas vagas são retiradas.</span>
         @if (erroDoCampo('composicaoOrigem')) {
           <span id="cfg-mod-composicaoOrigem-erro" class="field__error">{{
             erroDoCampo('composicaoOrigem')

@@ -143,14 +143,22 @@ describe('Bloco de modalidades da inscrição', () => {
     expect(tela.textContent).toContain('são calculadas pelo sistema a partir das respostas dadas');
   });
 
-  it('concorrendo, lista os nomes na ordem da oferta, sem código, e diz que o envio confirma', () => {
+  it('concorrendo, lista "código — nome" na ordem da oferta e diz que o envio confirma', () => {
     const tela = montar(naTela(modalidades({ itens: [ESCOLA_PUBLICA, AMPLA] })));
     irParaASecao(tela, 'Modalidades de concorrência');
 
     const itens = [...bloco(tela).querySelectorAll('ul li')].map((li) => li.textContent?.trim());
-    expect(itens).toEqual(['Ampla concorrência', 'Escola pública, sem renda']);
-    expect(bloco(tela).textContent).not.toContain('LI_EP');
+    expect(itens).toEqual(['AC — Ampla concorrência', 'LI_EP — Escola pública, sem renda']);
     expect(bloco(tela).textContent).toContain('O envio da inscrição confirma as modalidades.');
+  });
+
+  it('modalidade sem nome aparece só pelo código', () => {
+    const semNome = { codigo: 'ZZ_TESTE', nome: '', ordem: 0 };
+    const tela = montar(naTela(modalidades({ itens: [semNome] })));
+    irParaASecao(tela, 'Modalidades de concorrência');
+
+    const itens = [...bloco(tela).querySelectorAll('ul li')].map((li) => li.textContent?.trim());
+    expect(itens).toEqual(['ZZ_TESTE']);
   });
 
   it('faltando responder, a pergunta pendente leva o foco ao campo dela, na seção dela', async () => {
@@ -204,9 +212,9 @@ describe('Bloco de modalidades da inscrição', () => {
     const listas = [...bloco(tela).querySelectorAll('ul li')].map((li) => li.textContent?.trim());
     expect(titulos).toEqual(['1ª opção — Direito', '2ª opção — Engenharia da Computação']);
     expect(listas).toEqual([
-      'Ampla concorrência',
-      'Escola pública, sem renda',
-      'Ampla concorrência',
+      'AC — Ampla concorrência',
+      'LI_EP — Escola pública, sem renda',
+      'AC — Ampla concorrência',
     ]);
   });
 
@@ -220,7 +228,7 @@ describe('Bloco de modalidades da inscrição', () => {
     irParaASecao(tela, 'Modalidades de concorrência');
 
     const blocos = bloco(tela).querySelectorAll('.modalidades-da-inscricao__opcao');
-    expect(blocos[0].textContent).toContain('Ampla concorrência');
+    expect(blocos[0].textContent).toContain('AC — Ampla concorrência');
     expect(blocos[1].textContent).toContain(
       'nenhuma das modalidades ofertadas nesta opção de curso',
     );
@@ -296,10 +304,10 @@ describe('Bloco de modalidades da inscrição', () => {
     fixture.detectChanges();
 
     const regioes = [...tela.querySelectorAll('[aria-live="polite"]')].map((r) => r.textContent);
-    expect(regioes).toContain('Você passou a concorrer em: Escola pública, sem renda.');
+    expect(regioes).toContain('Você passou a concorrer em: LI_EP — Escola pública, sem renda.');
   });
 
-  it('a mudança do conjunto é anunciada pelos nomes, sem levar o foco', () => {
+  it('a mudança do conjunto é anunciada pelos rótulos, sem levar o foco', () => {
     const tela = montar(naTela(modalidades({ itens: [AMPLA] })));
     const foco = document.activeElement;
 
@@ -310,7 +318,7 @@ describe('Bloco de modalidades da inscrição', () => {
     fixture.detectChanges();
 
     const regioes = [...tela.querySelectorAll('[aria-live="polite"]')].map((r) => r.textContent);
-    expect(regioes).toContain('Você passou a concorrer em: Escola pública, sem renda.');
+    expect(regioes).toContain('Você passou a concorrer em: LI_EP — Escola pública, sem renda.');
     expect(document.activeElement).toBe(foco);
   });
 });

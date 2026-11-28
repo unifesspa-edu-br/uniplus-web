@@ -2,10 +2,8 @@ import { localizacaoDaConversao } from './localizacao-da-conversao';
 import type { ConteudoDoFormulario, NumeroDigitado } from '@uniplus/shared-inscricao/formulario';
 import { membroDoEnum } from '../membro-do-enum';
 import { CamposEmEdicao } from './campos-em-edicao';
-import type {
-  CatalogosDaConversaoDoFormulario,
-  ImpedimentoDaConversaoDoFormulario,
-} from './resultado-da-conversao';
+import type { ImpedimentoDaConversao } from '../impedimento-da-conversao';
+import type { CatalogosDaConversaoDoFormulario } from './resultado-da-conversao';
 
 const CAMPO_SEM_CORRESPONDENCIA =
   'O campo não tem uma correspondência única no catálogo. Carregue o catálogo novamente.';
@@ -21,14 +19,14 @@ const ASSUNTOS: readonly Assunto[] = [
 ];
 
 export class ContextoDaConversao {
-  private readonly problemas = new Map<Assunto, ImpedimentoDaConversaoDoFormulario[]>();
+  private readonly problemas = new Map<Assunto, ImpedimentoDaConversao[]>();
   constructor(
     readonly catalogos: CatalogosDaConversaoDoFormulario,
     readonly edicao: CamposEmEdicao,
     private readonly conteudo?: ConteudoDoFormulario,
   ) {}
 
-  get impedimentos(): readonly ImpedimentoDaConversaoDoFormulario[] {
+  get impedimentos(): readonly ImpedimentoDaConversao[] {
     return ASSUNTOS.flatMap((assunto) => this.problemas.get(assunto) ?? []);
   }
 

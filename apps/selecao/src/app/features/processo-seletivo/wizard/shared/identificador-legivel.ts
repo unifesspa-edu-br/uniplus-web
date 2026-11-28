@@ -1,3 +1,5 @@
+import type { ProblemDetails } from '@uniplus/shared-core/http';
+
 /**
  * Conferência local do identificador legível do certame, espelhando a do servidor
  * (`IdentificadorLegivel` em Seleção): kebab-case de 3 a 64 caracteres, e nunca com a forma de
@@ -49,7 +51,28 @@ export function problemaDoIdentificadorLegivel(valor: string): string | null {
   return null;
 }
 
-/** A recusa do servidor é sobre o identificador — e por isso aparece junto ao campo. */
-export function ehRecusaDoIdentificadorLegivel(code: string | null | undefined): boolean {
-  return code?.startsWith(PREFIXO_DAS_RECUSAS) ?? false;
+/** Nome do campo do pedido de criação que carrega o identificador legível. */
+export const CAMPO_DO_IDENTIFICADOR_NO_PEDIDO = 'identificadorLegivel';
+
+/** A causa é sobre o identificador: aponta o campo dele ou tem um dos códigos dele. */
+export function ehCausaDoIdentificadorLegivel(causa: {
+  readonly field?: string;
+  readonly code: string;
+}): boolean {
+  return (
+    causa.field === CAMPO_DO_IDENTIFICADOR_NO_PEDIDO || causa.code.startsWith(PREFIXO_DAS_RECUSAS)
+  );
+}
+
+/**
+ * A recusa do servidor é sobre o identificador — e por isso aparece junto ao campo. Decide pela
+ * lista de causas, em qualquer posição; sem lista, a recusa de uma só causa vale pelo código
+ * dela.
+ */
+export function ehRecusaDoIdentificadorLegivel(
+  problema: Pick<ProblemDetails, 'code' | 'errors'>,
+): boolean {
+  const causas = problema.errors ?? [];
+  if (causas.length === 0) return ehCausaDoIdentificadorLegivel({ code: problema.code });
+  return causas.some(ehCausaDoIdentificadorLegivel);
 }

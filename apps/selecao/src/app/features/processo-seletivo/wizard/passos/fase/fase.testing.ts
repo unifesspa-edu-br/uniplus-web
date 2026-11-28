@@ -115,6 +115,7 @@ export const BANCAS = [
 /** O cadastro de onde a tela tira os documentos. */
 export const ID_CPF = '01960000-0000-7000-0000-0000000000f1';
 export const ID_ETAPA_DOCUMENTAL = '01960000-0000-7000-0000-0000000000c1';
+export const CHAVE_ETAPA_DOCUMENTAL = 'etapa_documental';
 export const ID_TIPO_ETAPA = '01960000-0000-7000-0000-0000000000c2';
 export const TIPOS_DOCUMENTO = [
   {

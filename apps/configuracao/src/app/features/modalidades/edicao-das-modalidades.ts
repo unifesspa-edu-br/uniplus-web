@@ -6,6 +6,7 @@ import {
   ProblemI18nService,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
+import { codigoComNome } from '@uniplus/shared-utils';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { ModalidadeDto, ModalidadesApi } from '@uniplus/shared-data/configuracao';
 import { ModalidadesStore } from './modalidades.store';
@@ -56,7 +57,7 @@ export class EdicaoDasModalidades {
     if (this.removendo()) return;
     this.removendo.set(true);
     this.mensagemBloqueioServidor.set(null);
-    this.anuncio.set(`Removendo a modalidade ${alvo.codigo}.`);
+    this.anuncio.set(`Removendo a modalidade ${codigoComNome(alvo.codigo, alvo.nome)}.`);
     this.api
       .remover(alvo.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -65,8 +66,9 @@ export class EdicaoDasModalidades {
 
   private concluirRemocao(alvo: ModalidadeDto, resultado: ApiResult<void>): void {
     if (resultado.ok) {
-      this.notifications.success('Modalidade removida', alvo.codigo);
-      this.anuncio.set(`Modalidade ${alvo.codigo} removida.`);
+      const rotulo = codigoComNome(alvo.codigo, alvo.nome);
+      this.notifications.success('Modalidade removida', rotulo);
+      this.anuncio.set(`Modalidade ${rotulo} removida.`);
       this.dialogAberto.set(false);
       this.recarregar();
     } else if (resultado.problem.status === STATUS_HTTP.CONFLITO) {

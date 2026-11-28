@@ -47,6 +47,11 @@ function noFuso(
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'documento__fragmento' },
   templateUrl: './comprovante-da-inscricao.component.html',
+  styles: `
+    .comprovante__modalidade {
+      overflow-wrap: anywhere;
+    }
+  `,
 })
 export class ComprovanteDaInscricaoComponent {
   readonly comprovante = input.required<ComprovanteDaInscricaoDto>();

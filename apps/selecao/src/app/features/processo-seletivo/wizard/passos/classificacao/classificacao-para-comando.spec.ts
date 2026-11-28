@@ -52,6 +52,7 @@ function regraEliminacao(patch: Partial<RegraEliminacaoConfigurada>): RegraElimi
 function etapa(patch: Partial<EtapaPontuada>): EtapaPontuada {
   return {
     id: 'etapa-1',
+    chave: 'etapa_1',
     nome: 'Prova objetiva',
     carater: CaraterEtapaCodigo.CLASSIFICATORIA,
     tipoEtapaOrigemId: 'tipo-1',

@@ -10,6 +10,7 @@ const MODALIDADE_AMPLA: ModalidadeDto = {
   ...MODALIDADE,
   id: 'id-modalidade',
   codigo: 'AC',
+  nome: 'Modalidade de teste Alfa',
   legalFixa: true,
   descricao: 'Ampla concorrência',
 };

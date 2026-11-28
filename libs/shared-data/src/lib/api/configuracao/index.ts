@@ -1,5 +1,10 @@
 export { CONFIGURACAO_BASE_PATH } from './tokens';
-export { PathsApiConfiguracaoCampiGetParametersQueryDirection } from './schema';
+export {
+  AtualizarCursoCommandGrupoAreaEnem,
+  CriarCursoCommandGrupoAreaEnem,
+  CriarPesoAreaEnemCommandGrupoCurso,
+  PathsApiConfiguracaoCampiGetParametersQueryDirection,
+} from './schema';
 export {
   CampiApi,
   type AtualizarCampusCommand,
@@ -311,6 +316,7 @@ export {
 export {
   VocabulariosDeConfiguracaoApi,
   type VocabulariosDeConfiguracao,
+  type TipoDeCampo,
   type TipoDoDado,
   type QuantidadeDeValores,
   type OrigemFato,

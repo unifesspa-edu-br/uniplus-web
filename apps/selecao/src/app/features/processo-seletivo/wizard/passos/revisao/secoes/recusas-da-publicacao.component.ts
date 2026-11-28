@@ -1,3 +1,4 @@
+import { nomeDoIrAoCampo } from '../../../shared/recusas/nome-do-ir-ao-campo';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RecusaDoCampoComponent } from '@uniplus/shared-ui/components';
 
@@ -10,6 +11,7 @@ import {
 } from '../../../shared/recusas/recusas-da-publicacao.service';
 import { eRecusaDaProvaPresencial } from '../../prova-presencial/recusas-da-publicacao-na-prova-presencial.service';
 import { passoPeloRotulo } from '../destino-das-pendencias';
+import { ondeCorrigirARecusaDoPedido } from '../onde-corrigir-a-recusa';
 
 /**
  * As causas (`errors[]`) da última publicação recusada, na ordem em que a API as deu, cada uma com
@@ -36,6 +38,7 @@ export class RecusasDaPublicacaoComponent {
   protected readonly recusasDoServidor = inject(RecusasDaPublicacao);
 
   protected readonly semCampo = SEM_CAMPO;
+  protected readonly nomeDoBotao = nomeDoIrAoCampo;
 
   /** Cada causa, com a indicação de que há campo para onde levar a pessoa. */
   protected readonly itens = computed(() => {
@@ -44,6 +47,7 @@ export class RecusasDaPublicacaoComponent {
       const lugar = lugarDaRecusaDaPublicacao(recusa, cronograma);
       return {
         recusa,
+        ondeCorrigir: ondeCorrigirARecusaDoPedido(recusa.campo),
         comCampo: eRecusaDaProvaPresencial(recusa) || (lugar !== null && lugar.tipo !== 'passo'),
       };
     });

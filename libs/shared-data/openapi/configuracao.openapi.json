@@ -16773,6 +16773,12 @@
             ]
           },
           "grupoAreaEnem": {
+            "enum": [
+              "TECNOLOGICA",
+              "HUMANISTICA_I",
+              "HUMANISTICA_II",
+              "SAUDE_E_BIOLOGICAS"
+            ],
             "type": [
               "null",
               "string"
@@ -16782,7 +16788,14 @@
       },
       "AtualizarFaseCanonicaCommand": {
         "required": [
-          "id"
+          "id",
+          "nome",
+          "origemData",
+          "agrupaEtapas",
+          "permiteComplementacao",
+          "coletaInscricao",
+          "coletaSolicitacaoIsencao",
+          "organizadaEmChamadas"
         ],
         "type": "object",
         "properties": {
@@ -16796,38 +16809,6 @@
               "string"
             ]
           },
-          "descricao": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "agrupaEtapas": {
-            "type": "boolean",
-            "default": false
-          },
-          "permiteComplementacao": {
-            "type": "boolean",
-            "default": false
-          },
-          "baseLegal": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "coletaInscricao": {
-            "type": "boolean",
-            "default": false
-          },
-          "coletaSolicitacaoIsencao": {
-            "type": "boolean",
-            "default": false
-          },
-          "organizadaEmChamadas": {
-            "type": "boolean",
-            "default": false
-          },
           "origemData": {
             "oneOf": [
               {
@@ -16836,6 +16817,38 @@
               {
                 "$ref": "#/components/schemas/OrigemDataFaseCodigo"
               }
+            ]
+          },
+          "agrupaEtapas": {
+            "type": "boolean",
+            "description": "Se o tipo de fase agrupa as etapas pontuadas. Obrigat\u00F3rio: ausente ou nulo \u00E9 recusado (422)."
+          },
+          "permiteComplementacao": {
+            "type": "boolean",
+            "description": "Se o tipo de fase admite complementa\u00E7\u00E3o documental. Obrigat\u00F3rio: ausente ou nulo \u00E9 recusado (422)."
+          },
+          "coletaInscricao": {
+            "type": "boolean",
+            "description": "Se o tipo de fase coleta inscri\u00E7\u00F5es. Obrigat\u00F3rio: ausente ou nulo \u00E9 recusado (422)."
+          },
+          "coletaSolicitacaoIsencao": {
+            "type": "boolean",
+            "description": "Se o tipo de fase coleta a solicita\u00E7\u00E3o de isen\u00E7\u00E3o da taxa. Obrigat\u00F3rio: ausente ou nulo \u00E9 recusado (422)."
+          },
+          "organizadaEmChamadas": {
+            "type": "boolean",
+            "description": "Se o tipo de fase \u00E9 organizada em chamadas. Obrigat\u00F3rio: ausente ou nulo \u00E9 recusado (422)."
+          },
+          "descricao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "baseLegal": {
+            "type": [
+              "null",
+              "string"
             ]
           },
           "unidadeSugeridaId": {
@@ -16919,13 +16932,20 @@
       },
       "AtualizarModalidadeCommand": {
         "required": [
-          "id"
+          "id",
+          "nome"
         ],
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "nome": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
             "type": [
@@ -17143,7 +17163,8 @@
             "format": "uuid"
           },
           "permiteSobreposicao": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           }
         }
       },
@@ -17202,14 +17223,17 @@
           },
           "ppiPercentual": {
             "type": "number",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422). Zero \u00E9 um valor v\u00E1lido.",
             "format": "double"
           },
           "quilombolaPercentual": {
             "type": "number",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422). Zero \u00E9 um valor v\u00E1lido.",
             "format": "double"
           },
           "pcdPercentual": {
             "type": "number",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422). Zero \u00E9 um valor v\u00E1lido.",
             "format": "double"
           },
           "baseLegal": {
@@ -18267,6 +18291,7 @@
             ]
           },
           "valor": {
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "$ref": "#/components/schemas/JsonElement"
           }
         }
@@ -18768,6 +18793,12 @@
             ]
           },
           "grupoAreaEnem": {
+            "enum": [
+              "TECNOLOGICA",
+              "HUMANISTICA_I",
+              "HUMANISTICA_II",
+              "SAUDE_E_BIOLOGICAS"
+            ],
             "type": [
               "null",
               "string"
@@ -18777,7 +18808,14 @@
       },
       "CriarFaseCanonicaCommand": {
         "required": [
-          "codigo"
+          "codigo",
+          "nome",
+          "origemData",
+          "agrupaEtapas",
+          "permiteComplementacao",
+          "coletaInscricao",
+          "coletaSolicitacaoIsencao",
+          "organizadaEmChamadas"
         ],
         "type": "object",
         "properties": {
@@ -18793,38 +18831,6 @@
               "string"
             ]
           },
-          "descricao": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "agrupaEtapas": {
-            "type": "boolean",
-            "default": false
-          },
-          "permiteComplementacao": {
-            "type": "boolean",
-            "default": false
-          },
-          "baseLegal": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "coletaInscricao": {
-            "type": "boolean",
-            "default": false
-          },
-          "coletaSolicitacaoIsencao": {
-            "type": "boolean",
-            "default": false
-          },
-          "organizadaEmChamadas": {
-            "type": "boolean",
-            "default": false
-          },
           "origemData": {
             "oneOf": [
               {
@@ -18833,6 +18839,38 @@
               {
                 "$ref": "#/components/schemas/OrigemDataFaseCodigo"
               }
+            ]
+          },
+          "agrupaEtapas": {
+            "type": "boolean",
+            "description": "Se o tipo de fase agrupa as etapas pontuadas. Obrigat\u00F3rio: ausente ou nulo \u00E9 recusado (422)."
+          },
+          "permiteComplementacao": {
+            "type": "boolean",
+            "description": "Se o tipo de fase admite complementa\u00E7\u00E3o documental. Obrigat\u00F3rio: ausente ou nulo \u00E9 recusado (422)."
+          },
+          "coletaInscricao": {
+            "type": "boolean",
+            "description": "Se o tipo de fase coleta inscri\u00E7\u00F5es. Obrigat\u00F3rio: ausente ou nulo \u00E9 recusado (422)."
+          },
+          "coletaSolicitacaoIsencao": {
+            "type": "boolean",
+            "description": "Se o tipo de fase coleta a solicita\u00E7\u00E3o de isen\u00E7\u00E3o da taxa. Obrigat\u00F3rio: ausente ou nulo \u00E9 recusado (422)."
+          },
+          "organizadaEmChamadas": {
+            "type": "boolean",
+            "description": "Se o tipo de fase \u00E9 organizada em chamadas. Obrigat\u00F3rio: ausente ou nulo \u00E9 recusado (422)."
+          },
+          "descricao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "baseLegal": {
+            "type": [
+              "null",
+              "string"
             ]
           },
           "unidadeSugeridaId": {
@@ -19101,11 +19139,18 @@
       },
       "CriarModalidadeCommand": {
         "required": [
-          "codigo"
+          "codigo",
+          "nome"
         ],
         "type": "object",
         "properties": {
           "codigo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "nome": {
             "type": [
               "null",
               "string"
@@ -19384,6 +19429,12 @@
             ]
           },
           "grupoCurso": {
+            "enum": [
+              "TECNOLOGICA",
+              "HUMANISTICA_I",
+              "HUMANISTICA_II",
+              "SAUDE_E_BIOLOGICAS"
+            ],
             "type": [
               "null",
               "string"
@@ -19476,14 +19527,17 @@
           },
           "ppiPercentual": {
             "type": "number",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422). Zero \u00E9 um valor v\u00E1lido.",
             "format": "double"
           },
           "quilombolaPercentual": {
             "type": "number",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422). Zero \u00E9 um valor v\u00E1lido.",
             "format": "double"
           },
           "pcdPercentual": {
             "type": "number",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422). Zero \u00E9 um valor v\u00E1lido.",
             "format": "double"
           },
           "baseLegal": {
@@ -21118,7 +21172,11 @@
         "type": "object",
         "properties": {
           "instante": {
-            "type": "string",
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "date-time"
           },
           "fuso": {
@@ -21659,6 +21717,7 @@
           },
           "ordem": {
             "type": "integer",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "int32"
           },
           "apresentacao": {
@@ -22029,25 +22088,29 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PaginaPortavel"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhuma."
           },
           "termos": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TermoPortavel"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhum."
           },
           "derivacoes": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DerivacaoPortavel"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhuma."
           },
           "agregados": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AgregadoPortavel"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhum."
           }
         }
       },
@@ -22147,6 +22210,7 @@
           },
           "ordem": {
             "type": "integer",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "int32"
           },
           "rotulo": {
@@ -22176,7 +22240,8 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/FatoColetadoInput"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422)."
           },
           "paginaCodigo": {
             "type": [
@@ -22938,6 +23003,7 @@
         "required": [
           "id",
           "codigo",
+          "nome",
           "legalFixa",
           "descricao",
           "naturezaLegal",
@@ -22956,6 +23022,9 @@
             "format": "uuid"
           },
           "codigo": {
+            "type": "string"
+          },
+          "nome": {
             "type": "string"
           },
           "legalFixa": {
@@ -23534,7 +23603,8 @@
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422); envie [] quando n\u00E3o houver nenhum."
           }
         }
       },
@@ -23705,6 +23775,7 @@
           },
           "ordem": {
             "type": "integer",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "int32"
           },
           "tipo": {
@@ -24808,7 +24879,8 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/RegraPadraoInput"
-            }
+            },
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422). A lista vazia remove as regras."
           }
         }
       },
@@ -25388,6 +25460,7 @@
           },
           "ordem": {
             "type": "integer",
+            "description": "Obrigat\u00F3rio; ausente ou nulo \u00E9 recusado (422).",
             "format": "int32"
           },
           "termo": {

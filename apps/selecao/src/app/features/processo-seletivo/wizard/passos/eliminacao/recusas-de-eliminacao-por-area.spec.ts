@@ -68,7 +68,7 @@ describe('recusas da API para cortes por área', () => {
           {
             field: 'regrasEliminacao[0]',
             code: 'uniplus.selecao.configuracao_classificacao.corte_em_area_repetido',
-            message: 'repetido',
+            message: 'Há dois cortes para a mesma área',
           },
         ],
       },
@@ -85,7 +85,9 @@ describe('recusas da API para cortes por área', () => {
     const area = raiz.querySelector('#elim-area-0');
     expect(area?.getAttribute('aria-invalid')).toBe('true');
     expect(area?.getAttribute('aria-describedby')).toContain('elim-area-erro-0');
-    expect(raiz.querySelector('#elim-area-erro-0')?.textContent).toContain('já tem um corte');
+    expect(raiz.querySelector('#elim-area-erro-0')?.textContent).toBe(
+      'Há dois cortes para a mesma área',
+    );
     expect(raiz.querySelector('#elim-minimo-0')?.getAttribute('aria-invalid')).toBeNull();
 
     digitar('elim-minimo-0', '410');
@@ -111,7 +113,7 @@ describe('recusas da API para cortes por área', () => {
           {
             field: 'regrasEliminacao[0].areaCodigo',
             code: 'uniplus.selecao.configuracao_classificacao.corte_em_area_fora_do_quadro',
-            message: 'fora',
+            message: 'esta área não consta no quadro dos pesos',
           },
         ],
       },
@@ -124,8 +126,8 @@ describe('recusas da API para cortes por área', () => {
     const resultado = await gravacao;
 
     expect(resultado.valid).toBe(false);
-    expect(resultado.messages?.[0]).toMatch(
-      /^Regra de eliminação 1: a área não está em todos os grupos/,
-    );
+    expect(resultado.messages).toEqual([
+      'Regra de eliminação 1: esta área não consta no quadro dos pesos',
+    ]);
   });
 });

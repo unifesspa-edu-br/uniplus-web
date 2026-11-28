@@ -1,3 +1,5 @@
+import { codigoComNome } from '@uniplus/shared-utils';
+
 import type { DocumentosAvaliados } from './documentos-avaliados';
 import { type DependenciasDaAvaliacao } from './formulario-do-candidato.model';
 import { type PassoDoFormulario } from './passos-do-formulario';
@@ -58,15 +60,27 @@ export interface AvaliacaoNaTela {
   readonly erro: string | null;
 }
 
-/** Os nomes das modalidades na ordem da oferta. */
-export function nomesNaOrdem(modalidades: ModalidadesAvaliadas | null): readonly string[] {
-  if (modalidades?.situacao !== CONCORRE) return [];
-  return nomesPelaOrdem(modalidades.itens);
+/** Uma modalidade como a tela a mostra: o código decide a identidade, o rótulo é "código — nome". */
+export interface ModalidadeRotulada {
+  readonly codigo: string;
+  readonly rotulo: string;
 }
 
-/** Os nomes de um conjunto de modalidades, na ordem da oferta: o código nunca vai à tela. */
-export function nomesPelaOrdem(itens: readonly ModalidadeAvaliada[]): readonly string[] {
-  return [...itens].sort((a, b) => a.ordem - b.ordem).map((m) => m.nome);
+/** As modalidades rotuladas na ordem da oferta. */
+export function rotuladasNaOrdem(
+  modalidades: ModalidadesAvaliadas | null,
+): readonly ModalidadeRotulada[] {
+  if (modalidades?.situacao !== CONCORRE) return [];
+  return rotuladasPelaOrdem(modalidades.itens);
+}
+
+/** Um conjunto de modalidades rotuladas, na ordem da oferta. */
+export function rotuladasPelaOrdem(
+  itens: readonly ModalidadeAvaliada[],
+): readonly ModalidadeRotulada[] {
+  return [...itens]
+    .sort((a, b) => a.ordem - b.ordem)
+    .map((m) => ({ codigo: m.codigo, rotulo: codigoComNome(m.codigo, m.nome) }));
 }
 
 /**
@@ -82,12 +96,21 @@ export function anunciarMudancaDasModalidades(
 }
 
 function mudancaDasModalidades(anteriores: ModalidadesAvaliadas, atuais: ModalidadesAvaliadas) {
-  const antes = nomesNaOrdem(anteriores);
-  const depois = nomesNaOrdem(atuais);
+  const antes = rotuladasNaOrdem(anteriores);
+  const depois = rotuladasNaOrdem(atuais);
   return {
-    entraram: depois.filter((nome) => !antes.includes(nome)),
-    sairam: antes.filter((nome) => !depois.includes(nome)),
+    entraram: ausentesEm(depois, antes),
+    sairam: ausentesEm(antes, depois),
   };
+}
+
+/** Os rótulos das modalidades de `conjunto` cujo código não está em `referencia`. */
+function ausentesEm(
+  conjunto: readonly ModalidadeRotulada[],
+  referencia: readonly ModalidadeRotulada[],
+): string[] {
+  const codigos = new Set(referencia.map((m) => m.codigo));
+  return conjunto.filter((m) => !codigos.has(m.codigo)).map((m) => m.rotulo);
 }
 
 function fraseDaMudanca({ entraram, sairam }: ReturnType<typeof mudancaDasModalidades>): string {

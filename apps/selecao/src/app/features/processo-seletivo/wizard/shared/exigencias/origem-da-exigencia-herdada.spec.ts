@@ -10,7 +10,7 @@ const PROCESSO = {
     ['AVALIACAO', 'fase-2'],
   ]),
   modalidadesOfertadas: [],
-  etapasVivas: new Set<string>(),
+  etapaIdPorChave: new Map<string, string>(),
   formulariosPorFase: new Map<string, string[]>(),
 };
 const CAMPO = 'documento.requisitos.tamanhoMaximoBytes';

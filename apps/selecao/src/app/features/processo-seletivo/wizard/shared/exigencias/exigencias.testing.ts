@@ -21,8 +21,12 @@ export const ID_RG = '01960000-0000-7000-0000-0000000000d1';
 export const ID_CONTRACHEQUE = '01960000-0000-7000-0000-0000000000d2';
 export const ID_DIPLOMA = '01960000-0000-7000-0000-0000000000d3';
 
-/** As etapas que o processo tem hoje — é contra elas que a exigência aponta. */
-export const ETAPAS_VIVAS = new Set([ID_ETAPA_RENDA]);
+export const CHAVE_ETAPA_RENDA = 'etapa_renda';
+
+/** As etapas que o processo tem hoje, pela chave — é contra elas que a exigência aponta. */
+export const ETAPAS_POR_CHAVE: ReadonlyMap<string, string> = new Map([
+  [CHAVE_ETAPA_RENDA, ID_ETAPA_RENDA],
+]);
 
 export const FASES = new Map([
   ['ISENCAO', ID_ISENCAO],
@@ -56,7 +60,7 @@ export function comando(
   return regrasDeComprovacaoParaEnvio(rascunhoDado, {
     faseIdPorCodigo: FASES,
     modalidadesOfertadas: modalidades,
-    etapasVivas: ETAPAS_VIVAS,
+    etapaIdPorChave: ETAPAS_POR_CHAVE,
     formulariosPorFase: FORMULARIOS_POR_FASE,
   }).regras;
 }
@@ -93,11 +97,13 @@ export function detalheDaApi(
       { id: ID_ISENCAO, codigo: 'ISENCAO' },
       { id: ID_HABILITACAO, codigo: 'HABILITACAO' },
     ],
+    etapas: [{ id: ID_ETAPA_RENDA, chave: CHAVE_ETAPA_RENDA }],
     regrasDeComprovacao: regrasDeComprovacao,
   } as unknown as ProcessoSeletivoDto;
 }
 
 export interface AlteracoesDoDocumentoDaApi {
+  readonly chave?: string;
   readonly fatosComprovados?: readonly string[];
   readonly faseId?: string;
   readonly etapaId?: string | null;
@@ -167,7 +173,7 @@ const APLICABILIDADE_GERAL = {
 function documentoDaApi(alteracoes: AlteracoesDoDocumentoDaApi): DocumentoExigidoDto {
   return {
     id: 'doc-1',
-    chave: 'doc-1',
+    chave: alteracoes.chave ?? 'exigencia_rg',
     tipoDocumento: TIPO_RG,
     momento: momentoDaApi(alteracoes),
     aplicabilidade: alteracoes.aplicabilidade ?? APLICABILIDADE_GERAL,

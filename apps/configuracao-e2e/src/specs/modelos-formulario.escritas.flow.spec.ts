@@ -1,6 +1,7 @@
 import type { JsonDaApi } from '@uniplus/shared-e2e';
 import type { ModeloFormularioView } from '@uniplus/shared-data/configuracao';
 import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
+import { mockarVocabularioDeTiposDeCampo } from '../support/api-do-vocabulario-de-tipos-de-campo';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 const CORS_HEADERS = {
@@ -96,6 +97,7 @@ async function mockApi(
   const chaves: string[] = [];
   let aceita = false;
   let consultas = 0;
+  await mockarVocabularioDeTiposDeCampo(page);
   await page.route(/\/api\/configuracao\/tipos-processo(\?.*)?$/, (r) =>
     responder(r, { status: 200, corpo: [] }),
   );

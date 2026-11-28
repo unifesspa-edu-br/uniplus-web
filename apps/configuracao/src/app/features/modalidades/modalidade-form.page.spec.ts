@@ -213,6 +213,7 @@ describe('ModalidadeFormPage', () => {
   it('CA-02: cria modalidade válida (POST com Idempotency-Key)', async () => {
     await pagina.montar();
     pagina.setControl('codigo', 'V');
+    pagina.setControl('nome', '  Modalidade de teste V  ');
     pagina.setControl('descricao', 'PcD ampla concorrência');
     pagina.setControl('naturezaLegal', 'ACAO_AFIRMATIVA');
     pagina.edicao.aoMudarNatureza();
@@ -228,6 +229,7 @@ describe('ModalidadeFormPage', () => {
     expect(post.request.method).toBe('POST');
     expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
     expect(post.request.body.codigo).toBe('V');
+    expect(post.request.body.nome).toBe('Modalidade de teste V');
     expect(post.request.body.composicaoOrigem).toBe('AC');
     expect(post.request.body.remanejamento.destino).toBe('AC');
     expect(post.request.body.remanejamento.regra).toBe('DESTINO_UNICO');

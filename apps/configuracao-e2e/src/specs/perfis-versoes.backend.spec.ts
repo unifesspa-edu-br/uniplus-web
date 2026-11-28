@@ -70,7 +70,7 @@ test.describe('Perfil como versão aprovada', () => {
       .locator('input[type="file"]')
       .setInputFiles({ name: 'portaria.pdf', mimeType: 'application/pdf', buffer: PDF_MINIMO });
     await autor.getByRole('button', { name: 'Salvar perfil' }).click();
-    await expect(autor.getByText('Perfil criado', { exact: true })).toBeVisible();
+    await expect(autor.getByTestId('notification-host-title').filter({ hasText: 'Perfil criado' })).toBeVisible();
 
     const criado = await acharNaListagem<PerfilListado>(
       SEGUNDO_GESTOR_DE_ACESSOS,

@@ -107,7 +107,7 @@ describe('FasePassoComponent', () => {
       const regrasDeComprovacao = regrasDeComprovacaoParaEnvio(store.draft().documentos, {
         faseIdPorCodigo: new Map([['AVALIACAO', ID_AVALIACAO]]),
         modalidadesOfertadas: [],
-        etapasVivas: new Set<string>(),
+        etapaIdPorChave: new Map<string, string>(),
         formulariosPorFase: new Map([['AVALIACAO', ['INSCRICAO']]]),
       }).regras;
       expect(regrasDeComprovacao[0].documento?.momento?.formularioCodigo).toBe('ISENCAO_TAXA');
@@ -182,7 +182,7 @@ describe('FasePassoComponent', () => {
       const regrasDeComprovacao = regrasDeComprovacaoParaEnvio(store.draft().documentos, {
         faseIdPorCodigo: new Map([['AVALIACAO', ID_AVALIACAO]]),
         modalidadesOfertadas: [],
-        etapasVivas: new Set<string>(),
+        etapaIdPorChave: new Map<string, string>(),
         formulariosPorFase: new Map(),
       }).regras;
 

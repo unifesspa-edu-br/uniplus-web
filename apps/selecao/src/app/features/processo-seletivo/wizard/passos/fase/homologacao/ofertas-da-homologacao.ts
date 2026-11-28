@@ -6,6 +6,7 @@ import {
 } from '@uniplus/shared-inscricao/formulario';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
+import { comRotulosDosValores } from '../../../shared/gatilho-de-exigencia';
 import { CatalogoDeAtos } from '../../cronograma/catalogos/catalogo-de-atos.service';
 import { CatalogoDeFatos } from '../../cronograma/catalogos/catalogo-de-fatos.service';
 import { FATO_DA_EDICAO_DO_ENEM } from '../../classificacao/edicoes-do-enem';
@@ -39,12 +40,15 @@ export class OfertasDaHomologacao {
 
   /** Os fatos que o enquadramento pode citar, com as edições do exame como valores da edição. */
   readonly fatosDoEnquadramento = computed<readonly FatoEscolhivel[]>(() =>
-    fatosEscolhiveis(
-      this.catalogoDeFatos.fatos(),
-      new Map([
-        ...this.gatilho.dominiosDoGatilho(),
-        [FATO_DA_EDICAO_DO_ENEM, this.edicoesDeclaradas()],
-      ]),
+    comRotulosDosValores(
+      fatosEscolhiveis(
+        this.catalogoDeFatos.fatos(),
+        new Map([
+          ...this.gatilho.dominiosDoGatilho(),
+          [FATO_DA_EDICAO_DO_ENEM, this.edicoesDeclaradas()],
+        ]),
+      ),
+      this.gatilho.rotulosDoGatilho(),
     ),
   );
 

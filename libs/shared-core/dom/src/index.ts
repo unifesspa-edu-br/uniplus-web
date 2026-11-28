@@ -1,7 +1,1 @@
-export {
-  createDisclosureController,
-  type UiDisclosureController,
-  type UiDisclosureControllerOptions,
-  type UiDisclosureRef,
-} from '../../src/lib/dom/disclosure';
-export { mediaQuerySignal } from '../../src/lib/dom/media-query';
+export * from '../../src/lib/dom';

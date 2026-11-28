@@ -124,9 +124,9 @@ export async function verificarEnvioComErroInterno(page: Page, envios: string[])
 }
 
 export async function verificarAnuncioDeRemocao(page: Page): Promise<void> {
-  await expect(page.locator('.sr-only[role="status"]').first()).toHaveText(
-    'Curso ENG_CIV removido.',
-  );
+  await expect(
+    page.locator('.sr-only[role="status"]').filter({ hasText: 'Curso ENG_CIV removido.' }),
+  ).toHaveText('Curso ENG_CIV removido.');
 }
 
 export async function verificarRecargaDasOfertas(page: Page): Promise<void> {

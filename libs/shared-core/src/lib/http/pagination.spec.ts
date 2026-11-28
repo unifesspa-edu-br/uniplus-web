@@ -224,6 +224,14 @@ describe('ehCursorDePaginacaoObsoleto — cursor que não continua a consulta', 
     ).toBe(true);
   });
 
+  it('casa pelo code uniplus.paginacao.cursor_invalido (400, cursor de outra consulta)', () => {
+    expect(
+      ehCursorDePaginacaoObsoleto(
+        problem({ status: 400, code: 'uniplus.paginacao.cursor_invalido' }),
+      ),
+    ).toBe(true);
+  });
+
   it('casa pelo code uniplus.cursor.expirado (410)', () => {
     expect(
       ehCursorDePaginacaoObsoleto(problem({ status: 410, code: 'uniplus.cursor.expirado' })),
@@ -258,7 +266,15 @@ describe('ehCursorDePaginacaoExpirado — só expiração (410)', () => {
     ).toBe(true);
   });
 
-  it('false para 400 / uniplus.cursor.invalido (divergência, não expiração)', () => {
+  it('false para 400 / uniplus.paginacao.cursor_invalido (outra consulta, não expiração)', () => {
+    expect(
+      ehCursorDePaginacaoExpirado(
+        problem({ status: 400, code: 'uniplus.paginacao.cursor_invalido' }),
+      ),
+    ).toBe(false);
+  });
+
+  it('false para 400 / uniplus.cursor.invalido (cursor ilegível, não expiração)', () => {
     expect(
       ehCursorDePaginacaoExpirado(problem({ status: 400, code: 'uniplus.cursor.invalido' })),
     ).toBe(false);

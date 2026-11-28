@@ -78,11 +78,14 @@ function tiposDeDocumentoSemGrupo(
  * As exigências sem a etapa removida: quem a apontava como ponto de coleta volta a ser da
  * fase inteira, em vez de reenviar o identificador de uma etapa que não existe mais.
  */
-export function semAEtapa(exigencias: ExigenciasDoRascunho, etapaId: string): ExigenciasDoRascunho {
+export function semAEtapa(
+  exigencias: ExigenciasDoRascunho,
+  etapaChave: string,
+): ExigenciasDoRascunho {
   return {
     ...exigencias,
     regrasDeComprovacao: transformar(exigencias.regrasDeComprovacao, (documento) =>
-      documento.etapaId === etapaId ? { ...documento, etapaId: null } : documento,
+      documento.etapaChave === etapaChave ? { ...documento, etapaChave: null } : documento,
     ),
   };
 }

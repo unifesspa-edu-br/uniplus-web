@@ -34,7 +34,7 @@ describe('CascataRemanejamentoComponent — em consulta', () => {
     /** O store não aceita mutação em consulta: grava como rascunho e volta a publicado. */
     beforeEach(() => {
       store.patchObjectSection('vagas', {
-        ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
+        ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }])],
         cascata: { regraCodigo: 'REMANEJ-CASCATA-LEI-12711', regraVersao: 'v0' },
       });
       store.remoteSnapshot.set({
@@ -83,6 +83,7 @@ describe('CascataRemanejamentoComponent — em consulta', () => {
             {
               id: LB_Q,
               codigo: 'LB_Q',
+              nome: 'Baixa renda quilombola',
               gravada: {
                 descricao: null,
                 composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
@@ -129,7 +130,7 @@ describe('CascataRemanejamentoComponent — em consulta', () => {
         },
       } as unknown as ProcessoSeletivoDto);
       store.patchObjectSection('vagas', {
-        ofertas: [distribuicaoFederal([{ id: LB_Q, codigo: 'LB_Q' }])],
+        ofertas: [distribuicaoFederal([{ id: LB_Q, codigo: 'LB_Q', nome: '' }])],
       });
       store.remoteSnapshot.set({
         situacao: {

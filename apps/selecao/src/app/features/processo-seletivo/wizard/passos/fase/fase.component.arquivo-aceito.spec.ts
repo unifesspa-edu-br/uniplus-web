@@ -85,7 +85,7 @@ describe('Formatos aceitos na fase', () => {
     return regrasDeComprovacaoParaEnvio(tela.store.draft().documentos, {
       faseIdPorCodigo: new Map([['AVALIACAO', ID_AVALIACAO]]),
       modalidadesOfertadas: [],
-      etapasVivas: new Set<string>(),
+      etapaIdPorChave: new Map<string, string>(),
       formulariosPorFase: new Map(),
     }).regras;
   }

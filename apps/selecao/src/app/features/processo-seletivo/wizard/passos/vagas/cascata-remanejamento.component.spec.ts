@@ -27,7 +27,7 @@ describe('CascataRemanejamentoComponent', () => {
 
   it('não exibe seletor nem alerta quando nenhuma oferta segue a cascata', () => {
     store.patchObjectSection('vagas', {
-      ofertas: [distribuicaoFederal([{ id: LB_Q, codigo: 'LB_Q' }])],
+      ofertas: [distribuicaoFederal([{ id: LB_Q, codigo: 'LB_Q', nome: '' }])],
     });
     detectar();
 
@@ -39,7 +39,7 @@ describe('CascataRemanejamentoComponent', () => {
     store.patchObjectSection('vagas', {
       ofertas: [
         {
-          ...distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }]),
+          ...distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }]),
           ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
         },
       ],
@@ -54,7 +54,7 @@ describe('CascataRemanejamentoComponent', () => {
     store.patchObjectSection('vagas', {
       ofertas: [
         {
-          ...distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }]),
+          ...distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }]),
           regraDistribuicaoCodigo: 'DISTRIB-VAGAS-OUTRA',
         },
       ],
@@ -67,7 +67,7 @@ describe('CascataRemanejamentoComponent', () => {
 
   it('exibe o seletor sem regra pré-selecionada quando a seção se aplica', () => {
     store.patchObjectSection('vagas', {
-      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
+      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }])],
     });
     detectar();
 
@@ -80,7 +80,7 @@ describe('CascataRemanejamentoComponent', () => {
 
   it('deriva a matriz da regra escolhida e apresenta origem, destinos e fallback', () => {
     store.patchObjectSection('vagas', {
-      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
+      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }])],
     });
     detectar();
 
@@ -105,7 +105,11 @@ describe('CascataRemanejamentoComponent', () => {
     const primeiraLinha = Array.from(
       elemento.querySelector('.cascata-matriz tbody tr')?.querySelectorAll('th, td') ?? [],
     ).map((celula) => celula.textContent?.trim());
-    expect(primeiraLinha).toEqual(['LB_PPI', 'LB_Q', 'AC']);
+    expect(primeiraLinha).toEqual([
+      'LB_PPI — Baixa renda PPI',
+      'LB_Q — Baixa renda quilombola',
+      'AC — Ampla concorrência',
+    ]);
 
     // Até 767 px o design system esconde o `thead` e usa `data-label` como
     // rótulo visível da célula. Sem ele o cartão mostraria só os códigos, e a
@@ -126,14 +130,14 @@ describe('CascataRemanejamentoComponent', () => {
     // O destino final é enunciado fora da matriz: tratá-lo como linha sugeriria
     // que a ampla concorrência também remaneja.
     expect(elemento.querySelector('.cascata-matriz__terminal')?.textContent).toContain(
-      'revertida à ampla concorrência',
+      'revertida a AC — Ampla concorrência',
     );
   });
 
   it('aponta o encaixe pendente e trava a confirmação quando a oferta não cobre a matriz', () => {
     // Só a origem está selecionada — nem o destino final nem o outro destino.
     store.patchObjectSection('vagas', {
-      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
+      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }])],
     });
     detectar();
 
@@ -148,9 +152,9 @@ describe('CascataRemanejamentoComponent', () => {
     store.patchObjectSection('vagas', {
       ofertas: [
         distribuicaoFederal([
-          { id: LB_PPI, codigo: 'LB_PPI' },
-          { id: LB_Q, codigo: 'LB_Q' },
-          { id: AC, codigo: 'AC' },
+          { id: LB_PPI, codigo: 'LB_PPI', nome: '' },
+          { id: LB_Q, codigo: 'LB_Q', nome: '' },
+          { id: AC, codigo: 'AC', nome: '' },
         ]),
       ],
     });
@@ -166,9 +170,9 @@ describe('CascataRemanejamentoComponent', () => {
     store.patchObjectSection('vagas', {
       ofertas: [
         distribuicaoFederal([
-          { id: LB_PPI, codigo: 'LB_PPI' },
-          { id: LB_Q, codigo: 'LB_Q' },
-          { id: AC, codigo: 'AC' },
+          { id: LB_PPI, codigo: 'LB_PPI', nome: '' },
+          { id: LB_Q, codigo: 'LB_Q', nome: '' },
+          { id: AC, codigo: 'AC', nome: '' },
         ]),
       ],
     });
@@ -238,7 +242,7 @@ describe('CascataRemanejamentoComponent', () => {
 
   it('desabilita o controle reativo do seletor quando o passo não aceita edição', () => {
     store.patchObjectSection('vagas', {
-      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
+      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }])],
     });
     detectar();
     expect(componente.seletor.controle.disabled).toBe(false);
@@ -258,7 +262,7 @@ describe('CascataRemanejamentoComponent', () => {
     const mudanca = vi.fn();
     componente.seletor.controle.valueChanges.subscribe(mudanca);
     store.patchObjectSection('vagas', {
-      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
+      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI', nome: '' }])],
     });
     detectar();
 

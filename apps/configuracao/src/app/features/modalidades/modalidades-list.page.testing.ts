@@ -19,6 +19,7 @@ import { BASE, URL, URL_CATALOGO, modalidade } from './modalidades-de-teste.test
 export const V = modalidade({
   id: 'id-v',
   codigo: 'V',
+  nome: 'Modalidade de teste V',
   legalFixa: false,
   descricao: 'PcD ampla concorrência',
   naturezaLegal: NATUREZAS.acao,
@@ -78,6 +79,22 @@ export class PaginaDaListaDeModalidades {
     const req = this.controller.expectOne((r) => r.url === URL);
     expect(req.request.params.get('limit')).toBe('100');
     req.flush(itens);
+    for (const catalogo of this.controller.match(URL_CATALOGO)) catalogo.flush(CATALOGO);
+    await this.propagate();
+  }
+
+  /** O servidor devolve a lista em duas páginas; o cursor da segunda vem do cabeçalho `Link` da primeira. */
+  async flushEmDuasPaginas(
+    primeira: readonly ModalidadeDto[],
+    segunda: readonly ModalidadeDto[],
+  ): Promise<void> {
+    this.controller
+      .expectOne((r) => r.url === URL && r.params.get('cursor') === null)
+      .flush(primeira, { headers: { Link: `<${URL}?cursor=p2&direction=next>; rel="next"` } });
+    await this.propagate();
+    const pedidoDaSegunda = this.controller.expectOne((r) => r.params.get('cursor') === 'p2');
+    expect(pedidoDaSegunda.request.params.get('direction')).toBe('next');
+    pedidoDaSegunda.flush(segunda);
     for (const catalogo of this.controller.match(URL_CATALOGO)) catalogo.flush(CATALOGO);
     await this.propagate();
   }

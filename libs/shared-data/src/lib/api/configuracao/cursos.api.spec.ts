@@ -11,6 +11,7 @@ import {
 } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { CriarCursoCommand, CursoDto, CursosApi } from './cursos.api';
+import { AtualizarCursoCommandGrupoAreaEnem, CriarCursoCommandGrupoAreaEnem } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -31,7 +32,7 @@ const criarCommand: CriarCursoCommand = {
   nome: 'Engenharia Civil',
   grau: 'Bacharelado',
   nivelEnsino: 'Graduação',
-  grupoAreaEnem: 'TECNOLOGICA',
+  grupoAreaEnem: CriarCursoCommandGrupoAreaEnem.TECNOLOGICA,
 };
 
 describe('CursosApi', () => {
@@ -133,7 +134,15 @@ describe('CursosApi', () => {
 
   it('atualizar() faz PUT /api/configuracao/admin/cursos/{id}', async () => {
     const promise = firstValueFrom(
-      api.atualizar(ID, { id: ID, ...criarCommand }, withIdempotencyKey('k')),
+      api.atualizar(
+        ID,
+        {
+          id: ID,
+          ...criarCommand,
+          grupoAreaEnem: AtualizarCursoCommandGrupoAreaEnem.TECNOLOGICA,
+        },
+        withIdempotencyKey('k'),
+      ),
     );
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/cursos/${ID}`);
     expect(req.request.method).toBe('PUT');

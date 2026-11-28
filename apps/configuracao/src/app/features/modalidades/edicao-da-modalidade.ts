@@ -1,11 +1,14 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { codigoComNome } from '@uniplus/shared-utils';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
   type CausaDeCampo,
   type CausasDoProblema,
+  paginaDoErro,
+  paginaDoProblema,
   ProblemDetails,
   ProblemI18nService,
   separarCausas,
@@ -40,13 +43,13 @@ import {
 } from './modalidade-form';
 import { ModalidadeFormStore } from './modalidade-form.store';
 import type { OpcaoDeReferencia } from './opcao-de-referencia';
+import { recusaPorCodigo } from './recusas-da-modalidade';
 import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
   textoDaAreaGeral,
 } from '../../shared/formulario';
 
-const CODIGO_JA_EXISTE = 'uniplus.configuracao.modalidade.codigo_ja_existe';
 const CORPO_DIVERGENTE = 'uniplus.idempotency.body_mismatch';
 const ROTA_DA_LISTA = ['/modalidades'];
 
@@ -95,9 +98,14 @@ export class EdicaoDaModalidade {
       .filter((m) => m.codigo !== this.codigoAtual())
       .map((m) => ({
         value: m.codigo,
-        label: m.descricao ? `${m.codigo} — ${m.descricao}` : m.codigo,
+        label: codigoComNome(m.codigo, m.nome),
       })),
   );
+
+  private rotuloDaReferencia(codigo: string): string {
+    const m = this.store.opcoes().find((opcao) => opcao.codigo === codigo);
+    return m === undefined ? codigo : codigoComNome(m.codigo, m.nome);
+  }
 
   private readonly valores = toSignal(this.form.valueChanges, {
     initialValue: this.form.getRawValue(),
@@ -107,7 +115,9 @@ export class EdicaoDaModalidade {
     const rotulo =
       this.vocabularios.composicoes().find((item) => item.codigo === this.composicao())?.rotulo ??
       '';
-    return resumoCondicional(this.condicionais(), this.form.getRawValue(), rotulo);
+    return resumoCondicional(this.condicionais(), this.form.getRawValue(), rotulo, (codigo) =>
+      this.rotuloDaReferencia(codigo),
+    );
   });
 
   readonly confirmandoReset = signal(false);
@@ -229,7 +239,7 @@ export class EdicaoDaModalidade {
     }
     this.notifications.success(
       this.modoEdicao ? 'Modalidade atualizada' : 'Modalidade criada',
-      this.form.getRawValue().codigo,
+      codigoComNome(this.form.getRawValue().codigo, this.form.getRawValue().nome),
     );
     this.renovarChave();
     void this.router.navigate(ROTA_DA_LISTA);
@@ -249,22 +259,26 @@ export class EdicaoDaModalidade {
   private recusarNoFormulario(problem: ProblemDetails): boolean {
     const errosDeCampo = problem.errors ?? [];
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && errosDeCampo.length > 0) {
-      this.aplicarErrosDeValidacao(separarCausas(errosDeCampo));
+      this.aplicarErrosDeValidacao(separarCausas(errosDeCampo), problem);
       return true;
     }
-    // O código comparado é o do wire (`uniplus.<modulo>.<razao>`); o de domínio é chave de busca do servidor.
-    if (problem.code !== CODIGO_JA_EXISTE) return false;
-    this.recusarCodigoRepetido(problem);
+    return this.recusarPeloCodigo(problem);
+  }
+
+  private recusarPeloCodigo(problem: ProblemDetails): boolean {
+    const recusa = recusaPorCodigo(problem.code);
+    if (recusa === null) return false;
+    marcarRecusaDoServidor(
+      this.form.controls[recusa.controle],
+      problem.code,
+      recusa.mensagem,
+      paginaDoProblema(problem),
+    );
+    this.erro.set(null);
     return true;
   }
 
-  private recusarCodigoRepetido(problem: ProblemDetails): void {
-    const control = this.form.controls.codigo;
-    marcarRecusaDoServidor(control, problem.code, 'Código já utilizado por outra modalidade viva.');
-    this.erro.set(null);
-  }
-
-  private aplicarErrosDeValidacao(causas: CausasDoProblema): void {
+  private aplicarErrosDeValidacao(causas: CausasDoProblema, problem: ProblemDetails): void {
     let aplicouAlgum = false;
     const recusasDaRegra: string[] = [];
     for (const erro of causas.deCampo) {
@@ -272,18 +286,23 @@ export class EdicaoDaModalidade {
         recusasDaRegra.push(erro.message);
         aplicouAlgum = true;
       } else {
-        aplicouAlgum = this.marcarControle(erro) || aplicouAlgum;
+        aplicouAlgum = this.marcarControle(erro, problem) || aplicouAlgum;
       }
     }
     this.aplicabilidade.recusas.set(recusasDaRegra);
     this.erro.set(textoDaAreaGeral(aplicouAlgum, causas));
   }
 
-  private marcarControle(erro: CausaDeCampo): boolean {
-    const nome = controleDoCampoDoServidor(erro.field);
+  private marcarControle(erro: CausaDeCampo, problem: ProblemDetails): boolean {
+    const porCodigo = recusaPorCodigo(erro.code);
+    const nome = porCodigo?.controle ?? controleDoCampoDoServidor(erro.field);
     if (nome === null) return false;
-    const control = this.form.controls[nome];
-    marcarRecusaDoServidor(control, erro.code, erro.message);
+    marcarRecusaDoServidor(
+      this.form.controls[nome],
+      erro.code,
+      porCodigo?.mensagem ?? erro.message,
+      paginaDoErro(problem, erro.code),
+    );
     return true;
   }
 

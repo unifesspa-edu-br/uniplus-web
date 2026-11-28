@@ -1,9 +1,10 @@
 <section aria-labelledby="cfg-mod-identificacao" class="form-section" [formGroup]="form()">
   <h2 id="cfg-mod-identificacao" class="form-section__title">Identificação</h2>
   <div class="form-grid">
-    <label class="field form-grid__full" [class.is-error]="erroDoCampo('codigo')">
-      <span class="field__label is-required">Código</span>
+    <div class="field form-grid__full" [class.is-error]="erroDoCampo('codigo')">
+      <label class="field__label is-required" for="cfg-mod-codigo">Código</label>
       <input
+        id="cfg-mod-codigo"
         class="input"
         type="text"
         formControlName="codigo"
@@ -21,10 +22,36 @@
         >{{ ajudaDoCodigo }} Único entre as modalidades vivas. Não pode ser alterado após a
         criação.</span
       >
-      @if (erroDoCampo('codigo')) {
+      @if (recusasDoCampo('codigo').length > 0) {
+        <ui-recusa-do-campo id="cfg-mod-codigo-erro" [recusas]="recusasDoCampo('codigo')" />
+      } @else if (erroDoCampo('codigo')) {
         <span id="cfg-mod-codigo-erro" class="field__error">{{ erroDoCampo('codigo') }}</span>
       }
-    </label>
+    </div>
+
+    <div class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
+      <label class="field__label is-required" for="cfg-mod-nome">Nome</label>
+      <input
+        id="cfg-mod-nome"
+        class="input"
+        type="text"
+        formControlName="nome"
+        [attr.aria-describedby]="
+          erroDoCampo('nome') ? 'cfg-mod-nome-ajuda cfg-mod-nome-erro' : 'cfg-mod-nome-ajuda'
+        "
+        aria-required="true"
+        [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
+      />
+      <span class="field__hint" id="cfg-mod-nome-ajuda"
+        >Como a modalidade aparece, junto do código, para quem monta o processo seletivo (até
+        {{ nomeMax }} caracteres). Único entre as modalidades vivas.</span
+      >
+      @if (recusasDoCampo('nome').length > 0) {
+        <ui-recusa-do-campo id="cfg-mod-nome-erro" [recusas]="recusasDoCampo('nome')" />
+      } @else if (erroDoCampo('nome')) {
+        <span id="cfg-mod-nome-erro" class="field__error">{{ erroDoCampo('nome') }}</span>
+      }
+    </div>
 
     <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
       <span class="field__label">Descrição</span>
@@ -37,7 +64,7 @@
         [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
       />
       <span class="field__hint"
-        >Rótulo legível da modalidade (até {{ descricaoMax }} caracteres).</span
+        >Texto opcional que detalha a modalidade (até {{ descricaoMax }} caracteres).</span
       >
       @if (erroDoCampo('descricao')) {
         <span id="cfg-mod-descricao-erro" class="field__error">{{ erroDoCampo('descricao') }}</span>

@@ -94,7 +94,15 @@ export interface CriteriosDoComprovante {
  * primeira. A fase entra por CÓDIGO, para resolução na gravação.
  */
 export interface ExigenciaDeDocumento extends RegraDaExigenciaDeDocumento, CriteriosDoComprovante {
+  /**
+   * A chave local da exigência no documento da configuração: guardada como veio e reenviada sem
+   * mudar. `null` na exigência que a tela acabou de declarar, que segue sem chave: a dela vem da
+   * releitura. Toda cópia de exigência para outra fase é parte nova e volta a `null`.
+   */
+  readonly chave: string | null;
   readonly tipoDocumentoId: string;
+  /** O código do tipo de documento no catálogo; ausente no que a tela acabou de declarar. */
+  readonly tipoDocumentoCodigo?: string;
   /**
    * O nome que o processo guardou do tipo de documento. Cobre o tipo removido depois de exigido:
    * sem ele a linha sumiria da tela enquanto a gravação seguiria reenviando a exigência, invisível
@@ -104,8 +112,8 @@ export interface ExigenciaDeDocumento extends RegraDaExigenciaDeDocumento, Crite
   readonly faseCodigo: string;
   readonly faseIdLido?: string | null;
   readonly fatosComprovados?: readonly string[];
-  /** A etapa daquela fase que coleta o documento; `null` quando é da fase inteira. */
-  readonly etapaId: string | null;
+  /** A chave da etapa daquela fase que coleta o documento; `null` quando é da fase inteira. */
+  readonly etapaChave: string | null;
   /**
    * O código do formulário em cujo bloco de comprovação o candidato apresenta o documento, como o
    * operador o declarou; `null` enquanto não declarou. A fase não basta, porque dois formulários
@@ -130,6 +138,8 @@ export interface ModeloDaExigencia {
 /** Preserva as regras que a tela não edita, pois o envio substitui todas as regras. */
 export interface RegraDeComprovacao {
   readonly identificadorNoRascunho: string;
+  /** A posição que a regra ocupava na lista do documento lido; ausente na regra criada na tela. */
+  readonly origem?: number;
   readonly forma: 'DOCUMENTO' | 'TODOS_OS_ITENS' | 'QUANTIDADE_MINIMA_DE_ITENS';
   readonly documento: ExigenciaDeDocumento | null;
   readonly quantidadeMinima: number | null;

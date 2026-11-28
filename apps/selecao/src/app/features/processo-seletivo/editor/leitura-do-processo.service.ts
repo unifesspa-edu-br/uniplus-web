@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { ProblemI18nService, STATUS_HTTP, isApiOk } from '@uniplus/shared-core/http';
+import { ProblemI18nService, isApiOk } from '@uniplus/shared-core/http';
 import {
   FinalidadeDoDocumentoCodigo,
   ProcessoSeletivoDto,
@@ -15,22 +15,9 @@ import { CadastroInicial } from '../wizard/shared/cadastro-inicial.service';
 import { classificarDocumentos } from '../wizard/shared/hidratacao';
 import { passosConcluidosDe } from '../wizard/shared/passos-concluidos';
 import { CatalogosDeClassificacao } from '../wizard/passos/classificacao/catalogos-de-classificacao.service';
+import { ehIdentificadorDoProcesso } from '../identificador-do-processo';
 import { ConducaoDoWizard } from './conducao-do-wizard.service';
-
-/** Formato do `:id` na rota; recusar aqui poupa uma ida ao servidor com lixo. */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/**
- * 404 e 403 descrevem o endereço, não uma indisponibilidade: repetir a leitura daria o mesmo
- * resultado, e a saída é voltar à listagem. O resto admite retentativa.
- */
-function motivoDe(status: number): MotivoFalhaDeLeitura {
-  if (status === STATUS_HTTP.NAO_ENCONTRADO) return 'naoEncontrado';
-  if (status === STATUS_HTTP.SEM_PERMISSAO || status === STATUS_HTTP.NAO_AUTENTICADO) {
-    return 'semPermissao';
-  }
-  return 'falhaTemporaria';
-}
+import { motivoDaFalhaDeLeitura } from './motivo-da-falha-de-leitura';
 
 /**
  * Dona única da troca de processo no editor: lê o que o servidor tem e limpa o que a tela guardava
@@ -72,7 +59,7 @@ export class LeituraDoProcesso {
 
   /** Encerra também o carregamento anterior quando o novo endereço é inválido. */
   private validarIdentificador(id: string): boolean {
-    if (UUID.test(id)) return true;
+    if (ehIdentificadorDoProcesso(id)) return true;
     this.encerrarLeituraComFalha(
       'idInvalido',
       'O endereço não aponta para um identificador de processo válido.',
@@ -92,7 +79,7 @@ export class LeituraDoProcesso {
     if (superada()) return;
     if (!isApiOk(detalhe)) {
       this.encerrarLeituraComFalha(
-        motivoDe(detalhe.problem.status),
+        motivoDaFalhaDeLeitura(detalhe.problem.status),
         this.problemI18n.resolve(detalhe.problem).title,
       );
       return;

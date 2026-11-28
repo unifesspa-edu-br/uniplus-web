@@ -21,7 +21,7 @@ const EDITOR_PROCESSO_SELETIVO = 'editor-processo-seletivo';
 /**
  * A rota base é a listagem administrativa; `novo` inicia um cadastro vazio,
  * `:id` retoma um processo existente, `:id/simulacao/:codigo` simula um
- * formulário dele, `:id/publicacoes` mostra o que o processo já publicou e `:id/notas-do-enem`
+ * formulário dele, `:id/retificacao` retifica o processo publicado, `:id/publicacoes` mostra o que o processo já publicou e `:id/notas-do-enem`
  * trata do envio ao INEP e da importação das notas do ENEM.
  *
  * `novo` é declarada antes de `:id` porque o roteador casa na ordem — sem
@@ -71,6 +71,15 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
     loadComponent: () =>
       import('./notas-do-enem/notas-do-enem.page').then((m) => m.NotasDoEnemPage),
     data: { breadcrumb: 'Notas do ENEM' },
+  },
+  {
+    // A retificação do processo publicado edita em memória e não guarda nada: não reaproveita a
+    // tela do editor. Só configurar, como a retificação não pede aprovação de outra pessoa.
+    path: ':id/retificacao',
+    canActivate: CONFIGURAR_PROCESSO,
+    loadComponent: () =>
+      import('./retificacao/retificacao-do-processo.page').then((m) => m.RetificacaoDoProcessoPage),
+    data: { breadcrumb: 'Retificação' },
   },
   {
     path: ':id',

@@ -130,6 +130,23 @@ describe('problemasDaDistribuicao — dependências entre modalidades', () => {
     );
   });
 
+  it('nomeia a modalidade e a origem exigida quando há nome', () => {
+    const catalogoComNomes = catalogo([
+      { ...AC, nome: 'Ampla concorrência' },
+      { ...AC_PCD, nome: 'Pessoa com deficiência' },
+    ]);
+    const problemas = problemasDaDistribuicao(
+      federal({
+        modalidades: [par({ ...AC_PCD, nome: 'Pessoa com deficiência' })],
+        quadro: [{ modalidadeId: AC_PCD.id, quantidade: '2' }],
+      }),
+      catalogoComNomes,
+    );
+    expect(mensagens(problemas)).toContain(
+      'AC_PCD — Pessoa com deficiência exige a origem da retirada (AC — Ampla concorrência) selecionado nesta oferta.',
+    );
+  });
+
   it('exige o destino do remanejamento', () => {
     const comDestino = modalidade({
       id: 'm-dest',
@@ -194,6 +211,25 @@ describe('problemasDaDistribuicao — rol fechado da regra', () => {
     ).toBe(true);
   });
 
+  it('nomeia no rol a modalidade excedente quando a oferta guarda o nome', () => {
+    const problemas = problemasDaDistribuicao(
+      distribuicao({
+        modalidades: [
+          par(AC),
+          { id: AC_PCD.id, codigo: AC_PCD.codigo, nome: 'Ação afirmativa PcD' },
+        ],
+      }),
+      CATALOGO,
+      ['AC'],
+    );
+
+    expect(
+      mensagens(problemas).some((p) =>
+        p.startsWith('AC_PCD — Ação afirmativa PcD não pertence ao rol'),
+      ),
+    ).toBe(true);
+  });
+
   it('aceita todas as modalidades quando estão dentro do rol fechado', () => {
     const problemas = problemasDaDistribuicao(
       distribuicao({ modalidades: [par(AC)], quadro: [{ modalidadeId: AC.id, quantidade: '40' }] }),
@@ -254,6 +290,20 @@ describe('modalidade que saiu do cadastro', () => {
 
     expect(mensagens(problemasDaDistribuicao(orfa, CATALOGO))).toContain(
       'PCD_ANTIGA não está mais no cadastro de modalidades: remova esta oferta do quadro e configure-a novamente.',
+    );
+  });
+
+  it('nomeia a modalidade ausente quando a oferta guarda o nome', () => {
+    const orfa = distribuicao({
+      modalidades: [
+        par(INSTITUCIONAL),
+        { id: SUMIDA.id, codigo: SUMIDA.codigo, nome: 'Pessoa com deficiência' },
+      ],
+      quadro: [{ modalidadeId: INSTITUCIONAL.id, quantidade: '10' }],
+    });
+
+    expect(mensagens(problemasDaDistribuicao(orfa, CATALOGO))).toContain(
+      'PCD_ANTIGA — Pessoa com deficiência não está mais no cadastro de modalidades: remova esta oferta do quadro e configure-a novamente.',
     );
   });
 
