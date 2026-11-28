@@ -9,6 +9,7 @@ const sampleConfig: AppConfig = {
     issuerUrl: 'http://localhost:8080/realms/unifesspa',
     clientId: 'selecao-web',
     antecedenciaDaRenovacaoEmSegundos: 60,
+    periodoMaximoDaSessaoEmSegundos: 36000,
   },
 };
 

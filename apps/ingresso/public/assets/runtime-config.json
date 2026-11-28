@@ -3,6 +3,7 @@
   "oidc": {
     "issuerUrl": "http://localhost:8080/realms/unifesspa",
     "clientId": "ingresso-web",
-    "antecedenciaDaRenovacaoEmSegundos": 60
+    "antecedenciaDaRenovacaoEmSegundos": 60,
+    "periodoMaximoDaSessaoEmSegundos": 36000
   }
 }

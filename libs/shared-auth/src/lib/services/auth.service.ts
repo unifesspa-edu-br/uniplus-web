@@ -25,6 +25,7 @@ export class AuthService {
   private readonly _sessaoEncerrada = signal(false);
   private readonly _prazoDaCredencial = signal<PrazoDaCredencial | null>(null);
   private readonly _prazoDoAcesso = signal<PrazoDoAcesso | null>(null);
+  private periodoMaximoEmSegundos = 0;
 
   /**
    * Promessa de renovação em andamento, compartilhada entre chamadas concorrentes: o realm não
@@ -90,6 +91,7 @@ export class AuthService {
   private criarCliente(config: AuthConfig): Keycloak {
     const keycloak = this.createKeycloak(config);
     this.keycloak = keycloak;
+    this.periodoMaximoEmSegundos = config.periodoMaximoDaSessaoEmSegundos;
     return keycloak;
   }
 
@@ -215,8 +217,9 @@ export class AuthService {
     this._prazoDaCredencial.set(
       lerPrazoDaCredencial(
         keycloak.refreshTokenParsed,
+        keycloak.idTokenParsed?.auth_time,
         keycloak.timeSkew ?? 0,
-        this._prazoDaCredencial(),
+        this.periodoMaximoEmSegundos,
       ),
     );
   }

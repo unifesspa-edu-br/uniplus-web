@@ -59,6 +59,7 @@ describe('PesoPorAreaComponent — cadastro de Peso por Área', () => {
             issuerUrl: 'http://localhost:8080/realms/unifesspa',
             clientId: 'selecao-web',
             antecedenciaDaRenovacaoEmSegundos: 60,
+            periodoMaximoDaSessaoEmSegundos: 36000,
           },
         },
       });
