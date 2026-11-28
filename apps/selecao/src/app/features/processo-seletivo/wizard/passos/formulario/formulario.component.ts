@@ -82,8 +82,10 @@ const paraGravar = ({
   conteudo: formulario.conteudo,
 });
 
-const anuncioDoAcrescimo = (codigo: string): string =>
-  `Formulário ${codigo} acrescentado. Ele é criado no processo ao gravar o passo.`;
+const anuncioDoAcrescimo = (codigo: string, comModelo: boolean): string =>
+  comModelo
+    ? `Formulário ${codigo} acrescentado com o modelo escolhido.`
+    : `Formulário ${codigo} acrescentado. Ele é criado no processo ao gravar o passo.`;
 
 /**
  * Formulários do processo — a inscrição, o pedido de isenção, a habilitação e os que o certame
@@ -273,12 +275,24 @@ export class FormularioPassoComponent {
     }
   }
 
-  /** O foco vai à aba nova, e o leitor de tela ouve o que aconteceu. */
-  acrescentar(pedido: FormularioAAcrescentar): void {
-    this.edicao.acrescentar(pedido);
+  /**
+   * O foco vai à aba nova, e o leitor de tela ouve o que aconteceu. Com modelo, o formulário nasce
+   * como a cópia dele: o resumo ou a recusa substitui o aviso do acréscimo. Na recusa o formulário
+   * fica criado sem a cópia, e a aba traz a recusa para o operador aplicar depois.
+   */
+  async acrescentar(pedido: FormularioAAcrescentar): Promise<void> {
+    const novo = this.edicao.acrescentar(pedido);
     this.selecionarAba(pedido.codigo);
-    this.anuncio.set(anuncioDoAcrescimo(pedido.codigo));
+    this.anuncio.set(anuncioDoAcrescimo(pedido.codigo, pedido.modelo !== null));
     this.focarAba(this.formularios().length - 1);
+    if (pedido.modelo === null) return;
+    const texto = await this.aplicacao.aplicarAoAcrescentar(
+      novo,
+      this.abas().find((aba) => aba.codigo === novo.codigo)?.ehInscricao ?? false,
+      pedido.modelo,
+      () => this.campos.reconciliar(),
+    );
+    if (texto !== null) this.anuncio.set(texto);
   }
 
   /**

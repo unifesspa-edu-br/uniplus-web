@@ -25,6 +25,12 @@ export interface FormularioAAcrescentar {
 
 const CODIGO_INVALIDO =
   'O código começa com letra maiúscula e tem só letras maiúsculas, números e _ (até 60 caracteres).';
+const AJUDA_DO_MODELO =
+  'Com modelo, o formulário recebe o modelo inteiro, com as páginas, os campos e os termos dele, que você pode ajustar. Ao ser acrescentado, o formulário é gravado no processo com a cópia, e o código não muda mais. Se o processo recusar, a aba do formulário diz o motivo, e o código continua editável até a gravação. O seletor só funciona com o processo já criado.';
+const AJUDA_SEM_MODELO =
+  'O formulário nasce vazio, só com a página de revisão e os campos que o processo pressupõe.';
+const AJUDA_DO_CODIGO =
+  'Letras maiúsculas, números e _. O modelo escolhido preenche o código, que você pode mudar. O código não muda depois que o formulário é gravado; com modelo, ele é gravado ao ser acrescentado.';
 const CODIGO_REPETIDO = 'Já existe um formulário com este código.';
 
 /**
@@ -67,6 +73,15 @@ export class AcrescimoDeFormularioComponent {
     return this.codigosEmUso().includes(codigo) ? CODIGO_REPETIDO : null;
   });
 
+  /** Escolher "Nenhum, começar vazio" é decisão; antes dela, a ajuda explica o que o modelo traz. */
+  protected readonly decidiuSemModelo = signal(false);
+
+  protected readonly ajudaDoModelo = computed(() =>
+    this.decidiuSemModelo() && this.modeloEscolhido() === '' ? AJUDA_SEM_MODELO : AJUDA_DO_MODELO,
+  );
+
+  protected readonly ajudaDoCodigo = AJUDA_DO_CODIGO;
+
   protected readonly completo = computed(
     () =>
       this.faseEscolhida() !== '' &&
@@ -86,6 +101,7 @@ export class AcrescimoDeFormularioComponent {
     const anterior = this.modelos().find((modelo) => modelo.id === this.modeloEscolhido());
     const modelo = this.modelos().find((item) => item.id === id);
     this.modeloEscolhido.set(id);
+    this.decidiuSemModelo.set(id === '');
     if (modelo !== undefined && (this.codigo() === '' || this.codigo() === anterior?.codigo)) {
       this.codigo.set(modelo.codigo);
     }
@@ -106,5 +122,6 @@ export class AcrescimoDeFormularioComponent {
     this.faseEscolhida.set('');
     this.codigo.set('');
     this.modeloEscolhido.set('');
+    this.decidiuSemModelo.set(false);
   }
 }

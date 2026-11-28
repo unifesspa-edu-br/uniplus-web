@@ -76,6 +76,17 @@ export function consequenciaDoCodigo(codigo: string): ConsequenciaDoDescumprimen
   );
 }
 
+/** A cópia de um modelo na inscrição traz campos de outros formulários já gravados e os troca pelo gravado. */
+export function podeTrocarOutroFormulario(
+  formulario: FormularioDeInscricao,
+  codigo: string,
+  daInscricao: boolean,
+): boolean {
+  return (
+    daInscricao && formulario.formularios.some((item) => item.gravado && item.codigo !== codigo)
+  );
+}
+
 /** O formulário do código, ou nulo quando o rascunho não o tem. */
 export function formularioDoCodigo(
   formulario: FormularioDeInscricao,
