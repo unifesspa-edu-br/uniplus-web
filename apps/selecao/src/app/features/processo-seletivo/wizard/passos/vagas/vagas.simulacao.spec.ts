@@ -74,13 +74,14 @@ describe('VagasPassoComponent — simulação do quadro', () => {
    * invariante está sozinha, e sem estado que possa envelhecer entre o clique e a gravação.
    */
   it('editar o quadro derruba a simulação e volta a impedir a gravação', () => {
+    operador.alterarVoBase(OFERTA, '34');
     simular([OFERTA, OUTRA_OFERTA]);
     expect(componente.validar().valid).toBe(true);
 
     operador.alterarVoBase(OFERTA, '35');
 
     expect(store.draft().vagas.ofertas[0].voBase).toBe('35');
-    expect(servicos.estado.simulacaoCobreOQuadro()).toBe(false);
+    expect(servicos.estado.faltaSimular()).toBe(true);
     expect(componente.validar().valid).toBe(false);
   });
 
@@ -101,7 +102,7 @@ describe('VagasPassoComponent — simulação do quadro', () => {
     expect(store.draft().vagas.ofertas[0].voBase).toBe('35');
     expect(requisicao.cancelled).toBe(true);
     expect(servicos.simulacao.simulando()).toBe(false);
-    expect(servicos.estado.simulacaoCobreOQuadro()).toBe(false);
+    expect(servicos.estado.faltaSimular()).toBe(true);
 
     const resultado = await comReleitura(controller, componente.persistir());
     expect(resultado.valid).toBe(false);
@@ -124,8 +125,9 @@ describe('VagasPassoComponent — simulação do quadro', () => {
 
   /** Sem edição no meio, a resposta é a do quadro em tela e vale. */
   it('instala a simulação quando o quadro não mudou', () => {
+    operador.alterarVoBase(OFERTA, '34');
     simular([OFERTA, OUTRA_OFERTA]);
 
-    expect(servicos.estado.simulacaoCobreOQuadro()).toBe(true);
+    expect(servicos.estado.faltaSimular()).toBe(false);
   });
 });

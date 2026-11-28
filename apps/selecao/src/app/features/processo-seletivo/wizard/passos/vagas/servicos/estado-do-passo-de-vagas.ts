@@ -60,6 +60,9 @@ export class EstadoDoPassoDeVagas {
   readonly erroDaSimulacao = signal<string | null>(null);
   /** Avança a cada edição; identifica o quadro que originou uma simulação. */
   private versao = 0;
+  private readonly quadroAlteradoNaSessao = signal(false);
+  /** O quadro foi editado desde que o processo foi aberto; o quadro gravado, sem edição, não pede simulação. */
+  readonly quadroAlterado = this.quadroAlteradoNaSessao.asReadonly();
 
   readonly distribuicoes = computed(() => this.store.draft().vagas.ofertas);
 
@@ -193,6 +196,9 @@ export class EstadoDoPassoDeVagas {
     this.distribuicoes().every((item) => this.simulacao().has(item.ofertaCursoId)),
   );
 
+  /** Só o quadro alterado precisa ser simulado: o gravado e intacto já foi conferido ao gravar. */
+  readonly faltaSimular = computed(() => this.quadroAlterado() && !this.simulacaoCobreOQuadro());
+
   readonly numeroDeOpcoes = computed(() => this.store.draft().opcoesDeCurso.numero);
   readonly opcoesLidas = computed(() => rotuloDasOpcoes(this.numeroDeOpcoes()));
 
@@ -235,6 +241,7 @@ export class EstadoDoPassoDeVagas {
 
   /** Troca as ofertas do rascunho; o quadro mudou, então a simulação deixa de valer. */
   substituir(ofertas: readonly DistribuicaoDeVagas[]): void {
+    this.quadroAlteradoNaSessao.set(true);
     this.descartarSimulacao();
     this.store.patchObjectSection('vagas', { ofertas: [...ofertas] });
   }
@@ -267,6 +274,7 @@ export class EstadoDoPassoDeVagas {
   }
 
   private descartarEstadoLocal(): void {
+    this.quadroAlteradoNaSessao.set(false);
     this.descartarSimulacao();
     this.erroDaSimulacao.set(null);
     this.padraoPendente.set(PADRAO_VAZIO);
