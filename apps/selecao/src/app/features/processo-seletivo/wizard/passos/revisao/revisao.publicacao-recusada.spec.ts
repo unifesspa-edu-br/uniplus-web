@@ -237,6 +237,13 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
           status: 422,
           code: 'uniplus.selecao.processo_seletivo.documento_nao_confirmado',
           traceId: 't3',
+          errors: [
+            {
+              field: 'documentoEditalId',
+              code: 'uniplus.selecao.processo_seletivo.documento_nao_confirmado',
+              message: 'Somente um documento confirmado pode ser referenciado na publicação.',
+            },
+          ],
         },
         {
           status: 422,
@@ -270,6 +277,13 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
           status: 422,
           code: 'uniplus.selecao.processo_seletivo.documento_nao_confirmado',
           traceId: 't',
+          errors: [
+            {
+              field: 'documentoEditalId',
+              code: 'uniplus.selecao.processo_seletivo.documento_nao_confirmado',
+              message: 'Somente um documento confirmado pode ser referenciado na publicação.',
+            },
+          ],
         },
         {
           status: 422,

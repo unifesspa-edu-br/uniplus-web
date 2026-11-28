@@ -10,6 +10,7 @@ import {
 } from '../../../shared/recusas/recusas-da-publicacao.service';
 import { eRecusaDaProvaPresencial } from '../../prova-presencial/recusas-da-publicacao-na-prova-presencial.service';
 import { passoPeloRotulo } from '../destino-das-pendencias';
+import { ondeCorrigirARecusaDoPedido } from '../onde-corrigir-a-recusa';
 
 /**
  * As causas (`errors[]`) da última publicação recusada, na ordem em que a API as deu, cada uma com
@@ -44,6 +45,7 @@ export class RecusasDaPublicacaoComponent {
       const lugar = lugarDaRecusaDaPublicacao(recusa, cronograma);
       return {
         recusa,
+        ondeCorrigir: ondeCorrigirARecusaDoPedido(recusa.campo),
         comCampo: eRecusaDaProvaPresencial(recusa) || (lugar !== null && lugar.tipo !== 'passo'),
       };
     });
