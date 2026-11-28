@@ -1,6 +1,8 @@
 import { computed, signal } from '@angular/core';
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import type { RecusaDoCampo } from '@uniplus/shared-ui/components';
 
+import type { ControleDoCatalogo } from './passos/classificacao/recusas-do-catalogo';
 import type { CriterioDesempateConfigurado } from './processo-seletivo.models';
 import type { MotivoDaReleitura } from './shared/motivo-da-releitura';
 import {
@@ -46,6 +48,14 @@ export class ClassificacaoNoServidor {
 
   /** Recusa ao campo `escalaNotaFinal` (a escala que não é maior que zero). Some quando a escala muda e quando a gravação seguinte dá certo. */
   readonly recusaDaEscalaDaNotaFinal = signal<string | null>(null);
+
+  /**
+   * As recusas à regra citada em cada controle do catálogo, na última gravação recusada. A resposta
+   * recusada seguinte as substitui e a gravação aceita as limpa.
+   */
+  readonly recusasDoCatalogo = signal<ReadonlyMap<ControleDoCatalogo, readonly RecusaDoCampo[]>>(
+    new Map(),
+  );
 
   /** Recusa às edições do ENEM, gravadas logo depois da classificação, pelos passos Fórmula e Eliminação. Some quando a gravação seguinte dá certo. */
   readonly recusaDasEdicoesDoEnem = signal<string | null>(null);
@@ -182,6 +192,7 @@ export class ClassificacaoNoServidor {
   reiniciar(): void {
     this.recusaDaResolucaoPesoAreaEnem.set(null);
     this.recusaDaEscalaDaNotaFinal.set(null);
+    this.recusasDoCatalogo.set(new Map());
     this.pendenciasDaConferencia.set([]);
     this.recusaDasEdicoesDoEnem.set(null);
     this.edicoesGravadas.set([]);

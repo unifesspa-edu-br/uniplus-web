@@ -10,6 +10,7 @@ import {
   ehCausaDoIdentificadorLegivel,
   ehRecusaDoIdentificadorLegivel,
 } from '../../shared/identificador-legivel';
+import { acrescentarRecusaDoControle } from '../../shared/recusas-por-controle';
 
 /** Os campos do passo que a recusa da criação pode apontar, com o nome que a tela dá a cada um. */
 export type CampoDaIdentificacao =
@@ -106,11 +107,11 @@ function recusasDaLista(problema: ProblemDetails) {
   for (const causa of causasNaOrdemRecebida(problema)) {
     const campo = campoDaTela({ field: causa.campo, code: causa.codigo });
     if (campo === undefined) continue;
-    const recusas = porCampo.get(campo) ?? [];
-    if (!recusas.some((r) => r.mensagem === causa.mensagem && r.codigo === causa.codigo)) {
-      recusas.push({ codigo: causa.codigo, mensagem: causa.mensagem, pagina: causa.pagina });
-    }
-    porCampo.set(campo, recusas);
+    acrescentarRecusaDoControle(porCampo, campo, {
+      codigo: causa.codigo,
+      mensagem: causa.mensagem,
+      pagina: causa.pagina,
+    });
   }
   return porCampo;
 }

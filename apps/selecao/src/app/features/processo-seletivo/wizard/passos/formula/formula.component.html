@@ -41,7 +41,9 @@
       ><select
         class="input"
         id="f-regra-calculo"
-        [class.is-invalid]="invalidFields().has('regraCalculo')"
+        [class.is-invalid]="invalidFields().has('regraCalculo') || temRecusa('regraCalculo')"
+        [attr.aria-invalid]="temRecusa('regraCalculo') ? 'true' : null"
+        [attr.aria-describedby]="descricaoDaRecusa('regraCalculo')"
         [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
         (change)="escolherRegraCalculo($any($event.target).value)"
       >
@@ -54,6 +56,7 @@
           </option>
         }
       </select>
+      <sel-recusas-do-controle id="f-regra-calculo-erro" [recusas]="recusasDe('regraCalculo')" />
     </div>
 
     @if (usaFormulaLocal()) {
@@ -63,7 +66,11 @@
           ><select
             class="input"
             id="f-regra-arredondamento"
-            [class.is-invalid]="invalidFields().has('regraArredondamento')"
+            [class.is-invalid]="
+              invalidFields().has('regraArredondamento') || temRecusa('regraArredondamento')
+            "
+            [attr.aria-invalid]="temRecusa('regraArredondamento') ? 'true' : null"
+            [attr.aria-describedby]="descricaoDaRecusa('regraArredondamento')"
             [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
             (change)="escolherRegraArredondamento($any($event.target).value)"
           >
@@ -79,6 +86,10 @@
               </option>
             }
           </select>
+          <sel-recusas-do-controle
+            id="f-regra-arredondamento-erro"
+            [recusas]="recusasDe('regraArredondamento')"
+          />
         </div>
         <div class="form-field">
           <label class="label" for="f-casas">Casas decimais</label
@@ -133,7 +144,11 @@
         ><select
           class="input"
           id="f-ordem-alocacao"
-          [class.is-invalid]="invalidFields().has('regraOrdemAlocacao')"
+          [class.is-invalid]="
+            invalidFields().has('regraOrdemAlocacao') || temRecusa('regraOrdemAlocacao')
+          "
+          [attr.aria-invalid]="temRecusa('regraOrdemAlocacao') ? 'true' : null"
+          [attr.aria-describedby]="descricaoDaRecusa('regraOrdemAlocacao')"
           [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
           (change)="escolherRegraOrdemAlocacao($any($event.target).value)"
         >
@@ -149,6 +164,10 @@
             </option>
           }
         </select>
+        <sel-recusas-do-controle
+          id="f-ordem-alocacao-erro"
+          [recusas]="recusasDe('regraOrdemAlocacao')"
+        />
       </div>
     </div>
 

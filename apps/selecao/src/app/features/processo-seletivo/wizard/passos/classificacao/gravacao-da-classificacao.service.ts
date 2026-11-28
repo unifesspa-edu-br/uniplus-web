@@ -5,8 +5,10 @@ import {
   type CausaDeCampo,
   type ProblemDetails,
   ProblemI18nService,
+  STATUS_HTTP,
   separarCausas,
 } from '@uniplus/shared-core/http';
+import type { RecusaDoCampo } from '@uniplus/shared-ui/components';
 
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { ValidacaoDoPasso } from '../../processo-seletivo.models';
@@ -44,6 +46,13 @@ import {
   comoOpcoesDasEdicoes,
   declaraEdicoesDoEnem,
 } from './edicoes-do-enem';
+import {
+  type ControleDoCatalogo,
+  recusaDaRegraDaFormula,
+  recusasDoCatalogo,
+  semARegraDeEliminacao,
+  semOsControles,
+} from './recusas-do-catalogo';
 import { mensagemDaRecusaDaEscala, mensagemDaRecusaDaResolucao } from './recusas-da-classificacao';
 import {
   recusaDaClassificacaoPeloDesempate,
@@ -82,9 +91,25 @@ export class GravacaoDaClassificacao {
     return this.recusasPorCampo().get(`${indice}.${campo}`) ?? null;
   }
 
-  /** As posições seguintes mudam: as recusas guardadas por índice deixam de apontar a regra certa. */
-  esquecerRecusas(): void {
+  /** As recusas do catálogo ficam no estado da classificação, que a troca de processo reinicia. */
+  private readonly recusasDoCatalogo = this.store.classificacao.recusasDoCatalogo;
+
+  recusasDoControle(controle: ControleDoCatalogo): readonly RecusaDoCampo[] {
+    return this.recusasDoCatalogo().get(controle) ?? [];
+  }
+
+  esquecerRecusasDoControle(controle: ControleDoCatalogo): void {
+    if (this.recusasDoCatalogo().has(controle))
+      this.recusasDoCatalogo.update((mapa) => semOsControles(mapa, (chave) => chave === controle));
+  }
+
+  /**
+   * Remover a regra da posição muda as seguintes: a recusa dela sai, as das posteriores descem uma
+   * posição e as anteriores ficam. As do corte, guardadas por índice, são todas esquecidas.
+   */
+  removerRecusasDaRegraDeEliminacao(indice: number): void {
     this.recusasPorCampo.set(new Map());
+    this.recusasDoCatalogo.update((mapa) => semARegraDeEliminacao(mapa, indice));
   }
 
   esquecerRecusasDa(indice: number): void {
@@ -214,7 +239,8 @@ export class GravacaoDaClassificacao {
   }
 
   private registrarGravacaoConcluida(resolucaoGravada: string | null): void {
-    this.esquecerRecusas();
+    this.recusasPorCampo.set(new Map());
+    this.recusasDoCatalogo.set(new Map());
     this.store.classificacao.descartarRecusas();
     this.store.classificacao.recusaDaEscalaDaNotaFinal.set(null);
     this.registrarQuadroCongelado(resolucaoGravada);
@@ -281,6 +307,9 @@ export class GravacaoDaClassificacao {
   private mensagensDaRecusa(problema: ProblemDetails): string[] {
     const erros = separarCausas(problema.errors).deCampo;
     this.recusasPorCampo.set(recusasDoCorte(erros));
+    // Só a recusa de validação com causas reavaliou o catálogo; as demais respostas nada apagam.
+    if (problema.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && erros.length)
+      this.recusasDoCatalogo.set(recusasDoCatalogo(problema));
     this.guardarRecusasDaResolucao(erros);
     const recusaDaEscala = this.guardarRecusaDaEscala(erros);
 
@@ -337,19 +366,24 @@ function recusada(messages: string[]): Promise<ValidacaoDoPasso> {
 
 /** O texto da tela para a recusa de um campo, ou `null` quando a tela não a explica. */
 function textoDaRecusa(
-  erro: Pick<CausaDeCampo, 'field' | 'code'>,
+  erro: Pick<CausaDeCampo, 'field' | 'code' | 'message'>,
   recusaDaEscala: string | null,
 ): string | null {
   return (
     recusaDaEliminacao(erro) ??
-    (ehCampoDaEscala(erro.field) && recusaDaEscala !== null
-      ? `Escala da nota final, no passo ${NOME_DO_PASSO_DA_FORMULA}: ${recusaDaEscala}`
-      : null) ??
+    recusaDaRegraDaFormula(erro) ??
+    textoDaEscala(erro.field, recusaDaEscala) ??
     recusaDaClassificacaoPeloDesempate(erro) ??
     (ehCampoDaResolucao(erro.field)
       ? `Resolução de Peso por Área, no passo ${NOME_DO_PASSO_DA_FORMULA}: ${mensagemDaRecusaDaResolucao(erro)}`
       : null)
   );
+}
+
+function textoDaEscala(campo: string, recusaDaEscala: string | null): string | null {
+  return ehCampoDaEscala(campo) && recusaDaEscala !== null
+    ? recusaNoPassoDaFormula('Escala da nota final', recusaDaEscala)
+    : null;
 }
 
 function avisoDoCriterioSemArea(

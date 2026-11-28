@@ -105,7 +105,7 @@ describe('recusa por um critério de desempate já gravado', () => {
   it('com outro erro junto, mantém o título da raiz para ele', async () => {
     const resultado = await recusar(SEM_QUADRO, [
       { field: 'baseadoEmEnem', code: SEM_QUADRO, message: 'Critério 1.' },
-      { field: 'regraOrdemAlocacaoCodigo', code: 'outro', message: 'Outro.' },
+      { field: 'casasArredondamento', code: 'outro', message: 'Outro.' },
     ]);
 
     expect(resultado.messages).toEqual([TEXTO_SEM_QUADRO, 'Título genérico da raiz.']);

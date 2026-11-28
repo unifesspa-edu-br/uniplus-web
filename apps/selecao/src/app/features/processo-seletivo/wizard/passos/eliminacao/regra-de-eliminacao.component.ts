@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
+import { RecusaDoCampoComponent, type RecusaDoCampo } from '@uniplus/shared-ui/components';
+
 import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import type { RegraEliminacaoConfigurada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -30,6 +32,7 @@ import {
  */
 @Component({
   selector: 'sel-regra-de-eliminacao',
+  imports: [RecusaDoCampoComponent],
   templateUrl: './regra-de-eliminacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [':host { display: block; }'],
@@ -76,6 +79,14 @@ export class RegraDeEliminacaoComponent {
   protected readonly corteSugerido = computed(() => corteSugerido(this.regra(), this.quadro()));
   protected readonly rotuloDoMinimo = computed(() => rotuloDoMinimo(this.regra(), this.quadro()));
 
+  /** As recusas do catálogo que a API apontou para esta regra, e só para ela. */
+  protected readonly recusasDaRegra = computed<readonly RecusaDoCampo[]>(() =>
+    this.gravacao.recusasDoControle(`regraEliminacao.${this.indice()}`),
+  );
+  protected readonly idDaRecusaDaRegra = computed(() =>
+    this.recusasDaRegra().length > 0 ? `elim-regra-erro-${this.indice()}` : null,
+  );
+
   protected recusaDoCampo(campo: CampoDaRegra): string | null {
     return this.gravacao.recusaDoCampo(this.indice(), campo);
   }
@@ -90,6 +101,7 @@ export class RegraDeEliminacaoComponent {
   }
 
   protected escolherRegra(chave: string): void {
+    this.gravacao.esquecerRecusasDoControle(`regraEliminacao.${this.indice()}`);
     this.atualizar(trocaDeRegra(chave));
   }
 

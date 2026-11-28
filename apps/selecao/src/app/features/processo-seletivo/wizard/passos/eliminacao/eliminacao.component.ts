@@ -132,8 +132,8 @@ export class EliminacaoPassoComponent {
   }
 
   removerRegra(indice: number): void {
-    // As posições seguintes mudam: as recusas guardadas por índice deixam de apontar a regra certa.
-    this.gravacao.esquecerRecusas();
+    // As posições seguintes mudam: as recusas guardadas por índice descem com elas.
+    this.gravacao.removerRecusasDaRegraDeEliminacao(indice);
     this.store.patchObjectSection('classificacao', {
       regrasEliminacao: this.regras().filter((_, item) => item !== indice),
     });

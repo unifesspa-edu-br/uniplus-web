@@ -1,6 +1,6 @@
 import { separarCausas, type CausaDeCampo, type ProblemDetails } from '@uniplus/shared-core/http';
 
-type Explicar = (erro: { readonly field: string; readonly code: string }) => string | null;
+type Explicar = (erro: CausaDeCampo) => string | null;
 
 /**
  * O resumo de uma recusa do servidor: cada causa de campo que a tela explica, com o texto dela, uma

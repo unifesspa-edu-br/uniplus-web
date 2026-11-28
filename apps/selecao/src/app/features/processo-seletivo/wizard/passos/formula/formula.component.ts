@@ -13,6 +13,8 @@ import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { GravacaoDaClassificacao } from '../classificacao/gravacao-da-classificacao.service';
+import type { ControleDoCatalogo } from '../classificacao/recusas-do-catalogo';
+import type { RecusaDoCampo } from '@uniplus/shared-ui/components';
 import {
   REGRA_CALCULO_IMPORTADA,
   classificacaoUsaFormulaLocal,
@@ -34,12 +36,24 @@ import {
 } from '../classificacao/regra-escolhivel';
 import { EdicoesDoEnemComponent } from './edicoes-do-enem.component';
 import { PesoPorAreaComponent } from './peso-por-area.component';
+import { RecusasDoControleComponent } from './recusas-do-controle.component';
 
 const ID_DO_CAMPO_ESCALA = 'f-escala-nota-final';
 const MENSAGEM_SEM_EDICAO_DO_ENEM = 'Escolha ao menos uma edição do ENEM aceita.';
 const REGRA_DE_ARREDONDAMENTO_SEM_ESCOLHA = {
   regraArredondamentoCodigo: '',
   regraArredondamentoVersao: '',
+};
+
+type ControleDaFormula = Extract<
+  ControleDoCatalogo,
+  'regraCalculo' | 'regraArredondamento' | 'regraOrdemAlocacao'
+>;
+
+const ID_DO_SELETOR: Readonly<Record<ControleDaFormula, string>> = {
+  regraCalculo: 'f-regra-calculo',
+  regraArredondamento: 'f-regra-arredondamento',
+  regraOrdemAlocacao: 'f-ordem-alocacao',
 };
 
 /**
@@ -65,6 +79,7 @@ const REGRA_DE_ARREDONDAMENTO_SEM_ESCOLHA = {
     ValorEmConsultaComponent,
     EdicoesDoEnemComponent,
     PesoPorAreaComponent,
+    RecusasDoControleComponent,
   ],
   templateUrl: './formula.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -183,8 +198,23 @@ export class FormulaPassoComponent {
     () => this.usaFormulaLocal() && !divisorDaMediaValido(this.store.draft().cronograma.etapas),
   );
 
+  /** As recusas que a API fez à regra escolhida no seletor, para mostrar junto dele. */
+  recusasDe(controle: ControleDaFormula): readonly RecusaDoCampo[] {
+    return this.gravacao.recusasDoControle(controle);
+  }
+
+  temRecusa(controle: ControleDaFormula): boolean {
+    return this.recusasDe(controle).length > 0;
+  }
+
+  /** O seletor só aponta a região da recusa quando há recusa a ler. */
+  descricaoDaRecusa(controle: ControleDaFormula): string | null {
+    return this.temRecusa(controle) ? `${ID_DO_SELETOR[controle]}-erro` : null;
+  }
+
   escolherRegraCalculo(valor: string): void {
     const { codigo, versao } = lerChaveDaRegra(valor);
+    this.gravacao.esquecerRecusasDoControle('regraCalculo');
     if (codigo === '') this.limparRegraCalculo();
     else this.trocarRegraCalculo(codigo, versao);
     this.descartarRecusaQueNaoSeAplica();
@@ -210,11 +240,15 @@ export class FormulaPassoComponent {
       regraCalculoVersao: versao,
       ...(local ? {} : REGRA_DE_ARREDONDAMENTO_SEM_ESCOLHA),
     });
-    if (!local) this.store.classificacao.recusaDaEscalaDaNotaFinal.set(null);
+    if (!local) {
+      this.store.classificacao.recusaDaEscalaDaNotaFinal.set(null);
+      this.gravacao.esquecerRecusasDoControle('regraArredondamento');
+    }
   }
 
   escolherRegraArredondamento(valor: string): void {
     const { codigo, versao } = lerChaveDaRegra(valor);
+    this.gravacao.esquecerRecusasDoControle('regraArredondamento');
     this.store.patchObjectSection('classificacao', {
       regraArredondamentoCodigo: codigo,
       regraArredondamentoVersao: versao,
@@ -233,6 +267,7 @@ export class FormulaPassoComponent {
 
   escolherRegraOrdemAlocacao(valor: string): void {
     const { codigo, versao } = lerChaveDaRegra(valor);
+    this.gravacao.esquecerRecusasDoControle('regraOrdemAlocacao');
     this.store.patchObjectSection('classificacao', {
       regraOrdemAlocacaoCodigo: codigo,
       regraOrdemAlocacaoVersao: versao,
