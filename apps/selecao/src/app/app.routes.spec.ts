@@ -5,6 +5,52 @@ import { AuthService, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { PERMISSOES_DOS_ATALHOS_DO_ACOMPANHAMENTO } from './acesso/permissoes-das-telas';
 import { appRoutes } from './app.routes';
 
+const telaVazia = vi.hoisted(() => async () => {
+  const { Component } = await import('@angular/core');
+  return Component({ template: '', standalone: true })(class {});
+});
+
+/**
+ * A árvore de rotas é a real; as telas, não. Carregar cada tela traria o código de todos os seus
+ * componentes para dentro do teste, e nenhuma delas é instanciada aqui.
+ */
+vi.mock('./layout/layout', async () => ({ LayoutComponent: await telaVazia() }));
+vi.mock('./features/dashboard/dashboard.page', async () => ({ DashboardPage: await telaVazia() }));
+vi.mock('./features/homologacao/homologacao', async () => ({
+  HomologacaoComponent: await telaVazia(),
+}));
+vi.mock('./features/notas/notas', async () => ({ NotasComponent: await telaVazia() }));
+vi.mock('./features/classificacao/classificacao', async () => ({
+  ClassificacaoComponent: await telaVazia(),
+}));
+vi.mock('./features/acompanhamento/processo/acompanhamento-do-processo.page', async () => ({
+  AcompanhamentoDoProcessoPage: await telaVazia(),
+}));
+vi.mock('./features/inscricoes/inscricoes-do-processo.page', async () => ({
+  InscricoesDoProcessoPage: await telaVazia(),
+}));
+vi.mock('./features/inscricoes/detalhe-da-inscricao.page', async () => ({
+  DetalheDaInscricaoPage: await telaVazia(),
+}));
+vi.mock('./features/inscricoes/comprovante/comprovante-da-inscricao.page', async () => ({
+  ComprovanteDaInscricaoPage: await telaVazia(),
+}));
+vi.mock('./features/processo-seletivo/processo-seletivo.page', async () => ({
+  ProcessoSeletivoPage: await telaVazia(),
+}));
+vi.mock('./features/processo-seletivo/processos-seletivos-lista.page', async () => ({
+  ProcessosSeletivosListaPage: await telaVazia(),
+}));
+vi.mock('./features/processo-seletivo/simulacao/simulacao-do-processo.page', async () => ({
+  SimulacaoDoProcessoPage: await telaVazia(),
+}));
+vi.mock('./features/processo-seletivo/publicacoes/publicacoes-do-processo.page', async () => ({
+  PublicacoesDoProcessoPage: await telaVazia(),
+}));
+vi.mock('./features/processo-seletivo/notas-do-enem/notas-do-enem.page', async () => ({
+  NotasDoEnemPage: await telaVazia(),
+}));
+
 const autenticado = signal(true);
 const permissoes = signal<readonly string[]>([]);
 const permissoesStub = {

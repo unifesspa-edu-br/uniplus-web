@@ -1,6 +1,8 @@
 import { formasDeAceite, provedorDeFormasDeAceite } from './formas-de-aceite.testing';
 import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NEVER } from 'rxjs';
+import { VocabulariosDeConfiguracaoApi } from '@uniplus/shared-data/configuracao';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TermoConsentimentoDetalheComponent } from './termo-consentimento-detalhe.component';
 import { AcaoTermo, criarFormularioRascunho } from './termo-consentimento-form';
@@ -165,5 +167,24 @@ describe('TermoConsentimentoDetalheComponent', () => {
       const texto = terminar(acao);
       expect(document.activeElement).not.toBe(texto);
     });
+  });
+
+  it('avisa que o envio do rascunho espera as opções carregarem, em vez de ignorar o pedido', () => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: VocabulariosDeConfiguracaoApi, useValue: { listar: () => NEVER } }],
+    });
+    const fixture = montar();
+    const emitidos: string[] = [];
+    fixture.componentInstance.salvar.subscribe(() => emitidos.push('envio'));
+
+    (fixture.nativeElement as HTMLElement)
+      .querySelector('form')
+      ?.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    expect(emitidos).toEqual([]);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('form [role="status"]')?.textContent,
+    ).toBe('Aguarde as opções carregarem para enviar.');
   });
 });
