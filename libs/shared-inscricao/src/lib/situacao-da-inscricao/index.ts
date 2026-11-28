@@ -1,5 +1,1 @@
-export {
-  rotuloDaSituacaoDaInscricao,
-  varianteDaSituacaoDaInscricao,
-  ehSituacaoConhecida,
-} from './situacao-da-inscricao';
+export { varianteDaSituacaoDaInscricao } from './situacao-da-inscricao';
