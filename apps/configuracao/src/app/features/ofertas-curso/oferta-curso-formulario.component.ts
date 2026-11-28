@@ -10,6 +10,7 @@ import {
   FalhaDeLeituraComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
+import { adiarEnvioEnquantoPendente } from '../../shared/envio-adiado/envio-adiado';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { carregarVocabulario } from '../../shared/vocabulario-de-configuracao';
 import { OfertaCursoForm, mensagemDeErroDaOferta } from './oferta-curso-form';
@@ -109,6 +110,11 @@ export class OfertaCursoFormularioComponent {
     destino: () => document.getElementById('cfg-oferta-regime'),
   });
 
+  protected readonly envioAdiado = adiarEnvioEnquantoPendente(
+    this.leituraDosVocabularios.pendente,
+    'Aguarde as opções carregarem para enviar.',
+  );
+
   protected recarregarVocabularios(): void {
     Object.values(this.vocabularios)
       .filter((vocabulario) => vocabulario.falhou())
@@ -126,7 +132,7 @@ export class OfertaCursoFormularioComponent {
 
   /** O envio do formulário (Enter num campo, por exemplo) também espera o envio em curso. */
   protected aoEnviar(): void {
-    if (this.salvando() || this.falhaNosVocabularios() || this.leituraDosVocabularios.pendente()) {
+    if (this.salvando() || this.falhaNosVocabularios() || this.envioAdiado.adiarSePendente()) {
       return;
     }
     this.salvar.emit();

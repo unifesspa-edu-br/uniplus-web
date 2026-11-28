@@ -346,4 +346,22 @@ describe('OfertasCursoPage — regras do formulário', () => {
       expect(p.turno(valoresDaOferta.turnos[2].rotulo).checked).toBe(false);
     });
   });
+
+  describe('envio enquanto as opções carregam', () => {
+    const aviso = () => p.elemento('form ~ [role="status"]').textContent?.trim();
+
+    it('avisa que precisa esperar, e não envia, em vez de ignorar o pedido', async () => {
+      p = await montarPagina([], { vocabularios: 'pendentes' });
+      p.novo().click();
+      await p.responderUnidades();
+      expect(aviso()).toBe('');
+
+      p.salvar().click();
+      await p.propagar();
+
+      p.http.expectNone(ESCRITA);
+      expect(aviso()).toBe('Aguarde as opções carregarem para enviar.');
+      p.responderVocabularios();
+    });
+  });
 });

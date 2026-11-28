@@ -1,5 +1,7 @@
 import { provedorDeFormasDeAceite } from './formas-de-aceite.testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NEVER } from 'rxjs';
+import { VocabulariosDeConfiguracaoApi } from '@uniplus/shared-data/configuracao';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TermoConsentimentoFormularioComponent } from './termo-consentimento-formulario.component';
 import { criarFormulario } from './termo-consentimento-form';
@@ -69,5 +71,22 @@ describe('TermoConsentimentoFormularioComponent', () => {
       (item) => item.textContent,
     );
     expect(mensagens).toEqual(['Nome recusado.', 'Informe no máximo 20000 caracteres.']);
+  });
+
+  it('avisa que o envio espera as opções carregarem, em vez de ignorar o pedido', () => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: VocabulariosDeConfiguracaoApi, useValue: { listar: () => NEVER } }],
+    });
+    const fixture = montar(false);
+    const emitidos: string[] = [];
+    fixture.componentInstance.salvar.subscribe(() => emitidos.push('envio'));
+
+    raiz(fixture).querySelector('form')?.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    expect(emitidos).toEqual([]);
+    expect(raiz(fixture).querySelector('[role="status"]')?.textContent).toBe(
+      'Aguarde as opções carregarem para enviar.',
+    );
   });
 });
