@@ -8,6 +8,7 @@ const BASE: AppConfig = {
     issuerUrl: 'http://localhost:8080/realms/unifesspa',
     clientId: 'selecao-web',
     antecedenciaDaRenovacaoEmSegundos: 60,
+    periodoMaximoDaSessaoEmSegundos: 36000,
   },
 };
 
@@ -51,6 +52,21 @@ describe('resolveOidcConfig', () => {
 
       expect(() => resolveOidcConfig(config as unknown as AppConfig)).toThrow(
         'oidc.antecedenciaDaRenovacaoEmSegundos',
+      );
+    },
+  );
+
+  it('devolve o período máximo da sessão informado', () => {
+    expect(resolveOidcConfig(BASE).periodoMaximoDaSessaoEmSegundos).toBe(36000);
+  });
+
+  it.each([undefined, 0, -5, Number.NaN, '36000'])(
+    'recusa o período máximo da sessão %s',
+    (valor) => {
+      const config = { ...BASE, oidc: { ...BASE.oidc, periodoMaximoDaSessaoEmSegundos: valor } };
+
+      expect(() => resolveOidcConfig(config as unknown as AppConfig)).toThrow(
+        'oidc.periodoMaximoDaSessaoEmSegundos',
       );
     },
   );

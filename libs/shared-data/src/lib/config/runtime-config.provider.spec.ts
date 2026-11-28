@@ -62,6 +62,7 @@ describe('toAuthConfig — allowlist do geoApiUrl', () => {
         issuerUrl: 'https://oidc.example/auth/realms/unifesspa',
         clientId: 'uniplus-portal',
         antecedenciaDaRenovacaoEmSegundos: 60,
+        periodoMaximoDaSessaoEmSegundos: 36000,
       },
       ...overrides,
     };

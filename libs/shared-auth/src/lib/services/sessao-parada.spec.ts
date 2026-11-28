@@ -27,8 +27,6 @@ describe('Sessão de uma aba parada', () => {
     });
     const prazoDaCredencial = signal<PrazoDaCredencial | null>({
       venceEm: emitidoEm + 1800 * SEGUNDO,
-      concedidoMs: 1800 * SEGUNDO,
-      maiorConcedidoMs: 1800 * SEGUNDO,
       limite: 'inatividade',
     });
     const refreshToken = vi.fn(async () => true);
@@ -87,8 +85,6 @@ describe('Sessão de uma aba parada com consulta automática', () => {
     });
     const prazoDaCredencial = signal<PrazoDaCredencial | null>({
       venceEm: emitidoEm + 1800 * SEGUNDO,
-      concedidoMs: 1800 * SEGUNDO,
-      maiorConcedidoMs: 1800 * SEGUNDO,
       limite: 'inatividade',
     });
     const refreshToken = vi.fn(async (minima: number) => {

@@ -8,6 +8,7 @@ const config: AuthConfig = {
   issuerUrl: 'http://localhost:8080/realms/unifesspa',
   clientId: 'selecao-web',
   antecedenciaDaRenovacaoEmSegundos: 60,
+  periodoMaximoDaSessaoEmSegundos: 36000,
   allowedUrls: ['http://localhost:5000/api/v1', 'http://localhost:8080/realms/unifesspa'],
 };
 

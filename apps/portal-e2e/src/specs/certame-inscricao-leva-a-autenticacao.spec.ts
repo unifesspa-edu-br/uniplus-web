@@ -83,6 +83,7 @@ async function mockCertameAberto(page: Page): Promise<void> {
           issuerUrl: ISSUER_URL,
           clientId: 'portal-web',
           antecedenciaDaRenovacaoEmSegundos: 60,
+          periodoMaximoDaSessaoEmSegundos: 36000,
         },
       }),
     }),
