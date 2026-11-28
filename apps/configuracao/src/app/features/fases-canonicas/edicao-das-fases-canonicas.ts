@@ -34,7 +34,7 @@ import { aplicarRecusasDoProblema, descartarRecusasDoServidor } from '../../shar
 type Escrita = 'salvando' | 'removendo';
 
 /**
- * Todas as escritas da tela de fases canônicas: o formulário, o salvamento e a remoção com
+ * Todas as escritas da tela de tipos de fase: o formulário, o salvamento e a remoção com
  * confirmação. É a única dona do indicador de gravação, então uma escrita impede a outra.
  */
 @Injectable()
@@ -80,7 +80,7 @@ export class EdicaoDasFasesCanonicas {
   });
   /** Dentro do drawer: o andamento e a recusa, que só fazem sentido com ele aberto. */
   readonly anuncioDoSalvamento = computed(() =>
-    this.salvando() ? 'Salvando fase canônica.' : this.recusaDoSalvamento(),
+    this.salvando() ? 'Salvando tipo de fase.' : this.recusaDoSalvamento(),
   );
   /** Na página: o desfecho, anunciado quando nenhuma sobreposição está aberta para dizê-lo. */
   readonly anuncioDaPagina = computed(() =>
@@ -92,7 +92,7 @@ export class EdicaoDasFasesCanonicas {
     const fase = this.faseParaRemover();
     return fase
       ? `Deseja remover a fase ${fase.codigo}? A remoção impede novos editais de utilizar esta fase, mas não altera o que já foi congelado — a cópia por valor de cada cronograma permanece íntegra (snapshot-copy desacoplado) e não bloqueia esta remoção lógica.`
-      : 'Deseja remover esta fase canônica?';
+      : 'Deseja remover este tipo de fase?';
   });
 
   /**
@@ -205,8 +205,8 @@ export class EdicaoDasFasesCanonicas {
       this.recusaDoSalvamento.set(this.erro() ? '' : 'Revise os campos indicados.');
       return;
     }
-    this.resultadoDoSalvamento.set('Fase canônica atualizada.');
-    this.notifications.success('Fase canônica atualizada');
+    this.resultadoDoSalvamento.set('Tipo de fase atualizado.');
+    this.notifications.success('Tipo de fase atualizado');
     this.aberto.set(false);
     this.renovarChave();
     this.recarregar();
@@ -222,7 +222,7 @@ export class EdicaoDasFasesCanonicas {
       return;
     }
     this.resultadoDaRemocao.set(`Fase ${fase.codigo} removida.`);
-    this.notifications.success('Fase canônica removida', fase.codigo);
+    this.notifications.success('Tipo de fase removido', fase.codigo);
     this.confirmando.set(false);
     this.faseParaRemover.set(null);
     this.recarregar();

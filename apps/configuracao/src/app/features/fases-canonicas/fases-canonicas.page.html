@@ -1,6 +1,6 @@
 <div class="page-header">
   <div class="page-header__content">
-    <h1 class="page-header__title">Fase Canônica</h1>
+    <h1 class="page-header__title">Tipo de fase</h1>
     <p class="page-header__desc">
       Vocabulário de cronograma — momentos do ciclo de vida do processo seletivo · UNI-REQ-0064.
     </p>
@@ -8,12 +8,12 @@
 </div>
 
 <ui-alert variant="info" heading="Códigos definidos pelo catálogo institucional" [dynamic]="false">
-  As fases canônicas pertencem a um vocabulário fixo, provisionado pela instituição no seed da API e
+  Os tipos de fase pertencem a um vocabulário fixo, provisionado pela instituição no seed da API e
   congelado por snapshot nos cronogramas dos editais. Esta tela não cria fases nem altera o código
   de uma fase — aqui você apenas edita os atributos de fases existentes ou as remove.
 </ui-alert>
 
-<ui-falha-de-leitura titulo="Não foi possível carregar as fases canônicas" [leitura]="leitura" />
+<ui-falha-de-leitura titulo="Não foi possível carregar os tipos de fase" [leitura]="leitura" />
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 <cfg-fases-canonicas-lista
@@ -47,7 +47,7 @@
   (cancelar)="edicao.fechar()"
 />
 <cfg-confirmacao-de-remocao
-  titulo="Remover fase canônica"
+  titulo="Remover tipo de fase"
   [(aberto)]="edicao.confirmando"
   [mensagem]="edicao.mensagemDaConfirmacao()"
   [removendo]="edicao.removendo()"

@@ -67,7 +67,7 @@ export const MENU_LATERAL: readonly GrupoDoMenu[] = [
       },
       { label: 'Tipo de Deficiência', icon: 'pi-stop', routerLink: '/tipos-deficiencia' },
       {
-        label: 'Fase Canônica',
+        label: 'Tipo de fase',
         icon: 'pi-star',
         routerLink: '/fases-canonicas',
         exact: true,

@@ -91,7 +91,7 @@ export const appRoutes: Routes = [
       {
         path: 'fases-canonicas',
         canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['fases-canonicas'])],
-        data: { breadcrumb: 'Fase Canônica' },
+        data: { breadcrumb: 'Tipo de fase' },
         loadChildren: () =>
           import('./features/fases-canonicas/fases-canonicas.routes').then(
             (m) => m.FASES_CANONICAS_ROUTES,

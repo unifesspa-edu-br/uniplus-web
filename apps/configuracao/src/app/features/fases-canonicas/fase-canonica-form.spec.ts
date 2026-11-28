@@ -23,11 +23,12 @@ const fase: FaseCanonicaDto = {
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
+  organizadaEmChamadas: false,
   origemData: ORIGENS_DE_DATA.NO_EDITAL,
   criadoEm: '',
 };
 
-describe('formulário de fase canônica', () => {
+describe('formulário de tipo de fase', () => {
   it('preenche os opcionais em branco, valida e prepara a atualização sem o código', () => {
     const form = criarFormularioDeFase();
     expect(form.invalid).toBe(true);
@@ -43,6 +44,26 @@ describe('formulário de fase canônica', () => {
     const comando = comandoDeAtualizacao('f1', form);
     expect(comando).toMatchObject({ id: 'f1', nome: 'Nome', baseLegal: 'Lei', descricao: null });
     expect(comando).not.toHaveProperty('codigo');
+  });
+
+  it('começa sem valor marcado em "organizada em chamadas" e só vale depois de escolher', () => {
+    const form = criarFormularioDeFase();
+    expect(form.controls.organizadaEmChamadas.value).toBeNull();
+
+    form.reset({ ...valoresDaFase(fase), organizadaEmChamadas: null });
+    expect(form.controls.organizadaEmChamadas.hasError('required')).toBe(true);
+    expect(form.invalid).toBe(true);
+  });
+
+  it.each([true, false])('devolve no comando "organizada em chamadas" lida como %s', (valor) => {
+    const form = criarFormularioDeFase();
+    form.reset(valoresDaFase({ ...fase, organizadaEmChamadas: valor }));
+
+    expect(comandoDeAtualizacao('f1', form).organizadaEmChamadas).toBe(valor);
+  });
+
+  it('liga a recusa do servidor ao campo "organizada em chamadas"', () => {
+    expect(controleDoCampoDoServidor('OrganizadaEmChamadas')).toBe('organizadaEmChamadas');
   });
 
   it('devolve no comando os sinalizadores como foram lidos, sem consultar o código da fase', () => {

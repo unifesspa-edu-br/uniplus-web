@@ -18,7 +18,7 @@ import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/nave
 const PAGE_SIZE = 50;
 
 /**
- * Estado da listagem de fases canônicas: consulta, paginação e recarga.
+ * Estado da listagem de tipos de fase: consulta, paginação e recarga.
  */
 @Injectable()
 export class FasesCanonicasStore {
@@ -79,7 +79,7 @@ export class FasesCanonicasStore {
     if (problem) {
       return this.problemI18n.resolve(problem).title;
     }
-    return this.lista.error() ? 'Erro inesperado ao carregar fases canônicas.' : null;
+    return this.lista.error() ? 'Erro inesperado ao carregar tipos de fase.' : null;
   });
 
   constructor() {

@@ -255,7 +255,7 @@ describe('IdentificacaoPassoComponent', () => {
   });
 
   /**
-   * 413 é recusa definitiva do filtro de idempotência: manter a chave prenderia
+   * 413 é recusa definitiva do limite do corpo da requisição: manter a chave prenderia
    * a tela repetindo para sempre um comando que o servidor não aceita.
    */
   it('rotaciona a chave e libera os campos após 413', async () => {
@@ -264,7 +264,11 @@ describe('IdentificacaoPassoComponent', () => {
 
     const req1 = controller.expectOne(`${BASE}/api/selecao/processos-seletivos`);
     const chave1 = req1.request.headers.get('Idempotency-Key');
-    const grande = problema(413, 'uniplus.idempotency.body_muito_grande', 'Corpo muito grande');
+    const grande = problema(
+      413,
+      'uniplus.requisicao.corpo_acima_do_limite',
+      'O corpo da requisição passa do tamanho aceito',
+    );
     req1.flush(grande.body, grande.opts);
     await primeira;
 

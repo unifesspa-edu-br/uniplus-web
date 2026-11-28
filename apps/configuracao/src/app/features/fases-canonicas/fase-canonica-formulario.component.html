@@ -1,8 +1,8 @@
 <ui-drawer
   class="form-drawer"
   [(visible)]="aberto"
-  heading="Editar fase canônica"
-  ariaLabel="Formulário de fase canônica"
+  heading="Editar tipo de fase"
+  ariaLabel="Formulário de tipo de fase"
   position="right"
   [closable]="!salvando()"
 >
@@ -206,6 +206,34 @@
               da taxa, e ela não coleta inscrição — são janelas com prazos distintos.
             </span>
           </label>
+          <label class="field" [class.is-error]="erroDoCampo('organizadaEmChamadas')">
+            <span class="field__label is-required">Organizada em chamadas</span>
+            <select
+              class="select"
+              formControlName="organizadaEmChamadas"
+              [attr.aria-invalid]="erroDoCampo('organizadaEmChamadas') ? 'true' : null"
+              [attr.aria-describedby]="
+                erroDoCampo('organizadaEmChamadas')
+                  ? 'cfg-fase-erro-organizadaEmChamadas cfg-fase-ajuda-organizadaEmChamadas'
+                  : 'cfg-fase-ajuda-organizadaEmChamadas'
+              "
+              aria-required="true"
+            >
+              <option [ngValue]="null" disabled>Selecione sim ou não</option>
+              <option [ngValue]="true">Sim</option>
+              <option [ngValue]="false">Não</option>
+            </select>
+            <span class="field__hint" id="cfg-fase-ajuda-organizadaEmChamadas">
+              A fase é conduzida por chamadas, como a habilitação: cada chamada tem os seus
+              convocados. O edital que usar esta fase passa a exigir nela ao menos um formulário
+              obrigatório, que vale para todos os convocados.
+            </span>
+            @if (erroDoCampo('organizadaEmChamadas')) {
+              <span class="field__error" id="cfg-fase-erro-organizadaEmChamadas">{{
+                erroDoCampo('organizadaEmChamadas')
+              }}</span>
+            }
+          </label>
         </div>
       </fieldset>
 
@@ -294,7 +322,7 @@
       @if (salvando()) {
         <ui-spinner spinnerSize="sm" />
       }
-      {{ salvando() ? 'Salvando...' : 'Salvar fase canônica' }}
+      {{ salvando() ? 'Salvando...' : 'Salvar tipo de fase' }}
     </button>
   </div>
 </ui-drawer>

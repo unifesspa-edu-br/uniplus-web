@@ -4,11 +4,11 @@ import { faseCanonica } from '../support/api-de-fases-canonicas';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
- * E2E funcional da tela de Fase canônica (issues #393, #698). Convenção do repo:
+ * E2E funcional da tela de Tipo de fase (issues #393, #698). Convenção do repo:
  * runtime-config e API mockados por `page.route`; autenticação real (Keycloak)
  * via projeto `fluxo-chromium` (auth-setup + storageState).
  *
- * Issue #698: a interface comum não cria fase canônica — só lista, filtra,
+ * Issue #698: a interface comum não cria tipo de fase — só lista, filtra,
  * edita e remove. O endpoint de criação continua existindo na API, mas a tela
  * nunca o aciona.
  */
@@ -117,10 +117,10 @@ async function mockApi(page: Page, capturado: Capturado, lista: readonly unknown
 
 async function abrirPagina(page: Page): Promise<void> {
   await page.goto('/fases-canonicas');
-  await expect(page.getByRole('heading', { name: 'Fase Canônica', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tipo de fase', level: 1 })).toBeVisible();
 }
 
-test.describe('Fase canônica — sem criação pela interface (#698)', () => {
+test.describe('Tipo de fase — sem criação pela interface (#698)', () => {
   test.beforeEach(async ({ page }) => {
     await mockConfiguracaoRuntimeConfig(page);
   });
@@ -137,13 +137,13 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     await expect(page.getByText('Códigos definidos pelo catálogo institucional')).toBeVisible();
   });
 
-  test('CA-01 / CA-03 / CA-04: não há ação para criar uma fase canônica', async ({ page }) => {
+  test('CA-01 / CA-03 / CA-04: não há ação para criar um tipo de fase', async ({ page }) => {
     await mockApi(page, novoCapturado(), [faseSeed]);
     await abrirPagina(page);
 
-    await expect(page.getByRole('button', { name: 'Nova fase canônica' })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Nova fase canônica' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Criar fase canônica' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Novo tipo de fase' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Novo tipo de fase' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Criar tipo de fase' })).toHaveCount(0);
   });
 
   test('CA-02 / CA-16: estado vazio informa sem sugerir cadastrar a primeira fase', async ({
@@ -153,7 +153,7 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     await abrirPagina(page);
 
     await expect(page.getByText('catálogo de fases é definido institucionalmente')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Nova fase canônica' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Novo tipo de fase' })).toHaveCount(0);
   });
 
   test('CA-05 / CA-06 / CA-07 / CA-14: edição abre o drawer, código é readonly e salva via PUT', async ({
@@ -164,16 +164,16 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     await abrirPagina(page);
 
     await page
-      .getByRole('button', { name: `Editar fase canônica ${faseSeed.codigo}`, exact: true })
+      .getByRole('button', { name: `Editar tipo de fase ${faseSeed.codigo}`, exact: true })
       .click();
-    await expect(page.getByText('Editar fase canônica')).toBeVisible();
+    await expect(page.getByText('Editar tipo de fase')).toBeVisible();
 
     const codigoInput = page.locator('[formControlName="codigo"]');
     await expect(codigoInput).toHaveAttribute('readonly', '');
     await expect(codigoInput).toHaveValue('AVALIACAO');
 
     await page.locator('[formControlName="nome"]').fill('Avaliação (revisada)');
-    await page.getByRole('button', { name: 'Salvar fase canônica' }).click();
+    await page.getByRole('button', { name: 'Salvar tipo de fase' }).click();
 
     await expect.poll(() => capturado.puts.length).toBe(1);
     expect(capturado.puts[0]).not.toHaveProperty('codigo');
@@ -195,14 +195,14 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
       await abrirPagina(page);
 
       await page
-        .getByRole('button', { name: `Editar fase canônica ${faseSeed.codigo}`, exact: true })
+        .getByRole('button', { name: `Editar tipo de fase ${faseSeed.codigo}`, exact: true })
         .click();
       const campo = page.getByLabel('Origem da data');
       await expect(campo.getByRole('option', { name: 'No edital' })).toHaveCount(1);
       await expect(campo.getByRole('option', { name: 'Na execucao' })).toHaveCount(1);
       await campo.selectOption(origem);
       await expect(campo.locator('option:checked')).toHaveText(rotulo);
-      await page.getByRole('button', { name: 'Salvar fase canônica' }).click();
+      await page.getByRole('button', { name: 'Salvar tipo de fase' }).click();
 
       await expect.poll(() => capturado.puts.length).toBe(1);
       expect(capturado.puts[0]).toMatchObject({ origemData: origem });
@@ -214,7 +214,7 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     await abrirPagina(page);
 
     await page
-      .getByRole('button', { name: `Editar fase canônica ${faseSeed.codigo}`, exact: true })
+      .getByRole('button', { name: `Editar tipo de fase ${faseSeed.codigo}`, exact: true })
       .click();
     const ajuda = page
       .locator('label.field', { hasText: 'Origem da data' })
@@ -252,7 +252,7 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     await abrirPagina(page);
 
     await page
-      .getByRole('button', { name: `Editar fase canônica ${faseSeed.codigo}`, exact: true })
+      .getByRole('button', { name: `Editar tipo de fase ${faseSeed.codigo}`, exact: true })
       .click();
     const campo = page.locator('[formControlName="unidadeSugeridaId"]');
     await expect(
@@ -261,7 +261,7 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     expect((await runAxeWcagAA(page)).violations.map((violacao) => violacao.id)).toEqual([]);
 
     await campo.selectOption({ label: 'CGA — Centro de Gestão Acadêmica' });
-    await page.getByRole('button', { name: 'Salvar fase canônica' }).click();
+    await page.getByRole('button', { name: 'Salvar tipo de fase' }).click();
     await expect.poll(() => capturado.puts.length).toBe(1);
     expect(capturado.puts[0]).toMatchObject({ unidadeSugeridaId: UNIDADE_CGA.id });
   });
@@ -281,13 +281,13 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     await abrirPagina(page);
 
     await page
-      .getByRole('button', { name: `Editar fase canônica ${faseSeed.codigo}`, exact: true })
+      .getByRole('button', { name: `Editar tipo de fase ${faseSeed.codigo}`, exact: true })
       .click();
     const campo = page.locator('[formControlName="unidadeSugeridaId"]');
     await expect(campo).toHaveValue(UNIDADE_CGA.id);
 
     await campo.selectOption({ label: 'Nenhuma' });
-    await page.getByRole('button', { name: 'Salvar fase canônica' }).click();
+    await page.getByRole('button', { name: 'Salvar tipo de fase' }).click();
     await expect.poll(() => capturado.puts.length).toBe(1);
     expect(capturado.puts[0]).toMatchObject({ unidadeSugeridaId: null });
   });
@@ -300,7 +300,7 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     await abrirPagina(page);
 
     await page
-      .getByRole('button', { name: `Editar fase canônica ${faseIsencaoSeed.codigo}`, exact: true })
+      .getByRole('button', { name: `Editar tipo de fase ${faseIsencaoSeed.codigo}`, exact: true })
       .click();
 
     // A marca de isenção pertence a essa fase e só a ela, e as duas janelas são
@@ -308,7 +308,7 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     await expect(page.getByTestId('cfg-fase-coleta-isencao')).toHaveValue('Sim');
     await expect(page.locator('[formControlName="coletaInscricao"]')).toBeHidden();
 
-    await page.getByRole('button', { name: 'Salvar fase canônica' }).click();
+    await page.getByRole('button', { name: 'Salvar tipo de fase' }).click();
 
     await expect.poll(() => capturado.puts.length).toBe(1);
     expect(capturado.puts[0]).toMatchObject({
@@ -318,13 +318,13 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     expect(capturado.posts).toHaveLength(0);
   });
 
-  test('CA-15: remove uma fase canônica após confirmação', async ({ page }) => {
+  test('CA-15: remove um tipo de fase após confirmação', async ({ page }) => {
     const capturado = novoCapturado();
     await mockApi(page, capturado, [faseSeed]);
     await abrirPagina(page);
 
     await page
-      .getByRole('button', { name: `Remover fase canônica ${faseSeed.codigo}`, exact: true })
+      .getByRole('button', { name: `Remover tipo de fase ${faseSeed.codigo}`, exact: true })
       .click();
     const dialog = page.locator('dialog.uni-dialog[open]');
     await dialog.getByRole('button', { name: 'Remover' }).click();

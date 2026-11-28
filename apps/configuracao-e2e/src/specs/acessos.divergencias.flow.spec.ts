@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { DivergenciaDaGovernancaDto } from '@uniplus/shared-data/autorizacao';
 import { mockPermissoesEfetivas, type JsonDaApi } from '@uniplus/shared-e2e';
 import { ERRO_INTERNO, mockRota } from '../support/api-de-perfis-filas';
-import { tipoDeDivergencia } from '../support/enumerados-de-autorizacao';
+import { classificacaoDeProtecao, tipoDeDivergencia } from '../support/enumerados-de-autorizacao';
 import {
   PERMISSOES_DA_BETINA_SO_APROVA,
   PERMISSOES_DO_DIOGO_SO_APROVA,
@@ -20,8 +20,10 @@ const DIVERGENCIAS: readonly JsonDaApi<DivergenciaDaGovernancaDto>[] = [
     perfilNome: 'Gestão de acessos',
     codigo: 'autorizacao:perfis:manter',
     tipo: tipoDeDivergencia('CLASSIFICACAO'),
-    de: 'interno',
-    para: 'pessoal',
+    classificacaoAnterior: classificacaoDeProtecao('INTERNO'),
+    classificacaoNova: classificacaoDeProtecao('PESSOAL'),
+    deUnidadeAnterior: null,
+    deUnidadeNovo: null,
     instante: '2026-11-09T15:00:00Z',
   },
   {
@@ -30,8 +32,10 @@ const DIVERGENCIAS: readonly JsonDaApi<DivergenciaDaGovernancaDto>[] = [
     perfilNome: 'Operador de inscrições',
     codigo: 'autorizacao:concessoes:administrar',
     tipo: tipoDeDivergencia('COMPOSICAO_FALTANTE'),
-    de: null,
-    para: 'autorizacao:concessoes:administrar',
+    classificacaoAnterior: null,
+    classificacaoNova: null,
+    deUnidadeAnterior: null,
+    deUnidadeNovo: null,
     instante: '2026-11-09T16:00:00Z',
   },
 ];

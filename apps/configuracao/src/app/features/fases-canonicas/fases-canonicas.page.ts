@@ -33,7 +33,7 @@ export class FasesCanonicasPage {
   protected readonly store = inject(FasesCanonicasStore);
   protected readonly edicao = inject(EdicaoDasFasesCanonicas);
   protected readonly leitura = acompanharLeitura({
-    assunto: 'fases canônicas',
+    assunto: 'tipos de fase',
     falha: this.store.mensagemDeErro,
     pendente: this.store.carregando,
     indisponivel: this.edicao.gravando,

@@ -40,13 +40,13 @@ describe('FasesCanonicasPage — edição pelo drawer', () => {
     cena.fixture.detectChanges();
 
     const texto: string = cena.fixture.nativeElement.textContent;
-    expect(texto).toContain('Editar fase canônica');
-    expect(texto).not.toContain('Nova fase canônica');
+    expect(texto).toContain('Editar tipo de fase');
+    expect(texto).not.toContain('Novo tipo de fase');
 
     const submit = cena.fixture.nativeElement.querySelector(
       'button[form="cfg-fase-canonica-form"]',
     ) as HTMLButtonElement;
-    expect(submit.textContent?.trim()).toBe('Salvar fase canônica');
+    expect(submit.textContent?.trim()).toBe('Salvar tipo de fase');
   });
 
   it('CA-07: código é readonly na edição e o payload de atualização não inclui o campo codigo', async () => {
@@ -168,6 +168,87 @@ describe('FasesCanonicasPage — edição pelo drawer', () => {
     put.flush(null, { status: 204, statusText: 'No Content' });
     await propagar(cena);
     await responderLista(cena, [faseComColeta]);
+  });
+
+  it('mostra o campo "organizada em chamadas" sem marca na lacuna e envia o valor escolhido', async () => {
+    const organizada: FaseCanonicaDto = { ...faseAvaliacaoSeed, organizadaEmChamadas: true };
+    await responderLista(cena, [organizada]);
+
+    cena.edicao.abrirEdicao(organizada);
+    cena.fixture.detectChanges();
+    const campo = cena.fixture.nativeElement.querySelector(
+      '[formcontrolname="organizadaEmChamadas"]',
+    ) as HTMLSelectElement;
+    expect(campo.getAttribute('aria-required')).toBe('true');
+    expect(campo.textContent).toContain('Selecione sim ou não');
+
+    cena.edicao.salvar();
+    const put = cena.controller.expectOne(
+      `${BASE}/api/configuracao/admin/fases-canonicas/${organizada.id}`,
+    );
+    expect(put.request.body).toMatchObject({ organizadaEmChamadas: true });
+    put.flush(null, { status: 204, statusText: 'No Content' });
+    await propagar(cena);
+    await responderLista(cena, [organizada]);
+  });
+
+  it('envia "Não" explícito em "organizada em chamadas" quando a pessoa troca o valor', async () => {
+    const organizada: FaseCanonicaDto = { ...faseAvaliacaoSeed, organizadaEmChamadas: true };
+    await responderLista(cena, [organizada]);
+    cena.edicao.abrirEdicao(organizada);
+
+    cena.edicao.form.controls.organizadaEmChamadas.setValue(false);
+    cena.edicao.salvar();
+    const put = cena.controller.expectOne(
+      `${BASE}/api/configuracao/admin/fases-canonicas/${organizada.id}`,
+    );
+    expect(put.request.body).toMatchObject({ organizadaEmChamadas: false });
+    put.flush(null, { status: 204, statusText: 'No Content' });
+    await propagar(cena);
+    await responderLista(cena, [organizada]);
+  });
+
+  it('mostra junto ao campo "organizada em chamadas" a recusa que aponta esse campo', async () => {
+    await responderLista(cena, [faseAvaliacaoSeed]);
+    cena.edicao.abrirEdicao(faseAvaliacaoSeed);
+    cena.fixture.detectChanges();
+    cena.edicao.salvar();
+    cena.controller
+      .expectOne(`${BASE}/api/configuracao/admin/fases-canonicas/${faseAvaliacaoSeed.id}`)
+      .flush(
+        {
+          type: 'about:blank',
+          status: 422,
+          title: 'Recusa',
+          code: 'uniplus.validacao',
+          traceId: '00000000000000000000000000000002',
+          errors: [
+            {
+              field: 'OrganizadaEmChamadas',
+              code: 'uniplus.configuracao.fase_canonica.invalida',
+              message: 'Informe se a fase é organizada em chamadas.',
+            },
+          ],
+        },
+        {
+          status: 422,
+          statusText: 'Unprocessable Entity',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+    await propagar(cena);
+    cena.fixture.detectChanges();
+    await cena.fixture.whenStable();
+    cena.fixture.detectChanges();
+
+    const campo = cena.fixture.nativeElement.querySelector(
+      '[formcontrolname="organizadaEmChamadas"]',
+    ) as HTMLSelectElement;
+    expect(campo.getAttribute('aria-invalid')).toBe('true');
+    expect(campo.getAttribute('aria-describedby')).toContain('cfg-fase-erro-organizadaEmChamadas');
+    expect(cena.fixture.nativeElement.textContent).toContain(
+      'Informe se a fase é organizada em chamadas.',
+    );
   });
 
   it('oferece a origem da data pelos rótulos novos, e a ajuda não cita terceiro, MEC nem SiSU', async () => {

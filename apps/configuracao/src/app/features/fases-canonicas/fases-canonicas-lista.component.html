@@ -1,7 +1,7 @@
 <section class="panel" aria-labelledby="cfg-fases-canonicas-list-title">
   <div class="panel-head">
     <div class="panel-head__title">
-      <h2 id="cfg-fases-canonicas-list-title" tabindex="-1">Fases canônicas</h2>
+      <h2 id="cfg-fases-canonicas-list-title" tabindex="-1">Tipos de fase</h2>
       @if (carregando() || removendo()) {
         <span class="list-state__loading"
           ><ui-spinner spinnerSize="sm" /> {{ removendo() ? 'Removendo' : 'Carregando' }}</span
@@ -11,9 +11,9 @@
   </div>
 
   <ui-filter-bar
-    ariaLabel="Filtrar fases canônicas"
+    ariaLabel="Filtrar tipos de fase"
     searchPlaceholder="Buscar por código ou nome…"
-    searchAriaLabel="Buscar fase canônica"
+    searchAriaLabel="Buscar tipo de fase"
     [(searchValue)]="termoBusca"
     [attr.inert]="gravando() ? '' : null"
   />
@@ -22,8 +22,8 @@
     <div class="table-responsive">
       <table>
         <caption class="sr-only">
-          Fases canônicas, com unidade sugerida, agrupamento de etapas e permissão de complementação
-          documental
+          Tipos de fase, com unidade sugerida, agrupamento de etapas, permissão de complementação
+          documental e organização em chamadas
         </caption>
         <thead>
           <tr>
@@ -32,6 +32,7 @@
             <th scope="col">Unidade sugerida</th>
             <th scope="col">Agrupa etapas</th>
             <th scope="col">Permite compl.</th>
+            <th scope="col">Em chamadas</th>
             <th scope="col"><span class="sr-only">Ações</span></th>
           </tr>
         </thead>
@@ -70,18 +71,23 @@
                   <span aria-label="Não aplicável">—</span>
                 }
               </td>
+              <td data-label="Em chamadas">
+                <span class="tag" [class.tag--success]="fase.organizadaEmChamadas">{{
+                  fase.organizadaEmChamadas ? 'Sim' : 'Não'
+                }}</span>
+              </td>
               <td class="table-responsive__actions" data-label="Ações">
                 <ui-icon-button
                   icon="pi-pencil"
                   [accessibleName]="nomeDaAcao('editar', fase.codigo)"
-                  tooltip="Editar fase canônica"
+                  tooltip="Editar tipo de fase"
                   [isDisabled]="indisponivel()"
                   (triggered)="acionar('editar', fase)"
                 />
                 <ui-icon-button
                   icon="pi-trash"
                   [accessibleName]="nomeDaAcao('remover', fase.codigo)"
-                  tooltip="Remover fase canônica"
+                  tooltip="Remover tipo de fase"
                   [isDisabled]="indisponivel()"
                   (triggered)="acionar('remover', fase)"
                 />
@@ -108,7 +114,7 @@
       </ui-empty-state>
     } @else {
       <ui-empty-state
-        heading="Nenhuma fase canônica disponível"
+        heading="Nenhum tipo de fase disponível"
         description="O catálogo de fases é definido institucionalmente. As fases aparecem aqui quando o backend as provisiona."
       />
     }
@@ -116,7 +122,7 @@
   @if (temAnterior() || temProximo()) {
     <ui-pager
       statusText="Navegação por páginas"
-      navigationLabel="Paginação de fases canônicas"
+      navigationLabel="Paginação de tipos de fase"
       [hasPrevious]="temAnterior()"
       [hasNext]="temProximo()"
       [isDisabled]="indisponivel()"
