@@ -14,29 +14,36 @@ const TIPO = { codigo: 'HOMOLOGACAO_DAS_INSCRICOES', rotulo: 'Homologação das 
 const SENTIDO = { codigo: 'DESFAVORAVEL', rotulo: 'Desfavorável' };
 const ID_DO_MOTIVO = '01a0d640-0000-7000-8000-0000000000b1';
 
-/** O motivo no cadastro, como a API o lista. */
-const MOTIVO_NO_CADASTRO = {
-  id: ID_DO_MOTIVO,
+/** O que o motivo é, igual no cadastro e na escolha da fase. */
+const DADOS_DO_MOTIVO = {
   tipo: TIPO,
   codigo: CODIGO_DO_MOTIVO,
   descricao: DESCRICAO_DO_MOTIVO,
   subclassificacao: null,
   sentido: SENTIDO,
-  ativo: true,
 };
+
+/** O motivo no cadastro, como a API o lista. */
+const MOTIVO_NO_CADASTRO = { id: ID_DO_MOTIVO, ...DADOS_DO_MOTIVO, ativo: true };
 
 /** O motivo que a fase escolheu, como a leitura dos motivos do processo o devolve. */
 function motivoEscolhidoPelaFase(faseCanonicaOrigemId: string) {
   return {
     motivoDeDecisaoId: ID_DO_MOTIVO,
     lugar: { faseCanonicaOrigemId, etapaId: null },
-    tipo: TIPO,
-    codigo: CODIGO_DO_MOTIVO,
-    descricao: DESCRICAO_DO_MOTIVO,
-    subclassificacao: null,
-    sentido: SENTIDO,
+    ...DADOS_DO_MOTIVO,
     vigencia: { versaoDoEditalDeEntrada: 1, versaoDoEditalDeSaida: null },
     justificativaDaInclusao: null,
+  };
+}
+
+/** A condição do retorno do INEP de uma edição, com o enquadramento da edição do exame. */
+function condicaoDaEdicao(ano: string) {
+  return {
+    tipo: 'RESULTADO_NO_RETORNO_DO_INEP',
+    edicaoDoExame: Number(ano),
+    motivoDesfavoravelCodigo: CODIGO_DO_MOTIVO,
+    enquadramento: [[{ fato: 'EDICAO_ENEM', operador: IGUAL, valor: ano }]],
   };
 }
 
@@ -46,24 +53,7 @@ function motivoEscolhidoPelaFase(faseCanonicaOrigemId: string) {
  */
 export const REGRA_DA_MEDICINA: RegraDeHomologacaoDto = {
   resultadoAtoCodigo: 'RESULTADO_FINAL',
-  alternativas: EDICOES_DA_MEDICINA.map((ano) => ({
-    condicoes: [
-      {
-        tipo: 'RESULTADO_NO_RETORNO_DO_INEP',
-        edicaoDoExame: Number(ano),
-        motivoDesfavoravelCodigo: CODIGO_DO_MOTIVO,
-        enquadramento: [
-          [
-            {
-              fato: 'EDICAO_ENEM',
-              operador: IGUAL,
-              valor: ano,
-            },
-          ],
-        ],
-      },
-    ],
-  })),
+  alternativas: EDICOES_DA_MEDICINA.map((ano) => ({ condicoes: [condicaoDaEdicao(ano)] })),
 };
 
 /**
