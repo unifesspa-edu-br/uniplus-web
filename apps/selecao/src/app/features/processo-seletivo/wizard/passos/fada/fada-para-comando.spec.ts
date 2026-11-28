@@ -105,7 +105,7 @@ describe('comoComandoDoFada', () => {
 
   it('não grava enquanto a declaração não foi respondida', () => {
     expect(() => comoComandoDoFada(fada({ aplica: null }))).toThrow(
-      'A declaração do Fator de Atenuação precisa ser respondida',
+      'O comando só é montado depois de responder se o processo aplica o Fator de Atenuação',
     );
   });
 });

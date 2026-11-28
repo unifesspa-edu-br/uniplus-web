@@ -53,6 +53,31 @@ describe('formulário de tipo de ato', () => {
     expect(comandoDeAtualizacao('1', form)).toMatchObject({ id: '1', codigo: ' NOVO ' });
   });
 
+  it.each(['publicavelComoAvulso', 'exigeAtoCorrigido'] as const)(
+    'não monta os comandos com "%s" sem resposta',
+    (campo) => {
+      const form = criarFormularioDeAto();
+      form.reset(valoresDoAto(aviso));
+      form.controls[campo].setValue(null);
+
+      expect(() => comandoDeCriacao(form)).toThrow('O comando só é montado depois de responder');
+      expect(() => comandoDeAtualizacao('1', form)).toThrow(
+        'O comando só é montado depois de responder',
+      );
+    },
+  );
+
+  it.each([true, false])('envia nos comandos as duas respostas como %s', (resposta) => {
+    const form = criarFormularioDeAto();
+    form.reset(valoresDoAto(aviso));
+    form.patchValue({ publicavelComoAvulso: resposta, exigeAtoCorrigido: !resposta });
+
+    expect(comandoDeCriacao(form)).toMatchObject({
+      publicavelComoAvulso: resposta,
+      exigeAtoCorrigido: !resposta,
+    });
+  });
+
   it('liga o campo recusado pelo servidor ao controle, ignorando o desconhecido', () => {
     expect(controleDoCampoDoServidor('ExigeAtoCorrigido')).toBe('exigeAtoCorrigido');
     expect(controleDoCampoDoServidor('Desconhecido')).toBeNull();

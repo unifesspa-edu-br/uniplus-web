@@ -77,4 +77,14 @@ describe('declaração da taxa', () => {
 
     expect(comando).toEqual({ cobra: true, valor: 35, fundamentos: [CADASTRO_UNICO] });
   });
+
+  it('monta o comando do processo gratuito com a resposta "não" como foi escolhida', () => {
+    expect(comandoDaTaxa(pagamento({ cobra: false })).cobra).toBe(false);
+  });
+
+  it('não monta o comando enquanto a pergunta "cobra taxa" está em aberto', () => {
+    expect(() => comandoDaTaxa(pagamento({ cobra: null }))).toThrow(
+      'O comando só é montado depois de responder se o processo cobra taxa de inscrição.',
+    );
+  });
 });
