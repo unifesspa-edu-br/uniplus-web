@@ -21,7 +21,8 @@
     <select
       class="select"
       id="form-novo-modelo"
-      [disabled]="!store.aceitaEdicao()"
+      aria-describedby="form-novo-modelo-ajuda"
+      [disabled]="!store.aceitaEdicao() || store.processoSeletivoId() === null"
       (change)="escolherModelo($any($event.target).value)"
     >
       <option value="" [selected]="modeloEscolhido() === ''">Nenhum, começar vazio</option>
@@ -31,6 +32,7 @@
         </option>
       }
     </select>
+    <span class="field__hint" id="form-novo-modelo-ajuda">{{ ajudaDoModelo() }}</span>
   </div>
 
   <div class="form-field" [class.is-error]="erroDoCodigo() !== null">
@@ -49,8 +51,7 @@
       (input)="digitar($event)"
     />
     <span class="field__hint" id="form-novo-codigo-ajuda">
-      Letras maiúsculas, números e _. O modelo escolhido preenche o código, que você pode mudar. O
-      código não muda depois que o formulário é gravado.
+      {{ ajudaDoCodigo }}
     </span>
     @if (erroDoCodigo(); as erro) {
       <p class="field__erro" role="alert" id="form-novo-codigo-erro">{{ erro }}</p>

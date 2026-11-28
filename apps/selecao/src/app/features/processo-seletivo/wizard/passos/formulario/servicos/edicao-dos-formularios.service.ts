@@ -65,13 +65,15 @@ export class EdicaoDosFormularios {
 
   /**
    * Acrescenta o formulário com o código e a fase escolhidos, só com a revisão e aceite que todo
-   * formulário exige como última página; o resto vem do modelo, quando ele é aplicado. O
-   * formulário é criado no servidor quando o passo for gravado.
+   * formulário exige como última página, e registra o modelo escolhido. Sem modelo, o formulário é
+   * criado no servidor quando o passo for gravado; com modelo, quem chama aplica a cópia logo em
+   * seguida, e é ela que o cria. Devolve o formulário acrescentado.
    */
-  acrescentar(pedido: FormularioAAcrescentar): void {
+  acrescentar(pedido: FormularioAAcrescentar): FormularioDoProcessoNoRascunho {
     const novo = this.naFase(formularioNovo(pedido), this.formularios());
     this.trocar(novo, pedido.codigo);
     if (pedido.modelo !== null) this.aplicacao.escolher(pedido.codigo, pedido.modelo.id);
+    return novo;
   }
 
   private formularios(): readonly FormularioDoProcessoNoRascunho[] {

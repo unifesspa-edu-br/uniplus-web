@@ -39,12 +39,15 @@ const MODELOS = [
 describe('AcrescimoDeFormularioComponent', () => {
   let fixture: ComponentFixture<AcrescimoDeFormularioComponent>;
   let pedidos: FormularioAAcrescentar[];
+  let store: ProcessoSeletivoStore;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AcrescimoDeFormularioComponent],
       providers: [ProcessoSeletivoStore],
     }).compileComponents();
+    store = TestBed.inject(ProcessoSeletivoStore);
+    store.processoSeletivoId.set('processo-1');
     fixture = TestBed.createComponent(AcrescimoDeFormularioComponent);
     fixture.componentRef.setInput('fases', FASES);
     fixture.componentRef.setInput('modelos', MODELOS);
@@ -145,5 +148,45 @@ describe('AcrescimoDeFormularioComponent', () => {
     botao().click();
 
     expect(pedidos).toEqual([{ faseCodigo: 'AVALIACAO', codigo: 'OUTRO', modelo: null }]);
+  });
+
+  describe('ajuda do seletor de modelo', () => {
+    const ajuda = (): string => campo('form-novo-modelo-ajuda').textContent ?? '';
+
+    it('antes da escolha, diz o que o modelo traz, a gravação ao acrescentar e o código fixo', () => {
+      expect(campo('form-novo-modelo').getAttribute('aria-describedby')).toBe(
+        'form-novo-modelo-ajuda',
+      );
+      expect(ajuda()).toContain('recebe o modelo inteiro');
+      expect(ajuda()).toContain('o formulário é gravado no processo com a cópia');
+      expect(ajuda()).toContain('o código não muda mais');
+      expect(ajuda()).toContain('só funciona com o processo já criado');
+    });
+
+    it('com "Nenhum, começar vazio" escolhido, só diz que o formulário nasce vazio', () => {
+      escolher('form-novo-modelo', 'i');
+      escolher('form-novo-modelo', '');
+
+      expect(ajuda()).toContain('nasce vazio');
+      expect(ajuda()).not.toContain('modelo');
+    });
+
+    it('com modelo escolhido, a ajuda do código diz que ele é gravado ao acrescentar', () => {
+      escolher('form-novo-modelo', 'i');
+
+      expect(campo('form-novo-codigo-ajuda').textContent).toContain(
+        'ele é gravado ao ser acrescentado',
+      );
+    });
+  });
+
+  it('desativa o seletor de modelo enquanto o processo não foi criado', () => {
+    expect(campo<HTMLSelectElement>('form-novo-modelo').disabled).toBe(false);
+
+    store.processoSeletivoId.set(null);
+    fixture.detectChanges();
+
+    expect(campo<HTMLSelectElement>('form-novo-modelo').disabled).toBe(true);
+    expect(campo<HTMLSelectElement>('form-nova-fase').disabled).toBe(false);
   });
 });

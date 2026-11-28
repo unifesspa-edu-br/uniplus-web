@@ -14,7 +14,11 @@ import type { FormularioDoProcessoNoRascunho } from '../../../processo-seletivo.
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { LeiturasEmOrdem } from '../../../../leitura';
 import { tituloDoPasso } from '../../../shared/titulo-do-passo';
-import { comFormulario, formularioDoCodigo } from '../formularios-do-rascunho';
+import {
+  comFormulario,
+  formularioDoCodigo,
+  podeTrocarOutroFormulario,
+} from '../formularios-do-rascunho';
 import {
   comAplicacaoDoServidor,
   modelosOferecidos,
@@ -172,10 +176,15 @@ export class AplicacaoDeModelo {
   pedir(formulario: FormularioDoProcessoNoRascunho, daInscricao: boolean): string | null {
     const modelo = this.modeloEscolhidoNa(formulario.codigo);
     if (modelo === undefined) return null;
-    const bloqueio = this.aplicacaoQueBloqueia(formulario.codigo, modelo.id);
-    if (bloqueio !== undefined) return this.recusarPorCopiaEmAberto(formulario.codigo, ...bloqueio);
+    const recusa = this.recusaPorCopiaEmAberto(formulario.codigo, modelo.id);
+    if (recusa !== null) return recusa;
     this.pendente.set({ formulario, daInscricao, modelo });
     return null;
+  }
+
+  private recusaPorCopiaEmAberto(codigo: string, modeloId: string): string | null {
+    const bloqueio = this.aplicacaoQueBloqueia(codigo, modeloId);
+    return bloqueio === undefined ? null : this.recusarPorCopiaEmAberto(codigo, ...bloqueio);
   }
 
   private modeloEscolhidoNa(codigo: string): ModeloOferecido | undefined {
@@ -236,13 +245,40 @@ export class AplicacaoDeModelo {
   async confirmar(reconciliar: () => readonly string[]): Promise<string | null> {
     const pendente = this.pendente();
     this.pendente.set(null);
+    return pendente === null ? null : this.aplicar(pendente, reconciliar);
+  }
+
+  /**
+   * O formulário novo está vazio: a cópia entra sem diálogo, salvo se ela puder trocar outro
+   * formulário já gravado (inscrição), caso em que vale a confirmação da aba.
+   */
+  async aplicarAoAcrescentar(
+    formulario: FormularioDoProcessoNoRascunho,
+    daInscricao: boolean,
+    modelo: ModeloOferecido,
+    reconciliar: () => readonly string[],
+  ): Promise<string | null> {
+    const recusa = this.recusaPorCopiaEmAberto(formulario.codigo, modelo.id);
+    if (recusa !== null) return recusa;
+    const pedida = { formulario, daInscricao, modelo };
+    const rascunho = this.store.draft().formulario;
+    const confirmar = podeTrocarOutroFormulario(rascunho, formulario.codigo, daInscricao);
+    if (!confirmar) return this.aplicar(pedida, reconciliar);
+    this.pendente.set(pedida);
+    return null;
+  }
+
+  private async aplicar(
+    pedida: AplicacaoPedida,
+    reconciliar: () => readonly string[],
+  ): Promise<string | null> {
     const processoId = this.store.processoSeletivoId();
-    if (pendente === null || processoId === null) return null;
-    this.esquecerAplicacaoAnterior(pendente.formulario.codigo);
-    const desfecho = await this.aplicarTravandoOPasso(processoId, pendente);
+    if (processoId === null) return null;
+    this.esquecerAplicacaoAnterior(pedida.formulario.codigo);
+    const desfecho = await this.aplicarTravandoOPasso(processoId, pedida);
     if (desfecho === null) return null;
-    if (!desfecho.ok) return this.registrarRecusa(pendente, desfecho);
-    return this.registrarAplicacao(pendente, desfecho, reconciliar);
+    if (!desfecho.ok) return this.registrarRecusa(pedida, desfecho);
+    return this.registrarAplicacao(pedida, desfecho, reconciliar);
   }
 
   private registrarAplicacao(
