@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import type { ItemDoComprovanteDto } from '@uniplus/shared-data/selecao';
 import {
-  DadoDirective,
-  ListaDeDadosComponent,
   RespostaExibidaComponent,
   valorExibido,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-inscricao/resposta-da-inscricao';
+import { DadoDirective, ListaDeDadosComponent } from '@uniplus/shared-ui/components';
 
 /** As respostas de um trecho do comprovante, na ordem e com o rótulo que a API devolve. */
 @Component({
@@ -17,7 +16,7 @@ import {
     <ui-lista-de-dados [colunas]="colunas()">
       @for (resposta of respostas(); track $index) {
         <ng-template uiDado [rotulo]="resposta.rotulo">
-          <ui-resposta-exibida [exibido]="resposta.exibido" />
+          <insc-resposta-exibida [exibido]="resposta.exibido" />
         </ng-template>
       }
     </ui-lista-de-dados>

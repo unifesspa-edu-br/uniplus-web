@@ -264,7 +264,7 @@ describe('DetalheDaInscricaoPage', () => {
                   'SITUACAO',
                   'Situação do vínculo',
                   FormaDoValorDoItemCodigo.TEXTO,
-                  'cancelada',
+                  'CANCELADA',
                 ),
                 componente: exibicao(ExibicaoDoValorDoItemCodigo.SITUACAO),
               },

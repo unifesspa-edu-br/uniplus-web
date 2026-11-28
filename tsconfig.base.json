@@ -35,6 +35,12 @@
       "@uniplus/shared-inscricao": ["libs/shared-inscricao/src/index.ts"],
       "@uniplus/shared-inscricao/formulario": ["libs/shared-inscricao/formulario/src/index.ts"],
       "@uniplus/shared-inscricao/comprovante": ["libs/shared-inscricao/comprovante/src/index.ts"],
+      "@uniplus/shared-inscricao/situacao-da-inscricao": [
+        "libs/shared-inscricao/situacao-da-inscricao/src/index.ts"
+      ],
+      "@uniplus/shared-inscricao/resposta-da-inscricao": [
+        "libs/shared-inscricao/resposta-da-inscricao/src/index.ts"
+      ],
       "@uniplus/shared-ui/shell": ["libs/shared-ui/src/lib/components/shell.ts"],
       "@uniplus/shared-ui/notifications": [
         "libs/shared-ui/src/lib/components/notification-host/notification-host.ts"
