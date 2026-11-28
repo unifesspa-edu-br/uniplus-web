@@ -209,7 +209,7 @@ describe('o rascunho depois da aplicação', () => {
     expect(comAplicacaoDoServidor(antes, servidor, relato(), 'INSCRICAO')).toBe(antes);
   });
 
-  it('as derivações copiadas do catálogo somam-se às do rascunho, sem trocar as outras', () => {
+  it('depois da aplicação, as regras de derivação do rascunho são as que o servidor tem, copiadas ou não', () => {
     const servidor = {
       formularios: [doServidor('INSCRICAO', 'F-INSCRICAO', ['PCD'])],
       cronogramaFases: FASES,
@@ -218,19 +218,27 @@ describe('o rascunho depois da aplicação', () => {
         { codigoFato: 'RENDA_PER_CAPITA', regras: ['do catálogo'] },
       ],
     };
-    const editada = { codigoFato: 'COTISTA', regras: ['editada no rascunho'] };
+    const antes = rascunho({ derivacao: [{ codigoFato: 'COTISTA', regras: ['lida antes'] }] });
 
     const depois = comAplicacaoDoServidor(
-      rascunho({ derivacao: [editada] }),
+      antes,
       servidor,
       relato({ derivacoesCopiadas: ['RENDA_PER_CAPITA'] }),
       'INSCRICAO',
     );
 
-    expect(depois.derivacao).toEqual([
-      editada,
-      { codigoFato: 'RENDA_PER_CAPITA', regras: ['do catálogo'] },
-    ]);
+    expect(depois.derivacao).toEqual(servidor.regrasDerivacao);
+  });
+
+  it('o servidor sem regra de derivação deixa o rascunho sem regra de derivação', () => {
+    const servidor = {
+      formularios: [doServidor('INSCRICAO', 'F-INSCRICAO', ['PCD'])],
+      cronogramaFases: FASES,
+      regrasDerivacao: [],
+    };
+    const antes = rascunho({ derivacao: [{ codigoFato: 'COTISTA', regras: ['do servidor'] }] });
+
+    expect(comAplicacaoDoServidor(antes, servidor, relato(), 'INSCRICAO').derivacao).toEqual([]);
   });
 });
 
