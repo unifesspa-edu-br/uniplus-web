@@ -1,7 +1,3 @@
-.pub__resumo {
-  margin: var(--space-4) var(--space-5) 0;
-}
-
 .pub__resumo:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);

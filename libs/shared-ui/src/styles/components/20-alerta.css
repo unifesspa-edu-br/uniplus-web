@@ -4,6 +4,11 @@
  * lateral mais espessa e sombra para manter prioridade em telas com
  * múltiplas mensagens.
  * ========================================================================== */
+/* O elemento do componente é uma caixa de bloco: sem isso ele é inline e ignora margem
+   vertical quando o contêiner não é flex nem grid. */
+ui-alert {
+  display: block;
+}
 .alert {
   /* `wrap`: um `<p class="alert">` com texto interpolado e elementos inline no
      meio (ex.: `<strong>`) quebra o texto em vários itens flex anônimos — sem
