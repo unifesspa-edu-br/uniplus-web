@@ -176,6 +176,21 @@ describe('EnvioAoInepComponent', () => {
     );
   });
 
+  it('a recusa da geração do envio mostra o bloco do suporte fora do alerta', async () => {
+    tela = await abrirTela(controller);
+    await escolherEdicao(controller, tela, 'envio');
+
+    botao().click();
+    const [corpo, opcoes] = recusaSemInscritos();
+    controller.expectOne(`${ROTA_EDICAO}/envios-ao-inep`).flush(corpo, opcoes);
+    await tela.fixture.whenStable();
+    tela.fixture.detectChanges();
+
+    const bloco = secao().querySelector('ui-referencia-ao-suporte');
+    expect(bloco?.textContent).toContain('0af7651916cd43dd8448eb211c80319c');
+    expect(secao().querySelector('[role="alert"] ui-referencia-ao-suporte')).toBeNull();
+  });
+
   it('edição sem inscritos chega como aviso orientador e foca o alerta', async () => {
     tela = await abrirTela(controller);
     await escolherEdicao(controller, tela, 'envio');
@@ -187,7 +202,7 @@ describe('EnvioAoInepComponent', () => {
         title: 'Edição sem inscritos',
         status: 422,
         code: 'uniplus.selecao.notas_do_enem.edicao_sem_inscritos',
-        traceId: 't-1',
+        traceId: '0af7651916cd43dd8448eb211c80319c',
       }),
       {
         status: 422,
@@ -214,7 +229,7 @@ describe('EnvioAoInepComponent', () => {
       title: 'Edição sem inscritos',
       status: 422,
       code: 'uniplus.selecao.notas_do_enem.edicao_sem_inscritos',
-      traceId: 't-1',
+      traceId: '0af7651916cd43dd8448eb211c80319c',
     }),
     {
       status: 422,
