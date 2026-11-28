@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { soPeloDesempate } from '../classificacao/recusas-da-formula.testing';
 import type { CriterioDesempateConfigurado } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import {
@@ -60,7 +61,10 @@ describe('reavaliarRecusaPeloDesempate', () => {
     const store = new ProcessoSeletivoStore();
     store.patchObjectSection('classificacao', classificacao(ESCOLHIDA));
     store.classificacao.criteriosDesempateGravados.set(criterios);
-    store.classificacao.recusarPeloDesempate('Recusa pelo desempate.', leituraNaRecusa);
+    store.classificacao.registrarRecusasDaFormula(
+      soPeloDesempate('Recusa pelo desempate.'),
+      leituraNaRecusa,
+    );
     return store;
   }
 

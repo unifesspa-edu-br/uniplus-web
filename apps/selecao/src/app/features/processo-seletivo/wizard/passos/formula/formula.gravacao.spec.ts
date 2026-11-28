@@ -133,6 +133,7 @@ describe('Fórmula e precisão — gravar e avançar', () => {
 
   describe('quando o servidor recusa ou não responde', () => {
     const FORA_DO_QUADRO = 'uniplus.selecao.processo_seletivo.desempate_area_enem_fora_do_quadro';
+    const MENSAGEM_DA_API = 'Mensagem inventada sobre o critério de desempate na ordem 2.';
 
     it('recusa da resolução por critério de desempate gravado: mensagem no passo, recusa sob o campo e valores mantidos', async () => {
       prepararClassificacaoLocal();
@@ -145,13 +146,15 @@ describe('Fórmula e precisão — gravar e avançar', () => {
       recusarGravacao({
         title: 'Recusada.',
         code: 'uniplus.validacao',
-        errors: [{ field: 'resolucaoPesoAreaEnem', code: FORA_DO_QUADRO, message: 'Critério 1.' }],
+        errors: [
+          { field: 'resolucaoPesoAreaEnem', code: FORA_DO_QUADRO, message: MENSAGEM_DA_API },
+        ],
       });
       const resultado = await gravacao;
 
       expect(resultado.valid).toBe(false);
-      expect(resultado.messages?.[0]).toContain('Um critério de desempate gravado cita área');
-      expect(store.classificacao.recusaPeloDesempatePorArea()).not.toBeNull();
+      expect(resultado.messages).toEqual([MENSAGEM_DA_API]);
+      expect(store.classificacao.recusaPeloDesempatePorArea()).toBe(MENSAGEM_DA_API);
       expect(store.draft().classificacao.resolucaoPesoAreaEnem).toBe('R');
       expect(store.draft().classificacao.casasArredondamento).toBe('2');
     });

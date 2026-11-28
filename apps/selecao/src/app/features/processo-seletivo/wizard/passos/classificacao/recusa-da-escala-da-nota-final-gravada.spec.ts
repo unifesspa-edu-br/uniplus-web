@@ -50,9 +50,9 @@ describe('recusa da escala da nota final na gravação da classificação', () =
       code: 'uniplus.selecao.validacao',
       errors: [
         {
-          field: 'casasArredondamento',
-          code: 'uniplus.selecao.configuracao_classificacao.casas_arredondamento_obrigatorio',
-          message: 'As casas decimais de arredondamento são obrigatórias.',
+          field: 'nomeDoProcesso',
+          code: 'uniplus.selecao.processo_seletivo.nome_invalido',
+          message: 'O nome do processo é inválido.',
         },
       ],
     });

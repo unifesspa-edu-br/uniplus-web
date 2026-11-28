@@ -26,12 +26,10 @@ import {
 
 const CODIGO_INCOMPLETA =
   'uniplus.selecao.configuracao_classificacao.resolucao_peso_area_enem_incompleta';
-const CODIGO_CASAS_OBRIGATORIAS =
-  'uniplus.selecao.configuracao_classificacao.casas_arredondamento_obrigatorio';
-const RECUSA_DAS_CASAS = {
-  field: 'casasArredondamento',
-  code: CODIGO_CASAS_OBRIGATORIAS,
-  message: 'As casas decimais de arredondamento são obrigatórias.',
+const RECUSA_DE_OUTRO_CAMPO = {
+  field: 'nomeDoProcesso',
+  code: 'uniplus.selecao.processo_seletivo.nome_invalido',
+  message: 'O nome do processo é inválido.',
 };
 const MENSAGEM_DA_API = 'Falta o grupo Saúde e Biológicas na resolução escolhida';
 const ROTULO_DO_PASSO = `Resolução de Peso por Área, no passo ${NOME_DO_PASSO_DA_FORMULA}`;
@@ -150,7 +148,7 @@ describe('recusa da resolução de Peso por Área na gravação da classificaç�
     recusarGravacao({
       title: 'Campos inválidos.',
       code: 'uniplus.selecao.validacao',
-      errors: [RECUSA_DAS_CASAS],
+      errors: [RECUSA_DE_OUTRO_CAMPO],
     });
 
     const resultado = await gravacao;
@@ -170,7 +168,7 @@ describe('recusa da resolução de Peso por Área na gravação da classificaç�
       code: 'uniplus.selecao.validacao',
       errors: [
         { field: 'resolucaoPesoAreaEnem', code: CODIGO_INCOMPLETA, message: MENSAGEM_DA_API },
-        RECUSA_DAS_CASAS,
+        RECUSA_DE_OUTRO_CAMPO,
       ],
     });
 

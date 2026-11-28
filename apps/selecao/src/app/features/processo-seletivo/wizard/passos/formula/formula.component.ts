@@ -103,6 +103,11 @@ export class FormulaPassoComponent {
     exigeResolucaoPesoAreaEnem(this.store.draft().classificacao),
   );
 
+  /** Sem a resolução na tela, a recusa pelo desempate aparece junto da caixa do ENEM. */
+  readonly recusaDoDesempateForaDaResolucao = computed(() =>
+    this.exigeResolucao() ? null : this.store.classificacao.recusaPeloDesempatePorArea(),
+  );
+
   private readonly cadastroDePesos = inject(LeituraDoCadastroDePesos);
   private readonly gravacao = inject(GravacaoDaClassificacao);
 
@@ -215,6 +220,7 @@ export class FormulaPassoComponent {
   escolherRegraCalculo(valor: string): void {
     const { codigo, versao } = lerChaveDaRegra(valor);
     this.gravacao.esquecerRecusasDoControle('regraCalculo');
+    this.store.classificacao.esquecerRecusaPeloDesempate();
     if (codigo === '') this.limparRegraCalculo();
     else this.trocarRegraCalculo(codigo, versao);
     this.descartarRecusaQueNaoSeAplica();
@@ -288,6 +294,7 @@ export class FormulaPassoComponent {
       baseadoEmEnem: checked,
       ...(checked ? {} : { resolucaoPesoAreaEnem: '' }),
     });
+    this.store.classificacao.esquecerRecusaPeloDesempate();
     this.descartarRecusaQueNaoSeAplica();
   }
 

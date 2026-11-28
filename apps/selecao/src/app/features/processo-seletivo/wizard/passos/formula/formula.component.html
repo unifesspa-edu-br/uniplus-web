@@ -174,8 +174,11 @@
     <label class="check-item" style="margin-top: var(--space-5)"
       ><input
         type="checkbox"
+        id="f-baseado-enem"
         [checked]="store.draft().classificacao.baseadoEmEnem"
         [disabled]="!store.aceitaEdicao()"
+        [attr.aria-invalid]="recusaDoDesempateForaDaResolucao() ? 'true' : null"
+        [attr.aria-describedby]="recusaDoDesempateForaDaResolucao() ? 'f-baseado-enem-erro' : null"
         (change)="aoAlternarBaseadoEmEnem($event)"
       /><span
         >Classificação baseada em provas e notas do ENEM (define a resolução de Peso por Área que
@@ -183,6 +186,9 @@
         área, no passo Eliminação)</span
       ></label
     >
+    @if (recusaDoDesempateForaDaResolucao(); as recusa) {
+      <p class="field__error" id="f-baseado-enem-erro">{{ recusa }}</p>
+    }
 
     @if (declaraEdicoes()) {
       <sel-edicoes-do-enem [invalido]="invalidFields().has('edicoesEnem')" />

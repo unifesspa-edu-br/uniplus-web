@@ -2,6 +2,7 @@ import { computed, signal } from '@angular/core';
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import type { RecusaDoCampo } from '@uniplus/shared-ui/components';
 
+import type { RecusasDaFormula } from './passos/classificacao/recusas-da-formula';
 import type { ControleDoCatalogo } from './passos/classificacao/recusas-do-catalogo';
 import type { CriterioDesempateConfigurado } from './processo-seletivo.models';
 import type { MotivoDaReleitura } from './shared/motivo-da-releitura';
@@ -40,9 +41,9 @@ export type ClassificacaoGravada =
  */
 export class ClassificacaoNoServidor {
   /**
-   * Recusa ao campo `resolucaoPesoAreaEnem` na última gravação. Some quando a resolução muda ou
-   * deixa de ser exigida, quando o cadastro é relido e quando a gravação seguinte dá certo; uma
-   * recusa de outro campo não a apaga, porque o servidor pode ter recusado antes de julgá-la.
+   * Recusa ao campo `resolucaoPesoAreaEnem` na última gravação. Só a resposta com causa nesse campo
+   * a muda — sem causa de resolução, ela fica, porque o servidor pode ter recusado antes de julgá-la —
+   * e some quando a resolução muda ou deixa de ser exigida e quando a gravação seguinte dá certo.
    */
   readonly recusaDaResolucaoPesoAreaEnem = signal<string | null>(null);
 
@@ -75,9 +76,11 @@ export class ClassificacaoNoServidor {
 
   /**
    * Recusa da gravação da classificação por um critério de desempate já gravado que compara a nota
-   * de área do ENEM. Some como a da resolução; depois de gravar o desempate ou reler o cadastro,
-   * só quando a conferência dos critérios gravados mostra que a pendência acabou, e com os
-   * critérios gravados desconhecidos ela fica.
+   * de área do ENEM, com as mensagens distintas da resposta, em qualquer campo. Só a resposta com
+   * esses códigos a muda. Some quando a gravação dá certo, quando a resolução muda e quando o ENEM
+   * ou a regra de cálculo troca; depois de gravar o desempate ou reler o cadastro, só quando a
+   * conferência dos critérios gravados mostra que a pendência acabou, e com os critérios gravados
+   * desconhecidos ela fica.
    */
   readonly recusaPeloDesempatePorArea = signal<string | null>(null);
 
@@ -149,7 +152,22 @@ export class ClassificacaoNoServidor {
    */
   readonly versaoLida = signal(0);
 
-  recusarPeloDesempate(recusa: string | null, leituraDoCadastro: number): void {
+  /** Cada recusa muda só com a resposta que a julgou; as que a resposta não traz ficam. */
+  registrarRecusasDaFormula(
+    { daResolucao, peloDesempate, daEscala }: RecusasDaFormula,
+    leituraDoCadastro: number,
+  ): void {
+    if (daResolucao.julgada) this.recusaDaResolucaoPesoAreaEnem.set(daResolucao.recusa);
+    if (peloDesempate !== null) this.recusarPeloDesempate(peloDesempate, leituraDoCadastro);
+    if (daEscala !== null) this.recusaDaEscalaDaNotaFinal.set(daEscala);
+  }
+
+  /** A classificação do rascunho deixou de ser a que o servidor recusou pelo desempate. */
+  esquecerRecusaPeloDesempate(): void {
+    this.recusaPeloDesempatePorArea.set(null);
+  }
+
+  private recusarPeloDesempate(recusa: string, leituraDoCadastro: number): void {
     this.recusaPeloDesempatePorArea.set(recusa);
     this.leituraDoCadastroNaRecusaPeloDesempate.set(leituraDoCadastro);
     this.criteriosNaRecusaPeloDesempate.set(this.criteriosDesempateGravados());

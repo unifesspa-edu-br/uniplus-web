@@ -1,17 +1,17 @@
+import type { CausaDeCampo } from '@uniplus/shared-core/http';
+
 import { NOME_DO_PASSO_DA_FORMULA } from '../../processo-seletivo.data';
 import type { CriterioDesempateConfigurado } from '../../processo-seletivo.models';
-import { ehCampoDaResolucao } from '../classificacao/classificacao-para-comando';
+import { mensagemDaRecusaPeloDesempate } from '../classificacao/recusas-da-classificacao';
 
 const CRITERIO_GRAVADO_SEM_QUADRO = `compara a nota de área do ENEM, que só existe com a classificação baseada no ENEM pela média ponderada. Troque a regra do critério ou remova-o no passo Desempate e grave o passo, ou marque o ENEM e a média ponderada no passo ${NOME_DO_PASSO_DA_FORMULA}.`;
 
 /**
  * A recusa por um critério de desempate gravado que compara a nota de área do ENEM, com a
- * classificação fora do ENEM pela média ponderada — pela posição do critério, quando se sabe.
+ * classificação fora do ENEM pela média ponderada — pela posição do critério.
  */
-export function recusaPorCriterioGravadoSemQuadro(posicao: number | null): string {
-  return posicao === null
-    ? `Um critério de desempate gravado ${CRITERIO_GRAVADO_SEM_QUADRO}`
-    : `Critério de desempate ${posicao} gravado: ${CRITERIO_GRAVADO_SEM_QUADRO}`;
+export function recusaPorCriterioGravadoSemQuadro(posicao: number): string {
+  return `Critério de desempate ${posicao} gravado: ${CRITERIO_GRAVADO_SEM_QUADRO}`;
 }
 
 /**
@@ -43,22 +43,16 @@ const CITADA_POR_OUTRO_CRITERIO = `${PREFIXO_DA_RECUSA}area_enem_citada_por_outr
 const PREFIXO_DA_RECUSA_DO_CRITERIO = 'uniplus.selecao.criterio_desempate.';
 
 /**
- * O que a tela diz para a recusa do servidor a uma classificação que deixaria sem nota de área um
- * critério de desempate já gravado, pelo `code` e pelo campo — o `message` do servidor não é
- * contrato da tela. Sem quadro no campo da resolução, falta escolhê-la; nos campos do ENEM e da
- * regra de cálculo, falta a própria classificação pelo ENEM pela média ponderada.
+ * A mensagem do servidor para a recusa a uma classificação que deixaria sem nota de área um
+ * critério de desempate já gravado, reconhecida pelo `code`; `null` para qualquer outra recusa.
+ * A raiz sem causa de campo (`field` vazio) traz só o título do problema, que não é mensagem da
+ * causa: a recusa cai no texto genérico.
  */
-export function recusaDaClassificacaoPeloDesempate(erro: {
-  readonly field: string;
-  readonly code: string;
-}): string | null {
-  if (erro.code === FORA_DO_QUADRO) {
-    return 'Um critério de desempate gravado cita área do ENEM que a resolução escolhida não tem em todos os grupos. No passo Desempate, retire a área — ou, se nenhuma área do critério sobrar, troque a regra dele ou remova-o — e grave o passo; ou escolha outra resolução.';
-  }
-  if (erro.code !== SEM_QUADRO) return null;
-  return ehCampoDaResolucao(erro.field)
-    ? `Um critério de desempate gravado compara a nota de área do ENEM, que exige o quadro da resolução de Peso por Área. Troque a regra do critério no passo Desempate e grave o passo, ou escolha a resolução no passo ${NOME_DO_PASSO_DA_FORMULA}.`
-    : recusaPorCriterioGravadoSemQuadro(null);
+export function recusaDaClassificacaoPeloDesempate(
+  erro: Pick<CausaDeCampo, 'field' | 'code' | 'message'>,
+): string | null {
+  if (erro.code !== FORA_DO_QUADRO && erro.code !== SEM_QUADRO) return null;
+  return mensagemDaRecusaPeloDesempate(erro.field ? erro : { message: '' });
 }
 
 /** A frase da recusa, com o rótulo da área e a posição do outro critério que a cita, quando se sabem. */
