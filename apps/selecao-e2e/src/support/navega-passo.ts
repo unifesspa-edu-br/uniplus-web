@@ -8,16 +8,21 @@ export const LARGURA_STEPPER_LATERAL = 768;
  * até um passo muda com ele.
  */
 export async function irAoPasso(page: Page, rotulo: string, testInfo: TestInfo): Promise<void> {
-  const largura = larguraDoProjeto(testInfo);
-
-  if (largura >= LARGURA_STEPPER_LATERAL) {
-    await page
-      .getByRole('navigation', { name: 'Etapas do cadastro' })
-      .getByRole('button', { name: rotulo })
-      .click();
-    return;
+  if (larguraDoProjeto(testInfo) >= LARGURA_STEPPER_LATERAL) {
+    await irAoPassoPeloStepper(page, rotulo);
+  } else {
+    await irAoPassoPelaBarraDeEtapas(page, rotulo);
   }
+}
 
+async function irAoPassoPeloStepper(page: Page, rotulo: string): Promise<void> {
+  await page
+    .getByRole('navigation', { name: 'Etapas do cadastro' })
+    .getByRole('button', { name: rotulo })
+    .click();
+}
+
+async function irAoPassoPelaBarraDeEtapas(page: Page, rotulo: string): Promise<void> {
   await page.getByRole('button', { name: 'Abrir lista de etapas' }).click();
   const dialogo = page.getByRole('dialog', { name: 'Etapas do cadastro' });
   await expect(dialogo).toBeVisible();

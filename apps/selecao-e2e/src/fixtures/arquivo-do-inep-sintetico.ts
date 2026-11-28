@@ -72,18 +72,9 @@ export function numeroDeInscricao(ordem: number, rodada = 0): string {
   return String(240000000000 + rodada * 1000 + ordem);
 }
 
-export function linha(
-  pessoa: PessoaFicticia,
-  ordem: number,
-  cpf: string = pessoa.cpf,
-  rodada = 0,
-): string {
+/** Os campos que seguem as notas e as situações: nascimento, sexo, cidade e unidade da federação. */
+function camposDaPessoa(pessoa: PessoaFicticia): string[] {
   return [
-    numeroDeInscricao(ordem, rodada),
-    cpf,
-    pessoa.nome,
-    ...NOTAS_PADRAO,
-    ...SITUACOES_PADRAO,
     pessoa.nascimento,
     pessoa.sexo === 'Feminino' ? 'F' : 'M',
     pessoa.cidade,
@@ -91,7 +82,18 @@ export function linha(
     pessoa.sexo,
     pessoa.cidade,
     '',
-  ].join(';');
+  ];
+}
+
+export function linha(
+  pessoa: PessoaFicticia,
+  ordem: number,
+  cpf: string = pessoa.cpf,
+  rodada = 0,
+): string {
+  const identificacao = [numeroDeInscricao(ordem, rodada), cpf, pessoa.nome];
+  const resultado = [...NOTAS_PADRAO, ...SITUACOES_PADRAO];
+  return [...identificacao, ...resultado, ...camposDaPessoa(pessoa)].join(';');
 }
 
 /** O leiaute anterior, com três campos a mais: não pode ser lido com o de 20. */
