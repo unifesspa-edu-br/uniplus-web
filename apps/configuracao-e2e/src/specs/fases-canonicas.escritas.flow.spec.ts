@@ -72,7 +72,7 @@ async function mockApi(
   return { liberar, envios };
 }
 
-test.describe('Fase canônica — escritas', () => {
+test.describe('Tipo de fase — escritas', () => {
   test.beforeEach(async ({ page }) => {
     await mockConfiguracaoRuntimeConfig(page);
   });
@@ -80,11 +80,9 @@ test.describe('Fase canônica — escritas', () => {
   test('o catálogo institucional não oferece criação', async ({ page }) => {
     await mockApi(page, { status: 204 });
     await page.goto('/fases-canonicas');
+    await expect(page.getByRole('button', { name: 'Editar tipo de fase AVALIACAO' })).toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Editar fase canônica AVALIACAO' }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: /nova fase canônica|criar fase canônica/i }),
+      page.getByRole('button', { name: /novo tipo de fase|criar tipo de fase/i }),
     ).toHaveCount(0);
   });
 
@@ -106,11 +104,11 @@ test.describe('Fase canônica — escritas', () => {
       },
     });
     await page.goto('/fases-canonicas');
-    await page.getByRole('button', { name: 'Editar fase canônica AVALIACAO' }).click();
-    const drawer = page.getByRole('dialog', { name: 'Formulário de fase canônica' });
+    await page.getByRole('button', { name: 'Editar tipo de fase AVALIACAO' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Formulário de tipo de fase' });
     const nome = drawer.locator('input[formcontrolname="nome"]');
     await nome.fill('Avaliação revisada');
-    await drawer.getByRole('button', { name: 'Salvar fase canônica' }).click();
+    await drawer.getByRole('button', { name: 'Salvar tipo de fase' }).click();
     const salvar = drawer.getByRole('button', { name: 'Salvando...' });
     await expect(nome).toBeDisabled();
     await expect(nome).toHaveValue('Avaliação revisada');
@@ -139,8 +137,8 @@ test.describe('Fase canônica — escritas', () => {
   }) => {
     const { liberar, envios } = await mockApi(page, { status: 500, corpo: ERRO_INTERNO });
     await page.goto('/fases-canonicas');
-    await page.getByRole('button', { name: 'Editar fase canônica AVALIACAO' }).click();
-    const drawer = page.getByRole('dialog', { name: 'Formulário de fase canônica' });
+    await page.getByRole('button', { name: 'Editar tipo de fase AVALIACAO' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Formulário de tipo de fase' });
     const nome = drawer.locator('input[formcontrolname="nome"]');
     await nome.focus();
     await page.keyboard.press('Enter');
@@ -149,18 +147,18 @@ test.describe('Fase canônica — escritas', () => {
     liberar();
     await expect(drawer.getByText('Erro interno')).toBeVisible();
     await expect(nome).toBeEnabled();
-    await expect(drawer.getByRole('button', { name: 'Salvar fase canônica' })).toBeFocused();
+    await expect(drawer.getByRole('button', { name: 'Salvar tipo de fase' })).toBeFocused();
     expect(envios).toEqual(['PUT']);
   });
 
   test('envio barrado localmente leva o foco ao primeiro campo inválido', async ({ page }) => {
     const { envios } = await mockApi(page, { status: 204 });
     await page.goto('/fases-canonicas');
-    await page.getByRole('button', { name: 'Editar fase canônica AVALIACAO' }).click();
-    const drawer = page.getByRole('dialog', { name: 'Formulário de fase canônica' });
+    await page.getByRole('button', { name: 'Editar tipo de fase AVALIACAO' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Formulário de tipo de fase' });
     const nome = drawer.locator('input[formcontrolname="nome"]');
     await nome.fill('');
-    await drawer.getByRole('button', { name: 'Salvar fase canônica' }).focus();
+    await drawer.getByRole('button', { name: 'Salvar tipo de fase' }).focus();
     await page.keyboard.press('Enter');
     await expect(nome).toBeFocused();
     await expect(nome).toHaveAttribute('aria-invalid', 'true');
@@ -176,19 +174,17 @@ test.describe('Fase canônica — escritas', () => {
     await tentar.click();
     await expect(tentar).toBeFocused();
     await expect(tentar).toHaveAttribute('aria-disabled', 'true');
-    await expect(
-      page.getByRole('button', { name: 'Editar fase canônica AVALIACAO' }),
-    ).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Fases canônicas', level: 2 })).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Editar tipo de fase AVALIACAO' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Tipos de fase', level: 2 })).toBeFocused();
   });
 
   test('edição concluída devolve o foco ao acionador', async ({ page }) => {
     const { liberar } = await mockApi(page, { status: 204 });
     await page.goto('/fases-canonicas');
-    const acionador = page.getByRole('button', { name: 'Editar fase canônica AVALIACAO' });
+    const acionador = page.getByRole('button', { name: 'Editar tipo de fase AVALIACAO' });
     await acionador.click();
-    const drawer = page.getByRole('dialog', { name: 'Formulário de fase canônica' });
-    await drawer.getByRole('button', { name: 'Salvar fase canônica' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Formulário de tipo de fase' });
+    await drawer.getByRole('button', { name: 'Salvar tipo de fase' }).click();
     liberar();
     await expect(drawer).toBeHidden();
     await expect(acionador).toBeFocused();
@@ -197,8 +193,8 @@ test.describe('Fase canônica — escritas', () => {
   test('remoção pendente mantém o diálogo e anuncia o andamento', async ({ page }) => {
     const { liberar, envios } = await mockApi(page, { status: 204 });
     await page.goto('/fases-canonicas');
-    await page.getByRole('button', { name: 'Remover fase canônica AVALIACAO' }).click();
-    const dialogo = page.getByRole('dialog', { name: 'Remover fase canônica' });
+    await page.getByRole('button', { name: 'Remover tipo de fase AVALIACAO' }).click();
+    const dialogo = page.getByRole('dialog', { name: 'Remover tipo de fase' });
     const remover = dialogo.getByRole('button', { name: 'Remover', exact: true });
     await remover.click();
     await expect(remover).toBeFocused();
@@ -220,12 +216,12 @@ test.describe('Fase canônica — escritas', () => {
   }) => {
     const { liberar } = await mockApi(page, { status: 204 }, 'sem-a-fase');
     await page.goto('/fases-canonicas');
-    await page.getByRole('button', { name: 'Remover fase canônica AVALIACAO' }).click();
-    const dialogo = page.getByRole('dialog', { name: 'Remover fase canônica' });
+    await page.getByRole('button', { name: 'Remover tipo de fase AVALIACAO' }).click();
+    const dialogo = page.getByRole('dialog', { name: 'Remover tipo de fase' });
     await dialogo.getByRole('button', { name: 'Remover', exact: true }).click();
     liberar();
     await expect(dialogo).toBeHidden();
-    await expect(page.getByRole('heading', { name: 'Fases canônicas', level: 2 })).toBeFocused();
+    await expect(page.getByRole('heading', { name: 'Tipos de fase', level: 2 })).toBeFocused();
   });
 
   test('edição concluída, com falha na recarga, leva o foco ao título da lista', async ({
@@ -233,12 +229,12 @@ test.describe('Fase canônica — escritas', () => {
   }) => {
     const { liberar } = await mockApi(page, { status: 204 }, 'com-falha');
     await page.goto('/fases-canonicas');
-    await page.getByRole('button', { name: 'Editar fase canônica AVALIACAO' }).click();
-    const drawer = page.getByRole('dialog', { name: 'Formulário de fase canônica' });
-    await drawer.getByRole('button', { name: 'Salvar fase canônica' }).click();
+    await page.getByRole('button', { name: 'Editar tipo de fase AVALIACAO' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Formulário de tipo de fase' });
+    await drawer.getByRole('button', { name: 'Salvar tipo de fase' }).click();
     liberar();
     await expect(drawer).toBeHidden();
-    await expect(page.getByRole('heading', { name: 'Fases canônicas', level: 2 })).toBeFocused();
+    await expect(page.getByRole('heading', { name: 'Tipos de fase', level: 2 })).toBeFocused();
   });
 
   test('remoção recusada mantém o diálogo aberto e o foco dentro dele', async ({ page }) => {
@@ -252,15 +248,13 @@ test.describe('Fase canônica — escritas', () => {
       },
     });
     await page.goto('/fases-canonicas');
-    await page.getByRole('button', { name: 'Remover fase canônica AVALIACAO' }).click();
-    const dialogo = page.getByRole('dialog', { name: 'Remover fase canônica' });
+    await page.getByRole('button', { name: 'Remover tipo de fase AVALIACAO' }).click();
+    const dialogo = page.getByRole('dialog', { name: 'Remover tipo de fase' });
     await dialogo.getByRole('button', { name: 'Remover', exact: true }).click();
     liberar();
     await expect(dialogo.getByRole('button', { name: 'Cancelar' })).toBeEnabled();
     await expect(dialogo).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: 'Fases canônicas', level: 2 }),
-    ).not.toBeFocused();
+    await expect(page.getByRole('heading', { name: 'Tipos de fase', level: 2 })).not.toBeFocused();
     await expect(dialogo.locator(':focus')).toHaveCount(1);
   });
 });

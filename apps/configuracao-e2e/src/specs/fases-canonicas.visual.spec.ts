@@ -43,7 +43,7 @@ function metadataTheme(testInfo: TestInfo): VisualTheme {
   return theme === 'dark' || theme === 'contrast' ? theme : 'light';
 }
 
-test.describe('Fases canônicas — geometria da página e do formulário', () => {
+test.describe('Tipos de fase — geometria da página e do formulário', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     await mockConfiguracaoRuntimeConfig(page);
     await page.addInitScript((theme: VisualTheme) => {
@@ -88,8 +88,8 @@ test.describe('Fases canônicas — geometria da página e do formulário', () =
     page,
   }) => {
     await page.goto('/fases-canonicas');
-    await page.getByRole('button', { name: `Editar fase canônica ${FASE.codigo}` }).click();
-    const drawer = page.getByRole('dialog', { name: 'Formulário de fase canônica' });
+    await page.getByRole('button', { name: `Editar tipo de fase ${FASE.codigo}` }).click();
+    const drawer = page.getByRole('dialog', { name: 'Formulário de tipo de fase' });
     await expect(drawer).toBeVisible();
     await drawer.evaluate((el) =>
       Promise.all(el.getAnimations({ subtree: true }).map((animacao) => animacao.finished)),

@@ -3,7 +3,7 @@ import type { Page, Route } from '@playwright/test';
 import type { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { responder, responderPreflight, servirLeitura } from './escritas-retidas';
 
-/** API mockada da Fase canônica para os specs que só leem a lista e capturam a atualização. */
+/** API mockada do Tipo de fase para os specs que só leem a lista e capturam a atualização. */
 
 /** A fase sem nada admitido nem coletado; o teste troca só o que mede. */
 const FASE_SEM_SINALIZADORES: JsonDaApi<FaseCanonicaDto> = {
@@ -19,6 +19,7 @@ const FASE_SEM_SINALIZADORES: JsonDaApi<FaseCanonicaDto> = {
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
+  organizadaEmChamadas: false,
   origemData: { codigo: 'NO_EDITAL', rotulo: 'Definida no edital' },
   criadoEm: '2026-06-10T12:00:00Z',
 };

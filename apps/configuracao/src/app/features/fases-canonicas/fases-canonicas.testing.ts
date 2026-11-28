@@ -32,6 +32,7 @@ export const faseAvaliacaoSeed: FaseCanonicaDto = {
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
+  organizadaEmChamadas: false,
   origemData: ORIGENS_DE_DATA.NO_EDITAL,
   criadoEm: '2026-06-10T12:00:00Z',
 };
@@ -87,7 +88,7 @@ export function montarPagina(): CenaDaPagina {
   return cena;
 }
 
-/** A tela nunca deve emitir a criação de fase canônica. */
+/** A tela nunca deve emitir a criação de tipo de fase. */
 export function verificarRequisicoesDaPagina(cena: CenaDaPagina): void {
   cena.controller.expectNone((r) => r.method === 'POST' && r.url === CRIAR_URL);
   cena.controller.verify();

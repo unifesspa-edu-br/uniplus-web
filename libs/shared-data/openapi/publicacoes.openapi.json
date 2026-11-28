@@ -464,7 +464,7 @@
             }
           },
           "413": {
-            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "description": "O corpo da requisi\u00E7\u00E3o passa do limite de tamanho aceito pela opera\u00E7\u00E3o (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conte\u00FAdo. Sem tamanho declarado, com o conte\u00FAdo enviado em partes, a leitura \u00E9 interrompida ao passar do limite, e a verifica\u00E7\u00E3o de acesso pode recusar antes disso.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -838,7 +838,7 @@
             }
           },
           "413": {
-            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "description": "O corpo da requisi\u00E7\u00E3o passa do limite de tamanho aceito pela opera\u00E7\u00E3o (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conte\u00FAdo. Sem tamanho declarado, com o conte\u00FAdo enviado em partes, a leitura \u00E9 interrompida ao passar do limite, e a verifica\u00E7\u00E3o de acesso pode recusar antes disso.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -956,6 +956,16 @@
                 }
               }
             }
+          },
+          "413": {
+            "description": "O corpo da requisi\u00E7\u00E3o passa do limite de tamanho aceito pela opera\u00E7\u00E3o (uniplus.requisicao.corpo_acima_do_limite). Com o tamanho declarado acima do limite, a recusa vem antes de verificar o acesso e de ler o conte\u00FAdo. Sem tamanho declarado, com o conte\u00FAdo enviado em partes, a leitura \u00E9 interrompida ao passar do limite, e a verifica\u00E7\u00E3o de acesso pode recusar antes disso.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1053,13 +1063,22 @@
         "type": "object",
         "properties": {
           "nome": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "tipoMidia": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "hash": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -1211,6 +1230,8 @@
             "format": "uuid"
           },
           "codigo": {
+            "maxLength": 60,
+            "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]\u002B)*$",
             "type": [
               "null",
               "string"
@@ -1297,6 +1318,8 @@
         "type": "object",
         "properties": {
           "codigo": {
+            "maxLength": 60,
+            "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]\u002B)*$",
             "type": [
               "null",
               "string"
@@ -1514,10 +1537,16 @@
         "type": "object",
         "properties": {
           "orgao": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "serie": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "ano": {
             "type": "integer",
@@ -1530,17 +1559,28 @@
             ]
           },
           "tipoCodigo": {
-            "type": "string"
+            "maxLength": 60,
+            "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]\u002B)*$",
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "dataDoAto": {
             "type": "string",
             "format": "date"
           },
           "documentoHash": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "assinante": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "versaoDoObjetoId": {
             "type": [
@@ -1777,7 +1817,12 @@
         "type": "object",
         "properties": {
           "entidadeTipo": {
-            "type": "string"
+            "maxLength": 60,
+            "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]\u002B)*$",
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "entidadeId": {
             "type": "string",

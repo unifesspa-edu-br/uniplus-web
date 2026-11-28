@@ -1,4 +1,4 @@
-import { EtapaDaVersao, TipoDeDivergencia, TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
+import { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import type {
   DivergenciaDaGovernancaDto,
   MudancaDaPermissaoDto,
@@ -8,18 +8,6 @@ import type {
 export const FILA_DA_ETAPA: Readonly<Record<EtapaDaVersao, string>> = {
   [EtapaDaVersao.GESTAO_DE_ACESSOS]: '/acessos/reclassificacoes/gestao-de-acessos',
   [EtapaDaVersao.PROTECAO_DE_DADOS]: '/acessos/reclassificacoes/protecao-de-dados',
-};
-
-/**
- * `De` e `Para` da divergência chegam como texto, sem rótulo da API: o código da classificação
- * ganha aqui o mesmo nome que a API dá a ela nas demais respostas.
- */
-const CLASSIFICACAO_NA_DIVERGENCIA: Readonly<Record<string, string>> = {
-  PUBLICO: 'Público',
-  INTERNO: 'Interno',
-  PESSOAL: 'Pessoal',
-  IDENTIFICADOR: 'Identificador',
-  SENSIVEL: 'Sensível',
 };
 
 export function escopoDaPermissao(deUnidade: boolean): string {
@@ -42,17 +30,21 @@ export function mudancasDaPermissao(mudanca: MudancaDaPermissaoDto): readonly st
   return dessas;
 }
 
-/** O valor de um lado da divergência, na linguagem do tipo dela; sem valor, o traço. */
+export type LadoDaDivergencia = 'anterior' | 'nova';
+
+/**
+ * O valor de um lado da divergência: o rótulo da classificação que a API devolve ou o escopo
+ * em palavras; sem valor nesse lado, o traço.
+ */
 export function valorDaDivergencia(
-  tipo: DivergenciaDaGovernancaDto['tipo'],
-  valor: string | null,
+  divergencia: DivergenciaDaGovernancaDto,
+  lado: LadoDaDivergencia,
 ): string {
-  if (valor === null) return '—';
-  if (tipo.codigo === TipoDeDivergencia.CLASSIFICACAO) {
-    return CLASSIFICACAO_NA_DIVERGENCIA[valor.toUpperCase()] ?? valor;
-  }
-  if (tipo.codigo === TipoDeDivergencia.ESCOPO) {
-    return escopoDaPermissao(valor === TipoDeEscopo.UNIDADE);
-  }
-  return valor;
+  const anterior = lado === 'anterior';
+  const classificacao = anterior
+    ? divergencia.classificacaoAnterior
+    : divergencia.classificacaoNova;
+  if (classificacao !== null) return classificacao.rotulo;
+  const deUnidade = anterior ? divergencia.deUnidadeAnterior : divergencia.deUnidadeNovo;
+  return deUnidade === null ? '—' : escopoDaPermissao(deUnidade);
 }

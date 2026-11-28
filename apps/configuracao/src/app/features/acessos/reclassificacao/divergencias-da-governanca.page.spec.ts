@@ -1,4 +1,3 @@
-import { TipoDeEscopo } from '@uniplus/shared-data/autorizacao';
 import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -12,7 +11,7 @@ import {
   type DivergenciaDaGovernancaDto,
 } from '@uniplus/shared-data/autorizacao';
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
-import { ok, recusa } from '../testes';
+import { CLASSIFICACAO_DE_PROTECAO, ok, recusa } from '../testes';
 import { DivergenciasDaGovernancaPage } from './divergencias-da-governanca.page';
 import { TIPO_DE_DIVERGENCIA } from './reclassificacao.testing';
 
@@ -22,8 +21,10 @@ const FALTANTE: DivergenciaDaGovernancaDto = {
   perfilNome: 'Gestão de acessos',
   codigo: 'autorizacao:perfis:manter',
   tipo: TIPO_DE_DIVERGENCIA.COMPOSICAO_FALTANTE,
-  de: null,
-  para: 'autorizacao:perfis:manter',
+  classificacaoAnterior: null,
+  classificacaoNova: null,
+  deUnidadeAnterior: null,
+  deUnidadeNovo: null,
   instante: '2026-11-09T15:00:00Z',
 };
 const CLASSE: DivergenciaDaGovernancaDto = {
@@ -32,15 +33,15 @@ const CLASSE: DivergenciaDaGovernancaDto = {
   perfilId: 'p2',
   perfilNome: 'Proteção de dados',
   tipo: TIPO_DE_DIVERGENCIA.CLASSIFICACAO,
-  de: 'interno',
-  para: 'sensivel',
+  classificacaoAnterior: CLASSIFICACAO_DE_PROTECAO.INTERNO,
+  classificacaoNova: CLASSIFICACAO_DE_PROTECAO.PESSOAL,
 };
 const ESCOPO: DivergenciaDaGovernancaDto = {
   ...FALTANTE,
   id: 'd3',
   tipo: TIPO_DE_DIVERGENCIA.ESCOPO,
-  de: TipoDeEscopo.INSTITUICAO,
-  para: TipoDeEscopo.UNIDADE,
+  deUnidadeAnterior: false,
+  deUnidadeNovo: true,
 };
 
 describe('DivergenciasDaGovernancaPage', () => {
@@ -101,10 +102,24 @@ describe('DivergenciasDaGovernancaPage', () => {
     expect(linhas[0]).toContain('—');
     expect(linhas[1]).toContain('Classificação');
     expect(linhas[1]).toContain('Interno');
-    expect(linhas[1]).toContain('Sensível');
+    expect(linhas[1]).toContain('Pessoal');
+    expect(linhas[1]).not.toMatch(/INTERNO|PESSOAL|null|undefined/);
     expect(linhas[2]).toContain('Instituição');
     expect(linhas[2]).toContain('Unidade');
+    expect(linhas[2]).not.toMatch(/true|false|null|undefined/i);
     expect(linhas[0]).toContain('09/11/2026, 12:00');
+  });
+
+  it('mostra o traço no lado sem valor, sem escrever "null"', async () => {
+    const semLadoNovo: DivergenciaDaGovernancaDto = { ...ESCOPO, id: 'd4', deUnidadeNovo: null };
+    const { host } = await abrir(ok([semLadoNovo]));
+
+    const celulas = [...host.querySelectorAll('tbody td')].map((celula) =>
+      celula.textContent?.trim(),
+    );
+    expect(celulas).toContain('Instituição');
+    expect(celulas).toContain('—');
+    expect(host.textContent).not.toMatch(/null|undefined/);
   });
 
   it('linka o perfil para quem mantém ou aprova perfis, e só para essas pessoas', async () => {

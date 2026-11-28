@@ -25,6 +25,7 @@ export const fase: FaseCanonicaDto = {
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
+  organizadaEmChamadas: false,
   origemData: ORIGENS_DE_DATA.NO_EDITAL,
   criadoEm: '2026-06-10T12:00:00Z',
 };
@@ -49,12 +50,12 @@ export function elemento<T extends HTMLElement>(cena: CenaDaPagina, seletor: str
 }
 
 export async function abrirEdicao(cena: CenaDaPagina): Promise<void> {
-  elemento<HTMLButtonElement>(cena, 'button[aria-label="Editar fase canônica AVALIACAO"]').click();
+  elemento<HTMLButtonElement>(cena, 'button[aria-label="Editar tipo de fase AVALIACAO"]').click();
   await propagarRenderizando(cena);
 }
 
 export async function confirmarRemocao(cena: CenaDaPagina): Promise<void> {
-  elemento<HTMLButtonElement>(cena, 'button[aria-label="Remover fase canônica AVALIACAO"]').click();
+  elemento<HTMLButtonElement>(cena, 'button[aria-label="Remover tipo de fase AVALIACAO"]').click();
   await propagarRenderizando(cena);
   elemento<HTMLButtonElement>(cena, '[data-testid="confirm-dialog-confirm"]').click();
   await propagarRenderizando(cena);

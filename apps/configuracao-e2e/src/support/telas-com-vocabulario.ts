@@ -29,18 +29,18 @@ async function abrirPeloBotao(pagina: Page, botao: string): Promise<void> {
   await pagina.getByRole('button', { name: botao }).first().click();
 }
 
-/** A fase canônica não tem criação: o formulário que oferece a origem da data é o de edição. */
+/** O tipo de fase não tem criação: o formulário que oferece a origem da data é o de edição. */
 async function abrirEdicaoDeUmaFase(pagina: Page): Promise<void> {
   const fases = await chamarApi<{ codigo: string }[]>(
     PERSONA_DA_CONFIGURACAO,
     'GET',
     '/api/configuracao/fases-canonicas?limit=1',
   );
-  expect(fases.status, 'Leitura das fases canônicas').toBe(200);
+  expect(fases.status, 'Leitura dos tipos de fase').toBe(200);
   const [fase] = fases.corpo;
-  if (fase === undefined) throw new Error('A base não tem fase canônica para abrir a edição.');
-  await pagina.getByRole('searchbox', { name: 'Buscar fase canônica' }).fill(fase.codigo);
-  await pagina.getByRole('button', { name: `Editar fase canônica ${fase.codigo}` }).click();
+  if (fase === undefined) throw new Error('A base não tem tipo de fase para abrir a edição.');
+  await pagina.getByRole('searchbox', { name: 'Buscar tipo de fase' }).fill(fase.codigo);
+  await pagina.getByRole('button', { name: `Editar tipo de fase ${fase.codigo}` }).click();
 }
 
 /** Só uma natureza que não é ampla abre a seção de remanejamento, onde está a regra. */
@@ -111,7 +111,7 @@ export const TELAS_COM_VOCABULARIO: readonly TelaComVocabulario[] = [
     ],
   },
   {
-    nome: 'Fase canônica',
+    nome: 'Tipo de fase',
     rota: '/fases-canonicas',
     abrirFormulario: abrirEdicaoDeUmaFase,
     campos: [
