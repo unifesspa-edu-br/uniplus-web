@@ -1,4 +1,3 @@
-import { ehSituacaoConhecida } from '@uniplus/shared-inscricao/situacao-da-inscricao';
 import type { UiValorEmConsulta } from '@uniplus/shared-ui/components';
 import { formatarDataBr } from '@uniplus/shared-utils';
 
@@ -87,8 +86,10 @@ const LEITORES_POR_EXIBICAO: Readonly<Record<string, Leitor>> = {
     typeof valor === 'string' || typeof valor === 'number'
       ? { valor: formatarMoeda(String(valor)) }
       : undefined,
-  SITUACAO: (valor) =>
-    typeof valor === 'string' && ehSituacaoConhecida(valor) ? { situacao: valor } : undefined,
+  SITUACAO: (valor) => {
+    const situacao = texto(valor);
+    return situacao === null ? undefined : { situacao };
+  },
 };
 
 function lidoPeloComponente(componente: string, valor: unknown): ValorExibido | undefined {

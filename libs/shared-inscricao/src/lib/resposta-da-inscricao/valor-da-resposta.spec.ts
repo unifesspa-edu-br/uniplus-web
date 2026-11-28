@@ -126,7 +126,8 @@ describe('valorExibido', () => {
 
   it('entrega o componente situacao para a etiqueta de situação', () => {
     expect(valorExibido('TEXTO', 'ENVIADA', 'SITUACAO')).toEqual({ situacao: 'ENVIADA' });
-    expect(valorExibido('TEXTO', 'deferida', 'SITUACAO')).toEqual({ valor: 'deferida' });
+    expect(valorExibido('TEXTO', 'Deferida', 'SITUACAO')).toEqual({ situacao: 'Deferida' });
+    expect(valorExibido('TEXTO', '  ', 'SITUACAO')).toEqual({ valor: '  ' });
   });
 
   it('volta à exibição pelo tipo no componente padrão, desconhecido ou sem a forma dele', () => {
