@@ -129,8 +129,10 @@ describe('FasesCanonicasPage — edição pelo drawer', () => {
     expect(cena.edicao.ehFaseDeIsencao()).toBe(true);
     expect(cena.edicao.form.controls.coletaSolicitacaoIsencao.value).toBe(true);
     expect(
-      cena.fixture.nativeElement.querySelector('[formControlName="coletaInscricao"]'),
-    ).toBeNull();
+      cena.fixture.nativeElement
+        .querySelector('[formControlName="coletaInscricao"]')
+        .closest('[hidden]'),
+    ).not.toBeNull();
 
     cena.edicao.salvar();
     const put = cena.controller.expectOne(
