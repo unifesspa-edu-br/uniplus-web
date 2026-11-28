@@ -1,5 +1,5 @@
 import type { UiValorEmConsulta } from '../valor-em-consulta/valor-em-consulta';
-import { formatarDataBr } from '@uniplus/shared-utils';
+import { formatarCep, formatarDataBr } from '@uniplus/shared-utils';
 
 import { ehSituacaoConhecida } from './situacao-da-inscricao';
 
@@ -62,7 +62,7 @@ function endereco(valor: Readonly<Record<string, unknown>>): ValorExibido {
     complemento === null || via === '' ? via || complemento : `${via} — ${complemento}`,
     campo('bairro'),
     cidade,
-    cep === null ? null : `CEP ${cep}`,
+    cep === null ? null : `CEP ${formatarCep(cep)}`,
   ].filter((linha): linha is string => linha !== null && linha !== '');
   return linhas.length === 0 ? SEM_VALOR : { linhas };
 }
