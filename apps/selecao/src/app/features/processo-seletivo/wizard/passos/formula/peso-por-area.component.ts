@@ -15,7 +15,7 @@ import { formatarNumeroPtBr } from '@uniplus/shared-utils';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { focarAposRenderizarSeSemFoco } from '../../shared/foco-apos-renderizar';
-import { MOTIVO_DA_RELEITURA } from '../../shared/motivo-da-releitura';
+import { avisoDaReleitura } from '../../shared/motivo-da-releitura';
 import {
   baseLegalComum,
   colunasDoQuadro,
@@ -139,11 +139,11 @@ export class PesoPorAreaComponent {
   protected readonly mostraQuadroGravado = computed(() => this.quadroVigente().daCopiaCongelada);
   protected readonly quadro = computed<readonly GrupoDoQuadro[]>(() => this.quadroVigente().grupos);
 
-  /** O aviso de que o quadro à vista é a prévia, porque só uma releitura diz o que ficou congelado. */
+  /** O aviso de que só uma releitura diz o que ficou congelado, o mesmo do passo Desempate. */
   protected readonly avisoDeQuadroPorReler = computed(() => {
     const motivo = this.store.classificacao.motivoDaReleitura();
     return motivo !== null
-      ? `${MOTIVO_DA_RELEITURA[motivo]}. Enquanto isso, o quadro abaixo é a prévia do cadastro.`
+      ? avisoDaReleitura(motivo, this.store.classificacao.releituraFalhou())
       : null;
   });
 
@@ -261,9 +261,9 @@ export class PesoPorAreaComponent {
    */
   protected async relerProcesso(): Promise<void> {
     const decidiu = await relerProcessoAPedido(this.releitura, this.relendoProcesso);
-    if (decidiu && !this.store.classificacao.porReler()) {
-      this.focarQuemSobrou(ID_DO_TITULO_DA_SECAO);
-    }
+    if (!decidiu) return;
+    if (this.store.classificacao.porReler()) this.store.classificacao.registrarReleituraQueFalhou();
+    else this.focarQuemSobrou(ID_DO_TITULO_DA_SECAO);
   }
 
   /**
