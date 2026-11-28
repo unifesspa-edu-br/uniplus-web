@@ -143,6 +143,7 @@ describe('TiposDocumentoPage — detalhe e aprovação da proteção de dados', 
       });
       await p.abrirEdicao(laudo);
 
+      expect(p.elemento('cfg-tipo-documento-avisos').classList).toContain('form-drawer__avisos');
       const aviso = p.elemento('cfg-tipo-documento-avisos').textContent ?? '';
       expect(aviso).toContain('Devolvido pela proteção de dados');
       expect(aviso).toContain('Justificativa: O laudo traz dado de saúde.');

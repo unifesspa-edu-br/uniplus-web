@@ -6,6 +6,7 @@ import { AvisoDeNovaAprovacaoComponent } from '../../shared/protecao-do-catalogo
 /** O que a proteção de dados diz do tipo em edição: a decisão que pede ajuste e o aviso de nova aprovação. */
 @Component({
   selector: 'cfg-tipo-documento-avisos',
+  host: { class: 'form-drawer__avisos' },
   imports: [AlertComponent, AvisoDeNovaAprovacaoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
